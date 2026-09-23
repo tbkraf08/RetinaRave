@@ -7,7 +7,7 @@ import { FEATS } from '../engine/feats.js';
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS } from './post.js';
-import { G, ERRS } from './gl.js';
+import { G, ERRS, ETEX } from './gl.js';
 import { LOOK } from './look.js';
 import { HELP } from './help.js';
 import { getGrid } from '../math/mandel.js';
@@ -106,6 +106,7 @@ export function initHarness(hideLanding) {
     if (HASH.get('fake') === '0') ENGINE.start('demo');
     if (HASH.has('scene')) SC.forced = +HASH.get('scene');
     if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
+    if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
   }
 }
 

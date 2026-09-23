@@ -84,6 +84,10 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
 - Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: a stage writes the arrays in
   `TEX` (`state.js`: `{spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), row, hop}`) and bumps
   `hop` when there is a new frame; the core uploads when `hop` changes and hands them to scenes as `ctx.engineTex`.
+  `hist` is a ring: write exactly one row per hop at `row`, then advance `row` and `hop` together — the core sends only
+  the `hop − lastHop` rows ending at `row − 1` (two `texSubImage2D` calls when they wrap; the whole texture only when
+  ≥ 128 hops passed, e.g. a hidden tab). A stage that wrote rows without bumping `hop` by the same count would leave
+  stale rows on the GPU (v0.2 §13; `tools/hist-check.js` compares the two).
 - The synapse stage (`features-synapse.js`) is the worked example: `SYN_FEATS` lists its 54 fields, `synapseStage`
   copies `tap.an.A` into `MS` (`barPos/phrasePos/phrase16Pos` recomputed per frame from `A.beat` and the anchors —
   `grid()` refreshes them only every 16 hops; §10), drains `A.events` into `boundaryEvt/fakeoutEvt/moodEvt` (reset only

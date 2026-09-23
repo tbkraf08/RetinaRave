@@ -38,3 +38,9 @@ export function updateQuality(dtRaw) {
 
 // Tier 0..3 from q, for scenes with particle-count tables.
 export const tier = () => (Q.q < 0.25 ? 0 : Q.q < 0.5 ? 1 : Q.q < 0.8 ? 2 : 3);
+
+// Shared count budgets per tier (v0.2 §13, CONTRACTS §1.4): `points` for gl_VertexID particle clouds (DUST's table),
+// `segs` for CPU stroke buffers (ctx.lines path A; 16384 is POLYTOPE's cap). Scenes read ctx.budget(kind) and never
+// copy the numbers; per-ring / per-edge subdivision tables stay with the scene that owns the geometry.
+export const BUDGET = { points: [20000, 45000, 90000, 150000], segs: [2500, 5000, 9000, 16384] };
+export const budget = (kind) => BUDGET[kind][tier()];

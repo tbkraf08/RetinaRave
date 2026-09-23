@@ -81,6 +81,23 @@ the UNSIGNED_BYTE read they used before is INVALID_OPERATION on a float target (
 `CARD.bench` numbers recorded before 2026-09-23 §11 were submission times, ~0.01–0.05 ms, not render times). Check
 `CARD.ctx.gl.getError()` is 0 after a bench.
 
+## Engine textures (core change to `uploadEngineTex`, or a stage that writes `TEX`)
+
+The core uploads only the `hist` rows the engine wrote since the last frame (§13). `tools/hist-check.js` is an eval body
+that reads the GPU texture back through a framebuffer and compares every byte with the engine ring; on the real synth
+wrap it in a rAF callback (the analyzer hops between frames, so an eval outside the frame sees one CPU row the GPU has
+not had yet — that is the measurement, not the upload):
+```
+HC=$(sed '/^\/\//d' tools/hist-check.js | tr -d '\n' | sed 's/"/\\"/g'); RAF="new Promise(function(r){requestAnimationFrame(function(){r($HC)})})"
+GPU=1 node tools/cdp.js 'test&fake=0&scene=1' "[{\"until\":\"window.CARD\"},{\"wait\":3000},{\"eval\":\"$RAF\"},{\"wait\":9000},{\"eval\":\"$RAF\"}]"
+# => "hist fb 36053 hop 851 row 83 etexHop 851 nonzero 32768 mismatch 0 bytes 669952 full false glerr 0"   <- mismatch 0
+```
+`&histfull=1` under `#test` restores the v0.1 whole-texture upload (`CARD.ctx.engineTex.full`); a scene that samples
+`hist` must shoot the same md5 with and without it. `CARD.ctx.engineTex.bytes` counts bytes uploaded since load.
+`tools/scene-md5.sh <tag> [&extra]` shoots every registered scene at frames 360 and 840 under `CLOCK=1` into
+`tools/work/<tag>-s<id>-f<N>.jpg` and lists the md5s in `tools/work/<tag>-md5.txt` — before/after a core change the
+two lists must be identical (`diff`), and `tools/scene-md5.sh x '&histfull=1'` is the hist proof for every scene at once.
+
 ## Line renderer smoke (core change to `core/lines.js` or the targets)
 
 ```

@@ -2,7 +2,6 @@
 // Lifted from synapse scene 4 ("swarm"); the Hopf-fibre line overlay is dropped (broken depth test).
 import { VS_DUST, FS_DUST } from './shaders.js';
 
-const TIERS = [20000, 45000, 90000, 150000];
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
 
@@ -88,8 +87,7 @@ const SELF = {
   draw(target, { w, h }) {
     const ctx = this.ctx, gl = ctx.gl, P = this.pr;
     if (!P || !P.p) return;
-    const q = ctx.Q.q, tier = q < 0.25 ? 0 : q < 0.5 ? 1 : q < 0.8 ? 2 : 3;
-    const count = TIERS[tier], m = this.m, d = this.mood;
+    const count = ctx.budget('points'), m = this.m, d = this.mood;   // the core's particle budget for the current tier (CONTRACTS §1.4)
     lookVP(this.vp, this.yaw, this.pitch, this.dist, Math.max(w, 1) / Math.max(h, 1), 55 * DEG, 0.1, 10.1);
     ctx.use(P, target, w, h);
     gl.uniformMatrix4fv(P.u('uVP'), false, this.vp);

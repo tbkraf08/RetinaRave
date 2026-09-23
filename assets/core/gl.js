@@ -147,8 +147,10 @@ export function freeTarget(t) {
   }
 }
 
-// Engine textures (R8): spec 256×1, wave 512×1, hist 256×128 ring. Re-uploaded when the engine reports a new hop.
-export const ETEX = { spec: null, wave: null, hist: null, row: 0, hop: -1 };
+// Engine textures (R8): spec 256×1, wave 512×1, hist 256×128 ring. Uploaded when the engine reports a new hop: spec and
+// wave whole, hist only the rows written since the last upload (one per hop — v0.2 §13; `full` = the v0.1 whole-texture
+// path, kept for the harness's `&histfull=1` proof). `bytes` counts what went over the bus (harness readout).
+export const ETEX = { spec: null, wave: null, hist: null, row: 0, hop: -1, full: false, bytes: 0 };
 function r8(w, h) {
   const gl = G.gl, t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
@@ -167,6 +169,7 @@ export function uploadEngineTex(T) {
     ETEX.hist = r8(256, 128);
   }
   if (T.hop === ETEX.hop) return;
+  const delta = ETEX.hop < 0 ? 128 : T.hop - ETEX.hop; // hops since the last upload = rows the engine wrote since then
   ETEX.hop = T.hop;
   ETEX.row = T.row;
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -175,7 +178,19 @@ export function uploadEngineTex(T) {
   gl.bindTexture(gl.TEXTURE_2D, ETEX.wave.t);
   gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 512, 1, gl.RED, gl.UNSIGNED_BYTE, T.wave);
   gl.bindTexture(gl.TEXTURE_2D, ETEX.hist.t);
-  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 128, gl.RED, gl.UNSIGNED_BYTE, T.hist);
+  ETEX.bytes += 256 + 512;
+  const H = ETEX.hist.h, W = ETEX.hist.w;
+  const rows = (y0, n) => {
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y0, W, n, gl.RED, gl.UNSIGNED_BYTE, T.hist.subarray(y0 * W, (y0 + n) * W));
+    ETEX.bytes += n * W;
+  };
+  if (ETEX.full || delta >= H || delta <= 0) rows(0, H); // first upload, a hidden tab, or the harness switch
+  else {
+    // the newest row is T.row - 1; the rows to send are the last `delta` ending there, wrapping at the ring's top
+    const start = T.row - delta;
+    if (start >= 0) rows(start, delta);
+    else { rows(H + start, -start); if (T.row > 0) rows(0, T.row); }
+  }
 }
 
 const onResize = [];

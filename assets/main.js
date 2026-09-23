@@ -2,7 +2,7 @@
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
-import { Q, tier } from './core/quality.js';
+import { Q, tier, budget } from './core/quality.js';
 import { LOOK } from './core/look.js';
 import { addEffect } from './core/post.js';
 import { register, addTransition, setTransition } from './core/scenes.js';
@@ -38,7 +38,7 @@ try {
 // The ctx every scene and effect receives (docs/CONTRACTS.md §1.1). Never the module namespace of core/gl.js.
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
-  targets: G.RT, Q, tier, LOOK, hsv, engineTex: ETEX,
+  targets: G.RT, Q, tier, budget, LOOK, hsv, engineTex: ETEX,
   lines: { VS: VS_CHUNK, FS: FS_CHUNK, mk: mkLines, set: setLines, draw: drawLines, drawN: drawLinesN },
   log: (s) => { if (TEST) CARD.log.push(s); },
 };

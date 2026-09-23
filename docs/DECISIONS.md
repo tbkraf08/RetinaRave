@@ -504,3 +504,43 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   would suit touch. `wave`'s ELI5 still says "the last 2048 audio samples" while DUST samples the engine's 512-wide
   texture — the texture, not `MS.wave`, is what a scene sees (ENGINE.md). A `help.feats` line for a *variant* (DRUM)
   shares the parent's slot; a variant with its own reads would want its own.
+
+## §13 Row-only `hist` upload + `ctx.budget` (v0.2, 2026-09-23, orchestrator-written)
+
+- **The upload.** `uploadEngineTex` (core/gl.js) re-sent the whole 256×128 R8 spectrogram ring (32 KB) on every frame
+  in which the engine reported a new hop, although the analyzer writes exactly one row per hop
+  (`histTex.set(A.spec, histRow·256)`, `histRow = (histRow+1) % 128`; the fake timeline does the same per frame). Now
+  the number of hops since the last upload, `delta = T.hop − ETEX.hop`, is the number of rows to send: the last
+  `delta` rows ending at `T.row − 1`, as one `texSubImage2D` of `256×delta`, or two when they wrap the ring's top
+  (`rows(128 + start, −start)` + `rows(0, T.row)`), and the whole texture only on the first upload, when `delta ≥ 128`
+  (a hidden tab: rAF stops, the worklet does not) or when `ETEX.full` is set. No engine change: `TEX.row`/`TEX.hop`
+  were already the ring contract (ENGINE.md now says a stage must advance them together).
+- **Bytes over the bus, measured** (`ETEX.bytes`, real synth `test&fake=0`, ~95 hops/s, 60 fps): whole-texture path
+  24.08 MB in 1130 hops ≈ **2.0 MB/s**; row path 878 KB in 1134 hops ≈ **73 KB/s** — of which spec + wave (768 B per
+  frame, unchanged) are 46 KB/s and `hist` 24 KB/s (256 B per hop). `hist` alone: 32 KB/frame → 256 B/hop, 80× less.
+- **Proof.** (1) `tools/hist-check.js` reads the GPU texture back through a framebuffer (R8 is colour-renderable in
+  WebGL2; `readPixels` RGBA/UNSIGNED_BYTE, R channel) and compares all 32768 bytes with `ENGINE.tex.hist`: under
+  `CLOCK=1` **0 mismatch** at frames 100 and 400 (three wraps of the ring); on the real synth 0 mismatch at four
+  checks 3 s apart (hops 282 → 1134). The first real-synth run showed 251–256 mismatching bytes, always in row
+  `T.row` — the row the analyzer wrote *between* the frame's upload and the eval (the same count appeared with
+  `&histfull=1`, which uploads everything); inside a `requestAnimationFrame` callback, which runs in the frame's own
+  task batch, it is 0. HARNESS.md records the recipe. (2) `tools/scene-md5.sh`: every registered scene at frames 360
+  and 840 (`CLOCK=1 GPU=1`), ten shots, **md5-identical before and after** — nothing samples `hist` yet, so identical
+  is the only acceptable answer; FEIGEN (§15) is the first sampler and its `&histfull=1` equality is the proof that
+  the row path renders the same picture. (3) `parity.js fake` 0 diff / 72 fields; the §11 md5
+  `4ac523e9770e7d0625d46ed1f3e44769` unchanged at frame 290, `[0, 3, 0.4994]`.
+- **`&histfull=1`** (`#test`, `core/harness.js` → `ETEX.full`) keeps the v0.1 whole-texture path one hash param away so
+  the FEIGEN proof is an md5 equality between two runs, not an argument about the code.
+- **Budgets.** DUST's `TIERS = [20000, 45000, 90000, 150000]` was the only particle table but CONTRACTS §1.4 quoted it
+  as "the" budget for any POINTS scene to copy. It is core data now: `BUDGET = {points, segs}` in `core/quality.js`,
+  `budget(kind) = BUDGET[kind][tier()]`, on `ctx` as `ctx.budget`. `segs = [2500, 5000, 9000, 16384]` is the stroke
+  budget for CPU segment buffers (path A): 16384 is POLYTOPE's `CAP`, the lower tiers sized so a 2 k-segment overlay
+  (§14) fits at tier 0. DUST reads `ctx.budget('points')` — same numbers, same `tier()` thresholds, so its ten shots
+  are byte-identical (above) and `CARD.bench(1, 300)` before/after is inside the noise (three alternated runs,
+  medians 0.92 / 0.73 / 0.33 ms after vs 0.92 / 0.73 ms before; the count is the same number by construction).
+  **TORUS and POLYTOPE keep their tables** (`SEGT` segments per ring, `SUB/SUBB` subdivisions per edge): those are
+  geometry resolution, not counts — TORUS's ring count is fixed because its `cuts` is `'continuous'`, and POLYTOPE's
+  segment count is a product of cast × subdivision that no shared table expresses. §1.4/§1.6 say so.
+- **Harness additions:** `tools/scene-md5.sh <tag> [&extra]` (the before/after shot loop as a `diff`, reusable for any
+  core change and for §15's determinism check), `tools/hist-check.js`, `CARD.ctx.engineTex.bytes`. `check.js` 0 fail
+  / 0 warn after every edit.

@@ -83,10 +83,15 @@ ctx.targets                   {a, b, m}: the core's full-size scene targets. dra
                               draw into the one you are handed, never pick one yourself
 ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINEAR). spec 256×1 log spectrum (30 Hz–16 kHz,
                               floor-subtracted, peak-normalised), wave 512×1 zero-crossing-triggered waveform (0.5 = silence),
-                              hist 256×128 spectrogram ring (one row per ~10 ms hop, T wrap = REPEAT); row = the newest row's
-                              index (sample v = (row + 0.5)/128 for "now", subtract to go back in time). Bind with
+                              hist 256×128 spectrogram ring (one row per ~10 ms hop, T wrap = REPEAT); row = the index the
+                              next hop will write, so the newest row is row − 1: sample v = (row − 0.5)/128 for "now" and
+                              subtract age/128 rows to go back in time (REPEAT wraps it; 128 rows ≈ 1.3 s). Bind with
                               ctx.tex(pr, 'uSpec', unit, ctx.engineTex.spec). Under #test the fake timeline fills them.
+                              The core uploads only the hist rows written since the last frame (§13), so sampling hist
+                              costs nothing extra; `hist` rows older than 128 hops (~1.3 s) are overwritten in place.
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
+ctx.budget(kind)              the count for the current tier from the core's tables (§1.4): 'points' → particles of a
+                              gl_VertexID cloud, 'segs' → segments of a ctx.lines path-A buffer. Read it every draw.
 ctx.LOOK                      the palette block (§1.5)
 ctx.hsv(h, s, v) → [r,g,b]
 ctx.log(string)               append to CARD.log (only under #test)
@@ -160,7 +165,11 @@ needed, now generic:
 - **Overlay**: drawn after the composite, direct to the screen, with your on-screen weight `vis` (0..1, follows the
   crossfade). You enable/disable SCISSOR and BLEND yourself.
 - **`Q`-scaled work**: `ctx.Q.iter` (64..264 per-pixel iterations), `ctx.Q.scale` (render scale, applied by the core),
-  `ctx.Q.q` (0..1 knob). Particle scenes use `tier()`: `[20000, 45000, 90000, 150000][tier]`.
+  `ctx.Q.q` (0..1 knob). Count budgets come from the core, never from a table copied into a scene (§13):
+  `ctx.budget('points')` = `[20000, 45000, 90000, 150000]` per tier for gl_VertexID particle clouds (DUST),
+  `ctx.budget('segs')` = `[2500, 5000, 9000, 16384]` for CPU stroke buffers (`ctx.lines.mk` capacity = the top entry).
+  Per-ring / per-edge subdivision tables (TORUS's segments per ring, POLYTOPE's subdivisions per edge) are geometry,
+  not counts, and stay in the scene, indexed by `ctx.tier()`.
 - **Hooks**: named test entry points; the harness exposes them and maps `&name=value` hash params under `#test`.
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
 
@@ -180,8 +189,9 @@ for a subtler wobble.
 ### 1.6 `Q`
 
 `{q: 0..1, iter, scale, fps}`. The core adapts `q` from frame time. Scenes read, never write. `ctx.tier()` maps `q`
-to 0..3 (`q<.25 → 0, <.5 → 1, <.8 → 2, else 3`) for `[20000, 45000, 90000, 150000]`-style budgets; smooth it yourself
-if tier flips would be visible. `draw()`'s `(w, h)` is already the `Q.scale`-scaled size. Headless Chrome pacing
+to 0..3 (`q<.25 → 0, <.5 → 1, <.8 → 2, else 3`); `ctx.budget('points' | 'segs')` is the count for that tier (§1.4).
+Smooth it yourself if tier flips would be visible (a particle count can jump; a ring count cannot if `cuts` is
+`'continuous'`). `draw()`'s `(w, h)` is already the `Q.scale`-scaled size. Headless Chrome pacing
 sinks `q`; `CARD.bench(id, n)` is the perf verdict (see HARNESS.md).
 
 ### 1.7 `env` (5th argument of `update`)
