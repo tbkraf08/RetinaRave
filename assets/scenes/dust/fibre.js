@@ -13,18 +13,22 @@
 import { fibre4, rotSU2, stereo } from '../../math/hopf.js';
 
 const TAU = Math.PI * 2;
-const QT = [0.4, 0.7, 1, 1.4];                 // synapse's per-tier count knob, q = QT[tier]
+const QT = [0.4, 0.7, 1, 1];                   // per-tier count knob; synapse's tier 3 was 1.4 (DECISIONS 14)
 const GATE = 0.14;                             // pole gate on den; the fade runs over the next 0.25 of den
 const LUM = [0.299, 0.587, 0.114];
 const PHASE = [0, 0.33, 0.67];
 
-// Counts for a quality tier, exactly synapse scene 4's: nl tori, nF fibres each, N segments per fibre.
+// Counts for a quality tier: nl tori, nF fibres each, N segments per fibre. Synapse scene 4's formulas, but tier 3
+// repeats tier 2's knob (q = 1), so it draws 4 x 10 x 56 = 2240 segments and not 4 x 12 x 66 = 3168. The overlay
+// costs 0.4 us per segment (CONTRACTS 1.12) — +1.37 ms at tier 3, and Q is global, so that is every scene's tier —
+// and DECISIONS 14's polish note found 2240 to be the same picture: the 2 extra fibres per torus and the 10 extra
+// points per fibre bought nothing at 1.5 px wide and 0.3 bright.
 export function counts(tier) {
   const q = QT[tier] === undefined ? 1 : QT[tier];
   return { nl: Math.floor(2 + 2 * q), nF: Math.floor(5 + 5 * q), N: Math.floor(30 + 26 * q) };
 }
 
-// Buffer capacity: the largest nl*nF*N any tier asks for (tier 3: 4 x 12 x 66).
+// Buffer capacity: the largest nl*nF*N any tier asks for (tiers 2 and 3 both: 4 x 10 x 56 = 2240).
 export const CAP = (() => {
   let m = 0;
   for (let t = 0; t < 4; t++) { const c = counts(t); m = Math.max(m, c.nl * c.nF * c.N); }
