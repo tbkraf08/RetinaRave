@@ -55,17 +55,20 @@ mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never mor
 ## Transition (change to the crossfade pass, or a new `assets/transitions/*.js`)
 
 `&trans=<name>` under `#test` picks a registered transition for the run (`CARD.TRANSITIONS` lists them; the default
-is set in `assets/main.js`). The reference frame is the fake timeline's first fade — NAV → TORUS, `SWITCH@3.88`
-(frame 233), 116 frames long — at frame 290, `m = 0.499`:
+is set in `assets/main.js`). The reference frame is **director-blind** (since §15): force scene 0, release the director
+at frame 120 and start the fade to 3 by hand, shoot 58 frames later (`58/60/1.935 s = 0.499`):
 
 ```
-CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=290"},{"shot":"trans-mixs-f290"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
-# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.2/trans-mixs-f290.jpg → 4ac523e9770e7d0625d46ed1f3e44769 (GPU=1, 1280×720)
+CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&scene=0&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-mixs-0-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
+# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.2/trans-mixs-0-3-f178.jpg → a6e2b8cdcc47316cebb04f5529a26b06 (GPU=1, 1280×720)
 ```
-`mixs` is v3's crossfade and must stay byte-identical to that md5 (the v0.1 core pass; `trans-before-f290.jpg` is
-the shot taken before the slot existed). A different md5 after a core change is a pixel difference to explain, never
-a tolerance. `accept.sh` checks it on every sweep. Any other pair at `m ≈ 0.5`: force A, release the director at
-frame 120 and start the fade to B, shoot 58 frames later (`58/60/1.935 s = 0.499`):
+`mixs` is v3's crossfade and must stay byte-identical to that md5. A different md5 after a core change is a pixel
+difference to explain, never a tolerance. `accept.sh` checks it on every sweep. Until §15 the reference was the fake
+timeline's own first fade at frame 290 (`4ac523e9770e7d0625d46ed1f3e44769`, `trans-before-f290.jpg`); registering
+FEIGEN changed what the director picked there (NAV → FEIGEN instead of NAV → TORUS) without any transition pixel
+changing, so the check moved to the forced pair — the same md5 with FEIGEN registered and not (DECISIONS §15).
+**Registering a scene can move a director-dependent md5; the check must never depend on a pick.** The recipe for any
+other pair at `m ≈ 0.5` is the same:
 
 ```
 CLOCK=1 GPU=1 OUT=tools/work node tools/cdp.js 'test&scene=1&trans=morph' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-morph-1-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'

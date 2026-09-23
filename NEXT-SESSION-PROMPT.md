@@ -8,7 +8,7 @@ Parity with `cardioid3.html` on `#test` is 0 diff on every field; the v3 NAV sce
 
 **Read first:** `docs/CONTRACTS.md` (the one required read for scene/effect/stage authors), `docs/HARNESS.md`,
 `docs/DECISIONS.md` (every deviation and why, including the open items below), `docs/workers/*.md` (what workers
-tripped on). Memory note: `~/.claude/projects/-home-toma-Documents-TomaCoS/memory/project_eigenwobble.md`.
+tripped on). Memory note: `~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md`.
 
 **Working style that worked:** the orchestrator owns core/engine/contracts/parity; every scene and effect was written
 by a worker in an isolated git worktree (own `PORT=`), from the contract docs alone, accepted on screenshots, and its
@@ -41,19 +41,28 @@ parity real · monitor 0 spikes · 5 scenes · transition md5 · real start path
   from the new `help.feats` slot · formula · live value), the director's state, the cast, the keys. Zero DOM work while
   hidden (`CARD.HELP.ticks`), the §11 md5 and `parity.js fake` untouched, coverage by eval (`CARD.HELP.rows()`:
   107/107 fields, top table = `feats` on all 6 ids). NAV's `feats` trimmed to what it reads (11 v3-era leftovers).
-Still open below: #3 julia/feigen, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+- **#7 row-only `hist` upload + `ctx.budget`** → `core/gl.js`, `core/quality.js` (DECISIONS §13): the hop-delta rows
+  only (2.0 MB/s → 73 KB/s on the real synth), `&histfull=1` keeps the whole-texture path for proofs, `BUDGET {points,
+  segs}` + `ctx.budget(kind)`; `tools/hist-check.js`, `tools/scene-md5.sh`.
+- **DUST's Hopf-fibre overlay** → `scenes/dust/fibre.js` (worker, DECISIONS §14): path A, 560–3168 segments by tier,
+  `hooks.fibres`, A/B md5 equal to the old DUST with it off; the line renderer costs 0.4 µs/segment (§1.12).
+- **#3 FEIGEN** → `scenes/feigen/` id 6 (worker, DECISIONS §15): the perturbed Feigenbaum dive, the first `hist`
+  sampler (its `&histfull=1` md5 equality is the #7 proof). **JULIA dropped** on the side-by-side with NAV
+  (`accept/v0.2/julia-vs-nav.jpg`, DECISIONS §15). The §11 md5 re-based on the director-blind recipe
+  (`a6e2b8cd…`) because registering a scene moved the director's first pick.
+Everything in the v0.2 list is done. Open polish: FEIGEN's cost at depth (6.9–21 ms at tier 3; scale `uIter` by
+`Q.iter` or render at `0.8·scale`, DECISIONS §15), DUST's tier-3 fibre count (3168 segments, +1.4 ms), POLYTOPE's pole
+streaks (§8), NAV's interior smoulder on `N.par` (the one thing synapse's JULIA had, §15).
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
-1. **Line renderer in core** (`ctx.lines`: instanced quads from a Float32Array of segments, depth-tested). Unblocks
-   TORUS fibres as strokes instead of points and DUST's Hopf-fibre overlay (dropped in v0.1 for synapse's broken depth).
+1. ~~Line renderer in core~~ — done (§7); TORUS as strokes (§7), DUST's Hopf-fibre overlay (§14).
 2. ~~Synapse's morph transition~~ — done (DECISIONS §11): `assets/transitions/`, morph is the default.
-3. **Synapse's julia / feigen / polytope scenes** as workers (`synapse2.html` scenes 1/3/5; the polytope needs the
-   line renderer). Each is a folder + two lines in `main.js`.
+3. ~~Synapse's julia / feigen / polytope scenes~~ — polytope done (§8), feigen done (§15), julia dropped (§15).
 4. ~~The v4 help idea rebuilt on `feats.js`~~ — done (DECISIONS §12): `core/help.js`, the `help.feats` slot.
 5. ~~Tempo refinement for v3's canonical `bpm`~~ — done (DECISIONS §9).
 6. ~~Key look memory on `sectionAlt` + beat-quantised director actions~~ — done (DECISIONS §10).
-7. **Row-only `hist` upload** (32 KB/hop today) and `Q`-aware particle budgets shared across POINTS scenes.
+7. ~~Row-only `hist` upload and `Q`-aware particle budgets~~ — done (§13).
 
 ## Non-negotiables (unchanged)
 Zero deps · native modules · every visual parameter traces to `MS` · core closed except in a phase that targets it ·

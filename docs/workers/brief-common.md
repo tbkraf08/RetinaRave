@@ -46,8 +46,8 @@ Lifted fragment sources start with their own `out vec4 o;` — drop it (HEAD dec
 2. `PORT=<yours> GPU=1 node tools/cdp.js 'test&scene=<id>' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),scene:CARD.SC.logical})"},{"shot":"work/<name>-t6"},{"wait":8200},{"shot":"work/<name>-t14"}]'`
    → ERRS `[]`, nonFinite `[]`; Read both shots: the scene must be a distinct, non-black image at t6 and visibly react
    to the drop at 13 s in the t14 shot (brighter / burst / reformed — say what you see).
-3. `PORT=<yours> GPU=1 node tools/cdp.js 'test&fake=0&demo=house&scene=<id>' '[{"wait":10000},{"shot":"work/<name>-h10"},{"wait":20000},{"shot":"work/<name>-h30"},{"wait":20000},{"shot":"work/<name>-h50"},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),q:CARD.Q.q,bench:CARD.bench(<id>,60)})"}]'`
-   → three different-looking frames across the house track (groove → breakdown → build); report `bench` (ms).
+3. `PORT=<yours> GPU=1 node tools/cdp.js 'test&fake=0&demo=house&scene=<id>' '[{"wait":10000},{"shot":"work/<name>-h10"},{"wait":20000},{"shot":"work/<name>-h30"},{"wait":20000},{"shot":"work/<name>-h50"},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),q:CARD.Q.q,bench:CARD.bench(<id>,300)})"}]'`
+   → three different-looking frames across the house track (groove → breakdown → build); report `bench` (ms; n ≥ 300, HARNESS).
 4. The scene object has: `name id tag feats cuts score init update draw post help` and the `feats` list is exactly the
    MS fields you read (nothing more, nothing missing).
 

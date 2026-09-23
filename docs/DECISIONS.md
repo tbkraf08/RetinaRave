@@ -578,3 +578,66 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   wrong (synapse's `(y, q)` rotation is `poleOffset`, a rotation of S³ that is not in SU(2); the worker kept `rotSU2`,
   which carries fibres to fibres — the better choice, and invisible on screen); DUST has no `presence` read, so the
   rings scale with `alive` like the grains. Temptation not taken: `core/lines.js` (bisected the cost from outside).
+
+## §15 FEIGEN (id 6) and the JULIA decision (v0.2, 2026-09-23, worker from the brief, `docs/workers/feigen.md`)
+
+- **The JULIA question — outcome (c), dropped, on the side-by-side** (`tools/accept/v0.2/julia-vs-nav.jpg`: NAV at t6
+  on the fake timeline, then synapse's scene 5 driven headless from `synapse2.html#scene=5&demo=house` at 10 s and
+  30 s). Synapse's JULIA is `c = λ/2 − λ²/4` with `λ = ρe^{iθ}` inside the main cardioid: tension drives `ρ → 1` toward
+  the parabolic point `θ = 2πp/q` (`PARAB`), the hush holds `ρ = 1`, the drop pushes `ρ > 1` and the set shatters.
+  The pictures are the same family to a viewer: a filled Julia set with Green's-function bands (log₂G level sets as
+  rays/annuli) outside and DE filaments on the boundary — NAV's exterior at t6 *is* that picture, and its interior
+  chart is the multiplier `λ = ρe^{iφ}` of *every* bulb (main cardioid included) with `rho → min(1 − h, 0.985)`,
+  `N.par = sstep(0.8, 0.98, ρ)` (nav.js 157–176) and drops that exit through parabolic roots onto landing rays —
+  synapse's whole story, generalised. What synapse's colouring adds is the "critical slowing" interior smoulder
+  (`slow = clamp(lastStep·40, 0, 1)` brightening the filled set as ρ → 1) — a colouring, not a scene. The director
+  argument closes it: synapse used JULIA as *the* build scene ("a build deserves the scene that can implode", line
+  1498), and here the home scene owns builds (§4: a build parks home), so a peer JULIA's one narrative could never
+  play, and as a NAV variant it would need the chart walk restricted to the cardioid and the parabolic targets — NAV's
+  chart code, which this session does not touch. Left as a polish note: NAV could take the smoulder term on `N.par`.
+  Ids 7–8 stay free.
+- **FEIGEN, what came back** (`scenes/feigen/index.js` 203 + `shaders.js` 96 lines; registration two lines in `main.js`,
+  ids table `6 feigen · 7–8 free`). Synapse's scene 6 as written in its header: the real-axis dive toward
+  `c∞ = −1.401155189…`, one Feigenbaum factor `δ = 4.6692…` per 32-beat phrase (`feigL += dt/(32·period)·(0.25 +
+  1.5·lvl)·(1 − 0.8·tension)·alive`, `period = 60/bpm`, wrapped at `feigMax() + 1` with `feigMax = [3.4, 4, 4.6, 5][tier]`,
+  the kick-hidden wrap, `+1` on a drop — a jump by exactly one δ is the self-similarity, so it is nearly invisible),
+  perturbation iteration `e' = 2·Z·e + e² + dc` against the reference orbit of `c∞` computed in JS doubles and uploaded
+  once as an R32F 512×1 texture with raw `gl` in `init` (`ctx.tex` binds any `{t}`), the tricorn flip `e' = conj(…) +
+  dc` **on the section seed** (`floor(seed.a·1000) % 2` at `sectionEvt`; synapse flipped on drops, which here hard-cut
+  to home and would never be seen), DE filaments, Green bands, and `hist()` on `ctx.engineTex.hist` with `uHistRow =
+  (row − 0.5)/128` — the first scene that samples the spectrogram ring. `cuts: 'event'` (the flip is the one declared
+  jump); `score = build ? 0 : 0.2 + 0.4·regularity + 0.25·clarity + 0.15·calm`; `look = [feigL, tricorn]`; hooks
+  `&feig=<L>` (also marks the scene as arrived, or the arrival clamp `min(feigL, 1.2)` ate it — the worker's one
+  deviation) and `&tricorn=1`; `post {fb .55, bloom .3, kaleido 0}`; `feats` 18 exactly, `help.feats` 18/18.
+  `accept/v0.2/s6-t6.jpg` / `s6-t14.jpg`: the whole set at L 0.37, one δ deeper and magenta with the Green bands
+  after the drop (L 1.56).
+- **The #7 proof.** `CLOCK=1` frames 360 and 840: `7c976ae1…` / `9d859b1f…` across two runs (determinism) **and with
+  `&histfull=1`** (the v0.1 whole-texture upload) — equal. The row-delta upload feeds `histM` the same texture; `accept.sh`
+  now takes that pair for every scene whose folder mentions `engineTex.hist`.
+- **The md5 story (registration).** With id 6 registered the director's first pick on the fake timeline became NAV →
+  FEIGEN instead of NAV → TORUS, so the §11 frame-290 shot changed md5 (`585e73b5…` for `[0, 6, 0.499]`) with no
+  transition pixel changed. Re-based, as the session prompt required, on the director-blind recipe (HARNESS
+  "Transition": `&scene=0`, at frame 120 `SC.forced = −1; goScene(3, false)`, shoot at 178, `m = 0.4994`):
+  **`a6e2b8cdcc47316cebb04f5529a26b06`**, identical on two runs on HEAD and on a third run with `main.js` from the
+  commit before FEIGEN's registration (the same pixels from the same code), `git diff 8646186 HEAD` empty on
+  `transitions/mixs.js` and `core/scenes.js`. `accept.sh` "== transition" and the morph line use the forced pair now;
+  the rule in HARNESS: a reference md5 must never depend on a director pick. `parity.js fake` 0 diff / 72 (director-blind
+  by design).
+- **Director on the fake timeline with six scenes** (`director-fake-after15.txt` vs `-after`, `director-stats.js`): the
+  same 9 soft switches, all 9 on the bar line (held max 3.80, mean 1.64 beats, identify 7 / return 2), the same 11
+  restores at the same seconds; the sequence `0 3 4 0 4 3 4 …` became `0 6 4 0 4 6 4 …` — FEIGEN's score wins TORUS's
+  slot in the alt-1 section (0.2 + 0.4·regularity + 0.25·clarity + 0.15·calm against 0.25 + 0.45·clarity +
+  0.3·regularity, plus the seed noise) and comes back on every return of that section, as look memory should.
+- **Cost — the open item.** `CARD.bench(6, 300)` at full resolution, tier 3: L 1.21 / `uIter` 142 → **6.85 ms**, L 2.02
+  / 240 → 10.9, L 3.02 / 428 → 17.7, L 3.59 / 500 → 21.1 (NAV 2.3–2.7 in the same session); ≈ 1.7 ms + 0.036 ms per
+  iteration. The brief's "in NAV's range" is met only while shallow; the worker refused to retune synapse's `uIter =
+  min(500, (70 + 30·L²)·[0.6, 0.8, 1, 1.25][tier])` behind the orchestrator's back — rightly: the DE and the bands come
+  out of the escape count, and `Q` already trades both the multiplier and `feigMax` down (house settled at q 0.5,
+  tier 1, 6.2 ms with no artefact). Left open for a polish phase: scale `uIter` by `ctx.Q.iter/264` instead of the
+  tier row, or render the dive at `0.8·scale` — a §1.6 question, not a scene one.
+- **Friction (9) → docs:** hooks fire before `init` and clamp-on-arrival (§1.4, with §14's); `SC.hist` and `bench`'s
+  default `n` (HARNESS; brief-common's `bench(id, 60)` → 300); the brief's `928–962` range stopped one line short of
+  `FS_FEIGEN`'s end (the same off-by-one as POLYTOPE's brief — the worker took `o = vec4(col·uAlive, 1)` from MANDALA);
+  "`tricorn` also at `init`" is not computable without `MS` (0 until the first `sectionEvt`); `Math.floor` for `uIter`;
+  `look.set` guarded with `Array.isArray`. Temptations not taken: `core/` for hook timing and for whether `bench` is
+  full-res (both answered by experiment and HARNESS's own wording).
