@@ -748,7 +748,8 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   at +1.40 in the brief's shape). **The saving is sub-linear**: 29 % fewer segments bought 20 % of the cost — the
   marginal rate is ~0.25 µs/segment under a fixed per-`draw()` cost, against §1.12's 0.4 µs average (§1.12 says so
   now). The worker's proposal `4 × 12 × 48` (all twelve fibres, 0.913 ms — the same price, and the picture closer to
-  the old one, `accept/v0.2/dust-fibre-count-3way.jpg`) is taken: shipped as the follow-up commit. Friction: a bench
+  the old one, `accept/v0.2/dust-fibre-count-3way.jpg`) is taken: shipped as the follow-up commit (`N3 = 48` at tier 3, 2304 segments, `CAP` 2304; f840 `ed87b7f7…`,
+  interleaved on−off 0.53 ms in the quietest triple of the day; `dust-fibre-count.md` (k)). Friction: a bench
   threshold is not decidable from three medians on a shared machine (four repeats of the brief's command spread 0.09–
   1.13 ms around a 0.95 threshold while sibling workers' Chromes ran); the brief's t6/t14 shots run at tier 2 and could
   not see the change (the `CLOCK=1` pinned-`q` pair could).
