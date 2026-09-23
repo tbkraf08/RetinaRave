@@ -41,7 +41,8 @@ export function runChain(src, sw, sh, io) {
   io.aux = {};
   io.FX = FX;
   for (const fx of EFFECTS) {
-    if (!fx.enabled) continue;
+    const p = io.post[fx.name], on = p && p.on !== undefined ? p.on : fx.enabled;
+    if (!on) continue;
     if (fx.when && !fx.when(io)) continue;
     const out = fx.run(io);
     if (out) io.src = out;

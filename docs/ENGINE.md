@@ -1,0 +1,91 @@
+# Engine contract — audio in, `MS` out
+
+The engine (`assets/engine/`) has no GL and no DOM. Every frame the core calls `ENGINE.frame(dt, now, nowMs)` and
+gets back a filled `MS`, plus `GROOVE`. Scenes program against `MS` (§1 of CONTRACTS.md); this file is for whoever adds
+an **analysis stage** or an **audio source**.
+
+## `MS` — the music state vector
+
+`MS` is one flat object. Its schema is `assets/engine/feats.js`:
+
+```js
+FEATS.bass = { kind: 'level', eli5: 'how strong the bass is right now',
+               formula: 'pow(band(20-150Hz)/peakFollower, .8)·presence', drives: 'uBands.x, view scale', range: [0,1] }
+```
+
+`kind` tells you how to read it:
+
+| kind       | meaning                                                                                  |
+|------------|------------------------------------------------------------------------------------------|
+| `level`    | 0..1, smoothed; safe to feed straight into a uniform                                     |
+| `raw`      | unbounded number (bpm, angles unwrapped, seconds); scale it yourself                     |
+| `event`    | `true` for exactly one frame (`dropEvt`, `beat`, `onset`, `sectionEvt`, …)               |
+| `count`    | integer that only grows (`beatCount`, `sectionId`)                                       |
+| `angle`    | radians                                                                                  |
+| `enum`     | a string from `range` (`arc`: idle / valley / sustain / build / peak)                    |
+| `vector`   | Float32Array or array (`chroma[12]`, `wave[2048]`, `peaks[4]` = [[Hz, amp], …])          |
+| `internal` | a stage's own state parked on MS; scenes should not read it                              |
+
+Rules:
+- **Scenes read `MS` and never write it.** The test hook `CARD.fix` and the director's look memory (`seed.scene`) are
+  the only writers outside the engine.
+- **Every key of `MS` has a `FEATS` entry** — `tools/check.js` fails otherwise. Declare the default value in
+  `assets/engine/state.js` (`MS = {...}`) so the schema is closed and the fake timeline leaves it finite and idle.
+- `event` fields are cleared at the top of every frame by the v3 extractor; a stage that adds an event clears it
+  itself at the top of its function.
+
+## Frame order
+
+```
+ENGINE.frame(dt, now, nowMs):
+  if fakeOn:  sources.fake.update(dt, now)          // #test: the deterministic 24 s timeline writes MS directly
+  else:       sources.capture.tick(nowMs)          // silence watchdog
+              updateMusic(dt, now)                  // v3 extractor: bands, onsets, tempo, arc, drops, harmony, tension,
+                                                    //   surprisal, sections (features.js + features-slow.js)
+  for stage of stages (registration order): stage.fn(dt, now, MS)
+  if ENGINE.fix: Object.assign(MS, ENGINE.fix)     // test pins
+  updateGroove(dt, MS)                              // GROOVE.rot = drift + sway + nod
+  ENGINE.ms = ema(cpu ms of all of the above)
+```
+
+`dt` is clamped to ≤ 1/24 s; `now` is seconds on the rAF clock (all `*Evt` timestamps and refractory periods use it).
+
+## Adding an analysis stage
+
+```js
+// assets/engine/features-<name>.js
+import { ENGINE } from './engine.js';   // or register from main.js — either way it is one call
+export function myStage(dt, now, S) {
+  S.myEvt = false;                       // clear your own events first
+  S.myLevel = ...;                       // only fields you declared
+}
+ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
+```
+
+- `addStage(name, fn, feats)` throws at load if any declared feat has no `FEATS` entry.
+- A stage may **only add** the fields it declares. It never overwrites a v3 field or another stage's field. The
+  canonical owner of every concept both engines compute is v3 (`bpm`, `beat*`, `regularity`, `drop*`, `sectionId`,
+  `identifyEvt`, `chroma`, `interval`, `tension` …). If your stage computes a rival estimate, give it its own name
+  (`beatConf`, `bar`, `key`, `novelty`, …) — see DECISIONS.md for which one scenes should prefer and why.
+- A stage that needs raw audio frames registers a tap on `AU` (`assets/engine/audio.js`): `AU.onInit.push(ctx => …)`
+  runs once the `AudioContext` exists, with `AU.bus` as the node to tap (AnalyserNode or AudioWorklet). The v3
+  analysers (`AU.fast` 2048, `AU.slow` 8192) stay as they are (parity).
+- Budget: the whole engine must stay under 1.5 ms per frame (`CARD.ENGINE.ms`, `GPU=1`, 60 fps).
+- The fake timeline (`sources/fake.js`) must leave your fields finite and plausibly idle: add a line there that sets
+  them from the timeline phase if scenes will read them headlessly.
+- Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: the stage exposes the arrays
+  on `ENGINE.tex = {spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), hop: n}` and bumps `hop`
+  when there is a new frame; the core uploads and hands the textures to scenes through `ctx.engineTex` (§2 wires this).
+
+## Sources
+
+A source is `{ name, start(), stop(), tick?(nowMs) }` in `assets/engine/sources/`, plugged in as
+`ENGINE.sources[name]`. `start()` must call `initAudio()` and connect its output to `AU.bus`. The three that exist:
+
+- `demo` — the v3 techno sketch (126 BPM, intro / groove / break / build / drop). Default for `fake=0`.
+- `capture` — `getDisplayMedia` tab audio + the silence watchdog (`tick` swaps the demo in after 6 s of silence).
+- `fake` — the deterministic `#test` timeline; `update(dt, now)` instead of audio.
+- `&demo=<style>` selects an alternative synth by name from `ENGINE.sources` (§2 adds `demo-synapse`).
+
+`ENGINE.start('demo' | 'capture', msg)` is what the landing card calls; `AU.onRun(mode, msg)` / `AU.onStop(msg)` are the
+UI hooks the core sets (the engine never touches the DOM).

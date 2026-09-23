@@ -15,7 +15,7 @@ synth, `#test&scene=1` to force scene id 1.
 
 ```
 node tools/check.js
-# check: 28 modules · uniforms 42 · MS keys 64 · 0 fail · 0 warn
+# check: N modules · uniforms N · MS keys N · 0 fail · 0 warn
 ```
 Fails on: syntax, >500 lines, a declared-but-never-fetched uniform, a scene/effect importing core/engine, 'nav' in
 core/, an MS key without a FEATS entry. Warns above 350 lines.
@@ -33,7 +33,7 @@ node tools/test_misi.js        # ... OK
 node tools/cdp.js '<hash>' '<json steps>'
 ```
 - hash: `test` (deterministic fake music, 24 s loop: sustain 0–6 → valley 6–10 → build 10–13 → DROP 13 → peak → valley
-  21–24) · `test&fake=0` (real extractor on the demo synth) · `test&scene=N` forces scene id N (0-based, sticky) ·
+  21–24) · `test&fake=0` (real extractor on the demo synth) · `test&scene=N` forces the scene whose `id` is N (sticky; the number keys are offset: key 1 = id 0) ·
   `test&demo=house|dnb|…` picks the synapse synth (§2) · `real` = the real start path (no #test: landing card shown).
 - steps: `{wait:ms}` · `{shot:'work/name'}` (→ `tools/work/name.jpg`; `clip:[x,y,w,h,scale]` optional) · `{eval:'expr'}`
   (printed as `EVAL … => value`; promises awaited) · `{click:[x,y]}` · `{key:'d'}` · `{until:'expr', timeout:ms}`.
@@ -65,7 +65,8 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 ## `window.CARD` (available in every page)
 
 `MS` (music state) · `SC` (director) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
-(`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` · `REG` · `EFFECTS` · `FEATS` · `log` (event log under #test:
+(`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` (scene objects, registration order) · `REG[id]` = `{id, base, scene, variant}` ·
+`EFFECTS` · `FEATS` · `log` (event log under #test:
 `DROP@t`, `SECTION@t arc`, `SCENE@t -> id`, 1 Hz status lines) · `frameN` · `home` (the home scene's state; `NAV` in v3) ·
 `hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes).
 

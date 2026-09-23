@@ -31,12 +31,12 @@ export default {
   name: 'dust',                 // folder name
   id: 1,                        // integer, unique across scenes and variants; keys 1–9 force id 0–8
   tag: 'one line for the HUD',
-  feats: ['bass', 'flow'],      // every MS field you read (checked at load against feats.js; typo = ERRS entry)
-  cuts: 'continuous',           // what you promise about discontinuities: 'continuous' | 'onset' | 'event'
+  feats: ['bass', 'flow'],      // every MS field you read — names from Appendix A below (typo = CARD.ERRS entry)
+  cuts: 'continuous',           // your promise about discontinuities (§1.9): 'continuous' | 'onset' | 'event'
   score(MS, rt, SC) {},         // → 0..1 — your bid to be auto-picked now. Return 0 = never auto-pick now.
-  init(ctx) {},                 // build programs and buffers. Called once, before the first frame.
-  update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. Called every frame you are on screen (or always: see `always`).
-  draw(target, { w, h, variant, vmix }) {},   // render into `target` at (w, h) only. Nothing else.
+  init(ctx) {},                 // build programs and buffers. Called once, before the first frame. Keep ctx: this.ctx = ctx
+  update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. dt in seconds. Called every frame you are on screen (or always: see `always`).
+  draw(target, { w, h, variant, vmix }) {},   // render into `target` (one of the core's targets, handed to you) at (w, h). Nothing else.
   post: { fb: { decay: 0.7 }, bloom: { thr: 0.35 }, kaleido: 1 },   // effect params (object or fn(MS) → object)
   help: { eli5: '', why: '', math: '' },
   // optional slots:
@@ -49,6 +49,10 @@ export default {
   rt: {},                       // runtime readout you publish (§1.3); the core creates {} if you leave it out
 };
 ```
+
+The core calls these as **methods on your exported object**: `this` is the scene. There is no channel between `init`
+and `draw` other than what you keep yourself — stash `ctx`, programs and buffers on `this` (or in module-level
+variables of your `index.js`). `ctx` is not passed again to `update`/`draw`/`overlay`.
 
 ### 1.1 `ctx` — everything a scene or effect may touch in the core
 
@@ -64,7 +68,8 @@ ctx.upload(buf, Float32Array, n)     bufferSubData
 ctx.mkTarget(w, h, rgba8=false)      render target {t, f, w, h}; RGBA16F when available (rgba8 for CPU readback)
 ctx.freeTarget(t)
 ctx.onResize(fn(w, h))        register a callback; allocate your own targets there (they are freed/rebuilt by you)
-ctx.targets                   {a, b, m}: the core's full-size scene targets (read-only; do not draw into them yourself)
+ctx.targets                   {a, b, m}: the core's full-size scene targets. draw() receives one of them as `target`;
+                              draw into the one you are handed, never pick one yourself
 ctx.Q                         adaptive quality (§1.6)
 ctx.LOOK                      the palette block (§1.5)
 ctx.hsv(h, s, v) → [r,g,b]
@@ -107,7 +112,7 @@ needs `a<b`. `readPixels` from an RGBA16F target returns black: use `mkTarget(w,
 
 | key         | meaning                                                                                          |
 |-------------|--------------------------------------------------------------------------------------------------|
-| `time`      | the scene's own visual clock (seconds); becomes `uTime` while the scene is on screen              |
+| `time`      | the scene's own visual clock (seconds); becomes `uTime` while the scene is on screen. Leave it out and `uTime` is the core's presence-scaled wall clock (never NaN) |
 | `label`     | short string for the HUD                                                                          |
 | `log`       | string appended to the 1 Hz test log line                                                         |
 | `home`      | (home scene only) true while the scene is in its stable/interior state                            |
@@ -124,9 +129,11 @@ needed, now generic:
 - **Variants** (`variants: [...]`): a sub-mode with its own id and `score`. The director treats it as a scene for
   picking, history and forcing, but it renders through the parent's `draw` with `variant` = its name and `vmix` = a
   0.8 s eased 0→1 (the parent decides what that means: NAV's DRUM fades the interior membrane in).
-- **Per-scene post params** (`post`): `fb.decay` (0..1, trail persistence; the feedback effect multiplies by
-  presence and drops to 0.2 on a drop), `bloom.thr`, `kaleido` (0..1 damping of the kaleidoscope). Number or `fn(MS)`.
-  During a crossfade the incoming scene's params apply past the midpoint.
+- **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
+  multiplies by presence and drops to 0.2 on a drop), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
+  `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
+  Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
+  Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
 - **Overlay**: drawn after the composite, direct to the screen, with your on-screen weight `vis` (0..1, follows the
   crossfade). You enable/disable SCISSOR and BLEND yourself.
 - **`Q`-scaled work**: `ctx.Q.iter` (64..264 per-pixel iterations), `ctx.Q.scale` (render scale, applied by the core),
@@ -157,13 +164,32 @@ seconds (the same clock `MS` events are stamped with).
 
 ### 1.8 Registration
 
-Add your scene to the list in `assets/main.js` (`for (const scene of [nav, dust, ...])`). That is the only line outside
-your folder you touch. The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
+Two lines in `assets/main.js`, the only edits outside your folder: an import next to the other scene imports
+(`import dust from './scenes/dust/index.js';`) and your name appended to the list `for (const scene of [nav, dust])`.
+The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
+
+Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · 3 torus ·
+5–8 free. `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
+
+### 1.9 `cuts` — what you promise about discontinuities
+
+The continuity monitor (HARNESS.md) checks the home scene; for every scene `cuts` documents what a reviewer should
+expect frame to frame: `'continuous'` — nothing on screen ever jumps (all motion is springs/emas of MS);
+`'onset'` — visible jumps only on `MS.onset`/`MS.beat` (kicks, formation flips); `'event'` — jumps only on
+`dropEvt`/`sectionEvt`/`surpriseEvt` and declared chart cuts. Anything else is a bug.
+
+### 1.10 What the composite does to your pixels
+
+After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, prev·decay)` with a zoom/twist) →
+bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
+surprises/drops, kaleidoscope on peaks, flash on drops, tonemap `1 − exp(−1.5·c)`, vignette `1 − 0.9·|uv−.5|²`, dither.
+A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`
-(`FEATS[name] = {eli5, formula, kind, range, drives}`). A new analysis stage registers with
+(`FEATS[name] = {eli5, formula, kind, range, drives}`) — scene authors read Appendix A below instead of that file. A new analysis stage registers with
 `ENGINE.addStage(name, fn(dt, now, MS), feats)`; stages run after the v3 extractor in registration order; each may only
 add the fields it declares in `feats.js`, never overwrite another stage's. `check.js` fails on an `MS` key without a
 `FEATS` entry. A source is `{name, start(), stop(), tick?(nowMs)}` plugged into `ENGINE.sources`.
@@ -188,7 +214,8 @@ export default {
   sample it with `vUv * uvS` — after the first effect that re-renders at full size (feedback does) `uvS` is `[1,1]`.
 - `aux` is a scratch object for side-chains: bloom publishes `aux.bloom = {b1, b2}` for the composite.
 - `FX` is the core's per-frame fx state `{glitch, flash, kal, ca, seed}` (derived from `MS`; you read it).
-- `post` is the current scene's `post` object; read your params as `post.<name>`.
+- `post` is the current scene's `post` object; read your params as `post.<name>`. The core skips you when
+  `post.<name>.on === false`, and runs an `enabled: false` effect only when `post.<name>.on === true`.
 - The composite draws to the screen and is always last. Anything after it draws over it.
 
 Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) addEffect(fx, ctx)`.
@@ -202,8 +229,78 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
   each frame of the fade; both `update`s run.
 - Scores: `score()` + 0.25 per-section seed noise − 0.6 if you were the last scene − 0.25 if the one before.
 
+## Appendix A — the `MS` vocabulary
+
+Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..1 smoothed · `raw` unbounded ·
+`event` true for one frame · `count` · `angle` radians · `enum` string · `vector` array. (Internal fields are omitted.)
+
+<!-- FEATS:begin (generated by node tools/feats-doc.js — do not edit by hand) -->
+| field | kind | what it is | what it drives |
+|---|---|---|---|
+| `presence` | level | is there music at all | idle behaviour, palette wobble |
+| `bass` | level | how strong the bass is right now | uBands.x, view scale, orbit size |
+| `mid` | level | how strong the mids are | uBands.y, trap radius |
+| `high` | level | how strong the highs are | uBands.z |
+| `bassFast` | level | bass with a very fast attack (for kicks) | drop detection, beat phase lock |
+| `rms` | raw | raw loudness of the waveform | nothing directly |
+| `wave` | vector | the last 2048 audio samples | nothing in NAV |
+| `onset` | event | a hit just happened (one frame) | kick toward a Misiurewicz point, nod |
+| `hitStrength` | level | how hard that hit was | kick amplitude |
+| `hit` | level | the hit, decaying over ~0.14 s | uBeat.y, palette brightness, flash |
+| `onsetRate` | raw | hits per second | build cue |
+| `beat` | event | a beat boundary just passed | retargeting, scene switch gating |
+| `beatPhase` | level | where we are inside the beat, 0→1 | uBeat.x, sway, trap rotation |
+| `beatCount` | count | beats since start | phrase alignment, hysteresis |
+| `bpm` | raw | tempo | beat rate, crossfade duration |
+| `regularity` | level | how steady the rhythm is | sway amplitude, scene scores |
+| `eS` | level | short-term energy (0.3 s) | uArc.x, intensity, drift rate |
+| `eM` | level | medium-term energy (2.5 s) | arc classification, palette |
+| `eL` | level | long-term energy (12 s) | build cue (eM-eL) |
+| `eMax` | level | the loudest eM seen lately | valley/sustain threshold |
+| `build` | level | a build-up is happening | uArc.y, park at the root, scene precedence |
+| `absentT` | raw | seconds since the bass left | first drop path |
+| `arc` | enum | which part of the song this is | scene precedence, kal |
+| `arcT` | raw | seconds in the current arc | drop gating |
+| `dropEvt` | event | THE DROP just landed | hard cut to NAV EXT, flash, glitch |
+| `dropStrength` | level | how big the drop was | exterior depth after the drop |
+| `dropEnv` | level | the drop, decaying over ~2 beats | uBeat.w, zoom, feedback zoom |
+| `lastDrop` | raw | time of the last drop (s) | refractory |
+| `buildPk` | level | recent peak of build | second drop path |
+| `liveT` | raw | seconds of continuous presence | drop warm-up guard |
+| `highM` | level | slow highs (3 s) | riser cue |
+| `chroma` | vector | how much of each of the 12 pitch classes is present | fingerprint, surprisal, torus latitudes |
+| `bchroma` | vector | the same, bass only (<240 Hz) | root note for interval |
+| `harmAngle` | angle | where the harmony sits on the circle of fifths | uHarm.x, palette hue offset |
+| `harmUnw` | raw | the same angle, unwrapped (keeps turning) | alpha on the cardioid, EXT theta, phi |
+| `harmVel` | raw | how fast the harmony is moving | uHarm.y, hue drift rate |
+| `clarity` | level | how clearly tonal the music is | uHarm.z, harmony gating, scene scores |
+| `interval` | count | the interval (semitones) between the bass note and the strongest other note | which bulb / torus knot |
+| `peaks` | vector | the four strongest partials [Hz, amp] | DRUM Koenigs modes |
+| `rough` | raw | Sethares roughness of the strongest partials | tension |
+| `tension` | level | how dissonant / tense it feels | uArc.z, exterior depth, park, mood |
+| `suspension` | level | tension held high for a while | park at the root |
+| `resolveEvt` | event | a held tension just released | visual time release |
+| `intensity` | level | overall intensity | depth into a bulb, palette |
+| `surprisal` | level | how unexpected the music just got | uArc.w, glitch |
+| `surRaw` | raw | raw surprisal before shaping | HUD |
+| `surpriseEvt` | event | a real surprise (one frame) | hard scene switch, glitch |
+| `lastSurprise` | raw | time of the last surprise | refractory |
+| `sectionEvt` | event | the song moved to a new section | groove direction, fingerprint reset |
+| `sectionId` | count | which section this is (repeats get the same id) | seed noise in scene scores, kaleido segments |
+| `lastSection` | raw | time of the last section event | refractory |
+| `identifyEvt` | event | the section was just identified | soft scene switch |
+| `repeat` | level | is this section one we have seen before | baby dive, look memory |
+| `seed` | vector | per-section random constants {hue, th, a, scene} | palette offset, drift direction, alpha offset, remembered scene |
+<!-- FEATS:end -->
+
 ## Friction log
 
 Questions workers had to ask, and what changed in this doc as a result.
 
-- (none yet — §1 fills this)
+- **2026-09-22, probe scene (solid colour from bass), worker given only CONTRACTS.md + HARNESS.md.** Rendered first
+  try, ERRS empty. 13 questions logged (`docs/workers/probe.md`); fixes: registration is two lines (§1.8); how state
+  travels from `init` to `draw` (methods on the exported object, keep `ctx` on `this`); the `feats` vocabulary is now
+  Appendix A, generated from feats.js, instead of a pointer to a forbidden file; `rt.time` fallback stated; `dt` in
+  seconds; `cuts` defined (§1.9); off-values for `bloom.thr`/`kaleido`/`fb.decay` and `post.<effect>.on` made real;
+  `ctx.targets` wording; registered-id table and `CARD.REG` shape; what the composite does to a flat colour (§1.10);
+  HARNESS.md `&scene=N` is "scene id N" (the 0-based offset only applies to the number keys).
