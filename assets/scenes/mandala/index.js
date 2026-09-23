@@ -97,6 +97,26 @@ export default {
   rt: {},
 
   help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      arc: 'never auto-picked during a build',
+      regularity: 'the bid: a steady rhythm',
+      onsetRate: 'the bid: dense hits',
+      seed: 'how many mirrors: N = 4, 6, 8, 10 or 12 from the section seed',
+      kickCount: 'every 64 kicks the mirror count is drawn again',
+      flow: 'the fold constant drifts on musical time and the colours cycle slowly',
+      flowMid: 'the wedge rotates and the fold\'s twist turns on mid-band time',
+      bass: 'zooms in (the fold pushes harder) and sharpens the lit ring',
+      bassS: 'shifts the fold constant and the lit ring\'s radius',
+      midS: 'the fold\'s rotation angle and the constant\'s other half',
+      kick: 'a zoom pulse and the centre flare',
+      tension: 'zooms out: more of the fold\'s outer structure',
+      dropEnv: 'zooms in hard and the centre flares',
+      lvl: 'overall brightness',
+      high: 'the brightness of the orbit-trap ring',
+      hat: 'sparkle on the trap ring',
+      alive: 'silence fades to black',
+    },
     eli5: 'A kaleidoscope whose mirrors are a real Kleinian-style fold: abs() folds the plane onto itself and a '
       + 'sphere inversion turns it inside out, over and over. The music picks how many mirrors there are, how far '
       + 'the fold pushes, and which ring of the orbit lights up.',

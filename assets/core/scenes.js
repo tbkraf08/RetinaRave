@@ -46,6 +46,7 @@ export function setTransition(name) {
   trans = TRANSITIONS[name];
   return trans;
 }
+export const currentTransition = () => trans; // read-only: the help view names it (v0.2 §12)
 
 export function goScene(id, hard, S) {
   const E = REG[id];

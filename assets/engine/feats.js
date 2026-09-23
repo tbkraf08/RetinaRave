@@ -18,7 +18,7 @@ export const FEATS = {
   high: L('how strong the highs are', 'pow(band(2-12kHz)/peak, .7)·presence', 'uBands.z'),
   bassFast: L('bass with a very fast attack (for kicks)', 'pow(fastEma(band)/peak, .8)·presence', 'drop detection, beat phase lock'),
   rms: R('raw loudness of the waveform', 'sqrt(mean(wave²))', 'nothing directly'),
-  wave: { kind: 'vector', eli5: 'the last 2048 audio samples', formula: 'AnalyserNode time domain', drives: 'nothing in NAV', range: [-1, 1] },
+  wave: { kind: 'vector', eli5: 'the last 2048 audio samples', formula: 'AnalyserNode time domain', drives: 'the engine\'s wave texture (DUST\'s ribbon formation is the waveform); no scene reads it from MS', range: [-1, 1] },
   // --- onsets ---
   onset: E('a hit just happened (one frame)', 'spectral flux > mean+1.5σ of last 96 frames', 'kick toward a Misiurewicz point, nod'),
   hitStrength: L('how hard that hit was', '(flux-thr)/(3σ+.05)', 'kick amplitude'),
@@ -99,7 +99,7 @@ export const FEATS = {
   flow: R('musical time: seconds weighted by energy', '∫(.015+.9 lvl+.6 kick+1.2 drop) dt', 'DUST/MANDALA motion — never wall-clock'),
   flowBass: R('musical time driven by bass', '∫(.01+bass) dt', 'DUST'),
   flowMid: R('musical time driven by mids', '∫(.01+midS) dt', 'DUST/MANDALA'),
-  flowHigh: R('musical time driven by highs', '∫(.01+high) dt', '-'),
+  flowHigh: R('musical time driven by highs', '∫(.01+high) dt', 'POLYTOPE: the xw turn of the 4-D rotation'),
   centroid: L('spectral brightness', 'log2-weighted centroid / 7.5, ema .35 s', 'arousal, MANDALA colour'),
   flux: R('raw spectral flux (kick + .6 snare bands)', 'Σ positive log-magnitude differences', '-'),
   dirty: L('noisy / distorted texture', 'spectral flatness (geo/arith mean) shaped', 'mood spiky, valence'),

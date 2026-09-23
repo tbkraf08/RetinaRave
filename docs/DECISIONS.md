@@ -444,3 +444,63 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   45 s — 0 exceptions, hops advancing, switches; `test&fake=0` on http and on the bundle: the same phrase soft switch
   at 26.8 s ran the morph to `t = 1`, the rest drop/surprise hard cuts, `ERRS []`; the bundle's f290 `mixs` md5 is
   still `4ac523e9…`. The http page was never affected (native modules).
+
+## §12 The help view (v0.2, 2026-09-23) — `core/help.js`, the `help.feats` slot, orchestrator-written
+
+- **What is shown, and why these four parts.** `?` / `h` opens a DOM overlay (`Esc` closes; `d f m 0–9` keep working):
+  (A) the scene on screen — `tag`, the three depths of `help` (`math` collapsed), `cuts` in words, the scene's `hud()`
+  line as "developer readout", then one row per field in its `feats` with *name · ELI5 · what it drives here ·
+  formula · live value*, and, collapsed, the other fields the engine produces; (B) the director — logical / rendered
+  scenes and history, the crossfade (`SC.m`, `SC.dur`, the transition's name), a held switch (`SC.pend` with its
+  trigger and the line it waits for), the look memory (`SC.mem` keys → scenes, the current `sectionAlt`), the engine's
+  stages and `ENGINE.ms`, the effect chain; (C) the cast — every registered scene and variant with `tag` + three
+  depths, the current one marked; (D) the keys. A is the v4 idea ("what is driving what", live) with the row set
+  taken from the scene's `feats` instead of v4's mapping table; B is what a listener wonders when the picture changes
+  ("why did it switch?"); C is the contract's §0 promise made visible ("correct to someone who knows it, legible to
+  someone who doesn't"); D replaces the landing card's hint once the card is gone. v4's Mandelbrot map and SVG
+  diagrams were not lifted: they were one scene's story, and here every scene is a peer. The `d` HUD is untouched.
+- **`help.feats` is a scene slot, not a table in core.** `FEATS[k].drives` says what a field moves in general; the
+  per-scene half ("in DUST, `bassS` fattens the torus tube and dollies the camera in") is knowledge only the scene
+  has, so it lives next to its `feats` list (CONTRACTS §1.13) and a worker writing a scene writes both. A table in
+  `core/` keyed by scene name would be the special case §1.4 forbids and would rot silently; `check.js` now fails on a
+  `help.feats` key that is not in `feats` and warns on a `feats` entry without a line (the help shows the general
+  `drives` dimmed in that case, so the gap is visible on screen too), and fails on an empty `help` depth. The rule
+  imports the scene modules in node — they reach only `math/*` and their folder, and all five load without a DOM.
+  Lines written by reading each scene's `update`/`draw`/shaders (the orchestrator may open scenes): 27 + 13 + 17 + 16 +
+  16 = 89 clauses, one visual consequence each, 0 gaps.
+- **`feats` reality check, both sides.** NAV declared 38 fields; 11 of them (`harmAngle harmVel eMax regularity
+  surprisal surpriseEvt sectionId sectionEvt identifyEvt bpm bassFast`) are read nowhere in `nav/` — v3-era leftovers
+  from when NAV was the whole page and the director read through it. Trimmed to the 27 it reads (`high` stays: it is
+  `uBands.z` in the circular-trap highlight). Nothing rendered changes (the list is documentation the core validates,
+  never a switch); the top table *is* the list, so a stale entry would have been a lie on screen. On the engine side
+  `flowHigh` had `drives: '-'` while POLYTOPE reads it (now "the xw turn"), and `wave` said "nothing in NAV" (now: the
+  engine's wave texture, DUST's ribbon; no scene reads it from `MS`). Fields nothing reads keep `'-'` and the view says
+  "not used by any scene yet". Appendix A regenerated (107 fields).
+- **Cost: zero when hidden, by construction and by count.** `drawHelp` is called from `loop.js` right after `drawHUD`
+  (so it inherits the `document.hidden` early return) and its first line is `if (!HELP.on) return;`. Nothing is built
+  until the first open (the landing card does not pay for it). Open: the event fields are latched per frame (14
+  reads, no DOM) so a one-frame event is shown as "● just now" for half a second; the live cells and part B refresh
+  every 6th frame like the HUD; part A rebuilds only when `SC.logical` changes. `CARD.HELP.ticks`: **0** after 600
+  frames hidden, **100** after 600 frames open. `CARD.bench` back to back (HEAD then the phase, two runs each,
+  `test&trans=mixs` at frame 290, 1280×720): NAV 4.66 / 4.60 → 4.57 / 5.40 ms, TORUS 0.66 / 0.56 → 0.64 / 0.62,
+  DUST 0.47 / 0.35 → 0.42 / 0.42 — within the run-to-run noise (the bench never touches `help.js`; it measures
+  `renderScene`). The overlay itself is the compositor's business: `rgba(4,4,10,.82)` with a 2 px backdrop blur.
+- **Nothing the engine or the director decides changed — the checks chosen to prove exactly that.** The §11 frame:
+  `trans-mixs-f290` md5 **`4ac523e9770e7d0625d46ed1f3e44769`**, unchanged (help closed). The same frame with the help
+  open (`{key:'h'}` before the `until`): `[cur, next, m] = [0, 3, 0.4994]`, the same triple, and `__FRAME` advances
+  after the next `{wait}` (290 → 308) — the overlay dims, it does not stop. `parity.js fake` 0 diff (the sweep).
+  Coverage by eval, not by eye: `CARD.HELP.rows()` (read back from the DOM) has **107/107** non-internal keys, each
+  once, and `rows(true)` equals the scene's `feats` as a set on **all 6 registered ids** (`goScene(id, true)` then
+  `rows`). Real start path on `index.html` and `dist/eigenwobble.html` with the help opened and closed: `ERRS []`,
+  `nonFinite []`, `[EXC]` 0.
+- **One line in `core/scenes.js`** — `export const currentTransition = () => trans;` — a read-only getter for the
+  module-local current transition so part B can name it. The alternative (main.js and harness.js each remembering
+  the name they passed to `setTransition`) duplicates a fact the registry already owns. No behaviour touched.
+- **Harness.** `CARD.HELP` (`on`, `ticks`, `nTop`, `rows(topOnly)`), `accept.sh` "== help" (the two shots
+  `help-s0-f120` / `help-s3-f360`, the cast scrolled, `help fields N/N · top table = feats on 6/6 ids`, ticks
+  hidden/open, the real path with the help opened and closed and its `[EXC]` count; the bundle line now opens and
+  closes it too). `check.js` prints `scenes 5 (help.feats gaps 0)`. Shots in `tools/accept/v0.2/help-*.jpg`.
+- **Left open.** The formula column truncates with an ellipsis (the full text is the cell's tooltip); a click-to-expand
+  would suit touch. `wave`'s ELI5 still says "the last 2048 audio samples" while DUST samples the engine's 512-wide
+  texture — the texture, not `MS.wave`, is what a scene sees (ENGINE.md). A `help.feats` line for a *variant* (DRUM)
+  shares the parent's slot; a variant with its own reads would want its own.

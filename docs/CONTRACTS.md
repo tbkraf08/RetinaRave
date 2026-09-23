@@ -41,7 +41,8 @@ export default {
   update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. dt in seconds. Called every frame you are on screen (or always: see `always`).
   draw(target, { w, h, variant, vmix }) {},   // render into `target` (one of the core's targets, handed to you) at (w, h). Nothing else.
   post: { fb: { decay: 0.7 }, bloom: { thr: 0.35 }, kaleido: 1 },   // effect params (object or fn(MS) → object)
-  help: { eli5: '', why: '', math: '' },
+  help: { eli5: '', why: '', math: '',   // three depths, all required (§0); shown by the help view (§1.13)
+    feats: { bass: 'fattens the tubes' } },   // optional: per field of `feats`, what it moves on THIS screen (§1.13)
   // optional slots:
   overlay(PW, PH, vis, dt) {},  // post-composite, direct to screen; you scissor. vis = your on-screen weight 0..1
   hud() { return 'one line'; }, // extra HUD line while you are the logical scene
@@ -283,6 +284,21 @@ vertices per segment; path B evaluates `P` twice per vertex. 50 k segments is fi
 number of segments per ring, never in the number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
 (HARNESS.md) is the reference for a minimal path-A and path-B program.
 
+### 1.13 Help view — what the `?` overlay shows from your scene
+
+`core/help.js` (keys `?` / `h`, `Esc` closes) explains the machine to a listener from data alone; it never reads your
+code. From your object it shows: `tag` (the variant's `tag` while a variant is logical), the three depths of `help`
+(`math` collapsed), `cuts` in words (§1.9), your `hud()` line as "developer readout" (refreshed every 6th frame), and
+one row per field in `feats` with **name · ELI5 · what it drives here · formula · live value** — the ELI5 and formula
+come from `FEATS` (Appendix A), the live value is `MS[k]` drawn by its `kind` (a bar for a level, a flash for an event,
+`[n]` for a vector), and the "drives here" column is your **`help.feats[k]`**: one clause, the visual consequence on
+your screen ("fattens the tubes", "how many mirrors"), not the formula. A field without a line falls back to
+`FEATS[k].drives`, the field's general role, shown dimmed. Below, collapsed, the other fields the engine produces. The
+cast section lists every registered scene and variant with `tag` + three depths. Rules (`check.js`): every key of
+`help.feats` must be in `feats` (fail); a `feats` entry without a `help.feats` line is a warning; `help.eli5/why/math`
+must all be non-empty (fail). Keep `feats` exactly the fields you read — the top table *is* that list, so a stale
+entry is a visible lie. `CARD.HELP.rows(true)` returns the top table's names for a test.
+
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`
@@ -404,7 +420,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `high` | level | how strong the highs are | uBands.z |
 | `bassFast` | level | bass with a very fast attack (for kicks) | drop detection, beat phase lock |
 | `rms` | raw | raw loudness of the waveform | nothing directly |
-| `wave` | vector | the last 2048 audio samples | nothing in NAV |
+| `wave` | vector | the last 2048 audio samples | the engine's wave texture (DUST's ribbon formation is the waveform); no scene reads it from MS |
 | `onset` | event | a hit just happened (one frame) | kick toward a Misiurewicz point, nod |
 | `hitStrength` | level | how hard that hit was | kick amplitude |
 | `hit` | level | the hit, decaying over ~0.14 s | uBeat.y, palette brightness, flash |
@@ -468,7 +484,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `flow` | raw | musical time: seconds weighted by energy | DUST/MANDALA motion — never wall-clock |
 | `flowBass` | raw | musical time driven by bass | DUST |
 | `flowMid` | raw | musical time driven by mids | DUST/MANDALA |
-| `flowHigh` | raw | musical time driven by highs | - |
+| `flowHigh` | raw | musical time driven by highs | POLYTOPE: the xw turn of the 4-D rotation |
 | `centroid` | level | spectral brightness | arousal, MANDALA colour |
 | `flux` | raw | raw spectral flux (kick + .6 snare bands) | - |
 | `dirty` | level | noisy / distorted texture | mood spiky, valence |

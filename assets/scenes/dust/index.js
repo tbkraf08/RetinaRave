@@ -141,6 +141,22 @@ const SELF = {
   },
 
   help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      flow: 'the scene clock: the swarm\'s slow spin, the camera\'s orbit, the galaxy arms',
+      flowMid: 'the torus and ribbon formations twist on mid-band time',
+      bassS: 'the torus tube fattens, the whole cloud grows, the camera dollies in',
+      midS: 'the wobble of every grain and the ribbon\'s thickness',
+      lvl: 'how far each grain is pushed out by its own band, overall brightness, and how fast a re-pour completes',
+      kick: 'a kick shoves grains outward and brightens them; every 64 kicks the swarm re-pours into a new shape',
+      dropEnv: 'the cloud re-pours on the drop, grains fly outward, the camera dollies in',
+      tension: 'the cloud contracts and jitters',
+      hat: 'grains sparkle bigger at the edge',
+      alive: 'silence fades every grain to black',
+      arc: 'never auto-picked during a build',
+      punchy: 'the bid: punchy music invites the swarm',
+      regularity: 'the bid: a steady rhythm invites the swarm',
+    },
     eli5: 'Every dot is a particle that owns one frequency band of the spectrum. When its band gets loud the dot '
       + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: bass grains breathe near the '
       + 'centre, hi-hat grains sparkle at the edge. The whole swarm keeps pouring from one shape into another — a '

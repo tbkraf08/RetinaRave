@@ -1,5 +1,5 @@
 // The frame loop. Order (same as cardioid3): quality → resize → engine (music + groove + test pins) → scene updates →
-// director → look → fx → scene pass(es) + transition → effect chain → overlays → HUD → test log.
+// director → look → fx → scene pass(es) + transition → effect chain → overlays → HUD → help view → test log.
 import { ENGINE } from '../engine/engine.js';
 import { MS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
@@ -9,6 +9,7 @@ import { LOOK, updateLook } from './look.js';
 import { updateFX, runChain } from './post.js';
 import { SC, REG, SCENES, updateScenes, drawScenes, visibility, postParams } from './scenes.js';
 import { drawHUD } from './hud.js';
+import { drawHelp } from './help.js';
 import { CARD, logFrame } from './harness.js';
 
 let lastT = 0, frameN = 0, wall = 0;
@@ -48,6 +49,7 @@ export function frame(tms) {
   runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q });
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
   drawHUD(S, frameN);
+  drawHelp(S, frameN); // after drawHUD so it inherits the document.hidden early return; returns at once when closed
   logFrame(S, now, frameN);
 }
 

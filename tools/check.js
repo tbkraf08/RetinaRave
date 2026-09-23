@@ -1,7 +1,7 @@
 // Static checks, run after every edit: node --check on assets/**/*.js · module line caps (warn >350, fail >500) ·
 // dead uniforms (declared in a GLSL string, never fetched anywhere) · import discipline (only core/engine/main.js may
 // import core/gl.js; scenes/effects/transitions import nothing from core) · no 'nav' in core/ or transitions/ · every MS
-// key has a FEATS entry.
+// key has a FEATS entry · scene help has three depths, help.feats ⊂ feats (warn on a feats entry without a line).
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -55,5 +55,22 @@ const phantom = Object.keys(FEATS).filter((k) => !(k in MS));
 if (undocumented.length) fail('MS keys without a FEATS entry: ' + undocumented.join(','));
 if (phantom.length) warn('FEATS entries with no MS default (runtime-added by a stage?): ' + phantom.join(','));
 
-console.log(`check: ${files.length} modules · uniforms ${decl.size} · MS keys ${Object.keys(MS).length} · ${fails} fail · ${warns} warn`);
+// Scenes (imported like the engine modules: they reach only math/* and their own folder, so they load without a DOM):
+// help has three non-empty depths (CONTRACTS §0) · every help.feats key is in feats (§1.13) · a feats entry without a
+// help.feats line is a gap the help view fills with FEATS[k].drives (warn) · every feats entry exists in FEATS.
+const sceneDirs = fs.readdirSync(path.join(ROOT, 'assets/scenes'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+let helpGaps = 0;
+for (const d of sceneDirs) {
+  const sc = (await import(path.join(ROOT, 'assets/scenes', d, 'index.js'))).default, h = sc.help || {}, feats = sc.feats || [];
+  for (const k of ['eli5', 'why', 'math']) if (!(typeof h[k] === 'string' && h[k].trim())) fail('scene ' + d + ': help.' + k + ' is missing or empty');
+  const bad = Object.keys(h.feats || {}).filter((k) => !feats.includes(k));
+  if (bad.length) fail('scene ' + d + ': help.feats keys not in feats: ' + bad.join(','));
+  const undecl = feats.filter((k) => !(k in FEATS));
+  if (undecl.length) fail('scene ' + d + ': feats not in FEATS: ' + undecl.join(','));
+  const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
+  if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
+  for (const v of sc.variants || []) if (!(typeof v.tag === 'string' && v.tag)) fail('scene ' + d + ' variant ' + v.name + ': no tag');
+}
+
+console.log(`check: ${files.length} modules · uniforms ${decl.size} · MS keys ${Object.keys(MS).length} · scenes ${sceneDirs.length} (help.feats gaps ${helpGaps}) · ${fails} fail · ${warns} warn`);
 process.exit(fails ? 1 : 0);

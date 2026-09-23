@@ -9,6 +9,7 @@ import { Q } from './quality.js';
 import { FX, EFFECTS } from './post.js';
 import { G, ERRS } from './gl.js';
 import { LOOK } from './look.js';
+import { HELP } from './help.js';
 import { getGrid } from '../math/mandel.js';
 
 export const HASH = new URLSearchParams(location.hash.slice(1));
@@ -25,7 +26,7 @@ function readback(r) {
 }
 
 export const CARD = {
-  log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, TEST, HASH,
+  log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TEST, HASH,
   hooks: {},
   frameN: 0,
   get fix() { return ENGINE.fix; },

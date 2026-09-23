@@ -123,11 +123,31 @@ NOAUTO=1 GPU=1 node tools/cdp.js 'real' '[{"wait":1500},{"click":[695,440]},{"wa
 python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t14.jpg
 ```
 
+## Help view (change to `core/help.js`, a scene's `help` / `help.feats`, or `feats.js` text)
+
+Keys: `?` or `h` toggles, `Esc` closes; `d f m 0–9` keep working with it open. It is DOM (`#help` in `index.html`) over
+the still-rendering canvas, built on the first open, and does no work per frame while hidden. Steps `{key:'h'}` and
+`{key:'Escape'}` drive it; under `CLOCK=1` press the key *before* the `until` so the shot lands on a full page (the
+view completes on the frame it opens).
+```
+# NAV at frame 120 and TORUS at 360 (the fake timeline's first switch is at 233), then the cast scrolled into view
+CLOCK=1 GPU=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"key":"h"},{"until":"window.__FRAME>=120"},{"shot":"work/help-s0-f120"},{"until":"window.__FRAME>=360"},{"shot":"work/help-s3-f360"},{"eval":"document.getElementById(\"help\").scrollTop=1e5"},{"shot":"work/help-cast"}]'
+# coverage by eval: every non-internal FEATS key once, and the top table equals the scene's feats on every id
+... {"eval":"CARD.HELP.rows().length"}                     # 107
+... {"eval":"CARD.goScene(1,true);CARD.HELP.rows(true).join()"}   # DUST's feats, FEATS order
+# zero cost hidden: ticks count the live refreshes (every 6th frame while open)
+CLOCK=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"until":"window.__FRAME>=600"},{"eval":"CARD.HELP.ticks"},{"key":"h"},{"until":"window.__FRAME>=1200"},{"eval":"CARD.HELP.ticks"}]'   # 0 then 100
+```
+`accept.sh` "== help" does all of the above plus the real start path with the help opened and closed (`[EXC]` must be 0;
+the bundle line opens and closes it too). `check.js` enforces `help.feats ⊂ feats`, three non-empty `help` depths, and
+warns on a `feats` entry without a `help.feats` line. The §11 md5 is the proof the overlay changes nothing underneath:
+with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and `__FRAME` still advances after a `{wait}`.
+
 ## `window.CARD` (available in every page)
 
 `MS` (music state) · `SC` (director) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
 (`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` (scene objects, registration order) · `REG[id]` = `{id, base, scene, variant}` ·
-`EFFECTS` · `TRANSITIONS` · `FEATS` · `log` (event log under #test:
+`EFFECTS` · `TRANSITIONS` · `FEATS` · `HELP` (`on`, `ticks`, `nTop`, `rows(topOnly)` — "Help view" above) · `log` (event log under #test:
 `DROP@t`, `SECTION@t arc`, `SCENE@t -> id`, 1 Hz status lines) · `frameN` · `home` (the home scene's state; `NAV` in v3) ·
 `hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes).
 

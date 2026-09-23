@@ -36,7 +36,12 @@ parity real · monitor 0 spikes · 5 scenes · transition md5 · real start path
   is a plug-in; `mixs` moved out byte-identical (frame-290 md5 checked by `accept.sh`), synapse's flow-field morph
   written by a worker from the contract and made the default on the A/B montage (`accept/v0.2/montage-trans.jpg`);
   `&trans=<name>`, `CARD.benchTransition`. Harness fix: the benches never synced before (byte readback from RGBA16F).
-Still open below: #3 julia/feigen, #4, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+- **#4 help view** → `core/help.js` (DECISIONS §12, CONTRACTS §1.13): `?`/`h` opens a DOM overlay over the still-rendering
+  canvas — the current scene's `tag`, three depths, `cuts`, and one row per `feats` field (ELI5 · what it drives *here*
+  from the new `help.feats` slot · formula · live value), the director's state, the cast, the keys. Zero DOM work while
+  hidden (`CARD.HELP.ticks`), the §11 md5 and `parity.js fake` untouched, coverage by eval (`CARD.HELP.rows()`:
+  107/107 fields, top table = `feats` on all 6 ids). NAV's `feats` trimmed to what it reads (11 v3-era leftovers).
+Still open below: #3 julia/feigen, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
@@ -45,9 +50,7 @@ Still open below: #3 julia/feigen, #4, #7, plus DUST's Hopf-fibre overlay (now u
 2. ~~Synapse's morph transition~~ — done (DECISIONS §11): `assets/transitions/`, morph is the default.
 3. **Synapse's julia / feigen / polytope scenes** as workers (`synapse2.html` scenes 1/3/5; the polytope needs the
    line renderer). Each is a folder + two lines in `main.js`.
-4. **The v4 config-panel / help idea rebuilt on `feats.js`**: `FEATS` already carries eli5/formula/drives for every
-   field and every scene ships `help`; a `?` overlay that shows the live `MS` vector with its glossary and each scene's
-   three-depth help is mostly UI.
+4. ~~The v4 help idea rebuilt on `feats.js`~~ — done (DECISIONS §12): `core/help.js`, the `help.feats` slot.
 5. ~~Tempo refinement for v3's canonical `bpm`~~ — done (DECISIONS §9).
 6. ~~Key look memory on `sectionAlt` + beat-quantised director actions~~ — done (DECISIONS §10).
 7. **Row-only `hist` upload** (32 KB/hop today) and `Q`-aware particle budgets shared across POINTS scenes.

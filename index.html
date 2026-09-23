@@ -32,7 +32,31 @@
   kbd{border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 6px;font-size:11px}
   #msg{margin-top:16px;min-height:18px;font-size:13px;color:#fc9}
   #hud{position:fixed;left:10px;top:10px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#9f9;white-space:pre;
-    background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:9;pointer-events:none}
+    background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
+  /* the help view (core/help.js): a scrolling DOM page over the still-rendering canvas; display:none costs nothing */
+  #help{position:fixed;inset:0;overflow-y:auto;background:rgba(4,4,10,.82);color:#d6dce6;font:12px/1.5 ui-monospace,Menlo,monospace;
+    z-index:11;display:none;backdrop-filter:blur(2px)}
+  body.running.help{cursor:auto}
+  .hinner{max-width:1180px;margin:0 auto;padding:22px 28px 60px}
+  #help h1{font-size:13px;letter-spacing:.25em;color:#9cf;font-weight:400;margin:0 0 10px;padding:0;background:none;-webkit-text-fill-color:initial}
+  #help h2{font-size:12px;letter-spacing:.18em;color:#8ab;font-weight:400;margin:26px 0 8px;text-transform:uppercase}
+  #help h3{font-size:12px;color:#9cf;font-weight:400;margin:12px 0 2px}
+  #help p{margin:4px 0}
+  .htag{color:#fc8}.heli{color:#e8e6f0}.hmath{color:#9ab;font-size:11px}.hnote{color:#8ab;font-size:11px}
+  .hwhy{color:#b8c4d4;font-size:11px;border-left:2px solid rgba(160,200,255,.25);padding-left:10px;margin:6px 0}
+  .htab{border-collapse:collapse;width:100%;font-size:11px;margin:6px 0 10px;table-layout:fixed}
+  .htab th{text-align:left;color:#8ab;font-weight:400;border-bottom:1px solid rgba(160,200,255,.2);padding:3px 6px}
+  .htab td{vertical-align:top;padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .hk{color:#9cf;width:9%}.he{width:26%}.hd{width:27%;color:#8ab}.hd.here{color:#cfe}
+  .hf{width:28%}.hf code{color:#9ab;font-size:10.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hl{width:10%;white-space:nowrap;color:#9f9}
+  .hbar{height:5px;width:80px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:2px}
+  .hfill{height:100%;width:100%;background:#7bd;transform-origin:left;transform:scaleX(0)}
+  .hev{color:#556}.hev.lit{color:#ff8}
+  #help details{margin:4px 0 12px}#help summary{cursor:pointer;color:#8ab;font-size:11px}
+  .hdl{display:grid;grid-template-columns:120px 1fr;gap:3px 12px;font-size:11px;margin:0}.hdl dt{color:#8ab}.hdl dd{margin:0;color:#cfe}
+  .hcast{padding:6px 10px;border-left:2px solid transparent}.hcast.cur{border-left-color:#9cf;background:rgba(160,200,255,.05)}
+  #help kbd{border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:0 4px;font-size:10px}
 </style>
 </head>
 <body>
@@ -48,9 +72,10 @@
   <button id="go">Share a tab</button>
   <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a></div>
   <div id="msg"></div>
-  <div class="hint"><kbd>F</kbd> or double‑click for fullscreen · everything else is automatic</div>
+  <div class="hint"><kbd>?</kbd> explains what you see · <kbd>F</kbd> or double‑click for fullscreen · everything else is automatic</div>
 </div></div>
 <div id="hud"></div>
+<div id="help"><div class="hinner" id="helpBody"></div></div>
 
 <script type="module" src="assets/main.js"></script>
 </body>

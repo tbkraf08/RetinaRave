@@ -18,9 +18,8 @@ export default {
   always: true,     // updated every frame (the director reads its rt, the PiP path must stay continuous)
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropEvt', 'dropStrength', 'dropEnv', 'intensity',
-    'build', 'suspension', 'presence', 'harmUnw', 'harmAngle', 'harmVel', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'eMax',
-    'tension', 'resolveEvt', 'bass', 'mid', 'high', 'peaks', 'regularity', 'surprisal', 'surpriseEvt', 'sectionId', 'sectionEvt',
-    'identifyEvt', 'bpm', 'bassFast', 'clarity'],
+    'build', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
+    'bass', 'mid', 'high', 'peaks', 'clarity'], // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
   state: NAV,
   rt: { c: NAV.c, label: 'nav', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   variants: [{
@@ -30,6 +29,36 @@ export default {
   }],
   hooks: { baby: (i) => { NAV.forceBaby = +i; } },
   help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      interval: 'which bulb c heads for: the interval picks the p/q bulb (of the baby copy when inside one)',
+      repeat: 'a repeated section may dive into a baby copy of M (which one comes from the seed)',
+      seed: 'the section\'s constants: which baby copy, the interior angle offset, the exterior angle',
+      beat: 'retargeting happens on the beat, never on the root-to-ray bridge; loud beats are counted toward leaving',
+      beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
+      beatCount: 'beats since the last exit: settling back inside, which ray to take, the landing time',
+      dropEvt: 'the exit: c is thrown out of M along an external ray',
+      dropStrength: 'how deep outside the ray lands (log2 of the potential, -2.2 down to -0.5)',
+      dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings',
+      intensity: 'how deep into the bulb c sits, and the loud count that leads to leaving',
+      build: 'parks c at the bulb\'s root (the cusp) while a build runs',
+      suspension: 'also parks at the root: a held tension waits at the gateway',
+      presence: 'silence freezes c and slows the visual clock; the picture-in-picture fades out',
+      harmUnw: 'the interior angle alpha and the exterior angle theta: the harmony walks c around the bulb, and along the rays outside',
+      arc: 'sustain counts loud beats toward leaving; peak keeps c outside longer',
+      onset: 'a hard hit kicks c toward a Misiurewicz point (into the dendrite) and back',
+      hitStrength: 'how far that kick goes',
+      hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
+      eS: 'the exterior depth (with tension) and the amplitude of the DRUM modes',
+      eM: 'trail length (feedback decay 0.7 + 0.16 eM); DRUM bids when eM is low',
+      tension: 'the exterior depth: tense music sits further out along the ray',
+      resolveEvt: 'a release doubles the visual clock for a moment',
+      bass: 'the glow of the set\'s interior, a 5 % zoom-in, the size of the critical-orbit dots',
+      mid: 'the radius of the circular orbit trap',
+      high: 'the circular trap\'s highlight',
+      peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
+      clarity: 'DRUM\'s bid: a clear tonal interior with a converged cycle invites the membrane',
+    },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
     why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays.',
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',

@@ -177,6 +177,25 @@ export default {
   hud() { return this.rt.label + ' · ' + this.nSeg + ' segs'; },
 
   help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      flow: 'the scene clock: the camera\'s orbit and its pitch',
+      flowBass: 'the xy rotation of the 4-D double turn',
+      flowMid: 'the zw rotation of the double turn',
+      flowHigh: 'the extra xw turn',
+      tension: 'shrinks the figure and shakes the camera (hashed jitter, never random)',
+      dropEnv: 'the figure swells by up to 60 %',
+      kick: 'a small swell',
+      hit: 'the inner figure\'s strokes pulse thicker',
+      lvl: 'stroke brightness',
+      presence: 'brightness floor: muted audio still idles visibly',
+      seed: 'which cast: tesseract in a 24-cell, the 600-cell, or a 24-cell in the 600- or 120-cell',
+      sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded',
+      arc: 'never auto-picked during a build',
+      regularity: 'the bid: steady',
+      clarity: 'the bid: tonal',
+      calm: 'the bid: unhurried',
+    },
     eli5: 'These are the cubes and pyramids of four-dimensional space, seen from the inside. The cage keeps turning itself inside out because a 4-D turn has two independent speeds at once.',
     why: 'Each figure lives on the 3-sphere, the surface of a 4-D ball, and is squashed into our room by the same shadow-casting trick that turns a globe into a flat map: cells near the light source blow up and fade out, cells opposite it shrink. The music sets the two turning speeds (bass and mids), the size (tension and drops) and which figure you get (the section).',
     math: 'Six regular convex 4-polytopes exist; four are here. Vertices are normalised to |v| = 1, so they tile S³; edges are the nearest-neighbour pairs. Each frame a general element of SO(4) — independent rotations in the xy and zw planes (a double rotation, angles 0.1·flowBass and 0.14·flowMid) plus an xw turn — moves them, then stereographic projection from the pole (0,0,0,1), p ↦ (x,y,z)/(1−w), lands them in R³. An edge is subdivided on the sphere, so each piece follows a great circle and the projection sends it to a circular arc: the cells bulge because circles map to circles, not because anything is drawn curved. The pole is the point at infinity — the (1−w) > 0.16 gate and its ramp fade a cell out as it sweeps through. Counts: tesseract 16/32, 24-cell 24/96, 600-cell 120/720, 120-cell 600/1200.',

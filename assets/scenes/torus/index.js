@@ -215,6 +215,25 @@ export default {
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0 },
 
   help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      chroma: 'each pitch class\'s latitude and brightness: louder, nearer the equator, a fatter torus',
+      harmAngle: 'while the chroma is empty the latitudes come from the circle of fifths around this angle',
+      interval: 'the (p, q) of the bright knot strand',
+      harmUnw: 'the melody\'s turn slides along the knot',
+      beatPhase: 'the Hopf flow: one full turn every 8 beats',
+      beatCount: 'the whole beats of that same clock',
+      bass: 'fatter tubes and wider strokes',
+      tension: 'pushes the projection pole into the picture: the nest pinches',
+      dropEvt: 'everything collapses to the core circle',
+      dropEnv: 'brighter strokes while the collapse blooms back',
+      bpm: 'how fast the collapse recovers (about one beat)',
+      presence: 'overall opacity: silence dims the rings',
+      flow: 'the scene clock and the camera\'s gentle orbit',
+      arc: 'never auto-picked during a build',
+      clarity: 'the knot strand\'s brightness, and the bid',
+      regularity: 'the bid: a steady rhythm',
+    },
     eli5: 'Every ring is one fibre of the Hopf map: a circle living in the 3-sphere, seen through a stereographic window. Rings whose base points share a latitude of the base sphere all nest on one torus, so you are looking at real geometry, not a decoration.',
     why: 'The twelve pitch classes are twelve latitudes. The louder a pitch class is, the closer its latitude sits to the equator and the fatter its torus, so the chord you hear is literally the shape of the nest. The melody s interval picks the (p,q) of the bright knot strand — the same rotation numbers that pick NAV s bulb. Beats turn the Hopf flow (one turn per eight beats), groove tumbles the family in SU(2), bass fattens the tubes, tension pushes the projection pole into the picture, and a drop collapses everything to the core circle before it blooms back.',
     math: 'S3 = {(z1,z2) in C2 : |z1|^2+|z2|^2 = 1} fibres over S2 by h(z1,z2) = (2 z1 conj(z2), |z1|^2-|z2|^2). The fibre over (theta, phi) is psi -> e^{i psi}(cos(theta/2) e^{i phi/2}, sin(theta/2) e^{-i phi/2}). Stereographic projection from (0,0,0,1) sends it to the circle (x1,y1,x2)/(1-y2) in R3, and the whole latitude theta onto the torus of revolution R = 1/cos(theta/2), r = tan(theta/2) (theta = pi/2 is the Clifford torus, R = sqrt2, r = 1). Each such circle is a Villarceau circle of that torus: it winds once the long way and once the short way. Two fibres never meet because their base points differ, and a point of S3 has exactly one image under h — distinct fibres are disjoint, so the rings link once each and never cross.',
