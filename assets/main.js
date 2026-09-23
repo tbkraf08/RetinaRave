@@ -8,6 +8,7 @@ import { addEffect } from './core/post.js';
 import { register, addTransition, setTransition } from './core/scenes.js';
 import { initLines, VS_CHUNK, FS_CHUNK, mk as mkLines, set as setLines, draw as drawLines, drawN as drawLinesN } from './core/lines.js';
 import { initHUD } from './core/hud.js';
+import { OKLCH_GLSL } from './core/oklch.js';
 import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
 import { hsv } from './math/util.js';
@@ -39,7 +40,7 @@ try {
 // The ctx every scene and effect receives (docs/CONTRACTS.md §1.1). Never the module namespace of core/gl.js.
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
-  targets: G.RT, Q, tier, budget, LOOK, hsv, engineTex: ETEX,
+  targets: G.RT, Q, tier, budget, LOOK, hsv, engineTex: ETEX, oklch: OKLCH_GLSL,
   lines: { VS: VS_CHUNK, FS: FS_CHUNK, mk: mkLines, set: setLines, draw: drawLines, drawN: drawLinesN },
   log: (s) => { if (TEST) CARD.log.push(s); },
 };

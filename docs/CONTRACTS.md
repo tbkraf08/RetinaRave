@@ -96,6 +96,7 @@ ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q
 ctx.budget(kind)              the count for the current tier from the core's tables (§1.4): 'points' → particles of a
                               gl_VertexID cloud, 'segs' → segments of a ctx.lines path-A buffer. Read it every draw.
 ctx.LOOK                      the palette block (§1.5)
+ctx.oklch                     the OKLCH palette chunk (§1.14): GLSL you prepend to your own fragment source, opt-in
 ctx.hsv(h, s, v) → [r,g,b]
 ctx.log(string)               append to CARD.log (only under #test)
 ```
@@ -335,6 +336,31 @@ cast section lists every registered scene and variant with `tag` + three depths.
 `help.feats` must be in `feats` (fail); a `feats` entry without a `help.feats` line is a warning; `help.eli5/why/math`
 must all be non-empty (fail). Keep `feats` exactly the fields you read — the top table *is* that list, so a stale
 entry is a visible lie. `CARD.HELP.rows(true)` returns the top table's names for a test.
+
+### 1.14 OKLCH palette chunk — `ctx.oklch` (v0.3, opt-in)
+
+`ctx.oklch` is a GLSL string (`assets/core/oklch.js`). Prepend it to your fragment source — `ctx.mkProg(ctx.oklch + FS,
+name)` — and you have, after HEAD (so `TAU` and the common uniforms are in scope):
+
+```glsl
+vec3  linToOkLab(vec3 lin);          // Ottosson's OKLab, linear sRGB in
+vec3  okLabToLin(vec3 lab);          // and back (unclamped: out-of-gamut values come out < 0 or > 1)
+vec3  srgbToLin(vec3 enc);           // the piecewise sRGB curve, both ways, clamped to 0..1
+vec3  linToSrgb(vec3 lin);
+float okClip(float h, float L, float C);   // the chroma scale the gamut clip keeps at (h, L, C): 1 = inside sRGB
+vec3  palOK(float h, float L, float C);    // OKLCH → LINEAR sRGB, in gamut: chroma shrunk toward the grey axis at the
+                                           // same L (hue and lightness kept — a clipped colour goes greyer, never
+                                           // darker or hue-shifted, which is what a channel clamp does)
+vec3  palOKs(float h, float L, float C);   // the same, sRGB-encoded — what a scene writes while the chain is encoded
+```
+
+`h` is a turn (0..1), `L` 0..1, `C` in OKLab units. **C 0.11 at L 0.7 is inside sRGB at every hue** (the tightest hue
+is 200° at 0.119 — `tools/test_oklab.js`); above that the clip decides per pixel (14 halvings of C — only on the pixels
+that need it). Interpolate colours in OKLab (`mix` on the `(L, a, b)` triple, then `okLabToLin`), never on encoded
+values: the gamma midpoint of two complementary hues at L 0.7 has L 0.67 (`tools/oklch-smoke.js`). HEAD's `pal()` is
+untouched and stays the default; `assets/math/oklab.js` is the JS twin (same constants, `maxChroma(L, h)`) for
+anything computed on the CPU. Never call `okLabToLin` on a colour you then write unclamped: the chain's targets are
+float and a negative channel survives to the composite.
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 

@@ -5,8 +5,9 @@
 cd "$(dirname "$0")/.." || exit 1
 export OUT=tools/accept/v0.3; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
-echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1
+echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
+echo "== oklch smoke";    node tools/oklch-smoke.js | tail -1
 echo "== parity fake";   node tools/parity.js fake | grep -E "parity|MISMATCH|max \|diff\|" || echo "FAIL parity fake"
 echo "== parity real";   node tools/parity.js real | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')

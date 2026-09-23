@@ -30,6 +30,13 @@ node tools/test_tempo.js       # tempo estimator on a synthetic onset envelope: 
                                #   tempo changes picked up (§9). TEMPO_DEBUG=1 prints the ACF peaks, =2 every estimate.
 ```
 
+## OKLab (change to `core/oklch.js`, `math/oklab.js`, or a scene that uses `ctx.oklch`)
+
+```
+node tools/test_oklab.js           # the JS twin: Ottosson's reference triples, round trips, C .11 in gamut at L .7 for all hues → test_oklab: OK
+GPU=1 node tools/oklch-smoke.js    # the GLSL chunk through CARD.ctx: GPU = twin to 1/255, 0 clipped hues at L .7 C .11, OKLab midpoint keeps L → oklch-smoke: OK
+```
+
 ## Tempo traces (engine change to `engine/tempo.js`)
 
 ```

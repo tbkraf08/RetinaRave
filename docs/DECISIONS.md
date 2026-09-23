@@ -884,3 +884,28 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Left open:** none. The synapse stage's own followers run on the hop clock and were never frozen; DUST's exposure
   re-adapts over its own constants after a gap (audit 3's 22 → 51 climb) — its look, by design.
 
+## §19 oklch-palette — an OKLCH chunk as an opt-in core slot (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 4)
+
+- **What.** `assets/core/oklch.js` exports `OKLCH_GLSL`, handed to scenes and effects as `ctx.oklch` (CONTRACTS §1.14):
+  `linToOkLab` / `okLabToLin` (Ottosson's matrices), `srgbToLin` / `linToSrgb` (the piecewise curve), `okClip(h, L, C)`
+  (the chroma scale the gamut clip keeps), `palOK(h, L, C)` → linear sRGB in gamut, `palOKs` encoded. `assets/math/
+  oklab.js` is the JS twin with the same constants plus `maxChroma(L, h)`. HEAD's `pal()` is untouched — the chunk is
+  prepended by whoever wants it (`ctx.mkProg(ctx.oklch + FS, name)`), so no program that exists today changes: the
+  scene md5 list is identical to the v0.2 tag's, `parity.js fake` 0 diff, the mixs md5 unchanged (main.js only gained
+  the `ctx.oklch` line).
+- **The clip rule, decided.** Chroma is shrunk toward the grey axis at the same L until the colour is inside sRGB
+  (bisection, 14 halvings, only on pixels that are outside): hue and lightness are kept, a clipped colour goes greyer.
+  A channel clamp — what every cosine palette in the repo does implicitly — darkens and hue-shifts instead. 10 halvings
+  were tried first and left 11/255 between the GPU and the twin at C 0.3 (a channel moves several units per unit of
+  chroma at the gamut edge); the residual after 14 is 1/255. The half-pixel hue offset in the first smoke test (pixel
+  `i` is hue `i/360`, `gl_FragCoord.x − .5`) read as a 10/255 "clip disagreement" at blue for twenty minutes: near
+  blue the max chroma moves that much in half a degree.
+- **Numbers (`tools/test_oklab.js`, `tools/oklch-smoke.js`, both in `accept.sh`).** Reference triples to 2e-4 (red
+  0.6280/0.2249/0.1258 …), round trip 2.6e-7 on a 5³ grid; **C 0.11 at L 0.7 is inside sRGB at every hue** — the
+  tightest is 200° at 0.119 — which is the constant the FEIGEN brief (item 2) and NAV's hue (item 5) build on; GPU =
+  twin to 1/255 over 360 hues at L .7 C .11 and at L .5 C .3 (all clipped); the OKLab midpoint of two complementary
+  hues at L .7 has L 0.699, the gamma midpoint 0.670 — the reason §1.14 says interpolate in OKLab; 360 distinct 8-bit
+  colours over 360 hues; `ERRS []`, `getError` 0.
+- **Not done here, by design:** no scene uses the chunk yet (items 2, 5, 6 do); the chain is still encoded, so a
+  scene writes `palOKs`/`linToSrgb(palOK(…))` until item 3 moves the chain to linear light.
+

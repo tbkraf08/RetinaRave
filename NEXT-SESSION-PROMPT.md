@@ -49,7 +49,7 @@ DECISIONS §17's triage table for whenever a scene phase is opened).
    reachable at 1.0; the re-tune list capped at bloom threshold, exposure `TARGET`, feedback decay, DUST point gain;
    A/B montage per scene at f360/f840 decides, then `scene-md5.sh`, the mixs and FEIGEN md5s and `accept.sh` are
    re-based in one commit that says so (`parity.js fake` stays 0 diff — it compares state, not pixels).
-4. **`oklch-palette` — an OKLCH palette chunk as a core slot (opt-in, CONTRACTS §3).** The shared `pal()` in
+4. ✅ **DONE 2026-09-23 (DECISIONS §19: `ctx.oklch`, CONTRACTS §1.14, test_oklab + oklch-smoke in accept.sh).** **`oklch-palette` — an OKLCH palette chunk as a core slot (opt-in, CONTRACTS §3).** The shared `pal()` in
    `core/gl.js` is a tinted cosine palette in gamma sRGB and five scenes carry their own `palM`; no OKLab code exists
    in the repo. A GLSL chunk `palOK(h, L, C)` (OKLCH → linear sRGB, gamut-clipped), never the default. Acceptance: 0
    gamut-clipped pixels on a full hue sweep at L 0.7 / C 0.11; distinct 8-bit levels along an equipotential vs the sRGB
