@@ -19,10 +19,12 @@ const LUM = [0.299, 0.587, 0.114];
 const PHASE = [0, 0.33, 0.67];
 
 // Counts for a quality tier: nl tori, nF fibres each, N segments per fibre. Synapse scene 4's formulas, but tier 3
-// repeats tier 2's knob (q = 1), so it draws 4 x 10 x 56 = 2240 segments and not 4 x 12 x 66 = 3168. The overlay
-// costs 0.4 us per segment (CONTRACTS 1.12) — +1.37 ms at tier 3, and Q is global, so that is every scene's tier —
-// and DECISIONS 14's polish note found 2240 to be the same picture: the 2 extra fibres per torus and the 10 extra
-// points per fibre bought nothing at 1.5 px wide and 0.3 bright.
+// repeats tier 2's knob (q = 1), so it draws 4 x 10 x 56 = 2240 segments and not 4 x 12 x 66 = 3168. Q is global, so
+// the overlay's cost at tier 3 is every scene's tier: 14 measured +1.37 ms there and called 2240 the same picture,
+// and it is -- the 2 extra fibres per torus and the 10 extra points per fibre bought nothing at 1.5 px wide and 0.3
+// bright. Worth knowing before tuning this table again: the saving is the MARGINAL per-segment cost (0.25 us here,
+// not 1.12's 0.4 us average), so 928 fewer segments bought 0.24 of the 1.18 ms, and a fixed per-draw() cost is the
+// floor. See docs/workers/dust-fibre-count.md.
 export function counts(tier) {
   const q = QT[tier] === undefined ? 1 : QT[tier];
   return { nl: Math.floor(2 + 2 * q), nF: Math.floor(5 + 5 * q), N: Math.floor(30 + 26 * q) };
