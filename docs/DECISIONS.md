@@ -727,4 +727,16 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   "×3 medians" without the NAV interleave read a fake 1.8× regression (40 % drift between sessions) — HARNESS's
   interleave rule is the only protocol on this machine; §1.12's alpha rule now says the pole fade is the one place
   alpha may fall (a colour-only fade would leave an opaque black streak writing depth).
+  *DUST's tier-3 fibre count* (`brief-dust-fibre-count.md`, `dust-fibre-count.md`): `QT[3]` 1.4 → 1, so tier 3 draws
+  tier 2's `4 × 10 × 56 = 2240` segments (was 3168); the points path byte-identical to §14 (`e49cf54e…`/`7119a542…`
+  with `&fibres=0`), f360 unchanged even with the fibres on (that frame is at tier 2), f840 deterministic across runs.
+  Cost, measured drift-immune (one Chrome, three geometries rotated through 11 cycles, each `on` paired with the `off`
+  right after it, median of the pair differences): **0.948 ms** (was 1.184 in the same harness; §14's +1.37 reproduced
+  at +1.40 in the brief's shape). **The saving is sub-linear**: 29 % fewer segments bought 20 % of the cost — the
+  marginal rate is ~0.25 µs/segment under a fixed per-`draw()` cost, against §1.12's 0.4 µs average (§1.12 says so
+  now). The worker's proposal `4 × 12 × 48` (all twelve fibres, 0.913 ms — the same price, and the picture closer to
+  the old one, `accept/v0.2/dust-fibre-count-3way.jpg`) is taken: shipped as the follow-up commit. Friction: a bench
+  threshold is not decidable from three medians on a shared machine (four repeats of the brief's command spread 0.09–
+  1.13 ms around a 0.95 threshold while sibling workers' Chromes ran); the brief's t6/t14 shots run at tier 2 and could
+  not see the change (the `CLOCK=1` pinned-`q` pair could).
 

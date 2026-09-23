@@ -312,7 +312,9 @@ behind it. Path A's built-in program does both already.
 
 Widths under 1 px dim instead of thinning (constant energy), so distant hairlines fade rather than sparkle. Cost: four
 vertices per segment; path B evaluates `P` twice per vertex. Measured (§14, `CARD.bench` at 1280×720, GPU=1): path A
-`set` + `draw` ≈ **0.4 µs per segment** — 3.2 k segments ≈ 1.3 ms, so 50 k would be ~20 ms; plan against that, and take
+`set` + `draw` ≈ **0.4 µs per segment** — 3.2 k segments ≈ 1.3 ms, so 50 k would be ~20 ms; plan against that (the
+*marginal* rate is lower, ~0.25 µs/segment at a few thousand, under a fixed per-`draw()` cost: a count cut buys the
+marginal rate, not the average — DECISIONS §16), and take
 the count from `ctx.budget('segs')` (§1.4). Put the `tier()` budget in the number of segments per ring, never in the
 number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
 (HARNESS.md) is the reference for a minimal path-A and path-B program.
