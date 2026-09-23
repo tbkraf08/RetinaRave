@@ -695,7 +695,20 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   runs); flat in depth. The 60 frames after a flip average 2.7 ms (median of ten; 4.2 in the file's loaded page).
   House forced, 60 s: `q` **0.72** (§15: 0.50), `bench(6,300)` **1.20 ms** (§15: 6.15). Tier sweep: the same picture
   and `it500` at q 0.1 and 0.95 — only rows per frame differ (3 vs 11).
-- **The Q trace after** — see the table below (filled from `q-{house,aba}-after.txt`).
+- **The Q trace after — the acceptance** (`q-{house,aba}-after.txt`, mean of three runs, the same recipe; the dive
+  reached L 2.8–3.8 at tier 3 during every house visit):
+
+  | house, q | 0–40 s | 40–70 s (visit) | min in visit | 70–100 s | 100 s– | run mean |
+  |---|---|---|---|---|---|---|
+  | before | 0.60 | 0.59 | **0.49** | **0.62** | 0.73 | 0.63 |
+  | none | 0.60 | 0.74 | 0.69 | 0.86 | 0.96 | 0.76 |
+  | **after** | 0.60 | **0.74** | **0.68** | **0.86** | **0.96** | **0.76** |
+
+  aba: after 0.84 / none 0.85 run mean, 0.74 / 0.73 in the visit, 0.83 / 0.85 after it (look memory shortens its
+  visits to L ≈ 1). `after` is indistinguishable from `none` to the second decimal on every window; `before` is 0.2
+  lower for the rest of the track. The first `after` run of the day sat at q 0.00–0.05 from its first second, before
+  FEIGEN was on screen: a sibling worker's wait loop spinning at 100 % CPU plus the desktop Chrome's renderers — kept
+  as `scratchpad`-only evidence, not in `accept/`; a q trace with anything else on the machine measures the machine.
 - **Parity plan.** `parity.js fake` 0 diff (no core change); `tools/scene-md5.sh` on the commit before the merge and
   after: scenes 0/1/2/3/5 **byte-identical**, FEIGEN's two frames `dee30d91…` / `eb8aa082…` equal to the worker's md5s
   from its worktree (five runs, two hashes, the progressive schedule running, and with `&histfull=1`); the director-
