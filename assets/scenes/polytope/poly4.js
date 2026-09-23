@@ -118,6 +118,15 @@ export function rotate4(P, a1, a2, a3) {
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
+// The pole gate (v0.2 §16b, DECISIONS §8's polish note). (0,0,0,1) is the point at infinity of the stereographic
+// map: a sample with den = 1 − w/|v| small lands at radius g·√((2 − den)/den), so the run of pieces on an edge
+// sweeping the pole reached 3.39·g — past the frame edge — and drew as a long straight streak. The gate moves
+// 0.16 → 0.24 (radius at the gate 3.39·g → 2.71·g) and the ramp is re-based on the same top, so from den = 0.446
+// upward the fade is exactly what it was; only the last stretch before the pole is steeper. Continuous in the
+// rotation angles: f → 0 as den → GATE, so a piece still fades in and out and never appears (`cuts: 'continuous'`).
+const GATE = 0.24;
+const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is where the old ramp reached 1
+
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
 // (x0 y0 z0 w0 · x1 y1 z1 w1 · r g b a, widths in px). Returns the new segment count.
 // o: {a1,a2,a3, sub, g, eye, fwd, wpx, col:[r,g,b], alpha}
@@ -168,13 +177,13 @@ export function emit(kind, o, segs, off, cap) {
       let Z = 0;
       let vz = 0;
       let f = 0;
-      if (den > 0.16) {
+      if (den > GATE) {
         const m = g / (l * den);
         X = x * m;
         Y = y * m;
         Z = z * m;
         vz = X * fx + Y * fy + Z * fz - eDotF;
-        f = Math.min((den - 0.16) * 3.5, 1) * smooth((vz - 0.35) / 0.9);
+        f = Math.min((den - GATE) * RAMP, 1) * smooth((vz - 0.35) / 0.9);
       }
       const ok = f > 0.002;
       if (ok && have && n < cap) {
