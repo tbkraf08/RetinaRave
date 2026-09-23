@@ -213,7 +213,8 @@ If your scene has a discrete "look" that a returning listener would notice (DUST
 count N, TORUS's knot), export `look: { get() → v, set(v) }` where `v` is a small JSON-able value. On every section
 event the director stores each scene's `get()` on the outgoing section's seed; when a section is recognised again
 (`identifyEvt` with `repeat`) it restores the remembered scene **and** calls every scene's `set(v)` with what it had
-then. Keep `set` cheap and continuous-safe (it may be called while you are on screen).
+then. Keep `set` cheap and continuous-safe (it may be called while you are on screen). Both are called with `this` =
+your scene object.
 
 ### 1.12 Lines — `ctx.lines`
 
@@ -461,3 +462,9 @@ Questions workers had to ask, and what changed in this doc as a result.
   a 3D width is "px at unit depth ÷ view depth" — pick the constant so a stroke at your framing distance is 2–3 px.
   HARNESS: `CARD.glerr` exists only after a GL error, `bench`'s first call after a pause is cold, pinning `Q.q` must
   outlast the scene's own smoothing.
+- **2026-09-22, POLYTOPE (v0.2 §8), worker given CONTRACTS + brief, path A.** Rendered first try, deterministic
+  (byte-identical frame 360 across runs); 8 friction items (`docs/workers/polytope.md`). Fixes: `look.get/set` are
+  now called with `this` = the scene (§1.11); width wording (§1.12 friction above); the brief's synapse line range
+  stopped one line short and the worker derived the missing fact itself — stereographic projection is a central
+  projection, so a 4-D chord projects to a straight line: subdivided edge samples must be renormalised onto S³ to
+  bend. Recorded in DECISIONS §8 for the next S³ scene.

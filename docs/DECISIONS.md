@@ -182,3 +182,23 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   from POINTS (0.02–0.04 ms, timer floor). Two rules came out of it and are now in §1.12: alpha is coverage (a
   semi-transparent polyline beads at every joint under 'over'), and invisible fragments must `discard` or they write
   depth. The built-in path-A program got the same `discard`. Width: `2.6·(h/720)·(1+0.6·bass)·camDist / viewZ` px.
+
+## §8 POLYTOPE (v0.2, 2026-09-22, worker from the contract + brief, `docs/workers/polytope.md`)
+
+- **Scene id 5**, `ctx.lines` path A: the regular 4-polytopes (tesseract 16/32, 24-cell 24/96, 600-cell 120/720,
+  120-cell 600/1200 vertices/edges) built from their coordinates with nearest-neighbour edges, unit-normalised onto S³,
+  double-rotated (xy, zw, + xw) by `flowBass/flowMid/flowHigh`, edges subdivided **and renormalised onto S³** — the
+  stereographic map is a central projection, so a straight 4-D chord projects to a straight line; only samples on the
+  sphere bend into the great-circle arcs the picture is about (synapse's `poly4` did the same on its line 1149+, which
+  the brief's range omitted; the worker derived it). Segments fade through alpha as they approach the pole
+  (`den > 0.16` gate, `(den − 0.16)·3.5` ramp) and over view depth 0.35→1.25 near the camera (no pop at the near
+  plane, where `ctx.lines` drops `w ≤ 0` segments whole).
+- **Cast by section seed** (`floor(seed.a·3)`: tesseract ⊂ 24-cell · 600-cell · 24-cell ⊂ 600/120-cell), re-cast only
+  on `sectionEvt` with a one-second cross-fade of both casts; look memory = the cast index. Subdivisions per tier
+  `[3, 4, 6, 8]` (600/120-cell `[2, 3, 4, 5]`), peak 6.5 k segments, cap 16 k; bench 0.07–0.52 ms.
+- **Deviations from the brief:** gain ×1.8 (the brief's `0.75·(0.35+lvl)` peaked at 0.37; synapse carried a 0.45
+  floor and a 1.5 "star" factor); `presence` enters as `0.15 + 0.85·presence` so muted audio idles visibly (§0) instead
+  of going black; width is 2.2 px at the orbit centre (× eye distance ÷ view depth). Deterministic: frame-360 shots
+  byte-identical (`md5 dfdeba3b…`), no `Math.random()` (jitter from a hash of `seed.a` and a counter).
+- **Polish for later:** edges crossing near the pole leave long straight streaks off-frame at t6 (`accept/v0.2/
+  poly-t6.jpg`); a tighter pole gate at low `den`, or fading by projected segment length, would calm them.
