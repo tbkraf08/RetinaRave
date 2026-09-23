@@ -1,5 +1,9 @@
 # DUST — the tier-3 fibre count (v0.2 §16 ride-along) — worker report
 
+> **What shipped is in (k).** Sections (a)–(j) are the brief as written — tier 3 = `4 × 10 × 56`. The measurements in
+> (d) turned up a better row, the orchestrator took it, and tier 3 ships as **`4 × 12 × 48`** (all twelve fibres,
+> 2304 segments). Read (k) for the final counts, md5s and bench; read (a)–(j) for how they were arrived at.
+
 One file changed: `assets/scenes/dust/fibre.js`, one line of code —
 `QT = [0.4, 0.7, 1, 1.4]` → `[0.4, 0.7, 1, 1]`, plus the three comments that quoted the old numbers.
 `counts(3) === counts(2) = {nl: 4, nF: 10, N: 56}` = **2240** segments (was `4 × 12 × 66` = 3168), and `CAP` follows by
@@ -260,3 +264,63 @@ cuts: 'onset' · id 1 · score · look · help · hooks.fibres — untouched
 - `tools/work/` (git-ignored): `dustc-off-f360/f840`, `dustc-on-f360a/b`, `dustc-on-f840a/b`, `dustc-t6`, `dustc-t14`,
   `dustc-ab.jpg`, `dustc-q3-before-f360/f840`, `dustc-q3-after-f360/f840`, `dustc-q3-n48-f360/f840`, `dustc-q3.jpg`,
   `dustc-q3-3way.jpg`.
+
+## (k) `4 × 12 × 48` shipped
+
+The orchestrator took the (d) proposal: tier 3 keeps all twelve fibres per torus and spends 48 segments per fibre
+instead of 66. `counts(3) = {nl: 4, nF: 12, N: 48}` = **2304** segments (was 3168; the interim `4 × 10 × 56` = 2240 is
+gone), `CAP` follows at **2304**, and `fit()` returns the full 12 — no fibre is dropped. Tiers 0–2 are untouched and
+still come off synapse's `q` curve; tier 3 is the one exception and it is a named constant, `N3 = 48`, read in
+`counts` — deterministic, no hook, no global, nothing left behind from the bench instrumentation of friction 7
+(`grep -c FIBOVR assets/scenes/dust/fibre.js` → 0).
+
+```
+tier 0  {"nl":2,"nF":7,"N":40}    560   fit 7
+tier 1  {"nl":3,"nF":8,"N":48}   1152   fit 8
+tier 2  {"nl":4,"nF":10,"N":56}  2240   fit 10
+tier 3  {"nl":4,"nF":12,"N":48}  2304   fit 12
+CAP 2304                          counts(undefined) -> {"nl":4,"nF":10,"N":56}   (the tier-2 fallback, unchanged)
+```
+
+**`node tools/check.js`**
+```
+check: 55 modules · uniforms 106 · MS keys 117 · scenes 6 (help.feats gaps 0) · 0 fail · 0 warn
+```
+
+**The points path, `&fibres=0`** — unchanged for the third time:
+```
+e49cf54ee319db5cd6ac78150a3f977d  tools/work/dustc48-off-f360.jpg      <- §14 required e49cf54e…
+7119a54250be3ea0c09b1590ce3b9171  tools/work/dustc48-off-f840.jpg      <- §14 required 7119a542…
+```
+
+**Determinism with the fibres on**, the `CLOCK=1` f360/f840 pair run twice:
+```
+669aac71ff5e0f96263c4635c6504659  tools/work/dustc48-on-f360a.jpg
+669aac71ff5e0f96263c4635c6504659  tools/work/dustc48-on-f360b.jpg      <- identical
+ed87b7f7e4ef392d65ac713d76290d8e  tools/work/dustc48-on-f840a.jpg      <- the new f840 hash
+ed87b7f7e4ef392d65ac713d76290d8e  tools/work/dustc48-on-f840b.jpg      <- identical
+```
+f360 is still §14's `669aac71…` byte for byte — it lands at tier 2, which this change does not touch (friction 4
+again). f840 is tier 3 (`fib 4x12x48 seg 2236/2304`, `errs []`, `bad []`) and is the third distinct hash that frame
+has had: `f26d50de…` at `4 × 12 × 66`, `f96d0d7e…` at `4 × 10 × 56`, **`ed87b7f7e4ef392d65ac713d76290d8e`** now.
+
+**Bench**, the brief's interleaved three pairs, `q` pinned 0.95, tier 3, one Chrome, no other headless Chrome,
+load 5.35 → 5.15, `glerr` 0, `errs` []:
+```
+on  [1.088, 1.141, 1.621]   off [0.610, 0.614, 0.641]   ->  median on − median off = 0.527 ms
+```
+The tightest triple of the session on both sides. That is under the brief's 0.95 ms and under the +0.9 ms the
+proposal was allowed, and it sits below the rotated-run estimate for this geometry (0.913 ms) for the usual reason —
+the machine was quieter than it was in (d), and only same-run comparisons carry across. Against **1.37 ms** at §14's
+count, by any of the measurements here.
+
+**Real path, 45 s**
+```
+EVAL JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS}) => "{"bad":[],"errs":[]}"
+```
+`[]`, `[]`, no `[EXC]`.
+
+**Picture.** `tools/work/dustc48-f840.jpg`, 2-up at tier 3, f840: `4 × 12 × 66` left, the shipped `4 × 12 × 48` right.
+Indistinguishable — the same blue/green spiral, the same twelve strands in every fan, no faceting anywhere the
+shorter chords could have shown it. Which is the whole point of the row: the segments per ring were the cheap thing
+to spend, the fibres were not.

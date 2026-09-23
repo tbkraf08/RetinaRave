@@ -13,24 +13,31 @@
 import { fibre4, rotSU2, stereo } from '../../math/hopf.js';
 
 const TAU = Math.PI * 2;
-const QT = [0.4, 0.7, 1, 1];                   // per-tier count knob; synapse's tier 3 was 1.4 (DECISIONS 14)
+const QT = [0.4, 0.7, 1, 1.4];                 // synapse's per-tier count knob, q = QT[tier]
+const N3 = 48;                                 // ... except tier 3's segments per fibre: off the curve (q would give 66)
 const GATE = 0.14;                             // pole gate on den; the fade runs over the next 0.25 of den
 const LUM = [0.299, 0.587, 0.114];
 const PHASE = [0, 0.33, 0.67];
 
-// Counts for a quality tier: nl tori, nF fibres each, N segments per fibre. Synapse scene 4's formulas, but tier 3
-// repeats tier 2's knob (q = 1), so it draws 4 x 10 x 56 = 2240 segments and not 4 x 12 x 66 = 3168. Q is global, so
-// the overlay's cost at tier 3 is every scene's tier: 14 measured +1.37 ms there and called 2240 the same picture,
-// and it is -- the 2 extra fibres per torus and the 10 extra points per fibre bought nothing at 1.5 px wide and 0.3
-// bright. Worth knowing before tuning this table again: the saving is the MARGINAL per-segment cost (0.25 us here,
-// not 1.12's 0.4 us average), so 928 fewer segments bought 0.24 of the 1.18 ms, and a fixed per-draw() cost is the
-// floor. See docs/workers/dust-fibre-count.md.
+// Counts for a quality tier: nl tori, nF fibres each, N segments per fibre. Synapse scene 4's formulas everywhere but
+// tier 3, which keeps the full 4 x 12 family and spends 48 segments per fibre instead of 66: 2304 segments, not 3168.
+//
+// Why the exception. Q is global, so the overlay's cost at tier 3 is every scene's tier (CONTRACTS 1.6), and 14
+// measured the 3168-segment version at +1.37 ms. Measured here in one process with the candidates rotated, tier 3
+// costs 1.18 ms at 4 x 12 x 66, 0.95 at 4 x 10 x 56 and 0.91 at 4 x 12 x 48 -- so the 12 fibres are free if the
+// segments per fibre pay for them, and dropping two fibres per torus would have bought nothing. Segments per ring
+// are the right place to spend: at tier 3 the largest ring is ~200 px across, so 48 chords is a 7.5 degree facet,
+// well under a pixel of sagitta, while a missing fibre is a missing strand in the fan.
+//
+// Worth knowing before tuning this table again: a count cut buys the MARGINAL per-segment cost (0.25 us measured
+// between 2240 and 3168, not 1.12's 0.4 us average) and a fixed per-draw() cost is the floor under it.
+// See docs/workers/dust-fibre-count.md.
 export function counts(tier) {
   const q = QT[tier] === undefined ? 1 : QT[tier];
-  return { nl: Math.floor(2 + 2 * q), nF: Math.floor(5 + 5 * q), N: Math.floor(30 + 26 * q) };
+  return { nl: Math.floor(2 + 2 * q), nF: Math.floor(5 + 5 * q), N: tier === 3 ? N3 : Math.floor(30 + 26 * q) };
 }
 
-// Buffer capacity: the largest nl*nF*N any tier asks for (tiers 2 and 3 both: 4 x 10 x 56 = 2240).
+// Buffer capacity: the largest nl*nF*N any tier asks for (tier 3: 4 x 12 x 48 = 2304).
 export const CAP = (() => {
   let m = 0;
   for (let t = 0; t < 4; t++) { const c = counts(t); m = Math.max(m, c.nl * c.nF * c.N); }
