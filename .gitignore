@@ -1,0 +1,5 @@
+dist/
+tools/chr*/
+tools/work/
+*.jpg
+!tools/accept/**/*.jpg

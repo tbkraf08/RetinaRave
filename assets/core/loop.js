@@ -1,0 +1,53 @@
+// The frame loop. Order (same as cardioid3): quality → resize → engine (music + groove + test pins) → scene updates →
+// director → look → fx → scene pass(es) + crossfade → effect chain → overlays → HUD → test log.
+import { ENGINE } from '../engine/engine.js';
+import { MS } from '../engine/state.js';
+import { GROOVE } from '../engine/groove.js';
+import { G, resize } from './gl.js';
+import { Q, updateQuality } from './quality.js';
+import { LOOK, updateLook } from './look.js';
+import { updateFX, runChain } from './post.js';
+import { SC, REG, SCENES, updateScenes, drawScenes, visibility, postParams } from './scenes.js';
+import { drawHUD } from './hud.js';
+import { CARD, logFrame } from './harness.js';
+
+let lastT = 0, frameN = 0, wall = 0;
+
+export function frame(tms) {
+  requestAnimationFrame(frame);
+  const now = tms / 1000, dtRaw = Math.min(now - lastT, 0.25);
+  lastT = now;
+  if (dtRaw <= 0) return;
+  const dt = Math.min(dtRaw, 1 / 24);
+  frameN++;
+  CARD.frameN = frameN;
+  if (document.hidden) return;
+  updateQuality(dtRaw);
+  resize();
+  ENGINE.frame(dt, now, tms);
+  const S = MS;
+  // scene updates: scenes flagged always, plus the ones on screen
+  const env = { SC, Q, now };
+  for (const sc of SCENES) {
+    const id = sc.id, on = SC.cur === id || SC.next === id;
+    if (sc.always || on) sc.update(dt, S, GROOVE, LOOK, env);
+  }
+  updateScenes(dt, S);
+  updateLook(dt, S, now);
+  wall += dt * (0.15 + 0.85 * S.presence);
+  const cur = REG[SC.cur].scene.rt;
+  LOOK.time = cur.time !== undefined ? cur.time : wall;
+  updateFX(dt, S, LOOK.peak);
+  // scene pass(es) at adaptive resolution inside fixed-size targets
+  const trans = SC.next >= 0, sc = Q.scale * (trans ? 0.8 : 1);
+  const sw = Math.max(16, Math.round(G.PW * sc)), sh = Math.max(16, Math.round(G.PH * sc));
+  const src = drawScenes(sw, sh);
+  runChain(src, sw, sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q });
+  for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
+  drawHUD(S, frameN);
+  logFrame(S, now, frameN);
+}
+
+export function startLoop() {
+  requestAnimationFrame(frame);
+}

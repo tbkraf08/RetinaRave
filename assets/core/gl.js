@@ -1,0 +1,161 @@
+// GL: context, program builder, shared GLSL head, render targets, resize, tri(), tex(). Knows nothing about scenes.
+// Lifted from cardioid3 "GL". Scenes never import this module: they receive a ctx (see docs/CONTRACTS.md).
+import { LOOK } from './look.js';
+
+export const ERRS = [];
+export const G = { gl: null, cv: null, FLOAT: false, PW: 0, PH: 0, RT: {} };
+
+export const VS = `#version 300 es
+out vec2 vUv;void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);vUv=p;gl_Position=vec4(p*2.-1.,0.,1.);}`;
+
+// Every fragment program built with mkProg starts with HEAD. Uniforms uRes uTime uBands uBeat uArc uHarm uPal uTint
+// are bound by use() from LOOK; pal()/cmul()/rot()/hash() are the shared helpers.
+export const HEAD = `#version 300 es
+precision highp float;precision highp int;
+in vec2 vUv;out vec4 o;
+uniform vec2 uRes;uniform float uTime;uniform vec3 uBands;uniform vec4 uBeat;uniform vec4 uArc;uniform vec4 uHarm;uniform vec4 uPal;uniform vec3 uTint;
+#define TAU 6.2831853
+vec3 pal(float t){vec3 c=.5+.5*cos(TAU*(t+uPal.x+uPal.y*vec3(0.,.33,.67)));c=mix(c,c*uTint*1.5,.55);c*=c*1.3;float l=dot(c,vec3(.299,.587,.114));return mix(vec3(l),c,uPal.z)*uPal.w;}
+vec2 cmul(vec2 a,vec2 b){return vec2(a.x*b.x-a.y*b.y,a.x*b.y+a.y*b.x);}
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,s,-s,c);}
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+`;
+export const COMMON_UNIFORMS = ['uRes', 'uTime', 'uBands', 'uBeat', 'uArc', 'uHarm', 'uPal', 'uTint'];
+
+let vaoTri = null;
+
+export function initGL(canvas) {
+  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+  if (!gl) throw new Error('no webgl2');
+  G.gl = gl;
+  G.cv = canvas;
+  G.FLOAT = !!gl.getExtension('EXT_color_buffer_float');
+  gl.getExtension('OES_texture_float_linear');
+  vaoTri = gl.createVertexArray();
+  return gl;
+}
+
+// Build a program. mkProg(fs, name) prepends HEAD and uses the fullscreen VS; mkProg(vs, fs, name) is raw.
+export function mkProg(a, b, c) {
+  const gl = G.gl;
+  const raw = c !== undefined;
+  const vs = raw ? a : VS, fs = raw ? b : HEAD + a, name = raw ? c : b;
+  const p = gl.createProgram();
+  for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const s = gl.createShader(t);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      const e = 'shader ' + name + ': ' + gl.getShaderInfoLog(s);
+      console.error(e);
+      ERRS.push(e);
+    }
+    gl.attachShader(p, s);
+  }
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    const e = 'link ' + name + ': ' + gl.getProgramInfoLog(p);
+    console.error(e);
+    ERRS.push(e);
+  }
+  const loc = {};
+  return { p, name, u: (n) => (n in loc ? loc[n] : (loc[n] = gl.getUniformLocation(p, n))) };
+}
+
+// Bind program + target + viewport and upload the common uniforms from LOOK.
+export function use(pr, tgt, w, h) {
+  const gl = G.gl;
+  gl.useProgram(pr.p);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, tgt ? tgt.f : null);
+  gl.viewport(0, 0, w, h);
+  const u = pr.u;
+  if (u('uRes')) gl.uniform2f(u('uRes'), w, h);
+  if (u('uTime')) gl.uniform1f(u('uTime'), LOOK.time);
+  if (u('uBands')) gl.uniform3fv(u('uBands'), LOOK.bands);
+  if (u('uBeat')) gl.uniform4fv(u('uBeat'), LOOK.beat);
+  if (u('uArc')) gl.uniform4fv(u('uArc'), LOOK.arc);
+  if (u('uHarm')) gl.uniform4fv(u('uHarm'), LOOK.harm);
+  if (u('uPal')) gl.uniform4fv(u('uPal'), LOOK.pal);
+  if (u('uTint')) gl.uniform3fv(u('uTint'), LOOK.tint);
+}
+
+export function tex(pr, name, unit, t) {
+  const gl = G.gl;
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, t.t);
+  gl.uniform1i(pr.u(name), unit);
+}
+
+export function tri() {
+  const gl = G.gl;
+  gl.bindVertexArray(vaoTri);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+// Dynamic vertex buffer with one float attribute (location 0, comps floats per vertex).
+export function dynBuf(size, comps) {
+  const gl = G.gl;
+  const vao = gl.createVertexArray(), buf = gl.createBuffer();
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, size * 4, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, comps, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+  return { vao, buf };
+}
+
+export function upload(b, data, n) {
+  const gl = G.gl;
+  gl.bindBuffer(gl.ARRAY_BUFFER, b.buf);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, n);
+}
+
+// Render target. rgba8=true forces an 8-bit target (needed for CPU readback: readPixels from RGBA16F returns black).
+export function mkTarget(w, h, rgba8 = false) {
+  const gl = G.gl, F = G.FLOAT && !rgba8;
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, F ? gl.RGBA16F : gl.RGBA8, w, h, 0, gl.RGBA, F ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, null);
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) {
+    gl.texParameteri(gl.TEXTURE_2D, k, v);
+  }
+  const f = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  return { t, f, w, h };
+}
+
+export function freeTarget(t) {
+  if (t) {
+    G.gl.deleteTexture(t.t);
+    G.gl.deleteFramebuffer(t.f);
+  }
+}
+
+const onResize = [];
+export const addResizeHook = (fn) => onResize.push(fn);
+
+// Full-size targets a, b (scene passes), m (crossfade). Effects allocate their own via the resize hook.
+export function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  let w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+  const cap = 2560 / Math.max(w, h);
+  if (cap < 1) {
+    w = Math.round(w * cap);
+    h = Math.round(h * cap);
+  }
+  w = Math.max(w, 16);
+  h = Math.max(h, 16);
+  if (w === G.PW && h === G.PH) return;
+  G.PW = G.cv.width = w;
+  G.PH = G.cv.height = h;
+  const RT = G.RT;
+  for (const k in RT) freeTarget(RT[k]);
+  RT.a = mkTarget(w, h);
+  RT.b = mkTarget(w, h);
+  RT.m = mkTarget(w, h);
+  for (const f of onResize) f(w, h);
+}

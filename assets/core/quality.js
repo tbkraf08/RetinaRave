@@ -1,0 +1,40 @@
+// Q: adaptive quality. Frame-time controller that lowers/raises a single knob q in [0,1]; scenes read the derived
+// iter / scale (and their own tier tables) and never touch q. Lifted from cardioid3 updateQuality (tongueN dropped).
+import { clamp } from '../math/util.js';
+
+export const Q = { q: 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60 };
+
+export function updateQuality(dtRaw) {
+  Q.acc += dtRaw;
+  Q.n++;
+  Q.worst = Math.max(Q.worst, dtRaw);
+  if (Q.acc >= 0.5) {
+    const avg = Q.acc / Q.n;
+    Q.fps = 1 / avg;
+    if (avg > 0.0265) {
+      Q.ceil = Math.max(0, Q.q - 0.05);
+      Q.q -= 0.2;
+      Q.good = 0;
+    } else if (avg > 0.0188) {
+      Q.ceil = Math.max(0, Q.q - 0.02);
+      Q.q -= 0.07;
+      Q.good = 0;
+    } else if (avg < 0.0175) {
+      Q.good += Q.acc;
+      if (Q.good > 2.5) {
+        Q.q = Math.min(Q.q + 0.04, Q.ceil);
+        Q.good = 1.5;
+      }
+    }
+    Q.ceil = Math.min(1, Q.ceil + 0.002);
+    Q.q = clamp(Q.q, 0, 1);
+    Q.acc = 0;
+    Q.n = 0;
+    Q.worst = 0;
+    Q.iter = Math.round(64 + 200 * Q.q);
+    Q.scale = Math.round((0.38 + 0.62 * Q.q) * 16) / 16;
+  }
+}
+
+// Tier 0..3 from q, for scenes with particle-count tables.
+export const tier = () => (Q.q < 0.25 ? 0 : Q.q < 0.5 ? 1 : Q.q < 0.8 ? 2 : 3);

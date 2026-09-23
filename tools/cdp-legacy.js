@@ -1,0 +1,15 @@
+// usage: node cdp.js '<hash>' '<json steps>'  steps: [{wait:ms},{shot:'name',clip:[x,y,w,h,scale]},{eval:'expr'},{click:[x,y]},{key:'C'}]
+const {spawn}=require('child_process');const fs=require('fs');
+const hash=process.argv[2]||'test',steps=JSON.parse(process.argv[3]||'[]'),port=9300+Math.floor(Math.random()*500);
+const gpu=process.env.GPU?['--use-angle=gl','--ignore-gpu-blocklist']:['--use-angle=swiftshader','--enable-unsafe-swiftshader'];
+const ch=spawn('google-chrome',['--headless=new','--remote-debugging-port='+port,'--window-size=1280,720',...(process.env.NOAUTO?[]:['--autoplay-policy=no-user-gesture-required']),...(process.env.FAKECAP?['--auto-select-tab-capture-source-by-title=Cardioid','--auto-accept-this-tab-capture']:[]),'--no-first-run','--user-data-dir='+__dirname+'/chr'+port,...gpu,'about:blank'],{stdio:'ignore'});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{let tgt;for(let i=0;i<40;i++){await sleep(250);try{const l=await (await fetch('http://127.0.0.1:'+port+'/json')).json();tgt=l.find(t=>t.type==='page');if(tgt)break;}catch(e){}}
+ const ws=new WebSocket(tgt.webSocketDebuggerUrl);let id=0;const pend={};ws.onmessage=m=>{const d=JSON.parse(m.data);if(d.id&&pend[d.id]){pend[d.id](d.result||d.error);delete pend[d.id];}
+  else if(d.method==='Runtime.consoleAPICalled')console.log('[console.'+d.params.type+']',d.params.args.map(a=>a.value||a.description).join(' ').slice(0,1500));
+  else if(d.method==='Runtime.exceptionThrown')console.log('[EXC]',JSON.stringify(d.params.exceptionDetails).slice(0,1200));};
+ await new Promise(r=>ws.onopen=r);const send=(method,params={})=>new Promise(r=>{pend[++id]=r;ws.send(JSON.stringify({id,method,params}));});
+ await send('Runtime.enable');await send('Page.enable');await send('Page.navigate',{url:'file://'+(process.env.FILE||'/home/toma/Documents/Kraftek/Cardioid/cardioid.html')+'#'+hash});
+ for(const s of steps){if(s.wait)await sleep(s.wait);if(s.click){for(const type of ['mousePressed','mouseReleased'])await send('Input.dispatchMouseEvent',{type,x:s.click[0],y:s.click[1],button:'left',clickCount:1});}if(s.key){const k=s.key,code=/^[a-z]$/i.test(k)?'Key'+k.toUpperCase():/^[0-9]$/.test(k)?'Digit'+k:k,vk=k.length===1?k.toUpperCase().charCodeAt(0):k==='Escape'?27:0;for(const type of ['keyDown','keyUp'])await send('Input.dispatchKeyEvent',{type,key:k,code,windowsVirtualKeyCode:vk,nativeVirtualKeyCode:vk,text:type==='keyDown'&&k.length===1?k:undefined});}if(s.eval){const r=await send('Runtime.evaluate',{expression:s.eval,returnByValue:true,awaitPromise:true});console.log('EVAL',s.eval.slice(0,60),'=>',JSON.stringify(r.result?r.result.value:r));}
+  if(s.shot){const r=await send('Page.captureScreenshot',Object.assign({format:'jpeg',quality:85},s.clip?{clip:{x:s.clip[0],y:s.clip[1],width:s.clip[2],height:s.clip[3],scale:s.clip[4]||1}}:{}));fs.writeFileSync(__dirname+'/'+s.shot+'.jpg',Buffer.from(r.data,'base64'));console.log('shot',s.shot);}}
+ ws.close();ch.kill();await sleep(300);fs.rmSync(__dirname+'/chr'+port,{recursive:true,force:true});process.exit(0);})();
