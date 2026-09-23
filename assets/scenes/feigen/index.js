@@ -20,7 +20,7 @@ const S = {
   feigL: 0, tricorn: 0,
   cx: 0, cy: 0, width: 3.2, rot: 0,
   lvl: 0, kick: 0, drop: 0, hat: 0, flow: 0, midS: 0, tension: 0, alive: 0, histRow: 0,
-  hue: 0, sat: 1, bri: 1, spread: 1, invert: 0,
+  hue: 0, sat: 1, bri: 1, invert: 0, clipdbg: 0,
 };
 // The ladder's GL side: three rung slots (the rung on screen, the one being built, the one the cross-fade still
 // reads) plus one quarter-resolution target for rule 3. Nothing here is keyed on wall time — only on feigL, the
@@ -97,7 +97,7 @@ export default {
     this.ctx = ctx;
     CTX = ctx;
     PF = ctx.mkProg(FS_FIELD, 'feigen-field');
-    this.pc = ctx.mkProg(FS_COLOUR, 'feigen-colour');
+    this.pc = ctx.mkProg(ctx.oklch + FS_COLOUR, 'feigen-colour');   // OKLCH: the chunk goes in front, after HEAD
     // The reference orbit Z_n of c_inf, in JS doubles, stored as float32. Only the per-pixel OFFSET needs precision,
     // which is the whole point of the perturbation method — the reference may be single once it is computed exactly.
     const gl = ctx.gl, orb = new Float32Array(512);
@@ -156,7 +156,6 @@ export default {
     S.hue = m.hue;
     S.sat = m.sat;
     S.bri = m.bri;
-    S.spread = m.spread;
     S.invert = m.invert;
     this.rt.time = MS.flow;
     this.rt.label = 'L' + S.feigL.toFixed(2);
@@ -246,11 +245,8 @@ export default {
     gl.uniform1f(pr.u('uMidS'), S.midS);
     gl.uniform1f(pr.u('uTension'), S.tension);
     gl.uniform1f(pr.u('uAlive'), S.alive);
-    gl.uniform1f(pr.u('uHue'), S.hue);
-    gl.uniform1f(pr.u('uSat'), S.sat);
-    gl.uniform1f(pr.u('uBri'), S.bri);
-    gl.uniform1f(pr.u('uSpread'), S.spread);
-    gl.uniform1f(pr.u('uInvert'), S.invert);
+    gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri);
+    gl.uniform1f(pr.u('uInvert'), S.invert); gl.uniform1f(pr.u('uClipDbg'), S.clipdbg);
     ctx.tex(pr, 'uField', 0, src.tex);
     ctx.tex(pr, 'uField2', 1, pv.tex);
     ctx.tex(pr, 'uSpec', 2, ctx.engineTex.spec);
@@ -278,6 +274,7 @@ export default {
     // pinned, or the next sectionEvt redraws the flip from the seed and throws the hook away (as §15's clamp ate &feig)
     tricorn(v) { S.tricorn = +v ? 1 : 0; F.pinTric = 1; invalidate(); },   // a flip invalidates every rung, even a no-op one
     standin(v) { F.standin = +v ? 1 : 0; },
+    clipdbg(v) { S.clipdbg = +v || 0; },   // colour.js' gamut (1) and field (2) probes, read back through an RGBA8 target
   },
 
   help: {
@@ -288,19 +285,19 @@ export default {
       clarity: 'the bid: clearly tonal music',
       calm: 'the bid: quiet and unhurried',
       bpm: 'sets the dive\'s clock: one Feigenbaum level per 32 beats at full level',
-      lvl: 'how fast the dive falls, and the overall brightness',
+      lvl: 'how fast the dive falls, and the overall lightness',
       tension: 'slows the dive, widens the view, and lights the interior',
       alive: 'silence freezes the dive and fades to black',
-      kick: 'a brightness pulse, a slight zoom in, and the hidden level wrap',
+      kick: 'a lightness pulse, a slight zoom in, and the hidden level wrap',
       dropEvt: 'the depth jumps one whole Feigenbaum factor — self-similar, so you barely see it',
       sectionEvt: 'redraws the tricorn flip from the section seed',
       seed: 'decides the flip: conj(z)^2 + c instead of z^2 + c for this section',
-      flow: 'the Green\'s-function bands drift outward on musical time',
+      flow: 'the Green\'s-function iso-lightness bands drift outward on musical time',
       flowMid: 'the centre wanders along the axis and the frame rolls a few degrees',
-      bass: 'sharpens the filaments and lights the interior trap',
-      dropEnv: 'zooms in hard and floods the filaments',
-      hat: 'sparkle on the Green bands',
-      midS: 'how strongly the spectrogram\'s past shows through the boundary',
+      bass: 'narrows the black boundary edge and lights the interior trap',
+      dropEnv: 'zooms in hard and lifts the whole field\'s lightness',
+      hat: 'lifts the Green bands\' lightness',
+      midS: 'how strongly the spectrogram\'s past lightens the field off the boundary',
     },
     eli5: 'A never-ending zoom into the edge of the Mandelbrot set, falling along its spine toward one exact point. '
       + 'The shape you are falling into repeats: every time you have zoomed in by the same magic factor (about 4.67x) '
@@ -320,7 +317,11 @@ export default {
       + 'zoom — a ladder rung — a bounded band of rows per frame, one rung ahead of the fall, and every frame is a '
       + 'colouring of the rung that is already there. A rung that needs 500 iterations per point just takes more '
       + 'frames to build, and it has six seconds. The cost of the scene stopped depending on how deep it is, which '
-      + 'matters because the quality knob is shared: one expensive scene dims every other one for half a minute.',
+      + 'matters because the quality knob is shared: one expensive scene dims every other one for half a minute. '
+      + 'And the colour is not a palette laid over it: hue is the external angle, lightness the Green\'s potential, '
+      + 'chroma the distance estimate — the three coordinates the field already carries. A ray landing on a wake is a '
+      + 'line of constant hue, a level set of the potential a line of constant lightness, and the edge stays a pixel '
+      + 'wide however deep you fall, because the distance to the set draws it and not a filter.',
     math: 'c_inf = -1.401155189092051 is the accumulation of the period-doubling cascade of z -> z^2 + c on the real '
       + 'axis; consecutive bifurcation gaps shrink by Feigenbaum\'s delta = 4.669201609, and the cascade is '
       + 'asymptotically self-similar under that factor, so the view width is 3.2*delta^-L. Naive float32 dies at L ~ 4; '

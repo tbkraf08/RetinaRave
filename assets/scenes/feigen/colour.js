@@ -1,11 +1,11 @@
-// FEIGEN's COLOUR pass (v0.2 §16) — the music, every frame, one texture read of the field plus a few of spec/hist.
+// FEIGEN's COLOUR pass (v0.2 §16, recoloured in OKLCH in v0.3 §19) — the music, every frame, one texture read of the
+// field plus a few of spec/hist.
 //
 // The camera of the frame maps each pixel to a point of parameter space exactly as the §15 shader did
 // (p = (gl_FragCoord.xy - .5*uRes)/uRes.y, dc = centre + (p * rot) * width), and the field pass' answer at that
-// point is fetched out of the current rung. Everything after that is the §15 colouring verbatim: the same palette,
-// the same gains, the same specM / histM (so the `&histfull=1` equality still holds).
+// point is fetched out of the current rung.
 //
-// Two details that are not in the §15 shader:
+// Two details of the fetch that are not in the §15 shader:
 //  · the fetch is a MANUAL bilinear of four texelFetch()es, because two of the four channels must not be blended
 //    linearly — the escape angle wraps (blended as a unit vector) and the interior/exterior sign must not be
 //    interpolated at all (where the four signs disagree the nearest texel is taken alone).
@@ -17,6 +17,25 @@
 // A second rung can be sampled at the same time with its own rectangle and its own camera (uField2 / uRect2 /
 // uCentre2 / uWidth2) and cross-faded IN FIELD SPACE by uBlend: a rung change and the arrival of a rung that was
 // standing in are both resolution fades of the same mathematics, never two coloured pictures ghosting over another.
+//
+// THE COLOURING (v0.3 §19). dec() hands this pass the three exterior coordinates the mathematics actually has —
+// the Green's potential, the external angle, the distance estimate — so they are written to the three coordinates
+// of a perceptual colour space instead of through a cosine palette in gamma sRGB (whose "hue" changes lightness by
+// 2x around the wheel):
+//   H <- the external angle ea      external rays are iso-hue lines; a wake, a Misiurewicz point, a bulb's root are
+//                                   read off the picture as the places where the hues pinch. One turn of ea is one
+//                                   turn of hue, so the wrap at ea = 0 is invisible and the rung blend (which
+//                                   blends ea as a unit vector) stays continuous in hue.
+//   L <- log2 G, compressed         the potential's level sets are iso-lightness. -lG is the number of doublings of
+//                                   G below 1 (= n - log2 ln r), which runs into the hundreds on a deep visit, so
+//                                   it goes through sqrt + tanh: nothing saturates to black or white at &feig=3.6.
+//   C <- the distance estimate      chroma, not lightness, carries the boundary, so it stays crisp at any depth.
+//                                   Under half a pixel of DE the colour goes achromatic AND the lightness goes to
+//                                   0: the black edge is the field's own distance estimate, not a filter.
+// palOK (ctx.oklch, CONTRACTS §1.14) clips by shrinking chroma toward grey at the same L, so a colour can never be
+// clamped per channel — and cMax() below keeps every pixel inside the gamut to begin with, so it never clips at all.
+// The chain still expects encoded values, so the result is written through linToSrgb (a later core phase moves the
+// chain to linear light and this encode goes away). The music is exactly where §15 put it, but on L, not on RGB.
 export const FS_COLOUR = `
 uniform sampler2D uField;
 uniform sampler2D uField2;
@@ -44,22 +63,19 @@ uniform float uAlive;
 uniform float uHue;
 uniform float uSat;
 uniform float uBri;
-uniform float uSpread;
 uniform float uInvert;
+uniform float uClipDbg;   // #test only (hooks.clipdbg): 1 = write okClip into o.r, 2 = write the raw field probe
 
 // the engine's 256x1 log spectrum, 30 Hz .. 16 kHz, peak-normalised
 float specM(float x){ return texture(uSpec, vec2(clamp(x, 0.002, 0.998), 0.5)).r; }
 // the 256x128 spectrogram ring: uHistRow is "now" (the next row to be written, minus half a texel), age goes back in
 // time in rows/128 (~1.3 s of past); the T wrap is REPEAT, so the subtraction needs no modulo
 float histM(float x, float age){ return texture(uHist, vec2(clamp(x, 0.003, 0.997), uHistRow - clamp(age, 0., 0.96))).r; }
-// LOOK.mood palette: cosine ramp about the mood hue, gamma'd, inverted on a drop, then desaturated / dimmed
-vec3 palM(float t){
-  vec3 c = 0.5 + 0.5 * cos(TAU * (uHue + (t - 0.5) * uSpread + vec3(0., 0.33, 0.67)));
-  c = pow(c, vec3(1.7));
-  c = mix(c, vec3(1.) - c, uInvert * 0.85);
-  float l = dot(c, vec3(0.299, 0.587, 0.114));
-  return mix(vec3(l), c, uSat) * uBri;
-}
+// The largest chroma that is inside sRGB at this lightness FOR EVERY HUE, capped at the 0.11 of CONTRACTS §1.14.
+// assets/math/oklab.js's maxChroma, minimised over hue, is 0.170*L below L 0.75 (the tightest hue is 200 degrees at
+// every L) and falls to 0 at L 1; 0.11*min(1, 1.4L, 4(1-L)) is under that envelope at every L (worst ratio 1.06).
+// Chroma therefore never has to be clipped: okClip is 1 on every pixel, which is what hooks.clipdbg=1 counts.
+float cMax(float L){ return 0.11 * min(1., min(1.4 * L, 4. * (1. - L))); }
 
 // one field texel -> (log d, log2 G, escape angle, interior trap). lw = log of the view width this pixel is measured
 // against, so d is dimensionless and the dive stays scale-free exactly as in §15.
@@ -109,22 +125,50 @@ void main(){
       v.z = fract(atan(ss, cc) / TAU + 1.);
     } else if (uBlend > 0.5) { v = v2; esc = e2; }
   }
-  vec3 col;
+  vec3 hlc;        // the (hue, lightness, chroma) this pixel asked for — what hooks.clipdbg=1 re-checks
+  vec2 gd = vec2(0.);   // (-log2 G, the distance estimate in pixels) — what hooks.clipdbg=2 reads back
   if (esc > 0.5) {
-    // distance to M in units of the view width: scale-free, so the dive can loop on the cascade's self-similarity
-    float d = exp(v.x), lG = v.y, ea = v.z;
+    // distance to M in units of the view width: scale-free, so the dive can loop on the cascade's self-similarity.
+    // One pixel is uWidth/uRes.y in parameter units, so d*uRes.y IS the distance estimate in pixels.
+    float d = exp(v.x), lG = v.y, ea = v.z, dpx = d * uRes.y;
     float sp = specM(abs(fract(ea) * 2. - 1.) * 0.9);
-    float fil = exp(-d * mix(160., 70., uBands.x)) + 0.004 / (d + 0.0025);
-    col = palM(0.2 + sp * 0.3 + d * 0.8) * fil * (0.45 + 1.3 * uLevel + 1.1 * uKick + 2. * uDrop);
-    // Green's-function level sets: one band per doubling of G, drifting on musical time
+    // H: the external angle, one turn for one turn. The mood rotates the whole wheel; a drop turns it by half.
+    float H = ea + uHue + 0.5 * uInvert;
+    // L: the potential. -lG counts the doublings of G below 1: measured with hooks.clipdbg=2 it runs 0..120 at the
+    // arrival depth and 34..478 at &feig=3.6, so it goes through sqrt then tanh — monotone over both ranges and
+    // saturating at neither end (-lG 2 -> L .12, 8 -> .20, 40 -> .38, 85 -> .48, 153 -> .55, 478 -> .63). k = 10 was
+    // chosen on the montage: k = 7 held the whole deep exterior inside a sixth of the range, k = 14 flattened the
+    // arrival view's rim into the field. The 0.62 leaves the top of the range for the music below. A deep view is
+    // brighter than a shallow one because its potential really is deeper: the level sets are absolute, not
+    // normalised per frame, so the dive never re-grades itself mid-fall and a rung change cannot shift the grade.
+    float L = 0.03 + 0.62 * tanh(sqrt(max(-lG, 0.)) / 10.);
+    // the Green's level sets: one band per doubling of G, drifting on musical time — §15's band, now on lightness
     float band = 1. - smoothstep(0., 0.1, abs(fract(lG * 0.5 - uFlow * 0.3) - 0.5) - 0.4);
-    col += palM(0.65 + 0.04 * lG) * band * (0.04 + 0.45 * sp * sp + 0.3 * uHat) * exp(-d * 2.5) * (0.4 + uLevel);
+    L += band * (0.02 + 0.22 * sp * sp + 0.15 * uHat) * exp(-d * 2.5) * (0.4 + uLevel);
     // the spectrogram's past drifts off the boundary: the further out, the older the row
-    col += palM(0.85) * histM(abs(fract(ea * 2.) * 2. - 1.), clamp(d * 1.5, 0., 0.9)) * exp(-d * 6.) * 0.35 * uMidS;
+    L += histM(abs(fract(ea * 2.) * 2. - 1.), clamp(d * 1.5, 0., 0.9)) * exp(-d * 6.) * 0.25 * uMidS;
+    // the music rides lightness, never the encoded colour: the level scales it as §15's (0.45 + 1.3*uLevel) did,
+    // the kick adds <= .15 and the drop <= .25 — additive, so the gamut clip below always has room and no channel
+    // is ever clamped. uBri is the mood's own dimming, exactly where palM had it.
+    L = L * clamp((1.05 + 0.35 * uLevel) * uBri, 0.35, 1.30) + 0.15 * uKick + 0.25 * uDrop;
+    // the boundary: under half a pixel of DE the lightness goes to 0. Bass narrows that edge (§15's filament
+    // sharpening, which was the same mix(160, 70, bass) on the same d).
+    L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
+    hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
+    gd = vec2(-lG, dpx);
   } else {
     float t = v.w;   // orbit trap inside the set: how near the orbit passed the origin
-    col = palM(0.5 + t * 0.6) * (0.03 + 0.22 * uBands.x * exp(-t * 2.) + 0.12 * uTension) * (0.4 + uLevel);
+    // §15's interior brightness, read as a lightness: for a grey L = Y^(1/3) and Y ~ enc^2.4, so an encoded value
+    // enc is the lightness enc^0.8 — the interior keeps the weight it had. Hue half a turn off the mood, low chroma.
+    float b = (0.03 + 0.22 * uBands.x * exp(-t * 2.) + 0.12 * uTension) * (0.4 + uLevel) * uBri;
+    float L = pow(clamp(b, 0., 1.), 0.8);
+    hlc = vec3(uHue + 0.5, L, cMax(L) * 0.5 * uSat);
   }
-  o = vec4(col * uAlive, 1.);
+  if (uClipDbg > 0.5) {                            // #test only: the gamut and field probes, never a shipped pixel
+    o = uClipDbg < 1.5 ? vec4(okClip(hlc.x, hlc.y, hlc.z), 1., 1., 1.)
+                       : vec4(clamp(gd.x / 512., 0., 1.), clamp(gd.y / 8., 0., 1.), esc, 1.);
+    return;
+  }
+  o = vec4(linToSrgb(palOK(hlc.x, hlc.y, hlc.z)) * uAlive, 1.);
 }
 `;
