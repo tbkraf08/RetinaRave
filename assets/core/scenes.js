@@ -102,13 +102,13 @@ export function pickScene(S) {
 function saveLooks(S) {
   const looks = {};
   let any = false;
-  for (const sc of SCENES) if (sc.look) { looks[sc.name] = sc.look.get(); any = true; }
+  for (const sc of SCENES) if (sc.look) { looks[sc.name] = sc.look.get.call(sc); any = true; }
   if (any) S.seed.looks = looks;
 }
 function restoreLooks(S) {
   const looks = S.seed.looks;
   if (!looks) return;
-  for (const sc of SCENES) if (sc.look && looks[sc.name] !== undefined) sc.look.set(looks[sc.name]);
+  for (const sc of SCENES) if (sc.look && looks[sc.name] !== undefined) sc.look.set.call(sc, looks[sc.name]);
 }
 
 export function updateScenes(dt, S) {
