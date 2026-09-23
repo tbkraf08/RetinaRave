@@ -67,7 +67,9 @@ releases it into a soft switch home at 70 s (`VISIT=40:70:2.5`; `VISIT=` for the
 has the same deep visit on the same clock; tag `none` makes its `score` 0 after load instead (never auto-picked, as good as unregistered — no file edit).
 **One Chrome at a time and nothing else on the machine**: a second instance alone sinks `q` to 0 (`director-aba-after.txt`
 was traced beside house and sat at 0.00–0.06 for 190 s), so the runs are sequential (house 3 × 2 min, aba 3 × 3.2 min)
-and no worker shoots meanwhile. `demo` synths are random: compare the means of three runs, and compare `after` against
+and no worker shoots meanwhile — nor computes: a sibling's wait loop spinning on one core, with the desktop browser's
+renderers, held `q` at 0.00–0.05 for a whole run before FEIGEN was even on screen (§16). Check the 0–40 s window
+against `none` (0.60) before reading anything else. `demo` synths are random: compare the means of three runs, and compare `after` against
 `none`, not against `before`. `feigen-bench.sh` is the worker's and the orchestrator's one source of cost numbers:
 `&feig=<L>` per level with `q` pinned .95, `CARD.bench(6,300)` medians interleaved with `bench(0,300)` (load drift is
 2× across a session — only interleaved pairs compare), the cost of a tricorn flip (every rung rebuilt after §16), and
