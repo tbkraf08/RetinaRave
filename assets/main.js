@@ -18,6 +18,7 @@ import exposure from './effects/exposure.js';
 import composite from './effects/composite.js';
 
 import mixs from './transitions/mixs.js';
+import morph from './transitions/morph.js';
 
 import nav from './scenes/nav/index.js';
 import dust from './scenes/dust/index.js';
@@ -45,7 +46,7 @@ CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
 initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
-for (const tr of [mixs]) addTransition(tr, ctx);
+for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('mixs'); // the default transition (DECISIONS §11)
 for (const scene of [nav, dust, mandala, torus, polytope]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
