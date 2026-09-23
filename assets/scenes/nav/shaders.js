@@ -3,8 +3,10 @@
 
 // The Julia set of f_c. Exterior: distance-estimated dust with orbit traps; interior with a known cycle (uLam.w):
 // Koenigs coordinate bands + spokes, and the DRUM: Koopman modes cos(k·arg + TAU·m·L) driven by the spectral peaks.
+// Both interior branches carry the critical-slowing smoulder: uPar (NAV's N.par, the multiplier modulus |lambda| ->
+// 1 near a parabolic root) squared, so the term is exactly zero while par is 0 and the picture is byte-identical to v3.
 export const FS_JULIA = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -31,7 +33,8 @@ void main(){
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
-  }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);}
+    col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
+  }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x);}
   o=vec4(col,1.);
 }`;
 
