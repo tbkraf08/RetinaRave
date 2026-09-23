@@ -21,6 +21,7 @@ import nav from './scenes/nav/index.js';
 import dust from './scenes/dust/index.js';
 import mandala from './scenes/mandala/index.js';
 import torus from './scenes/torus/index.js';
+import polytope from './scenes/polytope/index.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,7 +44,7 @@ CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 initScenes();
 initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
-for (const scene of [nav, dust, mandala, torus]) {
+for (const scene of [nav, dust, mandala, torus, polytope]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);
