@@ -154,6 +154,9 @@ void main(){
     // the boundary: under half a pixel of DE the lightness goes to 0. Bass narrows that edge (§15's filament
     // sharpening, which was the same mix(160, 70, bass) on the same d).
     L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
+    // the band and the spectrogram can push the loudest frame's brightest pixels past white (13 of 921600 at the
+    // fake drop): hold L at 1 so cMax stays defined, where it is 0 and the colour is white — never a clamped channel
+    L = min(L, 1.);
     hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
     gd = vec2(-lG, dpx);
   } else {
