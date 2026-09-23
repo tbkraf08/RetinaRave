@@ -97,8 +97,24 @@ export function pickScene(S) {
 // Precedence (v3): forced → drop hard-cuts home → low presence drifts home → build parks home → event-gated soft switches.
 // The home scene's rt slots: home (bool, in its stable state), awayBeat (beat it last left home), settledAt (beat it
 // settled back; consumed here).
+// Look memory: on a section event the outgoing section's seed records every scene's look (scene.look.get()); when a
+// section is recognised again (identifyEvt with repeat) the remembered looks are restored (scene.look.set(v)).
+function saveLooks(S) {
+  const looks = {};
+  let any = false;
+  for (const sc of SCENES) if (sc.look) { looks[sc.name] = sc.look.get(); any = true; }
+  if (any) S.seed.looks = looks;
+}
+function restoreLooks(S) {
+  const looks = S.seed.looks;
+  if (!looks) return;
+  for (const sc of SCENES) if (sc.look && looks[sc.name] !== undefined) sc.look.set(looks[sc.name]);
+}
+
 export function updateScenes(dt, S) {
   const H = REG[SC.home].scene.rt, inHome = H.home !== false, away = H.awayBeat !== undefined ? H.awayBeat : -99;
+  if (S.sectionEvt) saveLooks(S);
+  if (S.identifyEvt && S.repeat) restoreLooks(S);
   if (SC.forced >= 0) {
     if (SC.logical !== SC.forced) goScene(SC.forced, true, S);
   } else {

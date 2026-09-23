@@ -81,3 +81,21 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **`&demo=<style>`** selects `sources/demo-synapse.js` (house · halftime · dnb · ambient · fakeout · aba · mix); no
   `&demo` keeps v3's synth so `fake=0` parity holds (re-verified: bpm 126.1 vs 126.2, arcs identical, drops 4.09/19.34
   vs 4.08/19.33).
+
+## §5 Director (2026-09-22)
+
+- **Look memory (synapse idea a) implemented** as a generic slot: `scene.look = {get, set}`; the director snapshots on
+  `sectionEvt` into the outgoing section's `seed.looks` (v3 already keeps one seed object per remembered section, so
+  the looks ride along with it) and restores on `identifyEvt && repeat`. Second director write into `MS.seed`
+  (documented with `seed.scene`). The fake timeline's sections repeat every 24 s, so `#test` exercises it.
+- **Beat-quantised actions (synapse idea b) — option, not implemented.** When `gridTrust > 0.5`, soft scene switches
+  and formation flips could be deferred to the next `barPos` crossing (or 16-beat line via `phrase16Pos`). Not done in
+  v0.1 because v3's director already gates soft switches on `beat` + 8/32-beat counts (parity), and the synapse grid
+  only becomes confident after the first section change; a v0.2 candidate once both grids can be compared on real music.
+- **Scores live in the scenes** (contract), not in `pickScene`; the director keeps v3's precedence. Per-scene bids:
+  NAV `0.5 + build` (home) · DRUM `0.85 clarity + 0.3 (1−eM) + 0.1` when interior with a cycle · DUST
+  `0.3 + 0.5 punchy + 0.2 regularity` · MANDALA `0.25 + 0.55 regularity + 0.2 min(1, onsetRate/6)` · TORUS
+  `0.25 + 0.45 clarity + 0.3 regularity`; DUST/MANDALA/TORUS bid 0 during builds (home parks there anyway).
+- **Bundle** (`tools/bundle.js`): a classic-script IIFE with a module table, not an import map of `data:` URLs —
+  relative specifiers cannot resolve against `data:` bases, so the map would have needed every import rewritten anyway,
+  and the IIFE is what works from `file://` with zero fuss. 35 modules → 194 KB.

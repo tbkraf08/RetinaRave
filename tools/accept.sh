@@ -15,4 +15,5 @@ for i in $(seq 0 $((IDS-1))); do
 done
 echo "== real start path"
 NOAUTO=1 node tools/cdp.js 'real' '[{"wait":1500},{"shot":"real-landing"},{"click":[695,440]},{"wait":4000},{"eval":"'"'"'REAL '"'"'+JSON.stringify({mode:CARD.ENGINE.AU.mode,bad:CARD.nonFinite(),errs:CARD.ERRS,glerr:CARD.glerr})"},{"shot":"real-4s"},{"wait":20000},{"eval":"'"'"'REAL24 '"'"'+JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS})"},{"shot":"real-24s"}]' | grep EVAL | sed 's/.*=> //'
+echo "== bundle";        node tools/bundle.js && FILE=$PWD/dist/eigenwobble.html NOAUTO=1 node tools/cdp.js 'real' '[{"wait":1500},{"click":[695,440]},{"wait":4000},{"eval":"'"'"'BUNDLE '"'"'+JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS,mode:CARD.ENGINE.AU.mode})"}]' | grep EVAL | sed 's/.*=> //'
 python3 tools/montage.py $OUT/montage-scenes.jpg 2 $OUT/s*-t6.jpg $OUT/s*-t14.jpg 2>/dev/null && echo "montage $OUT/montage-scenes.jpg"

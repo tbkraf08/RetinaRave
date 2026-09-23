@@ -90,6 +90,13 @@ GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s 
 GPU=1 node tools/parity.js real     # fake=0: bpm within 1, arc sequence identical, drops within 0.5 s
 ```
 
+## Single-file build
+
+```
+node tools/bundle.js                                  # → dist/eigenwobble.html (all modules inlined, works from file://)
+FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
+```
+
 ## Acceptance sweep
 
 ```

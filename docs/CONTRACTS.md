@@ -44,6 +44,7 @@ export default {
   hud() { return 'one line'; }, // extra HUD line while you are the logical scene
   hooks: { baby(v) {} },        // test hooks: exposed as CARD.hooks.<name>; &<name>=v in a #test hash calls it
   variants: [{ id: 4, name: 'drum', tag: '', score(MS, rt, SC) {} }],  // sub-modes with their own id (§1.4)
+  look: { get() {}, set(v) {} }, // look memory (§1.11): what to remember per section and restore on a return
   always: false,                // true = update() runs every frame even when off screen
   home: false,                  // true = the director's home scene (exactly one; NAV)
   rt: {},                       // runtime readout you publish (§1.3); the core creates {} if you leave it out
@@ -186,6 +187,14 @@ The continuity monitor (HARNESS.md) checks the home scene; for every scene `cuts
 expect frame to frame: `'continuous'` — nothing on screen ever jumps (all motion is springs/emas of MS);
 `'onset'` — visible jumps only on `MS.onset`/`MS.beat` (kicks, formation flips); `'event'` — jumps only on
 `dropEvt`/`sectionEvt`/`surpriseEvt` and declared chart cuts. Anything else is a bug.
+
+### 1.11 Look memory
+
+If your scene has a discrete "look" that a returning listener would notice (DUST's formation pair, MANDALA's fold
+count N, TORUS's knot), export `look: { get() → v, set(v) }` where `v` is a small JSON-able value. On every section
+event the director stores each scene's `get()` on the outgoing section's seed; when a section is recognised again
+(`identifyEvt` with `repeat`) it restores the remembered scene **and** calls every scene's `set(v)` with what it had
+then. Keep `set` cheap and continuous-safe (it may be called while you are on screen).
 
 ### 1.10 What the composite does to your pixels
 
