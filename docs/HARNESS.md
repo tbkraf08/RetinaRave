@@ -96,7 +96,7 @@ GPU=1 node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"}
 ## Parity with v3 (core/engine changes only)
 
 ```
-GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s + montage tools/accept/v0.1/parity-fake.jpg
+GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s + montage tools/accept/v0.2/parity-fake.jpg
 GPU=1 node tools/parity.js real     # fake=0: bpm within 1, arc sequence identical, drops within 0.5 s
 ```
 
@@ -110,7 +110,7 @@ FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait"
 ## Acceptance sweep
 
 ```
-GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v0.1/
+GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v0.2/
 ```
 
 ## Pitfalls already paid for

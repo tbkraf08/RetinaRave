@@ -1,5 +1,5 @@
 // Parity between cardioid3.html (via FILE=, legacy cdp semantics) and Eigenwobble on the same #test timeline.
-// usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.1/)
+// usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.2/)
 //   fake: CLOCK=1 deterministic 60 Hz clock on both, MS + NAV dumped every 60 frames for 24 s, max |diff| per field
 //         (expected 0: the fake path is deterministic), screenshots at frames 360/840/1200 (T≈6/14/20) montaged.
 //   real: #test&fake=0 (demo synth, real audio, real clock) for 32 s: bpm within 1, arc sequence identical, drop times within 0.5 s.
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const V3 = process.env.V3 || '/home/toma/Documents/Kraftek/Cardioid/cardioid3.html';
-const OUT = path.join(HERE, 'accept/v0.1');
+const OUT = path.join(HERE, 'accept/v0.2');
 const mode = process.argv[2] || 'both';
 
 const SNAP = `(()=>{const S=CARD.MS,N=CARD.NAV||CARD.home,o={};for(const k in S){const v=S[k];if(typeof v==='number'||typeof v==='boolean'||typeof v==='string')o[k]=v;

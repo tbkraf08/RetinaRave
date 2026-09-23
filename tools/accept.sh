@@ -1,16 +1,17 @@
 #!/bin/bash
-# v0.1 acceptance sweep -> tools/accept/v0.1/. Run with GPU=1. Prints one line per check; grep FAIL.
+# v0.2 acceptance sweep -> tools/accept/v0.2/. Run with GPU=1. Prints one line per check; grep FAIL.
 cd "$(dirname "$0")/.." || exit 1
-export OUT=tools/accept/v0.1; mkdir -p $OUT
+export OUT=tools/accept/v0.2; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1
+echo "== lines smoke";    node tools/lines-smoke.js | tail -1
 echo "== parity fake";   node tools/parity.js fake | grep -E "parity|MISMATCH|max \|diff\|" || echo "FAIL parity fake"
 echo "== parity real";   node tools/parity.js real | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
 echo "== monitor 60 s";  node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"},{\"wait\":60000},{\"eval\":\"'MON '+JSON.stringify({n:MON.n,fast:MON.fast,viol:MON.viol,errs:CARD.ERRS,bad:CARD.nonFinite()})\"}]" | grep EVAL | sed 's/.*=> //'
 echo "== scenes on #test (T6 / T14)"
-IDS=$(grep -o "scenes/[a-z_]*/index.js" assets/main.js | wc -l)
-for i in $(seq 0 $((IDS-1))); do
+IDS=$(grep -ho "^  id: [0-9]*" assets/scenes/*/index.js | grep -o "[0-9]*" | sort -n)
+for i in $IDS; do
   node tools/cdp.js "test&scene=$i" "[{\"wait\":6000},{\"eval\":\"'scene $i ERRS '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' | '+(CARD.REG[$i]?CARD.REG[$i].scene.name:'?')\"},{\"shot\":\"s$i-t6\"},{\"wait\":8200},{\"shot\":\"s$i-t14\"}]" | grep EVAL | sed 's/.*=> //'
 done
 echo "== real start path"
