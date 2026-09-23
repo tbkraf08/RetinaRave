@@ -27,8 +27,8 @@ export const TEX = { spec: new Uint8Array(256), wave: new Uint8Array(512).fill(1
 // Extractor scratch state (not part of the contract).
 export const XS = {
   fdb: new Float32Array(1024), mag: new Float32Array(1024), lmPrev: new Float32Array(1024), sdb: new Float32Array(4096),
-  pkB: 1e-4, pkM: 1e-4, pkH: 1e-4, pkAll: 1e-4, oRing: new Float32Array(96), oi: 0, lastOnset: -9, env: new Float32Array(800), ei: 0, envAcc: 0, tempoT: 0,
-  tmp: new Float32Array(800), candBpm: 0, candN: 0, slowTick: 0, pcOf: null, bLo: 0, bHiC: 0, bHiT: 0, bLowC: 0, binS: 5.859375, binF: 23.4375,
+  pkB: 1e-4, pkM: 1e-4, pkH: 1e-4, pkAll: 1e-4, oRing: new Float32Array(96), oi: 0, lastOnset: -9, env: new Float32Array(800), ei: 0, envAcc: 0, envNow: 0, tempoT: 0,
+  tmp: new Float32Array(800), candBpm: 0, candN: 0, tempoAge: 99, slowTick: 0, pcOf: null, bLo: 0, bHiC: 0, bHiT: 0, bLowC: 0, binS: 5.859375, binF: 23.4375,
   mu: new Float32Array(15), va: new Float32Array(15).fill(0.01), fp: new Float32Array(17), lib: [], arcPrev: 'idle', eAtChange: 0, phraseBeat: 0,
 };
 

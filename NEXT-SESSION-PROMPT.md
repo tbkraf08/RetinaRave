@@ -23,7 +23,12 @@ parity real · monitor 0 spikes · 5 scenes · real start path · bundle 46 modu
 - **TORUS as strokes** (worker, DECISIONS §7): over + depth, 144 rings × [48..160] segments, occlusion is real.
 - **#3 polytope** → `scenes/polytope/` id 5 (worker, DECISIONS §8): tesseract / 24 / 600 / 120-cell on S³, path A,
   cast by section seed, deterministic. Polish item: pole streaks at t6.
-Still open below: #2, #3 julia/feigen, #4, #5, #6, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+- **#5 tempo refinement** → `engine/tempo.js` (DECISIONS §9): harmonic-comb ACF, sub-lag vertices on the harmonics,
+  octave-aware switching with evidence gates; `bpm` within ±1 on every demo style, no octave flip in breakdowns,
+  `regularity` ≈ 0 on ambient; `tools/test_tempo.js` (node, synthetic envelope) + `tools/tempo-trace.sh` (per-style
+  traces in `accept/v0.2/tempo-*-{before,after}.txt`). Parity fake still 0 diff (the fake path never ran the
+  estimator); parity real now judges both engines against the synth's 126.
+Still open below: #2, #3 julia/feigen, #4, #6, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
@@ -36,8 +41,7 @@ Still open below: #2, #3 julia/feigen, #4, #5, #6, #7, plus DUST's Hopf-fibre ov
 4. **The v4 config-panel / help idea rebuilt on `feats.js`**: `FEATS` already carries eli5/formula/drives for every
    field and every scene ships `help`; a `?` overlay that shows the live `MS` vector with its glossary and each scene's
    three-depth help is mostly UI.
-5. **Tempo refinement for v3's canonical `bpm`** (dnb reads 172.4 not 174 and halves in breakdowns; `bpmSyn` is right):
-   a parity-changing engine change — do it as its own phase with the parity tolerance recorded in DECISIONS.
+5. ~~Tempo refinement for v3's canonical `bpm`~~ — done (DECISIONS §9).
 6. **Key look memory on `sectionAlt`** (synapse's clusterer separates A/B on the aba synth, v3's fingerprint does not —
    DECISIONS §5) and **beat-quantised director actions** when `gridTrust > 0.5` (deferred from §5, see DECISIONS).
 7. **Row-only `hist` upload** (32 KB/hop today) and `Q`-aware particle budgets shared across POINTS scenes.

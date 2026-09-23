@@ -26,7 +26,18 @@ core/, an MS key without a FEATS entry. Warns above 350 lines.
 node tools/test_baby.js        # ... OK · MISI 14
 node tools/test_misi.js        # ... OK
 node tools/test_hopf.js        # circle error 2e-12 · torus distance 2e-13 · ... OK   (§4 Hopf fibration)
+node tools/test_tempo.js       # tempo estimator on a synthetic onset envelope: 120/128/140/174 within ±0.5, 6 s gap held,
+                               #   tempo changes picked up (§9). TEMPO_DEBUG=1 prints the ACF peaks, =2 every estimate.
 ```
+
+## Tempo traces (engine change to `engine/tempo.js`)
+
+```
+GPU=1 tools/tempo-trace.sh after [styles]   # bpm / bpmSyn / regularity at 1 Hz per demo style -> tools/accept/v0.2/tempo-<style>-after.txt
+```
+50 s per style (mix: 360 s), two styles run in parallel. Do not run more than two Chrome instances at once: dropped
+frames under-fill the 100 Hz envelope ring (dt is clamped at 1/24 s) and the tempo reads high. The demo synth uses
+`Math.random()`: judge on two runs. `tempo-<style>-before.txt` are the v3 estimator's traces (DECISIONS §9).
 
 ## Line renderer smoke (core change to `core/lines.js` or the targets)
 
@@ -102,7 +113,7 @@ GPU=1 node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"}
 
 ```
 GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s + montage tools/accept/v0.2/parity-fake.jpg
-GPU=1 node tools/parity.js real     # fake=0: bpm within 1, arc sequence identical, drops within 0.5 s
+GPU=1 node tools/parity.js real     # fake=0: both bpm within 1 of the synth's 126, arc sequence identical, drops within 0.5 s
 ```
 
 ## Single-file build

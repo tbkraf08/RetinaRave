@@ -2,7 +2,8 @@
 // usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.2/)
 //   fake: CLOCK=1 deterministic 60 Hz clock on both, MS + NAV dumped every 60 frames for 24 s, max |diff| per field
 //         (expected 0: the fake path is deterministic), screenshots at frames 360/840/1200 (T≈6/14/20) montaged.
-//   real: #test&fake=0 (demo synth, real audio, real clock) for 32 s: bpm within 1, arc sequence identical, drop times within 0.5 s.
+//   real: #test&fake=0 (demo synth, real audio, real clock) for 32 s: both bpm within 1 of the synth's 126 (v0.2 §9: the canonical
+//         tempo no longer tracks v3's; v3's known error on this synth is +0.1..0.2), arc sequence identical, drop times within 0.5 s.
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -82,9 +83,10 @@ if (mode === 'real' || mode === 'both') {
   console.log('v3:', JSON.stringify(A));
   console.log('ew:', JSON.stringify(B));
   const dedup = (x) => (x || []).filter((v, i, arr) => i === 0 || v !== arr[i - 1]);
-  const bpmOk = Math.abs(A.bpm - B.bpm) <= 1, arcOk = JSON.stringify(dedup(A.arcs)) === JSON.stringify(dedup(B.arcs));
+  const TRUE_BPM = 126; // sources/demo.js
+  const bpmOk = Math.abs(B.bpm - TRUE_BPM) <= 1 && Math.abs(A.bpm - TRUE_BPM) <= 1, arcOk = JSON.stringify(dedup(A.arcs)) === JSON.stringify(dedup(B.arcs));
   const dropOk = (A.drops || []).length === (B.drops || []).length && (A.drops || []).every((t, i) => Math.abs(t - B.drops[i]) <= 0.5);
-  console.log('bpm within 1:', bpmOk, '· arc sequence identical:', arcOk, '· drops within 0.5 s:', dropOk, '· ew ERRS', JSON.stringify(B.errs), 'nonfinite', JSON.stringify(B.bad));
+  console.log('bpm within 1 of 126 (ew ' + (+B.bpm).toFixed(2) + ', v3 ' + (+A.bpm).toFixed(2) + '):', bpmOk, '· arc sequence identical:', arcOk, '· drops within 0.5 s:', dropOk, '· ew ERRS', JSON.stringify(B.errs), 'nonfinite', JSON.stringify(B.bad));
   if (!(bpmOk && arcOk && dropOk)) status = 1;
 }
 process.exit(status);

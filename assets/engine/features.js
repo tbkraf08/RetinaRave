@@ -4,7 +4,8 @@ import { clamp, ema, sstep, wrap1 } from '../math/util.js';
 import { AU } from './audio.js';
 import { MS, XS } from './state.js';
 export { MS, XS };
-import { tempoEstimate, slowAnalysis, identifySection } from './features-slow.js';
+import { slowAnalysis, identifySection } from './features-slow.js';
+import { tempoEstimate } from './tempo.js';
 
 export function setupBins(ctx) {
   const sr = ctx.sampleRate;
@@ -105,7 +106,8 @@ export function updateMusic(dt, now) {
   S.hit *= Math.exp(-dt / 0.14);
   S.onsetRate *= Math.exp(-dt / 1.0);
   // --- tempo + beat phase: autocorrelation of the 100 Hz onset envelope, comb-aligned PLL ---
-  X.envAcc += dt * 100;
+  X.envAcc += Math.min(now - (X.envNow || now), 0.5) * 100; // raw clock, not the clamped dt: a stalled frame must not shrink the ring's seconds (§9)
+  X.envNow = now;
   while (X.envAcc >= 1) {
     X.env[X.ei] = o;
     X.ei = (X.ei + 1) % 800;

@@ -28,7 +28,7 @@ export const FEATS = {
   beat: E('a beat boundary just passed', 'beatPhase wrapped', 'retargeting, scene switch gating'),
   beatPhase: L('where we are inside the beat, 0→1', 'phase += bpm/60·dt + PLL correction', 'uBeat.x, sway, trap rotation'),
   beatCount: { kind: 'count', eli5: 'beats since start', formula: 'increments on beat', drives: 'phrase alignment, hysteresis', range: [0, Infinity] },
-  bpm: R('tempo', 'argmax of autocorrelation of the 100 Hz onset envelope, parabolic refine', 'beat rate, crossfade duration'),
+  bpm: R('tempo (±1 BPM on the demo styles; holds its octave through breakdowns)', 'harmonic-comb ACF of the 100 Hz onset envelope (l + .6·2l + .3·4l, 130-centred prior), period from the harmonics\' parabolic vertices, octave-aware switching', 'beat rate, crossfade duration'),
   regularity: L('how steady the rhythm is', 'clamp(acf peak·1.6)·presence', 'sway amplitude, scene scores'),
   phaseCorr: I('pending beat-phase correction', 'PLL residual, bled at τ=0.18 s'),
   // --- energy arc ---

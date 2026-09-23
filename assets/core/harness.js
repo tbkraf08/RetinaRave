@@ -85,7 +85,7 @@ export function logFrame(S, now, frameN) {
   }
   if (frameN % 60 === 0) {
     const E = REG[SC.cur], rt = E ? E.scene.rt : {};
-    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} reg${S.regularity.toFixed(2)} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} q${Q.q.toFixed(2)}`);
+    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} syn${S.bpmSyn.toFixed(1)} reg${S.regularity.toFixed(2)} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} q${Q.q.toFixed(2)}`);
   }
   if (frameN % 30 === 0) {
     const e = G.gl.getError();

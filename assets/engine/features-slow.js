@@ -1,76 +1,8 @@
-// Slow stages of the v3 extractor: tempo (autocorrelation + comb PLL), harmony/tension from the long window,
-// section fingerprint identification. Lifted from cardioid3 tempoEstimate / slowAnalysis / identifySection.
-import { TAU, clamp, ema, frac, mix, sstep, wrap1 } from '../math/util.js';
+// Slow stages of the v3 extractor: harmony/tension from the long window, section fingerprint identification.
+// Lifted from cardioid3 slowAnalysis / identifySection (tempoEstimate moved to tempo.js and was rewritten in v0.2 §9).
+import { TAU, clamp, ema, mix, wrap1 } from '../math/util.js';
 import { AU } from './audio.js';
 import { MS, XS } from './state.js';
-
-export function tempoEstimate() {
-  const S = MS, X = XS, x = X.tmp;
-  let mean = 0;
-  for (let i = 0; i < 800; i++) {
-    x[i] = X.env[(X.ei + i) % 800];
-    mean += x[i];
-  }
-  mean /= 800;
-  let a0 = 0;
-  for (let i = 0; i < 800; i++) {
-    x[i] -= mean;
-    a0 += x[i] * x[i];
-  }
-  if (a0 < 1e-6) {
-    S.regularity = ema(S.regularity, 0, 0.5, 1);
-    return;
-  }
-  a0 /= 800;
-  const acf = X._acf || (X._acf = new Float32Array(104));
-  let best = 0, bL = 50;
-  for (let L = 30; L <= 102; L++) {
-    let a = 0;
-    for (let t = L; t < 800; t++) a += x[t] * x[t - L];
-    a /= (800 - L) * a0;
-    acf[L] = a;
-  }
-  for (let L = 31; L <= 101; L++) {
-    const bpm = 6000 / L, w = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 124) / 0.55, 2)), v = acf[L] * w;
-    if (v > best && acf[L] >= acf[L - 1] && acf[L] >= acf[L + 1]) {
-      best = v;
-      bL = L;
-    }
-  }
-  const y0 = acf[bL - 1], y1 = acf[bL], y2 = acf[bL + 1], den = y0 - 2 * y1 + y2;
-  const Lf = bL + (Math.abs(den) > 1e-9 ? 0.5 * (y0 - y2) / den : 0), bpm = 6000 / Lf;
-  S.regularity = ema(S.regularity, clamp(y1 * 1.6, 0, 1) * sstep(0.05, 0.3, S.presence), 0.5, 1.2);
-  if (y1 > 0.08) {
-    if (Math.abs(bpm - S.bpm) / S.bpm < 0.06) S.bpm += (bpm - S.bpm) * 0.3;
-    else {
-      if (Math.abs(bpm - X.candBpm) / bpm < 0.05) X.candN++;
-      else {
-        X.candBpm = bpm;
-        X.candN = 1;
-      }
-      if (X.candN >= 3) {
-        S.bpm = bpm;
-        X.candN = 0;
-      }
-    }
-    const Lc = 6000 / S.bpm;
-    let bs = -1e9, bphi = 0;
-    for (let phi = 0; phi < Math.floor(Lc); phi++) {
-      let sc = 0;
-      for (let k = 0; k < 8; k++) {
-        const idx = 799 - phi - Math.round(k * Lc);
-        if (idx < 0) break;
-        sc += x[idx];
-      }
-      if (sc > bs) {
-        bs = sc;
-        bphi = phi;
-      }
-    }
-    const tgt = frac((bphi + X.envAcc) / Lc + 0.03);
-    S.phaseCorr += wrap1(tgt - S.beatPhase - S.phaseCorr) * 0.35 * clamp(y1 * 3, 0, 1);
-  }
-}
 
 const A2M = 0.1151292546; // ln(10)/20: dB -> linear magnitude
 

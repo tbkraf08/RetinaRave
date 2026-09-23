@@ -41,7 +41,7 @@ ENGINE.frame(dt, now, nowMs):
   if fakeOn:  sources.fake.update(dt, now)          // #test: the deterministic 24 s timeline writes MS directly
   else:       sources.capture.tick(nowMs)          // silence watchdog
               updateMusic(dt, now)                  // v3 extractor: bands, onsets, tempo, arc, drops, harmony, tension,
-                                                    //   surprisal, sections (features.js + features-slow.js)
+                                                    //   surprisal, sections (features.js + tempo.js + features-slow.js)
   for stage of stages (registration order): stage.fn(dt, now, MS)
   if ENGINE.fix: Object.assign(MS, ENGINE.fix)     // test pins
   updateGroove(dt, MS)                              // GROOVE.rot = drift + sway + nod
@@ -71,6 +71,12 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
   runs once the `AudioContext` exists, with `AU.bus` as the node to tap (AnalyserNode or AudioWorklet). The v3
   analysers (`AU.fast` 2048, `AU.slow` 8192) stay as they are (parity).
 - Budget: the whole engine must stay under 1.5 ms per frame (`CARD.ENGINE.ms`, `GPU=1`, 60 fps).
+- **Tempo.** `bpm` (`engine/tempo.js`, v0.2 §9) reads within ±1 of the synth on every demo style (house 128, halftime
+  140, dnb 174, fakeout 128, aba 124), locks in 2–4 s, and holds its octave through breakdowns, hushes and 16th-note
+  builds; on beatless material it holds its last value and `regularity` stays low. `beatPhase`/`beatCount`/`beat` are
+  the comb PLL on that tempo. `bpmSyn` is the synapse rival kept for comparison — there is no longer a case where a
+  scene should prefer it (it is the one that wobbles in the dnb breakdown now). `tools/test_tempo.js` is the
+  estimator's node test; `tools/tempo-trace.sh` the per-style trace (DECISIONS §9 has the before/after table).
 - The fake timeline (`sources/fake.js`) leaves v3's `chroma`/`bchroma` at zero (v3's fake never filled them and parity
   forbids changing it) — chroma-driven scenes need a fallback from `harmAngle`/`interval` (TORUS does). Your own fields
   must be finite and plausibly idle there: add a line there that sets
