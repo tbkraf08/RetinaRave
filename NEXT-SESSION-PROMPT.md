@@ -4,8 +4,9 @@ You are the orchestrator on Eigenwobble (`~/Documents/Kraftek/Eigenwobble/`, zer
 engine, native ES modules, git). **v0.2 is tagged** (`git tag v0.2`; `releases/eigenwobble-v0.2.html` runs from
 `file://` anywhere; `tools/accept/v0.2/accept-17.txt` is the sweep behind the tag). It was audited in a real window
 (`docs/AUDIT-v0.2.md`: five checks, no engine bug, two help-view fixes) and every "Left open" line of v0.2 was decided
-in DECISIONS §17's triage table. This file is the v0.3 list that table produced, in priority order, with the numbers
-that motivate each item. Nothing here is started.
+in DECISIONS §17's triage table. This file is the v0.3 list that table produced — plus the colour block (items 2–6,
+added after the tag from a note on OKLCH and escape-data channels; DECISIONS §17 "Added after the tag") — in priority
+order, with the numbers that motivate each item. Nothing here is started.
 
 Ids 7–8 stay free: no new scene is on the v0.3 list (the candidate list — NEWTON, MODULAR, KLEIN, LORENZ — is in
 DECISIONS §17's triage table for whenever a scene phase is opened).
@@ -23,18 +24,55 @@ DECISIONS §17's triage table for whenever a scene phase is opened).
    followers re-seat (`ENGINE.resumeAt`); the fake path untouched. Acceptance: `parity.js fake` 0 diff; the probe's
    first 5 frames back show no glitch rows (luminance step ≤ 10 %; today FEIGEN 155 → 125 over 5 frames);
    `audit-3-*-back*.jpg` re-shot on the worklet path (minimize recipe).
-2. **`tempo-3to2` (engine/tempo.js).** §9: a 3:2 tempo change with the old lag alive takes up to 8 s (the 25 %
+2. **`feigen-oklch` — FEIGEN's colour pass on OKLCH channels (scene, worker brief, no re-tune cost).** The field
+   already decodes every texel to `(log d, log₂G, ea, trap)` — the distance estimate, the Green's potential and the
+   external angle. Today they go through a cosine `palM` in sRGB. New mapping in `scenes/feigen/colour.js` only:
+   **L ← log₂G** (log/sqrt before mapping so depth > 50 does not saturate), **H ← external angle** (external rays
+   become iso-hue lines: wakes and Misiurewicz points read off the picture), **C ← DE / pixel size** (chroma fades to
+   black below threshold — what keeps the boundary crisp at depth), interior from the trap; a cyclic hue at constant
+   L ≈ 0.7, C ≈ 0.11 (the largest chroma in sRGB gamut at every hue), OKLCH → OKLab → linear → encode, clip after.
+   Acceptance: the field and its build md5s untouched (the colour pass is the only change); Q trace after = `none` to
+   the second decimal (the decode already exists — cost neutral); 0 gamut-clipped pixels on a full hue sweep; the
+   L 4 boundary before/after shot and the seam ratio at `RUNG@` frames unchanged; the FEIGEN reference md5s re-based
+   in the brief's report.
+3. **`linear-chain` — the effect chain in linear light (core, `&linear=1` first, then re-base every md5).** Bloom is a
+   blur + add and the additive scene layers (`ONE, ONE` in DUST/NAV, `blend: 'add'` in `ctx.lines`) add light — both
+   are light transport and are done on gamma-encoded values today (dark fringes between complementary hues, channel-
+   wise clipping to white 3× too soon). The composite's tonemap `1 − exp(−1.5c)` is a linear-radiance operator applied
+   to encoded values and written to the screen without an encode step: display white is unreachable (a full-white
+   input maps to 0.78). Feedback is a `max` and is space-invariant; crossfades (mixs, morph) are perceptual and stay
+   encoded (a linear dissolve has the mid-fade brightness bump) — or move to OKLab with item 4. Shape: decode scene
+   output as sRGB at the chain input, bloom / additive / exposure gain / tonemap in linear (RGBA16F is built for it),
+   encode before dither; unblended pixels come out byte-identical, only regions where light is added change.
+   Acceptance: dark-fringe depth across a blurred red/cyan edge (min luma relative to the endpoints) from ≈ 0.6 to
+   ≥ 0.95; the clip fraction (any channel ≥ 1 before the tonemap) on DUST at the fake drop frame falls; display white
+   reachable at 1.0; the re-tune list capped at bloom threshold, exposure `TARGET`, feedback decay, DUST point gain;
+   A/B montage per scene at f360/f840 decides, then `scene-md5.sh`, the mixs and FEIGEN md5s and `accept.sh` are
+   re-based in one commit that says so (`parity.js fake` stays 0 diff — it compares state, not pixels).
+4. **`oklch-palette` — an OKLCH palette chunk as a core slot (opt-in, CONTRACTS §3).** The shared `pal()` in
+   `core/gl.js` is a tinted cosine palette in gamma sRGB and five scenes carry their own `palM`; no OKLab code exists
+   in the repo. A GLSL chunk `palOK(h, L, C)` (OKLCH → linear sRGB, gamut-clipped), never the default. Acceptance: 0
+   gamut-clipped pixels on a full hue sweep at L 0.7 / C 0.11; distinct 8-bit levels along an equipotential vs the sRGB
+   palette (banding); interpolation in OKLab, never in gamma. Taken up by items 2 and 5.
+5. **`nav-multiplier-hue` (taste on the v3 picture — gated on a montage).** NAV's interior already has Koenigs bands
+   and `uPar` (the multiplier modulus driving the smoulder); new: **hue from arg λ** (the internal angle), so a
+   component's internal rays and its root/cusps read off the image; `|λ| → L`. `nav.js` state untouched, so
+   `parity.js fake` 0 diff by construction; f360/f840 A/B montage decides.
+6. **`pip-hue` (after 5).** NAV's picture-in-picture Julia (`pipPath`): for connected J_c the exterior external angle
+   equals the parameter's, so with external angle driving hue the PiP shares it — a ray in M and its image in J_c read
+   the same. Small once 2 or 5 exist.
+7. **`tempo-3to2` (engine/tempo.js).** §9: a 3:2 tempo change with the old lag alive takes up to 8 s (the 25 %
    margin over the current tempo's score holds it). Acceptance: `test_tempo.js`'s 3:2 case (128 → 192 → 128) locks
    within 4 s, every other case unchanged to ±1 BPM, `parity real` both within 1 of 126, `tempo-trace.sh` before/after.
-3. **`director-renumber` (features-synapse.js + scenes.js).** §10: `SC.mem` is not renumbered when synapse merges or
+8. **`director-renumber` (features-synapse.js + scenes.js).** §10: `SC.mem` is not renumbered when synapse merges or
    drops a section (one stale restore). A `sectionRenumber` event (old → new, −1 dropped) applied to `SC.mem` keys.
    Acceptance: `director-trace.sh mix` × 3 → 0 `RESTORE@` lines whose filed `sectionAlt` no longer exists, and the
    renumber count per run reported — 0–1 per run closes the brief as "measured, harmless".
-4. **`morph-flow-slot` (low).** §11: the morph combs TORUS's ribbons mid-fade. One `&trans=morph` vs `mixs` A/B pair
+9. **`morph-flow-slot` (low).** §11: the morph combs TORUS's ribbons mid-fade. One `&trans=morph` vs `mixs` A/B pair
    per stroke scene (TORUS 3, POLYTOPE 5, DUST 1 with fibres) at CLOCK f178 in one montage; the slot is
    `scene.post.morph.flow` (default 1) read by `transitions/morph.js`. If the comb is not visible in the montage the
    brief closes without the slot.
-5. **Probe polish (harness, tiny).** `tools/probe.js` logs `cur` changes (a fade's end or a cut); log `next` changes
+10. **Probe polish (harness, tiny).** `tools/probe.js` logs `cur` changes (a fade's end or a cut); log `next` changes
    too so a hard cut is distinguishable from a soft switch in the real-window `SCENES` line.
 
 Closed in §17's table, do not reopen without a new number: sub-59 / over-200 BPM octave reads; the 8–12-beat restore

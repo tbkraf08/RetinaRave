@@ -832,3 +832,15 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   | harness | the bench protocol lived in three places | **done this session**: HARNESS "Bench protocol" (five rules), the Q-trace paragraph and the `CARD.bench` bullet point at it |
   | harness | `q-trace.sh`'s `VISIT` is FEIGEN-specific (`hooks.feig`) | **closed, say so**: `VISIT=40:70:<L>` is FEIGEN's dive depth; a scene that will ever need a forced deep visit brings its own hook and a `VISIT` of its own shape in its brief — no other scene has a "depth" (HARNESS says so now) |
   | audit 3 (new) | the first frames back from a hidden tab read as a drop (the v3 followers were frozen for the gap; on `#test` the fake timeline's `now` jumped over DROP@13) | **brief `resume-hold`** (small, engine-side, parity-neutral): on `visibilitychange` → visible, hold `drop`/`hit` detection for 1 s and let the followers re-seat (`ENGINE.resumeAt`), fake path untouched (`parity.js fake` 0 diff); acceptance: the probe's first 5 frames back show no glitch rows (lum step ≤ 10 %), `audit-3-*-back.jpg` re-shot |
+- **Added after the tag (2026-09-23, from a note on OKLCH and escape-data channels; the full briefs are in
+  NEXT-SESSION-PROMPT items 2–6):** FEIGEN's colour pass on OKLCH channels — L ← log₂G, H ← external angle, C ← the
+  distance estimate — is a colour-pass-only change because §16's field already decodes exactly those three quantities;
+  an opt-in OKLCH palette chunk in core; hue from arg λ on NAV's interior and the PiP sharing the external-angle hue;
+  and the effect chain in linear light. The last one is a correctness item, not taste: bloom (blur + add) and the
+  `ONE, ONE` scene layers are light transport done on gamma-encoded values, and the composite's tonemap
+  `1 − exp(−1.5c)` is a linear-radiance operator applied to encoded values with no encode step after it (display
+  white is unreachable: 1 → 0.78). Feedback is a `max` (space-invariant); crossfades stay encoded or go to OKLab —
+  a linear dissolve has the mid-fade brightness bump. Decided: `&linear=1` first, an A/B montage per scene, then every
+  final-frame md5 (scene-md5, mixs `a6e2b8cd…`, FEIGEN `dee30d91…`/`eb8aa082…`) re-based in one commit that says
+  so; `parity.js fake` is unaffected (state, not pixels). Not taken from the note: Julia sets as a scene (§15) and
+  derivative iteration (the field already carries `log|z′|`).
