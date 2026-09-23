@@ -28,7 +28,8 @@ fake` after any core/engine change (must print 0 diff); `GPU=1 tools/accept.sh` 
    three-depth help is mostly UI.
 5. **Tempo refinement for v3's canonical `bpm`** (dnb reads 172.4 not 174 and halves in breakdowns; `bpmSyn` is right):
    a parity-changing engine change — do it as its own phase with the parity tolerance recorded in DECISIONS.
-6. **Beat-quantised director actions** when `gridTrust > 0.5` (deferred from §5, see DECISIONS).
+6. **Key look memory on `sectionAlt`** (synapse's clusterer separates A/B on the aba synth, v3's fingerprint does not —
+   DECISIONS §5) and **beat-quantised director actions** when `gridTrust > 0.5` (deferred from §5, see DECISIONS).
 7. **Row-only `hist` upload** (32 KB/hop today) and `Q`-aware particle budgets shared across POINTS scenes.
 
 ## Non-negotiables (unchanged)
