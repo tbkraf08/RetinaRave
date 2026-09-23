@@ -2,12 +2,11 @@
 // Lifted from synapse2.html 217–336 (constructor, push, hopStep). anatomy/longFrame live in anatomy.js, the beat-
 // synchronous structure (grid, Foote novelty, sections) in structure.js; both are mixed into the prototype below.
 // Output lands in this.A (synapse's global `A`); features-synapse.js copies it into MS under non-colliding names.
-import { FFT, Band, Onset, Tempo, clamp01, lerp, smooth, smoothAR } from './dsp.js';
+import { FFT, Band, Onset, Tempo, clamp01, lerp, smooth, smoothAR, SPEC_W, WAVE_W, HIST_H, FDIM } from './dsp.js';
 import * as ANAT from './anatomy.js';
 import * as STRUCT from './structure.js';
 
-export const SPEC_W = 256, WAVE_W = 512, HIST_H = 128;
-export const FDIM = 23; // per-beat feature: 12 chroma + 9 log bands + onset density + percussiveness
+export { SPEC_W, WAVE_W, HIST_H, FDIM };
 
 export function makeA() {
   return {

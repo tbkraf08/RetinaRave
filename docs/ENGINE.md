@@ -73,9 +73,11 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
 - Budget: the whole engine must stay under 1.5 ms per frame (`CARD.ENGINE.ms`, `GPU=1`, 60 fps).
 - The fake timeline (`sources/fake.js`) must leave your fields finite and plausibly idle: add a line there that sets
   them from the timeline phase if scenes will read them headlessly.
-- Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: the stage exposes the arrays
-  on `ENGINE.tex = {spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), hop: n}` and bumps `hop`
-  when there is a new frame; the core uploads and hands the textures to scenes through `ctx.engineTex` (§2 wires this).
+- Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: a stage writes the arrays in
+  `TEX` (`state.js`: `{spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), row, hop}`) and bumps
+  `hop` when there is a new frame; the core uploads when `hop` changes and hands them to scenes as `ctx.engineTex`.
+- The synapse stage (`features-synapse.js`) is the worked example: `SYN_FEATS` lists its 54 fields, `synapseStage`
+  copies `tap.an.A` into `MS`, drains `A.events` into `boundaryEvt/fakeoutEvt/moodEvt`, fills `TEX`.
 
 ## Sources
 
@@ -85,7 +87,8 @@ A source is `{ name, start(), stop(), tick?(nowMs) }` in `assets/engine/sources/
 - `demo` — the v3 techno sketch (126 BPM, intro / groove / break / build / drop). Default for `fake=0`.
 - `capture` — `getDisplayMedia` tab audio + the silence watchdog (`tick` swaps the demo in after 6 s of silence).
 - `fake` — the deterministic `#test` timeline; `update(dt, now)` instead of audio.
-- `&demo=<style>` selects an alternative synth by name from `ENGINE.sources` (§2 adds `demo-synapse`).
+- `demo-synapse` — synapse's six-style synth (house halftime dnb ambient fakeout aba, `mix` tours them), selected by
+  `&demo=<style>` (`ENGINE.demoStyle`); without it `demo` runs, so `fake=0` parity with v3 holds.
 
 `ENGINE.start('demo' | 'capture', msg)` is what the landing card calls; `AU.onRun(mode, msg)` / `AU.onStop(msg)` are the
 UI hooks the core sets (the engine never touches the DOM).

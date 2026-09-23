@@ -135,6 +135,37 @@ export function freeTarget(t) {
   }
 }
 
+// Engine textures (R8): spec 256×1, wave 512×1, hist 256×128 ring. Re-uploaded when the engine reports a new hop.
+export const ETEX = { spec: null, wave: null, hist: null, row: 0, hop: -1 };
+function r8(w, h) {
+  const gl = G.gl, t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, w, h, 0, gl.RED, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, h > 1 ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+  return { t, w, h };
+}
+export function uploadEngineTex(T) {
+  const gl = G.gl;
+  if (!ETEX.spec) {
+    ETEX.spec = r8(256, 1);
+    ETEX.wave = r8(512, 1);
+    ETEX.hist = r8(256, 128);
+  }
+  if (T.hop === ETEX.hop) return;
+  ETEX.hop = T.hop;
+  ETEX.row = T.row;
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  gl.bindTexture(gl.TEXTURE_2D, ETEX.spec.t);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 1, gl.RED, gl.UNSIGNED_BYTE, T.spec);
+  gl.bindTexture(gl.TEXTURE_2D, ETEX.wave.t);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 512, 1, gl.RED, gl.UNSIGNED_BYTE, T.wave);
+  gl.bindTexture(gl.TEXTURE_2D, ETEX.hist.t);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 128, gl.RED, gl.UNSIGNED_BYTE, T.hist);
+}
+
 const onResize = [];
 export const addResizeHook = (fn) => onResize.push(fn);
 

@@ -2,20 +2,24 @@
 //   ENGINE.frame(dt, now, nowMs) runs: source tick → v3 extractor (or the fake timeline) → registered stages →
 //   test pins (ENGINE.fix) → GROOVE. ENGINE.ms is an EMA of the CPU cost per frame.
 import { ema } from '../math/util.js';
-import { MS } from './state.js';
+import { MS, TEX } from './state.js';
 import { updateMusic } from './features.js';
 import { AU, initAudio, run } from './audio.js';
 import { GROOVE, updateGroove } from './groove.js';
 import demo from './sources/demo.js';
 import capture from './sources/capture.js';
 import fake from './sources/fake.js';
+import demoSynapse from './sources/demo-synapse.js';
 import { FEATS } from './feats.js';
 
-AU.startDemo = demo.start;
+AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : demo.start());
 
 export const ENGINE = {
   MS, GROOVE, AU, FEATS,
-  sources: { demo, capture, fake },
+  sources: { demo, capture, fake, 'demo-synapse': demoSynapse },
+  demoStyle: null,  // &demo=<style> selects the synapse synth; null = the v3 demo (parity)
+  tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them
+  extraMs: 0,       // CPU spent outside frame() by stages (worklet port handler), drained into ms
   stages: [],       // [{ name, fn(dt, now, MS), feats:[...] }]
   fix: null,        // test hook: Object.assign(MS, fix) every frame after extraction
   fakeOn: false,    // #test without fake=0: the deterministic timeline replaces the extractor
@@ -45,6 +49,7 @@ export const ENGINE = {
     for (const st of this.stages) st.fn(dt, now, MS);
     if (this.fix) Object.assign(MS, this.fix);
     updateGroove(dt, MS);
-    this.ms = ema(this.ms, performance.now() - t0, dt, 1);
+    this.ms = ema(this.ms, performance.now() - t0 + this.extraMs, dt, 1);
+    this.extraMs = 0;
   },
 };

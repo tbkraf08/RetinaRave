@@ -70,6 +70,11 @@ ctx.freeTarget(t)
 ctx.onResize(fn(w, h))        register a callback; allocate your own targets there (they are freed/rebuilt by you)
 ctx.targets                   {a, b, m}: the core's full-size scene targets. draw() receives one of them as `target`;
                               draw into the one you are handed, never pick one yourself
+ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINEAR). spec 256×1 log spectrum (30 Hz–16 kHz,
+                              floor-subtracted, peak-normalised), wave 512×1 zero-crossing-triggered waveform (0.5 = silence),
+                              hist 256×128 spectrogram ring (one row per ~10 ms hop, T wrap = REPEAT); row = the newest row's
+                              index (sample v = (row + 0.5)/128 for "now", subtract to go back in time). Bind with
+                              ctx.tex(pr, 'uSpec', unit, ctx.engineTex.spec). Under #test the fake timeline fills them.
 ctx.Q                         adaptive quality (§1.6)
 ctx.LOOK                      the palette block (§1.5)
 ctx.hsv(h, s, v) → [r,g,b]
@@ -144,8 +149,11 @@ needed, now generic:
 ### 1.5 `LOOK` and `GROOVE`
 
 `LOOK` (in `update` args and `ctx.LOOK`): `{hue, hueT, pal:[hue,spread,sat,bri], tint:[r,g,b], bands, beat, arc,
-harm, time, peak}` — the v3 palette, derived from `MS` every frame. `LOOK.mood` (valence/arousal palette) arrives in
-§2 for the synapse scenes.
+harm, time, peak, mood}` — the v3 palette, derived from `MS` every frame. NAV reads `pal`/`tint` (through `HEAD`'s
+`pal()`); the synapse scenes read **`LOOK.mood`** = `{hue, sat, bri, spread, invert, angular, spiky}`: hue orbits a
+family anchor chosen by `moodFamily` (valence/arousal), `sat`/`bri`/`spread` follow intensity/tension/drops, `invert`
+pulses to 1 on a drop and decays in 0.3 s, `angular`/`spiky` are texture axes (percussive·punchy, dirty·arousal). Upload
+them as your own uniforms; synapse's `pal()` was `hue + spread·t` with `sat`/`bri` — see the DUST/MANDALA shaders.
 
 `GROOVE`: `{rot, drift, sway, nod:{x}, vel}` — one shared rotation angle (radians) that breathes with the beat.
 `rot = drift + sway + nod.x`. Use `rot` for your view rotation (NAV does), `vel` for angular velocity, `sway` alone
@@ -291,6 +299,59 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `identifyEvt` | event | the section was just identified | soft scene switch |
 | `repeat` | level | is this section one we have seen before | baby dive, look memory |
 | `seed` | vector | per-section random constants {hue, th, a, scene} | palette offset, drift direction, alpha offset, remembered scene |
+| `bassS` | level | synapse bass, slow (0.5 s) | DUST/MANDALA body |
+| `midS` | level | synapse mids, slow | DUST/MANDALA |
+| `highS` | level | synapse highs, slow | - |
+| `sub` | level | sub bass (25-60 Hz), fast | low rumble |
+| `lvl` | level | synapse loudness | DUST/MANDALA brightness, flow rate |
+| `kick` | level | a kick just hit, decaying (0.16 s) | DUST kick flare, MANDALA centre |
+| `snare` | level | a snare just hit, decaying (0.13 s) | - |
+| `hat` | level | a hat just hit, decaying (0.06 s) | DUST/MANDALA sparkle |
+| `kickCount` | count | kicks since start | MANDALA fold seed (every 64 kicks) |
+| `alive` | level | is sound present (synapse) | idle behaviour |
+| `hush` | level | the silence before a drop | DUST/MANDALA hold |
+| `calm` | level | quiet and unhurried | scene scores |
+| `resolve` | level | a held tension that released (fake-out) | DUST/MANDALA release |
+| `flow` | raw | musical time: seconds weighted by energy | DUST/MANDALA motion — never wall-clock |
+| `flowBass` | raw | musical time driven by bass | DUST |
+| `flowMid` | raw | musical time driven by mids | DUST/MANDALA |
+| `flowHigh` | raw | musical time driven by highs | - |
+| `centroid` | level | spectral brightness | arousal, MANDALA colour |
+| `flux` | raw | raw spectral flux (kick + .6 snare bands) | - |
+| `dirty` | level | noisy / distorted texture | mood spiky, valence |
+| `punchy` | level | transient-heavy mix | mood angular |
+| `perc` | level | percussive (spiky onset envelope) | arousal, angular |
+| `beatConf` | level | confidence in the synapse beat clock | gridTrust |
+| `gridTrust` | level | trust in the bar/phrase grid (keeps counting through breakdowns) | beat-quantised actions (§5) |
+| `barConf` | level | confidence in the bar (4-beat) line | boundary snapping |
+| `phraseConf` | level | confidence in the 16-beat phrase line | drop expectation, boundary snapping |
+| `bar` | count | bar number on the synapse grid | phrase-aware scenes |
+| `barPos` | raw | position inside the bar, 0..4 (beats) | MANDALA fold rotation |
+| `barPhase` | level | position inside the bar, 0..1 | TORUS breathing (alt) |
+| `phrasePos` | raw | position inside the 32-beat phrase, 0..32 | director look memory |
+| `phrase16Pos` | raw | position inside the 16-beat phrase | - |
+| `beatSyn` | raw | synapse beat clock (continuous beats) | grid fields |
+| `bpmSyn` | raw | synapse tempo estimate (rival to bpm; bpm is canonical) | HUD, DECISIONS.md comparison |
+| `key` | count | the key, 0=C … 11=B | TORUS knot / palette anchor |
+| `mode` | count | 0 major, 1 minor | valence |
+| `keyConf` | level | how sure the key is | TORUS |
+| `novelty` | level | timbre just changed (quick, causal) | early warning for the director |
+| `foote` | level | Foote novelty at the last beat (careful, 4-beat kernel) | boundaries |
+| `boundaryEvt` | event | a section boundary was just declared (synapse) | director soft switch (alt) |
+| `sectionAlt` | count | synapse section id (23-dim fingerprint clustering); sectionId is canonical | DECISIONS.md comparison |
+| `sectionReturn` | level | this section is a return of an earlier one (synapse) | look memory |
+| `sectionAge` | raw | beats since the section started | - |
+| `dropExpectedIn` | raw | beats until the expected drop line (-1 = none armed) | anticipation |
+| `dropConf` | level | how sure a drop is coming | TORUS pinch (alt) |
+| `fakeoutEvt` | event | the expected drop did not come | release |
+| `valence` | level | mood: dark ↔ bright | LOOK.mood hue anchor |
+| `arousal` | level | mood: calm ↔ fierce | LOOK.mood hue swing |
+| `moodFamily` | count | 0 calm-dark · 1 calm-bright · 2 fierce-dark · 3 euphoric | LOOK.mood anchor |
+| `moodEvt` | event | the mood family shifted | palette re-anchor |
+| `riser` | level | a riser is climbing | build evidence |
+| `roll` | level | the drum roll is accelerating | build evidence |
+| `swell` | level | energy swelling | build evidence |
+| `hp` | level | the bass was pulled (high-pass sweep) | build evidence |
 <!-- FEATS:end -->
 
 ## Friction log

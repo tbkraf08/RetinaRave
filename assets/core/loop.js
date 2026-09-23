@@ -3,7 +3,7 @@
 import { ENGINE } from '../engine/engine.js';
 import { MS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
-import { G, resize } from './gl.js';
+import { G, resize, uploadEngineTex } from './gl.js';
 import { Q, updateQuality } from './quality.js';
 import { LOOK, updateLook } from './look.js';
 import { updateFX, runChain } from './post.js';
@@ -25,6 +25,7 @@ export function frame(tms) {
   updateQuality(dtRaw);
   resize();
   ENGINE.frame(dt, now, tms);
+  uploadEngineTex(ENGINE.tex);
   const S = MS;
   // scene updates: scenes flagged always, plus the ones on screen
   const env = { SC, Q, now };

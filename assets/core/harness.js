@@ -65,6 +65,7 @@ export function initHarness(hideLanding) {
       if (TEST && HASH.has(k)) sc.hooks[k](HASH.get(k));
     }
   }
+  if (HASH.has('demo')) ENGINE.demoStyle = HASH.get('demo');
   if (TEST) {
     hideLanding();
     if (HASH.get('fake') === '0') ENGINE.start('demo');

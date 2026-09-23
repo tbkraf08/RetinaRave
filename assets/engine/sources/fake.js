@@ -1,9 +1,10 @@
 // Deterministic fake music state for the headless self-test (#test): 24 s loop — sustain 0–6, valley 6–10,
 // build 10–13, DROP at 13, peak 13–21, valley 21–24. Drives MS directly (no audio). Lifted from cardioid3 fakeMusic.
 import { TAU, clamp, ema, frac, sstep } from '../../math/util.js';
-import { MS } from '../state.js';
+import { MS, TEX } from '../state.js';
 
 const lib = {};
+let hatPh = 0;
 
 export function fakeMusic(dt, now) {
   const S = MS, T = now % 24;
@@ -73,6 +74,70 @@ export function fakeMusic(dt, now) {
   for (let i = 0; i < 2048; i++) S.wave[i] = Math.sin(i * 0.05 + now * 7) * 0.3 * e + Math.sin(i * 0.31 + now) * 0.2 * S.high;
   S.rms = 0.2;
   S.peaks = [[110, 1], [220, .6], [330, .5], [550, .3]];
+  fakeSynapse(dt, now, S, sec, T, e, kp, kickOn);
+}
+
+// Plausible, deterministic values for the synapse stage's fields so DUST / MANDALA / TORUS react headlessly.
+function fakeSynapse(dt, now, S, sec, T, e, kp, kickOn) {
+  S.boundaryEvt = S.fakeoutEvt = S.moodEvt = false;
+  S.lvl = e;
+  S.kick = S.beat && kickOn ? 1 : S.kick * Math.exp(-dt / 0.16);
+  S.snare = S.beat && kickOn && (S.beatCount & 1) ? 0.7 : S.snare * Math.exp(-dt / 0.13);
+  S.hat = (S.beatPhase < 0.5) !== (hatPh < 0.5) && sec !== 'valley' ? 0.5 : S.hat * Math.exp(-dt / 0.06);
+  hatPh = S.beatPhase;
+  if (S.beat && kickOn) S.kickCount++;
+  S.bassS = ema(S.bassS, S.bass, dt, 0.5);
+  S.midS = ema(S.midS, S.mid, dt, 0.5);
+  S.highS = ema(S.highS, S.high, dt, 0.5);
+  S.sub = S.bass * 0.8;
+  S.alive = 1;
+  S.hush = sec === 'build' && T > 12.6 ? 1 : 0;
+  S.calm = sec === 'valley' ? 0.8 : 0.2;
+  S.resolve = 0;
+  S.flow += dt * (0.015 + 0.9 * S.lvl + 0.6 * S.kick + 1.2 * S.dropEnv);
+  S.flowBass += dt * (0.01 + S.bass);
+  S.flowMid += dt * (0.01 + S.midS);
+  S.flowHigh += dt * (0.01 + S.high);
+  S.centroid = 0.35 + 0.3 * S.high;
+  S.flux = kp;
+  S.dirty = 0.2;
+  S.punchy = 0.6;
+  S.perc = 0.7;
+  S.beatConf = S.gridTrust = S.barConf = 0.9;
+  S.phraseConf = 0.8;
+  S.beatSyn = S.beatCount + S.beatPhase;
+  S.bpmSyn = S.bpm;
+  S.barPos = (S.beatCount % 4) + S.beatPhase;
+  S.barPhase = S.barPos / 4;
+  S.phrasePos = (S.beatCount % 32) + S.beatPhase;
+  S.phrase16Pos = (S.beatCount % 16) + S.beatPhase;
+  S.bar = Math.floor(S.beatCount / 4);
+  S.key = 9;
+  S.mode = 1;
+  S.keyConf = 0.8;
+  S.novelty = S.sectionEvt ? 1 : S.novelty * Math.exp(-dt / 0.8);
+  S.foote = S.novelty;
+  S.boundaryEvt = S.sectionEvt;
+  S.sectionAlt = S.sectionId;
+  S.sectionReturn = S.repeat ? 1 : 0;
+  S.sectionAge = S.beatCount;
+  S.dropExpectedIn = sec === 'build' ? (13 - T) * S.bpm / 60 : -1;
+  S.dropConf = S.build;
+  S.valence = ema(S.valence, sec === 'peak' ? 0.75 : sec === 'valley' ? 0.35 : 0.5, dt, 3);
+  S.arousal = ema(S.arousal, e, dt, 3);
+  S.moodFamily = sec === 'peak' ? 3 : sec === 'valley' ? 0 : 1;
+  S.riser = S.roll = S.build;
+  S.swell = S.hp = 0;
+  // textures: a three-hump log spectrum, the fake waveform, and the spectrogram ring
+  const sp = TEX.spec, wv = TEX.wave;
+  for (let j = 0; j < 256; j++) {
+    const v = S.bass * Math.exp(-j / 40) + S.mid * Math.exp(-(j - 100) * (j - 100) / 800) + S.high * Math.exp(-(j - 200) * (j - 200) / 1500);
+    sp[j] = clamp(v, 0, 1) * 255;
+  }
+  for (let i = 0; i < 512; i++) wv[i] = clamp(0.5 + S.wave[i * 4] * 1.2, 0, 1) * 255;
+  TEX.hist.set(sp, TEX.row * 256);
+  TEX.row = (TEX.row + 1) % 128;
+  TEX.hop++;
 }
 
 export default { name: 'fake', start() {}, stop() {}, update: fakeMusic };

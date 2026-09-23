@@ -1,5 +1,8 @@
 // Synapse DSP primitives: radix-2 FFT with Hann window, AGC band follower, median-thresholded onset detector, comb/PLL
 // tempo tracker with hysteresis and rival-tempo arbitration. Lifted from synapse2.html 131–215 (reformatted only).
+export const SPEC_W = 256, WAVE_W = 512, HIST_H = 128;
+export const FDIM = 23; // per-beat feature: 12 chroma + 9 log bands + onset density + percussiveness
+
 export const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 export const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 export const lerp = (a, b, t) => a + (b - a) * t;

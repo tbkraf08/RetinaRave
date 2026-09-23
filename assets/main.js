@@ -1,6 +1,7 @@
 // Boot: engine → core (GL, effects, scenes) → registry → harness → loop.
 import { ENGINE } from './engine/engine.js';
-import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS } from './core/gl.js';
+import './engine/features-synapse.js';
+import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
 import { Q } from './core/quality.js';
 import { LOOK } from './core/look.js';
 import { addEffect } from './core/post.js';
@@ -28,7 +29,7 @@ try {
 // The ctx every scene and effect receives (docs/CONTRACTS.md §1.1). Never the module namespace of core/gl.js.
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
-  targets: G.RT, Q, LOOK, hsv,
+  targets: G.RT, Q, LOOK, hsv, engineTex: ETEX,
   log: (s) => { if (TEST) CARD.log.push(s); },
 };
 

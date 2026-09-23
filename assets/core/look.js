@@ -7,7 +7,34 @@ export const LOOK = {
   bands: [0, 0, 0], beat: [0, 0, 0, 0], arc: [0, 0, 0, 0], harm: [0, 0, 0, 0],
   time: 0,          // visual clock: the active scene's rt.time if it has one, else wall time (see loop.js)
   peak: 0,
+  // synapse mood palette: hue orbits a family anchor chosen by (valence, arousal); the synapse scenes read this, v3 scenes read pal
+  mood: { hue: 0.38, sat: 0.5, bri: 0.6, spread: 0.2, invert: 0, anchor: 0.66, anchorSp: 0.2, hueFree: 0.6, angular: 0, spiky: 0 },
 };
+
+// mood family -> palette anchor (hue, spread): calm-dark · calm-bright · fierce-dark · euphoric (synapse2 FAMILY)
+const FAMILY = [{ h: 0.66, sp: 0.16 }, { h: 0.47, sp: 0.24 }, { h: 0.93, sp: 0.3 }, { h: 0.06, sp: 0.4 }];
+
+export function updateMood(dt, S) {
+  const M = LOOK.mood, fam = FAMILY[S.moodFamily] || FAMILY[0];
+  let da = fam.h - M.anchor;
+  da -= Math.round(da);
+  M.anchor += da * (1 - Math.exp(-dt / 5));
+  M.anchorSp = ema(M.anchorSp, fam.sp, dt, 5);
+  M.angular = ema(M.angular, clamp(1.4 * S.perc * (0.4 + 0.6 * S.punchy) - 0.25 + 0.3 * S.dirty * S.arousal, 0, 1), dt, 4);
+  M.spiky = ema(M.spiky, clamp(0.9 * S.dirty * (0.5 + S.arousal) + 0.5 * (1 - S.valence) - 0.3, 0, 1), dt, 4);
+  const I = S.intensity;
+  M.hueFree += dt * (0.004 + 0.10 * I * I + 0.06 * S.kick * I);
+  const anchor = M.anchor + 0.07 * Math.sin(S.flow * 0.05);
+  let dh = (M.hueFree - anchor) % 1;
+  if (dh > 0.5) dh -= 1;
+  if (dh < -0.5) dh += 1;
+  M.hue = anchor + dh * sstep(0.2, 0.62, I) * (0.5 + 0.5 * S.arousal);
+  M.sat = clamp(mix(0.62, 1.0, I) * (1 - 0.55 * S.tension) + 0.35 * S.dropEnv + 0.1 * (S.valence - 0.5), 0, 1.2);
+  M.bri = mix(0.5, 1.12, I) + 0.45 * S.dropEnv + 0.25 * S.tension;
+  M.spread = mix(M.anchorSp * 0.7, M.anchorSp * 1.6 + 0.1, I) + 0.2 * S.tension;
+  if (S.dropEvt) { M.invert = 1; M.hueFree += 0.27 + 0.25 * frac(S.seed.hue * 7.31); }
+  M.invert *= Math.exp(-dt / 0.3);
+}
 
 export function updateLook(dt, S, now) {
   const C = LOOK;
@@ -25,4 +52,5 @@ export function updateLook(dt, S, now) {
   C.beat = [S.beatPhase, S.hit, br, S.dropEnv];
   C.arc = [S.eS, S.build, S.tension, S.surprisal];
   C.harm = [S.harmAngle, S.harmVel, S.clarity, S.regularity];
+  updateMood(dt, S);
 }

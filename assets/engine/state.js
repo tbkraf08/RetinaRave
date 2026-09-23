@@ -12,7 +12,17 @@ export const MS = {
   seed: { hue: 0.6, th: 0, a: 0.3, scene: -1 }, intensity: 0, peaks: [], wave: new Float32Array(2048), rms: 0,
   // fields v3 created at runtime, declared here so the schema is closed
   highM: 0, buildPk: 0, liveT: 0, arcT: 0, surRaw: 0, repeat: false, _susHi: false,
+  // synapse stage (features-synapse.js) — additive, never overwrites the above
+  bassS: 0, midS: 0, highS: 0, sub: 0, lvl: 0, kick: 0, snare: 0, hat: 0, kickCount: 0, alive: 0, hush: 0, calm: 0, resolve: 0,
+  flow: 0, flowBass: 0, flowMid: 0, flowHigh: 0, centroid: 0.4, flux: 0, dirty: 0, punchy: 0.5, perc: 0,
+  beatConf: 0, gridTrust: 0, barConf: 0, phraseConf: 0, bar: 0, barPos: 0, barPhase: 0, phrasePos: 0, phrase16Pos: 0, beatSyn: 0, bpmSyn: 0,
+  key: 9, mode: 1, keyConf: 0, novelty: 0, foote: 0, boundaryEvt: false, sectionAlt: -1, sectionReturn: 0, sectionAge: 0,
+  dropExpectedIn: -1, dropConf: 0, fakeoutEvt: false, valence: 0.5, arousal: 0.3, moodFamily: 0, moodEvt: false, riser: 0, roll: 0, swell: 0, hp: 0,
 };
+
+// Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,
+// spectrogram ring 256×128 (row = the newest row). Filled by the synapse stage, or by the fake timeline under #test.
+export const TEX = { spec: new Uint8Array(256), wave: new Uint8Array(512).fill(128), hist: new Uint8Array(256 * 128), row: 0, hop: 0 };
 
 // Extractor scratch state (not part of the contract).
 export const XS = {
