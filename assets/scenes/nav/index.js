@@ -60,7 +60,7 @@ export default {
       clarity: 'DRUM\'s bid: a clear tonal interior with a converged cycle invites the membrane',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
-    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays.',
+    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle.',
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
@@ -116,6 +116,7 @@ export default {
     gl.uniform4f(u('uLam'), N.cyc.lnr, N.cyc.arg, N.cyc.q, N.cyc.has);
     gl.uniform1f(u('uEps2'), N.cyc.eps2);
     gl.uniform1f(u('uPx'), 2 * scale / h);
+    gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
     for (let j = 0; j < 4; j++) {
       const pk = S.peaks[j], f = pk ? pk[0] : 110 * (j + 1), oct = Math.log2(Math.max(f, 30) / 55);
       modes[j * 4] = 2 * (1 + (Math.round(oct * 12) * 7 % 12) % 4);
