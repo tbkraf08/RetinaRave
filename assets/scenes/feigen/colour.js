@@ -126,7 +126,7 @@ void main(){
     } else if (uBlend > 0.5) { v = v2; esc = e2; }
   }
   vec3 hlc;        // the (hue, lightness, chroma) this pixel asked for — what hooks.clipdbg=1 re-checks
-  vec2 gd = vec2(0.);   // (-log2 G, the distance estimate in pixels) — what hooks.clipdbg=2 reads back
+  vec2 gd = vec2(0., -24.);   // (-log2 G, log2 of the scale-free DE) — what hooks.clipdbg=2 reads back
   if (esc > 0.5) {
     // distance to M in units of the view width: scale-free, so the dive can loop on the cascade's self-similarity.
     // One pixel is uWidth/uRes.y in parameter units, so d*uRes.y IS the distance estimate in pixels.
@@ -134,31 +134,29 @@ void main(){
     float sp = specM(abs(fract(ea) * 2. - 1.) * 0.9);
     // H: the external angle, one turn for one turn. The mood rotates the whole wheel; a drop turns it by half.
     float H = ea + uHue + 0.5 * uInvert;
-    // L: the potential. -lG counts the doublings of G below 1: measured with hooks.clipdbg=2 it runs 0..120 at the
-    // arrival depth and 34..478 at &feig=3.6, so it goes through sqrt then tanh — monotone over both ranges and
-    // saturating at neither end (-lG 2 -> L .12, 8 -> .20, 40 -> .38, 85 -> .48, 153 -> .55, 478 -> .63). k = 10 was
-    // chosen on the montage: k = 7 held the whole deep exterior inside a sixth of the range, k = 14 flattened the
-    // arrival view's rim into the field. The 0.62 leaves the top of the range for the music below. A deep view is
-    // brighter than a shallow one because its potential really is deeper: the level sets are absolute, not
-    // normalised per frame, so the dive never re-grades itself mid-fall and a rung change cannot shift the grade.
-    float L = 0.03 + 0.62 * tanh(sqrt(max(-lG, 0.)) / 10.);
-    // the Green's level sets: one band per doubling of G, drifting on musical time — §15's band, now on lightness
+    // L: the DISTANCE, not the potential. d is already divided by the view width, so it carries the dive's
+    // self-similarity: the same shape of view has the same d at every depth, and the grade never moves under the
+    // fall. The open field sits at 0.72 — where cMax is the full 0.11, so the hue cells read as colour — and darkens
+    // into the set. KD is chosen on the montage (see the report): it is the reciprocal of the d that half-darkens.
+    float L = 0.72 * (1. - exp(-d * 200.));
+    // the Green's level sets: one band per doubling of G, drifting outward on musical time, as a +-0.08 ripple of
+    // lightness on top of the distance grade (§15's band term, same lG, same uFlow, same sp^2 / uHat amplitude)
     float band = 1. - smoothstep(0., 0.1, abs(fract(lG * 0.5 - uFlow * 0.3) - 0.5) - 0.4);
-    L += band * (0.02 + 0.22 * sp * sp + 0.15 * uHat) * exp(-d * 2.5) * (0.4 + uLevel);
-    // the spectrogram's past drifts off the boundary: the further out, the older the row
-    L += histM(abs(fract(ea * 2.) * 2. - 1.), clamp(d * 1.5, 0., 0.9)) * exp(-d * 6.) * 0.25 * uMidS;
-    // the music rides lightness, never the encoded colour: the level scales it as §15's (0.45 + 1.3*uLevel) did,
-    // the kick adds <= .15 and the drop <= .25 — additive, so the gamut clip below always has room and no channel
-    // is ever clamped. uBri is the mood's own dimming, exactly where palM had it.
-    L = L * clamp((1.05 + 0.35 * uLevel) * uBri, 0.35, 1.30) + 0.15 * uKick + 0.25 * uDrop;
+    L += (2. * band - 1.) * 0.08 * min(1.5, 0.6 + 0.6 * sp * sp + 0.5 * uHat);
+    // the spectrogram's past drifts off the boundary: the further out, the older the row. It darkens the bright
+    // field rather than lifting it, so it cannot push the exterior out of its chroma budget.
+    L -= histM(abs(fract(ea * 2.) * 2. - 1.), clamp(d * 1.5, 0., 0.9)) * exp(-d * 6.) * 0.20 * uMidS;
+    // the music rides lightness, never the encoded colour. The level and the mood's own brightness scale it, but
+    // only to 1.02, so the field stays in the L band where the chroma budget is full; the kick and the drop lift
+    // TOWARD white by <= .15 and <= .25 of the remaining headroom, so no gain can ever take a channel past 1.
+    L *= clamp(mix(1., uBri, 0.4) * (0.92 + 0.14 * uLevel), 0.65, 1.02);
+    L += (0.15 * uKick + 0.25 * uDrop) * (1. - clamp(L, 0., 1.));
     // the boundary: under half a pixel of DE the lightness goes to 0. Bass narrows that edge (§15's filament
     // sharpening, which was the same mix(160, 70, bass) on the same d).
     L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
-    // the band and the spectrogram can push the loudest frame's brightest pixels past white (13 of 921600 at the
-    // fake drop): hold L at 1 so cMax stays defined, where it is 0 and the colour is white — never a clamped channel
-    L = min(L, 1.);
+    L = clamp(L, 0., 1.);
     hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
-    gd = vec2(-lG, dpx);
+    gd = vec2(-lG, log2(max(d, 1e-7)));
   } else {
     float t = v.w;   // orbit trap inside the set: how near the orbit passed the origin
     // §15's interior brightness, read as a lightness: for a grey L = Y^(1/3) and Y ~ enc^2.4, so an encoded value
@@ -169,7 +167,7 @@ void main(){
   }
   if (uClipDbg > 0.5) {                            // #test only: the gamut and field probes, never a shipped pixel
     o = uClipDbg < 1.5 ? vec4(okClip(hlc.x, hlc.y, hlc.z), 1., 1., 1.)
-                       : vec4(clamp(gd.x / 512., 0., 1.), clamp(gd.y / 8., 0., 1.), esc, 1.);
+                       : vec4(clamp(gd.x / 512., 0., 1.), clamp((gd.y + 24.) / 24., 0., 1.), esc, 1.);
     return;
   }
   o = vec4(linToSrgb(palOK(hlc.x, hlc.y, hlc.z)) * uAlive, 1.);
