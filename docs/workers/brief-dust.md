@@ -23,7 +23,7 @@ It is the highest-trail scene: declare `post: { fb: { decay: 0.95 }, bloom: { th
 trails in the shader. Reads (from the mapping): `flow flowMid bassS midS lvl kick dropEnv tension hat alive` +
 `LOOK.mood` + `uSpec` (per-particle frequency ownership) + `uWave` (the ribbon formation). Do not read anything else.
 
-Camera: synapse used a director camera. Build a minimal one in `update()`: eye at distance ~3.2 on a slow orbit whose
+Camera: synapse used a director camera. Build a minimal one in `update()`: eye at distance ~4.4 (synapse's framing at this fov) on a slow orbit whose
 yaw = `0.35 * GROOVE.rot + 0.05 * MS.flow`, pitch a gentle `0.3 * sin(0.03 * MS.flow)`, looking at the origin, vertical
 fov ~55°, near 0.1 far 10.1 (match VS_SWARM's depth convention). Pass view-projection as one `mat4` uniform (or the
 pieces VS_SWARM expects). `GROOVE` is the 3rd argument of `update`.

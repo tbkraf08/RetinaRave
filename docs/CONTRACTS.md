@@ -9,8 +9,10 @@ fix the doc, not the reader.
 
 - Zero runtime dependencies. Native ES modules. WebGL2, fragment-shader-first. No bundler, no framework, no TypeScript.
 - Every visual parameter traces to a field of `MS` (the music state vector, schema in `assets/engine/feats.js`) or to
-  `GROOVE` / `LOOK`, which are themselves derived from `MS`. Never a hidden timer, never `Date.now()`, never a magic
-  constant that moves. Muted audio must visibly idle.
+  `GROOVE` / `LOOK`, which are themselves derived from `MS`. Never a hidden timer, never `Date.now()`, never
+  `Math.random()` (`#test` must be bit-identical: derive randomness from `MS.seed.a`/`sectionId` and a counter through
+  a hash), never a magic constant that moves. Muted audio must visibly idle. Event fields you gate on (`dropEvt`,
+  `onset`, `beat`) belong in `feats` like any other read.
 - Module cap: `tools/check.js` warns above 350 lines and fails above 500 (GLSL template strings count). Split
   `shaders.js` from `index.js` early. One statement per line, `//` comments are fine.
 - Import discipline (enforced by `check.js`): a scene or effect imports only from its own folder and from
@@ -59,10 +61,12 @@ variables of your `index.js`). `ctx` is not passed again to `update`/`draw`/`ove
 ### 1.1 `ctx` — everything a scene or effect may touch in the core
 
 ```
-ctx.gl            the WebGL2 context (raw; you own your GL state inside draw/overlay, restore blend/scissor when done)
+ctx.gl            the WebGL2 context (raw). On entry to draw(): BLEND off, DEPTH_TEST off, SCISSOR off, the target bound
+                  and viewport set, NOT cleared (clear it yourself if you need to). Leave it that way on return.
 ctx.mkProg(fs, name)          fullscreen program: HEAD + your fragment source, the shared triangle vertex shader
 ctx.mkProg(vs, fs, name)      raw program (own vertex shader, e.g. gl_VertexID particles). No HEAD is prepended.
-ctx.use(pr, target, w, h)     bind program + target (null = screen) + viewport and upload the common uniforms (§1.2)
+ctx.use(pr, target, w, h)     bind program + target (null = screen) + viewport and upload the common uniforms (§1.2);
+                              fine for raw programs too (only the uniforms that exist are set)
 ctx.tri()                     draw the fullscreen triangle
 ctx.tex(pr, 'uName', unit, t)        bind t.t (any {t}: a target or an engine texture) to a unit and set the sampler.
                               Scenes may use units 0–7.
@@ -84,7 +88,9 @@ ctx.hsv(h, s, v) → [r,g,b]
 ctx.log(string)               append to CARD.log (only under #test)
 ```
 
-Programs from `mkProg` are `{p, name, u(name) → location}`; `u()` caches lookups. Shader compile/link errors are
+Programs from `mkProg` are `{p, name, u(name) → location}`; `u()` caches lookups. `mkTarget` targets are cleared to
+opaque black on creation. `ctx.onResize` callbacks fire on the first resize at boot (before the first frame) and on
+every later size change — allocate there and you are ready by frame 1. Shader compile/link errors are
 pushed to `CARD.ERRS` (and `console.error`), never thrown.
 
 ### 1.2 Shared GLSL (`HEAD`)
@@ -110,7 +116,8 @@ mat2  rot(float a);            // 2D rotation
 float hash(vec2 p);            // 0..1 hash
 ```
 
-Uniforms you declare yourself must be fetched with `pr.u('name')` somewhere in your folder: `check.js` fails on a
+Uniforms you declare yourself must be fetched with `pr.u('name')` (or bound with `ctx.tex(pr, 'name', …)`) somewhere in
+your folder: `check.js` fails on a
 declared-but-never-fetched uniform (arrays: fetch `'uName[0]'`; a loop over a name array is invisible to it — write the
 literal). HEAD already declares `in vec2 vUv; out vec4 o;` — do not redeclare them. Never name a GLSL variable `gl_*`.
 `smoothstep(a,b,x)` needs `a<b` (lifted sources sometimes reverse it: write `1.-smoothstep(b,a,x)`). `readPixels` from
@@ -233,9 +240,13 @@ export default {
 };
 ```
 
-`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q}`.
+`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q}` — `src` a target; `w,h` the
+full target size, `sw,sh` the scene-pass size inside it; `uvS` `[u,v]` scale to sample `src`; `dt` seconds; `frameN`
+monotonic (it keeps counting while you are skipped — a gap means you were just switched on).
 - `src` is the current chain input (a target). The scene pass was rendered at `(sw, sh)` inside a `(w, h)` target:
-  sample it with `vUv * uvS` — after the first effect that re-renders at full size (feedback does) `uvS` is `[1,1]`.
+  sample it with `vUv * uvS`. Rule: an effect that returns a target has re-rendered the whole `(w, h)` target and must
+  set `io.uvS = [1, 1]` (feedback does; so anything after order 10 sees `[1,1]`). The target you return stays yours:
+  the core never frees or recycles it, and it reads it only until the next effect runs.
 - `aux` is a scratch object for side-chains: bloom publishes `aux.bloom = {b1, b2}` for the composite.
 - `FX` is the core's per-frame fx state `{glitch, flash, kal, ca, seed}` (derived from `MS`; you read it).
 - `post` is the current scene's `post` object; read your params as `post.<name>`. The core skips you when

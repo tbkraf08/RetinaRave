@@ -50,7 +50,7 @@ GPU=1 node tools/cdp.js 'test&scene=1' '[{"wait":6000},{"shot":"work/s1-t6"},{"e
 # shot work/s1-t6
 ```
 ```
-# deterministic: exactly frame 360 / 840, bit-identical between runs
+# deterministic: exactly frame 360 / 840 (the fake clock pauses while the screenshot is taken), bit-identical between runs
 CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=1' '[{"until":"__FRAME>=360"},{"shot":"work/s1-f360"},{"until":"__FRAME>=840"},{"shot":"work/s1-f840"}]'
 ```
 ```
@@ -73,6 +73,7 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 
 - `CARD.fix = {bass: 1, arc: 'peak'}` pins MS fields every frame after extraction (works with `fake=0` too). `null` clears.
 - `CARD.goScene(id, hard)` · `CARD.bench(id, n=40)` → ms per full-resolution render of scene id, readPixels-synced.
+  Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
 - `CARD.nonFinite()` → keys of MS holding a non-finite number (must be `[]`).
 
 ## Continuity monitor (NAV invariant)

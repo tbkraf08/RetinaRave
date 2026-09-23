@@ -13,9 +13,11 @@ import { hsv } from './math/util.js';
 
 import feedback from './effects/feedback.js';
 import bloom from './effects/bloom.js';
+import exposure from './effects/exposure.js';
 import composite from './effects/composite.js';
 
 import nav from './scenes/nav/index.js';
+import dust from './scenes/dust/index.js';
 import mandala from './scenes/mandala/index.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,8 +37,8 @@ const ctx = {
 };
 
 initScenes();
-for (const fx of [feedback, bloom, composite]) addEffect(fx, ctx);
-for (const scene of [nav, mandala]) {
+for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
+for (const scene of [nav, dust, mandala]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

@@ -3,7 +3,8 @@
 //   steps: [{wait:ms},{shot:'name',clip:[x,y,w,h,scale]},{eval:'expr'},{click:[x,y]},{key:'d'},{until:'expr',timeout:ms}]
 //   url: page to open (default http://127.0.0.1:PORT/ — tools/serve.js is spawned if nothing answers on PORT)
 // env: GPU=1 real GL (default SwiftShader) · NOAUTO=1 no autoplay flag · FAKECAP=1 auto-accept tab capture ·
-//      CLOCK=1 deterministic 60 Hz rAF clock (window.__FRAME counts frames; combine with {until:'__FRAME>=360'}) ·
+//      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
+//        exactly that frame for the shots/evals that follow; the next {wait} resumes it ·
 //      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765) · OUT=dir for shots
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -20,8 +21,8 @@ const gpu = process.env.GPU ? ['--use-angle=gl', '--ignore-gpu-blocklist'] : ['-
 // The fake clock starts ticking at the page's first requestAnimationFrame call, so frame 1 is the first frame of the
 // loop on both a sync-script page (v3) and a module page (modules load async).
 const CLOCK_SHIM = `(()=>{let f=0,q=[],started=false;const raf=window.requestAnimationFrame.bind(window);
-window.requestAnimationFrame=cb=>{q.push(cb);if(!started){started=true;raf(tick);}return q.length;};window.__FRAME=0;
-function tick(){const l=q;q=[];f++;const t=f*1000/60;window.__FRAME=f;window.__T=t;for(const cb of l)cb(t);raf(tick);}})();`;
+window.requestAnimationFrame=cb=>{q.push(cb);if(!started){started=true;raf(tick);}return q.length;};window.__FRAME=0;window.__PAUSE=0;window.__pauseAt=0;
+function tick(){if(window.__PAUSE||(window.__pauseAt&&f>=window.__pauseAt)){window.__PAUSE=1;raf(tick);return;}const l=q;q=[];f++;const t=f*1000/60;window.__FRAME=f;window.__T=t;for(const cb of l)cb(t);raf(tick);}})();`;
 
 async function ensureServer() {
   if (process.env.FILE) return null;
@@ -61,7 +62,7 @@ async function ensureServer() {
   await send('Page.navigate', { url: url + '#' + hash });
   let fail = 0;
   for (const s of steps) {
-    if (s.wait) await sleep(s.wait);
+    if (s.wait) { if (process.env.CLOCK) await evaluate('window.__pauseAt=0;window.__PAUSE=0'); await sleep(s.wait); }
     if (s.click) for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: s.click[0], y: s.click[1], button: 'left', clickCount: 1 });
     if (s.key) {
       const k = s.key, code = /^[a-z]$/i.test(k) ? 'Key' + k.toUpperCase() : /^[0-9]$/.test(k) ? 'Digit' + k : k;
@@ -71,7 +72,11 @@ async function ensureServer() {
     if (s.until) {
       const t0 = Date.now(), to = s.timeout || 120000;
       let ok = false;
-      while (Date.now() - t0 < to) { if (await evaluate('!!(' + s.until + ')')) { ok = true; break; } await sleep(40); }
+      // under CLOCK the clock pauses atomically when the predicate turns true, so the following shot/eval sees exactly that frame
+      const probe = process.env.CLOCK ? '((' + s.until + ')?(window.__PAUSE=1,true):false)' : '!!(' + s.until + ')';
+      const fm = process.env.CLOCK && /^\s*(?:window\.)?__FRAME\s*>=\s*(\d+)\s*$/.exec(s.until); // frame targets: the shim stops exactly there
+      if (fm) await evaluate('window.__pauseAt=' + fm[1] + ';window.__PAUSE=0');
+      while (Date.now() - t0 < to) { if (await evaluate(probe)) { ok = true; break; } await sleep(40); }
       if (!ok) { console.log('TIMEOUT waiting for', s.until); fail = 1; }
     }
     if (s.eval) { const v = await evaluate(s.eval); console.log('EVAL', s.eval.slice(0, 60), '=>', JSON.stringify(v)); }
