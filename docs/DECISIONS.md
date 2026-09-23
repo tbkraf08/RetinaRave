@@ -35,7 +35,9 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Continuity monitor flags spikes, not speed.** Ported as-is, `monitor.js` flagged v3 itself: 50+ frames per minute
   of 0.06–0.11 per-frame motion in EXT right after drops (the θ/log G springs are fast there). Those are smooth ramps.
   The monitor now counts them in `MON.fast` and flags only spikes (`d > 0.06` and `d > 2.5·dPrev + 0.01`), which is
-  the invariant that matters (chart cuts). Eigenwobble: 0 violations / 60 s (`fast` 36).
+  the invariant that matters (chart cuts). It watches `cPath` (the chart position before the beat-kick blend: the kick
+  is a declared jump-cut whose w=9 spring-back is fastest on its second frame) and carries the previous motion across
+  legal frames (a kick-rise frame must not reset the reference). Eigenwobble: 0 violations / 60 s over 4 drops.
 - **Parity clock.** `tools/parity.js` injects a deterministic 60 Hz rAF clock (`CLOCK=1` in cdp.js) into both pages.
   It starts ticking at the page's first `requestAnimationFrame` call, because a module page registers its loop a few
   real frames later than v3's sync script and the first `dt` would otherwise differ (found: 3-frame phase offset).

@@ -81,7 +81,9 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 ```
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
 GPU=1 node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"},{\"wait\":60000},{\"eval\":\"JSON.stringify({n:MON.n,fast:MON.fast,viol:MON.viol})\"}]"
-# => {"n":3590,"fast":36,"viol":[]}     <- viol must be []; fast = smooth fast frames (exterior after drops), fine
+# => {"n":3519,"fast":97,"viol":[]}     <- viol must be []; fast = smooth fast frames (exterior springs after drops), fine
+# It watches NAV.cPath (the chart position before the beat-kick blend); a violation is a spike: d>0.06 and d>2.5x the
+# previous frame's motion, outside declared cuts (pathCut<=2, a kick rise, a mode change and the 0.3 s after it).
 ```
 
 ## Parity with v3 (core/engine changes only)
