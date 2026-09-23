@@ -4,11 +4,12 @@
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { startGridWorker } from '../../math/mandel.js';
 import { NAV, updateNav } from './nav.js';
-import { FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
+import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
 let ctx, julia, mandel, pt, B_ORB;
+let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
 
 export default {
   name: 'nav',
@@ -27,7 +28,10 @@ export default {
     // v3: eligible only while the navigator is interior with a converged cycle (cycBase, before the kick hides it)
     score: (S, rt) => (rt.home && rt.cycBase ? 0.85 * S.clarity + 0.3 * (1 - S.eM) + 0.1 : 0),
   }],
-  hooks: { baby: (i) => { NAV.forceBaby = +i; } },
+  hooks: {
+    baby: (i) => { NAV.forceBaby = +i; },
+    clipdbg: (v) => { clipDbg = +v || 0; },   // the gamut probe of both escape branches, read back through an RGBA8 target
+  },
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
@@ -60,7 +64,7 @@ export default {
       clarity: 'DRUM\'s bid: a clear tonal interior with a converged cycle invites the membrane',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
-    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle.',
+    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Hue is the angle of the ray you are on: inside a component it is the internal angle arg lambda, outside it is the external angle of the point, which is why a ray in the picture-in-picture and its image in the Julia set share a colour.',
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
@@ -71,8 +75,8 @@ export default {
   init(c) {
     ctx = c;
     NAV.log = c.log;
-    julia = c.mkProg(FS_JULIA, 'julia');
-    mandel = c.mkProg(FS_MANDEL, 'mandel');
+    julia = c.mkProg(c.oklch + OK_NAV + FS_JULIA, 'julia');   // §1.14: hue and lightness independent, so arg lambda and |lambda| can drive one each
+    mandel = c.mkProg(c.oklch + OK_NAV + FS_MANDEL, 'mandel');
     pt = c.mkProg(VS_PT, FS_PT, 'pt');
     B_ORB = c.dynBuf(160 * 3, 3);
     startGridWorker();
@@ -117,6 +121,7 @@ export default {
     gl.uniform1f(u('uEps2'), N.cyc.eps2);
     gl.uniform1f(u('uPx'), 2 * scale / h);
     gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
+    gl.uniform1f(u('uClipDbg'), clipDbg);
     for (let j = 0; j < 4; j++) {
       const pk = S.peaks[j], f = pk ? pk[0] : 110 * (j + 1), oct = Math.log2(Math.max(f, 30) / 55);
       modes[j * 4] = 2 * (1 + (Math.round(oct * 12) * 7 % 12) % 4);
@@ -168,6 +173,7 @@ export default {
     gl.uniform4f(pr.u('uView'), PIP.cx.x, PIP.cy.x, pipS, 0);
     gl.uniform1i(pr.u('uIter'), Math.round(N.baby ? 256 : 90 + 120 * Q.q));
     gl.uniform1f(pr.u('uAlpha'), PIP.a);
+    gl.uniform1f(pr.u('uClipDbg'), clipDbg);
     for (let j = 0; j < 32; j++) { // a chart cut is not a path: no segment across it
       pipPath[j * 3] = N.path[j * 9];
       pipPath[j * 3 + 1] = N.path[j * 9 + 1];
