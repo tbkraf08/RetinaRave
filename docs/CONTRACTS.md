@@ -198,6 +198,17 @@ Smooth it yourself if tier flips would be visible (a particle count can jump; a 
 `'continuous'`). `draw()`'s `(w, h)` is already the `Q.scale`-scaled size. Headless Chrome pacing
 sinks `q`; `CARD.bench(id, n)` is the perf verdict (see HARNESS.md).
 
+**`Q` is global, so a scene's cost is everyone's** (v0.2 §16): one scene over budget drops `q` for every scene and the
+climb back takes ~30 s (`tools/q-trace.sh`, HARNESS). Before scaling iterations or resolution down, **separate what the
+mathematics computes from what the music changes per frame, and amortise the first over musical time.** A fractal
+field, an orbit, a distance transform depends on the parameters the music moves slowly (a zoom, a seed) — render it
+once into your own target (`ctx.mkTarget`), progressively if it is large (a bounded slice per `draw()`, scheduled on
+your own state and draw counter, never on wall time, so `#test` stays bit-identical), and let the per-frame pass be a
+colouring that reads it through the current camera and the current `MS`. NAV's Böttcher table and FEIGEN's reference
+orbit were already this; FEIGEN's field/colour split and zoom ladder (DECISIONS §16) is the shape for a per-pixel
+scene whose picture is expensive but whose camera is an affine map. TORUS and POLYTOPE rebuild seed-fixed geometry
+every frame and could not take it: their cost is the stroke count (§1.12), not the mathematics.
+
 ### 1.7 `env` (5th argument of `update`)
 
 `{SC: {logical, cur, next, m, variant, vT, vmix, home, forced}, Q, now}`. `SC.logical === this.id` tells you the

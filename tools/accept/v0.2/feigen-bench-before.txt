@@ -1,0 +1,53 @@
+== feigen-bench before · 2026-09-23 · levels 1.2 2 3 3.6 · seam L 1.3
+== (a) tier 3 steady state: feigen median of 3 × bench(6,300) | nav median (interleaved) | label | log
+feig=1.2: L L1.62 feigen 8.02 ms (runs 7.51/8.02/8.25) nav 1.48 ms · tier 3 q 0.95 · log [] glerr 0 errs []
+feig=2: L L2.42 feigen 13.07 ms (runs 12.72/13.07/13.18) nav 1.47 ms · tier 3 q 0.95 · log [] glerr 0 errs []
+feig=3: L L3.42 feigen 20.48 ms (runs 20.48/20.48/20.61) nav 1.60 ms · tier 3 q 0.95 · log [] glerr 0 errs []
+feig=3.6: L L4.02 feigen 22.23 ms (runs 21.92/22.23/22.39) nav 1.77 ms · tier 3 q 0.95 · log [] glerr 0 errs []
+== (b) build cost after a tricorn flip at the deepest level (tier 3)
+feig=3.6: L L4.01 steady 22.11 ms · flip: first two renders 37.30 ms wall, next 60 mean 17.26 ms, then steady 16.70 ms · log [] glerr 0
+== (c) seam ratio: CLOCK=1 &feig=1.3, frames 300..340
+f300 L1.61 
+f301 L1.61 
+f302 L1.61 
+f303 L1.61 
+f304 L1.61 
+f305 L1.61 
+f306 L1.62 
+f307 L1.62 
+f308 L1.62 
+f309 L1.62 
+f310 L1.62 
+f311 L1.62 
+f312 L1.62 
+f313 L1.62 
+f314 L1.62 
+f315 L1.62 
+f316 L1.62 
+f317 L1.63 
+f318 L1.63 
+f319 L1.63 
+f320 L1.63 
+f321 L1.63 
+f322 L1.63 
+f323 L1.63 
+f324 L1.63 
+f325 L1.63 
+f326 L1.64 
+f327 L1.64 
+f328 L1.64 
+f329 L1.64 
+f330 L1.64 
+f331 L1.64 
+f332 L1.64 
+f333 L1.64 
+f334 L1.64 
+f335 L1.64 
+f336 L1.65 
+f337 L1.65 
+f338 L1.65 
+f339 L1.65 
+f340 L1.65 
+RUNG lines:  
+consecutive |Δ| (grey 0..255): 301:1.62 302:1.52 303:1.39 304:1.27 305:4.48 306:2.15 307:1.81 308:1.56 309:1.40 310:1.27 311:1.21 312:1.12 313:1.11 314:1.08 315:1.05 316:1.04 317:1.04 318:1.03 319:1.03 320:42.51 321:6.92 322:4.72 323:4.05 324:3.93 325:3.58 326:3.18 327:2.73 328:2.36 329:2.12 330:1.84 331:1.69 332:1.53 333:1.35 334:4.47 335:2.17 336:1.87 337:1.63 338:1.42 339:1.30 340:1.22
+seam ratio max/median = 26.70 (max 42.51 at f320, median 1.59, mean 3.12)

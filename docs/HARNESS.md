@@ -52,6 +52,29 @@ with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise
 mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
 `Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
 
+## Q trace (any scene whose cost could move the global quality knob) and the FEIGEN bench (v0.2 §16)
+
+```
+GPU=1 tools/q-trace.sh before|none|after [house aba]   # q + scene at 1 Hz, 3 runs per style -> tools/accept/v0.2/q-<style>-<tag>.txt
+node tools/q-stats.js tools/accept/v0.2/q-house-before.txt   # per run: q mean/min, the 0-40 / 40-70 / 70-100 / 100- windows, every FEIGEN visit
+GPU=1 tools/feigen-bench.sh before|after [levels]            # per-level bench at tier 3 (NAV interleaved), flip cost, seam ratio -> feigen-bench-<tag>.txt
+```
+`Q` is global (`core/quality.js`: −0.2 per half second over 26.5 ms, −0.07 over 18.8, +0.04 per 2.5 s of good frames),
+so one expensive scene lowers every scene's tier for ~30 s after it leaves; the trace of `q` across a track is the
+measurement, the scene's own bench only the symptom. The recipe forces scene 6 at 40 s with the dive set to L 2.5 (the
+depth a minute-long section reaches; a visit from the arrival depth stays under L 1.3 for 30 s and costs nothing) and
+releases it into a soft switch home at 70 s (`VISIT=40:70:2.5`; `VISIT=` for the director's own picks), so every run
+has the same deep visit on the same clock; tag `none` makes its `score` 0 after load instead (never auto-picked, as good as unregistered — no file edit).
+**One Chrome at a time and nothing else on the machine**: a second instance alone sinks `q` to 0 (`director-aba-after.txt`
+was traced beside house and sat at 0.00–0.06 for 190 s), so the runs are sequential (house 3 × 2 min, aba 3 × 3.2 min)
+and no worker shoots meanwhile. `demo` synths are random: compare the means of three runs, and compare `after` against
+`none`, not against `before`. `feigen-bench.sh` is the worker's and the orchestrator's one source of cost numbers:
+`&feig=<L>` per level with `q` pinned .95, `CARD.bench(6,300)` medians interleaved with `bench(0,300)` (load drift is
+2× across a session — only interleaved pairs compare), the cost of a tricorn flip (every rung rebuilt after §16), and
+the seam ratio: `CLOCK=1` shots of frames 300–340 at `SEAM_L`, mean |Δ| per pixel between consecutive frames, max /
+median, and the |Δ| at each frame the scene logged a `RUNG@` change. Kick flares are the baseline spikes in that
+window (f305 / f334 ≈ 4.5, f320 ≈ 42 on the fake timeline before §16).
+
 ## Transition (change to the crossfade pass, or a new `assets/transitions/*.js`)
 
 `&trans=<name>` under `#test` picks a registered transition for the run (`CARD.TRANSITIONS` lists them; the default
