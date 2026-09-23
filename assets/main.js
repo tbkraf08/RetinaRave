@@ -1,11 +1,11 @@
-// Boot: engine → core (GL, effects, scenes) → registry → harness → loop.
+// Boot: engine → core (GL, effects, transitions, scenes) → registry → harness → loop.
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
 import { Q, tier } from './core/quality.js';
 import { LOOK } from './core/look.js';
 import { addEffect } from './core/post.js';
-import { initScenes, register } from './core/scenes.js';
+import { register, addTransition, setTransition } from './core/scenes.js';
 import { initLines, VS_CHUNK, FS_CHUNK, mk as mkLines, set as setLines, draw as drawLines, drawN as drawLinesN } from './core/lines.js';
 import { initHUD } from './core/hud.js';
 import { initHarness, CARD, TEST } from './core/harness.js';
@@ -16,6 +16,8 @@ import feedback from './effects/feedback.js';
 import bloom from './effects/bloom.js';
 import exposure from './effects/exposure.js';
 import composite from './effects/composite.js';
+
+import mixs from './transitions/mixs.js';
 
 import nav from './scenes/nav/index.js';
 import dust from './scenes/dust/index.js';
@@ -41,9 +43,10 @@ const ctx = {
 };
 CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
-initScenes();
 initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
+for (const tr of [mixs]) addTransition(tr, ctx);
+setTransition('mixs'); // the default transition (DECISIONS §11)
 for (const scene of [nav, dust, mandala, torus, polytope]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));

@@ -1,10 +1,10 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
 import { FEATS } from '../engine/feats.js';
-import { SC, REG, SCENES, goScene, renderScene } from './scenes.js';
+import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS } from './post.js';
 import { G, ERRS } from './gl.js';
@@ -15,7 +15,7 @@ export const HASH = new URLSearchParams(location.hash.slice(1));
 export const TEST = HASH.has('test');
 
 export const CARD = {
-  log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, FEATS, TEST, HASH,
+  log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, TEST, HASH,
   hooks: {},
   frameN: 0,
   get fix() { return ENGINE.fix; },
@@ -42,6 +42,38 @@ export const CARD = {
     }
     sync();
     return (performance.now() - t) / n;
+  },
+  // ms per full-resolution transition pass for every registered transition (v0.2 §11): the current scene into a, the
+  // next registered scene into b once, then n passes at m sweeping .2 → .8, readPixels-synced. Disturbs a transition's
+  // own per-fade state (the morph's ease) — bench after the shots, not before.
+  benchTransition(n = 300) {
+    const gl = G.gl, px = new Uint8Array(4), RT = G.RT, w = G.PW, h = G.PH;
+    const sync = () => {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, RT.m.f);
+      gl.readPixels(w >> 1, h >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    };
+    const other = SCENES.find((s) => s.id !== SC.cur).id;
+    renderScene(SC.cur, RT.a, w, h);
+    renderScene(other, RT.b, w, h);
+    const out = {};
+    for (const name in TRANSITIONS) {
+      const tr = TRANSITIONS[name];
+      const io = { a: RT.a, b: RT.b, m: 0.5, out: RT.m, w, h, sw: w, sh: h, uvS: [(w - 0.5) / w, (h - 0.5) / h], MS, FX, GROOVE, LOOK, dt: 1 / 60 };
+      gl.disable(gl.BLEND);
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.SCISSOR_TEST);
+      tr.run(io);
+      sync();
+      const t = performance.now();
+      for (let i = 0; i < n; i++) {
+        io.m = 0.2 + 0.6 * i / n;
+        tr.run(io);
+        if (i % 8 === 7) sync();
+      }
+      sync();
+      out[name] = (performance.now() - t) / n;
+    }
+    return out;
   },
   // Every MS number finite? Returns the offending keys (empty = healthy). Used by the real-start-path check.
   nonFinite() {
@@ -70,6 +102,7 @@ export function initHarness(hideLanding) {
     hideLanding();
     if (HASH.get('fake') === '0') ENGINE.start('demo');
     if (HASH.has('scene')) SC.forced = +HASH.get('scene');
+    if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
   }
 }
 

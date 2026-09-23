@@ -1,9 +1,9 @@
-// SC: scene registry, director (pickScene / precedence), crossfade (mixs), variants, forced/sticky.
+// SC: scene registry, director (pickScene / precedence), crossfade (through the transition slot), variants, forced/sticky.
 // Knows nothing about any specific scene: everything it reads from a scene is a contract slot (docs/CONTRACTS.md).
-// Lifted from cardioid3 "SCENES" (goScene / pickScene / updateScenes) + the mixs pass. v0.2 §10: look memory keyed on
-// synapse's sectionAlt, soft switches held to the bar line (DECISIONS §10).
+// Lifted from cardioid3 "SCENES" (goScene / pickScene / updateScenes). v0.2 §10: look memory keyed on synapse's
+// sectionAlt, soft switches held to the bar line (DECISIONS §10). v0.2 §11: the mixs pass moved to transitions/mixs.js.
 import { clamp, ema, frac } from '../math/util.js';
-import { G, mkProg, use, tex, tri } from './gl.js';
+import { G } from './gl.js';
 import { FX } from './post.js';
 
 export const SC = {
@@ -33,16 +33,18 @@ export function register(scene) {
   }
 }
 
-let mixs = null;
-const MIXS = `
-uniform sampler2D uA,uB;uniform float uM;uniform vec2 uUvS;
-vec3 smp(sampler2D s,vec2 uv){return texture(s,clamp(uv,vec2(0.),vec2(1.))*uUvS).rgb;}
-void main(){vec2 c=vUv-.5;c.x*=uRes.x/uRes.y;float m=uM*uM*(3.-2.*uM);
-  vec2 a=rot(m*.7)*c*(1.-.45*m),b=rot(-(1.-m)*.7)*c*(1.+.8*(1.-m));a.x/=uRes.x/uRes.y;b.x/=uRes.x/uRes.y;
-  vec3 A=smp(uA,a+.5),B=smp(uB,b+.5);float la=dot(A,vec3(.33)),lb=dot(B,vec3(.33));
-  float k=smoothstep(-.25,.25,(m*1.5-.25)+(lb-la)*.6-(1.-m)*length(c)*.3+m*.0);o=vec4(mix(A,B,clamp(k*step(.001,m),0.,1.)),1.);}`;
-export function initScenes() {
-  mixs = mkProg(MIXS, 'mixs');
+// Transitions (docs/CONTRACTS.md §5): the crossfade pass is a plug-in. Registered by name; one is current (setTransition).
+export const TRANSITIONS = {};
+let trans = null;
+export function addTransition(tr, ctx) {
+  tr.init(ctx);
+  TRANSITIONS[tr.name] = tr;
+  if (!trans) trans = tr;
+}
+export function setTransition(name) {
+  if (!TRANSITIONS[name]) throw new Error('transition ' + name + ' is not registered');
+  trans = TRANSITIONS[name];
+  return trans;
 }
 
 export function goScene(id, hard, S) {
@@ -221,19 +223,30 @@ export function renderScene(id, tgt, w, h) {
   E.scene.draw(tgt, { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix });
 }
 
-// Scene pass(es) at adaptive resolution (sw, sh) inside the fixed-size targets; returns the source target.
-export function drawScenes(sw, sh) {
-  const RT = G.RT, trans = SC.next >= 0;
+// Scene pass(es) at adaptive resolution (sw, sh) inside the fixed-size targets; returns the source target. During a
+// crossfade both scenes are rendered and the current transition draws the blend (io per CONTRACTS §5; the caller
+// supplies MS/GROOVE/LOOK/dt and reads io.uvS back: [1,1] means the transition re-rendered the whole (w, h)).
+export function drawScenes(sw, sh, io) {
+  const RT = G.RT, gl = G.gl;
   renderScene(SC.cur, RT.a, sw, sh);
-  if (!trans) return RT.a;
+  if (SC.next < 0) return RT.a;
   renderScene(SC.next, RT.b, sw, sh);
-  use(mixs, RT.m, sw, sh);
-  tex(mixs, 'uA', 0, RT.a);
-  tex(mixs, 'uB', 1, RT.b);
-  G.gl.uniform1f(mixs.u('uM'), SC.m);
-  G.gl.uniform2f(mixs.u('uUvS'), (sw - 0.5) / G.PW, (sh - 0.5) / G.PH);
-  tri();
-  return RT.m;
+  io.a = RT.a;
+  io.b = RT.b;
+  io.m = SC.m;
+  io.out = RT.m;
+  io.w = G.PW;
+  io.h = G.PH;
+  io.sw = sw;
+  io.sh = sh;
+  io.uvS = [(sw - 0.5) / G.PW, (sh - 0.5) / G.PH];
+  io.FX = FX;
+  gl.disable(gl.BLEND);
+  gl.disable(gl.DEPTH_TEST);
+  gl.disable(gl.SCISSOR_TEST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, RT.m.f);
+  gl.viewport(0, 0, sw, sh);
+  return trans.run(io) || RT.m;
 }
 
 // Visibility of a base scene id on screen (for overlays).

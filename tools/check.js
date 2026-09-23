@@ -1,6 +1,7 @@
 // Static checks, run after every edit: node --check on assets/**/*.js · module line caps (warn >350, fail >500) ·
 // dead uniforms (declared in a GLSL string, never fetched anywhere) · import discipline (only core/engine/main.js may
-// import core/gl.js; scenes/effects import nothing from core) · no 'nav' in core/ · every MS key has a FEATS entry.
+// import core/gl.js; scenes/effects/transitions import nothing from core) · no 'nav' in core/ or transitions/ · every MS
+// key has a FEATS entry.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -34,13 +35,14 @@ for (const f of files) {
   for (const m of src.matchAll(/tex\(\w+,\s*["'](\w+)/g)) used.add(m[1]);
   for (const m of src.matchAll(/getUniformLocation\(\w+,\s*["'](\w+)/g)) used.add(m[1]);
   const inCore = rel.startsWith('assets/core/') || rel.startsWith('assets/engine/') || rel === 'assets/main.js';
+  const plug = rel.startsWith('assets/scenes/') || rel.startsWith('assets/effects/') || rel.startsWith('assets/transitions/');
   for (const m of src.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
     const t = path.normalize(path.join(path.dirname(rel), m[1]));
     if (!inCore && t === 'assets/core/gl.js') fail(rel + ' imports core/gl.js directly (scenes get gl via ctx)');
-    if ((rel.startsWith('assets/scenes/') || rel.startsWith('assets/effects/')) && t.startsWith('assets/core/')) fail(rel + ' imports from core/ (' + t + ') — use ctx');
-    if ((rel.startsWith('assets/scenes/') || rel.startsWith('assets/effects/')) && t.startsWith('assets/engine/')) fail(rel + ' imports from engine/ (' + t + ') — scenes receive MS');
+    if (plug && t.startsWith('assets/core/')) fail(rel + ' imports from core/ (' + t + ') — use ctx');
+    if (plug && t.startsWith('assets/engine/')) fail(rel + ' imports from engine/ (' + t + ') — scenes receive MS');
   }
-  if (rel.startsWith('assets/core/') && /\bnav\b/i.test(src.replace(/navigator\.mediaDevices/g, ''))) fail(rel + " mentions 'nav' — core must not special-case a scene");
+  if ((rel.startsWith('assets/core/') || rel.startsWith('assets/transitions/')) && /\bnav\b/i.test(src.replace(/navigator\.mediaDevices/g, ''))) fail(rel + " mentions 'nav' — core must not special-case a scene");
 }
 const dead = [...decl].filter((n) => !used.has(n) && !COMMON.includes(n));
 if (dead.length) fail('dead uniforms (declared, never fetched): ' + dead.join(','));

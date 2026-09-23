@@ -329,9 +329,58 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
 - Soft switches land on the grid: while `gridTrust` > .5 the decision waits for the next bar line (`barPos` wrap; the
   16-beat line for the phrase trigger), at most 4 (16) beats; grid trust lost meanwhile fires it at once, a hard cut
   or home parking cancels it. Hard cuts are immediate. `SC.quantise = false` (harness) restores immediate switches.
-- Crossfades render both scenes and mix them (`mixs`) over `clamp(4·60/bpm, 1.2, 3)` s. Both `draw` calls happen
-  each frame of the fade; both `update`s run.
+- Crossfades render both scenes and hand them to the transition (§5; `mixs` by default) over `clamp(4·60/bpm, 1.2, 3)` s.
+  Both `draw` calls happen each frame of the fade; both `update`s run.
 - Scores: `score()` + 0.25 per-section seed noise − 0.6 if you were the last scene − 0.25 if the one before.
+
+## 5. Transition contract
+
+A transition is one file `assets/transitions/<name>.js` — the sibling of an effect (§3): it takes the two scene targets
+of a crossfade and produces the one target the effect chain starts from. The core renders both scenes every frame of
+the fade and advances the crossfade position; the transition only draws the picture in between.
+
+```js
+export default {
+  name: 'morph',
+  init(ctx) {},                 // programs, own targets (allocate in ctx.onResize). Called once, before the first frame
+  run(io) {},                   // draw the blend into io.out and return it, or return your own full-size target
+};
+```
+
+`io` per frame (only while a crossfade is running): `{a, b, m, out, w, h, sw, sh, uvS, MS, FX, GROOVE, LOOK, dt}`.
+- `a`, `b` are the core's scene targets (`{t, f, w, h}`, RGBA16F when available): the outgoing scene rendered in `a`,
+  the incoming in `b`, both at `(sw, sh)` inside the full `(w, h)` target — sample them with `vUv * uvS` exactly as an
+  effect samples `src`, and **clamp** the sample coordinate into `[0, uvS]` when you displace it (the targets are
+  CLAMP_TO_EDGE over the whole `(w, h)`, so an unclamped sample past `sw` reads the stale border of a larger frame).
+  They are unclamped floats: `a + b` can exceed 1, which bloom likes — but check the composite does not clip a whole
+  front white.
+- `m` is the crossfade position 0 → 1, the director's clock: it advances linearly over `clamp(4·60/bpm, 1.2, 3)` s,
+  the director commits on it, overlays and post params follow it, and on the frame it reaches 1 the core stops
+  rendering `b`. **Invariant: at `m = 1` your picture is `b`, at `m = 0` it is `a`** (`m` is never exactly 0 on entry:
+  the first frame of a fade has `m = dt/dur`). Between the two ends the shape is yours: a musical push may run ahead
+  of `m` (level and kicks pulling the front forward) but never lag it — `t = max(m, ease)` with `ease` derived from
+  `m`, `MS.lvl`, `MS.kick` and a per-transition accumulator that resets whenever `m` is not ≥ last frame's `m` (a new
+  fade restarts at 0; a reversed fade jumps to `1 − m` and swaps `a`/`b`). No wall clock, no `Math.random()`: the same
+  `#test` frame must render byte-identical across runs.
+- `out` is the core's crossfade target (full size, no depth, RGBA16F, **not cleared**): draw at `(sw, sh)` into it with
+  `ctx.use(pr, io.out, io.sw, io.sh)` and return it. Rule (§3): a transition that returns a target it rendered at the
+  full `(w, h)` must set `io.uvS = [1, 1]`; then the chain samples the whole target. The target you return stays yours.
+- `w, h` full target size; `sw, sh` the scene-pass size inside it (the core renders both scenes at `0.8 · Q.scale`
+  during a fade); `uvS = [(sw − .5)/w, (sh − .5)/h]`.
+- `MS`, `FX`, `GROOVE`, `LOOK`, `dt` as in §3 — every parameter of the blend traces to them.
+
+Entry GL state: BLEND, DEPTH_TEST and SCISSOR off, `out` bound with the viewport at `(sw, sh)`, colour not cleared.
+Leave it that way on return. Programs come from `ctx.mkProg(fs, name)` (HEAD prepended: `vUv`, `o`, `uRes`, `pal()`,
+`rot()`, `hash()` — §1.2; there is **no** noise helper: bring `hash21`/`vnoise` in your own file, named so they do not
+collide with `hash`). Lifted synapse post shaders read `gl_FragCoord.xy / uR`: here that is `vUv` (0..1 over the
+viewport, which is `(sw, sh)`), and the sample coordinate into `a`/`b` is `vUv * uUvS`. Synapse's `uT = (trans, flow,
+kick)` maps to `t` (above), `MS.flow`, `MS.kick`; its `uR` is HEAD's `uRes`.
+
+Registration (`assets/main.js`): `for (const tr of [mixs, morph]) addTransition(tr, ctx)` and `setTransition('mixs')`
+picks the default. Under `#test`, `&trans=<name>` picks another registered one for A/B (HARNESS.md "Transition").
+Cost: `CARD.benchTransition(n)` gives ms per full-resolution pass for every registered transition; the scene pass, the
+transition and the chain together must keep `Q.q ≈ 1` on a GPU during a fade — one pass, a few texture reads and a
+handful of noise evaluations per pixel is the budget.
 
 ## Appendix A — the `MS` vocabulary
 

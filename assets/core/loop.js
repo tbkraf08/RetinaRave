@@ -1,5 +1,5 @@
 // The frame loop. Order (same as cardioid3): quality → resize → engine (music + groove + test pins) → scene updates →
-// director → look → fx → scene pass(es) + crossfade → effect chain → overlays → HUD → test log.
+// director → look → fx → scene pass(es) + transition → effect chain → overlays → HUD → test log.
 import { ENGINE } from '../engine/engine.js';
 import { MS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
@@ -42,8 +42,10 @@ export function frame(tms) {
   // scene pass(es) at adaptive resolution inside fixed-size targets
   const trans = SC.next >= 0, sc = Q.scale * (trans ? 0.8 : 1);
   const sw = Math.max(16, Math.round(G.PW * sc)), sh = Math.max(16, Math.round(G.PH * sc));
-  const src = drawScenes(sw, sh);
-  runChain(src, sw, sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q });
+  const tio = { MS: S, GROOVE, LOOK, dt };
+  const src = drawScenes(sw, sh, tio);
+  const full = tio.uvS && tio.uvS[0] === 1 && tio.uvS[1] === 1; // the transition re-rendered the whole target (CONTRACTS §5)
+  runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q });
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
   drawHUD(S, frameN);
   logFrame(S, now, frameN);
