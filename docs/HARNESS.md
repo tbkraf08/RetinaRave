@@ -205,7 +205,8 @@ with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and
   default `n` is 40 for a quick look; a number you report needs `n ≥ 300`, see below) ·
   `CARD.benchTransition(n=300)` → the same per registered transition ("Transition" above).
   Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
-  The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it.
+  The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it. Pin `q` first (above): a scene
+  that reads `Q.iter` (NAV) otherwise changes its own iteration count between calls as headless pacing sinks `q`.
 - `CARD.nonFinite()` → keys of MS holding a non-finite number (must be `[]`).
 
 ## Continuity monitor (NAV invariant)

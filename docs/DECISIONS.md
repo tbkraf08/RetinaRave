@@ -753,4 +753,16 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   threshold is not decidable from three medians on a shared machine (four repeats of the brief's command spread 0.09–
   1.13 ms around a 0.95 threshold while sibling workers' Chromes ran); the brief's t6/t14 shots run at tier 2 and could
   not see the change (the `CLOCK=1` pinned-`q` pair could).
+  *NAV's interior smoulder* (`brief-nav-smoulder.md`, `nav-smoulder.md`): §15's one thing JULIA had. `uPar` = `N.par`
+  (the multiplier chart's approach to a parabolic root, `sstep(0.8, 0.98, ρ)`) uploaded from `draw`; in `FS_JULIA`'s
+  known-cycle branch `col += pal(.5 + .1·bands)·par²·(.35 + .3·bass)·(.3 + .7·bands)` and in the plain interior
+  `pal(.45)·par²·(.16 + .2·bass)` — retuned from the brief's bass-dominant suggestion because `MS.bass` is 0 through
+  the fake timeline's build, exactly where `par` rises (a bass coefficient collapsed to 0.15 against an interior base
+  of 0.03–0.13). `nav.js` untouched: `parity.js fake` 0 diff / 72; monitor 60 s `viol []`; frames with `par` 0
+  (f360 `92438f2d…`, f840 `d697789c…`) **byte-identical** before and after, f660/f720/f760 (`par` 0.46/0.78/0.19)
+  differ; `accept/v0.2/nav-smoulder.jpg` (f760 with `par` forced to 1 through a wrapped `update` — provably inert, the
+  same forcing on the old build is byte-identical to its own baseline): the dark silhouette lights from within, Koenigs
+  bands as smouldering rings, centre-crop mean 17/38/32 → 33/77/61, nothing clips, filaments / rays / PiP pixel-
+  identical. `par` never exceeds 0.79 on the fake timeline. Friction: `CARD.bench` on NAV is confounded by `Q.iter`
+  adapting between calls unless `q` is pinned first (HARNESS says so now).
 

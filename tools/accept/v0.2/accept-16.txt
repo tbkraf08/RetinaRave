@@ -1,0 +1,50 @@
+== check.js
+check: 55 modules · uniforms 107 · MS keys 117 · scenes 6 (help.feats gaps 0) · 0 fail · 0 warn
+== math tests
+OK · MISI 14
+OK
+OK
+test_tempo: OK
+test_director: OK
+== lines smoke
+lines-smoke: OK
+== parity fake
+max |diff| over all numeric fields: 0 · fields compared 72
+MS/NAV parity: every field identical to 1e-9
+montage: /home/toma/Documents/Kraftek/Eigenwobble/tools/accept/v0.2/parity-fake.jpg
+== parity real
+bpm within 1 of 126 (ew 126.18, v3 125.95): true · arc sequence identical: true · drops within 0.5 s: true · ew ERRS [] nonfinite []
+== monitor 60 s
+"ok"
+"MON {\"n\":3591,\"fast\":104,\"viol\":[],\"errs\":[],\"bad\":[]}"
+== scenes on #test (T6 / T14)
+"scene 0 ERRS [] bad [] | nav"
+"scene 1 ERRS [] bad [] | dust"
+"scene 2 ERRS [] bad [] | mandala"
+"scene 3 ERRS [] bad [] | torus"
+"scene 5 ERRS [] bad [] | polytope"
+"scene 6 ERRS [] bad [] | feigen"
+hist rows == full on feigen (id 6): f360 dee30d911c99e8ef6b3ccab62be07157 f840 eb8aa08240695e86a79c1c124117fe8d
+== feigen cost
+feig=3.6: L L4.02 feigen 1.66 ms (runs 1.63/1.66/1.66) nav 2.48 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b9
+feigen L3.6 steady 1.66 ms <= 3.72 (nav 2.48)
+== transition
+mixs 0→3 f178 md5 a6e2b8cdcc47316cebb04f5529a26b06 = recorded
+"MORPH 0→3 f178 {\"sc\":[0,3,0.499],\"errs\":[],\"bench\":{\"mixs\":0.6436666671435038,\"morph\":1.357333333492279}}"
+montage tools/accept/v0.2/montage-trans.jpg
+== help
+help cast shot scrolled to 2279
+help fields 107/107 (unique 107) · top table = feats on 7/7 ids
+help ticks hidden 0 (600 frames, want 0)
+help ticks open 100 (600 frames, want 100) errs []
+"HELP real {\"on\":false,\"ticks\":16,\"bad\":[],\"errs\":[]}"
+exceptions 0
+== real start path
+"REAL {\"mode\":\"demo\",\"bad\":[],\"errs\":[]}"
+"REAL24 {\"bad\":[],\"errs\":[],\"switched\":false}"
+exceptions 0
+== bundle
+bundled 55 modules → dist/eigenwobble.html (363 KB)
+"BUNDLE 30s {\"bad\":[],\"errs\":[],\"mode\":\"demo\",\"hop\":2821,\"switched\":true,\"help\":[false,15]}"
+exceptions 0
+montage tools/accept/v0.2/montage-scenes.jpg
