@@ -43,13 +43,12 @@ function alloc(w, h) {
   F.cw = Math.max(8, Math.ceil(sz.tw / LD.COARSE_DIV)); F.ch = Math.max(8, Math.ceil(sz.th / LD.COARSE_DIV));
   for (const s of F.slots) { if (s.tex) ctx.freeTarget(s.tex); s.tex = ctx.mkTarget(F.tw, F.th, false, false); }
   if (F.ctex) ctx.freeTarget(F.ctex);
-  F.ctex = ctx.mkTarget(F.cw, F.ch, false, false);
+  F.ctex = ctx.mkTarget(F.cw, F.ch, false, false);   // rule 3's quarter-resolution burst target
   invalidate();
 }
 function invalidate() {
   for (const s of F.slots) { s.r = -1; s.built = 0; }
-  F.coarse.ok = false; F.coarse.r = -1;
-  F.key = ''; F.cur = null; F.prev = null; F.prevIdx = -1; F.blendK = 0;
+  F.coarse.ok = false; F.coarse.r = -1; F.key = ''; F.cur = null; F.prev = null; F.prevIdx = -1; F.blendK = 0;
 }
 function mkSrc(idx, r, how, cx, cy, wd) {
   const s = F.slots[idx];
@@ -101,8 +100,7 @@ export default {
     this.pc = ctx.mkProg(FS_COLOUR, 'feigen-colour');
     // The reference orbit Z_n of c_inf, in JS doubles, stored as float32. Only the per-pixel OFFSET needs precision,
     // which is the whole point of the perturbation method — the reference may be single once it is computed exactly.
-    const gl = ctx.gl;
-    const orb = new Float32Array(512);
+    const gl = ctx.gl, orb = new Float32Array(512);
     let z = 0;
     for (let i = 0; i < 512; i++) { orb[i] = z; z = z * z + C_FEIG; }
     const t = gl.createTexture();
@@ -184,16 +182,19 @@ export default {
         src = mkSrc(st.idx, st.r, 'standin(' + st.k + ')', S.cx * k, S.cy * k, S.width * k);
       }
     }
-    if (!src) { i = LD.findCoarser(F.slots, r, S.tricorn, F.th); if (i >= 0) src = mkSrc(i, r, 'coarse', S.cx, S.cy, S.width); }
+    if (!src) {
+      i = LD.findCoarser(F.slots, r, S.tricorn, F.th);
+      if (i >= 0) src = mkSrc(i, F.slots[i].r, 'coarser(' + (r - F.slots[i].r) + ')', S.cx, S.cy, S.width);
+    }
     if (!src && F.coarse.ok && F.coarse.r === r && F.coarse.tricorn === S.tricorn) {
-      src = { key: 'q' + r, idx: -1, tex: F.ctex, rect: F.coarse.rect, sw: F.cw, sh: F.ch, cx: S.cx, cy: S.cy, wd: S.width, r, how: 'quarter' };
+      src = { key: 'q' + r, idx: -1, tex: F.ctex, rect: F.coarse.rect, sw: F.cw, sh: F.ch, cx: S.cx, cy: S.cy, wd: S.width, r, how: 'coarse' };
     }
     if (!src) {
       // rule 3: nothing usable — one draw of the whole rung at a quarter of the resolution per side, then refine
       const rect = LD.rungRect(r, F.aspect);
       renderField(F.ctex, F.cw, F.ch, rect, LD.iterFor(r), S.tricorn, 0, F.ch);
       F.coarse.r = r; F.coarse.tricorn = S.tricorn; F.coarse.ok = true; F.coarse.rect = rect;
-      src = { key: 'q' + r, idx: -1, tex: F.ctex, rect, sw: F.cw, sh: F.ch, cx: S.cx, cy: S.cy, wd: S.width, r, how: 'burst' };
+      src = { key: 'q' + r, idx: -1, tex: F.ctex, rect, sw: F.cw, sh: F.ch, cx: S.cx, cy: S.cy, wd: S.width, r, how: 'coarse' };
       cut = true;
     }
 
