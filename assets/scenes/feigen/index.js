@@ -31,7 +31,7 @@ const F = {
   draws: 0, blendK: 0, prevIdx: -1, key: '', cur: null, prev: null, plan: null,
   standin: 1, jump: 1, logR: -1, logHow: '',
 };
-let CTX = null;
+let CTX = null, PF = null, ORB = null;   // ctx, the field program, the reference-orbit texture
 let prevKick = 0;    // rising edge of MS.kick: the wrap hides itself in a hit
 let wasLogical = false;
 
@@ -55,13 +55,13 @@ function mkSrc(idx, r, how, cx, cy, wd) {
   return { key: 's' + idx, idx, tex: s.tex, rect: s.rect, sw: F.tw, sh: F.th, cx, cy, wd, r, how };
 }
 function renderField(tex, tw, th, rect, iter, tric, y, rows) {
-  const ctx = CTX, gl = ctx.gl, pr = ctx.__feigField;
+  const ctx = CTX, gl = ctx.gl, pr = PF;
   ctx.use(pr, tex, tw, th);
   gl.uniform4f(pr.u('uRect'), rect.x0, rect.x1, rect.y1, 0);
   gl.uniform2f(pr.u('uFieldSz'), tw, th);
   gl.uniform1f(pr.u('uTricorn'), tric);
   gl.uniform1i(pr.u('uIter'), iter);
-  ctx.tex(pr, 'uOrbit', 0, ctx.__feigOrbit);
+  ctx.tex(pr, 'uOrbit', 0, ORB);
   gl.enable(gl.SCISSOR_TEST);
   gl.scissor(0, y, tw, rows);
   ctx.tri();
@@ -96,7 +96,7 @@ export default {
   init(ctx) {
     this.ctx = ctx;
     CTX = ctx;
-    ctx.__feigField = ctx.mkProg(FS_FIELD, 'feigen-field');
+    PF = ctx.mkProg(FS_FIELD, 'feigen-field');
     this.pc = ctx.mkProg(FS_COLOUR, 'feigen-colour');
     // The reference orbit Z_n of c_inf, in JS doubles, stored as float32. Only the per-pixel OFFSET needs precision,
     // which is the whole point of the perturbation method — the reference may be single once it is computed exactly.
@@ -111,7 +111,7 @@ export default {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.bindTexture(gl.TEXTURE_2D, null);
-    ctx.__feigOrbit = { t };
+    ORB = { t };
     ctx.onResize(alloc);   // the rung ring lives and dies with the size: allocated before the first frame
   },
 
