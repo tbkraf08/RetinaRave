@@ -170,7 +170,11 @@ needed, now generic:
   `ctx.budget('segs')` = `[2500, 5000, 9000, 16384]` for CPU stroke buffers (`ctx.lines.mk` capacity = the top entry).
   Per-ring / per-edge subdivision tables (TORUS's segments per ring, POLYTOPE's subdivisions per edge) are geometry,
   not counts, and stay in the scene, indexed by `ctx.tier()`.
-- **Hooks**: named test entry points; the harness exposes them and maps `&name=value` hash params under `#test`.
+- **Hooks**: named test entry points; the harness exposes them as `CARD.hooks.<name>` and maps `&name=value` hash
+  params under `#test`. They are called as plain functions (the receiver is `CARD.hooks`, not your scene — refer to
+  your module-level object, never `this`) and a hash hook fires **before your `init`** and before the first frame: keep
+  the state a hook sets on the object literal (`fibresOn: 1`), not in `init`, or `init` clobbers it. A hook that sets
+  a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived.
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
 
 ### 1.5 `LOOK` and `GROOVE`
@@ -290,8 +294,10 @@ invisible still writes depth: `discard` below a small threshold (`if (a < 0.004)
 behind it. Path A's built-in program does both already.
 
 Widths under 1 px dim instead of thinning (constant energy), so distant hairlines fade rather than sparkle. Cost: four
-vertices per segment; path B evaluates `P` twice per vertex. 50 k segments is fine; put the `tier()` budget in the
-number of segments per ring, never in the number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
+vertices per segment; path B evaluates `P` twice per vertex. Measured (§14, `CARD.bench` at 1280×720, GPU=1): path A
+`set` + `draw` ≈ **0.4 µs per segment** — 3.2 k segments ≈ 1.3 ms, so 50 k would be ~20 ms; plan against that, and take
+the count from `ctx.budget('segs')` (§1.4). Put the `tier()` budget in the number of segments per ring, never in the
+number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
 (HARNESS.md) is the reference for a minimal path-A and path-B program.
 
 ### 1.13 Help view — what the `?` overlay shows from your scene

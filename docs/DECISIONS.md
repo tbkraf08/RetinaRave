@@ -544,3 +544,37 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Harness additions:** `tools/scene-md5.sh <tag> [&extra]` (the before/after shot loop as a `diff`, reusable for any
   core change and for §15's determinism check), `tools/hist-check.js`, `CARD.ctx.engineTex.bytes`. `check.js` 0 fail
   / 0 warn after every edit.
+
+## §14 DUST's Hopf-fibre overlay (v0.2, 2026-09-23, worker from the brief, `docs/workers/dust-fibre.md`)
+
+- **What came back.** Synapse's swarm overlay (scene 4: `nl` latitude tori of `nF` Hopf fibres, `N` segments each,
+  through its `seg()` with additive glow and a depth test that never worked — dropped in v0.1, §3) as `ctx.lines`
+  path A inside `scenes/dust/` (`fibre.js` 92 lines: counts, `emit`, `fit`; `index.js` 181 → 225). The fibres come from
+  `math/hopf.js` (`fibre4` → `rotSU2` → `stereo`, the pole gate on `den = 1 − z₄` before projecting: emit when
+  `min(den) > 0.14`, brightness × `min(1, (min(den) − 0.14)·4)`, alpha 1 — coverage, §1.12), scaled by `S0·g` with
+  `g = (1 − 0.3·tension)(1 + 0.6·dropEnv + 0.08·kick)` and `S0 = 0.7` (0.9 swept out of frame at `dist` 4.4, 0.55 stopped
+  reading as rings), drawn after the points into the same target with `{ mvp: this.vp, blend: 'add' }` and no depth
+  (the points write none). Counts per tier from synapse's `q = [0.4, 0.7, 1, 1.4]`: 2×7×40 = 560 · 3×8×48 = 1152 ·
+  4×10×56 = 2240 · **4×12×66 = 3168** (the brief's "tier 3 = 2240" was tier 2; the worker sized `CAP` from the formulas
+  instead of the brief's `mk(2560)`, which would have silently lost 3 of 12 fibres per torus). Brightness per fibre
+  `0.3·(0.35 + lvl)·(0.35 + 1.3·b)·alive` with `b = [bassS, midS, highS][l % 3]` per torus (scenes have no spectrum
+  array; `chroma` skipped — zero on the fake timeline), palette coordinate `0.15 + 0.22·l + 0.6·f/nF` through DUST's
+  mood palette, width `1.5·(h/720)·dist/viewZ` px. `feats` + 3 (`flowBass`, `highS`, `alive` was there), `help.feats`
+  updated for every field the rings also move; `look`, `cuts: 'onset'`, `score`, `post`, id untouched.
+- **A/B.** `hooks.fibres(0|1)` (`&fibres=0`): the `CLOCK=1` f360/f840 shots with the overlay off are **byte-identical to
+  §13's DUST** (`e49cf54e…`, `7119a542…`) — the points path is untouched; with it on, identical across two runs
+  (`669aac71…`, `f26d50de…`). `tools/work/dustf-ab.jpg` / `accept/v0.2/s1-t6.jpg`, `s1-t14.jpg`: faint nested arcs
+  inside the sphere at t6, linked rings threading the pour at t14, the swarm still the subject, nothing like TORUS's
+  144-ring nest; 0.0000 % pure-white pixels on all four shots.
+- **Cost — the finding.** `CARD.bench(1, 400)`, interleaved on/off (an all-on-then-all-off sequence was destroyed by
+  load drift): tier 0 **0.87 / 0.70 ms**, tier 3 **2.72 / 1.35 ms**, i.e. **+1.37 ms for 3168 segments**; house at
+  tier 3 +1.12 ms. A node micro-bench puts `emit` at 0.02–0.11 ms, so ~0.4 µs per segment is `ctx.lines.set` + the
+  instanced draw. That is 10× the brief's "~0.1 ms" expectation, which came from POLYTOPE's §8 bench — a number the
+  §11 harness finding later showed was submission time, not render time (no bench before §11 synced). §1.12 now says
+  0.4 µs/segment and that 50 k is *not* fine. Accepted as is: DUST at tier 3 is 2.7 ms against NAV's 2.7–2.9. Polish
+  candidates: a smaller tier-3 count (`4×10×56` is visually the same picture), or a `stride` in `set` for static rings.
+- **Friction (9) → docs:** hooks' receiver and timing (§1.4: plain call, before `init`, state on the literal); the
+  per-segment cost (§1.12); `SC.hist` and `bench`'s default `n` (HARNESS); the brief's `rotSU2` parenthetical was
+  wrong (synapse's `(y, q)` rotation is `poleOffset`, a rotation of S³ that is not in SU(2); the worker kept `rotSU2`,
+  which carries fibres to fibres — the better choice, and invisible on screen); DUST has no `presence` read, so the
+  rings scale with `alive` like the grains. Temptation not taken: `core/lines.js` (bisected the cost from outside).

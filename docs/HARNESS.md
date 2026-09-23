@@ -162,7 +162,7 @@ with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and
 
 ## `window.CARD` (available in every page)
 
-`MS` (music state) · `SC` (director) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
+`MS` (music state) · `SC` (director; `SC.hist` = the ids shown so far, `SC.cur/next/m`) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
 (`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` (scene objects, registration order) · `REG[id]` = `{id, base, scene, variant}` ·
 `EFFECTS` · `TRANSITIONS` · `FEATS` · `HELP` (`on`, `ticks`, `nTop`, `rows(topOnly)` — "Help view" above) · `log` (event log under #test:
 `DROP@t`, `SECTION@t arc`, `SCENE@t -> id`, 1 Hz status lines) · `frameN` · `home` (the home scene's state; `NAV` in v3) ·
@@ -173,7 +173,8 @@ with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and
   For an immediate check evaluate `CARD.ctx.gl.getError()` (0 = clean).
 - Pinning quality: `CARD.Q.q` is re-adapted every frame, so pin it with `setInterval(() => CARD.Q.q = 0.1, 16)` and
   wait longer than the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s before the shot).
-- `CARD.goScene(id, hard)` · `CARD.bench(id, n=40)` → ms per full-resolution render of scene id, readPixels-synced ·
+- `CARD.goScene(id, hard)` · `CARD.bench(id, n)` → ms per full-resolution render of scene id, readPixels-synced (the
+  default `n` is 40 for a quick look; a number you report needs `n ≥ 300`, see below) ·
   `CARD.benchTransition(n=300)` → the same per registered transition ("Transition" above).
   Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
   The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it.

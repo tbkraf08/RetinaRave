@@ -16,6 +16,13 @@ IDS=$(grep -ho "^  id: [0-9]*" assets/scenes/*/index.js | grep -o "[0-9]*" | sor
 for i in $IDS; do
   node tools/cdp.js "test&scene=$i" "[{\"wait\":6000},{\"eval\":\"'scene $i ERRS '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' | '+(CARD.REG[$i]?CARD.REG[$i].scene.name:'?')\"},{\"shot\":\"s$i-t6\"},{\"wait\":8200},{\"shot\":\"s$i-t14\"}]" | grep EVAL | sed 's/.*=> //'
 done
+# v0.2 §13/§15: a scene that samples the hist texture must shoot the same CLOCK=1 frame with the whole-texture upload (&histfull=1) and the row-delta upload
+for d in $(grep -l "engineTex.hist" assets/scenes/*/index.js); do i=$(grep -o "^  id: [0-9]*" $d | grep -o "[0-9]*"); n=$(basename $(dirname $d))
+  CLOCK=1 node tools/cdp.js "test&scene=$i" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"hist-s'$i'-f360"},{"until":"window.__FRAME>=840"},{"shot":"hist-s'$i'-f840"}]' > /dev/null
+  CLOCK=1 node tools/cdp.js "test&scene=$i&histfull=1" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"hist-s'$i'-f360-full"},{"until":"window.__FRAME>=840"},{"shot":"hist-s'$i'-f840-full"}]' > /dev/null
+  A=$(md5sum $OUT/hist-s$i-f360.jpg | cut -c1-32); B=$(md5sum $OUT/hist-s$i-f360-full.jpg | cut -c1-32); C=$(md5sum $OUT/hist-s$i-f840.jpg | cut -c1-32); D=$(md5sum $OUT/hist-s$i-f840-full.jpg | cut -c1-32)
+  [ "$A" = "$B" ] && [ "$C" = "$D" ] && echo "hist rows == full on $n (id $i): f360 $A f840 $C" || echo "FAIL hist rows != full on $n (id $i): f360 $A/$B f840 $C/$D"
+done
 echo "== transition";  MD5=4ac523e9770e7d0625d46ed1f3e44769   # mixs at the fake timeline's frame 290 (NAV→TORUS, m .499), GPU=1 1280×720: v3's crossfade, byte-identical since §11
 CLOCK=1 node tools/cdp.js 'test&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=290"},{"shot":"trans-mixs-f290"}]' > /dev/null; M=$(md5sum $OUT/trans-mixs-f290.jpg | cut -c1-32); [ "$M" = "$MD5" ] && echo "mixs f290 md5 $M = recorded" || echo "FAIL mixs f290 md5 $M != recorded $MD5"
 CLOCK=1 node tools/cdp.js 'test&trans=morph' '[{"until":"window.CARD"},{"until":"window.__FRAME>=290"},{"shot":"trans-morph-f290"},{"eval":"'"'"'MORPH f290 '"'"'+JSON.stringify({sc:[CARD.SC.cur,CARD.SC.next,+CARD.SC.m.toFixed(3)],errs:CARD.ERRS,bench:CARD.benchTransition(300)})"}]' | grep EVAL | sed 's/.*=> //'
