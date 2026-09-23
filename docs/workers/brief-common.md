@@ -33,7 +33,7 @@ declare the rest as ordinary uniforms, uploaded in `draw()` from `MS` / `LOOK.mo
 | uSceneAge | `MS.flow - flowAtEnter` (keep `flowAtEnter` = MS.flow when you become `env.SC.logical`) |
 | uShock (drop ring) | radius `dropAge*1.15`, amplitude `dropAge<1.6 ? dropEnv*exp(-dropAge*1.6)*1.2 : 0` |
 | KICKS[8] (travelling rings) | keep your own ring of the last 8 kicks `{age, s}` from rising edges of `MS.kick`, or skip |
-| uSpec / uWave / uHist / uHistRow | `ctx.engineTex.spec / .wave / .hist` bound with `ctx.tex(pr,'uSpec',unit,ctx.engineTex.spec)`; row = `(ctx.engineTex.row+0.5)/128` |
+| uSpec / uWave / uHist / uHistRow | `ctx.engineTex.spec / .wave / .hist` bound with `ctx.tex(pr,'uSpec',unit,ctx.engineTex.spec)`; uHistRow = `(ctx.engineTex.row − 0.5)/128` (`row` is the next row to be written; synapse's `R.histRow` was the newest — CONTRACTS §1.1) |
 | CAM / camPix() | there is no director camera. Fullscreen scenes ignore it; a 3D point scene builds its own simple camera (see your brief) |
 | GLSL_COMMON helpers you need (hash11, pal, ang, …) | copy the specific functions you use into your own `shaders.js`; do NOT copy the UBO block or the `#define`s. Note HEAD already defines `pal()`, `rot()`, `hash()`, `TAU` — name yours differently (`palM`, `hash11`) to avoid redefinition |
 
