@@ -29,7 +29,7 @@ const F = {
   aspect: 16 / 9, tw: 0, th: 0, cw: 0, ch: 0, dens: 0,
   slots: [LD.mkSlot(), LD.mkSlot(), LD.mkSlot()], coarse: { r: -1, tricorn: 0, ok: false, rect: null }, ctex: null,
   draws: 0, blendK: 0, prevIdx: -1, key: '', cur: null, prev: null, plan: null,
-  standin: 1, jump: 1, logR: -1, logHow: '',
+  standin: 1, jump: 1, pinTric: 0, logR: -1, logHow: '',
 };
 let CTX = null, PF = null, ORB = null;   // ctx, the field program, the reference-orbit texture
 let prevKick = 0;    // rising edge of MS.kick: the wrap hides itself in a hit
@@ -106,10 +106,8 @@ export default {
     const t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, 512, 1, 0, gl.RED, gl.FLOAT, orb);   // R32F + texelFetch: no extension in WebGL2
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.bindTexture(gl.TEXTURE_2D, null);
     ORB = { t };
     ctx.onResize(alloc);   // the rung ring lives and dies with the size: allocated before the first frame
@@ -121,7 +119,7 @@ export default {
     // The conjugation is keyed on the section seed, not the drop: this engine's director hard-cuts to the home scene
     // on a drop, so a drop-keyed flip would never be on screen when it happened. It invalidates every rung (they
     // carry the flag) — the one declared cut, so the burst of rule 3 on that frame is honest.
-    if (MS.sectionEvt) {
+    if (MS.sectionEvt && !F.pinTric) {
       const tc = Math.floor(MS.seed.a * 1000) % 2;
       if (tc !== S.tricorn) { S.tricorn = tc; invalidate(); }
     }
@@ -277,7 +275,8 @@ export default {
   // before init(), so everything they touch lives on these module-level objects, never in init.
   hooks: {
     feig(v) { S.feigL = +v; wasLogical = true; },
-    tricorn(v) { S.tricorn = +v ? 1 : 0; invalidate(); },   // a flip invalidates every rung, even a no-op one: the bench times it
+    // pinned, or the next sectionEvt redraws the flip from the seed and throws the hook away (as §15's clamp ate &feig)
+    tricorn(v) { S.tricorn = +v ? 1 : 0; F.pinTric = 1; invalidate(); },   // a flip invalidates every rung, even a no-op one
     standin(v) { F.standin = +v ? 1 : 0; },
   },
 
