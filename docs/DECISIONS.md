@@ -118,6 +118,12 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   and formation flips could be deferred to the next `barPos` crossing (or 16-beat line via `phrase16Pos`). Not done in
   v0.1 because v3's director already gates soft switches on `beat` + 8/32-beat counts (parity), and the synapse grid
   only becomes confident after the first section change; a v0.2 candidate once both grids can be compared on real music.
+- **aba look-memory run (190 s, `&demo=aba`):** the mechanism works — the one recognised return (`identifyEvt` with
+  `repeat` at 188 s) restored the remembered scene (DRUM, id 4) and the DUST/MANDALA looks `{dust:[0,1,1], mandala:10}`
+  stored with that section's seed. But v3's 17-dim `identifySection` merged the synth's A and B sections into one id
+  for most of the run (10 identify events, 9 of them "section 2"): the fingerprint (chroma·2 + 3 bands + onsetRate +
+  regularity, ema 3 s, cosine > 0.965) does not separate them. Synapse's 23-dim `sectionAlt` is the rival; whether it
+  separates A/B on this synth is recorded below. v0.2 candidate: key look memory on whichever detector proves sharper.
 - **Scores live in the scenes** (contract), not in `pickScene`; the director keeps v3's precedence. Per-scene bids:
   NAV `0.5 + build` (home) · DRUM `0.85 clarity + 0.3 (1−eM) + 0.1` when interior with a cycle · DUST
   `0.3 + 0.5 punchy + 0.2 regularity` · MANDALA `0.25 + 0.55 regularity + 0.2 min(1, onsetRate/6)` · TORUS
