@@ -25,6 +25,7 @@ core/, an MS key without a FEATS entry. Warns above 350 lines.
 ```
 node tools/test_baby.js        # ... OK · MISI 14
 node tools/test_misi.js        # ... OK
+node tools/test_hopf.js        # circle error 2e-12 · torus distance 2e-13 · ... OK   (§4 Hopf fibration)
 ```
 
 ## Headless Chrome (screenshots you Read as images)
