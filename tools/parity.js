@@ -1,5 +1,5 @@
 // Parity between cardioid3.html (via FILE=, legacy cdp semantics) and Eigenwobble on the same #test timeline.
-// usage: node tools/parity.js [fake|real|both]   (env GPU=1 recommended; shots -> tools/accept/v0.1/)
+// usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.1/)
 //   fake: CLOCK=1 deterministic 60 Hz clock on both, MS + NAV dumped every 60 frames for 24 s, max |diff| per field
 //         (expected 0: the fake path is deterministic), screenshots at frames 360/840/1200 (T≈6/14/20) montaged.
 //   real: #test&fake=0 (demo synth, real audio, real clock) for 32 s: bpm within 1, arc sequence identical, drop times within 0.5 s.
@@ -44,7 +44,7 @@ function diffFields(A, B) {
           const x = fa[j], y = fb[j];
           if (typeof x === 'number' && typeof y === 'number') mx = Math.max(mx, Math.abs(x - y)); else if (x !== y) mx = Math.max(mx, 1);
         }
-      } else if (a && b && typeof a === 'object') { for (const kk of new Set([...Object.keys(a), ...Object.keys(b)])) if (a[kk] !== b[kk]) mx = Math.max(mx, typeof a[kk] === 'number' ? Math.abs(a[kk] - b[kk]) : 1); }
+      } else if (a && b && typeof a === 'object') { for (const kk of new Set([...Object.keys(a), ...Object.keys(b)])) if (kk !== 'looks' && a[kk] !== b[kk]) mx = Math.max(mx, typeof a[kk] === 'number' ? Math.abs(a[kk] - b[kk]) : 1); }
       else if (a !== b) mx = Math.max(mx, 1);
     }
     res[k] = missing || mx;
