@@ -766,3 +766,69 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   identical. `par` never exceeds 0.79 on the fake timeline. Friction: `CARD.bench` on NAV is confounded by `Q.iter`
   adapting between calls unless `q` is pinned first (HARNESS says so now).
 
+## §17 Ship v0.2 — the real-window audit, the tag, the v0.3 triage (2026-09-23, orchestrator in a real window)
+
+- **Why a real window.** Every number before this section came from headless Chrome at 1280 × 633/720 on the fake
+  timeline or the demo synth. Five things headless cannot do — real sizes and DPR (three 46 MB rung slots at 1080p),
+  tab-capture audio, a hidden tab on the worklet path, the keys on a real screen, the bundle from `file://` — were done
+  once, by the orchestrator, in `/usr/bin/google-chrome` on the desktop display, driven over the same CDP steps as the
+  headless harness (`HEADED=1`, HARNESS "Real window"). `docs/AUDIT-v0.2.md` is the ledger: one line per check, a
+  number or a shot, a verdict; `tools/accept/v0.2/audit-*.jpg` and `audit-q-song.txt` are the evidence.
+- **Findings, in one paragraph each.** *Size/DPR:* at 1920 × 1080 and DPR 1.5 the 2560 cap binds (2560 × 1309, 4.1×
+  headless pixels), FEIGEN's rung is 4632 × 1295 (the 6 Mpx cap, ~150 MB for three slots + quarter) and it benches
+  0.93–1.10× NAV interleaved (5.6 vs 5.3 ms — both scale with the pixels); the desktop's native DPR is 0.75, so a
+  1920 × 1080 window is 1407 × 712 and FEIGEN is 0.74× NAV there; at fullscreen 2560 × 1439 FEIGEN 0.5–1.2× NAV, DUST
+  0.13–0.28× NAV. A drag-resize and a fullscreen with FEIGEN on screen re-allocate the ladder (`coarse` → `built`
+  within 4 s) with no black frame and one 33 / 83 ms frame; every other scene's resize is luminance-continuous; the
+  lazy-allocation fallback the prompt reserved was not needed. *Real audio:* a 4:16 track captured from its own
+  window is heard within 6 s, both tempo estimators sit at 116.9, `q` climbs from the page-load 0.56 to 0.8 at 58 s
+  and holds 1.0 for the last 150 s with FEIGEN visits, 14 331 frames with 0 black and 0 over 100 ms, 18 switches all
+  on sustain/section-return. *Hidden tab:* on `#test` the fake source does not hop while hidden (rAF-driven, by
+  design) and the ladder answers the 30 s jump with `standin(-1)`; on the worklet path the engine kept hopping (2822
+  hops in 30 s), the whole-ring upload was taken silently, and FEIGEN/DUST/NAV's first frames back were 55 / 22 / 62
+  mean luminance — never black. *Keys/help:* every key does what `hud.js` says; keys 8–9 on free ids are no-ops; the
+  help's formula column was truncated at **every** real width (47/107 rows; `.hinner` was capped at 1180 px) — fixed
+  by wrapping (`pre-wrap`, `overflow-wrap: anywhere`, the column follows the window to 1500 px): 0/107 after, tallest
+  cell three lines. *Bundle:* `dist/eigenwobble.html` from `file://` with capture: heard, 160 BPM read, help 107 rows,
+  `ERRS []`, `nonFinite []`, `[EXC]` 0.
+- **Fixed in the session (no worker needed — index.html CSS and a `feats.js` string):** the help wrap above; `wave`'s
+  ELI5 now names the 512-wide engine texture a scene samples (CONTRACTS appendix regenerated). Both are §12's
+  "Left open" lines. Parity untouched (`parity.js fake` 0 diff, the two reference md5s unchanged — `accept-17.txt`).
+- **Harness added:** `tools/cdp.js` `HEADED=1` (`WIN`, `WINPOS`, `DPR`, `CAPTITLE`; steps `tab`/`window`, `evalTab`,
+  `activate`, `bounds`, `clickSel`, `dblclick`, `sh`; `[EVAL-ERR]` lines), `tools/probe.js` (per-frame luminance/dt,
+  scene/visibility/resize/black/long events, the first frame back), HARNESS "Real window" and the consolidated "Bench
+  protocol". **Harness friction paid for:** a media document in a same-window tab that was never shown does not play,
+  a non-playing captured tab delivers no frames, the worklet then sees zero-channel input and never hops, and the tab
+  picker focuses the shared tab so the page is hidden and nothing runs (not the loop, not the watchdog) — every
+  "stall" in the first capture runs was this; the music goes in **its own window**. Sharing a tab adds Chrome's
+  infobar and shrinks the viewport 56 CSS px (a real `resize()` at t ≈ 0). Headed Chrome ignores `background:true`
+  for a same-window tab (that *is* the hidden-tab check); with a second window open the new tab lands there instead —
+  minimize the window (`{bounds:{windowState:'minimized'}}`) for a hidden check on the worklet path. `Page.captureScreenshot`
+  activates a hidden tab. `pgrep -f` from inside a `{sh}` step must bracket a letter (`gpu-proces[s]`).
+- **Not fixed, on purpose (v0.3 triage below):** the spurious drop rows on the first frames back from a hidden tab;
+  DUST's near-black stretches in the fake valley at real size (its look); the probe's hard-vs-soft blindness.
+- **The tag.** `v0.2` at the accept commit, `releases/eigenwobble-v0.2.html` = `dist/eigenwobble.html` (the artefact
+  that runs from `file://` anywhere), `accept-17.txt` the sweep behind it. v0.1 was a commit, never a tag; this is the
+  first.
+- **The v0.3 triage** — every "Left open" line decided (a brief title + its acceptance number, or closed with the reason):
+
+  | source | line | decision |
+  |---|---|---|
+  | §9 tempo | a 3:2 tempo change with the old lag alive takes up to 8 s | **brief `tempo-3to2`**: the 25 % margin over the current tempo's score is what holds the old lag; acceptance: `tools/test_tempo.js`'s 3:2 case (128 → 192 and back) locks within **4 s** (was ≤ 8), every other case unchanged to ±1 BPM, `parity.js fake` 0 diff (the fake path never runs the estimator), `parity real` both within 1 of 126. Audible? The director quantises soft switches to the bar line while `gridTrust > .5` — 8 s of a wrong bar is two switches held to the wrong line; the trace (`tempo-trace.sh`) says when the lag moved vs when the music did |
+  | §9 tempo | below 59 / above 200 BPM reads at an octave | **closed**: outside every style the engine is built for (house 120–130, dnb 170–176, ambient holds the prior); an octave read there is the correct musical answer for the visuals (the beat clock still lands on beats) |
+  | §10 director | `SC.mem` is not renumbered when synapse merges/drops a section (one stale restore) | **brief `director-renumber`**: the slot is a `sectionRenumber` event from `features-synapse.js` (old id → new id, or −1 for dropped) that `scenes.js` applies to `SC.mem` keys; acceptance: `director-trace.sh mix` × 3 shows **0** `RESTORE@` lines whose filed `sectionAlt` no longer exists, and the count of renumber events per `mix` run is in the report (if it is 0–1 per run the brief closes itself as "measured, harmless") |
+  | §10 director | the section-return restore lands 8–12 beats after a surprise hard cut | **closed**: v3's 8-beat spacing after a hard cut is the contract's "no two cuts inside 8 beats" (§1.9); the restore is a soft switch and waits for the bar line on top — landing 8–12 beats later is the promised behaviour, not a lag |
+  | §11 morph | the advection combs TORUS's ribbons mid-fade; `post.morph.flow` per scene is the slot | **brief `morph-flow-slot`** (low priority): one `&trans=morph` A/B pair per stroke scene (TORUS 3, POLYTOPE 5, DUST 1 with fibres) at CLOCK f178 against `mixs`; the slot is `scene.post.morph.flow` (default 1) read by `transitions/morph.js`; acceptance: the three pairs in one montage, the stroke scenes' pair |Δ| against the mixs pair at most 1.5× mixs's — if the comb is not visible in the montage the brief closes without the slot |
+  | §11 morph | a reversed fade jumps the front | **closed**: the reversal is itself a director hard cut (`goScene` mid-fade), an already-jumping frame |
+  | §12 help | the formula column truncates (touch wants click-to-expand) | **fixed this session** (audit 4): wrapping instead of an ellipsis, the inner column follows the window; 47/107 → 0/107 at 1080p; click-to-expand is moot |
+  | §12 help | `wave`'s ELI5 describes `MS.wave`, not the 512-wide texture | **fixed this session**: `feats.js` `wave` now says what a scene samples (the 512 × 1 engine texture) and that `MS.wave` is the raw read behind it; CONTRACTS appendix regenerated |
+  | §12 help | a variant (DRUM) has no `help.feats` of its own | **closed**: a variant reads exactly its parent's fields by construction (`REG[id].variant` over the same scene object); a variant with its own reads would be a scene, not a variant (CONTRACTS §1.13 says so now) |
+  | §16 FEIGEN | 70 MB at 1280 × 633; the density fallback at 1080p | **closed by audit 1**: at 2560 × 1309 the cap binds at 4632 × 1295 (6.0 Mpx, ~150 MB for three slots + quarter), FEIGEN benches 0.93–1.10× NAV, fullscreen re-allocation costs one 83 ms frame, no black frame, no stall — lazy allocation is not needed; the density fallback (1.76 → 1.4 texel/px at 2560 wide) is invisible against the colour pass's bilinear decode |
+  | §16 FEIGEN | the brief's aspect/rectangle error — patch `brief-feigen-field.md` or leave | **leave as history**: the report (`feigen-field.md`) and DECISIONS §16 both record the correction; a brief is a dated instruction, not a living doc — patching it would hide what the worker had to derive |
+  | §16 FEIGEN | `&standin=0` falls to a coarser rung, not a burst, so the burst is only seen after a flip | **closed, fine**: every view of rung r fits rung r − 1, so a coarser rung is always the better fallback; the burst exists for the one case with no built rung at all (a flip, or the first frame after a resize — audit 1 saw exactly that: `r6 coarse` after every size change) |
+  | §14/§16 DUST | fibre cost = fixed per-`draw()` + 0.25 µs/segment; `stride` for static rings | **closed unless run D says otherwise**: DUST vs NAV interleaved at the native 1407 × 712 and at fullscreen 2560 × 1439 (audit 1, run D) — see the numbers there; `stride` stays closed while DUST ≤ NAV |
+  | §15 JULIA | dropped; NAV took the smoulder | **closed**: `audit-1-nav-native-1080p.jpg` (real window, demo) — the interior lights from within at `par` > 0; at `par` 0 the silhouette is v3's, which is the parity promise |
+  | ids 7–8 | a scene candidate list for v0.3 (contract-only, no source) | **list, no build**: (a) **NEWTON** — Newton's-method basins of `z³ − 1` and the music-chosen polynomial, per-pixel with an affine camera → the field/colour split lifted verbatim (`ladder.js` is scene-agnostic in its geometry; the field is `(root id, log rate, arg)`), the first reuse of §16's principle; (b) **MODULAR** — the `j`-invariant / a modular form on the upper half-plane rendered through `SL(2,ℤ)` tiles, the camera walking the fundamental domain by section, drops jumping to a cusp (per-pixel, one reference orbit per tile, `hist` sampler like FEIGEN); (c) **KLEIN** — path-A strokes: a Boy's surface / Klein bottle immersion in `R³` as 144 rings × 96 segments through `ctx.lines`, the immersion parameter on `MS.tension`, the seed-fixed geometry per section like POLYTOPE (the stroke budget is the cost, §1.12); (d) **LORENZ** — path-B strokes: a strange attractor's trajectory bundle (Lorenz / Rössler / Thomas by section seed) integrated in-shader from `gl_VertexID`, `kick` kicking the parameter across the bifurcation. The contract test for v0.3 is (a): it needs nothing but CONTRACTS §1, §1.6 and `scenes/feigen/ladder.js` as a library |
+  | harness | the bench protocol lived in three places | **done this session**: HARNESS "Bench protocol" (five rules), the Q-trace paragraph and the `CARD.bench` bullet point at it |
+  | harness | `q-trace.sh`'s `VISIT` is FEIGEN-specific (`hooks.feig`) | **closed, say so**: `VISIT=40:70:<L>` is FEIGEN's dive depth; a scene that will ever need a forced deep visit brings its own hook and a `VISIT` of its own shape in its brief — no other scene has a "depth" (HARNESS says so now) |
+  | audit 3 (new) | the first frames back from a hidden tab read as a drop (the v3 followers were frozen for the gap; on `#test` the fake timeline's `now` jumped over DROP@13) | **brief `resume-hold`** (small, engine-side, parity-neutral): on `visibilitychange` → visible, hold `drop`/`hit` detection for 1 s and let the followers re-seat (`ENGINE.resumeAt`), fake path untouched (`parity.js fake` 0 diff); acceptance: the probe's first 5 frames back show no glitch rows (lum step ≤ 10 %), `audit-3-*-back.jpg` re-shot |

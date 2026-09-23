@@ -37,7 +37,7 @@
   #help{position:fixed;inset:0;overflow-y:auto;background:rgba(4,4,10,.82);color:#d6dce6;font:12px/1.5 ui-monospace,Menlo,monospace;
     z-index:11;display:none;backdrop-filter:blur(2px)}
   body.running.help{cursor:auto}
-  .hinner{max-width:1180px;margin:0 auto;padding:22px 28px 60px}
+  .hinner{max-width:min(1500px,96vw);margin:0 auto;padding:22px 28px 60px}
   #help h1{font-size:13px;letter-spacing:.25em;color:#9cf;font-weight:400;margin:0 0 10px;padding:0;background:none;-webkit-text-fill-color:initial}
   #help h2{font-size:12px;letter-spacing:.18em;color:#8ab;font-weight:400;margin:26px 0 8px;text-transform:uppercase}
   #help h3{font-size:12px;color:#9cf;font-weight:400;margin:12px 0 2px}
@@ -48,7 +48,7 @@
   .htab th{text-align:left;color:#8ab;font-weight:400;border-bottom:1px solid rgba(160,200,255,.2);padding:3px 6px}
   .htab td{vertical-align:top;padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.05)}
   .hk{color:#9cf;width:9%}.he{width:26%}.hd{width:27%;color:#8ab}.hd.here{color:#cfe}
-  .hf{width:28%}.hf code{color:#9ab;font-size:10.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hf{width:28%}.hf code{color:#9ab;font-size:10.5px;display:block;white-space:pre-wrap;overflow-wrap:anywhere}
   .hl{width:10%;white-space:nowrap;color:#9f9}
   .hbar{height:5px;width:80px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:2px}
   .hfill{height:100%;width:100%;background:#7bd;transform-origin:left;transform:scaleX(0)}

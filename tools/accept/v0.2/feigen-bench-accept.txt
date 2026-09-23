@@ -1,8 +1,8 @@
 == feigen-bench accept · 2026-09-23 · levels 3.6 · seam L 1.3
 == (a) tier 3 steady state: feigen median of 3 × bench(6,300) | nav median (interleaved) | label | log
-feig=3.6: L L4.02 feigen 1.66 ms (runs 1.63/1.66/1.66) nav 2.48 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0 errs []
+feig=3.6: L L4.02 feigen 1.14 ms (runs 1.12/1.14/1.23) nav 1.90 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0 errs []
 == (b) build cost after a tricorn flip at the deepest level (tier 3)
-feig=3.6: L L4.02 steady 1.56 ms · flip: first two renders 30.70 ms wall, next 60 mean 3.29 ms, then steady 2.23 ms · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0
+feig=3.6: L L4.02 steady 1.20 ms · flip: first two renders 13.40 ms wall, next 60 mean 2.62 ms, then steady 1.69 ms · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0
 == (c) seam ratio: CLOCK=1 &feig=1.3, frames 300..340
 f300 L1.61 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
 f301 L1.61 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2

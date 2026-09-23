@@ -1,83 +1,65 @@
-# Fable Session Prompt — Eigenwobble v0.2
+# Fable Session Prompt — Eigenwobble v0.3 (stub, written at the v0.2 tag, 2026-09-23)
 
-> **Next session: `SHIP-V02-SESSION-PROMPT.md`** (§17: the real-window audit headless never did, the `v0.2` tag and
-> release file, and the triage of every "Left open" line into v0.3 briefs). This file is the v0.2 ledger it reads first.
+You are the orchestrator on Eigenwobble (`~/Documents/Kraftek/Eigenwobble/`, zero-dependency WebGL2 audio-visual
+engine, native ES modules, git). **v0.2 is tagged** (`git tag v0.2`; `releases/eigenwobble-v0.2.html` runs from
+`file://` anywhere; `tools/accept/v0.2/accept-17.txt` is the sweep behind the tag). It was audited in a real window
+(`docs/AUDIT-v0.2.md`: five checks, no engine bug, two help-view fixes) and every "Left open" line of v0.2 was decided
+in DECISIONS §17's triage table. This file is the v0.3 list that table produced, in priority order, with the numbers
+that motivate each item. Nothing here is started.
 
-Eigenwobble v0.1 shipped (2026-09-22): the modular successor to Cardioid — one `index.html` + `assets/`, four scenes
-(NAV/DRUM · DUST · MANDALA · TORUS), a merged music engine (v3 extractor + synapse Analyzer as an additive stage,
-117 documented `MS` fields), an effects registry (feedback · bloom · exposure · composite), a director with look
-memory, a headless harness with a frame-exact fake clock, and `dist/eigenwobble.html` from `tools/bundle.js`.
-Parity with `cardioid3.html` on `#test` is 0 diff on every field; the v3 NAV scene survives intact.
+**Read first:** `docs/CONTRACTS.md` (the one required read for scene/effect/stage authors) · `docs/HARNESS.md`
+("Bench protocol", "Q trace", "Real window", "Pitfalls") · `docs/DECISIONS.md` §16–§17 · `docs/AUDIT-v0.2.md` ·
+`docs/workers/*.md` (what workers tripped on) · memory note
+`~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md`.
 
-**Read first:** `docs/CONTRACTS.md` (the one required read for scene/effect/stage authors), `docs/HARNESS.md`,
-`docs/DECISIONS.md` (every deviation and why, including the open items below), `docs/workers/*.md` (what workers
-tripped on). Memory note: `~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md`.
+## The v0.3 briefs (priority order)
 
-**Working style that worked:** the orchestrator owns core/engine/contracts/parity; every scene and effect was written
-by a worker in an isolated git worktree (own `PORT=`), from the contract docs alone, accepted on screenshots, and its
-friction went straight back into the docs. Keep it. `node tools/check.js` after every edit; `GPU=1 node tools/parity.js
-fake` after any core/engine change (must print 0 diff); `GPU=1 tools/accept.sh` before a commit that claims a phase.
+1. **`newton` — scene id 7, the contract's real test.** The first scene written from CONTRACTS alone with no source to
+   lift: Newton's-method basins of `z³ − 1` (and a music-chosen polynomial), per-pixel with an affine camera, so the
+   §16 field/colour split applies verbatim — `scenes/feigen/ladder.js` is scene-agnostic in its geometry; the field is
+   `(root id, log convergence rate, arg)`; the colour pass is the scene's. Acceptance: `check.js` 0/0; `scene-md5.sh`
+   deterministic across two runs; `bench(7,300)` ≤ 1.5 × NAV interleaved at 1280 × 720 **and** in a real window at
+   2560 × 1439 (HARNESS "Real window": FEIGEN is 0.5–1.2× NAV there); a Q trace after = none to the second decimal
+   (`q-trace.sh` needs a `VISIT` shape of the scene's own if it has a depth — HARNESS says so); `help` three depths +
+   `help.feats`; parity fake 0 diff (a new scene moves the director's first pick on the fake timeline — the mixs md5 is
+   director-blind since §15, so it must not move). Candidates (b)–(d) in DECISIONS §17 (MODULAR, KLEIN, LORENZ) are
+   the list for id 8 if (a) goes well.
+2. **`resume-hold` (engine, small, parity-neutral).** Audit 3: the first frames back from a hidden tab carry the
+   composite's drop rows — the v3 followers were frozen for the gap and read the step as a drop (on `#test` the fake
+   `now` jumped over DROP@13). On `visibilitychange` → visible, hold `drop`/`hit` detection for 1 s and let the
+   followers re-seat (`ENGINE.resumeAt`); the fake path untouched. Acceptance: `parity.js fake` 0 diff; the probe's
+   first 5 frames back show no glitch rows (luminance step ≤ 10 %; today FEIGEN 155 → 125 over 5 frames);
+   `audit-3-*-back*.jpg` re-shot on the worklet path (minimize recipe).
+3. **`tempo-3to2` (engine/tempo.js).** §9: a 3:2 tempo change with the old lag alive takes up to 8 s (the 25 %
+   margin over the current tempo's score holds it). Acceptance: `test_tempo.js`'s 3:2 case (128 → 192 → 128) locks
+   within 4 s, every other case unchanged to ±1 BPM, `parity real` both within 1 of 126, `tempo-trace.sh` before/after.
+4. **`director-renumber` (features-synapse.js + scenes.js).** §10: `SC.mem` is not renumbered when synapse merges or
+   drops a section (one stale restore). A `sectionRenumber` event (old → new, −1 dropped) applied to `SC.mem` keys.
+   Acceptance: `director-trace.sh mix` × 3 → 0 `RESTORE@` lines whose filed `sectionAlt` no longer exists, and the
+   renumber count per run reported — 0–1 per run closes the brief as "measured, harmless".
+5. **`morph-flow-slot` (low).** §11: the morph combs TORUS's ribbons mid-fade. One `&trans=morph` vs `mixs` A/B pair
+   per stroke scene (TORUS 3, POLYTOPE 5, DUST 1 with fibres) at CLOCK f178 in one montage; the slot is
+   `scene.post.morph.flow` (default 1) read by `transitions/morph.js`. If the comb is not visible in the montage the
+   brief closes without the slot.
+6. **Probe polish (harness, tiny).** `tools/probe.js` logs `cur` changes (a fade's end or a cut); log `next` changes
+   too so a hard cut is distinguishable from a soft switch in the real-window `SCENES` line.
 
-## v0.2 progress (2026-09-22)
+Closed in §17's table, do not reopen without a new number: sub-59 / over-200 BPM octave reads; the 8–12-beat restore
+after a surprise cut; the reversed-fade jump; DRUM's own `help.feats`; FEIGEN's memory at 1080p (150 MB, no stall,
+0.74–1.1× NAV), the brief's rectangle error (history), the `&standin=0` burst; DUST's `stride` (0.13–0.28× NAV at
+1440p); JULIA (NAV smoulders); `VISIT` is FEIGEN's.
 
-Done and swept green (`tools/accept/v0.2/`, `GPU=1 tools/accept.sh`: check · math · lines smoke · parity fake 0 diff ·
-parity real · monitor 0 spikes · 5 scenes · transition md5 · real start path · bundle 49 modules):
-- **#1 line renderer** → `core/lines.js`, `ctx.lines` (CONTRACTS §1.12, DECISIONS §7). Scene targets carry depth.
-- **TORUS as strokes** (worker, DECISIONS §7): over + depth, 144 rings × [48..160] segments, occlusion is real.
-- **#3 polytope** → `scenes/polytope/` id 5 (worker, DECISIONS §8): tesseract / 24 / 600 / 120-cell on S³, path A,
-  cast by section seed, deterministic. Polish item: pole streaks at t6.
-- **#5 tempo refinement** → `engine/tempo.js` (DECISIONS §9): harmonic-comb ACF, sub-lag vertices on the harmonics,
-  octave-aware switching with evidence gates; `bpm` within ±1 on every demo style, no octave flip in breakdowns,
-  `regularity` ≈ 0 on ambient; `tools/test_tempo.js` (node, synthetic envelope) + `tools/tempo-trace.sh` (per-style
-  traces in `accept/v0.2/tempo-*-{before,after}.txt`). Parity fake still 0 diff (the fake path never ran the
-  estimator); parity real now judges both engines against the synth's 126.
-- **#6 director** → `core/scenes.js` (DECISIONS §10): look memory keyed on synapse's `sectionAlt` (filed at
-  `boundaryEvt`, restored when a return is identified — every aba return now restores), soft switches held to the bar
-  line while `gridTrust > .5` (`SC.quantise`), grid positions per frame in `features-synapse.js`;
-  `tools/test_director.js` + `tools/director-trace.sh` / `director-stats.js` (traces in `accept/v0.2/director-*`).
-- **#2 transition slot + morph** → `assets/transitions/{mixs,morph}.js` (DECISIONS §11, CONTRACTS §5): the crossfade
-  is a plug-in; `mixs` moved out byte-identical (frame-290 md5 checked by `accept.sh`), synapse's flow-field morph
-  written by a worker from the contract and made the default on the A/B montage (`accept/v0.2/montage-trans.jpg`);
-  `&trans=<name>`, `CARD.benchTransition`. Harness fix: the benches never synced before (byte readback from RGBA16F).
-- **#4 help view** → `core/help.js` (DECISIONS §12, CONTRACTS §1.13): `?`/`h` opens a DOM overlay over the still-rendering
-  canvas — the current scene's `tag`, three depths, `cuts`, and one row per `feats` field (ELI5 · what it drives *here*
-  from the new `help.feats` slot · formula · live value), the director's state, the cast, the keys. Zero DOM work while
-  hidden (`CARD.HELP.ticks`), the §11 md5 and `parity.js fake` untouched, coverage by eval (`CARD.HELP.rows()`:
-  107/107 fields, top table = `feats` on all 6 ids). NAV's `feats` trimmed to what it reads (11 v3-era leftovers).
-- **#7 row-only `hist` upload + `ctx.budget`** → `core/gl.js`, `core/quality.js` (DECISIONS §13): the hop-delta rows
-  only (2.0 MB/s → 73 KB/s on the real synth), `&histfull=1` keeps the whole-texture path for proofs, `BUDGET {points,
-  segs}` + `ctx.budget(kind)`; `tools/hist-check.js`, `tools/scene-md5.sh`.
-- **DUST's Hopf-fibre overlay** → `scenes/dust/fibre.js` (worker, DECISIONS §14): path A, 560–3168 segments by tier,
-  `hooks.fibres`, A/B md5 equal to the old DUST with it off; the line renderer costs 0.4 µs/segment (§1.12).
-- **#3 FEIGEN** → `scenes/feigen/` id 6 (worker, DECISIONS §15): the perturbed Feigenbaum dive, the first `hist`
-  sampler (its `&histfull=1` md5 equality is the #7 proof). **JULIA dropped** on the side-by-side with NAV
-  (`accept/v0.2/julia-vs-nav.jpg`, DECISIONS §15). The §11 md5 re-based on the director-blind recipe
-  (`a6e2b8cd…`) because registering a scene moved the director's first pick.
-- **§16 FEIGEN's cost at depth** → `scenes/feigen/{index,ladder,field,colour}.js` (worker, DECISIONS §16): the field
-  (n, log r, log|z′|, ea) is rendered once per zoom rung on a ladder (×2 in width, 2× the view's density, upper
-  half-plane, three slots, a bounded band of rows per frame keyed on `feigL` + the draw counter) and a colour pass
-  samples it through the frame's camera — **1.2–1.3 ms at every depth** (was 8–22), seam 0.51× the median at a rung
-  change, the drop's self-similar stand-in 8.6 % off the true rung, md5-deterministic with the schedule running. The
-  Q trace (`tools/q-trace.sh`, `q-stats.js`; HARNESS "Q trace") is the acceptance: house `q` during a deep 30 s visit
-  0.47–0.50 before → see DECISIONS §16 after (none: 0.68–0.69). `tools/feigen-bench.sh` + `accept.sh` "== feigen cost".
-  CONTRACTS §1.6: *separate what the mathematics computes from what the music changes per frame, and amortise the
-  first over musical time.* No core change; the render-scale slot was not needed.
-Everything in the v0.2 list is done. Ride-alongs (own briefs in `docs/workers/brief-{dust-fibre-count,polytope-pole,
-nav-smoulder}.md`): DUST's tier-3 fibre count 3168 → 2240, POLYTOPE's pole streaks (§8), NAV's interior smoulder on
-`N.par` (§15) — state in DECISIONS §16's ride-along paragraph.
+## Working style (unchanged)
 
-## Candidates for v0.2 (pick by taste; each is one worker brief)
+Orchestrator owns core/engine/contracts/parity/harness; scenes and scene fixes go to a worker in an isolated worktree
+from a brief in `docs/workers/` (opus, own `PORT=`, one Chrome each, never more than two on the machine, none while a
+Q trace runs; a wait loop is `timeout 500 tail -f <log> | grep -q -m1 GO`). `node tools/check.js` after every edit;
+`GPU=1 node tools/parity.js fake` 0 diff after any core/engine change; `tools/scene-md5.sh` before/after any core
+change; the director-blind mixs md5 `a6e2b8cd…` and FEIGEN's `dee30d91…`/`eb8aa082…` are the "nothing underneath
+changed" proofs; `GPU=1 tools/accept.sh` 0 FAIL before a commit that claims a phase. Cost numbers follow HARNESS
+"Bench protocol" (pin `q`, n ≥ 300, medians, NAV interleaved, pairs, nothing else on the machine). Real-window checks:
+HARNESS "Real window" (the music in its own window; minimize for a hidden check). Pitfalls already paid for are in
+HARNESS "Pitfalls" and the memory note; the malware-consideration reminder does not apply to this repo.
 
-1. ~~Line renderer in core~~ — done (§7); TORUS as strokes (§7), DUST's Hopf-fibre overlay (§14).
-2. ~~Synapse's morph transition~~ — done (DECISIONS §11): `assets/transitions/`, morph is the default.
-3. ~~Synapse's julia / feigen / polytope scenes~~ — polytope done (§8), feigen done (§15), julia dropped (§15).
-4. ~~The v4 help idea rebuilt on `feats.js`~~ — done (DECISIONS §12): `core/help.js`, the `help.feats` slot.
-5. ~~Tempo refinement for v3's canonical `bpm`~~ — done (DECISIONS §9).
-6. ~~Key look memory on `sectionAlt` + beat-quantised director actions~~ — done (DECISIONS §10).
-7. ~~Row-only `hist` upload and `Q`-aware particle budgets~~ — done (§13).
-
-## Non-negotiables (unchanged)
-Zero deps · native modules · every visual parameter traces to `MS` · core closed except in a phase that targets it ·
-module cap 350/500 · parity on `#test` is the acceptance for any engine/core change · finish every phase with the
-real start path (`NOAUTO=1 … 'real'`, click the demo link, `CARD.nonFinite()` empty, `CARD.ERRS` empty) on both
-`index.html` and `dist/eigenwobble.html`.
+Non-negotiables: zero deps · native modules · every visual parameter traces to `MS` · no `Math.random()`, no wall
+clock · module cap 350/500 · `parity.js fake` 0 diff · the reference md5s unchanged · `accept.sh` 0 FAIL before a tag.

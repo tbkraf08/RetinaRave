@@ -181,6 +181,8 @@ needed, now generic:
   state your scene recomputes on an event (FEIGEN's `tricorn` from the seed at `sectionEvt`) must pin it for the run —
   otherwise the next event silently undoes the hook and the shot tests the wrong thing.
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
+  A variant reads exactly its parent's fields (it renders through the parent's `draw`), so it shares the parent's
+  `help.feats`; a variant that would need reads of its own is a scene, not a variant (v0.2 §17).
 
 ### 1.5 `LOOK` and `GROOVE`
 
@@ -455,7 +457,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `high` | level | how strong the highs are | uBands.z |
 | `bassFast` | level | bass with a very fast attack (for kicks) | drop detection, beat phase lock |
 | `rms` | raw | raw loudness of the waveform | nothing directly |
-| `wave` | vector | the last 2048 audio samples | the engine's wave texture (DUST's ribbon formation is the waveform); no scene reads it from MS |
+| `wave` | vector | the waveform, as the 512-wide engine texture a scene samples (MS.wave itself is the raw 2048-sample read behind it) | the engine's wave texture (DUST's ribbon formation is the waveform); no scene reads it from MS |
 | `onset` | event | a hit just happened (one frame) | kick toward a Misiurewicz point, nod |
 | `hitStrength` | level | how hard that hit was | kick amplitude |
 | `hit` | level | the hit, decaying over ~0.14 s | uBeat.y, palette brightness, flash |

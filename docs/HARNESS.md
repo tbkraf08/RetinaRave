@@ -52,6 +52,23 @@ with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise
 mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
 `Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
 
+## Bench protocol (every cost number in DECISIONS comes from this — v0.2 §17 consolidated the three copies)
+
+`CARD.bench(id, n)` is ms per full-resolution render of scene `id`, readPixels-synced. The number is only comparable when:
+1. **`q` is pinned first**: `setInterval(() => CARD.Q.q = 0.95, 16)` (or 0.1 for the low tier), then wait longer than
+   the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s) — a scene that reads `Q.iter` (NAV) otherwise
+   changes its own work between calls as pacing sinks `q`.
+2. **`n ≥ 300`**, three calls, the median — headless timers quantise to ~1/24 ms; below ~0.1 ms it only says "cheap".
+   The first call after any pause is cold (0.5–1.5 ms, shader warm-up): discard it.
+3. **Interleave with NAV in the same page**: `bench(id,300)` then `bench(0,300)`, as pairs, and report the ratio as
+   well as the ms — machine load drifts 2× across a session (0.7 ↔ 1.8 ms on the same page), so only interleaved
+   pairs compare, and a "×3 medians" without the interleave once read a fake 1.8× regression (§16 ride-alongs).
+4. **Pairs, not triples, and nothing else on the machine**: no second Chrome, no worker shooting, no wait loop
+   spinning (a `while ! test -e …` without a sleep zeroed a whole q trace; gate on `timeout 500 tail -f log | grep -q
+   -m1 GO`). The user's desktop Chrome loads every bench (flatpak, GPU process ~18 %).
+5. A threshold is decidable from interleaved pairs, never from absolute ms: `accept.sh`'s FEIGEN gate is
+   `max(2.9 ms, 1.5 × NAV)` for this reason. `tools/feigen-bench.sh` is the worked example of all five.
+
 ## Q trace (any scene whose cost could move the global quality knob) and the FEIGEN bench (v0.2 §16)
 
 ```
@@ -63,7 +80,9 @@ GPU=1 tools/feigen-bench.sh before|after [levels]            # per-level bench a
 so one expensive scene lowers every scene's tier for ~30 s after it leaves; the trace of `q` across a track is the
 measurement, the scene's own bench only the symptom. The recipe forces scene 6 at 40 s with the dive set to L 2.5 (the
 depth a minute-long section reaches; a visit from the arrival depth stays under L 1.3 for 30 s and costs nothing) and
-releases it into a soft switch home at 70 s (`VISIT=40:70:2.5`; `VISIT=` for the director's own picks), so every run
+releases it into a soft switch home at 70 s (`VISIT=40:70:2.5`; `VISIT=` for the director's own picks — the third
+field is FEIGEN's dive depth through `hooks.feig`; no other scene has a depth, so a scene that ever needs a forced deep
+visit brings its own hook and its own `VISIT` shape in its brief), so every run
 has the same deep visit on the same clock; tag `none` makes its `score` 0 after load instead (never auto-picked, as good as unregistered — no file edit).
 **One Chrome at a time and nothing else on the machine**: a second instance alone sinks `q` to 0 (`director-aba-after.txt`
 was traced beside house and sat at 0.00–0.06 for 190 s), so the runs are sequential (house 3 × 2 min, aba 3 × 3.2 min)
@@ -71,8 +90,8 @@ and no worker shoots meanwhile — nor computes: a sibling's wait loop spinning 
 renderers, held `q` at 0.00–0.05 for a whole run before FEIGEN was even on screen (§16). Check the 0–40 s window
 against `none` (0.60) before reading anything else. `demo` synths are random: compare the means of three runs, and compare `after` against
 `none`, not against `before`. `feigen-bench.sh` is the worker's and the orchestrator's one source of cost numbers:
-`&feig=<L>` per level with `q` pinned .95, `CARD.bench(6,300)` medians interleaved with `bench(0,300)` (load drift is
-2× across a session — only interleaved pairs compare), the cost of a tricorn flip (every rung rebuilt after §16), and
+`&feig=<L>` per level under the "Bench protocol" above (`q` pinned .95, `bench(6,300)` interleaved with `bench(0,300)`),
+the cost of a tricorn flip (every rung rebuilt after §16), and
 the seam ratio: `CLOCK=1` shots of frames 300–340 at `SEAM_L`, mean |Δ| per pixel between consecutive frames, max /
 median, and the |Δ| at each frame the scene logged a `RUNG@` change. Kick flares are the baseline spikes in that
 window (f305 / f334 ≈ 4.5, f320 ≈ 42 on the fake timeline before §16).
@@ -168,6 +187,32 @@ NOAUTO=1 GPU=1 node tools/cdp.js 'real' '[{"wait":1500},{"click":[695,440]},{"wa
 python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t14.jpg
 ```
 
+## Real window (headed Chrome on the desktop — v0.2 §17's audit; the one thing headless cannot do)
+
+```
+HEADED=1 WIN=1920,1080 WINPOS=0,0 DPR=1.5 node tools/cdp.js 'test&scene=6&feig=3.6' '<steps>'   # a real window on $DISPLAY
+HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps>'              # tab capture, auto-picked
+```
+- `HEADED=1` drops `--headless`; `WIN`/`WINPOS` size and place the window; `DPR=1.5` forces `devicePixelRatio` (this
+  desktop's native value is 0.75 — GNOME text scaling — so a 1920 × 1080 window renders 1407 × 712 and only
+  fullscreen reaches 2560 × 1439); `CAPTITLE=<substring>` makes Chrome pick that tab, with its audio, in the
+  `getDisplayMedia` dialog (`{clickSel:'#go'}` is a trusted click — a synthetic `.click()` is not a user gesture).
+- Extra steps: `{tab:'url', window:{left,top,width,height}}` opens the music in **its own window** ·
+  `{evalTab:'expr'}` evaluates there · `{tab:'url'}` (no `window`) opens a same-window tab, which **hides the page**
+  (headed Chrome ignores `background`) — that is the hidden-tab check; `{activate:'main'}` brings the page back ·
+  `{bounds:{width,height}}` / `{bounds:{windowState:'fullscreen'}}` resize the real window · `{dblclick:[x,y]}` ·
+  `{sh:'cmd'}` runs a shell command mid-run with `DBG` = the debug port (the GPU process: `pgrep -f
+  "type=gpu-proces[s].*chr$DBG"`) · `[EVAL-ERR]` lines are exceptions inside an `eval` step.
+- **The music must be in its own window.** A media document in a same-window tab that has never been shown does not
+  start playing (Chrome's never-activated-tab rule beats the autoplay flag), a captured tab that is not playing delivers
+  no audio frames, and the worklet then gets zero-channel input and never hops — the engine holds still by design and
+  the watchdog swaps the demo in only if the page is visible. With the music window on the other monitor the capture
+  is heard within 5 s and hops at 94/s (`tools/accept/v0.2/audit-2-*.jpg`, `docs/AUDIT-v0.2.md`).
+- `tools/probe.js` is the in-page frame probe for these runs: `fetch('/tools/probe.js').then(r=>r.text()).then(eval)`
+  then `PROBE.start()`; it records per frame dt, the drawn frame's mean luminance, `SC`, `q`, and events (scene switch,
+  visibility, resize, black frame `lum < 2`, long frame > 100 ms, the first frame back from hidden); `PROBE.summary()`.
+  Sharing a tab adds Chrome's infobar to the page and shrinks the viewport by 56 CSS px — a real `resize()` mid-run.
+
 ## Help view (change to `core/help.js`, a scene's `help` / `help.feats`, or `feats.js` text)
 
 Keys: `?` or `h` toggles, `Esc` closes; `d f m 0–9` keep working with it open. It is DOM (`#help` in `index.html`) over
@@ -202,11 +247,8 @@ with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and
 - Pinning quality: `CARD.Q.q` is re-adapted every frame, so pin it with `setInterval(() => CARD.Q.q = 0.1, 16)` and
   wait longer than the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s before the shot).
 - `CARD.goScene(id, hard)` · `CARD.bench(id, n)` → ms per full-resolution render of scene id, readPixels-synced (the
-  default `n` is 40 for a quick look; a number you report needs `n ≥ 300`, see below) ·
-  `CARD.benchTransition(n=300)` → the same per registered transition ("Transition" above).
-  Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
-  The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it. Pin `q` first (above): a scene
-  that reads `Q.iter` (NAV) otherwise changes its own iteration count between calls as headless pacing sinks `q`.
+  default `n` is 40 for a quick look; a number you report follows the "Bench protocol" above: `q` pinned, `n ≥ 300`,
+  medians, NAV interleaved) · `CARD.benchTransition(n=300)` → the same per registered transition ("Transition" above).
 - `CARD.nonFinite()` → keys of MS holding a non-finite number (must be `[]`).
 
 ## Continuity monitor (NAV invariant)
