@@ -29,7 +29,7 @@ declare the rest as ordinary uniforms, uploaded in `draw()` from `MS` / `LOOK.mo
 | uValence uArousal uDirty uPunchy uCentroid uFlux uAlive | same names on `MS` |
 | uPhrase uPhraseConf uSectionAge | `MS.phrasePos MS.phraseConf MS.sectionAge` |
 | uSeed | `MS.seed.a * 100` (a per-section constant; changes on section events) |
-| uQuality | `ctx.Q.q` · uRes → HEAD's `uRes` |
+| uQuality | `ctx.Q.q` (0..1; synapse's was an integer tier — e.g. iterations `7 + int(q*3.+.5)`) · uRes → HEAD's `uRes` |
 | uSceneAge | `MS.flow - flowAtEnter` (keep `flowAtEnter` = MS.flow when you become `env.SC.logical`) |
 | uShock (drop ring) | radius `dropAge*1.15`, amplitude `dropAge<1.6 ? dropEnv*exp(-dropAge*1.6)*1.2 : 0` |
 | KICKS[8] (travelling rings) | keep your own ring of the last 8 kicks `{age, s}` from rising edges of `MS.kick`, or skip |
@@ -38,6 +38,8 @@ declare the rest as ordinary uniforms, uploaded in `draw()` from `MS` / `LOOK.mo
 | GLSL_COMMON helpers you need (hash11, pal, ang, …) | copy the specific functions you use into your own `shaders.js`; do NOT copy the UBO block or the `#define`s. Note HEAD already defines `pal()`, `rot()`, `hash()`, `TAU` — name yours differently (`palM`, `hash11`) to avoid redefinition |
 
 Synapse's `pal()` was hue/spread/sat/bri driven; rebuild it from `LOOK.mood` (uHue etc.) in your shader as `palM(t)`.
+Lifted fragment sources start with their own `out vec4 o;` — drop it (HEAD declares it). Some contain a reversed
+`smoothstep(hi, lo, x)` — rewrite as `1.-smoothstep(lo, hi, x)`. `tools/check.js` is a legal read for the uniform idiom.
 
 **Acceptance (all from the repo root, all must pass):**
 1. `node tools/check.js` → `0 fail` (≤350 lines per file: keep `shaders.js` separate from `index.js`).

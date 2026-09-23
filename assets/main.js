@@ -16,6 +16,7 @@ import bloom from './effects/bloom.js';
 import composite from './effects/composite.js';
 
 import nav from './scenes/nav/index.js';
+import mandala from './scenes/mandala/index.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,7 +36,7 @@ const ctx = {
 
 initScenes();
 for (const fx of [feedback, bloom, composite]) addEffect(fx, ctx);
-for (const scene of [nav]) {
+for (const scene of [nav, mandala]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

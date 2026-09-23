@@ -81,7 +81,7 @@ export const FEATS = {
   identifyAt: I('scheduled time to identify the section', 'sectionEvt+2.2 s'),
   identifyEvt: E('the section was just identified', '2.2 s after sectionEvt', 'soft scene switch'),
   repeat: { kind: 'level', eli5: 'is this section one we have seen before', formula: 'fingerprint match > .965', drives: 'baby dive, look memory', range: [false, true] },
-  seed: { kind: 'vector', eli5: 'per-section random constants {hue, th, a, scene}', formula: 'drawn once per new section', drives: 'palette offset, drift direction, alpha offset, remembered scene', range: null },
+  seed: { kind: 'vector', eli5: 'per-section random constants {hue, th, a, scene, looks}: hue, a ∈ [0,1), th ∈ [−.5,.5), scene = remembered scene id, looks = remembered scene looks', formula: 'drawn once per new section', drives: 'palette offset, drift direction, alpha offset, remembered scene', range: null },
   // --- synapse stage (features-synapse.js): additive fields, canonical concepts stay v3's ---
   bassS: L('synapse bass, slow (0.5 s)', 'Band(40-150Hz).slow: AGC-normalised, ema .5 s', 'DUST/MANDALA body'),
   midS: L('synapse mids, slow', 'Band(300-2500Hz).slow', 'DUST/MANDALA'),
@@ -91,7 +91,7 @@ export const FEATS = {
   kick: L('a kick just hit, decaying (0.16 s)', 'median-thresholded low-band flux peak, gated on bass level', 'DUST kick flare, MANDALA centre'),
   snare: L('a snare just hit, decaying (0.13 s)', 'mid-band flux peak', '-'),
   hat: L('a hat just hit, decaying (0.06 s)', 'high-band flux peak', 'DUST/MANDALA sparkle'),
-  kickCount: { kind: 'count', eli5: 'kicks since start', formula: 'increments per kick', drives: 'MANDALA fold seed (every 64 kicks)', range: [0, Infinity] },
+  kickCount: { kind: 'count', eli5: 'kicks since start', formula: 'increments per kick', drives: 'MANDALA fold epoch (every 64 kicks; synapse used 32)', range: [0, Infinity] },
   alive: L('is sound present (synapse)', 'silentFor<.7 s, attack .25 s release .9 s', 'idle behaviour'),
   hush: L('the silence before a drop', 'tension>.35 & fast energy < 32% of short energy', 'DUST/MANDALA hold'),
   calm: L('quiet and unhurried', '(1-1.7 bassHold)(1.45-1.5 eShort)(1-.6 tension)', 'scene scores'),

@@ -31,7 +31,8 @@ export default {
   name: 'dust',                 // folder name
   id: 1,                        // integer, unique across scenes and variants; keys 1–9 force id 0–8
   tag: 'one line for the HUD',
-  feats: ['bass', 'flow'],      // every MS field you read — names from Appendix A below (typo = CARD.ERRS entry)
+  feats: ['bass', 'flow'],      // every MS field you read anywhere in this object (score/update/draw); HEAD-delivered
+                                // ones too (bass/mid/high via uBands). Names: Appendix A (typo = CARD.ERRS entry)
   cuts: 'continuous',           // your promise about discontinuities (§1.9): 'continuous' | 'onset' | 'event'
   score(MS, rt, SC) {},         // → 0..1 — your bid to be auto-picked now. Return 0 = never auto-pick now.
   init(ctx) {},                 // build programs and buffers. Called once, before the first frame. Keep ctx: this.ctx = ctx
@@ -63,7 +64,8 @@ ctx.mkProg(fs, name)          fullscreen program: HEAD + your fragment source, t
 ctx.mkProg(vs, fs, name)      raw program (own vertex shader, e.g. gl_VertexID particles). No HEAD is prepended.
 ctx.use(pr, target, w, h)     bind program + target (null = screen) + viewport and upload the common uniforms (§1.2)
 ctx.tri()                     draw the fullscreen triangle
-ctx.tex(pr, 'uName', unit, target)   bind target.t to a texture unit and set the sampler uniform
+ctx.tex(pr, 'uName', unit, t)        bind t.t (any {t}: a target or an engine texture) to a unit and set the sampler.
+                              Scenes may use units 0–7.
 ctx.dynBuf(floats, comps)     a DYNAMIC_DRAW VAO with one float attribute at location 0 → {vao, buf}
 ctx.upload(buf, Float32Array, n)     bufferSubData
 ctx.mkTarget(w, h, rgba8=false)      render target {t, f, w, h}; RGBA16F when available (rgba8 for CPU readback)
@@ -109,12 +111,16 @@ float hash(vec2 p);            // 0..1 hash
 ```
 
 Uniforms you declare yourself must be fetched with `pr.u('name')` somewhere in your folder: `check.js` fails on a
-declared-but-never-fetched uniform (arrays: fetch `'uName[0]'`). Never name a GLSL variable `gl_*`. `smoothstep(a,b,x)`
-needs `a<b`. `readPixels` from an RGBA16F target returns black: use `mkTarget(w,h,true)` for readback.
+declared-but-never-fetched uniform (arrays: fetch `'uName[0]'`; a loop over a name array is invisible to it — write the
+literal). HEAD already declares `in vec2 vUv; out vec4 o;` — do not redeclare them. Never name a GLSL variable `gl_*`.
+`smoothstep(a,b,x)` needs `a<b` (lifted sources sometimes reverse it: write `1.-smoothstep(b,a,x)`). `readPixels` from
+an RGBA16F target returns black: use `mkTarget(w,h,true)` for readback. `tools/check.js` is a legal read for the
+uniform/import idioms — use it instead of peeking at a sibling scene.
 
 ### 1.3 `rt` — what a scene publishes
 
-`scene.rt` is a plain object the scene fills in `update()`. The core reads only these keys, all optional:
+`scene.rt` is a plain object the scene fills in `update()` (the core assigns `{}` at registration, before `init`, if
+you leave it out). The core reads only these keys, all optional:
 
 | key         | meaning                                                                                          |
 |-------------|--------------------------------------------------------------------------------------------------|
@@ -186,7 +192,8 @@ scene's own id); `CARD.SCENES` is the array of scene objects in registration ord
 The continuity monitor (HARNESS.md) checks the home scene; for every scene `cuts` documents what a reviewer should
 expect frame to frame: `'continuous'` — nothing on screen ever jumps (all motion is springs/emas of MS);
 `'onset'` — visible jumps only on `MS.onset`/`MS.beat` (kicks, formation flips); `'event'` — jumps only on
-`dropEvt`/`sectionEvt`/`surpriseEvt` and declared chart cuts. Anything else is a bug.
+`dropEvt`/`sectionEvt`/`surpriseEvt`, declared chart cuts and declared beat-counted epochs (e.g. "every 64 kicks").
+Anything else is a bug.
 
 ### 1.11 Look memory
 
@@ -307,7 +314,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `lastSection` | raw | time of the last section event | refractory |
 | `identifyEvt` | event | the section was just identified | soft scene switch |
 | `repeat` | level | is this section one we have seen before | baby dive, look memory |
-| `seed` | vector | per-section random constants {hue, th, a, scene} | palette offset, drift direction, alpha offset, remembered scene |
+| `seed` | vector | per-section random constants {hue, th, a, scene, looks}: hue, a ∈ [0,1), th ∈ [−.5,.5), scene = remembered scene id, looks = remembered scene looks | palette offset, drift direction, alpha offset, remembered scene |
 | `bassS` | level | synapse bass, slow (0.5 s) | DUST/MANDALA body |
 | `midS` | level | synapse mids, slow | DUST/MANDALA |
 | `highS` | level | synapse highs, slow | - |
@@ -316,7 +323,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kick` | level | a kick just hit, decaying (0.16 s) | DUST kick flare, MANDALA centre |
 | `snare` | level | a snare just hit, decaying (0.13 s) | - |
 | `hat` | level | a hat just hit, decaying (0.06 s) | DUST/MANDALA sparkle |
-| `kickCount` | count | kicks since start | MANDALA fold seed (every 64 kicks) |
+| `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |
 | `calm` | level | quiet and unhurried | scene scores |
