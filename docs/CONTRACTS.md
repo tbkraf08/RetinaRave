@@ -249,8 +249,8 @@ flat in vec3 vCol; out vec4 o;
 void main() { float m = lineMask(); o = vec4(vCol * m, m); }`;   // lineMask() = anti-aliased coverage 0..1
 ```
 Per frame: `ctx.use(pr, target, w, h)`, your uniforms, then `ctx.lines.drawN(nSegments, { depth: true, blend: 'add' })`.
-`gl_InstanceID` is the segment; `gl_VertexID` (0..3) is the quad corner and belongs to `lineCorner` — do not read
-it. The chunk declares `uniform vec2 uRes` (filled by `ctx.use`, so do not declare your own `uRes`) and the varyings
+The renderer owns the quad and its VAO: bind nothing, create no VAO. `gl_InstanceID` is the segment; `gl_VertexID`
+(0..3) is the quad corner and belongs to `lineCorner` — do not read it. The chunk declares `uniform vec2 uRes` (filled by `ctx.use`, so do not declare your own `uRes`) and the varyings
 `vLineSeg`/`vLineHW`; name yours differently. A segment with an endpoint at or behind the camera plane (`w ≤ 0`) is
 dropped whole.
 
@@ -260,6 +260,13 @@ only · omitted/false ignores depth. `blend: 'over'` (default; correct occlusion
 or accept the overlap). The core's scene targets have a depth buffer, cleared to 1 before every `draw()`; your own
 targets get one with `ctx.mkTarget(w, h, false, true)`. Clip `z` must lie in (−w, w): for a pinhole camera with view
 depth `v.z` (and `w = v.z`) use `z = v.z − 2·near`, which increases with distance.
+
+**Alpha is coverage, not brightness.** Consecutive capsules of a polyline overlap inside every joint, so with
+`'over'` a semi-transparent stroke composites twice there and shows a bead on every join. Keep the stroke opaque —
+`o = vec4(col · m, m)` with `m = lineMask()` — and put brightness, fog and fades into the colour; let alpha fall only
+where a stroke must genuinely vanish (e.g. a fibre leaving through the projection pole). A fragment that ends up
+invisible still writes depth: `discard` below a small threshold (`if (a < 0.004) discard;`) or it will hide what is
+behind it. Path A's built-in program does both already.
 
 Widths under 1 px dim instead of thinning (constant energy), so distant hairlines fade rather than sparkle. Cost: four
 vertices per segment; path B evaluates `P` twice per vertex. 50 k segments is fine; put the `tier()` budget in the
@@ -448,3 +455,9 @@ Questions workers had to ask, and what changed in this doc as a result.
   seconds; `cuts` defined (§1.9); off-values for `bloom.thr`/`kaleido`/`fb.decay` and `post.<effect>.on` made real;
   `ctx.targets` wording; registered-id table and `CARD.REG` shape; what the composite does to a flat colour (§1.10);
   HARNESS.md `&scene=N` is "scene id N" (the 0-based offset only applies to the number keys).
+- **2026-09-22, TORUS strokes (v0.2 §7), worker given CONTRACTS §1.12 + the v0.1 scene.** Rendered strokes first try;
+  8 friction items (`docs/workers/torus-lines.md`). Fixes here: `drawN` needs no VAO (stated); alpha = coverage,
+  brightness in colour, `discard` invisible fragments (new paragraph in §1.12; the built-in program now discards too);
+  a 3D width is "px at unit depth ÷ view depth" — pick the constant so a stroke at your framing distance is 2–3 px.
+  HARNESS: `CARD.glerr` exists only after a GL error, `bench`'s first call after a pause is cold, pinning `Q.q` must
+  outlast the scene's own smoothing.

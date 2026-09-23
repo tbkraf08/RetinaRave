@@ -56,7 +56,7 @@ flat out vec4 vLineCol;
 void main(){vec4 c0=uMVP*vec4(aA.xyz,1.),c1=uMVP*vec4(aB.xyz,1.);vLineCol=aC;gl_Position=lineCorner(c0,c1,aA.w,aB.w);}`;
 const FS_A = '#version 300 es\nprecision highp float;\n' + FS_CHUNK + `
 flat in vec4 vLineCol;out vec4 o;
-void main(){float m=lineMask()*vLineCol.a;o=vec4(vLineCol.rgb*m,m);}`;
+void main(){float m=lineMask()*vLineCol.a;if(m<0.004)discard;o=vec4(vLineCol.rgb*m,m);}`;
 
 const IDENT = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const STRIDE = 48; // 12 floats per segment

@@ -79,8 +79,13 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 `hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes).
 
 - `CARD.fix = {bass: 1, arc: 'peak'}` pins MS fields every frame after extraction (works with `fake=0` too). `null` clears.
+- `CARD.glerr` is set only when a `gl.getError()` poll (every 30 frames) returns non-zero — `undefined` means clean.
+  For an immediate check evaluate `CARD.ctx.gl.getError()` (0 = clean).
+- Pinning quality: `CARD.Q.q` is re-adapted every frame, so pin it with `setInterval(() => CARD.Q.q = 0.1, 16)` and
+  wait longer than the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s before the shot).
 - `CARD.goScene(id, hard)` · `CARD.bench(id, n=40)` → ms per full-resolution render of scene id, readPixels-synced.
   Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
+  The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it.
 - `CARD.nonFinite()` → keys of MS holding a non-finite number (must be `[]`).
 
 ## Continuity monitor (NAV invariant)
