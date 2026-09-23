@@ -14,6 +14,16 @@ import { getGrid } from '../math/mandel.js';
 export const HASH = new URLSearchParams(location.hash.slice(1));
 export const TEST = HASH.has('test');
 
+// One-pixel readback from a core target: the GPU sync the benches rely on. The targets are RGBA16F when floats are
+// available, and a UNSIGNED_BYTE read from a float target is INVALID_OPERATION (rejected before it reaches the GPU,
+// so it never synced — every bench before §11 measured submission time); read FLOAT there.
+function readback(r) {
+  const gl = G.gl;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, r.f);
+  if (G.FLOAT) gl.readPixels(r.w >> 1, r.h >> 1, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4));
+  else gl.readPixels(r.w >> 1, r.h >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+}
+
 export const CARD = {
   log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, TEST, HASH,
   hooks: {},
@@ -25,13 +35,8 @@ export const CARD = {
   goScene: (id, hard) => goScene(id, hard, MS),
   // Micro-benchmark a scene id: ms per full-resolution render, readPixels-synced (Q.q is not a perf verdict headless).
   bench(id, n = 40) {
-    const gl = G.gl, px = new Uint8Array(4), T = [G.RT.a, G.RT.b];
-    const sync = () => {
-      for (const r of T) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, r.f);
-        gl.readPixels(G.PW >> 1, G.PH >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      }
-    };
+    const gl = G.gl, T = [G.RT.a, G.RT.b];
+    const sync = () => { for (const r of T) readback(r); };
     renderScene(id, G.RT.a, G.PW, G.PH);
     sync();
     const t = performance.now();
@@ -47,11 +52,8 @@ export const CARD = {
   // next registered scene into b once, then n passes at m sweeping .2 → .8, readPixels-synced. Disturbs a transition's
   // own per-fade state (the morph's ease) — bench after the shots, not before.
   benchTransition(n = 300) {
-    const gl = G.gl, px = new Uint8Array(4), RT = G.RT, w = G.PW, h = G.PH;
-    const sync = () => {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, RT.m.f);
-      gl.readPixels(w >> 1, h >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-    };
+    const gl = G.gl, RT = G.RT, w = G.PW, h = G.PH;
+    const sync = () => readback(RT.m);
     const other = SCENES.find((s) => s.id !== SC.cur).id;
     renderScene(SC.cur, RT.a, w, h);
     renderScene(other, RT.b, w, h);

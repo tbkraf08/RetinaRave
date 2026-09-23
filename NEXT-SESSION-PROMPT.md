@@ -18,7 +18,7 @@ fake` after any core/engine change (must print 0 diff); `GPU=1 tools/accept.sh` 
 ## v0.2 progress (2026-09-22)
 
 Done and swept green (`tools/accept/v0.2/`, `GPU=1 tools/accept.sh`: check · math · lines smoke · parity fake 0 diff ·
-parity real · monitor 0 spikes · 5 scenes · real start path · bundle 46 modules):
+parity real · monitor 0 spikes · 5 scenes · transition md5 · real start path · bundle 49 modules):
 - **#1 line renderer** → `core/lines.js`, `ctx.lines` (CONTRACTS §1.12, DECISIONS §7). Scene targets carry depth.
 - **TORUS as strokes** (worker, DECISIONS §7): over + depth, 144 rings × [48..160] segments, occlusion is real.
 - **#3 polytope** → `scenes/polytope/` id 5 (worker, DECISIONS §8): tesseract / 24 / 600 / 120-cell on S³, path A,
@@ -32,14 +32,17 @@ parity real · monitor 0 spikes · 5 scenes · real start path · bundle 46 modu
   `boundaryEvt`, restored when a return is identified — every aba return now restores), soft switches held to the bar
   line while `gridTrust > .5` (`SC.quantise`), grid positions per frame in `features-synapse.js`;
   `tools/test_director.js` + `tools/director-trace.sh` / `director-stats.js` (traces in `accept/v0.2/director-*`).
-Still open below: #2, #3 julia/feigen, #4, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+- **#2 transition slot + morph** → `assets/transitions/{mixs,morph}.js` (DECISIONS §11, CONTRACTS §5): the crossfade
+  is a plug-in; `mixs` moved out byte-identical (frame-290 md5 checked by `accept.sh`), synapse's flow-field morph
+  written by a worker from the contract and made the default on the A/B montage (`accept/v0.2/montage-trans.jpg`);
+  `&trans=<name>`, `CARD.benchTransition`. Harness fix: the benches never synced before (byte readback from RGBA16F).
+Still open below: #3 julia/feigen, #4, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
 1. **Line renderer in core** (`ctx.lines`: instanced quads from a Float32Array of segments, depth-tested). Unblocks
    TORUS fibres as strokes instead of points and DUST's Hopf-fibre overlay (dropped in v0.1 for synapse's broken depth).
-2. **Synapse's morph transition as an effect** (`effects/morph.js`): the crossfade today is v3's `mixs`; synapse had a
-   flow-field morph. Slot exists: the crossfade is a core pass — make it a pluggable `transition` slot first.
+2. ~~Synapse's morph transition~~ — done (DECISIONS §11): `assets/transitions/`, morph is the default.
 3. **Synapse's julia / feigen / polytope scenes** as workers (`synapse2.html` scenes 1/3/5; the polytope needs the
    line renderer). Each is a folder + two lines in `main.js`.
 4. **The v4 config-panel / help idea rebuilt on `feats.js`**: `FEATS` already carries eli5/formula/drives for every

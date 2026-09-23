@@ -47,7 +47,7 @@ CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
-setTransition('mixs'); // the default transition (DECISIONS §11)
+setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
 for (const scene of [nav, dust, mandala, torus, polytope]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));

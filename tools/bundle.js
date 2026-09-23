@@ -18,6 +18,23 @@ function resolve(from, spec) {
   return path.normalize(path.join(path.dirname(from), spec)).replace(/\\/g, '/');
 }
 
+// Top-level declarator names of `A = …, B = …;` (commas inside (), [], {}, strings and template strings do not split).
+function declarators(rest) {
+  const out = [];
+  let depth = 0, q = null, start = 0;
+  const piece = (s) => { const m = /^\s*([\w$]+)\s*(=|,|;|$)/.exec(s); if (m) out.push(m[1]); };
+  for (let i = 0; i < rest.length; i++) {
+    const c = rest[i];
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+    if (c === '"' || c === "'" || c === '`') q = c;
+    else if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (c === ',' && depth === 0) { piece(rest.slice(start, i)); start = i + 1; }
+  }
+  piece(rest.slice(start));
+  return out;
+}
+
 function transform(rel) {
   if (mods.has(rel)) return;
   let src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -34,8 +51,10 @@ function transform(rel) {
     if (ns) out.push(`const ${ns.replace(/\*\s+as\s+/, '')} = __m[${JSON.stringify(target)}];`);
     return out.join(' ');
   });
-  // export const/let/function/class NAME
-  src = src.replace(/^export\s+(const|let|var|async function|function|class)\s+([\w$]+)/gm, (m, kw, name) => { names.push(name); return `${kw} ${name}`; });
+  // export const/let/function/class NAME — a const/let/var may declare several names (`export const A = 1, B = 2;`):
+  // every top-level declarator of the statement (one statement per line in this codebase) goes into the table
+  src = src.replace(/^export\s+(const|let|var)\s+(.*)$/gm, (m, kw, rest) => { for (const n of declarators(rest)) names.push(n); return `${kw} ${rest}`; });
+  src = src.replace(/^export\s+(async function|function|class)\s+([\w$]+)/gm, (m, kw, name) => { names.push(name); return `${kw} ${name}`; });
   // export default EXPR
   src = src.replace(/^export\s+default\s+/gm, () => { def = '__default'; return 'const __default = '; });
   // export { a, b as c };

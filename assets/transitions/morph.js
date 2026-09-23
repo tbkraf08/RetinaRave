@@ -49,7 +49,7 @@ export default {
     this.ease = Math.min(1, this.ease + dm * (1 + EASE_LVL * MS.lvl) + MS.kick * io.dt * EASE_KICK);
     this.mPrev = m;
     const t = Math.max(m, this.ease);
-    this.ctx.log('morph m=' + m.toFixed(4) + ' t=' + t.toFixed(4) + ' lvl=' + MS.lvl.toFixed(3));
+    this.t = t; // readable from the harness (CARD.TRANSITIONS.morph.t)
     use(pr, io.out, io.sw, io.sh);
     tex(pr, 'uA', 0, io.a);
     tex(pr, 'uB', 1, io.b);

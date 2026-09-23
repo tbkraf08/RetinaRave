@@ -65,8 +65,9 @@ additive edge `exp(−((m−.5)·5)²)·sin(πt)·(a+b)·.9` rides the front. On
    PORT=8776 GPU=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"wait":2000},{"eval":"JSON.stringify([CARD.benchTransition(300),CARD.benchTransition(300),CARD.benchTransition(300)])"}]'
    ```
    Budget: the morph should cost no more than ~3× `mixs`; if it does, say where the time goes (drop a `vnoise` octave?).
-5. A 20 s real-path run without errors: `PORT=8776 GPU=1 node tools/cdp.js 'test&fake=0&demo=house&trans=morph'
-   '[{"until":"window.CARD"},{"wait":20000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),glerr:CARD.glerr,log:CARD.log.filter(l=>/SCENE@/.test(l))})"}]'`
+5. A 45 s real-path run without errors (the house demo's first soft switch lands at ~23 s; the first version of this
+   brief said 20 s and failed as printed): `PORT=8776 GPU=1 node tools/cdp.js 'test&fake=0&demo=house&trans=morph'
+   '[{"until":"window.CARD"},{"wait":45000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),glerr:CARD.glerr,log:CARD.log.filter(l=>/SCENE@/.test(l))})"}]'`
    → at least one `SCENE@` switch happened (the fade ran), `errs` and `bad` empty, `glerr` undefined.
 
 Commit in your worktree when done (`git add assets/transitions/morph.js assets/main.js docs/workers/morph.md`).

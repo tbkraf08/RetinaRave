@@ -358,3 +358,89 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   `SC.mem` is not renumbered with it (a stale entry restores the wrong section's look once; the ids then settle). The
   section-return trigger respects v3's 8-beat spacing, so after a surprise hard cut the restore lands 8–12 beats after
   the cut, not at the identification.
+
+## §11 Transition slot + synapse's morph (v0.2, 2026-09-23) — `assets/transitions/`, worker `docs/workers/morph.md`
+
+- **The slot.** The crossfade pass left `core/scenes.js`: `addTransition(tr, ctx)` registers by name, `setTransition(name)`
+  picks the current one, and `drawScenes(sw, sh, io)` renders `a`, renders `b`, then hands the transition
+  `io = {a, b, m, out, w, h, sw, sh, uvS, MS, FX, GROOVE, LOOK, dt}` (CONTRACTS §5) with BLEND/DEPTH/SCISSOR off and
+  `out` (= `RT.m`, no depth) bound at `(sw, sh)`. The transition returns the target the chain starts from; `loop.js`
+  builds the `io` and honours `io.uvS = [1, 1]` (a transition that re-rendered the whole target) by starting the chain
+  at `(w, h)` — the §3 rule, unchanged in spirit. `SC.m`/`SC.dur`/`goScene`, the director, `visibility`, `postParams`
+  and `Q.scale · 0.8` are untouched: `m` is the director's clock and a transition only draws between its ends.
+  `scenes.js` 263 lines; no `core/transition.js` was needed.
+- **`mixs` as a transition is byte-identical.** The `MIXS` string and its four uploads moved verbatim to
+  `transitions/mixs.js`. Proof: the fake timeline's first fade (NAV → TORUS, `SWITCH@3.88`, 116 frames) at frame 290,
+  `m = 0.4994`, under `CLOCK=1 GPU=1`: **md5 `4ac523e9770e7d0625d46ed1f3e44769`** before the refactor
+  (`trans-before-f290.jpg`, taken twice — identical), after it (`trans-mixs-f290.jpg`) and from `dist/eigenwobble.html`.
+  Same `[cur, next, m]` triple. `accept.sh` re-takes the shot on every sweep and compares against the recorded md5.
+  Regression net around the moved pass: `parity.js fake` 0 diff / 72 fields, `test_director` and `lines-smoke` OK,
+  `director-fake-after.txt` identical to §10's to the line (the clock did not move), `parity.js real` unchanged
+  (bpm 126.2 vs v3 125.9, arcs identical, drops within 0.05 s), aba 190 s: 7 restores of 7, 7 of 7 soft switches on the
+  bar line, A/B-periodic scene sequence (§10 had 8 switches on one more `return`; the synth is random).
+- **`morph` (worker, opus, worktree, 12 min, from CONTRACTS §5 + brief + `mixs.js` + five synapse line ranges).**
+  Synapse's `FS_MORPH` with `POST_HEAD` replaced by HEAD, `gl_FragCoord.xy/uR → vUv`, every sample clamped into `[0,1]`
+  then scaled by `uUvS` (unclamped, the advected edge reads the stale border of a larger frame), `hash21`/`vnoise`
+  brought along in the file. Uniforms `uA uB uUvS uT = (t, MS.flow, MS.kick)`; `MS` reads `lvl kick flow`. One pass,
+  four texture reads, six `vnoise`. Deterministic: frame 290 md5 `4775571949db4941443c039930cba15c` across two runs in
+  the worktree and again on main.
+  - *The musical ease.* `t = max(m, ease)`, `ease = min(1, ease + dm·(1 + 0.18·lvl) + kick·dt·0.12)` with
+    `dm = max(0, m − mPrev)`, reset to `m` whenever `m` is not ≥ last frame's (a new fade, or a reversal — the core
+    swaps `a`/`b` and sets `1 − m`). At frame 290 `t = 0.589` for `m = 0.499`, `lvl = 0.5`; the fade's last frame
+    (`m = 0.9989`) already has `t = 1`. Synapse's push was the whole clock (`trans += dt·rate·(0.35 + 1.3·level) +
+    kick·dt·0.9`); here it is a shape on the director's clock, so the visible transition is complete when the core
+    drops `b` — the §5 invariant, verified in the trace (`t = 0.0106 → a` everywhere, `t = 1 → b` everywhere).
+  - *Deviation from "lifted verbatim": three front constants.* The brief asked for the front to be mid-screen at
+    `m ≈ 0.5` so the A/B on one frame means something. The worker showed that cannot be tuned through the ease:
+    synapse's front threshold is `n* = (1.05 − 1.5t)/0.9` against a noise field whose mean runs 0.75 (centre) → 0.43
+    (corner) at 16:9, so the front crosses the whole frame in `Δt ≈ 0.19` centred on `t ≈ 0.40` — at `t = 0.5`
+    (the minimum, since `t ≥ m`) the picture is ~95 % `b`, and the ease only pushes `t` up. Retuned, every term kept:
+    `c` aspect-corrected (a round front), the radial weight `.35 → .75`, the sweep `t·1.5 − 1.05 → t·2.1 − 1.65`, and
+    `min(length(c), .9)` bounding the radial term so `n ∈ [−0.1275, 1.55]` and `X(t=0) ≤ −0.255 < −0.15`,
+    `X(t=1) ≥ 0.335 > 0.15`: exactly `a` at `m → 0` and `b` at `m = 1` at any aspect ratio, no `step()` gate. The
+    front now leaves the centre at `t ≈ 0.3`, is mid-screen at `0.5`, clears the corners at `0.73`. The additive edge
+    stays at synapse's `.9`: measured 0.000 % pure-white pixels and ≤ 0.008 % single-channel clipping on the four shots.
+- **A/B verdict — `morph` is the default** (`main.js`; `mixs` is `&trans=mixs` away and stays the byte-exact
+  reference). `tools/accept/v0.2/montage-trans.jpg`: the f290 fade and three `goScene` pairs at `m = 0.499`
+  (NAV → MANDALA, DUST → TORUS, POLYTOPE → NAV; recipe in HARNESS "Transition"), `mixs` left, `morph` right. `mixs`
+  is a rotating, counter-zooming double exposure: both whole scenes over the whole frame, the incoming one ghosted
+  across the outgoing one (on NAV → MANDALA its zoomed chart texture stripes the borders). `morph` hands the frame to
+  the incoming scene as a region — TORUS owns the centre with NAV melting into teal bands outside the front, MANDALA
+  eats a hole with the bright serrated edge ring, NAV's filigree takes the middle band against POLYTOPE's arcs — both
+  scenes recognisable, no border, no white-out; the flow field drags the outgoing scene into filaments, which is the
+  synapse look. Cost against taste: the double exposure never lets either scene be read; the front does.
+- **Cost, measured** (`CARD.benchTransition(300)`, 1280×720 full resolution, GPU=1 headless, three runs):
+  `mixs` 0.55–0.78 ms · `morph` 1.34–1.54 ms per pass (≈ 2×), against NAV 2.7–2.9 ms and TORUS 2.2 ms for a scene
+  pass (`CARD.bench`). During a fade the pass runs at `0.8 · Q.scale` (≈ 0.36 of the area at `scale = .75`), so the
+  transition adds well under a millisecond to two scene passes — the budget holds.
+  - *Harness finding on the way:* the worker's first numbers were 0.016 ms for both and it flagged them as not
+    physical. `CARD.bench` and `benchTransition` synced with `readPixels(…, UNSIGNED_BYTE)` on RGBA16F targets, which
+    is INVALID_OPERATION (`getError` 1282; `IMPLEMENTATION_COLOR_READ_TYPE` is HALF_FLOAT) — rejected before it reached
+    the GPU, so **no bench before §11 was synced** (they measured submission time; the "quantises at ~1/24 ms" note
+    in the memory was this). Both now read FLOAT when `G.FLOAT`; `getError` is 0 after a bench. Earlier `bench` figures
+    in this file (§3/§4/§7/§8) are not render times.
+- **Harness.** `&trans=<name>` under `#test` (selection only; no branch in the pass), `CARD.TRANSITIONS`,
+  `CARD.benchTransition(n)`, `accept.sh` "== transition" (md5 check + the morph shot + `montage-trans.jpg`), `check.js`:
+  `assets/transitions/` gets the effects' import rule and the `'nav'` rule. `bundle.js` needed nothing (the folder is
+  reached from `main.js`): 49 modules, 286 KB.
+- **Worker friction (7, `docs/workers/morph.md`)** → CONTRACTS §5: no `feats`/`frameN` for a transition, who swaps on a
+  reversal, the aspect convention, the `'nav'` rule, `CARD.TRANSITIONS.<name>` as the handle; §1 sub-heads reordered.
+  The brief's real-path check waited 20 s for a fade that lands at ~23 s on house (fixed to 45 s). Temptations, neither
+  opened: `core/scenes.js` (to reach the transition object — solved with `ctx.log`, now `this.t`) and
+  `effects/composite.js` (to know the tone curve — solved by measuring the JPEGs). Its per-frame `ctx.log` line was
+  dropped on merge (116 lines per fade in `CARD.log`).
+- **Left open.** The morph's advection warps stroke scenes (TORUS's ribbons comb mid-fade) — synapse's look, but a
+  per-scene `post.morph.flow` multiplier would be the slot for a scene that wants a stiffer front. A reversed fade
+  resets the ease to `m` (a small jump of the front on an already jumping frame).
+- **Bundle finding (the "starts and fades from `dist/`" check).** `dist/eigenwobble.html` threw `RangeError` in the
+  synapse analyzer's `hopStep` on every frame after the first hop — on the real start path too, and on the pre-§11
+  bundle as well (179 uncaught exceptions in 3 s). `tools/bundle.js` rewrote `export const SPEC_W = 256, WAVE_W = 512,
+  HIST_H = 128;` (`engine/synapse/dsp.js`) with a regex that kept only the first declarator, so `HIST_H`/`WAVE_W` were
+  `undefined` in the bundle and the spectrogram ring was a zero-length array. The sweep's bundle line never saw it:
+  `CARD.ERRS` holds shader errors only, and the page still answers evals while its frame loop dies inside
+  `ENGINE.frame`. Fixed in `bundle.js` (every top-level declarator of a `const/let/var` export goes into the module
+  table); `accept.sh`'s real-path and bundle lines now count cdp's `[EXC]` lines (`FAIL N uncaught exceptions`) and
+  the bundle line waits 30 s and reports `hop` and whether a switch happened. Verified after the fix: bundle real path
+  45 s — 0 exceptions, hops advancing, switches; `test&fake=0` on http and on the bundle: the same phrase soft switch
+  at 26.8 s ran the morph to `t = 1`, the rest drop/surprise hard cuts, `ERRS []`; the bundle's f290 `mixs` md5 is
+  still `4ac523e9…`. The http page was never affected (native modules).

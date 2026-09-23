@@ -17,8 +17,8 @@ synth, `#test&scene=1` to force scene id 1.
 node tools/check.js
 # check: N modules · uniforms N · MS keys N · 0 fail · 0 warn
 ```
-Fails on: syntax, >500 lines, a declared-but-never-fetched uniform, a scene/effect importing core/engine, 'nav' in
-core/, an MS key without a FEATS entry. Warns above 350 lines.
+Fails on: syntax, >500 lines, a declared-but-never-fetched uniform, a scene/effect/transition importing core/engine,
+'nav' in core/ or transitions/, an MS key without a FEATS entry. Warns above 350 lines.
 
 ## Math tests (node, plain import)
 
@@ -51,6 +51,35 @@ back) and `SWITCH@t -> id bar<pos> (held N beats, <trigger>)` (an event-branch s
 with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise = false`). aba is 190 s, house 120 s,
 mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
 `Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
+
+## Transition (change to the crossfade pass, or a new `assets/transitions/*.js`)
+
+`&trans=<name>` under `#test` picks a registered transition for the run (`CARD.TRANSITIONS` lists them; the default
+is set in `assets/main.js`). The reference frame is the fake timeline's first fade — NAV → TORUS, `SWITCH@3.88`
+(frame 233), 116 frames long — at frame 290, `m = 0.499`:
+
+```
+CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=290"},{"shot":"trans-mixs-f290"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
+# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.2/trans-mixs-f290.jpg → 4ac523e9770e7d0625d46ed1f3e44769 (GPU=1, 1280×720)
+```
+`mixs` is v3's crossfade and must stay byte-identical to that md5 (the v0.1 core pass; `trans-before-f290.jpg` is
+the shot taken before the slot existed). A different md5 after a core change is a pixel difference to explain, never
+a tolerance. `accept.sh` checks it on every sweep. Any other pair at `m ≈ 0.5`: force A, release the director at
+frame 120 and start the fade to B, shoot 58 frames later (`58/60/1.935 s = 0.499`):
+
+```
+CLOCK=1 GPU=1 OUT=tools/work node tools/cdp.js 'test&scene=1&trans=morph' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-morph-1-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
+```
+The §11 A/B set: (0 → 2) NAV → MANDALA, (1 → 3) DUST → TORUS, (5 → 0) POLYTOPE → NAV, plus the f290 fade, for `mixs`
+and `morph` → `tools/accept/v0.2/trans-<name>-<A>-<B>-f178.jpg`, tiled in `montage-trans.jpg`.
+
+`CARD.benchTransition(n = 300)` → `{mixs: ms, morph: ms}` per full-resolution pass, readPixels-synced (the current
+scene into `a`, the next registered one into `b`, then `n` passes with `m` sweeping .2 → .8). Same caveats as `bench`:
+first call cold, run three, take the median. It advances a transition's own per-fade state (the morph's ease), so
+bench after the shots, never before one. Both benches sync with a FLOAT `readPixels` on the RGBA16F targets since §11 —
+the UNSIGNED_BYTE read they used before is INVALID_OPERATION on a float target (rejected client-side, never synced:
+`CARD.bench` numbers recorded before 2026-09-23 §11 were submission times, ~0.01–0.05 ms, not render times). Check
+`CARD.ctx.gl.getError()` is 0 after a bench.
 
 ## Line renderer smoke (core change to `core/lines.js` or the targets)
 
@@ -98,7 +127,7 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 
 `MS` (music state) · `SC` (director) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
 (`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` (scene objects, registration order) · `REG[id]` = `{id, base, scene, variant}` ·
-`EFFECTS` · `FEATS` · `log` (event log under #test:
+`EFFECTS` · `TRANSITIONS` · `FEATS` · `log` (event log under #test:
 `DROP@t`, `SECTION@t arc`, `SCENE@t -> id`, 1 Hz status lines) · `frameN` · `home` (the home scene's state; `NAV` in v3) ·
 `hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes).
 
@@ -107,7 +136,8 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
   For an immediate check evaluate `CARD.ctx.gl.getError()` (0 = clean).
 - Pinning quality: `CARD.Q.q` is re-adapted every frame, so pin it with `setInterval(() => CARD.Q.q = 0.1, 16)` and
   wait longer than the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s before the shot).
-- `CARD.goScene(id, hard)` · `CARD.bench(id, n=40)` → ms per full-resolution render of scene id, readPixels-synced.
+- `CARD.goScene(id, hard)` · `CARD.bench(id, n=40)` → ms per full-resolution render of scene id, readPixels-synced ·
+  `CARD.benchTransition(n=300)` → the same per registered transition ("Transition" above).
   Headless timers quantise to ~1/24 ms: use `n ≥ 300`, run it three times, read the median; below ~0.1 ms it only says "cheap".
   The first call after any pause is cold (0.5–1.5 ms, shader warm-up) — discard it.
 - `CARD.nonFinite()` → keys of MS holding a non-finite number (must be `[]`).

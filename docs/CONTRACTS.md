@@ -15,7 +15,7 @@ fix the doc, not the reader.
   `onset`, `beat`) belong in `feats` like any other read.
 - Module cap: `tools/check.js` warns above 350 lines and fails above 500 (GLSL template strings count). Split
   `shaders.js` from `index.js` early. One statement per line, `//` comments are fine.
-- Import discipline (enforced by `check.js`): a scene or effect imports only from its own folder and from
+- Import discipline (enforced by `check.js`): a scene, effect or transition imports only from its own folder and from
   `assets/math/*` (pure functions). It never imports `assets/core/*` or `assets/engine/*`. Everything it needs from the
   core arrives in `ctx` (§1.1) and in the per-frame arguments.
 - Scenes read `MS` and never write it. Stages add fields, never overwrite (§2).
@@ -207,6 +207,13 @@ expect frame to frame: `'continuous'` — nothing on screen ever jumps (all moti
 `dropEvt`/`sectionEvt`/`surpriseEvt`, declared chart cuts and declared beat-counted epochs (e.g. "every 64 kicks").
 Anything else is a bug.
 
+### 1.10 What the composite does to your pixels
+
+After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, prev·decay)` with a zoom/twist) →
+bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
+surprises/drops, kaleidoscope on peaks, flash on drops, tonemap `1 − exp(−1.5·c)`, vignette `1 − 0.9·|uv−.5|²`, dither.
+A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
+
 ### 1.11 Look memory
 
 If your scene has a discrete "look" that a returning listener would notice (DUST's formation pair, MANDALA's fold
@@ -275,13 +282,6 @@ Widths under 1 px dim instead of thinning (constant energy), so distant hairline
 vertices per segment; path B evaluates `P` twice per vertex. 50 k segments is fine; put the `tier()` budget in the
 number of segments per ring, never in the number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
 (HARNESS.md) is the reference for a minimal path-A and path-B program.
-
-### 1.10 What the composite does to your pixels
-
-After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, prev·decay)` with a zoom/twist) →
-bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
-surprises/drops, kaleidoscope on peaks, flash on drops, tonemap `1 − exp(−1.5·c)`, vignette `1 − 0.9·|uv−.5|²`, dither.
-A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 
@@ -367,7 +367,14 @@ export default {
   full `(w, h)` must set `io.uvS = [1, 1]`; then the chain samples the whole target. The target you return stays yours.
 - `w, h` full target size; `sw, sh` the scene-pass size inside it (the core renders both scenes at `0.8 · Q.scale`
   during a fade); `uvS = [(sw − .5)/w, (sh − .5)/h]`.
-- `MS`, `FX`, `GROOVE`, `LOOK`, `dt` as in §3 — every parameter of the blend traces to them.
+- `MS`, `FX`, `GROOVE`, `LOOK`, `dt` as in §3 — every parameter of the blend traces to them. There is no `frameN` and no
+  `feats` list for a transition: a fade's start is `m` restarting (reset your state on it), and the core does not check
+  the `MS` fields a transition reads (keep them few and name them in a comment).
+- A reversal (`goScene` back to the outgoing scene mid-fade) is the core's: it swaps `a`/`b` and sets `m = 1 − m` on
+  the same frame — you only see `m` drop. Lifted synapse post shaders use an uncorrected `uv − .5` for radial terms;
+  the targets here are 16:9, so correct `c.x *= uRes.x / uRes.y` if a round front is wanted (the morph does).
+- The `'nav'` rule of `check.js` applies to `assets/transitions/` as it does to the core: a transition must not name a
+  scene, not even in a comment.
 
 Entry GL state: BLEND, DEPTH_TEST and SCISSOR off, `out` bound with the viewport at `(sw, sh)`, colour not cleared.
 Leave it that way on return. Programs come from `ctx.mkProg(fs, name)` (HEAD prepended: `vUv`, `o`, `uRes`, `pal()`,
@@ -378,7 +385,8 @@ kick)` maps to `t` (above), `MS.flow`, `MS.kick`; its `uR` is HEAD's `uRes`.
 
 Registration (`assets/main.js`): `for (const tr of [mixs, morph]) addTransition(tr, ctx)` and `setTransition('mixs')`
 picks the default. Under `#test`, `&trans=<name>` picks another registered one for A/B (HARNESS.md "Transition").
-Cost: `CARD.benchTransition(n)` gives ms per full-resolution pass for every registered transition; the scene pass, the
+The transition object is reachable from the harness as `CARD.TRANSITIONS.<name>` (keep a readout on `this` — the
+morph keeps `this.t`). Cost: `CARD.benchTransition(n)` gives ms per full-resolution pass for every registered transition; the scene pass, the
 transition and the chain together must keep `Q.q ≈ 1` on a GPU during a fade — one pass, a few texture reads and a
 handful of noise evaluations per pixel is the budget.
 
@@ -522,3 +530,13 @@ Questions workers had to ask, and what changed in this doc as a result.
   stopped one line short and the worker derived the missing fact itself — stereographic projection is a central
   projection, so a 4-D chord projects to a straight line: subdivided edge samples must be renormalised onto S³ to
   bend. Recorded in DECISIONS §8 for the next S³ scene.
+- **2026-09-23, MORPH transition (v0.2 §11), worker given CONTRACTS §5 + brief + `transitions/mixs.js`.** Rendered
+  first try, deterministic (frame 290 md5 identical across runs and across the worktree/main), accepted on the A/B
+  montage; 7 friction items (`docs/workers/morph.md`). Fixes here: no `feats`/`frameN` for a transition (§5); who
+  swaps `a`/`b` on a reversal (§5); the aspect convention for lifted post shaders (§5); the `'nav'` rule covers
+  `transitions/` (§0, §5); `CARD.TRANSITIONS.<name>` as the harness handle (§5, HARNESS); §1 sub-heads reordered
+  (1.10 was after 1.12). Substantive: the brief's tuning target ("front mid-screen at m ≈ 0.5") was unreachable with
+  synapse's front constants at 16:9 — the worker showed it analytically and retuned three constants (DECISIONS §11);
+  and its real-path check waited 20 s for a fade that lands at ~23 s on the house demo (brief fixed to 45 s). Harness
+  finding (orchestrator): `CARD.bench`/`benchTransition` read back UNSIGNED_BYTE from RGBA16F targets — an
+  INVALID_OPERATION that never reached the GPU, so no bench before §11 was synced (HARNESS "Transition").
