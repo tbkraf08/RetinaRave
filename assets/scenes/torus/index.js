@@ -2,22 +2,27 @@
 // The 12 pitch classes are 12 base-point families on S2: chroma[k] sets family k's colatitude (louder → nearer the
 // equator → fatter torus) and its brightness. Every ring on screen is one genuine fibre; the highlighted strand is the
 // (p,q) torus knot picked by MS.interval, the same rotation numbers NAV uses for its bulbs.
+// v0.2: every fibre is a continuous closed stroke through ctx.lines (CONTRACTS.md §1.12, path B), depth-tested, so
+// the tori occlude each other as they really do in R3. The tier budget is segments per ring; the ring count is fixed.
 import { fibre, torusRadii } from '../../math/hopf.js';
-import { VS, FS } from './shaders.js';
+import { mkVS, mkFS } from './shaders.js';
 
 const TAU = Math.PI * 2;
 const TH0 = 0.12;
 const THS = Math.PI / 2 - TH0;
 // rotation numbers p/q of the bulbs, indexed by MS.interval (semitones)
 const PQ = [[0, 1], [1, 15], [1, 8], [1, 5], [1, 4], [1, 3], [2, 5], [1, 2], [3, 5], [2, 3], [4, 5], [7, 8]];
-const TIER = [20000, 45000, 90000, 150000];
+// Segments per ring per tier. A Villarceau circle under stereographic projection is a round circle, so 48 chords
+// already read as smooth; the whole tier budget lives here and never in the number of rings (cuts: 'continuous').
+const SEGT = [48, 72, 108, 160];
 const FIB = 12;      // fibres (rings) per pitch-class family — fixed, so the tier never adds or removes a ring
-let PTS = 320;       // points per ring: the whole tier budget goes here, so only the dotting changes
-const KNOT_N = 1280; // points on the knot strand
+let SEG = 108;       // segments per ring
+let KSEG = 640;      // segments on the knot strand (it winds p+q times, so it needs more)
+let MODE = 1;        // 0 = additive glow, no depth · 1 = opaque strokes, depth-tested (see draw)
 
 const th = new Float32Array(12);
 const ch = new Float32Array(12);
-const U = { psi0: 0, alpha: 0, delta: 0, bassP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, fib: 20 };
+const U = { psi0: 0, alpha: 0, delta: 0, bassP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, fib: 20, wpx: 2.6 };
 const MOOD = new Float32Array(3);
 let SPREAD = 0.5;
 let QS = 0.6;
@@ -74,6 +79,12 @@ function probe(k) {
   return JSON.stringify({ theta: +th[i].toFixed(6), phi: +phi.toFixed(6), psi0: +U.psi0.toFixed(6), alpha: +U.alpha.toFixed(6), delta: +U.delta.toFixed(6), pts: out });
 }
 
+// test hook: 0 = additive glow without depth, 1 = depth-tested opaque strokes (the A/B that picked the default)
+function lmode(v) {
+  MODE = (v | 0) ? 1 : 0;
+  return MODE;
+}
+
 export default {
   name: 'torus',
   id: 3,
@@ -81,7 +92,7 @@ export default {
   feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'arc', 'clarity', 'regularity'],
   cuts: 'continuous',
   rt: {},
-  hooks: { probe },
+  hooks: { probe, lmode },
 
   score(MS) {
     return MS.arc === 'build' ? 0 : 0.25 + 0.45 * MS.clarity + 0.3 * MS.regularity;
@@ -89,8 +100,8 @@ export default {
 
   init(ctx) {
     this.ctx = ctx;
-    this.pr = ctx.mkProg(VS, FS, 'torus');
-    this.vao = ctx.gl.createVertexArray(); // empty VAO: every attribute comes from gl_VertexID
+    // path B of the line renderer (§1.12): the vertex shader builds every point, ctx.lines owns the quad and the VAO
+    this.pr = ctx.mkProg(mkVS(ctx.lines.VS), mkFS(ctx.lines.FS), 'torus');
     for (let k = 0; k < 12; k++) {
       th[k] = TH0 + 0.35 * THS;
       ch[k] = 0.35;
@@ -101,7 +112,7 @@ export default {
     QS += (this.ctx.Q.q - QS) * Math.min(1, dt * 0.5);   // slow, so the tier does not chatter
     const tier = QS < 0.32 ? 0 : QS < 0.62 ? 1 : QS < 0.86 ? 2 : 3;
     U.fib = FIB;
-    PTS = Math.max(96, Math.round(TIER[tier] / (12 * FIB)));
+    SEG = SEGT[tier];
 
     // the chroma vector IS the torus family: latitude and brightness of each pitch class.
     // When it carries no energy (silence, and the #test fake timeline, which leaves chroma zeroed) the latitudes come
@@ -144,8 +155,11 @@ export default {
     U.knotTh = Math.min((th[loudest] * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.bassP), 1.55);
     U.knotBri = 1.5 * (0.4 + 0.6 * (MS.clarity || 0));
 
+    KSEG = Math.min(1600, SEG * Math.max(2, pq[0] + pq[1]));
     const p = MS.presence;
-    U.gain = 2.2 * (0.22 + 0.78 * p) * (1 + 1.5 * MS.dropEnv) * (320 / PTS);
+    // a stroke carries the same energy whatever its segment count, so there is no density compensation any more
+    U.gain = Math.min(1, (0.3 + 0.7 * p) * (1 + 0.6 * MS.dropEnv));
+    U.wpx = 2.6 * (1 + 0.6 * MS.bass);
 
     const m = (LOOK && LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
     MOOD[0] = m.hue;
@@ -166,10 +180,6 @@ export default {
     this.ctx.use(pr, target, w, h);
     g.clearColor(0, 0, 0, 1);
     g.clear(g.COLOR_BUFFER_BIT);
-    g.disable(g.DEPTH_TEST);
-    g.enable(g.BLEND);
-    g.blendFunc(g.ONE, g.ONE);
-    g.uniform2f(pr.u('uRes2'), w, h);
     g.uniform4f(pr.u('uCam'), CAM[0], CAM[1], CAM[2], CAM[3]);
     g.uniform4f(pr.u('uCen'), CEN[0], CEN[1], CEN[2], CEN[3]);
     g.uniform1f(pr.u('uPsi0'), U.psi0);
@@ -180,26 +190,26 @@ export default {
     g.uniform3f(pr.u('uMood'), MOOD[0], MOOD[1], MOOD[2]);
     g.uniform1f(pr.u('uSpread'), SPREAD);
     g.uniform1f(pr.u('uGain'), U.gain);
-    g.uniform1f(pr.u('uSize'), 7.5 * Math.max(0.6, h / 720));
-    g.uniform1i(pr.u('uPts'), PTS);
+    // width in px is uSize / v.z, so the near side of a ring is thicker; uSize is px-at-unit-depth, set so that a
+    // stroke at the centroid (view depth ~ uCam.z) is U.wpx px at 720 p.
+    g.uniform1f(pr.u('uSize'), U.wpx * Math.max(0.6, h / 720) * CAM[2]);
+    g.uniform1i(pr.u('uSeg'), SEG);
     g.uniform1i(pr.u('uFib'), U.fib);
-    g.uniform1i(pr.u('uKnotN'), KNOT_N);
+    g.uniform1i(pr.u('uKnotN'), KSEG);
     g.uniform2f(pr.u('uKnotPQ'), pq[0], pq[1]);
     g.uniform1f(pr.u('uKnotT'), U.knotT);
     g.uniform1f(pr.u('uKnotTh'), U.knotTh);
     g.uniform2f(pr.u('uKnotBH'), U.knotBri, loudest / 12 + 0.09);
     g.uniform1fv(pr.u('uTheta[0]'), th);
     g.uniform1fv(pr.u('uChroma[0]'), ch);
-    g.bindVertexArray(this.vao);
-    g.drawArrays(g.POINTS, 0, 12 * U.fib * PTS + KNOT_N);
-    g.bindVertexArray(null);
-    g.disable(g.BLEND);
-    g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
+    // MODE 1: the fibres of different tori really do occlude each other in R3, so depth + 'over' is the honest
+    // picture. MODE 0 is the v0.1 additive glow (order-independent, overlaps brighten) — hooks.lmode flips it.
+    this.ctx.lines.drawN(12 * U.fib * SEG + KSEG, MODE ? { depth: true, blend: 'over' } : { blend: 'add' });
   },
 
   hud() {
     const { R, r } = torusRadii(th[loudest]);
-    return 'torus pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.fib);
+    return 'torus pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.fib) + ' seg ' + SEG;
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0 },
