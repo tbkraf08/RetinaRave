@@ -78,7 +78,10 @@ ctx.mkTarget(w, h, rgba8=false, depth=false)   render target {t, f, w, h}; RGBA1
                               readback); depth=true attaches a depth buffer (the core's scene targets have one)
 ctx.lines                     the line renderer (§1.12): {VS, FS, mk, set, draw, drawN} — anti-aliased strokes with depth
 ctx.freeTarget(t)
-ctx.onResize(fn(w, h))        register a callback; allocate your own targets there (they are freed/rebuilt by you)
+ctx.onResize(fn(w, h))        register a callback; allocate your own targets there (they are freed/rebuilt by you).
+                              fn receives the CANVAS size (the full target); draw() receives the Q.scale-scaled size,
+                              same aspect. ctx.use() never clears a target: progressive rendering into your own
+                              target across frames (a scissored band per draw, §1.6) accumulates as you expect
 ctx.targets                   {a, b, m}: the core's full-size scene targets. draw() receives one of them as `target`;
                               draw into the one you are handed, never pick one yourself
 ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINEAR). spec 256×1 log spectrum (30 Hz–16 kHz,
@@ -174,7 +177,9 @@ needed, now generic:
   params under `#test`. They are called as plain functions (the receiver is `CARD.hooks`, not your scene — refer to
   your module-level object, never `this`) and a hash hook fires **before your `init`** and before the first frame: keep
   the state a hook sets on the object literal (`fibresOn: 1`), not in `init`, or `init` clobbers it. A hook that sets
-  a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived.
+  a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived, and a hook that sets
+  state your scene recomputes on an event (FEIGEN's `tricorn` from the seed at `sectionEvt`) must pin it for the run —
+  otherwise the next event silently undoes the hook and the shot tests the wrong thing.
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
 
 ### 1.5 `LOOK` and `GROOVE`

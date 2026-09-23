@@ -641,3 +641,78 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   "`tricorn` also at `init`" is not computable without `MS` (0 until the first `sectionEvt`); `Math.floor` for `uIter`;
   `look.set` guarded with `Array.isArray`. Temptations not taken: `core/` for hook timing and for whether `bench` is
   full-res (both answered by experiment and HARNESS's own wording).
+
+## §16 FEIGEN's cost at depth — the field/colour split and the zoom ladder (v0.2, 2026-09-23, worker from `docs/workers/brief-feigen-field.md`, report `feigen-field.md`)
+
+- **The disease, measured before anything was changed** (`tools/q-trace.sh`, `q-stats.js`; the recipe forces scene 6
+  at 40 s with the dive set to L 2.5 — a visit from the arrival depth stayed under L 1.3 for 30 s and cost nothing —
+  and releases it home at 70 s; one Chrome, three runs per style, `none` = FEIGEN's `score` made 0 after load).
+  House, mean of three: q during the visit **min 0.47–0.50 against 0.68–0.69 with FEIGEN out**, the 70–100 s window
+  **0.62 against 0.86**, 100 s to the end **0.73 against 0.96**: one deep 30 s visit costs every other scene ~0.2 of
+  `q` for the rest of the track, because the controller climbs back at +0.04 per 2.5 s and its ceiling at +0.002 per
+  half second. aba: look memory restores the section's filed shallow depth mid-visit (`L 1.03` at release in all three
+  runs), so only run 1 dipped (0.48); the house number is the one that justifies the session.
+  `feigen-bench.sh before`, tier 3, NAV interleaved: **8.0 / 13.1 / 20.5 / 22.2 ms** at L 1.6 / 2.4 / 3.4 / 4.0 against
+  NAV 1.5–1.8; a tricorn flip's first two renders 37 ms.
+- **What was built** (`scenes/feigen/`: `index.js` 348 + `ladder.js` 140 + `colour.js` 130 + `field.js` 56;
+  `shaders.js` gone; `tools/test_feigen_ladder.js`). The per-pixel loop now writes a **field** — `R = esc ? n :
+  −(√tr + 1)` (the sign is the interior test), `G = log r`, `B = log|z′|`, `A = ea` — into a rung target, and a
+  per-frame **colour** pass samples it through the frame's affine camera and applies exactly §15's colouring
+  (`specM`/`histM`/palette/gains unchanged; the `&histfull=1` equality holds). Rungs every factor 2 in the base width
+  (`LR = ln2/lnδ = 0.449807` levels; `W_r = 3.2·2^−r`), the rectangle of every admissible view of the rung derived from
+  the aspect and the modulation bounds (`x ∈ [−0.79, 1.54]·W_r`, `y ∈ [0, 0.71]·W_r` at 16:9 — the brief's printed
+  rectangle was 1.6× too small because it had the view's aspect swapped; the node test proves containment over 1080
+  rolled corners), **upper half-plane only** (M and the tricorn are conjugation-symmetric because the reference orbit
+  is real, and both `ea` reads are `abs(fract(·)·2−1)` terms), density 2 texels per view pixel at the base width
+  (3337 × 905 = 3.0 Mpx, 23 MB RGBA16F per rung at the headless 1280 × 633; a 6 Mpx cap binds only at 1080p), three
+  slots + an 835 × 227 quarter target = 70 MB. `iter = min(500, (70 + 30·L_r²)·1.25)` at every tier — the tier no
+  longer trades iterations away; it scales the **work per frame**: `BUDGET = [6, 9, 12, 18]·10⁶` texel-iterations per
+  `draw()`, one scissored band of rows into the rung under construction (the current rung if unfinished, else `r + 1`,
+  double in the last 15 %), keyed on `feigL`, `tier()` and the scene's own draw counter — a 500-iteration rung builds
+  in 91 frames at tier 3, 302 at tier 0, against ≥ 6 s per rung at full dive speed. Sampling: four `texelFetch`, each
+  texel **decoded first** to `(log d, log₂G, ea, trap)` and the decoded values blended bilinearly (`n` and `log|z′|`
+  each jump by a doubling across every escape-count contour; only their combination is continuous), `ea` as a unit
+  vector, the nearest texel alone where the four signs disagree. RGBA16F kept over the pre-authorised 32F on a
+  precision audit: `log|z′|`'s ulp at the deepest allowed level puts 1.6 % on `d` under `exp(−160·d)`; nothing
+  roughened.
+- **The blend rule: field-space cross-fade over 30 draws, kept.** The seam test decided it (`feigen-bench.sh` (c):
+  `CLOCK=1`, `&feig=1.478`, a shot per frame 300–340, mean |Δ| between consecutive frames): the rung change at frame
+  313 measured **0.85 = 0.51 × the median** — quieter than an ordinary frame — where the timeline's own kick beats are
+  4.1–4.5 and the kick flare at f320 is 43 (the same series before §16: median 1.59, f320 42.5). The pre-authorised
+  hard switch was not needed; `accept/v0.2/feigen-field-seam.jpg`.
+- **The three event rules as shipped.** Drop and kick-wrap: a virtual level `Lv = L ∓ k` (k ≤ 3) whose rung is built,
+  sampled with the camera of `Lv` and `wdV` in `d` — the frame after the drop is the frame before it under the
+  composite's flash and glitch rows (`feigen-field-drop.jpg`: 779 / 781 same geometry, 900 one δ deeper); the true
+  rung cross-fades in when it lands (780 → 817 in the determinism run). The stand-in's error, measured with
+  `&standin=0`: **14.4 mean grey on a frame of mean 167 (8.6 %)**, and against the true mathematics at 2× magnification
+  (the coarser built rung), not a burst — the worker's fallback chain is `built → standin(k) → coarser(k) → quarter →
+  one burst draw`, because every view of rung `r` fits rung `r − 1`. Tricorn flip: every slot invalid, one quarter-
+  resolution draw of the current rung on that frame (≈ 5 ms at 500 iterations, first two renders 10–20 ms wall
+  against 37 before), refined at the budget (`feigen-field-flip.jpg`: 301 already the tricorn, 340 sharp). Never a
+  black frame, never a frame without a field, on every event shot.
+- **Cost after** (`feigen-bench-after.txt`, tier 3, NAV interleaved): **1.22 / 1.19 / 1.27 ms** at L 2.4 / 3.4 / 4.0
+  against NAV 2.0 (the L 1.6 page read 2.84 with NAV at 4.0 in the same page — a loaded page; 1.1–1.4 in four other
+  runs); flat in depth. The 60 frames after a flip average 2.7 ms (median of ten; 4.2 in the file's loaded page).
+  House forced, 60 s: `q` **0.72** (§15: 0.50), `bench(6,300)` **1.20 ms** (§15: 6.15). Tier sweep: the same picture
+  and `it500` at q 0.1 and 0.95 — only rows per frame differ (3 vs 11).
+- **The Q trace after** — see the table below (filled from `q-{house,aba}-after.txt`).
+- **Parity plan.** `parity.js fake` 0 diff (no core change); `tools/scene-md5.sh` on the commit before the merge and
+  after: scenes 0/1/2/3/5 **byte-identical**, FEIGEN's two frames `dee30d91…` / `eb8aa082…` equal to the worker's md5s
+  from its worktree (five runs, two hashes, the progressive schedule running, and with `&histfull=1`); the director-
+  blind mixs md5 `a6e2b8cd…` unchanged (`accept.sh`); `[EXC]` 0 on the real path (75 s) and the bundle (55 modules).
+- **Principle** (CONTRACTS §1.6): *separate what the mathematics computes from what the music changes per frame, and
+  amortise the first over musical time.* NAV's Böttcher table and FEIGEN's reference orbit were already this; the
+  field/colour split is the same idea for a per-pixel scene whose camera is an affine map. TORUS and POLYTOPE rebuild
+  seed-fixed geometry every frame and could not take it — their cost is the stroke count (§1.12), not the mathematics.
+  Interior acceleration (period checking, `|z′| → 0`) was ruled out before the session: near `c∞` the visible components
+  have period ~2^L with multiplier −1 at every doubling, convergence is algebraic, critical slowing *is* the scene.
+  The render-scale slot in core (the prompt's traced fallback) was **not needed** and was not built.
+- **Harness added:** `tools/q-trace.sh` / `q-stats.js` (HARNESS "Q trace"), `tools/feigen-bench.sh` (per-level bench
+  with NAV interleaved, flip cost, seam ratio at the scene's `RUNG@` frames), `accept.sh` "== feigen cost" (fails above
+  `max(2.9 ms, 1.5 × NAV)` at L 3.6). `check.js` 0 fail / 0 warn.
+- **Friction (11) → docs:** the brief's rung rectangle and view aspect (recorded above; the worker derived both);
+  `LR` 0.449946 → 0.449807; a modular slot map collides with the drop's 2–3-rung jump (slots picked by age);
+  decode-then-blend; the `tricorn` hook eaten by the next `sectionEvt` (pinned; CONTRACTS §1.4 now covers hooks whose
+  state the scene *recomputes*); `ctx.onResize` receives the canvas size and `ctx.use` never clears (§1.1);
+  `feigen-bench.sh`'s spurious `undefined` line (fixed). Temptations not taken: `core/gl.js` (answered through `CARD`),
+  `core/quality.js` (answered by the data: the flip's build mean tracked the page's own steady, i.e. machine load).

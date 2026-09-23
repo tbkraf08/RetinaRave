@@ -25,12 +25,12 @@ echo "== (a) tier 3 steady state: feigen median of 3 × bench(6,300) | nav media
 PIN='{"until":"window.CARD"},{"eval":"setInterval(function(){CARD.Q.q=0.95},16);'pin'"},{"wait":8000}'
 B='(function(){var b=[],n=[];CARD.bench(6,300);for(var i=0;i<3;i++){b.push(CARD.bench(6,300));n.push(CARD.bench(0,300));}var s=function(a,c){return a-c};b.sort(s);n.sort(s);var S=CARD.REG[6].scene;return \"L \"+S.rt.label+\" feigen \"+b[1].toFixed(2)+\" ms (runs \"+b.map(function(x){return x.toFixed(2)}).join(\"/\")+\") nav \"+n[1].toFixed(2)+\" ms · tier \"+CARD.ctx.tier()+\" q \"+CARD.Q.q.toFixed(2)+\" · log [\"+(S.rt.log||\"\")+\"] glerr \"+CARD.ctx.gl.getError()+\" errs \"+JSON.stringify(CARD.ERRS)})()'
 for L in $LEVELS; do
-  node tools/cdp.js "test&scene=6&feig=$L" "[$PIN,{\"eval\":\"$B\"}]" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | grep -v '^pin$' | grep -v '^pin$' | sed "s/^/feig=$L: /"
+  node tools/cdp.js "test&scene=6&feig=$L" "[$PIN,{\"eval\":\"$B\"}]" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | grep -v '^pin$\|^undefined$' | grep -v '^pin$\|^undefined$' | sed "s/^/feig=$L: /"
 done
 echo "== (b) build cost after a tricorn flip at the deepest level (tier 3)"
 L=${LEVELS##* }
 BB='(function(){CARD.bench(6,300);var steady=CARD.bench(6,300);var t0=performance.now();CARD.hooks.tricorn(1);CARD.bench(6,1);var t1=performance.now()-t0;var build=CARD.bench(6,60);var steady2=CARD.bench(6,300);var S=CARD.REG[6].scene;return \"L \"+S.rt.label+\" steady \"+steady.toFixed(2)+\" ms · flip: first two renders \"+t1.toFixed(2)+\" ms wall, next 60 mean \"+build.toFixed(2)+\" ms, then steady \"+steady2.toFixed(2)+\" ms · log [\"+(S.rt.log||\"\")+\"] glerr \"+CARD.ctx.gl.getError()})()'
-node tools/cdp.js "test&scene=6&feig=$L" "[$PIN,{\"eval\":\"$BB\"}]" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | grep -v '^pin$' | grep -v '^pin$' | sed "s/^/feig=$L: /"
+node tools/cdp.js "test&scene=6&feig=$L" "[$PIN,{\"eval\":\"$BB\"}]" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | grep -v '^pin$\|^undefined$' | grep -v '^pin$\|^undefined$' | sed "s/^/feig=$L: /"
 echo "== (c) seam ratio: CLOCK=1 &feig=$SEAM_L, frames 300..340"
 STEPS='[{"until":"window.CARD"}'
 for f in $(seq 300 340); do STEPS="$STEPS,{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"seam-$TAG/f$f\"},{\"eval\":\"'f$f '+CARD.REG[6].scene.rt.label+' '+(CARD.REG[6].scene.rt.log||'')\"}"; done
