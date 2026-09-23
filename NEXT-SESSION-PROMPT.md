@@ -1,5 +1,8 @@
 # Fable Session Prompt — Eigenwobble v0.2
 
+> **Next session: `SHIP-V02-SESSION-PROMPT.md`** (§17: the real-window audit headless never did, the `v0.2` tag and
+> release file, and the triage of every "Left open" line into v0.3 briefs). This file is the v0.2 ledger it reads first.
+
 Eigenwobble v0.1 shipped (2026-09-22): the modular successor to Cardioid — one `index.html` + `assets/`, four scenes
 (NAV/DRUM · DUST · MANDALA · TORUS), a merged music engine (v3 extractor + synapse Analyzer as an additive stage,
 117 documented `MS` fields), an effects registry (feedback · bloom · exposure · composite), a director with look
