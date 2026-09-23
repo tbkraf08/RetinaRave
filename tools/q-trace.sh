@@ -30,7 +30,7 @@ one() {
   if [ -n "$VISIT" ] && [ -z "$NONE" ]; then
     local a=${VISIT%%:*} rest=${VISIT#*:} b L0; b=${rest%%:*}; L0=${rest#*:}; [ "$L0" = "$rest" ] && L0=
     local hook=; [ -n "$L0" ] && hook="CARD.hooks.feig($L0);"
-    steps="[$pre,{\"wait\":$((a*1000))},{\"eval\":\"${hook}CARD.SC.forced=6;CARD.log.push('VISIT@'+(performance.now()/1000).toFixed(2)+' -> 6 L'+CARD.REG[6].scene.rt.label);'forced 6'\"},{\"wait\":$(((b-a)*1000))},{\"eval\":\"CARD.SC.forced=-1;CARD.goScene(0,false);CARD.log.push('VISIT@'+(performance.now()/1000).toFixed(2)+' -> 0 '+(CARD.REG[6].scene.rt.label||'')+' '+(CARD.REG[6].scene.rt.log||''));'released'\"},{\"wait\":$((W-b*1000))}"
+    steps="[$pre,{\"wait\":$((a*1000))},{\"eval\":\"${hook}CARD.SC.forced=6;CARD.log.push('VISIT@'+(performance.now()/1000).toFixed(2)+' -> 6 L$L0');'forced 6'\"},{\"wait\":$(((b-a)*1000))},{\"eval\":\"CARD.SC.forced=-1;CARD.goScene(0,false);CARD.log.push('VISIT@'+(performance.now()/1000).toFixed(2)+' -> 0 '+(CARD.REG[6].scene.rt.label||'')+' '+(CARD.REG[6].scene.rt.log||''));'released'\"},{\"wait\":$((W-b*1000))}"
   else
     steps="[$pre,{\"wait\":$W}"
   fi
