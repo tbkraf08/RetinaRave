@@ -10,6 +10,8 @@ const S = {
   hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, angular: 0,
 };
 
+let epochOff = 0; // set by look.set(): kicks to add so floor(kickCount/64) equals the remembered epoch
+
 export default {
   name: 'mandala',
   id: 2,
@@ -20,6 +22,11 @@ export default {
   // 'event': the only discontinuity is N, the fold count, and it moves only with the section seed / 64-kick epoch
   cuts: 'event',
 
+  // look memory (CONTRACTS §1.11): N = f(seed, floor(kickCount/64)); the seed returns with the section, the epoch via this
+  look: {
+    get: () => Math.floor(S.kickCount / 64),
+    set: (v) => { epochOff = v * 64 - Math.floor((S.kickCount - epochOff) / 64) * 64; },
+  },
   score(MS) {
     if (MS.arc === 'build') return 0;
     return 0.25 + 0.55 * MS.regularity + 0.2 * Math.min(1, MS.onsetRate / 6);
@@ -33,7 +40,7 @@ export default {
   update(dt, MS, GROOVE, LOOK) {
     const m = LOOK.mood;
     S.seed = MS.seed.a * 100;
-    S.kickCount = MS.kickCount;
+    S.kickCount = MS.kickCount + epochOff; // look memory shifts the 64-kick epoch so a returning section keeps its N
     S.flow = MS.flow;
     S.flowMid = MS.flowMid;
     S.bassS = MS.bassS;
