@@ -15,6 +15,16 @@ by a worker in an isolated git worktree (own `PORT=`), from the contract docs al
 friction went straight back into the docs. Keep it. `node tools/check.js` after every edit; `GPU=1 node tools/parity.js
 fake` after any core/engine change (must print 0 diff); `GPU=1 tools/accept.sh` before a commit that claims a phase.
 
+## v0.2 progress (2026-09-22)
+
+Done and swept green (`tools/accept/v0.2/`, `GPU=1 tools/accept.sh`: check · math · lines smoke · parity fake 0 diff ·
+parity real · monitor 0 spikes · 5 scenes · real start path · bundle 46 modules):
+- **#1 line renderer** → `core/lines.js`, `ctx.lines` (CONTRACTS §1.12, DECISIONS §7). Scene targets carry depth.
+- **TORUS as strokes** (worker, DECISIONS §7): over + depth, 144 rings × [48..160] segments, occlusion is real.
+- **#3 polytope** → `scenes/polytope/` id 5 (worker, DECISIONS §8): tesseract / 24 / 600 / 120-cell on S³, path A,
+  cast by section seed, deterministic. Polish item: pole streaks at t6.
+Still open below: #2, #3 julia/feigen, #4, #5, #6, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
 1. **Line renderer in core** (`ctx.lines`: instanced quads from a Float32Array of segments, depth-tested). Unblocks
