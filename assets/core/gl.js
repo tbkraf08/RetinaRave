@@ -112,7 +112,9 @@ export function upload(b, data, n) {
 }
 
 // Render target. rgba8=true forces an 8-bit target (needed for CPU readback: readPixels from RGBA16F returns black).
-export function mkTarget(w, h, rgba8 = false) {
+// depth=true attaches a DEPTH_COMPONENT24 renderbuffer (the core's scene targets a/b have one; ctx.lines depth-tests
+// against it). Created cleared: colour opaque black, depth 1.
+export function mkTarget(w, h, rgba8 = false, depth = false) {
   const gl = G.gl, F = G.FLOAT && !rgba8;
   const t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
@@ -123,15 +125,25 @@ export function mkTarget(w, h, rgba8 = false) {
   const f = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, f);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  let d = null;
+  if (depth) {
+    d = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, d);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, d);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  }
   gl.clearColor(0, 0, 0, 1);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  return { t, f, w, h };
+  gl.depthMask(true);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  return { t, f, w, h, d };
 }
 
 export function freeTarget(t) {
   if (t) {
     G.gl.deleteTexture(t.t);
     G.gl.deleteFramebuffer(t.f);
+    if (t.d) G.gl.deleteRenderbuffer(t.d);
   }
 }
 
@@ -169,7 +181,7 @@ export function uploadEngineTex(T) {
 const onResize = [];
 export const addResizeHook = (fn) => onResize.push(fn);
 
-// Full-size targets a, b (scene passes), m (crossfade). Effects allocate their own via the resize hook.
+// Full-size targets a, b (scene passes, with depth), m (crossfade). Effects allocate their own via the resize hook.
 export function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   let w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
@@ -185,8 +197,8 @@ export function resize() {
   G.PH = G.cv.height = h;
   const RT = G.RT;
   for (const k in RT) freeTarget(RT[k]);
-  RT.a = mkTarget(w, h);
-  RT.b = mkTarget(w, h);
+  RT.a = mkTarget(w, h, false, true);
+  RT.b = mkTarget(w, h, false, true);
   RT.m = mkTarget(w, h);
   for (const f of onResize) f(w, h);
 }

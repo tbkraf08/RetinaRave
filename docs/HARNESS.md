@@ -28,6 +28,13 @@ node tools/test_misi.js        # ... OK
 node tools/test_hopf.js        # circle error 2e-12 · torus distance 2e-13 · ... OK   (§4 Hopf fibration)
 ```
 
+## Line renderer smoke (core change to `core/lines.js` or the targets)
+
+```
+GPU=1 node tools/lines-smoke.js    # 11 pixel checks: depth order both ways, coverage/width, path-B chunk compiles → lines-smoke: OK
+```
+Also passes without `GPU=1` (SwiftShader). Draws through `CARD.ctx` (the ctx scenes receive; harness only).
+
 ## Headless Chrome (screenshots you Read as images)
 
 ```

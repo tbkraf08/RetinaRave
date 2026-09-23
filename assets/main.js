@@ -6,6 +6,7 @@ import { Q, tier } from './core/quality.js';
 import { LOOK } from './core/look.js';
 import { addEffect } from './core/post.js';
 import { initScenes, register } from './core/scenes.js';
+import { initLines, VS_CHUNK, FS_CHUNK, mk as mkLines, set as setLines, draw as drawLines, drawN as drawLinesN } from './core/lines.js';
 import { initHUD } from './core/hud.js';
 import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
@@ -34,10 +35,13 @@ try {
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
   targets: G.RT, Q, tier, LOOK, hsv, engineTex: ETEX,
+  lines: { VS: VS_CHUNK, FS: FS_CHUNK, mk: mkLines, set: setLines, draw: drawLines, drawN: drawLinesN },
   log: (s) => { if (TEST) CARD.log.push(s); },
 };
+CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
 initScenes();
+initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const scene of [nav, dust, mandala, torus]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));

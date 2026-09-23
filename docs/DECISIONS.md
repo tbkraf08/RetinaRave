@@ -154,3 +154,23 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Bundle** (`tools/bundle.js`): a classic-script IIFE with a module table, not an import map of `data:` URLs —
   relative specifiers cannot resolve against `data:` bases, so the map would have needed every import rewritten anyway,
   and the IIFE is what works from `file://` with zero fuss. 35 modules → 194 KB.
+
+## §7 Line renderer (v0.2, 2026-09-22)
+
+- **Instanced quads + capsule SDF, not `gl.LINES`.** `LINES` is 1 px, aliased, and ANGLE-GL ignores `lineWidth`. One
+  quad per segment (TRIANGLE_STRIP × 4, instanced) extended by a half width + 1 px at both ends, with the fragment shader
+  keeping only the capsule around the segment (screen-space distance from `gl_FragCoord` to the segment, `flat`
+  varyings carry the endpoints). Round caps come free and consecutive segments of a polyline overlap only inside the
+  cap, so joins are seamless; with additive blending the overlap is a sub-pixel brightening at each join, accepted.
+- **Two entry points, one GLSL.** Path A (buffer of 12-float segments, built-in program, `uMVP`) for CPU-generated
+  edges (the polytope scene); path B (`ctx.lines.VS`/`.FS` chunks included by a scene's own raw program, segments from
+  `gl_InstanceID`, no buffer) for analytic curves (TORUS's fibres). The chunk reuses HEAD's `uRes` name so `ctx.use`
+  fills it — a raw program that declares `uRes` already gets it (TORUS's `uRes2` was unnecessary).
+- **Depth.** The scene targets `RT.a`/`RT.b` now carry a `DEPTH_COMPONENT24` renderbuffer (`mkTarget(w, h, rgba8,
+  depth)`), and `renderScene` clears depth to 1 before every `draw()` (colour still not cleared, as the contract says).
+  `RT.m` (crossfade) and effect targets have none. NAV/DUST/MANDALA/TORUS unchanged: depth test stays off unless a
+  scene enables it. Parity fake: 0 diff after the change. Sub-pixel widths dim instead of thinning so a distant
+  hairline keeps its energy (a 0.3 px stroke at 30 % instead of a 1 px stroke flickering in and out).
+- **Harness.** `CARD.ctx` exposes the scene ctx for `tools/lines-smoke.js` (11 read-pixel checks on a 64×64 RGBA8
+  depth target: near-over-far in both draw orders, no-depth = last wins, capsule edge at hw and hw + feather, path B
+  compiles and draws). Green on ANGLE-GL and SwiftShader.

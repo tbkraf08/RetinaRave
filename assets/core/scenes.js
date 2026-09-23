@@ -145,9 +145,17 @@ export function updateScenes(dt, S) {
   SC.vmix = ema(SC.vmix, SC.vT, dt, 0.8);
 }
 
+// Entry state for draw(): BLEND/DEPTH_TEST/SCISSOR off, target bound, colour NOT cleared, depth cleared to 1.
 export function renderScene(id, tgt, w, h) {
-  const E = REG[id];
-  G.gl.disable(G.gl.BLEND);
+  const E = REG[id], gl = G.gl;
+  gl.disable(gl.BLEND);
+  gl.disable(gl.DEPTH_TEST);
+  gl.disable(gl.SCISSOR_TEST);
+  if (tgt.d) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, tgt.f);
+    gl.depthMask(true);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+  }
   E.scene.draw(tgt, { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix });
 }
 

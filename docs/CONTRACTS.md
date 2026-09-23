@@ -62,7 +62,8 @@ variables of your `index.js`). `ctx` is not passed again to `update`/`draw`/`ove
 
 ```
 ctx.gl            the WebGL2 context (raw). On entry to draw(): BLEND off, DEPTH_TEST off, SCISSOR off, the target bound
-                  and viewport set, NOT cleared (clear it yourself if you need to). Leave it that way on return.
+                  and viewport set, colour NOT cleared (clear it yourself if you need to), depth cleared to 1. Leave it
+                  that way on return.
 ctx.mkProg(fs, name)          fullscreen program: HEAD + your fragment source, the shared triangle vertex shader
 ctx.mkProg(vs, fs, name)      raw program (own vertex shader, e.g. gl_VertexID particles). No HEAD is prepended.
 ctx.use(pr, target, w, h)     bind program + target (null = screen) + viewport and upload the common uniforms (§1.2);
@@ -72,7 +73,9 @@ ctx.tex(pr, 'uName', unit, t)        bind t.t (any {t}: a target or an engine te
                               Scenes may use units 0–7.
 ctx.dynBuf(floats, comps)     a DYNAMIC_DRAW VAO with one float attribute at location 0 → {vao, buf}
 ctx.upload(buf, Float32Array, n)     bufferSubData
-ctx.mkTarget(w, h, rgba8=false)      render target {t, f, w, h}; RGBA16F when available (rgba8 for CPU readback)
+ctx.mkTarget(w, h, rgba8=false, depth=false)   render target {t, f, w, h}; RGBA16F when available (rgba8 for CPU
+                              readback); depth=true attaches a depth buffer (the core's scene targets have one)
+ctx.lines                     the line renderer (§1.12): {VS, FS, mk, set, draw, drawN} — anti-aliased strokes with depth
 ctx.freeTarget(t)
 ctx.onResize(fn(w, h))        register a callback; allocate your own targets there (they are freed/rebuilt by you)
 ctx.targets                   {a, b, m}: the core's full-size scene targets. draw() receives one of them as `target`;
@@ -211,6 +214,57 @@ count N, TORUS's knot), export `look: { get() → v, set(v) }` where `v` is a sm
 event the director stores each scene's `get()` on the outgoing section's seed; when a section is recognised again
 (`identifyEvt` with `repeat`) it restores the remembered scene **and** calls every scene's `set(v)` with what it had
 then. Keep `set` cheap and continuous-safe (it may be called while you are on screen).
+
+### 1.12 Lines — `ctx.lines`
+
+Anti-aliased strokes of any pixel width, depth-testable, drawn as one instanced quad per segment with a capsule cut
+out of it in the fragment shader — so consecutive segments of a polyline join seamlessly and ends are round. Two ways
+in; both produce premultiplied colour and restore GL state (BLEND/DEPTH_TEST off) on return.
+
+**A. CPU segments** — edges you compute in JS (polytopes, graphs, a handful of fibres):
+```js
+this.L = ctx.lines.mk(1200);                        // capacity in segments, once, in init()
+ctx.lines.set(this.L, segs, n);                     // Float32Array, 12 floats per segment:
+                                                    //   x0 y0 z0 w0   x1 y1 z1 w1   r g b a
+                                                    //   (w = stroke width in px at that end; rgba straight, a = opacity)
+ctx.lines.draw(this.L, target, w, h, { mvp, depth: true, blend: 'over' });
+```
+`mvp` is a column-major `Float32Array(16)` (clip = mvp · [x y z 1]); leave it out when the positions are already in
+clip space. `draw` binds its own program, so call it after your own passes, never between your `ctx.use` and your draw.
+
+**B. GPU polylines** — analytic curves; the vertex shader computes the points, there is no buffer. A raw program
+whose vertex shader includes `ctx.lines.VS` and whose fragment shader includes `ctx.lines.FS`:
+```js
+const VS = '#version 300 es\nprecision highp float;precision highp int;\n' + ctx.lines.VS + `
+uniform float uPts; flat out vec3 vCol;
+vec4 P(int ring, int i) { ... return vec4(clip); }          // point i of ring `ring`, in clip space
+void main() {
+  int s = gl_InstanceID, ring = s / int(uPts), i = s - ring * int(uPts);
+  vec4 c0 = P(ring, i), c1 = P(ring, (i + 1) % int(uPts));  // closed ring: the last segment wraps to point 0
+  vCol = ...;
+  gl_Position = lineCorner(c0, c1, w0px, w1px);             // width in px at each end (a 3D width is size / c.w)
+}`;
+const FS = '#version 300 es\nprecision highp float;\n' + ctx.lines.FS + `
+flat in vec3 vCol; out vec4 o;
+void main() { float m = lineMask(); o = vec4(vCol * m, m); }`;   // lineMask() = anti-aliased coverage 0..1
+```
+Per frame: `ctx.use(pr, target, w, h)`, your uniforms, then `ctx.lines.drawN(nSegments, { depth: true, blend: 'add' })`.
+`gl_InstanceID` is the segment; `gl_VertexID` (0..3) is the quad corner and belongs to `lineCorner` — do not read
+it. The chunk declares `uniform vec2 uRes` (filled by `ctx.use`, so do not declare your own `uRes`) and the varyings
+`vLineSeg`/`vLineHW`; name yours differently. A segment with an endpoint at or behind the camera plane (`w ≤ 0`) is
+dropped whole.
+
+**Options** (both paths): `depth: true` tests and writes (LEQUAL) against the target's depth buffer · `'test'` tests
+only · omitted/false ignores depth. `blend: 'over'` (default; correct occlusion with depth in any draw order) or
+`'add'` (glow accumulates; with depth on, a far stroke drawn before a near one still adds under it — draw near-to-far
+or accept the overlap). The core's scene targets have a depth buffer, cleared to 1 before every `draw()`; your own
+targets get one with `ctx.mkTarget(w, h, false, true)`. Clip `z` must lie in (−w, w): for a pinhole camera with view
+depth `v.z` (and `w = v.z`) use `z = v.z − 2·near`, which increases with distance.
+
+Widths under 1 px dim instead of thinning (constant energy), so distant hairlines fade rather than sparkle. Cost: four
+vertices per segment; path B evaluates `P` twice per vertex. 50 k segments is fine; put the `tier()` budget in the
+number of segments per ring, never in the number of rings, if your `cuts` is `'continuous'`. `tools/lines-smoke.js`
+(HARNESS.md) is the reference for a minimal path-A and path-B program.
 
 ### 1.10 What the composite does to your pixels
 
