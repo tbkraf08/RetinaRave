@@ -50,6 +50,19 @@ ENGINE.frame(dt, now, nowMs):
 
 `dt` is clamped to ≤ 1/24 s; `now` is seconds on the rAF clock (all `*Evt` timestamps and refractory periods use it).
 
+**Resume after a hidden tab (v0.3 resume-hold).** rAF does not run while the page is hidden, so the extractor's followers
+freeze for the gap while the audio (and the worklet stage) keep going; the first frames back would read the step as an
+onset, a drop or a surprise (the composite's glitch rows and flash — AUDIT-v0.2 §3). `main.js` calls `ENGINE.resume()` on
+`visibilitychange` → visible; the next `frame()` stamps `ENGINE.resumeAt = now` (`ENGINE.resumed` is true for that one
+frame) and, on the real path only: (1) `XS.holdUntil = now + 1` — for 1 s `updateMusic` sets no `onset`, `dropEvt` or
+`surpriseEvt`; (2) `XS.reseed` — on that frame the spectral-flux baseline is the current spectrum (flux 0) and the slow
+followers (`presence`, `eS/eM/eL/eMax`, `highM`, `build/buildPk`, the surprisal history model's mean/variance and its
+band inputs, the section fingerprint) advance by the gap they missed (`dtF = dt + now − X.envNow`: as if the current
+value had held throughout), so a stale `eM` cannot fire a drop once the hold ends; (3) `MS.hit` and `MS.dropEnv` are
+zeroed (transients the gap outlived — the dt clamp would carry them across). The loop zeroes `FX.glitch/flash` on the
+`resumed` frame. The fake timeline is untouched (it is a function of `now`; nothing in it was frozen), so `parity.js
+fake` is 0 diff by construction; the real path is byte-identical to v3 until a `resume()` happens.
+
 ## Adding an analysis stage
 
 ```js

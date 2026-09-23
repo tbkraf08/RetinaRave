@@ -32,6 +32,12 @@ function bandRms(m, a, b) {
 export function updateMusic(dt, now) {
   const S = MS, X = XS;
   S.onset = S.beat = S.dropEvt = S.sectionEvt = S.surpriseEvt = S.resolveEvt = S.identifyEvt = false;
+  // v0.3 resume-hold: for 1 s after a hidden tab comes back (ENGINE.resume → XS.holdUntil) no onset, drop or surprise
+  // may fire. On the first frame back (XS.reseed) the slow followers — energy arc, history model, fingerprint — advance
+  // by the gap they missed (dtF = dt + gap: as if the current value had held throughout), so a stale eM/eL/mu cannot
+  // read the step as a drop or a surprise once the hold ends; the flux baseline re-seats (no onset from a 30 s-old spectrum).
+  const hold = now < X.holdUntil, reseed = X.reseed, dtF = reseed ? dt + Math.max(0, now - X.envNow) : dt;
+  X.reseed = false;
   const live = AU.ctx && AU.mode !== 'none';
   if (live) {
     AU.fast.getFloatTimeDomainData(S.wave);
@@ -45,7 +51,7 @@ export function updateMusic(dt, now) {
   S.rms = Math.sqrt(s / 2048);
   const db = 20 * Math.log10(S.rms + 1e-9);
   const pT = sstep(-62, -44, db);
-  S.presence = ema(S.presence, pT, dt, pT > S.presence ? 0.25 : 1.4);
+  S.presence = ema(S.presence, pT, dtF, pT > S.presence ? 0.25 : 1.4);
   const m = X.mag;
   let mx = 0;
   for (let i = 0; i < 1024; i++) {
@@ -83,6 +89,7 @@ export function updateMusic(dt, now) {
       if (i <= iB) bflux += d;
     }
   }
+  if (reseed) flux = bflux = 0; // the first frame back: lmPrev was the spectrum before the gap, not an onset
   const o = (flux + 3 * bflux) * 0.01;
   let mean = 0;
   for (let i = 0; i < 96; i++) mean += X.oRing[i];
@@ -96,7 +103,7 @@ export function updateMusic(dt, now) {
   const thr = mean + 1.5 * sd + 0.02;
   X.oRing[X.oi] = o;
   X.oi = (X.oi + 1) % 96;
-  if (o > thr && now - X.lastOnset > 0.09 && S.presence > 0.1) {
+  if (o > thr && now - X.lastOnset > 0.09 && S.presence > 0.1 && !hold) {
     S.onset = true;
     X.lastOnset = now;
     S.hitStrength = clamp((o - thr) / (3 * sd + 0.05), 0, 1);
@@ -135,15 +142,15 @@ export function updateMusic(dt, now) {
   for (const k of ['bass', 'mid', 'high', 'bassFast', 'eS', 'eM', 'eL', 'build', 'tension', 'surprisal', 'hit']) if (!isFinite(S[k])) S[k] = 0;
   if (!isFinite(S.eMax)) S.eMax = 0.3;
   const e = Math.pow(clamp(0.45 * S.bass + 0.35 * S.mid + 0.2 * S.high, 0, 1), 0.8);
-  S.highM = ema(S.highM || 0, S.high, dt, 3);
-  S.eS = ema(S.eS, e, dt, 0.3);
-  S.eM = ema(S.eM, e, dt, 2.5);
-  S.eL = ema(S.eL, e, dt, 12);
-  S.eMax = Math.max(S.eMax * Math.exp(-dt / 60), S.eM, 0.15);
+  S.highM = ema(S.highM || 0, S.high, dtF, 3);
+  S.eS = ema(S.eS, e, dtF, 0.3);
+  S.eM = ema(S.eM, e, dtF, 2.5);
+  S.eL = ema(S.eL, e, dtF, 12);
+  S.eMax = Math.max(S.eMax * Math.exp(-dtF / 60), S.eM, 0.15);
   const prevAbsent = S.absentT;
   if (S.bassFast > 0.5) S.absentT = 0;
   else if (S.presence > 0.3) S.absentT += dt;
-  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5) {
+  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5 && !hold) {
     S.dropEvt = true;
     S.dropStrength = clamp(0.45 + prevAbsent / 10 + S.build * 0.4, 0, 1);
     S.lastDrop = now;
@@ -152,7 +159,7 @@ export function updateMusic(dt, now) {
   }
   // second drop path for tracks whose bass never leaves: a build was recently in progress and a hard bass hit lands
   // well above the medium-term energy
-  S.buildPk = Math.max((S.buildPk || 0) * Math.exp(-dt / 3), S.build);
+  S.buildPk = Math.max((S.buildPk || 0) * Math.exp(-dtF / 3), S.build);
   S.liveT = S.presence > 0.3 ? (S.liveT || 0) + dt : 0; // peak followers need a few seconds before ratios mean anything
   // gate: a build was seen, or we have sat in a valley/build arc for 3 s (quiet -> loud on a bass hit). arc already lags eM
   // by ~2.5 s. raw e, not eS: the first kick must count, eS lags it by 0.3 s
@@ -170,7 +177,7 @@ export function updateMusic(dt, now) {
   const ab = S.absentT > 1.5 ? 1 : 0;
   const bRaw = clamp(2 * Math.max(0, S.eM - S.eL) * (1 - ab) + ab * (0.3 + 0.03 * Math.min(S.absentT, 6) + 0.13 * Math.max(0, S.onsetRate - 3.5) +
     2.2 * Math.max(0, S.high - S.highM) + 0.25 * S.tension), 0, 1);
-  S.build = ema(S.build, bRaw, dt, bRaw > S.build ? 0.8 : 0.6);
+  S.build = ema(S.build, bRaw, dtF, bRaw > S.build ? 0.8 : 0.6);
   let arc = S.presence < 0.15 ? 'idle'
     : (now - S.lastDrop < 3 || (S.arc === 'peak' && S.eM > 0.6 * S.eMax && S.absentT < 1.5)) ? 'peak'
       : S.build > 0.5 ? 'build' : S.eM < 0.6 * S.eMax ? 'valley' : 'sustain';
@@ -200,14 +207,14 @@ export function updateMusic(dt, now) {
   // --- surprisal: z-scored prediction error of an exponential-history model on chroma + bands ---
   const x = X._x || (X._x = new Float32Array(15));
   for (let i = 0; i < 12; i++) x[i] = S.chroma[i];
-  X.sB = ema(X.sB || 0, S.bass, dt, 0.5);
-  X.sM = ema(X.sM || 0, S.mid, dt, 0.5);
-  X.sH = ema(X.sH || 0, S.high, dt, 0.5);
+  X.sB = ema(X.sB || 0, S.bass, dtF, 0.5);
+  X.sM = ema(X.sM || 0, S.mid, dtF, 0.5);
+  X.sH = ema(X.sH || 0, S.high, dtF, 0.5);
   x[12] = X.sB;
   x[13] = X.sM;
   x[14] = X.sH;
   let err = 0;
-  const k1 = 1 - Math.exp(-dt / 1.5), k2 = 1 - Math.exp(-dt / 10);
+  const k1 = 1 - Math.exp(-dtF / 1.5), k2 = 1 - Math.exp(-dtF / 10);
   for (let i = 0; i < 15; i++) {
     const d = x[i] - X.mu[i];
     err += d * d / (X.va[i] + 2e-4);
@@ -216,14 +223,14 @@ export function updateMusic(dt, now) {
   }
   S.surRaw = Math.sqrt(err / 15);
   const sT = clamp((S.surRaw - 0.9) / 0.8, 0, 1) * S.presence;
-  S.surprisal = ema(S.surprisal, sT, dt, sT > S.surprisal ? 0.05 : 0.5);
-  if (S.surprisal > 0.62 && now - S.lastSurprise > 2.5) {
+  S.surprisal = ema(S.surprisal, sT, dtF, sT > S.surprisal ? 0.05 : 0.5);
+  if (S.surprisal > 0.62 && now - S.lastSurprise > 2.5 && !hold) {
     S.surpriseEvt = true;
     S.lastSurprise = now;
     if (now - S.lastSection > 6) S.sectionEvt = true;
   }
   // --- section fingerprint + repeat detection ---
-  const fp = X.fp, kf = 1 - Math.exp(-dt / 3);
+  const fp = X.fp, kf = 1 - Math.exp(-dtF / 3);
   for (let i = 0; i < 12; i++) fp[i] += (S.chroma[i] * 2 - fp[i]) * kf;
   fp[12] += (S.bass - fp[12]) * kf;
   fp[13] += (S.mid - fp[13]) * kf;

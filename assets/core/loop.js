@@ -6,7 +6,7 @@ import { GROOVE } from '../engine/groove.js';
 import { G, resize, uploadEngineTex } from './gl.js';
 import { Q, updateQuality } from './quality.js';
 import { LOOK, updateLook } from './look.js';
-import { updateFX, runChain } from './post.js';
+import { FX, updateFX, runChain } from './post.js';
 import { SC, REG, SCENES, updateScenes, drawScenes, visibility, postParams } from './scenes.js';
 import { drawHUD } from './hud.js';
 import { drawHelp } from './help.js';
@@ -26,6 +26,7 @@ export function frame(tms) {
   updateQuality(dtRaw);
   resize();
   ENGINE.frame(dt, now, tms);
+  if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap
   uploadEngineTex(ENGINE.tex);
   const S = MS;
   // scene updates: scenes flagged always, plus the ones on screen

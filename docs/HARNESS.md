@@ -209,9 +209,27 @@ HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps
   the watchdog swaps the demo in only if the page is visible. With the music window on the other monitor the capture
   is heard within 5 s and hops at 94/s (`tools/accept/v0.2/audit-2-*.jpg`, `docs/AUDIT-v0.2.md`).
 - `tools/probe.js` is the in-page frame probe for these runs: `fetch('/tools/probe.js').then(r=>r.text()).then(eval)`
-  then `PROBE.start()`; it records per frame dt, the drawn frame's mean luminance, `SC`, `q`, and events (scene switch,
-  visibility, resize, black frame `lum < 2`, long frame > 100 ms, the first frame back from hidden); `PROBE.summary()`.
-  Sharing a tab adds Chrome's infobar to the page and shrinks the viewport by 56 CSS px — a real `resize()` mid-run.
+  then `PROBE.start()`; it records per frame dt, the drawn frame's mean luminance, `SC`, `q`, `FX.glitch` (`g`), `MS.hit`,
+  onset/surprise flags (`o`/`s`), and events (scene switch, `next` changes — a hard cut moves `cur` with `next` still −1,
+  a soft switch sets `next` first —, drops, visibility, resize, black frame `lum < 2`, long frame > 100 ms, the first
+  frame back from hidden); frame-tick events carry the frame's rAF time, so `PROBE.frames.filter(f => f.t >= ev.t)`
+  starts at that frame; `PROBE.summary()`. Sharing a tab adds Chrome's infobar to the page and shrinks the viewport by
+  56 CSS px — a real `resize()` mid-run.
+
+## Hidden tab (change to the extractor's followers, `ENGINE.resume`, or the loop's resume line — v0.3 resume-hold)
+
+Headless can hide the page: a second tab activated hides the main one (rAF stops, the worklet's hops queue and land in
+a burst on return), `{activate:'main'}` brings it back and fires `visibilitychange`. `Page.setWebLifecycleState`
+(`frozen`/`active`) is **not** it: `active` never restores visibility headless (tried, dropped).
+```
+GPU=1 node tools/cdp.js 'test&fake=0&scene=6' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=>PROBE.start())"},{"wait":8000},{"tab":"about:blank"},{"activate":"tab"},{"wait":15000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k==="back"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,60);return JSON.stringify({n:fr.length,onsets:fr.filter(function(f){return f.o}).length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k==="drop"&&e.t>=b.t}).length,gmax:Math.max.apply(null,fr.map(function(f){return f.g})),hitmax:Math.max.apply(null,fr.map(function(f){return f.hit})),resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]'
+# => {"n":60,"onsets":0,"surprise":0,"drops":0,"gmax":0,"hitmax":0,"resumeAt":26.4}   <- the first 60 frames (1 s) back: nothing may fire
+```
+`accept.sh` "== hidden tab" runs exactly this. Without the hold (`CARD.ENGINE.resume=function(){}` before hiding) the v3
+demo fired a drop within 0.5 s of return in 3 of 8 trials (glitch 0.93, flash: the frame at luminance 172 on FEIGEN) and
+carried `hit` 0.1–0.5 into the first frames on all 8; with it, 0 of 8. The real-window version (worklet path, window
+minimized) is the `audit-3-*-back-worklet.jpg` recipe in "Real window" — DUST's first frames back climb (23 → 36 over
+8 frames) because its exposure re-adapts; that is the effect, not a glitch.
 
 ## Help view (change to `core/help.js`, a scene's `help` / `help.feats`, or `feats.js` text)
 
@@ -276,6 +294,9 @@ FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait"
 ```
 
 ## Acceptance sweep
+
+Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.3}/` (`ACC=v0.2` to write beside the v0.2
+files; the v0.2 "before"/"none"/"after" traces referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 
 ```
 GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v0.2/

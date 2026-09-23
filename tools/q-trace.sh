@@ -4,7 +4,7 @@
 # half second over 26.5 ms, −0.07 over 18.8 ms, +0.04 per 2.5 s of good frames back). A 17 ms scene therefore lowers
 # every scene's tier for ~30 s after it leaves; the trace of q is the disease, the scene's own bench only the symptom.
 # usage: GPU=1 tools/q-trace.sh <before|none|after> [styles]     styles: house (120 s) aba (190 s)
-#   -> tools/accept/v0.2/q-<style>-<tag>.txt : RUNS=3 runs, "== run N" separated; each run = the @-events and the 1 Hz
+#   -> tools/accept/${ACC:-v0.3}/q-<style>-<tag>.txt : RUNS=3 runs, "== run N" separated; each run = the @-events and the 1 Hz
 #      lines of the #test log (they end in `sc<id> … q<q>`), plus VISIT@ markers. node tools/q-stats.js summarises.
 # ONE Chrome at a time, runs strictly sequential (unlike director-trace.sh): a second instance alone sinks q to 0
 # (director-aba-after.txt was traced beside house and sat at q 0.00–0.06 the whole run). Nothing else may load the
@@ -21,7 +21,7 @@ STYLES=${*:-house aba}
 RUNS=${RUNS:-3}
 VISIT=${VISIT-40:70:2.5}
 [ "$TAG" = none ] && NONE=1
-mkdir -p tools/accept/v0.2
+mkdir -p tools/accept/${ACC:-v0.3}
 one() {
   local s=$1 W steps pre
   case $s in aba) W=190000;; house) W=120000;; mix) W=360000;; *) W=120000;; esac
@@ -38,11 +38,11 @@ one() {
   node tools/cdp.js "test&fake=0&demo=$s" "$steps" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | sed 's/\\n/\n/g'
 }
 for s in $STYLES; do
-  f="tools/accept/v0.2/q-$s-$TAG.txt"; : > "$f"
+  f="tools/accept/${ACC:-v0.3}/q-$s-$TAG.txt"; : > "$f"
   for r in $(seq 1 "$RUNS"); do
     echo "== run $r ($s, $TAG, visit ${VISIT:-none}${NONE:+, FEIGEN score 0})" >> "$f"
     one "$s" >> "$f"
   done
   echo "== $s → $f ($(wc -l < "$f") lines, $(grep -c '^SCENE@' "$f") SCENE events, $(grep -c '\[EXC\]' "$f") EXC)"
 done
-node tools/q-stats.js $(for s in $STYLES; do echo "tools/accept/v0.2/q-$s-$TAG.txt"; done)
+node tools/q-stats.js $(for s in $STYLES; do echo "tools/accept/${ACC:-v0.3}/q-$s-$TAG.txt"; done)

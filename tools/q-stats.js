@@ -2,7 +2,7 @@
 // (id 6) visit with q at entry, min q during, min q in the 30 s after it left and q at exit + 30 s, and the mean q in
 // the fixed windows the trace recipe pins (0–40 before the visit, 40–70 during, 70–100 after, 100–end) so `before`,
 // `none` and `after` compare on the same clock. Then the mean of each column over the runs of a file.
-// usage: node tools/q-stats.js tools/accept/v0.2/q-house-before.txt [more files]
+// usage: node tools/q-stats.js tools/accept/v0.2/q-house-before.txt (the v0.2 traces; new ones land in tools/accept/v0.3/) [more files]
 import fs from 'node:fs';
 
 const f2 = (x) => (Number.isFinite(x) ? x.toFixed(2) : '  -  ');

@@ -844,3 +844,43 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   final-frame md5 (scene-md5, mixs `a6e2b8cd…`, FEIGEN `dee30d91…`/`eb8aa082…`) re-based in one commit that says
   so; `parity.js fake` is unaffected (state, not pixels). Not taken from the note: Julia sets as a scene (§15) and
   derivative iteration (the field already carries `log|z′|`).
+
+## §18 resume-hold — the first frames back from a hidden tab (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 1 + the probe polish, item 10)
+
+- **The bug, measured.** AUDIT-v0.2 §3 saw the composite's drop rows on the first frames back from a hidden tab (FEIGEN
+  155 → 125 over 5 frames on the worklet path). Mechanism: rAF stops while hidden, so `updateMusic`'s followers freeze
+  for the gap while the audio and the worklet stage keep going; on return the spectral-flux baseline (`lmPrev`) is the
+  spectrum from before the gap (a huge onset), `eM`/`eL` are stale (drop path 2's `e > 2·eM + 0.1` reads the loud
+  passage as a drop), the surprisal model's mean is stale (a surprise), and the loop's 1/24 s dt clamp carries `hit`,
+  `dropEnv`, `FX.glitch/flash` across the gap undecayed. Headless reproduction (a second tab activated hides the page —
+  HARNESS "Hidden tab"; `Page.setWebLifecycleState` `frozen`/`active` never restores visibility headless, tried and
+  dropped), v3 demo, 15–19 s hidden, 8 trials: a drop within 0.5 s of return in **3 of 8** (at 0.13 / 0.32 / 0.47 s;
+  glitch 0.93, the flash frame at luminance 172 on FEIGEN), `hit` 0.1–0.5 carried into the first frames on **8 of 8**.
+  In the real window the glitch is intermittent (it depends on what the music did across the gap: the same minimize
+  recipe with the hold disabled came back clean once, 47 → 51 → 54), which is why the trial count is the evidence.
+- **The fix (engine, ENGINE.md "Resume").** `main.js` → `ENGINE.resume()` on `visibilitychange` → visible; the next
+  `frame()` stamps `resumeAt` (`resumed` true for that frame) and, real path only: a 1 s hold on `onset`/`dropEvt`/
+  `surpriseEvt`; the flux baseline re-seated (flux 0 on that frame); the slow followers advanced by the gap they missed
+  (`dtF = dt + now − X.envNow` on the resume frame for `presence`, `eS/eM/eL/eMax`, `highM`, `build/buildPk`, the
+  surprisal model's mean/variance and band inputs, the section fingerprint — as if the current value had held
+  throughout); `hit`/`dropEnv` zeroed; the loop zeroes `FX.glitch/flash` on the `resumed` frame. The first cut (hold +
+  a snap of the surprisal mean only) still fired a drop 2.4 s after resume in 1 of 8 — `eM` was 62 % re-seated when
+  the hold ended and path 2 fired on the next onset; advancing the followers by the gap is what closes it. Fake path
+  untouched (a function of `now`, nothing frozen): `parity.js fake` 0 diff; `parity real` bpm 126.18 vs v3 125.96, arcs
+  identical, drops within 0.5 s; `dtF = dt` off the resume frame, so the real path is byte-identical to v3 otherwise.
+- **After, headless (same 8 trials):** 0 of 8 drops, 0 onsets / surprises in the first 60 frames, glitch 0, `hit` 0.
+  **After, real window** (worklet path, "Who Likes to Party" captured from its own window, minimized 20 s, `tools/accept/
+  v0.3/audit-3-{feigen,dust,nav}-back-worklet.jpg`): FEIGEN's first 5 frames back 46.7 / 45.4 / 42.6 / 42.1 / 40.7
+  (max step **6.2 %** — the brief's ≤ 10 %), NAV 48.7 / 50.8 / 48.3 / 51.1 / 51.2 (5.8 %), 0 onsets / drops / glitch in
+  the first 60 frames on all three, `ERRS []`, `nonFinite []`, `getError` 0. DUST's first frames swing (14.6 / 17.2 /
+  8.8 / 11.6 / 13.1): its own per-frame flicker at low luminance — headless the same scene reads 15 → 9 → 18 across 8
+  frames with no event fired — not the hold's concern. The scene md5 list (`scene-md5.sh`) is identical to the v0.2 tag's
+  (shot in a worktree at the tag on `PORT=8766`); the core change is one line that only runs on the resumed frame.
+- **Harness.** `tools/probe.js` (item 10): `next` events (a hard cut moves `cur` with `next` still −1; a soft switch sets
+  `next` first), `drop` events, per-frame `g` (`FX.glitch`), `hit`, `o`/`s` flags; frame-tick events carry the frame's
+  rAF time (before, `frames.filter(f => f.t >= back.t)` skipped the first frame back — the audit's "first 5 frames"
+  were frames 2–6). `accept.sh` "== hidden tab" (deterministic by construction: the hold masks events whatever the
+  music) and its output now goes to `tools/accept/v0.3/`.
+- **Left open:** none. The synapse stage's own followers run on the hop clock and were never frozen; DUST's exposure
+  re-adapts over its own constants after a gap (audit 3's 22 → 51 climb) — its look, by design.
+

@@ -57,5 +57,6 @@ for (const scene of [nav, dust, mandala, torus, polytope, feigen]) {
 }
 resize();
 initHUD();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) ENGINE.resume(); }); // v0.3 resume-hold (ENGINE.md)
 initHarness(() => $('landing').classList.add('hide'));
 startLoop();

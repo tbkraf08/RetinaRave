@@ -30,5 +30,6 @@ export const XS = {
   pkB: 1e-4, pkM: 1e-4, pkH: 1e-4, pkAll: 1e-4, oRing: new Float32Array(96), oi: 0, lastOnset: -9, env: new Float32Array(800), ei: 0, envAcc: 0, envNow: 0, tempoT: 0,
   tmp: new Float32Array(800), candBpm: 0, candN: 0, tempoAge: 99, slowTick: 0, pcOf: null, bLo: 0, bHiC: 0, bHiT: 0, bLowC: 0, binS: 5.859375, binF: 23.4375,
   mu: new Float32Array(15), va: new Float32Array(15).fill(0.01), fp: new Float32Array(17), lib: [], arcPrev: 'idle', eAtChange: 0, phraseBeat: 0,
+  holdUntil: -1, reseed: false, // v0.3 resume-hold (ENGINE.resume): events masked until holdUntil, flux/surprise baselines re-seated once
 };
 

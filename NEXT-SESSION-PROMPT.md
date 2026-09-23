@@ -18,7 +18,7 @@ DECISIONS §17's triage table for whenever a scene phase is opened).
 
 ## The v0.3 briefs (priority order)
 
-1. **`resume-hold` (engine, small, parity-neutral).** Audit 3: the first frames back from a hidden tab carry the
+1. ✅ **DONE 2026-09-23 (DECISIONS §18; probe polish, item 10, with it).** **`resume-hold` (engine, small, parity-neutral).** Audit 3: the first frames back from a hidden tab carry the
    composite's drop rows — the v3 followers were frozen for the gap and read the step as a drop (on `#test` the fake
    `now` jumped over DROP@13). On `visibilitychange` → visible, hold `drop`/`hit` detection for 1 s and let the
    followers re-seat (`ENGINE.resumeAt`); the fake path untouched. Acceptance: `parity.js fake` 0 diff; the probe's
@@ -72,7 +72,7 @@ DECISIONS §17's triage table for whenever a scene phase is opened).
    per stroke scene (TORUS 3, POLYTOPE 5, DUST 1 with fibres) at CLOCK f178 in one montage; the slot is
    `scene.post.morph.flow` (default 1) read by `transitions/morph.js`. If the comb is not visible in the montage the
    brief closes without the slot.
-10. **Probe polish (harness, tiny).** `tools/probe.js` logs `cur` changes (a fade's end or a cut); log `next` changes
+10. ✅ **DONE with item 1 (§18).** **Probe polish (harness, tiny).** `tools/probe.js` logs `cur` changes (a fade's end or a cut); log `next` changes
    too so a hard cut is distinguishable from a soft switch in the real-window `SCENES` line.
 
 Closed in §17's table, do not reopen without a new number: sub-59 / over-200 BPM octave reads; the 8–12-beat restore
