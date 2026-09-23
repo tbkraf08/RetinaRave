@@ -28,7 +28,11 @@ parity real · monitor 0 spikes · 5 scenes · real start path · bundle 46 modu
   `regularity` ≈ 0 on ambient; `tools/test_tempo.js` (node, synthetic envelope) + `tools/tempo-trace.sh` (per-style
   traces in `accept/v0.2/tempo-*-{before,after}.txt`). Parity fake still 0 diff (the fake path never ran the
   estimator); parity real now judges both engines against the synth's 126.
-Still open below: #2, #3 julia/feigen, #4, #6, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
+- **#6 director** → `core/scenes.js` (DECISIONS §10): look memory keyed on synapse's `sectionAlt` (filed at
+  `boundaryEvt`, restored when a return is identified — every aba return now restores), soft switches held to the bar
+  line while `gridTrust > .5` (`SC.quantise`), grid positions per frame in `features-synapse.js`;
+  `tools/test_director.js` + `tools/director-trace.sh` / `director-stats.js` (traces in `accept/v0.2/director-*`).
+Still open below: #2, #3 julia/feigen, #4, #7, plus DUST's Hopf-fibre overlay (now unblocked by `ctx.lines`).
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 
@@ -42,8 +46,7 @@ Still open below: #2, #3 julia/feigen, #4, #6, #7, plus DUST's Hopf-fibre overla
    field and every scene ships `help`; a `?` overlay that shows the live `MS` vector with its glossary and each scene's
    three-depth help is mostly UI.
 5. ~~Tempo refinement for v3's canonical `bpm`~~ — done (DECISIONS §9).
-6. **Key look memory on `sectionAlt`** (synapse's clusterer separates A/B on the aba synth, v3's fingerprint does not —
-   DECISIONS §5) and **beat-quantised director actions** when `gridTrust > 0.5` (deferred from §5, see DECISIONS).
+6. ~~Key look memory on `sectionAlt` + beat-quantised director actions~~ — done (DECISIONS §10).
 7. **Row-only `hist` upload** (32 KB/hop today) and `Q`-aware particle budgets shared across POINTS scenes.
 
 ## Non-negotiables (unchanged)

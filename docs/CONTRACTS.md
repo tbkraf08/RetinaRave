@@ -210,11 +210,13 @@ Anything else is a bug.
 ### 1.11 Look memory
 
 If your scene has a discrete "look" that a returning listener would notice (DUST's formation pair, MANDALA's fold
-count N, TORUS's knot), export `look: { get() → v, set(v) }` where `v` is a small JSON-able value. On every section
-event the director stores each scene's `get()` on the outgoing section's seed; when a section is recognised again
-(`identifyEvt` with `repeat`) it restores the remembered scene **and** calls every scene's `set(v)` with what it had
-then. Keep `set` cheap and continuous-safe (it may be called while you are on screen). Both are called with `this` =
-your scene object.
+count N, TORUS's knot), export `look: { get() → v, set(v) }` where `v` is a small JSON-able value. When synapse
+declares a section boundary (`boundaryEvt`) the director files each scene's `get()` together with the scene on screen
+under the outgoing section's `sectionAlt`; when synapse identifies a return (`sectionAlt` changes with `sectionReturn`
+1, a few beats after the boundary) it calls every scene's `set(v)` with what it had then **and** brings the filed scene
+back at the next soft switch (see §4: that switch lands on a bar line). Before synapse has identified any section
+(`sectionAlt` < 0) v3's seed carries the memory (`sectionEvt` saves, `identifyEvt` with `repeat` restores). Keep `set`
+cheap and continuous-safe (it may be called while you are on screen). Both are called with `this` = your scene object.
 
 ### 1.12 Lines — `ctx.lines`
 
@@ -322,8 +324,11 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
 ## 4. Director (what the core decides, so you don't)
 
 - Forced (`&scene=N`, keys) → drop hard-cuts to the home scene → low presence drifts home → a build parks home →
-  otherwise soft switches only on musical events (`surpriseEvt` hard; `identifyEvt`, 32-beat phrase, home settled +4
-  beats soft), at least 8 beats apart. Your `score()` is consulted only then.
+  otherwise soft switches only on musical events (`surpriseEvt` hard; `identifyEvt`, a synapse-recognised section
+  return, 32-beat phrase, home settled +4 beats soft), at least 8 beats apart. Your `score()` is consulted only then.
+- Soft switches land on the grid: while `gridTrust` > .5 the decision waits for the next bar line (`barPos` wrap; the
+  16-beat line for the phrase trigger), at most 4 (16) beats; grid trust lost meanwhile fires it at once, a hard cut
+  or home parking cancels it. Hard cuts are immediate. `SC.quantise = false` (harness) restores immediate switches.
 - Crossfades render both scenes and mix them (`mixs`) over `clamp(4·60/bpm, 1.2, 3)` s. Both `draw` calls happen
   each frame of the fade; both `update`s run.
 - Scores: `score()` + 0.25 per-section seed noise − 0.6 if you were the last scene − 0.25 if the one before.
@@ -350,7 +355,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `beat` | event | a beat boundary just passed | retargeting, scene switch gating |
 | `beatPhase` | level | where we are inside the beat, 0→1 | uBeat.x, sway, trap rotation |
 | `beatCount` | count | beats since start | phrase alignment, hysteresis |
-| `bpm` | raw | tempo | beat rate, crossfade duration |
+| `bpm` | raw | tempo (±1 BPM on the demo styles; holds its octave through breakdowns) | beat rate, crossfade duration |
 | `regularity` | level | how steady the rhythm is | sway amplitude, scene scores |
 | `eS` | level | short-term energy (0.3 s) | uArc.x, intensity, drift rate |
 | `eM` | level | medium-term energy (2.5 s) | arc classification, palette |
@@ -413,14 +418,14 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `punchy` | level | transient-heavy mix | mood angular |
 | `perc` | level | percussive (spiky onset envelope) | arousal, angular |
 | `beatConf` | level | confidence in the synapse beat clock | gridTrust |
-| `gridTrust` | level | trust in the bar/phrase grid (keeps counting through breakdowns) | beat-quantised actions (§5) |
+| `gridTrust` | level | trust in the bar/phrase grid (keeps counting through breakdowns) | director: soft switches are held to the bar line while > .5 (§10) |
 | `barConf` | level | confidence in the bar (4-beat) line | boundary snapping |
 | `phraseConf` | level | confidence in the 16-beat phrase line | drop expectation, boundary snapping |
 | `bar` | count | bar number on the synapse grid | phrase-aware scenes |
-| `barPos` | raw | position inside the bar, 0..4 (beats) | MANDALA fold rotation |
+| `barPos` | raw | position inside the bar, 0..4 (beats) | MANDALA fold rotation, director: a held soft switch lands when it wraps (§10) |
 | `barPhase` | level | position inside the bar, 0..1 | TORUS breathing (alt) |
-| `phrasePos` | raw | position inside the 32-beat phrase, 0..32 | director look memory |
-| `phrase16Pos` | raw | position inside the 16-beat phrase | - |
+| `phrasePos` | raw | position inside the 32-beat phrase, 0..32 | - |
+| `phrase16Pos` | raw | position inside the 16-beat phrase | director: a phrase-triggered soft switch lands when it wraps (§10) |
 | `beatSyn` | raw | synapse beat clock (continuous beats) | grid fields |
 | `bpmSyn` | raw | synapse tempo estimate (rival to bpm; bpm is canonical) | HUD, DECISIONS.md comparison |
 | `key` | count | the key, 0=C … 11=B | TORUS knot / palette anchor |
@@ -428,9 +433,9 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `keyConf` | level | how sure the key is | TORUS |
 | `novelty` | level | timbre just changed (quick, causal) | early warning for the director |
 | `foote` | level | Foote novelty at the last beat (careful, 4-beat kernel) | boundaries |
-| `boundaryEvt` | event | a section boundary was just declared (synapse) | director soft switch (alt) |
-| `sectionAlt` | count | synapse section id (23-dim fingerprint clustering); sectionId is canonical | DECISIONS.md comparison |
-| `sectionReturn` | level | this section is a return of an earlier one (synapse) | look memory |
+| `boundaryEvt` | event | a section boundary was just declared (synapse) | director: files the outgoing section's scene + looks (§10) |
+| `sectionAlt` | count | synapse section id (23-dim fingerprint clustering); sectionId is canonical | director look-memory key (§10); sectionId stays the seed key |
+| `sectionReturn` | level | this section is a return of an earlier one (synapse) | director: a sectionAlt change with 1 restores that section's scene + looks (§10) |
 | `sectionAge` | raw | beats since the section started | - |
 | `dropExpectedIn` | raw | beats until the expected drop line (-1 = none armed) | anticipation |
 | `dropConf` | level | how sure a drop is coming | TORUS pinch (alt) |

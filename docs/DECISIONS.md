@@ -60,9 +60,10 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   dropExpectedIn fakeoutEvt` (anticipation; the detonation itself stays v3's `dropEvt`). Synapse's own `drop` impulse
   and `tension` are not exposed (scenes use `dropEnv`/`tension`). `level` → `lvl`. Its `bass/mid/high` fast bands are
   not exposed either (v3's cover the same range with a slower attack); `bassS/midS/highS/sub` are.
-- **Which section detector scenes should prefer:** `sectionId` (v3) for *identity* — it is what the director's look
-  memory is keyed on and what the fake timeline drives; `boundaryEvt`/`sectionReturn` (synapse) for *timing* — its
-  boundaries are grid-snapped and confirmed against the whole section, so they land on bar lines. `novelty` is the
+- **Which section detector scenes should prefer:** `sectionId` (v3) for *identity* in v0.1 — it was what the director's
+  look memory was keyed on and what the fake timeline drives; `boundaryEvt`/`sectionReturn` (synapse) for *timing* — its
+  boundaries are grid-snapped and confirmed against the whole section, so they land on bar lines. **v0.2 §10:** the
+  director's memory is keyed on `sectionAlt`; `sectionId` remains the seed key (palette offsets, score noise). `novelty` is the
   early warning, `foote` the careful one.
 - **dnb tempo.** `#test&fake=0&demo=dnb`: `bpmSyn` 173.9–175.1 (inside 174±1), `key` 5 (F minor) with `keyConf` >0.93
   from 9 s on. v3's canonical `bpm` reads 172.4 (its autocorrelation runs on a 100 Hz envelope: lag 34.8 vs the true
@@ -135,10 +136,8 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   `sectionEvt` into the outgoing section's `seed.looks` (v3 already keeps one seed object per remembered section, so
   the looks ride along with it) and restores on `identifyEvt && repeat`. Second director write into `MS.seed`
   (documented with `seed.scene`). The fake timeline's sections repeat every 24 s, so `#test` exercises it.
-- **Beat-quantised actions (synapse idea b) — option, not implemented.** When `gridTrust > 0.5`, soft scene switches
-  and formation flips could be deferred to the next `barPos` crossing (or 16-beat line via `phrase16Pos`). Not done in
-  v0.1 because v3's director already gates soft switches on `beat` + 8/32-beat counts (parity), and the synapse grid
-  only becomes confident after the first section change; a v0.2 candidate once both grids can be compared on real music.
+- **Beat-quantised actions (synapse idea b) — done in v0.2, see §10.** Soft scene switches wait for the bar line while
+  `gridTrust > 0.5` (formation flips inside scenes are still the scenes' own business).
 - **aba look-memory run (190 s, `&demo=aba`):** the mechanism works — the one recognised return (`identifyEvt` with
   `repeat` at 188 s) restored the remembered scene (DRUM, id 4) and the DUST/MANDALA looks `{dust:[0,1,1], mandala:10}`
   stored with that section's seed. But v3's 17-dim `identifySection` merged the synth's A and B sections into one id
@@ -146,7 +145,7 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   regularity, ema 3 s, cosine > 0.965) does not separate them. Synapse's 23-dim `sectionAlt` **does** separate them: on the same synth it reads 2/3/2/3/2/3 with
   `sectionReturn = 1` on every return from 50 s on (one id per ~24 s section), while v3 stayed on id 2 for 110 s.
   Verdict for scenes: `sectionAlt`/`sectionReturn`/`boundaryEvt` for structure, `sectionId` only because the director's
-  look memory and the fake timeline are keyed on it. v0.2: key look memory on `sectionAlt` (a director-only change).
+  look memory and the fake timeline are keyed on it. v0.2: look memory is keyed on `sectionAlt` (§10).
 - **Scores live in the scenes** (contract), not in `pickScene`; the director keeps v3's precedence. Per-scene bids:
   NAV `0.5 + build` (home) · DRUM `0.85 clarity + 0.3 (1−eM) + 0.1` when interior with a cycle · DUST
   `0.3 + 0.5 punchy + 0.2 regularity` · MANDALA `0.25 + 0.55 regularity + 0.2 min(1, onsetRate/6)` · TORUS
@@ -290,3 +289,72 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   (steadier meaning: 0 on pads, unchanged on beats). `bpmSyn` stays the rival; ENGINE.md no longer recommends it.
 - **Not done / open:** a 3:2 tempo change with the old lag still alive takes up to 8 s; the two-vote fast path only
   fires once the old lag has collapsed. A tempo below 59 or above 200 BPM is read at an octave (LMIN/LMAX unchanged).
+
+## §10 Director on synapse's structure (v0.2, 2026-09-23) — look memory on `sectionAlt`, soft switches on the bar line
+
+- **A. Look memory is keyed on synapse's `sectionAlt`.** `SC.mem[alt] = {scene, looks}` is filed when synapse declares
+  a boundary (`boundaryEvt`) under the *outgoing* id (`SC.prevAlt`, last frame's `sectionAlt`) with the scene on
+  screen — or the one already decided and held for the bar line (B) — and every scene's `look.get()`. It is read when
+  synapse identifies a return: `sectionAlt` changes with `sectionReturn = 1`. Synapse identifies 4–8 beats *after* the
+  boundary (`structure.js identify()`: ≥ 4 beat-frames for a return, ≥ 8 for a new section), exactly the shape of the
+  fake timeline's 2.2 s `identifyAt`, so `SC.altOpen` closes at the boundary and reopens when the id lands: nothing
+  is filed or looked up in the gap (the stale id belongs to the section that just ended). Before synapse has identified
+  anything (`sectionAlt < 0`) v3's seed still carries the memory (`sectionEvt` saves, `identifyEvt && repeat`
+  restores, `seed.scene` lookup) — so the real start path and a page without the worklet behave as in v0.1.
+  `S.seed.scene` is still written on every event-branch switch (declared; the fake path keys coincide).
+  - *The filed scene is the one the section ended on*, not the one last chosen in it (the prompt left this open). A
+    section that never switched (v3's `seed.scene` stays −1 → `pickScene`) or whose last visit ended in a park still
+    gets a definite scene; on the fake timeline the two readings coincide in every section (measured: identical scene
+    sequence, below).
+  - *The return trigger is sticky* (`SC.due`): v3's `surpriseEvt` fires a hard cut at nearly every synth section change
+    (aba: 13 in 190 s), ~2 s before synapse identifies the return, and the 8-beat spacing then swallowed the restore
+    (first after-run, kept as `director-aba-aonly.txt` — A alone, hold off: 7 restores of the looks, 0 switches to the
+    remembered scene, the section's scene only came back with the next phrase/settled trigger). The owed switch stays a trigger
+    until the precedence gates open (precedence itself unchanged), and is cleared at the next boundary.
+  - **Measured, `&demo=aba` 190 s** (`accept/v0.2/director-aba-{before,after}.txt`, `tools/director-stats.js`): synapse
+    recognises 7 returns from 50 s on (ids alternate A/B every ~24 s; v3's `sectionId` sits on 2–3 for the whole run).
+    Before: 0 restores. After: **7 restores of 7**, 7 `return`-triggered switches, scene sequence A/B-periodic
+    (`… 2 1! 4 2! 1 4! 2 1! 4 2! 1 …`: the hard cut at the boundary, then the section's own scene back on the bar line).
+    house 120 s: 4 returns → 4 restores. mix 360 s: 11 returns → 11 restores (8–11 per run; the synth is random).
+    The `#test` fake timeline: 11 returns in 72 s → 11 restores (0 before — see the engine fix below), scene sequence
+    identical to v3's.
+- **B. Soft switches land on the bar line.** An event-branch decision (`identifyEvt`, return, phrase, settled) with
+  `gridTrust > 0.5` is held (`SC.pend`, one slot: a later decision replaces the target, the deadline stands) until
+  `barPos` wraps — for the phrase trigger until the bar line that opens a 16-beat phrase (`phrase16Pos < 4`; synapse
+  picks `o16` on the `o4` grid, so that is a bar line too — the first version waited for a `phrase16Pos` wrap alone
+  and landed at barPos 1.17 once when the anchor re-voted). Cap 4 beats (16 for phrase); a decision taken within 0.1
+  beat after a line fires at once; `gridTrust` falling to ≤ 0.5 while waiting fires at once; a drop, a surprise, a
+  forced scene, low presence or a build (home parking) cancel it. `SC.quantise = false` (harness `QOFF=1`) restores
+  the immediate switch. Hard cuts, parking and the crossfade are untouched; `pickScene` and `goScene` untouched.
+  - **Engine fix (a deviation from "nothing in the engine"):** the first after-run landed at barPos 0.21–0.27, not
+    < 0.1. `structure.js grid()` refreshes `A.barPos/phrasePos/phrase16Pos` every 16 hops = 160 ms (0.33 beat at 124),
+    while `A.beat` is per frame. `features-synapse.js` now derives the three positions per frame from `A.beat` and the
+    anchors `o4/o16/o32` (the way it already computed `S.bar`); the fields mean what `feats.js` says. MANDALA's fold
+    rotation (the other `barPos` reader) gets a smooth position instead of a 6 Hz staircase.
+  - **Measured landings** (`SWITCH@t -> id bar<pos> gt<trust> (held N beats, <trigger>)`, on the line = barPos < 0.1
+    or > 3.9): aba 8 of 8 on the line (held max 4.0, mean 1.7 beats); house 5 of 5 (max 3.3); mix 9 of 9 with
+    `gridTrust > 0.5` plus 2 immediate at `gridTrust` 0.10 (the ambient hand-over, by rule); fake 9 of 9 (max 3.8,
+    mean 1.6). Before: 1 of 8 (aba), 1 of 6 (house), 1 of 16 (mix), 1 of 12 (fake) — v3's triggers are on its own
+    beat count, ~2.8 beats off synapse's bar on aba. One more rule came out of the mix trace: a phrase hold (16-beat
+    cap) replaced by an identify decision used to inherit the 4-beat cap retroactively and fire mid-bar (141 s, barPos
+    1.03); the tightened cap now counts from the new decision, and a wrap must land at barPos < 0.5 (a grid re-vote in
+    the dnb hand-over can jump the position anywhere).
+- **Second engine fix, found by the fake trace:** `synapseStage` reset `boundaryEvt/fakeoutEvt/moodEvt` *before* its
+  "no analyzer" return, and the stage runs after `fake.update`, so on `#test` the fake mirror's `boundaryEvt` was
+  wiped every frame (nothing had consumed it before). The reset now follows the return. Parity unaffected (v3 has no
+  such fields).
+- **Parity decision.** `parity.js fake` forces `&scene=0`, so the director's soft-switch branch never runs there: A
+  and B cannot move it, and measured they do not — **0 diff over 72 fields with B on and with B off** (`QOFF=1`, added
+  to `parity.js` for exactly this check). No per-field allowance was needed or added. What the `#test` fake timeline
+  *does* change without `&scene=` is recorded instead: `director-fake-{before,after}.txt` — same 13-scene sequence,
+  the 9 event-branch switches moved onto bar lines by 0.01–1.85 s (≤ 3.8 beats), the 3 home parkings and the drop
+  cuts at the same frames. The `monitor 60 s` and the per-scene checks in `accept.sh` run with B on. `parity.js real`
+  (v3 synth): bpm / arcs / drops unchanged (the director does not feed back into `MS` except `seed.scene`).
+- **Harness.** `tools/test_director.js` (node, stub scenes, scripted MS at 120 BPM / 60 Hz: filing, restore + switch on
+  a synapse-only return, bar-line landing, the 4-beat cap on a stalled grid, grid loss, drop cancel, on-the-line
+  immediacy, `quantise` off, the owed switch after a hard cut, filing across a held switch) in `npm test` and
+  `accept.sh`. `tools/director-trace.sh` + `director-stats.js` (HARNESS "Director traces"). `scenes.js` 250 lines.
+- **Left open.** Synapse renumbers section ids when it merges a fresh section into a return or drops the oldest of 24;
+  `SC.mem` is not renumbered with it (a stale entry restores the wrong section's look once; the ids then settle). The
+  section-return trigger respects v3's 8-beat spacing, so after a surprise hard cut the restore lands 8–12 beats after
+  the cut, not at the identification.

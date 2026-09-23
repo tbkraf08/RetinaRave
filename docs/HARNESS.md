@@ -39,6 +39,19 @@ GPU=1 tools/tempo-trace.sh after [styles]   # bpm / bpmSyn / regularity at 1 Hz 
 frames under-fill the 100 Hz envelope ring (dt is clamped at 1/24 s) and the tempo reads high. The demo synth uses
 `Math.random()`: judge on two runs. `tempo-<style>-before.txt` are the v3 estimator's traces (DECISIONS §9).
 
+## Director traces (change to `core/scenes.js`)
+
+```
+GPU=1 tools/director-trace.sh after [aba house mix fake]   # every @-event + the 1 Hz line -> tools/accept/v0.2/director-<style>-after.txt
+node tools/director-stats.js tools/accept/v0.2/director-aba-after.txt   # returns vs RESTORE@, SWITCH@ on/off the bar line, scene sequence
+node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel
+```
+Under `#test` the log carries `SCENE@t -> id bar<pos> gt<trust>`, `RESTORE@t alt<id> scene<id>` (a section's looks came
+back) and `SWITCH@t -> id bar<pos> (held N beats, <trigger>)` (an event-branch soft switch landed); the 1 Hz line ends
+with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise = false`). aba is 190 s, house 120 s,
+mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
+`Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
+
 ## Line renderer smoke (core change to `core/lines.js` or the targets)
 
 ```

@@ -1,6 +1,7 @@
 // SC: scene registry, director (pickScene / precedence), crossfade (mixs), variants, forced/sticky.
 // Knows nothing about any specific scene: everything it reads from a scene is a contract slot (docs/CONTRACTS.md).
-// Lifted from cardioid3 "SCENES" (goScene / pickScene / updateScenes) + the mixs pass.
+// Lifted from cardioid3 "SCENES" (goScene / pickScene / updateScenes) + the mixs pass. v0.2 §10: look memory keyed on
+// synapse's sectionAlt, soft switches held to the bar line (DECISIONS §10).
 import { clamp, ema, frac } from '../math/util.js';
 import { G, mkProg, use, tex, tri } from './gl.js';
 import { FX } from './post.js';
@@ -10,6 +11,9 @@ export const SC = {
   logical: 0,                        // the logical id (a variant has its own id but renders its parent's base)
   variant: null, vT: 0, vmix: 0,     // active variant name, its target (0/1) and the eased mix scenes read
   lastBeat: -99, hist: [0], forced: -1, home: 0,
+  mem: {}, prevAlt: -1, altOpen: false, due: -1, // look memory keyed on sectionAlt (§10 A): mem[alt] = {scene, looks}; due = a return whose scene is still owed
+  quantise: true, pend: null,            // grid-held soft switch (§10 B): the one pending {id, why, beat0, ...}
+  restored: null, switched: null,        // this frame's director records (the harness logs them)
 };
 
 // REG[id] = { id, base, scene, variant }  (variant = null for a scene's own id)
@@ -97,42 +101,100 @@ export function pickScene(S) {
 // Precedence (v3): forced → drop hard-cuts home → low presence drifts home → build parks home → event-gated soft switches.
 // The home scene's rt slots: home (bool, in its stable state), awayBeat (beat it last left home), settledAt (beat it
 // settled back; consumed here).
-// Look memory: on a section event the outgoing section's seed records every scene's look (scene.look.get()); when a
-// section is recognised again (identifyEvt with repeat) the remembered looks are restored (scene.look.set(v)).
-function saveLooks(S) {
+// Look memory (§10): when a boundary is declared (boundaryEvt) the outgoing section — synapse's sectionAlt as it was
+// last frame — is filed in SC.mem with the scene on screen (or the one decided and held for the bar line) and every
+// scene's look.get(); when synapse identifies a
+// return (sectionAlt changes with sectionReturn 1) the looks are set back and the filed scene is the soft switch's
+// target — a trigger that stays armed (SC.due) until the precedence gates let it through, since v3's surprise hard
+// cut tends to land two seconds before the identification and its 8-beat spacing would otherwise eat the return.
+// Synapse identifies a few beats after the boundary (SC.altOpen tracks that), so nothing is filed or read in between. Before synapse has identified anything (sectionAlt < 0) v3's seed carries the memory: saved on sectionEvt,
+// restored on identifyEvt with repeat.
+function getLooks() {
   const looks = {};
   let any = false;
   for (const sc of SCENES) if (sc.look) { looks[sc.name] = sc.look.get.call(sc); any = true; }
-  if (any) S.seed.looks = looks;
+  return any ? looks : null;
 }
-function restoreLooks(S) {
-  const looks = S.seed.looks;
+function setLooks(looks) {
   if (!looks) return;
   for (const sc of SCENES) if (sc.look && looks[sc.name] !== undefined) sc.look.set.call(sc, looks[sc.name]);
+}
+function memory(S) {
+  const alt = S.sectionAlt, prev = SC.prevAlt, moved = alt !== prev;
+  SC.restored = null;
+  if (S.boundaryEvt) {
+    if (SC.altOpen && prev >= 0) SC.mem[prev] = { scene: SC.pend ? SC.pend.id : SC.logical, looks: getLooks() }; // a switch still held for the bar line counts
+    SC.altOpen = false;
+    SC.due = -1;
+  }
+  if (S.sectionEvt) { const l = getLooks(); if (l) S.seed.looks = l; }
+  if (moved) { SC.altOpen = alt >= 0; SC.prevAlt = alt; }
+  const M = SC.altOpen && S.sectionReturn === 1 ? SC.mem[alt] : null;
+  if (M && moved) { setLooks(M.looks); SC.restored = { alt, scene: M.scene }; SC.due = alt; }
+  else if (alt < 0 && S.identifyEvt && S.repeat) setLooks(S.seed.looks);
+  return { M, ret: !!M && SC.due === alt }; // the owed switch stays a trigger until the precedence gates let it through
+}
+
+// Soft switches land on the grid (§10 B): with gridTrust > .5 the decision is held until barPos wraps (for the phrase
+// trigger: the bar line that opens a 16-beat phrase), capped at 4 / 16 beats; grid trust lost while waiting fires it
+// at once. One slot: a later decision replaces the target (a bar hold replacing a phrase hold restarts the 4-beat
+// cap). Hard cuts and home parking are immediate and cancel it.
+const onLine = (S, phrase) => S.barPos < 0.1 && (!phrase || S.phrase16Pos < 4);
+function softSwitch(S, id, why) {
+  const phrase = why === 'phrase';
+  if (!SC.quantise || S.gridTrust <= 0.5 || onLine(S, phrase)) return land(S, id, 0, why);
+  if (SC.pend) { // one slot: the target follows the latest decision; a phrase hold tightened to a bar hold restarts its 4-beat cap
+    SC.pend.id = id; SC.pend.why = why;
+    if (!phrase && SC.pend.phrase) { SC.pend.phrase = false; SC.pend.beat0 = S.beatCount + S.beatPhase; }
+    return;
+  }
+  SC.pend = { id, why, phrase, beat0: S.beatCount + S.beatPhase, bar: S.barPos };
+}
+function land(S, id, held, why) {
+  const was = SC.logical;
+  goScene(id, false, S);
+  if (SC.logical !== was) SC.switched = { id, held, why };
+}
+function pending(S) {
+  const P = SC.pend;
+  if (!P) return;
+  const held = S.beatCount + S.beatPhase - P.beat0, cap = P.phrase ? 16 : 4;
+  const wrapped = S.barPos < P.bar - 2 && S.barPos < 0.5 && (!P.phrase || S.phrase16Pos < 4); // a real wrap lands near 0 (a grid re-vote can jump anywhere)
+  P.bar = S.barPos;
+  if (wrapped || held >= cap || S.gridTrust <= 0.5) { SC.pend = null; land(S, P.id, held, P.why); }
 }
 
 export function updateScenes(dt, S) {
   const H = REG[SC.home].scene.rt, inHome = H.home !== false, away = H.awayBeat !== undefined ? H.awayBeat : -99;
-  if (S.sectionEvt) saveLooks(S);
-  if (S.identifyEvt && S.repeat) restoreLooks(S);
+  const { M, ret } = memory(S);
+  SC.switched = null;
   if (SC.forced >= 0) {
+    SC.pend = null;
     if (SC.logical !== SC.forced) goScene(SC.forced, true, S);
   } else {
     const awayHome = SC.logical !== SC.home;
-    if (S.dropEvt) goScene(SC.home, true, S);
+    if (S.dropEvt) { SC.pend = null; goScene(SC.home, true, S); }
     else if (S.presence < 0.12) {
+      SC.pend = null;
       if (awayHome && SC.next < 0) goScene(SC.home, false, S);
-    } else if (S.build > 0.55 && SC.logical !== SC.home) goScene(SC.home, false, S); // builds park at home, waiting for the drop
+    } else if (S.build > 0.55) { // builds park at home, waiting for the drop
+      SC.pend = null;
+      if (SC.logical !== SC.home) goScene(SC.home, false, S);
+    }
     else if ((inHome || S.beatCount - away >= 16) && S.build < 0.4 && S.beatCount - SC.lastBeat >= 8 && SC.next < 0) {
       const phrase = S.beat && S.beatCount - SC.lastBeat >= 32 && (S.beatCount - away) % 16 === 0;
-      if (S.surpriseEvt) goScene(pickScene(S), true, S);
-      else if (S.identifyEvt || phrase || (H.settledAt && S.beatCount - H.settledAt >= 4)) {
+      if (S.surpriseEvt) { SC.pend = null; goScene(pickScene(S), true, S); }
+      else if (S.identifyEvt || ret || phrase || (H.settledAt && S.beatCount - H.settledAt >= 4)) {
+        const why = S.identifyEvt ? 'identify' : ret ? 'return' : phrase ? 'phrase' : 'settled';
         H.settledAt = 0;
-        const id = S.repeat && S.seed.scene >= 0 && REG[S.seed.scene] ? S.seed.scene : pickScene(S);
+        const v3 = S.repeat && S.seed.scene >= 0 && REG[S.seed.scene] ? S.seed.scene : -1;
+        const id = M && REG[M.scene] ? M.scene : S.sectionAlt < 0 && v3 >= 0 ? v3 : pickScene(S);
         S.seed.scene = id; // look memory: the one field of MS the director writes (declared in feats.js)
-        goScene(id, false, S);
+        SC.due = -1;
+        softSwitch(S, id, why);
       }
     }
+    pending(S);
   }
   if (SC.next >= 0) {
     SC.m += dt / SC.dur;

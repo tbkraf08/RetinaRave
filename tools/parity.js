@@ -56,13 +56,14 @@ function diffFields(A, B) {
 let status = 0;
 if (mode === 'fake' || mode === 'both') {
   console.log('=== fake path (CLOCK=1, #test&scene=0, 24 s = 1440 frames) ===');
+  const q = process.env.QOFF ? [{ until: 'window.CARD' }, { eval: 'CARD.SC.quantise=false' }] : []; // QOFF=1: §10 B off (director check only; the fake parity forces scene 0)
   const steps = [{ wait: 300 }, { eval: SAMPLER }, { until: 'window.__FRAME>=360' }, { shot: 'SIDE-t6' }, { until: 'window.__FRAME>=840' }, { shot: 'SIDE-t14' },
     { until: 'window.__FRAME>=1200' }, { shot: 'SIDE-t20' }, { until: 'window.__FRAME>=1441' }, { eval: 'JSON.stringify(window.__SAMP)' }, { eval: 'JSON.stringify(CARD.ERRS)' }, { eval: 'JSON.stringify(CARD.log.filter(l=>/@/.test(l)))' }];
   const sub = (side) => JSON.parse(JSON.stringify(steps).replace(/SIDE/g, side));
-  const a = run(true, 'test&scene=0', sub('v3'), { CLOCK: '1' }), b = run(false, 'test&scene=0', sub('ew'), { CLOCK: '1' });
+  const a = run(true, 'test&scene=0', sub('v3'), { CLOCK: '1' }), b = run(false, 'test&scene=0', q.concat(sub('ew')), { CLOCK: '1' });
   if (a.errs.length || b.errs.length) { console.log('page errors:', a.errs, b.errs); status = 1; }
-  const A = JSON.parse(a.evals[1] || '[]'), B = JSON.parse(b.evals[1] || '[]');
-  console.log('samples v3', A.length, 'ew', B.length, '· ERRS v3', a.evals[2], 'ew', b.evals[2]);
+  const o = q.length ? 1 : 0, A = JSON.parse(a.evals[1] || '[]'), B = JSON.parse(b.evals[1 + o] || '[]');
+  console.log('samples v3', A.length, 'ew', B.length, '· ERRS v3', a.evals[2], 'ew', b.evals[2 + o]);
   const d = diffFields(A, B);
   const bad = Object.entries(d).filter(([k, v]) => typeof v === 'number' && v > 1e-9);
   const info = Object.entries(d).filter(([k, v]) => typeof v !== 'number');
@@ -71,7 +72,7 @@ if (mode === 'fake' || mode === 'both') {
   console.log('max |diff| over all numeric fields:', Math.max(0, ...nums.map(([, v]) => v)), '· fields compared', nums.length);
   if (bad.length) { console.log('MISMATCH:', bad.map(([k, v]) => k + '=' + v).join('  ')); status = 1; } else console.log('MS/NAV parity: every field identical to 1e-9');
   console.log('events v3:', a.evals[3]);
-  console.log('events ew:', b.evals[3]);
+  console.log('events ew:', b.evals[3 + o]);
   const mt = spawnSync('python3', [path.join(HERE, 'montage.py'), path.join(OUT, 'parity-fake.jpg'), '3', ...['t6', 't14', 't20'].map((t) => path.join(OUT, 'v3-' + t + '.jpg')), ...['t6', 't14', 't20'].map((t) => path.join(OUT, 'ew-' + t + '.jpg'))], { encoding: 'utf8' });
   console.log('montage:', mt.status === 0 ? path.join(OUT, 'parity-fake.jpg') : mt.stderr);
 }

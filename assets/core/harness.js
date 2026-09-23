@@ -81,11 +81,14 @@ export function logFrame(S, now, frameN) {
   if (S.surpriseEvt) CARD.log.push('SURPRISE@' + now.toFixed(2));
   if (SC.logical !== CARD._ls) {
     CARD._ls = SC.logical;
-    CARD.log.push('SCENE@' + now.toFixed(2) + ' -> ' + SC.logical);
+    CARD.log.push('SCENE@' + now.toFixed(2) + ' -> ' + SC.logical + ' bar' + S.barPos.toFixed(2) + ' gt' + S.gridTrust.toFixed(2));
   }
+  // director records (v0.2 §10): a restored look memory, a soft switch landing (held = beats waited for the grid)
+  if (SC.restored) CARD.log.push('RESTORE@' + now.toFixed(2) + ' alt' + SC.restored.alt + ' scene' + SC.restored.scene);
+  if (SC.switched) CARD.log.push('SWITCH@' + now.toFixed(2) + ' -> ' + SC.switched.id + ' bar' + S.barPos.toFixed(2) + ' gt' + S.gridTrust.toFixed(2) + ' (held ' + SC.switched.held.toFixed(1) + ' beats, ' + SC.switched.why + ')');
   if (frameN % 60 === 0) {
     const E = REG[SC.cur], rt = E ? E.scene.rt : {};
-    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} syn${S.bpmSyn.toFixed(1)} reg${S.regularity.toFixed(2)} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} q${Q.q.toFixed(2)}`);
+    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} syn${S.bpmSyn.toFixed(1)} reg${S.regularity.toFixed(2)} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} alt${S.sectionAlt} ret${S.sectionReturn} bar${S.barPos.toFixed(2)} gt${S.gridTrust.toFixed(2)} q${Q.q.toFixed(2)}`);
   }
   if (frameN % 30 === 0) {
     const e = G.gl.getError();

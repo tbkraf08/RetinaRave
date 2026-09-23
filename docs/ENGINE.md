@@ -85,7 +85,9 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
   `TEX` (`state.js`: `{spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), row, hop}`) and bumps
   `hop` when there is a new frame; the core uploads when `hop` changes and hands them to scenes as `ctx.engineTex`.
 - The synapse stage (`features-synapse.js`) is the worked example: `SYN_FEATS` lists its 54 fields, `synapseStage`
-  copies `tap.an.A` into `MS`, drains `A.events` into `boundaryEvt/fakeoutEvt/moodEvt`, fills `TEX`.
+  copies `tap.an.A` into `MS` (`barPos/phrasePos/phrase16Pos` recomputed per frame from `A.beat` and the anchors —
+  `grid()` refreshes them only every 16 hops; §10), drains `A.events` into `boundaryEvt/fakeoutEvt/moodEvt` (reset only
+  when the analyzer exists, so the fake mirror's events survive on `#test`), fills `TEX`.
 
 ## Sources
 

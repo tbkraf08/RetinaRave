@@ -19,9 +19,9 @@ export const SYN_FEATS = [
 ];
 
 export function synapseStage(dt, now, S) {
-  S.boundaryEvt = S.fakeoutEvt = S.moodEvt = false;
   const an = tap.an;
-  if (!an) return; // no AudioContext yet (landing card): the state.js defaults stand
+  if (!an) return; // no AudioContext yet (landing card) or the fake timeline (#test): the defaults / the fake's mirror stand
+  S.boundaryEvt = S.fakeoutEvt = S.moodEvt = false; // (after the return: the stage runs after fake.update and used to wipe its events)
   const A = an.A;
   tap.frame(dt);
   ENGINE.extraMs += an.cpuMs; // the hop work happens in the worklet port handler, outside frame(): account for it here
@@ -33,7 +33,10 @@ export function synapseStage(dt, now, S) {
   S.centroid = A.centroid; S.flux = A.flux; S.dirty = A.dirty; S.punchy = A.punchy; S.perc = A.perc;
   S.beatConf = A.beatConf; S.gridTrust = A.gridTrust; S.barConf = A.barConf; S.phraseConf = A.phraseConf;
   S.beatSyn = A.beat; S.bpmSyn = A.bpm;
-  S.barPos = A.barPos; S.barPhase = A.barPos / 4; S.phrasePos = A.phrasePos; S.phrase16Pos = A.phrase16Pos;
+  // grid positions per frame from the beat clock and the anchors (grid() refreshes A.barPos only every 16 hops = 160 ms,
+  // too coarse for the director's bar-line landing; §10)
+  const wrap = (x, n) => ((x % n) + n) % n;
+  S.barPos = wrap(A.beat - an.o4, 4); S.barPhase = S.barPos / 4; S.phrasePos = wrap(A.beat - an.o32, 32); S.phrase16Pos = wrap(A.beat - an.o16, 16);
   S.bar = Math.floor((A.beat - an.o4) / 4);
   S.key = A.key; S.mode = A.mode; S.keyConf = A.keyClar;
   S.novelty = A.novelty; S.foote = A.foote; S.sectionAlt = A.section; S.sectionReturn = A.sectionReturn; S.sectionAge = A.sectionAge;
