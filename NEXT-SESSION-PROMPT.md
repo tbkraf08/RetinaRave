@@ -50,9 +50,18 @@ parity real · monitor 0 spikes · 5 scenes · transition md5 · real start path
   sampler (its `&histfull=1` md5 equality is the #7 proof). **JULIA dropped** on the side-by-side with NAV
   (`accept/v0.2/julia-vs-nav.jpg`, DECISIONS §15). The §11 md5 re-based on the director-blind recipe
   (`a6e2b8cd…`) because registering a scene moved the director's first pick.
-Everything in the v0.2 list is done. Open polish: FEIGEN's cost at depth (6.9–21 ms at tier 3; scale `uIter` by
-`Q.iter` or render at `0.8·scale`, DECISIONS §15), DUST's tier-3 fibre count (3168 segments, +1.4 ms), POLYTOPE's pole
-streaks (§8), NAV's interior smoulder on `N.par` (the one thing synapse's JULIA had, §15).
+- **§16 FEIGEN's cost at depth** → `scenes/feigen/{index,ladder,field,colour}.js` (worker, DECISIONS §16): the field
+  (n, log r, log|z′|, ea) is rendered once per zoom rung on a ladder (×2 in width, 2× the view's density, upper
+  half-plane, three slots, a bounded band of rows per frame keyed on `feigL` + the draw counter) and a colour pass
+  samples it through the frame's camera — **1.2–1.3 ms at every depth** (was 8–22), seam 0.51× the median at a rung
+  change, the drop's self-similar stand-in 8.6 % off the true rung, md5-deterministic with the schedule running. The
+  Q trace (`tools/q-trace.sh`, `q-stats.js`; HARNESS "Q trace") is the acceptance: house `q` during a deep 30 s visit
+  0.47–0.50 before → see DECISIONS §16 after (none: 0.68–0.69). `tools/feigen-bench.sh` + `accept.sh` "== feigen cost".
+  CONTRACTS §1.6: *separate what the mathematics computes from what the music changes per frame, and amortise the
+  first over musical time.* No core change; the render-scale slot was not needed.
+Everything in the v0.2 list is done. Ride-alongs (own briefs in `docs/workers/brief-{dust-fibre-count,polytope-pole,
+nav-smoulder}.md`): DUST's tier-3 fibre count 3168 → 2240, POLYTOPE's pole streaks (§8), NAV's interior smoulder on
+`N.par` (§15) — state in DECISIONS §16's ride-along paragraph.
 
 ## Candidates for v0.2 (pick by taste; each is one worker brief)
 

@@ -716,3 +716,15 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   state the scene *recomputes*); `ctx.onResize` receives the canvas size and `ctx.use` never clears (§1.1);
   `feigen-bench.sh`'s spurious `undefined` line (fixed). Temptations not taken: `core/gl.js` (answered through `CARD`),
   `core/quality.js` (answered by the data: the flip's build mean tracked the page's own steady, i.e. machine load).
+- **Ride-alongs (own workers, own briefs, none in `core/`).** *POLYTOPE's pole streaks* (`brief-polytope-pole.md`,
+  `polytope-pole.md`): the tighter gate shipped — `den > 0.24` (was 0.16) with the ramp re-based to reach 1 at the same
+  `den` as before, so everything inside `den = 0.4457` is bit-identical; the projected-length fade (option a) was
+  rejected on an offline sweep of 60 phases × every cast × 4 tiers — a fade per *piece* shortens with `sub`, so it
+  would have fixed the streaks only at tier 0 and dimmed the body 8 %; the gate is tier-independent (max reach
+  3.38 → 2.70·g at every tier). Streaks at t6/t14 no longer reach the frame edge (`accept/v0.2/polytope-pole-ab.jpg`),
+  consecutive-frame |Δ| 4.59/4.48 → 3.92/3.82 (no spike, `cuts: 'continuous'` kept), f360/f840 md5s identical across
+  two runs, bench 0.71× → 0.66× NAV interleaved. §8's polish note is closed; its `0.16` is history. Friction: a bench
+  "×3 medians" without the NAV interleave read a fake 1.8× regression (40 % drift between sessions) — HARNESS's
+  interleave rule is the only protocol on this machine; §1.12's alpha rule now says the pole fade is the one place
+  alpha may fall (a colour-only fade would leave an opaque black streak writing depth).
+

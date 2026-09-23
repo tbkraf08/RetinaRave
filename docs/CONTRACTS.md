@@ -305,7 +305,8 @@ depth `v.z` (and `w = v.z`) use `z = v.z − 2·near`, which increases with dist
 **Alpha is coverage, not brightness.** Consecutive capsules of a polyline overlap inside every joint, so with
 `'over'` a semi-transparent stroke composites twice there and shows a bead on every join. Keep the stroke opaque —
 `o = vec4(col · m, m)` with `m = lineMask()` — and put brightness, fog and fades into the colour; let alpha fall only
-where a stroke must genuinely vanish (e.g. a fibre leaving through the projection pole). A fragment that ends up
+where a stroke must genuinely vanish — the projection-pole fade is that one place (a colour-only fade there would
+leave an opaque black streak that still writes depth). A fragment that ends up
 invisible still writes depth: `discard` below a small threshold (`if (a < 0.004) discard;`) or it will hide what is
 behind it. Path A's built-in program does both already.
 
