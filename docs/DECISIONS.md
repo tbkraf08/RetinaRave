@@ -108,6 +108,25 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Director results:** 60 s `#test&fake=0` auto-picked NAV → MANDALA → DUST → NAV → MANDALA → NAV → MANDALA → DUST
   (3 distinct scenes, 8 switches, all event-gated, ≥8 beats apart).
 
+## §4 TORUS (2026-09-22, worker from the contract + hopf.js)
+
+- **Design kept:** the Hopf fibration under stereographic projection, 12 pitch-class families = 12 base-point
+  latitudes, each family the complete torus over its latitude (every ring a genuine fibre, a Villarceau circle), the
+  (p,q) torus knot from `interval` through NAV's bulb table, Hopf flow from the beat, SU(2) tumble from GROOVE, pole
+  offset from tension, collapse-and-bloom on the drop. `math/hopf.js` is the reference (`test_hopf.js`: circles to
+  2e-12, on-torus to 2e-13, fibres never meet, (1,1) knot = fibre); the GLSL port matches it to 6e-16.
+- **Spec numbers corrected by the geometry:** the tumble amplitude is bounded (`0.18·sin(GROOVE.rot)`) and the pole
+  offset capped (`0.6·tension`) because both rotations sweep the projection pole (the point sent to infinity) through
+  the family latitudes; a longitude *band* per family was replaced by the full latitude circle; the bass pulse acts on
+  θ, not on a radial scale about a centre circle that does not exist once the family is tumbled; camera tracks the
+  nest's centroid.
+- **`#test` chroma gap:** v3's fake timeline never fills `chroma`; parity forbids changing that. TORUS blends in the
+  chroma implied by `harmAngle` (cos² on the circle of fifths) while `Σchroma < 0.5`, continuously, so it has
+  something to show headlessly and uses the real vector verbatim with audio. v0.2: give `fake.js` a chroma of its own
+  as a *new* field? No — `chroma` is v3's; the honest fix is a parity-tolerance entry for the fake path.
+- **Not distinct enough yet as points:** at tier 1–2 the rings read as dotted threads and the scene is the dimmest of
+  the four. The line renderer (NEXT-SESSION-PROMPT #1) is the upgrade: strokes along fibres with depth.
+
 ## §5 Director (2026-09-22)
 
 - **Look memory (synapse idea a) implemented** as a generic slot: `scene.look = {get, set}`; the director snapshots on

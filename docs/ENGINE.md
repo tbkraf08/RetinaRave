@@ -71,7 +71,9 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
   runs once the `AudioContext` exists, with `AU.bus` as the node to tap (AnalyserNode or AudioWorklet). The v3
   analysers (`AU.fast` 2048, `AU.slow` 8192) stay as they are (parity).
 - Budget: the whole engine must stay under 1.5 ms per frame (`CARD.ENGINE.ms`, `GPU=1`, 60 fps).
-- The fake timeline (`sources/fake.js`) must leave your fields finite and plausibly idle: add a line there that sets
+- The fake timeline (`sources/fake.js`) leaves v3's `chroma`/`bchroma` at zero (v3's fake never filled them and parity
+  forbids changing it) — chroma-driven scenes need a fallback from `harmAngle`/`interval` (TORUS does). Your own fields
+  must be finite and plausibly idle there: add a line there that sets
   them from the timeline phase if scenes will read them headlessly.
 - Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: a stage writes the arrays in
   `TEX` (`state.js`: `{spec: Uint8Array(256), wave: Uint8Array(512), hist: Uint8Array(256*128), row, hop}`) and bumps

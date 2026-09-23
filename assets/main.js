@@ -2,7 +2,7 @@
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
-import { Q } from './core/quality.js';
+import { Q, tier } from './core/quality.js';
 import { LOOK } from './core/look.js';
 import { addEffect } from './core/post.js';
 import { initScenes, register } from './core/scenes.js';
@@ -19,6 +19,7 @@ import composite from './effects/composite.js';
 import nav from './scenes/nav/index.js';
 import dust from './scenes/dust/index.js';
 import mandala from './scenes/mandala/index.js';
+import torus from './scenes/torus/index.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -32,13 +33,13 @@ try {
 // The ctx every scene and effect receives (docs/CONTRACTS.md §1.1). Never the module namespace of core/gl.js.
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
-  targets: G.RT, Q, LOOK, hsv, engineTex: ETEX,
+  targets: G.RT, Q, tier, LOOK, hsv, engineTex: ETEX,
   log: (s) => { if (TEST) CARD.log.push(s); },
 };
 
 initScenes();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
-for (const scene of [nav, dust, mandala]) {
+for (const scene of [nav, dust, mandala, torus]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

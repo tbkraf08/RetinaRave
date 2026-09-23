@@ -82,7 +82,7 @@ ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINE
                               hist 256×128 spectrogram ring (one row per ~10 ms hop, T wrap = REPEAT); row = the newest row's
                               index (sample v = (row + 0.5)/128 for "now", subtract to go back in time). Bind with
                               ctx.tex(pr, 'uSpec', unit, ctx.engineTex.spec). Under #test the fake timeline fills them.
-ctx.Q                         adaptive quality (§1.6)
+ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
 ctx.LOOK                      the palette block (§1.5)
 ctx.hsv(h, s, v) → [r,g,b]
 ctx.log(string)               append to CARD.log (only under #test)
@@ -163,19 +163,21 @@ needed, now generic:
 ### 1.5 `LOOK` and `GROOVE`
 
 `LOOK` (in `update` args and `ctx.LOOK`): `{hue, hueT, pal:[hue,spread,sat,bri], tint:[r,g,b], bands, beat, arc,
-harm, time, peak, mood}` — the v3 palette, derived from `MS` every frame. NAV reads `pal`/`tint` (through `HEAD`'s
+harm, time, peak, mood}` — the v3 palette, derived from `MS` every frame. All hues are in turns (0..1). NAV reads `pal`/`tint` (through `HEAD`'s
 `pal()`); the synapse scenes read **`LOOK.mood`** = `{hue, sat, bri, spread, invert, angular, spiky}`: hue orbits a
 family anchor chosen by `moodFamily` (valence/arousal), `sat`/`bri`/`spread` follow intensity/tension/drops, `invert`
 pulses to 1 on a drop and decays in 0.3 s, `angular`/`spiky` are texture axes (percussive·punchy, dirty·arousal). Upload
 them as your own uniforms; synapse's `pal()` was `hue + spread·t` with `sat`/`bri` — see the DUST/MANDALA shaders.
 
 `GROOVE`: `{rot, drift, sway, nod:{x}, vel}` — one shared rotation angle (radians) that breathes with the beat.
-`rot = drift + sway + nod.x`. Use `rot` for your view rotation (NAV does), `vel` for angular velocity, `sway` alone
+`rot = drift + sway + nod.x`; `drift` (and so `rot`) grows without bound — wrap or `sin()` it where a bounded angle matters. Use `rot` for your view rotation (NAV does), `vel` for angular velocity, `sway` alone
 for a subtler wobble.
 
 ### 1.6 `Q`
 
-`{q: 0..1, iter, scale, fps}`. The core adapts `q` from frame time. Scenes read, never write. Headless Chrome pacing
+`{q: 0..1, iter, scale, fps}`. The core adapts `q` from frame time. Scenes read, never write. `ctx.tier()` maps `q`
+to 0..3 (`q<.25 → 0, <.5 → 1, <.8 → 2, else 3`) for `[20000, 45000, 90000, 150000]`-style budgets; smooth it yourself
+if tier flips would be visible. `draw()`'s `(w, h)` is already the `Q.scale`-scaled size. Headless Chrome pacing
 sinks `q`; `CARD.bench(id, n)` is the perf verdict (see HARNESS.md).
 
 ### 1.7 `env` (5th argument of `update`)
