@@ -70,6 +70,11 @@ for (const d of sceneDirs) {
   const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
   if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
   for (const v of sc.variants || []) if (!(typeof v.tag === 'string' && v.tag)) fail('scene ' + d + ' variant ' + v.name + ': no tag');
+  if (sc.colour) { // colour slot (§1.4): a default that is one of the variants, every variant an object
+    const c = sc.colour, names = Object.keys(c.variants || {});
+    if (!(c.default in (c.variants || {}))) fail('scene ' + d + ': colour.default ' + c.default + ' is not in colour.variants (' + names.join(',') + ')');
+    for (const n of names) if (typeof c.variants[n] !== 'object') fail('scene ' + d + ': colour.variants.' + n + ' is not an object');
+  }
 }
 
 console.log(`check: ${files.length} modules · uniforms ${decl.size} · MS keys ${Object.keys(MS).length} · scenes ${sceneDirs.length} (help.feats gaps ${helpGaps}) · ${fails} fail · ${warns} warn`);

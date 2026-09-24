@@ -166,6 +166,16 @@ needed, now generic:
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
   Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
   Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
+- **Colour variants** (`colour: { default: 'v2', variants: { v2: {…}, oklch: {…} } }`, v0.3 §26): a scene with more
+  than one colour mapping declares them by name; the core sets `colour.cur = default` at registration and `draw()`
+  receives the name as `colour` in its second argument (`draw(target, { w, h, variant, vmix, colour })`). The variant
+  objects are yours (a program, a shader source, a uniform table); the one key the core reads is `post`: a variant's
+  `post` replaces the scene's while it is current (FEIGEN's OKLCH pass needs bloom thr 0.6, its v0.2 pass 0.3).
+  `&colour=<name>` under `#test` (and `CARD.setColour(name)`) switches every scene that declares that name; a scene
+  without it keeps its default; an unknown name throws. **The default is the look the user chose** (v0.2's cosine
+  palettes on FEIGEN and NAV); an OKLCH mapping ships as an opt-in variant until the user picks it (DECISIONS §26).
+  The help view's cast line names the current variant and the declared ones. `check.js` fails on a default that is
+  not a variant.
 - **Overlay**: drawn after the composite, direct to the screen, with your on-screen weight `vis` (0..1, follows the
   crossfade). You enable/disable SCISSOR and BLEND yourself.
 - **`Q`-scaled work**: `ctx.Q.iter` (64..264 per-pixel iterations), `ctx.Q.scale` (render scale, applied by the core),

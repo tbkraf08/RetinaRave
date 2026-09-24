@@ -28,6 +28,11 @@ export function register(scene) {
   REG[id] = { id, base: id, scene, variant: null };
   SCENES.push(scene);
   if (scene.home) SC.home = id;
+  if (scene.colour) { // colour slot (CONTRACTS §1.4, v0.3 §26): named colour mappings, one current; the default is the scene's
+    const c = scene.colour;
+    if (!c.variants || !(c.default in c.variants)) throw new Error('scene ' + scene.name + ': colour.default is not a variant');
+    c.cur = c.default;
+  }
   for (const v of scene.variants || []) {
     if (REG[v.id]) throw new Error('variant id ' + v.id + ' taken');
     REG[v.id] = { id: v.id, base: id, scene, variant: v };
@@ -48,6 +53,15 @@ export function setTransition(name) {
   return trans;
 }
 export const currentTransition = () => trans; // read-only: the help view names it (v0.2 §12)
+
+// Colour variant (v0.3 §26): every scene that declares colour.variants[name] switches to it; the rest keep their own
+// default. Returns the scenes switched; throws on a name no scene knows (a typo in &colour= must not pass silently).
+export function setColour(name) {
+  const hit = [];
+  for (const sc of SCENES) if (sc.colour && sc.colour.variants[name]) { sc.colour.cur = name; hit.push(sc.name); }
+  if (!hit.length) throw new Error('colour variant ' + name + ' is not declared by any scene');
+  return hit;
+}
 
 export function goScene(id, hard, S) {
   const E = REG[id];
@@ -231,7 +245,8 @@ export function renderScene(id, tgt, w, h) {
     gl.depthMask(true);
     gl.clear(gl.DEPTH_BUFFER_BIT);
   }
-  E.scene.draw(tgt, { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix });
+  const sc = E.scene;
+  sc.draw(tgt, { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix, colour: sc.colour ? sc.colour.cur : null });
 }
 
 // Scene pass(es) at adaptive resolution (sw, sh) inside the fixed-size targets; returns the source target. During a
@@ -273,6 +288,7 @@ export function postParams(S) {
   return postOf(SC.next >= 0 && SC.m > 0.5 ? SC.next : SC.cur, S);
 }
 function postOf(id, S) {
-  const p = REG[id].scene.post;
+  const sc = REG[id].scene, cv = sc.colour && sc.colour.variants[sc.colour.cur];
+  const p = (cv && cv.post) || sc.post; // a colour variant may carry its own post (FEIGEN's bloom thr differs per mapping)
   return (typeof p === 'function' ? p(S) : p) || {};
 }

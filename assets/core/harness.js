@@ -1,10 +1,10 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
 import { FEATS } from '../engine/feats.js';
-import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition } from './scenes.js';
+import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS, CHAIN } from './post.js';
 import { G, ERRS, ETEX } from './gl.js';
@@ -34,6 +34,8 @@ export const CARD = {
   get GRID() { return getGrid(); },
   get home() { const E = REG[SC.home]; return E ? E.scene.state : null; }, // the home scene's state (parity/monitor tools)
   goScene: (id, hard) => goScene(id, hard, MS),
+  setColour, // colour variant by name for every scene that declares it (CONTRACTS §1.4); &colour=<name> under #test
+  get colour() { const o = {}; for (const s of SCENES) if (s.colour) o[s.name] = s.colour.cur; return o; },
   // Micro-benchmark a scene id: ms per full-resolution render, readPixels-synced (Q.q is not a perf verdict headless).
   bench(id, n = 40) {
     const gl = G.gl, T = [G.RT.a, G.RT.b];
@@ -106,6 +108,7 @@ export function initHarness(hideLanding) {
     if (HASH.get('fake') === '0') ENGINE.start('demo');
     if (HASH.has('scene')) SC.forced = +HASH.get('scene');
     if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
+    if (HASH.has('colour')) setColour(HASH.get('colour'));     // a scene's colour variant (CONTRACTS §1.4, v0.3 §26)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
   }

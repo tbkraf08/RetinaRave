@@ -111,6 +111,11 @@ window (f305 / f334 ≈ 4.5, f320 ≈ 42 on the fake timeline before §16).
 is set in `assets/main.js`). The reference frame is **director-blind** (since §15): force scene 0, release the director
 at frame 120 and start the fade to 3 by hand, shoot 58 frames later (`58/60/1.935 s = 0.499`):
 
+`&colour=<name>` under `#test` picks a scene colour variant (CONTRACTS §1.4) for every scene that declares it: `&colour=oklch`
+shows the §24/§25 OKLCH passes on FEIGEN and NAV; no param = each scene's default (v0.2's palettes). `CARD.colour` lists
+the current name per scene, `CARD.setColour(name)` switches at runtime. `tools/scene-md5.sh oklch '&colour=oklch'` is the
+variant's md5 list; the plain list is the default's.
+
 ```
 CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&scene=0&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-mixs-0-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
 # EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.3/trans-mixs-0-3-f178.jpg → 425a66e5b50c14786e6e25bc215a3169 (GPU=1, 1280×720; a6e2b8cd… on the v0.2 chain)

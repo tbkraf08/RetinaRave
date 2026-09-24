@@ -183,7 +183,8 @@ function buildC() {
     d.appendChild(el('p', 'hwhy', h.why));
     d.appendChild(el('p', 'hmath', h.math));
     box.appendChild(d);
-    box.appendChild(el('p', 'hnote', 'reads ' + (sc.feats || []).length + ' fields · cuts: ' + sc.cuts));
+    const col = sc.colour ? ' · colour: ' + sc.colour.cur + ' (variants: ' + Object.keys(sc.colour.variants).join(', ') + ')' : '';
+    box.appendChild(el('p', 'hnote', 'reads ' + (sc.feats || []).length + ' fields · cuts: ' + sc.cuts + col));
     C.appendChild(box);
   }
 }
