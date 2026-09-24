@@ -482,6 +482,13 @@ params: {
   `c` **in the parameter's own units**, clamped to the range, no `k`/`b`/`inv` (τ allowed — a slide). The ema is on `dt`.
   Any `level` / `raw` / `angle` / `event` field of `MS` may feed a parameter, whether or not it is in your `feats`
   (the parameter is yours; the source is the engine's) — `count` / `enum` / `vector` / `internal` never.
+- **What is not a parameter of this slot (v0.5 open ends):** an *unwrapped angle* (NAV's orbit-trap rotation, 40 rad
+  at f360) cannot honour a finite `range` — every bounded rewrite either stops being the verbatim expression or gives
+  an identical lo/hi pair (the shader reads `abs(dot(z, n))`); a `kind: 'angle'` parameter is a candidate, not a slot.
+  A nested `post` function (`fb.decay: (S) => …`) sees the view, not `env.params` — a trail length derived there stays
+  a §1.4 post param. A parameter that is the target of a spring whose response is exponential in it (NAV's `reach`,
+  the exterior depth) breaks the continuity invariant under an impulsive source (`reach ← kick`): the route is honest
+  and allowed, the scene says so in its report, and the panel's preview at the range ends is the user's warning.
 - **Name parameters for what the eye sees** (`sharp`, `width`, `glow`, `spin`), three to five per scene, the `eli5` a
   clause a listener understands without the code. A parameter nothing reads is a lie the panel shows; a visual constant
   the panel cannot reach is the thing this slot exists to remove ("every visual parameter traces to `MS`" — a constant is a

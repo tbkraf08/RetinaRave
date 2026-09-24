@@ -1286,3 +1286,48 @@ else was touched (the routes core, the director, every reference md5 and the v0.
   per-visual-parameter routes (`NEXT-SESSION-PROMPT.md` item 1). v0.4.1 is the panel naming what it already has
   correctly; v0.5 gives it the thing the user asked for.
 
+## §29 params — the visual parameters of a scene as a slot the panel routes into (v0.5 item 1, 2026-09-24, orchestrator + three workers from `docs/workers/brief-{feigen-params,nav-params,panel-3}.md`)
+
+**The decision (the user, 2026-09-24: "proceed" on `NEXT-SESSION-PROMPT.md` without looking at v0.4.1 first).** The real
+answer to sentence 1 of the v0.4.1 brief ("how do I map the musical features to the visual ones?"): a route whose *target*
+is a visual parameter — *"in FEIGEN, the filament sharpness is fed by the centroid"*. A scene declares `params: {name:
+{eli5, range: [lo, hi], from: (MS) => …}}` (CONTRACTS §1.16); the core hands `update()` the values as `env.params`,
+**exactly `from(view)` while nothing is routed** (identity by construction, as v0.4's view is), else the route
+`PROUTES[scene][param] = {src | 'const', c, k, b, inv, tau}` with the transfer in the parameter's unit interval and the
+range scaling it. Everything else composes over v0.4: a field route still feeds `from()`, the preset JSON gains a
+`params` block through `route.js BLOCKS`, `&param=` uses `route.js`'s grammar.
+
+- **`params-core` (`8d5bbd0`, `core/params.js` ~150 lines, a leaf-ish module: `route ← params ← scenes ← manual ←
+  harness`, `loop.js` sets `env.params = refreshParams(sc, dt)` before each `update()`).** Design choices: (1) the values
+  live in one object per scene refreshed in place (no allocation per frame), handed as `env.params` rather than
+  `this.params` so the declaration object is never shadowed; (2) `from()`'s reads are recorded once at registration
+  with a **Proxy of `MS`** — a read of a field not in `feats` (or not an `MS` field) throws at boot and fails `check.js`
+  the same way in node; the recorded list is the panel's "derived: bass, tension" source label; (3) the transfer works
+  in the unit interval (`u = clamp01(k·x̃ + b)`, `value = lo + (hi − lo)·u`) so `k 1 b 0` maps any level onto the whole
+  range and a constant is typed in the parameter's own units; an `event` source is 1 on its frame (with τ a decaying
+  pulse — "brightness ← kick"); any level / raw / angle / event field may feed a parameter whether or not it is in the
+  scene's `feats` (the parameter is the scene's, the source the engine's); (4) a constant `from: () => 0.04` is allowed
+  and shown as a manual setting — "every visual parameter traces to `MS`; a constant is a manual setting, shown as one".
+  Proofs before any scene declared a parameter: both md5 lists identical, parity 0, mixs `5892ddc5`, `tools/param-smoke.js`
+  49 (two smoke findings fixed: a scene without params gets `null`, and `centroid` is a *level*, not raw — the test's
+  assumption, not the code's).
+- **FEIGEN (worker, `feigen-params.md`, 5 commits, one per move, each md5-identical on v2 + oklch f360/f840):** `width`
+  (1 + 0.25 tension − 0.18 dropEnv − 0.03 kick, [0.4, 1.8]), `dive` (0.25 + 1.5 lvl, [0, 2]), `roll` (the constant 0.04,
+  [0, 0.4]), `glow` (lvl → `uLevel`, [0, 1]), `thick` (bass → a new `uThick` replacing the `uBands.x` read in both colour
+  passes, [0, 1]). Three finds now in §1.16: `from`'s argument must be named `MS` in a module whose state is a `const S`
+  (`check.js`'s decoy rule); an expression moves whole or not at all (the dive's `dt/(32·period)·A·B·C` is
+  left-associative — lifting `B·C` re-associates: 46 % of random draws differ in the last ulp, and `feigL` integrates —
+  only `A` moved); a shader-side value becomes a parameter only through an existing uniform (fp32 → fp64 folding is a
+  pixel change). `feigen.thick=centroid*1.5` is the user's sentence, literally, at f360 = 0.6825.
+- **NAV (worker, `nav-params.md`, 5 commits, each md5-identical + parity 0):** `trap` (0.35 + 0.9 mid, [0.35, 1.25]),
+  `zoom` ((1 − 0.05 bass − 0.07 hit)(1 + 0.25 dropEnv), [0.5, 2]), `dots` (1 + bass, [0, 3]), `pip` (sstep(0.05, 0.3,
+  presence), [0, 1]), `reach` (the exterior depth target, [LG_MIN, LG_MAX] = [−11.9, 0.9]; reads eS, tension, dropEnv;
+  passed into `updateNav` through `opts.P`). `spin` (the trap rotation) was built, proved identical and **reverted**: an
+  unwrapped angle cannot honour a finite range (§1.16 open end). Continuity monitor `viol []` unrouted and with
+  `trap ← kick`; **`reach ← kick` trips it 7 times** (the exterior spring's response is exponential in `reach`; an
+  impulse snaps c across 12.8 units) — the honest answer for that parameter, recorded in §1.16 rather than clamped
+  (a clamp would break the identity). DRUM (id 4) has no reference line (`scene-md5.sh` lists scene ids only) — the
+  worker baselined it at `2b9fd7e` and it is identical at HEAD.
+- **Panel (worker, `panel-3.md`):** _pending — filled in at the merge._
+- **Ship:** _pending — accept-32._
+
