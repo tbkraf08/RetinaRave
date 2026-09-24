@@ -11,7 +11,7 @@ Called **Eigenwobble** until v0.5 (2026-09-24); the decision log, worker reports
 
 - Run: `node tools/serve.js` then open `http://127.0.0.1:8765/` — or `node tools/bundle.js` and open `dist/retinarave.html`
   from `file://`. Tagged builds live in `releases/`.
-- Deploy: Cloudflare Pages, Git-connected — build command `npm run build` (writes `dist/index.html`), output directory `dist`, `NODE_VERSION=22`. Serves at retinarave.com.
+- Deploy: Cloudflare Workers (static assets), Git-connected — build `npm run build` (writes `dist/index.html`), deploy `npx wrangler deploy`; `wrangler.jsonc` points assets at `dist`. Serves at retinarave.com.
 - Keys: `1–9` / `0` force a scene · `?` / `h` the help view · `p` the routes panel · `Esc` closes.
 - Docs: `docs/CONTRACTS.md` (what a scene, effect or transition may touch — the only thing a contributor needs),
   `docs/ENGINE.md`, `docs/HARNESS.md` (every test and trace command), `docs/DECISIONS.md` (every deviation, with its

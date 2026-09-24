@@ -4,3 +4,5 @@ tools/work/
 *.jpg
 !tools/accept/**/*.jpg
 .claude/
+.wrangler/
+node_modules/
