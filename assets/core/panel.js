@@ -11,16 +11,17 @@ import { SC, REG, SCENES, TRANSITIONS } from './scenes.js';
 import { ROUTES, view, sources, setRoute, clearRoutes, routesJSON, loadRoutes, kindOf, pulse } from './route.js';
 import { MANUAL, manual, clearPost, resetManual, POST_PARAMS } from './manual.js';
 import { TEST } from './hash.js';
-import { el, up, focused, nums, short, clamp01, ID, btn, mkSel, numIn, wrap, drivesCell, jackCell, transferCell, meterCell } from './panel-ui.js';
+import { el, up, focused, nums, short, clamp01, ID, btn, mkSel, numIn, wrap, drivesCell, jackCell, transferCell, meterCell, startPreview, tickPreview, endPreviews, nPreviews } from './panel-ui.js';
+import { buildP, refreshP, resetP, copyP, resetRows } from './panel-params.js';   // v0.5: the parameters table of each block
 
 const KEY = 'ew.routes.v1';                 // the preset in localStorage (never touched under #test)
 const EVENT = 'event', LEVEL = 'level', CONST = 'const';
 const BID = /^the bid:/;                    // CONTRACTS §1.13: the line of a field its scene reads only in score()
 const NOTE = 'bid only — moves nothing while the scene is forced; changes when the director picks it';
-const PREV = 120, FIRED = 30;               // a preview lasts 2 s of help ticks; "fired" shows for half a second
+const FIRED = 30;                           // "fired" shows for half a second (a preview: panel-ui.js's PREV, 2 s of ticks)
 
 let rows = [], blocks = {}, ons = {}, posts = [], colours = [], holder = null, ta = null, err = null, store = null, mSel = null, tSel = null;
-let fLine = null, fTxt = null, fOn = null, fOff = null, lastF = 0, nPrev = 0;
+let fLine = null, fTxt = null, fOn = null, fOff = null, lastF = 0;
 
 const sceneName = (E) => up(E.scene.name) + (E.variant ? ' / ' + up(E.variant.name) : '');
 
@@ -43,6 +44,10 @@ function rowFor(sc, k) {
   R.msg = rt.appendChild(el('span', 'pprev-msg'));
   R.tr.appendChild(rt);
   [R.m1, R.m2] = meterCell(R.tr, R.ev, kind === LEVEL);
+  R.ctl = R.ev ? [R.sel] : [R.sel, R.c, R.k, R.b, R.tau, R.inv];   // the preview protocol (panel-ui.js): what it greys out,
+  R.get = () => (ROUTES[R.sc.name] || {})[R.f] || null;            // the spec in force before it, how to put one in force,
+  R.set = (spec) => setRoute(R.sc.name, R.f, spec);
+  R.done = () => { syncRow(R); syncJSON(); };                      // and the refresh once the user's own spec is back
   rows.push(R);
   return R.tr;
 }
@@ -61,31 +66,8 @@ const constFor = (R, hi) => {                                      // the extrem
   const g = FEATS[R.f].range;
   return g ? +g[hi] : hi ? 2 * (+view(R.sc)[R.f] || 0) || 1 : 0;
 };
-function preview(R, hi) {                                          // a route for 2 s of ticks — the user's own spec is kept
-  const c = constFor(R, hi);
-  if (!R.pv) { R.pv = { prev: (ROUTES[R.sc.name] || {})[R.f] || null }; nPrev++; }
-  R.pv.c = c;
-  R.pv.at = lastF;                                                 // the click lands between ticks: count from the last one
-  try { setRoute(R.sc.name, R.f, { src: CONST, c }); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; endPreview(R); return; }
-  R.tr.classList.add('ppreview');
-  able(R, true);
-  R.msg.textContent = msgFor(R, PREV);
-}
-const msgFor = (R, left) => 'preview: constant ' + short(R.pv.c) + ' · ' + Math.ceil(left / 60) + ' s left';
-function endPreview(R) {                                           // the spec in force before it goes back (it may be null)
-  const p = R.pv;
-  if (!p) return;
-  R.pv = null;
-  nPrev--;
-  try { setRoute(R.sc.name, R.f, p.prev); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; }
-  R.tr.classList.remove('ppreview');
-  R.msg.textContent = '';
-  able(R, false);
-  syncRow(R);
-  syncJSON();                                                      // skipped while a preview runs: refreshed once here
-}
-// The user cannot edit what is about to be put back; a fire is one frame true on this scene's view — no route, no storage.
-const able = (R, on) => { R.sel.disabled = on; if (!R.ev) for (const i of [R.c, R.k, R.b, R.tau, R.inv]) i.disabled = on; };
+const preview = (R, hi) => { const c = constFor(R, hi); startPreview(R, { src: CONST, c }, c, lastF); };   // 2 s of ticks
+// A fire is one frame true on this scene's view — no route, no storage.
 const fire = (R) => { try { pulse(R.sc.name, R.f); R.err.textContent = ''; R.fired = lastF; R.msg.textContent = 'fired'; } catch (e) { R.err.textContent = e.message; } };
 
 const specOf = (R) => (R.sel.value === '' ? null : R.ev ? { src: R.sel.value }
@@ -135,13 +117,14 @@ function block(sc) {
       if (o === sc) continue;
       for (const f in R) if ((o.feats || []).includes(f)) { try { setRoute(o.name, f, Object.assign({}, R[f])); n++; } catch (e) { msg.textContent = e.message; } }
     }
-    msg.textContent = 'copied ' + n + ' route' + (n === 1 ? '' : 's') + ' to the other scenes';
+    msg.textContent = 'copied ' + (n += copyP(sc, SCENES)) + ' route' + (n === 1 ? '' : 's') + ' to the other scenes';   // a parameter route travels to a scene declaring the same parameter
     syncAll();
     save();
   }));
-  bar.appendChild(btn(ID('rst', sc.name), 'reset scene', () => { clearRoutes(sc.name); msg.textContent = ''; syncAll(); save(); }));
+  bar.appendChild(btn(ID('rst', sc.name), 'reset scene', () => { clearRoutes(sc.name); resetP(sc.name); msg.textContent = ''; syncAll(); save(); }));
   bar.appendChild(msg);
   box.appendChild(bar);
+  buildP(sc, box, save);                                           // v0.5: the parameters table above the jacks, which fold
   return box;
 }
 
@@ -260,7 +243,7 @@ function buildPresets(sec) {
   store.id = ID('store');
 }
 // While a preview runs the textarea would show its constant as if it were the user's: skipped until the last one ends.
-const syncJSON = () => { if (!nPrev && ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
+const syncJSON = () => { if (!nPreviews() && ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
 function setStore(what) { if (store) store.textContent = 'localStorage[' + KEY + '] · ' + what; }
 function save() {
   syncJSON();
@@ -277,7 +260,7 @@ function syncAll() {
 
 // ---------------------------------------------------------------- the five calls the core makes
 export function buildE(section) {
-  rows = []; blocks = {}; ons = {}; posts = []; colours = []; nPrev = 0;
+  rows = []; blocks = {}; ons = {}; posts = []; colours = []; resetRows();
   section.replaceChildren();
   section.appendChild(el('h2', null, 'E · routes — which music feature drives which field, by hand'));
   section.appendChild(el('p', 'hnote', 'With nothing set here this page is a no-op: every scene reads the engine\'s own state, and every reference frame is '
@@ -285,7 +268,7 @@ export function buildE(section) {
     + 'event — and a constant source is simply a manual setting. Only the fields a scene declares it reads can be routed.'));
   buildForce(section);
   const top = el('p', 'hnote pbar');
-  top.appendChild(btn(ID('resetall'), 'reset everything', () => { clearRoutes(); resetManual(); syncAll(); save(); }));
+  top.appendChild(btn(ID('resetall'), 'reset everything', () => { clearRoutes(); resetP(); resetManual(); syncAll(); save(); }));
   section.appendChild(top);
   holder = el('div');
   holder.id = ID('blocks');
@@ -310,11 +293,8 @@ export function markE() {                                          // the scene 
 export function refreshE(frameN, hot) {                            // meters, previews and read-only readouts only — never a rebuild
   lastF = frameN;
   for (const R of rows) {
-    if (R.pv) {                                                    // 2 s counted on this tick, then the user's own spec is back
-      const left = PREV - (frameN - R.pv.at);
-      if (left <= 0) endPreview(R);
-      else R.msg.textContent = msgFor(R, left);
-    } else if (R.msg.textContent && frameN - R.fired >= FIRED) R.msg.textContent = '';
+    if (R.pv) tickPreview(R, frameN);                              // 2 s counted on this tick, then the user's own spec is back
+    else if (R.msg.textContent && frameN - R.fired >= FIRED) R.msg.textContent = '';
     const s = (ROUTES[R.sc.name] || {})[R.f] || null;
     const a = s ? (s.src === CONST ? s.c : MS[s.src]) : MS[R.f], b = view(R.sc)[R.f];
     if (R.ev) { // an event lasts one frame and this runs every 6th: help.js's per-frame latch says when each last fired (a routed event *is* its source's)
@@ -330,6 +310,7 @@ export function refreshE(frameN, hot) {                            // meters, pr
     if (R.m1.fill) R.m1.fill.style.transform = 'scaleX(' + clamp01(a).toFixed(3) + ')';
     if (R.m2.fill) R.m2.fill.style.transform = 'scaleX(' + clamp01(b).toFixed(3) + ')';
   }
+  refreshP(frameN, hot);                                           // v0.5: the parameters tables (meters, previews, the derived value)
   syncManual();                                                    // the number keys move MANUAL.scene / .trans too
   syncForce();                                                     // and with them the "which scene am I dialling" line
   syncPosts();                                                     // and &colour= / CARD.manual move the colour and post state
@@ -344,4 +325,4 @@ export function restore() {                                        // boot, outs
   try { loadRoutes(s); } catch (e) { console.warn('panel: the stored preset no longer loads (' + e.message + ') — ignored'); }
 }
 
-export function closeE() { for (const R of rows) if (R.pv) endPreview(R); }   // v0.4.1: every running preview ends with the view
+export function closeE() { endPreviews(); }   // v0.4.1: every running preview (a jack's, a parameter's) ends with the view

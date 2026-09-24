@@ -87,3 +87,36 @@ export function meterCell(tr, ev, bar) {
   tr.appendChild(td);
   return [m1, m2];
 }
+
+// ---------------------------------------------------------------- previews: one spec in force for 2 s of help ticks
+// Generalised out of panel.js (v0.4.1's jack preview) so the parameters table (v0.5) shares the mechanism instead of
+// copying it. A previewing row is a plain object — { tr, msg, err, ctl: [the inputs to grey out], get() → the spec in
+// force now, set(spec), done() } — and nothing here knows what a route, a parameter or a scene is. No save() ever runs
+// from a preview: the user's own spec goes back untouched, and nPreviews() keeps the preset textarea off the constant.
+export const PREV = 120;                     // ticks; the help view refreshes every 6th frame, so 2 s
+const RUN = [];                              // the rows previewing right now
+export const nPreviews = () => RUN.length;
+export const msgFor = (R, left) => 'preview: constant ' + short(R.pv.c) + ' · ' + Math.ceil(left / 60) + ' s left';
+const able = (R, on) => { for (const i of R.ctl) i.disabled = on; };
+export function startPreview(R, spec, c, at) {                     // at = the last tick: the click lands between two
+  if (!R.pv) { R.pv = { prev: R.get() }; RUN.push(R); }            // a second click restarts the clock, keeps the spec
+  R.pv.c = c;
+  R.pv.at = at;
+  try { R.set(spec); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; endPreview(R); return; }
+  R.tr.classList.add('ppreview');
+  able(R, true);
+  R.msg.textContent = msgFor(R, PREV);
+}
+export function endPreview(R) {                                    // the spec in force before it goes back (may be null)
+  const p = R.pv;
+  if (!p) return;
+  R.pv = null;
+  RUN.splice(RUN.indexOf(R), 1);
+  try { R.set(p.prev); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; }
+  R.tr.classList.remove('ppreview');
+  R.msg.textContent = '';
+  able(R, false);
+  R.done();
+}
+export function tickPreview(R, frameN) { const left = PREV - (frameN - R.pv.at); if (left <= 0) endPreview(R); else R.msg.textContent = msgFor(R, left); }
+export const endPreviews = () => { for (const R of RUN.slice()) endPreview(R); };   // closeE(), and a rebuild
