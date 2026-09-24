@@ -85,6 +85,7 @@ export function buildP(sc, box, saveFn) {
   for (const h of ['what it moves', 'parameter', 'source', 'transfer', '', 'derived → in force']) hr.appendChild(el('th', null, h));
   t.appendChild(hr);
   for (const p in sc.params) t.appendChild(prow(sc, p));
+  for (const R of rows) syncRow(R);                                // the controls say what is in force before the first tick
   box.insertBefore(el('p', 'hnote', HEAD), bar);
   box.insertBefore(t, bar);
   box.insertBefore(det, bar);
