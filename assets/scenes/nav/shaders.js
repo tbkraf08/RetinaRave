@@ -18,8 +18,8 @@ float cMax(float L){return .95*min(.17*L,.47*(1.-L));}
 // arg lambda / TAU (the component's internal angle, the rotation number's direction), LIGHTNESS = |lambda| (a centre
 // is dark, a root or a cusp bright), Koenigs bands on both and the spokes on chroma, and the DRUM: Koopman modes
 // cos(k arg + TAU m L) driven by the spectral peaks. Both interior branches carry the critical-slowing smoulder:
-// uPar (NAV's N.par, the multiplier modulus |lambda| -> 1 near a parabolic root) squared, now a lift on L, so the
-// term is exactly zero while par is 0.
+// uPar (NAV's N.par, the multiplier modulus |lambda| -> 1 near a parabolic root) squared, added after the DRUM mix
+// so the membrane keeps it, and exactly zero while par is 0.
 export const FS_JULIA = `
 uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc;uniform float uClipDbg; // uSc: z-scale of the (little) Julia set, 1/P
 void main(){
@@ -27,7 +27,7 @@ void main(){
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.,ea=0.,ew=.5;bool esc=false,conv=false,big=false;
   for(int i=0;i<420;i++){ if(i>=uIter)break;
     if(!big){dz=2.*cmul(z,dz);if(dot(dz,dz)>1e30)big=true;}
-    if(z.y<0.)ea+=ew;ew*=.5; /* the itinerary bit: which side of the ray pair R_0 u R_(1/2) this z_n sits on */
+    if(z.y<0.)ea+=ew;ew*=.5; /* the itinerary bit b_n, accepted convention: sign(Im z_n) names the half of the basin cut by R_0 u R_(1/2) (exact in the far field, a thin set near J) */
     z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
     tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
     if(m2>1e4){esc=true;break;}
@@ -40,27 +40,28 @@ void main(){
     float edge=exp(-e*.3),halo=1./(1.+e*.011),fl=edge*(.3+.4*uBeat.y);
     float gb=.5+.5*cos(TAU*(sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.))); /* Green's equipotential bands: today's exterior ripple, on L and C now */
     ea+=fract(atan(z.y,z.x)/TAU+1.)*2.*ew; /* phi(z) ~ z out there, so the last argument closes the binary expansion */
-    float lw=.58*((.07+.93*halo*halo)*(.28+.72*gb)+lt*(.25+1.2*uBands.x)*halo+exp(-d*7./uSc.x)*(.05+.6*uBeat.w)+ct*uBands.z*.9*halo);
-    float cs=(.55+.45*gb)*(1.-.55*fl);
-    float L=mix(pow(clamp(lw,0.,1.),.73),.92*uPal.w,fl); /* .73 = 1/3 of the 2.2 gamma: the same ramp the encoded weight had */
+    float lw=((.07+.93*halo*halo)*(.28+.72*gb)+lt*(.25+1.2*uBands.x)*halo+exp(-d*7./uSc.x)*(.05+.6*uBeat.w)+ct*uBands.z*.9*halo);
+    float cs=.55+.45*gb;
+    float L=.55*pow(clamp(lw,0.,1.),.73); /* .73 = 1/3 of the 2.2 gamma; the .55 cap keeps L under cMax's peak, so the sectors stay saturated on a dark field */
     hlc=vec4(ea+uPal.x,L,cMax(L)*cs,.11*cs);
-    col=palOKs(hlc.x,hlc.y,hlc.z);
+    col=palOKs(hlc.x,hlc.y,hlc.z)+vec3(1.)*fl*.45*uPal.w; /* the boundary flash is additive now, outside the OKLCH request */
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
     float bands=.5+.5*cos(TAU*Lk);float spokes=.5+.5*cos(ai*2.+uTime*.4);float bm=.6+.4*bands;
-    float L=clamp((.30+.35*exp(uLam.x))*bm+.30*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands),0.,.92); /* |lambda| -> L; critical slowing lifts it */
+    float L=clamp((.10+.32*exp(uLam.x))*bm,0.,.92); /* |lambda| -> L: a centre dark, a root a lit mid-tone, and low enough for the chroma to survive */
     float cs=bm*(.88+.12*spokes); /* the spokes are a chroma modulation now, not a brightness one */
     hlc=vec4(uLam.y/TAU+uPal.x,L,cMax(L)*cs,.11*cs);
     vec3 base=palOKs(hlc.x,hlc.y,hlc.z);
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
+    col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands); /* critical slowing: additive, outside the mix, so DRUM keeps it */
   }else{
-    float lw=.6*(.03+lt*.25*(.3+uBands.x)+uPar*uPar*(.16+.2*uBands.x));
-    float L=clamp(pow(clamp(lw,0.,1.),.73),0.,.92);float cs=.4;
+    float lw=.6*(.03+lt*.25*(.3+uBands.x));
+    float L=clamp(pow(clamp(lw,0.,1.),.73),0.,.25);float cs=.4;
     hlc=vec4(uPal.x+.5,L,cMax(L)*cs,.11*cs); /* no cycle known: the mood hue's complement at low chroma */
-    col=palOKs(hlc.x,hlc.y,hlc.z);
+    col=palOKs(hlc.x,hlc.y,hlc.z)+pal(.45)*uPar*uPar*(.16+.2*uBands.x);
   }
   if(uClipDbg>.5){o=vec4(okClip(hlc.x,hlc.y,uClipDbg>1.5?hlc.w:hlc.z),1.,1.,1.);return;} /* #test gamut probe */
   o=vec4(col,1.);
@@ -78,7 +79,7 @@ void main(){vec2 p=vUv*2.-1.;vec2 c=uView.xy+uView.z*p;vec2 z=vec2(0.),dz=vec2(0
   if(esc){float d=.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/(uView.z*2./uRes.y);float sn=n+1.-log2(.5*log(m2)/log(100.));
     ea+=fract(atan(z.y,z.x)/TAU+1.)*2.*ew; /* Phi_M(c) = phi_c(c): the bits come off the critical orbit z_1, z_2, ... */
     float gb=.5+.5*cos(TAU*sn*.03),lw=.35/(1.+e*.05)*(.35+.65*gb),cs=.55+.45*gb;
-    float L=pow(clamp(lw*.6,0.,1.),.73);
+    float L=.55*pow(clamp(lw,0.,1.),.73); /* the same cap as the main view; the white DE rim below is unchanged */
     hlc=vec4(ea+uPal.x,L,cMax(L)*cs,.11*cs);
     col=palOKs(hlc.x,hlc.y,hlc.z)+vec3(.9)*exp(-e*.6);}else col=vec3(.02,.02,.04);
   if(uClipDbg>.5){o=vec4(okClip(hlc.x,hlc.y,uClipDbg>1.5?hlc.w:hlc.z),1.,1.,1.);return;}
