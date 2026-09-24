@@ -1443,3 +1443,4 @@ this one. What the day changed for a listener: the panel's second level — *"in
 — on FEIGEN and NAV; a cheaper NAV where it was dearest; six scenes that answer `colour` the same way; a tonemap knee that can follow
 the mood. What it changed for a worker: §1.16 with its finds, a cycle check, a variant-aware md5 script, and a corrected audit.
 
+**Tag (later the same day).** The user opened the build on real music and routed a parameter from the panel: *"looks good and is ready to tag"* → `git tag v0.5` at this state, `releases/eigenwobble-v0.5.html` = `dist/eigenwobble.html` at the tag (the bundle accept-33 proved from `file://`). Items 5 and 6 stay carried into the next prompt. The project is renamed **Retina Rave** in the commits after the tag (§34) and pushed with its history to `github.com/tbkraf08/RetinaRave`.
