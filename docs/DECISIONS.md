@@ -1360,3 +1360,49 @@ range scaling it. Everything else composes over v0.4: a field route still feeds 
   each move its own commit proven byte-identical; the panel worker after the first scene merge, from the brief alone,
   first shoot; every worker's friction folded into §1.16 the same day; the merge judged on the workers' montages.
 
+## §30 nav-iter — the iteration budget without a chart (v0.5 item 2, 2026-09-24, orchestrator + a NAV worker from `docs/workers/brief-nav-iter.md`, report `nav-iter.md`)
+
+**The diagnosis was wrong, and the worker showed it before touching a line.** §26 / `AUDIT-v0.3.md` check 1 said NAV's
+f1500 cost (7.7 ms vs 1.8 at f480) was "convergence detection taking the full `uIter` near a parabolic root". At f1500
+`cyc.has` is **0** — `nav.js` hides the chart while the beat kick is up (`k > 0.02`, kick 0.147 there) — so the shader has
+**no convergence exit at all**, and the budget is **420**, not 264: c sits inside a period-4 baby, where `draw()`
+multiplies `Q.iter` by 1.6. The control is f2100 — the same baby, 420, |λ| as close to 1, but *with* a chart — at 2.7 ms.
+The brief's first candidate (widen `uEps2` as |λ| → 1) had nothing to widen. Corrected in `AUDIT-v0.3.md` (a dated note).
+
+- **The exit rule (`ITER_LO = 0.5`, `uIterLo` uploaded beside `uIter`, the same three lines in both shader files):** the
+  loop already computes `|(f^n)'|²` for the `big` test; now named `dd`, loop-local. Without a chart (`uLam.w < .5`) an
+  orbit whose `dd < 1` after half the budget is inside a basin — it can no longer escape, and the only thing its remaining
+  iterations could move is the line trap `tL`, which settled long before — so it breaks. The exterior path, `tL`, `tC`
+  and the escape branch are untouched by construction (nothing they read depends on where the loop stops). `nav.js` (the
+  state, parity's dump) is untouched.
+- **Measured (bench protocol, `Q.iter` pinned 264, medians of 3 × `bench(0, 300)`, interleaved A/B, two runs; the machine
+  drifted 2.5× across the session — ratios are the signal):** f1500 6.69 → 4.67 / 6.17 → 4.87 (**0.70 / 0.79**), f480
+  0.86 / 0.98, f900 0.97 / 1.05, f2100 0.89 / 1.05; f1500 / f480 **4.5 → 3.7**. Headed 1920 × 1080 agrees (0.74 / 0.76).
+  **The brief's target (f1500 ≤ 2 × f480, ≤ 0.5 × before) is not met and cannot be by the interior alone:** the exterior at
+  that baby-copy view costs ~2.55 ms extrapolated to zero iterations — more than all of f480 (1.62 ms) — so the ratio's
+  floor is ~1.6 with a free interior. The levers left are the 1.6× baby boost and the view scale, both design, not budget.
+- **Pixels:** every scene-md5 line byte-identical (v2 and oklch, s0 *and* s4 — DRUM had no reference line: `scene-md5.sh`
+  grepped `^  id:` and never saw a variant's four-space `id: 4`; fixed, both lists carry s4 now from the worker's HEAD
+  baseline); `par` 0.00 at f360 and f840 (the `conv` branch is dead at both checkpoints, so they could not see the change);
+  parity 0; monitor `viol []` (n 3606). **f1800: 0 pixels differ at a third the cost.** f1500: 1.20 % of pixels > 2, 0.037 %
+  > 32, max 85 — two small dendrite spirals deep inside the dark lobe, late-escaping filigree the 420 cap was already
+  deciding (`ni-1500-montage.jpg`, cap probes `ni-cap{420,264,211,158,106}-f1500.jpg`); exterior dust, equipotential
+  ripple, trap ring, outline, interior wash, PiP untouched. `ITER_LO 0.4` buys another ~8 % at f1500 and moves the OKLCH
+  s0-f360 jpg by 2/255 at one pixel — shipped 0.5 because the acceptance said byte-identical (the user's call to lower it).
+- **Rejected with numbers:** a Brent save + contraction certificate never fired at f1500 and cost +18–22 % everywhere; the
+  guard `dd·uPx² < 1` doubled the f1500 damage; `dd·uPx < 1` broke f360; a plain lower cap moved 2.43 % of f1500 *and* f360.
+- **Lesson:** a cost finding's cause is measured before it is briefed — the audit wrote the plausible mechanism, not the
+  observed one, and the item's acceptance was derived from it. The worker's first move (a cap probe at f1500 and the f2100
+  control) is what the brief should have asked for first.
+
+## §31 chain-k — the tonemap knee as a LOOK parameter (v0.5 item 4, 2026-09-24, orchestrator)
+
+`CHAIN.k` (1.5, §20) was the composite's fixed knee. Now `LOOK.k = CHAIN.k · (1 + CHAIN.kMood · (2·arousal − 1))`, ≥ 0.2,
+computed in `look.js` every frame and handed to `runChain` as `io.k` by the loop (`runChain` falls back to `CHAIN.k` for a
+caller without one — `chain-smoke`). **`kMood` defaults to 0**, so the knee is *exactly* `CHAIN.k` and every reference md5
+holds — the default look is v0.2's, the mood drive is a knob (arousal → a harder knee: with kMood 1, calm music k 0.75,
+fierce 3 — a harder knee lifts the mids: 0.18 grey through the linear composite reads 135 / 150 / 177 at k 0.75 / 1.5 / 3).
+`&k=` and `&kmood=` under `#test`; `chain-smoke.js` checks the three-k ladder, `io.k` = the default's pixel at 1.5, and
+`LOOK.k === CHAIN.k` at kMood 0. Not in the panel yet (a "chain" row in the manual section is a panel item — carried).
+_proofs pending_
+
