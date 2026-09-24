@@ -14,7 +14,8 @@ candidates below are ordered by what the day left open; the user's sentence outr
 > the microphone source + capability-aware card, touch bar / swipe / hold / wake lock / mobile quality seed. cdp gained `FAKEMIC=1` and
 > `MOBILE=1`; the harness clicks `#demo` by selector. **Open for the user:** Cloudflare dashboard steps (www custom domain + 301 to apex,
 > disable the workers.dev route, Search Console + sitemap, Web Analytics), the portrait review of scenes 1–6 on a real phone, and whether
-> to tag v0.6 after looking. The candidates below (params on four scenes, chain row, …) are unchanged.
+> to tag v0.6 after looking. **v0.6 was tagged the same evening; the user then asked for TORUS2 — the next session is
+> `TORUS2-SESSION-PROMPT.md`, not the candidates below** (they stay for later).
 
 **Read first:** `README.md` · `docs/CONTRACTS.md` (§1 the scene object, §1.13, §1.15 Routes, **§1.16 Params** incl. its
 open ends, §1.4) · `docs/HARNESS.md` ("Routes and manual overrides", "Params", "Effect chain" (`&k=`/`&kmood=`), "Help view",
