@@ -2,7 +2,7 @@
 // variant (Koopman modes from the spectral peaks). Overlay: picture-in-picture of M with the path of c.
 // Lifted from cardioid3 renderScene id 0 / PiP block, expressed through docs/CONTRACTS.md.
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { startGridWorker } from '../../math/mandel.js';
+import { startGridWorker, LG_MIN, LG_MAX } from '../../math/mandel.js';   // LG_*: the exterior potential's own bounds — the `reach` parameter's range
 import { NAV, updateNav } from './nav.js';
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
@@ -73,6 +73,18 @@ export default {
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 
+  // The visual parameters of this screen, and what feeds each one by default (CONTRACTS §1.16). Every `from(S)` is
+  // the expression `draw()` / `nav.js` computed inline before v0.5 — moved verbatim, never rewritten, so the picture
+  // is byte-identical while nothing is routed (one commit per move, each proved by the scene-md5 pair + parity).
+  params: {
+    trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
+    zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
+    dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
+    pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
+    // the one parameter nav.js reads (through updateNav's opts): the target of the exterior spring, already clamped to its own range by the expression it was
+    reach: { eli5: 'how far outside the set the drop throws the picture', range: [LG_MIN, LG_MAX], from: (S) => clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_MIN, LG_MAX) },
+  },
+
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
   // a blue exterior with the Koenigs bands inside. `oklch` is §25's perceptual pass, re-aimed by
   // `docs/workers/hue-follows-set.md` (hue = the equipotential outside, arg lambda inside),
@@ -95,8 +107,9 @@ export default {
 
   update(dt, S, GROOVE, LOOK, env) {
     const N = NAV, SC = env.SC;
+    this._P = env.params;   // §1.16: the same object every frame, refreshed before this update(); draw()/overlay() read it back the same frame
     if (this.rt.settledAt === 0) N.landed = 0; // the director consumed the landing (zeroed rt.settledAt)
-    updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5 });
+    updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5, P: env.params });
     const rt = this.rt;
     rt.home = N.mode === 'INT';
     rt.awayBeat = N.extBeat;
@@ -109,14 +122,14 @@ export default {
     this._S = S;
   },
   draw(tgt, { w, h, vmix, colour }) {
-    const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h;
+    const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
     const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u, B = N.baby;
     const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
     // inside a baby the same view is conjugated by w=A z (matched at the cut), then eased out (bz) until the host's decorations frame the copy
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
-    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) * (B ? mix(1, 1.7, N.bz.x) / B.A : 1);
+    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom * (B ? mix(1, 1.7, N.bz.x) / B.A : 1);
     const rotv = GROOVE.rot - (B ? B.argA : 0);
     N.view = [0, 0, scale, rotv];
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
@@ -125,7 +138,7 @@ export default {
     gl.uniform2f(u('uSc'), B ? 1 / B.A : 1, B ? 1 / B.P : 1);
     const ta = Math.PI * br;
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
-    gl.uniform1f(u('uTrapR'), 0.35 + 0.9 * S.mid);
+    gl.uniform1f(u('uTrapR'), P.trap);
     gl.uniform1f(u('uDrum'), vmix);
     gl.uniform2f(u('uZs'), N.cyc.zs[0], N.cyc.zs[1]);
     gl.uniform4f(u('uLam'), N.cyc.lnr, N.cyc.arg, N.cyc.q, N.cyc.has);
@@ -148,7 +161,7 @@ export default {
     gl.useProgram(pt.p);
     gl.uniform4f(pt.u('uView'), 0, 0, scale, rotv);
     gl.uniform1f(pt.u('uAsp'), asp);
-    gl.uniform1f(pt.u('uSize'), h * 0.012 * (1 + S.bass));
+    gl.uniform1f(pt.u('uSize'), h * 0.012 * P.dots);
     const oc = ctx.hsv(frac(LOOK.hue + 0.5), 0.35, 0.5 * LOOK.pal[3]);
     gl.uniform3f(pt.u('uCol'), oc[0], oc[1], oc[2]);
     gl.uniform1f(pt.u('uLine'), 0);
@@ -161,7 +174,7 @@ export default {
   // Picture-in-picture: M itself with the path of c. Post-composite, scissored, direct to screen.
   overlay(PW, PH, vis, dt) {
     const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q, cv = this.colour.cur;
-    PIP.a = ema(PIP.a, vis * sstep(0.05, 0.3, S.presence), dt, 0.5);
+    PIP.a = ema(PIP.a, vis * this._P.pip, dt, 0.5);
     let ex = N.baby ? 0 : 0.05;
     for (let i = 0; i < 96; i += 4) ex = Math.max(ex, Math.hypot(N.path[i * 3] - PIP.cx.x, N.path[i * 3 + 1] - PIP.cy.x));
     PIP.cx.step(N.cPath[0], dt);

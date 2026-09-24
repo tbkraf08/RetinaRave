@@ -1,7 +1,7 @@
 // LAYER 2: THE NAVIGATOR. The music moves c through charts on M: interior (multiplier of a bulb), exterior
 // (external angle, potential), and zoom-matched cuts into baby copies. Lifted verbatim from cardioid3 NAV.
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
-import { BULBS, extC, getGrid, LG_MIN, LG_MAX, solveMult } from '../../math/mandel.js';
+import { BULBS, extC, getGrid, LG_MIN, solveMult } from '../../math/mandel.js';   // LG_MAX left with the `reach` parameter's range in index.js
 import { BABIES, MISI, cardChart } from '../../math/baby.js';
 
 export const NAV = {
@@ -78,7 +78,7 @@ export function navDrop(S, now) {
   N.kick.set(0);
 }
 
-// env: { isLogical: this scene is the director's logical scene, drum: the drum variant is the target }
+// env: { isLogical: this scene is the director's logical scene, drum: the drum variant is the target, P: the scene's visual parameters (§1.16) }
 export function updateNav(dt, now, S, env) {
   const N = NAV, tgt = (N.baby ? N.baby.bulbs : BULBS)[S.interval];
   if (BABIES.length) N.want = N.forceBaby >= 0 ? BABIES[N.forceBaby % BABIES.length] : S.repeat ? BABIES[Math.floor(S.seed.a * BABIES.length) % BABIES.length] : null;
@@ -213,7 +213,7 @@ export function updateNav(dt, now, S, env) {
     }
     if (N.mode === 'EXT') {
       N.th.step(S.harmUnw / TAU + S.seed.th, dt);
-      N.lg.step(clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_MIN, LG_MAX), dt);
+      N.lg.step(env.P.reach, dt);   // the exterior depth is index.js's `reach` parameter (§1.16); its from() is this expression
     } else {
       N.target = N.homeB;
       if (N.homePhase === 0) {
