@@ -297,8 +297,25 @@ export function visibility(base) {
 export function postParams(S) {
   return postOf(SC.next >= 0 && SC.m > 0.5 ? SC.next : SC.cur, S);
 }
+// Manual post overrides (v0.4, core/manual.js owns the setters): MANUAL_POST[sceneName] = { bloom: {thr}, fb: {decay}, kaleido,
+// exposure: {on} } merged over the resolved post below. Empty = the scene's own post object, untouched.
+export const MANUAL_POST = {};
 function postOf(id, S) {
-  const sc = REG[id].scene, cv = sc.colour && sc.colour.variants[sc.colour.cur];
-  const p = (cv && cv.post) || sc.post; // a colour variant may carry its own post (FEIGEN's bloom thr differs per mapping)
-  return (typeof p === 'function' ? p(view(sc)) : p) || {}; // a post fn reads the scene's routed view, as update() does (v0.4)
+  const sc = REG[id].scene, cv = sc.colour && sc.colour.variants[sc.colour.cur], V = view(sc);
+  const p0 = (cv && cv.post) || sc.post; // a colour variant may carry its own post (FEIGEN's bloom thr differs per mapping)
+  let p = (typeof p0 === 'function' ? p0(V) : p0) || {}; // a post fn reads the scene's routed view, as update() does (v0.4)
+  if (V !== S) p = nested(p, V); // routed: a nested fn(MS) slot (fb.decay) is resolved against the view, not by the effect against MS
+  const m = MANUAL_POST[sc.name];
+  if (m) { const o = Object.assign({}, p); for (const k in m) o[k] = m[k] && typeof m[k] === 'object' ? Object.assign({}, p[k], m[k]) : m[k]; p = o; }
+  return p;
+}
+function nested(p, V) {
+  const o = {};
+  for (const k in p) {
+    const v = p[k];
+    if (typeof v === 'function') o[k] = v(V);
+    else if (v && typeof v === 'object') { o[k] = {}; for (const j in v) o[k][j] = typeof v[j] === 'function' ? v[j](V) : v[j]; }
+    else o[k] = v;
+  }
+  return o;
 }
