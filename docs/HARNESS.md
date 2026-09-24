@@ -322,7 +322,20 @@ an `[EXC]` line, the loop never starts — `CARD.frameN` stays 0: a typo must no
 to it · `clearRoutes(scene?)` · `routesJSON()` / `loadRoutes(json)` (the panel's preset: `{routes, manual}`) · `sources(field)` (what
 may feed it) · `view(name)` (the object the scene reads; `=== CARD.MS` while unrouted) · `MANUAL` (`scene` = `SC.forced`, `trans`,
 `colour` per scene, `post`) · `manual('scene', 6)` / `manual('trans', 'mixs')` / `manual('colour', 'feigen', 'oklch')` /
-`manual('post', 'feigen', 'bloom.thr', 0.3 | null)` · `posts('feigen.bloom.thr=0.3,…')` / `postString()`.
+`manual('post', 'feigen', 'bloom.thr', 0.3 | null)` · `posts('feigen.bloom.thr=0.3,…')` / `postString()` ·
+`pulse(scene, event)` (v0.4.1: the event is `true` on the scene's view for exactly the next frame — `view(name) !== MS` on
+that frame only; the panel's `fire` button; never a route, never stored).
+
+**The panel (v0.4.1, `panel-legibility`)**: the row's first column is the visual ("what it drives here"), the jack second;
+a `help.feats` line beginning `the bid:` (CONTRACTS §1.13) dims the row as bid-only; `0` / `1` (`pe-p0-<scene>-<field>`,
+`pe-p1-…`) route the jack to the field's `FEATS.range` extremes for 2 s **of help ticks** (120 frames; a raw field: 0 and
+twice the live value) and put the previous route back — `save()` is never called, the textarea is not refreshed while a
+preview runs; `fire` (`pe-fire-…`) calls `pulse`; `pe-force` / `pe-release` set `MANUAL.scene` to the logical scene / −1
+(the line `pe-force-line` says which); `pe-on-<scene>` reads `on screen` / `not on screen`. `closeE()` (called by
+`toggleHelp(false)`) ends a running preview. The native `<select>` popup is dark through `#help{color-scheme:dark}` +
+`#help option{…}` — judge it **headed** with the list open; headless cannot pop one. `check.js` warns on a `the bid:`
+line whose field is read outside `score()` and on a `score()`-only field without the prefix (static; HEAD uniform
+components in GLSL count as `draw()` reads).
 
 **Proofs** (`node tools/route-smoke.js` = the grammar, kind rules, ema, fall-through, throws — node, no DOM; the rest headless):
 ```

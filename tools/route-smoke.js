@@ -3,7 +3,7 @@
 import { MS } from '../assets/engine/state.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { ema } from '../assets/math/util.js';
-import { ROUTES, ROUTE, routeScene, view, setRoute, clearRoutes, refreshRoutes, parseRoute, serialiseRoute, applyRoutes, routesString, routesJSON, loadRoutes, sources, routable, BLOCKS } from '../assets/core/route.js';
+import { ROUTES, ROUTE, routeScene, view, setRoute, clearRoutes, refreshRoutes, parseRoute, serialiseRoute, applyRoutes, routesString, routesJSON, loadRoutes, sources, routable, BLOCKS, pulse } from '../assets/core/route.js';
 
 let fails = 0, n = 0;
 const ok = (c, m) => { n++; if (!c) { fails++; console.log('FAIL', m); } };
@@ -104,6 +104,22 @@ clearRoutes();
 ok(loadRoutes(j) === 3 && routesString() === str && BLOCKS.extra.got.x === 1, 'loadRoutes round-trips and dispatches blocks');
 throws(() => loadRoutes('{"routes":{"alpha":{"bass":{"src":"flow"}}}}'), /cannot feed/, 'a bad preset throws');
 ok(ROUTE.n === 3 && routesString() === str, 'and the routes in force stayed');
+clearRoutes();
+
+// v0.4.1 pulse: one event field true on the scene's view for exactly the next frame, never a route, never stored
+ok(view(A) === MS, 'pulse: unrouted before');
+pulse(A, 'onset');
+ok(view(A) === MS, 'pulse: nothing until the next refresh');
+refreshRoutes(0.016);
+ok(view(A) !== MS && view(A).onset === true && view(A).bass === MS.bass && ROUTE.n === 0, 'pulse: the view for one frame, the event true, everything else falls through, no route counted');
+refreshRoutes(0.016);
+ok(view(A) === MS, 'pulse: MS itself again on the frame after');
+setRoute(A, 'bass', { src: 'const', c: 0.5 }); pulse('alpha', 'onset'); refreshRoutes(0.016);
+ok(view(A).onset === true && view(A).bass === 0.5, 'pulse on a routed scene rides its view');
+refreshRoutes(0.016);
+ok(!Object.prototype.hasOwnProperty.call(view(A), 'onset') && view(A).bass === 0.5 && ROUTE.n === 1, 'and leaves the routes alone');
+throws(() => pulse(A, 'bass'), /not an event/, 'pulse of a level throws');
+throws(() => pulse(A, 'dropEvt'), /does not read/, 'pulse of an unlisted event throws');
 clearRoutes();
 
 console.log(`route smoke: ${n} checks · ${fails} fail`);
