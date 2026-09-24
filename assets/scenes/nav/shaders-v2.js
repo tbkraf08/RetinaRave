@@ -1,24 +1,31 @@
 // NAV shaders, colour mapping `v2` (CONTRACTS §1.4) — v0.2's Julia and PiP fragment sources, lifted verbatim, and
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
-// opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names — in particular there is
-// no uClipDbg here (the gamut probe belongs to the OKLCH pass) and no ctx.oklch / OK_NAV chunk in front of it.
+// opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
+// budget the loop now carries (uIterLo — the same three lines in both files, or the two mappings disagree) — in
+// particular there is no uClipDbg here (the gamut probe belongs to the OKLCH pass) and no ctx.oklch / OK_NAV chunk.
 // VS_PT / FS_PT are the same under both mappings, so they stay in shaders.js and are not duplicated here.
 
 // The Julia set of f_c. Exterior: distance-estimated dust with orbit traps; interior with a known cycle (uLam.w):
 // Koenigs coordinate bands + spokes, and the DRUM: Koopman modes cos(k·arg + TAU·m·L) driven by the spectral peaks.
 // Both interior branches carry the critical-slowing smoulder: uPar (NAV's N.par, the multiplier modulus |lambda| ->
 // 1 near a parabolic root) squared, so the term is exactly zero while par is 0 and the picture is byte-identical to v3.
+// The loop's budget is split (index.js ITER_LO, docs/workers/nav-iter.md): without a chart (uLam.w = 0) an orbit
+// whose accumulated derivative has collapsed below 1 is inside a basin — it cannot escape, and the only thing its
+// remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
+// path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
   for(int i=0;i<420;i++){ if(i>=uIter)break;
-    if(!big){dz=2.*cmul(z,dz);if(dot(dz,dz)>1e30)big=true;}
+    float dd=1e31;
+    if(!big){dz=2.*cmul(z,dz);dd=dot(dz,dz);if(dd>1e30)big=true;}
     z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
     tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
     if(m2>1e4){esc=true;break;}
     if(uLam.w>.5){vec2 w=z-uZs;if(dot(w,w)<uEps2){conv=true;break;}}
+    else if(i>=uIterLo&&dd<1.)break; // no chart: the long budget is for structure still resolving, and |(f^n)'|<1 says there is none left
   }
   float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;
   if(esc){

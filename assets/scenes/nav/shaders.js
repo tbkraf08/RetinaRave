@@ -29,18 +29,21 @@ const float K_SN=.2;
 // is dark, a root or a cusp bright), Koenigs bands on both and the spokes on chroma, and the DRUM: Koopman modes
 // cos(k arg + TAU m L) driven by the spectral peaks. Both interior branches carry the critical-slowing smoulder:
 // uPar (NAV's N.par, the multiplier modulus |lambda| -> 1 near a parabolic root) squared, added after the DRUM mix
-// so the membrane keeps it, and exactly zero while par is 0.
+// so the membrane keeps it, and exactly zero while par is 0. The loop's split budget (uIterLo) is shaders-v2.js's,
+// line for line — the two mappings share one loop and must keep sharing it.
 export const FS_JULIA = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc;uniform float uClipDbg; // uSc: z-scale of the (little) Julia set, 1/P
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform float uClipDbg; // uSc: z-scale of the (little) Julia set, 1/P
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
   for(int i=0;i<420;i++){ if(i>=uIter)break;
-    if(!big){dz=2.*cmul(z,dz);if(dot(dz,dz)>1e30)big=true;}
+    float dd=1e31;
+    if(!big){dz=2.*cmul(z,dz);dd=dot(dz,dz);if(dd>1e30)big=true;}
     z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
     tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
     if(m2>1e4){esc=true;break;}
     if(uLam.w>.5){vec2 w=z-uZs;if(dot(w,w)<uEps2){conv=true;break;}}
+    else if(i>=uIterLo&&dd<1.)break; // no chart: the long budget is for structure still resolving, and |(f^n)'|<1 says there is none left
   }
   float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;vec4 hlc=vec4(0.,1.,0.,0.); // hlc = the (h, L, C, C asked for) of this pixel
   if(esc){
