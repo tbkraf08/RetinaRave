@@ -118,7 +118,7 @@ variant's md5 list; the plain list is the default's.
 
 ```
 CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&scene=0&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-mixs-0-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
-# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.3/trans-mixs-0-3-f178.jpg → 425a66e5b50c14786e6e25bc215a3169 (GPU=1, 1280×720; a6e2b8cd… on the v0.2 chain)
+# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.3/trans-mixs-0-3-f178.jpg → 5892ddc5c1f553cbca140bbc1ef6b54d (GPU=1, 1280×720; 425a66e5… under the §24/§25 OKLCH default, a6e2b8cd… on the v0.2 chain)
 ```
 `mixs` is v3's crossfade and must stay byte-identical to that md5. A different md5 after a core change is a pixel
 difference to explain, never a tolerance. `accept.sh` checks it on every sweep. Until §15 the reference was the fake
