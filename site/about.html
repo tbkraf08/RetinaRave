@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>About Retina Rave — music, math, and why it exists</title>
+<meta name="description" content="Retina Rave is a free browser music visualizer that steers a camera through real mathematical objects. Who made it, what the scenes are, and how to support it.">
+<link rel="canonical" href="https://retinarave.com/about">
+<meta name="theme-color" content="#020207">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://retinarave.com/about">
+<meta property="og:title" content="About Retina Rave">
+<meta property="og:description" content="A free browser music visualizer that steers a camera through real mathematical objects. Who made it, what the scenes are, and how to support it.">
+<meta property="og:image" content="https://retinarave.com/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  html,body{margin:0;min-height:100%;background:#020207;color:#e8e6f0;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  body{background:radial-gradient(ellipse at 50% 20%,rgba(10,6,30,.55),rgba(2,2,7,.92) 70%) fixed}
+  main{max-width:640px;margin:0 auto;padding:56px 24px 80px}
+  h1{font-weight:200;letter-spacing:.55em;font-size:34px;margin:0 0 6px;padding-left:.55em;text-align:center;
+    background:linear-gradient(90deg,#8cf,#f6c,#fc8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin-bottom:40px;text-align:center}
+  h2{font-size:12px;letter-spacing:.18em;color:#8ab;font-weight:400;margin:38px 0 10px;text-transform:uppercase}
+  p{font-size:16px;line-height:1.6;margin:0 0 14px;opacity:.9}
+  a{color:#9cf}
+  ul{list-style:none;padding:0;margin:0}
+  li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:15px;line-height:1.5}
+  li b{color:#fff;font-weight:600;letter-spacing:.08em}
+  .row{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 4px}
+  .btn{display:inline-block;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);color:#fff;text-decoration:none;
+    font-size:13px;letter-spacing:.12em;padding:11px 20px;border-radius:40px;transition:all .25s}
+  .btn:hover{background:rgba(255,255,255,.16);border-color:#fff;box-shadow:0 0 30px rgba(140,180,255,.3)}
+  .btn.go{letter-spacing:.25em;text-transform:uppercase;padding:14px 30px;font-size:14px}
+  .center{text-align:center;margin-top:46px}
+  .small{font-size:12.5px;opacity:.5}
+</style>
+</head>
+<body>
+<main>
+  <h1>RETINA RAVE</h1>
+  <div class="sub">music navigating real mathematical objects</div>
+
+  <p>Hi, I'm Toma. I like music and math and built this for fun.</p>
+  <p>Retina Rave is a music visualizer that runs in your browser. It listens to whatever you are playing and steers a camera through
+    real mathematical objects: the shapes on screen are not drawn to look mathematical, they <em>are</em> the mathematics, computed live.
+    Beats, drops and sections are detected as they happen, and a director picks the scene, remembers what each part of the track looked like,
+    and crossfades between them. Nothing is random and nothing runs on a clock: every motion on screen traces back to the music.</p>
+
+  <h2>The scenes</h2>
+  <ul>
+    <li><b>NAV</b> — a walk over the Mandelbrot set's multiplier chart; each point the camera visits is a Julia set, and the music decides where it goes.</li>
+    <li><b>FEIGEN</b> — a dive down the Feigenbaum period-doubling cascade, the road of ever-smaller copies along the real axis of the Mandelbrot set.</li>
+    <li><b>DUST</b> — a swarm of particles in a flow field, with the fibres of the Hopf fibration threaded through it.</li>
+    <li><b>MANDALA</b> — a box-fold fractal seen through a kaleidoscope.</li>
+    <li><b>TORUS</b> — the Hopf fibration itself: circles on the three-dimensional sphere, projected down to where we can see them.</li>
+    <li><b>POLYTOPE</b> — the regular four-dimensional polytopes, turning on the 3-sphere and cast into three dimensions.</li>
+  </ul>
+
+  <h2>Support</h2>
+  <p>It is free and there are no ads. If it made your night better, a tip helps cover hosting and adding new scenes.</p>
+  <div class="row">
+    <a class="btn" href="https://venmo.com/u/toma-kraft" rel="noopener">Venmo @toma-kraft</a>
+    <a class="btn" href="https://cash.app/$toma5" rel="noopener">Cash App $toma5</a>
+  </div>
+
+  <h2>Follow</h2>
+  <p>Clips and new scenes land here first.</p>
+  <div class="row">
+    <a class="btn" href="https://www.instagram.com/retinarave" rel="noopener">Instagram @retinarave</a>
+    <a class="btn" href="https://www.youtube.com/@retinarave" rel="noopener">YouTube @retinarave</a>
+  </div>
+
+  <h2>How to use it</h2>
+  <p>On a computer: play music in another browser tab, open <a href="/">retinarave.com</a>, press <em>Share a tab</em> and pick that tab with its audio.
+    Press <kbd>?</kbd> at any time and the machine explains what you are looking at and what is moving it.
+    On a phone: put the music on a speaker and let the page listen with the microphone.</p>
+
+  <p class="center"><a class="btn go" href="/">▶ open the show</a></p>
+  <p class="center small">Retina Rave · a zero-dependency WebGL2 engine, native modules, no framework.</p>
+</main>
+</body>
+</html>

@@ -219,6 +219,10 @@ export function initHelp() {
   body.appendChild(el('h1', null, 'RETINA RAVE · what you are looking at, and what is moving it'));
   body.appendChild(el('p', 'hnote', 'Every visible parameter traces to a field of MS, the music state vector the engine computes each frame. Part A is the scene on screen and the fields it reads, with their live values; B is the director choosing scenes; C is every scene; D the keys; E lets you re-wire, by hand, which field drives what. The scene keeps rendering behind this page.'));
   for (const id of ['helpA', 'helpB', 'helpC', 'helpD', 'helpE']) body.appendChild(el('section')).id = id;
+  const foot = body.appendChild(el('p', 'hnote'));
+  foot.appendChild(document.createTextNode('Who made this and how to support it: '));
+  const a = foot.appendChild(el('a', null, 'about & support'));
+  a.href = 'about.html'; // site/about.html, copied beside the page by the build (a relative link so the file:// bundle finds it too)
   buildD();
   buildC();
   buildB();
