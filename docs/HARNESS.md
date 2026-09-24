@@ -378,7 +378,7 @@ FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait"
 
 ## Acceptance sweep
 
-Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.3}/` (`ACC=v0.2` to write beside the v0.2
+Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.4}/` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier
 files; the v0.2 "before"/"none"/"after" traces referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 
 ```
