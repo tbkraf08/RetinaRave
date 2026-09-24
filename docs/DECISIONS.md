@@ -1391,6 +1391,10 @@ The brief's first candidate (widen `uEps2` as |λ| → 1) had nothing to widen. 
   s0-f360 jpg by 2/255 at one pixel — shipped 0.5 because the acceptance said byte-identical (the user's call to lower it).
 - **Rejected with numbers:** a Brent save + contraction certificate never fired at f1500 and cost +18–22 % everywhere; the
   guard `dd·uPx² < 1` doubled the f1500 damage; `dd·uPx < 1` broke f360; a plain lower cap moved 2.43 % of f1500 *and* f360.
+- **Q trace (orchestrator, merged code, `q-house-{before,after}-nav-iter.txt`, `VISIT=` empty — the director's own picks, 3 runs
+  each, one Chrome, nothing else on the machine):** identical to the second decimal — q mean 0.75 / min 0.44, windows 0.59 / 0.73 /
+  0.85 / 0.95, the same scene sequence `0 5 0 2 1 5 0 5 2 1` — the house demo never walks NAV into the baby-copy region the fake
+  timeline reaches at f1500, so the trace proves a non-regression, not a gain; the gain is the bench table above.
 - **Lesson:** a cost finding's cause is measured before it is briefed — the audit wrote the plausible mechanism, not the
   observed one, and the item's acceptance was derived from it. The worker's first move (a cap probe at f1500 and the f2100
   control) is what the brief should have asked for first.
@@ -1427,4 +1431,15 @@ empty variant object carries no `post`, so the scene's own stays). The worker's 
 lines appended after s6 while `scene-md5.sh` emits ids in order (a `sort` compare hid it) — re-sorted; a fresh worktree has no
 `tools/work/` (the script mkdirs it now); HARNESS's help example labelled "the cast" scrolls to part E since the panel exists —
 relabelled; and **the dead bundle above**, which its item 6 caught on a clean extraction of the base commit.
+
+## §33 Ship items 2–4 (2026-09-24, orchestrator; not tagged)
+
+`GPU=1 tools/accept.sh` → `tools/accept/v0.5/accept-33.txt`: **18 sections, 0 FAIL, 0 exceptions** on the merged code (items 1–4 +
+the cycle fix) — parity 0, mixs `5892ddc5`, "== params" green, help 107/107 on 7/7 ids, hidden tab / worklet clean, the bundle 30 s
+clean from `file://` (`hop 2831`, `switched true`). `dist/eigenwobble.html` at `6d6fe68`^ is the build for the user's eyes. **v0.5 stays
+untagged**: items 5 (the OKLCH variant's open ends — opt-in, only if the user wants the variant tuned) and 6 (§21's halftime margin and
+§22's ring shift — no failing trace, carried) are the user's call, as is the tag, and they have not yet looked at v0.4.1's panel or
+this one. What the day changed for a listener: the panel's second level — *"in FEIGEN, the filament thickness is fed by the centroid"*
+— on FEIGEN and NAV; a cheaper NAV where it was dearest; six scenes that answer `colour` the same way; a tonemap knee that can follow
+the mood. What it changed for a worker: §1.16 with its finds, a cycle check, a variant-aware md5 script, and a corrected audit.
 
