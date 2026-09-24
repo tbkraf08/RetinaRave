@@ -164,6 +164,10 @@ export default {
 
   post: { fb: { decay: 0.74 }, bloom: { thr: 0.3 }, kaleido: 0 },
 
+  // One colour mapping, declared (CONTRACTS §1.4) so every scene answers `CARD.colour`, the cast line and the panel's
+  // colour select the same way. No `post` on the variant: the scene's own `post` above stays in force.
+  colour: { default: 'v2', variants: { v2: {} } },
+
   look: {
     get() { return self.cast; },
     set(v) {
