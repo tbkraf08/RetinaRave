@@ -172,6 +172,10 @@ GPU=1 node tools/chain-smoke.js     # the real effects on synthetic input, io.li
                                     #   (equal-luminance magenta|green, min Y / endpoints ≈ 0.75) vs none in linear (≈ 1.0); a white
                                     #   frame through the composite: 198/255 encoded, 255 linear → chain-smoke: OK
 ```
+`&k=1.5` sets the tonemap knee's base (`CARD.CHAIN.k`) and `&kmood=1` its mood gain (`CARD.CHAIN.kMood`, default 0): the frame's
+knee is `LOOK.k = k · (1 + kMood · (2·arousal − 1))`, ≥ 0.2 (v0.5 item 4; `look.js` computes it, `loop.js` hands it to `runChain` as
+`io.k`). With `kMood` 0 the knee is exactly `k` — every reference md5 holds; `chain-smoke.js` reads 0.18 grey through the linear
+composite at k 0.75 / 1.5 / 3 → 135 / 150 / 177 (a harder knee lifts the mids) and checks `LOOK.k === CHAIN.k` at the default.
 `&linear=0|1` under `#test` picks the chain's space (`CARD.CHAIN.linear`; the default is linear since §20, 0 is the
 v0.2 chain for A/B). The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
 composite into white-where-any-channel ≥ 1; the §20 number is DUST at the fake drop frame (`CLOCK=1`, shot at

@@ -8,7 +8,9 @@ export const FX = { glitch: 0, flash: 0, kal: 0, ca: 0, seed: 0 };
 // feedback, or by the fallback pass below when feedback is skipped), bloom / exposure / the composite's adds and
 // tonemap run on linear radiance, the composite encodes before vignette and dither. k: the tonemap knee,
 // (1 − exp(−k·c)) / (1 − exp(−k)) so linear 1.0 reaches display white. &linear=0|1 under #test (harness.js).
-export const CHAIN = { linear: true, k: 1.5 };
+// v0.5 item 4: k is a LOOK parameter — LOOK.k = k · (1 + kMood · (2·arousal − 1)) (look.js), the frame's knee the loop hands
+// runChain as io.k; kMood 0 (the default) makes it exactly k, so the reference md5s hold; &k= / &kmood= under #test.
+export const CHAIN = { linear: true, k: 1.5, kMood: 0 };
 
 export function updateFX(dt, S, peak) {
   if (S.dropEvt) {
@@ -52,7 +54,7 @@ export function runChain(src, sw, sh, io) {
   io.aux = {};
   io.FX = FX;
   io.linear = CHAIN.linear;
-  io.k = CHAIN.k;
+  if (io.k === undefined) io.k = CHAIN.k; // the loop passes LOOK.k (v0.5); a caller without one (chain-smoke) gets the base
   io.decoded = false; // set by the effect that decoded the scene output (feedback, order 10)
   for (const fx of EFFECTS) {
     if (io.linear && !io.decoded && fx.order > 10) decode(io); // feedback was skipped: decode here

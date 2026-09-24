@@ -50,7 +50,7 @@ export function frame(tms) {
   const tio = { MS: S, GROOVE, LOOK, dt };
   const src = drawScenes(sw, sh, tio);
   const full = tio.uvS && tio.uvS[0] === 1 && tio.uvS[1] === 1; // the transition re-rendered the whole target (CONTRACTS §5)
-  runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q });
+  runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q, k: LOOK.k }); // k: the frame's tonemap knee (v0.5 item 4)
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
   drawHUD(S, frameN);
   drawHelp(S, frameN); // after drawHUD so it inherits the document.hidden early return; returns at once when closed

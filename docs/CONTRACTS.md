@@ -529,7 +529,8 @@ target; `w,h` the full target size, `sw,sh` the scene-pass size inside it; `uvS`
 seconds; `frameN` monotonic (it keeps counting while you are skipped — a gap means you were just switched on);
 `linear` (§1.10) says the chain is in linear light — `src` holds linear radiance from order 10 on (feedback decodes
 the scene's encoded output and sets `decoded`; if feedback is skipped the core decodes before the first effect above
-order 10) and the composite encodes; `k` the tonemap knee. An effect that reads a slot or constant tuned on encoded
+order 10) and the composite encodes; `k` the tonemap knee — **`LOOK.k` this frame** (v0.5 item 4: `CHAIN.k` · (1 + `CHAIN.kMood` ·
+(2·arousal − 1)), exactly `CHAIN.k` while the mood gain is 0, its default; HARNESS "Effect chain"). An effect that reads a slot or constant tuned on encoded
 values converts it (`srgbToLin1` from `assets/math/oklab.js`, `pow(d, 2.2)` for a per-frame decay) so the slot keeps
 its meaning; `ctx.oklch` (§1.14) gives the GLSL side.
 - `src` is the current chain input (a target). The scene pass was rendered at `(sw, sh)` inside a `(w, h)` target:

@@ -45,7 +45,15 @@ const SNIPPET = `(() => {
     fill(src, [0.18, 0.18, 0.18], [0.18, 0.18, 0.18]); comp.run(io2); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.readPixels(W >> 1, H >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p);
     R['grey18_' + lin] = p[0];
   }
-  R.k = CARD.CHAIN.k; R.errs = CARD.ERRS.slice(); R.glerr = gl.getError();
+  // v0.5 item 4: the knee is a knob — 0.18 grey through the linear composite at three k (LOOK.k is what the loop passes; here io.k)
+  R.grey18_k = {};
+  for (const kk of [0.75, 1.5, 3]) {
+    fill(src, [0.18, 0.18, 0.18], [0.18, 0.18, 0.18]);
+    const io3 = { src, w: W, h: H, sw: W, sh: H, uvS: [1, 1], MS: Object.assign({}, CARD.MS, { eS: 0, dropEnv: 0, sectionId: 0 }), FX: { ca: 0, glitch: 0, kal: 0, flash: 0, seed: 1 }, aux: { bloom: { b1: blk, b2: blk } }, post: { kaleido: 0 }, linear: 1, k: kk };
+    comp.run(io3); gl.bindFramebuffer(gl.FRAMEBUFFER, null); const q = new Uint8Array(4); gl.readPixels(W >> 1, H >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, q);
+    R.grey18_k[kk] = q[0];
+  }
+  R.k = CARD.CHAIN.k; R.lookK = CARD.LOOK.k; R.kMood = CARD.CHAIN.kMood; R.errs = CARD.ERRS.slice(); R.glerr = gl.getError();
   return JSON.stringify(R);
 })()`;
 
@@ -55,6 +63,10 @@ if (!line) { console.log(r.stdout, r.stderr); console.log('FAIL chain-smoke: no 
 const R = JSON.parse(JSON.parse(line.slice(line.indexOf('=>') + 2).trim()));
 const checks = {
   'encoded blur has the dark fringe (≤ 0.8)': R.fringe0 <= 0.8,
+  // (1 − e^{−k·0.18})/(1 − e^{−k}) → sRGB: k 0.75 → 0.239 → 135 · 1.5 → 0.305 → 150 · 3 → 0.439 → 177 (±3): a harder knee lifts the mids
+  'knee at three k: 0.18 grey 135 / 150 / 177 (±3)': Math.abs(R.grey18_k[0.75] - 135) <= 3 && Math.abs(R.grey18_k[1.5] - 150) <= 3 && Math.abs(R.grey18_k[3] - 177) <= 3,
+  'k 1.5 through io.k = the chain default (same pixel)': R.grey18_k[1.5] === R.grey18_1,
+  'LOOK.k = CHAIN.k while kMood is 0': R.kMood === 0 && R.lookK === R.k,
   'linear blur has none (≥ 0.95)': R.fringe1 >= 0.95,
   'encoded tonemap never reaches white (≤ 200)': R.white0 <= 200,
   'linear chain reaches display white (≥ 254)': R.white1 >= 254,

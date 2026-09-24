@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -129,6 +129,8 @@ export function initHarness(hideLanding) {
     if (HASH.has('colour')) setColour(HASH.get('colour'));     // a scene's colour variant (CONTRACTS §1.4, v0.3 §26)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
+    if (HASH.has('k')) { CHAIN.k = +HASH.get('k'); if (!(CHAIN.k > 0)) throw new Error('&k= must be a positive number'); }           // v0.5 item 4: the tonemap knee's base
+    if (HASH.has('kmood')) { CHAIN.kMood = +HASH.get('kmood'); if (!isFinite(CHAIN.kMood)) throw new Error('&kmood= must be a number'); } // and its mood gain (arousal → harder knee)
     if (HASH.has('route')) applyRoutes(HASH.get('route'));  // v0.4 routes: scene.field=src[*k][+b][~tau][!],… (a bad one throws)
     if (HASH.has('post')) applyPosts(HASH.get('post'));      // v0.4 manual post: scene.bloom.thr=0.3,scene.kaleido=0,… (a bad one throws)
     if (HASH.has('param')) applyParams(HASH.get('param'));  // v0.5 params: scene.param=src[*k][+b][~tau][!] | scene.param=c:0.4,… (a bad one throws)
