@@ -296,7 +296,7 @@ the still-rendering canvas, built on the first open, and does no work per frame 
 `{key:'Escape'}` drive it; under `CLOCK=1` press the key *before* the `until` so the shot lands on a full page (the
 view completes on the frame it opens).
 ```
-# NAV at frame 120 and TORUS at 360 (the fake timeline's first switch is at 233), then the cast scrolled into view
+# NAV at frame 120 and TORUS at 360 (the fake timeline's first switch is at 233), then the overlay scrolled to its bottom (`scrollTop=1e5` — **part E, the panel, since v0.4**; for the cast, section C, `scrollIntoView` on its heading instead — the colour-slot worker shot the panel twice believing this line)
 CLOCK=1 GPU=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"key":"h"},{"until":"window.__FRAME>=120"},{"shot":"work/help-s0-f120"},{"until":"window.__FRAME>=360"},{"shot":"work/help-s3-f360"},{"eval":"document.getElementById(\"help\").scrollTop=1e5"},{"shot":"work/help-cast"}]'
 # coverage by eval: every non-internal FEATS key once, and the top table equals the scene's feats on every id
 ... {"eval":"CARD.HELP.rows().length"}                     # 107

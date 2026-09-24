@@ -1410,3 +1410,21 @@ drop-frame clip (`CLOCK=1`, mask at 780, shot 781, pixels > 128): **0.117 %** at
 `kmood=1` (LOOK.k 0.825 at that frame's arousal 0.275 — calm music softens the knee), both under the 0.2 % gate; `&k=3` moves
 DUST's s1-f360 (`bd378864…` vs `c6166af9…`). Not benched: the composite's cost does not depend on k.
 
+**The cycle (found by the colour-slot worker's file:// check, fixed `7406869`).** The first cut computed `LOOK.k` in `look.js`,
+which imported `CHAIN` from `post.js` — and `gl.js` imports `look.js`, `post.js` imports `gl.js`: `gl → look → post → gl`. The
+http page never noticed (native modules resolve a cycle), `bundle.js` wrote a file (it does not detect one), and the bundle died
+from `file://` with "Cannot destructure property 'G' of gl.js as it is undefined" — the second time a worker's `file://` item has
+caught a dead bundle (v0.4's `TAIL` regex was the first). Now `LOOK.k` is set in `loop.js` (which imports both) and **`check.js`
+fails on any import cycle in `assets/`** (a DFS over the relative-import graph; proven on the broken commit). Two bundle gates
+exist now: the sweep's `[EXC]` count and the static cycle check after every edit.
+
+## §32 colour-slot — a colour slot on every scene (v0.5 item 3, 2026-09-24, one worker from `docs/workers/brief-colour-slot.md`, report `colour-slot.md`)
+
+DUST, MANDALA, TORUS and POLYTOPE declare `colour: { default: 'v2', variants: { v2: {} } }` (16 inserted lines, one commit per
+scene) so `CARD.colour` lists six scenes, the cast line names `v2` on each, the panel's colour select (`pe-col-<scene>`) exists
+for all six, and `setColour('oklch')` still moves exactly NAV and FEIGEN. Every md5 line byte-identical under both mappings (the
+empty variant object carries no `post`, so the scene's own stays). The worker's finds: the v0.5 reference lists had DRUM's s4
+lines appended after s6 while `scene-md5.sh` emits ids in order (a `sort` compare hid it) — re-sorted; a fresh worktree has no
+`tools/work/` (the script mkdirs it now); HARNESS's help example labelled "the cast" scrolls to part E since the panel exists —
+relabelled; and **the dead bundle above**, which its item 6 caught on a clean extraction of the base commit.
+

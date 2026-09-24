@@ -168,8 +168,8 @@ needed, now generic:
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
   Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
   Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
-- **Colour variants** (`colour: { default: 'v2', variants: { v2: {…}, oklch: {…} } }`, v0.3 §26): a scene with more
-  than one colour mapping declares them by name; the core sets `colour.cur = default` at registration and `draw()`
+- **Colour variants** (`colour: { default: 'v2', variants: { v2: {…}, oklch: {…} } }`, v0.3 §26): every scene declares its colour mappings by name (v0.5 item 3: the four one-mapping scenes carry a single `v2`,
+  so `CARD.colour`, the cast line and the panel's colour selects are uniform); the core sets `colour.cur = default` at registration and `draw()`
   receives the name as `colour` in its second argument (`draw(target, { w, h, variant, vmix, colour })`). The variant
   objects are yours (a program, a shader source, a uniform table); the one key the core reads is `post`: a variant's
   `post` replaces the scene's while it is current (FEIGEN's OKLCH pass needs bloom thr 0.6, its v0.2 pass 0.3).
