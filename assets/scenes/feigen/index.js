@@ -25,7 +25,7 @@ const POST_OK = { fb: { decay: 0.55 }, bloom: { thr: 0.6 }, kaleido: 0 };
 const S = {
   feigL: 0, tricorn: 0,
   cx: 0, cy: 0, width: 3.2, rot: 0,
-  lvl: 0, kick: 0, drop: 0, hat: 0, flow: 0, midS: 0, tension: 0, alive: 0, histRow: 0,
+  lvl: 0, kick: 0, drop: 0, hat: 0, flow: 0, midS: 0, tension: 0, alive: 0, histRow: 0, thick: 0,
   hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, clipdbg: 0,
 };
 // The ladder's GL side: three rung slots (the rung on screen, the one being built, the one the cross-fade still
@@ -97,6 +97,7 @@ export default {
     dive: { eli5: 'how fast the dive falls', range: [0, 2], from: (MS) => 0.25 + 1.5 * MS.lvl },
     roll: { eli5: 'how far the frame rocks from side to side', range: [0, 0.4], from: () => 0.04 },
     glow: { eli5: 'how brightly the filaments burn', range: [0, 1], from: (MS) => MS.lvl },
+    thick: { eli5: 'how thick the glowing filaments are', range: [0, 1], from: (MS) => MS.bass },
   },
 
   // look memory (CONTRACTS §1.11): a returning section comes back to its own depth and its own conjugation
@@ -164,6 +165,7 @@ export default {
     S.rot = P.roll * Math.sin(MS.flowMid * 0.17);
 
     S.lvl = P.glow;         // uLevel in both colour passes: the brightness of the filaments, the bands and the interior
+    S.thick = P.thick;      // uThick in both colour passes: the width the filament glow (and the black edge) is drawn at
     S.kick = MS.kick;
     S.drop = MS.dropEnv;
     S.hat = MS.hat;

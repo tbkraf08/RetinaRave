@@ -44,6 +44,7 @@ uniform float uHat;
 uniform float uFlow;
 uniform float uMidS;
 uniform float uTension;
+uniform float uThick;   // the scene's thick parameter (bass by default) — how wide the filament glow is drawn
 uniform float uAlive;
 uniform float uHue;
 uniform float uSat;
@@ -118,7 +119,7 @@ void main(){
     // distance to M in units of the view width: scale-free, so the dive can loop on the cascade's self-similarity
     float d = exp(v.x), lG = v.y, ea = v.z;
     float sp = specM(abs(fract(ea) * 2. - 1.) * 0.9);
-    float fil = exp(-d * mix(160., 70., uBands.x)) + 0.004 / (d + 0.0025);
+    float fil = exp(-d * mix(160., 70., uThick)) + 0.004 / (d + 0.0025);
     col = palM(0.2 + sp * 0.3 + d * 0.8) * fil * (0.45 + 1.3 * uLevel + 1.1 * uKick + 2. * uDrop);
     // Green's-function level sets: one band per doubling of G, drifting on musical time
     float band = 1. - smoothstep(0., 0.1, abs(fract(lG * 0.5 - uFlow * 0.3) - 0.5) - 0.4);
@@ -144,7 +145,7 @@ export function upload(gl, pr, ctx, S, src, pv, bl) {
   gl.uniform1f(pr.u('uRot'), S.rot); gl.uniform1f(pr.u('uHistRow'), S.histRow);
   gl.uniform1f(pr.u('uLevel'), S.lvl); gl.uniform1f(pr.u('uKick'), S.kick); gl.uniform1f(pr.u('uDrop'), S.drop);
   gl.uniform1f(pr.u('uHat'), S.hat); gl.uniform1f(pr.u('uFlow'), S.flow); gl.uniform1f(pr.u('uMidS'), S.midS);
-  gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive);
+  gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive); gl.uniform1f(pr.u('uThick'), S.thick);
   gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri);
   gl.uniform1f(pr.u('uSpread'), S.spread); gl.uniform1f(pr.u('uInvert'), S.invert);
   ctx.tex(pr, 'uField', 0, src.tex); ctx.tex(pr, 'uField2', 1, pv.tex);

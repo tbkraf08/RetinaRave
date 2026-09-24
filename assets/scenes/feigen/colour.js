@@ -70,6 +70,7 @@ uniform float uHat;
 uniform float uFlow;
 uniform float uMidS;
 uniform float uTension;
+uniform float uThick;   // the scene's thick parameter (bass by default) — how narrow the black edge is drawn
 uniform float uAlive;
 uniform float uHue;
 uniform float uSat;
@@ -168,9 +169,9 @@ void main(){
     // TOWARD white by <= .15 and <= .25 of the remaining headroom, so no gain can ever take a channel past 1.
     L *= clamp(mix(1., uBri, 0.4) * (0.92 + 0.14 * uLevel), 0.65, 1.02);
     L += (0.15 * uKick + 0.25 * uDrop) * (1. - clamp(L, 0., 1.));
-    // the boundary: under half a pixel of DE the lightness goes to 0. Bass narrows that edge (§15's filament
-    // sharpening, which was the same mix(160, 70, bass) on the same d).
-    L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
+    // the boundary: under half a pixel of DE the lightness goes to 0. The thick parameter (bass by default) narrows
+    // that edge (§15's filament sharpening, which was the same mix(160, 70, bass) on the same d).
+    L *= smoothstep(0., mix(0.65, 0.38, uThick), dpx);
     // the cap: at and below 0.5 the chroma budget is wide enough for the hue bands to read as colour. It flattens
     // the band ripple's upper half and the kick/drop lift in the OPEN field (where L is already 0.5); everything
     // the music does downward, and everything it does near the boundary, survives.
@@ -207,7 +208,7 @@ export function upload(gl, pr, ctx, S, src, pv, bl) {
   gl.uniform1f(pr.u('uHat'), S.hat); gl.uniform1f(pr.u('uFlow'), S.flow); gl.uniform1f(pr.u('uMidS'), S.midS);
   gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive);
   gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri);
-  gl.uniform1f(pr.u('uInvert'), S.invert); gl.uniform1f(pr.u('uClipDbg'), S.clipdbg);
+  gl.uniform1f(pr.u('uInvert'), S.invert); gl.uniform1f(pr.u('uClipDbg'), S.clipdbg); gl.uniform1f(pr.u('uThick'), S.thick);
   ctx.tex(pr, 'uField', 0, src.tex); ctx.tex(pr, 'uField2', 1, pv.tex);
   ctx.tex(pr, 'uSpec', 2, ctx.engineTex.spec); ctx.tex(pr, 'uHist', 3, ctx.engineTex.hist);
 }
