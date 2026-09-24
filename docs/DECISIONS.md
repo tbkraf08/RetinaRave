@@ -1328,6 +1328,24 @@ range scaling it. Everything else composes over v0.4: a field route still feeds 
   impulse snaps c across 12.8 units) — the honest answer for that parameter, recorded in §1.16 rather than clamped
   (a clamp would break the identity). DRUM (id 4) has no reference line (`scene-md5.sh` lists scene ids only) — the
   worker baselined it at `2b9fd7e` and it is identical at HEAD.
-- **Panel (worker, `panel-3.md`):** _pending — filled in at the merge._
+- **Panel (worker, `brief-panel-3.md` → `panel-3.md`, 3 commits, merged `1e051fd`^):** a **parameters table per scene
+  block above the jacks** — what it moves (the `eli5`, first and wide) · parameter (name, `[lo, hi]`) · source (a select
+  whose first option reads *"derived: tension, dropEnv, kick"* from the Proxy-recorded reads, or *"derived: constant"*;
+  then every routable field with its kind, `const` last) · transfer (`k b τ invert`, a `c` input with the range as
+  `min`/`max`) · reset + **`lo` / `hi`** previews (a constant route at the range ends for 2 s of help ticks, the v0.4.1
+  mechanism generalised into `panel-ui.js` over a row protocol `{tr, msg, err, ctl, get, set, done}` so both tables share
+  one preview engine) · meter *derived → in force* (both live; equal while unrouted — the panel proves the identity every
+  tick). The jacks table folds under `<details>` *"the inputs behind these — 16 jacks"* for a scene with params; a scene
+  without keeps the v0.4.1 layout and ids. New leaf `core/panel-params.js` (125 lines; imports `params.js`, `feats.js`,
+  `panel-ui.js` only), `panel.js` 347 → 328, `panel-ui.js` 89 → 122. Ids `pe-psrc/pc/pk/pb/ptau/pinv/prst/plo/phi-<scene>-
+  <param>`, `pe-pdet-<scene>`. All ten acceptance items first shoot; storage through the existing `params` block of the
+  preset, `reset everything` clears it. Two finds now in §1.16: `env.params` is refreshed only on frames the scene
+  updates (an off-screen scene's "in force" meter is its last value), and an event *source* takes the full transfer
+  (unlike a v0.4 event jack) — the panel hides `k b inv` for `const` only. **The user's sentence in a real window**
+  (`p3-real-2.jpg`, DPR 1.5): the FEIGEN block's row *"how thick the glowing filaments are · thick [0, 1] · centroid ·
+  level"*, derived 0.237 → in force 0.455, set through the panel's own select — judged by the orchestrator's eyes.
+- **Merged-tree proofs (before the panel merge; the panel is closed-by-default DOM):** both md5 lists identical, parity 0
+  diff, mixs `5892ddc5`, `&param=feigen.thick=centroid*1.5,nav.zoom=c:2` → `PROUTE.n` 2, FEIGEN's values `{width 1.040,
+  dive 0.460, roll 0.04, glow 0.140, thick 0.6825}`, errs `[]`.
 - **Ship:** _pending — accept-32._
 
