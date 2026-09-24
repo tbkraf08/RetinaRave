@@ -8,8 +8,12 @@ import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
-let ctx, julia, mandel, pt, B_ORB;
+let ctx, julia, juliaH, mandel, pt, B_ORB;
 let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
+let hueCo = 0;     // #test only (hooks.hueco): which coordinate drives hue in FS_JULIA. 0 = shipped (arg lambda inside,
+// the external angle outside) — bit-identical, the override is skipped; 1 = the Koenigs coordinate inside and the smooth
+// escape count outside (iso-hue = an equipotential of J_c), with L capped at 0.5 and the chroma at the full cMax(L)
+// budget so the montage tests hue geometry and not the pale field of §25's first pass. The PiP stays shipped in both.
 
 export default {
   name: 'nav',
@@ -31,6 +35,7 @@ export default {
   hooks: {
     baby: (i) => { NAV.forceBaby = +i; },
     clipdbg: (v) => { clipDbg = +v || 0; },   // the gamut probe of both escape branches, read back through an RGBA8 target
+    hueco: (v) => { hueCo = +v || 0; },      // the hue-coordinate probe (docs/workers/hue-follows-set.md)
   },
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
@@ -99,7 +104,10 @@ export default {
   },
   draw(tgt, { w, h, vmix }) {
     const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h;
-    const pr = julia;
+    // #test only: hooks.hueco gets its OWN program, built on first use (a hash hook has NOT run by init — see the
+    // report's friction log), so the shipped pass keeps the shipped token stream and stays bit-identical.
+    if (hueCo && !juliaH) juliaH = ctx.mkProg(ctx.oklch + OK_NAV + '#define HUECO 1\n' + FS_JULIA, 'julia-hueco');
+    const pr = hueCo ? juliaH : julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u, B = N.baby;
     const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
@@ -122,6 +130,7 @@ export default {
     gl.uniform1f(u('uPx'), 2 * scale / h);
     gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
     gl.uniform1f(u('uClipDbg'), clipDbg);
+    if (hueCo) gl.uniform1i(u('uHueCo'), hueCo);   // the probe's uniform exists only in the #define HUECO build
     for (let j = 0; j < 4; j++) {
       const pk = S.peaks[j], f = pk ? pk[0] : 110 * (j + 1), oct = Math.log2(Math.max(f, 30) / 55);
       modes[j * 4] = 2 * (1 + (Math.round(oct * 12) * 7 % 12) % 4);

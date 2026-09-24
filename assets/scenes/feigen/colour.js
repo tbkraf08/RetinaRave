@@ -65,6 +65,19 @@ uniform float uSat;
 uniform float uBri;
 uniform float uInvert;
 uniform float uClipDbg;   // #test only (hooks.clipdbg): 1 = write okClip into o.r, 2 = write the raw field probe
+#ifdef HUECO
+// #test only (hooks.hueco, the v0.3 hue-follows-the-set probe): WHICH COORDINATE DRIVES HUE. 1 = the Green's potential
+// (level sets = iso-hue: the colour follows the boundary's contours), 2 = the scale-free distance estimate (bands
+// parallel to the boundary); 0 is the shipped external angle. index.js prepends the #define ONLY when the hook is set,
+// so at hueco 0 the preprocessor deletes every line of the probe and the shipped pass compiles from the shipped token
+// stream — byte-identical by construction, not by the optimiser's good will.
+// On 1 and 2 the lightness is capped at 0.5 and the chroma is the FULL okCmax(L) budget, because the user's "the
+// colours don't match the set" was seen at L 0.7 under the linear tonemap (§24): a pale field would confound the hue
+// question with a lightness question.
+uniform int uHueCo;
+const float K_G = 0.1;    // hue turns per unit of log2 G: one turn per 10 doublings of the potential (see the report)
+const float K_D = 0.25;   // hue turns per octave of the scale-free distance: one turn per 4 octaves
+#endif
 
 // the engine's 256x1 log spectrum, 30 Hz .. 16 kHz, peak-normalised
 float specM(float x){ return texture(uSpec, vec2(clamp(x, 0.002, 0.998), 0.5)).r; }
@@ -157,6 +170,13 @@ void main(){
     L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
     L = clamp(L, 0., 1.);
     hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
+#ifdef HUECO
+    if (uHueCo != 0) {                               // the hue-coordinate probe (see uHueCo above)
+      float Hc = uHueCo == 1 ? K_G * lG + uHue : K_D * log2(max(d, 1e-7)) + uHue;
+      float Lc = min(L, 0.5);
+      hlc = vec3(Hc, Lc, cMax(Lc));
+    }
+#endif
     gd = vec2(-lG, log2(max(d, 1e-7)));
   } else {
     float t = v.w;   // orbit trap inside the set: how near the orbit passed the origin

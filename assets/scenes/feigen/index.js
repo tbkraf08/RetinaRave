@@ -20,7 +20,7 @@ const S = {
   feigL: 0, tricorn: 0,
   cx: 0, cy: 0, width: 3.2, rot: 0,
   lvl: 0, kick: 0, drop: 0, hat: 0, flow: 0, midS: 0, tension: 0, alive: 0, histRow: 0,
-  hue: 0, sat: 1, bri: 1, invert: 0, clipdbg: 0,
+  hue: 0, sat: 1, bri: 1, invert: 0, clipdbg: 0, hueco: 0,
 };
 // The ladder's GL side: three rung slots (the rung on screen, the one being built, the one the cross-fade still
 // reads) plus one quarter-resolution target for rule 3. Nothing here is keyed on wall time — only on feigL, the
@@ -164,7 +164,10 @@ export default {
   draw(target, { w, h }) {
     const ctx = this.ctx;
     const gl = ctx.gl;
-    const pr = this.pc;
+    // #test only: hooks.hueco gets its OWN program, built on first use (a hash hook has NOT run by init — see the
+    // report's friction log), so the shipped pass keeps the shipped token stream and stays bit-identical.
+    if (S.hueco && !this.pch) this.pch = ctx.mkProg(ctx.oklch + '#define HUECO 1\n' + FS_COLOUR, 'feigen-colour-hueco');
+    const pr = S.hueco ? this.pch : this.pc;
     if (!F.slots[0].tex) alloc(w, h);
     F.draws++;
     const tier = ctx.tier(), L = Math.max(0, S.feigL), r = LD.rungOf(L);
@@ -238,15 +241,11 @@ export default {
     gl.uniform1f(pr.u('uRot'), S.rot);
     gl.uniform1f(pr.u('uHistRow'), S.histRow);
     gl.uniform1f(pr.u('uLevel'), S.lvl);
-    gl.uniform1f(pr.u('uKick'), S.kick);
-    gl.uniform1f(pr.u('uDrop'), S.drop);
-    gl.uniform1f(pr.u('uHat'), S.hat);
-    gl.uniform1f(pr.u('uFlow'), S.flow);
-    gl.uniform1f(pr.u('uMidS'), S.midS);
-    gl.uniform1f(pr.u('uTension'), S.tension);
-    gl.uniform1f(pr.u('uAlive'), S.alive);
-    gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri);
-    gl.uniform1f(pr.u('uInvert'), S.invert); gl.uniform1f(pr.u('uClipDbg'), S.clipdbg);
+    gl.uniform1f(pr.u('uKick'), S.kick); gl.uniform1f(pr.u('uDrop'), S.drop);
+    gl.uniform1f(pr.u('uHat'), S.hat); gl.uniform1f(pr.u('uFlow'), S.flow); gl.uniform1f(pr.u('uMidS'), S.midS);
+    gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive);
+    gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri); gl.uniform1f(pr.u('uInvert'), S.invert);
+    gl.uniform1f(pr.u('uClipDbg'), S.clipdbg); if (S.hueco) gl.uniform1i(pr.u('uHueCo'), S.hueco);   // only in the #define HUECO build
     ctx.tex(pr, 'uField', 0, src.tex);
     ctx.tex(pr, 'uField2', 1, pv.tex);
     ctx.tex(pr, 'uSpec', 2, ctx.engineTex.spec);
@@ -275,6 +274,7 @@ export default {
     tricorn(v) { S.tricorn = +v ? 1 : 0; F.pinTric = 1; invalidate(); },   // a flip invalidates every rung, even a no-op one
     standin(v) { F.standin = +v ? 1 : 0; },
     clipdbg(v) { S.clipdbg = +v || 0; },   // colour.js' gamut (1) and field (2) probes, read back through an RGBA8 target
+    hueco(v) { S.hueco = +v || 0; },   // hue-coordinate probe (hue-follows-set.md): 0 = shipped ea, 1 = log2 G, 2 = distance
   },
 
   help: {
