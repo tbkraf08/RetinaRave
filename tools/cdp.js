@@ -4,6 +4,7 @@
 //   url: page to open (default http://127.0.0.1:PORT/ — tools/serve.js is spawned if nothing answers on PORT)
 // env: GPU=1 real GL (default SwiftShader) · NOAUTO=1 no autoplay flag · FAKECAP=1 auto-accept tab capture ·
 //      FAKEMIC=1 a fake microphone, permission granted without a prompt (Chrome's test tone; v0.6 mic source) ·
+//      MOBILE=1 a phone: 390×844 viewport, DPR 3, touch, (pointer:coarse) true — the landing goes .mobile, the bar shows (v0.6) ·
 //      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
 //        exactly that frame for the shots/evals that follow; the next {wait} resumes it ·
 //      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765) · OUT=dir for shots ·
@@ -72,6 +73,11 @@ async function ensureServer() {
   await send('Runtime.enable');
   await send('Page.enable');
   if (process.env.CLOCK) await send('Page.addScriptToEvaluateOnNewDocument', { source: CLOCK_SHIM });
+  if (process.env.MOBILE) {
+    await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+    await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await send('Emulation.setEmulatedMedia', { features: [{ name: 'pointer', value: 'coarse' }, { name: 'hover', value: 'none' }] });
+  }
   await send('Page.navigate', { url: url + '#' + hash });
   let fail = 0, tab2 = null;
   const activate = async (targetId) => { await send('Target.activateTarget', { targetId }); };

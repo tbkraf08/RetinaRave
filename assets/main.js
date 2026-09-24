@@ -8,6 +8,7 @@ import { addEffect } from './core/post.js';
 import { register, addTransition, setTransition } from './core/scenes.js';
 import { initLines, VS_CHUNK, FS_CHUNK, mk as mkLines, set as setLines, draw as drawLines, drawN as drawLinesN } from './core/lines.js';
 import { initHUD } from './core/hud.js';
+import { initTouch } from './core/touch.js';
 import { OKLCH_GLSL } from './core/oklch.js';
 import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
@@ -58,6 +59,7 @@ for (const scene of [nav, dust, mandala, torus, polytope, feigen]) {
 }
 resize();
 initHUD();
+initTouch(); // v0.6: the bottom bar, swipe and hold on a coarse pointer (CSS shows the bar; the listeners cost nothing elsewhere)
 document.addEventListener('visibilitychange', () => { if (!document.hidden) ENGINE.resume(); }); // v0.3 resume-hold (ENGINE.md)
 initHarness(() => $('landing').classList.add('hide'));
 startLoop();

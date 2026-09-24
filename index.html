@@ -31,9 +31,9 @@
  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Toma"},"image":"https://retinarave.com/og.jpg"}
 </script>
 <style>
-  html,body{margin:0;height:100%;background:#020207;overflow:hidden;color:#e8e6f0;
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  canvas#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+  html,body{margin:0;height:100%;background:#020207;overflow:hidden;color:#e8e6f0;overscroll-behavior:none;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+  canvas#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
   body.running{cursor:none}
   #landing{position:fixed;inset:0;display:flex;overflow-y:auto;
     background:radial-gradient(ellipse at 50% 40%,rgba(10,6,30,.55),rgba(2,2,7,.92) 70%);
@@ -64,6 +64,20 @@
   .seo{margin:20px 0 0;font-size:12px;line-height:1.6;opacity:.38;max-width:520px}
   kbd{border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 6px;font-size:11px;white-space:nowrap}
   #msg{margin-top:16px;min-height:18px;font-size:13px;color:#fc9}
+  /* v0.6 mobile: the key row is noise on a touch screen; the bottom bar (core/touch.js) replaces it while running */
+  @media (pointer:coarse){.hint{display:none}}
+  #tbar{display:none;position:fixed;left:0;right:0;bottom:0;justify-content:center;gap:14px;z-index:13;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  #tbar button{appearance:none;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(4,4,10,.45);
+    color:#e8e6f0;font:20px/1 ui-sans-serif,system-ui,sans-serif;backdrop-filter:blur(4px);opacity:.6;cursor:pointer}
+  #tbar button:active{background:rgba(255,255,255,.2);opacity:1}
+  @media (pointer:coarse){body.running #tbar{display:flex}}
+  #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(88vw,420px);
+    background:rgba(4,4,10,.85);color:#e8e6f0;font-size:13px;line-height:1.45;padding:10px 14px;border-radius:10px;z-index:14;
+    opacity:0;pointer-events:none;transition:opacity .3s;text-align:center}
+  #toast.on{opacity:1}
+  @media (max-width:520px){.card{padding:28px 20px}h1{font-size:30px;letter-spacing:.4em;padding-left:.4em}.sub{font-size:11px;margin-bottom:26px}
+    .seo{font-size:11.5px}}
   #hud{position:fixed;left:10px;top:10px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#9f9;white-space:pre;
     background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
   /* the help view (core/help.js): a scrolling DOM page over the still-rendering canvas; display:none costs nothing */
@@ -155,6 +169,8 @@
   <p class="seo">A free, audio-reactive music visualizer that runs in the browser on WebGL2. The music steers a camera through real mathematical objects: the Mandelbrot set and its Julia sets, the Feigenbaum period-doubling cascade, a particle swarm, a box-fold mandala, the Hopf fibration, and four-dimensional polytopes. Beats, drops and sections are detected live and a director picks and crossfades the scenes.</p>
 </div></div>
 <div id="hud"></div>
+<div id="tbar"><button data-k="help" aria-label="help">?</button><button data-k="prev" aria-label="previous scene">‹</button><button data-k="next" aria-label="next scene">›</button><button data-k="fs" aria-label="fullscreen">⛶</button></div>
+<div id="toast"></div>
 <div id="help"><div class="hinner" id="helpBody"></div></div>
 
 <script type="module" src="assets/main.js"></script>

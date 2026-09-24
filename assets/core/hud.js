@@ -20,9 +20,11 @@ export function initHUD() {
       setTimeout(() => $('landing').classList.add('hide'), 1400);
     } else $('landing').classList.add('hide');
     document.body.classList.add('running');
+    keepAwake(true);
   };
   AU.onStop = (msg) => {
     document.body.classList.remove('running');
+    keepAwake(false);
     $('landing').classList.remove('hide');
     $('msg').textContent = msg || '';
   };
@@ -74,11 +76,25 @@ function renderHint() {
   }
 }
 
-function fullscreen() {
+// Fullscreen with the WebKit-prefixed path (older Safari); iOS Safari has neither, so canFullscreen() is false there (core/touch.js hints).
+const de = () => document.documentElement;
+export const canFullscreen = () => !!(de().requestFullscreen || de().webkitRequestFullscreen);
+export function fullscreen() {
   const d = document;
-  if (!d.fullscreenElement) (d.documentElement.requestFullscreen || (() => {})).call(d.documentElement);
-  else d.exitFullscreen();
+  if (!(d.fullscreenElement || d.webkitFullscreenElement)) (de().requestFullscreen || de().webkitRequestFullscreen || (() => {})).call(de());
+  else (d.exitFullscreen || d.webkitExitFullscreen || (() => {})).call(d);
 }
+
+// Keep the screen on while running (phones dim in 30 s): a screen wake lock, re-requested when the page comes back (the
+// lock is released by the browser on every hide). No-op where the API is missing; a refusal (low battery) is silent.
+let wake = null;
+async function keepAwake(on) {
+  if (!navigator.wakeLock) return;
+  if (!on) { if (wake) { try { await wake.release(); } catch (e) {} wake = null; } return; }
+  if (wake && !wake.released) return;
+  try { wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && document.body.classList.contains('running')) keepAwake(true); });
 
 export function hudText(S) {
   const f = (x) => x.toFixed(2);

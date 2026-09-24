@@ -12,7 +12,8 @@ Called **Eigenwobble** until v0.5 (2026-09-24); the decision log, worker reports
 - Run: `node tools/serve.js` then open `http://127.0.0.1:8765/` — or `node tools/bundle.js` and open `dist/retinarave.html`
   from `file://`. Tagged builds live in `releases/`.
 - Deploy: Cloudflare Workers (static assets), Git-connected — build `npm run build` (writes `dist/index.html`), deploy `npx wrangler deploy`; `wrangler.jsonc` points assets at `dist`. Serves at retinarave.com.
-- Keys: `1–7` / `0` force a scene · `?` / `h` the help view · `p` the routes panel · `Esc` closes.
+- Keys: `1–7` / `0` force a scene · `?` / `h` the help view · `p` the routes panel · `Esc` closes. On a phone (v0.6): the
+  microphone is the way in, a bottom bar has help / previous / next / fullscreen, a swipe steps the scene, a held press opens the help.
 - Docs: `docs/CONTRACTS.md` (what a scene, effect or transition may touch — the only thing a contributor needs),
   `docs/ENGINE.md`, `docs/HARNESS.md` (every test and trace command), `docs/DECISIONS.md` (every deviation, with its
   proof), `docs/workers/` (the briefs the scenes were built from, and the reports).

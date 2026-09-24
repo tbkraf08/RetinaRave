@@ -203,6 +203,9 @@ node tools/cdp.js '<hash>' '<json steps>'
   (printed as `EVAL … => value`; promises awaited) · `{click:[x,y]}` · `{key:'d'}` · `{until:'expr', timeout:ms}`.
 - env: `GPU=1` real GL (default SwiftShader, ~10× slower) · `NOAUTO=1` no autoplay flag (use for the real start path) ·
   `FAKEMIC=1` a fake microphone granted without a prompt (Chrome's test tone: `{clickSel:'#mic'}` → `AU.mode` 'mic', `heard` true within 8 s; v0.6) ·
+  `MOBILE=1` a phone (390×844, DPR 3, touch, `(pointer:coarse)` true): `#landing.mobile`, the key row hidden, `#tbar` shown while
+  running, `Q.q` seeded 0.35, `CARD.TOUCH.{swipes,holds}` count synthetic `TouchEvent`s on `#gl` (a swipe > 60 px in < 700 ms steps
+  `SC.forced`; a press held 600 ms toggles the help) — the v0.6 mobile proof recipe is in DECISIONS §35 ·
   `FAKECAP=1` auto-accept tab capture · `CLOCK=1` deterministic 60 Hz clock (`window.__FRAME`; frame 360 = T 6 s) ·
   `OUT=dir` where shots go (default `tools/`).
 

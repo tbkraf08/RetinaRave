@@ -197,10 +197,11 @@ const onResize = [];
 export const addResizeHook = (fn) => onResize.push(fn);
 
 // Full-size targets a, b (scene passes, with depth), m (crossfade). Effects allocate their own via the resize hook.
+const LONG_EDGE = typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches ? 1600 : 2560; // v0.6: phones render smaller (DPR 3 screens)
 export function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   let w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
-  const cap = 2560 / Math.max(w, h);
+  const cap = LONG_EDGE / Math.max(w, h);
   if (cap < 1) {
     w = Math.round(w * cap);
     h = Math.round(h * cap);

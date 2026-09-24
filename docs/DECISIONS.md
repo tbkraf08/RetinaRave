@@ -1456,3 +1456,57 @@ prompts, `releases/eigenwobble-v0.*.html` — keeps the old name, because they a
 worktrees of merged branches were removed (branches kept); the branch is `main`; the remote is `git@github.com:tbkraf08/RetinaRave.git`
 with the whole history (every commit since v0.1) and the tags v0.2–v0.5.
 
+
+## §35 v0.6 "public" — mobile, landing polish, about page, SEO (2026-09-24, orchestrator, plan `~/.claude/plans/i-have-a-clodeflare-delegated-squirrel.md`)
+
+The site went public at retinarave.com the same day (§34) and the first look listed five things: mobile was a poor experience, the
+landing card named two of the keys, the help headline still read EIGENWOBBLE, there was no about/support page, no SEO metadata.
+Five commits, one per step of the plan, `npm run check` + `npm test` green between each.
+
+**Step 1 — leftovers.** `help.js` h1 → RETINA RAVE. The key table became `keys()` (a function: the scene digit range reads
+`REG.length`, and scenes register after the module loads) with a third, short label per key; `hud.js renderHint()` renders the
+landing card's key row from it, so part D and the card cannot drift. `1–7`: only ids 0–6 are registered; `8`/`9` were silent no-ops.
+The `keydown` listener now returns on `input,select,textarea` targets (typing `0.5` in a panel number field released the director;
+`p`/`d`/`h`/`m` in the preset textarea fired shortcuts); Esc still passes. The panel's store line no longer prints the localStorage key
+(`ew.routes.v1` stays: renaming orphans saved presets). README dropped "a file" — no file source exists.
+
+**Step 2 — SEO + `site/`.** `index.html` head: title, description, canonical, theme-color, manifest, SVG favicon + apple-touch-icon,
+Open Graph + twitter card with `og.jpg` (1200×630: the FEIGEN f420 frame under `CLOCK=1 GPU=1 'test&scene=6'`, composed with the
+card's gradient h1 in an HTML page shot through cdp with a clip), JSON-LD `WebApplication`. A quiet `<p class="seo">` under the card
+names the scenes (Google renders JS, but the help text exists only after a keypress). `site/` (tracked; `npm run build` = bundle +
+`cp -r site/. dist/`): `robots.txt`, `sitemap.xml` (`/`, `/about`), `site.webmanifest` (standalone, any orientation), `favicon.svg`
+(the main cardioid c = e^{iθ}/2 − e^{2iθ}/4 and the period-2 bulb, stroked in the h1 gradient; PNG icons 192/512/180 are Chrome
+shots of it), `_headers` (page 300 s, images a week). `.gitignore` gained `!site/*.jpg`. The landing scrolls when the card is taller
+than the viewport (`overflow-y:auto`, `.card{margin:auto}`) — the card was exactly 633 px at 1280×720 headless. **Harness fix:** the
+"real start path" and bundle sections clicked `[695,440]`, which was the *demo link's* position on the old layout, not the button —
+`{clickSel:'#demo'}` now (`#go` starts tab capture, which hangs headless without a picker; the first attempt used `#go` and saw
+`mode none` — the button took focus, the promise never settled).
+
+**Step 3 — `site/about.html`.** Toma's voice ("I like music and math and built this for fun"), the six scenes in one line each,
+Venmo `@toma-kraft` / Cash App `$toma5`, Instagram and YouTube `@retinarave`, how to use it (desktop and phone), "▶ open the show".
+Linked from the card's alt row and the help view's foot as a relative `about.html` (Workers static assets serve it at `/about`
+and redirect `/about.html` there; the `file://` bundle beside `dist/about.html` resolves it too).
+
+**Step 4 — microphone.** `engine/sources/mic.js`: `getUserMedia` audio with EC/NS/AGC off, the same bus, analyser tap and silence
+watchdog as capture (`watchCapture` now watches both live modes), `stopAll` says "Microphone stopped." `ENGINE.start('mic')`. The
+card is capability-aware in `hud.js`: no `getDisplayMedia` (every mobile browser) or `(pointer:coarse)` → `#landing.mobile`
+(speaker copy + the mic button alone); desktop: Share a tab, then the mic under it. Proof: cdp `FAKEMIC=1` (Chrome's fake device +
+fake permission UI) → `mode 'mic'`, `heard true`, landing hidden; a stopped track returns to the card; without the flag the
+declined path runs the demo with its message. `parity.js fake` 0 diff over 72 fields.
+
+**Step 5 — touch.** `core/touch.js` (new leaf over scenes/help/hud): `#tbar` (CSS-only: `(pointer:coarse)` and `body.running`) with
+help · ‹ · › · ⛶, a horizontal swipe on `#gl` (> 60 px, < 700 ms, dx > 2|dy|) steps `SC.forced` through `REG` from the logical scene, a
+press held 600 ms toggles the help; a swipe while the help is open does nothing (it scrolls). ⛶ → `fullscreen()` (now with the
+WebKit-prefixed path) or, where no fullscreen API exists (iOS Safari), a toast pointing at Add to Home Screen. `hud.js` keeps a
+screen wake lock while running (re-requested on visibilitychange; released on stop). `quality.js` seeds `Q.q` 0.35 under a coarse
+pointer; `gl.js` caps the long edge at 1600 there (2560 elsewhere). `touch-action:none` is scoped to the canvas, `overscroll-behavior:none`
+on the page; `#help` and `#landing` keep touch scrolling. Proof: cdp `MOBILE=1` (390×844, DPR 3, touch, `pointer:coarse` emulated) —
+`.mobile` card, key row hidden, bar `flex` while running, synthetic `TouchEvent`s: swipe left 0→1, right →0, hold → `HELP.on`, bar
+next×2 → forced 2; `Q.q` read 0.15 half a second in (the 0.35 seed after one SwiftShader step). `scene-md5.sh v06` = the v0.5
+reference list on all 14 lines; test suite and parity as before. NAV in portrait: nothing cropped (the PiP sits under the bar's ⛶).
+
+**Left to the user (plan E6, C7):** Cloudflare dashboard — add `www.retinarave.com`, a 301 www → apex rule, disable the
+`*.workers.dev` route, verify in Search Console (DNS TXT) and submit `/sitemap.xml`, turn on Web Analytics; then the portrait
+review of scenes 1–6 on a real phone (the scenes were tuned landscape; nothing in code yet). Not done on purpose: a file/drop
+source (README's claim was dropped instead), shareable `&route=`/`&param=` URLs outside `#test`, the panel on a phone (its 10–12 px
+mono columns overflow at 390 px; it stays a desktop tool).

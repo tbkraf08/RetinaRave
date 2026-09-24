@@ -2,7 +2,10 @@
 // iter / scale (and their own tier tables) and never touch q. Lifted from cardioid3 updateQuality (tongueN dropped).
 import { clamp } from '../math/util.js';
 
-export const Q = { q: 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60 };
+// A coarse-pointer device (phone, tablet) starts lower so the first two seconds do not stutter before the controller catches
+// up (v0.6); the controller then finds the device's level as before. Headless Chrome and node have a fine pointer: unchanged.
+export const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches;
+export const Q = { q: COARSE ? 0.35 : 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60 };
 
 export function updateQuality(dtRaw) {
   Q.acc += dtRaw;
