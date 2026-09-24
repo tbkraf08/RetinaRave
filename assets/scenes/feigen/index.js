@@ -8,19 +8,25 @@
 // built rung through the current camera and does the music. Steady state is a colour pass plus one slice of the next
 // rung at ANY depth, instead of 30*L^2 iterations per pixel per frame. See help.why / help.math.
 import { FS_FIELD } from './field.js';
-import { FS_COLOUR } from './colour.js';
+import { FS_COLOUR, upload as upOK } from './colour.js';
+import { FS_COLOUR_V2, upload as upV2 } from './colour-v2.js';
 import * as LD from './ladder.js';
 
 const C_FEIG = -1.401155189092051;    // the Feigenbaum point: the accumulation of the period-doubling cascade
 const DELTA_F = LD.DELTA;             // Feigenbaum's delta: the ratio the cascade (and so this zoom) is self-similar by
 const FEIG_MAX = [3.4, 4, 4.6, 5];    // how deep the dive is allowed to go per quality tier (the 512-tap reference orbit)
+// The set already carries its own symmetry (the cascade repeats down the real axis), so a kaleidoscope on top would
+// fake a symmetry the mathematics does not have — it is off. Short trails keep the filaments from crawling. The OKLCH
+// mapping needs a higher bloom threshold: its bright pixels are plateaux, not filaments (§24 worker).
+const POST_V2 = { fb: { decay: 0.55 }, bloom: { thr: 0.3 }, kaleido: 0 };
+const POST_OK = { fb: { decay: 0.55 }, bloom: { thr: 0.6 }, kaleido: 0 };
 
 // Everything update() reads out of MS / LOOK, held for draw(). No hidden timers: every entry traces to MS.
 const S = {
   feigL: 0, tricorn: 0,
   cx: 0, cy: 0, width: 3.2, rot: 0,
   lvl: 0, kick: 0, drop: 0, hat: 0, flow: 0, midS: 0, tension: 0, alive: 0, histRow: 0,
-  hue: 0, sat: 1, bri: 1, invert: 0, clipdbg: 0, hueco: 0,
+  hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, clipdbg: 0,
 };
 // The ladder's GL side: three rung slots (the rung on screen, the one being built, the one the cross-fade still
 // reads) plus one quarter-resolution target for rule 3. Nothing here is keyed on wall time — only on feigL, the
@@ -97,7 +103,8 @@ export default {
     this.ctx = ctx;
     CTX = ctx;
     PF = ctx.mkProg(FS_FIELD, 'feigen-field');
-    this.pc = ctx.mkProg(ctx.oklch + FS_COLOUR, 'feigen-colour');   // OKLCH: the chunk goes in front, after HEAD
+    this.colour.variants.v2.pr = ctx.mkProg(FS_COLOUR_V2, 'feigen-colour-v2');          // the default: v0.2's palette
+    this.colour.variants.oklch.pr = ctx.mkProg(ctx.oklch + FS_COLOUR, 'feigen-colour'); // OKLCH: the chunk in front, after HEAD
     // The reference orbit Z_n of c_inf, in JS doubles, stored as float32. Only the per-pixel OFFSET needs precision,
     // which is the whole point of the perturbation method — the reference may be single once it is computed exactly.
     const gl = ctx.gl, orb = new Float32Array(512);
@@ -156,18 +163,15 @@ export default {
     S.hue = m.hue;
     S.sat = m.sat;
     S.bri = m.bri;
+    S.spread = m.spread;   // the v2 palette's hue spread (the OKLCH pass has no palette ramp)
     S.invert = m.invert;
     this.rt.time = MS.flow;
     this.rt.label = 'L' + S.feigL.toFixed(2);
   },
 
-  draw(target, { w, h }) {
+  draw(target, { w, h, colour }) {
     const ctx = this.ctx;
-    const gl = ctx.gl;
-    // #test only: hooks.hueco gets its OWN program, built on first use (a hash hook has NOT run by init — see the
-    // report's friction log), so the shipped pass keeps the shipped token stream and stays bit-identical.
-    if (S.hueco && !this.pch) this.pch = ctx.mkProg(ctx.oklch + '#define HUECO 1\n' + FS_COLOUR, 'feigen-colour-hueco');
-    const pr = S.hueco ? this.pch : this.pc;
+    const pr = this.colour.variants[colour].pr;
     if (!F.slots[0].tex) alloc(w, h);
     F.draws++;
     const tier = ctx.tier(), L = Math.max(0, S.feigL), r = LD.rungOf(L);
@@ -229,27 +233,7 @@ export default {
     // --- the colour pass: the music, into the target the core handed us
     const pv = F.prev || src;
     ctx.use(pr, target, w, h);
-    gl.uniform4f(pr.u('uRect'), src.rect.x0, src.rect.x1, src.rect.y1, 0);
-    gl.uniform4f(pr.u('uRect2'), pv.rect.x0, pv.rect.x1, pv.rect.y1, 0);
-    gl.uniform2f(pr.u('uSz'), src.sw, src.sh);
-    gl.uniform2f(pr.u('uSz2'), pv.sw, pv.sh);
-    gl.uniform2f(pr.u('uCentre'), src.cx, src.cy);
-    gl.uniform2f(pr.u('uCentre2'), pv.cx, pv.cy);
-    gl.uniform1f(pr.u('uWidth'), src.wd);
-    gl.uniform1f(pr.u('uWidth2'), pv.wd);
-    gl.uniform1f(pr.u('uBlend'), bl);
-    gl.uniform1f(pr.u('uRot'), S.rot);
-    gl.uniform1f(pr.u('uHistRow'), S.histRow);
-    gl.uniform1f(pr.u('uLevel'), S.lvl);
-    gl.uniform1f(pr.u('uKick'), S.kick); gl.uniform1f(pr.u('uDrop'), S.drop);
-    gl.uniform1f(pr.u('uHat'), S.hat); gl.uniform1f(pr.u('uFlow'), S.flow); gl.uniform1f(pr.u('uMidS'), S.midS);
-    gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive);
-    gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri); gl.uniform1f(pr.u('uInvert'), S.invert);
-    gl.uniform1f(pr.u('uClipDbg'), S.clipdbg); if (S.hueco) gl.uniform1i(pr.u('uHueCo'), S.hueco);   // only in the #define HUECO build
-    ctx.tex(pr, 'uField', 0, src.tex);
-    ctx.tex(pr, 'uField2', 1, pv.tex);
-    ctx.tex(pr, 'uSpec', 2, ctx.engineTex.spec);
-    ctx.tex(pr, 'uHist', 3, ctx.engineTex.hist);
+    (colour === 'v2' ? upV2 : upOK)(ctx.gl, pr, ctx, S, src, pv, bl);   // each mapping's own uniform set (CONTRACTS §1.4)
     ctx.tri();
 
     this.rt.log = 'r' + r + ' ' + how + ' b' + builtRows(r) + '/' + F.th + ' next r' + (r + 1) + ' b' + builtRows(r + 1)
@@ -257,9 +241,11 @@ export default {
       + ' ' + F.tw + 'x' + F.th + ' t' + tier;
   },
 
-  // The set already carries its own symmetry (the cascade repeats down the real axis), so a kaleidoscope on top would
-  // fake a symmetry the mathematics does not have — it is off here. Short trails keep the filaments from crawling.
-  post: { fb: { decay: 0.55 }, bloom: { thr: 0.6 }, kaleido: 0 }, // bloom 0.3 → 0.6 with the OKLCH pass (§19 worker): the bright pixels are plateaux now, not filaments
+  post: POST_V2,
+  // Two colourings of the same field (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's cosine palette
+  // over the distance/potential grade; `oklch` is §24's perceptual pass, opt-in with `&colour=oklch`, and it carries
+  // its own post because its bloom threshold differs. A variant's program and uniform upload are set in init().
+  colour: { default: 'v2', variants: { v2: { post: POST_V2 }, oklch: { post: POST_OK } } },
 
   rt: {},
 
@@ -274,7 +260,6 @@ export default {
     tricorn(v) { S.tricorn = +v ? 1 : 0; F.pinTric = 1; invalidate(); },   // a flip invalidates every rung, even a no-op one
     standin(v) { F.standin = +v ? 1 : 0; },
     clipdbg(v) { S.clipdbg = +v || 0; },   // colour.js' gamut (1) and field (2) probes, read back through an RGBA8 target
-    hueco(v) { S.hueco = +v || 0; },   // hue-coordinate probe (hue-follows-set.md): 0 = shipped ea, 1 = log2 G, 2 = distance
   },
 
   help: {
@@ -285,19 +270,19 @@ export default {
       clarity: 'the bid: clearly tonal music',
       calm: 'the bid: quiet and unhurried',
       bpm: 'sets the dive\'s clock: one Feigenbaum level per 32 beats at full level',
-      lvl: 'how fast the dive falls, and the overall lightness',
+      lvl: 'how fast the dive falls, and the overall brightness',
       tension: 'slows the dive, widens the view, and lights the interior',
       alive: 'silence freezes the dive and fades to black',
-      kick: 'a lightness pulse, a slight zoom in, and the hidden level wrap',
+      kick: 'a brightness pulse, a slight zoom in, and the hidden level wrap',
       dropEvt: 'the depth jumps one whole Feigenbaum factor — self-similar, so you barely see it',
       sectionEvt: 'redraws the tricorn flip from the section seed',
       seed: 'decides the flip: conj(z)^2 + c instead of z^2 + c for this section',
-      flow: 'the Green\'s-function iso-lightness bands drift outward on musical time',
+      flow: 'the Green\'s-function bands drift outward on musical time',
       flowMid: 'the centre wanders along the axis and the frame rolls a few degrees',
-      bass: 'narrows the black boundary edge and lights the interior trap',
-      dropEnv: 'zooms in hard and lifts the whole field\'s lightness',
-      hat: 'lifts the Green bands\' lightness',
-      midS: 'how strongly the spectrogram\'s past lightens the field off the boundary',
+      bass: 'sharpens the filaments and lights the interior trap (narrows the black edge under &colour=oklch)',
+      dropEnv: 'zooms in hard and floods the filaments',
+      hat: 'sparkle on the Green bands',
+      midS: 'how strongly the spectrogram\'s past shows through the boundary',
     },
     eli5: 'A never-ending zoom into the edge of the Mandelbrot set, falling along its spine toward one exact point. '
       + 'The shape you are falling into repeats: every time you have zoomed in by the same magic factor (about 4.67x) '
@@ -318,10 +303,10 @@ export default {
       + 'colouring of the rung that is already there. A rung that needs 500 iterations per point just takes more '
       + 'frames to build, and it has six seconds. The cost of the scene stopped depending on how deep it is, which '
       + 'matters because the quality knob is shared: one expensive scene dims every other one for half a minute. '
-      + 'And the colour is not a palette laid over it: hue is the external angle, lightness the distance estimate with the Green\'s potential '
-      + 'rippling it, chroma the same distance fading to black at the edge — the three coordinates the field already carries. A ray landing on a wake is a '
-      + 'line of constant hue, a level set of the potential a ripple of lightness, and the edge stays a pixel '
-      + 'wide however deep you fall, because the distance to the set draws it and not a filter.',
+      + 'There are two colourings of that one field: the default is v0.2\'s cosine palette over the distance estimate '
+      + 'with the Green\'s-function bands drifting through it — the dark field with the glowing filament; `&colour=oklch` '
+      + 'swaps in a perceptual one that writes the external angle to hue and the distance to lightness and chroma, so a '
+      + 'ray landing on a wake is a line of constant hue. That one is opt-in: the palette is the look this was tuned for.',
     math: 'c_inf = -1.401155189092051 is the accumulation of the period-doubling cascade of z -> z^2 + c on the real '
       + 'axis; consecutive bifurcation gaps shrink by Feigenbaum\'s delta = 4.669201609, and the cascade is '
       + 'asymptotically self-similar under that factor, so the view width is 3.2*delta^-L. Naive float32 dies at L ~ 4; '

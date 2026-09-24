@@ -22,13 +22,6 @@ float cMax(float L){return .95*min(.17*L,.47*(1.-L));}
 // so the membrane keeps it, and exactly zero while par is 0.
 export const FS_JULIA = `
 uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc;uniform float uClipDbg; // uSc: z-scale of the (little) Julia set, 1/P
-#ifdef HUECO
-uniform int uHueCo;   /* #test only (hooks.hueco): the hue-coordinate probe. index.js prepends the #define ONLY when the
-   hook is set, so at hueco 0 the preprocessor deletes every line below and the shipped pass compiles from the shipped
-   token stream -- byte-identical by construction, not by the optimiser's good will. */
-const float K_LK=1.;  /* hue turns per unit of the Koenigs coordinate Lk: one turn per Koenigs band, so the bands ARE the hue bands */
-const float K_SN=.2;  /* hue turns per unit of the smooth escape count: one turn per 5 doublings of the potential of J_c */
-#endif
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.,ea=0.,ew=.5;bool esc=false,conv=false,big=false;
@@ -51,9 +44,6 @@ void main(){
     float cs=.55+.45*gb;
     float L=.55*pow(clamp(lw,0.,1.),.73); /* .73 = 1/3 of the 2.2 gamma; the .55 cap keeps L under cMax's peak, so the sectors stay saturated on a dark field */
     hlc=vec4(ea+uPal.x,L,cMax(L)*cs,.11*cs);
-#ifdef HUECO
-    if(uHueCo!=0){float L2=min(L,.5);hlc=vec4(sn*K_SN*uSc.y+uPal.x,L2,cMax(L2),.11*cs);} /* iso-hue = an equipotential of J_c, L capped at .5 at full chroma */
-#endif
     col=palOKs(hlc.x,hlc.y,hlc.z)+vec3(1.)*fl*.45*uPal.w; /* the boundary flash is additive now, outside the OKLCH request */
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
@@ -62,9 +52,6 @@ void main(){
     float L=clamp((.10+.32*exp(uLam.x))*bm,0.,.92); /* |lambda| -> L: a centre dark, a root a lit mid-tone, and low enough for the chroma to survive */
     float cs=bm*(.88+.12*spokes); /* the spokes are a chroma modulation now, not a brightness one */
     hlc=vec4(uLam.y/TAU+uPal.x,L,cMax(L)*cs,.11*cs);
-#ifdef HUECO
-    if(uHueCo!=0){float L2=min(L,.5);hlc=vec4(Lk*K_LK+uPal.x,L2,cMax(L2),.11*cs);} /* the Koenigs bands become hue bands */
-#endif
     vec3 base=palOKs(hlc.x,hlc.y,hlc.z);
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;

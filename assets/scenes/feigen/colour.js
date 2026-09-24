@@ -1,5 +1,6 @@
-// FEIGEN's COLOUR pass (v0.2 §16, recoloured in OKLCH in v0.3 §19) — the music, every frame, one texture read of the
-// field plus a few of spec/hist.
+// FEIGEN's COLOUR pass, colour mapping `oklch` (CONTRACTS §1.4) — v0.2 §16's pass recoloured in OKLCH (§19/§24).
+// OPT-IN, not the default: `&colour=oklch` (DECISIONS §26 — the user kept the v0.2 look, which is colour-v2.js).
+// The music, every frame, one texture read of the field plus a few of spec/hist.
 //
 // The camera of the frame maps each pixel to a point of parameter space exactly as the §15 shader did
 // (p = (gl_FragCoord.xy - .5*uRes)/uRes.y, dc = centre + (p * rot) * width), and the field pass' answer at that
@@ -65,19 +66,6 @@ uniform float uSat;
 uniform float uBri;
 uniform float uInvert;
 uniform float uClipDbg;   // #test only (hooks.clipdbg): 1 = write okClip into o.r, 2 = write the raw field probe
-#ifdef HUECO
-// #test only (hooks.hueco, the v0.3 hue-follows-the-set probe): WHICH COORDINATE DRIVES HUE. 1 = the Green's potential
-// (level sets = iso-hue: the colour follows the boundary's contours), 2 = the scale-free distance estimate (bands
-// parallel to the boundary); 0 is the shipped external angle. index.js prepends the #define ONLY when the hook is set,
-// so at hueco 0 the preprocessor deletes every line of the probe and the shipped pass compiles from the shipped token
-// stream — byte-identical by construction, not by the optimiser's good will.
-// On 1 and 2 the lightness is capped at 0.5 and the chroma is the FULL okCmax(L) budget, because the user's "the
-// colours don't match the set" was seen at L 0.7 under the linear tonemap (§24): a pale field would confound the hue
-// question with a lightness question.
-uniform int uHueCo;
-const float K_G = 0.1;    // hue turns per unit of log2 G: one turn per 10 doublings of the potential (see the report)
-const float K_D = 0.25;   // hue turns per octave of the scale-free distance: one turn per 4 octaves
-#endif
 
 // the engine's 256x1 log spectrum, 30 Hz .. 16 kHz, peak-normalised
 float specM(float x){ return texture(uSpec, vec2(clamp(x, 0.002, 0.998), 0.5)).r; }
@@ -170,13 +158,6 @@ void main(){
     L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
     L = clamp(L, 0., 1.);
     hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
-#ifdef HUECO
-    if (uHueCo != 0) {                               // the hue-coordinate probe (see uHueCo above)
-      float Hc = uHueCo == 1 ? K_G * lG + uHue : K_D * log2(max(d, 1e-7)) + uHue;
-      float Lc = min(L, 0.5);
-      hlc = vec3(Hc, Lc, cMax(Lc));
-    }
-#endif
     gd = vec2(-lG, log2(max(d, 1e-7)));
   } else {
     float t = v.w;   // orbit trap inside the set: how near the orbit passed the origin
@@ -194,3 +175,21 @@ void main(){
   o = vec4(linToSrgb(palOK(hlc.x, hlc.y, hlc.z)) * uAlive, 1.);
 }
 `;
+
+// This mapping's uniform uploads (CONTRACTS §1.4). The OKLCH pass has no uSpread (hue is the external angle, not a
+// palette ramp) and carries uClipDbg, the #test gamut/field probe hooks.clipdbg drives.
+export function upload(gl, pr, ctx, S, src, pv, bl) {
+  gl.uniform4f(pr.u('uRect'), src.rect.x0, src.rect.x1, src.rect.y1, 0);
+  gl.uniform4f(pr.u('uRect2'), pv.rect.x0, pv.rect.x1, pv.rect.y1, 0);
+  gl.uniform2f(pr.u('uSz'), src.sw, src.sh); gl.uniform2f(pr.u('uSz2'), pv.sw, pv.sh);
+  gl.uniform2f(pr.u('uCentre'), src.cx, src.cy); gl.uniform2f(pr.u('uCentre2'), pv.cx, pv.cy);
+  gl.uniform1f(pr.u('uWidth'), src.wd); gl.uniform1f(pr.u('uWidth2'), pv.wd); gl.uniform1f(pr.u('uBlend'), bl);
+  gl.uniform1f(pr.u('uRot'), S.rot); gl.uniform1f(pr.u('uHistRow'), S.histRow);
+  gl.uniform1f(pr.u('uLevel'), S.lvl); gl.uniform1f(pr.u('uKick'), S.kick); gl.uniform1f(pr.u('uDrop'), S.drop);
+  gl.uniform1f(pr.u('uHat'), S.hat); gl.uniform1f(pr.u('uFlow'), S.flow); gl.uniform1f(pr.u('uMidS'), S.midS);
+  gl.uniform1f(pr.u('uTension'), S.tension); gl.uniform1f(pr.u('uAlive'), S.alive);
+  gl.uniform1f(pr.u('uHue'), S.hue); gl.uniform1f(pr.u('uSat'), S.sat); gl.uniform1f(pr.u('uBri'), S.bri);
+  gl.uniform1f(pr.u('uInvert'), S.invert); gl.uniform1f(pr.u('uClipDbg'), S.clipdbg);
+  ctx.tex(pr, 'uField', 0, src.tex); ctx.tex(pr, 'uField2', 1, pv.tex);
+  ctx.tex(pr, 'uSpec', 2, ctx.engineTex.spec); ctx.tex(pr, 'uHist', 3, ctx.engineTex.hist);
+}
