@@ -361,6 +361,15 @@ cast section lists every registered scene and variant with `tag` + three depths.
 must all be non-empty (fail). Keep `feats` exactly the fields you read — the top table *is* that list, so a stale
 entry is a visible lie. `CARD.HELP.rows(true)` returns the top table's names for a test.
 
+**Bid-only fields (v0.4.1).** A field you read **only in `score()`** — nowhere in `update`, `draw`, `post`, `hud` or
+`overlay` — moves nothing on screen: it only changes how loudly you bid for the screen. Its `help.feats` line **begins
+with `the bid:`** (`the bid: a steady groove raises it`). That prefix is the contract, not a heuristic: the help view
+and the routes panel dim such a row and say so ("bid only — moves nothing while the scene is forced; changes when the
+director picks it"), and `check.js` warns on a `the bid:` line whose field is read anywhere but `score()`, and on a
+field read only in `score()` whose line does not start so (a static read of `<param>.<field>` per function — say in
+your friction log if your code defeats it). A field read in `score()` *and* in `update()` is not bid-only: its line
+names the visual consequence, as always.
+
 ### 1.14 OKLCH palette chunk — `ctx.oklch` (v0.3, opt-in)
 
 `ctx.oklch` is a GLSL string (`assets/core/oklch.js`). Prepend it to your fragment source — `ctx.mkProg(ctx.oklch + FS,
@@ -418,6 +427,12 @@ object arrives as `MS`**. What you may assume:
   looks like a bug in the panel; a field you read but do not list cannot be routed and is a bug in your scene.
 - The transfer per route is `ema(clamp_kind(k · (inv ? flip(x) : x) + b), τ)` with `flip` = `1 − x` for a level, `−x`
   otherwise, the ema on `dt` (never wall time — `#test` stays bit-identical). A constant source is a manual setting.
+- **A preview is a route for two seconds, a fire is one frame (v0.4.1).** The panel's `0` / `1` buttons set a
+  constant route on the jack and put the previous route back after 2 s of the help view's ticks; you see a normal
+  route. Its `fire` button on an event field calls `pulse(scene, field)` (`CARD.pulse`): on the next frame your view has
+  that event `true` as an own property (a scene without routes gets a view for exactly that frame, then `MS` itself
+  again); the frame after, it is gone. Nothing is stored. A scene that reacts to an event only through the engine's
+  derived fields (`hit`, `kick`, `dropEnv` …) will not see a pulse of the raw event — say so in `help.feats`.
 - Harness (`docs/HARNESS.md` "Routes"): `&route=feigen.bass=centroid*1.5+0.1~0.2!,…` under `#test`,
   `&post=feigen.bloom.thr=0.3,…` for the manual post overrides, `CARD.route(scene, field, spec | null)`,
   `CARD.ROUTES`, `CARD.view(name) === CARD.MS` while unrouted, `CARD.MANUAL` / `CARD.manual(...)`. The director is

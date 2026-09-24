@@ -337,3 +337,5 @@ export function restore() {                                        // boot, outs
   if (!s) return;
   try { loadRoutes(s); } catch (e) { console.warn('panel: the stored preset no longer loads (' + e.message + ') — ignored'); }
 }
+
+export function closeE() {}                                        // v0.4.1: the core calls it when the view closes (a running preview ends here)

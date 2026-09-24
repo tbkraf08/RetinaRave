@@ -13,7 +13,7 @@ import { HELP } from './help.js';
 import { HASH, TEST } from './hash.js';
 import { restore as restorePanel } from './panel.js';
 import { MANUAL, manual, applyPosts, postString, POST_PARAMS, snapshotDefaults, resetManual } from './manual.js';
-import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view } from './route.js';
+import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view, pulse } from './route.js';
 import { getGrid } from '../math/mandel.js';
 
 export { HASH, TEST }; // parsed in hash.js (a leaf the panel can read too)
@@ -41,7 +41,7 @@ export const CARD = {
   get colour() { const o = {}; for (const s of SCENES) if (s.colour) o[s.name] = s.colour.cur; return o; },
   // routes (v0.4, CONTRACTS §1.15): ROUTES[scene][field] = spec · route(scene, field, spec|null) · routes('a.b=c,…') = the &route= grammar ·
   // routesString() back to it · routesJSON()/loadRoutes() the preset · view(name) = the MS a scene reads (=== MS when unrouted) · ROUTE.n/ms
-  ROUTES, ROUTE, route: setRoute, clearRoutes, routes: applyRoutes, routesString, routesJSON, loadRoutes, parseRoute, serialiseRoute, sources,
+  ROUTES, ROUTE, route: setRoute, clearRoutes, routes: applyRoutes, routesString, routesJSON, loadRoutes, parseRoute, serialiseRoute, sources, pulse,
   view: (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return view(s); },
   // manual overrides (v0.4, core/manual.js): MANUAL.scene (= SC.forced) / .trans / .colour / .post · manual('scene', 6) · manual('trans', 'mixs') ·
   // manual('colour', scene, variant) · manual('post', scene, 'bloom.thr', 0.3 | null) · posts('scene.bloom.thr=0.3,…') = the &post= grammar

@@ -22,6 +22,7 @@ export const BLOCKS = {};                  // extra blocks of the preset JSON: B
 const SCN = {};                            // sceneName → scene object (registered by scenes.js)
 const VIEWS = {};                          // sceneName → the routed view (present only while the scene has routes)
 const Y = {};                              // sceneName → { field → smoothed value } (ema state)
+const PULSES = [];                         // v0.4.1: { name, field } event fields forced true for exactly the next frame (the panel's "fire")
 const DEF = { src: 'const', c: 0, k: 1, b: 0, inv: false, tau: 0 };
 const TRANSFER = { level: 1, raw: 1, angle: 1 };   // kinds that take a constant and the transfer; 'event' routes only from an event
 
@@ -111,14 +112,33 @@ function routed(name, field, spec, dt) {
   return x;
 }
 
+// Fire one event field of one scene for exactly the next frame (the panel's preview of an event; CARD.pulse). Checked like a
+// route; applied by refreshRoutes on the next frame through the scene's view (created for that frame if the scene has none)
+// and removed on the frame after — a scene without routes is handed MS itself again. Never stored, never a route.
+export function pulse(scene, field) {
+  const sc = typeof scene === 'string' ? need(scene) : scene;
+  if (kindOf(field) !== 'event') throw new Error('route: ' + field + ' is not an event — nothing to fire');
+  if (!(sc.feats || []).includes(field)) throw new Error('route: ' + sc.name + ' does not read ' + field);
+  PULSES.push({ name: sc.name, field });
+}
+function applyPulses() {
+  for (const p of PULSES.splice(0)) {
+    if (p.done) { const V = VIEWS[p.name]; if (V) { if (!(ROUTES[p.name] || {})[p.field]) delete V[p.field]; if (!Object.keys(V).length) delete VIEWS[p.name]; } continue; }
+    (VIEWS[p.name] || (VIEWS[p.name] = Object.create(MS)))[p.field] = true;
+    p.done = true;
+    PULSES.push(p);
+  }
+}
+
 // Every frame, after the engine wrote MS and before any scene's update(): refresh every routed view's own fields.
 export function refreshRoutes(dt) {
-  if (!ROUTE.n) return;
+  if (!ROUTE.n) { if (PULSES.length) applyPulses(); return; }
   const t0 = performance.now();
   for (const name in VIEWS) {
     const V = VIEWS[name], R = ROUTES[name];
     for (const f in R) V[f] = routed(name, f, R[f], dt);
   }
+  if (PULSES.length) applyPulses();
   ROUTE.ms = ema(ROUTE.ms, performance.now() - t0, dt, 1);
 }
 

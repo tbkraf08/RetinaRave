@@ -9,7 +9,7 @@ import { MS } from '../engine/state.js';
 import { FEATS } from '../engine/feats.js';
 import { SC, REG, TRANSITIONS, currentTransition } from './scenes.js';
 import { EFFECTS } from './post.js';
-import { buildE, refreshE, markE } from './panel.js'; // part E, the routes panel (v0.4; panel.js never imports help.js)
+import { buildE, refreshE, markE, closeE } from './panel.js'; // part E, the routes panel (v0.4; panel.js never imports help.js)
 
 // on: shown · scene: the logical id part A (and E's mark) was built for · ticks: live refreshes so far (the harness counts them) ·
 // nTop: rows in the top table · rows(topOnly): the field names in part A's tables, read back from the DOM
@@ -241,7 +241,7 @@ export function toggleHelp(force) {
     refreshLive(0);
     refreshB();
     refreshE(0, hot);
-  }
+  } else closeE(); // v0.4.1: a running preview ends with the view (the panel gets no tick while closed)
 }
 
 // Called from loop.js right after drawHUD. Zero work while hidden.
