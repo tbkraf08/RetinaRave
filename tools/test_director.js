@@ -8,6 +8,8 @@
 //   5. a return recognised inside the 8-beat spacing after a hard cut is still restored once the gate opens
 //   6. a boundary that arrives while a switch is held files the decided scene, not the one still on screen
 //   7. a phrase hold (16-beat cap) replaced by an identify decision restarts the 4-beat cap instead of firing at once
+//   8. (v0.3 §21) synapse renumbers its sections (a fresh one merged, the ring shifted): the filed looks follow the
+//      id — a return under the new id restores them; with SC.renumberOn = false (the §10 behaviour) it does not
 //   node tools/test_director.js -> per-step lines + OK / FAIL
 import { MS } from '../assets/engine/state.js';
 import { SC, REG, register, updateScenes } from '../assets/core/scenes.js';
@@ -30,6 +32,7 @@ S.presence = 1; S.bpm = 120; S.build = 0; S.beatCount = 0; S.beatPhase = 0; S.gr
 let grid = true; // false = the bar position stops advancing (a stalled grid, to exercise the cap)
 function frame(ev = {}) {
   S.beat = S.dropEvt = S.sectionEvt = S.identifyEvt = S.boundaryEvt = S.surpriseEvt = false;
+  S.sectionRenumber = null; // per-frame, like the synapse stage
   S.beatPhase += DT * S.bpm / 60;
   if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; S.beat = true; }
   if (grid) { S.barPos = (S.beatCount % 4) + S.beatPhase; S.phrase16Pos = (S.beatCount % 16) + S.beatPhase; }
@@ -138,5 +141,25 @@ const r0 = beat();
 for (let i = 0; i < 30 * 5 && landed < 0; i++) { frame(); if (!SC.pend) { landed = beat() - r0; landBar = S.barPos; } }
 ok(landed >= 0 && landed < 4 && landBar < 0.1, `landed on the bar line at barPos ${landBar.toFixed(3)}, ${landed.toFixed(2)} beats after the replacement`);
 
+// 8. renumbering (§21): file under alt 5, then synapse drops id 3 (map: 0..2 → same, 3 → −1, 4 → 3, 5 → 4); a return
+//    identified as alt 4 must restore the looks filed under 5; with renumberOn = false the stale key 5 stays and 4 misses
+{
+  const runCase = (on) => {
+    SC.renumberOn = on; SC.mem = {}; SC.prevAlt = -1; SC.altOpen = false; SC.due = -1; SC.forced = -1;
+    beats(9); identify(5, 0); beats(9);
+    looks.one = 'filed-under-5'; boundary(); beats(9);           // files alt 5 with the current looks
+    identify(6, 0); beats(9);
+    looks.one = 'changed';
+    frame({ sectionRenumber: [0, 1, 2, -1, 3, 4, 5], sectionAlt: 5 }); // 3 dropped, 4 → 3, 5 → 4, 6 → 5 (synapse reports the current one as 5 in the same frame)
+    beats(2);
+    const before = sets.one; boundary(); beats(2); identify(4, 1); beats(1);
+    return { restored: looks.one, keys: Object.keys(SC.mem).join(','), sets: sets.one - before, rec: SC.restored };
+  };
+  const on = runCase(true), off = runCase(false);
+  console.log(`  renumber on: keys ${on.keys} looks ${on.restored} · off: keys ${off.keys} looks ${off.restored}`);
+  ok(on.keys === '4,5', 'renumber on: the keys 5,6 became 4,5 (' + on.keys + ')');
+  ok(on.restored === 'filed-under-5', 'renumber on: restored looks are the filed ones');
+  ok(off.restored !== 'filed-under-5', 'renumber off (§10): the return under 4 finds nothing (the stale restore the brief measured)');
+}
 console.log(fails ? `test_director: ${fails} FAIL` : 'test_director: OK');
 process.exit(fails ? 1 : 0);

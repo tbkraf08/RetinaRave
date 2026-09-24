@@ -55,7 +55,9 @@ node tools/test_director.js                                 # scripted MS, no Ch
 ```
 Under `#test` the log carries `SCENE@t -> id bar<pos> gt<trust>`, `RESTORE@t alt<id> scene<id>` (a section's looks came
 back) and `SWITCH@t -> id bar<pos> (held N beats, <trigger>)` (an event-branch soft switch landed); the 1 Hz line ends
-with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise = false`). aba is 190 s, house 120 s,
+with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise = false`); `RENUMOFF=1` with the look
+memory's key renumbering off (`CARD.SC.renumberOn = false`, v0.3 §21 — the log also carries `FILE@t alt<id> scene<id>`
+and `RENUMBER@t <map> kept<n> dropped<n>`, and `director-stats.js` replays the maps to count stale restores). aba is 190 s, house 120 s,
 mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
 `Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
 
@@ -111,7 +113,7 @@ at frame 120 and start the fade to 3 by hand, shoot 58 frames later (`58/60/1.93
 
 ```
 CLOCK=1 GPU=1 OUT=tools/accept/v0.2 node tools/cdp.js 'test&scene=0&trans=mixs' '[{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"},{"shot":"trans-mixs-0-3-f178"},{"eval":"JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m])"}]'
-# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.2/trans-mixs-0-3-f178.jpg → a6e2b8cdcc47316cebb04f5529a26b06 (GPU=1, 1280×720)
+# EVAL … => "[0,3,0.4994…]"   md5sum tools/accept/v0.3/trans-mixs-0-3-f178.jpg → 425a66e5b50c14786e6e25bc215a3169 (GPU=1, 1280×720; a6e2b8cd… on the v0.2 chain)
 ```
 `mixs` is v3's crossfade and must stay byte-identical to that md5. A different md5 after a core change is a pixel
 difference to explain, never a tolerance. `accept.sh` checks it on every sweep. Until §15 the reference was the fake
@@ -126,6 +128,10 @@ CLOCK=1 GPU=1 OUT=tools/work node tools/cdp.js 'test&scene=1&trans=morph' '[{"un
 ```
 The §11 A/B set: (0 → 2) NAV → MANDALA, (1 → 3) DUST → TORUS, (5 → 0) POLYTOPE → NAV, plus the f290 fade, for `mixs`
 and `morph` → `tools/accept/v0.2/trans-<name>-<A>-<B>-f178.jpg`, tiled in `montage-trans.jpg`.
+
+A per-scene transition slot is judged the same way with the slot set by eval before the fade: `{"eval":"CARD.REG[3].scene.post.morph={flow:0.4};CARD.SC.forced=-1;CARD.goScene(3,false)"}` (v0.3 §23: DUST → TORUS at
+flow 1 / 0.4 / 0 in `tools/accept/v0.3/morph-flow-slot.jpg`; the stroke-scene pairs 3 → 0, 5 → 0, 1 → 3 for mixs and
+morph in `morph-flow-ab.jpg`).
 
 `CARD.benchTransition(n = 300)` → `{mixs: ms, morph: ms}` per full-resolution pass, readPixels-synced (the current
 scene into `a`, the next registered one into `b`, then `n` passes with `m` sweeping .2 → .8). Same caveats as `bench`:
@@ -151,6 +157,21 @@ GPU=1 node tools/cdp.js 'test&fake=0&scene=1' "[{\"until\":\"window.CARD\"},{\"w
 `tools/scene-md5.sh <tag> [&extra]` shoots every registered scene at frames 360 and 840 under `CLOCK=1` into
 `tools/work/<tag>-s<id>-f<N>.jpg` and lists the md5s in `tools/work/<tag>-md5.txt` — before/after a core change the
 two lists must be identical (`diff`), and `tools/scene-md5.sh x '&histfull=1'` is the hist proof for every scene at once.
+The list at the §20 re-base (linear chain, FEIGEN OKLCH, NAV hue, TORUS morph slot) is `tools/accept/v0.3/scene-md5-v03.txt`;
+the v0.2 tag's list is what `git worktree add --detach <dir> v0.2` + `PORT=8766 tools/scene-md5.sh base` reproduces.
+
+## Effect chain (change to `core/post.js`, an effect, or the chain's colour space — v0.3 §20)
+
+```
+GPU=1 node tools/chain-smoke.js     # the real effects on synthetic input, io.linear 0 and 1: the dark fringe of an encoded blur
+                                    #   (equal-luminance magenta|green, min Y / endpoints ≈ 0.75) vs none in linear (≈ 1.0); a white
+                                    #   frame through the composite: 198/255 encoded, 255 linear → chain-smoke: OK
+```
+`&linear=0|1` under `#test` picks the chain's space (`CARD.CHAIN.linear`; the default is linear since §20, 0 is the
+v0.2 chain for A/B). The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
+composite into white-where-any-channel ≥ 1; the §20 number is DUST at the fake drop frame (`CLOCK=1`, shot at
+`__FRAME>=781` with the mask set at 780; count pixels > 128 with PIL): 10.6 % encoded → 0.12 % linear. The A/B set
+is `scene-md5.sh <tag> '&linear=0'` against `scene-md5.sh <tag>` tiled with `montage.py`.
 
 ## Line renderer smoke (core change to `core/lines.js` or the targets)
 

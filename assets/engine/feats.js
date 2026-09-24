@@ -123,6 +123,7 @@ export const FEATS = {
   foote: L('Foote novelty at the last beat (careful, 4-beat kernel)', 'checkerboard kernel on beat-feature self-similarity', 'boundaries'),
   boundaryEvt: E('a section boundary was just declared (synapse)', 'Foote peak confirmed against the whole section, or a drop', 'director: files the outgoing section\'s scene + looks (§10)'),
   sectionAlt: { kind: 'count', eli5: 'synapse section id (23-dim fingerprint clustering); sectionId is canonical', formula: 'nearest remembered section within .22/.32', drives: 'director look-memory key (§10); sectionId stays the seed key', range: [-1, Infinity] },
+  sectionRenumber: { kind: 'internal', eli5: 'synapse renumbered its section ids this frame: map[old] = new id, −1 = dropped (a fresh section merged into a return, or the 24-section ring shifted); null otherwise', formula: 'structure.js splice / shift', drives: 'director: SC.mem keys, prevAlt and due follow the map (§21)', range: [null, null] },
   sectionReturn: L('this section is a return of an earlier one (synapse)', '1 on a matched return, 0 on a new section', 'director: a sectionAlt change with 1 restores that section\'s scene + looks (§10)'),
   sectionAge: R('beats since the section started', 'beat - sectionStart', '-'),
   dropExpectedIn: R('beats until the expected drop line (-1 = none armed)', 'next 16-beat phrase line while tension>.3 and the grid is trusted', 'anticipation'),

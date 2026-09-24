@@ -26,7 +26,7 @@ const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff
 
 function reset() {
   MS.bpm = 124; MS.regularity = 0; MS.beatPhase = 0; MS.phaseCorr = 0; MS.presence = 0;
-  XS.env.fill(0); XS.ei = 0; XS.envAcc = 0; XS.tempoT = 0; XS.candBpm = 0; XS.candN = 0; XS.tempoAge = 99;
+  XS.env.fill(0); XS.ei = 0; XS.envAcc = 0; XS.tempoT = 0; XS.candBpm = 0; XS.candN = 0; XS.tempoAge = 99; XS.relN = 0; XS.relQ = 0;
   if (XS._acf) XS._acf.fill(0);
   if (XS.tempo) XS.tempo = null;
 }
@@ -105,6 +105,20 @@ for (const [name, p] of Object.entries(PAT)) {
   const d = run(PAT.dnb, 12), pd = d.findIndex((v) => Math.abs(v - 174) <= 1);
   console.log(`change 128 -> 174 direct: ${d.join(' ')}`);
   check('tempo change (direct)', pd >= 0 && pd + 1 <= 6, `174 picked up ${pd + 1} s after the cut (≤ 6)`);
+}
+// v0.3 item 7 (§9 "left open"): a 3:2 change with the old lag alive — 128 -> 192 (the house pattern at 192) and back.
+// 192 = 1.5 × 128 is a metrical relative (REL), which the estimator refuses while the current lag is alive; the 25 %
+// margin over the current tempo's own comb score held it for up to 8 s. Target: locked within 4 s each way.
+{
+  reset();
+  run(PAT.house, 20);
+  const fast = Object.assign({}, PAT.house, { bpm: 192 });
+  const u = run(fast, 12), pu = u.findIndex((v) => Math.abs(v - 192) <= 1);
+  console.log(`change 128 -> 192 (3:2): ${u.join(' ')}`);
+  check('tempo change 3:2 up', pu >= 0 && pu + 1 <= 4, `192 picked up ${pu + 1} s after the cut (≤ 4)`);
+  const dn = run(PAT.house, 12), pdn = dn.findIndex((v) => Math.abs(v - 128) <= 1);
+  console.log(`change 192 -> 128 (2:3): ${dn.join(' ')}`);
+  check('tempo change 2:3 down', pdn >= 0 && pdn + 1 <= 4, `128 picked up ${pdn + 1} s after the cut (≤ 4)`);
 }
 console.log(fail ? `test_tempo: ${fail} FAIL` : 'test_tempo: OK');
 process.exit(fail ? 1 : 0);

@@ -8,6 +8,7 @@ echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
 echo "== oklch smoke";    node tools/oklch-smoke.js | tail -1
+echo "== chain smoke";    node tools/chain-smoke.js | tail -1
 echo "== parity fake";   node tools/parity.js fake | grep -E "parity|MISMATCH|max \|diff\|" || echo "FAIL parity fake"
 echo "== parity real";   node tools/parity.js real | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
@@ -27,7 +28,7 @@ done
 # v0.2 §16: FEIGEN's steady-state cost at the deepest level, tier 3, must stay at or under NAV's (interleaved in the same page; 1.5× covers the load drift) and under 2.9 ms; feigen-bench.sh writes feigen-bench-accept.txt
 echo "== feigen cost";   R=$(tools/feigen-bench.sh accept 3.6 2>/dev/null | grep "^feig=3.6: L .* feigen" | head -1); F=$(echo "$R" | sed 's/.* feigen \([0-9.]*\) ms.*/\1/'); N=$(echo "$R" | sed 's/.* nav \([0-9.]*\) ms.*/\1/'); echo "$R" | cut -c1-120
 [ -n "$F" ] && awk -v f="$F" -v n="$N" 'BEGIN{lim=(n*1.5>2.9)?n*1.5:2.9; if (f<=lim) print "feigen L3.6 steady " f " ms <= " lim " (nav " n ")"; else print "FAIL feigen L3.6 steady " f " ms > " lim " (nav " n ")"}' || echo "FAIL feigen-bench.sh gave no L3.6 line"
-echo "== transition";  MD5=a6e2b8cdcc47316cebb04f5529a26b06   # mixs, director-blind (v0.2 §15): scene 0 forced, released at frame 120 with goScene(3), shot at 178 (m .499), GPU=1 1280×720. v3's crossfade byte-identical since §11; re-based from the frame-290 director pick (4ac523e9…) when FEIGEN's registration changed that pick — same pixels with FEIGEN unregistered (DECISIONS §15)
+echo "== transition";  MD5=425a66e5b50c14786e6e25bc215a3169   # mixs, director-blind, re-based for the linear chain (v0.3 §20; was a6e2b8cd… on the v0.2 chain, v0.2 §15): scene 0 forced, released at frame 120 with goScene(3), shot at 178 (m .499), GPU=1 1280×720. v3's crossfade byte-identical since §11; re-based from the frame-290 director pick (4ac523e9…) when FEIGEN's registration changed that pick — same pixels with FEIGEN unregistered (DECISIONS §15)
 TR='{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"}'
 CLOCK=1 node tools/cdp.js 'test&scene=0&trans=mixs' "[$TR,{\"shot\":\"trans-mixs-0-3-f178\"}]" > /dev/null; M=$(md5sum $OUT/trans-mixs-0-3-f178.jpg | cut -c1-32); [ "$M" = "$MD5" ] && echo "mixs 0→3 f178 md5 $M = recorded" || echo "FAIL mixs 0→3 f178 md5 $M != recorded $MD5"
 CLOCK=1 node tools/cdp.js 'test&scene=0&trans=morph' "[$TR,{\"shot\":\"trans-morph-0-3-f178\"},{\"eval\":\"'MORPH 0→3 f178 '+JSON.stringify({sc:[CARD.SC.cur,CARD.SC.next,+CARD.SC.m.toFixed(3)],errs:CARD.ERRS,bench:CARD.benchTransition(300)})\"}]" | grep "EVAL.*MORPH" | sed 's/.*=> //'

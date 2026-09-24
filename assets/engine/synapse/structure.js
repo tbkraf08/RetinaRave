@@ -129,7 +129,11 @@ export function identify() {
   }
   if (bi >= 0 && best < thr && second - best > 0.04) { // a return
     const s = this.sections[bi];
-    if (this.cur && this.cur.fresh) { this.sections.splice(this.sections.indexOf(this.cur), 1); this.sections.forEach((x, i) => (x.id = i)); }
+    if (this.cur && this.cur.fresh) { // the fresh section was this one all along: it goes, the ids above it move down
+      const k = this.sections.indexOf(this.cur), map = this.sections.map((x, i) => (i < k ? i : i === k ? -1 : i - 1));
+      this.sections.splice(k, 1); this.sections.forEach((x, i) => (x.id = i));
+      A.events.push({ type: 'renumber', map });
+    }
     this.cur = s; s.fresh = false; s.n++;
     A.section = s.id; A.sectionReturn = 1; A.returns++;
     if (this.prevSec && this.prevSec !== s) this.prevSec.next = s.id;
@@ -140,7 +144,10 @@ export function identify() {
     this.cur = s;
     A.section = s.id; A.sectionReturn = 0;
     if (this.prevSec) this.prevSec.next = s.id;
-    if (this.sections.length > 24) { this.sections.shift(); this.sections.forEach((x, i) => { x.id = i; x.next = -1; }); }
+    if (this.sections.length > 24) { // the ring is full: the oldest goes, every id moves down
+      A.events.push({ type: 'renumber', map: this.sections.map((x, i) => i - 1) });
+      this.sections.shift(); this.sections.forEach((x, i) => { x.id = i; x.next = -1; });
+    }
     A.events.push({ type: 'section', id: s.id, ret: false, d: best });
   } else if (this.cur && this.cur.fresh) {
     this.cur.f = f;

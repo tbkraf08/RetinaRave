@@ -7,7 +7,7 @@ STYLES=${*:-house halftime dnb fakeout aba ambient mix}
 mkdir -p tools/accept/${ACC:-v0.3}
 for s in $STYLES; do
   W=50000; [ "$s" = mix ] && W=360000
-  node tools/cdp.js "test&fake=0&demo=$s" "[{\"wait\":$W},{\"eval\":\"CARD.log.filter(l=>/bpm/.test(l)).map(l=>l.split(' ').slice(0,4).join(' ')).join('|')\"},{\"eval\":\"'ms '+CARD.ENGINE.ms.toFixed(3)\"}]" \
+  node tools/cdp.js "test&fake=0&demo=$s" "[{\"wait\":$W},{\"eval\":\"CARD.log.filter(l=>/bpm/.test(l)).map(l=>l.split(' ').slice(0,5).join(' ')).join('|')\"},{\"eval\":\"'ms '+CARD.ENGINE.ms.toFixed(3)\"}]" \
     | grep EVAL | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | tr '|' '\n' > "tools/accept/${ACC:-v0.3}/tempo-$s-$TAG.txt" &
 done
 wait

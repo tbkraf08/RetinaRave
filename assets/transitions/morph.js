@@ -11,7 +11,7 @@ const EASE_LVL = 0.18;   // extra fraction of dm per unit MS.lvl
 const EASE_KICK = 0.12;  // ease added per second at full MS.kick (kick decays over 0.16 s, so ~0.01 per kick)
 
 const FS = `
-uniform sampler2D uA,uB;uniform vec2 uUvS;uniform vec3 uT;// uT = (t, MS.flow, MS.kick)
+uniform sampler2D uA,uB;uniform vec2 uUvS;uniform vec3 uT;uniform vec2 uFlow;// uT = (t, MS.flow, MS.kick); uFlow = each scene's post.morph.flow (v0.3 §23)
 float hash21(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
   return mix(mix(hash21(i),hash21(i+vec2(1,0)),f.x),mix(hash21(i+vec2(0,1)),hash21(i+vec2(1,1)),f.x),f.y);}
@@ -27,8 +27,8 @@ void main(){vec2 uv=vUv;vec2 c=uv-.5;c.x*=uRes.x/uRes.y;float t=uT.x,fl=uT.y,kk=
   float n=vnoise(uv*3.+fl*.2)*.55+vnoise(uv*9.-fl*.3)*.25+(1.-min(length(c),.9)*1.3)*.75;
   float m=smoothstep(-.15,.15,t*2.1-.75-(1.-n)*.9);
   vec2 wv=vec2(vnoise(uv*5.+3.+fl*.3),vnoise(uv*5.+9.-fl*.3))-.5;
-  vec3 a=smp(uA,uv+wv*.22*t*(1.+kk));
-  vec3 b=smp(uB,uv-wv*.22*(1.-t)*(1.+kk));
+  vec3 a=smp(uA,uv+wv*.22*t*(1.+kk)*uFlow.x);
+  vec3 b=smp(uB,uv-wv*.22*(1.-t)*(1.+kk)*uFlow.y);
   float edge=exp(-pow((m-.5)*5.,2.))*sin(t*3.14159);
   o=vec4(mix(a,b,m)+(a+b)*edge*.9,1.);}`;
 
@@ -55,6 +55,8 @@ export default {
     tex(pr, 'uB', 1, io.b);
     gl.uniform2f(pr.u('uUvS'), io.uvS[0], io.uvS[1]);
     gl.uniform3f(pr.u('uT'), t, MS.flow, MS.kick);
+    const fl = (p) => (p && p.morph && p.morph.flow !== undefined ? p.morph.flow : 1); // the slot: how far the flow field advects that scene's picture (CONTRACTS §5)
+    gl.uniform2f(pr.u('uFlow'), fl(io.postA), fl(io.postB));
     tri();
     return io.out;
   },

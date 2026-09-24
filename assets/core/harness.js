@@ -1,12 +1,12 @@
 // Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
-import { MS } from '../engine/state.js';
+import { MS, XS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
 import { FEATS } from '../engine/feats.js';
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition } from './scenes.js';
 import { Q } from './quality.js';
-import { FX, EFFECTS } from './post.js';
+import { FX, EFFECTS, CHAIN } from './post.js';
 import { G, ERRS, ETEX } from './gl.js';
 import { LOOK } from './look.js';
 import { HELP } from './help.js';
@@ -26,7 +26,7 @@ function readback(r) {
 }
 
 export const CARD = {
-  log: [], MS, SC, Q, FX, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TEST, HASH,
+  log: [], MS, SC, Q, FX, CHAIN, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TEST, HASH,
   hooks: {},
   frameN: 0,
   get fix() { return ENGINE.fix; },
@@ -107,6 +107,7 @@ export function initHarness(hideLanding) {
     if (HASH.has('scene')) SC.forced = +HASH.get('scene');
     if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
+    if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
   }
 }
 
@@ -122,10 +123,12 @@ export function logFrame(S, now, frameN) {
   }
   // director records (v0.2 §10): a restored look memory, a soft switch landing (held = beats waited for the grid)
   if (SC.restored) CARD.log.push('RESTORE@' + now.toFixed(2) + ' alt' + SC.restored.alt + ' scene' + SC.restored.scene);
+  if (SC.filed) CARD.log.push('FILE@' + now.toFixed(2) + ' alt' + SC.filed.alt + ' scene' + SC.filed.scene);
+  if (S.sectionRenumber) CARD.log.push('RENUMBER@' + now.toFixed(2) + ' ' + S.sectionRenumber.join(',') + (SC.renumbered ? ' kept' + SC.renumbered.kept + ' dropped' + SC.renumbered.dropped : ' off'));
   if (SC.switched) CARD.log.push('SWITCH@' + now.toFixed(2) + ' -> ' + SC.switched.id + ' bar' + S.barPos.toFixed(2) + ' gt' + S.gridTrust.toFixed(2) + ' (held ' + SC.switched.held.toFixed(1) + ' beats, ' + SC.switched.why + ')');
   if (frameN % 60 === 0) {
     const E = REG[SC.cur], rt = E ? E.scene.rt : {};
-    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} syn${S.bpmSyn.toFixed(1)} reg${S.regularity.toFixed(2)} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} alt${S.sectionAlt} ret${S.sectionReturn} bar${S.barPos.toFixed(2)} gt${S.gridTrust.toFixed(2)} q${Q.q.toFixed(2)}`);
+    CARD.log.push(`${now.toFixed(1)} bpm${S.bpm.toFixed(1)} syn${S.bpmSyn.toFixed(1)} reg${S.regularity.toFixed(2)} r32${XS._tempoDbg && XS._tempoDbg.rel32 ? XS._tempoDbg.rel32.sc + '/' + XS._tempoDbg.rel32.v + '/' + XS._tempoDbg.rel32.n + '/' + XS._tempoDbg.rel32.s1 + '/' + XS._tempoDbg.rel32.sq : '-'} ${S.arc} e${S.eS.toFixed(2)}/${S.eM.toFixed(2)} b${S.bass.toFixed(2)} bld${S.build.toFixed(2)} abs${S.absentT.toFixed(1)} ten${S.tension.toFixed(2)} sur${S.surprisal.toFixed(2)}/${(S.surRaw || 0).toFixed(1)} iv${S.interval} cl${S.clarity.toFixed(2)} | ${rt.log || ''} | sc${SC.logical} sec${S.sectionId} alt${S.sectionAlt} ret${S.sectionReturn} bar${S.barPos.toFixed(2)} gt${S.gridTrust.toFixed(2)} q${Q.q.toFixed(2)}`);
   }
   if (frameN % 30 === 0) {
     const e = G.gl.getError();

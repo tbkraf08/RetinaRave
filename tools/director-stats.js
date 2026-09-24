@@ -16,7 +16,17 @@ for (const f of process.argv.slice(2)) {
   let prevAlt = null, returns = [];
   for (const l of hz) { const m = l.match(/^([\d.]+) .* alt(-?\d+) ret(\d)/); if (!m) continue; if (prevAlt !== null && +m[2] !== prevAlt && m[3] === '1') returns.push(+m[1] + ':' + m[2]); prevAlt = +m[2]; }
   const held = switches.map((l) => +l.match(/held ([\d.]+)/)[1]);
+  // v0.3 §21: replay synapse's renumbering over the director's FILE@ records — a RESTORE@ whose key holds no live record
+  // (or a record filed under an id the maps have since moved) is a stale restore. RENUMBER@ lines carry the map.
+  const live = {}; let renumbers = 0, stale = 0;
+  for (const l of ev) {
+    let m;
+    if ((m = l.match(/^FILE@[\d.]+ alt(\d+) scene(\d+)/))) live[+m[1]] = +m[2];
+    else if ((m = l.match(/^RENUMBER@[\d.]+ ([-\d,]+)/))) { renumbers++; const map = m[1].split(',').map(Number), old = Object.assign({}, live); for (const k in live) delete live[k]; for (const k in old) { const n = +k < map.length ? map[+k] : +k; if (n >= 0) live[n] = old[k]; } }
+    else if ((m = l.match(/^RESTORE@[\d.]+ alt(\d+) scene(\d+)/))) { if (live[+m[1]] === undefined || live[+m[1]] !== +m[2]) stale++; }
+  }
   console.log(`== ${f}`);
+  console.log(`renumbers (RENUMBER@): ${renumbers} · stale restores (RESTORE@ with no matching live FILE@ after the maps): ${stale} of ${restores.length}`);
   console.log(`returns (alt change with ret1, 1 Hz): ${returns.length} [${returns.join(' ')}]`);
   console.log(`RESTORE@: ${restores.length} [${restores.map((l) => l.slice(8).replace(' scene', '→')).join(' ')}]`);
   console.log(`soft switches${switches.length ? ' (SWITCH@)' : ' (SCENE@ minus hard cuts, incl. home parking)'}: ${soft.length} (gridTrust > .5: ${gridded.length}; on the bar line ${on.length}, off ${off.length} [${off.map((s) => s.t + '@' + s.bar).join(' ')}]; immediate with gridTrust ≤ .5: ${soft.length - gridded.length})`);

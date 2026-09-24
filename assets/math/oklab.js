@@ -33,6 +33,7 @@ export const inGamut = (c, eps = 1e-4) => c.every((x) => x >= -eps && x <= 1 + e
 
 // OKLCH → linear sRGB with the chunk's clip rule: chroma shrunk toward the grey axis at the same L until inside.
 export function okClip(h, L, C) {
+  L = Math.min(1, Math.max(0, L));
   const a = C * Math.cos(TAU * h), b = C * Math.sin(TAU * h);
   if (inGamut(okLabToLin([L, a, b]))) return 1;
   let lo = 0, hi = 1;
@@ -47,6 +48,9 @@ export function palOK(h, L, C) {
   const t = okClip(h, L, C);
   return okLabToLin([L, C * t * Math.cos(TAU * h), C * t * Math.sin(TAU * h)]).map((x) => Math.min(1, Math.max(0, x)));
 }
+
+// The chroma that fits every hue at lightness L (the chunk's okCmax): 0.11 at 0.7, linear to 0 at black and white.
+export const cMax = (L) => 0.11 * Math.min(1, 1.4 * L, 4 * (1 - L));
 
 // The largest chroma inside sRGB at (L, h): bisection to 1e-6 (the chunk's clip is the same search, 14 halvings of C:
 // at the gamut edge a channel moves several units per unit of chroma, so 10 halvings of C 0.3 left 11/255 between

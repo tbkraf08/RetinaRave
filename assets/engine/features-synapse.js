@@ -15,13 +15,14 @@ export const SYN_FEATS = [
   'flow', 'flowBass', 'flowMid', 'flowHigh', 'centroid', 'flux', 'dirty', 'punchy', 'perc',
   'beatConf', 'gridTrust', 'barConf', 'phraseConf', 'bar', 'barPos', 'barPhase', 'phrasePos', 'phrase16Pos', 'beatSyn', 'bpmSyn',
   'key', 'mode', 'keyConf', 'novelty', 'foote', 'boundaryEvt', 'sectionAlt', 'sectionReturn', 'sectionAge',
-  'dropExpectedIn', 'dropConf', 'fakeoutEvt', 'valence', 'arousal', 'moodFamily', 'moodEvt', 'riser', 'roll', 'swell', 'hp',
+  'dropExpectedIn', 'dropConf', 'fakeoutEvt', 'sectionRenumber', 'valence', 'arousal', 'moodFamily', 'moodEvt', 'riser', 'roll', 'swell', 'hp',
 ];
 
 export function synapseStage(dt, now, S) {
   const an = tap.an;
   if (!an) return; // no AudioContext yet (landing card) or the fake timeline (#test): the defaults / the fake's mirror stand
   S.boundaryEvt = S.fakeoutEvt = S.moodEvt = false; // (after the return: the stage runs after fake.update and used to wipe its events)
+  S.sectionRenumber = null;
   const A = an.A;
   tap.frame(dt);
   ENGINE.extraMs += an.cpuMs; // the hop work happens in the worklet port handler, outside frame(): account for it here
@@ -47,6 +48,7 @@ export function synapseStage(dt, now, S) {
     if (e.type === 'boundary') S.boundaryEvt = true;
     else if (e.type === 'fakeout') S.fakeoutEvt = true;
     else if (e.type === 'mood') S.moodEvt = true;
+    else if (e.type === 'renumber') S.sectionRenumber = S.sectionRenumber ? e.map.map((n) => (n < 0 ? -1 : S.sectionRenumber[n])) : e.map; // two in one frame compose
   }
   A.events.length = 0;
   TEX.spec = A.spec; TEX.wave = A.wave; TEX.hist = an.histTex; TEX.row = an.histRow; TEX.hop = an.hops;

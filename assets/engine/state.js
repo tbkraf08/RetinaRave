@@ -16,7 +16,7 @@ export const MS = {
   bassS: 0, midS: 0, highS: 0, sub: 0, lvl: 0, kick: 0, snare: 0, hat: 0, kickCount: 0, alive: 0, hush: 0, calm: 0, resolve: 0,
   flow: 0, flowBass: 0, flowMid: 0, flowHigh: 0, centroid: 0.4, flux: 0, dirty: 0, punchy: 0.5, perc: 0,
   beatConf: 0, gridTrust: 0, barConf: 0, phraseConf: 0, bar: 0, barPos: 0, barPhase: 0, phrasePos: 0, phrase16Pos: 0, beatSyn: 0, bpmSyn: 0,
-  key: 9, mode: 1, keyConf: 0, novelty: 0, foote: 0, boundaryEvt: false, sectionAlt: -1, sectionReturn: 0, sectionAge: 0,
+  key: 9, mode: 1, keyConf: 0, novelty: 0, foote: 0, boundaryEvt: false, sectionAlt: -1, sectionReturn: 0, sectionAge: 0, sectionRenumber: null,
   dropExpectedIn: -1, dropConf: 0, fakeoutEvt: false, valence: 0.5, arousal: 0.3, moodFamily: 0, moodEvt: false, riser: 0, roll: 0, swell: 0, hp: 0,
 };
 
@@ -31,5 +31,6 @@ export const XS = {
   tmp: new Float32Array(800), candBpm: 0, candN: 0, tempoAge: 99, slowTick: 0, pcOf: null, bLo: 0, bHiC: 0, bHiT: 0, bLowC: 0, binS: 5.859375, binF: 23.4375,
   mu: new Float32Array(15), va: new Float32Array(15).fill(0.01), fp: new Float32Array(17), lib: [], arcPrev: 'idle', eAtChange: 0, phraseBeat: 0,
   holdUntil: -1, reseed: false, // v0.3 resume-hold (ENGINE.resume): events masked until holdUntil, flux/surprise baselines re-seated once
+  relN: 0, relQ: 0,             // v0.3 §21 tempo 3:2 arbitration: consecutive short-window votes for the relative relQ
 };
 

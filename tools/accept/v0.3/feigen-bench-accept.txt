@@ -1,0 +1,54 @@
+== feigen-bench accept · 2026-09-23 · levels 3.6 · seam L 1.478
+== (a) tier 3 steady state: feigen median of 3 × bench(6,300) | nav median (interleaved) | label | log
+feig=3.6: L L4.02 feigen 1.21 ms (runs 1.20/1.21/1.23) nav 1.77 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0 errs []
+== (b) build cost after a tricorn flip at the deepest level (tier 3)
+feig=3.6: L L4.02 steady 1.19 ms · flip: first two renders 14.20 ms wall, next 60 mean 2.73 ms, then steady 1.77 ms · log [r8 built b905/905 next r9 b905/905 it500 rows0 3337x905 t3] glerr 0
+== (c) seam ratio: CLOCK=1 &feig=1.478, frames 300..340
+f300 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f301 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f302 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f303 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f304 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f305 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f306 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f307 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f308 L1.79 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f309 L1.80 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f310 L1.80 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f311 L1.80 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f312 L1.80 r3 built b905/905 next r4 b905/905 it208 rows0 3337x905 t2
+f313 L1.80 r4 blend b905/905 next r5 b9/905 it360 rows9 3337x905 t2
+f314 L1.80 r4 blend b905/905 next r5 b18/905 it360 rows9 3337x905 t2
+f315 L1.80 r4 blend b905/905 next r5 b27/905 it360 rows9 3337x905 t2
+f316 L1.80 r4 blend b905/905 next r5 b36/905 it360 rows9 3337x905 t2
+f317 L1.80 r4 blend b905/905 next r5 b45/905 it360 rows9 3337x905 t2
+f318 L1.80 r4 blend b905/905 next r5 b54/905 it360 rows9 3337x905 t2
+f319 L1.80 r4 blend b905/905 next r5 b63/905 it360 rows9 3337x905 t2
+f320 L1.81 r4 blend b905/905 next r5 b72/905 it360 rows9 3337x905 t2
+f321 L1.81 r4 blend b905/905 next r5 b81/905 it360 rows9 3337x905 t2
+f322 L1.81 r4 blend b905/905 next r5 b90/905 it360 rows9 3337x905 t2
+f323 L1.81 r4 blend b905/905 next r5 b99/905 it360 rows9 3337x905 t2
+f324 L1.81 r4 blend b905/905 next r5 b108/905 it360 rows9 3337x905 t2
+f325 L1.81 r4 blend b905/905 next r5 b117/905 it360 rows9 3337x905 t2
+f326 L1.81 r4 blend b905/905 next r5 b126/905 it360 rows9 3337x905 t2
+f327 L1.81 r4 blend b905/905 next r5 b135/905 it360 rows9 3337x905 t2
+f328 L1.82 r4 blend b905/905 next r5 b144/905 it360 rows9 3337x905 t2
+f329 L1.82 r4 blend b905/905 next r5 b153/905 it360 rows9 3337x905 t2
+f330 L1.82 r4 blend b905/905 next r5 b162/905 it360 rows9 3337x905 t2
+f331 L1.82 r4 blend b905/905 next r5 b171/905 it360 rows9 3337x905 t2
+f332 L1.82 r4 blend b905/905 next r5 b180/905 it360 rows9 3337x905 t2
+f333 L1.82 r4 blend b905/905 next r5 b189/905 it360 rows9 3337x905 t2
+f334 L1.82 r4 blend b905/905 next r5 b198/905 it360 rows9 3337x905 t2
+f335 L1.82 r4 blend b905/905 next r5 b207/905 it360 rows9 3337x905 t2
+f336 L1.82 r4 blend b905/905 next r5 b216/905 it360 rows9 3337x905 t2
+f337 L1.82 r4 blend b905/905 next r5 b225/905 it360 rows9 3337x905 t2
+f338 L1.83 r4 blend b905/905 next r5 b234/905 it360 rows9 3337x905 t2
+f339 L1.83 r4 blend b905/905 next r5 b243/905 it360 rows9 3337x905 t2
+f340 L1.83 r4 blend b905/905 next r5 b252/905 it360 rows9 3337x905 t2
+RUNG lines: RUNG@1 r3 L1.478 coarse | RUNG@56 r3 L1.538 blend | RUNG@85 r3 L1.568 built | RUNG@313 r4 L1.800 blend 
+consecutive |Δ| (grey 0..255): 301:1.62 302:1.46 303:1.36 304:1.23 305:2.23 306:1.46 307:1.30 308:1.25 309:1.21 310:1.18 311:1.19 312:1.17 313:0.56 314:0.58 315:0.62 316:0.66 317:0.67 318:0.69 319:0.72 320:37.47 321:7.59 322:5.60 323:4.65 324:3.95 325:3.31 326:2.84 327:2.80 328:2.31 329:2.05 330:1.88 331:1.68 332:1.58 333:1.44 334:2.40 335:1.68 336:1.53 337:1.48 338:1.46 339:1.44 340:1.46
+seam ratio max/median = 25.62 (max 37.47 at f320, median 1.46, mean 2.79)
+RUNG@1 is outside the shot window 301..340
+RUNG@56 is outside the shot window 301..340
+RUNG@85 is outside the shot window 301..340
+RUNG@313: |Δ| 0.56 = 0.38 × median (kick flares in this window before §16: f305 4.5, f320 42.5, f334 4.5)

@@ -909,3 +909,152 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
 - **Not done here, by design:** no scene uses the chunk yet (items 2, 5, 6 do); the chain is still encoded, so a
   scene writes `palOKs`/`linToSrgb(palOK(…))` until item 3 moves the chain to linear light.
 
+## §20 linear-chain — the effect chain in linear light (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 3)
+
+- **What was wrong.** Bloom (a blur and an add), the composite's bloom and flash adds and the exposure's metering ran on
+  sRGB-encoded values, and the composite's tonemap `1 − exp(−1.5c)` — a linear-radiance operator — was applied to
+  encoded values and written to the screen with no encode after it: display white was unreachable (white in → 198/255),
+  a blurred edge between complementary hues dipped in luminance (the encoded midpoint of equal-luminance magenta and
+  green has 0.75 of their luminance in `chain-smoke.js`'s measurement), and additive light clipped channel-wise long
+  before white (10.6 % of DUST's pixels at the fake drop frame had a channel ≥ 1 before the tonemap).
+- **The shape (CONTRACTS §1.10, §3).** The scene's output stays encoded (every palette in the repo is, and `ctx.oklch`
+  users write `palOKs`). Feedback — the chain's first pass — decodes it (`srgbToLin` from the §19 chunk, `uFb.w`) and
+  sets `io.decoded`; `post.js` decodes itself before the first effect above order 10 if feedback was skipped (no scene
+  does that today, the fallback is 10 lines). Bloom thresholds linear values; exposure meters linear luminance; the
+  composite adds bloom and flash in linear, tonemaps with `(1 − exp(−k·c)) / (1 − exp(−k))`, k 1.5, so linear 1.0
+  reaches white, encodes (`linToSrgb`), then vignette and dither on the encoded value (a display-space darkening and a
+  quantisation step). `CHAIN = { linear, k }` in `post.js`, `io.linear / io.k / io.decoded` per frame; `&linear=0`
+  under `#test` is the v0.2 chain (one uniform per program, no recompile) — the A/B and the history.
+- **Slots keep their encoded meaning — the re-tune list came out empty.** `post.bloom.thr` is decoded through the sRGB
+  curve (0.35 encoded → 0.10 linear, the knee `thr + .5` likewise), `post.fb.decay` becomes `d^2.2` per frame (a factor
+  on encoded values is that on linear ones: the trail a scene tuned stays), exposure's `TARGET` is decoded (0.22 →
+  0.040), and the flash — "+0.9 on encoded values" — becomes the linear add that puts the same wash on a black pixel:
+  `f' = −ln(1 − (1 − e^−k)·lin(1 − e^−1.5f)) / k` (0.9 → 0.34). Without the last one a drop whited the whole frame out
+  (0.9 of linear radiance is nearly white); with it the fake drop frame on DUST has mean luminance 150.5 vs 152.7
+  encoded. The brief's "unblended pixels byte-identical" could not hold: the tonemap moved with the chain, so every
+  pixel's tone curve changed (mid-tones a little brighter, highlights much brighter) — the per-scene A/B montage
+  (`tools/accept/v0.3/chain-linear-ab.jpg`, f360/f840 × 6 scenes) decided it: the same pictures with cleaner highlights,
+  FEIGEN's f840 filament and MANDALA's rim the most visible gains; nothing lost, nothing to re-tune.
+- **Numbers (`tools/chain-smoke.js`, in `accept.sh`; the DUST clip recipe in HARNESS "Effect chain").** Fringe: 0.745
+  encoded → 0.998 linear (the brief asked ≈ 0.6 → ≥ 0.95). White: 198 → 255. DUST clip fraction at the fake drop frame:
+  **10.6 % → 0.12 %** (`chain-linear-drop-clip.jpg`). `linear=0` is byte-identical to the v0.2 tag (scene md5 list
+  identical, mixs md5 unchanged) — the proof that only the space changed. Cost: one `pow` per pixel in feedback's decode
+  and one in the composite's encode; nothing else.
+- **The re-base (this commit: the default flips to linear after the FEIGEN OKLCH and NAV hue merges, so every
+  reference moves once).** mixs 0 → 3 f178: `a6e2b8cd…` → **`425a66e5b50c14786e6e25bc215a3169`** (three shots identical;
+  `accept.sh`). The scene list: `tools/accept/v0.3/scene-md5-v03.txt` (s0 87d5f8bd/6c1aadab, s1 c6166af9/7ca6598c,
+  s2 9a57626c/5e59be93, s3 d3e73b38/7e77c7b3, s5 24493420/2b1e1333, s6 923b314f/b438daf2). FEIGEN's `&histfull=1`
+  equality is computed by the sweep, not recorded. `parity.js fake` 0 diff throughout (state, not pixels).
+
+## §22 director-renumber — `SC.mem` follows synapse's section ids (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 8)
+
+- **The slot.** Synapse's section ids are indices into its ring (`engine/synapse/structure.js`): a fresh section merged
+  into a recognised return is spliced out and every id above it moves down; past 24 sections the ring shifts and every
+  id moves down by one. Both now push `{type: 'renumber', map}` (`map[old] = new`, −1 dropped); the stage publishes it
+  for that frame as `MS.sectionRenumber` (`null` otherwise; two in one frame compose) and the director's `memory()`
+  moves `SC.mem`'s keys, `prevAlt` and `due` through it before reading the frame's `sectionAlt` (which synapse already
+  reports in the new numbering). `SC.renumberOn = false` is the §10 behaviour (`RENUMOFF=1 director-trace.sh`);
+  `#test` logs `FILE@` (a filing) and `RENUMBER@ <map> kept<n> dropped<n>`; `director-stats.js` replays the maps over the
+  `FILE@` records and counts a `RESTORE@` whose key holds no live record as stale. `tools/test_director.js` case 8: a
+  filing under 5, a map dropping 3, a return identified as 4 restores the filed looks with the renumbering on and finds
+  nothing with it off.
+- **Measured: harmless today, by construction.** `director-trace.sh mix` × 3 with the fix and × 1 without
+  (`director-mix-renum{1,2,3,off}.txt`): renumber events **2 / 0 / 1 / 0** per 6-minute run, every one the merge of the
+  *newest* section (a fresh section is always the last index — nothing can be pushed while it is unsettled), so every
+  map was the identity on every filed key (`kept 7–8, dropped 0`); stale restores **0 of 11** in all four runs — also
+  in the run without the fix, which is the §10 "one stale restore" measured: the demo never produces it. Where the map
+  is not the identity is the 24-section ring shift (a long set: 24 boundaries) — every filed key moves down by one and
+  the oldest is dropped; that is the case the fix exists for, and case 8 of the node test is its proof. Closed as the
+  brief allowed: measured, harmless, the slot in place.
+
+## §21 tempo-3to2 — a 3:2 change decided by the last 2.5 s (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 7)
+
+- **The case, measured first.** `tools/test_tempo.js` gained the 3:2 case (the house pattern at 128 → the same pattern
+  at 192 → back). The §9 estimator never picked 192 up at all (12 s, not the 8 s §9 recorded on the synth): the old
+  tempo's comb `l + .6·2l + .3·4l` at lag 47 is propped by its harmonics at 94 and 188, which are exactly 3 and 6
+  beats of the new grid (2·L128 = 3·L192), so 128's comb keeps winning the whole-window argmax while its own lag dies;
+  and once the old material has drained the prior prefers 96 (192's halftime, 0.73 vs 0.60), which is a ½ relative and
+  refused while the 192 lag is alive. The 2:3 way (192 → 128) locked in 1 s already.
+- **The rule (tempo.js, rule 6).** The last 2.5 s of the normalised envelope get their own comb at the current lag and
+  at its 3:2 and 2:3 relatives (only those: ½/2/¼/4 are drum patterns a tempo explains and keep §9's rules); when the
+  relative's short comb is > 0.6, > 1.25× the current tempo's, **and the current beat lag itself has died relative to
+  the relative's** (`short(Lcur) < 0.5·short(Lrel)`) for three consecutive estimates (1.5 s), the tempo is the relative
+  (refined on the whole-window vertex). `test_tempo.js`: **192 in 4 s, 128 back in 4 s**, every other case unchanged
+  (dnb/four/house/halftime lock, gap and after to the same max err; build hold 0.53; the 174 changes 4 s and 5 s).
+- **What was tried and dropped, in one line each.** The beat lag alone as the reference (> 1.5× the current beat lag):
+  locked the synthetic case but flipped the mix demo's 140 halftime section to 93 eight times (halftime's 1-beat lag is
+  a quarter of its 2-beat lag — no reference at all). Per-product normalisation of the short ACF (a long lag has fewer
+  products): sent dnb to its 2:3 relative in the node test — the attenuation of long lags is a taper the rule needs.
+  Comb-only (no dead-beat-lag condition): steady house read the relative's comb at 1.06× its own, a margin too thin.
+- **Traces (`tempo-{mix,house,dnb,fakeout}-after32c.txt`, with `r32 sc/v/n/s1/sq` on every 1 Hz line).** mix: the same
+  three jumps as v0.2's trace (128 → 172 at 134 s, 174 → 139 at 258 s, 140 → 124 at 343 s — the demo's real changes)
+  and no other; house 0 jumps, fakeout 0, dnb 1 (the initial lock). The closest approach to a false vote: one second
+  of the mix's 140 section (279 s) met all three conditions (beat lag 0.29 vs the 2:3 relative's 0.95 — that passage
+  really has a 1.5-beat period) and no second before or after it did; three consecutive are needed. `parity real`:
+  ew 126.23 vs v3 125.99, arcs identical, drops within 0.5 s.
+
+## §23 morph-flow-slot — `post.morph.flow` (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 9)
+
+- **The montage decided it.** The three stroke-scene pairs at CLOCK f178 (`morph-flow-ab.jpg`: TORUS → NAV, POLYTOPE →
+  NAV, DUST → TORUS, mixs beside morph) show the comb once: in DUST → TORUS the incoming ribbons are smeared along the
+  flow field into a comb; TORUS → NAV and POLYTOPE → NAV land on NAV's drop frame and either transition reads the
+  same. So the slot exists and one scene sets it.
+- **The slot.** `drawScenes` hands the transition `io.postA` / `io.postB` (the outgoing and incoming scene's resolved
+  `post`, CONTRACTS §5); `morph` reads `post.morph.flow` (0..1, default 1) per side and scales that side's advection
+  (`uFlow`). At 1 the pass is byte-identical to before (the f178 md5 of the 1 → 3 morph unchanged). `morph-flow-
+  slot.jpg`: flow 1 / 0.4 / 0 — at 0.4 the ribbons are intact with a slight drift and the front still reads as a
+  morph; at 0 only the front moves. **TORUS ships 0.4**; POLYTOPE stays at 1 (its pair showed no comb — the brief's
+  closing rule), DUST at 1 (its fibres were the outgoing side and were not combed). `mixs` untouched.
+
+## §24 feigen-oklch — FEIGEN's colour pass on the field's three coordinates (v0.3, 2026-09-23, worker from `docs/workers/brief-feigen-oklch.md`, report `feigen-oklch.md`; NEXT-SESSION-PROMPT item 2)
+
+- **What shipped (`scenes/feigen/colour.js` only; `field.js`/`ladder.js` byte-identical):** H ← the external angle
+  (+ the mood hue, a half-turn flip on a drop), **L ← the scale-free distance estimate** `0.72·(1 − exp(−200·d))` — the
+  far field at 0.7 (where the chroma budget is full), darkening to the DE black band under half a pixel — rippled
+  ±0.08 by the Green's potential on musical time; C ← `cMax(L)·smoothstep(0.35, 2.5, d_px)·uSat`; kick/drop lift L by
+  ≤ 0.15 / 0.25 of the remaining headroom. The brief's first mapping (L ← log₂G compressed) was built and measured
+  first: a deep view spans hundreds of doublings, so the whole `&feig=3.6` frame went dark; the distance is the
+  quantity that is scale-free at every depth (the same picture — bright field, dark rim, black boundary — over a 250×
+  range of view width). The worker's `cMax(L)` envelope (now `okCmax` in the chunk) is what makes "0 clipped" true:
+  a flat C 0.11 would clip 621 k of 810 k pixels at L 0.3.
+- **Numbers.** Gamut 0 clipped of 921 600 on `&feig=1.2` and `3.6` at f360/f840. Banding along a Green's equipotential
+  (distinct 8-bit triplets per row): 357/305/354 → **395/781/768**. Cost +0.5 % vs a same-session interleaved master
+  control (the v0.2 accept file's ratio would read +8 %: machine drift, HARNESS "Bench protocol"). Seam at the rung
+  change (`SEAM_L` 1.478 — the tool's old default 1.3 measured no rung change; 1.478 is the default now) 0.42× the
+  window median (§16: 0.51×); the f320 kick flare 32.5 (was 42.5). `&histfull=1` equality holds (same md5s). Real path
+  45 s clean. Ride-along: `post.bloom.thr` 0.3 → 0.6 (the bright pixels are plateaux now, bloom softened the frame),
+  the `help.why` sentence corrected to what the code does.
+- **Under the linear chain (§20) the field's 0.72 came out near white** (the tonemap lifts mid-tones: encoded 0.72 →
+  0.83 on screen) — the shipped constant is **0.5** (`feig-l50.jpg`): a pale pastel field with a dark rim and the
+  black boundary, the same picture at `&feig=3.6`. Left open as taste: the field's lightness (0.4–0.5 is the band
+  where the hue cells still read as colour; the v0.2 look — dark field, glowing filament — is the inverse of this
+  design, not a setting of it).
+- **The Q trace after the merges and the chain flip (`q-{house,aba}-after.txt`, 3 runs each, one Chrome, nothing
+  else):** house mean 0.75 / windows 0.59 · 0.73 · 0.85 · 0.95, aba 0.84 / 0.59 · 0.73 · 0.85 · 0.99 — against v0.2's
+  `none` 0.76 / 0.60 · 0.74 · 0.86 · 0.96 and 0.85 / 0.59 · 0.73 · 0.85 · 0.99: **the same to the second decimal** with
+  six forced deep visits per style (entry 0.74–0.79, min during the visit the same, 0.95 at exit + 30 s). Cost
+  neutral, as the brief asked; `accept.sh` FEIGEN L3.6 1.21 ms vs NAV 1.77.
+- **The FEIGEN reference md5s are re-based in §20's commit** (the chain flip moves them again).
+
+## §25 nav-hue — NAV's interior by the multiplier, its exterior by the external angle (v0.3, 2026-09-23, worker from `docs/workers/brief-nav-hue.md`, report `nav-hue.md`; NEXT-SESSION-PROMPT items 5 + 6)
+
+- **What shipped (`scenes/nav/shaders.js` + `index.js`; `nav.js` untouched, `parity.js fake` 0 diff, monitor `viol []`).**
+  Interior (a known cycle): hue = arg λ + the mood hue, L = 0.10 + 0.32·|λ| modulated by the Koenigs bands (a centre
+  dark, a root a lit mid-tone — the multiplier is one value per frame, so the brightening is temporal, not a spatial
+  rim), C = `cMax(L)·(0.6 + 0.4·bands)` with the spokes as a ±12 % chroma ripple; the critical-slowing smoulder stays
+  the additive term outside the DRUM mix (§16's worker's). Exterior (main view and the PiP): hue = the external angle
+  + the mood hue — the doubling expansion accumulated per iteration as the itinerary bits `b_n = sign(Im z_n)`, closed
+  with `arg z_N·2^−N` — L capped at 0.55 (saturated hue lives there), the white DE rim unchanged. `LOOK.pal[0]`
+  still rotates the whole wheel.
+- **Two passes.** The first put the interior at L 0.30–0.65 (+ smoulder → 0.92) and the exterior uncapped: the montage
+  showed a pale interior and a washed drop frame — OKLCH puts bright colours at low chroma, so the identity of v3's
+  picture (dark interior, saturated exterior) lives below L 0.55. The second pass is the shipped one: dark interior
+  with a lit root at f660, the f840 drop an X of teal / amber / rose sectors on black (`nav-hue-ab.jpg`); v3's vivid
+  cyan is outside sRGB at C ≤ 0.119 — §19's price. Named ray: θ = 7/8 reads hue 0.399 in the main view and 0.393 in
+  the PiP (predicted 0.386). Gamut 0 clipped of 810 240 (main) and 23 104 (PiP) at f360/f840; a flat C 0.11 would clip
+  646 k / 696 k. Bench: NAV/id-3 ratio 5.81 → 5.33 in one session (id 3 rose 13 % with the machine; the ratio is the
+  figure). Real path 45 s clean.
+- **Friction into the docs:** `feigen/field.js` does not accumulate the external angle by itinerary (the brief said so —
+  it stores the escape argument); the itinerary derivation is in the report. Benching NAV against NAV is impossible:
+  the protocol's control is "the other scene in the same session" (id 3 here); pinning `Q.q` does not pin `Q.iter`.
+

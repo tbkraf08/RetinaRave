@@ -260,7 +260,7 @@ export default {
 
   // The set already carries its own symmetry (the cascade repeats down the real axis), so a kaleidoscope on top would
   // fake a symmetry the mathematics does not have — it is off here. Short trails keep the filaments from crawling.
-  post: { fb: { decay: 0.55 }, bloom: { thr: 0.3 }, kaleido: 0 },
+  post: { fb: { decay: 0.55 }, bloom: { thr: 0.6 }, kaleido: 0 }, // bloom 0.3 → 0.6 with the OKLCH pass (§19 worker): the bright pixels are plateaux now, not filaments
 
   rt: {},
 
@@ -318,9 +318,9 @@ export default {
       + 'colouring of the rung that is already there. A rung that needs 500 iterations per point just takes more '
       + 'frames to build, and it has six seconds. The cost of the scene stopped depending on how deep it is, which '
       + 'matters because the quality knob is shared: one expensive scene dims every other one for half a minute. '
-      + 'And the colour is not a palette laid over it: hue is the external angle, lightness the Green\'s potential, '
-      + 'chroma the distance estimate — the three coordinates the field already carries. A ray landing on a wake is a '
-      + 'line of constant hue, a level set of the potential a line of constant lightness, and the edge stays a pixel '
+      + 'And the colour is not a palette laid over it: hue is the external angle, lightness the distance estimate with the Green\'s potential '
+      + 'rippling it, chroma the same distance fading to black at the edge — the three coordinates the field already carries. A ray landing on a wake is a '
+      + 'line of constant hue, a level set of the potential a ripple of lightness, and the edge stays a pixel '
       + 'wide however deep you fall, because the distance to the set draws it and not a filter.',
     math: 'c_inf = -1.401155189092051 is the accumulation of the period-doubling cascade of z -> z^2 + c on the real '
       + 'axis; consecutive bifurcation gaps shrink by Feigenbaum\'s delta = 4.669201609, and the cascade is '

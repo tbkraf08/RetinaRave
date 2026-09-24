@@ -20,6 +20,9 @@
 //      (½×, 2×, ¼×, 4×, ⅓×, 3×, ⅔×, 3/2×; not 4/3) is explained by the current tempo while the current lag is still alive → refused; once the
 //      current lag has collapsed a slower relative needs 16 votes (8 s: the whole window), a faster one 4. A tempo that
 //      has seen 8 s of solid evidence (y1 > 0.3) without being confirmed lets any candidate through with 3 votes.
+//   6. 3:2 arbitration (v0.3 §21): a 3:2 / 2:3 change is invisible to the whole-window comb for 8 s (the old tempo's
+//      2l/4l harmonics sit on the new grid), so the last 2.5 s decide it — three estimates with the relative's beat lag
+//      > 0.3 and > 1.5× the current one switch the tempo (4 s up, 3 s down in test_tempo.js; was never / 8 s).
 import { clamp, ema, frac, sstep, wrap1 } from '../math/util.js';
 import { MS, XS } from './state.js';
 
@@ -105,6 +108,34 @@ export function tempoEstimate() {
   const clear = contrast > 4 && y1 > 0.15; // 0.15: white noise over 800 samples peaks at ~0.1
   X._tempoDbg = { bl, P, bpm, y1, h1, contrast, cur, best, clear };
   S.regularity = ema(S.regularity, clamp(y1 * 1.6, 0, 1) * sstep(0.05, 0.3, S.presence) * sstep(2, 5, contrast), 0.5, 1.2);
+  // 3:2 arbitration (v0.3 §21): a 3:2 or 2:3 change cannot be seen by the whole-window comb for 8 s — the old tempo's
+  // 2l/4l harmonics sit on the new beat grid (2·L128 = 3·L192), so its comb keeps winning while its own lag dies. The
+  // last 2.5 s decide instead, with the same harmonic comb (l + .6·2l + .3·4l — the beat lag alone is no reference:
+  // halftime's 1-beat lag is a quarter of its 2-beat lag, and 140's 2:3 relative flipped the mix demo on it): when the
+  // relative's short comb is > 0.6 and > 1.25× the current tempo's for three estimates (1.5 s), the tempo is the
+  // relative. Only these two ratios: ½/2/¼/4 are drum patterns a tempo explains (halftime, double-time) and keep §9's rules.
+  if (clear && y1 > 0.08) {
+    const M = 250, short = (l) => {
+      const i = Math.floor(l), f = l - i;
+      if (i + 1 >= M - 8) return 0; // a lag the window cannot hold
+      let a = 0, b = 0, n = 0;
+      for (let t = N - M; t < N; t++) { a += x[t] * x[t - i]; b += x[t] * x[t - i - 1]; n += x[t] * x[t]; }
+      return (a * (1 - f) + b * f) / (n + 1e-9); // normalised by the window's power: a long lag has fewer products and reads lower — a taper, kept (per-product normalisation flipped dnb to its 2:3 relative)
+    };
+    const combS = (l) => short(l) + 0.6 * short(2 * l) + 0.3 * short(4 * l);
+    const sc = combS(Lcur), s1 = short(Lcur);
+    let bq = 0, bv = 0;
+    for (const q of [1.5, 2 / 3]) { const v = combS(Lcur / q); if (v > bv) { bv = v; bq = q; } }
+    // three conditions: the relative's comb carries the window, beats the current comb, and the current BEAT lag has
+    // died relative to the relative's (a steady groove keeps its beat lag ≈ 0.8 while a relative's comb can reach 0.7)
+    if (bv > 0.6 && bv > 1.25 * sc && s1 < 0.5 * short(Lcur / bq)) { X.relN = (X.relQ === bq ? X.relN : 0) + 1; X.relQ = bq; } else X.relN = 0;
+    X._tempoDbg.rel32 = { sc: +sc.toFixed(2), q: bq, v: +bv.toFixed(2), n: X.relN, s1: +s1.toFixed(2), sq: +short(Lcur / bq).toFixed(2) };
+    if (X.relN >= 3) {
+      const [v] = vertex(acf, Math.round(Lcur / bq), 2), L2 = Math.abs(v / (Lcur / bq) - 1) < 0.05 ? v : Lcur / bq;
+      S.bpm = 6000 / L2;
+      X.relN = 0; X.candN = 0; X.tempoAge = 0;
+    }
+  }
   if (y1 > 0.08) {
     const r = bpm / S.bpm;
     if (!clear) { /* hold */ } else if (Math.abs(r - 1) < 0.06) {

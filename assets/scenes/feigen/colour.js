@@ -136,9 +136,10 @@ void main(){
     float H = ea + uHue + 0.5 * uInvert;
     // L: the DISTANCE, not the potential. d is already divided by the view width, so it carries the dive's
     // self-similarity: the same shape of view has the same d at every depth, and the grade never moves under the
-    // fall. The open field sits at 0.72 — where cMax is the full 0.11, so the hue cells read as colour — and darkens
-    // into the set. KD is chosen on the montage (see the report): it is the reciprocal of the d that half-darkens.
-    float L = 0.72 * (1. - exp(-d * 200.));
+    // fall. The open field sits at 0.5 (0.72 in the worker's pass on the encoded chain; the linear chain's tonemap
+    // lifts mid-tones, and 0.72 came out near white on screen — §20/§24) and darkens into the set. KD is chosen on
+    // the montage (see the report): it is the reciprocal of the d that half-darkens.
+    float L = 0.5 * (1. - exp(-d * 200.));
     // the Green's level sets: one band per doubling of G, drifting outward on musical time, as a +-0.08 ripple of
     // lightness on top of the distance grade (§15's band term, same lG, same uFlow, same sp^2 / uHat amplitude)
     float band = 1. - smoothstep(0., 0.1, abs(fract(lG * 0.5 - uFlow * 0.3) - 0.5) - 0.4);

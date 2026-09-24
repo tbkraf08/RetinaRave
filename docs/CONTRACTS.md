@@ -245,8 +245,17 @@ Anything else is a bug.
 
 After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, prev·decay)` with a zoom/twist) →
 bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
-surprises/drops, kaleidoscope on peaks, flash on drops, tonemap `1 − exp(−1.5·c)`, vignette `1 − 0.9·|uv−.5|²`, dither.
+surprises/drops, kaleidoscope on peaks, flash on drops, tonemap, vignette `1 − 0.9·|uv−.5|²`, dither.
 A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
+
+**The chain runs in linear light (v0.3 §20).** What you write is sRGB-encoded (every palette in the repo is); the chain
+decodes it once at its input (feedback's pass), blurs, adds bloom and flash and meters exposure on linear radiance, tone-
+maps with `(1 − exp(−1.5c)) / (1 − exp(−1.5))` — so a linear 1.0 reaches display white — and encodes before the
+vignette and the dither. What this means for you: the slots keep their encoded meaning (`post.bloom.thr` is still
+"bloom above encoded 0.35", `post.fb.decay` still the trail length you see: the core converts them through the curve),
+bloom adds light instead of encoded numbers (no dark fringe between complementary hues, no channel clipping to white
+three times too soon), and a scene whose colours came out of `ctx.oklch` should still write `palOKs` (encoded) —
+the decode is the chain's, not yours. `&linear=0` under `#test` is the v0.2 chain for A/B history.
 
 ### 1.11 Look memory
 
@@ -348,6 +357,7 @@ vec3  okLabToLin(vec3 lab);          // and back (unclamped: out-of-gamut values
 vec3  srgbToLin(vec3 enc);           // the piecewise sRGB curve, both ways, clamped to 0..1
 vec3  linToSrgb(vec3 lin);
 float okClip(float h, float L, float C);   // the chroma scale the gamut clip keeps at (h, L, C): 1 = inside sRGB
+                                           // (L is clamped to 0..1 here and in palOK — an L above 1 is not "white", it is out of gamut)
 vec3  palOK(float h, float L, float C);    // OKLCH → LINEAR sRGB, in gamut: chroma shrunk toward the grey axis at the
                                            // same L (hue and lightness kept — a clipped colour goes greyer, never
                                            // darker or hue-shifted, which is what a channel clamp does)
@@ -356,7 +366,10 @@ vec3  palOKs(float h, float L, float C);   // the same, sRGB-encoded — what a 
 
 `h` is a turn (0..1), `L` 0..1, `C` in OKLab units. **C 0.11 at L 0.7 is inside sRGB at every hue** (the tightest hue
 is 200° at 0.119 — `tools/test_oklab.js`); above that the clip decides per pixel (14 halvings of C — only on the pixels
-that need it). Interpolate colours in OKLab (`mix` on the `(L, a, b)` triple, then `okLabToLin`), never on encoded
+that need it). **The budget depends on L**: at L 0.3 only 0.051 fits every hue, at L 0.9 only 0.041 — a scene that
+varies lightness uses `okCmax(L) = 0.11·min(1, 1.4L, 4(1−L))` (JS: `cMax`) as its chroma, which is under the true
+envelope at every L, so its colours never reach the clip at all (`hooks.clipdbg` in FEIGEN and NAV count 0). Bright
+colours are pale in sRGB — a saturated blue is L 0.45 — so a scene that wants saturation keeps L at or below 0.7. Interpolate colours in OKLab (`mix` on the `(L, a, b)` triple, then `okLabToLin`), never on encoded
 values: the gamma midpoint of two complementary hues at L 0.7 has L 0.67 (`tools/oklch-smoke.js`). HEAD's `pal()` is
 untouched and stays the default; `assets/math/oklab.js` is the JS twin (same constants, `maxChroma(L, h)`) for
 anything computed on the CPU. Never call `okLabToLin` on a colour you then write unclamped: the chain's targets are
@@ -385,9 +398,14 @@ export default {
 };
 ```
 
-`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q}` — `src` a target; `w,h` the
-full target size, `sw,sh` the scene-pass size inside it; `uvS` `[u,v]` scale to sample `src`; `dt` seconds; `frameN`
-monotonic (it keeps counting while you are skipped — a gap means you were just switched on).
+`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q, linear, k, decoded}` — `src` a
+target; `w,h` the full target size, `sw,sh` the scene-pass size inside it; `uvS` `[u,v]` scale to sample `src`; `dt`
+seconds; `frameN` monotonic (it keeps counting while you are skipped — a gap means you were just switched on);
+`linear` (§1.10) says the chain is in linear light — `src` holds linear radiance from order 10 on (feedback decodes
+the scene's encoded output and sets `decoded`; if feedback is skipped the core decodes before the first effect above
+order 10) and the composite encodes; `k` the tonemap knee. An effect that reads a slot or constant tuned on encoded
+values converts it (`srgbToLin1` from `assets/math/oklab.js`, `pow(d, 2.2)` for a per-frame decay) so the slot keeps
+its meaning; `ctx.oklch` (§1.14) gives the GLSL side.
 - `src` is the current chain input (a target). The scene pass was rendered at `(sw, sh)` inside a `(w, h)` target:
   sample it with `vUv * uvS`. Rule: an effect that returns a target has re-rendered the whole `(w, h)` target and must
   set `io.uvS = [1, 1]` (feedback does; so anything after order 10 sees `[1,1]`). The target you return stays yours:
@@ -426,7 +444,10 @@ export default {
 };
 ```
 
-`io` per frame (only while a crossfade is running): `{a, b, m, out, w, h, sw, sh, uvS, MS, FX, GROOVE, LOOK, dt}`.
+`io` per frame (only while a crossfade is running): `{a, b, m, out, w, h, sw, sh, uvS, MS, FX, GROOVE, LOOK, dt, postA,
+postB}` — `postA`/`postB` are the outgoing and incoming scene's resolved `post` objects (§1.4), so a transition can carry
+per-scene slots: `morph` reads `post.morph.flow` (0..1, default 1 — how far its flow field advects that scene's
+picture; a stroke scene whose ribbons comb under the advection sets it lower, v0.3 §23).
 - `a`, `b` are the core's scene targets (`{t, f, w, h}`, RGBA16F when available): the outgoing scene rendered in `a`,
   the incoming in `b`, both at `(sw, sh)` inside the full `(w, h)` target — sample them with `vUv * uvS` exactly as an
   effect samples `src`, and **clamp** the sample coordinate into `[0, uvS]` when you displace it (the targets are

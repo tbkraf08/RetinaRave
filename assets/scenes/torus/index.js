@@ -212,7 +212,7 @@ export default {
     return 'torus pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.fib) + ' seg ' + SEG;
   },
 
-  post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0 },
+  post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } }, // morph.flow: the flow field combed the ribbons at 1 (v0.3 §23, montage morph-flow-slot.jpg)
 
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives

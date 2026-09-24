@@ -16,7 +16,7 @@
 cd "$(dirname "$0")/.." || exit 1
 TAG=${1:-after}; shift
 LEVELS=${*:-1.2 2 3 3.6}
-SEAM_L=${SEAM_L:-1.3}
+SEAM_L=${SEAM_L:-1.478}
 OUTF=tools/accept/${ACC:-v0.3}/feigen-bench-$TAG.txt
 mkdir -p tools/accept/${ACC:-v0.3} tools/work/seam-$TAG
 {

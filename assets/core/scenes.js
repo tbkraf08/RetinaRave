@@ -12,6 +12,7 @@ export const SC = {
   variant: null, vT: 0, vmix: 0,     // active variant name, its target (0/1) and the eased mix scenes read
   lastBeat: -99, hist: [0], forced: -1, home: 0,
   mem: {}, prevAlt: -1, altOpen: false, due: -1, // look memory keyed on sectionAlt (§10 A): mem[alt] = {scene, looks}; due = a return whose scene is still owed
+  renumberOn: true, renumbers: 0, renumbered: null, filed: null, // v0.3 §21: SC.mem follows synapse's id renumbering (renumberOn=false = the §10 behaviour, for the before/after trace)
   quantise: true, pend: null,            // grid-held soft switch (§10 B): the one pending {id, why, beat0, ...}
   restored: null, switched: null,        // this frame's director records (the harness logs them)
 };
@@ -123,10 +124,19 @@ function setLooks(looks) {
   for (const sc of SCENES) if (sc.look && looks[sc.name] !== undefined) sc.look.set.call(sc, looks[sc.name]);
 }
 function memory(S) {
+  SC.renumbered = SC.filed = null;
+  if (S.sectionRenumber && SC.renumberOn) { // synapse renumbered its sections (§21): the keys, prevAlt and due follow
+    const map = S.sectionRenumber, re = (k) => (k >= 0 && k < map.length ? map[k] : k), old = SC.mem;
+    let kept = 0, dropped = 0;
+    SC.mem = {};
+    for (const k in old) { const n = re(+k); if (n >= 0) { SC.mem[n] = old[k]; kept++; } else dropped++; }
+    SC.prevAlt = re(SC.prevAlt); SC.due = re(SC.due);
+    SC.renumbers++; SC.renumbered = { map, kept, dropped };
+  }
   const alt = S.sectionAlt, prev = SC.prevAlt, moved = alt !== prev;
   SC.restored = null;
   if (S.boundaryEvt) {
-    if (SC.altOpen && prev >= 0) SC.mem[prev] = { scene: SC.pend ? SC.pend.id : SC.logical, looks: getLooks() }; // a switch still held for the bar line counts
+    if (SC.altOpen && prev >= 0) { SC.mem[prev] = { scene: SC.pend ? SC.pend.id : SC.logical, looks: getLooks() }; SC.filed = { alt: prev, scene: SC.mem[prev].scene }; } // a switch still held for the bar line counts
     SC.altOpen = false;
     SC.due = -1;
   }
@@ -235,6 +245,8 @@ export function drawScenes(sw, sh, io) {
   io.a = RT.a;
   io.b = RT.b;
   io.m = SC.m;
+  io.postA = postOf(SC.cur, io.MS); // each scene's resolved post object: a transition reads its own slots there (§5, e.g. morph.flow)
+  io.postB = postOf(SC.next, io.MS);
   io.out = RT.m;
   io.w = G.PW;
   io.h = G.PH;
@@ -258,7 +270,9 @@ export function visibility(base) {
 
 // The post params of the scene that "owns" the frame (the incoming one past the crossfade midpoint).
 export function postParams(S) {
-  const sid = SC.next >= 0 && SC.m > 0.5 ? SC.next : SC.cur;
-  const p = REG[sid].scene.post;
+  return postOf(SC.next >= 0 && SC.m > 0.5 ? SC.next : SC.cur, S);
+}
+function postOf(id, S) {
+  const p = REG[id].scene.post;
   return (typeof p === 'function' ? p(S) : p) || {};
 }

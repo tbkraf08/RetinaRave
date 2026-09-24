@@ -90,6 +90,14 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
   the comb PLL on that tempo. `bpmSyn` is the synapse rival kept for comparison — there is no longer a case where a
   scene should prefer it (it is the one that wobbles in the dnb breakdown now). `tools/test_tempo.js` is the
   estimator's node test; `tools/tempo-trace.sh` the per-style trace (DECISIONS §9 has the before/after table).
+  v0.3 §21: a 3:2 / 2:3 change (128 ↔ 192) is decided by the last 2.5 s of the envelope — the whole-window comb cannot
+  see it for 8 s because the old tempo's 2l/4l harmonics sit on the new grid — three estimates (1.5 s) with the
+  relative's beat lag > 0.3 and > 1.5× the current one switch it (4 s up, 3 s down in `test_tempo.js`).
+- **Section renumbering (v0.3 §21).** Synapse's section ids are indices into its ring: a fresh section merged into a
+  recognised return, or the 24-section ring shifting, renumbers them. The stage publishes the map for that frame as
+  `sectionRenumber` (`map[old] = new`, −1 dropped, `null` otherwise); the director moves its look-memory keys,
+  `prevAlt` and `due` through it (`core/scenes.js` memory()), so a return under the new id restores what was filed
+  under the old one. `#test` logs `RENUMBER@` and `FILE@` lines; `director-stats.js` replays the maps.
 - The fake timeline (`sources/fake.js`) leaves v3's `chroma`/`bchroma` at zero (v3's fake never filled them and parity
   forbids changing it) — chroma-driven scenes need a fallback from `harmAngle`/`interval` (TORUS does). Your own fields
   must be finite and plausibly idle there: add a line there that sets

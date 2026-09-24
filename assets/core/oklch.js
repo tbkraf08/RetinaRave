@@ -4,7 +4,9 @@
 // okClip(h, L, C) → the chroma scale the gamut clip keeps (1 = the colour was inside sRGB), palOK(h, L, C) → LINEAR
 // sRGB in gamut, palOKs → the same sRGB-encoded (what a scene writes today, before the chain runs in linear light).
 // Hue h is a turn (0..1), L 0..1 (0.7 ≈ a light mid-tone), C in OKLab units (0.11 fits every hue at L 0.7 — the
-// smoke test proves it). The clip shrinks chroma toward the grey axis at the same L (hue and lightness preserved:
+// smoke test proves it); okCmax(L) is the chroma that fits EVERY hue at lightness L (0.11 at 0.7, falling to 0 at black
+// and white — under the true envelope at every L by ≥ 5 %: test_oklab.js), so a scene that varies L keeps its
+// chroma inside the gamut by construction instead of letting the clip decide per pixel. The clip shrinks chroma toward the grey axis at the same L (hue and lightness preserved:
 // a clipped colour goes greyer, never darker or hue-shifted, unlike a channel clamp). Never the default palette:
 // HEAD's pal() is untouched. assets/math/oklab.js is the JS twin with the same constants.
 export const OKLCH_GLSL = `
@@ -13,7 +15,8 @@ vec3 okLabToLin(vec3 c){float l_=c.x+.3963377774*c.y+.2158037573*c.z;float m_=c.
 vec3 linToSrgb(vec3 c){c=clamp(c,0.,1.);return mix(12.92*c,1.055*pow(c,vec3(1./2.4))-.055,step(.0031308,c));}
 vec3 srgbToLin(vec3 c){c=clamp(c,0.,1.);return mix(c/12.92,pow((c+.055)/1.055,vec3(2.4)),step(.04045,c));}
 bool okIn(vec3 c){return all(greaterThanEqual(c,vec3(-1e-4)))&&all(lessThanEqual(c,vec3(1.0001)));}
-float okClip(float h,float L,float C){vec3 ab=vec3(0.,cos(TAU*h),sin(TAU*h))*C;vec3 g=vec3(L,0.,0.);if(okIn(okLabToLin(g+ab)))return 1.;float lo=0.,hi=1.;for(int i=0;i<14;i++){float t=.5*(lo+hi);if(okIn(okLabToLin(g+ab*t)))lo=t;else hi=t;}return lo;}
+float okClip(float h,float L,float C){L=clamp(L,0.,1.);vec3 ab=vec3(0.,cos(TAU*h),sin(TAU*h))*C;vec3 g=vec3(L,0.,0.);if(okIn(okLabToLin(g+ab)))return 1.;float lo=0.,hi=1.;for(int i=0;i<14;i++){float t=.5*(lo+hi);if(okIn(okLabToLin(g+ab*t)))lo=t;else hi=t;}return lo;}
 vec3 palOK(float h,float L,float C){L=clamp(L,0.,1.);float t=okClip(h,L,C)*C;return clamp(okLabToLin(vec3(L,t*cos(TAU*h),t*sin(TAU*h))),0.,1.);}
 vec3 palOKs(float h,float L,float C){return linToSrgb(palOK(h,L,C));}
+float okCmax(float L){return .11*min(1.,min(1.4*L,4.*(1.-L)));}
 `;

@@ -1,9 +1,12 @@
 // BLOOM: threshold + two downsampled separable blurs (1/4 and 1/8). Publishes io.aux.bloom = {b1, b2} for the
 // composite; leaves io.src untouched. Scene slot: post.bloom.thr (number or fn(MS)). Lifted from cardioid3 FS.down/blur.
+// Linear chain (io.linear, v0.3 §20): the input is linear radiance; the threshold slot keeps its encoded meaning —
+// thr and the knee thr + .5 are decoded through the sRGB curve, so "bloom above encoded 0.35" stays that.
+import { srgbToLin1 } from '../math/oklab.js';
 const DOWN = `
-uniform sampler2D uT;uniform vec2 uTx;uniform float uThr;
+uniform sampler2D uT;uniform vec2 uTx;uniform vec2 uThr;
 void main(){vec3 c=vec3(0.);for(int i=0;i<4;i++){vec2 of=vec2(float(i&1),float(i>>1))*2.-1.;c+=texture(uT,vUv+of*uTx).rgb;}c*=.25;
-  float l=max(c.r,max(c.g,c.b));o=vec4(c*smoothstep(uThr,uThr+.5,l),1.);}`;
+  float l=max(c.r,max(c.g,c.b));o=vec4(c*smoothstep(uThr.x,uThr.y,l),1.);}`;
 const BLUR = `
 uniform sampler2D uT;uniform vec2 uDirTx;
 void main(){vec3 c=texture(uT,vUv).rgb*.227;c+=(texture(uT,vUv+uDirTx*1.385).rgb+texture(uT,vUv-uDirTx*1.385).rgb)*.316;
@@ -33,7 +36,8 @@ export default {
     use(pr, b1, b1.w, b1.h);
     tex(pr, 'uT', 0, io.src);
     gl.uniform2f(pr.u('uTx'), 1 / io.w, 1 / io.h);
-    gl.uniform1f(pr.u('uThr'), thr);
+    if (io.linear && thr > 0) gl.uniform2f(pr.u('uThr'), srgbToLin1(thr), srgbToLin1(thr + 0.5));
+    else gl.uniform2f(pr.u('uThr'), thr, thr + 0.5); // thr ≤ 0 = pass everything (no decode: the knee must stay open)
     tri();
     pr = this.blur;
     use(pr, b1b, b1.w, b1.h);
@@ -48,7 +52,7 @@ export default {
     use(pr, b2, b2.w, b2.h);
     tex(pr, 'uT', 0, b1);
     gl.uniform2f(pr.u('uTx'), 0.5 / b1.w, 0.5 / b1.h);
-    gl.uniform1f(pr.u('uThr'), -1);
+    gl.uniform2f(pr.u('uThr'), -1, -0.5);
     tri();
     pr = this.blur;
     use(pr, b2b, b2.w, b2.h);

@@ -1,6 +1,6 @@
 // OKLab twin test (node, no Chrome): Ottosson's reference triples, round trips, the clip rule, and the claim behind
 // v0.3's colour block — C 0.11 is inside sRGB at L 0.7 for every hue. usage: node tools/test_oklab.js
-import { linToOkLab, okLabToLin, linToSrgb, srgbToLin, okClip, palOK, maxChroma } from '../assets/math/oklab.js';
+import { linToOkLab, okLabToLin, linToSrgb, srgbToLin, okClip, palOK, maxChroma, cMax } from '../assets/math/oklab.js';
 let fails = 0;
 const ok = (name, cond, info = '') => { console.log((cond ? 'ok   ' : 'FAIL ') + name + (info ? ' · ' + info : '')); if (!cond) fails++; };
 const near = (a, b, e) => a.every((x, i) => Math.abs(x - b[i]) <= e);
@@ -33,5 +33,9 @@ ok('clip preserves hue (±0.002 turn)', Math.abs(hueOf(lab) - 0.75) < 2e-3, 'hue
 let mono = true; let prev = -1;
 for (let i = 0; i <= 20; i++) { const c = palOK(0, i / 20, 0); if (c[0] <= prev || Math.abs(c[0] - c[1]) > 1e-6 || Math.abs(c[1] - c[2]) > 1e-6) mono = false; prev = c[0]; }
 ok('grey axis neutral and monotone', mono);
+// cMax(L) sits under the min-over-hue envelope at every L (the scenes' chroma budget, CONTRACTS §1.14)
+let worstR = 0, worstL = 0;
+for (let i = 1; i < 100; i++) { const L = i / 100; let mn = 1; for (let h = 0; h < 72; h++) mn = Math.min(mn, maxChroma(L, h / 72)); const r = cMax(L) / mn; if (r > worstR) { worstR = r; worstL = L; } }
+ok('cMax(L) under the every-hue envelope for L in .01..99', worstR <= 1, `worst ratio ${worstR.toFixed(3)} at L ${worstL}`);
 console.log(fails ? `test_oklab: ${fails} FAIL` : 'test_oklab: OK');
 process.exit(fails ? 1 : 0);

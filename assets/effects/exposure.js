@@ -3,7 +3,10 @@
 //   2) 16x16 -> 1x1, folded with the previous 1x1 (ping-pong) so the exposure adapts over time
 //   3) io.src * gain -> full-size out target, returned as the new chain input.
 // Off by default; a scene turns it on with post.exposure.on = true. No scene params are read.
-const TARGET = 0.22;      // metered luminance we aim the frame at
+// Linear chain (io.linear, v0.3 §20): the metering sees linear luminance, so the target is TARGET decoded through the
+// sRGB curve (0.22 encoded ≈ 0.040 linear) — the same picture brightness aimed at in the space the frame is in.
+import { srgbToLin1 } from '../math/oklab.js';
+const TARGET = 0.22;      // metered luminance we aim the frame at (encoded terms)
 const TAU_UP = 0.6;       // seconds to adapt when the gain is rising (frame got darker)
 const TAU_DN = 1.5;       // seconds to adapt when the gain is falling (frame got brighter)
 
@@ -75,7 +78,7 @@ export default {
     use(pr, cur, 1, 1);
     tex(pr, 'uLum', 0, this.lum);
     tex(pr, 'uPrev', 1, prev);
-    gl.uniform4f(pr.u('uE'), TARGET, 1 - Math.exp(-dt / TAU_UP), 1 - Math.exp(-dt / TAU_DN), reset);
+    gl.uniform4f(pr.u('uE'), io.linear ? srgbToLin1(TARGET) : TARGET, 1 - Math.exp(-dt / TAU_UP), 1 - Math.exp(-dt / TAU_DN), reset);
     tri();
     this.pp ^= 1;
 

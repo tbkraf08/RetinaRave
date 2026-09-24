@@ -4,6 +4,11 @@ import { ema } from '../math/util.js';
 import { G } from './gl.js';
 
 export const FX = { glitch: 0, flash: 0, kal: 0, ca: 0, seed: 0 };
+// The chain's colour space (v0.3 §20). linear: the scene's encoded output is decoded once at the chain input (by
+// feedback, or by the fallback pass below when feedback is skipped), bloom / exposure / the composite's adds and
+// tonemap run on linear radiance, the composite encodes before vignette and dither. k: the tonemap knee,
+// (1 − exp(−k·c)) / (1 − exp(−k)) so linear 1.0 reaches display white. &linear=0|1 under #test (harness.js).
+export const CHAIN = { linear: true, k: 1.5 };
 
 export function updateFX(dt, S, peak) {
   if (S.dropEvt) {
@@ -22,7 +27,13 @@ export function updateFX(dt, S, peak) {
 
 export const EFFECTS = [];
 
+let decodeP = null, decodeT = null, decodeCtx = null;
 export function addEffect(fx, ctx) {
+  if (!decodeCtx) {
+    decodeCtx = ctx;
+    decodeP = ctx.mkProg(ctx.oklch + 'uniform sampler2D uT;uniform vec2 uUvS;void main(){o=vec4(srgbToLin(texture(uT,vUv*uUvS).rgb),1.);}', 'chain-decode');
+    ctx.onResize((w, h) => { ctx.freeTarget(decodeT); decodeT = ctx.mkTarget(w, h); });
+  }
   fx.init(ctx);
   fx.enabled = fx.enabled !== false;
   EFFECTS.push(fx);
@@ -40,11 +51,26 @@ export function runChain(src, sw, sh, io) {
   io.uvS = [(sw - 0.5) / G.PW, (sh - 0.5) / G.PH];
   io.aux = {};
   io.FX = FX;
+  io.linear = CHAIN.linear;
+  io.k = CHAIN.k;
+  io.decoded = false; // set by the effect that decoded the scene output (feedback, order 10)
   for (const fx of EFFECTS) {
+    if (io.linear && !io.decoded && fx.order > 10) decode(io); // feedback was skipped: decode here
     const p = io.post[fx.name], on = p && p.on !== undefined ? p.on : fx.enabled;
     if (!on) continue;
     if (fx.when && !fx.when(io)) continue;
     const out = fx.run(io);
     if (out) io.src = out;
   }
+}
+
+function decode(io) {
+  const { gl, tex, tri, use } = decodeCtx;
+  use(decodeP, decodeT, io.w, io.h);
+  tex(decodeP, 'uT', 0, io.src);
+  gl.uniform2f(decodeP.u('uUvS'), io.uvS[0], io.uvS[1]);
+  tri();
+  io.src = decodeT;
+  io.uvS = [1, 1];
+  io.decoded = true;
 }
