@@ -2,8 +2,8 @@
 
 Targets delivered: `assets/core/panel.js` (**347 lines**, cap 350) and the `#help` style block of `index.html`. One new
 file, exactly as the brief allows: `assets/core/panel-ui.js` (**89 lines**) — the DOM helpers, a leaf that imports
-**nothing at all**. Nothing else was touched (`git show --stat` on the two commits: `assets/core/panel.js`,
-`assets/core/panel-ui.js`, `index.html`, plus this report).
+**nothing at all**. Nothing else was touched: `assets/core/panel.js`, `assets/core/panel-ui.js`, `index.html` and this
+report, in four `PANEL2:` commits on top of `522a4af`.
 
 > **The orchestrator must add `assets/core/panel-ui.js` to `tools/check.js`'s two literal-name loops** (line 55's
 > `for (const f of ['assets/core/help.js', 'assets/core/panel.js'])` and line 120's per-scene-name check). The file
@@ -73,7 +73,8 @@ That brought it to 347 with the comments intact.
 paragraph says `view(name)`. **Used `CARD.view(CARD.REG[6].scene.name)`.**
 
 **2. Where the preview message goes.** The brief offers a choice — *"a `span.pprev-msg` in the reset cell or the
-`.herr` slot"*. **Guess:** the reset cell, beside the buttons that caused it; the same span carries `fired`, so the
+`.herr` slot"*. **Guess:** the reset cell, under the buttons that caused it (`display:block`, so a running preview cannot widen the
+table); the same span carries `fired`, so the
 `.herr` slot stays what it has always been (the message of a rejected route or a refused pulse).
 
 **3. The `0` / `1` `title`s.** The brief fixes only the raw case (*"0"*, *"twice the live value (raw field, no fixed
