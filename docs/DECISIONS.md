@@ -1404,5 +1404,9 @@ holds — the default look is v0.2's, the mood drive is a knob (arousal → a ha
 fierce 3 — a harder knee lifts the mids: 0.18 grey through the linear composite reads 135 / 150 / 177 at k 0.75 / 1.5 / 3).
 `&k=` and `&kmood=` under `#test`; `chain-smoke.js` checks the three-k ladder, `io.k` = the default's pixel at 1.5, and
 `LOOK.k === CHAIN.k` at kMood 0. Not in the panel yet (a "chain" row in the manual section is a panel item — carried).
-_proofs pending_
+**Proofs (merged tree, item 2 in):** both scene-md5 lists identical (14 lines each, DRUM included), parity 0 diff, mixs
+`5892ddc5`, `chain-smoke` OK (the ladder 135 / 150 / 177, `io.k` 1.5 = the default's pixel, `LOOK.k === CHAIN.k`); the DUST
+drop-frame clip (`CLOCK=1`, mask at 780, shot 781, pixels > 128): **0.117 %** at the default (§20 read 0.12) and **0.143 %** with
+`kmood=1` (LOOK.k 0.825 at that frame's arousal 0.275 — calm music softens the knee), both under the 0.2 % gate; `&k=3` moves
+DUST's s1-f360 (`bd378864…` vs `c6166af9…`). Not benched: the composite's cost does not depend on k.
 
