@@ -18,3 +18,61 @@ max |diff| over all numeric fields: 0 · fields compared 72
 MS/NAV parity: every field identical to 1e-9
 montage: /home/toma/Documents/Kraftek/Eigenwobble/tools/accept/v0.4/parity-fake.jpg
 == parity real
+bpm within 1 of 126 (ew 126.23, v3 126.68): true · arc sequence identical: true · drops within 0.5 s: true · ew ERRS [] nonfinite []
+== monitor 60 s
+"ok"
+"MON {\"n\":3604,\"fast\":119,\"viol\":[],\"errs\":[],\"bad\":[]}"
+== scenes on #test (T6 / T14)
+"scene 0 ERRS [] bad [] | nav"
+"scene 1 ERRS [] bad [] | dust"
+"scene 2 ERRS [] bad [] | mandala"
+"scene 3 ERRS [] bad [] | torus"
+"scene 5 ERRS [] bad [] | polytope"
+"scene 6 ERRS [] bad [] | feigen"
+== feigen cost
+feig=3.6: L L4.01 feigen 2.08 ms (runs 1.98/2.08/2.27) nav 3.02 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b9
+feigen L3.6 steady 2.08 ms <= 4.53 (nav 3.02)
+== transition
+mixs 0→3 f178 md5 5892ddc5c1f553cbca140bbc1ef6b54d = recorded
+"MORPH 0→3 f178 {\"sc\":[0,3,0.499],\"errs\":[],\"bench\":{\"mixs\":0.46066666682561236,\"morph\":1.8723333334922792}}"
+== hidden tab
+probe on
+hidden tab back {n:60,onsets:0,surprise:0,drops:0,gmax:0,hitmax:0,resumeAt:24.3,errs:[]}
+== hidden worklet
+"{\"n\":150,\"surprise\":0,\"drops\":0,\"srMax\":0.45,\"hop\":3581,\"resumeAt\":35.4}"
+hidden worklet: 150 frames back, 0 surprise, srMax < 1.4
+== routes
+route smoke: 68 checks · 0 fail
+manual smoke: 43 checks · 0 fail
+route-id: s6 f360 md5 = reference (8d6ac4a6234d1bbaaaac2bca65d8439d)
+route-hi: s6 f360 md5 3fa9434ebbfca483ce9d1852ac6ac883 != reference (moved, as it must)
+post-same: s6 f360 md5 = reference (8d6ac4a6234d1bbaaaac2bca65d8439d)
+post-off: s6 f360 md5 da43c0e1ca4d3aad867177b33828b7cc != reference (moved, as it must)
+panel open: on true E true n 0 ticks 50
+panel opened then closed: s6 f360 md5 = reference
+panel shot: scrollTop 3502 rows 107 errs []
+1
+PREVIEW f150 const c 1
+PREVIEW f300 centroid k 1.5 n 1 store null
+1
+CLOSE f320 centroid help false
+preview: const at f150, centroid*1.5 back at f300, storage null, Escape mid-preview restores
+FORCE true NAV is forced — the 
+RELEASE -1
+force/release: ok
+== help
+help cast shot scrolled to 7980
+help fields 107/107 (unique 107) · top table = feats on 7/7 ids
+help ticks hidden 0 (600 frames, want 0)
+help ticks open 100 (600 frames, want 100) errs []
+"HELP real {\"on\":false,\"ticks\":17,\"bad\":[],\"errs\":[]}"
+exceptions 0
+== real start path
+"REAL {\"mode\":\"demo\",\"bad\":[],\"errs\":[]}"
+"REAL24 {\"bad\":[],\"errs\":[],\"switched\":false}"
+exceptions 0
+== bundle
+bundled 64 modules → dist/eigenwobble.html (460 KB)
+"BUNDLE 30s {\"bad\":[],\"errs\":[],\"mode\":\"demo\",\"hop\":2830,\"switched\":true,\"help\":[false,15]}"
+exceptions 0
+montage tools/accept/v0.4/montage-scenes.jpg
