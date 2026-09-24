@@ -40,29 +40,24 @@ overrides" incl. the v0.4.1 panel paragraph, "Help view", "Real window", "Bench 
    the user has looked at), three to five params each, named for what the eye sees. Acceptance as v0.4.1's plus the per-scene
    md5 identity per move + a headed run where the user's own sentence is the test: *"in FEIGEN, the filament sharpness
    is fed by the centroid"* set from the panel, visible, in a real window.
-2. **NEWTON scene id 7, from the contract alone** (worker; §17's list, carried four times). Newton's method on z³ − 1 (or a
-   cubic the music walks), basins by root with the iteration count as lightness; a proof that CONTRACTS.md +
-   HARNESS.md still suffice for a scene nobody in the repo has seen — **and, after 1, that a new scene declares
-   `params` from day one.** Acceptance: brief-common's four items, a `colour` slot from the start (`v2` = a cosine
-   palette, `oklch` = `ctx.oklch` by root angle), `check.js` 0 fail, the Q trace after = none to the second decimal.
-3. **NAV's iteration budget near |λ| → 1** (orchestrator + a NAV worker; audit §26 check 1). NAV's cost swings **1.7 →
+2. **NAV's iteration budget near |λ| → 1** (orchestrator + a NAV worker; audit §26 check 1). NAV's cost swings **1.7 →
    7.7 ms** at 1280 × 720 along the fake timeline (f480 → f1500, `par` 0.76: the walk near a parabolic root, convergence
    detection takes the full `uIter`), **22.6 ms** at 2560 × 1439 — `Q` absorbs it today by dropping every scene's
    quality. Slot: `uIter` scaled by a NAV-side estimate of the convergence rate (|λ| from `N.cyc`, already uploaded as
    `uLam.x`) — a cheaper exit when |λ| → 1 — with `parity.js fake` 0 diff (state untouched) and the continuity monitor
    `viol []`. Acceptance: the f1500 bench ≤ 2× the f480 bench, byte-identical `scene-md5.sh` at f360/f840 (the change
    may only move pixels the iteration cap already moved — say so if it does, with a montage).
-4. **A colour slot on every scene** (§26: two scenes carry variants; DUST/MANDALA/TORUS/POLYTOPE have one mapping each).
+3. **A colour slot on every scene** (§26: two scenes carry variants; DUST/MANDALA/TORUS/POLYTOPE have one mapping each).
    Give each a `colour: {default: 'v2', variants: {v2}}` so `CARD.colour`, the cast line and the panel's colour selects
    are uniform. Acceptance: every `scene-md5.sh` line unchanged (a declared single variant is a no-op).
-5. **The chain's `k` as a LOOK parameter** (§20's tonemap `(1 − e^{−kc})/(1 − e^{−k})`, k fixed today). Slot: `LOOK.k`
+4. **The chain's `k` as a LOOK parameter** (§20's tonemap `(1 − e^{−kc})/(1 − e^{−k})`, k fixed today). Slot: `LOOK.k`
    from the mood (arousal → harder knee), `&k=` under `#test`, `chain-smoke.js` at three k. Acceptance: the mixs md5
    unchanged at the default k; the DUST drop-frame clip stays ≤ 0.2 %.
-6. **The OKLCH variant's open ends** (only if the user wants the variant tuned — it is opt-in): FEIGEN's `min(L, 0.5)`
+5. **The OKLCH variant's open ends** (only if the user wants the variant tuned — it is opt-in): FEIGEN's `min(L, 0.5)`
    cap clips the Green's band ripple and the kick/drop lift where the field is open (`hue-follows-set.md`, second pass
    — soften the cap, not the hue); NAV's interior chroma is 0.02–0.07 at the shipped L so the Koenigs bands read neutral
    (raise L inside or accept); §20's FEIGEN field lightness (variant only now).
-7. Carried, low priority: §21's halftime 2:3 margin (comb-only read the relative at 1.06×; the dead-beat-lag condition
+6. Carried, low priority: §21's halftime 2:3 margin (comb-only read the relative at 1.06×; the dead-beat-lag condition
    holds it — no failing trace); §22's 24-section ring shift (never observed in a real run — a 4-minute track files ~20;
    instrument `RENUMBER@` on a long set before touching it).
 
@@ -96,6 +91,8 @@ stamps a long frame and a fake drop — bench after the reading; `git worktree a
 `serve.js` from another session may already answer on 8765 (cdp.js reuses it — it serves the main checkout, fine for
 the orchestrator, wrong for a worker: workers use their own `PORT`). The malware-consideration reminder does not
 apply to this repo.
+
+**No new scenes until the user says so** (2026-09-24: NEWTON removed from this list — "I don't want to add new scenes till I am ready"; §17's candidate stays in DECISIONS, not here).
 
 Non-negotiables: zero deps · native modules · **every visual parameter traces to `MS`** (a routed field or param still
 does; a constant is a manual setting, shown as one) · no `Math.random()`, no wall clock · module cap 350/500 ·
