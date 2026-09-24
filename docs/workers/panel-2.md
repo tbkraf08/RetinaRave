@@ -158,6 +158,7 @@ PORT=8791 CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6' '[{"until":"window.CARD
   {"key":"Escape"},{"until":"window.__FRAME>=360"},{"shot":"work/p2-id-s6-f360"},{"eval":"JSON.stringify({n:CARD.ROUTE.n,errs:CARD.ERRS,ticks:CARD.HELP.ticks,on:CARD.HELP.on})"}]'
 EVAL => "{\"n\":0,\"errs\":[],\"ticks\":50,\"on\":false}"
 md5  8d6ac4a6234d1bbaaaac2bca65d8439d  tools/work/p2-id-s6-f360.jpg   == accept/v0.4/scene-md5-v03.txt s6-f360.jpg
+ (re-run after the last CSS edit as p2-id2-s6-f360.jpg: 8d6ac4a6234d1bbaaaac2bca65d8439d — same)
 … the same steps on 'test&scene=0':
 EVAL => "{\"n\":0,\"errs\":[],\"ticks\":50,\"on\":false}"
 md5  fb74fee47170b2d1f043db9f96319c7e  tools/work/p2-id-s0-f360.jpg   == …s0-f360.jpg
@@ -183,7 +184,8 @@ f300  EVAL => {"src":"centroid","c":0,"k":1.5,"b":0,"inv":false,"tau":0} | ROUTE
       EVAL => {"errs":[],"bad":[]}        EXC lines: 0
 ```
 *`p2-preview-s6-f150.jpg`* — FEIGEN's block: the `bass` row tinted amber, its select and four numbers greyed and
-disabled, `preview: constant 1 · 2 s left` beside the `reset 0 1` buttons, the meter reading `1.000 → 1.000` with both
+disabled, `preview: constant 1 · 2 s left` wrapped under the `reset 0 1` buttons in the same cell (it is `display:block`
+so a running preview cannot widen the table), the meter reading `1.000 → 1.000` with both
 bars full; `regularity` and `clarity` under it dimmed with the bid-only note; the `dropEvt` row with `fire` and no
 transfer cell.
 
