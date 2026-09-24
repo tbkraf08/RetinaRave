@@ -52,7 +52,7 @@ if (dead.length) fail('dead uniforms (declared, never fetched): ' + dead.join(',
 const { MS } = await import(path.join(ROOT, 'assets/engine/state.js'));
 const { FEATS } = await import(path.join(ROOT, 'assets/engine/feats.js'));
 const undocumented = Object.keys(MS).filter((k) => !(k in FEATS));
-for (const f of ['assets/core/help.js', 'assets/core/panel.js']) { // the DOM views: every field name they show comes from FEATS / feats at run time
+for (const f of ['assets/core/help.js', 'assets/core/panel.js', 'assets/core/panel-ui.js']) { // the DOM views: every field name they show comes from FEATS / feats at run time
   const src = fs.readFileSync(path.join(ROOT, f), 'utf8'), lits = new Set([...src.matchAll(/['"]([A-Za-z_]\w*)['"]/g)].map((m) => m[1]));
   const bad = [...lits].filter((w) => w in FEATS && FEATS[w].kind !== 'internal');
   if (bad.length) fail(f + ' names MS fields as literals: ' + bad.join(','));
@@ -117,7 +117,7 @@ for (const d of sceneDirs) {
   if (bad.length) fail('scene ' + d + ': help.feats keys not in feats: ' + bad.join(','));
   const undecl = feats.filter((k) => !(k in FEATS));
   if (undecl.length) fail('scene ' + d + ': feats not in FEATS: ' + undecl.join(','));
-  for (const f of ['assets/core/help.js', 'assets/core/panel.js']) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
+  for (const f of ['assets/core/help.js', 'assets/core/panel.js', 'assets/core/panel-ui.js']) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
   const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
   if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
   bidCheck(d, h.feats || {}, feats);
