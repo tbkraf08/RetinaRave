@@ -233,3 +233,142 @@ variant only, on the orchestrator's second instruction. Two things this montage 
 that the variant will have to settle on their own: the field's **lightness grade** (v0.2 is bright at the
 boundary, the OKLCH pass is bright in the far field — §24 left it open as taste) and whether NAV's **interior**
 should be lit enough for `cMax(L)` to let the Koenigs bands read as hue at all.
+
+---
+
+# Second pass — the winners applied to the `oklch` variant
+
+Instruction after both verdicts were accepted: apply them **to the opt-in `oklch` colour mapping only**; the `v2`
+default must not move by a byte. Merged `master` at `7077c44` (item 1's colour slot: `colour.js` / `shaders.js` are
+now the variant's sources, `colour-v2.js` / `shaders-v2.js` the default's, each with its own `upload()`), resolving
+in favour of master's structure — which also removed the `hueco` probe and its `#ifdef`, as instructed. The probe
+is the record above plus commits `6eec027` / `398b4a9`; `clipdbg` stays.
+
+## 8. What changed
+
+**FEIGEN, `assets/scenes/feigen/colour.js`, exterior branch only** (the interior is untouched):
+
+| | §24 | now |
+|---|---|---|
+| H | `ea + uHue + 0.5·uInvert` | **`K_D·log2(max(d,1e-7)) + uHue + 0.5·uInvert`**, `K_D = 0.25` |
+| L | the distance grade, ≤ ~0.5·1.02 + the band ripple | the same grade, **`min(clamp(L,0,1), 0.5)`** |
+| C | `cMax(L)·smoothstep(0.35, 2.5, dpx)·uSat` | **`okCmax(L)`** — the chunk's own envelope, full chroma |
+
+`ea` is still decoded and still drives the spectrum read (`specM`) and the spectrogram's drift (`histM`); it no
+longer colours anything. The local `cMax` stays because the interior branch still uses it.
+
+**NAV, `assets/scenes/nav/shaders.js`.** `FS_JULIA` exterior: H = **`sn·K_SN·uSc.y + uPal.x`** with `K_SN = 0.2` in
+`OK_NAV` (so both programs see it), `L = min(.55·pow(lw,.73), .5)`, `C = cMax(L)` at full chroma; `hlc.w` keeps the
+flat `.11·cs` that `hooks.clipdbg=2` reads as the counterfactual. The interior (`conv`) branch is **unchanged** —
+`arg λ` is one hue per component, which already follows the set; the montage's caveat there was chroma, not
+geometry. The no-cycle `else` branch is unchanged. `FS_MANDEL` (the PiP) exterior: H = **`sn·K_SN + uPal.x`** (no
+`uSc`: the PiP is always the host M at scale 1), so the two views share one rule; its L and C are its own, as
+before.
+
+**One deletion the instruction did not ask for, flagged here for reversal if it is unwanted.** With the external
+angle gone from both NAV programs, *nothing* read `ea`, and its binary-itinerary accumulation was two operations
+per iteration of a 420-iteration loop (`if(z.y<0.)ea+=ew;ew*=.5;`) plus a closing `atan`. Dead work in NAV's hot
+loop moves `Q` for every scene, so it is removed from `FS_JULIA` and `FS_MANDEL`. v0.3 §25's derivation stays in
+`DECISIONS.md` §25 and `docs/workers/nav-hue.md`, and the four lines are one revision away in `shaders.js`'s
+history. `shaders-v2.js` never had them.
+
+**Two consequences worth stating rather than discovering later.**
+1. **FEIGEN's `min(L, 0.5)` flattens the music in the open field.** The base grade is already 0.5 there, so the
+   Green's band ripple's upper half, and the `0.15·uKick + 0.25·uDrop` lift, are clipped off wherever the field is
+   open. Everything the music does *downward* (`clamp(…, 0.65, 1.02)` on a base of 0.5 reaches 0.325) and
+   everything it does near the boundary still shows. This is exactly what the montage judged, so it ships as
+   judged; if the variant later wants the kick back in the far field, the cap is the thing to soften, not the hue.
+2. **Both hue and lightness are now functions of `d` in FEIGEN.** They are different functions — `L` saturates at
+   0.5 within about `1/200` of a view width and `H` keeps turning over the whole range — so the far field is a
+   flat-lightness hue ramp and the near field a lightness fall. That is the picture the montage's row 3 showed.
+
+Help text follows the code in both scenes (`help.why`, and the `colour:` slot comments).
+
+## 9. Acceptance — verbatim
+
+```
+node tools/check.js
+check: 59 modules · uniforms 109 · MS keys 118 · scenes 6 (help.feats gaps 0) · 0 fail · 0 warn
+```
+
+**The gate — `PORT=8792 tools/scene-md5.sh v2` is identical to `tools/accept/v0.3/scene-md5-v03.txt`, all twelve
+lines** (`diff` of the two sorted lists prints nothing):
+
+```
+fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg      d3e73b38e30ca4176a869986869d05e3  s3-f360.jpg
+7225ea02adab09c37055b85189ac5d49  s0-f840.jpg      7e77c7b391bcae8860b57b36b38a1229  s3-f840.jpg
+c6166af903f80e0693471b5b28e4c6b6  s1-f360.jpg      24493420fd0e5d2ec4a83b32bbcaf2a1  s5-f360.jpg
+7ca6598c6a3bfb726641ae3103450a79  s1-f840.jpg      2b1e13337fe08f562c59945bb969c607  s5-f840.jpg
+9a57626c15937700b6d2694d88fb9fa8  s2-f360.jpg      8d6ac4a6234d1bbaaaac2bca65d8439d  s6-f360.jpg
+5e59be9338ab60119aee250133cbddf0  s2-f840.jpg      9adb1f5b764f55f68e13e3e83f4eecd2  s6-f840.jpg
+```
+
+`PORT=8792 tools/scene-md5.sh oklch '&colour=oklch'` — **only s0 and s6 move**, which is the whole of the change
+(s1/s2/s3/s5 declare no `oklch` variant and print the same md5s as above):
+
+| | before | after |
+|---|---|---|
+| s0-f360 | `87d5f8bd3241e9a1317f8848acd4f3da` | **`9ced2e67a9133790be819f2741bdbee0`** |
+| s0-f840 | `6c1aadabe62ce2cf3c0fddc7b3483983` | **`599ad98597c55d116a3195c1a17b7517`** |
+| s6-f360 | `923b314f49cee733625cbb096fde79f4` | **`d673746000e608ffdbee08d9a3d01f88`** |
+| s6-f840 | `b438daf212c786d19c14c2a024c74695` | **`0d6e78aa9f8900bf6832035bdf9b2335`** |
+
+`tools/accept/v0.3/scene-md5-v03-oklch.txt` is re-based to the right-hand column in its own commit.
+**`s6-f360` is byte-identical to the first pass's probe shot** `tools/work/chk-f-c2-f360.jpg`
+(`test&scene=6&hueco=2`, `d673746000e608ffdbee08d9a3d01f88`): what shipped is the montage's winning column, bit
+for bit, and not a re-interpretation of it.
+
+`hooks.clipdbg=1` through `REG[id].scene.hooks` (friction 2), `CLOCK=1 GPU=1`, under `&colour=oklch`:
+
+```
+scene 6  f360  {"id":6,"colour":"oklch","mode":1,"main":{"px":921600,"clipped":0,"min":255},"glerr":0}
+scene 6  f840  {"id":6,"colour":"oklch","mode":1,"main":{"px":921600,"clipped":0,"min":255},"glerr":0}
+scene 0  f360  {"id":0,"colour":"oklch","mode":1,"main":{"px":921600,"clipped":0,"min":255},"pip":{"px":29929,"lit":29929,"clipped":0,"min":255},"glerr":0}
+scene 0  f840  {"id":0,"colour":"oklch","mode":1,"main":{"px":921600,"clipped":0,"min":255},"pip":{"px":29929,"lit":29929,"clipped":0,"min":255},"glerr":0}
+```
+
+**0 clipped** in the main view at both frames on both scenes, and in NAV's PiP as well — which is what
+`okCmax`/`cMax` guarantees by construction, since the envelope is a bound over *every* hue and the change is
+entirely a change of hue.
+
+```
+PORT=8792 GPU=1 node tools/parity.js fake
+max |diff| over all numeric fields: 0 · fields compared 72
+MS/NAV parity: every field identical to 1e-9
+```
+
+The `mixs` reference (HARNESS "Transition", the director-blind forced pair):
+```
+EVAL JSON.stringify([CARD.SC.cur,CARD.SC.next,CARD.SC.m]) => "[0,3,0.49944444444444386]"
+md5sum … trans-mixs-0-3-f178.jpg → 5892ddc5c1f553cbca140bbc1ef6b54d
+```
+— still master's value, as it must be: the crossfade shoots the **default** mapping.
+
+```
+node tools/bundle.js
+bundled 59 modules → dist/eigenwobble.html (410 KB)
+FILE=$PWD/dist/eigenwobble.html PORT=8792 GPU=1 node tools/cdp.js 'test&scene=6&colour=oklch' …
+EVAL … => "{\"errs\":[],\"bad\":[],\"colour\":{\"nav\":\"oklch\",\"feigen\":\"oklch\"},\"scene\":6}"
+```
+0 `[EXC]` lines in the run. The single-file build carries the variant and selects it from the hash.
+
+## 10. The montage — `tools/accept/v0.3/oklch-variant.jpg`
+
+Four columns: `v2 s6 f360 | oklch s6 f360 | v2 s6 f840 | oklch s6 f840`, then the same pair of frames for s0.
+
+**FEIGEN.** The `oklch` columns are a contour map of the set: closed hue bands parallel to the boundary, a broad
+teal-to-orange ramp over the open field tightening into a rainbow rim that wraps the cardioid, the antenna and
+every bulb; a bulb is one hue across its width and a filament one hue along its length. The radial stripe comb of
+the `ea` mapping is gone, and the band width at f840 (L2.75) is the same as at f360 (L1.55) — the scale-free
+property the k was chosen for, visible.
+
+**NAV.** At f360 the set is outlined by a thin rainbow rim that traces its boundary exactly, on a dark neutral
+exterior; at f840 each of the two blobs wears its **own** concentric rings, where the shipped mapping split them
+down a sector seam into a teal half and an amber half. The PiP in the corner now wears the same rings on M, so the
+two views read as one rule.
+
+**Does the variant's colour follow the set in both scenes? Yes** — in FEIGEN as bands parallel to the boundary at
+every depth, in NAV as rings around each component of the filled set and around M in the PiP. Against the `v2`
+columns beside them the difference in kind is clear: v2 is one hue plus a brightness that follows the set, the
+variant is many hues whose *level sets* follow the set. They now say the same thing about the geometry in two
+different vocabularies, which is what "the colours match up with the set" asked for.
