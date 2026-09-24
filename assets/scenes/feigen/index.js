@@ -243,7 +243,8 @@ export default {
 
   post: POST_V2,
   // Two colourings of the same field (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's cosine palette
-  // over the distance/potential grade; `oklch` is §24's perceptual pass, opt-in with `&colour=oklch`, and it carries
+  // over the distance/potential grade; `oklch` is §24's perceptual pass re-aimed by `docs/workers/hue-follows-set.md`
+  // (the distance drives hue as well as lightness), opt-in with `&colour=oklch`, and it carries
   // its own post because its bloom threshold differs. A variant's program and uniform upload are set in init().
   colour: { default: 'v2', variants: { v2: { post: POST_V2 }, oklch: { post: POST_OK } } },
 
@@ -305,8 +306,9 @@ export default {
       + 'matters because the quality knob is shared: one expensive scene dims every other one for half a minute. '
       + 'There are two colourings of that one field: the default is v0.2\'s cosine palette over the distance estimate '
       + 'with the Green\'s-function bands drifting through it — the dark field with the glowing filament; `&colour=oklch` '
-      + 'swaps in a perceptual one that writes the external angle to hue and the distance to lightness and chroma, so a '
-      + 'ray landing on a wake is a line of constant hue. That one is opt-in: the palette is the look this was tuned for.',
+      + 'swaps in a perceptual one that writes the distance to the set to hue and to lightness, so the colour runs in '
+      + 'bands parallel to the boundary: a bulb is one hue across its width, a filament one hue along its length, and '
+      + 'the bands stay the same width however deep you fall. That one is opt-in: the palette is the look this was tuned for.',
     math: 'c_inf = -1.401155189092051 is the accumulation of the period-doubling cascade of z -> z^2 + c on the real '
       + 'axis; consecutive bifurcation gaps shrink by Feigenbaum\'s delta = 4.669201609, and the cascade is '
       + 'asymptotically self-similar under that factor, so the view width is 3.2*delta^-L. Naive float32 dies at L ~ 4; '

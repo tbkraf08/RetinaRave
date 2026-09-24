@@ -7,14 +7,24 @@
 // 4.3 %, so .95x that is inside sRGB at EVERY hue and lightness -- checked on a 200x720 (L, hue) grid against
 // Ottosson's matrices. cMax(.7) = .113, i.e. the .11 of §1.14, so `cMax(L) * x` is that section's `.11 * x` at L .7
 // and shrinks where the gamut does. With C capped this way palOK never clips: hooks.clipdbg=1 is 1.0 on every pixel.
+// K_SN: hue turns per unit of the smooth escape count, i.e. per doubling of the potential of J_c (and of M in the
+// PiP). One turn per five doublings draws four or five complete rings around a lobe -- a contour map, not a stripe
+// pattern (`tools/work/hue-set-nav.jpg`, docs/workers/hue-follows-set.md §2).
 export const OK_NAV = `
 float cMax(float L){return .95*min(.17*L,.47*(1.-L));}
+const float K_SN=.2;
 `;
 
-// The Julia set of f_c. Exterior: distance-estimated dust with orbit traps, HUE = the external angle of the point,
-// accumulated from the binary itinerary of its orbit (theta_n = (theta_{n+1} + b_n)/2 under z -> z^2, closed by the
-// argument of the escaped point) -- the same coordinate the PiP paints M's exterior with, so a dynamic ray in J_c and
-// the parameter ray of the same angle in M come out the same colour. Interior with a known cycle (uLam.w): HUE =
+// The Julia set of f_c. Exterior: distance-estimated dust with orbit traps, HUE = the SMOOTH ESCAPE COUNT, K_SN
+// turns per unit -- so iso-hue is an equipotential of J_c, a closed curve around the filled set, and the colour
+// follows the shape. It used to be the external angle, accumulated per iteration from the binary itinerary (v0.3
+// item 5); the montage `tools/work/hue-set-nav.jpg` is why it is not: the angle's level sets are enormous radial
+// sectors whose seams run straight THROUGH the set's own lobes (at f840 each blob came out half teal, half amber),
+// which is the user's "the colours don't match up with the set". The escape count wraps every lobe in concentric
+// rings instead. Lightness is capped at .5 and the chroma is the full cMax(L) there, so the rings read as colour on
+// a dark field. NOTHING reads the itinerary any more, so its per-iteration accumulation is gone from the loop and
+// from the PiP's (v0.3 §25's derivation stays in DECISIONS §25 and `docs/workers/nav-hue.md`, and the four lines are
+// one revision away). Interior with a known cycle (uLam.w): HUE =
 // arg lambda / TAU (the component's internal angle, the rotation number's direction), LIGHTNESS = |lambda| (a centre
 // is dark, a root or a cusp bright), Koenigs bands on both and the spokes on chroma, and the DRUM: Koopman modes
 // cos(k arg + TAU m L) driven by the spectral peaks. Both interior branches carry the critical-slowing smoulder:
@@ -24,10 +34,9 @@ export const FS_JULIA = `
 uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform vec2 uSc;uniform float uClipDbg; // uSc: z-scale of the (little) Julia set, 1/P
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
-  vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.,ea=0.,ew=.5;bool esc=false,conv=false,big=false;
+  vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
   for(int i=0;i<420;i++){ if(i>=uIter)break;
     if(!big){dz=2.*cmul(z,dz);if(dot(dz,dz)>1e30)big=true;}
-    if(z.y<0.)ea+=ew;ew*=.5; /* the itinerary bit b_n, accepted convention: sign(Im z_n) names the half of the basin cut by R_0 u R_(1/2) (exact in the far field, a thin set near J) */
     z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
     tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
     if(m2>1e4){esc=true;break;}
@@ -39,11 +48,10 @@ void main(){
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
     float edge=exp(-e*.3),halo=1./(1.+e*.011),fl=edge*(.3+.4*uBeat.y);
     float gb=.5+.5*cos(TAU*(sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.))); /* Green's equipotential bands: today's exterior ripple, on L and C now */
-    ea+=fract(atan(z.y,z.x)/TAU+1.)*2.*ew; /* phi(z) ~ z out there, so the last argument closes the binary expansion */
     float lw=((.07+.93*halo*halo)*(.28+.72*gb)+lt*(.25+1.2*uBands.x)*halo+exp(-d*7./uSc.x)*(.05+.6*uBeat.w)+ct*uBands.z*.9*halo);
     float cs=.55+.45*gb;
-    float L=.55*pow(clamp(lw,0.,1.),.73); /* .73 = 1/3 of the 2.2 gamma; the .55 cap keeps L under cMax's peak, so the sectors stay saturated on a dark field */
-    hlc=vec4(ea+uPal.x,L,cMax(L)*cs,.11*cs);
+    float L=min(.55*pow(clamp(lw,0.,1.),.73),.5); /* .73 = 1/3 of the 2.2 gamma; the .5 cap keeps L where cMax is wide, so the rings stay saturated on a dark field */
+    hlc=vec4(sn*K_SN*uSc.y+uPal.x,L,cMax(L),.11*cs); /* hue = the equipotential (uSc.y = 1/P: a baby copy's rings are as wide as its host's); w = the flat .11 counterfactual hooks.clipdbg=2 reads */
     col=palOKs(hlc.x,hlc.y,hlc.z)+vec3(1.)*fl*.45*uPal.w; /* the boundary flash is additive now, outside the OKLCH request */
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
@@ -68,19 +76,19 @@ void main(){
 }`;
 
 // Picture-in-picture: M itself with the path of c (drawn in-shader from uPath — gl.POINTS vanish in offset viewports
-// on ANGLE-GL). Its exterior takes the same external-angle hue with the same uPal.x offset, so a parameter ray here
-// and the dynamic ray of the same angle in the main view read as the same colour (v0.3 item 6).
+// on ANGLE-GL). Its exterior takes the same smooth-escape-count hue as the main view, with the same uPal.x offset
+// and the same K_SN (no uSc: the PiP is always the host M at scale 1), so the two views share one rule — the
+// ray-matching rationale of v0.3 item 6 went with the external angle.
 export const FS_MANDEL = `
 uniform vec4 uView;uniform int uIter;uniform float uAlpha;uniform vec3 uPath[32];uniform vec3 uPc;uniform float uClipDbg;
 float seg(vec2 p,vec2 a,vec2 b){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/max(dot(ba,ba),1e-12),0.,1.);return length(pa-ba*h);}
-void main(){vec2 p=vUv*2.-1.;vec2 c=uView.xy+uView.z*p;vec2 z=vec2(0.),dz=vec2(0.);float n=0.,m2=0.,ea=0.,ew=.5;bool esc=false;
-  for(int i=0;i<256;i++){if(i>=uIter)break;dz=2.*cmul(z,dz)+vec2(1.,0.);z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+c;m2=dot(z,z);n+=1.;if(m2>1e4){esc=true;break;}if(z.y<0.)ea+=ew;ew*=.5;}
+void main(){vec2 p=vUv*2.-1.;vec2 c=uView.xy+uView.z*p;vec2 z=vec2(0.),dz=vec2(0.);float n=0.,m2=0.;bool esc=false;
+  for(int i=0;i<256;i++){if(i>=uIter)break;dz=2.*cmul(z,dz)+vec2(1.,0.);z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+c;m2=dot(z,z);n+=1.;if(m2>1e4){esc=true;break;}}
   vec3 col=vec3(.0);vec4 hlc=vec4(0.,1.,0.,0.);
   if(esc){float d=.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/(uView.z*2./uRes.y);float sn=n+1.-log2(.5*log(m2)/log(100.));
-    ea+=fract(atan(z.y,z.x)/TAU+1.)*2.*ew; /* Phi_M(c) = phi_c(c): the bits come off the critical orbit z_1, z_2, ... */
     float gb=.5+.5*cos(TAU*sn*.03),lw=.35/(1.+e*.05)*(.35+.65*gb),cs=.55+.45*gb;
-    float L=.55*pow(clamp(lw,0.,1.),.73); /* the same cap as the main view; the white DE rim below is unchanged */
-    hlc=vec4(ea+uPal.x,L,cMax(L)*cs,.11*cs);
+    float L=.55*pow(clamp(lw,0.,1.),.73); /* the PiP keeps its own lightness and chroma; only the hue rule is shared */
+    hlc=vec4(sn*K_SN+uPal.x,L,cMax(L)*cs,.11*cs);
     col=palOKs(hlc.x,hlc.y,hlc.z)+vec3(.9)*exp(-e*.6);}else col=vec3(.02,.02,.04);
   if(uClipDbg>.5){o=vec4(okClip(hlc.x,hlc.y,uClipDbg>1.5?hlc.w:hlc.z),1.,1.,1.);return;}
   float pg=0.;for(int j=0;j<31;j++){float d=seg(c,uPath[j].xy,uPath[j+1].xy)/uView.z;pg+=(exp(-d*70.)+.35*exp(-d*14.))*uPath[j].z;}

@@ -65,7 +65,7 @@ export default {
       clarity: 'DRUM\'s bid: a clear tonal interior with a converged cycle invites the membrane',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
-    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one where hue is the angle of the ray you are on (inside a component the internal angle arg lambda, outside the external angle of the point), which is why there a ray in the picture-in-picture and its image in the Julia set share a colour.',
+    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
@@ -74,7 +74,8 @@ export default {
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
-  // a blue exterior with the Koenigs bands inside. `oklch` is §25's perceptual pass (hue = the angle of the ray),
+  // a blue exterior with the Koenigs bands inside. `oklch` is §25's perceptual pass, re-aimed by
+  // `docs/workers/hue-follows-set.md` (hue = the equipotential outside, arg lambda inside),
   // opt-in with `&colour=oklch`. The post params are the same for both, so neither variant carries one; each holds
   // the two programs init() compiled for it, and only the OKLCH pair declares uClipDbg.
   colour: { default: 'v2', variants: { v2: {}, oklch: {} } },
