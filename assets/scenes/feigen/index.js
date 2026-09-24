@@ -94,6 +94,7 @@ export default {
   params: {
     width: { eli5: 'how much of the set is in view', range: [0.4, 1.8],
       from: (MS) => 1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick },
+    roll: { eli5: 'how far the frame rocks from side to side', range: [0, 0.4], from: () => 0.04 },
   },
 
   // look memory (CONTRACTS §1.11): a returning section comes back to its own depth and its own conjugation
@@ -158,7 +159,7 @@ export default {
     S.cx = wd * (0.30 + 0.02 * Math.sin(MS.flowMid * 0.2));
     S.cy = wd * 0.03 * Math.sin(MS.flowMid * 0.13);
     S.width = wd;
-    S.rot = 0.04 * Math.sin(MS.flowMid * 0.17);
+    S.rot = P.roll * Math.sin(MS.flowMid * 0.17);
 
     S.lvl = MS.lvl;
     S.kick = MS.kick;
