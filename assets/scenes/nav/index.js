@@ -80,6 +80,7 @@ export default {
     trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
     dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
+    pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -171,7 +172,7 @@ export default {
   // Picture-in-picture: M itself with the path of c. Post-composite, scissored, direct to screen.
   overlay(PW, PH, vis, dt) {
     const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q, cv = this.colour.cur;
-    PIP.a = ema(PIP.a, vis * sstep(0.05, 0.3, S.presence), dt, 0.5);
+    PIP.a = ema(PIP.a, vis * this._P.pip, dt, 0.5);
     let ex = N.baby ? 0 : 0.05;
     for (let i = 0; i < 96; i += 4) ex = Math.max(ex, Math.hypot(N.path[i * 3] - PIP.cx.x, N.path[i * 3 + 1] - PIP.cy.x));
     PIP.cx.step(N.cPath[0], dt);
