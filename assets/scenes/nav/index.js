@@ -73,6 +73,13 @@ export default {
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 
+  // The visual parameters of this screen, and what feeds each one by default (CONTRACTS §1.16). Every `from(S)` is
+  // the expression `draw()` / `nav.js` computed inline before v0.5 — moved verbatim, never rewritten, so the picture
+  // is byte-identical while nothing is routed (one commit per move, each proved by the scene-md5 pair + parity).
+  params: {
+    trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
+  },
+
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
   // a blue exterior with the Koenigs bands inside. `oklch` is §25's perceptual pass, re-aimed by
   // `docs/workers/hue-follows-set.md` (hue = the equipotential outside, arg lambda inside),
@@ -95,6 +102,7 @@ export default {
 
   update(dt, S, GROOVE, LOOK, env) {
     const N = NAV, SC = env.SC;
+    this._P = env.params;   // §1.16: the same object every frame, refreshed before this update(); draw()/overlay() read it back the same frame
     if (this.rt.settledAt === 0) N.landed = 0; // the director consumed the landing (zeroed rt.settledAt)
     updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5 });
     const rt = this.rt;
@@ -109,7 +117,7 @@ export default {
     this._S = S;
   },
   draw(tgt, { w, h, vmix, colour }) {
-    const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h;
+    const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
     const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u, B = N.baby;
@@ -125,7 +133,7 @@ export default {
     gl.uniform2f(u('uSc'), B ? 1 / B.A : 1, B ? 1 / B.P : 1);
     const ta = Math.PI * br;
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
-    gl.uniform1f(u('uTrapR'), 0.35 + 0.9 * S.mid);
+    gl.uniform1f(u('uTrapR'), P.trap);
     gl.uniform1f(u('uDrum'), vmix);
     gl.uniform2f(u('uZs'), N.cyc.zs[0], N.cyc.zs[1]);
     gl.uniform4f(u('uLam'), N.cyc.lnr, N.cyc.arg, N.cyc.q, N.cyc.has);
