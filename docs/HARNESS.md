@@ -202,6 +202,7 @@ node tools/cdp.js '<hash>' '<json steps>'
 - steps: `{wait:ms}` · `{shot:'work/name'}` (→ `tools/work/name.jpg`; `clip:[x,y,w,h,scale]` optional) · `{eval:'expr'}`
   (printed as `EVAL … => value`; promises awaited) · `{click:[x,y]}` · `{key:'d'}` · `{until:'expr', timeout:ms}`.
 - env: `GPU=1` real GL (default SwiftShader, ~10× slower) · `NOAUTO=1` no autoplay flag (use for the real start path) ·
+  `FAKEMIC=1` a fake microphone granted without a prompt (Chrome's test tone: `{clickSel:'#mic'}` → `AU.mode` 'mic', `heard` true within 8 s; v0.6) ·
   `FAKECAP=1` auto-accept tab capture · `CLOCK=1` deterministic 60 Hz clock (`window.__FRAME`; frame 360 = T 6 s) ·
   `OUT=dir` where shots go (default `tools/`).
 

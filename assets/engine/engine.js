@@ -8,6 +8,7 @@ import { AU, initAudio, run } from './audio.js';
 import { GROOVE, updateGroove } from './groove.js';
 import demo from './sources/demo.js';
 import capture from './sources/capture.js';
+import mic from './sources/mic.js';
 import fake from './sources/fake.js';
 import demoSynapse from './sources/demo-synapse.js';
 import { FEATS } from './feats.js';
@@ -16,7 +17,7 @@ AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : d
 
 export const ENGINE = {
   MS, GROOVE, AU, FEATS,
-  sources: { demo, capture, fake, 'demo-synapse': demoSynapse },
+  sources: { demo, capture, mic, fake, 'demo-synapse': demoSynapse },
   demoStyle: null,  // &demo=<style> selects the synapse synth; null = the v3 demo (parity)
   tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them
   extraMs: 0,       // CPU spent outside frame() by stages (worklet port handler), drained into ms
@@ -39,10 +40,11 @@ export const ENGINE = {
     this.stages.push({ name, fn, feats });
   },
 
-  // Start a source by name: 'demo' | 'capture'. msg is shown on the landing card by the UI hook.
+  // Start a source by name: 'demo' | 'capture' | 'mic'. msg is shown on the landing card by the UI hook.
   start(name, msg) {
     initAudio();
     if (name === 'capture') return capture.start();
+    if (name === 'mic') return mic.start();
     run('demo', msg);
   },
 
@@ -59,7 +61,7 @@ export const ENGINE = {
     }
     if (this.fakeOn) fake.update(dt, now);
     else {
-      capture.tick(nowMs);
+      capture.tick(nowMs); // the silence watchdog, for capture and mic alike
       updateMusic(dt, now);
     }
     for (const st of this.stages) st.fn(dt, now, MS);

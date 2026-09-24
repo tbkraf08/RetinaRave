@@ -30,9 +30,9 @@ export async function startCapture() {
   }
 }
 
-// Silent capture -> demo takes over until real signal appears. now in ms (performance.now scale).
+// Silent live source (capture or mic) -> demo takes over until real signal appears. now in ms (performance.now scale).
 export function watchCapture(now) {
-  if (AU.mode !== 'capture' || !AU.capAn) return;
+  if ((AU.mode !== 'capture' && AU.mode !== 'mic') || !AU.capAn) return;
   AU.capAn.getFloatTimeDomainData(AU.capBuf);
   let s = 0;
   for (let i = 0; i < 512; i++) s += AU.capBuf[i] * AU.capBuf[i];

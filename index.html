@@ -48,10 +48,16 @@
   ol li::before{content:counter(s);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:50%;
     border:1px solid rgba(160,200,255,.45);display:flex;align-items:center;justify-content:center;font-size:12px;color:#9cf}
   ol li b{color:#fff;font-weight:600}
-  button#go{appearance:none;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);color:#fff;
+  button#go,button#mic{appearance:none;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.06);color:#fff;
     font:inherit;font-size:15px;letter-spacing:.25em;text-transform:uppercase;padding:16px 38px;border-radius:40px;cursor:pointer;
     transition:all .25s;backdrop-filter:blur(6px)}
-  button#go:hover{background:rgba(255,255,255,.16);border-color:#fff;box-shadow:0 0 40px rgba(140,180,255,.35)}
+  button#go:hover,button#mic:hover{background:rgba(255,255,255,.16);border-color:#fff;box-shadow:0 0 40px rgba(140,180,255,.35)}
+  /* the microphone: second on desktop, the one way in on a phone (#landing.mobile, set by core/hud.js) */
+  button#mic{display:block;margin:12px auto 0;font-size:12px;letter-spacing:.18em;padding:10px 22px;opacity:.75}
+  .mob{display:none}
+  .mobile ol,.mobile button#go{display:none}
+  .mobile .mob{display:block;font-size:15px;line-height:1.5;opacity:.9;margin:0 0 26px}
+  .mobile button#mic{font-size:15px;letter-spacing:.25em;padding:16px 38px;margin-top:0;opacity:1}
   .alt{margin-top:18px;font-size:12.5px;opacity:.55}
   .alt a{color:#9cf;cursor:pointer;text-decoration:underline}
   .hint{margin-top:22px;font-size:12px;opacity:.45;letter-spacing:.06em;line-height:1.9}
@@ -140,7 +146,9 @@
     <li>Press the button, choose that <b>tab</b> in the share dialog.</li>
     <li>Tick <b>“Also share tab audio”</b> — without it there is nothing to hear.</li>
   </ol>
+  <p class="mob">Play music on a speaker, then let this page <b>listen</b>. Loud and close works best.</p>
   <button id="go">Share a tab</button>
+  <button id="mic">Listen with the microphone</button>
   <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a> · <a href="about.html">about &amp; support</a></div>
   <div id="msg"></div>
   <div class="hint" id="hint"><kbd>?</kbd> explains what you see · <kbd>F</kbd> or double‑click for fullscreen</div>

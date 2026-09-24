@@ -33,7 +33,7 @@ export function initAudio() {
   for (const f of AU.onInit) f(ctx);
 }
 
-// Switch the live source. mode: 'demo' | 'capture' | 'none'.
+// Switch the live source. mode: 'demo' | 'capture' | 'mic' | 'none'.
 export function run(mode, msg) {
   AU.mode = mode;
   AU.heard = false;
@@ -44,6 +44,7 @@ export function run(mode, msg) {
 }
 
 export function stopAll() {
+  const was = AU.mode;
   if (AU.stream) {
     AU.stream.getTracks().forEach((t) => t.stop());
     AU.stream = null;
@@ -51,5 +52,5 @@ export function stopAll() {
   AU.mode = 'none';
   AU.capAn = null;
   if (AU.demo) AU.demo.out.gain.value = 0;
-  AU.onStop && AU.onStop('Sharing ended.');
+  AU.onStop && AU.onStop(was === 'mic' ? 'Microphone stopped.' : 'Sharing ended.');
 }

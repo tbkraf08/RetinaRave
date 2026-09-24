@@ -3,6 +3,7 @@
 //   steps: [{wait:ms},{shot:'name',clip:[x,y,w,h,scale]},{eval:'expr'},{click:[x,y]},{key:'d'},{until:'expr',timeout:ms}]
 //   url: page to open (default http://127.0.0.1:PORT/ — tools/serve.js is spawned if nothing answers on PORT)
 // env: GPU=1 real GL (default SwiftShader) · NOAUTO=1 no autoplay flag · FAKECAP=1 auto-accept tab capture ·
+//      FAKEMIC=1 a fake microphone, permission granted without a prompt (Chrome's test tone; v0.6 mic source) ·
 //      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
 //        exactly that frame for the shots/evals that follow; the next {wait} resumes it ·
 //      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765) · OUT=dir for shots ·
@@ -49,6 +50,7 @@ async function ensureServer() {
     : ['--headless=new', '--window-size=1280,720', ...gpu]), '--remote-debugging-port=' + dbg,
     ...(process.env.NOAUTO ? [] : ['--autoplay-policy=no-user-gesture-required']),
     ...(process.env.FAKECAP ? ['--auto-select-tab-capture-source-by-title=Retina Rave', '--auto-accept-this-tab-capture'] : []),
+    ...(process.env.FAKEMIC ? ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] : []),
     '--no-first-run', '--user-data-dir=' + HERE + '/chr' + dbg, 'about:blank'], { stdio: 'ignore' });
   let tgt;
   for (let i = 0; i < 40; i++) {

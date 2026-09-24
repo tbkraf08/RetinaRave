@@ -1,7 +1,7 @@
 # Retina Rave
 
 A zero-dependency WebGL2 audio-visual engine: native ES modules, no framework, no build step to run. Music in (a captured
-tab or the built-in demo synths), six scenes out — Julia-set navigation, a Feigenbaum dive, a particle swarm, a
+tab, the microphone, or the built-in demo synths), six scenes out — Julia-set navigation, a Feigenbaum dive, a particle swarm, a
 box-fold mandala, a Hopf-fibration torus, 4-polytopes on S³ — driven by a two-estimator music analysis (bands, onsets,
 tempo, drops, sections, mood) and a director that picks scenes, remembers looks per section, and crossfades through a
 pluggable transition. The `?` overlay explains every field the machine reads; its part E (key `p`) is a control panel

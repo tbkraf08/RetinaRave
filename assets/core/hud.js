@@ -35,6 +35,11 @@ export function initHUD() {
     ENGINE.start('capture');
   };
   $('demo').onclick = () => ENGINE.start('demo');
+  $('mic').onclick = () => { $('msg').textContent = ''; ENGINE.start('mic'); };
+  // Capability-aware card (v0.6): no tab capture (every mobile browser) or a coarse pointer → the microphone is the
+  // primary way in, the share-a-tab steps are noise. Desktop keeps Share a tab first, the microphone second.
+  const mobile = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) || (matchMedia && matchMedia('(pointer:coarse)').matches);
+  if (mobile) $('landing').classList.add('mobile');
   renderHint();
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();

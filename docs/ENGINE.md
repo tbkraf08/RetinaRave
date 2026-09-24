@@ -127,13 +127,15 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
 ## Sources
 
 A source is `{ name, start(), stop(), tick?(nowMs) }` in `assets/engine/sources/`, plugged in as
-`ENGINE.sources[name]`. `start()` must call `initAudio()` and connect its output to `AU.bus`. The three that exist:
+`ENGINE.sources[name]`. `start()` must call `initAudio()` and connect its output to `AU.bus`. The ones that exist:
 
 - `demo` — the v3 techno sketch (126 BPM, intro / groove / break / build / drop). Default for `fake=0`.
 - `capture` — `getDisplayMedia` tab audio + the silence watchdog (`tick` swaps the demo in after 6 s of silence).
+- `mic` — `getUserMedia` audio with echo cancellation, noise suppression and gain control off (v0.6; the phone at the
+  speakers, a laptop mic at a gig); the same analyser tap and watchdog as `capture` (`tick` is `watchCapture`).
 - `fake` — the deterministic `#test` timeline; `update(dt, now)` instead of audio.
 - `demo-synapse` — synapse's six-style synth (house halftime dnb ambient fakeout aba, `mix` tours them), selected by
   `&demo=<style>` (`ENGINE.demoStyle`); without it `demo` runs, so `fake=0` parity with v3 holds.
 
-`ENGINE.start('demo' | 'capture', msg)` is what the landing card calls; `AU.onRun(mode, msg)` / `AU.onStop(msg)` are the
+`ENGINE.start('demo' | 'capture' | 'mic', msg)` is what the landing card calls; `AU.onRun(mode, msg)` / `AU.onStop(msg)` are the
 UI hooks the core sets (the engine never touches the DOM).
