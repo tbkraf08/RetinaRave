@@ -473,14 +473,17 @@ params: {
   every frame, refreshed in place before your `update()` runs; `null` for a scene without `params`). Read them there and
   hold what `draw()` needs on your own object, as you do with `MS` fields (§1.15's rule). **While no parameter is
   routed, `env.params.sharp` is exactly `from(view)`** — identity by construction, not a clamp, not a copy through the
-  range: moving an inline expression into `from` is a byte-identical no-op, which is how a scene adopts the slot
+  range; it is refreshed **only on frames your `update()` runs** — an off-screen scene's values are its last update's,
+  and the panel's "in force" meter shows that stale value beside a live "derived" one until the scene is on screen again):
+  moving an inline expression into `from` is a byte-identical no-op, which is how a scene adopts the slot
   (`tools/scene-md5.sh` before/after each move; a parameter that cannot be made identical says why in the friction log).
 - **Routed, a parameter follows `PROUTES[scene][param] = {src | 'const', c, k, b, inv, tau}`**: `u = clamp01(k·x̃ + b)`
   with `x̃` = the source value (a `level` as is, an `event` 1 on its frame and 0 otherwise, `raw` / `angle` as is; `inv` =
   `1 − x̃` for a level or event, `−x̃` otherwise), then `value = ema(lo + (hi − lo)·u, τ)` — the transfer works in the
   parameter's unit interval and the range scales it, so `k 1 b 0` maps a level onto the whole range. A constant is
   `c` **in the parameter's own units**, clamped to the range, no `k`/`b`/`inv` (τ allowed — a slide). The ema is on `dt`.
-  Any `level` / `raw` / `angle` / `event` field of `MS` may feed a parameter, whether or not it is in your `feats`
+  An `event` source takes the full transfer (`k b inv τ` — unlike a v0.4 event *jack*, which takes none), so the panel
+  shows the transfer inputs for every field source and hides `k b inv` only for `const`. Any `level` / `raw` / `angle` / `event` field of `MS` may feed a parameter, whether or not it is in your `feats`
   (the parameter is yours; the source is the engine's) — `count` / `enum` / `vector` / `internal` never.
 - **What is not a parameter of this slot (v0.5 open ends):** an *unwrapped angle* (NAV's orbit-trap rotation, 40 rad
   at f360) cannot honour a finite `range` — every bounded rewrite either stops being the verbatim expression or gives
