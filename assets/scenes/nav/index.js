@@ -5,10 +5,11 @@ import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { startGridWorker } from '../../math/mandel.js';
 import { NAV, updateNav } from './nav.js';
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
+import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
-let ctx, julia, mandel, pt, B_ORB;
+let ctx, pt, B_ORB;   // the Julia and PiP programs are per colour mapping: this.colour.variants[name]
 let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
 
 export default {
@@ -64,7 +65,7 @@ export default {
       clarity: 'DRUM\'s bid: a clear tonal interior with a converged cycle invites the membrane',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
-    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Hue is the angle of the ray you are on: inside a component it is the internal angle arg lambda, outside it is the external angle of the point, which is why a ray in the picture-in-picture and its image in the Julia set share a colour.',
+    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one where hue is the angle of the ray you are on (inside a component the internal angle arg lambda, outside the external angle of the point), which is why there a ray in the picture-in-picture and its image in the Julia set share a colour.',
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
@@ -72,11 +73,20 @@ export default {
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 
+  // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
+  // a blue exterior with the Koenigs bands inside. `oklch` is §25's perceptual pass (hue = the angle of the ray),
+  // opt-in with `&colour=oklch`. The post params are the same for both, so neither variant carries one; each holds
+  // the two programs init() compiled for it, and only the OKLCH pair declares uClipDbg.
+  colour: { default: 'v2', variants: { v2: {}, oklch: {} } },
+
   init(c) {
     ctx = c;
     NAV.log = c.log;
-    julia = c.mkProg(c.oklch + OK_NAV + FS_JULIA, 'julia');   // §1.14: hue and lightness independent, so arg lambda and |lambda| can drive one each
-    mandel = c.mkProg(c.oklch + OK_NAV + FS_MANDEL, 'mandel');
+    const CV = this.colour.variants;
+    CV.v2.julia = c.mkProg(FS_JULIA_V2, 'julia-v2');            // the default: v0.2's pal() ramp, no OKLCH chunk
+    CV.v2.mandel = c.mkProg(FS_MANDEL_V2, 'mandel-v2');
+    CV.oklch.julia = c.mkProg(c.oklch + OK_NAV + FS_JULIA, 'julia');   // §1.14: hue and lightness independent, so arg lambda and |lambda| can drive one each
+    CV.oklch.mandel = c.mkProg(c.oklch + OK_NAV + FS_MANDEL, 'mandel');
     pt = c.mkProg(VS_PT, FS_PT, 'pt');
     B_ORB = c.dynBuf(160 * 3, 3);
     startGridWorker();
@@ -97,9 +107,9 @@ export default {
     this._groove = GROOVE;
     this._S = S;
   },
-  draw(tgt, { w, h, vmix }) {
+  draw(tgt, { w, h, vmix, colour }) {
     const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h;
-    const pr = julia;
+    const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u, B = N.baby;
     const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
@@ -121,7 +131,7 @@ export default {
     gl.uniform1f(u('uEps2'), N.cyc.eps2);
     gl.uniform1f(u('uPx'), 2 * scale / h);
     gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
-    gl.uniform1f(u('uClipDbg'), clipDbg);
+    if (colour === 'oklch') gl.uniform1f(u('uClipDbg'), clipDbg);   // the gamut probe is that mapping's own uniform
     for (let j = 0; j < 4; j++) {
       const pk = S.peaks[j], f = pk ? pk[0] : 110 * (j + 1), oct = Math.log2(Math.max(f, 30) / 55);
       modes[j * 4] = 2 * (1 + (Math.round(oct * 12) * 7 % 12) % 4);
@@ -149,7 +159,7 @@ export default {
 
   // Picture-in-picture: M itself with the path of c. Post-composite, scissored, direct to screen.
   overlay(PW, PH, vis, dt) {
-    const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q;
+    const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q, cv = this.colour.cur;
     PIP.a = ema(PIP.a, vis * sstep(0.05, 0.3, S.presence), dt, 0.5);
     let ex = N.baby ? 0 : 0.05;
     for (let i = 0; i < 96; i += 4) ex = Math.max(ex, Math.hypot(N.path[i * 3] - PIP.cx.x, N.path[i * 3 + 1] - PIP.cy.x));
@@ -163,7 +173,7 @@ export default {
     gl.scissor(x0, y0, sz, sz);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    const pr = mandel;
+    const pr = this.colour.variants[cv].mandel;
     gl.useProgram(pr.p);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(x0, y0, sz, sz);
@@ -173,7 +183,7 @@ export default {
     gl.uniform4f(pr.u('uView'), PIP.cx.x, PIP.cy.x, pipS, 0);
     gl.uniform1i(pr.u('uIter'), Math.round(N.baby ? 256 : 90 + 120 * Q.q));
     gl.uniform1f(pr.u('uAlpha'), PIP.a);
-    gl.uniform1f(pr.u('uClipDbg'), clipDbg);
+    if (cv === 'oklch') gl.uniform1f(pr.u('uClipDbg'), clipDbg);
     for (let j = 0; j < 32; j++) { // a chart cut is not a path: no segment across it
       pipPath[j * 3] = N.path[j * 9];
       pipPath[j * 3 + 1] = N.path[j * 9 + 1];
