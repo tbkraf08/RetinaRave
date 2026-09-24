@@ -1,115 +1,103 @@
-// Part E of the help view — the routes control panel (v0.4 item 3, docs/workers/brief-panel.md). DOM only: no GL, no
-// wall clock, no timer and no second requestAnimationFrame. The core calls exactly four things: buildE(section) once on
-// the first open, markE() when the logical scene changes, refreshE(frameN) on the help view's tick (every 6th frame
-// while open) and restore() at boot outside #test. Nothing here runs while the view is closed.
-// Every word shown is data: the scene registry (names, ids, feats, help.feats, colour variants, post), the schema
-// (FEATS) and route.js's sources() — no scene and no MS field is ever named as a literal (tools/check.js fails on one).
+// Part E of the help view — the routes control panel (v0.4 item 3; v0.4.1 "the panel you can read": docs/workers/brief-panel-2.md).
+// DOM only: no GL, no wall clock, no timer and no second requestAnimationFrame. The core calls exactly five things:
+// buildE(section) once on the first open, markE() when the logical scene changes, refreshE(frameN, hot) on the help view's
+// tick (every 6th frame while open), closeE() when the view closes (a running preview ends there) and restore() at boot
+// outside #test. Nothing here runs while the view is closed; the cells themselves are built by the leaf core/panel-ui.js.
+// Every word shown is data: the scene registry (names, ids, feats, help.feats, colour variants, post), the schema (FEATS)
+// and route.js's sources() — no scene and no MS field is ever named as a literal (tools/check.js fails on one).
 import { FEATS } from '../engine/feats.js';
 import { MS } from '../engine/state.js';
 import { SC, REG, SCENES, TRANSITIONS } from './scenes.js';
-import { ROUTES, view, sources, setRoute, clearRoutes, routesJSON, loadRoutes, kindOf } from './route.js';
+import { ROUTES, view, sources, setRoute, clearRoutes, routesJSON, loadRoutes, kindOf, pulse } from './route.js';
 import { MANUAL, manual, clearPost, resetManual, POST_PARAMS } from './manual.js';
 import { TEST } from './hash.js';
+import { el, up, focused, nums, short, clamp01, ID, btn, mkSel, numIn, wrap, drivesCell, jackCell, transferCell, meterCell } from './panel-ui.js';
 
 const KEY = 'ew.routes.v1';                 // the preset in localStorage (never touched under #test)
 const EVENT = 'event', LEVEL = 'level', CONST = 'const';
-const ID = (what, a, b) => 'pe-' + what + (a === undefined ? '' : '-' + a) + (b === undefined ? '' : '-' + b);
+const BID = /^the bid:/;                    // CONTRACTS §1.13: the line of a field its scene reads only in score()
+const NOTE = 'bid only — moves nothing while the scene is forced; changes when the director picks it';
+const PREV = 120, FIRED = 30;               // a preview lasts 2 s of help ticks; "fired" shows for half a second
 
-let rows = [], blocks = {}, posts = [], colours = [], holder = null, ta = null, err = null, store = null, mSel = null, tSel = null;
+let rows = [], blocks = {}, ons = {}, posts = [], colours = [], holder = null, ta = null, err = null, store = null, mSel = null, tSel = null;
+let fLine = null, fTxt = null, fOn = null, fOff = null, lastF = 0, nPrev = 0;
 
-const el = (tag, cls, text) => {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
-const up = (s) => String(s).toUpperCase();
-const focused = (e) => e && document.activeElement === e;
 const sceneName = (E) => up(E.scene.name) + (E.variant ? ' / ' + up(E.variant.name) : '');
-const nums = (x) => (typeof x === 'number' && isFinite(x) ? (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(3)) : String(x));
-const short = (x) => String(+(+x).toPrecision(6));
-const clamp01 = (x) => Math.min(1, Math.max(0, +x || 0));
-function btn(id, label, fn) { const b = el('button', 'pbtn', label); b.id = id; b.onclick = fn; return b; }
-function opt(v, t) { const o = el('option', null, t); o.value = v; return o; }
-function mkSel(id, pairs, cur, fn) {
-  const s = el('select');
-  s.id = id;
-  for (const [v, t] of pairs) s.appendChild(opt(v, t));
-  s.value = cur;
-  s.onchange = fn;
-  return s;
-}
-function numIn(id, def, step, min) {
-  const i = el('input');
-  i.type = 'number';
-  i.step = step;
-  if (min !== undefined) i.min = min;
-  i.id = id;
-  i.value = String(def);
-  return i;
-}
-function wrap(label, node, cls) { const w = el('label', cls || 'pnum'); if (label) w.appendChild(el('span', null, label)); w.appendChild(node); return w; }
 
 // ---------------------------------------------------------------- one routable field of one scene
-function segment(td, kind) {
-  const seg = { v: el('span', kind === EVENT ? 'pdot' : 'hv'), fill: null };
-  const box = el('span', 'pm');
-  box.appendChild(seg.v);
-  if (kind === LEVEL) { const b = el('div', 'hbar'); seg.fill = el('div', 'hfill'); b.appendChild(seg.fill); box.appendChild(b); }
-  td.appendChild(box);
-  return seg;
-}
-
 function rowFor(sc, k) {
-  const kind = kindOf(k), R = { sc, f: k, kind, ev: kind === EVENT, tr: el('tr') };
-  const name = el('td', 'hk', k);
-  name.appendChild(el('div', 'pkind', kind));
-  R.tr.appendChild(name);
-  const own = sc.help && sc.help.feats && sc.help.feats[k];       // part A's rule: the scene's own line is bright
-  R.tr.appendChild(el('td', 'hd' + (own ? ' here' : ''), own || FEATS[k].drives));
+  const kind = kindOf(k), R = { sc, f: k, kind, ev: kind === EVENT, tr: el('tr'), pv: null, fired: -1e9 };
+  const id = (what) => ID(what, sc.name, k), own = sc.help && sc.help.feats && sc.help.feats[k], bid = BID.test(own || '');
+  drivesCell(R.tr, own || FEATS[k].drives, own && !bid, bid && NOTE);   // what it moves on screen: first and wide
+  jackCell(R.tr, k, kind);                                              // the jack it is plugged into
   const st = el('td');
-  R.sel = mkSel(ID('src', sc.name, k), [['', '— (engine)'], ...sources(k).map((s) => [s, s])], '', () => push(R));
+  R.sel = mkSel(id('src'), [['', '— (engine)'], ...sources(k).map((s) => [s, s])], '', () => push(R));
   st.appendChild(R.sel);
-  R.err = el('div', 'herr');
-  st.appendChild(R.err);
+  R.err = st.appendChild(el('div', 'herr'));
   R.tr.appendChild(st);
-  const ct = el('td', 'pctl');
-  if (!R.ev) {                                                    // an event routes as a boolean: no transfer at all
-    R.c = numIn(ID('c', sc.name, k), 0, '0.05');
-    R.cw = wrap('c', R.c);
-    R.k = numIn(ID('k', sc.name, k), 1, '0.05');
-    R.b = numIn(ID('b', sc.name, k), 0, '0.05');
-    R.tau = numIn(ID('tau', sc.name, k), 0, '0.05', '0');
-    R.inv = el('input');
-    R.inv.type = 'checkbox';
-    R.inv.id = ID('inv', sc.name, k);
-    for (const w of [R.cw, wrap('×', R.k), wrap('+', R.b), wrap('τ', R.tau), wrap('', R.inv)]) ct.appendChild(w);
-    ct.lastChild.appendChild(el('span', null, 'invert'));
-    for (const i of [R.c, R.k, R.b, R.tau, R.inv]) i.onchange = () => push(R);
-  }
-  R.tr.appendChild(ct);
-  const rt = el('td');
-  rt.appendChild(btn(ID('r', sc.name, k), 'reset', () => set(R, null)));
+  if (R.ev) R.tr.appendChild(el('td', 'pctl'));                         // an event routes as a boolean: no transfer at all
+  else transferCell(R.tr, R, id, () => push(R));
+  const rt = el('td', 'pctl');
+  rt.appendChild(btn(id('r'), 'reset', () => set(R, null)));
+  previews(R, id, rt);
+  R.msg = rt.appendChild(el('span', 'pprev-msg'));
   R.tr.appendChild(rt);
-  const lt = el('td', 'hl pmeter');
-  R.m1 = segment(lt, kind);
-  lt.appendChild(el('span', 'parrow', '→'));
-  R.m2 = segment(lt, kind);
-  R.tr.appendChild(lt);
+  [R.m1, R.m2] = meterCell(R.tr, R.ev, kind === LEVEL);
   rows.push(R);
   return R.tr;
 }
+
+// What this row does at its extremes — the answer to "the dials seem to change nothing".
+function previews(R, id, td) {
+  if (R.ev) { td.appendChild(btn(id('fire'), 'fire', () => fire(R), 'pprev')); return; }
+  const g = FEATS[R.f].range;
+  for (const hi of [0, 1]) {
+    const b = btn(id(hi ? 'p1' : 'p0'), String(hi), () => preview(R, hi), 'pprev');
+    b.title = g ? 'a constant ' + short(g[hi]) + ' for 2 s' : hi ? 'twice the live value (raw field, no fixed range)' : '0';
+    td.appendChild(b);
+  }
+}
+const constFor = (R, hi) => {                                      // the extreme: the kind's range, or twice what is live
+  const g = FEATS[R.f].range;
+  return g ? +g[hi] : hi ? 2 * (+view(R.sc)[R.f] || 0) || 1 : 0;
+};
+function preview(R, hi) {                                          // a route for 2 s of ticks — the user's own spec is kept
+  const c = constFor(R, hi);
+  if (!R.pv) { R.pv = { prev: (ROUTES[R.sc.name] || {})[R.f] || null }; nPrev++; }
+  R.pv.c = c;
+  R.pv.at = lastF;                                                 // the click lands between ticks: count from the last one
+  try { setRoute(R.sc.name, R.f, { src: CONST, c }); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; endPreview(R); return; }
+  R.tr.classList.add('ppreview');
+  able(R, true);
+  R.msg.textContent = msgFor(R, PREV);
+}
+const msgFor = (R, left) => 'preview: constant ' + short(R.pv.c) + ' · ' + Math.ceil(left / 60) + ' s left';
+function endPreview(R) {                                           // the spec in force before it goes back (it may be null)
+  const p = R.pv;
+  if (!p) return;
+  R.pv = null;
+  nPrev--;
+  try { setRoute(R.sc.name, R.f, p.prev); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; }
+  R.tr.classList.remove('ppreview');
+  R.msg.textContent = '';
+  able(R, false);
+  syncRow(R);
+  syncJSON();                                                      // skipped while a preview runs: refreshed once here
+}
+// The user cannot edit what is about to be put back; a fire is one frame true on this scene's view — no route, no storage.
+const able = (R, on) => { R.sel.disabled = on; if (!R.ev) for (const i of [R.c, R.k, R.b, R.tau, R.inv]) i.disabled = on; };
+const fire = (R) => { try { pulse(R.sc.name, R.f); R.err.textContent = ''; R.fired = lastF; R.msg.textContent = 'fired'; } catch (e) { R.err.textContent = e.message; } };
 
 const specOf = (R) => (R.sel.value === '' ? null : R.ev ? { src: R.sel.value }
   : { src: R.sel.value, c: +R.c.value, k: +R.k.value, b: +R.b.value, tau: +R.tau.value, inv: R.inv.checked });
 const push = (R) => set(R, specOf(R));
 function set(R, spec) {                                            // one row → the core; the controls then show what is in force
-  try { setRoute(R.sc.name, R.f, spec); R.err.textContent = ''; }
-  catch (e) { R.err.textContent = e.message; }
+  try { setRoute(R.sc.name, R.f, spec); R.err.textContent = ''; } catch (e) { R.err.textContent = e.message; }
   syncRow(R);
   save();
 }
 function syncRow(R) {                                              // never trust the input: read ROUTES back
+  if (R.pv) return;                                                // a row in preview is not fought over
   const s = (ROUTES[R.sc.name] || {})[R.f] || null;
   if (!focused(R.sel)) R.sel.value = s ? s.src : '';
   if (!R.ev) {
@@ -122,11 +110,15 @@ function syncRow(R) {                                              // never trus
 
 // ---------------------------------------------------------------- one scene's block
 function block(sc) {
-  const box = el('div', 'hcast pblk');
+  const box = el('div', 'hcast pblk'), h = el('h3', null, up(sc.name) + ' · id ' + sc.id);
   box.id = ID('blk', sc.name);
-  box.appendChild(el('h3', null, up(sc.name) + ' · id ' + sc.id));
+  ons[sc.name] = h.appendChild(el('span', 'pon'));
+  ons[sc.name].id = ID('on', sc.name);
+  box.appendChild(h);
+  box.appendChild(el('p', 'hnote', 'each row is one input of this scene: the left column is what it moves on screen, '
+    + 'the source is the music feature you plug into it'));
   const t = el('table', 'htab ptab'), hr = el('tr'), dead = [];
-  for (const c of ['field', 'what it drives here', 'source', 'transfer', '', 'source → routed']) hr.appendChild(el('th', null, c));
+  for (const c of ['what it drives here', 'input', 'source', 'transfer', '', 'source → routed']) hr.appendChild(el('th', null, c));
   t.appendChild(hr);
   for (const k in FEATS) {                                         // FEATS order, as part A walks it
     if (!(sc.feats || []).includes(k)) continue;
@@ -153,20 +145,32 @@ function block(sc) {
   return box;
 }
 
+// ---------------------------------------------------------------- which scene am I dialling (the director keeps switching)
+function buildForce(section) {
+  fLine = el('p', 'hnote');
+  fLine.id = ID('force-line');
+  fTxt = fLine.appendChild(el('span'));
+  fOn = fLine.appendChild(btn(ID('force'), 'force', () => { manual('scene', SC.logical); syncManual(); syncForce(); save(); }));
+  fOff = fLine.appendChild(btn(ID('release'), 'release', () => { manual('scene', -1); syncManual(); syncForce(); save(); }));
+  section.appendChild(fLine);
+}
+function syncForce() {
+  if (!fLine) return;
+  const E = MANUAL.scene >= 0 ? REG[MANUAL.scene] : null;
+  fTxt.textContent = E ? sceneName(E) + ' is forced — the director will not switch while you dial '
+    : 'the director is choosing scenes — force this one while you dial ';
+  fOn.style.display = E ? 'none' : '';
+  fOff.style.display = E ? '' : 'none';
+}
+
 // ---------------------------------------------------------------- manual overrides (what the keys already do)
-function ownPost(sc, path) {                                       // the value the scene itself would use for one post param
-  const cv = sc.colour && sc.colour.variants[sc.colour.cur], p = (cv && cv.post) || sc.post;
-  if (typeof p === 'function') return p;
-  if (!p) return undefined;
-  const i = path.indexOf('.'), a = i < 0 ? path : path.slice(0, i), b = i < 0 ? null : path.slice(i + 1);
-  return b ? (p[a] || {})[b] : p[a];
+function pget(p, path) {                                           // one post param out of a post object, 'a' or 'a.b'
+  if (typeof p === 'function' || !p) return typeof p === 'function' ? p : undefined;
+  const i = path.indexOf('.'), a = i < 0 ? path : path.slice(0, i);
+  return i < 0 ? p[a] : (p[a] || {})[path.slice(i + 1)];
 }
-function ovPost(sc, path) {                                        // the override in force, if any
-  const P = MANUAL.post[sc.name];
-  if (!P) return undefined;
-  const i = path.indexOf('.'), a = i < 0 ? path : path.slice(0, i), b = i < 0 ? null : path.slice(i + 1);
-  return b ? (P[a] || {})[b] : P[a];
-}
+const ownPost = (sc, path) => { const cv = sc.colour && sc.colour.variants[sc.colour.cur]; return pget((cv && cv.post) || sc.post, path); };
+const ovPost = (sc, path) => pget(MANUAL.post[sc.name], path);     // the override in force, if any
 const isFlag = (path) => SCENES.some((s) => typeof ownPost(s, path) === 'boolean');
 
 function postCtl(sc, path, box, msg) {
@@ -185,8 +189,7 @@ function postCtl(sc, path, box, msg) {
   posts.push(P);
 }
 function apply(P, v, msg) {
-  try { manual('post', P.sc.name, P.path, v); msg.textContent = ''; }
-  catch (e) { msg.textContent = e.message; }
+  try { manual('post', P.sc.name, P.path, v); msg.textContent = ''; } catch (e) { msg.textContent = e.message; }
   syncPosts();
   save();
 }
@@ -207,7 +210,7 @@ function buildManual(sec) {
   const dl = el('dl', 'hdl'), msg = el('span', 'herr');
   const row = (label, node) => { dl.appendChild(el('dt', null, label)); dl.appendChild(el('dd')).appendChild(node); };
   mSel = mkSel(ID('scene'), [['', 'auto — the director chooses'], ...REG.filter((E) => E).map((E) => [String(E.id), E.id + ' · ' + sceneName(E)])],
-    '', () => { try { manual('scene', mSel.value === '' ? -1 : +mSel.value); msg.textContent = ''; } catch (e) { msg.textContent = e.message; } syncManual(); save(); });
+    '', () => { try { manual('scene', mSel.value === '' ? -1 : +mSel.value); msg.textContent = ''; } catch (e) { msg.textContent = e.message; } syncManual(); syncForce(); save(); });
   row('forced scene', mSel);
   tSel = mkSel(ID('trans'), Object.keys(TRANSITIONS).map((n) => [n, n]), '',
     () => { try { manual('trans', tSel.value); msg.textContent = ''; } catch (e) { msg.textContent = e.message; } syncManual(); save(); });
@@ -245,49 +248,42 @@ function buildPresets(sec) {
   sec.appendChild(ta);
   const bar = el('p', 'hnote pbar');
   bar.appendChild(btn(ID('load'), 'load', () => {
-    try { loadRoutes(ta.value); err.textContent = ''; syncAll(); save(); }
-    catch (e) { err.textContent = e.message; }                      // nothing else changes: the core checks it all first
+    try { loadRoutes(ta.value); err.textContent = ''; syncAll(); save(); } catch (e) { err.textContent = e.message; }  // the core checks it all first
   }));
   bar.appendChild(btn(ID('copybtn'), 'copy', () => {
-    try {
-      if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => ta.select());
-      else ta.select();
-    } catch (e) { ta.select(); }
+    try { if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => ta.select()); else ta.select(); } catch (e) { ta.select(); }
   }));
   sec.appendChild(bar);
-  err = el('p', 'herr');
+  err = sec.appendChild(el('p', 'herr'));
   err.id = ID('err');
-  sec.appendChild(err);
-  store = el('p', 'hnote');
+  store = sec.appendChild(el('p', 'hnote'));
   store.id = ID('store');
-  sec.appendChild(store);
 }
-const syncJSON = () => { if (ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
+// While a preview runs the textarea would show its constant as if it were the user's: skipped until the last one ends.
+const syncJSON = () => { if (!nPrev && ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
 function setStore(what) { if (store) store.textContent = 'localStorage[' + KEY + '] · ' + what; }
 function save() {
   syncJSON();
   if (TEST) { setStore('under #test it is neither read nor written, so the harness shots stay deterministic'); return; }
-  try { localStorage.setItem(KEY, routesJSON()); setStore('saved (' + routesJSON().length + ' chars) — every change made here is stored and loaded again at boot'); }
-  catch (e) { setStore('not available here (' + e.message + ') — nothing is stored'); }
+  try { localStorage.setItem(KEY, routesJSON()); setStore('saved (' + routesJSON().length + ' chars) — every change made here is stored and loaded again at boot'); } catch (e) { setStore('not available here (' + e.message + ') — nothing is stored'); }
 }
 function syncAll() {
   for (const R of rows) syncRow(R);
   syncManual();
+  syncForce();
   syncPosts();
   syncJSON();
 }
 
-// ---------------------------------------------------------------- the four calls the core makes
+// ---------------------------------------------------------------- the five calls the core makes
 export function buildE(section) {
-  rows = [];
-  blocks = {};
-  posts = [];
-  colours = [];
+  rows = []; blocks = {}; ons = {}; posts = []; colours = []; nPrev = 0;
   section.replaceChildren();
   section.appendChild(el('h2', null, 'E · routes — which music feature drives which field, by hand'));
   section.appendChild(el('p', 'hnote', 'With nothing set here this page is a no-op: every scene reads the engine\'s own state, and every reference frame is '
     + 'unchanged. A route keeps the field\'s kind — a level stays 0..1 after the gain, offset and smoothing, an event stays a flag fed only by another '
     + 'event — and a constant source is simply a manual setting. Only the fields a scene declares it reads can be routed.'));
+  buildForce(section);
   const top = el('p', 'hnote pbar');
   top.appendChild(btn(ID('resetall'), 'reset everything', () => { clearRoutes(); resetManual(); syncAll(); save(); }));
   section.appendChild(top);
@@ -297,19 +293,28 @@ export function buildE(section) {
   section.appendChild(holder);
   buildManual(section);
   buildPresets(section);
+  markE();
   syncAll();
   setStore(TEST ? 'under #test it is neither read nor written, so the harness shots stay deterministic'
     : 'read once at boot, written on every change made in this panel');
 }
 
-export function markE() {                                          // the scene on screen: marked, and first in the list
-  const E = REG[SC.logical], name = E && E.scene.name;
+export function markE() {                                          // the scene on screen: marked, said in words, first in the list
+  const E = REG[SC.logical], name = E && E.scene.name;             // a variant on screen counts as its parent's block
   for (const n in blocks) blocks[n].classList.toggle('cur', n === name);
+  for (const n in ons) ons[n].textContent = n === name ? ' · on screen' : ' · not on screen';
   if (holder && name && blocks[name] && holder.firstChild !== blocks[name]) holder.insertBefore(blocks[name], holder.firstChild);
+  syncForce();
 }
 
-export function refreshE(frameN, hot) {                            // meters and read-only readouts only — never a rebuild
+export function refreshE(frameN, hot) {                            // meters, previews and read-only readouts only — never a rebuild
+  lastF = frameN;
   for (const R of rows) {
+    if (R.pv) {                                                    // 2 s counted on this tick, then the user's own spec is back
+      const left = PREV - (frameN - R.pv.at);
+      if (left <= 0) endPreview(R);
+      else R.msg.textContent = msgFor(R, left);
+    } else if (R.msg.textContent && frameN - R.fired >= FIRED) R.msg.textContent = '';
     const s = (ROUTES[R.sc.name] || {})[R.f] || null;
     const a = s ? (s.src === CONST ? s.c : MS[s.src]) : MS[R.f], b = view(R.sc)[R.f];
     if (R.ev) { // an event lasts one frame and this runs every 6th: help.js's per-frame latch says when each last fired (a routed event *is* its source's)
@@ -326,6 +331,7 @@ export function refreshE(frameN, hot) {                            // meters and
     if (R.m2.fill) R.m2.fill.style.transform = 'scaleX(' + clamp01(b).toFixed(3) + ')';
   }
   syncManual();                                                    // the number keys move MANUAL.scene / .trans too
+  syncForce();                                                     // and with them the "which scene am I dialling" line
   syncPosts();                                                     // and &colour= / CARD.manual move the colour and post state
   syncJSON();
 }
@@ -338,4 +344,4 @@ export function restore() {                                        // boot, outs
   try { loadRoutes(s); } catch (e) { console.warn('panel: the stored preset no longer loads (' + e.message + ') — ignored'); }
 }
 
-export function closeE() {}                                        // v0.4.1: the core calls it when the view closes (a running preview ends here)
+export function closeE() { for (const R of rows) if (R.pv) endPreview(R); }   // v0.4.1: every running preview ends with the view

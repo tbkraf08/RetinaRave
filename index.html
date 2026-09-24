@@ -35,7 +35,7 @@
     background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
   /* the help view (core/help.js): a scrolling DOM page over the still-rendering canvas; display:none costs nothing */
   #help{position:fixed;inset:0;overflow-y:auto;background:rgba(4,4,10,.82);color:#d6dce6;font:12px/1.5 ui-monospace,Menlo,monospace;
-    z-index:11;display:none;backdrop-filter:blur(2px)}
+    z-index:11;display:none;backdrop-filter:blur(2px);color-scheme:dark}
   body.running.help{cursor:auto}
   .hinner{max-width:min(1500px,96vw);margin:0 auto;padding:22px 28px 60px}
   #help h1{font-size:13px;letter-spacing:.25em;color:#9cf;font-weight:400;margin:0 0 10px;padding:0;background:none;-webkit-text-fill-color:initial}
@@ -63,13 +63,24 @@
   #help input[type=checkbox]{accent-color:#7bd}
   #help input[type=number]{width:54px}
   #help select{max-width:170px}
+  /* the native popup list is the browser's, not ours: color-scheme paints it dark, these two colour its rows (v0.4.1 A) */
+  #help option,#help optgroup{background:#0b0d16;color:#cfe}
+  #help input:disabled,#help select:disabled{opacity:.45;cursor:not-allowed}
   #help textarea{width:100%;font-size:10.5px;line-height:1.4;resize:vertical}
   .pbtn{cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(160,200,255,.28);color:#9cf;
     font:inherit;font-size:10.5px;border-radius:3px;padding:1px 8px;margin-right:7px}
   .pbtn:hover{background:rgba(160,200,255,.18);color:#dff}
   .ptab{table-layout:auto}
   .ptab td{vertical-align:middle}
-  .ptab .hd{width:24%}
+  .ptab .hd{width:30%;min-width:24em}
+  .ptab .hk{width:11%}
+  .ptab .hd .hnote{display:block;color:#778;margin-top:2px}
+  .pbid td{opacity:.55}
+  .pbtn.pprev{padding:1px 6px;margin-right:4px}
+  .pprev-msg{color:#fc8;font-size:10.5px;display:block;white-space:normal;max-width:14em;margin-top:2px}
+  .ppreview{background:rgba(255,200,120,.10)}
+  .pon{color:#8ab}
+  .hcast.cur .pon{color:#9cf}
   .pkind{color:#667;font-size:10px}
   .pblk{margin:10px 0 4px}
   .pctl{white-space:nowrap}
