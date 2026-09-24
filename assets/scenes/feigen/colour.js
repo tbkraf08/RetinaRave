@@ -19,20 +19,30 @@
 // uCentre2 / uWidth2) and cross-faded IN FIELD SPACE by uBlend: a rung change and the arrival of a rung that was
 // standing in are both resolution fades of the same mathematics, never two coloured pictures ghosting over another.
 //
-// THE COLOURING (v0.3 §19). dec() hands this pass the three exterior coordinates the mathematics actually has —
-// the Green's potential, the external angle, the distance estimate — so they are written to the three coordinates
-// of a perceptual colour space instead of through a cosine palette in gamma sRGB (whose "hue" changes lightness by
-// 2x around the wheel):
-//   H <- the external angle ea      external rays are iso-hue lines; a wake, a Misiurewicz point, a bulb's root are
-//                                   read off the picture as the places where the hues pinch. One turn of ea is one
-//                                   turn of hue, so the wrap at ea = 0 is invisible and the rung blend (which
-//                                   blends ea as a unit vector) stays continuous in hue.
-//   L <- log2 G, compressed         the potential's level sets are iso-lightness. -lG is the number of doublings of
-//                                   G below 1 (= n - log2 ln r), which runs into the hundreds on a deep visit, so
-//                                   it goes through sqrt + tanh: nothing saturates to black or white at &feig=3.6.
-//   C <- the distance estimate      chroma, not lightness, carries the boundary, so it stays crisp at any depth.
-//                                   Under half a pixel of DE the colour goes achromatic AND the lightness goes to
-//                                   0: the black edge is the field's own distance estimate, not a filter.
+// THE COLOURING (v0.3 §19, re-aimed by `docs/workers/hue-follows-set.md`). dec() hands this pass the three exterior
+// coordinates the mathematics actually has — the Green's potential, the external angle, the distance estimate — so
+// they are written to the three coordinates of a perceptual colour space instead of through a cosine palette in
+// gamma sRGB (whose "hue" changes lightness by 2x around the wheel). §24 put the EXTERNAL ANGLE on hue; the montage
+// `tools/work/hue-set-feigen.jpg` is why it no longer does. The angle's level sets are the radial sectors of the
+// binary decomposition: they run PERPENDICULAR to the boundary, so one filament crosses a dozen hues along its
+// length and the colour reads as unrelated to the shape ("the colours don't match up with the set") — and at
+// &feig=3.6 the sectors are finer than a pixel and the whole frame averages to grey. The coordinate that follows
+// the set is the one that is already constant along it:
+//   H <- log2 of the DISTANCE       iso-hue is a curve parallel to the boundary: a bulb is one hue at its widest, a
+//        (K_D turns per octave)     filament one hue along its length, the far field a slow ramp. d is divided by
+//                                   the view width, so it is the one exterior coordinate the cascade's
+//                                   self-similarity leaves alone: the measured p10-p90 spread of log2 d is 6.3
+//                                   octaves at L0.37 and 11.5 at L4.15 (1.6 -> 2.9 hue turns at K_D 0.25), where
+//                                   -log2 G runs 8 -> 160 units, so a potential-driven hue would multiply its
+//                                   bands twentyfold down the dive. Hue wraps, so the absolute level does not
+//                                   matter — a shift of it is the rotation LOOK.pal[0] performs anyway.
+//   L <- the distance, capped       the same grade §24 measured, held at or below 0.5: above that the chroma budget
+//        at 0.5                     okCmax(L) falls away again and the hue cells stop reading as colour (the pale
+//                                   field the user saw was L 0.7 under the linear tonemap, §20/§24). The Green's
+//                                   potential still ripples it, and still carries the music.
+//   C <- okCmax(L), full            the whole budget the gamut allows at that lightness, so the bands are as
+//                                   saturated as sRGB can hold; the black edge is the lightness going to 0 under
+//                                   half a pixel of DE, the field's own distance estimate and not a filter.
 // palOK (ctx.oklch, CONTRACTS §1.14) clips by shrinking chroma toward grey at the same L, so a colour can never be
 // clamped per channel — and cMax() below keeps every pixel inside the gamut to begin with, so it never clips at all.
 // The chain still expects encoded values, so the result is written through linToSrgb (a later core phase moves the
@@ -77,6 +87,9 @@ float histM(float x, float age){ return texture(uHist, vec2(clamp(x, 0.003, 0.99
 // every L) and falls to 0 at L 1; 0.11*min(1, 1.4L, 4(1-L)) is under that envelope at every L (worst ratio 1.06).
 // Chroma therefore never has to be clipped: okClip is 1 on every pixel, which is what hooks.clipdbg=1 counts.
 float cMax(float L){ return 0.11 * min(1., min(1.4 * L, 4. * (1. - L))); }
+// Hue turns per octave of the scale-free distance estimate: one turn per 4 octaves, which holds the exterior
+// between 1.6 and 2.9 turns of hue at every depth measured (hue-follows-set.md §2). The interior has no d.
+const float K_D = 0.25;
 
 // one field texel -> (log d, log2 G, escape angle, interior trap). lw = log of the view width this pixel is measured
 // against, so d is dimensionless and the dive stays scale-free exactly as in §15.
@@ -133,8 +146,10 @@ void main(){
     // One pixel is uWidth/uRes.y in parameter units, so d*uRes.y IS the distance estimate in pixels.
     float d = exp(v.x), lG = v.y, ea = v.z, dpx = d * uRes.y;
     float sp = specM(abs(fract(ea) * 2. - 1.) * 0.9);
-    // H: the external angle, one turn for one turn. The mood rotates the whole wheel; a drop turns it by half.
-    float H = ea + uHue + 0.5 * uInvert;
+    // H: the scale-free distance, K_D turns of hue per octave of it — iso-hue parallel to the boundary (see the
+    // header, and docs/workers/hue-follows-set.md §2 for where 0.25 comes from). The mood rotates the whole wheel;
+    // a drop turns it by half. ea keeps the spectrum read and the spectrogram's drift below; it no longer colours.
+    float H = K_D * log2(max(d, 1e-7)) + uHue + 0.5 * uInvert;
     // L: the DISTANCE, not the potential. d is already divided by the view width, so it carries the dive's
     // self-similarity: the same shape of view has the same d at every depth, and the grade never moves under the
     // fall. The open field sits at 0.5 (0.72 in the worker's pass on the encoded chain; the linear chain's tonemap
@@ -156,8 +171,11 @@ void main(){
     // the boundary: under half a pixel of DE the lightness goes to 0. Bass narrows that edge (§15's filament
     // sharpening, which was the same mix(160, 70, bass) on the same d).
     L *= smoothstep(0., mix(0.65, 0.38, uBands.x), dpx);
-    L = clamp(L, 0., 1.);
-    hlc = vec3(H, L, cMax(L) * smoothstep(0.35, 2.5, dpx) * uSat);
+    // the cap: at and below 0.5 the chroma budget is wide enough for the hue bands to read as colour. It flattens
+    // the band ripple's upper half and the kick/drop lift in the OPEN field (where L is already 0.5); everything
+    // the music does downward, and everything it does near the boundary, survives.
+    L = min(clamp(L, 0., 1.), 0.5);
+    hlc = vec3(H, L, okCmax(L));   // the chunk's own envelope, at full chroma
     gd = vec2(-lG, log2(max(d, 1e-7)));
   } else {
     float t = v.w;   // orbit trap inside the set: how near the orbit passed the origin
