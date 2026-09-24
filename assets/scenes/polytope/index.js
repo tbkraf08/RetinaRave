@@ -191,7 +191,7 @@ export default {
       presence: 'brightness floor: muted audio still idles visibly',
       seed: 'which cast: tesseract in a 24-cell, the 600-cell, or a 24-cell in the 600- or 120-cell',
       sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded',
-      arc: 'never auto-picked during a build',
+      arc: 'the bid: never auto-picked during a build',
       regularity: 'the bid: steady',
       clarity: 'the bid: tonal',
       calm: 'the bid: unhurried',

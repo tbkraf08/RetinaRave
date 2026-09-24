@@ -99,7 +99,7 @@ export default {
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
-      arc: 'never auto-picked during a build',
+      arc: 'the bid: never auto-picked during a build',
       regularity: 'the bid: a steady rhythm',
       onsetRate: 'the bid: dense hits',
       seed: 'how many mirrors: N = 4, 6, 8, 10 or 12 from the section seed',

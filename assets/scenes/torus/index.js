@@ -230,7 +230,7 @@ export default {
       bpm: 'how fast the collapse recovers (about one beat)',
       presence: 'overall opacity: silence dims the rings',
       flow: 'the scene clock and the camera\'s gentle orbit',
-      arc: 'never auto-picked during a build',
+      arc: 'the bid: never auto-picked during a build',
       clarity: 'the knot strand\'s brightness, and the bid',
       regularity: 'the bid: a steady rhythm',
     },

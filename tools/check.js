@@ -64,6 +64,50 @@ if (phantom.length) warn('FEATS entries with no MS default (runtime-added by a s
 // Scenes (imported like the engine modules: they reach only math/* and their own folder, so they load without a DOM):
 // help has three non-empty depths (CONTRACTS §0) · every help.feats key is in feats (§1.13) · a feats entry without a
 // help.feats line is a gap the help view fills with FEATS[k].drives (warn) · every feats entry exists in FEATS.
+// Bid-only fields (CONTRACTS §1.13, v0.4.1): a field read only in score() has a help.feats line beginning 'the bid:'. Static, per
+// scene folder: every score() body (method, block arrow or expression arrow — a variant's too) is cut out; what remains is
+// "the rest". A field is read in the rest when `<MS-param>.<field>` appears there (the receiver is MS, or a parameter named
+// S/M of an enclosing function — a module-level `const S = {…}` decoy disables `S.` for that file), or when its HEAD uniform
+// component does (uBands.xyz = bass mid high · uBeat.xyzw = beatPhase hit beatCount dropEnv · uArc = eS build tension
+// surprisal · uHarm = harmAngle harmVel clarity regularity — a draw() read the JS cannot show). Warns, never fails: a
+// scene that defeats the grep says so in its friction log.
+const HEAD_U = { uBands: ['bass', 'mid', 'high'], uBeat: ['beatPhase', 'hit', 'beatCount', 'dropEnv'], uArc: ['eS', 'build', 'tension', 'surprisal'], uHarm: ['harmAngle', 'harmVel', 'clarity', 'regularity'] };
+function cutScores(src) {                      // returns [scoreBodies, rest]
+  let rest = '', bodies = '', i = 0;
+  const re = /\bscore\s*(?::\s*)?(?:=\s*)?(?:function\s*)?\(([^)]*)\)\s*(=>\s*)?/g;
+  let m;
+  while ((m = re.exec(src))) {
+    let j = m.index + m[0].length;
+    rest += src.slice(i, m.index);
+    if (src[j] === '{') { let d = 0; do { d += src[j] === '{' ? 1 : src[j] === '}' ? -1 : 0; j++; } while (d && j < src.length); }
+    else { let d = 0; while (j < src.length) { const c = src[j]; if (!d && (c === ',' || c === '\n' || c === '}')) break; d += '([{'.includes(c) ? 1 : ')]}'.includes(c) ? -1 : 0; if (d < 0) break; j++; } }
+    bodies += m[1] + ' ' + src.slice(m.index, j) + '\n';
+    i = re.lastIndex = j;
+  }
+  return [bodies, rest + src.slice(i)];
+}
+function reads(src, field) {                    // `MS.field`, `S.field`/`M.field` (unless a decoy const S exists in this file), HEAD components
+  const recv = ['MS', ...['S', 'M'].filter((r) => !new RegExp('^\\s*(const|let|var)\\s+' + r + '\\b', 'm').test(src))];
+  if (new RegExp('\\b(' + recv.join('|') + ')\\.' + field + '\\b').test(src)) return true;
+  for (const u in HEAD_U) { const c = HEAD_U[u].indexOf(field); if (c >= 0 && new RegExp('\\b' + u + '\\.[xyzw]*' + 'xyzw'[c] + '[xyzw]*\\b').test(src)) return true; }
+  return false;
+}
+function bidCheck(d, hf, feats) {
+  const dir = path.join(ROOT, 'assets/scenes', d), srcs = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
+  let inScore = '', rest = '';
+  for (const s of srcs) { const [b, r] = cutScores(s); inScore += b + '\n'; rest += r + '\n'; }
+  const bidOnly = [], notBid = [], stale = [];
+  for (const k of feats) {
+    const bid = /^the bid:/.test(hf[k] || ''), sc = /\b(S|MS|M)\.\w+/.test(inScore) && reads(inScore, k), rs = reads(rest, k);
+    if (bid && rs) notBid.push(k);
+    if (!bid && sc && !rs) bidOnly.push(k);
+    if (!sc && !rs) stale.push(k);
+  }
+  if (notBid.length) warn('scene ' + d + ": 'the bid:' lines on fields also read outside score(): " + notBid.join(','));
+  if (bidOnly.length) warn('scene ' + d + ": fields read only in score() whose help.feats line does not begin 'the bid:': " + bidOnly.join(','));
+  if (stale.length) warn('scene ' + d + ': feats entries the static read check cannot find (destructured? say so in the friction log): ' + stale.join(','));
+}
+
 const sceneDirs = fs.readdirSync(path.join(ROOT, 'assets/scenes'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 let helpGaps = 0;
 for (const d of sceneDirs) {
@@ -76,6 +120,7 @@ for (const d of sceneDirs) {
   for (const f of ['assets/core/help.js', 'assets/core/panel.js']) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
   const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
   if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
+  bidCheck(d, h.feats || {}, feats);
   for (const v of sc.variants || []) if (!(typeof v.tag === 'string' && v.tag)) fail('scene ' + d + ' variant ' + v.name + ': no tag');
   if (sc.colour) { // colour slot (§1.4): a default that is one of the variants, every variant an object
     const c = sc.colour, names = Object.keys(c.variants || {});

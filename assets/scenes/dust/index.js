@@ -191,7 +191,7 @@ const SELF = {
       tension: 'the cloud contracts and jitters, and the rings draw in with it',
       hat: 'grains sparkle bigger at the edge',
       alive: 'silence fades every grain, and every ring, to black',
-      arc: 'never auto-picked during a build',
+      arc: 'the bid: never auto-picked during a build',
       punchy: 'the bid: punchy music invites the swarm',
       regularity: 'the bid: a steady rhythm invites the swarm',
     },

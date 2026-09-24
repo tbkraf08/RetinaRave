@@ -266,7 +266,7 @@ export default {
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13)
     feats: {
-      arc: 'never auto-picked during a build',
+      arc: 'the bid: never auto-picked during a build',
       regularity: 'the bid: a steady rhythm',
       clarity: 'the bid: clearly tonal music',
       calm: 'the bid: quiet and unhurried',

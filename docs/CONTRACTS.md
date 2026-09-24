@@ -418,7 +418,8 @@ object arrives as `MS`**. What you may assume:
 - **Read `MS` fields in `update()` and hold what you need for `draw()` on your own object** (every scene already does).
   Do not keep a reference to the `MS` object itself across frames (`this.MS = MS` in `update`, read in `draw` or
   `overlay`): a route set mid-run would then be invisible to you until the next `update`, and the identity promise
-  above ("the same object") is per call, not for ever. (Audited 2026-09-24: no scene does.)
+  above ("the same object") is per call, not for ever. (Audited 2026-09-24 and again for v0.4.1: NAV stashes `this._S` in
+  `update` and reads it in the same frame's `draw`/`overlay` — harmless, `update` runs first every frame; nothing holds it longer.)
 - **A route keeps the field's kind.** A `level` stays 0..1 (clamped after the transfer), an `event` stays a boolean
   (only another event can feed it, no transfer), `raw` / `angle` stay unbounded. `count`, `enum`, `vector` and
   `internal` fields are never routed — `chroma`, `wave`, `seed`, `arc`, `interval`, `sectionId` are always the engine's.
