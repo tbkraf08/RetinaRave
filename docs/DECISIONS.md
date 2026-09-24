@@ -1510,3 +1510,5 @@ reference list on all 14 lines; test suite and parity as before. NAV in portrait
 review of scenes 1–6 on a real phone (the scenes were tuned landscape; nothing in code yet). Not done on purpose: a file/drop
 source (README's claim was dropped instead), shareable `&route=`/`&param=` URLs outside `#test`, the panel on a phone (its 10–12 px
 mono columns overflow at 390 px; it stays a desktop tool).
+
+**Tag v0.6 (2026-09-24):** the user looked at the live site ("looks good; tag v0.6"). `releases/retinarave-v0.6.html` = `dist/retinarave.html` at the tag (the first release under the new name; `about.html` and the icons are not inside it — they live in `site/`). package.json 0.6.0.
