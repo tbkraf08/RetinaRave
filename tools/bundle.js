@@ -11,8 +11,9 @@ const OUT = process.argv[2] || path.join(ROOT, 'dist/eigenwobble.html');
 const ENTRY = 'assets/main.js';
 
 const mods = new Map(); // rel path -> { deps: [rel], code }
-const IMPORT_RE = /^import\s+(?:([\w$]+)\s*,\s*)?(?:(\{[^}]*\})|(\*\s+as\s+[\w$]+)|([\w$]+))?\s*(?:from\s*)?['"]([^'"]+)['"]\s*;?[ \t]*$/gm;
-const SIDE_RE = /^import\s+['"]([^'"]+)['"]\s*;?[ \t]*$/gm;
+const TAIL = "\\s*;?[ \\t]*(?://[^\\n]*)?$";   // a trailing line comment after the statement is part of the line (v0.4's core modules carry one)
+const IMPORT_RE = new RegExp("^import\\s+(?:([\\w$]+)\\s*,\\s*)?(?:(\\{[^}]*\\})|(\\*\\s+as\\s+[\\w$]+)|([\\w$]+))?\\s*(?:from\\s*)?['\"]([^'\"]+)['\"]" + TAIL, 'gm');
+const SIDE_RE = new RegExp("^import\\s+['\"]([^'\"]+)['\"]" + TAIL, 'gm');
 
 function resolve(from, spec) {
   return path.normalize(path.join(path.dirname(from), spec)).replace(/\\/g, '/');
@@ -58,7 +59,7 @@ function transform(rel) {
   // export default EXPR
   src = src.replace(/^export\s+default\s+/gm, () => { def = '__default'; return 'const __default = '; });
   // export { a, b as c };
-  src = src.replace(/^export\s*\{([^}]*)\}\s*;?[ \t]*$/gm, (m, list) => {
+  src = src.replace(new RegExp("^export\\s*\\{([^}]*)\\}" + TAIL, 'gm'), (m, list) => {
     for (const item of list.split(',')) {
       const t = item.trim();
       if (!t) continue;
