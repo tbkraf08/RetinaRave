@@ -186,8 +186,13 @@ needed, now generic:
   not counts, and stay in the scene, indexed by `ctx.tier()`.
 - **Hooks**: named test entry points; the harness exposes them as `CARD.hooks.<name>` and maps `&name=value` hash
   params under `#test`. They are called as plain functions (the receiver is `CARD.hooks`, not your scene — refer to
-  your module-level object, never `this`) and a hash hook fires **before your `init`** and before the first frame: keep
-  the state a hook sets on the object literal (`fibresOn: 1`), not in `init`, or `init` clobbers it. A hook that sets
+  your module-level object, never `this`) and a hash hook fires **after your `init`** (main.js inits and registers
+  every scene, then `initHarness` reads the hash) and **before the first frame**: `init` must not be the only place a
+  hook's effect is read — a program a hook selects is built lazily in `draw` (or `init` builds every alternative), and
+  state a hook sets must survive the first `update`. (v0.2's contract said "before `init`"; the hue-set worker showed
+  it wrong with a `ctx.log` in `init`.) `CARD.hooks` is one flat map: two scenes declaring the same hook name (FEIGEN's
+  and NAV's `clipdbg`) shadow each other there, though the hash dispatcher reaches both — call a specific scene's hook
+  through `CARD.REG[id].scene.hooks.<name>(v)`. A hook that sets
   a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived, and a hook that sets
   state your scene recomputes on an event (FEIGEN's `tricorn` from the seed at `sectionEvt`) must pin it for the run —
   otherwise the next event silently undoes the hook and the shot tests the wrong thing.
