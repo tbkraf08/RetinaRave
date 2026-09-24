@@ -98,3 +98,5 @@ colour pass is back), no black frame on resize or fullscreen, a real track at `q
 tempo estimators at 117, the keys, the help with the cast line's new colour key, the bundle from `file://` with capture.
 One observation for v0.4 (NEXT-SESSION-PROMPT item 2): NAV's cost swings 4.6× with the parameter (22.6 ms at fullscreen
 near a parabolic root) — v3's loop, not a v0.3 change, but the thing `Q` pays for most.
+
+**Correction (v0.5 item 2, 2026-09-24, `docs/workers/nav-iter.md`):** check 1's stated cause — "convergence detection takes the full `uIter` near a parabolic root" — is wrong. At f1500 `cyc.has` is 0 (the beat kick hides the chart while `k > 0.02`), so the shader has **no convergence exit at all** there, and the budget is 420, not 264 (c is inside a period-4 baby: `draw()` multiplies `Q.iter` by 1.6). f2100 — the same baby, the same 420, |λ| as close to 1, but with a chart — costs 2.7 ms against f1500's 6.2–6.7. The cost is *no exit*, not *slow exit*; and the exterior alone at that baby view (~2.55 ms extrapolated to zero iterations) exceeds all of f480, so the f1500/f480 ratio cannot go below ~1.6 by the interior alone. DECISIONS §30.
