@@ -88,6 +88,14 @@ export default {
   // 'event': the zoom itself is scale-free and continuous; the only jump is the tricorn flip on a section event
   cuts: 'event',
 
+  // The visual parameters (CONTRACTS §1.16): what the eye sees, the values it can take, and the derivation update()
+  // wrote inline until now — moved verbatim, so an unrouted frame is the same frame. The argument is named `MS` and
+  // not `S` because `S` is this module's own state object (and check.js's static read grep keys on `MS.<field>`).
+  params: {
+    width: { eli5: 'how much of the set is in view', range: [0.4, 1.8],
+      from: (MS) => 1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick },
+  },
+
   // look memory (CONTRACTS §1.11): a returning section comes back to its own depth and its own conjugation
   look: {
     get: () => [S.feigL, S.tricorn],
@@ -123,6 +131,7 @@ export default {
   update(dt, MS, GROOVE, LOOK, env) {
     const ctx = this.ctx;
     const m = LOOK.mood;
+    const P = env.params;   // §1.16: from(view) per parameter, unless the panel routes it
     // The conjugation is keyed on the section seed, not the drop: this engine's director hard-cuts to the home scene
     // on a drop, so a drop-keyed flip would never be on screen when it happened. It invalidates every rung (they
     // carry the flag) — the one declared cut, so the burst of rule 3 on that frame is honest.
@@ -145,7 +154,7 @@ export default {
     wasLogical = logical;
 
     const L = S.feigL;
-    const wd = 3.2 * Math.pow(DELTA_F, -L) * (1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick);
+    const wd = 3.2 * Math.pow(DELTA_F, -L) * P.width;
     S.cx = wd * (0.30 + 0.02 * Math.sin(MS.flowMid * 0.2));
     S.cy = wd * 0.03 * Math.sin(MS.flowMid * 0.13);
     S.width = wd;
