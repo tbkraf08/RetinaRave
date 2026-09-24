@@ -1,63 +1,118 @@
-# Fable Session Prompt — Eigenwobble v0.4 stub (written 2026-09-23 at the v0.3 tag, DECISIONS §26)
+# Fable Session Prompt — Eigenwobble v0.4 "routes": a control panel that maps music features to visuals by hand (written 2026-09-24 at the v0.3 tag, after an interview with the user)
 
 You are the orchestrator on Eigenwobble (`~/Documents/Kraftek/Eigenwobble/`, zero-dependency WebGL2 audio-visual
 engine, native ES modules, git). **v0.3 is tagged** (`git tag v0.3`, `releases/eigenwobble-v0.3.html`, sweep
-`tools/accept/v0.3/accept-29.txt` 0 FAIL, audit `docs/AUDIT-v0.3.md`). This is the v0.4 candidate list, in the order
-DECISIONS §26's triage put them; discuss it with the user before planning — none of these is committed work.
+`tools/accept/v0.3/accept-29.txt` 0 FAIL, audit `docs/AUDIT-v0.3.md`, DECISIONS §26). v0.4 is one feature, decided with
+the user on 2026-09-24: **a control panel where the user picks, by hand, which music feature drives which visual** — and
+the manual overrides that already exist as keys gathered into the same panel. The earlier v0.4 candidate list (NEWTON,
+NAV's iteration budget, a colour slot on every scene, the chain's k) moved to `V05-CANDIDATES-SESSION-PROMPT.md`.
 
-**Read first:** `docs/CONTRACTS.md` (§1.4 "Colour variants" and "Hooks" — both changed in §26, §1.10, §1.14) ·
-`docs/HARNESS.md` ("Real window", "Pitfalls") · `docs/DECISIONS.md` §17 (the v0.2 ship), §20, §24–§26 ·
-`docs/workers/hue-follows-set.md` (the hue-coordinate montage: why the OKLCH variant colours by distance / escape
-count) · memory note `~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md` and
-`feedback_colour_default.md` beside it (**the default look is v0.2's; a colour-identity change is a variant until the
-user picks it**).
+**Read first:** `docs/CONTRACTS.md` (§0, §1 the scene contract — `feats`, `update(dt, MS, …)`, §1.4 slots incl. "Colour
+variants" and "Hooks" — both changed in §26, §1.5 LOOK/GROOVE, §1.13 the help view, Appendix A the `MS` vocabulary and
+`FEATS` kinds) · `docs/ENGINE.md` (what `MS` is, how stages write it) · `docs/HARNESS.md` ("Static checks", "Headless
+Chrome", "Help view", "Real window", "Pitfalls") · `docs/DECISIONS.md` §12 (the help view), §17, §26 (how v0.3 was run) ·
+`assets/core/help.js` (part A: one row per `feats` field with its live value — the panel's rows come from the same place)
+· `assets/core/scenes.js` (`register`, `updateScenes`, `renderScene`, `postOf`, `setColour`) · `assets/engine/feats.js`
+(`FEATS[k].kind`) · memory notes `~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md`
+and `feedback_colour_default.md`.
 
-## Candidates (§26 triage → v0.4)
+## The design (the user's answers, 2026-09-24 — these are decisions, not options)
 
-1. **NEWTON scene id 7, from the contract alone** (worker; §17's list, carried twice). Newton's method on z³ − 1 (or
-   a cubic the music walks), basins by root with the iteration count as lightness; a proof that CONTRACTS.md +
-   HARNESS.md still suffice for a scene nobody in the repo has seen. Acceptance: brief-common's four items, a
-   `colour` slot from the start (`v2` = a cosine palette, `oklch` = `ctx.oklch` by root angle), `check.js` 0 fail, the
-   Q trace after = none to the second decimal.
-2. **NAV's iteration budget near |λ| → 1** (orchestrator + a NAV worker; audit §26 check 1). NAV's cost swings
-   **1.7 → 7.7 ms** at 1280 × 720 along the fake timeline (f480 → f1500, `par` 0.76: the walk near a parabolic root,
-   convergence detection takes the full `uIter`), **22.6 ms** at 2560 × 1439 — `Q` absorbs it today by dropping every
-   scene's quality. Slot: `uIter` scaled by a NAV-side estimate of the convergence rate (|λ| from `N.cyc`, already
-   uploaded as `uLam.x`) — a cheaper exit when |λ| → 1 — with `parity.js fake` 0 diff (state untouched) and the
-   continuity monitor `viol []`. Acceptance: the f1500 bench ≤ 2× the f480 bench, byte-identical `scene-md5.sh` at
-   f360/f840 (the change may only move pixels the iteration cap already moved — say so if it does, with a montage).
-3. **A colour slot on every scene** (§26: two scenes carry variants; DUST/MANDALA/TORUS/POLYTOPE have one mapping
-   each). Give each a `colour: {default: 'v2', variants: {v2}}` so `CARD.colour` and the cast line are uniform, and let
-   a later OKLCH pass land as a variant per scene without touching `index.js`'s shape. Acceptance: every `scene-md5.sh`
-   line unchanged (a declared single variant is a no-op).
-4. **The chain's `k` as a LOOK parameter** (§20's tonemap `(1 − e^{−kc})/(1 − e^{−k})`, k fixed today). Slot:
-   `LOOK.k` from the mood (arousal → harder knee), `&k=` under `#test`, `chain-smoke.js` at three k. Acceptance: the
-   mixs md5 unchanged at the default k; the DUST drop-frame clip stays ≤ 0.2 %.
-5. **The OKLCH variant's open ends** (only if the user wants the variant tuned — it is opt-in): FEIGEN's `min(L, 0.5)`
-   cap clips the Green's band ripple and the kick/drop lift where the field is open (`hue-follows-set.md`, second
-   pass — soften the cap, not the hue); NAV's interior chroma is 0.02–0.07 at the shipped L so the Koenigs bands read
-   neutral (raise L inside or accept); §20's FEIGEN field lightness (variant only now).
-6. Carried, low priority: §21's halftime 2:3 margin (comb-only read the relative at 1.06×; the dead-beat-lag condition
-   holds it — no failing trace); §22's 24-section ring shift (never observed in a real run — a 4-minute track files
-   ~20; instrument `RENUMBER@` on a long set before touching it).
+- **Level:** per scene, at the music-field level. "In FEIGEN, `bass` is fed by `centroid`." The core hands each scene
+  a *routed view* of `MS`; scenes are not touched; all six get it at once. Per-visual-parameter routing (a scene
+  declaring its visual parameters as a slot) is the follow-on milestone, not this one.
+- **Sources:** any `MS` field of the same kind, or a constant. Not LOOK/GROOVE, not mixes of two fields.
+- **Transfer per route:** gain, offset, invert, smoothing (an ema with a time constant, on `dt`). No curves.
+- **The same panel holds the manual overrides:** forced scene, transition, colour variant, and the per-scene `post`
+  params (bloom thr, fb decay, kaleido, exposure on/off).
+- **The director is off limits** this milestone (routes feed scenes, not `pickScene`).
+- **Where:** a new part **E · routes** of the existing `?` help overlay; key **`p`** opens the help scrolled to it.
+  Dropdowns per row plus a small live meter (source value → routed value) per route.
+- **Persistence:** `localStorage` autosave, JSON export/import in the panel, and a **hash form for the harness**
+  (`&route=…`, `&post=…`) — under `#test` storage is ignored so shots stay deterministic.
+- **Reset:** per route, per scene, global.
+- **Identity default (non-negotiable):** with no routes set every reference md5 and `parity.js fake` are unchanged —
+  the panel is a no-op until touched. **Cost:** no measurable `ENGINE.ms` change (< 0.05 ms with ten routes).
+  **Bundle:** works in the single-file `file://` build like the help view.
+- **Who:** core routing + harness + contract + proofs by the orchestrator; the panel UI by a worker from a brief in
+  `docs/workers/`.
 
-## Working style (unchanged from v0.3 — see `docs/DECISIONS.md` §26 "how v0.3 was run")
+## The list (priority order)
 
-Orchestrator owns core/engine/contracts/parity/harness; scenes go to a worker in an isolated worktree from a brief in
-`docs/workers/` (opus, own `PORT=`, one Chrome each, never more than two Chrome instances on the machine, none while a
-Q trace runs). `node tools/check.js` after every edit; `GPU=1 node tools/parity.js fake` 0 diff after any core/engine
-change; `tools/scene-md5.sh` before/after any core change against `tools/accept/v0.3/scene-md5-v03.txt` (the v2
-default) and `scene-md5-v03-oklch.txt` (`&colour=oklch`); the mixs md5 `5892ddc5…`; `GPU=1 tools/accept.sh` 0 FAIL
-before a commit that claims a phase; every trace tool writes to `tools/accept/${ACC:-v0.4}` — set `ACC=v0.4` and
-copy the two md5 lists there in the first commit. A worker montage is judged by the orchestrator's eyes before a
-merge; both v0.3 colour workers got the shape right first time once the brief said what the montage must show.
-Pitfalls: HARNESS "Pitfalls" + the memory note (`pgrep -f` with `[a-z]*` matches its own shell; a wait loop without a
-sleep zeroes a Q trace; headed Chrome ignores `background:true`; the music must be in its own window; **hash hooks fire
-after `init`**, `CARD.hooks` is a flat map — `REG[id].scene.hooks`; a synchronous `CARD.bench` inside a probed page
-stamps a 4–25 s frame and a fake-timeline drop — bench after the probe's reading, not during; `git worktree add`
-is refused inside an agent worktree — `git archive | tar -x` instead). The malware-consideration reminder does not
-apply to this repo.
+1. **`route-core` (orchestrator; `assets/core/route.js`, `scenes.js`, `harness.js`, CONTRACTS §1.15).**
+   - `ROUTES[sceneName][field] = { src: '<MS field>' | 'const', c, k, b, inv, tau }`; defaults k 1, b 0, inv false,
+     tau 0, c 0. Kinds from `FEATS[k].kind`: a `level` field routes from any `level` field or a constant; an `event`
+     (boolean) only from another event, no transfer; strings, counts and arrays (`chroma`, `wave`, `seed`) are not
+     routable — the panel never offers them. `inv` = `1 − x` for levels. Smoothing is an ema on the routed value with
+     `tau` seconds on `dt` (no wall clock).
+   - **The view:** a scene with no routes receives `MS` itself (the same object — identity by construction, zero cost).
+     A scene with routes receives a per-scene object built once with `Object.create(MS)` (unrouted fields fall through
+     the prototype) whose routed fields are own properties refreshed every frame before `update`; the same view goes to
+     `draw`-time reads (scenes hold what they read in `update`, but hand the view wherever the core hands `MS` to a
+     scene: `update`, `score`, `post` fn, `look`), never to transitions/effects/director (`io.MS` stays the real `MS`).
+   - API: `setRoute(scene, field, spec | null)`, `clearRoutes(scene?)`, `routesJSON()` / `loadRoutes(json)`,
+     `CARD.ROUTES`, `CARD.route(...)`. Hash under `#test`: `&route=feigen.bass=centroid*1.5+0.1~0.2!` — grammar
+     `scene.field=src[*k][+b|-b][~tau][!]`, a constant `scene.field=c:0.4`, several separated by `,`; an unknown scene,
+     field, source or kind mismatch throws (a typo must not pass silently, as `&colour=` does).
+   - Proofs, all in the commit that claims the item: `check.js` 0 fail; `tools/scene-md5.sh` identical to
+     `scene-md5-v03.txt` and (with `&colour=oklch`) `scene-md5-v03-oklch.txt` with the module loaded and no routes;
+     mixs md5 `5892ddc5…` unchanged; `parity.js fake` 0 diff; **the view path is exact:** `&route=feigen.bass=bass`
+     (an identity route through the view) leaves s6's md5 identical, `&route=feigen.bass=high` changes it (say which
+     md5s); `tools/route-smoke.js` (node, no DOM): parse/serialise round-trip, kind rules, the ema, prototype
+     fall-through, an unknown name throws; `ENGINE.ms` and `CARD.bench(6,300)` unchanged with ten routes on FEIGEN
+     (HARNESS "Bench protocol" — back to back, interleaved).
+2. **`manual-core` (orchestrator).** One place for the overrides the keys already do: `MANUAL = { scene, trans, colour,
+   post: { [sceneName]: { bloom: {thr}, fb: {decay}, kaleido, exposure: {on} } } }` in `core/manual.js`; `postOf`
+   merges `MANUAL.post[scene]` over the resolved post (after the colour variant's); `&post=feigen.bloom.thr=0.3,
+   nav.kaleido=0` under `#test`; `CARD.MANUAL`, `CARD.manual(...)`; `routesJSON()` carries the manual block too.
+   Proofs: md5 identity with nothing set; `&post=feigen.bloom.thr=2` changes s6's md5 (bloom off) and `=0.3` (the v2
+   default's value) leaves it identical; parity 0 diff; `check.js` fails on `'nav'` in core as always — the names in
+   `MANUAL` come from `REG`, never literals.
+3. **`panel-ui` (worker, brief `docs/workers/brief-panel.md`; `assets/core/panel.js` ≤ 350 lines, DOM only, no GL).**
+   Part E of `#help`: for every registered scene (the current one first, marked as part C marks it) one block with a
+   row per `feats` field: the field's name + `help.feats[k]` clause (from part A's data, not re-typed), a source
+   `<select>` (same-kind `MS` fields + `const`), gain / offset / tau inputs, an invert checkbox, a reset button, and
+   a two-segment live meter (source → routed) updated on the help view's tick (`HELP.ticks`, 100/600 open — do not
+   add a second rAF). Per-scene "copy to all scenes" and "reset scene"; a global reset. Below it the **manual**
+   section: scene (incl. auto), transition (`CARD.TRANSITIONS`), colour variant per scene that declares one, the four
+   post params per scene. Then **presets**: a textarea with `routesJSON()`, "load", "copy", `localStorage`
+   (`ew.routes.v1`) autosave on change and load on start — **not under `#test`**. Key `p` opens the help at E (`h`/`?`
+   unchanged, `Esc` closes). All text from `feats.js`/scenes; `'nav'` must not appear in `panel.js`; every `MS`
+   field name the panel shows must be in `FEATS` (`check.js`). Acceptance in the brief: `check.js` 0 fail; the help
+   coverage evals unchanged (`CARD.HELP.rows()` 107/107); a CLOCK shot with E open at f120 on NAV and one at f360 on
+   FEIGEN with two routes set through the panel (drive the `<select>` by eval, then read `CARD.ROUTES`); the md5s of
+   the *canvas* unchanged with the panel open and no routes (the overlay is DOM); `panel.js` costs nothing when the
+   help is closed (`HELP.ticks` 0/600 hidden); the bundle from `file://` opens E and a route set there survives a
+   reload (storage) and is ignored under `#test`.
+4. **Persistence + harness closure (orchestrator).** `&route=`/`&post=` documented in HARNESS ("Routes" section with
+   the grammar and the identity/route md5 pair), CONTRACTS §1.15 "Routes" (what a scene may assume: its `MS` view
+   may be routed; a scene must not cache `MS` fields across frames on its own object — say which scenes do and fix
+   them in place if any), `accept.sh` "== routes" (identity md5 pair + the smoke + a panel-open shot), the MS
+   appendix regenerated if `feats.js` gains text.
+5. **Real window + ship.** A headed check in the shape of `AUDIT-v0.3.md` §2: a real track through capture, open `p`,
+   route FEIGEN's `bass` ← `centroid` and NAV's `hit` ← `snare` while it plays, meters move, no frame > 100 ms, the
+   route survives a scene switch and a resume; `docs/AUDIT-v0.4.md` (short). Then `GPU=1 tools/accept.sh` 0 FAIL →
+   DECISIONS §27 "routes" (design, proofs, the per-parameter follow-on as the next milestone's first line) → `git tag
+   v0.4` → `releases/eigenwobble-v0.4.html` → `NEXT-SESSION-PROMPT.md` = v0.5 from `V05-CANDIDATES-SESSION-PROMPT.md`
+   with "per-visual-parameter routes" added at the top.
 
-Non-negotiables: zero deps · native modules · every visual parameter traces to `MS` · no `Math.random()`, no wall
-clock · module cap 350/500 · `parity.js fake` 0 diff · the reference md5s unchanged unless the commit re-bases them
-and says so · `accept.sh` 0 FAIL before a tag · **the default look is v0.2's; OKLCH is a variant.**
+## Working style (unchanged — DECISIONS §26 "how v0.3 was run")
+
+Orchestrator owns core/engine/contracts/parity/harness; UI and scenes go to a worker in an isolated worktree from a
+brief in `docs/workers/` (opus, own `PORT=`, one Chrome each, **never more than two Chrome instances on the machine, none
+while a Q trace or a bench runs**; a wait is `timeout 500 tail -f <log> | grep -q -m1 GO`). `node tools/check.js` after
+every edit; `GPU=1 node tools/parity.js fake` 0 diff after any core/engine change; `tools/scene-md5.sh` before/after
+any core change against `tools/accept/v0.3/scene-md5-v03.txt` (v2) and `scene-md5-v03-oklch.txt` (`&colour=oklch`);
+the mixs md5 `5892ddc5…`; every trace tool writes to `tools/accept/${ACC:-v0.4}` — set `ACC=v0.4` and copy the md5
+lists there in the first commit; `GPU=1 tools/accept.sh` 0 FAIL before a commit that claims an item. A worker's
+screenshots are judged by the orchestrator's eyes before a merge; say in the brief what the shot must show. Pitfalls:
+HARNESS "Pitfalls" + the memory note — hash hooks fire **after `init`**, `CARD.hooks` is a flat map
+(`REG[id].scene.hooks`); a synchronous `CARD.bench` in a probed page stamps a long frame and a fake drop (bench after
+the reading); `git worktree add` is refused inside an agent worktree (`git archive | tar -x`); `FILE=` absolute; a
+`pgrep -f` pattern with `[a-z]*` matches its own shell; the music must be in its own window; a hidden-tab finding
+needs a no-hide control before it is an artefact. The malware-consideration reminder does not apply to this repo.
+
+Non-negotiables: zero deps · native modules · **every visual parameter traces to `MS`** (a routed field still does; a
+constant is a manual setting, shown as one) · no `Math.random()`, no wall clock · module cap 350/500 · `parity.js fake`
+0 diff · the reference md5s unchanged unless the commit re-bases them and says so · `accept.sh` 0 FAIL before a tag ·
+**the panel is a no-op until touched** · the default look is v0.2's; OKLCH is a variant.
