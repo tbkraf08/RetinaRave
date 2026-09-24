@@ -27,9 +27,14 @@ const CUTS = { // the §1.9 promise, in words
   onset: 'onset — visible jumps only on hits and beats',
   event: 'event — jumps only on drops, section changes, surprises and declared epochs',
 };
-const KEYS = [['?', 'or H — this view'], ['P', 'this view opened at part E, the routes panel (what drives what, by hand)'], ['Esc', 'close it'], ['D', 'the developer HUD (numbers, every 6th frame)'],
-  ['F', 'fullscreen (or double-click)'], ['M', 'monitor the demo synth in the speakers'],
-  ['1 – 9', 'force the scene with id 0 – 8 (the ids are in part C)'], ['0', 'back to the director']];
+// The key table: [key, long (part D), short (the landing card's hint row — core/hud.js renders it from here, so the two never drift)].
+// A function, not a const: the scene digit range reads REG.length, and scenes register after this module loads.
+export const keys = () => [['?', 'or H — this view', 'help'],
+  ['P', 'this view opened at part E, the routes panel (what drives what, by hand)', 'routes panel'], ['Esc', 'close it', null],
+  ['D', 'the developer HUD (numbers, every 6th frame)', 'dev HUD'], ['F', 'fullscreen (or double-click)', 'fullscreen'],
+  ['M', 'monitor the demo synth in the speakers', 'monitor demo'],
+  ['1 – ' + REG.length, 'force the scene with id 0 – ' + (REG.length - 1) + ' (the ids are in part C)', 'force a scene'],
+  ['0', 'back to the director', 'director']];
 const EV = Object.keys(FEATS).filter((k) => FEATS[k].kind === 'event'); // latched per frame while open (they last one frame)
 
 let live = {}, hot = {}, hudLine = null, bRows = {}, marks = {};
@@ -197,7 +202,7 @@ function buildD() {
   D.replaceChildren();
   D.appendChild(el('h2', null, 'D · keys'));
   const dl = el('dl', 'hdl');
-  for (const [k, t] of KEYS) {
+  for (const [k, t] of keys()) {
     const dt = el('dt');
     dt.appendChild(el('kbd', null, k));
     dl.appendChild(dt);
@@ -211,7 +216,7 @@ export function initHelp() {
   HELP.built = true;
   const body = $('helpBody');
   body.replaceChildren();
-  body.appendChild(el('h1', null, 'EIGENWOBBLE · what you are looking at, and what is moving it'));
+  body.appendChild(el('h1', null, 'RETINA RAVE · what you are looking at, and what is moving it'));
   body.appendChild(el('p', 'hnote', 'Every visible parameter traces to a field of MS, the music state vector the engine computes each frame. Part A is the scene on screen and the fields it reads, with their live values; B is the director choosing scenes; C is every scene; D the keys; E lets you re-wire, by hand, which field drives what. The scene keeps rendering behind this page.'));
   for (const id of ['helpA', 'helpB', 'helpC', 'helpD', 'helpE']) body.appendChild(el('section')).id = id;
   buildD();

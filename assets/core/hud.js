@@ -1,5 +1,6 @@
 // HUD + keys + landing card. The only module that touches the DOM besides main.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–9 force scene (1 = id 0) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–N force scene (1 = id 0, N = REG.length) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
 import { toggleMonitor } from '../engine/sources/demo.js';
@@ -7,7 +8,7 @@ import { SC, REG } from './scenes.js';
 import { Q } from './quality.js';
 import { G } from './gl.js';
 import { GROOVE } from '../engine/groove.js';
-import { toggleHelp, openHelpAt } from './help.js';
+import { toggleHelp, openHelpAt, keys } from './help.js';
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
@@ -34,8 +35,10 @@ export function initHUD() {
     ENGINE.start('capture');
   };
   $('demo').onclick = () => ENGINE.start('demo');
+  renderHint();
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
+    if (k !== 'escape' && e.target && e.target.matches && e.target.matches('input,select,textarea')) return; // typing in the panel is not a shortcut (v0.6)
     if (k === 'f') fullscreen();
     else if (k === 'd') {
       HUD.on = !HUD.on;
@@ -47,6 +50,23 @@ export function initHUD() {
     else if (k >= '0' && k <= '9') SC.forced = k === '0' ? -1 : (REG[+k - 1] ? +k - 1 : SC.forced);
   });
   addEventListener('dblclick', fullscreen);
+}
+
+// The landing card's key row, from the help view's table (part D) so the two agree forever. Keys without a short label are left out.
+function renderHint() {
+  const h = $('hint');
+  if (!h) return;
+  h.replaceChildren();
+  let first = true;
+  for (const [k, , short] of keys()) {
+    if (!short) continue;
+    if (!first) h.appendChild(document.createTextNode(' · '));
+    first = false;
+    const kb = document.createElement('kbd');
+    kb.textContent = k;
+    h.appendChild(kb);
+    h.appendChild(document.createTextNode(' ' + short));
+  }
 }
 
 function fullscreen() {

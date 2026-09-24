@@ -244,7 +244,7 @@ function buildPresets(sec) {
 }
 // While a preview runs the textarea would show its constant as if it were the user's: skipped until the last one ends.
 const syncJSON = () => { if (!nPreviews() && ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
-function setStore(what) { if (store) store.textContent = 'localStorage[' + KEY + '] · ' + what; }
+function setStore(what) { if (store) store.textContent = 'preset, saved in this browser · ' + what; } // the storage key itself is an implementation detail (v0.6)
 function save() {
   syncJSON();
   if (TEST) { setStore('under #test it is neither read nor written, so the harness shots stay deterministic'); return; }
