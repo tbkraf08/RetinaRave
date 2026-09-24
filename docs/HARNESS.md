@@ -340,7 +340,7 @@ components in GLSL count as `draw()` reads).
 **Proofs** (`node tools/route-smoke.js` = the grammar, kind rules, ema, fall-through, throws — node, no DOM; the rest headless):
 ```
 # identity: the module loaded and no routes → every scene-md5 line unchanged (v2 and &colour=oklch lists), mixs md5, parity fake 0 diff
-tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.4/scene-md5-v03.txt)
+tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.5/scene-md5-v03.txt)
 # the view path is exact: an identity route through the view leaves FEIGEN's md5s identical; a real route moves them
 CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=bass' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rid-s6-f360"}]'   # 8d6ac4a6… (= s6-f360)
 CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=high' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rhi-s6-f360"}]'   # differs
@@ -395,7 +395,7 @@ FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait"
 
 ## Acceptance sweep
 
-Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.4}/` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier
+Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.5}/` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier
 files; the v0.2 "before"/"none"/"after" traces referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 
 ```

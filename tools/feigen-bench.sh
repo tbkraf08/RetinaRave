@@ -1,6 +1,6 @@
 #!/bin/bash
 # FEIGEN cost harness (v0.2 §16): the numbers the worker's report and the orchestrator's acceptance both come from.
-# usage: GPU=1 tools/feigen-bench.sh <tag> [levels]      -> prints and writes tools/accept/${ACC:-v0.4}/feigen-bench-<tag>.txt
+# usage: GPU=1 tools/feigen-bench.sh <tag> [levels]      -> prints and writes tools/accept/${ACC:-v0.5}/feigen-bench-<tag>.txt
 #   (a) per level (default 1.2 2 3 3.6, set with &feig=), tier 3 (q pinned .95, 8 s settle): CARD.bench(6,300) three
 #       times interleaved with CARD.bench(0,300) in the same page (load drift is 2×; only interleaved medians compare),
 #       the scene's rt.label / rt.log, glerr. Steady state: the first bench(6,300) is discarded (cold, and after §16 it is
@@ -17,8 +17,8 @@ cd "$(dirname "$0")/.." || exit 1
 TAG=${1:-after}; shift
 LEVELS=${*:-1.2 2 3 3.6}
 SEAM_L=${SEAM_L:-1.478}
-OUTF=tools/accept/${ACC:-v0.4}/feigen-bench-$TAG.txt
-mkdir -p tools/accept/${ACC:-v0.4} tools/work/seam-$TAG
+OUTF=tools/accept/${ACC:-v0.5}/feigen-bench-$TAG.txt
+mkdir -p tools/accept/${ACC:-v0.5} tools/work/seam-$TAG
 {
 echo "== feigen-bench $TAG · $(date +%F) · levels $LEVELS · seam L $SEAM_L"
 echo "== (a) tier 3 steady state: feigen median of 3 × bench(6,300) | nav median (interleaved) | label | log"

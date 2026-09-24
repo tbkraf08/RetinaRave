@@ -1,9 +1,9 @@
-#!/bin/bash
-# Acceptance sweep -> tools/accept/${ACC:-v0.4}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/${ACC:-v0.5}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/, v0.4/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/${ACC:-v0.5}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
-export OUT=tools/accept/${ACC:-v0.4}; mkdir -p $OUT
+export OUT=tools/accept/${ACC:-v0.5}; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
@@ -39,7 +39,7 @@ echo "== hidden worklet" # v0.3 §26 audit: the same on the worklet path (synaps
 R=$(node tools/cdp.js 'test&fake=0&demo=dnb&scene=1' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=>PROBE.start())"},{"wait":14000},{"tab":"about:blank"},{"activate":"tab"},{"wait":20000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k===\"back\"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,150);return JSON.stringify({n:fr.length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k===\"drop\"&&e.t>=b.t}).length,srMax:+Math.max.apply(null,fr.map(function(f){return f.sr})).toFixed(2),hop:CARD.ENGINE.tex.hop,resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]' | grep EVAL | tail -1 | sed 's/.*=> //'); echo "$R"; echo "$R" | tr -d '\\' | grep -q '"n":150,"surprise":0,"drops":0,"srMax":\(0\|1\.[0-3]\)' && echo "hidden worklet: 150 frames back, 0 surprise, srMax < 1.4" || echo "FAIL hidden worklet: $R"
 echo "== routes"         # v0.4: the node smokes; the view path is exact (an identity route leaves FEIGEN's f360 md5 = the reference, a real route moves it); the manual post the same way (the v2 default's own bloom thr = identical, bloom off moves it); the panel opened (key p) then closed before the shot leaves the canvas md5 identical; a panel-open shot for the eyes
 node tools/route-smoke.js | tail -1; node tools/manual-smoke.js | tail -1
-REF6=$(grep "s6-f360" tools/accept/v0.4/scene-md5-v03.txt | cut -c1-32)
+REF6=$(grep "s6-f360" tools/accept/v0.5/scene-md5-v03.txt | cut -c1-32)
 for r in "route-id:route=feigen.bass=bass:same" "route-hi:route=feigen.bass=high:diff" "post-same:post=feigen.bloom.thr=0.3:same" "post-off:post=feigen.bloom.thr=2:diff"; do t=${r%%:*}; q=${r#*:}; q=${q%:*}; want=${r##*:}
   CLOCK=1 node tools/cdp.js "test&scene=6&$q" "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=360\"},{\"shot\":\"$t-s6-f360\"}]" > /dev/null; M=$(md5sum $OUT/$t-s6-f360.jpg | cut -c1-32)
   if [ "$want" = same ]; then [ "$M" = "$REF6" ] && echo "$t: s6 f360 md5 = reference ($M)" || echo "FAIL $t: s6 f360 md5 $M != reference $REF6"; else [ "$M" != "$REF6" ] && echo "$t: s6 f360 md5 $M != reference (moved, as it must)" || echo "FAIL $t: s6 f360 md5 did not move"; fi
