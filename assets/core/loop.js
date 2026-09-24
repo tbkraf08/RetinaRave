@@ -11,6 +11,7 @@ import { SC, REG, SCENES, updateScenes, drawScenes, visibility, postParams } fro
 import { drawHUD } from './hud.js';
 import { drawHelp } from './help.js';
 import { CARD, logFrame } from './harness.js';
+import { refreshRoutes, view } from './route.js';
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -29,11 +30,12 @@ export function frame(tms) {
   if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap
   uploadEngineTex(ENGINE.tex);
   const S = MS;
-  // scene updates: scenes flagged always, plus the ones on screen
+  refreshRoutes(dt); // v0.4: routed views refreshed from the finished MS (returns at once while no route exists)
+  // scene updates: scenes flagged always, plus the ones on screen — each reads its own view of MS (MS itself unless routed)
   const env = { SC, Q, now };
   for (const sc of SCENES) {
     const id = sc.id, on = SC.cur === id || SC.next === id;
-    if (sc.always || on) sc.update(dt, S, GROOVE, LOOK, env);
+    if (sc.always || on) sc.update(dt, view(sc), GROOVE, LOOK, env);
   }
   updateScenes(dt, S);
   updateLook(dt, S, now);

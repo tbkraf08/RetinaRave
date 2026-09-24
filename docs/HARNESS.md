@@ -301,6 +301,39 @@ the bundle line opens and closes it too). `check.js` enforces `help.feats ⊂ fe
 warns on a `feats` entry without a `help.feats` line. The §11 md5 is the proof the overlay changes nothing underneath:
 with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and `__FRAME` still advances after a `{wait}`.
 
+## Routes and manual overrides (v0.4 — change to `core/route.js`, `core/manual.js`, `scenes.js` postOf / renderScene, or the panel)
+
+Per-scene routing of `MS` fields (CONTRACTS §1.15) and the manual overrides, all under `#test`; storage is ignored there.
+```
+&route=feigen.bass=centroid*1.5+0.1~0.2!,feigen.kick=snare      # scene.field=src[*k][+b|-b][~tau][!] — several with ','
+&route=feigen.bass=c:0.4                                        # a constant source (transfer still applies)
+&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the four post params: bloom.thr fb.decay kaleido exposure.on
+```
+A `+` in a hash reaches the page as a space through `URLSearchParams` — the parser reads both. An unknown scene, field,
+source, kind mismatch (`flow` → `bass`), a transfer on an event, or an unknown post param **throws at init** (cdp prints
+an `[EXC]` line, the loop never starts — `CARD.frameN` stays 0: a typo must not pass silently). Lists are all-or-nothing.
+
+`CARD`: `ROUTES[scene][field]` (the specs in force) · `ROUTE.n` / `ROUTE.ms` (routes in force / the refresh cost, 0 with none) ·
+`route(scene, field, {src, k, b, inv, tau, c} | null)` · `routes('a.b=c,…')` (the grammar, all-or-nothing) · `routesString()` back
+to it · `clearRoutes(scene?)` · `routesJSON()` / `loadRoutes(json)` (the panel's preset: `{routes, manual}`) · `sources(field)` (what
+may feed it) · `view(name)` (the object the scene reads; `=== CARD.MS` while unrouted) · `MANUAL` (`scene` = `SC.forced`, `trans`,
+`colour` per scene, `post`) · `manual('scene', 6)` / `manual('trans', 'mixs')` / `manual('colour', 'feigen', 'oklch')` /
+`manual('post', 'feigen', 'bloom.thr', 0.3 | null)` · `posts('feigen.bloom.thr=0.3,…')` / `postString()`.
+
+**Proofs** (`node tools/route-smoke.js` = the grammar, kind rules, ema, fall-through, throws — node, no DOM; the rest headless):
+```
+# identity: the module loaded and no routes → every scene-md5 line unchanged (v2 and &colour=oklch lists), mixs md5, parity fake 0 diff
+tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.4/scene-md5-v03.txt)
+# the view path is exact: an identity route through the view leaves FEIGEN's md5s identical; a real route moves them
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=bass' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rid-s6-f360"}]'   # 8d6ac4a6… (= s6-f360)
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=high' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rhi-s6-f360"}]'   # differs
+# a manual post: the v2 default's own value leaves s6 identical, bloom off (thr 2) moves it
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&post=feigen.bloom.thr=0.3' …   # identical · &post=feigen.bloom.thr=2 differs
+# cost: ten routes on FEIGEN, q pinned, bench(6,300)/bench(0,300) interleaved before / with / after ("Bench protocol"): ratios .68 / .64 / .77 (noise),
+#   ROUTE.ms 0.007–0.023 ms (tools/accept/v0.4/route-bench.txt); the refresh runs outside ENGINE.frame so ENGINE.ms cannot move
+```
+`accept.sh` "== routes" runs the smoke, the identity pair, the post pair and a panel-open shot.
+
 ## `window.CARD` (available in every page)
 
 `MS` (music state) · `SC` (director; `SC.hist` = the ids shown so far, `SC.cur/next/m`) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`

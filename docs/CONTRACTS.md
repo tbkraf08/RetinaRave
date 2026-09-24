@@ -38,9 +38,9 @@ export default {
   cuts: 'continuous',           // your promise about discontinuities (§1.9): 'continuous' | 'onset' | 'event'
   score(MS, rt, SC) {},         // → 0..1 — your bid to be auto-picked now. Return 0 = never auto-pick now.
   init(ctx) {},                 // build programs and buffers. Called once, before the first frame. Keep ctx: this.ctx = ctx
-  update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. dt in seconds. Called every frame you are on screen (or always: see `always`).
+  update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. dt in seconds. Called every frame you are on screen (or always: see `always`). MS may be a routed view (§1.15)
   draw(target, { w, h, variant, vmix }) {},   // render into `target` (one of the core's targets, handed to you) at (w, h). Nothing else.
-  post: { fb: { decay: 0.7 }, bloom: { thr: 0.35 }, kaleido: 1 },   // effect params (object or fn(MS) → object)
+  post: { fb: { decay: 0.7 }, bloom: { thr: 0.35 }, kaleido: 1 },   // effect params (object or fn(MS) → object); the panel may override the four named ones (§1.15)
   help: { eli5: '', why: '', math: '',   // three depths, all required (§0); shown by the help view (§1.13)
     feats: { bass: 'fattens the tubes' } },   // optional: per field of `feats`, what it moves on THIS screen (§1.13)
   // optional slots:
@@ -389,6 +389,39 @@ values: the gamma midpoint of two complementary hues at L 0.7 has L 0.67 (`tools
 untouched and stays the default; `assets/math/oklab.js` is the JS twin (same constants, `maxChroma(L, h)`) for
 anything computed on the CPU. Never call `okLabToLin` on a colour you then write unclamped: the chain's targets are
 float and a negative channel survives to the composite.
+
+### 1.15 Routes — your `MS` may be a routed view (v0.4)
+
+The `?` overlay's part E (key `p`) lets the listener re-wire, by hand and per scene, which music feature drives which
+field you read: "in FEIGEN, `bass` is fed by `centroid`". Nothing changes for you in code; what changes is **which
+object arrives as `MS`**. What you may assume:
+
+- **Without routes you receive `MS` itself** — the same object as always (identity by construction; every reference md5
+  is unchanged with the module loaded). With routes on your scene you receive a *view*: an object created once with
+  `Object.create(MS)` whose routed fields are own properties refreshed every frame before your `update()`; every field
+  you did not route falls through the prototype to the live `MS`. The core hands the view wherever it hands you `MS`:
+  `update(dt, MS, …)`, `score(MS, …)` (a variant's `score` gets its parent's view), a `post` given as `fn(MS)`, and a
+  nested post function such as `fb.decay: (S) => …` (resolved against the view by `postOf` while you are routed). The
+  HEAD uniforms `use()` uploads (`uBands uBeat uArc uHarm`) are direct reads of `bass mid high · beatPhase hit beatCount
+  dropEnv · eS build tension surprisal · harmAngle harmVel clarity regularity`, so during a routed scene's `draw()` they
+  are computed from its view too (swapped into `LOOK` for that draw, restored after). `LOOK`'s palette (`pal`, `tint`,
+  `mood`), `GROOVE` and `uTime` are the director's, not yours: they stay derived from the real `MS` and are not routed.
+- **Read `MS` fields in `update()` and hold what you need for `draw()` on your own object** (every scene already does).
+  Do not keep a reference to the `MS` object itself across frames (`this.MS = MS` in `update`, read in `draw` or
+  `overlay`): a route set mid-run would then be invisible to you until the next `update`, and the identity promise
+  above ("the same object") is per call, not for ever. (Audited 2026-09-24: no scene does.)
+- **A route keeps the field's kind.** A `level` stays 0..1 (clamped after the transfer), an `event` stays a boolean
+  (only another event can feed it, no transfer), `raw` / `angle` stay unbounded. `count`, `enum`, `vector` and
+  `internal` fields are never routed — `chroma`, `wave`, `seed`, `arc`, `interval`, `sectionId` are always the engine's.
+- **Only fields in your `feats` can be routed** (the panel's rows come from it, the API refuses others) — one more
+  reason to keep `feats` exactly what you read (§1.13). A route to a field you list but never read moves nothing and
+  looks like a bug in the panel; a field you read but do not list cannot be routed and is a bug in your scene.
+- The transfer per route is `ema(clamp_kind(k · (inv ? flip(x) : x) + b), τ)` with `flip` = `1 − x` for a level, `−x`
+  otherwise, the ema on `dt` (never wall time — `#test` stays bit-identical). A constant source is a manual setting.
+- Harness (`docs/HARNESS.md` "Routes"): `&route=feigen.bass=centroid*1.5+0.1~0.2!,…` under `#test`,
+  `&post=feigen.bloom.thr=0.3,…` for the manual post overrides, `CARD.route(scene, field, spec | null)`,
+  `CARD.ROUTES`, `CARD.view(name) === CARD.MS` while unrouted, `CARD.MANUAL` / `CARD.manual(...)`. The director is
+  untouched: routes feed scenes, never `pickScene` (it reads your routed `score`, which is yours to compute).
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 

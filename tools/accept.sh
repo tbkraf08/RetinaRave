@@ -1,9 +1,9 @@
 #!/bin/bash
-# Acceptance sweep -> tools/accept/v0.3/ (v0.2's sweeps stay in tools/accept/v0.2/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/${ACC:-v0.4}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
-export OUT=tools/accept/v0.3; mkdir -p $OUT
+export OUT=tools/accept/${ACC:-v0.4}; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1

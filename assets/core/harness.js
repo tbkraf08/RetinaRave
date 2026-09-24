@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -10,6 +10,7 @@ import { FX, EFFECTS, CHAIN } from './post.js';
 import { G, ERRS, ETEX } from './gl.js';
 import { LOOK } from './look.js';
 import { HELP } from './help.js';
+import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view } from './route.js';
 import { getGrid } from '../math/mandel.js';
 
 export const HASH = new URLSearchParams(location.hash.slice(1));
@@ -36,6 +37,10 @@ export const CARD = {
   goScene: (id, hard) => goScene(id, hard, MS),
   setColour, // colour variant by name for every scene that declares it (CONTRACTS §1.4); &colour=<name> under #test
   get colour() { const o = {}; for (const s of SCENES) if (s.colour) o[s.name] = s.colour.cur; return o; },
+  // routes (v0.4, CONTRACTS §1.15): ROUTES[scene][field] = spec · route(scene, field, spec|null) · routes('a.b=c,…') = the &route= grammar ·
+  // routesString() back to it · routesJSON()/loadRoutes() the preset · view(name) = the MS a scene reads (=== MS when unrouted) · ROUTE.n/ms
+  ROUTES, ROUTE, route: setRoute, clearRoutes, routes: applyRoutes, routesString, routesJSON, loadRoutes, parseRoute, serialiseRoute, sources,
+  view: (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return view(s); },
   // Micro-benchmark a scene id: ms per full-resolution render, readPixels-synced (Q.q is not a perf verdict headless).
   bench(id, n = 40) {
     const gl = G.gl, T = [G.RT.a, G.RT.b];
@@ -111,6 +116,7 @@ export function initHarness(hideLanding) {
     if (HASH.has('colour')) setColour(HASH.get('colour'));     // a scene's colour variant (CONTRACTS §1.4, v0.3 §26)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
+    if (HASH.has('route')) applyRoutes(HASH.get('route'));  // v0.4 routes: scene.field=src[*k][+b][~tau][!],… (a bad one throws)
   }
 }
 

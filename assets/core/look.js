@@ -47,10 +47,16 @@ export function updateLook(dt, S, now) {
   // the (1-presence) wobble is the only place a wall-clock term enters: it only acts while there is no music
   C.pal[3] = (0.28 + 0.55 * Math.pow(S.eS, 0.8) + 0.2 * S.hit + 0.2 * S.dropEnv) * (0.7 + 0.3 * S.presence) * (1 + 0.25 * Math.sin(now * 0.7) * (1 - S.presence));
   C.tint = hsv(hueT, 0.75, 1);
+  headVecs(S, C);
+  updateMood(dt, S);
+}
+
+// The four HEAD vectors that are direct per-frame reads of MS (uBands uBeat uArc uHarm). Split out so a routed scene's
+// draw can upload them from its own view (v0.4 routes, scenes.js renderScene); pal / tint / time are stateful and stay LOOK's.
+export function headVecs(S, C) {
   C.bands = [S.bass, S.mid, S.high];
   const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
   C.beat = [S.beatPhase, S.hit, br, S.dropEnv];
   C.arc = [S.eS, S.build, S.tension, S.surprisal];
   C.harm = [S.harmAngle, S.harmVel, S.clarity, S.regularity];
-  updateMood(dt, S);
 }

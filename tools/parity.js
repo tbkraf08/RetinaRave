@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const V3 = process.env.V3 || '/home/toma/Documents/Kraftek/Cardioid/cardioid3.html';
-const OUT = path.join(HERE, 'accept/' + (process.env.ACC || 'v0.3')); // ACC=v0.2 to write beside the v0.2 sweeps
+const OUT = path.join(HERE, 'accept/' + (process.env.ACC || 'v0.4')); // ACC=v0.3 / v0.2 to write beside the earlier sweeps
 const mode = process.argv[2] || 'both';
 
 const SNAP = `(()=>{const S=CARD.MS,N=CARD.NAV||CARD.home,o={};for(const k in S){const v=S[k];if(typeof v==='number'||typeof v==='boolean'||typeof v==='string')o[k]=v;

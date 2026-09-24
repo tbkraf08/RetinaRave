@@ -5,6 +5,8 @@
 import { clamp, ema, frac } from '../math/util.js';
 import { G } from './gl.js';
 import { FX } from './post.js';
+import { LOOK, headVecs } from './look.js';
+import { routeScene, view, isRouted } from './route.js'; // v0.4 routes: the MS view a scene reads (MS itself without routes)
 
 export const SC = {
   cur: 0, next: -1, m: 0, dur: 2,   // base ids of the two rendered scenes and the crossfade position
@@ -25,6 +27,7 @@ export function register(scene) {
   const id = scene.id;
   if (REG[id]) throw new Error('scene id ' + id + ' taken by ' + REG[id].scene.name);
   scene.rt = scene.rt || {};
+  routeScene(scene);
   REG[id] = { id, base: id, scene, variant: null };
   SCENES.push(scene);
   if (scene.home) SC.home = id;
@@ -102,7 +105,8 @@ export function pickScene(S) {
   let best = SC.home, bv = -9;
   for (const E of REG) {
     if (!E) continue;
-    const sc = E.variant ? E.variant.score(S, E.scene.rt, SC) : E.scene.score(S, E.scene.rt, SC);
+    const V = view(E.scene); // a variant reads its parent's fields, so its parent's view (§1.4)
+    const sc = E.variant ? E.variant.score(V, E.scene.rt, SC) : E.scene.score(V, E.scene.rt, SC);
     if (!(sc > 0)) continue;
     let v = sc + 0.25 * frac(Math.sin((S.sectionId + 1) * (E.id + 1) * 12.9898) * 43758.5);
     const hi = SC.hist.indexOf(E.id);
@@ -245,8 +249,14 @@ export function renderScene(id, tgt, w, h) {
     gl.depthMask(true);
     gl.clear(gl.DEPTH_BUFFER_BIT);
   }
-  const sc = E.scene;
-  sc.draw(tgt, { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix, colour: sc.colour ? sc.colour.cur : null });
+  const sc = E.scene, arg = { w, h, variant: E.variant ? E.variant.name : SC.variant, vmix: SC.vmix, colour: sc.colour ? sc.colour.cur : null };
+  if (!isRouted(sc)) { sc.draw(tgt, arg); return; }
+  // v0.4 routes: the HEAD uniforms use() uploads (uBands uBeat uArc uHarm) are direct reads of MS fields the scene declares in
+  // feats, so a routed scene's programs get them from its view — swapped into LOOK for this draw only, then restored
+  const keep = [LOOK.bands, LOOK.beat, LOOK.arc, LOOK.harm];
+  headVecs(view(sc), LOOK);
+  sc.draw(tgt, arg);
+  [LOOK.bands, LOOK.beat, LOOK.arc, LOOK.harm] = keep;
 }
 
 // Scene pass(es) at adaptive resolution (sw, sh) inside the fixed-size targets; returns the source target. During a
@@ -290,5 +300,5 @@ export function postParams(S) {
 function postOf(id, S) {
   const sc = REG[id].scene, cv = sc.colour && sc.colour.variants[sc.colour.cur];
   const p = (cv && cv.post) || sc.post; // a colour variant may carry its own post (FEIGEN's bloom thr differs per mapping)
-  return (typeof p === 'function' ? p(S) : p) || {};
+  return (typeof p === 'function' ? p(view(sc)) : p) || {}; // a post fn reads the scene's routed view, as update() does (v0.4)
 }

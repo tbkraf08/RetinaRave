@@ -1,0 +1,6 @@
+"pinned"
+"none feigen 0.789 nav 1.156 ratio 0.683 engine 1.856 route 0.0000 n0"
+"ten feigen 0.735 nav 1.155 ratio 0.636 engine 1.782 route 0.0066 n10"
+"none2 feigen 0.851 nav 1.113 ratio 0.765 engine 1.407 route 0.0066 n0"
+"engine with ten, 3 s later: "
+"engine 2.016 route 0.0226 n10 errs [] bad []"
