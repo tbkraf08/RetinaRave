@@ -96,6 +96,7 @@ export default {
       from: (MS) => 1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick },
     dive: { eli5: 'how fast the dive falls', range: [0, 2], from: (MS) => 0.25 + 1.5 * MS.lvl },
     roll: { eli5: 'how far the frame rocks from side to side', range: [0, 0.4], from: () => 0.04 },
+    glow: { eli5: 'how brightly the filaments burn', range: [0, 1], from: (MS) => MS.lvl },
   },
 
   // look memory (CONTRACTS §1.11): a returning section comes back to its own depth and its own conjugation
@@ -162,7 +163,7 @@ export default {
     S.width = wd;
     S.rot = P.roll * Math.sin(MS.flowMid * 0.17);
 
-    S.lvl = MS.lvl;
+    S.lvl = P.glow;         // uLevel in both colour passes: the brightness of the filaments, the bands and the interior
     S.kick = MS.kick;
     S.drop = MS.dropEnv;
     S.hat = MS.hat;
