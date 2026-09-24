@@ -462,6 +462,13 @@ params: {
   and fails `check.js` (which calls it the same way in node). It must return a finite number; `check.js` warns when the
   value on the `MS` defaults falls outside `range`. Read only `S` in it — no `dt`, no `this`, no state (a parameter is
   what the visual uses *this frame*; a phase or a depth you integrate stays your state).
+  **Name the argument `MS`** (`from: (MS) => MS.lvl`): `check.js`'s static read check counts `MS.<field>` / `S.<field>` reads, and
+  a scene whose module keeps its own state in a `const S` has `S.` disabled as a receiver — `(S) => S.lvl` there would
+  read as a stale `feats` entry (the FEIGEN worker's find). **Move an expression whole or not at all**: a product
+  `a · b · c · d` is left-associative — lifting `b · c` out of it re-associates and moves the last ulp (FEIGEN's dive
+  integrates `dt/(32·period) · A · B · C`; only the leading factor `A` could move; the worker measured 46 % of random
+  draws differing under re-association). A shader-side expression becomes a parameter only where the shader already
+  receives the value as a uniform — folding fp32 shader arithmetic into fp64 JS is a pixel change.
 - **The values arrive as `env.params`** in `update(dt, MS, GROOVE, LOOK, env)`: one object per scene (the same object
   every frame, refreshed in place before your `update()` runs; `null` for a scene without `params`). Read them there and
   hold what `draw()` needs on your own object, as you do with `MS` fields (§1.15's rule). **While no parameter is
