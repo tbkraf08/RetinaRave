@@ -262,7 +262,7 @@ function buildPresets(sec) {
   store.id = ID('store');
   sec.appendChild(store);
 }
-const syncJSON = () => { if (ta && !focused(ta)) ta.value = routesJSON(); };
+const syncJSON = () => { if (ta && !focused(ta)) { const j = routesJSON(); if (ta.value !== j) ta.value = j; } };
 function setStore(what) { if (store) store.textContent = 'localStorage[' + KEY + '] · ' + what; }
 function save() {
   syncJSON();
@@ -308,17 +308,16 @@ export function markE() {                                          // the scene 
   if (holder && name && blocks[name] && holder.firstChild !== blocks[name]) holder.insertBefore(blocks[name], holder.firstChild);
 }
 
-export function refreshE(frameN) {                                 // meters and read-only readouts only — never a rebuild
+export function refreshE(frameN, hot) {                            // meters and read-only readouts only — never a rebuild
   for (const R of rows) {
     const s = (ROUTES[R.sc.name] || {})[R.f] || null;
     const a = s ? (s.src === CONST ? s.c : MS[s.src]) : MS[R.f], b = view(R.sc)[R.f];
-    if (R.ev) {
-      if (a) R.ha = frameN;
-      if (b) R.hb = frameN;
+    if (R.ev) { // an event lasts one frame and this runs every 6th: help.js's per-frame latch says when each last fired (a routed event *is* its source's)
+      const lit = (k) => hot && hot[k] !== undefined && frameN - hot[k] < 30;
       R.m1.v.textContent = '●';
       R.m2.v.textContent = '●';
-      R.m1.v.classList.toggle('lit', frameN - (R.ha === undefined ? -1e9 : R.ha) < 30);
-      R.m2.v.classList.toggle('lit', frameN - (R.hb === undefined ? -1e9 : R.hb) < 30);
+      R.m1.v.classList.toggle('lit', lit(s ? s.src : R.f));
+      R.m2.v.classList.toggle('lit', lit(s ? s.src : R.f));
       continue;
     }
     R.m1.v.textContent = nums(a);

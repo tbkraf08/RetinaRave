@@ -95,7 +95,7 @@ while the help view is closed (nothing of yours runs outside the four calls abov
 
 1. `node tools/check.js` → 0 fail (panel.js ≤ 350 lines, no literal names).
 2. **Help coverage unchanged**: the `accept.sh` "== help" eval (copy it from `tools/accept.sh`, add `PORT=8790`) still
-   prints `help fields 107/107 (unique 107) · top table = feats on 6/6 ids` — part A is untouched by your section.
+   prints `help fields 107/107 (unique 107) · top table = feats on 7/7 ids` (7 registry entries: six scenes + NAV's DRUM variant) — part A is untouched by your section.
 3. **Two CLOCK shots with E open**, read them:
    ```
    PORT=8790 CLOCK=1 GPU=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"key":"p"},{"until":"window.__FRAME>=120"},{"eval":"document.getElementById(\"helpE\").scrollIntoView();\"E at \"+document.getElementById(\"help\").scrollTop"},{"shot":"work/panel-s0-f120"}]'

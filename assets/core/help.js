@@ -240,7 +240,7 @@ export function toggleHelp(force) {
     markE();
     refreshLive(0);
     refreshB();
-    refreshE(0);
+    refreshE(0, hot);
   }
 }
 
@@ -253,7 +253,7 @@ export function drawHelp(S, frameN) {
     HELP.ticks++;
     refreshLive(frameN);
     refreshB();
-    refreshE(frameN);
+    refreshE(frameN, hot); // hot: the per-frame event latch (an event lasts one frame; the panel only runs on this tick)
   }
 }
 
