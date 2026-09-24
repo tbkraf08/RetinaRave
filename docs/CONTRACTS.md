@@ -429,7 +429,7 @@ object arrives as `MS`**. What you may assume:
 - The transfer per route is `ema(clamp_kind(k · (inv ? flip(x) : x) + b), τ)` with `flip` = `1 − x` for a level, `−x`
   otherwise, the ema on `dt` (never wall time — `#test` stays bit-identical). A constant source is a manual setting.
 - **A preview is a route for two seconds, a fire is one frame (v0.4.1).** The panel's `0` / `1` buttons set a
-  constant route on the jack and put the previous route back after 2 s of the help view's ticks; you see a normal
+  constant route on the jack and put the previous route (usually none) back after 2 s of the help view's ticks; you see a normal
   route. Its `fire` button on an event field calls `pulse(scene, field)` (`CARD.pulse`): on the next frame your view has
   that event `true` as an own property (a scene without routes gets a view for exactly that frame, then `MS` itself
   again); the frame after, it is gone. Nothing is stored. A scene that reacts to an event only through the engine's
@@ -714,3 +714,12 @@ Questions workers had to ask, and what changed in this doc as a result.
   and its real-path check waited 20 s for a fade that lands at ~23 s on the house demo (brief fixed to 45 s). Harness
   finding (orchestrator): `CARD.bench`/`benchTransition` read back UNSIGNED_BYTE from RGBA16F targets — an
   INVALID_OPERATION that never reached the GPU, so no bench before §11 was synced (HARNESS "Transition").
+- **2026-09-24, panel-legibility (v0.4.1 §28), worker given this doc + `brief-panel-2.md` + `panel.md`.** Friction (14
+  items, `panel-2.md`): the brief's `CARD.view(CARD.REG[6].scene)` throws — `CARD.view` takes the scene **name** (the
+  brief was wrong, HARNESS was right); the preview's "previous route" is usually *none* (§1.15 now says so); where the
+  preview message lives, the `0`/`1` titles for ranged fields, whether the `the bid:` prefix stays in the drives text
+  (it does — the author's sentence, then the note), one sentence per block — all guesses, all kept. Harness findings
+  went to HARNESS "Pitfalls" (the native popup is not in a CDP screenshot, `xwd` dies while it is open, never
+  `windowactivate` by class on a shared desktop, a DOM table has no `tbody`). Doc change: §1.13 "Bid-only fields" was
+  written before the brief and needed no edit.
+

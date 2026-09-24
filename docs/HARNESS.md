@@ -412,3 +412,11 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
 - Module scripts are strict mode: no implicit globals. Import what you use.
 - The demo synth uses `Math.random()` noise: `fake=0` runs are not bit-identical ("judge on 2+ runs"); `#test` is.
 - The empty hash defaults to `test` in cdp.js — pass `real` for the real start path.
+- A `<select>`'s native popup is a separate override-redirect X window: `Page.captureScreenshot` never contains it,
+  `xwd -root` fails with `BadColor` while it is open, and only `color-scheme` styles it. Open it with a trusted
+  `{clickSel:'#pe-src-…'}` (`{key:'Alt+ArrowDown'}` sends no modifier) and grab the root with python-Xlib + PIL (the
+  worker's `tools/work/xshot.py`, v0.4.1). Never `xdotool … windowactivate` by class in a headed run — it raised other
+  Chrome-class windows on the desktop.
+- A DOM-built `<table>` has no `<tbody>`: select `#pe-blk-<scene> tr`, not `tbody tr`.
+- `CARD.view(name)` takes the scene name, not the scene object.
+

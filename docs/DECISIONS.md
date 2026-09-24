@@ -1241,3 +1241,48 @@ per-*visual-parameter* level (a scene declaring its knobs as a slot) is the foll
   elements the orchestrator would later drive, one worker from the brief alone (first shoot), the merge judged on its
   screenshots, the audit only on the merged code, and a cost finding on the real path chased with a second run and a
   same-conditions control of the previous release before being written down as "the machine, not the code".
+
+## §28 panel-legibility — the panel you can read (v0.4.1, 2026-09-24, orchestrator + one worker from `docs/workers/brief-panel-2.md`, report `panel-2.md`)
+
+The user's first hands-on with the v0.4 panel on real music produced three sentences; each became one change, nothing
+else was touched (the routes core, the director, every reference md5 and the v0.2 look are as at v0.4).
+
+- **"It looks like I'm mapping musical features to other musical features"** → the row's first column is now the visual
+  ("what it drives here", bright and wide), the jack (`bass · level`) second, and each block says under its heading
+  *each row is one input of this scene: the left column is what it moves on screen, the source is the music feature
+  you plug into it*. Same data as v0.4 (`help.feats` / `FEATS.drives`); the panel merely names the visual first.
+- **"It doesn't seem like changing the parameters changes the viz"** → four causes, four answers. (b) *bid-only
+  fields*: a field a scene reads only in `score()` is now a contract convention — its `help.feats` line begins `the
+  bid:` (CONTRACTS §1.13); the audit found 17 such fields across the six scenes and 6 lines without the prefix (`arc`
+  in TORUS/DUST/MANDALA/FEIGEN/POLYTOPE, NAV's `clarity`), fixed; the panel dims the row and says *bid only — moves
+  nothing while the scene is forced; changes when the director picks it*; `check.js` warns both ways (a `the bid:`
+  field read outside `score()`, a `score()`-only field without the prefix — static per scene folder, score bodies cut
+  out, HEAD uniform components in GLSL counted as `draw()` reads since `mandala.bass/high`, `feigen.bass` and `nav.high`
+  are read only through `uBands`). (a/c) *preview the extremes*: per row `0` / `1` route the jack to `FEATS.range`'s
+  ends (a raw field: 0 and twice the live value) for 2 s of help ticks, then the previous route — or none — comes back;
+  `fire` on an event row is a new core call `pulse(scene, field)` (route.js): the event is `true` on the scene's view for
+  exactly the next frame, a view created for that frame if the scene has none, never a route, never stored; `closeE()`
+  (help.js → panel) ends a preview when the view closes. Storage is never written by a preview and the preset textarea
+  is not refreshed while one runs. (d) *which scene am I dialling*: a line under the E heading — *the director is
+  choosing scenes — force this one while you dial* with **force** / **release** (`MANUAL.scene`), and every block heading
+  says `on screen` / `not on screen` live.
+- **"The drop down is white background with white text"** → `#help{color-scheme:dark}` plus `#help option{…}`: the
+  native popup is the browser's window, not the page's, and only `color-scheme` reaches it. Judged headed with the
+  list open (`tools/work/p2-dropdown.jpg` in the worker's tree): dark list, light rows, the first row highlighted.
+- **What the worker found** (`panel-2.md`): a `<select>` popup is an override-redirect X window that
+  `Page.captureScreenshot` never contains and `xwd -root` refuses (`BadColor`) while it is up — python-Xlib grabs it;
+  `xdotool … windowactivate` by class raised other Chrome-class windows on the desktop (never do it in a headed run);
+  the trusted `{clickSel}` click opens the list, `{key:'Alt+ArrowDown'}` does not (cdp.js sends no modifiers);
+  `CARD.view` takes a name; a DOM-built table has no `tbody`. `panel.js` reached 403 lines with the list moved in, so
+  the DOM helpers and the four cell builders became the leaf `core/panel-ui.js` (89 lines, imports nothing); `check.js`
+  now covers it in the literal-name check.
+- **Proofs.** `check.js` 0 fail 0 warn (the bid check proven to fire both ways on a deliberately broken FEIGEN); route
+  smoke 68/68 with 10 pulse checks; `parity.js fake` 0 diff over 72 fields after the route.js change; both scene-md5
+  lists (v2 default, `&colour=oklch`) identical to the v0.4 references before the merge; the worker's ten acceptance
+  items (identity md5s `8d6ac4a6…` / `fb74fee4…` with the panel opened and closed, ticks 0/100, the preview by eval at
+  f150/f300, `fire` at f121/f122, closeE, force/release, the bid rows, the bundle from `file://`); `accept.sh` "== routes"
+  gained the preview / closeE / force-release sequence; the sweep is `accept-31.txt`.
+- **Not done here, carried to v0.5:** the real answer to sentence 1 is a row that says *filament sharpness ← centroid* —
+  per-visual-parameter routes (`NEXT-SESSION-PROMPT.md` item 1). v0.4.1 is the panel naming what it already has
+  correctly; v0.5 gives it the thing the user asked for.
+

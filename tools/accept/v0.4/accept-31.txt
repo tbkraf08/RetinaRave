@@ -1,0 +1,20 @@
+== check.js
+check: 64 modules · uniforms 109 · MS keys 118 · scenes 6 (help.feats gaps 0) · 0 fail · 0 warn
+== math tests
+OK · MISI 14
+OK
+OK
+test_tempo: OK
+test_director: OK
+test_oklab: OK
+== lines smoke
+lines-smoke: OK
+== oklch smoke
+oklch-smoke: OK
+== chain smoke
+chain-smoke: OK
+== parity fake
+max |diff| over all numeric fields: 0 · fields compared 72
+MS/NAV parity: every field identical to 1e-9
+montage: /home/toma/Documents/Kraftek/Eigenwobble/tools/accept/v0.4/parity-fake.jpg
+== parity real
