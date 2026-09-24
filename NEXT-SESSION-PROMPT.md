@@ -9,6 +9,13 @@ opened the build on real music, routed a parameter from the panel and said *"loo
 time the panel met their eyes with approval. **First action of this session: ask the user what v0.6 is for.** The
 candidates below are ordered by what the day left open; the user's sentence outranks them.
 
+> **2026-09-24, later: v0.6 "public" executed** (DECISIONS §35, commits 6f70fa9…bc3d8e3, not tagged): RETINA RAVE help headline, the landing
+> key row from `keys()`, keydown target guard, SEO head + `site/` (robots, sitemap, manifest, favicon, og.jpg, `_headers`, `about.html`),
+> the microphone source + capability-aware card, touch bar / swipe / hold / wake lock / mobile quality seed. cdp gained `FAKEMIC=1` and
+> `MOBILE=1`; the harness clicks `#demo` by selector. **Open for the user:** Cloudflare dashboard steps (www custom domain + 301 to apex,
+> disable the workers.dev route, Search Console + sitemap, Web Analytics), the portrait review of scenes 1–6 on a real phone, and whether
+> to tag v0.6 after looking. The candidates below (params on four scenes, chain row, …) are unchanged.
+
 **Read first:** `README.md` · `docs/CONTRACTS.md` (§1 the scene object, §1.13, §1.15 Routes, **§1.16 Params** incl. its
 open ends, §1.4) · `docs/HARNESS.md` ("Routes and manual overrides", "Params", "Effect chain" (`&k=`/`&kmood=`), "Help view",
 "Real window", "Bench protocol", "Pitfalls") · `docs/DECISIONS.md` **§27–§34** (§29 params, §30 the corrected NAV cost story,
