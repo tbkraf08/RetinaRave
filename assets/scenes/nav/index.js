@@ -2,7 +2,7 @@
 // variant (Koopman modes from the spectral peaks). Overlay: picture-in-picture of M with the path of c.
 // Lifted from cardioid3 renderScene id 0 / PiP block, expressed through docs/CONTRACTS.md.
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { startGridWorker } from '../../math/mandel.js';
+import { startGridWorker, LG_MIN, LG_MAX } from '../../math/mandel.js';   // LG_*: the exterior potential's own bounds — the `reach` parameter's range
 import { NAV, updateNav } from './nav.js';
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
@@ -81,6 +81,8 @@ export default {
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
     dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
     pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
+    // the one parameter nav.js reads (through updateNav's opts): the target of the exterior spring, already clamped to its own range by the expression it was
+    reach: { eli5: 'how far outside the set the drop throws the picture', range: [LG_MIN, LG_MAX], from: (S) => clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_MIN, LG_MAX) },
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -107,7 +109,7 @@ export default {
     const N = NAV, SC = env.SC;
     this._P = env.params;   // §1.16: the same object every frame, refreshed before this update(); draw()/overlay() read it back the same frame
     if (this.rt.settledAt === 0) N.landed = 0; // the director consumed the landing (zeroed rt.settledAt)
-    updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5 });
+    updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5, P: env.params });
     const rt = this.rt;
     rt.home = N.mode === 'INT';
     rt.awayBeat = N.extBeat;
