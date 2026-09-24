@@ -214,6 +214,10 @@ export default {
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } }, // morph.flow: the flow field combed the ribbons at 1 (v0.3 §23, montage morph-flow-slot.jpg)
 
+  // One colour mapping, declared (CONTRACTS §1.4) so every scene answers `CARD.colour`, the cast line and the panel's
+  // colour select the same way. No `post` on the variant: the scene's own `post` above stays in force.
+  colour: { default: 'v2', variants: { v2: {} } },
+
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
