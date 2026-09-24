@@ -78,6 +78,7 @@ export default {
   // is byte-identical while nothing is routed (one commit per move, each proved by the scene-md5 pair + parity).
   params: {
     trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
+    zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -124,7 +125,7 @@ export default {
     const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
     // inside a baby the same view is conjugated by w=A z (matched at the cut), then eased out (bz) until the host's decorations frame the copy
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
-    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) * (B ? mix(1, 1.7, N.bz.x) / B.A : 1);
+    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom * (B ? mix(1, 1.7, N.bz.x) / B.A : 1);
     const rotv = GROOVE.rot - (B ? B.argA : 0);
     N.view = [0, 0, scale, rotv];
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
