@@ -46,6 +46,26 @@ for (const f of files) {
   if ((rel.startsWith('assets/core/') || rel.startsWith('assets/transitions/')) && /\bnav\b/i.test(src.replace(/navigator\.mediaDevices/g, ''))) fail(rel + " mentions 'nav' — core must not special-case a scene");
 }
 const dead = [...decl].filter((n) => !used.has(n) && !COMMON.includes(n));
+// Import cycles: the bundler (tools/bundle.js) orders modules by their imports and cannot order a cycle — the page dies from file://
+// with an undefined module (v0.5 item 4 closed gl → look → post → gl and the http page never noticed). Every relative import edge
+// in assets/, DFS for a back edge; a cycle fails.
+{
+  const edges = {};
+  for (const f of files) {
+    const rel = path.relative(ROOT, f), src = fs.readFileSync(f, 'utf8');
+    edges[rel] = [...src.matchAll(/^\s*import\s[^'"]*['"](\.[^'"]+)['"]/gm)].map((m) => path.normalize(path.join(path.dirname(rel), m[1])));
+  }
+  const state = {}, stack = [];
+  const dfs = (n) => {
+    if (state[n] === 2) return false;
+    if (state[n] === 1) { fail('import cycle: ' + stack.slice(stack.indexOf(n)).concat(n).join(' → ')); return true; }
+    state[n] = 1; stack.push(n);
+    for (const m of edges[n] || []) if (dfs(m)) return true;
+    stack.pop(); state[n] = 2;
+    return false;
+  };
+  for (const n in edges) if (dfs(n)) break;
+}
 if (dead.length) fail('dead uniforms (declared, never fetched): ' + dead.join(','));
 
 // MS schema: every key of MS must be documented in FEATS (static, via node import of the pure modules)

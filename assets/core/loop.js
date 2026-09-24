@@ -6,7 +6,7 @@ import { GROOVE } from '../engine/groove.js';
 import { G, resize, uploadEngineTex } from './gl.js';
 import { Q, updateQuality } from './quality.js';
 import { LOOK, updateLook } from './look.js';
-import { FX, updateFX, runChain } from './post.js';
+import { FX, CHAIN, updateFX, runChain } from './post.js';
 import { SC, REG, SCENES, updateScenes, drawScenes, visibility, postParams } from './scenes.js';
 import { drawHUD } from './hud.js';
 import { drawHelp } from './help.js';
@@ -40,6 +40,7 @@ export function frame(tms) {
   }
   updateScenes(dt, S);
   updateLook(dt, S, now);
+  LOOK.k = Math.max(0.2, CHAIN.k * (1 + CHAIN.kMood * (2 * S.arousal - 1))); // v0.5 item 4: the tonemap knee this frame; kMood 0 → exactly CHAIN.k
   wall += dt * (0.15 + 0.85 * S.presence);
   const cur = REG[SC.cur].scene.rt;
   LOOK.time = cur.time !== undefined ? cur.time : wall;
