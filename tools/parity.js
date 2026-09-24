@@ -1,4 +1,4 @@
-// Parity between cardioid3.html (via FILE=, legacy cdp semantics) and Eigenwobble on the same #test timeline.
+// Parity between cardioid3.html (via FILE=, legacy cdp semantics) and Retina Rave (formerly Eigenwobble) on the same #test timeline.
 // usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.2/)
 //   fake: CLOCK=1 deterministic 60 Hz clock on both, MS + NAV dumped every 60 frames for 24 s, max |diff| per field
 //         (expected 0: the fake path is deterministic), screenshots at frames 360/840/1200 (T≈6/14/20) montaged.

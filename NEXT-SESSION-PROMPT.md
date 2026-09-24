@@ -1,84 +1,79 @@
-# Fable Session Prompt — Eigenwobble v0.5 "knobs" (updated 2026-09-24 after items 1–4 merged — params, NAV iteration budget, colour slot everywhere, chain k; the user said "proceed" without looking at v0.4.1 — still ask them to look, now at the params panel)
+# Fable Session Prompt — Retina Rave after v0.5 (written 2026-09-24, the day v0.5 was tagged and the project renamed)
 
-You are the orchestrator on Eigenwobble (`~/Documents/Kraftek/Eigenwobble/`, zero-dependency WebGL2 audio-visual
-engine, native ES modules, git). **v0.4.1 is tagged** (`git tag v0.4.1`, `releases/eigenwobble-v0.4.1.html`, DECISIONS §28).
-**v0.5 items 1–4 are merged on master (not tagged; DECISIONS §29–§32, sweeps `accept-32.txt` (item 1) and `accept-33.txt` (items 2–4)):** a scene declares
-its visual parameters (`params: {name: {eli5, range, from: (MS) => …}}`, CONTRACTS **§1.16**), `update()` receives the values as
-`env.params` (= `from(view)` exactly while unrouted — every reference md5 unchanged), the panel's part E shows a **parameters
-table** per scene above the folded jacks (`core/panel-params.js`), `&param=scene.param=src[*k][+b][~tau][!] | c:<v>` under
-`#test`, `CARD.param/params/PROUTES/paramsOf/paramDeps/derived`. FEIGEN: `width dive roll glow thick`; NAV: `trap zoom dots
-pip reach`. **First action of this session: ask the user to open `dist/eigenwobble.html` (or build it: `node tools/bundle.js`)
-on real music (key `p`), route one FEIGEN parameter from the panel, and say what they see** — if they already have, their words
-are the brief and go first, above the list below. Then decide with them whether v0.5 is tagged now (item 1 alone) or after
-the list.
+You are the orchestrator on **Retina Rave** (`~/Documents/Kraftek/RetinaRave/`, zero-dependency WebGL2 audio-visual engine,
+native ES modules, git; GitHub `git@github.com:tbkraf08/RetinaRave.git`, branch `main`, tags v0.2–v0.5 pushed). It was
+called **Eigenwobble** until v0.5: `docs/DECISIONS.md` §1–§33, the worker reports, the accept logs and the memory notes
+use that name — they are history, not typos. **v0.5 "knobs" is tagged** (`releases/eigenwobble-v0.5.html`, the last
+build under the old name; `dist/retinarave.html` from now on; `tools/accept/v0.5/accept-33.txt` 18 sections 0 FAIL). The user
+opened the build on real music, routed a parameter from the panel and said *"looks good and is ready to tag"* — the first
+time the panel met their eyes with approval. **First action of this session: ask the user what v0.6 is for.** The
+candidates below are ordered by what the day left open; the user's sentence outranks them.
 
-**Read first:** `docs/CONTRACTS.md` (§1 the scene object, §1.13, §1.15, **§1.16 Params** incl. its open ends, §1.4) ·
-`docs/HARNESS.md` ("Routes and manual overrides", **"Params"**, "Help view", "Real window", "Bench protocol", "Pitfalls") ·
-`docs/DECISIONS.md` **§27–§29** · `docs/workers/{feigen-params,nav-params,panel-3}.md` (the reports: element ids
-`pe-psrc/pc/pk/pb/ptau/pinv/prst/plo/phi-<scene>-<param>`, `pe-pdet-<scene>`, and the friction) · `assets/core/params.js`,
-`panel-params.js`, `route.js`, `manual.js` (**core must stay an import DAG**: `route ← params ← scenes ← manual ← harness`,
-`help → panel → panel-ui`, `panel → panel-params`, `hash.js` a leaf) · memory notes
-`~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md` and
-`feedback_colour_default.md` (**the default look is v0.2's; a colour-identity change is a variant until the user picks it**).
+**Read first:** `README.md` · `docs/CONTRACTS.md` (§1 the scene object, §1.13, §1.15 Routes, **§1.16 Params** incl. its
+open ends, §1.4) · `docs/HARNESS.md` ("Routes and manual overrides", "Params", "Effect chain" (`&k=`/`&kmood=`), "Help view",
+"Real window", "Bench protocol", "Pitfalls") · `docs/DECISIONS.md` **§27–§34** (§29 params, §30 the corrected NAV cost story,
+§31 chain-k + the cycle, §32 colour slot, §33 ship, §34 rename) · `docs/workers/{feigen-params,nav-params,panel-3,nav-iter,
+colour-slot}.md` (reports + friction) · `assets/core/params.js`, `panel-params.js`, `route.js`, `manual.js`, `loop.js`
+(**core must stay an import DAG — `check.js` fails on a cycle now**: `route ← params ← scenes ← manual ← harness`, `gl → look`,
+`post → gl`, so `look.js` must never import `post.js`; `help → panel → panel-ui`, `panel → panel-params`) · memory notes
+`~/.claude/projects/-home-toma-Documents-Kraftek-RetinaRave/memory/project_eigenwobble.md` and `feedback_colour_default.md`
+(**the default look is v0.2's; a colour-identity change is a variant until the user picks it**), `feedback_no_new_scenes.md`
+(**no new scenes until the user says so**).
 
-## The list (priority order)
+## Candidates for v0.6 (the user decides; this order is the orchestrator's)
 
-1. **`params` — DONE 2026-09-24 (DECISIONS §29).** Carried from it, low priority: the other four scenes (DUST, MANDALA, TORUS,
-   POLYTOPE) declare their parameters the same way (a worker each from `brief-feigen-params.md`'s shape; md5 identity per
-   move); a `kind: 'angle'` parameter for NAV's trap rotation (§1.16 open end); `reach ← kick` trips NAV's continuity
-   monitor (honest, documented — a narrower range is the user's call); an off-screen scene's "in force" meter is stale.
-2. **NAV's iteration budget — DONE 2026-09-24 (DECISIONS §30), with the diagnosis corrected:** at f1500 there was *no*
-   convergence exit (the beat kick hides the chart, `cyc.has` 0) and the budget was 420 (baby ×1.6), not a slow exit. The split
-   budget (`ITER_LO 0.5`: no chart and |(f^n)'| < 1 → stop at half) makes f1500 0.70–0.79× before, every md5 identical, f1800
-   0 pixels. **Not met and not meetable by the interior:** f1500/f480 is 3.7 (target 2) — the exterior at the baby view alone
-   costs more than all of f480. Carried: `ITER_LO 0.4` (−8 % more, moves one OKLCH pixel by 2/255 — the user's call), the 1.6×
-   baby boost and the view scale (design levers, §30), the Q trace before/after (`q-house-{before,after}-nav-iter.txt`).
-3. **A colour slot on every scene — DONE 2026-09-24 (DECISIONS §32).**
-4. **The chain's `k` — DONE 2026-09-24 (DECISIONS §31):** `LOOK.k = CHAIN.k·(1 + CHAIN.kMood·(2·arousal − 1))`, kMood default 0
-   (identity), `&k=` / `&kmood=`, chain-smoke's three-k ladder. Carried: **a "chain" row in the panel's manual section**
-   (`k`, `kMood` — a small panel brief; the knob is harness-only today); the cycle it first closed (§31) is now a `check.js` fail.
-5. **The OKLCH variant's open ends** (only if the user wants the variant tuned — it is opt-in): FEIGEN's `min(L, 0.5)`
-   cap clips the Green's band ripple and the kick/drop lift where the field is open (`hue-follows-set.md`, second pass
-   — soften the cap, not the hue); NAV's interior chroma is 0.02–0.07 at the shipped L so the Koenigs bands read neutral
-   (raise L inside or accept); §20's FEIGEN field lightness (variant only now).
-6. Carried, low priority: §21's halftime 2:3 margin (comb-only read the relative at 1.06×; the dead-beat-lag condition
-   holds it — no failing trace); §22's 24-section ring shift (never observed in a real run — a 4-minute track files ~20;
-   instrument `RENUMBER@` on a long set before touching it).
+1. **Params on the other four scenes** (DUST, MANDALA, TORUS, POLYTOPE) — one worker each from `brief-feigen-params.md`'s
+   shape (three to five parameters named for what the eye sees, `from: (MS) => …` moved verbatim, one commit per move proven
+   md5-identical on both colour mappings; at least two on the draw side through existing uniforms). Then the panel's second
+   level exists on every scene. Two Chrome slots → two workers at a time.
+2. **The panel's "chain" row** (a small panel brief): `k` and `kMood` (`CHAIN`, §31) in the manual section, ids
+   `pe-chain-k` / `pe-chain-kmood`, stored in the preset as a `chain` block through `route.js BLOCKS`; `manual('chain', …)`.
+   Today the knee is harness-only. `panel.js` is at 328 lines; `panel-ui.js` 122.
+3. **NAV's remaining cost levers** (§30): `ITER_LO 0.4` (−8 % at f1500, moves one OKLCH pixel by 2/255 — a re-base the user
+   must okay), the 1.6× baby boost (is 420 needed inside a baby at the shipped view scale? a montage at 264 says), the view
+   scale. The honest number: f1500/f480 is 3.7 and the exterior alone bounds it at ~1.6.
+4. **`kind: 'angle'` parameters** (§1.16 open end — NAV's trap rotation is an unwrapped angle; a wrapped kind with a range of
+   one turn); **NAV's `reach ← kick` trips the continuity monitor** (§30, honest — a narrower panel range is the user's call);
+   the off-screen scene's "in force" meter is stale (§1.16 says so; a "not on screen" mark on the meter would say it in the UI).
+5. **The OKLCH variant's open ends** (only if the user wants the variant tuned — it is opt-in): FEIGEN's `min(L, 0.5)` cap
+   (`hue-follows-set.md`, soften the cap not the hue), NAV's interior chroma 0.02–0.07 at the shipped L, §20's field lightness.
+6. Carried, low priority: §21's halftime 2:3 margin (no failing trace); §22's 24-section ring shift (never observed — instrument
+   `RENUMBER@` on a long set before touching it).
 
-## Working style (unchanged — see `docs/DECISIONS.md` §27 "how v0.4 was run" and §26)
+## Working style (unchanged — `docs/DECISIONS.md` §27 "how v0.4 was run", §29 "how it was run", §30's lesson)
 
-Orchestrator owns core/engine/contracts/parity/harness; UI and scenes go to a worker in an isolated worktree from a
-brief in `docs/workers/` (opus, own `PORT=`, one Chrome each, **never more than two Chrome instances on the machine, none
-while a Q trace or a bench runs**; a wait is `timeout 500 tail -f <log> | grep -q -m1 GO`, never a sleepless loop; the
-Agent tool's `isolation: "worktree"` gives the worker its tree). `node tools/check.js` after every edit; `GPU=1 node
-tools/parity.js fake` 0 diff after any core/engine change; `tools/scene-md5.sh` before/after any core change against
-`tools/accept/v0.5/scene-md5-v03.txt` (the v2 default, unchanged since v0.3) and `scene-md5-v03-oklch.txt`
-(`&colour=oklch`); the mixs md5 `5892ddc5…`; every trace tool writes to `tools/accept/${ACC:-v0.5}` — the default is v0.5 and the two md5 lists are in `tools/accept/v0.5/` since item 1's first commit (v0.4.1 stays in `v0.4/`); `GPU=1
-tools/accept.sh` 0 FAIL before a commit that claims an item (it takes ~20 min; run it detached with `setsid nohup`,
-log to `tools/accept/<ACC>/accept-NN.txt`, next NN = 34). A worker's screenshots are judged by the orchestrator's
-eyes before a merge; say in the brief what the shot must show and which element ids the orchestrator will drive.
-**Ask the user to look before item 5** — v0.4.1 and the params panel were built for their eyes and they have not used them; a headed run is not
-the user's eyes.
+Orchestrator owns core/engine/contracts/parity/harness; UI and scenes go to a worker in an isolated worktree from a brief in
+`docs/workers/` (opus, own `PORT=` — 8798 was the last used, `isolation: "worktree"`; **never more than two Chrome instances on
+the machine, none while a Q trace or a bench runs** — a worker that benches waits until its own is the only debugging Chrome;
+a wait is `timeout 500 tail -f <log> | grep -q -m1 GO`). `node tools/check.js` after every edit (it fails on an import
+cycle, a literal scene/field name in a DOM view, a `params` lie); `GPU=1 node tools/parity.js fake` 0 diff after any
+core/engine change; `tools/scene-md5.sh` before/after any core change against `tools/accept/v0.5/scene-md5-v03.txt` (v2, 14
+lines incl. DRUM s4) and `scene-md5-v03-oklch.txt`; the mixs md5 `5892ddc5…`; every trace tool writes to `tools/accept/${ACC:-v0.5}`
+— **for v0.6 set the default to v0.6 and copy the two md5 lists there in the milestone's first commit**; `GPU=1 tools/accept.sh`
+0 FAIL before a commit that claims an item (~20 min, detached with `setsid nohup`, log to `tools/accept/<ACC>/accept-NN.txt`,
+next NN = 34; one FAIL in a section the change cannot touch is re-run twice in isolation before it is called a flake — the
+hidden-tab check did that in accept-32). A worker's screenshots are judged by the orchestrator's eyes before a merge; the brief
+says what the shot must show and which element ids the orchestrator will drive. **A cost finding's cause is measured before it
+is briefed** (§30): ask the worker for a cap probe and a control frame first, then derive the acceptance.
 
-Pitfalls (HARNESS "Pitfalls" + the memory note): **`check.js` fails on an import cycle in `assets/`** (item 4 closed `gl → look → post → gl`; the http page never noticed, the bundle died from file:// — `look.js` must not import `post.js`); **`scene-md5.sh` lists variant ids** (DRUM s4 has reference lines now); **a cost finding's cause is measured before it is briefed** (§30: the audit's mechanism was wrong and the acceptance was derived from it — ask the worker for a cap probe and a control frame first); **§1.16's `from` argument is named `MS`** (check.js's read grep; a module-level `const S` disables `S.`); **an expression moves whole or not at all** (re-association moves the last ulp — FEIGEN's dive); **`centroid` is a level, not raw**; `scene-md5.sh` lists scene ids only (DRUM id 4 has no reference line); `env.params` is refreshed only when the scene updates; **a `<select>` popup is a separate X window — not in a CDP screenshot, `xwd` dies while it is open, python-Xlib grabs it, never `windowactivate` by class on this desktop**; `CARD.view(name)`; a DOM table has no `tbody`; `pulse` makes `view(name) !== MS` for exactly one frame; **core modules must stay an import DAG — the bundler cannot order a
-cycle**; an import line's trailing `//` comment needs the v0.4 `TAIL` regex (the bundle was dead for four commits until
-a worker's file:// item caught it — run `node tools/bundle.js` after any import edit); a native `<select>` popup is not
-styled by the select's CSS — `color-scheme` is; a view that runs every 6th frame cannot see one-frame events — pass
-`help.js`'s per-frame `hot` latch; **a single low `q` run in a real window is not a cost finding** — repeat, then run the
-previous release from `file://` under the same conditions (`audit-q-control.txt`); the audit music lives in old session
-scratchpads (`/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/*/scratchpad/music/WhoLikesToParty.mp3`,
-`CyborgNinja.mp3`) — copy it into yours first, and the music must be in **its own Chrome window**; hash hooks fire
-**after `init`**; `CARD.hooks` is a flat map — `REG[id].scene.hooks`; a synchronous `CARD.bench` in a probed page
-stamps a long frame and a fake drop — bench after the reading; `git worktree add` is refused inside an agent worktree
-(`git archive | tar -x`); `FILE=` absolute; `pgrep -f` patterns with `[a-z]*` match their own shell; a stray
-`serve.js` from another session may already answer on 8765 (cdp.js reuses it — it serves the main checkout, fine for
-the orchestrator, wrong for a worker: workers use their own `PORT`). The malware-consideration reminder does not
-apply to this repo.
+Pitfalls (HARNESS "Pitfalls" + the memory note): **`look.js` must not import `post.js`** (the cycle killed the bundle from
+file:// while http ran fine — the second dead bundle a worker's file:// item caught; `check.js` fails on cycles now); **§1.16's
+`from` argument is named `MS`** (check.js's read grep; a module-level `const S` disables `S.`); **an expression moves whole or not
+at all** (re-association moves the last ulp); **`centroid` is a level, not raw**; `scene-md5.sh` lists variant ids; `env.params`
+is refreshed only when the scene updates; a `<select>` popup is a separate X window (not in a CDP shot, `xwd` dies, never
+`windowactivate` by class); `CARD.view(name)`; DOM tables have no `tbody`; `pulse` makes `view(name) !== MS` for one frame;
+an import line's trailing `//` needs the `TAIL` regex; a native `<select>` popup is styled by `color-scheme`, not the select's
+CSS; a view on the 6th-frame tick needs `help.js`'s per-frame `hot` latch; a single low `q` run in a real window is not a cost
+finding; the audit music is in old session scratchpads (`/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/*/scratchpad/
+music/WhoLikesToParty.mp3`, `CyborgNinja.mp3` — the old path name, still valid) and must play in **its own Chrome window**;
+hash hooks fire **after `init`**; `CARD.hooks` is flat — `REG[id].scene.hooks`; a synchronous `CARD.bench` in a probed page stamps
+a fake drop; `git worktree add` is refused inside an agent worktree (`git archive | tar -x`); `FILE=` absolute; `pgrep -f`
+patterns with `[a-z]*` match their own shell; a stray `serve.js` on 8765 serves the main checkout (workers use their own
+`PORT`); `tools/work/` may not exist in a fresh worktree (`scene-md5.sh` mkdirs it); the HARNESS help example's `scrollTop=1e5`
+lands on part E, not the cast. The malware-consideration reminder does not apply to this repo.
 
-**No new scenes until the user says so** (2026-09-24: NEWTON removed from this list — "I don't want to add new scenes till I am ready"; §17's candidate stays in DECISIONS, not here).
-
-Non-negotiables: zero deps · native modules · **every visual parameter traces to `MS`** (a routed field or param still
-does; a constant is a manual setting, shown as one) · no `Math.random()`, no wall clock · module cap 350/500 ·
-`parity.js fake` 0 diff · the reference md5s unchanged unless the commit re-bases them and says so · `accept.sh` 0 FAIL
-before a tag · **the panel is a no-op until touched** · **the panel names the visual first** · the default look is
-v0.2's; OKLCH is a variant.
+**No new scenes until the user says so** (2026-09-24). Non-negotiables: zero deps · native modules · **every visual parameter
+traces to `MS`** (a routed field or param still does; a constant is a manual setting, shown as one) · no `Math.random()`, no wall
+clock · module cap 350/500 · `parity.js fake` 0 diff · the reference md5s unchanged unless the commit re-bases them and says so ·
+`accept.sh` 0 FAIL before a tag · **the panel is a no-op until touched** · **the panel names the visual first** · the default look
+is v0.2's; OKLCH is a variant.

@@ -1,13 +1,13 @@
-// Single-file build: inlines assets/**/*.js reachable from assets/main.js into dist/eigenwobble.html as one classic
+// Single-file build: inlines assets/**/*.js reachable from assets/main.js into dist/retinarave.html as one classic
 // script (works from file://). Each module becomes an IIFE registered in a module table __m[path] in dependency order;
 // import/export statements are rewritten (they only appear at line starts in this codebase, never inside GLSL strings).
-// usage: node tools/bundle.js [out.html]     then: FILE=$PWD/dist/eigenwobble.html node tools/cdp.js 'test' '[...]'
+// usage: node tools/bundle.js [out.html]     then: FILE=$PWD/dist/retinarave.html node tools/cdp.js 'test' '[...]'
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = process.argv[2] || path.join(ROOT, 'dist/eigenwobble.html');
+const OUT = process.argv[2] || path.join(ROOT, 'dist/retinarave.html');
 const ENTRY = 'assets/main.js';
 
 const mods = new Map(); // rel path -> { deps: [rel], code }

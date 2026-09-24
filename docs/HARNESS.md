@@ -1,3 +1,5 @@
+# Retina Rave — harness (the engine was Eigenwobble until v0.5; the accept logs and worker reports keep that name)
+
 # Harness — every command a worker needs
 
 All commands run from the repo root. Zero dependencies beyond node ≥ 20, google-chrome, python3 + PIL (montage).
@@ -270,7 +272,7 @@ HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps
   and a `drop` event that are the bench, not the engine. Read the probe first, bench after (or in another run).
 - `git worktree add` is refused from inside an agent worktree (the harness's isolation): a worker that needs a
   second tree uses `git archive <tag> | tar -x -C <dir>` (no `.git`, so no `git status` there — list the copied files).
-- `FILE=` must be absolute (`FILE=$PWD/dist/eigenwobble.html`); a relative path makes Chrome open `file://dist/…`.
+- `FILE=` must be absolute (`FILE=$PWD/dist/retinarave.html`); a relative path makes Chrome open `file://dist/…`.
 
 ## Hidden tab (change to the extractor's followers, `ENGINE.resume`, or the loop's resume line — v0.3 resume-hold)
 
@@ -417,8 +419,8 @@ GPU=1 node tools/parity.js real     # fake=0: both bpm within 1 of the synth's 1
 ## Single-file build
 
 ```
-node tools/bundle.js                                  # → dist/eigenwobble.html (all modules inlined, works from file://)
-FILE=$PWD/dist/eigenwobble.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
+node tools/bundle.js                                  # → dist/retinarave.html (all modules inlined, works from file://)
+FILE=$PWD/dist/retinarave.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
 ```
 
 ## Acceptance sweep

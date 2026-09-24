@@ -48,7 +48,7 @@ async function ensureServer() {
       ...(process.env.CAPTITLE ? ['--auto-select-tab-capture-source-by-title=' + process.env.CAPTITLE] : [])]
     : ['--headless=new', '--window-size=1280,720', ...gpu]), '--remote-debugging-port=' + dbg,
     ...(process.env.NOAUTO ? [] : ['--autoplay-policy=no-user-gesture-required']),
-    ...(process.env.FAKECAP ? ['--auto-select-tab-capture-source-by-title=Eigenwobble', '--auto-accept-this-tab-capture'] : []),
+    ...(process.env.FAKECAP ? ['--auto-select-tab-capture-source-by-title=Retina Rave', '--auto-accept-this-tab-capture'] : []),
     '--no-first-run', '--user-data-dir=' + HERE + '/chr' + dbg, 'about:blank'], { stdio: 'ignore' });
   let tgt;
   for (let i = 0; i < 40; i++) {

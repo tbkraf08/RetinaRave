@@ -1,4 +1,4 @@
-# Eigenwobble contracts
+# Retina Rave contracts (the engine was called Eigenwobble until v0.5; history keeps that name)
 
 **This is the one required read.** To add a scene, an effect, or an analysis stage you read this file, the folder you
 are writing, and `docs/HARNESS.md` for the commands. You never open `assets/core/` or `assets/engine/`. If something here

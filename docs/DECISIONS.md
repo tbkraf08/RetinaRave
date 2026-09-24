@@ -1444,3 +1444,15 @@ this one. What the day changed for a listener: the panel's second level — *"in
 the mood. What it changed for a worker: §1.16 with its finds, a cycle check, a variant-aware md5 script, and a corrected audit.
 
 **Tag (later the same day).** The user opened the build on real music and routed a parameter from the panel: *"looks good and is ready to tag"* → `git tag v0.5` at this state, `releases/eigenwobble-v0.5.html` = `dist/eigenwobble.html` at the tag (the bundle accept-33 proved from `file://`). Items 5 and 6 stay carried into the next prompt. The project is renamed **Retina Rave** in the commits after the tag (§34) and pushed with its history to `github.com/tbkraf08/RetinaRave`.
+
+## §34 Retina Rave — the rename and the push (2026-09-24, after the v0.5 tag; the user: "rename project to Retina Rave and push code (all the git history if possible)")
+
+The engine is **Retina Rave** from the commit after v0.5. What changed: `index.html`'s title and landing word, the bundle's name
+(`dist/retinarave.html`; `tools/bundle.js`, `accept.sh`, HARNESS), `cdp.js`'s tab-capture title match, `package.json` (`retina-rave`
+0.5.0), the first line of CONTRACTS / HARNESS / brief-common, a `README.md`, and `NEXT-SESSION-PROMPT.md`. What did not: every
+historical document — DECISIONS §1–§33, the worker briefs and reports, the audit files, the accept logs, the earlier session
+prompts, `releases/eigenwobble-v0.*.html` — keeps the old name, because they are records of what was said when. The directory is
+`~/Documents/Kraftek/RetinaRave/` (a symlink at the old path keeps old commands and the old memory key working); the twenty agent
+worktrees of merged branches were removed (branches kept); the branch is `main`; the remote is `git@github.com:tbkraf08/RetinaRave.git`
+with the whole history (every commit since v0.1) and the tags v0.2–v0.5.
+

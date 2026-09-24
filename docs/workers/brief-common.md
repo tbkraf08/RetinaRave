@@ -1,6 +1,6 @@
 # Common brief for synapse-scene workers (DUST, MANDALA) — §3
 
-You are a worker on Eigenwobble (zero-dependency WebGL2 audio-visual engine, native ES modules).
+You are a worker on Retina Rave (formerly Eigenwobble) (zero-dependency WebGL2 audio-visual engine, native ES modules).
 
 **You may read ONLY:** `docs/CONTRACTS.md`, `docs/HARNESS.md`, `docs/ENGINE.md`, your target folder, and the named
 line ranges of `~/Documents/TomaCoS/claude_scratch_sept_20_2026/synapse2.html` (read them with `sed -n 'a,bp'`; never
@@ -15,7 +15,7 @@ you feel you must, don't: write the question down in your friction log, guess, c
 596–658). Here every shader gets `HEAD` (uRes uTime uBands uBeat uArc uHarm uPal uTint + pal()/rot()/hash()) and you
 declare the rest as ordinary uniforms, uploaded in `draw()` from `MS` / `LOOK.mood` / `ctx`. Mapping:
 
-| synapse | Eigenwobble source (in `draw`/`update`) |
+| synapse | Retina Rave source (in `draw`/`update`) |
 |---|---|
 | uTime | `MS.flow` (musical time — never wall-clock) |
 | uBeat | `MS.beatCount + MS.beatPhase` · uBar → `MS.barPos` · uBeatConf → `MS.beatConf` · uBeatI → `MS.beatSyn` |
