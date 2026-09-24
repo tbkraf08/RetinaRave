@@ -25,7 +25,7 @@
     requestAnimationFrame(tick);
     const dt = P.last ? t - P.last : 0; P.last = t; P.n++;
     const SC = CARD.SC, MS = CARD.MS, l = document.hidden ? -2 : lum();
-    const f = { t: +((t - P.t0) / 1000).toFixed(3), dt: +dt.toFixed(1), lum: +l.toFixed(1), cur: SC.cur, next: SC.next, m: +(+SC.m).toFixed(2), q: +(+CARD.Q.q).toFixed(2), hid: document.hidden ? 1 : 0, g: +(+CARD.FX.glitch).toFixed(2), hit: +(+MS.hit).toFixed(2), o: MS.onset ? 1 : 0, s: MS.surpriseEvt ? 1 : 0 };
+    const f = { t: +((t - P.t0) / 1000).toFixed(3), dt: +dt.toFixed(1), lum: +l.toFixed(1), cur: SC.cur, next: SC.next, m: +(+SC.m).toFixed(2), q: +(+CARD.Q.q).toFixed(2), hid: document.hidden ? 1 : 0, g: +(+CARD.FX.glitch).toFixed(2), hit: +(+MS.hit).toFixed(2), o: MS.onset ? 1 : 0, s: MS.surpriseEvt ? 1 : 0, sr: +(+MS.surRaw).toFixed(2), su: +(+MS.surprisal).toFixed(2), pr: +(+MS.presence).toFixed(2), bf: +(+MS.bassFast || 0).toFixed(2), ab: +(+MS.absentT || 0).toFixed(2), es: +(+MS.eS || 0).toFixed(2), em: +(+MS.eM || 0).toFixed(2), bp: +(+MS.buildPk || 0).toFixed(2), hs: +(+MS.hitStrength || 0).toFixed(2), arc: MS.arc, ds: +(+MS.dropStrength || 0).toFixed(2) };
     P.frames.push(f); if (P.frames.length > 4000) P.frames.shift();
     if (dt > P.maxdt) P.maxdt = dt;
     if (dt > 100 && !document.hidden) { P.long++; evt('long', { dt: +dt.toFixed(0), lum: f.lum }, f.t); }

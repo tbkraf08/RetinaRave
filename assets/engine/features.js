@@ -37,6 +37,11 @@ export function updateMusic(dt, now) {
   // by the gap they missed (dtF = dt + gap: as if the current value had held throughout), so a stale eM/eL/mu cannot
   // read the step as a drop or a surprise once the hold ends; the flux baseline re-seats (no onset from a 30 s-old spectrum).
   const hold = now < X.holdUntil, reseed = X.reseed, dtF = reseed ? dt + Math.max(0, now - X.envNow) : dt;
+  // v0.3 §26 audit: `settle` — 2.5 s from the resume, longer than the hold. The followers snap to the resume frame's
+  // instantaneous values, so for ~one time constant eM is one frame's energy, not a mean (the demo hidden between two
+  // kicks came back with eS = eM = 0.24 and eS at 0.65 a second later: every kick cleared "e > eM + 0.25" and the first
+  // onset that coincided was a drop, +1.3 s, 2 of 3 runs). The drop rules and the surprisal model's variance wait it out.
+  const settle = now < X.holdUntil + 1.5;
   X.reseed = false;
   const live = AU.ctx && AU.mode !== 'none';
   if (live) {
@@ -66,10 +71,13 @@ export function updateMusic(dt, now) {
   const iH = clamp(Math.round(12000 / bF), iM + 4, 1023);
   const rb = bandRms(m, 1, iB + 1), rm = bandRms(m, iB + 1, iM), rh = bandRms(m, iM, iH), dec = Math.exp(-dt / 40);
   // gain rides the peak of the *smoothed* band so sustained material reads near 1, transients above the floor
-  X.aB = ema(X.aB || 0, rb, dt, rb > (X.aB || 0) ? 0.03 : 0.16);
-  X.aM = ema(X.aM || 0, rm, dt, rm > (X.aM || 0) ? 0.04 : 0.2);
-  X.aH = ema(X.aH || 0, rh, dt, rh > (X.aH || 0) ? 0.03 : 0.14);
-  X.fB = ema(X.fB || 0, rb, dt, rb > (X.fB || 0) ? 0.012 : 0.07);
+  // dtF: on the resume frame the band followers snap to the current band (v0.3 §26 audit — a follower left to catch up
+  // on `dt` fed the surprisal model a moving input for ~1 s while its mean lagged, so the raw surprisal ramped 0.1 → 1.5
+  // and a surprise fired the moment the hold ended); every other frame dtF = dt.
+  X.aB = ema(X.aB || 0, rb, dtF, rb > (X.aB || 0) ? 0.03 : 0.16);
+  X.aM = ema(X.aM || 0, rm, dtF, rm > (X.aM || 0) ? 0.04 : 0.2);
+  X.aH = ema(X.aH || 0, rh, dtF, rh > (X.aH || 0) ? 0.03 : 0.14);
+  X.fB = ema(X.fB || 0, rb, dtF, rb > (X.fB || 0) ? 0.012 : 0.07);
   X.pkAll = Math.max(X.pkAll * dec, mx, 1e-5);
   X.pkB = Math.max(X.pkB * dec, X.aB, X.pkAll * 0.03);
   X.pkM = Math.max(X.pkM * dec, X.aM, X.pkAll * 0.01);
@@ -147,10 +155,11 @@ export function updateMusic(dt, now) {
   S.eM = ema(S.eM, e, dtF, 2.5);
   S.eL = ema(S.eL, e, dtF, 12);
   S.eMax = Math.max(S.eMax * Math.exp(-dtF / 60), S.eM, 0.15);
+  if (reseed) S.absentT = 0; // v0.3 §26 audit: absence before the gap is no evidence after it
   const prevAbsent = S.absentT;
   if (S.bassFast > 0.5) S.absentT = 0;
   else if (S.presence > 0.3) S.absentT += dt;
-  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5 && !hold) {
+  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5 && !settle) {
     S.dropEvt = true;
     S.dropStrength = clamp(0.45 + prevAbsent / 10 + S.build * 0.4, 0, 1);
     S.lastDrop = now;
@@ -165,7 +174,7 @@ export function updateMusic(dt, now) {
   // by ~2.5 s. raw e, not eS: the first kick must count, eS lags it by 0.3 s
   const lowArc = (S.arc === 'valley' || S.arc === 'build') && (S.arcT || 0) > 1;
   // three gates: a build led here, or a quiet arc led here, or the energy more than doubles on this hit (groove kicks ~1.8x eM, drops 3x)
-  if (!S.dropEvt && S.liveT > 4 && S.onset && S.hitStrength > 0.6 && S.bassFast > 0.6 &&
+  if (!S.dropEvt && !settle && S.liveT > 4 && S.onset && S.hitStrength > 0.6 && S.bassFast > 0.6 &&
     (((S.buildPk > 0.5 || lowArc) && e > S.eM + 0.25) || e > 2 * S.eM + 0.1) && now - S.lastDrop > 8) {
     S.dropEvt = true;
     S.dropStrength = clamp(0.35 + 0.6 * Math.max(S.buildPk, e - S.eM), 0, 1);
@@ -196,7 +205,7 @@ export function updateMusic(dt, now) {
     if (Math.abs(S.eM - X.eAtChange) > 0.12 && now - S.lastSection > 8) S.sectionEvt = true;
   }
   // --- harmony / tension from the long window (every other frame) ---
-  if (live && (X.slowTick++ & 1) === 0) slowAnalysis(dt * 2);
+  if (live && (reseed || (X.slowTick++ & 1) === 0)) slowAnalysis(reseed ? dtF : dt * 2); // the resume frame always runs it, with the gap: chroma snaps too (same audit)
   S.suspension = ema(S.suspension, sstep(0.55, 0.8, S.tension) * S.presence, dt, 1.3);
   if (S._susHi && S.tension < 0.4) {
     S.resolveEvt = true;
@@ -214,14 +223,21 @@ export function updateMusic(dt, now) {
   x[13] = X.sM;
   x[14] = X.sH;
   let err = 0;
-  const k1 = 1 - Math.exp(-dtF / 1.5), k2 = 1 - Math.exp(-dtF / 10);
+  // v0.3 §26 audit: during `settle` the model re-learns its mean fast and learns no variance — the inputs settle over
+  // ~1.5 s after a gap (a real track's raw surprisal ramped 0.1 → 1.5 with the mean lagging at 1.5 s, and a surprise cut
+  // followed the hold in 3 of 4 restores); a musical surprise or drop inside those 2.5 s is the one thing this gives up.
+  const k1 = 1 - Math.exp(-dtF / (settle ? 0.25 : 1.5)), k2 = 1 - Math.exp(-dtF / 10);
   for (let i = 0; i < 15; i++) {
     const d = x[i] - X.mu[i];
     err += d * d / (X.va[i] + 2e-4);
-    X.va[i] += (d * d - X.va[i]) * k2;
+    // v0.3 §26 audit: the gap carries no variance. Advancing va by dtF collapsed it to one stale d² (k2 → 0.86), so every
+    // ordinary beat after the hold read as a surprise (a hard cut 1.5–3 s after 3 of 4 restores). The mean still jumps
+    // to the current frame (k1 → 1: as if held throughout); the variance keeps its pre-gap value and the reseed frame's
+    // error — 'now vs 20 s ago' — is not scored.
+    if (!reseed && !settle) X.va[i] += (d * d - X.va[i]) * k2;
     X.mu[i] += d * k1;
   }
-  S.surRaw = Math.sqrt(err / 15);
+  if (!reseed) S.surRaw = Math.sqrt(err / 15);
   const sT = clamp((S.surRaw - 0.9) / 0.8, 0, 1) * S.presence;
   S.surprisal = ema(S.surprisal, sT, dtF, sT > S.surprisal ? 0.05 : 0.5);
   if (S.surprisal > 0.62 && now - S.lastSurprise > 2.5 && !hold) {

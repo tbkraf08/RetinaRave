@@ -249,6 +249,21 @@ HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps
   starts at that frame; `PROBE.summary()`. Sharing a tab adds Chrome's infobar to the page and shrinks the viewport by
   56 CSS px — a real `resize()` mid-run.
 
+- **A minimize is the real hidden check on the worklet path** (v0.3 §26 audit): `{bounds:{windowState:'minimized'}}`,
+  wait, `{bounds:{windowState:'normal'}}`, `{activate:'main'}` — the page fires `visibilitychange`, the worklet keeps
+  hopping (90/s) while hidden, the first frame back is 60–70 ms, and the `back` event in `tools/probe.js` is the origin
+  for the resume-hold read (HARNESS "Hidden tab"'s expression). Three minimizes in one run (`audit-b2.txt`) is the
+  shape that separates a resume artefact from the song's own surprises: count the hard cuts in the 8 s after each
+  `back` against the run's baseline rate (run B: one hard cut per 23 s), and **run the same demo without hiding as the
+  control** — an event at +N s after `back` is the demo's own if the control has it at the same clock time (house's
+  drop at 44 s). The probe's `sr/su/pr` fields show the model's inputs per frame; the §26 ramp is one line of them.
+- **Never bench inside a probed page's reading.** `CARD.bench(id, 300)` is synchronous: it stops the rAF loop for
+  4–25 s, the probe records one frame of that dt, and the fake timeline lands its drop on the frame after — a `long`
+  and a `drop` event that are the bench, not the engine. Read the probe first, bench after (or in another run).
+- `git worktree add` is refused from inside an agent worktree (the harness's isolation): a worker that needs a
+  second tree uses `git archive <tag> | tar -x -C <dir>` (no `.git`, so no `git status` there — list the copied files).
+- `FILE=` must be absolute (`FILE=$PWD/dist/eigenwobble.html`); a relative path makes Chrome open `file://dist/…`.
+
 ## Hidden tab (change to the extractor's followers, `ENGINE.resume`, or the loop's resume line — v0.3 resume-hold)
 
 Headless can hide the page: a second tab activated hides the main one (rAF stops, the worklet's hops queue and land in
@@ -258,7 +273,9 @@ a burst on return), `{activate:'main'}` brings it back and fires `visibilitychan
 GPU=1 node tools/cdp.js 'test&fake=0&scene=6' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=>PROBE.start())"},{"wait":8000},{"tab":"about:blank"},{"activate":"tab"},{"wait":15000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k==="back"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,60);return JSON.stringify({n:fr.length,onsets:fr.filter(function(f){return f.o}).length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k==="drop"&&e.t>=b.t}).length,gmax:Math.max.apply(null,fr.map(function(f){return f.g})),hitmax:Math.max.apply(null,fr.map(function(f){return f.hit})),resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]'
 # => {"n":60,"onsets":0,"surprise":0,"drops":0,"gmax":0,"hitmax":0,"resumeAt":26.4}   <- the first 60 frames (1 s) back: nothing may fire
 ```
-`accept.sh` "== hidden tab" runs exactly this. Without the hold (`CARD.ENGINE.resume=function(){}` before hiding) the v3
+`accept.sh` "== hidden tab" runs exactly this, and "== hidden worklet" the same on synapse's dnb synth (150 frames, `srMax` < 1.4). Since the
+v0.3 §26 audit the extractor holds events 1 s and its drop rules + surprisal-model variance 2.5 s (`settle`, ENGINE.md "Resume"): a
+finding here needs a no-hide control of the same demo (its own drops/surprises at the same clock time) before it is called an artefact. Without the hold (`CARD.ENGINE.resume=function(){}` before hiding) the v3
 demo fired a drop within 0.5 s of return in 3 of 8 trials (glitch 0.93, flash: the frame at luminance 172 on FEIGEN) and
 carried `hit` 0.1–0.5 into the first frames on all 8; with it, 0 of 8. The real-window version (worklet path, window
 minimized) is the `audit-3-*-back-worklet.jpg` recipe in "Real window" — DUST's first frames back climb (23 → 36 over

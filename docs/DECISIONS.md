@@ -1058,3 +1058,95 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   it stores the escape argument); the itinerary derivation is in the report. Benching NAV against NAV is impossible:
   the protocol's control is "the other scene in the same session" (id 3 here); pinning `Q.q` does not pin `Q.iter`.
 
+
+## §26 Ship v0.3 — the colour default, the hue diagnosis, the real-window audit, the tag (2026-09-23, orchestrator + two workers)
+
+**The feedback.** After the §24/§25 montages the user said: "I don't like the colour pastel change — the colours don't seem
+to match up with the set. Not opposed to pastel, but it shouldn't be the default." Two decisions follow, both permanent:
+**the default look is v0.2's** (FEIGEN's cosine palette over the distance/potential grade, NAV's v3 blue exterior with the
+Koenigs bands), and **a colour-identity change is a variant until the user picks it** — never the default on a worker's
+montage alone (memory: `feedback_colour_default.md`).
+
+- **`colour` slot (core, `4d00d89`; CONTRACTS §1.4 "Colour variants").** `scene.colour = {default, variants: {name: {…}}}`;
+  the core sets `colour.cur` at registration, `setColour(name)` switches every scene that declares the name (an unknown
+  name throws), `&colour=<name>` under `#test`, `CARD.setColour` / `CARD.colour`, `draw(target, {…, colour})`, a variant's
+  `post` replaces the scene's (FEIGEN's OKLCH pass needs bloom thr 0.6, the v0.2 pass 0.3), the cast line names the
+  current and the declared variants, `check.js` fails on a default that is not a variant. Proof the slot alone changed
+  nothing: scene-md5 identical, parity fake 0 diff.
+- **`colour-default` (worker, `docs/workers/colour-default.md`).** The v0.2 shaders lifted verbatim into `colour-v2.js` /
+  `shaders-v2.js`, each mapping with its own `upload()` (the v0.2 → HEAD uniform diff was a clean subset/superset pair:
+  FEIGEN dropped `uSpread`, added `uClipDbg`; NAV added `uClipDbg`). **Byte identity on all twelve md5 lines** with a
+  v0.2 tree + the §20 chain files (`post.js`, `effects/*`, `oklch.js`, `oklab.js`, `main.js`), first shoot, zero fixes;
+  `&colour=oklch` identical to the §24/§25 list on all twelve. Re-based: `scene-md5-v03.txt` = the v2 default,
+  `scene-md5-v03-oklch.txt` = the variant, mixs `425a66e5…` → **`5892ddc5c1f553cbca140bbc1ef6b54d`** (NAV is scene 0 of
+  the pair; the same md5 from the v2chain tree). FEIGEN's `help.feats` lines back to v0.2's brightness wording.
+- **`hue-follows-the-set` (worker, `docs/workers/hue-follows-set.md`, the diagnosis before any mapping).** One montage per
+  scene at L ≤ 0.5 and full chroma `okCmax(L)` (the pale look was L 0.7 + the linear tonemap, not the hue): FEIGEN hue by
+  the external angle (shipped) / the Green's potential / the distance, at f360, f840 and `&feig=3.6`; NAV by arg λ + ea
+  (shipped) / Koenigs inside + smooth escape count outside; a v0.2 row under each. **Read by the orchestrator:** the
+  external angle draws a comb of radial stripes perpendicular to the boundary that goes finer than a pixel at depth
+  (the frame averages to grey — the mapping deletes itself); potential and distance both wrap the set in concentric
+  hue shells, **distance wins** (scale-free: the band width at f840 equals f360's; `−lG`'s p10–p90 spans 0.8 → 16 turns
+  from L 0.4 to L 4.2, no `K_G` works at both depths — §24's lightness failure again); on NAV the shipped mapping split
+  each lobe down a sector seam into a teal and an amber half, the **escape count** wraps every lobe in rings. The
+  user's sentence was exact: v0.2 is one hue per frame with brightness following the boundary — itself a
+  potential/distance colouring. Applied to the `oklch` variant only (second pass): FEIGEN `H = 0.25·log2 d + uHue`,
+  L capped 0.5, C = `okCmax(L)`; NAV exterior `H = 0.2·sn·uSc.y + uPal.x`, the PiP the same rule, the interior's arg λ
+  kept (one hue per component follows the set; its chroma is 0.02–0.07 at the shipped L — open); the itinerary
+  accumulation left NAV's loops (nothing read `ea` any more). `s6-f360` of the variant is byte-identical to the
+  montage's winning column. `clipdbg` 0 clipped on both scenes and the PiP; parity 0; the v2 default did not move by a
+  byte (the gate). Montages: `tools/accept/v0.3/colour-default.jpg`, `oklch-variant.jpg`.
+- **Two contract errors the workers found.** CONTRACTS §1.4 said a hash hook fires *before* `init`; main.js inits and
+  registers every scene, then `initHarness` reads the hash — a hook fires **after `init`, before the first frame** (a
+  program a hook selects is built lazily in `draw`); `CARD.hooks` is one flat map, so FEIGEN's and NAV's `clipdbg`
+  shadow each other — `REG[id].scene.hooks`. Fixed in §1.4 (`0477310`). `git worktree add` is refused inside an agent
+  worktree (`git archive | tar -x`); `FILE=` must be absolute.
+- **The real-window audit (`docs/AUDIT-v0.3.md`)** — five checks in a headed Chrome, the shape of §17. Numbers: the 2560
+  cap and the rung sizes as §17; FEIGEN **0.60×** NAV at 1920 × 1080 DPR 1.5 (3.6 vs 6.0 ms), 0.58× native, 0.69×
+  native fullscreen; 0 black frames on resize and fullscreen, no long frame from the transition itself; a real track
+  heard within 8 s, `bpm` 116.8–117.0 on both estimators, `q` 0.80 at 72 s and 1.00 from 154 s with the linear chain,
+  0 black / 0 long frames; the keys; the cast line's colour key on a real page; the bundle from `file://` with capture
+  at 160 BPM. **One engine bug:** after a 20 s minimize on the worklet path the §18 hold kept the first second clean,
+  but **a surprise cut followed the hold in 3 of 4 restores** (+3.1, +2.1, +1.5 s; run B's baseline: one hard cut per
+  23 s). The probe grew `sr/su/pr` (raw surprisal, surprisal, presence per frame) and showed the raw surprisal
+  **ramping 0.10 → 1.51 over 1.1 s** after `back`: the band followers (`aB/aM/aH/fB`, τ 0.03–0.2 on `dt`) and the chroma
+  emas (τ 0.25 on `dt`) were left to catch up after the gap, so the model's input moved for ~1 s while its mean lagged
+  at 1.5 s; and `va` advanced by `dtF` on the reseed frame had collapsed to one stale d² (k2 0.86). Fix
+  (`features.js`, ENGINE.md "Resume"): `va` never advanced by the gap and the reseed frame's error not scored; the band
+  and chroma followers snap with `dtF` (`slowAnalysis` runs on the reseed frame with the gap); a **2.5 s `settle`**
+  window (longer than the 1 s event hold) in which the model re-learns its mean at 0.25 s and learns no variance. dnb
+  raw peak in the first 2.5 s 1.51 → 1.18 → 0.86 by step, surprisal 0.76 → 0.35 → 0; the demos' own events still fire
+  at their no-hide control times. Headed, final surprisal code: restores 1 and 3 clean for 8 s, restore 2 a surprise at
+  +3.05 s — 1 of 3 at the song's rate. **Then the sweep's own hidden check (v3's demo, `&fake=0`) flaked on a drop at
+  +1.3 s** (accept-28; 2 of 3 standalone): a no-hide control has no drop there; the probe (now `bf ab es em bp hs arc
+  ds` too) showed `eS = eM = 0.24` on the resume frame — the followers snap to one instantaneous energy, not a mean —
+  and `eS` 0.65 a second later, so the second drop rule's `e > eM + 0.25` gate was open for every kick until `eM` had
+  ~one time constant of data; whichever run had an onset coincide fired. **Both drop rules now wait for `settle`**
+  (2.5 s) as the surprisal model does; `absentT` zeroed on the reseed frame. 3 of 3 demo restores clean for 8 s, dnb
+  and house keep their own events at control times (+3.2 / +4.0 s). **Method:** a hidden-tab finding needs a no-hide control of the same demo at the same
+  clock time before it is an artefact (house's "+3.9 s surprise" was its own drop), a baseline of hard cuts per second
+  from the run itself, and a per-frame trace of the model's inputs — the ramp is visible in one line. Guard:
+  `accept.sh` "== hidden worklet" (dnb hidden 20 s at 15 s: 150 frames back, 0 surprise, `srMax` < 1.4). Parity fake
+  0 diff (the fake path never resumes; `dtF = dt` elsewhere).
+- **NAV's cost depends on the parameter** (audit check 1): `bench(0, 200)` 1.79 ms at f480, **7.68 at f1500** (`par`
+  0.76, the walk near a parabolic root, iter 264), 4.07 at f2100; 22.6 ms at 2560 × 1439 in the DPR-1.5 run. Not a v0.3
+  change (v3's loop, parity-bound), but the thing `Q` pays for most → v0.4 item 2.
+- **The v0.3 triage** — every "Left open" line decided:
+
+  | source | line | decision |
+  |---|---|---|
+  | §20 chain | FEIGEN's field lightness under the linear chain (0.5, taste) | **variant only now** (the default is v0.2's pass); tuned with the variant if the user ever picks it (v0.4 stub item 5) |
+  | §21 tempo | the halftime 2:3 margin (comb-only read the relative at 1.06×) | **closed**: the dead-beat-lag condition holds it; no trace flips; instrument before touching |
+  | §22 director | the 24-section ring shift never observed | **carried, low**: a 4-minute track files ~20; `RENUMBER@` on a long set first (v0.4 stub item 6) |
+  | §24 FEIGEN | the OKLCH mapping | **a variant, re-mapped by distance** (this section); the §24 lightness derivation stays as the variant's L |
+  | §25 NAV | the OKLCH mapping; the PiP ray-matching | **a variant, re-mapped by escape count**; the ray-matching rationale is gone with the external angle — §25 / `nav-hue.md` keep the derivation |
+  | §24 / §25 | `min(L, 0.5)` clips the band ripple; NAV's interior chroma | **open in the variant** (v0.4 stub item 5) |
+  | §18 hold | the first frames back | **extended** (this section): followers snap, `settle` 2.5 s, the worklet-path guard |
+  | audit 1 | NAV 4.6× with `c` | **v0.4 item 2** |
+
+- **Ship.** `GPU=1 tools/accept.sh` → `accept-29.txt` 0 FAIL (accept-27: the new check's verdict grep; accept-28: the drop-rule flake, fixed above) → `git tag v0.3` → `releases/eigenwobble-v0.3.html` =
+  `dist/eigenwobble.html` at the tag (59 modules, 410 KB) → `NEXT-SESSION-PROMPT.md` = the v0.4 stub.
+- **How v0.3 was run** (for the next orchestrator): core slot first, proven no-op by md5 + parity, then two workers in
+  parallel from committed briefs (one Chrome each), the orchestrator's own eyes on every montage before a merge, the
+  audit only after the sweep on the merged code, and a finding on the real path chased to a per-frame mechanism with a
+  control run before any fix — then the fix proven headless on two demos and headed on the track.

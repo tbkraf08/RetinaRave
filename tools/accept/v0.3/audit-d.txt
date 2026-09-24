@@ -1,0 +1,11 @@
+bundled 59 modules → dist/eigenwobble.html (410 KB)
+### D-bundle 22:21:35
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/cf46cf47-38ba-4 ok windows 11850892 11850894
+shot audit-5-bundle-landing
+clickSel #go [937.9896087646484,541.6250419616699]
+EVAL 'D6 '+JSON.stringify({proto:location.protocol,mode:CARD.ENGI => "D6 {\"proto\":\"file:\",\"mode\":\"capture\",\"heard\":true,\"hop\":561,\"errs\":[]}"
+EVAL 'D36 '+JSON.stringify({bpm:+CARD.MS.bpm.toFixed(2),syn:+CARD => "D36 {\"bpm\":159.94,\"syn\":160.23,\"hop\":3383,\"q\":0.6840000000000002,\"scene\":2}"
+shot audit-5-bundle-36s
+EVAL 'D-HELP '+JSON.stringify({on:CARD.HELP.on,rows:CARD.HELP.row => "D-HELP {\"on\":true,\"rows\":107,\"cast\":[\"reads 27 fields · cuts: event · colour: v2 (variants: v2, oklch)\",\"reads 27 fields · cuts: event · colour: v2 (variants: v2, oklch)\",\"reads 18 fields · cuts: event · colour: v2 (variants: v2, oklch)\"]}"
+EVAL 'D60 '+JSON.stringify({bpm:+CARD.MS.bpm.toFixed(2),hop:CARD. => "D60 {\"bpm\":159.85,\"hop\":5732,\"errs\":[],\"bad\":[],\"hist\":[6,2,5],\"colour\":{\"nav\":\"v2\",\"feigen\":\"v2\"}}"
+### end D-bundle 22:22:41

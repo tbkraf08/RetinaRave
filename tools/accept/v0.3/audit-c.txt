@@ -1,0 +1,25 @@
+### C-keys 22:21:21
+clickSel #demo [987.0729370117188,593.6250205039978]
+EVAL 'C-HELP '+JSON.stringify({on:CARD.HELP.on,rows:CARD.HELP.row => "C-HELP {\"on\":true,\"rows\":107,\"trunc\":[0,107],\"cast\":[\"reads 27 fields · cuts: event · colour: v2 (variants: v2, oklch)\",\"reads 27 fields · cuts: event · colour: v2 (variants: v2, oklch)\",\"reads 18 fields · cuts: event · colour: v2 (variants: v2, oklch)\"],\"inner\":1556}"
+shot audit-4-help-cast
+EVAL 'C-ESC '+JSON.stringify({on:CARD.HELP.on}) => "C-ESC {\"on\":false}"
+EVAL 'K1 '+CARD.SC.forced => "K1 0"
+EVAL 'K2 '+CARD.SC.forced => "K2 1"
+EVAL 'K3 '+CARD.SC.forced => "K3 2"
+EVAL 'K4 '+CARD.SC.forced => "K4 3"
+EVAL 'K5 '+CARD.SC.forced => "K5 4"
+EVAL 'K6 '+CARD.SC.forced => "K6 5"
+EVAL 'K7 '+CARD.SC.forced => "K7 6"
+EVAL 'K8 '+CARD.SC.forced => "K8 6"
+EVAL 'K9 '+CARD.SC.forced => "K9 6"
+EVAL 'K0 '+CARD.SC.forced => "K0 -1"
+EVAL 'K7-cur '+JSON.stringify({cur:CARD.SC.cur,logical:CARD.SC.lo => "K7-cur {\"cur\":6,\"logical\":6,\"colour\":{\"nav\":\"v2\",\"feigen\":\"v2\"}}"
+EVAL 'C-FULL '+JSON.stringify({fs:!!document.fullscreenElement,ca => "C-FULL {\"fs\":true,\"canvas\":[2560,1439]}"
+EVAL 'C-ESC2 '+JSON.stringify({fs:!!document.fullscreenElement,ca => "C-ESC2 {\"fs\":false,\"canvas\":[1407,712]}"
+EVAL 'C-DBL '+JSON.stringify({fs:!!document.fullscreenElement}) => "C-DBL {\"fs\":true}"
+EVAL 'C-DBL2 '+JSON.stringify({fs:!!document.fullscreenElement}) => "C-DBL2 {\"fs\":false}"
+EVAL 'C-HUD '+document.getElementById('hud').style.display => "C-HUD block"
+EVAL 'C-H '+CARD.HELP.on => "C-H true"
+EVAL 'C-H2 '+CARD.HELP.on => "C-H2 false"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[]}"
+### end C-keys 22:21:35

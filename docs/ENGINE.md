@@ -56,11 +56,21 @@ onset, a drop or a surprise (the composite's glitch rows and flash — AUDIT-v0.
 `visibilitychange` → visible; the next `frame()` stamps `ENGINE.resumeAt = now` (`ENGINE.resumed` is true for that one
 frame) and, on the real path only: (1) `XS.holdUntil = now + 1` — for 1 s `updateMusic` sets no `onset`, `dropEvt` or
 `surpriseEvt`; (2) `XS.reseed` — on that frame the spectral-flux baseline is the current spectrum (flux 0) and the slow
-followers (`presence`, `eS/eM/eL/eMax`, `highM`, `build/buildPk`, the surprisal history model's mean/variance and its
-band inputs, the section fingerprint) advance by the gap they missed (`dtF = dt + now − X.envNow`: as if the current
-value had held throughout), so a stale `eM` cannot fire a drop once the hold ends; (3) `MS.hit` and `MS.dropEnv` are
-zeroed (transients the gap outlived — the dt clamp would carry them across). The loop zeroes `FX.glitch/flash` on the
-`resumed` frame. The fake timeline is untouched (it is a function of `now`; nothing in it was frozen), so `parity.js
+followers (`presence`, `eS/eM/eL/eMax`, `highM`, `build/buildPk`, the surprisal history model's mean and its band
+inputs `sB/sM/sH`, the section fingerprint, **and — since the v0.3 audit (§26) — the band followers `aB/aM/aH/fB` and
+the chroma emas in `slowAnalysis`, which runs on that frame with the gap**) advance by the gap they missed (`dtF = dt +
+now − X.envNow`: as if the current value had held throughout), so a stale `eM` cannot fire a drop once the hold ends;
+(3) `MS.hit` and `MS.dropEnv` are zeroed (transients the gap outlived — the dt clamp would carry them across). The loop
+zeroes `FX.glitch/flash` on the `resumed` frame. **The surprisal model's variance is never advanced by the gap** (it
+carries no variance: advanced by `dtF` it collapsed to one stale d² and every later beat was a surprise) and the reseed
+frame's error ('now vs 20 s ago') is not scored; for **2.5 s** after the resume (`settle = now < holdUntil + 1.5`,
+longer than the 1 s event hold) the model re-learns its mean at 0.25 s and learns no variance, because the inputs
+settle over ~1.5 s after a gap and a mean lagging at 1.5 s read that settling as a surprise (a hard cut 1–3 s after 3 of
+4 restores on a real track, `AUDIT-v0.3.md` §3). **Both drop rules wait for `settle` too**: the snapped `eM` is one frame's
+energy, not a 2.5 s mean, until about one time constant has passed — the built-in demo hidden between two kicks came back
+with `eS = eM = 0.24` and `eS` 0.65 a second later, so every kick cleared `e > eM + 0.25` and the first onset that coincided
+was a drop at +1.3 s (2 of 3 runs). `absentT` is zeroed on the reseed frame (absence before the gap is no evidence after
+it). A musical surprise or drop inside those 2.5 s is the one thing this gives up. The fake timeline is untouched (it is a function of `now`; nothing in it was frozen), so `parity.js
 fake` is 0 diff by construction; the real path is byte-identical to v3 until a `resume()` happens.
 
 ## Adding an analysis stage
