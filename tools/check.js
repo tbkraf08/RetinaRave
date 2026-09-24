@@ -1,7 +1,8 @@
 // Static checks, run after every edit: node --check on assets/**/*.js · module line caps (warn >350, fail >500) ·
 // dead uniforms (declared in a GLSL string, never fetched anywhere) · import discipline (only core/engine/main.js may
 // import core/gl.js; scenes/effects/transitions import nothing from core) · no 'nav' in core/ or transitions/ · every MS
-// key has a FEATS entry · scene help has three depths, help.feats ⊂ feats (warn on a feats entry without a line).
+// key has a FEATS entry · scene help has three depths, help.feats ⊂ feats (warn on a feats entry without a line) · help.js /
+// panel.js name no MS field and no scene as a quoted literal (the help and the panel show data, never a special case).
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -51,6 +52,11 @@ if (dead.length) fail('dead uniforms (declared, never fetched): ' + dead.join(',
 const { MS } = await import(path.join(ROOT, 'assets/engine/state.js'));
 const { FEATS } = await import(path.join(ROOT, 'assets/engine/feats.js'));
 const undocumented = Object.keys(MS).filter((k) => !(k in FEATS));
+for (const f of ['assets/core/help.js', 'assets/core/panel.js']) { // the DOM views: every field name they show comes from FEATS / feats at run time
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8'), lits = new Set([...src.matchAll(/['"]([A-Za-z_]\w*)['"]/g)].map((m) => m[1]));
+  const bad = [...lits].filter((w) => w in FEATS && FEATS[w].kind !== 'internal');
+  if (bad.length) fail(f + ' names MS fields as literals: ' + bad.join(','));
+}
 const phantom = Object.keys(FEATS).filter((k) => !(k in MS));
 if (undocumented.length) fail('MS keys without a FEATS entry: ' + undocumented.join(','));
 if (phantom.length) warn('FEATS entries with no MS default (runtime-added by a stage?): ' + phantom.join(','));
@@ -67,6 +73,7 @@ for (const d of sceneDirs) {
   if (bad.length) fail('scene ' + d + ': help.feats keys not in feats: ' + bad.join(','));
   const undecl = feats.filter((k) => !(k in FEATS));
   if (undecl.length) fail('scene ' + d + ': feats not in FEATS: ' + undecl.join(','));
+  for (const f of ['assets/core/help.js', 'assets/core/panel.js']) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
   const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
   if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
   for (const v of sc.variants || []) if (!(typeof v.tag === 'string' && v.tag)) fail('scene ' + d + ' variant ' + v.name + ': no tag');

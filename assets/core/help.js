@@ -9,8 +9,9 @@ import { MS } from '../engine/state.js';
 import { FEATS } from '../engine/feats.js';
 import { SC, REG, TRANSITIONS, currentTransition } from './scenes.js';
 import { EFFECTS } from './post.js';
+import { buildE, refreshE, markE } from './panel.js'; // part E, the routes panel (v0.4; panel.js never imports help.js)
 
-// on: shown · scene: the logical id part A was built for · ticks: live refreshes so far (the harness counts them) ·
+// on: shown · scene: the logical id part A (and E's mark) was built for · ticks: live refreshes so far (the harness counts them) ·
 // nTop: rows in the top table · rows(topOnly): the field names in part A's tables, read back from the DOM
 export const HELP = { on: false, scene: -1, ticks: 0, nTop: 0, built: false, rows };
 
@@ -26,7 +27,7 @@ const CUTS = { // the §1.9 promise, in words
   onset: 'onset — visible jumps only on hits and beats',
   event: 'event — jumps only on drops, section changes, surprises and declared epochs',
 };
-const KEYS = [['?', 'or H — this view'], ['Esc', 'close it'], ['D', 'the developer HUD (numbers, every 6th frame)'],
+const KEYS = [['?', 'or H — this view'], ['P', 'this view opened at part E, the routes panel (what drives what, by hand)'], ['Esc', 'close it'], ['D', 'the developer HUD (numbers, every 6th frame)'],
   ['F', 'fullscreen (or double-click)'], ['M', 'monitor the demo synth in the speakers'],
   ['1 – 9', 'force the scene with id 0 – 8 (the ids are in part C)'], ['0', 'back to the director']];
 const EV = Object.keys(FEATS).filter((k) => FEATS[k].kind === 'event'); // latched per frame while open (they last one frame)
@@ -211,11 +212,19 @@ export function initHelp() {
   const body = $('helpBody');
   body.replaceChildren();
   body.appendChild(el('h1', null, 'EIGENWOBBLE · what you are looking at, and what is moving it'));
-  body.appendChild(el('p', 'hnote', 'Every visible parameter traces to a field of MS, the music state vector the engine computes each frame. Part A is the scene on screen and the fields it reads, with their live values; B is the director choosing scenes; C is every scene; D the keys. The scene keeps rendering behind this page.'));
-  for (const id of ['helpA', 'helpB', 'helpC', 'helpD']) body.appendChild(el('section')).id = id;
+  body.appendChild(el('p', 'hnote', 'Every visible parameter traces to a field of MS, the music state vector the engine computes each frame. Part A is the scene on screen and the fields it reads, with their live values; B is the director choosing scenes; C is every scene; D the keys; E lets you re-wire, by hand, which field drives what. The scene keeps rendering behind this page.'));
+  for (const id of ['helpA', 'helpB', 'helpC', 'helpD', 'helpE']) body.appendChild(el('section')).id = id;
   buildD();
   buildC();
   buildB();
+  buildE($('helpE'));
+}
+
+// Open the view scrolled to one part (key p → 'helpE').
+export function openHelpAt(id) {
+  toggleHelp(true);
+  const e = $(id);
+  if (e) e.scrollIntoView();
 }
 
 export function toggleHelp(force) {
@@ -228,8 +237,10 @@ export function toggleHelp(force) {
   if (on) { // complete on the frame it opens (a paused clock still shows a full page)
     buildA();
     markC();
+    markE();
     refreshLive(0);
     refreshB();
+    refreshE(0);
   }
 }
 
@@ -237,11 +248,12 @@ export function toggleHelp(force) {
 export function drawHelp(S, frameN) {
   if (!HELP.on) return;
   for (const k of EV) if (S[k]) hot[k] = frameN;
-  if (SC.logical !== HELP.scene) { buildA(); markC(); }
+  if (SC.logical !== HELP.scene) { buildA(); markC(); markE(); }
   if (frameN % 6 === 0) {
     HELP.ticks++;
     refreshLive(frameN);
     refreshB();
+    refreshE(frameN);
   }
 }
 

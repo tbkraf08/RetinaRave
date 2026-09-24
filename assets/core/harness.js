@@ -10,12 +10,13 @@ import { FX, EFFECTS, CHAIN } from './post.js';
 import { G, ERRS, ETEX } from './gl.js';
 import { LOOK } from './look.js';
 import { HELP } from './help.js';
-import { MANUAL, manual, applyPosts, postString, POST_PARAMS } from './manual.js';
+import { HASH, TEST } from './hash.js';
+import { restore as restorePanel } from './panel.js';
+import { MANUAL, manual, applyPosts, postString, POST_PARAMS, snapshotDefaults, resetManual } from './manual.js';
 import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view } from './route.js';
 import { getGrid } from '../math/mandel.js';
 
-export const HASH = new URLSearchParams(location.hash.slice(1));
-export const TEST = HASH.has('test');
+export { HASH, TEST }; // parsed in hash.js (a leaf the panel can read too)
 
 // One-pixel readback from a core target: the GPU sync the benches rely on. The targets are RGBA16F when floats are
 // available, and a UNSIGNED_BYTE read from a float target is INVALID_OPERATION (rejected before it reaches the GPU,
@@ -44,7 +45,7 @@ export const CARD = {
   view: (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return view(s); },
   // manual overrides (v0.4, core/manual.js): MANUAL.scene (= SC.forced) / .trans / .colour / .post · manual('scene', 6) · manual('trans', 'mixs') ·
   // manual('colour', scene, variant) · manual('post', scene, 'bloom.thr', 0.3 | null) · posts('scene.bloom.thr=0.3,…') = the &post= grammar
-  MANUAL, manual, posts: applyPosts, postString, POST_PARAMS,
+  MANUAL, manual, posts: applyPosts, postString, POST_PARAMS, resetManual,
   // Micro-benchmark a scene id: ms per full-resolution render, readPixels-synced (Q.q is not a perf verdict headless).
   bench(id, n = 40) {
     const gl = G.gl, T = [G.RT.a, G.RT.b];
@@ -104,6 +105,7 @@ export const CARD = {
 // Apply the hash to engine + director; expose scene hooks (&<hook>=value for any scene that declares hooks.<hook>).
 export function initHarness(hideLanding) {
   window.CARD = CARD;
+  snapshotDefaults(); // v0.4: the transition main.js chose and each scene's colour default — what resetManual() returns to
   ENGINE.fakeOn = TEST && HASH.get('fake') !== '0';
   for (const sc of SCENES) {
     for (const k in sc.hooks || {}) {
@@ -122,7 +124,7 @@ export function initHarness(hideLanding) {
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
     if (HASH.has('route')) applyRoutes(HASH.get('route'));  // v0.4 routes: scene.field=src[*k][+b][~tau][!],… (a bad one throws)
     if (HASH.has('post')) applyPosts(HASH.get('post'));      // v0.4 manual post: scene.bloom.thr=0.3,scene.kaleido=0,… (a bad one throws)
-  }
+  } else restorePanel(); // v0.4: the panel's localStorage preset, never under #test (the shots stay deterministic)
 }
 
 // Per-frame test logging (only under #test).

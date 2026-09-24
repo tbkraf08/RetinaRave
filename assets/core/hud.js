@@ -1,5 +1,5 @@
 // HUD + keys + landing card. The only module that touches the DOM besides main.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–9 force scene (1 = id 0) · 0 auto · ? or h help view · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–9 force scene (1 = id 0) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
 import { toggleMonitor } from '../engine/sources/demo.js';
@@ -7,7 +7,7 @@ import { SC, REG } from './scenes.js';
 import { Q } from './quality.js';
 import { G } from './gl.js';
 import { GROOVE } from '../engine/groove.js';
-import { toggleHelp } from './help.js';
+import { toggleHelp, openHelpAt } from './help.js';
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
@@ -42,6 +42,7 @@ export function initHUD() {
       $('hud').style.display = HUD.on ? 'block' : 'none';
     } else if (k === 'm') toggleMonitor();
     else if (k === 'h' || k === '?') toggleHelp();
+    else if (k === 'p') openHelpAt('helpE');
     else if (k === 'escape') toggleHelp(false);
     else if (k >= '0' && k <= '9') SC.forced = k === '0' ? -1 : (REG[+k - 1] ? +k - 1 : SC.forced);
   });

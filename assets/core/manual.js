@@ -13,6 +13,16 @@ export const POST_PARAMS = Object.keys(PARAMS);
 
 const need = (name) => { const sc = sceneOf(name); if (!sc) throw new Error('manual: no scene named ' + name); return sc; };
 
+const DEFAULTS = { trans: null }; // captured by snapshotDefaults() (harness.js initHarness, after main.js chose the transition)
+export function snapshotDefaults() { DEFAULTS.trans = MANUAL.trans; }
+// Back to the untouched state: no forced scene, main.js's transition, every scene's colour default, no post override.
+export function resetManual() {
+  SC.forced = -1;
+  if (DEFAULTS.trans) setTransition(DEFAULTS.trans);
+  for (const s of SCENES) if (s.colour) s.colour.cur = s.colour.default;
+  clearPost();
+}
+
 export const MANUAL = {
   post: MANUAL_POST,
   get scene() { return SC.forced; },
