@@ -659,6 +659,16 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 
 Questions workers had to ask, and what changed in this doc as a result.
 
+- **2026-09-24, the routes panel (v0.4 §27), worker given CONTRACTS §1.13 / §1.15 + `brief-panel.md` + the three core
+  modules it imports.** Every acceptance line first shoot; 9 friction items (`docs/workers/panel.md`). Fixes: the brief
+  said "latch events as help.js does" but the panel only runs on the 6-frame tick — the core now passes its per-frame
+  latch into `refreshE(frameN, hot)` (a view that runs every 6th frame cannot see one-frame events by itself; say which
+  side latches); a checkbox has no empty state — the worker's `indeterminate` + `×` is the rule for a boolean override;
+  `manual.js` exports the four param paths but not their types — the worker inferred "boolean" from the scenes' own
+  `post` (fine, and the honest way: the schema is the scenes); the brief's coverage line said `6/6` where the registry
+  has 7 entries (a variant counts) — fixed. Harness finding (the worker's): `tools/bundle.js` rejected an `import` line
+  with a trailing `//` comment, which four v0.4 core modules carried — the bundle was dead from the first v0.4 commit to
+  the merge; `accept.sh`'s `[EXC]` count would have caught it at the sweep, the worker caught it at its bundle item.
 - **2026-09-22, probe scene (solid colour from bass), worker given only CONTRACTS.md + HARNESS.md.** Rendered first
   try, ERRS empty. 13 questions logged (`docs/workers/probe.md`); fixes: registration is two lines (§1.8); how state
   travels from `init` to `draw` (methods on the exported object, keep `ctx` on `this`); the `feats` vocabulary is now

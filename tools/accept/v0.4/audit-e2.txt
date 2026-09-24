@@ -1,0 +1,31 @@
+### E-routes 08:41:22
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/7c857b19-f9bd-4 ok windows 844778042 844778044
+EVALTAB (()=>{const v=document.querySelector('video,audio' => [false,1.9,256.348299]
+EVAL fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(( => "probe on"
+clickSel #go [937.9896087646484,541.6250419616699]
+EVAL 'E8 '+JSON.stringify({mode:CARD.ENGINE.AU.mode,heard:CARD.EN => "E8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"canvas\":[1407,670],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":116.52,\"syn\":116.93,\"q\":0.5720000000000001,\"ms\":1.88,\"routeMs\":0,\"hop\":750,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":484,\"errs\":[],\"bad\":[],\"help\":[false,0],\"routes\":\"\",\"n\":0}}"
+EVAL 'E-OPEN '+JSON.stringify({on:CARD.HELP.on,scrollTop:document => "E-OPEN {\"on\":true,\"scrollTop\":2814.666748046875,\"first\":\"pe-blk-feigen\",\"cur\":[\"pe-blk-feigen\"],\"ticks\":10}"
+shot audit4-panel-open-13s
+EVAL 'E-DRIVE '+JSON.stringify((()=>{const ch=(id,v)=>{const e=do => "E-DRIVE {\"sel\":[\"centroid\",\"1.5\",\"snare\"],\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"n\":2,\"err\":[],\"store\":240}"
+EVAL 'E-METER1 '+JSON.stringify((()=>{const m=(s,f)=>[...document => "E-METER1 {\"feigenBass\":[\"0.603\",\"0.904\"],\"navHit\":[\"0.225\",\"0.225\"],\"viewBass\":0.911,\"msBass\":0.79,\"msCentroid\":0.608,\"viewHit\":0.153,\"msHit\":0.103,\"msSnare\":0.153}"
+EVAL 'E-METER2 '+JSON.stringify((()=>{const m=(s,f)=>[...document => "E-METER2 {\"feigenBass\":[\"0.692\",\"1.000\"],\"navHit\":[\"0.412\",\"0.412\"],\"viewBass\":1,\"msBass\":0.689,\"msCentroid\":0.699,\"viewHit\":0.247,\"msHit\":0.489,\"msSnare\":0.247}"
+EVAL 'E-ROUTES '+JSON.stringify({ROUTES:CARD.ROUTES,ta:document.g => "E-ROUTES {\"ROUTES\":{\"feigen\":{\"bass\":{\"src\":\"centroid\",\"c\":0,\"k\":1.5,\"b\":0,\"inv\":false,\"tau\":0}},\"nav\":{\"hit\":{\"src\":\"snare\",\"c\":0,\"k\":1,\"b\":0,\"inv\":false,\"tau\":0}}},\"ta\":240,\"store\":\"localStorage[ew.routes.v1] · saved (240 chars) — every change made here is stored and loaded again at boot\"}"
+shot audit4-panel-routed-20s
+shot audit4-feigen-routed-24s
+EVAL 'E24 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "E24 {\"t\":20.1,\"bpm\":116.75,\"syn\":116.93,\"q\":0.5960000000000001,\"ms\":1.9,\"routeMs\":0.009,\"hop\":1878,\"scene\":6,\"black\":0,\"long\":0,\"maxdt\":83,\"frames\":1190,\"errs\":[],\"bad\":[],\"help\":[false,47],\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"n\":2}"
+EVAL 'E-SWITCH1 '+JSON.stringify({logical:CARD.SC.logical,cur:CAR => "E-SWITCH1 {\"logical\":0,\"cur\":0,\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"feigenRouted\":true,\"navRouted\":true}"
+shot audit4-nav-routed-28s
+EVAL 'E-SWITCH2 '+JSON.stringify({logical:CARD.SC.logical,cur:CAR => "E-SWITCH2 {\"logical\":6,\"cur\":6,\"next\":-1,\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"feigenRouted\":true}"
+EVAL window.__tk=CARD.HELP.ticks;'ticks '+window.__tk => "ticks 53"
+bounds {"windowState":"minimized"} ok
+bounds {"windowState":"normal"} ok
+EVAL 'E-HOLD '+JSON.stringify((function(){var b=PROBE.ev.filter(f => "E-HOLD {\"n\":60,\"onsets\":0,\"surprise\":0,\"drops\":0,\"gmax\":0,\"dt0\":[10058,67.3,33.4],\"resumeAt\":42.7,\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"viewIsRouted\":true,\"ticksBefore\":53,\"ticksNow\":81}"
+EVAL 'E-METER3 '+JSON.stringify((()=>{const m=(s,f)=>[...document => "E-METER3 {\"feigenBass\":[\"0.652\",\"0.979\"],\"navHit\":[\"0.499\",\"0.499\"],\"viewBass\":0.962,\"msBass\":0.733,\"msCentroid\":0.641,\"viewHit\":0.263,\"msHit\":0.49,\"msSnare\":0.263}"
+shot audit4-panel-back-50s
+EVAL 'E60 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "E60 {\"t\":52.1,\"bpm\":116.89,\"syn\":116.93,\"q\":0.6340000000000001,\"ms\":1.9,\"routeMs\":0.0076,\"hop\":4877,\"scene\":6,\"black\":0,\"long\":1,\"maxdt\":10058,\"frames\":2493,\"errs\":[],\"bad\":[],\"help\":[false,83],\"routes\":\"feigen.bass=centroid*1.5,nav.hit=snare\",\"n\":2}"
+EVAL 'SCENES '+JSON.stringify(PROBE.ev.filter(e=>e.k==='scene').m => "SCENES [[-0.001,-1,0],[8.072,0,6],[20.116,6,0],[24.236,0,6]]"
+EVAL 'LONG '+JSON.stringify(PROBE.ev.filter(e=>e.k==='long'||e.k= => "LONG [[38.881,\"long\",10058]]"
+EVAL 'Q1HZ '+JSON.stringify(PROBE.q1) => "Q1HZ [0.52,0.54,0.55,0.55,0.56,0.56,0.56,0.57,0.57,0.58,0.58,0.58,0.59,0.52,0.52,0.56,0.56,0.59,0.59,0.59,0.6,0.6,0.6,0.61,0.61,0.62,0.62,0.62,0.63,0.63,0.63,0.63,0.63,0.63,0.63,0.63,0.63,0.63,0.63,0.43,0.43,0.43,0.43,0.47,0.51,0.55,0.59,0.61,0.62,0.62,0.63,0.63,0.63]"
+EVAL (()=>{document.getElementById('pe-resetall').click();return  => "E-RESET {\"n\":0,\"routes\":\"\",\"trans\":\"morph\",\"forced\":-1,\"store\":\"{\\\"routes\\\":{},\\\"manual\\\":{\\\"scene\\\":-1,\\\"trans\\\":\\\"morph\\\",\\\"colour\\\":{\\\"nav\\\":\\\"v2\\\",\\\"feigen\\\":\\\"v2\\\"},\\\"post\\\":{}}}\"}"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":4932,\"hist\":[6,0,6],\"colour\":{\"nav\":\"v2\",\"feigen\":\"v2\"},\"summary\":2525}"
+### end 08:42:19

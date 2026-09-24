@@ -1150,3 +1150,94 @@ montage alone (memory: `feedback_colour_default.md`).
   parallel from committed briefs (one Chrome each), the orchestrator's own eyes on every montage before a merge, the
   audit only after the sweep on the merged code, and a finding on the real path chased to a per-frame mechanism with a
   control run before any fix — then the fix proven headless on two demos and headed on the track.
+
+## §27 routes — a control panel that maps music features to visuals by hand (v0.4, 2026-09-24, orchestrator + one worker; `NEXT-SESSION-PROMPT.md` of the v0.3 tag)
+
+**The decision (with the user, 2026-09-24).** v0.4 is one feature: the listener re-wires, by hand and per scene, which
+music feature drives which field a scene reads — "in FEIGEN, `bass` is fed by `centroid`" — with gain, offset, invert
+and an ema, or a constant; the manual overrides the keys already do (forced scene, transition, colour variant, the
+four post params) gathered into the same panel; part E of the `?` help view, key `p`; `localStorage` + JSON presets +
+a hash form for the harness; **a no-op until touched** (every reference md5 unchanged); the director off limits; the
+per-*visual-parameter* level (a scene declaring its knobs as a slot) is the follow-on, not this. The earlier v0.4 stub
+(NEWTON, NAV's iteration budget, a colour slot everywhere, the chain's k) moved to the v0.5 candidates.
+
+- **`route-core` (`9a0c2c9`, `core/route.js`, CONTRACTS §1.15, HARNESS "Routes").** `ROUTES[scene][field] = {src | 'const',
+  c, k, b, inv, tau}`; the core hands each scene a *view* of `MS`: **the same `MS` object while the scene has no routes**
+  (identity by construction — not a copy, not a proxy: zero cost and no way to drift), else an object made once with
+  `Object.create(MS)` whose routed fields are own properties refreshed by `refreshRoutes(dt)` in the loop after the
+  engine wrote `MS` and before any `update()`; unrouted fields fall through the prototype live. The view goes wherever
+  the core hands a scene `MS` — `update`, `score` (a variant reads its parent's view), a `post` fn, a nested post fn
+  slot (`fb.decay(S)`, resolved by `postOf` against the view while routed) — never to the director, the transitions or
+  the effects (`io.MS` is the real `MS`). **Kinds are the contract:** `level`/`raw`/`angle` route from the same kind or
+  a constant (`inv` = 1 − x on a level, −x otherwise; a level clamped 0..1 after the transfer so the kind's promise
+  survives a gain), an `event` only from an event with no transfer, `count`/`enum`/`vector`/`internal` never (`chroma`,
+  `wave`, `seed`, `arc`, `sectionId` are always the engine's). A route names a field the scene lists in `feats` — the
+  panel's rows are that list, so `feats` is finally load-bearing (§1.13's "a stale entry is a visible lie" now has a
+  control attached). Unknown scene / field / source / kind mismatch **throws** (a typo in `&route=` kills init, as
+  `&colour=` does); lists and presets are all-or-nothing (checked, then applied). The ema is on `dt` (no wall clock).
+  **The one thing the design missed:** `bass`/`mid`/`high`, `beatPhase`/`hit`/`beatCount`/`dropEnv`, `eS`/`build`/
+  `tension`/`surprisal`, `harmAngle`/`harmVel`/`clarity`/`regularity` reach every shader through the HEAD uniforms
+  `use()` uploads from `LOOK` — a routed `bass` would have moved nothing on FEIGEN, whose only `bass` read is
+  `uBands.x`. `look.js headVecs(S, C)` is the split-out derivation; `renderScene` swaps the four vectors from the view
+  into `LOOK` around a routed scene's `draw()` and restores them (`pal`/`tint`/`time`/`GROOVE` stay the director's — a
+  scene's palette is not its own field). Proof the view path is exact: `&route=feigen.bass=bass` (an identity route
+  *through* the view, own property and HEAD swap included) leaves s6 f360/f840 byte-identical, also with ten identity
+  routes; `feigen.bass=high` moves both frames (`3fa9434e…`/`12d4c045…`). Cost: ten routes on FEIGEN, `q` pinned,
+  interleaved `bench(6,300)/bench(0,300)` none → ten → none: ratios .68 / .64 / .77 (the noise band); `ROUTE.ms`
+  0.007–0.023 ms (its own 1 s ema, 0 with no route; the refresh runs outside `ENGINE.frame`). Grammar:
+  `scene.field=src[*k][+b|-b][~tau][!]`, `scene.field=c:0.4`; a `+` arrives as a space through `URLSearchParams` — the
+  parser reads both. `tools/route-smoke.js` (node, no DOM: 60 checks).
+- **`manual-core` (`a4e4545`, `core/manual.js`).** `MANUAL.scene` **is** `SC.forced`, `.trans` the current transition,
+  `.colour` each scene's `colour.cur` — live getters/setters over the director's own state, never a second copy (the
+  keys `1–9`/`0` and the panel move the same thing); `.post` is `MANUAL_POST` (kept in `scenes.js` so `postOf` merges it
+  without an import cycle — **the bundler cannot order a cycle**, so core stays a DAG: `route ← scenes ← manual ←
+  harness`, `hash.js` a leaf for `TEST`). The four params `bloom.thr fb.decay kaleido exposure.on` per scene, merged
+  over the resolved post *after* the colour variant's; with nothing set `postOf` returns the scene's own post object.
+  `&post=feigen.bloom.thr=0.3,…`; the block rides in `routesJSON()`/`loadRoutes()` through `route.js BLOCKS`;
+  `resetManual()` returns to main.js's transition (snapshotted at `initHarness`) and each scene's colour default. Proofs:
+  md5 identity (v2 + oklch lists, mixs) with the module loaded, parity 0; `feigen.bloom.thr=0.3` (the v2 default's own
+  value) leaves s6 identical, `=2` moves it (`da43c0e1…`), `kaleido=0,fb.decay=0.2` too; `tools/manual-smoke.js` 43.
+- **`panel-ui` (worker, `docs/workers/brief-panel.md` → `panel.md`, `cbbd0fe` merged `23120c7`; `core/panel.js` 339
+  lines, DOM only).** One block per scene (the current one first and marked), a row per routable field of `feats` with
+  the `help.feats` clause (part A's rule, from the same data), a source `<select>` from `sources(k)`, gain / offset / τ
+  / invert / a `c` input for `const`, a per-row reset, a two-segment live meter (source → routed; two bars for a level,
+  numbers for raw, dots for events); per block "copy to all scenes" and "reset scene", a global "reset everything"
+  (`clearRoutes()` + `resetManual()`); the manual section (forced scene incl. variants, transition, colour per scene,
+  the four post params with the scene's own value as placeholder — a checkbox is `indeterminate` while unset, with a
+  `×`); presets (textarea of `routesJSON()`, load, copy) and `localStorage['ew.routes.v1']` saved on every change and
+  read at boot by `restore()` — **never under `#test`**. The core's side (`eba7582`): `help.js` gives a `<section
+  id="helpE">` and calls `buildE / markE / refreshE(frameN, hot)` on its existing 6-frame tick — no second rAF, no
+  timer; `hud.js` maps `p` → `openHelpAt('helpE')`; `harness.js` calls `restore()` after the hash when not under
+  `#test`; `check.js` fails on a quoted `FEATS` key or scene name in `help.js`/`panel.js` (the views show data). First
+  shoot, every acceptance line passed; the worker found **the bundler broken at HEAD**: `IMPORT_RE` rejected an import
+  line with a trailing `//` comment, which four v0.4 core modules carry — fixed with a shared `TAIL` (the `[EXC]` count
+  in `accept.sh` would have caught it at the sweep, the worker caught it at item 7). Two things it could not do from
+  its side and said so: an event lasts one frame and the panel runs every 6th — its own latch saw one dot in six; the
+  orchestrator passes `help.js`'s per-frame `hot` map into `refreshE` (`e01c157`), and a routed event's dot is its
+  source's. The brief's coverage line said `6/6` where the registry has 7 entries (DRUM) — fixed in the brief.
+- **Two design corrections while building.** (1) Lists are all-or-nothing: the first draft applied routes in order and
+  threw at the first bad one, leaving a half-applied list — `checkRoute` (pure) then `setRoute`. (2) A fresh route is
+  in force at once (`rebuild` evaluates it with `dt 0`: a fresh ema snaps, a kept one holds) so a route set by an eval
+  between the refresh and `update` is not one frame late.
+- **What is not routed, and why:** `LOOK.pal/tint/mood` (stateful palettes — the director's, and §1.5 says so),
+  `GROOVE`, `uTime`; the director's inputs (`pickScene` reads the scene's *routed* `score`, which is the scene's to
+  compute — but `updateScenes` reads the real `MS`); a scene's `look` memory (no `MS` argument). A scene must not keep
+  the `MS` object across frames (§1.15; audited: none does — every scene copies what it reads in `update`).
+- **The real-window check** (`docs/AUDIT-v0.4.md`, runs E1/E2 + a control): two routes set through the panel's own
+  controls while a real track plays, in force on the next frame; the meter's routed value is the source's transfer
+  (`centroid` 0.608 × 1.5 = `view('feigen').bass` 0.911 while `MS.bass` was 0.79) and the FEIGEN shot shows it (the
+  HEAD swap); the routes survive a scene switch and a 10 s minimize (the §26 hold intact, ticks and meters on); 0 black,
+  the only long frame the minimize; `ROUTE.ms` 0.01; "reset everything" stores the identity state. **Run E1's `q` sat
+  at 0** for 52 s at 58 fps — not reproduced in E2 (0.52 → 0.63, the v0.3 climb), and the control (v0.3 release vs the
+  v0.4 bundle, `file://`, same track, 30 s each, minutes apart) climbed **identically to the second decimal** — a
+  machine moment, recorded so a single low run is never read as the routes' cost.
+- **Ship.** `GPU=1 tools/accept.sh` → `accept-30.txt` **0 FAIL, 17 sections, 0 exceptions** (first run on the merged code; the new "== routes" section all green, help 107/107 on 7/7 ids, ticks 0/100, parity 0, mixs `5892ddc5…`, FEIGEN L3.6 1.34 ms vs NAV 2.16, hidden tab / worklet clean) → `git tag v0.4` → `releases/eigenwobble-v0.4.html` =
+  `dist/eigenwobble.html` at the tag → `NEXT-SESSION-PROMPT.md` = the v0.5 candidates with **per-visual-parameter
+  routes** as the first line (a scene declares its visual parameters as a slot — "the tube radius", "how many
+  mirrors" — and the panel routes `MS` fields into *those*, the natural second level of the same panel; the per-field
+  level shipped here is what it composes over).
+- **How v0.4 was run:** core first as two leaf-ish modules proven no-op by md5 + parity before any UI existed, the
+  contract section written before the worker's brief, the brief naming the four calls the core would make and the
+  elements the orchestrator would later drive, one worker from the brief alone (first shoot), the merge judged on its
+  screenshots, the audit only on the merged code, and a cost finding on the real path chased with a second run and a
+  same-conditions control of the previous release before being written down as "the machine, not the code".

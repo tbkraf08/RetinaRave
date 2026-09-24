@@ -257,6 +257,10 @@ HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps
   `back` against the run's baseline rate (run B: one hard cut per 23 s), and **run the same demo without hiding as the
   control** — an event at +N s after `back` is the demo's own if the control has it at the same clock time (house's
   drop at 44 s). The probe's `sr/su/pr` fields show the model's inputs per frame; the §26 ramp is one line of them.
+- **A single low `q` run in a real window is not a cost finding** (v0.4 audit, `AUDIT-v0.4.md`): run E1 sat at `q` 0 for
+  52 s at 58 fps; the second run climbed as v0.3's did, and the control — the previous release and the candidate bundle
+  from `file://`, same track, 30 s each, minutes apart (`audit-q-control.txt`) — climbed identically to the second
+  decimal. Before writing a `q` difference down: repeat the run, then run the previous release under the same conditions.
 - **Never bench inside a probed page's reading.** `CARD.bench(id, 300)` is synchronous: it stops the rAF loop for
   4–25 s, the probe records one frame of that dt, and the fake timeline lands its drop on the frame after — a `long`
   and a `drop` event that are the bench, not the engine. Read the probe first, bench after (or in another run).
@@ -283,7 +287,7 @@ minimized) is the `audit-3-*-back-worklet.jpg` recipe in "Real window" — DUST'
 
 ## Help view (change to `core/help.js`, a scene's `help` / `help.feats`, or `feats.js` text)
 
-Keys: `?` or `h` toggles, `Esc` closes; `d f m 0–9` keep working with it open. It is DOM (`#help` in `index.html`) over
+Keys: `?` or `h` toggles, `p` opens it scrolled to part E (the routes panel, v0.4), `Esc` closes; `d f m 0–9` keep working with it open. It is DOM (`#help` in `index.html`) over
 the still-rendering canvas, built on the first open, and does no work per frame while hidden. Steps `{key:'h'}` and
 `{key:'Escape'}` drive it; under `CLOCK=1` press the key *before* the `until` so the shot lands on a full page (the
 view completes on the frame it opens).
