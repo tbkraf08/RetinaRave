@@ -14,10 +14,11 @@ let ctx, pt, B_ORB;   // the Julia and PiP programs are per colour mapping: this
 // (|(f^n)'| < 1, the shaders' `dd < 1.`) is inside a basin: it can no longer escape, and with no cycle chart
 // (uLam.w = 0 — the beat kick hides it) the only thing left that its iterations can still move is the line trap,
 // which has long since found its minimum. Such an orbit stops at ITER_LO of the budget; every other pixel keeps
-// all of it. .4 is the largest fraction that still pays: at f1800 the frames are byte-identical either way and
-// the frame is a third cheaper, and f360 / f840 (no baby copy, so the shorter budget is 79 not 168) do not move
-// a byte. Below ~.2 the f360 pair starts to move, which is the floor this number is kept clear of.
-const ITER_LO = 0.4;
+// all of it. .5 is the lowest fraction at which every scene-md5 pair still comes out byte-identical in BOTH colour
+// mappings: at .4 the picture is another 8 % cheaper at f1500 but the OKLCH s0-f360 jpg moves (by 2/255 at its
+// worst pixel — the flat branch's pow(lw, .73) amplifies a tL difference that v2's linear ramp quantises away),
+// and by ~.2 the v2 pair moves too. f1800 is byte-identical at every fraction down to .2 and a third cheaper.
+const ITER_LO = 0.5;
 let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
 
 export default {
