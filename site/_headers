@@ -1,0 +1,16 @@
+# Cloudflare Workers static assets honour this file. The page itself: short cache so a deploy shows within minutes;
+# icons and the link-preview image: long cache (they change with a new file name, not in place).
+/
+  Cache-Control: public, max-age=300
+/about
+  Cache-Control: public, max-age=300
+/og.jpg
+  Cache-Control: public, max-age=604800
+/icon-192.png
+  Cache-Control: public, max-age=604800
+/icon-512.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+/favicon.svg
+  Cache-Control: public, max-age=604800

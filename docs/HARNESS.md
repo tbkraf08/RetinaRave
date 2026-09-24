@@ -218,7 +218,7 @@ CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=1' '[{"until":"__FRAME>=360"},{"shot
 ```
 ```
 # the real start path: landing card, click the demo link, no NaN anywhere, no shader errors
-NOAUTO=1 GPU=1 node tools/cdp.js 'real' '[{"wait":1500},{"click":[695,440]},{"wait":4000},{"eval":"JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS})"}]'
+NOAUTO=1 GPU=1 node tools/cdp.js 'real' '[{"wait":1500},{"clickSel":"#demo"},{"wait":4000},{"eval":"JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS})"}]'
 # EVAL ... => "{\"bad\":[],\"errs\":[]}"
 ```
 ```

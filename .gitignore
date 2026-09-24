@@ -6,3 +6,4 @@ tools/work/
 .claude/
 .wrangler/
 node_modules/
+!site/*.jpg

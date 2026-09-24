@@ -1,0 +1,15 @@
+{
+  "name": "Retina Rave",
+  "short_name": "Retina Rave",
+  "description": "Music-reactive visuals from real mathematics — free, in your browser.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020207",
+  "theme_color": "#020207",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

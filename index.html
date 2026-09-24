@@ -2,18 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retina Rave</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Retina Rave — music-reactive visuals from real math</title>
+<meta name="description" content="Retina Rave is a free music visualizer in your browser: audio-reactive WebGL scenes that navigate the Mandelbrot set and other real mathematical objects, driven by whatever you are playing.">
+<link rel="canonical" href="https://retinarave.com/">
+<meta name="theme-color" content="#020207">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://retinarave.com/">
+<meta property="og:title" content="Retina Rave — music-reactive visuals from real math">
+<meta property="og:description" content="A free music visualizer in your browser: WebGL scenes that navigate the Mandelbrot set and other real mathematical objects, driven by whatever you are playing.">
+<meta property="og:image" content="https://retinarave.com/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Retina Rave — music-reactive visuals from real math">
+<meta name="twitter:description" content="A free music visualizer in your browser: WebGL scenes that navigate the Mandelbrot set and other real mathematical objects.">
+<meta name="twitter:image" content="https://retinarave.com/og.jpg">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Retina Rave","url":"https://retinarave.com/",
+ "description":"A free music visualizer in the browser: audio-reactive WebGL scenes that navigate the Mandelbrot set and other real mathematical objects.",
+ "applicationCategory":"MultimediaApplication","operatingSystem":"Any (browser with WebGL2)","browserRequirements":"WebGL2",
+ "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Toma"},"image":"https://retinarave.com/og.jpg"}
+</script>
 <style>
   html,body{margin:0;height:100%;background:#020207;overflow:hidden;color:#e8e6f0;
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   canvas#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
   body.running{cursor:none}
-  #landing{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  #landing{position:fixed;inset:0;display:flex;overflow-y:auto;
     background:radial-gradient(ellipse at 50% 40%,rgba(10,6,30,.55),rgba(2,2,7,.92) 70%);
     transition:opacity .9s ease;z-index:5}
   #landing.hide{opacity:0;pointer-events:none}
-  .card{max-width:560px;padding:44px 48px;text-align:center}
+  .card{max-width:560px;padding:36px 48px;margin:auto;text-align:center} /* margin:auto centres when it fits and scrolls when it does not */
   h1{font-weight:200;letter-spacing:.55em;font-size:40px;margin:0 0 6px;padding-left:.55em;
     background:linear-gradient(90deg,#8cf,#f6c,#fc8);-webkit-background-clip:text;background-clip:text;color:transparent}
   .sub{font-size:13px;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin-bottom:34px}
@@ -28,8 +54,9 @@
   button#go:hover{background:rgba(255,255,255,.16);border-color:#fff;box-shadow:0 0 40px rgba(140,180,255,.35)}
   .alt{margin-top:18px;font-size:12.5px;opacity:.55}
   .alt a{color:#9cf;cursor:pointer;text-decoration:underline}
-  .hint{margin-top:26px;font-size:12px;opacity:.45;letter-spacing:.06em}
-  kbd{border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 6px;font-size:11px}
+  .hint{margin-top:22px;font-size:12px;opacity:.45;letter-spacing:.06em;line-height:1.9}
+  .seo{margin:20px 0 0;font-size:12px;line-height:1.6;opacity:.38;max-width:520px}
+  kbd{border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 6px;font-size:11px;white-space:nowrap}
   #msg{margin-top:16px;min-height:18px;font-size:13px;color:#fc9}
   #hud{position:fixed;left:10px;top:10px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#9f9;white-space:pre;
     background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
@@ -117,6 +144,7 @@
   <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a></div>
   <div id="msg"></div>
   <div class="hint" id="hint"><kbd>?</kbd> explains what you see · <kbd>F</kbd> or double‑click for fullscreen</div>
+  <p class="seo">A free, audio-reactive music visualizer that runs in the browser on WebGL2. The music steers a camera through real mathematical objects: the Mandelbrot set and its Julia sets, the Feigenbaum period-doubling cascade, a particle swarm, a box-fold mandala, the Hopf fibration, and four-dimensional polytopes. Beats, drops and sections are detected live and a director picks and crossfades the scenes.</p>
 </div></div>
 <div id="hud"></div>
 <div id="help"><div class="hinner" id="helpBody"></div></div>
