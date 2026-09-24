@@ -79,6 +79,7 @@ export default {
   params: {
     trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
+    dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -157,7 +158,7 @@ export default {
     gl.useProgram(pt.p);
     gl.uniform4f(pt.u('uView'), 0, 0, scale, rotv);
     gl.uniform1f(pt.u('uAsp'), asp);
-    gl.uniform1f(pt.u('uSize'), h * 0.012 * (1 + S.bass));
+    gl.uniform1f(pt.u('uSize'), h * 0.012 * P.dots);
     const oc = ctx.hsv(frac(LOOK.hue + 0.5), 0.35, 0.5 * LOOK.pal[3]);
     gl.uniform3f(pt.u('uCol'), oc[0], oc[1], oc[2]);
     gl.uniform1f(pt.u('uLine'), 0);
