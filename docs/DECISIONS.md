@@ -1347,5 +1347,16 @@ range scaling it. Everything else composes over v0.4: a field route still feeds 
 - **Merged-tree proofs (before the panel merge; the panel is closed-by-default DOM):** both md5 lists identical, parity 0
   diff, mixs `5892ddc5`, `&param=feigen.thick=centroid*1.5,nav.zoom=c:2` → `PROUTE.n` 2, FEIGEN's values `{width 1.040,
   dive 0.460, roll 0.04, glow 0.140, thick 0.6825}`, errs `[]`.
-- **Ship:** _pending — accept-32._
+- **Ship (not tagged).** `GPU=1 tools/accept.sh` → `tools/accept/v0.5/accept-32.txt`: 18 sections, the new "== params"
+  all green (smoke 49, identity `paramsOf == derived` on 5 parameters, a centroid route and both range ends move the s6
+  md5 and lo ≠ hi, the panel sets a route by select and previews `hi` for 2 s of ticks with storage null), help 107/107 on
+  7/7 ids, parity 0, mixs `5892ddc5`, bundle clean, **one FAIL: "hidden tab back … onsets:1"** — the v0.3 resume-hold check,
+  which item 1 cannot touch; re-run twice in isolation → `onsets:0` both times (as accept-30/31), recorded as an addendum in
+  the log: a machine moment (the check counts 60 frames, the hold is 1 s — slow frames let the demo's next onset into the
+  window). **v0.5 is not tagged on item 1 alone**: the user has not looked at v0.4.1 or at this panel; `NEXT-SESSION-PROMPT`
+  asks them to, and to decide whether the tag comes now or after the list. `dist/eigenwobble.html` is the build to open.
+- **How it was run:** the core as one leaf-ish module proven a no-op (both md5 lists, parity, mixs) before any scene declared
+  a parameter; the contract section written before the three briefs; two scene workers in parallel (the two Chrome slots),
+  each move its own commit proven byte-identical; the panel worker after the first scene merge, from the brief alone,
+  first shoot; every worker's friction folded into §1.16 the same day; the merge judged on the workers' montages.
 

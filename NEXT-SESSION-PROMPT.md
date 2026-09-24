@@ -1,45 +1,32 @@
-# Fable Session Prompt — Eigenwobble v0.5 "knobs" (written 2026-09-24 after v0.4.1 shipped; the user has not yet looked at v0.4.1 — ask first)
+# Fable Session Prompt — Eigenwobble v0.5 "knobs" (updated 2026-09-24 after item 1 `params` merged; the user said "proceed" without looking at v0.4.1 — still ask them to look, now at the params panel)
 
 You are the orchestrator on Eigenwobble (`~/Documents/Kraftek/Eigenwobble/`, zero-dependency WebGL2 audio-visual
-engine, native ES modules, git). **v0.4.1 is tagged** (`git tag v0.4.1`, `releases/eigenwobble-v0.4.1.html`, sweep
-`tools/accept/v0.4/accept-31.txt`, DECISIONS §28): the panel you can read — the visual leads the row, bid-only rows
-dimmed under the `the bid:` convention (CONTRACTS §1.13, `check.js` warns both ways), `0` / `1` / `fire` previews
-(`route.js pulse`, `closeE`), the force-this-scene line, the dark native dropdown (`color-scheme`). It answers the
-user's three sentences of 2026-09-24 at the v0.4 level; **the user has not seen it yet. First action of this session:
-ask the user to open v0.4.1 on real music (key `p`) and say what they see, before any v0.5 work** — if they already
-have, their words are the brief and go first, above the list below.
+engine, native ES modules, git). **v0.4.1 is tagged** (`git tag v0.4.1`, `releases/eigenwobble-v0.4.1.html`, DECISIONS §28).
+**v0.5 item 1 `params` is merged on master (not tagged; DECISIONS §29, `tools/accept/v0.5/accept-32.txt`):** a scene declares
+its visual parameters (`params: {name: {eli5, range, from: (MS) => …}}`, CONTRACTS **§1.16**), `update()` receives the values as
+`env.params` (= `from(view)` exactly while unrouted — every reference md5 unchanged), the panel's part E shows a **parameters
+table** per scene above the folded jacks (`core/panel-params.js`), `&param=scene.param=src[*k][+b][~tau][!] | c:<v>` under
+`#test`, `CARD.param/params/PROUTES/paramsOf/paramDeps/derived`. FEIGEN: `width dive roll glow thick`; NAV: `trap zoom dots
+pip reach`. **First action of this session: ask the user to open `dist/eigenwobble.html` (or build it: `node tools/bundle.js`)
+on real music (key `p`), route one FEIGEN parameter from the panel, and say what they see** — if they already have, their words
+are the brief and go first, above the list below. Then decide with them whether v0.5 is tagged now (item 1 alone) or after
+the list.
 
-**Read first:** `docs/CONTRACTS.md` (§1 the scene object, §1.13 incl. "Bid-only fields", **§1.15 Routes** incl. the
-preview/pulse paragraph, §1.4 "Per-scene post params"/"Colour variants") · `docs/HARNESS.md` ("Routes and manual
-overrides" incl. the v0.4.1 panel paragraph, "Help view", "Real window", "Bench protocol", "Pitfalls") · `docs/DECISIONS.md`
-**§27 + §28** · `docs/workers/brief-panel-2.md` + **`panel-2.md`** (the element ids — `pe-src/k/b/tau/inv/c/r/p0/p1/fire-<scene>-<field>`,
-`pe-force`, `pe-release`, `pe-force-line`, `pe-on-<scene>`, `pe-scene`, `pe-trans`, `pe-post-<scene>-<path>`, `pe-json`,
-`pe-resetall` — and the worker's friction) · `assets/core/panel.js` + `panel-ui.js`, `route.js`, `manual.js`, `help.js`
-(**core must stay an import DAG**: `route ← scenes ← manual ← harness`, `help → panel → panel-ui`, `hash.js` a leaf) ·
-`assets/scenes/*/index.js` `feats` + `help.feats` + `score()` · memory notes
+**Read first:** `docs/CONTRACTS.md` (§1 the scene object, §1.13, §1.15, **§1.16 Params** incl. its open ends, §1.4) ·
+`docs/HARNESS.md` ("Routes and manual overrides", **"Params"**, "Help view", "Real window", "Bench protocol", "Pitfalls") ·
+`docs/DECISIONS.md` **§27–§29** · `docs/workers/{feigen-params,nav-params,panel-3}.md` (the reports: element ids
+`pe-psrc/pc/pk/pb/ptau/pinv/prst/plo/phi-<scene>-<param>`, `pe-pdet-<scene>`, and the friction) · `assets/core/params.js`,
+`panel-params.js`, `route.js`, `manual.js` (**core must stay an import DAG**: `route ← params ← scenes ← manual ← harness`,
+`help → panel → panel-ui`, `panel → panel-params`, `hash.js` a leaf) · memory notes
 `~/.claude/projects/-home-toma-Documents-Kraftek-Eigenwobble/memory/project_eigenwobble.md` and
 `feedback_colour_default.md` (**the default look is v0.2's; a colour-identity change is a variant until the user picks it**).
 
 ## The list (priority order)
 
-1. **`params` — per-visual-parameter routes, the second level of the same panel (orchestrator core +
-   contract, a worker per scene, a panel worker).** The real answer to sentence 1: a row that says *"filament
-   sharpness ← centroid"*. Slot: a scene declares its visual parameters — `params: { sharp: { eli5: 'how sharp the
-   filaments are', range: [0, 1], from: (S) => S.bass } }` — the default derivation **is** the documentation, as
-   `feats` + `help.feats` are for fields — and reads them through `this.params.sharp` (or `env.params`), which the
-   core refreshes before `update()` from `from(view)` (so a field route still feeds it) or from a param route
-   (`PROUTES[scene][param] = {src, k, b, inv, tau}` into the declared range). **Identity default as v0.4:** with no
-   param route the core hands back exactly `from(view)` — every reference md5 stays while scenes move their constants
-   into `params` one at a time (a worker per scene from a brief; the md5 sweep proves each move is a no-op; a scene
-   that cannot be made byte-identical says why). The panel's part E gains, per scene, a **parameters** table above the
-   jacks table: parameter · what it is · source (a field whose kind fits, or a constant) · transfer · meter (derived →
-   routed), and the jacks table folds under a `details` ("the inputs behind these"). `&param=feigen.sharp=centroid*1.5`
-   under `#test`; `CARD.PROUTES`, `CARD.param(...)`; the preset JSON gains a `params` block (`route.js BLOCKS`).
-   `check.js` fails on a `params` key without `eli5`/`range`/`from`, and on a `from` that reads a field not in `feats`
-   (call it once with a Proxy of MS in node — a read of an undeclared key throws). Start with FEIGEN and NAV (the two
-   the user has looked at), three to five params each, named for what the eye sees. Acceptance as v0.4.1's plus the per-scene
-   md5 identity per move + a headed run where the user's own sentence is the test: *"in FEIGEN, the filament sharpness
-   is fed by the centroid"* set from the panel, visible, in a real window.
+1. **`params` — DONE 2026-09-24 (DECISIONS §29).** Carried from it, low priority: the other four scenes (DUST, MANDALA, TORUS,
+   POLYTOPE) declare their parameters the same way (a worker each from `brief-feigen-params.md`'s shape; md5 identity per
+   move); a `kind: 'angle'` parameter for NAV's trap rotation (§1.16 open end); `reach ← kick` trips NAV's continuity
+   monitor (honest, documented — a narrower range is the user's call); an off-screen scene's "in force" meter is stale.
 2. **NAV's iteration budget near |λ| → 1** (orchestrator + a NAV worker; audit §26 check 1). NAV's cost swings **1.7 →
    7.7 ms** at 1280 × 720 along the fake timeline (f480 → f1500, `par` 0.76: the walk near a parabolic root, convergence
    detection takes the full `uIter`), **22.6 ms** at 2560 × 1439 — `Q` absorbs it today by dropping every scene's
@@ -68,16 +55,15 @@ brief in `docs/workers/` (opus, own `PORT=`, one Chrome each, **never more than 
 while a Q trace or a bench runs**; a wait is `timeout 500 tail -f <log> | grep -q -m1 GO`, never a sleepless loop; the
 Agent tool's `isolation: "worktree"` gives the worker its tree). `node tools/check.js` after every edit; `GPU=1 node
 tools/parity.js fake` 0 diff after any core/engine change; `tools/scene-md5.sh` before/after any core change against
-`tools/accept/v0.4/scene-md5-v03.txt` (the v2 default, unchanged since v0.3) and `scene-md5-v03-oklch.txt`
-(`&colour=oklch`); the mixs md5 `5892ddc5…`; every trace tool writes to `tools/accept/${ACC:-v0.4}` — for item 1 set the
-default to v0.5 and copy the two md5 lists there in that milestone's first commit (v0.4.1 stays in `v0.4/`); `GPU=1
+`tools/accept/v0.5/scene-md5-v03.txt` (the v2 default, unchanged since v0.3) and `scene-md5-v03-oklch.txt`
+(`&colour=oklch`); the mixs md5 `5892ddc5…`; every trace tool writes to `tools/accept/${ACC:-v0.5}` — the default is v0.5 and the two md5 lists are in `tools/accept/v0.5/` since item 1's first commit (v0.4.1 stays in `v0.4/`); `GPU=1
 tools/accept.sh` 0 FAIL before a commit that claims an item (it takes ~20 min; run it detached with `setsid nohup`,
-log to `tools/accept/<ACC>/accept-NN.txt`, next NN = 32). A worker's screenshots are judged by the orchestrator's
+log to `tools/accept/<ACC>/accept-NN.txt`, next NN = 33). A worker's screenshots are judged by the orchestrator's
 eyes before a merge; say in the brief what the shot must show and which element ids the orchestrator will drive.
-**Ask the user to look before item 1** — v0.4.1 was built for their eyes and they have not used it; a headed run is not
+**Ask the user to look before item 2** — v0.4.1 and the params panel were built for their eyes and they have not used them; a headed run is not
 the user's eyes.
 
-Pitfalls (HARNESS "Pitfalls" + the memory note): **a `<select>` popup is a separate X window — not in a CDP screenshot, `xwd` dies while it is open, python-Xlib grabs it, never `windowactivate` by class on this desktop**; `CARD.view(name)`; a DOM table has no `tbody`; `pulse` makes `view(name) !== MS` for exactly one frame; **core modules must stay an import DAG — the bundler cannot order a
+Pitfalls (HARNESS "Pitfalls" + the memory note): **§1.16's `from` argument is named `MS`** (check.js's read grep; a module-level `const S` disables `S.`); **an expression moves whole or not at all** (re-association moves the last ulp — FEIGEN's dive); **`centroid` is a level, not raw**; `scene-md5.sh` lists scene ids only (DRUM id 4 has no reference line); `env.params` is refreshed only when the scene updates; **a `<select>` popup is a separate X window — not in a CDP screenshot, `xwd` dies while it is open, python-Xlib grabs it, never `windowactivate` by class on this desktop**; `CARD.view(name)`; a DOM table has no `tbody`; `pulse` makes `view(name) !== MS` for exactly one frame; **core modules must stay an import DAG — the bundler cannot order a
 cycle**; an import line's trailing `//` comment needs the v0.4 `TAIL` regex (the bundle was dead for four commits until
 a worker's file:// item caught it — run `node tools/bundle.js` after any import edit); a native `<select>` popup is not
 styled by the select's CSS — `color-scheme` is; a view that runs every 6th frame cannot see one-frame events — pass
