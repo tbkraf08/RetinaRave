@@ -94,6 +94,7 @@ export default {
   params: {
     width: { eli5: 'how much of the set is in view', range: [0.4, 1.8],
       from: (MS) => 1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick },
+    dive: { eli5: 'how fast the dive falls', range: [0, 2], from: (MS) => 0.25 + 1.5 * MS.lvl },
     roll: { eli5: 'how far the frame rocks from side to side', range: [0, 0.4], from: () => 0.04 },
   },
 
@@ -143,7 +144,7 @@ export default {
 
     // the dive: one delta per unit of L, paced by musical time, faster when loud, slower when tense, frozen in silence
     const period = 60 / Math.max(MS.bpm, 40);
-    S.feigL += dt / (32 * period) * (0.25 + 1.5 * MS.lvl) * (1 - 0.8 * MS.tension) * MS.alive;
+    S.feigL += dt / (32 * period) * P.dive * (1 - 0.8 * MS.tension) * MS.alive;   // the brake and the silence gate stay inline: moving them re-associates the product (report)
     const fmax = FEIG_MAX[ctx.tier()];
     if (S.feigL > fmax + 1) { S.feigL -= 1; F.jump = -1; }
     if (MS.kick > 0.5 && prevKick <= 0.5 && S.feigL > fmax) { S.feigL -= 1; F.jump = -1; }   // self-similar wrap, hidden in a kick
