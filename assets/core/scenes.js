@@ -7,6 +7,7 @@ import { G } from './gl.js';
 import { FX } from './post.js';
 import { LOOK, headVecs } from './look.js';
 import { routeScene, view, isRouted } from './route.js'; // v0.4 routes: the MS view a scene reads (MS itself without routes)
+import { paramScene } from './params.js'; // v0.5 params: a scene's visual parameters (validated once here; values handed to update() by the loop)
 
 export const SC = {
   cur: 0, next: -1, m: 0, dur: 2,   // base ids of the two rendered scenes and the crossfade position
@@ -28,6 +29,7 @@ export function register(scene) {
   if (REG[id]) throw new Error('scene id ' + id + ' taken by ' + REG[id].scene.name);
   scene.rt = scene.rt || {};
   routeScene(scene);
+  paramScene(scene); // v0.5: checks the params slot (eli5 / range / from reads ⊂ feats) and makes the value object
   REG[id] = { id, base: id, scene, variant: null };
   SCENES.push(scene);
   if (scene.home) SC.home = id;

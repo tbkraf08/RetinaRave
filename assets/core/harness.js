@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -14,6 +14,7 @@ import { HASH, TEST } from './hash.js';
 import { restore as restorePanel } from './panel.js';
 import { MANUAL, manual, applyPosts, postString, POST_PARAMS, snapshotDefaults, resetManual } from './manual.js';
 import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view, pulse } from './route.js';
+import { PROUTES, PROUTE, setParam, clearParams, applyParams, paramsString, paramsOf, paramDeps, paramSources, derived } from './params.js';
 import { getGrid } from '../math/mandel.js';
 
 export { HASH, TEST }; // parsed in hash.js (a leaf the panel can read too)
@@ -28,6 +29,7 @@ function readback(r) {
   else gl.readPixels(r.w >> 1, r.h >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
 }
 
+const byName = (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return s; };
 export const CARD = {
   log: [], MS, SC, Q, FX, CHAIN, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TEST, HASH,
   hooks: {},
@@ -42,10 +44,15 @@ export const CARD = {
   // routes (v0.4, CONTRACTS §1.15): ROUTES[scene][field] = spec · route(scene, field, spec|null) · routes('a.b=c,…') = the &route= grammar ·
   // routesString() back to it · routesJSON()/loadRoutes() the preset · view(name) = the MS a scene reads (=== MS when unrouted) · ROUTE.n/ms
   ROUTES, ROUTE, route: setRoute, clearRoutes, routes: applyRoutes, routesString, routesJSON, loadRoutes, parseRoute, serialiseRoute, sources, pulse,
-  view: (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return view(s); },
+  view: (name) => view(byName(name)),
   // manual overrides (v0.4, core/manual.js): MANUAL.scene (= SC.forced) / .trans / .colour / .post · manual('scene', 6) · manual('trans', 'mixs') ·
   // manual('colour', scene, variant) · manual('post', scene, 'bloom.thr', 0.3 | null) · posts('scene.bloom.thr=0.3,…') = the &post= grammar
   MANUAL, manual, posts: applyPosts, postString, POST_PARAMS, resetManual,
+  // params (v0.5, CONTRACTS §1.16): PROUTES[scene][param] = spec · param(scene, param, spec|null) · params('a.b=c,…') = the &param= grammar ·
+  // paramsString() back to it · paramsOf(name) = the live value object update() received · paramDeps(name, p) = the fields from() reads ·
+  // derived(name, p) = from(view) now · paramSources() = what may feed one · PROUTE.n
+  PROUTES, PROUTE, param: setParam, clearParams, params: applyParams, paramsString, paramSources,
+  paramsOf: (name) => paramsOf(byName(name)), paramDeps: (name, p) => paramDeps(byName(name), p), derived: (name, p) => derived(byName(name), p),
   // Micro-benchmark a scene id: ms per full-resolution render, readPixels-synced (Q.q is not a perf verdict headless).
   bench(id, n = 40) {
     const gl = G.gl, T = [G.RT.a, G.RT.b];
@@ -124,6 +131,7 @@ export function initHarness(hideLanding) {
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
     if (HASH.has('route')) applyRoutes(HASH.get('route'));  // v0.4 routes: scene.field=src[*k][+b][~tau][!],… (a bad one throws)
     if (HASH.has('post')) applyPosts(HASH.get('post'));      // v0.4 manual post: scene.bloom.thr=0.3,scene.kaleido=0,… (a bad one throws)
+    if (HASH.has('param')) applyParams(HASH.get('param'));  // v0.5 params: scene.param=src[*k][+b][~tau][!] | scene.param=c:0.4,… (a bad one throws)
   } else restorePanel(); // v0.4: the panel's localStorage preset, never under #test (the shots stay deterministic)
 }
 

@@ -351,6 +351,30 @@ CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&post=feigen.bloom.thr=0.3' …   #
 ```
 `accept.sh` "== routes" runs the smoke, the identity pair, the post pair and a panel-open shot.
 
+## Params (v0.5 — change to `core/params.js`, `loop.js`'s update line, a scene's `params` slot, or the panel's parameters table)
+
+Per-scene routing of `MS` fields into a scene's *visual parameters* (CONTRACTS §1.16), under `#test`:
+```
+&param=feigen.sharp=centroid*1.5+0.1~0.2!,feigen.glow=c:0.6   # scene.param=src[*k][+b|-b][~tau][!] (route.js's grammar) · a constant c:<value> in the parameter's units
+```
+An unknown scene or parameter, a source that is not a level / raw / angle / event field, a transfer on a constant, or a
+negative τ **throws at init** (`[EXC]`, `CARD.frameN` stays 0). Lists and the preset's `params` block are all-or-nothing.
+
+`CARD`: `PROUTES[scene][param]` · `PROUTE.n` · `param(scene, param, {src, c, k, b, inv, tau} | null)` · `params('a.b=c,…')` ·
+`paramsString()` · `clearParams(scene?)` · `paramsOf(name)` (the value object `update()` received: `from(view)` per parameter unless
+routed) · `paramDeps(name, p)` (the fields `from()` read at registration) · `derived(name, p)` (`from(view)` now, never stored) ·
+`paramSources()` (every routable source, `const` last). `routesJSON()` / `loadRoutes()` carry the block as `params`.
+
+**Proofs** (`node tools/param-smoke.js` = the declaration checks, identity, the transfer, events and constants, the grammar, the block — node,
+no DOM; the rest headless):
+```
+# identity: the module loaded and no parameter routed → every scene-md5 line unchanged (v2 and &colour=oklch), mixs md5, parity fake 0 diff
+tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.5/scene-md5-v03.txt)
+# a scene's move of a constant into params is a no-op per move: the same diff after each commit of the scene's worker
+# a param route moves the picture; a constant route at the derived value on the defaults does not have to (from() is live, the constant is not)
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&param=feigen.<p>=centroid*1.5' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/prt-s6-f360"}]'
+```
+
 ## `window.CARD` (available in every page)
 
 `MS` (music state) · `SC` (director; `SC.hist` = the ids shown so far, `SC.cur/next/m`) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`

@@ -41,6 +41,8 @@ export default {
   update(dt, MS, GROOVE, LOOK, env) {},   // CPU state. dt in seconds. Called every frame you are on screen (or always: see `always`). MS may be a routed view (§1.15)
   draw(target, { w, h, variant, vmix }) {},   // render into `target` (one of the core's targets, handed to you) at (w, h). Nothing else.
   post: { fb: { decay: 0.7 }, bloom: { thr: 0.35 }, kaleido: 1 },   // effect params (object or fn(MS) → object); the panel may override the four named ones (§1.15)
+  params: { sharp: { eli5: 'how sharp the filaments are', range: [0, 1], from: (S) => S.bass } },   // your visual parameters (§1.16, v0.5):
+                                // what the eye sees, its range, its default derivation from your view of MS; update() receives the values as env.params
   help: { eli5: '', why: '', math: '',   // three depths, all required (§0); shown by the help view (§1.13)
     feats: { bass: 'fattens the tubes' } },   // optional: per field of `feats`, what it moves on THIS screen (§1.13)
   // optional slots:
@@ -438,6 +440,49 @@ object arrives as `MS`**. What you may assume:
   `&post=feigen.bloom.thr=0.3,…` for the manual post overrides, `CARD.route(scene, field, spec | null)`,
   `CARD.ROUTES`, `CARD.view(name) === CARD.MS` while unrouted, `CARD.MANUAL` / `CARD.manual(...)`. The director is
   untouched: routes feed scenes, never `pickScene` (it reads your routed `score`, which is yours to compute).
+
+### 1.16 Params — your visual parameters are a slot the panel routes into (v0.5)
+
+§1.15 re-wires the fields you read (your jacks). This level re-wires **what the eye sees**: "in FEIGEN, the filament
+sharpness is fed by the centroid". You declare your visual parameters, each with what it is, its range, and the
+derivation you would have written inline:
+
+```js
+params: {
+  sharp: { eli5: 'how sharp the filaments are', range: [0, 1],   from: (S) => S.bass },
+  width: { eli5: 'how much of the set is in view', range: [0.5, 4], from: (S) => 3.2 * (1 + 0.25 * S.tension - 0.18 * S.dropEnv) },
+  glow:  { eli5: 'how bright the interior smoulders', range: [0, 1], from: () => 0.35 },   // a constant: shown as a manual setting
+},
+```
+
+- **`from(S)` is the documentation** of what feeds the parameter, as `feats` + `help.feats` are for fields: a pure
+  function of your view of `MS` (§1.15 — a field route still feeds it), reading **only fields you list in `feats`**. The
+  core calls it once at registration with a Proxy of `MS` and records the fields it read (the panel's "source" column
+  while the parameter is not routed); a read of a field not in `feats`, or not an `MS` field, **throws at registration**
+  and fails `check.js` (which calls it the same way in node). It must return a finite number; `check.js` warns when the
+  value on the `MS` defaults falls outside `range`. Read only `S` in it — no `dt`, no `this`, no state (a parameter is
+  what the visual uses *this frame*; a phase or a depth you integrate stays your state).
+- **The values arrive as `env.params`** in `update(dt, MS, GROOVE, LOOK, env)`: one object per scene (the same object
+  every frame, refreshed in place before your `update()` runs; `null` for a scene without `params`). Read them there and
+  hold what `draw()` needs on your own object, as you do with `MS` fields (§1.15's rule). **While no parameter is
+  routed, `env.params.sharp` is exactly `from(view)`** — identity by construction, not a clamp, not a copy through the
+  range: moving an inline expression into `from` is a byte-identical no-op, which is how a scene adopts the slot
+  (`tools/scene-md5.sh` before/after each move; a parameter that cannot be made identical says why in the friction log).
+- **Routed, a parameter follows `PROUTES[scene][param] = {src | 'const', c, k, b, inv, tau}`**: `u = clamp01(k·x̃ + b)`
+  with `x̃` = the source value (a `level` as is, an `event` 1 on its frame and 0 otherwise, `raw` / `angle` as is; `inv` =
+  `1 − x̃` for a level or event, `−x̃` otherwise), then `value = ema(lo + (hi − lo)·u, τ)` — the transfer works in the
+  parameter's unit interval and the range scales it, so `k 1 b 0` maps a level onto the whole range. A constant is
+  `c` **in the parameter's own units**, clamped to the range, no `k`/`b`/`inv` (τ allowed — a slide). The ema is on `dt`.
+  Any `level` / `raw` / `angle` / `event` field of `MS` may feed a parameter, whether or not it is in your `feats`
+  (the parameter is yours; the source is the engine's) — `count` / `enum` / `vector` / `internal` never.
+- **Name parameters for what the eye sees** (`sharp`, `width`, `glow`, `spin`), three to five per scene, the `eli5` a
+  clause a listener understands without the code. A parameter nothing reads is a lie the panel shows; a visual constant
+  the panel cannot reach is the thing this slot exists to remove ("every visual parameter traces to `MS`" — a constant is a
+  manual setting, shown as one: `from: () => 0.35`).
+- Harness (`docs/HARNESS.md` "Params"): `&param=feigen.sharp=centroid*1.5+0.1~0.2!,feigen.glow=c:0.6` under `#test`
+  (route.js's grammar), `CARD.param(scene, param, spec | null)`, `CARD.PROUTES`, `CARD.paramsOf(name)` (the live
+  values), `CARD.paramDeps(name, p)`, `CARD.derived(name, p)`; the preset JSON carries a `params` block. The panel's part E
+  shows a **parameters** table per scene above the jacks: parameter · what it is · source · transfer · meter.
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 

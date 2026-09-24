@@ -51,8 +51,10 @@ if (dead.length) fail('dead uniforms (declared, never fetched): ' + dead.join(',
 // MS schema: every key of MS must be documented in FEATS (static, via node import of the pure modules)
 const { MS } = await import(path.join(ROOT, 'assets/engine/state.js'));
 const { FEATS } = await import(path.join(ROOT, 'assets/engine/feats.js'));
+const { checkParams } = await import(path.join(ROOT, 'assets/core/params.js'));
 const undocumented = Object.keys(MS).filter((k) => !(k in FEATS));
-for (const f of ['assets/core/help.js', 'assets/core/panel.js', 'assets/core/panel-ui.js']) { // the DOM views: every field name they show comes from FEATS / feats at run time
+const VIEWS = ['assets/core/help.js', 'assets/core/panel.js', 'assets/core/panel-ui.js', 'assets/core/panel-params.js'].filter((f) => fs.existsSync(path.join(ROOT, f)));
+for (const f of VIEWS) { // the DOM views: every field name they show comes from FEATS / feats at run time
   const src = fs.readFileSync(path.join(ROOT, f), 'utf8'), lits = new Set([...src.matchAll(/['"]([A-Za-z_]\w*)['"]/g)].map((m) => m[1]));
   const bad = [...lits].filter((w) => w in FEATS && FEATS[w].kind !== 'internal');
   if (bad.length) fail(f + ' names MS fields as literals: ' + bad.join(','));
@@ -117,11 +119,18 @@ for (const d of sceneDirs) {
   if (bad.length) fail('scene ' + d + ': help.feats keys not in feats: ' + bad.join(','));
   const undecl = feats.filter((k) => !(k in FEATS));
   if (undecl.length) fail('scene ' + d + ': feats not in FEATS: ' + undecl.join(','));
-  for (const f of ['assets/core/help.js', 'assets/core/panel.js', 'assets/core/panel-ui.js']) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
+  for (const f of VIEWS) if (new RegExp("['\"]" + d + "['\"]").test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) fail(f + " names scene '" + d + "' as a literal");
   const gaps = feats.filter((k) => !(h.feats && h.feats[k]));
   if (gaps.length) { helpGaps += gaps.length; warn('scene ' + d + ': feats without a help.feats line (the help shows FEATS.drives): ' + gaps.join(',')); }
   bidCheck(d, h.feats || {}, feats);
   for (const v of sc.variants || []) if (!(typeof v.tag === 'string' && v.tag)) fail('scene ' + d + ' variant ' + v.name + ': no tag');
+  if (sc.params) { // params slot (CONTRACTS §1.16, v0.5): eli5 / range [lo, hi] / from(S) reading only feats fields (a Proxy of MS: an undeclared read throws), a finite number back, inside the range on the defaults (warn)
+    try {
+      const deps = checkParams(sc);
+      for (const p in sc.params) { const pd = sc.params[p], v = pd.from(MS); if (v < pd.range[0] || v > pd.range[1]) warn('scene ' + sc.name + ': param ' + p + ' from() on the MS defaults is ' + v + ', outside its range [' + pd.range + ']'); }
+      void deps; // a param whose from() reads no field is a constant — allowed, shown by the panel as a manual setting
+    } catch (e) { fail(e.message); }
+  }
   if (sc.colour) { // colour slot (§1.4): a default that is one of the variants, every variant an object
     const c = sc.colour, names = Object.keys(c.variants || {});
     if (!(c.default in (c.variants || {}))) fail('scene ' + d + ': colour.default ' + c.default + ' is not in colour.variants (' + names.join(',') + ')');

@@ -12,6 +12,7 @@ import { drawHUD } from './hud.js';
 import { drawHelp } from './help.js';
 import { CARD, logFrame } from './harness.js';
 import { refreshRoutes, view } from './route.js';
+import { refreshParams } from './params.js';
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -35,7 +36,7 @@ export function frame(tms) {
   const env = { SC, Q, now };
   for (const sc of SCENES) {
     const id = sc.id, on = SC.cur === id || SC.next === id;
-    if (sc.always || on) sc.update(dt, view(sc), GROOVE, LOOK, env);
+    if (sc.always || on) { env.params = refreshParams(sc, dt); sc.update(dt, view(sc), GROOVE, LOOK, env); } // v0.5: the scene's parameter values, from(view) unless routed
   }
   updateScenes(dt, S);
   updateLook(dt, S, now);
