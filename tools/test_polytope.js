@@ -2,6 +2,8 @@
 // profile of grooves.js, and (from step 3) the pole-safety bound of dance.js. No DOM, no GL.
 //   node tools/test_polytope.js
 import * as GR from '../assets/scenes/polytope/grooves.js';
+import { clampXW, XWMAX, OMEGA, KICK_XY, hit as daHit, reset as daReset, step as daStep } from '../assets/scenes/polytope/dance.js';
+import { GATE, get4, poleMargin, rotate4 } from '../assets/scenes/polytope/poly4.js';
 
 let fails = 0;
 const ok = (c, m, extra) => { console.log((c ? '  ok ' : '  FAIL ') + m + (extra === undefined ? '' : ' — ' + extra)); if (!c) fails++; };
@@ -123,6 +125,57 @@ console.log('3. the bump profile along an edge is exact at the subdivision point
   GR.fillProfile(empty, 8, 1000);
   ok(empty.every((x) => x === 0), 'an expired train paints nothing');
   GR.train(null);
+}
+
+// ---------------------------------------------------------------- 4. pole safety
+console.log('4. the xw excursion moves no vertex\'s den by more than XWMAX (dance.js POLE SAFETY)');
+{
+  ok(clampXW(9) === XWMAX && clampXW(-9) === -XWMAX && clampXW(0.01) === 0.01, 'clampXW caps the excursion at ±XWMAX', XWMAX);
+  let worstMove = 0, worstGated = 0;
+  for (let i = 0; i < 200; i++) {
+    const a1 = i * 0.3173, a2 = i * 0.2111;
+    const exc = clampXW((i % 2 ? 1 : -1) * (0.05 + 0.9 * ((i * 0.37) % 1)));
+    for (const kind of ['tess', 'c24', 'c600', 'c120']) {
+      const P = get4(kind);
+      rotate4(P, a1, a2, 0);
+      const base = Float64Array.from({ length: P.N }, (_, v) => 1 - P.R[v * 4 + 3]);
+      rotate4(P, a1, a2, exc);
+      for (let v = 0; v < P.N; v++) {
+        const d = 1 - P.R[v * 4 + 3];
+        worstMove = Math.max(worstMove, Math.abs(d - base[v]));
+        // the theorem's consequence: a vertex comfortably outside the gate is never put inside it
+        if (base[v] > GATE + XWMAX && d <= GATE) worstGated++;
+      }
+    }
+  }
+  ok(worstMove <= XWMAX + 1e-9, 'over 200 rotations × 4 polytopes no den moved by more than XWMAX', 'worst |Δden| ' + worstMove.toFixed(5) + ' vs ' + XWMAX);
+  ok(worstGated === 0, 'and no vertex outside GATE + XWMAX was ever put inside the gate', worstGated + ' violations');
+  // the premise the brief assumed, measured: three of the four polytopes DO reach the pole on xy/zw alone
+  const mins = ['tess', 'c24', 'c600', 'c120'].map((k) => {
+    const P = get4(k);
+    let m = 9;
+    for (let i = 0; i < 200; i++) { rotate4(P, i * 0.0973, i * 0.1361, 0); m = Math.min(m, poleMargin(P)); }
+    return k + ' ' + m.toFixed(4);
+  });
+  ok(true, 'min den under the xy/zw rotation alone (why the brief\'s clamp is not writable)', mins.join(' · '));
+}
+
+// ---------------------------------------------------------------- 5. the nudge
+console.log('5. the critically damped nudge overshoots and settles to exactly zero net');
+{
+  daReset();
+  daHit(0, 1);
+  const IN = { turnT: 0, zwT: 0, flowHigh: 0, bass: 0, slow: 0, beatPhase: 0, barPos: 0, sweep: 0 };
+  let peak = 0, peakT = 0;
+  for (let f = 1; f <= 120; f++) {
+    const U = daStep(1 / 60, IN);
+    if (Math.abs(U.nudge1) > Math.abs(peak)) { peak = U.nudge1; peakT = f / 60; }
+  }
+  const end = daStep(1 / 60, IN).nudge1;
+  ok(Math.abs(peak - KICK_XY / (OMEGA * Math.E)) < 0.004, 'the peak is KICK_XY/(ω e)', peak.toFixed(4) + ' vs ' + (KICK_XY / (OMEGA * Math.E)).toFixed(4));
+  ok(Math.abs(peakT - 1 / OMEGA) < 0.02, 'reached at t = 1/ω', peakT.toFixed(3) + ' s');
+  ok(Math.abs(end) < 1e-3, 'and it is back to zero two seconds later (the 16-beat lock holds)', end.toExponential(2));
+  ok(peak > 0.1, 'and it is visible: over 0.1 rad at amplitude 1 (lean 13)', peak.toFixed(3) + ' rad');
 }
 
 console.log(fails ? 'test_polytope: ' + fails + ' FAIL' : 'test_polytope: OK');

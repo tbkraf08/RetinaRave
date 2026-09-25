@@ -2,8 +2,9 @@
 // projected stereographically into the room. Edges are subdivided on S^3, so every edge arrives as a circular
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).
 import { clamp, ema } from '../../math/util.js';
+import * as DA from './dance.js';
 import * as GR from './grooves.js';
-import { get4, emit, mvpMat } from './poly4.js';
+import { GATE, get4, emit, mvpMat, poleMargin, rotate4 } from './poly4.js';
 
 const SUB = [3, 4, 6, 8];        // subdivisions per edge by tier (small polytopes)
 const SUBB = [2, 3, 4, 5];       // ... for the 600/120-cell: 720–1200 edges, so fewer pieces each
@@ -14,6 +15,9 @@ const NEAR = 0.1;
 const SCALE = 0.9;               // overall fit of the projected image in the frame
 const GAIN = 1.8;                // stroke gain, as synapse's uLineGain carried 1.5 on the star scenes
 const BIG = '@big';              // resolved to the 600-cell or (tier ≥ 2) the 120-cell
+const TAU = Math.PI * 2;
+const TURNB = 16;                // beats per full turn of the xy (bass) plane — the user's own number
+const TURNB2 = 32;               // ... of the zw (mid) plane, so the two invariant planes never phase-lock
 
 // cast: [inner, outer]. s = scale, w = width scale, i = intensity, ta = palette coordinate.
 const CASTS = [
@@ -41,17 +45,40 @@ let beatNow = 0;   // beatCount + beatPhase — musical time, the only clock the
 // n / last / ema / thr the orchestrator's real-music trace reads every 2 s to judge a dead or saturated train.
 const info = () => JSON.stringify(GR.info(beatNow));
 
+// test hook: the motion numbers of spec 2, read frame by frame across a bar
+const motion = DA.motion;
+
+// test hook: the pole margin of the kinds actually on screen, with and without the dance's xw excursion, and the
+// count of vertices the excursion pushed from comfortably outside the gate to inside it (dance.js POLE SAFETY —
+// the theorem says 0, always). Re-rotates the shared tables, which every `emit` rewrites next frame anyway, so it
+// is free between frames and must not be called from inside one.
+function pole() {
+  const p = self.p, kinds = self.kinds || [];
+  let den = 9, den0 = 9, gated = 0;
+  for (const k of kinds) {
+    const P = get4(k);
+    rotate4(P, p.a1, p.a2, p.a3 - DA.U.exc);
+    const base = [];
+    for (let i = 0; i < P.N; i++) base.push(1 - P.R[i * 4 + 3]);
+    den0 = Math.min(den0, poleMargin(P));
+    rotate4(P, p.a1, p.a2, p.a3);
+    den = Math.min(den, poleMargin(P));
+    for (let i = 0; i < P.N; i++) if (base[i] > GATE + DA.XWMAX && 1 - P.R[i * 4 + 3] <= GATE) gated++;
+  }
+  return JSON.stringify({ kinds, den: +den.toFixed(5), den0: +den0.toFixed(5), gated, exc: +DA.U.exc.toFixed(5), a3: +p.a3.toFixed(5), gate: GATE });
+}
+
 export default {
   name: 'polytope',
   id: 5,
   tag: 'regular 4-polytopes on S³, stereographic',
   card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and cast into three dimensions' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
-  feats: ['flow', 'flowBass', 'flowMid', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
+  feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
-    'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust'],
+    'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush'],
   cuts: 'continuous',
   rt: {},
-  hooks: { train: GR.train, info },
+  hooks: { train: GR.train, info, motion, pole },
 
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -62,6 +89,7 @@ export default {
     self = this;
     this.ctx = ctx;
     GR.reset();
+    DA.reset();
     for (const k of ['tess', 'c24', 'c600', 'c120']) get4(k);   // build the tables now, never mid-frame
     this.L = ctx.lines.mk(CAP);
     this.segs = new Float32Array(CAP * 12);
@@ -76,6 +104,7 @@ export default {
     this.jx = 0;
     this.jy = 0;
     this.nSeg = 0;
+    this.kinds = [];
     this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, colIn: [1, 1, 1], colOut: [1, 1, 1] };
   },
 
@@ -103,11 +132,24 @@ export default {
     // spec 1: the three onset trains. Musical time only — a bump filed at beat B stays at age beatNow − B for ever.
     beatNow = MS.beatCount + MS.beatPhase;
     GR.step(dt, [MS.bass, MS.mid, MS.high], [MS.kick, MS.snare, MS.hat], beatNow, MS.beat, MS.gridTrust);
-    // SO(4): two independent plane rotations plus an xw turn, all on musical time
-    p.a1 = 0.1 * MS.flowBass;
-    p.a2 = 0.14 * MS.flowMid;
-    p.a3 = 0.04 * MS.flowHigh;
-    p.g = (1 - 0.3 * MS.tension) * (1 + 0.6 * MS.dropEnv + 0.08 * MS.kick);
+    const F = GR.fired();
+    for (let i = 0; i < F.length; i += 2) DA.hit(F[i], F[i + 1]);
+    // spec 2: SO(4) still, but the two invariant planes now LOCK to the beat count and are NUDGED by the trains —
+    // xy a full turn per 16 beats on the bass, zw per 32 on the mids, xw the old drift plus a bounded excursion.
+    const D = DA.step(dt, {
+      turnT: ((MS.beatCount / TURNB) * TAU) % TAU,
+      zwT: ((MS.beatCount / TURNB2) * TAU) % TAU,
+      flowHigh: MS.flowHigh,
+      bass: MS.bass,
+      slow: Math.max(MS.hush, MS.calm),
+      beatPhase: MS.beatPhase,
+      barPos: MS.barPos,
+      sweep: 0,
+    });
+    p.a1 = D.a1;
+    p.a2 = D.a2;
+    p.a3 = D.a3;
+    p.g = (1 - 0.3 * MS.tension) * (1 + 0.6 * MS.dropEnv + 0.08 * MS.kick) * (1 + D.bounce) * (1 + D.breath);
     // camera: a slow orbit on musical time, plus synapse's tension shake — hashed, never Math.random()
     p.yaw = 0.12 * MS.flow;
     p.pitch = 0.3 * Math.sin(0.11 * MS.flow);
@@ -153,6 +195,7 @@ export default {
     // 2.2 px at the centre of the orbit, falling off as 1/viewZ like any perspective stroke
     const wpx = 2.2 * (h / 720) * D;
     let n = 0;
+    const kindsSeen = new Set();
     // draw a cast with weight ww; during a section cross-fade both casts are drawn, alphas eased
     const cast = (ci, ww) => {
       if (ww <= 0.002) return;
@@ -160,6 +203,7 @@ export default {
         const kinds = e.k === BIG ? (this.bigMix >= 1 ? [[this.big, 1]] : [[this.bigPrev, 1 - this.bigMix], [this.big, this.bigMix]]) : [[e.k, 1]];
         for (const [kind, kw] of kinds) {
           if (kw <= 0.002) continue;
+          kindsSeen.add(kind);
           o.g = e.s * p.g * SCALE;
           o.sub = e.sub ? p.subB : p.sub;
           o.wpx = wpx * e.w * (e === CASTS[ci][0] ? p.pulse : 1);
@@ -172,6 +216,7 @@ export default {
     if (this.castMix < 1) cast(this.castPrev, 1 - this.castMix);
     cast(this.cast, this.castMix);
     this.nSeg = n;
+    this.kinds = [...kindsSeen];
     ctx.lines.set(this.L, this.segs, n);
     ctx.lines.draw(this.L, target, w, h, { mvp: this.mvp, depth: true, blend: 'over' });
   },
@@ -192,15 +237,13 @@ export default {
     },
   },
 
-  hud() { return this.rt.label + ' · ' + this.nSeg + ' segs · bumps ' + GR.live(beatNow); },
+  hud() { return this.rt.label + ' · ' + this.nSeg + ' segs · bumps ' + GR.live(beatNow) + ' · xy ' + DA.U.a1.toFixed(2) + '/' + DA.U.a1T.toFixed(2); },
 
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
       flow: 'the scene clock: the camera\'s orbit and its pitch',
-      flowBass: 'the xy rotation of the 4-D double turn',
-      flowMid: 'the zw rotation of the double turn',
-      flowHigh: 'the extra xw turn',
+      flowHigh: 'drifts the extra xw turn, the one that carries a cell through the pole',
       tension: 'shrinks the figure and shakes the camera (hashed jitter, never random)',
       dropEnv: 'the figure swells by up to 60 %',
       kick: 'confirms a bass onset (the train counts it at full strength, an unconfirmed rise at 60 %), and a small swell',
@@ -210,8 +253,10 @@ export default {
       snare: 'confirms a mid onset',
       hat: 'confirms a high onset',
       beat: 'files a faint bass bump when a whole bar went by with no onset, so a drumless track still breathes',
-      beatCount: 'the beat clock the trains are filed on',
-      beatPhase: 'the beat clock the trains are filed on',
+      beatCount: 'the lock: sixteen beats is one turn of the xy plane, thirty-two of the zw plane',
+      beatPhase: 'the beat clock the trains are filed on, and the 5 % thump on every beat',
+      barPos: 'the bar\'s breath: the figure swells and shrinks 2 % over four beats, even in silence',
+      hush: 'the hush before a drop slows every spring, so the figure hangs',
       gridTrust: 'when the grid is trusted the bumps snap to the nearest sixteenth, so a straight groove reads as even',
       hit: 'the inner figure\'s strokes pulse thicker',
       lvl: 'stroke brightness',
@@ -221,7 +266,7 @@ export default {
       arc: 'the bid: never auto-picked during a build',
       regularity: 'the bid: steady',
       clarity: 'the bid: tonal',
-      calm: 'the bid: unhurried',
+      calm: 'slows the springs with the hush, and the bid: unhurried',
     },
     eli5: 'These are the cubes and pyramids of four-dimensional space, seen from the inside. The cage keeps turning itself inside out because a 4-D turn has two independent speeds at once.',
     why: 'Each figure lives on the 3-sphere, the surface of a 4-D ball, and is squashed into our room by the same shadow-casting trick that turns a globe into a flat map: cells near the light source blow up and fade out, cells opposite it shrink. The music sets the two turning speeds (bass and mids), the size (tension and drops) and which figure you get (the section).',

@@ -38,6 +38,11 @@ export const THR_HIGH = 0.17;  // ... `high`
 export const EMATC = 0.4;      // seconds: the running mean the rise is measured against
 export const REFR = 0.25;      // beats between two launches in one band — one 16th (= 15/bpm seconds, exactly)
 export const VOTE = 0.6;       // amplitude without the matching drum's confirming vote
+// The rise that counts as a FULL-STRENGTH onset. Without it the amplitude is the raw rise, and a typical rise on
+// real music is 0.2–0.4 (measured), so every nudge and every bump arrived at a third of its designed size — the bar
+// series of spec 2 read 0.002–0.046 rad where lean 13 wants the groove visible at arm's length. 0.45 is the 1st
+// percentile of the positive rises on house, i.e. about as hard as that band ever hits.
+export const AMPN = 0.45;
 export const FAINT = 0.25;     // the `beat`'s own faint bass entry when no band hit came in the last bar
 export const GRIDT = 0.5;      // above this `gridTrust` the launch beat snaps to the nearest 16th
 // Hysteresis. Without it a band that RAMPS and then HOLDS (a riser, a sustained pad) files an entry every refractory
@@ -74,6 +79,8 @@ const DRF = new Float32Array(BANDS);           // frame of that drum's last risi
 const LAST = new Float32Array(BANDS);          // beat of that band's last launch (the refractory)
 const ARM = new Uint8Array(BANDS);             // 1 while the band may fire again (the hysteresis latch)
 const NLAU = new Int32Array(BANDS);            // launches since load, for hooks.info
+const FIRED = [];                              // the launches filed THIS frame: [band, amp, band, amp, …]
+export const fired = () => FIRED;
 let lastHit = -1e9;                            // beat of the last launch in any band
 let mode = null, sched = -1e9, frameN = 0;
 
@@ -88,6 +95,7 @@ export function reset() {
   LAST.fill(-1e9);
   ARM.fill(1);
   NLAU.fill(0);
+  FIRED.length = 0;
   lastHit = -1e9;
   sched = -1e9;
   frameN = 0;
@@ -100,6 +108,7 @@ export function launch(band, beat, amp, drum) {
   AM[i] = amp;
   AD[i] = drum;
   W[band] = (W[band] + 1) % SLOTS;
+  FIRED.push(band, amp);
   LAST[band] = beat;
   NLAU[band]++;
   lastHit = Math.max(lastHit, beat);
@@ -117,6 +126,7 @@ export const trainMode = () => mode;
 // One frame. levels = [bass, mid, high]; drums = [kick, snare, hat]; beatNow = beatCount + beatPhase.
 export function step(dt, levels, drums, beatNow, beatEvt, gridTrust) {
   frameN++;
+  FIRED.length = 0;
   if (mode) {
     const P = PAT[mode], bar = Math.floor(beatNow / 4);
     for (let b = bar - 1; b <= bar; b++) {
@@ -140,7 +150,7 @@ export function step(dt, levels, drums, beatNow, beatEvt, gridTrust) {
     if (ARM[b] && rise > THR[b] && beatNow - LAST[b] >= REFR) {
       const vote = frameN - DRF[b] <= 1 ? 1 : 0;   // the drum's ±1 frame window
       ARM[b] = 0;
-      launch(b, snap ? Math.round(4 * beatNow) / 4 : beatNow, Math.min(1, rise) * (vote ? 1 : VOTE), vote);
+      launch(b, snap ? Math.round(4 * beatNow) / 4 : beatNow, Math.min(1, rise / AMPN) * (vote ? 1 : VOTE), vote);
     }
   }
   // a drumless, unpeaked track still breathes: the beat itself files a faint bass entry once a bar goes by unfiled

@@ -124,7 +124,7 @@ const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 // 0.16 → 0.24 (radius at the gate 3.39·g → 2.71·g) and the ramp is re-based on the same top, so from den = 0.446
 // upward the fade is exactly what it was; only the last stretch before the pole is steeper. Continuous in the
 // rotation angles: f → 0 as den → GATE, so a piece still fades in and out and never appears (`cuts: 'continuous'`).
-const GATE = 0.24;
+export const GATE = 0.24;
 const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is where the old ramp reached 1
 
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
@@ -211,6 +211,17 @@ export function emit(kind, o, segs, off, cap) {
     }
   }
   return n;
+}
+
+// How close the nearest vertex comes to the projection pole, as `den` = 1 − w (the vertices are unit, so |v| = 1
+// and `den` is exactly the quantity the gate tests). Reads the LAST rotate4's output, so call it after one.
+// Measured on the bare xy/zw double rotation (tools/work/pole.js) this reaches 0 for the 24-, 600- and 120-cell and
+// bottoms out at 0.2929 for the tesseract: a vertex sweeping through the pole is what the scene is about, and what
+// GATE and its ramp exist to fade. dance.js bounds how far the dance may move it; see POLE SAFETY there.
+export function poleMargin(P) {
+  let m = 9;
+  for (let i = 0; i < P.N; i++) { const d = 1 - P.R[i * 4 + 3]; if (d < m) m = d; }
+  return m;
 }
 
 // Column-major 4x4 for clip = M·[p,1] with a pinhole camera: w = view depth, z = view depth − 2·near
