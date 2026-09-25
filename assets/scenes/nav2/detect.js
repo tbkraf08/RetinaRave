@@ -33,7 +33,8 @@ export const FAKE_HOLD = 0.5;    // s (one beat at 124 bpm) the slow ema is held
 export const REL_TAU = 0.45;     // s — the release follower of dropEnv
 export const SPIN_SW = 0.6;      // rad/s per unit swirl
 export const SPIN_W = 0.5;       // rad/s per unit wind^2
-export const SPIN_SC = 0.6;      // rad/s per unit scratch (scratch is not an MS field, so it cannot live in the param)
+export const SPIN_SC = 0.6;      // rad/s per unit of the swirl the PARAM cannot see: scratch (not an MS field) and
+                                 // hooks.swirl's pin. Held equal to SPIN_SW so the two halves of the swirl weigh the same.
 export const SPIN_TAU = 0.25;    // s — the rate's own ease, so the angle's derivative never jumps
 export const SPIN_REL = 0.8;     // how much of the rate the drop's release takes away
 export const LIFT_TAU = 0.20;    // s — the blob's float ease
@@ -82,10 +83,9 @@ export function updateDet(dt, S, P) {
     D.cEma = S.centroid;
     D.lEma = P.lift;
   }
-  if (!D.seeded) {              // GROOVE's own rule for a section constant: the sign of seed.th
-    D.dir = S.seed.th < 0 ? -1 : 1;
-    D.seeded = 1;
-  }
+  // GROOVE's own rule for a section constant: the sign of seed.th. Read every frame, not latched — a section change
+  // flips it, and the RATE is eased below, so the angle itself never jumps.
+  D.dir = S.seed.th < 0 ? -1 : 1;
   // --- pitch: the motion of the centroid, not its level -------------------------------------------------
   D.cEma = ema(D.cEma, S.centroid, dt, C_TAU);
   const raw = clamp(0.5 + PITCH_K * (S.centroid - D.cEma), 0, 1);
@@ -128,7 +128,10 @@ export function updateDet(dt, S, P) {
   else D.wind = ema(D.wind, D.windT, dt, D.fake > 0 ? W_FAKE : W_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
-  D.spin = clamp(P.spin, 0, 2) + SPIN_SC * D.scratch;
+  // The `spin` parameter carries everything the rate has that is an MS field (riser, hp, roll and the wind-up's own
+  // square). scratch and hooks.swirl's pin are NOT MS fields and cannot live in a from(), so they ride on top at the
+  // same gain. Routing `spin` therefore drives the frame, and a pinned swirl still turns it for the test.
+  D.spin = clamp(P.spin, 0, 2) + SPIN_SC * clamp(D.scratch + (D.pinSwirl >= 0 ? D.pinSwirl : 0), 0, 1);
   const rt = D.dir * D.spin * (1 - SPIN_REL * D.rel);
   D.rate = ema(D.rate, rt, dt, SPIN_TAU);     // the RATE is eased, so the angle integrates and never jumps
   D.angle += D.rate * dt;                     // on dt, not musical time: the param's range is declared in rad/s

@@ -150,7 +150,7 @@ export default {
     const cm = Math.hypot(N.c[0], N.c[1]);
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
     const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom;
-    const rotv = this._groove.rot;
+    const rotv = this._groove.rot + (STILL ? 0 : D.angle);   // the groove's shared angle plus NAV2's own stir
     // The blob floats UP the SCREEN, not up the complex plane: uView.xy is the view's centre in c, so the offset is
     // carried through the same rotation the shader applies to p (z = uView.xy + uView.z*rot(uView.w)*p, and VS_PT's
     // own algebra fixes rot(a) = [[cos,-sin],[sin,cos]]), and negated, because raising the blob lowers the centre.
