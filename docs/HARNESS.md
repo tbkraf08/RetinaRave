@@ -427,6 +427,21 @@ node tools/bundle.js                                  # → dist/retinarave.html
 FILE=$PWD/dist/retinarave.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
 ```
 
+## What to re-prove after a change (v0.7, the user: "when building/updating a scene only need to test that one scene")
+
+The proof is sized to what the diff can reach. Scenes import nothing from `core/` or `engine/` and a forced shot runs one
+scene's `update`/`draw`, so a change inside one scene folder cannot move another scene's pixels — the full eight-scene list
+after every scene edit (the v0.5–v0.7 habit, four lists in the TORUS2 session) was insurance against nothing.
+
+| the diff touches | prove | cost |
+|---|---|---|
+| **one scene folder only** (`assets/scenes/<x>/`) | `node tools/check.js` · `IDS=<id> tools/scene-md5.sh <tag>` (that scene's f360/f840 lines, diff against the reference) · its own proof shots · `CARD.bench(id, 300)` interleaved with NAV when cost could move | ~1 min |
+| **`main.js` registration** (a new id, an id swap, the list order) | one full `tools/scene-md5.sh` list, the mixs md5, the help counts — the one file that touches every scene (`REG` order, the key row, the cast, every `init` at boot) | ~6 min, once |
+| **`core/`, `engine/`, `effects/`, `transitions/`, `main.js` beyond registration** | the full list (v2 + `&colour=oklch`), parity fake, mixs, and the Q trace when cost could move — i.e. `tools/accept.sh` | 25 min + 16 per trace |
+| **a scene enters the director's rotation** (a bid that was 0 becomes live) | the Q trace on house + aba *after* the promotion — a scene with bid 0 cannot be picked, so a trace before it measures nothing | 16 min |
+
+A worker's brief names the tier; the orchestrator runs the sweep once, at the tag, not piecemeal and then again.
+
 ## Acceptance sweep
 
 Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.5}/` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier

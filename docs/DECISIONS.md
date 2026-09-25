@@ -1593,3 +1593,13 @@ as the v0.7 look and stay the first knobs if the user ever objects. The Replacem
 - **Tag v0.7 "alive":** `GPU=1 ACC=v0.7 tools/accept.sh` → `tools/accept/v0.7/accept-34.txt`, 19 sections, **0 FAIL** (parity 0, mixs `641f6633` = recorded, hidden tab / worklet
   clean, params identity, "== torus2" all green at id 3, bundle 30 s clean). `releases/retinarave-v0.7.html` = `dist/retinarave.html` at the tag; package.json 0.7.0; pushed to
   `main` (deploys retinarave.com: key `4` is TORUS2, key `8` the old torus).
+
+## §38 Proof sized to the diff (2026-09-24, the user: "when building/updating a scene only need to test that one scene")
+
+**The decision.** After TORUS2 the user asked why a new scene took so long to test; the answer was four eight-scene md5 lists, two
+Q traces and a full sweep for a change confined to one folder. The §15 incident that started the habit was a *registration* effect
+(the director's pick moved a reference), fixed by making the mixs reference director-blind — not evidence that one scene's folder
+can reach another's pixels (it cannot: CONTRACTS §0, a forced shot runs one scene). HARNESS "What to re-prove after a change" is
+now the rule: a scene-folder diff proves its own lines (`IDS=<id> tools/scene-md5.sh`, ~1 min), a registration change one full list
+once, core/engine changes the sweep, and the Q trace only when a scene *enters the rotation* (a bid of 0 cannot be picked — the
+forced-only trace in §36 measured nothing). `scene-md5.sh` honours `IDS=`; `brief-common.md` tells workers so.

@@ -41,7 +41,8 @@ Synapse's `pal()` was hue/spread/sat/bri driven; rebuild it from `LOOK.mood` (uH
 Lifted fragment sources start with their own `out vec4 o;` — drop it (HEAD declares it). Some contain a reversed
 `smoothstep(hi, lo, x)` — rewrite as `1.-smoothstep(lo, hi, x)`. `tools/check.js` is a legal read for the uniform idiom.
 
-**Acceptance (all from the repo root, all must pass):**
+**Acceptance (all from the repo root, all must pass; your diff is one scene folder, so you prove that scene — `IDS=<id>
+tools/scene-md5.sh <tag>` for its own md5 lines, never the full list; HARNESS "What to re-prove"):**
 1. `node tools/check.js` → `0 fail` (≤350 lines per file: keep `shaders.js` separate from `index.js`).
 2. `PORT=<yours> GPU=1 node tools/cdp.js 'test&scene=<id>' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),scene:CARD.SC.logical})"},{"shot":"work/<name>-t6"},{"wait":8200},{"shot":"work/<name>-t14"}]'`
    → ERRS `[]`, nonFinite `[]`; Read both shots: the scene must be a distinct, non-black image at t6 and visibly react
