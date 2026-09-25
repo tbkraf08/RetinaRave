@@ -8,6 +8,7 @@ import { mkVS, mkFS } from './shaders.js';
 import { BANDS, SLOTS, fill as wfill, live as wlive, positions as wpos, step as wstep, train } from './waves.js';
 import { COUNT as ATN, EXT as ATEXT, H as ATH, NAMES as ATNAMES } from './attractors.js';
 import { anchor } from './colour.js';
+import { HELP } from './help.js';
 import { BOUNCE, dist, reframe, turn as turnEase } from './motion.js';
 
 const TAU = Math.PI * 2;
@@ -142,7 +143,8 @@ export default {
     }
   },
 
-  update(dt, MS, GROOVE, LOOK) {
+  update(dt, MS, GROOVE, LOOK, env) {
+    const P = env.params;     // §1.16: exactly from(view) while nothing is routed — the six below moved verbatim
     QS += (this.ctx.Q.q - QS) * Math.min(1, dt * 0.5);   // slow, so the tier does not chatter
     const tier = QS < 0.32 ? 0 : QS < 0.62 ? 1 : QS < 0.86 ? 2 : 3;
     SEG = SEGT[tier];
@@ -181,7 +183,7 @@ export default {
     U.beatNow = MS.beatCount + MS.beatPhase;
     wstep([MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat);
     wfill(WB, WA, U.beatNow);
-    U.wave = 0.26 + 0.1 * MS.kick;                 // the kick-wave amplitude (the `wave` parameter of step 7)
+    U.wave = P.wave;                                  // the kick bump's displacement (params.wave)
 
     // one full turn of the Hopf flow per 8 beats, plus a per-band rate: the low (pitch classes 0-3), mid (4-7) and
     // high (8-11) families advance along their rings at flowBass / flowMid / flowHigh instead of one shared flow.
@@ -212,7 +214,7 @@ export default {
     // spec 1d / 6: the hat shimmer, gated by alive (nothing in silence) and lifted by novelty
     U.shim = SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
     // spec 6: hush and calm dim the floor
-    U.glow = GLOW * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
+    U.glow = P.glow;
 
     KSEG = Math.min(1600, SEG * Math.max(2, pq[0] + pq[1]));
     const p = MS.presence;
@@ -243,24 +245,23 @@ export default {
     attFade = Math.max(0, attFade - dt / MORPHTC);
     // rough, tense music pulls the torus out of shape; the intro is left alone. The arc enum has no 'intro' value
     // (feats.js: idle | valley | sustain | build | peak) — 'idle' is the one that means nothing has started.
-    U.morphT = morphPin ? morphPin.m : MS.arc === 'idle' ? 0 : MORPHK * MS.tension;
+    U.morphT = morphPin ? morphPin.m : P.morph;   // MORPHK * tension * (arc is the intro ? 0 : 1)
     U.morph += (U.morphT - U.morph) * (1 - Math.exp(-dt / MORPHTC));
     if (morphPin) U.morph = morphPin.m;
 
     // spec 4c: growth. Stage 1 (build 0 -> 0.5) raises the fibre count per family, stage 2 (0.5 -> 1) brings the
     // camera in; intensity and arousal set the resting size between builds.
     const gB = Math.min(1, 2 * MS.build);
-    const gC = Math.min(1, Math.max(0, 2 * MS.build - 1));
     U.fibF += (FIBMIN + (FIBMAX - FIBMIN) * Math.min(1, gB + 0.3 * MS.arousal) - U.fibF) * (1 - Math.exp(-dt / FIBTC));
     U.draw = fibPin > 0 ? fibPin : Math.max(1, Math.ceil(U.fibF - 1e-6));
-    U.size = 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * gC;
+    U.size = P.size;
     // spec 4a: the nudge. The target is read off the beat COUNT, so it can never drift; the angle springs to it with
     // a ~0.3 s time constant (hush / calm double it). Sixteen nudges make one turn — phrase16Pos is the cross-check.
-    U.turnT = ((MS.beatCount / 16) * TAU) % TAU;
+    U.turnT = P.turn;
     U.turn = turnEase(dt, U.turnT, Math.max(MS.hush, MS.calm));
     U.phrase = MS.phrase16Pos;
     // spec 4b: the bounce, 5 % and visible — a thump, not a sine
-    U.bounce = BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4);
+    U.bounce = P.bounce;
 
     reframe(dt, th, ch, U.psi0, U.alpha, U.delta, CEN);
     const f = MS.flow;
@@ -323,54 +324,20 @@ export default {
     return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2);
   },
 
+  // The six visual parameters (CONTRACTS §1.16), named for what the eye sees. Every from() is the expression that
+  // was inline in update(), moved whole (an expression re-associated is not the same expression — §1.16), reading
+  // only fields in `feats`, and update() now reads env.params instead. A route can feed any of them anything.
+  params: {
+    turn: { eli5: 'where the whole nest has been nudged to, in the turn it makes every sixteen beats', range: [0, 6.2832], from: (MS) => ((MS.beatCount / 16) * TAU) % TAU },
+    bounce: { eli5: 'how hard the nest thumps on the beat', range: [0, 0.1], from: (MS) => BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4) },
+    size: { eli5: 'how much of the screen the nest fills', range: [0.4, 0.9], from: (MS) => 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1)) },
+    glow: { eli5: 'how brightly the fibres inside the nest are kept lit', range: [0, 0.5], from: (MS) => GLOW * (1 - GLOWQ * Math.max(MS.hush, MS.calm)) },
+    morph: { eli5: 'how far the rings are pulled out of shape along a strange attractor', range: [0, 1], from: (MS) => MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1) },
+    wave: { eli5: 'how deep the bump a kick sends travelling along every thread', range: [0, 0.4], from: (MS) => WAVE0 + 0.1 * MS.kick },
+  },
+
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },
   colour: { default: 'v2', variants: { v2: {} } },
 
-  help: {
-    feats: {
-      chroma: 'each pitch class\'s latitude and brightness: louder, nearer the equator, a fatter torus',
-      harmAngle: 'while the chroma is empty the latitudes come from the circle of fifths around this angle',
-      interval: 'the (p, q) of the bright knot strand',
-      harmUnw: 'the melody\'s turn slides along the knot',
-      beatPhase: 'the Hopf flow: one full turn every 8 beats',
-      beatCount: 'the whole beats of that same clock',
-      bass: 'how wide every stroke is drawn',
-      sub: 'fattens the tubes — the sub bass swells the whole nest',
-      tension: 'pushes the projection pole into the picture, and pulls the rings out along a strange attractor',
-      dropEvt: 'everything collapses to the core circle',
-      dropEnv: 'brighter strokes while the collapse blooms back',
-      bpm: 'how fast the collapse recovers (about one beat)',
-      presence: 'overall opacity: silence dims the rings',
-      flow: 'the scene clock and the camera\'s gentle tilt',
-      flowBass: 'the low four pitch classes slide along their rings at the bass\'s own pace',
-      flowMid: 'the middle four slide at the mids\' pace',
-      flowHigh: 'the top four slide at the highs\' pace — the three bands drift apart instead of moving as one',
-      barPos: 'the tubes breathe in and out over the bar, even in silence',
-      surpriseEvt: 'a surprise twists the whole nest on its axis and it settles back over a second',
-      sectionEvt: 'a new section re-picks the knot: the same interval table, rotated by the section',
-      roll: 'an accelerating drum roll unwinds the rings until they no longer close',
-      riser: 'a riser does the same: the rings open into helices, and the drop snaps them shut',
-      intensity: 'how bright the melody\'s knot strand burns, and part of the resting size',
-      arc: 'the intro is left alone: no attractor bends the torus while nothing has started',
-      sectionAlt: 'which strange attractor this section is bent into, and it rotates the knot table',
-      build: 'the nest grows: first more threads per family, then the camera comes in',
-      arousal: 'fiercer music rests bigger, with more threads and wider strokes',
-      phrase16Pos: 'the sixteen-beat phrase the turn is measured against: one full turn as this wraps',
-      key: 'the hue anchor: the twelve keys are twelve hues round the circle of fifths, so a modulation is a small turn',
-      mode: 'major bends the whole palette warm, minor cool',
-      keyConf: 'how far the key is trusted: below a third of the way the last confident key is held and the colours slide back to the mood palette',
-      valence: 'brighter music adds a little more warmth on top of the mode',
-      kick: 'flashes the quiet inner fibres, and launches the big slow bump that travels along every thread',
-      snare: 'launches a sharp bright pulse that travels along the loudest family and the knot',
-      hat: 'a fine shimmer running round every ring, and tiny fast ripples travelling with it',
-      beat: 'a track with no drums still breathes: a faint bump is launched on the beat when no band hit came',
-      alive: 'the shimmer only happens while there is sound',
-      novelty: 'a timbre change lifts the shimmer',
-      hush: 'the silence before a drop dims the brightness floor',
-      calm: 'quiet music dims the brightness floor the same way',
-    },
-    eli5: 'Every ring is one fibre of the Hopf map, as in TORUS, and this version is built to move with the music: nothing inside the nest is allowed to fall dark, every kick flashes the quiet fibres at the core, and the hats run a fine shimmer round each ring.',
-    why: 'The first TORUS drew the geometry right but stayed dark inside: a quiet pitch class sat at a twentieth of the brightness of the loud one and disappeared into the fog. Here a brightness floor keeps every fibre visible, the fog only ever dims the far side by half, the kick lights the innermost (quietest) families rather than the loud rim, and the hats shimmer along the ring parameter — so the bass lights the core and the melody lights the rim.',
-    math: 'S3 = {(z1,z2) in C2 : |z1|^2+|z2|^2 = 1} fibres over S2 by h(z1,z2) = (2 z1 conj(z2), |z1|^2-|z2|^2). The fibre over (theta, phi) is psi -> e^{i psi}(cos(theta/2) e^{i phi/2}, sin(theta/2) e^{-i phi/2}). Stereographic projection from (0,0,0,1) sends it to the circle (x1,y1,x2)/(1-y2) in R3, and the whole latitude theta onto the torus of revolution R = 1/cos(theta/2), r = tan(theta/2); each such circle is a Villarceau circle of that torus, winding once the long way and once the short way. Distinct fibres are disjoint, so the rings link once each and never cross.',
-  },
+  help: HELP,
 };
