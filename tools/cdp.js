@@ -3,6 +3,7 @@
 //   steps: [{wait:ms},{shot:'name',clip:[x,y,w,h,scale]},{eval:'expr'},{click:[x,y]},{key:'d'},{until:'expr',timeout:ms}]
 //   url: page to open (default http://127.0.0.1:PORT/ — tools/serve.js is spawned if nothing answers on PORT)
 // env: GPU=1 real GL (default SwiftShader) · NOAUTO=1 no autoplay flag · FAKECAP=1 auto-accept tab capture ·
+//      WIN=w,h also sizes the headless window (default 1280,720) · PNG=1 lossless .png shots instead of .jpg q85 (press/Reddit shots) ·
 //      FAKEMIC=1 a fake microphone, permission granted without a prompt (Chrome's test tone; v0.6 mic source) ·
 //      MOBILE=1 a phone: 390×844 viewport, DPR 3, touch, (pointer:coarse) true — the landing goes .mobile, the bar shows (v0.6) ·
 //      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
@@ -48,7 +49,7 @@ async function ensureServer() {
   const ch = spawn('google-chrome', [...(headed ? ['--window-position=' + (process.env.WINPOS || '0,0'), '--window-size=' + (process.env.WIN || '1920,1080'),
       ...(process.env.DPR ? ['--force-device-scale-factor=' + process.env.DPR] : []),
       ...(process.env.CAPTITLE ? ['--auto-select-tab-capture-source-by-title=' + process.env.CAPTITLE] : [])]
-    : ['--headless=new', '--window-size=1280,720', ...gpu]), '--remote-debugging-port=' + dbg,
+    : ['--headless=new', '--window-size=' + (process.env.WIN || '1280,720'), ...gpu]), '--remote-debugging-port=' + dbg,
     ...(process.env.NOAUTO ? [] : ['--autoplay-policy=no-user-gesture-required']),
     ...(process.env.FAKECAP ? ['--auto-select-tab-capture-source-by-title=Retina Rave', '--auto-accept-this-tab-capture'] : []),
     ...(process.env.FAKEMIC ? ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] : []),
@@ -108,8 +109,10 @@ async function ensureServer() {
     }
     if (s.eval) { const v = await evaluate(s.eval); console.log('EVAL', s.eval.slice(0, 60), '=>', JSON.stringify(v)); }
     if (s.shot) {
-      const r = await send('Page.captureScreenshot', Object.assign({ format: 'jpeg', quality: 85 }, s.clip ? { clip: { x: s.clip[0], y: s.clip[1], width: s.clip[2], height: s.clip[3], scale: s.clip[4] || 1 } } : {}));
-      const f = path.isAbsolute(s.shot) ? s.shot + '.jpg' : path.join(OUT, s.shot + '.jpg');
+      const png = !!process.env.PNG;
+      const r = await send('Page.captureScreenshot', Object.assign(png ? { format: 'png' } : { format: 'jpeg', quality: 85 }, s.clip ? { clip: { x: s.clip[0], y: s.clip[1], width: s.clip[2], height: s.clip[3], scale: s.clip[4] || 1 } } : {}));
+      const ext = png ? '.png' : '.jpg';
+      const f = path.isAbsolute(s.shot) ? s.shot + ext : path.join(OUT, s.shot + ext);
       fs.mkdirSync(path.dirname(f), { recursive: true });
       fs.writeFileSync(f, Buffer.from(r.data, 'base64'));
       console.log('shot', s.shot);
