@@ -1603,3 +1603,58 @@ can reach another's pixels (it cannot: CONTRACTS §0, a forced shot runs one sce
 now the rule: a scene-folder diff proves its own lines (`IDS=<id> tools/scene-md5.sh`, ~1 min), a registration change one full list
 once, core/engine changes the sweep, and the Q trace only when a scene *enters the rotation* (a bid of 0 cannot be picked — the
 forced-only trace in §36 measured nothing). `scene-md5.sh` honours `IDS=`; `brief-common.md` tells workers so.
+
+## §39 NAV2 — "the melody draws the path" (v0.8, 2026-09-25, orchestrator + one worker from `docs/workers/brief-nav2.md`, report `nav2.md`; `NAV2-SESSION-PROMPT.md`)
+
+**The decision (the user, 2026-09-24, after TORUS2):** *"update the NAV scene (don't touch existing, create new scene) … right now we
+are bounded by known locations, how can we make the music actually navigate? … when a sound moves up and down that the set isn't
+moving with it … I like the way the set curls, but doesn't always line up … when you hear a swirl that it starts curling (and when
+building before a drop)."* The interview settled four things as the user's: pitch height is Im c ("the melody draws the path", no
+charts, no target tables); the blob's spokes/bands *and* the whole blob move with pitch; a swirl = filter sweep / drum roll / dj
+scratch; the curl to cause = the spiral arms and the whole frame turning. So: **NAV2, id 8, forced-only** (key `9`, `score()` 0), NAV
+(id 0) byte-identical and home until the user approves.
+
+- **Skeleton first (`eab125a`):** NAV lifted verbatim under the new name, proven a no-op with one full list (ids 0–7 = the v0.7 list,
+  **s8 = s0** `fb74fee4`/`7225ea02`), mixs `641f6633`, parity 0. Two engine facts paid for on the way: `loop.js` calls **every**
+  registered scene's `overlay()` every frame, and a forced scene is **drawn on its first frame before its first `update()`** — an
+  uncaught read in NAV2 aborted the frame for every scene, froze the CLOCK=1 clock and moved NAV's own md5 (CONTRACTS §1 overlay line;
+  the skeleton guards both and was `always: true` for that one commit so its update history equalled NAV's). `math/mandel.js` starts
+  the ray-grid worker once per page.
+- **The scene (worker, seven commits `167bbd9`…`4f38399`, `assets/scenes/nav2/{index,nav2,exit,detect,shaders}.js` + `assets/math/field.js`,
+  `tools/test_field.js`, `tools/test_nav2.js`):** c is a ball rolling inside M under three forces — the melody's pull (Im c ← centroid
+  through a `W_Y` 14 spring, Re c ← bass − high in musical time), **the wall = |λ| of the attracting cycle found chart-free every frame**
+  (critical orbit → nearest return → divisor test on the polished point → Newton on f^q(z) − z; ∇ρ by central differences; an outward
+  step is projected tangential and bisected — c slides along the rim; ρ alone is not a wall: a step across a root lands in the next
+  component with a *small* ρ, the period test is), the wind-up pressing c to `RHO_CAP` .985 so the arms tighten by construction
+  (`arg λ / ln|λ|`); **gates through parabolic roots by Farey** (q ≤ 7, a step the wall refused held `GATE_HOLD`, child size proxy);
+  **the drop** the one cut (a clean-checked ray along the ρ-normal to NAV's depth, `pathCut` 0, EXT/HOME/IN legs = NAV's settle rule in
+  chart-free form); no Misiurewicz kick (`state.kick.x` 0 for ever); every non-cut frame ≤ `V_MAX·dt` = 0.02 < the monitor's 0.06 by
+  construction. Five uniforms with IEEE-identity rests (`uKoen`, `uCurl`, `uView.xy`, `uView.w`, `uGlow`) so `&still=1` is byte-identical
+  to the scene without them — the no-op gate of every visual step. Detectors in `detect.js` (pitch = high-passed centroid, sweep, roll,
+  scratch = flicks of a bend, swirl = soft-OR, wind on synapse's `dropExpectedIn` countdown + `build` + `hush`, spin rate integrated).
+  Six params `height side wind lift spin zoom`. Bugs found by the node tests, not by pixels: `pot()` off by exactly 1 against
+  `buildRayGrid`; the nearest return naming a non-primitive period where λ ≈ −1.
+- **Cost:** 0.95–0.99× NAV (bench protocol, q .95 + `Q.iter` pinned, each scene forced in its own page); `update()` median 0.004 ms in
+  node; the monitor `viol []` with max exactly `V_MAX·dt`.
+- **Two retune passes from real-music traces (the orchestrator's headed runs + an 80 s `n2info` trace at 2 s on each mp3,
+  `AUDIT-v0.8.md`):** the headless build passed every gate and was wrong twice on real music. (a) `sweep` saturated (median .67/.86)
+  because its centroid-trend term fired on ordinary jitter → the frame stirred on a plain groove; now a *sustained monotone climb* (≥ 1.2 s,
+  rate-scaled, capped .85 — only `riser`/`hp` reach 1): median .01/.03. (b) c rested at the 1/2 root (Re −0.8, the cardioid's neck), so
+  the melody's Im wish was capped at ±0.17 and every drop rode out toward the antenna; then, in the belly, ρ rested at .4–.9 and the
+  interior was dark (`lum.py` centre .13–.17 vs NAV .5–.8). Pass 3: **the wall owns the radial direction** (a two-sided spring to
+  `RHO_FREE` .91, the melody's pull projected onto the ρ-contour's tangent *unconditionally* — a conditional projection made its
+  threshold an unstable equilibrium; the normal is degenerate at c = 0 and pushed c to the cusp) and the running centroid normaliser
+  centred on its window (anchored at the floor it read −1 on a flat centroid). After: c covers the whole cardioid on WLTP, three gates on
+  CN under the melody alone, `RHO_FREE` chosen on a luminance table (`&rho=` pin: .91 is where the melody riding the rim first reaches the
+  1/2 root). **Lesson (HARNESS "Real window" gains a line):** a detector's false-positive rate and a navigator's resting place are
+  invisible headlessly — the acceptance for any music-follower is a real-track trace of its own state at 2 s, with the tab URL and
+  `AU.mode` printed (the first driver's tab URL was broken and traced other audio: two "tracks" with identical numbers).
+- **Definition, not weakening (the worker's record):** at a parabolic root there is no attracting cycle, so `has` is 0 and ρ is 1 by
+  definition while a gate transits; those frames are counted and reported separately in `test_nav2.js`, not failed.
+- **What the user should look at first (ranked in `nav2.md`):** `RHO_FREE` .91 (resting brightness — NAV2 is darker than NAV in most
+  real-music frames, ratio median ≈ .3), `GATE_HOLD` 1 beat (9.9 % of `#test` interior frames are gate transits with no chart), `Y_AMP` /
+  `PITCH_K`, `LIFT`/`SLIDE`, `CURL`/`SPIN_SW`, the scratch thresholds (never fired on either track). Not built: the `oklch` variant,
+  re-hosting DRUM (`uDrum` uploaded 0, no variants).
+- **Replacement (not done — waits for the user):** NAV2 → id 0 with NAV's bid, NAV → `nav-v1` id 8 forced-only, DRUM stays nav-v1's,
+  `parity.js` `&scene=0` → 8 + `CARD.REG[8].scene.state`, mixs re-based, lists → `tools/accept/v0.8/`, the about page's NAV line, the Q
+  trace on house + aba, §40, tag v0.8.

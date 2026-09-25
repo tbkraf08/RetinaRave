@@ -1,0 +1,73 @@
+### a8-wltp-n2 WhoLikesToParty key 9 02:57:53
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/fde2e182-a857-4 ok windows 1224103157 1224103159
+EVALTAB (()=>{const v=document.querySelector('video,audio' => [false,1.9,256.348299]
+EVAL fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(( => "probe on"
+clickSel #go [937.9896087646484,452.1875114440918]
+EVAL 'T8 '+JSON.stringify({mode:CARD.ENGINE.AU.mode,heard:CARD.EN => "T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":116.52,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.84,\"q\":0.5720000000000001,\"ms\":2.32,\"hop\":752,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":486,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6629 -0.1708  rho 0.9363 q 1 has 1  wind 0.30 curl 0.36 spin 0.59  pitch 0.48 lift 0.024  par 0.34 tscale 0.90\"}}"
+shot a8-wltp-n2-20s
+EVAL 'T20 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T20 {\"t\":20.3,\"bpm\":116.89,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.77,\"q\":0.6240000000000001,\"ms\":2.1,\"hop\":1894,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":1216,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6746 -0.0441  rho 0.9248 q 1 has 1  wind 0.12 curl 0.15 spin 0.10  pitch 0.60 lift -0.005  par 0.31 tscale 0.91\"}"
+shot a8-wltp-n2-40s
+EVAL 'T40 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T40 {\"t\":40.4,\"bpm\":116.89,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.8,\"q\":0.7040000000000002,\"ms\":1.96,\"hop\":3785,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":2425,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6499 -0.1581  rho 0.9196 q 1 has 1  wind 0.03 curl 0.05 spin 0.08  pitch 0.47 lift -0.030  par 0.30 tscale 0.92\"}"
+shot a8-wltp-n2-60s
+EVAL 'T60 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T60 {\"t\":60.6,\"bpm\":116.9,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.68,\"q\":0.7840000000000003,\"ms\":1.69,\"hop\":5678,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":3636,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c 0.2497 -0.0038  rho 0.9128 q 1 has 1  wind 0.00 curl 0.07 spin 0.08  pitch 0.20 lift -0.187  par 0.27 tscale 0.94\"}"
+shot a8-wltp-n2-80s
+EVAL 'T80 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T80 {\"t\":80.8,\"bpm\":116.91,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.73,\"q\":0.8640000000000003,\"ms\":1.93,\"hop\":7572,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":4847,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c 0.2504 -0.0040  rho 0.9189 q 1 has 1  wind 0.02 curl 0.05 spin 0.08  pitch 0.33 lift -0.070  par 0.29 tscale 0.96\"}"
+EVAL 'LONG '+JSON.stringify(PROBE.ev.filter(e=>e.k==='long'||e.k= => "LONG []"
+EVAL 'Q1HZ '+JSON.stringify(PROBE.q1) => "Q1HZ [0.52,0.54,0.55,0.55,0.56,0.56,0.56,0.57,0.57,0.58,0.58,0.58,0.59,0.59,0.6,0.6,0.6,0.61,0.61,0.62,0.62,0.62,0.63,0.63,0.64,0.64,0.64,0.65,0.65,0.66,0.66,0.66,0.67,0.67,0.68,0.68,0.68,0.69,0.69,0.7,0.7,0.7,0.71,0.71,0.72,0.72,0.72,0.73,0.73,0.74,0.74,0.74,0.75,0.75,0.76,0.76,0.76,0.77,0.77,0.78,0.78,0.78,0.79,0.79,0.8,0.8,0.8,0.81,0.81,0.82,0.82,0.82,0.83,0.83,0.84,0.84,0.84,0.85,0.85,0.86,0.86]"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7572,\"summary\":4847}"
+### end 02:59:18
+### a8-wltp-n1 WhoLikesToParty key 1 02:59:21
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/fde2e182-a857-4 ok windows 361984154 361984156
+EVALTAB (()=>{const v=document.querySelector('video,audio' => [false,1.9,256.348299]
+EVAL fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(( => "probe on"
+clickSel #go [937.9896087646484,452.1875114440918]
+EVAL 'T8 '+JSON.stringify({mode:CARD.ENGINE.AU.mode,heard:CARD.EN => "T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":116.73,\"syn\":116.97,\"key\":11,\"mode\":1,\"keyConf\":0.81,\"q\":0.542,\"ms\":2.14,\"hop\":747,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":484,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c -0.7738 0.0138  h 0.09 alpha 0.500  theta 0.000 log2G -4.00  par 0.63 tscale 0.60  bulb 1/2  cycBase 1\"}}"
+shot a8-wltp-n1-20s
+EVAL 'T20 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T20 {\"t\":20.2,\"bpm\":116.93,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.78,\"q\":0.5940000000000001,\"ms\":1.89,\"hop\":1889,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":1214,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c -0.1639 0.7281  h 0.43 alpha 0.333  theta 0.000 log2G -4.00  par 0.00 tscale 1.00  bulb 1/3  cycBase 1\"}"
+shot a8-wltp-n1-40s
+EVAL 'T40 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T40 {\"t\":40.5,\"bpm\":116.87,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.78,\"q\":0.6740000000000002,\"ms\":1.95,\"hop\":3785,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":2427,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c -0.9293 -0.1204  h 0.44 alpha 0.500  theta 0.000 log2G -4.00  par 0.00 tscale 1.00  bulb 1/2  cycBase 1\"}"
+shot a8-wltp-n1-60s
+EVAL 'T60 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T60 {\"t\":60.7,\"bpm\":116.93,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.73,\"q\":0.7540000000000002,\"ms\":1.89,\"hop\":5681,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":3639,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c -0.3471 0.7104  h 0.46 alpha 0.400  theta 0.000 log2G -4.00  par 0.00 tscale 1.00  bulb 2/5  cycBase 1\"}"
+shot a8-wltp-n1-80s
+EVAL 'T80 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T80 {\"t\":80.8,\"bpm\":116.93,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.74,\"q\":0.8340000000000003,\"ms\":1.94,\"hop\":7568,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":4846,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c 0.2998 -0.0822  h -0.12 alpha -0.105  theta 0.000 log2G -4.00  par 0.00 tscale 0.97  bulb 1/3  cycBase 1\"}"
+EVAL 'LONG '+JSON.stringify(PROBE.ev.filter(e=>e.k==='long'||e.k= => "LONG []"
+EVAL 'Q1HZ '+JSON.stringify(PROBE.q1) => "Q1HZ [0.39,0.43,0.47,0.51,0.53,0.53,0.53,0.54,0.54,0.55,0.55,0.55,0.56,0.56,0.57,0.57,0.57,0.58,0.58,0.59,0.59,0.59,0.6,0.6,0.61,0.61,0.61,0.62,0.62,0.63,0.63,0.63,0.64,0.64,0.65,0.65,0.65,0.66,0.66,0.67,0.67,0.67,0.68,0.68,0.69,0.69,0.69,0.7,0.7,0.71,0.71,0.71,0.72,0.72,0.73,0.73,0.73,0.74,0.74,0.75,0.75,0.75,0.76,0.76,0.77,0.77,0.77,0.78,0.78,0.79,0.79,0.79,0.8,0.8,0.81,0.81,0.81,0.82,0.82,0.83,0.83]"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7568,\"summary\":4846}"
+### end 03:00:47
+### a8-cn-n2 CyborgNinja key 9 03:00:50
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/fde2e182-a857-4 ok windows 340365400 340365402
+EVALTAB (()=>{const v=document.querySelector('video,audio' => [false,1.9,180.062063]
+EVAL fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(( => "probe on"
+clickSel #go [937.9896087646484,452.1875114440918]
+EVAL 'T8 '+JSON.stringify({mode:CARD.ENGINE.AU.mode,heard:CARD.EN => "T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":159.83,\"syn\":160.23,\"key\":2,\"mode\":1,\"keyConf\":0.45,\"q\":0.542,\"ms\":2.18,\"hop\":744,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":484,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6070 0.3082  rho 0.9394 q 1 has 1  wind 0.34 curl 0.33 spin 0.55  pitch 0.49 lift 0.004  par 0.35 tscale 0.90\"}}"
+shot a8-cn-n2-20s
+EVAL 'T20 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T20 {\"t\":20.2,\"bpm\":159.87,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.6,\"q\":0.5940000000000001,\"ms\":1.89,\"hop\":1884,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":1213,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6281 0.2379  rho 0.9258 q 1 has 1  wind 0.15 curl 0.18 spin -0.19  pitch 0.57 lift 0.001  par 0.31 tscale 0.91\"}"
+shot a8-cn-n2-40s
+EVAL 'T40 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T40 {\"t\":40.4,\"bpm\":159.94,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.68,\"q\":0.6740000000000002,\"ms\":1.88,\"hop\":3780,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":2425,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.7743 0.0401  rho 0.9168 q 2 has 1  wind 0.03 curl 0.11 spin -0.10  pitch 0.60 lift -0.004  par 0.72 tscale 0.51\"}"
+shot a8-cn-n2-60s
+EVAL 'T60 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T60 {\"t\":60.7,\"bpm\":159.91,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.74,\"q\":0.7540000000000002,\"ms\":1.96,\"hop\":5675,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":3637,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6640 0.0312  rho 0.9129 q 1 has 1  wind 0.00 curl 0.08 spin -0.09  pitch 0.49 lift -0.017  par 0.27 tscale 0.89\"}"
+shot a8-cn-n2-80s
+EVAL 'T80 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T80 {\"t\":80.8,\"bpm\":159.91,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.9,\"q\":0.8340000000000003,\"ms\":1.72,\"hop\":7563,\"scene\":8,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":4844,\"errs\":[],\"bad\":[],\"hud\":\"nav2 INT  c -0.6191 0.2328  rho 0.9150 q 1 has 1  wind 0.00 curl 0.10 spin -0.12  pitch 0.52 lift 0.016  par 0.28 tscale 0.91\"}"
+EVAL 'LONG '+JSON.stringify(PROBE.ev.filter(e=>e.k==='long'||e.k= => "LONG []"
+EVAL 'Q1HZ '+JSON.stringify(PROBE.q1) => "Q1HZ [0.39,0.43,0.47,0.51,0.53,0.53,0.53,0.54,0.54,0.55,0.55,0.55,0.56,0.56,0.57,0.57,0.57,0.58,0.58,0.59,0.59,0.59,0.6,0.6,0.61,0.61,0.61,0.62,0.62,0.63,0.63,0.63,0.64,0.64,0.65,0.65,0.65,0.66,0.66,0.67,0.67,0.67,0.68,0.68,0.69,0.69,0.69,0.7,0.7,0.71,0.71,0.71,0.72,0.72,0.73,0.73,0.73,0.74,0.74,0.75,0.75,0.75,0.76,0.76,0.77,0.77,0.77,0.78,0.78,0.79,0.79,0.79,0.8,0.8,0.81,0.81,0.81,0.82,0.82,0.83,0.83]"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7564,\"summary\":4845}"
+### end 03:02:15
+### a8-cn-n1 CyborgNinja key 1 03:02:18
+tab file:///tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/fde2e182-a857-4 ok windows 968562972 968562974
+EVALTAB (()=>{const v=document.querySelector('video,audio' => [false,1.9,180.062063]
+EVAL fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(( => "probe on"
+clickSel #go [937.9896087646484,452.1875114440918]
+EVAL 'T8 '+JSON.stringify({mode:CARD.ENGINE.AU.mode,heard:CARD.EN => "T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":159.83,\"syn\":160.23,\"key\":2,\"mode\":1,\"keyConf\":0.29,\"q\":0.542,\"ms\":0.76,\"hop\":747,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":481,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c 0.3537 -0.1035  h 0.02 alpha -0.125  theta 0.000 log2G -4.00  par 1.00 tscale 0.07  bulb 7/8  cycBase 1\"}}"
+shot a8-cn-n1-20s
+EVAL 'T20 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T20 {\"t\":20.2,\"bpm\":159.86,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.63,\"q\":0.5940000000000001,\"ms\":2.16,\"hop\":1890,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":1211,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c 0.3771 -0.1647  h 0.39 alpha -0.125  theta 0.000 log2G -4.00  par 0.00 tscale 0.99  bulb 7/8  cycBase 1\"}"
+shot a8-cn-n1-40s
+EVAL 'T40 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T40 {\"t\":40.5,\"bpm\":159.96,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.69,\"q\":0.6740000000000002,\"ms\":2.05,\"hop\":3785,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":2424,\"errs\":[],\"bad\":[],\"hud\":\"nav EXT  c -0.2045 1.0847  h 0.02 alpha -0.600  theta 0.258 log2G -6.85  par 0.00 tscale 0.99  bulb 2/5  cycBase 0\"}"
+shot a8-cn-n1-60s
+EVAL 'T60 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T60 {\"t\":60.7,\"bpm\":159.85,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.69,\"q\":0.7540000000000002,\"ms\":1.97,\"hop\":5682,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":3637,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c 0.0469 0.6426  h -0.12 alpha -0.725  theta -0.290 log2G -11.85  par 0.00 tscale 0.81  bulb 3/5  cycBase 1\"}"
+shot a8-cn-n1-80s
+EVAL 'T80 '+JSON.stringify({t:+((performance.now()-PROBE.t0)/1000 => "T80 {\"t\":80.9,\"bpm\":159.9,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.91,\"q\":0.8340000000000003,\"ms\":1.95,\"hop\":7579,\"scene\":0,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":4850,\"errs\":[],\"bad\":[],\"hud\":\"nav INT  c 0.3645 0.3303  h 0.02 alpha -0.800  theta -0.333 log2G -11.85  par 1.00 tscale 0.42  bulb 1/5  cycBase 1\"}"
+EVAL 'LONG '+JSON.stringify(PROBE.ev.filter(e=>e.k==='long'||e.k= => "LONG []"
+EVAL 'Q1HZ '+JSON.stringify(PROBE.q1) => "Q1HZ [0.39,0.43,0.47,0.51,0.53,0.53,0.53,0.54,0.54,0.55,0.55,0.55,0.56,0.56,0.57,0.57,0.57,0.58,0.58,0.59,0.59,0.59,0.6,0.6,0.61,0.61,0.61,0.62,0.62,0.63,0.63,0.63,0.64,0.64,0.65,0.65,0.65,0.66,0.66,0.67,0.67,0.67,0.68,0.68,0.69,0.69,0.69,0.7,0.7,0.71,0.71,0.71,0.72,0.72,0.73,0.73,0.73,0.74,0.74,0.75,0.75,0.75,0.76,0.76,0.77,0.77,0.77,0.78,0.78,0.79,0.79,0.79,0.8,0.8,0.81,0.81,0.81,0.82,0.82,0.83,0.83]"
+EVAL 'END '+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),g => "END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7579,\"summary\":4850}"
+### end 03:03:44
+DONE-AUDIT

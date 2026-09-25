@@ -278,6 +278,10 @@ HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps
   second tree uses `git archive <tag> | tar -x -C <dir>` (no `.git`, so no `git status` there — list the copied files).
 - `FILE=` must be absolute (`FILE=$PWD/dist/retinarave.html`); a relative path makes Chrome open `file://dist/…`.
 
+A music-follower (a detector, a navigator's resting place) is judged by a **real-track trace of its own state at 2 s** (v0.8 NAV2:
+`tools/accept/v0.8/det8.py` — `hooks.n2info()` + the MS fields it reads, 40 samples, the tab URL and `AU.mode` printed so a broken
+capture cannot pass as a track); a headless `#test` proof cannot see a false-positive rate. Two "tracks" with identical numbers = one source.
+
 ## Hidden tab (change to the extractor's followers, `ENGINE.resume`, or the loop's resume line — v0.3 resume-hold)
 
 Headless can hide the page: a second tab activated hides the main one (rAF stops, the worklet's hops queue and land in
