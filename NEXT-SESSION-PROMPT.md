@@ -9,11 +9,10 @@ opened the build on real music, routed a parameter from the panel and said *"loo
 time the panel met their eyes with approval. **First action of this session: ask the user what v0.6 is for.** The
 candidates below are ordered by what the day left open; the user's sentence outranks them.
 
-> **2026-09-24, night: TORUS2 built, approved and promoted — v0.7 "alive" tagged and pushed** (DECISIONS §36 the build, §37 the swap;
-> `docs/workers/torus2.md`, `docs/AUDIT-v0.7.md`, `tools/accept/v0.7/accept-34.txt` 0 FAIL). TORUS2 is id 3 with TORUS's bid; the old
-> TORUS is `torus-v1` at id 7, forced-only (key `8`) for one release — **deleting it is the user's separate decision** (next session:
-> ask). Open on TORUS2: the `oklch` variant (not built), and the §36 leans if the user ever objects (`WAVE0` .26, the narrowed
-> spread, `MORPHK` .9, minor not always cool). Cloudflare dashboard steps below still open.
+> **2026-09-24, night: v0.7 "alive" tagged and pushed** — TORUS2 promoted to id 3 (DECISIONS §36–§37), `torus-v1` at id 7 forced-only for
+> one release (deleting it is the user's separate decision), proof sized to the diff (§38). **The next session is `NAV2-SESSION-PROMPT.md`**
+> (NAV2, "the melody draws the path", planned with the user the same night — the four interview answers there are theirs), not the
+> candidates below. Open on TORUS2: the `oklch` variant, the §36 leans if the user ever objects. Cloudflare dashboard steps below still open.
 
 > **2026-09-24, later: v0.6 "public" executed** (DECISIONS §35, commits 6f70fa9…bc3d8e3, not tagged): RETINA RAVE help headline, the landing
 > key row from `keys()`, keydown target guard, SEO head + `site/` (robots, sitemap, manifest, favicon, og.jpg, `_headers`, `about.html`),
