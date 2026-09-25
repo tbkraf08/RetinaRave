@@ -129,7 +129,18 @@ const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is whe
 
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
 // (x0 y0 z0 w0 · x1 y1 z1 w1 · r g b a, widths in px). Returns the new segment count.
-// o: {a1,a2,a3, sub, g, eye, fwd, wpx, col:[r,g,b], alpha}
+// o: {a1,a2,a3, sub, g, eye, fwd, wpx, col:[r,g,b], alpha, prof, gw, gbri, gwid}
+//
+// `prof` (spec 4) is grooves.fillProfile's three bump profiles along one edge, sampled at the sub+1 points this
+// loop already visits — so the pulses cost one dot product and two multiplies per sample, and not one exponential.
+// `gbase` is what a piece with no bump on it gets: slightly BELOW one, so the stretch between two bumps is a little
+// darker and thinner than an ungrooved stroke and every edge reads as a string of beads. It doubles the contrast
+// for the same peak, which matters because the peak is already deep in the bloom. At groove 0 it is exactly 1 and
+// the whole mechanism is the identity. `gw` weights the three bands for THIS figure (the mids ride the outer cage
+// only). Because every edge carries the
+// same profile and a bump travels one edge length per bar, the rhythm becomes the spacing of the bumps along every
+// edge of the polytope at once. Brightness goes in the colour and width in the width — never in the alpha, which
+// is coverage (CONTRACTS §1.12) and belongs to the pole fade alone.
 export function emit(kind, o, segs, off, cap) {
   const P = get4(kind);
   rotate4(P, o.a1, o.a2, o.a3);
@@ -144,6 +155,14 @@ export function emit(kind, o, segs, off, cap) {
   const cr = o.col[0];
   const cg = o.col[1];
   const cb = o.col[2];
+  const PR = o.prof;
+  const n1 = sub + 1;
+  const w0 = o.gw[0];
+  const w1 = o.gw[1];
+  const w2 = o.gw[2];
+  const gbri = o.gbri;
+  const gwid = o.gwid;
+  const gbase = o.gbase;
   let n = off;
   for (let e = 0; e < E.length; e += 2) {
     const a = E[e] * 4;
@@ -161,6 +180,8 @@ export function emit(kind, o, segs, off, cap) {
     let pZ = 0;
     let pV = 0;
     let pF = 0;
+    let pB = 0;
+    let pW = 1;
     let have = false;
     for (let k = 0; k <= sub; k++) {
       const s = k / sub;
@@ -185,20 +206,25 @@ export function emit(kind, o, segs, off, cap) {
         vz = X * fx + Y * fy + Z * fz - eDotF;
         f = Math.min((den - GATE) * RAMP, 1) * smooth((vz - 0.35) / 0.9);
       }
+      // the three trains' bumps where this sample sits along the edge: one brightness and one width multiplier
+      const pk = PR[k] * w0 + PR[n1 + k] * w1 + PR[n1 + n1 + k] * w2;
+      const bri = gbase + gbri * pk;
+      const wid = gbase + gwid * pk;
       const ok = f > 0.002;
       if (ok && have && n < cap) {
         const j = n * 12;
+        const bm = 0.5 * (pB + bri);
         segs[j] = pX;
         segs[j + 1] = pY;
         segs[j + 2] = pZ;
-        segs[j + 3] = o.wpx / pV;
+        segs[j + 3] = (o.wpx * pW) / pV;
         segs[j + 4] = X;
         segs[j + 5] = Y;
         segs[j + 6] = Z;
-        segs[j + 7] = o.wpx / vz;
-        segs[j + 8] = cr;
-        segs[j + 9] = cg;
-        segs[j + 10] = cb;
+        segs[j + 7] = (o.wpx * wid) / vz;
+        segs[j + 8] = cr * bm;
+        segs[j + 9] = cg * bm;
+        segs[j + 10] = cb * bm;
         segs[j + 11] = o.alpha * 0.5 * (pF + f);
         n++;
       }
@@ -207,6 +233,8 @@ export function emit(kind, o, segs, off, cap) {
       pZ = Z;
       pV = vz;
       pF = f;
+      pB = bri;
+      pW = wid;
       have = ok;
     }
   }

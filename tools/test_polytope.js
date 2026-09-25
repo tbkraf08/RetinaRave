@@ -117,7 +117,8 @@ console.log('3. the bump profile along an edge is exact at the subdivision point
     ok(row.every((x) => x >= 0 && x < 4), 'sub ' + nsub + ': the profile stays finite and non-negative', 'max ' + Math.max(...row).toFixed(3));
   }
   // ink is conserved across a tier flip: the mean of the profile barely moves when sub changes (cuts: 'continuous')
-  const mean = (n) => { const o = new Float32Array(3 * (n + 1)); GR.fillProfile(o, n, beat); let s2 = 0; for (let k = 0; k <= n; k++) s2 += o[k]; return s2 / (n + 1); };
+  // k = 0 and k = nsub are the SAME point on the edge parameter, so the mean runs over 0…nsub-1
+  const mean = (n) => { const o = new Float32Array(3 * (n + 1)); GR.fillProfile(o, n, beat); let s2 = 0; for (let k = 0; k < n; k++) s2 += o[k]; return s2 / n; };
   const m3 = mean(3), m8 = mean(8);
   ok(Math.abs(m3 - m8) / m8 < 0.06, 'the ink under the bumps survives a tier flip 3 ↔ 8', 'sub3 ' + m3.toFixed(4) + ' sub8 ' + m8.toFixed(4));
   const empty = new Float32Array(3 * 9);

@@ -57,12 +57,17 @@ export const DRUMLO = 0.25;
 // spec 4: the bump's width along the edge parameter, per band — the bass a wide slow swell, the mid a sharp pulse,
 // the high a tiny fast ripple — and the peak each one reaches at amplitude 1.
 //
-// The brief's leans were 0.18 / 0.08 / 0.04. An EDGE HAS ONLY sub+1 SAMPLE POINTS (sub ≤ 8, so a spacing of 0.125
-// along the edge at the best tier), and that is the whole resolution available: 0.18 is three times the gap between
-// two four-on-the-floor bumps, so the four merge into one flat glow — measured, the 4x4 profile had ONE maximum.
-// 0.085 puts a bump at 2.9 σ from its neighbours, which reads as four; below ~0.05 the feature is finer than the
-// mesh and only aliases. Retune here; the ordering (wide · sharper · tiny) is what carries the three bands apart.
-export const SIG = [0.085, 0.055, 0.035];
+// The brief's leans were 0.18 / 0.08 / 0.04. An EDGE HAS ONLY sub+1 SAMPLE POINTS (sub ≤ 8, a spacing of 0.125
+// along the edge at the best tier) and that is the whole resolution there is. Measured on the live 4x4 profile:
+//   0.18  — the four bumps of a bar merge into ONE maximum. Unusable.
+//   0.085 — four maxima, but the trough between two bumps 0.25 apart is 0.80 of the peak (each Gaussian is still
+//           worth 0.40 of itself at the midpoint), so the beads read as a 1.25x ripple. Too faint for lean 13.
+//   0.055 — the trough falls to 0.28 of the peak: a 3x ripple, which reads as a string of beads.
+// Below ~0.05 the bump is finer than the mesh and its sampled peak flickers as it travels (the ink is conserved by
+// the box convolution in fillProfile, but the peak is not). 0.055 costs about 35 % of peak flicker at 4 Hz, which
+// the scene's own feedback trail (post.fb.decay 0.74) smooths. Retune here; the ordering — wide · sharper · tiny —
+// is what keeps the three bands apart, together with WHERE they are painted and how often they fire.
+export const SIG = [0.055, 0.042, 0.032];
 export const PEAK = [1.0, 0.85, 0.45];
 
 const THR = [THR_BASS, THR_MID, THR_HIGH];

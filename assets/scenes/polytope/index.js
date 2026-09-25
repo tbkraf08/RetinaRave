@@ -18,6 +18,13 @@ const BIG = '@big';              // resolved to the 600-cell or (tier ≥ 2) the
 const TAU = Math.PI * 2;
 const TURNB = 16;                // beats per full turn of the xy (bass) plane — the user's own number
 const TURNB2 = 32;               // ... of the zw (mid) plane, so the two invariant planes never phase-lock
+const MAXSUB = 8;                // the largest entry of SUB — the bump profiles are sized for it once, in init
+// spec 4, lean 13: what a bump does to the piece it sits on, at groove 1. Brightness is the loud one; the width
+// pulse is what makes a bump read as a THICKENING travelling round the cage rather than only a brighter patch.
+const PBRI = 1.7;
+const PWID = 0.9;
+const PDIP = 0.3;                // how far BELOW normal a piece with no bump on it sits, at groove 1
+const GROOVE0 = 0.8;             // the resting amplitude of the whole thing (becomes the `groove` param, spec 7)
 
 // cast: [inner, outer]. s = scale, w = width scale, i = intensity, ta = palette coordinate.
 const CASTS = [
@@ -40,13 +47,30 @@ let self = null;   // §1.11's look.get/set are called on the look object, not t
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 let beatNow = 0;   // beatCount + beatPhase — musical time, the only clock the grooves and the dance ever read
+let castPin = -1;  // hooks.cast: the cast is re-picked at every sectionEvt, so a hook that sets it must pin it for
+                   // the run or the next section silently undoes it and the shot tests the wrong thing (§1.4).
 
 // test hook: the three trains as numbers (spec 1) — the positions a proof shot is read against, and the per-band
 // n / last / ema / thr the orchestrator's real-music trace reads every 2 s to judge a dead or saturated train.
-const info = () => JSON.stringify(GR.info(beatNow));
+function info() {
+  const o = GR.info(beatNow), p = self.p, n1 = p.sub + 1;
+  // `prof` is the multiplier `emit` actually applies, piece by piece, along EVERY edge of the inner figure: the
+  // bumps per edge, as the numbers the pixels are made of. Band 0 (bass) is the one the pinned trains drive.
+  o.sub = p.sub;
+  o.prof = Array.from(self.profA.slice(0, n1), (x) => +(p.gbase + p.gbri * x).toFixed(3));
+  return JSON.stringify(o);
+}
 
 // test hook: the motion numbers of spec 2, read frame by frame across a bar
 const motion = DA.motion;
+
+// test hook: pin the cast for the whole run, cross-fade finished — the only way to bench or shoot one figure
+// (CARD.bench renders 300 frames with the main thread blocked, so a setInterval cannot hold it).
+function cast(v) {
+  castPin = v === null || v === undefined || v < 0 ? -1 : clamp(v | 0, 0, 2);
+  if (castPin >= 0 && self) { self.castPrev = castPin; self.cast = castPin; self.castMix = 1; }
+  return castPin;
+}
 
 // test hook: the pole margin of the kinds actually on screen, with and without the dance's xw excursion, and the
 // count of vertices the excursion pushed from comfortably outside the gate to inside it (dance.js POLE SAFETY —
@@ -78,7 +102,7 @@ export default {
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush'],
   cuts: 'continuous',
   rt: {},
-  hooks: { train: GR.train, info, motion, pole },
+  hooks: { train: GR.train, info, motion, pole, cast },
 
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -94,6 +118,8 @@ export default {
     this.L = ctx.lines.mk(CAP);
     this.segs = new Float32Array(CAP * 12);
     this.mvp = new Float32Array(16);
+    this.profA = new Float32Array(3 * (MAXSUB + 1));   // the bump profiles along one edge, at p.sub …
+    this.profB = new Float32Array(3 * (MAXSUB + 1));   // … and at p.subB for the 600/120-cell
     this.cast = 0;
     this.castPrev = 0;
     this.castMix = 1;
@@ -105,7 +131,7 @@ export default {
     this.jy = 0;
     this.nSeg = 0;
     this.kinds = [];
-    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, colIn: [1, 1, 1], colOut: [1, 1, 1] };
+    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0, gbase: 1, colIn: [1, 1, 1], colOut: [1, 1, 1] };
   },
 
   update(dt, MS, GROOVE, LOOK, env) {
@@ -120,6 +146,7 @@ export default {
         this.castMix = 0;
       }
     }
+    if (castPin >= 0) { this.cast = castPin; this.castPrev = castPin; this.castMix = 1; }
     this.castMix = Math.min(1, this.castMix + dt);
     // the 120-cell only fits above tier 2; the swap is a discontinuity, so cross-fade it over a second
     const want = this.ctx.tier() >= 2 ? 'c120' : 'c600';
@@ -161,6 +188,12 @@ export default {
     p.sub = SUB[t];
     p.subB = SUBB[t];
     p.pulse = 1 + 0.4 * MS.hit;
+    // spec 4: the three trains painted along one edge, sampled where the subdivision already lands
+    GR.fillProfile(this.profA, p.sub, beatNow);
+    GR.fillProfile(this.profB, p.subB, beatNow);
+    p.gbri = PBRI * GROOVE0;
+    p.gwid = PWID * GROOVE0;
+    p.gbase = 1 - PDIP * GROOVE0;
     const m = LOOK.mood;
     // 0.75·(0.35 + lvl)·presence, with a presence floor so muted audio still idles visibly (§0) instead of black
     const bright = GAIN * 0.75 * (0.35 + MS.lvl) * (0.15 + 0.85 * MS.presence);
@@ -191,7 +224,7 @@ export default {
     const r = nrm(cross(f, [0, 1, 0]));
     const u = cross(r, f);
     mvpMat(this.mvp, eye, r, u, f, FOCAL, w / h, NEAR);
-    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, col: p.colIn, alpha: 1 };
+    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, col: p.colIn, alpha: 1, prof: this.profA, gw: [1, 1, 1], gbri: p.gbri, gwid: p.gwid, gbase: p.gbase };
     // 2.2 px at the centre of the orbit, falling off as 1/viewZ like any perspective stroke
     const wpx = 2.2 * (h / 720) * D;
     let n = 0;
@@ -200,12 +233,15 @@ export default {
     const cast = (ci, ww) => {
       if (ww <= 0.002) return;
       for (const e of CASTS[ci]) {
+        // the mids ride the OUTER cage only (spec 4); a one-figure cast is both, so it takes all three bands
+        o.gw[1] = CASTS[ci].length === 1 || e !== CASTS[ci][0] ? 1 : 0;
         const kinds = e.k === BIG ? (this.bigMix >= 1 ? [[this.big, 1]] : [[this.bigPrev, 1 - this.bigMix], [this.big, this.bigMix]]) : [[e.k, 1]];
         for (const [kind, kw] of kinds) {
           if (kw <= 0.002) continue;
           kindsSeen.add(kind);
           o.g = e.s * p.g * SCALE;
           o.sub = e.sub ? p.subB : p.sub;
+          o.prof = e.sub ? this.profB : this.profA;
           o.wpx = wpx * e.w * (e === CASTS[ci][0] ? p.pulse : 1);
           o.col = e.ta < 0.3 ? p.colIn : p.colOut;
           o.alpha = e.i * ww * kw;
