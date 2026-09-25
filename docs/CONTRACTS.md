@@ -46,7 +46,7 @@ export default {
   help: { eli5: '', why: '', math: '',   // three depths, all required (§0); shown by the help view (§1.13)
     feats: { bass: 'fattens the tubes' } },   // optional: per field of `feats`, what it moves on THIS screen (§1.13)
   // optional slots:
-  overlay(PW, PH, vis, dt) {},  // post-composite, direct to screen; you scissor. vis = your on-screen weight 0..1
+  overlay(PW, PH, vis, dt) {},  // post-composite, direct to screen; you scissor. vis = your on-screen weight 0..1 — called EVERY frame for EVERY registered scene, so an `always: false` scene must return until its first update() (v0.8 NAV2 skeleton: an uncaught read of this._P froze the fake clock)
   hud() { return 'one line'; }, // extra HUD line while you are the logical scene
   hooks: { baby(v) {} },        // test hooks: exposed as CARD.hooks.<name>; &<name>=v in a #test hash calls it
   variants: [{ id: 4, name: 'drum', tag: '', score(MS, rt, SC) {} }],  // sub-modes with their own id (§1.4)
@@ -248,7 +248,7 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
 Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · 8 free. `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav2** (v0.8, forced-only until approved: `score()` 0, key `9`; `NAV2-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities

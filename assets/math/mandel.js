@@ -60,7 +60,10 @@ export const getGrid = () => GRID;
 export const setGrid = (g) => { GRID = g; };
 
 // Build the grid off the main thread; falls back to a synchronous build. Browser only.
+let GRIDW = false;   // v0.8: NAV and NAV2 both ask at init — one worker, one table (the second caller's onReady is not honoured; nobody passes one)
 export function startGridWorker(onReady) {
+  if (GRIDW) return;
+  GRIDW = true;
   const src = 'const TAU_=Math.PI*2;' + buildRayGrid.toString() +
     ';onmessage=e=>{const g=buildRayGrid(...e.data);postMessage(g,[g.grid.buffer]);}';
   const fallback = () => setTimeout(() => { GRID = buildRayGrid(...GRIDP); onReady && onReady(GRID); }, 50);
