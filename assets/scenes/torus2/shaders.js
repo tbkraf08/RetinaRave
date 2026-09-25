@@ -193,7 +193,7 @@ void main() {
     // spec 1d: a fine shimmer running round the ring parameter on the hats
     bri *= 1.0 + uShim * sin(SHIMK * t0 * TAU + float(ring) * 1.7);
     bri *= 1.0 + q0;                          // spec 2: the snare's bright pulse travelling round the ring
-    hueT = float(fam) / 12.0;
+    hueT = float(fam) / 12.0 - 0.5;   // the anchor is the MIDDLE of the twelve hues, not the first of them
     wm = 1.0;
   }
   float v0, v1;
