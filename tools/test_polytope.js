@@ -2,8 +2,8 @@
 // profile of grooves.js, and (from step 3) the pole-safety bound of dance.js. No DOM, no GL.
 //   node tools/test_polytope.js
 import * as GR from '../assets/scenes/polytope/grooves.js';
-import { clampXW, XWMAX, OMEGA, KICK_XY, hit as daHit, reset as daReset, step as daStep } from '../assets/scenes/polytope/dance.js';
-import { GATE, get4, poleMargin, rotate4 } from '../assets/scenes/polytope/poly4.js';
+import { clampXW, XWMAX, OMEGA, KICK_XY, SWEEPB, SWEEP_MIN, SWEEPTOL, hit as daHit, reset as daReset, step as daStep, sweepAngle, sweepFire, sweepProgress } from '../assets/scenes/polytope/dance.js';
+import { GATE, get4, poleMargin, rotate4, sweepTarget } from '../assets/scenes/polytope/poly4.js';
 
 let fails = 0;
 const ok = (c, m, extra) => { console.log((c ? '  ok ' : '  FAIL ') + m + (extra === undefined ? '' : ' — ' + extra)); if (!c) fails++; };
@@ -177,6 +177,38 @@ console.log('5. the critically damped nudge overshoots and settles to exactly ze
   ok(Math.abs(peakT - 1 / OMEGA) < 0.02, 'reached at t = 1/ω', peakT.toFixed(3) + ' s');
   ok(Math.abs(end) < 1e-3, 'and it is back to zero two seconds later (the 16-beat lock holds)', end.toExponential(2));
   ok(peak > 0.1, 'and it is visible: over 0.1 rad at amplitude 1 (lean 13)', peak.toFixed(3) + ' rad');
+}
+
+// ---------------------------------------------------------------- 6. the sweep
+console.log('6. the inside-out sweep: one beat, a bump with no kink, and it really reaches the pole');
+{
+  daReset();
+  ok(sweepFire(100, 0.8, 0) === 1, 'a sweep is cued');
+  ok(sweepFire(100 + SWEEP_MIN - 0.1, 0.8, 0) === 0, 'and refused inside SWEEP_MIN beats', SWEEP_MIN);
+  ok(sweepFire(100 + SWEEP_MIN + 0.1, 0.8, 0) === 1, 'but allowed after them');
+  ok(sweepFire(100 + SWEEP_MIN + 0.2, 0.8, 1) === 1, 'hooks.sweep() forces one anyway');
+  daReset();
+  sweepFire(0, 0.8, 0);
+  const at = (u) => sweepAngle(u * SWEEPB);
+  ok(Math.abs(at(0)) < 1e-12 && Math.abs(at(1)) < 1e-12, 'zero at both ends');
+  ok(Math.abs(at(0.5) - 0.8) < 1e-9, 'and the full delta at the half beat', at(0.5).toFixed(6));
+  ok(Math.abs(at(0.002) - at(0)) < 2e-4 && Math.abs(at(0.998) - at(1)) < 2e-4, 'with no kink where it joins the drift');
+  ok(Math.abs(sweepProgress(0.37 * SWEEPB) - 0.37) < 1e-9 && sweepProgress(5) === 0, 'the progress is the parameter', sweepProgress(0.37 * SWEEPB));
+  // and it genuinely carries a vertex through: the polytopes that CAN reach the pole do
+  const reach = ['tess', 'c24', 'c600', 'c120'].map((k) => {
+    const P = get4(k);
+    let worst = 0;
+    for (let i = 0; i < 60; i++) {
+      const a1 = i * 0.317, a2 = i * 0.211, a3 = i * 0.03;
+      rotate4(P, a1, a2, a3 + sweepTarget(P, a1, a2, a3, SWEEPTOL).d);
+      worst = Math.max(worst, poleMargin(P));
+    }
+    return { k, worst };
+  });
+  for (const r of reach) {
+    if (r.k === 'tess') ok(r.worst > GATE, 'the tesseract alone never reaches the gate — its best den is 1 - 1/sqrt2', r.worst.toFixed(4));
+    else ok(r.worst < GATE, r.k + ': the sweep always puts a vertex inside the gate (the cell blows up and fades)', 'worst ' + r.worst.toFixed(4));
+  }
 }
 
 console.log(fails ? 'test_polytope: ' + fails + ' FAIL' : 'test_polytope: OK');

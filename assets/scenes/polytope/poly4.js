@@ -274,6 +274,40 @@ export function emit(kind, o, segs, off, cap) {
   return n;
 }
 
+// spec 3: the shortest xw move that carries a vertex THROUGH the projection pole, as an angle relative to `a3`.
+//
+// After the xy/zw rotation a vertex's w-coordinate under the xw turn is R sin(a + phi) with R = hypot(x, w) and
+// phi = atan2(w, x), so it is closest to the pole (w = 1, den = 0) at a = pi/2 - phi, and R is how close it can
+// ever get. Only a vertex with R = 1 touches the pole exactly, so the candidates are those within TOL of the best
+// R available, and among those the one whose a is the shortest move from where the plane is now — the sweep is then
+// always the least violent way to turn the cage inside out. Returns {d, R, i}: the delta, that vertex's reach, its
+// index. One pass over the vertices, at the cue only.
+export function sweepTarget(P, a1, a2, a3, tol) {
+  const V = P.V, c1 = Math.cos(a1), s1 = Math.sin(a1), c2 = Math.cos(a2), s2 = Math.sin(a2);
+  const HALF = Math.PI / 2, TAU = Math.PI * 2;
+  let rmax = 0;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    const X = V[o] * c1 - V[o + 1] * s1;
+    const Q = V[o + 2] * s2 + V[o + 3] * c2;
+    const R = Math.hypot(X, Q);
+    if (R > rmax) rmax = R;
+  }
+  let best = { d: 0, R: 0, i: -1 }, bestAbs = 1e9;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    const X = V[o] * c1 - V[o + 1] * s1;
+    const Q = V[o + 2] * s2 + V[o + 3] * c2;
+    const R = Math.hypot(X, Q);
+    if (R < rmax - tol) continue;
+    let d = HALF - Math.atan2(Q, X) - a3;
+    d -= TAU * Math.floor(d / TAU + 0.5);          // the short way round
+    const ad = Math.abs(d);
+    if (ad < bestAbs) { bestAbs = ad; best = { d, R, i }; }
+  }
+  return best;
+}
+
 // How close the nearest vertex comes to the projection pole, as `den` = 1 − w (the vertices are unit, so |v| = 1
 // and `den` is exactly the quantity the gate tests). Reads the LAST rotate4's output, so call it after one.
 // Measured on the bare xy/zw double rotation (tools/work/pole.js) this reaches 0 for the 24-, 600- and 120-cell and

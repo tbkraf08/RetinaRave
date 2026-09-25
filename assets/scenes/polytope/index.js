@@ -5,7 +5,7 @@ import { clamp, ema } from '../../math/util.js';
 import * as CO from './colour.js';
 import * as DA from './dance.js';
 import * as GR from './grooves.js';
-import { GATE, get4, emit, mvpMat, poleMargin, rotate4 } from './poly4.js';
+import { GATE, get4, emit, mvpMat, poleMargin, rotate4, sweepTarget } from './poly4.js';
 
 const SUB = [3, 4, 6, 8];        // subdivisions per edge by tier (small polytopes)
 const SUBB = [2, 3, 4, 5];       // ... for the 600/120-cell: 720–1200 edges, so fewer pieces each
@@ -49,6 +49,8 @@ let self = null;   // §1.11's look.get/set are called on the look object, not t
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 let beatNow = 0;   // beatCount + beatPhase — musical time, the only clock the grooves and the dance ever read
+let prevPhrase = 0;   // spec 3: phrase16Pos wraps (decreases) at a phrase boundary — that is one of the cues
+let sweepForce = 0;   // hooks.sweep(): fire one on the next update, ignoring the arc gate and the spacing
 let castPin = -1;  // hooks.cast: the cast is re-picked at every sectionEvt, so a hook that sets it must pin it for
                    // the run or the next section silently undoes it and the shot tests the wrong thing (§1.4).
 
@@ -66,6 +68,24 @@ function info() {
 
 // test hook: the motion numbers of spec 2, read frame by frame across a bar
 const motion = DA.motion;
+
+// test hook: fire an inside-out sweep on the next frame, whatever the arc and whenever the last one was
+function sweep() {
+  sweepForce = 1;
+  return 1;
+}
+
+// the shortest xw move that carries a vertex of one of the figures ON SCREEN through the pole. The tesseract alone
+// cannot reach the pole (its best `den` is 0.2929, outside the 0.24 gate — poly4.sweepTarget's own arithmetic), so
+// the candidate with the greatest reach wins and only then the shortest move.
+function sweepDelta(p) {
+  let best = null;
+  for (const k of self.kinds || []) {
+    const t = sweepTarget(get4(k), p.a1, p.a2, p.a3, DA.SWEEPTOL);
+    if (!best || t.R > best.R + 1e-6 || (Math.abs(t.R - best.R) <= 1e-6 && Math.abs(t.d) < Math.abs(best.d))) best = t;
+  }
+  return best ? best.d : 0;
+}
 
 // test hook: pin the cast for the whole run, cross-fade finished — the only way to bench or shoot one figure
 // (CARD.bench renders 300 frames with the main thread blocked, so a setInterval cannot hold it).
@@ -103,10 +123,11 @@ export default {
   feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
-    'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence'],
+    'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence',
+    'phrase16Pos', 'dropEvt'],
   cuts: 'continuous',
   rt: {},
-  hooks: { train: GR.train, info, motion, pole, cast, key: CO.key, chroma: CO.chroma },
+  hooks: { train: GR.train, info, motion, pole, cast, sweep, key: CO.key, chroma: CO.chroma },
 
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -168,6 +189,13 @@ export default {
     for (let i = 0; i < F.length; i += 2) DA.hit(F[i], F[i + 1]);
     // spec 2: SO(4) still, but the two invariant planes now LOCK to the beat count and are NUDGED by the trains —
     // xy a full turn per 16 beats on the bass, zw per 32 on the mids, xw the old drift plus a bounded excursion.
+    // spec 3: the inside-out sweep is CUED, never chance — a phrase boundary, a section or the drop, and never
+    // while nothing has started (`arc` is 'idle'; the enum has no 'intro' value). One per SWEEP_MIN beats.
+    const wrapped = MS.phrase16Pos < prevPhrase;
+    prevPhrase = MS.phrase16Pos;
+    if (sweepForce || ((wrapped || MS.sectionEvt || MS.dropEvt) && MS.arc !== 'idle')
+    ) DA.sweepFire(beatNow, sweepDelta(p), sweepForce);
+    sweepForce = 0;
     const D = DA.step(dt, {
       turnT: ((MS.beatCount / TURNB) * TAU) % TAU,
       zwT: ((MS.beatCount / TURNB2) * TAU) % TAU,
@@ -176,7 +204,8 @@ export default {
       slow: Math.max(MS.hush, MS.calm),
       beatPhase: MS.beatPhase,
       barPos: MS.barPos,
-      sweep: 0,
+      sweep: DA.sweepAngle(beatNow),
+      sweepU: DA.sweepProgress(beatNow),
     });
     p.a1 = D.a1;
     p.a2 = D.a2;
@@ -206,7 +235,7 @@ export default {
     CO.step(dt, MS, m, this.ctx.hsv, GLOW0, bright);
     this.rt.time = MS.flow;
     this.rt.label = ['tesseract ⊂ 24-cell', '600-cell', '24-cell ⊂ ' + (this.big === 'c120' ? '120-cell' : '600-cell')][this.cast];
-    this.rt.log = 'poly ' + this.rt.label + ' sub ' + p.sub + '/' + p.subB + ' seg ' + this.nSeg;
+    this.rt.log = 'poly ' + this.rt.label + ' sub ' + p.sub + '/' + p.subB + ' seg ' + this.nSeg + (D.sweep ? ' SWEEP ' + D.sweep.toFixed(2) : '');
   },
 
   draw(target, { w, h }) {
@@ -302,8 +331,10 @@ export default {
       valence: 'a little extra warmth when the music is bright',
       presence: 'brightness floor: muted audio still idles visibly',
       seed: 'which cast: tesseract in a 24-cell, the 600-cell, or a 24-cell in the 600- or 120-cell',
-      sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded',
-      arc: 'the bid: never auto-picked during a build',
+      sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded — and it cues a sweep',
+      arc: 'nothing sweeps until the music has started, and the bid: never auto-picked during a build',
+      phrase16Pos: 'a phrase boundary cues the inside-out sweep: one cell is carried through the pole over a beat',
+      dropEvt: 'the drop cues the same sweep',
       regularity: 'the bid: steady',
       clarity: 'the bid: tonal',
       calm: 'slows the springs with the hush, and the bid: unhurried',

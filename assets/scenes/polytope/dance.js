@@ -48,20 +48,26 @@ export const WOBBLE = 0.12;    // rad of extra xw angle at bass 1 — the near c
 export const WOBTC = 0.2;      // seconds: the wobble's ease
 export const DRIFTXW = 0.04;   // today's 0.04 * flowHigh drift, unchanged
 export const XWMAX = 0.18;     // rad: the hard cap on impulse + wobble (see POLE SAFETY above)
+export const SWEEPB = 1;       // beats the inside-out sweep takes — one beat, on the musical clock (= 60/bpm s)
+export const SWEEP_MIN = 4;    // beats that must pass before another sweep may be cued
+export const SWEEPTOL = 0.02;  // how far below the best reach a vertex may be and still be a sweep candidate
 
 // the live numbers, read by index.js and published by hooks.motion()
 // a1/a2 are the TOTALS the scene rotates by (lock + nudge); lock1/lock2 are the eased 16- and 32-beat locks alone.
-export const U = { a1: 0, a2: 0, a3: 0, lock1: 0, lock2: 0, a1T: 0, a2T: 0, nudge1: 0, nudge2: 0, drift: 0, exc: 0, bounce: 0, breath: 0, wobble: 0 };
+export const U = { a1: 0, a2: 0, a3: 0, lock1: 0, lock2: 0, a1T: 0, a2T: 0, nudge1: 0, nudge2: 0, drift: 0, exc: 0, bounce: 0, breath: 0, wobble: 0, sweep: 0, sweepA: 0 };
 
 const XY = [0, 0];   // [angle, velocity] of the nudge in each plane
 const ZW = [0, 0];
 const XW = [0, 0];
 let wob = 0;
+let swStart = -1e9, swAmp = 0;   // the sweep: the beat it was cued on and the xw delta it drives
 
 export function reset() {
   for (const k in U) U[k] = 0;
   XY[0] = XY[1] = ZW[0] = ZW[1] = XW[0] = XW[1] = 0;
   wob = 0;
+  swStart = -1e9;
+  swAmp = 0;
 }
 
 // one exact step of x'' + 2w x' + w^2 x = 0 (critically damped): x(t) = (x + c t) e^-wt, c = v + w x
@@ -90,6 +96,32 @@ export function hit(band, amp) {
   else XW[1] = KICK_XW * amp;
 }
 
+// spec 3: cue an inside-out sweep. `delta` is the xw angle that carries a vertex through the pole (poly4's
+// sweepTarget). Refused inside SWEEP_MIN beats of the last one; `force` is hooks.sweep(). Returns 1 if it took.
+export function sweepFire(beatNow, delta, force) {
+  if (!force && beatNow - swStart < SWEEP_MIN) return 0;
+  swStart = beatNow;
+  swAmp = delta;
+  return 1;
+}
+
+// how far through a sweep we are, 0 outside one — this is the `sweep` parameter (spec 7)
+export function sweepProgress(beatNow) {
+  const u = (beatNow - swStart) / SWEEPB;
+  return u > 0 && u < 1 ? u : 0;
+}
+
+// The angle the sweep asks of the xw plane: a bump that is zero at both ends with zero slope there, so the plane
+// leaves and rejoins its drift without a kink, and peaks at the half beat — the instant the chosen vertex sits on
+// the pole, the cell blows up through the existing gate and the cage reads inside out. It is added AFTER the
+// XWMAX cap because it is the one move in the scene allowed to cross (POLE SAFETY above).
+export function sweepAngle(beatNow) {
+  const u = (beatNow - swStart) / SWEEPB;
+  if (!(u > 0 && u < 1)) return 0;
+  const sn = Math.sin(Math.PI * u);
+  return swAmp * sn * sn;
+}
+
 // One frame. IN: {turnT, zwT, flowHigh, bass, slow, beatPhase, barPos, sweep} — `sweep` is spec 3's deliberate
 // crossing in radians, added AFTER the cap because it is the one move allowed through the pole.
 export function step(dt, IN) {
@@ -110,6 +142,8 @@ export function step(dt, IN) {
   U.wobble = wob;
   U.drift = DRIFTXW * IN.flowHigh;
   U.exc = clampXW(XW[0] + wob);
+  U.sweepA = IN.sweep;
+  U.sweep = IN.sweepU;
   U.a3 = U.drift + U.exc + IN.sweep;
   // (d) the thump: max(0, cos)^4 is a kick on the beat, not a sine — and (e) the bar's breath, alive in silence
   U.bounce = BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * IN.beatPhase)), 4);
@@ -122,6 +156,7 @@ export function motion() {
     a1: +U.a1.toFixed(4), a1T: +U.a1T.toFixed(4), lock1: +U.lock1.toFixed(4), nudge1: +U.nudge1.toFixed(4),
     a2: +U.a2.toFixed(4), a2T: +U.a2T.toFixed(4), nudge2: +U.nudge2.toFixed(4),
     a3: +U.a3.toFixed(4), drift: +U.drift.toFixed(4), exc: +U.exc.toFixed(4), wobble: +U.wobble.toFixed(4),
+    sweep: +U.sweep.toFixed(4), sweepA: +U.sweepA.toFixed(4),
     bounce: +U.bounce.toFixed(4), breath: +U.breath.toFixed(4),
   });
 }
