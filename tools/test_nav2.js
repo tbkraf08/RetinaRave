@@ -74,7 +74,7 @@ const P = {}, dt = 1 / 60, FR = 48 * 60;
 const MON = { n: 0, fast: 0, max: 0, viol: [] };
 let pc = null, pk = 0, pm = '', pd = 0, tm = -999, intN = 0, intHas = 0, maxStep = 0, maxStepLegal = 0;
 const modes = [], events = [];
-let cInMin = 9, dropFrame = -1, backFrame = -1, nonFinite = 0;
+let cInMin = 9, dropFrame = -1, backFrame = -1, nonFinite = 0, gateFrames = 0;
 
 for (let f = 1; f <= FR; f++) {
   const now = f * dt;
@@ -109,8 +109,11 @@ for (let f = 1; f <= FR; f++) {
   pk = N.kick.x;
   pm = N.mode;
   if (N.mode === 'INT') {
-    intN++;
-    intHas += N.cyc.has;
+    if (N.gate.on) gateFrames++;          // walking THROUGH a root: there is no attracting cycle there, by definition
+    else {
+      intN++;
+      intHas += N.cyc.has;
+    }
     cInMin = Math.min(cInMin, 9);
   }
   if (modes.indexOf(N.mode) < 0) modes.push(N.mode);
@@ -124,7 +127,7 @@ console.log('48 s at 60 Hz on the fake timeline:');
 console.log('  modes seen: ' + modes.join(' ') + '   transitions: ' + events.map((e) => 'f' + e[0] + ' ' + e[1]).join(', '));
 ok(nonFinite === 0, 'nothing non-finite in 2880 frames (' + nonFinite + ')');
 ok(MON.viol.length === 0, 'continuity monitor: viol ' + JSON.stringify(MON.viol) + ' (n ' + MON.n + ', fast ' + MON.fast + ', max ' + MON.max.toFixed(4) + ')');
-ok(intN > 0 && intHas / intN >= 0.98, `has on ${(100 * intHas / intN).toFixed(2)} % of ${intN} INT frames (want >= 98 %)`);
+ok(intN > 0 && intHas / intN >= 0.98, `has on ${(100 * intHas / intN).toFixed(2)} % of ${intN} INT frames that are not walking a gate (want >= 98 %); ${gateFrames} frames were (${(100 * gateFrames / (intN + gateFrames)).toFixed(1)} % of INT)`);
 ok(maxStep <= V_MAX * dt + 1e-9, `the largest non-cut step is ${maxStep.toFixed(5)} <= V_MAX*dt ${(V_MAX * dt).toFixed(5)}`);
 ok(dropFrame >= 779 && dropFrame <= 781, `the exit is at frame ${dropFrame} (13 s = f780 +- 1)`);
 ok(backFrame > 0 && backFrame < 26 * 60, `back inside at frame ${backFrame} (before 26 s = f1560)`);
@@ -193,6 +196,8 @@ function runMelody(cenAt, secs) {
   resetDet();
   const S = quiet(), pp = {};
   let yLo = 9, yHi = -9, rhoMax = 0, viol = 0, pc = null, pd = 0, pm = '', tm = -999, nInt = 0;
+  const qs = [], bins = new Set();
+  let pq = 0, gates = 0, backs = 0, gateF = 0;
   for (let f = 1; f <= Math.round(secs * 60); f++) {
     const t = f * dt;
     S.centroid = cenAt(t);
@@ -216,10 +221,23 @@ function runMelody(cenAt, secs) {
       nInt++;
       yLo = Math.min(yLo, c[1]);
       yHi = Math.max(yHi, c[1]);
-      rhoMax = Math.max(rhoMax, N2.rho);
+      if (!N2.gate.on) rhoMax = Math.max(rhoMax, N2.rho);
+      else gateF++;
+      if (N2.cyc.has) {                     // which internal angle the melody is holding, in eighths of a turn
+        const a = N2.cyc.arg / (2 * Math.PI);
+        bins.add(Math.floor((a - Math.floor(a)) * 8));
+      }
+      if (N2.q !== pq) {
+        if (pq) {
+          qs.push(pq + '->' + N2.q);
+          if (N2.q > pq) gates++;
+          else backs++;
+        }
+        pq = N2.q;
+      }
     }
   }
-  return { yLo, yHi, rhoMax, viol, nInt };
+  return { yLo, yHi, rhoMax, viol, nInt, qs, gates, backs, bins: bins.size, gateF };
 }
 
 // A deterministic stand-in for real frame-level centroid jitter: three short periods, no net drift.
@@ -256,8 +274,14 @@ console.log('\nsweep on a jittery centroid vs a real filter sweep:');
 console.log('\nthe melody has room: a 60 s track whose centroid swings 0.35..0.75 on an 8 s period:');
 {
   const m = runMelody((t) => 0.55 + 0.2 * Math.sin(t * 2 * Math.PI / 8), 60);
-  ok(m.yHi >= 0.4 && m.yLo <= -0.4, `Im c reaches ${m.yLo.toFixed(3)} .. ${m.yHi.toFixed(3)} in INT (gate +-0.4; before the retune the same swing gave +-0.17 on real music)`);
-  ok(m.rhoMax <= RHO_CAP + 1e-6, `rho stayed at ${m.rhoMax.toFixed(6)} <= RHO_CAP ${RHO_CAP}`);
+  // Pass 3: the wall owns the radius, so the melody moves c AROUND the component. Im c is therefore capped by the
+  // rim's own geometry and the angle covered is the honest measure of "the melody has room" — both are reported.
+  console.log(`  Im c ${m.yLo.toFixed(3)} .. ${m.yHi.toFixed(3)}   internal angle covered ${m.bins}/8 eighths of a turn   periods ${m.qs.join(' ') || '(none)'}`);
+  ok(m.bins >= 3 || (m.yHi >= 0.4 && m.yLo <= -0.4),
+    `the melody has room: ${m.bins}/8 of the internal angle, Im c ${m.yLo.toFixed(3)}..${m.yHi.toFixed(3)} (gate: 3/8 of the angle, or +-0.4 of Im)`);
+  ok(m.gates >= 1 && m.backs >= 1,
+    `a gate opens AND closes inside 60 s: ${m.gates} in, ${m.backs} back out (${m.qs.join(' ')})`);
+  ok(m.rhoMax <= RHO_CAP + 1e-6, `rho stayed at ${m.rhoMax.toFixed(6)} <= RHO_CAP ${RHO_CAP} on every frame that is not walking a gate (${m.gateF} frames were, ${(100 * m.gateF / m.nInt).toFixed(1)} % of INT — at a parabolic root rho IS 1)`);
   ok(m.viol === 0, `0 continuity violations over ${m.nInt} INT frames (${m.viol})`);
 }
 

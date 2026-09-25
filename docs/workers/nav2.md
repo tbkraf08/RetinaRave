@@ -529,3 +529,124 @@ first now:
 Still not done, and still the honest gap: **the headed real-music run is the orchestrator's, not mine**, so the
 `scratch` detector has still never fired on real audio (max 0.28 / 0.33 across the two traces, and it never fired
 before the retune either — nothing in this retune touched it).
+
+## Pass 3: the wall owns the radius (v0.8, 2026-09-25)
+
+Pass 2 gave the melody room but left c resting at rho 0.41-0.89 (median ~0.6), `par` 0 on every HUD sample, q 1
+throughout and **no gate in 160 s** of real music. At that radius the Julia set is a plain near-polygon and the
+Koenigs arms do not show: centre luminance 0.13 (CN) / 0.17 (WLTP) against NAV's 0.82 / 0.50. The user's own words
+were "I like the way the set curls", so the arms have to be there at rest. This pass is my own top remaining lean
+made structural, as proposed at the end of pass 2.
+
+### The force model
+
+The melody's pull is now projected onto the **tangent** of the rho contour and the radial direction belongs to one
+two-sided spring `K_R*(rhoT - rho)*n`, `rhoT = mix(RHO_FREE, RHO_CAP, press)`. `K_BACK` and `K_FREE` are gone — there
+is one gain. `side` and `height` therefore choose an **angle** around the component, not a distance.
+
+Two findings, both now comments in `nav2.js`:
+
+* **The projection must be unconditional.** Gating it on `rho > RHO_FREE*TAN_ON` — the obvious "only once c is near
+  the rim" — makes that threshold an unstable equilibrium: below it the melody's inward pull fights the spring, above
+  it does not, so c parks exactly there and never crosses. Measured: a pin of 0.90 settled at **0.7021** against a
+  threshold of 0.72. With the projection always on, rho is the spring's alone and tracks rhoT to four decimals.
+* **The normal is degenerate at the seed.** At c = 0, lambda = 0 and |lambda| is not differentiable, so `rhoGrad`
+  returns nothing usable and the default normal (1, 0) pushed c straight to the **cusp** — internal angle 0, the one
+  place on the rim where the Julia set is a fat round blob with no arms, and the tangential flow's *unstable*
+  equilibrium, so it stuck there. Below `RHO_DEGEN` 0.05 the outward direction is now taken toward the melody's wish.
+  This is what the first luminance sweep was really measuring; before the fix every pinned radius read 0.037-0.057.
+
+### RHO_FREE chosen by measurement
+
+`hooks.rho(v)` (`&rho=0.91`) pins the radial target. `#test` f360, `tools/lum.py` centre, against **NAV's own f360
+centre 0.2933** on the same frame (`IDS=0 tools/scene-md5.sh`), so the bar is 0.4 x 0.2933 = **0.117**:
+
+| pinned rho | c settles at | q | par | centre lum | vs NAV |
+|---|---|---|---|---|---|
+| 0.88 | 0.9097 | 1 | 0.265 | 0.0523 | 0.18x |
+| 0.90 | 0.9108 | 1 | — | 0.0503 | 0.17x |
+| **0.91** | **0.9204** | **2** | **0.744** | **0.1297** | **0.44x** |
+| 0.92 | 0.9200 | 2 | 0.741 | 0.1349 | 0.46x |
+| 0.93 | 0.9289 | 2 | — | 0.1484 | 0.51x |
+| 0.95 | 0.9497 | 2 | 0.925 | 0.1849 | 0.63x |
+
+**RHO_FREE = 0.91**, the lowest that clears the bar. The step between 0.90 and 0.91 is not gradual and it is not
+about brightness curves: it is **the gate**. At 0.91 the melody riding the rim reaches the 1/2 root and walks into
+the period-2 disc, where `par` goes 0.27 -> 0.74 and the arms light. Below it c stays on the cardioid at q 1 and the
+blob is flat. Items 1 and 2 of this pass turned out to be the same item.
+
+### The gate is reachable under the melody alone
+
+"Pressed" is now simply `rho > GATE_RHO_MIN` (0.86, kept below RHO_FREE) or a refused step; riding the rim IS being
+pressed, so the gate waits only for the Farey address to hold still for `GATE_HOLD`, now 1.0 beat. On the 60 s
+synthetic melody in `test_nav2.js` (centroid 0.35-0.75 on an 8 s period):
+
+```
+Im c -0.571 .. 0.669   internal angle covered 6/8 eighths of a turn   periods 1->3 3->1 1->3 3->1 1->3 3->1
+a gate opens AND closes inside 60 s: 3 in, 3 back out                                    PASS
+rho stayed at 0.976919 <= RHO_CAP on every non-gate frame (28 gate frames, 0.8 % of INT) PASS
+0 continuity violations over 3480 INT frames                                             PASS
+```
+
+Both measures of "the melody has room" are reported, as asked: **Im c reaches -0.571..+0.669** (it is not capped by
+the rim after all, because the 1/3 bulb reaches Im 0.8) **and 6 of 8 eighths of the internal angle**. c walks into
+the three-arm bulb and back out through the angle-0 exit gate, three times, unaided.
+
+Two statistics had to change their definition, and the reason is not a weakening: **at a parabolic root there is no
+attracting cycle**, so while a gate is walking through one, `has` is 0 and rho is 1 *by definition*. Those frames are
+now counted separately instead of failing the assertion. On `#test` they are **9.9 %** of INT frames (155 of 1565) —
+`#test`'s centroid ramp sweeps the angle fast and trips gate after gate; on the 60 s melody they are 0.8 %.
+
+### Re-proved
+
+```
+check.js                 81 modules · 0 fail · 2 warn (feigen 351, nav2.js 393 — both soft cap)
+test_nav2.js / test_field.js / param-smoke (49) / test_baby / test_misi    all OK
+update() cost            median 0.0040 ms  mean 0.0056  p99 0.0378  max 0.1998   (gate 0.5 ms)
+continuity monitor 60 s  {"n":3606,"fast":0,"max":0.02016,"viol":[]}   errs [] bad []
+bench, q .95 + Q.iter 264 pinned, interleaved:  [2.709/2.321] [1.701/1.718] [1.696/1.720]
+                         NAV2 1.698 vs NAV 1.719 = 0.99x   (cap 1.5x; unchanged from pass 2's 0.95x, so the finder
+                         running pressed against the rim every frame costs nothing measurable)
+house run                errs [] bad [] q 0.696 bench 2.069 ms
+```
+
+Centre luminance on the house demo, NAV2 beside NAV at the same clock times (two page loads; the demo synth uses
+`Math.random`, so these are indicative, not bit-comparable):
+
+| t | NAV2 centre | NAV centre | ratio |
+|---|---|---|---|
+| 10 s | 0.507 | 0.624 | 0.81x |
+| 30 s | 0.085 | 0.124 | 0.69x |
+| 50 s | 0.620 | 0.303 | **2.05x** |
+
+On `#test` f360 the same measure is 0.135 against NAV's 0.293 (**0.46x**), where pass 2 read 0.043 (0.15x).
+
+### The md5s, third and last re-base
+
+```
+plain f360  9021eac8e0def02ce49a28b4bf0f77e9        still f360  9021eac8e0def02ce49a28b4bf0f77e9
+plain f840  f62997959107739e98e3599a68fdd4ef        still f480  a1e037f5936ebbe2293c9734294d898b
+                                                    still f720  62c73a6f3a33d6e31f30e31e8855fa5d
+                                                    still f840  7e3f34cb2ee398d677d3c1c26d83dcd2
+```
+
+Each stable across two runs; `still f360 == plain f360` still holds for the same reason. All three sets are kept in
+`tools/accept/v0.8/nav2-md5.txt`. Shots: `nav2-pass3.jpg` (f360 / f600 / f720 / f765 / f840 with NAV's f360 beside
+them) and `nav2-pass3-house.jpg`.
+
+### What I would tune first now
+
+1. **`GATE_HOLD` 1.0 beat — how often the Julia set changes species.** This is the one number I am least comfortable
+   with and the only thing in this pass I would push back on. Riding the rim means c is *always* pressed, so the
+   gate's only damping is how long the melody must hold an angle. On `#test` that is 9.9 % of interior frames spent
+   walking through roots with no cycle and the flat no-chart shading; on a steadier melody it is 0.8 %. If the user
+   finds it busy, `GATE_HOLD` is the knob, and `SIZE_MIN` (0.02) is the second — raising it refuses the smaller
+   children and keeps c among the big bulbs.
+2. **`RHO_FREE` 0.91.** Measured, not guessed, but measured against one frame of one timeline. 0.93 and 0.95 look
+   better still on `#test` (0.51x and 0.63x of NAV) at the cost of sitting closer to the cap, which leaves the
+   wind-up less room to press further.
+3. **`RHO_DEGEN` 0.05 and the wish-direction fallback.** It only fires at the seed and after a drop's return, but it
+   is the difference between the melody choosing the angle and the cusp choosing it.
+4. Then the pass-2 list (`SW_CW`, `Y_REACH`/`NORM_TAU`) and the original 2-8.
+
+Still not done: the headed real-music run is the orchestrator's, so `scratch` has still never fired on real audio.

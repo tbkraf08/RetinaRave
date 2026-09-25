@@ -34,22 +34,34 @@ export const TAU_M = 0.55;       // s — the melody's pull: v = (wish - c)/TAU_
 export const LOOSE = 0.8;        // how much of the pull a full wind-up takes away
 export const BIS = 6;            // bisections to the largest step still inside
 export const RHO_CAP = 0.985;    // the wall (float32 uC quantisation; above this the picture stops changing)
-export const RHO_FREE = 0.72;    // where the ball rests with no wind
-export const K_R = 4.0;          // units/s per unit of (rhoT - rho): the wind's pressure toward the rim
-export const K_BACK = 1.2;       // ... and the always-on restoring push when rho is ABOVE the target: without it the
-                                 // melody parks c on the rim, where ln|lambda| -> 0 makes the bands sub-pixel
-export const K_FREE = 0.90;      // ... and BELOW it, with no wind at all. The wall sets the radius, the melody sets the
-                                 // angle: in the cardioid's belly the melody alone would leave c near the centre, where
-                                 // the Julia set is a plain near-circle and par is 0. rho ~ RHO_FREE keeps it lobed.
+export const RHO_FREE = 0.91;    // where the ball rests with no wind. Chosen by measurement, not taste: `&rho=<r>`
+                                 // pins the radial target, and the centre luminance of #test f360 (tools/lum.py)
+                                 // against NAV's 0.2933 on the same frame runs 0.052 at 0.88, 0.050 at 0.90, 0.130 at
+                                 // 0.91, 0.135 at 0.92, 0.148 at 0.93, 0.185 at 0.95. 0.91 is the LOWEST that clears
+                                 // 0.4x NAV (0.117) — and the step is the gate: at 0.91 the melody riding the rim
+                                 // reaches the 1/2 root and walks into the period-2 disc, where par goes 0.27 -> 0.74
+                                 // and the arms light. Below it c stays on the cardioid at q 1 and the blob is flat.
+// The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
+// "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
+// fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
+// at 0.7021 against a threshold of 0.72. With the projection always on, rho is the spring's alone and tracks rhoT.
+export const RHO_DEGEN = 0.05;   // below this |lambda| the rho-normal is meaningless (at c = 0, lambda = 0 and |lambda|
+                                 // is not differentiable), so the OUTWARD direction is taken toward the melody's wish.
+                                 // Without it the seed at c = 0 pushed straight along the default normal (1, 0) to the
+                                 // CUSP, internal angle 0 — the one place on the rim where the Julia set is a fat round
+                                 // blob with no arms at all, and a tangential flow's unstable equilibrium, so it stuck.
+export const K_R = 4.0;          // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
+                                 // radial direction outright now, so there is no separate inward/outward gain.
 export const K_HIT = 0.35;       // a hit pushes rhoT transiently (the only thing left of NAV's kick)
 export const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 export const PAR_HI = 0.98;
 // --- the gates --------------------------------------------------------------------------------------------
 export const GATE_Q = 7;         // the largest denominator the Farey address will name
 export const GATE_W = 0.02;      // gate width in turns, divided by q
-export const GATE_RHO = 0.004;   // rho this near the cap is pressed even if the step was not blocked
-export const GATE_RHO_MIN = 0.93;// ... and a blocked step is pressure only this near the rim
-export const GATE_HOLD = 0.5;    // beats of held pressure before the cap opens
+export const GATE_RHO_MIN = 0.86;// riding the rim at RHO_FREE IS being pressed: at or above this, c is against the
+                                 // wall and a root it holds still beside is a gate. Kept below RHO_FREE on purpose.
+export const GATE_HOLD = 1.0;    // beats of held pressure before the cap opens (c rides the rim now, so
+                                 // this is the whole damping on how often a gate fires)
 export const GATE_BUILD = 0.4;   // a wind-up must never change component: no gate while build is above this
 export const SIZE_MIN = 0.02;    // the child must be at least this big in c to be worth entering
 export const GATE_C = 1;         // child-size proxy: GATE_C*sin(pi p/q)/q^2 / |dlambda/dc| (0.25 at the 1/2 root = its radius)
@@ -76,7 +88,7 @@ export const N2 = {
   path: new Float32Array(96 * 3), pathCut: 999, orbit: new Float32Array(160 * 3),
   kick: { x: 0 },        // the continuity monitor's shape; NAV2 is chart-free, so this is 0 for ever
   baby: null,            // ... and it never dives into a baby copy
-  cycBase: 1, seeded: 0, xSeed: 0, blocked: 0,
+  cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
   log: () => {},
 };
 
@@ -142,6 +154,8 @@ export function resetNav2() {
   N.cGood[0] = N.cGood[1] = 0;
   N.q = 1;
   N.xSeed = 0;
+  // NOT rhoPin: it is a test pin set by a hash hook, which fires BEFORE the first update() and so before this
+  // lazy reset runs (CONTRACTS §1.4: "state a hook sets must survive the first update"). Resetting it here ate it.
   findCycle(0, 0, TR, N_MAX);
   land(N, 0, 0, TR);
   N.seeded = 1;
@@ -215,7 +229,7 @@ function gateTick(N, dt, S) {
   // the wall's own restoring push balance depends on the music, and on the 1/3 root that balance sits at rho 0.974 —
   // below any fixed threshold near the cap, so a fixed threshold means the gate can never open under the melody alone
   // (measured 2026-09-25: c walked to the 1/3 root and sat there for 400 frames).
-  const pressed = (N.blocked || N.rho > RHO_CAP - GATE_RHO) && N.rho > GATE_RHO_MIN;
+  const pressed = N.rho > GATE_RHO_MIN || N.blocked;
   if (!N.cy.has || S.build >= GATE_BUILD || !pressed) {
     G.press = 0;
     return;
@@ -306,12 +320,26 @@ function stepInt(N, dt, S, P) {
   } else {
     const loose = 1 - LOOSE * D.wind;
     let vx = (wx - N.cPath[0]) / TAU_M * loose, vy = (wy - N.cPath[1]) / TAU_M * loose;
-    // a hit pushes the TARGET modulus transiently. The wall is two-sided: outward only as hard as the wind presses,
-    // inward always — so with nothing winding up the ball rests at RHO_FREE and the interior stays legible.
-    const press = clamp(D.wind + K_HIT * S.hit, 0, 1), rhoT = mix(RHO_FREE, RHO_CAP, press);
-    const dr = rhoT - N.rho, kr = dr >= 0 ? (K_R * press + K_FREE) * dr : K_BACK * dr;
-    vx += kr * N.n[0];
-    vy += kr * N.n[1];
+    // The wall owns the RADIUS, the melody owns the ANGLE: the radial part of the melody's pull is projected out and
+    // what is left moves c AROUND the component. `side` and `height` therefore choose an angle, not a distance.
+    let nx = N.n[0], ny = N.n[1];
+    if (N.rho < RHO_DEGEN) {              // no usable normal yet: go out the way the melody is asking
+      const ux = wx - N.cPath[0], uy = wy - N.cPath[1], um = Math.sqrt(ux * ux + uy * uy);
+      if (um > 1e-9) {
+        nx = ux / um;
+        ny = uy / um;
+      }
+    } else {
+      const dn = vx * nx + vy * ny;
+      vx -= dn * nx;
+      vy -= dn * ny;
+    }
+    // a hit pushes the TARGET modulus transiently; the wind carries it from RHO_FREE up to the cap
+    const press = clamp(D.wind + K_HIT * S.hit, 0, 1);
+    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(RHO_FREE, RHO_CAP, press);
+    const kr = K_R * (rhoT - N.rho);
+    vx += kr * nx;
+    vy += kr * ny;
     const sp = Math.sqrt(vx * vx + vy * vy);
     if (sp > V_MAX) {
       vx *= V_MAX / sp;

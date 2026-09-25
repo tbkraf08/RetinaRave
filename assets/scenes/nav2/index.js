@@ -49,6 +49,9 @@ export default {
     // two arguments: CARD.REG[8].scene.hooks.wish(x, y) — pin the melody's wish, upstream of the spring and the ema
     wish: (x, y) => { DET.pinWish = x === undefined || x === null ? null : [+x, +y]; },
     reset: () => { resetNav2(); resetDet(); },
+    // &rho=0.9 — pin the radial target, so the picture at a chosen |lambda| can be shot and measured (this is how
+    // RHO_FREE was chosen: the lowest resting radius whose centre luminance still shows the Koenigs arms).
+    rho: (v) => { N2.rhoPin = v === undefined ? -1 : clamp(+v, 0, 0.9999); },
     // Measurement only (HARNESS "Bench protocol": CARD.bench cannot see the CPU finder). It calls the scene's own
     // update path n times on the last frame's arguments and returns the MEDIAN in ms. The wall clock here is never
     // read by update/draw/overlay — nothing on screen depends on it — but it DOES advance the navigator's state, so
@@ -73,7 +76,7 @@ export default {
       mode: N2.mode, c: [N2.c[0], N2.c[1]], rho: N2.rho, q: N2.q, has: N2.cyc.has, comp: N2.compSize,
       wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow,
       pitch: DET.pitch, lift: DET.lift, sweep: DET.sweep, roll: DET.roll, scratch: DET.scratch, swirl: DET.swirl,
-      spin: DET.spin, rate: DET.rate, angle: DET.angle, par: N2.par, lg: N2.lg, pathCut: N2.pathCut,
+      spin: DET.spin, rate: DET.rate, angle: DET.angle, par: N2.par, lg: N2.lg, pathCut: N2.pathCut, rhoPin: N2.rhoPin,
       gate: N2.gate.on ? N2.gate.p + '/' + N2.gate.q + ':' + N2.gate.ph : '', still: STILL,
       dropExpectedIn: LAST ? LAST.dropExpectedIn : -1, frame: 0,
     }),
