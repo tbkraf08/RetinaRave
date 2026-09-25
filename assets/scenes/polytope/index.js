@@ -3,6 +3,7 @@
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).
 import { clamp, ema } from '../../math/util.js';
 import * as CO from './colour.js';
+import { HELP } from './help.js';
 import * as DA from './dance.js';
 import * as GR from './grooves.js';
 import { GATE, get4, emit, mvpMat, poleMargin, rotate4, sweepTarget } from './poly4.js';
@@ -27,6 +28,20 @@ const PWID = 0.9;
 const PDIP = 0.3;                // how far BELOW normal a piece with no bump on it sits, at groove 1
 const GROOVE0 = 0.8;             // the resting amplitude of the whole thing (becomes the `groove` param, spec 7)
 const GLOW0 = 0.35;              // a sector's brightness floor: what an unsounded pitch class still shows (spec 5)
+// spec 6, growth in two stages. Stage 1 (build 0 → 0.5) rounds the arcs: the subdivision rises from SUBLO of the
+// tier's own value to all of it — never past it, so the tier budget (§1.4: a per-edge subdivision is geometry and
+// stays in the scene, indexed by tier()) is never raised by the music and the worst-case segment count does not
+// move. A subdivision is an integer and every change of it re-cuts every edge, which is the one discontinuity
+// CONTRACTS §1.12 sanctions for a `continuous` scene ("put the tier budget in the number of segments per ring") —
+// and grooves.fillProfile conserves the bumps' ink across the change, so the beads do not flash. Eased over ~1 s.
+const SUBLO = 0.7;
+const SUBTC = 0.35;              // seconds (three of them ≈ the 1 s the brief asks for)
+const SUBAR = 0.3;               // how much `arousal` counts toward stage 1 on top of the build (TORUS2's number)
+// Stage 2 (build 0.5 → 1) grows the figure. SIZE0 is today's resting size; the cap is SIZE0 + the three terms.
+const SIZE0 = 0.95;
+const SIZEI = 0.10;              // intensity
+const SIZEA = 0.07;              // arousal
+const SIZEB = 0.15;              // the second half of the build
 
 // cast: [inner, outer]. s = scale, w = width scale, i = intensity, ta = palette coordinate.
 const CASTS = [
@@ -124,7 +139,7 @@ export default {
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
     'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence',
-    'phrase16Pos', 'dropEvt'],
+    'phrase16Pos', 'dropEvt', 'build', 'intensity', 'arousal'],
   cuts: 'continuous',
   rt: {},
   hooks: { train: GR.train, info, motion, pole, cast, sweep, key: CO.key, chroma: CO.chroma },
@@ -157,6 +172,7 @@ export default {
     this.jy = 0;
     this.nSeg = 0;
     this.kinds = [];
+    this.subF = 1;
     this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0, gbase: 1 };
   },
 
@@ -210,7 +226,10 @@ export default {
     p.a1 = D.a1;
     p.a2 = D.a2;
     p.a3 = D.a3;
-    p.g = (1 - 0.3 * MS.tension) * (1 + 0.6 * MS.dropEnv + 0.08 * MS.kick) * (1 + D.bounce) * (1 + D.breath);
+    // spec 6 stage 2: the resting size comes from intensity and arousal, the second half of the build grows it,
+    // and today's tension shrink and 60 % drop swell are untouched.
+    const size = SIZE0 + SIZEI * MS.intensity + SIZEA * MS.arousal + SIZEB * Math.min(1, Math.max(0, 2 * MS.build - 1));
+    p.g = size * (1 - 0.3 * MS.tension) * (1 + 0.6 * MS.dropEnv + 0.08 * MS.kick) * (1 + D.bounce) * (1 + D.breath);
     // camera: a slow orbit on musical time, plus synapse's tension shake — hashed, never Math.random()
     p.yaw = 0.12 * MS.flow;
     p.pitch = 0.3 * Math.sin(0.11 * MS.flow);
@@ -219,8 +238,11 @@ export default {
     this.jx = ema(this.jx, (hash1(s) - 0.5) * 2 * jit, dt, 0.05);
     this.jy = ema(this.jy, (hash1(s + 19.19) - 0.5) * 2 * jit, dt, 0.05);
     const t = this.ctx.tier();
-    p.sub = SUB[t];
-    p.subB = SUBB[t];
+    // spec 6 stage 1: the arcs get rounder with the build, toward the tier's own subdivision and never past it
+    const gB = Math.min(1, 2 * MS.build + SUBAR * MS.arousal);
+    this.subF += (SUBLO + (1 - SUBLO) * gB - this.subF) * (1 - Math.exp(-dt / SUBTC));
+    p.sub = Math.max(2, Math.round(SUB[t] * this.subF));
+    p.subB = Math.max(2, Math.round(SUBB[t] * this.subF));
     p.pulse = 1 + 0.4 * MS.hit;
     // spec 4: the three trains painted along one edge, sampled where the subdivision already lands
     GR.fillProfile(this.profA, p.sub, beatNow);
@@ -302,45 +324,5 @@ export default {
 
   hud() { return this.rt.label + ' · ' + this.nSeg + ' segs · bumps ' + GR.live(beatNow) + ' · xy ' + DA.U.a1.toFixed(2) + '/' + DA.U.a1T.toFixed(2); },
 
-  help: {
-    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
-    feats: {
-      flow: 'the scene clock: the camera\'s orbit and its pitch',
-      flowHigh: 'drifts the extra xw turn, the one that carries a cell through the pole',
-      tension: 'shrinks the figure and shakes the camera (hashed jitter, never random)',
-      dropEnv: 'the figure swells by up to 60 %',
-      kick: 'confirms a bass onset (the train counts it at full strength, an unconfirmed rise at 60 %), and a small swell',
-      bass: 'the bass groove: every rise over its own average files a bump that travels along every edge',
-      mid: 'the mid groove: a sharper bump, on the outer figure only',
-      high: 'the high groove: tiny fast ripples everywhere',
-      snare: 'confirms a mid onset',
-      hat: 'confirms a high onset',
-      beat: 'files a faint bass bump when a whole bar went by with no onset, so a drumless track still breathes',
-      beatCount: 'the lock: sixteen beats is one turn of the xy plane, thirty-two of the zw plane',
-      beatPhase: 'the beat clock the trains are filed on, and the 5 % thump on every beat',
-      barPos: 'the bar\'s breath: the figure swells and shrinks 2 % over four beats, even in silence',
-      hush: 'the hush before a drop slows every spring, so the figure hangs',
-      gridTrust: 'when the grid is trusted the bumps snap to the nearest sixteenth, so a straight groove reads as even',
-      hit: 'the inner figure\'s strokes pulse thicker',
-      lvl: 'stroke brightness',
-      key: 'the key anchors the colour wheel painted round the cage: a modulation turns the whole wheel',
-      mode: 'major warms the anchor, minor cools it',
-      keyConf: 'how far the key is trusted; below a third the last confident key is held and the colour slides back to the palette',
-      chroma: 'the sounding notes light their own sectors of the wheel; the rest sit at the floor',
-      harmAngle: 'stands in for the chroma when the chroma carries no energy, so the wheel is never dead',
-      valence: 'a little extra warmth when the music is bright',
-      presence: 'brightness floor: muted audio still idles visibly',
-      seed: 'which cast: tesseract in a 24-cell, the 600-cell, or a 24-cell in the 600- or 120-cell',
-      sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded — and it cues a sweep',
-      arc: 'nothing sweeps until the music has started, and the bid: never auto-picked during a build',
-      phrase16Pos: 'a phrase boundary cues the inside-out sweep: one cell is carried through the pole over a beat',
-      dropEvt: 'the drop cues the same sweep',
-      regularity: 'the bid: steady',
-      clarity: 'the bid: tonal',
-      calm: 'slows the springs with the hush, and the bid: unhurried',
-    },
-    eli5: 'These are the cubes and pyramids of four-dimensional space, seen from the inside. The cage keeps turning itself inside out because a 4-D turn has two independent speeds at once.',
-    why: 'Each figure lives on the 3-sphere, the surface of a 4-D ball, and is squashed into our room by the same shadow-casting trick that turns a globe into a flat map: cells near the light source blow up and fade out, cells opposite it shrink. The music sets the two turning speeds (bass and mids), the size (tension and drops) and which figure you get (the section).',
-    math: 'Six regular convex 4-polytopes exist; four are here. Vertices are normalised to |v| = 1, so they tile S³; edges are the nearest-neighbour pairs. Each frame a general element of SO(4) — independent rotations in the xy and zw planes (a double rotation, angles 0.1·flowBass and 0.14·flowMid) plus an xw turn — moves them, then stereographic projection from the pole (0,0,0,1), p ↦ (x,y,z)/(1−w), lands them in R³. An edge is subdivided on the sphere, so each piece follows a great circle and the projection sends it to a circular arc: the cells bulge because circles map to circles, not because anything is drawn curved. The pole is the point at infinity — the (1−w) > 0.24 gate and its ramp fade a cell out as it sweeps through. Counts: tesseract 16/32, 24-cell 24/96, 600-cell 120/720, 120-cell 600/1200.',
-  },
+  help: HELP,
 };
