@@ -160,6 +160,7 @@ export default {
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
     gl.uniform4f(u('uView'), vx, vy, scale, rotv);
     gl.uniform2f(u('uKoen'), SLIDE * kn, SLIDE_A * kn);
+    gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));
