@@ -1,4 +1,11 @@
-// NAV2 shaders = NAV's colour mapping `v2` (assets/scenes/nav/shaders-v2.js) lifted verbatim + the critical-orbit point program from nav/shaders.js (the same under both mappings); NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
+// NAV2 shaders = NAV's colour mapping `v2` (assets/scenes/nav/shaders-v2.js) lifted verbatim + the critical-orbit point program from nav/shaders.js, plus NAV2's own uniforms.
+// NAV2's additions, each with a rest value that is an EXACT IEEE identity, so `&still=1` (hooks.still) renders byte-identically to the lifted shader for the same c:
+//   uKoen vec2  rest (0,0)  the pitch slides the Koenigs bands (Lk) and rotates the spokes (ai)      -- x + 0
+//   uCurl float rest 0      a gain on the natural arm tightness arg(lambda)/ln|lambda|: ai += uCurl*Lk  -- x + 0*Lk
+//   uGlow float rest 1      the smoulder brightens in the hush: the two uPar*uPar terms times uGlow     -- x * 1
+//   uView.xy    rest (0,0)  the whole blob floats with the pitch (this uniform already existed, always 0 in NAV)
+//   uView.w     rest = GROOVE.rot alone; NAV2 adds its own spin angle on top
+// NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
 // budget the loop now carries (uIterLo — the same three lines in both files, or the two mappings disagree) — in
@@ -14,7 +21,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0)
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -38,6 +45,7 @@ void main(){
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
+    Lk+=uKoen.x;ai+=uKoen.y; /* NAV2: the pitch slides the bands and rotates the spokes. Rest (0,0) is an exact IEEE identity (x+0), so a still frame is byte-identical to the same c without this line */
     float bands=.5+.5*cos(TAU*Lk);float spokes=.5+.5*cos(ai*2.+uTime*.4);
     vec3 base=pal(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes);
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}

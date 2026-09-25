@@ -4,7 +4,7 @@
 // against the boundary until the Koenigs arms wind up, and the drop is the one cut. NAV (id 0) stays home and untouched.
 import { clamp, sstep, ema, frac, Spring } from '../../math/util.js';
 import { N2, updateNav2, resetNav2, Y_AMP, X_HOME, X_AMP, LIFT } from './nav2.js';
-import { DET, resetDet, updateDet, WIND_BEATS, SPIN_SW, SPIN_W } from './detect.js';
+import { DET, resetDet, updateDet, WIND_BEATS, SPIN_SW, SPIN_W, SLIDE, SLIDE_A } from './detect.js';
 import { FS_JULIA_V2, FS_MANDEL_V2, VS_PT, FS_PT } from './shaders.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
@@ -143,7 +143,7 @@ export default {
 
   draw(tgt, { w, h, vmix, colour }) {
     if (!this._S) return;   // a forced scene is drawn on its first frame before its first update()
-    const gl = ctx.gl, S = this._S, N = N2, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
+    const gl = ctx.gl, S = this._S, N = N2, D = DET, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
     const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u;
@@ -151,9 +151,15 @@ export default {
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
     const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom;
     const rotv = this._groove.rot;
-    N.view = [0, 0, scale, rotv];
+    // The blob floats UP the SCREEN, not up the complex plane: uView.xy is the view's centre in c, so the offset is
+    // carried through the same rotation the shader applies to p (z = uView.xy + uView.z*rot(uView.w)*p, and VS_PT's
+    // own algebra fixes rot(a) = [[cos,-sin],[sin,cos]]), and negated, because raising the blob lowers the centre.
+    const lv = STILL ? 0 : -D.lift * scale, kn = STILL ? 0 : D.pE;
+    const vx = -Math.sin(rotv) * lv, vy = Math.cos(rotv) * lv;
+    N.view = [vx, vy, scale, rotv];
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
-    gl.uniform4f(u('uView'), 0, 0, scale, rotv);
+    gl.uniform4f(u('uView'), vx, vy, scale, rotv);
+    gl.uniform2f(u('uKoen'), SLIDE * kn, SLIDE_A * kn);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));
@@ -180,7 +186,7 @@ export default {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.useProgram(pt.p);
-    gl.uniform4f(pt.u('uView'), 0, 0, scale, rotv);
+    gl.uniform4f(pt.u('uView'), vx, vy, scale, rotv);   // the orbit dots ride with the blob
     gl.uniform1f(pt.u('uAsp'), asp);
     gl.uniform1f(pt.u('uSize'), h * 0.012 * (DOTS_0 + S.bass));
     const oc = ctx.hsv(frac(LOOK.hue + 0.5), 0.35, 0.5 * LOOK.pal[3]);
