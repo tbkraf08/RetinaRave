@@ -2,6 +2,7 @@
 // projected stereographically into the room. Edges are subdivided on S^3, so every edge arrives as a circular
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).
 import { clamp, ema } from '../../math/util.js';
+import * as GR from './grooves.js';
 import { get4, emit, mvpMat } from './poly4.js';
 
 const SUB = [3, 4, 6, 8];        // subdivisions per edge by tier (small polytopes)
@@ -34,15 +35,23 @@ let self = null;   // §1.11's look.get/set are called on the look object, not t
 
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
+let beatNow = 0;   // beatCount + beatPhase — musical time, the only clock the grooves and the dance ever read
+
+// test hook: the three trains as numbers (spec 1) — the positions a proof shot is read against, and the per-band
+// n / last / ema / thr the orchestrator's real-music trace reads every 2 s to judge a dead or saturated train.
+const info = () => JSON.stringify(GR.info(beatNow));
+
 export default {
   name: 'polytope',
   id: 5,
   tag: 'regular 4-polytopes on S³, stereographic',
   card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and cast into three dimensions' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
   feats: ['flow', 'flowBass', 'flowMid', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
-    'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm'],
+    'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
+    'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust'],
   cuts: 'continuous',
   rt: {},
+  hooks: { train: GR.train, info },
 
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -52,6 +61,7 @@ export default {
   init(ctx) {
     self = this;
     this.ctx = ctx;
+    GR.reset();
     for (const k of ['tess', 'c24', 'c600', 'c120']) get4(k);   // build the tables now, never mid-frame
     this.L = ctx.lines.mk(CAP);
     this.segs = new Float32Array(CAP * 12);
@@ -90,6 +100,9 @@ export default {
       this.bigMix = 0;
     }
     this.bigMix = Math.min(1, this.bigMix + dt);
+    // spec 1: the three onset trains. Musical time only — a bump filed at beat B stays at age beatNow − B for ever.
+    beatNow = MS.beatCount + MS.beatPhase;
+    GR.step(dt, [MS.bass, MS.mid, MS.high], [MS.kick, MS.snare, MS.hat], beatNow, MS.beat, MS.gridTrust);
     // SO(4): two independent plane rotations plus an xw turn, all on musical time
     p.a1 = 0.1 * MS.flowBass;
     p.a2 = 0.14 * MS.flowMid;
@@ -179,7 +192,7 @@ export default {
     },
   },
 
-  hud() { return this.rt.label + ' · ' + this.nSeg + ' segs'; },
+  hud() { return this.rt.label + ' · ' + this.nSeg + ' segs · bumps ' + GR.live(beatNow); },
 
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
@@ -190,7 +203,16 @@ export default {
       flowHigh: 'the extra xw turn',
       tension: 'shrinks the figure and shakes the camera (hashed jitter, never random)',
       dropEnv: 'the figure swells by up to 60 %',
-      kick: 'a small swell',
+      kick: 'confirms a bass onset (the train counts it at full strength, an unconfirmed rise at 60 %), and a small swell',
+      bass: 'the bass groove: every rise over its own average files a bump that travels along every edge',
+      mid: 'the mid groove: a sharper bump, on the outer figure only',
+      high: 'the high groove: tiny fast ripples everywhere',
+      snare: 'confirms a mid onset',
+      hat: 'confirms a high onset',
+      beat: 'files a faint bass bump when a whole bar went by with no onset, so a drumless track still breathes',
+      beatCount: 'the beat clock the trains are filed on',
+      beatPhase: 'the beat clock the trains are filed on',
+      gridTrust: 'when the grid is trusted the bumps snap to the nearest sixteenth, so a straight groove reads as even',
       hit: 'the inner figure\'s strokes pulse thicker',
       lvl: 'stroke brightness',
       presence: 'brightness floor: muted audio still idles visibly',
