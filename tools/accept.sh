@@ -1,9 +1,9 @@
-# Acceptance sweep -> tools/accept/${ACC:-v0.5}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/, v0.4/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
-# Acceptance sweep -> tools/accept/${ACC:-v0.5}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/${ACC:-v0.8}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/, v0.4/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/${ACC:-v0.8}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
-export OUT=tools/accept/${ACC:-v0.5}; mkdir -p $OUT
+export OUT=tools/accept/${ACC:-v0.8}; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
@@ -75,6 +75,21 @@ grep -q "even true" $OUT/t2-train-4x4.txt && grep -q "even false" $OUT/t2-train-
 CLOCK=1 node tools/cdp.js 'test&scene=3&param=torus2.morph=c:1' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"t2-par-morph1-s3-f360"},{"eval":"'"'"'n '"'"'+CARD.PROUTE.n+'"'"' p '"'"'+JSON.stringify(CARD.paramsOf('"'"'torus2'"'"'))"}]' | grep EVAL | sed 's/.*=> //'
 [ "$(md5sum $OUT/t2-par-morph1-s3-f360.jpg | cut -c1-32)" != "$(grep s3-f360 $R7 | cut -c1-32)" ] && echo "torus2 param morph=1 moves the f360 md5" || echo "FAIL torus2 param morph=1 moved nothing"
 python3 tools/montage.py $OUT/montage-torus2.jpg 2 $OUT/s7-t6.jpg $OUT/s3-t6.jpg $OUT/s7-t14.jpg $OUT/s3-t14.jpg $OUT/t2-train-4x4.jpg $OUT/t2-train-sync.jpg 2>/dev/null && echo "montage $OUT/montage-torus2.jpg"
+echo "== nav2"           # v0.8: NAV2 (id 8, forced-only, score 0 — DECISIONS §39): its own f360/f840 md5s against tools/accept/v0.8/scene-md5-v08.txt, the &still=1 four against nav2-still-md5.txt (every NAV2-only uniform at its IEEE-identity rest), the two node tests, and the continuity monitor over 30 s with NAV2's state injected (max must stay under 0.06: every non-cut frame moves cPath by <= V_MAX*dt by construction)
+R8=tools/accept/v0.8/scene-md5-v08.txt
+for f in 360 840; do REF=$(grep "s8-f$f" $R8 | cut -c1-32)
+  CLOCK=1 node tools/cdp.js 'test&scene=8' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-s8-f$f\"},{\"eval\":\"'s8 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[8].scene.hud().slice(0,60)\"}]" | grep EVAL | sed 's/.*=> //'
+  M=$(md5sum $OUT/n2-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 f$f md5 $M = reference" || echo "FAIL nav2 f$f md5 $M != reference $REF"
+done
+for f in 360 480 720 840; do REF=$(grep "still-f$f" tools/accept/v0.8/nav2-still-md5.txt | cut -c1-32)
+  CLOCK=1 node tools/cdp.js 'test&scene=8&still=1' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-still-s8-f$f\"}]" > /dev/null
+  M=$(md5sum $OUT/n2-still-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 still f$f md5 $M = reference" || echo "FAIL nav2 still f$f md5 $M != reference $REF"
+done
+node tools/test_field.js | tail -1; node tools/test_nav2.js | tail -1
+MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
+R=$(node tools/cdp.js 'test&fake=0&scene=8' "[{\"until\":\"window.CARD\"},{\"wait\":1500},{\"eval\":\"CARD.NAV=CARD.REG[8].scene.state;$MON;'ok'\"},{\"wait\":30000},{\"eval\":\"'MON8 '+JSON.stringify({n:MON.n,fast:MON.fast,max:+MON.max.toFixed(4),viol:MON.viol})\"}]" | grep MON8 | sed 's/.*=> //' | tr -d '"'); echo "$R"
+echo "$R" | grep -q 'viol:\[\]' && echo "nav2 monitor clean" || echo "FAIL nav2 monitor: $R"
+python3 tools/montage.py $OUT/montage-nav2.jpg 2 $OUT/n2-s8-f360.jpg $OUT/n2-s8-f840.jpg $OUT/n2-still-s8-f360.jpg $OUT/n2-still-s8-f840.jpg 2>/dev/null && echo "montage $OUT/montage-nav2.jpg"
 echo "== help"           # v0.2 §12: two shots with the help open (NAV f120, TORUS f360 — the fake timeline's first switch is at 233), the cast scrolled, coverage by eval, ticks hidden/open, the real path with the help opened and closed
 CLOCK=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"key":"h"},{"until":"window.__FRAME>=120"},{"shot":"help-s0-f120"},{"until":"window.__FRAME>=360"},{"shot":"help-s3-f360"},{"eval":"document.getElementById('"'"'help'"'"').scrollTop=1e5;'"'"'help cast shot scrolled to '"'"'+document.getElementById('"'"'help'"'"').scrollTop"},{"shot":"help-cast"},{"eval":"(function(){var out=[],ok=0,n=0,all=Object.keys(CARD.FEATS).filter(function(k){return CARD.FEATS[k].kind!==\"internal\"}).length,rows=0,uniq=0;for(var i=0;i<CARD.REG.length;i++){var E=CARD.REG[i];if(!E)continue;n++;CARD.goScene(E.id,true);var t=CARD.HELP.rows(true),r=CARD.HELP.rows(),f=E.scene.feats;rows=r.length;uniq=new Set(r).size;if(t.slice().sort().join()===f.slice().sort().join())ok++;else out.push(\"id \"+E.id+\" top!=feats\")}return \"help fields \"+rows+\"/\"+all+\" (unique \"+uniq+\") · top table = feats on \"+ok+\"/\"+n+\" ids\"+(out.length?\" FAIL \"+out.join(\",\"):\"\")})()"}]' | grep EVAL | sed 's/.*=> //' | tr -d '"'
 CLOCK=1 node tools/cdp.js 'test' '[{"until":"window.CARD"},{"until":"window.__FRAME>=600"},{"eval":"'"'"'help ticks hidden '"'"'+CARD.HELP.ticks+'"'"' (600 frames, want 0)'"'"'"},{"key":"h"},{"until":"window.__FRAME>=1200"},{"eval":"'"'"'help ticks open '"'"'+CARD.HELP.ticks+'"'"' (600 frames, want 100) errs '"'"'+JSON.stringify(CARD.ERRS)"}]' | grep EVAL | sed 's/.*=> //' | tr -d '"'
