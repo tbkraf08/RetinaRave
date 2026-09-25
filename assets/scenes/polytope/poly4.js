@@ -55,7 +55,7 @@ export function mk4(list) {
   for (let j = 1; j < N; j++) dm = Math.min(dm, d2(0, j));
   const E = [];
   for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) if (d2(i, j) < dm * 1.02) E.push(i, j);
-  return { V: new Float64Array(V.flat()), E: new Uint16Array(E), R: new Float64Array(N * 4), N, nE: E.length / 2 };
+  return { V: new Float64Array(V.flat()), E: new Uint16Array(E), R: new Float64Array(N * 4), C: new Float32Array(N * 3), N, nE: E.length / 2 };
 }
 
 const DEF = {
@@ -118,6 +118,28 @@ export function rotate4(P, a1, a2, a3) {
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
+// spec 5: paint each vertex with its sector of the colour wheel. The sector is the vertex's angle in the xy plane
+// AFTER the rotation, so the wheel rolls with the bass; the last `secb` of a sector cross-fades into the next one
+// in RGB, which is what keeps a vertex's colour continuous as it crosses a boundary (colour.js, CONTINUITY).
+// `sec` is colour.js's twelve premultiplied RGB triples. Call after rotate4.
+export function paint(P, sec, secb, n) {
+  const R = P.R, C = P.C, inv = 1 / secb;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    let u = Math.atan2(R[o + 1], R[o]) / (Math.PI * 2);
+    u -= Math.floor(u);
+    u *= n;
+    const k0 = u | 0;
+    const w = smooth((u - k0 - (1 - secb)) * inv);
+    const a = (k0 % n) * 3;
+    const b = ((k0 + 1) % n) * 3;
+    const c = i * 3;
+    C[c] = sec[a] + (sec[b] - sec[a]) * w;
+    C[c + 1] = sec[a + 1] + (sec[b + 1] - sec[a + 1]) * w;
+    C[c + 2] = sec[a + 2] + (sec[b + 2] - sec[a + 2]) * w;
+  }
+}
+
 // The pole gate (v0.2 §16b, DECISIONS §8's polish note). (0,0,0,1) is the point at infinity of the stereographic
 // map: a sample with den = 1 − w/|v| small lands at radius g·√((2 − den)/den), so the run of pieces on an edge
 // sweeping the pole reached 3.39·g — past the frame edge — and drew as a long straight streak. The gate moves
@@ -129,7 +151,7 @@ const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is whe
 
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
 // (x0 y0 z0 w0 · x1 y1 z1 w1 · r g b a, widths in px). Returns the new segment count.
-// o: {a1,a2,a3, sub, g, eye, fwd, wpx, col:[r,g,b], alpha, prof, gw, gbri, gwid}
+// o: {a1,a2,a3, sub, g, eye, fwd, wpx, alpha, prof, gw, gbri, gwid, gbase, sec, secn, secb}
 //
 // `prof` (spec 4) is grooves.fillProfile's three bump profiles along one edge, sampled at the sub+1 points this
 // loop already visits — so the pulses cost one dot product and two multiplies per sample, and not one exponential.
@@ -152,9 +174,8 @@ export function emit(kind, o, segs, off, cap) {
   const fy = o.fwd[1];
   const fz = o.fwd[2];
   const eDotF = o.eye[0] * fx + o.eye[1] * fy + o.eye[2] * fz;
-  const cr = o.col[0];
-  const cg = o.col[1];
-  const cb = o.col[2];
+  paint(P, o.sec, o.secb, o.secn);
+  const Cv = P.C;
   const PR = o.prof;
   const n1 = sub + 1;
   const w0 = o.gw[0];
@@ -165,8 +186,18 @@ export function emit(kind, o, segs, off, cap) {
   const gbase = o.gbase;
   let n = off;
   for (let e = 0; e < E.length; e += 2) {
-    const a = E[e] * 4;
-    const b = E[e + 1] * 4;
+    const ia = E[e];
+    const ib = E[e + 1];
+    const a = ia * 4;
+    const b = ib * 4;
+    const ca = ia * 3;
+    const cb2 = ib * 3;
+    const c0r = Cv[ca];
+    const c0g = Cv[ca + 1];
+    const c0b = Cv[ca + 2];
+    const cdr = Cv[cb2] - c0r;
+    const cdg = Cv[cb2 + 1] - c0g;
+    const cdb = Cv[cb2 + 2] - c0b;
     const ax = Rv[a];
     const ay = Rv[a + 1];
     const az = Rv[a + 2];
@@ -214,6 +245,8 @@ export function emit(kind, o, segs, off, cap) {
       if (ok && have && n < cap) {
         const j = n * 12;
         const bm = 0.5 * (pB + bri);
+        // the piece takes the wheel's colour lerped between its two vertices, at its own midpoint along the edge
+        const sm = (k - 0.5) / sub;
         segs[j] = pX;
         segs[j + 1] = pY;
         segs[j + 2] = pZ;
@@ -222,9 +255,9 @@ export function emit(kind, o, segs, off, cap) {
         segs[j + 5] = Y;
         segs[j + 6] = Z;
         segs[j + 7] = (o.wpx * wid) / vz;
-        segs[j + 8] = cr * bm;
-        segs[j + 9] = cg * bm;
-        segs[j + 10] = cb * bm;
+        segs[j + 8] = (c0r + cdr * sm) * bm;
+        segs[j + 9] = (c0g + cdg * sm) * bm;
+        segs[j + 10] = (c0b + cdb * sm) * bm;
         segs[j + 11] = o.alpha * 0.5 * (pF + f);
         n++;
       }

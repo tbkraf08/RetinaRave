@@ -2,6 +2,7 @@
 // projected stereographically into the room. Edges are subdivided on S^3, so every edge arrives as a circular
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).
 import { clamp, ema } from '../../math/util.js';
+import * as CO from './colour.js';
 import * as DA from './dance.js';
 import * as GR from './grooves.js';
 import { GATE, get4, emit, mvpMat, poleMargin, rotate4 } from './poly4.js';
@@ -25,6 +26,7 @@ const PBRI = 1.7;
 const PWID = 0.9;
 const PDIP = 0.3;                // how far BELOW normal a piece with no bump on it sits, at groove 1
 const GROOVE0 = 0.8;             // the resting amplitude of the whole thing (becomes the `groove` param, spec 7)
+const GLOW0 = 0.35;              // a sector's brightness floor: what an unsounded pitch class still shows (spec 5)
 
 // cast: [inner, outer]. s = scale, w = width scale, i = intensity, ta = palette coordinate.
 const CASTS = [
@@ -58,6 +60,7 @@ function info() {
   // bumps per edge, as the numbers the pixels are made of. Band 0 (bass) is the one the pinned trains drive.
   o.sub = p.sub;
   o.prof = Array.from(self.profA.slice(0, n1), (x) => +(p.gbase + p.gbri * x).toFixed(3));
+  o.colour = CO.info();
   return JSON.stringify(o);
 }
 
@@ -99,10 +102,11 @@ export default {
   card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and cast into three dimensions' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
   feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
-    'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush'],
+    'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
+    'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence'],
   cuts: 'continuous',
   rt: {},
-  hooks: { train: GR.train, info, motion, pole, cast },
+  hooks: { train: GR.train, info, motion, pole, cast, key: CO.key, chroma: CO.chroma },
 
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -114,6 +118,7 @@ export default {
     this.ctx = ctx;
     GR.reset();
     DA.reset();
+    CO.reset();
     for (const k of ['tess', 'c24', 'c600', 'c120']) get4(k);   // build the tables now, never mid-frame
     this.L = ctx.lines.mk(CAP);
     this.segs = new Float32Array(CAP * 12);
@@ -131,7 +136,7 @@ export default {
     this.jy = 0;
     this.nSeg = 0;
     this.kinds = [];
-    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0, gbase: 1, colIn: [1, 1, 1], colOut: [1, 1, 1] };
+    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0, gbase: 1 };
   },
 
   update(dt, MS, GROOVE, LOOK, env) {
@@ -197,15 +202,8 @@ export default {
     const m = LOOK.mood;
     // 0.75·(0.35 + lvl)·presence, with a presence floor so muted audio still idles visibly (§0) instead of black
     const bright = GAIN * 0.75 * (0.35 + MS.lvl) * (0.15 + 0.85 * MS.presence);
-    const v = 0.55 + 0.45 * m.bri;
-    const set = (out, ta) => {
-      const c = this.ctx.hsv(m.hue + m.spread * ta, m.sat, v);
-      out[0] = c[0] * bright;
-      out[1] = c[1] * bright;
-      out[2] = c[2] * bright;
-    };
-    set(p.colIn, 0.15);
-    set(p.colOut, 0.55);
+    // spec 5: the twelve sector colours of the wheel — the key sets the anchor, chroma lights the sounding notes
+    CO.step(dt, MS, m, this.ctx.hsv, GLOW0, bright);
     this.rt.time = MS.flow;
     this.rt.label = ['tesseract ⊂ 24-cell', '600-cell', '24-cell ⊂ ' + (this.big === 'c120' ? '120-cell' : '600-cell')][this.cast];
     this.rt.log = 'poly ' + this.rt.label + ' sub ' + p.sub + '/' + p.subB + ' seg ' + this.nSeg;
@@ -224,7 +222,7 @@ export default {
     const r = nrm(cross(f, [0, 1, 0]));
     const u = cross(r, f);
     mvpMat(this.mvp, eye, r, u, f, FOCAL, w / h, NEAR);
-    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, col: p.colIn, alpha: 1, prof: this.profA, gw: [1, 1, 1], gbri: p.gbri, gwid: p.gwid, gbase: p.gbase };
+    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, alpha: 1, sec: CO.IN, secn: CO.SECN, secb: CO.SECB, prof: this.profA, gw: [1, 1, 1], gbri: p.gbri, gwid: p.gwid, gbase: p.gbase };
     // 2.2 px at the centre of the orbit, falling off as 1/viewZ like any perspective stroke
     const wpx = 2.2 * (h / 720) * D;
     let n = 0;
@@ -243,7 +241,7 @@ export default {
           o.sub = e.sub ? p.subB : p.sub;
           o.prof = e.sub ? this.profB : this.profA;
           o.wpx = wpx * e.w * (e === CASTS[ci][0] ? p.pulse : 1);
-          o.col = e.ta < 0.3 ? p.colIn : p.colOut;
+          o.sec = e.ta < 0.3 ? CO.IN : CO.OUT;
           o.alpha = e.i * ww * kw;
           n = emit(kind, o, this.segs, n, CAP);
         }
@@ -296,6 +294,12 @@ export default {
       gridTrust: 'when the grid is trusted the bumps snap to the nearest sixteenth, so a straight groove reads as even',
       hit: 'the inner figure\'s strokes pulse thicker',
       lvl: 'stroke brightness',
+      key: 'the key anchors the colour wheel painted round the cage: a modulation turns the whole wheel',
+      mode: 'major warms the anchor, minor cools it',
+      keyConf: 'how far the key is trusted; below a third the last confident key is held and the colour slides back to the palette',
+      chroma: 'the sounding notes light their own sectors of the wheel; the rest sit at the floor',
+      harmAngle: 'stands in for the chroma when the chroma carries no energy, so the wheel is never dead',
+      valence: 'a little extra warmth when the music is bright',
       presence: 'brightness floor: muted audio still idles visibly',
       seed: 'which cast: tesseract in a 24-cell, the 600-cell, or a 24-cell in the 600- or 120-cell',
       sectionEvt: 'the cast is drawn again only at a section event, and even then cross-faded',
