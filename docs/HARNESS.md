@@ -453,4 +453,12 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
   Chrome-class windows on the desktop.
 - A DOM-built `<table>` has no `<tbody>`: select `#pe-blk-<scene> tr`, not `tbody tr`.
 - `CARD.view(name)` takes the scene name, not the scene object.
+- `CARD.bench(id, n)` benches whatever state that scene's **last `update()`** left: benching TORUS from a page where TORUS2 was
+  forced read tier 1 (`seg 72`) because its update had barely run. Bench a scene in a page where it is the forced scene, `q`
+  pinned, settled; compare pages through their NAV ratios (v0.7, TORUS2).
+- `CARD.goScene(id, hard)` does not beat a sticky `&scene=N`: `SC.logical` stays at N. Load a second page instead.
+- `#test` sets `hat` to **exactly 0.5** (snare 0.7, kick 1.0): a rising-edge detector's threshold must be below 0.5.
+- `tools/probe.js` needs a real window (it registers its own rAF and reads the GL canvas through a 2-D canvas): headless
+  luminance is `python3 tools/lum.py <shot.jpg>` on the saved screenshot (centre 20 % vs the 60–90 % rim annulus; post-composite,
+  so the vignette flatters the ratio — compare against another scene's shot measured the same way).
 

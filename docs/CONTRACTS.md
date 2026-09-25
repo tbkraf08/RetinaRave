@@ -194,7 +194,8 @@ needed, now generic:
   state a hook sets must survive the first `update`. (v0.2's contract said "before `init`"; the hue-set worker showed
   it wrong with a `ctx.log` in `init`.) `CARD.hooks` is one flat map: two scenes declaring the same hook name (FEIGEN's
   and NAV's `clipdbg`) shadow each other there, though the hash dispatcher reaches both — call a specific scene's hook
-  through `CARD.REG[id].scene.hooks.<name>(v)`. A hook that sets
+  through `CARD.REG[id].scene.hooks.<name>(v)` — and that is the only way to call a hook that takes **two arguments**
+  (TORUS2's `key(k, mode)`, `morph(m, which)`): the hash dispatcher passes one value, so such hooks are `{eval}` calls, never `&name=` (v0.7). A hook that sets
   a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived, and a hook that sets
   state your scene recomputes on an event (FEIGEN's `tricorn` from the seed at `sectionEvt`) must pin it for the run —
   otherwise the next event silently undoes the hook and the shot tests the wrong thing.
@@ -462,6 +463,9 @@ params: {
   and fails `check.js` (which calls it the same way in node). It must return a finite number; `check.js` warns when the
   value on the `MS` defaults falls outside `range`. Read only `S` in it — no `dt`, no `this`, no state (a parameter is
   what the visual uses *this frame*; a phase or a depth you integrate stays your state).
+  **A field behind a short-circuit is not recorded** when the `MS` defaults skip it: `arc === 'idle' ? 0 : 0.9 * tension`
+  records only `arc` (the defaults' `arc` *is* `'idle'`) and the panel's source column lies — write `0.9 * tension * (arc === 'idle' ? 0 : 1)`
+  (a multiply by 1.0 is exact, so the float is the same) and both are read (TORUS2, v0.7).
   **Name the argument `MS`** (`from: (MS) => MS.lvl`): `check.js`'s static read check counts `MS.<field>` / `S.<field>` reads, and
   a scene whose module keeps its own state in a `const S` has `S.` disabled as a receiver — `(S) => S.lvl` there would
   read as a stale `feats` entry (the FEIGEN worker's find). **Move an expression whole or not at all**: a product

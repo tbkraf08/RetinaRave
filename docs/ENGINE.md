@@ -109,7 +109,10 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
   `prevAlt` and `due` through it (`core/scenes.js` memory()), so a return under the new id restores what was filed
   under the old one. `#test` logs `RENUMBER@` and `FILE@` lines; `director-stats.js` replays the maps.
 - The fake timeline (`sources/fake.js`) leaves v3's `chroma`/`bchroma` at zero (v3's fake never filled them and parity
-  forbids changing it) — chroma-driven scenes need a fallback from `harmAngle`/`interval` (TORUS does). Your own fields
+  forbids changing it) — chroma-driven scenes need a fallback from `harmAngle`/`interval` (TORUS does). It **does** fill the
+  synapse mirror: `key` 9 / `mode` 1 / `keyConf` 0.8 (A minor on every `#test` shot), `kick` 1 on every beat while kicks are on
+  (sustain and peak), `snare` 0.7 on odd beats, `hat` exactly 0.5 twice a beat outside valleys, `alive` 1, `riser = roll = build`,
+  `sectionAlt = sectionId` (v0.7, checked for TORUS2). Your own fields
   must be finite and plausibly idle there: add a line there that sets
   them from the timeline phase if scenes will read them headlessly.
 - Textures derived from engine arrays (`uSpec`, `uWave`, `uHist`) are owned by the core: a stage writes the arrays in

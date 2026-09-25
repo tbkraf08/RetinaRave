@@ -1512,3 +1512,58 @@ source (README's claim was dropped instead), shareable `&route=`/`&param=` URLs 
 mono columns overflow at 390 px; it stays a desktop tool).
 
 **Tag v0.6 (2026-09-24):** the user looked at the live site ("looks good; tag v0.6"). `releases/retinarave-v0.6.html` = `dist/retinarave.html` at the tag (the first release under the new name; `about.html` and the icons are not inside it — they live in `site/`). package.json 0.6.0.
+
+## §36 TORUS2 — the Hopf torus that is alive with the music (v0.7, 2026-09-24, orchestrator + one worker from `docs/workers/brief-torus2.md`, report `torus2.md`; `TORUS2-SESSION-PROMPT.md`)
+
+**The decision (the user, 2026-09-24, after TORUS on real music):** *"1. the inside fibres are dark color and never seem to
+light up; 2. should be able to detect rhythms in the bass / mids / lows; 3. color should be based on musical key; 4. rotation
+of the object should be based on the speed of the music (16 beats == full turn), should subtly bounce with the beat; object
+should grow is music builds / intensity; mix in different attractors like the thomas / 3 cells cnn attractor; What else can
+be controlled by music to make object feel interesting and alive with music?"* — and *"create as a net new scene for now
+that will replace the existing torus scene once approved"*. So: **TORUS2, id 7, forced-only** (key `8`, `&scene=7`;
+`score()` 0 — the director never picks it, DECISIONS §15's lesson: a registered scene must not move a reference pick),
+TORUS (id 3) byte-identical and still in the rotation. The interview settled five things as the user's: waves on the
+threads for rhythm, major warm / minor cool, the key as a hue *anchor* (twelve hues keep their spacing, the wheel turns),
+the 16-beat turn as a **nudge per beat**, the bounce 5 % and visible. Everything else is a lean, marked in the brief.
+
+- **Skeleton first (`ce34cc8`):** the registration alone, proven a no-op — scene-md5 ids 0–6 = `tools/accept/v0.5/scene-md5-v03.txt`,
+  mixs `5892ddc5`, parity fake 0 — before a pixel. The session prompt was wrong about one thing: `sources/fake.js` **does**
+  fill `key` 9 / `mode` 1 / `keyConf` 0.8 and `kick`/`snare`/`hat` on `#test`; only `chroma` is zero (§4).
+- **The scene (worker, eight commits `8a13ec3`…`9e5be87`, `assets/scenes/torus2/{index,shaders,waves,colour,motion,attractors,help}.js`,
+  1022 lines, `tools/test_torus2.js`):** (1) the inside lights — a brightness floor (`GLOW`), the fog capped, the quiet inner
+  families flash on `kick`, `hat` shimmers along every fibre: centre luminance at f360 **0.56 vs TORUS's 0.29** (`tools/lum.py`,
+  centre 20 % / rim annulus; ratio 2.6); (2) **waves on the threads** — a rising edge of `kick`/`snare`/`hat` launches a bump
+  (displacement normal to the stroke *and* a brightness pulse) that travels **one ring per bar** on the beat clock
+  (`beatCount + beatPhase`, no wall clock), a ring buffer of 8 launch beats per band as uniforms, summed in the vertex shader;
+  the rhythm is the spacing: the pinned 4x4 train reads positions `.10 .35 .60 .85` (gaps .25), the syncopated one `.10 .225
+  .60 .725` (gaps .125/.375) — `hooks.train`, `hooks.info`; (3) **colour from the key** — anchor `((7·key) mod 12)/12` on the
+  circle of fifths, eased ~2 s on the unwrapped hue, `mode` pulls the anchor 45 % toward warm 0.02 / cool 0.55, `keyConf` < 0.3
+  holds the last key and slides toward `LOOK.mood`, `valence` on top; the spread narrowed to 0.30–0.75 **centred on the anchor**
+  (a full-rainbow spread let no bias read — the cost is the v0.2 twelve-hue look, the user has not seen it yet); (4) a
+  **nudge per beat** (`turnT = beatCount/16 · 2π`, a 0.3 s spring, `hush`/`calm` ×2 slower), the **5 % bounce** through the
+  camera distance (`max(0, cos 2π·beatPhase)^4`), growth in two stages (fibre slots per family 6→12 on `build` 0–0.5, camera in
+  on 0.5–1, resting size from `intensity`/`arousal`, the drop collapse kept); (5) **attractors by advection** — Thomas, the
+  3-cell CNN (the brief's weights were *not* chaotic — λ ≈ 0; the standard three-cell template with s = 3.21 gives λ ≈ 0.118,
+  measured in `test_torus2.js`), Aizawa, Halvorsen; 8 RK2 steps in the vertex shader after projection, normalised into the
+  nest's ball, clamped at 1.6× its radius (the §4 pole), lerped by `morph = 0.9·tension` (0 in `arc` idle), picked by
+  `sectionAlt mod 4` with a 1 s cross-fade; (6) the alive list — all eleven, one `help.feats` line each (the unwind lives on the
+  longitude φ, not on ψ: adding phase to a fibre's own parameter runs round the same circle). Six params (§1.16): `turn bounce
+  size glow morph wave`, identity proven, a `morph=c:1` route moves the md5.
+- **Cost (bench protocol, two page loads each with its own scene forced — a bench of an off-screen scene measures its last
+  update's state, friction 12):** TORUS2 1.556 ms vs TORUS 1.267 ms at tier 3 with morph 1 and every wave live — **1.23× raw,
+  1.31× NAV-normalised, 1.45× by per-pair ratios**, all under the 1.5× cap; the extra is the advection (halved by `STEPS` 8 → 4).
+- **Merged-tree proofs (`9e5be87` + the accept section):** ids 0–6 identical, s7 md5s `7189a6ba` / `48113eda` stable across three
+  runs (`tools/accept/v0.7/scene-md5-v07.txt` = the v0.7 list), mixs `5892ddc5`, parity 0, `accept.sh` "== torus2" (md5s, the
+  luminance gate centre ≥ .4 ratio ≥ .35, the two trains even/uneven from `hooks.info` de-duplicated — a wave a bar old sits
+  where a new one launches —, the param route).
+- **Friction now owed to the docs:** `arc` has no `'intro'` (the enum is `idle|valley|sustain|build|peak`); `#test` sets `hat`
+  to exactly 0.5 (an edge detector's threshold must be below it); `ctx.budget('segs')` is the CPU-buffer budget, a path-B scene's
+  segments per ring stay geometry (§1.4 says so; the brief contradicted it); a two-argument hook is reached through
+  `CARD.REG[id].scene.hooks.f(a, b)` in an eval, not `&name=`; `goScene` does not beat a sticky `&scene=`; `paramDeps` misses a
+  field behind a short-circuit on the defaults (write `a · (cond ? 0 : 1)`); `tools/probe.js` needs a real window (headless
+  luminance is `tools/lum.py` on the shot, post-composite).
+- **What the user should look at first (the worker's own doubts):** the wave amplitude `WAVE0` 0.26 of the fibre radius (4× the
+  lean; 6 % was invisible; the rings are lobed between kicks), the narrowed spread, `MORPHK` 0.9 (aba at 50 s is a magenta comet).
+  Not built: the `oklch` variant (v2 alone is declared; `colour.js anchor()` returns a turn, so a `palOK` pass is small).
+- **Replacement (not done — waits for the user):** TORUS2 takes id 3's bid (`0.25 + 0.45 clarity + 0.3 regularity`, 0 in builds),
+  TORUS moves to id 7 as `torus-v1` forced-only for one release, both md5 lists re-based in the same commit, §37 records it, then tag v0.7.

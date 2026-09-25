@@ -1,0 +1,36 @@
+### a7-wltp-t2 WhoLikesToParty key 8 21:46:35
+"T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":116.78,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.72,\"q\":0.542,\"ms\":1.97,\"hop\":752,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":483,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc11 R=1.13 r=0.53 knot 1,3 fib 144 seg 72 glow 0.18 waves 18 key 11m turn -0.70 size 0.75 cnn 0.19 slip 0.00\"}}"
+"T20 {\"t\":20.2,\"bpm\":116.86,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.76,\"q\":0.5940000000000001,\"ms\":1.93,\"hop\":1892,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":1212,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc11 R=1.19 r=0.65 knot 1,2 fib 144 seg 72 glow 0.18 waves 24 key 11m turn 8.53 size 0.69 halvorsen 0.24 slip 0.56\"}"
+"T40 {\"t\":40.4,\"bpm\":116.79,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.8,\"q\":0.6740000000000002,\"ms\":1.91,\"hop\":3785,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":2423,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc9 R=1.16 r=0.59 knot 4,5 fib 108 seg 108 glow 0.18 waves 15 key 11m turn 24.07 size 0.69 thomas 0.21 slip 0.00\"}"
+"T60 {\"t\":60.6,\"bpm\":116.86,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.68,\"q\":0.7540000000000002,\"ms\":1.83,\"hop\":5679,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":3634,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc6 R=1.18 r=0.62 knot 2,3 fib 96 seg 108 glow 0.18 waves 24 key 11m turn 39.52 size 0.69 aizawa 0.22 slip 0.00\"}"
+"T80 {\"t\":80.8,\"bpm\":116.89,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.82,\"q\":0.8340000000000003,\"ms\":1.43,\"hop\":7573,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":4844,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc6 R=1.22 r=0.70 knot 1,15 fib 108 seg 108 glow 0.18 waves 21 key 11m turn 54.93 size 0.69 halvorsen 0.24 slip 0.00\"}"
+"LONG []"
+"END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7573,\"summary\":4844}"
+### end 21:48:00
+### a7-wltp-t1 WhoLikesToParty key 4 21:48:00
+"T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":116.54,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.83,\"q\":0.542,\"ms\":2.27,\"hop\":746,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":482,\"errs\":[],\"bad\":[],\"hud\":\"torus pc11 R=1.12 r=0.52 knot 1,3 fib 144 seg 72\"}}"
+"T20 {\"t\":20.2,\"bpm\":116.88,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.77,\"q\":0.5940000000000001,\"ms\":1.89,\"hop\":1887,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":1212,\"errs\":[],\"bad\":[],\"hud\":\"torus pc9 R=1.18 r=0.64 knot 1,3 fib 144 seg 72\"}"
+"T40 {\"t\":40.4,\"bpm\":116.91,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.77,\"q\":0.6740000000000002,\"ms\":1.88,\"hop\":3779,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":2422,\"errs\":[],\"bad\":[],\"hud\":\"torus pc9 R=1.16 r=0.58 knot 1,2 fib 144 seg 108\"}"
+"T60 {\"t\":60.6,\"bpm\":116.77,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.72,\"q\":0.7540000000000002,\"ms\":1.88,\"hop\":5673,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":3633,\"errs\":[],\"bad\":[],\"hud\":\"torus pc6 R=1.19 r=0.64 knot 1,3 fib 144 seg 108\"}"
+"T80 {\"t\":80.8,\"bpm\":116.94,\"syn\":116.93,\"key\":11,\"mode\":1,\"keyConf\":0.75,\"q\":0.8340000000000003,\"ms\":1.92,\"hop\":7567,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":4844,\"errs\":[],\"bad\":[],\"hud\":\"torus pc6 R=1.22 r=0.69 knot 1,3 fib 144 seg 108\"}"
+"LONG []"
+"END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7567,\"summary\":4844}"
+### end 21:49:26
+### a7-cn-t2 CyborgNinja key 8 21:49:26
+"T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":159.78,\"syn\":160.23,\"key\":2,\"mode\":1,\"keyConf\":0.49,\"q\":0.542,\"ms\":1.93,\"hop\":752,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":483,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc1 R=1.41 r=1.00 knot 1,2 fib 144 seg 72 glow 0.18 waves 20 key 2m turn 0.85 size 0.77 cnn 0.25 slip 0.00\"}}"
+"T20 {\"t\":20.2,\"bpm\":159.88,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.61,\"q\":0.5900000000000001,\"ms\":1.98,\"hop\":1893,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":1213,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc0 R=1.41 r=1.00 knot 0,1 fib 144 seg 72 glow 0.18 waves 16 key 7m turn 13.47 size 0.69 cnn 0.26 slip 0.00\"}"
+"T40 {\"t\":40.4,\"bpm\":159.92,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.71,\"q\":0.6740000000000002,\"ms\":1.85,\"hop\":3788,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":2424,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc0 R=1.40 r=0.98 knot 1,2 fib 108 seg 108 glow 0.18 waves 19 key 7m turn 34.68 size 0.69 aizawa 0.34 slip 0.00\"}"
+"T60 {\"t\":60.6,\"bpm\":159.94,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.71,\"q\":0.7540000000000002,\"ms\":0.6,\"hop\":5681,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":3635,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc1 R=1.41 r=1.00 knot 1,3 fib 96 seg 108 glow 0.18 waves 12 key 8m turn 55.80 size 0.70 halvorsen 0.26 slip 0.00\"}"
+"T80 {\"t\":80.8,\"bpm\":159.88,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.87,\"q\":0.8340000000000003,\"ms\":1.97,\"hop\":7577,\"scene\":7,\"black\":0,\"long\":0,\"maxdt\":17,\"frames\":4847,\"errs\":[],\"bad\":[],\"hud\":\"torus2 pc1 R=1.25 r=0.75 knot 4,5 fib 96 seg 108 glow 0.18 waves 21 key 8m turn 76.98 size 0.71 halvorsen 0.38 slip 0.00\"}"
+"LONG []"
+"END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7577,\"summary\":4847}"
+### end 21:50:51
+### a7-cn-t1 CyborgNinja key 4 21:50:51
+"T8 {\"mode\":\"capture\",\"heard\":true,\"vp\":[1876,893],\"dpr\":0.75,\"s\":{\"t\":8.1,\"bpm\":159.9,\"syn\":160.51,\"key\":7,\"mode\":1,\"keyConf\":0.46,\"q\":0.542,\"ms\":2.05,\"hop\":751,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":484,\"errs\":[],\"bad\":[],\"hud\":\"torus pc0 R=1.41 r=1.00 knot 1,2 fib 144 seg 72\"}}"
+"T20 {\"t\":20.2,\"bpm\":159.83,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.64,\"q\":0.5940000000000001,\"ms\":1.93,\"hop\":1891,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":1213,\"errs\":[],\"bad\":[],\"hud\":\"torus pc0 R=1.41 r=1.00 knot 1,2 fib 144 seg 72\"}"
+"T40 {\"t\":40.4,\"bpm\":159.93,\"syn\":160.23,\"key\":7,\"mode\":1,\"keyConf\":0.67,\"q\":0.6740000000000002,\"ms\":1.95,\"hop\":3783,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":2423,\"errs\":[],\"bad\":[],\"hud\":\"torus pc0 R=1.33 r=0.88 knot 2,5 fib 144 seg 108\"}"
+"T60 {\"t\":60.6,\"bpm\":159.87,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.72,\"q\":0.7540000000000002,\"ms\":1.88,\"hop\":5677,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":3634,\"errs\":[],\"bad\":[],\"hud\":\"torus pc1 R=1.41 r=1.00 knot 1,15 fib 144 seg 108\"}"
+"T80 {\"t\":80.8,\"bpm\":159.85,\"syn\":160.23,\"key\":8,\"mode\":1,\"keyConf\":0.88,\"q\":0.8340000000000003,\"ms\":1.83,\"hop\":7570,\"scene\":3,\"black\":0,\"long\":0,\"maxdt\":33,\"frames\":4845,\"errs\":[],\"bad\":[],\"hud\":\"torus pc1 R=1.25 r=0.76 knot 1,5 fib 144 seg 108\"}"
+"LONG []"
+"END {\"errs\":[],\"bad\":[],\"mode\":\"capture\",\"hop\":7570,\"summary\":4845}"
+### end 21:52:16
