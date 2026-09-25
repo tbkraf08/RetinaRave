@@ -2,8 +2,7 @@
 
 **v0.8.1 "this is what it sees" (DECISIONS §40) is built on `main`, not tagged:** the landing tagline ("I taught a computer to listen to
 music. / This is what it sees.") and the scene tiles (`core/landing.js`, `card` slot CONTRACTS §1.17, `site/thumbs/` from `tools/thumbs.sh`,
-a click previews the scene live on the muted demo). Shots in `tools/accept/v0.8.1/`. **The user looks; on their word:** `npm run build`,
-`cp dist/retinarave.html releases/retinarave-v0.8.1.html`, commit, `git tag v0.8.1`, push (the push deploys). Then the NAV2 question below.
+a click previews the scene live on the muted demo). Shots in `tools/accept/v0.8.1/`, `releases/retinarave-v0.8.1.html`. Next: the NAV2 question below.
 
 
 **State:** v0.7 "alive" tagged and deployed. **NAV2 is built on `main` (DECISIONS §39, `docs/AUDIT-v0.8.md`, `docs/workers/nav2.md`),

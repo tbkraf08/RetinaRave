@@ -1704,3 +1704,6 @@ forced 3, landing hidden, running true, errs []`; key `6` in the show → `force
 Full scene-md5 list vs `tools/accept/v0.8/scene-md5-v08.txt` (below), bundle from `file://` (below). Shots in `tools/accept/v0.8.1/`.
 The full `accept.sh` sweep was not run (the user's rule since v0.8: the tag gate is their look at the build; no render code moved).
 
+**Tagged v0.8.1 (2026-09-25, the user: "build, commit, tag, and deploy" after looking at the local build):** `releases/retinarave-v0.8.1.html` = the
+bundle at the tag; `npm run build` → `dist/` (index + `thumbs/`) deployed by the push to `main`. No sweep, per §39's rule.
+
