@@ -1,0 +1,15 @@
+# NAV2 (id 8) reference md5s — GPU=1, CLOCK=1, 1280x720, PORT=8799.
+# plain:  IDS=8 tools/scene-md5.sh <tag>                      (f360 / f840)
+# still:  CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=8&still=1' ... (f360 / f480 / f720 / f840)
+#
+# The STILL four are set in step 1 and must not move again: `&still=1` forces every NAV2-only uniform to its rest
+# value, and every rest value is an exact IEEE identity (x+0, x*1), so a visual step that moves a still frame has
+# changed something it should not have. The PLAIN two move with every visual step, by design.
+
+[step 1 — the path (the force model; no new uniforms yet)]
+still f360 58efe9b437999f93d0d56cf9da7931d4
+still f480 f05203da666cbfad5f504edd62161a73
+still f720 dc3cc058236580d8d2e96382c681a7fd
+still f840 38813940fa024cd82fbc00a1fe05fb9e
+plain f360 58efe9b437999f93d0d56cf9da7931d4
+plain f840 38813940fa024cd82fbc00a1fe05fb9e
