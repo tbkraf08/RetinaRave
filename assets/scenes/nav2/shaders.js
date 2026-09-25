@@ -21,7 +21,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -52,8 +52,8 @@ void main(){
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
-    col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
-  }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x);}
+    col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands)*uGlow; /* critical slowing: the bands smoulder as |lambda|->1. NAV2's uGlow (rest 1, an exact x*1.) brightens it in the silence before the drop */
+  }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x)*uGlow;}
   o=vec4(col,1.);
 }`;
 
