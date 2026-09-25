@@ -42,7 +42,33 @@
   .card{max-width:560px;padding:36px 48px;margin:auto;text-align:center} /* margin:auto centres when it fits and scrolls when it does not */
   h1{font-weight:200;letter-spacing:.55em;font-size:40px;margin:0 0 6px;padding-left:.55em;
     background:linear-gradient(90deg,#8cf,#f6c,#fc8);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{font-size:13px;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin-bottom:34px}
+  .sub{font-size:16px;line-height:1.5;font-weight:300;letter-spacing:.02em;opacity:.72;margin-bottom:26px}
+  /* v0.8.1 — the scene tiles (core/landing.js renders them from the registry): a click previews the scene live on the silent demo */
+  #pick{margin:0 0 28px}
+  .pickhead{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;margin-bottom:10px}
+  #scenes{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+  .tile{appearance:none;flex:1 1 0;min-width:64px;max-width:96px;padding:0;border-radius:8px;overflow:hidden;cursor:pointer;color:#cfd6e6;font:inherit;
+    border:1px solid rgba(255,255,255,.14);background:linear-gradient(160deg,rgba(70,60,130,.55),rgba(10,8,24,.85));transition:all .25s;text-align:center}
+  .tile img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;opacity:.92}
+  .tile span{display:block;font-size:9.5px;letter-spacing:.16em;padding:5px 2px 6px}
+  .tile:hover{border-color:rgba(255,255,255,.6);transform:translateY(-2px)}
+  .tile:hover img{opacity:1}
+  .tile.on{border-color:#fff;box-shadow:0 0 22px rgba(140,180,255,.35)}
+  /* the director's tile: no picture — the title sits where the picture would, over the card's own gradient; "on" until a scene is picked */
+  .tile.dir{background:radial-gradient(ellipse at 50% 35%,rgba(120,100,200,.5),rgba(10,8,24,.9) 75%)}
+  .tile.dir span{aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;box-sizing:content-box;color:#9cf}
+  .tile.dir.on span{color:#fff}
+  #peekmsg{display:none;font-size:13px;line-height:1.45;opacity:.8;margin:12px 0 0;min-height:18px}
+  /* peek: a tile started the silent demo (core/landing.js) — the card slims to the bottom and the scene shows through */
+  #landing.peek{background:linear-gradient(to top,rgba(2,2,7,.9) 0%,rgba(2,2,7,.5) 40%,rgba(2,2,7,0) 100%)}
+  .peek .card{margin:auto auto 0;max-width:680px;padding:18px 40px 22px}
+  .peek h1{font-size:16px;letter-spacing:.45em;margin:0 0 12px;padding-left:.45em}
+  .peek .sub,.peek ol,.peek .mob,.peek .seo,.peek .hint,.peek .pickhead{display:none}
+  .peek #pick{margin-bottom:16px}
+  .peek .tile{max-width:104px}
+  .peek #peekmsg{display:block}
+  .peek button#go,.peek .mobile button#mic{padding:12px 30px;font-size:14px}
+  .peek .alt{margin-top:12px}
   ol{list-style:none;padding:0;margin:0 0 30px;text-align:left;counter-reset:s}
   ol li{counter-increment:s;position:relative;padding:9px 0 9px 44px;font-size:15px;line-height:1.45;opacity:.9}
   ol li::before{content:counter(s);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:50%;
@@ -76,8 +102,8 @@
     background:rgba(4,4,10,.85);color:#e8e6f0;font-size:13px;line-height:1.45;padding:10px 14px;border-radius:10px;z-index:14;
     opacity:0;pointer-events:none;transition:opacity .3s;text-align:center}
   #toast.on{opacity:1}
-  @media (max-width:520px){.card{padding:28px 20px}h1{font-size:30px;letter-spacing:.4em;padding-left:.4em}.sub{font-size:11px;margin-bottom:26px}
-    .seo{font-size:11.5px}}
+  @media (max-width:520px){.card{padding:28px 20px}h1{font-size:30px;letter-spacing:.4em;padding-left:.4em}.sub{font-size:14.5px;margin-bottom:22px}
+    .seo{font-size:11.5px}.tile{flex:0 0 calc(25% - 6px);max-width:none}.peek .card{padding:14px 16px 18px}.tile span{font-size:9px;letter-spacing:.1em}}
   #hud{position:fixed;left:10px;top:10px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#9f9;white-space:pre;
     background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
   /* the help view (core/help.js): a scrolling DOM page over the still-rendering canvas; display:none costs nothing */
@@ -154,7 +180,9 @@
 <canvas id="gl"></canvas>
 <div id="landing"><div class="card">
   <h1>RETINA RAVE</h1>
-  <div class="sub">music navigating real mathematical objects</div>
+  <div class="sub">I taught a computer to listen to music.<br>This is what it sees.</div>
+  <div id="pick"><div class="pickhead">the scenes · click one to see it move</div>
+    <div id="scenes"></div><div id="peekmsg"></div></div>
   <ol>
     <li>Start your music in <b>another browser tab</b>.</li>
     <li>Press the button, choose that <b>tab</b> in the share dialog.</li>

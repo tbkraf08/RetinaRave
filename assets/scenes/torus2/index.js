@@ -123,6 +123,7 @@ export default {
   name: 'torus2',
   id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
+  card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
   feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
   cuts: 'continuous',
   rt: {},

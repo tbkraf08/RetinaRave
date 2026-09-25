@@ -82,6 +82,7 @@ export default {
   name: 'feigen',
   id: 6,
   tag: 'Feigenbaum dive · perturbed Mandelbrot, one delta per level',
+  card: { title: 'FEIGEN', blurb: 'a dive down the Feigenbaum cascade: ever-smaller copies of the set along the real axis' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/feigen.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() the first four, update()/draw() the rest
   feats: ['arc', 'regularity', 'clarity', 'calm', 'bpm', 'lvl', 'tension', 'alive', 'kick', 'dropEvt', 'sectionEvt',
     'seed', 'flow', 'flowMid', 'bass', 'dropEnv', 'hat', 'midS'],

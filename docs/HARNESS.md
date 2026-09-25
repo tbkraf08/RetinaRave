@@ -389,6 +389,21 @@ tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 t
 CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&param=feigen.<p>=centroid*1.5' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/prt-s6-f360"}]'
 ```
 
+## Landing tiles (v0.8.1 — change to `core/landing.js`, `hud.js`'s run/stop hooks, `index.html`'s card, a scene's `card` slot, `tools/thumbs.sh`)
+
+The tiles are DOM, rendered from `REG` at `initHUD`; a click is `pick(id)`: `SC.forced = id` and, while the card is up and
+`AU.mode === 'none'`, the muted demo synth starts as a live preview with the card slimmed (`#landing.peek`). Prove on the **real**
+hash (the harness hides the card under `#test`, so `pick()` never previews there):
+
+    GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"      # the steps: tiles + thumbnail widths, FEIGEN tile → peek state, DIRECTOR → forced -1, TORUS tile then the demo link → the show
+
+Expected: `TILES 6 imgs 480,…` (a 0 or a missing image = the thumbnail did not load — `tools/serve.js` serves `site/` at the root since
+v0.8.1; on `file://` the images are absent by design); `PEEK true 6 6 demo 0 peek` (mon 0 = silent); `DIRECTOR -1`; `START demo false 3
+hide true []` — the forced scene survives the start. `MOBILE=1` for the
+phone card (`.mobile`, four tiles a row) and `FAKEMIC=1` + `{clickSel:"#mic"}` for the microphone out of a preview. Thumbnails:
+`tools/thumbs.sh` (all pinned frames) or `tools/thumbs.sh "1:1200"` (one scene); a frame change is a commit that says so. `accept.sh`
+"== landing" runs the desktop recipe.
+
 ## `window.CARD` (available in every page)
 
 `MS` (music state) · `SC` (director; `SC.hist` = the ids shown so far, `SC.cur/next/m`) · `Q` · `FX` · `ERRS` (shader errors — must be `[]`) · `GROOVE` · `LOOK` · `ENGINE`
@@ -441,6 +456,7 @@ after every scene edit (the v0.5–v0.7 habit, four lists in the TORUS2 session)
 |---|---|---|
 | **one scene folder only** (`assets/scenes/<x>/`) | `node tools/check.js` · `IDS=<id> tools/scene-md5.sh <tag>` (that scene's f360/f840 lines, diff against the reference) · its own proof shots · `CARD.bench(id, 300)` interleaved with NAV when cost could move | ~1 min |
 | **`main.js` registration** (a new id, an id swap, the list order) | one full `tools/scene-md5.sh` list, the mixs md5, the help counts — the one file that touches every scene (`REG` order, the key row, the cast, every `init` at boot) | ~6 min, once |
+| **the landing card only** (`core/landing.js`, `hud.js`'s hooks, `index.html`'s card CSS/markup, `site/`) | `check.js` · the "Landing tiles" recipe (desktop + `MOBILE=1`) · the bundle from `file://` · one full `scene-md5.sh` list as the "nothing underneath moved" receipt (DOM cannot move a pixel of the canvas, the list says so in 5 min) | 6 min |
 | **`core/`, `engine/`, `effects/`, `transitions/`, `main.js` beyond registration** | the full list (v2 + `&colour=oklch`), parity fake, mixs, and the Q trace when cost could move — i.e. `tools/accept.sh` | 25 min + 16 per trace |
 | **a scene enters the director's rotation** (a bid that was 0 becomes live) | the Q trace on house + aba *after* the promotion — a scene with bid 0 cannot be picked, so a trace before it measures nothing | 16 min |
 

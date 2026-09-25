@@ -1,0 +1,10 @@
+[{"until":"window.CARD"},{"wait":1500},
+ {"eval":"'TILES '+CARD.LANDING.tiles+' imgs '+[...document.querySelectorAll('#scenes img')].map(i=>i.naturalWidth).join(',')"},
+ {"shot":"landing"},
+ {"clickSel":"#scenes .tile[data-id=\"6\"]"},{"wait":2500},
+ {"eval":"'PEEK '+[CARD.LANDING.peek,CARD.SC.forced,CARD.SC.cur,CARD.ENGINE.AU.mode,CARD.ENGINE.AU.demo.mon.gain.value,document.getElementById('landing').className].join(' ')"},
+ {"shot":"landing-peek"},
+ {"clickSel":"#director"},{"wait":600},{"eval":"'DIRECTOR '+CARD.SC.forced"},
+ {"clickSel":"#scenes .tile[data-id=\"3\"]"},{"wait":600},
+ {"clickSel":"#demo"},{"wait":2500},
+ {"eval":"'START '+[CARD.ENGINE.AU.mode,CARD.LANDING.peek,CARD.SC.forced,document.getElementById('landing').className,document.body.classList.contains('running'),JSON.stringify(CARD.ERRS)].join(' ')"}]

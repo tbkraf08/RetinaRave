@@ -16,6 +16,7 @@ export default {
   name: 'mandala',
   id: 2,
   tag: 'N-fold Kleinian fold · box-fold + sphere inversion, orbit-trapped',
+  card: { title: 'MANDALA', blurb: 'a box-fold fractal seen through a kaleidoscope' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/mandala.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() reads the first three, update() the rest
   feats: ['arc', 'regularity', 'onsetRate', 'seed', 'kickCount', 'flow', 'flowMid', 'bass', 'bassS',
     'midS', 'kick', 'tension', 'dropEnv', 'lvl', 'high', 'hat', 'alive'],

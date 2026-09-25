@@ -38,6 +38,7 @@ export default {
   name: 'polytope',
   id: 5,
   tag: 'regular 4-polytopes on S³, stereographic',
+  card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and cast into three dimensions' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
   feats: ['flow', 'flowBass', 'flowMid', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm'],
   cuts: 'continuous',

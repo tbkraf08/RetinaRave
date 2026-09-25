@@ -1659,3 +1659,48 @@ scratch; the curl to cause = the spiral arms and the whole frame turning. So: **
   `parity.js` `&scene=0` → 8 + `CARD.REG[8].scene.state`, mixs re-based, lists → `tools/accept/v0.8/`, the about page's NAV line, the Q
   trace on house + aba, §40, tag v0.8.
 - **Tagged v0.8 as is (2026-09-25, the user: "tag and push as is for now" — "i validated the build, should just be tagging and pushing? full sweep is expensive"):** NAV2 stays id 8 / key `9` / forced-only, NAV stays home; no swap, no Q trace. The acceptance sweep was **not** run for this tag — the user's own look at the build is the gate, and the sweep costs ~10 % of a weekly token budget; it is for core/engine changes when asked. `tools/accept.sh` gained the "== nav2" section (s8 md5s vs `tools/accept/v0.8/scene-md5-v08.txt` = the v0.7 list + s8, the still four vs `nav2-still-md5.txt`, the node tests, the monitor) for whenever it next runs; `releases/retinarave-v0.8.html` = dist at the tag; package.json 0.8.0; pushed (deploys retinarave.com: key `9` is NAV2).
+
+## §40 v0.8.1 "this is what it sees" — the tagline and the scene tiles (2026-09-25, orchestrator; the user: "more cosmetic changes → on landing page")
+
+**The ask:** *"'music navigating real mathematics' → how can we change this? inspo: visualizing music / 'I taught the computer how to
+listen to music'; also, how can we preview the different scenes before anything happens? (maybe give an option for people click
+specific one?)"*
+
+**Tagline.** The sub-line under the title was a product statement in small caps ("music navigating real mathematical objects"); it is
+now two sentences in the first person, sentence case, the about page's voice ("Hi, I'm Toma"): **"I taught a computer to listen to
+music. / This is what it sees."** The first sentence is the user's inspiration with "the computer" → "a computer" (a claim about one
+machine, not the machine); the second is what "visualizing music" means here and hands the eye to the tiles right under it. The
+`<title>`, the meta/OG descriptions and the JSON-LD keep the search-engine wording (they are what a search result shows, not what a
+visitor reads); `site/about.html` carries the same two lines. `.sub` lost the uppercase and the letter-spacing — a sentence is read,
+a label is glanced at.
+
+**Scene tiles (the preview).** Three ways were on the table: (1) still thumbnails only; (2) a live preview by forcing a scene with no
+music (the canvas renders under the card from the first frame — a dim, slowly turning NAV at presence 0, `prestart-canvas.jpg`);
+(3) a live preview on the built-in demo synth. (3) won because the synth is already **silent unless monitored** (`mon.gain` 0, key
+`m`) — a click can start it as a user gesture and the listener hears nothing — and because a still cannot show that the thing moves
+*to music*. (1) rides along as the row's face: a tile is a real frame from the fake timeline, so the row is honest before any click.
+Built: `core/landing.js` (78 lines) renders one tile per scene with a **`card` slot** (CONTRACTS §1.17: `title`, `blurb`; core stays
+scene-blind — `check.js`'s no-'nav' rule holds) plus a first **DIRECTOR** tile (no picture, "on" by default); a click = `pick(id)`:
+`SC.forced = id` and, while the card is up and no source runs, `ENGINE.start('demo')` with `LANDING.peek` set, which `hud.js`'s
+`AU.onRun` reads to keep the card and add `#landing.peek` (the card slims to a bottom strip over a bottom-up gradient: small title,
+the row, "previewing FEIGEN on the built-in demo signal — blurb", the start buttons). Keys `1–9`/`0` go through `pick()` too, so a
+key on the landing previews like a click; during the show `pick()` is exactly the old key handler (SC.forced + the tile marks). A start
+button calls `leavePeek()` first, so the run that follows hides the card whatever mode it lands in (a declined capture still falls to
+the demo with its message); `stopAll` → `onStop` also leaves peek (the demo is muted then). `CARD.LANDING = {peek, picked, tiles}`.
+Thumbnails: `tools/thumbs.sh` shoots `test&scene=<id>` at `CLOCK=1 GPU=1` and writes 480×270 q82 JPEGs to `site/thumbs/<name>.jpg`
+(13–32 KB each, 115 KB for six); frames by eye from a f360/f840 montage — NAV f360 (the Julia stop), MANDALA f840 (blue), TORUS f360,
+POLYTOPE f840, FEIGEN f360 (the cardioid); DUST is dim at both (green haze, `c-s1-f{360,840}.jpg`) → f1200 (the swarm in flight).
+`tools/serve.js` falls back to `site/<path>` for a miss at the root so `thumbs/x.jpg` resolves in dev as it does after `npm run
+build` (`cp -r site/. dist/`); the release file opened alone from `file://` has no thumbs — `img.onerror` removes the image and the
+tile keeps its gradient and title (the bundle test below). Cards on the six director-pickable scenes; `torus-v1` (id 7) and `nav2`
+(id 8) have none — a forced-only scene is not offered to a visitor. Phone: four tiles per row (`flex:0 0 calc(25% - 6px)`; the
+first cut let a lone seventh tile stretch the full width, `landing-mobile.jpg` before the fix), the same peek.
+
+**Proof (sized to the diff: core/hud.js + harness.js changed, no render code):** `check.js` 0 fail; headless real path (`GPU=1`):
+6 tiles, six images at natural width 480, DIRECTOR on; click FEIGEN → `peek true, forced 6, cur 6, mode demo, mon 0, running false`,
+`#landing.peek`; click DIRECTOR → `forced -1`; key `4` in peek → `forced 3`, tile 3 on; click the demo link → `mode demo, peek false,
+forced 3, landing hidden, running true, errs []`; key `6` in the show → `forced 5`, `0` → `-1`. `FAKEMIC=1`: tile MANDALA → `#mic` →
+`mode mic, forced 2, cur 2, hidden, demo gain 0`. `MOBILE=1`: `.mobile` card with the 4+3 row, tile TORUS → `.mobile.peek`, forced 3.
+Full scene-md5 list vs `tools/accept/v0.8/scene-md5-v08.txt` (below), bundle from `file://` (below). Shots in `tools/accept/v0.8.1/`.
+The full `accept.sh` sweep was not run (the user's rule since v0.8: the tag gate is their look at the build; no render code moved).
+

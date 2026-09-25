@@ -32,6 +32,7 @@ const SELF = {
   name: 'dust',
   id: 1,
   tag: 'a swarm of dust, one frequency band per grain',
+  card: { title: 'DUST', blurb: 'a swarm of particles in a flow field, one frequency band per grain, the Hopf fibres threaded through' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/dust.jpg from tools/thumbs.sh
   feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'kick', 'dropEnv', 'tension', 'hat',
     'alive', 'arc', 'punchy', 'regularity'],
   cuts: 'onset',

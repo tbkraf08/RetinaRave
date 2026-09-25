@@ -25,6 +25,7 @@ export default {
   name: 'nav',
   id: 0,
   tag: 'music navigates the Mandelbrot set: bulbs by interval, exterior rays on the drop',
+  card: { title: 'NAV', blurb: 'a walk over the Mandelbrot set: every stop is a Julia set, and the music picks the route' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/nav.jpg from tools/thumbs.sh
   home: true,       // the director's home scene: drops cut here, builds park here
   always: true,     // updated every frame (the director reads its rt, the PiP path must stay continuous)
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks

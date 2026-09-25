@@ -505,6 +505,18 @@ params: {
   values), `CARD.paramDeps(name, p)`, `CARD.derived(name, p)`; the preset JSON carries a `params` block. The panel's part E
   shows a **parameters** table per scene above the jacks: parameter · what it is · source · transfer · meter.
 
+### 1.17 Card — your tile on the landing page (v0.8.1, opt-in)
+
+`card: { title, blurb }` puts your scene on the landing card's tile row (`core/landing.js` renders the row from `REG`; a variant
+never gets a tile — it is its parent's). `title` is the name in capitals the listener sees under the picture (`'TORUS'`, not the
+module name); `blurb` is one clause a listener understands with no code and no formula — it is read aloud, so to speak, as
+"previewing TITLE on the built-in demo signal — blurb". The picture is `site/thumbs/<name>.jpg` (480×270, JPEG), built by
+`tools/thumbs.sh` from the fake timeline at `CLOCK=1` — the frame per scene is pinned in that script; pick yours by eye and pin it
+there. A click on the tile sets `SC.forced` to your id and starts the built-in demo synth **muted** as a live preview behind the
+slimmed card ("peek"); the start buttons keep the forced scene. Nothing reaches your `update`/`draw` that keys 1–9 do not already
+send: a tile is a key with a picture. A scene without `card` (forced-only candidates, retired versions) is simply not on the row.
+Rules (`check.js`): `title` and `blurb` non-empty (fail); a `card` without its thumbnail is a warning (run `tools/thumbs.sh`).
+
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`

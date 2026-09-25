@@ -15,10 +15,12 @@ const server = http.createServer((req, res) => {
   if (p.endsWith('/')) p += 'index.html';
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
+  const send = (f, data) => { res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data); };
   fs.readFile(file, (err, data) => {
-    if (err) { res.writeHead(404); return res.end('not found: ' + p); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-    res.end(data);
+    if (!err) return send(file, data);
+    // what `npm run build` copies to the dist root (site/: favicon, thumbs/…) is served from site/ here, so dev == deploy for those paths (v0.8.1)
+    const alt = path.join(ROOT, 'site', p);
+    fs.readFile(alt, (err2, d2) => { if (err2) { res.writeHead(404); return res.end('not found: ' + p); } send(alt, d2); });
   });
 });
 server.listen(PORT, '127.0.0.1', () => console.log(`serving ${ROOT} at http://127.0.0.1:${PORT}/`));

@@ -1,4 +1,4 @@
-// HUD + keys + landing card. The only module that touches the DOM besides main.js.
+// HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
 // Keys: d HUD · f fullscreen · m monitor the demo synth · 1–N force scene (1 = id 0, N = REG.length) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
@@ -9,12 +9,19 @@ import { Q } from './quality.js';
 import { G } from './gl.js';
 import { GROOVE } from '../engine/groove.js';
 import { toggleHelp, openHelpAt, keys } from './help.js';
+import { LANDING, initLanding, pick, leavePeek } from './landing.js'; // v0.8.1: the scene tiles + the live preview ("peek")
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
 
 export function initHUD() {
   AU.onRun = (mode, msg) => {
+    if (LANDING.peek && mode === 'demo') { // a tile started the silent demo as a preview: the card stays, slimmed to the bottom (index.html #landing.peek)
+      $('landing').classList.add('peek');
+      $('msg').textContent = '';
+      return;
+    }
+    leavePeek();
     if (msg) {
       $('msg').textContent = msg;
       setTimeout(() => $('landing').classList.add('hide'), 1400);
@@ -27,8 +34,10 @@ export function initHUD() {
     keepAwake(false);
     $('landing').classList.remove('hide');
     $('msg').textContent = msg || '';
+    leavePeek(); // the demo is muted by stopAll: a preview that was running has nothing to show
   };
   $('go').onclick = () => {
+    leavePeek();
     $('msg').textContent = '';
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
       ENGINE.start('demo', 'Tab capture is not supported here — running the demo signal.');
@@ -36,12 +45,13 @@ export function initHUD() {
     }
     ENGINE.start('capture');
   };
-  $('demo').onclick = () => ENGINE.start('demo');
-  $('mic').onclick = () => { $('msg').textContent = ''; ENGINE.start('mic'); };
+  $('demo').onclick = () => { leavePeek(); ENGINE.start('demo'); };
+  $('mic').onclick = () => { leavePeek(); $('msg').textContent = ''; ENGINE.start('mic'); };
   // Capability-aware card (v0.6): no tab capture (every mobile browser) or a coarse pointer → the microphone is the
   // primary way in, the share-a-tab steps are noise. Desktop keeps Share a tab first, the microphone second.
   const mobile = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) || (matchMedia && matchMedia('(pointer:coarse)').matches);
   if (mobile) $('landing').classList.add('mobile');
+  initLanding(); // the tiles, from REG (after every register — main.js calls initHUD after the loop)
   renderHint();
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
@@ -54,7 +64,7 @@ export function initHUD() {
     else if (k === 'h' || k === '?') toggleHelp();
     else if (k === 'p') openHelpAt('helpE');
     else if (k === 'escape') toggleHelp(false);
-    else if (k >= '0' && k <= '9') SC.forced = k === '0' ? -1 : (REG[+k - 1] ? +k - 1 : SC.forced);
+    else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });
   addEventListener('dblclick', fullscreen);
 }

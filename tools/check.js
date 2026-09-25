@@ -156,6 +156,10 @@ for (const d of sceneDirs) {
     if (!(c.default in (c.variants || {}))) fail('scene ' + d + ': colour.default ' + c.default + ' is not in colour.variants (' + names.join(',') + ')');
     for (const n of names) if (typeof c.variants[n] !== 'object') fail('scene ' + d + ': colour.variants.' + n + ' is not an object');
   }
+  if (sc.card) { // card slot (§1.17, v0.8.1): a landing tile — title and blurb non-empty; the picture is site/thumbs/<name>.jpg (tools/thumbs.sh)
+    for (const k of ['title', 'blurb']) if (!(typeof sc.card[k] === 'string' && sc.card[k].trim())) fail('scene ' + d + ': card.' + k + ' is missing or empty');
+    if (!fs.existsSync(path.join(ROOT, 'site/thumbs', sc.name + '.jpg'))) warn('scene ' + d + ': card without site/thumbs/' + sc.name + '.jpg — run tools/thumbs.sh');
+  }
 }
 
 console.log(`check: ${files.length} modules · uniforms ${decl.size} · MS keys ${Object.keys(MS).length} · scenes ${sceneDirs.length} (help.feats gaps ${helpGaps}) · ${fails} fail · ${warns} warn`);

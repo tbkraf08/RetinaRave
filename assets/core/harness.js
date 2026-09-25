@@ -11,6 +11,7 @@ import { G, ERRS, ETEX } from './gl.js';
 import { LOOK } from './look.js';
 import { HELP } from './help.js';
 import { TOUCH } from './touch.js'; // v0.6: swipe/hold counters
+import { LANDING } from './landing.js'; // v0.8.1: the landing tiles' state (peek / picked / tiles)
 import { HASH, TEST } from './hash.js';
 import { restore as restorePanel } from './panel.js';
 import { MANUAL, manual, applyPosts, postString, POST_PARAMS, snapshotDefaults, resetManual } from './manual.js';
@@ -32,7 +33,7 @@ function readback(r) {
 
 const byName = (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return s; };
 export const CARD = {
-  log: [], MS, SC, Q, FX, CHAIN, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TOUCH, TEST, HASH,
+  log: [], MS, SC, Q, FX, CHAIN, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TOUCH, LANDING, TEST, HASH,
   hooks: {},
   frameN: 0,
   get fix() { return ENGINE.fix; },

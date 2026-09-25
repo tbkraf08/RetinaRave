@@ -7,3 +7,4 @@ tools/work/
 .wrangler/
 node_modules/
 !site/*.jpg
+!site/thumbs/*.jpg
