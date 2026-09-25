@@ -6,9 +6,10 @@
 // is built with mkAnchor() here and not shared: two scenes easing one `hueU` would fight over it during a crossfade.
 // Behaviour is bit-identical (the s3 f360/f840 md5s 7189a6ba… / 48113eda… are unmoved); the long explanation of the
 // circle of fifths, the mode PULL and the keyConf gate lives in keycolour.js beside the code.
+// The constants themselves are NOT re-exported from here: nothing imports them through this file, and
+// `export { … } from '…'` is a form tools/bundle.js cannot rewrite — it throws "unhandled export form", so the
+// single-file build (the thing releases/*.html actually ships) dies while check.js and the http page stay green.
 import { mkAnchor } from '../../math/keycolour.js';
-
-export { WARM, COOL, PULL, SATMAJ, SATMIN, VALW, HUETC, KEYC0, KEYC1, wrap } from '../../math/keycolour.js';
 
 const A = mkAnchor();
 export const OUT = A.OUT;

@@ -34,7 +34,12 @@ export const SPREAD1 = 0.45;   // … rising to 0.75 at mood.spread 1, centred o
 export const CHTC = 0.15;      // seconds: how fast a sector's brightness follows the chroma
 export const FIFTH = 1 / 12;   // the outer figure's hue offset: one twelfth of a turn = the dominant
 export const CHMIN = 0.02;     // below this peak the chroma vector carries nothing and harmAngle stands in
-export const SATK = 0.65;      // the mood's saturation reaches the wheel as 0.35 + SATK · mood.sat, × the mode's lift
+// The saturation law is POLYTOPE's own (`ctx.hsv(hue, mood.sat, v)`), not TORUS2's `0.35 + 0.65·mood.sat`: that
+// floor was written for a scene whose fibres are spatially separated by pitch class. All the mode does is lift or
+// drop it (SATMAJ / SATMIN from keycolour.js). Honest note: restoring this law did NOT move the pale-picture
+// measurement on the loud demos (see the report's friction log — the twelve-hue wheel concentrates the light into
+// the few LIT sectors and their bloom halos stack toward white there). GLOW0, SPREAD0/SPREAD1 and index.js's PBRI
+// are the knobs if the user finds it pale; the deterministic #test frames measure 0.63-0.80 saturation.
 
 const A = mkAnchor();          // POLYTOPE's own anchor state — never TORUS2's (see keycolour.js)
 const CH = new Float32Array(SECN);     // the eased chroma, by pitch class
@@ -71,7 +76,7 @@ export function chroma(v) {
 export function step(dt, S, mood, hsv, glow, bright) {
   const An = A.anchor(dt, S.key, S.mode, S.keyConf, S.valence, S.harmAngle, mood.hue, keyPin);
   const spread = SPREAD0 + SPREAD1 * mood.spread;
-  const sat = Math.min(1.2, (0.35 + SATK * mood.sat) * An.sat);
+  const sat = Math.min(1.2, mood.sat * An.sat);
   const v = 0.55 + 0.45 * mood.bri;
   // the chroma vector, with TORUS2's harmAngle fallback blended in by how much energy the real one carries
   const C = chPin || S.chroma;

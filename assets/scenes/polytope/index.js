@@ -21,19 +21,19 @@ const TAU = Math.PI * 2;
 const TURNB = 16;                // beats per full turn of the xy (bass) plane — the user's own number
 const TURNB2 = 32;               // ... of the zw (mid) plane, so the two invariant planes never phase-lock
 const MAXSUB = 8;                // the largest entry of SUB — the bump profiles are sized for it once, in init
-// spec 4, lean 13: what a bump does to the piece it sits on, at groove 1. Brightness is the loud one; the width
-// pulse is what makes a bump read as a THICKENING travelling round the cage rather than only a brighter patch.
+// spec 4, lean 13: what a bump does to the piece it sits on, at groove 1 — a thickening as much as a brightening.
 const PBRI = 1.7;
-const PWID = 0.9;
-const PDIP = 0.3;                // how far BELOW normal a piece with no bump on it sits, at groove 1
+const PWID = 1.2;
 const GROOVE0 = 0.8;             // the resting amplitude of the whole thing (becomes the `groove` param, spec 7)
 const GLOW0 = 0.35;              // a sector's brightness floor: what an unsounded pitch class still shows (spec 5)
 const GLOWQ = 0.4;               // hush / calm lower the floor by this much (TORUS2's number)
-// spec 6, growth in two stages. Stage 1 (build 0 → 0.5) rounds the arcs: the subdivision rises from SUBLO of the
-// tier's own value to all of it — never past it, so the music can never raise the tier budget (§1.4) and the
-// worst-case segment count does not move. Re-cutting an edge is the one discontinuity §1.12 sanctions for a
-// `continuous` scene, and grooves.fillProfile conserves the bumps' ink across it, so the beads do not flash.
-const SUBLO = 0.7;
+// spec 6, growth in two stages. Stage 1 (build 0 → 0.5) rounds the arcs: the subdivision rises from the tier's own
+// value toward the NEXT tier's, capped at SUB[3]. It starts AT the tier's value, never below it, because that is
+// the resolution the groove's beads are drawn at — a floor below it (0.7 was the first try) left tier 2 cutting an
+// edge into four pieces, exactly the spacing of a four-on-the-floor train, and the beads vanished. One tier of
+// growth bounds the extra work at +33 % and leaves the worst case at the tier-3 count, which CAP already covers.
+// Re-cutting an edge is the one discontinuity §1.12 sanctions for a `continuous` scene, and fillProfile keeps the
+// bumps' depth across it, so they fade rather than flash.
 const SUBTC = 0.35;              // seconds (three of them ≈ the 1 s the brief asks for)
 const SUBAR = 0.3;               // how much `arousal` counts toward stage 1 on top of the build (TORUS2's number)
 // Stage 2 (build 0.5 → 1) grows the figure. SIZE0 is today's resting size; the cap is SIZE0 + the three terms.
@@ -75,7 +75,7 @@ function info() {
   // `prof` is the multiplier `emit` actually applies, piece by piece, along EVERY edge of the inner figure: the
   // bumps per edge, as the numbers the pixels are made of. Band 0 (bass) is the one the pinned trains drive.
   o.sub = p.sub;
-  o.prof = Array.from(self.profA.slice(0, n1), (x) => +(p.gbase + p.gbri * x).toFixed(3));
+  o.prof = Array.from(self.profA.slice(0, n1), (x) => +(1 + p.gbri * x).toFixed(3));
   o.colour = CO.info();
   return JSON.stringify(o);
 }
@@ -170,8 +170,8 @@ export default {
     this.jy = 0;
     this.nSeg = 0;
     this.kinds = [];
-    this.subF = 1;
-    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0, gbase: 1 };
+    this.subF = 0;
+    this.p = { a1: 0, a2: 0, a3: 0, g: 1, yaw: 0, pitch: 0, sub: 0, subB: 0, pulse: 1, gbri: 0, gwid: 0 };
   },
 
   update(dt, MS, GROOVE, LOOK, env) {
@@ -239,16 +239,16 @@ export default {
     const t = this.ctx.tier();
     // spec 6 stage 1: the arcs get rounder with the build, toward the tier's own subdivision and never past it
     const gB = Math.min(1, 2 * MS.build + SUBAR * MS.arousal);
-    this.subF += (SUBLO + (1 - SUBLO) * gB - this.subF) * (1 - Math.exp(-dt / SUBTC));
-    p.sub = Math.max(2, Math.round(SUB[t] * this.subF));
-    p.subB = Math.max(2, Math.round(SUBB[t] * this.subF));
+    this.subF += (gB - this.subF) * (1 - Math.exp(-dt / SUBTC));
+    const t2 = Math.min(3, t + 1);
+    p.sub = Math.round(SUB[t] + (SUB[t2] - SUB[t]) * this.subF);
+    p.subB = Math.round(SUBB[t] + (SUBB[t2] - SUBB[t]) * this.subF);
     p.pulse = 1 + 0.4 * MS.hit;
     // spec 4: the three trains painted along one edge, sampled where the subdivision already lands
     GR.fillProfile(this.profA, p.sub, beatNow);
     GR.fillProfile(this.profB, p.subB, beatNow);
     p.gbri = PBRI * P.groove;
     p.gwid = PWID * P.groove;
-    p.gbase = 1 - PDIP * P.groove;
     const m = LOOK.mood;
     // 0.75·(0.35 + lvl)·presence, with a presence floor so muted audio still idles visibly (§0) instead of black
     const bright = GAIN * 0.75 * (0.35 + MS.lvl) * (0.15 + 0.85 * MS.presence);
@@ -272,7 +272,7 @@ export default {
     const r = nrm(cross(f, [0, 1, 0]));
     const u = cross(r, f);
     mvpMat(this.mvp, eye, r, u, f, FOCAL, w / h, NEAR);
-    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, alpha: 1, sec: CO.IN, secn: CO.SECN, secb: CO.SECB, prof: this.profA, gw: [1, 1, 1], gbri: p.gbri, gwid: p.gwid, gbase: p.gbase };
+    const o = { a1: p.a1, a2: p.a2, a3: p.a3, sub: 4, g: 1, eye, fwd: f, wpx: 2, alpha: 1, sec: CO.IN, secn: CO.SECN, secb: CO.SECB, prof: this.profA, gw: [1, 1, 1], gbri: p.gbri, gwid: p.gwid };
     // 2.2 px at the centre of the orbit, falling off as 1/viewZ like any perspective stroke
     const wpx = 2.2 * (h / 720) * D;
     let n = 0;
@@ -342,7 +342,7 @@ export default {
     const C = CO.LIVE;
     return this.rt.label + ' ' + this.nSeg + ' segs · key ' + C.key + (C.mode ? 'm' : 'M') + ' lit ' + C.lit
       + ' · bumps ' + GR.positions(0, beatNow).length + '/' + GR.positions(1, beatNow).length + '/' + GR.positions(2, beatNow).length
-      + ' · xy ' + DA.U.a1.toFixed(2) + '→' + DA.U.a1T.toFixed(2) + ' · sweep ' + DA.U.sweep.toFixed(2);
+      + ' · xy ' + (((DA.U.a1 % TAU) + TAU) % TAU).toFixed(2) + '→' + DA.U.a1T.toFixed(2) + ' · sweep ' + DA.U.sweep.toFixed(2);
   },
 
   help: HELP,

@@ -147,19 +147,19 @@ export function paint(P, sec, secb, n) {
 // upward the fade is exactly what it was; only the last stretch before the pole is steeper. Continuous in the
 // rotation angles: f → 0 as den → GATE, so a piece still fades in and out and never appears (`cuts: 'continuous'`).
 export const GATE = 0.24;
+const EBL = 0.3;   // how much of an edge's length is spent crossing from its first vertex's colour to its second's
 const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is where the old ramp reached 1
 
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
 // (x0 y0 z0 w0 · x1 y1 z1 w1 · r g b a, widths in px). Returns the new segment count.
-// o: {a1,a2,a3, sub, g, eye, fwd, wpx, alpha, prof, gw, gbri, gwid, gbase, sec, secn, secb}
+// o: {a1,a2,a3, sub, g, eye, fwd, wpx, alpha, prof, gw, gbri, gwid, sec, secn, secb}
 //
 // `prof` (spec 4) is grooves.fillProfile's three bump profiles along one edge, sampled at the sub+1 points this
 // loop already visits — so the pulses cost one dot product and two multiplies per sample, and not one exponential.
-// `gbase` is what a piece with no bump on it gets: slightly BELOW one, so the stretch between two bumps is a little
-// darker and thinner than an ungrooved stroke and every edge reads as a string of beads. It doubles the contrast
-// for the same peak, which matters because the peak is already deep in the bloom. At groove 0 it is exactly 1 and
-// the whole mechanism is the identity. `gw` weights the three bands for THIS figure (the mids ride the outer cage
-// only). Because every edge carries the
+// The profile is zero-mean along the edge (grooves.fillProfile), so `1 + gain·profile` averages to exactly one:
+// the groove REDISTRIBUTES light and width along an edge instead of adding to it, and a stroke between two bumps is
+// darker and thinner than an ungrooved one. At groove 0 the whole mechanism is the identity, pixel for pixel.
+// `gw` weights the three bands for THIS figure (the mids ride the outer cage only). Because every edge carries the
 // same profile and a bump travels one edge length per bar, the rhythm becomes the spacing of the bumps along every
 // edge of the polytope at once. Brightness goes in the colour and width in the width — never in the alpha, which
 // is coverage (CONTRACTS §1.12) and belongs to the pole fade alone.
@@ -183,7 +183,6 @@ export function emit(kind, o, segs, off, cap) {
   const w2 = o.gw[2];
   const gbri = o.gbri;
   const gwid = o.gwid;
-  const gbase = o.gbase;
   let n = off;
   for (let e = 0; e < E.length; e += 2) {
     const ia = E[e];
@@ -239,14 +238,18 @@ export function emit(kind, o, segs, off, cap) {
       }
       // the three trains' bumps where this sample sits along the edge: one brightness and one width multiplier
       const pk = PR[k] * w0 + PR[n1 + k] * w1 + PR[n1 + n1 + k] * w2;
-      const bri = gbase + gbri * pk;
-      const wid = gbase + gwid * pk;
+      const bri = Math.max(0, 1 + gbri * pk);
+      const wid = Math.max(0.15, 1 + gwid * pk);   // a stroke may thin, never vanish or invert
       const ok = f > 0.002;
       if (ok && have && n < cap) {
         const j = n * 12;
         const bm = 0.5 * (pB + bri);
-        // the piece takes the wheel's colour lerped between its two vertices, at its own midpoint along the edge
-        const sm = (k - 0.5) / sub;
+        // The piece takes the wheel's colour of its NEARER vertex, with a short blend across the middle of the
+        // edge (EBL wide) so nothing steps. The brief allowed either this or a straight end-to-end lerp; this one,
+        // because an edge of a 4-polytope routinely joins two vertices most of a wheel apart and an end-to-end
+        // lerp in RGB then runs the whole stroke through grey. (Measured, it changed the picture's saturation by
+        // less than 0.02 — the greying is elsewhere — but a pure sector colour is the truer thing to draw.)
+        const sm = smooth(((k - 0.5) / sub - 0.5) / EBL + 0.5);
         segs[j] = pX;
         segs[j + 1] = pY;
         segs[j + 2] = pZ;

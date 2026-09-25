@@ -111,20 +111,25 @@ console.log('3. the bump profile along an edge is exact at the subdivision point
     GR.fillProfile(out, nsub, beat);
     const row = Array.from(out.slice(0, nsub + 1));
     const peaks = [];
-    for (let k = 1; k < nsub; k++) if (row[k] > row[k - 1] && row[k] >= row[k + 1] && row[k] > 0.2 * Math.max(...row)) peaks.push(k / nsub);
+    for (let k = 1; k < nsub; k++) if (row[k] > row[k - 1] && row[k] >= row[k + 1] && row[k] > 0) peaks.push(k / nsub);
     ok(peaks.length >= 3, 'sub ' + nsub + ': the 4x4 profile peaks where each of the four bumps sits', JSON.stringify(peaks.map((x) => +x.toFixed(3))));
-    ok(Math.min(...row) < 0.55 * Math.max(...row), 'sub ' + nsub + ': and dips between them (the four read as four)', 'min/max ' + (Math.min(...row) / Math.max(...row)).toFixed(3));
-    ok(row.every((x) => x >= 0 && x < 4), 'sub ' + nsub + ': the profile stays finite and non-negative', 'max ' + Math.max(...row).toFixed(3));
+    ok(Math.min(...row) < 0 && Math.max(...row) > 0, 'sub ' + nsub + ': and dips below zero between them (the four read as four)', 'min ' + Math.min(...row).toFixed(3) + ' max ' + Math.max(...row).toFixed(3));
+    ok(row.every((x) => Number.isFinite(x) && Math.abs(x) < 4), 'sub ' + nsub + ': the profile stays finite and bounded', 'max|.| ' + Math.max(...row.map(Math.abs)).toFixed(3));
   }
   // ink is conserved across a tier flip: the mean of the profile barely moves when sub changes (cuts: 'continuous')
   // k = 0 and k = nsub are the SAME point on the edge parameter, so the mean runs over 0…nsub-1
   const mean = (n) => { const o = new Float32Array(3 * (n + 1)); GR.fillProfile(o, n, beat); let s2 = 0; for (let k = 0; k < n; k++) s2 += o[k]; return s2 / n; };
-  const m3 = mean(3), m8 = mean(8);
-  ok(Math.abs(m3 - m8) / m8 < 0.06, 'the ink under the bumps survives a tier flip 3 ↔ 8', 'sub3 ' + m3.toFixed(4) + ' sub8 ' + m8.toFixed(4));
+  const rms = (n) => { const o = new Float32Array(3 * (n + 1)); GR.fillProfile(o, n, beat); let s2 = 0; for (let k = 0; k < n; k++) s2 += o[k] * o[k]; return Math.sqrt(s2 / n); };
+  ok(Math.abs(mean(3)) < 1e-6 && Math.abs(mean(8)) < 1e-6 && Math.abs(mean(5)) < 1e-6,
+    'the profile is zero-mean at every subdivision — the groove redistributes light, it does not add any',
+    'sub3 ' + mean(3).toExponential(1) + ' sub5 ' + mean(5).toExponential(1) + ' sub8 ' + mean(8).toExponential(1));
+  // the depth DOES fall with the tier, and must: at sub 3 one piece is a third of the edge, so four bumps 0.25
+  // apart are inside one box and there is almost nothing left to redistribute. It fades, it never aliases.
+  ok(rms(3) > 0.3 * rms(8) && rms(3) < rms(8), 'its depth fades smoothly with a coarser mesh rather than aliasing', 'rms sub3 ' + rms(3).toFixed(4) + ' sub5 ' + rms(5).toFixed(4) + ' sub8 ' + rms(8).toFixed(4));
   const empty = new Float32Array(3 * 9);
   GR.reset();
   GR.fillProfile(empty, 8, 1000);
-  ok(empty.every((x) => x === 0), 'an expired train paints nothing');
+  ok(empty.every((x) => x === 0), 'an expired train paints nothing (the multiplier is exactly 1)');
   GR.train(null);
 }
 

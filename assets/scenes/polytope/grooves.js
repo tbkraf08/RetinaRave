@@ -193,6 +193,14 @@ export function positions(band, beatNow) {
 // under the bump is conserved. That is what keeps the picture continuous across a tier flip (`cuts: 'continuous'`):
 // a coarser subdivision widens and dims each bump instead of letting it flicker between the sample points as it
 // travels, and a feature finer than the mesh fades out rather than aliasing.
+//
+// Each band's row is then made ZERO-MEAN along the edge. This matters more than it looks: without it the multiplier
+// `1 + gain·profile` raises the AVERAGE brightness of every stroke as well as modulating it, so a track with a busy
+// groove came out about twice as bright overall and saturated to white through the bloom — the exact failure
+// DECISIONS §7 warns about, and the first before/after montage showed it on house and aba. Zero-mean, the groove
+// only ever redistributes light along an edge: the beads are as strong as ever and the picture's exposure is the
+// one the brightness law already chose. (k = nsub is the same point on the edge as k = 0, so the mean runs 0…nsub-1
+// and the duplicate endpoint does not weight the average.)
 export function fillProfile(out, nsub, beatNow) {
   const n1 = nsub + 1;
   out.fill(0, 0, BANDS * n1);
@@ -212,6 +220,10 @@ export function fillProfile(out, nsub, beatNow) {
         out[o + k] += a * Math.exp(d * d * inv);
       }
     }
+    let mean = 0;
+    for (let k = 0; k < nsub; k++) mean += out[o + k];
+    mean /= nsub;
+    for (let k = 0; k <= nsub; k++) out[o + k] -= mean;
   }
   return out;
 }
