@@ -17,7 +17,9 @@ const K = {
   FADE1: 1.75,
 };
 
-const BODY = `
+import { GLSL as ATTRACTORS } from './attractors.js';
+
+const BODY = ATTRACTORS + `
 #define TAU 6.2831853
 #define NEAR 0.05
 #define SHIMK ${K.SHIMK.toFixed(1)}
@@ -160,7 +162,8 @@ vec3 ringPt(int fam, int sub, float t, out float fade, out float pulse) {
   waves(t, fam, disp, pulse);
   vec3 d = p - 0.5 * (p + pa);
   float L = length(d);
-  return L > 1e-5 ? p + d * (disp * min(L, uCen.w * 1.2) / L) : p;
+  if (L > 1e-5) p += d * (disp * min(L, uCen.w * 1.2) / L);
+  return atMorph(p, uCen.xyz, uCen.w);       // spec 5: the whole bumped ring is advected along the attractor
 }
 
 void main() {
@@ -172,8 +175,8 @@ void main() {
   if (s >= base) {
     int i = s - base;
     float t0 = float(i) / float(uKnotN), t1 = float(i + 1) / float(uKnotN);
-    p0 = world(knotZ(t0), f0);
-    p1 = world(knotZ(t1), f1);
+    p0 = atMorph(world(knotZ(t0), f0), uCen.xyz, uCen.w);
+    p1 = atMorph(world(knotZ(t1), f1), uCen.xyz, uCen.w);
     float dk, qk;
     waves(t0, int(uLoud), dk, qk);            // the knot rides the loudest family, so it takes that family's pulse
     bri = uKnotBH.x * (1.0 + qk);
