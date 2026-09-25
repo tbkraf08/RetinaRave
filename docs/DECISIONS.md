@@ -1567,3 +1567,29 @@ the 16-beat turn as a **nudge per beat**, the bounce 5 % and visible. Everything
   Not built: the `oklch` variant (v2 alone is declared; `colour.js anchor()` returns a turn, so a `palOK` pass is small).
 - **Replacement (not done — waits for the user):** TORUS2 takes id 3's bid (`0.25 + 0.45 clarity + 0.3 regularity`, 0 in builds),
   TORUS moves to id 7 as `torus-v1` forced-only for one release, both md5 lists re-based in the same commit, §37 records it, then tag v0.7.
+
+## §37 TORUS2 promoted — the swap, the re-base, the v0.7 tag (2026-09-24, orchestrator; the user: "torus2 looks good, promote it. tag then deploy")
+
+**The decision:** the user looked at `tools/accept/v0.7/montage-torus2-{real,demo}.jpg` and the build and approved TORUS2 as built —
+none of §36's leans was questioned (the wave amplitude .26, the narrowed spread, `MORPHK` .9, minor not always cool), so they stand
+as the v0.7 look and stay the first knobs if the user ever objects. The Replacement path of `TORUS2-SESSION-PROMPT.md` step 4, exactly:
+
+- **The swap:** `torus2` is **id 3** and carries TORUS's bid verbatim (`arc === 'build' ? 0 : 0.25 + 0.45 clarity + 0.3 regularity`;
+  `clarity`/`regularity` added to its `feats` with "the bid:" lines). The old TORUS is **`torus-v1`, id 7**, `score()` 0 —
+  forced-only (key `8`) for one release; `arc` and `regularity` left its `feats` (only the bid read them). `main.js` registers
+  `[nav, dust, mandala, torus2, polytope, feigen, torus]` so the cast order is by id. CONTRACTS §1.8's table says so. Deleting v1 is a
+  later, separate decision of the user's. The about page's TORUS line ("the Hopf fibration itself: circles on the three-dimensional
+  sphere, projected down to where we can see them") is still true of TORUS2 and stays.
+- **The re-base, in this same commit:** `tools/scene-md5.sh` after the swap is the v0.5 v2 list with **s3 ↔ s7 exchanged and nothing
+  else moved** (s3 = `7189a6ba` / `48113eda`, s7 = `d3e73b38` / `7e77c7b3`) → `tools/accept/v0.7/scene-md5-v07.txt`; the OKLCH list
+  likewise → `scene-md5-v07-oklch.txt`; `accept.sh` and HARNESS point at them. The **mixs reference md5 is `641f6633`** (stable across
+  two runs): the director-blind 0→3 fade at f178 now lands on TORUS2 (was `5892ddc5` with TORUS at 3 — the recipe is unchanged, the
+  pixels are the new scene's). Parity fake 0 diff (the swap touches no core file). `test_director.js`, the manual / route / param
+  smokes unchanged.
+- **Q trace with TORUS2 in the rotation (`q-{house,aba}-promoted.txt`):** house 0.56 / 0.71 / 0.83 / 0.93 (minima .66 / .77), aba 0.56 / 0.71 / 0.83 / 0.98 (.65 / .77) over three runs
+  each — the same digits as `q-*-after.txt` with TORUS2 unregistered-as-good-as (§36) and as the v0.5 trace; the director now picks
+  id 3 on aba in every run (`seq … 3 …`) and the knob never notices: a 1.23× TORUS scene under the 0.4 µs/segment line cost is invisible
+  to a controller that moves on 18.8 / 26.5 ms frames.
+- **Tag v0.7 "alive":** `GPU=1 ACC=v0.7 tools/accept.sh` → `tools/accept/v0.7/accept-34.txt`, 19 sections, **0 FAIL** (parity 0, mixs `641f6633` = recorded, hidden tab / worklet
+  clean, params identity, "== torus2" all green at id 3, bundle 30 s clean). `releases/retinarave-v0.7.html` = `dist/retinarave.html` at the tag; package.json 0.7.0; pushed to
+  `main` (deploys retinarave.com: key `4` is TORUS2, key `8` the old torus).

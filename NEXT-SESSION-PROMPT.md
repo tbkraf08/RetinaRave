@@ -9,12 +9,11 @@ opened the build on real music, routed a parameter from the panel and said *"loo
 time the panel met their eyes with approval. **First action of this session: ask the user what v0.6 is for.** The
 candidates below are ordered by what the day left open; the user's sentence outranks them.
 
-> **2026-09-24, night: TORUS2 built (DECISIONS §36, `docs/workers/torus2.md`, `docs/AUDIT-v0.7.md`; commits `ce34cc8`…HEAD).** Id 7,
-> forced-only (key `8`), TORUS untouched, every reference md5 unchanged, Q trace `none`, headed runs clean. **The user has not
-> looked yet.** Next session: the user's verdict on `tools/accept/v0.7/montage-torus2-{real,demo}.jpg` and the build (key `8`) — the
-> leans to retune first are `WAVE0` .26, the narrowed spread, `MORPHK` .9, and whether minor must beat the anchor for "cool";
-> then the **Replacement** path in `TORUS2-SESSION-PROMPT.md` step 4 (TORUS2 → id 3's bid, TORUS → id 7 `torus-v1`, re-base both
-> md5 lists in the same commit, §37, tag v0.7). Not built: the `oklch` variant. Cloudflare dashboard steps below still open.
+> **2026-09-24, night: TORUS2 built, approved and promoted — v0.7 "alive" tagged and pushed** (DECISIONS §36 the build, §37 the swap;
+> `docs/workers/torus2.md`, `docs/AUDIT-v0.7.md`, `tools/accept/v0.7/accept-34.txt` 0 FAIL). TORUS2 is id 3 with TORUS's bid; the old
+> TORUS is `torus-v1` at id 7, forced-only (key `8`) for one release — **deleting it is the user's separate decision** (next session:
+> ask). Open on TORUS2: the `oklch` variant (not built), and the §36 leans if the user ever objects (`WAVE0` .26, the narrowed
+> spread, `MORPHK` .9, minor not always cool). Cloudflare dashboard steps below still open.
 
 > **2026-09-24, later: v0.6 "public" executed** (DECISIONS §35, commits 6f70fa9…bc3d8e3, not tagged): RETINA RAVE help headline, the landing
 > key row from `keys()`, keydown target guard, SEO head + `site/` (robots, sitemap, manifest, favicon, og.jpg, `_headers`, `about.html`),

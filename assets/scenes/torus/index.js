@@ -86,16 +86,18 @@ function lmode(v) {
 }
 
 export default {
-  name: 'torus',
-  id: 3,
-  tag: 'hopf fibration — every ring is one fibre, nested tori are the chroma',
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'arc', 'clarity', 'regularity'],
+  name: 'torus-v1',
+  id: 7,
+  tag: 'hopf fibration, v1 — every ring is one fibre, nested tori are the chroma (replaced by TORUS2 at id 3, v0.7; forced-only)',
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'clarity'],
   cuts: 'continuous',
   rt: {},
   hooks: { probe, lmode },
 
-  score(MS) {
-    return MS.arc === 'build' ? 0 : 0.25 + 0.45 * MS.clarity + 0.3 * MS.regularity;
+  // v0.7 (DECISIONS §37): the bid (0 in a build, else .25 + .45 clarity + .3 regularity) moved to TORUS2 at id 3; v1 is
+  // forced-only (key 8) for one release, then deleting it is a separate decision of the user's.
+  score() {
+    return 0;
   },
 
   init(ctx) {
@@ -234,9 +236,7 @@ export default {
       bpm: 'how fast the collapse recovers (about one beat)',
       presence: 'overall opacity: silence dims the rings',
       flow: 'the scene clock and the camera\'s gentle orbit',
-      arc: 'the bid: never auto-picked during a build',
-      clarity: 'the knot strand\'s brightness, and the bid',
-      regularity: 'the bid: a steady rhythm',
+      clarity: 'the knot strand\'s brightness',
     },
     eli5: 'Every ring is one fibre of the Hopf map: a circle living in the 3-sphere, seen through a stereographic window. Rings whose base points share a latitude of the base sphere all nest on one torus, so you are looking at real geometry, not a decoration.',
     why: 'The twelve pitch classes are twelve latitudes. The louder a pitch class is, the closer its latitude sits to the equator and the fatter its torus, so the chord you hear is literally the shape of the nest. The melody s interval picks the (p,q) of the bright knot strand — the same rotation numbers that pick NAV s bulb. Beats turn the Hopf flow (one turn per eight beats), groove tumbles the family in SU(2), bass fattens the tubes, tension pushes the projection pole into the picture, and a drop collapses everything to the core circle before it blooms back.',

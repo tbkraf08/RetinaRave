@@ -42,6 +42,8 @@ export const HELP = {
       alive: 'the shimmer only happens while there is sound',
       novelty: 'a timbre change lifts the shimmer',
       hush: 'the silence before a drop dims the brightness floor',
+      clarity: 'the bid: a clear harmony',
+      regularity: 'the bid: a steady rhythm',
       calm: 'quiet music dims the brightness floor the same way',
     },
     eli5: 'Every ring is one fibre of the Hopf map, as in TORUS, and this version is built to move with the music: nothing inside the nest is allowed to fall dark, every kick flashes the quiet fibres at the core, and the hats run a fine shimmer round each ring.',

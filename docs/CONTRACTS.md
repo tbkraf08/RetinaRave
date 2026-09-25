@@ -247,8 +247,8 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 (`import dust from './scenes/dust/index.js';`) and your name appended to the list `for (const scene of [nav, dust])`.
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
-Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · 3 torus ·
-5 polytope · 6 feigen · **7 torus2** (v0.7, forced-only until approved: `score()` 0) · 8 free. `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · 8 free. `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities

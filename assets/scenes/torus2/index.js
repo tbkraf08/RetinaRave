@@ -1,6 +1,7 @@
 // TORUS2 (v0.7) — the Hopf torus that is alive with the music. A from-scratch successor to TORUS (id 3) that keeps the
 // Hopf fibration geometry (math/hopf.js, DECISIONS §4) and answers the user's five points of 2026-09-24
-// (docs/workers/brief-torus2.md). Forced-only until the user approves it (key 8 / &scene=7): score() returns 0.
+// (docs/workers/brief-torus2.md). Promoted to id 3 on 2026-09-24 ("torus2 looks good, promote it" — DECISIONS §37): it carries
+// TORUS's bid; TORUS v1 lives on as id 7 (torus-v1, forced-only) for one release.
 // Step 1 of the brief's Process: the inside lights up — a brightness floor, a fog floor, a kick flash on the quiet
 // inner families, a hat shimmer along every fibre.
 import { fibre, torusRadii } from '../../math/hopf.js';
@@ -120,16 +121,16 @@ function info() {
 
 export default {
   name: 'torus2',
-  id: 7,
+  id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
   cuts: 'continuous',
   rt: {},
   hooks: { probe, info, train, fib, key, motion, morph, unwind },
 
-  // never auto-picked until approved (the replacement gives it TORUS's bid: 0 in builds, else .25 + .45 clarity + .3 regularity)
-  score() {
-    return 0;
+  // TORUS's bid, verbatim (§4 / §37): never during a build, else clarity and a steady rhythm
+  score(MS) {
+    return MS.arc === 'build' ? 0 : 0.25 + 0.45 * MS.clarity + 0.3 * MS.regularity;
   },
 
   init(ctx) {

@@ -1,0 +1,104 @@
+== check.js
+warn assets/scenes/feigen/index.js has 351 lines (soft cap 350)
+check: 75 modules · uniforms 128 · MS keys 118 · scenes 7 (help.feats gaps 0) · 0 fail · 1 warn
+== math tests
+OK · MISI 14
+OK
+OK
+test_tempo: OK
+test_director: OK
+test_oklab: OK
+== lines smoke
+lines-smoke: OK
+== oklch smoke
+oklch-smoke: OK
+== chain smoke
+chain-smoke: OK
+== parity fake
+max |diff| over all numeric fields: 0 · fields compared 72
+MS/NAV parity: every field identical to 1e-9
+montage: /home/toma/Documents/Kraftek/RetinaRave/tools/accept/v0.7/parity-fake.jpg
+== parity real
+bpm within 1 of 126 (ew 126.19, v3 125.85): true · arc sequence identical: true · drops within 0.5 s: true · ew ERRS [] nonfinite []
+== monitor 60 s
+"ok"
+"MON {\"n\":3607,\"fast\":144,\"viol\":[],\"errs\":[],\"bad\":[]}"
+== scenes on #test (T6 / T14)
+"scene 0 ERRS [] bad [] | nav"
+"scene 1 ERRS [] bad [] | dust"
+"scene 2 ERRS [] bad [] | mandala"
+"scene 3 ERRS [] bad [] | torus2"
+"scene 5 ERRS [] bad [] | polytope"
+"scene 6 ERRS [] bad [] | feigen"
+"scene 7 ERRS [] bad [] | torus-v1"
+== feigen cost
+feig=3.6: L L4.02 feigen 0.98 ms (runs 0.98/0.98/0.99) nav 1.61 ms · tier 3 q 0.95 · log [r8 built b905/905 next r9 b9
+feigen L3.6 steady 0.98 ms <= 2.9 (nav 1.61)
+== transition
+mixs 0→3 f178 md5 641f6633834226d2428386bd8cc4e6b5 = recorded
+"MORPH 0→3 f178 {\"sc\":[0,3,0.499],\"errs\":[],\"bench\":{\"mixs\":0.28199999968210854,\"morph\":1.0116666666666667}}"
+== hidden tab
+probe on
+hidden tab back {n:60,onsets:0,surprise:0,drops:0,gmax:0,hitmax:0,resumeAt:24.3,errs:[]}
+== hidden worklet
+"{\"n\":150,\"surprise\":0,\"drops\":0,\"srMax\":0.47,\"hop\":3575,\"resumeAt\":35.4}"
+hidden worklet: 150 frames back, 0 surprise, srMax < 1.4
+== routes
+route smoke: 68 checks · 0 fail
+manual smoke: 43 checks · 0 fail
+route-id: s6 f360 md5 = reference (8d6ac4a6234d1bbaaaac2bca65d8439d)
+route-hi: s6 f360 md5 3fa9434ebbfca483ce9d1852ac6ac883 != reference (moved, as it must)
+post-same: s6 f360 md5 = reference (8d6ac4a6234d1bbaaaac2bca65d8439d)
+post-off: s6 f360 md5 da43c0e1ca4d3aad867177b33828b7cc != reference (moved, as it must)
+panel open: on true E true n 0 ticks 50
+panel opened then closed: s6 f360 md5 = reference
+panel shot: scrollTop 3659 rows 107 errs []
+1
+PREVIEW f150 const c 1
+PREVIEW f300 centroid k 1.5 n 1 store null
+1
+CLOSE f320 centroid help false
+preview: const at f150, centroid*1.5 back at f300, storage null, Escape mid-preview restores
+FORCE true NAV is forced — the 
+RELEASE -1
+force/release: ok
+== params
+param-smoke: 49 checks, 0 fail
+params: FEIGEN's first parameter is width [0.4, 1.8]
+params identity: IDENT true n 5 proutes 0 deps [\tension\,\dropEnv\,\kick\]
+param-src: s6 f360 md5 1292382ed6654449a759eb2810c8946c != reference (moved)
+param-lo: s6 f360 md5 156fe6b3c31b2ad7750ff9dc8dfde701 != reference (moved)
+param-hi: s6 f360 md5 4790aafdf4dfabaf7d55dee93840ca77 != reference (moved)
+param lo != hi on width
+panel params: set by select, hi preview for 2 s of ticks, back, storage null
+== torus2
+"s3 f360 errs [] bad []"
+torus2 f360 md5 7189a6ba6899e1e34d077eddbaaf4de8 = reference
+"s3 f840 errs [] bad []"
+torus2 f840 md5 48113eda4d94ff1f48c35b7b29f06a38 = reference
+t2-s3-f360.jpg                     centre 0.5610  rim 0.2156  ratio 2.60
+torus2 interior lit: centre 0.5610 ratio 2.60
+1
+TRAIN 4x4 n 4 pos [0.1,0.35,0.6,0.85] gaps [0.25,0.25,0.25,0.25] even true
+1
+TRAIN sync n 4 pos [0.1,0.225,0.6,0.725] gaps [0.125,0.375,0.125,0.375] even false
+torus2 train: 4x4 evenly spaced, sync not
+"n 1 p {\"turn\":4.71238898038469,\"bounce\":0,\"size\":0.6615594059217454,\"glow\":0.12239999999999998,\"morph\":1,\"wave\":0.2917958841655991}"
+torus2 param morph=1 moves the f360 md5
+montage tools/accept/v0.7/montage-torus2.jpg
+== help
+help cast shot scrolled to 7453
+help fields 107/107 (unique 107) · top table = feats on 8/8 ids
+help ticks hidden 0 (600 frames, want 0)
+help ticks open 100 (600 frames, want 100) errs []
+"HELP real {\"on\":false,\"ticks\":16,\"bad\":[],\"errs\":[]}"
+exceptions 0
+== real start path
+"REAL {\"mode\":\"demo\",\"bad\":[],\"errs\":[]}"
+"REAL24 {\"bad\":[],\"errs\":[],\"switched\":false}"
+exceptions 0
+== bundle
+bundled 75 modules → dist/retinarave.html (562 KB)
+"BUNDLE 30s {\"bad\":[],\"errs\":[],\"mode\":\"demo\",\"hop\":2832,\"switched\":false,\"help\":[false,15]}"
+exceptions 0
+montage tools/accept/v0.7/montage-scenes.jpg
