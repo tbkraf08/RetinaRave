@@ -25,7 +25,7 @@ const MAXSUB = 8;                // the largest entry of SUB — the bump profil
 const PBRI = 1.7;
 const PWID = 1.2;
 const GROOVE0 = 0.8;             // the resting amplitude of the whole thing (becomes the `groove` param, spec 7)
-const GLOW0 = 0.35;              // a sector's brightness floor: what an unsounded pitch class still shows (spec 5)
+const GLOW0 = 0.55;              // a sector's brightness floor: what an unsounded pitch class still shows (spec 5; .35 in the worker's build — on real music most sectors sit at the floor and the cage read dimmer than v0.8, §41)
 const GLOWQ = 0.4;               // hush / calm lower the floor by this much (TORUS2's number)
 // spec 6, growth in two stages. Stage 1 (build 0 → 0.5) rounds the arcs: the subdivision rises from the tier's own
 // value toward the NEXT tier's, capped at SUB[3]. It starts AT the tier's value, never below it, because that is

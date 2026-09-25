@@ -1707,3 +1707,86 @@ The full `accept.sh` sweep was not run (the user's rule since v0.8: the tag gate
 **Tagged v0.8.1 (2026-09-25, the user: "build, commit, tag, and deploy" after looking at the local build):** `releases/retinarave-v0.8.1.html` = the
 bundle at the tag; `npm run build` → `dist/` (index + `thumbs/`) deployed by the push to `main`. No sweep, per §39's rule.
 
+
+## §41 POLYTOPE dances — v0.9 "the cage dances" (2026-09-25, orchestrator + one opus worker from `docs/workers/brief-polytope-dance.md`, report `polytope-dance.md`; `POLYTOPE-DANCE-SESSION-PROMPT.md`, `docs/AUDIT-v0.9.md`)
+
+**The decision (the user, 2026-09-25, after the v0.8.1 tag):** *"write a prompt to improve the polytope scene (can modify existing
+polytope scene; only work on scene -> don't need full testing sweep; can tag and deploy when done); what musical/visual language can we
+leverage from torus2 update? how can this shape dance to the music? I liked color tied to circle of fifths; should extract grooves from
+bass, mid, highs."* One interview answer: **id 5 modified in place** (same id, same bid, no forced-only twin), tag v0.9, deploy, no user
+gate — git is the fallback. Thirteen leans (in the brief, each marked) stood unanswered; the user has not looked at the result.
+
+- **What changed (`assets/scenes/polytope/{index,poly4,grooves,dance,colour,help}.js`, 349/336/247/162/132/47 lines; `tools/test_polytope.js`
+  220; ten worker commits `57f1e34`…`afebe63`):** the geometry of §8 untouched (the four polytopes on S³, the double rotation, the
+  stereographic arcs, the cast by section seed, path A, the pole gate `GATE` 0.24). What moves it: (1) **three onset trains** — the scene
+  detects onsets on `bass`/`mid`/`high` itself (a rise over a ~0.4 s EMA above `THR_BASS/MID/HIGH` 0.18/0.15/0.17, a hysteresis latch
+  `ARMF` 0.5 so a ramp-and-hold files one entry not six, refractory one 16th at `bpm`, amplitude normalised by `AMPN` 0.45, ×1 when
+  `kick`/`snare`/`hat` voted within a frame else ×0.6), a ring of the last 8 launches per band as ages in beats, snapped to the 16th grid
+  above `gridTrust` .5, a faint bass entry from `beat` when a bar passes without a hit; (2) **the dance** — the xy plane's target is
+  `beatCount/16 · 2π` and zw's `beatCount/32 · 2π` (read off the count, never integrated), a 0.3 s spring to each (×2 slower on
+  `hush`/`calm`) plus a critically-damped impulse per train hit (`KICK_XY/ZW/XW` 10/7/1.8; a full bass onset lurches 18°), xw keeps
+  `0.04·flowHigh` plus the high train's small kicks and the bass **pole wobble** (`WOBBLE` 0.12 rad), the sum capped at `XWMAX` 0.18;
+  the **5 % thump** `max(0, cos 2π·beatPhase)⁴` on the scale, a ±2 % breath on `barPos`; (3) **the inside-out sweep on cue** — on a
+  `phrase16Pos` wrap, `sectionEvt` or `dropEvt` (never in `arc` idle, at most one per `SWEEP_MIN` 4 beats) a deterministic one-beat xw
+  move carries the vertex nearest the pole through it, the cell blows up and fades through the gate, then the plane settles back to
+  its lock; (4) **beads along the edges** — each train paints a Gaussian bump (`SIG` .055/.042/.032 of an edge) wherever a hit's age
+  lands, travelling one edge per bar, fading over `LIFE` 8 beats, bass on every edge, mid on the outer figure, high everywhere and small;
+  the profile is **zero-mean** so the groove redistributes light along an edge instead of adding it (the first build added a DC lift and
+  bloomed white, §7's failure — the fix raised the peak/trough contrast to 2.26× on 4x4, 8.4× on sync; f360 mean luminance +4.6 %,
+  saturation unchanged, 0 % pixels blown); (5) **the colour wheel** — the anchor math of `torus2/colour.js` moved whole to
+  `assets/math/keycolour.js` (`mkAnchor()`: per-scene state, so two scenes never ease one hue; `torus2/colour.js` is a 17-line
+  re-export, its s3 md5s `7189a6ba`/`48113eda` unmoved in four runs), each vertex's sector = its xy angle after the rotation quantised
+  to twelve, sector k = pitch class (7k mod 12), hue = anchor + k·spread/12 (spread 0.30–0.45 centred, TORUS2's), inner figure the
+  anchor wheel, outer the same wheel a fifth on, chroma lights a sector `GLOW0 .35 + .65·chroma[pc]` (eased 0.15 s; on `#test`
+  derived from `harmAngle` as TORUS2 does), major warm / minor cool through the shared PULL; (6) **growth** staged on `build` (the
+  subdivision from the tier's own toward the maximum on 0–.5, the size on .5–1, resting size from `intensity`/`arousal`, the drop's
+  60 % kept); (7) six params `turn bounce size groove glow sweep`, identity a byte-exact no-op, `groove=c:0` moves the md5; (8) `feats`
+  36 fields, every one read and lined.
+- **Proofs:** s5 `06b46063…`/`cccb0094…` stable on `GLOW0` .55 (the worker's `177c300f…`/`84a6bb55…` at .35; the v0.9 reference `tools/accept/v0.9/scene-md5-v09.txt` = the v0.8 list with s5
+  re-based); ids 0–4, 6–8 byte-identical on the merged tree; parity fake 0 / 72 fields; `git diff 033f800 -- assets/core assets/engine
+  assets/main.js` empty; the bundle runs from `file://` with key `6` → scene 5, errs `[]`. Pinned trains: 4x4 `.10 .35 .60 .85` (gaps
+  .25 ×4), sync `.10 .225 .60 .725` (.125/.375). Bar series on house: the target advanced exactly four sixteenths over four beats, the
+  angle lurches at each bass entry (peak nudge 0.187 rad against the 0.393 the lock advances per beat), the bounce peaks at beatPhase
+  0. Pole margin over 600 frames on `#test` and house: **0 vertices newly gated by the dance** (max excursion 0.139 < `XWMAX`); the
+  brief's "clamp so no vertex passes the gate" is unachievable as written (the 24-, 600- and 120-cell each reach `1 − w = 0` under the
+  xy/zw rotation alone) — the bound proven instead is `|den(a) − den(0)| ≤ |a|`, so a capped excursion cannot gate a vertex outside
+  `GATE + XWMAX`. **Bench** (protocol, cast pinned by `hooks.cast` — `CARD.bench` blocks the thread, a `setInterval` cannot pin state
+  re-picked on an event): cast 0 tier 3 960 segs **0.528 ms vs 0.429 before, 1.23× raw / 1.25× NAV-normalised** (cap 2×); cast 2
+  (24-cell ⊂ 120-cell, 6279 segs, all 24 slots live) 1.118 ms, ratio to NAV .58 (v0.2's pole worker measured .66 for this cast).
+  **Q trace** house + aba, `before` (`753f985`) vs `after` (the merge), three runs each: every window mean identical to the second
+  decimal (house 0.73 · .56/.71/.83/.93, aba 0.83 · .56/.71/.83/.98), 0 EXC, id 5 in every sequence.
+- **The mixs reference md5 moved before this session:** `641f6633…` → `f0c9d637…` at v0.8.1 (`d7bb5b7` touched `core/hud.js` and
+  `harness.js`; the user tagged on a look, no sweep ran). Proven not this merge's: the same `f0c9d637…` on `753f985` and on `de6a5fe`.
+  `accept.sh` re-based with the note.
+- **Docs paid:** §8's pole-gate line quoted v0.2's 0.16/3.5 two workers after the pole worker replaced it (corrected); HARNESS —
+  `CARD.ctx`, `REG[id].scene` as the live object, the bench-blocks-the-thread pin, the routed-param look rule, the v0.9 re-prove row,
+  `det9.py`; `check.js` now refuses `export { … } from` (the http page and `check.js` were green while `bundle.js` threw `unhandled
+  export form` and the shipped single-file build died — the worker found it at step 1).
+- **The headed real-music run (`tools/accept/v0.9/audit9.sh`, id 5 forced by key `6`, tab capture, 80 s each):** CyborgNinja (160 bpm)
+  and WhoLikesToParty (117 bpm): 0 black frames, 0 long frames, `errs []`, `nonFinite []`, capture mode, ~4850 frames each, q climbing
+  .39 → .83 as the controller warms (the same ramp NAV2's v0.8 run showed). **The three trains traced at 2 s over 80 s (`det9.py`,
+  `tools/accept/v0.9/det9-{cn,wltp}-pass1.txt`), one pass, no retune:** bass 0.88 / 0.94 launches per beat (never a 2 s window without
+  one, median 4–5 per window, amplitude median .28/.36 — one per beat, not one per 16th: neither dead nor saturated); mid 0.24 / 0.36
+  per beat (7 and 6 of 39 windows empty, snare vote 28 % / 15 % — the snare-and-vocal lane, about every third beat); high 0.24 per beat
+  on CyborgNinja (9 empty windows; its high band is a sustained wash — level median .81 against an EMA of .78 leaves no headroom for a
+  rise) and 0.69 per beat on WhoLikesToParty (never empty, **62 % hat-confirmed** — the hats). `gridTrust` .8–1.0 throughout, so the
+  launches sat on the 16th grid. The kick vote on the bass train is low (10 % / 25 %): the ±1-frame coincidence window is tight against
+  a decaying `kick` impulse — the amplitude ×0.6 without the vote is the lean to widen first if the bass beads look faint.
+- **One orchestrator pass on the look, from the real-track montage:** the after frames were plainly dimmer than v0.8's on both tracks
+  though the worker had measured no loss on `#test` (f360 mean luminance +4.6 %). The cause is the wheel itself: a sector's brightness
+  is `glow + (1 − glow)·chroma[pc]`, the fake timeline's `harmAngle`-derived chroma lights the wheel broadly, real chroma lights two or
+  three pitch classes and leaves nine sectors at the floor — v0.8 lit every stroke fully. **`GLOW0` .35 → .55** (one constant, the
+  `glow` param's resting value; the sounding sectors keep their 1.0 so the chord still reads), s5 re-based, the accept section, thumb,
+  demo and real-track shots re-taken on the new value. `GAIN` and `PBRI/PWID` untouched.
+- **The leans, ranked by how likely the user is to want them retuned (the worker's order, with the orchestrator's two on top):** the
+  glow floor `GLOW0` .55 and the overall brightness against v0.8 (`GAIN` 1.8, `PBRI` 1.7 / `PWID` 1.2) — the pass above is one look,
+  the user's is the one that counts; the high-band threshold `THR_HIGH` .17 and the EMA's ~0.4 s on dense
+  highs (sparse on CyborgNinja); the bump widths `SIG` .055/.042/.032 (the brief's lean .18/.08/.04 merged a bar's four bumps into one
+  on a 9-sample edge); the nudge gains `KICK_XY/ZW/XW` 10/7/1.8 with `AMPN` .45 (18° per full bass onset); `XWMAX` .18 and the
+  reinterpreted clamp; the spread `SPREAD0/1` .30/.45 (TORUS2's, but its families are spatially apart and these sectors interleave);
+  `GLOW0` .35; `WOBBLE` .12; `LIFE` 8; the three thresholds; `SWEEP_MIN` 4; `SIZE0/I/A/B`; `SECB` .3. Every one is a named constant at
+  the top of its module.
+- **Not built, for the next POLYTOPE session:** cells-as-pitch-classes (lean 9's other branch — the sixteen cells of the tesseract or
+  the twenty-four of the 24-cell as the twelve pitch classes doubled, a geometry job); the OKLCH variant; portrait cropping (pre-existing,
+  `polytope-dance.md` friction 15 — the outer cage runs off a 390×844 frame at every size; TORUS2's `min(1, aspect)` rule would fix it
+  and shrink the phone view to 46 %, a look change the user has not asked for).
