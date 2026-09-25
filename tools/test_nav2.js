@@ -4,7 +4,7 @@
 // so it can be, and this is the proof that its continuity invariant holds by construction, not by a screenshot.
 // node tools/test_nav2.js            N2TRACE=1 prints one line per half second
 import scene from '../assets/scenes/nav2/index.js';
-import { N2, resetNav2, updateNav2, V_MAX } from '../assets/scenes/nav2/nav2.js';
+import { N2, resetNav2, updateNav2, V_MAX, RHO_CAP } from '../assets/scenes/nav2/nav2.js';
 import { resetDet, updateDet, DET } from '../assets/scenes/nav2/detect.js';
 import { clamp, ema } from '../assets/math/util.js';
 
@@ -156,6 +156,109 @@ void cInMin;
   console.log(`\nupdate() cost over ${FR} frames (node, hrtime): median ${med.toFixed(4)} ms  mean ${mean.toFixed(4)} ms  p99 ${p99.toFixed(4)} ms  max ${mx.toFixed(4)} ms`);
   ok(med <= 0.5, `the median update() is ${med.toFixed(4)} ms (gate 0.5 ms)`);
   ok(mx <= 5, `the worst single update() is ${mx.toFixed(4)} ms`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The v0.8 retune, proved (docs/workers/nav2.md "Retune after the real-music trace"). Two things the headed traces
+// showed: `sweep` saturated on ordinary centroid jitter, and the melody had no room to move c.
+// ---------------------------------------------------------------------------------------------------------------
+const quiet = () => ({
+  presence: 1, bass: 0.2, mid: 0.4, high: 0.35, hit: 0, hitStrength: 0, beat: false, beatPhase: 0, beatCount: 0,
+  bpm: 124, eS: 0.3, eM: 0.3, build: 0, tension: 0.2, arc: 'sustain', dropEvt: false, dropStrength: 0, dropEnv: 0,
+  resolveEvt: false, centroid: 0.5, flux: 0, hush: 0, flow: 0, kick: 0, lvl: 0.3, riser: 0, roll: 0, hp: 0,
+  onsetRate: 0, dropExpectedIn: -1, fakeoutEvt: false, peaks: [[110, 1], [220, 0.6], [330, 0.5], [550, 0.3]],
+  seed: { hue: 0.6, th: -0.29, a: 0.17, scene: -1 },
+});
+
+// Drive the DETECTORS alone off a centroid signal. Returns the sweep track.
+function runSweep(cenAt, secs) {
+  resetDet();
+  const S = quiet(), pp = {}, out = [];
+  for (let f = 1; f <= Math.round(secs * 60); f++) {
+    const t = f * dt;
+    S.centroid = cenAt(t);
+    S.flow += dt;
+    S.beatPhase += dt * S.bpm / 60;
+    if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
+    for (const k in scene.params) pp[k] = scene.params[k].from(S);
+    updateDet(dt, S, pp);
+    out.push(DET.sweep);
+  }
+  return out;
+}
+
+// Drive the WHOLE scene off a centroid signal, with the monitor's rule. Returns the reach of Im c inside INT.
+function runMelody(cenAt, secs) {
+  resetNav2();
+  resetDet();
+  const S = quiet(), pp = {};
+  let yLo = 9, yHi = -9, rhoMax = 0, viol = 0, pc = null, pd = 0, pm = '', tm = -999, nInt = 0;
+  for (let f = 1; f <= Math.round(secs * 60); f++) {
+    const t = f * dt;
+    S.centroid = cenAt(t);
+    S.flow += dt;
+    S.beatPhase += dt * S.bpm / 60;
+    if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
+    for (const k in scene.params) pp[k] = scene.params[k].from(S);
+    updateDet(dt, S, pp);
+    updateNav2(dt, t, S, { P: pp, isLogical: true });
+    const c = [N2.cPath[0], N2.cPath[1]];
+    if (pc) {
+      if (N2.mode !== pm) tm = f;
+      const d = Math.hypot(c[0] - pc[0], c[1] - pc[1]);
+      const legal = N2.pathCut <= 2 || N2.mode !== pm || f - tm < 18;
+      if (!legal && d > 0.06 && d > 2.5 * pd + 0.01) viol++;
+      pd = d;
+    }
+    pc = c;
+    pm = N2.mode;
+    if (N2.mode === 'INT' && f > 120) {     // two seconds for the normaliser to see the range
+      nInt++;
+      yLo = Math.min(yLo, c[1]);
+      yHi = Math.max(yHi, c[1]);
+      rhoMax = Math.max(rhoMax, N2.rho);
+    }
+  }
+  return { yLo, yHi, rhoMax, viol, nInt };
+}
+
+// A deterministic stand-in for real frame-level centroid jitter: three short periods, no net drift.
+const jitter = (t) => 0.5 + 0.09 * Math.sin(t * 8.9) + 0.07 * Math.sin(t * 4.7 + 1.3) + 0.06 * Math.sin(t * 2.9 + 2.6);
+// A real filter sweep: 0.3 units over 3 s, repeated with a fall between.
+const ramp = (t) => { const u = t % 9; return u < 3 ? 0.4 + 0.1 * u : u < 4 ? 0.7 - 0.3 * (u - 3) : 0.4; };
+// The two real tracks' own centroids, sampled at 2 s by the headed trace, linearly interpolated back to 60 Hz. This
+// is SMOOTHER than the real signal (frame jitter is gone), so it is a conservative test of the run detector.
+const CEN_CN = [0.571, 0.523, 0.595, 0.553, 0.528, 0.603, 0.58, 0.555, 0.601, 0.571, 0.496, 0.605, 0.566, 0.56, 0.61,
+  0.597, 0.453, 0.614, 0.615, 0.546, 0.601, 0.632, 0.5, 0.598, 0.585, 0.542, 0.591, 0.615, 0.505, 0.601, 0.574, 0.558,
+  0.591, 0.588, 0.516, 0.596, 0.553, 0.573, 0.591, 0.565];
+const CEN_WLTP = [0.537, 0.7, 0.528, 0.677, 0.558, 0.694, 0.588, 0.658, 0.603, 0.647, 0.611, 0.657, 0.671, 0.645,
+  0.629, 0.583, 0.615, 0.629, 0.622, 0.681, 0.653, 0.734, 0.713, 0.744, 0.765, 0.72, 0.654, 0.672, 0.553, 0.649,
+  0.596, 0.636, 0.65, 0.671, 0.658, 0.642, 0.679, 0.645, 0.696, 0.708];
+const replay = (arr) => (t) => {
+  const u = Math.min(t / 2, arr.length - 1.001), i = Math.floor(u);
+  return arr[i] + (arr[i + 1] - arr[i]) * (u - i);
+};
+const stat = (a) => ({ min: Math.min(...a), max: Math.max(...a), med: a.slice().sort((x, y) => x - y)[a.length >> 1] });
+
+console.log('\nsweep on a jittery centroid vs a real filter sweep:');
+{
+  const j = stat(runSweep(jitter, 30));
+  ok(j.max <= 0.15, `jitter (three short periods, no drift): sweep max ${j.max.toFixed(4)} med ${j.med.toFixed(4)} (gate <= 0.15)`);
+  const r = runSweep(ramp, 12), rs = stat(r.slice(120));
+  ok(rs.max >= 0.6, `a 0.3-unit climb over 3 s: sweep max ${rs.max.toFixed(3)} (gate >= 0.6)`);
+  const cn = stat(runSweep(replay(CEN_CN), 78)), wl = stat(runSweep(replay(CEN_WLTP), 78));
+  console.log(`  Cyborg Ninja centroid replayed: sweep min ${cn.min.toFixed(3)} med ${cn.med.toFixed(3)} max ${cn.max.toFixed(3)}   (before the retune: min 0.53 med 0.67 max 0.93)`);
+  console.log(`  Who Likes to Party replayed:    sweep min ${wl.min.toFixed(3)} med ${wl.med.toFixed(3)} max ${wl.max.toFixed(3)}   (before the retune: min 0.58 med 0.855 max 0.98)`);
+  ok(cn.med <= 0.2, `Cyborg Ninja's centroid no longer reads as a sweep (med ${cn.med.toFixed(3)} <= 0.2; riser and hp are 0 on all 40 of its samples, so this term was ALL of it)`);
+  ok(wl.med <= 0.45, `Who Likes to Party's centroid, which really does sweep 0.53 <-> 0.77 every 4 s, is capped (med ${wl.med.toFixed(3)} <= 0.45)`);
+}
+
+console.log('\nthe melody has room: a 60 s track whose centroid swings 0.35..0.75 on an 8 s period:');
+{
+  const m = runMelody((t) => 0.55 + 0.2 * Math.sin(t * 2 * Math.PI / 8), 60);
+  ok(m.yHi >= 0.4 && m.yLo <= -0.4, `Im c reaches ${m.yLo.toFixed(3)} .. ${m.yHi.toFixed(3)} in INT (gate +-0.4; before the retune the same swing gave +-0.17 on real music)`);
+  ok(m.rhoMax <= RHO_CAP + 1e-6, `rho stayed at ${m.rhoMax.toFixed(6)} <= RHO_CAP ${RHO_CAP}`);
+  ok(m.viol === 0, `0 continuity violations over ${m.nInt} INT frames (${m.viol})`);
 }
 
 console.log(fails ? `\ntest_nav2: ${fails} FAIL` : '\ntest_nav2: OK');

@@ -364,3 +364,168 @@ Ranked, the ones I am least sure of at the top.
 * **Re-hosting DRUM.** `uDrum` is uploaded as `vmix` with no variants declared, so it is 0 and the door stays open.
 * **The Q trace.** Correctly skipped: `score()` returns 0, and a scene that cannot be picked cannot move the knob
   (DECISIONS §38).
+
+## Retune after the real-music trace (v0.8, 2026-09-25)
+
+The orchestrator ran the headed real-music audit I could not (friction 16) and sent back two findings that are not
+taste. Both hold. `det8-before.txt` is the "before": two verified tab captures, 40 samples each, `au: capture`,
+Cyborg Ninja at 160 bpm and Who Likes to Party at 117.
+
+A third finding (too many drops) was **withdrawn** — the trace behind it had no audio — so the settle rule is
+untouched, and the four return-leg constants I had tightened while investigating it are back at their v0.8 values
+(`DRIFT_EXT` 0.07, `HOME_TAN` 0.9, `HOME_EPS` 0.004, `HOME_LG` 0.05, `V_IN` 1.1). For the record, my own reading of
+the *valid* traces: NAV2 is INT for all 80 s on **both** tracks, never drops, never gates. The settle rule is NAV's
+verbatim (`exit.js` says so on the function), and nothing in these traces argues with it.
+
+### 1. `sweep` saturated on ordinary centroid jitter
+
+| | Cyborg Ninja | Who Likes to Party |
+|---|---|---|
+| centroid | 0.453 – 0.632 | 0.528 – 0.765 |
+| `riser` non-zero | **0 of 40 samples** | 3 of 40 (max 0.21) |
+| `hp` non-zero | **0 of 40 samples** | 4 of 40 (max 0.31) |
+| `sweep` before | min 0.530 **med 0.670** max 0.930 | min 0.580 **med 0.855** max 0.980 |
+| `swirl` before | med 0.795 | med 0.880 |
+| `curl` before | med 0.26 | med 0.28 |
+
+On Cyborg Ninja the engine's own build-evidence fields are **identically zero on every sample** and `sweep` still
+never falls below 0.53 — so 100 % of it was `|centroid trend| / TR_SC`, firing on the ordinary jitter of a real
+centroid. The frame was stirring and the arms were curling on a plain groove, which is the opposite of the user's
+item ("when you hear a swirl it starts curling").
+
+**The fix.** The trend term is replaced by a *sustained monotone climb*. A short ema (`SW_SM` 0.30 s) kills frame
+noise; a run is broken by any fall of `SW_DROP` (0.035) below its own peak; the climb only counts after `SW_MINT`
+(1.2 s) and fully after `SW_MAXT` (2.0 s); and it is scaled by its own **rate** against `SW_RATE` (0.10 units/s), so
+a track's slow drift does not read like a filter sweep. `sweep = max(riser, hp, SW_CW*climb)`.
+
+**`SW_CW` is 0.85, deliberately below 1, and this is the one place I did not do exactly what was asked.** The brief
+for the retune said to scale the climb so "a real filter sweep reads 1 and jitter reads 0". On Who Likes to Party
+that is not achievable by any causal detector reading the centroid alone: its centroid genuinely swings 0.53 to 0.77
+every four seconds, which has both the **size** and the **rate** of a filter sweep. The two are the same signal. So
+the centroid path is allowed at most 0.85 of `sweep`, and only `riser` / `hp` — which see the spectrum, not one
+number — can drive it to 1. Both were offered as options in the retune brief; this is the first with the second's
+cap on top.
+
+**After** (`node tools/test_nav2.js`, the two real centroid series replayed from the trace, linearly interpolated
+back to 60 Hz — *smoother* than the real signal, so a conservative test):
+
+```
+jitter (three short periods, no net drift):   sweep max 0.0000  med 0.0000        gate <= 0.15   PASS
+a 0.3-unit climb over 3 s:                    sweep max 0.698                     gate >= 0.6    PASS
+Cyborg Ninja centroid replayed:               min 0.000  med 0.014  max 0.170     (was 0.53 / 0.67 / 0.93)
+Who Likes to Party replayed:                  min 0.000  med 0.012  max 0.264     (was 0.58 / 0.855 / 0.98)
+```
+
+`#test`'s own build still fires properly: **sweep 0.824 at f720** (gate >= 0.6), `swirl` 0.967, `wind` 0.949. And at
+f600, four seconds earlier on a steady groove, `sweep` is now **0.001** where it was 0.063, `swirl` 0.002 (was
+0.064) and `curl` 0.003 (was 0.021). On the demo synth the 60 s monitor run ends with `curl 0.10` in its HUD, where
+the pre-retune real-music trace sat at 0.21 to 0.43 throughout.
+
+### 2. The melody had no room where c rested
+
+Confirmed with the traces' own numbers: c stayed inside **x -0.700..-0.611, y 0.026..0.126** for 80 s on Cyborg
+Ninja and **x -0.731..-0.455, y 0.053..0.311** on Who Likes to Party, while the centroids ran 0.45-0.63 and
+0.53-0.77. Two separate causes, both fixed:
+
+* **`X_HOME` -0.8 -> -0.3.** -0.8 is the *neck* between the cardioid and the period-2 disc, where the boundary's
+  |Im c| is about 0.1: "melody up = c up" was capped by geometry, and the rho-normal there points left, which is why
+  every drop rode out toward the antenna. -0.3 is the **belly**, boundary |Im| about 0.55, with the 1/3 root at Im
+  0.6495 straight up. `side`'s declared range follows: [-1.9, 0.3] -> **[-1.4, 0.8]**, still
+  `X_HOME + X_AMP*(bass - high)` with `X_AMP` -1.1 unchanged, so bass-heavy passages still walk left to the cascade.
+* **A running normaliser on the pitch.** `height`'s `from()` is unchanged (`Y_AMP*(centroid - 0.5)` — it is still
+  the declared, routable target); what is new is state, exactly as the high-pass on `lift` already was. Two
+  followers track the target's observed low and high over `NORM_TAU` 8 s, and the wish is
+  `Y_REACH * (P.height - mid) / half`, clamped, with `half` floored at `NORM_MIN`/2. So a track whose centroid means
+  0.46 and spans 0.31-0.87 gets its *own* range mapped onto +-`Y_REACH` (0.6) instead of being measured against a
+  fixed 0.5 midpoint.
+
+  One find inside the find: the normaliser must be **centred on the window, not anchored at its floor**. Written
+  `2*(h - lo)/span - 1`, a perfectly flat centroid collapses `lo` onto the signal itself and reads **-1**, and on
+  `#test`'s valley that parked c at Im -0.49. Centred, a flat signal reads 0.
+
+* **`K_FREE` 0.9, new.** The wall was one-sided below the target: with no wind it never pushed *outward*, so in the
+  belly the melody alone left c near the cardioid's centre, where the Julia set is a plain near-circle and `par` is
+  0. Now the wall sets the radius and the melody sets the angle. Resting rho on `#test` at f600: **0.19 -> 0.42**.
+
+**After**, on `#test` across the build (`CLOCK=1`, one run):
+
+```
+frame  mode   sweep  swirl   wind   curl   glow    rho     Im c    par
+f600   INT    0.001  0.002  0.006  0.003   1.00  0.4150  -0.0001  0.000     a steady groove: still
+f660   INT    0.527  0.764  0.559  0.425   1.00  0.6686   0.0731  0.000
+f720   INT    0.824  0.967  0.949  0.622   1.00  0.9035   0.2784  0.245
+f765   INT    0.917  0.993  0.992  0.645   1.80  0.9406   0.3925  0.351     the hush
+f780   EXT    0.915  0.992  0.000  0.298   1.00  0.9450   1.4040  0.000     the drop
+f800   EXT    0.538  0.815  0.000  0.245   1.00  0.9450   1.0605  0.000
+```
+
+Before the retune the same six frames read `sweep` 0.063 -> 0.938, `Im c` -0.0585 -> +0.0265, `rho` 0.971 -> 0.983 —
+the melody moved c by 0.085 of Im and rho was already at the rim before the build started. Now the melody moves it
+by 0.39 and rho climbs 0.42 -> 0.94.
+
+And in node, a 60 s synthetic track whose centroid swings 0.35-0.75 on an 8 s period:
+
+```
+Im c reaches -0.518 .. 0.518 in INT      gate +-0.4   PASS   (real music before the retune: +-0.17)
+rho stayed at 0.842903 <= RHO_CAP 0.985               PASS
+0 continuity violations over 3480 INT frames          PASS
+```
+
+### The module split
+
+`nav2.js` hit the 500-line hard cap during this retune (friction 14 warned it would). The exterior half — the drop,
+EXT/HOME and the bridge home — moved verbatim into **`assets/scenes/nav2/exit.js`** (149 lines), which is the right
+seam anyway: nothing in it touches the multiplier chart, because the interior half navigates by rho = |lambda| and
+that half by the Green's potential log2 G. It imports only `math/*`, so `nav2.js -> exit.js -> field.js` is a chain
+and `check.js`'s cycle test stays green; `land` is passed into `stepIn` as a callback rather than imported back.
+`nav2.js` is now 362 lines.
+
+### Re-proved after the retune
+
+```
+check.js                    81 modules · 0 fail · 2 warn (feigen 351, nav2.js 362 — both soft cap)
+test_field.js               OK
+test_nav2.js                OK  (the original eight, the cost block, and the five new retune checks)
+param-smoke.js              49 checks, 0 fail
+test_baby.js / test_misi.js OK
+update() cost               median 0.0040 ms  mean 0.0056  p99 0.0303  max 0.2667   (gate 0.5 ms)
+continuity monitor, 60 s    {"n":3607,"fast":0,"max":0.02016,"viol":[]}   errs [] bad []
+house run                   errs [] bad [] q 0.694 bench 2.014 ms, three different frames
+IDS=8 scene-md5.sh          stable across two runs; the still four stable across two runs
+```
+
+**The md5s re-base a second time** — this is a navigation change, so every frame moves:
+
+```
+plain f360  bee91a60801799495e11cf1171fb9fdb        still f360  bee91a60801799495e11cf1171fb9fdb
+plain f840  66295bb7155b362a59a66a49ce290106        still f480  97c0fb9af6e26177da8a39e7393774cc
+                                                    still f720  b787c94210d5b07e37c7386ad420437f
+                                                    still f840  bfc4479658249dcc07bc1b9343d41c94
+```
+
+`still f360 == plain f360` still holds, and for the same reason as before: at f360 the timeline is in a valley, the
+centroid is flat, there is no wind, and every NAV2 uniform is already at rest. Both sets are kept in
+`tools/accept/v0.8/nav2-md5.txt`. Shots: `nav2-retune.jpg` (f360 / f600 / f720 / f765 / f840 with the pre-retune
+f360 beside them for comparison) and `nav2-retune-house.jpg`.
+
+### What the retune changes in the tuning list
+
+Lean 1 of the original report ("`X_HOME` / `RHO_FREE` / `K_BACK` — where the melody rests") is **done**: the resting
+place is the belly and the wall now sets the radius. What is left of it, and what I would put in front of the user
+first now:
+
+1. **The resting radius is still low (rho 0.42 on `#test`).** `K_FREE` 0.9 balances against the melody's *position*
+   spring, and raising it further starts to override the melody's own Re wish. The structurally right fix, not made
+   here because it is a change to the force model rather than a constant: project the melody's pull onto the
+   **tangent** of the rho contour and let the wall own the radial direction outright — the melody would then choose
+   the angle and the wall the radius, cleanly, instead of the two negotiating.
+2. **`SW_CW` 0.85, with `SW_RATE` 0.10 and `SW_RISE` 0.28.** The centroid path's authority over `sweep`. If the user
+   still sees the frame stirring on a groove, `SW_CW` is the knob; if a real sweep is missed, `SW_RATE`.
+3. **`Y_REACH` 0.6 and `NORM_TAU` 8 s.** How far a full melodic swing throws c, and how quickly the normaliser
+   forgets a track's range. A shorter `NORM_TAU` makes quiet passages feel more dramatic and risks pumping.
+4. Then the original list's 2-8 unchanged (`Y_AMP`/`PITCH_K`, `LIFT`/`SLIDE`, `W_Y`/`TAU_M`/`K_R`, `CURL`/`SPIN_SW`,
+   the gate policy, the scratch thresholds, `WIND_BEATS`/`GLOW_H`).
+
+Still not done, and still the honest gap: **the headed real-music run is the orchestrator's, not mine**, so the
+`scratch` detector has still never fired on real audio (max 0.28 / 0.33 across the two traces, and it never fired
+before the retune either — nothing in this retune touched it).

@@ -13,36 +13,42 @@
 // rho-normal out to log2 G = -2.2 + 1.7*dropStrength, its segment checked clean, pathCut 0, mode EXT. Every other
 // frame moves cPath by at most V_MAX*dt, well under the continuity monitor's 0.06 spike rule.
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
-import { findCycle, rhoGrad, pot, potGrad, rayTo, cleanLine, nearestRational, mkCyc, N_ITER, N_MAX } from '../../math/field.js';
+import { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } from '../../math/field.js';
+import { V_MAX, FLOW_CAP, cpy, doDrop, stepExt, stepIn } from './exit.js';
 import { DET } from './detect.js';
+export { V_MAX, FLOW_CAP };      // re-exported: the tests and index.js read them from the navigator
 
 // --- the melody's wishes (index.js declares `height` / `side` / `lift` from these) -------------------------
-export const Y_AMP = 1.3;        // Im c per unit of centroid above/below the middle: UP IS UP
-export const X_HOME = -0.8;      // Re c the balance drifts around
+export const Y_AMP = 1.3;        // Im c per unit of centroid above/below the middle: UP IS UP (the `height` param's gain)
+export const Y_REACH = 0.6;      // ... and the |Im c| a FULL melodic swing asks for, once detect.js has normalised the
+                                 // height onto the track's own observed centroid range (DET.hN in [-1, 1])
+export const X_HOME = -0.3;      // Re c the balance drifts around: the cardioid's BELLY (boundary |Im| ~0.55, the 1/3
+                                 // root straight up). -0.8 was the NECK, |Im| ~0.1, so "melody up" was capped by
+                                 // geometry and every drop's rho-normal pointed left at the antenna (v0.8 headed trace)
 export const X_AMP = -1.1;       // Re c per unit of (bass - high): NEGATIVE, so bass-heavy drifts LEFT to the cascade
 export const LIFT = 0.65;        // view units of blob float per unit of centroid off 0.45 (capped by `lift`'s +-0.3 range)
 export const W_Y = 14;           // rad/s — the pitch spring, ~0.3 s settle
 export const TAU_X = 1.2;        // musical seconds — the Re bias's ema (~8 real seconds in a #test valley, frozen in silence)
-export const FLOW_CAP = 0.1;     // s of musical time a single frame may advance the Re bias (a resume must not jump it)
 // --- the forces -------------------------------------------------------------------------------------------
 export const TAU_M = 0.55;       // s — the melody's pull: v = (wish - c)/TAU_M
 export const LOOSE = 0.8;        // how much of the pull a full wind-up takes away
-export const V_MAX = 1.2;        // units/s — the hard speed cap (0.02/frame at 60 Hz, 0.05 at the loop's 1/24 s cap)
 export const BIS = 6;            // bisections to the largest step still inside
 export const RHO_CAP = 0.985;    // the wall (float32 uC quantisation; above this the picture stops changing)
-export const RHO_FREE = 0.72;    // where the ball rests with no wind. 0.72 settles c in the period-2 disc, the brightest
-                                 // resting place tried (lum.py centre at f360: 0.078, vs 0.035 at 0.60 and NAV's 0.29)
+export const RHO_FREE = 0.72;    // where the ball rests with no wind
 export const K_R = 4.0;          // units/s per unit of (rhoT - rho): the wind's pressure toward the rim
-export const K_BACK = 1.2;       // ... and the always-on restoring push when rho is ABOVE the target. Without it the melody
-                                 // parks c on the rim, where ln|lambda| -> 0 makes the bands sub-pixel and the interior black
+export const K_BACK = 1.2;       // ... and the always-on restoring push when rho is ABOVE the target: without it the
+                                 // melody parks c on the rim, where ln|lambda| -> 0 makes the bands sub-pixel
+export const K_FREE = 0.90;      // ... and BELOW it, with no wind at all. The wall sets the radius, the melody sets the
+                                 // angle: in the cardioid's belly the melody alone would leave c near the centre, where
+                                 // the Julia set is a plain near-circle and par is 0. rho ~ RHO_FREE keeps it lobed.
 export const K_HIT = 0.35;       // a hit pushes rhoT transiently (the only thing left of NAV's kick)
 export const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 export const PAR_HI = 0.98;
 // --- the gates --------------------------------------------------------------------------------------------
 export const GATE_Q = 7;         // the largest denominator the Farey address will name
 export const GATE_W = 0.02;      // gate width in turns, divided by q
-export const GATE_RHO = 0.004;   // rho this near the cap counts as pressed even if the step was not blocked
-export const GATE_RHO_MIN = 0.93;// ... and a blocked step only counts as pressure this near the rim
+export const GATE_RHO = 0.004;   // rho this near the cap is pressed even if the step was not blocked
+export const GATE_RHO_MIN = 0.93;// ... and a blocked step is pressure only this near the rim
 export const GATE_HOLD = 0.5;    // beats of held pressure before the cap opens
 export const GATE_BUILD = 0.4;   // a wind-up must never change component: no gate while build is above this
 export const SIZE_MIN = 0.02;    // the child must be at least this big in c to be worth entering
@@ -51,25 +57,7 @@ export const GATE_TOL = 1e-3;    // |lambda - e^{2pi i p/q}| at which we call ou
 export const GATE_PUSH = 1.0;    // child sizes to push past the root
 export const GATE_WALK = 0.9;    // units of walking toward a root before the gate gives up
 export const GATE_CAP = 0.99995; // the cap while a gate is open (the root itself has rho = 1)
-// --- the drop ---------------------------------------------------------------------------------------------
-export const DROP_A = -2.2;      // NAV's depth (nav.js:74): log2 G = DROP_A + DROP_B*dropStrength
-export const DROP_B = 1.7;
-export const LG_LO = -11.9;      // the potential's own bounds (math/mandel.js LG_MIN / LG_MAX: NAV's reach range)
-export const LG_HI = 0.9;
-export const DROP_ROT = 0.131;   // rad (7.5 deg) — the retry when a sample of the segment is not outside M
-export const DROP_TRIES = 13;    // +-45 deg of retries: a 1.8-unit ray from near the set grazes a dendrite more often than
-                                 // not, and the drop must ALWAYS happen, so the least bad direction is taken if none is
-                                 // clean. The ray's own budget (RAY_T0/RAY_TMAX/RAY_BIS/RAY_N) is in math/field.js
-// --- outside ----------------------------------------------------------------------------------------------
-export const W_EXT = 3.0;        // 1/s — how fast c walks onto the target equipotential
-export const DRIFT_EXT = 0.07;   // units of equipotential drift per second of MUSICAL time
-export const HOME_TAN = 0.9;     // units/s the drift is unwound at
-export const HOME_EPS = 0.004;   // |drift| that counts as unwound
-export const HOME_LG = 0.05;     // |log2 G - the exit potential| that counts as arrived
-export const HOME_TRIES = 240;   // frames of trying for a clean bridge before taking the one we have
-export const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
-
-const TR = mkCyc(), BE = mkCyc(), GR = { gx: 0, gy: 0, dlr: 0, dli: 0, dl: 0 }, PG = { x: 0, y: 0 };
+const TR = mkCyc(), BE = mkCyc(), GR = { gx: 0, gy: 0, dlr: 0, dli: 0, dl: 0 };
 const FR = { p: 0, q: 1, err: 1 }, CD = [0, 0];
 let bx = 0, by = 0, bm = 0;   // the winning probe of the frame
 
@@ -98,11 +86,6 @@ const cdiv = (ar, ai, br, bi) => {
   CD[1] = (ai * br - ar * bi) / d;
   return CD;
 };
-const cpy = (a, b) => {
-  a.has = b.has; a.q = b.q; a.zr = b.zr; a.zi = b.zi; a.lr = b.lr; a.li = b.li;
-  a.rho = b.rho; a.arg = b.arg; a.eps2 = b.eps2; a.res = b.res; a.n = b.n;
-};
-
 // The shader reads ln|lambda| and arg lambda (the Koenigs coordinate is invariant under f^q, so the bands have no seam).
 function pub(N) {
   const C = N.cyc, y = N.cy;
@@ -294,7 +277,7 @@ function stepInt(N, dt, S, P) {
   const D = DET, dflow = clamp(S.flow - N.flow0, 0, FLOW_CAP);
   N.flow0 = S.flow;
   const pin = D.pinWish;
-  N.ySp.step(pin ? pin[1] : P.height, dt, W_Y);
+  N.ySp.step(pin ? pin[1] : Y_REACH * D.hN, dt, W_Y);
   if (!N.xSeed) {            // start the bias AT the signal: a first frame that creeps in from X_HOME parks c on the rim
     N.xE = pin ? pin[0] : P.side;
     N.xSeed = 1;
@@ -326,7 +309,7 @@ function stepInt(N, dt, S, P) {
     // a hit pushes the TARGET modulus transiently. The wall is two-sided: outward only as hard as the wind presses,
     // inward always — so with nothing winding up the ball rests at RHO_FREE and the interior stays legible.
     const press = clamp(D.wind + K_HIT * S.hit, 0, 1), rhoT = mix(RHO_FREE, RHO_CAP, press);
-    const dr = rhoT - N.rho, kr = dr >= 0 ? K_R * press * dr : K_BACK * dr;
+    const dr = rhoT - N.rho, kr = dr >= 0 ? (K_R * press + K_FREE) * dr : K_BACK * dr;
     vx += kr * N.n[0];
     vy += kr * N.n[1];
     const sp = Math.sqrt(vx * vx + vy * vy);
@@ -339,122 +322,6 @@ function stepInt(N, dt, S, P) {
   N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) : 0;
 }
 
-// The one cut. Walk the rho-normal outward to the target potential (math/field.js rayTo), check the segment is clean
-// (cleanLine), jump. The straight normal often fails the check — the antenna and the dendrites are in the way — so the
-// direction is retried at +-5 degrees.
-function doDrop(N, S, now) {
-  if (N.mode !== 'INT') {
-    N.extBeat = S.beatCount;
-    N.timeScale = 2.6;
-    return;
-  }
-  const lgT = clamp(DROP_A + DROP_B * S.dropStrength, LG_LO, LG_HI), x = N.cPath[0], y = N.cPath[1];
-  let bt = 0, bd = 0, be = 0, bb = 1e9, bk = -1;
-  for (let k = 0; k < DROP_TRIES; k++) {
-    const a = k === 0 ? 0 : ((k & 1) ? 1 : -1) * DROP_ROT * Math.ceil(k / 2);
-    const ca = Math.cos(a), sa = Math.sin(a);
-    const dx = N.n[0] * ca - N.n[1] * sa, dy = N.n[0] * sa + N.n[1] * ca;
-    const t = rayTo(x, y, dx, dy, lgT);
-    if (!(t > 0)) continue;
-    const bad = cleanLine(x, y, dx, dy, t);
-    if (bad < bb) {
-      bb = bad;
-      bt = t;
-      bd = dx;
-      be = dy;
-      bk = k;
-    }
-    if (!bad) break;
-  }
-  {
-    const dx = bd, dy = be, t = bt, k = bk;
-    if (!(t > 0)) {
-      N.log('DROP2@' + now.toFixed(2) + ' the ray never reached log2G ' + lgT.toFixed(2) + ': staying inside');
-      return;
-    }
-    N.cIn[0] = x;
-    N.cIn[1] = y;
-    cpy(N.cyIn, N.cy);
-    N.cOut[0] = N.cPath[0] = x + dx * t;
-    N.cOut[1] = N.cPath[1] = y + dy * t;
-    N.segL = t;
-    N.pathCut = 0;
-    N.mode = 'EXT';
-    N.lgExit = lgT;
-    N.drift = 0;
-    N.homeTry = 0;
-    N.extBeat = S.beatCount;
-    N.timeScale = 2.6;
-    N.cy.has = N.cyc.has = 0;
-    N.par = 0;
-    N.gate.on = 0;
-    N.log('DROP2@' + now.toFixed(2) + ' lg ' + lgT.toFixed(2) + ' t ' + t.toFixed(4) + ' try ' + k + ' bad ' + bb);
-  }
-}
-
-// EXT / HOME follow grad log2 G: the normal carries c onto the target equipotential, the tangent drifts along it in
-// musical time. HOME unwinds that drift and returns to the exit potential, which is (to the frame's accuracy) the
-// point the drop landed on — so the bridge home starts where c already is and nothing jumps.
-function stepExt(N, dt, S) {
-  const dflow = clamp(S.flow - N.flow0, 0, FLOW_CAP), away = S.beatCount - N.extBeat;
-  N.flow0 = S.flow;
-  if (N.mode === 'EXT' && S.dropEnv < 0.2 &&
-    ((S.arc !== 'peak' && away > 8) || away > 48 || S.presence < 0.15)) N.mode = 'HOME';
-  const lg = pot(N.cPath[0], N.cPath[1]);
-  potGrad(N.cPath[0], N.cPath[1], PG);
-  const gm = Math.sqrt(PG.x * PG.x + PG.y * PG.y) || 1e-9, gx = PG.x / gm, gy = PG.y / gm;
-  let lgT, tv;
-  if (N.mode === 'EXT') {
-    // NAV's `reach` expression, inline (it is not a parameter here — six is the cap, and the four visible ones won)
-    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_LO, LG_HI);
-    tv = DRIFT_EXT * dflow / Math.max(dt, 1e-5);
-  } else {
-    lgT = N.lgExit;
-    tv = clamp(-N.drift / Math.max(dt, 1e-5), -HOME_TAN, HOME_TAN);
-  }
-  let vx = W_EXT * (lgT - lg) / gm * gx - tv * gy, vy = W_EXT * (lgT - lg) / gm * gy + tv * gx;
-  const sp = Math.sqrt(vx * vx + vy * vy);
-  if (sp > V_MAX) {
-    vx *= V_MAX / sp;
-    vy *= V_MAX / sp;
-  }
-  N.drift += (vy * gx - vx * gy) * dt;
-  N.cPath[0] += vx * dt;
-  N.cPath[1] += vy * dt;
-  N.lg = lg;
-  N.cy.has = N.cyc.has = 0;
-  N.par = 0;
-  if (N.mode !== 'HOME') return;
-  N.homeTry++;
-  if (!(Math.abs(N.drift) < HOME_EPS && Math.abs(lg - lgT) < HOME_LG)) return;
-  const ux = N.cPath[0] - N.cIn[0], uy = N.cPath[1] - N.cIn[1], ul = Math.sqrt(ux * ux + uy * uy);
-  if (!(ul > 1e-9)) return;
-  if (cleanLine(N.cIn[0], N.cIn[1], ux / ul, uy / ul, ul) !== 0 && N.homeTry < HOME_TRIES) return;
-  N.cOut[0] = N.cPath[0];
-  N.cOut[1] = N.cPath[1];
-  N.segL = ul;
-  N.mode = 'IN';
-  N.s = 1;
-}
-
-function stepIn(N, dt, S) {
-  N.s = clamp(N.s - V_IN * dt / Math.max(N.segL, 1e-9), 0, 1);
-  N.cPath[0] = mix(N.cIn[0], N.cOut[0], N.s);
-  N.cPath[1] = mix(N.cIn[1], N.cOut[1], N.s);
-  N.par = 1 - N.s;
-  N.cy.has = N.cyc.has = 0;
-  if (N.s > 0) return;
-  N.mode = 'INT';
-  findCycle(N.cIn[0], N.cIn[1], TR, N_MAX);     // a rare off-frame seek: the full bound, the pre-drop cycle warm
-  if (TR.has) land(N, N.cIn[0], N.cIn[1], TR);
-  else land(N, N.cIn[0], N.cIn[1], N.cyIn);
-  N.ySp.set(N.cIn[1]);
-  N.xE = N.cIn[0];
-  N.landed = S.beatCount;
-  N.homeTry = 0;
-  N.gate.on = N.gate.press = 0;
-}
-
 // env: { P: the scene's visual parameters (CONTRACTS §1.16), isLogical: this scene is the director's logical scene }
 export function updateNav2(dt, now, S, env) {
   const N = N2;
@@ -463,7 +330,7 @@ export function updateNav2(dt, now, S, env) {
   N.pathCut++;
   if (S.dropEvt) doDrop(N, S, now);
   if (N.mode === 'INT') stepInt(N, dt, S, env.P);
-  else if (N.mode === 'IN') stepIn(N, dt, S);
+  else if (N.mode === 'IN') stepIn(N, dt, S, land);
   else stepExt(N, dt, S);
   N.c[0] = N.cPath[0];
   N.c[1] = N.cPath[1];

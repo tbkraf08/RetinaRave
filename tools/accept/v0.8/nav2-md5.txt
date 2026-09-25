@@ -12,7 +12,15 @@
 # below any fixed threshold near the cap, so the gate could never open under the melody alone. The four still md5s
 # below are the re-based reference at HEAD; the step-1..5 set is kept underneath for the record.
 
-[v0.8 NAV2 — HEAD]
+[v0.8 NAV2 — HEAD, after the retune on the real-music trace]
+plain f360 bee91a60801799495e11cf1171fb9fdb
+plain f840 66295bb7155b362a59a66a49ce290106
+still f360 bee91a60801799495e11cf1171fb9fdb
+still f480 97c0fb9af6e26177da8a39e7393774cc
+still f720 b787c94210d5b07e37c7386ad420437f
+still f840 bfc4479658249dcc07bc1b9343d41c94
+
+[the v0.8 seven-step build, before the retune — for the record only]
 plain f360 54c928855c03ba1f1c0cab6bd10971c3
 plain f840 16589246149259bc7a467bc9e908885e
 still f360 54c928855c03ba1f1c0cab6bd10971c3

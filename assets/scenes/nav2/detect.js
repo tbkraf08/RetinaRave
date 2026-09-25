@@ -8,12 +8,27 @@
 // swirl    the soft-OR of the three: what the user hears as "a swirl"
 // wind     the pre-drop wind-up, on synapse's drop countdown (NOT `build` alone); a drop RELEASES it, a fake-out does not
 // spin     the frame's turn rate: the swirl plus the square of the wind, released by the drop
-import { clamp, ema } from '../../math/util.js';
+import { clamp, ema, sstep } from '../../math/util.js';
 
 export const PITCH_K = 2.5;      // gain from centroid motion to pitch height
 export const C_TAU = 4.0;        // s — the centroid's own long mean: the high-pass that makes pitch a motion
-export const TR_TAU = 0.12;      // s — the short ema the centroid's derivative is read through
-export const TR_SC = 0.12;       // centroid units/s that count as a full sweep
+// A sweep is a SUSTAINED MONOTONE CLIMB of the centroid, not a big derivative. The v0.8 headed trace (a real track at
+// 160 bpm, 40 samples) showed the raw-derivative form saturating: |trend|/0.12 fired on ordinary jitter — the centroid
+// moved 0.31 <-> 0.87 between 2 s samples — so sweep read 0.52-0.99 on every sample while the engine's own `riser` was
+// 0 on 35 of 40 and `hp` on 39 of 40. The run below is broken by any fall of SW_DROP, must last SW_MINT before it
+// counts, and is scaled by its own RATE, so the track's slow drift (0.036 units/s) reads a fraction of a real filter
+// sweep (0.12-0.19 units/s) instead of the same 1.0.
+export const SW_SM = 0.30;       // s — ema on the centroid before the run test (kills frame-level noise)
+export const SW_DROP = 0.035;    // a fall this far below the run's peak ends the run
+export const SW_RISE = 0.28;     // the total climb that reads a full sweep
+export const SW_MINT = 1.2;      // s of sustained climbing before a climb counts at all
+export const SW_MAXT = 2.0;      // s ... and counts fully
+export const SW_RATE = 0.10;     // centroid units/s — the rate a real filter sweep climbs at
+export const SW_CW = 0.85;       // how much of `sweep` the CENTROID path may claim on its own. It is capped below 1
+                                 // on purpose: on Who Likes to Party the centroid really does swing 0.53 <-> 0.77
+                                 // every four seconds, which has the size AND the rate of a filter sweep, so no causal
+                                 // detector reading the centroid alone can separate the two. Only the engine's own
+                                 // `riser` / `hp` — which see the spectrum, not one number — may drive sweep to 1.
 export const SW_A = 0.25;        // s — sweep attack
 export const SW_R = 0.60;        // s — sweep release
 export const RO_A = 0.30;        // s — roll attack
@@ -37,6 +52,11 @@ export const SPIN_SC = 0.6;      // rad/s per unit of the swirl the PARAM cannot
                                  // hooks.swirl's pin. Held equal to SPIN_SW so the two halves of the swirl weigh the same.
 export const SPIN_TAU = 0.25;    // s — the rate's own ease, so the angle's derivative never jumps
 export const SPIN_REL = 0.8;     // how much of the rate the drop's release takes away
+export const NORM_TAU = 8.0;     // s — the window the centroid's OBSERVED range is measured over (the span's own
+                                 // relaxation is half that). Without it the melody is mapped off a fixed 0.5 midpoint,
+                                 // and on a real track whose centroid means 0.46 and spans 0.31-0.87 the wish only ever
+                                 // asked for -0.25..+0.48 of Im c and the blob moved +-0.17 (v0.8 headed trace).
+export const NORM_MIN = 0.25;    // the smallest span the normaliser will divide by
 export const LIFT_TAU = 0.20;    // s — the blob's float ease
 export const LIFT_V = 0.35;      // view units of float per unit of pinned pitch (hooks.pitch)
 export const LIFT_G = 2.5;       // gain on the HIGH-PASSED lift target: the param's range is the level's, this is the motion's
@@ -49,7 +69,8 @@ export const GLOW_H = 0.8;       // how much the smoulder brightens in the hush 
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1,
-  cEma: 0, cPrev: -1, cTr: 0, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
+  hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
+  cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
   pinPitch: -1, pinScratch: -1, pinSwirl: -1, pinWish: null,
 };
@@ -68,7 +89,9 @@ export function resetDet() {
   D.glow = 1;
   D.cEma = 0;
   D.cPrev = -1;
-  D.cTr = D.lEma = D.pvPrev = D.bendSgn = D.flicks = 0;
+  D.cSm = -1;
+  D.hN = D.climb = D.runT = D.runPk = D.runLo = D.hLo = D.hHi = 0;
+  D.lEma = D.pvPrev = D.bendSgn = D.flicks = 0;
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.dir = 1;
@@ -81,7 +104,11 @@ export function updateDet(dt, S, P) {
   if (D.cPrev < 0) {            // first frame: start the long means AT the signal, so nothing swings on boot
     D.cPrev = S.centroid;
     D.cEma = S.centroid;
+    D.cSm = S.centroid;
+    D.runPk = D.runLo = S.centroid;
     D.lEma = P.lift;
+    D.hLo = P.height - NORM_MIN / 2;
+    D.hHi = P.height + NORM_MIN / 2;
   }
   // GROOVE's own rule for a section constant: the sign of seed.th. Read every frame, not latched — a section change
   // flips it, and the RATE is eased below, so the angle itself never jumps.
@@ -95,11 +122,25 @@ export function updateDet(dt, S, P) {
   // --- the blob's float: the same high-pass on the declared `lift` target, so uKoen and uView.y move together ---
   D.lEma = ema(D.lEma, P.lift, dt, C_TAU);
   D.lift = ema(D.lift, D.pinPitch >= 0 ? LIFT_V * pn : LIFT_G * (P.lift - D.lEma), dt, LIFT_TAU);
-  // --- sweep: a filter sweep / riser over seconds --------------------------------------------------------
-  const tr = (S.centroid - D.cPrev) / Math.max(dt, 1e-4);
+  // --- the melody's height, normalised to the track's OWN observed range --------------------------------
+  const sp0 = D.hHi - D.hLo;
+  D.hLo = Math.min(P.height, D.hLo + sp0 * dt / NORM_TAU);
+  D.hHi = Math.max(P.height, D.hHi - sp0 * dt / NORM_TAU);
+  // centred on the window, not anchored at its floor: a FLAT centroid must read the middle (0), and it collapses
+  // hLo onto hHi onto the signal itself, which an anchored form would read as -1 (measured on #test's valley).
+  const mid = (D.hLo + D.hHi) / 2, half = Math.max((D.hHi - D.hLo) / 2, NORM_MIN / 2);
+  D.hN = clamp((P.height - mid) / half, -1, 1);
+  // --- sweep: a SUSTAINED MONOTONE CLIMB of the centroid, or the engine's own riser / hp -----------------
   D.cPrev = S.centroid;
-  D.cTr = ema(D.cTr, tr, dt, TR_TAU);
-  const swT = clamp(Math.max(S.riser, S.hp, Math.abs(D.cTr) / TR_SC), 0, 1);
+  D.cSm = ema(D.cSm, S.centroid, dt, SW_SM);
+  if (D.cSm > D.runPk) D.runPk = D.cSm;
+  if (D.cSm < D.runPk - SW_DROP) {          // a real reversal ends the run; frame jitter does not
+    D.runLo = D.runPk = D.cSm;
+    D.runT = 0;
+  } else if (D.cSm > D.runLo) D.runT += dt;
+  const rise = D.runPk - D.runLo, rate = rise / Math.max(D.runT, 1e-3);
+  D.climb = clamp(rise / SW_RISE, 0, 1) * sstep(SW_MINT, SW_MAXT, D.runT) * clamp(rate / SW_RATE, 0, 1);
+  const swT = clamp(Math.max(S.riser, S.hp, SW_CW * D.climb), 0, 1);
   D.sweep = ema(D.sweep, swT, dt, swT > D.sweep ? SW_A : SW_R);
   // --- roll: the drum roll / snare build -----------------------------------------------------------------
   const roT = clamp(Math.max(S.roll, (S.onsetRate - OR_LO) / OR_SC), 0, 1);

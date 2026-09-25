@@ -123,7 +123,7 @@ export default {
   // Six, the cap, named for what the eye sees (CONTRACTS §1.16). trap / dots / pip / reach stay inline expressions.
   params: {
     height: { eli5: 'how high in the set the melody has taken c', range: [-1, 1], from: (MS) => Y_AMP * (MS.centroid - 0.5) },
-    side: { eli5: 'how far toward the bass side (left) or the bright side (right)', range: [-1.9, 0.3], from: (MS) => X_HOME + X_AMP * (MS.bass - MS.high) },
+    side: { eli5: 'how far toward the bass side (left) or the bright side (right)', range: [-1.4, 0.8], from: (MS) => X_HOME + X_AMP * (MS.bass - MS.high) },
     wind: { eli5: 'how hard c is pressed against the boundary: the arms wind up', range: [0, 1], from: (MS) => windTarget(MS) },
     lift: { eli5: 'how far the blob floats up or down with the pitch', range: [-0.3, 0.3], from: (MS) => LIFT * (MS.centroid - 0.45) },
     spin: { eli5: 'how fast the frame is stirred on top of the groove', range: [0, 1.5], from: (MS) => SPIN_SW * (1 - (1 - MS.riser) * (1 - MS.hp) * (1 - MS.roll)) + SPIN_W * windTarget(MS) * windTarget(MS) },
