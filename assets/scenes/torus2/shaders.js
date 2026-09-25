@@ -36,6 +36,7 @@ uniform float uSize;     // stroke width in px at unit view depth (CPU: px at th
 uniform int   uSeg;      // segments per ring (the whole tier budget lives here)
 uniform int   uFib;      // fibre slots per pitch-class family — the longitude grid, never tier-dependent
 uniform int   uDraw;     // how many of those slots are drawn right now (the build's growth)
+uniform float uFibF;     // the same count, eased and fractional: the newest ring fades in instead of popping
 uniform int   uKnotN;    // segments on the highlighted torus knot
 uniform vec2  uKnotPQ;   // (p,q) from MS.interval
 uniform float uKnotT;    // knot parameter offset (harmUnw)
@@ -193,6 +194,7 @@ void main() {
     // spec 1d: a fine shimmer running round the ring parameter on the hats
     bri *= 1.0 + uShim * sin(SHIMK * t0 * TAU + float(ring) * 1.7);
     bri *= 1.0 + q0;                          // spec 2: the snare's bright pulse travelling round the ring
+    bri *= clamp(uFibF - float(sub), 0.0, 1.0);   // spec 4c: the ring the build is adding fades in over ~0.75 s
     hueT = float(fam) / 12.0 - 0.5;   // the anchor is the MIDDLE of the twelve hues, not the first of them
     wm = 1.0;
   }

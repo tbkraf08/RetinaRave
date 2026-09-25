@@ -7,7 +7,7 @@ import { fibre, torusRadii } from '../../math/hopf.js';
 import { mkVS, mkFS } from './shaders.js';
 import { BANDS, SLOTS, fill as wfill, live as wlive, positions as wpos, step as wstep, train } from './waves.js';
 import { anchor } from './colour.js';
-import { reframe } from './motion.js';
+import { BOUNCE, dist, reframe, turn as turnEase } from './motion.js';
 
 const TAU = Math.PI * 2;
 const TH0 = 0.12;
@@ -18,6 +18,13 @@ const PQ = [[0, 1], [1, 15], [1, 8], [1, 5], [1, 4], [1, 3], [2, 5], [1, 2], [3,
 // already read as smooth; the whole tier budget lives here and never in the number of rings (cuts: 'continuous').
 const SEGT = [48, 72, 108, 160];
 const FIBN = 12;      // longitude slots per pitch-class family — the grid, fixed, never tier-dependent
+// spec 4c, growth stage 1: how many of those slots are actually drawn. The tier never touches this (cuts:
+// 'continuous' — a tier flip may only change segments per ring); the build and arousal do, eased over ~0.75 s so a
+// ring that appears fades in instead of popping.
+const FIBMIN = 6;
+const FIBMAX = FIBN;
+const FIBTC = 0.25;
+const FOV = 1.95;     // focal length 1/tan(fov/2), fov ~54 deg
 // --- the manual settings of the look (a named constant near the top, not a magic number in a shader) ---
 const GLOW = 0.18;    // spec 1a: no fibre below this fraction of the loudest family's brightness
 const GLOWQ = 0.4;    // spec 6: hush / calm dim the floor by this much
@@ -39,7 +46,7 @@ let KSEG = 640;       // segments on the knot strand (it winds p+q times, so it 
 
 const th = new Float32Array(12);
 const ch = new Float32Array(12);
-const U = { psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1 };
+const U = { turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0 };
 const MOOD = new Float32Array(3);
 const WB = new Float32Array(BANDS * SLOTS);   // wave ages in beats, uploaded every frame
 const WA = new Float32Array(BANDS * SLOTS);   // wave amplitudes at launch
@@ -50,6 +57,7 @@ const CEN = [0, 0, 0, 2.4];
 let pq = PQ[0];
 let loudest = 0;
 let keyPin = null;    // hooks.key(k, mode): pin the key inside update(), never touching MS
+let ASP = 16 / 9;
 let fibPin = -1;      // hooks.fib: pin the drawn slot count so a proof shot can show one thread per family
 
 // CPU reference: a few points of one fibre straight out of assets/math/hopf.js, for comparing against the GPU port.
@@ -59,6 +67,11 @@ function probe(k) {
   const out = [];
   for (let j = 0; j < 4; j++) out.push(fibre(th[i], phi, j / 4 * TAU, U.psi0, U.alpha, U.delta).map((x) => +x.toFixed(6)));
   return JSON.stringify({ theta: +th[i].toFixed(6), phi: +phi.toFixed(6), psi0: +U.psi0.toFixed(6), alpha: +U.alpha.toFixed(6), delta: +U.delta.toFixed(6), pts: out });
+}
+
+// test hook: the motion numbers of spec 4, read frame by frame across a bar
+function motion() {
+  return JSON.stringify({ turn: +U.turn.toFixed(4), turnT: +U.turnT.toFixed(4), bounce: +U.bounce.toFixed(4), size: +U.size.toFixed(4), fib: +U.fibF.toFixed(3), cam: +CAM[2].toFixed(3) });
 }
 
 // test hook: pin key / mode (keyConf 1) inside our own update — MS is never written (CONTRACTS: scenes read MS)
@@ -82,10 +95,10 @@ export default {
   name: 'torus2',
   id: 7,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'intensity', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'intensity', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm'],
   cuts: 'continuous',
   rt: {},
-  hooks: { probe, info, train, fib, key },
+  hooks: { probe, info, train, fib, key, motion },
 
   // never auto-picked until approved (the replacement gives it TORUS's bid: 0 in builds, else .25 + .45 clarity + .3 regularity)
   score() {
@@ -94,6 +107,7 @@ export default {
 
   init(ctx) {
     this.ctx = ctx;
+    ctx.onResize((w, h) => { ASP = w / Math.max(1, h); });   // the short edge binds the fill: portrait must not crop
     // path B of the line renderer (§1.12): the vertex shader builds every point, ctx.lines owns the quad and the VAO
     this.pr = ctx.mkProg(mkVS(ctx.lines.VS), mkFS(ctx.lines.FS), 'torus2');
     for (let k = 0; k < 12; k++) {
@@ -106,7 +120,7 @@ export default {
     QS += (this.ctx.Q.q - QS) * Math.min(1, dt * 0.5);   // slow, so the tier does not chatter
     const tier = QS < 0.32 ? 0 : QS < 0.62 ? 1 : QS < 0.86 ? 2 : 3;
     SEG = SEGT[tier];
-    U.draw = fibPin > 0 ? fibPin : FIBN;
+
 
     // the chroma vector IS the torus family: latitude and brightness of each pitch class. When it carries no energy
     // (silence, and the #test fake timeline, which leaves chroma zeroed) the latitudes come from the harmony the
@@ -183,9 +197,24 @@ export default {
     U.hue = A.hue;
     U.sat = A.sat;
 
+    // spec 4c: growth. Stage 1 (build 0 -> 0.5) raises the fibre count per family, stage 2 (0.5 -> 1) brings the
+    // camera in; intensity and arousal set the resting size between builds.
+    const gB = Math.min(1, 2 * MS.build);
+    const gC = Math.min(1, Math.max(0, 2 * MS.build - 1));
+    U.fibF += (FIBMIN + (FIBMAX - FIBMIN) * Math.min(1, gB + 0.3 * MS.arousal) - U.fibF) * (1 - Math.exp(-dt / FIBTC));
+    U.draw = fibPin > 0 ? fibPin : Math.max(1, Math.ceil(U.fibF - 1e-6));
+    U.size = 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * gC;
+    // spec 4a: the nudge. The target is read off the beat COUNT, so it can never drift; the angle springs to it with
+    // a ~0.3 s time constant (hush / calm double it). Sixteen nudges make one turn — phrase16Pos is the cross-check.
+    U.turnT = ((MS.beatCount / 16) * TAU) % TAU;
+    U.turn = turnEase(dt, U.turnT, Math.max(MS.hush, MS.calm));
+    U.phrase = MS.phrase16Pos;
+    // spec 4b: the bounce, 5 % and visible — a thump, not a sine
+    U.bounce = BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4);
+
     reframe(dt, th, ch, U.psi0, U.alpha, U.delta, CEN);
     const f = MS.flow;
-    CAM = [0.05 * f, 0.46 + 0.16 * Math.sin(0.043 * f), 2.9 * CEN[3], 1.95]; // gentle orbit, fov ~54 deg
+    CAM = [U.turn, 0.46 + 0.16 * Math.sin(0.043 * f), dist(CEN[3], FOV, U.size, ASP, 1 + U.bounce), FOV];
     this.rt.time = f;
     this.rt.label = 'hopf ' + pq[0] + '/' + pq[1];
   },
@@ -212,6 +241,7 @@ export default {
     g.uniform1i(pr.u('uSeg'), SEG);
     g.uniform1i(pr.u('uFib'), FIBN);
     g.uniform1i(pr.u('uDraw'), U.draw);
+    g.uniform1f(pr.u('uFibF'), fibPin > 0 ? fibPin : U.fibF);
     g.uniform1i(pr.u('uKnotN'), KSEG);
     g.uniform2f(pr.u('uKnotPQ'), pq[0], pq[1]);
     g.uniform1f(pr.u('uKnotT'), U.knotT);
@@ -235,7 +265,7 @@ export default {
 
   hud() {
     const { R, r } = torusRadii(th[loudest]);
-    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M');
+    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2);
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },
@@ -257,7 +287,10 @@ export default {
       bpm: 'how fast the collapse recovers (about one beat)',
       presence: 'overall opacity: silence dims the rings',
       flow: 'the scene clock and the camera\'s gentle orbit',
-      intensity: 'how bright the melody\'s knot strand burns',
+      intensity: 'how bright the melody\'s knot strand burns, and part of the resting size',
+      build: 'the nest grows: first more threads per family, then the camera comes in',
+      arousal: 'fiercer music rests bigger, with more threads and wider strokes',
+      phrase16Pos: 'the sixteen-beat phrase the turn is measured against: one full turn as this wraps',
       key: 'the hue anchor: the twelve keys are twelve hues round the circle of fifths, so a modulation is a small turn',
       mode: 'major bends the whole palette warm, minor cool',
       keyConf: 'how far the key is trusted: below a third of the way the last confident key is held and the colours slide back to the mood palette',
