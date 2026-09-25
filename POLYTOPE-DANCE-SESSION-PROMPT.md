@@ -92,7 +92,7 @@ the pole gate and the depth fade in `emit` (§8, the pole worker). What changes 
    deterministic xw rotation over one beat that carries **one vertex through the pole** — the cell blows up, fades through the
    existing gate, and the cage turns inside out — then let the plane settle back into its 32-beat lock. Choose the vertex nearest
    the pole at the cue so the sweep is always short. Between cues the xw bounds from (2c) and (2f) must keep every vertex off the
-   pole, so the move happens *only* when the music calls it. Pinned in the intro (`arc`). Acceptance: a CLOCK=1 series of five
+   pole, so the move happens *only* when the music calls it. Pinned while `arc` is 'idle' (there is no 'intro' value). Acceptance: a CLOCK=1 series of five
    shots across the sweep on a pinned cue (`hooks.sweep`) and a shot 4 s later identical in structure to one 4 s before it.
 4. **Pulses along the edges** (the visible groove). Each edge piece has a parameter `t ∈ [0,1)` (vertex to vertex, the subdivision
    already gives it). Each train paints a brightness (and width) bump wherever a hit's age lands, travelling **one edge length
