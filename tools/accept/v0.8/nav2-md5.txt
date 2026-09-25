@@ -1,15 +1,30 @@
 # NAV2 (id 8) reference md5s — GPU=1, CLOCK=1, 1280x720, PORT=8799.
-# plain:  IDS=8 tools/scene-md5.sh <tag>                      (f360 / f840)
+# plain:  IDS=8 tools/scene-md5.sh <tag>                            (f360 / f840)
 # still:  CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=8&still=1' ... (f360 / f480 / f720 / f840)
 #
-# The STILL four are set in step 1 and must not move again: `&still=1` forces every NAV2-only uniform to its rest
-# value, and every rest value is an exact IEEE identity (x+0, x*1), so a visual step that moves a still frame has
-# changed something it should not have. The PLAIN two move with every visual step, by design.
+# `&still=1` (hooks.still) forces every NAV2-only uniform to its rest value, and every rest value is an exact IEEE
+# identity (x+0, x*1), so a VISUAL step that moves a still frame has changed something it should not have. That is how
+# steps 2-5 were gated: all four held byte-identical through uKoen, uView.xy, uCurl, uGlow and uView.w.
+#
+# A NAVIGATION change moves c and therefore moves every frame, stills included. That happened once, deliberately, in
+# step 7: the gate's "pressed against the rim" test became a step the wall refused this frame instead of an absolute
+# rho, because the balance between the melody's pull and the wall's restoring push sits at rho 0.974 on the 1/3 root,
+# below any fixed threshold near the cap, so the gate could never open under the melody alone. The four still md5s
+# below are the re-based reference at HEAD; the step-1..5 set is kept underneath for the record.
 
-[step 1 — the path (the force model; no new uniforms yet)]
+[v0.8 NAV2 — HEAD]
+plain f360 54c928855c03ba1f1c0cab6bd10971c3
+plain f840 16589246149259bc7a467bc9e908885e
+still f360 54c928855c03ba1f1c0cab6bd10971c3
+still f480 9fec8478b309d668080707266265854b
+still f720 81b17ee4c89c0fd9595115cb85e733bc
+still f840 3c18d6638ab43585a66ec372f8b7af82
+# still f360 == plain f360: at f360 the fake timeline is in a valley, the centroid is flat and there is no wind, so
+# every NAV2 uniform is already at its rest value. still f840 != plain f840: after the drop, curl, lift and the spin
+# angle are all non-zero. Both pairs stable across two runs.
+
+[steps 1-5, before the step-7 gate change — for the record only]
 still f360 58efe9b437999f93d0d56cf9da7931d4
 still f480 f05203da666cbfad5f504edd62161a73
 still f720 dc3cc058236580d8d2e96382c681a7fd
 still f840 38813940fa024cd82fbc00a1fe05fb9e
-plain f360 58efe9b437999f93d0d56cf9da7931d4
-plain f840 38813940fa024cd82fbc00a1fe05fb9e

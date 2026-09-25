@@ -132,5 +132,31 @@ ok(events.length >= 6, `two drops in 48 s: ${events.length} mode changes`);
 ok(N2.cyc.has === 1 || N2.mode !== 'INT', 'the cycle is live at the end (mode ' + N2.mode + ', has ' + N2.cyc.has + ')');
 void cInMin;
 
+// Cost: the same 48 s driven again, timed. process.hrtime has nanosecond resolution, so unlike the browser hook this
+// sees a single call. The brief's gate is the MEDIAN of 300 update() calls <= 0.5 ms.
+{
+  resetNav2();
+  resetDet();
+  const MS2 = JSON.parse(JSON.stringify(MS));
+  MS2.peaks = MS.peaks;
+  MS2.seed = MS.seed;
+  const per = [];
+  for (let f = 1; f <= FR; f++) {
+    const now = f * dt;
+    fake(MS2, dt, now);
+    for (const k in scene.params) P[k] = scene.params[k].from(MS2);
+    const t0 = process.hrtime.bigint();
+    updateDet(dt, MS2, P);
+    updateNav2(dt, now, MS2, { P, isLogical: true });
+    per.push(Number(process.hrtime.bigint() - t0) / 1e6);
+  }
+  const sorted = per.slice().sort((a, b) => a - b);
+  const med = sorted[sorted.length >> 1], p99 = sorted[Math.floor(sorted.length * 0.99)], mx = sorted[sorted.length - 1];
+  const mean = per.reduce((a, b) => a + b, 0) / per.length;
+  console.log(`\nupdate() cost over ${FR} frames (node, hrtime): median ${med.toFixed(4)} ms  mean ${mean.toFixed(4)} ms  p99 ${p99.toFixed(4)} ms  max ${mx.toFixed(4)} ms`);
+  ok(med <= 0.5, `the median update() is ${med.toFixed(4)} ms (gate 0.5 ms)`);
+  ok(mx <= 5, `the worst single update() is ${mx.toFixed(4)} ms`);
+}
+
 console.log(fails ? `\ntest_nav2: ${fails} FAIL` : '\ntest_nav2: OK');
 process.exit(fails ? 1 : 0);

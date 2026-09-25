@@ -9,7 +9,7 @@ import { FS_JULIA_V2, FS_MANDEL_V2, VS_PT, FS_PT } from './shaders.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
-let ctx, pt, B_ORB, LAST = null;
+let ctx, pt, B_ORB, LAST = null, LENV = null;
 const ITER_LO = 0.5;      // NAV's split iteration budget (docs/workers/nav-iter.md) — the same fraction
 const TRAP_0 = 0.35;      // the orbit trap's ring, inline (not a parameter: six is the cap)
 const TRAP_K = 0.9;
@@ -49,6 +49,26 @@ export default {
     // two arguments: CARD.REG[8].scene.hooks.wish(x, y) — pin the melody's wish, upstream of the spring and the ema
     wish: (x, y) => { DET.pinWish = x === undefined || x === null ? null : [+x, +y]; },
     reset: () => { resetNav2(); resetDet(); },
+    // Measurement only (HARNESS "Bench protocol": CARD.bench cannot see the CPU finder). It calls the scene's own
+    // update path n times on the last frame's arguments and returns the MEDIAN in ms. The wall clock here is never
+    // read by update/draw/overlay — nothing on screen depends on it — but it DOES advance the navigator's state, so
+    // the page it is called in is a measurement page, not a picture.
+    timeUpdate: (n) => {
+      const k = Math.max(1, Math.round(+n) || 300), t = [];
+      if (!LAST || !LENV) return -1;
+      const w0 = performance.now();
+      for (let i = 0; i < k; i++) {
+        const t0 = performance.now();
+        updateDet(1 / 60, LAST, LENV.params);
+        updateNav2(1 / 60, LENV.now, LAST, { P: LENV.params, isLogical: true });
+        t.push(performance.now() - t0);
+      }
+      const tot = performance.now() - w0;
+      t.sort((a, b) => a - b);
+      // med is 0 whenever a single call is below the browser's timer resolution; mean over the whole batch is then
+      // the number to read (and tools/test_nav2.js measures the same thing in node, where the clock is finer).
+      return { med: t[k >> 1], mean: tot / k, tot: tot, n: k };
+    },
     n2info: () => ({
       mode: N2.mode, c: [N2.c[0], N2.c[1]], rho: N2.rho, q: N2.q, has: N2.cyc.has, comp: N2.compSize,
       wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow,
@@ -126,6 +146,7 @@ export default {
     const N = N2;
     this._P = env.params;
     LAST = S;
+    LENV = env;
     if (this.rt.settledAt === 0) N.landed = 0;
     updateDet(dt, S, env.params);
     updateNav2(dt, env.now, S, { P: env.params, isLogical: env.SC.logical === this.id });

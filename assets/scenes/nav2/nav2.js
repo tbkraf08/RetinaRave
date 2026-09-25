@@ -1,19 +1,17 @@
 // NAV2's navigator (docs/workers/brief-nav2.md §1): "the melody draws the path". c is never looked up in a table and
-// never walks a chart — it is a ball rolling inside M under three forces, and the boundary is a wall it can slide along
-// and, at a parabolic root, walk through.
-//
-//   the melody's pull   pitch height is Im c (a critically damped spring), the spectral balance is Re c (an ema in
-//                       MUSICAL time, so silence freezes the drift); the pull loosens while a build winds up
-//   the wall            rho = |lambda| of the attracting cycle, found chart-free every frame (math/field.js). rho = 1
-//                       IS the boundary. An outward step is projected onto the rim's tangent and bisected to the largest
-//                       step still inside, so c slides along the rim instead of stopping at it
-//   the wind-up         as `wind` rises the ball is PRESSED to the rim: rho -> 1 and the Koenigs arms tighten by
-//                       construction (their tightness is arg lambda / ln|lambda|, so no shader gain is needed for it)
-//
-// Gates: pressed against the rim near internal angle p/q (Farey, q <= 7) for half a beat, c walks THROUGH the root into
-// the child bulb and the finder re-verifies with period q*k. No Misiurewicz table, no kick: state.kick.x is 0 for ever.
-// The drop is the ONE cut: a ray along the rho-normal out to log2 G = -2.2 + 1.7*dropStrength, its segment checked
-// clean, pathCut 0, mode EXT. Every other frame moves cPath by at most V_MAX*dt, under the monitor's 0.06 spike rule.
+// never walks a chart — it is a ball rolling inside M under three forces.
+//   the melody's pull  pitch height is Im c (a critically damped spring), the spectral balance is Re c (an ema in
+//                      MUSICAL time, so silence freezes it); the pull loosens while a build winds up
+//   the wall           rho = |lambda| of the attracting cycle, found chart-free every frame (math/field.js); rho = 1 IS
+//                      the boundary. An outward step is projected onto the rim's tangent and bisected to the largest
+//                      step still inside, so c SLIDES along the rim, and the period must not change (see probe())
+//   the wind-up        as `wind` rises the ball is PRESSED to the rim: rho -> 1 and the Koenigs arms tighten by
+//                      construction, their tightness being arg lambda / ln|lambda|
+// Gates: a step the wall refused, held half a beat near internal angle p/q (Farey, q <= 7), walks c THROUGH the root
+// into the child bulb, and the finder re-verifies with period q*k; internal angle 0 runs it backwards, out to the
+// parent. No Misiurewicz table, no kick: state.kick.x is 0 for ever. The drop is the ONE cut: a ray along the
+// rho-normal out to log2 G = -2.2 + 1.7*dropStrength, its segment checked clean, pathCut 0, mode EXT. Every other
+// frame moves cPath by at most V_MAX*dt, well under the continuity monitor's 0.06 spike rule.
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
 import { findCycle, rhoGrad, pot, potGrad, rayTo, cleanLine, nearestRational, mkCyc, N_ITER, N_MAX } from '../../math/field.js';
 import { DET } from './detect.js';
@@ -22,11 +20,9 @@ import { DET } from './detect.js';
 export const Y_AMP = 1.3;        // Im c per unit of centroid above/below the middle: UP IS UP
 export const X_HOME = -0.8;      // Re c the balance drifts around
 export const X_AMP = -1.1;       // Re c per unit of (bass - high): NEGATIVE, so bass-heavy drifts LEFT to the cascade
-export const LIFT = 0.65;        // view units of blob float per unit of centroid off 0.45 (the `lift` param's
-                                 // whole range is +-0.3, so this is capped by the range check on the MS defaults)
+export const LIFT = 0.65;        // view units of blob float per unit of centroid off 0.45 (capped by `lift`'s +-0.3 range)
 export const W_Y = 14;           // rad/s — the pitch spring, ~0.3 s settle
-export const TAU_X = 1.2;        // musical seconds — the Re bias's own ema (musical time runs at ~0.15 s/s in a
-                                 // valley on #test, so this is still ~8 real seconds there and freezes in silence)
+export const TAU_X = 1.2;        // musical seconds — the Re bias's ema (~8 real seconds in a #test valley, frozen in silence)
 export const FLOW_CAP = 0.1;     // s of musical time a single frame may advance the Re bias (a resume must not jump it)
 // --- the forces -------------------------------------------------------------------------------------------
 export const TAU_M = 0.55;       // s — the melody's pull: v = (wish - c)/TAU_M
@@ -34,26 +30,23 @@ export const LOOSE = 0.8;        // how much of the pull a full wind-up takes aw
 export const V_MAX = 1.2;        // units/s — the hard speed cap (0.02/frame at 60 Hz, 0.05 at the loop's 1/24 s cap)
 export const BIS = 6;            // bisections to the largest step still inside
 export const RHO_CAP = 0.985;    // the wall (float32 uC quantisation; above this the picture stops changing)
-export const RHO_FREE = 0.72;    // where the ball rests with no wind. With the melody's home wish at X_HOME this
-                                 // settles c inside the period-2 disc (through the 1/2 gate), which is the brightest of
-                                 // the resting places tried: 0.60 keeps c on the main cardioid and the centre luminance
-                                 // halves again (0.035 vs 0.078 vs NAV's 0.29 — tools/lum.py at f360)
+export const RHO_FREE = 0.72;    // where the ball rests with no wind. 0.72 settles c in the period-2 disc, the brightest
+                                 // resting place tried (lum.py centre at f360: 0.078, vs 0.035 at 0.60 and NAV's 0.29)
 export const K_R = 4.0;          // units/s per unit of (rhoT - rho): the wind's pressure toward the rim
-export const K_BACK = 1.2;       // ... and the always-on restoring push when rho is ABOVE the target. Without it the
-                                 // melody can park c on the rim with no wind, where ln|lambda| -> 0 makes the Koenigs
-                                 // bands sub-pixel and the interior renders flat black (measured against NAV, f360)
+export const K_BACK = 1.2;       // ... and the always-on restoring push when rho is ABOVE the target. Without it the melody
+                                 // parks c on the rim, where ln|lambda| -> 0 makes the bands sub-pixel and the interior black
 export const K_HIT = 0.35;       // a hit pushes rhoT transiently (the only thing left of NAV's kick)
 export const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 export const PAR_HI = 0.98;
 // --- the gates --------------------------------------------------------------------------------------------
 export const GATE_Q = 7;         // the largest denominator the Farey address will name
 export const GATE_W = 0.02;      // gate width in turns, divided by q
-export const GATE_RHO = 0.004;   // how near the cap counts as "pressed"
+export const GATE_RHO = 0.004;   // rho this near the cap counts as pressed even if the step was not blocked
+export const GATE_RHO_MIN = 0.93;// ... and a blocked step only counts as pressure this near the rim
 export const GATE_HOLD = 0.5;    // beats of held pressure before the cap opens
 export const GATE_BUILD = 0.4;   // a wind-up must never change component: no gate while build is above this
 export const SIZE_MIN = 0.02;    // the child must be at least this big in c to be worth entering
-export const GATE_C = 1;         // the child-size proxy's constant: GATE_C*sin(pi p/q)/q^2 / |dlambda/dc| (= 0.25 at
-                                 // the 1/2 root, which IS the period-2 disc's radius — so the push lands near its centre)
+export const GATE_C = 1;         // child-size proxy: GATE_C*sin(pi p/q)/q^2 / |dlambda/dc| (0.25 at the 1/2 root = its radius)
 export const GATE_TOL = 1e-3;    // |lambda - e^{2pi i p/q}| at which we call ourselves AT the root
 export const GATE_PUSH = 1.0;    // child sizes to push past the root
 export const GATE_WALK = 0.9;    // units of walking toward a root before the gate gives up
@@ -64,9 +57,9 @@ export const DROP_B = 1.7;
 export const LG_LO = -11.9;      // the potential's own bounds (math/mandel.js LG_MIN / LG_MAX: NAV's reach range)
 export const LG_HI = 0.9;
 export const DROP_ROT = 0.131;   // rad (7.5 deg) — the retry when a sample of the segment is not outside M
-export const DROP_TRIES = 13;    // +-45 deg of retries: a 1.8-unit ray from near the set grazes a dendrite more often
-                                 // than not, and the drop must ALWAYS happen (the least bad direction is taken if none
-                                 // is clean). The ray's own budget — RAY_T0/RAY_TMAX/RAY_BIS/RAY_N — is in math/field.js
+export const DROP_TRIES = 13;    // +-45 deg of retries: a 1.8-unit ray from near the set grazes a dendrite more often than
+                                 // not, and the drop must ALWAYS happen, so the least bad direction is taken if none is
+                                 // clean. The ray's own budget (RAY_T0/RAY_TMAX/RAY_BIS/RAY_N) is in math/field.js
 // --- outside ----------------------------------------------------------------------------------------------
 export const W_EXT = 3.0;        // 1/s — how fast c walks onto the target equipotential
 export const DRIFT_EXT = 0.07;   // units of equipotential drift per second of MUSICAL time
@@ -95,7 +88,7 @@ export const N2 = {
   path: new Float32Array(96 * 3), pathCut: 999, orbit: new Float32Array(160 * 3),
   kick: { x: 0 },        // the continuity monitor's shape; NAV2 is chart-free, so this is 0 for ever
   baby: null,            // ... and it never dives into a baby copy
-  cycBase: 1, seeded: 0, xSeed: 0,
+  cycBase: 1, seeded: 0, xSeed: 0, blocked: 0,
   log: () => {},
 };
 
@@ -189,7 +182,9 @@ function probe(N, sx, sy, cap) {
 
 // The wall. An outward step is projected onto the rim's tangent, then bisected: c SLIDES along the rim.
 function moveInt(N, sx, sy) {
+  N.blocked = 0;
   if (probe(N, sx, sy, RHO_CAP)) return land(N, bx, by, BE);
+  N.blocked = 1;   // the melody wanted out and the wall said no: THIS is the pressure a gate waits for
   const dn = sx * N.n[0] + sy * N.n[1];
   if (dn > 0) {
     sx -= dn * N.n[0];
@@ -233,7 +228,12 @@ function gateTick(N, dt, S) {
   const G = N.gate, bt = S.beatCount + S.beatPhase, db = clamp(bt - N.beat0, 0, 1);
   N.beat0 = bt;
   if (G.on) return;
-  if (!N.cy.has || S.build >= GATE_BUILD || N.rho < RHO_CAP - GATE_RHO) {
+  // "Pressed against the rim" is a step the wall REFUSED this frame, not an absolute rho: where the melody's pull and
+  // the wall's own restoring push balance depends on the music, and on the 1/3 root that balance sits at rho 0.974 —
+  // below any fixed threshold near the cap, so a fixed threshold means the gate can never open under the melody alone
+  // (measured 2026-09-25: c walked to the 1/3 root and sat there for 400 frames).
+  const pressed = (N.blocked || N.rho > RHO_CAP - GATE_RHO) && N.rho > GATE_RHO_MIN;
+  if (!N.cy.has || S.build >= GATE_BUILD || !pressed) {
     G.press = 0;
     return;
   }
@@ -261,6 +261,14 @@ function gateTick(N, dt, S) {
 
 function gateStep(N, dt) {
   const G = N.gate, step = V_MAX * dt;
+  // The arrival test runs in BOTH phases: the walk toward the root can already cross into the child, and checking it
+  // only while pushing overshoots — measured, c went 1 -> 3 -> 9 in twenty frames because the push kept going.
+  const done = G.exit ? (N.q < G.q0 && G.q0 % N.q === 0) : (N.q === G.q0 * G.q);
+  if (N.cy.has && N.rho <= RHO_CAP && done) {
+    N.log('GATE ok q' + N.q + ' rho ' + N.rho.toFixed(4));
+    G.on = 0;
+    return;
+  }
   if (G.ph === 0) {
     const a = TAU * G.p / G.q, er = Math.cos(a) - N.cy.lr, ei = Math.sin(a) - N.cy.li;
     if (Math.sqrt(er * er + ei * ei) < GATE_TOL || !N.cy.has) {
@@ -278,11 +286,7 @@ function gateStep(N, dt) {
     const s = Math.min(step, Math.max(G.want - G.pushed, 0));
     gateMove(N, G.dx * s, G.dy * s);
     G.pushed += s;
-    const done = G.exit ? (N.q < G.q0 && G.q0 % N.q === 0) : (N.q === G.q0 * G.q);
-    if (N.cy.has && N.rho <= RHO_CAP && done) {
-      N.log('GATE ok q' + N.q + ' rho ' + N.rho.toFixed(4));
-      G.on = 0;
-    } else if (G.pushed >= G.want) G.on = 0;
+    if (G.pushed >= G.want) G.on = 0;
   }
 }
 
