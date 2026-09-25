@@ -55,7 +55,7 @@ export function mk4(list) {
   for (let j = 1; j < N; j++) dm = Math.min(dm, d2(0, j));
   const E = [];
   for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) if (d2(i, j) < dm * 1.02) E.push(i, j);
-  return { V: new Float64Array(V.flat()), E: new Uint16Array(E), R: new Float64Array(N * 4), N, nE: E.length / 2 };
+  return { V: new Float64Array(V.flat()), E: new Uint16Array(E), R: new Float64Array(N * 4), C: new Float32Array(N * 3), N, nE: E.length / 2 };
 }
 
 const DEF = {
@@ -118,18 +118,51 @@ export function rotate4(P, a1, a2, a3) {
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
+// spec 5: paint each vertex with its sector of the colour wheel. The sector is the vertex's angle in the xy plane
+// AFTER the rotation, so the wheel rolls with the bass; the last `secb` of a sector cross-fades into the next one
+// in RGB, which is what keeps a vertex's colour continuous as it crosses a boundary (colour.js, CONTINUITY).
+// `sec` is colour.js's twelve premultiplied RGB triples. Call after rotate4.
+export function paint(P, sec, secb, n) {
+  const R = P.R, C = P.C, inv = 1 / secb;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    let u = Math.atan2(R[o + 1], R[o]) / (Math.PI * 2);
+    u -= Math.floor(u);
+    u *= n;
+    const k0 = u | 0;
+    const w = smooth((u - k0 - (1 - secb)) * inv);
+    const a = (k0 % n) * 3;
+    const b = ((k0 + 1) % n) * 3;
+    const c = i * 3;
+    C[c] = sec[a] + (sec[b] - sec[a]) * w;
+    C[c + 1] = sec[a + 1] + (sec[b + 1] - sec[a + 1]) * w;
+    C[c + 2] = sec[a + 2] + (sec[b + 2] - sec[a + 2]) * w;
+  }
+}
+
 // The pole gate (v0.2 §16b, DECISIONS §8's polish note). (0,0,0,1) is the point at infinity of the stereographic
 // map: a sample with den = 1 − w/|v| small lands at radius g·√((2 − den)/den), so the run of pieces on an edge
 // sweeping the pole reached 3.39·g — past the frame edge — and drew as a long straight streak. The gate moves
 // 0.16 → 0.24 (radius at the gate 3.39·g → 2.71·g) and the ramp is re-based on the same top, so from den = 0.446
 // upward the fade is exactly what it was; only the last stretch before the pole is steeper. Continuous in the
 // rotation angles: f → 0 as den → GATE, so a piece still fades in and out and never appears (`cuts: 'continuous'`).
-const GATE = 0.24;
+export const GATE = 0.24;
+const EBL = 0.3;   // how much of an edge's length is spent crossing from its first vertex's colour to its second's
 const RAMP = 1 / (0.16 + 1 / 3.5 - GATE);   // = 4.861…: (0.16 + 1/3.5) is where the old ramp reached 1
 
 // Rotate, subdivide every edge on S^3, project, and append one 12-float line segment per piece
 // (x0 y0 z0 w0 · x1 y1 z1 w1 · r g b a, widths in px). Returns the new segment count.
-// o: {a1,a2,a3, sub, g, eye, fwd, wpx, col:[r,g,b], alpha}
+// o: {a1,a2,a3, sub, g, eye, fwd, wpx, alpha, prof, gw, gbri, gwid, sec, secn, secb}
+//
+// `prof` (spec 4) is grooves.fillProfile's three bump profiles along one edge, sampled at the sub+1 points this
+// loop already visits — so the pulses cost one dot product and two multiplies per sample, and not one exponential.
+// The profile is zero-mean along the edge (grooves.fillProfile), so `1 + gain·profile` averages to exactly one:
+// the groove REDISTRIBUTES light and width along an edge instead of adding to it, and a stroke between two bumps is
+// darker and thinner than an ungrooved one. At groove 0 the whole mechanism is the identity, pixel for pixel.
+// `gw` weights the three bands for THIS figure (the mids ride the outer cage only). Because every edge carries the
+// same profile and a bump travels one edge length per bar, the rhythm becomes the spacing of the bumps along every
+// edge of the polytope at once. Brightness goes in the colour and width in the width — never in the alpha, which
+// is coverage (CONTRACTS §1.12) and belongs to the pole fade alone.
 export function emit(kind, o, segs, off, cap) {
   const P = get4(kind);
   rotate4(P, o.a1, o.a2, o.a3);
@@ -141,13 +174,29 @@ export function emit(kind, o, segs, off, cap) {
   const fy = o.fwd[1];
   const fz = o.fwd[2];
   const eDotF = o.eye[0] * fx + o.eye[1] * fy + o.eye[2] * fz;
-  const cr = o.col[0];
-  const cg = o.col[1];
-  const cb = o.col[2];
+  paint(P, o.sec, o.secb, o.secn);
+  const Cv = P.C;
+  const PR = o.prof;
+  const n1 = sub + 1;
+  const w0 = o.gw[0];
+  const w1 = o.gw[1];
+  const w2 = o.gw[2];
+  const gbri = o.gbri;
+  const gwid = o.gwid;
   let n = off;
   for (let e = 0; e < E.length; e += 2) {
-    const a = E[e] * 4;
-    const b = E[e + 1] * 4;
+    const ia = E[e];
+    const ib = E[e + 1];
+    const a = ia * 4;
+    const b = ib * 4;
+    const ca = ia * 3;
+    const cb2 = ib * 3;
+    const c0r = Cv[ca];
+    const c0g = Cv[ca + 1];
+    const c0b = Cv[ca + 2];
+    const cdr = Cv[cb2] - c0r;
+    const cdg = Cv[cb2 + 1] - c0g;
+    const cdb = Cv[cb2 + 2] - c0b;
     const ax = Rv[a];
     const ay = Rv[a + 1];
     const az = Rv[a + 2];
@@ -161,6 +210,8 @@ export function emit(kind, o, segs, off, cap) {
     let pZ = 0;
     let pV = 0;
     let pF = 0;
+    let pB = 0;
+    let pW = 1;
     let have = false;
     for (let k = 0; k <= sub; k++) {
       const s = k / sub;
@@ -185,20 +236,31 @@ export function emit(kind, o, segs, off, cap) {
         vz = X * fx + Y * fy + Z * fz - eDotF;
         f = Math.min((den - GATE) * RAMP, 1) * smooth((vz - 0.35) / 0.9);
       }
+      // the three trains' bumps where this sample sits along the edge: one brightness and one width multiplier
+      const pk = PR[k] * w0 + PR[n1 + k] * w1 + PR[n1 + n1 + k] * w2;
+      const bri = Math.max(0, 1 + gbri * pk);
+      const wid = Math.max(0.15, 1 + gwid * pk);   // a stroke may thin, never vanish or invert
       const ok = f > 0.002;
       if (ok && have && n < cap) {
         const j = n * 12;
+        const bm = 0.5 * (pB + bri);
+        // The piece takes the wheel's colour of its NEARER vertex, with a short blend across the middle of the
+        // edge (EBL wide) so nothing steps. The brief allowed either this or a straight end-to-end lerp; this one,
+        // because an edge of a 4-polytope routinely joins two vertices most of a wheel apart and an end-to-end
+        // lerp in RGB then runs the whole stroke through grey. (Measured, it changed the picture's saturation by
+        // less than 0.02 — the greying is elsewhere — but a pure sector colour is the truer thing to draw.)
+        const sm = smooth(((k - 0.5) / sub - 0.5) / EBL + 0.5);
         segs[j] = pX;
         segs[j + 1] = pY;
         segs[j + 2] = pZ;
-        segs[j + 3] = o.wpx / pV;
+        segs[j + 3] = (o.wpx * pW) / pV;
         segs[j + 4] = X;
         segs[j + 5] = Y;
         segs[j + 6] = Z;
-        segs[j + 7] = o.wpx / vz;
-        segs[j + 8] = cr;
-        segs[j + 9] = cg;
-        segs[j + 10] = cb;
+        segs[j + 7] = (o.wpx * wid) / vz;
+        segs[j + 8] = (c0r + cdr * sm) * bm;
+        segs[j + 9] = (c0g + cdg * sm) * bm;
+        segs[j + 10] = (c0b + cdb * sm) * bm;
         segs[j + 11] = o.alpha * 0.5 * (pF + f);
         n++;
       }
@@ -207,10 +269,57 @@ export function emit(kind, o, segs, off, cap) {
       pZ = Z;
       pV = vz;
       pF = f;
+      pB = bri;
+      pW = wid;
       have = ok;
     }
   }
   return n;
+}
+
+// spec 3: the shortest xw move that carries a vertex THROUGH the projection pole, as an angle relative to `a3`.
+//
+// After the xy/zw rotation a vertex's w-coordinate under the xw turn is R sin(a + phi) with R = hypot(x, w) and
+// phi = atan2(w, x), so it is closest to the pole (w = 1, den = 0) at a = pi/2 - phi, and R is how close it can
+// ever get. Only a vertex with R = 1 touches the pole exactly, so the candidates are those within TOL of the best
+// R available, and among those the one whose a is the shortest move from where the plane is now — the sweep is then
+// always the least violent way to turn the cage inside out. Returns {d, R, i}: the delta, that vertex's reach, its
+// index. One pass over the vertices, at the cue only.
+export function sweepTarget(P, a1, a2, a3, tol) {
+  const V = P.V, c1 = Math.cos(a1), s1 = Math.sin(a1), c2 = Math.cos(a2), s2 = Math.sin(a2);
+  const HALF = Math.PI / 2, TAU = Math.PI * 2;
+  let rmax = 0;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    const X = V[o] * c1 - V[o + 1] * s1;
+    const Q = V[o + 2] * s2 + V[o + 3] * c2;
+    const R = Math.hypot(X, Q);
+    if (R > rmax) rmax = R;
+  }
+  let best = { d: 0, R: 0, i: -1 }, bestAbs = 1e9;
+  for (let i = 0; i < P.N; i++) {
+    const o = i * 4;
+    const X = V[o] * c1 - V[o + 1] * s1;
+    const Q = V[o + 2] * s2 + V[o + 3] * c2;
+    const R = Math.hypot(X, Q);
+    if (R < rmax - tol) continue;
+    let d = HALF - Math.atan2(Q, X) - a3;
+    d -= TAU * Math.floor(d / TAU + 0.5);          // the short way round
+    const ad = Math.abs(d);
+    if (ad < bestAbs) { bestAbs = ad; best = { d, R, i }; }
+  }
+  return best;
+}
+
+// How close the nearest vertex comes to the projection pole, as `den` = 1 − w (the vertices are unit, so |v| = 1
+// and `den` is exactly the quantity the gate tests). Reads the LAST rotate4's output, so call it after one.
+// Measured on the bare xy/zw double rotation (tools/work/pole.js) this reaches 0 for the 24-, 600- and 120-cell and
+// bottoms out at 0.2929 for the tesseract: a vertex sweeping through the pole is what the scene is about, and what
+// GATE and its ramp exist to fade. dance.js bounds how far the dance may move it; see POLE SAFETY there.
+export function poleMargin(P) {
+  let m = 9;
+  for (let i = 0; i < P.N; i++) { const d = 1 - P.R[i * 4 + 3]; if (d < m) m = d; }
+  return m;
 }
 
 // Column-major 4x4 for clip = M·[p,1] with a pinhole camera: w = view depth, z = view depth − 2·near
