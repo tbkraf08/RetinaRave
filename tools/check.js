@@ -43,6 +43,9 @@ for (const f of files) {
     if (plug && t.startsWith('assets/core/')) fail(rel + ' imports from core/ (' + t + ') — use ctx');
     if (plug && t.startsWith('assets/engine/')) fail(rel + ' imports from engine/ (' + t + ') — scenes receive MS');
   }
+  // v0.9 (POLYTOPE-DANCE friction 4): `export { a } from '…'` passes here and on http but tools/bundle.js cannot rewrite it,
+  // so the shipped single-file build dies — refuse the form (import, then export the names).
+  if (/^export\s*\{[^}]*\}\s*from\s/m.test(src)) fail(rel + " uses `export { … } from` — bundle.js cannot rewrite it; import then export");
   if ((rel.startsWith('assets/core/') || rel.startsWith('assets/transitions/')) && /\bnav\b/i.test(src.replace(/navigator\.mediaDevices/g, ''))) fail(rel + " mentions 'nav' — core must not special-case a scene");
 }
 const dead = [...decl].filter((n) => !used.has(n) && !COMMON.includes(n));

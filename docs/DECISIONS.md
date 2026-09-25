@@ -190,7 +190,7 @@ Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, truste
   stereographic map is a central projection, so a straight 4-D chord projects to a straight line; only samples on the
   sphere bend into the great-circle arcs the picture is about (synapse's `poly4` did the same on its line 1149+, which
   the brief's range omitted; the worker derived it). Segments fade through alpha as they approach the pole
-  (`den > 0.16` gate, `(den − 0.16)·3.5` ramp) and over view depth 0.35→1.25 near the camera (no pop at the near
+  (v0.2's `den > 0.16` gate, `(den − 0.16)·3.5` ramp — **superseded** by the pole worker: `GATE` 0.24 with the ramp reaching 1 at 0.4457, `poly4.js`; two workers copied the old numbers from here before v0.9 corrected this line) and over view depth 0.35→1.25 near the camera (no pop at the near
   plane, where `ctx.lines` drops `w ≤ 0` segments whole).
 - **Cast by section seed** (`floor(seed.a·3)`: tesseract ⊂ 24-cell · 600-cell · 24-cell ⊂ 600/120-cell), re-cast only
   on `sectionEvt` with a one-second cross-fade of both casts; look memory = the cast index. Subdivisions per tier

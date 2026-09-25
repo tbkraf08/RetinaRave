@@ -69,6 +69,9 @@ mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never mor
 1. **`q` is pinned first**: `setInterval(() => CARD.Q.q = 0.95, 16)` (or 0.1 for the low tier), then wait longer than
    the scene's own smoothing (TORUS eases its tier over ~2 s; wait 8 s) — a scene that reads `Q.iter` (NAV) otherwise
    changes its own work between calls as pacing sinks `q`.
+   `CARD.bench` runs its `n` `update()`s with the thread **blocked**, so a `setInterval` cannot pin state a scene recomputes on an
+   event (POLYTOPE re-picks its cast on `sectionEvt`: the first v0.9 bench ran at 4291 segs instead of 960) — pin such state through a
+   scene hook (`hooks.cast`) before the calls.
 2. **`n ≥ 300`**, three calls, the median — headless timers quantise to ~1/24 ms; below ~0.1 ms it only says "cheap".
    The first call after any pause is cold (0.5–1.5 ms, shader warm-up): discard it.
 3. **Interleave with NAV in the same page**: `bench(id,300)` then `bench(0,300)`, as pairs, and report the ratio as
@@ -410,7 +413,8 @@ phone card (`.mobile`, four tiles a row) and `FAKEMIC=1` + `{clickSel:"#mic"}` f
 (`ENGINE.ms` = engine CPU ms/frame EMA) · `SCENES` (scene objects, registration order) · `REG[id]` = `{id, base, scene, variant}` ·
 `EFFECTS` · `TRANSITIONS` · `FEATS` · `HELP` (`on`, `ticks`, `nTop`, `rows(topOnly)` — "Help view" above) · `log` (event log under #test:
 `DROP@t`, `SECTION@t arc`, `SCENE@t -> id`, 1 Hz status lines) · `frameN` · `home` (the home scene's state; `NAV` in v3) ·
-`hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes).
+`hooks` (scene test hooks) · `GRID` (the exterior ray table, null until the worker finishes). · `ctx` (the scene ctx: `CARD.ctx.tier()`, `CARD.ctx.gl`) · `REG[id].scene` is the **live** scene object — its `p`,
+`cast`, `rt` may be read and written from an eval (every pin in `docs/workers/polytope-dance.md` works that way).
 
 - `CARD.fix = {bass: 1, arc: 'peak'}` pins MS fields every frame after extraction (works with `fake=0` too). `null` clears.
 - `CARD.glerr` is set only when a `gl.getError()` poll (every 30 frames) returns non-zero — `undefined` means clean.
@@ -460,6 +464,11 @@ after every scene edit (the v0.5–v0.7 habit, four lists in the TORUS2 session)
 | **`core/`, `engine/`, `effects/`, `transitions/`, `main.js` beyond registration** | the full list (v2 + `&colour=oklch`), parity fake, mixs, and the Q trace when cost could move — i.e. `tools/accept.sh` | 25 min + 16 per trace |
 | **a scene enters the director's rotation** (a bid that was 0 becomes live) | the Q trace on house + aba *after* the promotion — a scene with bid 0 cannot be picked, so a trace before it measures nothing | 16 min |
 
+v0.9 POLYTOPE (id 5 modified in place, DECISIONS §41) is the first row: `IDS=5 tools/scene-md5.sh` against `tools/accept/v0.9/scene-md5-v09.txt`
+(= the v0.8 list with s5 re-based), `accept.sh` "== polytope" (the pinned trains, the key pair, the groove route), the bench both casts,
+and — because id 5 bids — the Q trace on house + aba (`tools/accept/v0.9/q-*-{before,after}.txt`). The real-music trace is
+`tools/accept/v0.9/det9.py <track> <tag>` (`hooks.info()`: per band launches, the last launch and its drum vote, EMA, threshold).
+
 A worker's brief names the tier; the orchestrator runs the sweep once, at the tag, not piecemeal and then again.
 
 ## Acceptance sweep
@@ -473,6 +482,8 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
 
 ## Pitfalls already paid for
 
+- A **look question is decided by a routed parameter on `#test`** (`&param=<scene>.<p>=c:0` vs none at the same CLOCK=1 frame), never by
+  two `fake=0` runs — the demo synths are random and two runs once disagreed by 0.6 in mean saturation (v0.9, `polytope-dance.md` (e)).
 - `gl.POINTS` vanish in an offset viewport on ANGLE-GL (fine in SwiftShader): overlays draw paths in-shader.
 - `smoothstep(a,b,x)` with a>b is undefined. Never name a GLSL variable `gl_*`.
 - `readPixels(UNSIGNED_BYTE)` from an RGBA16F target returns black — `ctx.mkTarget(w,h,true)` for readback.
