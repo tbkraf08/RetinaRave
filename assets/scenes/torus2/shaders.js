@@ -26,7 +26,9 @@ const BODY = ATTRACTORS + `
 #define FLASH ${K.FLASH.toFixed(2)}
 uniform vec4  uCam;      // yaw, pitch, distance, focal (1/tan(fov/2))
 uniform vec4  uCen;      // centroid of the tumbled family in R3 (xyz) and its radius (w)
-uniform float uPsi0;     // Hopf flow  2pi(beatCount+beatPhase)/8
+uniform vec3  uPsi3;     // Hopf flow per family band: low (pc 0-3), mid (4-7), high (8-11) — beat + flowBass/Mid/High
+uniform float uPsi0;     // the same flow for the knot strand (the loudest family's band)
+uniform float uSlip;     // spec 6: riser / roll unwind the rings toward helices; above 0.02 they are drawn open
 uniform float uAlpha;    // SU(2) tumble
 uniform float uDelta;    // pole offset  0.6*tension
 uniform float uSubP;     // tube fatten  0.25*sub
@@ -86,9 +88,12 @@ vec4 flow(vec4 z, float a) {
 // whole latitude circle theta_k, its fibres run right around phi so they cover one full torus, and the families are
 // interleaved by a twelfth of the fibre spacing. The longitude grid is uFib slots wide however many are drawn.
 vec4 ringZ(int fam, int sub, float t) {
-  float phi = (float(sub) + float(fam) / 12.0) * TAU / float(uFib);
+  // The slip goes on the LONGITUDE, not on psi: adding phase to psi only runs further round the same circle (the
+  // fibre IS that circle), whereas sweeping phi carries the curve across the family's torus — a (1, 1+k) torus
+  // curve, an open helix that no longer closes. That is what a riser unwinding a ring has to mean.
+  float phi = (float(sub) + float(fam) / 12.0) * TAU / float(uFib) + uSlip * t;
   float theta = min(mix(uTheta[fam], 0.05, uCollapse) * (1.0 + uSubP), 1.55);
-  float psi = t * TAU + uPsi0 + float(sub) * 0.7;
+  float psi = t * TAU + uPsi3[fam / 4] + float(sub) * 0.7;
   float c = cos(theta * 0.5), s = sin(theta * 0.5);
   float a1 = psi + phi * 0.5, a2 = psi - phi * 0.5;
   return vec4(c * cos(a1), c * sin(a1), s * cos(a2), s * sin(a2));
@@ -172,6 +177,7 @@ void main() {
   int base = 12 * uDraw * uSeg;
   vec3 p0, p1;
   float f0, f1, bri, hueT, wm;
+  bool open = false;
   if (s >= base) {
     int i = s - base;
     float t0 = float(i) / float(uKnotN), t1 = float(i + 1) / float(uKnotN);
@@ -187,6 +193,7 @@ void main() {
     int i = s - ring * uSeg;
     int fam = ring - (ring / 12) * 12, sub = ring / 12;
     float t0 = float(i) / float(uSeg), t1 = float(i + 1) / float(uSeg);
+    open = uSlip > 0.02 && i == uSeg - 1;     // an unwound ring no longer closes: skip the wrapping segment
     float q0, q1;
     p0 = ringPt(fam, sub, t0, f0, q0);
     p1 = ringPt(fam, sub, t1, f1, q1);
@@ -203,7 +210,7 @@ void main() {
   }
   float v0, v1;
   vec4 c0 = proj(p0, v0);
-  vec4 c1 = proj(p1, v1);
+  vec4 c1 = open ? vec4(0.0, 0.0, 0.0, -1.0) : proj(p1, v1);
   // depth cue: with 'over' the far strokes are already hidden where they are behind, and a fog on the colour keeps the
   // near shell reading as the near one. Its floor is high (spec 1b): a depth cue, never a wall.
   float fog = clamp(${K.FOGHI.toFixed(2)} - ${K.FOGK.toFixed(2)} * (0.5 * (v0 + v1) / max(uCam.z, 0.5)), ${K.FOGLO.toFixed(2)}, ${K.FOGHI.toFixed(2)});

@@ -28,6 +28,11 @@ const FIBTC = 0.25;
 const FOV = 1.95;     // focal length 1/tan(fov/2), fov ~54 deg
 const MORPHTC = 1.0;  // spec 5: the morph eases over ~1 s, and an attractor change cross-fades over the same
 const MORPHK = 0.9;   // how much of the tension reaches the morph
+const BREATH = 0.03;  // spec 6: the tube breathes +-3 % over the bar, even in silence
+const TWIST = 0.6;    // spec 6: a surprise twists the SU(2) tumble target, inside the |alpha| <= 0.18 bound
+const TWISTTC = 0.35; // and eases back over ~1 s (three time constants)
+const PSIK = 0.25;    // spec 6: how fast flowBass/Mid/High drive the three family bands' Hopf flows
+const UNWIND = 2.5;   // spec 6: radians of phase slip across one ring at riser 1 — the rings open into helices
 // --- the manual settings of the look (a named constant near the top, not a magic number in a shader) ---
 const GLOW = 0.18;    // spec 1a: no fibre below this fraction of the loudest family's brightness
 const GLOWQ = 0.4;    // spec 6: hush / calm dim the floor by this much
@@ -49,8 +54,9 @@ let KSEG = 640;       // segments on the knot strand (it winds p+q times, so it 
 
 const th = new Float32Array(12);
 const ch = new Float32Array(12);
-const U = { morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0 };
+const U = { twist: 0, slip: 0, morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0 };
 const MOOD = new Float32Array(3);
+const PSI = new Float32Array(3);
 const WB = new Float32Array(BANDS * SLOTS);   // wave ages in beats, uploaded every frame
 const WA = new Float32Array(BANDS * SLOTS);   // wave amplitudes at launch
 let SPREAD = 0.5;
@@ -63,7 +69,9 @@ let keyPin = null;    // hooks.key(k, mode): pin the key inside update(), never 
 let ASP = 16 / 9;
 let fibPin = -1;
 let morphPin = null;  // hooks.morph(m, which)
-let att = 0, attPrev = 0, attFade = 0, attSel = -2;      // hooks.fib: pin the drawn slot count so a proof shot can show one thread per family
+let att = 0, attPrev = 0, attFade = 0, attSel = -2;
+let pqOff = 0;        // spec 6: sectionEvt rotates the knot table
+let unwindPin = -1;   // hooks.unwind(v)      // hooks.fib: pin the drawn slot count so a proof shot can show one thread per family
 
 // CPU reference: a few points of one fibre straight out of assets/math/hopf.js, for comparing against the GPU port.
 function probe(k) {
@@ -72,6 +80,12 @@ function probe(k) {
   const out = [];
   for (let j = 0; j < 4; j++) out.push(fibre(th[i], phi, j / 4 * TAU, U.psi0, U.alpha, U.delta).map((x) => +x.toFixed(6)));
   return JSON.stringify({ theta: +th[i].toFixed(6), phi: +phi.toFixed(6), psi0: +U.psi0.toFixed(6), alpha: +U.alpha.toFixed(6), delta: +U.delta.toFixed(6), pts: out });
+}
+
+// test hook: pin the riser that unwinds the rings into helices
+function unwind(v) {
+  unwindPin = v === null || v === undefined || v < 0 ? -1 : Math.min(1, +v);
+  return unwindPin;
 }
 
 // test hook: pin the morph and which attractor, so the four-shot montage is a controlled comparison
@@ -100,17 +114,17 @@ function fib(v) {
 
 // test hook: the live look numbers, so a shot can be read as numbers as well as pixels
 function info() {
-  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow) });
+  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), slip: +U.slip.toFixed(3), twist: +U.twist.toFixed(3), pqOff, att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow) });
 }
 
 export default {
   name: 'torus2',
   id: 7,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm'],
   cuts: 'continuous',
   rt: {},
-  hooks: { probe, info, train, fib, key, motion, morph },
+  hooks: { probe, info, train, fib, key, motion, morph, unwind },
 
   // never auto-picked until approved (the replacement gives it TORUS's bid: 0 in builds, else .25 + .45 clarity + .3 regularity)
   score() {
@@ -169,15 +183,26 @@ export default {
     wfill(WB, WA, U.beatNow);
     U.wave = 0.26 + 0.1 * MS.kick;                 // the kick-wave amplitude (the `wave` parameter of step 7)
 
-    U.psi0 = TAU * ((U.beatNow / 8) % 1);             // one full turn of the Hopf flow per 8 beats
+    // one full turn of the Hopf flow per 8 beats, plus a per-band rate: the low (pitch classes 0-3), mid (4-7) and
+    // high (8-11) families advance along their rings at flowBass / flowMid / flowHigh instead of one shared flow.
+    const psiB = TAU * ((U.beatNow / 8) % 1);
+    PSI[0] = (psiB + PSIK * MS.flowBass) % TAU;
+    PSI[1] = (psiB + PSIK * MS.flowMid) % TAU;
+    PSI[2] = (psiB + PSIK * MS.flowHigh) % TAU;
+    U.psi0 = PSI[(loudest / 4) | 0];
     // The tumble lives in SU(2), not in the camera, and its amplitude is bounded: rotSU2 by alpha moves the base
     // sphere's south pole (the point stereographic projection sends to infinity) to colatitude pi - 2 alpha, and the
     // moment that crosses a family's latitude that whole torus blows up off screen. |alpha| <= 0.18, |delta| <= 0.6.
-    U.alpha = 0.18 * Math.sin(GROOVE.rot);
+    if (MS.surpriseEvt) U.twist = 1;                  // spec 6: a surprise twists the tumble target and eases back
+    U.twist *= Math.exp(-dt / TWISTTC);
+    U.alpha = 0.18 * Math.max(-1, Math.min(1, Math.sin(GROOVE.rot) + TWIST * U.twist));
     U.delta = 0.6 * MS.tension;                       // roughness pinches the picture toward the pole
-    U.subP = 0.25 * MS.sub;                           // the sub bass fattens the tubes (bass now sets the stroke width)
+    // the sub bass fattens the tubes (bass now sets the stroke width), and the bar breathes them +-3 % in silence
+    U.subP = 0.25 * MS.sub + BREATH * Math.sin(TAU * MS.barPos / 4);
     U.knotT = (0.5 * MS.harmUnw) % TAU;               // the melody traces the knot (p, q integral: mod TAU is exact)
-    pq = PQ[Math.max(0, Math.min(11, MS.interval | 0))];
+    // spec 6: a section event re-picks the knot — the same interval table, rotated by the section (deterministic)
+    if (MS.sectionEvt) pqOff = Math.max(0, MS.sectionAlt | 0);
+    pq = PQ[((Math.max(0, Math.min(11, MS.interval | 0)) + pqOff) % 12 + 12) % 12];
     U.knotTh = Math.min((th[loudest] * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
     U.knotBri = 1.5 * (0.4 + 0.6 * MS.intensity);
 
@@ -192,7 +217,9 @@ export default {
     KSEG = Math.min(1600, SEG * Math.max(2, pq[0] + pq[1]));
     const p = MS.presence;
     U.gain = Math.min(1, (0.3 + 0.7 * p) * (1 + 0.6 * MS.dropEnv));
-    U.wpx = WPX * (1 + 0.6 * MS.bass);
+    U.wpx = WPX * (1 + 0.6 * MS.bass) * (0.85 + 0.3 * MS.arousal);   // spec 6: arousal sets the resting width
+    // spec 6: the build unwinds the rings toward helices, and the drop's collapse snaps the slip back to zero
+    U.slip = UNWIND * (unwindPin >= 0 ? unwindPin : Math.max(MS.riser, MS.roll)) * (1 - U.collapse);
 
     const m = (LOOK && LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
     const A = anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, m.hue, keyPin);
@@ -251,6 +278,8 @@ export default {
     g.uniform4f(pr.u('uCam'), CAM[0], CAM[1], CAM[2], CAM[3]);
     g.uniform4f(pr.u('uCen'), CEN[0], CEN[1], CEN[2], CEN[3]);
     g.uniform1f(pr.u('uPsi0'), U.psi0);
+    g.uniform3f(pr.u('uPsi3'), PSI[0], PSI[1], PSI[2]);
+    g.uniform1f(pr.u('uSlip'), U.slip);
     g.uniform1f(pr.u('uAlpha'), U.alpha);
     g.uniform1f(pr.u('uDelta'), U.delta);
     g.uniform1f(pr.u('uSubP'), U.subP);
@@ -291,7 +320,7 @@ export default {
 
   hud() {
     const { R, r } = torusRadii(th[loudest]);
-    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2);
+    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2);
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },
@@ -312,7 +341,15 @@ export default {
       dropEnv: 'brighter strokes while the collapse blooms back',
       bpm: 'how fast the collapse recovers (about one beat)',
       presence: 'overall opacity: silence dims the rings',
-      flow: 'the scene clock and the camera\'s gentle orbit',
+      flow: 'the scene clock and the camera\'s gentle tilt',
+      flowBass: 'the low four pitch classes slide along their rings at the bass\'s own pace',
+      flowMid: 'the middle four slide at the mids\' pace',
+      flowHigh: 'the top four slide at the highs\' pace — the three bands drift apart instead of moving as one',
+      barPos: 'the tubes breathe in and out over the bar, even in silence',
+      surpriseEvt: 'a surprise twists the whole nest on its axis and it settles back over a second',
+      sectionEvt: 'a new section re-picks the knot: the same interval table, rotated by the section',
+      roll: 'an accelerating drum roll unwinds the rings until they no longer close',
+      riser: 'a riser does the same: the rings open into helices, and the drop snaps them shut',
       intensity: 'how bright the melody\'s knot strand burns, and part of the resting size',
       arc: 'the intro is left alone: no attractor bends the torus while nothing has started',
       sectionAlt: 'which strange attractor this section is bent into, and it rotates the knot table',
