@@ -44,6 +44,12 @@ uniform vec2  uKnotBH;   // knot brightness, knot hue
 uniform vec2  uGlowM;    // the brightness floor (0..0.5) and the loudest family's brightness
 uniform float uFlashK;   // the kick follower that lights the core, 0..1
 uniform float uShim;     // shimmer gain (hat x alive x novelty)
+uniform float uWaveB[24];  // spec 2: age in beats of the last 8 launches per band (kick, snare, hat); < 0 = empty
+uniform float uWaveA[24];  // the amplitude each was launched with
+uniform vec3  uWaveW;    // bump width along the ring parameter per band
+uniform vec3  uWaveD;    // how far each band's bump displaces the stroke (a fraction of the fibre's own radius)
+uniform vec3  uWaveP;    // how much each band's bump brightens it
+uniform float uLoud;     // the loudest family (the one the knot rides): the snare pulse is its own
 uniform float uTheta[12];  // colatitude per pitch class
 uniform float uChroma[12]; // chroma per pitch class
 flat out vec3 vCol;
@@ -93,6 +99,27 @@ vec4 knotZ(float t) {
   return flow(z, uPsi0);
 }
 
+// spec 2: the waves of all three bands at ring parameter t of family fam. A wave launched age beats ago sits at
+// t = (age / 4) mod 1 — one full ring per bar — with a gaussian bump of the band's width and a fade of exp(-age/2).
+// The rhythm is therefore the spacing of the bumps: four-on-the-floor lands them at 0, 1/4, 1/2, 3/4.
+void waves(float t, int fam, out float disp, out float pulse) {
+  disp = 0.0;
+  pulse = 0.0;
+  for (int b = 0; b < 3; b++) {
+    if (b == 1 && fam != int(uLoud)) continue;   // the snare's bright pulse rides the loudest family alone
+    float wd = uWaveW[b];
+    for (int s = 0; s < 8; s++) {
+      float age = uWaveB[b * 8 + s];
+      if (age < 0.0) continue;
+      float d = t - fract(age * 0.25);
+      d -= floor(d + 0.5);                        // the nearest image of the bump round the closed ring
+      float g = exp(-(d * d) / (wd * wd)) * exp(-age * 0.5) * uWaveA[b * 8 + s];
+      disp += g * uWaveD[b];                      // every wave is a displacement AND a brightness pulse; the bands
+      pulse += g * uWaveP[b];                     // differ in which of the two dominates (spec 2)
+    }
+  }
+}
+
 void camBasis() {
   float cy = cos(uCam.x), sy = sin(uCam.x), cp = cos(uCam.y), sp = sin(uCam.y);
   gEye = uCen.xyz + uCam.z * vec3(cp * cy, cp * sy, sp);
@@ -121,6 +148,20 @@ vec4 proj(vec3 p, out float vz) {
   return vec4(uCam.w * v.x / asp, uCam.w * v.y, v.z - 2.0 * NEAR, v.z);
 }
 
+// A fibre point in R3 with the travelling waves displacing it normal to the stroke. Every fibre projects to a ROUND
+// circle (tools/test_hopf.js proves it to 1e-9), so the point at t + 1/2 is that circle's exact antipode and their
+// midpoint is its centre: p − centre is the fibre's own radius vector, which exists whatever the tumble does — a
+// "radial scale about a torus centre circle" does not, once the family is tumbled (DECISIONS §4: cyclides).
+vec3 ringPt(int fam, int sub, float t, out float fade, out float pulse) {
+  float f2, disp;
+  vec3 p = world(ringZ(fam, sub, t), fade);
+  vec3 pa = world(ringZ(fam, sub, t + 0.5), f2);
+  waves(t, fam, disp, pulse);
+  vec3 d = p - 0.5 * (p + pa);
+  float L = length(d);
+  return L > 1e-5 ? p + d * (disp * min(L, uCen.w * 1.2) / L) : p;
+}
+
 void main() {
   camBasis();
   int s = gl_InstanceID;
@@ -132,7 +173,9 @@ void main() {
     float t0 = float(i) / float(uKnotN), t1 = float(i + 1) / float(uKnotN);
     p0 = world(knotZ(t0), f0);
     p1 = world(knotZ(t1), f1);
-    bri = uKnotBH.x;
+    float dk, qk;
+    waves(t0, int(uLoud), dk, qk);            // the knot rides the loudest family, so it takes that family's pulse
+    bri = uKnotBH.x * (1.0 + qk);
     hueT = uKnotBH.y;
     wm = 1.6;                                 // the melody strand reads as the thickest line in the picture
   } else {
@@ -140,14 +183,16 @@ void main() {
     int i = s - ring * uSeg;
     int fam = ring - (ring / 12) * 12, sub = ring / 12;
     float t0 = float(i) / float(uSeg), t1 = float(i + 1) / float(uSeg);
-    p0 = world(ringZ(fam, sub, t0), f0);
-    p1 = world(ringZ(fam, sub, t1), f1);
+    float q0, q1;
+    p0 = ringPt(fam, sub, t0, f0, q0);
+    p1 = ringPt(fam, sub, t1, f1, q1);
     float cw = uChroma[fam];
     // spec 1a: the quiet pitch classes used to sit at 0.05 and vanish. They now never fall below uGlowM.x of the
     // loudest family, so the inside of the nest is lit; 1c: the kick flashes the quiet (inner) families hardest.
     bri = max(0.05 + 1.35 * cw * cw, uGlowM.x * uGlowM.y) + FLASH * uFlashK * (1.0 - cw);
     // spec 1d: a fine shimmer running round the ring parameter on the hats
     bri *= 1.0 + uShim * sin(SHIMK * t0 * TAU + float(ring) * 1.7);
+    bri *= 1.0 + q0;                          // spec 2: the snare's bright pulse travelling round the ring
     hueT = float(fam) / 12.0;
     wm = 1.0;
   }
