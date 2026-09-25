@@ -93,7 +93,9 @@ tension shake. What changes is *what moves it* and *what colours it*. Today's `u
    fills `kick/snare/hat`, `key 9 / mode 1 / keyConf .8`; only `chroma` is zero** (§36 friction) — a strict `> 0.5`
    threshold never fires on hat there. Hooks: `hooks.train('4x4' | 'sync' | null)` pins the bass train to a fixed
    pattern on the fake clock (TORUS2's `PAT`) with the detectors off; `hooks.info()` returns JSON with the positions of
-   each band's live bumps along an edge (`(age/4) mod 1`, sorted, 4 decimals) exactly as TORUS2's does.
+   each band's live bumps along an edge (`(age/4) mod 1`, sorted, 4 decimals) exactly as TORUS2's does, **plus per band**
+   `n` (launches since load), `last` `{beat, amp, drum}` (the last launch and whether its drum vote fired), `ema` (the band's
+   current EMA) and `thr` — the orchestrator's real-music trace reads these every 2 s to judge a dead or saturated train.
    *Acceptance:* the 4x4 pin shows **four evenly spaced bumps per edge** at f360 (gaps 0.25 ± 0.03 from `hooks.info`,
    de-duplicated — a bump a bar old sits where a new one launches) and the sync pin shows uneven spacing.
 2. **Dance — the rotation planes nudge to the grooves** (`dance.js`, the port of `torus2/motion.js`'s `turn`).
