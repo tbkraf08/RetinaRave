@@ -1,0 +1,1 @@
+BENCH before: [[0.476,2.219],[0.429,2.235],[0.332,2.225]] tier 3 tesseract 960 segs
