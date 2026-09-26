@@ -13,7 +13,7 @@ Called **Eigenwobble** until v0.5 (2026-09-24); the decision log, worker reports
   from `file://`. Tagged builds live in `releases/`.
 - Deploy: Cloudflare Workers (static assets), Git-connected — build `npm run build` (writes `dist/index.html`), deploy `npx wrangler deploy`; `wrangler.jsonc` points assets at `dist`. Serves at retinarave.com.
 - Landing (v0.8.1): a tile per scene — click one and it plays live on the muted built-in demo before any music is shared; the start buttons keep it (`0` hands back to the director). Thumbnails: `tools/thumbs.sh` → `site/thumbs/`.
-- Keys: `1–9` / `0` force a scene · `?` / `h` the help view · `p` the routes panel · `Esc` closes. On a phone (v0.6): the
+- Keys: `1–9` / `0` force a scene · `n` the next scene, cycling (ids past 8 have no digit) · `?` / `h` the help view · `p` the routes panel · `Esc` closes. On a phone (v0.6): the
   microphone is the way in, a bottom bar has help / previous / next / fullscreen, a swipe steps the scene, a held press opens the help.
 - Docs: `docs/CONTRACTS.md` (what a scene, effect or transition may touch — the only thing a contributor needs),
   `docs/ENGINE.md`, `docs/HARNESS.md` (every test and trace command), `docs/DECISIONS.md` (every deviation, with its

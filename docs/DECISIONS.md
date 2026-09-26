@@ -1790,3 +1790,78 @@ gate — git is the fallback. Thirteen leans (in the brief, each marked) stood u
   the twenty-four of the 24-cell as the twelve pitch classes doubled, a geometry job); the OKLCH variant; portrait cropping (pre-existing,
   `polytope-dance.md` friction 15 — the outer cage runs off a 390×844 frame at every size; TORUS2's `min(1, aspect)` rule would fix it
   and shrink the phone view to 46 %, a look change the user has not asked for).
+
+## §42 MAXWELL — the four equations that dance, v0.10 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell.md`, report `maxwell.md`; `MAXWELL-SESSION-PROMPT.md`, `docs/AUDIT-v0.10.md`)
+
+**What the user asked (2026-09-26):** "just plan for now; new scene -> maxwells equations (right now torus2 is my favorite scene)",
+one planning answer ("add 'N' for cycling next scene"), then the same day: run the plan, no full sweep (only the new scene), commit and
+tag v0.10 so it deploys. So the scene is **forced-only** (bid 0, id 9, reached by `n`) and the tag has **no montage gate** — the user
+looks after, as NAV2 (v0.8) and POLYTOPE (v0.9) were shipped. Everything else below is a lean the user has not seen.
+
+**The scene (id 9, `assets/scenes/maxwell/{index,fdtd,medium,sources,render,probe,help}.js`, `math/nudge.js`, `tools/test_fdtd.js`):**
+a Yee-grid FDTD in the TE mode — `Ez, Hx, Hy` on ping-pong float targets, two fragment passes a substep, Courant 0.5, grid and substeps
+by tier (256×144×2 … 768×432×4), **fixed substeps per frame** (by frame count, so CLOCK=1 md5s hold: s9 4e26a427/57bac88e), a 16-cell
+graded absorber, soft sources. Twelve charges on a ring by pitch class (`sectorPc`: the ring *is* the circle of fifths), lit by chroma
+(from `harmAngle` when chroma is silent — the `#test` case, TORUS2's fallback), a dipole at the centre that nudges `beatCount/16 · 2π`
+through `math/nudge.js` (TORUS2's `turn` ease, lifted; TORUS2 keeps its own copy this release), every hit a real wavefront (TORUS2's ring
+buffer of launch times; `hooks.train('4')` → four rings 35.05 / 35.07 / 34.90 / 34.88 cells apart, predicted 35.22, worst 0.34 cells;
+`'synco'` → 52.4 / 17.8 / 52.3 / 17.8 — **the rhythm is the spacing, measured off the field, not drawn**), the carrier at `bpm`.
+The section is the medium (`sectionAlt` mod 4: lens · mirror cavity · photonic lattice · waveguide, 1.2 s cross-fade); `build` lowers
+sigma and raises contrast; the drop turns the absorber into a mirror. Signed `Ez` → the key's anchor hue vs its warm/cool opposite
+(`keycolour.js`), |E| → luminance, the H field lines as closed strokes in the anchor hue, a 5 % thump, the yaw with the nudge.
+`post { fb .72, bloom .28, kaleido 0, morph .55 }`, six params (`light ring lens charge turn bounce`), 38 feats (the plan's 37 +
+`harmAngle`), card + thumb at f360.
+
+**Decided by measurement (the worker; each a named constant at the top of its module):**
+1. **A source in Faraday's pass is a magnetic monopole density.** The plan's "magnetic dipole whose changing B induces the E rings",
+   built literally as a magnetic current `M` in the H update, gave H a charge −∇·M: the field lines opened (`hooks.probe()` loops 0 /
+   open 18). Faraday now carries **no source**; the dipole is what one is — a pair of antiparallel z-currents in the Ampère pass, its
+   axis the nudge (loops 44 / open 0 on the same frame). `test_fdtd` asserts it structurally. The plan's sentence was wrong; the plan's
+   "∇·B = 0 … they must never open" was the rule that caught it.
+2. **The field lines are contours of the stream function** (marching squares on A, H = curl A, from a whole readback of the small
+   target every `LINEF` frames), not seeded streamlines (RK4 drifted across level sets; Newton-projected RK4 was polygonal). Equal levels =
+   equal flux, so line density *is* |H|. `gap` 0 at every tier; 516–3508 segments = 6–21 % of `ctx.budget('segs')`. Path A.
+3. **The energy gate as the brief worded it is not a leapfrog invariant** (Σ(εEz²+Hx²+Hy²) ripples 10.4 % because E and H sit half a
+   step apart); the Yee invariant (H as the product of its two half steps) holds to 1.2e-14 and the naive sum's drift is 0.41 %. The
+   test gates on the invariant. ∇·B to 1e-6 after 500 steps; a pulse front at d/c ± 1 cell (measured speed 0.4966 vs 0.5).
+4. **The drop's mirror takes the bulk loss away too, is a ~1.5-cell shell, holds 2.2 s then relaxes over 3.2 s.** With the music's own
+   sigma a wave dies before the absorber, so a mirror at the edge alone changed the energy 0.2–2.8 %; a thick conductor ate a third of
+   it; a pure exponential from the first frame never let the standing wave form. With the drive cut at f300: mirrored 752 → 745 → 705
+   (−6.3 % over two seconds, −0.9 % over the first half) against a control that loses 97.4 %.
+5. **A round porthole, not the grid's rectangle.** A yawing rectangle sweeps four black corners across the frame and cut the drop's
+   standing wave with a straight edge; the plane fades to black on a disc of half the grid height, `FITK` frames it, `RINGM` keeps the
+   ring inside a portrait frame.
+6. **Cost:** 3.2× TORUS2 before, 1.25× after (medians of NAV-normalised pairs, seven pairs a page, cold pair dropped; the early pairs say
+   1.6×, the late 1.28× — both pages drift together). The two levers pulled without touching the picture: the lines rebuilt every 2–3
+   frames instead of every frame (the readback + marching squares was 1.0 of 2.6 ms at tier 3), the twelve-charge loop bounded by the ring
+   (skips ~85 % of texels). The lever not pulled: tier 3's four substeps (three would be ~0.8× at the cost of slower light at the top
+   tier) — the plan marked the table decided, so it stands; the user's eye decides.
+7. Float readback: `IMPLEMENTATION_COLOR_READ_TYPE` is `FLOAT` here, so the field targets are RGBA32F and read with `gl.FLOAT` (7e-8
+   against the float64 twin); the half-float path is written and unexercised. CONTRACTS §1.2's "readPixels from RGBA16F returns black"
+   is true of `UNSIGNED_BYTE` reads only.
+
+**The `n` key (core, the user's one answered item):** `stepScene` moved from `core/touch.js` to `core/scenes.js` (touch.js and hud.js
+both import it; hud.js must not import touch.js — a cycle), returns the id, and both the key and the swipe go through the landing picker
+`pick(id)` so a press on the card previews like a tile. `keys()` row `N`, the hint row has 8 kbd. **A v0.8.1 bug found by the cycling
+proof:** `landing.js mark()` read `card.title` on a scene without a tile, so keys `8` and `9` (torus-v1, nav2) had thrown a TypeError since
+v0.8.1; it now falls back to the scene's name + tag. Proof: the full scene-md5 list on the skeleton commit = v0.9's s0–s8 line for line
+(registering id 9 at bid 0 moves nothing), mixs f0c9d637 unchanged, `n` ×9 from the director → forced 1…9 → 0, `9` → 8, `0` → −1.
+
+**The real tracks (AUDIT-v0.10):** 80 s on CyborgNinja (160 bpm, 7m → 8m) and WhoLikesToParty (117 bpm, 11m), tab capture, key `9`
+then `n`: 0 black, ERRS [], one long frame (2018 ms) at the capture start on WLTP before the key; the hue turns with the key; `probe().gap`
+0 on all 80 samples, energy 115–867 and finite, the trains' spacings follow the kicks. q sat at 0–.34 (tier 0) for both runs where
+v0.8/v0.9's runs sat at .4–.8 — an A/B the same night (`tools/accept/v0.10/ab-q-v09-vs-v010.txt`) shows the v0.9 tree collapsing the same
+way at the capture start (q .28 → .01, a 984 ms frame) and climbing at the same .004/s, so the machine, not the scene; HEAD's start frame
+is twice as long (2014 ms) — one sample, on the watch list. Tag v0.10 on these proofs, no sweep, no bid — the user's word.
+
+**Leans for the user's eye, ranked:** (1) the overall brightness and the porthole's size against TORUS2 side by side (`montage-maxwell*.jpg`);
+(2) tier 3's substep count (cost vs the speed of light on a big screen); (3) the mirror's hold (2.2 s) and the standing wave's length;
+(4) the line density (levels per tier 9–15) and their alpha; (5) the carrier's lock to the beat grid under `regularity` (a guess — the plan
+gave `regularity` no job); (6) the Ricker envelope of a hit (the plan said "a hit"); (7) the medium cross-fade (1.2 s); (8) whether MAXWELL
+should bid (a score, then the Q trace on house + aba, the `accept.sh` section — not this release).
+
+**Docs owed and paid here:** CONTRACTS §1 id line + §1.8 (id 9, the `n` key), HARNESS keys, README keys, `site/about.html` line,
+`tools/thumbs.sh` PICK `9:360`. **Owed to CONTRACTS, from the worker's friction (not yet written):** §1.2 readback sentence (item 7);
+§1.4 — a hook a proof calls by name is `CARD.REG[id].scene.hooks.<name>` (`CARD.hooks.key` reaches the last scene registered and `&key=`
+calls every scene's), and a read-only hook must not mutate; §1.10 — a scene under a rotating camera needs a porthole; "one band of rows
+per frame" is wrong for a downsampled target (a time-patchwork field is not divergence-free — read it whole, less often).
