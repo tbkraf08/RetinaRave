@@ -1,115 +1,101 @@
 // MAXWELL — the sources: where the field comes from. Pure arithmetic, no GL, no DOM (node-importable).
 //
-// Gauss's law is the twelve charges: sector k of the circle of fifths sits at angle 2*pi*k/12 on a ring and carries
-// pitch class (7k mod 12) (assets/math/keycolour.js's own convention), its charge proportional to that pitch class's
-// chroma. A charge OSCILLATES at the carrier frequency, which bpm sets — so the wavelength follows the tempo — and
-// radiates. Ampere-Maxwell is the bass: a kick is a z-current pulse at the centre (a ring of B expanding at c) and
-// `sub` sets a standing current there.
+// v0.12, the user's own sentence — "no sound -> quiet (ie. wave not generated)". **THERE IS NO CARRIER.** Nothing in
+// this module oscillates because the music is playing. Every source is a LAUNCH, and a launch happens because
+// something HIT; between hits the field has no source term at all, so a lit room with no sound in it is black.
+// (v0.10/v0.11 radiated a continuous carrier from all twelve charges, the dipole and the sub's standing current at
+// one wavelength the whole time the music played — the steady train the user saw, which had nothing to do with any
+// sound — and the `beat` event launched a faint ring when no band had hit, a metronome. Both are gone.)
 //
-// Rhythm becomes geometry because every hit is a real launch: the last SLOTS launch STEP COUNTS per band are kept
-// (TORUS2's waves.js ring buffer, in substeps instead of beats because the field's clock is the substep), and the
-// wave equation does the rest. A launch's envelope is a Ricker pulse — (1 - x^2) e^{-x^2/2}, zero mean, so it
+// Gauss's law is still the twelve charges: sector k of the circle of fifths sits at angle 2*pi*k/12 on a ring and
+// carries pitch class (7k mod 12) (assets/math/keycolour.js's convention), and the chroma still says how brightly
+// each one GLOWS — but a charge only radiates when a launch is placed on it. Ampere-Maxwell is the centre: a kick is
+// a z-current pulse there (a ring of B expanding at c), and the dipole is a pair of antiparallel currents whose axis
+// is the beat nudge — it too radiates only through a launch routed into it.
+//
+// Rhythm becomes geometry because every hit is a real launch: the last NSLOT launch STEP COUNTS are kept in one
+// shared ring buffer (TORUS2's waves.js, in substeps instead of beats because the field's clock is the substep), and
+// the wave equation does the rest. A launch's envelope is a Ricker pulse — (1 - x^2) e^{-x^2/2}, zero mean, so it
 // radiates a clean shell instead of a monopole that cannot get away — of a width fixed in GRID HEIGHTS, so the ring
 // is the same thickness at every tier. Four kicks a beat apart therefore leave four shells whose spacing is
 // S * (substeps per beat); a syncopated bass leaves them uneven. hooks.train() reads those spacings back as numbers.
 //
 // The launch step is FRACTIONAL: a train pinned to beat t is launched at (the current step) minus the lateness of the
 // frame that noticed it, so the spacings are the pattern's and not the frame grid's.
+import { sectorPc } from '../../math/keycolour.js';
 import { COURANT } from './fdtd.js';
 
 export const BANDS = 3;        // 0 kick (the centre current) · 1 snare (the loudest sector) · 2 hat (all twelve)
-export const SLOTS = 8;        // the last 8 launches per band
+export const NSLOT = 32;       // ONE shared ring of launches, not an array per band: a launch lives about 0.4-0.9 s
+                               // (TPKS + LIFES sigmas) and the busiest bar measured is ~15 launches in that window,
+                               // so 32 slots never evicts a shell that is still in flight.
 export const HI = 0.45;        // a rising edge: over HI having been under LO. #test sets hat to EXACTLY 0.5, so a
 export const LO = 0.25;        // threshold of 0.5 would never fire (HARNESS "Pitfalls").
-export const FAINT = 0.30;     // the `beat` event's own faint kick when no band hit came in the last beat — only
-                               // while `alive`: the engine holds bpm through silence, so without that gate the
-                               // beat kept launching a ring a beat into an empty room (v0.11 item 1).
-export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at CENT0 brightness — about 6 waves
-                               // across the porthole, which is where it reads as waves rather than as speckle at
-                               // one end or as two fat blobs at the other.
-// v0.11 item 3: the carrier is the TIMBRE, not the tempo. Until v0.10 the wavelength was LAM0 * 120/bpm, so every
-// 4/4 track near 120-140 bpm drew the same waves — the user's "different music kinda looked similar". It is now
-// lam = LAM0 * 2^(-CENTK (centroid - CENT0)): bright music short waves, sub-heavy long ones, an octave of centroid
-// for every 1/CENTK of it. bpm still sets the sweep and the ring spacing is still the train's own cadence.
-export const CENT0 = 0.45;     // the centroid that draws LAM0 exactly (the middle of the extractor's range)
-export const CENTK = 2.5;      // ... and how many halvings of the wavelength a unit of centroid is worth
-export const DIRTK = 1.8;      // `dirty` adds this much second harmonic to a charge's carrier: the growl of a
-                               // distorted bass draws as a DOUBLED ripple on every crest. The harmonic is the
-                               // COSINE one — sin(t) + a sin(2t) has the same two extrema a sine has, whatever a
-                               // is, and draws no second ripple at all (measured: crest gaps 35.0 at dirty 1, the
-                               // fundamental's own). sin(t) + a cos(2t) has four once a > 1/4, because its
-                               // derivative factorises as cos(t)(1 - 4a sin(t)): one crest splits into two with a
-                               // dip between them, which is the ripple the eye reads as a growl.
-export const WOBA = 0.85;      // the LFO's share of the carrier's AMPLITUDE. This is the wobble the eye actually
-                               // sees, and it is not the one the plan asked for: a wobble carried by the
-                               // WAVELENGTH cannot be resolved at a dubstep LFO rate, because light crosses the
-                               // porthole in about 1.5 s and the carrier is ~33 cells while one 2 Hz cycle is 36
-                               // cells of travel — a chirp with one crest per period is not a chirp (measured: a
-                               // 0.74 -> 1.26 breath of eps moved the crest spacing 4 %). An amplitude LFO on the
-                               // twelve charges leaves shells of bright and dark 36 cells apart marching outward
-                               // at c, which is what a bass that wobbles looks like.
-export const LAMLO = 0.035;    // the wavelength is never shorter than this (the grid must resolve it)
-export const TSIGH = 0.022;    // a launch's ring thickness, in grid heights
+// The launch's shape. v0.11's carrier constants (LAM0 CENTK LAMLO RSWEEP WOBA SHIM SHIMM SUBK PSK) are gone with the
+// carrier; what the TIMBRE still does is shape the SHELL, which costs nothing and reads at a glance.
+export const TSIGH = 0.022;    // a launch's ring thickness, in grid heights, at CENT0 brightness
+export const CENT0 = 0.45;     // the centroid that draws TSIGH exactly (the middle of the extractor's range)
+export const TSIGK = 1.2;      // ... and how many HALVINGS of the thickness a unit of centroid is worth: bright
+                               // music draws thin shells, a sub-heavy track fat ones. It is the thickness and not
+                               // the wavelength because there is no wavelength any more — a launch is one shell.
+export const SIGLO = 2;        // ... never thinner than this many substeps (the grid must resolve it)
+export const DIRTK = 1.8;      // `dirty` puts a SECOND LOBE on the shell: a distorted, growling bass draws as a
+export const DIRTD = 2.2;      // doubled ring, the second one this many sigmas behind the first. (In v0.11 `dirty`
+                               // added a cosine second harmonic to the carrier's waveform; with the carrier gone the
+                               // same growl is a second Ricker trailing the first, which is the thing the eye reads.)
 export const TPKS = 2.6;       // the pulse peaks this many sigmas after its launch step
 export const LIFES = 3.2;      // ... and the slot is live until this many sigmas past the peak
-export const CHG = 0.0075;     // per-substep Ez a charge adds at chroma 1 and params.charge 1. A continuous source
-                               // in a low-loss cavity integrates: the steady state is the source rate over the loss
-                               // rate, so this is ~8x smaller than the first guess (which saturated the picture flat).
 export const KICKA = 0.14;     // the centre current's pulse amplitude
 export const SNAREA = 0.11;    // the loudest sector's sharp pulse
 export const HATA = 0.025;     // the hats' tiny launches on all twelve
-export const SHIM = 0.0045;    // the hats' CONTINUOUS shimmer amplitude
-export const SHIMM = 3.0;      // ... at this multiple of the carrier frequency
-export const SUBK = 0.030;     // the standing current: sub bass at the centre. 0.004 was invisible (v0.11 item 3:
-                               // the bass has to pump the middle of the picture, not only tint it).
 export const KPUN0 = 0.6;      // the kick current's pulse amplitude is KICKA x (KPUN0 + KPUN1 x punchy): a
 export const KPUN1 = 0.8;      // transient-heavy mix hits harder than a compressed one
-export const DIPA = 0.030;     // the dipole pair's current amplitude
-export const DIPR = 0.40;      // ... its resting share, so the dipole is lit between nudges
-export const DIPK = 2.2;       // ... and how much a nudge's angular velocity adds to it
+export const DIPA = 0.030;     // the dipole pair's current amplitude — and it is driven by the CENTRE LAUNCH's own
+export const DIPB = 0.35;      // envelope, never by a carrier: a kick radiates a monopole ring plus this much of a
+export const DIPK = 2.2;       // two-lobed pattern along the dipole's axis, and a kick that lands on the beat the
+                               // dipole turns adds DIPK of the nudge's angular velocity to it. Between kicks the
+                               // dipole is a geometry and nothing else. (v0.11's DIPR — a resting share oscillating
+                               // at the carrier — was the second continuous source and is gone with the first.)
 export const RING = 0.34;      // the charges' ring radius in grid heights (inside the cavity, outside the lens)
-export const PSK = 0.40;       // how far flowBass/Mid/High drift the three families' phases
-export const RSWEEP = 0.45;    // roll / riser sweep the carrier up by this fraction and the drop snaps it back
 // the pinned patterns, in beats of the bar. 'off' is the empty one: no launches at all, which is how a proof can
-// stop the drive without stopping the field (the drop's standing-wave hold needs a source-free window).
-export const PAT = { '4': [0, 1, 2, 3], synco: [0, 1.5, 2, 3.5], off: [] };
+// stop the drive without stopping the field (the drop's standing-wave hold needs a source-free window, and item A's
+// own gate — music playing, nothing hitting, energy 0 — is exactly this pattern).
+export const PAT = { '4': [0, 1, 2, 3], '8': [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5], synco: [0, 1.5, 2, 3.5], off: [] };
 
 // --- state -------------------------------------------------------------------------------------------------------
-const AT = new Float64Array(BANDS * SLOTS);    // launch step per slot (-1e18 = never used)
-const AM = new Float64Array(BANDS * SLOTS);    // amplitude at launch
-const AW = new Int32Array(BANDS * SLOTS);      // which sector it was launched on (band 1)
-const WR = new Int32Array(BANDS);              // next slot to write per band
+const AT = new Float64Array(NSLOT);            // launch step per slot (-1e18 = never used)
+const AM = new Float64Array(NSLOT);            // amplitude at launch (already scaled by params.charge)
+const AB = new Int32Array(NSLOT);              // which band launched it
+const AW = new Int32Array(NSLOT);              // ... and which sector (-1 = the centre)
+let WR = 0;                                    // next slot to write
 const PREV = new Float64Array(BANDS);          // last frame's level per band, for the edge detector
 export const CX = new Float32Array(12);        // the charges in CELLS (the shader's own coordinates)
 export const CY = new Float32Array(12);
 export const CA = new Float32Array(12);        // ... and their Ez amplitude this substep
 export const W12 = new Float32Array(12);       // the twelve weights (chroma, or the harmAngle fallback)
-const FAM = new Float32Array(3);               // the three families' phase drifts
-export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 100, S: COURANT, wa: 1 };
+export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, spb: 100, S: COURANT };
 
-let mode = null, sched = -1e18, lastHit = -1e18, step = 0;
-let ph = 0, dph = 0;           // the carrier's phase and its per-substep increment
-let g = { amp: 1, hat: 0, sub: 0, loud: 0, dip: 0, pol: 1, shim: 0, alive: 1, pres: 1, cent: CENT0, dirty: 0, punchy: 0.5, lfo: 0 };
+let mode = null, sched = -1e18, step = 0;
+let g = { amp: 1, loud: 0, pol: 1, pres: 1, cent: CENT0, dirty: 0, punchy: 0.5, yaw: 0, yawRate: 0 };
 
 export function reset() {
   AT.fill(-1e18);
   AM.fill(0);
+  AB.fill(0);
   AW.fill(0);
-  WR.fill(0);
+  WR = 0;
   PREV.fill(0);
   CA.fill(0);
-  lastHit = -1e18;
   sched = -1e18;
   step = 0;
-  ph = 0;
   OUT.j = OUT.dj = 0;
   OUT.step = 0;
 }
 reset();
 
-// hooks.train('4' | 'synco' | null): pin the launches to a pattern on the fake clock, edge detector off.
+// hooks.train('4' | '8' | 'synco' | 'off' | null): pin the launches to a pattern on the fake clock, detector off.
 export function train(v) {
-  mode = v === '4' || v === '4x4' ? '4' : v === 'synco' || v === 'sync' ? 'synco' : v === 'off' ? 'off' : null;
+  mode = v === '4' || v === '4x4' ? '4' : v === '8' ? '8' : v === 'synco' || v === 'sync' ? 'synco' : v === 'off' ? 'off' : null;
   if (mode !== 'off') reset();
   else { sched = 1e18; PREV.fill(1); }
   return mode;
@@ -118,117 +104,108 @@ export const trainMode = () => mode;
 export const stepNow = () => step;
 
 export function launch(band, atStep, amp, sector) {
-  const i = band * SLOTS + WR[band];
-  AT[i] = atStep;
-  AM[i] = amp;
-  AW[i] = sector | 0;
-  WR[band] = (WR[band] + 1) % SLOTS;
-  lastHit = Math.max(lastHit, atStep);
+  AT[WR] = atStep;
+  AM[WR] = amp * (g.amp === undefined ? 1 : g.amp);
+  AB[WR] = band | 0;
+  AW[WR] = sector | 0;
+  WR = (WR + 1) % NSLOT;
 }
 
-// The Ricker envelope of a launch, as a function of its age in substeps.
-export function env(age, sig) {
-  const x = (age - TPKS * sig) / sig;
-  if (x < -TPKS || x > LIFES) return 0;
-  return (1 - x * x) * Math.exp(-0.5 * x * x);
+// The Ricker envelope of a launch, as a function of its age in substeps — plus `dirty`'s second lobe behind it.
+const rick = (u) => (u < -TPKS || u > LIFES ? 0 : (1 - u * u) * Math.exp(-0.5 * u * u));
+export function env(age, sig, d) {
+  const x = (age - TPKS * sig) / sig, dd = DIRTK * (d || 0);
+  return rick(x) + (dd > 0 ? dd * rick(x - DIRTD) : 0);
+}
+
+// Gauss: the twelve charges' weights, and which sector is the loudest. The chroma vector IS the charge. When it
+// carries no energy (silence, and the #test fake timeline, which leaves chroma zeroed) the weights come from the
+// harmony the extractor does report: pitch class k sits at 2pi(7k mod 12)/12 on the circle of fifths and is weighted
+// by how close it is to harmAngle. `w` blends the two continuously, so nothing ever jumps (TORUS2 index.js:155-175,
+// DECISIONS §4). Since v0.12 a weight is a GLOW and a target, never a carrier amplitude: it says how brightly a
+// charge burns on the rim and which sector a snare is launched from, and it radiates nothing by itself.
+//   C the chroma vector · ha harmAngle · bass · pres presence · pin hooks.mxchroma's sectors (null = off)
+export function weights(C, ha, bass, pres, pin) {
+  let sum = 0, mxc = 0, loud = 0, mx = -1;
+  for (let k = 0; k < 12; k++) { const c = Math.max(0, C[k] || 0); sum += c; if (c > mxc) mxc = c; }
+  const w = Math.min(1, 2 * sum), nrm = 1 / Math.max(0.2, mxc);
+  for (let k = 0; k < 12; k++) {
+    const pc = sectorPc(k);
+    const imp = Math.pow(0.5 + 0.5 * Math.cos(ha - ((7 * pc) % 12) / 12 * 2 * Math.PI), 2);
+    const band = pc < 4 ? 0.55 + 0.55 * bass : pc < 8 ? 1 : 0.85;
+    W12[k] = pin ? (pin.indexOf(k) >= 0 ? 1 : 0) : Math.min(1, (w * Math.max(0, C[pc] || 0) * nrm + (1 - w) * imp * pres) * band);
+    if (W12[k] > mx) { mx = W12[k]; loud = k; }
+  }
+  return loud;
 }
 
 // One frame of bookkeeping. Called from update() before the substeps run.
-//   sub   substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
-//   lev   [kick, snare, hat] · beatNow beatCount + beatPhase · beatEvt MS.beat
-//   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate, alive, pres, cent, dirty,
-//          punchy, lfo}
-export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
-  // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the
-  // ring radii, the spacings and the carrier's phase step. (The first train trace reported 43.5 cells of spacing
-  // from COURANT while the picture showed 34: light was 0.78 that frame.)
+//   sub  substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
+//   p    {lev:[kick,snare,hat], beatNow, amp, cent, dirty, punchy, loud, bpm, dt, light, pol, yaw, yawRate, pres, alive}
+export function frame(sub, gh, cx, cy, p) {
+  // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the ring
+  // radii and the spacings. (The first train trace reported 43.5 cells of spacing from COURANT while the picture
+  // showed 34: light was 0.78 that frame.)
   const S = COURANT * (p.light === undefined ? 1 : p.light);
   OUT.S = S;
-  const sig = Math.max(2, TSIGH * gh / S);
-  const spb = sub * (60 / Math.max(40, p.bpm)) / Math.max(1e-4, p.dt);
-  const lam = Math.max(LAMLO * gh, LAM0 * gh * Math.pow(2, -CENTK * ((p.cent === undefined ? CENT0 : p.cent) - CENT0)) / (1 + RSWEEP * p.sweep));
-  OUT.sig = sig;
-  OUT.lam = lam;
-  OUT.spb = spb;
-  dph = 2 * Math.PI * S / lam;
+  OUT.sig = Math.max(SIGLO, TSIGH * gh / S * Math.pow(2, -TSIGK * ((p.cent === undefined ? CENT0 : p.cent) - CENT0)));
+  OUT.spb = sub * (60 / Math.max(40, p.bpm)) / Math.max(1e-4, p.dt);
   g = p;
   for (let k = 0; k < 12; k++) {
     const a = 2 * Math.PI * k / 12;
     CX[k] = cx + RING * gh * Math.cos(a);
     CY[k] = cy + RING * gh * Math.sin(a);
   }
-  FAM[0] = PSK * p.fam[0];
-  FAM[1] = PSK * p.fam[1];
-  FAM[2] = PSK * p.fam[2];
   if (mode) {
-    const P = PAT[mode], bar = Math.floor(beatNow / 4);
+    const P = PAT[mode], bar = Math.floor(p.beatNow / 4);
     for (let b = bar - 1; b <= bar; b++) {
       for (let j = 0; j < P.length; j++) {
         const t = b * 4 + P[j];
-        if (t <= beatNow && t > sched) { launch(0, step - (beatNow - t) * spb, 1, -1); sched = t; }
+        if (t <= p.beatNow && t > sched) { launch(0, step - (p.beatNow - t) * OUT.spb, 1, -1); sched = t; }
       }
     }
     return;
   }
+  const alive = p.alive === undefined ? 1 : p.alive;
   for (let b = 0; b < BANDS; b++) {
-    const x = lev[b];
-    if (x > HI && PREV[b] < LO) launch(b, step, Math.min(1, x), p.loud);
+    const x = p.lev[b];
+    if (x > HI && PREV[b] < LO && (b < 2 || alive > 0.5)) launch(b, step, Math.min(1, x), p.loud);
     PREV[b] = x;
   }
-  if (beatEvt && (p.alive === undefined ? 1 : p.alive) > 0.5 && step - lastHit > 0.9 * spb) launch(0, step, FAINT, -1);
 }
 
-// One substep: fill CA / OUT.j / OUT.mx / OUT.my for this substep and advance the clocks.
+// One substep: fill CA / OUT.j / OUT.dj for this substep and advance the clock.
 export function substep() {
-  const sig = OUT.sig;
-  const wa = Math.max(0, 1 + WOBA * (g.lfo || 0));   // the wobble on the carrier's amplitude
-  // the carrier's own waveform, growl and all: everything that radiates at the carrier frequency uses it, the
-  // dipole included — the dipole sits at the centre, so a pure sine there drowns the charges' harmonic along the
-  // +x ray that probe.js hRow() measures (the first dirty trace read the dipole and reported no doubling at all).
-  const car = (t) => Math.sin(t) + DIRTK * (g.dirty || 0) * Math.cos(2 * t);
-  OUT.wa = wa;
-  let jc = SUBK * g.sub * Math.sin(ph);
-  for (let k = 0; k < 12; k++) {
-    const pc = (7 * k) % 12;
-    const f = FAM[(pc / 4) | 0];
-    const th = ph + f + 0.37 * k;
-    let a = CHG * g.amp * wa * W12[k] * car(th);
-    a += SHIM * g.shim * W12[k] * Math.sin(SHIMM * ph + 1.7 * k);
-    CA[k] = a;
-  }
-  for (let b = 0; b < BANDS; b++) {
-    for (let s = 0; s < SLOTS; s++) {
-      const i = b * SLOTS + s;
-      if (AT[i] < -1e17) continue;
-      const e = env(step - AT[i], sig);
-      if (e === 0) continue;
-      const v = e * AM[i];
-      if (b === 0) jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * v;
-      else if (b === 1) CA[AW[i] % 12] += SNAREA * v;
-      else for (let k = 0; k < 12; k++) CA[k] += HATA * v;
-    }
+  const sig = OUT.sig, d = g.dirty || 0;
+  let jc = 0, ke = 0;
+  CA.fill(0);
+  for (let i = 0; i < NSLOT; i++) {
+    if (AT[i] < -1e17) continue;
+    const e = env(step - AT[i], sig, d);
+    if (e === 0) continue;
+    const v = e * AM[i];
+    if (AB[i] === 0) { ke += v; jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * v; }
+    else if (AB[i] === 1) CA[((AW[i] % 12) + 12) % 12] += SNAREA * v;
+    else for (let k = 0; k < 12; k++) CA[k] += HATA * v;
   }
   OUT.j = jc;
-  // The dipole: a pair of antiparallel currents whose AXIS is the eased nudge, oscillating at the carrier. Its
-  // current carries a resting share plus the nudge's own angular velocity, so the two lobes glow between beats and
-  // flare on the beat the dipole turns. surpriseEvt flips its polarity (g.pol) for one frame's worth of source.
-  // DIPR is scaled by `presence` (v0.11 item 1): in silence the dipole is not merely quiet, it is off between
-  // nudges, and there are no nudges either (hush/calm hold the turn).
-  OUT.dj = DIPA * g.amp * g.pol * (DIPR * (g.pres === undefined ? 1 : g.pres) + DIPK * Math.abs(g.yawRate)) * car(ph);
+  // The dipole: a pair of antiparallel currents whose AXIS is the eased nudge, driven by the CENTRE LAUNCH's own
+  // envelope. Its share carries a base plus the nudge's angular velocity, so a kick that lands on the beat the
+  // dipole turns comes out two-lobed along the new axis and a kick between nudges is very nearly a plain ring.
+  // surpriseEvt flips its polarity (g.pol). With no launch at the centre the dipole radiates nothing at all.
+  OUT.dj = DIPA * g.pol * (DIPB + DIPK * Math.abs(g.yawRate)) * ke;
   OUT.dx = Math.cos(g.yaw);
   OUT.dy = Math.sin(g.yaw);
-  ph += dph;
-  if (ph > 1e6) ph -= 1e6;
   step++;
   OUT.step = step;
 }
 
-// The live launches of one band as {age in substeps, radius in cells}: the ring geometry, read as numbers.
+// The live launches of one band as radii in cells: the ring geometry, read as numbers.
 export function rings(band) {
   const out = [];
-  for (let s = 0; s < SLOTS; s++) {
-    const i = band * SLOTS + s, age = step - AT[i];
-    if (AT[i] < -1e17 || age < 0) continue;
+  for (let i = 0; i < NSLOT; i++) {
+    const age = step - AT[i];
+    if (AT[i] < -1e17 || AB[i] !== band || age < 0) continue;
     const r = (age - TPKS * OUT.sig) * OUT.S;
     if (r < -2) continue;
     out.push(+r.toFixed(3));
@@ -244,5 +221,5 @@ export function spacings(band) {
 }
 
 export function info() {
-  return { mode, step, S: +OUT.S.toFixed(4), wa: +OUT.wa.toFixed(3), shim: +(g.shim || 0).toFixed(4), fam: [+FAM[0].toFixed(3), +FAM[1].toFixed(3), +FAM[2].toFixed(3)], amp: +(g.amp || 0).toFixed(3), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
+  return { mode, step, S: +OUT.S.toFixed(4), amp: +(g.amp || 0).toFixed(3), sig: +OUT.sig.toFixed(2), spb: +OUT.spb.toFixed(2), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
 }
