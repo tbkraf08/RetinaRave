@@ -192,3 +192,73 @@ in both files for the orchestrator to fold later.
 The requested five-frame series is `mx-bar-f300`, `-f315`, `-f330`, `-f345`, `-f360`: the whole plane, its charge
 ring and its medium rotate a little further anticlockwise in each, and f345 is visibly the largest (it is the frame
 of the five nearest a beat).
+
+---
+
+## Step 4 — the key as a hue anchor
+
+`hooks.key("k,mode")` pins the key inside `update()` and never touches `MS` (TORUS2's shape). It must be called as
+`CARD.REG[9].scene.hooks.key("7,1")`: `key` is also TORUS2's hook name, and `CARD.hooks` is one flat map (§1.4) —
+whichever registers last wins there, and a `&key=` hash param reaches *both* scenes' hooks.
+
+Both shots `test&scene=9&tier=1`, CLOCK=1, f360, mirror cavity, everything else identical:
+
+```
+hooks.key("0,0")   C major   mxinfo: key 0 mode 0 hue 0.0090
+                   tools/lum.py            centre 0.3436  rim 0.2222  ratio 1.55
+                   mean rgb 63.2 52.0 65.2   saturation-weighted mean hue 0.8138  (293 deg)
+hooks.key("7,1")   G minor   mxinfo: key 7 mode 1 hue 0.2933
+                   tools/lum.py            centre 0.3495  rim 0.2351  ratio 1.49
+                   mean rgb 55.5 61.6 61.8   saturation-weighted mean hue 0.4841  (174 deg)
+```
+
+The anchors are `keycolour.js`'s arithmetic exactly: C major puts `hueKey` at 0 and the mode pulls it 0.45 of the way
+to WARM 0.02, giving 0.0090; G minor puts it at (7·7 mod 12)/12 = 0.0833 and the mode pulls it 0.45 of the way to
+COOL 0.55, giving 0.2933. On screen (`mx-key00-f360`, `mx-key71-f360`) the first is a red-and-teal target of rings,
+the second a blue-and-amber one — the two hues of a frame are always the anchor and its opposite, because that is
+what the sign of Ez picks, so the *pair* rotates with the key and the mean hue moves with it: 293° vs 174°, a
+third of the wheel apart for a fifth and a mode.
+
+---
+
+## Step 5 — the H field lines: path A, and which path and why
+
+**Path A.** A field line is a sequential construction; path B's vertex shader would have to rebuild the whole curve
+for every point of it, so the CPU builds the segments once and uploads them. (Path B is right for TORUS2's rings,
+where point *i* of a ring is a closed-form function of *i*.)
+
+But *how* the line is built changed twice, and the second change is the one that matters:
+
+1. **Seeded streamlines, RK4 on the normalised H.** Wandered: a constant-arc-length integrator drifts across level
+   sets wherever |H| varies, and in the far field, where |H| is rounding, it scribbles across the frame. 0–5 loops
+   closed out of 15–24 seeds.
+2. **The same, with a Newton projection back onto the seed's level set each step** (∇A = (−Hy, Hx) is normal to the
+   curve). Better — 19 loops — still visibly polygonal and still seeded wherever the seed grid happened to fall.
+3. **Contours of the stream function at evenly spaced levels, by marching squares.** In two dimensions a
+   divergence-free field is the curl of one scalar, H = (∂A/∂y, −∂A/∂x), so its field lines *are* the level sets of
+   A, and A is recovered from the readback by cumulative sums — the path integral of H is path-independent exactly
+   because ∇·H = 0. Marching squares cannot drift (every point is an interpolation on a cell edge), and evenly
+   spaced levels mean equal flux between neighbouring lines, so the **line density is |H|**: the picture is the
+   physics rather than a record of where the seeds were.
+
+**Closure, measured.** The crossing on the edge between two cells is the same linear interpolation of the same two
+corner values from both sides, so the two cells write the same float. `chains()` hashes every endpoint and walks the
+pairing. `hooks.probe()` reports `loops` (contours that close), `open` (contours with a loose end — only ones that
+leave the window) and `gap`, the largest distance from a closed contour's end back to its start.
+
+Per tier (`hooks.tier(t)`, 360 frames of settling after each change, `test&scene=9`, `Q.q` 1 so `ctx.budget('segs')`
+is the tier-3 entry 16384 throughout — the budget follows `Q`, not the pinned grid):
+
+| tier | grid | levels | segments | closed loops | open | gap | budget | share |
+|---|---|---|---|---|---|---|---|---|
+| 0 | 256×144 | 9 | 516 | 38 | 0 | **0** | 9000 | 6 % |
+| 1 | 384×216 | 11 | 2221 | 194 | 6 | **0** | 16384 | 14 % |
+| 2 | 512×288 | 13 | 2060 | 73 | 0 | **0** | 16384 | 13 % |
+| 3 | 768×432 | 15 | 3508 | 110 | 12 | **0** | 16384 | 21 % |
+
+`gap` is 0 at every tier and every frame measured. `open` is never zero by construction — a field line that leaves
+the window closes outside it — and it was 18–23 with 0–2 closed loops until the magnetic-current source was removed
+from Faraday (step 1); that number is the sharpest instrument the scene has for ∇·B.
+
+Shot `mx-lines-f360` (tier 1): fine closed loops threaded between the wave crests, tight where the field is strong
+and sparse where it is weak, with the cavity's two gaps leaking a fan of them outward.
