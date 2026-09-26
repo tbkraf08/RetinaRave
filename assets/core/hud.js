@@ -1,10 +1,10 @@
 // HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–N force scene (1 = id 0, N = REG.length) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
 import { toggleMonitor } from '../engine/sources/demo.js';
-import { SC, REG } from './scenes.js';
+import { SC, REG, stepScene } from './scenes.js';
 import { Q } from './quality.js';
 import { G } from './gl.js';
 import { GROOVE } from '../engine/groove.js';
@@ -64,6 +64,7 @@ export function initHUD() {
     else if (k === 'h' || k === '?') toggleHelp();
     else if (k === 'p') openHelpAt('helpE');
     else if (k === 'escape') toggleHelp(false);
+    else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
     else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });
   addEventListener('dblclick', fullscreen);

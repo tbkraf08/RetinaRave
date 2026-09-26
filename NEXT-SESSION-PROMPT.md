@@ -25,3 +25,17 @@ forced-only, not swapped in; the user has not looked. Show `tools/accept/v0.8/mo
 
 Still open, unchanged: the Cloudflare dashboard steps (v0.6), TORUS2's leans, deleting `torus-v1`, the OKLCH variants, POLYTOPE's
 portrait cropping (pre-existing, `polytope-dance.md` friction 15 — a look change the user has not asked for).
+
+**NAV2 candidate, not built (noted 2026-09-26, planning only):** a **phase-winding colour variant** — colour each pixel by how the
+argument of the iterate fⁿ(z) turns around it (finite differences of the phase on the neighbours = the argument principle, Cauchy's
+theorem = Green's theorem on a holomorphic map), giving field-line bands that trace the map's zeros and poles instead of escape-time
+contours. Scope: a colour variant on NAV2 only, opt-in like the OKLCH variants (v0.2 look stays default), no engine or core change
+(the music engine already publishes every band; a stream-function scene is a new scene and stays parked). Prove with `IDS=8
+tools/scene-md5.sh` (variant off = reference md5, on = moves) and a real-track montage; no sweep, no Q trace. Context: the Green's /
+Stokes discussion — the other two scene-side ideas were trace-zero on the eigen-shear (only if zoom drift is ever seen) and a stream
+function under the morph flow (only if seams are seen). Decide after the swap question above, not before.
+
+**MAXWELL, a new scene the user asked for (2026-09-26, "just plan for now"):** the plan is `MAXWELL-SESSION-PROMPT.md` — a live
+2D FDTD solution of Maxwell's equations (id 9, forced-only, TORUS2's language: twelve pitch-class charges, a dipole that nudges per
+beat, hits as real wavefronts, the section as the medium) plus the one thing the user answered: an `n` key that cycles to the next
+scene (the number keys ran out at NAV2's `9`). Not built; runs in its own session, after or beside the NAV2 question above.

@@ -71,6 +71,6 @@ function mark() {
   for (const b of document.querySelectorAll('#scenes .tile')) b.classList.toggle('on', +b.dataset.id === LANDING.picked);
   const m = $('peekmsg');
   if (!m) return;
-  const E = REG[LANDING.picked];
-  m.textContent = E ? 'previewing ' + E.scene.card.title + ' on the built-in demo signal — ' + E.scene.card.blurb : 'previewing the director on the built-in demo signal — it picks the scene to the music';
+  const E = REG[LANDING.picked], c = E && (E.scene.card || { title: E.scene.name.toUpperCase(), blurb: E.scene.tag }); // v0.10: a scene without a tile (forced-only, reached by a key or `n`) previews by name + tag — before, key 8/9 threw here
+  m.textContent = E ? 'previewing ' + c.title + ' on the built-in demo signal — ' + c.blurb : 'previewing the director on the built-in demo signal — it picks the scene to the music';
 }

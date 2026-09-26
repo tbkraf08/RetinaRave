@@ -31,7 +31,7 @@ A scene is a folder `assets/scenes/<name>/` whose `index.js` has a default expor
 ```js
 export default {
   name: 'dust',                 // folder name
-  id: 1,                        // integer, unique across scenes and variants; keys 1–9 force id 0–8
+  id: 1,                        // integer, unique across scenes and variants; keys 1–9 force id 0–8, `n` cycles to the next id (9+ have no digit)
   tag: 'one line for the HUD',
   feats: ['bass', 'flow'],      // every MS field you read anywhere in this object (score/update/draw); HEAD-delivered
                                 // ones too (bass/mid/high via uBands). Names: Appendix A (typo = CARD.ERRS entry)
@@ -248,7 +248,7 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
 Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav2** (v0.8, forced-only until approved: `score()` 0, key `9`; `NAV2-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav2** (v0.8, forced-only until approved: `score()` 0, key `9`; `NAV2-SESSION-PROMPT.md`) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities

@@ -2,21 +2,14 @@
 // CSS only under (pointer:coarse) while running) with help · previous scene · next scene · fullscreen, a horizontal swipe on
 // the canvas that steps the forced scene through the registry, and a press held still for 600 ms that toggles the help
 // view. Nothing here runs per frame and nothing changes what the director decides beyond SC.forced, exactly as keys 1–9 do.
-import { SC, REG } from './scenes.js';
+import { stepScene } from './scenes.js'; // v0.10: moved there so the `n` key (core/hud.js) shares it without hud.js importing touch.js (a cycle)
 import { toggleHelp, HELP } from './help.js';
 import { fullscreen, canFullscreen } from './hud.js';
+import { pick } from './landing.js';
 
 const $ = (id) => document.getElementById(id);
 export const TOUCH = { swipes: 0, holds: 0 }; // counters the harness reads
 const HOLD_MS = 600, SWIPE_PX = 60;
-
-// Step the forced scene by d from where the eye is now (the logical scene while the director drives).
-export function stepScene(d) {
-  const n = REG.length;
-  if (!n) return;
-  const from = SC.forced >= 0 ? SC.forced : SC.logical;
-  SC.forced = (from + d + n) % n;
-}
 
 let toastT = 0;
 export function toast(text, ms = 2600) {
@@ -42,8 +35,8 @@ export function initTouch() {
       if (!b) return;
       const k = b.dataset.k;
       if (k === 'help') toggleHelp();
-      else if (k === 'prev') stepScene(-1);
-      else if (k === 'next') stepScene(1);
+      else if (k === 'prev') pick(stepScene(-1));
+      else if (k === 'next') pick(stepScene(1));
       else if (k === 'fs') fullscreenOrHint();
     });
   }
@@ -68,7 +61,7 @@ export function initTouch() {
     if (performance.now() - t0 < 700 && Math.abs(dx) > SWIPE_PX && Math.abs(dx) > 2 * Math.abs(dy)) {
       TOUCH.swipes++;
       if (HELP.on) return; // the help view scrolls; a swipe there is not a scene change
-      stepScene(dx < 0 ? 1 : -1);
+      pick(stepScene(dx < 0 ? 1 : -1)); // through the picker (v0.10), so the tile marks follow a swipe on the card
     }
   }, { passive: true });
   cv.addEventListener('touchcancel', () => clearTimeout(hold), { passive: true });

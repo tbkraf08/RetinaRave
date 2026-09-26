@@ -24,6 +24,17 @@ export const SC = {
 export const REG = [];
 export const SCENES = [];
 
+// Step the forced scene by d from where the eye is now (the logical scene while the director drives) and return the new id.
+// A swipe (core/touch.js) and the `n` key (core/hud.js, v0.10 — the number keys ran out at NAV2's `9`) both cycle through
+// the registry with it; they hand the id to the landing picker so a press on the card previews like a tile.
+export function stepScene(d) {
+  const n = REG.length;
+  if (!n) return -1;
+  const from = SC.forced >= 0 ? SC.forced : SC.logical;
+  SC.forced = (from + d + n) % n;
+  return SC.forced;
+}
+
 export function register(scene) {
   const id = scene.id;
   if (REG[id]) throw new Error('scene id ' + id + ' taken by ' + REG[id].scene.name);

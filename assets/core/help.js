@@ -33,7 +33,8 @@ export const keys = () => [['?', 'or H — this view', 'help'],
   ['P', 'this view opened at part E, the routes panel (what drives what, by hand)', 'routes panel'], ['Esc', 'close it', null],
   ['D', 'the developer HUD (numbers, every 6th frame)', 'dev HUD'], ['F', 'fullscreen (or double-click)', 'fullscreen'],
   ['M', 'monitor the demo synth in the speakers', 'monitor demo'],
-  ['1–' + REG.length, 'force the scene with id 0 – ' + (REG.length - 1) + ' (the ids are in part C)', 'force a scene'],
+  ['1–' + Math.min(9, REG.length), 'force the scene with id 0 – ' + (Math.min(9, REG.length) - 1) + ' (the ids are in part C)', 'force a scene'],
+  ['N', 'the next scene, cycling through all ' + REG.length + ' (a swipe on a phone does the same)', 'next scene'],
   ['0', 'back to the director', 'director']];
 const EV = Object.keys(FEATS).filter((k) => FEATS[k].kind === 'event'); // latched per frame while open (they last one frame)
 

@@ -200,7 +200,7 @@ Also passes without `GPU=1` (SwiftShader). Draws through `CARD.ctx` (the ctx sce
 node tools/cdp.js '<hash>' '<json steps>'
 ```
 - hash: `test` (deterministic fake music, 24 s loop: sustain 0–6 → valley 6–10 → build 10–13 → DROP 13 → peak → valley
-  21–24) · `test&fake=0` (real extractor on the demo synth) · `test&scene=N` forces the scene whose `id` is N (sticky; the number keys are offset: key 1 = id 0) ·
+  21–24) · `test&fake=0` (real extractor on the demo synth) · `test&scene=N` forces the scene whose `id` is N (sticky; the number keys are offset: key 1 = id 0; `{key:'n'}` steps to the next id, wrapping — v0.10, ids 9+ have no digit) ·
   `test&demo=house|dnb|…` picks the synapse synth (§2) · `real` = the real start path (no #test: landing card shown).
 - steps: `{wait:ms}` · `{shot:'work/name'}` (→ `tools/work/name.jpg`; `clip:[x,y,w,h,scale]` optional) · `{eval:'expr'}`
   (printed as `EVAL … => value`; promises awaited) · `{click:[x,y]}` · `{key:'d'}` · `{until:'expr', timeout:ms}`.
@@ -304,7 +304,7 @@ minimized) is the `audit-3-*-back-worklet.jpg` recipe in "Real window" — DUST'
 
 ## Help view (change to `core/help.js`, a scene's `help` / `help.feats`, or `feats.js` text)
 
-Keys: `?` or `h` toggles, `p` opens it scrolled to part E (the routes panel, v0.4), `Esc` closes; `d f m 0–9` keep working with it open. It is DOM (`#help` in `index.html`) over
+Keys: `?` or `h` toggles, `p` opens it scrolled to part E (the routes panel, v0.4), `Esc` closes; `d f m n 0–9` keep working with it open (`n` = the next scene, cycling — v0.10, the digits ran out at id 8; `core/scenes.js stepScene`, shared with the swipe). It is DOM (`#help` in `index.html`) over
 the still-rendering canvas, built on the first open, and does no work per frame while hidden. Steps `{key:'h'}` and
 `{key:'Escape'}` drive it; under `CLOCK=1` press the key *before* the `until` so the shot lands on a full page (the
 view completes on the frame it opens).
