@@ -327,3 +327,71 @@ its standing wave. The plane is now faded to black on a **disc** of radius half 
 own width — a round porthole, which has no corners to sweep — and `FITK` frames that disc to fill the height.
 `RINGM` keeps the portrait rule the plan asked for: on a phone the plane letterboxes rather than crop the ring of
 charges.
+
+---
+
+## Step 8 — the alive list
+
+Every entry of `feats` is read for real; `check.js`'s static read check reports **no stale entry** for this scene
+(`0 fail`, and the only warnings are three files over the 350-line soft cap and the missing thumbnail, which step 10
+makes). The plan's list is read off `CARD.fix`, `test&scene=9&tier=1`, CLOCK=1, one pin at a time:
+
+```
+f300  baseline                        sigma 0.0179  shear 0.110  lam 34.80  shim 0.0206  fam [0.373, 1.012, 0.720]
+f360  fix {hush:1, calm:1}            sigma 0.0263  ...                                       <- the waves die faster
+f420  fix {tension:1}                 shear 0.502                                             <- the lens is sheared
+f480  fix {riser:1, roll:1}           lam 24.42 (from 33.03)                                  <- the carrier sweeps up
+f540  fix {arc:'idle'}                sigma 0.0900 = VACSIG exactly, vac 1 (no geometry)      <- the intro is vacuum
+f560  fix {alive:1, novelty:1, hat:1} shim 1.0000 (from 0)                                    <- the hat shimmer
+f580  fix {flowBass:10, flowMid:20, flowHigh:30}   fam [4.000, 8.000, 12.000] = PSK x each    <- three families drift
+```
+
+and the one-frame event, `pol` being the dipole's polarity:
+
+```
+f300 pol  1   f301 fix {surpriseEvt:true} pol -1   f320 pol -1   f321 fix {surpriseEvt:true} pol  1   f340 pol  1
+```
+
+so a surprise flips the dipole's current for the sources it drives and leaves it flipped — one surprise, one flip.
+
+The three sinks the list feeds are `sigma` (hush/calm up, build down), the carrier's `lam` (bpm sets it, roll/riser
+sweep it up and the drop snaps it back, `regularity` locks it to an exact fraction of a beat's travel) and the
+medium (`sectionAlt` picks it, `sectionEvt` rotates it, `tension` shears the lens, `build` raises its contrast,
+`barPos` breathes it ±3 %). `help.feats` has a line for each of the 38 — `check.js` reports `help.feats gaps 0`.
+
+**`harmAngle` is not in the plan's `feats` list and has to be.** `#test` leaves `chroma` all zero, so the twelve
+charges are derived from `harmAngle` exactly as `torus2/index.js:155–175` does, and `keycolour.js`'s anchor takes it
+as its own fallback. Without it in `feats` the field would be read and not declared, which §1.15 forbids (and the
+routes panel could not reach it). 38 entries, not the plan's 37.
+
+---
+
+## Step 9 — the six parameters
+
+```
+node tools/param-smoke.js        param-smoke: 49 checks, 0 fail
+```
+
+`paramsOf` against `derived`, and the fields each `from()` was recorded reading, at f360 on the fake timeline:
+
+```
+                 in force        from(view)      paramDeps
+light            0.808837036     0.808837036     intensity
+ring             0.310000000     0.310000000     build + hush + calm
+lens             1.719999263     1.719999263     build + tension
+charge           0.602371850     0.602371850     intensity + bass
+turn             4.712388980     4.712388980     beatCount
+bounce           0.000000000     0.000000000     beatPhase
+```
+
+identical to nine decimals, which is §1.16's identity-by-construction. A route moves the picture:
+
+```
+IDS=9 tools/scene-md5.sh mx                        s9-f360  fd879a32ee99454eb8f2453828c2bf82
+test&scene=9&param=maxwell.lens=c:4, f360          mxp-s9   4bb2b863bc2404dc69be3461ea1c84fb   (paramsOf.lens = 4)
+```
+
+`light` is worth a note for the panel: it scales the Courant number, so routing it re-times *everything* geometric —
+the ring spacings, the carrier's wavelength in cells, how far a wave gets before the loss eats it. It is honest and
+it is the parameter most worth turning. At its range's bottom (0.3) light crawls; at the top (1) the scheme is at
+its stability limit and still stable, because `COURANT` is the limit and `light` only ever multiplies it by ≤ 1.

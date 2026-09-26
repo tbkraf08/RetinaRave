@@ -215,5 +215,5 @@ export function spacings(band) {
 }
 
 export function info() {
-  return { mode, step, S: +OUT.S.toFixed(4), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
+  return { mode, step, S: +OUT.S.toFixed(4), shim: +(g.shim || 0).toFixed(4), fam: [+FAM[0].toFixed(3), +FAM[1].toFixed(3), +FAM[2].toFixed(3)], amp: +(g.amp || 0).toFixed(3), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
 }
