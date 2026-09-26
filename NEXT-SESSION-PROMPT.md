@@ -11,7 +11,17 @@ timbre (`CENTK` 2.5), `dirty` doubles the ripple (cosine harmonic, `DIRTK` 1.8),
 the sub's wobble breathes the medium (`WOBK` 0.6) **and pumps the carrier's amplitude (`WOBA` 0.85)** — a uniform ε(t) cannot change
 a wave's k, so the wobble is amplitude, not wavelength (measured 4 % vs the 12 % gate). **The user has not looked at v0.11.**
 
-**First:** show the user `tools/accept/v0.11/montage-maxwell2-paused.jpg` (silence vs sound — show this one first),
+**The user looked at v0.11 (2026-09-26) and said:** the waves from the centre come at a constant rate; every sound should generate
+a wave, coloured by the note being played; double-time passages do not show in what the middle emits; and what is the pattern of
+small circles in the background. Answers given: the constant rate is the continuous carrier + the beat-locked `FAINT` ring, the small
+circles are the photonic-lattice medium. The user decided: **no sound → quiet (no wave generated)**; **follow the rec on the media —
+drop the lattice, keep the lens and the mirror cavity, decide the waveguide after seeing sound-only ripples in the cavity.** The plan is
+**`MAXWELL-ONSET-SESSION-PROMPT.md`** (v0.12, MAXWELL in place, still forced-only: the carrier and the metronome go; every onset —
+kick by `kickCount`, snare/hat by a re-armed edge, the engine's `onset` event, a soft per-pitch-class note onset — launches a Ricker
+shell in its note's hue, the kick's hue from `argmax(bchroma)`; lattice removed, rotation lens · cavity, waveguide by hook only;
+`index.js` must come down from 498 lines). **Run that session first; the paragraph below is what it supersedes.**
+
+**Was first:** show the user `tools/accept/v0.11/montage-maxwell2-paused.jpg` (silence vs sound — show this one first),
 `montage-maxwell2-demo.jpg` (house / aba / dnb, v0.10 left · v0.11 right — many colours, and paler), `montage-maxwell2-real.jpg`
 (CyborgNinja / WhoLikesToParty / Malicious at 20–80 s), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the
 eye sees" and the ranked leans (§43). Their word decides. **Say plainly what the AUDIT says:** the per-note colour is proven only
