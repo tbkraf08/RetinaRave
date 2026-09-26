@@ -1,30 +1,35 @@
-# Next session — Retina Rave after v0.10 (written 2026-09-26, at the v0.10 tag)
+# Next session — Retina Rave after v0.11 (written 2026-09-26, at the v0.11 tag)
 
-**v0.10 "the four equations that dance" is tagged and deployed (DECISIONS §42, `docs/AUDIT-v0.10.md`, `docs/workers/maxwell.md`):**
-MAXWELL (id 9) — a live 2D Yee-grid FDTD of Maxwell's equations in TORUS2's language: twelve pitch-class charges on the circle of fifths,
-a current-loop dipole nudged `beatCount/16` per beat, every hit a real wavefront whose spacing is the rhythm (measured off the field to
-0.5 cells), the section as the medium (lens · mirror cavity · lattice · waveguide), the drop a mirror that makes the field stand, the H
-field lines as closed contours of the stream function, a round porthole. **Forced-only** (bid 0): key `9` then `n`, or `n` from anywhere
-(the new core key, the user's one answered item — `n` cycles the registry through the landing picker). The user asked for the scene and
-for the tag without a gate; **the user has not looked at the result yet.**
+**v0.11 "the wave remembers its note" is tagged and deployed (DECISIONS §43, `docs/AUDIT-v0.11.md`, worker report
+`docs/workers/maxwell-wobble.md`):** MAXWELL (id 9) modified in place after the user's three notes on v0.10 — still **forced-only**
+(bid 0, key `9` then `n`). Item 1: `presence` gates every source, `absentT` lets the rings go, the contours got an absolute floor and
+the strokes got the plane's porthole (the corner scribble was most of "noisy"); with the track paused the picture is black (energy
+1e-5 of playing, 0 segments, 0 lit charges, on three real tracks). Item 2: a second half-grid wave equation carries rgb + w
+(`colour.js`), hue = rgb/w, the sign of Ez is brightness (`TROUGH` 0.35), the key anchor no longer rotates the wheel (`CHUE0` 0,
+`CSPREAD` 1.6); pinned-sector proof 0.0018 turns; cost 1.01–1.24× TORUS2 with tier-3 substeps 4 → 3. Item 3: the carrier is the
+timbre (`CENTK` 2.5), `dirty` doubles the ripple (cosine harmonic, `DIRTK` 1.8), the bass pumps the centre (`SUBK` 0.03, kick × punchy),
+the sub's wobble breathes the medium (`WOBK` 0.6) **and pumps the carrier's amplitude (`WOBA` 0.85)** — a uniform ε(t) cannot change
+a wave's k, so the wobble is amplitude, not wavelength (measured 4 % vs the 12 % gate). **The user has not looked at v0.11.**
 
-**The user looked (2026-09-26) and gave three notes — too noisy in silence; the wave should carry the note's colour (it is two hues);
-no wobble on dubstep, different music looks alike. The plan is `MAXWELL-WOBBLE-SESSION-PROMPT.md` (v0.11, MAXWELL in place, still
-forced-only: `presence` gates the sources and the contours get an absolute floor; a colour field by linearity so each wave carries its
-note's hue; the sub's wobble breathes the medium's ε, the carrier follows the centroid, `dirty` doubles the ripple, tier-3 substeps 4 → 3
-for the budget). Bring a dubstep mp3. Run that session first; the paragraph below is what it supersedes.**
-
-**Was first:** show the user `tools/accept/v0.10/montage-maxwell.jpg` (MAXWELL left · TORUS2 right: house, aba, dnb at f360/f840) and
-`montage-maxwell-real.jpg` (CyborgNinja + WhoLikesToParty at 20/40/60/80 s), `montage-maxwell-media.jpg` (the four media),
-`montage-maxwell-drop.jpg` (drop vs no drop), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the eye sees" and
-the ranked leans (§42). Their word decides — a retune is a named constant at the top of `assets/scenes/maxwell/{fdtd,medium,sources,
-render,index}.js`, proven with `IDS=9 tools/scene-md5.sh` (re-base `tools/accept/v0.10/scene-md5-v010.txt` s9 lines) +
-`tools/accept/v0.10/det10.py <track> <tag>` for the field's energy / trains / probe on a real track (mp3s in a scratchpad
-`…/scratchpad/music/`). The cost lever the worker left alone: tier 3's four substeps (§42 item 6).
-- **Promote →** a `score()` (TORUS2's shape, §36), then the Q trace on house + aba (a scene entering the rotation), the `accept.sh`
-  "== maxwell" section (s9 md5s, the pinned trains, the key pair, `test_fdtd`), a DECISIONS section, tag v0.11.
-- **Docs owed to CONTRACTS** (§42's last paragraph): §1.2 readback, §1.4 hook naming + read-only hooks, §1.10 the porthole under a
-  rotating camera, the readback-band sentence. One commit, no proof beyond `check.js`.
+**First:** show the user `tools/accept/v0.11/montage-maxwell2-paused.jpg` (silence vs sound — show this one first),
+`montage-maxwell2-demo.jpg` (house / aba / dnb, v0.10 left · v0.11 right — many colours, and paler), `montage-maxwell2-real.jpg`
+(CyborgNinja / WhoLikesToParty / Malicious at 20–80 s), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the
+eye sees" and the ranked leans (§43). Their word decides. **Say plainly what the AUDIT says:** the per-note colour is proven only
+under a pinned sector (real chroma is flat and the twelve hues sit symmetrically about the anchor, so no real-track agreement number
+exists); the wobble is proven only by the CLOCK=1 `hooks.wob(2)` series (a 2 s trace cannot resolve 1–4 Hz); `Malicious` (Kevin
+MacLeod, 140 BPM, CC-BY) stood in for dubstep and has no wobble bass — **the user's 3 has never been tested on dubstep; bring an mp3
+to `…/scratchpad/music/`**. A retune is a named constant at the top of `assets/scenes/maxwell/{colour,sources,fdtd,medium,render,
+index}.js` (`TROUGH`, `CSPREAD`, `FGAIN`, `CENTK`, `WOBA`, `GRIDT[3]` substeps — ranked in §43), proven with `IDS=9 tools/scene-md5.sh`
+(re-base `tools/accept/v0.11/scene-md5-v011.txt` s9 lines) + `tools/accept/v0.11/det11.py <track> <tag>` (energy / spacing / dominant
+hue per 2 s) and `audit11.sh` (the paused start).
+- **Promote →** a `score()` (TORUS2's shape, §36), then the Q trace on house + aba, the `accept.sh` "== maxwell" section (s9 md5s,
+  the pinned trains, the key pair, `test_fdtd`), a DECISIONS section, tag v0.12.
+- **"Still not the note's colour" →** the instrument is a pinned-chroma real-track hook (pin one sector while a real track plays),
+  not a bigger `CSPREAD`. **"Still no wobble" →** the mechanism for rings that bunch is a graded lens with a shorter travel time or a
+  source-side chirp — a new plan, not a constant.
+- **Docs owed to HARNESS** (§43's last paragraph): `tools/lum.py` has no hue field (v0.10's report quoted one from an uncommitted
+  instrument); the scene palette is cosine, not HSV — hue numbers are palette turns via `probe.js hueFit`; the 500-line hard cap is
+  where a growing scene's budget goes (`maxwell/index.js` is at 498).
 
 **Then — the NAV2 question (v0.8, DECISIONS §39, `docs/AUDIT-v0.8.md`), still open:** NAV2 is id 8, key `9`, forced-only, not swapped
 in; the user has not looked. Show `tools/accept/v0.8/montage-nav2-real.jpg` (NAV left · NAV2 right) and `dist/retinarave.html` key `9`;
@@ -46,4 +51,4 @@ cropping, the NAV2 phase-winding colour variant (noted 2026-09-26, not built: co
 a colour variant on NAV2 only, opt-in, `IDS=8` proof, decide after the swap question).
 
 **Not this:** a MAXWELL bid, a full sweep, 3D, an OKLCH variant, the Hertzian-dipole hedge (only if the montage disappoints and the user
-asks).
+asks), fallback B (the `vec4` Yee) unless the user rejects the colour field's picture.

@@ -1865,3 +1865,122 @@ should bid (a score, then the Q trace on house + aba, the `accept.sh` section �
 §1.4 — a hook a proof calls by name is `CARD.REG[id].scene.hooks.<name>` (`CARD.hooks.key` reaches the last scene registered and `&key=`
 calls every scene's), and a read-only hook must not mutate; §1.10 — a scene under a rotating camera needs a porthole; "one band of rows
 per frame" is wrong for a downsampled target (a time-patchwork field is not divergence-free — read it whole, less often).
+
+## §43 MAXWELL — "the wave remembers its note", v0.11 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell-wobble.md`, report `maxwell-wobble.md`; `MAXWELL-WOBBLE-SESSION-PROMPT.md`, `docs/AUDIT-v0.11.md`)
+
+**What the user asked (2026-09-26, after looking at v0.10, verbatim):** "1) it feels too noisy when there is no sound ; 2) the color of
+the wave should match the color associated with the coord/note (it seems to just be two colors that switches sometimes?) ; 3) the waves
+don't wobble like I was expecting listening to dubstep (different music kinda looked similar)". Those three sentences are the spec.
+MAXWELL is **modified in place** — same id 9, still forced-only (bid 0, key `9` then `n`) — and the gate is v0.10's: no sweep, proof on
+id 9 only. Everything else below is a lean the user has not seen; **the user has not looked at v0.11.**
+
+**The scene (id 9, `assets/scenes/maxwell/{index,fdtd,medium,sources,render,probe,help}.js` + new `colour.js`; `tools/test_fdtd.js`
+group 5):** unchanged Yee FDTD, plus (1) `presence` / `alive` / `absentT` gating every source and the contours, and the plane's porthole
+now shared with `strokes()`; (2) a **second, half-resolution wave equation** carrying `rgb` and a non-negative weight `w` with the same
+sources, the hue being `rgb/w` — so a wavefront carries the colour of the note that launched it, and the sign of Ez became brightness;
+(3) the carrier driven by **timbre** rather than tempo, a cosine second harmonic on `dirty`, the bass pumping the centre, and a wobble
+that breathes the medium and pumps the carrier's amplitude. `feats` 38 → **43** (minus `regularity`, plus `presence absentT bassFast
+centroid dirty punchy`); hooks 11 → **16** (plus `quiet wob timbre mxchroma mxcol`, mx-prefixed where `CARD.hooks` already owns the
+name). s9 md5 `d268a071` / `473e474c` (v0.10: `4e26a427` / `57bac88e`) — the whole picture changed, so both moved; the merged tree
+reproduces the worker's pair exactly.
+
+**Decided by measurement (the worker; each a named constant at the top of its module). The plan's diagnosis was right on every claim
+about v0.10's code, verified line by line before anything changed. Three things in the plan did not survive a measurement:**
+
+1. **A uniform breath of ε cannot bunch a wave that is already in flight.** The plan wanted the rings to bunch and stretch at the wobble
+   rate. A spatially uniform ε(t) leaves a plane wave an eigenmode with its **k unchanged** — only the frequency moves — so the
+   wavelength of a wave in flight is frozen. Measured at 2 Hz with ε swinging 0.74 → 1.26: crest spacing moved **4 %** against the 12 %
+   gate. And at an LFO rate it cannot be resolved anyway — light crosses the porthole in ~1.5 s and one 2 Hz cycle is 36 cells of travel,
+   so a wavelength chirp has one crest per period. What a wobbling bass does to a spectrum is pump the LEVEL, so `WOBA` 0.85 rides the
+   carrier's **amplitude**: shells of bright and dark 36 cells apart marching outward at c, **39 % peak-to-trough** on a clean 30-frame
+   period (`hooks.wob(2)`, energy 356.8 → 495.9, peaks one cycle apart to 2 %). The graded breath stayed — it is real physics, it moves
+   the local speed and the loss — but the gate did not.
+2. **`hooks.quiet(1)` pinning `presence`, `alive` and `absentT` is not a picture of silence.** CONTRACTS §1.16: a param's `from()` is
+   evaluated by the ENGINE from `MS`, so a hook that pins a field inside `update()` never reaches the params — `charge` stayed at exactly
+   the value silence was supposed to take away, and the first pinned frame came back only 13 % down. The hook now pins the three band
+   impulses and `sub` as well and takes `charge` and `ring` to what their own `from()`s give on the pinned fields. Then the energy is 0.
+3. **"the hue boundary within one ring width of the Ez ring" has no referent.** Once the sign of Ez is brightness and the hue comes from
+   the colour field, a smooth hue field has no boundary at a crest. What was measured instead: the colour field's wave keeps step with
+   Ez's (colour rings 36 cells apart vs Ez's 35.2; the colour front at r = 175 against the outermost visible Ez crest at 179.8, about an
+   eighth of a spacing) and the hue is the right one (0.0018 turns).
+
+   And two smaller ones. **`ASCALE` as the plan defined it** — the A range of a `hooks.train('4')` frame at charge 1 — measures 1.118,
+   which is ABOVE every musical frame (0.77…0.95), so it would thin every musical frame and (measured) would not even reduce the segment
+   count. `ASCALE` is **0.55**, half that, a floor under the level spacing: above it the picture is v0.10's exactly, below it a weak
+   field reaches a fraction of the levels. **The two-class chroma proof "a fifth apart"** is one sector on this ring, i.e. `spread/12` =
+   0.045 turns, which no picture can separate; it is run on sectors 3 and 9, a tritone, the furthest-apart pair.
+
+4. **The strokes needed the plane's own porthole, and that is the single biggest part of "too noisy."** In v0.10 the plane faded to black
+   on a disc and the H contours did not, so the near-empty corners were stroked over the black — the loose loops outside the porthole in
+   every v0.10 shot. `PORTW`/`PORTE`/`portFade` are now shared between the shader and `strokes()`; a segment whose midpoint is outside
+   the disc is not emitted. **64 of 994 segments at f360, 1315 of 3480 at f840.** `hooks.probe()` now reports `drawn` beside `segs`.
+5. **A linear wave operator does not preserve `0 ≤ rgb ≤ w` even though every source does.** Where the Green's function is negative, `w`
+   clamps to zero under a positive `rgb` and the "chromaticity" reaches 2950. The projection `min(rgb, w)` after `max(0)` costs one
+   instruction and is what makes `rgb/w` a colour — the one line of `colour.js` not in the plan, and without it item 2 does not work.
+   (Related: a second-order leapfrog cannot ping-pong between two targets. The Yee pair gets away with two because each pass reads one
+   field and writes the other; `u_{n+1} = f(u_n, u_{n−1})` needs three. That is the difference between 2 and 3 extra targets in the cost
+   estimate.)
+6. **The anchor shifts the whole wheel, and that is what made a note change colour with the key.** `sectorHue(hue, k, spread)` =
+   `hue + spread(k/12 − 1/2)`. The spread stays, the anchor's offset goes (`CHUE0` 0.0) and the spread widens to `CSPREAD` **1.6** (capped
+   at `CSPMAX` 0.92 of a turn), because a third of the wheel is right for twelve small glows on a ring and wrong once those hues are the
+   colour of every wave in the picture. `CSPREAD = 1` is v0.10's spacing exactly, for the user to put back.
+7. **`FGAIN` 3.4 → 6.0 pays for the trough.** With the sign of Ez as brightness, half the picture is dimmed to `TROUGH` 0.35 and the
+   reference frame's mean luminance fell 31 %; 6.0 puts f360 back to 0.3259 against v0.10's 0.3830 — **−15 %, with centre/rim 1.69 → 1.37,
+   so the picture is flatter as well as slightly dimmer**. `TROUGH` is the one constant to raise if the user wants v0.10's contrast back.
+8. **"Different music must look different" is answered by `dirty`, `sub` and `punchy`, not by the carrier.** The ≥ 20 % gate on the mean
+   crest spacing per demo style is **not met and cannot be**: house / aba / dnb have mean spectral centroid 0.485 / 0.459 / 0.459, i.e.
+   the same mean carrier to 4 %. What separates them is `dirty` (3.0× aba↔dnb), `sub` (10× — aba's wobble swings ε 0.89…1.49 against
+   dnb's 0.83…1.06) and `punchy` (1.6×), which are exactly the three new mappings; and within a style the carrier does move (house's
+   centroid ran 0.37 → 0.77 in one 20 s window, `lam` 42.3 → 19.2 cells, a factor of 2.2). The honest summary is that the styles look
+   different and the thing that makes them look different is not the one the plan named. Lever with the most room: `CENTK` (2.5);
+   next, `bpm` back as a second carrier term.
+9. **Cost: 1.24× TORUS2 on the worker's tree, 1.01× on the merged tree, gate ≤ 1.5×.** Two-page protocol, seven NAV-interleaved pairs a
+   page, cold pair dropped, median of the ratios. The worker's levers: the porthole cull took 38 % of the strokes out of the drop frame
+   (MAXWELL measured **0.96×** after items 1 and 3), then the colour field plus tier-3 substeps **4 → 3** (`GRIDT[3][2]`, the session's
+   one numerics change) landed at 1.24×. The orchestrator's re-run on the merged tree medians 1.230 / 1.216 = **1.01×** (early pair 1.35×,
+   late 1.17×) — the NAV drift both reports warn about. Undoing the substep change costs about 0.25× of TORUS2.
+
+**The proofs (AUDIT-v0.11, `tools/accept/v0.11/`):** worker, tier 1 CLOCK=1 — silence gives lum centre 1.2 %, segs 0, energy 0 against
+the unpinned frame; one pinned sector gives worst hue error **0.0018 turns** at saturation ≥ 0.983, two sectors a tritone apart give
+their exact circular midpoint between them, a key change moves the anchor 0.0090 → 0.2933 with the twelve note hues **identical to four
+decimals**. Orchestrator, headed, three 90 s real tracks with a **paused start** (`audit11.sh`, `det11.py` — new): with the tab paused,
+energy **0.002 / 0.021 / 0.000034** against 2885 / 1808 / 2729 playing, `segs` and `drawn` **0**, probe centre ≤ 0.003, and every black
+frame PROBE counted (291 / 202 / 392) falls inside the paused window — **0 black frames in 72 s of play**, `long` 0, ERRS [], nonFinite
+[], `probe().gap` 0 on all 120 samples, q .39 → .87. `check.js` 0 fail / 3 warn (maxwell `index.js` **498** lines, two under the hard
+cap), `param-smoke` 49/0, `test_fdtd` OK including group 5.
+
+**What this release does NOT prove, and says so:** (a) item 2 is proven **per note only under a pin**. On real music the chroma vector is
+flat (no bin clears 0.3 in 37 of 39 samples) and the twelve hues are symmetric about the anchor, so a chroma-weighted "expected hue"
+collapses onto the anchor and the agreement number is at chance at every lag; what the headed run does show is that the wave is no longer
+anchor-coloured (mean |dominant hue − anchor| 0.254 / 0.252 / 0.153 turns, i.e. a whole half-span) and that a third to two-thirds of the
+dominant hues land outside the arc the twelve sectors occupy. (b) The wobble is proven only at CLOCK=1: a 2 s trace cadence cannot
+resolve a 1–4 Hz LFO (Nyquist 0.25 Hz). (c) **No dubstep track exists in the scratchpad** — `Malicious` (Kevin MacLeod, 140 BPM, CC-BY)
+stood in, and it has no wobble bass, so the user's 3 has still never been tested on the music it was about.
+
+**Leans for the user's eye, ranked:** (1) `TROUGH` 0.35 and the 15 % dimmer, flatter picture — the price of "the sign of Ez is
+brightness", one constant to raise; (2) `CSPREAD` 1.6 against v0.10's 1 (and note 1.6 spans more than half the wheel, which is why some
+mixtures land on a hue no note owns); (3) the wobble being amplitude and not wavelength — physics, not effort; a bunching ring needs a
+different mechanism and a new plan; (4) the demo styles separating on `dirty`/`sub`/`punchy` rather than the carrier, with `CENTK` 2.5 the
+lever; (5) `FGAIN` 6.0; (6) the dubstep stand-in — one mp3 is the cheapest improvement to the next round; (7) tier-3 substeps 4 → 3
+(~0.25× of TORUS2 to undo); (8) `VACT`/`VACW` 1.0/1.0 s, how fast silence lets the rings go.
+
+**Docs owed and paid here:** `docs/AUDIT-v0.11.md`, this section, `tools/accept/v0.11/README.md`, the thumb re-shot
+(`tools/thumbs.sh "9:360"` — the f360 frame changed), `package.json` 0.11.0, `releases/retinarave-v0.11.html`; **and the six CONTRACTS
+sentences** — the four owed from §42 (§1.2 readback by `IMPLEMENTATION_COLOR_READ_TYPE` + a small target read whole, §1.4 hook naming
+via `CARD.REG[id].scene.hooks` + read-only hooks must not mutate, §1.10 a plane under a rotating camera needs a porthole; commit
+`06de82a`) plus the two this session adds (§1.4: a test hook that pins a field must also pin the **params derived from it**, because a
+param's `from()` is evaluated by the engine from `MS` — `hooks.quiet(1)` left `charge` at its musical value until it did; and a `hud`/
+`info` hook's object literal is not namespaced, so a second key of the same name silently wins — `mxinfo`'s `sub:` was overwritten by
+the sub's ema and a bench script read the wrong number, renamed `subS`; commit `6587f06`). **Still owed to HARNESS:** `tools/lum.py` has
+no hue field (v0.10's report quotes a "saturation-weighted mean hue" from an instrument that was never committed), the scene palette
+is `0.5 + 0.5 cos(TAU(h + [0, .33, .67]))`, not HSV — every hue number in these reports is in palette turns recovered by `probe.js
+hueFit`, and a proof that quotes HLS degrees against a constant in palette turns is comparing nothing; and the **500-line hard cap** is
+the real constraint on a scene that grows (`check.js` only says so after the edit) — a brief that adds a subsystem to a 400-line scene
+should say where the line budget is going first.
+
+**The release bundle (found at the tag, fixed here):** `tools/bundle.js`'s `declarators()` split an `export const` line on the
+commas of its trailing `//` comment, so `colour.js`'s `export const CDIP = 0.05; // … with them on, every` exported a phantom `every`
+and `releases/retinarave-v0.11.html` threw `ReferenceError` at load (the v0.10 release, run as the control, was fine). The parser now
+stops at `//` outside a string. Proof: `FILE=$PWD/releases/retinarave-v0.11.html … 'test'` keys `9` then `n` → scene 9, forced 9,
+errs `[]`, nonFinite `[]`, 43 feats (`tools/accept/v0.11/release-file-9n.jpg`). Every release from now on is proven from `file://`
+before the tag, as v0.10 was — the bundler is not the served page.

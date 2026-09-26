@@ -27,6 +27,7 @@ function declarators(rest) {
   for (let i = 0; i < rest.length; i++) {
     const c = rest[i];
     if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+    if (c === '/' && rest[i + 1] === '/') break;   // a trailing line comment: its commas are prose, not declarators (v0.11: `// … with them on, every`)
     if (c === '"' || c === "'" || c === '`') q = c;
     else if ('([{'.includes(c)) depth++;
     else if (')]}'.includes(c)) depth--;
