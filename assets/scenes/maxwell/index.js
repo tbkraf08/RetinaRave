@@ -27,6 +27,15 @@ const GAFL = 0.10;      // a dark charge still shows on the ring at this much of
 const VACT = 1.0;       // seconds of `absentT` after which silence starts letting the last rings go ...
 const VACW = 1.0;       // ... and over this many more it has taken all of `ring`, so they fade in about a second
 const QUIETT = 10;      // the `absentT` hooks.quiet(1) pins: long past VACT + VACW
+// v0.11 item 3 — the wobble. A dubstep bass is an LFO on a filter at 1/4 to 1/8 note, i.e. 1-4 Hz, and it sits in
+// `sub` / `bassFast`. The MEDIUM breathes with it: eps(x,t) = eps_geom(x) * (1 + WOBK (sub - subSlow)), one uniform,
+// no medium rebuild. Light slows across the whole cavity when the sub swells, so the carrier's wavelength — which is
+// v/f, and v is what just changed — bunches and stretches at the wobble rate everywhere at once.
+const WOBK = 0.6;       // how hard the sub's swell bends the light
+const WOBTC = 0.6;      // ... measured against an ema of `sub` this many seconds long (the LFO, not the level)
+const WOBLO = 0.70;     // eps is never scaled below this: S / sqrt(eps) must stay under the 2-D Courant limit
+const WOBHI = 1.60;     // ... nor above this (a slower cavity than this reads as a freeze)
+const WOBSH = 0.9;      // the lens flexes on each bass pump: shear takes this much of (bassFast - bass), unsmoothed
 const MEDVIS = 1.0;     // how visible the medium is
 const MIRHOLD = 2.2;    // the drop's mirror is held full on for about a bar ...
 const DROPTC = 3.2;     // ... and then relaxes over another, so the whole gesture is about two bars
@@ -42,6 +51,7 @@ const U = {
   geoRot: 0, mirHold: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
   beatNow: 0, phrase: 0, loud: 0, mx: 0, lam: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
   tw: 0, th: 0, flow: 0, light: 0.7, fit: 144, pres: 1, sil: 0, arange: 0, alev: 0, nlev: 0, drawn: 0,
+  frame: 0, wob: 1, lfo: 0, subS: 0, shearE: 0, cent: 0.45, dirty: 0, punchy: 0.5,
 };
 const GH12 = new Float32Array(12);     // the twelve hues
 const Z12 = new Float32Array(12);      // twelve zeros: lab mode silences the charges
@@ -54,6 +64,7 @@ let F0 = null, F1 = null, CUR = null, MED = null, DS = null;
 let GW = 0, GH = 0, DW = 0, DH = 0, ASP = 16 / 9, QS = 0.6, NEED = 1, CLR = 0;
 let DSPX = null, APX = null, LTGT = null;
 let keyPin = null, medPin = -1, tierPin = -1, LCD = 0, NSEG = 0, linesOn = 1, quietPin = 0;
+let wobPin = 0, timbrePin = null;
 // what probe.js needs to read: the live targets and sizes, refreshed where they change
 export const ST = { ctx: null, cur: null, med: null, tgt: null, gw: 0, gh: 0, U, hues: null };
 const AN = mkAnchor();
@@ -239,6 +250,16 @@ function hQuiet(v) { quietPin = v === null || v === undefined || +v ? 1 : 0; ret
 // how far silence has got: 0 while the bass is there, 1 once it has been gone VACT + VACW seconds and nothing is
 // present. `presence` is the gate, `absentT` the clock — a pad-only breakdown keeps presence up and keeps its rings.
 const SIL = (absentT, pres) => Math.max(0, Math.min(1, (absentT - VACT) / VACW)) * (1 - pres);
+// hooks.wob(f) pins sub = 0.5 + 0.5 sin(2 pi f frame/60) — a clean LFO at f Hz on the scene's own frame counter, so
+// a CLOCK=1 series is reproducible. hooks.wob(0) releases it.
+function hWob(v) { wobPin = v === null || v === undefined ? 0 : +v; return wobPin; }
+// hooks.timbre(centroid, dirty) pins the two fields the carrier reads; hooks.timbre() releases them. The #test fake
+// timeline holds centroid 0.455, dirty 0.2, punchy 0.6 at every frame (measured), so nothing else can move them.
+function hTimbre(c, d) {
+  const p = String(c === null || c === undefined ? '' : c).split(',');
+  timbrePin = p[0] === '' ? null : { c: +p[0], d: +(d !== undefined ? d : p[1] || 0) };
+  return JSON.stringify(timbrePin);
+}
 
 export default {
   name: 'maxwell',
@@ -248,13 +269,14 @@ export default {
   feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'dropEnv', 'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid', 'flowHigh', 'roll', 'riser',
-    'hush', 'calm', 'alive', 'novelty', 'clarity', 'regularity', 'presence', 'absentT'],
+    'hush', 'calm', 'alive', 'novelty', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
+    'punchy'],
   cuts: 'continuous',
   always: false,
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
 
   init(ctx) {
     this.ctx = ctx;
@@ -294,6 +316,16 @@ export default {
     // (1 - SIL(10, 0)) = 0, so these two lines ARE the from()s, evaluated on the pinned fields.
     const amp = quietPin ? 0 : P.charge;
     const ring = quietPin ? 0 : P.ring;
+    // item 3: the sub's LFO measured against its own slow ema, and the timbre the carrier reads. hooks.wob(f) pins
+    // a clean f-Hz sine on `sub`, hooks.timbre(c, d) pins `centroid` / `dirty` — both inside update(), never on MS.
+    U.frame++;
+    const sub = quietPin ? 0 : wobPin ? 0.5 + 0.5 * Math.sin(TAU * wobPin * U.frame / 60) : MS.sub;
+    U.subS += (sub - U.subS) * (1 - Math.exp(-dt / WOBTC));
+    U.lfo = Math.max(-1, Math.min(1, sub - U.subS));
+    U.wob = Math.max(WOBLO, Math.min(WOBHI, 1 + WOBK * U.lfo));
+    U.cent = timbrePin ? timbrePin.c : MS.centroid;
+    U.dirty = timbrePin ? timbrePin.d : MS.dirty;
+    U.punchy = MS.punchy;
 
     // Gauss: the twelve charges. The chroma vector IS the charge. When it carries no energy (silence, and the #test
     // fake timeline, which leaves chroma zeroed) the weights come from the harmony the extractor does report: pitch
@@ -341,7 +373,10 @@ export default {
     if (MS.sectionEvt) U.geoRot = 0.37 * Math.max(0, MS.sectionAlt | 0);
     const lensT = P.lens * (1 + 0.03 * Math.sin(TAU * MS.barPos / 4));
     U.lens += (lensT - U.lens) * (1 - Math.exp(-dt / CONTC));
-    U.shear += (0.55 * MS.tension - U.shear) * (1 - Math.exp(-dt / CONTC));
+    // the eased tension shear, plus the bass pump ON TOP of the ease — a 0.45 s ema would swallow a kick's own
+    // attack, and the flex is the thing the eye reads as the bass hitting the glass.
+    U.shearE += (0.55 * MS.tension - U.shearE) * (1 - Math.exp(-dt / CONTC));
+    U.shear = U.shearE + WOBSH * (MS.bassFast - MS.bass);
     U.sigma = MS.arc === 'idle' ? VACSIG : (1 - ring) * SIGMAX;
     U.vac = medPin === -2 || MS.arc === "idle" ? 1 : 0;
     // the drop's mirror HOLDS for a bar and then relaxes, rather than decaying from the first frame: while it is
@@ -352,13 +387,13 @@ export default {
     else U.mir *= Math.exp(-dt / DROPTC);
     if (U.mir < 1e-4) U.mir = 0;
 
-    // Ampere-Maxwell: the bass is a current, the hits are launches, bpm is the carrier, regularity locks it to the grid
+    // Ampere-Maxwell: the bass is a current, the hits are launches, the TIMBRE is the carrier (v0.11 item 3)
     U.beatNow = MS.beatCount + MS.beatPhase;
     U.phrase = MS.phrase16Pos;
     U.flow = MS.flowBass + MS.flowMid + MS.flowHigh;
     SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2,
       quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat, {
-      amp, sub: quietPin ? 0 : MS.sub, loud: U.loud, bpm: MS.bpm, dt, reg: MS.regularity, light: P.light,
+      amp, sub, lfo: U.lfo, cent: U.cent, dirty: U.dirty, punchy: U.punchy, loud: U.loud, bpm: MS.bpm, dt, light: P.light,
       sweep: Math.max(MS.roll, MS.riser) * (1 - MS.dropEnv), pol: U.pol, yaw: U.yaw, yawRate: U.yawRate,
       shim: MS.hat * (0.3 + 0.7 * alive) * (0.5 + 0.5 * MS.novelty), alive, pres,
       fam: [MS.flowBass, MS.flowMid, MS.flowHigh],
@@ -388,6 +423,7 @@ export default {
     g.uniform3f(prM.u('uGeo'), U.geoA, U.geoB, U.geoF);
     g.uniform4f(prM.u('uMed'), U.lens, U.shear, U.sigma, U.vac);
     g.uniform2f(prM.u('uMir'), U.mir, U.geoRot);
+    g.uniform1f(prM.u('uWob'), U.wob);
     ctx.tri();
     const S = COURANT * U.light;
     const n = U.pend;

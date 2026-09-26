@@ -24,10 +24,30 @@ export const LO = 0.25;        // threshold of 0.5 would never fire (HARNESS "Pi
 export const FAINT = 0.30;     // the `beat` event's own faint kick when no band hit came in the last beat — only
                                // while `alive`: the engine holds bpm through silence, so without that gate the
                                // beat kept launching a ring a beat into an empty room (v0.11 item 1).
-export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at 120 bpm — about 6 waves across the
-                               // porthole, which is where it reads as waves rather than as speckle at one end or
-                               // as two fat blobs at the other.
-export const BPM0 = 120;
+export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at CENT0 brightness — about 6 waves
+                               // across the porthole, which is where it reads as waves rather than as speckle at
+                               // one end or as two fat blobs at the other.
+// v0.11 item 3: the carrier is the TIMBRE, not the tempo. Until v0.10 the wavelength was LAM0 * 120/bpm, so every
+// 4/4 track near 120-140 bpm drew the same waves — the user's "different music kinda looked similar". It is now
+// lam = LAM0 * 2^(-CENTK (centroid - CENT0)): bright music short waves, sub-heavy long ones, an octave of centroid
+// for every 1/CENTK of it. bpm still sets the sweep and the ring spacing is still the train's own cadence.
+export const CENT0 = 0.45;     // the centroid that draws LAM0 exactly (the middle of the extractor's range)
+export const CENTK = 2.5;      // ... and how many halvings of the wavelength a unit of centroid is worth
+export const DIRTK = 1.8;      // `dirty` adds this much second harmonic to a charge's carrier: the growl of a
+                               // distorted bass draws as a DOUBLED ripple on every crest. The harmonic is the
+                               // COSINE one — sin(t) + a sin(2t) has the same two extrema a sine has, whatever a
+                               // is, and draws no second ripple at all (measured: crest gaps 35.0 at dirty 1, the
+                               // fundamental's own). sin(t) + a cos(2t) has four once a > 1/4, because its
+                               // derivative factorises as cos(t)(1 - 4a sin(t)): one crest splits into two with a
+                               // dip between them, which is the ripple the eye reads as a growl.
+export const WOBA = 0.85;      // the LFO's share of the carrier's AMPLITUDE. This is the wobble the eye actually
+                               // sees, and it is not the one the plan asked for: a wobble carried by the
+                               // WAVELENGTH cannot be resolved at a dubstep LFO rate, because light crosses the
+                               // porthole in about 1.5 s and the carrier is ~33 cells while one 2 Hz cycle is 36
+                               // cells of travel — a chirp with one crest per period is not a chirp (measured: a
+                               // 0.74 -> 1.26 breath of eps moved the crest spacing 4 %). An amplitude LFO on the
+                               // twelve charges leaves shells of bright and dark 36 cells apart marching outward
+                               // at c, which is what a bass that wobbles looks like.
 export const LAMLO = 0.035;    // the wavelength is never shorter than this (the grid must resolve it)
 export const TSIGH = 0.022;    // a launch's ring thickness, in grid heights
 export const TPKS = 2.6;       // the pulse peaks this many sigmas after its launch step
@@ -40,7 +60,10 @@ export const SNAREA = 0.11;    // the loudest sector's sharp pulse
 export const HATA = 0.025;     // the hats' tiny launches on all twelve
 export const SHIM = 0.0045;    // the hats' CONTINUOUS shimmer amplitude
 export const SHIMM = 3.0;      // ... at this multiple of the carrier frequency
-export const SUBK = 0.004;     // the standing current: sub bass at the centre
+export const SUBK = 0.030;     // the standing current: sub bass at the centre. 0.004 was invisible (v0.11 item 3:
+                               // the bass has to pump the middle of the picture, not only tint it).
+export const KPUN0 = 0.6;      // the kick current's pulse amplitude is KICKA x (KPUN0 + KPUN1 x punchy): a
+export const KPUN1 = 0.8;      // transient-heavy mix hits harder than a compressed one
 export const DIPA = 0.030;     // the dipole pair's current amplitude
 export const DIPR = 0.40;      // ... its resting share, so the dipole is lit between nudges
 export const DIPK = 2.2;       // ... and how much a nudge's angular velocity adds to it
@@ -62,11 +85,11 @@ export const CY = new Float32Array(12);
 export const CA = new Float32Array(12);        // ... and their Ez amplitude this substep
 export const W12 = new Float32Array(12);       // the twelve weights (chroma, or the harmAngle fallback)
 const FAM = new Float32Array(3);               // the three families' phase drifts
-export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 100, S: COURANT };
+export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 100, S: COURANT, wa: 1 };
 
 let mode = null, sched = -1e18, lastHit = -1e18, step = 0;
 let ph = 0, dph = 0;           // the carrier's phase and its per-substep increment
-let g = { amp: 1, hat: 0, sub: 0, loud: 0, dip: 0, pol: 1, shim: 0, alive: 1, pres: 1 };
+let g = { amp: 1, hat: 0, sub: 0, loud: 0, dip: 0, pol: 1, shim: 0, alive: 1, pres: 1, cent: CENT0, dirty: 0, punchy: 0.5, lfo: 0 };
 
 export function reset() {
   AT.fill(-1e18);
@@ -113,7 +136,8 @@ export function env(age, sig) {
 // One frame of bookkeeping. Called from update() before the substeps run.
 //   sub   substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
 //   lev   [kick, snare, hat] · beatNow beatCount + beatPhase · beatEvt MS.beat
-//   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate, alive, pres}
+//   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate, alive, pres, cent, dirty,
+//          punchy, lfo}
 export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
   // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the
   // ring radii, the spacings and the carrier's phase step. (The first train trace reported 43.5 cells of spacing
@@ -122,13 +146,7 @@ export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
   OUT.S = S;
   const sig = Math.max(2, TSIGH * gh / S);
   const spb = sub * (60 / Math.max(40, p.bpm)) / Math.max(1e-4, p.dt);
-  let lam = Math.max(LAMLO * gh, LAM0 * gh * BPM0 / Math.max(40, p.bpm) / (1 + RSWEEP * p.sweep));
-  // regularity LOCKS the carrier to the grid: a steady rhythm pulls the wavelength to the nearest exact fraction of
-  // the distance light covers in one beat, so the wavefronts and the rings line up and the plane reads as standing;
-  // an unsteady one lets the carrier sit where the tempo put it.
-  const travel = spb * S;
-  const nw = Math.max(1, Math.round(travel / lam));
-  lam += (travel / nw - lam) * Math.max(0, Math.min(1, p.reg || 0));
+  const lam = Math.max(LAMLO * gh, LAM0 * gh * Math.pow(2, -CENTK * ((p.cent === undefined ? CENT0 : p.cent) - CENT0)) / (1 + RSWEEP * p.sweep));
   OUT.sig = sig;
   OUT.lam = lam;
   OUT.spb = spb;
@@ -163,11 +181,18 @@ export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
 // One substep: fill CA / OUT.j / OUT.mx / OUT.my for this substep and advance the clocks.
 export function substep() {
   const sig = OUT.sig;
+  const wa = Math.max(0, 1 + WOBA * (g.lfo || 0));   // the wobble on the carrier's amplitude
+  // the carrier's own waveform, growl and all: everything that radiates at the carrier frequency uses it, the
+  // dipole included — the dipole sits at the centre, so a pure sine there drowns the charges' harmonic along the
+  // +x ray that probe.js hRow() measures (the first dirty trace read the dipole and reported no doubling at all).
+  const car = (t) => Math.sin(t) + DIRTK * (g.dirty || 0) * Math.cos(2 * t);
+  OUT.wa = wa;
   let jc = SUBK * g.sub * Math.sin(ph);
   for (let k = 0; k < 12; k++) {
     const pc = (7 * k) % 12;
     const f = FAM[(pc / 4) | 0];
-    let a = CHG * g.amp * W12[k] * Math.sin(ph + f + 0.37 * k);
+    const th = ph + f + 0.37 * k;
+    let a = CHG * g.amp * wa * W12[k] * car(th);
     a += SHIM * g.shim * W12[k] * Math.sin(SHIMM * ph + 1.7 * k);
     CA[k] = a;
   }
@@ -178,7 +203,7 @@ export function substep() {
       const e = env(step - AT[i], sig);
       if (e === 0) continue;
       const v = e * AM[i];
-      if (b === 0) jc += KICKA * v;
+      if (b === 0) jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * v;
       else if (b === 1) CA[AW[i] % 12] += SNAREA * v;
       else for (let k = 0; k < 12; k++) CA[k] += HATA * v;
     }
@@ -189,7 +214,7 @@ export function substep() {
   // flare on the beat the dipole turns. surpriseEvt flips its polarity (g.pol) for one frame's worth of source.
   // DIPR is scaled by `presence` (v0.11 item 1): in silence the dipole is not merely quiet, it is off between
   // nudges, and there are no nudges either (hush/calm hold the turn).
-  OUT.dj = DIPA * g.amp * g.pol * (DIPR * (g.pres === undefined ? 1 : g.pres) + DIPK * Math.abs(g.yawRate)) * Math.sin(ph);
+  OUT.dj = DIPA * g.amp * g.pol * (DIPR * (g.pres === undefined ? 1 : g.pres) + DIPK * Math.abs(g.yawRate)) * car(ph);
   OUT.dx = Math.cos(g.yaw);
   OUT.dy = Math.sin(g.yaw);
   ph += dph;
@@ -219,5 +244,5 @@ export function spacings(band) {
 }
 
 export function info() {
-  return { mode, step, S: +OUT.S.toFixed(4), shim: +(g.shim || 0).toFixed(4), fam: [+FAM[0].toFixed(3), +FAM[1].toFixed(3), +FAM[2].toFixed(3)], amp: +(g.amp || 0).toFixed(3), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
+  return { mode, step, S: +OUT.S.toFixed(4), wa: +OUT.wa.toFixed(3), shim: +(g.shim || 0).toFixed(4), fam: [+FAM[0].toFixed(3), +FAM[1].toFixed(3), +FAM[2].toFixed(3)], amp: +(g.amp || 0).toFixed(3), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
 }
