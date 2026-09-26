@@ -8,7 +8,13 @@ field lines as closed contours of the stream function, a round porthole. **Force
 (the new core key, the user's one answered item — `n` cycles the registry through the landing picker). The user asked for the scene and
 for the tag without a gate; **the user has not looked at the result yet.**
 
-**First:** show the user `tools/accept/v0.10/montage-maxwell.jpg` (MAXWELL left · TORUS2 right: house, aba, dnb at f360/f840) and
+**The user looked (2026-09-26) and gave three notes — too noisy in silence; the wave should carry the note's colour (it is two hues);
+no wobble on dubstep, different music looks alike. The plan is `MAXWELL-WOBBLE-SESSION-PROMPT.md` (v0.11, MAXWELL in place, still
+forced-only: `presence` gates the sources and the contours get an absolute floor; a colour field by linearity so each wave carries its
+note's hue; the sub's wobble breathes the medium's ε, the carrier follows the centroid, `dirty` doubles the ripple, tier-3 substeps 4 → 3
+for the budget). Bring a dubstep mp3. Run that session first; the paragraph below is what it supersedes.**
+
+**Was first:** show the user `tools/accept/v0.10/montage-maxwell.jpg` (MAXWELL left · TORUS2 right: house, aba, dnb at f360/f840) and
 `montage-maxwell-real.jpg` (CyborgNinja + WhoLikesToParty at 20/40/60/80 s), `montage-maxwell-media.jpg` (the four media),
 `montage-maxwell-drop.jpg` (drop vs no drop), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the eye sees" and
 the ranked leans (§42). Their word decides — a retune is a named constant at the top of `assets/scenes/maxwell/{fdtd,medium,sources,
