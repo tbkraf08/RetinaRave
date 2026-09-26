@@ -31,7 +31,7 @@ export const HELP = {
     tension: 'shears the lens: a tense passage squashes it into an ellipse and the focus smears',
     dropEvt: 'the walls stop absorbing and become mirrors: the field slams into a standing wave, and the mirror is held for a bar and then relaxes over another, so the whole gesture is about two bars',
     arc: 'before anything has started there is no medium at all: empty space, and a high loss, so the plane just glows',
-    sectionAlt: 'which of the four media this section is: a lens, a mirror cavity, a photonic lattice, a waveguide',
+    sectionAlt: 'which medium this section is: the ripples travel through a lens, or through a hall of mirrors, and the section decides which',
     sectionEvt: 'a new section rotates the geometry, so the same medium returns at a new angle',
     surpriseEvt: 'a surprise flips the dipole: its next ring comes out with the opposite sign',
     flowBass: 'the scene\'s own musical clock, the low band\'s share of it',

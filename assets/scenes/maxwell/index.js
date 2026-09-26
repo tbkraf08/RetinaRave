@@ -10,7 +10,7 @@
 import { mkAnchor } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { COURANT, CUT, DIPD, FS_E, FS_H, GRIDT, SRCW, mkField, readBand } from './fdtd.js';
-import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
+import { FS_MED, GEON, GEOROT, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
 import { CSAT, TROUGH, WFL, WFL1, buildColour, clearColour, colourTex, initColour, noteHues, stepColour } from './colour.js';
 import { ASCALE, CSTAT, FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, portFade, stream } from './render.js';
 import * as SRC from './sources.js';
@@ -222,8 +222,11 @@ function hKey(v) {
   keyPin = p[0] === '' || +p[0] < 0 ? null : { k: ((+p[0] | 0) % 12 + 12) % 12, m: +p[1] ? 1 : 0 };
   return JSON.stringify(keyPin);
 }
-// hooks.medium(0..3) pins one of the four geometries; GEON or more pins EMPTY SPACE, which is the control every
-// measurement of a free wave needs (a ring reflected off the cavity wall is not a ring of the train).
+// hooks.medium(0..3) pins one of the four SLOTS — 0 lens, 1 mirror cavity, 2 empty space, 3 the waveguide — and GEON
+// or more pins empty space as well, which is the control every measurement of a free wave needs (a ring reflected off
+// the cavity wall is not a ring of the train). Only 0 and 1 are in the section's rotation (medium.js GEOROT); slot 2
+// was the photonic lattice until v0.12 item C and is now the control, so the user's "pattern of small circles"
+// cannot come back through a pin either.
 function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
 function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
 // hooks.lines(0) draws no field lines — what the bench needs to say how much of the scene they are
@@ -264,8 +267,8 @@ function hTimbre(c, d) {
 export default {
   name: 'maxwell',
   id: 9,
-  tag: "maxwell's equations, solved live — twelve charges by pitch class, a dipole nudged per beat, hits as wavefronts, the section as the medium",
-  card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: twelve charges by pitch class, a magnet turning one notch a beat, and every drum hit a real ripple of light" },
+  tag: "maxwell's equations, solved live — every sound a wavefront in its note's hue, a dipole nudged per beat, the section a lens or a mirror cavity",
+  card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: every sound sends out a real ripple of light in its own note's colour, through a lens or a hall of mirrors — and silence sends out nothing" },
   feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid',
@@ -350,7 +353,7 @@ export default {
     U.zoom = ZOOM0 + ZOOMK * (0.6 * MS.intensity + 0.4 * MS.arousal) + U.bounce;
 
     // the medium is the section, cross-faded so `cuts` stays 'continuous'; the build makes it ring longer and bend harder
-    const sel = medPin >= 0 ? medPin : MS.sectionAlt < 0 ? 0 : ((MS.sectionAlt % GEON) + GEON) % GEON;
+    const sel = medPin >= 0 ? medPin : MS.sectionAlt < 0 ? 0 : ((MS.sectionAlt % GEOROT) + GEOROT) % GEOROT;
     if (sel !== U.geoA) { U.geoB = U.geoA; U.geoA = sel; U.geoF = 0; }
     U.geoF = Math.min(1, U.geoF + dt / GEOTC);
     if (MS.sectionEvt) U.geoRot = 0.37 * Math.max(0, MS.sectionAlt | 0);

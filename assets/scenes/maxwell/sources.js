@@ -200,7 +200,11 @@ export function substep() {
   OUT.step = step;
 }
 
-// The live launches of one band as radii in cells: the ring geometry, read as numbers.
+// The last RPT launches of one band as radii in cells: the ring geometry, read as numbers. The shell has long since
+// passed a radius of a few hundred cells, but the BOOKKEEPING radius is what says the rhythm became the geometry.
+// Only the newest RPT are reported: the shared buffer holds 32 (v0.11 had 8 per band) and the oldest of those were
+// launched at another tier's substep rate, so their spacings are a different `spb`'s and belong to no comparison.
+export const RPT = 8;
 export function rings(band) {
   const out = [];
   for (let i = 0; i < NSLOT; i++) {
@@ -210,7 +214,7 @@ export function rings(band) {
     if (r < -2) continue;
     out.push(+r.toFixed(3));
   }
-  return out.sort((a, b) => a - b);
+  return out.sort((a, b) => a - b).slice(0, RPT);
 }
 
 // The spacings between consecutive live rings of a band, in cells — the proof that the rhythm is the geometry.
