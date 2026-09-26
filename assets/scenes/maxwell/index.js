@@ -23,14 +23,17 @@ const FGAIN = 3.4;      // how brightly a unit of |E| burns
 const GLOWG = 0.85;     // ... and a charge's glow
 const FLOOR = 0.010;    // the plane is never pure black: silence still shows the cavity
 const MEDVIS = 1.0;     // how visible the medium is
-const DROPTC = 1.9;     // the drop's mirror decays over about two bars
+const MIRHOLD = 2.2;    // the drop's mirror is held full on for about a bar ...
+const DROPTC = 3.2;     // ... and then relaxes over another, so the whole gesture is about two bars
 const CONTC = 0.45;     // the medium's contrast and shear ease over this many seconds
 const HUETC = 0.30;     // the charges' hue purity eases (clarity moves fast)
 const DSB = 6;          // the H-line downsample block, in cells
+const FITK = 0.75;      // the porthole's framing: this much of the grid height across one screen height
+const RINGM = 0.368;    // ... but never so close that the charges' ring (0.34 grid heights) is cropped
 
 const U = {
   tier: -1, sub: 2, pend: 0, yaw: 0, yawRate: 0, bounce: 0, zoom: 1, mir: 0, pol: 1, geoA: 0, geoB: 0, geoF: 1,
-  geoRot: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
+  geoRot: 0, mirHold: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
   beatNow: 0, phrase: 0, loud: 0, mx: 0, lam: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
   tw: 0, th: 0, flow: 0, light: 0.7, fit: 144,
 };
@@ -190,7 +193,7 @@ function hKey(v) {
 // hooks.medium(0..3) pins one of the four geometries; GEON or more pins EMPTY SPACE, which is the control every
 // measurement of a free wave needs (a ring reflected off the cavity wall is not a ring of the train).
 function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
-function hDrop() { U.mir = 1; return 1; }
+function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
 
 export default {
   name: 'maxwell',
@@ -282,8 +285,12 @@ export default {
     U.shear += (0.55 * MS.tension - U.shear) * (1 - Math.exp(-dt / CONTC));
     U.sigma = MS.arc === 'idle' ? VACSIG : (1 - P.ring) * SIGMAX;
     U.vac = medPin === -2 || MS.arc === "idle" ? 1 : 0;
-    if (MS.dropEvt) U.mir = 1;
-    U.mir *= Math.exp(-dt / DROPTC);
+    // the drop's mirror HOLDS for a bar and then relaxes, rather than decaying from the first frame: while it is
+    // full on the plane is closed and lossless and the field genuinely stands (a pure exponential from 1 gave the
+    // loss back inside half a second, and the standing wave never had time to form).
+    if (MS.dropEvt) { U.mir = 1; U.mirHold = MIRHOLD; }
+    if (U.mirHold > 0) U.mirHold -= dt;
+    else U.mir *= Math.exp(-dt / DROPTC);
     if (U.mir < 1e-4) U.mir = 0;
 
     // Ampere-Maxwell: the bass is a current, the hits are launches, bpm is the carrier, regularity locks it to the grid
@@ -327,7 +334,11 @@ export default {
     U.pend = 0;
     for (let i = 0; i < n; i++) substep(S);
     // the picture. The grid is CONTAINED in the viewport: the cells one screen height covers.
-    U.fit = ASP >= GW / GH ? GH : GW / ASP;
+    // How many cells one screen height covers. render.js fades the plane to black on a DISC of radius half the grid
+    // height, so what the camera turns is a round PORTHOLE and its full turn every sixteen beats sweeps no corners
+    // across the frame. FITK frames that disc: it fills the height and is round at the sides. The second term is the
+    // portrait rule — on a phone the ring of charges must not be cropped, so the plane letterboxes instead.
+    U.fit = Math.max(FITK * GH, 2 * RINGM * GH / Math.max(0.2, ASP));
     ctx.use(prS, target, w, h);
     ctx.tex(prS, 'uF', 0, CUR);
     ctx.tex(prS, 'uM', 1, MED);

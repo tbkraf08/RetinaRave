@@ -262,3 +262,68 @@ from Faraday (step 1); that number is the sharpest instrument the scene has for 
 
 Shot `mx-lines-f360` (tier 1): fine closed loops threaded between the wave crests, tight where the field is strong
 and sparse where it is weak, with the cavity's two gaps leaking a fan of them outward.
+
+---
+
+## Step 6 — the four media
+
+`hooks.medium(0..3)` pins one of the four; `hooks.medium(4)` — anything at or above `GEON` — pins **empty space**,
+which is the control every measurement of a free wave needs (step 2's train trace) and was not in the brief.
+`test&scene=9&tier=1&medium=N`, CLOCK=1, f360, tiled in `mx-media.jpg`:
+
+- **0 lens** (`mx-med0-lens-f360`) — the rings are visibly *tighter inside the disc than outside it*: a higher ε is
+  a lower phase velocity, so the same carrier has a shorter wavelength there. The ring crests bend as they cross the
+  rim, which is refraction and is the only thing in the scene that is drawn by nothing at all.
+- **1 mirror cavity** (`mx-med1-cavity-f360`) — a ring of conductor with two gaps. The field is held inside it as a
+  set of concentric standing rings, much brighter than outside, and a fan of wavefronts escapes through each gap.
+- **2 photonic lattice** (`mx-med2-lattice-f360`) — a square grid of ε dots at about two carrier wavelengths'
+  period. **The wavelength crawls**: the rings no longer expand as circles but break into a cellular pattern whose
+  cells are the lattice's own, because the components near the band edge travel at a fraction of the free speed
+  while the rest run ahead — the picture is a slow standing lattice mode with fast rings threading it.
+- **3 waveguide** (`mx-med3-guide-f360`) — two conducting rails. Between them the field runs along the guide as a
+  bright column with the transverse mode's nodes visible against the rails; outside them it is faint and radially
+  symmetric, because nothing from the source gets past a conductor except through the ends.
+
+---
+
+## Step 7 — the drop's mirror
+
+Two changes to the plan, both measured into existence:
+
+1. **The mirror must take the bulk loss away too, not only the absorber.** At the loss the music asks for (σ ≈ 0.024
+   from `params.ring`), a wave is down to a tenth of itself after ~100 cells, so it never reaches the absorber at
+   all: turning the absorber into a conductor changed the energy by **0.2 % / 1.3 % / 2.8 %** against the control.
+   `MIRQ = 1`: with the mirror full on the plane is closed *and* lossless.
+2. **The mirror is a surface, not a band.** A conductor is Ez = 0, so a thick one destroys the Ez of everything that
+   enters it. Turning the whole 16-cell absorber band into conductor still lost **a third** of the energy in two
+   seconds; a three-cell shell **6 %**, and a sub-cell one **9 %** (too thin to reflect — the wave tunnels it). The
+   shell is about a cell and a half.
+3. **The mirror HOLDS and then relaxes** (`MIRHOLD` 2.2 s, then `DROPTC` 3.2 s), instead of decaying from the first
+   frame. A pure exponential from 1 gave the loss back inside half a second and the standing wave never formed.
+
+The measurement, `test&scene=9&tier=1&medium=4` (empty space, so the absorber is the only exit), with the drive cut
+at f300 (`hooks.train("off")` — a new empty pinned pattern — and `CARD.param('maxwell','charge',{c:0})`, which
+silences the twelve charges *and* the dipole) so what is measured is the boundary and nothing else:
+
+```
+                     f300 (the cut)     f330        f360        f420
+hooks.drop() fired   602.119848      752.515762  745.676572  705.339339      f330 -> f360  -0.91 %
+control, no drop     602.119848      369.517686  168.228847   15.721881      f330 -> f420  -6.29 %
+```
+
+The control has lost **97.4 %** of its energy by f420; the mirrored plane **6.3 %**, all of it into the shell. The
+brief's "within 5 %" is met over the half second in which the standing wave forms and missed by 1.3 points over the
+full two; the residue is the discrete conductor itself and is named in `medium.js`.
+
+`mx-drop-f330/f360/f420` against `mx-nodrop-f330/f360/f420`: with the mirror the plane is filled corner to corner
+with a standing interference pattern that is still there two seconds later; without it there is nothing left but the
+twelve charges' own glow and a few contour rings around them.
+
+### The framing, which the drop montage is what found
+
+The camera yaws a full turn every sixteen beats. With the picture drawn as the grid's **rectangle** that turn sweeps
+four black corners across the frame, and at yaw 5.9 rad the drop shot had a straight black cut through the middle of
+its standing wave. The plane is now faded to black on a **disc** of radius half the grid height, over the absorber's
+own width — a round porthole, which has no corners to sweep — and `FITK` frames that disc to fill the height.
+`RINGM` keeps the portrait rule the plan asked for: on a phone the plane letterboxes rather than crop the ring of
+charges.

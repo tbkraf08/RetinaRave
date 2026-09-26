@@ -21,6 +21,9 @@ export const SIGMAX = 0.035;  // the vacuum's own loss at `ring` = 0. The decay 
 export const VACSIG = 0.09;   // arc 'idle' (nothing has started): no geometry, this much loss, the plane just glows.
                               // index.js applies it as the base sigma; uMed.w only switches the GEOMETRY off, so
                               // hooks.medium(4) can pin empty space without also pinning the intro's loss.
+// The picture is a round PORTHOLE of the plane: render.js fades it to black over the absorber's own width, so the
+// grid's rectangle is never seen and the yawing camera has no corners to sweep. The geometry is sized against that
+// disc — radius half a grid height, less the absorber.
 export const RLENS = 0.30;    // the lens disc's radius, in units of the grid HEIGHT (the ring of charges is at 0.34)
 export const LSOFT = 0.05;    // ... and the width of its edge, so the lens is not a scattering step
 export const RCAV = 0.385;    // the mirror cavity's radius
@@ -34,6 +37,11 @@ export const XGUI = 0.80;     // ... how far along x they run
 export const GEON = 4;
 export const NAMES = ['lens', 'mirror cavity', 'photonic lattice', 'waveguide'];
 export const GEOTC = 1.2;     // a section change cross-fades the two geometries over this many seconds
+export const MIRQ = 1.00;     // the drop's mirror takes the BULK loss away too, all of it: with the mirror full on
+                              // the plane is closed AND lossless, and the field really stands. Without this the drop
+                              // changed almost nothing — at the loss the music asks for, a wave is down to a tenth
+                              // of itself before it ever reaches the absorber, so turning the absorber into a mirror
+                              // was turning a mirror on behind a curtain.
 
 export const FS_MED = `
 uniform vec2 uSz;
@@ -77,8 +85,12 @@ void main() {
   float t = max(0.0, (${ABSN.toFixed(1)} - d) / ${ABSN.toFixed(1)});
   float abs0 = ${ABSSIG.toFixed(3)} * t * t;
   float eps = 1.0 + (uMed.x - 1.0) * g.x;
-  float sig = uMed.z + abs0 * (1.0 - uMir.x);
-  float mir = max(g.y, uMir.x * smoothstep(0.0, 0.35, t));
+  float sig = uMed.z * (1.0 - ${MIRQ.toFixed(2)} * uMir.x) + abs0 * (1.0 - uMir.x);
+  // The drop's mirror is a SHELL about a cell and a half thick at the very edge, not the whole absorber band. A
+  // conductor is Ez = 0, so a thick one destroys the Ez of everything that enters it: with the whole 16-cell band
+  // turned to conductor the "lossless" cavity lost a third of its energy in two seconds; a three-cell shell lost
+  // 6 % and a sub-cell one 9 % (too thin to reflect — the wave tunnels it). A mirror is a surface.
+  float mir = max(g.y, uMir.x * smoothstep(0.90, 0.99, t));
   o = vec4(eps, sig, clamp(mir, 0.0, 1.0), 0.0);
 }
 `;

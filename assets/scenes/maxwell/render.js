@@ -1,4 +1,5 @@
 // MAXWELL — the display pass: one fragment program that turns the field into the picture.
+import { ABSN } from './fdtd.js';
 //
 // Signed Ez is the HUE: positive toward the key's anchor hue (assets/math/keycolour.js, the circle of fifths), negative
 // toward the hue half a turn away, continuously through zero — so a standing wave reads as two interleaved colours and
@@ -60,9 +61,11 @@ void main() {
   float hue = uCol.x + 0.25 * (1.0 - sgn);
   float L = uGain.x * (abs(ez) + ${HGAIN.toFixed(2)} * hm);
   L = L / (1.0 + L);
-  // the absorber's width is also the picture's edge: fade there, so the plane has no hard rectangular border when the
-  // camera yaws it (the first montage showed the grid's corner as a straight black cut across the frame)
-  float ed = smoothstep(0.0, 22.0, min(min(g.x, g.y), min(uSz.x - g.x, uSz.y - g.y)));
+  // The picture is a round PORTHOLE: the plane fades to black over the absorber's own width, on a DISC of radius
+  // half the grid height. A rectangular fade would have the camera's full turn sweep four black corners across the
+  // frame (the drop montage at yaw 5.9 was a straight black cut through the middle of the standing wave).
+  float R = 0.5 * uSz.y;
+  float ed = 1.0 - smoothstep(R - ${(2.2 * ABSN).toFixed(1)}, R - ${(0.2 * ABSN).toFixed(1)}, length(g - uCtr));
   vec3 col = hueRGB(hue, ${LSAT.toFixed(2)} * uCol.y, uCol.z) * L;
   // the medium, as a hint: the lens brightens with its eps contrast, a conductor draws as a cool line
   col += uGain.y * (${MEDE.toFixed(3)} * max(0.0, md.r - 1.0) + ${MEDC.toFixed(3)} * md.b) * hueRGB(uCol.w, 0.5, 1.0);

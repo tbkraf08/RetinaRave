@@ -22,8 +22,9 @@ export const SLOTS = 8;        // the last 8 launches per band
 export const HI = 0.45;        // a rising edge: over HI having been under LO. #test sets hat to EXACTLY 0.5, so a
 export const LO = 0.25;        // threshold of 0.5 would never fire (HARNESS "Pitfalls").
 export const FAINT = 0.30;     // the `beat` event's own faint kick when no band hit came in the last beat
-export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at 120 bpm (~6 waves across the plane).
-                               // At 0.09 (11 waves) twelve sources interfering read as speckle, not as waves.
+export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at 120 bpm — about 6 waves across the
+                               // porthole, which is where it reads as waves rather than as speckle at one end or
+                               // as two fat blobs at the other.
 export const BPM0 = 120;
 export const LAMLO = 0.035;    // the wavelength is never shorter than this (the grid must resolve it)
 export const TSIGH = 0.022;    // a launch's ring thickness, in grid heights
@@ -44,7 +45,9 @@ export const DIPK = 2.2;       // ... and how much a nudge's angular velocity ad
 export const RING = 0.34;      // the charges' ring radius in grid heights (inside the cavity, outside the lens)
 export const PSK = 0.40;       // how far flowBass/Mid/High drift the three families' phases
 export const RSWEEP = 0.45;    // roll / riser sweep the carrier up by this fraction and the drop snaps it back
-export const PAT = { '4': [0, 1, 2, 3], synco: [0, 1.5, 2, 3.5] };
+// the pinned patterns, in beats of the bar. 'off' is the empty one: no launches at all, which is how a proof can
+// stop the drive without stopping the field (the drop's standing-wave hold needs a source-free window).
+export const PAT = { '4': [0, 1, 2, 3], synco: [0, 1.5, 2, 3.5], off: [] };
 
 // --- state -------------------------------------------------------------------------------------------------------
 const AT = new Float64Array(BANDS * SLOTS);    // launch step per slot (-1e18 = never used)
@@ -81,8 +84,9 @@ reset();
 
 // hooks.train('4' | 'synco' | null): pin the launches to a pattern on the fake clock, edge detector off.
 export function train(v) {
-  mode = v === '4' || v === '4x4' ? '4' : v === 'synco' || v === 'sync' ? 'synco' : null;
-  reset();
+  mode = v === '4' || v === '4x4' ? '4' : v === 'synco' || v === 'sync' ? 'synco' : v === 'off' ? 'off' : null;
+  if (mode !== 'off') reset();
+  else { sched = 1e18; PREV.fill(1); }
   return mode;
 }
 export const trainMode = () => mode;
