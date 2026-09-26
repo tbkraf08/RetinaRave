@@ -37,6 +37,7 @@ export const XGUI = 0.80;     // ... how far along x they run
 export const GEON = 4;
 export const NAMES = ['lens', 'mirror cavity', 'photonic lattice', 'waveguide'];
 export const GEOTC = 1.2;     // a section change cross-fades the two geometries over this many seconds
+export const WOBR = 0.50;     // the wobble's radius in grid heights: the whole porthole, strongest at the centre
 export const MIRQ = 1.00;     // the drop's mirror takes the BULK loss away too, all of it: with the mirror full on
                               // the plane is closed AND lossless, and the field really stands. Without this the drop
                               // changed almost nothing — at the loss the music asks for, a wave is down to a tenth
@@ -50,6 +51,14 @@ uniform float uHS;        // the grid height in cells: the normalising length, s
 uniform vec3 uGeo;        // the geometry now, the one before, and the cross-fade 1 -> 0
 uniform vec4 uMed;        // eps contrast (params.lens), the lens shear (tension), base sigma, the vacuum mix (arc)
 uniform vec2 uMir;        // the drop's mirror 0..1, and the geometry's own rotation (sectionAlt)
+uniform float uWob;       // the wobble (v0.11 item 3), applied over WOBR with a raised-cosine profile: strongest at
+                          // the centre, nothing at the rim. It has to be GRADED. A perfectly UNIFORM eps(t) leaves
+                          // every plane wave an eigenmode with its k unchanged — only the frequency moves — so a
+                          // uniform breath cannot bunch a ring that is already in flight (measured: the crest
+                          // spacing moved 4 % over a full 2 Hz cycle at eps 0.74 -> 1.26). A GRADED one is a lens
+                          // that breathes: the middle of the cavity slows while the rim does not, the fronts bend
+                          // as they cross it, and the ripple visibly squeezes and relaxes at the wobble rate.
+                          // index.js clamps uWob into [WOBLO, WOBHI] so S / sqrt(eps) never leaves the Courant limit.
 float sm(float e, float x) { return 1.0 - smoothstep(0.0, e, x); }   // 1 inside, 0 outside, over a width e
 // one geometry: eps mask (x) and conductor mask (y), in grid-height units around the centre
 vec2 geo(int k, vec2 u, float shear) {
@@ -84,7 +93,8 @@ void main() {
   float d = min(min(q.x, q.y), min(uSz.x - 1.0 - q.x, uSz.y - 1.0 - q.y));
   float t = max(0.0, (${ABSN.toFixed(1)} - d) / ${ABSN.toFixed(1)});
   float abs0 = ${ABSSIG.toFixed(3)} * t * t;
-  float eps = 1.0 + (uMed.x - 1.0) * g.x;
+  float wr = clamp(length(u) / ${WOBR.toFixed(3)}, 0.0, 1.0);
+  float eps = (1.0 + (uMed.x - 1.0) * g.x) * (1.0 + (uWob - 1.0) * (0.5 + 0.5 * cos(3.14159265 * wr)));
   float sig = uMed.z * (1.0 - ${MIRQ.toFixed(2)} * uMir.x) + abs0 * (1.0 - uMir.x);
   // The drop's mirror is a SHELL about a cell and a half thick at the very edge, not the whole absorber band. A
   // conductor is Ez = 0, so a thick one destroys the Ez of everything that enters it: with the whole 16-cell band
