@@ -57,6 +57,13 @@ export const NOTEA = 0.045;    // a note onset's amplitude — the secondary sou
 export const NOTEREFR = 0.20;  // ... and its per-bin refractory
 export const ONSETW = 0.05;    // an engine `onset` launches only if no band launched within this many seconds
 export const ONSETA = 0.07;    // ... at this amplitude, between the snare's and the note's
+export const KSIL = 1.0;       // seconds without a kick launch after which EVERY launch (snare, hat, the engine's onset)
+                               // moves to the CENTRE: a breakdown's stabs, chops and hats ring from the middle as thin
+                               // shells (sources.js WSIG, ONSETC) instead of dim sector pulses on the ring — SeeYouDrop
+                               // 50-58 s read as "no ripples" with the kick silent 6 s while the mids and highs stayed
+                               // loud (v0.12.1). The first cut moved the onset alone: two shells in six seconds, at half
+                               // a kick's current — a dot, not a ring.
+export const ONSC0 = 0.4;      // ... a centre onset's amplitude is max(ONSC0, mid, high): never fainter than this
 
 // --- state ---------------------------------------------------------------------------------------------------------
 const PK = new Float64Array(3);        // the tracked peak per drum band (only 1 snare and 2 hat use it)
@@ -64,7 +71,7 @@ const ARM = new Int32Array(3);
 const LAST = new Float64Array(3);      // ... and the time of its last launch
 const CEM = new Float64Array(12);      // the NOTEW ema of `chroma` a rise is measured against
 const NLAST = new Float64Array(12);    // the time of each pitch class's last note launch
-let T = 0, kc = -1, tBand = -1e9;
+let T = 0, kc = -1, tBand = -1e9, tKick = -1e9;
 
 export function resetOnsets() {
   PK.fill(0);
@@ -75,6 +82,7 @@ export function resetOnsets() {
   T = 0;
   kc = -1;
   tBand = -1e9;
+  tKick = -1e9;
 }
 resetOnsets();
 
@@ -89,7 +97,7 @@ function risen(C) {
 }
 
 // One frame of detection. Fills `Q` with (band, sector, amp, hue) quadruples and returns how many.
-//   p     {dt, lev:[kick,snare,hat], kickCount, onset, chroma, bchroma, alive, loud, quiet, bpin}
+//   p     {dt, lev:[kick,snare,hat], kickCount, onset, chroma, bchroma, alive, loud, quiet, bpin, mid, high}
 //   hues  the twelve sector hues (index.js GH12) · anchor the key's hue, for a launch with no note of its own
 // `quiet` (hooks.quiet(1)) still advances every clock and every ema — a pin that froze them would dump the whole
 // backlog as a burst of launches the moment it was released.
@@ -111,11 +119,13 @@ export function scan(p, Q, hues, anchor) {
     const hue = sec < 0 ? anchor : hues[sec];
     const amp = Math.min(1, Math.max(KLEV0, p.lev[0]));
     for (let i = 0; i < dk; i++) { Q[4 * n] = 0; Q[4 * n + 1] = -1; Q[4 * n + 2] = amp; Q[4 * n + 3] = hue; n++; }
+    tKick = T;
     tBand = T;
   }
   // the snare and the hat: a re-armed edge on the engine's decaying impulse
   const rs = risen(C);
   const sec = rs >= 0 ? rs : p.loud | 0;
+  const centre = T - tKick > KSIL;   // the breakdown rule: with the kick silent, everything launches from the middle
   for (let b = 1; b < 3; b++) {
     const x = p.lev[b];
     PK[b] = Math.max(x, PK[b] * pd);
@@ -124,13 +134,15 @@ export function scan(p, Q, hues, anchor) {
       ARM[b] = 0;
       LAST[b] = T;
       tBand = T;
-      Q[4 * n] = b; Q[4 * n + 1] = sec; Q[4 * n + 2] = Math.min(1, x); Q[4 * n + 3] = hues[sec]; n++;
+      Q[4 * n] = b; Q[4 * n + 1] = centre ? -1 : sec; Q[4 * n + 2] = Math.min(1, x); Q[4 * n + 3] = hues[sec]; n++;
     }
   }
   // anything else that hits: the engine's own onset, when no band spoke for it
+  // (from the centre, at the mids'/highs' level, while the kick has been silent KSIL — the breakdown rule)
   if (p.onset && T - tBand > ONSETW && n < MAXQ) {
     tBand = T;
-    Q[4 * n] = 3; Q[4 * n + 1] = sec; Q[4 * n + 2] = 1; Q[4 * n + 3] = hues[sec]; n++;
+    const amp = centre ? Math.min(1, Math.max(ONSC0, p.mid || 0, p.high || 0)) : 1;
+    Q[4 * n] = 3; Q[4 * n + 1] = centre ? -1 : sec; Q[4 * n + 2] = amp; Q[4 * n + 3] = hues[sec]; n++;
   }
   // notes as such: a chroma bin that rose, from its own sector, in its own hue
   if (C && (p.alive === undefined ? 1 : p.alive) > 0.5) {

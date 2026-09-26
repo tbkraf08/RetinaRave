@@ -2043,3 +2043,44 @@ headroom; (7) `TSIGK`/`DIRTK` on a real dubstep track.
 hue numbers are palette turns); CONTRACTS §1.4 the release-on-`undefined` convention (every pin hook is a mutator when read — the
 worker lost a run to `hooks.medium()` un-pinning its own shot; a trace reads `hud()` or a read-only hook). **Owed:** the
 launch-weighted expected hue in `det12.py`; the `CDIP` comment in `colour.js` now describes v0.11's workaround.
+
+## §45 MAXWELL — thin waves and fat waves, the breakdown rule, v0.12.1 (2026-09-26, orchestrator alone, from the user's look at SeeYouDrop)
+
+**The user's word.** Watching the first dubstep (Ray Volpe — SEE YOU DROP, `~/Music/RetinaRave/SeeYouDrop.flac`) through MAXWELL:
+"the part that was missing ripples was 50s-57s", then "the sounds didn't feel quiet tho. feel like there should be more skinnier
+waves, (vs bass fatter waves)?". A per-second replay of 46–62 s (`tools/accept/v0.12/breakdown-window.py`, `montage-syd-breakdown.jpg`)
+agreed: 50.5–58 s is the breakdown, `kick` 0 and the engine's `kickCount` frozen at 65 for six seconds, `bass` .04, while `snare`
+peaked .35 and `hat` .57 (the drum bar HI is .45) and the mids and highs stayed loud. v0.12's rule put every non-kick launch on the
+ring of charges at SNAREA .11 / HATA .025 / ONSETA .07, and only the kick launched from the centre — so the breakdown's launches
+(2–6 a second, real) were dim sector pulses nobody could read, and the plane was a dim disc until the drop at 58 s.
+
+**Two changes, both retunes on the v0.12 machinery, no new scene:**
+
+1. **A launch carries its own width** (`sources.js` `AS[]`, `WSIG = [1, .55, .45, .5, .5]` per band, `KWB = .35`): the shell's
+   Ricker sigma is the frame's `OUT.sig` times the launch's multiplier, floored at SIGLO. The kick is the fat one and gets fatter with
+   the bass under it (x (1 + .35 x bass), so a drop kick at bass .95 is 1.33x v0.12's width); a snare is half a kick, a hat under
+   half, an onset and a note half. `hooks.launches().last[].w` reports it; `rings()` uses it for the bookkeeping radius. `centroid`
+   still scales the whole frame's sigma (TSIGK) on top.
+2. **The breakdown rule** (`onsets.js` `KSIL = 1.0`, `ONSC0 = .4`; `sources.js` `ONSETC = .85`): once no kick has launched for a
+   second, EVERY launch — snare, hat, the engine's onset — comes from the centre instead of its sector, thin, and drives the centre
+   current at .85 of a kick's; the engine's onset takes max(.4, mid, high) as its amplitude there (the scene now reads `mid` and
+   `high`). The dipole is still driven by kicks alone. The first cut moved the onset alone at .5 of a kick: two shells in six
+   seconds and a dot at the centre, not a ring (`montage-syd-breakdown-v0121.jpg` is the second cut). The centre's colour
+   (`OUT.khue`, colour.js uAC) now follows the last CENTRE launch — a kick's bass note, or the loud sector during a breakdown.
+
+**Proof.** The replay after: from 53 s every launch in `last` is sector −1 (hats at w .45, amp .3–.45, three to five a second), and
+the frames 52–58 s show thin concentric shells from the centre where v0.12 showed a disc; 58–61 s the drop's kick rings, wider.
+`det12.py` on SeeYouDrop: launches 0–25 median 18, per band 406/15/47/139/8, engine kickCount Δ406, dkick ≤ .08 on 80 % (med .02),
+dbass 78 % — the per-note gate unchanged; Malicious 73 % (med .03) / 68 %, still over the 70 % bar but down from 79 % / 82 %: with
+the centre's hue following the breakdown's loud sector, dkick (measured against the last KICK's note) drifts in Malicious's quiet
+bars — the number moved for a reason the rule states. `audit12.sh` paused start on SeeYouDrop: every black frame inside the pause
+but six on resume, none after 20 s, `long` 0, `errs []`. `IDS=9 tools/scene-md5.sh` twice: 95fd7d73 / 4e2108a7 (re-based in
+`scene-md5-v012.txt`; v0.12 was 4ad6d2ea / 4c2ab3c8). `tools/check.js` 0 fail (help lines for `mid`, `high` added), `test_fdtd`
+OK. Thumb 9:360 re-shot. `releases/retinarave-v0.12.1.html` proven from file:// (9+n → scene 9, errs [], 32 launches by 9 s,
+widths per band on the launches).
+
+**Not done / open.** The drum bar HI .45 is unchanged, so a breakdown whose snares sit under it (the first replay read snare
+.15–.35; the third .5–.67 — run-to-run variance in the extractor) still rings only on the engine's onsets. Whether the double-time
+fill at 59–61 s (§44's open question) should double the launches is untouched: `dn` 21 then 15 against onsets 11.9. No sweep of
+WSIG / KWB / ONSETC — three numbers chosen by eye on one track; the other three tracks were not re-watched, only re-measured.
+

@@ -18,7 +18,10 @@ note on 79 % of samples on Malicious but 17 % on CyborgNinja (a two-note basslin
 and the instrument is wrong for that — a launch-weighted expected hue is owed to `det12.py`); "launches within 30 % of `onsetRate`" was
 unmeetable arithmetic (per band vs per frame); the note source and `TSIGK`/`DIRTK` are proven on the demo synths and by pin only; no
 double-time passage was found in the three tracks; **dubstep has arrived: `~/Music/RetinaRave/SeeYouDrop.flac`** (Ray Volpe — SEE YOU
-DROP, 16-bit/44.1 kHz, 2:38; the MAXWELL per-note gate and the double-time passage are still unproven on it). Tracks now live in
+DROP, 16-bit/44.1 kHz, 2:38). **v0.12.1 (DECISIONS §45)** on the user's look at it: a launch carries its own width (`WSIG`, the kick
+x (1 + `KWB` x bass)) and the breakdown rule (`KSIL`: kick silent a second → every launch from the centre, thin, at `ONSETC`); the
+per-note gate met on SeeYouDrop 80 % and Malicious 73 %; a real double-time fill at 59–61 s (onsets 11.9 vs median 5.6) that the
+launches did not follow — the open question. HI .45 unchanged; WSIG/KWB/ONSETC chosen by eye on one track, not swept. Tracks now live in
 `$MUSIC` (default `~/Music/RetinaRave`, the incompetech three copied there too); `audit12.sh`/`det12.py` take the name with or without
 its extension (`audit12.sh SeeYouDrop mx3-syd`). A retune is a named constant at the top of `assets/scenes/maxwell/{onsets,sources,colour,medium,render,
 index}.js` (`REARM`, `HATA`, `FGAIN`, `NOTEK`/`NOTEA`, `GRIDT[3]` substeps — ranked in §44), proven with `IDS=9 tools/scene-md5.sh` (re-base

@@ -195,3 +195,24 @@ SeeYouDrop        0–21, median 17      401   14   46  111    8                
   at 69.5 s). The launches did **not** double with it (`dn` 21 then 15 against a running 15–19): the 70 ms refractory and the 32-slot
   ring cap the scene's rate, so the double-time proof the audit asked for now has a real passage to run against — the question of
   whether MAXWELL *should* double there is open, and the retune constants (`REARM`, `HATA`) are where it would be answered.
+
+## Addendum 2 (2026-09-26) — v0.12.1: thin waves, fat waves, the breakdown rule (DECISIONS §45)
+
+The user's look at SeeYouDrop: "the part that was missing ripples was 50s-57s", "feel like there should be more skinnier waves,
+(vs bass fatter waves)?". That window is the breakdown — `kick` 0 six seconds, `bass` .04, snare/hat under HI, mids and highs loud
+— and v0.12's launches there were dim sector pulses on the ring (`montage-syd-breakdown.jpg`). Two retunes: a per-launch shell width
+(`WSIG` per band, the kick x (1 + `KWB` x bass)) and the breakdown rule (`KSIL`: with the kick silent a second, every launch comes
+from the centre, thin, at `ONSETC` .85 of a kick's current). After (`montage-syd-breakdown-v0121.jpg`): thin concentric shells all
+through 52–58 s, the drop's kick rings wider from 58 s.
+
+```
+                 launches / 2 s        per band over 80 s (kick snare hat onset note)   engine kickCount   dkick ≤ .08   dbass ≤ .08
+SeeYouDrop        0–25, median 18      406   15   47  139    8                            441 (Δ406)        80 %  (med .02)   78 %
+Malicious         0–22, median 15      385    2   15   90   67                            (Δ385)            73 %  (med .03)   68 %
+```
+
+The per-note gate holds on both; Malicious fell from 79 % / 82 % because the centre's hue now follows the breakdown's loud sector
+while `dkick` is measured against the last kick's note. Paused start on SeeYouDrop: black frames inside the pause only (six on
+resume), `long` 0, `errs []`. s9 md5 re-based 95fd7d73 / 4e2108a7 (twice). Files: `det12-{syd,mal}-v0121.txt`,
+`det12-syd-breakdown{,-v0121}.txt`, `breakdown-window.py`, `syd-v0121-{paused8s,20s,40s,60s,80s}.jpg`.
+

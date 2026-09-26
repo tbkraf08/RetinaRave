@@ -51,6 +51,16 @@ export const HATA = 0.025;     // the hats' tiny launches on all twelve
 // ... and the per-band amplitude a SECTOR launch injects, indexed by band (band 0 goes through KICKA at the centre,
 // band 2 over all twelve). onsets.js NOTEA / ONSETA say why the two new ones sit where they do.
 export const BAMP = [0, SNAREA, HATA, ONSETA, NOTEA];
+// The WIDTH of a launch's shell, per band, as a multiple of the frame's OUT.sig (v0.12.1, the user's word on SeeYouDrop's
+// breakdown: "more skinnier waves, vs bass fatter waves"). The kick is the fat one and gets fatter with the bass under
+// it (x (1 + KWB x bass)); every other sound is a thin shell — a snare half the kick's width, a hat under half. The
+// grid floor SIGLO still applies to the product.
+export const WSIG = [1, 0.55, 0.45, 0.5, 0.5];
+export const KWB = 0.35;
+// A centre launch that is not a kick (onsets.js KSIL: a snare, hat or engine onset launched from the CENTRE while the
+// kick has been silent — a breakdown's stabs, chops and hats) drives the centre current at this share of a kick's;
+// it never feeds the dipole. 0.5 in the first cut was a dot; the thin shell needs nearly a kick's current to read.
+export const ONSETC = 0.85;
 export const KPUN0 = 0.6;      // the kick current's pulse amplitude is KICKA x (KPUN0 + KPUN1 x punchy): a
 export const KPUN1 = 0.8;      // transient-heavy mix hits harder than a compressed one
 export const DIPA = 0.030;     // the dipole pair's current amplitude — and it is driven by the CENTRE LAUNCH's own
@@ -68,6 +78,7 @@ export const PAT = { '4': [0, 1, 2, 3], '8': [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5], s
 // --- state -------------------------------------------------------------------------------------------------------
 const AT = new Float64Array(NSLOT);            // launch step per slot (-1e18 = never used)
 const AM = new Float64Array(NSLOT);            // amplitude at launch (already scaled by params.charge)
+const AS = new Float64Array(NSLOT).fill(1);    // shell width at launch, as a multiple of the frame's OUT.sig (WSIG)
 const AB = new Int32Array(NSLOT);              // which band launched it
 const AW = new Int32Array(NSLOT);              // ... which sector (-1 = the centre)
 const AH = new Float64Array(NSLOT);            // ... and the hue it injects, in palette turns
@@ -88,6 +99,7 @@ let g = { amp: 1, loud: 0, pol: 1, pres: 1, cent: CENT0, dirty: 0, punchy: 0.5, 
 export function reset() {
   AT.fill(-1e18);
   AM.fill(0);
+  AS.fill(1);
   AB.fill(0);
   AW.fill(0);
   AH.fill(0);
@@ -112,9 +124,10 @@ export function train(v) {
 export const trainMode = () => mode;
 export const stepNow = () => step;
 
-export function launch(band, atStep, amp, sector, hue, frame) {
+export function launch(band, atStep, amp, sector, hue, frame, w) {
   AT[WR] = atStep;
   AM[WR] = amp * (g.amp === undefined ? 1 : g.amp);
+  AS[WR] = w > 0 ? w : (WSIG[band | 0] || 1);
   AB[WR] = band | 0;
   AW[WR] = sector | 0;
   AH[WR] = hue || 0;
@@ -122,7 +135,7 @@ export function launch(band, atStep, amp, sector, hue, frame) {
   WR = (WR + 1) % NSLOT;
   PB[band | 0]++;
   NTOT++;
-  if ((band | 0) === 0) OUT.khue = hue || 0;
+  if ((sector | 0) === -1) OUT.khue = hue || 0;   // the centre's colour is the last CENTRE launch's (a kick's, or a centre onset's)
 }
 
 // hooks.launches() — every launch the scene has made, read as numbers (read-only; tools/accept/v0.12/det12.py reads
@@ -136,7 +149,7 @@ export function launches(medium) {
   for (let i = NSLOT - LASTN; i < NSLOT; i++) {
     const j = (WR + i + NSLOT) % NSLOT;
     if (AT[j] < -1e17) continue;
-    last.push({ band: BANDN[AB[j]] || String(AB[j]), sector: AW[j], hue: +AH[j].toFixed(4), amp: +AM[j].toFixed(4), step: AF[j] });
+    last.push({ band: BANDN[AB[j]] || String(AB[j]), sector: AW[j], hue: +AH[j].toFixed(4), amp: +AM[j].toFixed(4), w: +AS[j].toFixed(2), step: AF[j] });
   }
   const perBand = {};
   for (let b = 0; b < BANDS; b++) perBand[BANDN[b]] = PB[b];
@@ -174,7 +187,7 @@ export function weights(C, ha, bass, pres, pin) {
 // One frame of bookkeeping. Called from update() before the substeps run.
 //   sub  substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
 //   p    {lev:[kick,snare,hat], beatNow, amp, cent, dirty, punchy, loud, bpm, dt, light, pol, yaw, yawRate, pres,
-//         alive, quiet, frame, kickCount, onset, chroma, bchroma, bpin, hues, anchor}
+//         alive, quiet, frame, kickCount, onset, chroma, bchroma, bpin, hues, anchor, bass, mid, high}
 export function frame(sub, gh, cx, cy, p) {
   // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the ring
   // radii and the spacings. (The first train trace reported 43.5 cells of spacing from COURANT while the picture
@@ -203,7 +216,8 @@ export function frame(sub, gh, cx, cy, p) {
     return;
   }
   const n = scan(p, Q, p.hues, p.anchor || 0);
-  for (let i = 0; i < n; i++) launch(Q[4 * i], step, Q[4 * i + 2], Q[4 * i + 1], Q[4 * i + 3], p.frame);
+  const wk = WSIG[0] * (1 + KWB * (p.bass || 0));
+  for (let i = 0; i < n; i++) launch(Q[4 * i], step, Q[4 * i + 2], Q[4 * i + 1], Q[4 * i + 3], p.frame, Q[4 * i] === 0 ? wk : 0);
 }
 
 // One substep: fill CA / OUT.j / OUT.dj for this substep and advance the clock.
@@ -213,10 +227,14 @@ export function substep() {
   CA.fill(0);
   for (let i = 0; i < NSLOT; i++) {
     if (AT[i] < -1e17) continue;
-    const e = env(step - AT[i], sig, d);
+    const e = env(step - AT[i], Math.max(SIGLO, sig * AS[i]), d);
     if (e === 0) continue;
     const v = e * AM[i];
-    if (AB[i] === 0) { ke += v; jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * v; }
+    if (AW[i] === -1) {   // the centre: a kick's current (and the dipole's drive), or another band's at ONSETC of it
+      const c = AB[i] === 0 ? v : ONSETC * v;
+      if (AB[i] === 0) ke += v;
+      jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * c;
+    }
     else if (AB[i] === 2) for (let k = 0; k < 12; k++) CA[k] += HATA * v;
     else CA[((AW[i] % 12) + 12) % 12] += BAMP[AB[i]] * v;
   }
@@ -242,7 +260,7 @@ export function rings(band) {
   for (let i = 0; i < NSLOT; i++) {
     const age = step - AT[i];
     if (AT[i] < -1e17 || AB[i] !== band || age < 0) continue;
-    const r = (age - TPKS * OUT.sig) * OUT.S;
+    const r = (age - TPKS * OUT.sig * AS[i]) * OUT.S;
     if (r < -2) continue;
     out.push(+r.toFixed(3));
   }

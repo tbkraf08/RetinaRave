@@ -275,7 +275,7 @@ export default {
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid',
     'hush', 'calm', 'alive', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
-    'punchy'],
+    'punchy', 'mid', 'high'],
   cuts: 'continuous',
   always: false,
   rt: {},
@@ -382,10 +382,11 @@ export default {
       chroma: MS.chroma, bchroma: MS.bchroma, hues: GH12, anchor: A.hue, bpin: chromaPin ? chromaPin[0] : -1,
       amp, cent: U.cent, dirty: U.dirty, punchy: U.punchy, loud: U.loud, bpm: MS.bpm, dt, light: P.light,
       pol: U.pol, yaw: U.yaw, yawRate: U.yawRate, alive, pres, quiet: quietPin, frame: U.frame,
+      bass: MS.bass, mid: MS.mid, high: MS.high,
     });
     U.sig = SRC.OUT.sig; U.spb = SRC.OUT.spb;
-    // The colour the CENTRE injects is the last kick's — the bass note it was launched on (sources.js OUT.khue),
-    // never the key's anchor any more. It is what colour.js's uAC carries, so a kick's shell leaves the middle in
+    // The colour the CENTRE injects is the last centre launch's — a kick's bass note, or a centre onset's loud sector
+    // while the kick is silent (sources.js OUT.khue), never the key's anchor any more. It is what colour.js's uAC carries, so a kick's shell leaves the middle in
     // its own note's hue; between kicks nothing is injected there, so nothing else reads it.
     for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (SRC.OUT.khue + [0, 0.33, 0.67][i]));
     this.rt.time = MS.flowBass + MS.flowMid;

@@ -42,6 +42,10 @@ tree (`11f264b`) on 2026-09-26 at `PORT=8810 GPU=1`, one Chrome at a time. Worke
 - `v012-after-s9-f{360,840}.jpg` — the md5 pair (f840 is now the cavity; on v0.11 it was the waveguide, which left rotation).
 - `mx3-{cn,wltp,mal}-{paused8s,20s,40s,60s,80s}.jpg` — the real-track clock shots from `audit12.sh`.
 - `mx3-syd-{paused8s,20s,40s,60s,80s}.jpg` + `det12-syd.txt` — the same on SeeYouDrop (the first dubstep, 2026-09-26; AUDIT-v0.12 addendum).
+- **v0.12.1 (DECISIONS §45, AUDIT-v0.12 addendum 2):** `breakdown-window.py` — `OUT=<dir> T0=46 N=16 python3 tools/accept/v0.12/breakdown-window.py`
+  seeks SeeYouDrop to T0 and takes a shot + D line every second (its D lines are `det12.py`'s); `montage-syd-breakdown.jpg` (v0.12:
+  a disc 52–58 s) vs `montage-syd-breakdown-v0121.jpg` (thin shells from the centre, then the fat kick rings at 58 s), with
+  `det12-syd-breakdown{,-v0121}.txt`; `det12-{syd,mal}-v0121.txt` the gate table; `syd-v0121-*.jpg` the paused-start clock shots.
 
 ## Montages
 
