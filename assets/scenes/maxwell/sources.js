@@ -24,13 +24,13 @@
 // frame that noticed it, so the spacings are the pattern's and not the frame grid's.
 import { sectorPc } from '../../math/keycolour.js';
 import { COURANT } from './fdtd.js';
+import { BANDN, MAXQ, NB, NOTEA, ONSETA, resetOnsets, scan } from './onsets.js';
 
-export const BANDS = 3;        // 0 kick (the centre current) · 1 snare (the loudest sector) · 2 hat (all twelve)
+export const BANDS = NB;       // 0 kick (the centre) · 1 snare · 2 hat (all twelve) · 3 onset · 4 note — onsets.js
+                               // says what fires each one and in whose hue; this module only turns them into shells.
 export const NSLOT = 32;       // ONE shared ring of launches, not an array per band: a launch lives about 0.4-0.9 s
                                // (TPKS + LIFES sigmas) and the busiest bar measured is ~15 launches in that window,
                                // so 32 slots never evicts a shell that is still in flight.
-export const HI = 0.45;        // a rising edge: over HI having been under LO. #test sets hat to EXACTLY 0.5, so a
-export const LO = 0.25;        // threshold of 0.5 would never fire (HARNESS "Pitfalls").
 // The launch's shape. v0.11's carrier constants (LAM0 CENTK LAMLO RSWEEP WOBA SHIM SHIMM SUBK PSK) are gone with the
 // carrier; what the TIMBRE still does is shape the SHELL, which costs nothing and reads at a glance.
 export const TSIGH = 0.022;    // a launch's ring thickness, in grid heights, at CENT0 brightness
@@ -46,8 +46,11 @@ export const DIRTD = 2.2;      // doubled ring, the second one this many sigmas 
 export const TPKS = 2.6;       // the pulse peaks this many sigmas after its launch step
 export const LIFES = 3.2;      // ... and the slot is live until this many sigmas past the peak
 export const KICKA = 0.14;     // the centre current's pulse amplitude
-export const SNAREA = 0.11;    // the loudest sector's sharp pulse
+export const SNAREA = 0.11;    // the rising sector's sharp pulse
 export const HATA = 0.025;     // the hats' tiny launches on all twelve
+// ... and the per-band amplitude a SECTOR launch injects, indexed by band (band 0 goes through KICKA at the centre,
+// band 2 over all twelve). onsets.js NOTEA / ONSETA say why the two new ones sit where they do.
+export const BAMP = [0, SNAREA, HATA, ONSETA, NOTEA];
 export const KPUN0 = 0.6;      // the kick current's pulse amplitude is KICKA x (KPUN0 + KPUN1 x punchy): a
 export const KPUN1 = 0.8;      // transient-heavy mix hits harder than a compressed one
 export const DIPA = 0.030;     // the dipole pair's current amplitude — and it is driven by the CENTRE LAUNCH's own
@@ -66,14 +69,18 @@ export const PAT = { '4': [0, 1, 2, 3], '8': [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5], s
 const AT = new Float64Array(NSLOT);            // launch step per slot (-1e18 = never used)
 const AM = new Float64Array(NSLOT);            // amplitude at launch (already scaled by params.charge)
 const AB = new Int32Array(NSLOT);              // which band launched it
-const AW = new Int32Array(NSLOT);              // ... and which sector (-1 = the centre)
+const AW = new Int32Array(NSLOT);              // ... which sector (-1 = the centre)
+const AH = new Float64Array(NSLOT);            // ... and the hue it injects, in palette turns
+const AF = new Float64Array(NSLOT);            // ... and the frame it was launched on
+const Q = new Float64Array(4 * MAXQ);          // one frame's detections: (band, sector, amp, hue) per launch
+const PB = new Float64Array(BANDS);            // launches per band SINCE LOAD (reset() does not zero these: the
+let NTOT = 0;                                  // trace differences them, and a re-pin must not read as -30)
 let WR = 0;                                    // next slot to write
-const PREV = new Float64Array(BANDS);          // last frame's level per band, for the edge detector
 export const CX = new Float32Array(12);        // the charges in CELLS (the shader's own coordinates)
 export const CY = new Float32Array(12);
 export const CA = new Float32Array(12);        // ... and their Ez amplitude this substep
 export const W12 = new Float32Array(12);       // the twelve weights (chroma, or the harmAngle fallback)
-export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, spb: 100, S: COURANT };
+export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, spb: 100, S: COURANT, khue: 0 };
 
 let mode = null, sched = -1e18, step = 0;
 let g = { amp: 1, loud: 0, pol: 1, pres: 1, cent: CENT0, dirty: 0, punchy: 0.5, yaw: 0, yawRate: 0 };
@@ -83,9 +90,11 @@ export function reset() {
   AM.fill(0);
   AB.fill(0);
   AW.fill(0);
+  AH.fill(0);
+  AF.fill(0);
   WR = 0;
-  PREV.fill(0);
   CA.fill(0);
+  resetOnsets();
   sched = -1e18;
   step = 0;
   OUT.j = OUT.dj = 0;
@@ -97,18 +106,41 @@ reset();
 export function train(v) {
   mode = v === '4' || v === '4x4' ? '4' : v === '8' ? '8' : v === 'synco' || v === 'sync' ? 'synco' : v === 'off' ? 'off' : null;
   if (mode !== 'off') reset();
-  else { sched = 1e18; PREV.fill(1); }
+  else { reset(); sched = 1e18; }
   return mode;
 }
 export const trainMode = () => mode;
 export const stepNow = () => step;
 
-export function launch(band, atStep, amp, sector) {
+export function launch(band, atStep, amp, sector, hue, frame) {
   AT[WR] = atStep;
   AM[WR] = amp * (g.amp === undefined ? 1 : g.amp);
   AB[WR] = band | 0;
   AW[WR] = sector | 0;
+  AH[WR] = hue || 0;
+  AF[WR] = frame || 0;
   WR = (WR + 1) % NSLOT;
+  PB[band | 0]++;
+  NTOT++;
+  if ((band | 0) === 0) OUT.khue = hue || 0;
+}
+
+// hooks.launches() — every launch the scene has made, read as numbers (read-only; tools/accept/v0.12/det12.py reads
+// exactly this shape). `n` and `perBand` are cumulative since LOAD, so a trace differences them; `last` is the newest
+// LASTN in launch order with the NEWEST LAST; `hue` is in palette turns, the same scale as hooks.mxcol().hues;
+// `sector` is 0..11 or -1 for the centre (a kick); `step` is the FRAME a launch was made on; `medium` the geometry
+// in force. A hat lights all twelve in their own hues — its `sector` is the rising one, where its colour is counted.
+export const LASTN = 16;
+export function launches(medium) {
+  const last = [];
+  for (let i = NSLOT - LASTN; i < NSLOT; i++) {
+    const j = (WR + i + NSLOT) % NSLOT;
+    if (AT[j] < -1e17) continue;
+    last.push({ band: BANDN[AB[j]] || String(AB[j]), sector: AW[j], hue: +AH[j].toFixed(4), amp: +AM[j].toFixed(4), step: AF[j] });
+  }
+  const perBand = {};
+  for (let b = 0; b < BANDS; b++) perBand[BANDN[b]] = PB[b];
+  return { n: NTOT, perBand, last, medium: medium === undefined ? -1 : medium };
 }
 
 // The Ricker envelope of a launch, as a function of its age in substeps — plus `dirty`'s second lobe behind it.
@@ -141,7 +173,8 @@ export function weights(C, ha, bass, pres, pin) {
 
 // One frame of bookkeeping. Called from update() before the substeps run.
 //   sub  substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
-//   p    {lev:[kick,snare,hat], beatNow, amp, cent, dirty, punchy, loud, bpm, dt, light, pol, yaw, yawRate, pres, alive}
+//   p    {lev:[kick,snare,hat], beatNow, amp, cent, dirty, punchy, loud, bpm, dt, light, pol, yaw, yawRate, pres,
+//         alive, quiet, frame, kickCount, onset, chroma, bchroma, bpin, hues, anchor}
 export function frame(sub, gh, cx, cy, p) {
   // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the ring
   // radii and the spacings. (The first train trace reported 43.5 cells of spacing from COURANT while the picture
@@ -156,22 +189,21 @@ export function frame(sub, gh, cx, cy, p) {
     CX[k] = cx + RING * gh * Math.cos(a);
     CY[k] = cy + RING * gh * Math.sin(a);
   }
+  // A pinned train is band 0 from the centre, in the hue the bass note would have carried (hooks.mxchroma pins that
+  // bin, so a pinned train is a pinned colour and "did the note's hue travel" has one known answer per shell).
+  const khue = p.bpin >= 0 ? p.hues[p.bpin] : p.anchor || 0;
   if (mode) {
     const P = PAT[mode], bar = Math.floor(p.beatNow / 4);
     for (let b = bar - 1; b <= bar; b++) {
       for (let j = 0; j < P.length; j++) {
         const t = b * 4 + P[j];
-        if (t <= p.beatNow && t > sched) { launch(0, step - (p.beatNow - t) * OUT.spb, 1, -1); sched = t; }
+        if (t <= p.beatNow && t > sched) { launch(0, step - (p.beatNow - t) * OUT.spb, 1, -1, khue, p.frame); sched = t; }
       }
     }
     return;
   }
-  const alive = p.alive === undefined ? 1 : p.alive;
-  for (let b = 0; b < BANDS; b++) {
-    const x = p.lev[b];
-    if (x > HI && PREV[b] < LO && (b < 2 || alive > 0.5)) launch(b, step, Math.min(1, x), p.loud);
-    PREV[b] = x;
-  }
+  const n = scan(p, Q, p.hues, p.anchor || 0);
+  for (let i = 0; i < n; i++) launch(Q[4 * i], step, Q[4 * i + 2], Q[4 * i + 1], Q[4 * i + 3], p.frame);
 }
 
 // One substep: fill CA / OUT.j / OUT.dj for this substep and advance the clock.
@@ -185,8 +217,8 @@ export function substep() {
     if (e === 0) continue;
     const v = e * AM[i];
     if (AB[i] === 0) { ke += v; jc += KICKA * (KPUN0 + KPUN1 * (g.punchy === undefined ? 0.5 : g.punchy)) * v; }
-    else if (AB[i] === 1) CA[((AW[i] % 12) + 12) % 12] += SNAREA * v;
-    else for (let k = 0; k < 12; k++) CA[k] += HATA * v;
+    else if (AB[i] === 2) for (let k = 0; k < 12; k++) CA[k] += HATA * v;
+    else CA[((AW[i] % 12) + 12) % 12] += BAMP[AB[i]] * v;
   }
   OUT.j = jc;
   // The dipole: a pair of antiparallel currents whose AXIS is the eased nudge, driven by the CENTRE LAUNCH's own

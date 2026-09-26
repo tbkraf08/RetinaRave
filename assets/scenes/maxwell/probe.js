@@ -8,6 +8,7 @@ import { COURANT, energyOf, readBand, readType } from './fdtd.js';
 import { NAMES } from './medium.js';
 import { chains } from './render.js';
 import { colourSize, colourTex } from './colour.js';
+import { detInfo } from './onsets.js';
 import * as SRC from './sources.js';
 
 export function hEnergy(ST) {
@@ -64,7 +65,7 @@ export function hProbe(ST) {
 
 export function hInfo(ST) {
   const U = ST.U;
-  return JSON.stringify({ grid: [ST.gw, ST.gh], cgrid: [U.cw, U.ch], sub: U.sub, tier: U.tier, S: +(COURANT * U.light).toFixed(4), sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2), step: SRC.OUT.step, geo: NAMES[U.geoA] + (U.geoF < 1 ? '<' + NAMES[U.geoB] : ''), fade: +U.geoF.toFixed(3), lens: +U.lens.toFixed(3), shear: +U.shear.toFixed(3), wob: +U.wob.toFixed(4), subS: +U.subS.toFixed(4), lfo: +U.lfo.toFixed(4), cent: +U.cent.toFixed(3), dirty: +U.dirty.toFixed(3), punchy: +U.punchy.toFixed(3), sigma: +U.sigma.toFixed(4), mir: +U.mir.toFixed(4), vac: U.vac, pol: U.pol, yaw: +U.yaw.toFixed(4), rate: +U.yawRate.toFixed(4), zoom: +U.zoom.toFixed(4), key: U.key, mode: U.mode, hue: +U.hue.toFixed(4), loud: U.loud, lab: U.lab, float32: !!(ST.cur && ST.cur.float32), segs: U.segs, loops: U.loops, gap: U.gap, src: SRC.info() });
+  return JSON.stringify({ grid: [ST.gw, ST.gh], cgrid: [U.cw, U.ch], sub: U.sub, tier: U.tier, S: +(COURANT * U.light).toFixed(4), sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2), step: SRC.OUT.step, geo: NAMES[U.geoA] + (U.geoF < 1 ? '<' + NAMES[U.geoB] : ''), fade: +U.geoF.toFixed(3), lens: +U.lens.toFixed(3), shear: +U.shear.toFixed(3), wob: +U.wob.toFixed(4), subS: +U.subS.toFixed(4), lfo: +U.lfo.toFixed(4), cent: +U.cent.toFixed(3), dirty: +U.dirty.toFixed(3), punchy: +U.punchy.toFixed(3), sigma: +U.sigma.toFixed(4), mir: +U.mir.toFixed(4), vac: U.vac, pol: U.pol, yaw: +U.yaw.toFixed(4), rate: +U.yawRate.toFixed(4), zoom: +U.zoom.toFixed(4), key: U.key, mode: U.mode, hue: +U.hue.toFixed(4), loud: U.loud, lab: U.lab, float32: !!(ST.cur && ST.cur.float32), segs: U.segs, loops: U.loops, gap: U.gap, src: SRC.info(), det: detInfo() });
 }
 
 // hooks.mxcol() — the colour field read as numbers (v0.11 item 2). A screenshot cannot answer "does the wave carry

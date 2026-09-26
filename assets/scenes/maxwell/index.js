@@ -137,8 +137,11 @@ function substep(S) {
   g.uniform1fv(prE.u('uCA[0]'), U.lab ? Z12 : SRC.CA);
   g.uniform2f(prE.u('uRing'), SRC.RING * GH, CUT * SRCW + 2);
   ctx.tri();
-  // ... and the colour field, one pass at a quarter of the texels, driven by the same bookkeeping (colour.js)
-  if (!U.lab) stepColour(S, MED, U.csc, [GW / 2, GH / 2], SRC.RING * GH, CUT * SRCW + 2, DIPD, SRC, GH12, AC3, chromaPin ? 0 : 1);
+  // ... and the colour field, one pass at a quarter of the texels, driven by the same bookkeeping (colour.js). Its
+  // `drums` gate is 1 ALWAYS since v0.12: hooks.mxchroma used to silence the centre current and the dipole there
+  // because both carried the KEY's anchor hue and drowned the charges (colour.js CDIP), and neither is pitchless
+  // now — so the pin would leave a pinned train with no colour at all (measured: w = 0 at every probe point).
+  if (!U.lab) stepColour(S, MED, U.csc, [GW / 2, GH / 2], SRC.RING * GH, CUT * SRCW + 2, DIPD, SRC, GH12, AC3, 1);
   U.pulse = 0;
 }
 
@@ -223,10 +226,9 @@ function hKey(v) {
   return JSON.stringify(keyPin);
 }
 // hooks.medium(0..3) pins one of the four SLOTS — 0 lens, 1 mirror cavity, 2 empty space, 3 the waveguide — and GEON
-// or more pins empty space as well, which is the control every measurement of a free wave needs (a ring reflected off
-// the cavity wall is not a ring of the train). Only 0 and 1 are in the section's rotation (medium.js GEOROT); slot 2
-// was the photonic lattice until v0.12 item C and is now the control, so the user's "pattern of small circles"
-// cannot come back through a pin either.
+// or more pins empty space too, the control every measurement of a free wave needs (a ring reflected off the cavity
+// wall is not a ring of the train). Only 0 and 1 are in the section's rotation (medium.js GEOROT); slot 2 held the
+// photonic lattice until v0.12 item C, so the user's "pattern of small circles" cannot return through a pin either.
 function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
 function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
 // hooks.lines(0) draws no field lines — what the bench needs to say how much of the scene they are
@@ -246,9 +248,10 @@ function hWob(v) { wobPin = v === null || v === undefined ? 0 : +v; return wobPi
 // hooks.mxchroma("k") / ("k,j") lights only those SECTORS of the ring at weight 1 and darkens the rest, inside
 // update(). The name is mx-prefixed because POLYTOPE owns hooks.chroma and CARD.hooks is one flat map (§1.4).
 // Sector k sits at 2 pi k / 12 on the circle of fifths and carries pitch class sectorPc(k) = (7k) mod 12; its hue
-// is GH12[k], which since v0.11 does not move with the key. The pin ALSO silences the dipole in the colour field
-// (colour.js CDIP says why) and, since v0.12, pins the BASS NOTE to its first sector — so a kick launched from the
-// centre takes that sector's hue too, and every launch on the plane is then one known colour (item B's gate).
+// is GH12[k], which since v0.11 does not move with the key. Since v0.12 it ALSO pins the BASS NOTE to its first
+// sector — so a kick launched from the centre takes that sector's hue too, and every launch on the plane is then one
+// known colour, which is item B's gate. (It no longer silences the two centre sources in the colour field: neither
+// is pitchless any more. See the stepColour call.)
 function hMxchroma(v) {
   const p = String(v === null || v === undefined ? '' : v).split(',').filter((x) => x !== '');
   chromaPin = p.length ? p.map((x) => ((+x | 0) % 12 + 12) % 12) : null;
@@ -256,8 +259,7 @@ function hMxchroma(v) {
 }
 // hooks.timbre(centroid, dirty) pins the two fields a launch's SHELL reads (sources.js TSIGK, DIRTK); hooks.timbre()
 // releases them. The #test timeline holds centroid 0.455, dirty 0.2, punchy 0.6 at every frame (measured), so a pin
-// is the ONLY way to prove either of them — which is why v0.12 keeps this hook although the carrier it was written
-// for is gone.
+// is the ONLY way to prove either — which is why v0.12 keeps the hook although the carrier it was written for is gone.
 function hTimbre(c, d) {
   const p = String(c === null || c === undefined ? '' : c).split(',');
   timbrePin = p[0] === '' ? null : { c: +p[0], d: +(d !== undefined ? d : p[1] || 0) };
@@ -269,7 +271,7 @@ export default {
   id: 9,
   tag: "maxwell's equations, solved live — every sound a wavefront in its note's hue, a dipole nudged per beat, the section a lens or a mirror cavity",
   card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: every sound sends out a real ripple of light in its own note's colour, through a lens or a hall of mirrors — and silence sends out nothing" },
-  feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
+  feats: ['chroma', 'bchroma', 'onset', 'kickCount', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid',
     'hush', 'calm', 'alive', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
@@ -279,7 +281,7 @@ export default {
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, launches: () => SRC.launches(medPin === -2 ? -2 : U.geoA), energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
 
   init(ctx) {
     this.ctx = ctx;
@@ -342,7 +344,6 @@ export default {
     U.pure += (0.35 + 0.65 * MS.clarity - U.pure) * (1 - Math.exp(-dt / HUETC));
     const spread = 0.30 + 0.45 * m.spread;
     noteHues(GH12, spread, U.pure);     // the twelve notes' own hues — colour.js CHUE0 says why they ignore the key
-    for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (A.hue + [0, 0.33, 0.67][i]));
 
     // Faraday: the nudge. The target is read off the beat COUNT so it can never drift; the angle springs to it, and
     // that spring's velocity is how two-lobed a kick's ring comes out (sources.js DIPK) — nothing between nudges.
@@ -377,11 +378,16 @@ export default {
     U.beatNow = MS.beatCount + MS.beatPhase;
     U.phrase = MS.phrase16Pos;
     SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2, {
-      lev: quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], beatNow: U.beatNow,
+      lev: quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], beatNow: U.beatNow, kickCount: MS.kickCount, onset: MS.onset,
+      chroma: MS.chroma, bchroma: MS.bchroma, hues: GH12, anchor: A.hue, bpin: chromaPin ? chromaPin[0] : -1,
       amp, cent: U.cent, dirty: U.dirty, punchy: U.punchy, loud: U.loud, bpm: MS.bpm, dt, light: P.light,
-      pol: U.pol, yaw: U.yaw, yawRate: U.yawRate, alive, pres,
+      pol: U.pol, yaw: U.yaw, yawRate: U.yawRate, alive, pres, quiet: quietPin, frame: U.frame,
     });
     U.sig = SRC.OUT.sig; U.spb = SRC.OUT.spb;
+    // The colour the CENTRE injects is the last kick's — the bass note it was launched on (sources.js OUT.khue),
+    // never the key's anchor any more. It is what colour.js's uAC carries, so a kick's shell leaves the middle in
+    // its own note's hue; between kicks nothing is injected there, so nothing else reads it.
+    for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (SRC.OUT.khue + [0, 0.33, 0.67][i]));
     this.rt.time = MS.flowBass + MS.flowMid;
     this.rt.label = 'fdtd ' + GW + 'x' + GH + ' ' + NAMES[U.geoA];
     this._S = 1;
