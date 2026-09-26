@@ -209,7 +209,12 @@ needed, now generic:
   already uses (`key`, `train`, `probe`, `reset`, `chroma`) either prefixes it (`mxchroma`) or accepts that only the `REG`
   path reaches it (grep `hooks:` across `assets/scenes/*/` first). **A hook that reports must not mutate:** `hooks.train()`
   with no argument only reads the measured spacings, `hooks.energy()`/`hooks.probe()` only read back — a trace calls them
-  every 2 s and a report that also re-pinned would make the trace test the pin, not the track.
+  every 2 s and a report that also re-pinned would make the trace test the pin, not the track. **A hook that pins a field
+  must also pin the params derived from it (v0.11 §43):** `params.<p>.from(S)` is evaluated by the engine from the real `MS`
+  (§1.16), so a pin inside `update()` never reaches `env.params` — MAXWELL's `hooks.quiet(1)` left `charge` at its musical
+  value until it also took `charge` and `ring` to what their `from()`s give on the pinned fields. And a `hud`/info hook that
+  returns an object literal must keep its keys unique: a second `sub:` silently replaced the first and a bench read the
+  wrong number (`subS`).
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
   A variant reads exactly its parent's fields (it renders through the parent's `draw`), so it shares the parent's
   `help.feats`; a variant that would need reads of its own is a scene, not a variant (v0.2 §17).
