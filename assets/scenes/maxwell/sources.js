@@ -21,7 +21,9 @@ export const BANDS = 3;        // 0 kick (the centre current) · 1 snare (the lo
 export const SLOTS = 8;        // the last 8 launches per band
 export const HI = 0.45;        // a rising edge: over HI having been under LO. #test sets hat to EXACTLY 0.5, so a
 export const LO = 0.25;        // threshold of 0.5 would never fire (HARNESS "Pitfalls").
-export const FAINT = 0.30;     // the `beat` event's own faint kick when no band hit came in the last beat
+export const FAINT = 0.30;     // the `beat` event's own faint kick when no band hit came in the last beat — only
+                               // while `alive`: the engine holds bpm through silence, so without that gate the
+                               // beat kept launching a ring a beat into an empty room (v0.11 item 1).
 export const LAM0 = 0.155;     // the carrier's wavelength in GRID HEIGHTS at 120 bpm — about 6 waves across the
                                // porthole, which is where it reads as waves rather than as speckle at one end or
                                // as two fat blobs at the other.
@@ -64,7 +66,7 @@ export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 1
 
 let mode = null, sched = -1e18, lastHit = -1e18, step = 0;
 let ph = 0, dph = 0;           // the carrier's phase and its per-substep increment
-let g = { amp: 1, hat: 0, sub: 0, loud: 0, dip: 0, pol: 1, shim: 0 };
+let g = { amp: 1, hat: 0, sub: 0, loud: 0, dip: 0, pol: 1, shim: 0, alive: 1, pres: 1 };
 
 export function reset() {
   AT.fill(-1e18);
@@ -111,7 +113,7 @@ export function env(age, sig) {
 // One frame of bookkeeping. Called from update() before the substeps run.
 //   sub   substeps this frame · gh the grid height in cells · cx, cy the grid centre in cells
 //   lev   [kick, snare, hat] · beatNow beatCount + beatPhase · beatEvt MS.beat
-//   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate}
+//   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate, alive, pres}
 export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
   // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the
   // ring radii, the spacings and the carrier's phase step. (The first train trace reported 43.5 cells of spacing
@@ -155,7 +157,7 @@ export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
     if (x > HI && PREV[b] < LO) launch(b, step, Math.min(1, x), p.loud);
     PREV[b] = x;
   }
-  if (beatEvt && step - lastHit > 0.9 * spb) launch(0, step, FAINT, -1);
+  if (beatEvt && (p.alive === undefined ? 1 : p.alive) > 0.5 && step - lastHit > 0.9 * spb) launch(0, step, FAINT, -1);
 }
 
 // One substep: fill CA / OUT.j / OUT.mx / OUT.my for this substep and advance the clocks.
@@ -185,7 +187,9 @@ export function substep() {
   // The dipole: a pair of antiparallel currents whose AXIS is the eased nudge, oscillating at the carrier. Its
   // current carries a resting share plus the nudge's own angular velocity, so the two lobes glow between beats and
   // flare on the beat the dipole turns. surpriseEvt flips its polarity (g.pol) for one frame's worth of source.
-  OUT.dj = DIPA * g.amp * g.pol * (DIPR + DIPK * Math.abs(g.yawRate)) * Math.sin(ph);
+  // DIPR is scaled by `presence` (v0.11 item 1): in silence the dipole is not merely quiet, it is off between
+  // nudges, and there are no nudges either (hush/calm hold the turn).
+  OUT.dj = DIPA * g.amp * g.pol * (DIPR * (g.pres === undefined ? 1 : g.pres) + DIPK * Math.abs(g.yawRate)) * Math.sin(ph);
   OUT.dx = Math.cos(g.yaw);
   OUT.dy = Math.sin(g.yaw);
   ph += dph;

@@ -21,6 +21,15 @@ export const EPS0 = 0.015;    // the sign of Ez is read as ez / (|ez| + EPS0): a
                               // two hues and only the zero crossing is a blend. A plain multiply-and-clamp put the
                               // whole plane at one hue, because |Ez| away from a source is a few hundredths.
 export const LSAT = 0.92;
+// The porthole, in cells, shared with FS_SHOW below — until v0.10 the PLANE was faded to black on this disc and the
+// H lines were not, so the contours of the near-empty corners were drawn over the black: the faint loops outside the
+// porthole in every real-track shot, and a good part of the user's "too noisy". The strokes now carry the same fade.
+export const PORTW = 2.2 * ABSN;        // where the fade starts, inside the disc's radius
+export const PORTE = 0.2 * ABSN;        // ... and where it is complete
+export function portFade(d, R) {        // 1 well inside the porthole, 0 outside it (FS_SHOW's smoothstep)
+  const x = Math.max(0, Math.min(1, (d - (R - PORTW)) / Math.max(1e-6, PORTW - PORTE)));
+  return 1 - x * x * (3 - 2 * x);
+}
 
 export const FS_SHOW = `
 uniform sampler2D uF;
@@ -66,7 +75,7 @@ void main() {
   // half the grid height. A rectangular fade would have the camera's full turn sweep four black corners across the
   // frame (the drop montage at yaw 5.9 was a straight black cut through the middle of the standing wave).
   float R = 0.5 * uSz.y;
-  float ed = 1.0 - smoothstep(R - ${(2.2 * ABSN).toFixed(1)}, R - ${(0.2 * ABSN).toFixed(1)}, length(g - uCtr));
+  float ed = 1.0 - smoothstep(R - ${PORTW.toFixed(1)}, R - ${PORTE.toFixed(1)}, length(g - uCtr));
   vec3 col = hueRGB(hue, ${LSAT.toFixed(2)} * uCol.y, uCol.z) * L;
   // the medium, as a hint: the lens brightens with its eps contrast, a conductor draws as a cool line
   col += uGain.y * (${MEDE.toFixed(3)} * max(0.0, md.r - 1.0) + ${MEDC.toFixed(3)} * md.b) * hueRGB(uCol.w, 0.5, 1.0);
@@ -139,7 +148,14 @@ void main() {
 export const NLEV = [9, 11, 13, 15];    // contour levels of A per tier — geometry, so the table stays in the scene
 export const HW = 1.3;                  // the strokes' width in px at 720p
 export const HALPHA = 0.30;             // ... and their brightness (alpha is coverage, brightness is the colour: §1.12)
-export const AFLOOR = 1e-6;             // a flat A (no field at all) draws nothing
+// The two numbers that make silence quiet in the LINES (v0.11 item 1). Until v0.10 the NLEV levels were spaced from
+// the frame's OWN A range, so a near-empty field was stretched back up to a full picture of contour noise — the
+// faint loops outside the porthole in every v0.10 shot. The spacing is now fixed: dA = max(range, ASCALE) / NLEV, so
+// a loud frame contours exactly as it did and a frame a tenth as strong reaches only a tenth of the levels and draws
+// a tenth of the loops. ASCALE is the A range of a hooks.train('4') frame at charge 1 (measured, tier 1: 0.94; the
+// value keeps a headroom of ~2x over the musical frames, which measure 0.4-0.6).
+export const ASCALE = 0.55;
+export const AFLOOR = 2e-3;             // ... and below this range there is no field at all: draw nothing.
 
 // The stream function on the small grid: A[i][j] - A[i][j-1] = Hx[i][j-1] and A[i][j] - A[i-1][j] = -Hy[i-1][j].
 // One sweep down the first column and then along each row.
@@ -174,13 +190,23 @@ export function stream(px, w, h, A) {
   return A;
 }
 
-// Marching squares over A at `nl` evenly spaced levels. Writes x0, y0, x1, y1 per segment (small-grid coordinates)
+// Marching squares over A at evenly spaced levels. Writes x0, y0, x1, y1 per segment (small-grid coordinates)
 // into `out` and returns the segment count. Per cell only the levels between its own min and max corner are tried.
-export function contours(A, w, h, nl, out, cap) {
+//
+// The level SPACING is dA = max(hi - lo, ASCALE) / nl — an absolute scale with the frame's own range as a floor
+// under it, not the frame's range alone. Above ASCALE the picture is v0.10's exactly; below it the levels are still
+// ASCALE/nl apart, so a quiet frame simply does not reach most of them. CSTAT reports what the frame measured.
+export const CSTAT = { lo: 0, hi: 0, range: 0, levels: 0 };
+export function contours(A, w, h, nl, out, cap, scale) {
   let lo = A[0], hi = A[0];
   for (let p = 1; p < w * h; p++) { const v = A[p]; if (v < lo) lo = v; else if (v > hi) hi = v; }
+  CSTAT.lo = lo;
+  CSTAT.hi = hi;
+  CSTAT.range = hi - lo;
+  CSTAT.levels = 0;
   if (!(hi - lo > AFLOOR)) return 0;
-  const dA = (hi - lo) / nl;
+  const dA = Math.max(hi - lo, scale === undefined ? 0 : scale) / nl;
+  CSTAT.levels = Math.max(0, Math.floor((hi - lo) / dA - 0.5) + 1);
   let n = 0;
   const put = (x0, y0, x1, y1) => { out[4 * n] = x0; out[4 * n + 1] = y0; out[4 * n + 2] = x1; out[4 * n + 3] = y1; n++; };
   for (let j = 0; j + 1 < h; j++) {

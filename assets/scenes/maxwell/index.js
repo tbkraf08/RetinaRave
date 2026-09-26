@@ -9,7 +9,7 @@ import { mkAnchor, sectorHue, sectorPc } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { COURANT, CUT, DIPD, FS_E, FS_H, GRIDT, SRCW, mkField, readBand } from './fdtd.js';
 import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
-import { FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, stream } from './render.js';
+import { ASCALE, CSTAT, FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, portFade, stream } from './render.js';
 import * as SRC from './sources.js';
 import { HELP } from './help.js';
 import { hEnergy, hInfo, hProbe, hRow } from './probe.js';
@@ -21,7 +21,12 @@ const ZOOM0 = 1.03;     // the resting zoom; intensity / arousal add to it
 const ZOOMK = 0.10;
 const FGAIN = 3.4;      // how brightly a unit of |E| burns
 const GLOWG = 0.85;     // ... and a charge's glow
-const FLOOR = 0.010;    // the plane is never pure black: silence still shows the cavity
+const FLOOR = 0.005;    // the plane is never pure black: silence still shows the cavity (v0.11 item 1: halved)
+const GAFL = 0.10;      // a dark charge still shows on the ring at this much of its glow — times `presence`, so
+                        // silence really is twelve unlit beads and not a lit ring (v0.11 item 1)
+const VACT = 1.0;       // seconds of `absentT` after which silence starts letting the last rings go ...
+const VACW = 1.0;       // ... and over this many more it has taken all of `ring`, so they fade in about a second
+const QUIETT = 10;      // the `absentT` hooks.quiet(1) pins: long past VACT + VACW
 const MEDVIS = 1.0;     // how visible the medium is
 const MIRHOLD = 2.2;    // the drop's mirror is held full on for about a bar ...
 const DROPTC = 3.2;     // ... and then relaxes over another, so the whole gesture is about two bars
@@ -36,10 +41,11 @@ const U = {
   tier: -1, sub: 2, pend: 0, yaw: 0, yawRate: 0, bounce: 0, zoom: 1, mir: 0, pol: 1, geoA: 0, geoB: 0, geoF: 1,
   geoRot: 0, mirHold: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
   beatNow: 0, phrase: 0, loud: 0, mx: 0, lam: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
-  tw: 0, th: 0, flow: 0, light: 0.7, fit: 144,
+  tw: 0, th: 0, flow: 0, light: 0.7, fit: 144, pres: 1, sil: 0, arange: 0, alev: 0, nlev: 0, drawn: 0,
 };
 const GH12 = new Float32Array(12);     // the twelve hues
 const Z12 = new Float32Array(12);      // twelve zeros: lab mode silences the charges
+const Z3 = [0, 0, 0];                  // ... and three: hooks.quiet silences the three bands
 const GA12 = new Float32Array(12);     // the twelve glow amplitudes
 const SEG = new Float32Array(16384 * 12);   // the path-A upload: 12 floats a segment (CONTRACTS §1.12)
 const CSEG = new Float32Array(16384 * 4);   // ... and the same segments in small-grid coordinates, for chains()
@@ -47,7 +53,7 @@ let CTX = null, prH = null, prE = null, prM = null, prS = null, prD = null, LN =
 let F0 = null, F1 = null, CUR = null, MED = null, DS = null;
 let GW = 0, GH = 0, DW = 0, DH = 0, ASP = 16 / 9, QS = 0.6, NEED = 1, CLR = 0;
 let DSPX = null, APX = null, LTGT = null;
-let keyPin = null, medPin = -1, tierPin = -1, LCD = 0, NSEG = 0, linesOn = 1;
+let keyPin = null, medPin = -1, tierPin = -1, LCD = 0, NSEG = 0, linesOn = 1, quietPin = 0;
 // what probe.js needs to read: the live targets and sizes, refreshed where they change
 export const ST = { ctx: null, cur: null, med: null, tgt: null, gw: 0, gh: 0, U, hues: null };
 const AN = mkAnchor();
@@ -145,14 +151,25 @@ function strokes(target, w, h) {
     const part = readBand(ctx, DS, 0, DH, DSPX);
     if (part !== DSPX) DSPX.set(part);
     stream(DSPX, DW, DH, APX);
-    NSEG = linesOn ? contours(APX, DW, DH, NLEV[tier], CSEG, ctx.budget('segs')) : 0;
+    NSEG = linesOn ? contours(APX, DW, DH, NLEV[tier], CSEG, ctx.budget('segs'), ASCALE) : 0;
+    U.arange = +CSTAT.range.toFixed(5);
+    U.alev = CSTAT.levels;
   }
   LCD--;
   const n = NSEG;
   const px = HW * Math.max(0.6, h / 720);
   const col = [(0.55 + 0.45 * U.sat) * HALPHA, 0.62 * HALPHA, 0.95 * HALPHA];
+  // ... and the strokes carry the plane's own porthole fade (render.js portFade). A segment whose midpoint is
+  // outside the disc is not emitted at all: in v0.10 those corner contours were drawn over black, which is where
+  // the faint loops outside the porthole came from.
+  const R = 0.5 * GH, cxg = GW / 2, cyg = GH / 2;
+  let m = 0;
   for (let s = 0; s < n; s++) {
-    const o = 12 * s;
+    const mx = (0.5 * (CSEG[4 * s] + CSEG[4 * s + 2]) + 0.5) * DSB - cxg;
+    const my = (0.5 * (CSEG[4 * s + 1] + CSEG[4 * s + 3]) + 0.5) * DSB - cyg;
+    const fd = portFade(Math.sqrt(mx * mx + my * my), R);
+    if (fd <= 0) continue;
+    const o = 12 * m;
     for (let e = 0; e < 2; e++) {
       const q = clip(CSEG[4 * s + 2 * e], CSEG[4 * s + 2 * e + 1]);
       SEG[o + 4 * e] = q[0];
@@ -160,15 +177,17 @@ function strokes(target, w, h) {
       SEG[o + 4 * e + 2] = 0;
       SEG[o + 4 * e + 3] = px;
     }
-    SEG[o + 8] = col[0];
-    SEG[o + 9] = col[1];
-    SEG[o + 10] = col[2];
+    SEG[o + 8] = col[0] * fd;
+    SEG[o + 9] = col[1] * fd;
+    SEG[o + 10] = col[2] * fd;
     SEG[o + 11] = 1;
+    m++;
   }
   U.segs = n;
+  U.drawn = m;
   U.nlev = NLEV[tier];
-  if (n > 0) {
-    ctx.lines.set(LN, SEG, n);
+  if (m > 0) {
+    ctx.lines.set(LN, SEG, m);
     ctx.lines.draw(LN, target, w, h, { blend: 'add' });
   }
 }
@@ -210,6 +229,16 @@ function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v
 function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
 // hooks.lines(0) draws no field lines — what the bench needs to say how much of the scene they are
 function hLines(v) { linesOn = v === undefined || v === null || +v ? 1 : 0; LCD = 0; return linesOn; }
+// hooks.quiet(1) pins presence = alive = 0 and absentT = QUIETT INSIDE update() — never on MS (TORUS2's hooks.key
+// shape). The #test fake timeline reports presence 1, alive 1, absentT 0 at every frame (measured f360 and f840),
+// so this pin is the only way to photograph silence on a deterministic clock.
+// It pins the three band impulses and `sub` to zero as well, and that is not a convenience: MS.kick / snare / hat
+// are flux peaks and MS.sub a band follower, so in real silence they ARE zero. Pinning presence alone leaves the
+// #test timeline drumming into an empty room (measured: energy only 13 % down), which is not a picture of silence.
+function hQuiet(v) { quietPin = v === null || v === undefined || +v ? 1 : 0; return quietPin; }
+// how far silence has got: 0 while the bass is there, 1 once it has been gone VACT + VACW seconds and nothing is
+// present. `presence` is the gate, `absentT` the clock — a pad-only breakdown keeps presence up and keeps its rings.
+const SIL = (absentT, pres) => Math.max(0, Math.min(1, (absentT - VACT) / VACW)) * (1 - pres);
 
 export default {
   name: 'maxwell',
@@ -219,13 +248,13 @@ export default {
   feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'dropEnv', 'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid', 'flowHigh', 'roll', 'riser',
-    'hush', 'calm', 'alive', 'novelty', 'clarity', 'regularity'],
+    'hush', 'calm', 'alive', 'novelty', 'clarity', 'regularity', 'presence', 'absentT'],
   cuts: 'continuous',
   always: false,
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
 
   init(ctx) {
     this.ctx = ctx;
@@ -251,6 +280,20 @@ export default {
     if (tier !== U.tier) { U.tier = tier; NEED = 1; }
     U.light = P.light;
     U.pend = U.sub;
+    // v0.11 item 1 — silence is quiet. Nothing in v0.10 read `presence`: in silence the engine still held bpm, the
+    // beat still fired a FAINT kick, the harmAngle fallback still lit all twelve charges at the `charge` floor of
+    // 0.45 and the dipole still carried DIPR of its current, so the scene drew silence as loudly as a chorus.
+    // `presence` now gates every source; `absentT` (seconds since the bass left) lets the rings go.
+    const pres = quietPin ? 0 : MS.presence;
+    const alive = quietPin ? 0 : MS.alive;
+    U.pres = pres;
+    U.sil = SIL(quietPin ? QUIETT : MS.absentT, pres);
+    // The two params whose from() reads the pinned fields have to be pinned with them: the engine derives every
+    // param from the REAL MS (§1.16), so a hook that pins presence inside update() would leave `charge` at the
+    // value silence is supposed to take away. charge.from is presence x (...) = 0 and ring.from is (...) x
+    // (1 - SIL(10, 0)) = 0, so these two lines ARE the from()s, evaluated on the pinned fields.
+    const amp = quietPin ? 0 : P.charge;
+    const ring = quietPin ? 0 : P.ring;
 
     // Gauss: the twelve charges. The chroma vector IS the charge. When it carries no energy (silence, and the #test
     // fake timeline, which leaves chroma zeroed) the weights come from the harmony the extractor does report: pitch
@@ -266,7 +309,7 @@ export default {
       const fifth = ((7 * pc) % 12) / 12 * TAU;
       const imp = Math.pow(0.5 + 0.5 * Math.cos(MS.harmAngle - fifth), 2);
       const band = pc < 4 ? 0.55 + 0.55 * MS.bass : pc < 8 ? 1 : 0.85;
-      const c = Math.min(1, (w * Math.max(0, C[pc] || 0) * nrm + (1 - w) * imp) * band);
+      const c = Math.min(1, (w * Math.max(0, C[pc] || 0) * nrm + (1 - w) * imp * pres) * band);
       SRC.W12[k] = c;
       if (c > mx) { mx = c; U.loud = k; }
     }
@@ -299,7 +342,7 @@ export default {
     const lensT = P.lens * (1 + 0.03 * Math.sin(TAU * MS.barPos / 4));
     U.lens += (lensT - U.lens) * (1 - Math.exp(-dt / CONTC));
     U.shear += (0.55 * MS.tension - U.shear) * (1 - Math.exp(-dt / CONTC));
-    U.sigma = MS.arc === 'idle' ? VACSIG : (1 - P.ring) * SIGMAX;
+    U.sigma = MS.arc === 'idle' ? VACSIG : (1 - ring) * SIGMAX;
     U.vac = medPin === -2 || MS.arc === "idle" ? 1 : 0;
     // the drop's mirror HOLDS for a bar and then relaxes, rather than decaying from the first frame: while it is
     // full on the plane is closed and lossless and the field genuinely stands (a pure exponential from 1 gave the
@@ -313,10 +356,11 @@ export default {
     U.beatNow = MS.beatCount + MS.beatPhase;
     U.phrase = MS.phrase16Pos;
     U.flow = MS.flowBass + MS.flowMid + MS.flowHigh;
-    SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2, [MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat, {
-      amp: P.charge, sub: MS.sub, loud: U.loud, bpm: MS.bpm, dt, reg: MS.regularity, light: P.light,
+    SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2,
+      quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat, {
+      amp, sub: quietPin ? 0 : MS.sub, loud: U.loud, bpm: MS.bpm, dt, reg: MS.regularity, light: P.light,
       sweep: Math.max(MS.roll, MS.riser) * (1 - MS.dropEnv), pol: U.pol, yaw: U.yaw, yawRate: U.yawRate,
-      shim: MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty),
+      shim: MS.hat * (0.3 + 0.7 * alive) * (0.5 + 0.5 * MS.novelty), alive, pres,
       fam: [MS.flowBass, MS.flowMid, MS.flowHigh],
     });
     U.lam = SRC.OUT.lam;
@@ -365,7 +409,7 @@ export default {
     g.uniform4f(prS.u('uGain'), FGAIN, MEDVIS, GLOWG, FLOOR);
     g.uniform1fv(prS.u('uGX[0]'), SRC.CX);
     g.uniform1fv(prS.u('uGY[0]'), SRC.CY);
-    for (let k = 0; k < 12; k++) GA12[k] = 0.10 + 0.9 * SRC.W12[k];   // a floor, so all twelve are on the ring
+    for (let k = 0; k < 12; k++) GA12[k] = U.pres * (GAFL + (1 - GAFL) * SRC.W12[k]);   // a floor while there is music, dark without it
     g.uniform1fv(prS.u('uGA[0]'), GA12);
     g.uniform1fv(prS.u('uGH[0]'), GH12);
     g.uniform2f(prS.u('uRing'), SRC.RING * GH, 3 * GLOWW + 2);
@@ -388,9 +432,9 @@ export default {
   // would have written inline, moved whole, reading only fields in `feats`.
   params: {
     light: { eli5: 'how fast light travels, as a fraction of what the grid can carry', range: [0.3, 1], from: (MS) => 0.70 + 0.25 * MS.intensity },
-    ring: { eli5: 'how long a wave rings before the space swallows it', range: [0, 1], from: (MS) => 0.55 + 0.35 * MS.build - 0.3 * Math.max(MS.hush, MS.calm) },
+    ring: { eli5: 'how long a wave rings before the space swallows it', range: [0, 1], from: (MS) => (0.55 + 0.35 * MS.build - 0.3 * Math.max(MS.hush, MS.calm)) * (1 - SIL(MS.absentT, MS.presence)) },
     lens: { eli5: 'how hard the medium bends the light', range: [1, 4], from: (MS) => 1.6 + 1.4 * MS.build + 0.6 * MS.tension },
-    charge: { eli5: 'how loudly the charges and the dipole radiate', range: [0, 1], from: (MS) => 0.45 + 0.35 * MS.intensity + 0.2 * MS.bass },
+    charge: { eli5: 'how loudly the charges and the dipole radiate', range: [0, 1], from: (MS) => MS.presence * (0.45 + 0.35 * MS.intensity + 0.2 * MS.bass) },
     turn: { eli5: 'where the dipole has been nudged to, in the turn it makes every sixteen beats', range: [0, 6.2832], from: (MS) => ((MS.beatCount / 16) * TAU) % TAU },
     bounce: { eli5: 'how hard the cavity thumps on the beat', range: [0, 0.1], from: (MS) => BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4) },
   },

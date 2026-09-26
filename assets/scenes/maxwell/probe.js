@@ -41,7 +41,7 @@ export function hProbe(ST) {
   const c = chains(ST.seg, U.segs);
   U.loops = c.loops;
   U.gap = c.gap;
-  const out = { gap: c.gap, loops: c.loops, open: c.open, segs: U.segs, levels: U.nlev, cap: ST.ctx.budget('segs'), readType: ST.cur ? readType(ST.ctx, ST.cur) : '-', hues: [] };
+  const out = { gap: c.gap, loops: c.loops, open: c.open, segs: U.segs, drawn: U.drawn, levels: U.nlev, arange: U.arange, alev: U.alev, cap: ST.ctx.budget('segs'), readType: ST.cur ? readType(ST.ctx, ST.cur) : '-', hues: [] };
   for (let k = 0; k < 12; k++) out.hues.push(+ST.hues[k].toFixed(4));
   if (ST.tgt && U.tw > 0) {
     const px = readBand(ST.ctx, ST.tgt, 0, U.th), sw = ST.tgt.w, w = U.tw, h = U.th, half = Math.min(w, h) / 2;
