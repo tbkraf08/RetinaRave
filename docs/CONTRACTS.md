@@ -135,8 +135,13 @@ Uniforms you declare yourself must be fetched with `pr.u('name')` (or bound with
 your folder: `check.js` fails on a
 declared-but-never-fetched uniform (arrays: fetch `'uName[0]'`; a loop over a name array is invisible to it — write the
 literal). HEAD already declares `in vec2 vUv; out vec4 o;` — do not redeclare them. Never name a GLSL variable `gl_*`.
-`smoothstep(a,b,x)` needs `a<b` (lifted sources sometimes reverse it: write `1.-smoothstep(b,a,x)`). `readPixels` from
-an RGBA16F target returns black: use `mkTarget(w,h,true)` for readback. `tools/check.js` is a legal read for the
+`smoothstep(a,b,x)` needs `a<b` (lifted sources sometimes reverse it: write `1.-smoothstep(b,a,x)`). **Readback (v0.10 §42):**
+`readPixels` with `UNSIGNED_BYTE` from a float target returns black — either `mkTarget(w,h,true)` (RGBA8) for a byte read, or
+query `gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE)` once in `init` and read a float target with the type it names
+(`FLOAT` into a `Float32Array` on the harness GPU, where `EXT_color_buffer_float` also renders RGBA32F; `HALF_FLOAT` into a
+`Uint16Array` you decode yourself elsewhere). A readback is a pipeline stall: read a **small target whole** (MAXWELL's stream
+function is a 1.6 % downsample of the field), not a band of rows per frame — a CPU copy stitched from different frames is a
+time-patchwork, not a field (its divergence is not zero and its contours do not close). `tools/check.js` is a legal read for the
 uniform/import idioms — use it instead of peeking at a sibling scene.
 
 ### 1.3 `rt` — what a scene publishes
@@ -198,7 +203,13 @@ needed, now generic:
   (TORUS2's `key(k, mode)`, `morph(m, which)`): the hash dispatcher passes one value, so such hooks are `{eval}` calls, never `&name=` (v0.7). A hook that sets
   a phase your scene clamps on arrival (FEIGEN's `feigL`) must also mark the scene as arrived, and a hook that sets
   state your scene recomputes on an event (FEIGEN's `tricorn` from the seed at `sectionEvt`) must pin it for the run —
-  otherwise the next event silently undoes the hook and the shot tests the wrong thing.
+  otherwise the next event silently undoes the hook and the shot tests the wrong thing. **Naming (v0.10 §42):** a hook a
+  proof calls by name is `CARD.REG[id].scene.hooks.<name>` — `CARD.hooks.key` reaches whichever scene registered last, and
+  `&key=` calls every scene's — so a proof recipe always spells the id; a scene adding a hook whose word another scene
+  already uses (`key`, `train`, `probe`, `reset`, `chroma`) either prefixes it (`mxchroma`) or accepts that only the `REG`
+  path reaches it (grep `hooks:` across `assets/scenes/*/` first). **A hook that reports must not mutate:** `hooks.train()`
+  with no argument only reads the measured spacings, `hooks.energy()`/`hooks.probe()` only read back — a trace calls them
+  every 2 s and a report that also re-pinned would make the trace test the pin, not the track.
 - **`always`**: update every frame regardless of visibility (the home scene needs it; most scenes should not).
   A variant reads exactly its parent's fields (it renders through the parent's `draw`), so it shares the parent's
   `help.feats`; a variant that would need reads of its own is a scene, not a variant (v0.2 §17).
@@ -265,6 +276,10 @@ After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, 
 bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
 surprises/drops, kaleidoscope on peaks, flash on drops, tonemap, vignette `1 − 0.9·|uv−.5|²`, dither.
 A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
+**A plane under a rotating or nudged camera needs a porthole (v0.10 §42):** a rectangular field yawed or zoomed per beat shows its
+corners and its edge against the letterbox on every step (MAXWELL's dipole nudge), and the trails smear that edge; mask the
+plane to a disc (or feather it) inside your own `draw` — the composite has no crop slot and the vignette is too soft to hide a
+corner.
 
 **The chain runs in linear light (v0.3 §20).** What you write is sRGB-encoded (every palette in the repo is); the chain
 decodes it once at its input (feedback's pass), blurs, adds bloom and flash and meters exposure on linear radiance, tone-
