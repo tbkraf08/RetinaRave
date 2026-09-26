@@ -1984,3 +1984,62 @@ and `releases/retinarave-v0.11.html` threw `ReferenceError` at load (the v0.10 r
 stops at `//` outside a string. Proof: `FILE=$PWD/releases/retinarave-v0.11.html … 'test'` keys `9` then `n` → scene 9, forced 9,
 errs `[]`, nonFinite `[]`, 43 feats (`tools/accept/v0.11/release-file-9n.jpg`). Every release from now on is proven from `file://`
 before the tag, as v0.10 was — the bundler is not the served page.
+
+## §44 MAXWELL — "every sound a wave", v0.12 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell-onset.md`, report `maxwell-onset.md`; `MAXWELL-ONSET-SESSION-PROMPT.md`, `docs/AUDIT-v0.12.md`)
+
+**What the user asked (2026-09-26, after looking at v0.11, verbatim):** "it still seems like the waves coming out of the center are at a
+constant rate -> I'm expecting every sound to generate a wave (and the wave color is based on musical note being played) sometimes the
+music goes double time, doesn't seem like what is being immited from middle matches ; also why are there a pattern of small circles in
+the background?" Then "1. no sound -> quiet (ie. wave not generated) 2. what are the media?" and, told what the four media were, "follow
+your rec" (drop the photonic lattice, keep the lens and the mirror cavity, decide the waveguide after seeing sound-only ripples in the
+cavity). Those sentences are the spec. MAXWELL is **modified in place** — id 9, still forced-only (bid 0, key `9` then `n`); the gate is
+v0.10's and v0.11's: no sweep, proof on id 9 only. **The user has not looked at v0.12.**
+
+**The diagnosis held.** The constant rate was the continuous carrier (twelve charges, the dipole and the sub's standing current
+oscillating at the timbre's wavelength the whole time the music played) plus the beat-locked `FAINT` ring; the only discrete launches
+were three drum bands behind a hysteresis edge that could not re-fire while hits overlapped; the pale cream was the carrier mixing all
+twelve hues; the small circles were the photonic lattice's ε dots. The worker verified each claim in the code before changing it.
+
+**The scene now (`assets/scenes/maxwell/{index,fdtd,colour,medium,sources,onsets,render,probe,help}.js`, `index.js` 497 → 465, `onsets.js`
+new, 151):** nothing radiates continuously. Every launch is a Ricker shell from a place with an amplitude and **one hue** injected into
+v0.11's colour field: (1) **kicks** by the `kickCount` delta per frame (a counter — any rate; N kicks in a frame = N launches), from the
+centre and through the dipole, hue = `argmax(bchroma)` — the bass note — or the key's anchor below `BCHMIN`; (2) **snares and hats** by a
+**re-armed edge** (fire above `HI` after falling to `REARM` 0.5 × the last peak, refractory `REFR` 70 ms), the snare from the pitch class
+that rose most in `NOTEW` 150 ms, the hat on all twelve at `HATA`; (3) the engine's **`onset`** event when no band launched within
+`ONSETW` 50 ms, at `ONSETA` from the loudest-rising sector; (4) a **note** onset — a chroma bin rising by `NOTEK` **0.05** (the plan's 0.08
+fired 4 times in 14 s of house; the worker measured the chroma-rise distribution over 481 frames per synth) from its own sector at
+`NOTEA` 0.045, per-bin refractory 200 ms. One shared 32-slot launch ring (`NSLOT`) replaces 8 per band. Timbre survives on the shell:
+`TSIGK` (thickness by centroid), `DIRTK` (a second lobe for `dirty`); the sub still breathes the medium's ε (`WOBK`) — it moves the light,
+it is not a source. Media: **lens · mirror cavity** in rotation (`sectionAlt mod 2`), the waveguide by `hooks.medium(3)` only, `medium(2)`
+empty space, the lattice's code gone. `feats` 41: `bchroma onset kickCount` in, `beat roll riser novelty flowHigh dropEnv` out.
+Hooks: `launches()` (read-only: `{n, perBand, last[≤16], medium}`; `reset()` zeroes the ring but not the counters, so a trace can
+difference them); `wob`/`timbre` kept (they are the only way to prove `WOBK`/`TSIGK`/`DIRTK` — `#test` pins `centroid`, `dirty`, `sub`
+flat); `mxchroma` no longer silences the centre in the colour field (the centre is no longer pitchless — under the plan's own gate the
+silencing zeroed the only source).
+
+**The proofs (AUDIT-v0.12, `tools/accept/v0.12/`):** worker, CLOCK=1 — `train('off')` with music on: energy **0** exactly, segs 0 (v0.11
+396.41 / 468); one `#test` bar launches kick 4 / snare 2 / hat 8 = the fake timeline's; `train('8')`/`('4')` crest gaps **0.4999**;
+`mxchroma("3")` plane hue **0.0018 turns** off the target; all five bands fire on house / aba / dnb (32–40 launches per 2 s). Orchestrator,
+merged tree — s9 md5 `4ad6d2ea` / `4c2ab3c8` = the worker's; the paused start on three real tracks: **0 launches in every band 8 s into
+the pause**, energy 1e-5…2e-2 vs playing medians 73…505, every black frame inside the paused window, 0 long, ERRS `[]`, q .57 → .87;
+launches per 2 s 16 / 23 / 29 (Malicious / WLTP / CN) moving with the track; the plane's dominant hue within 0.08 turns of the last
+kick's bass note on **79 % of Malicious samples, 45 % WLTP, 17 % CN**; `medium` never 2. Cost **0.80× TORUS2** (worker 0.92×), from
+1.01× / 1.24×. `releases/retinarave-v0.12.html` proven from `file://` (keys `9` `n` → scene 9, errs `[]`, 30 launches by 9 s).
+
+**What this release does NOT prove, and says so:** (a) the plan's ≥ 70 % per-note gate is met on Malicious only — on CyborgNinja the
+bass alternates between two notes and the plane remembers a second of shells, so "distance to the newest kick's hue" is the wrong
+instrument for a mixture; a launch-weighted expected hue is owed to `det12.py`. (b) "Launches within 30 % of `onsetRate`" cannot hold by
+construction: the scene launches per band, the engine counts one onset per frame for the whole stack (measured 2.9–3.6×); read
+`dpb`. (c) The note source, `TSIGK` and `DIRTK` are proven on the demo synths and by pin only. (d) No double-time passage was found in
+the three tracks' 80 s windows; the double-time proof is `train('8')`. (e) Still no dubstep.
+
+**Leans for the user's eye, ranked:** (1) the rate — 13–20 launches a second on house; `REARM` 0.5 → 0.35 first, then `HATA`; (2)
+brightness between hits — dimmer than v0.11 by construction, `FGAIN` 6.0 is the knob, a floor is not; (3) the hat as the last
+all-twelve source — weight it by chroma, one line; (4) the waveguide back into rotation (the worker's vote; the rails are the only
+non-concentric composition); (5) one stray contour stroke outside the porthole at WLTP 20 s; (6) tier-3 substeps 3 → 4 with the
+headroom; (7) `TSIGK`/`DIRTK` on a real dubstep track.
+
+**Docs owed and paid here:** HARNESS's three §43 notes (the 500-line cap as a budget, `lum.py` has no hue field, cosine palettes →
+hue numbers are palette turns); CONTRACTS §1.4 the release-on-`undefined` convention (every pin hook is a mutator when read — the
+worker lost a run to `hooks.medium()` un-pinning its own shot; a trace reads `hud()` or a read-only hook). **Owed:** the
+launch-weighted expected hue in `det12.py`; the `CDIP` comment in `colour.js` now describes v0.11's workaround.

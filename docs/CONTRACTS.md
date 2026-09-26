@@ -209,7 +209,9 @@ needed, now generic:
   already uses (`key`, `train`, `probe`, `reset`, `chroma`) either prefixes it (`mxchroma`) or accepts that only the `REG`
   path reaches it (grep `hooks:` across `assets/scenes/*/` first). **A hook that reports must not mutate:** `hooks.train()`
   with no argument only reads the measured spacings, `hooks.energy()`/`hooks.probe()` only read back — a trace calls them
-  every 2 s and a report that also re-pinned would make the trace test the pin, not the track. **A hook that pins a field
+  every 2 s and a report that also re-pinned would make the trace test the pin, not the track. **The release-on-`undefined` convention makes every pin hook a mutator when read (v0.12 §44):** `hooks.medium()`, `tier()`, `quiet()`,
+  `key()`, `mxchroma()` called with no argument *release* their pin, so a trace never reads a pin hook to learn its state — it reads
+  `hud()` or a read-only hook (`launches().medium`); the worker lost a run to `hooks.medium()` reporting −1 and un-pinning the shot. **A hook that pins a field
   must also pin the params derived from it (v0.11 §43):** `params.<p>.from(S)` is evaluated by the engine from the real `MS`
   (§1.16), so a pin inside `update()` never reaches `env.params` — MAXWELL's `hooks.quiet(1)` left `charge` at its musical
   value until it also took `charge` and `ring` to what their `from()`s give on the pinned fields. And a `hud`/info hook that

@@ -1,45 +1,35 @@
-# Next session — Retina Rave after v0.11 (written 2026-09-26, at the v0.11 tag)
+# Next session — Retina Rave after v0.12 (written 2026-09-26, at the v0.12 tag)
 
-**v0.11 "the wave remembers its note" is tagged and deployed (DECISIONS §43, `docs/AUDIT-v0.11.md`, worker report
-`docs/workers/maxwell-wobble.md`):** MAXWELL (id 9) modified in place after the user's three notes on v0.10 — still **forced-only**
-(bid 0, key `9` then `n`). Item 1: `presence` gates every source, `absentT` lets the rings go, the contours got an absolute floor and
-the strokes got the plane's porthole (the corner scribble was most of "noisy"); with the track paused the picture is black (energy
-1e-5 of playing, 0 segments, 0 lit charges, on three real tracks). Item 2: a second half-grid wave equation carries rgb + w
-(`colour.js`), hue = rgb/w, the sign of Ez is brightness (`TROUGH` 0.35), the key anchor no longer rotates the wheel (`CHUE0` 0,
-`CSPREAD` 1.6); pinned-sector proof 0.0018 turns; cost 1.01–1.24× TORUS2 with tier-3 substeps 4 → 3. Item 3: the carrier is the
-timbre (`CENTK` 2.5), `dirty` doubles the ripple (cosine harmonic, `DIRTK` 1.8), the bass pumps the centre (`SUBK` 0.03, kick × punchy),
-the sub's wobble breathes the medium (`WOBK` 0.6) **and pumps the carrier's amplitude (`WOBA` 0.85)** — a uniform ε(t) cannot change
-a wave's k, so the wobble is amplitude, not wavelength (measured 4 % vs the 12 % gate). **The user has not looked at v0.11.**
+**v0.12 "every sound a wave" is tagged and deployed (DECISIONS §44, `docs/AUDIT-v0.12.md`, worker report `docs/workers/maxwell-onset.md`,
+plan `MAXWELL-ONSET-SESSION-PROMPT.md`):** MAXWELL (id 9) modified in place after the user's look at v0.11 — still **forced-only** (bid 0,
+key `9` then `n`). The carrier and the beat-locked `FAINT` ring are gone: with the music playing and every hit pinned off the field's energy
+is **0** exactly, and 8 s into a paused window on three real tracks **0 launches** in every band. Every onset launches a Ricker shell in
+its note's hue — kicks by the `kickCount` delta from the centre in the bass note's hue (`argmax(bchroma)`), snares/hats by a re-armed
+edge (`REARM` 0.5, `REFR` 70 ms), the engine's `onset` event, and a soft per-pitch-class note onset (`NOTEK` 0.05) — through one 32-slot
+ring, reported by `hooks.launches()`. Double time: `train('8')`/`('4')` spacing 0.4999. The lattice is removed; rotation is lens · mirror
+cavity; the waveguide is `hooks.medium(3)` only. Cost 0.80× TORUS2. `index.js` 465 (+ `onsets.js` 151). **The user has not looked at v0.12.**
 
-**The user looked at v0.11 (2026-09-26) and said:** the waves from the centre come at a constant rate; every sound should generate
-a wave, coloured by the note being played; double-time passages do not show in what the middle emits; and what is the pattern of
-small circles in the background. Answers given: the constant rate is the continuous carrier + the beat-locked `FAINT` ring, the small
-circles are the photonic-lattice medium. The user decided: **no sound → quiet (no wave generated)**; **follow the rec on the media —
-drop the lattice, keep the lens and the mirror cavity, decide the waveguide after seeing sound-only ripples in the cavity.** The plan is
-**`MAXWELL-ONSET-SESSION-PROMPT.md`** (v0.12, MAXWELL in place, still forced-only: the carrier and the metronome go; every onset —
-kick by `kickCount`, snare/hat by a re-armed edge, the engine's `onset` event, a soft per-pitch-class note onset — launches a Ricker
-shell in its note's hue, the kick's hue from `argmax(bchroma)`; lattice removed, rotation lens · cavity, waveguide by hook only;
-`index.js` must come down from 498 lines). **Run that session first; the paragraph below is what it supersedes.**
-
-**Was first:** show the user `tools/accept/v0.11/montage-maxwell2-paused.jpg` (silence vs sound — show this one first),
-`montage-maxwell2-demo.jpg` (house / aba / dnb, v0.10 left · v0.11 right — many colours, and paler), `montage-maxwell2-real.jpg`
-(CyborgNinja / WhoLikesToParty / Malicious at 20–80 s), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the
-eye sees" and the ranked leans (§43). Their word decides. **Say plainly what the AUDIT says:** the per-note colour is proven only
-under a pinned sector (real chroma is flat and the twelve hues sit symmetrically about the anchor, so no real-track agreement number
-exists); the wobble is proven only by the CLOCK=1 `hooks.wob(2)` series (a 2 s trace cannot resolve 1–4 Hz); `Malicious` (Kevin
-MacLeod, 140 BPM, CC-BY) stood in for dubstep and has no wobble bass — **the user's 3 has never been tested on dubstep; bring an mp3
-to `…/scratchpad/music/`**. A retune is a named constant at the top of `assets/scenes/maxwell/{colour,sources,fdtd,medium,render,
-index}.js` (`TROUGH`, `CSPREAD`, `FGAIN`, `CENTK`, `WOBA`, `GRIDT[3]` substeps — ranked in §43), proven with `IDS=9 tools/scene-md5.sh`
-(re-base `tools/accept/v0.11/scene-md5-v011.txt` s9 lines) + `tools/accept/v0.11/det11.py <track> <tag>` (energy / spacing / dominant
-hue per 2 s) and `audit11.sh` (the paused start).
-- **Promote →** a `score()` (TORUS2's shape, §36), then the Q trace on house + aba, the `accept.sh` "== maxwell" section (s9 md5s,
-  the pinned trains, the key pair, `test_fdtd`), a DECISIONS section, tag v0.12.
-- **"Still not the note's colour" →** the instrument is a pinned-chroma real-track hook (pin one sector while a real track plays),
-  not a bigger `CSPREAD`. **"Still no wobble" →** the mechanism for rings that bunch is a graded lens with a shorter travel time or a
-  source-side chirp — a new plan, not a constant.
-- **Docs owed to HARNESS** (§43's last paragraph): `tools/lum.py` has no hue field (v0.10's report quoted one from an uncommitted
-  instrument); the scene palette is cosine, not HSV — hue numbers are palette turns via `probe.js hueFit`; the 500-line hard cap is
-  where a growing scene's budget goes (`maxwell/index.js` is at 498).
+**First: show the user** `tools/accept/v0.12/montage-maxwell3-paused.jpg` (silence vs sound — first), `montage-maxwell3-demo.jpg` (house /
+aba / dnb, v0.11 left · v0.12 right — many small shells in many hues, busier and dimmer), `montage-maxwell3-real.jpg` (CyborgNinja /
+WhoLikesToParty / Malicious at 20–80 s — separate ripples at the rim sectors by 80 s), `montage-maxwell3-media.jpg` (lens · cavity ·
+waveguide · empty — **the waveguide question** is theirs), and `dist/retinarave.html` key `9` then `n`; read them the AUDIT's "What the eye
+sees" and the ranked leans (§44). Their word decides. **Say plainly what the AUDIT says:** the plane's hue matches the last kick's bass
+note on 79 % of samples on Malicious but 17 % on CyborgNinja (a two-note bassline; the plane is a mixture of the last second's shells,
+and the instrument is wrong for that — a launch-weighted expected hue is owed to `det12.py`); "launches within 30 % of `onsetRate`" was
+unmeetable arithmetic (per band vs per frame); the note source and `TSIGK`/`DIRTK` are proven on the demo synths and by pin only; no
+double-time passage was found in the three tracks; **still no dubstep — bring an mp3 to `…/scratchpad/music/`** (this session's
+scratchpad: `/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/dc110efa-e487-4f63-9c82-c30184aa9016/scratchpad/music/`, or curl
+incompetech's three again). A retune is a named constant at the top of `assets/scenes/maxwell/{onsets,sources,colour,medium,render,
+index}.js` (`REARM`, `HATA`, `FGAIN`, `NOTEK`/`NOTEA`, `GRIDT[3]` substeps — ranked in §44), proven with `IDS=9 tools/scene-md5.sh` (re-base
+`tools/accept/v0.12/scene-md5-v012.txt` s9 lines) + `tools/accept/v0.12/det12.py <track> <tag>` (read `dpb`, `dkick`, `medium`) and
+`audit12.sh` (the paused start).
+- **Promote →** a `score()` (TORUS2's shape, §36), then the Q trace on house + aba, the `accept.sh` "== maxwell" section (s9 md5s, the
+  pinned trains, the key pair, `test_fdtd`), a DECISIONS section, tag v0.13.
+- **"Too busy" →** `REARM` 0.5 → 0.35, then `HATA`. **"Too dark between hits" →** `FGAIN`, never a floor (a floor is a carrier by another
+  name — the user said quiet). **"The waveguide back" →** `sectionAlt mod 3` in `medium.js`, one line + `NAMES`/`help.js`, the md5 pair
+  re-based. **"Still not the note's colour" →** first the launch-weighted expected hue in `det12.py` (the instrument), then the hat by
+  chroma (`W12[k]`, one line in `sources.js`), not a bigger `CSPREAD`.
+- **Docs owed:** the launch-weighted expected hue in `det12.py`; the `CDIP` comment in `colour.js` (describes v0.11's workaround).
 
 **Then — the NAV2 question (v0.8, DECISIONS §39, `docs/AUDIT-v0.8.md`), still open:** NAV2 is id 8, key `9`, forced-only, not swapped
 in; the user has not looked. Show `tools/accept/v0.8/montage-nav2-real.jpg` (NAV left · NAV2 right) and `dist/retinarave.html` key `9`;
@@ -58,7 +48,9 @@ in §41; a retune is a constant at the top of `assets/scenes/polytope/*.js`, `ID
 Still open, unchanged: the Cloudflare dashboard steps (v0.6), TORUS2's leans, deleting `torus-v1`, folding `torus2/motion.js turn` onto
 `math/nudge.js` (a duplicate since v0.10; a TORUS2 change, so it waits for a TORUS2 session), the OKLCH variants, POLYTOPE's portrait
 cropping, the NAV2 phase-winding colour variant (noted 2026-09-26, not built: colour by the winding of arg fⁿ(z) — the argument principle —
-a colour variant on NAV2 only, opt-in, `IDS=8` proof, decide after the swap question).
+a colour variant on NAV2 only, opt-in, `IDS=8` proof, decide after the swap question). The working tree at the v0.12 tag still carries
+uncommitted deletions of six `tools/accept/v0.8/{ew,v3}-t*.jpg` and two untracked `tools/accept/v0.8/trans-*.jpg` from an earlier session —
+not this session's; restore or commit them when someone knows why.
 
-**Not this:** a MAXWELL bid, a full sweep, 3D, an OKLCH variant, the Hertzian-dipole hedge (only if the montage disappoints and the user
-asks), fallback B (the `vec4` Yee) unless the user rejects the colour field's picture.
+**Not this:** a MAXWELL bid, a full sweep, 3D, an OKLCH variant, a carrier "bed" behind the hits (the user said quiet), the Hertzian-dipole
+hedge, fallback B (the `vec4` Yee).

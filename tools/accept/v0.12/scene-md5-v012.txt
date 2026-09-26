@@ -1,0 +1,22 @@
+# s9 MEASURED on the merged v0.12 tree (HEAD 11f264b, IDS=9 PORT=8810, 2026-09-26) and equal to the worker's
+# report (docs/workers/maxwell-onset.md): 4ad6d2ea / 4c2ab3c8.  v0.11's s9 was d268a071 / 473e474c.
+fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
+7225ea02adab09c37055b85189ac5d49  s0-f840.jpg
+c6166af903f80e0693471b5b28e4c6b6  s1-f360.jpg
+7ca6598c6a3bfb726641ae3103450a79  s1-f840.jpg
+9a57626c15937700b6d2694d88fb9fa8  s2-f360.jpg
+5e59be9338ab60119aee250133cbddf0  s2-f840.jpg
+7189a6ba6899e1e34d077eddbaaf4de8  s3-f360.jpg
+48113eda4d94ff1f48c35b7b29f06a38  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+be2e3c8d6f2484ef55753e4d5213ef97  s4-f840.jpg
+06b4606341684e569c633b30684055ec  s5-f360.jpg
+cccb0094fee921bd5aaee7bc31260ef9  s5-f840.jpg
+8d6ac4a6234d1bbaaaac2bca65d8439d  s6-f360.jpg
+9adb1f5b764f55f68e13e3e83f4eecd2  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+9021eac8e0def02ce49a28b4bf0f77e9  s8-f360.jpg
+f62997959107739e98e3599a68fdd4ef  s8-f840.jpg
+4ad6d2ea0b2818a9d9cb1b0ad5dc6f70  s9-f360.jpg
+4c2ab3c8da487a007521cbc0112b2e50  s9-f840.jpg
