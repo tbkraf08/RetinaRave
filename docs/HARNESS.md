@@ -21,6 +21,9 @@ node tools/check.js
 ```
 Fails on: syntax, >500 lines, a declared-but-never-fetched uniform, a scene/effect/transition importing core/engine,
 'nav' in core/ or transitions/, an MS key without a FEATS entry. Warns above 350 lines.
+The 500-line cap is a hard fail and is where a growing scene's budget goes (v0.11, §43: MAXWELL's `index.js` reached 498 —
+a brief that adds a subsystem to a 400-line scene says first which lines leave; a split module, `colour.js`/`onsets.js`, is the
+usual answer, and `check.js` only tells you after the edit).
 
 ## Math tests (node, plain import)
 
@@ -507,4 +510,8 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
 - `tools/probe.js` needs a real window (it registers its own rAF and reads the GL canvas through a 2-D canvas): headless
   luminance is `python3 tools/lum.py <shot.jpg>` on the saved screenshot (centre 20 % vs the 60–90 % rim annulus; post-composite,
   so the vignette flatters the ratio — compare against another scene's shot measured the same way).
+- `tools/lum.py` has **no hue field** (v0.10's MAXWELL report quoted a hue from an instrument that was never committed): a hue
+  number comes from a scene hook (`hooks.mxcol()` on MAXWELL) or `probe.js hueFit`, never from `lum.py`.
+- Scene palettes are **cosine**, `0.5 + 0.5·cos(TAU·(h + [0, .33, .67]))`, not HSV: a hue number in a report is in **palette
+  turns** (0–1, recovered by `probe.js hueFit`), and a proof that quotes HLS degrees against a constant in turns compares nothing.
 
