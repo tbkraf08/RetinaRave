@@ -9,6 +9,10 @@ tree (`11f264b`) on 2026-09-26 at `PORT=8810 GPU=1`, one Chrome at a time. Worke
 
 - **`audit12.sh <track> <tag>`** — v0.11's `audit11.sh` with `OUT`/the scratchpad moved: key `9` then `n`, tab capture, the paused start
   (10 s paused right after the keys land, `<tag>-paused8s` + `TPAUSE`), then the 20/40/60/80 s shots and STAT lines, `LONG`, `Q1HZ`, `END`.
+  **Tracks live in `$MUSIC` (default `~/Music/RetinaRave`, 2026-09-26)** — no longer a session scratchpad under `/tmp` that gets wiped.
+  `<track>` is the file name with or without its extension (`.flac .wav .mp3 .m4a .opus .ogg` tried in that order): `SeeYouDrop`
+  (Ray Volpe, 16-bit/44.1 kHz FLAC — the first dubstep), `CyborgNinja`, `WhoLikesToParty`, `Malicious` (the incompetech three, 320 mp3).
+  The step JSON goes to `$SP/audit` (default `/tmp/retinarave`). `det12.py` follows the same rule.
 - **`det12.py <track> <tag>`** — the 2 s / 80 s trace, v0.11's D line plus the launches: `lau` (`hooks.launches()`: `n`, `perBand`, the
   last four), `dn`/`dpb` (launches since the previous line, total and per band), `onsets` (= `onsetRate` × 2), `lr` = `dn/onsets`,
   `kickhue` (the newest kick's hue = the bass note at that kick), `dkick` (circular distance, turns, between the plane's dominant hue
@@ -37,6 +41,7 @@ tree (`11f264b`) on 2026-09-26 at `PORT=8810 GPU=1`, one Chrome at a time. Worke
 - `mx3-b-{house,aba,dnb}-t{6,14}.jpg` — the demo synths on v0.12 (their v0.11 twins are `../v0.11/after-*`).
 - `v012-after-s9-f{360,840}.jpg` — the md5 pair (f840 is now the cavity; on v0.11 it was the waveguide, which left rotation).
 - `mx3-{cn,wltp,mal}-{paused8s,20s,40s,60s,80s}.jpg` — the real-track clock shots from `audit12.sh`.
+- `mx3-syd-{paused8s,20s,40s,60s,80s}.jpg` + `det12-syd.txt` — the same on SeeYouDrop (the first dubstep, 2026-09-26; AUDIT-v0.12 addendum).
 
 ## Montages
 

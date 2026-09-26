@@ -21,10 +21,20 @@
 # A PAUSED START matching audit12.sh is inserted after the keys land: pause the media tab, 8 s, one D line preceded by the
 # marker PAUSED8S (its dn is the launches during silence — the item-A gate on a real track: 0), 2 s more, .play(), marker
 # RESUME, then the 40 x 2 s play loop. Do NOT pipe this script into `head` (SIGPIPE kills the run).
-# usage: det12.py <track> <tag>   -> prints D {...} lines
+# usage: det12.py <track> <tag>   -> prints D {...} lines. <track> is a file in $MUSIC (default ~/Music/RetinaRave), with
+#        or without its extension (.flac .wav .mp3 .m4a .opus .ogg tried in that order) — the same rule as audit12.sh.
 import json, os, subprocess, sys, datetime
-S = '/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/dc110efa-e487-4f63-9c82-c30184aa9016/scratchpad'
+MUSIC = os.environ.get('MUSIC') or os.path.expanduser('~/Music/RetinaRave')
 track, tag = sys.argv[1], sys.argv[2]
+def resolve(name):
+    if os.path.isfile(os.path.join(MUSIC, name)): return os.path.join(MUSIC, name)
+    for e in ('flac', 'wav', 'mp3', 'm4a', 'opus', 'ogg'):
+        f = os.path.join(MUSIC, f'{name}.{e}')
+        if os.path.isfile(f): return f
+    return None
+FILE = resolve(track) or resolve(os.path.splitext(track)[0])
+if not FILE: sys.exit(f'det12: no {track} in {MUSIC} (tried .flac .wav .mp3 .m4a .opus .ogg)')
+track = os.path.splitext(track)[0]
 INFO = ("(()=>{const h=CARD.REG[9].scene.hooks,S=CARD.MS;const J=(f)=>{try{const v=f();return typeof v==='string'?JSON.parse(v):v}catch(e){return String(e)}};"
         "const g=(k)=>(S[k]!==undefined&&S[k]!==null&&isFinite(+S[k])?+(+S[k]).toFixed(2):null);"
         "const lit=(S.chroma?Array.from(S.chroma).reduce((a,x,i)=>{if(x>0.3)a.push(i);return a},[]):null);"
@@ -49,7 +59,7 @@ INFO = ("(()=>{const h=CARD.REG[9].scene.hooks,S=CARD.MS;const J=(f)=>{try{const
         "presence:g('presence'),alive:g('alive'),absentT:g('absentT'),centroid:g('centroid'),dirty:g('dirty'),punchy:g('punchy'),"
         "energy:J(()=>h.energy()),train:J(()=>h.train()),probe:J(()=>h.probe()),hud:CARD.REG[9].scene.hud?CARD.REG[9].scene.hud():''})})()")
 steps = [{"until": "window.CARD"}, {"wait": 1000},
-         {"tab": f"file://{S}/music/{track}.mp3", "window": {"left": 2000, "top": 100, "width": 640, "height": 360}}, {"wait": 2000},
+         {"tab": f"file://{FILE}", "window": {"left": 2000, "top": 100, "width": 640, "height": 360}}, {"wait": 2000},
          {"evalTab": "(()=>{const v=document.querySelector('video,audio');return 'TAB '+location.href+' '+(v?[v.paused,+v.currentTime.toFixed(1)]:'none')})()"},
          {"activate": "main"}, {"wait": 500}, {"clickSel": "#go"}, {"wait": 6000}, {"key": "9"}, {"key": "n"}, {"wait": 1500},
          {"evalTab": "(()=>{const v=document.querySelector('video,audio');if(v)v.pause();return 'PAUSED '+(v?v.paused:'none')})()"},

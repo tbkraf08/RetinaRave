@@ -17,9 +17,10 @@ sees" and the ranked leans (§44). Their word decides. **Say plainly what the AU
 note on 79 % of samples on Malicious but 17 % on CyborgNinja (a two-note bassline; the plane is a mixture of the last second's shells,
 and the instrument is wrong for that — a launch-weighted expected hue is owed to `det12.py`); "launches within 30 % of `onsetRate`" was
 unmeetable arithmetic (per band vs per frame); the note source and `TSIGK`/`DIRTK` are proven on the demo synths and by pin only; no
-double-time passage was found in the three tracks; **still no dubstep — bring an mp3 to `…/scratchpad/music/`** (this session's
-scratchpad: `/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/dc110efa-e487-4f63-9c82-c30184aa9016/scratchpad/music/`, or curl
-incompetech's three again). A retune is a named constant at the top of `assets/scenes/maxwell/{onsets,sources,colour,medium,render,
+double-time passage was found in the three tracks; **dubstep has arrived: `~/Music/RetinaRave/SeeYouDrop.flac`** (Ray Volpe — SEE YOU
+DROP, 16-bit/44.1 kHz, 2:38; the MAXWELL per-note gate and the double-time passage are still unproven on it). Tracks now live in
+`$MUSIC` (default `~/Music/RetinaRave`, the incompetech three copied there too); `audit12.sh`/`det12.py` take the name with or without
+its extension (`audit12.sh SeeYouDrop mx3-syd`). A retune is a named constant at the top of `assets/scenes/maxwell/{onsets,sources,colour,medium,render,
 index}.js` (`REARM`, `HATA`, `FGAIN`, `NOTEK`/`NOTEA`, `GRIDT[3]` substeps — ranked in §44), proven with `IDS=9 tools/scene-md5.sh` (re-base
 `tools/accept/v0.12/scene-md5-v012.txt` s9 lines) + `tools/accept/v0.12/det12.py <track> <tag>` (read `dpb`, `dkick`, `medium`) and
 `audit12.sh` (the paused start).

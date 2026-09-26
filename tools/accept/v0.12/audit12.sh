@@ -7,11 +7,17 @@
 # CDP session (Target.attachToTarget + Runtime.evaluate + Target.detachFromTarget) — it never depends on which tab is
 # frontmost, so no {"activate":"tab"}/{"activate":"main"} pair is needed around it (confirmed against cdp.js's header
 # and its evalTab implementation; v0.10's own evalTab call runs before "activate main" too).
-# usage: audit12.sh <track> <tag>
+# usage: audit12.sh <track> <tag>   — <track> is a file in $MUSIC (default ~/Music/RetinaRave), given with or without its
+#        extension: SeeYouDrop, SeeYouDrop.flac, CyborgNinja … (.flac .wav .mp3 .m4a .opus .ogg are tried in that order).
+#        The step JSON lands in $SP/audit (default /tmp/retinarave). Chrome titles a file:// media tab by its file name,
+#        so CAPTITLE=<track> still picks the tab.
 cd /home/toma/Documents/Kraftek/RetinaRave || exit 1
 export OUT=tools/accept/v0.12 GPU=1
-SP=/tmp/claude-1000/-home-toma-Documents-Kraftek-Eigenwobble/dc110efa-e487-4f63-9c82-c30184aa9016/scratchpad
-TRACK=$1; TAG=$2
+MUSIC=${MUSIC:-$HOME/Music/RetinaRave}
+SP=${SP:-/tmp/retinarave}
+TRACK=${1%.*}; TAG=$2
+resolve() { local e f; [ -f "$MUSIC/$1" ] && { echo "$MUSIC/$1"; return; }; for e in flac wav mp3 m4a opus ogg; do f="$MUSIC/$1.$e"; [ -f "$f" ] && { echo "$f"; return; }; done; return 1; }
+FILE=$(resolve "${1}") || FILE=$(resolve "$TRACK") || { echo "audit12: no $TRACK.{flac,wav,mp3,m4a,opus,ogg} in $MUSIC" >&2; exit 1; }
 mkdir -p "$OUT" "$SP/audit"
 PROBE="fetch('/tools/probe.js').then(r=>r.text()).then(eval).then(()=>PROBE.start())"
 STAT="{t:+((performance.now()-PROBE.t0)/1000).toFixed(1),bpm:+CARD.MS.bpm.toFixed(2),syn:+CARD.MS.bpmSyn.toFixed(2),key:CARD.MS.key,mode:CARD.MS.mode,keyConf:+CARD.MS.keyConf.toFixed(2),q:CARD.Q.q,ms:+CARD.ENGINE.ms.toFixed(2),hop:CARD.ENGINE.tex.hop,scene:CARD.SC.logical,black:PROBE.black,long:PROBE.long,maxdt:+PROBE.maxdt.toFixed(0),frames:PROBE.n,errs:CARD.ERRS,bad:CARD.nonFinite(),hud:(CARD.REG[CARD.SC.logical].scene.hud?CARD.REG[CARD.SC.logical].scene.hud():'')}"
@@ -20,7 +26,7 @@ if [ -n "$DRY" ]; then
 fi
 cat > "$SP/audit/$TAG.json" <<EOJ
 [{"until":"window.CARD"},{"wait":1000},
-{"tab":"file://$SP/music/$TRACK.mp3","window":{"left":2000,"top":100,"width":640,"height":360}},{"wait":2000},
+{"tab":"file://$FILE","window":{"left":2000,"top":100,"width":640,"height":360}},{"wait":2000},
 {"evalTab":"(()=>{const v=document.querySelector('video,audio');return v?[v.paused,+v.currentTime.toFixed(1),v.duration]:'none'})()"},
 {"activate":"main"},{"wait":500},{"eval":"$PROBE"},{"clickSel":"#go"},{"wait":6000},
 {"key":"9"},{"key":"n"},{"wait":1000},
@@ -41,6 +47,6 @@ if [ -n "$DRY" ]; then
   echo "DRY: wrote $SP/audit/$TAG.json, not launching Chrome"
   exit 0
 fi
-echo "### $TAG $TRACK key 9+n paused-start $(date +%H:%M:%S)"
+echo "### $TAG $TRACK ($FILE) key 9+n paused-start $(date +%H:%M:%S)"
 env HEADED=1 WIN=1920,1080 WINPOS=0,0 CAPTITLE=$TRACK PORT=${PORT:-8840} node tools/cdp.js 'real' "$(cat "$SP/audit/$TAG.json")" 2>&1 | grep -v "^\[console" | cut -c1-1500
 echo "### end $(date +%H:%M:%S)"

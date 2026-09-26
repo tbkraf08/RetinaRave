@@ -171,3 +171,27 @@ No bid, no sweep, no Q trace, no NAV2 swap, no POLYTOPE, no TORUS2 fold, no 3D, 
 palette turns), CONTRACTS §1.4 (the release-on-`undefined` convention makes every pin hook a mutator when read), this audit, DECISIONS
 §44, `tools/accept/v0.12/README.md`, the thumb, the release proven from `file://`.
 **Owed:** a launch-weighted expected hue in `det12.py` (the right instrument for (a) above); the `CDIP` comment in `colour.js`.
+
+
+## Addendum 2026-09-26 — the first dubstep: SeeYouDrop (Ray Volpe, FLAC)
+
+Tracks moved out of the session scratchpad to `$MUSIC` (default `~/Music/RetinaRave`); `audit12.sh`/`det12.py` resolve the name with
+or without its extension. `SeeYouDrop.flac` (16-bit/44.1 kHz, 2:38, 150 BPM) is the dubstep the audit above was still missing.
+`audit12.sh SeeYouDrop mx3-syd` (`mx3-syd-{paused8s,20s,40s,60s,80s}.jpg`) + `det12.py SeeYouDrop mx3-syd` (`det12-syd.txt`), the
+same clock and the same columns as the table above:
+
+```
+                 launches / 2 s        per band over 80 s (kick snare hat onset note)   engine kickCount   dkick ≤ .08   dbass ≤ .08
+SeeYouDrop        0–21, median 17      401   14   46  111    8                            441 (Δ401)        80 %  (med .02)   73 %
+```
+
+- **The paused start holds on it:** `dn` 0 on both D lines inside the paused window (the same shape as the three above); every black
+  frame inside the pause but seven in the first frames after `.play()`, none after 20 s; `errs []`, `medium` 0/1 only, tempo 150.0
+  throughout, key G♯ minor from 20 s.
+- **The per-note gate (≤ .08 on ≥ 70 %) is met** — the second track to meet it after Malicious, and for the same reason: kick-led,
+  401 kick launches against 14 snares. The engine's `kickCount` grew by exactly the kick launches (441 − 40 = 401).
+- **A double-time passage exists here.** `onsets` per 2 s sits at a median 5.6 and reads 11.9 on two consecutive samples (t 59.0 and
+  61.2 s, 2.1×) — the fill into the breakdown (bass collapses .92 → .11 at 63 s, `build` climbs to .67, `arc` peak with `dropEnv` .78
+  at 69.5 s). The launches did **not** double with it (`dn` 21 then 15 against a running 15–19): the 70 ms refractory and the 32-slot
+  ring cap the scene's rate, so the double-time proof the audit asked for now has a real passage to run against — the question of
+  whether MAXWELL *should* double there is open, and the retune constants (`REARM`, `HATA`) are where it would be answered.
