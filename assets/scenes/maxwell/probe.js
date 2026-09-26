@@ -17,6 +17,25 @@ export function hEnergy(ST) {
   return +energyOf(px, ST.gw, ST.gh, eps).toFixed(6);
 }
 
+// The crests of Ez along the +x ray from the centre, in cells, to sub-cell accuracy — the ring radii MEASURED off
+// the field itself, one row of readback, so hooks.train()'s spacings are not only the launch bookkeeping.
+export function hRow(ST) {
+  if (!ST.cur) return [];
+  const gw = ST.gw, gh = ST.gh, c = gw >> 1;
+  const px = readBand(ST.ctx, ST.cur, gh >> 1, 1);
+  let mx = 0;
+  for (let i = c; i < gw; i++) mx = Math.max(mx, px[4 * i]);
+  const out = [];
+  for (let i = c + 2; i < gw - 1; i++) {
+    const a = px[4 * (i - 1)], b = px[4 * i], d = px[4 * (i + 1)];
+    if (b > a && b >= d && b > 0.02 * mx) {
+      const den = a - 2 * b + d;
+      out.push(+(i - c + (Math.abs(den) > 1e-12 ? 0.5 * (a - d) / den : 0)).toFixed(2));
+    }
+  }
+  return out;
+}
+
 export function hProbe(ST) {
   const U = ST.U;
   const c = chains(ST.seg, U.segs);

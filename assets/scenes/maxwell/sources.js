@@ -57,7 +57,7 @@ export const CY = new Float32Array(12);
 export const CA = new Float32Array(12);        // ... and their Ez amplitude this substep
 export const W12 = new Float32Array(12);       // the twelve weights (chroma, or the harmAngle fallback)
 const FAM = new Float32Array(3);               // the three families' phase drifts
-export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 100 };
+export const OUT = { j: 0, dj: 0, dx: 1, dy: 0, step: 0, sig: 8, lam: 24, spb: 100, S: COURANT };
 
 let mode = null, sched = -1e18, lastHit = -1e18, step = 0;
 let ph = 0, dph = 0;           // the carrier's phase and its per-substep increment
@@ -109,19 +109,24 @@ export function env(age, sig) {
 //   lev   [kick, snare, hat] · beatNow beatCount + beatPhase · beatEvt MS.beat
 //   p     {amp, hat, sub, loud, bpm, dt, sweep, dip, pol, shim, fam:[b,m,h], yawRate}
 export function frame(sub, gh, cx, cy, lev, beatNow, beatEvt, p) {
-  const sig = Math.max(2, TSIGH * gh / COURANT);
+  // the speed in force: params.light scales the Courant number, and EVERYTHING geometric here follows it — the
+  // ring radii, the spacings and the carrier's phase step. (The first train trace reported 43.5 cells of spacing
+  // from COURANT while the picture showed 34: light was 0.78 that frame.)
+  const S = COURANT * (p.light === undefined ? 1 : p.light);
+  OUT.S = S;
+  const sig = Math.max(2, TSIGH * gh / S);
   const spb = sub * (60 / Math.max(40, p.bpm)) / Math.max(1e-4, p.dt);
   let lam = Math.max(LAMLO * gh, LAM0 * gh * BPM0 / Math.max(40, p.bpm) / (1 + RSWEEP * p.sweep));
   // regularity LOCKS the carrier to the grid: a steady rhythm pulls the wavelength to the nearest exact fraction of
   // the distance light covers in one beat, so the wavefronts and the rings line up and the plane reads as standing;
   // an unsteady one lets the carrier sit where the tempo put it.
-  const travel = spb * COURANT;
+  const travel = spb * S;
   const nw = Math.max(1, Math.round(travel / lam));
   lam += (travel / nw - lam) * Math.max(0, Math.min(1, p.reg || 0));
   OUT.sig = sig;
   OUT.lam = lam;
   OUT.spb = spb;
-  dph = 2 * Math.PI * COURANT / lam;
+  dph = 2 * Math.PI * S / lam;
   g = p;
   for (let k = 0; k < 12; k++) {
     const a = 2 * Math.PI * k / 12;
@@ -176,7 +181,7 @@ export function substep() {
   // The dipole: a pair of antiparallel currents whose AXIS is the eased nudge, oscillating at the carrier. Its
   // current carries a resting share plus the nudge's own angular velocity, so the two lobes glow between beats and
   // flare on the beat the dipole turns. surpriseEvt flips its polarity (g.pol) for one frame's worth of source.
-  OUT.dj = DIPA * g.pol * (DIPR + DIPK * Math.abs(g.yawRate)) * Math.sin(ph);
+  OUT.dj = DIPA * g.amp * g.pol * (DIPR + DIPK * Math.abs(g.yawRate)) * Math.sin(ph);
   OUT.dx = Math.cos(g.yaw);
   OUT.dy = Math.sin(g.yaw);
   ph += dph;
@@ -191,7 +196,7 @@ export function rings(band) {
   for (let s = 0; s < SLOTS; s++) {
     const i = band * SLOTS + s, age = step - AT[i];
     if (AT[i] < -1e17 || age < 0) continue;
-    const r = (age - TPKS * OUT.sig) * COURANT;
+    const r = (age - TPKS * OUT.sig) * OUT.S;
     if (r < -2) continue;
     out.push(+r.toFixed(3));
   }
@@ -206,5 +211,5 @@ export function spacings(band) {
 }
 
 export function info() {
-  return { mode, step, sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
+  return { mode, step, S: +OUT.S.toFixed(4), sig: +OUT.sig.toFixed(2), lam: +OUT.lam.toFixed(2), spb: +OUT.spb.toFixed(2), ph: +(ph % (2 * Math.PI)).toFixed(3), j: +OUT.j.toFixed(4), dip: [+OUT.dj.toFixed(4), +OUT.dx.toFixed(3), +OUT.dy.toFixed(3)], kick: rings(0), snare: rings(1), hat: rings(2), space: spacings(0) };
 }

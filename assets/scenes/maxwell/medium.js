@@ -18,7 +18,9 @@ import { ABSN, ABSSIG } from './fdtd.js';
 export const SIGMAX = 0.035;  // the vacuum's own loss at `ring` = 0. The decay per substep is (1 - a)/(1 + a) with
                               // a = sigma S / 2, so 0.035 is a decay length of ~70 cells and 0.45 was ~5: the first
                               // montage was a glow around each source with no wave in it at all.
-export const VACSIG = 0.09;   // arc 'idle' (nothing has started): no geometry, sigma this high, the plane just glows
+export const VACSIG = 0.09;   // arc 'idle' (nothing has started): no geometry, this much loss, the plane just glows.
+                              // index.js applies it as the base sigma; uMed.w only switches the GEOMETRY off, so
+                              // hooks.medium(4) can pin empty space without also pinning the intro's loss.
 export const RLENS = 0.30;    // the lens disc's radius, in units of the grid HEIGHT (the ring of charges is at 0.34)
 export const LSOFT = 0.05;    // ... and the width of its edge, so the lens is not a scattering step
 export const RCAV = 0.385;    // the mirror cavity's radius
@@ -75,7 +77,7 @@ void main() {
   float t = max(0.0, (${ABSN.toFixed(1)} - d) / ${ABSN.toFixed(1)});
   float abs0 = ${ABSSIG.toFixed(3)} * t * t;
   float eps = 1.0 + (uMed.x - 1.0) * g.x;
-  float sig = mix(uMed.z, ${VACSIG.toFixed(3)}, uMed.w) + abs0 * (1.0 - uMir.x);
+  float sig = uMed.z + abs0 * (1.0 - uMir.x);
   float mir = max(g.y, uMir.x * smoothstep(0.0, 0.35, t));
   o = vec4(eps, sig, clamp(mir, 0.0, 1.0), 0.0);
 }

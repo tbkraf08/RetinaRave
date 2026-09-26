@@ -8,11 +8,11 @@
 import { mkAnchor, sectorHue, sectorPc } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { COURANT, DIPD, FS_E, FS_H, GRIDT, mkField, readBand } from './fdtd.js';
-import { FS_MED, GEON, GEOTC, NAMES, SIGMAX } from './medium.js';
+import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
 import { FS_DOWN, FS_SHOW, HALPHA, HW, NLEV, chains, contours, stream } from './render.js';
 import * as SRC from './sources.js';
 import { HELP } from './help.js';
-import { hEnergy, hInfo, hProbe } from './probe.js';
+import { hEnergy, hInfo, hProbe, hRow } from './probe.js';
 
 const TAU = Math.PI * 2;
 // --- the manual settings of the look: named constants at the top, never a magic number in a shader ---
@@ -174,16 +174,22 @@ function hTier(v) { tierPin = v === null || v === undefined || +v < 0 ? -1 : Mat
 function hReset() { SRC.reset(); NG.reset(); AN.reset(); CLR = 1; U.pulse = U.lab; U.mir = 0; U.pol = 1; return 1; }
 // vacuum, no absorber, a perfect-conductor wall, no music sources, one pinned gaussian pulse: the twin's own run
 function hLab(v) { U.lab = v === null || v === undefined || +v ? 1 : 0; hReset(); return U.lab; }
+// hooks.train(v) pins a pattern; hooks.train() with NO argument only reports (calling it to read the numbers must
+// not reset the very thing it is reporting — the first train shot was taken one frame after its own hook cleared it).
 function hTrain(v) {
-  SRC.train(v === '' || v === null || v === undefined ? null : String(v));
-  return JSON.stringify({ mode: SRC.trainMode(), rings: SRC.rings(0), spacings: SRC.spacings(0), sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2) });
+  if (v !== undefined) SRC.train(v === '' || v === null ? null : String(v));
+  const cr = hRow(ST), gaps = [];
+  for (let i = 1; i < cr.length; i++) gaps.push(+(cr[i] - cr[i - 1]).toFixed(2));
+  return JSON.stringify({ mode: SRC.trainMode(), rings: SRC.rings(0), spacings: SRC.spacings(0), crests: cr, crestGaps: gaps, sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2) });
 }
 function hKey(v) {
   const p = String(v === null || v === undefined ? '' : v).split(',');
   keyPin = p[0] === '' || +p[0] < 0 ? null : { k: ((+p[0] | 0) % 12 + 12) % 12, m: +p[1] ? 1 : 0 };
   return JSON.stringify(keyPin);
 }
-function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : (+v | 0) % GEON; return medPin; }
+// hooks.medium(0..3) pins one of the four geometries; GEON or more pins EMPTY SPACE, which is the control every
+// measurement of a free wave needs (a ring reflected off the cavity wall is not a ring of the train).
+function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
 function hDrop() { U.mir = 1; return 1; }
 
 export default {
@@ -274,8 +280,8 @@ export default {
     const lensT = P.lens * (1 + 0.03 * Math.sin(TAU * MS.barPos / 4));
     U.lens += (lensT - U.lens) * (1 - Math.exp(-dt / CONTC));
     U.shear += (0.55 * MS.tension - U.shear) * (1 - Math.exp(-dt / CONTC));
-    U.sigma = (1 - P.ring) * SIGMAX;
-    U.vac = MS.arc === 'idle' ? 1 : 0;
+    U.sigma = MS.arc === 'idle' ? VACSIG : (1 - P.ring) * SIGMAX;
+    U.vac = medPin === -2 || MS.arc === "idle" ? 1 : 0;
     if (MS.dropEvt) U.mir = 1;
     U.mir *= Math.exp(-dt / DROPTC);
     if (U.mir < 1e-4) U.mir = 0;
@@ -285,7 +291,7 @@ export default {
     U.phrase = MS.phrase16Pos;
     U.flow = MS.flowBass + MS.flowMid + MS.flowHigh;
     SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2, [MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat, {
-      amp: P.charge, sub: MS.sub, loud: U.loud, bpm: MS.bpm, dt, reg: MS.regularity,
+      amp: P.charge, sub: MS.sub, loud: U.loud, bpm: MS.bpm, dt, reg: MS.regularity, light: P.light,
       sweep: Math.max(MS.roll, MS.riser) * (1 - MS.dropEnv), pol: U.pol, yaw: U.yaw, yawRate: U.yawRate,
       shim: MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty),
       fam: [MS.flowBass, MS.flowMid, MS.flowHigh],
@@ -356,7 +362,7 @@ export default {
     light: { eli5: 'how fast light travels, as a fraction of what the grid can carry', range: [0.3, 1], from: (MS) => 0.70 + 0.25 * MS.intensity },
     ring: { eli5: 'how long a wave rings before the space swallows it', range: [0, 1], from: (MS) => 0.55 + 0.35 * MS.build - 0.3 * Math.max(MS.hush, MS.calm) },
     lens: { eli5: 'how hard the medium bends the light', range: [1, 4], from: (MS) => 1.6 + 1.4 * MS.build + 0.6 * MS.tension },
-    charge: { eli5: 'how loudly the twelve charges radiate', range: [0, 1], from: (MS) => 0.45 + 0.35 * MS.intensity + 0.2 * MS.bass },
+    charge: { eli5: 'how loudly the charges and the dipole radiate', range: [0, 1], from: (MS) => 0.45 + 0.35 * MS.intensity + 0.2 * MS.bass },
     turn: { eli5: 'where the dipole has been nudged to, in the turn it makes every sixteen beats', range: [0, 6.2832], from: (MS) => ((MS.beatCount / 16) * TAU) % TAU },
     bounce: { eli5: 'how hard the cavity thumps on the beat', range: [0, 0.1], from: (MS) => BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4) },
   },
