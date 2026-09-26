@@ -89,6 +89,7 @@ uniform vec4 uDip;      // the dipole: its current this substep, its axis (unit)
 uniform float uCX[12];
 uniform float uCY[12];
 uniform float uCA[12];
+uniform vec2 uRing;     // the charges' ring: its radius in cells and how far its blobs reach
 ${BLOB}
 void main() {
   ivec2 p = ivec2(gl_FragCoord.xy);
@@ -105,8 +106,13 @@ void main() {
   float ca = (1.0 - a) / (1.0 + a);
   float cb = (uS / eps) / (1.0 + a);
   float src = 0.0;
-  for (int k = 0; k < 12; k++) {
-    if (abs(uCA[k]) > 1e-6) src += uCA[k] * blob(gl_FragCoord.xy, vec2(uCX[k], uCY[k]), ${SRCW.toFixed(2)});
+  // The twelve charges sit on ONE ring, so a single radius test skips the twelve-blob loop for the ~85 % of texels
+  // that are nowhere near it. (Twelve distance tests per texel per substep is 16 M of them a frame at tier 3.)
+  float rr = length(gl_FragCoord.xy - uCtr);
+  if (abs(rr - uRing.x) < uRing.y) {
+    for (int k = 0; k < 12; k++) {
+      if (abs(uCA[k]) > 1e-6) src += uCA[k] * blob(gl_FragCoord.xy, vec2(uCX[k], uCY[k]), ${SRCW.toFixed(2)});
+    }
   }
   if (abs(uJ) > 1e-6) src += uJ * blob(gl_FragCoord.xy, uCtr, ${KW.toFixed(2)});
   // The magnetic dipole, as what a magnetic dipole IS: a current loop. In two dimensions that is a pair of

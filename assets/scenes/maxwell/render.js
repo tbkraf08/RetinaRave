@@ -34,6 +34,7 @@ uniform float uGX[12];
 uniform float uGY[12];
 uniform float uGA[12];
 uniform float uGH[12];
+uniform vec2 uRing;        // the charges' ring: its radius in cells and how far the glows reach
 vec3 hueRGB(float h, float sat, float bri) {
   vec3 c = 0.5 + 0.5 * cos(TAU * (h + vec3(0.0, 0.33, 0.67)));
   float l = dot(c, vec3(0.3, 0.59, 0.11));
@@ -69,12 +70,15 @@ void main() {
   vec3 col = hueRGB(hue, ${LSAT.toFixed(2)} * uCol.y, uCol.z) * L;
   // the medium, as a hint: the lens brightens with its eps contrast, a conductor draws as a cool line
   col += uGain.y * (${MEDE.toFixed(3)} * max(0.0, md.r - 1.0) + ${MEDC.toFixed(3)} * md.b) * hueRGB(uCol.w, 0.5, 1.0);
-  // the twelve charges, each in its own hue on the circle of fifths
-  for (int k = 0; k < 12; k++) {
-    vec2 d = g - vec2(uGX[k], uGY[k]);
-    float q = dot(d, d);
-    if (q > ${(GLOWW * GLOWW * 9).toFixed(1)}) continue;
-    col += hueRGB(uGH[k], uCol.y, 1.0) * (uGain.z * uGA[k] * exp(-q / ${(2 * GLOWW * GLOWW).toFixed(2)}));
+  // the twelve charges, each in its own hue on the circle of fifths. They sit on one ring, so one radius test
+  // skips the loop for most of the screen (the same trick the source pass uses).
+  if (abs(length(g - uCtr) - uRing.x) < uRing.y) {
+    for (int k = 0; k < 12; k++) {
+      vec2 d = g - vec2(uGX[k], uGY[k]);
+      float q = dot(d, d);
+      if (q > ${(GLOWW * GLOWW * 9).toFixed(1)}) continue;
+      col += hueRGB(uGH[k], uCol.y, 1.0) * (uGain.z * uGA[k] * exp(-q / ${(2 * GLOWW * GLOWW).toFixed(2)}));
+    }
   }
   o = vec4((col + uGain.w * hueRGB(uCol.x, 0.3, 1.0)) * ed, 1.0);
 }

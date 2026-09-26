@@ -395,3 +395,240 @@ test&scene=9&param=maxwell.lens=c:4, f360          mxp-s9   4bb2b863bc2404dc69be
 the ring spacings, the carrier's wavelength in cells, how far a wave gets before the loss eats it. It is honest and
 it is the parameter most worth turning. At its range's bottom (0.3) light crawls; at the top (1) the scheme is at
 its stability limit and still stable, because `COURANT` is the limit and `light` only ever multiplies it by ≤ 1.
+
+---
+
+## Step 10 — card, help, acceptance
+
+**Card** (§1.17): `title 'MAXWELL'`, blurb *"Maxwell's four equations solved live on a grid: twelve charges by
+pitch class, a magnet turning one notch a beat, and every drum hit a real ripple of light"*.
+`PORT=8820 tools/thumbs.sh "9:360"` → `site/thumbs/maxwell.jpg`, 17241 bytes. The script does take an id, so it is
+run here and the frame (360) is pinned in this report rather than in the script's default list — **the orchestrator
+should add `9:360` to `PICK` in `tools/thumbs.sh`**, which is outside this worker's targets.
+
+**Help**: three depths plus a `help.feats` line for all 38 fields; `check.js` reports `help.feats gaps 0`.
+
+### Acceptance (brief-common 1-4, on id 9)
+
+**1.** `node tools/check.js` → `95 modules · uniforms 151 · MS keys 118 · scenes 9 (help.feats gaps 0) · 0 fail · 3
+warn`. The three warnings are file lengths over the 350-line *soft* cap — `feigen/index.js` 352 and `nav2/nav2.js`
+393 were already there; **`maxwell/index.js` is 402**, under the 500 hard cap but over the soft one. It was split
+twice already (`probe.js` for the readback hooks, `help.js` for the text); what is left is the contract object, the
+substep, the strokes and the hooks. Flagged, not fixed.
+
+**2.** `PORT=8820 GPU=1 node tools/cdp.js 'test&scene=9' …`
+
+```
+EVAL ... => {"errs":[],"bad":[],"scene":9,"q":0.696,"tier":1}
+shot mx-t6 · shot mx-t14
+EVAL CARD.hooks.probe() => {"gap":0,"loops":137,"open":25,"segs":1796,"levels":11,"cap":9000,"readType":"FLOAT",
+                            "centre":0.30790,"rim":0.17784,"ratio":1.731}
+```
+
+`ERRS []`, `nonFinite []`. **t6** (sustain, mirror cavity): a round porthole of concentric blue-and-gold standing
+rings inside the cavity wall, the field lines threaded between the crests, the twelve charges as violet beads on
+their ring. **t14** (one second after the drop at 13 s, waveguide): the whole plane is filled corner to corner with
+a much brighter standing interference pattern, the two rails crossing it — the drop is unmistakable, and it is the
+mirror doing it, not a flash.
+
+**3.** `PORT=8820 GPU=1 node tools/cdp.js 'test&fake=0&demo=house&scene=9' …`
+
+```
+EVAL ... => {"errs":[],"bad":[],"q":0.696,"tier":2,"fps":60}
+mxinfo at 50 s: grid [512,288] sub 4 S 0.4076 lam 44.92 geo "lens" lens 1.963 sigma 0.0136 mir 0.4301 key 9 mode 0
+                segs 3565 float32 true   src.space [45.6, 24.5, 21.2, 47.3, 45.6, 45.6, 45.6]
+```
+
+`mx-h10` / `mx-h30` / `mx-h50` are three clearly different frames (`mx-house.jpg`): h10 a bright green-and-magenta
+cavity (the real extractor's key puts the anchor at a different hue from the fake timeline's), h30 a dim photonic
+lattice with the field broken into the lattice's cells, h50 a bright lens again with wide rings. The `src.space`
+line is the live proof the trains read a real groove: house's kicks leave rings 45.6 cells apart, with two at 24.5
+and 21.2 where the off-beat hits landed.
+
+**4.** The scene object carries `name id tag feats cuts score init update draw post help` plus `card params colour
+hooks rt always overlay hud`; `feats` is exactly the 38 fields it reads.
+
+### Bench
+
+Protocol as HARNESS: `q` pinned at 0.95 by `setInterval`, 10 s of settling, `bench(id, 300)` interleaved with
+`bench(0, 300)` as pairs, the first (cold) pair discarded, seven pairs, the ratio reported as well as the ms. Two
+pages, because a sticky `&scene=N` means the other scene's `update()` has barely run (HARNESS pitfall).
+
+```
+test&scene=9   maxwell  NAV   ratio        test&scene=3   torus2   NAV   ratio
+               1.540  1.352  1.140                        0.901  1.268  0.710
+               1.369  1.174  1.165                        0.885  1.250  0.708
+               1.115  1.149  0.971                        0.852  1.193  0.714
+               1.544  1.258  1.227                        1.256  1.276  0.984
+               1.487  0.960  1.549                        1.139  0.921  1.237
+               1.599  0.954  1.675                        1.162  0.958  1.212
+               1.643  1.035  1.587                        1.182  0.940  1.258
+        median 1.540  1.149  1.227               median   1.139  1.193  0.984
+```
+
+**MAXWELL is 1.25x TORUS2** on the medians of the NAV-normalised pairs (1.227 / 0.984) — under the <= 1.5x gate.
+The honest caveat: both pages drift the same way through the run (NAV falls from ~1.25 ms to ~0.95 while the scene
+rises), so the *early* pairs give 1.140 / 0.710 = **1.61x** and the *late* ones 1.587 / 1.237 = **1.28x**. The
+number is somewhere between 1.25 and 1.6 and the gate is at the top of that. Every pair is printed above; the
+median is the verdict.
+
+Two cost decisions came out of that bench, both of which left the picture alone:
+
+- **the field lines are rebuilt every `LINEF` frames** (2, 2, 3, 3 by tier) and re-projected every frame. The
+  `readPixels` stall plus the marching squares was **1.0 ms of the scene's 2.6** at tier 3 — the most expensive
+  thing in the scene after the field itself. Rebuilding at 20 Hz leaves them at most two frames behind a wave that
+  moves two cells a frame. `hooks.lines(0)` turns them off, which is how the 1.0 ms was attributed.
+- **the twelve charges are bounded by their ring.** They sit on one circle, so one radius test skips the
+  twelve-blob loop for ~85 % of texels — in the source pass that loop ran 16 M times a frame at tier 3, and in the
+  display pass once per screen pixel.
+
+Before both: 2.612 / 1.415 = 1.846 against TORUS2's 0.582, i.e. **3.2x** and a clear fail.
+
+### Final md5
+
+```
+IDS=9 PORT=8820 tools/scene-md5.sh mx
+scene 9 errs [] hop 840 row 72
+4e26a42791d36764ed29edbfbcdf4fd6  s9-f360.jpg
+57bac88e80ab0e03afb0a67455e582a0  s9-f840.jpg
+```
+
+---
+
+## The `feats` list (38)
+
+```
+chroma harmAngle key mode keyConf valence kick snare hat beat bpm beatPhase beatCount barPos phrase16Pos bass sub
+build intensity arousal tension dropEvt dropEnv arc sectionAlt sectionEvt surpriseEvt flowBass flowMid flowHigh
+roll riser hush calm alive novelty clarity regularity
+```
+
+The plan's list plus `harmAngle` (step 8).
+
+## The `post` params
+
+```js
+post: { fb: { decay: 0.72 }, bloom: { thr: 0.28 }, kaleido: 0, morph: { flow: 0.55 } }
+```
+
+- `fb.decay` **0.72**, shorter than TORUS2's 0.85: the field already has its own memory — that is what a wave
+  equation is — so a long trail smears the crests into each other and the standing pattern stops reading. 0.72 is
+  enough to keep a kick's ring glowing for the frame or two after it passes.
+- `bloom.thr` **0.28**, a little under TORUS2's 0.3: the crests are broad and dim rather than thin and bright, and
+  the bloom is what gives the interference its light.
+- `kaleido` **0**. The picture is already radially symmetric about its own centre; mirroring it adds nothing and
+  breaks the one thing the eye tracks, which is where a front is.
+- `morph.flow` **0.55**. A field of broad bands combs badly under a strong advection (the stroke-scene lesson of
+  v0.3 §23 applies to bands too), but it is not a stroke scene either — half way.
+
+## Which H-lines path, and why
+
+**Path A** (CPU segments through `ctx.lines.set` / `.draw`). Path B builds each point in the vertex shader from
+`gl_InstanceID`, which suits a curve whose point *i* is a closed-form function of *i* (TORUS2's rings). A field line
+is not: it is a contour, found by walking cells, so path B would have to rebuild the whole contour for every point
+of it. Segment counts against `ctx.budget('segs')` are in step 5's table — 6 % to 21 % of the cap.
+
+## Screenshots, one line each
+
+| shot | what it shows |
+|---|---|
+| `mx-first-f360`, `mx-t2…t13-*` | the build's own history: flat saturation, then waves, then the field lines going from scribbles to closed loops. Kept for the record, not for the montage. |
+| `mx-lab-f200` | `hooks.lab` — one pinned pulse in a closed lossless box, the frame the 7e-8 twin comparison was read from. |
+| `mx-train4-f360` | four kicks a beat apart: four evenly spaced rings filling the mirror cavity. |
+| `mx-synco-f360` | the same, syncopated: the rings in close-far-close-far pairs. |
+| `mx-train4-vac-f360`, `mx-synco-vac-f360` | the same two in empty space with nothing else radiating — the controls the measured spacings come from. |
+| `mx-bar-f300/315/330/345/360` | one bar: the plane, its charge ring and its medium turn further anticlockwise in each; f345 is the largest (the frame of the five nearest a beat). |
+| `mx-key00-f360` | C major: a red-and-teal target of rings, anchor hue 0.009. |
+| `mx-key71-f360` | G minor: the same frame in blue and amber, anchor hue 0.293. |
+| `mx-lines-f360` | the H field lines as the picture's subject: closed loops threaded between the crests, dense where the field is strong. |
+| `mx-media.jpg` | the four media at f360 — lens (rings tighter inside the disc), mirror cavity (trapped, leaking through two gaps), photonic lattice (the wavelength crawling into the lattice's own cells), waveguide (a bright column between the rails). |
+| `mx-drop-f330/360/420` | the drop's mirror: the plane fills with a standing wave and is still full two seconds later. |
+| `mx-nodrop-f330/360/420` | the control at the same frames: by f420 there is nothing left but the charges' glow. |
+| `mx-dropab.jpg` | those two, tiled. |
+| `mx-t6`, `mx-t14`, `mx-t6t14.jpg` | the acceptance pair: the cavity at 6 s, the drop's standing wave at 14 s. |
+| `mx-h10/h30/h50`, `mx-house.jpg` | the house demo at 10, 30 and 50 s: cavity, lattice, lens — three different pictures. |
+| `mx-s9-f360`, `mx-s9-f840` | the reference frames the final md5s are of. |
+| `mxp-s9-f360` | the same frame with `&param=maxwell.lens=c:4` — a route moves the picture. |
+| `site/thumbs/maxwell.jpg` | the landing tile, id 9 frame 360. |
+
+---
+
+## Friction log — what the docs did not answer, and what is wrong in them
+
+Each of these is a line the next brief or CONTRACTS should carry.
+
+1. **The brief's energy gate cannot be met as worded, and the wording is the bug.**
+   *"energy `Σ(ε Ez² + Hx² + Hy²)` in a closed lossless cavity within 1 % over 1000 steps after the source stops"* —
+   that sum is not an invariant of a leapfrog, because E and H live half a step apart. Measured ripple: **10.40 %**.
+   The Yee scheme's own energy (the H term as the product of the two half steps) holds to **1.2e-14**. Both are
+   printed by `tools/test_fdtd.js`; the gate is on the invariant and on the naive sum's *drift* (0.41 %).
+
+2. **The brief's step-1 sentence "Field on screen as raw signed Ez (grey)" and the plan's "a magnetic dipole …
+   whose changing B induces the E rings" are in conflict with the plan's own "∇·B = 0 … They must never open."**
+   A magnetic-current dipole source gives H a magnetic charge density −∇·M. Either the dipole is a current loop
+   (what was built) or the field lines open at it. This is the one real physics error in the plan and it is worth a
+   line in DECISIONS: *a source term in Faraday's pass is a magnetic monopole density unless it is divergence-free.*
+
+3. **"one band of rows per frame, sized to stay under the bench gate; never the whole field"** is right about the
+   *field* and wrong about the *downsampled* field. A banded read of the small target makes the CPU copy a patchwork
+   of times, and a time-patchwork field is not divergence-free, so nothing closes. What the budget is actually about
+   is the size of the stall: the small target is 1.6 % of the field's texels. It is read **whole, every LINEF
+   frames**.
+
+4. **CONTRACTS §1.1 says `ctx.mkTarget` is "RGBA16F when available" and §1.2 that "`readPixels` from an RGBA16F
+   target returns black: use `mkTarget(w,h,true)` for readback".** Both are true of `UNSIGNED_BYTE` reads. On this
+   machine `IMPLEMENTATION_COLOR_READ_TYPE` is `FLOAT` and `EXT_color_buffer_float` renders RGBA32F, so the field
+   targets are re-specified to RGBA32F and read back with `gl.FLOAT` directly — 7e-8 agreement with a float64 twin.
+   §1.2's sentence should say *`UNSIGNED_BYTE` from a float target returns black; query
+   `IMPLEMENTATION_COLOR_READ_TYPE` and read with the type it names.*
+
+5. **`CARD.hooks` name collisions are worse than §1.4 admits for a hook a proof needs to call.** `key` is TORUS2's
+   hook name too, so `CARD.hooks.key` reaches whichever scene registered last and a `&key=` hash param calls *both*.
+   Every hook of this scene that a proof calls by name is called as `CARD.REG[9].scene.hooks.<name>(v)`. A scene
+   whose hook names are its own (`mxinfo` rather than `info`) is the cheaper habit; `train`, `key`, `reset`, `probe`
+   and `drop` are all shared with something.
+
+6. **A read-only hook must not mutate.** `hooks.train()` reset the train it was asked to report, so the first train
+   shot was taken one frame after its own hook had cleared it. `hooks.train(v)` pins; `hooks.train()` reports. Worth
+   a sentence in §1.4 beside "a hook that sets a phase your scene clamps on arrival must also mark the scene as
+   arrived".
+
+7. **A proof of a free wave needs an empty-space control, and the brief's hook list has none.** `hooks.medium(0..3)`
+   pins a geometry; `hooks.medium(4)` (anything ≥ `GEON`) pins vacuum. Without it every ring measurement is a
+   measurement of the cavity.
+
+8. **`params.light` scales the Courant number, so it re-times everything geometric.** The first train trace reported
+   43.5 cells of spacing from the constant while the picture showed 34, because `light` was 0.78. Any parameter that
+   scales the simulation's own clock has to be threaded into every derived number; `OUT.S` is that thread here.
+   This is the same class of trap as `polytope-dance.md`'s routed-param pitfall, one level down.
+
+9. **`tools/thumbs.sh`'s `PICK` list is in the script**, so a scene cannot ship its own thumbnail frame without
+   editing a file outside its folder. The thumb is made and the frame recorded here; the script's default list still
+   has no `9:360`.
+
+10. **Nothing in the docs says what a scene should do about a camera that rotates.** A scene drawn as the grid's
+    rectangle sweeps four black corners across the frame when it yaws. The answer here is a round porthole (fade on
+    a disc) plus a framing constant; it is worth a line in §1.10 beside what the composite does.
+
+**Was I tempted to open a forbidden file?** Once: to find out whether `ctx.budget('segs')` follows `ctx.tier()` or a
+pinned scene tier, when `hooks.tier(t)` made the two disagree. It was answerable from CONTRACTS §1.4 and
+`core/quality.js` (a legal read) — `budget` reads `Q`, always — so the step-5 table reports both.
+
+**Guesses made and kept:** the medium cross-fade time (1.2 s, TORUS2's attractor fade is 1.0); which sector carries
+which pitch class (`sectorPc`, so the ring *is* the circle of fifths rather than the chromatic order — `keycolour.js`
+documents the convention but nothing says a ring of charges should use it); the Ricker envelope for a hit (the plan
+says only "a hit"); the three families split by pitch class 0–3 / 4–7 / 8–11 (TORUS2's); `regularity` locking the
+carrier to an exact fraction of a beat's travel (the plan gives `regularity` no job at all, and a `feats` entry with
+no job is a lie the help view shows).
+
+## If this is picked up again
+
+- **The bench is at the gate, not under it** (1.25–1.6× TORUS2 depending on the window). The lever that has not been
+  pulled is the plan's own numerics: tier 3 is 768×432 × 4 substeps = 2.65 M texel-updates a frame, and 3 substeps
+  there would take it to ~0.8× of the current cost with the only visible change being that light travels a quarter
+  slower at the top tier. The plan marked that table "decided, the worker does not re-decide", so it stands.
+- **The half-float readback path is unexercised** on this machine (everything came back `FLOAT`). It is ten lines in
+  `fdtd.js` and it is the path a weaker GPU will take.
+- **`hooks.probe().open`** — contours with a loose end — is the sharpest instrument the scene has for ∇·B, and it is
+  free. Any future change to the sources should watch it: it was 18–23 while Faraday carried a magnetic current and
+  is 0–25 now (all of them lines that genuinely leave the window).

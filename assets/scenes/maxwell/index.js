@@ -7,9 +7,9 @@
 // Forced-only (score 0, key `n` cycles to it) until the user approves it.
 import { mkAnchor, sectorHue, sectorPc } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
-import { COURANT, DIPD, FS_E, FS_H, GRIDT, mkField, readBand } from './fdtd.js';
+import { COURANT, CUT, DIPD, FS_E, FS_H, GRIDT, SRCW, mkField, readBand } from './fdtd.js';
 import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
-import { FS_DOWN, FS_SHOW, HALPHA, HW, NLEV, chains, contours, stream } from './render.js';
+import { FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, stream } from './render.js';
 import * as SRC from './sources.js';
 import { HELP } from './help.js';
 import { hEnergy, hInfo, hProbe, hRow } from './probe.js';
@@ -28,6 +28,7 @@ const DROPTC = 3.2;     // ... and then relaxes over another, so the whole gestu
 const CONTC = 0.45;     // the medium's contrast and shear ease over this many seconds
 const HUETC = 0.30;     // the charges' hue purity eases (clarity moves fast)
 const DSB = 6;          // the H-line downsample block, in cells
+const LINEF = [2, 2, 3, 3];     // the field lines are rebuilt every this many frames, by tier (a readback stalls)
 const FITK = 0.75;      // the porthole's framing: this much of the grid height across one screen height
 const RINGM = 0.368;    // ... but never so close that the charges' ring (0.34 grid heights) is cropped
 
@@ -46,7 +47,7 @@ let CTX = null, prH = null, prE = null, prM = null, prS = null, prD = null, LN =
 let F0 = null, F1 = null, CUR = null, MED = null, DS = null;
 let GW = 0, GH = 0, DW = 0, DH = 0, ASP = 16 / 9, QS = 0.6, NEED = 1, CLR = 0;
 let DSPX = null, APX = null, LTGT = null;
-let keyPin = null, medPin = -1, tierPin = -1;
+let keyPin = null, medPin = -1, tierPin = -1, LCD = 0, NSEG = 0, linesOn = 1;
 // what probe.js needs to read: the live targets and sizes, refreshed where they change
 export const ST = { ctx: null, cur: null, med: null, tgt: null, gw: 0, gh: 0, U, hues: null };
 const AN = mkAnchor();
@@ -74,6 +75,8 @@ function build() {
   ST.gh = GH;
   NEED = 0;
   CLR = 1;
+  LCD = 0;
+  NSEG = 0;
   U.mx = 0;
 }
 
@@ -112,6 +115,7 @@ function substep(S) {
   g.uniform1fv(prE.u('uCX[0]'), SRC.CX);
   g.uniform1fv(prE.u('uCY[0]'), SRC.CY);
   g.uniform1fv(prE.u('uCA[0]'), U.lab ? Z12 : SRC.CA);
+  g.uniform2f(prE.u('uRing'), SRC.RING * GH, CUT * SRCW + 2);
   ctx.tri();
   U.pulse = 0;
 }
@@ -120,21 +124,31 @@ function substep(S) {
 // evenly spaced levels (render.js) as path-A segments.
 function strokes(target, w, h) {
   const ctx = CTX, g = ctx.gl;
-  ctx.use(prD, DS, DW, DH);
-  ctx.tex(prD, 'uF', 0, CUR);
-  g.uniform2f(prD.u('uSz'), GW, GH);
-  g.uniform1f(prD.u('uBlk'), DSB);
-  ctx.tri();
-  // The WHOLE small target, every frame — not a band of its rows. A banded read leaves DSPX a patchwork of up to
-  // DH / BANDF different times, and a time-patchwork H field is NOT divergence-free, so not one streamline closes
-  // (measured: loops 0 at every frame of the first run). DW x DH is 1.6 % of the field's texels, the same cost
-  // class as one band of the field itself, which is what the brief's budget is about.
-  const part = readBand(ctx, DS, 0, DH, DSPX);
-  if (part !== DSPX) DSPX.set(part);
-  stream(DSPX, DW, DH, APX);
   const tier = Math.max(0, Math.min(3, U.tier < 0 ? 0 : U.tier));
-  const cap = ctx.budget('segs');
-  const n = contours(APX, DW, DH, NLEV[tier], CSEG, cap);
+  // The lines are REBUILT every LINEF frames and re-projected every frame. A readPixels stalls the pipeline, and at
+  // tier 3 the stall plus the marching squares was 1.0 of the scene's 2.6 ms — the single most expensive thing in
+  // the scene after the field itself. Rebuilding at 20 Hz and projecting the stored segments at 60 leaves the
+  // rotation smooth and the lines at most two frames behind the field, which on a wave that moves 2 cells a frame
+  // is invisible.
+  //
+  // When it does read, it reads the WHOLE small target — never a band of its rows. A banded read leaves DSPX a
+  // patchwork of up to DH/rows different times, and a time-patchwork H field is NOT divergence-free, so nothing
+  // closes (measured: loops 0, open 18 at every frame of the first build). DW x DH is 1.6 % of the field's texels,
+  // the same cost class as one band of the field itself, which is what the brief's budget is about.
+  if (LCD <= 0) {
+    LCD = LINEF[tier];
+    ctx.use(prD, DS, DW, DH);
+    ctx.tex(prD, 'uF', 0, CUR);
+    g.uniform2f(prD.u('uSz'), GW, GH);
+    g.uniform1f(prD.u('uBlk'), DSB);
+    ctx.tri();
+    const part = readBand(ctx, DS, 0, DH, DSPX);
+    if (part !== DSPX) DSPX.set(part);
+    stream(DSPX, DW, DH, APX);
+    NSEG = linesOn ? contours(APX, DW, DH, NLEV[tier], CSEG, ctx.budget('segs')) : 0;
+  }
+  LCD--;
+  const n = NSEG;
   const px = HW * Math.max(0.6, h / 720);
   const col = [(0.55 + 0.45 * U.sat) * HALPHA, 0.62 * HALPHA, 0.95 * HALPHA];
   for (let s = 0; s < n; s++) {
@@ -194,6 +208,8 @@ function hKey(v) {
 // measurement of a free wave needs (a ring reflected off the cavity wall is not a ring of the train).
 function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
 function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
+// hooks.lines(0) draws no field lines — what the bench needs to say how much of the scene they are
+function hLines(v) { linesOn = v === undefined || v === null || +v ? 1 : 0; LCD = 0; return linesOn; }
 
 export default {
   name: 'maxwell',
@@ -209,7 +225,7 @@ export default {
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
 
   init(ctx) {
     this.ctx = ctx;
@@ -352,6 +368,7 @@ export default {
     for (let k = 0; k < 12; k++) GA12[k] = 0.10 + 0.9 * SRC.W12[k];   // a floor, so all twelve are on the ring
     g.uniform1fv(prS.u('uGA[0]'), GA12);
     g.uniform1fv(prS.u('uGH[0]'), GH12);
+    g.uniform2f(prS.u('uRing'), SRC.RING * GH, 3 * GLOWW + 2);
     ctx.tri();
     strokes(target, w, h);
     ctx.use(prS, target, w, h);   // leave the target bound with the viewport set, as draw() found it (§1.1)
