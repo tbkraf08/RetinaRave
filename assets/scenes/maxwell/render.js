@@ -5,7 +5,7 @@ import { ABSN } from './fdtd.js';
 // toward the hue half a turn away, continuously through zero — so a standing wave reads as two interleaved colours and
 // a travelling front as a moving colour edge. |E| (with a share of |H|, which is what carries the energy in the front)
 // is the LUMINANCE, through the core's linear chain with bloom on. The twelve charges glow in their twelve hues; the
-// medium is drawn as a faint hint so the lens, the cavity walls, the lattice and the rails are visible.
+// medium is drawn as a faint hint so the lens, the cavity walls and the waveguide's rails are visible.
 //
 // The grid is 16:9 and is CONTAINED in the viewport (letterbox in portrait, pillarbox in a wider window): the charges'
 // ring lives inside the central square, so it is never cropped whatever the phone does (v0.6 mobile).

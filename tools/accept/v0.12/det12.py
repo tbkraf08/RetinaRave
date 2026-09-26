@@ -10,7 +10,11 @@
 #   kickhue  = the hue of the newest kick launch in `last` (the bass note at that kick, argmax bchroma, or the anchor)
 #   dkick    = circular distance in turns between `dom` (the plane's dominant hue along the +x ray beyond r = 8 cells) and
 #              kickhue — the plan's per-note gate: ≤ 0.08 on ≥ 70 % of samples
-#   bk/bhue  = argmax(bchroma) now and its sector hue (mxcol().hues[bk]); dbass = dist(dom, bhue) — the same question asked of
+#   bk/bhue  = argmax(bchroma) now and its sector hue. `bk` is a PITCH CLASS and mxcol().hues is indexed by SECTOR, and a
+#              pitch class pc sits at sector (7 pc) mod 12 (assets/math/keycolour.js sectorPc is its inverse: 7·7 = 1 mod 12),
+#              so the hue is hues[(7·bk) mod 12] — hues[bk] compared a hue against the wrong note. (Fixed by the MAXWELL3
+#              worker to match the scale hooks.launches() reports `hue` on; the line's own comment already said "sector hue".)
+#              dbass = dist(dom, bhue) — the same question asked of
 #              the bass note sounding NOW rather than at the last kick (a kick's hue is held in the field for ~a ring's life)
 #   medium   = the geometry in force (0 lens, 1 cavity, 3 waveguide — 2 must never appear)
 # A double-time passage: read `onsets` doubling along the trace and `dn` doubling with it — the AUDIT lists the samples.
@@ -30,7 +34,7 @@ INFO = ("(()=>{const h=CARD.REG[9].scene.hooks,S=CARD.MS;const J=(f)=>{try{const
         "const DH=(a,b)=>{if(a==null||b==null)return null;const d=Math.abs(a-b)%1;return +Math.min(d,1-d).toFixed(4)};"
         "let dom=null,wmax=null,bk=null,bhue=null,kickhue=null,dn=null,dpb=null;"
         "if(mc&&mc.ray&&mc.ray.length){dom=CM(mc.ray.filter(p=>p[0]>=8).map(p=>[p[1],p[2]]));wmax=+Math.max.apply(null,mc.ray.map(p=>p[1])).toFixed(4);}"
-        "if(S.bchroma&&mc&&mc.hues){bk=0;for(let i=1;i<12;i++)if(S.bchroma[i]>S.bchroma[bk])bk=i;bhue=mc.hues[bk];}"
+        "if(S.bchroma&&mc&&mc.hues){bk=0;for(let i=1;i<12;i++)if(S.bchroma[i]>S.bchroma[bk])bk=i;bhue=mc.hues[(7*bk)%12];}"
         "if(lau&&lau.last){for(let i=lau.last.length-1;i>=0;i--)if(lau.last[i].band==='kick'){kickhue=lau.last[i].hue;break;}}"
         "if(lau&&typeof lau.n==='number'){const p=window.__L0||null;dn=p?lau.n-p.n:null;"
         "if(p&&lau.perBand&&p.perBand){dpb={};for(const k in lau.perBand)dpb[k]=lau.perBand[k]-(p.perBand[k]||0);}"

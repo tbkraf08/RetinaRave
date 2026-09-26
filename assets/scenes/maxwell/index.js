@@ -1,14 +1,16 @@
-// MAXWELL (v0.10, id 9) — the four equations that dance: a live 2D Yee-grid FDTD solution of Maxwell's equations in the
+// MAXWELL (v0.12, id 9) — the four equations that dance: a live 2D Yee-grid FDTD solution of Maxwell's equations in the
 // TE mode (Ez, Hx, Hy on ping-pong RGBA16F/32F targets), driven by the music in TORUS2's language — twelve charges on a
-// ring by pitch class lit by chroma, a magnetic dipole at the centre that turns one nudge per beat, every hit a real
-// wavefront at the speed of light, the section as the medium (lens · mirror cavity · photonic lattice · waveguide), the
-// drop a mirror. MAXWELL-SESSION-PROMPT.md is the plan, docs/workers/brief-maxwell.md the brief, docs/workers/maxwell.md
-// the worker's report. The physics is gated by tools/test_fdtd.js, not by the picture.
+// ring by pitch class lit by chroma, a magnetic dipole at the centre that turns one nudge per beat, EVERY SOUND a real
+// wavefront at the speed of light in its own note's hue, the section as the medium (lens · mirror cavity), the drop a
+// mirror. v0.12 took the carrier and the metronome out (the user: "no sound -> quiet"), so nothing radiates between
+// hits: sources.js is launches and nothing else. MAXWELL-ONSET-SESSION-PROMPT.md is the plan, docs/workers/
+// brief-maxwell-onset.md the brief, docs/workers/maxwell-onset.md the worker's report. The physics is gated by
+// tools/test_fdtd.js, not by the picture.
 // Forced-only (score 0, key `n` cycles to it) until the user approves it.
-import { mkAnchor, sectorPc } from '../../math/keycolour.js';
+import { mkAnchor } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { COURANT, CUT, DIPD, FS_E, FS_H, GRIDT, SRCW, mkField, readBand } from './fdtd.js';
-import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
+import { FS_MED, GEON, GEOROT, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
 import { CSAT, TROUGH, WFL, WFL1, buildColour, clearColour, colourTex, initColour, noteHues, stepColour } from './colour.js';
 import { ASCALE, CSTAT, FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, portFade, stream } from './render.js';
 import * as SRC from './sources.js';
@@ -30,9 +32,9 @@ const GAFL = 0.10;      // a dark charge still shows on the ring at this much of
 const VACT = 1.0;       // seconds of `absentT` after which silence starts letting the last rings go ...
 const VACW = 1.0;       // ... and over this many more it has taken all of `ring`, so they fade in about a second
 const QUIETT = 10;      // the `absentT` hooks.quiet(1) pins: long past VACT + VACW
-// v0.11 item 3 — the wobble. A dubstep bass is an LFO at 1-4 Hz and it sits in `sub` / `bassFast`. The medium
-// breathes with it (medium.js WOBR says why the breath has to be graded) and so does the carrier's amplitude
-// (sources.js WOBA says why the amplitude is the one the eye reads).
+// v0.11 item 3 — the wobble. A dubstep bass is an LFO at 1-4 Hz and it sits in `sub` / `bassFast`. The MEDIUM breathes
+// with it (medium.js WOBR says why the breath has to be graded) and that is all it does now: v0.11 also pumped the
+// carrier's amplitude with it, and v0.12 has no carrier to pump. The sub moves the light; it is not a source.
 const WOBK = 0.6;       // how hard the sub's swell bends the light
 const WOBTC = 0.6;      // ... measured against an ema of `sub` this many seconds long (the LFO, not the level)
 const WOBLO = 0.70;     // eps is never scaled below this: S / sqrt(eps) must stay under the 2-D Courant limit
@@ -51,8 +53,8 @@ const RINGM = 0.368;    // ... but never so close that the charges' ring (0.34 g
 const U = {
   tier: -1, sub: 2, pend: 0, yaw: 0, yawRate: 0, bounce: 0, zoom: 1, mir: 0, pol: 1, geoA: 0, geoB: 0, geoF: 1,
   geoRot: 0, mirHold: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
-  beatNow: 0, phrase: 0, loud: 0, mx: 0, lam: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
-  tw: 0, th: 0, flow: 0, light: 0.7, fit: 144, pres: 1, sil: 0, arange: 0, alev: 0, nlev: 0, drawn: 0,
+  beatNow: 0, phrase: 0, loud: 0, mx: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
+  tw: 0, th: 0, light: 0.7, fit: 144, pres: 1, sil: 0, arange: 0, alev: 0, nlev: 0, drawn: 0,
   frame: 0, wob: 1, lfo: 0, subS: 0, shearE: 0, cent: 0.45, dirty: 0, punchy: 0.5, csc: 0.5, cw: 0, ch: 0,
 };
 const GH12 = new Float32Array(12);     // the twelve hues
@@ -93,15 +95,8 @@ function build() {
   DSPX = new Float32Array(4 * DW * DH);
   APX = new Float32Array(DW * DH);
   CUR = F0;
-  ST.cur = F0;
-  ST.med = MED;
-  ST.gw = GW;
-  ST.gh = GH;
-  NEED = 0;
-  CLR = 1;
-  LCD = 0;
-  NSEG = 0;
-  U.mx = 0;
+  ST.cur = F0; ST.med = MED; ST.gw = GW; ST.gh = GH;
+  NEED = 0; CLR = 1; LCD = 0; NSEG = 0; U.mx = 0;
 }
 
 function clearFields() {
@@ -142,8 +137,11 @@ function substep(S) {
   g.uniform1fv(prE.u('uCA[0]'), U.lab ? Z12 : SRC.CA);
   g.uniform2f(prE.u('uRing'), SRC.RING * GH, CUT * SRCW + 2);
   ctx.tri();
-  // ... and the colour field, one pass at a quarter of the texels, driven by the same bookkeeping (colour.js)
-  if (!U.lab) stepColour(S, MED, U.csc, [GW / 2, GH / 2], SRC.RING * GH, CUT * SRCW + 2, DIPD, SRC, GH12, AC3, chromaPin ? 0 : 1);
+  // ... and the colour field, one pass at a quarter of the texels, driven by the same bookkeeping (colour.js). Its
+  // `drums` gate is 1 ALWAYS since v0.12: hooks.mxchroma used to silence the centre current and the dipole there
+  // because both carried the KEY's anchor hue and drowned the charges (colour.js CDIP), and neither is pitchless
+  // now — so the pin would leave a pinned train with no colour at all (measured: w = 0 at every probe point).
+  if (!U.lab) stepColour(S, MED, U.csc, [GW / 2, GH / 2], SRC.RING * GH, CUT * SRCW + 2, DIPD, SRC, GH12, AC3, 1);
   U.pulse = 0;
 }
 
@@ -172,9 +170,8 @@ function strokes(target, w, h) {
   const n = NSEG;
   const px = HW * Math.max(0.6, h / 720);
   const col = [(0.55 + 0.45 * U.sat) * HALPHA, 0.62 * HALPHA, 0.95 * HALPHA];
-  // ... and the strokes carry the plane's own porthole fade (render.js portFade). A segment whose midpoint is
-  // outside the disc is not emitted at all: in v0.10 those corner contours were drawn over black, which is where
-  // the faint loops outside the porthole came from.
+  // ... and the strokes carry the plane's own porthole fade (render.js portFade). A segment whose midpoint is outside
+  // the disc is not emitted at all — in v0.10 those corner contours drew the faint loops outside the porthole.
   const R = 0.5 * GH, cxg = GW / 2, cyg = GH / 2;
   let m = 0;
   for (let s = 0; s < n; s++) {
@@ -185,20 +182,12 @@ function strokes(target, w, h) {
     const o = 12 * m;
     for (let e = 0; e < 2; e++) {
       const q = clip(CSEG[4 * s + 2 * e], CSEG[4 * s + 2 * e + 1]);
-      SEG[o + 4 * e] = q[0];
-      SEG[o + 4 * e + 1] = q[1];
-      SEG[o + 4 * e + 2] = 0;
-      SEG[o + 4 * e + 3] = px;
+      SEG[o + 4 * e] = q[0]; SEG[o + 4 * e + 1] = q[1]; SEG[o + 4 * e + 2] = 0; SEG[o + 4 * e + 3] = px;
     }
-    SEG[o + 8] = col[0] * fd;
-    SEG[o + 9] = col[1] * fd;
-    SEG[o + 10] = col[2] * fd;
-    SEG[o + 11] = 1;
+    SEG[o + 8] = col[0] * fd; SEG[o + 9] = col[1] * fd; SEG[o + 10] = col[2] * fd; SEG[o + 11] = 1;
     m++;
   }
-  U.segs = n;
-  U.drawn = m;
-  U.nlev = NLEV[tier];
+  U.segs = n; U.drawn = m; U.nlev = NLEV[tier];
   if (m > 0) {
     ctx.lines.set(LN, SEG, m);
     ctx.lines.draw(LN, target, w, h, { blend: 'add' });
@@ -236,37 +225,41 @@ function hKey(v) {
   keyPin = p[0] === '' || +p[0] < 0 ? null : { k: ((+p[0] | 0) % 12 + 12) % 12, m: +p[1] ? 1 : 0 };
   return JSON.stringify(keyPin);
 }
-// hooks.medium(0..3) pins one of the four geometries; GEON or more pins EMPTY SPACE, which is the control every
-// measurement of a free wave needs (a ring reflected off the cavity wall is not a ring of the train).
+// hooks.medium(0..3) pins one of the four SLOTS — 0 lens, 1 mirror cavity, 2 empty space, 3 the waveguide — and GEON
+// or more pins empty space too, the control every measurement of a free wave needs (a ring reflected off the cavity
+// wall is not a ring of the train). Only 0 and 1 are in the section's rotation (medium.js GEOROT); slot 2 held the
+// photonic lattice until v0.12 item C, so the user's "pattern of small circles" cannot return through a pin either.
 function hMedium(v) { medPin = v === null || v === undefined || +v < 0 ? -1 : +v >= GEON ? -2 : (+v | 0) % GEON; return medPin; }
 function hDrop() { U.mir = 1; U.mirHold = MIRHOLD; return 1; }
 // hooks.lines(0) draws no field lines — what the bench needs to say how much of the scene they are
 function hLines(v) { linesOn = v === undefined || v === null || +v ? 1 : 0; LCD = 0; return linesOn; }
-// hooks.quiet(1) pins presence = alive = 0 and absentT = QUIETT INSIDE update() — never on MS (TORUS2's hooks.key
-// shape). The #test fake timeline reports presence 1, alive 1, absentT 0 at every frame (measured f360 and f840),
-// so this pin is the only way to photograph silence on a deterministic clock.
-// It pins the three band impulses and `sub` to zero as well, and that is not a convenience: MS.kick / snare / hat
-// are flux peaks and MS.sub a band follower, so in real silence they ARE zero. Pinning presence alone leaves the
-// #test timeline drumming into an empty room (measured: energy only 13 % down), which is not a picture of silence.
+// hooks.quiet(1) pins presence = alive = 0, absentT = QUIETT, the three band impulses and `sub` to zero INSIDE
+// update() — never on MS (TORUS2's hooks.key shape). The #test timeline reports presence 1, alive 1, absentT 0 at
+// every frame, so this is the only way to photograph silence on a deterministic clock; and the band impulses have to
+// go with it, because MS.kick/snare/hat are flux peaks that in real silence ARE zero (pinning presence alone left the
+// timeline drumming into an empty room: energy only 13 % down, v0.11).
 function hQuiet(v) { quietPin = v === null || v === undefined || +v ? 1 : 0; return quietPin; }
 // how far silence has got: 0 while the bass is there, 1 once it has been gone VACT + VACW seconds and nothing is
 // present. `presence` is the gate, `absentT` the clock — a pad-only breakdown keeps presence up and keeps its rings.
 const SIL = (absentT, pres) => Math.max(0, Math.min(1, (absentT - VACT) / VACW)) * (1 - pres);
-// hooks.wob(f) pins sub = 0.5 + 0.5 sin(2 pi f frame/60) — a clean LFO at f Hz on the scene's own frame counter, so
-// a CLOCK=1 series is reproducible. hooks.wob(0) releases it.
+// hooks.wob(f) pins sub = 0.5 + 0.5 sin(2 pi f frame/60) — a clean LFO at f Hz on the scene's own frame counter, so a
+// CLOCK=1 series is reproducible. hooks.wob(0) releases it. v0.12 keeps it: `sub` still breathes the medium (WOBK).
 function hWob(v) { wobPin = v === null || v === undefined ? 0 : +v; return wobPin; }
 // hooks.mxchroma("k") / ("k,j") lights only those SECTORS of the ring at weight 1 and darkens the rest, inside
 // update(). The name is mx-prefixed because POLYTOPE owns hooks.chroma and CARD.hooks is one flat map (§1.4).
 // Sector k sits at 2 pi k / 12 on the circle of fifths and carries pitch class sectorPc(k) = (7k) mod 12; its hue
-// is GH12[k], which since v0.11 does not move with the key. The pin ALSO silences the two pitchless sources in the
-// colour field — colour.js CDIP says why, and why nothing else makes "did the note's colour travel" answerable.
+// is GH12[k], which since v0.11 does not move with the key. Since v0.12 it ALSO pins the BASS NOTE to its first
+// sector — so a kick launched from the centre takes that sector's hue too, and every launch on the plane is then one
+// known colour, which is item B's gate. (It no longer silences the two centre sources in the colour field: neither
+// is pitchless any more. See the stepColour call.)
 function hMxchroma(v) {
   const p = String(v === null || v === undefined ? '' : v).split(',').filter((x) => x !== '');
   chromaPin = p.length ? p.map((x) => ((+x | 0) % 12 + 12) % 12) : null;
   return JSON.stringify(chromaPin);
 }
-// hooks.timbre(centroid, dirty) pins the two fields the carrier reads; hooks.timbre() releases them. The #test fake
-// timeline holds centroid 0.455, dirty 0.2, punchy 0.6 at every frame (measured), so nothing else can move them.
+// hooks.timbre(centroid, dirty) pins the two fields a launch's SHELL reads (sources.js TSIGK, DIRTK); hooks.timbre()
+// releases them. The #test timeline holds centroid 0.455, dirty 0.2, punchy 0.6 at every frame (measured), so a pin
+// is the ONLY way to prove either — which is why v0.12 keeps the hook although the carrier it was written for is gone.
 function hTimbre(c, d) {
   const p = String(c === null || c === undefined ? '' : c).split(',');
   timbrePin = p[0] === '' ? null : { c: +p[0], d: +(d !== undefined ? d : p[1] || 0) };
@@ -276,26 +269,24 @@ function hTimbre(c, d) {
 export default {
   name: 'maxwell',
   id: 9,
-  tag: "maxwell's equations, solved live — twelve charges by pitch class, a dipole nudged per beat, hits as wavefronts, the section as the medium",
-  card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: twelve charges by pitch class, a magnet turning one notch a beat, and every drum hit a real ripple of light" },
-  feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'bpm', 'beatPhase',
+  tag: "maxwell's equations, solved live — every sound a wavefront in its note's hue, a dipole nudged per beat, the section a lens or a mirror cavity",
+  card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: every sound sends out a real ripple of light in its own note's colour, through a lens or a hall of mirrors — and silence sends out nothing" },
+  feats: ['chroma', 'bchroma', 'onset', 'kickCount', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
-    'dropEnv', 'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid', 'flowHigh', 'roll', 'riser',
-    'hush', 'calm', 'alive', 'novelty', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
+    'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid',
+    'hush', 'calm', 'alive', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
     'punchy'],
   cuts: 'continuous',
   always: false,
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, launches: () => SRC.launches(medPin === -2 ? -2 : U.geoA), energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
 
   init(ctx) {
     this.ctx = ctx;
     CTX = ctx;
-    ST.ctx = ctx;
-    ST.hues = GH12;
-    ST.seg = CSEG;
+    ST.ctx = ctx; ST.hues = GH12; ST.seg = CSEG;
     prH = ctx.mkProg(FS_H, 'maxwell-h');
     prE = ctx.mkProg(FS_E, 'maxwell-e');
     prM = ctx.mkProg(FS_MED, 'maxwell-medium');
@@ -315,22 +306,20 @@ export default {
     if (tier !== U.tier) { U.tier = tier; NEED = 1; }
     U.light = P.light;
     U.pend = U.sub;
-    // v0.11 item 1 — silence is quiet. Nothing in v0.10 read `presence`: in silence the engine still held bpm, the
-    // beat still fired a FAINT kick, the harmAngle fallback still lit all twelve charges at the `charge` floor of
-    // 0.45 and the dipole still carried DIPR of its current, so the scene drew silence as loudly as a chorus.
-    // `presence` now gates every source; `absentT` (seconds since the bass left) lets the rings go.
+    // v0.11 item 1 — silence is quiet: `presence` gates every source (in v0.10 nothing read it and the scene drew
+    // silence as loudly as a chorus), `absentT` (seconds since the bass left) lets the rings go. v0.12 item A goes
+    // further: with no carrier there is nothing to gate between hits in the first place.
     const pres = quietPin ? 0 : MS.presence;
     const alive = quietPin ? 0 : MS.alive;
     U.pres = pres;
     U.sil = SIL(quietPin ? QUIETT : MS.absentT, pres);
-    // The two params whose from() reads the pinned fields have to be pinned with them: the engine derives every
-    // param from the REAL MS (§1.16), so a hook that pins presence inside update() would leave `charge` at the
-    // value silence is supposed to take away. charge.from is presence x (...) = 0 and ring.from is (...) x
-    // (1 - SIL(10, 0)) = 0, so these two lines ARE the from()s, evaluated on the pinned fields.
+    // The two params whose from() reads the pinned fields have to be pinned with them (CONTRACTS §1.4): the engine
+    // derives every param from the REAL MS, so these two lines ARE the from()s evaluated on the pinned fields —
+    // charge.from is presence x (...) = 0 and ring.from is (...) x (1 - SIL(10, 0)) = 0.
     const amp = quietPin ? 0 : P.charge;
     const ring = quietPin ? 0 : P.ring;
-    // item 3: the sub's LFO measured against its own slow ema, and the timbre the carrier reads. hooks.wob(f) pins
-    // a clean f-Hz sine on `sub`, hooks.timbre(c, d) pins `centroid` / `dirty` — both inside update(), never on MS.
+    // item 3: the sub's LFO measured against its own slow ema, and the timbre a launch's SHELL reads. hooks.wob(f)
+    // pins a clean f-Hz sine on `sub`, hooks.timbre(c, d) pins `centroid` / `dirty` — inside update(), never on MS.
     U.frame++;
     const sub = quietPin ? 0 : wobPin ? 0.5 + 0.5 * Math.sin(TAU * wobPin * U.frame / 60) : MS.sub;
     U.subS += (sub - U.subS) * (1 - Math.exp(-dt / WOBTC));
@@ -340,24 +329,9 @@ export default {
     U.dirty = timbrePin ? timbrePin.d : MS.dirty;
     U.punchy = MS.punchy;
 
-    // Gauss: the twelve charges. The chroma vector IS the charge. When it carries no energy (silence, and the #test
-    // fake timeline, which leaves chroma zeroed) the weights come from the harmony the extractor does report: pitch
-    // class k sits at 2pi(7k mod 12)/12 on the circle of fifths and is weighted by how close it is to harmAngle.
-    // w blends the two continuously, so nothing ever jumps (TORUS2 index.js:155-175, DECISIONS §4).
-    const C = MS.chroma;
-    let sum = 0, mxc = 0;
-    for (let k = 0; k < 12; k++) { const c = Math.max(0, C[k] || 0); sum += c; if (c > mxc) mxc = c; }
-    const w = Math.min(1, 2 * sum), nrm = 1 / Math.max(0.2, mxc);
-    let mx = -1;
-    for (let k = 0; k < 12; k++) {
-      const pc = sectorPc(k);
-      const fifth = ((7 * pc) % 12) / 12 * TAU;
-      const imp = Math.pow(0.5 + 0.5 * Math.cos(MS.harmAngle - fifth), 2);
-      const band = pc < 4 ? 0.55 + 0.55 * MS.bass : pc < 8 ? 1 : 0.85;
-      const c = Math.min(1, (w * Math.max(0, C[pc] || 0) * nrm + (1 - w) * imp * pres) * band);
-      SRC.W12[k] = chromaPin ? (chromaPin.indexOf(k) >= 0 ? 1 : 0) : c;
-      if (SRC.W12[k] > mx) { mx = SRC.W12[k]; U.loud = k; }
-    }
+    // Gauss: the twelve charges' weights and the loudest sector — sources.js weights() (its header says why the
+    // harmAngle fallback is there, and that a weight is a glow and a launch target and never a carrier amplitude).
+    U.loud = SRC.weights(MS.chroma, MS.harmAngle, MS.bass, pres, chromaPin);
 
     // the key as a hue ANCHOR on the circle of fifths, and clarity as the hue PURITY of the twelve
     const m = (LOOK && LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
@@ -370,10 +344,9 @@ export default {
     U.pure += (0.35 + 0.65 * MS.clarity - U.pure) * (1 - Math.exp(-dt / HUETC));
     const spread = 0.30 + 0.45 * m.spread;
     noteHues(GH12, spread, U.pure);     // the twelve notes' own hues — colour.js CHUE0 says why they ignore the key
-    for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (A.hue + [0, 0.33, 0.67][i]));
 
     // Faraday: the nudge. The target is read off the beat COUNT so it can never drift; the angle springs to it, and
-    // the dipole's moment RATE is that spring's velocity — so it radiates on the nudge and is silent between nudges.
+    // that spring's velocity is how two-lobed a kick's ring comes out (sources.js DIPK) — nothing between nudges.
     U.yaw = NG.turn(dt, P.turn, Math.max(MS.hush, MS.calm));
     U.yawRate = NG.rate();
     if (MS.surpriseEvt) U.pol = -U.pol;
@@ -381,7 +354,7 @@ export default {
     U.zoom = ZOOM0 + ZOOMK * (0.6 * MS.intensity + 0.4 * MS.arousal) + U.bounce;
 
     // the medium is the section, cross-faded so `cuts` stays 'continuous'; the build makes it ring longer and bend harder
-    const sel = medPin >= 0 ? medPin : MS.sectionAlt < 0 ? 0 : ((MS.sectionAlt % GEON) + GEON) % GEON;
+    const sel = medPin >= 0 ? medPin : MS.sectionAlt < 0 ? 0 : ((MS.sectionAlt % GEOROT) + GEOROT) % GEOROT;
     if (sel !== U.geoA) { U.geoB = U.geoA; U.geoA = sel; U.geoF = 0; }
     U.geoF = Math.min(1, U.geoF + dt / GEOTC);
     if (MS.sectionEvt) U.geoRot = 0.37 * Math.max(0, MS.sectionAlt | 0);
@@ -401,20 +374,20 @@ export default {
     else U.mir *= Math.exp(-dt / DROPTC);
     if (U.mir < 1e-4) U.mir = 0;
 
-    // Ampere-Maxwell: the bass is a current, the hits are launches, the TIMBRE is the carrier (v0.11 item 3)
+    // Ampere-Maxwell: every sound is a launch and nothing else radiates (v0.12 item A)
     U.beatNow = MS.beatCount + MS.beatPhase;
     U.phrase = MS.phrase16Pos;
-    U.flow = MS.flowBass + MS.flowMid + MS.flowHigh;
-    SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2,
-      quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat, {
-      amp, sub, lfo: U.lfo, cent: U.cent, dirty: U.dirty, punchy: U.punchy, loud: U.loud, bpm: MS.bpm, dt, light: P.light,
-      sweep: Math.max(MS.roll, MS.riser) * (1 - MS.dropEnv), pol: U.pol, yaw: U.yaw, yawRate: U.yawRate,
-      shim: MS.hat * (0.3 + 0.7 * alive) * (0.5 + 0.5 * MS.novelty), alive, pres,
-      fam: [MS.flowBass, MS.flowMid, MS.flowHigh],
+    SRC.frame(U.sub, GH || 144, (GW || 256) / 2, (GH || 144) / 2, {
+      lev: quietPin ? Z3 : [MS.kick, MS.snare, MS.hat], beatNow: U.beatNow, kickCount: MS.kickCount, onset: MS.onset,
+      chroma: MS.chroma, bchroma: MS.bchroma, hues: GH12, anchor: A.hue, bpin: chromaPin ? chromaPin[0] : -1,
+      amp, cent: U.cent, dirty: U.dirty, punchy: U.punchy, loud: U.loud, bpm: MS.bpm, dt, light: P.light,
+      pol: U.pol, yaw: U.yaw, yawRate: U.yawRate, alive, pres, quiet: quietPin, frame: U.frame,
     });
-    U.lam = SRC.OUT.lam;
-    U.sig = SRC.OUT.sig;
-    U.spb = SRC.OUT.spb;
+    U.sig = SRC.OUT.sig; U.spb = SRC.OUT.spb;
+    // The colour the CENTRE injects is the last kick's — the bass note it was launched on (sources.js OUT.khue),
+    // never the key's anchor any more. It is what colour.js's uAC carries, so a kick's shell leaves the middle in
+    // its own note's hue; between kicks nothing is injected there, so nothing else reads it.
+    for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (SRC.OUT.khue + [0, 0.33, 0.67][i]));
     this.rt.time = MS.flowBass + MS.flowMid;
     this.rt.label = 'fdtd ' + GW + 'x' + GH + ' ' + NAMES[U.geoA];
     this._S = 1;
@@ -425,10 +398,7 @@ export default {
     const ctx = this.ctx, g = ctx.gl;
     if (NEED) build();
     if (CLR) clearFields();
-    LTGT = target;
-    ST.tgt = target;
-    U.tw = w;
-    U.th = h;
+    LTGT = target; ST.tgt = target; U.tw = w; U.th = h;
     // the medium, one pass per frame (a medium that only eased on a threshold would jump)
     ctx.use(prM, MED, GW, GH);
     g.uniform2f(prM.u('uSz'), GW, GH);
@@ -443,10 +413,8 @@ export default {
     const n = U.pend;
     U.pend = 0;
     for (let i = 0; i < n; i++) substep(S);
-    // the picture. The grid is CONTAINED in the viewport: the cells one screen height covers.
-    // How many cells one screen height covers. render.js fades the plane to black on a DISC of radius half the grid
-    // height, so what the camera turns is a round PORTHOLE and its full turn every sixteen beats sweeps no corners
-    // across the frame. FITK frames that disc: it fills the height and is round at the sides. The second term is the
+    // The picture: how many cells one screen height covers. FITK frames the round PORTHOLE render.js fades the plane
+    // to (its header says why a rectangular fade would sweep corners across the frame); the second term is the
     // portrait rule — on a phone the ring of charges must not be cropped, so the plane letterboxes instead.
     U.fit = Math.max(FITK * GH, 2 * RINGM * GH / Math.max(0.2, ASP));
     ctx.use(prS, target, w, h);
@@ -476,7 +444,7 @@ export default {
 
   hud() {
     return 'maxwell ' + GW + 'x' + GH + '/' + U.sub + ' ' + NAMES[U.geoA] + ' eps ' + U.lens.toFixed(2) + ' sig ' + U.sigma.toFixed(3)
-      + ' lam ' + U.lam.toFixed(1) + ' mir ' + U.mir.toFixed(2) + ' key ' + U.key + (U.mode ? 'm' : 'M')
+      + ' mir ' + U.mir.toFixed(2) + ' key ' + U.key + (U.mode ? 'm' : 'M')
       + ' yaw ' + U.yaw.toFixed(2) + ' p16 ' + U.phrase.toFixed(1) + ' segs ' + U.segs + '/' + U.loops + ' gap ' + U.gap;
   },
 
@@ -486,7 +454,7 @@ export default {
     light: { eli5: 'how fast light travels, as a fraction of what the grid can carry', range: [0.3, 1], from: (MS) => 0.70 + 0.25 * MS.intensity },
     ring: { eli5: 'how long a wave rings before the space swallows it', range: [0, 1], from: (MS) => (0.55 + 0.35 * MS.build - 0.3 * Math.max(MS.hush, MS.calm)) * (1 - SIL(MS.absentT, MS.presence)) },
     lens: { eli5: 'how hard the medium bends the light', range: [1, 4], from: (MS) => 1.6 + 1.4 * MS.build + 0.6 * MS.tension },
-    charge: { eli5: 'how loudly the charges and the dipole radiate', range: [0, 1], from: (MS) => MS.presence * (0.45 + 0.35 * MS.intensity + 0.2 * MS.bass) },
+    charge: { eli5: 'how loudly every hit radiates', range: [0, 1], from: (MS) => MS.presence * (0.45 + 0.35 * MS.intensity + 0.2 * MS.bass) },
     turn: { eli5: 'where the dipole has been nudged to, in the turn it makes every sixteen beats', range: [0, 6.2832], from: (MS) => ((MS.beatCount / 16) * TAU) % TAU },
     bounce: { eli5: 'how hard the cavity thumps on the beat', range: [0, 0.1], from: (MS) => BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4) },
   },

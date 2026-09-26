@@ -2,12 +2,17 @@
 //   R = eps (relative permittivity, >= 1)   G = sigma (conductivity: how fast a wave dies)
 //   B = the conductor mask 0..1 (1 = a perfect mirror: the E pass multiplies Ez by 1 - mask)   A = spare
 //
-// Four geometries, picked by MS.sectionAlt mod 4, so a returning section returns to its medium through the director's
-// look memory (CONTRACTS §1.11): a LENS (a disc of higher eps, sheared by tension), a MIRROR CAVITY (a ring of
-// conductor with two gaps), a PHOTONIC LATTICE (a square grid of eps dots — the band gap makes some wavelengths
-// crawl), a WAVEGUIDE (two conducting rails). A section change CROSS-FADES the two geometries over ~1.2 s, which is
-// what lets the scene promise `cuts: 'continuous'` while the section is a discrete choice; the conductor is a graded
-// mask for the same reason (a hard `if` would cut mid-fade).
+// TWO geometries are in ROTATION, picked by MS.sectionAlt mod GEOROT, so a returning section returns to its medium
+// through the director's look memory (CONTRACTS §1.11): a LENS (a disc of higher eps, sheared by tension) and a
+// MIRROR CAVITY (a ring of conductor with two gaps). A section change CROSS-FADES the two over ~1.2 s, which is what
+// lets the scene promise `cuts: 'continuous'` while the section is a discrete choice; the conductor is a graded mask
+// for the same reason (a hard `if` would cut mid-fade).
+//
+// v0.12 item C — the user, on v0.11: "why are there a pattern of small circles in the background?". That was the
+// PHOTONIC LATTICE (a square grid of eps dots, every fourth section), and it is REMOVED: slot 2 is empty space, so
+// hooks.medium(2) pins a control and can never draw a lattice again. The WAVEGUIDE (two conducting rails) survives
+// at slot 3 but is OUT of rotation — reachable only by hooks.medium(3), for one montage shot, until the user has
+// seen sound-only ripples in the cavity and decided its fate. The drop's mirror (MIRQ, 2.2 s hold) is untouched.
 //
 // The pass is re-rendered every frame: it is one pass against the field's 2*substeps, and a medium that eased its
 // numbers only on a threshold would jump. Nothing here is keyed on wall time.
@@ -29,13 +34,12 @@ export const LSOFT = 0.05;    // ... and the width of its edge, so the lens is n
 export const RCAV = 0.385;    // the mirror cavity's radius
 export const TCAV = 0.028;    // ... its wall thickness
 export const GAPW = 0.30;     // ... the half-width in radians of each of its two gaps
-export const PLAT = 0.082;    // the photonic lattice's period (grid heights) — about two carrier wavelengths
-export const RLAT = 0.028;    // ... the radius of one eps dot
 export const YGUI = 0.155;    // the waveguide's rails at +- this
 export const TGUI = 0.022;    // ... their thickness
 export const XGUI = 0.80;     // ... how far along x they run
-export const GEON = 4;
-export const NAMES = ['lens', 'mirror cavity', 'photonic lattice', 'waveguide'];
+export const GEON = 4;        // the geometry SLOTS hooks.medium(v) can pin: 0 lens · 1 cavity · 2 empty · 3 waveguide
+export const GEOROT = 2;      // ... and how many of them the section rotates through: the lens and the cavity only
+export const NAMES = ['lens', 'mirror cavity', 'empty space', 'waveguide'];
 export const GEOTC = 1.2;     // a section change cross-fades the two geometries over this many seconds
 export const WOBR = 0.50;     // the wobble's radius in grid heights: the whole porthole, strongest at the centre
 export const MIRQ = 1.00;     // the drop's mirror takes the BULK loss away too, all of it: with the mirror full on
@@ -72,10 +76,7 @@ vec2 geo(int k, vec2 u, float shear) {
     float gap = max(sm(0.04, abs(a) - ${GAPW.toFixed(3)}), sm(0.04, abs(abs(a) - 3.14159265) - ${GAPW.toFixed(3)}));
     return vec2(0.0, wall * (1.0 - gap));
   }
-  if (k == 2) {
-    vec2 c = (fract(u / ${PLAT.toFixed(4)} + 0.5) - 0.5) * ${PLAT.toFixed(4)};
-    return vec2(sm(0.008, length(c) - ${RLAT.toFixed(3)}), 0.0);
-  }
+  if (k == 2) return vec2(0.0, 0.0);   // slot 2 is EMPTY SPACE (item C: the photonic lattice was here and is gone)
   float rail = sm(0.004, abs(abs(u.y) - ${YGUI.toFixed(3)}) - ${TGUI.toFixed(3)}) * sm(0.05, abs(u.x) - ${XGUI.toFixed(3)});
   return vec2(0.0, rail);
 }
