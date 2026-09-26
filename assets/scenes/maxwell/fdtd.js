@@ -23,7 +23,10 @@
 export const COURANT = 0.5;      // c dt / dx — decided (MAXWELL-SESSION-PROMPT "Numerics"), `light` scales it 0.3..1
 // grid and substeps per frame by ctx.tier(): [w, h, substeps]. 16:9 throughout; the simulation runs by FRAME COUNT,
 // never dt-scaled, so a CLOCK=1 frame is reproducible (the plan's decision).
-export const GRIDT = [[256, 144, 2], [384, 216, 3], [512, 288, 4], [768, 432, 4]];
+// v0.11 item 2 takes the cost lever the v0.10 worker left (DECISIONS §42 item 6): tier 3's substeps go 4 -> 3, the
+// one numerics change of this session, which pays for the colour field. The only visible consequence is that light
+// travels a quarter slower at the top tier.
+export const GRIDT = [[256, 144, 2], [384, 216, 3], [512, 288, 4], [768, 432, 3]];
 export const ABSN = 16;          // cells of graded absorber at the edge (quadratic ramp), not a full PML
 export const ABSSIG = 0.75;      // sigma at the outermost absorber cell
 export const SRCW = 2.3;         // gaussian half-width in cells of a charge's source blob

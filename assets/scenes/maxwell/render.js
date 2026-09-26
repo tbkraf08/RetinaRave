@@ -44,6 +44,8 @@ uniform float uGY[12];
 uniform float uGA[12];
 uniform float uGH[12];
 uniform vec2 uRing;        // the charges' ring: its radius in cells and how far the glows reach
+uniform sampler2D uC;      // the colour field (colour.js), half the grid, LINEAR: rgb = SUM |amp| rgb_k, a = SUM |amp|
+uniform vec4 uCP;          // WFL, WFL1 (the w floor and the w at which the colour field owns the hue), CSAT, TROUGH
 vec3 hueRGB(float h, float sat, float bri) {
   vec3 c = 0.5 + 0.5 * cos(TAU * (h + vec3(0.0, 0.33, 0.67)));
   float l = dot(c, vec3(0.3, 0.59, 0.11));
@@ -68,15 +70,28 @@ void main() {
   float ez = f.r;
   float hm = length(f.gb);
   float sgn = ez / (abs(ez) + ${EPS0.toFixed(4)});
-  float hue = uCol.x + 0.25 * (1.0 - sgn);
   float L = uGain.x * (abs(ez) + ${HGAIN.toFixed(2)} * hm);
   L = L / (1.0 + L);
+  // v0.11 item 2: the HUE is the colour field's, the physics is still Ez's. rgb / w is a chromaticity because both
+  // are driven by the same non-negative source magnitudes, so the ratio is a weighted mean of the hues that reached
+  // this texel; it is normalised to its own maximum channel so only the COLOUR of it is used, never the brightness.
+  // Below WFL no light of a known colour has arrived here and the key's anchor hue shows through.
+  vec4 cf = texture(uC, g / uSz);
+  float cw = max(cf.a, 0.0);
+  vec3 chroma = max(cf.rgb, vec3(0.0)) / max(cw, uCP.x);
+  float cm = max(chroma.r, max(chroma.g, chroma.b));
+  chroma = cm > 1e-5 ? chroma / cm : vec3(1.0);
+  chroma = mix(vec3(dot(chroma, vec3(0.3, 0.59, 0.11))), chroma, clamp(uCP.z * uCol.y, 0.0, 1.0));
+  vec3 base = mix(hueRGB(uCol.x, ${LSAT.toFixed(2)} * uCol.y, 1.0), chroma, smoothstep(uCP.x, uCP.y, cw)) * uCol.z;
+  // ... and the SIGN of Ez is brightness only now, not a second hue: a crest is bright, a trough dips to TROUGH of
+  // it, so a standing wave still reads as a standing wave and the note keeps its own colour on both halves.
+  L *= mix(uCP.w, 1.0, 0.5 + 0.5 * sgn);
   // The picture is a round PORTHOLE: the plane fades to black over the absorber's own width, on a DISC of radius
   // half the grid height. A rectangular fade would have the camera's full turn sweep four black corners across the
   // frame (the drop montage at yaw 5.9 was a straight black cut through the middle of the standing wave).
   float R = 0.5 * uSz.y;
   float ed = 1.0 - smoothstep(R - ${PORTW.toFixed(1)}, R - ${PORTE.toFixed(1)}, length(g - uCtr));
-  vec3 col = hueRGB(hue, ${LSAT.toFixed(2)} * uCol.y, uCol.z) * L;
+  vec3 col = base * L;
   // the medium, as a hint: the lens brightens with its eps contrast, a conductor draws as a cool line
   col += uGain.y * (${MEDE.toFixed(3)} * max(0.0, md.r - 1.0) + ${MEDC.toFixed(3)} * md.b) * hueRGB(uCol.w, 0.5, 1.0);
   // the twelve charges, each in its own hue on the circle of fifths. They sit on one ring, so one radius test
@@ -93,6 +108,16 @@ void main() {
 }
 `;
 
+// THE TWO DECISIONS INDEX.JS'S strokes() POINTS AT.
+// (1) The lines are REBUILT every LINEF frames and re-projected every frame. A readPixels stalls the pipeline, and
+//     at tier 3 the stall plus the marching squares was 1.0 of the scene's 2.6 ms — the single most expensive thing
+//     in the scene after the field itself. Rebuilding at 20 Hz and projecting the stored segments at 60 leaves the
+//     rotation smooth and the lines at most two frames behind a wave that moves two cells a frame, which is nothing.
+// (2) When it does read, it reads the WHOLE small target — never a band of its rows. A banded read leaves the CPU
+//     copy a patchwork of up to DH/rows different times, and a time-patchwork H field is NOT divergence-free, so
+//     nothing closes (measured: loops 0, open 18 at every frame of the first build). DW x DH is 1.6 % of the
+//     field's texels, the same cost class as one band of the field itself, which is what the budget is about.
+//
 // The downsample pass for the H field lines. Ez is a plain block mean (only hooks.probe() reads it), but H is
 // restricted FLUX-CONSERVINGLY. Hx lives on the vertical faces of a cell and Hy on the horizontal ones, so the
 // coarse Hx of an n x n block is the mean of the n fine Hx DOWN its left face and the coarse Hy the mean of the n

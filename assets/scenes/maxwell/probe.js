@@ -7,6 +7,7 @@
 import { COURANT, energyOf, readBand, readType } from './fdtd.js';
 import { NAMES } from './medium.js';
 import { chains } from './render.js';
+import { colourSize, colourTex } from './colour.js';
 import * as SRC from './sources.js';
 
 export function hEnergy(ST) {
@@ -63,5 +64,52 @@ export function hProbe(ST) {
 
 export function hInfo(ST) {
   const U = ST.U;
-  return JSON.stringify({ grid: [ST.gw, ST.gh], sub: U.sub, tier: U.tier, S: +(COURANT * U.light).toFixed(4), lam: +SRC.OUT.lam.toFixed(2), sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2), step: SRC.OUT.step, geo: NAMES[U.geoA] + (U.geoF < 1 ? '<' + NAMES[U.geoB] : ''), fade: +U.geoF.toFixed(3), lens: +U.lens.toFixed(3), shear: +U.shear.toFixed(3), wob: +U.wob.toFixed(4), sub: +U.subS.toFixed(4), cent: +U.cent.toFixed(3), dirty: +U.dirty.toFixed(3), punchy: +U.punchy.toFixed(3), sigma: +U.sigma.toFixed(4), mir: +U.mir.toFixed(4), vac: U.vac, pol: U.pol, yaw: +U.yaw.toFixed(4), rate: +U.yawRate.toFixed(4), zoom: +U.zoom.toFixed(4), key: U.key, mode: U.mode, hue: +U.hue.toFixed(4), loud: U.loud, lab: U.lab, float32: !!(ST.cur && ST.cur.float32), segs: U.segs, loops: U.loops, gap: U.gap, src: SRC.info() });
+  return JSON.stringify({ grid: [ST.gw, ST.gh], cgrid: [U.cw, U.ch], sub: U.sub, tier: U.tier, S: +(COURANT * U.light).toFixed(4), lam: +SRC.OUT.lam.toFixed(2), sig: +SRC.OUT.sig.toFixed(2), spb: +SRC.OUT.spb.toFixed(2), step: SRC.OUT.step, geo: NAMES[U.geoA] + (U.geoF < 1 ? '<' + NAMES[U.geoB] : ''), fade: +U.geoF.toFixed(3), lens: +U.lens.toFixed(3), shear: +U.shear.toFixed(3), wob: +U.wob.toFixed(4), subS: +U.subS.toFixed(4), lfo: +U.lfo.toFixed(4), cent: +U.cent.toFixed(3), dirty: +U.dirty.toFixed(3), punchy: +U.punchy.toFixed(3), sigma: +U.sigma.toFixed(4), mir: +U.mir.toFixed(4), vac: U.vac, pol: U.pol, yaw: +U.yaw.toFixed(4), rate: +U.yawRate.toFixed(4), zoom: +U.zoom.toFixed(4), key: U.key, mode: U.mode, hue: +U.hue.toFixed(4), loud: U.loud, lab: U.lab, float32: !!(ST.cur && ST.cur.float32), segs: U.segs, loops: U.loops, gap: U.gap, src: SRC.info() });
+}
+
+// hooks.mxcol() — the colour field read as numbers (v0.11 item 2). A screenshot cannot answer "does the wave carry
+// the note's hue": the camera yaws, the glows and the medium hint are added on top, and the JPEG moves the chroma.
+// This reads the colour target itself and reports, per probe point, the palette hue of rgb/w, its saturation and w.
+// The palette is 0.5 + 0.5 cos(TAU (h + [0, .33, .67])), which is not HSV, so the hue is recovered by a fit: the h
+// on a 1/720 grid whose colour is nearest the measured chromaticity. The points are the twelve charges' own feet,
+// the midpoints of consecutive pairs, and the centre.
+const COFF = [0, 0.33, 0.67];
+export function hueFit(r, g, b) {
+  const m = Math.max(r, g, b);
+  if (!(m > 0)) return { h: 0, sat: 0 };
+  const c = [r / m, g / m, b / m];
+  let best = 0, bd = 1e9;
+  for (let i = 0; i < 720; i++) {
+    const h = i / 720;
+    let d = 0;
+    for (let k = 0; k < 3; k++) { const v = 0.5 + 0.5 * Math.cos(2 * Math.PI * (h + COFF[k])); d += (v - c[k]) * (v - c[k]); }
+    if (d < bd) { bd = d; best = h; }
+  }
+  return { h: best, sat: (m - Math.min(r, g, b)) / m };
+}
+
+export function hMxcol(ST) {
+  const t = colourTex();
+  if (!t || !ST.cur) return '{}';
+  const cs = colourSize(), cw = cs[0], chh = cs[1];
+  const px = readBand(ST.ctx, t, 0, chh);
+  const sc = cw / ST.gw;
+  const at = (x, y) => {
+    const i = Math.max(0, Math.min(cw - 1, Math.round(x * sc))), j = Math.max(0, Math.min(chh - 1, Math.round(y * sc)));
+    const o = 4 * (j * cw + i), w = px[o + 3];
+    const f = hueFit(px[o], px[o + 1], px[o + 2]);
+    return { h: +f.h.toFixed(4), sat: +f.sat.toFixed(3), w: +w.toFixed(5) };
+  };
+  const feet = [], mid = [];
+  for (let k = 0; k < 12; k++) {
+    feet.push(at(SRC.CX[k], SRC.CY[k]));
+    mid.push(at(0.5 * (SRC.CX[k] + SRC.CX[(k + 1) % 12]), 0.5 * (SRC.CY[k] + SRC.CY[(k + 1) % 12])));
+  }
+  const hues = [];
+  for (let k = 0; k < 12; k++) hues.push(+ST.hues[k].toFixed(4));
+  // ... and the +x ray the Ez crests are measured along (hRow), in FIELD cells, so the two can be compared directly:
+  // does the colour arrive WITH the wave, or behind it.
+  const ray = [];
+  for (let r = 0; r < ST.gw / 2; r += 2) { const q = at(ST.gw / 2 + r, ST.gh / 2); ray.push([r, q.w, q.h]); }
+  return JSON.stringify({ grid: [cw, chh], hues, feet, mid, centre: at(ST.gw / 2, ST.gh / 2), ray });
 }

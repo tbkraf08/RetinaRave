@@ -5,21 +5,24 @@
 // drop a mirror. MAXWELL-SESSION-PROMPT.md is the plan, docs/workers/brief-maxwell.md the brief, docs/workers/maxwell.md
 // the worker's report. The physics is gated by tools/test_fdtd.js, not by the picture.
 // Forced-only (score 0, key `n` cycles to it) until the user approves it.
-import { mkAnchor, sectorHue, sectorPc } from '../../math/keycolour.js';
+import { mkAnchor, sectorPc } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { COURANT, CUT, DIPD, FS_E, FS_H, GRIDT, SRCW, mkField, readBand } from './fdtd.js';
 import { FS_MED, GEON, GEOTC, NAMES, SIGMAX, VACSIG } from './medium.js';
+import { CSAT, TROUGH, WFL, WFL1, buildColour, clearColour, colourTex, initColour, noteHues, stepColour } from './colour.js';
 import { ASCALE, CSTAT, FS_DOWN, FS_SHOW, GLOWW, HALPHA, HW, NLEV, chains, contours, portFade, stream } from './render.js';
 import * as SRC from './sources.js';
 import { HELP } from './help.js';
-import { hEnergy, hInfo, hProbe, hRow } from './probe.js';
+import { hEnergy, hInfo, hMxcol, hProbe, hRow } from './probe.js';
 
 const TAU = Math.PI * 2;
 // --- the manual settings of the look: named constants at the top, never a magic number in a shader ---
 const BOUNCE = 0.05;    // the thump on the beat: 5 % of the zoom (the plan's number)
 const ZOOM0 = 1.03;     // the resting zoom; intensity / arousal add to it
 const ZOOMK = 0.10;
-const FGAIN = 3.4;      // how brightly a unit of |E| burns
+const FGAIN = 6.0;      // how brightly a unit of |E| burns. 3.4 until v0.10; the sign of Ez is now brightness and
+                        // not a second hue (colour.js TROUGH), so half the picture is dimmed to 0.35 of what it was
+                        // and the mean luminance of the reference frame fell 31 %. 6.0 puts it back (measured).
 const GLOWG = 0.85;     // ... and a charge's glow
 const FLOOR = 0.005;    // the plane is never pure black: silence still shows the cavity (v0.11 item 1: halved)
 const GAFL = 0.10;      // a dark charge still shows on the ring at this much of its glow — times `presence`, so
@@ -27,10 +30,9 @@ const GAFL = 0.10;      // a dark charge still shows on the ring at this much of
 const VACT = 1.0;       // seconds of `absentT` after which silence starts letting the last rings go ...
 const VACW = 1.0;       // ... and over this many more it has taken all of `ring`, so they fade in about a second
 const QUIETT = 10;      // the `absentT` hooks.quiet(1) pins: long past VACT + VACW
-// v0.11 item 3 — the wobble. A dubstep bass is an LFO on a filter at 1/4 to 1/8 note, i.e. 1-4 Hz, and it sits in
-// `sub` / `bassFast`. The MEDIUM breathes with it: eps(x,t) = eps_geom(x) * (1 + WOBK (sub - subSlow)), one uniform,
-// no medium rebuild. Light slows across the whole cavity when the sub swells, so the carrier's wavelength — which is
-// v/f, and v is what just changed — bunches and stretches at the wobble rate everywhere at once.
+// v0.11 item 3 — the wobble. A dubstep bass is an LFO at 1-4 Hz and it sits in `sub` / `bassFast`. The medium
+// breathes with it (medium.js WOBR says why the breath has to be graded) and so does the carrier's amplitude
+// (sources.js WOBA says why the amplitude is the one the eye reads).
 const WOBK = 0.6;       // how hard the sub's swell bends the light
 const WOBTC = 0.6;      // ... measured against an ema of `sub` this many seconds long (the LFO, not the level)
 const WOBLO = 0.70;     // eps is never scaled below this: S / sqrt(eps) must stay under the 2-D Courant limit
@@ -51,9 +53,10 @@ const U = {
   geoRot: 0, mirHold: 0, lens: 1.6, shear: 0, sigma: 0, vac: 0, hue: 0, sat: 1, bri: 1, key: 0, mode: 0, pure: 1,
   beatNow: 0, phrase: 0, loud: 0, mx: 0, lam: 0, sig: 0, spb: 0, segs: 0, loops: 0, gap: 0, lab: 0, pulse: 0,
   tw: 0, th: 0, flow: 0, light: 0.7, fit: 144, pres: 1, sil: 0, arange: 0, alev: 0, nlev: 0, drawn: 0,
-  frame: 0, wob: 1, lfo: 0, subS: 0, shearE: 0, cent: 0.45, dirty: 0, punchy: 0.5,
+  frame: 0, wob: 1, lfo: 0, subS: 0, shearE: 0, cent: 0.45, dirty: 0, punchy: 0.5, csc: 0.5, cw: 0, ch: 0,
 };
 const GH12 = new Float32Array(12);     // the twelve hues
+const AC3 = new Float32Array(3);       // ... and the anchor's rgb, for the sources that have no pitch class
 const Z12 = new Float32Array(12);      // twelve zeros: lab mode silences the charges
 const Z3 = [0, 0, 0];                  // ... and three: hooks.quiet silences the three bands
 const GA12 = new Float32Array(12);     // the twelve glow amplitudes
@@ -64,7 +67,7 @@ let F0 = null, F1 = null, CUR = null, MED = null, DS = null;
 let GW = 0, GH = 0, DW = 0, DH = 0, ASP = 16 / 9, QS = 0.6, NEED = 1, CLR = 0;
 let DSPX = null, APX = null, LTGT = null;
 let keyPin = null, medPin = -1, tierPin = -1, LCD = 0, NSEG = 0, linesOn = 1, quietPin = 0;
-let wobPin = 0, timbrePin = null;
+let wobPin = 0, timbrePin = null, chromaPin = null;
 // what probe.js needs to read: the live targets and sizes, refreshed where they change
 export const ST = { ctx: null, cur: null, med: null, tgt: null, gw: 0, gh: 0, U, hues: null };
 const AN = mkAnchor();
@@ -83,6 +86,10 @@ function build() {
   DW = Math.max(8, Math.round(GW / DSB));
   DH = Math.max(8, Math.round(GH / DSB));
   DS = mkField(ctx, DW, DH);
+  const CS = buildColour(Math.max(0, Math.min(3, t)));
+  U.csc = CS[0] / GW;
+  U.cw = CS[0];
+  U.ch = CS[1];
   DSPX = new Float32Array(4 * DW * DH);
   APX = new Float32Array(DW * DH);
   CUR = F0;
@@ -105,6 +112,7 @@ function clearFields() {
     g.clear(g.COLOR_BUFFER_BIT);
   }
   g.bindFramebuffer(g.FRAMEBUFFER, null);
+  clearColour();
   CLR = 0;
 }
 
@@ -134,6 +142,8 @@ function substep(S) {
   g.uniform1fv(prE.u('uCA[0]'), U.lab ? Z12 : SRC.CA);
   g.uniform2f(prE.u('uRing'), SRC.RING * GH, CUT * SRCW + 2);
   ctx.tri();
+  // ... and the colour field, one pass at a quarter of the texels, driven by the same bookkeeping (colour.js)
+  if (!U.lab) stepColour(S, MED, U.csc, [GW / 2, GH / 2], SRC.RING * GH, CUT * SRCW + 2, DIPD, SRC, GH12, AC3, chromaPin ? 0 : 1);
   U.pulse = 0;
 }
 
@@ -142,16 +152,8 @@ function substep(S) {
 function strokes(target, w, h) {
   const ctx = CTX, g = ctx.gl;
   const tier = Math.max(0, Math.min(3, U.tier < 0 ? 0 : U.tier));
-  // The lines are REBUILT every LINEF frames and re-projected every frame. A readPixels stalls the pipeline, and at
-  // tier 3 the stall plus the marching squares was 1.0 of the scene's 2.6 ms — the single most expensive thing in
-  // the scene after the field itself. Rebuilding at 20 Hz and projecting the stored segments at 60 leaves the
-  // rotation smooth and the lines at most two frames behind the field, which on a wave that moves 2 cells a frame
-  // is invisible.
-  //
-  // When it does read, it reads the WHOLE small target — never a band of its rows. A banded read leaves DSPX a
-  // patchwork of up to DH/rows different times, and a time-patchwork H field is NOT divergence-free, so nothing
-  // closes (measured: loops 0, open 18 at every frame of the first build). DW x DH is 1.6 % of the field's texels,
-  // the same cost class as one band of the field itself, which is what the brief's budget is about.
+  // Rebuilt every LINEF frames, re-projected every frame, and the small target is read WHOLE — the two cost
+  // and correctness decisions behind that are in render.js's own header, beside the contours they are about.
   if (LCD <= 0) {
     LCD = LINEF[tier];
     ctx.use(prD, DS, DW, DH);
@@ -253,6 +255,16 @@ const SIL = (absentT, pres) => Math.max(0, Math.min(1, (absentT - VACT) / VACW))
 // hooks.wob(f) pins sub = 0.5 + 0.5 sin(2 pi f frame/60) — a clean LFO at f Hz on the scene's own frame counter, so
 // a CLOCK=1 series is reproducible. hooks.wob(0) releases it.
 function hWob(v) { wobPin = v === null || v === undefined ? 0 : +v; return wobPin; }
+// hooks.mxchroma("k") / ("k,j") lights only those SECTORS of the ring at weight 1 and darkens the rest, inside
+// update(). The name is mx-prefixed because POLYTOPE owns hooks.chroma and CARD.hooks is one flat map (§1.4).
+// Sector k sits at 2 pi k / 12 on the circle of fifths and carries pitch class sectorPc(k) = (7k) mod 12; its hue
+// is GH12[k], which since v0.11 does not move with the key. The pin ALSO silences the two pitchless sources in the
+// colour field — colour.js CDIP says why, and why nothing else makes "did the note's colour travel" answerable.
+function hMxchroma(v) {
+  const p = String(v === null || v === undefined ? '' : v).split(',').filter((x) => x !== '');
+  chromaPin = p.length ? p.map((x) => ((+x | 0) % 12 + 12) % 12) : null;
+  return JSON.stringify(chromaPin);
+}
 // hooks.timbre(centroid, dirty) pins the two fields the carrier reads; hooks.timbre() releases them. The #test fake
 // timeline holds centroid 0.455, dirty 0.2, punchy 0.6 at every frame (measured), so nothing else can move them.
 function hTimbre(c, d) {
@@ -276,7 +288,7 @@ export default {
   rt: {},
   score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
 
-  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST) },
+  hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
 
   init(ctx) {
     this.ctx = ctx;
@@ -289,6 +301,7 @@ export default {
     prM = ctx.mkProg(FS_MED, 'maxwell-medium');
     prS = ctx.mkProg(FS_SHOW, 'maxwell-show');
     prD = ctx.mkProg(FS_DOWN, 'maxwell-down');
+    initColour(ctx, mkField);
     LN = ctx.lines.mk(16384);
     ctx.onResize((w, h) => { ASP = w / Math.max(1, h); NEED = 1; });
     for (let k = 0; k < 12; k++) SRC.W12[k] = 0.3;
@@ -342,8 +355,8 @@ export default {
       const imp = Math.pow(0.5 + 0.5 * Math.cos(MS.harmAngle - fifth), 2);
       const band = pc < 4 ? 0.55 + 0.55 * MS.bass : pc < 8 ? 1 : 0.85;
       const c = Math.min(1, (w * Math.max(0, C[pc] || 0) * nrm + (1 - w) * imp * pres) * band);
-      SRC.W12[k] = c;
-      if (c > mx) { mx = c; U.loud = k; }
+      SRC.W12[k] = chromaPin ? (chromaPin.indexOf(k) >= 0 ? 1 : 0) : c;
+      if (SRC.W12[k] > mx) { mx = SRC.W12[k]; U.loud = k; }
     }
 
     // the key as a hue ANCHOR on the circle of fifths, and clarity as the hue PURITY of the twelve
@@ -356,7 +369,8 @@ export default {
     U.mode = A.mode;
     U.pure += (0.35 + 0.65 * MS.clarity - U.pure) * (1 - Math.exp(-dt / HUETC));
     const spread = 0.30 + 0.45 * m.spread;
-    for (let k = 0; k < 12; k++) GH12[k] = A.hue + (sectorHue(A.hue, k, spread) - A.hue) * U.pure;
+    noteHues(GH12, spread, U.pure);     // the twelve notes' own hues — colour.js CHUE0 says why they ignore the key
+    for (let i = 0; i < 3; i++) AC3[i] = 0.5 + 0.5 * Math.cos(TAU * (A.hue + [0, 0.33, 0.67][i]));
 
     // Faraday: the nudge. The target is read off the beat COUNT so it can never drift; the angle springs to it, and
     // the dipole's moment RATE is that spring's velocity — so it radiates on the nudge and is silent between nudges.
@@ -443,6 +457,8 @@ export default {
     g.uniform4f(prS.u('uView'), U.fit, U.yaw, U.zoom, ASP);
     g.uniform4f(prS.u('uCol'), U.hue, U.sat, U.bri, U.hue + 0.5);
     g.uniform4f(prS.u('uGain'), FGAIN, MEDVIS, GLOWG, FLOOR);
+    ctx.tex(prS, 'uC', 2, colourTex());
+    g.uniform4f(prS.u('uCP'), WFL, WFL1, CSAT, TROUGH);
     g.uniform1fv(prS.u('uGX[0]'), SRC.CX);
     g.uniform1fv(prS.u('uGY[0]'), SRC.CY);
     for (let k = 0; k < 12; k++) GA12[k] = U.pres * (GAFL + (1 - GAFL) * SRC.W12[k]);   // a floor while there is music, dark without it

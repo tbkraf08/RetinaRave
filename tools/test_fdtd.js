@@ -13,6 +13,7 @@
 //        node tools/test_fdtd.js twin <w> <h> <steps>    the GPU-vs-twin comparison of hooks.lab / hooks.energy:
 //                                                        the same vacuum + PEC + one pulse, energy after <steps>
 import { ABSN, ABSSIG, COURANT, CUT, FS_E, FS_H, KW, PULSE_A, PULSE_W, SRCW, absSigma, energyOf } from '../assets/scenes/maxwell/fdtd.js';
+import { CSIG, FS_C } from '../assets/scenes/maxwell/colour.js';
 
 let fails = 0;
 const ok = (c, m, extra) => { console.log((c ? '  ok   ' : '  FAIL ') + m + (extra === undefined ? '' : ' — ' + extra)); if (!c) fails++; };
@@ -224,6 +225,56 @@ console.log('4. the graded absorber: monotone to the edge, zero in the interior,
   }
   const eA = energyOf(interleave(A), w, h, null), eB = energyOf(interleave(B), w, h, null);
   ok(eA < 0.2 * eB, 'after 400 steps the absorbing cavity holds under a fifth of the mirrored one', 'absorber ' + eA.toExponential(3) + ' vs mirror ' + eB.toFixed(4));
+}
+
+console.log('5. the colour field (v0.11): a 64x64 twin of the scalar leapfrog colour.js runs on the GPU');
+{
+  // u_{n+1} = [2A u_n - (A - B) u_{n-1} + lap(u_n)] / (A + B), A = eps/S^2, B = sigma/(2S), four channels (r,g,b,w),
+  // every source non-negative. Two gates: the energy stays bounded (the scheme is stable at the Courant number the
+  // scene uses) and the chromaticity rgb/w never leaves [0,1] — which is the whole reason w is a magnitude and not
+  // the signed carrier: a signed w would put the hue through infinity at every zero crossing.
+  const w = 64, h = 64, S = COURANT / 2;          // the colour grid's cells are twice as wide, so its S is halved
+  const N = w * h * 4;
+  let u0 = new Float64Array(N), u1 = new Float64Array(N), u2 = new Float64Array(N);
+  const eps = 1.6, A = eps / (S * S), B = CSIG / (2 * S);
+  const HUES = [0.12, 0.47, 0.81];               // three sources, three hues, at three places
+  const AT = [[20, 32], [32, 44], [44, 24]];
+  const rgb = (hu) => [0, 1, 2].map((k) => 0.5 + 0.5 * Math.cos(2 * Math.PI * (hu + [0, 0.33, 0.67][k])));
+  let emax = 0, cmin = 1e9, cmax = -1e9;
+  for (let n = 0; n < 1200; n++) {
+    for (let j = 1; j < h - 1; j++) {
+      for (let i = 1; i < w - 1; i++) {
+        const o = 4 * (j * w + i);
+        for (let c = 0; c < 4; c++) {
+          const lap = u0[o + 4 + c] + u0[o - 4 + c] + u0[o + 4 * w + c] + u0[o - 4 * w + c] - 4 * u0[o + c];
+          u2[o + c] = (2 * A * u0[o + c] - (A - B) * u1[o + c] + lap) / (A + B);
+        }
+      }
+    }
+    // the sources: |amp| x rgb into the three colour channels and |amp| into w, exactly as FS_C does
+    const amp = 0.02 * Math.abs(Math.sin(n * 0.11));
+    for (let k = 0; k < 3; k++) {
+      const o = 4 * (AT[k][1] * w + AT[k][0]), c = rgb(HUES[k]);
+      u2[o] += amp * c[0]; u2[o + 1] += amp * c[1]; u2[o + 2] += amp * c[2]; u2[o + 3] += amp;
+    }
+    for (let q = 0; q < N; q++) u2[q] = Math.max(0, u2[q]);
+    for (let q = 0; q < N; q += 4) for (let c = 0; c < 3; c++) u2[q + c] = Math.min(u2[q + c], u2[q + 3]);
+    const t = u1; u1 = u0; u0 = u2; u2 = t;
+    let e = 0;
+    for (let q = 0; q < N; q++) e += u0[q] * u0[q];
+    emax = Math.max(emax, e);
+    if (n > 400) {
+      for (let q = 0; q < N; q += 4) {
+        const ww = u0[q + 3];
+        if (ww < 1e-6) continue;
+        for (let c = 0; c < 3; c++) { const r = u0[q + c] / ww; cmin = Math.min(cmin, r); cmax = Math.max(cmax, r); }
+      }
+    }
+  }
+  ok(Number.isFinite(emax) && emax < 1e6, 'the energy stays bounded over 1200 steps', 'max sum u^2 ' + emax.toExponential(3));
+  ok(cmin >= -1e-9 && cmax <= 1 + 1e-9, 'the chromaticity rgb / w stays inside [0, 1]', cmin.toExponential(2) + ' .. ' + cmax.toFixed(6));
+  ok(/vec4 un = \(2\.0 \* A \* u0 - \(A - B\) \* um \+ lap\) \/ \(A \+ B\)/.test(FS_C), 'the emitted GLSL is that same update');
+  ok(/un = max\(un, vec4\(0\.0\)\)/.test(FS_C) && /min\(un\.rgb, vec3\(un\.a\)\)/.test(FS_C), 'FS_C projects every texel back onto 0 <= rgb <= w');
 }
 
 console.log('test_fdtd: ' + (fails ? fails + ' FAIL' : 'OK'));
