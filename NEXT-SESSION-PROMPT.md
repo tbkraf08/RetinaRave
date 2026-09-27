@@ -1,7 +1,9 @@
-# Next session — Retina Rave after v0.13 (written 2026-09-27; local `main` ahead of origin, unpushed)
+# Next session — Retina Rave after v0.13 (written 2026-09-27; v0.13 tagged and pushed 2026-09-27 on the user's word)
 
-**Live:** v0.12.1 (retinarave.com, pushed 2026-09-26). **Local:** v0.13 NAV2 "bump with the beat" (four passes, DECISIONS §46 + addenda,
-`docs/AUDIT-v0.13.md`) + `NAV2-BEAT-SESSION-PROMPT.md`, **unpushed** — a push to `main` deploys; push only on the user's word.
+**Live:** v0.13 (retinarave.com, tagged and pushed 2026-09-27): NAV2 "bump with the beat", eight passes (DECISIONS §46 + addenda 1–7,
+`docs/AUDIT-v0.13.md` §1–8), `NAV2-BEAT-SESSION-PROMPT.md`. **The user validated pass 8** (*"nav2 looks good, can tag and deploy it. (leave
+it at slot9)"*) — NAV2 stays id 8 / key `9`, forced-only; **the swap question (§39: NAV2 → id 0 / home) is answered: no swap.** A push to
+`main` deploys; push only on the user's word.
 
 **Validated by the user (2026-09-27):**
 - **MAXWELL v0.12 / v0.12.1 is good** (*"I validated v0.12 maxwell scene and is good now"*; the user also said "done with maxwell for now"
@@ -11,13 +13,11 @@
   the waveguide / the hat by chroma) is retired unless the user brings it back.
 - **POLYTOPE v0.9 is fine** (*"Polytope has been reviewed and is fine now"*). Untouched; its portrait cropping stays on the standing list.
 
-**The live work is NAV2 (id 8, key `9`, forced-only), at pass 8 (2026-09-27, unseen by the user; `beat.js` split out of `nav2.js`):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
+**NAV2 is done for now** (id 8, key `9`, forced-only, pass 8 validated). If the user brings it back, read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
 `~/Music/RetinaRave/SeeYouDrop.flac`, the state constant by constant, the workflow (window replay → cause in the numbers → constants →
 re-prove → audit section → commit), the pitfalls, and the ranked open list (the user's look at pass 4; gates vs notes; 1:45 measured as a
 full-strength drop, the choice is the user's; the other three tracks measured + `DROP_GAP` 32 beats from Malicious on 2026-09-27, AUDIT §5,
-montages ready to show; `beat.js` holds the press; measure per frame with `perbeat13.py`). Then, when the user says the look is right: tag v0.13, push
-on their word, and raise the **swap question** (§39 / `NAV2-SESSION-PROMPT.md` step 4: NAV2 → id 0 / home / always / NAV's bid, NAV →
-`nav-v1` id 8, parity + md5 lists + `accept.sh` + `site/about.html` + CONTRACTS §1.8, the Q trace on house + aba, a DECISIONS section).
+montages ready to show; `beat.js` holds the press; measure per frame with `perbeat13.py`). The swap (§39 step 4) is declined: "leave it at slot9". Do not raise it again unless the user does.
 
 **Tracks:** `~/Music/RetinaRave/` (SeeYouDrop.flac + CyborgNinja / WhoLikesToParty / Malicious mp3); the v0.12 and v0.13 accept scripts take
 the name with or without its extension (`$MUSIC` overrides the folder). The user reports timestamps in TRACK time; `nav2-window.py

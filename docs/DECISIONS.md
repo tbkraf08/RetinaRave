@@ -2193,3 +2193,8 @@ wind's weight squared** (`WIND_P` 2) because the engine's 0.3 wind-up through th
 windless sweep said 0.52; the hold 0.4 so the climb from the low trough finishes on every beat. Per frame on 27–33 s: press 0.90–0.92 on
 every beat, trough 0.68 → 0.55, a fifth of each beat near the circle, the Q swing ≥ 0.12 on two beats in three. s8 md5 2daaa2c0 /
 f2342b7f twice. AUDIT-v0.13's eighth section. The user has not seen it; the swing is now bounded by the beat's own length.
+
+**§46 closed (2026-09-27):** the user on pass 8: *"nav2 looks good, can tag and deploy it. (leave it at slot9)"*. v0.13 tagged and pushed
+to `main` (retinarave.com). NAV2 stays id 8 / key `9`, forced-only, `score()` 0 — the §39 swap question (NAV2 → id 0 / home) is answered:
+no swap; NAV (id 0) stays home and byte-identical.
+

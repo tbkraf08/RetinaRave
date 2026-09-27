@@ -113,7 +113,7 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 
 ## Open, ranked
 
-1. **The user's next look** at pass 8 (watch it live; the montage cannot show a per-beat pinch). Then tag v0.13 and, on the user's word, push.
+1. ~~The user's next look at pass 8~~ — **validated 2026-09-27**: *"nav2 looks good, can tag and deploy it. (leave it at slot9)"*; v0.13 tagged and pushed; NAV2 stays id 8 / key 9, no swap. Then tag v0.13 and, on the user's word, push.
 2. **Gates vs notes:** 0 gates on the real track now. Decide with the user whether the species should also change through gates.
 3. **1:45:** measured (`nav2-window-syd-145.txt`, `montage-nav2-syd-145.jpg`): a full-strength engine drop (`ds` 1.0), NAV2 outside
    105.9–111.4 s, the interior after it at eS 0.78 (1:33–1:39 read 0.87–0.94). `dropStrength` cannot gate it (1.0 at both drops); the
