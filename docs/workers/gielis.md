@@ -409,3 +409,223 @@ All four scene modules are under the 350 soft cap; nothing near the 500 hard cap
   intro / groove / breakdown / double-time / drop windows and the per-beat rulers are the orchestrator's after the merge.
 - **The `score()` expression behind the 0** — the brief asked for `score(MS) { return 0; }` with no reads, and that is
   what is there.
+
+---
+
+# Pass 1 — the retune, 2026-09-27 (v0.14, scene id 10)
+
+**Prompt:** the user on the first build — *"shouldn't the superformula be making more shapes?"* — then "yes retune" to
+three items: lobes at rest, a lean that differs per family, and a species in the second curve plus meridians.
+Worktree `.claude/worktrees/agent-a749d206f4a01c782`, branch `worktree-agent-a749d206f4a01c782`, reset onto `main`
+(`e651a5c`, the merged v0.14) — the branch was still at v0.13 and had no GIELIS at all. Three commits, one per item,
+each proven before the next. Not merged. `PORT=8811` on every cdp run; one Chrome at a time.
+
+## The constants, before → after
+
+| constant | file | before | after | why |
+|---|---|---|---|---|
+| `N1_REST` | nest.js | 12 | **2.0** | 12 is a circle for every m (root Q 0.998), so the species existed only during the thump. Swept against the brief's "root Q about 0.90–0.95". |
+| `N1_BEAT` | nest.js | 1.2 | **0.6** | the pinch now travels from a shape to a star; `N1_MIN` 0.5 untouched and never reached |
+| `SUBK`'s target | nest.js | `a, b` | **the family's radius** | `a > 1` scales r by `a^(n2/n1)` = 1.18^6.67 at the new pinch and puts a narrow spike at θ = 0 that a drawn ring at φ = 0 lands on (2.85× measured) |
+| — | nest.js | — | **`NRM` 64 / `NRM_PHI` 65 / `normOf()`** | new: each family scaled by 1/max(1, r1max·r2max) of its own profile |
+| `LEAN_C` | nest.js | — (no per-family lean) | **0.7, `n2 = 1 − LEAN_C·chroma[k]`** | the brief's `1 + 1.5·chroma` pulls the exponent UP toward 2, and (2, 2) is exactly a circle — see friction 1 |
+| `LEAN_V` | nest.js | — | **1.0, `n3 = 1 + LEAN_V·(0.5 − valence)·2`** | the brief's, unchanged |
+| `LEAN_MIN` / `LEAN_MAX` | nest.js | — | **0.2 / 6** | `pow(0, 0)` is undefined in GLSL; an exponent at 0 is a NaN waiting |
+| `TEMPLATES[0]` | nest.js | `round` (1, 1, 1, 1) = BASE | **`bloom` (2, 0.5, 1, 1)** | `round` was BASE, so one section in four showed no lean (AUDIT-v0.14 §5 item 3) |
+| template composition | nest.js | replacement: `mix(BASE, T, morph)` | **offset: `base_k + morph·(T − BASE)`** | so a family keeps its own identity through every section |
+| `M_PHI` | nest.js | 4, the shared latitude lobe count | **the family's own m** (M_PHI survives as the *witness's* reference profile only) | the body was a ball of hoops |
+| `N1_PHI` | nest.js | — (the latitude used `uN1`) | **4** | shaped in latitude, never spiky |
+| `MERID` | nest.js | — | **6 per family**, `SEGM` = `SEGT[tier]` | so the 3D shape reads (AUDIT-v0.14 §5 item 4) |
+| `SEGMAX` | nest.js | 96 | **112** | the headroom §5 item 4 identified; `SEGT` [16, 26, 38, 52] unchanged |
+| `uLean` | shaders.js | `vec4` | **`vec4[12]`** | per slot |
+| `uOpen` | shaders.js | `float` | **`float[12]`** | an odd numerator with a lopsided lean needs 2q turns, so only those rings skip the wrapping segment |
+| `uMPhi` | shaders.js | `float` | **removed**; `uN1Phi`, `uSegR[12]`, `uSegM`, `uMerid`, `uNorm[12]` are new | |
+
+Unchanged and deliberately so: `HIT_K` 0.3, the reciprocal press law `pinchOf`, `RINGS` 7, `PHI_MAX` 0.85, `SEGT`,
+`FLOOR` 0.18, `KNEE` 0.8, `WAVE0` 0.26, `MORPHK` 0.9, `ATK` 0.12, the six parameters, `M0` 4 and the ratio table.
+
+## Rest Q per species at `N1_REST` 2.0 (base lean, `tools/test_gielis.js` item 4)
+
+| interval | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| m | 4.000 | 4.250 | 4.500 | 4.800 | 5.000 | 5.333 | 5.600 | 6.000 | 6.400 | 6.667 | 7.200 | 7.500 |
+| **rest Q** | **0.936** | 0.892 | 0.877 | 0.885 | 0.906 | 0.851 | 0.845 | 0.870 | 0.811 | 0.811 | 0.798 | **0.776** |
+| beat Q | 0.569 | 0.478 | 0.452 | 0.451 | 0.468 | 0.378 | 0.371 | 0.383 | 0.309 | 0.309 | 0.281 | 0.262 |
+| swing | 0.367 | 0.414 | 0.425 | 0.434 | 0.438 | 0.473 | 0.474 | 0.487 | 0.502 | 0.502 | 0.517 | 0.514 |
+
+As built these read **0.998 … 0.991** at rest, i.e. twelve circles. The root is now a clearly rounded square (0.936,
+inside the brief's 0.90–0.95 band) and the major seventh a visible fifteen-lobed star at 0.776 **with no beat landing**.
+The n1 sweep behind the choice (root / fifth / tritone): 1.6 .904/.811/.786 · 1.8 .923/.844/.819 · **2.0 .936/.870/.845**
+· 2.2 .947/.890/.866 · 2.4 .955/.906/.882 · 3.0 (the brief's lean) .971/.938/.917 · 12 (as built) .998/.996/.991.
+The per-family lean then pushes them further: at a plausible chroma the twelve rest at **0.744–0.860** at one and the
+same m, from the lean alone.
+
+## The bar series (per frame, `#test` f840–960, the fake's peak; `tools/work/qtrace.sh` + `perbeat.py`)
+
+| beat | as built | after item 1 | after items 2 & 3 (final) |
+|---|---|---|---|
+| 29 | rest .995 → .776, swing **0.219** | rest .807 → .329, swing **0.478** | rest .728 → .271, swing **0.457** |
+| 30 | rest .995 → .776, swing **0.219** | rest .820 → .337, swing **0.484** | rest .733 → .264, swing **0.469** |
+| 31 | rest .995 → .776, swing **0.219** | rest .838 → .342, swing **0.496** | rest .727 → .258, swing **0.469** |
+| 32 | rest .991 → .666, swing **0.325** | rest .834 → .303, swing **0.531** | rest .698 → .190, swing **0.508** |
+
+4/4 beats over the 0.15 gate on every pass, n1 reaching exactly `N1_BEAT` 0.600 at beatPhase 0 on all four. The rest
+state is **not** a circle any more: 0.698–0.733 on the loudest family with the section's lean on it (0.776–0.936 at the
+base lean, per species, table above). Between beats n1 tops out at 1.78–1.85 rather than at `N1_REST`, because the
+fake's peak holds `kick` ≈ 0.12 between hits and `HIT_K` 0.3 rides on top — by design.
+
+## The continuity monitor (60 s of `test&fake=0&scene=10`, `CARD.NAV = CARD.REG[10].scene.state` before the MON snippet)
+
+```
+as built   n 3606  fast 0  max 0.0533  viol []
+item 1     n 3607  fast 0  max 0.0466  viol []      errs [] bad [] scene 10
+item 2     n 3603  fast 0  max 0.0557  viol []      errs [] bad [] scene 10
+item 3     n 3607  fast 0  max 0.0414  viol []      errs [] bad [] scene 10
+```
+Under the 0.06 spike rule throughout, and the deeper pinch did **not** move it up: the radius normalisation bounds the
+witness's travel, which is why item 1 came out *below* the build. The witness keeps `M_PHI` as its own reference
+latitude profile deliberately — it must stay species-free, and the loudest family changes by a swap.
+
+## The bench (HARNESS "Bench protocol": `q` pinned .95, `CARD.fix` widest, 9 s settle, cold discarded, n = 300, five interleaved pairs, each scene forced in its own page)
+
+| pair | GIELIS s10 (ms) | NAV (ms) | | TORUS2 s3 (ms) | NAV (ms) |
+|---|---|---|---|---|---|
+| 1 | 0.677 | 3.175 | | 1.227 | 3.162 |
+| 2 | 0.686 | 3.074 | | 1.223 | 3.069 |
+| 3 | 0.662 | 2.569 | | 1.561 | 2.635 |
+| 4 | 0.691 | 2.552 | | 1.537 | 2.632 |
+| 5 | 0.642 | 2.632 | | 1.523 | 2.607 |
+| **median** | **0.677** | **2.632** | | **1.523** | **2.635** |
+
+| statistic | GIELIS / TORUS2 | cap |
+|---|---|---|
+| medians of the raw ms | **0.444×** | 1.5 |
+| NAV-normalised | **0.445×** | 1.5 |
+| median of the per-pair ratios | **0.418×** | 1.5 |
+
+Cold calls discarded: GIELIS 1.147, TORUS2 1.371. `errs []`, no `glerr`. CPU side `hooks.timeUpdate(300)`:
+mean **0.153 ms** (median reads 0.200 — the browser's 0.1 ms timer quantum), against the 0.5 ms gate; ~0.1 ms of that
+is the new per-family normalisation (12 × (64 + 65) `sf()` calls). It was 0.052 ms as built.
+
+### Segments per tier (all twelve families drawn, `CARD.Q.q` pinned per tier, read off `hooks.info()`)
+
+| tier | `SEGT` per turn | segments on a ring, q = 1 / 2 / 3 / 4 / 5 | per meridian | rings | meridians | **total** |
+|---|---|---|---|---|---|---|
+| 0 | 16 | 16 / 32 / 48 / 64 / 80 | 16 | 4 144 | 1 152 | **5 296** |
+| 1 | 26 | 26 / 52 / 78 / 104 / 112 | 26 | 6 230 | 1 872 | **8 102** |
+| 2 | 38 | 38 / 76 / 112 / 112 / 112 | 38 | 7 350 | 2 736 | **10 086** |
+| 3 | 52 | 52 / 104 / 112 / 112 / 112 | 52 | 8 036 | 3 744 | **11 780** |
+
+`SEGMAX` 112 caps a ring; `RINGS` 7 and `MERID` 6 never change with the tier (`cuts: 'continuous'`). The turn-count
+multiset {1,1,1,2,2,3,3,4,5,5,5,5} is the same in every key, so the totals are key-independent.
+
+## The md5s (`IDS=10 tools/scene-md5.sh`, two runs each, all stable)
+
+```
+                          f360                              f840
+as built (re-measured)    2c1b21c8c5553ab84008ac7060cbfa00  2e978a09fc3ebb8d1aa428911a6be16d
+item 1  plain             e91161023972672f8868a9732c48e84b  6970bebf5ae044c00f7721a5275654b5
+item 1  still             210b10a729a6db429bd4346147682d87  71d961375e18d3b59783497758f91202   (RE-BASED)
+item 2  plain             0b60b4146b1173562d52d484aa71ad87  e280f33f8d487c7e341d2e7b6f67b950
+item 2  still             210b10a729a6db429bd4346147682d87  71d961375e18d3b59783497758f91202   (unchanged — the gate held)
+item 3  plain (FINAL)     4f6c8cb0967dc1a84bda3b3a297b575f  1dc4cb4c398172f5339af25aac1cd469
+item 3  still (FINAL)     fd8e256b9f1b8c9a5d38000bfa0d4d47  88f6d5cbc667aac1d39321e3b32fd46b   (RE-BASED)
+```
+The build's plain pair reproduced **exactly** on this machine before any edit (the previous commit's scene files checked
+back out into the tree, shot, then restored) — which is what makes the before/after montages comparable.
+**Two re-bases, both declared.** Item 1: the rest state itself is what changed, so a rest frame must change.
+Item 3: the meridians and the latitude species are *geometry*, not music-driven uniforms, so `still` cannot pin them
+away. Item 2 is the interesting one — it re-laid `uLean` from a `vec4` to a `vec4[12]` and `uOpen` to an array, and the
+still pair came out **byte-identical**, which is exactly the no-op gate earning its keep.
+
+## The shots (all `tools/work/`, untracked)
+
+| file | one sentence |
+|---|---|
+| `gi-p1-item1.jpg` | before/after, `#test` f360 + f840 and house 10 + 30 s: every ring is a lobed polygon on every frame where before it was a smooth circle — the species are visible with no beat landing. |
+| `gi-p1-item1b.jpg` | house 50 s before/after: the same nest of stacked hoops becomes a stack of four- and five-lobed plates, and the beat's pinch now bites from a shape rather than from a circle. |
+| `gi-p1-item2.jpg` | before/after: the families no longer share one outline — the loud outer ones are sharp lopsided stars while the quiet inner ones stay round, so the nest reads as twelve different things rather than twelve sizes of one thing. |
+| `gi-p1-item2-tmpl.jpg` | `hooks.template(0..3)` at `&param=gielis.lean=c:1`: bloom (tall, spiky, leaning), petal (wide and fluffy), blade (a fat rounded barrel), shard (a small sharp star) — four visibly different sections where one used to be a no-op. |
+| `a2-key81.jpg` | `hooks.key(8, 1)` at f360 with the numbers: loudest three `9:m4.25 lean 0.30/1.54`, `2:m5.6 0.37/1.54`, `4:m6.4 0.41/1.54` — one n2 per family, one n3 for the nest, `open` 1 on four of twelve. |
+| `gi-p1-item3.jpg` | before/after: the six meridians tie the seven hoops into one surface and the latitude species bulges the silhouette, so the thing reads as a solid instead of a lantern. |
+| `gi-p1-item3b.jpg` | house 50 s: the same frame gains a woven pole-to-pole cage; the shape is now legible as a 3D body at a glance. |
+| `gi-p1-overall.jpg` | the whole pass, build vs final on four frames: smooth stacked circles → a lobed, meridian-tied solid whose twelve species are visible at rest. |
+| `gi-p1-acc.jpg` | `t6` (the nest at rest with the fallback key, meridians and all), `t14` (the 13 s drop's rebound), and the portrait run. |
+| `a3-portrait.jpg` | `WIN=720,1280` at f720: a globe of rings and meridians, comfortably inside the short edge — nothing crops. |
+
+## Friction — what the docs and the brief lacked, and every lean changed
+
+1. **[lean changed, the big one] The brief's per-family lean has the wrong sign.** `n2 = 1 + LEAN_C·chroma` with
+   `LEAN_C` 1.5 pulls the exponent **up** toward 2, and (2, 2) is exactly a circle — the build's own finding, one
+   section above this one. Built as written and measured on the first montage: the loudest family on `#test` drew
+   n2 **2.50**, and its rest Q went 0.936 → **0.976** while its beat Q went 0.569 → **0.808**. The one shape the eye
+   follows became the roundest thing on screen and item 1's whole gain was spent on it. Inverted:
+   `n2 = 1 − LEAN_C·chroma`, `LEAN_C` **0.7** — the largest span that keeps all twelve clear of the `LEAN_MIN` clamp
+   (n2 0.30–0.93, rest Q 0.744–0.860). The loudest family is now both the most lopsided *and* the most shaped, which
+   is what "more shapes" asks for. `LEAN_V` is the brief's 1.0, untouched.
+2. **[lean changed] `N1_REST` 2.0, not the brief's 3.** The brief gave the lean *and* the measurement that overrides
+   it ("root Q about 0.90–0.95"); 3 measures 0.971, still a circle to the eye. 2.0 is mid-band. This is the brief
+   working as designed, not a disagreement.
+3. **A deep pinch needs a radius normalisation, and the brief does not mention one.** `r = base^(−1/n1)` amplifies any
+   `base < 1` by the exponent, which is now 1.667 instead of 0.833. Over every reachable lean × the twelve species the
+   *unnormalised* drawn radius reaches **9.8×** the family's own (it hits the `R_MAX` 4 clamp) where the camera frames
+   `RAD` 1. This is not a taste question — it crops. `normOf()` scales each family by 1/max(1, r1max·r2max) of its own
+   profile; a symmetric lean normalises by exactly 1, so it is provably a no-op on those frames. Worst case after:
+   **1.0095×** over 46 656 cases, inside `FILLMAX` 0.85. It is also *what a pinch should look like*: the valleys pull
+   in and the lobe tips stay at the family's radius.
+4. **The normaliser must be sampled in the superformula's own argument.** `t = m·θ/4` has period π whatever m is, so 64
+   samples of [0, π) resolve every family equally; the same 64 spread over θ under-read the peak by 10 % at m 7.5.
+   The latitude arm cannot use the trick (its φ range is fixed, not a period), and once the latitude carries the
+   family's m its range spans up to 1.6 periods — hence `NRM_PHI` 65, and odd so that φ = 0, where r2 peaks, is sampled.
+5. **[lean changed] `sub` may not fatten `a, b` at this pinch.** `a > 1` scales r by `a^(n2/n1)` = 1.18^6.67 = 3.1,
+   *and* puts a narrow radial spike at θ = 0 (base = (1/a)^n2 < 1) that a 64-sample normaliser cannot see but a drawn
+   ring at φ = 0 lands exactly on — 2.85× measured. Moved onto the family's **radius**, where it is linear, means the
+   same thing to the eye, and cannot touch the exponents. It also makes a = 1 everywhere, which is what makes the
+   normalisation accurate.
+6. **A pre-existing bug the deep pinch exposed:** `nest.js` computed `N.open` from the lean and then assigned
+   `N.open = 0` eleven lines later, so a lopsided template's ring drew a chord across the shape instead of skipping
+   its wrapping segment. Invisible at n1 12; not invisible at n1 0.6.
+7. **The open flag has to be per slot, and only odd numerators need it.** `closure()` already says so (`gen = 2q` for
+   odd p, `q` for even), and the build's own test proves it — but the scene used one global flag. With a per-family
+   lean *every* ring is lopsided, so a global flag would gap all twelve when only four need it. Measured live under
+   key 8 minor: `open` = [1,0,0,1,0,1,0,0,0,1,0,0].
+8. **The brief's "`uLean` becomes per-slot … keep every declared uniform fetched" is the whole story for `check.js`,**
+   but the thing that actually needed care was `uMPhi`: once the latitude carries the family's m the uniform is dead,
+   and a dead *declared* uniform fails the check. Removed, not left at a constant.
+9. **`tools/cdp.js`'s step list is JSON on argv, so a `'` or a `"` inside an `eval` is a fight.** `'` did not
+   survive the round trip in this session's shell. Every multi-step eval here is written to a file
+   (`tools/work/steps-*.json`) and passed as `"$(cat …)"`. Worth a line in HARNESS.
+10. **The worktree the Agent tool handed over was at v0.13** and contained no `assets/scenes/gielis/` at all — it had
+    to be reset onto `main` before anything could start. Worth checking first in any pass-N session.
+11. `tools/work/` is gitignored, so the helper scripts written there (`qtrace.sh`, `perbeat.py`, `steps-*.json`) are
+    not committed. `perbeat.py` is a slimmer `perbeat14.py` that reads the per-frame collector's own trace format; if
+    another pass wants it, it belongs in `tools/accept/v0.14/`.
+
+## What I would tune next, in order
+
+1. **Brightness.** Untouched this pass and still AUDIT-v0.14 §5 item 2: p95 luminance 0.20–0.45 on the groove against
+   the brief's 0.6–0.8. The meridians add strokes, so the pass has probably moved it up a little, but nobody has
+   measured it on the real track. `FLOOR` 0.18 → 0.3 lights the interior without touching the rim; `KNEE` 0.8 is the
+   other end. **This is now the top item, ahead of everything below.**
+2. **Size.** §5 item 1, also untouched: the nest fills ~40 % of the frame height on a black rim. `FILL0` 0.6,
+   `FILLMAX` 0.85, `CAM_D` = FOV/fill. One constant.
+3. **`LEAN_C` 0.7 and the sign.** I am confident the sign is right and can prove it; the *magnitude* is a taste call.
+   At 0.7 the loudest family sits at n2 0.30, close to the 0.2 clamp — if the user wants the loud families gentler,
+   0.5 keeps them at 0.50 and the twelve still separate cleanly.
+4. **`N1_BEAT` 0.6.** Every beat now takes the whole nest to Q 0.19–0.33. That is a lot of deformation, and on a real
+   track with `eS` already high it may read as thrashing rather than as breathing. 0.8 is the obvious next try
+   (root beat Q ≈ 0.66, swing ≈ 0.28).
+5. **`MERID` 6 and `RINGS` 7.** The meridians did the work the hoops could not, so the balance between the two is now
+   the open question: 9 rings and 4 meridians is the same budget and a different object.
+6. **`N1_PHI` 4.** Chosen as the brief's lean and not swept. If the body reads too smooth top-to-bottom, 2.5 shapes it
+   harder; if it reads lumpy, 6.
+7. **`M0` 4 and the ratio table against `m = k + 3`** — unchanged from the build's list, and now more consequential,
+   because the species shows at rest and in latitude as well as on the beat.
+8. **The hue wander** (§5 item 5) and **`WAVE0`** — both untouched, both still on the build's list.
+
+## Not done this pass
+
+- Anything on SeeYouDrop. Every number above is `#test` or the house synth; the track windows are the orchestrator's.
+- `site/thumbs/gielis.jpg` — still the one allowed `check.js` warning, plus three pre-existing line caps
+  (`nest.js` is now 438 lines against the 350 soft cap, 500 hard).
+- The brightness and size items, which are the top of the list above and were not in this pass's three.
