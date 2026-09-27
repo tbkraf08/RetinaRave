@@ -67,7 +67,9 @@ function info() {
   for (let s = 0; s < FIBMAX; s++) m.push(N.pc[s] + ':' + +N.sMA[s].toFixed(3) + '/q' + N.sQ[s]);
   return JSON.stringify({
     n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
-    morph: +N.morph.toFixed(4), template: TEMPLATE_NAMES[N.template], tFade: +N.tFade.toFixed(3), lean: [+N.lean[0].toFixed(3), +N.lean[1].toFixed(3), +N.lean[2].toFixed(3), +N.lean[3].toFixed(3)], collapse: +N.collapse.toFixed(4), slip: +N.slip.toFixed(4), twist: +N.twist.toFixed(4), key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
+    morph: +N.morph.toFixed(4), template: TEMPLATE_NAMES[N.template], tFade: +N.tFade.toFixed(3), lean: [+N.lean[0].toFixed(3), +N.lean[1].toFixed(3), +N.lean[2].toFixed(3), +N.lean[3].toFixed(3)],
+    leanL: [+N.leanK[N.loudest * 4].toFixed(3), +N.leanK[N.loudest * 4 + 1].toFixed(3), +N.leanK[N.loudest * 4 + 2].toFixed(3), +N.leanK[N.loudest * 4 + 3].toFixed(3)],
+    leans: Array.from({ length: FIBMAX }, (_, s) => N.pc[s] + ':' + +N.sLean[s * 4].toFixed(2) + '/' + +N.sLean[s * 4 + 1].toFixed(2)), open: Array.from(N.sOpen), collapse: +N.collapse.toFixed(4), slip: +N.slip.toFixed(4), twist: +N.twist.toFixed(4), key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
     med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4), turnT: +PV.turn.toFixed(4), bounce: +N.bounce.toFixed(4), wave: +N.wave.toFixed(4), fibF: +N.fibF.toFixed(3),
     size: +N.fill.toFixed(4), dist: +CAM[2].toFixed(3), tier: TIER, still: STILL,
@@ -204,14 +206,14 @@ export default {
     g.uniform1fv(pr.u('uSz[0]'), N.sSz);
     g.uniform1fv(pr.u('uBr[0]'), N.sBr);
     g.uniform1fv(pr.u('uNorm[0]'), N.sNorm);
-    g.uniform4f(pr.u('uLean'), N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
+    g.uniform4fv(pr.u('uLean[0]'), N.sLean);
     g.uniform1f(pr.u('uN1'), N.n1);
     g.uniform1f(pr.u('uMPhi'), M_PHI);
     g.uniform1f(pr.u('uPhiMax'), PHI_MAX);
     g.uniform1f(pr.u('uThOff'), STILL ? 0 : N.phiOff);
     g.uniform3f(pr.u('uPsi3'), N.psi[0], N.psi[1], N.psi[2]);
     g.uniform1f(pr.u('uSlip'), N.slip);
-    g.uniform1f(pr.u('uOpen'), N.open);
+    g.uniform1fv(pr.u('uOpen[0]'), N.sOpen);
     g.uniform1f(pr.u('uShim'), N.shim);
     g.uniform1f(pr.u('uFlashK'), N.flash);
     g.uniform1f(pr.u('uMed'), N.med);

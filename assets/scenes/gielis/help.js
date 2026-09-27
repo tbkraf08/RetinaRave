@@ -3,12 +3,12 @@
 
 export const HELP = {
   feats: {
-    chroma: 'which notes are sounding: each pitch class is one shape, and the louder it is the bigger and brighter its shape',
+    chroma: 'which notes are sounding: each pitch class is one shape — the louder it is the bigger, the brighter, and the more lopsided its lobes',
     harmAngle: 'while the chroma is empty the twelve sizes come from the circle of fifths around this angle',
     key: 'the song\'s key decides BOTH the colours and the shapes: every family\'s lobe count is its distance from this key',
     mode: 'major bends the whole palette warm, minor cool',
     keyConf: 'how far the key is trusted: below a third of the way the last confident key is held, for the colours and the shapes alike',
-    valence: 'brighter music adds a little more warmth on top of the mode',
+    valence: 'brighter music adds a little more warmth on top of the mode, and leans every shape\'s lobes the opposite way from dark music',
     beat: 'a track with no drums still breathes: a faint bump is launched on the beat when no drum hit came',
     beatPhase: 'the thump: every beat pinches all twelve shapes from their resting lobes down to a star, and bounces the camera',
     beatCount: 'the whole beats of that same clock — sixteen of them make one turn of the nest',
@@ -22,11 +22,11 @@ export const HELP = {
     bass: 'how wide every stroke is drawn',
     eS: 'how hard the beat presses: a loud passage pinches the shapes much further than a quiet intro',
     build: 'the nest grows: first more shapes appear, then the camera comes in',
-    tension: 'how far the lobes are pulled toward the section\'s own template',
+    tension: 'how far the section\'s own template is added to every shape\'s lean',
     intensity: 'part of the resting size of the nest',
     arousal: 'fiercer music rests bigger, with more shapes and wider strokes',
     arc: 'the intro is left alone: no template bends the shapes while nothing has started',
-    sectionAlt: 'which of the four lean templates this section pulls the lobes toward — a returning section returns to its own',
+    sectionAlt: 'which of the four lean templates this section adds on top of every shape\'s own lean — a returning section returns to its own',
     sectionEvt: 'a new section re-picks where every ring starts',
     dropEvt: 'everything collapses: the pinch goes to its deepest and the whole nest shrinks for a beat',
     dropEnv: 'and rebounds brighter while the collapse blooms back',

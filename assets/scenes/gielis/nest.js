@@ -58,8 +58,25 @@ export const HIT_K = 0.3;        // a hit inside the beat deepens the pinch on t
 // the beat would have deformed nothing until a section pulled the lean off round. (1, 1, 1, 1) is the same family one
 // exponent lower: still a circle as n1 → ∞, and the pinch acts.
 export const BASE = [1, 1, 1, 1];
-export const TEMPLATE_NAMES = ['round', 'petal', 'blade', 'shard'];
-export const TEMPLATES = [[1, 1, 1, 1], [1, 4, 1, 1], [4, 1, 1, 1.3], [0.6, 0.6, 1, 1]];
+// Pass 1 item 2: the lean is now PER FAMILY, so a loud note is lopsided and a quiet one symmetric, and a bright track
+// leans the other way from a dark one. n2 from the family's own weight (its chroma, or the fifths fallback while the
+// chroma is empty — the same number that sets its size), n3 from the mood's valence, one value for the whole nest.
+// The section's template is an OFFSET added on top rather than a replacement, so the family's own identity survives
+// every section: lean_k = (base_k + morph·(template − BASE)), the two exponents clamped.
+// The brief's lean was n2 = 1 + LEAN_C·chroma with LEAN_C 1.5, i.e. UP toward 2 — and (2, 2) is exactly a circle (the
+// build's own finding). Measured at the montage: with it the loudest family on #test drew n2 2.50 and its rest Q went
+// 0.936 → 0.976 while its beat Q went 0.569 → 0.808, so the one shape the eye follows became the roundest thing on
+// screen and item 1's whole gain was spent. The exponent is pulled DOWN instead: a loud family is both the most
+// lopsided AND the most shaped, which is what "more shapes" asks for. LEAN_C 0.7 is the largest span that keeps all
+// twelve n2 clear of the LEAN_MIN clamp (n2 0.30–0.93 at a plausible chroma; rest Q 0.784–0.930, twelve distinct).
+export const LEAN_C = 0.7;       // n2 = 1 − LEAN_C·chroma[k] — the loudest family is the most lopsided and starriest
+export const LEAN_V = 1.0;       // n3 = 1 + LEAN_V·(0.5 − valence)·2 — dark music leans one way, bright the other
+export const LEAN_MIN = 0.2;     // neither exponent may reach 0: |sin t|^0 is pow(0, 0), undefined in GLSL …
+export const LEAN_MAX = 6;       // …and a runaway exponent is a runaway radius (the normalisation would hide it)
+// `round` was (1, 1, 1, 1) = BASE, so one section in four showed no lean at all (AUDIT-v0.14 §5 item 3). It is now
+// `bloom`: a fat lobe in cos and a thin one in sin, which is visibly not the base and not any of the other three.
+export const TEMPLATE_NAMES = ['bloom', 'petal', 'blade', 'shard'];
+export const TEMPLATES = [[2, 0.5, 1, 1], [1, 4, 1, 1], [4, 1, 1, 1.3], [0.6, 0.6, 1, 1]];
 export const MORPHTC = 1.0;      // the lean eases, and a template change cross-fades, over ~1 s
 export const MORPHK = 0.9;       // how much of the tension reaches the lean (the `lean` parameter's gain)
 export const M_PHI = 4;          // the lobe count of the SECOND curve (the latitude profile), the same for every family,
@@ -94,7 +111,10 @@ export const SEGMIN = 12;
 // RAD 1. So each family is scaled by 1/max(1, r1max·r2max) of its OWN profile: a pinch now pulls the valleys in and
 // leaves the lobe tips at the family's radius — which is what "collapses into interesting shapes" looks like — and
 // nothing can ever crop. A symmetric lean has rMax exactly 1, so on those frames the scale is exactly 1.
-export const NRM = 64;           // samples of one turn of theta (one turn covers a full period for every m >= 4)
+// The equator's maximum is found in the superformula's OWN argument t = m·θ/4, whose period is π whatever m is, so NRM
+// samples of [0, π) resolve every family equally instead of spreading the same budget over m·π/2 of it (at m 7.5 that
+// was a 10 % under-read, and the normalisation is only as good as its worst sample).
+export const NRM = 64;           // samples of one half-period of t = m·θ/4 — exact for every m
 export const NRM_PHI = 33;       // …and of the drawn latitude range (ODD, so phi = 0 — where r2 peaks — is sampled)
 
 const NF = 12;
@@ -111,7 +131,9 @@ export const N = {
   bri: new Float32Array(NF),       // its brightness
   mA: new Float32Array(NF),        // its lobe count …
   mB: new Float32Array(NF),        // …and the one before the last key change
-  qt: new Float32Array(NF),        // turns of θ its ring needs to close
+  qt: new Float32Array(NF),        // turns of θ its ring needs to close (the SYMMETRIC count)
+  qOdd: new Float32Array(NF),      // …and 1 when its numerator is odd, so a lopsided lean needs 2q and the ring is open
+  leanK: new Float32Array(NF * 4), // its own (n2, n3, a, b)
   pc: new Float32Array(NF),        // per DRAWN SLOT (loudness order): which pitch class it is
   sMA: new Float32Array(NF),       // and the same four, in slot order — the uniform payload
   sMB: new Float32Array(NF),
@@ -120,8 +142,11 @@ export const N = {
   sBr: new Float32Array(NF),
   norm: new Float32Array(NF),      // per PITCH CLASS: 1/max(1, rMax) of its own profile (the pass-1 normalisation)
   sNorm: new Float32Array(NF),     // …and the same in slot order — the uniform payload
+  sLean: new Float32Array(NF * 4), // the twelve leans in slot order (uLean[12])
+  sOpen: new Float32Array(NF),     // 1 = this slot's ring does not close, so its wrapping segment is skipped
   off: new Int32Array(NF + 1),     // cumulative segments per slot — the vertex shader's index
-  lean: new Float32Array(4),       // the (n2, n3, a, b) in force
+  lean: new Float32Array(4),       // the chroma-weighted MEAN lean: what the witness and the hud report
+  tOff: new Float32Array(4),       // the section template's offset from BASE, eased and cross-faded
   psi: new Float32Array(3),
   mFade: 0, mKey: -1, tFade: 0,
   n1: N1_REST, Q: 1, A: 0, L: 0,
@@ -190,6 +215,7 @@ function species(dt, key) {
       const e = mOf(k - key);
       N.mA[k] = e.m;
       N.qt[k] = e.turns;
+      N.qOdd[k] = e.num % 2;
     }
     N.mFade = N.mKey < 0 ? 0 : 1;      // the first build is not a change
     N.mKey = key;
@@ -242,7 +268,7 @@ export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(
 export function normOf(m, n1, L, mPhi, n1p) {
   let r1 = 0, r2 = 0;
   for (let j = 0; j < NRM; j++) {
-    const v = sf((j / NRM) * TAU, m, n1, L[0], L[1], L[2], L[3]);
+    const v = sf(((j / NRM) * Math.PI * 4) / m, m, n1, L[0], L[1], L[2], L[3]);   // θ such that t = jπ/NRM
     if (v > r1) r1 = v;
   }
   for (let j = 0; j < NRM_PHI; j++) {
@@ -279,13 +305,28 @@ export function updateNest(dt, MS, P, O) {
   let dph = N.phiT - N.phiOff;
   dph -= Math.round(dph);                                                       // the short way round, in turns
   N.phiOff += dph * (1 - Math.exp(-dt / PHITC));
+  // The template is now an OFFSET from BASE, cross-faded between the outgoing and incoming tuples and scaled by the
+  // `lean` parameter; the per-family lean below adds it. At `still` the offset is 0 and every family is BASE.
   const TA = TEMPLATES[N.template], TB = TEMPLATES[N.tPrev], amt = O.still ? 0 : N.morph;
   N.fat = O.still ? 1 : 1 + SUBK * MS.sub + BREATH_B * Math.sin((TAU * MS.barPos) / 4);
-  for (let i = 0; i < 4; i++) {
-    const t = TA[i] + (TB[i] - TA[i]) * N.tFade;
-    N.lean[i] = BASE[i] + (t - BASE[i]) * amt;
+  for (let i = 0; i < 4; i++) N.tOff[i] = (TA[i] + (TB[i] - TA[i]) * N.tFade - BASE[i]) * amt;
+  // n2 is the family's own weight, n3 the mood's valence. A loud family is lopsided, a quiet one symmetric; a dark
+  // track leans the lobes the other way from a bright one. Both exponents clamped: pow(0, 0) is undefined in GLSL.
+  const vLean = O.still ? 0 : LEAN_V * (0.5 - MS.valence) * 2;
+  for (let k = 0; k < NF; k++) {
+    const b2 = O.still ? BASE[0] : 1 - LEAN_C * N.ch[k], b3 = O.still ? BASE[1] : 1 + vLean;
+    N.leanK[k * 4] = Math.min(LEAN_MAX, Math.max(LEAN_MIN, b2 + N.tOff[0]));
+    N.leanK[k * 4 + 1] = Math.min(LEAN_MAX, Math.max(LEAN_MIN, b3 + N.tOff[1]));
+    N.leanK[k * 4 + 2] = BASE[2] + N.tOff[2];
+    N.leanK[k * 4 + 3] = BASE[3] + N.tOff[3];
   }
-  N.open = Math.abs(N.lean[0] - N.lean[1]) > 0.02 || Math.abs(N.lean[2] - N.lean[3]) > 0.02 ? 1 : 0;
+
+  // the chroma-weighted MEAN lean: continuous in chroma and free of the species, so the continuity monitor's witness
+  // and the hud can be read off it while every family draws its own.
+  let lw = 0;
+  N.lean.fill(0);
+  for (let k = 0; k < NF; k++) { lw += N.ch[k]; for (let i = 0; i < 4; i++) N.lean[i] += N.ch[k] * N.leanK[k * 4 + i]; }
+  for (let i = 0; i < 4; i++) N.lean[i] = lw > 1e-4 ? N.lean[i] / lw : N.leanK[i];
 
   // the breath: n1 sits at N1_REST and every beat presses it toward N1_BEAT
   N.press = press(MS.beatPhase);
@@ -301,7 +342,6 @@ export function updateNest(dt, MS, P, O) {
   N.shim = O.still ? 0 : SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
   // the build unwinds the rings toward helices, and the drop's collapse snaps the slip back to zero
   N.slip = O.still ? 0 : UNWIND * Math.max(MS.riser, MS.roll) * (1 - N.collapse);
-  if (N.slip > 0.01) N.open = 1;
   if (MS.surpriseEvt && !O.still) N.twistT = 1;
   N.twistT *= Math.exp(-dt / TWISTTC);
   N.twist += (N.twistT - N.twist) * (1 - Math.exp(-dt / ATK));
@@ -323,7 +363,12 @@ export function updateNest(dt, MS, P, O) {
 
   // the drawn slots in loudness order, and the segment offsets the vertex shader indexes by
   const ord = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].sort((x, y) => N.ch[y] - N.ch[x]);
-  for (let k = 0; k < NF; k++) N.norm[k] = normOf(N.mA[k], N.n1, N.lean, M_PHI, N.n1);
+  const LK = [0, 0, 0, 0];
+  let anyOpen = 0;
+  for (let k = 0; k < NF; k++) {
+    for (let i = 0; i < 4; i++) LK[i] = N.leanK[k * 4 + i];
+    N.norm[k] = normOf(N.mA[k], N.n1, LK, M_PHI, N.n1);
+  }
   let tot = 0;
   for (let s = 0; s < NF; s++) {
     const k = ord[s];
@@ -334,9 +379,17 @@ export function updateNest(dt, MS, P, O) {
     N.sSz[s] = N.size[k] * N.fat * (1 - (1 - DROP_SZ) * N.collapse);
     N.sBr[s] = N.bri[k];
     N.sNorm[s] = N.norm[k];
+    for (let i = 0; i < 4; i++) N.sLean[s * 4 + i] = N.leanK[k * 4 + i];
+    // A ring of m = p/q closes in q turns only while the lean is symmetric; with an ODD numerator and a lopsided lean
+    // it needs 2q, so the wrapping segment would draw a chord across the shape (math/gielis.js closure()). Skip it —
+    // one segment in fifty is a gap the eye cannot find, a chord is not. The unwind opens every ring the same way.
+    const lop = Math.abs(N.sLean[s * 4] - N.sLean[s * 4 + 1]) > 0.02 || Math.abs(N.sLean[s * 4 + 2] - N.sLean[s * 4 + 3]) > 0.02;
+    N.sOpen[s] = N.slip > 0.01 || (N.qOdd[k] && lop) ? 1 : 0;
+    anyOpen = anyOpen || N.sOpen[s];
     N.off[s] = tot;
     if (s < N.draw) tot += RINGS * segsOf(O.tier, s);
   }
+  N.open = anyOpen;
   N.off[NF] = tot;
   N.segs = tot;
   N.segPer = segsOf(O.tier, 0);
@@ -345,7 +398,8 @@ export function updateNest(dt, MS, P, O) {
 
 // Green's ruler on the loudest family's equatorial profile, at the lean and the pinch in force this frame.
 export function measureQ() {
-  const g = greenQ(N.mA[N.loudest], N.n1, N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
+  const b = N.loudest * 4;
+  const g = greenQ(N.mA[N.loudest], N.n1, N.leanK[b], N.leanK[b + 1], N.leanK[b + 2], N.leanK[b + 3]);
   N.Q = g.Q;
   N.A = g.A;
   N.L = g.L;

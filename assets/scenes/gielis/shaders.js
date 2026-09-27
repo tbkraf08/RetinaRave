@@ -44,14 +44,15 @@ uniform float uPc[12];     // which pitch class the slot is (its hue, and which 
 uniform float uSz[12];     // its radius
 uniform float uBr[12];     // its brightness
 uniform float uNorm[12];   // and 1/max(1, rMax) of its own profile: the deep pinch may not grow the family (nest.js normOf)
-uniform vec4  uLean;       // (n2, n3, a, b) — the section's template, mixed in by the lean parameter
+uniform vec4  uLean[12];   // (n2, n3, a, b) PER SLOT: n2 from the family's own chroma, n3 from the mood's valence,
+                           // with the section template's offset added on top (nest.js LEAN_C / LEAN_V)
 uniform float uN1;         // the pinch: the beat's breath, one value for the whole nest
 uniform float uMPhi;       // the lobe count of the second (latitude) curve
 uniform float uPhiMax;     // latitude spans +-uPhiMax * pi/2
 uniform float uThOff;      // a new section re-picks the rings' phase (turns)
 uniform vec3  uPsi3;       // ring phase per band: low (pc 0-3), mid (4-7), high (8-11) — flowBass/Mid/High
 uniform float uSlip;       // riser / roll drift the rings in latitude: a closed ring opens into a helix
-uniform float uOpen;       // >0.5 when the ring no longer closes, so the wrapping segment is skipped
+uniform float uOpen[12];   // >0.5 when THIS slot's ring no longer closes, so its wrapping segment is skipped
 uniform float uShim;       // shimmer gain (hat x alive x novelty)
 uniform float uFlashK;     // the kick follower that lights the quiet inner families
 uniform float uMed;        // the median family brightness — the flash goes to everything under it
@@ -109,9 +110,10 @@ vec3 ptOf(int slot, int ring, float t, out float pulse, out float hue) {
   int band = int(uPc[slot]) / 4;
   float th = t * GTAU * q + uPsi3[band] + uThOff * GTAU;
   float phi = (float(ring) / float(uRings - 1) - 0.5) * GPI * uPhiMax + uSlip * t;
-  vec2 Qb = uLean.zw;
-  vec4 P2 = vec4(uMPhi, uN1, uLean.x, uLean.y);
-  float r1 = mix(sfR(th, vec4(uMA[slot], uN1, uLean.x, uLean.y), Qb), sfR(th, vec4(uMB[slot], uN1, uLean.x, uLean.y), Qb), uMF);
+  vec4 Ln = uLean[slot];
+  vec2 Qb = Ln.zw;
+  vec4 P2 = vec4(uMPhi, uN1, Ln.x, Ln.y);
+  float r1 = mix(sfR(th, vec4(uMA[slot], uN1, Ln.x, Ln.y), Qb), sfR(th, vec4(uMB[slot], uN1, Ln.x, Ln.y), Qb), uMF);
   float r2 = sfR(phi, P2, Qb);
   vec3 p = vec3(r1 * cos(th) * r2 * cos(phi), r1 * sin(th) * r2 * cos(phi), r2 * sin(phi)) * (uSz[slot] * uNorm[slot]);
   float disp;
@@ -149,7 +151,7 @@ void main() {
   int ring = local / segs;
   int i = local - ring * segs;
   float t0 = float(i) / float(segs), t1 = float(i + 1) / float(segs);
-  bool open = uOpen > 0.5 && i == segs - 1;     // a ring the lean or the unwind has opened: skip the wrapping segment
+  bool open = uOpen[slot] > 0.5 && i == segs - 1;   // a ring the lean or the unwind has opened: skip the wrapping segment
   float q0, q1, h0, h1;
   vec3 p0 = ptOf(slot, ring, t0, q0, h0);
   vec3 p1 = ptOf(slot, ring, t1, q1, h1);

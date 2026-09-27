@@ -10,11 +10,12 @@
 //   6. the GLSL twin's constants vs the JS to 0
 //   7. cost: greenQ() at 512 samples well under 1 ms
 import { sf, point3, closure, mOf, mTable, greenQ, GLSL, TAU, N1_MIN, R_MAX, BASE_MIN, M0, QCAP, N_Q, RATIO } from '../assets/math/gielis.js';
-import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES, normOf, M_PHI, PHI_MAX } from '../assets/scenes/gielis/nest.js';
+import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES, normOf, M_PHI, PHI_MAX, LEAN_C, LEAN_V, LEAN_MIN, LEAN_MAX } from '../assets/scenes/gielis/nest.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
 const f = (x, k = 4) => x.toFixed(k);
+const clamp2 = (x) => Math.min(LEAN_MAX, Math.max(LEAN_MIN, x));
 
 console.log('1. the circle limit');
 const polyQ = Math.PI / N_Q / Math.tan(Math.PI / N_Q);   // the exact isoperimetric quotient of the regular N-gon
@@ -73,6 +74,16 @@ for (let t = 0; t < TEMPLATES.length; t++) {
   const L = TEMPLATES[t], g = greenQ(6, N1_REST, L[0], L[1], L[2], L[3]), h = greenQ(6, N1_BEAT, L[0], L[1], L[2], L[3]);
   ok(g.Q > 0.5 && g.Q - h.Q > 0.05, `template ${TEMPLATE_NAMES[t]} (${L.join(', ')}) at m 6: Q ${f(g.Q)} → ${f(h.Q)}, r ≤ ${f(g.rMax)}`);
 }
+// Pass 1 item 2: every template must actually DO something (`round` was BASE, so one section in four showed no lean).
+ok(TEMPLATES.every((L) => L.some((v, i) => Math.abs(v - BASE[i]) > 0.1)), 'all four templates differ from BASE — no section is a no-op');
+ok(new Set(TEMPLATES.map((L) => L.join(','))).size === 4, 'and the four differ from each other: ' + TEMPLATES.map((L, i) => `${TEMPLATE_NAMES[i]} (${L.join(', ')})`).join(' · '));
+// …and the twelve families must differ from each other at a plausible chroma, at the SAME m, so it is the lean alone.
+const chDemo = [1, 0.15, 0.6, 0.2, 0.8, 0.3, 0.1, 0.9, 0.25, 0.5, 0.35, 0.45];
+const qByFam = chDemo.map((c) => greenQ(6, N1_REST, clamp2(1 - LEAN_C * c), 1, 1, 1).Q);
+ok(new Set(qByFam.map((q) => q.toFixed(3))).size === 12 && qByFam[0] === Math.min(...qByFam),
+  'twelve chroma values give twelve different shapes at one m, the loudest the starriest: Q ' + qByFam.map((q) => f(q, 3)).join(' '));
+const vSwing = [0, 0.5, 1].map((v) => greenQ(6, N1_REST, 1, clamp2(1 + LEAN_V * (0.5 - v) * 2), 1, 1).Q);
+ok(Math.abs(vSwing[0] - vSwing[2]) > 0.02, `valence 0 / .5 / 1 moves the lean: Q ${vSwing.map((q) => f(q, 3)).join(' → ')}`);
 
 console.log('5. the interval table');
 const T = mTable();
@@ -107,16 +118,21 @@ console.log('8. the radius normalisation (pass 1: the deep pinch may not grow a 
 // so this also measures how much normOf's own 64/32 sampling can under-read a peak.
 const latMax = (m, n1, L) => { let r = 0; for (let j = 0; j <= 512; j++) { const v = sf((j / 512 - 0.5) * Math.PI * PHI_MAX, m, n1, L[0], L[1], L[2], L[3]); if (v > r) r = v; } return r; };
 const eqMax = (m, n1, L) => { let r = 0; for (let j = 0; j < 4096; j++) { const v = sf((j / 4096) * TAU, m, n1, L[0], L[1], L[2], L[3]); if (v > r) r = v; } return r; };
-// Every lean the scene can reach: BASE pulled toward one of the four templates, or toward a cross-fade of two, at every
-// morph. a and b are the template's alone (pass 1 moved the sub's fattening onto the family's RADIUS, which is why this
-// set has a = 1 throughout — the a > 1 case is what made a 64-sample normaliser unsafe).
+// Every lean the scene can reach: the family's own base (n2 from its chroma, n3 from the mood's valence) plus the
+// section template's offset, at every morph, including a cross-fade between two templates. a and b are the template's
+// alone (pass 1 item 1 moved the sub's fattening onto the family's RADIUS, which is why a = 1 throughout — the a > 1
+// case is what made a 64-sample normaliser unsafe).
 const LEANS = [];
-for (const mo of [0, 0.25, 0.5, 0.75, 1]) {
-  for (const A of TEMPLATES) {
-    for (const B of TEMPLATES) {
-      for (const tf of [0, 0.5, 1]) {
-        const T = [0, 1, 2, 3].map((i) => A[i] + (B[i] - A[i]) * tf);
-        LEANS.push([0, 1, 2, 3].map((i) => BASE[i] + (T[i] - BASE[i]) * mo));
+for (const ch of [0, 0.5, 1]) {
+  for (const val of [0, 0.5, 1]) {
+    for (const mo of [0, 0.5, 1]) {
+      for (const A of TEMPLATES) {
+        for (const B of TEMPLATES) {
+          for (const tf of [0, 0.5, 1]) {
+            const T = [0, 1, 2, 3].map((i) => (A[i] + (B[i] - A[i]) * tf - BASE[i]) * mo);
+            LEANS.push([clamp2(1 - LEAN_C * ch + T[0]), clamp2(1 + LEAN_V * (0.5 - val) * 2 + T[1]), BASE[2] + T[2], BASE[3] + T[3]]);
+          }
+        }
       }
     }
   }
@@ -132,9 +148,9 @@ for (const L of LEANS) {
   }
 }
 ok(wRaw > 1.4, `unnormalised, the worst reachable lean grows the drawn radius to ${f(wRaw, 3)}x (${wCase}) where the camera frames RAD 1`);
-// normOf reads its maxima at 64 theta and 33 phi samples, so it can under-read a sharp peak by a few per cent; the
-// camera's own FILLMAX 0.85 absorbs that (0.85 x 1.03 = 0.88 of the short edge), which is why the gate is 1.05 and not 1.
-ok(wNorm <= 1.05, `normalised, the worst is ${f(wNorm, 4)}x (${wnCase}) over ${LEANS.length * 36} cases — inside FILLMAX 0.85`);
+// normOf reads its maxima at 64 t samples (one half-period, exact for every m) and 33 phi samples, so it can still
+// under-read a sharp peak slightly; the camera's own FILLMAX 0.85 absorbs that, which is why the gate is 1.01 and not 1.
+ok(wNorm <= 1.01, `normalised, the worst is ${f(wNorm, 4)}x (${wnCase}) over ${LEANS.length * 36} cases — inside FILLMAX 0.85`);
 ok(Math.abs(normOf(4, N1_REST, [1, 1, 1, 1], M_PHI, N1_REST) - 1) < 1e-12 && PHI_MAX > 0, 'a symmetric lean normalises by exactly 1 (a no-op on those frames)');
 
 console.log(fails ? `test_gielis: ${fails} FAIL` : 'test_gielis: OK');
