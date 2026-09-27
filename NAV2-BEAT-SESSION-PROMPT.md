@@ -51,6 +51,13 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
   1:04 was that). `BUMP_LG` 0.5 pulls the exterior target in on the beat. The spin gains are halved (`SPIN_SW` 0.3, `SPIN_W` 0.25).
   The engine fires `dropEvt` at 58 s **and** at 1:45 on this track (4 s outside each) — 1:45 is the user's "highest energy"; if it
   still under-reacts, the drop event is the suspect, not the gains.
+- **Pass 6 (2026-09-27, the user's look at pass 4; addendum 5 / AUDIT §6):** *"the movement is still too subtle"; "the beat causes the
+  set to collapse into interesting shapes, then the silence rebounds to the circle (NAV does this ~38-42 s)"; "why do different sounds
+  look so similar?"; two frames "too bright"; "do energy gain read against the track's own peak".* The notes are the twelve simplest roots
+  (`NOTE_ANG`), the beat presses to the cap (`RHO_BEAT` 0.985) with a peak hold (`BUMP_HOLD` 0.3), the smoulder is the wind's (`PAR_WIND`),
+  gates lock under a note (`NOTE_LOCK`), E against the track's own peak (`E_PK_TAU`), the luminance knees (`uLum`) and the dust's dim
+  (`uExtG`, `EXT_DIM`, `EXT_ENV` 1.2). `press-sweep.mjs` is the node instrument. **The user has not seen pass 6** — show
+  `montage-nav2-syd-groove-p6.jpg` (26–50 s) and `montage-nav2-syd-58-p6.jpg` (the 58 s drop) first.
 - **The drop's refractory** (`exit.js` `DROP_GAP` 32 beats, 2026-09-27, addendum 4 / AUDIT §5): a `dropEvt` inside eight bars of NAV2's
   last cut is a hit, not a cut (`N.dropBeat`). Found on Malicious (three engine drops in 14 s of its intro, 18 of 25 s outside); SeeYouDrop's
   two drops (58 s, 1:45, 47 s apart) both stand, s8 md5 unchanged. The 1:45 drop is measured full-strength (`ds` 1.0): NAV2 answers the
@@ -96,7 +103,7 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 
 ## Open, ranked
 
-1. **The user's next look** at pass 4 (intro, 25 s, 1:38, 1:45). Then tag v0.13 and, on the user's word, push.
+1. **The user's next look** at pass 6 (the groove 26–50 s, the 58 s drop, the intro). Then tag v0.13 and, on the user's word, push.
 2. **Gates vs notes:** 0 gates on the real track now. Decide with the user whether the species should also change through gates.
 3. **1:45:** measured (`nav2-window-syd-145.txt`, `montage-nav2-syd-145.jpg`): a full-strength engine drop (`ds` 1.0), NAV2 outside
    105.9–111.4 s, the interior after it at eS 0.78 (1:33–1:39 read 0.87–0.94). `dropStrength` cannot gate it (1.0 at both drops); the

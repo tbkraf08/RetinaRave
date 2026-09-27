@@ -12288,15 +12288,24 @@ const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of the ru
                                  // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
                                  // rho high ("should be moving faster / reacting more", the user). 0.55 left the
                                  // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+const BUMP_HOLD = 0.3;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
+                                 // so the ball reaches the rim (V_MAX 1.2 needs ~0.2 s from the trough to the pinch at the
+                                 // 1/2 root, the farthest); the node sweep (AUDIT-v0.13 §6): without it the press peaked at
+                                 // rho 0.88–0.89 whatever K_R did, because a stiffer spring only follows the fall faster
 const IV_TAU = 1.5;       // s — the ema of the hit interval
-const E_LO = 0.5;         // eS below this is no extra energy; at eS 1 the energy gain E is 1 ("1:45 -> this is
-                                 // where the highest energy is, should be reacting more": E lifts the beat's ceiling,
-                                 // the halo's reach, the curl and the kick zoom)
+const E_LO = 0.5;         // energy below this fraction of the track's own peak is no extra energy; at the peak E is 1
+                                 // ("1:45 -> this is where the highest energy is, should be reacting more": E lifts the
+                                 // halo's reach, the curl and the kick zoom). Pass 6: read against the running peak of eS
+                                 // (the user: "energy gain read against the track's own peak") — SeeYouDrop's 1:45 reads
+                                 // eS 0.78 against 0.87–0.94 at 1:33–1:39, so a fixed scale gave it E 0.56 where the ear
+                                 // hears the peak; against its own peak (E_PK_TAU) both read 1
+const E_PK_TAU = 20;      // s — the energy peak's decay: a section's peak, not a bar's (the beat's own is 3 s)
+const E_PK_MIN = 0.3;     // ... and the smallest peak the energy is divided by
 
 const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
-  ival: 0.5, tHit: 0, onset: 0, E: 0,
+  ival: 0.5, tHit: 0, onset: 0, E: 0, ePk: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -12323,7 +12332,7 @@ function resetDet() {
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.bump = D.pulse = D.pk = 0;
-  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0;
+  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0; D.ePk = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -12403,14 +12412,15 @@ function updateDet(dt, S, P) {
   const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
   D.tHit += dt;
   const tau = Math.min(BUMP_TAU, BUMP_IV * D.ival);
-  const dec = D.bump * Math.exp(-dt / tau);
+  const dec = D.tHit < BUMP_HOLD * D.ival ? D.bump : D.bump * Math.exp(-dt / tau);
   D.onset = hitN > dec + 0.05 && D.tHit > 0.08 ? 1 : 0;   // a NEW hit: above the decaying envelope, not a re-read of the last
   if (D.onset) {
     D.ival = ema(D.ival, clamp(D.tHit, 0.08, 2), 1, IV_TAU / Math.max(D.tHit, 0.08));
     D.tHit = 0;
   }
   D.bump = Math.max(dec, hitN);
-  D.E = clamp(((S.eS || 0) - E_LO) / (1 - E_LO), 0, 1);
+  D.ePk = Math.max(S.eS || 0, D.ePk * Math.exp(-dt / E_PK_TAU));
+  D.E = clamp(((S.eS || 0) / Math.max(D.ePk, E_PK_MIN) - E_LO) / (1 - E_LO), 0, 1);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
@@ -12426,7 +12436,7 @@ function updateDet(dt, S, P) {
   D.glow = 1 + GLOW_H * S.hush;
 }
 
-return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, BUMP_PK_TAU, BUMP_PK_MIN, BUMP_E0, BUMP_IV, IV_TAU, E_LO, DET, resetDet, updateDet };
+return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, BUMP_PK_TAU, BUMP_PK_MIN, BUMP_E0, BUMP_IV, BUMP_HOLD, IV_TAU, E_LO, E_PK_TAU, E_PK_MIN, DET, resetDet, updateDet };
 })();
 
 __m["assets/scenes/nav2/exit.js"] = (function () {
@@ -12463,6 +12473,10 @@ const EXT_BEATS = 8;      // beats outside after the drop before HOME (v0.13, th
                                  // dust at 150 bpm; the set the user wants bumping is the INTERIOR one, so the drop is
                                  // now a two-bar excursion). Silence still brings it home at once
 const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
+const EXT_ENV = 1.2;      // log2 G the drop's release pushes the exterior target OUT by (NAV's 3.2). Pass 6, the user
+                                 // on the two frames after 1:45 on SeeYouDrop: "the color being too bright and can't see the
+                                 // complexity of the shape" — at +3.2 the landing is far out where the picture is all halo;
+                                 // nearer the set the dust keeps its dendrites and its dark
 const BUMP_LG = 0.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
                                  // condenses toward it on every kick, so the edge bumps with the beat out here too.
                                  // 1.5 in the first cut lurched the whole cloud on every kick ("wobbly", the user at 1:04)
@@ -12551,7 +12565,7 @@ function stepExt(N, dt, S) {
   let lgT, tv;
   if (N.mode === 'EXT') {
     // NAV's `reach` expression, inline (it is not a parameter here — six is the cap, and the four visible ones won)
-    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv - BUMP_LG * DET.bump, LG_LO, LG_HI);
+    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + EXT_ENV * S.dropEnv - BUMP_LG * DET.bump, LG_LO, LG_HI);
     tv = DRIFT_EXT * dflow / Math.max(dt, 1e-5);
   } else {
     lgT = N.lgExit;
@@ -12601,7 +12615,7 @@ function stepIn(N, dt, S, land) {
   N.gate.on = N.gate.press = 0;
 }
 
-return { V_MAX, FLOW_CAP, DROP_A, DROP_B, LG_LO, LG_HI, DROP_ROT, DROP_TRIES, W_EXT, DRIFT_EXT, HOME_TAN, HOME_EPS, HOME_LG, HOME_TRIES, EXT_BEATS, V_IN, BUMP_LG, DROP_GAP, cpy, doDrop, stepExt, stepIn };
+return { V_MAX, FLOW_CAP, DROP_A, DROP_B, LG_LO, LG_HI, DROP_ROT, DROP_TRIES, W_EXT, DRIFT_EXT, HOME_TAN, HOME_EPS, HOME_LG, HOME_TRIES, EXT_BEATS, V_IN, EXT_ENV, BUMP_LG, DROP_GAP, cpy, doDrop, stepExt, stepIn };
 })();
 
 __m["assets/scenes/nav2/nav2.js"] = (function () {
@@ -12660,9 +12674,20 @@ const NOTE_V = 8.0;       // 1/s — the beat's NOTE: on a hit the bass note's p
                                  // beat should make the set close up (different pitches are different shapes)", the
                                  // user on SeeYouDrop). The wall keeps the radius; a note across a root is a gate's job
 const NOTE_MIN = 0.08;    // below this much bass chroma there is no note: the melody's wish stands
-const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
-                                 // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
-                                 // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
+// v0.13 pass 6 (the user: "the beat causes the set (the black circle in the middle) to collapse into interesting shapes,
+// then the silence rebounds to the circle"; "why do different sounds look so similar?"): the collapse is the PINCH — the
+// filled Julia set of c near the root at internal angle p/q with |lambda| -> 1 is q-fold beaded (1/2 the basilica, 1/3 the
+// rabbit), and the necks close only as rho -> 1. Pass 4 put the notes at (k + 1/2)/12, BETWEEN the roots by construction, and
+// capped the beat at 0.93 — every note was a dimpled circle. Now the twelve pitch classes are the twelve simplest roots,
+// ascending with pitch around the cardioid, and the beat presses to the cap. The wall (probe(): the period must not
+// change) keeps c in the cardioid, so the silence still rebounds to the circle; gates are locked while a note drives
+// (gateTick: NOTE_LOCK), because a period-q bulb never rounds again (Q ~0.65 flat).
+const NOTE_ANG = [1 / 6, 1 / 5, 1 / 4, 1 / 3, 2 / 5, 1 / 2, 3 / 5, 2 / 3, 3 / 4, 4 / 5, 5 / 6, 6 / 7];
+const NOTE_LOCK = 0.1;    // the beat density (detect.js pulse) above which a latched note locks the gates
+const RHO_BEAT = 0.985;   // the most the BEAT may press to: the cap itself (pass 6). 0.93 in passes 2–5, capped
+                                 // under the smoulder (par = sstep(PAR_LO, PAR_HI, rho), squared in the shader) which
+                                 // washed the interior out on every kick ("a little too bright"); the smoulder is now
+                                 // the WIND's alone (PAR_WIND), so the beat may reach the pinch with the interior dark
 // The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
 // "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
 // fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
@@ -12677,6 +12702,8 @@ const K_R = 10.0;         // units/s per unit of (rhoT - rho): ONE two-sided rad
                                  // v0.8 (a rest, not a pulse); 10 follows a BUMP_TAU 0.28 s press within a beat
 const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 const PAR_HI = 0.98;
+const PAR_WIND = 1;       // pass 6: the smoulder (and its time crawl) is gated by the wind-up — par x wind^PAR_WIND —
+                                 // so the beat's press to the cap does not light the interior; the pre-drop wind still does
 // --- the gates --------------------------------------------------------------------------------------------
 const GATE_Q = 7;         // the largest denominator the Farey address will name
 const GATE_W = 0.02;      // gate width in turns, divided by q
@@ -12862,8 +12889,8 @@ function gateTick(N, dt, S) {
   // below any fixed threshold near the cap, so a fixed threshold means the gate can never open under the melody alone
   // (measured 2026-09-25: c walked to the 1/3 root and sat there for 400 frames).
   const pressed = N.rho > GATE_RHO_MIN || N.blocked;
-  if (!N.cy.has || S.build >= GATE_BUILD) {
-    G.press = 0;
+  if (!N.cy.has || S.build >= GATE_BUILD || (N.note >= 0 && DET.pulse > NOTE_LOCK)) {
+    G.press = 0;   // no cycle, a wind-up, or a note driving the beat: the species is the note's, not a gate's
     return;
   }
   if (!pressed) {
@@ -12981,7 +13008,7 @@ function stepInt(N, dt, S, P) {
       for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
       N.note = bk;
       if (bk >= 0) {
-        const a = TAU * (bk + 0.5) / 12, lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
+        const a = TAU * NOTE_ANG[bk], lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
         N.noteX = lr / 2 - (lr * lr - li * li) / 4;
         N.noteY = li / 2 - (2 * lr * li) / 4;
       }
@@ -13001,7 +13028,7 @@ function stepInt(N, dt, S, P) {
     }
     moveInt(N, vx * dt, vy * dt);
   }
-  N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) : 0;
+  N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;
 }
 
 // env: { P: the scene's visual parameters (CONTRACTS §1.16), isLogical: this scene is the director's logical scene }
@@ -13045,7 +13072,7 @@ function updateNav2(dt, now, S, env) {
   }
 }
 
-return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
+return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, PAR_WIND, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
 })();
 
 __m["assets/scenes/nav2/shaders.js"] = (function () {
@@ -13062,6 +13089,11 @@ __m["assets/scenes/nav2/shaders.js"] = (function () {
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
 //                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
 //                            the exterior takes half of it -- x * 1
+//   uExtG float rest 1       pass 6: the exterior branch's gain — EXT_DIM while c is outside the set (eased), 1 inside  -- x * 1
+//   uLum  vec4  rest 0       pass 6: a soft knee on the luminance, col /= 1 + K*max(0, L - L0): xy = (L0, K) for the interior
+//                            (the set stays dark whatever the palette's phase — green/yellow are 3-10x the luminance of the
+//                            blues in sRGB, and there the "black circle" was a bright banded one), zw for the exterior (the
+//                            dust stops washing out, the halo keeps its swing). Rest 0 is exact  -- x * 1
 //   uBump float rest 0       v0.13: the beat throws light OFF the edge — the exterior halo's reach 1/(1+e*.011) widens to
 //                            1/(1+e*.011/(1+uBump)) on each bump and falls back with it ("light oscillating off the
 //                            edge", the user on the intro of SeeYouDrop) -- e*.011/(1+0) is exact
@@ -13081,7 +13113,7 @@ __m["assets/scenes/nav2/shaders.js"] = (function () {
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow;uniform vec4 uLum;uniform float uExtG; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -13116,6 +13148,7 @@ void main(){
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
     col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands)*uGlow; /* critical slowing: the bands smoulder as |lambda|->1. NAV2's uGlow (rest 1, an exact x*1.) brightens it in the silence before the drop */
   }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x)*uGlow;}
+  float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?uLum.zw:uLum.xy;col*=(esc?uExtG:1.)/(1.+kn.y*max(0.,L-kn.x)); /* NAV2 pass 6: uExtG (rest 1 exact) dims the exterior AFTER the knee while c is outside the set — with every pixel near the Cantor dust the halo term saturates and the frame is a wash ("too bright, can't see the complexity", the user after 1:45); before the knee it only bought 0.5 -> 0.4. a soft knee on the luminance — the interior's (xy) keeps the set DARK whatever the palette's phase (the user: "the black circle in the middle"; "can't see the complexity of the shape"), the exterior's (zw) stops the dust washing out. Rest 0 is exact: x*(1./(1.+0.)) */
   o=vec4(col,1.);
 }`;
 
@@ -13271,6 +13304,15 @@ const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
 const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
+const LUM_IN = [0.12, 6]; // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
+                          // phase: the green frames read a centre of 0.36-0.47 (a bright banded interior) where the blue ones
+                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark; at (0.12, 6) a 0.5 comes down to 0.15
+const LUM_EX = [0.35, 2]; // (uLum.zw): the exterior's — the rim's 0.5-0.76 comes down to 0.4, the halo's swing below it stays
+const EXT_DIM = 0.5;      // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
+const EXT_DIM_TAU = 0.5;  // this many seconds so the bridge home does not pop; inside the set the halo keeps its full light.
+                          // The dust frames after the 58 s drop read a centre of 0.39-0.58 with the knee alone (the halo
+                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22
+let extG = 1;
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
 // The wind-up target, shared by the `wind` and `spin` parameters. Every field is read unconditionally or as a
@@ -13415,6 +13457,7 @@ const __default = {
     updateDet(dt, S, env.params);
     updateNav2(dt, env.now, S, { P: env.params, isLogical: env.SC.logical === this.id });
     measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms): hooks.green() reads it
+    extG = ema(extG, N.mode === 'INT' ? 1 : EXT_DIM, dt, EXT_DIM_TAU);   // the dust's dim (uExtG), eased
     const rt = this.rt;
     rt.home = N.mode === 'INT';
     rt.awayBeat = N.extBeat;
@@ -13450,6 +13493,9 @@ const __default = {
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
     gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump * (1 + D.E));
+    if (STILL) gl.uniform4f(u('uLum'), 0, 0, 0, 0);
+    else gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
+    gl.uniform1f(u('uExtG'), STILL ? 1 : extG);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));

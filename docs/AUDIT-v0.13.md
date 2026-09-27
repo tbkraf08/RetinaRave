@@ -214,3 +214,61 @@ with the cut and six seconds of dust, and the interior afterwards reads a *lower
 does not touch it (47 s after the first). If the user wants 1:45 to be the interior reacting more, the options are: no cut at all above
 some `away` (the drop as a press to `RHO_CAP` instead), or the energy gain read against the track's own peak the way the beat is
 (`BUMP_PK_TAU`), so 1:45 and 1:33 both read E ≈ 1.
+
+## Sixth pass — the user's look at pass 4 (2026-09-27): "the movement is still too subtle"
+
+The user's words, in order: *(1) "the shape is doing a better job moving to the music, but the movement is still too subtle -> all the
+shapes. When I say breathing with the music I [mean] that the beat causes the set (ie. black circle in the middle) collapses into
+interesting shapes, then the silence rebounds to the circle (original NAV does this, it just didn't line up with music ~38s-42s on SEE
+YOU DROP); on the montage-nav2-syd-double.jpg -> in the second row, the last two screen shots are example of the color being too bright
+and can't see the complexity of the shape. (2) do 'energy gain read against the track's own peak'. (3) there are some interesting shapes
+being generated but still seems all the same (I know there is infinite complexity in mandelbrot/julia sets, why does different sounds look
+so similar?)"*
+
+**What NAV does at 38–42 s** (`montage-nav-syd-35-45.jpg`, key 0): the black disc pinches into a chain of beads with thin necks — c at the
+1/2 root (−0.75) with |λ| → 1, the basilica. That is the answer to (3) as well: the species of a Julia set is the internal angle p/q of c's
+root, and the necks between its q-fold beads close only as ρ → 1. Pass 4 put the twelve notes at (k + ½)/12 — *between* the roots by
+construction (never 1/2, 1/3, 1/4, 1/6) — and capped the beat at ρ 0.93 under the smoulder; every note was therefore a dimpled circle, and
+they all looked alike. The Q trace said so: 0.78–0.95 with a median 0.90 (a circle is 1; the basilica at the pinch is ≈ 0.7).
+
+**Changes (`nav2.js`, `detect.js`, `exit.js`, `shaders.js`, `index.js`; every constant carries the user's words):**
+
+- **The twelve notes are the twelve simplest roots** (`NOTE_ANG` = 1/6 1/5 1/4 1/3 2/5 1/2 3/5 2/3 3/4 4/5 5/6 6/7, ascending with pitch
+  around the cardioid). **The beat presses to the cap** (`RHO_BEAT` 0.93 → 0.985 = `RHO_CAP`). **The smoulder is the wind's alone**
+  (`PAR_WIND`: par × wind), so the press no longer lights the interior — that was the pass-2 wash-out and the reason for the 0.93 cap.
+  **Gates lock while a note drives** (`NOTE_LOCK`: pulse > 0.1 with a latched note zeroes the gate's press) — a period-q bulb never rounds
+  again (Q ≈ 0.65 flat), and the user's rebound is to the circle. The wall (`probe()`: the period must not change) keeps c in the cardioid
+  at the root, so the pinch forms without crossing.
+- **The press holds its peak** (`BUMP_HOLD` 0.3 of the hit interval before the decay). The node sweep (`press-sweep.mjs`: a kick on
+  every beat, the bass on pitch class 5 → 1/2, the farthest root radially) found the radial spring was not the lever: at `K_R` 10 / 20 / 30
+  the press peaked at ρ 0.89 / 0.87 / 0.86 — a stiffer spring only follows the *falling* target faster, and `V_MAX` 1.2 needs ~0.2 s from
+  the trough to the pinch at 1/2. With the hold: peak 0.982–0.985 at 124 / 150 / 175 bpm, trough 0.83–0.85, the angle error at the press
+  0.0000 turns, Q 0.71–0.79 through the beat, and 15 s of silence → Q 0.977 at ρ 0.300 (`test_nav2` §8, four new assertions).
+- **(2) E against the track's own peak** (`E_PK_TAU` 20 s, `E_PK_MIN` 0.3): E = ((eS / ePk) − 0.5)/0.5. On SeeYouDrop E now reads 0.96–1.00
+  through 1:33–2:00 (1:45 read 0.56 before), 0.2–0.6 in the breakdown bars.
+- **The brightness.** Measured with `lum.py`: the frames the user pointed at, and every "washed" frame since, are the *green/yellow* phase
+  of the palette — 3–10× the luminance of the blues in sRGB — and the interior's own bands. In the pass-6a groove window the green frames'
+  centre read 0.36–0.38 (a bright banded interior) where the blue ones read 0.03–0.05; NAV's collapse at 38–42 s is dark inside. Two NAV2-only
+  uniforms, both exact identities at rest: **`uLum`**, a soft luminance knee col /= 1 + K·max(0, L − L0), (0.12, 6) for the interior (the set
+  stays dark whatever the phase: the green frames' centre 0.36 → 0.10–0.22) and (0.35, 2) for the exterior; and **`uExtG`** = `EXT_DIM` 0.5,
+  eased over 0.5 s, on the exterior branch while c is *outside* the set — there every pixel is near the Cantor dust, the halo term saturates
+  and the frame is a wash by construction, which no knee fixes (a knee flattens; 0.5 → 0.4). Applied after the knee. `EXT_ENV` 1.2 (NAV's 3.2)
+  lands the drop nearer the set. The 58 s drop's dust, centre luminance by second: pass 4 (the 1:45 window) 0.53 / 0.75 / 0.66 / 0.21; the
+  knees alone 0.39 / 0.39 / 0.58 / 0.50; final 0.38 / 0.30 / 0.26 / 0.10 (the first second is the cut itself, the ease not yet down).
+
+```
+SeeYouDrop                       rho (INT) min / med / max   Q min / med / max        v med / max   notes latched     centre lum (green / blue frames)
+80 s, pass 4  (det13-syd-final2) 0.475 / 0.667 / 0.966       0.785 / 0.898 / 0.953    0.493 / 0.623 0 1 4 6 7 8 9 11
+80 s, pass 6  (det13-syd-p6)     0.536 / 0.772 / 0.964       0.712 / 0.843 / 0.951    0.323 / 0.625 0 1 4 6 7 8 9 11
+26–50 s, pass 6a (knee 0.35/2)   0.446 / 0.807 / 0.953       0.771 / 0.834 / 0.947    —             8 1 7 4 9        0.36–0.38 / 0.03–0.05
+26–50 s, pass 6  (split knees)   0.516 / 0.877 / 0.976       0.705 / 0.815 / 0.926    0.281 / 0.635 1 3 4 7 8 9      0.10–0.22 / 0.02–0.06
+```
+
+The set is now less round on average (Q median 0.90 → 0.84 over 80 s, 0.82 in the groove) and reaches the pinch (ρ 0.976 sampled at 1 s; 0.98
+in node); the interior stays dark in every phase; the same eight notes latch. s8 md5 f5d4f051 / 0671f15a twice (re-based; pass 4 was
+253b19c4 / 778fb7e2), `check` 0 fail, `test_nav2` 25 ok, `test_green`, `npm test`, `test_fdtd`, `test_field` OK, the release rebuilt and
+proven from file:// (key 9 → scene 8, errs [], Q 0.703 on the test page). ms 2.4–2.6 (the note pull's probes at the rim).
+
+**Not proven / open:** the user has not seen pass 6. The 1:45 drop did not fire in either pass-6 run (it did in two earlier ones) — it is
+the engine's bass-returns rule, run to run; the exterior was proven on the 58 s drop instead. `nav2.js` is 452 lines (soft cap 350, hard
+500): the next machinery change moves the note / press block to a `beat.js`. The other three tracks were not re-watched under pass 6.

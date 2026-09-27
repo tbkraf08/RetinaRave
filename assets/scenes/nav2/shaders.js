@@ -10,6 +10,11 @@
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
 //                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
 //                            the exterior takes half of it -- x * 1
+//   uExtG float rest 1       pass 6: the exterior branch's gain — EXT_DIM while c is outside the set (eased), 1 inside  -- x * 1
+//   uLum  vec4  rest 0       pass 6: a soft knee on the luminance, col /= 1 + K*max(0, L - L0): xy = (L0, K) for the interior
+//                            (the set stays dark whatever the palette's phase — green/yellow are 3-10x the luminance of the
+//                            blues in sRGB, and there the "black circle" was a bright banded one), zw for the exterior (the
+//                            dust stops washing out, the halo keeps its swing). Rest 0 is exact  -- x * 1
 //   uBump float rest 0       v0.13: the beat throws light OFF the edge — the exterior halo's reach 1/(1+e*.011) widens to
 //                            1/(1+e*.011/(1+uBump)) on each bump and falls back with it ("light oscillating off the
 //                            edge", the user on the intro of SeeYouDrop) -- e*.011/(1+0) is exact
@@ -29,7 +34,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow;uniform vec4 uLum;uniform float uExtG; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -64,6 +69,7 @@ void main(){
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
     col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands)*uGlow; /* critical slowing: the bands smoulder as |lambda|->1. NAV2's uGlow (rest 1, an exact x*1.) brightens it in the silence before the drop */
   }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x)*uGlow;}
+  float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?uLum.zw:uLum.xy;col*=(esc?uExtG:1.)/(1.+kn.y*max(0.,L-kn.x)); /* NAV2 pass 6: uExtG (rest 1 exact) dims the exterior AFTER the knee while c is outside the set — with every pixel near the Cantor dust the halo term saturates and the frame is a wash ("too bright, can't see the complexity", the user after 1:45); before the knee it only bought 0.5 -> 0.4. a soft knee on the luminance — the interior's (xy) keeps the set DARK whatever the palette's phase (the user: "the black circle in the middle"; "can't see the complexity of the shape"), the exterior's (zw) stops the dust washing out. Rest 0 is exact: x*(1./(1.+0.)) */
   o=vec4(col,1.);
 }`;
 

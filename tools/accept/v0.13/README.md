@@ -14,6 +14,15 @@ Tracks from `$MUSIC` (default `~/Music/RetinaRave`), the v0.12 rule: the name wi
   25 s outside) → `DROP_GAP` 32 beats (`exit.js`): `det13-mal-gap.txt`, `nav2-window-mal-intro-gap.txt` + `montage-nav2-mal-intro-gap.jpg`
   after; `det13-syd-gap.txt` is SeeYouDrop on the same build (its two drops are 47 s apart, both stand). `nav2-window-syd-145.txt` +
   `montage-nav2-syd-145.jpg` are 1:40–1:56 with `ds`: the 1:45 drop is a full-strength one (ds 1.0, arc build → peak).
+- **Pass 6 (2026-09-27, the user's look at pass 4: "the movement is still too subtle"; "the beat causes the set to collapse into
+  interesting shapes, then the silence rebounds to the circle"; "why do different sounds look so similar?"; two frames "too bright")** —
+  `montage-nav-syd-35-45.jpg` is NAV (key 0) on 35–45 s, the collapse the user pointed at (beads at the 1/2 root). `press-sweep.mjs <bpm>`
+  is the node sweep (a kick per beat with the bass on pitch class 5 → the 1/2 root: the press's peak, the trough, Q, the angle error, the
+  silence's rebound). `nav2-window-groove-p6{a,}.txt` + `montage-nav2-syd-groove-p6{a,}.jpg` are 26–50 s (a = before the split luminance
+  knees), `nav2-window-double-p6a.txt` + `montage-nav2-syd-double-p6a.jpg` 92–120 s, `nav2-window-syd-145-p6.txt` + `montage-nav2-syd-145-p6.jpg`
+  1:40–1:56 (the engine fired no drop at 1:45 in this run, nor in the 92–120 s one — it did in two earlier runs; the drop is the
+  engine's, run to run), `nav2-window-syd-58-p6{a,}.txt` + `montage-nav2-syd-58-p6{a,}.jpg` 50–62 s (the 58 s drop: a = the exterior
+  knee alone, the final one with `uExtG`). `det13-syd-p6.txt` is the 80 s trace.
 - **`tab13.py <file> [full]`** — tabulates a det13 trace or a window log (ρ / bump / ival / E / eS / note / kick / hit / drop / ds / arc /
   gate / Q / v per line, and one summary line: modes, ρ and Q min / med / max, v med / max and > 0 count, notes latched, gates, ms).
 - `scene-md5-v013.txt` — s8 re-based (twice); the rest of the list is v0.12's (unchanged by `DROP_GAP`: 253b19c4 / 778fb7e2, twice).

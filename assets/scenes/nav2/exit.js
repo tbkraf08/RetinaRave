@@ -30,6 +30,10 @@ export const EXT_BEATS = 8;      // beats outside after the drop before HOME (v0
                                  // dust at 150 bpm; the set the user wants bumping is the INTERIOR one, so the drop is
                                  // now a two-bar excursion). Silence still brings it home at once
 export const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
+export const EXT_ENV = 1.2;      // log2 G the drop's release pushes the exterior target OUT by (NAV's 3.2). Pass 6, the user
+                                 // on the two frames after 1:45 on SeeYouDrop: "the color being too bright and can't see the
+                                 // complexity of the shape" — at +3.2 the landing is far out where the picture is all halo;
+                                 // nearer the set the dust keeps its dendrites and its dark
 export const BUMP_LG = 0.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
                                  // condenses toward it on every kick, so the edge bumps with the beat out here too.
                                  // 1.5 in the first cut lurched the whole cloud on every kick ("wobbly", the user at 1:04)
@@ -118,7 +122,7 @@ export function stepExt(N, dt, S) {
   let lgT, tv;
   if (N.mode === 'EXT') {
     // NAV's `reach` expression, inline (it is not a parameter here — six is the cap, and the four visible ones won)
-    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv - BUMP_LG * DET.bump, LG_LO, LG_HI);
+    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + EXT_ENV * S.dropEnv - BUMP_LG * DET.bump, LG_LO, LG_HI);
     tv = DRIFT_EXT * dflow / Math.max(dt, 1e-5);
   } else {
     lgT = N.lgExit;

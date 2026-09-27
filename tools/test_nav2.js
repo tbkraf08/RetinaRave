@@ -314,5 +314,47 @@ console.log('\nthe melody has room: a 60 s track whose centroid swings 0.35..0.7
   ok(qMin > 0.95, `no beat: the set is a quasi-circle, Q >= ${qMin.toFixed(4)} over the last 10 s (gate > 0.95)`);
   ok(vPos / n > 0.9, `no beat: the melody still moves the edge — v > 0 on ${(100 * vPos / n).toFixed(0)} % of frames`);
 }
+// 8. the beat's note collapses the set and the silence rebounds it (v0.13 pass 6, the user: "the beat causes the set to
+// collapse into interesting shapes, then the silence rebounds to the circle"): a kick on every beat with the bass on ONE pitch
+// class for 30 s — the note names a root (NOTE_ANG), the press reaches the pinch (rho near the cap), the gates stay locked
+// (q stays 1: a bulb never rounds again) — then 15 s of silence: Q back above 0.95 at RHO_REST.
+{
+  const { RHO_REST, RHO_CAP, NOTE_ANG } = await import('../assets/scenes/nav2/nav2.js');
+  const { measure, resetGreen, G } = await import('../assets/scenes/nav2/green.js');
+  resetNav2(); resetDet(); resetGreen();
+  const S = quiet(), pp = {};
+  S.bchroma = new Float32Array(12);
+  let rhoMax = 0, qMax = 1, angErr = 9, qMin = 1, n = 0, argAt = 0;
+  for (let f = 1; f <= 45 * 60; f++) {
+    const t = f * dt, beat = t < 30;
+    S.centroid = 0.5 + 0.1 * Math.sin(2 * Math.PI * t / 8);
+    S.flow += dt;
+    S.beatPhase += dt * S.bpm / 60;
+    if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
+    S.beat = beat && S.beatPhase < dt * S.bpm / 60;
+    S.kick = S.beat ? 1 : S.kick * Math.exp(-dt / 0.16);
+    S.eS = beat ? 0.9 : 0.2;
+    S.bchroma.fill(0);
+    S.bchroma[5] = beat ? 0.8 : 0;                        // pitch class 5 -> NOTE_ANG[5] = 1/2: the basilica's root
+    for (const k in scene.params) pp[k] = scene.params[k].from(S);
+    updateDet(dt, S, pp);
+    updateNav2(dt, t, S, { P: pp, isLogical: true });
+    measure(N2.c[0], N2.c[1], dt);
+    if (beat && t > 10 && N2.mode === 'INT') {
+      rhoMax = Math.max(rhoMax, N2.rho);
+      qMax = Math.max(qMax, N2.q);
+      if (N2.cyc.has && N2.rho > 0.9) {                   // at the press: how close is the internal angle to the note's root
+        const a = N2.cyc.arg / (2 * Math.PI), e = Math.abs(a - Math.floor(a + 0.5) - 0) ;
+        const d = Math.abs(((a - NOTE_ANG[5]) % 1 + 1.5) % 1 - 0.5);
+        if (d < angErr) { angErr = d; argAt = N2.rho; }
+      }
+    }
+    if (t > 40) { n++; qMin = Math.min(qMin, G.Q); }
+  }
+  ok(rhoMax >= 0.97, `the note's press reaches the pinch: rho max ${rhoMax.toFixed(4)} under a kick on every beat (gate >= 0.97; cap ${RHO_CAP})`);
+  ok(qMax === 1, `the gates stay locked while the note drives: q max ${qMax} (gate 1 — a bulb never rounds again)`);
+  ok(angErr < 0.03, `c sits at the note's root: the internal angle is ${angErr.toFixed(4)} turns off 1/2 at rho ${argAt.toFixed(3)} (gate < 0.03)`);
+  ok(qMin > 0.95 && Math.abs(N2.rho - RHO_REST) < 0.05, `the silence rebounds: Q >= ${qMin.toFixed(4)} over the last 5 s, rho ${N2.rho.toFixed(3)} (RHO_REST ${RHO_REST})`);
+}
 console.log(fails ? `\ntest_nav2: ${fails} FAIL` : '\ntest_nav2: OK');
 process.exit(fails ? 1 : 0);

@@ -11,7 +11,7 @@
   the waveguide / the hat by chroma) is retired unless the user brings it back.
 - **POLYTOPE v0.9 is fine** (*"Polytope has been reviewed and is fine now"*). Untouched; its portrait cropping stays on the standing list.
 
-**The live work is NAV2 (id 8, key `9`, forced-only):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
+**The live work is NAV2 (id 8, key `9`, forced-only), at pass 6 (2026-09-27, unseen by the user):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
 `~/Music/RetinaRave/SeeYouDrop.flac`, the state constant by constant, the workflow (window replay → cause in the numbers → constants →
 re-prove → audit section → commit), the pitfalls, and the ranked open list (the user's look at pass 4; gates vs notes; 1:45 measured as a
 full-strength drop, the choice is the user's; the other three tracks measured + `DROP_GAP` 32 beats from Malicious on 2026-09-27, AUDIT §5,

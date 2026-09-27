@@ -2157,3 +2157,18 @@ changed: **1:45 on SeeYouDrop is a full-strength drop** (`ds` 1.0, arc build →
 answers the user's "highest energy" with the cut and ~6 s outside, and the interior after it reads eS 0.78 against 0.87–0.94 at 1:33–1:39;
 the two ways to make 1:45 "react more" inside (no cut above some `away`, or E read against the track's own energy peak) wait for the
 user's look. `tab13.py` tabulates a trace. AUDIT-v0.13's fifth section.
+
+**§46 addendum 5 (2026-09-27, the user's look at pass 4):** *"the movement is still too subtle -> all the shapes ... the beat causes
+the set (ie. black circle in the middle) [to collapse] into interesting shapes, then the silence rebounds to the circle (original NAV does
+this ~38s-42s) ... [two frames] too bright and can't see the complexity ... do 'energy gain read against the track's own peak' ... why do
+different sounds look so similar?"* NAV at 38–42 s is the basilica's pinch: c at the 1/2 root with |λ| → 1. **Decisions:** the twelve
+notes are the twelve simplest roots (`NOTE_ANG`; pass 4's (k + ½)/12 sat *between* the roots by construction, so every note was a
+dimpled circle — that is why the sounds looked alike); the beat presses to the cap (`RHO_BEAT` 0.985) with the smoulder handed to the
+wind alone (`PAR_WIND`), so the interior no longer lights on the press; the press holds its peak (`BUMP_HOLD` 0.3 of the interval —
+the node sweep showed `K_R` was not the lever, `V_MAX` and the decay were: 0.89 without the hold, 0.98 with it); gates lock while a
+note drives (`NOTE_LOCK`), because a bulb never rounds again and the rebound is to the circle; E is read against the track's own
+energy peak (`E_PK_TAU` 20 s); and the brightness, measured, is the palette's green phase plus the saturated exterior halo — two
+NAV2-only uniforms, exact at rest: `uLum` (a luminance knee, (0.12, 6) interior / (0.35, 2) exterior) and `uExtG` (`EXT_DIM` 0.5 on the
+exterior while c is outside, eased 0.5 s, applied after the knee), with `EXT_ENV` 1.2 landing the drop nearer the set. Q median 0.90 →
+0.84 over 80 s, the green frames' centre 0.36 → 0.10–0.22, the dust after the 58 s drop 0.75 → 0.30. s8 md5 f5d4f051 / 0671f15a twice.
+`test_nav2` §8 (the collapse and the rebound) added. AUDIT-v0.13's sixth section. The user has not seen it.

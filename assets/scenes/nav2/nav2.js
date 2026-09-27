@@ -52,9 +52,20 @@ export const NOTE_V = 8.0;       // 1/s — the beat's NOTE: on a hit the bass n
                                  // beat should make the set close up (different pitches are different shapes)", the
                                  // user on SeeYouDrop). The wall keeps the radius; a note across a root is a gate's job
 export const NOTE_MIN = 0.08;    // below this much bass chroma there is no note: the melody's wish stands
-export const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
-                                 // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
-                                 // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
+// v0.13 pass 6 (the user: "the beat causes the set (the black circle in the middle) to collapse into interesting shapes,
+// then the silence rebounds to the circle"; "why do different sounds look so similar?"): the collapse is the PINCH — the
+// filled Julia set of c near the root at internal angle p/q with |lambda| -> 1 is q-fold beaded (1/2 the basilica, 1/3 the
+// rabbit), and the necks close only as rho -> 1. Pass 4 put the notes at (k + 1/2)/12, BETWEEN the roots by construction, and
+// capped the beat at 0.93 — every note was a dimpled circle. Now the twelve pitch classes are the twelve simplest roots,
+// ascending with pitch around the cardioid, and the beat presses to the cap. The wall (probe(): the period must not
+// change) keeps c in the cardioid, so the silence still rebounds to the circle; gates are locked while a note drives
+// (gateTick: NOTE_LOCK), because a period-q bulb never rounds again (Q ~0.65 flat).
+export const NOTE_ANG = [1 / 6, 1 / 5, 1 / 4, 1 / 3, 2 / 5, 1 / 2, 3 / 5, 2 / 3, 3 / 4, 4 / 5, 5 / 6, 6 / 7];
+export const NOTE_LOCK = 0.1;    // the beat density (detect.js pulse) above which a latched note locks the gates
+export const RHO_BEAT = 0.985;   // the most the BEAT may press to: the cap itself (pass 6). 0.93 in passes 2–5, capped
+                                 // under the smoulder (par = sstep(PAR_LO, PAR_HI, rho), squared in the shader) which
+                                 // washed the interior out on every kick ("a little too bright"); the smoulder is now
+                                 // the WIND's alone (PAR_WIND), so the beat may reach the pinch with the interior dark
 // The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
 // "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
 // fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
@@ -69,6 +80,8 @@ export const K_R = 10.0;         // units/s per unit of (rhoT - rho): ONE two-si
                                  // v0.8 (a rest, not a pulse); 10 follows a BUMP_TAU 0.28 s press within a beat
 export const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 export const PAR_HI = 0.98;
+export const PAR_WIND = 1;       // pass 6: the smoulder (and its time crawl) is gated by the wind-up — par x wind^PAR_WIND —
+                                 // so the beat's press to the cap does not light the interior; the pre-drop wind still does
 // --- the gates --------------------------------------------------------------------------------------------
 export const GATE_Q = 7;         // the largest denominator the Farey address will name
 export const GATE_W = 0.02;      // gate width in turns, divided by q
@@ -254,8 +267,8 @@ function gateTick(N, dt, S) {
   // below any fixed threshold near the cap, so a fixed threshold means the gate can never open under the melody alone
   // (measured 2026-09-25: c walked to the 1/3 root and sat there for 400 frames).
   const pressed = N.rho > GATE_RHO_MIN || N.blocked;
-  if (!N.cy.has || S.build >= GATE_BUILD) {
-    G.press = 0;
+  if (!N.cy.has || S.build >= GATE_BUILD || (N.note >= 0 && DET.pulse > NOTE_LOCK)) {
+    G.press = 0;   // no cycle, a wind-up, or a note driving the beat: the species is the note's, not a gate's
     return;
   }
   if (!pressed) {
@@ -373,7 +386,7 @@ function stepInt(N, dt, S, P) {
       for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
       N.note = bk;
       if (bk >= 0) {
-        const a = TAU * (bk + 0.5) / 12, lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
+        const a = TAU * NOTE_ANG[bk], lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
         N.noteX = lr / 2 - (lr * lr - li * li) / 4;
         N.noteY = li / 2 - (2 * lr * li) / 4;
       }
@@ -393,7 +406,7 @@ function stepInt(N, dt, S, P) {
     }
     moveInt(N, vx * dt, vy * dt);
   }
-  N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) : 0;
+  N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;
 }
 
 // env: { P: the scene's visual parameters (CONTRACTS §1.16), isLogical: this scene is the director's logical scene }

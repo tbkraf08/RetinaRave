@@ -20,6 +20,15 @@ const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
 const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
+const LUM_IN = [0.12, 6]; // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
+                          // phase: the green frames read a centre of 0.36-0.47 (a bright banded interior) where the blue ones
+                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark; at (0.12, 6) a 0.5 comes down to 0.15
+const LUM_EX = [0.35, 2]; // (uLum.zw): the exterior's — the rim's 0.5-0.76 comes down to 0.4, the halo's swing below it stays
+const EXT_DIM = 0.5;      // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
+const EXT_DIM_TAU = 0.5;  // this many seconds so the bridge home does not pop; inside the set the halo keeps its full light.
+                          // The dust frames after the 58 s drop read a centre of 0.39-0.58 with the knee alone (the halo
+                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22
+let extG = 1;
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
 // The wind-up target, shared by the `wind` and `spin` parameters. Every field is read unconditionally or as a
@@ -164,6 +173,7 @@ export default {
     updateDet(dt, S, env.params);
     updateNav2(dt, env.now, S, { P: env.params, isLogical: env.SC.logical === this.id });
     measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms): hooks.green() reads it
+    extG = ema(extG, N.mode === 'INT' ? 1 : EXT_DIM, dt, EXT_DIM_TAU);   // the dust's dim (uExtG), eased
     const rt = this.rt;
     rt.home = N.mode === 'INT';
     rt.awayBeat = N.extBeat;
@@ -199,6 +209,9 @@ export default {
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
     gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump * (1 + D.E));
+    if (STILL) gl.uniform4f(u('uLum'), 0, 0, 0, 0);
+    else gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
+    gl.uniform1f(u('uExtG'), STILL ? 1 : extG);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));

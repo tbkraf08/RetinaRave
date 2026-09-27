@@ -87,15 +87,24 @@ export const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of
                                  // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
                                  // rho high ("should be moving faster / reacting more", the user). 0.55 left the
                                  // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+export const BUMP_HOLD = 0.3;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
+                                 // so the ball reaches the rim (V_MAX 1.2 needs ~0.2 s from the trough to the pinch at the
+                                 // 1/2 root, the farthest); the node sweep (AUDIT-v0.13 §6): without it the press peaked at
+                                 // rho 0.88–0.89 whatever K_R did, because a stiffer spring only follows the fall faster
 export const IV_TAU = 1.5;       // s — the ema of the hit interval
-export const E_LO = 0.5;         // eS below this is no extra energy; at eS 1 the energy gain E is 1 ("1:45 -> this is
-                                 // where the highest energy is, should be reacting more": E lifts the beat's ceiling,
-                                 // the halo's reach, the curl and the kick zoom)
+export const E_LO = 0.5;         // energy below this fraction of the track's own peak is no extra energy; at the peak E is 1
+                                 // ("1:45 -> this is where the highest energy is, should be reacting more": E lifts the
+                                 // halo's reach, the curl and the kick zoom). Pass 6: read against the running peak of eS
+                                 // (the user: "energy gain read against the track's own peak") — SeeYouDrop's 1:45 reads
+                                 // eS 0.78 against 0.87–0.94 at 1:33–1:39, so a fixed scale gave it E 0.56 where the ear
+                                 // hears the peak; against its own peak (E_PK_TAU) both read 1
+export const E_PK_TAU = 20;      // s — the energy peak's decay: a section's peak, not a bar's (the beat's own is 3 s)
+export const E_PK_MIN = 0.3;     // ... and the smallest peak the energy is divided by
 
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
-  ival: 0.5, tHit: 0, onset: 0, E: 0,
+  ival: 0.5, tHit: 0, onset: 0, E: 0, ePk: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -122,7 +131,7 @@ export function resetDet() {
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.bump = D.pulse = D.pk = 0;
-  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0;
+  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0; D.ePk = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -202,14 +211,15 @@ export function updateDet(dt, S, P) {
   const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
   D.tHit += dt;
   const tau = Math.min(BUMP_TAU, BUMP_IV * D.ival);
-  const dec = D.bump * Math.exp(-dt / tau);
+  const dec = D.tHit < BUMP_HOLD * D.ival ? D.bump : D.bump * Math.exp(-dt / tau);
   D.onset = hitN > dec + 0.05 && D.tHit > 0.08 ? 1 : 0;   // a NEW hit: above the decaying envelope, not a re-read of the last
   if (D.onset) {
     D.ival = ema(D.ival, clamp(D.tHit, 0.08, 2), 1, IV_TAU / Math.max(D.tHit, 0.08));
     D.tHit = 0;
   }
   D.bump = Math.max(dec, hitN);
-  D.E = clamp(((S.eS || 0) - E_LO) / (1 - E_LO), 0, 1);
+  D.ePk = Math.max(S.eS || 0, D.ePk * Math.exp(-dt / E_PK_TAU));
+  D.E = clamp(((S.eS || 0) / Math.max(D.ePk, E_PK_MIN) - E_LO) / (1 - E_LO), 0, 1);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
