@@ -12247,9 +12247,11 @@ const W_TAU = 0.40;       // s — the wind's own ema
 const W_FAKE = 2.5;       // s — after a fake-out the tension LEAKS out instead of releasing
 const FAKE_HOLD = 0.5;    // s (one beat at 124 bpm) the slow ema is held after a fake-out
 const REL_TAU = 0.45;     // s — the release follower of dropEnv
-const SPIN_SW = 0.6;      // rad/s per unit swirl
-const SPIN_W = 0.5;       // rad/s per unit wind^2
-const SPIN_SC = 0.6;      // rad/s per unit of the swirl the PARAM cannot see: scratch (not an MS field) and
+const SPIN_SW = 0.3;      // rad/s per unit swirl. 0.6 in v0.8; halved after the user's look at SeeYouDrop
+                                 // ("at 1:04 it starts to get swirly"): the post-drop synths read swirl 0.93-1.0 and
+                                 // the frame turned at 0.66-0.79 rad/s
+const SPIN_W = 0.25;      // rad/s per unit wind^2 (0.5 in v0.8, halved with SPIN_SW)
+const SPIN_SC = 0.3;      // rad/s per unit of the swirl the PARAM cannot see: scratch (not an MS field) and
                                  // hooks.swirl's pin. Held equal to SPIN_SW so the two halves of the swirl weigh the same.
 const SPIN_TAU = 0.25;    // s — the rate's own ease, so the angle's derivative never jumps
 const SPIN_REL = 0.8;     // how much of the rate the drop's release takes away
@@ -12427,9 +12429,14 @@ const HOME_TAN = 0.9;     // units/s the drift is unwound at
 const HOME_EPS = 0.004;   // |drift| that counts as unwound
 const HOME_LG = 0.05;     // |log2 G - the exit potential| that counts as arrived
 const HOME_TRIES = 240;   // frames of trying for a clean bridge before taking the one we have
+const EXT_BEATS = 8;      // beats outside after the drop before HOME (v0.13, the user at 1:04 on SeeYouDrop: "it
+                                 // starts to get swirly/wobbly" — NAV's rule kept c out 48 beats at `arc` peak, 19 s of
+                                 // dust at 150 bpm; the set the user wants bumping is the INTERIOR one, so the drop is
+                                 // now a two-bar excursion). Silence still brings it home at once
 const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
-const BUMP_LG = 1.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
-                                 // condenses toward it on every kick, so the edge bumps with the beat out here too
+const BUMP_LG = 0.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
+                                 // condenses toward it on every kick, so the edge bumps with the beat out here too.
+                                 // 1.5 in the first cut lurched the whole cloud on every kick ("wobbly", the user at 1:04)
 
 const TR = mkCyc(), PG = { x: 0, y: 0 };
 
@@ -12491,12 +12498,12 @@ function doDrop(N, S, now) {
 // EXT / HOME follow grad log2 G: the normal carries c onto the target equipotential, the tangent drifts along it in
 // musical time. HOME unwinds that drift and returns to the exit potential, which is (to the frame's accuracy) the
 // point the drop landed on — so the bridge home starts where c already is and nothing jumps.
-// The settle rule is NAV's, verbatim (nav.js:206): arc not 'peak' and 8 beats away, or 48 beats, or silence.
+// The settle rule was NAV's (nav.js:206: arc not 'peak' and 8 beats away, or 48 beats, or silence); v0.13 is EXT_BEATS
+// away regardless of the arc, or silence.
 function stepExt(N, dt, S) {
   const dflow = clamp(S.flow - N.flow0, 0, FLOW_CAP), away = S.beatCount - N.extBeat;
   N.flow0 = S.flow;
-  if (N.mode === 'EXT' && S.dropEnv < 0.2 &&
-    ((S.arc !== 'peak' && away > 8) || away > 48 || S.presence < 0.15)) N.mode = 'HOME';
+  if (N.mode === 'EXT' && S.dropEnv < 0.2 && (away > EXT_BEATS || S.presence < 0.15)) N.mode = 'HOME';
   const lg = pot(N.cPath[0], N.cPath[1]);
   potGrad(N.cPath[0], N.cPath[1], PG);
   const gm = Math.sqrt(PG.x * PG.x + PG.y * PG.y) || 1e-9, gx = PG.x / gm, gy = PG.y / gm;
@@ -12553,7 +12560,7 @@ function stepIn(N, dt, S, land) {
   N.gate.on = N.gate.press = 0;
 }
 
-return { V_MAX, FLOW_CAP, DROP_A, DROP_B, LG_LO, LG_HI, DROP_ROT, DROP_TRIES, W_EXT, DRIFT_EXT, HOME_TAN, HOME_EPS, HOME_LG, HOME_TRIES, V_IN, BUMP_LG, cpy, doDrop, stepExt, stepIn };
+return { V_MAX, FLOW_CAP, DROP_A, DROP_B, LG_LO, LG_HI, DROP_ROT, DROP_TRIES, W_EXT, DRIFT_EXT, HOME_TAN, HOME_EPS, HOME_LG, HOME_TRIES, EXT_BEATS, V_IN, BUMP_LG, cpy, doDrop, stepExt, stepIn };
 })();
 
 __m["assets/scenes/nav2/nav2.js"] = (function () {
@@ -12601,9 +12608,13 @@ const RHO_REST = 0.30;    // where the ball rests with NO BEAT and no wind (v0.1
                                  // the 1/3 root); the melody still turns it, so the wobble moves. v0.8's RHO_FREE 0.91
                                  // rested c ON the rim for brightness (its luminance table is in DECISIONS §39) and
                                  // the set was always arms — the beat could only nudge it (K_HIT 0.35).
-const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rhoT from RHO_REST to RHO_CAP
-const PULSE_K = 0.8;      // ... and the beat's DENSITY holds part of that between the kicks (0.6 in the first
-                                 // cut; with 0.8 a steady beat sits at rhoT ~0.55 between kicks and ~0.98 on them)
+const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rhoT from RHO_REST to RHO_BEAT
+const PULSE_K = 0.4;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
+                                 // cut held rho at ~0.74 between kicks on SeeYouDrop, so the outline hardly moved
+                                 // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6
+const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
+                                 // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
+                                 // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
 // The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
 // "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
 // fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
@@ -12621,9 +12632,12 @@ const PAR_HI = 0.98;
 // --- the gates --------------------------------------------------------------------------------------------
 const GATE_Q = 7;         // the largest denominator the Farey address will name
 const GATE_W = 0.02;      // gate width in turns, divided by q
-const GATE_RHO_MIN = 0.80;// at or above this rho c counts as pressed against the wall, and a root it is beside
-                                 // is a gate. 0.86 in v0.8 (kept below RHO_FREE 0.91, the rest); 0.80 for the beat's
-                                 // pulses, which touch the rim briefly — the node sweep found no gate at 0.86
+const GATE_RHO_MIN = 0.72;// at or above this rho c counts as pressed against the wall, and a root it is beside
+                                 // is a gate. 0.86 in v0.8 (kept below RHO_FREE 0.91, the rest). With the beat capped
+                                 // at RHO_BEAT 0.93 the pulses touch 0.8 only briefly: the second node sweep read 0
+                                 // gates at 0.80 / leak 0.3, 1 at 0.80 / leak 0.1, 8 in 60 s at 0.72 / leak 0.3 — the
+                                 // last is the user's "as the beat evolves the set should come back to a slightly
+                                 // different shape": a gate IS the shape coming back different (period 1 -> 3 -> 1)
 const GATE_HOLD = 1.0;    // beats of held pressure before the cap opens (this is the whole damping on how
                                  // often a gate fires)
 const GATE_LEAK = 0.3;    // v0.13: c no longer rides the rim, the beat presses it there in pulses — so the held
@@ -12907,8 +12921,8 @@ function stepInt(N, dt, S, P) {
     }
     // the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
     // cap for the drop. With none of them c rests at RHO_REST: the circle
-    const press = clamp(D.wind + BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
-    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(RHO_REST, RHO_CAP, press);
+    const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
+    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, RHO_BEAT, beat), RHO_CAP, D.wind);
     const kr = K_R * (rhoT - N.rho);
     vx += kr * nx;
     vy += kr * ny;
@@ -12963,7 +12977,7 @@ function updateNav2(dt, now, S, env) {
   }
 }
 
-return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_DEGEN, K_R, PAR_LO, PAR_HI, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
+return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
 })();
 
 __m["assets/scenes/nav2/shaders.js"] = (function () {
@@ -12978,7 +12992,8 @@ __m["assets/scenes/nav2/shaders.js"] = (function () {
 //   uRound float rest 0      v0.13: the picture brightens as the set ROUNDS (rho = |lambda| falls): the interior base and
 //                            the exterior glow are multiplied by 1 + uRound*(1-rho), rho from uLam.x, gated by uLam.w. A
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
-//                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim) -- x * 1
+//                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
+//                            the exterior takes half of it -- x * 1
 // NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
@@ -13017,7 +13032,7 @@ void main(){
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
     col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
-    col*=rnd;
+    col*=1.+(rnd-1.)*.5; /* the exterior glow takes half the round-set gain: at full it washed the dust out */
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
@@ -13182,7 +13197,8 @@ const TRAP_K = 0.9;
 const DOTS_0 = 1;         // the critical-orbit dot size, inline
 const PIP_LO = 0.05;      // the picture-in-picture's presence gate, inline
 const PIP_HI = 0.3;
-const ROUND_G = 1.5;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho))
+const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
+                          // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
 // The wind-up target, shared by the `wind` and `spin` parameters. Every field is read unconditionally or as a
@@ -13202,7 +13218,7 @@ const __default = {
   cuts: 'event',    // c jumps only at the drop (pathCut 0 + a mode change); every other frame moves c by <= V_MAX*dt
   feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick',
     'build', 'tension', 'hush', 'dropExpectedIn', 'fakeoutEvt', 'dropEvt', 'dropStrength', 'dropEnv',
-    'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'arc', 'presence', 'flow', 'seed', 'resolveEvt'],
+    'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'presence', 'flow', 'seed', 'resolveEvt'],
   state: N2,        // the continuity monitor's shape: {mode, cPath, pathCut, kick:{x}, baby, c}
   rt: { c: N2.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
 
@@ -13274,13 +13290,12 @@ const __default = {
       dropStrength: 'how far outside the ray lands (log2 of the potential, -2.2 up to -0.5)',
       dropEnv: 'zooms the view out by up to 25 %, lights the exterior dust, and releases the frame\'s turn',
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
-      beatCount: 'the same clock; a gate needs half a beat of held pressure, and the exterior settles on beats away',
+      beatCount: 'the same clock; a gate needs a beat of held pressure (leaking between the beat\'s pulses), and the drop\'s excursion outside lasts eight beats',
       hit: 'a hit is a beat: it presses c from the resting circle out toward the boundary and the arms spiral in; between hits c breathes back (0.28 s), and how DENSE the hits are holds it part-way out',
       kick: 'the kick is the beat too: the same press as a hit, whichever is stronger',
       hitStrength: 'how hard that hit was: it arms the scratch gate',
       eS: 'how far out along the normal the exterior sits, and the amplitude of the (dormant) drum modes',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
-      arc: 'the peak keeps c outside longer before it comes home',
       presence: 'silence freezes the drift, slows the visual clock and fades the picture-in-picture out',
       flow: 'musical time: the bass/bright drift integrates in it, and so does the exterior drift, so silence freezes both',
       seed: 'the section\'s constants: the sign of seed.th is which way the frame stirs',
@@ -13302,7 +13317,7 @@ const __default = {
     wind: { eli5: 'how hard c is pressed against the boundary: the arms wind up', range: [0, 1], from: (MS) => windTarget(MS) },
     lift: { eli5: 'how far the blob floats up or down with the pitch', range: [-0.3, 0.3], from: (MS) => LIFT * (MS.centroid - 0.45) },
     spin: { eli5: 'how fast the frame is stirred on top of the groove', range: [0, 1.5], from: (MS) => SPIN_SW * (1 - (1 - MS.riser) * (1 - MS.hp) * (1 - MS.roll)) + SPIN_W * windTarget(MS) * windTarget(MS) },
-    zoom: { eli5: 'how much of the set is in view', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit) * (1 + 0.25 * MS.dropEnv) },
+    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - 0.06 * MS.kick) * (1 + 0.25 * MS.dropEnv) },
   },
 
   colour: { default: 'v2', variants: { v2: {} } },

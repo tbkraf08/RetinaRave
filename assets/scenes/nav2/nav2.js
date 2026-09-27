@@ -41,9 +41,13 @@ export const RHO_REST = 0.30;    // where the ball rests with NO BEAT and no win
                                  // the 1/3 root); the melody still turns it, so the wobble moves. v0.8's RHO_FREE 0.91
                                  // rested c ON the rim for brightness (its luminance table is in DECISIONS §39) and
                                  // the set was always arms — the beat could only nudge it (K_HIT 0.35).
-export const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rhoT from RHO_REST to RHO_CAP
-export const PULSE_K = 0.8;      // ... and the beat's DENSITY holds part of that between the kicks (0.6 in the first
-                                 // cut; with 0.8 a steady beat sits at rhoT ~0.55 between kicks and ~0.98 on them)
+export const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rhoT from RHO_REST to RHO_BEAT
+export const PULSE_K = 0.4;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
+                                 // cut held rho at ~0.74 between kicks on SeeYouDrop, so the outline hardly moved
+                                 // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6
+export const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
+                                 // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
+                                 // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
 // The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
 // "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
 // fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
@@ -61,9 +65,12 @@ export const PAR_HI = 0.98;
 // --- the gates --------------------------------------------------------------------------------------------
 export const GATE_Q = 7;         // the largest denominator the Farey address will name
 export const GATE_W = 0.02;      // gate width in turns, divided by q
-export const GATE_RHO_MIN = 0.80;// at or above this rho c counts as pressed against the wall, and a root it is beside
-                                 // is a gate. 0.86 in v0.8 (kept below RHO_FREE 0.91, the rest); 0.80 for the beat's
-                                 // pulses, which touch the rim briefly — the node sweep found no gate at 0.86
+export const GATE_RHO_MIN = 0.72;// at or above this rho c counts as pressed against the wall, and a root it is beside
+                                 // is a gate. 0.86 in v0.8 (kept below RHO_FREE 0.91, the rest). With the beat capped
+                                 // at RHO_BEAT 0.93 the pulses touch 0.8 only briefly: the second node sweep read 0
+                                 // gates at 0.80 / leak 0.3, 1 at 0.80 / leak 0.1, 8 in 60 s at 0.72 / leak 0.3 — the
+                                 // last is the user's "as the beat evolves the set should come back to a slightly
+                                 // different shape": a gate IS the shape coming back different (period 1 -> 3 -> 1)
 export const GATE_HOLD = 1.0;    // beats of held pressure before the cap opens (this is the whole damping on how
                                  // often a gate fires)
 export const GATE_LEAK = 0.3;    // v0.13: c no longer rides the rim, the beat presses it there in pulses — so the held
@@ -347,8 +354,8 @@ function stepInt(N, dt, S, P) {
     }
     // the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
     // cap for the drop. With none of them c rests at RHO_REST: the circle
-    const press = clamp(D.wind + BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
-    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(RHO_REST, RHO_CAP, press);
+    const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
+    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, RHO_BEAT, beat), RHO_CAP, D.wind);
     const kr = K_R * (rhoT - N.rho);
     vx += kr * nx;
     vy += kr * ny;

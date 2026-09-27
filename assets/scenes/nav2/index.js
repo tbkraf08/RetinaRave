@@ -17,7 +17,8 @@ const TRAP_K = 0.9;
 const DOTS_0 = 1;         // the critical-orbit dot size, inline
 const PIP_LO = 0.05;      // the picture-in-picture's presence gate, inline
 const PIP_HI = 0.3;
-const ROUND_G = 1.5;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho))
+const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
+                          // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
 // The wind-up target, shared by the `wind` and `spin` parameters. Every field is read unconditionally or as a
@@ -37,7 +38,7 @@ export default {
   cuts: 'event',    // c jumps only at the drop (pathCut 0 + a mode change); every other frame moves c by <= V_MAX*dt
   feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick',
     'build', 'tension', 'hush', 'dropExpectedIn', 'fakeoutEvt', 'dropEvt', 'dropStrength', 'dropEnv',
-    'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'arc', 'presence', 'flow', 'seed', 'resolveEvt'],
+    'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'presence', 'flow', 'seed', 'resolveEvt'],
   state: N2,        // the continuity monitor's shape: {mode, cPath, pathCut, kick:{x}, baby, c}
   rt: { c: N2.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
 
@@ -109,13 +110,12 @@ export default {
       dropStrength: 'how far outside the ray lands (log2 of the potential, -2.2 up to -0.5)',
       dropEnv: 'zooms the view out by up to 25 %, lights the exterior dust, and releases the frame\'s turn',
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
-      beatCount: 'the same clock; a gate needs half a beat of held pressure, and the exterior settles on beats away',
+      beatCount: 'the same clock; a gate needs a beat of held pressure (leaking between the beat\'s pulses), and the drop\'s excursion outside lasts eight beats',
       hit: 'a hit is a beat: it presses c from the resting circle out toward the boundary and the arms spiral in; between hits c breathes back (0.28 s), and how DENSE the hits are holds it part-way out',
       kick: 'the kick is the beat too: the same press as a hit, whichever is stronger',
       hitStrength: 'how hard that hit was: it arms the scratch gate',
       eS: 'how far out along the normal the exterior sits, and the amplitude of the (dormant) drum modes',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
-      arc: 'the peak keeps c outside longer before it comes home',
       presence: 'silence freezes the drift, slows the visual clock and fades the picture-in-picture out',
       flow: 'musical time: the bass/bright drift integrates in it, and so does the exterior drift, so silence freezes both',
       seed: 'the section\'s constants: the sign of seed.th is which way the frame stirs',
@@ -137,7 +137,7 @@ export default {
     wind: { eli5: 'how hard c is pressed against the boundary: the arms wind up', range: [0, 1], from: (MS) => windTarget(MS) },
     lift: { eli5: 'how far the blob floats up or down with the pitch', range: [-0.3, 0.3], from: (MS) => LIFT * (MS.centroid - 0.45) },
     spin: { eli5: 'how fast the frame is stirred on top of the groove', range: [0, 1.5], from: (MS) => SPIN_SW * (1 - (1 - MS.riser) * (1 - MS.hp) * (1 - MS.roll)) + SPIN_W * windTarget(MS) * windTarget(MS) },
-    zoom: { eli5: 'how much of the set is in view', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit) * (1 + 0.25 * MS.dropEnv) },
+    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - 0.06 * MS.kick) * (1 + 0.25 * MS.dropEnv) },
   },
 
   colour: { default: 'v2', variants: { v2: {} } },

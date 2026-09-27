@@ -25,9 +25,14 @@ export const HOME_TAN = 0.9;     // units/s the drift is unwound at
 export const HOME_EPS = 0.004;   // |drift| that counts as unwound
 export const HOME_LG = 0.05;     // |log2 G - the exit potential| that counts as arrived
 export const HOME_TRIES = 240;   // frames of trying for a clean bridge before taking the one we have
+export const EXT_BEATS = 8;      // beats outside after the drop before HOME (v0.13, the user at 1:04 on SeeYouDrop: "it
+                                 // starts to get swirly/wobbly" — NAV's rule kept c out 48 beats at `arc` peak, 19 s of
+                                 // dust at 150 bpm; the set the user wants bumping is the INTERIOR one, so the drop is
+                                 // now a two-bar excursion). Silence still brings it home at once
 export const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
-export const BUMP_LG = 1.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
-                                 // condenses toward it on every kick, so the edge bumps with the beat out here too
+export const BUMP_LG = 0.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
+                                 // condenses toward it on every kick, so the edge bumps with the beat out here too.
+                                 // 1.5 in the first cut lurched the whole cloud on every kick ("wobbly", the user at 1:04)
 
 const TR = mkCyc(), PG = { x: 0, y: 0 };
 
@@ -89,12 +94,12 @@ export function doDrop(N, S, now) {
 // EXT / HOME follow grad log2 G: the normal carries c onto the target equipotential, the tangent drifts along it in
 // musical time. HOME unwinds that drift and returns to the exit potential, which is (to the frame's accuracy) the
 // point the drop landed on — so the bridge home starts where c already is and nothing jumps.
-// The settle rule is NAV's, verbatim (nav.js:206): arc not 'peak' and 8 beats away, or 48 beats, or silence.
+// The settle rule was NAV's (nav.js:206: arc not 'peak' and 8 beats away, or 48 beats, or silence); v0.13 is EXT_BEATS
+// away regardless of the arc, or silence.
 export function stepExt(N, dt, S) {
   const dflow = clamp(S.flow - N.flow0, 0, FLOW_CAP), away = S.beatCount - N.extBeat;
   N.flow0 = S.flow;
-  if (N.mode === 'EXT' && S.dropEnv < 0.2 &&
-    ((S.arc !== 'peak' && away > 8) || away > 48 || S.presence < 0.15)) N.mode = 'HOME';
+  if (N.mode === 'EXT' && S.dropEnv < 0.2 && (away > EXT_BEATS || S.presence < 0.15)) N.mode = 'HOME';
   const lg = pot(N.cPath[0], N.cPath[1]);
   potGrad(N.cPath[0], N.cPath[1], PG);
   const gm = Math.sqrt(PG.x * PG.x + PG.y * PG.y) || 1e-9, gx = PG.x / gm, gy = PG.y / gm;

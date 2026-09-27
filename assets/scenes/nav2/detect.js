@@ -46,9 +46,11 @@ export const W_TAU = 0.40;       // s — the wind's own ema
 export const W_FAKE = 2.5;       // s — after a fake-out the tension LEAKS out instead of releasing
 export const FAKE_HOLD = 0.5;    // s (one beat at 124 bpm) the slow ema is held after a fake-out
 export const REL_TAU = 0.45;     // s — the release follower of dropEnv
-export const SPIN_SW = 0.6;      // rad/s per unit swirl
-export const SPIN_W = 0.5;       // rad/s per unit wind^2
-export const SPIN_SC = 0.6;      // rad/s per unit of the swirl the PARAM cannot see: scratch (not an MS field) and
+export const SPIN_SW = 0.3;      // rad/s per unit swirl. 0.6 in v0.8; halved after the user's look at SeeYouDrop
+                                 // ("at 1:04 it starts to get swirly"): the post-drop synths read swirl 0.93-1.0 and
+                                 // the frame turned at 0.66-0.79 rad/s
+export const SPIN_W = 0.25;      // rad/s per unit wind^2 (0.5 in v0.8, halved with SPIN_SW)
+export const SPIN_SC = 0.3;      // rad/s per unit of the swirl the PARAM cannot see: scratch (not an MS field) and
                                  // hooks.swirl's pin. Held equal to SPIN_SW so the two halves of the swirl weigh the same.
 export const SPIN_TAU = 0.25;    // s — the rate's own ease, so the angle's derivative never jumps
 export const SPIN_REL = 0.8;     // how much of the rate the drop's release takes away

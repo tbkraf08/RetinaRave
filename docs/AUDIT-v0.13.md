@@ -84,3 +84,30 @@ Green's theorem turns a trace of one of them into the three numbers the user's s
 - v0.8's `nav2-still-md5.txt` identity (NAV2 `&still=1` = NAV byte-for-byte) no longer holds: c's path differs. `&still=1`
   still zeroes every NAV2-only uniform including `uRound`.
 - NAV2 stays id 8 / key 9 / forced-only; the swap question (NEXT-SESSION-PROMPT) is unchanged.
+
+## After the user's look (the same day): "25s-1m03s set should be bumping in some way with each beat (as beat evolves the set should come back to a slightly different shape); 1m04 it starts to get swirly/wobbly; also is a little too bright (detail is getting washed out)"
+
+The first cut's trace names each: between kicks the beat's density held ρ at ~0.74, so the outline hardly moved; on every kick the
+press reached `RHO_CAP` 0.985, where the smoulder (`par²`) is the drop's light — the wash-out; and 1:04 is the drop's exterior
+leg (20 s of dust under NAV's 48-beat rule at `arc` peak) with the swirl detector at 0.93–1.0 turning the frame at 0.66–0.79 rad/s.
+
+- `RHO_BEAT` 0.93: the beat presses to this, the wind alone reaches `RHO_CAP`. `PULSE_K` 0.8 → 0.4: ρ falls to ~0.6 between kicks.
+  `zoom` pumps in 6 % on the kick. `GATE_RHO_MIN` 0.80 → 0.72 (second node sweep: 0 gates at 0.80 under the capped press, 8 in 60 s
+  at 0.72 / leak 0.3 — "come back to a slightly different shape" IS a gate, period 1 → 3 → 1).
+- `EXT_BEATS` 8: the drop is a two-bar excursion (3 s outside at 150 bpm, home by 64 s) instead of 20 s; `SPIN_SW` / `SPIN_W` /
+  `SPIN_SC` halved (0.3 / 0.25 / 0.3); `BUMP_LG` 1.5 → 0.5 (the cloud no longer lurches); `ROUND_G` 1.5 → 0.8, the exterior at half.
+- `arc` left NAV2's `feats` (nothing reads it now).
+
+```
+                          rho (INT) min / med / max     Q min / med / max        v med / max   v > 0    EXT samples   spin max   gates   ms
+SeeYouDrop v0.12 NAV2     0.877 / 0.926 / 1.000         —                        —             —        10 (20 s)     0.79       1       2.02
+first cut                 0.671 / 0.827 / 0.985         0.700 / 0.805 / 0.947    0.189 / 0.578 29/29    10 (20 s)     0.79       1       2.04
+after the look            0.493 / 0.660 / 0.925         0.641 / 0.877 / 0.953    0.120 / 0.608 37/37     2 (4 s)      0.43       1       2.00
+```
+
+Per second across 46–88 s (`nav2-window-after2.txt`, `montage-nav2-syd-after2.jpg`): ρ 0.54–0.87 and Q 0.81–0.95 swing with the
+kicks, the exterior leg is 58.5–63 s and the set is back, round, by 64 s. Luminance on the 46–55 s frames: centre median 0.08
+(v0.12 0.20, the first cut 0.19 — the interior is now darker than v0.12 between beats, with the rim lit: 0.38 median, = v0.12),
+so "washed out" is gone and the breakdown reads as a dark disc with a lit edge; if that is too dark the knob is `ROUND_G`.
+s8 md5 1da850ba / 6d46c51f, twice.
+

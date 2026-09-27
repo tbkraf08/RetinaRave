@@ -1,5 +1,7 @@
 # v0.13 (NAV2 "bump with the beat", DECISIONS §46): only NAV2's folder changed, so only s8 is re-proven here (HARNESS
 # "What to re-prove"); every other line is tools/accept/v0.12/scene-md5-v012.txt's (s9 = the v0.12.1 re-base 95fd7d73 / 4e2108a7).
-# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-26) on the v0.13 tree with uRound: 17f888e8 / 83d37910 (the first cut without uRound read e2fd7f16 / 83d37910 — f840 has no cycle on the CLOCK page, so uRound is x*1 there). v0.12's s8 was 9021eac8 / f6299795.
-17f888e8f4870f43537a1da562431091  s8-f360.jpg
-83d37910a86fdd38f65c2390d00f91b2  s8-f840.jpg
+# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-26) on the v0.13 tree after the user's look (RHO_BEAT, PULSE_K .4, EXT_BEATS 8,
+# ROUND_G .8, SPIN halved, the kick zoom): 1da850ba / 6d46c51f. The first cut read e2fd7f16 / 83d37910, then 17f888e8 / 83d37910
+# with uRound; v0.12's s8 was 9021eac8 / f6299795.
+1da850baa2ca5b8ad6b2182bdae0cce7  s8-f360.jpg
+6d46c51f201ab522c37b23835769b54f  s8-f840.jpg

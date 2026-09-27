@@ -8,7 +8,8 @@
 //   uRound float rest 0      v0.13: the picture brightens as the set ROUNDS (rho = |lambda| falls): the interior base and
 //                            the exterior glow are multiplied by 1 + uRound*(1-rho), rho from uLam.x, gated by uLam.w. A
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
-//                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim) -- x * 1
+//                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
+//                            the exterior takes half of it -- x * 1
 // NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
@@ -47,7 +48,7 @@ void main(){
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
     col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
-    col*=rnd;
+    col*=1.+(rnd-1.)*.5; /* the exterior glow takes half the round-set gain: at full it washed the dust out */
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q

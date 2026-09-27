@@ -2120,3 +2120,11 @@ of the 80 s SeeYouDrop trace, the set always a spiky blob, a hit worth `K_HIT` 0
 start + node stand in); the drop's 20 s outside untouched; the v0.8 `&still=1` = NAV identity no longer holds (c's path differs);
 NAV2 still forced-only, the swap question unchanged; the other three tracks not re-watched.
 
+**§46 addendum — after the user's look (2026-09-26):** *"25s-1m03s set should be bumping in some way with each beat (as beat evolves
+the set should come back to a slightly different shape); 1m04 it starts to get swirly/wobbly; also is a little too bright."*
+`RHO_BEAT` 0.93 (the beat's ceiling; the smoulder at `RHO_CAP` was the wash-out), `PULSE_K` 0.4 (ρ ~0.6 between kicks: the outline
+moves), the kick pumps `zoom` 6 %, `GATE_RHO_MIN` 0.72 (a gate is the shape coming back different — 8 per minute on a plain beat in
+node), `EXT_BEATS` 8 (the drop is a two-bar excursion; 1:04 was 20 s of dust under NAV's peak rule — NAV's own rule is untouched in
+NAV), the spin gains halved, `BUMP_LG` 0.5, `ROUND_G` 0.8 with the exterior at half, `arc` out of `feats`. Trace: ρ 0.49/0.66/0.93,
+Q 0.64/0.88/0.95, v > 0 on 37/37, EXT 4 s, spin max 0.43 (0.79), ms 2.00. AUDIT-v0.13's second table.
+
