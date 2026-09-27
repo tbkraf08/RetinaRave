@@ -155,6 +155,20 @@ function species(dt, key) {
   N.mFade = Math.max(0, N.mFade - dt / MTC);
 }
 
+// --- 3. the breath ----------------------------------------------------------------------------------------------
+// TORUS2's thump, read off the engine's beat GRID — never the kick detector, which reads 0.1–0.3 in this track's intro
+// and misses a third of the beats (DECISIONS §46 addendum 2). The depth scales with the short-term energy, so 25 s
+// presses harder than 0–13 s and the double-time stretch hardest; a hit in the same beat adds HIT_K on top. The whole
+// nest breathes together — a per-family phase lag is a retune, not a lean. `press` is the beat's own shape, so it can
+// never trip the continuity monitor's spike rule.
+export const press = (beatPhase) => Math.pow(Math.max(0, Math.cos(TAU * beatPhase)), 4);
+// The press travels along 1/n1, not along n1. 1/n1 IS the exponent of the superformula, and the shape is a circle for
+// every n1 above about 4: measured on the fake timeline, a LINEAR ramp N1_REST → N1_BEAT spent two thirds of its travel
+// between 12 and 4, where Q moves by 0.007 and the eye sees nothing (the first step-3 series: n1 dipped to 7.8 on every
+// beat and Q went 0.9916 → 0.9791). Linear in the exponent, a half press is n1 2.56 and Q 0.92 — a shape. The third
+// lean changed, and the only one that is a reparametrisation rather than a number.
+export const pinchOf = (d) => 1 / (1 / N1_REST + (1 / N1_BEAT - 1 / N1_REST) * d);
+
 // The uniform payload of the waves — empty until step 4.
 export function waveUpload(ages, amps, hues) {
   ages.fill(-1);
@@ -167,13 +181,21 @@ export function waveUpload(ages, amps, hues) {
 export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(SEGT[tier] * N.sQ[s])));
 
 // --- the frame --------------------------------------------------------------------------------------------------
-// `floor` is the brightness floor in force (the `glow` parameter's value); `tier` the smoothed quality tier.
-export function updateNest(dt, MS, floor, tier, key, n1pin) {
-  families(MS, floor);
-  species(dt, key);
+// P is the six visual parameters (§1.16; inline expressions until step 8 moves them into the slot verbatim).
+// O = {key, tier, pinch, still} — the resolved key, the smoothed quality tier, hooks.pinch and hooks.still.
+export function updateNest(dt, MS, P, O) {
+  N.still = O.still;
+  families(MS, P.glow);
+  species(dt, O.key);
   N.beatNow = MS.beatCount + MS.beatPhase;
-  N.n1 = n1pin >= 0 ? Math.max(N1_MIN, n1pin) : N1_REST;
   for (let i = 0; i < 4; i++) N.lean[i] = BASE[i];
+
+  // the breath: n1 sits at N1_REST and every beat presses it toward N1_BEAT
+  N.press = press(MS.beatPhase);
+  N.depth = P.breath;
+  const d = Math.min(1, N.depth * N.press + HIT_K * MS.kick);
+  N.n1 = O.still ? N1_REST : Math.max(N1_MIN, pinchOf(d));
+  if (O.pinch >= 0) N.n1 = Math.max(N1_MIN, O.pinch);
   N.open = 0;
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
   N.draw = FIBMAX;
@@ -191,11 +213,11 @@ export function updateNest(dt, MS, floor, tier, key, n1pin) {
     N.sSz[s] = N.size[k];
     N.sBr[s] = N.bri[k];
     N.off[s] = tot;
-    if (s < N.draw) tot += RINGS * segsOf(tier, s);
+    if (s < N.draw) tot += RINGS * segsOf(O.tier, s);
   }
   N.off[NF] = tot;
   N.segs = tot;
-  N.segPer = segsOf(tier, 0);
+  N.segPer = segsOf(O.tier, 0);
   return tot;
 }
 

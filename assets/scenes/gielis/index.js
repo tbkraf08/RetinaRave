@@ -33,6 +33,8 @@ const WH = new Float32Array(BANDS * SLOTS);   // …and the hue each one carries
 const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
+const P = { breath: 1, glow: FLOOR };            // the visual parameters in force this frame
+const O = { key: 0, tier: 3, pinch: -1, still: 0 };   // the pins and the tier
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
 let STILL = 0, KEYPIN = null, N1PIN = -1;
 
@@ -125,9 +127,15 @@ export default {
     MOOD[2] = 0.5 + 0.7 * mood.bri;
     SPREAD = 0.3 + 0.45 * mood.spread;
 
-    // the brightness floor: how brightly the inner shapes are kept lit (the `glow` parameter of step 8)
-    const floor = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
-    updateNest(dt, MS, floor, TIER, A.key, N1PIN);
+    // The six visual parameters, still written inline: step 8 moves each expression VERBATIM into the params slot
+    // (CONTRACTS §1.16) and proves the s10 md5s unmoved by the move.
+    P.breath = 0.5 + 0.5 * MS.eS;
+    P.glow = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
+    O.key = A.key;
+    O.tier = TIER;
+    O.pinch = N1PIN;
+    O.still = STILL;
+    updateNest(dt, MS, P, O);
     measureQ();
 
     // the camera. The nest is centred, so the distance is solved from the fill of the SHORT edge: a point at radius r
