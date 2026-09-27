@@ -43,6 +43,7 @@ uniform float uQt[12];     // turns of theta the slot's ring needs to close
 uniform float uPc[12];     // which pitch class the slot is (its hue, and which band drives its ring phase)
 uniform float uSz[12];     // its radius
 uniform float uBr[12];     // its brightness
+uniform float uNorm[12];   // and 1/max(1, rMax) of its own profile: the deep pinch may not grow the family (nest.js normOf)
 uniform vec4  uLean;       // (n2, n3, a, b) — the section's template, mixed in by the lean parameter
 uniform float uN1;         // the pinch: the beat's breath, one value for the whole nest
 uniform float uMPhi;       // the lobe count of the second (latitude) curve
@@ -112,11 +113,11 @@ vec3 ptOf(int slot, int ring, float t, out float pulse, out float hue) {
   vec4 P2 = vec4(uMPhi, uN1, uLean.x, uLean.y);
   float r1 = mix(sfR(th, vec4(uMA[slot], uN1, uLean.x, uLean.y), Qb), sfR(th, vec4(uMB[slot], uN1, uLean.x, uLean.y), Qb), uMF);
   float r2 = sfR(phi, P2, Qb);
-  vec3 p = vec3(r1 * cos(th) * r2 * cos(phi), r1 * sin(th) * r2 * cos(phi), r2 * sin(phi)) * uSz[slot];
+  vec3 p = vec3(r1 * cos(th) * r2 * cos(phi), r1 * sin(th) * r2 * cos(phi), r2 * sin(phi)) * (uSz[slot] * uNorm[slot]);
   float disp;
   waves(t, slot, disp, pulse, hue);
   float L = length(p);
-  if (L > 1e-5) p += p * (disp * uSz[slot] / L);
+  if (L > 1e-5) p += p * (disp * uSz[slot] * uNorm[slot] / L);
   return p;
 }
 

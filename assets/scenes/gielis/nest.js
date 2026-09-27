@@ -3,13 +3,13 @@
 // this file owns
 //   1. the twelve families: chroma → size and brightness, with the circle-of-fifths fallback for silence and #test
 //   2. the species: family k's lobe count m from the just-intonation ratio of its interval above the key (math/gielis.js)
-//   3. the breath: n1 sits near the circle and drops toward a pinch on every beat, off the engine's beat GRID
+//   3. the breath: n1 rests where the species is visible and drops to a star on every beat, off the engine's beat GRID
 //   4. the section's lean template, the drop's collapse, the build's unwind, the surprise's twist
 //   5. the launch ring buffer (math/waves.js, per caller) and the hue each wave carries
 //   6. Green's ruler on the loudest family — the only instrument that can see a per-beat pinch (DECISIONS §46)
 // Every constant is a named lean at the top, never a magic number in a shader: the user retunes on the first montage.
 //
-// Process (the brief): step 1 draws the nest AT REST — one lobe count M0 for every family, n1 = N1_REST, the base lean,
+// Process (the brief): the nest AT REST is n1 = N1_REST, the base lean,
 // no waves, no flash, no shimmer, no growth. That frame is the `still` reference (hooks.still(1) forces exactly it) and
 // every later step keeps it, so a visual step that moves a still frame has moved something it should not have.
 
@@ -22,7 +22,13 @@ export const PHI_MAX = 0.85;     // …spanning ±PHI_MAX·π/2 of latitude (the
 export const FLOOR = 0.18;       // no family below this fraction of the loudest one's brightness (the `glow` parameter)
 export const SIZE0 = 0.25;       // the quietest family's radius …
 export const SIZEK = 0.75;       // …and how much more the loudest one takes
-export const SUBK = 0.15;        // the sub bass fattens a and b
+// Pass 1: the sub used to fatten a and b. At the deep pinch that is unsafe — r scales as a^(n2/n1), i.e. 1.18^6.67 = 3.1
+// at n1 = N1_BEAT, and a > 1 puts a NARROW radial spike at theta = 0 (base = (1/a)^n2 < 1) that a 64-sample normaliser
+// cannot see but a drawn ring at phi = 0 lands exactly on: measured, the drawn radius reached 2.85x the family's own.
+// The same thing the eye is asked to see — the family fattens with the sub — is now a scale on the family's RADIUS,
+// where it is exactly linear and cannot interact with the exponents. a is therefore the template's value throughout
+// (1 everywhere; only blade's b is 1.3), which is also what makes the normalisation accurate at 64 samples.
+export const SUBK = 0.15;        // the sub bass fattens every family
 export const BREATH_B = 0.03;    // and the bar breathes them ±3 %, even in silence
 export const FLASHT = 0.25;      // the kick flash's decay (seconds)
 export const SHIM = 0.55;        // shimmer depth at hat 1
@@ -31,11 +37,20 @@ export const FIBMAX = 12;        // …and at build ≥ 0.5
 export const FIBTC = 0.25;       // eased, so a family that appears fades in instead of popping
 export const PRES0 = 0.05;       // below this presence nothing is drawn at all
 // --- the breath (spec 3) ---
-export const N1_REST = 12;       // the resting pinch: n1 → ∞ is a circle, 12 already reads as one (Q ≥ 0.987 everywhere)
-// The brief's lean was 1.5. Measured (tools/test_gielis.js item 4): at 1.5 the ROOT family (m = 4) swings only 0.106 of
-// Q through a beat — under the brief's own ≥ 0.15 gate — while the starry families swing 0.15–0.32. 1.2 puts all twelve
-// over it (0.158–0.414). This and BASE below are the two leans changed, both for a measured reason.
-export const N1_BEAT = 1.2;
+// Pass 1, the user's first sentence on the built scene: "shouldn't the superformula be making more shapes?" The answer
+// was N1_REST 12: n1 = 12 is a CIRCLE for every m (root Q 0.998, the starriest family 0.991), so the twelve species only
+// existed during the fifth of a beat the thump lasted. The rest state now shows the species. Swept in node over the root
+// (m 4), the fifth (m 6) and the tritone (m 28/5) at the base lean, against the brief's "root Q about 0.90–0.95":
+//   n1  1.6   1.8   2.0   2.2   2.4   3.0  (the brief's lean)   12 (as built)
+//   m4  .904  .923  .936  .947  .955  .971                      .998
+//   m6  .811  .844  .870  .890  .906  .938                      .996
+//   m5.6 .786 .819  .845  .866  .882  .917                      .991
+// 3 is still a circle to the eye (root .971); 2.0 puts the root mid-band and every dissonance visibly starry at rest.
+export const N1_REST = 2.0;
+// …and the beat pinches from there toward a star. 0.6 with the reciprocal law below (N1_MIN 0.5 is the floor and is
+// never reached). Swing at the base lean: root .936 → .569, the major 7th .776 → .262 — 0.37–0.51 per beat against the
+// brief's ≥ 0.15 gate, where the built 12 → 1.2 gave 0.16–0.41 from a rest that was a circle.
+export const N1_BEAT = 0.6;
 export const HIT_K = 0.3;        // a hit inside the beat deepens the pinch on top of the grid's press
 // --- the lean (spec 6) ---
 // The brief's resting lean was (n2, n3, a, b) = (2, 2, 1, 1). That is EXACTLY a circle for every m and every n1:
@@ -71,6 +86,16 @@ export const WAVEP = [1.1, 1.8, 0.5];        // and how much each brightens
 export const SEGT = [16, 26, 38, 52];   // segments per TURN of θ per tier
 export const SEGMAX = 96;               // …capped per ring, so a five-turn family cannot blow the total
 export const SEGMIN = 12;
+// --- the radius normalisation the deep pinch forces (pass 1) -----------------------------------------------------
+// r = base^(-1/n1) amplifies any base < 1 by the exponent, and 1/N1_BEAT is now 1.667 instead of 0.833. A lopsided
+// lean (blade's b 1.3, and from pass 1 item 2 every family's own n2) makes base < 1 over part of the turn, so the
+// family's radius grew instead of pinching: measured over the twelve species × the four templates × the lean extremes
+// at n1 = N1_BEAT, the worst rMax hit the R_MAX 4 clamp (blade at morph 1 on a loud family) where the camera frames
+// RAD 1. So each family is scaled by 1/max(1, r1max·r2max) of its OWN profile: a pinch now pulls the valleys in and
+// leaves the lobe tips at the family's radius — which is what "collapses into interesting shapes" looks like — and
+// nothing can ever crop. A symmetric lean has rMax exactly 1, so on those frames the scale is exactly 1.
+export const NRM = 64;           // samples of one turn of theta (one turn covers a full period for every m >= 4)
+export const NRM_PHI = 33;       // …and of the drawn latitude range (ODD, so phi = 0 — where r2 peaks — is sampled)
 
 const NF = 12;
 const SRT = new Float32Array(NF);
@@ -93,6 +118,8 @@ export const N = {
   sQ: new Float32Array(NF),
   sSz: new Float32Array(NF),
   sBr: new Float32Array(NF),
+  norm: new Float32Array(NF),      // per PITCH CLASS: 1/max(1, rMax) of its own profile (the pass-1 normalisation)
+  sNorm: new Float32Array(NF),     // …and the same in slot order — the uniform payload
   off: new Int32Array(NF + 1),     // cumulative segments per slot — the vertex shader's index
   lean: new Float32Array(4),       // the (n2, n3, a, b) in force
   psi: new Float32Array(3),
@@ -103,7 +130,7 @@ export const N = {
   flash: 0, shim: 0, press: 0, depth: 0,
   template: 0, tPrev: 0, morph: 0, tSel: -2,
   collapse: 0, dropT: 0, slip: 0, twist: 0, twistT: 0, phiOff: 0, phiT: 0, gain: 1,
-  beatNow: 0, still: 0, fill: 0.6, phrase: 0, bounce: 0, wave: WAVE0,
+  beatNow: 0, still: 0, fill: 0.6, phrase: 0, bounce: 0, wave: WAVE0, fat: 1,
 };
 
 export const train = WV.train;
@@ -210,6 +237,21 @@ export function waveUpload(ages, amps, hues) {
 // capped so the total stays inside the brief's 8 000 at tier 3. The tier never touches RINGS (cuts: 'continuous').
 export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(SEGT[tier] * N.sQ[s])));
 
+// The pass-1 normalisation: the largest radius this family's own profile reaches, equator × latitude, so the shader can
+// divide it out. rMax of a symmetric lean is exactly 1 (base = 1 at t = 0), so this is a no-op on those frames.
+export function normOf(m, n1, L, mPhi, n1p) {
+  let r1 = 0, r2 = 0;
+  for (let j = 0; j < NRM; j++) {
+    const v = sf((j / NRM) * TAU, m, n1, L[0], L[1], L[2], L[3]);
+    if (v > r1) r1 = v;
+  }
+  for (let j = 0; j < NRM_PHI; j++) {
+    const v = sf((j / (NRM_PHI - 1) - 0.5) * Math.PI * PHI_MAX, mPhi, n1p, L[0], L[1], L[2], L[3]);
+    if (v > r2) r2 = v;
+  }
+  return 1 / Math.max(1, r1 * r2);
+}
+
 // --- the frame --------------------------------------------------------------------------------------------------
 // P is the six visual parameters (§1.16; inline expressions until step 8 moves them into the slot verbatim).
 // O = {key, tier, pinch, tPin, still, hueOf} — the resolved key, the tier, the three pins, and the hue of a
@@ -238,10 +280,10 @@ export function updateNest(dt, MS, P, O) {
   dph -= Math.round(dph);                                                       // the short way round, in turns
   N.phiOff += dph * (1 - Math.exp(-dt / PHITC));
   const TA = TEMPLATES[N.template], TB = TEMPLATES[N.tPrev], amt = O.still ? 0 : N.morph;
-  const fat = O.still ? 1 : 1 + SUBK * MS.sub + BREATH_B * Math.sin((TAU * MS.barPos) / 4);
+  N.fat = O.still ? 1 : 1 + SUBK * MS.sub + BREATH_B * Math.sin((TAU * MS.barPos) / 4);
   for (let i = 0; i < 4; i++) {
     const t = TA[i] + (TB[i] - TA[i]) * N.tFade;
-    N.lean[i] = (BASE[i] + (t - BASE[i]) * amt) * (i >= 2 ? fat : 1);
+    N.lean[i] = BASE[i] + (t - BASE[i]) * amt;
   }
   N.open = Math.abs(N.lean[0] - N.lean[1]) > 0.02 || Math.abs(N.lean[2] - N.lean[3]) > 0.02 ? 1 : 0;
 
@@ -252,7 +294,6 @@ export function updateNest(dt, MS, P, O) {
   N.n1 = O.still ? N1_REST : Math.max(N1_MIN, pinchOf(d));
   if (N.collapse > 0) N.n1 += (N1_BEAT - N.n1) * N.collapse;
   if (O.pinch >= 0) N.n1 = Math.max(N1_MIN, O.pinch);
-  N.open = 0;
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
 
   // the flash on the quiet inner families, and the shimmer along every ring
@@ -282,6 +323,7 @@ export function updateNest(dt, MS, P, O) {
 
   // the drawn slots in loudness order, and the segment offsets the vertex shader indexes by
   const ord = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].sort((x, y) => N.ch[y] - N.ch[x]);
+  for (let k = 0; k < NF; k++) N.norm[k] = normOf(N.mA[k], N.n1, N.lean, M_PHI, N.n1);
   let tot = 0;
   for (let s = 0; s < NF; s++) {
     const k = ord[s];
@@ -289,8 +331,9 @@ export function updateNest(dt, MS, P, O) {
     N.sMA[s] = N.mA[k];
     N.sMB[s] = N.mB[k];
     N.sQ[s] = N.qt[k] || 1;
-    N.sSz[s] = N.size[k] * (1 - (1 - DROP_SZ) * N.collapse);
+    N.sSz[s] = N.size[k] * N.fat * (1 - (1 - DROP_SZ) * N.collapse);
     N.sBr[s] = N.bri[k];
+    N.sNorm[s] = N.norm[k];
     N.off[s] = tot;
     if (s < N.draw) tot += RINGS * segsOf(O.tier, s);
   }
@@ -320,7 +363,7 @@ export function witnessR() {
   let s = 0;
   for (let j = 0; j < WITN; j++) s += sf((j / WITN) * TAU, M_PHI, N.n1, N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
   let w = 0, r = 0;
-  for (let k = 0; k < NF; k++) { w += N.ch[k]; r += N.ch[k] * N.size[k]; }
+  for (let k = 0; k < NF; k++) { w += N.ch[k]; r += N.ch[k] * N.size[k] * N.fat * N.norm[k]; }
   return (s / WITN) * (w > 1e-4 ? r / w : SIZE0) * (1 - (1 - DROP_SZ) * N.collapse);
 }
 export { BANDS, SLOTS };

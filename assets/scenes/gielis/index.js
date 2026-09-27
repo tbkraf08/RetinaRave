@@ -1,7 +1,7 @@
 // GIELIS (v0.14, id 10, no digit key — `n` cycles to it, or &scene=10) — "the superformula nest that breathes with the
 // music". Twelve pitch classes as twelve nested 3D supershapes drawn as latitude rings of strokes: the interval above
-// the key sets each family's lobe count, the beat pinches them all toward a star and the silence lets them relax back
-// toward a circle. Built on TORUS2's music-to-visual model (id 3, the user's favourite mapping — DECISIONS §36/§37) from
+// the key sets each family's lobe count, the beat pinches them all down to a star and the silence lets them relax back
+// to their resting lobes (pass 1: the rest state shows the species, it is not a circle). Built on TORUS2's music-to-visual model (id 3, the user's favourite mapping — DECISIONS §36/§37) from
 // docs/workers/brief-gielis.md; the numerics are assets/math/gielis.js, the ruler Green's theorem. Forced-only until the
 // user approves it: score() is 0, so the director never picks it and the reference md5s of ids 0–9 stay where they are.
 //
@@ -203,6 +203,7 @@ export default {
     g.uniform1fv(pr.u('uPc[0]'), N.pc);
     g.uniform1fv(pr.u('uSz[0]'), N.sSz);
     g.uniform1fv(pr.u('uBr[0]'), N.sBr);
+    g.uniform1fv(pr.u('uNorm[0]'), N.sNorm);
     g.uniform4f(pr.u('uLean'), N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
     g.uniform1f(pr.u('uN1'), N.n1);
     g.uniform1f(pr.u('uMPhi'), M_PHI);

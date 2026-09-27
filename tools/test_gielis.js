@@ -4,11 +4,13 @@
 //   2. the p/q closure: m = 3/2 closes after exactly 2 turns with a symmetric lean, 4 with a lopsided one
 //   3. the spherical product is the unit sphere when both curves are 1
 //   4. a known star's Q (m = 5, n1 = 1, n2 = n3 = 1) and the per-family rest → beat swing the scene is gated on
+//   8. pass 1: the rest state is NOT a circle (the root in 0.90-0.95), and nothing the lean can do grows a family past
+//      its own radius (nest.js normOf, which the deep N1_BEAT made necessary)
 //   5. the interval table: 12 entries, root 1/1, fifth 3/2, every one closing in ≤ 8 turns
 //   6. the GLSL twin's constants vs the JS to 0
 //   7. cost: greenQ() at 512 samples well under 1 ms
 import { sf, point3, closure, mOf, mTable, greenQ, GLSL, TAU, N1_MIN, R_MAX, BASE_MIN, M0, QCAP, N_Q, RATIO } from '../assets/math/gielis.js';
-import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES } from '../assets/scenes/gielis/nest.js';
+import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES, normOf, M_PHI, PHI_MAX } from '../assets/scenes/gielis/nest.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
@@ -50,20 +52,26 @@ ok(sph < 1e-6, `r1 = r2 = 1 gives the unit sphere: max |‖P‖ − 1| = ${sph.t
 console.log('4. the ruler — a known star, and the breath the scene is gated on');
 const star = greenQ(5, 1, 1, 1, 1, 1);
 ok(star.Q > 0 && star.Q < 0.75, `m = 5, n1 = 1, n2 = n3 = 1: Q = ${f(star.Q)} (r ∈ [${f(star.rMin)}, ${f(star.rMax)}])`);
-let minSwing = 9, minRest = 9;
+let minSwing = 9, minRest = 9, maxRest = 0, rootRest = 0;
 const rows = mTable().map((e) => {
   const r = greenQ(e.m, N1_REST, BASE[0], BASE[1], BASE[2], BASE[3]).Q;
   const b = greenQ(e.m, N1_BEAT, BASE[0], BASE[1], BASE[2], BASE[3]).Q;
   minSwing = Math.min(minSwing, r - b);
   minRest = Math.min(minRest, r);
+  maxRest = Math.max(maxRest, r);
+  if (e.interval === 0) rootRest = r;
   return `i${e.interval} m ${f(e.m, 3)} q${e.turns} ${f(r, 3)}→${f(b, 3)}`;
 });
 console.log('   ' + rows.join(' · '));
-ok(minRest >= 0.9, `rest Q ≥ 0.9 on every family (worst ${f(minRest)}) at n1 = N1_REST ${N1_REST}`);
+// Pass 1's gate replaces "rest Q >= 0.9" (which was a gate on the rest being a CIRCLE). The user asked for more shapes:
+// the rest state must now show the species, so the root reads as a clearly rounded square and nothing is a circle.
+ok(rootRest > 0.9 && rootRest < 0.95, `the root (m ${M0}) rests at Q ${f(rootRest)} — a rounded square, in the brief's 0.90-0.95`);
+ok(maxRest < 0.96, `no family rests as a circle (roundest ${f(maxRest)}) at n1 = N1_REST ${N1_REST}`);
+ok(minRest > 0.7, `and none rests as a star either (starriest ${f(minRest)}) — the beat has somewhere to go`);
 ok(minSwing >= 0.15, `beat swing ≥ 0.15 on every family (worst ${f(minSwing)}) at n1 = N1_BEAT ${N1_BEAT}`);
 for (let t = 0; t < TEMPLATES.length; t++) {
   const L = TEMPLATES[t], g = greenQ(6, N1_REST, L[0], L[1], L[2], L[3]), h = greenQ(6, N1_BEAT, L[0], L[1], L[2], L[3]);
-  ok(g.Q > 0.9 && g.Q - h.Q > 0.05, `template ${TEMPLATE_NAMES[t]} (${L.join(', ')}) at m 6: Q ${f(g.Q)} → ${f(h.Q)}, r ≤ ${f(g.rMax)}`);
+  ok(g.Q > 0.5 && g.Q - h.Q > 0.05, `template ${TEMPLATE_NAMES[t]} (${L.join(', ')}) at m 6: Q ${f(g.Q)} → ${f(h.Q)}, r ≤ ${f(g.rMax)}`);
 }
 
 console.log('5. the interval table');
@@ -94,5 +102,40 @@ const t0 = performance.now();
 for (let i = 0; i < 200; i++) greenQ(5.6, 2 + 0.01 * i, 1, 1, 1, 1);
 const ms = (performance.now() - t0) / 200;
 ok(ms < 1, `greenQ() at ${N_Q} samples: ${f(ms, 4)} ms (gate 1 ms)`);
+console.log('8. the radius normalisation (pass 1: the deep pinch may not grow a family)');
+// The truth is sampled 8x denser than nest.js normOf does, over exactly the theta turn and the DRAWN latitude range,
+// so this also measures how much normOf's own 64/32 sampling can under-read a peak.
+const latMax = (m, n1, L) => { let r = 0; for (let j = 0; j <= 512; j++) { const v = sf((j / 512 - 0.5) * Math.PI * PHI_MAX, m, n1, L[0], L[1], L[2], L[3]); if (v > r) r = v; } return r; };
+const eqMax = (m, n1, L) => { let r = 0; for (let j = 0; j < 4096; j++) { const v = sf((j / 4096) * TAU, m, n1, L[0], L[1], L[2], L[3]); if (v > r) r = v; } return r; };
+// Every lean the scene can reach: BASE pulled toward one of the four templates, or toward a cross-fade of two, at every
+// morph. a and b are the template's alone (pass 1 moved the sub's fattening onto the family's RADIUS, which is why this
+// set has a = 1 throughout — the a > 1 case is what made a 64-sample normaliser unsafe).
+const LEANS = [];
+for (const mo of [0, 0.25, 0.5, 0.75, 1]) {
+  for (const A of TEMPLATES) {
+    for (const B of TEMPLATES) {
+      for (const tf of [0, 0.5, 1]) {
+        const T = [0, 1, 2, 3].map((i) => A[i] + (B[i] - A[i]) * tf);
+        LEANS.push([0, 1, 2, 3].map((i) => BASE[i] + (T[i] - BASE[i]) * mo));
+      }
+    }
+  }
+}
+let wRaw = 0, wNorm = 0, wCase = '', wnCase = '';
+for (const L of LEANS) {
+  for (const e of mTable()) {
+    for (const n1 of [N1_REST, 1.2, N1_BEAT]) {
+      const rq = eqMax(e.m, n1, L), lt = latMax(M_PHI, n1, L), nz = normOf(e.m, n1, L, M_PHI, n1);
+      if (rq * lt > wRaw) { wRaw = rq * lt; wCase = `m ${f(e.m, 2)} n1 ${n1} lean (${L.map((x) => f(x, 2)).join(', ')})`; }
+      if (rq * lt * nz > wNorm) { wNorm = rq * lt * nz; wnCase = `m ${f(e.m, 2)} n1 ${n1} lean (${L.map((x) => f(x, 2)).join(', ')})`; }
+    }
+  }
+}
+ok(wRaw > 1.4, `unnormalised, the worst reachable lean grows the drawn radius to ${f(wRaw, 3)}x (${wCase}) where the camera frames RAD 1`);
+// normOf reads its maxima at 64 theta and 33 phi samples, so it can under-read a sharp peak by a few per cent; the
+// camera's own FILLMAX 0.85 absorbs that (0.85 x 1.03 = 0.88 of the short edge), which is why the gate is 1.05 and not 1.
+ok(wNorm <= 1.05, `normalised, the worst is ${f(wNorm, 4)}x (${wnCase}) over ${LEANS.length * 36} cases — inside FILLMAX 0.85`);
+ok(Math.abs(normOf(4, N1_REST, [1, 1, 1, 1], M_PHI, N1_REST) - 1) < 1e-12 && PHI_MAX > 0, 'a symmetric lean normalises by exactly 1 (a no-op on those frames)');
+
 console.log(fails ? `test_gielis: ${fails} FAIL` : 'test_gielis: OK');
 process.exit(fails ? 1 : 0);
