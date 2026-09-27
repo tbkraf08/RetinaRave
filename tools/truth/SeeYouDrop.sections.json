@@ -1,0 +1,31 @@
+{
+  "track": "SeeYouDrop",
+  "time": "track seconds",
+  "source": "orchestrator annotation 2026-09-27 from tools/truth/trackmap.py (SeeYouDrop.txt / .json) + the user's ear quotes; NOT confirmed by the user; step E0 pins every boundary to the bar line of the truth beat grid",
+  "bpm": 150,
+  "feel": "grid 150 (0.40 s beat); the percussive-onset ACF picks 75 in the loudest 30 s (half-time feel: kick on 1, snare on 3 in the drop sections)",
+  "tonic_hypothesis": "C# minor: the sub loop C#1 - A1 - F#1 - E1 (build 13-25 s, outro 134-157 s) is i - VI - iv - III, and every groove / drop sits on C#1; the engine reports G# minor (the fifth) because synapse's key chroma starts at 65 Hz and never sees the 35 Hz root. E0 decides.",
+  "shape": "two cycles of groove -> climb (G1, D#2) -> void -> drop, then the gated drop 2, then the build's walk returns as the outro",
+  "sections": [
+    { "t0": 0.0,   "t1": 13.0,  "label": "intro",        "bass": "harmonic mid-bass (h/f 1.2) walks G#2/A2 0-5 s, F#2 6-9 s, E2 10-12 s (the sub walk an octave up), no sub", "drums": "none; hats rise (4.2 onsets/s at 5-10 s)", "ear": "0-13s the high rise up to their max" },
+    { "t0": 13.0,  "t1": 25.0,  "label": "walk",         "bass": "sine sub (h/f 0.06) walks C#1 13.0, A1 16.1, F#1 19.3, E1 22.6; sub = 68-79 % of all energy", "drums": "none" },
+    { "t0": 25.0,  "t1": 44.9,  "label": "groove",       "bass": "sine sub C#1 held; the 60-150 Hz band pulses every 0.395 s", "drums": "kick candidates ~2/s, low onsets 3.6-5.8/s", "ear": "at 25s it really starts moving the edge on every beat" },
+    { "t0": 44.9,  "t1": 49.9,  "label": "climb",        "bass": "G1 44.9, D#2 48.1", "drums": "mid + high onsets 7.4/s (3x the groove)" },
+    { "t0": 49.9,  "t1": 57.6,  "label": "void",         "bass": "none (sub 1 %, bass 1 %)", "drums": "hats + mids (mid 49 %, high 42 % of energy)", "ear": "the part that was missing ripples was 50s-57s ... more skinnier waves (vs bass fatter waves)" },
+    { "t0": 57.6,  "t1": 90.0,  "label": "slides",       "bass": "sine sub back at 57.6 s (0 -> 83 % in 0.2 s, h/f 0.01 from the first frame); each hit slides D#1 / D1 -> C#1 in ~0.3 s", "drums": "kick candidates ~2/s", "event": "DROP 1 at 57.6 s" },
+    { "t0": 90.0,  "t1": 96.0,  "label": "groove-return","bass": "as 25-45 s (sub pulse 0.395 s)" },
+    { "t0": 96.0,  "t1": 105.7, "label": "climb-double", "bass": "G1 96.0, D#2 99.4, then no sub 101.1-105.7 (a harmonic mid-bass at ~110 Hz, h/f 1.5-4.9)", "drums": "mid / high onsets 5.4-7.2/s", "ear": "at 1:38 it goes double time -> should be moving faster / reacting more" },
+    { "t0": 105.7, "t1": 130.5, "label": "gated",        "bass": "sine sub C#1, ducked every ~0.8 s (one half-time beat), deepest once per 1.6 s bar; octave / fifth grace notes", "drums": "kick candidates ~2.5/s", "event": "DROP 2 at 105.7 s", "ear": "1:45 -> this is where the highest energy is, should be reacting more" },
+    { "t0": 130.5, "t1": 134.5, "label": "turn",         "bass": "C#1 held 131.4", "drums": "sparse (0.6-1/s)" },
+    { "t0": 134.5, "t1": 157.4, "label": "outro-walk",   "bass": "the walk returns twice: A1 134.5, F#1 137.6, E1 140.9, C#1 144.1, A1 147.3, F#1 150.5, E1 153.7", "drums": "none", "texture": "highs 1 % of energy (a low-pass has closed)" }
+  ],
+  "drops": [57.6, 105.7],
+  "not_drops": [
+    { "t": "intro ~9-10 s", "why": "the engine fired a full-strength dropEvt here in v0.14 (AUDIT-v0.14 §3; check probe vs track time); truth: the first sub arrives at 13.0 s and no kick before 25 s. A layer entry, not a drop." }
+  ],
+  "returns": [
+    { "a": "groove 25-44.9", "b": "groove-return 90-96" },
+    { "a": "climb 44.9-49.9", "b": "climb-double 96-101" },
+    { "a": "walk 13-25", "b": "outro-walk 134.5-157.4" }
+  ]
+}

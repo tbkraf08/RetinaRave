@@ -1,0 +1,9 @@
+
+=== CyborgNinja  179.9 s  tempo 162.2 bpm (percussive onsets, loudest 30 s from 138 s)
+loud half: sub 7%  bass 76%  lm 8%  mid 6%  high 2% | bass f0 69.1 Hz C#2 held 85% | centroid30-600 97 Hz  h/f 0.12
+
+=== WhoLikesToParty  256.2 s  tempo 117.6 bpm (percussive onsets, loudest 30 s from 0 s)
+loud half: sub 37%  bass 28%  lm 11%  mid 14%  high 10% | bass f0 46.2 Hz F#1 held 15% | centroid30-600 105 Hz  h/f 0.19
+
+=== Malicious  222.7 s  tempo 69.8 bpm (percussive onsets, loudest 30 s from 135 s)
+loud half: sub 1%  bass 52%  lm 25%  mid 19%  high 3% | bass f0 95.5 Hz G2 held 35% | centroid30-600 169 Hz  h/f 0.53

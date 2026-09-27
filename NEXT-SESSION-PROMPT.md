@@ -1,5 +1,7 @@
 # Next session — Retina Rave after v0.14's build (written 2026-09-27; v0.13 tagged and pushed; **v0.14 GIELIS built and merged on `main`, NOT tagged, NOT pushed, the user has not looked**)
 
+**New ask (2026-09-27, after v0.14 pass 1): v0.15 = the engine's ears + a new scene CHLADNI at id 11 ("slot 12"), tuned on SeeYouDrop — the full spec is `ENGINE-CHLADNI-SESSION-PROMPT.md`; ground truth in `tools/truth/`. The user said "wait for my say before running full sweep": no `tools/accept.sh` until they do. The GIELIS look below is still pending and untouched by that work.**
+
 **GIELIS (id 10, "slot 11", no digit key: `n` / `&scene=10`, forced-only, `score()` 0)** — the superformula nest the user asked for on
 2026-09-27 ("goal new scene (slot 11); use 'see you drop' as the inspiration … how can we use the superformula to visualize music?"),
 built on TORUS2's music model (the user: "torus2 is my favorite visually for how music lines up to the viz"). Spec `GIELIS-SESSION-PROMPT.md`,

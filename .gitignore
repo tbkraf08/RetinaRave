@@ -9,3 +9,4 @@ node_modules/
 !site/*.jpg
 !site/thumbs/*.jpg
 __pycache__/
+tools/.pylib/
