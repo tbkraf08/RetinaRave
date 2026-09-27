@@ -2,8 +2,9 @@
 
 You are the orchestrator on **Retina Rave** (`~/Documents/Kraftek/RetinaRave/`, zero-dependency WebGL2 audio-visual engine,
 native ES modules, git, branch `main`, GitHub `git@github.com:tbkraf08/RetinaRave.git`; a push to `main` deploys retinarave.com —
-push only on the user's word). **State:** **v0.14 GIELIS (id 10) tagged and pushed 2026-09-27** on the user's word — tagged, not
-validated: the user has not said its look is right (`NEXT-SESSION-PROMPT.md` carries that look — do not touch GIELIS). NAV2 (id 8) is paused mid-tune, not validated — do not touch it.
+push only on the user's word). **State:** v0.14 tagged, pushed and live (2026-09-27). **This session is only the engine update, the
+new scene and the offline analysis they need** (the user: "next session prompt should just be the engine update and new scene (and any
+offline analysis that might be needed)"); everything else waits in `docs/OPEN-ITEMS.md` and is not touched.
 
 **The user's ask (2026-09-27, verbatim):**
 > "what needs to be added to the engine to extract the highest quality possible elements from music to make the most intuitive and
@@ -254,8 +255,7 @@ identity proof; `feats` = exactly the fields read, each with a `help.feats` clau
 
 ## What this session is not
 
-Not a GIELIS retune (its look is pending — `NEXT-SESSION-PROMPT.md`), not NAV2 (paused), not a change to TORUS2 / MAXWELL / POLYTOPE,
-not a change to any existing MS field's value, not machine-learning stems inside the engine, not an OKLCH default, not the Cloudflare
-dashboard steps (still open since v0.6 — remind once, in one line). If the user's first sentence of the session changes the spec, it
+Not a change to any other scene (ids 0–10 stay pixel-identical), not a change to any existing MS field's value, not machine-learning
+stems inside the engine, not an OKLCH default, not anything in `docs/OPEN-ITEMS.md`. If the user's first sentence of the session changes the spec, it
 outranks every lean here. The concept (Chladni), the figure table, the section boundary shapes and every constant are the
 orchestrator's leans, stated as leans in the briefs; the user corrects them at the first montage.
