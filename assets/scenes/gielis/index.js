@@ -13,8 +13,8 @@ import { mkNudge } from '../../math/nudge.js';
 import { BANDS, SLOTS } from '../../math/waves.js';
 import { HELP } from './help.js';
 import {
-  N, updateNest, resetNest, measureQ, rimR, waveUpload, segsOf, train, live, positions,
-  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST, press, TWIST, MORPHK, TEMPLATE_NAMES,
+  N, updateNest, resetNest, measureQ, witnessR, waveUpload, segsOf, train, live, positions,
+  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, WAVE0, SEGT, N1_REST, press, TWIST, MORPHK, TEMPLATE_NAMES,
 } from './nest.js';
 
 const TAU = Math.PI * 2;
@@ -36,16 +36,16 @@ const WH = new Float32Array(BANDS * SLOTS);   // …and the hue each one carries
 const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
-const P = { breath: 1, glow: FLOOR, turn: 0, size: 0.6, lean: 0 };   // the visual parameters in force this frame
+const PV = { turn: 0 };                          // the last frame's parameter values, for hooks.info()
 const O = { key: 0, tier: 3, pinch: -1, tPin: -1, still: 0, hueOf: null };   // the pins, the tier and the hue map
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
-let STILL = 0, KEYPIN = null, N1PIN = -1, TPIN = -1;
+let STILL = 0, KEYPIN = null, N1PIN = -1, TPIN = -1, LAST = null;
 
 // The hue coordinate of pitch class pc, as the shader reads it: the anchor is the MIDDLE of the twelve hues.
 const hueOf = (pc) => pc / 12 - 0.5;
 
 // One point projected the way the vertex shader projects it, for the continuity monitor's 2-vector (spec 3): the
-// loudest family's rim at θ = 0, in normalised screen coordinates, which moves with the yaw, the size and the pinch.
+// witness point (nest.js witnessR) carried round by the yaw, in normalised screen coordinates.
 function screenOf(x, y, z) {
   const cy = Math.cos(CAM[0]), sy = Math.sin(CAM[0]), cp = Math.cos(CAM[1]), sp = Math.sin(CAM[1]);
   const e = [CAM[2] * cp * cy, CAM[2] * cp * sy, CAM[2] * sp];
@@ -69,7 +69,7 @@ function info() {
     n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
     morph: +N.morph.toFixed(4), template: TEMPLATE_NAMES[N.template], tFade: +N.tFade.toFixed(3), lean: [+N.lean[0].toFixed(3), +N.lean[1].toFixed(3), +N.lean[2].toFixed(3), +N.lean[3].toFixed(3)], collapse: +N.collapse.toFixed(4), slip: +N.slip.toFixed(4), twist: +N.twist.toFixed(4), key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
-    med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4), turnT: +P.turn.toFixed(4), bounce: +N.bounce.toFixed(4), fibF: +N.fibF.toFixed(3),
+    med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4), turnT: +PV.turn.toFixed(4), bounce: +N.bounce.toFixed(4), wave: +N.wave.toFixed(4), fibF: +N.fibF.toFixed(3),
     size: +N.fill.toFixed(4), dist: +CAM[2].toFixed(3), tier: TIER, still: STILL,
     live: live(N.beatNow), kick: positions(0, N.beatNow), snare: positions(1, N.beatNow), hat: positions(2, N.beatNow),
   });
@@ -90,6 +90,24 @@ function key(k, m) {
 const pinch = (v) => { N1PIN = v === undefined || v === '' || +v < 0 ? -1 : +v; return N1PIN; };
 // &template=2 — pin which of the four lean templates the section would have picked (-1 releases it)
 const template = (v) => { TPIN = v === undefined || v === '' || +v < 0 ? -1 : +v | 0; return TPIN; };
+// Measurement only (HARNESS "Bench protocol": CARD.bench cannot see the CPU side — the twelve families, the species
+// and the 512-sample Green trace). It re-runs the scene's own CPU path n times on the last frame's arguments and
+// returns the MEDIAN in ms. The wall clock here is never read by update/draw — nothing on screen depends on it — but
+// it DOES advance the nest's state, so the page it is called in is a measurement page, not a picture.
+function timeUpdate(n) {
+  const k = Math.max(1, Math.round(+n) || 300), t = [];
+  if (!LAST) return -1;
+  const w0 = performance.now();
+  for (let i = 0; i < k; i++) {
+    const t0 = performance.now();
+    updateNest(1 / 60, LAST.MS, LAST.P, O);
+    measureQ();
+    t.push(performance.now() - t0);
+  }
+  const tot = performance.now() - w0;
+  t.sort((a, b) => a - b);
+  return { med: t[k >> 1], mean: tot / k, tot, n: k };
+}
 
 export default {
   name: 'gielis',
@@ -104,7 +122,7 @@ export default {
   rt: {},
   // the continuity monitor's shape (HARNESS "Continuity monitor"): CARD.NAV = CARD.REG[10].scene.state
   state: { n1: N1_REST, Q: 1, cPath: CPATH, pathCut: 9, kick: { x: 0 }, baby: null, mode: 'nest' },
-  hooks: { info, green, still, key, pinch, train, template },
+  hooks: { info, green, still, key, pinch, train, template, timeUpdate },
 
   // never auto-picked until the user approves it (DECISIONS §15: a registered scene must not move a reference pick)
   score() {
@@ -119,7 +137,7 @@ export default {
     resetNest();
   },
 
-  update(dt, MS) {
+  update(dt, MS, GROOVE, LOOK, env) {
     QS += (this.ctx.Q.q - QS) * Math.min(1, dt * 0.5);       // slow, so the tier does not chatter
     TIER = QS < 0.32 ? 0 : QS < 0.62 ? 1 : QS < 0.86 ? 2 : 3;
 
@@ -132,38 +150,37 @@ export default {
     MOOD[2] = 0.5 + 0.7 * mood.bri;
     SPREAD = 0.3 + 0.45 * mood.spread;
 
-    // The six visual parameters, still written inline: step 8 moves each expression VERBATIM into the params slot
-    // (CONTRACTS §1.16) and proves the s10 md5s unmoved by the move.
-    P.breath = 0.5 + 0.5 * MS.eS;
-    P.glow = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
-    P.turn = ((MS.beatCount / 16) * TAU) % TAU;
-    P.lean = MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1);
-    P.size = 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1));
+    // The six visual parameters (CONTRACTS §1.16). Every from() below is the expression that was inline here through
+    // steps 1-7, moved WHOLE (an expression re-associated is not the same expression — §1.16), reading only fields in
+    // `feats`; update() now reads env.params, and the s10 md5s did not move.
     O.key = A.key;
     O.tier = TIER;
     O.pinch = N1PIN;
     O.tPin = TPIN;
     O.still = STILL;
     O.hueOf = hueOf;
-    updateNest(dt, MS, P, O);
+    updateNest(dt, MS, env.params, O);
+    LAST = { MS, P: env.params };      // what hooks.timeUpdate re-runs
     measureQ();
 
     // the camera. The nest is centred, so the distance is solved from the fill of the SHORT edge: a point at radius r
     // and view depth d lands at ndc_y = focal·r/d and ndc_x = focal·r/(d·aspect), so the short edge binds at
     // d = focal·r/(fill·min(1, aspect)) — portrait included (the phone is 390×844).
-    N.fill = STILL ? FILL0 : Math.min(FILLMAX, P.size);
+    N.fill = STILL ? FILL0 : Math.min(FILLMAX, env.params.size);
     N.bounce = STILL ? 0 : BOUNCE * press(MS.beatPhase);
-    CAM[0] = STILL ? 0 : NG.turn(dt, P.turn, Math.max(MS.hush, MS.calm));
+    CAM[0] = STILL ? 0 : NG.turn(dt, env.params.turn, Math.max(MS.hush, MS.calm));
     CAM[1] = CAM_EL + TWIST * N.twist;
     CAM[2] = (FOV * RAD) / (N.fill * Math.min(1, ASP)) / (1 + N.bounce);
     STROKE = WPX * (1 + 0.6 * MS.bass) * (0.85 + 0.3 * MS.arousal);
     N.phrase = MS.phrase16Pos;                              // the sixteen-beat phrase the turn is measured against
-    screenOf(rimR(), 0, 0);
+    screenOf(witnessR(), 0, 0);
     this.state.n1 = N.n1;
     this.state.Q = N.Q;
     waveUpload(WB, WA, WH);
     this.rt.time = N.beatNow;
     this.rt.label = 'gielis pc' + N.loudest + ' n1 ' + N.n1.toFixed(1);
+    N.wave = env.params.wave;          // the kick bump's displacement (params.wave)
+    PV.turn = env.params.turn;
     this._ready = 1;
   },
 
@@ -207,7 +224,7 @@ export default {
     g.uniform1fv(pr.u('uWaveA[0]'), WA);
     g.uniform1fv(pr.u('uWaveH[0]'), WH);
     g.uniform3f(pr.u('uWaveW'), WAVEW[0], WAVEW[1], WAVEW[2]);
-    g.uniform3f(pr.u('uWaveD'), WAVED[0], WAVED[1], WAVED[2]);
+    g.uniform3f(pr.u('uWaveD'), N.wave, WAVED[1], WAVED[2]);
     g.uniform3f(pr.u('uWaveP'), WAVEP[0], WAVEP[1], WAVEP[2]);
     // The shells of different families really do occlude each other in R³, so depth + 'over' is the honest picture
     // (DECISIONS §7: additive strokes of opaque width saturate to a white blob at the drop).
@@ -218,6 +235,16 @@ export default {
     return 'gielis pc' + N.loudest + ' m ' + N.mA[N.loudest].toFixed(2) + ' n1 ' + N.n1.toFixed(2) + ' Q ' + N.Q.toFixed(3) +
       ' waves ' + live(N.beatNow) + ' key ' + KC.OUT.key + (KC.OUT.mode ? 'm' : 'M') + ' turn ' + CAM[0].toFixed(2) + ' size ' + N.fill.toFixed(2) +
       ' tmpl ' + TEMPLATE_NAMES[N.template] + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '/' + N.segs + ' t' + TIER;
+  },
+
+  // The six, named for what the eye sees (CONTRACTS §1.16). `wave` reaches the shader through nest.js's WAVED[0].
+  params: {
+    breath: { eli5: 'how deep every shape pinches on the beat', range: [0, 1], from: (MS) => 0.5 + 0.5 * MS.eS },
+    wave: { eli5: 'how deep the bump a kick sends travelling round every ring', range: [0, 0.4], from: (MS) => WAVE0 + 0.1 * MS.kick },
+    turn: { eli5: 'where the whole nest has been nudged to, in the turn it makes every sixteen beats', range: [0, 6.2832], from: (MS) => ((MS.beatCount / 16) * TAU) % TAU },
+    size: { eli5: 'how much of the screen the nest fills', range: [0.4, 0.9], from: (MS) => 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1)) },
+    lean: { eli5: 'how far the lobes are pulled toward the section\'s template', range: [0, 1], from: (MS) => MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1) },
+    glow: { eli5: 'how brightly the inner shapes are kept lit', range: [0, 0.5], from: (MS) => FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm)) },
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },

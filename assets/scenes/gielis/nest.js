@@ -56,6 +56,12 @@ export const DROP_G = 1.6;       // …and the rebound gains this much brightnes
 export const PSIK = 0.25;        // flowBass / flowMid / flowHigh advance the low / mid / high families' ring phase
 export const TWIST = 0.4;        // a surprise twists the camera elevation by at most this many radians
 export const TWISTTC = 0.35;     // and it eases back over ~1 s
+// cuts: 'continuous' means NOTHING on screen ever jumps, so the three event-driven quantities all ATTACK rather than
+// step: the drop's collapse, the surprise's twist and the section's ring phase. Fast enough to read as a slam at
+// 150 bpm (a beat is 0.4 s), slow enough that the continuity monitor's spike rule is never tripped.
+export const ATK = 0.12;         // seconds — the drop's and the twist's attack (0.06 stepped the witness 0.063-0.072 per frame
+                                 // on the fake timeline's own drops at 13 s and 37 s: over the monitor's 0.06 spike rule)
+export const PHITC = 0.35;       // and the section's ring phase eases over this
 // --- the waves (spec 4) ---
 export const WAVEW = [0.05, 0.017, 0.008];   // gaussian sigma along the ring parameter per band (kick, snare, hat)
 export const WAVE0 = 0.26;       // the kick bump's displacement, a fraction of the family's own radius (TORUS2's — 6 % was invisible)
@@ -96,8 +102,8 @@ export const N = {
   fibF: FIBMAX, draw: FIBMAX, segs: 0, open: 0, segPer: 0,
   flash: 0, shim: 0, press: 0, depth: 0,
   template: 0, tPrev: 0, morph: 0, tSel: -2,
-  collapse: 0, slip: 0, twist: 0, phiOff: 0, gain: 1,
-  beatNow: 0, still: 0, fill: 0.6, phrase: 0, bounce: 0,
+  collapse: 0, dropT: 0, slip: 0, twist: 0, twistT: 0, phiOff: 0, phiT: 0, gain: 1,
+  beatNow: 0, still: 0, fill: 0.6, phrase: 0, bounce: 0, wave: WAVE0,
 };
 
 export const train = WV.train;
@@ -214,10 +220,12 @@ export function updateNest(dt, MS, P, O) {
   species(dt, O.key);
   N.beatNow = MS.beatCount + MS.beatPhase;
 
-  // the drop: collapse for about one beat, then rebound on dropEnv (TORUS2's exp(-dt*bpm/60))
-  if (MS.dropEvt) N.collapse = 1;
-  N.collapse *= Math.exp((-dt * Math.max(40, MS.bpm || 120)) / 60);
-  if (N.collapse < 1e-4 || O.still) N.collapse = 0;
+  // the drop: collapse for about one beat, then rebound on dropEnv (TORUS2's exp(-dt*bpm/60) release, with an attack)
+  if (MS.dropEvt) N.dropT = 1;
+  N.dropT *= Math.exp((-dt * Math.max(40, MS.bpm || 120)) / 60);
+  N.collapse += (N.dropT - N.collapse) * (1 - Math.exp(-dt / ATK));
+  if (N.dropT < 1e-4 && N.collapse < 1e-4) N.collapse = N.dropT = 0;
+  if (O.still) N.collapse = N.dropT = 0;
 
   // the section's lean template, cross-faded over MORPHTC; a returning section returns to its own template, because
   // sectionAlt is synapse's fingerprint id. The amount is the `lean` parameter (MORPHK * tension, 0 in the intro).
@@ -225,7 +233,10 @@ export function updateNest(dt, MS, P, O) {
   if (sel !== N.tSel) { if (N.tSel !== -2) { N.tPrev = N.template; N.tFade = 1; } N.tSel = sel; N.template = sel; }
   N.tFade = Math.max(0, N.tFade - dt / MORPHTC);
   N.morph += (P.lean - N.morph) * (1 - Math.exp(-dt / MORPHTC));
-  if (MS.sectionEvt) N.phiOff = ((((MS.sectionAlt | 0) % 12) + 12) % 12) / 12;   // a new section re-picks the rings' phase
+  if (MS.sectionEvt) N.phiT = ((((MS.sectionAlt | 0) % 12) + 12) % 12) / 12;     // a new section re-picks the rings' phase
+  let dph = N.phiT - N.phiOff;
+  dph -= Math.round(dph);                                                       // the short way round, in turns
+  N.phiOff += dph * (1 - Math.exp(-dt / PHITC));
   const TA = TEMPLATES[N.template], TB = TEMPLATES[N.tPrev], amt = O.still ? 0 : N.morph;
   const fat = O.still ? 1 : 1 + SUBK * MS.sub + BREATH_B * Math.sin((TAU * MS.barPos) / 4);
   for (let i = 0; i < 4; i++) {
@@ -250,8 +261,9 @@ export function updateNest(dt, MS, P, O) {
   // the build unwinds the rings toward helices, and the drop's collapse snaps the slip back to zero
   N.slip = O.still ? 0 : UNWIND * Math.max(MS.riser, MS.roll) * (1 - N.collapse);
   if (N.slip > 0.01) N.open = 1;
-  if (MS.surpriseEvt && !O.still) N.twist = 1;
-  N.twist *= Math.exp(-dt / TWISTTC);
+  if (MS.surpriseEvt && !O.still) N.twistT = 1;
+  N.twistT *= Math.exp(-dt / TWISTTC);
+  N.twist += (N.twistT - N.twist) * (1 - Math.exp(-dt / ATK));
 
   // growth stage 1: the drawn family count FIBMIN -> FIBMAX over build 0 -> 0.5, eased so a family that appears fades
   // in instead of popping (stage 2, the camera coming in, is the `size` parameter's and lives in index.js)
@@ -297,6 +309,18 @@ export function measureQ() {
   return g;
 }
 
-// the equatorial radius of the loudest family at θ = 0 — the continuity monitor's 2-vector rides on it
-export const rimR = () => sf(0, N.mA[N.loudest], N.n1, N.lean[0], N.lean[1], N.lean[2], N.lean[3]) * N.sSz[0];
+// The continuity monitor's witness (HARNESS "Continuity monitor"). It must be CONTINUOUS in everything the music
+// moves, so it cannot be "the loudest family's rim": the loudest family changes by a swap, a discontinuity in the
+// witness and not on screen (16 violations in the first 60 s run, every one of them a reorder). Instead: the chroma-
+// weighted mean family radius — continuous in chroma — times the mean radius of the SHARED latitude profile at the
+// pinch and the lean in force, which every family has, times the drop's collapse. It therefore sees the beat's
+// breath, the section's lean, the growth, the drop and the sub's fattening, and never the species.
+const WITN = 32;
+export function witnessR() {
+  let s = 0;
+  for (let j = 0; j < WITN; j++) s += sf((j / WITN) * TAU, M_PHI, N.n1, N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
+  let w = 0, r = 0;
+  for (let k = 0; k < NF; k++) { w += N.ch[k]; r += N.ch[k] * N.size[k]; }
+  return (s / WITN) * (w > 1e-4 ? r / w : SIZE0) * (1 - (1 - DROP_SZ) * N.collapse);
+}
 export { BANDS, SLOTS };
