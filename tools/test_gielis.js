@@ -1,0 +1,98 @@
+// GIELIS's numerics (assets/math/gielis.js), in node — the superformula, the closure arithmetic, the species table,
+// Green's ruler and the GLSL twin's constants.
+//   1. the circle limit: n1 → ∞ is a circle for ANY m (Q = the 512-gon's, to 1e-4)
+//   2. the p/q closure: m = 3/2 closes after exactly 2 turns with a symmetric lean, 4 with a lopsided one
+//   3. the spherical product is the unit sphere when both curves are 1
+//   4. a known star's Q (m = 5, n1 = 1, n2 = n3 = 1) and the per-family rest → beat swing the scene is gated on
+//   5. the interval table: 12 entries, root 1/1, fifth 3/2, every one closing in ≤ 8 turns
+//   6. the GLSL twin's constants vs the JS to 0
+//   7. cost: greenQ() at 512 samples well under 1 ms
+import { sf, point3, closure, mOf, mTable, greenQ, GLSL, TAU, N1_MIN, R_MAX, BASE_MIN, M0, QCAP, N_Q, RATIO } from '../assets/math/gielis.js';
+import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES } from '../assets/scenes/gielis/nest.js';
+
+let fails = 0;
+const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
+const f = (x, k = 4) => x.toFixed(k);
+
+console.log('1. the circle limit');
+const polyQ = Math.PI / N_Q / Math.tan(Math.PI / N_Q);   // the exact isoperimetric quotient of the regular N-gon
+for (const m of [4, 3.5, 28 / 5]) {
+  const g = greenQ(m, 1e6, 1, 1, 1, 1);
+  ok(g.Q > 0.999 && Math.abs(g.Q - polyQ) < 1e-4, `m = ${m}, n1 = 1e6: Q = ${f(g.Q, 6)} (the ${N_Q}-gon's ${f(polyQ, 6)}), r ∈ [${f(g.rMin)}, ${f(g.rMax)}]`);
+}
+
+console.log('2. the p/q closure (m = 3/2: q = 2 turns)');
+const c32 = closure(3, 2);
+ok(c32.sym === 2 && c32.gen === 4, `closure(3, 2) = ${c32.sym} symmetric turns, ${c32.gen} lopsided`);
+let dSym = 0, dOne = 0, dAsym = 0, dAsym4 = 0;
+for (let j = 0; j < 400; j++) {
+  const p = (j / 400) * TAU;
+  dSym = Math.max(dSym, Math.abs(sf(p + 2 * TAU, 1.5, 3, 1, 1, 1, 1) - sf(p, 1.5, 3, 1, 1, 1, 1)));
+  dOne = Math.max(dOne, Math.abs(sf(p + TAU, 1.5, 3, 1, 1, 1, 1) - sf(p, 1.5, 3, 1, 1, 1, 1)));
+  dAsym = Math.max(dAsym, Math.abs(sf(p + 2 * TAU, 1.5, 3, 1, 4, 1, 1) - sf(p, 1.5, 3, 1, 4, 1, 1)));
+  dAsym4 = Math.max(dAsym4, Math.abs(sf(p + 4 * TAU, 1.5, 3, 1, 4, 1, 1) - sf(p, 1.5, 3, 1, 4, 1, 1)));
+}
+ok(dSym < 1e-9, `symmetric lean: r(φ + 4π) = r(φ) to ${dSym.toExponential(2)}`);
+ok(dOne > 0.01, `and r(φ + 2π) ≠ r(φ) (max |Δ| ${f(dOne)}) — one turn does not close`);
+ok(dAsym > 0.01 && dAsym4 < 1e-9, `lopsided lean (n3 = 4): 2 turns leave ${f(dAsym)}, 4 turns close to ${dAsym4.toExponential(2)}`);
+
+console.log('3. the spherical product');
+let sph = 0;
+for (let i = 0; i < 40; i++) {
+  for (let j = 0; j < 20; j++) {
+    const th = (i / 40) * TAU - Math.PI, ph = (j / 19 - 0.5) * Math.PI;
+    const p = point3(th, ph, [4, 1e6, 1, 1, 1, 1], [4, 1e6, 1, 1, 1, 1]);
+    sph = Math.max(sph, Math.abs(Math.hypot(p[0], p[1], p[2]) - 1));
+  }
+}
+ok(sph < 1e-6, `r1 = r2 = 1 gives the unit sphere: max |‖P‖ − 1| = ${sph.toExponential(2)}`);
+
+console.log('4. the ruler — a known star, and the breath the scene is gated on');
+const star = greenQ(5, 1, 1, 1, 1, 1);
+ok(star.Q > 0 && star.Q < 0.75, `m = 5, n1 = 1, n2 = n3 = 1: Q = ${f(star.Q)} (r ∈ [${f(star.rMin)}, ${f(star.rMax)}])`);
+let minSwing = 9, minRest = 9;
+const rows = mTable().map((e) => {
+  const r = greenQ(e.m, N1_REST, BASE[0], BASE[1], BASE[2], BASE[3]).Q;
+  const b = greenQ(e.m, N1_BEAT, BASE[0], BASE[1], BASE[2], BASE[3]).Q;
+  minSwing = Math.min(minSwing, r - b);
+  minRest = Math.min(minRest, r);
+  return `i${e.interval} m ${f(e.m, 3)} q${e.turns} ${f(r, 3)}→${f(b, 3)}`;
+});
+console.log('   ' + rows.join(' · '));
+ok(minRest >= 0.9, `rest Q ≥ 0.9 on every family (worst ${f(minRest)}) at n1 = N1_REST ${N1_REST}`);
+ok(minSwing >= 0.15, `beat swing ≥ 0.15 on every family (worst ${f(minSwing)}) at n1 = N1_BEAT ${N1_BEAT}`);
+for (let t = 0; t < TEMPLATES.length; t++) {
+  const L = TEMPLATES[t], g = greenQ(6, N1_REST, L[0], L[1], L[2], L[3]), h = greenQ(6, N1_BEAT, L[0], L[1], L[2], L[3]);
+  ok(g.Q > 0.9 && g.Q - h.Q > 0.05, `template ${TEMPLATE_NAMES[t]} (${L.join(', ')}) at m 6: Q ${f(g.Q)} → ${f(h.Q)}, r ≤ ${f(g.rMax)}`);
+}
+
+console.log('5. the interval table');
+const T = mTable();
+ok(T.length === 12, `${T.length} entries`);
+ok(T[0].p === 1 && T[0].q === 1 && T[0].m === M0, `the root is 1/1 → m = ${T[0].m}`);
+ok(T[7].p === 3 && T[7].q === 2 && T[7].m === M0 * 1.5, `the fifth is 3/2 → m = ${T[7].m} (${T[7].lobes} lobes in ${T[7].turns} turn)`);
+ok(T.every((e) => e.turns <= 8 && e.turnsGen <= 8), `every entry closes in ≤ 8 turns (max ${Math.max(...T.map((e) => e.turns))} symmetric, ${Math.max(...T.map((e) => e.turnsGen))} lopsided)`);
+ok(T.every((e) => e.turns <= QCAP), `and in ≤ QCAP ${QCAP} with the symmetric lean the scene draws`);
+ok(new Set(T.map((e) => e.m)).size === 12, 'the twelve lobe counts are distinct — twelve pitches, twelve shapes');
+const exact = T.filter((e) => Math.abs(e.m - e.exact) < 1e-12).length;
+console.log(`   ${exact}/12 are the exact ratio M0·p/q; the rest are snapped to denominator ≤ ${QCAP}: ` +
+  T.filter((e) => Math.abs(e.m - e.exact) > 1e-12).map((e) => `i${e.interval} ${f(e.exact, 4)}→${e.num}/${e.den}`).join(', '));
+ok(T.every((e) => Math.abs(e.m - (M0 * e.p) / e.q) < 0.02), 'every snapped m is within 0.02 of its exact ratio');
+ok(RATIO.length === 12 && mOf(19).interval === 7, 'mOf() wraps the interval into 0..11');
+
+console.log('6. the GLSL twin vs the JS');
+const num = (re) => { const m = GLSL.match(re); return m ? +m[1] : NaN; };
+const pairs = [['N1_MIN', num(/#define N1_MIN ([\d.]+)/), N1_MIN], ['R_MAX', num(/#define R_MAX ([\d.]+)/), R_MAX],
+  ['BASE_MIN', num(/#define BASE_MIN ([\d.]+)/), BASE_MIN], ['GTAU', num(/#define GTAU ([\d.]+)/), TAU]];
+let worst = 0;
+for (const [n, g, j] of pairs) worst = Math.max(worst, Math.abs(g - j));
+ok(worst < 1e-6, 'constants GLSL vs twin: ' + pairs.map(([n, g, j]) => `${n} ${g}/${f(j, 6)}`).join(' · ') + ` max |Δ| ${worst.toExponential(2)}`);
+ok(/float sfR\(/.test(GLSL) && /vec3 sfPoint\(/.test(GLSL), 'the twin declares sfR() and sfPoint()');
+
+console.log('7. cost');
+const t0 = performance.now();
+for (let i = 0; i < 200; i++) greenQ(5.6, 2 + 0.01 * i, 1, 1, 1, 1);
+const ms = (performance.now() - t0) / 200;
+ok(ms < 1, `greenQ() at ${N_Q} samples: ${f(ms, 4)} ms (gate 1 ms)`);
+console.log(fails ? `test_gielis: ${fails} FAIL` : 'test_gielis: OK');
+process.exit(fails ? 1 : 0);
