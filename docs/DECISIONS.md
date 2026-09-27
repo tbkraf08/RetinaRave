@@ -2182,3 +2182,14 @@ the Q swing through a beat doubled. The pastel, measured with `sat13.py`, was no
 luminance 0.72 → 0.53): the exterior knee is off, the interior knee milder (0.2, 3), and the dust's dim alone carries the post-drop
 frames (`EXT_DIM` 0.35). p95 0.81, the green frames' centre 0.26–0.42 against a rim of 0.53–0.71, the dust 0.30. s8 md5 c0373ec5 /
 d61162a7 twice. AUDIT-v0.13's seventh section. The user has not seen it; `nav2.js` 470 lines — the next machinery change extracts `beat.js`.
+
+**§46 addendum 7 (2026-09-27, the user's look at pass 7):** *"getting closer but still not deforming enough with the music (this is an
+extreme example and pretty much should be deforming on every beat)."* **Decisions:** `beat.js` (the press, the note, the cap, the slew;
+a pure move out of nav2.js, md5 identical); a per-frame beat trace (`nav2-window.py DT= SHOT=0 MIN=1`, `perbeat13.py`) because a montage
+cannot see a 0.12 s pinch; **every tick of the engine's beat grid is a full press while kicks are recent** (`GRID_K` 1.0, `GRID_T` 2 s,
+`GRID_ARM` 0.5 — the kick's own press was 0.34–0.76 on a third of the beats); the trough is the target's fall, not the speed (`BUMP_IV`
+0.3, `PULSE_K` 0.3, the slew as the monitor's own growth rule `STEP_G` 2.4 / `STEP_0` 0.008 on the realised step, `V_INT` 3.5); **the
+wind's weight squared** (`WIND_P` 2) because the engine's 0.3 wind-up through the groove floored the trough at 0.6 on the track where the
+windless sweep said 0.52; the hold 0.4 so the climb from the low trough finishes on every beat. Per frame on 27–33 s: press 0.90–0.92 on
+every beat, trough 0.68 → 0.55, a fifth of each beat near the circle, the Q swing ≥ 0.12 on two beats in three. s8 md5 2daaa2c0 /
+f2342b7f twice. AUDIT-v0.13's eighth section. The user has not seen it; the swing is now bounded by the beat's own length.

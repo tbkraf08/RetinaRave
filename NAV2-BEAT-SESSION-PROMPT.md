@@ -51,11 +51,17 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
   1:04 was that). `BUMP_LG` 0.5 pulls the exterior target in on the beat. The spin gains are halved (`SPIN_SW` 0.3, `SPIN_W` 0.25).
   The engine fires `dropEvt` at 58 s **and** at 1:45 on this track (4 s outside each) — 1:45 is the user's "highest energy"; if it
   still under-reacts, the drop event is the suspect, not the gains.
+- **Pass 8 (2026-09-27, the user's look at pass 7; addendum 7 / AUDIT §8):** *"still not deforming enough … should be deforming on
+  every beat".* `beat.js` now holds the press (nav2.js 396 lines). The grid press (`GRID_K` 1.0: every engine beat is a full press while
+  kicks are recent), `BUMP_IV` 0.3, `PULSE_K` 0.3, the slew as the monitor's growth rule (`STEP_G`/`STEP_0` on the realised step), `V_INT`
+  3.5, `WIND_P` 2 (the wind squared — the 0.3 wind-up through the groove floored the trough), `BUMP_HOLD` 0.4. **Measure per frame**, not by
+  montage: `DT=16 SHOT=0 MIN=1 nav2-window.py` + `perbeat13.py`. Per beat on the track: press 0.9 every beat, trough 0.55, a fifth of each
+  beat near the circle. The swing is now bounded by the beat's length (0.4 s: hold 0.16 + fall + climb). **The user has not seen pass 8.**
 - **Pass 7 (2026-09-27, the user's look at pass 6; addendum 6 / AUDIT §7):** *"still not deforming enough"; "a bit too muted now (almost
   pastel); I like the bright / glowy look, but not so bright that I can't see the mandelbrot shapes".* `V_INT` 2.4 + `A_MAX` 30 (the
   interior's speed with a slew; the monitor's rule is a spike rule), `BUMP_IV` 0.5, `K_R` 20 (the trough 0.84 → 0.67, the Q swing doubled);
   the exterior knee off, the interior knee (0.2, 3), `EXT_DIM` 0.35 (p95 luminance 0.53 → 0.81, the dust 0.30). `sat13.py` is the pastel
-  instrument. **The user has not seen pass 7** — show `montage-nav2-syd-groove-p7.jpg` and `montage-nav2-syd-58-p7.jpg` first.
+  instrument. The user saw pass 7: "still not deforming enough … on every beat" → pass 8.
 - **Pass 6 (2026-09-27, the user's look at pass 4; addendum 5 / AUDIT §6):** *"the movement is still too subtle"; "the beat causes the
   set to collapse into interesting shapes, then the silence rebounds to the circle (NAV does this ~38-42 s)"; "why do different sounds
   look so similar?"; two frames "too bright"; "do energy gain read against the track's own peak".* The notes are the twelve simplest roots
@@ -107,7 +113,7 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 
 ## Open, ranked
 
-1. **The user's next look** at pass 7 (the groove 26–50 s, the 58 s drop, the intro). Then tag v0.13 and, on the user's word, push.
+1. **The user's next look** at pass 8 (watch it live; the montage cannot show a per-beat pinch). Then tag v0.13 and, on the user's word, push.
 2. **Gates vs notes:** 0 gates on the real track now. Decide with the user whether the species should also change through gates.
 3. **1:45:** measured (`nav2-window-syd-145.txt`, `montage-nav2-syd-145.jpg`): a full-strength engine drop (`ds` 1.0), NAV2 outside
    105.9–111.4 s, the interior after it at eS 0.78 (1:33–1:39 read 0.87–0.94). `dropStrength` cannot gate it (1.0 at both drops); the
@@ -116,6 +122,5 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 4. **The other three tracks** re-measured and re-watched under v0.13 (AUDIT §5; `montage-nav2-{cn,wltp}-intro.jpg`, `montage-nav2-mal-
    intro-gap.jpg`): CyborgNinja is a one-note bassline (notes 0 / 1 → a fat near-cusp set, Q median 0.94 — item 2's question in another
    form), WhoLikesToParty fine, Malicious fixed by `DROP_GAP`. The user has not watched any of the three; show the montages.
-5. **Cost:** 2.3 ms with the note pull (the wall's `findCycle` probes); the budget is fine, but `nav2.js` is 470 lines (soft cap 350, hard
-   500) — the NEXT machinery change MUST move the note / press / slew block out (a `beat.js` beside `exit.js`, importing `detect.js` only).
+5. **Cost:** 2.3 ms with the note pull (the wall's `findCycle` probes); `nav2.js` 396 lines + `beat.js` 110 after the pass-8 move.
 6. The NAV2 swap question (§39: NAV2 → id 0 / home) is unchanged and waits for the user; the phase-winding colour variant is still not built.

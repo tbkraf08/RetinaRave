@@ -1,0 +1,605 @@
+tab file:///home/toma/Music/RetinaRave/SeeYouDrop.flac ok windows 19015284 19015286
+clickSel #go [937.9896087646484,565.5833549499512]
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 106
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.41
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.411,\"bc\":18,\"bp\":0.39,\"bump\":0.7,\"rho\":0.915,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.36,\"green\":{\"Q\":0.786}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.43
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.431,\"bc\":18,\"bp\":0.43,\"bump\":0.63,\"rho\":0.879,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.32,\"green\":{\"Q\":0.806}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.45
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.45,\"bc\":18,\"bp\":0.48,\"bump\":0.57,\"rho\":0.845,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.29,\"green\":{\"Q\":0.824}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.47
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.47,\"bc\":18,\"bp\":0.57,\"bump\":0.64,\"rho\":0.783,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.32,\"green\":{\"Q\":0.862}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.49
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.489,\"bc\":18,\"bp\":0.62,\"bump\":0.64,\"rho\":0.789,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.29,\"green\":{\"Q\":0.872}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.508,\"bc\":18,\"bp\":0.66,\"bump\":0.64,\"rho\":0.816,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.876}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.528,\"bc\":18,\"bp\":0.71,\"bump\":0.64,\"rho\":0.852,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.883}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.55
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.547,\"bc\":18,\"bp\":0.75,\"bump\":0.64,\"rho\":0.894,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.21,\"green\":{\"Q\":0.894}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.57
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.567,\"bc\":18,\"bp\":0.8,\"bump\":0.64,\"rho\":0.939,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.908}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.59
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.587,\"bc\":18,\"bp\":0.88,\"bump\":0.44,\"rho\":0.752,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.942}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.61
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.604,\"bc\":18,\"bp\":0.93,\"bump\":0.38,\"rho\":0.658,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.949}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.63
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.621,\"bc\":18,\"bp\":0.97,\"bump\":0.34,\"rho\":0.7,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.945}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.65
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.639,\"bc\":19,\"bp\":0.01,\"bump\":0.92,\"rho\":0.88,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.923}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.67
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.656,\"bc\":19,\"bp\":0.06,\"bump\":0.92,\"rho\":0.87,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.912}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.67
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.674,\"bc\":19,\"bp\":0.1,\"bump\":0.92,\"rho\":0.895,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.896}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.69
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.691,\"bc\":19,\"bp\":0.14,\"bump\":0.92,\"rho\":0.899,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.883}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.71
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.708,\"bc\":19,\"bp\":0.18,\"bump\":0.92,\"rho\":0.911,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.869}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.73
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.726,\"bc\":19,\"bp\":0.23,\"bump\":0.92,\"rho\":0.919,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.22,\"green\":{\"Q\":0.855}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.75
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.743,\"bc\":19,\"bp\":0.27,\"bump\":0.75,\"rho\":0.891,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.857}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.77
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.76,\"bc\":19,\"bp\":0.32,\"bump\":0.62,\"rho\":0.837,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.871}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.79
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.777,\"bc\":19,\"bp\":0.37,\"bump\":0.51,\"rho\":0.787,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.884}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.8
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.795,\"bc\":19,\"bp\":0.42,\"bump\":0.42,\"rho\":0.741,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.897}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.81
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.813,\"bc\":19,\"bp\":0.47,\"bump\":0.35,\"rho\":0.701,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.908}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.83
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.83,\"bc\":19,\"bp\":0.52,\"bump\":0.28,\"rho\":0.666,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.917}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.85
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.848,\"bc\":19,\"bp\":0.56,\"bump\":0.23,\"rho\":0.634,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.925}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.87
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.866,\"bc\":19,\"bp\":0.61,\"bump\":0.21,\"rho\":0.616,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.93}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.89
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.883,\"bc\":19,\"bp\":0.66,\"bump\":0.19,\"rho\":0.602,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.934}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.91
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.9,\"bc\":19,\"bp\":0.7,\"bump\":0.44,\"rho\":0.667,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.919}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.93
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.919,\"bc\":19,\"bp\":0.75,\"bump\":0.44,\"rho\":0.737,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.9}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.94
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.937,\"bc\":19,\"bp\":0.84,\"bump\":0.44,\"rho\":0.743,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.896}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.96
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.955,\"bc\":19,\"bp\":0.88,\"bump\":0.44,\"rho\":0.743,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.895}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.98
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.973,\"bc\":19,\"bp\":0.93,\"bump\":0.44,\"rho\":0.744,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.894}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 107.99
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.991,\"bc\":19,\"bp\":0.97,\"bump\":0.36,\"rho\":0.707,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.904}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.01
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.009,\"bc\":20,\"bp\":0.02,\"bump\":0.9,\"rho\":0.808,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.87}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.03
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.026,\"bc\":20,\"bp\":0.06,\"bump\":0.9,\"rho\":0.924,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.816}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.05
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.043,\"bc\":20,\"bp\":0.1,\"bump\":0.9,\"rho\":0.949,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.797}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.06
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.061,\"bc\":20,\"bp\":0.15,\"bump\":0.9,\"rho\":0.956,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.07,\"green\":{\"Q\":0.788}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.08
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.079,\"bc\":20,\"bp\":0.19,\"bump\":0.9,\"rho\":0.96,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.06,\"green\":{\"Q\":0.782}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.1
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.097,\"bc\":20,\"bp\":0.23,\"bump\":0.73,\"rho\":0.924,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.06,\"green\":{\"Q\":0.799}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.12
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.115,\"bc\":20,\"bp\":0.28,\"bump\":0.65,\"rho\":0.887,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.27,\"green\":{\"Q\":0.817}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.14
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.134,\"bc\":20,\"bp\":0.32,\"bump\":0.65,\"rho\":0.878,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.25,\"green\":{\"Q\":0.82}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.16
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.154,\"bc\":20,\"bp\":0.4,\"bump\":0.79,\"rho\":0.938,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.783}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.18
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.173,\"bc\":20,\"bp\":0.45,\"bump\":0.79,\"rho\":0.944,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.778}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.19
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.193,\"bc\":20,\"bp\":0.49,\"bump\":0.64,\"rho\":0.897,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.804}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.21
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.213,\"bc\":20,\"bp\":0.53,\"bump\":0.51,\"rho\":0.833,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.836}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.23
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.232,\"bc\":20,\"bp\":0.57,\"bump\":0.45,\"rho\":0.788,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.856}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.25
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.251,\"bc\":20,\"bp\":0.62,\"bump\":0.4,\"rho\":0.754,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.87}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.27
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.271,\"bc\":20,\"bp\":0.71,\"bump\":0.78,\"rho\":0.918,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.28,\"green\":{\"Q\":0.79}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.3
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.289,\"bc\":20,\"bp\":0.76,\"bump\":0.78,\"rho\":0.937,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.25,\"green\":{\"Q\":0.777}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.32
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.306,\"bc\":20,\"bp\":0.8,\"bump\":0.78,\"rho\":0.943,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.23,\"green\":{\"Q\":0.773}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.33
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.324,\"bc\":20,\"bp\":0.85,\"bump\":0.78,\"rho\":0.946,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.77}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.34
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.343,\"bc\":20,\"bp\":0.89,\"bump\":0.62,\"rho\":0.916,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.788}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.36
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.361,\"bc\":20,\"bp\":0.94,\"bump\":0.5,\"rho\":0.837,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.83}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.38
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.38,\"bc\":20,\"bp\":0.98,\"bump\":0.4,\"rho\":0.773,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.86}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.4
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.397,\"bc\":21,\"bp\":0.03,\"bump\":0.91,\"rho\":0.877,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.809}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.42
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.415,\"bc\":21,\"bp\":0.07,\"bump\":0.91,\"rho\":0.947,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.767}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.432,\"bc\":21,\"bp\":0.12,\"bump\":0.91,\"rho\":0.967,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.753}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.46
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.45,\"bc\":21,\"bp\":0.16,\"bump\":0.91,\"rho\":0.974,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.748}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.47
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.467,\"bc\":21,\"bp\":0.21,\"bump\":0.91,\"rho\":0.976,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.745}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.48
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.484,\"bc\":21,\"bp\":0.25,\"bump\":0.89,\"rho\":0.977,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.33,\"green\":{\"Q\":0.744}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.5
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.502,\"bc\":21,\"bp\":0.29,\"bump\":0.89,\"rho\":0.978,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.3,\"green\":{\"Q\":0.743}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.519,\"bc\":21,\"bp\":0.33,\"bump\":0.89,\"rho\":0.978,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.27,\"green\":{\"Q\":0.742}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.536,\"bc\":21,\"bp\":0.42,\"bump\":0.89,\"rho\":0.979,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.22,\"green\":{\"Q\":0.741}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.56
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.554,\"bc\":21,\"bp\":0.46,\"bump\":0.7,\"rho\":0.958,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.755}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.58
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.571,\"bc\":21,\"bp\":0.51,\"bump\":0.55,\"rho\":0.894,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.794}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.59
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.59,\"bc\":21,\"bp\":0.55,\"bump\":0.44,\"rho\":0.817,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.835}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.61
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.609,\"bc\":21,\"bp\":0.59,\"bump\":0.4,\"rho\":0.772,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.857}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.63
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.627,\"bc\":21,\"bp\":0.63,\"bump\":0.4,\"rho\":0.756,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.864}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.65
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.643,\"bc\":21,\"bp\":0.68,\"bump\":0.4,\"rho\":0.75,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.867}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.66
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.661,\"bc\":21,\"bp\":0.72,\"bump\":0.4,\"rho\":0.747,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.869}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.68
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.679,\"bc\":21,\"bp\":0.76,\"bump\":0.31,\"rho\":0.716,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.882}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.71
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.697,\"bc\":21,\"bp\":0.8,\"bump\":0.25,\"rho\":0.67,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.899}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.71
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.716,\"bc\":21,\"bp\":0.85,\"bump\":0.22,\"rho\":0.643,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.908}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.73
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.735,\"bc\":21,\"bp\":0.89,\"bump\":0.2,\"rho\":0.625,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.07,\"green\":{\"Q\":0.914}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.75
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.753,\"bc\":21,\"bp\":0.97,\"bump\":0.89,\"rho\":0.674,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.33,\"green\":{\"Q\":0.9}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.77
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.771,\"bc\":22,\"bp\":0.01,\"bump\":0.89,\"rho\":0.787,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.3,\"green\":{\"Q\":0.857}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.79
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.789,\"bc\":22,\"bp\":0.04,\"bump\":0.89,\"rho\":0.892,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.27,\"green\":{\"Q\":0.805}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.81
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.807,\"bc\":22,\"bp\":0.08,\"bump\":0.89,\"rho\":0.951,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.769}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.83
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.824,\"bc\":22,\"bp\":0.12,\"bump\":0.69,\"rho\":0.918,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.22,\"green\":{\"Q\":0.788}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.84
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.841,\"bc\":22,\"bp\":0.16,\"bump\":0.55,\"rho\":0.856,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.822}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.86
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.859,\"bc\":22,\"bp\":0.2,\"bump\":0.49,\"rho\":0.816,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.841}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.88
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.876,\"bc\":22,\"bp\":0.24,\"bump\":0.49,\"rho\":0.803,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.847}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.9
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.894,\"bc\":22,\"bp\":0.28,\"bump\":0.49,\"rho\":0.799,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.849}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.92
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.911,\"bc\":22,\"bp\":0.32,\"bump\":0.49,\"rho\":0.797,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.85}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.93
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.929,\"bc\":22,\"bp\":0.36,\"bump\":0.38,\"rho\":0.778,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.859}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.95
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.947,\"bc\":22,\"bp\":0.4,\"bump\":0.31,\"rho\":0.715,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.884}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.96
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.965,\"bc\":22,\"bp\":0.44,\"bump\":0.28,\"rho\":0.68,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.897}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 108.98
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.982,\"bc\":22,\"bp\":0.48,\"bump\":0.91,\"rho\":0.779,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.33,\"green\":{\"Q\":0.858}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.999,\"bc\":22,\"bp\":0.52,\"bump\":0.91,\"rho\":0.883,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.29,\"green\":{\"Q\":0.807}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.02
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.017,\"bc\":22,\"bp\":0.56,\"bump\":0.91,\"rho\":0.949,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.767}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.04
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.036,\"bc\":22,\"bp\":0.6,\"bump\":0.91,\"rho\":0.968,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.753}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.06
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.054,\"bc\":22,\"bp\":0.69,\"bump\":0.52,\"rho\":0.852,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.82}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.08
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.071,\"bc\":22,\"bp\":0.73,\"bump\":0.46,\"rho\":0.805,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.843}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.1
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.088,\"bc\":22,\"bp\":0.77,\"bump\":0.91,\"rho\":0.905,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.65,\"green\":{\"Q\":0.79}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.12
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.106,\"bc\":22,\"bp\":0.81,\"bump\":0.91,\"rho\":0.955,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.58,\"green\":{\"Q\":0.758}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.12
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.123,\"bc\":22,\"bp\":0.85,\"bump\":0.91,\"rho\":0.971,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.52,\"green\":{\"Q\":0.746}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.14
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.142,\"bc\":22,\"bp\":0.89,\"bump\":0.68,\"rho\":0.929,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.47,\"green\":{\"Q\":0.773}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.16
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.16,\"bc\":22,\"bp\":0.93,\"bump\":0.61,\"rho\":0.89,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.43,\"green\":{\"Q\":0.796}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.18
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.178,\"bc\":22,\"bp\":0.97,\"bump\":0.61,\"rho\":0.876,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.38,\"green\":{\"Q\":0.804}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.2
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.197,\"bc\":23,\"bp\":0.02,\"bump\":0.91,\"rho\":0.922,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.35,\"green\":{\"Q\":0.777}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.22
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.216,\"bc\":23,\"bp\":0.06,\"bump\":0.91,\"rho\":0.961,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.31,\"green\":{\"Q\":0.752}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.24
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.237,\"bc\":23,\"bp\":0.14,\"bump\":0.5,\"rho\":0.851,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.25,\"green\":{\"Q\":0.817}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.25
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.255,\"bc\":23,\"bp\":0.18,\"bump\":0.57,\"rho\":0.849,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.23,\"green\":{\"Q\":0.818}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.27
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.273,\"bc\":23,\"bp\":0.22,\"bump\":0.57,\"rho\":0.848,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.21,\"green\":{\"Q\":0.819}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.29
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.29,\"bc\":23,\"bp\":0.26,\"bump\":0.57,\"rho\":0.847,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.819}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.31
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.307,\"bc\":23,\"bp\":0.3,\"bump\":0.57,\"rho\":0.847,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.82}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.33
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.324,\"bc\":23,\"bp\":0.34,\"bump\":0.42,\"rho\":0.827,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.83}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.35
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.342,\"bc\":23,\"bp\":0.38,\"bump\":0.75,\"rho\":0.888,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.49,\"green\":{\"Q\":0.798}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.37
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.359,\"bc\":23,\"bp\":0.42,\"bump\":0.75,\"rho\":0.922,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.44,\"green\":{\"Q\":0.778}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.38
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.376,\"bc\":23,\"bp\":0.46,\"bump\":0.75,\"rho\":0.933,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.4,\"green\":{\"Q\":0.771}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.39
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.393,\"bc\":23,\"bp\":0.5,\"bump\":0.75,\"rho\":0.937,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.36,\"green\":{\"Q\":0.768}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.41
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.41,\"bc\":23,\"bp\":0.54,\"bump\":0.54,\"rho\":0.914,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.32,\"green\":{\"Q\":0.782}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.43
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.427,\"bc\":23,\"bp\":0.58,\"bump\":0.45,\"rho\":0.846,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.29,\"green\":{\"Q\":0.821}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.45
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.444,\"bc\":23,\"bp\":0.62,\"bump\":0.45,\"rho\":0.802,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.843}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.47
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.462,\"bc\":23,\"bp\":0.66,\"bump\":0.45,\"rho\":0.786,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.851}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.49
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.48,\"bc\":23,\"bp\":0.7,\"bump\":0.45,\"rho\":0.78,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.28,\"green\":{\"Q\":0.854}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.5
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.498,\"bc\":23,\"bp\":0.74,\"bump\":0.41,\"rho\":0.76,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.863}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.516,\"bc\":23,\"bp\":0.78,\"bump\":0.37,\"rho\":0.737,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.23,\"green\":{\"Q\":0.873}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.534,\"bc\":23,\"bp\":0.82,\"bump\":0.37,\"rho\":0.729,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.21,\"green\":{\"Q\":0.877}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.56
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.552,\"bc\":23,\"bp\":0.86,\"bump\":0.37,\"rho\":0.726,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.879}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.57
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.569,\"bc\":23,\"bp\":0.9,\"bump\":0.37,\"rho\":0.724,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.88}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.59
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.587,\"bc\":23,\"bp\":0.99,\"bump\":0.29,\"rho\":0.684,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.896}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.61
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.605,\"bc\":24,\"bp\":0.03,\"bump\":0.9,\"rho\":0.756,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.32,\"green\":{\"Q\":0.869}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.63
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.622,\"bc\":24,\"bp\":0.07,\"bump\":0.9,\"rho\":0.862,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.29,\"green\":{\"Q\":0.819}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.64
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.639,\"bc\":24,\"bp\":0.11,\"bump\":0.64,\"rho\":0.873,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.814}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.66
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.657,\"bc\":24,\"bp\":0.15,\"bump\":0.45,\"rho\":0.832,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.834}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.68
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.675,\"bc\":24,\"bp\":0.19,\"bump\":0.36,\"rho\":0.755,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.21,\"green\":{\"Q\":0.868}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.7
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.693,\"bc\":24,\"bp\":0.23,\"bump\":0.33,\"rho\":0.693,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.19,\"green\":{\"Q\":0.897}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.72
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.711,\"bc\":24,\"bp\":0.28,\"bump\":0.33,\"rho\":0.678,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.17,\"green\":{\"Q\":0.907}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.74
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.729,\"bc\":24,\"bp\":0.32,\"bump\":0.42,\"rho\":0.725,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.24,\"green\":{\"Q\":0.902}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.76
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.747,\"bc\":24,\"bp\":0.36,\"bump\":0.38,\"rho\":0.721,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.22,\"green\":{\"Q\":0.911}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.76
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.765,\"bc\":24,\"bp\":0.41,\"bump\":0.34,\"rho\":0.703,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.2,\"green\":{\"Q\":0.923}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.78
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.783,\"bc\":24,\"bp\":0.45,\"bump\":0.31,\"rho\":0.681,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.18,\"green\":{\"Q\":0.935}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.8
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.801,\"bc\":24,\"bp\":0.5,\"bump\":0.31,\"rho\":0.691,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.16,\"green\":{\"Q\":0.941}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.82
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.818,\"bc\":24,\"bp\":0.55,\"bump\":0.31,\"rho\":0.678,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.14,\"green\":{\"Q\":0.947}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.84
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.837,\"bc\":24,\"bp\":0.64,\"bump\":0.21,\"rho\":0.624,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.12,\"green\":{\"Q\":0.951}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.86
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.855,\"bc\":24,\"bp\":0.68,\"bump\":0.19,\"rho\":0.579,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.1,\"green\":{\"Q\":0.953}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.88
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.874,\"bc\":24,\"bp\":0.73,\"bump\":0.17,\"rho\":0.582,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.09,\"green\":{\"Q\":0.95}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.89
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.891,\"bc\":24,\"bp\":0.77,\"bump\":0.84,\"rho\":0.755,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.46,\"green\":{\"Q\":0.921}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.91
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.909,\"bc\":24,\"bp\":0.82,\"bump\":0.84,\"rho\":0.921,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.41,\"green\":{\"Q\":0.878}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.93
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.927,\"bc\":24,\"bp\":0.86,\"bump\":0.84,\"rho\":0.964,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.37,\"green\":{\"Q\":0.85}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.95
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.944,\"bc\":24,\"bp\":0.9,\"bump\":0.62,\"rho\":0.864,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.33,\"green\":{\"Q\":0.868}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.97
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.962,\"bc\":24,\"bp\":0.95,\"bump\":0.56,\"rho\":0.833,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.3,\"green\":{\"Q\":0.87}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 109.99
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.98,\"bc\":24,\"bp\":0.99,\"bump\":0.51,\"rho\":0.805,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.27,\"green\":{\"Q\":0.873}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.01
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.999,\"bc\":25,\"bp\":0.03,\"bump\":0.91,\"rho\":0.923,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.24,\"green\":{\"Q\":0.819}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.03
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.017,\"bc\":25,\"bp\":0.08,\"bump\":0.91,\"rho\":0.97,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.29,\"green\":{\"Q\":0.788}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.03
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.034,\"bc\":25,\"bp\":0.12,\"bump\":0.62,\"rho\":0.896,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.26,\"green\":{\"Q\":0.82}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.05
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.052,\"bc\":25,\"bp\":0.16,\"bump\":0.46,\"rho\":0.807,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.24,\"green\":{\"Q\":0.855}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.07
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.07,\"bc\":25,\"bp\":0.25,\"bump\":0.69,\"rho\":0.863,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.867}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.09
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.088,\"bc\":25,\"bp\":0.29,\"bump\":0.69,\"rho\":0.906,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.876}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.11
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.105,\"bc\":25,\"bp\":0.33,\"bump\":0.49,\"rho\":0.79,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.913}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.13
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.123,\"bc\":25,\"bp\":0.38,\"bump\":0.66,\"rho\":0.979,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.34,\"green\":{\"Q\":0.899}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.15
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.14,\"bc\":25,\"bp\":0.42,\"bump\":0.6,\"rho\":0.88,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.3,\"green\":{\"Q\":0.925}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.17
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.158,\"bc\":25,\"bp\":0.46,\"bump\":0.6,\"rho\":0.93,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.27,\"green\":{\"Q\":0.931}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.18
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.175,\"bc\":25,\"bp\":0.5,\"bump\":0.6,\"rho\":0.642,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.25,\"green\":{\"Q\":0.944}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.19
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.192,\"bc\":25,\"bp\":0.55,\"bump\":0.45,\"rho\":0.764,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.22,\"green\":{\"Q\":0.925}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.21
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.21,\"bc\":25,\"bp\":0.59,\"bump\":0.4,\"rho\":0.677,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.935}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.23
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.227,\"bc\":25,\"bp\":0.63,\"bump\":0.37,\"rho\":0.687,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.933}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.25
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.245,\"bc\":25,\"bp\":0.67,\"bump\":0.37,\"rho\":0.684,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.932}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.27
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.264,\"bc\":25,\"bp\":0.71,\"bump\":0.37,\"rho\":0.686,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.931}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.29
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.283,\"bc\":25,\"bp\":0.75,\"bump\":0.37,\"rho\":0.688,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.929}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.3
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.301,\"bc\":25,\"bp\":0.79,\"bump\":0.33,\"rho\":0.665,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.933}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.32
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.319,\"bc\":25,\"bp\":0.83,\"bump\":0.3,\"rho\":0.649,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.935}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.34
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.338,\"bc\":25,\"bp\":0.91,\"bump\":0.3,\"rho\":0.651,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.934}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.36
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.356,\"bc\":25,\"bp\":0.94,\"bump\":0.23,\"rho\":0.62,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.94}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.38
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.374,\"bc\":25,\"bp\":0.98,\"bump\":0.2,\"rho\":0.589,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.945}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.4
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.392,\"bc\":26,\"bp\":0.02,\"bump\":0.9,\"rho\":0.689,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.927}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.42
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.41,\"bc\":26,\"bp\":0.06,\"bump\":0.9,\"rho\":0.85,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.886}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.43
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.427,\"bc\":26,\"bp\":0.11,\"bump\":0.9,\"rho\":0.926,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.852}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.45
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.444,\"bc\":26,\"bp\":0.15,\"bump\":0.59,\"rho\":0.816,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.882}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.47
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.462,\"bc\":26,\"bp\":0.19,\"bump\":0.39,\"rho\":0.715,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.908}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.49
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.479,\"bc\":26,\"bp\":0.23,\"bump\":0.27,\"rho\":0.644,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.925}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.5
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.497,\"bc\":26,\"bp\":0.27,\"bump\":0.24,\"rho\":0.625,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.93}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.515,\"bc\":26,\"bp\":0.31,\"bump\":0.24,\"rho\":0.622,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.931}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.534,\"bc\":26,\"bp\":0.35,\"bump\":0.24,\"rho\":0.622,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.931}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.55
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.551,\"bc\":26,\"bp\":0.39,\"bump\":0.18,\"rho\":0.591,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.938}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.57
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.569,\"bc\":26,\"bp\":0.43,\"bump\":0.91,\"rho\":0.685,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.916}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.59
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.586,\"bc\":26,\"bp\":0.47,\"bump\":0.81,\"rho\":0.823,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.873}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.61
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.605,\"bc\":26,\"bp\":0.55,\"bump\":0.81,\"rho\":0.934,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.15,\"green\":{\"Q\":0.815}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.63
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.622,\"bc\":26,\"bp\":0.6,\"bump\":0.58,\"rho\":0.843,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.851}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.65
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.639,\"bc\":26,\"bp\":0.64,\"bump\":0.52,\"rho\":0.801,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.866}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.67
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.657,\"bc\":26,\"bp\":0.68,\"bump\":0.46,\"rho\":0.768,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.876}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.67
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.674,\"bc\":26,\"bp\":0.72,\"bump\":0.46,\"rho\":0.762,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.877}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.69
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.692,\"bc\":26,\"bp\":0.76,\"bump\":0.46,\"rho\":0.761,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.877}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.71
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.71,\"bc\":26,\"bp\":0.8,\"bump\":0.33,\"rho\":0.72,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.891}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.73
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.728,\"bc\":26,\"bp\":0.84,\"bump\":0.29,\"rho\":0.673,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.905}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.75
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.746,\"bc\":26,\"bp\":0.89,\"bump\":0.26,\"rho\":0.647,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.913}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.77
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.765,\"bc\":26,\"bp\":0.93,\"bump\":0.26,\"rho\":0.64,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.915}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.79
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.782,\"bc\":26,\"bp\":0.98,\"bump\":0.26,\"rho\":0.638,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.916}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.81
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.8,\"bc\":27,\"bp\":0.02,\"bump\":0.9,\"rho\":0.661,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.909}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.83
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.817,\"bc\":27,\"bp\":0.07,\"bump\":0.57,\"rho\":0.731,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.886}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.84
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.835,\"bc\":27,\"bp\":0.12,\"bump\":0.37,\"rho\":0.711,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.08,\"green\":{\"Q\":0.893}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.86
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.853,\"bc\":27,\"bp\":0.16,\"bump\":0.23,\"rho\":0.643,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.07,\"green\":{\"Q\":0.914}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.88
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.87,\"bc\":27,\"bp\":0.2,\"bump\":0.84,\"rho\":0.758,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.18,\"green\":{\"Q\":0.882}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.9
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.888,\"bc\":27,\"bp\":0.29,\"bump\":0.84,\"rho\":0.96,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.15,\"green\":{\"Q\":0.834}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.92
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.906,\"bc\":27,\"bp\":0.34,\"bump\":0.6,\"rho\":0.872,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.13,\"green\":{\"Q\":0.881}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.93
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.924,\"bc\":27,\"bp\":0.38,\"bump\":0.53,\"rho\":0.825,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.12,\"green\":{\"Q\":0.906}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.95
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.942,\"bc\":27,\"bp\":0.42,\"bump\":0.47,\"rho\":0.784,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.11,\"green\":{\"Q\":0.924}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.96
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.96,\"bc\":27,\"bp\":0.47,\"bump\":0.47,\"rho\":0.807,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.1,\"green\":{\"Q\":0.93}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 110.98
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.977,\"bc\":27,\"bp\":0.51,\"bump\":0.47,\"rho\":0.773,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.09,\"green\":{\"Q\":0.939}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.994,\"bc\":27,\"bp\":0.55,\"bump\":0.34,\"rho\":0.592,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.08,\"green\":{\"Q\":0.955}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.01
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.012,\"bc\":27,\"bp\":0.6,\"bump\":0.3,\"rho\":0.721,\"mode\":\"INT\",\"q\":1,\"note\":0,\"kick\":0.07,\"green\":{\"Q\":0.943}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.03
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.029,\"bc\":27,\"bp\":0.64,\"bump\":0.27,\"rho\":0.478,\"mode\":\"INT\",\"q\":1,\"note\":4,\"kick\":0.06,\"green\":{\"Q\":0.965}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.05
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.047,\"bc\":27,\"bp\":0.68,\"bump\":0.53,\"rho\":0.638,\"mode\":\"INT\",\"q\":1,\"note\":4,\"kick\":0.31,\"green\":{\"Q\":0.94}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.07
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.064,\"bc\":27,\"bp\":0.73,\"bump\":0.9,\"rho\":0.727,\"mode\":\"INT\",\"q\":1,\"note\":4,\"kick\":0.28,\"green\":{\"Q\":0.912}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.08
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.082,\"bc\":27,\"bp\":0.77,\"bump\":0.81,\"rho\":0.737,\"mode\":\"INT\",\"q\":1,\"note\":4,\"kick\":0.25,\"green\":{\"Q\":0.898}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.1
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.099,\"bc\":27,\"bp\":0.81,\"bump\":0.72,\"rho\":0.732,\"mode\":\"INT\",\"q\":1,\"note\":4,\"kick\":0.23,\"green\":{\"Q\":0.888}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.12
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.116,\"bc\":27,\"bp\":0.85,\"bump\":0.64,\"rho\":0.787,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.2,\"green\":{\"Q\":0.858}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.13
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.134,\"bc\":27,\"bp\":0.9,\"bump\":0.64,\"rho\":0.809,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.18,\"green\":{\"Q\":0.84}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.15
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.151,\"bc\":27,\"bp\":0.94,\"bump\":0.64,\"rho\":0.823,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.16,\"green\":{\"Q\":0.826}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.17
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.168,\"bc\":27,\"bp\":0.98,\"bump\":0.9,\"rho\":0.883,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.15,\"green\":{\"Q\":0.788}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.19
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.186,\"bc\":28,\"bp\":0.02,\"bump\":0.9,\"rho\":0.92,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.13,\"green\":{\"Q\":0.759}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.21
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.203,\"bc\":28,\"bp\":0.06,\"bump\":0.72,\"rho\":0.907,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.21,\"green\":{\"Q\":0.764}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.22
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.22,\"bc\":28,\"bp\":0.11,\"bump\":0.72,\"rho\":0.905,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.19,\"green\":{\"Q\":0.763}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.24
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.238,\"bc\":28,\"bp\":0.15,\"bump\":0.72,\"rho\":0.907,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.17,\"green\":{\"Q\":0.759}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.26
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.256,\"bc\":28,\"bp\":0.24,\"bump\":0.46,\"rho\":0.807,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.14,\"green\":{\"Q\":0.815}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.28
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.273,\"bc\":28,\"bp\":0.28,\"bump\":0.41,\"rho\":0.772,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.12,\"green\":{\"Q\":0.833}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.3
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.291,\"bc\":28,\"bp\":0.33,\"bump\":0.41,\"rho\":0.756,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.11,\"green\":{\"Q\":0.84}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.31
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.309,\"bc\":28,\"bp\":0.37,\"bump\":0.41,\"rho\":0.749,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.1,\"green\":{\"Q\":0.843}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.33
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.327,\"bc\":28,\"bp\":0.42,\"bump\":0.29,\"rho\":0.707,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.09,\"green\":{\"Q\":0.862}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.34
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.344,\"bc\":28,\"bp\":0.46,\"bump\":0.26,\"rho\":0.675,\"mode\":\"INT\",\"q\":1,\"note\":3,\"kick\":0.08,\"green\":{\"Q\":0.875}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.36
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.361,\"bc\":28,\"bp\":0.51,\"bump\":0.39,\"rho\":0.687,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.36,\"green\":{\"Q\":0.871}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.38
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.379,\"bc\":28,\"bp\":0.55,\"bump\":0.39,\"rho\":0.694,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.32,\"green\":{\"Q\":0.868}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.4
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.397,\"bc\":28,\"bp\":0.59,\"bump\":0.32,\"rho\":0.676,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.29,\"green\":{\"Q\":0.877}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.42
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.415,\"bc\":28,\"bp\":0.64,\"bump\":0.29,\"rho\":0.658,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.26,\"green\":{\"Q\":0.885}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.433,\"bc\":28,\"bp\":0.68,\"bump\":0.27,\"rho\":0.641,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.24,\"green\":{\"Q\":0.892}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.46
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.449,\"bc\":28,\"bp\":0.72,\"bump\":0.24,\"rho\":0.624,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.21,\"green\":{\"Q\":0.899}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.46
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.467,\"bc\":28,\"bp\":0.77,\"bump\":0.24,\"rho\":0.616,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.19,\"green\":{\"Q\":0.902}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.48
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.484,\"bc\":28,\"bp\":0.81,\"bump\":0.2,\"rho\":0.597,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.17,\"green\":{\"Q\":0.909}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.5
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.502,\"bc\":28,\"bp\":0.85,\"bump\":0.18,\"rho\":0.581,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.16,\"green\":{\"Q\":0.914}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.521,\"bc\":28,\"bp\":0.89,\"bump\":0.16,\"rho\":0.568,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.14,\"green\":{\"Q\":0.919}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.539,\"bc\":28,\"bp\":0.98,\"bump\":0.13,\"rho\":0.544,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.11,\"green\":{\"Q\":0.926}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.56
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.556,\"bc\":29,\"bp\":0.02,\"bump\":0.9,\"rho\":0.584,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.62,\"green\":{\"Q\":0.914}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.58
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.574,\"bc\":29,\"bp\":0.06,\"bump\":0.9,\"rho\":0.676,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.56,\"green\":{\"Q\":0.881}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.59
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.593,\"bc\":29,\"bp\":0.11,\"bump\":0.59,\"rho\":0.763,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.5,\"green\":{\"Q\":0.844}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.61
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.611,\"bc\":29,\"bp\":0.15,\"bump\":0.53,\"rho\":0.781,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.45,\"green\":{\"Q\":0.836}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.63
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.627,\"bc\":29,\"bp\":0.19,\"bump\":0.48,\"rho\":0.772,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.41,\"green\":{\"Q\":0.841}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.65
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.645,\"bc\":29,\"bp\":0.23,\"bump\":0.44,\"rho\":0.753,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.37,\"green\":{\"Q\":0.851}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.66
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.663,\"bc\":29,\"bp\":0.27,\"bump\":0.44,\"rho\":0.745,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.33,\"green\":{\"Q\":0.855}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.68
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.681,\"bc\":29,\"bp\":0.32,\"bump\":0.36,\"rho\":0.713,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.3,\"green\":{\"Q\":0.87}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.7
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.699,\"bc\":29,\"bp\":0.36,\"bump\":0.32,\"rho\":0.687,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.27,\"green\":{\"Q\":0.88}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.73
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.719,\"bc\":29,\"bp\":0.4,\"bump\":0.29,\"rho\":0.664,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.24,\"green\":{\"Q\":0.89}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.74
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.736,\"bc\":29,\"bp\":0.44,\"bump\":0.27,\"rho\":0.643,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.22,\"green\":{\"Q\":0.897}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.75
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.754,\"bc\":29,\"bp\":0.48,\"bump\":0.27,\"rho\":0.634,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.2,\"green\":{\"Q\":0.9}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.77
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.771,\"bc\":29,\"bp\":0.53,\"bump\":0.22,\"rho\":0.611,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.18,\"green\":{\"Q\":0.908}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.79
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.789,\"bc\":29,\"bp\":0.62,\"bump\":0.18,\"rho\":0.577,\"mode\":\"INT\",\"q\":1,\"note\":1,\"kick\":0.14,\"green\":{\"Q\":0.919}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.81
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.806,\"bc\":29,\"bp\":0.66,\"bump\":0.16,\"rho\":0.534,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.932}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.83
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.824,\"bc\":29,\"bp\":0.7,\"bump\":0.16,\"rho\":0.516,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.937}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.85
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.841,\"bc\":29,\"bp\":0.75,\"bump\":0.13,\"rho\":0.501,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.11,\"green\":{\"Q\":0.941}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.87
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.858,\"bc\":29,\"bp\":0.79,\"bump\":0.75,\"rho\":0.548,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.6,\"green\":{\"Q\":0.929}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.87
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.877,\"bc\":29,\"bp\":0.83,\"bump\":0.68,\"rho\":0.64,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.54,\"green\":{\"Q\":0.903}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.89
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.895,\"bc\":29,\"bp\":0.87,\"bump\":0.61,\"rho\":0.692,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.48,\"green\":{\"Q\":0.891}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.91
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.913,\"bc\":29,\"bp\":0.92,\"bump\":0.61,\"rho\":0.727,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.44,\"green\":{\"Q\":0.885}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.93
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.931,\"bc\":29,\"bp\":0.96,\"bump\":0.5,\"rho\":0.714,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.39,\"green\":{\"Q\":0.897}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.95
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.949,\"bc\":30,\"bp\":0,\"bump\":0.88,\"rho\":0.817,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.35,\"green\":{\"Q\":0.874}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.97
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.966,\"bc\":30,\"bp\":0.05,\"bump\":0.52,\"rho\":0.77,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.32,\"green\":{\"Q\":0.901}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 111.99
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.983,\"bc\":30,\"bp\":0.09,\"bump\":0.37,\"rho\":0.682,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.29,\"green\":{\"Q\":0.927}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.001,\"bc\":30,\"bp\":0.13,\"bump\":0.37,\"rho\":0.685,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.26,\"green\":{\"Q\":0.932}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.02
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.018,\"bc\":30,\"bp\":0.17,\"bump\":0.31,\"rho\":0.635,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.23,\"green\":{\"Q\":0.943}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.04
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.036,\"bc\":30,\"bp\":0.21,\"bump\":0.28,\"rho\":0.62,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.21,\"green\":{\"Q\":0.948}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.06
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.054,\"bc\":30,\"bp\":0.26,\"bump\":0.88,\"rho\":0.842,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.927}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.07
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.072,\"bc\":30,\"bp\":0.3,\"bump\":0.79,\"rho\":0.838,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.17,\"green\":{\"Q\":0.936}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.09
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.089,\"bc\":30,\"bp\":0.38,\"bump\":0.63,\"rho\":0.773,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.14,\"green\":{\"Q\":0.922}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.11
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.107,\"bc\":30,\"bp\":0.43,\"bump\":0.57,\"rho\":0.808,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.13,\"green\":{\"Q\":0.914}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.12
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.125,\"bc\":30,\"bp\":0.47,\"bump\":0.51,\"rho\":0.752,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.11,\"green\":{\"Q\":0.92}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.14
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.143,\"bc\":30,\"bp\":0.51,\"bump\":0.45,\"rho\":0.733,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.1,\"green\":{\"Q\":0.922}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.16
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.16,\"bc\":30,\"bp\":0.55,\"bump\":0.45,\"rho\":0.738,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.09,\"green\":{\"Q\":0.919}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.18
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.177,\"bc\":30,\"bp\":0.59,\"bump\":0.36,\"rho\":0.674,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.08,\"green\":{\"Q\":0.929}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.2
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.195,\"bc\":30,\"bp\":0.63,\"bump\":0.32,\"rho\":0.656,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.07,\"green\":{\"Q\":0.932}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.22
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.212,\"bc\":30,\"bp\":0.68,\"bump\":0.29,\"rho\":0.635,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.07,\"green\":{\"Q\":0.935}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.24
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.229,\"bc\":30,\"bp\":0.72,\"bump\":0.26,\"rho\":0.615,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.06,\"green\":{\"Q\":0.938}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.25
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.246,\"bc\":30,\"bp\":0.76,\"bump\":0.29,\"rho\":0.638,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.27,\"green\":{\"Q\":0.934}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.26
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.263,\"bc\":30,\"bp\":0.8,\"bump\":0.26,\"rho\":0.618,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.24,\"green\":{\"Q\":0.937}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.28
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.28,\"bc\":30,\"bp\":0.83,\"bump\":0.24,\"rho\":0.602,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.22,\"green\":{\"Q\":0.94}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.3
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.298,\"bc\":30,\"bp\":0.87,\"bump\":0.21,\"rho\":0.586,\"mode\":\"INT\",\"q\":1,\"note\":9,\"kick\":0.2,\"green\":{\"Q\":0.942}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.32
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.316,\"bc\":30,\"bp\":0.91,\"bump\":0.19,\"rho\":0.566,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.945}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.34
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.333,\"bc\":30,\"bp\":0.95,\"bump\":0.19,\"rho\":0.566,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.944}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.36
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.35,\"bc\":30,\"bp\":0.99,\"bump\":0.16,\"rho\":0.544,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.948}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.37
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.367,\"bc\":31,\"bp\":0.03,\"bump\":0.89,\"rho\":0.619,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.932}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.38
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.384,\"bc\":31,\"bp\":0.07,\"bump\":0.51,\"rho\":0.755,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.895}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.4
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.401,\"bc\":31,\"bp\":0.11,\"bump\":0.29,\"rho\":0.648,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.921}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.42
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.419,\"bc\":31,\"bp\":0.15,\"bump\":0.17,\"rho\":0.566,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.939}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.436,\"bc\":31,\"bp\":0.19,\"bump\":0.1,\"rho\":0.512,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.95}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.46
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.454,\"bc\":31,\"bp\":0.23,\"bump\":0.27,\"rho\":0.605,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.24,\"green\":{\"Q\":0.929}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.48
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.474,\"bc\":31,\"bp\":0.31,\"bump\":0.22,\"rho\":0.594,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.19,\"green\":{\"Q\":0.931}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.5
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.493,\"bc\":31,\"bp\":0.35,\"bump\":0.2,\"rho\":0.578,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.17,\"green\":{\"Q\":0.934}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.511,\"bc\":31,\"bp\":0.39,\"bump\":0.18,\"rho\":0.564,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.937}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.53
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.528,\"bc\":31,\"bp\":0.43,\"bump\":0.17,\"rho\":0.552,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.94}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.54
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.546,\"bc\":31,\"bp\":0.47,\"bump\":0.17,\"rho\":0.549,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.94}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.56
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.563,\"bc\":31,\"bp\":0.51,\"bump\":0.23,\"rho\":0.574,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.934}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.58
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.581,\"bc\":31,\"bp\":0.55,\"bump\":0.21,\"rho\":0.577,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.933}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.6
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.599,\"bc\":31,\"bp\":0.59,\"bump\":0.19,\"rho\":0.567,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.16,\"green\":{\"Q\":0.936}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.62
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.616,\"bc\":31,\"bp\":0.63,\"bump\":0.17,\"rho\":0.554,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.14,\"green\":{\"Q\":0.939}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.64
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.634,\"bc\":31,\"bp\":0.67,\"bump\":0.17,\"rho\":0.551,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.13,\"green\":{\"Q\":0.939}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.66
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.652,\"bc\":31,\"bp\":0.71,\"bump\":0.14,\"rho\":0.533,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.12,\"green\":{\"Q\":0.943}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.67
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.67,\"bc\":31,\"bp\":0.76,\"bump\":0.13,\"rho\":0.521,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.1,\"green\":{\"Q\":0.946}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.69
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.688,\"bc\":31,\"bp\":0.8,\"bump\":0.12,\"rho\":0.511,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.09,\"green\":{\"Q\":0.948}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.71
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.707,\"bc\":31,\"bp\":0.88,\"bump\":0.31,\"rho\":0.623,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.22,\"green\":{\"Q\":0.922}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.73
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.728,\"bc\":31,\"bp\":0.92,\"bump\":0.25,\"rho\":0.606,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.2,\"green\":{\"Q\":0.926}}"
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 112.75
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":17.749,\"bc\":31,\"bp\":0.96,\"bump\":0.23,\"rho\":0.589,\"mode\":\"INT\",\"q\":1,\"note\":8,\"kick\":0.18,\"green\":{\"Q\":0.93}}"
+EVAL JSON.stringify({errs:CARD.ERRS,au:CARD.ENGINE.AU.mode,scene: => "{\"errs\":[],\"au\":\"capture\",\"scene\":8}"
+

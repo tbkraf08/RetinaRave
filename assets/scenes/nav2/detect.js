@@ -83,17 +83,32 @@ export const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's O
 export const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
 export const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
                                  // the drop's bump harder
-export const BUMP_IV = 0.5;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
+export const BUMP_IV = 0.3;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
                                  // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
                                  // rho high ("should be moving faster / reacting more", the user). 0.55 left the
                                  // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double).
                                  // Pass 7: 0.5 again (tau 0.2 s at 150 bpm) — with the peak HELD for BUMP_HOLD first, the
                                  // shorter decay is what lets the trough between kicks fall (0.84 -> 0.67, the node sweep:
-                                 // "still not deforming enough"); 0.4 lost the peak at 150 bpm
-export const BUMP_HOLD = 0.3;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
+                                 // "still not deforming enough"); 0.4 lost the peak at 150 bpm at V_INT 2.4. Pass 8: 0.3 (tau 0.12 s
+                                 // at 150 bpm) with V_INT 3.6 and the growth-rule slew — peak 0.97, trough 0.50, the collapse and
+                                 // the near-circle on EVERY beat ("pretty much should be deforming on every beat")
+export const BUMP_HOLD = 0.4;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
                                  // so the ball reaches the rim (V_MAX 1.2 needs ~0.2 s from the trough to the pinch at the
                                  // 1/2 root, the farthest); the node sweep (AUDIT-v0.13 §6): without it the press peaked at
-                                 // rho 0.88–0.89 whatever K_R did, because a stiffer spring only follows the fall faster
+                                 // rho 0.88–0.89 whatever K_R did, because a stiffer spring only follows the fall faster.
+                                 // 0.3 in passes 6-7; 0.4 in pass 8: the per-frame trace on the real track showed beats whose
+                                 // climb from the new low trough (0.5) plus a note change did not finish inside 0.12 s (peaks
+                                 // 0.78); 0.16 s does (node: peak 0.983 / trough 0.56 at 150 bpm against 0.971 / 0.52), and more
+                                 // speed buys nothing past 3.5 (the sweep: 4.5 and 5.5 identical to the third decimal)
+export const GRID_K = 1.0;       // pass 8 (the user: "this is an extreme example and pretty much should be deforming on every
+                                 // beat"): every tick of the engine's BEAT GRID (S.beat) presses at least this much x the energy
+                                 // term, while a real kick has been heard inside GRID_T. The 10 Hz beat trace on 27-37 s read the
+                                 // kick's own press at 0.34-0.76 on 9 of 26 beats (a weak kick against the running peak) and
+                                 // the set only half-collapsed there; the grid is the beat the user hears. 1.0: every beat is a
+                                 // full press (0.85 left the per-frame peak at 0.95; the kick's own strength shows in the halo)
+export const GRID_T = 2.0;       // s — how long after the last real kick (GRID_ARM of the running peak) the grid keeps pressing:
+                                 // a breakdown with no kicks lets go inside a bar, and the silence rebounds to the circle
+export const GRID_ARM = 0.5;     // the kick / hit, as a fraction of the running peak, that counts as a real kick
 export const IV_TAU = 1.5;       // s — the ema of the hit interval
 export const E_LO = 0.5;         // energy below this fraction of the track's own peak is no extra energy; at the peak E is 1
                                  // ("1:45 -> this is where the highest energy is, should be reacting more": E lifts the
@@ -107,7 +122,7 @@ export const E_PK_MIN = 0.3;     // ... and the smallest peak the energy is divi
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
-  ival: 0.5, tHit: 0, onset: 0, E: 0, ePk: 0,
+  ival: 0.5, tHit: 0, onset: 0, E: 0, ePk: 0, tK: 9,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -134,7 +149,7 @@ export function resetDet() {
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.bump = D.pulse = D.pk = 0;
-  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0; D.ePk = 0;
+  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0; D.ePk = 0; D.tK = 9;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -211,7 +226,9 @@ export function updateDet(dt, S, P) {
   // --- the beat: a peak-hold of the kick / the hit with its own decay, and its density ----------------------
   const bt = Math.max(S.kick || 0, S.hit || 0);
   D.pk = Math.max(bt, D.pk * Math.exp(-dt / BUMP_PK_TAU));
-  const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
+  const kN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1), eT = BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1);
+  D.tK = kN > GRID_ARM ? 0 : D.tK + dt;
+  const hitN = Math.max(kN, S.beat && D.tK < GRID_T ? GRID_K : 0) * eT;   // the kick's own press, or the grid's while kicks are recent
   D.tHit += dt;
   const tau = Math.min(BUMP_TAU, BUMP_IV * D.ival);
   const dec = D.tHit < BUMP_HOLD * D.ival ? D.bump : D.bump * Math.exp(-dt / tau);

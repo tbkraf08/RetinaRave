@@ -92,7 +92,7 @@ export const N2 = {
   baby: null,            // ... and it never dives into a baby copy
   cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
   note: -1, noteX: 0, noteY: 0,   // the beat's note (pitch class, latched on the hit) and its point on the rim
-  vx: 0, vy: 0,          // the interior velocity (A_MAX slews it)
+  vx: 0, vy: 0, stepP: 0,   // the interior velocity, and the step the wall let c take last frame (beat.js slews on it)
   log: () => {},
 };
 
@@ -155,6 +155,7 @@ export function resetNav2() {
   N.drift = N.s = N.extBeat = N.landed = N.homeTry = 0;
   N.dropBeat = -1e9;
   N.vx = N.vy = 0;
+  N.stepP = 0;
   N.pathCut = 999;
   N.gate.on = N.gate.press = N.gate.pushed = N.gate.walk = 0;
   N.cGood[0] = N.cGood[1] = 0;
@@ -314,6 +315,7 @@ function stepInt(N, dt, S, P) {
     wx = N.cPath[0] + d[0];
     wy = N.cPath[1] + d[1];
   }
+  const px = N.cPath[0], py = N.cPath[1];   // the step the wall lets c take this frame (beat.js's slew grows from it)
   gateTick(N, dt, S);
   if (N.gate.on) gateStep(N, dt);
   else if (!N.cy.has) {
@@ -350,6 +352,7 @@ function stepInt(N, dt, S, P) {
     vy = bv[1];
     moveInt(N, vx * dt, vy * dt);
   }
+  N.stepP = Math.hypot(N.cPath[0] - px, N.cPath[1] - py);   // on every interior path (a gate's walk, the walk back to cGood too)
   N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;
 }
 
@@ -363,6 +366,7 @@ export function updateNav2(dt, now, S, env) {
   if (N.mode === 'INT') stepInt(N, dt, S, env.P);
   else if (N.mode === 'IN') stepIn(N, dt, S, land);
   else stepExt(N, dt, S);
+  if (N.mode !== 'INT') N.stepP = 0;   // outside, the interior's slew restarts from rest on the landing
   N.c[0] = N.cPath[0];
   N.c[1] = N.cPath[1];
   N.cycBase = N.cyc.has;

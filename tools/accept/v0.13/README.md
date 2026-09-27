@@ -28,6 +28,13 @@ Tracks from `$MUSIC` (default `~/Music/RetinaRave`), the v0.12 rule: the name wi
   `montage-nav2-syd-groove-p7.jpg` (26–50 s), `nav2-window-syd-58-p7{a,}.txt` + `montage-nav2-syd-58-p7{a,}.jpg` (the 58 s drop; a = `EXT_DIM`
   0.6, the final one 0.35), `det13-syd-p7.txt` (80 s). `sat13.py <images>` — the fraction of bright pixels, their mean saturation and
   luminance, and the 95th-percentile luminance (the "pastel" instrument: pass 6's p95 read 0.53 against pass 4's 0.72; pass 7 reads 0.81).
+- **Pass 8 (2026-09-27, the user's look at pass 7: "getting closer but still not deforming enough with the music (this is an extreme
+  example and pretty much should be deforming on every beat)")** — `nav2-window.py` gained `DT=<ms>` / `SHOT=0` / `MIN=1` (a short D line)
+  for beat traces: `nav2-beat-fine.txt` (pass 7, 10 Hz, 27–37 s) and `nav2-beat-fine8.txt` (pass 8a, 10 Hz) — the 10 Hz sampling misses
+  a 0.12 s pinch, so **`perbeat13.py`** reads the per-FRAME traces: `nav2-beat-ff8.txt` (pass 8a: V_INT 3.5, BUMP_IV 0.3, PULSE_K 0.3, GRID_K
+  0.85), `nav2-beat-ff8b.txt` (+ WIND_P 2, GRID_K 1.0; 27–33 s), `nav2-beat-ff8c.txt` (the same, 1:46–1:52), `nav2-beat-ff8d.txt` (final: +
+  BUMP_HOLD 0.4). `nav2-window-groove-p8.txt` + `montage-nav2-syd-groove-p8.jpg` (26–50 s), `nav2-window-syd-58-p8.txt` + `montage-nav2-syd-
+  58-p8.jpg`, `det13-syd-p8.txt`. `beat.js` holds the press now (a pure move first, md5 identical).
 - **`tab13.py <file> [full]`** — tabulates a det13 trace or a window log (ρ / bump / ival / E / eS / note / kick / hit / drop / ds / arc /
   gate / Q / v per line, and one summary line: modes, ρ and Q min / med / max, v med / max and > 0 count, notes latched, gates, ms).
 - `scene-md5-v013.txt` — s8 re-based (twice); the rest of the list is v0.12's (unchanged by `DROP_GAP`: 253b19c4 / 778fb7e2, twice).

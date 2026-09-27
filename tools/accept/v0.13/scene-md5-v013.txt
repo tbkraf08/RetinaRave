@@ -1,7 +1,7 @@
 # v0.13 (NAV2 "bump with the beat", DECISIONS §46): only NAV2's folder changed, so only s8 is re-proven here (HARNESS
 # "What to re-prove"); every other line is tools/accept/v0.12/scene-md5-v012.txt's (s9 = the v0.12.1 re-base 95fd7d73 / 4e2108a7).
-# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-27) on the pass-7 tree (V_INT + A_MAX, K_R 20, BUMP_IV 0.5, the exterior knee off, the interior knee (0.2, 3), EXT_DIM 0.35): c0373ec5 / d61162a7 (7b29e056 at EXT_DIM 0.6); pass 6 was f5d4f051 / 0671f15a; pass 4 was 253b19c4 / 778fb7e2 on the v0.13 tree (the beat's note, the interval decay, the energy
+# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-27) on the pass-8 tree (beat.js; the grid press, the growth-rule slew on the realised step, V_INT 3.5, BUMP_IV 0.3, PULSE_K 0.3, GRID_K 1.0, WIND_P 2, BUMP_HOLD 0.4): 2daaa2c0 / f2342b7f (0e5c3346 / c7c73f9a at hold 0.3); pass 7 was c0373ec5 / d61162a7 (identical across the beat.js move); pass 6 was f5d4f051 / 0671f15a; pass 4 was 253b19c4 / 778fb7e2 on the v0.13 tree (the beat's note, the interval decay, the energy
 # gain): 253b19c4 / 778fb7e2. Earlier cuts: e2fd7f16 / 83d37910, 17f888e8 / 83d37910 (uRound), 1da850ba / 6d46c51f (RHO_BEAT,
 # EXT_BEATS 8), 34ee5482 / d81945bd (the kick-peak normalisation, uBump). v0.12's s8 was 9021eac8 / f6299795.
-c0373ec5c5fdf1780eac4938351877c6  s8-f360.jpg
-d61162a7ef1a320e189992c83171afd1  s8-f840.jpg
+2daaa2c0cbc80d96879049d1631fb74b  s8-f360.jpg
+f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg

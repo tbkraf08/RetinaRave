@@ -11,6 +11,9 @@ exec(src.split('steps = [')[0])          # gives FILE, INFO, KEY, track
 OUT = os.environ['OUT']; T0 = int(os.environ.get('T0', '46')); N = int(os.environ.get('N', '24')); TAG = os.environ.get('TAG', 'n2w')
 PAUSE = int(os.environ.get('PAUSE', '0'))
 DT = int(os.environ.get('DT', '1000')); SHOT = os.environ.get('SHOT', '1') != '0'   # DT ms between samples, SHOT=0 for D lines only (a 10 Hz beat trace)
+if os.environ.get('MIN') == '1':   # a SHORT D line (t, beat count, bump, rho, Q, kick, note) for a per-frame trace: 200 full INFOs overflow the argv
+    INFO = ("(()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS,g=h.green();const r=(x,k)=>+(+x).toFixed(k);"
+            "return 'D '+JSON.stringify({t:r(performance.now()/1000,3),bc:S.beatCount,bp:r(S.beatPhase,2),bump:r(i.bump,2),rho:r(i.rho,3),mode:i.mode,q:i.q,note:i.note,kick:r(S.kick,2),green:{Q:r(g.Q,3)}})})()")
 PV = "(()=>{const v=document.querySelector('video,audio');v.%s();return v.paused})()"
 CT = "(()=>{const v=document.querySelector('video,audio');return +v.currentTime.toFixed(2)})()"
 steps = [{"until": "window.CARD"}, {"wait": 1000},

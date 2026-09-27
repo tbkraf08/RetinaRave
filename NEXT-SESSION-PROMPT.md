@@ -11,11 +11,11 @@
   the waveguide / the hat by chroma) is retired unless the user brings it back.
 - **POLYTOPE v0.9 is fine** (*"Polytope has been reviewed and is fine now"*). Untouched; its portrait cropping stays on the standing list.
 
-**The live work is NAV2 (id 8, key `9`, forced-only), at pass 7 (2026-09-27, unseen by the user; `nav2.js` at 470 of the 500-line hard cap):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
+**The live work is NAV2 (id 8, key `9`, forced-only), at pass 8 (2026-09-27, unseen by the user; `beat.js` split out of `nav2.js`):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
 `~/Music/RetinaRave/SeeYouDrop.flac`, the state constant by constant, the workflow (window replay → cause in the numbers → constants →
 re-prove → audit section → commit), the pitfalls, and the ranked open list (the user's look at pass 4; gates vs notes; 1:45 measured as a
 full-strength drop, the choice is the user's; the other three tracks measured + `DROP_GAP` 32 beats from Malicious on 2026-09-27, AUDIT §5,
-montages ready to show; `nav2.js` at 470 lines, `beat.js` extraction due). Then, when the user says the look is right: tag v0.13, push
+montages ready to show; `beat.js` holds the press; measure per frame with `perbeat13.py`). Then, when the user says the look is right: tag v0.13, push
 on their word, and raise the **swap question** (§39 / `NAV2-SESSION-PROMPT.md` step 4: NAV2 → id 0 / home / always / NAV's bid, NAV →
 `nav-v1` id 8, parity + md5 lists + `accept.sh` + `site/about.html` + CONTRACTS §1.8, the Q trace on house + aba, a DECISIONS section).
 

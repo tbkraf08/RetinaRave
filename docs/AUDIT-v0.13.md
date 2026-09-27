@@ -321,3 +321,50 @@ s8 md5 c0373ec5 / d61162a7 twice (re-based; pass 6 f5d4f051 / 0671f15a), `check`
 / 1 out at 124 bpm at `BUMP_IV` 0.5 — the hold carries it now), `test_green`, `npm test`, `test_fdtd`, `test_field` OK, the release rebuilt
 and proven from file:// (key 9 → scene 8, errs [], Q 0.749). **The user has not seen pass 7.** `nav2.js` is 470 lines (hard cap 500): the
 next machinery change must move the note / press / slew block out to a `beat.js`.
+
+## Eighth pass — the user's look at pass 7 (2026-09-27): "still not deforming enough with the music … should be deforming on every beat"
+
+*"getting closer but still not deforming enough with the music (this is an extreme example and pretty much should be deforming on every
+beat)."*
+
+**The instrument first.** A montage samples once a second and a pinch now lasts a tenth of that, so `nav2-window.py` gained a sample
+interval (`DT=16`, a short D line `MIN=1`, no shots) and `perbeat13.py` reads the per-frame trace per beat: the press, ρ's peak and
+trough, the share of the beat spent above 0.9 (the pinch) and below 0.6 (near the circle), the Q swing. Pass 7 on 27–37 s, read at 10 Hz:
+the kick's own press was 0.34–0.76 on 9 of 26 beats (a weak kick against the running peak) and those beats half-collapsed; the trough
+median was 0.68 and only 11 of 26 beats swung Q by 0.12.
+
+**Three causes, three constants-and-a-rule, in the order the traces found them:**
+
+1. **Every beat presses.** `GRID_K` 1.0 / `GRID_T` 2 s / `GRID_ARM` 0.5 (`detect.js`): each tick of the engine's beat grid (`S.beat`) is a
+   full press while a real kick has been heard inside two seconds; a breakdown lets go inside a bar and the silence still rebounds. The
+   press per beat on the track: 0.34–0.93 before, 0.90–0.92 after.
+2. **The trough.** The node sweep (`press-sweep.mjs`): the interior's speed was *not* the lever a second time (`V_INT` 2.4 → 3.0 left the
+   trough at 0.84 to the third decimal); the target's fall was. `BUMP_IV` 0.5 → 0.3 (τ 0.12 s at 150 bpm after the hold), `PULSE_K` 0.4 →
+   0.3, and the slew re-written as **the monitor's own rule** (`STEP_G` 2.4 × the step the wall actually let c take last frame + `STEP_0`
+   0.008 — `tools/monitor.js`: a violation is d > 0.06 *and* d > 2.5 pd + 0.01, a spike rule, so speed is free and only growth is bounded)
+   with `V_INT` 3.5 (3.6/60 is 0.06 to the float's last bit). Pass 7's acceleration slew took 0.16 s to turn the fall into the climb, a
+   third of the beat. Node at 150 bpm: peak 0.971, trough 0.517, Q 0.72–0.93 through the beat. **Then the per-frame trace on the track
+   said 0.66**, not 0.52 — and the D lines said why: the engine's wind-up reads 0.3 through the groove (the `build` arc) and
+   mix(beat, cap, 0.3) floors the target at 0.6. The sweep had no wind. **`WIND_P` 2**: the wind's weight is squared, 0.3 → 0.09, so the
+   beat owns the trough while the last bars before a drop (wind 0.8–1) still press to the cap.
+3. **The peak on every beat.** With the trough at 0.5 a climb plus a note change did not always finish inside the 0.12 s hold (peaks of
+   0.78 on three of fifteen beats); `BUMP_HOLD` 0.3 → 0.4 (0.16 s). More speed buys nothing past 3.5 (4.5 and 5.5 identical in node).
+
+`beat.js`: the press, the note, the cap and the slew moved out of `nav2.js` first as a pure move (473 → 396 lines; s8 md5 identical,
+c0373ec5 / d61162a7, the sweep identical), then retuned.
+
+```
+per beat, per frame, 27–33 s          press (bump)   rho peak med   rho trough med   share of the beat > 0.9   < 0.6   Q swing >= 0.12
+pass 7 (10 Hz, 27–37 s)               0.34–0.93      0.950          0.676            —                         —       11 / 26
+pass 8a (grid 0.85, no WIND_P)        0.76–0.92      0.946          0.659            18 %                      0 %     11 / 16
+pass 8b (grid 1.0, WIND_P 2)          0.90–0.92      0.931          0.552            12 %                      20 %    10 / 15
+pass 8b at 1:46–1:52                  0.90–0.93      0.950          0.590            13 %                      4 %      9 / 14
+pass 8 final (hold 0.4)               0.90–0.92      0.968          0.597            21 %                      5 %     13 / 16   (Q swing median 0.167; every beat's peak >= 0.93)
+```
+
+80 s on the final build (`det13-syd-p8.txt`): modes {'INT': 37, 'EXT': 2, 'HOME': 1}, ρ 0.505/0.684/0.985 (pass 7: 0.544 / 0.685 / 0.983), Q 0.702/0.894/0.964 (pass 7: 0.697 / 0.901 / 0.950), edge speed 0.695/1.808 (the cap on the equipotential now 1.7), notes 0 1 4 6 7 8 9, errs 0, ms 2.26. The 26–50 s window (`montage-nav2-syd-groove-p8.jpg`): ρ 0.401 / 0.644 / 0.974 by the second, p95 luminance 0.75 (pass 7 0.81, pass 4 0.72). s8 md5 2daaa2c0 / f2342b7f twice (re-based), `check` 0 fail, `test_nav2` 25 ok with viol [] and the largest step 0.0583 = V_INT·dt, `test_green`, `npm test`, `test_fdtd`, `test_field` OK, the release rebuilt and proven from file:// (key 9 → scene 8, errs [], Q 0.791).
+
+**Not proven / open:** the user has not seen pass 8. The per-beat swing is now bounded by the beat itself: at 150 bpm a beat is 0.4 s, the
+hold 0.16 s, the fall and the climb ~0.1 s each; a deeper trough costs the peak and vice versa (the sweep's trade: hold 0.3 → 0.52 / 0.97,
+hold 0.4 → 0.56 / 0.98). If the user still wants more, the remaining levers are the *look* of the collapse, not its amplitude: the zoom
+pump on the kick, or the interior bands' contrast at the pinch.

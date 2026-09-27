@@ -13,9 +13,10 @@ export const RHO_REST = 0.30;    // where the ball rests with NO BEAT and no win
                                  // rested c ON the rim for brightness (its luminance table is in DECISIONS §39) and
                                  // the set was always arms — the beat could only nudge it (K_HIT 0.35).
 export const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rhoT from RHO_REST to RHO_BEAT
-export const PULSE_K = 0.4;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
+export const PULSE_K = 0.3;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
                                  // cut held rho at ~0.74 between kicks on SeeYouDrop, so the outline hardly moved
-                                 // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6
+                                 // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6. 0.3 in pass 8
+                                 // ("should be deforming on every beat"): the trough is a near-circle, 0.5 (the node sweep)
 export const RHO_E = 0.04;       // ... plus this much at full energy (detect.js E): the peak presses closer to the rim
 export const NOTE_V = 8.0;       // 1/s — the beat's NOTE: on a hit the bass note's pitch class names an internal angle
                                  // ((k + 0.5)/12 around the cardioid) and c is pulled AROUND the rim toward it at this
@@ -33,18 +34,29 @@ export const NOTE_MIN = 0.08;    // below this much bass chroma there is no note
 // (gateTick: NOTE_LOCK), because a period-q bulb never rounds again (Q ~0.65 flat).
 export const NOTE_ANG = [1 / 6, 1 / 5, 1 / 4, 1 / 3, 2 / 5, 1 / 2, 3 / 5, 2 / 3, 3 / 4, 4 / 5, 5 / 6, 6 / 7];
 export const NOTE_LOCK = 0.1;    // the beat density (detect.js pulse) above which a latched note locks the gates
+export const WIND_P = 2;         // pass 8: the wind's weight on the target is wind^WIND_P. The per-frame trace on SeeYouDrop's groove
+                                 // (27-33 s) read the trough between kicks at 0.66 where the node sweep said 0.52 — the engine's
+                                 // wind-up sat at 0.3 through the groove (the `build` arc) and mix(beat, CAP, 0.3) floors the target
+                                 // at 0.6. Squared, 0.3 -> 0.09 (the beat owns the trough) while the last bars before a drop
+                                 // (wind 0.8-1) still press to the cap. The pinned wind of the tests is 1 either way
 export const RHO_BEAT = 0.985;   // the most the BEAT may press to: the cap itself (pass 6). 0.93 in passes 2–5, capped
                                  // under the smoulder (par = sstep(PAR_LO, PAR_HI, rho), squared in the shader) which
                                  // washed the interior out on every kick ("a little too bright"); the smoulder is now
                                  // the WIND's alone (PAR_WIND), so the beat may reach the pinch with the interior dark
-export const V_INT = 2.4;        // units/s — the interior's own speed cap (pass 7, the user: "still not deforming enough"). The breath
+export const V_INT = 3.5;        // units/s — the interior's own speed cap (pass 7, the user: "still not deforming enough"; 2.4 there,
+                                 // 3.5 in pass 8 with the growth-rule slew: the climb from the trough at 0.5 fits the hold; 3.5 not
+                                 // 3.6 because 3.6/60 is 0.06 to the float's last bit, the monitor's own edge). The breath
                                  // is bounded by speed x beat: at V_MAX 1.2 the trip from the pinch at the 1/2 root (c -0.735) back
                                  // to rho 0.5 (-0.31) is 0.35 s, a whole beat at 150 bpm, so the trough sat at 0.84 whatever the
                                  // press did (the node sweep, AUDIT §7). The continuity monitor's rule is a SPIKE rule (a step more
                                  // than 2.5x the last + 0.01), not an absolute, so speed is free and acceleration is what A_MAX bounds
-export const A_MAX = 30.0;       // units/s^2 — the interior velocity's slew: the first step from rest is A_MAX*dt^2 (0.052 at the
-                                 // loop's 1/24 s cap, 0.008 at 60 Hz) and each next step is under 2.5x the last, so no frame rate
-                                 // trips the monitor; full speed in 0.08 s. Gates and the walk back to cGood keep V_MAX
+export const STEP_G = 2.4;       // pass 8: the slew IS the monitor's rule — a frame's step may grow to at most STEP_G x the last
+                                 // step + STEP_0 (tools/monitor.js: a violation is d > 0.06 AND d > 2.5*pd + 0.01), at any frame
+                                 // rate. From rest: 0.008, 0.027, 0.073, 0.18 — full speed in three frames (0.05 s at 60 Hz, 0.125 s
+                                 // at the loop's 1/24 s cap). Pass 7's A_MAX 30 (an acceleration) took 0.16 s to turn the fall
+                                 // into the climb, a third of the beat. Gates and the walk back to cGood keep V_MAX
+export const STEP_0 = 0.008;     // units — the step a frame may always take (under the rule's + 0.01)
+export const A_MAX = STEP_G;     // (kept as a name for the tests: the growth factor)
 export const K_R = 20.0;         // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
                                  // radial direction outright, so there is no separate inward/outward gain. 4 in
                                  // v0.8 (a rest, not a pulse); 10 followed a BUMP_TAU 0.28 s press within a beat; 20 in
@@ -63,7 +75,7 @@ export function beatStep(N, dt, S, nx, ny, vx, vy, cap) {
   // cap for the drop. With none of them c rests at RHO_REST: the circle
   const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
   const rhoB = Math.min(RHO_BEAT + RHO_E * D.E, cap);
-  const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), cap, D.wind);
+  const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), cap, Math.pow(D.wind, WIND_P));
   // the beat's note: latched on the hit, its internal angle on the cardioid at the beat's radius
   if (D.onset && S.bchroma) {
     let bk = -1, bv = NOTE_MIN;
@@ -88,11 +100,14 @@ export function beatStep(N, dt, S, nx, ny, vx, vy, cap) {
     vx *= V_INT / sp;
     vy *= V_INT / sp;
   }
-  // the slew: the velocity may change by at most A_MAX*dt a frame, so a kick's step grows from rest instead of jumping
-  const ax = vx - N.vx, ay = vy - N.vy, am = Math.sqrt(ax * ax + ay * ay), aCap = A_MAX * dt;
-  if (am > aCap) {
-    vx = N.vx + ax * aCap / am;
-    vy = N.vy + ay * aCap / am;
+  // the slew: this frame's step may be at most STEP_G x the last frame's + STEP_0 (the monitor's own rule), so a kick's step
+  // grows from rest in three frames instead of jumping, and the fall turns into the climb as fast as the rule allows
+  // ... measured on the step the wall actually LET c take (N.stepP, nav2.js after moveInt), not the velocity asked for: a step
+  // the wall refused or bisected is a short step, and the rule is about the next one being no more than 2.5x that
+  const sCap = (STEP_G * N.stepP + STEP_0) / Math.max(dt, 1e-4), sp2 = Math.sqrt(vx * vx + vy * vy);
+  if (sp2 > sCap) {
+    vx *= sCap / sp2;
+    vy *= sCap / sp2;
   }
   N.vx = vx;
   N.vy = vy;
