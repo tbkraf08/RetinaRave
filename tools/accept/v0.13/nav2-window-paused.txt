@@ -1,0 +1,67 @@
+tab file:///home/toma/Music/RetinaRave/SeeYouDrop.flac ok windows 533796983 533796985
+clickSel #go [937.9896087646484,565.5833549499512]
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 46
+EVALTAB (()=>{const v=document.querySelector('video,audio' => true
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":12.4,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[-0.234,0.613],\"rho\":0.97,\"q\":1,\"has\":1,\"wind\":0.37,\"bump\":0.53,\"pulse\":0.32,\"curl\":0.69,\"pitch\":0.73,\"lift\":0.163,\"swirl\":1,\"rate\":0.91,\"par\":0.4,\"gate\":\"\",\"kick\":0.24,\"hit\":0.37,\"bp\":0.27,\"bc\":18,\"bass\":0.98,\"eS\":0.93,\"or\":7.9,\"cen\":0.662,\"build\":0.84,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.7062,\"A\":2.9949,\"L\":7.3002,\"v\":0.091,\"dA\":-0.3013},\"ms\":1.88,\"errs\":0}"
+shot n2p-00
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":13.5,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[-0.195,0.369],\"rho\":0.672,\"q\":1,\"has\":1,\"wind\":0.3,\"bump\":0.03,\"pulse\":0.25,\"curl\":0.4,\"pitch\":0.7,\"lift\":0.135,\"swirl\":0.94,\"rate\":0.65,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.08,\"bc\":21,\"bass\":0,\"eS\":0.11,\"or\":2.6,\"cen\":0.672,\"build\":0.64,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8715,\"A\":3.3184,\"L\":6.9172,\"v\":0.087,\"dA\":0.174},\"ms\":1.62,\"errs\":0}"
+shot n2p-01
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":14.6,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[-0.156,0.246],\"rho\":0.495,\"q\":1,\"has\":1,\"wind\":0.16,\"bump\":0,\"pulse\":0.15,\"curl\":0.17,\"pitch\":0.65,\"lift\":0.102,\"swirl\":0.38,\"rate\":0.05,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.81,\"bc\":23,\"bass\":0,\"eS\":0,\"or\":0.8,\"cen\":0.672,\"build\":0.39,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9345,\"A\":3.4261,\"L\":6.7876,\"v\":0.031,\"dA\":0.0421},\"ms\":1.61,\"errs\":0}"
+shot n2p-02
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":15.7,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.147,0.205],\"rho\":0.435,\"q\":1,\"has\":1,\"wind\":0.13,\"bump\":0,\"pulse\":0.08,\"curl\":0.1,\"pitch\":0.61,\"lift\":0.077,\"swirl\":0.18,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.98,\"bc\":24,\"bass\":0,\"eS\":0,\"or\":0.3,\"cen\":0.672,\"build\":0.36,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9502,\"A\":3.4517,\"L\":6.7563,\"v\":0.012,\"dA\":0.0122},\"ms\":1.79,\"errs\":0}"
+shot n2p-03
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":16.8,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.15,0.185],\"rho\":0.411,\"q\":1,\"has\":1,\"wind\":0.12,\"bump\":0,\"pulse\":0.05,\"curl\":0.08,\"pitch\":0.59,\"lift\":0.058,\"swirl\":0.12,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.17,\"bc\":25,\"bass\":0,\"eS\":0,\"or\":0.1,\"cen\":0.672,\"build\":0.35,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9558,\"A\":3.4607,\"L\":6.7452,\"v\":0.008,\"dA\":0.0052},\"ms\":1.71,\"errs\":0}"
+shot n2p-04
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":18,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.156,0.17],\"rho\":0.399,\"q\":1,\"has\":1,\"wind\":0.12,\"bump\":0,\"pulse\":0.03,\"curl\":0.07,\"pitch\":0.56,\"lift\":0.044,\"swirl\":0.1,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.1,\"bc\":25,\"bass\":0,\"eS\":0,\"or\":0,\"cen\":0.672,\"build\":0.35,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9584,\"A\":3.4648,\"L\":6.74,\"v\":0.007,\"dA\":0.0026},\"ms\":1.47,\"errs\":0}"
+shot n2p-05
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":19.1,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.164,0.158],\"rho\":0.393,\"q\":1,\"has\":1,\"wind\":0.12,\"bump\":0,\"pulse\":0.02,\"curl\":0.07,\"pitch\":0.55,\"lift\":0.033,\"swirl\":0.08,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.06,\"bc\":25,\"bass\":0,\"eS\":0,\"or\":0,\"cen\":0.672,\"build\":0.35,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9598,\"A\":3.4668,\"L\":6.7374,\"v\":0.006,\"dA\":0.0013},\"ms\":1.46,\"errs\":0}"
+shot n2p-06
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.44
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":20.2,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.173,0.147],\"rho\":0.389,\"q\":1,\"has\":1,\"wind\":0.12,\"bump\":0,\"pulse\":0.01,\"curl\":0.07,\"pitch\":0.54,\"lift\":0.025,\"swirl\":0.07,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.05,\"bc\":25,\"bass\":0,\"eS\":0,\"or\":0,\"cen\":0.672,\"build\":0.35,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9605,\"A\":3.4679,\"L\":6.7359,\"v\":0.006,\"dA\":0.0007},\"ms\":1.54,\"errs\":0}"
+shot n2p-07
+EVALTAB (()=>{const v=document.querySelector('video,audio' => false
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 47.52
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":21.3,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.181,0.135],\"rho\":0.387,\"q\":1,\"has\":1,\"wind\":0.12,\"bump\":0,\"pulse\":0.01,\"curl\":0.06,\"pitch\":0.53,\"lift\":0.019,\"swirl\":0.07,\"rate\":0.01,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.04,\"bc\":25,\"bass\":0,\"eS\":0,\"or\":0,\"cen\":0.672,\"build\":0.35,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9608,\"A\":3.4684,\"L\":6.7352,\"v\":0.006,\"dA\":0.0003},\"ms\":1.54,\"errs\":0}"
+shot n2p-08
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 48.58
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":22.4,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.414,0.268],\"rho\":0.735,\"q\":1,\"has\":1,\"wind\":0.08,\"bump\":0.32,\"pulse\":0.21,\"curl\":0.45,\"pitch\":0.46,\"lift\":-0.014,\"swirl\":0.87,\"rate\":0.69,\"par\":0,\"gate\":\"\",\"kick\":0.11,\"hit\":0.22,\"bp\":0.58,\"bc\":27,\"bass\":0.92,\"eS\":0.87,\"or\":5.5,\"cen\":0.647,\"build\":0.11,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8409,\"A\":3.2584,\"L\":6.9782,\"v\":0.311,\"dA\":0.6459},\"ms\":1.86,\"errs\":0}"
+shot n2p-09
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 49.7
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":23.5,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.402,0.071],\"rho\":0.624,\"q\":1,\"has\":1,\"wind\":0.1,\"bump\":0.23,\"pulse\":0.21,\"curl\":0.43,\"pitch\":0.49,\"lift\":-0.011,\"swirl\":0.95,\"rate\":0.62,\"par\":0,\"gate\":\"\",\"kick\":0.19,\"hit\":0,\"bp\":0.41,\"bc\":30,\"bass\":0.88,\"eS\":0.94,\"or\":3.5,\"cen\":0.656,\"build\":0.24,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8887,\"A\":3.3446,\"L\":6.877,\"v\":0.064,\"dA\":-0.1118},\"ms\":1.9,\"errs\":0}"
+shot n2p-10
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 50.82
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":24.7,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[-0.253,0.202],\"rho\":0.526,\"q\":1,\"has\":1,\"wind\":0.16,\"bump\":0.03,\"pulse\":0.17,\"curl\":0.34,\"pitch\":0.8,\"lift\":0.142,\"swirl\":0.89,\"rate\":0.69,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0,\"bp\":0.1,\"bc\":33,\"bass\":0.03,\"eS\":0.5,\"or\":1.2,\"cen\":0.789,\"build\":0.36,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9236,\"A\":3.4069,\"L\":6.8083,\"v\":0.202,\"dA\":0.0706},\"ms\":2.01,\"errs\":0}"
+shot n2p-11
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 51.94
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":25.8,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[0,0.486],\"rho\":0.814,\"q\":1,\"has\":1,\"wind\":0.16,\"bump\":0.36,\"pulse\":0.22,\"curl\":0.48,\"pitch\":0.61,\"lift\":0.087,\"swirl\":0.81,\"rate\":0.64,\"par\":0.01,\"gate\":\"\",\"kick\":0.02,\"hit\":0.11,\"bp\":0.03,\"bc\":36,\"bass\":0.04,\"eS\":0.5,\"or\":1.9,\"cen\":0.733,\"build\":0.37,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8092,\"A\":3.2109,\"L\":7.0615,\"v\":0.272,\"dA\":0.6831},\"ms\":2.02,\"errs\":0}"
+shot n2p-12
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 53.04
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":26.9,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[0.272,0.404],\"rho\":0.932,\"q\":1,\"has\":1,\"wind\":0.16,\"bump\":0.5,\"pulse\":0.31,\"curl\":0.54,\"pitch\":0.58,\"lift\":0.064,\"swirl\":0.77,\"rate\":0.54,\"par\":0.33,\"gate\":\"\",\"kick\":0,\"hit\":0.21,\"bp\":0.69,\"bc\":38,\"bass\":0.03,\"eS\":0.47,\"or\":2.3,\"cen\":0.735,\"build\":0.43,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.7644,\"A\":3.1456,\"L\":7.1911,\"v\":0.15,\"dA\":0.3802},\"ms\":2,\"errs\":0}"
+shot n2p-13
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 54.18
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":28,\"au\":\"capture\",\"bpm\":150,\"mode\":\"INT\",\"c\":[0.247,0.214],\"rho\":0.735,\"q\":1,\"has\":1,\"wind\":0.23,\"bump\":0.15,\"pulse\":0.3,\"curl\":0.35,\"pitch\":0.6,\"lift\":0.065,\"swirl\":0.65,\"rate\":0.47,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0.04,\"bp\":0.47,\"bc\":41,\"bass\":0.03,\"eS\":0.49,\"or\":2.6,\"cen\":0.753,\"build\":0.6,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8891,\"A\":3.363,\"L\":6.8945,\"v\":0.077,\"dA\":0.1659},\"ms\":2.05,\"errs\":0}"
+shot n2p-14
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 55.31
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":29.2,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[0.321,0.178],\"rho\":0.885,\"q\":1,\"has\":1,\"wind\":0.29,\"bump\":0.6,\"pulse\":0.28,\"curl\":0.57,\"pitch\":0.59,\"lift\":0.046,\"swirl\":0.56,\"rate\":0.43,\"par\":0.18,\"gate\":\"\",\"kick\":0,\"hit\":0.49,\"bp\":0.22,\"bc\":44,\"bass\":0.04,\"eS\":0.52,\"or\":2.8,\"cen\":0.756,\"build\":0.7,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.8498,\"A\":3.3045,\"L\":6.9904,\"v\":0.633,\"dA\":-1.5185},\"ms\":2.18,\"errs\":0}"
+shot n2p-15
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 56.43
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":30.3,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[0.265,0.151],\"rho\":0.75,\"q\":1,\"has\":1,\"wind\":0.33,\"bump\":0.12,\"pulse\":0.26,\"curl\":0.34,\"pitch\":0.55,\"lift\":0.033,\"swirl\":0.56,\"rate\":0.41,\"par\":0,\"gate\":\"\",\"kick\":0,\"hit\":0.02,\"bp\":0.04,\"bc\":47,\"bass\":0.04,\"eS\":0.52,\"or\":2,\"cen\":0.747,\"build\":0.77,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.9007,\"A\":3.3828,\"L\":6.8698,\"v\":0.06,\"dA\":0.1264},\"ms\":2.02,\"errs\":0}"
+shot n2p-16
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 57.58
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":31.4,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"INT\",\"c\":[0.36,0.149],\"rho\":0.983,\"q\":1,\"has\":1,\"wind\":0.37,\"bump\":0.36,\"pulse\":0.33,\"curl\":0.45,\"pitch\":0.54,\"lift\":0.027,\"swirl\":0.46,\"rate\":0.36,\"par\":0.4,\"gate\":\"\",\"kick\":0,\"hit\":0.09,\"bp\":0.88,\"bc\":49,\"bass\":0.06,\"eS\":0.55,\"or\":2.2,\"cen\":0.748,\"build\":0.83,\"hush\":0,\"drop\":0,\"dei\":-1,\"green\":{\"Q\":0.822,\"A\":3.2627,\"L\":7.0626,\"v\":0.023,\"dA\":0.0638},\"ms\":2.02,\"errs\":0}"
+shot n2p-17
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 58.7
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":32.5,\"au\":\"capture\",\"bpm\":150,\"mode\":\"EXT\",\"c\":[0.433,-0.033],\"rho\":0.965,\"q\":1,\"has\":0,\"wind\":0.07,\"bump\":0.4,\"pulse\":0.41,\"curl\":0.39,\"pitch\":0.34,\"lift\":-0.101,\"swirl\":0.53,\"rate\":0.24,\"par\":0,\"gate\":\"\",\"kick\":0.19,\"hit\":0.1,\"bp\":0.68,\"bc\":52,\"bass\":0.98,\"eS\":0.82,\"or\":2.4,\"cen\":0.656,\"build\":0.23,\"hush\":0,\"drop\":0.31,\"dei\":-1,\"green\":{\"Q\":0.7548,\"A\":3.161,\"L\":7.2542,\"v\":0.152,\"dA\":0.656},\"ms\":2.13,\"errs\":0}"
+shot n2p-18
+EVALTAB (()=>{const v=document.querySelector('video,audio' => 59.82
+EVAL (()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS => "D {\"t\":33.7,\"au\":\"capture\",\"bpm\":149.9,\"mode\":\"EXT\",\"c\":[0.369,0.04],\"rho\":0.965,\"q\":1,\"has\":0,\"wind\":0.14,\"bump\":0.55,\"pulse\":0.46,\"curl\":0.62,\"pitch\":0.4,\"lift\":-0.078,\"swirl\":0.99,\"rate\":0.58,\"par\":0,\"gate\":\"\",\"kick\":0.4,\"hit\":0.27,\"bp\":0.52,\"bc\":55,\"bass\":0.94,\"eS\":0.85,\"or\":2.5,\"cen\":0.666,\"build\":0.37,\"hush\":0,\"drop\":0.09,\"dei\":-1,\"green\":{\"Q\":0.8348,\"A\":3.2861,\"L\":7.0331,\"v\":0.043,\"dA\":-0.059},\"ms\":1.93,\"errs\":0}"
+shot n2p-19
+EVAL JSON.stringify({errs:CARD.ERRS,au:CARD.ENGINE.AU.mode,scene: => "{\"errs\":[],\"au\":\"capture\",\"scene\":8}"
+

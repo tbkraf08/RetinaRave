@@ -8,3 +8,4 @@ tools/work/
 node_modules/
 !site/*.jpg
 !site/thumbs/*.jpg
+__pycache__/

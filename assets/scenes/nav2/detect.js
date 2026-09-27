@@ -65,10 +65,19 @@ export const SLIDE_A = 1.10;     // Koenigs spoke rotation per unit pitch, radia
 export const CURL = 0.35;        // gain on the natural tightness per unit wind (uCurl)
 export const CURL_SW = 0.30;     // ... and per unit swirl
 export const GLOW_H = 0.8;       // how much the smoulder brightens in the hush (uGlow = 1 + GLOW_H*hush)
+// --- the beat (v0.13, the user on SeeYouDrop: "the mandelbrot set to bump with the beat. no beat == more of a circle
+// (some variation), as the beat happens it spirals in showing the complexity") ---------------------------------
+export const BUMP_TAU = 0.35;    // s — a hit's press decays with this constant (a beat at 150 bpm is 0.4 s apart, so
+                                 // the press falls to a third between kicks and c breathes in and out with them).
+                                 // 0.28 left the pulse too short to reach the rim through K_R and V_MAX (test_nav2
+                                 // sweep 2026-09-26: rho peaked 0.88 and no gate opened under a kick on every beat)
+export const PULSE_TAU = 2.0;    // s — the beat DENSITY, an ema of the bump: a busy passage keeps c part-way pressed
+                                 // between its kicks ("some variation"), a beatless one lets it rest on the circle
+export const CURL_B = 0.5;       // gain on the arms' tightness per unit bump: the beat spirals the arms in (uCurl)
 
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
-  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1,
+  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -94,6 +103,7 @@ export function resetDet() {
   D.lEma = D.pvPrev = D.bendSgn = D.flicks = 0;
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
+  D.bump = D.pulse = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -167,6 +177,9 @@ export function updateDet(dt, S, P) {
   D.fake = Math.max(0, D.fake - dt);
   if (S.dropEvt) D.wind = 0;
   else D.wind = ema(D.wind, D.windT, dt, D.fake > 0 ? W_FAKE : W_TAU);
+  // --- the beat: a peak-hold of the kick / the hit with its own decay, and its density ----------------------
+  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), S.kick || 0, S.hit || 0);
+  D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
   // The `spin` parameter carries everything the rate has that is an MS field (riser, hp, roll and the wind-up's own
@@ -177,6 +190,6 @@ export function updateDet(dt, S, P) {
   D.rate = ema(D.rate, rt, dt, SPIN_TAU);     // the RATE is eased, so the angle integrates and never jumps
   D.angle += D.rate * dt;                     // on dt, not musical time: the param's range is declared in rad/s
   // --- the shader gains --------------------------------------------------------------------------------
-  D.curl = CURL * D.wind + CURL_SW * D.swirl;
+  D.curl = CURL * D.wind + CURL_SW * D.swirl + CURL_B * D.bump;
   D.glow = 1 + GLOW_H * S.hush;
 }

@@ -5,6 +5,7 @@
 // The two motion limits both halves share live here, since this is the module the other one imports.
 import { clamp, mix } from '../../math/util.js';
 import { findCycle, pot, potGrad, rayTo, cleanLine, mkCyc, N_MAX } from '../../math/field.js';
+import { DET } from './detect.js';   // detect.js imports math/util alone, so this stays a chain, never a cycle
 
 export const V_MAX = 1.2;        // units/s — the hard speed cap (0.02/frame at 60 Hz, 0.05 at the loop's 1/24 s cap)
 export const FLOW_CAP = 0.1;     // s of musical time a single frame may advance an ema (a resume must not jump one)
@@ -25,6 +26,8 @@ export const HOME_EPS = 0.004;   // |drift| that counts as unwound
 export const HOME_LG = 0.05;     // |log2 G - the exit potential| that counts as arrived
 export const HOME_TRIES = 240;   // frames of trying for a clean bridge before taking the one we have
 export const V_IN = 1.1;         // units/s along the bridge home (under V_MAX: the bridge is a normal frame)
+export const BUMP_LG = 1.5;      // log2 G the beat pulls the exterior target IN by (v0.13): outside the set the dust
+                                 // condenses toward it on every kick, so the edge bumps with the beat out here too
 
 const TR = mkCyc(), PG = { x: 0, y: 0 };
 
@@ -98,7 +101,7 @@ export function stepExt(N, dt, S) {
   let lgT, tv;
   if (N.mode === 'EXT') {
     // NAV's `reach` expression, inline (it is not a parameter here — six is the cap, and the four visible ones won)
-    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_LO, LG_HI);
+    lgT = clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv - BUMP_LG * DET.bump, LG_LO, LG_HI);
     tv = DRIFT_EXT * dflow / Math.max(dt, 1e-5);
   } else {
     lgT = N.lgExit;

@@ -5,6 +5,10 @@
 //   uGlow float rest 1      the smoulder brightens in the hush: the two uPar*uPar terms times uGlow     -- x * 1
 //   uView.xy    rest (0,0)  the whole blob floats with the pitch (this uniform already existed, always 0 in NAV)
 //   uView.w     rest = GROOVE.rot alone; NAV2 adds its own spin angle on top
+//   uRound float rest 0      v0.13: the picture brightens as the set ROUNDS (rho = |lambda| falls): the interior base and
+//                            the exterior glow are multiplied by 1 + uRound*(1-rho), rho from uLam.x, gated by uLam.w. A
+//                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
+//                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim) -- x * 1
 // NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
@@ -21,7 +25,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -35,6 +39,7 @@ void main(){
     else if(i>=uIterLo&&dd<1.)break; // no chart: the long budget is for structure still resolving, and |(f^n)'|<1 says there is none left
   }
   float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;
+  float rnd=1.+uRound*uLam.w*clamp(1.-exp(uLam.x),0.,1.); /* NAV2 v0.13: the round set's light. Rest 0 is exact (x*(1.+0.)) */
   if(esc){
     float sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
@@ -42,13 +47,14 @@ void main(){
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
     col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
+    col*=rnd;
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
     Lk+=uKoen.x;ai+=uKoen.y; /* NAV2: the pitch slides the bands and rotates the spokes. Rest (0,0) is an exact IEEE identity (x+0), so a still frame is byte-identical to the same c without this line */
     ai+=uCurl*Lk; /* NAV2: a gain on the NATURAL tightness arg(lambda)/ln|lambda| — a swirl or a wind-up curls the arms further. Rest 0 is exact (x + 0.*Lk, Lk finite). Lk is f^q-invariant, so no seam */
     float bands=.5+.5*cos(TAU*Lk);float spokes=.5+.5*cos(ai*2.+uTime*.4);
-    vec3 base=pal(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes);
+    vec3 base=pal(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes)*rnd;
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;

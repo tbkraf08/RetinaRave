@@ -190,7 +190,9 @@ function runSweep(cenAt, secs) {
   return out;
 }
 
-// Drive the WHOLE scene off a centroid signal, with the monitor's rule. Returns the reach of Im c inside INT.
+// Drive the WHOLE scene off a centroid signal WITH A BEAT (a kick on every beat: v0.13 rests c on the circle at
+// RHO_REST with no beat, and it is the beat's press that carries it to the rim where a gate can open), with the
+// monitor's rule. Returns the reach of Im c inside INT.
 function runMelody(cenAt, secs) {
   resetNav2();
   resetDet();
@@ -204,6 +206,8 @@ function runMelody(cenAt, secs) {
     S.flow += dt;
     S.beatPhase += dt * S.bpm / 60;
     if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
+    S.beat = S.beatPhase < dt * S.bpm / 60;
+    S.kick = S.beat ? 1 : S.kick * Math.exp(-dt / 0.16);   // the beat: a kick on every beat, the engine's own decay
     for (const k in scene.params) pp[k] = scene.params[k].from(S);
     updateDet(dt, S, pp);
     updateNav2(dt, t, S, { P: pp, isLogical: true });
@@ -280,10 +284,34 @@ console.log('\nthe melody has room: a 60 s track whose centroid swings 0.35..0.7
   ok(m.bins >= 3 || (m.yHi >= 0.4 && m.yLo <= -0.4),
     `the melody has room: ${m.bins}/8 of the internal angle, Im c ${m.yLo.toFixed(3)}..${m.yHi.toFixed(3)} (gate: 3/8 of the angle, or +-0.4 of Im)`);
   ok(m.gates >= 1 && m.backs >= 1,
-    `a gate opens AND closes inside 60 s: ${m.gates} in, ${m.backs} back out (${m.qs.join(' ')})`);
+    `a gate opens AND closes inside 60 s under the melody and a kick on every beat: ${m.gates} in, ${m.backs} back out (${m.qs.join(' ')})`);
   ok(m.rhoMax <= RHO_CAP + 1e-6, `rho stayed at ${m.rhoMax.toFixed(6)} <= RHO_CAP ${RHO_CAP} on every frame that is not walking a gate (${m.gateF} frames were, ${(100 * m.gateF / m.nInt).toFixed(1)} % of INT — at a parabolic root rho IS 1)`);
   ok(m.viol === 0, `0 continuity violations over ${m.nInt} INT frames (${m.viol})`);
 }
 
+// v0.13: no beat == the circle. quiet() has no kick and no hit; c must settle near RHO_REST (the build's wind is 0 on
+// this timeline) and Green's ruler must read a quasi-circle (Q close to 1), with the melody still turning it (v > 0).
+{
+  const { RHO_REST } = await import('../assets/scenes/nav2/nav2.js');
+  const { measure, resetGreen, G } = await import('../assets/scenes/nav2/green.js');
+  resetNav2(); resetDet(); resetGreen();
+  const S = quiet(), pp = {};
+  let vPos = 0, n = 0, qMin = 1;
+  for (let f = 1; f <= 900; f++) {
+    const t = f * dt;
+    S.centroid = 0.5 + 0.2 * Math.sin(2 * Math.PI * t / 8);
+    S.flow += dt;
+    S.beatPhase += dt * S.bpm / 60;
+    if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
+    for (const k in scene.params) pp[k] = scene.params[k].from(S);
+    updateDet(dt, S, pp);
+    updateNav2(dt, t, S, { P: pp, isLogical: true });
+    measure(N2.c[0], N2.c[1], dt);
+    if (f > 300) { n++; if (G.v > 0) vPos++; qMin = Math.min(qMin, G.Q); }
+  }
+  ok(Math.abs(N2.rho - RHO_REST) < 0.03, `no beat: rho settles at ${N2.rho.toFixed(3)} (RHO_REST ${RHO_REST})`);
+  ok(qMin > 0.95, `no beat: the set is a quasi-circle, Q >= ${qMin.toFixed(4)} over the last 10 s (gate > 0.95)`);
+  ok(vPos / n > 0.9, `no beat: the melody still moves the edge — v > 0 on ${(100 * vPos / n).toFixed(0)} % of frames`);
+}
 console.log(fails ? `\ntest_nav2: ${fails} FAIL` : '\ntest_nav2: OK');
 process.exit(fails ? 1 : 0);

@@ -6,6 +6,7 @@ import { clamp, sstep, ema, frac, Spring } from '../../math/util.js';
 import { N2, updateNav2, resetNav2, Y_AMP, X_HOME, X_AMP, LIFT } from './nav2.js';
 import { DET, resetDet, updateDet, WIND_BEATS, SPIN_SW, SPIN_W, SLIDE, SLIDE_A } from './detect.js';
 import { FS_JULIA_V2, FS_MANDEL_V2, VS_PT, FS_PT } from './shaders.js';
+import { measure, resetGreen, G as GREEN } from './green.js';
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
@@ -16,6 +17,7 @@ const TRAP_K = 0.9;
 const DOTS_0 = 1;         // the critical-orbit dot size, inline
 const PIP_LO = 0.05;      // the picture-in-picture's presence gate, inline
 const PIP_HI = 0.3;
+const ROUND_G = 1.5;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho))
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
 // The wind-up target, shared by the `wind` and `spin` parameters. Every field is read unconditionally or as a
@@ -33,7 +35,7 @@ export default {
   home: false,      // NAV (id 0) is home until the user approves NAV2
   always: false,    // NAV2 is forced-only: it updates when it is on screen, like every other non-home scene
   cuts: 'event',    // c jumps only at the drop (pathCut 0 + a mode change); every other frame moves c by <= V_MAX*dt
-  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks',
+  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick',
     'build', 'tension', 'hush', 'dropExpectedIn', 'fakeoutEvt', 'dropEvt', 'dropStrength', 'dropEnv',
     'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'arc', 'presence', 'flow', 'seed', 'resolveEvt'],
   state: N2,        // the continuity monitor's shape: {mode, cPath, pathCut, kick:{x}, baby, c}
@@ -48,9 +50,13 @@ export default {
     swirl: (v) => { DET.pinSwirl = v === undefined ? -1 : clamp(+v, 0, 1); },
     // two arguments: CARD.REG[8].scene.hooks.wish(x, y) — pin the melody's wish, upstream of the spring and the ema
     wish: (x, y) => { DET.pinWish = x === undefined || x === null ? null : [+x, +y]; },
-    reset: () => { resetNav2(); resetDet(); },
+    reset: () => { resetNav2(); resetDet(); resetGreen(); },
+    // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — Q the
+    // roundness 4 pi A / L^2 (1 = a circle), v the mean edge speed, dA the area's rate. Meaningful while c is in M
+    // (mode INT); outside, the level curve pinches and `ok` says nothing about it, so a trace reads it with the mode.
+    green: () => GREEN,
     // &rho=0.9 — pin the radial target, so the picture at a chosen |lambda| can be shot and measured (this is how
-    // RHO_FREE was chosen: the lowest resting radius whose centre luminance still shows the Koenigs arms).
+    // v0.8's RHO_FREE was chosen; v0.13 rests at RHO_REST and the beat presses from there).
     rho: (v) => { N2.rhoPin = v === undefined ? -1 : clamp(+v, 0, 0.9999); },
     // Measurement only (HARNESS "Bench protocol": CARD.bench cannot see the CPU finder). It calls the scene's own
     // update path n times on the last frame's arguments and returns the MEDIAN in ms. The wall clock here is never
@@ -74,7 +80,7 @@ export default {
     },
     n2info: () => ({
       mode: N2.mode, c: [N2.c[0], N2.c[1]], rho: N2.rho, q: N2.q, has: N2.cyc.has, comp: N2.compSize,
-      wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow,
+      wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow, bump: DET.bump, pulse: DET.pulse,
       pitch: DET.pitch, lift: DET.lift, sweep: DET.sweep, roll: DET.roll, scratch: DET.scratch, swirl: DET.swirl,
       spin: DET.spin, rate: DET.rate, angle: DET.angle, par: N2.par, lg: N2.lg, pathCut: N2.pathCut, rhoPin: N2.rhoPin,
       gate: N2.gate.on ? N2.gate.p + '/' + N2.gate.q + ':' + N2.gate.ph : '', still: STILL,
@@ -104,7 +110,8 @@ export default {
       dropEnv: 'zooms the view out by up to 25 %, lights the exterior dust, and releases the frame\'s turn',
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
       beatCount: 'the same clock; a gate needs half a beat of held pressure, and the exterior settles on beats away',
-      hit: 'a hit presses c a little harder against the boundary, flashes the set\'s edge and zooms in slightly',
+      hit: 'a hit is a beat: it presses c from the resting circle out toward the boundary and the arms spiral in; between hits c breathes back (0.28 s), and how DENSE the hits are holds it part-way out',
+      kick: 'the kick is the beat too: the same press as a hit, whichever is stronger',
       hitStrength: 'how hard that hit was: it arms the scratch gate',
       eS: 'how far out along the normal the exterior sits, and the amplitude of the (dormant) drum modes',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
@@ -153,6 +160,7 @@ export default {
     if (this.rt.settledAt === 0) N.landed = 0;
     updateDet(dt, S, env.params);
     updateNav2(dt, env.now, S, { P: env.params, isLogical: env.SC.logical === this.id });
+    measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms): hooks.green() reads it
     const rt = this.rt;
     rt.home = N.mode === 'INT';
     rt.awayBeat = N.extBeat;
@@ -160,7 +168,7 @@ export default {
     rt.cycBase = N.cycBase;
     rt.time = N.vtime;
     rt.label = N.mode + ' q' + N.q + (N.gate.on ? ' gate ' + N.gate.p + '/' + N.gate.q : '');
-    rt.log = `${N.mode} rho${N.rho.toFixed(3)} q${N.q} w${DET.wind.toFixed(2)} cu${DET.curl.toFixed(2)}`;
+    rt.log = `${N.mode} rho${N.rho.toFixed(3)} q${N.q} w${DET.wind.toFixed(2)} b${DET.bump.toFixed(2)} cu${DET.curl.toFixed(2)} Q${GREEN.Q.toFixed(3)}`;
     this._groove = GROOVE;
     this._S = S;
   },
@@ -186,6 +194,7 @@ export default {
     gl.uniform2f(u('uKoen'), SLIDE * kn, SLIDE_A * kn);
     gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
+    gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));
@@ -265,6 +274,6 @@ export default {
 
   hud() {
     const N = N2, D = DET, f = (x) => x.toFixed(2);
-    return `nav2 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  rho ${N.rho.toFixed(4)} q ${N.q} has ${N.cyc.has}  wind ${f(D.wind)} curl ${f(D.curl)} spin ${f(D.rate)}  pitch ${f(D.pitch)} lift ${D.lift.toFixed(3)}  par ${f(N.par)} tscale ${f(N.timeScale)}${N.gate.on ? '  gate ' + N.gate.p + '/' + N.gate.q : ''}`;
+    return `nav2 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  rho ${N.rho.toFixed(4)} q ${N.q} has ${N.cyc.has}  wind ${f(D.wind)} bump ${f(D.bump)} pulse ${f(D.pulse)} Q ${GREEN.Q.toFixed(3)} curl ${f(D.curl)} spin ${f(D.rate)}  pitch ${f(D.pitch)} lift ${D.lift.toFixed(3)}  par ${f(N.par)} tscale ${f(N.timeScale)}${N.gate.on ? '  gate ' + N.gate.p + '/' + N.gate.q : ''}`;
   },
 };

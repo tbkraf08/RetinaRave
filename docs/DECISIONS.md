@@ -2084,3 +2084,39 @@ widths per band on the launches).
 fill at 59–61 s (§44's open question) should double the launches is untouched: `dn` 21 then 15 against onsets 11.9. No sweep of
 WSIG / KWB / ONSETC — three numbers chosen by eye on one track; the other three tracks were not re-watched, only re-measured.
 
+## §46 NAV2 — "bump with the beat", Green's ruler, v0.13 (2026-09-26, orchestrator alone, from the user's ask on SeeYouDrop; `docs/AUDIT-v0.13.md`)
+
+**The user's word:** *"audit the NAV2 scene with SeeYouDrop.flac; can make modifications; I want the mandelbrot set to bump with the
+beat. no beat == more of a circle (some variation), as the beat happens it spirals in showing the complexity of the mandelbrot set.
+The edge of the set should always be moving with the music. How can Green's theorem help?"*
+
+**What was there:** v0.8 rested c ON the rim (`RHO_FREE` 0.91, chosen for brightness, §39) — ρ 0.88–1.00 on every interior sample
+of the 80 s SeeYouDrop trace, the set always a spiky blob, a hit worth `K_HIT` 0.35 of press. Nothing measured the shape.
+
+**Decisions:**
+1. **The beat is the press, the circle is the rest.** `detect.js` `bump` (peak-hold of kick/hit, `BUMP_TAU` 0.35 s) and `pulse`
+   (its 2 s ema, the beat's density); `nav2.js` `RHO_REST` 0.30 replaces `RHO_FREE`, press = wind + `BUMP_K` 1.0·bump + `PULSE_K`
+   0.8·pulse, `K_R` 4 → 10, `K_HIT` gone; `CURL_B` 0.5 curls the arms on the beat. The brightness that `RHO_FREE` bought is paid by
+   `uRound` (5.) instead of by resting on the rim.
+2. **Gates leak, not reset** (`GATE_LEAK` 0.3, `GATE_RHO_MIN` 0.80): pulses touch the rim briefly; the held pressure now leaks between
+   them. Set by a 16-point node sweep — the mildest point where a kick-per-beat timeline opens and closes a gate (1 → 3 → 1) with 0
+   violations; at `GATE_RHO_MIN` 0.86 or `BUMP_TAU` 0.28 no gate opened at all. `test_nav2.js`'s melody run gained the kick.
+3. **The beat reaches outside** (`exit.js` `BUMP_LG` 1.5 on the exterior target potential).
+4. **Green's theorem is the ruler, not the engine** (`green.js`, `hooks.green()`, `test_green.js`): A = ½∮(x dy − y dx) on c's
+   equipotential |φ_c| = 1.06 (256 points, 7 pull-backs through ±√(z − c), branch continuous in the external angle), Q = 4πA/L²,
+   dA/dt = ∮ v·n ds and the mean edge speed. Q is 1 at c = 0 exactly (the 256-gon's), 0.99 → 0.70 as ρ 0.2 → 0.99 along the 1/3
+   root; Gronwall's area theorem says the area deficit IS the Böttcher tail. 0.032 ms. The AUDIT's "How Green's theorem helps"
+   is the user's answer. Not built: the phase-winding colour (the argument principle, same family).
+5. **`uRound`** (rest 0, exact): the interior base and the exterior glow × (1 + `ROUND_G` 1.5 (1 − ρ)). Measured need: centre
+   luminance fell to a median 0.06 on the window frames (v0.12 0.20); with it 0.19.
+
+**Proof:** `det13.py` + `nav2-window.py` (`tools/accept/v0.13/`, tracks from `$MUSIC`): ρ 0.671 / 0.827 / 0.985, Q 0.700 / 0.805 /
+0.947, v 0.189 median / 0.578 max and > 0 on 29/29 interior samples, one gate, ms 2.04 (2.02), errs []. The paused start (8 s): ρ
+0.97 → 0.39, Q 0.71 → 0.96, v → 0.006; first kick after play ρ 0.74, v 0.31. `test_nav2` no-beat: ρ 0.300, Q ≥ 0.977, v > 0 on
+100 %. s8 md5 17f888e8 / 83d37910 twice (v0.12 9021eac8 / f6299795); `check.js` 0 fail; `npm test`, `test_fdtd`, `test_field`,
+`test_green`, `test_nav2` OK; `releases/retinarave-v0.13.html` proven from file:// (key 9 → scene 8, errs []).
+
+**Open:** the six look constants by eye on one track (the four gate/press ones swept); no beatless passage on a real track (paused
+start + node stand in); the drop's 20 s outside untouched; the v0.8 `&still=1` = NAV identity no longer holds (c's path differs);
+NAV2 still forced-only, the swap question unchanged; the other three tracks not re-watched.
+

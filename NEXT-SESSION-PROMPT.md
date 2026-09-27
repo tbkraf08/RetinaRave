@@ -35,8 +35,11 @@ index}.js` (`REARM`, `HATA`, `FGAIN`, `NOTEK`/`NOTEA`, `GRIDT[3]` substeps — r
   chroma (`W12[k]`, one line in `sources.js`), not a bigger `CSPREAD`.
 - **Docs owed:** the launch-weighted expected hue in `det12.py`; the `CDIP` comment in `colour.js` (describes v0.11's workaround).
 
-**Then — the NAV2 question (v0.8, DECISIONS §39, `docs/AUDIT-v0.8.md`), still open:** NAV2 is id 8, key `9`, forced-only, not swapped
-in; the user has not looked. Show `tools/accept/v0.8/montage-nav2-real.jpg` (NAV left · NAV2 right) and `dist/retinarave.html` key `9`;
+**Then — the NAV2 question (v0.8, DECISIONS §39, `docs/AUDIT-v0.8.md`), still open — now on v0.13 (§46, `docs/AUDIT-v0.13.md`):**
+the user looked at NAV2 on SeeYouDrop and asked for it to bump with the beat; v0.13 rests c at `RHO_REST` 0.30 (a quasi-circle) and
+the beat presses it to the rim (`bump`/`pulse`, `CURL_B`), gates leak, `uRound` pays the brightness, `green.js` measures Q = 4πA/L²
+and the edge speed (`hooks.green()`, `det13.py`, `nav2-window.py`). Open there: the look constants by eye on one track, the other
+three not re-watched, the drop's 20 s outside untouched. NAV2 is still id 8, key `9`, forced-only, not swapped in. Show `tools/accept/v0.8/montage-nav2-real.jpg` (NAV left · NAV2 right) and `dist/retinarave.html` key `9`;
 the AUDIT's "What the eye sees" and the ranked leans (`RHO_FREE` resting brightness first).
 - **Approve →** the swap, one commit, `NAV2-SESSION-PROMPT.md` step 4 verbatim (NAV2 → id 0 / home / always / NAV's bid; NAV →
   `nav-v1` id 8 forced-only; DRUM stays nav-v1's variant, score 0; `tools/parity.js` `&scene=0` → `8` and `CARD.NAV || CARD.home` →
