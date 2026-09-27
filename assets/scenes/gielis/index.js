@@ -9,11 +9,12 @@
 // nest.js: the families, the species, the breath, the lean templates, the waves, the ruler. shaders.js: the GLSL.
 import { mkVS, mkFS } from './shaders.js';
 import { mkAnchor } from '../../math/keycolour.js';
+import { mkNudge } from '../../math/nudge.js';
 import { BANDS, SLOTS } from '../../math/waves.js';
 import { HELP } from './help.js';
 import {
   N, updateNest, resetNest, measureQ, rimR, waveUpload, segsOf, train, live, positions,
-  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST,
+  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST, press, TWIST,
 } from './nest.js';
 
 const TAU = Math.PI * 2;
@@ -25,15 +26,17 @@ const FILLMAX = 0.85;   // the nest never fills more than this, so nothing crops
 const RAD = 1.0;        // the nest's own radius: SIZE0 + SIZEK at chroma 1
 const WPX = 2.6;        // stroke width in px at 720 p at the framing distance
 const GLOWQ = 0.4;      // hush / calm dim the brightness floor by this much
+const BOUNCE = 0.05;    // the beat's second thump, on the camera distance — 5 % and visible (TORUS2's, the user's number)
 
 const KC = mkAnchor();
+const NG = mkNudge();   // the beat nudge, per caller (math/nudge.js): 1/16 of a turn per beat, eased ~0.3 s
 const WB = new Float32Array(BANDS * SLOTS);   // wave ages in beats, uploaded every frame
 const WA = new Float32Array(BANDS * SLOTS);   // …their amplitudes at launch …
 const WH = new Float32Array(BANDS * SLOTS);   // …and the hue each one carries (the note)
 const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
-const P = { breath: 1, glow: FLOOR };            // the visual parameters in force this frame
+const P = { breath: 1, glow: FLOOR, turn: 0, size: 0.6 };   // the visual parameters in force this frame
 const O = { key: 0, tier: 3, pinch: -1, still: 0, hueOf: null };   // the pins, the tier and the hue map
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
 let STILL = 0, KEYPIN = null, N1PIN = -1;
@@ -66,7 +69,7 @@ function info() {
     n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
     morph: +N.morph.toFixed(4), template: N.template, key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
-    med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4),
+    med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4), turnT: +P.turn.toFixed(4), bounce: +N.bounce.toFixed(4), fibF: +N.fibF.toFixed(3),
     size: +N.fill.toFixed(4), dist: +CAM[2].toFixed(3), tier: TIER, still: STILL,
     live: live(N.beatNow), kick: positions(0, N.beatNow), snare: positions(1, N.beatNow), hat: positions(2, N.beatNow),
   });
@@ -131,6 +134,8 @@ export default {
     // (CONTRACTS §1.16) and proves the s10 md5s unmoved by the move.
     P.breath = 0.5 + 0.5 * MS.eS;
     P.glow = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
+    P.turn = ((MS.beatCount / 16) * TAU) % TAU;
+    P.size = 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1));
     O.key = A.key;
     O.tier = TIER;
     O.pinch = N1PIN;
@@ -142,10 +147,11 @@ export default {
     // the camera. The nest is centred, so the distance is solved from the fill of the SHORT edge: a point at radius r
     // and view depth d lands at ndc_y = focal·r/d and ndc_x = focal·r/(d·aspect), so the short edge binds at
     // d = focal·r/(fill·min(1, aspect)) — portrait included (the phone is 390×844).
-    N.fill = Math.min(FILLMAX, FILL0);
-    CAM[0] = 0;
-    CAM[1] = CAM_EL;
-    CAM[2] = (FOV * RAD) / (N.fill * Math.min(1, ASP));
+    N.fill = STILL ? FILL0 : Math.min(FILLMAX, P.size);
+    N.bounce = STILL ? 0 : BOUNCE * press(MS.beatPhase);
+    CAM[0] = STILL ? 0 : NG.turn(dt, P.turn, Math.max(MS.hush, MS.calm));
+    CAM[1] = CAM_EL + TWIST * N.twist;
+    CAM[2] = (FOV * RAD) / (N.fill * Math.min(1, ASP)) / (1 + N.bounce);
     STROKE = WPX * (1 + 0.6 * MS.bass) * (0.85 + 0.3 * MS.arousal);
     N.phrase = MS.phrase16Pos;                              // the sixteen-beat phrase the turn is measured against
     screenOf(rimR(), 0, 0);

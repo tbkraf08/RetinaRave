@@ -97,7 +97,7 @@ export const N = {
   flash: 0, shim: 0, press: 0, depth: 0,
   template: 0, tPrev: 0, morph: 0, tSel: -2,
   collapse: 0, slip: 0, twist: 0, phiOff: 0, gain: 1,
-  beatNow: 0, still: 0, fill: 0.6, phrase: 0,
+  beatNow: 0, still: 0, fill: 0.6, phrase: 0, bounce: 0,
 };
 
 export const train = WV.train;
@@ -223,12 +223,23 @@ export function updateNest(dt, MS, P, O) {
   if (O.pinch >= 0) N.n1 = Math.max(N1_MIN, O.pinch);
   N.open = 0;
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
-  N.draw = FIBMAX;
-  N.fibF = FIBMAX;
 
   // the flash on the quiet inner families, and the shimmer along every ring
   N.flash = O.still ? 0 : Math.max(N.flash * Math.exp(-dt / FLASHT), MS.kick);
   N.shim = O.still ? 0 : SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
+
+  // growth stage 1: the drawn family count FIBMIN -> FIBMAX over build 0 -> 0.5, eased so a family that appears fades
+  // in instead of popping (stage 2, the camera coming in, is the `size` parameter's and lives in index.js)
+  const gB = Math.min(1, 2 * MS.build);
+  const fT = O.still ? FIBMAX : FIBMIN + (FIBMAX - FIBMIN) * Math.min(1, gB + 0.3 * MS.arousal);
+  N.fibF += (fT - N.fibF) * (1 - Math.exp(-dt / FIBTC));
+  N.draw = Math.max(1, Math.min(FIBMAX, Math.ceil(N.fibF - 1e-6)));
+
+  // the ring phase per band: the low (pc 0-3), mid (4-7) and high (8-11) families turn on their rings at their own pace
+  const psiB = TAU * ((N.beatNow / 8) % 1);
+  N.psi[0] = O.still ? 0 : (psiB + PSIK * MS.flowBass) % TAU;
+  N.psi[1] = O.still ? 0 : (psiB + PSIK * MS.flowMid) % TAU;
+  N.psi[2] = O.still ? 0 : (psiB + PSIK * MS.flowHigh) % TAU;
 
   if (!O.still) waves(MS, O.hueOf);
 
