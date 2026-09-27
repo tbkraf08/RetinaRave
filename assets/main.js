@@ -31,6 +31,7 @@ import feigen from './scenes/feigen/index.js';
 import torus2 from './scenes/torus2/index.js'; // v0.7: id 3, TORUS's bid (DECISIONS §37); torus is torus-v1 at id 7, forced-only
 import nav2 from './scenes/nav2/index.js'; // v0.8: id 8, forced-only (score 0, key 9) until the user approves it — NAV2-SESSION-PROMPT.md
 import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (score 0; the `n` key cycles to it — the number keys ran out) — MAXWELL-SESSION-PROMPT.md
+import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
 
 const $ = (id) => document.getElementById(id);
 
@@ -54,7 +55,7 @@ initLines();
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
-for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell]) {
+for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

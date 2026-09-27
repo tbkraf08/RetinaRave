@@ -266,7 +266,7 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
 Registered ids (keep this table current): **0 nav** (home) · **4 drum** (nav variant) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav2** (v0.8, forced-only until approved: `score()` 0, key `9`; `NAV2-SESSION-PROMPT.md`) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav2** (v0.8, forced-only until approved: `score()` 0, key `9`; `NAV2-SESSION-PROMPT.md`) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities
