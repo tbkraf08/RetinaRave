@@ -1,4 +1,4 @@
-# Next session — Retina Rave after v0.13 (written 2026-09-27; local `main` five commits ahead of origin, unpushed)
+# Next session — Retina Rave after v0.13 (written 2026-09-27; local `main` ahead of origin, unpushed)
 
 **Live:** v0.12.1 (retinarave.com, pushed 2026-09-26). **Local:** v0.13 NAV2 "bump with the beat" (four passes, DECISIONS §46 + addenda,
 `docs/AUDIT-v0.13.md`) + `NAV2-BEAT-SESSION-PROMPT.md`, **unpushed** — a push to `main` deploys; push only on the user's word.
@@ -13,8 +13,9 @@
 
 **The live work is NAV2 (id 8, key `9`, forced-only):** read `NAV2-BEAT-SESSION-PROMPT.md` first — the user's four rounds of words on
 `~/Music/RetinaRave/SeeYouDrop.flac`, the state constant by constant, the workflow (window replay → cause in the numbers → constants →
-re-prove → audit section → commit), the pitfalls, and the ranked open list (the user's look at pass 4; gates vs notes; the second `dropEvt`
-at 1:45; the other three tracks unwatched under v0.13; `nav2.js` at 415 lines). Then, when the user says the look is right: tag v0.13, push
+re-prove → audit section → commit), the pitfalls, and the ranked open list (the user's look at pass 4; gates vs notes; 1:45 measured as a
+full-strength drop, the choice is the user's; the other three tracks measured + `DROP_GAP` 32 beats from Malicious on 2026-09-27, AUDIT §5,
+montages ready to show; `nav2.js` at 439 lines). Then, when the user says the look is right: tag v0.13, push
 on their word, and raise the **swap question** (§39 / `NAV2-SESSION-PROMPT.md` step 4: NAV2 → id 0 / home / always / NAV's bid, NAV →
 `nav-v1` id 8, parity + md5 lists + `accept.sh` + `site/about.html` + CONTRACTS §1.8, the Q trace on house + aba, a DECISIONS section).
 

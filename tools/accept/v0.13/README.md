@@ -8,5 +8,13 @@ Tracks from `$MUSIC` (default `~/Music/RetinaRave`), the v0.12 rule: the name wi
 - **`nav2-window.py <track>`** — `OUT=<dir> T0=<s> N=<n> [PAUSE=<s>]`: seek the tab to T0, a shot + D line every second; `PAUSE`
   pauses the music for the first seconds (the no-beat proof). `nav2-window-{before,after,after2,paused}.txt` + `montage-nav2-syd-{before,
   after,after2,paused}.jpg` (46–70 s, after2 46–88 s; the paused one 46 s with 8 s paused). `nav2-window-intro.txt` + `montage-nav2-syd-intro.jpg` are 0–60 s on the final build (the intro's beat, the 25 s gate, the drop). `nav2-window-double{-before,}.txt` + `montage-nav2-syd-double{-before,}.jpg` are 92–120 s (double time at 1:38, the energy peak) before and after the fourth pass; `intro2` is 0–60 s on the final build. **Show `intro2` and `double` first.**
-- `scene-md5-v013.txt` — s8 re-based (twice); the rest of the list is v0.12's.
+- **The other three tracks under v0.13 (2026-09-27)** — `det13-{cn,wltp,mal}-v013.txt` (CyborgNinja / WhoLikesToParty / Malicious, 80 s
+  each, the pass-4 build; the D line now also carries `ds` = dropStrength and `arc`), `nav2-window-{cn,wltp}-intro.txt` + `montage-nav2-
+  {cn,wltp}-intro.jpg` (0–60 s). Malicious's intro fired the engine's drop three times in 14 s and NAV2 cut every time (18 of its first
+  25 s outside) → `DROP_GAP` 32 beats (`exit.js`): `det13-mal-gap.txt`, `nav2-window-mal-intro-gap.txt` + `montage-nav2-mal-intro-gap.jpg`
+  after; `det13-syd-gap.txt` is SeeYouDrop on the same build (its two drops are 47 s apart, both stand). `nav2-window-syd-145.txt` +
+  `montage-nav2-syd-145.jpg` are 1:40–1:56 with `ds`: the 1:45 drop is a full-strength one (ds 1.0, arc build → peak).
+- **`tab13.py <file> [full]`** — tabulates a det13 trace or a window log (ρ / bump / ival / E / eS / note / kick / hit / drop / ds / arc /
+  gate / Q / v per line, and one summary line: modes, ρ and Q min / med / max, v med / max and > 0 count, notes latched, gates, ms).
+- `scene-md5-v013.txt` — s8 re-based (twice); the rest of the list is v0.12's (unchanged by `DROP_GAP`: 253b19c4 / 778fb7e2, twice).
 - `../../test_green.js`, `../../test_nav2.js` (the kick on every beat, the no-beat circle) — node.

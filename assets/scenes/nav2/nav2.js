@@ -106,6 +106,7 @@ export const N2 = {
   gate: { on: 0, ph: 0, p: 0, q: 1, exit: 0, want: 0, press: 0, pushed: 0, walk: 0, q0: 1, dx: 1, dy: 0 },
   cGood: [0, 0],         // the last point known to be interior WITH a cycle: where a wedged frame walks back to
   cIn: [0, 0], cOut: [0, 0], segL: 0, lgExit: 0, drift: 0, s: 0, extBeat: 0, landed: 0, homeTry: 0,
+  dropBeat: -1e9,        // the beat of NAV2's last cut (exit.js DROP_GAP): a drop inside the gap is a hit, not a cut
   path: new Float32Array(96 * 3), pathCut: 999, orbit: new Float32Array(160 * 3),
   kick: { x: 0 },        // the continuity monitor's shape; NAV2 is chart-free, so this is 0 for ever
   baby: null,            // ... and it never dives into a baby copy
@@ -171,6 +172,7 @@ export function resetNav2() {
   N.timeScale = 1;
   N.vtime = 0;
   N.drift = N.s = N.extBeat = N.landed = N.homeTry = 0;
+  N.dropBeat = -1e9;
   N.pathCut = 999;
   N.gate.on = N.gate.press = N.gate.pushed = N.gate.walk = 0;
   N.cGood[0] = N.cGood[1] = 0;

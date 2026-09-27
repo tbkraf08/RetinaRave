@@ -2,8 +2,8 @@
 
 You are the orchestrator on **Retina Rave** (`~/Documents/Kraftek/RetinaRave/`, zero-dependency WebGL2 audio-visual engine, native ES
 modules, git, branch `main`, GitHub `git@github.com:tbkraf08/RetinaRave.git`; **a push to `main` deploys retinarave.com — never push
-without the user's word**). Live is **v0.12.1** (MAXWELL, pushed 2026-09-26). Local `main` is **four commits ahead, unpushed**: v0.13
-(`abe9fef`, `ccd0b09`, `8a48e60`, `60d4d99`), all NAV2, all uncommitted-to-the-world. `package.json` 0.13.0, `releases/retinarave-v0.13.html`
+without the user's word**). Live is **v0.12.1** (MAXWELL, pushed 2026-09-26). Local `main` is **ahead of origin, unpushed**: v0.13
+(`abe9fef`, `ccd0b09`, `8a48e60`, `60d4d99`, then the prompts, the v0.8 jpg housekeeping and the `DROP_GAP` pass on 2026-09-27), all NAV2. `package.json` 0.13.0, `releases/retinarave-v0.13.html`
 rebuilt and proven from file:// each pass. This session **continues modifying NAV2 (id 8) in place** — no new scene, no id change, still
 forced-only (key `9`, `score()` 0; NAV id 0 stays home and byte-identical) — from the user's next look.
 
@@ -51,6 +51,10 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
   1:04 was that). `BUMP_LG` 0.5 pulls the exterior target in on the beat. The spin gains are halved (`SPIN_SW` 0.3, `SPIN_W` 0.25).
   The engine fires `dropEvt` at 58 s **and** at 1:45 on this track (4 s outside each) — 1:45 is the user's "highest energy"; if it
   still under-reacts, the drop event is the suspect, not the gains.
+- **The drop's refractory** (`exit.js` `DROP_GAP` 32 beats, 2026-09-27, addendum 4 / AUDIT §5): a `dropEvt` inside eight bars of NAV2's
+  last cut is a hit, not a cut (`N.dropBeat`). Found on Malicious (three engine drops in 14 s of its intro, 18 of 25 s outside); SeeYouDrop's
+  two drops (58 s, 1:45, 47 s apart) both stand, s8 md5 unchanged. The 1:45 drop is measured full-strength (`ds` 1.0): NAV2 answers the
+  user's "highest energy" with the cut and ~6 s of dust — whether that is "reacting more" is the user's call.
 - **Green's ruler** (`green.js`, `hooks.green()`): c's equipotential |φ_c| = 1.06 traced by 7 pull-backs of a big circle through
   ±√(z − c) (256 points, branch continuous in the external angle), then A = ½∮(x dy − y dx), Q = 4πA/L², dA/dt, mean edge speed v.
   0.03 ms. Q = 1 at c = 0 exactly; meaningful in mode INT only. The audit's last section is the user's Green's-theorem answer.
@@ -94,9 +98,13 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 
 1. **The user's next look** at pass 4 (intro, 25 s, 1:38, 1:45). Then tag v0.13 and, on the user's word, push.
 2. **Gates vs notes:** 0 gates on the real track now. Decide with the user whether the species should also change through gates.
-3. **1:45:** the second `dropEvt`. If the peak should stay inside, gate NAV2's drop on `dropStrength` or on `away` since the last one.
-4. **The other three tracks** (`CyborgNinja`, `WhoLikesToParty`, `Malicious` in `~/Music/RetinaRave`) have been re-measured, never re-watched
-   under v0.13; the running-peak normalisation and the note mapping were tuned on one dubstep track.
+3. **1:45:** measured (`nav2-window-syd-145.txt`, `montage-nav2-syd-145.jpg`): a full-strength engine drop (`ds` 1.0), NAV2 outside
+   105.9–111.4 s, the interior after it at eS 0.78 (1:33–1:39 read 0.87–0.94). `dropStrength` cannot gate it (1.0 at both drops); the
+   options if the user wants the peak inside: no cut above some `away` (the drop as a press to `RHO_CAP`), or E read against the track's
+   own energy peak the way the beat is. Ask with the montage.
+4. **The other three tracks** re-measured and re-watched under v0.13 (AUDIT §5; `montage-nav2-{cn,wltp}-intro.jpg`, `montage-nav2-mal-
+   intro-gap.jpg`): CyborgNinja is a one-note bassline (notes 0 / 1 → a fat near-cusp set, Q median 0.94 — item 2's question in another
+   form), WhoLikesToParty fine, Malicious fixed by `DROP_GAP`. The user has not watched any of the three; show the montages.
 5. **Cost:** 2.20 ms with the note pull (the wall's `findCycle` probes); the budget is fine, but `nav2.js` is 415 lines (soft cap 350, hard
    500) — the next machinery change should move the note / press block out (a `beat.js` beside `exit.js`, importing `detect.js` only).
 6. The NAV2 swap question (§39: NAV2 → id 0 / home) is unchanged and waits for the user; the phase-winding colour variant is still not built.

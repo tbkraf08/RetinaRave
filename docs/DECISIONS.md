@@ -2143,3 +2143,17 @@ ceiling (`RHO_E`), the halo, the curl and the kick zoom. Edge speed median 2.4×
 notes latched in 30 s, the Q median 0.93 → 0.90. `BUMP_IV` 0.55 → 0.7 by the node sweep (the 124 bpm test beat opened no gate at
 0.55). AUDIT-v0.13's fourth section.
 
+
+**§46 addendum 4 (2026-09-27, no new word from the user — the open list's item 4):** the other three tracks re-measured and re-watched
+under v0.13 (`det13-{cn,wltp,mal}-v013.txt`, the 0–60 s montages). CyborgNinja and WhoLikesToParty bump as asked (the first on a
+one-note bassline, so notes 0 / 1 only and a fat near-cusp set; the second latches ten pitch classes at 117 bpm). **Malicious found the
+fault:** its stuttering bass intro fires the engine's bass-returns `dropEvt` three times in 14 s (`dropStrength` 1.0 each) and NAV2 cut
+every time — 18 of its first 25 s were the exterior dust, the 1:04 complaint on another track (`EXT_BEATS` made the drop a two-bar
+excursion; a re-drop undid it). **Decision: `DROP_GAP` 32 beats (`exit.js`)** — a `dropEvt` inside eight bars of NAV2's last cut is a
+hit, not a cut (`doDrop` returns; the beat's press answers the kick; `N.dropBeat` is the only new state). No drop recurs inside eight
+bars; SeeYouDrop's two (58 s, 1:45; 47 s apart) both stand, so pass 4's look is untouched: s8 md5 253b19c4 / 778fb7e2 twice, every node
+test OK, the release re-proven from file://. Malicious after: two excursions in 40 s instead of three in 14 s. Also measured, not
+changed: **1:45 on SeeYouDrop is a full-strength drop** (`ds` 1.0, arc build → peak; det13's D line now carries `ds` and `arc`) — NAV2
+answers the user's "highest energy" with the cut and ~6 s outside, and the interior after it reads eS 0.78 against 0.87–0.94 at 1:33–1:39;
+the two ways to make 1:45 "react more" inside (no cut above some `away`, or E read against the track's own energy peak) wait for the
+user's look. `tab13.py` tabulates a trace. AUDIT-v0.13's fifth section.

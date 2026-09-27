@@ -34,6 +34,14 @@ export const BUMP_LG = 0.5;      // log2 G the beat pulls the exterior target IN
                                  // condenses toward it on every kick, so the edge bumps with the beat out here too.
                                  // 1.5 in the first cut lurched the whole cloud on every kick ("wobbly", the user at 1:04)
 
+export const DROP_GAP = 32;      // beats — a dropEvt inside this many beats of NAV2's last cut is NOT a second cut (v0.13, the
+                                 // other three tracks re-measured under v0.13: on Malicious the engine's bass-returns rule fired
+                                 // three drops in 14 s of the intro, dropStrength 1 each, so NAV2 cut, landed and cut again and
+                                 // 18 of its first 25 s were the exterior dust — the very thing the user rejected at 1:04 on
+                                 // SeeYouDrop ("swirly/wobbly"; EXT_BEATS made the drop a two-bar excursion, and a re-drop
+                                 // undid it). No drop recurs inside eight bars; the beat's own press still answers the hit.
+                                 // SeeYouDrop's two drops (58 s and 1:45, 47 s apart) both stand
+
 const TR = mkCyc(), PG = { x: 0, y: 0 };
 
 export const cpy = (a, b) => {
@@ -45,6 +53,10 @@ export const cpy = (a, b) => {
 // (cleanLine), jump. The straight normal often fails the check — the antenna and the dendrites are in the way — so the
 // direction is retried over +-45 degrees and the least bad one is taken if none is clean.
 export function doDrop(N, S, now) {
+  if (S.beatCount - N.dropBeat < DROP_GAP) {
+    N.log('DROP2@' + now.toFixed(2) + ' inside DROP_GAP (' + (S.beatCount - N.dropBeat) + ' beats since the last cut): a hit, not a cut');
+    return;
+  }
   if (N.mode !== 'INT') {
     N.extBeat = S.beatCount;
     N.timeScale = 2.6;
@@ -83,7 +95,7 @@ export function doDrop(N, S, now) {
   N.lgExit = lgT;
   N.drift = 0;
   N.homeTry = 0;
-  N.extBeat = S.beatCount;
+  N.extBeat = N.dropBeat = S.beatCount;
   N.timeScale = 2.6;
   N.cy.has = N.cyc.has = 0;
   N.par = 0;

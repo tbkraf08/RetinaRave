@@ -162,3 +162,55 @@ and > 0 on 37/37, eight notes latched, E median 0.64, spin max 0.47, EXT 4 s, ms
 comes back different through the notes rather than through a gate (the node test still opens eight per minute on a fixed-note beat).
 The release rebuilt and proven from file:// (key 9 → scene 8, errs [], Q 0.977 on the test page).
 
+
+## Fifth pass — the other three tracks under v0.13, and the drop that came back (2026-09-27, no new word from the user)
+
+Pass 4 waits for the user's look. Meanwhile the open list's item 4: CyborgNinja, WhoLikesToParty and Malicious had been re-measured but
+never re-watched under v0.13, and the beat's normalisation and the note mapping were tuned on one dubstep track. `det13.py` on each
+(80 s, the D line now carrying `ds` = dropStrength and `arc`), then `nav2-window.py` 0–60 s and a montage:
+
+```
+                    bpm   modes (40 samples)        rho (INT) min / med / max   Q min / med / max        v med / max   notes latched          kick max  eS med
+CyborgNinja         160   INT 40                    0.483 / 0.682 / 0.923       0.838 / 0.940 / 0.966    0.166 / 0.624 0 1 3 5                0.71      0.83
+WhoLikesToParty     117   INT 40                    0.459 / 0.645 / 0.798       0.811 / 0.884 / 0.956    0.377 / 0.622 0 1 3 4 5 6 7 9        0.66      0.71
+Malicious           140   INT 31 EXT 5 HOME 2 IN 2  0.450 / 0.581 / 0.779       0.830 / 0.914 / 0.952    0.306 / 0.620 0 1 3 6 7 8            0.30      0.67
+SeeYouDrop (pass 4) 150   INT 37 EXT 2 HOME 1       0.475 / 0.667 / 0.966       0.785 / 0.898 / 0.953    0.493 / 0.623 0 1 4 6 7 8 9 11       0.60      0.82
+```
+
+- **CyborgNinja** breathes on every beat (bump 0.04–0.90, ρ 0.50 ↔ 0.92 between samples) but latches almost only notes 0 and 1 — the
+  bass sits on one pitch — so the species hardly changes: a fat set near the cusp, Q median 0.94, the edge slow (v median 0.17). That is
+  the note mapping doing what it says on a one-note bassline; whether it should also vary is the user's (item 2, gates vs notes).
+- **WhoLikesToParty** at 117 bpm latches ten pitch classes in 60 s (the window: ρ 0.424 / 0.622 / 0.832, v median 0.48, > 0 on 60/60);
+  the beat's press reads 0.87 at its peaks; nothing to name.
+- **Malicious is the fault.** Its intro's bass stutters in and out for more than 1.8 s at a time, so the engine's bass-returns rule fired
+  `dropEvt` at probe 15.5, 21.5 and 27.5 s, `dropStrength` 1.0 each, and NAV2 cut every time: EXT → HOME → IN → INT → cut again. 18 of
+  its first 25 s were the exterior dust, the very thing the user rejected at 1:04 on SeeYouDrop ("swirly/wobbly"); `EXT_BEATS` 8 made the
+  drop a two-bar excursion, and a re-drop simply undid it (the non-INT branch of `doDrop` also restarted the 8-beat clock).
+
+**The change — one constant, no new machinery:** `DROP_GAP` 32 beats (`exit.js`): a `dropEvt` inside 32 beats of NAV2's last cut is a
+hit, not a cut — `doDrop` returns, the beat's own press answers the kick (the engine's flash / glitch still fire; only NAV2's ray does
+not). `N.dropBeat` (the beat of the last cut, reset to −∞) is the only state. No drop recurs inside eight bars; SeeYouDrop's two (58 s and
+1:45, 47 s apart) both stand, so pass 4's look is untouched — s8 md5 253b19c4 / 778fb7e2 twice, `test_nav2` 21 ok (its one drop), `test_green`
+OK, `check` 0 fail, `npm test` / `test_fdtd` / `test_field` OK, the release rebuilt and proven from file:// (key 9 → scene 8, errs [],
+Q 0.869 on the test page).
+
+```
+Malicious                        modes                        rho (INT) min / med / max   Q min / med / max        v med / max   notes
+0–60 s window, after (1 s)       INT 48 EXT 6 HOME 4 IN 2     0.411 / 0.600 / 0.787       0.826 / 0.918 / 0.967    0.251 / 0.624 0 1 3 5 6 7 8
+80 s trace, before (2 s)         INT 31 EXT 5 HOME 2 IN 2     0.450 / 0.581 / 0.779       0.830 / 0.914 / 0.952    0.306 / 0.620 0 1 3 6 7 8
+80 s trace, after (2 s)          INT 37 EXT 1 HOME 1 IN 1     0.461 / 0.592 / 0.786       0.825 / 0.917 / 0.963    0.249 / 0.618 0 1 3 6 7 8
+SeeYouDrop 80 s, after           INT 37 EXT 2 HOME 1          0.459 / 0.656 / 0.866       0.777 / 0.905 / 0.954    0.348 / 0.625 0 1 4 6 7 8 9 11   (pass 4: INT 37 EXT 2 HOME 1, 0.475 / 0.667 / 0.966, 0.785 / 0.898 / 0.953, 0.493 / 0.623, the same eight notes)
+```
+
+In the after window the engine still fires at track 5.9, 12.6, 19.2 and 25.9 s (`drop` 0.48 / 0.60 / 0.70 / 0.84 on the sample after
+each): the first and the fourth cut (20 s apart, both two-bar excursions of ~6 s to the landing), the second and third — 18 and 36 beats
+after the first cut's beat, the third just inside the gap at 140 bpm — are hits, and the set stays in: ρ 0.50 with bump 0.84 at 12.6 s.
+Two excursions in 40 s instead of three in 14 s; the rest of the minute is the interior bumping.
+
+**1:45 on SeeYouDrop, measured** (`nav2-window-syd-145.txt`, 1:40–1:56 with `ds`): the bars before it are the breakdown (eS 0.58–0.66, E
+0.15–0.32, arc `build`), the drop lands at track 105.9 s with `ds` 1.0 and arc `peak`, and NAV2 is outside 105.9–111.4 s (EXT 4 s, HOME,
+IN) — back in at 112.5 s with eS 0.77–0.82, ρ 0.62–0.72. So the engine agrees with the user that 1:45 is the biggest moment; NAV2 answers it
+with the cut and six seconds of dust, and the interior afterwards reads a *lower* energy (eS 0.78) than 1:33–1:39 (0.87–0.94). `DROP_GAP`
+does not touch it (47 s after the first). If the user wants 1:45 to be the interior reacting more, the options are: no cut at all above
+some `away` (the drop as a press to `RHO_CAP` instead), or the energy gain read against the track's own peak the way the beat is
+(`BUMP_PK_TAU`), so 1:45 and 1:33 both read E ≈ 1.

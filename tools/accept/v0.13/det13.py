@@ -23,7 +23,7 @@ INFO = ("(()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS;const g=h.
         "rho:r(i.rho,3),q:i.q,has:i.has,wind:r(i.wind,2),bump:r(i.bump,2),pulse:r(i.pulse,2),ival:r(i.ival,2),E:r(i.E,2),note:i.note,curl:r(i.curl,2),pitch:r(i.pitch,2),lift:r(i.lift,3),"
         "swirl:r(i.swirl,2),rate:r(i.rate,2),par:r(i.par,2),gate:i.gate,"
         "kick:r(S.kick,2),hit:r(S.hit,2),bp:r(S.beatPhase,2),bc:S.beatCount,bass:r(S.bass,2),eS:r(S.eS,2),or:r(S.onsetRate,1),"
-        "cen:r(S.centroid,3),build:r(S.build,2),hush:r(S.hush,2),drop:r(S.dropEnv,2),dei:r(S.dropExpectedIn,1),"
+        "cen:r(S.centroid,3),build:r(S.build,2),hush:r(S.hush,2),drop:r(S.dropEnv,2),dei:r(S.dropExpectedIn,1),ds:r(S.dropStrength,2),arc:S.arc,"
         "green:g?{Q:r(g.Q,4),A:r(g.A,4),L:r(g.L,4),v:r(g.v,3),dA:r(g.dA,4)}:null,"
         "ms:r(CARD.ENGINE.ms,2),errs:CARD.ERRS.length})})()")
 steps = [{"until": "window.CARD"}, {"wait": 1000},
