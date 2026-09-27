@@ -1,7 +1,8 @@
 # v0.14 (GIELIS, id 10, DECISIONS §47): the full list, MEASURED 2026-09-27 on the v0.13 tag (tools/work/g14base, PORT 8901) — every line
 # of ids 0–9 equal to tools/accept/v0.12/scene-md5-v012.txt (s0–s7, s9) and tools/accept/v0.13/scene-md5-v013.txt (s8) — and again
 # after the math/waves.js lift (IDS=3 twice: 7189a6ba / 48113eda) and after the GIELIS skeleton's registration (all eleven ids, PORT
-# 8904). s10 below is the SKELETON (a cleared black frame, the same md5 at f360 and f840); the worker's scene replaces it.
+# 8904). s10 = the WORKER'S SCENE on the merged tree d4d3540 (PORT 8904, 2026-09-27) = the worker's own two runs (gi, gi2); the skeleton
+# read 496ce9a8 at both frames (a cleared black frame). The &still=1 pair is gielis-still-md5.txt.
 # mixs 0→3 f178: 641f6633 before and after the registration (tools/work/g14-trans-mixs-{pre,0-3-f178}.jpg) and on the leftover
 # tools/accept/v0.8/trans-mixs-0-3-f178.jpg of 2026-09-25 — NOT accept.sh's recorded f0c9d637 (a pre-existing mismatch on this
 # machine, not moved by this session; noted for AUDIT-v0.14). Parity fake: every field identical to 1e-9 (parity-fake.jpg).
@@ -25,5 +26,5 @@ d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
 f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg
 95fd7d73b17a3e26b4b77b9cddb6206a  s9-f360.jpg
 4e2108a7f958a280953eabfc1a595f20  s9-f840.jpg
-496ce9a895a1c9ca60e7a123964a654b  s10-f360.jpg  (skeleton)
-496ce9a895a1c9ca60e7a123964a654b  s10-f840.jpg  (skeleton)
+2c1b21c8c5553ab84008ac7060cbfa00  s10-f360.jpg
+2e978a09fc3ebb8d1aa428911a6be16d  s10-f840.jpg

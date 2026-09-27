@@ -2204,3 +2204,159 @@ it)"*. The word "validated" in the §46 closing line, in the v0.13 commit messag
 `K_R`, `V_INT`, the running-peak bump) are therefore not a proven model and are not copied into GIELIS (§47); only the user's music
 descriptions from the NAV2 sessions carry over. Do not touch NAV2 (id 8, key `9`) until the user resumes it.
 
+## §47 GIELIS — the superformula nest, v0.14 (2026-09-27, orchestrator + one opus worker from `docs/workers/brief-gielis.md`, report `gielis.md`; `GIELIS-SESSION-PROMPT.md`, `docs/AUDIT-v0.14.md`)
+
+**The user's ask (verbatim, the same day as the v0.13 tag):** *"goal new scene (slot 11); use 'see you drop' as the inspiration for
+the scene … how can we use the superformula to visualize music?"* — which lifts the standing "no new scenes until asked" rule
+(memory `feedback_no_new_scenes.md`) **for GIELIS only**. And, on the model: *"torus2 is my favorite visually for how music lines up
+to the viz"*. And, on NAV2: *"I wouldn't say nav2 validated. (I'm just taking a break tuning it)"* (§46 addendum 8).
+
+**The interview — the five answers, verbatim from `GIELIS-SESSION-PROMPT.md`, everything else a lean:** *(1) renderer = **3D
+supershape nest as strokes**, TORUS2's lineage · (2) species = **interval-to-key ratios** · (3) **section morph on the lobe lean is
+in** · (4) **id 10, reached by `n` / `&scene=10`, no digit key, forced-only until approved; the folder and card are `GIELIS`** ·
+(5) acceptance windows on SeeYouDrop = intro 0–13 s, groove 25–63 s, breakdown 49–58 s, double time 1:38, drop 1:45, per-beat
+rulers on the n1 swing and the wave spacing.*
+
+**Why TORUS2's model and not NAV2's.** The user named TORUS2 as the mapping that works, so GIELIS speaks its language: twelve
+pitch classes as twelve visible things, hits launching events that travel at a musical speed, a thump on the beat, a nudge per
+beat, key on the circle of fifths with major warm / minor cool, section picks the morph target, drop = collapse and rebound,
+everything on the musical clock, `cuts: 'continuous'`, **no running-peak normalisation**. NAV2's mechanics are explicitly **not** a
+model: v0.13 is tagged and deployed but **paused mid-tune, not validated** (§46 addendum 8), so `beat.js`'s press, the roots,
+`K_R`, `V_INT` and the running-peak bump are not copied — only the user's *music sentences* from the NAV2 sessions carry over
+(the collapse-and-rebound, "different pitches are different shapes", "deforming on every beat", bright but legible). NAV2 (id 8,
+key `9`) was not touched. What GIELIS does borrow from §46 is the **measuring lesson**: Green's Q is the ruler, and a montage
+cannot judge a per-beat pinch — measure per frame.
+
+**The design, one paragraph per spec item (every constant a named lean at the top of its module).**
+
+1. **The nest.** Family k (pitch class) is one nested supershape drawn as `RINGS` 7 latitude rings of strokes over ±`PHI_MAX` 0.85
+   of latitude, path B through `ctx.lines`, the vertex shader building every point from `gl_VertexID`. Size and brightness follow
+   `chroma[k]` (`SIZE0` 0.25 + `SIZEK` 0.75·chroma, the loudest outermost and brightest) with the circle-of-fifths `harmAngle`
+   fallback blended continuously so `#test` and silence still have a nest; a brightness floor `FLOOR` 0.18 of the loudest and a
+   capped fog. `kick` flashes the families below the median brightness (`FLASHT` 0.25 s max-hold decay); `hat` shimmers along every
+   ring (`SHIM` 0.55); `sub` fattens `a, b` (`SUBK` 0.15) and the bar breathes them ±`BREATH_B` 3 % even in silence; below
+   `PRES0` 0.05 presence nothing is drawn.
+2. **The species.** Family k's lobe count is the just-intonation ratio of its interval above the key: `m = M0 · p/q` with `M0` 4,
+   so the root is a rounded square (m 4), the major third five lobes, the fifth six, the tritone 28 over five turns, the minor
+   seventh 36 over five. `QCAP` 5 caps the turns a ring may need, which snapped exactly one entry — the minor second, 16/15 →
+   17/4 (0.4 %), because 16/15 needs fifteen turns to close. Twelve distinct lobe counts, so twelve distinct shapes;
+   `keyConf` gates the key exactly as `keycolour.js` gates the hue, the fallback key is the nearest fifth of `harmAngle`, and a key
+   change **cross-fades the two radii** over `MTC` 0.7 s ×3 — a rational m never interpolates. The table lives in
+   `math/gielis.js`, so the fallback `m = k + 3` is one line.
+3. **The breath.** `n1` rests at `N1_REST` 12 (a circle, Q ≥ 0.987 on every family) and every beat presses toward `N1_BEAT` 1.2
+   with TORUS2's thump `press = max(0, cos 2π·beatPhase)^4`, read off the engine's beat **grid** — never the kick detector, which
+   reads 0.09–0.44 in this track's intro. The depth is the `breath` parameter (0.5 + 0.5·eS), so 25 s presses harder than 0–13 s
+   and the double-time stretch hardest; a `kick` inside the beat adds `HIT_K` 0.3 on top. `build`/`tension` go to the lean, never
+   to n1 — the wind must not floor the breath (the NAV2 pass-8 trap). Green's Q of the loudest family's equatorial profile
+   (512 samples, `N_Q`) is the ruler and `hooks.green()` exposes it.
+4. **The waves.** `torus2/waves.js`'s launch ring buffer was lifted to `assets/math/waves.js` as **`mkWaves()`**, per caller (a
+   module-level buffer would have made TORUS2's eight slots and GIELIS's the same slots); TORUS2's pixels did not move (s3
+   `7189a6ba` / `48113eda` before and after, twice). Rising edges in kick / snare / hat launch a bump running round every ring at
+   one ring per bar, `WAVEW` [0.05, 0.017, 0.008] wide, `WAVED` [`WAVE0` 0.26, 0.008, 0.01] deep with `WAVEP` brightening, both
+   displacement and pulse, 2-beat decay and 8-beat life; the wave rides the ring parameter, so on a q-turn family one wave runs the
+   whole closed curve in a bar. Each slot carries its launching family's hue in GIELIS's own `WHUE` column — the note's colour, as
+   MAXWELL was validated to do. Silence is quiet: `presence`/`hush` gate the floor, no carrier.
+5. **Motion.** `mkNudge()` yaws the nest 1/16 turn per beat (`hush`/`calm` slow the spring); `BOUNCE` 0.05 is the beat's second
+   thump on the camera distance; `build` 0→0.5 raises the drawn family count `FIBMIN` 6 → `FIBMAX` 12 with `FIBTC` 0.25 easing so a
+   family fades in instead of popping, 0.5→1 brings the camera in; `intensity`/`arousal` set the resting size, `FILL0` 0.6 and
+   `FILLMAX` 0.85 so nothing crops in portrait; `flowBass/Mid/High` advance the low / mid / high families' ring phase (`PSIK` 0.25);
+   camera elevation `CAM_EL` 0.55 rad, distance 3.2·size.
+6. **Section and drop.** `sectionAlt mod 4` picks a lean template — `round` (1,1,1,1) · `petal` (1,4,1,1) · `blade` (4,1,1,1.3) ·
+   `shard` (0.6,0.6,1,1) — cross-faded over `MORPHTC` 1 s by `morph = MORPHK 0.9 · tension · (arc idle ? 0 : 1)`; `dropEvt`
+   collapses every n1 to the pinch and the nest to `DROP_SZ` 0.4 for about a beat and rebounds with `DROP_G` 1.6 on `dropEnv`;
+   `surpriseEvt` twists the camera by at most `TWIST` 0.4 rad (`TWISTTC` 0.35); `riser`/`roll` drift the rings in latitude so the
+   closed rings open into helices (`UNWIND` 0.35) and snap back on the drop. There is no cut, so there is no refractory to tune.
+7. **Colour.** `mkAnchor()` from `math/keycolour.js` — key on the fifths, major warm / minor cool by pull, `keyConf` gate, `HUETC`
+   ease — with the twelve families spread around the anchor and `valence` warmth on top. A soft luminance knee in the fragment
+   shader (`KNEE` 0.8, `KNEE_S` 3) keeps the glow peaks and stops the stroke's core washing the lobes out ("I like the bright /
+   glowy look, but I don't want it to be so bright that can't see the … shapes"). `colour: { default: 'v2', variants: { v2: {} } }`
+   — **the `oklch` variant is not built**, per `feedback_colour_default.md`; it stays a later opt-in.
+
+**Six parameters (§1.16):** `breath` · `wave` · `turn` · `size` · `lean` · `glow`. `paramsOf === derived` with a difference of
+exactly 0; five `from()`s are the inline expressions moved byte-identically (proven with `&param=gielis.wave=c:0.26` reproducing
+the pre-move pair `d7806c9b` / `a0097ad3`), and `wave` = `WAVE0 + 0.1·kick` is declared as the one behavioural change of the move.
+`feats` is 38 fields, all read, `help.feats` 38 with 0 gaps; `clarity` and `regularity` were dropped because `score(MS) { return 0; }`
+reads nothing.
+
+**The four leans the worker changed, every one for a measured reason** (`docs/workers/gielis.md` (a) items 1–4):
+(i) the brief's resting lean (2, 2, 1, 1) is **exactly a circle for every m and every n1** — `|cos|² + |sin|² = 1`, Pythagoras — so
+the breath would have been a no-op at rest; `BASE` is (1, 1, 1, 1), still a circle as n1 → ∞ and the pinch acts. (ii) `N1_BEAT`
+1.5 → **1.2**: at 1.5 the root family swings only 0.106 of Q through a beat, under the brief's own 0.15 gate, while the starry
+families swing 0.15–0.32; 1.2 puts all twelve over it (0.158–0.414). (iii) **the press travels along `1/n1`, not `n1`** — the
+single most important change: `1/n1` is the superformula's exponent and the shape is a circle for every n1 above ~4, so the
+brief's linear ramp dipped n1 to 7.8–8.4 on every beat for a Q move of 0.9916 → 0.9791, invisible;
+`pinchOf(d) = 1/(1/N1_REST + (1/N1_BEAT − 1/N1_REST)·d)` makes a half press n1 2.56 and Q 0.92. (iv) `depth = breath`, not
+`(0.5 + 0.5·eS)·breath` — the `breath` parameter's own `from()` IS `0.5 + 0.5·eS`, so the brief's product squared `eS`.
+Two arithmetic corrections stand with them: the fifth's six lobes close in **one** turn, not two (the q-turn rule uses the
+denominator of the reduced m), and the rule holds only under a symmetric lean (a lopsided one needs 2q turns when the numerator is
+odd), so the scene draws the symmetric count and skips the wrapping segment (`uOpen`) when the lean or the unwind has opened the ring.
+
+**The continuity monitor, and what it took to make it mean anything.** `viol []` on `#test` 40 s (n 2407, max 0.0583) and on 60 s
+of the house synth (n 3606, max 0.0533) — but only after three findings. **`state.pathCut` is a constant 9, not the brief's 0**:
+`tools/monitor.js` reads `legal = N.pathCut <= 2`, so a constant 0 declares every frame a legal cut and `viol []` is true by
+construction. **The witness cannot be the loudest family's rim** — the loudest family changes by a *swap*, a discontinuity in the
+witness and not on screen; the first 60 s run read 16 violations, every one a reorder, so the witness (`nest.js witnessR()`) is now
+the chroma-weighted mean family radius times the mean radius of the shared latitude profile at the pinch and lean in force: it sees
+the breath, the lean, the growth, the drop and the sub, and never the species. (The brief's other idea, the nest's centroid on
+screen, is exactly 0 for a centred nest.) **Three event-driven quantities stepped** — the drop stepped the witness by 0.063–0.072
+per frame, over the 0.06 spike rule and a genuine jump — so the drop's collapse, the surprise's twist and the section's ring phase
+all attack/ease (`ATK` 0.12 s, `PHITC` 0.35 s, the short way round the turn); at 150 bpm a 0.12 s attack is under a third of a
+beat and still reads as a slam.
+
+**Proof.** ids 0–9: **all twenty md5 lines identical** to the v0.12/v0.13 references, measured on the v0.13 tag, after the
+`waves.js` lift and after the registration (`tools/accept/v0.14/scene-md5-v014.txt`); the skeleton's own s10 pair was `496ce9a8`
+twice (a black frame). **s10 = `2c1b21c8` / `2e978a09`** twice; **`&still=1` = `89664dad` / `fe2809bc`** (`gielis-still-md5.txt`),
+set at step 2 and byte-identical through steps 3–8 — the no-op gate for every future GIELIS change. mixs 0→3 f178 `641f6633`
+before and after; parity fake every field identical to 1e-9. `check.js` 0 fail / 4 warn (three pre-existing line caps + the missing
+thumb), `test_gielis` OK, `test_torus2` OK, `param-smoke` 49/0, the monitor `viol []`. **Cost 0.50× TORUS2** at tier 3 with all
+twelve families drawn (0.658 ms against 1.327 ms, cap 1.5×; 7 140 segments at tier 3, `SEGT` [16, 26, 38, 52] per turn capped at
+`SEGMAX` 96 per ring) and the CPU path 0.052 ms against the 0.5 ms gate — the 512-sample Green trace is essentially all of it.
+**Q trace** (`none`, house + aba, `ACC=v0.14`, three runs each, GIELIS not forced): GIELIS never appears in any run's scene sequence (bid 0), no FEIGEN visit; house q mean 0.73 / min 0.35, windows 0–40 · 40–70 · 70–100 · 100– = 0.56 · 0.71 · 0.83 · 0.93; aba 0.83 / 0.35, 0.56 · 0.71 · 0.83 · 0.98 — within 0.04 of the only earlier `none` trace (v0.2's: house 0.76, 0.60 · 0.74 · 0.86 · 0.96; aba 0.85, 0.59 · 0.73 · 0.85 · 0.99); the min 0.35 vs 0.48 is the load-time dip (`tools/accept/v0.14/q-{house,aba}-none.txt`, `node tools/q-stats.js`).
+
+**What SeeYouDrop measured, blunt** (`docs/AUDIT-v0.14.md` §3; eleven runs, `KEY=9,n,n SCENE=10`, `au capture`, `errs []`,
+`scene 10` on every one):
+- **The brief's swing ruler is NOT met.** Per frame, the Q swing clears 0.15 on 8 % (27–32 s), 62 % (33–38 s), 0 % (the breakdown)
+  and 58 % (97–102 s) of the beats against a gate of 90 %; the swing medians are 0.130 / 0.155 / 0.095 / 0.157. Two five-second
+  traces on the same groove disagree by a factor of eight, so the number is not settled: 250 samples is the argv's ceiling.
+- **The rest between beats IS met on every beat** (49 of 49 beats back to Q ≥ 0.9; median rest Q 0.994–0.997). The rebound to the
+  circle is exactly right.
+- **The depth is bounded by the shape, not the press:** n1 reaches 1.24–1.33 against `N1_BEAT` 1.2 on the groove, so the pinch is
+  full on every beat and the Q swing is still 0.13–0.16. More press buys nothing.
+- **The breakdown is shallower with `kick` 0, as designed** (n1 trough 1.56), and the hats carry the ripples the user missed there
+  (waves median 11, `hat` to 0.68) — §45's thin-waves rule, on the grid press alone.
+- **The brief's brightness band is NOT met, in the other direction.** p95 luminance 0.20–0.45 on the groove, 0.14–0.38 in the
+  breakdown, 0.19–0.35 in the 1:45 window, against 0.6–0.8; `lum.py` centre 0.15–0.31 with a rim of 0.009–0.07. The nest is **dark
+  and small** — it fills about 40 % of the frame height on black — not washed out. Saturation is fine (0.51–0.74 on bright pixels).
+  The only frames in the band are the 58 s drop (0.49–0.72).
+- **The 58 s drop reads** (`ds` 1, `dropEnv` 0.55 → n1 1.32 / Q 0.890, waves 15 → 17; a yellow burst on `break-07…09`). **The 1:45
+  drop did not fire in this run at all** — `dropStrength` and `dropEnv` are 0 on all eight samples of 105.4–113.1 s. That is the
+  engine's bass-returns rule, run to run (AUDIT-v0.13 saw the same twice), so GIELIS's answer to the user's biggest moment is
+  **untested**. Separately, the engine fired a full-strength `dropEvt` at 9–10 s in the intro, where the track was documented as
+  having only two drops 47 s apart.
+- **The species walk is real:** the loudest pitch class walks eight values across the groove and m walks 4 → 4.8 → 6 → 5.33 → 7.5
+  → 6.4 → 5.6 → 5 with it. "Different pitches are different shapes" is built in, by construction.
+- **The hue sweeps more than a full turn across the groove** (0.278 → 1.631) while the engine's key is stable at 8 minor for 37 of
+  40 samples — so it is the anchor's ease and the mood terms, not a wandering key. The engine's key *is* wrong at the start of
+  three of five windows (6 major, 1, 4 on a G♯ minor track); that is the extractor.
+- **Also shown, not tuned:** CyborgNinja and WhoLikesToParty 0–30 s. CyborgNinja's one-note bassline gives four of twelve species
+  in 30 s (NAV2 found the same bassline); WhoLikesToParty is the best-behaved — one stable key, eight loudest pitch classes, all
+  four templates, the deepest pinch of the session (Q 0.658).
+
+**The open retune list, ranked, for the user's look** (AUDIT-v0.14 §5): (1) **size** — the nest fills ~40 % of the frame
+(`FILL0` / `FILLMAX` / `CAM_D`); (2) **brightness** — p95 0.2–0.45 against 0.6–0.8 (`FLOOR` 0.18, `GLOWQ` 0.4, `KNEE` 0.8 /
+`KNEE_S` 3); (3) **the breath's visible depth** — the lean at the pinch (`n2`/`n3`, and the templates: `round` is now
+`(1,1,1,1)` = `BASE`, so a `round` section shows **no** lean and only three of four templates do anything) and `N1_BEAT` (1.5 with
+the reciprocal law is the worker's own next try); (4) **the hoops → a shell** — `RINGS` 7 / `PHI_MAX` 0.85 read as a lantern, and
+`SEGT`/`SEGMAX` have roughly **3×** headroom because §14's 0.4 µs/segment is path A while path B measures 0.067–0.092 µs/segment
+here (a five-turn family gets 19 segments per turn today and its lobes read as a polygon); (5) **the hue's ease** (`HUETC`, the
+same anchor TORUS2 uses — a scene-side slower ease is the lever, not a change in `math/keycolour.js`); (6) **`M0` 4 and the ratio
+table** against the fallback `m = k + 3`, if the starry families read as noise rather than as species. Lower: `WAVE0` 0.26 /
+`WAVEW` on twelve shells instead of TORUS2's 144 rings, and `ATK` 0.12 s — for which the honest answer to "the drop should hit
+harder" is a declared cut (`cuts: 'event'`, `pathCut` → 0 on `dropEvt`), a contract change, not a lean.
+
+**Standing items.** The **digit-key question is the user's**, raised once when they approve: a tenth digit key, or GIELIS taking a
+slot; until then id 10 is forced-only, `score()` 0, reached by `n` or `&scene=10`. **`site/thumbs/gielis.jpg`** is missing (one
+`tools/thumbs.sh "10:<frame>"` run when the look is approved) — `check.js`'s fourth warn. The **mixs 0→3 f178 mismatch** is
+pre-existing on this machine (`641f6633` measured, `f0c9d637` recorded in `tools/accept.sh`, also on a leftover shot of
+2026-09-25): not moved by v0.14, to be re-based or explained before the next release. The **`oklch` variant** stays a later opt-in.
+The **Cloudflare dashboard steps** are still open from v0.6. **The user has not looked at GIELIS yet**; nothing is tagged or pushed.

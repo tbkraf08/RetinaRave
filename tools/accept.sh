@@ -108,6 +108,25 @@ CLOCK=1 node tools/cdp.js 'test&scene=5&param=polytope.groove=c:0' '[{"until":"w
 [ "$(md5sum $OUT/pd-par-groove0-s5-f360.jpg | cut -c1-32)" != "$(grep s5-f360 $R9 | cut -c1-32)" ] && echo "polytope param groove=0 moves the f360 md5" || echo "FAIL polytope param groove=0 moved nothing"
 node tools/test_polytope.js | tail -1
 python3 tools/montage.py $OUT/montage-polytope-accept.jpg 2 $OUT/pd-s5-f360.jpg $OUT/pd-s5-f840.jpg $OUT/pd-train-4x4.jpg $OUT/pd-train-sync.jpg $OUT/pd-key-0-0.jpg $OUT/pd-key-7-1.jpg 2>/dev/null && echo "montage $OUT/montage-polytope-accept.jpg"
+echo "== gielis"         # v0.14: GIELIS (id 10, forced-only, score 0, no digit key — DECISIONS §47): its own f360/f840 md5s against tools/accept/v0.14/scene-md5-v014.txt, the &still=1 pair against gielis-still-md5.txt (every music-driven uniform at rest: n1 at N1_REST, no waves, no flash/shimmer, morph 0), the node test, the pinned kick train (hooks.train('4x4') puts four bumps per ring at gaps of exactly .25 — positions from hooks.info().kick, doubled because a wave a bar old sits where a new one launches), and the continuity monitor over 30 s with GIELIS's state injected (viol [])
+R10=tools/accept/v0.14/scene-md5-v014.txt
+for f in 360 840; do REF=$(grep "s10-f$f" $R10 | cut -c1-32)
+  CLOCK=1 node tools/cdp.js 'test&scene=10' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"gi-s10-f$f\"},{\"eval\":\"'s10 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[10].scene.hud().slice(0,70)\"}]" | grep EVAL | sed 's/.*=> //'
+  M=$(md5sum $OUT/gi-s10-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "gielis f$f md5 $M = reference" || echo "FAIL gielis f$f md5 $M != reference $REF"
+done
+for f in 360 840; do REF=$(grep "still-f$f" tools/accept/v0.14/gielis-still-md5.txt | cut -c1-32)
+  CLOCK=1 node tools/cdp.js 'test&scene=10&still=1' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"gi-still-s10-f$f\"}]" > /dev/null
+  M=$(md5sum $OUT/gi-still-s10-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "gielis still f$f md5 $M = reference" || echo "FAIL gielis still f$f md5 $M != reference $REF"
+done
+node tools/test_gielis.js | tail -1
+R=$(CLOCK=1 node tools/cdp.js 'test&scene=10&pinch=6' "[{\"until\":\"window.CARD\"},{\"eval\":\"CARD.REG[10].scene.hooks.train('4x4')\"},{\"until\":\"window.__FRAME>=480\"},{\"shot\":\"gi-train-4x4-f480\"},{\"eval\":\"'TRAIN '+JSON.stringify(JSON.parse(CARD.REG[10].scene.hooks.info()).kick)\"}]" | grep TRAIN | sed 's/.*=> //' | tr -d '"'); echo "$R"
+python3 -c "
+import json,sys; p=sorted(set(json.loads('$R'.split('TRAIN ')[1]))); g=[round(p[i+1]-p[i],3) for i in range(len(p)-1)]
+print('gielis train 4x4 gaps',g, 'ok' if len(p)==4 and all(abs(x-.25)<.01 for x in g) else 'FAIL')"
+MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
+R=$(node tools/cdp.js 'test&fake=0&scene=10' "[{\"until\":\"window.CARD\"},{\"wait\":1500},{\"eval\":\"CARD.NAV=CARD.REG[10].scene.state;$MON;'ok'\"},{\"wait\":30000},{\"eval\":\"'MON10 '+JSON.stringify({n:MON.n,fast:MON.fast,max:+MON.max.toFixed(4),viol:MON.viol})\"}]" | grep MON10 | sed 's/.*=> //' | tr -d '"\\'); echo "$R"
+echo "$R" | grep -q 'viol:\[\]' && echo "gielis monitor clean" || echo "FAIL gielis monitor: $R"
+python3 tools/montage.py $OUT/montage-gielis.jpg 2 $OUT/gi-s10-f360.jpg $OUT/gi-s10-f840.jpg $OUT/gi-still-s10-f360.jpg $OUT/gi-train-4x4-f480.jpg 2>/dev/null && echo "montage $OUT/montage-gielis.jpg"
 echo "== landing"        # v0.8.1: the scene tiles on the real path (steps in tools/landing-steps.json, HARNESS "Landing tiles"): one tile per `card` scene + DIRECTOR, thumbnails loaded (480 wide), a tile click previews on the muted demo with the card in peek, the director tile releases, the demo link starts the show and keeps the forced scene
 R=$(GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"); echo "$R" | grep EVAL | sed 's/.*=> //'
 echo "$R" | grep -q "TILES 6 imgs 480,480,480,480,480,480" && echo "landing: 6 tiles, 6 thumbnails" || echo "FAIL landing tiles/thumbnails"

@@ -1,0 +1,5 @@
+# GIELIS &still=1 (hooks.still(1): every music-driven uniform at rest — n1 at N1_REST, no waves, no flash/shimmer, morph 0, the
+# fallback key): set at the worker's step 2 (re-based once there — the species has no rest value) and byte-identical through steps
+# 3–8; measured again on the merged tree d4d3540 (PORT 8907, 2026-09-27). The step-1 pair was cfe06ce3 / 921ea881.
+89664dad910bea6b916849a9e8cbf85f  still-f360.jpg
+fe2809bc052f4f9b75b4d8e4cd049a8e  still-f840.jpg

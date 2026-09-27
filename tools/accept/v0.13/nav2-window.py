@@ -21,11 +21,11 @@ if os.environ.get('MIN') == '1' and SCENE == 8:   # a SHORT D line (t, beat coun
 elif SCENE == 10:   # GIELIS (v0.14): n1 / Q of the loudest family, the waves live, the beat — MIN=1 keeps only what perbeat14.py reads
     R = "const r=(x,k)=>(x===undefined||x===null||!isFinite(+x))?null:+(+x).toFixed(k);"
     if os.environ.get('MIN') == '1':
-        INFO = ("(()=>{const h=CARD.REG[10].scene.hooks,i=h.info(),S=CARD.MS,g=h.green();" + R +
+        INFO = ("(()=>{const h=CARD.REG[10].scene.hooks,i=JSON.parse(h.info()),S=CARD.MS,g=h.green();" + R +
                 "return 'D '+JSON.stringify({t:r(performance.now()/1000,3),bc:S.beatCount,bp:r(S.beatPhase,2),n1:r(g.n1,2),Q:r(g.Q,3),m:g.m,loud:i.loudest,"
                 "waves:i.live,kick:r(S.kick,2),eS:r(S.eS,2),hat:r(S.hat,2)})})()")
     else:
-        INFO = ("(()=>{const h=CARD.REG[10].scene.hooks,i=h.info(),S=CARD.MS,g=h.green();" + R +
+        INFO = ("(()=>{const h=CARD.REG[10].scene.hooks,i=JSON.parse(h.info()),S=CARD.MS,g=h.green();" + R +
                 "return 'D '+JSON.stringify({t:r(performance.now()/1000,1),au:CARD.ENGINE.AU.mode,bpm:r(S.bpm,1),n1:r(g.n1,2),Q:r(g.Q,4),A:r(g.A,4),L:r(g.L,4),m:g.m,"
                 "loud:i.loudest,draw:i.draw,seg:i.seg,morph:r(i.morph,2),tmpl:i.template,key:i.key,mode:i.mode,hue:r(i.hue,3),turn:r(i.turn,2),size:r(i.size,2),"
                 "waves:i.live,wk:i.kick,ws:i.snare,wh:i.hat,flash:r(i.flash,2),shim:r(i.shim,2),"
