@@ -14,7 +14,7 @@ import { BANDS, SLOTS } from '../../math/waves.js';
 import { HELP } from './help.js';
 import {
   N, updateNest, resetNest, measureQ, rimR, waveUpload, segsOf, train, live, positions,
-  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST, press, TWIST,
+  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST, press, TWIST, MORPHK, TEMPLATE_NAMES,
 } from './nest.js';
 
 const TAU = Math.PI * 2;
@@ -36,10 +36,10 @@ const WH = new Float32Array(BANDS * SLOTS);   // …and the hue each one carries
 const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
-const P = { breath: 1, glow: FLOOR, turn: 0, size: 0.6 };   // the visual parameters in force this frame
-const O = { key: 0, tier: 3, pinch: -1, still: 0, hueOf: null };   // the pins, the tier and the hue map
+const P = { breath: 1, glow: FLOOR, turn: 0, size: 0.6, lean: 0 };   // the visual parameters in force this frame
+const O = { key: 0, tier: 3, pinch: -1, tPin: -1, still: 0, hueOf: null };   // the pins, the tier and the hue map
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
-let STILL = 0, KEYPIN = null, N1PIN = -1;
+let STILL = 0, KEYPIN = null, N1PIN = -1, TPIN = -1;
 
 // The hue coordinate of pitch class pc, as the shader reads it: the anchor is the MIDDLE of the twelve hues.
 const hueOf = (pc) => pc / 12 - 0.5;
@@ -67,7 +67,7 @@ function info() {
   for (let s = 0; s < FIBMAX; s++) m.push(N.pc[s] + ':' + +N.sMA[s].toFixed(3) + '/q' + N.sQ[s]);
   return JSON.stringify({
     n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
-    morph: +N.morph.toFixed(4), template: N.template, key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
+    morph: +N.morph.toFixed(4), template: TEMPLATE_NAMES[N.template], tFade: +N.tFade.toFixed(3), lean: [+N.lean[0].toFixed(3), +N.lean[1].toFixed(3), +N.lean[2].toFixed(3), +N.lean[3].toFixed(3)], collapse: +N.collapse.toFixed(4), slip: +N.slip.toFixed(4), twist: +N.twist.toFixed(4), key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
     med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4), turnT: +P.turn.toFixed(4), bounce: +N.bounce.toFixed(4), fibF: +N.fibF.toFixed(3),
     size: +N.fill.toFixed(4), dist: +CAM[2].toFixed(3), tier: TIER, still: STILL,
@@ -88,6 +88,8 @@ function key(k, m) {
 // &pinch=1.2 — pin n1, the superformula's pinch, so the shape at a chosen roundness can be shot and measured (NAV2's
 // hooks.rho is the same instrument). A read of it is hooks.info().n1; -1 releases it.
 const pinch = (v) => { N1PIN = v === undefined || v === '' || +v < 0 ? -1 : +v; return N1PIN; };
+// &template=2 — pin which of the four lean templates the section would have picked (-1 releases it)
+const template = (v) => { TPIN = v === undefined || v === '' || +v < 0 ? -1 : +v | 0; return TPIN; };
 
 export default {
   name: 'gielis',
@@ -102,7 +104,7 @@ export default {
   rt: {},
   // the continuity monitor's shape (HARNESS "Continuity monitor"): CARD.NAV = CARD.REG[10].scene.state
   state: { n1: N1_REST, Q: 1, cPath: CPATH, pathCut: 9, kick: { x: 0 }, baby: null, mode: 'nest' },
-  hooks: { info, green, still, key, pinch, train },
+  hooks: { info, green, still, key, pinch, train, template },
 
   // never auto-picked until the user approves it (DECISIONS §15: a registered scene must not move a reference pick)
   score() {
@@ -135,10 +137,12 @@ export default {
     P.breath = 0.5 + 0.5 * MS.eS;
     P.glow = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
     P.turn = ((MS.beatCount / 16) * TAU) % TAU;
+    P.lean = MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1);
     P.size = 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1));
     O.key = A.key;
     O.tier = TIER;
     O.pinch = N1PIN;
+    O.tPin = TPIN;
     O.still = STILL;
     O.hueOf = hueOf;
     updateNest(dt, MS, P, O);
@@ -186,7 +190,7 @@ export default {
     g.uniform1f(pr.u('uN1'), N.n1);
     g.uniform1f(pr.u('uMPhi'), M_PHI);
     g.uniform1f(pr.u('uPhiMax'), PHI_MAX);
-    g.uniform1f(pr.u('uThOff'), N.phiOff);
+    g.uniform1f(pr.u('uThOff'), STILL ? 0 : N.phiOff);
     g.uniform3f(pr.u('uPsi3'), N.psi[0], N.psi[1], N.psi[2]);
     g.uniform1f(pr.u('uSlip'), N.slip);
     g.uniform1f(pr.u('uOpen'), N.open);
@@ -213,7 +217,7 @@ export default {
   hud() {
     return 'gielis pc' + N.loudest + ' m ' + N.mA[N.loudest].toFixed(2) + ' n1 ' + N.n1.toFixed(2) + ' Q ' + N.Q.toFixed(3) +
       ' waves ' + live(N.beatNow) + ' key ' + KC.OUT.key + (KC.OUT.mode ? 'm' : 'M') + ' turn ' + CAM[0].toFixed(2) + ' size ' + N.fill.toFixed(2) +
-      ' tmpl ' + N.template + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '/' + N.segs + ' t' + TIER;
+      ' tmpl ' + TEMPLATE_NAMES[N.template] + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '/' + N.segs + ' t' + TIER;
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },

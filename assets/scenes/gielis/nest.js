@@ -206,20 +206,40 @@ export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(
 
 // --- the frame --------------------------------------------------------------------------------------------------
 // P is the six visual parameters (§1.16; inline expressions until step 8 moves them into the slot verbatim).
-// O = {key, tier, pinch, still, hueOf} — the resolved key, the tier, hooks.pinch / hooks.still, and the hue of a
+// O = {key, tier, pinch, tPin, still, hueOf} — the resolved key, the tier, the three pins, and the hue of a
 // pitch class (index.js's, because it is the shader's hue coordinate).
 export function updateNest(dt, MS, P, O) {
   N.still = O.still;
   families(MS, P.glow);
   species(dt, O.key);
   N.beatNow = MS.beatCount + MS.beatPhase;
-  for (let i = 0; i < 4; i++) N.lean[i] = BASE[i];
+
+  // the drop: collapse for about one beat, then rebound on dropEnv (TORUS2's exp(-dt*bpm/60))
+  if (MS.dropEvt) N.collapse = 1;
+  N.collapse *= Math.exp((-dt * Math.max(40, MS.bpm || 120)) / 60);
+  if (N.collapse < 1e-4 || O.still) N.collapse = 0;
+
+  // the section's lean template, cross-faded over MORPHTC; a returning section returns to its own template, because
+  // sectionAlt is synapse's fingerprint id. The amount is the `lean` parameter (MORPHK * tension, 0 in the intro).
+  const sel = O.tPin >= 0 ? O.tPin % TEMPLATES.length : MS.sectionAlt < 0 ? 0 : (MS.sectionAlt | 0) % TEMPLATES.length;
+  if (sel !== N.tSel) { if (N.tSel !== -2) { N.tPrev = N.template; N.tFade = 1; } N.tSel = sel; N.template = sel; }
+  N.tFade = Math.max(0, N.tFade - dt / MORPHTC);
+  N.morph += (P.lean - N.morph) * (1 - Math.exp(-dt / MORPHTC));
+  if (MS.sectionEvt) N.phiOff = ((((MS.sectionAlt | 0) % 12) + 12) % 12) / 12;   // a new section re-picks the rings' phase
+  const TA = TEMPLATES[N.template], TB = TEMPLATES[N.tPrev], amt = O.still ? 0 : N.morph;
+  const fat = O.still ? 1 : 1 + SUBK * MS.sub + BREATH_B * Math.sin((TAU * MS.barPos) / 4);
+  for (let i = 0; i < 4; i++) {
+    const t = TA[i] + (TB[i] - TA[i]) * N.tFade;
+    N.lean[i] = (BASE[i] + (t - BASE[i]) * amt) * (i >= 2 ? fat : 1);
+  }
+  N.open = Math.abs(N.lean[0] - N.lean[1]) > 0.02 || Math.abs(N.lean[2] - N.lean[3]) > 0.02 ? 1 : 0;
 
   // the breath: n1 sits at N1_REST and every beat presses it toward N1_BEAT
   N.press = press(MS.beatPhase);
   N.depth = P.breath;
   const d = Math.min(1, N.depth * N.press + HIT_K * MS.kick);
   N.n1 = O.still ? N1_REST : Math.max(N1_MIN, pinchOf(d));
+  if (N.collapse > 0) N.n1 += (N1_BEAT - N.n1) * N.collapse;
   if (O.pinch >= 0) N.n1 = Math.max(N1_MIN, O.pinch);
   N.open = 0;
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
@@ -227,6 +247,11 @@ export function updateNest(dt, MS, P, O) {
   // the flash on the quiet inner families, and the shimmer along every ring
   N.flash = O.still ? 0 : Math.max(N.flash * Math.exp(-dt / FLASHT), MS.kick);
   N.shim = O.still ? 0 : SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
+  // the build unwinds the rings toward helices, and the drop's collapse snaps the slip back to zero
+  N.slip = O.still ? 0 : UNWIND * Math.max(MS.riser, MS.roll) * (1 - N.collapse);
+  if (N.slip > 0.01) N.open = 1;
+  if (MS.surpriseEvt && !O.still) N.twist = 1;
+  N.twist *= Math.exp(-dt / TWISTTC);
 
   // growth stage 1: the drawn family count FIBMIN -> FIBMAX over build 0 -> 0.5, eased so a family that appears fades
   // in instead of popping (stage 2, the camera coming in, is the `size` parameter's and lives in index.js)
@@ -252,7 +277,7 @@ export function updateNest(dt, MS, P, O) {
     N.sMA[s] = N.mA[k];
     N.sMB[s] = N.mB[k];
     N.sQ[s] = N.qt[k] || 1;
-    N.sSz[s] = N.size[k];
+    N.sSz[s] = N.size[k] * (1 - (1 - DROP_SZ) * N.collapse);
     N.sBr[s] = N.bri[k];
     N.off[s] = tot;
     if (s < N.draw) tot += RINGS * segsOf(O.tier, s);
