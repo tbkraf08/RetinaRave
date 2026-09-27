@@ -10,6 +10,7 @@ sys.argv = ['det13.py', sys.argv[1] if len(sys.argv) > 1 else 'SeeYouDrop', 'x']
 exec(src.split('steps = [')[0])          # gives FILE, INFO, KEY, track
 OUT = os.environ['OUT']; T0 = int(os.environ.get('T0', '46')); N = int(os.environ.get('N', '24')); TAG = os.environ.get('TAG', 'n2w')
 PAUSE = int(os.environ.get('PAUSE', '0'))
+DT = int(os.environ.get('DT', '1000')); SHOT = os.environ.get('SHOT', '1') != '0'   # DT ms between samples, SHOT=0 for D lines only (a 10 Hz beat trace)
 PV = "(()=>{const v=document.querySelector('video,audio');v.%s();return v.paused})()"
 CT = "(()=>{const v=document.querySelector('video,audio');return +v.currentTime.toFixed(2)})()"
 steps = [{"until": "window.CARD"}, {"wait": 1000},
@@ -19,7 +20,7 @@ steps = [{"until": "window.CARD"}, {"wait": 1000},
 if PAUSE > 0: steps.append({"evalTab": PV % 'pause'})
 for i in range(N):
     if PAUSE > 0 and i == PAUSE: steps.append({"evalTab": PV % 'play'})
-    steps += [{"evalTab": CT}, {"eval": INFO}, {"shot": f"{TAG}-{i:02d}"}, {"wait": 1000}]
+    steps += [{"evalTab": CT}, {"eval": INFO}] + ([{"shot": f"{TAG}-{i:02d}"}] if SHOT else []) + [{"wait": DT}]
 steps.append({"eval": "JSON.stringify({errs:CARD.ERRS,au:CARD.ENGINE.AU.mode,scene:CARD.SC.logical})"})
 env = dict(os.environ, HEADED='1', WIN='1920,1080', WINPOS='0,0', CAPTITLE=track, GPU='1', PORT=os.environ.get('PORT', '8861'))
 p = subprocess.run(['node', 'tools/cdp.js', 'real', json.dumps(steps)], env=env, capture_output=True, text=True)

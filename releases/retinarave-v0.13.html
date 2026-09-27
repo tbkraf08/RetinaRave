@@ -12621,44 +12621,15 @@ function stepIn(N, dt, S, land) {
 return { V_MAX, FLOW_CAP, DROP_A, DROP_B, LG_LO, LG_HI, DROP_ROT, DROP_TRIES, W_EXT, DRIFT_EXT, HOME_TAN, HOME_EPS, HOME_LG, HOME_TRIES, EXT_BEATS, V_IN, EXT_ENV, BUMP_LG, DROP_GAP, cpy, doDrop, stepExt, stepIn };
 })();
 
-__m["assets/scenes/nav2/nav2.js"] = (function () {
+__m["assets/scenes/nav2/beat.js"] = (function () {
 'use strict';
-// NAV2's navigator (docs/workers/brief-nav2.md §1): "the melody draws the path". c is never looked up in a table and
-// never walks a chart — it is a ball rolling inside M under three forces.
-//   the melody's pull  pitch height is Im c (a critically damped spring), the spectral balance is Re c (an ema in
-//                      MUSICAL time, so silence freezes it); the pull loosens while a build winds up
-//   the wall           rho = |lambda| of the attracting cycle, found chart-free every frame (math/field.js); rho = 1 IS
-//                      the boundary. An outward step is projected onto the rim's tangent and bisected to the largest
-//                      step still inside, so c SLIDES along the rim, and the period must not change (see probe())
-//   the wind-up        as `wind` rises the ball is PRESSED to the rim: rho -> 1 and the Koenigs arms tighten by
-//                      construction, their tightness being arg lambda / ln|lambda|
-// Gates: a step the wall refused, held half a beat near internal angle p/q (Farey, q <= 7), walks c THROUGH the root
-// into the child bulb, and the finder re-verifies with period q*k; internal angle 0 runs it backwards, out to the
-// parent. No Misiurewicz table, no kick: state.kick.x is 0 for ever. The drop is the ONE cut: a ray along the
-// rho-normal out to log2 G = -2.2 + 1.7*dropStrength, its segment checked clean, pathCut 0, mode EXT. Every other
-// frame moves cPath by at most V_MAX*dt, well under the continuity monitor's 0.06 spike rule.
-const { TAU, clamp, mix, sstep, ema, Spring } = __m["assets/math/util.js"];
-const { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } = __m["assets/math/field.js"];
-const { V_MAX, FLOW_CAP, cpy, doDrop, stepExt, stepIn } = __m["assets/scenes/nav2/exit.js"];
+// NAV2's beat: the press, the note, the interior's speed cap and its slew — moved out of nav2.js at the 500-line hard cap
+// (v0.13 pass 8; nav2.js was 473 lines). A pure move: the same operations in the same order, s8 md5 identical. Imports detect.js
+// and math/util alone, so nav2.js -> beat.js -> detect.js is a chain, never a cycle (tools/check.js fails on cycles); the wall's
+// RHO_CAP is passed in, because the wall is nav2.js's. Every constant is named here with the user's words beside it.
+const { TAU, clamp, mix } = __m["assets/math/util.js"];
 const { DET } = __m["assets/scenes/nav2/detect.js"];
 
-
-// --- the melody's wishes (index.js declares `height` / `side` / `lift` from these) -------------------------
-const Y_AMP = 1.3;        // Im c per unit of centroid above/below the middle: UP IS UP (the `height` param's gain)
-const Y_REACH = 0.6;      // ... and the |Im c| a FULL melodic swing asks for, once detect.js has normalised the
-                                 // height onto the track's own observed centroid range (DET.hN in [-1, 1])
-const X_HOME = -0.3;      // Re c the balance drifts around: the cardioid's BELLY (boundary |Im| ~0.55, the 1/3
-                                 // root straight up). -0.8 was the NECK, |Im| ~0.1, so "melody up" was capped by
-                                 // geometry and every drop's rho-normal pointed left at the antenna (v0.8 headed trace)
-const X_AMP = -1.1;       // Re c per unit of (bass - high): NEGATIVE, so bass-heavy drifts LEFT to the cascade
-const LIFT = 0.65;        // view units of blob float per unit of centroid off 0.45 (capped by `lift`'s +-0.3 range)
-const W_Y = 14;           // rad/s — the pitch spring, ~0.3 s settle
-const TAU_X = 1.2;        // musical seconds — the Re bias's ema (~8 real seconds in a #test valley, frozen in silence)
-// --- the forces -------------------------------------------------------------------------------------------
-const TAU_M = 0.55;       // s — the melody's pull: v = (wish - c)/TAU_M
-const LOOSE = 0.8;        // how much of the pull a full wind-up takes away
-const BIS = 6;            // bisections to the largest step still inside
-const RHO_CAP = 0.985;    // the wall (float32 uC quantisation; above this the picture stops changing)
 const RHO_REST = 0.30;    // where the ball rests with NO BEAT and no wind (v0.13, the user on SeeYouDrop: "no
                                  // beat == more of a circle (some variation), as the beat happens it spirals in
                                  // showing the complexity"). At |lambda| 0.3 the Julia set is a quasi-circle (Green's
@@ -12691,15 +12662,6 @@ const RHO_BEAT = 0.985;   // the most the BEAT may press to: the cap itself (pas
                                  // under the smoulder (par = sstep(PAR_LO, PAR_HI, rho), squared in the shader) which
                                  // washed the interior out on every kick ("a little too bright"); the smoulder is now
                                  // the WIND's alone (PAR_WIND), so the beat may reach the pinch with the interior dark
-// The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
-// "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
-// fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
-// at 0.7021 against a threshold of 0.72. With the projection always on, rho is the spring's alone and tracks rhoT.
-const RHO_DEGEN = 0.05;   // below this |lambda| the rho-normal is meaningless (at c = 0, lambda = 0 and |lambda|
-                                 // is not differentiable), so the OUTWARD direction is taken toward the melody's wish.
-                                 // Without it the seed at c = 0 pushed straight along the default normal (1, 0) to the
-                                 // CUSP, internal angle 0 — the one place on the rim where the Julia set is a fat round
-                                 // blob with no arms at all, and a tangential flow's unstable equilibrium, so it stuck.
 const V_INT = 2.4;        // units/s — the interior's own speed cap (pass 7, the user: "still not deforming enough"). The breath
                                  // is bounded by speed x beat: at V_MAX 1.2 the trip from the pinch at the 1/2 root (c -0.735) back
                                  // to rho 0.5 (-0.31) is 0.35 s, a whole beat at 150 bpm, so the trough sat at 0.84 whatever the
@@ -12715,6 +12677,107 @@ const K_R = 20.0;         // units/s per unit of (rhoT - rho): ONE two-sided rad
                                  // no longer costs the peak, and it follows the FALL — the node sweep at 150 bpm, K_R
                                  // 10 -> 20 with BUMP_IV 0.5: peak 0.967 -> 0.985, trough 0.753 -> 0.667, Q through the
                                  // beat 0.72-0.84 -> 0.71-0.87 (the swing doubled). 30 lost the peak at 150 bpm
+
+const OUT = [0, 0];
+// One interior frame's beat: the press on the target modulus, the note's pull around the rim, the radial spring, the speed cap
+// and the slew. (vx, vy) is the melody's tangential velocity on entry; (nx, ny) the rim's normal; the result is the velocity to move
+// by. nav2.js's moveInt then slides it along the wall.
+function beatStep(N, dt, S, nx, ny, vx, vy, cap) {
+  const D = DET;
+// the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
+  // cap for the drop. With none of them c rests at RHO_REST: the circle
+  const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
+  const rhoB = Math.min(RHO_BEAT + RHO_E * D.E, cap);
+  const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), cap, D.wind);
+  // the beat's note: latched on the hit, its internal angle on the cardioid at the beat's radius
+  if (D.onset && S.bchroma) {
+    let bk = -1, bv = NOTE_MIN;
+    for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
+    N.note = bk;
+    if (bk >= 0) {
+      const a = TAU * NOTE_ANG[bk], lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
+      N.noteX = lr / 2 - (lr * lr - li * li) / 4;
+      N.noteY = li / 2 - (2 * lr * li) / 4;
+    }
+  }
+  if (N.note >= 0 && N.q === 1) {
+    const g = NOTE_V * D.bump;
+    vx += (N.noteX - N.cPath[0]) * g;
+    vy += (N.noteY - N.cPath[1]) * g;
+  }
+  const kr = K_R * (rhoT - N.rho);
+  vx += kr * nx;
+  vy += kr * ny;
+  const sp = Math.sqrt(vx * vx + vy * vy);
+  if (sp > V_INT) {
+    vx *= V_INT / sp;
+    vy *= V_INT / sp;
+  }
+  // the slew: the velocity may change by at most A_MAX*dt a frame, so a kick's step grows from rest instead of jumping
+  const ax = vx - N.vx, ay = vy - N.vy, am = Math.sqrt(ax * ax + ay * ay), aCap = A_MAX * dt;
+  if (am > aCap) {
+    vx = N.vx + ax * aCap / am;
+    vy = N.vy + ay * aCap / am;
+  }
+  N.vx = vx;
+  N.vy = vy;
+  OUT[0] = vx;
+  OUT[1] = vy;
+  return OUT;
+}
+
+return { RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, RHO_BEAT, V_INT, A_MAX, K_R, beatStep };
+})();
+
+__m["assets/scenes/nav2/nav2.js"] = (function () {
+'use strict';
+// NAV2's navigator (docs/workers/brief-nav2.md §1): "the melody draws the path". c is never looked up in a table and
+// never walks a chart — it is a ball rolling inside M under three forces.
+//   the melody's pull  pitch height is Im c (a critically damped spring), the spectral balance is Re c (an ema in
+//                      MUSICAL time, so silence freezes it); the pull loosens while a build winds up
+//   the wall           rho = |lambda| of the attracting cycle, found chart-free every frame (math/field.js); rho = 1 IS
+//                      the boundary. An outward step is projected onto the rim's tangent and bisected to the largest
+//                      step still inside, so c SLIDES along the rim, and the period must not change (see probe())
+//   the wind-up        as `wind` rises the ball is PRESSED to the rim: rho -> 1 and the Koenigs arms tighten by
+//                      construction, their tightness being arg lambda / ln|lambda|
+// Gates: a step the wall refused, held half a beat near internal angle p/q (Farey, q <= 7), walks c THROUGH the root
+// into the child bulb, and the finder re-verifies with period q*k; internal angle 0 runs it backwards, out to the
+// parent. No Misiurewicz table, no kick: state.kick.x is 0 for ever. The drop is the ONE cut: a ray along the
+// rho-normal out to log2 G = -2.2 + 1.7*dropStrength, its segment checked clean, pathCut 0, mode EXT. Every other
+// frame moves cPath by at most V_MAX*dt, well under the continuity monitor's 0.06 spike rule.
+const { TAU, clamp, mix, sstep, ema, Spring } = __m["assets/math/util.js"];
+const { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } = __m["assets/math/field.js"];
+const { V_MAX, FLOW_CAP, cpy, doDrop, stepExt, stepIn } = __m["assets/scenes/nav2/exit.js"];
+const { DET } = __m["assets/scenes/nav2/detect.js"];
+const { RHO_REST, RHO_BEAT, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, K_R, V_INT, A_MAX, beatStep } = __m["assets/scenes/nav2/beat.js"];
+
+
+
+// --- the melody's wishes (index.js declares `height` / `side` / `lift` from these) -------------------------
+const Y_AMP = 1.3;        // Im c per unit of centroid above/below the middle: UP IS UP (the `height` param's gain)
+const Y_REACH = 0.6;      // ... and the |Im c| a FULL melodic swing asks for, once detect.js has normalised the
+                                 // height onto the track's own observed centroid range (DET.hN in [-1, 1])
+const X_HOME = -0.3;      // Re c the balance drifts around: the cardioid's BELLY (boundary |Im| ~0.55, the 1/3
+                                 // root straight up). -0.8 was the NECK, |Im| ~0.1, so "melody up" was capped by
+                                 // geometry and every drop's rho-normal pointed left at the antenna (v0.8 headed trace)
+const X_AMP = -1.1;       // Re c per unit of (bass - high): NEGATIVE, so bass-heavy drifts LEFT to the cascade
+const LIFT = 0.65;        // view units of blob float per unit of centroid off 0.45 (capped by `lift`'s +-0.3 range)
+const W_Y = 14;           // rad/s — the pitch spring, ~0.3 s settle
+const TAU_X = 1.2;        // musical seconds — the Re bias's ema (~8 real seconds in a #test valley, frozen in silence)
+// --- the forces -------------------------------------------------------------------------------------------
+const TAU_M = 0.55;       // s — the melody's pull: v = (wish - c)/TAU_M
+const LOOSE = 0.8;        // how much of the pull a full wind-up takes away
+const BIS = 6;            // bisections to the largest step still inside
+const RHO_CAP = 0.985;    // the wall (float32 uC quantisation; above this the picture stops changing)
+// The melody's pull is projected onto the rim's TANGENT unconditionally. Gating the projection on rho (the obvious
+// "only once c is near the rim") makes the threshold an unstable equilibrium: below it the melody's inward pull
+// fights the spring, above it does not, so c parks exactly there and never crosses — measured, a pin of 0.90 settled
+// at 0.7021 against a threshold of 0.72. With the projection always on, rho is the spring's alone and tracks rhoT.
+const RHO_DEGEN = 0.05;   // below this |lambda| the rho-normal is meaningless (at c = 0, lambda = 0 and |lambda|
+                                 // is not differentiable), so the OUTWARD direction is taken toward the melody's wish.
+                                 // Without it the seed at c = 0 pushed straight along the default normal (1, 0) to the
+                                 // CUSP, internal angle 0 — the one place on the rim where the Julia set is a fat round
+                                 // blob with no arms at all, and a tangential flow's unstable equilibrium, so it stuck.
 const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 const PAR_HI = 0.98;
 const PAR_WIND = 1;       // pass 6: the smoulder (and its time crawl) is gated by the wind-up — par x wind^PAR_WIND —
@@ -13014,43 +13077,10 @@ function stepInt(N, dt, S, P) {
       vx -= dn * nx;
       vy -= dn * ny;
     }
-    // the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
-    // cap for the drop. With none of them c rests at RHO_REST: the circle
-    const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
-    const rhoB = Math.min(RHO_BEAT + RHO_E * D.E, RHO_CAP);
-    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), RHO_CAP, D.wind);
-    // the beat's note: latched on the hit, its internal angle on the cardioid at the beat's radius
-    if (D.onset && S.bchroma) {
-      let bk = -1, bv = NOTE_MIN;
-      for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
-      N.note = bk;
-      if (bk >= 0) {
-        const a = TAU * NOTE_ANG[bk], lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
-        N.noteX = lr / 2 - (lr * lr - li * li) / 4;
-        N.noteY = li / 2 - (2 * lr * li) / 4;
-      }
-    }
-    if (N.note >= 0 && N.q === 1) {
-      const g = NOTE_V * D.bump;
-      vx += (N.noteX - N.cPath[0]) * g;
-      vy += (N.noteY - N.cPath[1]) * g;
-    }
-    const kr = K_R * (rhoT - N.rho);
-    vx += kr * nx;
-    vy += kr * ny;
-    const sp = Math.sqrt(vx * vx + vy * vy);
-    if (sp > V_INT) {
-      vx *= V_INT / sp;
-      vy *= V_INT / sp;
-    }
-    // the slew: the velocity may change by at most A_MAX*dt a frame, so a kick's step grows from rest instead of jumping
-    const ax = vx - N.vx, ay = vy - N.vy, am = Math.sqrt(ax * ax + ay * ay), aCap = A_MAX * dt;
-    if (am > aCap) {
-      vx = N.vx + ax * aCap / am;
-      vy = N.vy + ay * aCap / am;
-    }
-    N.vx = vx;
-    N.vy = vy;
+    // the beat (beat.js): the press, the note, the spring, the cap and the slew
+    const bv = beatStep(N, dt, S, nx, ny, vx, vy, RHO_CAP);
+    vx = bv[0];
+    vy = bv[1];
     moveInt(N, vx * dt, vy * dt);
   }
   N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;
@@ -13097,7 +13127,7 @@ function updateNav2(dt, now, S, env) {
   }
 }
 
-return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, RHO_BEAT, RHO_DEGEN, V_INT, A_MAX, K_R, PAR_LO, PAR_HI, PAR_WIND, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
+return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_DEGEN, PAR_LO, PAR_HI, PAR_WIND, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP, RHO_REST, RHO_BEAT, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, K_R, V_INT, A_MAX };
 })();
 
 __m["assets/scenes/nav2/shaders.js"] = (function () {
