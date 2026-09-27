@@ -2134,3 +2134,12 @@ so the bump is now read against the track's own running kick/hit peak (`BUMP_PK_
 1 at `eS` 1); `uBump` (rest 0) widens the exterior halo's reach 1 + 1.5·bump — the light off the edge. Intro bump median 0.47 (0.31),
 ρ 0.64–0.84 on every sample; the gate at 25 s into period 2 is the shape coming back different. AUDIT-v0.13's third section.
 
+**§46 addendum 3 (2026-09-27):** *"each beat should make the set close up (different pitches are different shapes); at 1:38 it goes
+double time -> should be moving faster / reacting more; 1:45 -> highest energy, should be reacting more."* The beat's NOTE: the bass
+note's pitch class latched on each hit names an internal angle (k + ½)/12 and c is pulled around the rim to it (`NOTE_V` 8 × bump;
+`bchroma` in `feats`) — twelve pitches, twelve species; the bump's decay follows the running hit interval (`BUMP_IV` 0.7, so double
+time breathes at τ 0.14 s instead of pinning ρ high — the before trace read ρ 0.87–0.93 flat there); the energy gain E lifts the
+ceiling (`RHO_E`), the halo, the curl and the kick zoom. Edge speed median 2.4× on the double-time stretch (0.333 vs 0.138), seven
+notes latched in 30 s, the Q median 0.93 → 0.90. `BUMP_IV` 0.55 → 0.7 by the node sweep (the 124 bpm test beat opened no gate at
+0.55). AUDIT-v0.13's fourth section.
+

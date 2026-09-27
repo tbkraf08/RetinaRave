@@ -37,7 +37,7 @@ export default {
   home: false,      // NAV (id 0) is home until the user approves NAV2
   always: false,    // NAV2 is forced-only: it updates when it is on screen, like every other non-home scene
   cuts: 'event',    // c jumps only at the drop (pathCut 0 + a mode change); every other frame moves c by <= V_MAX*dt
-  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick',
+  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick', 'bchroma',
     'build', 'tension', 'hush', 'dropExpectedIn', 'fakeoutEvt', 'dropEvt', 'dropStrength', 'dropEnv',
     'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'presence', 'flow', 'seed', 'resolveEvt'],
   state: N2,        // the continuity monitor's shape: {mode, cPath, pathCut, kick:{x}, baby, c}
@@ -83,6 +83,7 @@ export default {
     n2info: () => ({
       mode: N2.mode, c: [N2.c[0], N2.c[1]], rho: N2.rho, q: N2.q, has: N2.cyc.has, comp: N2.compSize,
       wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow, bump: DET.bump, pulse: DET.pulse,
+      ival: DET.ival, E: DET.E, note: N2.note,
       pitch: DET.pitch, lift: DET.lift, sweep: DET.sweep, roll: DET.roll, scratch: DET.scratch, swirl: DET.swirl,
       spin: DET.spin, rate: DET.rate, angle: DET.angle, par: N2.par, lg: N2.lg, pathCut: N2.pathCut, rhoPin: N2.rhoPin,
       gate: N2.gate.on ? N2.gate.p + '/' + N2.gate.q + ':' + N2.gate.ph : '', still: STILL,
@@ -114,6 +115,7 @@ export default {
       beatCount: 'the same clock; a gate needs a beat of held pressure (leaking between the beat\'s pulses), and the drop\'s excursion outside lasts eight beats',
       hit: 'a hit is a beat: it presses c from the resting circle out toward the boundary and the arms spiral in; between hits c breathes back (0.28 s), and how DENSE the hits are holds it part-way out',
       kick: 'the kick is the beat too: the same press as a hit, whichever is stronger',
+      bchroma: 'the bass note under each beat names the shape: its pitch class is an internal angle around the cardioid, and the beat pulls c around the rim to it — different pitches, different species',
       hitStrength: 'how hard that hit was: it arms the scratch gate',
       eS: 'how far out along the normal the exterior sits, and the amplitude of the (dormant) drum modes',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
@@ -138,7 +140,7 @@ export default {
     wind: { eli5: 'how hard c is pressed against the boundary: the arms wind up', range: [0, 1], from: (MS) => windTarget(MS) },
     lift: { eli5: 'how far the blob floats up or down with the pitch', range: [-0.3, 0.3], from: (MS) => LIFT * (MS.centroid - 0.45) },
     spin: { eli5: 'how fast the frame is stirred on top of the groove', range: [0, 1.5], from: (MS) => SPIN_SW * (1 - (1 - MS.riser) * (1 - MS.hp) * (1 - MS.roll)) + SPIN_W * windTarget(MS) * windTarget(MS) },
-    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - 0.06 * MS.kick) * (1 + 0.25 * MS.dropEnv) },
+    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick, harder at high energy', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - (0.03 + 0.06 * MS.eS) * MS.kick) * (1 + 0.25 * MS.dropEnv) },
   },
 
   colour: { default: 'v2', variants: { v2: {} } },
@@ -196,7 +198,7 @@ export default {
     gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
-    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump);
+    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump * (1 + D.E));
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));

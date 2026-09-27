@@ -45,6 +45,13 @@ export const BUMP_K = 1.0;       // the beat's press: a kick at full strength ta
 export const PULSE_K = 0.4;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
                                  // cut held rho at ~0.74 between kicks on SeeYouDrop, so the outline hardly moved
                                  // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6
+export const RHO_E = 0.04;       // ... plus this much at full energy (detect.js E): the peak presses closer to the rim
+export const NOTE_V = 8.0;       // 1/s — the beat's NOTE: on a hit the bass note's pitch class names an internal angle
+                                 // ((k + 0.5)/12 around the cardioid) and c is pulled AROUND the rim toward it at this
+                                 // rate x bump, so each beat closes the set up into that note's own species ("each
+                                 // beat should make the set close up (different pitches are different shapes)", the
+                                 // user on SeeYouDrop). The wall keeps the radius; a note across a root is a gate's job
+export const NOTE_MIN = 0.08;    // below this much bass chroma there is no note: the melody's wish stands
 export const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
                                  // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
                                  // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
@@ -103,6 +110,7 @@ export const N2 = {
   kick: { x: 0 },        // the continuity monitor's shape; NAV2 is chart-free, so this is 0 for ever
   baby: null,            // ... and it never dives into a baby copy
   cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
+  note: -1, noteX: 0, noteY: 0,   // the beat's note (pitch class, latched on the hit) and its point on the rim
   log: () => {},
 };
 
@@ -355,7 +363,24 @@ function stepInt(N, dt, S, P) {
     // the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
     // cap for the drop. With none of them c rests at RHO_REST: the circle
     const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
-    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, RHO_BEAT, beat), RHO_CAP, D.wind);
+    const rhoB = Math.min(RHO_BEAT + RHO_E * D.E, RHO_CAP);
+    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), RHO_CAP, D.wind);
+    // the beat's note: latched on the hit, its internal angle on the cardioid at the beat's radius
+    if (D.onset && S.bchroma) {
+      let bk = -1, bv = NOTE_MIN;
+      for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
+      N.note = bk;
+      if (bk >= 0) {
+        const a = TAU * (bk + 0.5) / 12, lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
+        N.noteX = lr / 2 - (lr * lr - li * li) / 4;
+        N.noteY = li / 2 - (2 * lr * li) / 4;
+      }
+    }
+    if (N.note >= 0 && N.q === 1) {
+      const g = NOTE_V * D.bump;
+      vx += (N.noteX - N.cPath[0]) * g;
+      vy += (N.noteY - N.cPath[1]) * g;
+    }
     const kr = K_R * (rhoT - N.rho);
     vx += kr * nx;
     vy += kr * ny;

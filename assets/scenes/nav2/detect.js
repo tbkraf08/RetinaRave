@@ -83,10 +83,19 @@ export const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's O
 export const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
 export const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
                                  // the drop's bump harder
+export const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
+                                 // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
+                                 // rho high ("should be moving faster / reacting more", the user). 0.55 left the
+                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+export const IV_TAU = 1.5;       // s — the ema of the hit interval
+export const E_LO = 0.5;         // eS below this is no extra energy; at eS 1 the energy gain E is 1 ("1:45 -> this is
+                                 // where the highest energy is, should be reacting more": E lifts the beat's ceiling,
+                                 // the halo's reach, the curl and the kick zoom)
 
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
+  ival: 0.5, tHit: 0, onset: 0, E: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -113,6 +122,7 @@ export function resetDet() {
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.bump = D.pulse = D.pk = 0;
+  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -190,7 +200,16 @@ export function updateDet(dt, S, P) {
   const bt = Math.max(S.kick || 0, S.hit || 0);
   D.pk = Math.max(bt, D.pk * Math.exp(-dt / BUMP_PK_TAU));
   const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
-  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), hitN);
+  D.tHit += dt;
+  const tau = Math.min(BUMP_TAU, BUMP_IV * D.ival);
+  const dec = D.bump * Math.exp(-dt / tau);
+  D.onset = hitN > dec + 0.05 && D.tHit > 0.08 ? 1 : 0;   // a NEW hit: above the decaying envelope, not a re-read of the last
+  if (D.onset) {
+    D.ival = ema(D.ival, clamp(D.tHit, 0.08, 2), 1, IV_TAU / Math.max(D.tHit, 0.08));
+    D.tHit = 0;
+  }
+  D.bump = Math.max(dec, hitN);
+  D.E = clamp(((S.eS || 0) - E_LO) / (1 - E_LO), 0, 1);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
@@ -202,6 +221,6 @@ export function updateDet(dt, S, P) {
   D.rate = ema(D.rate, rt, dt, SPIN_TAU);     // the RATE is eased, so the angle integrates and never jumps
   D.angle += D.rate * dt;                     // on dt, not musical time: the param's range is declared in rad/s
   // --- the shader gains --------------------------------------------------------------------------------
-  D.curl = CURL * D.wind + CURL_SW * D.swirl + CURL_B * D.bump;
+  D.curl = CURL * D.wind + CURL_SW * D.swirl + CURL_B * D.bump * (1 + D.E);
   D.glow = 1 + GLOW_H * S.hush;
 }

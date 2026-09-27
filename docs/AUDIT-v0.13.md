@@ -130,3 +130,35 @@ The 80 s trace on the final build (`det13-syd-final.txt`), the same columns as t
 0.878 / 0.950, v 0.220 median / 0.622 max and > 0 on 37/37, EXT 2 samples, spin max 0.43, one gate, bump median 0.46 (0.31 before
 the normalisation), ms 2.02, errs []. The release rebuilt and proven from file:// (key 9 → scene 8, errs [], Q 0.977 on the test page).
 
+## Fourth pass — "each beat should make the set close up (different pitches are different shapes); at 1:38 it goes double time -> should be moving faster / reacting more; 1:45 -> this is where the highest energy is, should be reacting more"
+
+The 92–120 s replay before (`nav2-window-double-before.txt`): at 1:38 onsets 4.7–5.9 a second and the bump never decayed (0.54–0.90),
+so ρ sat at 0.87–0.93 — pinned, reacting LESS; from 1:48 the melody had parked c near the cusp (internal angle 0, the fat round blob)
+and Q read 0.93–0.95 whatever the beat did. Three changes:
+
+- **The beat's note** (`nav2.js` `NOTE_V` 8, `NOTE_MIN` 0.08; `feats` gains `bchroma`): on each hit the bass note's pitch class k is
+  latched and names an internal angle (k + ½)/12 around the cardioid; c is pulled AROUND the rim toward that note's point at
+  `NOTE_V` × bump. The wall keeps the radius; in a child bulb (q > 1) the note waits. Twelve pitches, twelve species — near 1/2 two
+  lobes, near 1/3 three arms, near 0 the round blob.
+- **The decay follows the hit interval** (`detect.js` `BUMP_IV` 0.7 of the running interval, `IV_TAU` 1.5 s; a hit is an onset when
+  it clears the decaying envelope): straight time at 150 bpm breathes with τ 0.28 s, double time 0.14 s.
+- **The energy gain** E = (eS − 0.5)/0.5 (`E_LO`): lifts the beat's ceiling by `RHO_E` 0.04, the halo's reach and the curl by (1 + E),
+  the kick's zoom pump from 3 % to 9 %.
+
+```
+                          rho (INT) min / med / max     Q min / med / max        v med / max     notes latched
+92–120 s before           0.574 / 0.775 / 0.958         0.729 / 0.933 / 0.957    0.138 / 0.621   —
+92–120 s after            0.541 / 0.690 / 0.922         0.736 / 0.897 / 0.955    0.333 / 0.624   1 4 6 7 8 9 10
+0–60 s after              0.476 / 0.659 / 0.979         0.673 / 0.894 / 0.955    0.360 / 0.620   0 1 4 6 7 8 9 11
+```
+
+At 1:38 the interval reads 0.17–0.23 s and the edge speed's median across the stretch is 2.4× before (0.333 vs 0.138), hitting the
+navigator's own speed cap (0.62 = `V_MAX` on the equipotential) on nine of 22 interior samples; E reads 0.73–0.88 through 1:33–1:41
+(the engine's energy peak sits there, not at 1:45 — at 1:45 the engine fired a second `dropEvt`, 4 s outside). The set no longer
+parks round: seven notes latched in 30 s, the Q median down from 0.93 to 0.90 with the same range. s8 md5 253b19c4 / 778fb7e2, twice.
+The 80 s trace on this build (`det13-syd-final2.txt`): ρ 0.475 / 0.667 / 0.966, Q 0.785 / 0.898 / 0.953, v 0.493 median / 0.623 max
+and > 0 on 37/37, eight notes latched, E median 0.64, spin max 0.47, EXT 4 s, ms 2.20 (2.02: the note pull's findCycle probes), errs [];
+**no gate in these 80 s** — the note keeps c moving around the rim, so it is rarely held beside a root for `GATE_HOLD`; the shape now
+comes back different through the notes rather than through a gate (the node test still opens eight per minute on a fixed-note beat).
+The release rebuilt and proven from file:// (key 9 → scene 8, errs [], Q 0.977 on the test page).
+

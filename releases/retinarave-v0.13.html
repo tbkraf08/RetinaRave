@@ -12284,10 +12284,19 @@ const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's OWN runn
 const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
 const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
                                  // the drop's bump harder
+const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
+                                 // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
+                                 // rho high ("should be moving faster / reacting more", the user). 0.55 left the
+                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+const IV_TAU = 1.5;       // s — the ema of the hit interval
+const E_LO = 0.5;         // eS below this is no extra energy; at eS 1 the energy gain E is 1 ("1:45 -> this is
+                                 // where the highest energy is, should be reacting more": E lifts the beat's ceiling,
+                                 // the halo's reach, the curl and the kick zoom)
 
 const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
   wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
+  ival: 0.5, tHit: 0, onset: 0, E: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -12314,6 +12323,7 @@ function resetDet() {
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
   D.bump = D.pulse = D.pk = 0;
+  D.ival = 0.5; D.tHit = 0; D.onset = 0; D.E = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -12391,7 +12401,16 @@ function updateDet(dt, S, P) {
   const bt = Math.max(S.kick || 0, S.hit || 0);
   D.pk = Math.max(bt, D.pk * Math.exp(-dt / BUMP_PK_TAU));
   const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
-  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), hitN);
+  D.tHit += dt;
+  const tau = Math.min(BUMP_TAU, BUMP_IV * D.ival);
+  const dec = D.bump * Math.exp(-dt / tau);
+  D.onset = hitN > dec + 0.05 && D.tHit > 0.08 ? 1 : 0;   // a NEW hit: above the decaying envelope, not a re-read of the last
+  if (D.onset) {
+    D.ival = ema(D.ival, clamp(D.tHit, 0.08, 2), 1, IV_TAU / Math.max(D.tHit, 0.08));
+    D.tHit = 0;
+  }
+  D.bump = Math.max(dec, hitN);
+  D.E = clamp(((S.eS || 0) - E_LO) / (1 - E_LO), 0, 1);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
@@ -12403,11 +12422,11 @@ function updateDet(dt, S, P) {
   D.rate = ema(D.rate, rt, dt, SPIN_TAU);     // the RATE is eased, so the angle integrates and never jumps
   D.angle += D.rate * dt;                     // on dt, not musical time: the param's range is declared in rad/s
   // --- the shader gains --------------------------------------------------------------------------------
-  D.curl = CURL * D.wind + CURL_SW * D.swirl + CURL_B * D.bump;
+  D.curl = CURL * D.wind + CURL_SW * D.swirl + CURL_B * D.bump * (1 + D.E);
   D.glow = 1 + GLOW_H * S.hush;
 }
 
-return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, BUMP_PK_TAU, BUMP_PK_MIN, BUMP_E0, DET, resetDet, updateDet };
+return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, BUMP_PK_TAU, BUMP_PK_MIN, BUMP_E0, BUMP_IV, IV_TAU, E_LO, DET, resetDet, updateDet };
 })();
 
 __m["assets/scenes/nav2/exit.js"] = (function () {
@@ -12622,6 +12641,13 @@ const BUMP_K = 1.0;       // the beat's press: a kick at full strength takes rho
 const PULSE_K = 0.4;      // ... and the beat's DENSITY holds part of that between the kicks. 0.8 in the first
                                  // cut held rho at ~0.74 between kicks on SeeYouDrop, so the outline hardly moved
                                  // ("should be bumping in some way with each beat"); 0.4 lets it fall to ~0.6
+const RHO_E = 0.04;       // ... plus this much at full energy (detect.js E): the peak presses closer to the rim
+const NOTE_V = 8.0;       // 1/s — the beat's NOTE: on a hit the bass note's pitch class names an internal angle
+                                 // ((k + 0.5)/12 around the cardioid) and c is pulled AROUND the rim toward it at this
+                                 // rate x bump, so each beat closes the set up into that note's own species ("each
+                                 // beat should make the set close up (different pitches are different shapes)", the
+                                 // user on SeeYouDrop). The wall keeps the radius; a note across a root is a gate's job
+const NOTE_MIN = 0.08;    // below this much bass chroma there is no note: the melody's wish stands
 const RHO_BEAT = 0.93;    // the most the BEAT may press to. The smoulder (par = sstep(PAR_LO, PAR_HI, rho),
                                  // squared in the shader) is the drop's light; at RHO_CAP on every kick it washed the
                                  // interior out ("a little too bright", the user). Only the wind reaches RHO_CAP
@@ -12680,6 +12706,7 @@ const N2 = {
   kick: { x: 0 },        // the continuity monitor's shape; NAV2 is chart-free, so this is 0 for ever
   baby: null,            // ... and it never dives into a baby copy
   cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
+  note: -1, noteX: 0, noteY: 0,   // the beat's note (pitch class, latched on the hit) and its point on the rim
   log: () => {},
 };
 
@@ -12932,7 +12959,24 @@ function stepInt(N, dt, S, P) {
     // the beat presses the TARGET modulus (the bump, and its density between kicks); the wind carries it up to the
     // cap for the drop. With none of them c rests at RHO_REST: the circle
     const beat = clamp(BUMP_K * D.bump + PULSE_K * D.pulse, 0, 1);
-    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, RHO_BEAT, beat), RHO_CAP, D.wind);
+    const rhoB = Math.min(RHO_BEAT + RHO_E * D.E, RHO_CAP);
+    const rhoT = N.rhoPin >= 0 ? N.rhoPin : mix(mix(RHO_REST, rhoB, beat), RHO_CAP, D.wind);
+    // the beat's note: latched on the hit, its internal angle on the cardioid at the beat's radius
+    if (D.onset && S.bchroma) {
+      let bk = -1, bv = NOTE_MIN;
+      for (let pc = 0; pc < 12; pc++) if (S.bchroma[pc] > bv) { bv = S.bchroma[pc]; bk = pc; }
+      N.note = bk;
+      if (bk >= 0) {
+        const a = TAU * (bk + 0.5) / 12, lr = rhoB * Math.cos(a), li = rhoB * Math.sin(a);
+        N.noteX = lr / 2 - (lr * lr - li * li) / 4;
+        N.noteY = li / 2 - (2 * lr * li) / 4;
+      }
+    }
+    if (N.note >= 0 && N.q === 1) {
+      const g = NOTE_V * D.bump;
+      vx += (N.noteX - N.cPath[0]) * g;
+      vy += (N.noteY - N.cPath[1]) * g;
+    }
     const kr = K_R * (rhoT - N.rho);
     vx += kr * nx;
     vy += kr * ny;
@@ -12987,7 +13031,7 @@ function updateNav2(dt, now, S, env) {
   }
 }
 
-return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
+return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
 })();
 
 __m["assets/scenes/nav2/shaders.js"] = (function () {
@@ -13230,7 +13274,7 @@ const __default = {
   home: false,      // NAV (id 0) is home until the user approves NAV2
   always: false,    // NAV2 is forced-only: it updates when it is on screen, like every other non-home scene
   cuts: 'event',    // c jumps only at the drop (pathCut 0 + a mode change); every other frame moves c by <= V_MAX*dt
-  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick',
+  feats: ['centroid', 'bass', 'high', 'mid', 'riser', 'hp', 'roll', 'onsetRate', 'flux', 'peaks', 'kick', 'bchroma',
     'build', 'tension', 'hush', 'dropExpectedIn', 'fakeoutEvt', 'dropEvt', 'dropStrength', 'dropEnv',
     'beatPhase', 'beatCount', 'hit', 'hitStrength', 'eS', 'eM', 'presence', 'flow', 'seed', 'resolveEvt'],
   state: N2,        // the continuity monitor's shape: {mode, cPath, pathCut, kick:{x}, baby, c}
@@ -13276,6 +13320,7 @@ const __default = {
     n2info: () => ({
       mode: N2.mode, c: [N2.c[0], N2.c[1]], rho: N2.rho, q: N2.q, has: N2.cyc.has, comp: N2.compSize,
       wind: DET.wind, windT: DET.windT, count: DET.count, curl: DET.curl, glow: DET.glow, bump: DET.bump, pulse: DET.pulse,
+      ival: DET.ival, E: DET.E, note: N2.note,
       pitch: DET.pitch, lift: DET.lift, sweep: DET.sweep, roll: DET.roll, scratch: DET.scratch, swirl: DET.swirl,
       spin: DET.spin, rate: DET.rate, angle: DET.angle, par: N2.par, lg: N2.lg, pathCut: N2.pathCut, rhoPin: N2.rhoPin,
       gate: N2.gate.on ? N2.gate.p + '/' + N2.gate.q + ':' + N2.gate.ph : '', still: STILL,
@@ -13307,6 +13352,7 @@ const __default = {
       beatCount: 'the same clock; a gate needs a beat of held pressure (leaking between the beat\'s pulses), and the drop\'s excursion outside lasts eight beats',
       hit: 'a hit is a beat: it presses c from the resting circle out toward the boundary and the arms spiral in; between hits c breathes back (0.28 s), and how DENSE the hits are holds it part-way out',
       kick: 'the kick is the beat too: the same press as a hit, whichever is stronger',
+      bchroma: 'the bass note under each beat names the shape: its pitch class is an internal angle around the cardioid, and the beat pulls c around the rim to it — different pitches, different species',
       hitStrength: 'how hard that hit was: it arms the scratch gate',
       eS: 'how far out along the normal the exterior sits, and the amplitude of the (dormant) drum modes',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
@@ -13331,7 +13377,7 @@ const __default = {
     wind: { eli5: 'how hard c is pressed against the boundary: the arms wind up', range: [0, 1], from: (MS) => windTarget(MS) },
     lift: { eli5: 'how far the blob floats up or down with the pitch', range: [-0.3, 0.3], from: (MS) => LIFT * (MS.centroid - 0.45) },
     spin: { eli5: 'how fast the frame is stirred on top of the groove', range: [0, 1.5], from: (MS) => SPIN_SW * (1 - (1 - MS.riser) * (1 - MS.hp) * (1 - MS.roll)) + SPIN_W * windTarget(MS) * windTarget(MS) },
-    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - 0.06 * MS.kick) * (1 + 0.25 * MS.dropEnv) },
+    zoom: { eli5: 'how much of the set is in view: it pumps in on every kick, harder at high energy', range: [0.5, 2], from: (MS) => (1 - 0.05 * MS.bass - 0.07 * MS.hit - (0.03 + 0.06 * MS.eS) * MS.kick) * (1 + 0.25 * MS.dropEnv) },
   },
 
   colour: { default: 'v2', variants: { v2: {} } },
@@ -13389,7 +13435,7 @@ const __default = {
     gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
-    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump);
+    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump * (1 + D.E));
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));
