@@ -5,12 +5,12 @@
 //   3. the spherical product is the unit sphere when both curves are 1
 //   4. a known star's Q (m = 5, n1 = 1, n2 = n3 = 1) and the per-family rest → beat swing the scene is gated on
 //   8. pass 1: the rest state is NOT a circle (the root in 0.90-0.95), and nothing the lean can do grows a family past
-//      its own radius (nest.js normOf, which the deep N1_BEAT made necessary)
+//      its own radius — equator at the beat's pinch x latitude at N1_PHI (nest.js normOf, which the deep N1_BEAT forced)
 //   5. the interval table: 12 entries, root 1/1, fifth 3/2, every one closing in ≤ 8 turns
 //   6. the GLSL twin's constants vs the JS to 0
 //   7. cost: greenQ() at 512 samples well under 1 ms
 import { sf, point3, closure, mOf, mTable, greenQ, GLSL, TAU, N1_MIN, R_MAX, BASE_MIN, M0, QCAP, N_Q, RATIO } from '../assets/math/gielis.js';
-import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES, normOf, M_PHI, PHI_MAX, LEAN_C, LEAN_V, LEAN_MIN, LEAN_MAX } from '../assets/scenes/gielis/nest.js';
+import { BASE, N1_REST, N1_BEAT, TEMPLATES, TEMPLATE_NAMES, normOf, N1_PHI, PHI_MAX, LEAN_C, LEAN_V, LEAN_MIN, LEAN_MAX } from '../assets/scenes/gielis/nest.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
@@ -141,7 +141,7 @@ let wRaw = 0, wNorm = 0, wCase = '', wnCase = '';
 for (const L of LEANS) {
   for (const e of mTable()) {
     for (const n1 of [N1_REST, 1.2, N1_BEAT]) {
-      const rq = eqMax(e.m, n1, L), lt = latMax(M_PHI, n1, L), nz = normOf(e.m, n1, L, M_PHI, n1);
+      const rq = eqMax(e.m, n1, L), lt = latMax(e.m, N1_PHI, L), nz = normOf(e.m, n1, L, e.m, N1_PHI);
       if (rq * lt > wRaw) { wRaw = rq * lt; wCase = `m ${f(e.m, 2)} n1 ${n1} lean (${L.map((x) => f(x, 2)).join(', ')})`; }
       if (rq * lt * nz > wNorm) { wNorm = rq * lt * nz; wnCase = `m ${f(e.m, 2)} n1 ${n1} lean (${L.map((x) => f(x, 2)).join(', ')})`; }
     }
@@ -151,7 +151,7 @@ ok(wRaw > 1.4, `unnormalised, the worst reachable lean grows the drawn radius to
 // normOf reads its maxima at 64 t samples (one half-period, exact for every m) and 33 phi samples, so it can still
 // under-read a sharp peak slightly; the camera's own FILLMAX 0.85 absorbs that, which is why the gate is 1.01 and not 1.
 ok(wNorm <= 1.01, `normalised, the worst is ${f(wNorm, 4)}x (${wnCase}) over ${LEANS.length * 36} cases — inside FILLMAX 0.85`);
-ok(Math.abs(normOf(4, N1_REST, [1, 1, 1, 1], M_PHI, N1_REST) - 1) < 1e-12 && PHI_MAX > 0, 'a symmetric lean normalises by exactly 1 (a no-op on those frames)');
+ok(Math.abs(normOf(4, N1_REST, [1, 1, 1, 1], 4, N1_PHI) - 1) < 1e-12 && PHI_MAX > 0, 'a symmetric lean normalises by exactly 1 (a no-op on those frames)');
 
 console.log(fails ? `test_gielis: ${fails} FAIL` : 'test_gielis: OK');
 process.exit(fails ? 1 : 0);

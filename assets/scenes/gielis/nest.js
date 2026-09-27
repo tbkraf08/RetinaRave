@@ -79,8 +79,14 @@ export const TEMPLATE_NAMES = ['bloom', 'petal', 'blade', 'shard'];
 export const TEMPLATES = [[2, 0.5, 1, 1], [1, 4, 1, 1], [4, 1, 1, 1.3], [0.6, 0.6, 1, 1]];
 export const MORPHTC = 1.0;      // the lean eases, and a template change cross-fades, over ~1 s
 export const MORPHK = 0.9;       // how much of the tension reaches the lean (the `lean` parameter's gain)
-export const M_PHI = 4;          // the lobe count of the SECOND curve (the latitude profile), the same for every family,
-                                 // so the pitch reads in the equatorial lobes — which is what the ruler measures
+// Pass 1 item 3: the SECOND curve (the latitude profile) gets the family's species too, so the body is a shaped solid
+// rather than a ball of hoops — the same m as the equator, with its own shallower pinch so it is shaped and not spiky
+// in latitude. M_PHI survives as the CONTINUITY WITNESS's reference profile alone: the witness must be species-free
+// (the loudest family changes by a swap, which is a discontinuity in the witness and not on screen).
+export const M_PHI = 4;          // the witness's reference latitude profile — no longer a uniform
+export const N1_PHI = 4;         // the latitude curve's own pinch: shaped, but never a star in latitude
+export const MERID = 6;          // meridian strokes per family, at fixed theta, spanning the whole latitude range …
+                                 // …so the 3D shape reads instead of a stack of hoops (AUDIT-v0.14 §5 item 4)
 export const MTC = 0.7;          // a key change cross-fades the two radii over ~2 s (three time constants)
 export const UNWIND = 0.35;      // riser / roll drift the rings in latitude: closed rings open into helices
 export const DROP_SZ = 0.4;      // the drop collapses the nest to this fraction of its size for about one beat
@@ -100,8 +106,10 @@ export const WAVE0 = 0.26;       // the kick bump's displacement, a fraction of 
 export const WAVED = [WAVE0, 0.008, 0.01];
 export const WAVEP = [1.1, 1.8, 0.5];        // and how much each brightens
 // --- the segment budget (CONTRACTS §1.4: a path-B scene's segments per ring are geometry, not budget('segs')) ---
-export const SEGT = [16, 26, 38, 52];   // segments per TURN of θ per tier
-export const SEGMAX = 96;               // …capped per ring, so a five-turn family cannot blow the total
+// The 8 000-segment cap in the build came from DECISIONS §14's 0.4 µs/segment, which is path A; path B measured
+// 0.067–0.092 µs/segment here, about 3x the headroom, so pass 1 spends it on the meridians (and SEGMAX 96 -> 112).
+export const SEGT = [16, 26, 38, 52];   // segments per TURN of θ per tier, and per meridian stroke
+export const SEGMAX = 112;              // …capped per ring, so a five-turn family cannot blow the total
 export const SEGMIN = 12;
 // --- the radius normalisation the deep pinch forces (pass 1) -----------------------------------------------------
 // r = base^(-1/n1) amplifies any base < 1 by the exponent, and 1/N1_BEAT is now 1.667 instead of 0.833. A lopsided
@@ -115,7 +123,8 @@ export const SEGMIN = 12;
 // samples of [0, π) resolve every family equally instead of spreading the same budget over m·π/2 of it (at m 7.5 that
 // was a 10 % under-read, and the normalisation is only as good as its worst sample).
 export const NRM = 64;           // samples of one half-period of t = m·θ/4 — exact for every m
-export const NRM_PHI = 33;       // …and of the drawn latitude range (ODD, so phi = 0 — where r2 peaks — is sampled)
+export const NRM_PHI = 65;       // …and of the drawn latitude range (ODD, so phi = 0 is sampled; the latitude curve now
+                                 // carries the family's own m, so its range spans up to 1.6 periods and needs the samples)
 
 const NF = 12;
 const SRT = new Float32Array(NF);
@@ -144,6 +153,7 @@ export const N = {
   sNorm: new Float32Array(NF),     // …and the same in slot order — the uniform payload
   sLean: new Float32Array(NF * 4), // the twelve leans in slot order (uLean[12])
   sOpen: new Float32Array(NF),     // 1 = this slot's ring does not close, so its wrapping segment is skipped
+  sSeg: new Float32Array(NF),      // segments on one of this slot's rings (the meridians' count is shared: N.segM)
   off: new Int32Array(NF + 1),     // cumulative segments per slot — the vertex shader's index
   lean: new Float32Array(4),       // the chroma-weighted MEAN lean: what the witness and the hud report
   tOff: new Float32Array(4),       // the section template's offset from BASE, eased and cross-faded
@@ -151,7 +161,7 @@ export const N = {
   mFade: 0, mKey: -1, tFade: 0,
   n1: N1_REST, Q: 1, A: 0, L: 0,
   loudest: 0, med: 0, briMax: 1,
-  fibF: FIBMAX, draw: FIBMAX, segs: 0, open: 0, segPer: 0,
+  fibF: FIBMAX, draw: FIBMAX, segs: 0, open: 0, segPer: 0, segM: 0,
   flash: 0, shim: 0, press: 0, depth: 0,
   template: 0, tPrev: 0, morph: 0, tSel: -2,
   collapse: 0, dropT: 0, slip: 0, twist: 0, twistT: 0, phiOff: 0, phiT: 0, gain: 1,
@@ -262,6 +272,8 @@ export function waveUpload(ages, amps, hues) {
 // Segments on one ring of slot s: they scale with the family's turns (a five-turn ring covers five times the θ),
 // capped so the total stays inside the brief's 8 000 at tier 3. The tier never touches RINGS (cuts: 'continuous').
 export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(SEGT[tier] * N.sQ[s])));
+// A meridian is one open stroke from pole to pole, so it gets the ring's per-TURN budget (it covers half a turn of φ).
+export const segMOf = (tier) => Math.max(SEGMIN, SEGT[tier]);
 
 // The pass-1 normalisation: the largest radius this family's own profile reaches, equator × latitude, so the shader can
 // divide it out. rMax of a symmetric lean is exactly 1 (base = 1 at t = 0), so this is a no-op on those frames.
@@ -367,7 +379,7 @@ export function updateNest(dt, MS, P, O) {
   let anyOpen = 0;
   for (let k = 0; k < NF; k++) {
     for (let i = 0; i < 4; i++) LK[i] = N.leanK[k * 4 + i];
-    N.norm[k] = normOf(N.mA[k], N.n1, LK, M_PHI, N.n1);
+    N.norm[k] = normOf(N.mA[k], N.n1, LK, N.mA[k], N1_PHI);
   }
   let tot = 0;
   for (let s = 0; s < NF; s++) {
@@ -386,13 +398,15 @@ export function updateNest(dt, MS, P, O) {
     const lop = Math.abs(N.sLean[s * 4] - N.sLean[s * 4 + 1]) > 0.02 || Math.abs(N.sLean[s * 4 + 2] - N.sLean[s * 4 + 3]) > 0.02;
     N.sOpen[s] = N.slip > 0.01 || (N.qOdd[k] && lop) ? 1 : 0;
     anyOpen = anyOpen || N.sOpen[s];
+    N.sSeg[s] = segsOf(O.tier, s);
     N.off[s] = tot;
-    if (s < N.draw) tot += RINGS * segsOf(O.tier, s);
+    if (s < N.draw) tot += RINGS * N.sSeg[s] + MERID * segMOf(O.tier);
   }
   N.open = anyOpen;
   N.off[NF] = tot;
   N.segs = tot;
-  N.segPer = segsOf(O.tier, 0);
+  N.segM = segMOf(O.tier);
+  N.segPer = N.sSeg[0];
   return tot;
 }
 
@@ -416,6 +430,7 @@ const WITN = 32;
 export function witnessR() {
   let s = 0;
   for (let j = 0; j < WITN; j++) s += sf((j / WITN) * TAU, M_PHI, N.n1, N.lean[0], N.lean[1], N.lean[2], N.lean[3]);
+  // (M_PHI, not the loudest family's m: a swap of the loudest family is a jump in the witness and nothing on screen.)
   let w = 0, r = 0;
   for (let k = 0; k < NF; k++) { w += N.ch[k]; r += N.ch[k] * N.size[k] * N.fat * N.norm[k]; }
   return (s / WITN) * (w > 1e-4 ? r / w : SIZE0) * (1 - (1 - DROP_SZ) * N.collapse);

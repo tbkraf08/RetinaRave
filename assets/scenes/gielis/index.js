@@ -14,7 +14,7 @@ import { BANDS, SLOTS } from '../../math/waves.js';
 import { HELP } from './help.js';
 import {
   N, updateNest, resetNest, measureQ, witnessR, waveUpload, segsOf, train, live, positions,
-  RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, WAVE0, SEGT, N1_REST, press, TWIST, MORPHK, TEMPLATE_NAMES,
+  RINGS, PHI_MAX, FLOOR, FIBMAX, N1_PHI, MERID, WAVEW, WAVED, WAVEP, WAVE0, SEGT, N1_REST, press, TWIST, MORPHK, TEMPLATE_NAMES,
 } from './nest.js';
 
 const TAU = Math.PI * 2;
@@ -66,7 +66,7 @@ function info() {
   const m = [];
   for (let s = 0; s < FIBMAX; s++) m.push(N.pc[s] + ':' + +N.sMA[s].toFixed(3) + '/q' + N.sQ[s]);
   return JSON.stringify({
-    n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
+    n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segM: N.segM, merid: MERID, segs: N.segs,
     morph: +N.morph.toFixed(4), template: TEMPLATE_NAMES[N.template], tFade: +N.tFade.toFixed(3), lean: [+N.lean[0].toFixed(3), +N.lean[1].toFixed(3), +N.lean[2].toFixed(3), +N.lean[3].toFixed(3)],
     leanL: [+N.leanK[N.loudest * 4].toFixed(3), +N.leanK[N.loudest * 4 + 1].toFixed(3), +N.leanK[N.loudest * 4 + 2].toFixed(3), +N.leanK[N.loudest * 4 + 3].toFixed(3)],
     leans: Array.from({ length: FIBMAX }, (_, s) => N.pc[s] + ':' + +N.sLean[s * 4].toFixed(2) + '/' + +N.sLean[s * 4 + 1].toFixed(2)), open: Array.from(N.sOpen), collapse: +N.collapse.toFixed(4), slip: +N.slip.toFixed(4), twist: +N.twist.toFixed(4), key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
@@ -208,8 +208,11 @@ export default {
     g.uniform1fv(pr.u('uNorm[0]'), N.sNorm);
     g.uniform4fv(pr.u('uLean[0]'), N.sLean);
     g.uniform1f(pr.u('uN1'), N.n1);
-    g.uniform1f(pr.u('uMPhi'), M_PHI);
+    g.uniform1f(pr.u('uN1Phi'), N1_PHI);
     g.uniform1f(pr.u('uPhiMax'), PHI_MAX);
+    g.uniform1fv(pr.u('uSegR[0]'), N.sSeg);
+    g.uniform1f(pr.u('uSegM'), N.segM);
+    g.uniform1f(pr.u('uMerid'), MERID);
     g.uniform1f(pr.u('uThOff'), STILL ? 0 : N.phiOff);
     g.uniform3f(pr.u('uPsi3'), N.psi[0], N.psi[1], N.psi[2]);
     g.uniform1f(pr.u('uSlip'), N.slip);
@@ -237,7 +240,7 @@ export default {
   hud() {
     return 'gielis pc' + N.loudest + ' m ' + N.mA[N.loudest].toFixed(2) + ' n1 ' + N.n1.toFixed(2) + ' Q ' + N.Q.toFixed(3) +
       ' waves ' + live(N.beatNow) + ' key ' + KC.OUT.key + (KC.OUT.mode ? 'm' : 'M') + ' turn ' + CAM[0].toFixed(2) + ' size ' + N.fill.toFixed(2) +
-      ' tmpl ' + TEMPLATE_NAMES[N.template] + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '/' + N.segs + ' t' + TIER;
+      ' tmpl ' + TEMPLATE_NAMES[N.template] + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '+' + MERID + 'x' + N.segM + '/' + N.segs + ' t' + TIER;
   },
 
   // The six, named for what the eye sees (CONTRACTS §1.16). `wave` reaches the shader through nest.js's WAVED[0].

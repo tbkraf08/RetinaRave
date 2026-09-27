@@ -47,8 +47,11 @@ uniform float uNorm[12];   // and 1/max(1, rMax) of its own profile: the deep pi
 uniform vec4  uLean[12];   // (n2, n3, a, b) PER SLOT: n2 from the family's own chroma, n3 from the mood's valence,
                            // with the section template's offset added on top (nest.js LEAN_C / LEAN_V)
 uniform float uN1;         // the pinch: the beat's breath, one value for the whole nest
-uniform float uMPhi;       // the lobe count of the second (latitude) curve
+uniform float uN1Phi;      // the LATITUDE curve's own, shallower pinch: the body is shaped, never spiky in latitude
 uniform float uPhiMax;     // latitude spans +-uPhiMax * pi/2
+uniform float uSegR[12];   // segments on one of this slot's rings …
+uniform float uSegM;       // …and on one of its meridian strokes (shared: a meridian covers half a turn of phi)
+uniform float uMerid;      // how many meridians each family gets
 uniform float uThOff;      // a new section re-picks the rings' phase (turns)
 uniform vec3  uPsi3;       // ring phase per band: low (pc 0-3), mid (4-7), high (8-11) — flowBass/Mid/High
 uniform float uSlip;       // riser / roll drift the rings in latitude: a closed ring opens into a helix
@@ -102,25 +105,43 @@ void waves(float t, int slot, out float disp, out float pulse, out float hue) {
   hue = ws > 1e-5 ? hs / ws : 0.0;
 }
 
-// One point of slot s, ring r, at ring parameter t in [0, 1): theta = 2 pi q t, so one wave runs the whole
-// closed curve in one bar however many turns that curve takes. The pinch uN1 and the lean uLean are the nest's, the
-// lobe count is the family's; the wave displaces the point radially by a fraction of the family's own radius.
-vec3 ptOf(int slot, int ring, float t, out float pulse, out float hue) {
-  float q = uQt[slot];
-  int band = int(uPc[slot]) / 4;
-  float th = t * GTAU * q + uPsi3[band] + uThOff * GTAU;
-  float phi = (float(ring) / float(uRings - 1) - 0.5) * GPI * uPhiMax + uSlip * t;
+// One point of slot s at (theta, phi). BOTH curves carry the family's species now: the equator's lobe count is its m
+// over q turns, and the latitude profile's is the same m at its own shallower pinch uN1Phi — so the body is a shaped
+// solid rather than a ball of hoops. A rational m does not interpolate, so a key change cross-fades the RADII of both
+// curves. wav is 0 on a meridian: the waves and the shimmer ride the rings, the meridians only carry the flash and
+// the family's hue. The wave displaces the point radially by a fraction of the family's own (normalised) radius.
+vec3 ptAt(int slot, float th, float phi, float t, float wav, out float pulse, out float hue) {
   vec4 Ln = uLean[slot];
   vec2 Qb = Ln.zw;
-  vec4 P2 = vec4(uMPhi, uN1, Ln.x, Ln.y);
   float r1 = mix(sfR(th, vec4(uMA[slot], uN1, Ln.x, Ln.y), Qb), sfR(th, vec4(uMB[slot], uN1, Ln.x, Ln.y), Qb), uMF);
-  float r2 = sfR(phi, P2, Qb);
-  vec3 p = vec3(r1 * cos(th) * r2 * cos(phi), r1 * sin(th) * r2 * cos(phi), r2 * sin(phi)) * (uSz[slot] * uNorm[slot]);
-  float disp;
-  waves(t, slot, disp, pulse, hue);
-  float L = length(p);
-  if (L > 1e-5) p += p * (disp * uSz[slot] * uNorm[slot] / L);
+  float r2 = mix(sfR(phi, vec4(uMA[slot], uN1Phi, Ln.x, Ln.y), Qb), sfR(phi, vec4(uMB[slot], uN1Phi, Ln.x, Ln.y), Qb), uMF);
+  float sc = uSz[slot] * uNorm[slot];
+  vec3 p = vec3(r1 * cos(th) * r2 * cos(phi), r1 * sin(th) * r2 * cos(phi), r2 * sin(phi)) * sc;
+  float disp = 0.0;
+  pulse = 0.0;
+  hue = 0.0;
+  if (wav > 0.5) {
+    waves(t, slot, disp, pulse, hue);
+    float L = length(p);
+    if (L > 1e-5) p += p * (disp * sc / L);
+  }
   return p;
+}
+// A latitude ring: fixed phi, theta round q turns of the ring parameter t, so one wave runs the whole closed curve in
+// one bar however many turns that curve takes.
+vec3 ptRing(int slot, int ring, float t, out float pulse, out float hue) {
+  int band = int(uPc[slot]) / 4;
+  float th = t * GTAU * uQt[slot] + uPsi3[band] + uThOff * GTAU;
+  float phi = (float(ring) / float(uRings - 1) - 0.5) * GPI * uPhiMax + uSlip * t;
+  return ptAt(slot, th, phi, t, 1.0, pulse, hue);
+}
+// A meridian: fixed theta (one of uMerid spread round one turn, carried by the same phase the rings turn on), phi
+// sweeping the whole drawn latitude range.
+vec3 ptMerid(int slot, int mer, float t, out float pulse, out float hue) {
+  int band = int(uPc[slot]) / 4;
+  float th = (float(mer) / uMerid) * GTAU + uPsi3[band] + uThOff * GTAU;
+  float phi = (t - 0.5) * GPI * uPhiMax;
+  return ptAt(slot, th, phi, t, 0.0, pulse, hue);
 }
 
 void camBasis() {
@@ -147,19 +168,24 @@ void main() {
   int slot = 0;
   for (int k = 1; k < 12; k++) { if (s >= uOff[k]) slot = k; }
   int local = s - uOff[slot];
-  int segs = max(1, (uOff[slot + 1] - uOff[slot]) / uRings);
-  int ring = local / segs;
-  int i = local - ring * segs;
-  float t0 = float(i) / float(segs), t1 = float(i + 1) / float(segs);
-  bool open = uOpen[slot] > 0.5 && i == segs - 1;   // a ring the lean or the unwind has opened: skip the wrapping segment
+  int segs = max(1, int(uSegR[slot]));
+  int segM = max(1, int(uSegM));
+  int rings = uRings * segs;                        // this slot's rings first, then its meridians
+  bool mer = local >= rings;
+  int idx = mer ? (local - rings) / segM : local / segs;    // which ring, or which meridian
+  int i = mer ? local - rings - idx * segM : local - idx * segs;
+  int n = mer ? segM : segs;
+  float t0 = float(i) / float(n), t1 = float(i + 1) / float(n);
+  // a ring the lean or the unwind has opened: skip the wrapping segment (a meridian is open by construction)
+  bool open = !mer && uOpen[slot] > 0.5 && i == n - 1;
   float q0, q1, h0, h1;
-  vec3 p0 = ptOf(slot, ring, t0, q0, h0);
-  vec3 p1 = ptOf(slot, ring, t1, q1, h1);
+  vec3 p0 = mer ? ptMerid(slot, idx, t0, q0, h0) : ptRing(slot, idx, t0, q0, h0);
+  vec3 p1 = mer ? ptMerid(slot, idx, t1, q1, h1) : ptRing(slot, idx, t1, q1, h1);
   float hueT = uPc[slot] / 12.0 - 0.5;          // the anchor is the MIDDLE of the twelve hues, not the first of them
   hueT = mix(hueT, h0, clamp(q0 * ${K.WHUE_K.toFixed(2)}, 0.0, WHUE_M));
   // the quiet families never fall below the floor (nest.js FLOOR), and a kick flashes everything under the median
   float bri = uBr[slot] + FLASH * uFlashK * clamp((uMed - uBr[slot]) / max(uMed, 0.05), 0.0, 1.0);
-  bri *= 1.0 + uShim * sin(SHIMK * t0 * GTAU + float(slot) * 1.7);
+  if (!mer) bri *= 1.0 + uShim * sin(SHIMK * t0 * GTAU + float(slot) * 1.7);   // the shimmer rides the rings
   bri *= 1.0 + q0;                              // the travelling bump's own brightness pulse
   bri *= clamp(uDrawF - float(slot), 0.0, 1.0); // the family the build is adding fades in over ~0.75 s
   float v0, v1;
