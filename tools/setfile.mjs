@@ -1,0 +1,13 @@
+const p = process.env.DBG, f = process.argv[2], sel = process.argv[3] || '#file';
+const l = await (await fetch(`http://127.0.0.1:${p}/json`)).json();
+const t = l.find((x) => x.type === 'page');
+const ws = new WebSocket(t.webSocketDebuggerUrl);
+let id = 0; const pend = {};
+ws.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pend[d.id]) { pend[d.id](d.result || d.error); delete pend[d.id]; } };
+await new Promise((r) => (ws.onopen = r));
+const send = (method, params = {}) => new Promise((r) => { pend[++id] = r; ws.send(JSON.stringify({ id, method, params })); });
+await send('DOM.enable');
+const doc = await send('DOM.getDocument');
+const n = await send('DOM.querySelector', { nodeId: doc.root.nodeId, selector: sel });
+console.log('node', n.nodeId, 'setFileInputFiles', JSON.stringify(await send('DOM.setFileInputFiles', { files: [f], nodeId: n.nodeId })));
+ws.close();

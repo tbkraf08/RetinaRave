@@ -8,12 +8,32 @@ const WORKLET_SRC = `class Tap extends AudioWorkletProcessor { constructor(){ su
   process(inputs){ const inp = inputs[0]; if (inp && inp.length) { const L = inp[0], R = inp[1] || L, b = this.b; for (let i = 0; i < L.length; i++) { b[this.n++] = (L[i] + R[i]) * 0.5; if (this.n === 512) { this.port.postMessage(b.slice(0)); this.n = 0; } } } return true; } }
 registerProcessor('synapse-tap', Tap);`;
 
+// Every Tap ever built. sources/file.js reaches the live one through this in deterministic mode (engine/sources/ may
+// not import features-synapse.js, which owns the instance — that edge would close a cycle through engine.js).
+export const TAPS = [];
+
 export class Tap {
   constructor() {
     this.an = null;
     this.mode = 'none';
     this.lastPush = 0;
     this.ctx = null;
+    // v0.15 E1: the clock `lastPush` and the beat-clock lead are measured on. In deterministic file mode the caller
+    // passes the frame clock's ms to pushBlock, so `lead` is a function of the frame and not of the wall clock.
+    this.clock = () => performance.now();
+    this.silent = false;
+    TAPS.push(this);
+  }
+
+  // v0.15 E1: deterministic file mode. The worklet is still attached to the (silent) bus and still posts in real time —
+  // its zero blocks must never reach the Analyzer, so the port handler drops them while this is set.
+  mute(on) { this.silent = !!on; }
+
+  // v0.15 E1: push one exact 512-sample block on the main thread, with the clock's ms for the beat-clock lead.
+  pushBlock(b, ms) {
+    if (!this.an) return;
+    this.lastPush = ms;
+    this.an.push(b);
   }
   async attach(ctx, source) {
     this.ctx = ctx;
@@ -28,7 +48,8 @@ export class Tap {
       z.gain.value = 0;
       node.connect(z).connect(ctx.destination);
       node.port.onmessage = (e) => {
-        this.lastPush = performance.now();
+        if (this.silent) return; // deterministic file mode: the bus is silent and the source pushes the real blocks
+        this.lastPush = this.clock();
         this.an.push(e.data);
       };
       this.mode = 'worklet';
@@ -51,7 +72,7 @@ export class Tap {
         this.fall.getFloatTimeDomainData(this.td);
         an.push(this.td.subarray(8192 - n));
         this.lastT = t;
-        this.lastPush = performance.now();
+        this.lastPush = this.clock();
       }
     }
     A.kick *= Math.exp(-d / 0.16);
@@ -61,7 +82,7 @@ export class Tap {
     A.dropHold *= Math.exp(-d / 14);
     A.dropAge += d;
     A.resolve *= Math.exp(-d / 2.2);
-    const T = an.tempo, lead = this.mode === 'none' ? 0 : Math.min(0.05, (performance.now() - this.lastPush) / 1000) + 0.03;
+    const T = an.tempo, lead = this.mode === 'none' ? 0 : Math.min(0.05, (this.clock() - this.lastPush) / 1000) + 0.03;
     A.beat = T.beat + lead / T.period;
     A.period = T.period;
     A.flow += d * (0.015 + 0.9 * A.level + 0.6 * A.kick + 1.2 * A.drop);

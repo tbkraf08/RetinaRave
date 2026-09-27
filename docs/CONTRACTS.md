@@ -770,6 +770,8 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `roll` | level | the drum roll is accelerating | build evidence |
 | `swell` | level | energy swelling | build evidence |
 | `hp` | level | the bass was pulled (high-pass sweep) | build evidence |
+| `heardT` | raw | the audio time the listener hears at this frame (s); -1 with no audio | nothing visual: the base every event onset and PCM block is stamped in |
+| `fileOn` | level | a file is the source (1) or not (0) | nothing visual: the harness and the trace read it |
 <!-- FEATS:end -->
 
 ## Friction log

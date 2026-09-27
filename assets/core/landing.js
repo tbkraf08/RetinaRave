@@ -7,6 +7,8 @@ import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
 import { SC, REG } from './scenes.js';
 
+const DRAG = 'drag'; // #landing's class while a file hovers over the card
+
 const $ = (id) => document.getElementById(id);
 export const LANDING = { peek: false, picked: -1, tiles: 0 }; // peek: a tile started the demo and the card stays up · picked: the tile's id (-1 = director)
 
@@ -45,7 +47,38 @@ export function initLanding() {
     box.appendChild(b);
     LANDING.tiles++;
   }
+  initFile();
   mark();
+}
+
+// v0.15 E1 — "play a file": the hidden <input type=file> behind the .alt-row link, and the same thing by dropping an audio
+// file anywhere on the card. The file is decoded in this page (File.arrayBuffer -> decodeAudioData in engine/sources/file.js);
+// nothing is uploaded and no network request is made. Mobile gets the input (a picker); the drop listeners cost nothing there.
+export function initFile() {
+  const inp = $('file'), link = $('pickfile'), card = $('landing');
+  if (inp && link) {
+    link.onclick = (e) => { e.preventDefault(); inp.click(); };
+    inp.onchange = () => play(inp.files && inp.files[0]);
+  }
+  if (!card) return;
+  const over = (e) => { if (!e.dataTransfer) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; card.classList.add(DRAG); };
+  card.addEventListener('dragenter', over);
+  card.addEventListener('dragover', over);
+  card.addEventListener('dragleave', (e) => { if (e.target === card) card.classList.remove(DRAG); });
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    card.classList.remove(DRAG);
+    play(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+}
+
+// One picked / dropped file becomes the source. A start hides the card like any other (hud.js's AU.onRun).
+function play(f) {
+  if (!f) return;
+  leavePeek();
+  const m = $('msg');
+  if (m) m.textContent = 'playing ' + f.name;
+  ENGINE.start('file', { src: f });
 }
 
 // Force a scene (-1 = the director) and, while the card is up, show it live on the silent demo. During the show (a source
