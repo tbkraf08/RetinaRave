@@ -87,6 +87,7 @@ export async function startFile(src, opt = {}) {
   // different amount: the MS trace would still match frame for frame but a screenshot of a real track would not.
   // window.__pauseAt / __PAUSE are tools/cdp.js's CLOCK=1 shim; on a page without it this is two harmless properties.
   holdClock(det);
+  if (det) armTap();                                // BEFORE the decode: see armTap
   const name = typeof src === 'string' ? src : (src && src.name) || 'file';
   const F = AU.file = {
     name, sr: ctx.sampleRate, n: 0, dur: 0, L: null, R: null, mono: null,
@@ -139,23 +140,35 @@ function downmix(L, R) {
   return m;
 }
 
-// Deterministic mode: shims in place of the AnalyserNodes, the worklet taps silenced, the PCM bus fed locally, a seeded
-// Math.random. Everything here is undone by teardown().
+// Deterministic mode, part one — BEFORE the decode, because the decode takes a different number of milliseconds every run
+// and everything here is a race against it:
+//   · the synapse worklet is already attached to the (silent) bus and already posting 512 zero blocks in real time. Left
+//     alone it pushes a DIFFERENT NUMBER of blocks of silence into the Analyzer before the playhead starts — which is what
+//     made 37 of the 113 trace columns (kick, snare, hat, beatSyn, the whole grid, the moods) differ between two runs while
+//     every v3 column already matched to the bit.
+//   · Tap.mode is 'none' until addModule resolves and 'worklet' after, and tap.frame's beat-clock `lead` is 0 in the first
+//     case and 0.03+ in the second — so the frame the flip lands on moved beatSyn and everything downstream. Pin it.
+//   · the PCM bus must never build its own worklet here (the bus is silent; the source pushes the real blocks).
+//   · the seeded PRNG (features-slow.js:125, see the module header) has to be in place before the first section can fire.
+function armTap() {
+  for (const t of TAPS) { t.mute(true); t.clock = () => detMs; }
+  PCM.local = true;
+  PCM.detach();
+  PCM.map = null;
+  PCM.reset();
+  if (!realRandom) { realRandom = Math.random; Math.random = seededRandom(DET_SEED); }
+}
+
+// Deterministic mode, part two — after the decode: the analyser shims over the decoded mono, and the block scratch.
 function armDet(F) {
   realAn = { fast: AU.fast, slow: AU.slow };
   AU.fast = makeAnalyser(realAn.fast.fftSize, realAn.fast.smoothingTimeConstant);
   AU.slow = makeAnalyser(realAn.slow.fftSize, realAn.slow.smoothingTimeConstant);
   AU.fast.setSource(F.mono, F.sr);
   AU.slow.setSource(F.mono, F.sr);
-  for (const t of TAPS) { t.mute(true); t.clock = () => detMs; } // the worklet hears the silent bus: its zeros are a lie
-  PCM.local = true;
-  PCM.detach();
-  PCM.map = null;
-  PCM.reset();
   blkM = new Float32Array(HOP);
   blkL = new Float32Array(HOP);
   blkR = new Float32Array(HOP);
-  if (!realRandom) { realRandom = Math.random; Math.random = seededRandom(DET_SEED); }
 }
 
 // Real-time mode: the buffer node, audible, from F.at.
