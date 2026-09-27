@@ -26,5 +26,8 @@ d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
 f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg
 95fd7d73b17a3e26b4b77b9cddb6206a  s9-f360.jpg
 4e2108a7f958a280953eabfc1a595f20  s9-f840.jpg
-2c1b21c8c5553ab84008ac7060cbfa00  s10-f360.jpg
-2e978a09fc3ebb8d1aa428911a6be16d  s10-f840.jpg
+# PASS 1 (2026-09-27, the user: 'shouldn't the superformula be making more shapes?'): lobes at rest (N1_REST 12 -> 2.0, N1_BEAT 0.6),
+# the per-family lean, the latitude species + meridians — s10 re-based on the merged pass-1 tree (the worker's two runs = the orchestrator's):
+# the build's pair was 2c1b21c8 / 2e978a09.
+4f6c8cb0967dc1a84bda3b3a297b575f  s10-f360.jpg
+1dc4cb4c398172f5339af25aac1cd469  s10-f840.jpg

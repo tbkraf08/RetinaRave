@@ -371,3 +371,28 @@ then id 10 stays forced-only, `score()` 0, reached by `n` or `&scene=10`.
   changed this machine's transition rendering earlier, and it should be re-based or explained before the next release.
 - **`check.js`'s four warns** are three pre-existing line caps and the missing `site/thumbs/gielis.jpg`. One `tools/thumbs.sh`
   run closes the fourth when the look is approved.
+
+## §7 Pass 1 — "shouldn't the superformula be making more shapes?" (2026-09-27)
+
+The user's first look, then "yes retune". Three items (DECISIONS §47 addendum 1; the worker's "Pass 1" in `docs/workers/gielis.md`):
+lobes at rest (`N1_REST` 12 → 2.0, `N1_BEAT` 1.2 → 0.6, `normOf()`), the per-family lean (`n2 = 1 − 0.7·chroma` — the brief's sign was
+wrong, measured; `n3` from valence; templates as offsets; `round` → `bloom`), the latitude species + six meridians per family.
+
+| ruler | the build | pass 1 |
+|---|---|---|
+| rest Q per species (`#test`, base lean) | 0.998 → 0.991 (twelve circles) | 0.936 (root) → 0.776 (tritone) |
+| bar-series swing, fake peak beats 29–32 | 0.219 / 0.219 / 0.219 / 0.325 | 0.457 / 0.469 / 0.469 / 0.508 |
+| groove per-beat Q swing median (33 s trace) | 0.155 | **0.375** |
+| groove beats with swing ≥ 0.15 | 8/13 (62 %) | **13/13** |
+| groove rest Q median | 0.994 | 0.836 (a shape, not a circle — by design) |
+| n1 trough median | 1.24 | 0.62 |
+| monitor max / viol | 0.0533 / [] | 0.0557 / [] |
+| bench vs TORUS2 · segments at tier 3 | 0.50× · 7 140 | 0.44× · 11 780 |
+| p95 luminance, groove shots 00–07 | 0.20–0.45 | 0.20–0.44 (unchanged — not in this pass) |
+| s10 md5 · still | 2c1b21c8 / 2e978a09 · 89664dad / fe2809bc | 4f6c8cb0 / 1dc4cb4c · fd8e256b / 88f6d5cb |
+
+**The look** (`montage-gi-syd-{groove,intro,break}-p1.jpg`, same windows as §3): the meridians turn the lantern into a wireframe globe;
+its silhouette is squared, pentagonal or starred frame to frame, and the pinched frames read as shapes rather than flinches (groove 26, 29,
+33; intro 07–09). The globe look now dominates the way the hoops did. Size (~40 % of the frame) and brightness are unchanged and are the
+next pass. Not met, by design: the rest between beats is no longer Q ≥ 0.9 — the user's "no beat == more of a circle (some variation)"
+is now read as "some variation".

@@ -2360,3 +2360,21 @@ slot; until then id 10 is forced-only, `score()` 0, reached by `n` or `&scene=10
 pre-existing on this machine (`641f6633` measured, `f0c9d637` recorded in `tools/accept.sh`, also on a leftover shot of
 2026-09-25): not moved by v0.14, to be re-based or explained before the next release. The **`oklch` variant** stays a later opt-in.
 The **Cloudflare dashboard steps** are still open from v0.6. **The user has not looked at GIELIS yet**; nothing is tagged or pushed.
+
+**§47 addendum 1 (2026-09-27, the user's first look: *"shouldn't the superformula be making more shapes?"* → *"yes retune"*):** the
+diagnosis in the constants, not the formula — `N1_REST` 12 is a circle for every m, so the twelve species existed only in the thump's fifth
+of a beat; the base lean (1,1,1,1) is round and the `round` template equalled it; the latitude curve had one fixed lobe count, so the body
+was a ball of hoops. **Pass 1 (the worker, three commits 58353ac / 2c27578 / 8b1b03f, merged):** lobes at rest — `N1_REST` 2.0 (the
+brief's lean 3 overridden by its own gate: the root reads Q 0.936, the tritone 0.776; twelve species 0.94 → 0.78 where the build had twelve
+circles 0.998 → 0.991), `N1_BEAT` 0.6, a radius normalisation `normOf()` (`NRM` 64) because the deep pinch grew a family 9.8× its radius;
+the per-family lean — `n2 = 1 − 0.7·chroma` (**the brief's `1 + 1.5·chroma` had the wrong sign**: (2, 2) is exactly a circle, so the loudest
+family became the roundest thing on screen and item 1's gain was spent — measured, rest Q 0.936 → 0.976), `n3 = 1 + (0.5 − valence)·2`,
+the template an offset on it, `round` → `bloom` (2, 0.5, 1, 1), `uLean[12]`; the latitude curve takes the family's own m at `N1_PHI` 4 and
+six meridians per family (`MERID` 6, `SEGMAX` 112; segments per tier 5 296 / 8 102 / 10 086 / 11 780, bench 0.44× TORUS2, `timeUpdate`
+0.15 ms); the sub fattens the radius, not `a, b`. Monitor `viol []` max 0.0557; s10 4f6c8cb0 / 1dc4cb4c, still fd8e256b / 88f6d5cb (re-based
+twice by design, item 2 byte-identical). **On the track** (`gielis-window-gi-syd-{groove,intro,break}-p1.txt`, `groove-trace-p1` at 33 s):
+per-beat Q swing median 0.130/0.155 → **0.375, 13/13 beats ≥ 0.15** (the build: 1/13 and 8/13), rest Q 0.994 → 0.836 (no longer a circle,
+by design), n1 trough 0.62. The orchestrator's look at `montage-gi-syd-{groove,intro}-p1.jpg`: the meridians turn the lantern into a
+wireframe globe whose silhouette is now squared, pentagonal or starred frame to frame, and the pinched frames read as shapes rather than
+flinches; the globe look now dominates the way the hoops did; still ~40 % of the frame and p95 luminance 0.20–0.44 — size and brightness
+were not in this pass and are next. The user has not seen pass 1.

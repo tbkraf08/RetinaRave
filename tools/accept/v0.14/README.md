@@ -110,3 +110,5 @@ python3 tools/accept/v0.13/sat13.py tools/accept/v0.14/gi-syd-break-*.jpg # p95 
 
 `../../test_gielis.js` (node: the circle limit, the p/q closure, the star's Q, the GLSL twin's constants, the interval table, the
 ruler's cost) and `../../test_torus2.js` (the `waves.js` lift left TORUS2 alone) are the node side.
+
+- **Pass 1 (2026-09-27, "shouldn't the superformula be making more shapes?")** — `gielis-window-gi-syd-{groove,intro,break}-p1.txt` + `montage-gi-syd-{groove,intro,break}-p1.jpg` (the same windows as the build's), `gielis-window-gi-syd-groove-trace-p1.txt` (T0 33, 250 samples; perbeat14: swing med 0.375, 13/13). The md5 files carry both the build's and pass 1's pairs.
