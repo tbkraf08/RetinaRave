@@ -13,7 +13,7 @@
 // no waves, no flash, no shimmer, no growth. That frame is the `still` reference (hooks.still(1) forces exactly it) and
 // every later step keeps it, so a visual step that moves a still frame has moved something it should not have.
 
-import { sf, greenQ, M0, TAU } from '../../math/gielis.js';
+import { sf, greenQ, mOf, TAU, N1_MIN } from '../../math/gielis.js';
 import { BANDS, SLOTS } from '../../math/waves.js';
 
 // --- the nest (spec 1) ---
@@ -135,6 +135,26 @@ function families(MS, floor) {
   N.med = 0.5 * (SRT[5] + SRT[6]);      // the median brightness: the kick will flash everything under it (step 5)
 }
 
+// --- 2. the species ---------------------------------------------------------------------------------------------
+// Family k's lobe count is the just-intonation ratio of its interval above the key, scaled by M0 (math/gielis.js). The
+// key is keycolour.js's (index.js resolves it): the real key while keyConf is trusted, the nearest fifth of harmAngle
+// while it is not — the same gate the hue is on, so the shape logic and the colour logic agree. A rational m does not
+// interpolate cleanly (m and m + ε are unrelated shapes), so a key change CROSS-FADES the two radii in the vertex
+// shader: mA is the new species, mB the one before it, mFade runs 1 → 0 over MTC.
+function species(dt, key) {
+  if (key !== N.mKey) {
+    N.mB.set(N.mA);
+    for (let k = 0; k < NF; k++) {
+      const e = mOf(k - key);
+      N.mA[k] = e.m;
+      N.qt[k] = e.turns;
+    }
+    N.mFade = N.mKey < 0 ? 0 : 1;      // the first build is not a change
+    N.mKey = key;
+  }
+  N.mFade = Math.max(0, N.mFade - dt / MTC);
+}
+
 // The uniform payload of the waves — empty until step 4.
 export function waveUpload(ages, amps, hues) {
   ages.fill(-1);
@@ -148,10 +168,11 @@ export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(
 
 // --- the frame --------------------------------------------------------------------------------------------------
 // `floor` is the brightness floor in force (the `glow` parameter's value); `tier` the smoothed quality tier.
-export function updateNest(dt, MS, floor, tier) {
+export function updateNest(dt, MS, floor, tier, key, n1pin) {
   families(MS, floor);
+  species(dt, key);
   N.beatNow = MS.beatCount + MS.beatPhase;
-  N.n1 = N1_REST;
+  N.n1 = n1pin >= 0 ? Math.max(N1_MIN, n1pin) : N1_REST;
   for (let i = 0; i < 4; i++) N.lean[i] = BASE[i];
   N.open = 0;
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
@@ -164,12 +185,9 @@ export function updateNest(dt, MS, floor, tier) {
   for (let s = 0; s < NF; s++) {
     const k = ord[s];
     N.pc[s] = k;
-    N.mA[k] = M0;
-    N.mB[k] = M0;
-    N.qt[k] = 1;
     N.sMA[s] = N.mA[k];
     N.sMB[s] = N.mB[k];
-    N.sQ[s] = N.qt[k];
+    N.sQ[s] = N.qt[k] || 1;
     N.sSz[s] = N.size[k];
     N.sBr[s] = N.bri[k];
     N.off[s] = tot;

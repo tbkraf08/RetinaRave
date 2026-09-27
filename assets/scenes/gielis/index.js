@@ -34,7 +34,7 @@ const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
-let STILL = 0;
+let STILL = 0, KEYPIN = null, N1PIN = -1;
 
 // The hue coordinate of pitch class pc, as the shader reads it: the anchor is the MIDDLE of the twelve hues.
 const hueOf = (pc) => pc / 12 - 0.5;
@@ -61,7 +61,7 @@ function info() {
   const m = [];
   for (let s = 0; s < FIBMAX; s++) m.push(N.pc[s] + ':' + +N.sMA[s].toFixed(3) + '/q' + N.sQ[s]);
   return JSON.stringify({
-    n1: +N.n1.toFixed(4), Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
+    n1: +N.n1.toFixed(4), pinch: N1PIN, Q: +N.Q.toFixed(4), loudest: N.loudest, m, draw: N.draw, seg: N.segPer, segs: N.segs,
     morph: +N.morph.toFixed(4), template: N.template, key: KC.OUT.key, mode: KC.OUT.mode, hue: +KC.OUT.hue.toFixed(4),
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
     med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4),
@@ -73,6 +73,16 @@ function info() {
 const green = () => ({ Q: +N.Q.toFixed(6), A: +N.A.toFixed(6), L: +N.L.toFixed(6), n1: +N.n1.toFixed(4), m: N.mA[N.loudest] });
 // &still=1 / hooks.still(1) — every uniform a later step introduces at its rest value: the no-op gate of every visual commit
 const still = (v) => { STILL = v === undefined || v === '' ? 1 : +v; };
+// two arguments, so it is reached as CARD.REG[10].scene.hooks.key(k, mode) (CONTRACTS §1.4): pin key / mode inside our
+// own update — MS is never written. It moves the colours AND the shapes, because both are read off the same key.
+function key(k, m) {
+  KEYPIN = k === null || k === undefined || k < 0 ? null : { k: (((k | 0) % 12) + 12) % 12, m: (m | 0) ? 1 : 0 };
+  return JSON.stringify(KEYPIN);
+}
+
+// &pinch=1.2 — pin n1, the superformula's pinch, so the shape at a chosen roundness can be shot and measured (NAV2's
+// hooks.rho is the same instrument). A read of it is hooks.info().n1; -1 releases it.
+const pinch = (v) => { N1PIN = v === undefined || v === '' || +v < 0 ? -1 : +v; return N1PIN; };
 
 export default {
   name: 'gielis',
@@ -87,7 +97,7 @@ export default {
   rt: {},
   // the continuity monitor's shape (HARNESS "Continuity monitor"): CARD.NAV = CARD.REG[10].scene.state
   state: { n1: N1_REST, Q: 1, cPath: CPATH, pathCut: 9, kick: { x: 0 }, baby: null, mode: 'nest' },
-  hooks: { info, green, still },
+  hooks: { info, green, still, key, pinch },
 
   // never auto-picked until the user approves it (DECISIONS §15: a registered scene must not move a reference pick)
   score() {
@@ -109,7 +119,7 @@ export default {
     // colour: the key as a hue ANCHOR on the circle of fifths, major warm / minor cool by PULL, the keyConf gate and
     // the ~2 s ease are all inside math/keycolour.js — imported, never re-derived (DECISIONS §36 spec 3).
     const mood = (this.ctx.LOOK && this.ctx.LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
-    const A = KC.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, mood.hue, null);
+    const A = KC.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, mood.hue, KEYPIN);
     MOOD[0] = A.hue;
     MOOD[1] = Math.min(1.2, (0.35 + 0.65 * mood.sat) * A.sat);
     MOOD[2] = 0.5 + 0.7 * mood.bri;
@@ -117,7 +127,7 @@ export default {
 
     // the brightness floor: how brightly the inner shapes are kept lit (the `glow` parameter of step 8)
     const floor = FLOOR * (1 - GLOWQ * Math.max(MS.hush, MS.calm));
-    updateNest(dt, MS, floor, TIER);
+    updateNest(dt, MS, floor, TIER, A.key, N1PIN);
     measureQ();
 
     // the camera. The nest is centred, so the distance is solved from the fill of the SHORT edge: a point at radius r
