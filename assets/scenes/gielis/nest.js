@@ -14,7 +14,7 @@
 // every later step keeps it, so a visual step that moves a still frame has moved something it should not have.
 
 import { sf, greenQ, mOf, TAU, N1_MIN } from '../../math/gielis.js';
-import { BANDS, SLOTS } from '../../math/waves.js';
+import { mkWaves, BANDS, SLOTS } from '../../math/waves.js';
 
 // --- the nest (spec 1) ---
 export const RINGS = 7;          // latitude rings per family
@@ -68,6 +68,11 @@ export const SEGMIN = 12;
 
 const NF = 12;
 const SRT = new Float32Array(NF);
+const WV = mkWaves();                            // OUR OWN ring buffer — never TORUS2's eight slots (math/waves.js)
+const WAGE = new Float32Array(BANDS * SLOTS);    // ages in beats, as mkWaves reports them
+const WAMP = new Float32Array(BANDS * SLOTS);    // the amplitude each was launched with
+const WHUE = new Float32Array(BANDS * SLOTS);    // OUR own column: the hue coordinate of the launching family
+const WOLD = new Float32Array(BANDS * SLOTS);
 
 export const N = {
   ch: new Float32Array(NF),        // per PITCH CLASS: the family weight (chroma, or the fifths fallback)
@@ -95,11 +100,15 @@ export const N = {
   beatNow: 0, still: 0, fill: 0.6, phrase: 0,
 };
 
-export const train = () => null;
-export const live = () => 0;
-export const positions = () => [];
+export const train = WV.train;
+export const live = WV.live;
+export const positions = WV.positions;
 
 export function resetNest() {
+  WV.reset();
+  WAGE.fill(-1);
+  WOLD.fill(-1);
+  WHUE.fill(0);
   N.mKey = -1;
   N.n1 = N1_REST;
   N.fibF = FIBMAX;
@@ -169,11 +178,26 @@ export const press = (beatPhase) => Math.pow(Math.max(0, Math.cos(TAU * beatPhas
 // lean changed, and the only one that is a reparametrisation rather than a number.
 export const pinchOf = (d) => 1 / (1 / N1_REST + (1 / N1_BEAT - 1 / N1_REST) * d);
 
-// The uniform payload of the waves — empty until step 4.
+// --- 4. the waves -----------------------------------------------------------------------------------------------
+// The ring buffer is math/waves.js's, per caller, so TORUS2's eight slots stay TORUS2's. What is ours is the HUE each
+// wave carries — the note, as MAXWELL was validated to do: the launching family's own hue. mkWaves() does the edge
+// detection inside step(), so a fresh launch is found by watching the ages it reports: a slot whose age just fell, or
+// came alive, was written this frame.
+function waves(MS, hueOf) {
+  WOLD.set(WAGE);
+  WV.step([MS.kick, MS.snare, MS.hat], N.beatNow, MS.beat);
+  WV.fill(WAGE, WAMP, N.beatNow);
+  for (let i = 0; i < WAGE.length; i++) {
+    if (WAGE[i] >= 0 && (WOLD[i] < 0 || WAGE[i] < WOLD[i])) WHUE[i] = hueOf(N.loudest);
+  }
+}
+
+// The uniform payload of the waves: ages, amplitudes, hues (empty while `still` is pinned).
 export function waveUpload(ages, amps, hues) {
-  ages.fill(-1);
-  amps.fill(0);
-  hues.fill(0);
+  if (N.still) { ages.fill(-1); amps.fill(0); hues.fill(0); return; }
+  ages.set(WAGE);
+  amps.set(WAMP);
+  hues.set(WHUE);
 }
 
 // Segments on one ring of slot s: they scale with the family's turns (a five-turn ring covers five times the θ),
@@ -182,7 +206,8 @@ export const segsOf = (tier, s) => Math.max(SEGMIN, Math.min(SEGMAX, Math.round(
 
 // --- the frame --------------------------------------------------------------------------------------------------
 // P is the six visual parameters (§1.16; inline expressions until step 8 moves them into the slot verbatim).
-// O = {key, tier, pinch, still} — the resolved key, the smoothed quality tier, hooks.pinch and hooks.still.
+// O = {key, tier, pinch, still, hueOf} — the resolved key, the tier, hooks.pinch / hooks.still, and the hue of a
+// pitch class (index.js's, because it is the shader's hue coordinate).
 export function updateNest(dt, MS, P, O) {
   N.still = O.still;
   families(MS, P.glow);
@@ -200,6 +225,8 @@ export function updateNest(dt, MS, P, O) {
   N.gain = MS.presence < PRES0 ? 0 : Math.min(1.6, (0.3 + 0.7 * MS.presence) * (1 + (DROP_G - 1) * MS.dropEnv));
   N.draw = FIBMAX;
   N.fibF = FIBMAX;
+
+  if (!O.still) waves(MS, O.hueOf);
 
   // the drawn slots in loudness order, and the segment offsets the vertex shader indexes by
   const ord = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].sort((x, y) => N.ch[y] - N.ch[x]);

@@ -12,7 +12,7 @@ import { mkAnchor } from '../../math/keycolour.js';
 import { BANDS, SLOTS } from '../../math/waves.js';
 import { HELP } from './help.js';
 import {
-  N, updateNest, resetNest, measureQ, rimR, waveUpload, segsOf,
+  N, updateNest, resetNest, measureQ, rimR, waveUpload, segsOf, train, live, positions,
   RINGS, PHI_MAX, FLOOR, FIBMAX, M_PHI, WAVEW, WAVED, WAVEP, SEGT, N1_REST,
 } from './nest.js';
 
@@ -34,7 +34,7 @@ const MOOD = new Float32Array(3);
 const CAM = [0, CAM_EL, 3.2, FOV];
 const CPATH = [0, 0];
 const P = { breath: 1, glow: FLOOR };            // the visual parameters in force this frame
-const O = { key: 0, tier: 3, pinch: -1, still: 0 };   // the pins and the tier
+const O = { key: 0, tier: 3, pinch: -1, still: 0, hueOf: null };   // the pins, the tier and the hue map
 let QS = 0.6, TIER = 3, ASP = 16 / 9, SPREAD = 0.5, STROKE = 2.6;
 let STILL = 0, KEYPIN = null, N1PIN = -1;
 
@@ -68,7 +68,7 @@ function info() {
     sat: +KC.OUT.sat.toFixed(3), spread: +SPREAD.toFixed(3), beat: +N.beatNow.toFixed(3), press: +N.press.toFixed(4),
     med: +N.med.toFixed(4), flash: +N.flash.toFixed(4), shim: +N.shim.toFixed(4), turn: +CAM[0].toFixed(4),
     size: +N.fill.toFixed(4), dist: +CAM[2].toFixed(3), tier: TIER, still: STILL,
-    live: 0, kick: [], snare: [], hat: [],
+    live: live(N.beatNow), kick: positions(0, N.beatNow), snare: positions(1, N.beatNow), hat: positions(2, N.beatNow),
   });
 }
 // Green's ruler on the loudest family (nest.js measureQ) — read only, never a pin (CONTRACTS §1.4).
@@ -99,7 +99,7 @@ export default {
   rt: {},
   // the continuity monitor's shape (HARNESS "Continuity monitor"): CARD.NAV = CARD.REG[10].scene.state
   state: { n1: N1_REST, Q: 1, cPath: CPATH, pathCut: 9, kick: { x: 0 }, baby: null, mode: 'nest' },
-  hooks: { info, green, still, key, pinch },
+  hooks: { info, green, still, key, pinch, train },
 
   // never auto-picked until the user approves it (DECISIONS §15: a registered scene must not move a reference pick)
   score() {
@@ -135,6 +135,7 @@ export default {
     O.tier = TIER;
     O.pinch = N1PIN;
     O.still = STILL;
+    O.hueOf = hueOf;
     updateNest(dt, MS, P, O);
     measureQ();
 
@@ -205,7 +206,7 @@ export default {
 
   hud() {
     return 'gielis pc' + N.loudest + ' m ' + N.mA[N.loudest].toFixed(2) + ' n1 ' + N.n1.toFixed(2) + ' Q ' + N.Q.toFixed(3) +
-      ' waves 0 key ' + KC.OUT.key + (KC.OUT.mode ? 'm' : 'M') + ' turn ' + CAM[0].toFixed(2) + ' size ' + N.fill.toFixed(2) +
+      ' waves ' + live(N.beatNow) + ' key ' + KC.OUT.key + (KC.OUT.mode ? 'm' : 'M') + ' turn ' + CAM[0].toFixed(2) + ' size ' + N.fill.toFixed(2) +
       ' tmpl ' + N.template + ' morph ' + N.morph.toFixed(2) + ' seg ' + N.segPer + '/' + N.segs + ' t' + TIER;
   },
 
