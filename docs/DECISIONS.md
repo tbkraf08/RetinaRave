@@ -2198,3 +2198,9 @@ f2342b7f twice. AUDIT-v0.13's eighth section. The user has not seen it; the swin
 to `main` (retinarave.com). NAV2 stays id 8 / key `9`, forced-only, `score()` 0 — the §39 swap question (NAV2 → id 0 / home) is answered:
 no swap; NAV (id 0) stays home and byte-identical.
 
+**§46 addendum 8 (2026-09-27, the same day, after the tag):** the user: *"I wouldn't say nav2 validated. (I'm just taking a break tuning
+it)"*. The word "validated" in the §46 closing line, in the v0.13 commit message and in the first NEXT-SESSION-PROMPT after the tag is
+**wrong**: v0.13 is tagged and deployed, NAV2 is **paused mid-tune, not validated**. NAV2's mechanics (the `beat.js` press, the roots,
+`K_R`, `V_INT`, the running-peak bump) are therefore not a proven model and are not copied into GIELIS (§47); only the user's music
+descriptions from the NAV2 sessions carry over. Do not touch NAV2 (id 8, key `9`) until the user resumes it.
+
