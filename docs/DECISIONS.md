@@ -2378,3 +2378,11 @@ by design), n1 trough 0.62. The orchestrator's look at `montage-gi-syd-{groove,i
 wireframe globe whose silhouette is now squared, pentagonal or starred frame to frame, and the pinched frames read as shapes rather than
 flinches; the globe look now dominates the way the hoops did; still ~40 % of the frame and p95 luminance 0.20–0.44 — size and brightness
 were not in this pass and are next. The user has not seen pass 1.
+
+**§47 addendum 2 (2026-09-27, tagged and pushed on the user's word):** *"is the gielis scene tagged and pushed? if not can do that now"*
+(and the user's note on `NEXT-SESSION-PROMPT.md`: "ok to tag and push before starting new work"). **v0.14 = pass 1 as merged**:
+`releases/retinarave-v0.14.html`, package.json 0.14.0, `site/thumbs/gielis.jpg` from the build (`thumbs.sh 10:360`), tag `v0.14`, push →
+retinarave.com. No sweep (memory `feedback_sweep_cost`; the full sweep also waits for the user's word under the v0.15 prompt): `check.js`
+0 fail, `npm test` + `test_gielis` OK, `npm run build` bundles. GIELIS stays id 10, forced-only (`score` 0, `n` / `&scene=10`, no digit
+key). **Tagged is not validated** (the NAV2 lesson, §46 addendum 8): the user has not said the look is right; size and brightness remain
+the first retune items when they look.

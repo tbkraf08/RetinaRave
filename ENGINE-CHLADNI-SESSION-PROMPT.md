@@ -2,9 +2,8 @@
 
 You are the orchestrator on **Retina Rave** (`~/Documents/Kraftek/RetinaRave/`, zero-dependency WebGL2 audio-visual engine,
 native ES modules, git, branch `main`, GitHub `git@github.com:tbkraf08/RetinaRave.git`; a push to `main` deploys retinarave.com —
-push only on the user's word). **State:** v0.13 tagged and pushed; **v0.14 GIELIS (id 10) built, pass 1 merged, NOT tagged, NOT
-pushed, the user has not looked** (`NEXT-SESSION-PROMPT.md` carries that look — do not touch GIELIS; raise once, in one line, that
-v0.14 is still untagged). NAV2 (id 8) is paused mid-tune, not validated — do not touch it.
+push only on the user's word). **State:** **v0.14 GIELIS (id 10) tagged and pushed 2026-09-27** on the user's word — tagged, not
+validated: the user has not said its look is right (`NEXT-SESSION-PROMPT.md` carries that look — do not touch GIELIS). NAV2 (id 8) is paused mid-tune, not validated — do not touch it.
 
 **The user's ask (2026-09-27, verbatim):**
 > "what needs to be added to the engine to extract the highest quality possible elements from music to make the most intuitive and
