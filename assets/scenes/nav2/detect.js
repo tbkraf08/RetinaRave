@@ -83,10 +83,13 @@ export const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's O
 export const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
 export const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
                                  // the drop's bump harder
-export const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
+export const BUMP_IV = 0.5;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
                                  // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
                                  // rho high ("should be moving faster / reacting more", the user). 0.55 left the
-                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double).
+                                 // Pass 7: 0.5 again (tau 0.2 s at 150 bpm) — with the peak HELD for BUMP_HOLD first, the
+                                 // shorter decay is what lets the trough between kicks fall (0.84 -> 0.67, the node sweep:
+                                 // "still not deforming enough"); 0.4 lost the peak at 150 bpm
 export const BUMP_HOLD = 0.3;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
                                  // so the ball reaches the rim (V_MAX 1.2 needs ~0.2 s from the trough to the pinch at the
                                  // 1/2 root, the farthest); the node sweep (AUDIT-v0.13 §6): without it the press peaked at

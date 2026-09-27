@@ -4,7 +4,7 @@
 // so it can be, and this is the proof that its continuity invariant holds by construction, not by a screenshot.
 // node tools/test_nav2.js            N2TRACE=1 prints one line per half second
 import scene from '../assets/scenes/nav2/index.js';
-import { N2, resetNav2, updateNav2, V_MAX, RHO_CAP } from '../assets/scenes/nav2/nav2.js';
+import { N2, resetNav2, updateNav2, V_MAX, V_INT, RHO_CAP } from '../assets/scenes/nav2/nav2.js';
 import { resetDet, updateDet, DET } from '../assets/scenes/nav2/detect.js';
 import { clamp, ema } from '../assets/math/util.js';
 
@@ -128,7 +128,7 @@ console.log('  modes seen: ' + modes.join(' ') + '   transitions: ' + events.map
 ok(nonFinite === 0, 'nothing non-finite in 2880 frames (' + nonFinite + ')');
 ok(MON.viol.length === 0, 'continuity monitor: viol ' + JSON.stringify(MON.viol) + ' (n ' + MON.n + ', fast ' + MON.fast + ', max ' + MON.max.toFixed(4) + ')');
 ok(intN > 0 && intHas / intN >= 0.98, `has on ${(100 * intHas / intN).toFixed(2)} % of ${intN} INT frames that are not walking a gate (want >= 98 %); ${gateFrames} frames were (${(100 * gateFrames / (intN + gateFrames)).toFixed(1)} % of INT)`);
-ok(maxStep <= V_MAX * dt + 1e-9, `the largest non-cut step is ${maxStep.toFixed(5)} <= V_MAX*dt ${(V_MAX * dt).toFixed(5)}`);
+ok(maxStep <= Math.max(V_MAX, V_INT) * dt + 1e-9, `the largest non-cut step is ${maxStep.toFixed(5)} <= max(V_MAX, V_INT)*dt ${(Math.max(V_MAX, V_INT) * dt).toFixed(5)}`);
 ok(dropFrame >= 779 && dropFrame <= 781, `the exit is at frame ${dropFrame} (13 s = f780 +- 1)`);
 ok(backFrame > 0 && backFrame < 26 * 60, `back inside at frame ${backFrame} (before 26 s = f1560)`);
 ok(events.length >= 6, `two drops in 48 s: ${events.length} mode changes`);

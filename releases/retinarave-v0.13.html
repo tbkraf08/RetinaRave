@@ -12284,10 +12284,13 @@ const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's OWN runn
 const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
 const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
                                  // the drop's bump harder
-const BUMP_IV = 0.7;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
+const BUMP_IV = 0.5;      // the bump's decay is at most this fraction of the running HIT INTERVAL, so double time
                                  // (SeeYouDrop 1:38: onsets 4.7-5.9 a second) breathes twice as fast instead of pinning
                                  // rho high ("should be moving faster / reacting more", the user). 0.55 left the
-                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double)
+                                 // 124 bpm test beat too short to open a gate; 0.7 (tau 0.28 s straight, 0.14 double).
+                                 // Pass 7: 0.5 again (tau 0.2 s at 150 bpm) — with the peak HELD for BUMP_HOLD first, the
+                                 // shorter decay is what lets the trough between kicks fall (0.84 -> 0.67, the node sweep:
+                                 // "still not deforming enough"); 0.4 lost the peak at 150 bpm
 const BUMP_HOLD = 0.3;    // pass 6: the press HOLDS its peak for this fraction of the hit interval before it decays,
                                  // so the ball reaches the rim (V_MAX 1.2 needs ~0.2 s from the trough to the pinch at the
                                  // 1/2 root, the farthest); the node sweep (AUDIT-v0.13 §6): without it the press peaked at
@@ -12697,9 +12700,21 @@ const RHO_DEGEN = 0.05;   // below this |lambda| the rho-normal is meaningless (
                                  // Without it the seed at c = 0 pushed straight along the default normal (1, 0) to the
                                  // CUSP, internal angle 0 — the one place on the rim where the Julia set is a fat round
                                  // blob with no arms at all, and a tangential flow's unstable equilibrium, so it stuck.
-const K_R = 10.0;         // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
+const V_INT = 2.4;        // units/s — the interior's own speed cap (pass 7, the user: "still not deforming enough"). The breath
+                                 // is bounded by speed x beat: at V_MAX 1.2 the trip from the pinch at the 1/2 root (c -0.735) back
+                                 // to rho 0.5 (-0.31) is 0.35 s, a whole beat at 150 bpm, so the trough sat at 0.84 whatever the
+                                 // press did (the node sweep, AUDIT §7). The continuity monitor's rule is a SPIKE rule (a step more
+                                 // than 2.5x the last + 0.01), not an absolute, so speed is free and acceleration is what A_MAX bounds
+const A_MAX = 30.0;       // units/s^2 — the interior velocity's slew: the first step from rest is A_MAX*dt^2 (0.052 at the
+                                 // loop's 1/24 s cap, 0.008 at 60 Hz) and each next step is under 2.5x the last, so no frame rate
+                                 // trips the monitor; full speed in 0.08 s. Gates and the walk back to cGood keep V_MAX
+const K_R = 20.0;         // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
                                  // radial direction outright, so there is no separate inward/outward gain. 4 in
-                                 // v0.8 (a rest, not a pulse); 10 follows a BUMP_TAU 0.28 s press within a beat
+                                 // v0.8 (a rest, not a pulse); 10 followed a BUMP_TAU 0.28 s press within a beat; 20 in
+                                 // pass 7 ("still not deforming enough"): with the peak held (BUMP_HOLD) a stiffer spring
+                                 // no longer costs the peak, and it follows the FALL — the node sweep at 150 bpm, K_R
+                                 // 10 -> 20 with BUMP_IV 0.5: peak 0.967 -> 0.985, trough 0.753 -> 0.667, Q through the
+                                 // beat 0.72-0.84 -> 0.71-0.87 (the swing doubled). 30 lost the peak at 150 bpm
 const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 const PAR_HI = 0.98;
 const PAR_WIND = 1;       // pass 6: the smoulder (and its time crawl) is gated by the wind-up — par x wind^PAR_WIND —
@@ -12747,6 +12762,7 @@ const N2 = {
   baby: null,            // ... and it never dives into a baby copy
   cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
   note: -1, noteX: 0, noteY: 0,   // the beat's note (pitch class, latched on the hit) and its point on the rim
+  vx: 0, vy: 0,          // the interior velocity (A_MAX slews it)
   log: () => {},
 };
 
@@ -12808,6 +12824,7 @@ function resetNav2() {
   N.vtime = 0;
   N.drift = N.s = N.extBeat = N.landed = N.homeTry = 0;
   N.dropBeat = -1e9;
+  N.vx = N.vy = 0;
   N.pathCut = 999;
   N.gate.on = N.gate.press = N.gate.pushed = N.gate.walk = 0;
   N.cGood[0] = N.cGood[1] = 0;
@@ -13022,10 +13039,18 @@ function stepInt(N, dt, S, P) {
     vx += kr * nx;
     vy += kr * ny;
     const sp = Math.sqrt(vx * vx + vy * vy);
-    if (sp > V_MAX) {
-      vx *= V_MAX / sp;
-      vy *= V_MAX / sp;
+    if (sp > V_INT) {
+      vx *= V_INT / sp;
+      vy *= V_INT / sp;
     }
+    // the slew: the velocity may change by at most A_MAX*dt a frame, so a kick's step grows from rest instead of jumping
+    const ax = vx - N.vx, ay = vy - N.vy, am = Math.sqrt(ax * ax + ay * ay), aCap = A_MAX * dt;
+    if (am > aCap) {
+      vx = N.vx + ax * aCap / am;
+      vy = N.vy + ay * aCap / am;
+    }
+    N.vx = vx;
+    N.vy = vy;
     moveInt(N, vx * dt, vy * dt);
   }
   N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;
@@ -13072,7 +13097,7 @@ function updateNav2(dt, now, S, env) {
   }
 }
 
-return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, RHO_BEAT, RHO_DEGEN, K_R, PAR_LO, PAR_HI, PAR_WIND, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
+return { Y_AMP, Y_REACH, X_HOME, X_AMP, LIFT, W_Y, TAU_X, TAU_M, LOOSE, BIS, RHO_CAP, RHO_REST, BUMP_K, PULSE_K, RHO_E, NOTE_V, NOTE_MIN, NOTE_ANG, NOTE_LOCK, RHO_BEAT, RHO_DEGEN, V_INT, A_MAX, K_R, PAR_LO, PAR_HI, PAR_WIND, GATE_Q, GATE_W, GATE_RHO_MIN, GATE_HOLD, GATE_LEAK, GATE_BUILD, SIZE_MIN, GATE_C, GATE_TOL, GATE_PUSH, GATE_WALK, GATE_CAP, N2, resetNav2, updateNav2, V_MAX, FLOW_CAP };
 })();
 
 __m["assets/scenes/nav2/shaders.js"] = (function () {
@@ -13304,14 +13329,19 @@ const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
 const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
-const LUM_IN = [0.12, 6]; // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
+const LUM_IN = [0.2, 3];  // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
                           // phase: the green frames read a centre of 0.36-0.47 (a bright banded interior) where the blue ones
-                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark; at (0.12, 6) a 0.5 comes down to 0.15
-const LUM_EX = [0.35, 2]; // (uLum.zw): the exterior's — the rim's 0.5-0.76 comes down to 0.4, the halo's swing below it stays
-const EXT_DIM = 0.5;      // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
+                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark. (0.12, 6) in pass 6 flattened the bands to one
+                          // dark tone ("a bit too muted now, almost pastel", the user); (0.2, 3) keeps the gradation to 0.2
+                          // and brings a 0.5 to 0.26
+const LUM_EX = [1, 0];    // (uLum.zw): the exterior's — OFF (an exact identity). (0.35, 2) in pass 6 compressed the halo's peaks
+                          // and that is the pastel the user saw: "I like the bright / glowy look"
+const EXT_DIM = 0.35;     // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
 const EXT_DIM_TAU = 0.5;  // this many seconds so the bridge home does not pop; inside the set the halo keeps its full light.
                           // The dust frames after the 58 s drop read a centre of 0.39-0.58 with the knee alone (the halo
-                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22
+                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22.
+                          // Pass 7: 0.35 — with the exterior KNEE gone (the halo's glow back, the user: "I like the bright /
+                          // glowy look") the dust read 0.55-0.67 again at 0.6; the dim alone must carry it (-> ~0.35)
 let extG = 1;
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 

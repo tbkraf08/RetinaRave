@@ -23,6 +23,11 @@ Tracks from `$MUSIC` (default `~/Music/RetinaRave`), the v0.12 rule: the name wi
   1:40–1:56 (the engine fired no drop at 1:45 in this run, nor in the 92–120 s one — it did in two earlier runs; the drop is the
   engine's, run to run), `nav2-window-syd-58-p6{a,}.txt` + `montage-nav2-syd-58-p6{a,}.jpg` 50–62 s (the 58 s drop: a = the exterior
   knee alone, the final one with `uExtG`). `det13-syd-p6.txt` is the 80 s trace.
+- **Pass 7 (2026-09-27, the user's look at pass 6: "still not deforming enough"; "a bit too muted now (looks almost pastel sometimes); I
+  like the bright / glowy look, but not so bright that [I] can't see the mandelbrot shapes")** — `nav2-window-groove-p7.txt` +
+  `montage-nav2-syd-groove-p7.jpg` (26–50 s), `nav2-window-syd-58-p7{a,}.txt` + `montage-nav2-syd-58-p7{a,}.jpg` (the 58 s drop; a = `EXT_DIM`
+  0.6, the final one 0.35), `det13-syd-p7.txt` (80 s). `sat13.py <images>` — the fraction of bright pixels, their mean saturation and
+  luminance, and the 95th-percentile luminance (the "pastel" instrument: pass 6's p95 read 0.53 against pass 4's 0.72; pass 7 reads 0.81).
 - **`tab13.py <file> [full]`** — tabulates a det13 trace or a window log (ρ / bump / ival / E / eS / note / kick / hit / drop / ds / arc /
   gate / Q / v per line, and one summary line: modes, ρ and Q min / med / max, v med / max and > 0 count, notes latched, gates, ms).
 - `scene-md5-v013.txt` — s8 re-based (twice); the rest of the list is v0.12's (unchanged by `DROP_GAP`: 253b19c4 / 778fb7e2, twice).

@@ -75,9 +75,21 @@ export const RHO_DEGEN = 0.05;   // below this |lambda| the rho-normal is meanin
                                  // Without it the seed at c = 0 pushed straight along the default normal (1, 0) to the
                                  // CUSP, internal angle 0 — the one place on the rim where the Julia set is a fat round
                                  // blob with no arms at all, and a tangential flow's unstable equilibrium, so it stuck.
-export const K_R = 10.0;         // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
+export const V_INT = 2.4;        // units/s — the interior's own speed cap (pass 7, the user: "still not deforming enough"). The breath
+                                 // is bounded by speed x beat: at V_MAX 1.2 the trip from the pinch at the 1/2 root (c -0.735) back
+                                 // to rho 0.5 (-0.31) is 0.35 s, a whole beat at 150 bpm, so the trough sat at 0.84 whatever the
+                                 // press did (the node sweep, AUDIT §7). The continuity monitor's rule is a SPIKE rule (a step more
+                                 // than 2.5x the last + 0.01), not an absolute, so speed is free and acceleration is what A_MAX bounds
+export const A_MAX = 30.0;       // units/s^2 — the interior velocity's slew: the first step from rest is A_MAX*dt^2 (0.052 at the
+                                 // loop's 1/24 s cap, 0.008 at 60 Hz) and each next step is under 2.5x the last, so no frame rate
+                                 // trips the monitor; full speed in 0.08 s. Gates and the walk back to cGood keep V_MAX
+export const K_R = 20.0;         // units/s per unit of (rhoT - rho): ONE two-sided radial spring. The wall owns the
                                  // radial direction outright, so there is no separate inward/outward gain. 4 in
-                                 // v0.8 (a rest, not a pulse); 10 follows a BUMP_TAU 0.28 s press within a beat
+                                 // v0.8 (a rest, not a pulse); 10 followed a BUMP_TAU 0.28 s press within a beat; 20 in
+                                 // pass 7 ("still not deforming enough"): with the peak held (BUMP_HOLD) a stiffer spring
+                                 // no longer costs the peak, and it follows the FALL — the node sweep at 150 bpm, K_R
+                                 // 10 -> 20 with BUMP_IV 0.5: peak 0.967 -> 0.985, trough 0.753 -> 0.667, Q through the
+                                 // beat 0.72-0.84 -> 0.71-0.87 (the swing doubled). 30 lost the peak at 150 bpm
 export const PAR_LO = 0.8;       // the smoulder's window in rho (NAV's, chart-free)
 export const PAR_HI = 0.98;
 export const PAR_WIND = 1;       // pass 6: the smoulder (and its time crawl) is gated by the wind-up — par x wind^PAR_WIND —
@@ -125,6 +137,7 @@ export const N2 = {
   baby: null,            // ... and it never dives into a baby copy
   cycBase: 1, seeded: 0, xSeed: 0, blocked: 0, rhoPin: -1,
   note: -1, noteX: 0, noteY: 0,   // the beat's note (pitch class, latched on the hit) and its point on the rim
+  vx: 0, vy: 0,          // the interior velocity (A_MAX slews it)
   log: () => {},
 };
 
@@ -186,6 +199,7 @@ export function resetNav2() {
   N.vtime = 0;
   N.drift = N.s = N.extBeat = N.landed = N.homeTry = 0;
   N.dropBeat = -1e9;
+  N.vx = N.vy = 0;
   N.pathCut = 999;
   N.gate.on = N.gate.press = N.gate.pushed = N.gate.walk = 0;
   N.cGood[0] = N.cGood[1] = 0;
@@ -400,10 +414,18 @@ function stepInt(N, dt, S, P) {
     vx += kr * nx;
     vy += kr * ny;
     const sp = Math.sqrt(vx * vx + vy * vy);
-    if (sp > V_MAX) {
-      vx *= V_MAX / sp;
-      vy *= V_MAX / sp;
+    if (sp > V_INT) {
+      vx *= V_INT / sp;
+      vy *= V_INT / sp;
     }
+    // the slew: the velocity may change by at most A_MAX*dt a frame, so a kick's step grows from rest instead of jumping
+    const ax = vx - N.vx, ay = vy - N.vy, am = Math.sqrt(ax * ax + ay * ay), aCap = A_MAX * dt;
+    if (am > aCap) {
+      vx = N.vx + ax * aCap / am;
+      vy = N.vy + ay * aCap / am;
+    }
+    N.vx = vx;
+    N.vy = vy;
     moveInt(N, vx * dt, vy * dt);
   }
   N.par = N.cy.has ? sstep(PAR_LO, PAR_HI, N.rho) * (N.q > 1 ? 1 : 0.4) * Math.pow(D.wind, PAR_WIND) : 0;

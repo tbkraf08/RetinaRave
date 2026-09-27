@@ -2172,3 +2172,13 @@ NAV2-only uniforms, exact at rest: `uLum` (a luminance knee, (0.12, 6) interior 
 exterior while c is outside, eased 0.5 s, applied after the knee), with `EXT_ENV` 1.2 landing the drop nearer the set. Q median 0.90 →
 0.84 over 80 s, the green frames' centre 0.36 → 0.10–0.22, the dust after the 58 s drop 0.75 → 0.30. s8 md5 f5d4f051 / 0671f15a twice.
 `test_nav2` §8 (the collapse and the rebound) added. AUDIT-v0.13's sixth section. The user has not seen it.
+
+**§46 addendum 6 (2026-09-27, the user's look at pass 6):** *"still not deforming enough"; "a bit too muted now (looks almost pastel
+sometimes). I like the bright / glowy look, but I don't want it to be so bright that can't see the mandelbrot shapes."* **Decisions:**
+the interior gets its own speed cap `V_INT` 2.4 with an acceleration slew `A_MAX` 30 (the continuity monitor's rule is a spike rule, so
+speed is free and acceleration is what is bounded; the first step from rest is 0.052 at the 1/24 s cap), `BUMP_IV` 0.5 and `K_R` 20 —
+the node sweep showed the trough between kicks (0.84) was the *target's* slow fall, not the speed: peak 0.985 / trough 0.667 at 150 bpm,
+the Q swing through a beat doubled. The pastel, measured with `sat13.py`, was not saturation (unchanged) but the halo's peaks (p95
+luminance 0.72 → 0.53): the exterior knee is off, the interior knee milder (0.2, 3), and the dust's dim alone carries the post-drop
+frames (`EXT_DIM` 0.35). p95 0.81, the green frames' centre 0.26–0.42 against a rim of 0.53–0.71, the dust 0.30. s8 md5 c0373ec5 /
+d61162a7 twice. AUDIT-v0.13's seventh section. The user has not seen it; `nav2.js` 470 lines — the next machinery change extracts `beat.js`.

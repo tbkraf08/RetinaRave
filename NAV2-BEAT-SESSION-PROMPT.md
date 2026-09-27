@@ -51,13 +51,17 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
   1:04 was that). `BUMP_LG` 0.5 pulls the exterior target in on the beat. The spin gains are halved (`SPIN_SW` 0.3, `SPIN_W` 0.25).
   The engine fires `dropEvt` at 58 s **and** at 1:45 on this track (4 s outside each) — 1:45 is the user's "highest energy"; if it
   still under-reacts, the drop event is the suspect, not the gains.
+- **Pass 7 (2026-09-27, the user's look at pass 6; addendum 6 / AUDIT §7):** *"still not deforming enough"; "a bit too muted now (almost
+  pastel); I like the bright / glowy look, but not so bright that I can't see the mandelbrot shapes".* `V_INT` 2.4 + `A_MAX` 30 (the
+  interior's speed with a slew; the monitor's rule is a spike rule), `BUMP_IV` 0.5, `K_R` 20 (the trough 0.84 → 0.67, the Q swing doubled);
+  the exterior knee off, the interior knee (0.2, 3), `EXT_DIM` 0.35 (p95 luminance 0.53 → 0.81, the dust 0.30). `sat13.py` is the pastel
+  instrument. **The user has not seen pass 7** — show `montage-nav2-syd-groove-p7.jpg` and `montage-nav2-syd-58-p7.jpg` first.
 - **Pass 6 (2026-09-27, the user's look at pass 4; addendum 5 / AUDIT §6):** *"the movement is still too subtle"; "the beat causes the
   set to collapse into interesting shapes, then the silence rebounds to the circle (NAV does this ~38-42 s)"; "why do different sounds
   look so similar?"; two frames "too bright"; "do energy gain read against the track's own peak".* The notes are the twelve simplest roots
   (`NOTE_ANG`), the beat presses to the cap (`RHO_BEAT` 0.985) with a peak hold (`BUMP_HOLD` 0.3), the smoulder is the wind's (`PAR_WIND`),
   gates lock under a note (`NOTE_LOCK`), E against the track's own peak (`E_PK_TAU`), the luminance knees (`uLum`) and the dust's dim
-  (`uExtG`, `EXT_DIM`, `EXT_ENV` 1.2). `press-sweep.mjs` is the node instrument. **The user has not seen pass 6** — show
-  `montage-nav2-syd-groove-p6.jpg` (26–50 s) and `montage-nav2-syd-58-p6.jpg` (the 58 s drop) first.
+  (`uExtG`, `EXT_DIM`, `EXT_ENV` 1.2). `press-sweep.mjs` is the node instrument. The user saw pass 6: "still not deforming enough", "too muted" → pass 7.
 - **The drop's refractory** (`exit.js` `DROP_GAP` 32 beats, 2026-09-27, addendum 4 / AUDIT §5): a `dropEvt` inside eight bars of NAV2's
   last cut is a hit, not a cut (`N.dropBeat`). Found on Malicious (three engine drops in 14 s of its intro, 18 of 25 s outside); SeeYouDrop's
   two drops (58 s, 1:45, 47 s apart) both stand, s8 md5 unchanged. The 1:45 drop is measured full-strength (`ds` 1.0): NAV2 answers the
@@ -103,7 +107,7 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 
 ## Open, ranked
 
-1. **The user's next look** at pass 6 (the groove 26–50 s, the 58 s drop, the intro). Then tag v0.13 and, on the user's word, push.
+1. **The user's next look** at pass 7 (the groove 26–50 s, the 58 s drop, the intro). Then tag v0.13 and, on the user's word, push.
 2. **Gates vs notes:** 0 gates on the real track now. Decide with the user whether the species should also change through gates.
 3. **1:45:** measured (`nav2-window-syd-145.txt`, `montage-nav2-syd-145.jpg`): a full-strength engine drop (`ds` 1.0), NAV2 outside
    105.9–111.4 s, the interior after it at eS 0.78 (1:33–1:39 read 0.87–0.94). `dropStrength` cannot gate it (1.0 at both drops); the
@@ -112,6 +116,6 @@ are probe time (≈ track + 2 s in `det13.py`) — replay the window with `nav2-
 4. **The other three tracks** re-measured and re-watched under v0.13 (AUDIT §5; `montage-nav2-{cn,wltp}-intro.jpg`, `montage-nav2-mal-
    intro-gap.jpg`): CyborgNinja is a one-note bassline (notes 0 / 1 → a fat near-cusp set, Q median 0.94 — item 2's question in another
    form), WhoLikesToParty fine, Malicious fixed by `DROP_GAP`. The user has not watched any of the three; show the montages.
-5. **Cost:** 2.20 ms with the note pull (the wall's `findCycle` probes); the budget is fine, but `nav2.js` is 415 lines (soft cap 350, hard
-   500) — the next machinery change should move the note / press block out (a `beat.js` beside `exit.js`, importing `detect.js` only).
+5. **Cost:** 2.3 ms with the note pull (the wall's `findCycle` probes); the budget is fine, but `nav2.js` is 470 lines (soft cap 350, hard
+   500) — the NEXT machinery change MUST move the note / press / slew block out (a `beat.js` beside `exit.js`, importing `detect.js` only).
 6. The NAV2 swap question (§39: NAV2 → id 0 / home) is unchanged and waits for the user; the phase-winding colour variant is still not built.

@@ -272,3 +272,52 @@ proven from file:// (key 9 → scene 8, errs [], Q 0.703 on the test page). ms 2
 **Not proven / open:** the user has not seen pass 6. The 1:45 drop did not fire in either pass-6 run (it did in two earlier ones) — it is
 the engine's bass-returns rule, run to run; the exterior was proven on the 58 s drop instead. `nav2.js` is 452 lines (soft cap 350, hard
 500): the next machinery change moves the note / press block to a `beat.js`. The other three tracks were not re-watched under pass 6.
+
+## Seventh pass — the user's look at pass 6 (2026-09-27): "still not deforming enough"; "a bit too muted now"
+
+*"1. still not deforming enough. 2. is a bit too muted now (looks almost pastel sometimes). I like the bright / glowy look, but I don't want
+it to be so bright that can't see the mandelbrot shapes."*
+
+**(1) The deformation.** Pass 6 reached the pinch (ρ 0.98) but the trough between kicks sat at 0.84, so the set went from pinched to
+slightly-less-pinched. The node sweep (`press-sweep.mjs`) found, in order: the speed cap was *not* the lever — `V_INT` 1.2 → 3.0 left the
+trough at 0.84 to the third decimal; the radial spring was not either on its own; the *target's* fall was: the press decays with τ = 0.7 ×
+the hit interval after its hold, so the target itself never fell below ~0.7 before the next kick, and the spring lagged it. Three constants:
+
+- `V_INT` 2.4 — the interior's own speed cap, with **`A_MAX` 30 units/s², a velocity slew** (`N.vx`, `N.vy`). The continuity monitor's rule
+  is a *spike* rule (a step over 2.5× the last + 0.01), not an absolute, so speed is free and acceleration is what must be bounded: the first
+  step from rest is A_MAX·dt² (0.052 at the loop's 1/24 s cap, 0.008 at 60 Hz) and each next step is under 2.5× the last at any frame rate.
+  `test_nav2`'s monitor: viol [], max step 0.0400 = V_INT·dt. Gates, the walk back to `cGood` and the exterior keep `V_MAX` 1.2. The Green
+  edge speed's ceiling moved with it (v max 0.62 → 1.26 on the equipotential).
+- `BUMP_IV` 0.7 → 0.5 (τ 0.2 s at 150 bpm after the hold) — the target falls to ~0.5 by the next kick.
+- `K_R` 10 → 20 — with the peak *held* a stiffer spring no longer costs the peak (that was pass 6's finding at K_R 20/30 without the hold),
+  and it follows the fall. 30 lost the peak at 150 bpm (0.95).
+
+```
+150 bpm, a kick per beat, the bass on 1/2       peak rho   trough (median)   Q through the beat
+pass 6 (K_R 10, BUMP_IV 0.7, hold 0.3)           0.979      0.841             0.715 .. 0.793
+pass 7 (K_R 20, BUMP_IV 0.5, hold 0.3, V_INT)    0.985      0.667             0.710 .. 0.872
+```
+
+The Q swing through a beat doubled (0.08 → 0.16). On the track (26–50 s, 1 s samples): ρ 0.92 / 0.95 / 0.79 / 0.71 / 0.95 / 0.83 / 0.56 /
+0.61 / 0.62 / 0.96 / 0.98 / 0.97 / 0.52 / 0.61 / 0.93 / 0.97 / 0.96 / 0.94 / 0.97 / 0.63 / 0.67 / 0.48 / 0.82 / 0.64 — the set is at the pinch
+or near the circle, rarely between; the montage shows both. 80 s: ρ 0.544 / 0.685 / 0.983 (pass 6: 0.536 / 0.772 / 0.964), Q 0.697 / 0.901 /
+0.950, the same eight notes, errs 0, ms 2.33.
+
+**(2) The pastel.** `sat13.py` on the montages: saturation is unchanged (0.64–0.66 on the bright pixels in every pass); what pass 6 lost is
+the *peaks* — the 95th-percentile luminance 0.72 (pass 4) → 0.53 (pass 6). That is the exterior knee compressing the halo. So: the exterior
+knee is **off** (`LUM_EX` (1, 0), an exact identity); the interior knee is milder, (0.12, 6) → **(0.2, 3)**, so the bands keep their
+gradation to 0.2 and a 0.5 comes to 0.26 (the set still reads dark against the halo: rim − centre 0.34 in the green frames, pass 6 0.18);
+and the dust's dim, which is what the two frames the user first pointed at needed, carries that alone: `EXT_DIM` 0.6 → **0.35** (at 0.6
+with the knee gone the dust read 0.55–0.67 again).
+
+```
+                          p95 luminance   green-frame centre   rim (green frames)   dust after the 58 s drop (centre, by second)
+pass 4                    0.72            0.36–0.38            0.5–0.76             0.53 / 0.75 / 0.66
+pass 6                    0.53            0.10–0.22            0.28–0.42            0.38 / 0.30 / 0.26
+pass 7                    0.81            0.26–0.42            0.53–0.71            0.33 / 0.30 / 0.26
+```
+
+s8 md5 c0373ec5 / d61162a7 twice (re-based; pass 6 f5d4f051 / 0671f15a), `check` 0 fail, `test_nav2` 25 ok (the gate test still opens 1 in
+/ 1 out at 124 bpm at `BUMP_IV` 0.5 — the hold carries it now), `test_green`, `npm test`, `test_fdtd`, `test_field` OK, the release rebuilt
+and proven from file:// (key 9 → scene 8, errs [], Q 0.749). **The user has not seen pass 7.** `nav2.js` is 470 lines (hard cap 500): the
+next machinery change must move the note / press / slew block out to a `beat.js`.

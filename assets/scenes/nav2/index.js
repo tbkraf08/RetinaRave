@@ -20,14 +20,19 @@ const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
 const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
-const LUM_IN = [0.12, 6]; // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
+const LUM_IN = [0.2, 3];  // pass 6 (uLum.xy): the interior's luminance knee (L0, K) — the set stays dark whatever the palette's
                           // phase: the green frames read a centre of 0.36-0.47 (a bright banded interior) where the blue ones
-                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark; at (0.12, 6) a 0.5 comes down to 0.15
-const LUM_EX = [0.35, 2]; // (uLum.zw): the exterior's — the rim's 0.5-0.76 comes down to 0.4, the halo's swing below it stays
-const EXT_DIM = 0.5;      // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
+                          // read 0.03-0.05 and NAV's collapse at 38-42 s is dark. (0.12, 6) in pass 6 flattened the bands to one
+                          // dark tone ("a bit too muted now, almost pastel", the user); (0.2, 3) keeps the gradation to 0.2
+                          // and brings a 0.5 to 0.26
+const LUM_EX = [1, 0];    // (uLum.zw): the exterior's — OFF (an exact identity). (0.35, 2) in pass 6 compressed the halo's peaks
+                          // and that is the pastel the user saw: "I like the bright / glowy look"
+const EXT_DIM = 0.35;     // pass 6 (uExtG): the exterior branch's gain while c is OUTSIDE the set (the drop's dust), eased over
 const EXT_DIM_TAU = 0.5;  // this many seconds so the bridge home does not pop; inside the set the halo keeps its full light.
                           // The dust frames after the 58 s drop read a centre of 0.39-0.58 with the knee alone (the halo
-                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22
+                          // term is 1 wherever the dust is near, i.e. everywhere), the interior's frames 0.03-0.22.
+                          // Pass 7: 0.35 — with the exterior KNEE gone (the halo's glow back, the user: "I like the bright /
+                          // glowy look") the dust read 0.55-0.67 again at 0.6; the dim alone must carry it (-> ~0.35)
 let extG = 1;
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 

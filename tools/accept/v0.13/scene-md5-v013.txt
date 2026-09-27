@@ -1,7 +1,7 @@
 # v0.13 (NAV2 "bump with the beat", DECISIONS §46): only NAV2's folder changed, so only s8 is re-proven here (HARNESS
 # "What to re-prove"); every other line is tools/accept/v0.12/scene-md5-v012.txt's (s9 = the v0.12.1 re-base 95fd7d73 / 4e2108a7).
-# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-27) on the pass-6 tree (the notes on the roots, the press to the cap, the hold, uLum, EXT_ENV): f5d4f051 / 0671f15a (the f840 frame moved with uExtG, the dust's dim; f5d4f051 / 6772c18c with the knees alone, dd4e82dd / 6772c18c before them); pass 4 was 253b19c4 / 778fb7e2 on the v0.13 tree (the beat's note, the interval decay, the energy
+# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-27) on the pass-7 tree (V_INT + A_MAX, K_R 20, BUMP_IV 0.5, the exterior knee off, the interior knee (0.2, 3), EXT_DIM 0.35): c0373ec5 / d61162a7 (7b29e056 at EXT_DIM 0.6); pass 6 was f5d4f051 / 0671f15a; pass 4 was 253b19c4 / 778fb7e2 on the v0.13 tree (the beat's note, the interval decay, the energy
 # gain): 253b19c4 / 778fb7e2. Earlier cuts: e2fd7f16 / 83d37910, 17f888e8 / 83d37910 (uRound), 1da850ba / 6d46c51f (RHO_BEAT,
 # EXT_BEATS 8), 34ee5482 / d81945bd (the kick-peak normalisation, uBump). v0.12's s8 was 9021eac8 / f6299795.
-f5d4f051f370eca168fb103c8b25c437  s8-f360.jpg
-0671f15aac792b3e894db29c286e4a58  s8-f840.jpg
+c0373ec5c5fdf1780eac4938351877c6  s8-f360.jpg
+d61162a7ef1a320e189992c83171afd1  s8-f840.jpg
