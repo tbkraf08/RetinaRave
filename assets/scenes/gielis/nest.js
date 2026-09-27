@@ -226,6 +226,10 @@ export function updateNest(dt, MS, P, O) {
   N.draw = FIBMAX;
   N.fibF = FIBMAX;
 
+  // the flash on the quiet inner families, and the shimmer along every ring
+  N.flash = O.still ? 0 : Math.max(N.flash * Math.exp(-dt / FLASHT), MS.kick);
+  N.shim = O.still ? 0 : SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
+
   if (!O.still) waves(MS, O.hueOf);
 
   // the drawn slots in loudness order, and the segment offsets the vertex shader indexes by
