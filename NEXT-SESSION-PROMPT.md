@@ -25,8 +25,8 @@ T0=<s>` replays that window with a shot and a D line per second.
 **Standing, unchanged:** the Cloudflare dashboard steps (v0.6: www → apex, disable `*.workers.dev`, Search Console, Web Analytics); TORUS2's
 leans; deleting `torus-v1`; folding `torus2/motion.js turn` onto `math/nudge.js` (waits for a TORUS2 session); the OKLCH variants;
 POLYTOPE's portrait cropping; the NAV2 phase-winding colour variant (the argument principle; opt-in, `IDS=8` proof, after the swap
-question). The working tree still carries the uncommitted deletions of six `tools/accept/v0.8/{ew,v3}-t*.jpg` and two untracked
-`tools/accept/v0.8/trans-*.jpg` from an earlier session — not ours; restore or commit them when someone knows why.
+question). The six `tools/accept/v0.8/{ew,v3}-t*.jpg` deletions were committed 2026-09-27 on the user's word; two untracked
+`tools/accept/v0.8/trans-*.jpg` remain: they are `tools/accept.sh` outputs (`$OUT` once pointed there), regenerable, left untracked.
 
 **Not this:** a MAXWELL bid or retune, a full acceptance sweep, 3D, an OKLCH default, a carrier "bed" behind MAXWELL's hits, the
 Hertzian-dipole hedge, fallback B (the `vec4` Yee), a new scene (the user asks for scenes; see the memory).
