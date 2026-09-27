@@ -10,6 +10,9 @@
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
 //                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
 //                            the exterior takes half of it -- x * 1
+//   uBump float rest 0       v0.13: the beat throws light OFF the edge — the exterior halo's reach 1/(1+e*.011) widens to
+//                            1/(1+e*.011/(1+uBump)) on each bump and falls back with it ("light oscillating off the
+//                            edge", the user on the intro of SeeYouDrop) -- e*.011/(1+0) is exact
 // NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
@@ -26,7 +29,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -44,7 +47,7 @@ void main(){
   if(esc){
     float sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
-    float edge=exp(-e*.3),halo=1./(1.+e*.011);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
+    float edge=exp(-e*.3),halo=1./(1.+e*.011/(1.+uBump)); /* NAV2 v0.13: the halo breathes off the edge with the beat */float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
     col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));

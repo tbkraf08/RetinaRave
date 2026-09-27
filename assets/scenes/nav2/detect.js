@@ -76,10 +76,17 @@ export const BUMP_TAU = 0.35;    // s — a hit's press decays with this constan
 export const PULSE_TAU = 2.0;    // s — the beat DENSITY, an ema of the bump: a busy passage keeps c part-way pressed
                                  // between its kicks ("some variation"), a beatless one lets it rest on the circle
 export const CURL_B = 0.5;       // gain on the arms' tightness per unit bump: the beat spirals the arms in (uCurl)
+export const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's OWN running kick/hit peak (the user on
+                                 // SeeYouDrop: "0-13s ... edge should be bumping on every beat; at 25s it really starts
+                                 // moving the edge on every beat" — the engine's `kick` read 0.1-0.3 in the intro and
+                                 // 0.2-0.55 in the groove, so a fixed scale bumped it at a third of its size)
+export const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
+export const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
+                                 // the drop's bump harder
 
 export const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
-  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0,
+  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -105,7 +112,7 @@ export function resetDet() {
   D.lEma = D.pvPrev = D.bendSgn = D.flicks = 0;
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
-  D.bump = D.pulse = 0;
+  D.bump = D.pulse = D.pk = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -180,7 +187,10 @@ export function updateDet(dt, S, P) {
   if (S.dropEvt) D.wind = 0;
   else D.wind = ema(D.wind, D.windT, dt, D.fake > 0 ? W_FAKE : W_TAU);
   // --- the beat: a peak-hold of the kick / the hit with its own decay, and its density ----------------------
-  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), S.kick || 0, S.hit || 0);
+  const bt = Math.max(S.kick || 0, S.hit || 0);
+  D.pk = Math.max(bt, D.pk * Math.exp(-dt / BUMP_PK_TAU));
+  const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
+  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), hitN);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);

@@ -111,3 +111,22 @@ kicks, the exterior leg is 58.5–63 s and the set is back, round, by 64 s. Lumi
 so "washed out" is gone and the breakdown reads as a dark disc with a lit edge; if that is too dark the knob is `ROUND_G`.
 s8 md5 1da850ba / 6d46c51f, twice.
 
+## Third pass — the user on the extremes: "0-13s the high rise up to their max (edge should be bumping on every beat / light oscillating off the edge); at 25s it really starts moving the edge on every beat"
+
+The 0–30 s replay (`nav2-window-intro.txt`) showed why the intro barely bumped: the engine's `kick` reads 0.1–0.3 there and 0.2–0.55
+in the groove on this track (its kick detector is gated on bass level), so against a fixed scale the bump was a third of its size.
+
+- **The beat is read against the track's own running kick/hit peak** (`detect.js` `BUMP_PK_TAU` 3 s, floor `BUMP_PK_MIN` 0.25), scaled
+  by energy (`BUMP_E0` 0.5: half at silence, full at `eS` 1) — the intro's beats bump, the drop's bump harder.
+- **Light off the edge:** `uBump` (rest 0, exact) widens the exterior halo's reach 1/(1 + e·0.011) to 1/(1 + e·0.011/(1 + 1.5·bump)) on
+  each bump and lets it fall back with it.
+- The gate test's kick timeline carries `eS` 0.9 (a beat has energy behind it).
+
+60 s from the start (`montage-nav2-syd-intro.jpg`, 8 per row): 0–13 s ρ 0.64–0.84 and `bump` 0.22–0.79 per sample (median 0.47 over
+the window against 0.31 before), Q 0.79–0.89 breathing with it; 19 s the build's wind presses to 0.98; **25 s the gate into the
+period-2 disc** — the shape comes back different (Q 0.65 flat for 24 s: a two-lobed set is never round) and back to period 1 at
+49 s, the breakdown rounding to Q 0.94; the drop at 58 s, home by 62 s. s8 md5 34ee5482 / d81945bd, twice.
+The 80 s trace on the final build (`det13-syd-final.txt`), the same columns as the second table: ρ 0.559 / 0.734 / 0.977, Q 0.689 /
+0.878 / 0.950, v 0.220 median / 0.622 max and > 0 on 37/37, EXT 2 samples, spin max 0.43, one gate, bump median 0.46 (0.31 before
+the normalisation), ms 2.02, errs []. The release rebuilt and proven from file:// (key 9 → scene 8, errs [], Q 0.977 on the test page).
+

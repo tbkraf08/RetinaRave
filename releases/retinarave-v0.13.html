@@ -12277,10 +12277,17 @@ const BUMP_TAU = 0.35;    // s — a hit's press decays with this constant (a be
 const PULSE_TAU = 2.0;    // s — the beat DENSITY, an ema of the bump: a busy passage keeps c part-way pressed
                                  // between its kicks ("some variation"), a beatless one lets it rest on the circle
 const CURL_B = 0.5;       // gain on the arms' tightness per unit bump: the beat spirals the arms in (uCurl)
+const BUMP_PK_TAU = 3.0;  // s — the beat is read against the track's OWN running kick/hit peak (the user on
+                                 // SeeYouDrop: "0-13s ... edge should be bumping on every beat; at 25s it really starts
+                                 // moving the edge on every beat" — the engine's `kick` read 0.1-0.3 in the intro and
+                                 // 0.2-0.55 in the groove, so a fixed scale bumped it at a third of its size)
+const BUMP_PK_MIN = 0.25; // ... the smallest peak the beat is divided by (silence must not normalise noise up)
+const BUMP_E0 = 0.5;      // ... and the bump is this much at zero energy, 1 at eS 1: the intro's beats bump,
+                                 // the drop's bump harder
 
 const DET = {
   pitch: 0.5, pE: 0, lift: 0, sweep: 0, roll: 0, scratch: 0, swirl: 0,
-  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0,
+  wind: 0, windT: 0, count: 0, spin: 0, rate: 0, angle: 0, rel: 0, curl: 0, glow: 1, bump: 0, pulse: 0, pk: 0,
   hN: 0, climb: 0, runT: 0, runPk: 0, runLo: 0, cSm: -1, hLo: 0, hHi: 0,
   cEma: 0, cPrev: -1, lEma: 0, pvPrev: 0, bendSgn: 0, flicks: 0, fluxPk: 1e-6, hitF: 0,
   fake: 0, dir: 1, seeded: 0,
@@ -12306,7 +12313,7 @@ function resetDet() {
   D.lEma = D.pvPrev = D.bendSgn = D.flicks = 0;
   D.fluxPk = 1e-6;
   D.hitF = D.fake = 0;
-  D.bump = D.pulse = 0;
+  D.bump = D.pulse = D.pk = 0;
   D.dir = 1;
   D.seeded = 0;
 }
@@ -12381,7 +12388,10 @@ function updateDet(dt, S, P) {
   if (S.dropEvt) D.wind = 0;
   else D.wind = ema(D.wind, D.windT, dt, D.fake > 0 ? W_FAKE : W_TAU);
   // --- the beat: a peak-hold of the kick / the hit with its own decay, and its density ----------------------
-  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), S.kick || 0, S.hit || 0);
+  const bt = Math.max(S.kick || 0, S.hit || 0);
+  D.pk = Math.max(bt, D.pk * Math.exp(-dt / BUMP_PK_TAU));
+  const hitN = clamp(bt / Math.max(D.pk, BUMP_PK_MIN), 0, 1) * (BUMP_E0 + (1 - BUMP_E0) * clamp(S.eS || 0, 0, 1));
+  D.bump = Math.max(D.bump * Math.exp(-dt / BUMP_TAU), hitN);
   D.pulse = ema(D.pulse, D.bump, dt, PULSE_TAU);
   // --- the release, the spin rate, the angle ------------------------------------------------------------
   D.rel = ema(D.rel, S.dropEnv, dt, REL_TAU);
@@ -12397,7 +12407,7 @@ function updateDet(dt, S, P) {
   D.glow = 1 + GLOW_H * S.hush;
 }
 
-return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, DET, resetDet, updateDet };
+return { PITCH_K, C_TAU, SW_SM, SW_DROP, SW_RISE, SW_MINT, SW_MAXT, SW_RATE, SW_CW, SW_A, SW_R, RO_A, RO_R, OR_LO, OR_SC, SCR_SLEW, SCR_TAU, SCR_N0, SCR_NS, SCR_GATE, FLUX_TAU, WIND_BEATS, W_TAU, W_FAKE, FAKE_HOLD, REL_TAU, SPIN_SW, SPIN_W, SPIN_SC, SPIN_TAU, SPIN_REL, NORM_TAU, NORM_MIN, LIFT_TAU, LIFT_V, LIFT_G, SLIDE, SLIDE_A, CURL, CURL_SW, GLOW_H, BUMP_TAU, PULSE_TAU, CURL_B, BUMP_PK_TAU, BUMP_PK_MIN, BUMP_E0, DET, resetDet, updateDet };
 })();
 
 __m["assets/scenes/nav2/exit.js"] = (function () {
@@ -12994,6 +13004,9 @@ __m["assets/scenes/nav2/shaders.js"] = (function () {
 //                            round set is a smooth one, and a smooth Julia set has less edge for the distance-estimate
 //                            glow to light (lum.py: centre 0.02-0.06 at rho 0.7-0.87 against 0.19-0.47 on the rim);
 //                            the exterior takes half of it -- x * 1
+//   uBump float rest 0       v0.13: the beat throws light OFF the edge — the exterior halo's reach 1/(1+e*.011) widens to
+//                            1/(1+e*.011/(1+uBump)) on each bump and falls back with it ("light oscillating off the
+//                            edge", the user on the intro of SeeYouDrop) -- e*.011/(1+0) is exact
 // NAV2 declares v2 alone (DECISIONS §26: OKLCH stays an opt-in variant, not this session).
 // the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
 // opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
@@ -13010,7 +13023,7 @@ __m["assets/scenes/nav2/shaders.js"] = (function () {
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform float uRound;uniform float uBump;uniform int uIterLo;uniform vec2 uSc;uniform vec2 uKoen;uniform float uCurl;uniform float uGlow; // uSc: z-scale of the (little) Julia set, 1/P. uKoen: NAV2's pitch slide, rest (0,0). uCurl: NAV2's arm-tightness gain, rest 0. uGlow: NAV2's hush brightening of the smoulder, rest 1
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -13028,7 +13041,7 @@ void main(){
   if(esc){
     float sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
-    float edge=exp(-e*.3),halo=1./(1.+e*.011);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
+    float edge=exp(-e*.3),halo=1./(1.+e*.011/(1.+uBump)); /* NAV2 v0.13: the halo breathes off the edge with the beat */float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
     col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
@@ -13198,6 +13211,7 @@ const DOTS_0 = 1;         // the critical-orbit dot size, inline
 const PIP_LO = 0.05;      // the picture-in-picture's presence gate, inline
 const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
+const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
@@ -13375,6 +13389,7 @@ const __default = {
     gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
+    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));

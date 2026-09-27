@@ -18,6 +18,7 @@ const DOTS_0 = 1;         // the critical-orbit dot size, inline
 const PIP_LO = 0.05;      // the picture-in-picture's presence gate, inline
 const PIP_HI = 0.3;
 const ROUND_G = 0.8;      // v0.13: how much the picture brightens as the set rounds (uRound; 1 + ROUND_G*(1-rho)).
+const BUMP_H = 1.5;       // v0.13: how far the exterior halo reaches off the edge on a full bump (uBump; 1 + BUMP_H*bump)
                           // 1.5 in the first cut: "a little too bright (detail is getting washed out)" — the user
 let STILL = 0;            // &still=1 / hooks.still(1): every NAV2-only uniform at its rest value (an IEEE identity)
 
@@ -195,6 +196,7 @@ export default {
     gl.uniform1f(u('uCurl'), STILL ? 0 : D.curl);
     gl.uniform1f(u('uGlow'), STILL ? 1 : D.glow);
     gl.uniform1f(u('uRound'), STILL ? 0 : ROUND_G);
+    gl.uniform1f(u('uBump'), STILL ? 0 : BUMP_H * D.bump);
     const it = Math.min(420, Math.round(Q.iter));
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));

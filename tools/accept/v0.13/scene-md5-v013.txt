@@ -1,7 +1,7 @@
 # v0.13 (NAV2 "bump with the beat", DECISIONS §46): only NAV2's folder changed, so only s8 is re-proven here (HARNESS
 # "What to re-prove"); every other line is tools/accept/v0.12/scene-md5-v012.txt's (s9 = the v0.12.1 re-base 95fd7d73 / 4e2108a7).
-# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-26) on the v0.13 tree after the user's look (RHO_BEAT, PULSE_K .4, EXT_BEATS 8,
-# ROUND_G .8, SPIN halved, the kick zoom): 1da850ba / 6d46c51f. The first cut read e2fd7f16 / 83d37910, then 17f888e8 / 83d37910
-# with uRound; v0.12's s8 was 9021eac8 / f6299795.
-1da850baa2ca5b8ad6b2182bdae0cce7  s8-f360.jpg
-6d46c51f201ab522c37b23835769b54f  s8-f840.jpg
+# s8 MEASURED twice (IDS=8 PORT=8862/8863, 2026-09-26) on the final v0.13 tree (the beat normalised to the track's kick peak x
+# energy, uBump the halo's reach): 34ee5482 / d81945bd. Earlier cuts the same day: e2fd7f16 / 83d37910, 17f888e8 / 83d37910 (uRound),
+# 1da850ba / 6d46c51f (RHO_BEAT, EXT_BEATS 8). v0.12's s8 was 9021eac8 / f6299795.
+34ee5482200ca6093d1e4e2a6782c556  s8-f360.jpg
+d81945bd91b611e755ea6da8969509b4  s8-f840.jpg

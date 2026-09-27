@@ -208,6 +208,7 @@ function runMelody(cenAt, secs) {
     if (S.beatPhase >= 1) { S.beatPhase -= 1; S.beatCount++; }
     S.beat = S.beatPhase < dt * S.bpm / 60;
     S.kick = S.beat ? 1 : S.kick * Math.exp(-dt / 0.16);   // the beat: a kick on every beat, the engine's own decay
+    S.eS = 0.9;                                            // ... with a beat's energy behind it (the bump scales by eS)
     for (const k in scene.params) pp[k] = scene.params[k].from(S);
     updateDet(dt, S, pp);
     updateNav2(dt, t, S, { P: pp, isLogical: true });

@@ -2128,3 +2128,9 @@ node), `EXT_BEATS` 8 (the drop is a two-bar excursion; 1:04 was 20 s of dust und
 NAV), the spin gains halved, `BUMP_LG` 0.5, `ROUND_G` 0.8 with the exterior at half, `arc` out of `feats`. Trace: ρ 0.49/0.66/0.93,
 Q 0.64/0.88/0.95, v > 0 on 37/37, EXT 4 s, spin max 0.43 (0.79), ms 2.00. AUDIT-v0.13's second table.
 
+**§46 addendum 2 — the extremes (2026-09-26):** *"0-13s the high rise up to their max (edge should be bumping on every beat / light
+oscillating off the edge); at 25s it really starts moving the edge on every beat."* The engine's `kick` reads 0.1–0.3 in this intro,
+so the bump is now read against the track's own running kick/hit peak (`BUMP_PK_TAU` 3 s, floor 0.25) times energy (`BUMP_E0` 0.5 →
+1 at `eS` 1); `uBump` (rest 0) widens the exterior halo's reach 1 + 1.5·bump — the light off the edge. Intro bump median 0.47 (0.31),
+ρ 0.64–0.84 on every sample; the gate at 25 s into period 2 is the shape coming back different. AUDIT-v0.13's third section.
+
