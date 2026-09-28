@@ -835,6 +835,14 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `mapBoundaryEvt` | event | a section boundary, on its bar line | section change |
 | `heardT` | raw | the audio time the listener hears at this frame (s); -1 with no audio | nothing visual: the base every event onset and PCM block is stamped in |
 | `fileOn` | level | a file is the source (1) or not (0) | nothing visual: the harness and the trace read it |
+| `predKickEvt` | event | a kick is PREDICTED on this 16th, released on time (before the audio when the capture path lags) | hit a kick motion ON the beat instead of 38-52 ms after it |
+| `predSnareEvt` | event | a snare is predicted on this 16th | snare motion on time |
+| `predHatEvt` | event | a hat is predicted on this 16th | hat motion on time |
+| `predKickIn` | raw | beats until the next predicted kick (-1 = none / not confident) | wind up before the kick lands |
+| `predConf` | level | how sure the bar store is of what comes next | weight a predicted motion against the reactive one |
+| `barMatch` | level | how much the bar being heard looks like one heard before | repetition feel |
+| `barNovelEvt` | event | this bar starts something new: its first steps contradict a confident prediction | a section change ~1.25-2 beats into its first bar, not 4-8 beats later |
+| `barReturnEvt` | event | this new bar is a return of material from at least 8 bars back | restore an earlier look on the return's first bar |
 | `leadT` | raw | how far the beat, bar and phrase clocks are moved onto what the listener hears (s; 0 = off) | nothing visual: the harness and the trace read it |
 <!-- FEATS:end -->
 

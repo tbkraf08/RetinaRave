@@ -24,7 +24,7 @@ const KEYS = ['beatPhase', 'beat', 'beatCount', 'beatSyn', 'barPos', 'barPhase',
 export const LEAD = {
   on: true,       // v0.16 default; &lead=0 / the L key turn it off
   disp: 0,        // s, added to the audio lead
-  L: null,        // s, the audio lead: the median of `ring` (null until the first good sample)
+  L: null,        // s, the audio lead: the median of `ring` (null until the first good sample); estimated even when off
   ring: [],
   raw: null,      // the clocks' own values this frame, put back by restore()
   n: null,        // the moved v3 clock's last whole beat (it never steps back, so no beat fires twice)
@@ -66,11 +66,13 @@ export function restore(S) {
 }
 
 export function apply(dt, S, fakeOn) {
-  if (!LEAD.on || fakeOn) { S.leadT = 0; LEAD.n = null; return; }
+  if (fakeOn) { S.leadT = 0; LEAD.n = null; return; }
+  // the estimate runs whether or not the clocks are moved (live step 3: the bars stage places onsets and releases its
+  // predictions on heard time with it even under &lead=0); OFF still publishes nothing — leadT 0, the clocks raw
   const a = audioLead();
   const ok = isFinite(a) && Math.abs(a) < MAX_LEAD;     // anything else is not a latency (a stale timestamp, a stall)
-  if (!ok && LEAD.L === null) { S.leadT = 0; LEAD.n = null; return; }
   if (ok) LEAD.L = median(a);
+  if (!LEAD.on || LEAD.L === null) { S.leadT = 0; LEAD.n = null; return; }
   const L = LEAD.L + LEAD.disp;
   S.leadT = L;
   const r = LEAD.raw = {};
