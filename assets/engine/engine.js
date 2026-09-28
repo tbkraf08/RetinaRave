@@ -13,6 +13,7 @@ import fake from './sources/fake.js';
 import demoSynapse from './sources/demo-synapse.js';
 import file, { DET_LEAD, FPS } from './sources/file.js';
 import { TRACE, LOG, pushLog } from './trace.js';
+import { PCM } from './pcm.js';
 import { FEATS } from './feats.js';
 
 AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : demo.start());
@@ -28,6 +29,7 @@ export const ENGINE = {
   fakeOn: false,    // #test without fake=0: the deterministic timeline replaces the extractor
   ms: 0,
   frameN: 0,        // v0.15: frames run by frame(); the trace's `f` and the event log's `f`
+  PCM,              // v0.15 E1: the PCM bus (PCM.on(fn) -> fn(L, R, t0)); the EARS stage subscribes here
   TRACE,            // v0.15 E1: the per-frame MS recorder tools/filetrace.js drives (ENGINE.TRACE.start/stop)
   LOG,              // v0.15 E2: the event ring behind log() below, cap 20 000 (engine/trace.js LOG_CAP)
   resumeAt: -1,     // `now` of the first frame after a hidden tab (v0.3 resume-hold); the extractor holds its events for 1 s from it

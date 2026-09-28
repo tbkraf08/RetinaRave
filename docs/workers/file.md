@@ -184,6 +184,36 @@ for (const f of fields) {
 }
 ```
 
+### Heard time, the event log and the PCM bus (acceptance 4)
+
+`MS.heardT` (raw, s) and `MS.fileOn` (0/1) are written by the `clock` stage, which `engine.js` registers with
+`ENGINE.addStage` **before** `features-synapse.js` registers `'synapse'` (engine.js's module body runs first, because
+features-synapse imports it), so it is the first stage every frame and nothing else reads `AU.heardT` per frame.
+`node tools/feats-doc.js` regenerated Appendix A (109 non-internal fields). Verified on the page: `CARD.MS.heardT` 90.00000
+and `CARD.MS.fileOn` 1 in det mode, `heardT` 90.00851 in real time; `-1` with no source.
+`CARD.LOG` (= `ENGINE.LOG`, cap 20 000) holds `fileStart` with `{frame0, sr, at, det, dur, name}` on every run, and
+`fileEnd` at the end of the track. `ENGINE.log(type, t, extra)` is the public hook, `t` in the engine's time base.
+
+The PCM bus, with a test listener registered before `frame0` (the deterministic clock is held at frame 1 during the decode,
+so an `{eval}` after `window.CARD` is in time), over heard 58 → 90 s of SeeYouDrop:
+
+| | deterministic (the source pushes) | real time (the stereo AudioWorklet on `AU.bus`) |
+|---|---|---|
+| blocks with a stamp | 3004 | 3012 |
+| blocks stamped −1 (before the node started) | 0 | 38 (the 0.06 s `START_DELAY` and the worklet's lead) |
+| first / last `t0` | 57.99467 / 90.02667 | 57.91867 / 90.03600 |
+| `t0` step vs 512/`sr` = 0.010666667 | max deviation **1.30e-14 s** | max deviation **1.54e-14 s** |
+| non-monotone steps / gaps | **0** | **0** |
+| `L` / `R` lengths | 512 / 512 | 512 / 512 |
+| side / mid energy over 60–90 s | **0.218542** | **0.218494** |
+| worklet built? | no (`PCM.local`) | yes |
+
+So the blocks are contiguous to double-rounding in both modes, the real-time stamps come from the
+`AudioWorkletGlobalScope`'s `currentFrame` and never drift or gap, and **`L ≠ R`**: the track carries 21.85 % as much
+side energy as mid over 60–90 s. That the two modes agree on that ratio to 5e-5 — one path from the decoded
+`AudioBuffer` channels, the other from the live graph through a worklet — is the cross-check that the stereo plumbing is
+the same signal. `PCM.on` builds nothing until a listener exists, and never builds a worklet in deterministic mode.
+
 ### Latency, and how `DET_LEAD` was chosen
 
 1478 frames of a real-time file run, headless, 48 kHz:

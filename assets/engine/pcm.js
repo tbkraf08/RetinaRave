@@ -49,6 +49,7 @@ export const PCM = {
 
   // The live graph the worklet would tap. Called once from initAudio; attaching still waits for a listener.
   arm(ctx, src) {
+    if (this.node && (ctx !== this.ctx || src !== this.src)) this.detach(); // a different graph: never leave a node connected
     this.ctx = ctx;
     this.src = src;
     this.attach();

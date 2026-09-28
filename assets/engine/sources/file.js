@@ -97,6 +97,9 @@ export async function startFile(src, opt = {}) {
     heardT: () => heardTOf(F),
   };
   F.ph = F.at;
+  // The PCM bus's stamps are in the engine's time base, which in file mode is TRACK seconds. The live worklet hands us
+  // context seconds, so the map is set here (before the first block can arrive) and reports -1 until the node has started.
+  if (!det) PCM.map = (ctxT) => (F.frame0 < 0 ? -1 : clamp(F.at + (ctxT - F.ctx0), 0, F.dur));
   run('file', opt.msg);
   AU.stopFile = teardown;
   let buf = null;
@@ -181,8 +184,7 @@ function startBuffer(F) {
   const t0 = ctx.currentTime + START_DELAY;
   node.start(t0, F.at);
   F.ctx0 = t0;
-  PCM.map = (ctxT) => clamp(F.at + (ctxT - F.ctx0), 0, F.dur);  // the bus's blocks are stamped in TRACK seconds
-  PCM.arm(ctx, AU.bus);
+  PCM.attach();   // the bus was armed with this ctx and AU.bus at initAudio; this only builds the worklet if somebody listens
 }
 
 // The audio time the listener hears at this frame, in the file's own base (track seconds).
