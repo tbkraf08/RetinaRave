@@ -72,7 +72,12 @@ export function dpBeats(env, fps, per, alpha = DP_ALPHA) {
   return out.reverse();
 }
 
+export const RESEED = 512;           // the phasor recurrence is re-seeded from Math.cos/sin every this many hops
 // Sub-hop period + phase: maximise |<env, e^{2 pi i t / p}>|. -> { per, phase, coh }
+// The inner sum advances e^{i k i} by one complex multiply per hop instead of a cos and a sin (1600 candidate periods x
+// 14 775 hops is 23.6 M transcendental pairs, 274 ms of the 649 ms buildGrid cost; two re-seeds per 1024 hops keep the
+// unit-modulus recurrence's drift under 1e-13, five orders under the 1e-5 the grid is rounded to, and the map's JSON
+// comes out byte-identical).
 export function refitGrid(env, fps, per, span = REFIT_HOPS / fps, step = REFIT_STEP) {
   const n = env.length;
   let sum = 0; for (let i = 0; i < n; i++) sum += env[i];
@@ -81,7 +86,15 @@ export function refitGrid(env, fps, per, span = REFIT_HOPS / fps, step = REFIT_S
   for (let p = per - span; p < per + span; p += step) {
     let re = 0, im = 0;
     const k = 2 * Math.PI / p / fps;
-    for (let i = 0; i < n; i++) { const a = k * i; re += env[i] * Math.cos(a); im += env[i] * Math.sin(a); }
+    const wr = Math.cos(k), wi = Math.sin(k);
+    let cr = 1, ci = 0;
+    for (let i = 0; i < n; i++) {
+      if ((i & (RESEED - 1)) === 0 && i) { const a = k * i; cr = Math.cos(a); ci = Math.sin(a); }
+      const e = env[i];
+      if (e !== 0) { re += e * cr; im += e * ci; }
+      const nr = cr * wr - ci * wi;
+      ci = cr * wi + ci * wr; cr = nr;
+    }
     const m = Math.sqrt(re * re + im * im) / sum;
     if (m > bm) { bm = m; bp = p; ba = Math.atan2(im, re); }
   }

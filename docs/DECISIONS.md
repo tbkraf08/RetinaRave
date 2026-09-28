@@ -2386,3 +2386,37 @@ retinarave.com. No sweep (memory `feedback_sweep_cost`; the full sweep also wait
 0 fail, `npm test` + `test_gielis` OK, `npm run build` bundles. GIELIS stays id 10, forced-only (`score` 0, `n` / `&scene=10`, no digit
 key). **Tagged is not validated** (the NAV2 lesson, §46 addendum 8): the user has not said the look is right; size and brightness remain
 the first retune items when they look.
+
+
+## §48 v0.15 — the engine's ears, the file source, the track map, CHLADNI (2026-09-27, orchestrator + opus workers FILE, EARS (two passes), CHLADNI; briefs `docs/workers/brief-{file,ears,ears2,chladni}.md`, reports `file.md`, `ears.md`, `chladni.md`; `ENGINE-CHLADNI-SESSION-PROMPT.md`, `docs/AUDIT-v0.15.md`)
+
+**The ask** (the user, verbatim): "what needs to be added to the engine to extract the highest quality possible elements from
+music to make the most intuitive and legible visualization that make it looked synced with the music? … additionally create a
+net new scene (slot 12) to highlight engine updates ; tune for SEE YOU DROP specifically; wait for my say before running full
+sweep; think". **No `tools/accept.sh` this session** — the cheap proofs after every engine step (check, node tests, parity fake,
+one full md5 list, mixs).
+
+**What was built (additive: no existing MS value, no existing pixel moved — parity fake 0, ids 0–10 md5 = v0.14, mixs 641f6633):**
+1. **File source + deterministic real-track runs (FILE):** `&track=<name>&at=<s>` (served by `tools/serve.js` `/music/` from
+   `$MUSIC`, local only; a pick / drop control on the landing card, local decode). Under `CLOCK=1` nothing plays; the playhead is
+   frame-exact, `AU.fast` / `AU.slow` are PCM-backed AnalyserNode shims (`engine/shim.js`), the synapse tap gets exact 512 blocks
+   on the main thread — two runs are byte-identical. `DET_LEAD` 0.0427 s (the measured `outputLatency` + a quantum) models the
+   analysers running ahead of the listener. A seeded `Math.random` in det mode only (`features-slow.js:125` is reachable on real
+   music). `tools/filetrace.js` → the trace JSON `compare.py` reads.
+2. **Heard time (FILE):** `MS.heardT` / `fileOn` (stage `clock`), the PCM bus (`engine/pcm.js`, a stereo worklet stamped with
+   `currentFrame`, lazy), `ENGINE.log`. Deviation: real-time `heardT` does not subtract `outputLatency` again (`contextTime`
+   already lags by it, measured). Capture-mode lag not measured this session (`&sync=` exists).
+3. **The ears (EARS):** `engine/ears/` pure DSP, the stage `ears` (`features-ears.js`, orchestrator) — sub pitch / slides /
+   purity / gate, tonic with the sub (C# minor on SeeYouDrop; the old `key` said G#), register, clean kicks (a beater click
+   within 25 ms), snare / hat, densities, felt pulse, low-pass, width; events released at heard time with ages.
+   `subCents` = from the nearest note (the field list), not from the tonic (the spec's prose) — the interval is computable.
+4. **The track map (EARS + orchestrator):** `engine/map/` — beats (Ellis DP), bars, sections (Foote, labels, returns), drops by
+   the whole track (the low end entering after ≥ 1 bar of absence + a kick-density gate over 8 bars — a limited master defeats
+   every energy-only gate), `eG`. Built **on the main thread inside the file source's gates** (1.6 s for SeeYouDrop), not in a
+   Worker as the spec leaned: a Blob worker cannot resolve the module imports and the bundle has no module URLs; the playhead
+   waits for it anyway, so the only cost is a one-time pause before playback.
+5. **CHLADNI** (id 11, forced-only): see the addenda.
+
+**Measured (AUDIT-v0.15 §1):** kick F 0.25 → 0.79 on the groove, drops exact on every run, tonic right, slides 32/41 — and the
+misses stated: kick F < 0.9 and 13 % on bare 808s (the causal front end), sub ±30 cents 73 %, boundaries 7/11 (4 annotated
+times are off the bar grid), returns 4/5. Pass 2 (EARS) takes the file-mode onsets and sub from the non-causal map.

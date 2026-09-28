@@ -329,7 +329,14 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
     print('  '.join(f"{s0_}s {n_}x{k_}" for s0_, n_, k_ in runs if k_ >= 5))
     contour = dict(fps=10, t=[round(float(v), 2) for v in t[::step]], f0=[round(float(v), 2) for v in f0[::step]],
                    sub=[round(float(v / tot[i]), 3) for i, v in list(enumerate(sub))[::step]], hf=[round(float(min(v, 99)), 3) for v in harm[::step]])
+    # `fps=100` is the NOMINAL rate and it is wrong: the hop is int(0.01*ysr) = 22 samples at ysr = sr/20 = 2205, so the
+    # real rate is 2205/22 = 100.2273 Hz and the label drifts 358 ms by the end of a 157 s track. Reading the contour at
+    # 100 Hz is what made the engine's +-30-cents ruler read 72.7 % when the pitch itself agrees to 1 cent (v0.15 pass 2,
+    # docs/workers/ears.md). The v0.14 value stays for byte compatibility; `fpsExact` (and `hop` / `ysr`, so the number is
+    # derivable rather than asserted) is the one to read. Frame f is centred at t0 + f/fpsExact.
     contour['f0td'] = dict(fps=100, t0=round(float(ttd[0]), 3), f0=np.round(np.where(voiced, f0td, 0), 1).tolist(), conf=np.round(conf, 2).tolist())
+    contour['f0td']['fpsExact'] = round(float(ysr / hop), 6)
+    contour['f0td']['hop'] = int(hop); contour['f0td']['ysr'] = float(ysr); contour['f0td']['win'] = int(W)
     out = dict(summary=summ, grains=list(grains), slices=slices, sub_runs=runs, onsets=dict(low=np.round(low, 3).tolist(), click=np.round(kick, 3).tolist(),
                mid=np.round(mid_, 3).tolist(), high=np.round(high_, 3).tolist()), contour=contour)
 

@@ -7,8 +7,11 @@ import { FFT } from '../ears/dsp.js';
 import { buildGrid } from './beats.js';
 import { buildSections, kkTonic } from './sections.js';
 import { findDrops } from './drops.js';
+import { buildOnsets } from './onsets.js';
+import { buildSubPitch } from './subpitch.js';
+import { ANA_SR, resample } from './resample.js';
 
-export const MAP_V = 1;
+export const MAP_V = 2;              // v2 adds `onsets` (non-causal, the truth's front end) and `sub` (a centred YIN)
 export const EG_FPS = 10;            // the energy arc's rate
 export const EG_LO = 5, EG_HI = 98;  // percentiles mapped to 0 and 1 — the macro arc the AGC flattens
 export const CH_N = 8192;            // the chroma FFT per bar
@@ -20,20 +23,32 @@ export const MED_W = 5;              // the non-causal median (in hops) that spl
 const pctOf = (a, q) => { const b = Array.from(a).sort((x, y) => x - y); return b[Math.max(0, Math.min(b.length - 1, Math.floor(q / 100 * b.length)))]; };
 
 // The whole decoded track in, a plain JSON-able map out.
-export function buildMap(L, R, sr, opts = {}) {
-  const n = L.length, dur = n / sr;
+export function buildMap(L, R, sr0, opts = {}) {
+  const dur = L.length / sr0;
+  const prof = opts.prof || {};                // buildMap's own cost split (ms), for the report and for test_map
+  const clk = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Number(process.hrtime.bigint()) / 1e6;
+  let mark = clk();
+  const lap = (k) => { const t = clk(); prof[k] = +(t - mark).toFixed(1); mark = t; };
+  // THE WHOLE MAP ANALYSES AT ANA_SR (44.1 kHz), whatever the AudioContext decoded at. `resample.js`' header has the
+  // measurement: the truth tool's own front end, run on the same music at 48 kHz, reproduces only 70 % of its own
+  // 44.1 kHz onsets, because a 2048-point STFT's bins, a 17-frame median and `int(0.09*fps2)` all mean different things
+  // in Hz and in seconds at a different rate. Bringing the audio to one rate first also makes the map RATE-INDEPENDENT:
+  // the 48 kHz build's grid, sections, drops and tonic now come out as the 44.1 kHz build's instead of drifting
+  // (before: phase 0.0400 against 0.0360, coherence 0.122 against 0.129, tonic confidence 0.158 against 0.222).
+  const mono0 = new Float32Array(L.length);
+  for (let i = 0; i < L.length; i++) mono0[i] = 0.5 * (L[i] + (R ? R[i] : L[i]));
+  const mono = resample(mono0, sr0, ANA_SR), sr = ANA_SR, n = mono.length;
+  lap('resample');
   // --- one pass: band powers per hop, and the sub's pitch / gate per hop
   const perc = new PercTrack(sr), sub = new SubTrack(sr);
   const NH = Math.floor(n / PHOP);
   const NB = 7;
   const bp = new Float64Array(NH * NB);
   const sHz = new Float64Array(NH), sNote = new Int8Array(NH).fill(-1), sGate = new Uint8Array(NH);
-  const mono = new Float32Array(n);
   const onKick = [];                   // kick onset times: the drop rule's density measure (see the bar loop)
   let h = 0;
   for (let i = 0; i < n; i++) {
-    const m = 0.5 * (L[i] + (R ? R[i] : L[i]));
-    mono[i] = m;
+    const m = mono[i];
     const pe = perc.e, den0 = pe[B_SUB] + pe[B_LOWBASS] + pe[B_HARM];
     if (i % PHOP === 0) sub.share = den0 > 0 ? pe[B_SUB] / den0 : 1;
     perc.step(m, (i + 1) / sr);
@@ -45,6 +60,14 @@ export function buildMap(L, R, sr, opts = {}) {
       h++;
     }
   }
+  lap('pass');
+  // --- the non-causal channels: the truth tool's own onset front end and its own centred YIN
+  const ons = buildOnsets(mono, sr, Object.assign({ mono44: mono }, opts.onsets || {}));
+  lap('onsets');
+  const subP = buildSubPitch(mono, sr,
+    { e60: ons.e60, e600: ons.e600, share: ons.share, t0: ons.t0, fps: ons.fps }, opts.sub || {});
+  lap('subpitch');
+  delete ons.mono44; delete ons.share; delete ons.e60; delete ons.e600;
   const fps = sr / PHOP;
   // --- the percussive onset envelope: each band's dB minus a CENTRED median (non-causal), positive flux, summed
   const env = new Float64Array(NH), elow = new Float64Array(NH), emid = new Float64Array(NH);
@@ -70,8 +93,10 @@ export function buildMap(L, R, sr, opts = {}) {
     if (b === B_SNARE) for (let i = 0; i < NH; i++) emid[i] = tmp[i];
   }
   for (const b of [B_SUB, B_LOWBASS]) { bandFlux(b, tmp); for (let i = 0; i < NH; i++) elow[i] += tmp[i]; }
+  lap('flux');
   // --- the grid
   const grid = buildGrid(env, elow, emid, fps, dur);
+  lap('grid');
   const db = grid.downbeats.slice();
   if (db.length < 4) return emptyMap(sr, dur, grid);
   if (db[db.length - 1] < dur) db.push(Math.min(dur, db[db.length - 1] + grid.bar));
@@ -129,6 +154,7 @@ export function buildMap(L, R, sr, opts = {}) {
     for (let d = 0; d < 11; d++) F[b * DIM + d] = row[d];
     for (let i = 0; i < 12; i++) F[b * DIM + 11 + i] = 2 * ch12[b * 12 + i];
   }
+  lap('bars');
   // --- sections, drops, tonic, the energy arc
   const sec = buildSections(F, DIM, db, opts);
   if (sec.sections.length) {                   // the section list covers the whole track: the first bar line is not t = 0
@@ -153,8 +179,10 @@ export function buildMap(L, R, sr, opts = {}) {
   const lo = pctOf(raw, EG_LO), hi = pctOf(raw, EG_HI);
   const v = new Array(NE);
   for (let i = 0; i < NE; i++) v[i] = Math.max(0, Math.min(1, (raw[i] - lo) / (hi - lo + 1e-14)));
+  lap('tail');
   return {
-    v: MAP_V, sr, dur: r6(dur), bpm: r4(grid.bpm), beat: r6(grid.beat), phase: r5(grid.phase), bar: r6(grid.bar),
+    onsets: ons, sub: subP,        // `prof` is NOT returned: it would make two builds differ. It fills `opts.prof`.
+    v: MAP_V, sr: sr0, anaSr: sr, dur: r6(dur), bpm: r4(grid.bpm), beat: r6(grid.beat), phase: r5(grid.phase), bar: r6(grid.bar),
     grid: { coh: r4(grid.coh), dpResMs: r4(grid.dpRes * 1000), dpAgree: r4(grid.dpAgree), downbeatMod4: grid.downbeatMod4, downbeatScores: grid.downbeatScores.map(r4) },
     beats: grid.beats.map(r4), downbeats: grid.downbeats.map(r4),
     sections: sec.sections.map((s) => ({ t0: r4(s.t0), t1: r4(s.t1), id: s.id, label: s.label, ret: s.ret, bars: s.bars })),
@@ -170,11 +198,13 @@ const r4 = (x) => Math.round(x * 1e4) / 1e4;
 const r5 = (x) => Math.round(x * 1e5) / 1e5;
 const r6 = (x) => Math.round(x * 1e6) / 1e6;
 function emptyMap(sr, dur, grid) {
-  return { v: MAP_V, sr, dur: r6(dur), bpm: r4(grid.bpm), beat: r6(grid.beat), phase: r5(grid.phase), bar: r6(grid.bar),
+  return { v: MAP_V, sr: sr0, anaSr: sr, dur: r6(dur), bpm: r4(grid.bpm), beat: r6(grid.beat), phase: r5(grid.phase), bar: r6(grid.bar),
     grid: { coh: r4(grid.coh), dpResMs: r4(grid.dpRes * 1000), dpAgree: r4(grid.dpAgree), downbeatMod4: grid.downbeatMod4, downbeatScores: grid.downbeatScores.map(r4) },
     beats: grid.beats.map(r4), downbeats: grid.downbeats.map(r4), sections: [], novelty: { bars: [], v: [], thr: 0 },
     drops: [], dropWhy: [], energy: { bars: [], low: [], e: [] }, eG: { fps: EG_FPS, v: [] },
-    tonic: { pc: 0, minor: 0, conf: 0, scores: new Array(24).fill(0) } };
+    tonic: { pc: 0, minor: 0, conf: 0, scores: new Array(24).fill(0) },
+    onsets: { fps: 0, t0: 0, nfr: 0, kick: [], snare: [], hat: [], low: [], bare: [] },
+    sub: { fps: 0, t0: 0, n: 0, hz: [], cents: [], note: [], conf: [], gate: [], vcd: [], glide: [], inT: [], outT: [], noteT: [] } };
 }
 
 // --- reading the map at heard time -----------------------------------------------------------------------------------
@@ -209,6 +239,19 @@ export function mapAt(map, t, out = {}) {
     const j = Math.min(g.v.length - 1, i + 1), f = Math.max(0, Math.min(1, x - i));
     out.eG = g.v[i] + (g.v[j] - g.v[i]) * f;
   } else out.eG = 0;
+  return out;
+}
+
+// The sub channel at heard time. The NEAREST frame, never an interpolation: `hz` is 0 on an unvoiced frame and averaging
+// a pitch with 0 would invent one an octave down, `note` and `gate` are categorical, and the grid is 100.2273 Hz so the
+// nearest frame is at most 5 ms away — a third of a 60 Hz frame.
+// out { hz, cents, note, conf, gate, glide }
+export function mapSubAt(map, t, out = {}) {
+  const P = map.sub;
+  if (!P || !P.n) { out.hz = 0; out.cents = 0; out.note = -1; out.conf = 0; out.gate = 0; out.glide = 0; return out; }
+  const i = Math.max(0, Math.min(P.n - 1, Math.round((t - P.t0) * P.fps)));
+  out.hz = P.hz[i]; out.cents = P.cents[i]; out.note = P.note[i];
+  out.conf = P.conf[i]; out.gate = P.gate[i]; out.glide = P.glide[i];
   return out;
 }
 

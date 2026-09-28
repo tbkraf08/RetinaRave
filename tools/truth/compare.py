@@ -145,7 +145,10 @@ def run(trace, truth, win=None, md=None, ann=None):
         T.add('kicks on bare 808s', 'new', f'{pct:.1f} % ({hit}/{len(kt)})', '<= 5 %', pct <= 5.0)
     else: T.add('kicks on bare 808s', 'new', 'absent')
     # --- sub pitch
-    ct = truth['contour']['f0td']; c0, cf = ct['t0'], ct['fps']; cf0 = np.array(ct['f0'], float)
+    # `fps` in the contour is the nominal 100; `fpsExact` is 2205/22 = 100.2273 and is what the frames actually are. Using
+    # the nominal one drifts 358 ms over a 157 s track, which is 2.4 semitones of an 808 slide: the ruler then reads the
+    # wrong reference frame and the engine looks 27 points worse than it is (72.7 % against 99.8 %). See trackmap.py.
+    ct = truth['contour']['f0td']; c0 = ct['t0']; cf = ct.get('fpsExact', ct['fps']); cf0 = np.array(ct['f0'], float)
     sh = np.array(truth['contour']['sub'], float); st10 = np.array(truth['contour']['t'], float)
     sub = colf(trace, 'subHz')
     if sub is not None:
@@ -193,7 +196,12 @@ def run(trace, truth, win=None, md=None, ann=None):
               f"extra {' '.join('%.2f' % v for v in extra) if len(extra) else 'none'}; "
               f"max |lag| {1000 * max((abs(d - r) for d, r in pairs), default=0):.0f} ms")
     # --- structure: boundaries
-    bl = [s['t0'] for s in (ann['sections'] if ann else truth.get('sections', []))]
+    # v2 of the annotation states which of its own times are NOT boundary events: the first section's t0 is the start of
+    # the file (every detector fires it on its first frame, before a recording window can begin) and the last section's t1
+    # is the file's duration. Grading either is grading a constant, and it cost 2 of the 11 rows in pass 1.
+    secs = ann['sections'] if ann else truth.get('sections', [])
+    bl = [s['t0'] for s in secs]
+    if ann and ann.get('start_is_not_a_boundary') and bl: bl = bl[1:]
     beat = truth.get('bpm_grid', {}).get('beat', 0.4)
     for src, fld in (('new', 'mapBoundaryEvt'), ('old', 'boundaryEvt')):
         c = trace['cols'].get(fld)
@@ -276,7 +284,8 @@ def make_synth(truth, out, shift=0.0, fps=60, fields=None):
             if last >= 0: age[k] = tb[k] - (tb[last] - shift)
         cols[cls + 'Evt'] = ev.tolist(); cols[cls + 'Age'] = np.round(age, 5).tolist()
         cols[cls] = np.clip(np.maximum.accumulate(np.where(ev > 0, 1.0, 0.0)) * 0 + ev, 0, 1).tolist()
-    f0 = np.array(ct['f0'], float); ti = np.clip(np.round((tb - ct['t0']) * ct['fps']).astype(int), 0, len(f0) - 1)
+    f0 = np.array(ct['f0'], float)
+    ti = np.clip(np.round((tb - ct['t0']) * ct.get('fpsExact', ct['fps'])).astype(int), 0, len(f0) - 1)
     cols['subHz'] = np.round(f0[ti], 3).tolist()
     v = f0[ti] > 0; st = 12 * np.log2(np.maximum(f0[ti], 1e-6) / 55.0)
     g = np.r_[0, np.diff(st)] * fps; g[~v] = 0; g[1:][~v[:-1]] = 0     # no glide across an unvoiced gap
