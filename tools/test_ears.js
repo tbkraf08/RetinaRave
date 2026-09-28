@@ -91,7 +91,9 @@ const inw = (a, t0, t1) => a.filter((v) => v >= t0 && v < t1);
 const BADBEATS = [];
 // ---------------------------------------------------------------------------------------------------- the sub rulers
 function subRulers(R, truth, label) {
-  const ct = truth.contour.f0td, cf0 = ct.f0, c0 = ct.t0, cfps = ct.fps;
+  // `ct.fps` is the NOMINAL 100; the hop is 22 samples at ysr = 2205, so the real rate is 100.2273 Hz and reading the
+  // contour at 100 drifts 358 ms by 157 s — 2.4 semitones of an 808 slide. v0.15 pass 2 added `fpsExact` to the truth.
+  const ct = truth.contour.f0td, cf0 = ct.f0, c0 = ct.t0, cfps = ct.fpsExact || ct.fps;
   const sh = truth.contour.sub, st10 = truth.contour.t;
   const hz = R.cols.subHz, t = R.t;
   const cents = [];
