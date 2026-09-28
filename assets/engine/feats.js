@@ -5,6 +5,8 @@
 //   drives: what it moves visually (documentation only).
 // Stages may only ADD fields they declare here and must never overwrite another stage's fields (docs/ENGINE.md).
 
+import { EARS_FEATS } from './ears/feats.js';
+
 const L = (eli5, formula, drives, range = [0, 1]) => ({ kind: 'level', eli5, formula, drives, range });
 const R = (eli5, formula, drives) => ({ kind: 'raw', eli5, formula, drives, range: null });
 const E = (eli5, formula, drives) => ({ kind: 'event', eli5, formula, drives, range: [false, true] });
@@ -137,6 +139,19 @@ export const FEATS = {
   roll: L('the drum roll is accelerating', 'onsets per beat rising in octaves', 'build evidence'),
   swell: L('energy swelling', 'eShort/eMed - 1.04 or level trend', 'build evidence'),
   hp: L('the bass was pulled (high-pass sweep)', 'bassShort/bassLong low + low-edge trend', 'build evidence'),
+  // --- the ears stage (features-ears.js, v0.15 E3): engine/ears/feats.js, spread verbatim ---
+  ...EARS_FEATS,
+  // --- the track map (features-ears.js, v0.15 E4; file mode only — mapOn 0 and these idle otherwise) ---
+  mapOn: L('the whole track is known in advance (a file is playing and its map is built)', 'buildMap(decoded track) done and fileOn', 'choose the map fields over the live fallbacks (dropConf, dropExpectedIn, build)'),
+  toDrop: R('beats until the next drop (-1 = none ahead)', '(next map drop - heardT) / map beat', 'wind up exactly to the drop frame'),
+  toBoundary: R('beats until the current section ends (-1 = none)', '(section t1 - heardT) / map beat', 'anticipate a section change'),
+  buildProg: L('how far through the build into the next drop', '(heardT - t0) / (t1 - t0) of the section that ends in a drop, 0 elsewhere', 'spiral / tilt through the void'),
+  mapSection: { kind: 'count', eli5: 'which kind of section this is (sections that sound alike share the label)', formula: 'bar-synchronous self-similarity, Foote novelty, cluster labels (map/sections.js)', drives: 'plate shape / palette per section', range: [-1, Infinity] },
+  mapNext: { kind: 'count', eli5: 'the label of the section after this one (-1 = none)', formula: 'map.sections[i+1].label', drives: 'anticipate the next look', range: [-1, Infinity] },
+  mapReturn: L('this section is a return of an earlier one', 'map.sections[i].ret', 'restore a look'),
+  eG: L('loudness against the whole track (the macro arc the AGC flattens)', 'bar energy mapped p5 -> 0, p98 -> 1 over the whole track, at heardT', 'global brightness / amplitude'),
+  mapDropEvt: E('a drop, on its exact bar line (frame-exact, every run)', 'a map drop in (previous heardT, heardT]', 'the slam'),
+  mapBoundaryEvt: E('a section boundary, on its bar line', 'a map section start in (previous heardT, heardT]', 'section change'),
   // --- the clock stage (engine.js, v0.15 E2): the engine's time base ---
   heardT: R('the audio time the listener hears at this frame (s); -1 with no audio', 'file: playhead - DET_LEAD (det) / at + ctxHeard - startCtx (real time) · capture/mic: ctx.currentTime + SYNC_OFS · demo: ctxHeard', 'nothing visual: the base every event onset and PCM block is stamped in'),
   fileOn: L('a file is the source (1) or not (0)', "AU.mode === 'file'", 'nothing visual: the harness and the trace read it'),

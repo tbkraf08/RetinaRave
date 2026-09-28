@@ -770,6 +770,45 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `roll` | level | the drum roll is accelerating | build evidence |
 | `swell` | level | energy swelling | build evidence |
 | `hp` | level | the bass was pulled (high-pass sweep) | build evidence |
+| `subHz` | raw | the pitch of the sub bass, in Hz (0 = no sub) | the Chladni figure, any pitch-driven colour |
+| `subCents` | raw | how far the sub is from the nearest equal-tempered note, in cents | micro-detune of a figure, a hue nudge |
+| `subNote` | count | which pitch class the sub is playing (C = 0), -1 when there is none | a 12-entry figure / colour table indexed by the bass note |
+| `subConf` | level | how sure that pitch is | fade a pitch-driven channel out when the sub is not clear |
+| `subGlide` | raw | how fast the sub is sliding, in semitones per second (+ = rising) | morph between neighbouring figures during a slide |
+| `subNoteEvt` | event | a new sub note just started | retarget the figure, kick the sand |
+| `subPure` | level | how sine-like the bass is (1 = a pure 808 sine, 0 = a harmonic-rich bass) | mix in the 2nd / 3rd harmonic figures: clean lines vs busy ones |
+| `subGate` | count | is the sub sounding at all (0/1, hysteresis) | silence the sand when there is no bass ("no sound -> quiet") |
+| `subIn` | event | the sub just came in | the drop's first frame, a burst |
+| `subOut` | event | the sub just left | let the figure relax, the sand settle |
+| `tonic` | count | the key's root, as a pitch class (C = 0) | the reference note every interval is measured from; palette root |
+| `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
+| `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
+| `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
+| `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
+| `width` | level | how wide the stereo image is | spread, how far the figure reaches off-centre |
+| `kickEvt` | event | a kick just hit (one read) | the hit: a flash, a shove, a ring |
+| `snareEvt` | event | a snare or clap just hit | a second, different hit channel |
+| `hatEvt` | event | a hat just hit | fine, fast detail; the intro's rising hats |
+| `kickAge` | raw | seconds since the last kick (99 before any) | place a fast animation exactly, sub-frame |
+| `snareAge` | raw | seconds since the last snare (99 before any) | as kickAge |
+| `hatAge` | raw | seconds since the last hat (99 before any) | as kickAge |
+| `kickVel` | level | how hard the last kick hit | amplitude of the hit |
+| `snareVel` | level | how hard the last snare hit | amplitude of the hit |
+| `hatVel` | level | how hard the last hat hit | amplitude of the hit |
+| `denK` | raw | kicks per second over the last second | busy-ness of the low end |
+| `denS` | raw | snares per second over the last second | the climbs: 1.7x the groove on this track |
+| `denH` | raw | hats per second over the last second | double time, the rising intro |
+| `pulse` | raw | the felt beat as a multiple of the grid beat: 0.5 = half time, 1, 2 = double time | breathe on the felt beat, not the grid beat |
+| `mapOn` | level | the whole track is known in advance (a file is playing and its map is built) | choose the map fields over the live fallbacks (dropConf, dropExpectedIn, build) |
+| `toDrop` | raw | beats until the next drop (-1 = none ahead) | wind up exactly to the drop frame |
+| `toBoundary` | raw | beats until the current section ends (-1 = none) | anticipate a section change |
+| `buildProg` | level | how far through the build into the next drop | spiral / tilt through the void |
+| `mapSection` | count | which kind of section this is (sections that sound alike share the label) | plate shape / palette per section |
+| `mapNext` | count | the label of the section after this one (-1 = none) | anticipate the next look |
+| `mapReturn` | level | this section is a return of an earlier one | restore a look |
+| `eG` | level | loudness against the whole track (the macro arc the AGC flattens) | global brightness / amplitude |
+| `mapDropEvt` | event | a drop, on its exact bar line (frame-exact, every run) | the slam |
+| `mapBoundaryEvt` | event | a section boundary, on its bar line | section change |
 | `heardT` | raw | the audio time the listener hears at this frame (s); -1 with no audio | nothing visual: the base every event onset and PCM block is stamped in |
 | `fileOn` | level | a file is the source (1) or not (0) | nothing visual: the harness and the trace read it |
 <!-- FEATS:end -->

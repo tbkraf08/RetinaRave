@@ -97,6 +97,7 @@ export async function startFile(src, opt = {}) {
     heardT: () => heardTOf(F),
   };
   F.ph = F.at;
+  for (const f of AU.onFile) f(F);                 // v0.15 E4: the ears stage pushes the track map's build onto F.gates here
   // The PCM bus's stamps are in the engine's time base, which in file mode is TRACK seconds. The live worklet hands us
   // context seconds, so the map is set here (before the first block can arrive) and reports -1 until the node has started.
   if (!det) PCM.map = (ctxT) => (F.frame0 < 0 ? -1 : clamp(F.at + (ctxT - F.ctx0), 0, F.dur));

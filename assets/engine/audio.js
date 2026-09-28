@@ -9,6 +9,7 @@ export const AU = {
   file: null,           // v0.15 E1: sources/file.js's state while a file is the source (null otherwise)
   stopFile: null,       // v0.15 E1: sources/file.js's teardown, so stopAll can undo the file graph without importing it
   sync: 0,              // v0.15 E2: SYNC_OFS (s) — the declared capture-path lag added to heardT in capture / mic mode
+  onFile: [],           // fns(F) called when a file source starts, before its decode (features-ears.js arms the map gate)
   onInit: [],           // fns(ctx) called once the context exists (features.js registers setupBins)
   onRun: null,          // fn(mode, msg) — UI hook
   onStop: null,         // fn(msg) — UI hook

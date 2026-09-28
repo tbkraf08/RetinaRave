@@ -1,6 +1,7 @@
 // Boot: engine → core (GL, effects, transitions, scenes) → registry → harness → loop.
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
+import './engine/features-ears.js'; // v0.15: the ears + the track map (additive stage after synapse)
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
 import { Q, tier, budget } from './core/quality.js';
 import { LOOK } from './core/look.js';
