@@ -2420,3 +2420,17 @@ one full md5 list, mixs).
 **Measured (AUDIT-v0.15 §1):** kick F 0.25 → 0.79 on the groove, drops exact on every run, tonic right, slides 32/41 — and the
 misses stated: kick F < 0.9 and 13 % on bare 808s (the causal front end), sub ±30 cents 73 %, boundaries 7/11 (4 annotated
 times are off the bar grid), returns 4/5. Pass 2 (EARS) takes the file-mode onsets and sub from the non-causal map.
+
+**Addendum 1 — EARS pass 2 (merged `f42bf93`).** File mode takes kicks / snares / hats and the sub from the non-causal map
+(STFT + HPSS, a centred YIN, the map analysed at 44.1 kHz whatever the context rate); events are released on the frame
+*nearest* the onset (ages ≥ −1/120 s on that frame, stated in `EARS_FEATS`). `SeeYouDrop.sections.json` v2 is bar-pinned
+(drop 2 = 105.596, the walk arrivals, `not_drops`; old numbers kept as `was`). Result (AUDIT §2): kick F 1.000, 0 % on bare
+808s, first-frame lag +2 ms, sub 100 %, returns 5/5, boundaries 9/10 — with the caveat that file mode now reproduces the truth
+tool's own analysis, so the causal live path's §1 numbers remain the independent engine measurement. `buildMap` 2.9 s.
+
+**Addendum 2 — CHLADNI (merged `1d155a5`, id 11, forced-only).** `math/chladni.js` (the square-plate figure, a 12-entry table
+by Tenney height of the interval to `tonic`: the walk C#–A–F#–E = (1,2) (2,5) (2,3) (1,5); an asymptotic-Bessel circular
+plate while the bass is away from the tonic), GPU sand ping-pong, leaps analytic in `kickAge`, gate / register / void /
+anticipation / low-pass / colour on one channel each. Deviations from the brief: `subGlide` unread (measured useless on this
+track), the plate boundary keyed to "bass away from the tonic" not `mapSection`, `state.pathCut` 3, a preset `&ears=1&figure=i`
+instead of `&fix=`. 8 of 9 windows met or on timing (AUDIT §3); open: the drop's figure under the global flash, the slides.

@@ -59,3 +59,21 @@ the front end did not reproduce itself at 48 kHz (the map now analyses at 44.1 k
 
 Nothing moved: two full-track det runs `cmp`-identical, parity fake 0, the full md5 list identical to the skeleton list
 (`scene-md5-v015-ears2.txt`). `buildMap` 2.9 s in the page (was 1.6 s): a one-time pause before playback.
+
+## §3 CHLADNI (id 11) — the nine SeeYouDrop windows (file mode, CLOCK=1; `docs/workers/chladni.md` (g), montages `tools/accept/v0.15/ch-win*.jpg`)
+
+| # | window | verdict | the number |
+|---|---|---|---|
+| 1 | walk 12.4–25.7 s | figures met, switch timing not | 4 distinct figures (1,2) (2,5) (2,3) (1,5); switch +0.085 / +0.053 / +0.187 / +0.237 s after the truth arrival (target 50 ms; the ears' own YIN arrival is +0.14 / +0.04 / +0.05 / +0.05 of it) |
+| 2 | groove 25–45 s | met | a leap on 38 / 38 kicks, lag +3.7 ms, none on bare 808s; the root figure held 13.4 s |
+| 3 | climbs | met | hit density 2.62× / 2.56× the groove; camera rises 0.70 → 0.90 / 1.00 rad |
+| 4 | void 49.9–57.6 s | met | plate amplitude mean 0.014; the inward spiral 0 → 0.87 with `buildProg` |
+| 5 | drops 57.6 / 105.6 s | met on timing | the slam +11.1 ms / +4.1 ms (inside one frame) — **but the composite's global flash + glitch bars wash the frame grey for ~0.15 s and hide the figure** (not a scene setting: CONTRACTS §1.4 has no per-scene flash weight) |
+| 6 | slides 57.6–90 s | partly | 82 % of the time on the tonic figure, but only 4 / 13 truth slides read as a morph; `subGlide` cannot separate a slide from an 808 attack (p90 13.3 groove vs 10.5 slides) — needs the map's slide list as a field |
+| 7 | gated 105.7–130 s | met | 19 gate dips, median spacing 1.58 s vs the 1.60 s bar, amplitude down to 0.012 |
+| 8 | outro 134.5–157 s | met | `lpSweep` fog 0.93 → 0.26, the walk returns twice, the sand dims 0.62 → 0.15 |
+| 9 | brightness | met | p95 luminance 0.56–0.73, median 0.63 (5 of 6 groove shots in 0.6–0.8) |
+
+Bench 1.23× TORUS2 (gate 1.5×). Continuity monitor over 60 s of file mode: `viol []`. s11 md5s (`&ears=1&figure=0`)
+606f721a / f7b1c6ee on the merged tree `1d155a5` = the worker's two runs. Not run: `tools/accept.sh` (the user's word);
+CyborgNinja / WhoLikesToParty 0–30 s and a capture-mode run (the spec's "shown, not tuned") — left for the user's look.
