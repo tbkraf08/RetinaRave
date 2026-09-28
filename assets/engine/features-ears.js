@@ -53,8 +53,9 @@ function onBlock(L, R, t0) {
 }
 
 // Called by sources/file.js (AU.onFile) when a file starts, before its decode: the playhead waits for this gate.
+// ENGINE.useMap false (&map=0, live step 3.0): no map at all, so a file runs the causal ears exactly as capture does.
 function armMap(F) {
-  if (!F || F === EARS.mapFile || !F.gates) return;
+  if (!ENGINE.useMap || !F || F === EARS.mapFile || !F.gates) return;
   EARS.mapFile = F;
   EARS.map = null;
   resetRel();

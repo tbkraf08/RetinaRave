@@ -461,6 +461,11 @@ real-time / deterministic mode (the default is deterministic exactly when cdp's 
 the beat / bar / phrase clocks moved onto heard time — `MS.leadT` = heardT − the analysers' newest audio time (+ `&disp=<ms>`):
 file-det −`DET_LEAD`, real-time file / demo the output timestamp's lag (median of 64 frames, stale timestamps dropped), capture
 `SYNC_OFS` or the measured 27 ms, mic `SYNC_OFS`. The `L` key toggles it live (a toast says the lead). Off = byte-identical traces.
+`&map=0` (live step 3.0, `ENGINE.useMap`) skips the file's track map: the ears stay **causal** — the live path on a file,
+deterministic under `CLOCK=1` (two runs `cmp`-identical), the harness every live-mode stage is developed on. SeeYouDrop 25–45 s
+with `&map=0`: kick F 0.786 (P 0.717 R 0.868), placed lag +5 ms, against the map's 1.000. With no map gate the file opens a
+frame earlier, so `filetrace.js` may print "frame0 is -1" (its header eval races the first frame) — the `fileStart` log still
+says frame0 2, and a window with t0 ≥ 8 s records the same frames; a t0 = 0 window starts one frame earlier (heard 0).
 
 Two modes, and only the second is reproducible:
 - **real time** (a real window, or headless without `CLOCK=1`): an `AudioBufferSourceNode` into `AU.bus` **and** into

@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &det= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -151,6 +151,9 @@ export function initHarness(hideLanding) {
   // off (&lead=1 on), &disp=<ms> adds a display lead
   if (HASH.has('lead')) ENGINE.LEAD.on = HASH.get('lead') === '1';
   if (HASH.has('disp') && isFinite(+HASH.get('disp'))) ENGINE.LEAD.disp = +HASH.get('disp') / 1000;
+  // live step 3.0: &map=0 skips the file's track map, so the ears stay causal (the live path on a file, deterministic under
+  // CLOCK=1) — what every live-mode stage is developed against; the default builds the map as v0.15 did
+  if (HASH.has('map')) ENGINE.useMap = HASH.get('map') !== '0';
   if (track) {
     hideLanding();
     ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),
