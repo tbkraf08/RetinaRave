@@ -1,0 +1,6 @@
+# CHLADNI (id 11) reference md5s, v0.15 — CLOCK=1 GPU=1, hash `test&scene=11&ears=1&figure=0`
+# (#test never fills the new ear fields, and the harness has no &fix= hash param: hooks.ears(1) pins the groove
+#  preset — a pure 808 on the tonic — and hooks.figure(0) the root figure. docs/workers/chladni.md friction 1.)
+# IDS=11 tools/scene-md5.sh <tag> "&ears=1&figure=0"   ·  identical over two runs 2026-09-27
+606f721a55f5782340205e1548db4bd2  s11-f360.jpg
+f7b1c6eed36389a1d84eaa084d537ddc  s11-f840.jpg

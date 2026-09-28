@@ -37,8 +37,21 @@ const fOf = (T) => F0 + Math.round((T - at) * FPS);
 const fStart = fOf(t0), fEnd = fOf(t1);
 
 const head = 'JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,sr:CARD.ENGINE.AU.file.sr,det:CARD.ENGINE.AU.file.det,at:CARD.ENGINE.AU.file.at})';
-const START = 'CARD.TRACE.start(' + JSON.stringify(fields) + '), CARD.ENGINE.frameN';
-const STOP = '(()=>{const j=CARD.TRACE.stop();window.__tj=JSON.stringify(j);return JSON.stringify({len:window.__tj.length,frames:j.f.length,fields:j.fields.length,mode:j.mode,t0:j.t[0],t1:j.t[j.t.length-1],cpu:+CARD.ENGINE.ms.toFixed(3),errs:CARD.ERRS.length,bad:CARD.nonFinite().length})})()';
+// CARD.TRACE records MS. The window numbers are also about what the SCENE did with MS, so a second recorder rides
+// the same frames on requestAnimationFrame (the fake clock drives rAF, so it fires exactly once per recorded frame)
+// and samples the scene's own read-only hook. Columns are fixed here and named in the JSON's `chcols`.
+const CHREC = "(function(){window.__CH=[];var S=CARD.REG[11].scene;function f(){var I=JSON.parse(S.hooks.info());"
+  + "window.__CH.push([window.__FRAME,+CARD.MS.heardT.toFixed(5),I.s,I.h,I.bnd,I.away,I.amp,I.gate,I.lift,I.spiral,"
+  + "I.glow,I.fog,I.note,I.win,I.tonic,I.hue,I.pitch,I.dist,I.drive,+CARD.MS.kickAge.toFixed(5),+CARD.MS.kickVel.toFixed(4),"
+  + "CARD.MS.kickEvt?1:0,CARD.MS.snareEvt?1:0,CARD.MS.hatEvt?1:0,CARD.MS.mapDropEvt?1:0,CARD.MS.subGate,+CARD.MS.subPure.toFixed(4),"
+  + "CARD.MS.subNote,+CARD.MS.subCents.toFixed(2),+CARD.MS.bassReg.toFixed(4),+CARD.MS.buildProg.toFixed(4),+CARD.MS.lpSweep.toFixed(4),"
+  + "CARD.MS.mapSection,CARD.MS.mapReturn,+CARD.MS.eG.toFixed(4),+CARD.MS.sub.toFixed(4),+CARD.MS.bass.toFixed(4)]);"
+  + "requestAnimationFrame(f);}f();})(),window.__CH.length";
+const CHCOLS = ['f', 't', 's', 'h', 'bnd', 'away', 'amp', 'gate', 'lift', 'spiral', 'glow', 'fog', 'note', 'win', 'tonic',
+  'hue', 'pitch', 'dist', 'drive', 'kickAge', 'kickVel', 'kickEvt', 'snareEvt', 'hatEvt', 'mapDropEvt', 'subGate',
+  'subPure', 'subNote', 'subCents', 'bassReg', 'buildProg', 'lpSweep', 'mapSection', 'mapReturn', 'eG', 'sub', 'bass'];
+const START = 'CARD.TRACE.start(' + JSON.stringify(fields) + '), ' + CHREC;
+const STOP = '(()=>{const j=CARD.TRACE.stop();j.chcols=' + JSON.stringify(CHCOLS) + ';j.ch=window.__CH;window.__tj=JSON.stringify(j);return JSON.stringify({len:window.__tj.length,frames:j.f.length,fields:j.fields.length,mode:j.mode,t0:j.t[0],t1:j.t[j.t.length-1],cpu:+CARD.ENGINE.ms.toFixed(3),errs:CARD.ERRS.length,bad:CARD.nonFinite().length})})()';
 const INFO = '"@"+CARD.MS.heardT.toFixed(4)+" "+CARD.REG[11].scene.hooks.info()';
 
 const steps = [

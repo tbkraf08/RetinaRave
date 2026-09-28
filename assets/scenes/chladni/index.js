@@ -54,6 +54,9 @@ const BASSON = 0.18;         // the bass is SOUNDING when its level, wherever it
                              // 0.066, the intro's mid-bass 0.40 — measured on SeeYouDrop, docs/workers/chladni.md)
 const REGLO = 0.45;          // bassReg is ~1 whenever no sub is present, so the camera reads it through a knee: below
 const REGHI = 0.90;          // REGLO is a sub, above REGHI a mid-bass, and with NO bass at all the register is HELD
+const REGTC = 0.60;          // and the knee's OUTPUT is eased: bassReg crosses it in one frame, and an ema whose
+                             // target jumps 1.9 rad is itself a jump on its first frame (the continuity monitor
+                             // caught exactly that — docs/workers/chladni.md (h))
 const HPAD = 0.25;           // the purity knee: the ears read this track's pure 808 at subPure 0.65, not 1, so the
                              // harmonic mix only starts below 1 − HPAD (the intro's 0.05 still gives h 0.93)
 const TONTC = 10.0;           // the TONIC is latched the same way, over a much longer window, because a change of
@@ -170,8 +173,11 @@ const SELF = {
   rt: {},
   hooks: { figure, ears, info, settle },
   // the continuity monitor's shape (tools/monitor.js reads CARD.NAV || CARD.home, so a run points CARD.NAV here):
-  // cPath is where the camera is looking from, in radians — the thing that must never jump on this screen.
-  state: { mode: 'plate', cPath: [0, PITCH_SUB], pathCut: 0, kick: { x: 0 }, baby: null },
+  // cPath is where the camera is looking from, in radians — the thing that must never jump on this screen. `pathCut`
+  // is 3, not 0: the monitor's legality test starts `N.pathCut <= 2 ||`, so a scene that publishes 0 is never measured
+  // at all and the run passes vacuously (docs/workers/chladni.md friction 4). 3 means "this scene declares no chart
+  // cut — measure every frame", and the only free passes left are a kick's rise and a mode change.
+  state: { mode: 'plate', cPath: [0, PITCH_SUB], pathCut: 3, kick: { x: 0 }, baby: null },
 
   // never auto-picked until the user approves it
   score() {
@@ -273,7 +279,8 @@ const SELF = {
     if (this.regRaw === undefined) this.regRaw = 0;
     // and it fades out with the VOID: "where the bass lives" is not a fact when there is no bass, so a silent passage
     // keeps the camera where the music last put it instead of being thrown overhead by a reading of nothing
-    const reg = sstep(REGLO, REGHI, this.regRaw) * (1 - U.lift);
+    this.regE = ema(this.regE === undefined ? 0 : this.regE, sstep(REGLO, REGHI, this.regRaw), dt, REGTC);
+    const reg = this.regE * (1 - U.lift);
     // the plate's gate: the sub's own gate where there IS a sub (so drop 2's 60 ms ducks read as a stomp), the
     // bass level where the bass has moved up an octave and subGate is 0 by definition
     U.gate = ema(U.gate, (reg > 0.5 ? (lvl > BASSON ? 1 : 0) : E.gate > 0.5 ? 1 : 0), dt, GATETC);
@@ -329,9 +336,16 @@ const SELF = {
     U.bounce = BOUNCE * Math.pow(Math.max(0, Math.cos(TAU * MS.beatPhase)), 4);
     const dTgt = (DIST_SUB + (DIST_MID - DIST_SUB) * reg) / (1 + U.bounce);
     U.dist = ema(U.dist, dTgt, dt, CAMTC * 0.25);
-    // the nudge: the target is read off the BEAT COUNT divided by the felt beat, so it cannot drift, and it eases
-    // (math/nudge.js). pulse 0.5 = half time: sixteen FELT beats still make one turn.
-    U.yaw = this.nudge.turn(dt, ((MS.beatCount * Math.max(0.25, MS.pulse)) / 16) * TAU % TAU, Math.max(MS.hush, MS.calm));
+    // the nudge: one sixteenth of a turn per FELT beat. The turn is ACCUMULATED from the beat count's own steps
+    // rather than read off `beatCount · pulse`, because the felt beat can change (half time to double time) and
+    // multiplying a large beat count by a new pulse moves the target by radians in one frame — the continuity
+    // monitor caught that as a 0.155 rad spike. Accumulating, a pulse change alters the RATE and never the angle,
+    // and with a constant pulse it is still read off the beat count, so it cannot drift (TORUS2's rule).
+    const bc = MS.beatCount | 0;
+    if (this.bcPrev === undefined) this.bcPrev = bc;
+    this.turnAcc = (this.turnAcc || 0) + ((bc - this.bcPrev) * Math.max(0.25, MS.pulse)) / 16;
+    this.bcPrev = bc;
+    U.yaw = this.nudge.turn(dt, (this.turnAcc - Math.floor(this.turnAcc)) * TAU, Math.max(MS.hush, MS.calm));
     camera(U.yaw, U.pitch, U.dist);
 
     // 7. COLOUR — the key as a hue anchor on the circle of fifths (math/keycolour.js), on the TONIC the new ears
