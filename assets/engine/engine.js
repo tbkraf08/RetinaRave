@@ -15,11 +15,13 @@ import file, { DET_LEAD, FPS } from './sources/file.js';
 import { TRACE, LOG, pushLog } from './trace.js';
 import { PCM } from './pcm.js';
 import { FEATS } from './feats.js';
+import { LEAD, restore as leadRestore, apply as leadApply } from './lead.js';
 
 AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : demo.start());
 
 export const ENGINE = {
   MS, GROOVE, AU, FEATS,
+  LEAD,             // live step 2: the clocks moved onto heard time (engine/lead.js); off unless &lead=1
   sources: { demo, capture, mic, fake, file, 'demo-synapse': demoSynapse },
   demoStyle: null,  // &demo=<style> selects the synapse synth; null = the v3 demo (parity)
   tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them
@@ -83,6 +85,7 @@ export const ENGINE = {
         MS.hit = MS.dropEnv = 0; // transients the gap has long outlived — the loop's dt clamp would carry them across it
       }
     }
+    leadRestore(MS);  // the clocks' own values back before anything integrates them (engine/lead.js; a no-op when off)
     if (this.fakeOn) fake.update(dt, now);
     else {
       // v0.15 E1: the file source advances the playhead here — the analyser shims are seeked and the synapse tap is fed
@@ -92,6 +95,7 @@ export const ENGINE = {
       updateMusic(dt, now);
     }
     for (const st of this.stages) st.fn(dt, now, MS);
+    leadApply(dt, MS, this.fakeOn); // after every stage, before the groove, the core and the trace read the clocks
     if (this.fix) Object.assign(MS, this.fix);
     updateGroove(dt, MS);
     TRACE.frame(MS, this.frameN, MS.heardT, TRACE.meta || this.traceMeta());

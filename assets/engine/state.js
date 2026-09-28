@@ -19,7 +19,7 @@ export const MS = {
   key: 9, mode: 1, keyConf: 0, novelty: 0, foote: 0, boundaryEvt: false, sectionAlt: -1, sectionReturn: 0, sectionAge: 0, sectionRenumber: null,
   dropExpectedIn: -1, dropConf: 0, fakeoutEvt: false, valence: 0.5, arousal: 0.3, moodFamily: 0, moodEvt: false, riser: 0, roll: 0, swell: 0, hp: 0,
   // clock stage (engine.js, v0.15 E2) — the engine's time base, written before every other stage
-  heardT: -1, fileOn: 0,
+  heardT: -1, fileOn: 0, leadT: 0,
   // ears stage (features-ears.js, v0.15 E3) — idle defaults: no sub, no onset yet (ages 99), no map
   subHz: 0, subCents: 0, subNote: -1, subConf: 0, subGlide: 0, subNoteEvt: false, subPure: 0, subGate: 0, subIn: false, subOut: false,
   tonic: -1, tonicMinor: 0, tonicConf: 0, bassReg: 0, lpSweep: 0, width: 0,

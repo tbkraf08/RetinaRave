@@ -155,6 +155,7 @@ export const FEATS = {
   // --- the clock stage (engine.js, v0.15 E2): the engine's time base ---
   heardT: R('the audio time the listener hears at this frame (s); -1 with no audio', 'file: playhead - DET_LEAD (det) / at + ctxHeard - startCtx (real time) · capture/mic: ctx.currentTime + SYNC_OFS · demo: ctxHeard', 'nothing visual: the base every event onset and PCM block is stamped in'),
   fileOn: L('a file is the source (1) or not (0)', "AU.mode === 'file'", 'nothing visual: the harness and the trace read it'),
+  leadT: R('how far the beat, bar and phrase clocks are moved onto what the listener hears (s; 0 = off)', 'engine/lead.js, &lead=1: (heardT - the analysers\' newest audio time) + &disp, the median of the last 64 good samples (a stale output timestamp is dropped); file-det -DET_LEAD, real-time file / demo ctxHeard - currentTime, capture SYNC_OFS or 0.027 measured, mic SYNC_OFS. beatPhase/beat/beatCount move at bpm, beatSyn/barPos/barPhase/phrasePos/phrase16Pos/bar at bpmSyn; the clocks\' own state is restored before the next frame', 'nothing visual: the harness and the trace read it', [-0.2, 0.2]),
 };
 
 export const FEAT_KEYS = Object.keys(FEATS);

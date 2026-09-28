@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &det= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &det= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -147,6 +147,9 @@ export function initHarness(hideLanding) {
   // &sync=<ms> reaches capture / mic mode here (AU.heardT adds it); until 2026-09-28 only startFile applied it, so a
   // capture page could not declare its own lag. Measured with tools/caplag.js clicks (docs/HARNESS.md).
   if (HASH.has('sync') && isFinite(+HASH.get('sync'))) ENGINE.AU.sync = +HASH.get('sync') / 1000;
+  // live step 2 (engine/lead.js): &lead=1 moves the beat / bar / phrase clocks onto heard time, &disp=<ms> adds a display lead
+  if (HASH.has('lead')) ENGINE.LEAD.on = HASH.get('lead') === '1';
+  if (HASH.has('disp') && isFinite(+HASH.get('disp'))) ENGINE.LEAD.disp = +HASH.get('disp') / 1000;
   if (track) {
     hideLanding();
     ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),

@@ -549,6 +549,10 @@ are the scene author's rules:
   picture must be able to say which sound moved it.
 - **Continuous things on heard time.** Every ears / map level is already evaluated at `MS.heardT` (the audio time the listener
   hears this frame) — read it, do not smooth it again on `dt` unless the look needs inertia (and then say so).
+- **The beat clocks on heard time (live step 2).** `beatPhase` / `beat` / `beatCount` (v3) and `beatSyn` / `barPos` / `barPhase`
+  / `phrasePos` / `phrase16Pos` / `bar` (synapse) lock to the audio the analysers see — 47 ms before the ear in a real-time file
+  or the demo, 27 ms after it in capture. With the lead on (`&lead=1`, the `L` key; `MS.leadT` ≠ 0) the engine publishes them
+  moved onto heard time (`engine/lead.js`); a scene reads the same names either way and must not add its own offset.
 - **Events placed by their age.** `kickEvt` / `snareEvt` / `hatEvt` fire on the frame the onset is heard; `kickAge` etc. is
   the heard time since the onset (99 before any; it can be a few ms below 0 on the release frame — clamp `max(0, age)`). A fast
   motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
@@ -809,9 +813,9 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kickEvt` | event | a kick just hit (one read) | the hit: a flash, a shove, a ring |
 | `snareEvt` | event | a snare or clap just hit | a second, different hit channel |
 | `hatEvt` | event | a hat just hit | fine, fast detail; the intro's rising hats |
-| `kickAge` | raw | seconds since the last kick (99 before any) | place a fast animation exactly, sub-frame |
-| `snareAge` | raw | seconds since the last snare (99 before any) | as kickAge |
-| `hatAge` | raw | seconds since the last hat (99 before any) | as kickAge |
+| `kickAge` | raw | seconds since the last kick (99 before any; slightly NEGATIVE on the frame it fires) | place a fast animation exactly, sub-frame |
+| `snareAge` | raw | seconds since the last snare (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
+| `hatAge` | raw | seconds since the last hat (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
 | `kickVel` | level | how hard the last kick hit | amplitude of the hit |
 | `snareVel` | level | how hard the last snare hit | amplitude of the hit |
 | `hatVel` | level | how hard the last hat hit | amplitude of the hit |
@@ -831,6 +835,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `mapBoundaryEvt` | event | a section boundary, on its bar line | section change |
 | `heardT` | raw | the audio time the listener hears at this frame (s); -1 with no audio | nothing visual: the base every event onset and PCM block is stamped in |
 | `fileOn` | level | a file is the source (1) or not (0) | nothing visual: the harness and the trace read it |
+| `leadT` | raw | how far the beat, bar and phrase clocks are moved onto what the listener hears (s; 0 = off) | nothing visual: the harness and the trace read it |
 <!-- FEATS:end -->
 
 ## Friction log

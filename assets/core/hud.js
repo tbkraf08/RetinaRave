@@ -53,6 +53,9 @@ export function initHUD() {
   if (mobile) $('landing').classList.add('mobile');
   initLanding(); // the tiles, from REG (after every register — main.js calls initHUD after the loop)
   renderHint();
+  // the L key's one-line notice, on touch.js's #toast element (touch.js imports this module, so not its toast(): a cycle)
+  let toastT = 0;
+  const toast = (text) => { const t = $('toast'); if (!t) return; t.textContent = text; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); };
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (k !== 'escape' && e.target && e.target.matches && e.target.matches('input,select,textarea')) return; // typing in the panel is not a shortcut (v0.6)
@@ -64,7 +67,10 @@ export function initHUD() {
     else if (k === 'h' || k === '?') toggleHelp();
     else if (k === 'p') openHelpAt('helpE');
     else if (k === 'escape') toggleHelp(false);
-    else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
+    else if (k === 'l') { // live step 2: the lead on / off (engine/lead.js), for an A/B by eye in stream mode
+      ENGINE.LEAD.on = !ENGINE.LEAD.on;
+      setTimeout(() => toast(ENGINE.LEAD.on ? 'beat clocks on heard time (lead ' + Math.round(1000 * ENGINE.MS.leadT) + ' ms)' : 'beat clocks as analysed (lead off)'), 200); // leadT is set on the next frame
+    } else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
     else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });
   addEventListener('dblclick', fullscreen);
@@ -113,7 +119,7 @@ export function hudText(S) {
   const lines = [
     `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
     `bands ${f(S.bass)} ${f(S.mid)} ${f(S.high)}  presence ${f(S.presence)}  hit ${f(S.hit)}`,
-    `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}`,
+    `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}  lead ${ENGINE.LEAD.on ? (1000 * S.leadT).toFixed(0) + ' ms' : 'off'}`,
     `arc ${S.arc}  eS ${f(S.eS)} eM ${f(S.eM)} eL ${f(S.eL)}  build ${f(S.build)}  absent ${f(S.absentT)}  dropEnv ${f(S.dropEnv)}`,
     `harm ${f(S.harmAngle)} vel ${f(S.harmVel)} clarity ${f(S.clarity)}  interval ${S.interval}`,
     `tension ${f(S.tension)} (rough ${S.rough.toFixed(3)})  suspension ${f(S.suspension)}  surprisal ${f(S.surprisal)}  section ${S.sectionId}${S.repeat ? ' (repeat)' : ''}`,
