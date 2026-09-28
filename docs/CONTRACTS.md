@@ -539,6 +539,26 @@ slimmed card ("peek"); the start buttons keep the forced scene. Nothing reaches 
 send: a tile is a key with a picture. A scene without `card` (forced-only candidates, retired versions) is simply not on the row.
 Rules (`check.js`): `title` and `blurb` non-empty (fail); a `card` without its thumbnail is a warning (run `tools/thumbs.sh`).
 
+### 1.18 Sync rules — how a scene looks synced with the music (v0.15)
+
+The v0.15 ears (`engine/ears/`, stage `ears`) and track map (`engine/map/`, file mode) exist so a visual can land *on* the
+sound. The rulers they are measured by (`ENGINE-CHLADNI-SESSION-PROMPT.md`, `tools/truth/compare.py`, `docs/AUDIT-v0.15.md`)
+are the scene author's rules:
+
+- **One musical element → one visual channel.** Never feed the sub's pitch and the kick into the same knob; a reader of the
+  picture must be able to say which sound moved it.
+- **Continuous things on heard time.** Every ears / map level is already evaluated at `MS.heardT` (the audio time the listener
+  hears this frame) — read it, do not smooth it again on `dt` unless the look needs inertia (and then say so).
+- **Events placed by their age.** `kickEvt` / `snareEvt` / `hatEvt` fire on the frame the onset is heard; `kickAge` etc. is
+  the heard time since the onset (99 before any; it can be a few ms below 0 on the release frame — clamp `max(0, age)`). A fast
+  motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
+- **Anticipation only from what is known.** In file mode (`mapOn` 1) `toDrop`, `buildProg`, `toBoundary`, `mapNext` are the
+  track's own future: wind up exactly to `mapDropEvt`. In live modes `mapOn` is 0 — fall back to `dropConf`, `dropExpectedIn`,
+  `build`, `dropEvt`, and never invent a countdown.
+- **Silence is quiet.** `subGate` 0 / `presence` low means the channel it drives rests; no carrier animation.
+- **Pitch against the tonic.** `tonic` / `tonicMinor` include the sub's root (the v0.14 `key` reads the fifth on sub-heavy
+  tracks); the interval of the bass is `((subNote − tonic + 12) % 12) + subCents/100` (`subCents` is from the nearest note).
+
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`
