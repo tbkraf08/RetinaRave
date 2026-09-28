@@ -144,6 +144,9 @@ export function initHarness(hideLanding) {
     if (HASH.has('post')) applyPosts(HASH.get('post'));      // v0.4 manual post: scene.bloom.thr=0.3,scene.kaleido=0,… (a bad one throws)
     if (HASH.has('param')) applyParams(HASH.get('param'));  // v0.5 params: scene.param=src[*k][+b][~tau][!] | scene.param=c:0.4,… (a bad one throws)
   } else restorePanel(); // v0.4: the panel's localStorage preset, never under #test (the shots stay deterministic)
+  // &sync=<ms> reaches capture / mic mode here (AU.heardT adds it); until 2026-09-28 only startFile applied it, so a
+  // capture page could not declare its own lag. Measured with tools/caplag.js clicks (docs/HARNESS.md).
+  if (HASH.has('sync') && isFinite(+HASH.get('sync'))) ENGINE.AU.sync = +HASH.get('sync') / 1000;
   if (track) {
     hideLanding();
     ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),

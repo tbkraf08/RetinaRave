@@ -516,11 +516,24 @@ extrapolated `contextTime` as it is and does not subtract `outputLatency` a seco
 (= median `outputLatency` + one render quantum). **`outputLatency` is the audio device's: re-measure `AU.lat()` on any
 machine whose sync numbers matter** — ITU-R BT.1359's 45 ms sound-before-picture threshold is the same size as it.
 
-Capture-mode lag was **not measured** this session (no headed capture run). The recipe, for whoever does it: play a track
-with known truth onsets in its own Chrome window (`{tab:'url', window:{…}}` + `CAPTITLE=`, see "Real window"), read that
-tab's `HTMLMediaElement.currentTime` and `performance.now()` together with `{evalTab:…}`, read the page's `MS.heardT` at
-the frame the matching onset is detected (`ENGINE.LOG`), and the difference of the two `performance.now()`-mapped times is
-the lag. Declare it with `&sync=<ms>`; it is added to `heardT` in capture / mic mode and reported in the trace, never guessed.
+Capture-mode lag, **measured 2026-09-28** (`docs/AUDIT-live-grid.md`): **27 ms** (p10 24, p90 32; a 3 s start-up transient
+reads 15–23) on this desktop, Chrome tab capture, 48 kHz. Declare it with `&sync=27` — since 2026-09-28 the hash reaches
+capture mode (`core/harness.js`; before, only `startFile` applied it). It moves the ears' `…Age` placement (kick +32 → +7 ms,
+snare / hat +24 → 0 ms) and nothing else: the v3 and synapse beat clocks do not read `heardT`.
+
+```
+node tools/caplag.js clicks 30                          # AUDIBLE: SYNC_OFS from a 2 kHz click train -> tools/work/caplag/clicks.json
+node tools/caplag.js track SeeYouDrop 20 70 [27]        # AUDIBLE: a capture trace in LISTENER time -> tools/work/caplag/SeeYouDrop-cap[-sync27].json
+python3 tools/truth/gridcheck.py <trace> [--win 22,90] [--sections] [--md out.md]   # the beat / bar / phrase clocks vs the truth grid
+```
+`caplag.js` is headed (`HEADED=1 CAPTITLE=RR-SRC`, set by the tool; page on monitor 0, source window at x 2760): the source
+`tools/capsrc.html` plays clicks or a track through its own `AudioContext` and maps context time to the wall through
+`getOutputTimestamp` (the wall time a sample is **heard**); the page maps `ctx.currentTime` to the wall per rAF and stamps
+clicks on the PCM bus. SYNC_OFS = captured audio time − `currentTime` at the heard wall time. A trace's `t` is rewritten to
+the track second the listener hears at that frame (`tHeardCtx` keeps the original), so `compare.py` / `gridcheck.py` grade it
+as they grade a file trace. Not in any number: the frame's own path to the glass (compositor + display, 1–3 frames). The
+source plays a −46 dBFS 220 Hz bed from load on so the capture watchdog never swaps the demo in; the click detector is a
+0.25 s refractory over 0.15, not a quiet gate (the captured click's edge rises through any low gate first).
 
 ### The PCM bus
 

@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>RR-SRC</title>
+<!-- The SOURCE tab of a capture-lag run (tools/caplag.js): plays a click train or a track through Web Audio and keeps the
+     map from its context time to the wall clock (performance.timeOrigin + performanceTime of getOutputTimestamp), so the
+     wall time at which the listener HEARS any sample it plays is known to ~1 ms. Nothing starts until SRC.start(). -->
+<body style="background:#111;color:#9ab;font:14px monospace;padding:16px">
+<div id="s">RR-SRC idle</div>
+<script>
+const q = new URLSearchParams(location.search);
+const SRC = window.SRC = { mode: q.get('mode') || 'clicks', track: q.get('track') || '', at: +(q.get('at') || 0),
+  dur: +(q.get('dur') || 20), period: +(q.get('period') || 0.5), map: [], clicks: [], s0: -1, sr: 0, ready: false, err: null };
+const ctx = new AudioContext({ latencyHint: 'interactive' });
+const say = (m) => (document.getElementById('s').textContent = m);
+// context time -> wall ms, sampled every 25 ms; caplag.js fits a line through it
+setInterval(() => {
+  const ts = ctx.getOutputTimestamp();
+  if (ts && ts.contextTime > 0) SRC.map.push([ts.contextTime, performance.timeOrigin + ts.performanceTime]);
+}, 25);
+let buf = null;
+// a steady -46 dBFS 220 Hz bed from load on: the page's silence watchdog (sources/capture.js, RMS > 1e-4) latches `heard`
+// at once, so it never swaps the demo synth in between clicks; the click detector's quiet gate (< 0.02) ignores it
+const bed = ctx.createOscillator(), bg = ctx.createGain(); bed.frequency.value = 220; bg.gain.value = 0.005;
+bed.connect(bg); bg.connect(ctx.destination); bed.start();
+SRC.load = async () => {
+  if (SRC.mode === 'track') {
+    const r = await fetch('/music/' + encodeURIComponent(SRC.track));
+    buf = await ctx.decodeAudioData(await r.arrayBuffer());
+  }
+  SRC.ready = true; say('RR-SRC ready ' + SRC.mode);
+  return true;
+};
+SRC.start = async () => {
+  if (ctx.state !== 'running') await ctx.resume();
+  const t0 = ctx.currentTime + 1.0;
+  if (SRC.mode === 'clicks') {
+    const sr = ctx.sampleRate, n = Math.round(sr * 0.006), b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = 0.8 * Math.exp(-i / (sr * 0.0012)) * Math.cos(2 * Math.PI * 2000 * i / sr);
+    const N = Math.round(SRC.dur / SRC.period);
+    for (let k = 0; k < N; k++) {
+      const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination);
+      const tc = t0 + k * SRC.period; s.start(tc); SRC.clicks.push(tc);
+    }
+  } else {
+    const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination);
+    s.start(t0, SRC.at, SRC.dur); SRC.s0 = t0; SRC.sr = buf.sampleRate;
+  }
+  say('RR-SRC playing ' + SRC.mode + ' from ctx ' + t0.toFixed(3));
+  return { t0, state: ctx.state, outLat: ctx.outputLatency, baseLat: ctx.baseLatency, sr: ctx.sampleRate };
+};
+SRC.dump = () => JSON.stringify({ mode: SRC.mode, track: SRC.track, at: SRC.at, dur: SRC.dur, s0: SRC.s0, clicks: SRC.clicks,
+  map: SRC.map, outLat: ctx.outputLatency, baseLat: ctx.baseLatency, sr: ctx.sampleRate });
+</script>
