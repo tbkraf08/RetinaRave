@@ -1,3 +1,6 @@
+pcm -> /home/toma/Documents/Kraftek/RetinaRave/.claude/worktrees/agent-a3315f44703afd482/tools/truth/../work/SeeYouDrop.f32
+pcm -> /home/toma/Documents/Kraftek/RetinaRave/.claude/worktrees/agent-a3315f44703afd482/tools/truth/../work/SeeYouDrop.48000.f32
+pcm -> /home/toma/Documents/Kraftek/RetinaRave/.claude/worktrees/agent-a3315f44703afd482/tools/truth/../work/SeeYouDrop.48000.st.f32
 
 === SeeYouDrop  157.4 s  tempo 75.0 bpm (percussive onsets, loudest 30 s from 60 s)
 loud half: sub 58%  bass 15%  lm 4%  mid 11%  high 11% | bass f0 36.5 Hz D1 held 15% | centroid30-600 69 Hz  h/f 0.06
@@ -41,5 +44,57 @@ grain tables -> tools/truth/SeeYouDrop/grain-8.txt tools/truth/SeeYouDrop/grain-
 
 sub note runs (start s, note, x steps of 4 hops = 0.093 s held; runs of >= 5 steps shown; '.' = sub under 15 % of the energy):
 0.3s .x135  13.0s C#1x26  16.1s A1x25  18.5s .x8  19.3s F#1x34  22.6s E1x26  25.0s .x7  44.9s G1x34  48.1s D#2x14  49.9s .x83  62.5s B1x7  63.3s .x7  68.2s C#1x7  69.8s D1x5  72.2s C#1x7  82.6s C#1x7  89.0s C#1x7  96.0s G1x35  99.4s D#2x13  101.1s .x14  102.6s .x32  105.8s C#1x5  106.5s C#1x6  107.4s C#1x5  108.1s C#1x6  108.9s C#1x5  109.7s C#1x6  114.1s E1x5  117.7s .x8  118.6s .x11  119.8s C#1x7  120.9s C#1x8  121.8s C#1x7  125.0s .x8  127.3s C#1x5  128.2s C#1x5  128.9s C#1x6  129.9s D1x6  130.5s .x8  131.4s C#1x24  134.5s A1x25  136.9s .x7  137.6s F#1x35  140.9s E1x34  144.1s C#1x26  147.3s A1x25  149.7s .x7  150.5s F#1x35  153.7s E1x26  156.1s .x14
+
+beat grid: 150.030 bpm (beat 0.39992 s), phase 0.0172 s, coherence 0.253, 394 beats, DP residual 32 ms; downbeat = beat index 0 mod 4 (scores [6.832, 6.544, 6.194, 6.654]), 99 bars of 1.5997 s
+  first downbeats: 0.017 1.617 3.217 4.816 6.416 8.016
+beat-synchronous grain tables -> tools/truth/SeeYouDrop/grain-beat.txt tools/truth/SeeYouDrop/grain-bar.txt tools/truth/SeeYouDrop/grain-4bar.txt
+
+drops (bar-pinned; clause 1 = low end >= 0.55 of its p90 after a bar under 0.15; clause 2 = a sustained energy jump >= 0.25 with the low end loud after and under 0.45 before; both need the 4 bars after at 0.6 of the track p90 energy and 0.3 of its p90 onset density, and 4 bars since the last drop): 57.606(absence) 105.596(absence)
+  bar low-end level (share of p90) per bar, 0.5 s resolution is the bar: 0:0.10 13:0.73 26:0.48 38:0.54 51:0.00 64:0.74 77:0.72 90:0.60 102:0.18 115:0.76 128:0.94 141:0.67 154:0.68
+
+tonic: C# minor  conf 0.277  (KK on a sub-inclusive chroma over the loud half)
+  top 5: C#m +0.756  C#M +0.547  AM +0.491  F#m +0.431  F#M +0.287
+  chroma: C0.040 C#0.328 D0.113 D#0.042 E0.092 F0.032 F#0.061 G0.037 G#0.068 A0.107 A#0.037 B0.045
+
+sub slides (>= 1.0 semitone within <= 0.5 s, monotonic, voiced): 41 total, 13 on 57.6-90 s
+  22.01->22.51 -1.6st  26.18->26.26 -2.4st  26.59->26.74 -1.3st  28.19->28.34 -1.7st  29.79->29.90 -2.2st  30.20->30.35 -1.2st  33.00->33.15 -1.7st  34.21->34.32 -1.3st  34.60->34.73 -2.2st  35.01->35.10 -1.2st  36.61->36.70 -1.4st  37.82->37.96 -1.3st  58.61->58.72 -2.5st  60.62->60.72 -2.3st ...
+bare 808 note starts (a low onset with no 2-8 kHz click within 15 ms): 275 of 504 low onsets (55 %); kick candidates 229
+
+sections (bar-synchronous, label = cluster id, ret = a return of an earlier section):
+   t0      t1     bars id label ret
+    0.017  12.815    8   0     0   0
+   12.815  25.612    8   1     1   0
+   25.612  38.409    8   2     2   0
+   38.409  44.808    4   3     3   0
+   44.808  49.607    3   4     4   0
+   49.607  57.606    5   5     5   0
+   57.606  62.405    3   6     6   0
+   62.405  78.401   10   7     7   0
+   78.401  89.599    7   8     6   1
+   89.599  95.998    4   9     3   1
+   95.998 105.596    6  10     4   1
+  105.596 115.194    6  11     8   0
+  115.194 119.993    3  12     9   0
+  119.993 131.191    7  13     8   1
+  131.191 156.786   16  14     1   1
+
+annotated vs automatic boundaries (truth | auto | delta beats | nearest bar line of the grid):
+     0.00 |   0.017 |  +0.04 b | bar line   0.017 (+0.04 b)
+    13.00 |  12.815 |  -0.46 b | bar line  12.815 (-0.46 b)
+    25.00 |  25.612 |  +1.53 b | bar line  25.612 (+1.53 b)   MISS   (no bar line within 1 beat of the annotation)
+    44.90 |  44.808 |  -0.23 b | bar line  44.808 (-0.23 b)
+    49.90 |  49.607 |  -0.73 b | bar line  49.607 (-0.73 b)
+    57.60 |  57.606 |  +0.02 b | bar line  57.606 (+0.01 b)
+    90.00 |  89.599 |  -1.00 b | bar line  89.599 (-1.00 b)   MISS   (no bar line within 1 beat of the annotation)
+    96.00 |  95.998 |  -0.01 b | bar line  95.998 (-0.01 b)
+   105.70 | 105.596 |  -0.26 b | bar line 105.596 (-0.26 b)
+   130.50 | 131.191 |  +1.73 b | bar line 131.191 (+1.73 b)   MISS   (no bar line within 1 beat of the annotation)
+   134.50 | 131.191 |  -8.27 b | bar line 134.390 (-0.27 b)   MISS
+   157.40 | 156.786 |  -1.54 b | bar line 156.786 (-1.54 b)   MISS   (no bar line within 1 beat of the annotation)
+  -> 7 of 12 annotated boundaries within +-1 beat (0.400 s); 4 of them have no bar line within 1 beat at all
+  returns (the annotation's pairs; a pair is "labelled" when both halves land in the same cluster):
+    groove 25-44.9           <-> groove-return 90-96       labels 2 / 3  MISS
+    climb 44.9-49.9          <-> climb-double 96-101       labels 4 / 4  OK
+    walk 13-25               <-> outro-walk 134.5-157.4    labels 1 / 1  OK
 
 json -> tools/truth/SeeYouDrop.json
