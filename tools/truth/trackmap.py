@@ -21,6 +21,10 @@ v0.15 (E0) adds, as new JSON keys and new tables only — every v0.14 key, table
              SeeYouDrop), an Ellis-2007 dynamic-programming beat tracker on the percussive onset envelope, then a sub-hop
              period+phase refit (a constant-tempo track locks to ~1 ms; if the DP residual is > 60 ms the DP beats are kept).
              `downbeat_mod4` = which beat index mod 4 is the bar line (the low band is loudest on 1, the mid band on 3).
+             Live step 3.1: a linear grid is then put on the kicks when they say it is off — `anchor_grid` (the kicks'
+             eighth lattice > 25 ms off: re-phase, beat = the lattice with more low flux), `drift_fit` (a linear drift of
+             that lattice: re-fit the period), and on that path the bar line comes from beat-level novelty when it is
+             decisive. `bpm_grid.anchor` (only when the grid moved) holds the evidence. docs/workers/truth-grid-s3.md.
   beats downbeats                 the grids themselves (s).
   slices["beat"|"bar"|"4bar"]     beat-synchronous grains + tools/truth/<name>/grain-{beat,bar,4bar}.txt. Fixed-time slices cut
              across events (a 5 s slice once made drop 1 look harmonic when it is a pure sine from its first frame); these do not.
@@ -103,6 +107,21 @@ SLIDE_SEMI, SLIDE_MAXT = 1.0, 0.5       # a slide: >= 1 semitone within <= 0.5 s
 SLIDE_MINT, SLIDE_MAXJ = 0.08, 1.0      # ... lasting >= 80 ms (an instant re-trigger is a note, not a glide), no frame jumping > 1 semitone
 SLIDE_MAXS, SLIDE_HOLD, SLIDE_HTOL = 12.0, 4, 0.4   # ... at most an octave, and the landing note held +-0.4 semitone for 40 ms
 CLICK_W = 0.015                         # a low onset is a kick candidate if a mid/high onset is within 15 ms
+ANCHOR_MS, ANCHOR_R = 0.025, 0.5        # live step 3.1: re-anchor the linear grid when the kicks' eighth-note lattice sits more
+                                        # than 25 ms off it AND the kicks lock to that lattice (resultant >= 0.5). refit_grid
+                                        # maximises the BEAT-rate fundamental of the onset envelope; when kicks land on both
+                                        # eighths of the beat (CyborgNinja: 330 vs 359 per half) that fundamental cancels and the
+                                        # phase falls between them (72 ms off every kick, resultant 0.04 at the beat, 0.96 at the
+                                        # eighth). SeeYouDrop's lattice offset is +2.9 ms, so it never enters this branch.
+DRIFT_G, DRIFT_MIN, DRIFT_R2 = 8, 16, 0.8   # ... and re-fit the PERIOD when the kicks' lattice offset, measured per 8 s slice
+                                        # (>= 6 kicks, resultant >= 0.3), drifts LINEARLY across the track: >= 16 such slices,
+                                        # weighted R^2 >= 0.8, and the fitted line moves more than ANCHOR_MS end to end.
+                                        # WhoLikesToParty: 32 slices, R^2 0.85, -40 ms (+20 -> -22 ms). SeeYouDrop: 10 slices,
+                                        # R^2 0.48 (its kicks are sparse and sectioned), so its hand-checked grid stays.
+ANCHOR_NOV_L, ANCHOR_NOV_MARGIN = 16, 1.5   # ... and then the bar line comes from beat-level novelty (a 16-beat step kernel on
+                                        # per-beat percussive band levels): the change points of a syncopated pattern land on
+                                        # bar lines, while "the low band is loudest on 1" follows the syncopation. Used only
+                                        # when the winning beat mod 4 carries >= 1.5x the runner-up's novelty; else downbeat_phase.
 
 def tempo_peak(env, fps, lo=0.25, hi=1.0):
     """Comb ACF with a log-normal tempo prior -> (period s, the score curve, the lags). Picks 0.40 s, not 0.80 s, on SeeYouDrop."""
@@ -141,6 +160,55 @@ def downbeat_phase(beats, elow, emid, fps):
         m = np.arange(len(beats)) % 4
         sc.append(float(lv[m == ph].mean() + 0.5 * mv[m == (ph + 2) % 4].mean()))
     return int(np.argmax(sc)), [round(v, 3) for v in sc]
+
+def at_time(e, bt, fps, t0):
+    """Envelope peak within +-1 frame of TIME bt. Frame i of the short STFT is centred at t0 + i / fps (t0 = 1024 / sr = 23 ms
+    with boundary=None); downbeat_phase indexes int(bt * fps), two frames late — kept there for byte compatibility."""
+    i = np.clip(np.round((np.asarray(bt) - t0) * fps).astype(int), 1, len(e) - 2); return np.maximum(np.maximum(e[i - 1], e[i]), e[i + 1])
+
+def anchor_grid(kicks, per, ph, elow, fps, t0):
+    """The kicks' eighth-note lattice against the linear grid. -> None when the grid already sits on it (|offset| <= ANCHOR_MS,
+    or the kicks do not lock), else (new phase, evidence). Of the two beat lattices an eighth apart, the beat is the one with
+    more low-band (40-150 Hz) flux on it. The period is not touched."""
+    if len(kicks) < 32: return None
+    h = per / 2; z = np.exp(2j * np.pi * (kicks - ph) / h).mean(); off, R = float(np.angle(z) / (2 * np.pi) * h), float(abs(z))
+    ev = dict(offset_ms=round(off * 1000, 1), r8=round(R, 3))
+    if abs(off) <= ANCHOR_MS or R < ANCHOR_R: return None
+    a = (ph + off) % per; cands = [a, (a + h) % per]; tend = t0 + len(elow) / fps; sc = []
+    for c in cands:
+        bt = c + per * np.arange(int((tend - c) / per)); sc.append(float(at_time(elow, bt, fps, t0).mean()))
+    k = int(np.argmax(sc)); ev.update(lattice=[round(v, 4) for v in cands], low_on_beat=[round(v, 3) for v in sc], pick=k,
+                                      was=round(float(ph), 5), moved_ms=round(((cands[k] - ph + per / 2) % per - per / 2) * 1000, 1))
+    return cands[k], ev
+
+def drift_fit(kicks, per, ph):
+    """A linear drift of the kicks' eighth-note lattice against the grid -> None, or (period, phase, evidence) with the drift
+    folded into the grid: offset(t) = c0 t + c1 means the kicks sit at ph + n per (1 + c0) + c1 + c0 ph."""
+    h = per / 2; ts, os_, ws = [], [], []
+    for s in np.arange(0, kicks[-1] if len(kicks) else 0, DRIFT_G):
+        m = (kicks >= s) & (kicks < s + DRIFT_G)
+        if m.sum() < 6: continue
+        z = np.exp(2j * np.pi * (kicks[m] - ph) / h).mean()
+        if abs(z) < 0.3: continue
+        ts.append(s + DRIFT_G / 2); os_.append(np.angle(z) / (2 * np.pi) * h); ws.append(abs(z) * m.sum())
+    if len(ts) < DRIFT_MIN: return None
+    ts, os_, ws = map(np.array, (ts, os_, ws)); W = np.sqrt(ws); A = np.c_[ts, np.ones_like(ts)]
+    c = np.linalg.lstsq(A * W[:, None], os_ * W, rcond=None)[0]; res = os_ - A @ c
+    r2 = float(1 - np.sum(ws * res ** 2) / (np.sum(ws * (os_ - np.average(os_, weights=ws)) ** 2) + 1e-18)); span = float(c[0] * (ts[-1] - ts[0]))
+    ev = dict(slices=len(ts), r2=round(r2, 3), span_ms=round(span * 1000, 1), resid_ms=round(float(np.sqrt(np.average(res ** 2, weights=ws))) * 1000, 1))
+    if r2 < DRIFT_R2 or abs(span) <= ANCHOR_MS: return None
+    p2, ph2 = per * (1 + c[0]), ph + c[1] + c[0] * ph
+    ev.update(was=dict(beat=round(float(per), 6), phase=round(float(ph), 5))); return float(p2), float(ph2 % p2), ev
+
+def downbeat_novelty(beats, levels, L=ANCHOR_NOV_L):
+    """Beat index mod 4 of the bar line from where the music changes: per-beat log band levels (z-scored), novelty = |mean of
+    the next L beats - mean of the previous L|, peaks >= p85 at least L apart, novelty-weighted count per beat mod 4."""
+    F = np.array([[np.log10(lv[(tt >= a) & (tt < b)].sum() + 1e-9) for tt, lv in levels] for a, b in zip(beats[:-1], beats[1:])])
+    F = (F - F.mean(0)) / (F.std(0) + 1e-9); n = len(F); nov = np.zeros(n)
+    for i in range(L, n - L): nov[i] = np.linalg.norm(F[i:i + L].mean(0) - F[i - L:i].mean(0))
+    pk, _ = find_peaks(nov, distance=L, height=np.percentile(nov, 85))
+    w = np.bincount(pk % 4, weights=nov[pk], minlength=4); o = np.argsort(w)[::-1]
+    return int(o[0]), float(w[o[0]] / (w[o[1]] + 1e-9)), [round(float(v), 2) for v in w], [round(float(beats[i]), 3) for i in pk]
 
 def foote(SSM, L=SEC_KERNEL):
     """Foote novelty from a self-similarity matrix with a Gaussian-tapered checkerboard kernel."""
@@ -353,7 +421,29 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
     dpres = float(np.sqrt(np.mean((bdp - beats[np.clip(np.round((bdp - phg) / pg).astype(int), 0, nb - 1)]) ** 2))) if len(bdp) > 4 else 0.0
     if dpres > 0.06:                                       # the linear grid does not fit: the track's tempo moves, keep the DP beats
         beats = bdp; pg = float(np.median(np.diff(bdp))); phg = float(beats[0])
+    anc = None; anchor = {}
+    if dpres <= 0.06:                                      # live step 3.1: put the linear grid on the kicks (phase, then drift)
+        ka = kick if len(kick) >= 64 else low; g0 = dict(beat=round(float(pg), 6), phase=round(float(phg), 5))
+        a1 = anchor_grid(ka, pg, phg, elow, fps2, t2[0])
+        if a1 is not None: phg, anchor['phase'] = a1
+        a2 = drift_fit(ka, pg, phg)
+        if a2 is not None: pg, phg, anchor['drift'] = a2
+        if anchor:
+            anc = True; anchor['was'] = g0; nb = int((t2[-1] - phg) / pg) + 1; beats = phg + pg * np.arange(max(0, nb))
     dphase, dscores = downbeat_phase(beats, elow, emid, fps2)
+    if anc is not None:
+        lv = lambda lo_, hi_: (t2, Pp[(f2 >= lo_) & (f2 < hi_)].sum(0))
+        nph, nmargin, nw, npk = downbeat_novelty(beats, [lv(25, 60), lv(40, 150), lv(150, 2500), lv(5000, 12000)])
+        anchor.update(downbeat_phase=dict(pick=dphase, scores=dscores), novelty=dict(pick=nph, margin=round(nmargin, 2), weights=nw, peaks=npk))
+        if nmargin >= ANCHOR_NOV_MARGIN: dphase = nph
+        anchor['downbeat_from'] = 'novelty' if nmargin >= ANCHOR_NOV_MARGIN else 'downbeat_phase'
+        print(f"\ngrid re-anchored on the kicks (was beat {anchor['was']['beat']:.6f} s, phase {anchor['was']['phase']:.4f} s):")
+        if 'phase' in anchor:
+            a_ = anchor['phase']; print(f"  phase: eighth-lattice offset {a_['offset_ms']:+.1f} ms (r {a_['r8']:.2f}), low flux on the two beat "
+                                       f"lattices {a_['low_on_beat']} -> moved {a_['moved_ms']:+.1f} ms")
+        if 'drift' in anchor: print(f"  drift: {anchor['drift']}")
+        print(f"  -> beat {pg:.6f} s, phase {phg:.4f} s; downbeat: downbeat_phase {anchor['downbeat_phase']['pick']} {dscores}, novelty {nph} "
+              f"(weights {nw}, margin {nmargin:.2f}) -> {dphase} from {anchor['downbeat_from']}")
     downbeats = beats[dphase::4]; bar = 4 * pg
     print(f"\nbeat grid: {60 / pg:.3f} bpm (beat {pg:.5f} s), phase {phg:.4f} s, coherence {coh:.3f}, "
           f"{len(beats)} beats, DP residual {dpres * 1000:.0f} ms; downbeat = beat index {dphase} mod 4 (scores {dscores}), "
@@ -455,7 +545,8 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
     print(f"bare 808 note starts (a low onset with no 2-8 kHz click within {CLICK_W * 1000:.0f} ms): {len(bare)} of {len(low)} low onsets "
           f"({100 * len(bare) / max(1, len(low)):.0f} %); kick candidates {len(kick)}")
     out.update(bpm_grid=dict(bpm=round(60 / pg, 4), beat=round(pg, 6), phase=round(phg, 5), coherence=round(coh, 4),
-                             dp_residual_ms=round(dpres * 1000, 1), downbeat_mod4=dphase, downbeat_scores=dscores, bar=round(bar, 6)),
+                             dp_residual_ms=round(dpres * 1000, 1), downbeat_mod4=dphase, downbeat_scores=dscores, bar=round(bar, 6),
+                             **({} if anc is None else {'anchor': anchor})),
                beats=np.round(beats, 4).tolist(), downbeats=np.round(downbeats, 4).tolist(),
                sections=sections, novelty=dict(bars=np.round(downbeats[:len(nov)], 3).tolist(), v=np.round(nov, 4).tolist(), thr=round(float(thr), 4)),
                drops=[round(v, 3) for v in drops], tonic=dict(pc=tpc, name=NAMES[tpc], minor=tmin_, conf=round(tconf, 4), scores=tsc),
