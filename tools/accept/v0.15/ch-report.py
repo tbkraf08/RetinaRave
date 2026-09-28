@@ -11,6 +11,9 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')
 W = os.path.join(ROOT, 'tools', 'work')
 TRUTH = json.load(open(os.path.join(ROOT, 'tools', 'truth', 'SeeYouDrop.json')))
+SEC = json.load(open(os.path.join(ROOT, 'tools', 'truth', 'SeeYouDrop.sections.json')))
+WALK = [w['attack'] for w in SEC['walk']]          # v2: the E0 BAR LINE each walk note starts on
+DROPS = SEC['drops']                               # v2: 57.6056, 105.5959 (v1 said 57.6, 105.7)
 
 
 def load(tag):
@@ -72,13 +75,13 @@ c = load('ch-w1')
 if c:
     t = c['t']
     sw = [(r[0], r[2]) for r in runs(c['win'], t)]
-    want = [13.0, 16.1, 19.3, 22.6]
+    want = WALK
     got = [x[0] for x in sw[1:]]
     tp, f, errs = match(got, want, 1.6)
     figs = [FIG[int(round(s)) % 12] for s in [c['s'][min(range(len(t)), key=lambda i: abs(t[i] - x))] for x in (14.2, 17.2, 20.6, 23.8)]]
     print('1  walk 13-25 s — four distinct figures')
     print('   figure switches (win runs): %s' % [(round(a, 3), b) for a, b in sw])
-    print('   matched %d/4 of the truth note starts %s; errors (s) %s; median %+.3f' % (tp, want, [round(e, 3) for e in errs], med(errs)))
+    print('   matched %d/4 of the truth note attacks %s; errors (s) %s; median %+.3f' % (tp, want, [round(e, 3) for e in errs], med(errs)))
     print('   the figures at the four shots: %s  distinct %d/4' % (figs, len(set(figs))))
     print('   tonic held: %s' % sorted(set(c['tonic'])))
 
@@ -145,7 +148,7 @@ if c:
     print('   camera pitch %.3f -> %.3f rad (the build tilts it up)' % (c['pitch'][0], c['pitch'][-1]))
 
 # ---- 5. the drops -----------------------------------------------------------
-for tag, want, name in (('ch-w5a', 57.606, 'drop 1'), ('ch-w5b', 105.596, 'drop 2')):
+for tag, want, name in (('ch-w5a', DROPS[0], 'drop 1'), ('ch-w5b', DROPS[1], 'drop 2')):
     c = load(tag)
     if not c:
         continue

@@ -31,8 +31,12 @@ const DIST_MID = 3.70;       // and far away
 const CAMTC = 0.45;          // the camera eases over ~1.4 s: a register change is music, never a cut
 const BOUNCE = 0.05;         // the thump per felt beat, on the camera distance (TORUS2's number, the user's own)
 const TILTB = 0.55;          // how far the build tilts the camera up through the void
-const SLIDETC = 0.07;        // the figure's own ease: a slide tracks it exactly, a note JUMP becomes a 4-frame morph
-                             // (CONTRACTS §1.9 'continuous' — nothing on screen may jump, not even a note change)
+const SLIDETC = 0.07;        // the figure's own ease. A SLIDE (the pitch moving a fraction of a semitone) tracks it
+const JUMPTC = 3.0;          // exactly; a JUMP to another table entry is slowed by up to this factor, because the
+                             // table is ordered by consonance and not chromatically, so neighbouring semitones are
+                             // wildly different figures. A 0.2 s grace note then only gets 60 % of the way and comes
+                             // back — a wobble, not a strobe — while a real note change still lands in ~0.3 s
+                             // (CONTRACTS §1.9 'continuous': nothing on screen may jump, not even a note change)
 const LINEW = 0.052;         // the nodal line's half-width in field units: a line, not a band
 const GLOW0 = 0.95;          // how brightly a nodal line glows when the plate is driven
 const GLOWQ = 0.34;          // and the floor it keeps when it is not, so a silent figure is still legible
@@ -65,10 +69,12 @@ const TONMIN = 0.60;         // and it is not latched at all until that much evi
 const TONMARG = 3.0;         // tonic re-maps every figure at once: SeeYouDrop's tonic wobbles C# -> A -> F# over
                              // 18-25 s and this holds it at C# (the truth's hypothesis) through the whole track
 const CONF = 0.15;           // below this subConf a new pitch is not accepted — the figure holds
-const VOTETC = 0.30;         // the sub's note is decided by a decaying VOTE over the twelve, with this time constant
-const VOTEMARG = 2.0;        // and a challenger must beat the sitting note by this much to take the figure. Measured
-                             // on SeeYouDrop: the groove then holds one figure through 20 s with 5 switches instead of
-                             // 17, and the walk's four notes are still found (docs/workers/chladni.md)
+const VOTETC = 0.15;         // the sub's note is decided by a decaying VOTE over the twelve, with this time constant,
+const VOTEMARG = 3.0;        // and a challenger must beat the sitting note by this much to take the figure. Re-tuned
+                             // against the v0.15 pass-2 ears (sub pitch 100 % within +-30 cents): the filter's own lag
+                             // is now the dominant error, so the window is half what pass 1 needed. The walk's four
+                             // notes are found +0.15, +0.05, +0.15, +0.20 s after their bar lines — and the ears' own
+                             // YIN arrival is +0.14, +0.04, +0.05, +0.05 of that (docs/workers/chladni.md (f))
 const LIFTWAIT = 0.40;       // the sand only starts to float after the bass has been gone this long — drop 2's
                              // 60 ms ducks are a stomp, not a void
 const KEYC = 0.25;           // below this tonicConf the old `key` is used instead of `tonic` (Appendix A's fallback)
@@ -255,14 +261,20 @@ const SELF = {
       // whenever the reported note IS the sitting note — that is the slide.
       const V = this.vote, dec = Math.exp(-dt / VOTETC);
       for (let k = 0; k < NFIG; k++) V[k] *= dec;
-      if (E.gate > 0.5 && E.note >= 0 && E.conf > CONF) V[E.note] += dt * E.sub * E.sub * E.conf;
-      let best = 0;
-      for (let k = 1; k < NFIG; k++) if (V[k] > V[best]) best = k;
-      if (this.win < 0 || (best !== this.win && V[best] > VOTEMARG * V[this.win])) this.win = best;
+      const voted = E.gate > 0.5 && E.note >= 0 && E.conf > CONF;
+      if (voted) V[E.note] += dt * E.sub * E.sub * E.conf;
+      // the winner only moves on a frame that actually heard a pitch: between two 808 hits `subNote` is −1 with the
+      // gate still open, and re-deciding there would let a decayed stray note take the figure in silence
+      if (voted) {
+        let best = 0;
+        for (let k = 1; k < NFIG; k++) if (V[k] > V[best]) best = k;
+        if (this.win < 0 || (best !== this.win && V[best] > VOTEMARG * V[this.win])) this.win = best;
+      }
       if (this.win >= 0) this.sTgt = ((this.win - E.tonic) % NFIG + NFIG) % NFIG + (this.win === E.note ? E.cents / 100 : 0);
       if (this.sTgt === undefined) this.sTgt = 0;
       const d = NFIG * wrap((this.sTgt + P.figure - U.s) / NFIG);   // wrap() is keycolour's short way round a wheel
-      U.s = (U.s + d * (1 - Math.exp(-dt / SLIDETC)) + NFIG) % NFIG;
+      const tc = SLIDETC * (1 + JUMPTC * Math.min(1, Math.abs(d) * 0.5));
+      U.s = (U.s + d * (1 - Math.exp(-dt / tc)) + NFIG) % NFIG;
     }
     const B = blendOf(U.s);
     const FA = figOf(B.i), FB = figOf(B.j);

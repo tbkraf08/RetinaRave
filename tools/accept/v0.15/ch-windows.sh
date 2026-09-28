@@ -11,7 +11,8 @@ W() {
   WARM=999 PORT=${PORT:-8814} timeout 1800 node tools/accept/v0.15/chwin.js SeeYouDrop "$t0" "$t1" "$tag" "$shots"
 }
 ONLY=$1
-W ch-w1  13    25    '14.2,17.2,20.6,23.8'                  # 1 the walk: four distinct figures
+W ch-w1  12.4  25.7  '14.2,17.2,20.6,23.8'                  # 1 the walk: four distinct figures (t0 before
+#   the first bar line 12.8146 so the C# switch is INSIDE the window and gradeable)
 W ch-w2  25    45    '28.0,30.05,33.0,36.0,40.0,44.0'       # 2 the groove: a leap per kick, the root figure holds
 W ch-w3a 44.9  50    '45.5,47.0,48.5,49.6'                  # 3 climb 1: density and the camera rising
 W ch-w3b 96    101.5 '96.8,98.2,99.6,100.9'                 # 3 climb 2 (double time)

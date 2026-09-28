@@ -193,20 +193,29 @@ camera, `TILTB · antic`) · `glow` (how brightly the lines glow, const `GLOW0`)
 
 ## (f) What the track actually said — the measurements that changed the design
 
-Every number from a deterministic file-mode trace of the whole 157 s (`tools/work/ch-full.json`).
+Every number from a deterministic file-mode trace of the whole 157 s: `tools/work/ch-full.json` before EARS pass 2,
+`tools/work/ch-full2.json` on the merged tree. The scene was built against pass 1 and re-tuned against pass 2, so
+both are quoted where they differ — the shape of the design is the same, the constants are not.
 
-1. **The ears' sub pitch wanders per frame, and so does the truth.** Over the groove 25–45 s, gated frames read
-   C# 52 %, D 17 %, D# 16 %, F 6.5 %, … — and `tools/truth/SeeYouDrop.json`'s own grain track agrees: C#1 is about
-   62 % of the groove's grains, with single-grain G1 / D1 / G#1 / D#1 excursions between them (the 808's attack and
-   its decay tail read as other notes). The AUDIT's "88.9 % `subNote` per beat" is a per-**beat** vote; per frame it
-   is ~52 %. A figure driven straight off `subNote` therefore flickered through the whole table on the held groove.
-   → the vote filter. Measured sweep (`VOTETC` × `VOTEMARG`), figure switches in the 20 s groove / walk notes found:
-   `0.25 × 1.5` → 17 / 4 · `0.30 × 2.0` → **5 / 4** · `0.40 × 2.0` → 2 / 4 but the walk's switches lag +0.43 s ·
-   `0.50 × 3.0` → 2 / 4, lag +0.65 s. Chosen: `0.30 × 2.0`.
-2. **The tonic wobbles.** Raw `MS.tonic` over the track: C# for 115.6 s of 157, but F# for 16.3 s and A for 15.6 s,
-   including a 4.8 s F# run right in the middle of the build's walk (19.8–24.6 s). A tonic change re-maps all twelve
-   figures at once, so it is latched (`TONTC` 10 s, `TONMIN` 0.60, `TONMARG` 3.0): C# for 100 % of a run warmed from
-   t 0. The same latch from a cold start at 37 s takes 44 s to settle — which is why every window below warms from 0.
+1. **The ears' sub pitch wandered per frame, and so does the truth.** *Pass 1:* over the groove 25–45 s, gated frames
+   read C# 52 %, D 17 %, D# 16 %, F 6.5 %, … — and `tools/truth/SeeYouDrop.json`'s own grain track agreed: C#1 is
+   about 62 % of the groove's grains, with single-grain G1 / D1 / G#1 / D#1 excursions between them (the 808's attack
+   and its decay tail read as other notes). The AUDIT's "88.9 % `subNote` per beat" is a per-**beat** vote; per frame
+   it was ~52 %. A figure driven straight off `subNote` flickered through the whole table on a held groove. → the
+   vote filter, chosen from a sweep at `VOTETC 0.30 × VOTEMARG 2.0` (5 groove switches instead of 17, all four walk
+   notes found). *Pass 2:* the raw note is now clean — the walk reads C# 12.95–15.15, A 16.05–18.35, F# 19.27–22.43,
+   E 22.47–24.83 with `−1` between, and in the groove the named frames are 74 % C#. The filter's own lag became the
+   dominant error, so the window was halved: **`VOTETC 0.15 × VOTEMARG 2.0`**, and the winner now only moves on a
+   frame that actually heard a pitch (between two 808 hits `subNote` is −1 with the gate still open, and re-deciding
+   there let a decayed stray note take the figure in silence). Re-measured sweep, walk error / groove switches:
+   `0.06 × 1.2` → +0.135 s / 210 · `0.10 × 1.6` → +0.103 s / 56 · **`0.15 × 2.0` → +0.15 s / 32** · `0.25 × 2.0` →
+   +0.22 s / 13. Of that +0.15 s, the ears' own YIN arrival is +0.14, +0.04, +0.05, +0.05 s after the four bar lines
+   (`sections.json` v2 `walk[].arrival`), so the filter adds ~0.10 s.
+2. **The tonic wobbles, in both passes.** Raw `MS.tonic` on the merged tree: C# from 0.68 s, then F# 8.5–10.2, C#
+   10.3–18.1, A 18.1–19.8, F# 19.8–24.6, C# 24.6–45.1 … — a 4.8 s F# run right in the middle of the build's walk.
+   A tonic change re-maps all twelve figures at once, so it is latched (`TONTC` 10 s, `TONMIN` 0.60, `TONMARG` 3.0):
+   C# for 100 % of a run warmed from t 0. The same latch from a cold start at 37 s takes 44 s to settle — which is
+   why every window below warms from 0.
 3. **`bassReg` is ~1 whenever there is no sub at all**, not only when the bass has moved up: the void reads
    bassReg 0.993 with `bass` 0.066. Taken literally it threw the camera overhead through every silence. → the knee
    (0.45 → 0.90) and the fade-out with the void.
@@ -216,9 +225,11 @@ Every number from a deterministic file-mode trace of the whole 157 s (`tools/wor
 5. **`subPure` reads 0.65 on this track's pure 808**, 0.88 on the walk, 0.05–0.13 on the harmonic mid-bass, and
    0.009 in the void where there is no bass to be impure. → the knee `HPAD` 0.25, and the register carries the other
    half of the sentence (a bass out of the sub IS a harmonic bass), so the void does not read as "maximally impure".
-6. **The groove's gate is 99 % on** (one 0.2 s off-run in 20 s), while drop 2's ducks are 50–70 ms gaps once per
-   ~1.5 s (the bar). So the gate had to be fast (`GATETC` 0.035 s) and the *void's lift* had to be slow to arm
-   (`LIFTWAIT` 0.40 s) — otherwise every duck floated the sand.
+6. **The groove's gate is 99 % on** (one 0.2 s off-run in 20 s), while drop 2's ducks are short gaps a bar or so
+   apart. So the gate had to be fast (`GATETC` 0.035 s) and the *void's lift* had to be slow to arm (`LIFTWAIT`
+   0.40 s) — otherwise every duck floated the sand. Pass 2 is what makes the channel earn its place: over
+   105.6–130.5 s the merged ears give **23 gate-off edges = 1.48 per bar**, where pass 1 gave 6 in the whole
+   24 s and missed the entire 106.4–111.3 s group, which is the once-per-bar stomp of "1:45".
 7. **Two rules for the plate's boundary were measured and rejected.** Counting distinct sustained notes per map
    section: the map's sections are 3–13 s long and the walk changes note once per section, so no section ever
    reached two. Counting them per map *label* (labels recur — 0 = intro/voids, 1 = the walk and the outro walk,
