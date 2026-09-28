@@ -89,7 +89,14 @@ SEC_MINBARS = 2                         # a section is at least this many bars
 SEC_CLUSTER = 0.35                      # cosine distance under which two segments share a label (a "return")
 DROP_QUIET = 0.15                       # the low end counts as absent under this share of the track's loud-section low level
 DROP_MIN = 0.55                         # ... and as entered at or above this share
-DROP_AFTER_P = 70                       # the 4 bars after a drop must reach this percentile of the track's bar energy
+DROP_AFTER_MIN = 0.60                   # the 4 bars after a drop must reach this share of the track's p90 bar energy (an
+                                        # absolute share, not a percentile of the distribution: a percentile moves with how
+                                        # much of the track is loud, and map/drops.js could not reproduce it)
+DROP_DEN_MIN, DROP_DEN_W = 0.30, 8                     # ... AND this share of its p90 kick-candidate density. THIS is what separates a drop
+                                        # from a loud bass layer entry: SeeYouDrop's walk at 13 s is as energetic as drop 1
+                                        # (mean of the 4 bars after: 0.80 against 0.83 of the track's p90) because the track
+                                        # is limited and its sub is 68-79 % of the energy — but the walk has no drums at all.
+                                        # An energy gate alone cannot tell them apart at any threshold.
 DROP_JUMP, DROP_SOFT, DROP_REFRACT = 0.25, 0.45, 4   # clause 2: a sustained jump (mean of the next 4 bars - the previous 4) with
                                         # the low end loud after and under DROP_SOFT before; at least DROP_REFRACT bars apart
 SLIDE_SEMI, SLIDE_MAXT = 1.0, 0.5       # a slide: >= 1 semitone within <= 0.5 s, monotonic, voiced throughout
@@ -402,17 +409,25 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
     lowE = np.array([Sb['sub'][(tb >= a) & (tb < b)].sum() + Sb['bass'][(tb >= a) & (tb < b)].sum() for a, b in zip(downbeats[:-1], downbeats[1:])])
     barE = np.array([Sb['tot'][(tb >= a) & (tb < b)].sum() for a, b in zip(downbeats[:-1], downbeats[1:])])
     ref = np.percentile(lowE, 90) + 1e-12; lrel = lowE / ref; erel = barE / (np.percentile(barE, 90) + 1e-12)
-    drops = []; lo_thr = np.percentile(erel, DROP_AFTER_P); why = []; last = -99
+    drops = []; why = []; last = -99
+    # "does this bar carry the BEAT": kick candidates per second. Not energy (SeeYouDrop is limited, so the walk at 13 s and
+    # drop 1 have the same bar energy, 0.80 and 0.83 of the p90), not a band share, not the upper-band power — see
+    # docs/workers/ears.md for the four measures that were tried and failed. The walk has NO kick and the drops have ~2/s.
+    dens = np.array([((kick >= a) & (kick < b)).sum() / (b - a) for a, b in zip(downbeats[:-1], downbeats[1:])], float)
+    drel = dens / (np.percentile(dens, 90) + 1e-12)
     aft = np.array([erel[i:i + 4].mean() for i in range(len(erel))])
+    aftD = np.array([drel[i:i + DROP_DEN_W].mean() for i in range(len(drel))])
     bef = np.array([erel[max(0, i - 4):i].mean() if i else erel[0] for i in range(len(erel))])
     for i in range(1, len(lrel)):
-        if aft[i] < lo_thr or i - last < DROP_REFRACT: continue        # the section after a drop is among the track's loudest
+        # the bars after a drop are among the track's loudest AND carry its drums
+        if aft[i] < DROP_AFTER_MIN or aftD[i] < DROP_DEN_MIN or i - last < DROP_REFRACT: continue
         c1 = lrel[i] >= DROP_MIN and lrel[i - 1] < DROP_QUIET                                   # the low end returns from absence
         c2 = lrel[i] >= DROP_MIN and lrel[i - 1] < DROP_SOFT and aft[i] - bef[i] >= DROP_JUMP    # or a large sustained jump
         if c1 or c2: drops.append(float(downbeats[i])); why.append('absence' if c1 else 'jump'); last = i
     print(f"\ndrops (bar-pinned; clause 1 = low end >= {DROP_MIN} of its p90 after a bar under {DROP_QUIET}; clause 2 = a sustained "
-          f"energy jump >= {DROP_JUMP} with the low end loud after and under {DROP_SOFT} before; both need the 4 bars after in the "
-          f"top {100 - DROP_AFTER_P} % of bar energy and {DROP_REFRACT} bars since the last drop): "
+          f"energy jump >= {DROP_JUMP} with the low end loud after and under {DROP_SOFT} before; both need the 4 bars after at "
+          f"{DROP_AFTER_MIN} of the track p90 energy and {DROP_DEN_MIN} of its p90 onset density, and {DROP_REFRACT} bars since the "
+          f"last drop): "
           + (' '.join(f'{v:.3f}({w})' for v, w in zip(drops, why)) or 'none'))
     print(f"  bar low-end level (share of p90) per bar, 0.5 s resolution is the bar: " +
           ' '.join(f'{downbeats[i]:.0f}:{lrel[i]:.2f}' for i in range(0, len(lrel), 8)))

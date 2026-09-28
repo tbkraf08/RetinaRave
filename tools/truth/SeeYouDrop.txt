@@ -49,7 +49,7 @@ beat grid: 150.030 bpm (beat 0.39992 s), phase 0.0172 s, coherence 0.253, 394 be
   first downbeats: 0.017 1.617 3.217 4.816 6.416 8.016
 beat-synchronous grain tables -> tools/truth/SeeYouDrop/grain-beat.txt tools/truth/SeeYouDrop/grain-bar.txt tools/truth/SeeYouDrop/grain-4bar.txt
 
-drops (bar-pinned; clause 1 = low end >= 0.55 of its p90 after a bar under 0.15; clause 2 = a sustained energy jump >= 0.25 with the low end loud after and under 0.45 before; both need the 4 bars after in the top 30 % of bar energy and 4 bars since the last drop): 57.606(absence) 105.596(absence)
+drops (bar-pinned; clause 1 = low end >= 0.55 of its p90 after a bar under 0.15; clause 2 = a sustained energy jump >= 0.25 with the low end loud after and under 0.45 before; both need the 4 bars after at 0.6 of the track p90 energy and 0.3 of its p90 onset density, and 4 bars since the last drop): 57.606(absence) 105.596(absence)
   bar low-end level (share of p90) per bar, 0.5 s resolution is the bar: 0:0.10 13:0.73 26:0.48 38:0.54 51:0.00 64:0.74 77:0.72 90:0.60 102:0.18 115:0.76 128:0.94 141:0.67 154:0.68
 
 tonic: C# minor  conf 0.277  (KK on a sub-inclusive chroma over the loud half)
