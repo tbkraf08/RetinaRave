@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &det= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -34,6 +34,8 @@ function readback(r) {
 const byName = (name) => { const s = SCENES.find((x) => x.name === name); if (!s) throw new Error('no scene ' + name); return s; };
 export const CARD = {
   log: [], MS, SC, Q, FX, CHAIN, ERRS, GROOVE, LOOK, ENGINE, SCENES, REG, EFFECTS, TRANSITIONS, FEATS, HELP, TOUCH, LANDING, TEST, HASH,
+  TRACE: ENGINE.TRACE, // v0.15 E1: the per-frame MS recorder (tools/filetrace.js) — CARD.TRACE.start(fields) / .stop()
+  LOG: ENGINE.LOG,     // v0.15 E2: the event ring (fileStart / fileEnd, and the ears' onsets later)
   hooks: {},
   frameN: 0,
   get fix() { return ENGINE.fix; },
@@ -115,7 +117,12 @@ export const CARD = {
 export function initHarness(hideLanding) {
   window.CARD = CARD;
   snapshotDefaults(); // v0.4: the transition main.js chose and each scene's colour default — what resetManual() returns to
-  ENGINE.fakeOn = TEST && HASH.get('fake') !== '0';
+  // v0.15 E1: &track=<name> runs a real track through the REAL extractor from the first frame — it implies fake=0 (the fake
+  // timeline never runs when a track is set) and hides the card whatever the hash is. &at=<s> the track second to start at,
+  // &det=0/1 forces real-time / deterministic mode (the default is deterministic exactly when cdp's CLOCK=1 shim is there),
+  // &sync=<ms> declares SYNC_OFS for capture mode. Works with or without #test: `#track=SeeYouDrop` is a valid page.
+  const track = HASH.get('track');
+  ENGINE.fakeOn = TEST && HASH.get('fake') !== '0' && !track;
   for (const sc of SCENES) {
     for (const k in sc.hooks || {}) {
       CARD.hooks[k] = sc.hooks[k];
@@ -137,6 +144,11 @@ export function initHarness(hideLanding) {
     if (HASH.has('post')) applyPosts(HASH.get('post'));      // v0.4 manual post: scene.bloom.thr=0.3,scene.kaleido=0,… (a bad one throws)
     if (HASH.has('param')) applyParams(HASH.get('param'));  // v0.5 params: scene.param=src[*k][+b][~tau][!] | scene.param=c:0.4,… (a bad one throws)
   } else restorePanel(); // v0.4: the panel's localStorage preset, never under #test (the shots stay deterministic)
+  if (track) {
+    hideLanding();
+    ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),
+      det: HASH.has('det') ? HASH.get('det') === '1' : undefined });
+  }
 }
 
 // Per-frame test logging (only under #test).

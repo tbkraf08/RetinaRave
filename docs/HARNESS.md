@@ -446,6 +446,116 @@ GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s 
 GPU=1 node tools/parity.js real     # fake=0: both bpm within 1 of the synth's 126, arc sequence identical, drops within 0.5 s
 ```
 
+## File source — a real track, deterministically (v0.15 E1/E2)
+
+`tools/serve.js` serves `GET /music/<name>` from `$MUSIC` (default `~/Music/RetinaRave`), name with or without extension
+(`.flac .wav .mp3 .ogg`, as `tools/truth/trackmap.py find()`); a name carrying `/`, `\` or `..` is refused 400. **The route
+lives in `serve.js` and nowhere else** — `tools/bundle.js` inlines `assets/**/*.js` into one HTML file and `npm run build`
+copies `site/`, so no track and no `/music/` handler can be bundled or deployed (`wrangler.jsonc` deploys `./dist`).
+Nothing under `~/Music` is ever committed.
+
+Hash: `&track=<name>` (with or without `#test`) starts the file source on the **real** extractor — it implies `fake=0`
+and hides the landing card. `&at=<s>` the track second the playhead starts at (default 0) · `&det=0` / `&det=1` forces
+real-time / deterministic mode (the default is deterministic exactly when cdp's `CLOCK=1` shim is present) ·
+`&sync=<ms>` declares `SYNC_OFS`, added to `AU.heardT()` in capture / mic mode.
+
+Two modes, and only the second is reproducible:
+- **real time** (a real window, or headless without `CLOCK=1`): an `AudioBufferSourceNode` into `AU.bus` **and** into
+  `ctx.destination` — a file mode is **audible** (capture mode mutes because the other tab is already heard).
+- **deterministic** (`CLOCK=1`): nothing is played. The playhead is `at + (frame − frame0)/60 + DET_LEAD`, `AU.fast` /
+  `AU.slow` are PCM-backed `AnalyserNode` shims (`assets/engine/shim.js`) over the decoded mono ending at it, and the
+  synapse tap is fed exact 512-sample blocks on the main thread before the synapse stage. Two runs are bit-identical.
+
+```
+python3 tools/truth/trackmap.py SeeYouDrop --pcm     # tools/work/SeeYouDrop.f32 — the node tests' input
+node tools/test_shim.js                              # the shims against a second implementation of the spec (PCM=1 adds the real dump)
+PORT=8812 node tools/filetrace.js SeeYouDrop 0 60 tools/work/a.json          # a deterministic trace of [0, 60] s heard time
+PORT=8812 node tools/filetrace.js SeeYouDrop 0 60 tools/work/b.json
+cmp tools/work/a.json tools/work/b.json              # must be IDENTICAL (md5 d302a35b2bd733f68ed1a1c9109a4d9b for 0-60 s)
+PORT=8812 RT=1 node tools/filetrace.js SeeYouDrop 0 60 tools/work/rt.json    # the real-time path, same recorder, mode 'file-rt'
+```
+`filetrace.js <track> <t0> <t1> <out.json> [fields='*'] [extraHash]` runs `CLOCK=1 GPU=1` cdp on
+`#test&track=<track>&at=<t0 − WARM>&scene=0` (`WARM` 8 s of engine warm-up), records `[t0, t1]` in **heard** time and
+writes the frozen JSON (`{track, mode, sr, at, fps, detLead, fields, f, t, cols, log}` — booleans 0/1, non-finite null).
+It prints frames / fields / heard range / mode / `f0` / `sr` / log entries / `ENGINE.ms` / size. A 60 s `'*'` trace is
+3600 frames × 113 fields ≈ **5.07 MB**, returned in 400 000-character chunks from `window.__tj` (a single CDP return that
+size is not attempted; `MAX_CHUNKS` caps it at 16 MB and the driver says so rather than truncating).
+
+### The four rules of a deterministic real-track run
+
+1. **`frame0` is 2, always.** The source sets `window.__pauseAt = 1` before the decode and clears it when the track is
+   open, so the page runs exactly one warm-up frame however long the decode takes. Without it `core/loop.js`'s `wall`
+   (which advances on silence) had accumulated a different amount each run and every **screenshot** differed while the MS
+   trace matched. `heardT = at + (frame − 2)/60` exactly.
+2. **Release the clock with `{eval:"window.__PAUSE=0"}` or a `__FRAME` target — never `{wait}`.** cdp's `{wait}` step
+   clears `window.__pauseAt` as well as `__PAUSE`, which undoes the hold.
+3. **Address the window by `__FRAME`, not by a `heardT` predicate.** A general `{until}` polls every 40 ms and the fake
+   clock runs hundreds of frames in the gap, so it stops at a different frame in each run.
+4. **Two consecutive non-`__FRAME` `{until}`s deadlock** (the first sets `__PAUSE = 1` and only a `{wait}` or a `__FRAME`
+   target clears it) — put `{eval:"window.__PAUSE=0"}` between them.
+
+The recipe, in full — the first real-music screenshots the project has (TORUS2 at heard 103.967 / 107.967 s, around drop 2):
+
+```
+PORT=8812 CLOCK=1 GPU=1 OUT=tools/work node tools/cdp.js 'test&track=SeeYouDrop&at=100&scene=3' '[{"until":"window.CARD"},{"until":"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open","timeout":300000},{"until":"window.__FRAME>=240","timeout":300000},{"shot":"file-a6-f240"},{"until":"window.__FRAME>=480","timeout":300000},{"shot":"file-a6-f480"},{"eval":"JSON.stringify({heard:CARD.MS.heardT,errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
+# md5sum tools/work/file-a6-f240.jpg -> 5ac81cba6423837518b7a867b04a1aff   (GPU=1, 1280x720, heard 103.96667)
+# md5sum tools/work/file-a6-f480.jpg -> 6158b70f85ddebe80210cc7f021a1d52   (heard 107.96667, arc 'peak', sectionId 2)
+```
+
+### Time — `AU.heardT()` and `AU.lat()`
+
+The time base is "audio time" (s): **track** seconds in file mode, `AU.ctx` seconds in the live modes. `MS.heardT` (raw)
+and `MS.fileOn` (0/1) carry it into MS, written by the `clock` stage before every other stage; `ENGINE.LOG` (cap 20 000,
+`ENGINE.log(type, t, extra)`) stamps events in the same base and holds `fileStart` / `fileEnd`.
+
+`AU.lat()` prints every latency number in one object: `{rate, base, out, now, ctxT, perfT, heard, state}`. Measured here
+(headless, 48 kHz, 1478 frames): `outputLatency` median **0.040** s (it steps between 0.032 and 0.048), `baseLatency`
+0.010667 (512 samples), and `ctx.currentTime − AU.ctxHeard()` median **0.0454** / p90 0.0504 — i.e.
+`getOutputTimestamp().contextTime` **already** lags `currentTime` by the output latency, so `AU.ctxHeard()` returns the
+extrapolated `contextTime` as it is and does not subtract `outputLatency` a second time. `DET_LEAD` = **0.0427** s
+(= median `outputLatency` + one render quantum). **`outputLatency` is the audio device's: re-measure `AU.lat()` on any
+machine whose sync numbers matter** — ITU-R BT.1359's 45 ms sound-before-picture threshold is the same size as it.
+
+Capture-mode lag was **not measured** this session (no headed capture run). The recipe, for whoever does it: play a track
+with known truth onsets in its own Chrome window (`{tab:'url', window:{…}}` + `CAPTITLE=`, see "Real window"), read that
+tab's `HTMLMediaElement.currentTime` and `performance.now()` together with `{evalTab:…}`, read the page's `MS.heardT` at
+the frame the matching onset is detected (`ENGINE.LOG`), and the difference of the two `performance.now()`-mapped times is
+the lag. Declare it with `&sync=<ms>`; it is added to `heardT` in capture / mic mode and reported in the trace, never guessed.
+
+### The PCM bus
+
+`ENGINE.PCM.on(fn)` → `fn(L, R, t0)` with `L`, `R` = `Float32Array(512)` and `t0` = the audio time of the block's **first**
+sample. Live modes are fed by a stereo `AudioWorklet` on `AU.bus` whose stamps come from the worklet's own `currentFrame`;
+deterministic file mode is fed by the source from the decoded channels. **The worklet is built lazily on the first
+`PCM.on`** — with no listener there is nothing to measure. Proven over heard 58 → 90 s of SeeYouDrop: `t0` steps by
+512/`sr` to within 1.3e-14 s (det) / 1.5e-14 s (real time), zero non-monotone steps and zero gaps, and side/mid energy over
+60–90 s is 0.218542 (det) vs 0.218494 (real time) — `L ≠ R`, and both paths agree on how much.
+
+```
+PORT=8812 CLOCK=1 GPU=1 node tools/cdp.js 'test&track=SeeYouDrop&at=58&scene=0' '[{"until":"window.CARD"},{"eval":"window.__P={n:0,last:null,dmax:-1e9,dmin:1e9};CARD.ENGINE.PCM.on(function(L,R,t0){var P=window.__P;if(t0<0)return;P.n++;if(P.last!==null){var d=t0-P.last;if(d>P.dmax)P.dmax=d;if(d<P.dmin)P.dmin=d;}P.last=t0;});1"},{"until":"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open","timeout":300000},{"until":"window.__FRAME>=1922","timeout":600000},{"eval":"JSON.stringify({blocks:window.__P.n,step:512/CARD.ENGINE.AU.file.sr,dmax:window.__P.dmax,dmin:window.__P.dmin})"}]'
+```
+
+### The landing control ("play a file from this device")
+
+`index.html` carries `<a id="pickfile">` in the `.alt` row and a hidden `<input type="file" accept="audio/*" id="file">`;
+`core/landing.js` `initFile()` wires the link to the input and adds drag-and-drop on the whole card (`#landing.drag` is the
+hover cue). The file is decoded in the page (`File.arrayBuffer` → `decodeAudioData`) — **nothing is uploaded**. `cdp.js`
+has no step for `DOM.setFileInputFiles`, so `tools/setfile.mjs` does it from a `{sh:…}` step (which gets `DBG` = the debug
+port); the drop path needs no helper, a real `DragEvent` with a `DataTransfer` from an `{eval}` is the genuine event.
+
+```
+PORT=8812 GPU=1 node tools/cdp.js real '[{"until":"window.CARD"},{"wait":600},{"sh":"node tools/setfile.mjs /home/toma/Music/RetinaRave/SeeYouDrop.flac \"#file\""},{"wait":4000},{"eval":"JSON.stringify({mode:CARD.ENGINE.AU.mode,name:CARD.ENGINE.AU.file.name,presence:CARD.MS.presence,hidden:document.getElementById(\"landing\").classList.contains(\"hide\"),errs:CARD.ERRS})"}]'
+# => mode 'file', name 'SeeYouDrop.flac', presence 1, hidden true, errs []          (the drop path: see docs/workers/file.md (e))
+```
+
+### What to re-prove after a change to the file source, the shims, the PCM bus or the trace
+
+`node tools/check.js` · `npm test` · `node tools/test_shim.js` · two `filetrace.js` runs + `cmp` · `node tools/parity.js
+fake` (0 diff — `heardT` and `fileOn` show as "missing in v3" **info**, never a diff) · `tools/scene-md5.sh` full list
+against `tools/accept/v0.14/scene-md5-v014.txt` · the mixs md5 ("Transition") · the bundle. Nothing in the file path runs
+on the fake timeline, so a scene's pixels cannot move — but the `clock` stage runs in every mode, which is what the md5
+list and the parity run are checking.
+
 ## Single-file build
 
 ```
@@ -494,6 +604,17 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
 - A per-iteration `sin(atan)` in a unified shader sank `Q.q` to 0 — keep shaders per scene, gate work on uniforms.
 - Module scripts are strict mode: no implicit globals. Import what you use.
 - The demo synth uses `Math.random()` noise: `fake=0` runs are not bit-identical ("judge on 2+ runs"); `#test` is.
+- `features-slow.js:125` seeds a new section's look with `Math.random()` (`MS.seed` → `LOOK`, `GROOVE`, MANDALA, POLYTOPE,
+  FEIGEN, NAV), so **real music is not reproducible in pixels** unless something replaces it: deterministic file mode
+  installs a seeded PRNG over `Math.random` for the run and restores it on stop (v0.15 E1).
+- cdp's `{wait}` step clears `window.__pauseAt` as well as `window.__PAUSE`, and a general (non-`__FRAME`) `{until}` sets
+  `__PAUSE = 1` that only a `{wait}` or a `__FRAME` target clears — so two non-frame `{until}`s in a row deadlock, and a
+  `{wait}` between them silently un-holds a deterministic clock. `{eval:"window.__PAUSE=0"}` is the resume that touches
+  nothing else (v0.15 E1, "File source").
+- **`innerHeight` is 633 at the default `WIN=1280,720`** and the landing card's `.alt` row sits at y 629–644, so
+  `{clickSel:"#demo"}` on the `real` hash dispatches a click *below the viewport* and the handler never fires — the
+  documented real-start-path check passes anyway because it only asserts `CARD.ERRS` / `nonFinite()`. Add `WIN=1280,900`
+  (then `AU.mode` really is `'demo'`), or assert `AU.mode` so the miss cannot hide again. Pre-existing; found v0.15 E1.
 - The empty hash defaults to `test` in cdp.js — pass `real` for the real start path.
 - A `<select>`'s native popup is a separate override-redirect X window: `Page.captureScreenshot` never contains it,
   `xwd -root` fails with `BadColor` while it is open, and only `color-scheme` styles it. Open it with a trusted

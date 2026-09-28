@@ -174,6 +174,8 @@
   #help .pptab select{max-width:230px}   /* "derived: tension, dropEnv, kick" is the sentence: let it fit */
   .pptab .hv.lit{color:#ff8}
   #help summary:hover{color:#cfe}
+  /* v0.15 — a file dragged onto the card (core/landing.js) */
+  #landing.drag .card{outline:1px dashed rgba(160,200,255,.7);outline-offset:14px;border-radius:10px}
 </style>
 </head>
 <body>
@@ -191,7 +193,8 @@
   <p class="mob">Play music on a speaker, then let this page <b>listen</b>. Loud and close works best.</p>
   <button id="go">Share a tab</button>
   <button id="mic">Listen with the microphone</button>
-  <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a> · <a href="about.html">about &amp; support</a></div>
+  <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a> · <a id="pickfile" href="#">play a file from this device</a> · <a href="about.html">about &amp; support</a></div>
+  <input type="file" accept="audio/*" id="file" hidden>  <!-- v0.15: the file source (core/landing.js); the file is decoded here, nothing is uploaded -->
   <div id="msg"></div>
   <div class="hint" id="hint"><kbd>?</kbd> explains what you see · <kbd>F</kbd> or double‑click for fullscreen</div>
   <p class="seo">A free, audio-reactive music visualizer that runs in the browser on WebGL2. The music steers a camera through real mathematical objects: the Mandelbrot set and its Julia sets, the Feigenbaum period-doubling cascade, a particle swarm, a box-fold mandala, the Hopf fibration, and four-dimensional polytopes. Beats, drops and sections are detected live and a director picks and crossfades the scenes.</p>

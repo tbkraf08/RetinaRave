@@ -11,13 +11,16 @@ import capture from './sources/capture.js';
 import mic from './sources/mic.js';
 import fake from './sources/fake.js';
 import demoSynapse from './sources/demo-synapse.js';
+import file, { DET_LEAD, FPS } from './sources/file.js';
+import { TRACE, LOG, pushLog } from './trace.js';
+import { PCM } from './pcm.js';
 import { FEATS } from './feats.js';
 
 AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : demo.start());
 
 export const ENGINE = {
   MS, GROOVE, AU, FEATS,
-  sources: { demo, capture, mic, fake, 'demo-synapse': demoSynapse },
+  sources: { demo, capture, mic, fake, file, 'demo-synapse': demoSynapse },
   demoStyle: null,  // &demo=<style> selects the synapse synth; null = the v3 demo (parity)
   tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them
   extraMs: 0,       // CPU spent outside frame() by stages (worklet port handler), drained into ms
@@ -25,6 +28,10 @@ export const ENGINE = {
   fix: null,        // test hook: Object.assign(MS, fix) every frame after extraction
   fakeOn: false,    // #test without fake=0: the deterministic timeline replaces the extractor
   ms: 0,
+  frameN: 0,        // v0.15: frames run by frame(); the trace's `f` and the event log's `f`
+  PCM,              // v0.15 E1: the PCM bus (PCM.on(fn) -> fn(L, R, t0)); the EARS stage subscribes here
+  TRACE,            // v0.15 E1: the per-frame MS recorder tools/filetrace.js drives (ENGINE.TRACE.start/stop)
+  LOG,              // v0.15 E2: the event ring behind log() below, cap 20 000 (engine/trace.js LOG_CAP)
   resumeAt: -1,     // `now` of the first frame after a hidden tab (v0.3 resume-hold); the extractor holds its events for 1 s from it
   resumePending: false,
   resumed: false,   // true during the one frame stamped resumeAt (the core zeroes its own transients on it)
@@ -40,16 +47,33 @@ export const ENGINE = {
     this.stages.push({ name, fn, feats });
   },
 
-  // Start a source by name: 'demo' | 'capture' | 'mic'. msg is shown on the landing card by the UI hook.
+  // v0.15 E2: record one event at its audio time (docs/ENGINE.md "Time"): { type, t, f: frameN, ...extra }. The hook the
+  // ears' sub-frame onsets hang on; sources/file.js logs fileStart / fileEnd through engine/trace.js directly.
+  log(type, t, extra) { return pushLog(type, t, this.frameN, extra); },
+
+  // What the trace's header says about this run. mode: 'file-det' | 'file-rt' | 'capture' | 'mic' | 'demo' | 'none'.
+  traceMeta() {
+    const F = AU.file;
+    return {
+      track: F ? F.name : null,
+      mode: AU.mode === 'file' && F ? (F.det ? 'file-det' : 'file-rt') : AU.mode,
+      sr: AU.ctx ? AU.ctx.sampleRate : 0, at: F ? F.at : 0, fps: FPS, detLead: DET_LEAD,
+    };
+  },
+
+  // Start a source by name: 'demo' | 'capture' | 'mic' | 'file'. msg is shown on the landing card by the UI hook; for
+  // 'file' it is the option object instead: { src, at, det, sync, msg } (sources/file.js startFile).
   start(name, msg) {
     initAudio();
     if (name === 'capture') return capture.start();
     if (name === 'mic') return mic.start();
+    if (name === 'file') { this.fakeOn = false; return file.start(msg && msg.src, msg || {}); } // a real track, never the fake timeline
     run('demo', msg);
   },
 
   frame(dt, now, nowMs) {
     const t0 = performance.now();
+    this.frameN++;
     this.resumed = false;
     if (this.resumePending) {
       this.resumePending = false;
@@ -61,13 +85,25 @@ export const ENGINE = {
     }
     if (this.fakeOn) fake.update(dt, now);
     else {
+      // v0.15 E1: the file source advances the playhead here — the analyser shims are seeked and the synapse tap is fed
+      // its exact blocks BEFORE the extractor and the synapse stage read them. A no-op in every other mode.
+      file.tick(nowMs);
       capture.tick(nowMs); // the silence watchdog, for capture and mic alike
       updateMusic(dt, now);
     }
     for (const st of this.stages) st.fn(dt, now, MS);
     if (this.fix) Object.assign(MS, this.fix);
     updateGroove(dt, MS);
+    TRACE.frame(MS, this.frameN, MS.heardT, TRACE.meta || this.traceMeta());
     this.ms = ema(this.ms, performance.now() - t0 + this.extraMs, dt, 1);
     this.extraMs = 0;
   },
 };
+
+// v0.15 E2 — the clock stage: the audio time the listener hears at this frame, and whether a file is the source. It runs
+// FIRST (registered before features-synapse.js's 'synapse' stage), writes only its own two fields, and is the only thing
+// in the engine that reads AU.heardT per frame.
+ENGINE.addStage('clock', (dt, now, S) => {
+  S.heardT = AU.heardT();
+  S.fileOn = AU.mode === 'file' ? 1 : 0;
+}, ['heardT', 'fileOn']);

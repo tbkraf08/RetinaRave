@@ -18,6 +18,8 @@ export const MS = {
   beatConf: 0, gridTrust: 0, barConf: 0, phraseConf: 0, bar: 0, barPos: 0, barPhase: 0, phrasePos: 0, phrase16Pos: 0, beatSyn: 0, bpmSyn: 0,
   key: 9, mode: 1, keyConf: 0, novelty: 0, foote: 0, boundaryEvt: false, sectionAlt: -1, sectionReturn: 0, sectionAge: 0, sectionRenumber: null,
   dropExpectedIn: -1, dropConf: 0, fakeoutEvt: false, valence: 0.5, arousal: 0.3, moodFamily: 0, moodEvt: false, riser: 0, roll: 0, swell: 0, hp: 0,
+  // clock stage (engine.js, v0.15 E2) — the engine's time base, written before every other stage
+  heardT: -1, fileOn: 0,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

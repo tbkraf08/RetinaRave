@@ -137,6 +137,9 @@ export const FEATS = {
   roll: L('the drum roll is accelerating', 'onsets per beat rising in octaves', 'build evidence'),
   swell: L('energy swelling', 'eShort/eMed - 1.04 or level trend', 'build evidence'),
   hp: L('the bass was pulled (high-pass sweep)', 'bassShort/bassLong low + low-edge trend', 'build evidence'),
+  // --- the clock stage (engine.js, v0.15 E2): the engine's time base ---
+  heardT: R('the audio time the listener hears at this frame (s); -1 with no audio', 'file: playhead - DET_LEAD (det) / at + ctxHeard - startCtx (real time) · capture/mic: ctx.currentTime + SYNC_OFS · demo: ctxHeard', 'nothing visual: the base every event onset and PCM block is stamped in'),
+  fileOn: L('a file is the source (1) or not (0)', "AU.mode === 'file'", 'nothing visual: the harness and the trace read it'),
 };
 
 export const FEAT_KEYS = Object.keys(FEATS);
