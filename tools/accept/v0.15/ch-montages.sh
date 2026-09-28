@@ -11,5 +11,5 @@ M ch-win6-slides.jpg 3 tools/work/ch-w6-0{0,1,2,3,4,5}.jpg
 M ch-win7-gated.jpg  3 tools/work/ch-w7-0{0,1,2,3,4,5}.jpg
 M ch-win8-outro.jpg  3 tools/work/ch-w8-0{0,1,2,3,4,5}.jpg
 M ch-win9-bright.jpg 3 tools/work/ch-w2-0{0,2,3,4,5}.jpg
-python3 tools/work/ch-p95.py tools/work/ch-w2-0{0,1,2,3,4,5}.jpg 2>/dev/null
+python3 tools/accept/v0.15/ch-p95.py tools/work/ch-w2-0{0,1,2,3,4,5}.jpg 2>/dev/null
 python3 tools/lum.py tools/work/ch-w2-0{2,3}.jpg

@@ -215,4 +215,4 @@ if c:
     print('   distinct figures in the outro: %d; plate boundary (0 square, 1 round) %.2f -> %.2f' % (len(set(c['win'])), c['bnd'][0], c['bnd'][-1]))
     print('   amp %.3f -> %.3f' % (c['amp'][0], c['amp'][-1]))
 
-print('\n9  brightness — see tools/work/ch-p95.py on the groove shots (tools/lum.py has no percentile field)')
+print('\n9  brightness — see tools/accept/v0.15/ch-p95.py on the groove shots (tools/lum.py has no percentile field)')

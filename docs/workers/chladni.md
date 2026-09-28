@@ -20,7 +20,7 @@ run to run — the first scene in this repo tuned on the real track instead of o
 2. **`tools/lum.py` has no percentile.** The brief's window 9 is "p95 luminance 0.6–0.8 on the groove
    (`tools/lum.py`)"; `lum.py` prints a centre-box mean, a rim-annulus mean and their ratio, and nothing else — the
    same gap HARNESS "Pitfalls" already records for hue ("`tools/lum.py` has **no hue field**"). **Guess/fix:** a
-   four-line `tools/work/ch-p95.py` (p50 / p95 / p99 / mean over the whole frame). **For HARNESS:** say which
+   four-line `tools/accept/v0.15/ch-p95.py` (p50 / p95 / p99 / mean over the whole frame). **For HARNESS:** say which
    instrument answers a percentile question, or add the field to `lum.py`.
 3. **`tools/filetrace.js` pins `&scene=0`** inside its hash and appends `extraHash` after it, so a second `&scene=`
    cannot override it. A scene worker who wants its own scene in a deterministic trace has to fork the driver.
@@ -53,6 +53,14 @@ run to run — the first scene in this repo tuned on the real track instead of o
     key from what it has heard, so a window that starts cold at 105 s latches from 8 s of evidence and a window that
     starts at 0 latches from the whole track. Every acceptance window below therefore runs `WARM=999` (warm from
     t 0) — which is also the honest case, since a listener does not start the track at 1:45.
+11. **A scene can weight the kaleidoscope but not the flash.** CONTRACTS §1.4 gives `post.kaleido` as a 0..1
+    multiplier on a composite behaviour, and §1.10 lists the others — glitch row shifts, flash on drops — with no
+    such slot, and the composite is always last and cannot be switched off. On both drops CHLADNI's own slam is
+    under a full-screen white flash and glitch bars for ~0.15 s (`tools/work/ch-win5-drops.jpg`). **Guess:** leave
+    it; it is the director's language and the drop still reads. **For CONTRACTS §1.4:** if a scene whose whole point
+    is a figure is expected to show that figure on the drop frame, the flash needs a per-scene weight.
+12. **`tools/monitor.js` needs a `baby`-free scene to publish `pathCut > 2`** — see 4; the number itself is the
+    friction, because the brief's example value silently disables the instrument.
 
 ## (b) Was I tempted to open a forbidden file?
 
@@ -222,8 +230,113 @@ Every number from a deterministic file-mode trace of the whole 157 s (`tools/wor
 
 ## (g) The nine windows
 
-*(filled from `python3 tools/accept/v0.15/ch-report.py` — see the numbers section below)*
+All nine in deterministic file mode, `CLOCK=1`, PORT 8814, **warmed from t 0** so the scene's tonic latch has the
+whole track behind it (`bash tools/accept/v0.15/ch-windows.sh`; scored by `python3 tools/accept/v0.15/ch-report.py`;
+one montage each, listed below). Every window: `ERRS []`, `nonFinite []`, `f0 2`, mode `file-det`.
 
-## (h) Cost, determinism, continuity
+| # | window | met? | the number it turns on |
+|---|---|---|---|
+| 1 | 13–25 s, the walk | **met** (shape), **not met** (timing) | four figures, **4/4 distinct**: (1,2) → (2,5) → (2,3) → (1,5); all four truth note starts matched; switch error **+0.10, −0.45, +0.33, +0.30 s** (median +0.30) against the "within 50 ms" target — the ears' (the engine reports A1 at 15.65 s where the truth has 16.10) plus ~0.15 s of the scene's vote. Each switch STARTS on its own frame and the morph completes in 0.15–0.37 s |
+| 2 | 25–45 s, the groove | **met** (the leap), **not met** (the bare 808s) | a leap on **33 of 38** truth kick candidates, **F 0.786** (the AUDIT's 0.79 for the same field), lag median **+20.3 ms**, and the leap's onset frame IS the kickEvt frame by construction (kickAge median 0.0087 s — sub-frame). **11 of 46 leaps (23.9 %)** land on a bare 808 re-trigger and not on a kick candidate, against a 5 % target. The root figure holds: **5 figure switches in 20 s** (17 without the vote filter), 65.3 % of frames on the tonic, and the plate's amplitude swings a median **0.156** every 0.4 s — "bumping on every beat" |
+| 3 | 44.9–49.9 and 96–101 s, the climbs | **not met** (density), **met** (the camera) | scene hits/s **1.27×** and **1.33×** the groove, against a 2.5× target. The TRUTH's own onsets here are 2.90× / 3.22× (mid) and 3.13× / 2.96× (high) the groove, so the shortfall is the engine's detectors and not the mapping: the engine's hats are 1.93× denser here and its snares 1.27×. The camera rises exactly as asked: pitch **0.73 → 0.96** and **0.67 → 1.13** rad, distance **2.4 → 3.1** and **1.9 → 3.7** |
+| 4 | 49.9–57.6 s, the void | **met** | plate amplitude mean **0.014** and under the 0.05 target on **389 of 421** frames from 50.6 s; the ring-down crosses 0.05 at **50.38 s**, 0.48 s into the void. The one excursion is a single 0.5 s window at **51.15–51.67 s** where the ears read a sub — and the truth has a real low onset at 51.154 s there. lift **0 → 1**, spiral **0 → 0.866** tracking buildProg **0.03 → 1.00**, camera pitch **0.93 → 1.10** rad |
+| 5 | 57.6 and 105.7 s, the drops | **met** | `mapDropEvt` at **57.6167 s** (truth 57.606, **+10.7 ms = +0.64 frames**) and **105.6000 s** (truth 105.596, **+4.0 ms = +0.24 frames**) — both inside ±1 frame, on every run. On drop 1's frame the plate's amplitude goes **0.000 → 1.054 in 0.20 s**, lift 1.00 → 0.57, spiral 0.86 → 0.42, and the figure arrives at the root (s → 0.05) within 0.2 s |
+| 6 | 57.6–90 s, the slides | **met, thinly** | **10 of 13** truth slides (77 %) move the figure by more than 0.25 semitone; median movement **0.331** semitone, max 1.963; the figure sits on the tonic for **79.9 %** of the section, which is the "relaxes into the root figure" half. Thin because the vote's hysteresis holds the winner and only the cents ride — see (i) |
+| 7 | 105.7–130 s, the gated drop 2 | **partly met** | the channel works and bites: the plate's gate reaches **0.000** and the amplitude **0.038** on a duck. But the ears report only **6 gate-off runs in 24 s** against the truth's own **11 silence runs**, and they miss the whole 106.4–111.3 s group — which is the once-per-bar stomp the user means by "1:45 … should be reacting more". Not the mapping: `subGate` never drops there |
+| 8 | 134.5–157 s, the outro | **met** | `lpSweep` **0.929 → 0.256** and the scene's fog follows it exactly; the walk returns **twice** — A(9), B(11), F#(6), E(4), C#(1), then A, B, F#, E — **5 distinct figures**; the plate is round (boundary 0.31 → 1.00) because the bass is away from the tonic; the sand settles and dims, amplitude **0.613 → 0.148** |
+| 9 | brightness on the groove | **met** | p95 luminance over the six groove frames **0.502 / 0.525 / 0.612 / 0.671 / 0.702 / 0.800**, median **0.64** — four of six inside the 0.6–0.8 band, two just under it at the groove's quiet end (40 s and 44 s, where the drive itself falls). `tools/lum.py` on the brightest: centre 0.64, rim 0.26, ratio 2.45 |
 
-*(filled below)*
+Montages (`tools/work/`, 640 px tiles captioned with the frame name) and what each one shows:
+
+1. `ch-win1-walk.jpg` — four plainly different circular figures (a wide ring, a dense rosette, a two-lobe pattern, a
+   fine spiral), each in its own hue, as the bass walks C# → A → F# → E.
+2. `ch-win2-groove.jpg` — a bright square plate holding the (1, 2) cross, the sand spraying up off it on each kick
+   and falling back onto the lines, the last two frames turning round as the climb starts.
+3. `ch-win3-climbs.jpg` — the plate shrinking and tipping toward overhead as the bass leaves the sub, its figure
+   going busy and rough as the purity drops.
+4. `ch-win4-void.jpg` — a small dark spiral of drifting sand, then the plate rising into view as a gold circular web
+   with the sand thrown into a tall spray and winding inward toward the drop.
+5. `ch-win5-drops.jpg` — the plate tight and dark, then the drop's white flash (the composite's, see (i)), then the
+   root figure blooming back in green-gold; both drops, six frames each.
+6. `ch-win6-slides.jpg` — the square plate holding the root figure, its mesh visibly loosening and re-tightening
+   around each hit.
+7. `ch-win7-gated.jpg` — six bright, legible, differently coloured plates across drop 2: a green ring, a cyan mesh
+   mid-spray, a gold-green cross, a round rippled plate, a big green X, a cyan dotted mesh.
+8. `ch-win8-outro.jpg` — six dim, fogged, desaturated round plates with the walk's figures back and the sand
+   settled: the picture the low-pass closing sounds like.
+9. `ch-win9-bright.jpg` — the five groove frames the p95 numbers come from.
+
+Also proven, not a window: the twelve figures pinned side by side on `#test` (`tools/work/ch-figures.jpg` — the
+ladder from the unison's cross to the semitone's dense grid) and one kick at 60 fps (`tools/work/ch-leap.jpg`).
+
+## (h) Cost, determinism, continuity, and the acceptance list
+
+1. `node tools/check.js` → **0 fail** (6 warns: five pre-existing soft-cap lines plus "card without
+   site/thumbs/chladni.jpg", which `tools/thumbs.sh` fills once the user approves the scene).
+   `node tools/test_chladni.js` → **OK**, 33 checks. `node tools/param-smoke.js` → 49 checks, 0 fail. `npm test` OK.
+2. `PORT=8814 GPU=1 node tools/cdp.js 'test&scene=11&ears=1' …` → `errs []`, `bad []`, `scene 11`, `glerr 0`,
+   and the same again after the fake timeline's drop at 13 s.
+3. The nine windows: (g).
+4. `IDS=11 tools/scene-md5.sh <tag> '&ears=1&figure=0'` — **identical over two runs**, and identical again after the
+   continuity fixes: `s11-f360 606f721a55f5782340205e1548db4bd2`, `s11-f840 f7b1c6eed36389a1d84eaa084d537ddc`
+   (`tools/accept/v0.15/scene-md5-v015-chladni.txt`). The diff is one scene folder + `assets/math/chladni.js` +
+   `tools/`, so no other scene's lines can have moved (HARNESS "What to re-prove").
+5. The scene object carries `name id tag card feats cuts score init update draw post colour params help hud hooks
+   state` (plus `rt`, `look` and two of its own methods). `score()` returns 0; no digit key; `&scene=11` and `n`
+   both reach it.
+6. **Bench** (HARNESS "Bench protocol": `q` pinned 0.95, tier 3, 150 000 points, `n = 300`, three interleaved pairs,
+   the warm call discarded, each scene in its own forced page):
+
+   | scene | its ms (median of 3) | NAV in the same page | ratio to NAV |
+   |---|---|---|---|
+   | CHLADNI (11) | **1.162** | 1.536 | **0.756** |
+   | TORUS2 (3) | 0.897 | 1.458 | 0.615 |
+
+   Through their own NAV ratios CHLADNI is **1.23× TORUS2** — inside the brief's 1.5× gate. (Raw ms would say 1.30×;
+   the protocol's rule is the interleaved ratio.) The state pass was the cost risk and it is not the cost: it runs
+   over 150 000 texels with the harmonic terms behind a UNIFORM branch, so a pure sub costs a third of an impure one.
+
+   **Continuity monitor**, 60 s of deterministic file mode (heard 20 → 80 s of SeeYouDrop), pointed at the scene's
+   own `state`: `{n: 3600, fast: 0, max: 0.0585, viol: []}` — every frame measured, nothing above the spike
+   threshold. Getting there took two real fixes (commit `804a4da`): the felt-beat turn is now accumulated from the
+   beat count's own steps instead of `beatCount · pulse` (a change of felt beat moved the target 0.155 rad in one
+   frame), and the register knee's output is eased (an ema whose target jumps 1.9 rad is itself a jump on its first
+   frame).
+
+7. **The settle instrument on the real track**, 150 000 grains (`bash tools/accept/v0.15/ch-proofs.sh settle`):
+   0.4 s after the walk's four figure changes **91.3 %, 59.1 %, 87.0 %, 98.2 %** — three of four over the 70 % gate,
+   the miss being the walk's biggest jump, (1, 2) → (2, 5). Across one groove kick: **90.4 %** before → **78.1 %**
+   at 0.03 s → **93.7 %** at 0.17 s → **91.3 %** at 0.37 s. The sand really leaves its lines and finds them again.
+
+8. **Params** (`bash tools/accept/v0.15/ch-proofs.sh params`): `paramsOf == derived` for all six with nothing routed
+   (`figure` 0, `sand` 1, `leap` 5.5, `tilt` 0, `glow` 0.95, `fog` 0 — every one `===`); `paramDeps('chladni','tilt')`
+   is `["buildProg","mapOn","dropConf"]`, all three recorded, so §1.16's short-circuit trap is avoided, and `'fog'`
+   is `["lpSweep"]`. A constant route AT the derived value is byte-identical (`figure=c:0` gives the reference md5
+   `606f721a…`); a route away from it moves the picture (`figure=c:5` → `54fb698757eb74cff636b35c23a30098`,
+   `glow=c:0.15` → `9af182a0…`, `glow=c:1.5` → `82183689…`).
+
+**Not run, on the user's instruction:** `tools/accept.sh` (the full sweep), the full scene-md5 list, the Q trace
+(id 11 bids 0, so it cannot be picked and a trace would measure nothing — HARNESS "What to re-prove"), and the
+thumbnail. Not merged, not pushed, no tag.
+
+## (i) What I would change next, and the deviations from the brief
+
+- **`subGlide` is in the brief's channel table and the scene does not read it.** Window 6 is the thin one: the
+  vote's hysteresis keeps the figure on the tonic through a slide and only the cents ride, so the median morph is
+  0.33 semitone where the truth's slides are 1.1–2.6. The fix is one line and is exactly what `subGlide` is for —
+  blend the figure's target from the voted note toward the RAW instantaneous pitch by how fast the sub is sliding,
+  so a real slide pulls the figure the whole way and a flicker does not. Not done because it re-tunes a channel
+  after the windows were shot, and the user corrects leans at the first montage.
+- **The circular plate is the asymptotic Bessel form, not `J_n(kr)`** — right ring spacing, right sector count,
+  rings shifted inward by the McMahon term at high `n`. Stated in the module header, measured in the node test.
+- **The plate's boundary is not keyed to `mapSection`** as the brief leaned. Both label-keyed rules were measured
+  and neither separates a walk from the groove on this track ((f) 7). "The bass is away from the tonic" does, it
+  works live as well as from the map, and a returning section still gets its shape back through look memory.
+- **`state.pathCut` is 3, not the brief's 0** — otherwise the continuity monitor measures nothing (friction 4).
+- **The drop's slam is invisible for ~0.15 s** under the composite's own white flash and glitch bars (`FX.flash`,
+  `FX.glitch`, CONTRACTS §1.10). A scene can weight the kaleidoscope per scene (`post.kaleido`) but not the flash,
+  and the composite cannot be switched off. If a drop's FIGURE is meant to read on the drop frame, the flash needs
+  a per-scene weight the way `kaleido` has one. **For CONTRACTS §1.4.**
+- **Two things the user asked for that the ears cannot yet give:** the once-per-bar stomp at 1:45 (window 7 — the
+  gate does not drop there) and the climbs' "skinnier waves" density (window 3 — the hat detector is only 1.9×
+  denser there than on the groove). Both are engine work; EARS pass 2 is aimed at the first.
