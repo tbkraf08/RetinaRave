@@ -29,3 +29,33 @@ mixs 641f6633 (`tools/accept/v0.15/scene-md5-v015-skeleton.txt`). Capture-mode l
 
 Pass 2 (EARS, `docs/workers/brief-ears2.md`) attacks the kick front end, the sub pitch and the first-frame lag with the
 non-causal map in file mode.
+
+## §2 After EARS pass 2 (`f42bf93`) — `tools/accept/v0.15/ruler-det-b.md` (file-det), `ruler-rt-b.md` (real-time file, 20–60 s)
+
+In file mode the kicks, snares, hats and the sub now come from the **non-causal map** (a proper STFT + HPSS and a centred YIN
+over the whole decoded track), released on the frame nearest their onset (ages in [−1/120, 0) on that frame). Every live
+mode keeps the causal ears of §1.
+
+| ruler | §1 | §2 | target |
+|---|---|---|---|
+| kick F ±30 ms, 25–45 s / whole track | 0.79 / 0.53 | **1.000 / 1.000** (tp 229, 0 miss, 0 extra) | ≥ 0.90 |
+| kicks on bare 808s | 8.6 % | **0.0 %** | ≤ 5 % |
+| kick lag first frame / placed | +18 / +9 ms | **+2 (p90 +7, max +8) / +0 ms** | med ≤ 15 |
+| sub pitch ±30 cents | 72.7 % | **100.0 %** (median 1 cent) | ≥ 90 % |
+| `subNote` per beat | 88.9 % | **91.1 %** | ≥ 90 % |
+| slides | 32 / 41 | 24 / 41, sign 24/24, span 0.150 s (the truth's own trace recovers only 25 / 41 at 60 fps) | — |
+| drops | 2/2 | 2/2 | exact, none else |
+| boundaries ±1 beat (annotation **v2**, bar-pinned) | 7 / 11 | 9 / 10 (the turn, bar 82, missed) | all |
+| returns | 4 / 5 | **5 / 5** | all |
+| real-time file mode, 20–60 s | — | kick F 0.994, lag +1 ms, sub 99.8 % | — |
+
+**Read this table with one caveat, stated plainly:** in file mode the ears now run the *same kind of* front end as the truth
+tool (HPSS onsets with the same click definition, YIN on the same band), so "F 1.000" and "100 %" say the page reproduces the
+offline analysis exactly and on the right frame — they do not independently prove the truth is right. The truth itself was
+checked at fine grains by hand in E0 (the walk notes, both drops, the void, the tonic by two different chromas); the causal
+live path (§1's numbers) is the independent engine measurement and stays as it was. Two reference bugs pass 2 found and fixed
+in the truth tool: the f0 contour's rate is 100.2273 Hz, not 100 (a 358 ms drift over the track — most of §1's 72.7 %), and
+the front end did not reproduce itself at 48 kHz (the map now analyses at 44.1 kHz whatever the context rate).
+
+Nothing moved: two full-track det runs `cmp`-identical, parity fake 0, the full md5 list identical to the skeleton list
+(`scene-md5-v015-ears2.txt`). `buildMap` 2.9 s in the page (was 1.6 s): a one-time pause before playback.
