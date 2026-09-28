@@ -9,6 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
+import { buildMap, mapAt, mapCross } from '../assets/engine/map/map.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const arg = (k, d) => { const a = process.argv.find((v) => v.startsWith('--' + k + '=')); return a ? a.split('=')[1] : d; };
@@ -264,13 +265,30 @@ function costTable(R, label) {
   ok(`[${label}] cost per block`, R.cost.pushMed <= 0.19, `${R.cost.pushMed.toFixed(4)} ms median`, '<= 0.19 ms');
 }
 
-function writeTrace(R, out, track) {
+// The frozen trace format (docs/workers/brief-file.md): every EARS_FIELDS column plus the map's mapAt / mapCross fields,
+// so `compare.py` sees exactly what it will see from the page's recorder.
+const MAP_FIELDS = ['mapOn', 'toDrop', 'toBoundary', 'buildProg', 'mapSection', 'mapNext', 'mapReturn', 'eG',
+  'mapDropEvt', 'mapBoundaryEvt'];
+function writeTrace(R, out, track, map) {
+  const r5 = (v) => (v === null || !Number.isFinite(v) ? null : Math.round(v * 1e5) / 1e5);
   const cols = {};
-  for (const f of EARS_FIELDS) cols[f] = R.cols[f].map((v) => (v === null ? null : (typeof v === 'number' ? Math.round(v * 1e5) / 1e5 : v)));
-  const tr = { track, mode: 'node', sr: R.sr, at: 0, fps: 60, detLead: 0, fields: EARS_FIELDS.slice(),
+  for (const f of EARS_FIELDS) cols[f] = R.cols[f].map(r5);
+  const fields = EARS_FIELDS.slice();
+  if (map) {
+    for (const f of MAP_FIELDS) { cols[f] = []; fields.push(f); }
+    const o = {};
+    for (let i = 0; i < R.t.length; i++) {
+      mapAt(map, R.t[i], o);
+      const c = mapCross(map, i ? R.t[i - 1] : 0, R.t[i]);
+      for (const f of MAP_FIELDS.slice(0, 8)) cols[f].push(r5(o[f]));
+      cols.mapDropEvt.push(c.drop ? 1 : 0);
+      cols.mapBoundaryEvt.push(c.boundary ? 1 : 0);
+    }
+  }
+  const tr = { track, mode: 'node', sr: R.sr, at: 0, fps: 60, detLead: 0, fields,
     f: R.frames, t: R.t, cols, log: R.evs.map((e) => ({ type: e.type, t: e.t, vel: Math.round(1e3 * (e.vel || 0)) / 1e3, note: e.note })) };
   fs.writeFileSync(out, JSON.stringify(tr));
-  console.log(`  trace -> ${path.relpath ? path.relpath(ROOT, out) : out}  (${R.t.length} frames, ${(fs.statSync(out).size / 1e6).toFixed(1)} MB)`);
+  console.log(`  trace -> ${out}  (${R.t.length} frames, ${fields.length} fields, ${(fs.statSync(out).size / 1e6).toFixed(1)} MB)`);
   return tr;
 }
 
@@ -294,7 +312,13 @@ for (const sr of rates) {
   }
 }
 const ti = process.argv.indexOf('--trace');
-if (ti > 0 && process.argv[ti + 1]) writeTrace(last, path.resolve(process.argv[ti + 1]), 'SeeYouDrop');
+if (ti > 0 && process.argv[ti + 1]) {
+  const pcm = loadPcm('SeeYouDrop', last.sr);
+  const t0 = process.hrtime.bigint();
+  const map = buildMap(pcm.L, pcm.R, pcm.sr);
+  console.log(`  map built in ${(Number(process.hrtime.bigint() - t0) / 1e9).toFixed(2)} s`);
+  writeTrace(last, path.resolve(process.argv[ti + 1]), 'SeeYouDrop', map);
+}
 console.log(FAIL ? `\n${FAIL} FAILED` : '\nall ears rulers pass');
 process.exit(FAIL ? 1 : 0);
 }
