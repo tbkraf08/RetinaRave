@@ -1,31 +1,78 @@
 {
   "track": "SeeYouDrop",
+  "v": 2,
   "time": "track seconds",
   "source": "orchestrator annotation 2026-09-27 from tools/truth/trackmap.py (SeeYouDrop.txt / .json) + the user's ear quotes; NOT confirmed by the user; step E0 pins every boundary to the bar line of the truth beat grid",
+  "v2_note": "v0.15 pass 2 (EARS, docs/workers/ears.md '## Pass 2', authorised by the orchestrator in docs/workers/brief-ears2.md item 3): every boundary, drop and walk note is now the E0 BAR LINE it belongs to, measured, with the v1 number kept as `was` and a `changed` note naming the evidence. v1's numbers were round ear estimates and 10 Hz `sub_runs` labels of a 0.372 s STFT; four of them (25.0, 90.0, 130.5, 157.4) had no bar line within a beat, which capped any bar-pinned detector at 8 of 12 boundaries however good it was. Nothing here is a new opinion about the music: the grid is trackmap.py's (phase 0.01724 s, beat 0.399919 s, bar 1.599676 s, 150.030 BPM) and every `changed` note cites the low-onset or contour evidence that put the boundary on that bar.",
+  "grid": { "bpm": 150.0303, "beat": 0.399919, "bar": 1.599676, "phase": 0.01724, "bars": 99, "downbeat_mod4": 0, "barOf": "t(bar k) = 0.01724 + k * 1.599676" },
   "bpm": 150,
   "feel": "grid 150 (0.40 s beat); the percussive-onset ACF picks 75 in the loudest 30 s (half-time feel: kick on 1, snare on 3 in the drop sections)",
   "tonic_hypothesis": "C# minor: the sub loop C#1 - A1 - F#1 - E1 (build 13-25 s, outro 134-157 s) is i - VI - iv - III, and every groove / drop sits on C#1; the engine reports G# minor (the fifth) because synapse's key chroma starts at 65 Hz and never sees the 35 Hz root. E0 decides.",
+  "tonic_settled": "C# minor, KK correlation +0.756 against C# major +0.547 and A major +0.491, confidence 0.277 on the sub-inclusive chroma of the loud half (docs/workers/ears.md 2.5). Confirmed, not a hypothesis any more.",
   "shape": "two cycles of groove -> climb (G1, D#2) -> void -> drop, then the gated drop 2, then the build's walk returns as the outro",
   "sections": [
-    { "t0": 0.0,   "t1": 13.0,  "label": "intro",        "bass": "harmonic mid-bass (h/f 1.2) walks G#2/A2 0-5 s, F#2 6-9 s, E2 10-12 s (the sub walk an octave up), no sub", "drums": "none; hats rise (4.2 onsets/s at 5-10 s)", "ear": "0-13s the high rise up to their max" },
-    { "t0": 13.0,  "t1": 25.0,  "label": "walk",         "bass": "sine sub (h/f 0.06) walks C#1 13.0, A1 16.1, F#1 19.3, E1 22.6; sub = 68-79 % of all energy", "drums": "none" },
-    { "t0": 25.0,  "t1": 44.9,  "label": "groove",       "bass": "sine sub C#1 held; the 60-150 Hz band pulses every 0.395 s", "drums": "kick candidates ~2/s, low onsets 3.6-5.8/s", "ear": "at 25s it really starts moving the edge on every beat" },
-    { "t0": 44.9,  "t1": 49.9,  "label": "climb",        "bass": "G1 44.9, D#2 48.1", "drums": "mid + high onsets 7.4/s (3x the groove)" },
-    { "t0": 49.9,  "t1": 57.6,  "label": "void",         "bass": "none (sub 1 %, bass 1 %)", "drums": "hats + mids (mid 49 %, high 42 % of energy)", "ear": "the part that was missing ripples was 50s-57s ... more skinnier waves (vs bass fatter waves)" },
-    { "t0": 57.6,  "t1": 90.0,  "label": "slides",       "bass": "sine sub back at 57.6 s (0 -> 83 % in 0.2 s, h/f 0.01 from the first frame); each hit slides D#1 / D1 -> C#1 in ~0.3 s", "drums": "kick candidates ~2/s", "event": "DROP 1 at 57.6 s" },
-    { "t0": 90.0,  "t1": 96.0,  "label": "groove-return","bass": "as 25-45 s (sub pulse 0.395 s)" },
-    { "t0": 96.0,  "t1": 105.7, "label": "climb-double", "bass": "G1 96.0, D#2 99.4, then no sub 101.1-105.7 (a harmonic mid-bass at ~110 Hz, h/f 1.5-4.9)", "drums": "mid / high onsets 5.4-7.2/s", "ear": "at 1:38 it goes double time -> should be moving faster / reacting more" },
-    { "t0": 105.7, "t1": 130.5, "label": "gated",        "bass": "sine sub C#1, ducked every ~0.8 s (one half-time beat), deepest once per 1.6 s bar; octave / fifth grace notes", "drums": "kick candidates ~2.5/s", "event": "DROP 2 at 105.7 s", "ear": "1:45 -> this is where the highest energy is, should be reacting more" },
-    { "t0": 130.5, "t1": 134.5, "label": "turn",         "bass": "C#1 held 131.4", "drums": "sparse (0.6-1/s)" },
-    { "t0": 134.5, "t1": 157.4, "label": "outro-walk",   "bass": "the walk returns twice: A1 134.5, F#1 137.6, E1 140.9, C#1 144.1, A1 147.3, F#1 150.5, E1 153.7", "drums": "none", "texture": "highs 1 % of energy (a low-pass has closed)" }
+    { "t0": 0.0172, "bar": 0, "t1": 12.8146, "label": "intro", "was": { "t0": 0.0, "t1": 13.0 }, "changed": "bar 0 is 0.0172, not 0.0; t1 follows the walk's t0",
+      "bass": "harmonic mid-bass (h/f 1.2) walks G#2/A2 0-5 s, F#2 6-9 s, E2 10-12 s (the sub walk an octave up), no sub", "drums": "none; hats rise (4.2 onsets/s at 5-10 s)", "ear": "0-13s the high rise up to their max" },
+    { "t0": 12.8146, "bar": 8, "t1": 25.6121, "label": "walk", "was": { "t0": 13.0, "t1": 25.0 },
+      "changed": "bar 8 = 12.8146; the sub's own first low onset is 12.794 (-21 ms of the bar) and the 22-60 Hz attack is 12.799. v1's 13.0 is -0.46 beat off the bar and 0.19 s after the note has started",
+      "bass": "sine sub (h/f 0.06) walks C#1, A1, F#1, E1 on every second bar (see `walk`); sub = 68-79 % of all energy", "drums": "none" },
+    { "t0": 25.6121, "bar": 16, "t1": 44.8082, "label": "groove", "was": { "t0": 25.0, "t1": 44.9 },
+      "changed": "bar 16 = 25.6121. v1's 25.0 is +1.53 beat from ANY bar line (it is mid-bar) and 0.48 s before the groove's first low onset, 25.484; the drums come in over 25.484 / 25.623 / 25.728 / 25.879 and bar 16 is where the pattern starts",
+      "bass": "sine sub C#1 held; the 60-150 Hz band pulses every 0.395 s", "drums": "kick candidates ~2/s, low onsets 3.6-5.8/s", "ear": "at 25s it really starts moving the edge on every beat" },
+    { "t0": 44.8082, "bar": 28, "t1": 49.6072, "label": "climb", "was": { "t0": 44.9, "t1": 49.9 }, "changed": "bar 28 = 44.8082 (-0.23 beat of v1)",
+      "bass": "G1 44.9, D#2 48.1", "drums": "mid + high onsets 7.4/s (3x the groove)" },
+    { "t0": 49.6072, "bar": 31, "t1": 57.6056, "label": "void", "was": { "t0": 49.9, "t1": 57.6 },
+      "changed": "bar 31 = 49.6072 (-0.73 beat of v1) — an ODD bar, three bars after the climb's, which is why the void is 5 bars and not 4",
+      "bass": "none (sub 1 %, bass 1 %)", "drums": "hats + mids (mid 49 %, high 42 % of energy)", "ear": "the part that was missing ripples was 50s-57s ... more skinnier waves (vs bass fatter waves)" },
+    { "t0": 57.6056, "bar": 36, "t1": 89.5991, "label": "slides", "was": { "t0": 57.6, "t1": 90.0 }, "changed": "bar 36 = 57.6056, +0.01 beat of v1 — v1 was already right here",
+      "bass": "sine sub back at 57.6056 (0 -> 83 % in 0.2 s, h/f 0.01 from the first frame); each hit slides D#1 / D1 -> C#1 in ~0.15 s (41 slides whole track, median span 0.150 s; v1's '~0.3 s' was generous)", "drums": "kick candidates ~2/s", "event": "DROP 1 at 57.6056" },
+    { "t0": 89.5991, "bar": 56, "t1": 95.9978, "label": "groove-return", "was": { "t0": 90.0, "t1": 96.0 },
+      "changed": "bar 56 = 89.5991. v1's 90.0 is a BEAT line (beat 225) but mid-bar, exactly -1.00 beat from bar 56, so no bar-pinned detector could ever hit it; the low onsets resume at 89.815 / 90.012",
+      "bass": "as 25-45 s (sub pulse 0.395 s)" },
+    { "t0": 95.9978, "bar": 60, "t1": 105.5959, "label": "climb-double", "was": { "t0": 96.0, "t1": 105.7 }, "changed": "bar 60 = 95.9978, -0.01 beat of v1 — v1 was already right here",
+      "bass": "G1 96.0, D#2 99.4, then no sub 101.1-105.6 (a harmonic mid-bass at ~110 Hz, h/f 1.5-4.9)", "drums": "mid / high onsets 5.4-7.2/s", "ear": "at 1:38 it goes double time -> should be moving faster / reacting more" },
+    { "t0": 105.5959, "bar": 66, "t1": 131.1907, "label": "gated", "was": { "t0": 105.7, "t1": 130.5 },
+      "changed": "bar 66 = 105.5959; the audible sub entry is 105.621 (+25 ms) and v1's 105.7 is the 10 Hz `sub_runs` label ('105.8s C#1x5') of a 0.372 s STFT, 0.10 s late",
+      "bass": "sine sub C#1, ducked every ~0.8 s (one half-time beat), deepest once per 1.6 s bar; octave / fifth grace notes", "drums": "kick candidates ~2.5/s", "event": "DROP 2 at 105.5959", "ear": "1:45 -> this is where the highest energy is, should be reacting more" },
+    { "t0": 131.1907, "bar": 82, "t1": 134.39, "label": "turn", "was": { "t0": 130.5, "t1": 134.5 },
+      "changed": "bar 82 = 131.1907. v1's 130.5 is +1.73 beat from any bar line; the drums stop after 130.101 and the held C#1's own 22-60 Hz attack is 131.221 (+30 ms of bar 82). v1's own text already said 'C#1 held 131.4'",
+      "bass": "C#1 held from 131.22", "drums": "sparse (0.6-1/s)" },
+    { "t0": 134.39, "bar": 84, "t1": 157.4, "label": "outro-walk", "was": { "t0": 134.5, "t1": 157.4 },
+      "changed": "bar 84 = 134.39 (-0.27 beat of v1); t1 is the FILE's duration, not a bar line (bar 98 is 156.7855) and it is NOT a boundary — the map forces the last section's t1 to `dur`, so no detector fires there and it must not be graded as one",
+      "bass": "the walk returns twice, every second bar (see `outro_walk`)", "drums": "none", "texture": "highs 1 % of energy (a low-pass has closed)" }
   ],
-  "drops": [57.6, 105.7],
+  "end_is_not_a_boundary": true,
+  "start_is_not_a_boundary": true,
+  "start_note": "The first section's t0 is the START OF THE FILE, not a transition, and it is not gradeable as a boundary event. `buildMap` forces sections[0].t0 to 0 (bar 0 is 0.0172, and a section list must cover the track), and no frame's half-open (tPrev, t] can contain 0 unless tPrev < 0 — so the engine fires it on its very FIRST frame, which is frame 1, one frame before `tools/filetrace.js` can start recording (the deterministic recipe holds the clock at frame 1 while the track decodes and the window begins at frame 2, docs/HARNESS.md 'File source'). Measured: the event IS in ENGINE.LOG and the page's own boundary list has all 13, but the trace's first frame is heard 0.0167 s and the crossing already happened. `compare.py --make-synth` fires one on frame 0 only because it builds the trace itself from t = 0.",
+  "walk": [
+    { "note": "C#1", "bar": 8, "attack": 12.8146, "lowOnset": 12.794, "arrival": 12.951, "was": 13.0 },
+    { "note": "A1", "bar": 10, "attack": 16.0139, "lowOnset": 16.01, "arrival": 16.054, "was": 16.1 },
+    { "note": "F#1", "bar": 12, "attack": 19.2132, "lowOnset": 19.203, "arrival": 19.256, "was": 19.3 },
+    { "note": "E1", "bar": 14, "attack": 22.4126, "lowOnset": 22.407, "arrival": 22.459, "was": 22.6 }
+  ],
+  "walk_note": "`attack` = the E0 bar line the note starts on (the walk is one note every second bar, bars 8 / 10 / 12 / 14). `lowOnset` = the truth's own 40-150 Hz HPSS onset, 4-21 ms of the bar line in every case. `arrival` = the first frame of contour.f0td that NAMES the note, 40-140 ms later, because a 100 ms YIN window has to fill before it can. v1's four numbers were 10 Hz run-length labels: 13.0 is 0.19 s after the attack, 22.6 is 0.19 s after it, and a pickup figure at 15.232 / 15.372 / 15.673 is what made 16.1 look like the arrival. Grade an event against `attack`, a pitch channel against `arrival`. Read contour.f0td at `fpsExact` (100.2273 Hz), NOT at the nominal `fps` 100: at 100 Hz the labels drift 358 ms by the end of the track.",
+  "outro_walk": [
+    { "note": "A1", "bar": 84, "attack": 134.39, "was": 134.5 },
+    { "note": "F#1", "bar": 86, "attack": 137.5894, "was": 137.6 },
+    { "note": "E1", "bar": 88, "attack": 140.7887, "was": 140.9 },
+    { "note": "C#1", "bar": 90, "attack": 143.9881, "was": 144.1 },
+    { "note": "A1", "bar": 92, "attack": 147.1874, "was": 147.3 },
+    { "note": "F#1", "bar": 94, "attack": 150.3868, "was": 150.5 },
+    { "note": "E1", "bar": 96, "attack": 153.5862, "was": 153.7 }
+  ],
+  "drops": [57.6056, 105.5959],
+  "drops_was": [57.6, 105.7],
+  "drops_detail": [
+    { "t": 57.6056, "bar": 36, "was": 57.6, "attack": 57.609, "changed": "bar 36; the 22-60 Hz attack is 57.609 (+3 ms). v1 was right to 5 ms" },
+    { "t": 105.5959, "bar": 66, "was": 105.7, "attack": 105.621, "changed": "bar 66; the 22-60 Hz attack is 105.621 (+25 ms). v1's 105.7 is the 10 Hz sub_runs label and is 0.10 s late — the two drops are 47.990 s = 120.00 beats apart on this grid, which v1's 57.6 / 105.7 (120.26 beats) cannot both be" }
+  ],
   "not_drops": [
-    { "t": "intro ~9-10 s", "why": "the engine fired a full-strength dropEvt here in v0.14 (AUDIT-v0.14 §3; check probe vs track time); truth: the first sub arrives at 13.0 s and no kick before 25 s. A layer entry, not a drop." }
+    { "t": 12.8146, "bar": 8, "was": "intro ~9-10 s",
+      "why": "the engine fired a full-strength dropEvt here in v0.14 (AUDIT-v0.14 §3). v1 put it at '~9-10 s'; there is NO sub anywhere before 12.799 s, so what v0.14 fired on is the sub LAYER ENTRY at bar 8 (12.8146), not something at 9-10 s. A layer entry, not a drop: the bar has the same energy as drop 1 (0.85 against 0.86 of the track p90, because the track is limited and the sub is 68-79 % of the energy there) and no kick at all, which is why the drop rule needs the kick-density gate and not an energy threshold (docs/workers/ears.md 4.1)." }
   ],
   "returns": [
-    { "a": "groove 25-44.9", "b": "groove-return 90-96" },
-    { "a": "climb 44.9-49.9", "b": "climb-double 96-101" },
-    { "a": "walk 13-25", "b": "outro-walk 134.5-157.4" }
+    { "a": "groove 25.6121-44.8082", "b": "groove-return 89.5991-95.9978" },
+    { "a": "climb 44.8082-49.6072", "b": "climb-double 95.9978-101.1" },
+    { "a": "walk 12.8146-25.6121", "b": "outro-walk 134.39-157.4" }
   ]
 }

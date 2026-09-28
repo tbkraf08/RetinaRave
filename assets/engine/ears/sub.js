@@ -33,7 +33,16 @@ export const NOTE_HOLD = 0.032;   // a pitch change of >= 1 semitone must hold t
 // Measured on the walk (the truth's f0td arrivals 12.98 / 16.09 / 19.30 / 22.51): without a backdate the events land
 // 61-92 ms late, which is W/2 for the pitch to appear in the window plus NOTE_HOLD/2 to confirm it. Backdating by that
 // amount puts them inside +-25 ms. The event still carries an audio time and `subNoteAge` stays true.
-export const NOTE_LAG = SUB_WIN / 2 + NOTE_HOLD / 2 - 0.016;
+// v0.15 pass 2 RE-MEASURED this against a reference that is read at the right frame rate. Pass 1's 0.060 s was fitted to
+// `contour.f0td` indexed at its NOMINAL 100 Hz; the contour's real rate is 2205/22 = 100.2273 Hz, so at 13-23 s the
+// reference itself was 30-50 ms early and the events looked 11-42 ms late when they were 62-73 ms late. The structural
+// budget is bigger than pass 1 assumed: the ring's YIN window ENDS `tmax/srd` = 46 ms before the newest sample (the guard
+// Yin.run needs for its longest lag), then SUB_WIN/2 = 60 ms for the new pitch to reach the window's centre, then two
+// frames of the 5-frame median (16 ms) and NOTE_HOLD/2 (16 ms) — 138 ms. Swept 0.060 / 0.100 / 0.110 / 0.120 / 0.125 /
+// 0.130 / 0.140 against the v2 annotation's walk arrivals: 0.125 s gives +6 / +8 / -1 / -3 ms (0.060 gave +71 / +73 /
+// +64 / +62), and past 0.130 the nearest event to the first two arrivals becomes an earlier pickup note (-84 / -82 ms).
+// 13 ms under the structural budget, because the new pitch is visible a little before the window's centre passes it.
+export const NOTE_LAG = 0.125;
 export const RETRIG_DB = 7;       // a jump of this many dB in the sub RMS while the gate is open is an 808 re-trigger
 export const RETRIG_MIN = 0.090;  // ... at most this often
 export const GLIDE_TAU = 0.030;   // the smoothing of the semitone/s derivative
@@ -48,7 +57,8 @@ export const MED_N = 5;
 export const NOTE_MODE = 1;
 
 export class SubTrack {
-  constructor(sr) {
+  constructor(sr, o = {}) {
+    this.noteLag = o.noteLag === undefined ? NOTE_LAG : o.noteLag;
     this.D = Math.max(1, Math.round(sr / SUB_SRD));
     this.srd = sr / this.D;
     this.lp = [new Biquad('lp', sr, SUB_LP, 0.541), new Biquad('lp', sr, SUB_LP, 1.307)];   // 4th-order Butterworth
@@ -137,7 +147,7 @@ export class SubTrack {
       if (this.candSt === null || Math.abs(st - this.candSt) >= 1) { this.candSt = st; this.candT = t; }
       else if (t - this.candT >= NOTE_HOLD) {
         this.st = st; this.candSt = null;
-        this.note1(this.candT - NOTE_LAG, clamp01(rel), n.note);
+        this.note1(this.candT - this.noteLag, clamp01(rel), n.note);
       }
     } else this.candSt = null;
     return true;

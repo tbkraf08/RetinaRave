@@ -534,3 +534,352 @@ tools/test_ears.js                      19 rulers x 2 rates, --trace writes the 
 tools/test_map.js                       27 rulers x 2 rates, --others for the other three tracks
 tools/work/*                            gitignored: the probes, the sweeps, the trace, the ruler markdown
 ```
+
+---
+
+# EARS worker report — v0.15 **pass 2** (file-mode non-causal channels, the release rule, the v2 annotation)
+
+Branch `worktree-agent-a46befe3a06b79c4c`, five commits `EARS:` on top of `488b5f9`. Nothing merged into `main`, nothing
+pushed, `tools/accept.sh` never run, no scene / `core/` / FILE file touched. PORT 8815 throughout, one Chrome at a time.
+
+## Pass 2
+
+### 1. The headline table — the in-page ruler, `file-det`, whole SeeYouDrop, 48 kHz
+
+`tools/accept/v0.15/ruler-det-a.md` → `tools/accept/v0.15/ruler-det-b.md`, `new` source (the v0.15 ears + map):
+
+| ruler | before | after | target |
+|---|---|---|---|
+| kick lag **first-frame** | med +18 p90 +24 max +27 ms **FAIL** | **med +2 p90 +7 max +8 ms** pass | med ≤15 p90 ≤30 max ≤45 |
+| kick lag **placed** | med +9 p90 +16 max 25 ms | **med +0 p90 +0 max 1 ms** pass | \|med\| ≤15 |
+| **kick F ±30 ms, 25–45 s** | 0.79 (whole track 0.525 **FAIL**) | **1.000** (P 1.000 R 1.000); whole track **1.000**, tp 229 miss 0 extra 0 | ≥ 0.90 |
+| **bare-808 %** | 8.6 % (18/209) **FAIL** | **0.0 % (0/229)** pass | ≤ 5 % |
+| snare F / hat F | 0.596 / 0.729 | **1.000 / 0.999** | reported |
+| snare / hat first-frame | med +15 / +11 ms | **med +0 / +1 ms** | med ≤15 |
+| **sub ±30 cents** | 72.7 % of 4532 **FAIL** | **100.0 % of 4531** (med \|c\| 1.0, octave 0.00 %) pass | ≥ 90 % |
+| **subNote per beat** | 88.9 % of 225 **FAIL** | **91.1 % of 302** pass (node, `test_map`) | ≥ 90 % |
+| slides | 32 of 41, sign 31/32, span 0.100 s | 24 of 41, **sign 24/24**, span **0.150 s** (= the truth's) | ≥ 50 %, sign ≥ 90 % |
+| **drops** | 2/2 at 57.617 / 105.600, max \|lag\| 11 ms | 2/2, same, max \|lag\| 11 ms | exact ±1 frame |
+| **boundaries** | 7 of 11 **FAIL** | **9 of 10** FAIL (only the turn) | all |
+| **returns** | 4 of 5 **FAIL** | **5 of 5** pass | all |
+| tonic | C# minor pass | C# minor, first right at **0.7 s** | C# minor |
+
+18 pass, 4 fail. **Three of the four fails are the v0.14 `old` baseline rows** (old kick F 0.188, old boundaries 0 of 10,
+old tonic G#) — they are the comparison, not a regression. The one `new` fail is `boundaries`, discussed in §5.
+
+`buildMap` in the PAGE: **2886.6 ms** (`mapReady`, 13 sections, drops [57.6107, 105.5896]); in node 2.84 s at 44.1 kHz and
+2.88–2.95 s at 48 kHz. Determinism: two `filetrace.js SeeYouDrop 0 157` runs with all 61 fields, **`cmp` identical**, md5
+`dadcbc485cece4d166eb6af8f9d891c0`, 9420 frames, 4.73 MB, `ENGINE.ms` 3.975 / 4.108. `node tools/parity.js fake`:
+**max \|diff\| 0** over 72 fields, every field identical to 1e-9. The full `tools/scene-md5.sh ears2` list
+(`tools/accept/v0.15/scene-md5-v015-ears2.txt`) is **identical line for line** to the v0.15 skeleton list — ids 0–10
+unchanged, s11 the black frame `496ce9a8`. **The ears feed no existing scene**: nothing reads `EARS_FIELDS` or the map
+fields yet, and none of this runs on the fake timeline, so no scene's pixels can move. `node tools/check.js` 0 fail
+(5 warns, all pre-existing), `npm test` OK, `node tools/test_map.js` 41 of 41 at both rates.
+
+### 2. Two measurement errors in the reference, and what they were worth
+
+**(a) `contour.f0td.fps` is recorded as 100 and the real rate is 100.2273 Hz.** The hop is `int(0.01*ysr)` = 22 samples
+at `ysr = sr/20 = 2205`, so `2205/22 = 100.2273`. Reading the contour at the nominal 100 Hz drifts **358 ms** by the end
+of a 157 s track — at a 40 Hz sub that is 2.4 semitones of an 808 slide, so the ruler compares the engine to the wrong
+reference frame. This is most of pass 1's ±30-cents failure: the same pitch channel reads **72.7 % at 100 Hz and 99.8 %
+at 100.2273 Hz**. `trackmap.py` now writes `fpsExact` / `hop` / `ysr` / `win` as NEW keys (a key-by-key diff of all four
+regenerated truth JSONs shows four new keys each and nothing changed or removed) and `compare.py` / `test_ears.js` /
+`test_map.js` read `fpsExact`. Measured honestly the CAUSAL path is *worse* than pass 1 claimed — 62.4 % frame by frame,
+not 72.6 %, because it is ~106 ms late and the drifted reference was partly cancelling that. Its walk notes were +71 /
++73 / +64 / +62 ms, not +42 / +37 / +20 / +11. Both are fixed in §4.
+
+**(b) The truth's own front end is not rate-stable, and the page runs at 48 kHz.** `tools/work/probe_rate.py` runs
+trackmap.py's OWN onset pipeline on the same music resampled to 48 kHz and grades it against its own 44.1 kHz lists:
+F **0.702** on low onsets, kick F **0.724** (0.706 on 25–45 s), **12.2 %** of its own kicks on its own `bare808` list.
+The cause is that every constant is in bins and frames: "40–150 Hz" is bins 2–6 = 43–129 Hz at 44.1 kHz and 47–141 Hz at
+48 kHz, the 17-frame HPSS medians span 197 ms against 181 ms, and `int(0.09*fps2)` is 7 frames against 8. My JS port
+reproduced python's numbers **at both rates** (516 / 238 / 278 / 405 / 474 onsets and F 0.702 / 0.724 / 0.919 / 0.914 at
+48 kHz, identical), so the disagreement was the reference's, not an implementation's. **0.706 was the ceiling for any
+implementation graded that way** — which is why the whole map now analyses at `ANA_SR` 44100.
+
+### 3. The work — `map.onsets` and `map.sub`, the truth's own algorithms
+
+**`assets/engine/map/onsets.js`.** The truth tool's HPSS is **SEPARABLE, not 2-D**: `median_filter(S, (1,17))` along TIME
+is the harmonic estimate, `median_filter(S, (17,1))` along FREQUENCY the percussive one, combined by a squared Wiener
+mask `S·Sp²/(Sh²+Sp²+1e-12)` — that is Fitzgerald 2010, two 1-D medians. A 2-D median would be one filter over a 17×17
+neighbourhood and is NOT what the reference does. Ported separably, both medians sliding (sorted insert/remove, O(K) per
+sample), with scipy's `'reflect'` edge mode so the first and last frames match; plus scipy's `find_peaks` exactly (strict
+local maxima with plateau midpoints, height, then the distance filter applied highest-peak-first), `numpy.percentile`'s
+linear interpolation for the level gate, and the click test at the truth's OWN **15 ms**. Proved at two levels: the band
+dB envelopes match python to **≤ 0.001 dB** (`tools/work/probe_L.py` against `probe_cmpL.js`, 13571 frames × 3 bands),
+and the onset lists are **504/504 low, 387/387 snare, 469/469 hat, 229/229 kick, 275/275 bare — F 1.000 each**.
+
+**`assets/engine/map/subpitch.js`.** The truth's contour, ported: the same 130 Hz zero-phase 6th-order Butterworth
+(forward then backward), the same `[::20]`, the same 100 ms / 10 ms YIN, the same 0.15 threshold, walk-down, **two**
+octave-check passes (with `numpy.round`'s half-to-EVEN, which the check hits on every odd tau) and parabolic refinement.
+**CENTRED** — frame f is stamped at `(f·hop + W/2)/ysr`, the truth's own convention, so the value describes the music AT
+that instant and there is no half-window latency to backdate. Result: 15782 frames on the truth's own grid, ±30 cents on
+**100.0 %**, median error **1.0 cent**, p90 2.0, **0.00 % octave errors**.
+
+**`assets/engine/map/resample.js`**, `ANA_SR` 44100, a tabled 16-tap Blackman-windowed sinc (147/160 exact fractional
+phases, unit DC gain per phase). 34 ms at 44.1 kHz (a no-op), 195 ms at 48 kHz. The whole map analyses there, so the
+48 kHz build's grid, sections, drops and tonic now come out as the 44.1 kHz build's — **the map is rate-independent**
+(before: phase 0.0400 against 0.0360, coherence 0.122 against 0.129, tonic confidence 0.158 against 0.222, 9 boundaries
+against 8).
+
+### 4. The release rule, and the two causal biases
+
+**The release rule** (`ears/ears.js`, and the same rule for the map's events in `features-ears.js`): an onset at audio
+time `t` fires on the read whose heard time is **NEAREST** `t` — `t <= tHeard + lead`, `lead = min(1/120, half the
+measured read interval)` — instead of the first read at or after it. The old rule always rounded UP, adding a uniform
+[0, 1/60) s of pure frame quantisation on top of the detector's error: median +8.3 ms, max +16.7 ms. That is exactly
+pass 1's gap between first-frame (+18 ms) and placed (+9 ms). **Stated in `EARS_FEATS`:** on the release frame the event
+is up to `lead` early, so `kickAge` / `snareAge` / `hatAge` are NEGATIVE there, in [−1/120, 0) s, and their declared
+ranges now start at −0.0084 so a scene can clamp knowingly. Measured in the det trace: **86 of 229 kick releases carry a
+negative age, the most negative −8.3 ms.** `lead` is never more than half a frame at any frame rate.
+
+**`perc.js ONSET_LAG = 0.006 s`, new.** The hop-centre guess was not enough: the flux at hop *i* is the rise from hop
+*i−1*, so a transient anywhere inside hop *i−1* is only visible at hop *i* and the residual is a LAG, not a fraction of a
+hop. Median onset error against the truth, before → after: 44.1 kHz kick **+6 → 0**, snare **+6 → −0**, hat **+6 → −0**
+ms; 48 kHz kick **+9 → +3**, snare **+5 → −1**, hat **+5 → −1**. Near-constant in milliseconds across two hop lengths,
+which is why the correction is in seconds and not in hops.
+
+**`sub.js NOTE_LAG 0.060 → 0.125 s.`** Pass 1 fitted 0.060 to the contour indexed at the nominal 100 Hz. The structural
+budget is 46 ms (the ring's YIN guard, `tmax/srd`) + 60 (half the window) + 16 (two frames of the 5-frame median) + 16
+(half `NOTE_HOLD`) = 138 ms. Swept against the v2 walk arrivals:
+
+```
+0.060  +71 +73 +64 +62 ms       0.120  +11 +13  +4  +2 ms
+0.100  +31 +33 +24 +22          0.125   +6  +8  -1  -3   <- chosen
+0.110  +21 +23 +14 +12          0.130  -84 -82  -6  -8   (the nearest event becomes an earlier pickup note)
+```
+
+13 ms under the structural budget, because the new pitch is visible a little before the window's centre passes it.
+
+### 5. The v2 annotation, and the boundaries / returns against it
+
+`tools/truth/SeeYouDrop.sections.json` v2 (the orchestrator authorised the edit) pins every boundary, drop and walk note
+to its E0 bar line, keeps the v1 value as `was` and names the evidence in `changed`. The four v1 times with **no bar line
+within a beat** were the whole story of pass 1's boundary row: 25.0 (+1.53 beat from ANY bar line, mid-bar, and 0.48 s
+before the groove's first low onset at 25.484), 90.0 (a BEAT line — beat 225 — but mid-bar, exactly −1.00 beat from bar
+56), 130.5 (+1.73 beat; the drums stop after 130.101 and the held C#1's attack is 131.221, +30 ms of bar 82), and 157.4
+(the file's DURATION, not a bar line and not a boundary). v2 also records that the first section's t0 is not a boundary
+event either — see below — and corrects `not_drops` from "intro ~9–10 s" to bar 8 (12.8146), since there is no sub
+anywhere before 12.799 and what v0.14 fired on is the sub LAYER ENTRY. The walk's four notes become `attack` (the bar
+line, within 4–21 ms of the truth's own 40–150 Hz onset in every case: 12.794 / 16.010 / 19.203 / 22.407 against bars
+8 / 10 / 12 / 14) and `arrival` (the first contour frame that NAMES the note, 40–140 ms later because a 100 ms YIN window
+has to fill), and the same for the seven outro-walk notes on bars 84–96.
+
+**Boundaries and returns, before → after:**
+
+| | v1 | v2 |
+|---|---|---|
+| annotated times with no bar line within a beat | **4 of 12** | **0 of 11** |
+| node (`test_map`, against the map's own list) | 8 of 12 | **10 of 11**, nine of them within 0.04 beat (16 ms) |
+| in the page (`compare.py`, against `mapBoundaryEvt`) | 7 of 11 | **9 of 10** |
+| sections produced | 18 | **13** |
+| return pairs (node) | 3 of 3 | **3 of 3** |
+| returns labelled (page) | **4 of 5** | **5 of 5** |
+
+`sections.js KERNEL 4 → 6` plus a new `REFINE = 1`. Against v2, kernel 4 with no refinement gave 9 of 11 and both misses
+were exactly ONE BAR early — bar 60 (the double-time climb) had novelty 6.660 at bar 59 and 5.665 at 60, and bar 82 (the
+turn) 5.294 at 81 and 4.884 at 82 against a 4.912 threshold. A Gaussian checkerboard smears by construction, so its peak
+is only good to about a bar, and both changes do begin inside the bar before (the double-time onsets from 94.819, the
+drums thinning from 130.101). `REFINE` moves each peak to whichever bar line within ±1 bar maximises the UNWEIGHTED
+cosine distance between the mean feature vector of the `KERNEL` bars before it and the `KERNEL` bars after it. Swept
+refine 0/1 × minBars 1/2/3 × kernel 3/4/6 × novK 0.4/0.6/0.8 — 54 builds, `tools/work/probe_sweep.js`:
+
+```
+refine 1, kernel 6  ->  10 of 11 boundaries, 3 of 3 returns, 13 sections   at minBars 1, 2 AND 3 and at novK 0.4 and 0.6
+refine 0, kernel 3, novK 0.6 -> 10 of 11, 3 of 3, but 21 sections
+refine 1, kernel 4  ->  7 of 11 (the one bad corner: a 4-bar mean is too short to beat the novelty's own peak)
+```
+
+A plateau, not a lucky point, and it reaches the same 10 of 11 with eight fewer sections. Every point in the sweep keeps
+the drops exact.
+
+**The one remaining boundary miss** is the turn, 131.1907 → detected 129.579, one bar early, where the drums really do
+thin out at 130.101 (mid-bar 81). A genuine ±1-bar ambiguity in the music, not a detector bug, and the refinement that
+fixes it (measured) costs three others.
+
+**The first section's t0 is not gradeable, and that was worth 2 rows.** `buildMap` forces `sections[0].t0` to 0 (the first
+bar line is 0.036 s, and a section list must cover the track), and no frame's half-open `(tPrev, t]` can contain 0 unless
+`tPrev < 0` — so pass 1 never fired it at all. It now fires, on the engine's very FIRST frame; but that frame is frame 1,
+and `filetrace.js`' deterministic recipe holds the clock at frame 1 while the track decodes and begins recording at frame
+2, so **a trace can never contain it**. `compare.py --make-synth` fires one on frame 0 only because it builds the trace
+itself from t = 0 — so grading the page against it was grading a constant the page could not produce. v2 says so
+(`start_is_not_a_boundary`, beside `end_is_not_a_boundary`) and `compare.py` drops both.
+
+### 6. The slides row went DOWN, and here is the ceiling that says it should have
+
+24 of 41 against pass 1's 32, and it is the right answer. `compare.py --make-synth`, a trace built from the **truth
+itself**, recovers only **25 of 41** with `trace_slides` at 60 fps (sign 25/25, median span 0.117 s). 24 is one under that
+ceiling. Pass 1's 32 was **above** it, which is the tell: the causal 5-frame pitch median invents monotone glides the
+truth's own contour does not have (and its median span was 0.100 s against the truth's 0.150; the map's is **0.150 s
+exactly**, and its signs are 24/24 against 31/32). It is not holes in `subHz` either — the nonzero-`subHz` run lengths
+over 57.6–90 s match the truth's frame for frame (120 runs against 126, the same lengths, top runs 38/38/37 against
+38/38/37; in that window only 39 of 1073 truth-voiced frames have no pitch from me, and zero the other way). What differs
+is `trace_slides`' own monotonicity and landing-hold tests applied to a RAW contour instead of a smoothed one.
+
+### 7. `subGate`, and why the truth's own `voiced` flag is not it
+
+`map.sub`'s gate keeps the frozen `subGate` formula, non-causally: the 25–60 Hz RMS over the **track's** p90 (the causal
+track chases a ~32 s p90; over a whole file that IS the p90) crossing 0.16 up / 0.075 down, AND the sub owning ≥ 0.30 of
+25–600 Hz, with a 45 ms dwell as a both-ways run filter. Using the truth's own per-frame `voiced` flag instead was
+measured and rejected: it has no hysteresis at all and flickers **5.74 gate edges per bar** through the gated drop
+(105.7–130.5 s) against the causal track's 0.77, and it put `subIn` at drop 1 on the wrong beat (57.6789, +73 ms).
+The share needed the same treatment — a per-frame share swings with every kick — so it is held by a **centred 0.22 s
+moving maximum**, the non-causal form of the causal `SHARE_DOWN` 0.45 s asymmetry: 4.84 → **2.90 edges per bar**, and
+`subIn` at drop 1 landed at **57.6091, +3 ms of bar 36** (pass 1: +39 ms) and at drop 2 at 105.6299, +34 ms.
+
+`HOLD_MAX = 0` (a rejected YIN frame shows nothing, not the last pitch). Swept 0 / 1 / 2 / 3 / 5 and both sub rulers fall
+monotonically with it: ±30 cents **100.0 / 99.9 / 99.8 / 99.8 / 99.7 %** and `subNote` against the truth's per-beat slice
+note **91.1 / 90.4 / 85.1 / 82.5 / 80.5 %**. Holding sounds kinder to a scene but it is exactly wrong on the climbs
+(38–44 s, 89–92 s), where the sub slides up to D#1/E1 through frames the YIN rejects while the held value is still the
+C#1 before them. `subGate` is the field that says "there is a sub"; `subHz` says what it is, or 0.
+
+### 8. The cost split
+
+| stage | 44.1 kHz | 48 kHz |
+|---|---|---|
+| `resample` to ANA_SR | 34 ms (a no-op) | 195 ms |
+| `pass` (PercTrack + SubTrack, per sample) | 826–850 ms | 806–868 ms |
+| **`onsets`** (STFT 2048/512 + separable HPSS + peaks) | **1225–1236 ms** | 1225–1236 ms |
+| **`subpitch`** (zero-phase LP, decimate, centred YIN) | **395–403 ms** | 332–347 ms |
+| `flux` (6 band fluxes, MED_W 5) | 73–76 ms | 73–96 ms |
+| `grid` (tempo ACF, 5 × refitGrid, comb phase, downbeat) | 157–159 ms | 157–159 ms |
+| `bars` (99 × 4 chroma FFT(8192), features) | 95–100 ms | 86–98 ms |
+| `tail` (sections, drops, tonic, eG) | 6 ms | 4–6 ms |
+| **total** | **2.84 s** | **2.88–2.95 s** (page: **2.887 s**) |
+
+Two things paid for the new 1.6 s. `refitGrid` now advances its phasor by one complex multiply per hop instead of a
+`Math.cos` and a `Math.sin`, re-seeded every 512 hops: **274 → 67 ms per call** (1600 candidate periods × 14775 hops was
+23.6 M transcendental pairs), drift under 1e-13, and the map's rounded JSON is unchanged — the period, phase and
+coherence agree to nine decimals and all 27 pass-1 rulers still pass. And the sliding median is written out flat rather
+than through closures (1.8× on the two planes), runs only over the 440 bins the three bands actually need, and skips the
+100-bin gap between them. The frequency median is consumed one column at a time so no third `nb × nfr` plane is ever
+held; peak memory is `S` + `Sh` ≈ 55 MB at 44.1 kHz. `buildMap` fills `opts.prof` with this split, and `prof` is
+deliberately NOT in the returned map — it would make two builds differ, and determinism is a ruler.
+
+### 9. The other three tracks (`file-det`, 0–60 s)
+
+| track | kick F | kicks on a bare 808 | kick first-frame / placed | sub ±30 cents | drops |
+|---|---|---|---|---|---|
+| CyborgNinja | **1.000** (n 235) | 0.0 % | med +0 p90 +7 / med +0 max 1 ms | 100.0 % of 49 | 0/0 (the truth has none) |
+| WhoLikesToParty | **1.000** (n 227) | 0.0 % | med −1 p90 +7 / med +0 max 1 ms | 100.0 % of 823 | 0/1 — fires 56.50, truth 57.50 |
+| Malicious | **1.000** (n 21) | 0.0 % | med −1 p90 +6 / med −0 max 0 ms | 100.0 % of 13 | 0/0 (its only truth drop is 148.29 s) |
+
+The old v0.14 baseline on the same three windows: kick F 0.414 / 0.558 / 0.096. The non-causal channels generalise
+perfectly because they ARE the truth's algorithm. WhoLikesToParty's drop being ~1 s (two bars) early is pass 1's finding
+unchanged (its grid phase differs; coherence 0.106, the weakest of the four) and is not a pass-2 regression. Boundaries
+and the tonic on these three disagree with the truth as they did in pass 1 — both implementations' confidence there is
+≤ 0.28 and there is no annotation to arbitrate.
+
+### 10. The real-time path (`RT=1`, 20–60 s) — `tools/accept/v0.15/ruler-rt-b.md`
+
+Nearly the deterministic path: kick F **0.994** (P 0.987 R 1.000, one extra), snare 0.996, hat 1.000; first-frame lag med
++1 / +0 / +2 ms, placed med +0 max 1 ms; bare 808s **0.0 %**; sub ±30 cents **99.8 %** of 1060; drops **1/1 at 57.612**
+(+6 ms); boundaries **4 of 4** in the window; slides 10 of 13, sign 10/10. 16 pass, 6 fail.
+
+**What differs, and why:** (a) `returns labelled 0 of 5` — the ruler counts all five of the truth's `ret` sections but
+only frames inside the 20–60 s window can score, and none of the returns is in it. A windowing artefact; the whole-track
+det run is 5 of 5. (b) `tonic D major` — the causal `TonicTrack` is the same code in both paths, but an RT run starts the
+page at `at = 12 s` instead of 0, so its chroma history is a different 8 s of music; it does reach C# minor ("first right
+at 26.5 s") and then loses it inside the window. The tonic is the one field where the live path is genuinely at the mercy
+of where you joined the track. (c) the one extra kick and one extra snare: the RT path's blocks come from the
+`AudioWorklet` with the worklet's own stamps, so its heard time is not frame-exact and a release can land on a
+neighbouring frame. Everything else in the window agrees to a millisecond.
+
+### 11. Every constant added or changed
+
+| file | name | value | why |
+|---|---|---|---|
+| `map/onsets.js` | `N2` / `H2` | 2048 / 512 | the truth's `n2`, `h2` |
+| | `HP_MED` | 17 | the truth's separable HPSS medians, both axes |
+| | `ON_BANDS` / `ON_THR` | 40–150, 150–2500, 5–12k / 5, 3, 3 dB | the truth's |
+| | `ON_GATE_DB` / `ON_DIST` | 30 dB under p95 / 0.09 s | the truth's; the distance is `int(0.09·fps2)`, TRUNCATED as numpy does (7 frames at 44.1 kHz, not 8 — this one cost an hour) |
+| | `CLICK_W` | **0.015 s** | the truth's OWN definition, not the causal path's 25 ms compromise |
+| | `VEL_P` | 0.95 | velocity = the peak's flux over the class's own whole-track p95 (non-causal, so not a follower) |
+| `map/subpitch.js` | `LP_HZ` / `DEC` | 130 Hz 6th order zero-phase / 20 | the truth's `sosfiltfilt(butter(6,130))[::20]` |
+| | `YWIN` `YHOP` `YFMIN` `YFMAX` `YTHR` `YOCT` | 0.1 / 0.01 s / 28 / 130 Hz / 0.15 / 0.35 | all the truth's |
+| | `VCONF` / `VRMS` / `VSHARE` | 0.6 / 0.1 / 0.05 | the truth's voiced rule, verbatim |
+| | `GATE_ON/OFF`, `GATE_SHARE_ON/OFF`, `GATE_P` | 0.16 / 0.075, 0.30 / 0.26, p90 | the frozen `subGate` formula, with the track's p90 as the non-causal p90 |
+| | `SHARE_W` | 0.22 s | the centred moving maximum; §7, 4.84 → 2.90 gate edges per bar |
+| | `HOLD_MAX` | **0** | swept 0/1/2/3/5; §7 |
+| | `MIN_RUN` `NOTE_HOLD` `RETRIG_DB` `RETRIG_MIN` `GLIDE_TAU` | 0.045 / 0.032 s / 7 dB / 0.09 / 0.03 s | the causal track's, so the two agree on what a note is |
+| `map/resample.js` | `ANA_SR` / `RS_T` / `RS_MAXPH` | 44100 / 8 (16 taps) / 8192 | §2(b); 16 taps is ~−50 dB, far under a 5 dB flux threshold |
+| `map/sections.js` | `KERNEL` | 4 → **6** | §5, a plateau in a 54-point sweep |
+| | `REFINE` | **1** bar | §5 |
+| `map/beats.js` | `RESEED` | 512 hops | the phasor recurrence's re-seed interval; §8 |
+| `map/map.js` | `MAP_V` | 1 → **2** | `onsets` and `sub` are new |
+| `ears/ears.js` | `REL_LEAD` / `DT_MAX` | 1/120 s / 0.05 s | the release rule; §4 |
+| `ears/perc.js` | `ONSET_LAG` | **0.006 s** | §4 |
+| `ears/sub.js` | `NOTE_LAG` | 0.060 → **0.125 s** | §4, a seven-point sweep |
+| `features-ears.js` | — | — | `mapOverride`, the map-event cursors, `resetRel` on a new file or a backwards seek |
+
+### 12. Friction log — pass 2
+
+1. **The brief's "slides still ≥ 32/41 sign-right" is not reachable honestly, and 32 never was.** The reference's own
+   ceiling under `compare.py`'s 60 fps `trace_slides` is 25 of 41 (§6). *Missing sentence:* which slide number is the
+   reference — the truth's 100 Hz `find_slides` list (41) or what `trace_slides` can recover from it (25). I report both
+   and treat 25 as the ceiling.
+2. **`buildMap ≤ 3 s` and "the click test at the truth's definition" are in tension with a 48 kHz page.** Reproducing the
+   truth's front end exactly means its exact rate, which means a resample (195 ms at 48 kHz) on top of a 1.6 s front end.
+   I got to 2.89 s by making `refitGrid` 4× faster and the medians 1.8× faster — but a track much longer than ~170 s will
+   blow the budget. *Guess:* the 3 s is a "the playhead waits for this" budget, not a hard contract; a Worker (E4's
+   original plan) removes it. **Question for the orchestrator:** should `buildMap` move to a Worker before any track
+   longer than SeeYouDrop is used?
+3. **`den*` now follows the map's events in file mode, which the brief's "everything else stays causal" arguably excludes.**
+   I did it because `denK` is DEFINED as "kicks per second over the last second", and having `kickEvt` fire the map's
+   kicks while `denK` counts the causal detector's would make the channel incoherent — a scene reading both would see a
+   density that never matches its own events. The field's name, kind, range and meaning are unchanged. Flagged, not
+   hidden; say the word and it goes back to causal.
+4. **`subPure` stays causal in file mode** (it lives in `texture.js` and the map has no equivalent), so in file mode
+   `subHz` is centred and `subPure` is ~35 ms late. Nothing measured this as a problem; noted because a scene that
+   cross-fades a figure on `subPure` at a note change will see the two disagree for two frames.
+5. **`subConf` in file mode is the YIN CMND confidence on every frame the YIN ran**, including frames where the pitch was
+   rejected and `subHz` is 0. A scene gating on `subConf > x` rather than on `subHz > 0` will see confidence without a
+   pitch. *Guess:* `subHz > 0` is the test a scene should use; the frozen field list does not say.
+6. **Negative ages.** The frozen field list gives `kickAge` the range [0, 99]; the release rule needs [−1/120, 0) on one
+   frame. I changed the declared range to [−0.0084, 99] and said so in the formula text, because the alternative
+   (clamping inside the ears) throws away the only sub-frame information the field exists to carry. **If a parallel scene
+   worker has written `kickAge`-based code that assumes non-negative, this is the line to read.**
+7. **`mapBoundaryEvt` at t = 0 can be logged but never recorded** (§5). *Missing sentence:* whether "boundaries: all"
+   includes the first section's start. v2 now says it does not.
+8. **`compare.py`'s `returns labelled` ruler is not windowable** — it counts all of the truth's `ret` sections however
+   short the trace is, so the RT run reads 0 of 5 (§10). Left alone: it is the frozen ruler and the det run covers it.
+9. **Guess:** `map.onsets` carries `low` and `bare` beside the three frozen classes. They are not MS fields and no scene
+   sees them; the tests need them and they cost ~800 numbers in a 393 kB map.
+10. **Guess:** `map.sub.fps` is 100.2273, not the brief's nominal "fps: 100". I report the real rate because `mapSubAt`
+    indexes with it; rounding to 100 would reintroduce the very 358 ms drift §2(a) is about.
+11. **A trap, and the exact twin of pass 1's.** My first `slideMed` used one `(offset, stride)` pair for both the source
+    and the destination, so the frequency median wrote `col[f + nfr·i]` — off the end of a 566-element scratch column.
+    Typed arrays drop out-of-range writes silently, so every band sum came out 0, `L` was a flat −100 dB, and the
+    detector found 37 % of the onsets with 97 % precision. It looked like a *tuning* problem for twenty minutes. What
+    found it in one step was comparing my numbers to python's **frame by frame** instead of comparing summary statistics:
+    `mean |dL| 2.74 dB, max 97.3 at frame 0` is a bug; `F 0.52` is an opinion. Pass 1's lesson was "check the
+    instrument's own time base"; this one's corollary is *check the instrument against the instrument, not against the
+    music.* Both of pass 2's headline wins (§2a and §2b) came from that same move.
+12. **The malware-consideration reminder** fired on `assets/engine/ears/perc.js` and `tools/truth/trackmap.py`. Audio DSP
+    in a known-benign repo; proceeded per the brief and CLAUDE.md, no memo written.
+
+### 13. What is where (pass 2)
+
+```
+assets/engine/map/onsets.js      NEW  the truth's STFT + separable HPSS onset front end, F 1.000 on all four streams
+assets/engine/map/subpitch.js    NEW  the truth's centred YIN + the frozen subGate, +-30 cents on 100.0 %
+assets/engine/map/resample.js    NEW  ANA_SR 44100; why the map is rate-independent
+assets/engine/map/map.js              buildMap -> map.onsets / map.sub, MAP_V 2, mapSubAt(), opts.prof
+assets/engine/map/sections.js         KERNEL 6 + REFINE 1: boundaries 10 of 11, 13 sections instead of 18
+assets/engine/map/beats.js            refitGrid's phasor recurrence, 274 -> 67 ms per call
+assets/engine/ears/ears.js            the release rule (REL_LEAD, the measured read interval), opts.sub
+assets/engine/ears/perc.js            ONSET_LAG 0.006 s, opts.onsetLag
+assets/engine/ears/sub.js             NOTE_LAG 0.125 s, opts.noteLag
+assets/engine/ears/feats.js           the release rule and the file-mode source stated in the formula text
+assets/engine/features-ears.js        mapOverride: file mode reads map.onsets / map.sub; one event-log path; t=0 boundary
+tools/truth/trackmap.py               contour.f0td.fpsExact / hop / ysr / win (new keys only, all four tracks)
+tools/truth/compare.py                reads fpsExact; honours start_is_not_a_boundary / end_is_not_a_boundary
+tools/truth/SeeYouDrop.sections.json  v2: every boundary, drop and walk note on its bar line, with `was` and `changed`
+tools/test_map.js                     14 new rulers per rate (41 of 41 pass at 44.1 and 48 kHz) + the cost split
+tools/test_ears.js                    reads fpsExact and the v2 walk times
+tools/accept/v0.15/ruler-det-b.md     the in-page table, file-det, whole track, 48 kHz
+tools/accept/v0.15/ruler-rt-b.md      the same, RT=1, 20-60 s
+tools/accept/v0.15/scene-md5-v015-ears2.txt   the full list, identical to the skeleton's
+tools/work/probe_{L.py,cmpL.js,rate.py,onsets.js,sub.js,hold.js,sweep.js,notelag.js,refit.js,walk.js,bnd.js,prof.js}
+                                      gitignored, the proofs behind every number above
+```
