@@ -7,8 +7,10 @@
 // at each clock's own tempo, so a scene's beat line lands on the beat that is HEARD. The clocks' own state is never moved:
 // apply() saves the raw values and restore() (ENGINE.frame, before the extractor runs) puts them back, so the v3 PLL, the
 // tempo comb, fake.js and every stage before this one see exactly what they saw before.
-// OFF (the default) = apply() returns before touching MS, so every value, md5 and parity row is what it was.
-// Hash: &lead=1 turns it on, &disp=<ms> adds a display lead (the frame's path to the glass is unmeasured, so 0 by default).
+// ON by default since v0.16 (the user watched it in stream mode, 2026-09-28: "looks good"). The fake timeline never gets a
+// lead, so parity fake and every scene-md5 line are unchanged; real-audio runs move (a det file trace by -DET_LEAD).
+// OFF (&lead=0 or the L key) = apply() returns before touching MS: every value is what v0.15 published.
+// &disp=<ms> adds a display lead (the frame's path to the glass is unmeasured, so 0 by default).
 import { AU } from './audio.js';
 import { DET_LEAD } from './sources/file.js';
 
@@ -20,7 +22,7 @@ const RING = 64;                // samples in the median (~1 s at 60 fps; ctxHea
 const KEYS = ['beatPhase', 'beat', 'beatCount', 'beatSyn', 'barPos', 'barPhase', 'phrasePos', 'phrase16Pos', 'bar'];
 
 export const LEAD = {
-  on: false,
+  on: true,       // v0.16 default; &lead=0 / the L key turn it off
   disp: 0,        // s, added to the audio lead
   L: null,        // s, the audio lead: the median of `ring` (null until the first good sample)
   ring: [],

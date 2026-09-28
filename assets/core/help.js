@@ -33,7 +33,7 @@ export const keys = () => [['?', 'or H — this view', 'help'],
   ['P', 'this view opened at part E, the routes panel (what drives what, by hand)', 'routes panel'], ['Esc', 'close it', null],
   ['D', 'the developer HUD (numbers, every 6th frame)', 'dev HUD'], ['F', 'fullscreen (or double-click)', 'fullscreen'],
   ['M', 'monitor the demo synth in the speakers', 'monitor demo'],
-  ['L', 'the lead on / off: the beat, bar and phrase clocks moved onto the audio you hear (&lead=1 starts with it on)', null],
+  ['L', 'the lead on / off: the beat, bar and phrase clocks moved onto the audio you hear (on by default; &lead=0 starts with it off)', null],
   ['1–' + Math.min(9, REG.length), 'force the scene with id 0 – ' + (Math.min(9, REG.length) - 1) + ' (the ids are in part C)', 'force a scene'],
   ['N', 'the next scene, cycling through all ' + REG.length + ' (a swipe on a phone does the same)', 'next scene'],
   ['0', 'back to the director', 'director']];

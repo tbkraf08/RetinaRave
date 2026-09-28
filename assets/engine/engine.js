@@ -21,7 +21,7 @@ AU.startDemo = () => (ENGINE.demoStyle ? demoSynapse.start(ENGINE.demoStyle) : d
 
 export const ENGINE = {
   MS, GROOVE, AU, FEATS,
-  LEAD,             // live step 2: the clocks moved onto heard time (engine/lead.js); off unless &lead=1
+  LEAD,             // live step 2: the clocks moved onto heard time (engine/lead.js); on by default since v0.16, &lead=0 turns it off
   sources: { demo, capture, mic, fake, file, 'demo-synapse': demoSynapse },
   demoStyle: null,  // &demo=<style> selects the synapse synth; null = the v3 demo (parity)
   tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them

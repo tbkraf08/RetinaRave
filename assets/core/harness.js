@@ -147,7 +147,8 @@ export function initHarness(hideLanding) {
   // &sync=<ms> reaches capture / mic mode here (AU.heardT adds it); until 2026-09-28 only startFile applied it, so a
   // capture page could not declare its own lag. Measured with tools/caplag.js clicks (docs/HARNESS.md).
   if (HASH.has('sync') && isFinite(+HASH.get('sync'))) ENGINE.AU.sync = +HASH.get('sync') / 1000;
-  // live step 2 (engine/lead.js): &lead=1 moves the beat / bar / phrase clocks onto heard time, &disp=<ms> adds a display lead
+  // live step 2 (engine/lead.js): the beat / bar / phrase clocks on heard time — on by default since v0.16, &lead=0 turns it
+  // off (&lead=1 on), &disp=<ms> adds a display lead
   if (HASH.has('lead')) ENGINE.LEAD.on = HASH.get('lead') === '1';
   if (HASH.has('disp') && isFinite(+HASH.get('disp'))) ENGINE.LEAD.disp = +HASH.get('disp') / 1000;
   if (track) {
