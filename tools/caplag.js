@@ -1,6 +1,6 @@
 // Measure the CAPTURE path's lag (SYNC_OFS) and record a capture-mode trace graded in the listener's own time.
 //   node tools/caplag.js clicks [dur=20]                     -> SYNC_OFS from a click train (tools/work/caplag/clicks.json)
-//   [HASHX='&lead=1'] node tools/caplag.js track <name> <at> <dur> [sync_ms]   -> tools/work/caplag/<name>-cap[-sync..][-lead-1].json, `t` = the
+//   [HASHX='&lead=1'] [FIELDSX='predKickEvt,…'] node tools/caplag.js track <name> <at> <dur> [sync_ms]   -> tools/work/caplag/<name>-cap[-sync..][-lead-1].json, `t` = the
 //                                                              TRACK second the listener hears at each frame
 // Headed and AUDIBLE (the source plays through the speakers): HEADED=1, CAPTITLE=RR-SRC, the page on monitor 0, the
 // source (tools/capsrc.html) in its own window on monitor 1 (HARNESS "Real window": the music must be in its own window).
@@ -24,7 +24,9 @@ const [mode = 'clicks', ...rest] = process.argv.slice(2);
 const PORT = process.env.PORT || '8830';
 const FIELDS = ['heardT', 'beat', 'beatPhase', 'bpm', 'regularity', 'beatConf', 'gridTrust', 'barConf', 'barPos', 'barPhase',
   'phrasePos', 'phrase16Pos', 'beatSyn', 'bpmSyn', 'dropEvt', 'dropConf', 'dropExpectedIn', 'build', 'boundaryEvt',
-  'leadT', 'kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'subHz', 'subGlide', 'onset', 'kick', 'snare', 'hat'];
+  'leadT', 'kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'subHz', 'subGlide', 'onset', 'kick', 'snare', 'hat',
+  // FIELDSX='a,b' records more (live step 3: the bars stage's pred* / bar* fields); the output name gains '-fx'
+  ...(process.env.FIELDSX ? process.env.FIELDSX.split(',').map((x) => x.trim()).filter(Boolean) : [])];
 
 let src, dur, track = '', at = 0, sync = 0;
 if (mode === 'clicks') { dur = +(rest[0] || 20); src = `mode=clicks&dur=${dur}`; }
@@ -115,7 +117,7 @@ ch.on('exit', (code) => {
     tr.tHeardCtx = tr.t;
     tr.t = tr.t.map((t) => { const w = fp.f(t - sy); return +(at + (fs_.inv(w) - S.s0)).toFixed(6); });
     tr.track = track; tr.mode = 'capture'; tr.capture = { sync: sy, at, dur, srcFitRms: fs_.rms, pageFitRms: fp.rms };
-    const tag = (process.env.HASHX || '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+    const tag = ((process.env.HASHX || '') + (process.env.FIELDSX ? '-fx' : '')).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
     const f = path.join(OUTD, `${track}-cap${sy ? '-sync' + Math.round(sy * 1000) : ''}${tag ? '-' + tag : ''}.json`);
     fs.writeFileSync(f, JSON.stringify(tr));
     console.log(`${f}: ${tr.t.length} frames, listener time ${tr.t[0].toFixed(2)} → ${tr.t[tr.t.length - 1].toFixed(2)} s, sync ${sy}`);

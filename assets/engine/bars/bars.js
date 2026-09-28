@@ -22,13 +22,11 @@
 // discontinuity -> conf 0 and no predicted events. Never invent.
 
 import { SECTIONS } from './sections.js';
+import { MATCH, STEPS, TOPK, TAU } from './vote.js';
 import { NBAR, DIM, W_CLS, EPS, pop } from './common.js';
 
-export { NBAR, DIM };
+export { NBAR, DIM, STEPS, TOPK, TAU };
 
-export const STEPS = 16;          // per bar: 16ths
-export const TOPK = 8;            // candidates in a vote
-export const TAU = 0.04;          // vote weight exp((sim - best) / TAU)
 export const CONF_MIN = 0.35;     // predConf below this releases no predicted event
 export const CLOSE_M = 0.35;      // beats after a bar's end before it is closed: the capture path's +52 ms detection lag and
                                   // a late onset's rounding must land in it first
@@ -37,7 +35,10 @@ export const OFF_MAX = 0.4;       // steps: the largest micro-timing offset a cl
 export const OFF_RATE = 0.05;     // the offset's EMA rate per onset
 
 
-export const BARS_OUT = ['predKickEvt', 'predSnareEvt', 'predHatEvt', 'predKickIn', 'predConf', 'barMatch', 'barNovelEvt', 'barReturnEvt'];
+export const BARS_OUT = ['predKickEvt', 'predSnareEvt', 'predHatEvt', 'predKickAge', 'predSnareAge', 'predHatAge', 'predKick', 'predSnare',
+  'predHat', 'predKickIn', 'predConf', 'barMatch', 'barNovelEvt', 'barReturnEvt'];
+export const PRED_DECAY = 0.16;   // s: predKick / predSnare / predHat decay like synapse's kick / snare / hat levels (TORUS2)
+const AGE_OUT = ['predKickAge', 'predSnareAge', 'predHatAge'], LVL_OUT = ['predKick', 'predSnare', 'predHat'];
 
 function mkBar(k) {
   // guess: the steps predicted for this bar, released or not (graded against `bits` when it closes); g: any step decided
@@ -66,14 +67,15 @@ export class Bars {
     this.lastEvtK = -99;
     this.lastRet = null;                // the last return: { k: its bar, src: the bar it matched }
     this.pB = null; this.pBpm = 0;
-    // MICRO-TIMING: per class, where its onsets land against their step line (steps, EMA over onsets). A class is released
-    // at its line + its offset, so a predicted hit lands where that class's hits are heard, not on the bare grid (on the
-    // SeeYouDrop groove the causal kicks sit +25 ms after the heard v3 line, the hats on it)
+    // MICRO-TIMING: per class, where its onsets land against their line (steps, EMA); a class is released at line + offset
+    // (on the SeeYouDrop groove the causal kicks sit +25 ms after the heard v3 line, the hats on it)
     this.off = new Float64Array(3);
     this.q = [];                        // decided, not yet released: { c, y } (y = the release position, grid beats)
+    this.lastY = [NaN, NaN, NaN];       // per class, the grid position of the last released prediction (its age's origin)
     this.out = {};
     for (const k of BARS_OUT) this.out[k] = 0;
     this.out.predKickIn = -1;
+    for (const k of AGE_OUT) this.out[k] = 99;
   }
 
   // one frame. i = { B, rel, bpm, ok, anchor, onsets: [{c, x}], feat, lead }:
@@ -110,8 +112,8 @@ export class Bars {
     bc.n[q]++;
     // close every bar that ended CLOSE_M beats ago
     for (const [k, b] of this.open) if (y >= 4 * (k + 1) + CLOSE_M) this.close(b);
-    // decide every step whose line (+ the earliest class offset) the grid crossed since the last frame, then release each
-    // decided class when the grid reaches its line + that class's offset (the nearest frame: y + lead >= it)
+    // decide each step whose line (+ the earliest class offset) was crossed, release each class at line + its offset (the
+    // nearest frame: y + lead >= it)
     const yr = i.rel - this.a + i.lead, dmin = Math.min(0, this.off[0], this.off[1], this.off[2]);
     const gNow = Math.floor(yr * 4 - dmin);
     if (this.gRel === null) this.gRel = gNow + 1;
@@ -121,17 +123,23 @@ export class Bars {
     let k = 0;
     for (let j = 0; j < this.q.length; j++) {
       const e = this.q[j];
-      if (yr >= e.y) { if (e.c === 0) o.predKickEvt = 1; else if (e.c === 1) o.predSnareEvt = 1; else o.predHatEvt = 1; }
+      if (yr >= e.y) { if (e.c === 0) o.predKickEvt = 1; else if (e.c === 1) o.predSnareEvt = 1; else o.predHatEvt = 1; this.lastY[e.c] = e.y; }
       else if (yr > e.y - 1) this.q[k++] = e;                    // (a stale entry after a jump is dropped)
     }
     this.q.length = k;
+    // the ages of the last predicted hits in heard s (as kickAge: within half a frame of 0 on the release frame), and levels
+    const yNow = i.rel - this.a;
+    for (let c = 0; c < 3; c++) {
+      const y0 = this.lastY[c], age = y0 === y0 ? (yNow - y0) * 60 / i.bpm : 99;
+      o[AGE_OUT[c]] = age; o[LVL_OUT[c]] = age < 99 ? Math.exp(-Math.max(0, age) / PRED_DECAY) : 0;
+    }
     o.predConf = this.conf; o.barMatch = this.match;
     o.predKickIn = this.kickIn(yr);
     return o;
   }
 
   degrade() { this.conf = 0; this.out.predConf = 0; this.out.predKickIn = -1; }
-  cut() { this.open.clear(); this.lastK = null; this.gRel = null; this.predK = null; this.conf = 0; this.q.length = 0; this.lastV = null; this.cand0 = null; this.ctxSeq = -1; }
+  cut() { this.open.clear(); this.lastK = null; this.gRel = null; this.predK = null; this.conf = 0; this.q.length = 0; this.lastY.fill(NaN); this.lastV = null; this.cand0 = null; this.ctxSeq = -1; }
 
   // the bar phase: a proposal must hold for two bars before the grid moves to it
   phase(p, B) {
@@ -192,105 +200,6 @@ export class Bars {
     return 1 - d / DIM;
   }
 
-  // the context similarities of every stored slot, for the newest stored bar (recomputed once per stored bar):
-  // ctx1[j] = the bar before j vs the newest, ctx2[j] = the bar two before j vs the one before the newest (NaN = none)
-  context() {
-    if (this.ctxSeq === this.seq) return;
-    this.ctxSeq = this.seq;
-    const nb = Math.min(this.seq, NBAR), p1 = this.slot(0), p2 = p1 >= 0 && this.cont[p1] && nb > 1 ? this.slot(1) : -1;
-    this.p2ok = p2 >= 0;
-    for (let n = 0; n < nb; n++) {
-      const j = this.slot(n);
-      const jp = this.cont[j] && n + 1 < nb ? this.slot(n + 1) : -1;
-      const jpp = jp >= 0 && this.cont[jp] && n + 2 < nb ? this.slot(n + 2) : -1;
-      this.ctx1[j] = jp >= 0 ? this.simSlots(jp, p1) : NaN;
-      this.ctx2[j] = jpp >= 0 && p2 >= 0 ? this.simSlots(jpp, p2) : NaN;
-    }
-  }
-
-  // the heard bar's per-beat energy means for its completed beats (< qb) into tq
-  heardE(cur, qb) {
-    for (let q = 0; q < qb; q++) {
-      const m = cur.n[q] ? 1 / cur.n[q] : 0;
-      for (let d = 0; d < DIM; d++) this.tq[q * DIM + d] = cur.E[q * DIM + d] * m;
-    }
-  }
-
-  // similarity of the heard part of `cur` (steps < s, beats < s/4) to stored slot j: bits (weight wb) + energies (we each)
-  heardSim(cur, j, s, wb, we) {
-    const mask = s >= STEPS ? 0xffff : (1 << s) - 1, qb = s >> 2;
-    let dif = 0, uni = 0;
-    for (let c = 0; c < 3; c++) { const x = cur.bits[c] & mask, y = this.bits[j * 3 + c] & mask; dif += W_CLS[c] * pop(x ^ y); uni += W_CLS[c] * pop(x | y); }
-    let num = wb * (1 - dif / (uni + 1)), den = wb;
-    for (let q = 0; q < qb; q++) if (cur.n[q]) { num += we * this.simE(this.tq, q * DIM, this.E, (j * 4 + q) * DIM); den += we; }
-    return [num, den];
-  }
-
-  // score every stored bar as the one the heard bar kc (steps < s heard) repeats; the newest stored bar is kc - 1
-  vote(kc, s) {
-    const nb = Math.min(this.seq, NBAR), cur = this.open.get(kc);
-    const ctx = this.lastK === kc - 1;
-    if (ctx) this.context();
-    if (cur && s > 0) this.heardE(cur, s >> 2);
-    const idx = [], sc = [];
-    for (let n = 0; n < nb; n++) {
-      const j = this.slot(n);
-      if (!this.okS[j]) continue;
-      let num = 0, den = 0;
-      if (ctx) {                                                 // a candidate with no bar before it scores a neutral 0.5 there
-        const a = this.ctx1[j], b = this.ctx2[j];
-        num += a === a ? a : 0.5; den += 1;
-        if (this.p2ok) { num += 0.5 * (b === b ? b : 0.5); den += 0.5; }
-      }
-      if (cur && s > 0) { const [x, y] = this.heardSim(cur, j, s, 2 * s / STEPS, 0.5); num += x; den += y; }
-      if (den <= 0) continue;
-      const back = kc - this.kOf[j];
-      const bonus = back % 16 === 0 ? 0.03 : back % 8 === 0 ? 0.02 : back % 4 === 0 ? 0.01 : 0;
-      idx.push(j); sc.push(num / den + bonus);
-    }
-    const ord = idx.map((_, n) => n).sort((x, y) => sc[y] - sc[x]).slice(0, TOPK);
-    const best = ord.length ? sc[ord[0]] : 0;
-    return { k: kc, s, idx: ord.map((n) => idx[n]), sc: ord.map((n) => sc[n]), w: ord.map((n) => Math.exp((sc[n] - best) / TAU)), best };
-  }
-
-  // the successors of a vote's candidates, as the vote for the next bar kc (its first steps, before kc - 1 is closed)
-  succ(V, kc, s) {
-    // scored as their parents were: a best candidate with no stored successor (the bar just before kc) leaves the
-    // prediction to the others at THEIR score, so the confidence says how good the continuation really is
-    const idx = [], sc = [];
-    for (let n = 0; n < V.idx.length; n++) {
-      const j = V.idx[n], nx = (j + 1) % NBAR;
-      if (nx === (this.seq % NBAR) || this.kOf[nx] !== this.kOf[j] + 1 || !this.cont[nx] || !this.okS[nx]) continue;
-      idx.push(nx); sc.push(V.sc[n]);
-    }
-    const best = idx.length ? Math.max(...sc) : 0;
-    return { k: kc, s, idx, sc, w: sc.map((x) => Math.exp((x - best) / TAU)), best };
-  }
-
-  // fill pred[] for bar kc from step s on, and for bar kc + 1 from the candidates' successors
-  predict(V) {
-    this.pred.fill(0);
-    const W = V.w.reduce((x, y) => x + y, 0);
-    if (!W) return;
-    for (let c = 0; c < 3; c++) {
-      for (let st = V.s; st < STEPS; st++) {
-        let p = 0;
-        for (let n = 0; n < V.idx.length; n++) if (this.bits[V.idx[n] * 3 + c] >> st & 1) p += V.w[n];
-        this.pred[c * 2 * STEPS + st] = p / W > 0.5 ? 1 : 0;
-      }
-      let p2w = 0;
-      const p2 = new Float32Array(STEPS);
-      for (let n = 0; n < V.idx.length; n++) {
-        const j = V.idx[n], nx = (j + 1) % NBAR;
-        if (this.kOf[nx] !== this.kOf[j] + 1 || !this.cont[nx] || !this.okS[nx]) continue;
-        p2w += V.w[n];
-        for (let st = 0; st < STEPS; st++) if (this.bits[nx * 3 + c] >> st & 1) p2[st] += V.w[n];
-      }
-      for (let st = 0; st < STEPS; st++) this.pred[c * 2 * STEPS + STEPS + st] = p2w > 0 && p2[st] / p2w > 0.5 ? 1 : 0;
-    }
-    this.predK = V.k;
-  }
-
   // the global step g's line has been crossed: decide it from the steps before it, release it, test for a change
   release(g, ok) {
     const kc = Math.floor(g / STEPS), s = g - kc * STEPS;
@@ -341,4 +250,4 @@ export class Bars {
   }
 }
 
-Object.assign(Bars.prototype, SECTIONS);
+Object.assign(Bars.prototype, MATCH, SECTIONS);

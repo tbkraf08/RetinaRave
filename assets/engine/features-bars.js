@@ -28,6 +28,8 @@ export function barsStage(dt, now, S) {
   if (dt > 0 && dt < 0.05) BARS.dt += (dt - BARS.dt) * 0.2;
   const o = BARS.bars.step(feed(S, LEAD.L === null ? 0 : LEAD.L, LEAD.on ? LEAD.disp : 0, BARS.dt, BARS.inp));
   S.predKickEvt = !!o.predKickEvt; S.predSnareEvt = !!o.predSnareEvt; S.predHatEvt = !!o.predHatEvt;
+  S.predKickAge = o.predKickAge; S.predSnareAge = o.predSnareAge; S.predHatAge = o.predHatAge;
+  S.predKick = o.predKick; S.predSnare = o.predSnare; S.predHat = o.predHat;
   S.predKickIn = o.predKickIn; S.predConf = o.predConf; S.barMatch = o.barMatch;
   S.barNovelEvt = !!o.barNovelEvt; S.barReturnEvt = !!o.barReturnEvt;
 }

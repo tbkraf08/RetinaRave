@@ -44,7 +44,7 @@ function run(delay) {
     while (oi < on.length && on[oi].x * SPB + delay <= t + 0.5 / FPS) { onsets.push(on[oi]); oi++; }
     const k = Math.floor(B / 4);
     const o = bars.step({ B, rel: B, bpm: BPM, ok: true, anchor: -1, onsets, feat: feat(song[Math.min(k, song.length - 1)]), lead: 0.5 / FPS / SPB });
-    for (const [c, fld] of [[0, 'predKickEvt'], [1, 'predSnareEvt'], [2, 'predHatEvt']]) if (o[fld]) got.push({ c, B });
+    for (const [c, fld] of [[0, 'predKickEvt'], [1, 'predSnareEvt'], [2, 'predHatEvt']]) if (o[fld]) got.push({ c, B, age: o[['predKickAge', 'predSnareAge', 'predHatAge'][c]], lvl: o[['predKick', 'predSnare', 'predHat'][c]] });
     if (o.barNovelEvt) nov.push(B);
     if (o.barReturnEvt) ret.push(B);
     conf.push({ B, v: o.predConf });
@@ -64,6 +64,9 @@ for (const [label, delay] of [['onsets on time (file-det)', 0], ['onsets 52 ms l
   const miss = [...T].filter((x) => !Pd.has(x)), extra = [...Pd].filter((x) => !T.has(x));
   ok('loop bars 6-23: every step predicted, nothing else', !miss.length && !extra.length, `${pred.length} released · miss ${miss.length} extra ${extra.length}`);
   const off = pred.map((e) => Math.abs(e.B - Math.round(e.B * 4) / 4) * SPB * 1000);
+  const ages = pred.map((e) => e.age), lv = pred.map((e) => e.lvl);
+  ok('the age on the release frame is within half a frame of 0', Math.max(...ages.map(Math.abs)) <= 0.5 / FPS + 1e-9 && Math.min(...lv) > 0.94,
+    `age ${(1000 * Math.min(...ages)).toFixed(2)}..${(1000 * Math.max(...ages)).toFixed(2)} ms · level >= ${Math.min(...lv).toFixed(3)}`);
   ok('released on the frame nearest the line', Math.max(...off) <= 1000 / FPS / 2 + 1e-6, `max |off| ${Math.max(...off).toFixed(2)} ms`);
   if (V) console.log('    miss', miss.slice(0, 8), 'extra', extra.slice(0, 8), '(class:global 16th; bar = step >> 4)');
   // 2. no section events inside the loop (after the first cycle)

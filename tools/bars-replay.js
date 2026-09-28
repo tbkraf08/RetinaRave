@@ -22,9 +22,12 @@ if (miss.length) { console.error('bars-replay: the trace lacks ' + miss.join(', 
 if (tr.cols.leadT && tr.cols.leadT.some((v) => v)) console.warn('bars-replay: leadT is not 0 — record with &lead=0 (the clocks must be raw)');
 const bars = new M.Bars(), L = -(tr.detLead || 0.0427), dt = 1 / (tr.fps || 60), S = {}, into = {};
 const OUT = M.BARS_OUT, cols = Object.fromEntries(OUT.map((k) => [k, []]));
+let cpu = 0, worst = 0;
 for (let i = 0; i < tr.t.length; i++) {
   for (const k of FEED_IN) { const v = tr.cols[k][i]; S[k] = v === null ? NaN : v; }
+  const c0 = performance.now();
   const o = bars.step(feed(S, L, 0, dt, into));
+  const c = performance.now() - c0; cpu += c; if (c > worst) worst = c;
   for (const k of OUT) cols[k].push(typeof o[k] === 'number' ? +o[k].toFixed(4) : o[k] ? 1 : 0);
 }
 const keep = ['leadT', 'kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge'];
@@ -32,4 +35,4 @@ const res = { track: tr.track, mode: tr.mode, sr: tr.sr, at: tr.at, fps: tr.fps,
   fields: [...keep, ...OUT], cols: Object.assign(Object.fromEntries(keep.filter((k) => k in tr.cols).map((k) => [k, tr.cols[k]])), cols) };
 res.cols.leadT = tr.t.map(() => L);
 fs.writeFileSync(out, JSON.stringify(res));
-console.log(`${out}: ${tr.t.length} frames · bars stored ${bars.seq}`);
+console.log(`${out}: ${tr.t.length} frames · bars stored ${bars.seq} · ${(1000 * cpu / tr.t.length).toFixed(1)} µs/frame mean, worst ${worst.toFixed(2)} ms`);

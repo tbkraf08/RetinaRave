@@ -27,7 +27,8 @@ export const MS = {
   denK: 0, denS: 0, denH: 0, pulse: 1,
   mapOn: 0, toDrop: -1, toBoundary: -1, buildProg: 0, mapSection: -1, mapNext: -1, mapReturn: 0, eG: 0, mapDropEvt: false, mapBoundaryEvt: false,
   // bars stage (features-bars.js, live step 3) — idle: nothing predicted
-  predKickEvt: false, predSnareEvt: false, predHatEvt: false, predKickIn: -1, predConf: 0, barMatch: 0, barNovelEvt: false, barReturnEvt: false,
+  predKickEvt: false, predSnareEvt: false, predHatEvt: false, predKickAge: 99, predSnareAge: 99, predHatAge: 99,
+  predKick: 0, predSnare: 0, predHat: 0, predKickIn: -1, predConf: 0, barMatch: 0, barNovelEvt: false, barReturnEvt: false,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

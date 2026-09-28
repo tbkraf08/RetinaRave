@@ -4,6 +4,11 @@ The user (2026-09-27): *"next session prompt should just be the engine update an
 needed)"*. Everything the old next-session prompt carried besides that work lives here, unchanged, for when the user brings it back:
 the GIELIS look (v0.14 tagged and pushed 2026-09-27, not validated), NAV2 (paused), the validated scenes, the standing list.
 
+**Live step 3 (2026-09-28, DECISIONS §50, AUDIT-live-grid "Step 3") — open after the session:** the user's look at the A/B
+(NEXT-SESSION-PROMPT.md) and any default it decides · v0.16 + step 3 are local only (not pushed / deployed; retinarave.com serves
+v0.15) · the section test's features (synapse per-beat `F`), recall (the 0.35 gate / a soft `predKickP`), section annotations for a
+second track · the headless `file://` demo: the ears hear no onsets (`kickAge` 99, before step 3 too) · step 4 (build detector v2).
+
 **GIELIS (id 10, "slot 11", no digit key: `n` / `&scene=10`, forced-only, `score()` 0)** — the superformula nest the user asked for on
 2026-09-27 ("goal new scene (slot 11); use 'see you drop' as the inspiration … how can we use the superformula to visualize music?"),
 built on TORUS2's music model (the user: "torus2 is my favorite visually for how music lines up to the viz"). Spec `GIELIS-SESSION-PROMPT.md`,

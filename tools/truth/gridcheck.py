@@ -16,8 +16,9 @@ after the audible one. Phase is only graded on frames whose tempo is in the righ
 meaningful phase against a single-time grid); the tempo rows say how many frames that is.
 
 Truth caveat (2026-09-28): only SeeYouDrop's grid is hand-checked (its kicks sit +4 ms after its beats). CyborgNinja's
-kicks cluster at beat phase 0.19 / 0.69 (the grid's phase is ~70 ms off) and Malicious' are uniform over the beat (DP
-residual 90 ms), so on those tracks read the TEMPO rows only.
+grid phase was re-anchored onto its kicks in live step 3.1 (f0e69e8, docs/workers/truth-grid-s3.md: median |kick error| 72 ->
+3 ms; beat and bar gradeable — the half-beat choice rests on a 9 % low-band margin), WhoLikesToParty's tempo was re-fitted
+(beat phase gradeable, the bar line NOT verified), Malicious' kicks are uniform over the beat (DP residual 90 ms): TEMPO rows only.
 
 Caveat, stated where it is printed: the trace's `t` is heardT. In a deterministic file trace the analysers see the
 audio DET_LEAD (42.7 ms) before it is heard, as in a real-time window; a CAPTURE run sees it L after (the capture lag,

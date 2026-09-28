@@ -556,6 +556,11 @@ are the scene author's rules:
 - **Events placed by their age.** `kickEvt` / `snareEvt` / `hatEvt` fire on the frame the onset is heard; `kickAge` etc. is
   the heard time since the onset (99 before any; it can be a few ms below 0 on the release frame — clamp `max(0, age)`). A fast
   motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
+- **Predicted hits (live step 3).** `predKickEvt` / `predSnareEvt` / `predHatEvt` are released ON the heard hit (median
+  +1…+5 ms in capture) from the bar fingerprint store — use them where a reaction would be 38–52 ms late; `predKickAge` etc. place
+  a motion like `kickAge` (within half a frame of 0 on the release frame), `predKick` / `predSnare` / `predHat` are the same hits
+  as levels decaying over 0.16 s (synapse's `kick` shape). They are predictions: gate or weight by `predConf`, and let the
+  reactive event through when they disagree. `barNovelEvt` / `barReturnEvt` fire 1.2–3 beats into a new bar, not on its line.
 - **Anticipation only from what is known.** In file mode (`mapOn` 1) `toDrop`, `buildProg`, `toBoundary`, `mapNext` are the
   track's own future: wind up exactly to `mapDropEvt`. In live modes `mapOn` is 0 — fall back to `dropConf`, `dropExpectedIn`,
   `build`, `dropEvt`, and never invent a countdown.
@@ -838,6 +843,12 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `predKickEvt` | event | a kick is PREDICTED on this 16th, released on time (before the audio when the capture path lags) | hit a kick motion ON the beat instead of 38-52 ms after it |
 | `predSnareEvt` | event | a snare is predicted on this 16th | snare motion on time |
 | `predHatEvt` | event | a hat is predicted on this 16th | hat motion on time |
+| `predKickAge` | raw | seconds since the last PREDICTED kick (99 before any; within half a frame of 0 on its frame) | place a kick animation from the prediction (CHLADNI route: chladni.kickAge=predKickAge) |
+| `predSnareAge` | raw | seconds since the last predicted snare | snare animation from the prediction |
+| `predHatAge` | raw | seconds since the last predicted hat | hat animation from the prediction |
+| `predKick` | level | the predicted kick, decaying over 0.16 s (1 on the predicted hit) | a kick-level channel on time (TORUS2 route: torus2.kick=predKick) |
+| `predSnare` | level | the predicted snare, decaying over 0.16 s | snare-level channel on time |
+| `predHat` | level | the predicted hat, decaying over 0.16 s | hat-level channel on time |
 | `predKickIn` | raw | beats until the next predicted kick (-1 = none / not confident) | wind up before the kick lands |
 | `predConf` | level | how sure the bar store is of what comes next | weight a predicted motion against the reactive one |
 | `barMatch` | level | how much the bar being heard looks like one heard before | repetition feel |

@@ -577,6 +577,32 @@ against `tools/accept/v0.14/scene-md5-v014.txt` · the mixs md5 ("Transition") �
 on the fake timeline, so a scene's pixels cannot move — but the `clock` stage runs in every mode, which is what the md5
 list and the parity run are checking.
 
+## Bars — the bar fingerprint store (live step 3; change to `engine/bars/`, `features-bars.js`, or anything it reads)
+
+Develop on the **causal** path: `&map=0` (the file's ears stay causal) and `&lead=0` (the trace's clocks are then the raw ones
+the stage sees; the stage's own output does not depend on the lead — 0 frames differ). Record the stage's inputs once, then
+replay the store in node in seconds and grade it:
+
+```
+F=$(node tools/bars-replay.js --fields)                                    # heardT, leadT + bars/feed.js FEED_IN
+PORT=8851 node tools/filetrace.js SeeYouDrop 0 157.4 tools/work/in-syd.json "$F" '&map=0&lead=0'
+node tools/bars-replay.js tools/work/in-syd.json tools/work/out-syd.json   # prints µs/frame; the page's run agrees on
+python3 tools/truth/predcheck.py tools/work/out-syd.json [--win 25.6,44.8] [--conf 0.5] [--md out.md]   # 9442/9444 event frames
+python3 tools/truth/predcheck.py --self-test
+node tools/test_bars.js                                                     # in npm test: the synthetic loop / change / return
+FIELDSX='predKickEvt,predSnareEvt,predHatEvt,predConf,barNovelEvt,barReturnEvt,sectionAlt,sectionReturn' \
+  node tools/caplag.js track SeeYouDrop 20 70 27                            # AUDIBLE: the live confirmation (…-cap-sync27-fx.json)
+```
+The replay reads the trace's `-detLead` as `LEAD.L` (file-det). A replay starting later than the page's first frame lacks that
+history (a t0 = 8 trace misses the 8 s warm-up), so `predConf` drifts while the events agree to a few frames. A lone
+`serve.js` left on a port by a killed run can hang the next `filetrace.js` on that port at "file open" (300 s timeout, then
+the demo) — use a fresh `PORT` or kill it. Rows: `tools/accept/live-grid/*-bars-*.md`.
+
+The A/B the user watches (no scene edit — routes, CONTRACTS §1.15; a normal page: the routes panel `P` or `CARD.route`):
+`#test&track=SeeYouDrop&map=0&scene=3&route=torus2.kick=predKick,torus2.snare=predSnare,torus2.hat=predHat` (TORUS2's wave +
+core flash on the predicted hits; drop the `route=` for the reactive synapse levels), and for CHLADNI's ballistic sand
+`&scene=11&route=chladni.kickEvt=predKickEvt,chladni.kickAge=predKickAge,chladni.snareAge=predSnareAge,chladni.hatAge=predHatAge`.
+
 ## Single-file build
 
 ```

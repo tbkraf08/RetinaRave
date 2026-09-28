@@ -2470,3 +2470,60 @@ dropped, not an EMA: one stale first-frame timestamp (+0.24 s) held an EMA at +4
 `&ears=1&figure=0` md5 606f721a / f7b1c6ee unchanged; `&lead=0` reproduces v0.15's det trace byte for byte; a default det
 trace carries `leadT` −42.7 ms. `package.json` 0.16.0, `releases/retinarave-v0.16.html`. Not run: `tools/accept.sh`; not
 pushed or deployed (not asked). Next: step 3, `LIVE-STEP3-SESSION-PROMPT.md`.
+
+## §50 v0.17 (in progress) — live step 3: bar fingerprints (2026-09-28, orchestrator + one worker for 3.1; `LIVE-STEP3-SESSION-PROMPT.md`, `docs/AUDIT-live-grid.md` "Step 3")
+
+**The ask:** step 3 of the agreed six-step live plan ("focus on live mode … I don't expect to have the file normally"; "yes" to the
+plan): predict the next bar's hits so they land on time, and know a section change / a return when it starts.
+
+**3.0 `&map=0` (`3428c9e`).** `ENGINE.useMap` gates the file's track map, so a file runs the causal ears — the live path,
+deterministic under `CLOCK=1`. Default traces unchanged (`cmp`); SeeYouDrop 25–45 s kick F 0.786 (the brief's 0.77–0.79).
+**3.1 truth grids (worker, `f0e69e8`, `docs/workers/truth-grid-s3.md`).** CyborgNinja's grid re-anchored onto its kicks (a
+general rule in `trackmap.py`: an eighth-note kick grid > 25 ms off the beat grid moves it; the beat half is the one with more
+40–150 Hz energy) — median |kick error| 72 → 3 ms at every grain; WhoLikesToParty's tempo re-fitted (drift +20 → −22 ms gone),
+its bar line not verified; SeeYouDrop / Malicious byte-identical. **3.2 `predcheck.py` (`06d089b`)**, self-tested.
+
+**3.3 the store (`d4a62c5`, `engine/bars/`: `bars.js` + mixins `vote.js`, `sections.js`, `feed.js`, `common.js`; `features-bars.js`).**
+The leans, each measured before it was taken:
+- **The grid is v3's, not synapse's.** The brief said "quantised on the synapse grid"; measured on the causal path (whole-track
+  det) synapse's tempo is right 61.6 % of frames (half-time through the groove-return and the climb-double, the bar line right
+  57 %) against v3's 95.5 % (beat F 0.91). Bars are 4 v3 beats; synapse proposes the bar PHASE only when `barConf` ≥ 0.9 in the same
+  octave (held 8 beats before the store moves). The v3 bar lines landed on all 10 annotated SeeYouDrop downbeats.
+- **THE TIME BASE: release inside the stage on the heard grid, with the lead's own estimate** — not a hook after `leadApply`.
+  `B = beatCount + beatPhase + LEAD.L·bpm/60` (raw v3 + heardT − the analysers' newest audio time), onsets at `B − age·bpm/60`,
+  a step released when `B` (+ `&disp` with the lead on) crosses it. Why: an onset can only be placed by its age on a heard grid,
+  and that needs the true audio lead whether or not the lead PUBLISHES the clocks, so `lead.js` now estimates `LEAD.L` with the
+  lead off too (it still publishes nothing: the `&lead=0` whole-track trace is `cmp`-identical to v0.16). A post-lead hook would
+  have put `&lead=0` predictions on the analysis grid (43 ms early in det, 27 ms late in capture). Proof: the stage's output is
+  identical with the lead on and off (0 of 8965 frames differ); predicted lags in capture +1…+5 ms, in det −5…+3 ms (groove) — no
+  constant ±27–43 ms anywhere.
+- **Per-class micro-timing.** Each class is released at its line + a learned offset (EMA of where its onsets land, ±0.4 step):
+  the causal kicks sit +25 ms after the heard v3 line, the snares +6, the hats 0 — without it the predicted kicks read −16 ms.
+- **Reliability is precision.** `predConf` = match quality × the recent bars' prediction precision × the vote's agreement.
+  Graded as Jaccard against what the ears heard, a right prediction was punished for every onset the ears added or missed
+  (reliability sat at 0.25–0.5 on the groove); the harm of a released event is a hit that does not come.
+- **The per-beat energy vector is 12 MS fields** (synapse `bassS midS highS sub lvl centroid`, the ears' `bassReg subGate subPure
+  denK denS denH`), not synapse's per-beat `F` (23-dim). Self-contained and node-testable, the brief's own suggestion; `F` is
+  the next lever for the section test (AUDIT "Open").
+- **No pattern → bars map.** A linear scan of the 256-bar ring per decided 16th costs 5.1 µs/frame mean (worst 0.66 ms);
+  the exact-pattern index the design notes proposed buys nothing at that size, and exact bits never repeat through the ears' noise.
+- **The first steps of a bar come from the previous vote's successors** (the bar before is still open for CLOSE_M = 0.35
+  beat — the capture path's +52 ms detection lag); a candidate with no bar before it scores a neutral 0.5 on context.
+- **Section tests against the recent bars, not against the prediction.** A section start = the heard part (5 / 8 steps) is
+  unlike every one of the last 4–8 bars while those were alike, on the mean of the THREE largest per-dim distances (the plain
+  mean over 12 dims read the drop — sub 0.04 → 0.94 — as 0.62 similar). A first version gated it on a confident prediction and
+  found 0 of 10 (the confidence is low exactly where sections change). A return = an older bar (≥ 8 back) matches 0.15 better
+  than the recent bars and is itself unlike them; a return whose source moves forward no faster than time within 8 bars of the
+  last return is that return going on (a fill bar in a returned loop), which also swallows the climb-double (its material
+  follows the groove's in the original order) — accepted: a false return on every fill after every return is worse.
+- **Additive fields** (FEATS, `feats-doc.js`, Appendix A checked): `predKickEvt / predSnareEvt / predHatEvt`, `predKickAge /
+  predSnareAge / predHatAge` (raw, like `kickAge`), `predKick / predSnare / predHat` (levels decaying 0.16 s, synapse's `kick`
+  shape — so TORUS2's kick channel can be routed from them with no scene edit), `predKickIn`, `predConf`, `barMatch`,
+  `barNovelEvt`, `barReturnEvt`. Nothing existing changes value: default and `&lead=0` whole-track det traces `cmp`-identical to
+  v0.16, parity fake 0 diff, s11 `606f721a` / `f7b1c6ee`.
+
+**3.4 numbers** (AUDIT "Step 3", rows `tools/accept/live-grid/*-bars-*.md`): capture 22–90 s kick / snare / hat F 0.46 / 0.47 /
+0.53 at +5 / +1 / +3 ms, 100 % released before the audio arrived (reactive first frame F 0.02–0.11, +38–52 ms); section starts
+3 / 10 at +1.2–2 beats (synapse 3 / 10 at +3–5), returns 1 / 3 (synapse 0 / 3). **3.5:** no new scene; the A/B is a route
+(the report and NEXT-SESSION-PROMPT.md). Not run: `tools/accept.sh` (not asked). Not tagged, not pushed.
+
