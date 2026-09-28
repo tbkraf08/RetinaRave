@@ -18,7 +18,8 @@ import { blendOf, figOf, NFIG } from '../../math/chladni.js';
 import { mkAnchor, wrap } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { clamp, ema, TAU } from '../../math/util.js';
-import { PLATE_FS } from './shaders.js';
+import { PLATE_FS, SAND_FS, SAND_VS, SAND_FS_DRAW, SETTLE_FS } from './shaders.js';
+import { mkSand, DELTA } from './sand.js';
 import { HELP } from './help.js';
 
 // --- the leans. Every constant named for what it does; the user corrects them at the first montage. ---
@@ -44,10 +45,20 @@ const SPIRAL = 0.9;          // how hard the build spirals the sand inward
 const NOTEHUE = 0.42;        // how far round the fifths wheel the sub note's own hue sits from the tonic's
 const ANTIHUE = 0.11;        // and the antinodes' hue, a shade off the lines'
 const KEYC = 0.25;           // below this tonicConf the old `key` is used instead of `tonic` (Appendix A's fallback)
+const WALK = 4.40;           // the random walk's step, plate units per second at |u| = 1 and full drive: the plate
+                             // throws a grain hardest where it moves most, which is the whole mechanism
+const DESC = 1.00;           // the descent on u^2, per second: what makes a thrown grain LAND on a line and stay
+const GRAV = 11.0;           // the leap's gravity, plate units per second squared: a kick's throw lands in ~0.2 s
+const LEAPK = 0.62;          // and how high a kickVel of 1 throws a grain sitting on an antinode
+const PTPX = 2.3;            // a grain's size in px at 720 p, at unit view depth
+const SANDB = 1.15;          // how bright the sand is
+const NEAR = 0.05;           // the points pass's near / far planes: the plate is 2 units across at 1.8 to 4.2 away
+const FAR = 20;
 const WALKN = 2;             // a section with this many different sub notes in it is a WALK: the plate goes round
 const BNDTC = 0.9;           // and the boundary morphs over ~2.7 s, never cutting
 
-const U = { s: 0, h: 0, bnd: 0, amp: 0, gate: 0, lift: 0, spiral: 0, glow: GLOW0, fog: 0, hue: 0, yaw: 0, pitch: PITCH_SUB, dist: DIST_SUB, bounce: 0, ripA: 99, ripK: 0, ripD: 0, snA: 99, snR: 0, tonic: 0, note: -1, fig: '1/2', drive: 0 };
+const SU = { s: 0, h: 0, bnd: 0, walk: 0, desc: DESC, dt: 1 / 60, gate: 0, amp: 0, lift: 0, spiral: 0 };
+const U = { s: 0, h: 0, bnd: 0, amp: 0, gate: 0, lift: 0, spiral: 0, glow: GLOW0, fog: 0, hue: 0, yaw: 0, pitch: PITCH_SUB, dist: DIST_SUB, bounce: 0, ripA: 99, ripK: 0, ripD: 0, snA: 99, snR: 0, tonic: 0, note: -1, fig: '1/2', drive: 0, kickAge: 99, kickVel: 0 };
 const MOOD = [0, 1, 1];
 const EYE = [0, 0, 0];
 const BAS = new Float32Array(9);
@@ -95,6 +106,26 @@ function ears(v) {
   return earsPin;
 }
 
+// The view-projection for the sand's points, column-major, built from the same yaw / pitch / dist as the plate's ray
+// cast so a grain and the line it sits on are drawn by the same camera. Right-handed, looking down -z in view space.
+function lookVP(m, aspect, focal) {
+  const rx = BAS[0], ry = BAS[1], rz = BAS[2], ux = BAS[3], uy = BAS[4], uz = BAS[5], fx = BAS[6], fy = BAS[7], fz = BAS[8];
+  const de = fx * EYE[0] + fy * EYE[1] + fz * EYE[2];
+  const A = (FAR + NEAR) / (NEAR - FAR), Bp = (2 * FAR * NEAR) / (NEAR - FAR), sx = focal / aspect;
+  m[0] = sx * rx; m[4] = sx * ry; m[8] = sx * rz; m[12] = -sx * (rx * EYE[0] + ry * EYE[1] + rz * EYE[2]);
+  m[1] = focal * ux; m[5] = focal * uy; m[9] = focal * uz; m[13] = -focal * (ux * EYE[0] + uy * EYE[1] + uz * EYE[2]);
+  m[2] = -A * fx; m[6] = -A * fy; m[10] = -A * fz; m[14] = A * de + Bp;
+  m[3] = fx; m[7] = fy; m[11] = fz; m[15] = -de;
+}
+
+// test hook, read-only: the settle instrument — the fraction of the sand within DELTA of a nodal line, by one byte
+// readback of a pass over the grain texture (a pipeline stall, so it is only ever called from a harness eval).
+function settle() {
+  const sc = SELF;
+  if (!sc.sand || !sc.ctx) return JSON.stringify({ n: 0, settled: 0, delta: DELTA, air: 0 });
+  return JSON.stringify(sc.sand.settle(SU, sc.ctx.budget('points')));
+}
+
 // test hook, read-only (CONTRACTS §1.4: a hook that reports must not mutate): the live look numbers.
 function info() {
   return JSON.stringify({ s: +U.s.toFixed(4), fig: U.fig, h: +U.h.toFixed(3), bnd: +U.bnd.toFixed(3), amp: +U.amp.toFixed(4), gate: +U.gate.toFixed(3), lift: +U.lift.toFixed(3), spiral: +U.spiral.toFixed(3), glow: +U.glow.toFixed(3), fog: +U.fog.toFixed(3), note: U.note, tonic: U.tonic, hue: +U.hue.toFixed(4), yaw: +U.yaw.toFixed(4), pitch: +U.pitch.toFixed(4), dist: +U.dist.toFixed(4), drive: +U.drive.toFixed(4), figPin, earsPin });
@@ -110,7 +141,7 @@ const SELF = {
     'beatCount', 'pulse', 'hush', 'calm', 'flow', 'buildProg', 'dropConf', 'mapBoundaryEvt', 'sectionEvt'],
   cuts: 'continuous',
   rt: {},
-  hooks: { figure, ears, info },
+  hooks: { figure, ears, info, settle },
   // the continuity monitor's shape (tools/monitor.js reads CARD.NAV || CARD.home, so a run points CARD.NAV here):
   // cPath is where the camera is looking from, in radians — the thing that must never jump on this screen.
   state: { mode: 'plate', cPath: [0, PITCH_SUB], pathCut: 0, kick: { x: 0 }, baby: null },
@@ -124,6 +155,12 @@ const SELF = {
     this.ctx = ctx;
     ctx.onResize((w, h) => { ASP = w / Math.max(1, h); });
     this.pr = ctx.mkProg(PLATE_FS, 'chladni-plate');
+    this.prSand = ctx.mkProg(SAND_FS, 'chladni-sand');
+    this.prDraw = ctx.mkProg(SAND_VS, SAND_FS_DRAW, 'chladni-grains');
+    this.prSettle = ctx.mkProg(SETTLE_FS, 'chladni-settle');
+    this.sand = mkSand(ctx, { sand: this.prSand, settle: this.prSettle });
+    this.vao = ctx.gl.createVertexArray();
+    this.vp = new Float32Array(16);
     this.anchor = mkAnchor();
     this.nudge = mkNudge();
     this.sec = { notes: 0, last: -1, walk: 0 };
@@ -225,6 +262,18 @@ const SELF = {
     U.glow = GLOW0 * (GLOWQ + (1 - GLOWQ) * clamp(0.3 + U.amp, 0, 1));
     U.fog = MS.lpSweep;
 
+    // the sand's own block: one place the state pass and the settle instrument both read
+    SU.s = U.s;
+    SU.h = U.h;
+    SU.bnd = U.bnd;
+    SU.walk = WALK;
+    SU.desc = DESC;
+    SU.dt = Math.min(0.05, dt);          // a long frame must not teleport the sand off the plate
+    SU.gate = U.gate;
+    SU.amp = clamp(U.amp, 0, 1.6);
+    SU.lift = U.lift;
+    SU.spiral = U.spiral;
+
     this.rt.time = MS.flow;
     this.rt.label = 'fig ' + U.fig + ' s ' + U.s.toFixed(2);
     const st = this.state;
@@ -236,7 +285,9 @@ const SELF = {
 
   draw(target, { w, h }) {
     const ctx = this.ctx, g = ctx.gl, pr = this.pr;
-    if (!pr || !pr.p) return;
+    if (!pr || !pr.p || !this.sand) return;
+    const count = ctx.budget('points');           // the core's per-tier particle budget, read every draw (CONTRACTS 1.4)
+    this.sand.step(SU, count);                    // one state step, into the sand's own target
     ctx.use(pr, target, w, h);
     g.uniform3f(pr.u('uEye'), EYE[0], EYE[1], EYE[2]);
     g.uniformMatrix3fv(pr.u('uCamB'), false, BAS);
@@ -246,7 +297,38 @@ const SELF = {
     g.uniform4f(pr.u('uHue'), U.hue, ANTIHUE, U.fog, U.lift);
     g.uniform3f(pr.u('uRip'), U.ripA, U.ripK, U.snR);
     g.uniform3f(pr.u('uMood'), MOOD[0], MOOD[1], MOOD[2]);
+    g.clearColor(0, 0, 0, 1);
+    g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
     ctx.tri();
+    this.grains(target, w, h, count);
+  },
+
+  // The sand, drawn last: additive gl.POINTS over the plate, no depth (the plate pass wrote none and the grains are
+  // order-independent light). Full viewport — gl.POINTS vanish in an offset one on ANGLE-GL (HARNESS "Pitfalls").
+  grains(target, w, h, count) {
+    const ctx = this.ctx, g = ctx.gl, pr = this.prDraw;
+    if (!pr || !pr.p) return;
+    lookVP(this.vp, ASP, 1 / Math.tan(FOV * 0.5));
+    ctx.use(pr, target, w, h);
+    ctx.tex(pr, 'uPos', 0, this.sand.tex());
+    g.uniformMatrix4fv(pr.u('uVP'), false, this.vp);
+    g.uniform2f(pr.u('uGrid'), this.sand.grid[0], this.sand.grid[1]);
+    g.uniform2f(pr.u('uRes'), w, h);
+    g.uniform4f(pr.u('uFig'), U.s, U.h, U.bnd, 0);
+    g.uniform4f(pr.u('uLeap'), U.kickAge, U.kickVel, GRAV, LEAPK);
+    g.uniform4f(pr.u('uSand'), PTPX, SANDB * (0.55 + 0.45 * Math.min(1, U.amp + U.lift)), U.gate, U.lift);
+    g.uniform4f(pr.u('uHue'), U.hue, ANTIHUE, U.fog, U.lift);
+    g.uniform3f(pr.u('uMood'), MOOD[0], MOOD[1], MOOD[2]);
+    const wasDepth = g.isEnabled(g.DEPTH_TEST);
+    g.disable(g.DEPTH_TEST);
+    g.enable(g.BLEND);
+    g.blendFunc(g.ONE, g.ONE);
+    g.bindVertexArray(this.vao);
+    g.drawArrays(g.POINTS, 0, count);
+    g.bindVertexArray(null);
+    g.disable(g.BLEND);
+    g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
+    if (wasDepth) g.enable(g.DEPTH_TEST);
   },
 
   hud() {
