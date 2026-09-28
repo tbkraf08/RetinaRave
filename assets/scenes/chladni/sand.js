@@ -36,6 +36,7 @@ export function mkSand(ctx, progs) {
     gl.uniform4f(pr.u('uFig'), U.s, U.h, U.bnd, 0);
     gl.uniform4f(pr.u('uStep'), U.walk, U.desc, frame, U.dt);
     gl.uniform4f(pr.u('uAir'), U.gate, U.amp, U.lift, U.spiral);
+    gl.uniform2f(pr.u('uKick'), U.kickAge, U.kickVel);
     gl.uniform2f(pr.u('uGrid'), GW, rows);
     ctx.tri();
     const t = cur;

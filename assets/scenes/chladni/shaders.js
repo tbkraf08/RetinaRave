@@ -87,7 +87,11 @@ uniform sampler2D uPos;    // the other ping-pong target: the grains as they wer
 uniform vec4 uFig;         // s, h, bnd, unused
 uniform vec4 uStep;        // walk step, descent gain, frame counter, dt
 uniform vec4 uAir;         // gate (1 = the plate is driven), amplitude, the void's lift, the drop's spiral
+uniform vec2 uKick;        // the kick: its age in seconds, and how hard it hit
 uniform vec2 uGrid;        // the state texture's size
+#define CH_KICKJ 4.5       // how far a kick of velocity 1 scatters a grain, plate units per second. The user:
+                           // "I don't want it to be so bright that can't see the shapes" — 9.0 buried the figure
+#define CH_KICKTC 0.05     // and how fast that shake dies
 
 float h11(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
 
@@ -109,6 +113,9 @@ void main() {
   float n1 = h11(id * 0.717 + uStep.z * 1.913) - 0.5;
   float n2 = h11(id * 1.331 + uStep.z * 2.719 + 7.3) - 0.5;
   vec2 jit = vec2(n1, n2) * uStep.x * abs(u) * uAir.y * uAir.x;
+  // the kick SHAKES the plate: the sand is scattered off its lines and has to find them again, which is what makes
+  // the settle instrument bite and what the eye reads as a throw. Placed by kickAge, so it is exact to the sub-frame.
+  jit += vec2(n2, n1) * (CH_KICKJ * uKick.y * exp(-max(0.0, uKick.x) / CH_KICKTC));
   // the descent on u^2: grad(u^2) = 2u grad(u), by a central difference of the same field the plate pass draws
   float e = 0.004;
   vec2 gr = vec2(chField(p + vec2(e, 0.0), uFig.x, uFig.y, uFig.z) - chField(p - vec2(e, 0.0), uFig.x, uFig.y, uFig.z),
@@ -116,7 +123,7 @@ void main() {
   vec2 desc = -uStep.y * u * gr * uAir.x;
   // the void: no drive, so the sand lifts and drifts instead of settling, and the build spirals it inward
   vec2 tang = vec2(-p.y, p.x);
-  vec2 drift = uAir.z * vec2(n2, -n1) * 0.7 + uAir.w * (tang * 0.35 - p * 0.55);
+  vec2 drift = uAir.z * vec2(n2, -n1) * 0.7 + uAir.w * (tang * 0.55 - p * 0.22);   // wind in, do not collapse
   p += (jit + desc + drift) * uStep.w;      // every term is per SECOND, so the walk is the same at any frame rate
   // the plate keeps its sand: reflect at the boundary rather than clamp, so no grain piles up on the rim
   float din = chIn(p, uFig.z);
@@ -153,7 +160,9 @@ void main() {
   vec2 p = s.xy;
   float u = chField(p, uFig.x, uFig.y, uFig.z);
   // higher on the antinodes: a grain sitting on a nodal line is barely thrown, one on an antinode is thrown hard
-  float w = uLeap.w * (0.25 + 0.75 * abs(u)) * (0.6 + 0.8 * h11(id * 5.19 + 3.3));
+  // higher on the antinodes, but never zero on a nodal line — that is where nearly all the sand IS, and a leap only
+  // the antinodes could take would be a leap nobody sees
+  float w = uLeap.w * (0.55 + 0.45 * abs(u)) * (0.6 + 0.8 * h11(id * 5.19 + 3.3));
   float a = max(0.0, uLeap.x);
   float leap = max(0.0, uLeap.y * w * a - 0.5 * uLeap.z * a * a);
   float z = s.z * uSand.w + leap;
