@@ -28,12 +28,25 @@ const AGES = { kick: 'kickAge', snare: 'snareAge', hat: 'hatAge' };
 // 262 ms late at drop 1), the sub losing ownership of the low end is a section-level fact and may take its time (a fast
 // fall made the gate chatter 5.4 times a bar through the ducked drop 2 and halved the slide count).
 export const SHARE_UP = 0.012, SHARE_DOWN = 0.45;
-export const HIST = 512;            // history frames (~4 s at the sub hop) — read() may look back ~60 ms, this is ample
+export const HIST = 512;            // history frames (~4 s at the sub hop) — read() may look back ~60 ms
+// THE RELEASE RULE. An onset at audio time t fires on the read whose heard time is NEAREST t, not on the first read at
+// or after it: `t <= tHeard + lead`, with `lead = min(REL_LEAD, half the measured read interval)`. The old rule ("the
+// first read with tHeard >= t") is unbiased about nothing — it always rounds UP, so it added a uniform [0, 1/60) s on
+// top of the detector's own error: a mean and median of 8.3 ms and a maximum of 16.7 ms, which is why pass 1's
+// first-frame kick lag was +18 ms median while its PLACED lag (t - kickAge) was +9 (tools/accept/v0.15/ruler-det-a.md).
+// Rounding to the nearer frame makes the quantisation symmetric, median ~0 and |max| <= half a frame.
+// The cost is that on the release frame the event is up to `lead` EARLY, so `kickAge` / `snareAge` / `hatAge` are then
+// NEGATIVE, in [-lead, 0). That is stated in EARS_FEATS' formula text for the three age fields and a scene that cannot
+// take a negative age must clamp at 0 — it is at most 8.3 ms, a third of a frame at 60 Hz.
+// `lead` never exceeds half a frame at any frame rate: REL_LEAD caps it at 8.3 ms (half of 1/60) and the measured half
+// interval caps it below that whenever the page runs FASTER than 60 Hz.
+export const REL_LEAD = 1 / 120;
+export const DT_MAX = 0.05;         // a read interval longer than this is a seek or a stall, not a frame, this is ample
 
 export class Ears {
   constructor(sr, opts = {}) {
     this.sr = sr;
-    this.sub = new SubTrack(sr);
+    this.sub = new SubTrack(sr, opts.sub || {});
     this.perc = new PercTrack(sr, opts.perc || {});
     this.tone = new TonicTrack(sr, opts.tonic || {});
     this.tex = new TextureTrack(sr);
@@ -52,8 +65,12 @@ export class Ears {
     for (const k of Object.values(AGES)) this.out[k] = 99;
     this.out.subNote = -1; this.out.tonic = -1; this.out.pulse = 1;
     this.blocks = 0;
+    this.relLead = opts.relLead === undefined ? REL_LEAD : opts.relLead;
+    this.tRead = -1; this.dtRead = 1 / 60;           // the measured read interval, for the release lead
   }
   get events() { return this.released; }
+  // The release lead for this read: half a frame, never more than REL_LEAD.
+  lead() { return Math.min(this.relLead, 0.5 * this.dtRead); }
 
   push(L, R, t0) {
     const n = L.length, sr = this.sr;
@@ -103,11 +120,14 @@ export class Ears {
     const out = this.out;
     for (const k of Object.values(EVENTS)) out[k] = 0;
     this.released.length = 0;
+    if (this.tRead >= 0) { const d = tHeard - this.tRead; if (d > 0 && d <= DT_MAX) this.dtRead += (d - this.dtRead) * 0.2; }
+    this.tRead = tHeard;
+    const rel = tHeard + this.lead();                 // the release rule: the frame NEAREST the onset
     // release every pending onset whose audio time has been reached
     let k = 0;
     for (let i = 0; i < this.pending.length; i++) {
       const e = this.pending[i];
-      if (e.t <= tHeard) {
+      if (e.t <= rel) {
         const f = EVENTS[e.type];
         if (f) { out[f] = 1; this.lastEv[e.type] = e.t; }
         this.released.push(e);

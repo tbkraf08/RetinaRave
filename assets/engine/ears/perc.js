@@ -29,6 +29,12 @@ export const REFRACT = [0.085, 0.060, 0.045];    // per-class refractory (s)
 // gives F 0.73 with 12.6 %. 25 ms is chosen: it matches the truth's kick COUNT (207 against 229) and gives a usable channel.
 export const CLICK_W = 0.025;
 export const ONSET_OFS = 0.5;        // the onset's audio time is (hop end) - ONSET_OFS * hopDur: the transient sits inside the hop
+// ... minus a fixed ONSET_LAG. The hop-centre guess above is not enough: the flux at hop i is the RISE from hop i-1 to
+// hop i, so a transient that starts anywhere inside hop i-1 is only visible at hop i, and the residual is a LAG, not a
+// fraction of a hop. Measured against the truth's onsets (tools/test_ears.js "onset time error vs truth", median over
+// the whole track): with ONSET_LAG 0 the causal path is kick +6 / snare +6 / hat +6 ms at 44.1 kHz and +9 / +5 / +5 at
+// 48 kHz — near-constant in MILLISECONDS across the two hop lengths, which is why the correction is in seconds.
+export const ONSET_LAG = 0.006;
 export const DEN_WIN = 1.0;          // den* window (s)
 export const GATE_DB = -34;          // ignore flux while a band sits this far under its own running p90 level
 export const FM_A = 0.02;            // the flux mean / deviation smoothing per hop (~0.6 s)
@@ -43,6 +49,7 @@ export class PercTrack {
     this.refract = o.refract || REFRACT;
     this.clickW = o.clickW === undefined ? CLICK_W : o.clickW;
     this.gateDb = o.gateDb === undefined ? GATE_DB : o.gateDb;
+    this.onsetLag = o.onsetLag === undefined ? ONSET_LAG : o.onsetLag;
     this.clickFloor = o.clickFloor === undefined ? CLICK_FLOOR : o.clickFloor;
     this.bodyReq = o.bodyReq === undefined ? BODY_REQ : o.bodyReq;
     this.bodyFloor = o.bodyFloor === undefined ? BODY_FLOOR : o.bodyFloor;
@@ -97,7 +104,7 @@ export class PercTrack {
       this.flux[i] = fl;
       this.fm[i] += (fl - this.fm[i]) * FM_A; this.fd[i] += (Math.abs(fl - this.fm[i]) - this.fd[i]) * FM_A;
     }
-    const ot = t - ONSET_OFS * this.hopDur;
+    const ot = t - ONSET_OFS * this.hopDur - this.onsetLag;
     // the click band decides what a low onset was
     if (this.flux[B_CLICK] > Math.max(this.fm[B_CLICK] + this.thrK * this.fd[B_CLICK], this.clickFloor)) this.clickT = ot;
     if (this.flux[B_HARM] > Math.max(this.fm[B_HARM] + this.thrK * this.fd[B_HARM], this.bodyFloor)) this.bodyT = ot;

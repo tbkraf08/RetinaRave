@@ -88,6 +88,7 @@ function fm(det, ref, tol) {
 }
 const inw = (a, t0, t1) => a.filter((v) => v >= t0 && v < t1);
 
+const ANN = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/truth/SeeYouDrop.sections.json'), 'utf8'));
 const BADBEATS = [];
 // ---------------------------------------------------------------------------------------------------- the sub rulers
 function subRulers(R, truth, label) {
@@ -134,7 +135,10 @@ function subRulers(R, truth, label) {
   // the four walk notes. The annotation's 13.0 / 16.1 / 19.3 / 22.6 come from a 10 Hz run-length coding of a 0.37 s STFT;
   // the truth's own 100 Hz YIN puts the note arrivals at 12.98 / 16.09 / 19.30 / 22.51 and the 22-60 Hz attack of the first
   // one at 12.80. Both are reported; the assertion uses the f0td arrivals with the annotation's 50 ms.
-  const walkA = [13.0, 16.1, 19.3, 22.6], walkY = [12.98, 16.09, 19.30, 22.51];
+  // v2 of the annotation carries both, measured: `attack` = the E0 bar line the note starts on (within 4-21 ms of the
+  // truth's own 40-150 Hz onset) and `arrival` = the first contour frame that NAMES the note, 40-140 ms later.
+  const walkA = ANN.walk ? ANN.walk.map((w) => w.attack) : [13.0, 16.1, 19.3, 22.6];
+  const walkY = ANN.walk ? ANN.walk.map((w) => w.arrival) : [12.98, 16.09, 19.30, 22.51];
   const notes = R.evs.filter((e) => e.type === 'subNote').map((e) => e.t);
   const near = (v) => { const c = notes.filter((n) => Math.abs(n - v) <= 0.25); if (!c.length) return null; let b = c[0]; for (const x of c) if (Math.abs(x - v) < Math.abs(b - v)) b = x; return b - v; };
   const wa = walkA.map(near), wy = walkY.map(near);

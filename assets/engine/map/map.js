@@ -242,6 +242,19 @@ export function mapAt(map, t, out = {}) {
   return out;
 }
 
+// The sub channel at heard time. The NEAREST frame, never an interpolation: `hz` is 0 on an unvoiced frame and averaging
+// a pitch with 0 would invent one an octave down, `note` and `gate` are categorical, and the grid is 100.2273 Hz so the
+// nearest frame is at most 5 ms away — a third of a 60 Hz frame.
+// out { hz, cents, note, conf, gate, glide }
+export function mapSubAt(map, t, out = {}) {
+  const P = map.sub;
+  if (!P || !P.n) { out.hz = 0; out.cents = 0; out.note = -1; out.conf = 0; out.gate = 0; out.glide = 0; return out; }
+  const i = Math.max(0, Math.min(P.n - 1, Math.round((t - P.t0) * P.fps)));
+  out.hz = P.hz[i]; out.cents = P.cents[i]; out.note = P.note[i];
+  out.conf = P.conf[i]; out.gate = P.gate[i]; out.glide = P.glide[i];
+  return out;
+}
+
 // Did a drop / a section boundary fall in (tPrev, t]?
 export function mapCross(map, tPrev, t) {
   let drop = false, boundary = false;

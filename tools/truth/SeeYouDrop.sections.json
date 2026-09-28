@@ -42,6 +42,8 @@
       "bass": "the walk returns twice, every second bar (see `outro_walk`)", "drums": "none", "texture": "highs 1 % of energy (a low-pass has closed)" }
   ],
   "end_is_not_a_boundary": true,
+  "start_is_not_a_boundary": true,
+  "start_note": "The first section's t0 is the START OF THE FILE, not a transition, and it is not gradeable as a boundary event. `buildMap` forces sections[0].t0 to 0 (bar 0 is 0.0172, and a section list must cover the track), and no frame's half-open (tPrev, t] can contain 0 unless tPrev < 0 — so the engine fires it on its very FIRST frame, which is frame 1, one frame before `tools/filetrace.js` can start recording (the deterministic recipe holds the clock at frame 1 while the track decodes and the window begins at frame 2, docs/HARNESS.md 'File source'). Measured: the event IS in ENGINE.LOG and the page's own boundary list has all 13, but the trace's first frame is heard 0.0167 s and the crossing already happened. `compare.py --make-synth` fires one on frame 0 only because it builds the trace itself from t = 0.",
   "walk": [
     { "note": "C#1", "bar": 8, "attack": 12.8146, "lowOnset": 12.794, "arrival": 12.951, "was": 13.0 },
     { "note": "A1", "bar": 10, "attack": 16.0139, "lowOnset": 16.01, "arrival": 16.054, "was": 16.1 },

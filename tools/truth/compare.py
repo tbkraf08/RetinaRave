@@ -196,7 +196,12 @@ def run(trace, truth, win=None, md=None, ann=None):
               f"extra {' '.join('%.2f' % v for v in extra) if len(extra) else 'none'}; "
               f"max |lag| {1000 * max((abs(d - r) for d, r in pairs), default=0):.0f} ms")
     # --- structure: boundaries
-    bl = [s['t0'] for s in (ann['sections'] if ann else truth.get('sections', []))]
+    # v2 of the annotation states which of its own times are NOT boundary events: the first section's t0 is the start of
+    # the file (every detector fires it on its first frame, before a recording window can begin) and the last section's t1
+    # is the file's duration. Grading either is grading a constant, and it cost 2 of the 11 rows in pass 1.
+    secs = ann['sections'] if ann else truth.get('sections', [])
+    bl = [s['t0'] for s in secs]
+    if ann and ann.get('start_is_not_a_boundary') and bl: bl = bl[1:]
     beat = truth.get('bpm_grid', {}).get('beat', 0.4)
     for src, fld in (('new', 'mapBoundaryEvt'), ('old', 'boundaryEvt')):
         c = trace['cols'].get(fld)
