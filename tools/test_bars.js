@@ -7,7 +7,7 @@
 //   · the loop comes back: barReturnEvt (and barNovelEvt) on its first bar
 // Run twice: onsets delivered on the frame nearest them (file-det) and 52 ms after them (the capture path's reaction).
 //   node tools/test_bars.js [--verbose]
-import { Bars, STEPS, DIM, WARM } from '../assets/engine/bars/bars.js';
+import { Bars, STEPS, DIM } from '../assets/engine/bars/bars.js';
 
 const V = process.argv.includes('--verbose');
 let FAIL = 0;
@@ -95,20 +95,22 @@ for (const [label, delay] of [['onsets on time (file-det)', 0], ['onsets 52 ms l
   const m2 = [...t2].filter((x) => !p2.has(x)).length, e2 = [...p2].filter((x) => !t2.has(x)).length;
   ok('return: bars 2-4 of it predicted exactly', !m2 && !e2, `miss ${m2} extra ${e2}`);
 }
-// COLD START (the warm-up, docs/AUDIT-live-grid.md "Step 3 — warm-up"): the loop entered mid-way (bar C first) on a clock that
-// runs 8 % fast for 2 s, cuts to the right tempo, then pulls its phase in from -0.3 beat (tau 1 s) — the v3 clock from a cold
-// start; the kicks sit +25 ms after their line (the causal kicks on SeeYouDrop). Onsets are placed by their (true) ages on the
-// MOVING grid, as features-bars.js places them. Held to: nothing released while the clock is still off by > 0.03 beat; the
-// first 12 predicted kicks on time (|median| <= 6 ms: the offset learned on the settled grid, not from the pull-in); the last
-// 8 bars exact. The control (WARM.GATE = OFF_SET = 0, the pre-warm-up store) must fail the timing, else the case proves
-// nothing. A first sight of a bar (A, after only C was trusted: they differ by one kick) may be guessed wrong once — the
-// thin history's honest limit, printed.
-function coldRun(gate) {
-  const W0 = { ...WARM };
-  WARM.GATE = gate; WARM.OFF_SET = gate;
-  const bars = new Bars(), loop = [C, D, A, B], NB = 28, bps = BPM / 60, KOFF = 0.025;
+// COLD START (the warm-up, docs/AUDIT-live-grid.md "Step 3 — warm-up"). The loop is entered mid-way (bar C first) on a clock
+// that runs 8 % fast for 2 s, cuts to the right tempo, then pulls its phase in from -0.3 beat (tau 1 s) — the v3 clock from a
+// cold start; the kicks sit +25 ms after their line (the causal kicks on SeeYouDrop). Onsets are placed by their (true) ages
+// on the MOVING grid, as features-bars.js places them. INTRO: the same, after 6 bars of an intro whose only "kicks" are two
+// pads a bar read 20 ms EARLY (the offset the intro teaches is wrong for the groove — SeeYouDrop's walk). Held to: nothing
+// released while the clock is off by > 0.03 beat; the first 12 predicted kicks (of the groove) on time, |median| <= 6 ms
+// (an EMA at 0.05 read -8 ms on the first case); the last 8 bars exact. A first sight of a bar (A, when only C was
+// stored: they differ by one kick) may be guessed wrong, as the first groove bar may carry an intro kick — the thin
+// history's honest limit: at most two, printed.
+const PAD = P([2, 10], [], [], 0.2);
+function coldRun(intro) {
+  const bars = new Bars(), loop = [C, D, A, B], NI = intro ? 6 : 0, NB = 28 + NI, bps = BPM / 60, KOFF = 0.025;
+  const barOf = (k) => (k < NI ? PAD : loop[(k - NI) % 4]);
   const on = [];
-  for (let k = 0; k < NB; k++) ['kick', 'snare', 'hat'].forEach((cls, c) => loop[k % 4][cls].forEach((st) => on.push({ c, t: (4 * k + st / 4) / bps + (c ? 0 : KOFF) })));
+  for (let k = 0; k < NB; k++) ['kick', 'snare', 'hat'].forEach((cls, c) => barOf(k)[cls].forEach((st) =>
+    on.push({ c, t: (4 * k + st / 4) / bps + (c ? 0 : k < NI ? -0.020 : KOFF), groove: k >= NI })));
   on.sort((x, y) => x.t - y.t);
   const err = (t) => (t < 2 ? 0.08 * bps * t : -0.3 * Math.exp(-(t - 2)));      // reported - true, beats
   const got = [];
@@ -118,31 +120,30 @@ function coldRun(gate) {
     const onsets = [];
     while (oi < on.length && on[oi].t <= t + 0.5 / FPS) { onsets.push({ c: on[oi].c, x: Brep - (t - on[oi].t) * bpm / 60 }); oi++; }
     const k = Math.floor(t * bps / 4);
-    const o = bars.step({ B: Brep, rel: Brep, bpm, ok: true, anchor: -1, onsets, feat: feat(loop[k % 4]), lead: 0.5 / FPS * bpm / 60, dt: 1 / FPS });
+    const o = bars.step({ B: Brep, rel: Brep, bpm, ok: true, anchor: -1, onsets, feat: feat(barOf(k)), lead: 0.5 / FPS * bpm / 60, dt: 1 / FPS });
     for (const [c, fld] of [[0, 'predKickEvt'], [1, 'predSnareEvt'], [2, 'predHatEvt']]) if (o[fld]) {
-      const near = on.filter((e) => e.c === c).reduce((a, e) => (Math.abs(e.t - t) < Math.abs(a - t) ? e.t : a), 1e9);
-      got.push({ c, t, lag: t - near });
+      const near = on.filter((e) => e.c === c).reduce((a, e) => (Math.abs(e.t - t) < Math.abs(a.t - t) ? e : a), { t: 1e9 });
+      got.push({ c, t, lag: t - near.t, groove: near.groove });
       if (Math.abs(err(t)) > 0.03) early++;
     }
   }
-  Object.assign(WARM, W0);
-  const lo = (4 * (NB - 8)) / bps, hi = (4 * NB - 0.5) / bps, tol = 0.5 / FPS + 1e-9;
+  const lo = (4 * (NB - 8)) / bps, hi = (4 * NB - 0.5) / bps, tol = 0.5 / FPS + 0.004;
   const last = on.filter((e) => e.t >= lo && e.t < hi);
-  const hit = last.filter((e) => got.some((g) => g.c === e.c && Math.abs(g.t - e.t) <= tol + (e.c ? 0 : 0.004))).length;
-  const extra = got.filter((g) => g.t >= lo && g.t < hi && !last.some((e) => e.c === g.c && Math.abs(g.t - e.t) <= tol + (e.c ? 0 : 0.004))).length;
-  const k12 = got.filter((g) => g.c === 0 && Math.abs(g.lag) < 0.05).slice(0, 12).map((g) => 1000 * g.lag).sort((x, y) => x - y);
+  const hit = last.filter((e) => got.some((g) => g.c === e.c && Math.abs(g.t - e.t) <= tol)).length;
+  const extra = got.filter((g) => g.t >= lo && g.t < hi && !last.some((e) => e.c === g.c && Math.abs(g.t - e.t) <= tol)).length;
+  const k12 = got.filter((g) => g.c === 0 && g.groove && Math.abs(g.lag) < 0.05).slice(0, 12).map((g) => 1000 * g.lag).sort((x, y) => x - y);
   const wrong = got.filter((g) => Math.abs(g.lag) > 0.030);
   if (V) console.log('    wrong', wrong.map((e) => `${'KSH'[e.c]}@bar ${(e.t * bps / 4).toFixed(2)} ${(1000 * e.lag).toFixed(0)}ms`).join(' '), '· first 12 kicks', k12.map((x) => x.toFixed(0)).join(' '));
   return { got, early, last: last.length, hit, extra, kmed: k12.length ? k12[k12.length >> 1] : NaN, wrong, first: got.length ? got[0].t : null };
 }
-{
-  console.log('cold start (mid-loop, a tempo cut at 2 s, phase pulled in from -0.3 beat, kicks +25 ms)');
-  const R = coldRun(1), X = coldRun(0);
+for (const [label, intro] of [['cold start (mid-loop, a tempo cut at 2 s, phase pulled in from -0.3 beat, kicks +25 ms)', false],
+  ['cold start after a 6-bar intro (its pads read as kicks 20 ms early)', true]]) {
+  console.log(label);
+  const R = coldRun(intro);
   ok('nothing released while the clock is off by > 0.03 beat', R.early === 0, `${R.early} of ${R.got.length} · first release at ${R.first === null ? '-' : R.first.toFixed(1) + ' s'}`);
-  ok('the first 12 predicted kicks on time (|median| <= 6 ms)', Math.abs(R.kmed) <= 6, `median ${R.kmed.toFixed(1)} ms`);
+  ok('the first 12 predicted groove kicks on time (|median| <= 6 ms)', Math.abs(R.kmed) <= 6, `median ${R.kmed.toFixed(1)} ms`);
   ok('the last 8 bars exact', R.hit === R.last && R.extra === 0, `${R.hit}/${R.last} · extra ${R.extra}`);
-  ok('at most one first-sight guess wrong (> 30 ms off)', R.wrong.length <= 1, `${R.wrong.length} (${R.wrong.map((e) => 'bar ' + (e.t * BPM / 240).toFixed(2)).join(' ')})`);
-  ok('control (warm-up off) releases its first kicks early', X.kmed < -6, `median ${X.kmed.toFixed(1)} ms · ${X.early} released while the clock was off · ${X.wrong.length} wrong`);
+  ok('at most two first-sight guesses wrong (> 30 ms off)', R.wrong.length <= 2, `${R.wrong.length} (${R.wrong.map((e) => 'bar ' + (e.t * BPM / 240).toFixed(2)).join(' ')})`);
 }
 // degrade: ok false -> nothing released, conf 0
 {

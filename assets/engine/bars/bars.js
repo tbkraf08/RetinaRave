@@ -22,11 +22,14 @@
 // discontinuity -> conf 0 and no predicted events. Never invent.
 //
 // WARM-UP (2026-09-28, docs/AUDIT-live-grid.md "Step 3 — warm-up"): from a cold start the v3 clock cuts its tempo once and
-// then pulls its phase in for 2-4 s; bars stored meanwhile sit a 16th off in the history. So the grid must SETTLE before
-// the store trusts it: per bar the clock's SLIP (how far B moved against its own tempo, the PLL pulling) is summed, and
-// after a start or a discontinuity bars are untrusted and nothing is released until WARM.SET_BARS bars in a row slipped
-// less than WARM.SLIP_SET; settled, a bar that slips more than WARM.SLIP_BAR is untrusted (the grid moved under it). A
-// tempo cut that comes before the grid lived WARM.LIFE_MIN bars untrusts what that grid stored (a clock still looking).
+// then pulls its phase in for 2-4 s; onsets placed meanwhile sit up to a 16th off (the reliability grading goes quiet on
+// the bars they fill: measured, the first releases are as precise as a warm store's) and would teach the micro-timing
+// offsets the pull-in instead of the groove. So the grid must SETTLE before the offsets learn from it: per bar the clock's SLIP (how far B moved against its own tempo, the PLL pulling) is summed,
+// and after a start or a discontinuity the grid counts as settled once WARM.SET_BARS bars in a row slipped less than
+// WARM.SLIP_SET (or WARM.SET_MAX bars passed). The micro-timing offsets learn on a settled grid only, as the MEDIAN of each
+// class's last OFF_WIN residuals (a new groove after an intro is followed within half a window), and the reliability is
+// earned (x relN / WARM.REL_N0) and reset at a discontinuity. WARM.GATE = 1 also untrusts an unsettled grid's bars and
+// releases nothing until it settles (off: measured no better, 2-3 s quieter — docs/AUDIT-live-grid.md "W.1").
 
 import { SECTIONS } from './sections.js';
 import { MATCH, STEPS, TOPK, TAU } from './vote.js';
@@ -39,10 +42,12 @@ export const CLOSE_M = 0.35;      // beats after a bar's end before it is closed
                                   // a late onset's rounding must land in it first
 export const NOV_STEPS = [5, 8];  // the steps at which a bar is tested for a section change (bars/sections.js)
 export const OFF_MAX = 0.4;       // steps: the largest micro-timing offset a class may learn (+-40 ms at 150 BPM)
-export const OFF_RATE = 0.05;     // the offset's EMA rate per onset (a plain mean of the first 1 / OFF_RATE after a settle)
+export const OFF_WIN = 16;        // the offset is the MEDIAN of a class's last OFF_WIN residuals (a settled grid's): it follows a
+                                  // new groove within half a window (an EMA at 0.05 took 13 s when the drums came in after an intro)
 // the warm-up's knobs (a mutable object so tools/bars-replay.js --set can tune them; nothing else writes it)
 export const WARM = {
-  GATE: 1,                        // 1: an unsettled grid's bars are untrusted and release nothing; 0: settling only times the offsets
+  GATE: 0,                        // 1: an unsettled grid's bars are untrusted and release nothing (measured: no gain in timing or
+                                  //    precision once the offsets are a median, 2-3 s more quiet — off); 0: settling times the offsets
   OFF_SET: 1,                     // 1: the offsets learn on a settled grid only; 0: from the first onset (GATE / OFF_SET = the
                                   //    ruler's A/B switches, docs/AUDIT-live-grid.md "W.1")
   SLIP_SET: 0.05,                 // beats: a bar slipping less than this counts toward settling
@@ -93,6 +98,7 @@ export class Bars {
     // MICRO-TIMING: per class, where its onsets land against their line (steps, EMA); a class is released at line + offset
     // (on the SeeYouDrop groove the causal kicks sit +25 ms after the heard v3 line, the hats on it)
     this.off = new Float64Array(3); this.offN = new Float64Array(3);  // learned on a settled grid only
+    this.offR = [0, 1, 2].map(() => new Float64Array(OFF_WIN)); this.offS = new Float64Array(OFF_WIN);
     this.q = [];                        // decided, not yet released: { c, y } (y = the release position, grid beats)
     this.lastY = [NaN, NaN, NaN];       // per class, the grid position of the last released prediction (its age's origin)
     this.out = {};
@@ -126,7 +132,7 @@ export class Bars {
       const b = this.bar(k);
       b.bits[e.c] |= 1 << s;
       const d = (e.x - this.a) * 4 - g, lim = OFF_MAX;
-      if (this.settled || !WARM.OFF_SET) this.off[e.c] += (Math.max(-lim, Math.min(lim, d)) - this.off[e.c]) * Math.max(OFF_RATE, 1 / ++this.offN[e.c]);
+      if (this.settled || !WARM.OFF_SET) this.learnOff(e.c, Math.max(-lim, Math.min(lim, d)));
     }
     // the energies into the beat being heard
     const kc = Math.floor(y / 4), q = Math.min(3, Math.floor(y - 4 * kc));
@@ -162,6 +168,16 @@ export class Bars {
     o.predConf = this.conf; o.barMatch = this.match;
     o.predKickIn = this.kickIn(yr);
     return o;
+  }
+
+  // the class's offset = the median of its last OFF_WIN residuals (fewer until the ring fills)
+  learnOff(c, d) {
+    const R = this.offR[c], n = Math.min(++this.offN[c], OFF_WIN);
+    R[(this.offN[c] - 1) % OFF_WIN] = d;
+    const S = this.offS;
+    for (let k = 0; k < n; k++) S[k] = R[k];
+    const v = S.subarray(0, n).sort();
+    this.off[c] = n & 1 ? v[n >> 1] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
   }
 
   degrade() { this.conf = 0; this.out.predConf = 0; this.out.predKickIn = -1; }

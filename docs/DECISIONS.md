@@ -2553,3 +2553,10 @@ slightly in the beginning and gets better over time"*. The leans, each measured 
   first release after a cold start 12.6 → 15.2 s on SeeYouDrop, 23.2 → 24.2 s on CyborgNinja (one of 12 starts silent 40 s).
 - The CyborgNinja v3 clock sits 80–180 ms off its kick-anchored truth warm and cold (near half a beat at 160 BPM) — a clock
   item for later (step 4+), recorded in AUDIT.
+- **Follow-up the same day (W.1b): the offset is a median, the gate is off.** The start-at-0 real-time run (the user's
+  scenario: an intro, then the drums) was still early after W.1 (−7 ms ×3): the grid settles during a quiet intro, so the
+  gate never sees the groove arrive, and the EMA took 13 s to move the kick offset from the intro's to the groove's. A
+  median of the last 16 residuals follows it within half a window; with it the gate measured no better on timing or
+  precision and cost 2–3 s of quiet, so `WARM.GATE = 0` (a switch, not deleted: the "quiet until right" variant if the user
+  prefers it). What stays: the settle state times the offsets' learning, the reliability is earned, both reset at a
+  discontinuity, the section tests keep their own trust. The first-4-s lags: SeeYouDrop 0 / 0 / −6 ms (baseline −13 / −9 / −5).
