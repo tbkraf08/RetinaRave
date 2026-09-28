@@ -42,6 +42,7 @@ export const CLOSE_M = 0.35;      // beats after a bar's end before it is closed
                                   // a late onset's rounding must land in it first
 export const NOV_STEPS = [5, 8];  // the steps at which a bar is tested for a section change (bars/sections.js)
 export const OFF_MAX = 0.4;       // steps: the largest micro-timing offset a class may learn (+-40 ms at 150 BPM)
+export const OFF_RING = 32;       // the residual ring's size (WARM.OFF_WIN <= it)
 export const OFF_WIN = 16;        // the offset is the MEDIAN of a class's last OFF_WIN residuals (a settled grid's): it follows a
                                   // new groove within half a window (an EMA at 0.05 took 13 s when the drums came in after an intro)
 // the warm-up's knobs (a mutable object so tools/bars-replay.js --set can tune them; nothing else writes it)
@@ -55,6 +56,7 @@ export const WARM = {
   SET_MAX: 6,                     // bars after a start / discontinuity: settled anyway (a hunting clock does not get better)
   SLIP_BAR: 0.12,                 // beats: settled, a bar slipping more than this is untrusted
   LIFE_MIN: 8,                    // bars: a tempo cut before the grid lived this long untrusts the bars it stored
+  OFF_WIN,                        // residuals in the offset's median (bars.js OFF_WIN)
   REL_N0: 2                       // graded bars before the reliability counts in full (x relN / REL_N0 until then)
 };
 
@@ -98,7 +100,7 @@ export class Bars {
     // MICRO-TIMING: per class, where its onsets land against their line (steps, EMA); a class is released at line + offset
     // (on the SeeYouDrop groove the causal kicks sit +25 ms after the heard v3 line, the hats on it)
     this.off = new Float64Array(3); this.offN = new Float64Array(3);  // learned on a settled grid only
-    this.offR = [0, 1, 2].map(() => new Float64Array(OFF_WIN)); this.offS = new Float64Array(OFF_WIN);
+    this.offR = [0, 1, 2].map(() => new Float64Array(OFF_RING)); this.offS = new Float64Array(OFF_RING);
     this.q = [];                        // decided, not yet released: { c, y } (y = the release position, grid beats)
     this.lastY = [NaN, NaN, NaN];       // per class, the grid position of the last released prediction (its age's origin)
     this.out = {};
@@ -172,10 +174,10 @@ export class Bars {
 
   // the class's offset = the median of its last OFF_WIN residuals (fewer until the ring fills)
   learnOff(c, d) {
-    const R = this.offR[c], n = Math.min(++this.offN[c], OFF_WIN);
-    R[(this.offN[c] - 1) % OFF_WIN] = d;
+    const R = this.offR[c], W = Math.min(WARM.OFF_WIN, OFF_RING), n = Math.min(++this.offN[c], W);
+    R[(this.offN[c] - 1) % OFF_RING] = d;
     const S = this.offS;
-    for (let k = 0; k < n; k++) S[k] = R[k];
+    for (let k = 0; k < n; k++) S[k] = R[(this.offN[c] - 1 - k + OFF_RING * 4) % OFF_RING];
     const v = S.subarray(0, n).sort();
     this.off[c] = n & 1 ? v[n >> 1] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
   }
