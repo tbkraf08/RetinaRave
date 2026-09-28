@@ -51,6 +51,22 @@ and sections before they happen). **CHLADNI exists to show those upgrades, one m
 - `docs/AUDIT-v0.15.md` (the orchestrator's ruler table of the ears in file mode) — **what the ears get right and wrong on
   this track**; design around a known miss rather than hide it.
 
+**Facts as merged (orchestrator, 2026-09-27 — `tools/accept/v0.15/ruler-det-a.md` is the in-page table):**
+- File mode headless: `CLOCK=1 GPU=1 node tools/cdp.js 'test&track=SeeYouDrop&at=<s>&scene=11' …` — the clock is held while
+  the track decodes and the map builds, `frame0` = 2, heard time = `at + (frame − 2)/60` (the playhead runs `DET_LEAD` 0.0427 s
+  ahead of it). **Release the clock with `{eval:"window.__PAUSE=0"}`, never `{wait}`** (file.md; `tools/filetrace.js` shows the
+  recipe). `&at=` starts the engine cold — warm up ≥ 8 s before a window you judge (`at = window start − 8`).
+- The ears on SeeYouDrop (in the page): tonic **C# minor** from 0.7 s (the old `key` says G#: use `tonic`, fall back to `key`
+  when `tonic` is −1) · slides 32 of 41 found, sign right 31/32 · `subNote` per beat 88.9 % · sub pitch within ±30 cents on 73 %
+  of sub-loud frames (median error 8 cents) · kicks F 0.79 on 25–45 s, 13 % of them on bare 808 re-triggers (a parallel
+  **EARS pass 2** is replacing the file-mode kicks and sub with non-causal ones from the map — the names and meanings stay;
+  values improve under you, so judge the look, and re-run the windows after the orchestrator merges it) · drops: `mapDropEvt`
+  at 57.617 and 105.600 s, nowhere else · `subCents` is cents from the **nearest** note (−50..50), so the fractional interval
+  is `((subNote − tonic + 12) % 12) + subCents/100` · `pulse` reads 0.5 through most of the track (the felt beat is 0.8 s
+  everywhere, the truth agrees) — it does not separate the drops from the groove; don't build a look that needs it to ·
+  ages may become slightly negative (≥ −1/120 s) on the release frame after pass 2: clamp `max(0, age)`.
+- The map's sections (`mapSection` labels) are bar-pinned; 7 of 11 annotated boundaries within a beat, 4 of 5 returns.
+
 ## Targets
 
 `assets/scenes/chladni/` (the skeleton is registered: `index.js` with `name 'chladni'`, `id 11`, `score() → 0`, `tag`,
