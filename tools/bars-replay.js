@@ -17,6 +17,8 @@ const a = process.argv.slice(2);
 if (a[0] === '--fields') { console.log(['heardT', 'leadT', ...FEED_IN].join(',')); process.exit(0); }
 const opt = (k) => (a.includes(k) ? a.splice(a.indexOf(k), 2)[1] : null);
 const FROM = opt('--from'), DIAG = opt('--diag');
+const SET = opt('--set');                  // --set SLIP_SET=0.08,REL_N0=2: the warm-up's knobs (bars.js WARM)
+if (SET) for (const kv of SET.split(',')) { const [k, v] = kv.split('='); if (!(k in M.WARM)) { console.error('bars-replay: no WARM.' + k); process.exit(2); } M.WARM[k] = +v; }
 const [inp, out] = a;
 if (!inp || !out) { console.error('usage: node tools/bars-replay.js <in.json> <out.json> | --fields'); process.exit(2); }
 const tr = JSON.parse(fs.readFileSync(inp, 'utf8'));
@@ -37,7 +39,7 @@ for (let i = i0; i < tr.t.length; i++) {
   for (const k of OUT) cols[k].push(typeof o[k] === 'number' ? +o[k].toFixed(4) : o[k] ? 1 : 0);
   if (DIAG && (bars.seq !== seq || bars.a !== a0)) {
     diag.push({ t: tr.t[i], seq: bars.seq, k: bars.lastK, a: bars.a, moved: bars.a !== a0, off: [...bars.off].map((x) => +x.toFixed(3)),
-      rel: +bars.rel.toFixed(3), relN: bars.relN, conf: +bars.conf.toFixed(3), match: +bars.match.toFixed(3), ok: bars.seq ? bars.okS[(bars.seq - 1) % M.NBAR] : 0 });
+      rel: +bars.rel.toFixed(3), relN: bars.relN, conf: +bars.conf.toFixed(3), match: +bars.match.toFixed(3), ok: bars.seq ? bars.okS[(bars.seq - 1) % M.NBAR] : 0, set: bars.settled ? 1 : 0 });
     seq = bars.seq; a0 = bars.a;
   }
 }

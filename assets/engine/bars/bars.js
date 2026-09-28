@@ -20,6 +20,13 @@
 // the step it is found, ~1.25-2 beats into the bar); if those steps instead match an older bar (>= RET_MIN bars back)
 // clearly better than the prediction, it is a return (`ret`). Degrade: no trusted history, `ok` false, silence, a
 // discontinuity -> conf 0 and no predicted events. Never invent.
+//
+// WARM-UP (2026-09-28, docs/AUDIT-live-grid.md "Step 3 — warm-up"): from a cold start the v3 clock cuts its tempo once and
+// then pulls its phase in for 2-4 s; bars stored meanwhile sit a 16th off in the history. So the grid must SETTLE before
+// the store trusts it: per bar the clock's SLIP (how far B moved against its own tempo, the PLL pulling) is summed, and
+// after a start or a discontinuity bars are untrusted and nothing is released until WARM.SET_BARS bars in a row slipped
+// less than WARM.SLIP_SET; settled, a bar that slips more than WARM.SLIP_BAR is untrusted (the grid moved under it). A
+// tempo cut that comes before the grid lived WARM.LIFE_MIN bars untrusts what that grid stored (a clock still looking).
 
 import { SECTIONS } from './sections.js';
 import { MATCH, STEPS, TOPK, TAU } from './vote.js';
@@ -32,7 +39,19 @@ export const CLOSE_M = 0.35;      // beats after a bar's end before it is closed
                                   // a late onset's rounding must land in it first
 export const NOV_STEPS = [5, 8];  // the steps at which a bar is tested for a section change (bars/sections.js)
 export const OFF_MAX = 0.4;       // steps: the largest micro-timing offset a class may learn (+-40 ms at 150 BPM)
-export const OFF_RATE = 0.05;     // the offset's EMA rate per onset
+export const OFF_RATE = 0.05;     // the offset's EMA rate per onset (a plain mean of the first 1 / OFF_RATE after a settle)
+// the warm-up's knobs (a mutable object so tools/bars-replay.js --set can tune them; nothing else writes it)
+export const WARM = {
+  GATE: 1,                        // 1: an unsettled grid's bars are untrusted and release nothing; 0: settling only times the offsets
+  OFF_SET: 1,                     // 1: the offsets learn on a settled grid only; 0: from the first onset (GATE / OFF_SET = the
+                                  //    ruler's A/B switches, docs/AUDIT-live-grid.md "W.1")
+  SLIP_SET: 0.05,                 // beats: a bar slipping less than this counts toward settling
+  SET_BARS: 2,                    // ... this many in a row settle the grid (they are trusted, the bars before are not)
+  SET_MAX: 6,                     // bars after a start / discontinuity: settled anyway (a hunting clock does not get better)
+  SLIP_BAR: 0.12,                 // beats: settled, a bar slipping more than this is untrusted
+  LIFE_MIN: 8,                    // bars: a tempo cut before the grid lived this long untrusts the bars it stored
+  REL_N0: 2                       // graded bars before the reliability counts in full (x relN / REL_N0 until then)
+};
 
 
 export const BARS_OUT = ['predKickEvt', 'predSnareEvt', 'predHatEvt', 'predKickAge', 'predSnareAge', 'predHatAge', 'predKick', 'predSnare',
@@ -42,7 +61,7 @@ const AGE_OUT = ['predKickAge', 'predSnareAge', 'predHatAge'], LVL_OUT = ['predK
 
 function mkBar(k) {
   // guess: the steps predicted for this bar, released or not (graded against `bits` when it closes); g: any step decided
-  return { k, bits: [0, 0, 0], E: new Float32Array(4 * DIM), n: new Float32Array(4), ok: true, guess: [0, 0, 0], g: 0 };
+  return { k, bits: [0, 0, 0], E: new Float32Array(4 * DIM), n: new Float32Array(4), ok: true, guess: [0, 0, 0], g: 0, slip: 0 };
 }
 
 export class Bars {
@@ -54,7 +73,9 @@ export class Bars {
     this.E = new Float32Array(NBAR * 4 * DIM);
     this.kOf = new Float64Array(NBAR);  // the bar number each slot holds
     this.cont = new Uint8Array(NBAR);   // 1: the slot before holds bar k - 1 (a contiguous predecessor)
-    this.okS = new Uint8Array(NBAR);    // 1: trusted (the grid was ok all bar)
+    this.okS = new Uint8Array(NBAR);    // 1: trusted (the grid was ok all bar, settled, did not move under it: its BITS vote)
+    this.okE = new Uint8Array(NBAR);    // 1: its energies are usable (the grid was ok all bar: the section tests, bars/sections.js —
+                                        //    a per-beat energy mean does not care about a grid 50 ms off, a 16th pattern does)
     this.open = new Map();              // bar number -> the bar being filled
     this.lastK = null;                  // the newest stored bar number
     this.gRel = null;                   // the next global step to release
@@ -67,9 +88,11 @@ export class Bars {
     this.lastEvtK = -99;
     this.lastRet = null;                // the last return: { k: its bar, src: the bar it matched }
     this.pB = null; this.pBpm = 0;
+    // WARM-UP: settled once WARM.SET_BARS quiet bars in a row closed after the last start / discontinuity
+    this.settled = false; this.quietN = 0; this.pend = []; this.lifeSeq = 0;
     // MICRO-TIMING: per class, where its onsets land against their line (steps, EMA); a class is released at line + offset
     // (on the SeeYouDrop groove the causal kicks sit +25 ms after the heard v3 line, the hats on it)
-    this.off = new Float64Array(3);
+    this.off = new Float64Array(3); this.offN = new Float64Array(3);  // learned on a settled grid only
     this.q = [];                        // decided, not yet released: { c, y } (y = the release position, grid beats)
     this.lastY = [NaN, NaN, NaN];       // per class, the grid position of the last released prediction (its age's origin)
     this.out = {};
@@ -82,14 +105,16 @@ export class Bars {
   //   B      heard beat position (continuous) · rel  the position predictions are released at (B + a display lead)
   //   bpm    the grid's tempo · ok  the grid is usable now · anchor  a proposed bar phase 0..3 or -1
   //   onsets new onsets placed on the grid (c 0 kick / 1 snare / 2 hat, x in beats) · feat  DIM floats now
-  //   lead   the release rule's lead in beats (half a frame)
+  //   lead   the release rule's lead in beats (half a frame) · dt  the frame interval (s; absent = no slip measured)
   step(i) {
     const o = this.out;
     o.predKickEvt = o.predSnareEvt = o.predHatEvt = o.barNovelEvt = o.barReturnEvt = 0;
     const B = i.B;
     if (!(i.bpm > 0) || !isFinite(B)) { this.degrade(); return o; }
     // a discontinuity: a seek (B jumps), a tempo jump (> 4 %) -> the open bars go, the context restarts
-    if (this.pB !== null && (B < this.pB - 0.5 || B > this.pB + 2 || Math.abs(i.bpm / this.pBpm - 1) > 0.04)) this.cut();
+    let slip = 0;
+    if (this.pB !== null && (B < this.pB - 0.5 || B > this.pB + 2 || Math.abs(i.bpm / this.pBpm - 1) > 0.04)) { this.cut(); this.unsettle(); }
+    else if (this.pB !== null && i.dt > 0) slip = B - this.pB - i.bpm / 60 * i.dt;
     this.pB = B; this.pBpm = i.bpm;
     this.phase(i.anchor, B);
     const y = B - this.a;
@@ -101,12 +126,13 @@ export class Bars {
       const b = this.bar(k);
       b.bits[e.c] |= 1 << s;
       const d = (e.x - this.a) * 4 - g, lim = OFF_MAX;
-      this.off[e.c] += (Math.max(-lim, Math.min(lim, d)) - this.off[e.c]) * OFF_RATE;
+      if (this.settled || !WARM.OFF_SET) this.off[e.c] += (Math.max(-lim, Math.min(lim, d)) - this.off[e.c]) * Math.max(OFF_RATE, 1 / ++this.offN[e.c]);
     }
     // the energies into the beat being heard
     const kc = Math.floor(y / 4), q = Math.min(3, Math.floor(y - 4 * kc));
     const bc = this.bar(kc);
     if (!i.ok) bc.ok = false;
+    bc.slip += slip;
     const E = bc.E, off = q * DIM;
     for (let d = 0; d < DIM; d++) E[off + d] += i.feat[d];
     bc.n[q]++;
@@ -139,6 +165,13 @@ export class Bars {
   }
 
   degrade() { this.conf = 0; this.out.predConf = 0; this.out.predKickIn = -1; }
+  // a discontinuity (a seek, a tempo jump): the grid must settle again; a grid that lived under WARM.LIFE_MIN bars was a
+  // clock still looking, and the bars it stored are untrusted
+  unsettle() {
+    if (WARM.GATE === 1 && this.seq - this.lifeSeq < WARM.LIFE_MIN) for (let n = this.lifeSeq; n < this.seq; n++) this.okS[n % NBAR] = 0;
+    this.settled = false; this.quietN = 0; this.pend.length = 0; this.lifeSeq = this.seq;
+    this.rel = 0.5; this.relN = 0; this.off.fill(0); this.offN.fill(0);   // measured on the old grid
+  }
   cut() { this.open.clear(); this.lastK = null; this.gRel = null; this.predK = null; this.conf = 0; this.q.length = 0; this.lastY.fill(NaN); this.lastV = null; this.cand0 = null; this.ctxSeq = -1; }
 
   // the bar phase: a proposal must hold for two bars before the grid moves to it
@@ -166,12 +199,21 @@ export class Bars {
     }
     if (any <= 1e-6) b.ok = false;                               // silence is not a pattern
     this.cont[j] = this.lastK !== null && b.k === this.lastK + 1 ? 1 : 0;
-    this.okS[j] = b.ok ? 1 : 0;
+    // WARM-UP: trusted only on a settled grid that did not move under the bar (see the header)
+    const sl = Math.abs(b.slip);
+    this.okE[j] = b.ok ? 1 : 0;
+    if (this.settled) this.okS[j] = b.ok && (sl <= WARM.SLIP_BAR || WARM.GATE !== 1) ? 1 : 0;
+    else {
+      this.okS[j] = b.ok && WARM.GATE !== 1 ? 1 : 0;
+      if (b.ok && sl < WARM.SLIP_SET) { this.quietN++; this.pend.push(j); } else { this.quietN = 0; this.pend.length = 0; }
+      if (this.quietN >= WARM.SET_BARS || this.seq + 1 - this.lifeSeq >= WARM.SET_MAX) { this.settled = true; for (const q of this.pend) this.okS[q] = 1; this.pend.length = 0; }
+      if (!b.ok) this.okS[j] = 0;
+    }
     this.kOf[j] = b.k;
     // grade what was released for this bar against what it heard: the continuation reliability behind predConf
     // (precision: of the steps it predicted, the share heard — an extra or a missed onset in what the ears heard is their
     // noise, a predicted hit that did not come is the harm a released event does)
-    if (b.g >= STEPS / 2 && b.ok) {
+    if (b.g >= STEPS / 2 && this.okS[j]) {
       let hit = 0, all = 0;
       for (let c = 0; c < 3; c++) { hit += W_CLS[c] * pop(b.guess[c] & b.bits[c]); all += W_CLS[c] * pop(b.guess[c]); }
       const acc = all > 0 ? hit / all : 1;
@@ -224,7 +266,7 @@ export class Bars {
     }
     const cl = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
     this.match = V.best;
-    this.conf = ok && V.idx.length ? cl((V.best - 0.5) / 0.4) * cl(this.rel) * (0.5 + 0.5 * agree) : 0;
+    this.conf = ok && (this.settled || WARM.GATE !== 1) && V.idx.length ? cl((V.best - 0.5) / 0.4) * cl(this.rel) * (WARM.REL_N0 > 0 ? Math.min(1, this.relN / WARM.REL_N0) : 1) * (0.5 + 0.5 * agree) : 0;
     this.predict(V);
     const bk = this.lastK !== null && kc <= this.lastK ? null : this.bar(kc);
     if (bk && V.idx.length) bk.g++;

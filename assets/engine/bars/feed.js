@@ -22,6 +22,6 @@ export function feed(S, L, disp, dt, into) {
   const sure = S.barConf >= ANCHOR_CONF && S.bpmSyn > 0 && Math.abs(S.bpmSyn / S.bpm - 1) < 0.02;
   into.B = B; into.rel = B + disp * bps; into.bpm = S.bpm; into.ok = S.presence >= PRESENT;
   into.anchor = sure ? ((Math.round(raw - S.barPos) % 4) + 4) % 4 : -1;
-  into.lead = bps > 0 ? Math.min(1 / 120, 0.5 * dt) * bps : 0;
+  into.lead = bps > 0 ? Math.min(1 / 120, 0.5 * dt) * bps : 0; into.dt = dt;
   return into;
 }

@@ -41,7 +41,7 @@ export const SECTIONS = {
     const rec = [];
     for (let n = 0; n < NREC; n++) {
       const j = this.slot(n);
-      if (j < 0 || !this.okS[j] || this.kOf[j] !== kc - 1 - n) break;
+      if (j < 0 || !this.okE[j] || this.kOf[j] !== kc - 1 - n) break;
       rec.push(j);
     }
     if (rec.length < NREC_MIN) return;
@@ -60,7 +60,7 @@ export const SECTIONS = {
     let best = 0, bj = -1;
     for (let n = rec.length; n < nb; n++) {
       const j = this.slot(n);
-      if (!this.okS[j] || kc - this.kOf[j] < RET_MIN) continue;
+      if (!this.okE[j] || kc - this.kOf[j] < RET_MIN) continue;
       const v = both(j);
       if (v > best) { best = v; bj = j; }
     }

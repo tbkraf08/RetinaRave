@@ -2527,3 +2527,29 @@ The leans, each measured before it was taken:
 3 / 10 at +1.2–2 beats (synapse 3 / 10 at +3–5), returns 1 / 3 (synapse 0 / 3). **3.5:** no new scene; the A/B is a route
 (the report and NEXT-SESSION-PROMPT.md). Not run: `tools/accept.sh` (not asked). Not tagged, not pushed.
 
+
+**§50 addendum — the warm-up (2026-09-28, `LIVE-STEP3-WARMUP-SESSION-PROMPT.md`, AUDIT "Step 3 — warm-up").** The user's look at
+the TORUS2 A/B: *"the predicted seems to bring more energy / brighter strands which I like, but seems like beat is off
+slightly in the beginning and gets better over time"*. The leans, each measured first:
+- **A cold-start ruler that grades against the same audio, warm.** Binning by time since the start (the prompt's capture
+  table) mixes the warm-up with whatever section the start lands in; the first releases were set beside the whole-track
+  (warm) store's releases in exactly those seconds (`warmcheck.py` "warm, same s"). On 24 det cold starts the baseline's
+  early PRECISION already equals the warm store's (0.73 / 0.72, 0.66 / 0.71); its early TIMING does not (−13 / −9 / −5 ms in
+  the first 4 s, then 0). The fix went after the timing.
+- **Cause: the clock's pull-in, not the store's thin history.** From a cold start v3 cuts its tempo once (1.5–5.6 s in) and
+  pulls its phase in for 2–4 s (cold − warm +69 +30 +15 +8 +3 ms per s); the kicks' residual reads −28 ms on bars 1–4, +28
+  after. The store learned its offsets from those residuals and released on the moving grid.
+- **Settle on the clock's slip, per bar, with a cap.** The slip is causal, needs nothing new from upstream (v3 has no lock
+  field) and is the pull-in itself. Measured against the alternatives: a signed 2-bar sum (hunting cancels) settles in the
+  middle of CyborgNinja's hunting; a per-bar gate at 0.05 forever untrusts 41 % of CyborgNinja's bars (its warm p75 slip is
+  0.084 beat) — so 0.05 decides only the settling, 0.12 the per-bar trust after it, and 6 bars settle a clock that never
+  gets quieter. Sweep (SLIP_SET 0.05 / 0.08 / 0.1, SET_BARS 1 / 2, SET_MAX 4 / 6 / 8 / none, REL_N0 0 / 2 / 3): within noise
+  of each other on P; the chosen row is the least quiet with the first-4-s lags on time.
+- **Two trusts.** A bar's 16th pattern votes only from a settled grid (`okS`); its per-beat energies feed the section tests
+  whenever the grid was ok (`okE`) — the first version shared one trust and lost the void boundary.
+- **Not built: re-cutting the history on a bar-phase move** (hypothesis 3). 4 of 8 cold starts move the phase 10–24 s in;
+  after W.1 no row blames it.
+- **The level shape is untouched** (the look the user liked: pred* peak 1.0, no velocity). The price is quiet: the median
+  first release after a cold start 12.6 → 15.2 s on SeeYouDrop, 23.2 → 24.2 s on CyborgNinja (one of 12 starts silent 40 s).
+- The CyborgNinja v3 clock sits 80–180 ms off its kick-anchored truth warm and cold (near half a beat at 160 BPM) — a clock
+  item for later (step 4+), recorded in AUDIT.
