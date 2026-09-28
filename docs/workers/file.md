@@ -255,6 +255,40 @@ upper bound; it is also the only column that legitimately differs between two id
 
 ---
 
+### Nothing moved (acceptance 1, 5, 7)
+
+| check | result |
+|---|---|
+| `node tools/check.js` | **0 fail**, 4 warn (all four pre-existing soft line caps: `feigen/index.js` 352, `gielis/nest.js` 439, `maxwell/index.js` 467, `nav2/nav2.js` 400) |
+| `npm test` | **OK** (`test_baby`, `test_misi`, `test_hopf`, `test_tempo`, `test_director`) |
+| `node tools/test_shim.js` | **OK**, 18 checks (`PCM=1` adds the real dump) |
+| `node tools/test_gielis.js` | OK (run as a spot check on the newest scene) |
+| `node tools/parity.js fake` | **max \|diff\| 0 over all 72 numeric fields compared · "MS/NAV parity: every field identical to 1e-9" · ERRS [] both sides.** `heardT` and `fileOn` appear in the *info* line as "missing in v3", which is where every other field v3 does not have appears — never in the diff |
+| `tools/scene-md5.sh file1` (full list, ids 0–10, frames 360 and 840) | **22 of 22 lines identical to `tools/accept/v0.14/scene-md5-v014.txt`**, `errs []` and `hop 840 row 72` on every id |
+| the mixs md5 (HARNESS "Transition") | **`641f6633834226d2428386bd8cc4e6b5`** — measured on a clean checkout of this tree *before* any edit and again after all of them. Identical. (This is the value the v0.14 session also saw on this machine; the recorded `f0c9d637…` in `docs/` is from another machine and did not reproduce here either before or after my change, so the change is a no-op against whichever reference is right) |
+| `node tools/bundle.js` | 109 modules → 973 KB. Documented check `FILE=… 'test&scene=0'` → `{"errs":[],"bad":[]}` |
+| the bundle's real demo path | `FILE=$PWD/dist/retinarave.html NOAUTO=1 GPU=1 WIN=1280,900 … 'real'` + `{"clickSel":"#demo"}` → `AU.mode 'demo'`, `presence 0.993`, `ERRS []`, `nonFinite []`, `heardT 4.9957` (ctx-time heard time, as demo mode should), `fileOn 0`, card hidden. The pick control is present from `file://`: `#pickfile` yes, `#file` yes with `accept="audio/*"`. `WIN=1280,900` is needed — see friction 16 |
+| `/music/` in `dist/` | **no audio, no track, no route.** The only hits are source text the bundler inlines verbatim: `const MUSIC_URL = '/music/'` and its comment (3 occurrences of the string, 0 bytes of audio). `dist/` is 2.3 MB: two 999 KB HTML bundles plus `site/`. `wrangler.jsonc` deploys `./dist` as static assets, so a `/music/…` request on the deployed site 404s and `&track=` there simply falls back to the demo — the route exists only in `tools/serve.js`. The strings `SeeYouDrop` and `Music/RetinaRave` do appear in `dist`, in **comments**: `gielis/help.js`, `nav2/{detect,shaders}.js`, `maxwell/sources.js` and `core/harness.js` quote the user's ear on the track, and have since v0.8 |
+| `PCM` cost with no listener | the worklet is never built (`PCM.node` false, `PCM.blocks` 0 on the demo path) |
+| the mic path (`FAKEMIC=1`, `{clickSel:"#mic"}`, `WIN=1280,900`) | `AU.mode 'mic'`, `AU.heard true`, `presence 0.401` (Chrome's test tone), `MS.heardT 8.011` (context time + `SYNC_OFS` 0, which is what a live mode's heard time should be), `fileOn 0`, `ERRS []`, `nonFinite []`, no PCM worklet |
+
+### The first real-music screenshots (acceptance 6)
+
+```
+PORT=8812 CLOCK=1 GPU=1 OUT=tools/work node tools/cdp.js 'test&track=SeeYouDrop&at=100&scene=3' \
+  '[{"until":"window.CARD"},{"until":"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open","timeout":300000},
+    {"until":"window.__FRAME>=240","timeout":300000},{"shot":"file-a6-f240"},
+    {"until":"window.__FRAME>=480","timeout":300000},{"shot":"file-a6-f480"}]'
+```
+
+| frame | heard | md5, run 1 | md5, run 2 | state |
+|---|---|---|---|---|
+| 240 | 103.96667 s | `5ac81cba6423837518b7a867b04a1aff` | `5ac81cba6423837518b7a867b04a1aff` | `f0` 2, `sectionId` 1, `arc` build, `seed` [0.35889, −0.394097, 0.67529] |
+| 480 | 107.96667 s | `6158b70f85ddebe80210cc7f021a1d52` | `6158b70f85ddebe80210cc7f021a1d52` | `sectionId` 2, `arc` peak, `bass` 0.67427, `seed` [0.917935, −0.398423, 0.301003], `ERRS []`, `nonFinite []` |
+
+TORUS2 (id 3) around drop 2. Both md5s reproduced exactly on the second run, and so did `MS.seed` — which is the seeded
+PRNG doing its job: without it the two `seed` triples differ and so do the two pictures.
+
 ## (d) Friction — every sentence the docs lack, every guess, every lean changed
 
 1. **`tools/cdp.js`'s `{wait}` clears `window.__pauseAt`.** Nothing says so. It silently undid the decode hold and cost the
@@ -301,6 +335,20 @@ upper bound; it is also the only column that legitimately differs between two id
 13. **The 44.1 vs 48 kHz trap.** `tools/work/SeeYouDrop.f32` is 44 100 Hz (the file's rate) and the engine runs at 48 000
     (the context's). `trackmap.py`'s truth times are in track seconds so they compare fine, but any *sample index* from the
     dump is not an index into what the engine heard.
+16. **`{clickSel:"#demo"}` on the `real` hash has been missing the link.** `innerHeight` is **633** at the default
+    `WIN=1280,720` (headless reports 633, not 720) and the `.alt` row sits at y 629–644, so the dispatched click is below
+    the viewport, `document.elementFromPoint` at the centre returns `null`, and the handler never fires — `AU.mode` stays
+    `'none'`. **Pre-existing**: I reverted my one-line `.alt` change and reproduced it exactly (same y, same miss). It
+    hides because the documented real-start-path check only asserts `CARD.ERRS` and `nonFinite()`, which are `[]` whether
+    or not the demo started. `WIN=1280,900` fixes it and then `AU.mode` is `'demo'` with `presence` 0.993. HARNESS now
+    carries the pitfall; the recipe itself is not mine to change.
+17. **The recorded mixs md5 does not reproduce on this machine, before or after my change.** `docs/` carries
+    `f0c9d637…` and `641f6633…` from the v0.14 session; a clean checkout of this tree gives `641f6633…` and so does the
+    tree with every edit applied. So the *change* is provably a no-op on that pixel, but which of the two values is
+    canonical is still open (it is a GPU/driver difference, not a code one).
+18. **`tools/.pylib` is a symlink here, and `.gitignore` has `tools/.pylib/` with a trailing slash**, which only matches a
+    directory — so `git status` shows it untracked in a worktree. It was never added.
+
 14. **`npm test` does not run `tools/test_shim.js`** — `package.json` is not on my edit list. Run it by hand, or add it.
 15. **HARNESS's "Landing tiles" expected line says `TILES 6`; it is `TILES 8` since GIELIS.** Not mine to renumber, but the
     row passes on 8 and the other three lines are exact.
