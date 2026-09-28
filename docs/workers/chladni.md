@@ -242,20 +242,22 @@ both are quoted where they differ — the shape of the design is the same, the c
 ## (g) The nine windows
 
 All nine in deterministic file mode, `CLOCK=1`, PORT 8814, **warmed from t 0** so the scene's tonic latch has the
-whole track behind it (`bash tools/accept/v0.15/ch-windows.sh`; scored by `python3 tools/accept/v0.15/ch-report.py`;
-one montage each, listed below). Every window: `ERRS []`, `nonFinite []`, `f0 2`, mode `file-det`.
+whole track behind it (`bash tools/accept/v0.15/ch-windows.sh`; scored by `python3 tools/accept/v0.15/ch-report.py`
+against `tools/truth/SeeYouDrop.json` and `sections.json` **v2**; one montage each, listed below). Every window:
+`ERRS []`, `nonFinite []`, `f0 2`, mode `file-det`. **Run on the merged tree, after EARS pass 2.** Where pass 1's
+number is interesting it is given in brackets.
 
 | # | window | met? | the number it turns on |
 |---|---|---|---|
-| 1 | 13–25 s, the walk | **met** (shape), **not met** (timing) | four figures, **4/4 distinct**: (1,2) → (2,5) → (2,3) → (1,5); all four truth note starts matched; switch error **+0.10, −0.45, +0.33, +0.30 s** (median +0.30) against the "within 50 ms" target — the ears' (the engine reports A1 at 15.65 s where the truth has 16.10) plus ~0.15 s of the scene's vote. Each switch STARTS on its own frame and the morph completes in 0.15–0.37 s |
-| 2 | 25–45 s, the groove | **met** (the leap), **not met** (the bare 808s) | a leap on **33 of 38** truth kick candidates, **F 0.786** (the AUDIT's 0.79 for the same field), lag median **+20.3 ms**, and the leap's onset frame IS the kickEvt frame by construction (kickAge median 0.0087 s — sub-frame). **11 of 46 leaps (23.9 %)** land on a bare 808 re-trigger and not on a kick candidate, against a 5 % target. The root figure holds: **5 figure switches in 20 s** (17 without the vote filter), 65.3 % of frames on the tonic, and the plate's amplitude swings a median **0.156** every 0.4 s — "bumping on every beat" |
-| 3 | 44.9–49.9 and 96–101 s, the climbs | **not met** (density), **met** (the camera) | scene hits/s **1.27×** and **1.33×** the groove, against a 2.5× target. The TRUTH's own onsets here are 2.90× / 3.22× (mid) and 3.13× / 2.96× (high) the groove, so the shortfall is the engine's detectors and not the mapping: the engine's hats are 1.93× denser here and its snares 1.27×. The camera rises exactly as asked: pitch **0.73 → 0.96** and **0.67 → 1.13** rad, distance **2.4 → 3.1** and **1.9 → 3.7** |
-| 4 | 49.9–57.6 s, the void | **met** | plate amplitude mean **0.014** and under the 0.05 target on **389 of 421** frames from 50.6 s; the ring-down crosses 0.05 at **50.38 s**, 0.48 s into the void. The one excursion is a single 0.5 s window at **51.15–51.67 s** where the ears read a sub — and the truth has a real low onset at 51.154 s there. lift **0 → 1**, spiral **0 → 0.866** tracking buildProg **0.03 → 1.00**, camera pitch **0.93 → 1.10** rad |
-| 5 | 57.6 and 105.7 s, the drops | **met** | `mapDropEvt` at **57.6167 s** (truth 57.606, **+10.7 ms = +0.64 frames**) and **105.6000 s** (truth 105.596, **+4.0 ms = +0.24 frames**) — both inside ±1 frame, on every run. On drop 1's frame the plate's amplitude goes **0.000 → 1.054 in 0.20 s**, lift 1.00 → 0.57, spiral 0.86 → 0.42, and the figure arrives at the root (s → 0.05) within 0.2 s |
-| 6 | 57.6–90 s, the slides | **met, thinly** | **10 of 13** truth slides (77 %) move the figure by more than 0.25 semitone; median movement **0.331** semitone, max 1.963; the figure sits on the tonic for **79.9 %** of the section, which is the "relaxes into the root figure" half. Thin because the vote's hysteresis holds the winner and only the cents ride — see (i) |
-| 7 | 105.7–130 s, the gated drop 2 | **partly met** | the channel works and bites: the plate's gate reaches **0.000** and the amplitude **0.038** on a duck. But the ears report only **6 gate-off runs in 24 s** against the truth's own **11 silence runs**, and they miss the whole 106.4–111.3 s group — which is the once-per-bar stomp the user means by "1:45 … should be reacting more". Not the mapping: `subGate` never drops there |
-| 8 | 134.5–157 s, the outro | **met** | `lpSweep` **0.929 → 0.256** and the scene's fog follows it exactly; the walk returns **twice** — A(9), B(11), F#(6), E(4), C#(1), then A, B, F#, E — **5 distinct figures**; the plate is round (boundary 0.31 → 1.00) because the bass is away from the tonic; the sand settles and dims, amplitude **0.613 → 0.148** |
-| 9 | brightness on the groove | **met** | p95 luminance over the six groove frames **0.502 / 0.525 / 0.612 / 0.671 / 0.702 / 0.800**, median **0.64** — four of six inside the 0.6–0.8 band, two just under it at the groove's quiet end (40 s and 44 s, where the drive itself falls). `tools/lum.py` on the brightest: centre 0.64, rim 0.26, ratio 2.45 |
+| 1 | 12.4–25.7 s, the walk | **met** (shape), **not met** (timing) | four figures, **4/4 distinct**: (1,2) → (2,5) → (2,3) → (1,5), one per note of C#1 → A1 → F#1 → E1; all four of v2's bar-line attacks matched; switch error **+0.085, +0.053, +0.187, +0.237 s** (median **+0.187**) against the brief's 50 ms. Of that, the EARS' own YIN arrival is **+0.14, +0.04, +0.05, +0.05 s** (`sections.json` v2 `walk[].arrival`: a 100 ms window has to fill before a note can be named), so the scene's vote adds ≈ 0.10 s and the target is not reachable by a scene at all |
+| 2 | 25–45 s, the groove | **met** | a leap on **38 of 38** truth kick candidates, **F 1.000**, lag median **+3.7 ms** p90 +7.7 [pass 1: 33/38, F 0.786, +20.3 ms], **0 %** on bare 808 re-triggers [23.9 %], and `kickAge` on the onset frames median **0.0033 s** — the throw is placed *inside* the frame. The root figure holds: from 25.78 s the plate stays on C# for **13.4 s** without a single switch; the 22 switches in the window are all in 38.9–45 s, where the truth's own `sub_runs` are full of grace notes. Figure travel 2.09 semitones/s against a 1.28 floor that is the 808's own micro-detune. 67.5 % of frames on the tonic |
+| 3 | 44.9–49.9 and 96–101 s, the climbs | **met** | scene hits/s **2.62×** and **2.56×** the groove against the ≥ 2.5× target [pass 1: 1.27× and 1.33×], matching the truth's own 2.90× / 3.22× (mid) and 3.13× / 2.96× (high). The camera rises with the register: pitch **0.70 → 0.90** and **0.70 → 1.00** rad, distance **2.12 → 2.72** and **2.05 → 3.06** |
+| 4 | 49.9–57.6 s, the void | **met** | plate amplitude mean **0.0141**, under the 0.05 target on 389 of 421 frames from 50.6 s; the ring-down crosses 0.05 at **50.37 s**, 0.47 s into the void. The one excursion is a single 0.5 s window at 51.15–51.67 s where the ears read a sub — and the truth has a real low onset at 51.154 s there. lift **0 → 1**, spiral **0 → 0.866** tracking buildProg **0.034 → 0.999**, camera pitch **0.89 → 1.10** rad |
+| 5 | 57.6 and 105.6 s, the drops | **met** | `mapDropEvt` at **57.6167 s** (v2 truth 57.6056, **+11.1 ms = +0.66 frames**) and **105.6000 s** (105.5959, **+4.1 ms = +0.25 frames**) — both inside ±1 frame, on every run. On drop 1's frame the plate's amplitude goes **0.122 → 1.065 in 0.5 s**, lift 1.00 → 0.57, spiral 0.86 → 0.42, the figure at the root within 0.2 s. Drop 2's frame shows `kickAge` **−0.0044** — pass 2's negative release age, which the scene clamps and which correctly gives a leap of 0 (the throw has not happened yet) |
+| 6 | 57.6–90 s, the slides | **partly met** | the figure moves through the section at **2.15 semitones/s** and sits on the tonic figure for **82.2 %** of frames — it is relaxing into the root, continuously. But scored per truth slide (the figure moving > 0.25 semitone inside the slide's own 0.1–0.2 s span + 0.6 s) it is **4 of 13** [pass 1 read 10/13, on a figure that was noisy *everywhere*, which is a false positive rather than a better scene]. The scene's anti-strobe damping (`VOTEMARG` 3, `JUMPTC` 3) is what costs it; `subGlide` would be the honest channel and **cannot help on this track** — its smoothed magnitude is *higher* in the groove (p90 13.3) than in the slides (10.5), because the 808's attack transient glides as hard as a musical slide |
+| 7 | 105.7–130 s, the gated drop 2 | **met** | **19 gate dips in 24.3 s, one per 1.28 s, spacing median 1.58 s — the bar is 1.60 s.** The plate's gate reaches **0.000** and the amplitude **0.012** on a duck, median amplitude 0.756: the figure blinks out and comes back, once a bar. [Pass 1: 2 dips in 24 s — the ears did not report the ducks at all.] This is the user's "1:45 … should be reacting more" |
+| 8 | 134.5–157 s, the outro | **met** | `lpSweep` **0.929 → 0.256** and the scene's fog follows it exactly; the walk returns **twice** — A(9), B(11), F#(6), E(4), C#(1), then A, B, F#, E — **5 distinct figures**; the plate rounds (boundary **0.00 → 1.00**) because the bass is away from the tonic; the sand settles and dims, amplitude **0.616 → 0.146** |
+| 9 | brightness on the groove | **met** | p95 luminance over the six groove frames **0.561 / 0.608 / 0.624 / 0.643 / 0.678 / 0.733**, median **0.634** — five of six inside the 0.6–0.8 band, one at 0.561 just under. `tools/lum.py` on the same frames: centre 0.42, rim 0.18, ratio 2.39 |
 
 Montages (`tools/work/`, 640 px tiles captioned with the frame name) and what each one shows:
 
@@ -285,6 +287,7 @@ ladder from the unison's cross to the semitone's dense grid) and one kick at 60 
 1. `node tools/check.js` → **0 fail** (6 warns: five pre-existing soft-cap lines plus "card without
    site/thumbs/chladni.jpg", which `tools/thumbs.sh` fills once the user approves the scene).
    `node tools/test_chladni.js` → **OK**, 33 checks. `node tools/param-smoke.js` → 49 checks, 0 fail. `npm test` OK.
+   All four run again on the merged tree (EARS pass 2, `32d662a`) with the same result.
 2. `PORT=8814 GPU=1 node tools/cdp.js 'test&scene=11&ears=1' …` → `errs []`, `bad []`, `scene 11`, `glerr 0`,
    and the same again after the fake timeline's drop at 13 s.
 3. The nine windows: (g).
@@ -332,12 +335,15 @@ thumbnail. Not merged, not pushed, no tag.
 
 ## (i) What I would change next, and the deviations from the brief
 
-- **`subGlide` is in the brief's channel table and the scene does not read it.** Window 6 is the thin one: the
-  vote's hysteresis keeps the figure on the tonic through a slide and only the cents ride, so the median morph is
-  0.33 semitone where the truth's slides are 1.1–2.6. The fix is one line and is exactly what `subGlide` is for —
-  blend the figure's target from the voted note toward the RAW instantaneous pitch by how fast the sub is sliding,
-  so a real slide pulls the figure the whole way and a flicker does not. Not done because it re-tunes a channel
-  after the windows were shot, and the user corrects leans at the first montage.
+- **`subGlide` is in the brief's channel table and the scene does not read it — and on this track it cannot help.**
+  Window 6 is the one that is only partly met. The obvious fix is to blend the figure's target toward the RAW
+  instantaneous pitch by how fast the sub is sliding, which is exactly what `subGlide` is for. **Measured, it does
+  not separate a slide from a hit:** smoothed |subGlide| (ema 0.12 s) has p90 **13.3** in the groove against **10.5**
+  in the slides section, because a sine 808's attack transient glides as hard as a musical slide. A channel that is
+  louder where you do not want it than where you do is not a channel. What would work is the map's own slide list
+  (`ears.md` pass 2 detects 24 of the 41 truth slides non-causally) exposed as a field — an engine ask, not a scene
+  one. The scene's own `VOTEMARG` / `JUMPTC` is the knob the user can turn meanwhile: at `VOTEMARG 2, JUMPTC 0` the
+  slides read strongly and the groove strobes 5.4 semitones/s; the shipped 3 / 3 holds the groove at 2.1.
 - **The circular plate is the asymptotic Bessel form, not `J_n(kr)`** — right ring spacing, right sector count,
   rings shifted inward by the McMahon term at high `n`. Stated in the module header, measured in the node test.
 - **The plate's boundary is not keyed to `mapSection`** as the brief leaned. Both label-keyed rules were measured
@@ -348,6 +354,8 @@ thumbnail. Not merged, not pushed, no tag.
   `FX.glitch`, CONTRACTS §1.10). A scene can weight the kaleidoscope per scene (`post.kaleido`) but not the flash,
   and the composite cannot be switched off. If a drop's FIGURE is meant to read on the drop frame, the flash needs
   a per-scene weight the way `kaleido` has one. **For CONTRACTS §1.4.**
-- **Two things the user asked for that the ears cannot yet give:** the once-per-bar stomp at 1:45 (window 7 — the
-  gate does not drop there) and the climbs' "skinnier waves" density (window 3 — the hat detector is only 1.9×
-  denser there than on the groove). Both are engine work; EARS pass 2 is aimed at the first.
+- **The two things pass 1's ears could not give, pass 2 gave.** The once-per-bar stomp of 1:45 is now 19 gate dips
+  at a 1.58 s spacing against the 1.60 s bar, and the climbs are 2.6× the groove's hit density instead of 1.3×. Both
+  were reported as engine misses in the pre-merge pass of this report (commit `4ab428a`) and both are now met with
+  no change to the scene's mapping — which is the strongest evidence that the channels were wired to the right
+  fields.
