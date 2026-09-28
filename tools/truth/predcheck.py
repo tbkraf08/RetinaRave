@@ -4,6 +4,7 @@
 
     python3 tools/truth/predcheck.py <trace.json> [--truth tools/truth/SeeYouDrop.json] [--win 25.6,44.8[;89.6,96]]
                                      [--sections tools/truth/SeeYouDrop.sections.json] [--conf 0.5] [--md out.md]
+    python3 tools/truth/predcheck.py --bins 8 <trace.json> [<trace.json> ...] [--conf 0.35] [--md out.md]
     python3 tools/truth/predcheck.py --self-test
 
 Rows (every time is HEARD time, the trace's `t`):
@@ -17,6 +18,10 @@ Rows (every time is HEARD time, the trace's `t`):
   sections  barNovelEvt vs the annotated boundaries (sections[].t0 but the first) and barReturnEvt vs `returns[].b`,
             latency in beats from the bar line (the first event in [-0.5, +8] beats), beside the synapse fields
             (boundaryEvt; sectionReturn rising to 1). Events matched to nothing are counted as false.
+  bins      (--bins W, the COLD-START ruler, live step 3 warm-up) per W s since each trace's FIRST frame: released
+            n · P · lag median per class (P = the share of released hits within +-30 ms of a truth onset) and the share
+            of frames with predConf >= --conf (default 0.35, the release gate); per trace the time to the first RIGHT hit
+            and how many wrong ones came before it. Several traces (each its own cold start) are summed bin by bin.
 The window (--win, several joined by ';') selects truth onsets and releases alike; the section rows use the whole trace
 unless --win is given.
 """
@@ -156,6 +161,65 @@ def run(tr, truth, secs, wins=None, conf=None, md=None, quiet=False):
     return R
 
 # ----------------------------------------------------------------------------------------------------------------------
+def bins_of(tr, truth, width, conf=0.35):
+    """One trace -> {bins: [{cls: [n, tp, lags]}, conf share], first: {cls: (t first right, wrong before it)}} on the
+    time since the trace's first frame."""
+    tb = np.array(tr['t'], float); t0 = tb[0]; nb = int(np.ceil((tb[-1] - t0) / width))
+    pc = colf(tr, 'predConf'); out = {'bins': [dict() for _ in range(nb)], 'first': {}, 'conf': [], 'dur': tb[-1] - t0}
+    for b in range(nb):
+        m = (tb >= t0 + b * width) & (tb < t0 + (b + 1) * width)
+        out['conf'].append((int(np.sum(np.nan_to_num(pc[m]) >= conf)) if pc is not None else 0, int(m.sum())))
+    for cls, key in CLS:
+        ref = np.array(truth['onsets'][key], float)
+        pe = tr['cols'].get('pred' + cls.capitalize() + 'Evt')
+        if pe is None: continue
+        rel = tb[evframes(pe)]
+        pairs, _, _ = match(rel, ref[(ref >= t0 - TOL_EV) & (ref <= tb[-1] + TOL_EV)], TOL_EV)
+        good = {a: a - r for a, r in pairs}
+        for b in range(nb):
+            x = rel[(rel >= t0 + b * width) & (rel < t0 + (b + 1) * width)]
+            lags = [good[a] for a in x if a in good]
+            out['bins'][b][cls] = [len(x), len(lags), lags]
+        right = sorted(good)
+        tf = right[0] - t0 if right else None
+        out['first'][cls] = (tf, int(np.sum(rel < right[0])) if right else len(rel))
+    return out
+
+def bins_report(paths, width, conf=0.35, md=None):
+    """Sum the bins of several cold-start traces; print a table (and --md)."""
+    R = []
+    for p in paths:
+        tr = ld(p); tname = tr.get('track') or 'SeeYouDrop'
+        R.append((p, bins_of(tr, ld(os.path.join(HERE, f'{tname}.json')), width, conf)))
+    nb = max(len(r['bins']) for _, r in R)
+    head = ['since start'] + [f'{c} n · P · lag' for c, _ in CLS] + [f'frames conf>={conf}']
+    rows = []; agg = []
+    for b in range(nb):
+        row = [f'{b * width:g}-{(b + 1) * width:g} s']; A = {}
+        for cls, _ in CLS:
+            n = tp = 0; lags = []
+            for _, r in R:
+                if b < len(r['bins']) and cls in r['bins'][b]: n += r['bins'][b][cls][0]; tp += r['bins'][b][cls][1]; lags += r['bins'][b][cls][2]
+            A[cls] = (n, tp)
+            row.append(f'{n} · {tp / n:.2f} · {1000 * np.median(lags):+.0f}' if n and lags else f'{n} · {"0.00" if n else "-"}')
+        cn = sum(r['conf'][b][0] for _, r in R if b < len(r['conf'])); cf = sum(r['conf'][b][1] for _, r in R if b < len(r['conf']))
+        row.append(f'{100 * cn / max(1, cf):.0f} %'); rows.append(row); agg.append(A)
+    w = [max(len(r[i]) for r in rows + [head]) for i in range(len(head))]
+    line = lambda r: '  '.join(r[i].ljust(w[i]) for i in range(len(r)))
+    print(line(head)); print('  '.join('-' * x for x in w))
+    for r in rows: print(line(r))
+    print('first right hit (s since start) · wrong released before it:')
+    for p, r in R:
+        print('  ' + os.path.basename(p) + ': ' + ' · '.join(f'{c} ' + ('-' if r['first'][c][0] is None else f'{r["first"][c][0]:.1f}') + f' ({r["first"][c][1]} wrong)' for c, _ in CLS if c in r['first']))
+    if md:
+        with open(md, 'w') as fh:
+            fh.write('| ' + ' | '.join(head) + ' |\n|' + '---|' * len(head) + '\n')
+            for r in rows: fh.write('| ' + ' | '.join(r) + ' |\n')
+            fh.write('\nfirst right hit (s since start) · wrong released before it:\n\n')
+            for p, r in R: fh.write('- ' + os.path.basename(p) + ': ' + ' · '.join(f'{c} ' + ('-' if r['first'][c][0] is None else f'{r["first"][c][0]:.1f}') + f' ({r["first"][c][1]} wrong)' for c, _ in CLS if c in r['first']) + '\n')
+        print('md ->', md)
+    return agg, R
+
 def synth(truth, secs, shift=0.0, fps=60, lead=-0.0427):
     """A trace built from the truth itself: every onset released on its nearest frame (+shift s), boundaries / returns
     likewise. Perfect prediction must read F 1.0 and lag ~0."""
@@ -203,6 +267,9 @@ if __name__ == '__main__':
     if '--self-test' in a: sys.exit(0 if self_test() else 1)
     if not a: print(__doc__); sys.exit(2)
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d
+    if '--bins' in a:
+        pos = [x for i, x in enumerate(a) if not x.startswith('--') and (i == 0 or not a[i - 1].startswith('--'))]
+        bins_report(pos, float(opt('--bins')), float(opt('--conf', 0.35)), opt('--md')); sys.exit(0)
     tr = ld(a[0])
     tname = tr.get('track') or 'SeeYouDrop'
     truth = ld(opt('--truth', os.path.join(HERE, f'{tname}.json')))

@@ -7,12 +7,16 @@
 //   python3 tools/truth/predcheck.py tools/work/out-syd.json
 // The replay's audio lead is the trace's -detLead (file-det; what LEAD.L reads there), dt 1/fps. Identity with the page:
 // a page trace of the pred fields under '&map=0' equals the replay's (the check at the end of HARNESS.md "Bars").
+// Warm-up (live step 3, 2026-09-28): --from <heard s> starts the store COLD there on the trace's warm clocks (the store's
+// own warm-up, apart from the clocks'); --diag <out.json> writes one row per stored bar (the offsets, reliability, phase).
 import fs from 'node:fs';
 import * as M from '../assets/engine/bars/bars.js';
 import { feed, FEED_IN } from '../assets/engine/bars/feed.js';
 
 const a = process.argv.slice(2);
 if (a[0] === '--fields') { console.log(['heardT', 'leadT', ...FEED_IN].join(',')); process.exit(0); }
+const opt = (k) => (a.includes(k) ? a.splice(a.indexOf(k), 2)[1] : null);
+const FROM = opt('--from'), DIAG = opt('--diag');
 const [inp, out] = a;
 if (!inp || !out) { console.error('usage: node tools/bars-replay.js <in.json> <out.json> | --fields'); process.exit(2); }
 const tr = JSON.parse(fs.readFileSync(inp, 'utf8'));
@@ -23,16 +27,25 @@ if (tr.cols.leadT && tr.cols.leadT.some((v) => v)) console.warn('bars-replay: le
 const bars = new M.Bars(), L = -(tr.detLead || 0.0427), dt = 1 / (tr.fps || 60), S = {}, into = {};
 const OUT = M.BARS_OUT, cols = Object.fromEntries(OUT.map((k) => [k, []]));
 let cpu = 0, worst = 0;
-for (let i = 0; i < tr.t.length; i++) {
+const i0 = FROM === null ? 0 : Math.max(0, tr.t.findIndex((x) => x >= +FROM)), diag = [];
+let seq = 0, a0 = bars.a;
+for (let i = i0; i < tr.t.length; i++) {
   for (const k of FEED_IN) { const v = tr.cols[k][i]; S[k] = v === null ? NaN : v; }
   const c0 = performance.now();
   const o = bars.step(feed(S, L, 0, dt, into));
   const c = performance.now() - c0; cpu += c; if (c > worst) worst = c;
   for (const k of OUT) cols[k].push(typeof o[k] === 'number' ? +o[k].toFixed(4) : o[k] ? 1 : 0);
+  if (DIAG && (bars.seq !== seq || bars.a !== a0)) {
+    diag.push({ t: tr.t[i], seq: bars.seq, k: bars.lastK, a: bars.a, moved: bars.a !== a0, off: [...bars.off].map((x) => +x.toFixed(3)),
+      rel: +bars.rel.toFixed(3), relN: bars.relN, conf: +bars.conf.toFixed(3), match: +bars.match.toFixed(3), ok: bars.seq ? bars.okS[(bars.seq - 1) % M.NBAR] : 0 });
+    seq = bars.seq; a0 = bars.a;
+  }
 }
+if (DIAG) fs.writeFileSync(DIAG, JSON.stringify(diag));
 const keep = ['leadT', 'kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge'];
-const res = { track: tr.track, mode: tr.mode, sr: tr.sr, at: tr.at, fps: tr.fps, detLead: tr.detLead, t: tr.t, f: tr.f, log: [],
-  fields: [...keep, ...OUT], cols: Object.assign(Object.fromEntries(keep.filter((k) => k in tr.cols).map((k) => [k, tr.cols[k]])), cols) };
-res.cols.leadT = tr.t.map(() => L);
+const sl = (x) => x.slice(i0);
+const res = { track: tr.track, mode: tr.mode, sr: tr.sr, at: tr.at, fps: tr.fps, detLead: tr.detLead, t: sl(tr.t), f: sl(tr.f), log: [],
+  fields: [...keep, ...OUT], cols: Object.assign(Object.fromEntries(keep.filter((k) => k in tr.cols).map((k) => [k, sl(tr.cols[k])])), cols) };
+res.cols.leadT = res.t.map(() => L);
 fs.writeFileSync(out, JSON.stringify(res));
-console.log(`${out}: ${tr.t.length} frames · bars stored ${bars.seq} · ${(1000 * cpu / tr.t.length).toFixed(1)} µs/frame mean, worst ${worst.toFixed(2)} ms`);
+console.log(`${out}: ${tr.t.length - i0} frames · bars stored ${bars.seq} · ${(1000 * cpu / (tr.t.length - i0)).toFixed(1)} µs/frame mean, worst ${worst.toFixed(2)} ms`);

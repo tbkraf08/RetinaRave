@@ -6,7 +6,8 @@
 // CLOCK=1 GPU=1 cdp on '#test&track=<track>&at=<t0−WARM>&scene=0': WARM seconds of engine warm-up run before t0 so the
 // followers, the tempo estimator and the synapse grid are not cold at the first recorded frame; the recorded window is
 // [t0, t1] in HEARD time (MS.heardT, the trace's `t`). RT=1 drops CLOCK and records the real-time path instead
-// (mode 'file-rt'); &det=0 is added so a headed run behaves the same way.
+// (mode 'file-rt'); &det=0 is added so a headed run behaves the same way. WARM=0 records a cold start (live step 3 warm-up:
+// the engine's first seconds are exactly what the ruler grades).
 //
 // The deterministic recipe, which every real-track run must follow (docs/HARNESS.md "File source"):
 //   engine/sources/file.js holds the frame clock at frame 1 while the track decodes, so frame0 is 2 on every run. The
@@ -22,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const WARM = 8;              // s of engine warm-up before t0
+const WARM = process.env.WARM === undefined ? 8 : +process.env.WARM;  // s of engine warm-up before t0 (WARM=0: a cold start AT t0)
 const FPS = 60;              // the deterministic clock's rate (assets/engine/sources/file.js FPS)
 const F0 = 2;                // the frame the playhead starts on: file.js holds the clock at DET_HOLD_FRAME = 1, so f0 = 2
 const CHUNK = 400000;        // characters per chunk eval

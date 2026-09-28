@@ -593,6 +593,10 @@ node tools/test_bars.js                                                     # in
 FIELDSX='predKickEvt,predSnareEvt,predHatEvt,predConf,barNovelEvt,barReturnEvt,sectionAlt,sectionReturn' \
   node tools/caplag.js track SeeYouDrop 20 70 27                            # AUDIBLE: the live confirmation (…-cap-sync27-fx.json)
 ```
+**Warm-up** (the first bars after a cold start): `tools/warm-rec.sh` (~7 min: SeeYouDrop + CyborgNinja, whole + four `WARM=0`
+cold starts each → `tools/work/warm/`), then `tools/warm-ruler.sh [tag]` after every store change (seconds; replays into
+`tools/work/warm-<tag>/`, prints `warmcheck.py`'s rows). `predcheck.py --bins 8 <traces…>` = P / lag per 8 s since each
+trace's start; `warmcheck.py --clock cold.json:whole.json:t0` = the v3 clock cold vs warm; `bars-replay.js --from s --diag d.json`.
 The replay reads the trace's `-detLead` as `LEAD.L` (file-det). A replay starting later than the page's first frame lacks that
 history (a t0 = 8 trace misses the 8 s warm-up), so `predConf` drifts while the events agree to a few frames. A lone
 `serve.js` left on a port by a killed run can hang the next `filetrace.js` on that port at "file open" (300 s timeout, then
