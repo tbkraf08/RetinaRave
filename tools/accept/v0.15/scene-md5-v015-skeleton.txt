@@ -1,0 +1,27 @@
+# v0.15 (2026-09-27): the full list after the FILE + EARS merges, the features-ears.js wiring and the CHLADNI skeleton at id 11 (PORT 8822):
+# ids 0–10 = tools/accept/v0.14/scene-md5-v014.txt line for line (s10 = the v0.14 pass-1 re-base 4f6c8cb0 / 1dc4cb4c); s11 = the skeleton's cleared black
+# frame 496ce9a8. mixs 0→3 f178 641f6633 (= main before, this machine). Parity fake: every field identical to 1e-9 (parity-fake.jpg).
+fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
+7225ea02adab09c37055b85189ac5d49  s0-f840.jpg
+c6166af903f80e0693471b5b28e4c6b6  s1-f360.jpg
+7ca6598c6a3bfb726641ae3103450a79  s1-f840.jpg
+9a57626c15937700b6d2694d88fb9fa8  s2-f360.jpg
+5e59be9338ab60119aee250133cbddf0  s2-f840.jpg
+7189a6ba6899e1e34d077eddbaaf4de8  s3-f360.jpg
+48113eda4d94ff1f48c35b7b29f06a38  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+be2e3c8d6f2484ef55753e4d5213ef97  s4-f840.jpg
+06b4606341684e569c633b30684055ec  s5-f360.jpg
+cccb0094fee921bd5aaee7bc31260ef9  s5-f840.jpg
+8d6ac4a6234d1bbaaaac2bca65d8439d  s6-f360.jpg
+9adb1f5b764f55f68e13e3e83f4eecd2  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+2daaa2c0cbc80d96879049d1631fb74b  s8-f360.jpg
+f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg
+95fd7d73b17a3e26b4b77b9cddb6206a  s9-f360.jpg
+4e2108a7f958a280953eabfc1a595f20  s9-f840.jpg
+4f6c8cb0967dc1a84bda3b3a297b575f  s10-f360.jpg
+1dc4cb4c398172f5339af25aac1cd469  s10-f840.jpg
+496ce9a895a1c9ca60e7a123964a654b  s11-f360.jpg
+496ce9a895a1c9ca60e7a123964a654b  s11-f840.jpg
