@@ -60,4 +60,6 @@ pre-change tree (no existing MS value moved), the bundle from `file://` clean, t
 
 - Malicious: neither detector finds its kicks (109 clicks among 681 low onsets); v2 is slightly worse there.
 - SeeYouDrop's 808 note starts: 188 of v2's 262 misses are bare 808s (a glide or a sub below the 40 Hz band edge).
-- The default stays synapse's: `kick2` etc. reach a scene only by route until the user says otherwise.
+- **TORUS2 reads v2 by default since 2026-09-29** (the user: "v2 looks good" → "default on TORUS2 only"); every other scene
+  keeps synapse's `kick` / `snare` / `hat`. TORUS2's old look: `&route=torus2.kick2=kick,torus2.snare2=snare,torus2.hat2=hat`.
+  The TORUS2 md5s are unchanged (7189a6ba / 48113eda: on the fake timeline v2 mirrors synapse).

@@ -2600,3 +2600,8 @@ det), the bar store's releases (bars feed uses `disp` when the lead is on), and 
 ears' events (kickEvt … are released on heard time; releasing them early is possible in file modes only — left open).
 In capture the clocks now run 40 ms further ahead too: the user approved v0.16 there at 0 — to be re-looked.
 Proofs: check 0 fail, npm test OK, the `&lead=0` whole-track trace `cmp`-identical (the display lead needs the lead).
+
+**§51 addendum — TORUS2 reads v2 by default (2026-09-29).** The user: "v2 looks good", then "Default on TORUS2 only". TORUS2's
+feats `kick / snare / hat` → `kick2 / snare2 / hat2` (the wave step, the core flash, the hat shimmer, the `wave` param, help);
+every other scene unchanged. Proof (one scene folder): s3 f360 / f840 md5 7189a6ba / 48113eda before and after (v2 mirrors
+synapse on the fake timeline), check 0 fail, the real-track page live. A route that named `torus2.kick` must now name `torus2.kick2`.

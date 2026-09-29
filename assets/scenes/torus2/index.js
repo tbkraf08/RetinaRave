@@ -124,7 +124,7 @@ export default {
   id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
   cuts: 'continuous',
   rt: {},
   hooks: { probe, info, train, fib, key, motion, morph, unwind },
@@ -183,7 +183,7 @@ export default {
 
     // spec 2: musical time drives the waves — beatNow never drifts, so a bump launched on a beat stays on its grid
     U.beatNow = MS.beatCount + MS.beatPhase;
-    wstep([MS.kick, MS.snare, MS.hat], U.beatNow, MS.beat);
+    wstep([MS.kick2, MS.snare2, MS.hat2], U.beatNow, MS.beat);   // the reactive drums v2 (the user, 2026-09-29: "v2 looks good")
     wfill(WB, WA, U.beatNow);
     U.wave = P.wave;                                  // the kick bump's displacement (params.wave)
 
@@ -210,11 +210,11 @@ export default {
     U.knotTh = Math.min((th[loudest] * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
     U.knotBri = 1.5 * (0.4 + 0.6 * MS.intensity);
 
-    // spec 1c: the kick lights the core. Our own follower on MS.kick (which itself decays over 0.16 s), so the flash
+    // spec 1c: the kick lights the core. Our own follower on MS.kick2 (which itself decays over 0.16 s), so the flash
     // lasts about FLASHT seconds; the shader weights it by (1 - chroma) so the quiet inner families get it.
-    U.flash = Math.max(U.flash * Math.exp(-dt / FLASHT), MS.kick);
+    U.flash = Math.max(U.flash * Math.exp(-dt / FLASHT), MS.kick2);
     // spec 1d / 6: the hat shimmer, gated by alive (nothing in silence) and lifted by novelty
-    U.shim = SHIM * MS.hat * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
+    U.shim = SHIM * MS.hat2 * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
     // spec 6: hush and calm dim the floor
     U.glow = P.glow;
 
@@ -335,7 +335,7 @@ export default {
     size: { eli5: 'how much of the screen the nest fills', range: [0.4, 0.9], from: (MS) => 0.58 + 0.1 * MS.intensity + 0.07 * MS.arousal + 0.15 * Math.min(1, Math.max(0, 2 * MS.build - 1)) },
     glow: { eli5: 'how brightly the fibres inside the nest are kept lit', range: [0, 0.5], from: (MS) => GLOW * (1 - GLOWQ * Math.max(MS.hush, MS.calm)) },
     morph: { eli5: 'how far the rings are pulled out of shape along a strange attractor', range: [0, 1], from: (MS) => MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1) },
-    wave: { eli5: 'how deep the bump a kick sends travelling along every thread', range: [0, 0.4], from: (MS) => WAVE0 + 0.1 * MS.kick },
+    wave: { eli5: 'how deep the bump a kick sends travelling along every thread', range: [0, 0.4], from: (MS) => WAVE0 + 0.1 * MS.kick2 },
   },
 
   post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },

@@ -617,8 +617,7 @@ node tools/drums-node.js [Track …] [--out dir] [--set S0=0.2,G=2.5,HOLD=0] [--
 python3 tools/truth/drumcheck.py tools/work/drums/node-*.json [--src syn,ears,v2] [--tol 0.03]
 node tools/test_drums.js                                          # in npm test
 ```
-The node run = the page's det run (`kick2` identical frame by frame). The A/B the user watches: `#test&track=SeeYouDrop&map=0&scene=3&route=torus2.kick=kick2,torus2.snare=snare2,torus2.hat=hat2`
-(drop `route=` for synapse's levels). A capture run: `FIELDSX='kick2,snare2,hat2' node tools/caplag.js track SeeYouDrop 24 50 27`
+The node run = the page's det run (`kick2` identical frame by frame). TORUS2 reads v2 by default (2026-09-29); its old look for an A/B: `#test&track=SeeYouDrop&scene=3&route=torus2.kick2=kick,torus2.snare2=snare,torus2.hat2=hat`. A capture run: `FIELDSX='kick2,snare2,hat2' node tools/caplag.js track SeeYouDrop 24 50 27`
 (AUDIBLE; `kick` / `snare` / `hat` are already in caplag's FIELDS — naming them again doubles their columns).
 
 ## Single-file build
