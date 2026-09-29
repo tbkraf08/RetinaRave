@@ -2580,3 +2580,8 @@ the music better)"; to the three options offered (improve the reactive path · p
   ms early in file modes (analysis ahead of the ear) — the hold makes them +5…+10 (the 60 Hz frame), nothing held in capture.
 - **Graded by what shows** (`drumcheck.py`, level rising edges ≥ 0.18) and, in capture, with each source's constant lag removed
   and a chance level beside it: synapse's capture kick is 0.39 against a 0.29 chance, v2's 0.54 against 0.15.
+
+**v0.17 tagged locally (2026-09-29) on the user's word** ("v2 looks good" → "tag v0.17 locally then switch back to v0.16"): live
+step 3 (the bar store, pred* fields, used by no scene by default), its warm-up (W.0–W.1c), the reactive drums v2 (kick2 /
+snare2 / hat2, opt-in by route — the TORUS2 default the user chose is NOT in the tag). `releases/retinarave-v0.17.html`,
+package.json 0.17.0. Not pushed (retinarave.com serves v0.15). The user then asked to compare v0.16 with v0.15 on NAV.
