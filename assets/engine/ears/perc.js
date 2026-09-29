@@ -115,7 +115,8 @@ export class PercTrack {
       else if (ot - this.pendKick.t > this.clickW) this.pendKick = null;   // bare: it was an 808 note start
     }
     if (this.fire(0, B_KICK, ot)) {
-      this.out.push({ type: 'low', t: ot, vel: this.vel[0] });   // every low-band onset, kick or bare 808 note start
+      this.out.push({ type: 'low', t: ot, vel: this.vel[0], fl: this.flux[B_KICK] });   // every low-band onset, kick or bare 808
+                                                               // note start (fl: its raw dB flux — the reactive drums' strength)
       if (clicked) this.emit(0, ot, this.vel[0]);
       else this.pendKick = { t: ot, vel: this.vel[0] };
     }

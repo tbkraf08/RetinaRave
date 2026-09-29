@@ -609,6 +609,18 @@ The A/B the user watches (no scene edit — routes, CONTRACTS §1.15; a normal p
 core flash on the predicted hits; drop the `route=` for the reactive synapse levels), and for CHLADNI's ballistic sand
 `&scene=11&route=chladni.kickEvt=predKickEvt,chladni.kickAge=predKickAge,chladni.snareAge=predSnareAge,chladni.hatAge=predHatAge`.
 
+## Drums — the reactive drums v2 (`engine/drums/`, `features-drums.js`, or the ears' low lane)
+
+```
+python3 tools/truth/trackmap.py <Track> --pcm --sr=48000       # once per track (tools/work/<Track>.48000.st.f32)
+node tools/drums-node.js [Track …] [--out dir] [--set S0=0.2,G=2.5,HOLD=0] [--perc thrK=2.5]   # seconds per track
+python3 tools/truth/drumcheck.py tools/work/drums/node-*.json [--src syn,ears,v2] [--tol 0.03]
+node tools/test_drums.js                                          # in npm test
+```
+The node run = the page's det run (`kick2` identical frame by frame). The A/B the user watches: `#test&track=SeeYouDrop&map=0&scene=3&route=torus2.kick=kick2,torus2.snare=snare2,torus2.hat=hat2`
+(drop `route=` for synapse's levels). A capture run: `FIELDSX='kick2,snare2,hat2' node tools/caplag.js track SeeYouDrop 24 50 27`
+(AUDIBLE; `kick` / `snare` / `hat` are already in caplag's FIELDS — naming them again doubles their columns).
+
 ## Single-file build
 
 ```

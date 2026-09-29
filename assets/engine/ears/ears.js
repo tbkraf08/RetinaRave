@@ -59,6 +59,8 @@ export class Ears {
     this.hv = CONT.map(() => new Float32Array(HIST));
     this.pending = [];               // detected, not yet released
     this.released = [];              // released by the last read()
+    this.pendLow = []; this.lowReleased = [];   // the LOW onsets (every 40-150 Hz onset, kick or 808 note start): their own lane,
+                                     // released by the same rule, read by the reactive drums v2 (engine/drums) — nothing else
     this.lastEv = Object.create(null);
     this.out = {};
     for (const k of EARS_FIELDS) this.out[k] = 0;
@@ -93,7 +95,7 @@ export class Ears {
     this.blocks++;
     // the block-rate work: collect the percussion onsets found at the 128-sample hop, then the readouts and the slow chroma
     const ev = perc.take();
-    for (let i = 0; i < ev.length; i++) if (ev[i].type !== 'low') this.pending.push(ev[i]);
+    for (let i = 0; i < ev.length; i++) if (ev[i].type !== 'low') this.pending.push(ev[i]); else this.pendLow.push(ev[i]);
     this.pulse.push(ev);
     tex.hop(this.tEnd, perc);
     this.pulse.hop(this.tEnd);
@@ -134,6 +136,9 @@ export class Ears {
       } else this.pending[k++] = e;
     }
     this.pending.length = k;
+    this.lowReleased.length = 0; k = 0;
+    for (let i = 0; i < this.pendLow.length; i++) { const e = this.pendLow[i]; if (e.t <= rel) this.lowReleased.push(e); else this.pendLow[k++] = e; }
+    this.pendLow.length = k;
     for (const cls in AGES) out[AGES[cls]] = this.lastEv[cls] === undefined ? 99 : tHeard - this.lastEv[cls];
     // continuous fields at tHeard: the bracketing history frames, interpolated (newest when tHeard is past them)
     const n = this.hn;

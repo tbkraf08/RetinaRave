@@ -2560,3 +2560,23 @@ slightly in the beginning and gets better over time"*. The leans, each measured 
   precision and cost 2–3 s of quiet, so `WARM.GATE = 0` (a switch, not deleted: the "quiet until right" variant if the user
   prefers it). What stays: the settle state times the offsets' learning, the reliability is earned, both reset at a
   discontinuity, the section tests keep their own trust. The first-4-s lags: SeeYouDrop 0 / 0 / −6 ms (baseline −13 / −9 / −5).
+
+## §51 the reactive drums v2 — `kick2` / `snare2` / `hat2` (2026-09-28, orchestrator; `docs/AUDIT-drums.md`)
+
+**The ask.** The user, after the warm-up A/B: "I think the reactive still looks better (ie. seems like it moves in sync with
+the music better)"; to the three options offered (improve the reactive path · prediction only as a supplement · stop), "do #1".
+(The offer mislabelled it "live step 4"; the plan's step 4 is the build-up detector — told the user, left for later.)
+
+- **Additive, by route.** The reactive look lives in `kick` / `snare` / `hat`, read by five scenes; changing them moves every
+  md5. v2 is three new levels of the same shape (`engine/drums/drums.js`, stage `features-drums.js` after the ears), A/B'd by
+  `torus2.kick=kick2,torus2.snare=snare2,torus2.hat=hat2`; the default moves only on the user's word.
+- **The kick = the ears' low onsets**, measured against synapse's flux peaks and the ears' beater-gated kicks on four tracks
+  (AUDIT table): the truth's own `low` definition computed causally, already inside `perc.js` and dropped — now a separate
+  lane in `Ears` (`pendLow` / `lowReleased`), so the event log and every existing field stay byte-identical. A second, retuned
+  low picker was measured and not built (plateau: ±0.01 F).
+- **Strength by rank, times synapse's bass loudness.** The ears' velocity saturates (p50 1.0 — the uniform brightness of the
+  predicted route); the rank keeps synapse's distribution and synapse's own bass factor keeps the section dynamics.
+- **Snare / hat stay synapse's, held to heard time.** Synapse's are better than the ears' on 3 of 4 tracks; they lit up 6–12
+  ms early in file modes (analysis ahead of the ear) — the hold makes them +5…+10 (the 60 Hz frame), nothing held in capture.
+- **Graded by what shows** (`drumcheck.py`, level rising edges ≥ 0.18) and, in capture, with each source's constant lag removed
+  and a chance level beside it: synapse's capture kick is 0.39 against a 0.29 chance, v2's 0.54 against 0.15.

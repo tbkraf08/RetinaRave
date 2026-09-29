@@ -3,6 +3,7 @@ import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
 import './engine/features-ears.js'; // v0.15: the ears + the track map (additive stage after synapse)
 import './engine/features-bars.js'; // live step 3: the bar fingerprint store (additive stage after the ears, before the lead)
+import './engine/features-drums.js'; // the reactive drums v2: kick2 / snare2 / hat2 (additive stage after the ears)
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
 import { Q, tier, budget } from './core/quality.js';
 import { LOOK } from './core/look.js';

@@ -754,6 +754,9 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kick` | level | a kick just hit, decaying (0.16 s) | DUST kick flare, MANDALA centre |
 | `snare` | level | a snare just hit, decaying (0.13 s) | - |
 | `hat` | level | a hat just hit, decaying (0.06 s) | DUST/MANDALA sparkle |
+| `kick2` | level | a kick or an 808 note just hit, decaying (0.16 s) — the reactive drums v2 | route a kick channel to it (TORUS2 A/B): fewer false flashes than kick, more real hits |
+| `snare2` | level | a snare just hit, decaying (0.13 s) — the reactive drums v2 | route a snare channel to it |
+| `hat2` | level | a hat just hit, decaying (0.06 s) — the reactive drums v2 | route a hat channel to it |
 | `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |
