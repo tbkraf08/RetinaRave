@@ -2605,3 +2605,7 @@ Proofs: check 0 fail, npm test OK, the `&lead=0` whole-track trace `cmp`-identic
 feats `kick / snare / hat` → `kick2 / snare2 / hat2` (the wave step, the core flash, the hat shimmer, the `wave` param, help);
 every other scene unchanged. Proof (one scene folder): s3 f360 / f840 md5 7189a6ba / 48113eda before and after (v2 mirrors
 synapse on the fake timeline), check 0 fail, the real-track page live. A route that named `torus2.kick` must now name `torus2.kick2`.
+
+**v0.17.1 tagged locally (2026-09-29) on the user's word** ("tag as v0.17.1, don't deploy yet"): v0.17 + the 40 ms display lead
+by default (§52) + TORUS2 on the reactive drums v2 (§51 addendum). `releases/retinarave-v0.17.1.html`, package.json 0.17.1. Not
+pushed (retinarave.com serves v0.15); the display lead in stream mode not yet re-looked.
