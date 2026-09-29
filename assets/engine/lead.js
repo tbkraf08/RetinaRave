@@ -11,7 +11,8 @@
 // lead, so parity fake and every scene-md5 line are unchanged; real-audio runs move (a det file trace by -DET_LEAD).
 // OFF (&lead=0 or the L key) = apply() returns before touching MS: every value is what v0.15 published.
 // &disp=<ms> sets the display lead: the frame's path to the glass (compositor + display), unmeasured — 40 ms by default since
-// 2026-09-29, set by the user's eye (DECISIONS §52); &disp=0 is v0.16's timing.
+// 2026-09-29 in the FILE modes and the demo, set by the user's eye (DECISIONS §52); 0 in capture / mic (the same day, the user's
+// stream-mode A/B: &disp=0 "looks better", §53). An explicit &disp= sets both; &disp=0 is v0.16's timing everywhere.
 import { AU } from './audio.js';
 import { DET_LEAD } from './sources/file.js';
 
@@ -26,6 +27,7 @@ export const LEAD = {
   on: true,       // v0.16 default; &lead=0 / the L key turn it off
   disp: 0.040,    // s, added to the audio lead: the frame's path to the glass (2026-09-29, the user's eye: &disp=40 and &lead=0 —
                   // v0.15's clocks ran ~43-47 ms ahead in file mode — both looked right, the lead alone did not); &disp=0 = v0.16
+  dispLive: 0,    // s, the display lead in capture / mic (2026-09-29, the user's stream-mode A/B: 0 "looks better" than 40; §53)
   L: null,        // s, the audio lead: the median of `ring` (null until the first good sample); estimated even when off
   ring: [],
   raw: null,      // the clocks' own values this frame, put back by restore()
@@ -60,6 +62,12 @@ function median(v) {
   return s.length & 1 ? s[m] : 0.5 * (s[m - 1] + s[m]);
 }
 
+// the display lead this frame: 0 with the lead off, LEAD.dispLive on a live source (capture / mic), else LEAD.disp
+export function dispNow() {
+  if (!LEAD.on) return 0;
+  return AU.mode === 'capture' || AU.mode === 'mic' ? LEAD.dispLive : LEAD.disp;
+}
+
 export function restore(S) {
   const r = LEAD.raw;
   if (!r) return;
@@ -75,7 +83,7 @@ export function apply(dt, S, fakeOn) {
   const ok = isFinite(a) && Math.abs(a) < MAX_LEAD;     // anything else is not a latency (a stale timestamp, a stall)
   if (ok) LEAD.L = median(a);
   if (!LEAD.on || LEAD.L === null) { S.leadT = 0; LEAD.n = null; return; }
-  const L = LEAD.L + LEAD.disp;
+  const L = LEAD.L + dispNow();
   S.leadT = L;
   const r = LEAD.raw = {};
   for (let i = 0; i < KEYS.length; i++) r[KEYS[i]] = S[KEYS[i]];

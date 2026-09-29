@@ -5,7 +5,7 @@
 // The fake timeline has no analyzer: the v2 levels mirror synapse's there, so a route behaves the same under #test.
 import { AU } from './audio.js';
 import { ENGINE } from './engine.js';
-import { LEAD } from './lead.js';
+import { LEAD, dispNow } from './lead.js';
 import { tap } from './features-synapse.js';
 import { EARS } from './features-ears.js';
 import { Drums, DRUMS_OUT } from './drums/drums.js';
@@ -18,9 +18,9 @@ export function drumsStage(dt, now, S) {
   if (!DRUMS2.d || src !== DRUMS2.src) { DRUMS2.d = new Drums(); DRUMS2.src = src; }
   const i = DRUMS2.inp, an = tap.an, E = EARS.ears;
   i.syn = an.A; i.bassN = an.bands.bass.n; i.dt = dt > 0 && dt < 0.1 ? dt : 1 / 60;
-  // held to the GLASS, not the ear: the display lead (LEAD.disp, 40 ms) is the frame's path to the screen, so a hit shown
+  // held to the GLASS, not the ear: the display lead (dispNow(): 40 ms in file modes, 0 live) is the path to the screen, so a hit shown
   // disp before its sound is heard is on time for the eye
-  i.ahead = (LEAD.L === null ? 0 : -LEAD.L) - (LEAD.on ? LEAD.disp : 0);
+  i.ahead = (LEAD.L === null ? 0 : -LEAD.L) - dispNow();
   i.low = 0; i.lowFl = 0;
   if (E) for (const e of E.lowReleased) { i.low = 1; if (e.fl > i.lowFl) i.lowFl = e.fl; }
   const o = DRUMS2.d.step(i);

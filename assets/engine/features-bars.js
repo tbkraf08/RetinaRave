@@ -14,7 +14,7 @@
 // synapse only proposes the bar phase, when its bar line is sure (barConf >= ANCHOR_CONF, same octave as v3).
 import { AU } from './audio.js';
 import { ENGINE } from './engine.js';
-import { LEAD } from './lead.js';
+import { LEAD, dispNow } from './lead.js';
 import { Bars, BARS_OUT } from './bars/bars.js';
 import { feed } from './bars/feed.js';
 
@@ -26,7 +26,7 @@ export function barsStage(dt, now, S) {
   const src = AU.mode + ':' + (AU.file ? AU.file.name + '@' + AU.file.at : '');
   if (!BARS.bars || src !== BARS.src) { BARS.bars = new Bars(); BARS.src = src; }
   if (dt > 0 && dt < 0.05) BARS.dt += (dt - BARS.dt) * 0.2;
-  const o = BARS.bars.step(feed(S, LEAD.L === null ? 0 : LEAD.L, LEAD.on ? LEAD.disp : 0, BARS.dt, BARS.inp));
+  const o = BARS.bars.step(feed(S, LEAD.L === null ? 0 : LEAD.L, dispNow(), BARS.dt, BARS.inp));
   S.predKickEvt = !!o.predKickEvt; S.predSnareEvt = !!o.predSnareEvt; S.predHatEvt = !!o.predHatEvt;
   S.predKickAge = o.predKickAge; S.predSnareAge = o.predSnareAge; S.predHatAge = o.predHatAge;
   S.predKick = o.predKick; S.predSnare = o.predSnare; S.predHat = o.predHat;

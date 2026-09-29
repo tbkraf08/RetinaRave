@@ -2609,3 +2609,16 @@ synapse on the fake timeline), check 0 fail, the real-track page live. A route t
 **v0.17.1 tagged locally (2026-09-29) on the user's word** ("tag as v0.17.1, don't deploy yet"): v0.17 + the 40 ms display lead
 by default (§52) + TORUS2 on the reactive drums v2 (§51 addendum). `releases/retinarave-v0.17.1.html`, package.json 0.17.1. Not
 pushed (retinarave.com serves v0.15); the display lead in stream mode not yet re-looked.
+
+## §53 the display lead is file-mode only (2026-09-29, the user's stream-mode A/B)
+
+**The look.** Two links in stream mode (tab capture) on v0.17.1: A = the default (40 ms display lead, §52) · B = `#disp=0`
+(v0.16's stream timing) → "B looks better". So in capture the clocks read right on the heard time (capture −11 ms, AUDIT-live-grid
+step 2), and the 40 ms that the eye wanted in file mode is not wanted live.
+**The change.** `LEAD.dispLive` = 0 beside `LEAD.disp` = 0.040; `dispNow()` in `engine/lead.js` = 0 with the lead off,
+`dispLive` on a capture / mic source, `disp` in the file modes and the demo — read by the lead, the bars feed and the drums v2
+hold (the three §52 consumers). An explicit `&disp=<ms>` sets both (so `#disp=40` is A in capture again). **Not explained:** the
+glass path is the same screen in both modes; why the eye wants it in file mode and not in capture is open (the capture lag
+27 ms may be under-measured, or file mode's own lead estimate off by about that much) — recorded, not chased.
+Proofs: SeeYouDrop 20–50 s file-det trace identical before / after (1801 frames × 170 fields, log too); `dispNow()` per mode
+default `file .04 demo .04 capture 0 mic 0`, `&disp=40` → .04 everywhere, `&lead=0` → 0 everywhere; check 0 fail, npm test OK.

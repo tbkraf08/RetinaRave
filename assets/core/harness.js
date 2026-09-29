@@ -148,9 +148,10 @@ export function initHarness(hideLanding) {
   // capture page could not declare its own lag. Measured with tools/caplag.js clicks (docs/HARNESS.md).
   if (HASH.has('sync') && isFinite(+HASH.get('sync'))) ENGINE.AU.sync = +HASH.get('sync') / 1000;
   // live step 2 (engine/lead.js): the beat / bar / phrase clocks on heard time — on by default since v0.16, &lead=0 turns it
-  // off (&lead=1 on), &disp=<ms> sets the display lead (40 by default since 2026-09-29; &disp=0 = v0.16)
+  // off (&lead=1 on), &disp=<ms> sets the display lead in every mode (by default 40 in the file modes / demo, 0 in capture /
+  // mic since 2026-09-29; &disp=0 = v0.16)
   if (HASH.has('lead')) ENGINE.LEAD.on = HASH.get('lead') === '1';
-  if (HASH.has('disp') && isFinite(+HASH.get('disp'))) ENGINE.LEAD.disp = +HASH.get('disp') / 1000;
+  if (HASH.has('disp') && isFinite(+HASH.get('disp'))) ENGINE.LEAD.disp = ENGINE.LEAD.dispLive = +HASH.get('disp') / 1000;
   // live step 3.0: &map=0 skips the file's track map, so the ears stay causal (the live path on a file, deterministic under
   // CLOCK=1) — what every live-mode stage is developed against; the default builds the map as v0.15 did
   if (HASH.has('map')) ENGINE.useMap = HASH.get('map') !== '0';

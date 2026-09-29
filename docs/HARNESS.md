@@ -458,7 +458,8 @@ Hash: `&track=<name>` (with or without `#test`) starts the file source on the **
 and hides the landing card. `&at=<s>` the track second the playhead starts at (default 0) · `&det=0` / `&det=1` forces
 real-time / deterministic mode (the default is deterministic exactly when cdp's `CLOCK=1` shim is present) ·
 `&sync=<ms>` declares `SYNC_OFS`, added to `AU.heardT()` in capture / mic mode. `&lead=1` (live step 2, `engine/lead.js`) publishes
-the beat / bar / phrase clocks moved onto heard time — `MS.leadT` = heardT − the analysers' newest audio time (+ `&disp=<ms>`):
+the beat / bar / phrase clocks moved onto heard time — `MS.leadT` = heardT − the analysers' newest audio time (+ the display lead `dispNow()`: 40 ms in file modes / demo, 0 in
+capture / mic by default since 2026-09-29, `&disp=<ms>` sets both):
 file-det −`DET_LEAD`, real-time file / demo the output timestamp's lag (median of 64 frames, stale timestamps dropped), capture
 `SYNC_OFS` or the measured 27 ms, mic `SYNC_OFS`. The `L` key toggles it live (a toast says the lead). Off = byte-identical traces.
 `&map=0` (live step 3.0, `ENGINE.useMap`) skips the file's track map: the ears stay **causal** — the live path on a file,
