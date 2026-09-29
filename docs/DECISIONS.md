@@ -2585,3 +2585,18 @@ the music better)"; to the three options offered (improve the reactive path · p
 step 3 (the bar store, pred* fields, used by no scene by default), its warm-up (W.0–W.1c), the reactive drums v2 (kick2 /
 snare2 / hat2, opt-in by route — the TORUS2 default the user chose is NOT in the tag). `releases/retinarave-v0.17.html`,
 package.json 0.17.0. Not pushed (retinarave.com serves v0.15). The user then asked to compare v0.16 with v0.15 on NAV.
+
+## §52 the display lead: 40 ms by default (2026-09-29, the user's eye)
+
+**The look.** On NAV in file mode the user found v0.15 better than the current tree ("in theory v0.16 should be on par with
+v0.15"). On NAV the only v0.15 → v0.16 difference is the lead (v0.16's default: the clocks published on heard time); in file
+mode it moved them ~43 ms LATER (v0.15's clocks ran ~43–47 ms ahead of the ear, AUDIT-live-grid step 1). Three links on v0.16:
+as shipped · `&lead=0` · `&disp=40` → "second and third look good".
+**Reading:** the lead is right about the ear, and the frame's own path to the glass (compositor + display — unmeasured, noted
+in HARNESS "Not in any number") is ~40 ms on this desktop; v0.15's early clocks happened to cover it. So `LEAD.disp` = 0.040 by
+default (`&disp=0` = v0.16). The display lead reaches everything timed on the lead: the clocks (leadT −43 → −2.7 ms in file
+det), the bar store's releases (bars feed uses `disp` when the lead is on), and the drums v2 hold, now net of it
+(`features-drums.js`: with 40 ms nothing is held in file modes — the eye wants a hit ~40 ms before the ear). Not moved: the
+ears' events (kickEvt … are released on heard time; releasing them early is possible in file modes only — left open).
+In capture the clocks now run 40 ms further ahead too: the user approved v0.16 there at 0 — to be re-looked.
+Proofs: check 0 fail, npm test OK, the `&lead=0` whole-track trace `cmp`-identical (the display lead needs the lead).

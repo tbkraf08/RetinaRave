@@ -10,7 +10,8 @@
 // ON by default since v0.16 (the user watched it in stream mode, 2026-09-28: "looks good"). The fake timeline never gets a
 // lead, so parity fake and every scene-md5 line are unchanged; real-audio runs move (a det file trace by -DET_LEAD).
 // OFF (&lead=0 or the L key) = apply() returns before touching MS: every value is what v0.15 published.
-// &disp=<ms> adds a display lead (the frame's path to the glass is unmeasured, so 0 by default).
+// &disp=<ms> sets the display lead: the frame's path to the glass (compositor + display), unmeasured — 40 ms by default since
+// 2026-09-29, set by the user's eye (DECISIONS §52); &disp=0 is v0.16's timing.
 import { AU } from './audio.js';
 import { DET_LEAD } from './sources/file.js';
 
@@ -23,7 +24,8 @@ const KEYS = ['beatPhase', 'beat', 'beatCount', 'beatSyn', 'barPos', 'barPhase',
 
 export const LEAD = {
   on: true,       // v0.16 default; &lead=0 / the L key turn it off
-  disp: 0,        // s, added to the audio lead
+  disp: 0.040,    // s, added to the audio lead: the frame's path to the glass (2026-09-29, the user's eye: &disp=40 and &lead=0 —
+                  // v0.15's clocks ran ~43-47 ms ahead in file mode — both looked right, the lead alone did not); &disp=0 = v0.16
   L: null,        // s, the audio lead: the median of `ring` (null until the first good sample); estimated even when off
   ring: [],
   raw: null,      // the clocks' own values this frame, put back by restore()

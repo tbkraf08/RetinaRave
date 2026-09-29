@@ -10,7 +10,9 @@
 // synapse scales its own kick (0.5 + 0.5 x bass.n). THE SNARE AND HAT stay synapse's (measured better than the ears'), but
 // every synapse hit is HELD until its audio is heard: synapse sees the audio `ahead` s before it is heard in file modes
 // (the det lead, 42.7 ms) and confirms an onset ~SYN_DELAY after its audio, so it lit up ~11 ms early in det and more in
-// real-time file mode; in capture (the audio arrives after it is heard) nothing is held.
+// real-time file mode; in capture (the audio arrives after it is heard) nothing is held. `ahead` is net of the display lead
+// (features-drums.js): with the default 40 ms the det lead's 43 ms leaves nothing to hold — the eye wants the hit ~40 ms
+// before the ear (DECISIONS §52).
 //
 // i = { syn: synapse's A (kick / snare / hat levels, already decayed this frame), bassN: synapse's bass loudness (bands.bass.n),
 // low / lowFl: an ears low onset released this frame and its raw dB flux, ahead: s the analysers are ahead of heard time
