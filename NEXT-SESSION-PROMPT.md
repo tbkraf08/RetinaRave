@@ -1,27 +1,31 @@
-# Next session — Retina Rave (written 2026-09-29, evening)
+# Next session — Retina Rave (written 2026-09-30)
 
-**State:** **v0.18 tagged LOCALLY** (`6e4f1d1`), **not deployed** (the user, earlier the same day: "don't deploy"); retinarave.com
-serves v0.15; `main` 31 commits ahead of origin. Since v0.17.1: the display lead is file-mode only (§53: 40 ms in file / demo,
-0 in capture / mic — the user's stream A/B "B looks better"); **live step 4, the build / drop detector** (§54: `engine/build/`,
-`buildLive` / `dropLiveIn` / `dropLiveEvt`; page causal 5/6 drops armed 7–16 beats ahead, 0.28 false/min, 0 on CyborgNinja;
-capture 14 / 6 beats ahead, 0 false in 111 s); NAV reads it by default ("B looks good" → "#1" = NAV only), MAXWELL / POLYTOPE /
-GIELIS still on v3's `build` / `dropEvt`.
+**State:** **v0.20 tagged LOCALLY**, **not deployed** (the user has held every deploy since v0.15: "don't deploy"); retinarave.com
+serves v0.15; `main` ~45 commits ahead of origin. **All six steps of the live plan (DECISIONS §49) are in:** the lead (§49), the bar
+store + warm-up (§50), reactive drums v2 (§51), display lead 40 ms file-mode only (§52–§53), the live build / drop detector (§54, NAV
+reads it by default), the predicted-event queue (§55, no scene reads it by default), the PCM beat clock (§56, THE DEFAULT CLOCK).
 
-**The user's words this session (verbatim, in order):** "B looks better" (stream, `#disp=0`) · "don't deploy, go to live step 4" ·
-"B looks good" (NAV on the live route, stream) · "#1" (default on NAV only).
+**The user's words (verbatim, latest first):** "B really seems to handle the double time as it builds before drop better; default
+and tag what has been done so far" (PCM clock) · "on the PCM bus seems more accurate and would be wanted regardless … still need to
+work on the predictions" · "B looks good" / "#1" (live detector on NAV) · "B looks better" (stream: no display lead) · "don't deploy".
 
 **Do, in order:**
-1. **Deploy only on their word** (push `main` + tags; a push deploys). Ask once at the start whether v0.18 goes live.
-2. **Live step 5 — the predicted-event queue** (the six-step plan, DECISIONS §49): one queue of the events the engine expects
-   (the bar store's `pred*` hits, `dropLiveIn`'s bar line, the beat lines) released on heard time minus the display lead, so a
-   scene can read "what comes next" from one place instead of three. Measure first (predcheck / dropcheck rulers exist); additive;
-   A/B by route in stream mode; a default only on their word.
-3. Smaller, only on the user's go: the other three build readers (MAXWELL / POLYTOPE / GIELIS) onto the live detector; a
-   second no-drop control track + a hand check of WhoLikesToParty's drops (truth ±2 beats — its drops sit at v3 bar phase 3);
-   the slam threshold `RET` 1.75 (margin 1.56–1.87 rests on two WLTP pickups); the fake-timeline thumbnails (NAV's f840 moved:
-   no live drops on the fake timeline — `site/thumbs/nav.jpg` may want a file-mode frame like CHLADNI's); the earlier list
-   (CyborgNinja's v3 clock 80–180 ms off, the ears' events under the display lead in file modes, v2 drums on other scenes).
+1. **Ask once: does v0.20 go live?** Deploy = push `main` + tags, only on their word. Before a deploy: `tools/accept.sh` has not been
+   run since v0.14 — run it (or say so), regenerate the fake-timeline thumbnails (`site/thumbs/nav.jpg` — NAV's f840 moved), and
+   check `site/` copy mentions nothing stale.
+2. **"Still need to work on the predictions"** — the store on the PCM clock (capture pred kick F 0.38, P 0.66; CyborgNinja 0.70). Next
+   levers, measured in AUDIT-live-grid: (a) **a bar-line source of its own** — the bar phase is beat count mod 4 wherever synapse isn't
+   sure (SeeYouDrop's downbeat lands right by from-0 luck on both clocks; WhoLikesToParty's drops sit at v3 bar phase 3); (b) the
+   store's per-class offsets in real time (the `nextKickIn` count-down jumps 281/min are theirs, not the clock's); (c) CyborgNinja's
+   lattice choice (two equal-energy kick lattices; the truth's pick rests on a 9 % margin) needs a musical rule; (d) recall: precision
+   0.66 but recall 0.27 — what the store never predicts.
+3. **Scenes on the queue** (`next*Up` wind-ups) only if the user asks for the TORUS2 wind-up A/B again (§55 recipe:
+   `CARD.params('torus2.wave=nextKickUp*0.35+0.65')`) — they have not looked at it.
+4. Smaller, on their go: MAXWELL / POLYTOPE / GIELIS onto the live detector; parity's `nav.*` rows (mismatch since 22eb969, expected);
+   v3's run-to-run 1e-8 nondeterminism hours apart (Chrome / decode state, not code); a second no-drop control track; WLTP truth ±2 beats.
    Everything else: `docs/OPEN-ITEMS.md`.
 
-**Read first:** DECISIONS §53–§54, `docs/AUDIT-live-grid.md` "Step 4", HARNESS "Build", memory `project_live_mode`,
-`feedback_display_lead`, `feedback_reactive_over_predicted`. Step 6 (tempo on the PCM bus / Kalman) only if jitter demands it.
+**Read first:** DECISIONS §53–§56 (tail), `docs/AUDIT-live-grid.md` steps 4–6, HARNESS "Build" / "Queue" / "Clock", memory
+`project_live_mode`, `feedback_display_lead`, `feedback_reactive_over_predicted`. Lessons this round: heardT STEPS in capture
+(10.7 / 21.3 ms per frame) — evaluate anything on heard time at `now` + the median offset, never at heardT itself; the dev server on
+8765 is the user's and has no port in its command line — kill test servers by port only; audible runs: say so first.
