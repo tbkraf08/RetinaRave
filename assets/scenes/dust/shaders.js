@@ -2,6 +2,10 @@
 // No vertex buffer: every particle is derived from gl_VertexID, so the whole cloud is one drawArrays(POINTS).
 // The helpers below (hash11, rot, spec, wave, palM) are the GLSL_COMMON functions this scene actually uses,
 // copied in rather than shared — HEAD is not prepended to a raw two-source program.
+//
+// §57 step 1: the cloud's spin, the torus's main turn and the galaxy's winding arrive as ONE angle computed on the
+// beat grid (uSpin / uSpinG, grid.js) instead of three rates read off the flow clocks. uFlow is left with the one
+// job it can keep: the phase of the roughness jitter, where a musical-time scramble is exactly what is wanted.
 
 export const VS_DUST = `#version 300 es
 precision highp float;
@@ -12,8 +16,10 @@ uniform mat4 uVP;          // view-projection built on the CPU in update()
 uniform vec2 uRes;         // target size in pixels
 uniform float uCount;      // particles this frame (Q tier) — brightness is normalised by it
 uniform vec3 uForm;        // formation from, formation to, cross-fade 0..1
-uniform float uFlow;       // MS.flow — musical time. Never a wall clock.
-uniform float uFlowMid;    // MS.flowMid
+uniform float uSpin;       // the beat grid: the eased nudge-per-beat angle in radians (grid.js, CPU side)
+uniform float uSpinG;      // the same angle at the galaxy's winding rate
+uniform float uFlow;       // MS.flow — musical time. The jitter's phase and the slow drift, never the beat.
+uniform float uFlowMid;    // MS.flowMid — the per-grain wobble and the ribbon's twist (slow drift)
 uniform float uBassS;      // MS.bassS
 uniform float uMidS;       // MS.midS
 uniform float uLevel;      // MS.lvl
@@ -54,11 +60,13 @@ vec3 form(int k, float n, vec3 h, float id){
   //    so no two particles ever line up into a seam.
   if (k == 0){ float y = 1. - 2. * n, rr = sqrt(max(0., 1. - y * y)), ph = id * 2.39996; return vec3(cos(ph) * rr, y, sin(ph) * rr) * 1.05; }
   // 1: torus — (R + r cos v) around the main circle u, r sin v up the tube; r breathes with the slow bass.
-  if (k == 1){ float u = TAU * h.x + uFlow * .12, v = TAU * h.y + uFlowMid * .3; float R = 1.1, rr = .38 + .2 * uBassS;
+  //    u turns with the beat, a little faster than the cloud around it, so the ring reads as the thing being nudged.
+  if (k == 1){ float u = TAU * h.x + uSpin * .7, v = TAU * h.y + uFlowMid * .3; float R = 1.1, rr = .38 + .2 * uBassS;
                return vec3((R + rr * cos(v)) * cos(u), rr * sin(v), (R + rr * cos(v)) * sin(u)); }
   // 2: three-arm galaxy — radius is sqrt-distributed (uniform area), the arm is a log-ish spiral whose
-  //    winding rate falls off as 1/(r + .35) so the core turns faster than the rim.
-  if (k == 2){ float rr = sqrt(h.x) * 1.7 + .05; float arm = floor(h.y * 3.) / 3. * TAU; float an = rr * 2.6 + arm + uFlow * .35 / (rr + .35) + (h.z - .5) * .5;
+  //    winding rate falls off as 1/(r + .35) so the core turns faster than the rim. It winds per beat, so every
+  //    beat shears the arms a little — most in the core, least at the rim, which is what a spiral arm is.
+  if (k == 2){ float rr = sqrt(h.x) * 1.7 + .05; float arm = floor(h.y * 3.) / 3. * TAU; float an = rr * 2.6 + arm + uSpinG / (rr + .35) + (h.z - .5) * .5;
                return vec3(cos(an) * rr, (h.z - .5) * .22 / (rr + .4), sin(an) * rr); }
   // 3: the waveform itself as a twisting ribbon.
   float x = n * 2. - 1.; float w = wave(n);
@@ -80,7 +88,7 @@ void main(){
   pos *= 1. + uKick * .22 * h.z + uDrop * 1.6 * h.y * h.y - .2 * uTension + .1 * uBassS;
   pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // jitter as tension rises
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
-  pos.xz *= rot(uFlow * .17);                                 // the cloud's own slow spin (the camera orbits too)
+  pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);
   gl_Position = cp;
   float zc = max(cp.w, .05);                                  // distance along the view axis

@@ -3,6 +3,7 @@
 // faint linked rings drawn additively over the cloud in the same camera, no depth test. See fibre.js.
 import { VS_DUST, FS_DUST } from './shaders.js';
 import { CAP, counts, emit, fit } from './fibre.js';
+import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
@@ -34,7 +35,7 @@ const SELF = {
   tag: 'a swarm of dust, one frequency band per grain',
   card: { title: 'DUST', blurb: 'a swarm of particles in a flow field, one frequency band per grain, the Hopf fibres threaded through' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/dust.jpg from tools/thumbs.sh
   feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'kick', 'dropEnv', 'tension', 'hat',
-    'alive', 'arc', 'punchy', 'regularity'],
+    'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt', 'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
   fibresOn: 1,                  // hooks.fibres — the A/B switch; set before init(), so never reset there
@@ -49,10 +50,11 @@ const SELF = {
     this.pr = ctx.mkProg(VS_DUST, FS_DUST, 'dust');
     this.vao = ctx.gl.createVertexArray();               // no attributes: positions come from gl_VertexID
     this.vp = new Float32Array(16);
-    this.formA = 0; this.formB = 0; this.formT = 1; this.formKick = 0; this.nRef = 0;
-    this.kickHi = false; this.dropHi = false;
+    this.formA = 0; this.formB = 0; this.formT = 1; this.nRef = 0;
+    this.dropHi = false;
+    this.spin = 0; this.spinG = 0; this.trig = mkTrigger(); this.why = 'init';
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
-    this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, kick: 0, drop: 0, tension: 0, hat: 0, alive: 0 };
+    this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, kick: 0, drop: 0, tension: 0, hat: 0, alive: 0, spin: 0, spinG: 0 };
     this.mood = { hue: 0, sat: 0, bri: 0, spread: 0, invert: 0, angular: 0 };
     lookVP(this.vp, 0, 0, this.dist, 1, 55 * DEG, 0.1, 10.1);
     this.L = ctx.lines.mk(CAP);                          // the fibre overlay's own segment buffer (CONTRACTS 1.12 A)
@@ -69,12 +71,17 @@ const SELF = {
   },
 
   update(dt, MS, GROOVE, LOOK, env) {
-    // discrete events, read off the decaying impulses (rising edges)
-    const kickOn = MS.kick > 0.5;
-    if (kickOn && !this.kickHi && ++this.formKick >= 64 && this.formT >= 1) { this.formKick = 0; this.reform(); }
-    this.kickHi = kickOn;
+    // The beat grid (grid.js): one angle, read off the beat COUNT so it can never drift, eased so every beat is a
+    // nudge. The galaxy's winding rides the same angle at its own rate.
+    this.spin = ease(this.spin, spinTarget(MS), dt);
+    this.spinG = GAL_K * this.spin;
+
+    // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
+    // never while a pour is still running. The drop is the one exception: it re-pours wherever it lands.
+    const why = trigger(this.trig, MS, this.formT >= 1);
+    if (why) { this.why = why; this.reform(); }
     const dropOn = MS.dropEnv > 0.5;
-    if (dropOn && !this.dropHi) this.reform();           // DETONATE: the cloud re-pours on the drop
+    if (dropOn && !this.dropHi) { this.why = 'drop'; this.reform(); }   // DETONATE: the cloud re-pours on the drop
     this.dropHi = dropOn;
     // the cross-fade advances with the music: energy pushes, kicks shove
     if (this.formT < 1) this.formT = Math.min(1, this.formT + dt * (0.08 + 0.5 * MS.lvl + 0.8 * MS.kick));
@@ -88,11 +95,12 @@ const SELF = {
     m.flow = MS.flow; m.flowMid = MS.flowMid; m.flowBass = MS.flowBass; m.bassS = MS.bassS; m.midS = MS.midS;
     m.highS = MS.highS; m.lvl = MS.lvl;
     m.kick = MS.kick; m.drop = MS.dropEnv; m.tension = MS.tension; m.hat = MS.hat; m.alive = MS.alive;
+    m.spin = this.spin % (Math.PI * 2); m.spinG = this.spinG % (Math.PI * 2);   // wrapped: fp32 in the shader
     const q = LOOK.mood, d = this.mood;
     d.hue = q.hue; d.sat = q.sat; d.bri = q.bri; d.spread = q.spread; d.invert = q.invert; d.angular = q.angular;
 
     this.rt.time = MS.flow;                              // the visual clock is musical time, not the wall clock
-    this.rt.label = FORMS[this.formA] + (this.formT < 1 ? '>' + FORMS[this.formB] + ' ' + this.formT.toFixed(2) : '');
+    this.rt.label = FORMS[this.formA] + (this.formT < 1 ? '>' + FORMS[this.formB] + ' ' + this.formT.toFixed(2) : '') + ' ' + this.spin.toFixed(1);
   },
 
   draw(target, { w, h }) {
@@ -105,6 +113,8 @@ const SELF = {
     gl.uniform2f(P.u('uRes'), w, h);
     gl.uniform1f(P.u('uCount'), count);
     gl.uniform3f(P.u('uForm'), this.formA, this.formB, this.formT);
+    gl.uniform1f(P.u('uSpin'), m.spin);
+    gl.uniform1f(P.u('uSpinG'), m.spinG);
     gl.uniform1f(P.u('uFlow'), m.flow);
     gl.uniform1f(P.u('uFlowMid'), m.flowMid);
     gl.uniform1f(P.u('uBassS'), m.bassS);
@@ -157,8 +167,14 @@ const SELF = {
   },
 
   // test hook: &fibres=0 under #test draws the swarm alone (the A/B md5 of the points path)
+  // dinfo(): the scene's own numbers, frame by frame, for tools/dust-trace.js. Read-only (CONTRACTS §1.4: a hook
+  // that reports must not mutate).
   hooks: {
     fibres(v) { SELF.fibresOn = +v; },
+    dinfo() {
+      return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
+        why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : 0, nRef: SELF.nRef };
+    },
   },
 
   // the highest-trail scene in the set: the trails are the feedback effect's job, never faked in the shader
@@ -180,7 +196,7 @@ const SELF = {
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
-      flow: 'the scene clock: the swarm\'s slow spin, the camera\'s orbit, the galaxy arms',
+      flow: 'the scene clock, and the phase of the jitter the roughness shakes the cloud with; the camera drifts on it',
       flowMid: 'the torus and ribbon formations twist on mid-band time; it also twists the fibre rings and wobbles '
         + 'how high up the sphere each ring sits',
       flowBass: 'bass time tumbles the whole family of fibre rings rigidly, so the linked circles roll through '
@@ -190,12 +206,18 @@ const SELF = {
       highS: 'lights the third ring: the highest tori brighten with the top of the mix',
       lvl: 'how far each grain is pushed out by its own band, overall brightness, how fast a re-pour completes, and '
         + 'the overall brightness of the rings',
-      kick: 'a kick shoves grains outward and brightens them, and swells the rings a little; every 64 kicks the '
-        + 'swarm re-pours into a new shape',
+      kick: 'a kick shoves grains outward and brightens them, swells the rings a little, and hurries a pour along',
       dropEnv: 'the cloud re-pours on the drop, grains fly outward, the rings swell, the camera dollies in',
       tension: 'the cloud contracts and jitters, and the rings draw in with it',
       hat: 'grains sparkle bigger at the edge',
       alive: 'silence fades every grain, and every ring, to black',
+      beatCount: 'the beat grid: the whole cloud is nudged a thirty-second of a turn on every beat, the torus a '
+        + 'little further and the galaxy arms further still in their core than at their rim',
+      beatPhase: 'together with the bar position it says where the downbeat is, so the first beat of the bar gets '
+        + 'half a nudge more than the other three',
+      barPos: 'which beat of the bar this is: the downbeat gets the bigger nudge',
+      phrase16Pos: 'when the sixteen-beat phrase comes round, the swarm pours into a new shape',
+      barNovelEvt: 'a bar that starts something new pours the swarm into a new shape, wherever in the phrase it falls',
       arc: 'the bid: never auto-picked during a build',
       punchy: 'the bid: punchy music invites the swarm',
       regularity: 'the bid: a steady rhythm invites the swarm',
@@ -210,15 +232,21 @@ const SELF = {
       + 'each of 20k-150k grains its own bin turns the spectrum into a texture you feel rather than read: you see '
       + 'the density of the mix, not just its loudness. Formations change only on kicks and drops (cuts: onset) so '
       + 'the change always lands with the music, and the cross-fade is per-particle so the cloud pours instead of '
-      + 'snapping. The camera orbits with GROOVE and dollies in on bass, so the body of the track is also motion.',
+      + 'snapping. The camera orbits with GROOVE and dollies in on bass, so the body of the track is also motion. '
+      + 'Every turn in the picture is on the beat grid: the cloud, the doughnut and the galaxy arms are nudged a '
+      + 'step on each beat and a bigger step on the downbeat, and a shape change waits for the phrase line or for a '
+      + 'bar the engine says begins something new — so you can count the bars off the screen with the sound off.',
     math: 'Fibonacci sphere: y = 1 - 2n spreads the particles evenly in height (a sphere\'s area per unit height is '
       + 'constant), ring radius r = sqrt(1 - y^2), and the azimuth advances by the golden angle 2pi/phi^2 ~ 2.39996 '
       + 'rad per particle. Because phi is the hardest number to approximate by rationals, successive points never '
       + 'fall into arms or seams, so the sphere is as uniform as a lattice-free point set gets. Torus: with the tube '
       + 'angle v and the ring angle u, p = ((R + r cos v) cos u, r sin v, (R + r cos v) sin u); r = .38 + .2*bassS, '
       + 'so the tube fattens with the low end. Galaxy: radius r = sqrt(h) gives uniform density per unit area, and '
-      + 'the arm angle r*2.6 + flow*.35/(r + .35) winds the core faster than the rim, which is what makes spiral '
-      + 'arms. Ribbon: the waveform texture sampled along x, twisted by rot(2.5x). Projection: a standard '
+      + 'the arm angle r*2.6 + 0.9*spin/(r + .35) winds the core faster than the rim, which is what makes spiral '
+      + 'arms. The grid: spin eases toward (2pi/32)*(beatCount + bar/2), a target read off the COUNTS and never '
+      + 'integrated, so it cannot drift however the tempo moves; the ease has a 0.22 s time constant, which is half '
+      + 'a beat at 150 BPM, so each beat lands as a nudge and the bar line lands as one and a half. '
+      + 'Ribbon: the waveform texture sampled along x, twisted by rot(2.5x). Projection: a standard '
       + 'perspective matrix, fov 55 deg, near .1, far 10.1; point size falls as 1/w (w = distance along the view '
       + 'axis) and brightness carries min(1, 50000/count) so adding particles never adds total light. The rings are '
       + 'Hopf fibres: the circle psi -> (cos(t/2) e^i(psi+phi/2), sin(t/2) e^i(psi-phi/2)) on the 3-sphere, sent to a '

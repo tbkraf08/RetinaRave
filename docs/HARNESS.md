@@ -740,6 +740,28 @@ switch `predKickIn` / `nextKickIn` to 5e-5 (the v3 path itself differs page / no
 lattice vote must be near-unanimous (7 of 8 four-second windows) — 3 consecutive flipped CyborgNinja between its two kick lattices
 four times in 40 s; and `R_LINE` off loses 20–65 ms on two tracks (the onsets alone cannot pick a lattice).
 
+## Scene ruler on a real track — `tools/dust-trace.js` (a scene edit whose point is the SYNC, v0.20+ / DECISIONS §57)
+
+`filetrace.js` records MS, and MS says nothing about what a SCENE did with it; `probe.js` reads the canvas but needs a
+real window. `dust-trace.js` is the two of them on the deterministic file path — it forces the scene, registers its own
+rAF after the loop's (so it runs once the frame is drawn AND composited) and records per frame the composited
+framebuffer's mean luminance (`lum`, plus the centre 20 % `lumC` and the 60–90 % rim `lumR`, the split `lum.py` uses),
+the named MS fields, and every number of the scene's own `hooks.dinfo()`:
+
+```
+PORT=8880 WARM=20 node tools/dust-trace.js SeeYouDrop 20 110 tools/work/d/syd-after.json 1
+python3 tools/work/d/an.py tools/work/d/syd-{before,after}.json     # the DUST overhaul's own reader
+```
+`WARM` is the engine warm-up before the window (default 8 s) — **the live build detector needs 32 s of music before it
+can arm anything** (§54), so a window that is meant to show `buildLive` starts the page at `at` 0: `WARM=20` for a
+window at 20 s. The output is the `{track, mode, at, fps, fields, f, t, cols}` shape `tools/truth/*.py` read. The
+recorder costs a `readPixels` per frame (a centred half of the buffer): 90 s of track is ~3 min of wall clock, so
+**never bench beside one** — the interleaved NAV ratio is the only number that survives it.
+
+A scene that wants columns exports `hooks.dinfo()` returning a flat object of numbers; it must not mutate (CONTRACTS
+§1.4). The tool passes the eval blocks to `cdp.js` as ONE line: cdp logs `EVAL <expr.slice(0,60)> => <value>`, so a
+newline inside the first 60 characters splits the log line and the driver can no longer find the value.
+
 ## Single-file build
 
 ```
