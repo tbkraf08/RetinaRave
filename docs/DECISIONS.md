@@ -2855,3 +2855,10 @@ orchestrator's.
 beat line +0 / 6 / 14 ms (med / p50 / p90) vs +11 / 15 / 45, jitter 6 / 14 vs 9 / 53, beat F 0.938 vs 0.876; the predicted kicks on it
 F 0.38 (P 0.66) at +4 ms vs 0.19 (P 0.34) at +25; `nextBeatIn` P 0.92 vs 0.79, drops 14 / 8 beats ahead both. The A/B for the user is
 the live switch (`CARD.setClock('pcm')` / `'v3'`); the default stays v3 until their word. Not tagged, not pushed.
+
+**§56 addendum 3 — the PCM clock is the default (2026-09-30, the user's stream-mode A/B).** "B really seems to handle the double
+time as it builds before drop better; default and tag what has been done so far." `CLOCK.src = 'pcm'`: `bpm / beatPhase / beat /
+beatCount` publish the PCM clock for every stage and scene; `&clock=v3` / `CARD.setClock('v3')` is v0.19's clock. Proofs: check 0
+fail, npm test OK, feats appendix regenerated (188 fields); the fake timeline never runs the clock stage, so s0 f360 / f840 md5
+`fb74fee4` / `8a0715df` unchanged; a SeeYouDrop det trace (`&map=0`, 20–40 s): `clockPcm` 1 on 1201 / 1201 frames, `bpm ==
+bpmPcm` on all, `beatPhase` vs `beatPhasePcm` within 1.4e-14, conf median 0.93, ENGINE.ms 0.09–0.14.

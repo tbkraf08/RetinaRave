@@ -28,9 +28,9 @@ export const FEATS = {
   onsetRate: R('hits per second', 'Σonsets·exp(-dt/1)', 'build cue'),
   // --- tempo / beat ---
   beat: E('a beat boundary just passed', 'beatPhase wrapped', 'retargeting, scene switch gating'),
-  beatPhase: L('where we are inside the beat, 0→1', 'phase += bpm/60·dt + PLL correction', 'uBeat.x, sway, trap rotation'),
+  beatPhase: L('where we are inside the beat, 0→1', 'the PCM beat clock (engine/clock, default since 2026-09-30: Kalman beat position on the ears\' sample-timed onsets) through the lead; &clock=v3: phase += bpm/60·dt + PLL correction', 'uBeat.x, sway, trap rotation'),
   beatCount: { kind: 'count', eli5: 'beats since start', formula: 'increments on beat', drives: 'phrase alignment, hysteresis', range: [0, Infinity] },
-  bpm: R('tempo (±1 BPM on the demo styles; holds its octave through breakdowns)', 'harmonic-comb ACF of the 100 Hz onset envelope (l + .6·2l + .3·4l, 130-centred prior), period from the harmonics\' parabolic vertices, octave-aware switching', 'beat rate, crossfade duration'),
+  bpm: R('tempo (±1 BPM on the demo styles; holds its octave through breakdowns)', 'the PCM clock\'s tempo by default since 2026-09-30 (&clock=v3: v3\'s); both: harmonic-comb ACF of the 100 Hz onset envelope (l + .6·2l + .3·4l, 130-centred prior), period from the harmonics\' parabolic vertices, octave-aware switching', 'beat rate, crossfade duration'),
   regularity: L('how steady the rhythm is', 'clamp(acf peak·1.6)·presence', 'sway amplitude, scene scores'),
   phaseCorr: I('pending beat-phase correction', 'PLL residual, bled at τ=0.18 s'),
   // --- energy arc ---
@@ -120,7 +120,7 @@ export const FEATS = {
   beatCountPcm: { kind: 'count', eli5: 'the PCM clock\'s beats since its start', formula: 'floor of the beat position; never steps back (a pull back across a line holds on it)', drives: 'nothing by default; beatCount with the switch on', range: [0, Infinity] },
   beatPcm: E('the PCM clock crossed a beat line this frame', 'beatCountPcm stepped', 'nothing by default; beat with the switch on'),
   clockConfPcm: L('how sure the PCM clock is of its phase', '1 − σ(beat position) / 0.25 beat, from the Kalman covariance', 'nothing by default; a scene may gate on it'),
-  clockPcm: { kind: 'level', eli5: 'is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock\'s', formula: 'ENGINE.CLOCK.src === \'pcm\' (\'&clock=pcm\' / CARD.setClock)', drives: 'nothing: the harness and the HUD read it', range: [0, 1] },
+  clockPcm: { kind: 'level', eli5: 'is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock\'s', formula: 'ENGINE.CLOCK.src === \'pcm\' (the default since 2026-09-30; \'&clock=v3\' / CARD.setClock(\'v3\') off)', drives: 'nothing: the harness and the HUD read it', range: [0, 1] },
   kickCount: { kind: 'count', eli5: 'kicks since start', formula: 'increments per kick', drives: 'MANDALA fold epoch (every 64 kicks; synapse used 32)', range: [0, Infinity] },
   alive: L('is sound present (synapse)', 'silentFor<.7 s, attack .25 s release .9 s', 'idle behaviour'),
   hush: L('the silence before a drop', 'tension>.35 & fast energy < 32% of short energy', 'DUST/MANDALA hold'),

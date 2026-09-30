@@ -714,7 +714,7 @@ nextHatIn,nextDropIn,nextKickConf,nextKickUp,predKickIn,buildLive,dropLiveIn,que
 
 ## Clock — the beat clock on the PCM bus (live step 6; a change to `engine/clock/`, `features-clock.js`, the ears' onsets, or anything that reads `bpm` / `beatPhase` / `beat` / `beatCount`)
 
-Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatCount` — the PLL on the frame-rate flux, the default
+Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatCount` — the PLL on the frame-rate flux, the default until 2026-09-30 — the PCM clock is the default since §56 addendum 3; `&clock=v3` brings v3's back
 every scene reads) and the PCM clock's (`bpmPcm` / `beatPhasePcm` / `beatPcm` / `beatCountPcm` / `clockConfPcm` — tempo.js's comb on a
 per-hop spectral flux of the PCM bus, the ears' sample-timed onsets as ticks, a Kalman filter on (beat position, rate); `engine/clock/`).
 Both are published on the lead's time base (heard time + the display lead; the raw analysis time under `&lead=0`), so their beat lines

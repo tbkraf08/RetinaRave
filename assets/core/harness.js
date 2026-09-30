@@ -44,7 +44,7 @@ export const CARD = {
   get GRID() { return getGrid(); },
   get QUEUE() { return ENGINE.QUEUE ? ENGINE.QUEUE.list : []; }, // live step 5: the predicted-event queue's entries [{ cls, t (heard s), conf }], by t
   setClock,                                                      // live step 6: 'pcm' | 'v3' — which beat clock bpm / beatPhase / beat / beatCount publish (features-clock.js; &clock=pcm under #test)
-  get clock() { return ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'; },
+  get clock() { return ENGINE.CLOCK ? ENGINE.CLOCK.src : 'pcm'; },
   get home() { const E = REG[SC.home]; return E ? E.scene.state : null; }, // the home scene's state (parity/monitor tools)
   goScene: (id, hard) => goScene(id, hard, MS),
   setColour, // colour variant by name for every scene that declares it (CONTRACTS §1.4); &colour=<name> under #test
@@ -160,7 +160,7 @@ export function initHarness(hideLanding) {
   // CLOCK=1) — what every live-mode stage is developed against; the default builds the map as v0.15 did
   if (HASH.has('map')) ENGINE.useMap = HASH.get('map') !== '0';
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
-  // the default 'v3' is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
+  // pcm is the default since 2026-09-30 (§56 addendum 3); &clock=v3 is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
   if (HASH.has('clock')) setClock(HASH.get('clock'));
   if (track) {
     hideLanding();

@@ -25,7 +25,7 @@ const RING = 64;               // frames in the heardT − now median (~1 s at 6
 const SEEK = 0.1;              // s: an offset this far from the median is a seek / a new stream, not jitter
 
 export const CLOCKS = {
-  src: 'v3',            // 'v3' | 'pcm': which clock bpm / beatPhase / beat / beatCount publish
+  src: 'pcm',           // 'v3' | 'pcm': which clock bpm / beatPhase / beat / beatCount publish (pcm by default since 2026-09-30, §56)
   clk: null, E: null, subscribed: false, cpu: 0, cpuTotal: 0, blocks: 0, mono: new Float32Array(PCM.BLOCK),   // cpu: ms since the last frame drained it; cpuTotal: since the start (the cost ruler: cpuTotal / ENGINE.frameN)
   seen: [-1, -1, -1],   // the newest onset time handed over per class (the ears keep an onset pending until its release)
   pub: { n: null },     // the published PCM count's memory (it never steps back: a beat fires once; clock.js read())
