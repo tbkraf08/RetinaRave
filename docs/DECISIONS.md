@@ -2679,3 +2679,8 @@ look by route: `nav.buildLive=build,nav.dropLiveEvt=dropEvt`. Fake-timeline md5 
 `8a0715df` (the fake timeline has v3 builds and drops, none of the live detector's — NAV no longer parks or exits there; the
 landing's demo synth runs the real stages, so it does). check 0 fail, npm test OK. The trade: in file mode v3's `build` armed
 before 2 of 6 truth drops on its own, the live detector 5 of 6 (§54); a scene on `buildLive` gives up the first for the second.
+
+**v0.18 tagged locally (2026-09-29) on the user's word ("B looks good" → "#1"; "don't deploy" stands from earlier the same day):**
+v0.17.1 + the display lead file-mode only (§53) + the live build / drop detector (§54) + NAV on it by default (§54 addendum 2).
+`releases/retinarave-v0.18.html` (1252 KB, 142 modules; from `file://` 348 frames in 6 s, errs [], nonFinite []), package.json
+0.18.0. Not pushed (retinarave.com serves v0.15).
