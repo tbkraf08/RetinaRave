@@ -57,6 +57,15 @@ export const HELP = {
       + 'where a loud one is a galaxy. The drums are not dimmed with it — a quiet section\'s kick is still a kick',
     eS: 'the same loudness measured over a third of a second instead of two and a half, so the moment a drop '
       + 'lands counts as loud even though the two seconds before it were the silence of the build',
+    harmAngle: 'where the harmony sits on the circle of fifths: it is the fallback the whole palette is centred '
+      + 'on when the key itself is not trusted',
+    key: 'the key is the colour of the cloud and of the rings: the twelve keys are twelve hues round the circle of '
+      + 'fifths, so a change of key is a small turn of the whole palette and related keys look related',
+    mode: 'major pulls the palette to the warm half of the wheel and lifts the colour, minor to the cool half and '
+      + 'drains it a little',
+    keyConf: 'how sure the engine is of the key: while it is unsure the last confident key is held and the colour '
+      + 'slides back toward the plain mood palette, so a keyless stretch is never a random hue',
+    valence: 'happy music warms the palette a little further, sad music cools it',
     denK: 'how many kicks a second there are: with no bass and almost no kicks the swarm becomes the waveform '
       + 'itself, a single line',
     arc: 'the bid: never auto-picked during a build',

@@ -9,8 +9,18 @@ import { dyn, mkDyn } from './dyn.js';
 import { HAB, NW, ema, emaK, mkEma } from './habit.js';
 import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
+import { mkAnchor } from '../../math/keycolour.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
+// §60 step 3: the key as a hue ANCHOR, the same language TORUS2 (id 3) and POLYTOPE (id 5) already speak
+// (assets/math/keycolour.js): the twelve keys are twelve hues round the circle of fifths, so a modulation is a
+// small turn and related keys are neighbouring colours; the MODE pulls the anchor the short way toward warm
+// (major) or cool (minor), because a fixed offset promises nothing once the key has rotated the wheel; `keyConf`
+// gates the whole thing, holding the last confident key and sliding back toward LOOK.mood when the read goes
+// noisy; and the anchor eases over ~2 s on the UNWRAPPED hue, so a key change is a turn and never a jump.
+// Its state is PER CALLER by design — DUST easing the same `hueU` as TORUS2 would have made two scenes on screen
+// in one crossfade fight over one variable — so DUST builds its own.
+const KEY = mkAnchor();
 const DEG = Math.PI / 180;
 const S0 = 0.7;                 // fibre scale at rest. The pole gate caps a projected ring at sqrt(1.86/.14) = 3.64,
                                 // so 0.7 keeps the widest sweep inside the 2.3-unit frame half-height at dist 4.4.
@@ -42,6 +52,7 @@ const SELF = {
     'subNoteEvt', 'subGate',
     'buildLive', 'nextDropIn', 'dropLiveEvt',
     'eM', 'eS', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
+    'harmAngle', 'key', 'mode', 'keyConf', 'valence',
     'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
@@ -50,6 +61,7 @@ const SELF = {
   pinD: -1,                     // hooks.dyn — test only: pin the dynamic-range drive (a bench must not run at the
                                 // fake timeline's own eM, which is 0.374 → drive 0.40 → grains at 73 % of their size)
   habOn: 1,                     // hooks.hab — the A/B switch for the habituation (0 = pass 1's drive exactly)
+  keyPin: null,                 // hooks.key(k, m) — test only: pin the key inside update(), never touching MS
 
   // the director's home scene owns builds; DUST bids on punchy, steady music
   score(MS) {
@@ -151,10 +163,13 @@ const SELF = {
     m.ringR = ringR(this.vS, midR(this.formA, this.formB, this.formT)); m.ringW = ringW(this.vS);
     m.spin = this.spin % (Math.PI * 2); m.spinG = this.spinG % (Math.PI * 2);   // wrapped: fp32 in the shader
     const q = LOOK.mood, d = this.mood;
+    // The palette's centre is the KEY, not the mood's own hue: `LOOK.mood` is still the base the anchor eases
+    // AWAY from, and is all that is left when the key is not trusted (keycolour.js gates on `keyConf`).
+    const A = KEY.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, q.hue, this.keyPin);
     // the void drains the palette: the colour goes out of the cloud and the hue family closes toward one hue,
     // and the drop's release puts it back (the mood object is the fibres' palette too, so the rings drain with it)
     const dr = 1 - 0.55 * Math.min(1, m.build);
-    d.hue = q.hue; d.sat = q.sat * dr; d.bri = q.bri; d.spread = q.spread * (1 - 0.35 * Math.min(1, m.build));
+    d.hue = A.hue; d.sat = Math.min(1.2, q.sat * A.sat) * dr; d.bri = q.bri; d.spread = q.spread * (1 - 0.35 * Math.min(1, m.build));
     d.invert = q.invert; d.angular = q.angular;
 
     this.rt.time = MS.flow;                              // the visual clock is musical time, not the wall clock
@@ -238,6 +253,8 @@ const SELF = {
     form(v) { SELF.pinF = v === '' || v === undefined || v === null ? -1 : +v; },   // -1 = the music chooses (the default)
     dyn(v) { SELF.pinD = v === '' || v === undefined || v === null ? -1 : +v; },     // -1 = the music chooses (the default)
     hab(v) { SELF.habOn = +v; },                                                    // &hab=0: pass 1's drive, for the A/B
+    // &key=<k> (and hooks.key(k, m) from a page) pins the key so a shot can prove one hue at a time
+    key(k, m) { SELF.keyPin = k === null || k === undefined || k === '' || k < 0 ? null : { k: ((k | 0) % 12 + 12) % 12, m: (m | 0) ? 1 : 0 }; return JSON.stringify(SELF.keyPin); },
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
@@ -245,6 +262,8 @@ const SELF = {
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
         dyn: SELF.m.dyn, pk: SELF.vD.pk, dr: SELF.vD.r,
+        hue: SELF.mood.hue, hsat: SELF.mood.sat, key: KEY.OUT.key, kmode: KEY.OUT.mode, kconf: KEY.OUT.conf,
+        fifth: KEY.OUT.fifth,
         ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age,
         ringR: ringR(SELF.vS, midR(SELF.formA, SELF.formB, SELF.formT)), form: SELF.formT >= 1 ? SELF.formB : -1 };
     },
