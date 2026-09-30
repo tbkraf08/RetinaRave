@@ -13,15 +13,20 @@
 // seconds of the track (§57's own intro figures) — a 3:1 spread the picture was throwing away.
 //
 // FLOOR is what stops an intro being blown up: without it the peak at second one IS the intro's own energy, the
-// ratio is 1, and the quietest part of the track is drawn at full brightness. 0.70 is just under the resting `eM`
-// of both test tracks' grooves (SeeYouDrop p25 0.789, CyborgNinja p05 0.796), so a normal track's groove sits at
-// the top of the range from the first frame and only something genuinely quieter than a groove reads quiet.
+// ratio is 1, and the quietest part of the track is drawn at full brightness. It has to be at or a little above the
+// resting `eM` of a normal groove (SeeYouDrop p25 0.789 p50 0.822, CyborgNinja p05 0.796 p50 0.821), so that a
+// groove sits at the top of the range from the first frame and only something genuinely quieter reads quiet.
+// 0.70 was the first cut and was too low: on SeeYouDrop it left the drive at 0.976 through 8-14 s, where the track
+// is still assembling itself, so the intro was as bright as the groove. 0.84 puts the drive there at 0.681 and at
+// 2-8 s at 0.268 — the first eight seconds read 0.633 of the groove's luminance against 0.671 before the whole
+// overhaul and 0.886 with the 0.70 floor. Above the floor the peak is the track's own (0.896-0.904 by 30 s here),
+// so the floor only ever binds while the hold is still warming up, which is exactly its job.
 //
 // LO is where the range bottoms out: below 55 % of the track's peak the base of the cloud is at its floor. It is
 // not 0, because an energy ratio of 0 is silence and `alive` already handles silence.
 
 export const PK_REL = 25;        // s: the peak's release time constant (instant attack)
-export const PK_FLOOR = 0.7;     // the peak can never sit below this — the intro guard
+export const PK_FLOOR = 0.84;    // the peak can never sit below this — the intro guard
 export const LO = 0.55;          // eM/peak at or under this reads fully quiet
 
 // The gains. BASE is the cloud itself — the grains' own spectrum push and the ambient 0.22 — and it carries the

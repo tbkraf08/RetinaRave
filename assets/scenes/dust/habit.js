@@ -66,6 +66,23 @@
 // sparse. Weighted, the mean of amp² is held in every section, sparse or dense, and the novelty can only decide
 // WHICH grains get the light. It cannot be zero: with no novelty anywhere the RMS is HAB itself.
 //
+// HOLDING THE MEAN OF amp² IS NOT QUITE HOLDING THE LIGHT, and two attempts to close the gap were measured and
+// rejected. The brightness is multiplied by `min(1, sz)` — a sub-pixel grain fades (shaders.js, energy
+// conservation) — and by the overdraw a grain's own area buys, so in a SPARSE mix the redistribution leaks: the
+// grains whose bands are new grow past a pixel and stop being attenuated, while the ones that shrink were already
+// sub-pixel and had nothing left to lose. On SeeYouDrop's intro (2-40 s), where instruments enter one per bar,
+// 8-14 s read 1.56x the groove at 28-40 s against 0.92x before pass 2. The two fixes, all four candidates measured
+// on the same clock (`tools/work/d2/syd-e10 / syd-e06 / syd-fin / syd-intro-*`):
+//
+//   candidate                          window p95/p05  |dlum| p50  per-beat  intro 2-8  intro 8-14
+//   the gain as it is        <- this            4.123        2.10     1.436       0.89        1.56
+//   the gain^0.6                                4.227        1.72     1.366       0.75        1.32
+//   the SIZE left on the raw level              4.177        1.63     1.366       0.65        1.09
+//
+// Both fixes work on the intro and both give back almost all of what step 2 bought — the per-frame motion (+52 %)
+// and the per-beat contrast (1.366 -> 1.436) ARE the novelty, and they travel through the size. So the gain stays
+// whole and the intro is dimmed where it belongs, in the dynamic range: `dyn.js` PK_FLOOR 0.70 -> 0.84.
+//
 // What this does NOT touch: the three transient voices and the sub. They are driven by the onsets' own ages
 // (voices.js), not by `amp`, so a habituated pad cannot dim a kick — the same rule step 1 follows.
 
