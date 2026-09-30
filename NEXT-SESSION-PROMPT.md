@@ -10,6 +10,8 @@ and tag what has been done so far" (PCM clock) · "on the PCM bus seems more acc
 work on the predictions" · "B looks good" / "#1" (live detector on NAV) · "B looks better" (stream: no display lead) · "don't deploy".
 
 **Do, in order:**
+0. **The DUST overhaul, pass 1 — `DUST-OVERHAUL-SESSION-PROMPT.md`** (the user, 2026-09-30: "start with DUST (can do a full
+   overhaul in place)", the legibility brief inside it, "looks good, can start"). This is the live work; items 1–4 below wait.
 1. **Ask once: does v0.20 go live?** Deploy = push `main` + tags, only on their word. Before a deploy: `tools/accept.sh` has not been
    run since v0.14 — run it (or say so), regenerate the fake-timeline thumbnails (`site/thumbs/nav.jpg` — NAV's f840 moved), and
    check `site/` copy mentions nothing stale.
