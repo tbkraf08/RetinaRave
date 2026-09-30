@@ -621,6 +621,23 @@ node tools/test_drums.js                                          # in npm test
 The node run = the page's det run (`kick2` identical frame by frame). TORUS2 reads v2 by default (2026-09-29); its old look for an A/B: `#test&track=SeeYouDrop&scene=3&route=torus2.kick2=kick,torus2.snare2=snare,torus2.hat2=hat`. A capture run: `FIELDSX='kick2,snare2,hat2' node tools/caplag.js track SeeYouDrop 24 50 27`
 (AUDIBLE; `kick` / `snare` / `hat` are already in caplag's FIELDS — naming them again doubles their columns).
 
+## Build — the build-up / drop ruler (live step 4; a change to anything that says "a drop is coming")
+
+```
+tools/build-rec.sh [outdir=tools/work/build]      # ~12 min, two lanes (PORTA 8831 / PORTB 8832): per track the whole track, det,
+                                                  # &lead=0, twice — &map=0 (the causal path) and &map=1 (the file map, the ceiling)
+cd tools/work/build && python3 ../../truth/dropcheck.py SeeYouDrop-map0.json WhoLikesToParty-map0.json Malicious-map0.json \
+  CyborgNinja-map0.json SeeYouDrop-map1.json WhoLikesToParty-map1.json Malicious-map1.json CyborgNinja-map1.json --summary [--md out.md]
+python3 tools/truth/dropcheck.py <trace.json> [--rule 'build>=0.5' --rule 'toDrop<=16' --rule 'dropEvt:evt']   # per trace, per rule
+python3 tools/truth/dropcheck.py --selftest
+```
+A rule arms a field: `f>=x` (a level), `f<=n` (a count-down in beats, negative = none), `f:evt` (an event). Per truth drop:
+the anticipation (beats the run live at the drop has been armed; gaps ≤ 1 beat bridged, the run may end 1 beat early), a
+count-down's pointing error, an event's lag (±2 beats); false arms / min = onsets with no drop within 16 bars; armed % and
+a chance hit rate (the mask circularly shifted). `--summary` pools the tracks (drops in trace order: SeeYouDrop ×2,
+WhoLikesToParty ×3, Malicious ×1; CyborgNinja = the false-alarm control) and takes each map rule from the `&map=1` trace.
+MS `tension` is v3's roughness; synapse's own tension and drop event are not in MS (the node harness below has them).
+
 ## Single-file build
 
 ```

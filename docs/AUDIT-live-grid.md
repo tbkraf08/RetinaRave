@@ -277,3 +277,62 @@ the pre-warm-up capture kept as `…-cap-sync27-fx-prewarmup.json`): P kick / sn
 audio arrived; first releases 12 s in, +13…+19 ms for their first 8 s, then +1…+16. One run each, different start points
 (19 vs 24 s), not the same input — the capture's own run-to-run spread is not measured; `FIELDSX` with the replay's inputs
 (`node tools/bars-replay.js --fields`) would make the next capture replayable.
+
+## Step 4 — build / drop (`LIVE-STEP4-BUILD-SESSION-PROMPT.md`)
+
+Live, nothing anticipates a drop ("What it says" 3). Step 4 measures first: B.0 a ruler and the existing fields graded on it,
+B.1 a node harness and a study of the causal candidates. Truth drops (heard s, `tools/truth/<Track>.json`, the tool's, only
+SeeYouDrop's hand-checked): SeeYouDrop 57.6 / 105.6, WhoLikesToParty 57.5 / 131.4 / 188.8, Malicious 148.3; **CyborgNinja has
+none — the false-alarm control.**
+
+### B.0 — the ruler (`tools/truth/dropcheck.py`) and the existing fields
+
+`dropcheck.py` (numpy only, `--selftest` on synthetic traces: a 16-beat ramp over 0.5 reads 8 beats, a count-down its own
+length with 0 pointing error, an event +50 ms, a flicker bridged, a 50 % mask ~0.5 chance) grades an ARM RULE per field —
+a level `f>=x`, a count-down `f<=n` (beats; negative = none), an event `f:evt`. Per truth drop: the **anticipation** = beats
+the armed run live at the drop has been armed (it may end ≤ 1 beat before the slam — a gap bar; gaps ≤ 1 beat bridged),
+0 = not armed; an event's **lag** (nearest within ±2 beats). **False arms / min** = arm onsets with no truth drop in the next
+16 bars (64 beats: a longer lead is no anticipation a visual can use), on the drop tracks and on CyborgNinja apart.
+**Armed %** and a **chance hit** rate beside it (the arm mask circularly shifted 200×: the drops it would "anticipate" by
+luck). Traces: `tools/build-rec.sh` — whole tracks, det, `&lead=0`, `&map=0` (the causal path — what stream mode runs) and
+`&map=1` (the file map, the non-causal ceiling); `dropcheck.py … --summary` pools them. Drops in the order SeeYouDrop 1 2 ·
+WhoLikesToParty 1 2 3 · Malicious 1.
+
+| rule | anticipation per drop, beats (event: lag ms) | armed at drop | false /min drop tracks | false /min CN | armed % drop / CN | chance hit |
+|---|---|---|---|---|---|---|
+| v3 `build>=0.5` | 7.9 2.2 · 0 0 0 · 0 | 2/6 | 0.57 | 0.33 | 6.5 / 7.0 | 0.08 |
+| v3 `build>=0.3` | 10.2 3.0 · 0 0 0 · 0 | 2/6 | 0.57 | 0.33 | 10.5 / 11.0 | 0.12 |
+| v3 `dropEvt` (event) | −6 +4 · — — — · — | 2/6 | 0.28 | 0 | — | 0.01 |
+| synapse `riser>=0.5` / `>=0.2` | 0 on all · (0.1 on WLTP 2) | 0/6 · 1/6 | 2.55 / 3.11 | 0.33 | 4.7 / 0.2 · 6.9 / 0.3 | 0.07 / 0.09 |
+| synapse `dropConf>=0.3` / `>=0.1` | 0 on all / 0.4 on SYD 1 | 0/6 · 1/6 | 0.09 | 0 | 1.1 · 1.7 / 0 | 0.02 |
+| synapse `dropExpectedIn<=16` / `<=8` | 1.0 (pointing +11.9 beats late) on SYD 1, else 0 / 0 on all | 1/6 · 0/6 | 0.09 | 0 | 1.7 · 0.6 / 0 | 0.03 / 0.01 |
+| synapse `hush>=0.5` | never armed anywhere | 0/6 | 0 | 0 | 0 / 0 | 0 |
+| synapse `hp>=0.5` (high-pass sweep evidence) | **18.0** 0.8 · 0 0 0 · 0 | 2/6 | 0.75 | **0** | 2.6 / 0 | 0.03 |
+| synapse `roll>=0.5` / `swell>=0.5` | 0 4.7 · 0 0 0.6 · 0 / 3.3 on SYD 1 | 2/6 · 1/6 | 5.00 / 3.40 | 3.34 / 0.33 | 10.7 / 5.0 · 11.3 / 1.2 | 0.18 / 0.17 |
+| MS `tension>=0.5` (v3's roughness, not synapse's) | 0 on all | 0/6 | 5.66 | 5.67 | 6.1 / 2.1 | 0.10 |
+| synapse's own tension `synTension>=0.3` (node) | 1.0 on SYD 1 | 1/6 | 0.38 | 0 | 3.4 / 0 | 0.04 |
+| synapse's evidence `synAll>=0.3` (node) | 10.6 6.6 · 0 0 1.6 · 0 | 3/6 | 6.13 | 5.33 | 13.3 / 4.7 | 0.23 |
+| synapse's drop event `synDropEvt` (node; not in MS) | never fired | 0/6 | 0 | 0 | — | 0 |
+| **ceiling** map `buildProg>0` | 20.0 12.0 · 0 0 0 · 0 | 2/6 | 0 | 0 | 3.9 / 0 | 0.06 |
+| **ceiling** map `toDrop<=16` / `<=32` | 16 16 · 0 0 0 · 15.9 / 32 32 · 0 0 0 · 31.8 | 3/6 | 0 | 0 | 7.0 / 0 · 13.9 / 0 | 0.07 / 0.18 |
+| **ceiling** map `mapDropEvt` (event) | +11 +4 · **−1007 −1019 −1021** · +39 | 6/6 | 0 | 0 | — | 0.02 |
+
+What it says:
+1. **Nothing live anticipates.** The best existing causal arm is v3's `build` (an energy-arc level): 2 of 6 drops, both on
+   SeeYouDrop (7.9 / 2.2 beats at 0.5), 0.57 false arms / min and armed as often on CyborgNinja (7 %) as on the drop tracks —
+   it is "the energy went up", not "a drop is coming". Synapse's anticipation chain is dead on the live path: `dropExpectedIn`
+   armed once (1 beat before SeeYouDrop's drop 1, pointing 12 beats late), `dropConf` peaks at 0.1–0.3, `hush` never set, and
+   synapse's own drop event never fired — its `tension` needs `ev.all > 0.3`, which the riser / roll / swell evidence reaches
+   mostly where no drop comes (`synAll>=0.3` 6.1 false / min, 5.3 on CyborgNinja).
+2. **The one existing field with a real signal is synapse's `hp`** (the high-pass sweep: bass pulled + the low spectral edge
+   rising): 18 beats before SeeYouDrop's drop 1, never armed on CyborgNinja, armed 2.6 % of the time. At 0.5 it misses the
+   other four; B.1 below finds its 5 s mean the best single arm.
+3. **The reactive events are on time where they fire:** v3 `dropEvt` −6 / +4 ms on SeeYouDrop, 0 false on CyborgNinja — but
+   0 of 4 on WhoLikesToParty / Malicious (their drops do not follow a bass absence ≥ 1.8 s).
+4. **The ceiling is not a ruler on WhoLikesToParty.** The file map puts all three of its drops **2.0 beats (half a bar) before
+   the truth** (56.50 / 130.33 / 187.77 vs 57.51 / 131.35 / 188.79 s, beat 0.513 s) — WhoLikesToParty's truth bar line is the
+   unverified one (step 3 "Open"). The node study below sees the bass return in the truth's bar 0, not the map's; either way
+   the map's `toDrop` counts to its own drop, 2 beats early, and its 16 / 32 beats read as 0 here (the run ends > 1 beat before
+   the truth drop). On SeeYouDrop and Malicious the ceiling is the ideal: 16 / 32 beats of warning, 0 false.
+5. The rows marked "node" come from the B.1 harness (`tools/build-node.js` — synapse's internals MS does not carry); it
+   agrees with the page runs field for field (B.1), so they are the live code too.
