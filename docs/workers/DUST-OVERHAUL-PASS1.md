@@ -300,3 +300,10 @@ In each: press **2** for DUST, Share a tab, play the track. SeeYouDrop is the re
 - **CyborgNinja** (no drop) should hold one shape for the whole minute and never pretend a build is coming
 
 A look remark is a retune request; the numbers above say which constant each remark lands on.
+
+## The audible capture run (orchestrator, after the worker) — see DECISIONS §57 addendum
+
+SeeYouDrop 40 → 112 s, `&sync=27`, DUST forced: drop 2 `dropLiveEvt` +85 ms in listener time, `buildLive` 2.78 s before; drop 1
+missed on warm-up (17.6 s from a 40 s start — not the scene). The one retune it bought: `FRESH` 0.04 → 0.06 in `voices.js`, because
+on the capture path the engine's age at every level edge sits one heard-time step later (40–60 ms) than on det, and at 0.04 every
+snare / hat voice and a third of the kick voices were placed on their frame, ~45 ms late. s1 md5 unchanged.

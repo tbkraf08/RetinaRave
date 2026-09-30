@@ -18,7 +18,12 @@
 // `Math.max(…, lvl)` underneath is the safety net: a hit whose age went astray still shows at the level's own size.
 
 const THR = 0.18;                // what counts as a hit: drumcheck's own "level rising edges >= 0.18" (§51)
-const FRESH = 0.04;              // an engine age this close to the edge is the same onset, and seeds the voice
+const FRESH = 0.06;              // an engine age this close to the edge is the same onset, and seeds the voice.
+// 0.04 was the det-path number (kick p50 +7 ms). The AUDIBLE capture run (SeeYouDrop 40–112 s, &sync=27, DUST forced,
+// tools/work/caplag/SeeYouDrop-cap-sync27-scene-1-fx.json) put the age at the level's edge in the 40–60 ms band for
+// ALL three voices (kick 32 of 184 edges, snare 87 of 145, hat 150 of 261, and NONE under 40 for snare / hat) — one
+// heard-time step later than det — so at 0.04 a live hit was placed on its frame, ~45 ms late to the ear. No two
+// logged kicks were within 80 ms, so 0.06 cannot pick up the previous hit; 60–80 (hat 29, snare 21) stays unseeded.
 
 // tc: the voice's decay in seconds (longer than the level's own, which is what "slow decay" means).
 // floor: the smallest amplitude a hit is allowed to have, so a soft hit is still a hit.

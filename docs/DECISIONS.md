@@ -2970,3 +2970,25 @@ where it returns; three thresholds are fitted on two tracks; the return path cou
 
 **Not tagged, not pushed, not deployed**; the A/B for the user is `releases/retinarave-v0.20.html` from `file://` against the
 dev server, key 2, the same track, in stream mode.
+
+### §57 addendum — the audible capture run, and `FRESH` 0.04 → 0.06 (orchestrator, 2026-09-30)
+
+The one audible run: `PORT=8830 HASHX='&scene=1' FIELDSX='kick2,kickAge,…,eM,denK' node tools/caplag.js track SeeYouDrop 40 72 27`
+→ `tools/work/caplag/SeeYouDrop-cap-sync27-scene-1-fx.json`, 4443 frames, listener time 38.96 → 113.05 s, fits 4.2 / 2.9 ms rms.
+(Grader's trap, recorded so nobody chases it again: `barPos / phrase16Pos / kickAge / snareAge / hatAge` are already in caplag's
+FIELDS, so naming them in FIELDSX INTERLEAVES a second copy — 8886 values for 4443 frames; take every other one. Read raw it looked
+like `kickAge` never reset; de-duplicated it resets 121 times for 120 logged kicks.)
+
+- **Drop 2 in listener time:** `dropLiveEvt` at 105.685 s = **+85 ms** after the truth (det path +17); `buildLive` armed **2.78 s**
+  before (det 3.2); `barNovelEvt` 98.5 / 101.71 / 106.5, `barReturnEvt` 98.5 / 106.5. **Drop 1 was not seen** — the run started at
+  40 s and the detector had 17.6 s (~11 bars) of warm-up; the earlier captures from 0 s armed 5.6 s before it (§56). Warm-up, not DUST.
+  `buildLive` never rose between the drops (0). 181 beats over 74 s = 146.6 BPM read (truth 150: the clock's start-up).
+- **The voices' seed on the capture path.** At each level's rising edge (≥ 0.18, +0.02) the engine's age of the same class reads:
+  kick2 / kickAge **<40 ms 51, 40–60 32, >120 101** (of 184 edges; 120 logged kicks — the level chatters), snare2 / snareAge **<40 0,
+  40–60 87, 60–80 21, 80–120 5, >120 32** (145), hat2 / hatAge **<40 0, 40–60 150, 60–80 29, 80–120 25, >120 57** (261). The det path
+  had put kick p50 at +7 ms; capture puts every class one heard-time step later, in the 40–60 band — exactly past `FRESH = 0.04`, so a
+  live hit's voice started from age 0 on its frame, ~45 ms late to the ear, for ALL snares and hats and a third of the kicks.
+  **Lean: `FRESH` 0.06.** No two logged kicks were within 80 ms (0 of 120), so 0.06 cannot seed from the previous hit; 60–80 stays
+  unseeded (the different-picker cases the worker measured at p50 +101 / +92 on det). The fake-timeline s1 md5 is **unchanged**
+  (`6696c6eb` / `01143b8d`: no det age falls in the band), `check` 0 fail. Live-only change, by design.
+- Nothing else in the capture contradicts the det numbers; the scene ran the whole window with `errs []`.
