@@ -54,4 +54,4 @@ detStream(pcm, {
 });
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify({ track, mode: 'node', sr, at: 0, fps: FPS, detLead: DET_LEAD, fields: names, f, t, cols, log }));
-console.log(`${OUT}: ${t.length} frames · pcm onsets ${clk.onsets} (hits ${clk.hits}) · est ${clk.est} lines ${clk.lines} · bpm ${clk.bpm.toFixed(2)} conf ${clk.conf.toFixed(2)} · ${((performance.now() - c0) / 1000).toFixed(1)} s`);
+console.log(`${OUT}: ${t.length} frames · pcm onsets ${clk.onsets} (hits ${clk.hits}) · est ${clk.est} lines ${clk.lines} jumps ${clk.jumps} · bpm ${clk.bpm.toFixed(2)} conf ${clk.conf.toFixed(2)} · ${((performance.now() - c0) / 1000).toFixed(1)} s`);

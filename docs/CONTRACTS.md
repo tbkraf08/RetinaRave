@@ -773,6 +773,12 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `nextSnareUp` | level | the wind-up to the next predicted snare | a param route |
 | `nextHatUp` | level | the wind-up to the next predicted hat | a param route |
 | `queueN` | count | how many events the queue lists within the next 2 bars | nothing visual: the harness and the help view read it |
+| `bpmPcm` | raw | the tempo of the beat clock estimated on the PCM bus | nothing by default; bpm with the switch on |
+| `beatPhasePcm` | level | where the PCM clock is inside its beat, 0→1 | nothing by default; beatPhase with the switch on |
+| `beatCountPcm` | count | the PCM clock's beats since its start | nothing by default; beatCount with the switch on |
+| `beatPcm` | event | the PCM clock crossed a beat line this frame | nothing by default; beat with the switch on |
+| `clockConfPcm` | level | how sure the PCM clock is of its phase | nothing by default; a scene may gate on it |
+| `clockPcm` | level | is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock's | nothing: the harness and the HUD read it |
 | `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |

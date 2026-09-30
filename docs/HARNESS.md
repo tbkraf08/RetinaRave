@@ -712,6 +712,33 @@ after the clear — TORUS2 must be on screen (its `update()` refreshes `env.para
 nextHatIn,nextDropIn,nextKickConf,nextKickUp,predKickIn,buildLive,dropLiveIn,queueN' node tools/caplag.js track SeeYouDrop 0 110 27` (AUDIBLE;
 `beatPhase`, `beat`, `bpm`, `leadT`, `kickEvt` … are already in caplag's FIELDS — naming them again doubles their columns).
 
+## Clock — the beat clock on the PCM bus (live step 6; a change to `engine/clock/`, `features-clock.js`, the ears' onsets, or anything that reads `bpm` / `beatPhase` / `beat` / `beatCount`)
+
+Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatCount` — the PLL on the frame-rate flux, the default
+every scene reads) and the PCM clock's (`bpmPcm` / `beatPhasePcm` / `beatPcm` / `beatCountPcm` / `clockConfPcm` — tempo.js's comb on a
+per-hop spectral flux of the PCM bus, the ears' sample-timed onsets as ticks, a Kalman filter on (beat position, rate); `engine/clock/`).
+Both are published on the lead's time base (heard time + the display lead; the raw analysis time under `&lead=0`), so their beat lines
+compare frame for frame. **The switch:** `&clock=pcm` under `#test`, `CARD.setClock('pcm' | 'v3')` live (`CARD.clock` reads it, `clockPcm`
+in MS says it) makes `bpm` / `beatPhase` / `beat` / `beatCount` publish the PCM clock's RAW values before the bars / drums / build / queue
+stages and the lead, so everything downstream — every scene included — rides it; v3's own values come back at the next frame
+(`ENGINE.restores`), so its PLL never sees the swap. Default `'v3'` (a default moves only on the user's word).
+```
+node tools/test_clock.js                                                   # in npm test: synthetic clicks — lock, phase, ramp, gap, outlier, lattice, determinism
+node tools/clock-study.js <Track> [--out f.json] [--raw]                   # node, the det time base: both clocks on heard time + every onset in `log`; CLOCKK='{"R_ON":1e-3}' knobs
+node tools/build-node.js [Track …] [--out dir]                             # runs the clock too; CLOCKSRC=pcm = the page's &clock=pcm (bars / build / queue ride it)
+python3 tools/truth/gridcheck.py <trace> --heard                           # the 'pcm' rows beside v3's: tempo %, lag, jitter, beat F, lock, frame-to-frame |dlag|, clockConfPcm on / off the beat
+PORT=8864 node tools/filetrace.js <Track> 0 <dur> out.json 'heardT,leadT,bpm,beatPhase,beat,beatCount,bpmPcm,beatPhasePcm,beatPcm,beatCountPcm,clockConfPcm,clockPcm,…' '&map=0&lead=0[&clock=pcm]'
+node tools/build-node.js --cmp page.json node.json bpmPcm,beatPhasePcm,beatCountPcm,beatPcm,predKickIn,nextKickIn   # page = node
+```
+`gridcheck.py --heard` (a det / node trace recorded with the lead off carries the RAW clocks, `detLead` before heard time): moves v3's and the
+PCM clock's beat position by −detLead at their own tempo — the lead's rule under `&disp=0` — so the lag rows read each clock's own error
+on heard time (0 = the truth beat) and the lock rows work. Page = node: the PCM fields agree to 2.4e-4 (`beatPhasePcm`), and under the
+switch `predKickIn` / `nextKickIn` to 5e-5 (the v3 path itself differs page / node in its first seconds — pre-existing, B.1). The cost:
+`CARD.ENGINE.CLOCK.cpuTotal / CARD.ENGINE.frameN` (ms per frame the PCM listener spent: the FFT per hop + the filter). Knobs:
+`CARD.ENGINE.CLOCK.K` (= `CLOCK` in `engine/clock/clock.js`; the sweep in AUDIT-live-grid Step 6 T.2). Pitfall: the comb line's
+lattice vote must be near-unanimous (7 of 8 four-second windows) — 3 consecutive flipped CyborgNinja between its two kick lattices
+four times in 40 s; and `R_LINE` off loses 20–65 ms on two tracks (the onsets alone cannot pick a lattice).
+
 ## Single-file build
 
 ```

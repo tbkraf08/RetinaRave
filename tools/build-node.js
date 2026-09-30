@@ -59,7 +59,9 @@ if (process.env.BUILDK) Object.assign(BUILD, JSON.parse(process.env.BUILDK));
 // live step 5: the bars store and the queue run too (as features-bars.js / features-queue.js feed them); QUEUEK='{"HOLD":0.1}'
 if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
 // live step 6: the PCM beat clock runs too (as features-clock.js feeds it: the mono block, then the ears' new onsets); CLOCKK='{"R_ON":1e-3}'
-// overrides knobs; CLOCKSRC=pcm is the page's &clock=pcm — the bars / build / queue stages ride the PCM clock's raw values
+// overrides knobs; CLOCKSRC=pcm is the page's &clock=pcm — the bars / build / queue stages ride the PCM clock's raw values;
+// CLOCKKOFF=<beats> forces the swapped-in count's offset (the page sets it at the flip: 0 on a from-0 run) — e.g. the settled
+// v3 − pcm count difference, so a from-0 grading holds the BAR PHASE equal to the v3 run's (the stores keep it in count units)
 if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 const CLOCKSRC = process.env.CLOCKSRC === 'pcm' ? 'pcm' : 'v3';
 const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
@@ -97,7 +99,7 @@ for (const track of TRACKS) {
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
   const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
-  const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {};
+  const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {}, ck = { k: null };
   const EARS_B = ['kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'bassReg', 'subGate', 'subPure', 'denK', 'denS', 'denH'];
   const wrap = (x, n) => ((x % n) + n) % n;
   detStream(pcm, {
@@ -113,7 +115,12 @@ for (const track of TRACKS) {
       clk.read(heard + DET_LEAD, cpub, cev);
       cols.bpmPcm.push(r4(cev.bpm)); cols.beatPhasePcm.push(r4(cev.phase)); cols.beatCountPcm.push(cev.count); cols.beatPcm.push(cev.beat ? 1 : 0);
       cols.clockConfPcm.push(r4(clk.conf)); cols.clockPcm.push(CLOCKSRC === 'pcm' ? 1 : 0);
-      const CK = CLOCKSRC === 'pcm' ? clk.read(heard + DET_LEAD, craw, {}) : null;
+      let CK = null;
+      if (CLOCKSRC === 'pcm') {   // features-clock.js: the count offset k onto v3's count, set at the flip (here: the first frame)
+        // (v3's raw count here, not the page's count − 1: on the first frame both pages read 0 — the −1 is a later cold-start quirk of v3's shim)
+        if (ck.k === null && M0) { clk.at(heard + DET_LEAD, cev); ck.k = process.env.CLOCKKOFF !== undefined ? +process.env.CLOCKKOFF : Math.round(M0.beatCount + M0.beatPhase - cev.b); craw.n = null; }
+        CK = clk.read(heard + DET_LEAD, craw, {}); CK.count += ck.k === null ? 0 : ck.k;
+      }
       if (v3) { const S = M0; for (const k of V3_K) cols[k].push(r4(k === 'arcN' ? ARC[S.arc] ?? -1 : S[k])); }
       tap.frame(dt);
       const o = ears.read(heard);

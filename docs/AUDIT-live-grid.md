@@ -855,3 +855,96 @@ pushes, `tools/clock-study.js` writes a compare.py trace + every onset into its 
 The comb line is the one input that matters (without it two tracks lose 20–65 ms and their jitter triples); the vote's
 majority must be near-unanimous (5 of 8 flips CyborgNinja); the rest move things by ±3 ms. The onset ruler, the phase
 ruler and the lattice are three different questions, and the sweep says the answers do not trade against each other.
+
+### T.3 — the numbers (page `&map=0&lead=0` det, whole tracks, default clock and `&clock=pcm`; `tools/work/clock/t3{v3,pcm}-<Track>.json`, `tools/accept/live-grid/clock/t3*`)
+
+**The clocks** (`gridcheck.py --heard`; every lag = the clock's own error on heard time; the PCM clock's rows are the same on
+both traces — the switch changes what `bpm` / `beatPhase` publish, not the clock):
+
+| track | v3: lag med (|lag| p50 / p90) · jitter p50 / p90 · `beat` F · lock | PCM: lag med (|lag| p50 / p90) · jitter p50 / p90 · `beatPcm` F · lock |
+|---|---|---|---|
+| SeeYouDrop | −4 ms (8 / 30) · 8 / 32 · 0.912 · 10.5 s | **+2 ms (6 / 19) · 6 / 19 · 0.970 · 7.6 s** |
+| CyborgNinja | −66 (144 / 183) · 93 / 247 · 0.138 · never (this run; the T.0 run −87 · 43 / 244 · 0.05) | **+179 (179 / 181) · 1 / 3** · 0.004 · never — the OTHER kick lattice, exactly half a beat (187 ms), stable to 3 ms |
+| WhoLikesToParty | +3 (4 / 13) · 4 / 11 · 0.945 · 8.0 s | +7 (7 / 10) · **2 / 6** · 0.956 · 10.9 s |
+| Malicious | +9 (10 / 100) · 10 / 92 · 0.770 · 6.1 s (T.0 run +22 · 10 / 67 · 0.75) | +11 (13 / 28) · **7 / 25** · **0.944** · 6.1 s |
+
+- The PCM clock is steadier on every track (jitter p90 19 / 3 / 6 / 25 ms against 32 / 247 / 11 / 92) and its beat events hit
+  more (0.97 / 0.96 / 0.94 against 0.91 / 0.945 / 0.77). SeeYouDrop through drop 1 (45–55 s): p90 1–6 ms against v3's 46–62;
+  at 133–145 s (the turn / outro) both drift (−20 / p90 10 against −87 / 71). Frame-to-frame |dlag| is 0.0 for both in det
+  (v3's PLL bleeds; the Kalman corrects in steps: 0.7 % of frames move > 5 ms, 58 of those 66 in the first 10 s of the cold start).
+- **CyborgNinja is a lattice question, not a clock question.** Both kick lattices carry near-equal energy; the comb line picks
+  one on 70 % of its windows and the truth's downbeat tool the other by a 9 % low-band margin. v3 sits between them and tears
+  (p90 247); the PCM clock sits ON one of them to 3 ms — and the bar store's predictions ride that (below). Which one is "the
+  beat" is not decidable from the audio alone; a stable line is the useful one.
+- **v3 is not deterministic run to run at the 1e-8 level.** Two page runs of the same 4a1e24c code hours apart differ in v3's
+  `regularity` at frame 28 (the first comb estimate) by 4e-7 and in `beatPhase` by 6e-9; on SeeYouDrop / WhoLikesToParty that
+  stays below 1e-5 for the whole track, on CyborgNinja's torn cold start it snowballs into a different lock (−87 vs −66 ms
+  median), on Malicious into +22 vs +9. Three runs in one hour (the 4a1e24c tree, this tree twice, 25 s) are bit-identical
+  and the whole-track additive proofs are identical (T.4): the decode or Chrome's state moved between the hours, not the code.
+  The T.3 v3 column is today's run, the same run the `&clock=pcm` twin was recorded beside.
+
+**The predictions with the switch on — the user's question** (`predcheck.py` F ±30 ms (P), the release lag med / p90;
+`queuecheck.py` `next*In` F (P; chance), lag, jumps / live minute; `dropcheck` beats ahead):
+
+| track · clock | pred kick · snare · hat F (P) | `nextKickIn` F (P) lag / jumps | `nextBeatIn` F, jumps | `nextBarIn` F | drops (beats ahead) |
+|---|---|---|---|---|---|
+| SeeYouDrop · v3 | 0.465 (0.58) · 0.586 (0.80) · 0.524 (0.75); lag +3 / 11 · 0 / 7 · +2 / 9 | 0.50 (0.59) +1 / 15 ms, 39 /min | 0.87, 0.4 | 0.87 | 15.9 · 8.0, 0.38 false/min |
+| SeeYouDrop · pcm | 0.440 (0.57) · 0.526 (0.73) · 0.492 (0.72); lag +4 / 9 · 0 / 6 · +3 / 9 | 0.46 (0.57) +2 / 8, 55 | 0.94, 27 (58 of 68 in the first 10 s) | 0.63 | 14.0 · 8.0, 0.38 |
+| SeeYouDrop · pcm, v3's bar phase (node, CLOCKKOFF=14) | **0.470 (0.59) · 0.585 (0.80) · 0.532 (0.76)** | 0.49 (0.59) | 0.94 | **0.94** | |
+| CyborgNinja · v3 | 0.332 (0.72) · 0.329 (0.73) · 0.432 (0.75); lag −7 / 16 · −12 / 14 · −12 / 14 | 0.36 (0.61) −4 / 22, 53 | 0.05 | 0.00 | — |
+| CyborgNinja · pcm | **0.696 (0.95) · 0.684 (0.97) · 0.861 (1.00)**; lag −5 / 4 · −10 / 0 · −11 / 3 | **0.72 (0.93) −4 / 10, 12** | 0.00 (the other lattice) | 0.00 | — |
+| WhoLikesToParty · v3 | 0.512 (0.80) · 0.462 (0.69) · 0.619 (0.82); lag +6 / 19 · +2 / 14 · +2 / 14 | 0.54 (0.78) +6 / 17, 39 | 0.93, 0.0 | 0.30 (unverified line) | 8.0 (err +4) · 7 · 11 |
+| WhoLikesToParty · pcm | **0.559 (0.86) · 0.484 (0.71) · 0.669 (0.86)**; lag +6 / 16 · +2 / 12 · +2 / 12 | **0.58 (0.83) +6 / 16, 31** | 0.96, 1.9 | 0.29 | 8.0 (err 0) · 7 · 11 |
+| WhoLikesToParty · pcm, v3's bar phase (node, CLOCKKOFF=−1) | **0.611 (0.86) · 0.557 (0.73) · 0.723 (0.86)** | 0.63 (0.86) | 0.96 | | |
+| Malicious · either | nothing predicted (F ≤ 0.03), as before | | 0.72 → **0.91** | 0.16 / 0.18 | 0 · 0.54 false/min |
+
+- **Yes, they improve — where the clock was the limit.** CyborgNinja: the store's hits go from F 0.33 / 0.33 / 0.43 to 0.70 /
+  0.68 / 0.86 at P 0.95–1.00, the kick count-down from 0.36 to 0.72 with a quarter of the jumps — the store's per-class
+  offsets ride a line that no longer tears. WhoLikesToParty +0.05 / +0.02 / +0.05. The release lags' p90 tighten on every
+  track (SeeYouDrop kick 11 → 9, CyborgNinja 16 → 4, WhoLikesToParty 19 → 16 ms).
+- **SeeYouDrop's −0.02…−0.06 is the bar phase, not the clock.** The build / bars / queue stages keep the bar phase in COUNT
+  units (bar k = beats [4k + a, 4k + a + 4), `a` from synapse's sure anchor when it has one, else 0 = the count's own mod 4).
+  v3's count from t = 0 lands ≡ the truth downbeat by the accident of a track that starts on one (`t3v3`: offset 0 on every
+  frame; synapse is sure on 0–30 % of the frames outside 60–90 s); the PCM clock's count, 14 beats behind after its own cold
+  start, lands 2 beats off — `nextBarIn` 0.87 → 0.63, and the store's confidence share drops 8 points, the F 0.02–0.06. Put the
+  same bar phase under both (node, `CLOCKKOFF=14`: the swapped-in count offset forced to the settled v3 − PCM difference) and
+  the PCM clock wins on SeeYouDrop too (0.470 / 0.585 / 0.532 vs 0.465 / 0.586 / 0.524, `nextBarIn` 0.94 vs 0.87) and by
+  more on WhoLikesToParty (0.611 / 0.557 / 0.723). In live use no start is at t = 0, so v3's mod-4 luck is not a property the
+  A/B has — the switch (below) keeps whatever bar phase the stages hold.
+- **The switch keeps the count.** Flipped live, `features-clock.js` sets a whole-beat offset `k` at the flip so the swapped-in
+  count matches v3's to within half a beat: the beat LINE moves by the two clocks' difference (SeeYouDrop +6 ms, CyborgNinja
+  up to half a beat) and `beatCount` / the bar phase do not. Measured the other way first: k set at LOCK time (7.6 s into a
+  from-0 run) jumped the count under the stages after they had anchored and put the bar line 2 beats off for 50 s — so k is
+  set at the flip and never later; a new Clock (a new stream, a seek) re-seats it. Flipping BACK to v3 holds the published
+  line for up to the two clocks' difference (lead.js's "a pull back across a line holds on it": SeeYouDrop `beatPhase` 0 for
+  ~50 ms at the flip back, proved headless below).
+- **Cost.** `CARD.ENGINE.CLOCK.cpuTotal / frameN` = **0.17 ms per frame** in the headless page (SeeYouDrop, 1200 frames: the
+  mono mix, the 2048 FFT per 512-sample hop, the flux, the ring, the filter, the pending scan); in node 0.09 ms per frame
+  against the ears' 0.12 (`ENGINE.ms` at the end of a whole-track CLOCK=1 run with two Chromes in parallel reads 1.4–5.2 and is
+  not a ruler). Under the 0.2 ms target; on the main thread because that is where the PCM bus and the ears' onsets are.
+
+### T.4 — the proofs and the A/B
+
+- `node tools/check.js` 0 fail (148 modules, 199 MS keys) · `npm test` OK with `test_clock.js` (13 checks) · `GPU=1 node
+  tools/parity.js fake`: the 72 MS fields 0 diff, the `nav.*` rows red as since 22eb969 (OPEN-ITEMS) · the bundle 1299 KB / 148
+  modules, from `file://` 346 frames in 6 s, errs [], nonFinite [], `clockPcm` 0 / `bpmPcm` 124 (the fake timeline has no PCM).
+- **Additive:** SeeYouDrop whole-track det traces from a `git archive 4a1e24c` tree (port 8866) against this tree (8867), in the
+  same hour: the 32-field caplag set on the default hash md5 `22bfb9e9`, its `&lead=0` twin `01d9c307`, the 80-field set
+  (build-rec's + drums / bars / build / queue fields) `25107502` — all three `cmp`-identical (9444 frames). No existing value
+  moved; the v3 clock, the lead, the stores and the queue are what they were with the switch off.
+- **Page = node** (`build-node.js --cmp`, SeeYouDrop 0–40 s): `beatPhasePcm` within 2.4e-4 on 2400 / 2400 frames,
+  `beatCountPcm` / `beatPcm` / `clockPcm` exact; under the switch `predKickIn` / `nextKickIn` within 5e-5 on 9443 / 9444 frames
+  (the v3 path itself differs page / node in its first seconds — B.1, pre-existing).
+- **The switch, headless on the real page** (`#test&track=SeeYouDrop&at=30&scene=4&map=0`, CLOCK=1): at frame 900 `clock` 'v3',
+  `bpm` 150.026 / `bpmPcm` 149.968, `beatPhase` 0.507 / `beatPhasePcm` 0.503; `CARD.setClock('pcm')` → three frames later
+  `bpm === bpmPcm` (149.9702), `beatPhase === beatPhasePcm` to 1e-14, `beatCount` 35 → 35 (k 0); at frame 1200 still equal,
+  `beatCount` 48 = `beatCountPcm`, `nextBeatIn` 0.397, ERRS [], nonFinite []; `CARD.setClock('v3')` → `bpm` 149.939 (v3's
+  own) with `bpmPcm` 149.990, `clockPcm` 0, `beatPhase` 0 on the flip frame (the hold across the line), errs [].
+- **The A/B for the user (stream mode, the capture page):** A = the default; B = `CARD.setClock('pcm')` in the console on
+  TORUS2 (key 4) and NAV (key 1) — every beat-driven motion (the wave's pulse, NAV's bump, the bars' predicted hits, the queue's
+  wind-ups) rides the PCM clock; `CARD.setClock('v3')` back. Or start B with `HASHX='&clock=pcm'`. The capture run for the
+  ruler: `FIELDSX='beatCount,bpmPcm,beatPhasePcm,beatPcm,beatCountPcm,clockConfPcm,clockPcm,predKickEvt,predKickIn,nextBeatIn,
+  nextBarIn,nextKickIn,nextSnareIn,nextHatIn,nextDropIn,queueN,buildLive,dropLiveIn' node tools/caplag.js track SeeYouDrop 0 110
+  27` (caplag's own FIELDS carry heardT / beat / beatPhase / bpm / leadT / the ears' events; FIELDSX must not repeat them), once
+  as is and once with `HASHX='&clock=pcm'`; then `gridcheck.py` (the pcm rows beside v3's, no `--heard`: a capture trace is on
+  heard time already), `predcheck.py`, `queuecheck.py` on both.

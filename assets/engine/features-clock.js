@@ -24,10 +24,11 @@ const CLS = { kick: 0, snare: 1, hat: 2 };
 
 export const CLOCKS = {
   src: 'v3',            // 'v3' | 'pcm': which clock bpm / beatPhase / beat / beatCount publish
-  clk: null, E: null, subscribed: false, cpu: 0, blocks: 0, mono: new Float32Array(PCM.BLOCK),
+  clk: null, E: null, subscribed: false, cpu: 0, cpuTotal: 0, blocks: 0, mono: new Float32Array(PCM.BLOCK),   // cpu: ms since the last frame drained it; cpuTotal: since the start (the cost ruler: cpuTotal / ENGINE.frameN)
   seen: [-1, -1, -1],   // the newest onset time handed over per class (the ears keep an onset pending until its release)
   pub: { n: null },     // the published PCM count's memory (it never steps back: a beat fires once; clock.js read())
   rawSt: { n: null },   // the swapped-in raw count's
+  k: null,              // the swapped-in count's whole-beat offset onto v3's count (set at lock / at the flip; below)
   raw: null,            // v3's own bpm / beatPhase / beat / beatCount this frame, put back by restore()
   ev: {},
   K: CLOCK,             // the knobs (tools / the console)
@@ -39,7 +40,7 @@ function onBlock(L, R, t0) {
   if (t0 < 0) return;
   const c0 = performance.now();
   const E = EARS.ears;
-  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; }
+  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; CLOCKS.k = null; }
   const m = CLOCKS.mono, n = L.length;
   for (let i = 0; i < n; i++) m[i] = 0.5 * (L[i] + R[i]);
   CLOCKS.clk.push(n === m.length ? m : m.subarray(0, n), t0);
@@ -48,7 +49,8 @@ function onBlock(L, R, t0) {
     for (let i = 0; i < p.length; i++) { const e = p[i], c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; CLOCKS.clk.onset(e.t, c, e.vel); } }
   }
   CLOCKS.blocks++;
-  CLOCKS.cpu += performance.now() - c0;
+  const ms = performance.now() - c0;
+  CLOCKS.cpu += ms; CLOCKS.cpuTotal += ms;
 }
 
 // v3's own clock back before the extractor integrates it (engine.js frame(), beside the lead's restore)
@@ -78,12 +80,20 @@ export function clockStage(dt, now, S) {
   C.read(tPub, CLOCKS.pub, ev);
   S.bpmPcm = ev.bpm; S.beatPhasePcm = ev.phase; S.beatCountPcm = ev.count; S.beatPcm = ev.beat; S.clockConfPcm = C.conf;
   S.clockPcm = CLOCKS.src === 'pcm' ? 1 : 0;
-  if (CLOCKS.src !== 'pcm') { CLOCKS.rawSt.n = null; return; }
+  if (CLOCKS.src !== 'pcm') { CLOCKS.rawSt.n = null; CLOCKS.k = null; return; }
   // the switch: the PCM clock's raw values (at the analysers' time) replace v3's for every stage after this one and the lead
   const r = CLOCKS.raw = {};
   for (let i = 0; i < KEYS.length; i++) r[KEYS[i]] = S[KEYS[i]];
-  C.read(LEAD.L !== null ? T - LEAD.L : C.t, CLOCKS.rawSt, ev);
-  S.bpm = ev.bpm; S.beatPhase = ev.phase; S.beatCount = ev.count; S.beat = ev.beat;
+  const tRaw = LEAD.L !== null ? T - LEAD.L : C.t;
+  // THE COUNT OFFSET k (whole beats): set at the FLIP (the first frame the switch is on), so that the swapped-in count matches
+  // v3's to within half a beat — the flip moves the beat LINE by the two clocks' difference and nothing else: no jump of
+  // beatCount (phrase logic, hysteresis) and no jump of the bar phase the build / bars stages hold in count units (mod 4).
+  // At the flip and never later: a count jump after the stages anchored their bar phase shifts that phase by the jump (measured:
+  // k set at lock time, 7.6 s into SeeYouDrop, put the bar line 2 beats off for the next 50 s). A new Clock re-seats it.
+  if (CLOCKS.k === null) { C.at(tRaw, ev); CLOCKS.k = Math.round(r.beatCount + r.beatPhase - ev.b); CLOCKS.rawSt.n = null; }
+  C.read(tRaw, CLOCKS.rawSt, ev);
+  const k = CLOCKS.k === null ? 0 : CLOCKS.k;
+  S.bpm = ev.bpm; S.beatPhase = ev.phase; S.beatCount = ev.count + k; S.beat = ev.beat;
 }
 
 ENGINE.addStage('clock-pcm', clockStage, CLOCK_OUT);

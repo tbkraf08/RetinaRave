@@ -43,6 +43,8 @@ ENGINE.frame(dt, now, nowMs):
               updateMusic(dt, now)                  // v3 extractor: bands, onsets, tempo, arc, drops, harmony, tension,
                                                     //   surprisal, sections (features.js + tempo.js + features-slow.js)
   for stage of stages (registration order): stage.fn(dt, now, MS)
+                                                    //   clock · synapse · ears · clock-pcm · bars · drums · build · queue (main.js)
+  leadApply(dt, MS)                                 // the lead: the clocks moved onto heard time (engine/lead.js; restored at the top of the next frame)
   if ENGINE.fix: Object.assign(MS, ENGINE.fix)     // test pins
   updateGroove(dt, MS)                              // GROOVE.rot = drift + sway + nod
   ENGINE.ms = ema(cpu ms of all of the above)
@@ -89,7 +91,10 @@ ENGINE.addStage('my', myStage, ['myLevel', 'myEvt']);
 - A stage may **only add** the fields it declares. It never overwrites a v3 field or another stage's field. The
   canonical owner of every concept both engines compute is v3 (`bpm`, `beat*`, `regularity`, `drop*`, `sectionId`,
   `identifyEvt`, `chroma`, `interval`, `tension` …). If your stage computes a rival estimate, give it its own name
-  (`beatConf`, `bar`, `key`, `novelty`, …) — see DECISIONS.md for which one scenes should prefer and why.
+  (`beatConf`, `bar`, `key`, `novelty`, `bpmPcm` …) — see DECISIONS.md for which one scenes should prefer and why.
+  The one sanctioned exception is a SWITCHED swap: the lead (`engine/lead.js`) and the PCM clock switch (`features-clock.js`,
+  `&clock=pcm` / `CARD.setClock`) write over `beatPhase` / `beat` / `beatCount` (/ `bpm`) for the rest of the frame and put the
+  owner's values back at the top of the next one (`ENGINE.restores`), so the owner never integrates a foreign value.
 - A stage that needs raw audio frames registers a tap on `AU` (`assets/engine/audio.js`): `AU.onInit.push(ctx => …)`
   runs once the `AudioContext` exists, with `AU.bus` as the node to tap (AnalyserNode or AudioWorklet). The v3
   analysers (`AU.fast` 2048, `AU.slow` 8192) stay as they are (parity).
