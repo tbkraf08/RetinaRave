@@ -2992,3 +2992,9 @@ like `kickAge` never reset; de-duplicated it resets 121 times for 120 logged kic
   unseeded (the different-picker cases the worker measured at p50 +101 / +92 on det). The fake-timeline s1 md5 is **unchanged**
   (`6696c6eb` / `01143b8d`: no det age falls in the band), `check` 0 fail. Live-only change, by design.
 - Nothing else in the capture contradicts the det numbers; the scene ran the whole window with `errs []`.
+
+**v0.21 tagged locally (2026-09-30) on the user's word ("tag what we have so far"; deploy still held — "don't deploy yet"):** v0.20 +
+the DUST overhaul pass 1 (§57 + addendum, `FRESH` 0.06). `releases/retinarave-v0.21.html` (1326 KB, 151 modules; from `file://`
+on scene 1: errs [], nonFinite [], clock pcm), package.json 0.21.0. Not pushed (retinarave.com serves v0.15). The user's first look:
+"Overall it is looking good, but something still feels out of sync. Visuals almost seem slow to register on the beat" — the
+accuracy review is next (§58).
