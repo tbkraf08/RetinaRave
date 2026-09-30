@@ -30,6 +30,7 @@ export const MS = {
   predKickEvt: false, predSnareEvt: false, predHatEvt: false, predKickAge: 99, predSnareAge: 99, predHatAge: 99,
   predKick: 0, predSnare: 0, predHat: 0, predKickIn: -1, predConf: 0, barMatch: 0, barNovelEvt: false, barReturnEvt: false,
   kick2: 0, snare2: 0, hat2: 0,                       // the reactive drums v2 (engine/drums, features-drums.js)
+  buildLive: 0, dropLiveIn: -1, dropLiveEvt: false,   // the live build / drop detector (engine/build, features-build.js) — idle
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

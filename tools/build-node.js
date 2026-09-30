@@ -19,6 +19,8 @@ import { Tap } from '../assets/engine/synapse/tap.js';
 import { Ears } from '../assets/engine/ears/ears.js';
 import { loadPcm } from './test_ears.js';
 import { detStream, makeV3, DET_LEAD, FPS, F0 } from './node-stream.js';
+import { Build, BUILD, BUILD_OUT } from '../assets/engine/build/build.js';
+import { feed, laneTake } from '../assets/engine/build/feed.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -45,9 +47,13 @@ const opt = (k, d) => (a.includes(k) ? a.splice(a.indexOf(k), 2)[1] : d);
 const flag = (k) => (a.includes(k) ? (a.splice(a.indexOf(k), 1), true) : false);
 const OUT = opt('--out', path.join(ROOT, 'tools/work/build'));
 const V3 = !flag('--no-v3');
+// the live build stage (engine/build, B.2) runs with v3: --disp <ms> its display lead (0 = the &lead=0 page, 40 = the default
+// file page); BUILDK='{"HP_ARM":0.05}' overrides knobs (the sweep uses tools/build-replay.js on the recorded inputs instead)
+const DISP = +opt('--disp', 0) / 1000;
+if (process.env.BUILDK) Object.assign(BUILD, JSON.parse(process.env.BUILDK));
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 
-const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt'];
+const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'kickVel'];
 const SYN_A = { synTension: 'tension', hush: 'hush', dropConf: 'dropConf', dropExpectedIn: 'dropExpectedIn', gridTrust: 'gridTrust',
   phraseConf: 'phraseConf', barConf: 'barConf', beatConf: 'beatConf', beatSyn: 'beat', bpmSyn: 'bpm', eFast: 'eFast', eShort: 'eShort',
   eMed: 'eMed', eLong: 'eLong', bassS: 'bassS', midS: 'midS', highS: 'highS', sub: 'sub', lvl: 'level', centroid: 'centroid',
@@ -62,7 +68,7 @@ const r4 = (v) => (typeof v === 'boolean' ? (v ? 1 : 0) : Number.isFinite(v) ? +
 // v3's state is the engine's module singleton (MS / XS): one process per track, or the second track starts warm on the first
 if (V3 && TRACKS.length > 1) {
   for (const tr of TRACKS) {
-    const r = spawnSync('node', [import.meta.filename, tr, '--out', OUT], { stdio: 'inherit' });
+    const r = spawnSync('node', [import.meta.filename, tr, '--out', OUT, '--disp', String(DISP * 1000)], { stdio: 'inherit' });
     if (r.status) process.exit(r.status);
   }
   process.exit(0);
@@ -75,9 +81,10 @@ for (const track of TRACKS) {
   let detMs = 0; tap.clock = () => detMs;
   const an = tap.an, A = an.A, ears = new Ears(sr), v3 = V3 ? await makeV3(pcm) : null;
   const names = [...EARS_K, ...Object.keys(SYN_A), ...Object.keys(SYN_EV), ...Object.keys(SYN_IN), 'rollRate', 'phrase16Pos', 'barPos',
-    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', ...(V3 ? V3_K : [])];
+    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT'] : [])];
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
+  const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {} };
   const wrap = (x, n) => ((x % n) + n) % n;
   detStream(pcm, {
     pre(fr) { detMs = (fr + F0) * 1000 / FPS; },   // file.js tickFile: the frame clock's ms, then this frame's pushes
@@ -87,6 +94,19 @@ for (const track of TRACKS) {
       tap.frame(dt);
       const o = ears.read(heard);
       for (const k of EARS_K) cols[k].push(r4(o[k]));
+      // the LOW lane (engine/drums' kick; engine/build's slam): an onset released this frame, its raw flux and age (heard)
+      let lf = 0, la = 99;
+      for (const e of ears.lowReleased) { if (e.fl > lf) lf = e.fl; la = heard - e.t; }
+      cols.lowEvt.push(ears.lowReleased.length ? 1 : 0); cols.lowFl.push(r4(lf)); cols.lowAge.push(r4(la));
+      if (v3) {   // the build stage, fed as features-build.js feeds it (v3's count - 1: the page's, B.1)
+        const M = v3.MS, S = bst.S;
+        S.beatCount = M.beatCount - 1; S.beatPhase = M.beatPhase; S.bpm = M.bpm; S.presence = M.presence;
+        S.barConf = A.barConf; S.bpmSyn = A.bpm; S.barPos = wrap(A.beat - an.o4, 4); S.hp = A.ev.hp; S.bassS = A.bassS; S.sub = A.sub; S.heardT = heard;
+        const ts = laneTake(ears, heard + DISP + 0.5 / FPS, bst.lane, bst.ts);
+        cols.lowT.push(ts.length ? ts.map((x) => +x.toFixed(6)) : null);
+        const bo = bst.b.step(feed(S, -DET_LEAD, DISP, dt, ts, bst.inp));
+        for (const k of BUILD_OUT) cols[k].push(r4(bo[k]));
+      }
       for (const k in SYN_A) cols[k].push(r4(A[SYN_A[k]]));
       for (const k in SYN_EV) cols[k].push(r4(A.ev[SYN_EV[k]]));
       for (const k in SYN_IN) cols[k].push(r4(an[SYN_IN[k]]));
