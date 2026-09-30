@@ -6,6 +6,12 @@
 // §57 step 1: the cloud's spin, the torus's main turn and the galaxy's winding arrive as ONE angle computed on the
 // beat grid (uSpin / uSpinG, grid.js) instead of three rates read off the flow clocks. uFlow is left with the one
 // job it can keep: the phase of the roughness jitter, where a musical-time scramble is exactly what is wanted.
+//
+// §57 step 2: three transient voices, separated by the BAND a grain owns, so a reader can tell the drums apart
+// (§1.18 "one musical element, one visual channel"). uVoice carries the four envelopes voices.js shapes from the
+// onsets' ages: the kick shoves the inner grains outward, the snare launches a flash RING that travels out through
+// the mid grains (uSnareR), the hat sparkles the edge, and a sub note swells the core. uKick / uHat are gone —
+// the scene reads the reactive drums v2 now (kick2 / snare2 / hat2, §51).
 
 export const VS_DUST = `#version 300 es
 precision highp float;
@@ -23,10 +29,10 @@ uniform float uFlowMid;    // MS.flowMid — the per-grain wobble and the ribbon
 uniform float uBassS;      // MS.bassS
 uniform float uMidS;       // MS.midS
 uniform float uLevel;      // MS.lvl
-uniform float uKick;       // MS.kick
+uniform vec4 uVoice;       // the four voices' envelopes: kick, snare, hat, sub (voices.js)
+uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gaussian half-width
 uniform float uDrop;       // MS.dropEnv
 uniform float uTension;    // MS.tension
-uniform float uHat;        // MS.hat
 uniform float uAlive;      // MS.alive
 uniform float uHue;        // LOOK.mood.hue
 uniform float uSat;        // LOOK.mood.sat
@@ -80,21 +86,37 @@ void main(){
   vec3 h = vec3(hash11(id * 1.31 + 1.), hash11(id * 2.17 + 7.), hash11(id * 3.73 + 13.));
   float fx = pow(h.x, 1.4) * .95;                             // more particles own the low bins
   float amp = spec(fx);                                       // this particle's band, right now
+  // Which drum a grain answers to is the band it owns. wLow: the inner, low-bin grains the kick and the sub move.
+  // wMid: a band around the snare's body. wHigh: the edge grains the hats live on. The three barely overlap, so
+  // the three voices are separable on screen instead of all brightening the same cloud.
+  float wLow = 1. - smoothstep(.06, .34, fx);
+  float wMid = exp(-pow((fx - .46) / .24, 2.));
+  float wHigh = smoothstep(.52, .95, fx);
   // formation cross-fade, staggered per particle so the cloud pours from one shape into the next
   vec3 pos = mix(form(int(uForm.x), n, h, id), form(int(uForm.y), n, h, id), smoothstep(0., 1., clamp(uForm.z * 1.4 - h.z * .4, 0., 1.)));
   pos += .16 * (uMidS + .1) * sin(pos.yzx * 3.1 + uFlowMid * .9 + h.y * TAU);
   vec3 dir = normalize(pos + 1e-4);
   pos += dir * amp * .55 * (.3 + uLevel);                     // each particle pushed out by its own band
-  pos *= 1. + uKick * .22 * h.z + uDrop * 1.6 * h.y * h.y - .2 * uTension + .1 * uBassS;
+  float R = length(pos);
+
+  // the three transient voices, each on its own band and each placed by its onset's age (voices.js)
+  float kick = uVoice.x * wLow * (.55 + .9 * h.z);            // a shove outward through the inner grains
+  pos += dir * kick * .5;
+  pos += dir * uVoice.w * .3 * wLow * wLow;                   // the sub swells the core while it sounds
+  float ring = uVoice.y * wMid * exp(-pow((R - uSnareR.x) / max(uSnareR.y, .02), 2.));
+  pos += dir * ring * .38;                                    // the snare's flash ring, travelling out
+  float spark = uVoice.z * wHigh * (.35 + 1.5 * h.y);         // the hat sparkles the edge
+
+  pos *= 1. + uDrop * 1.6 * h.y * h.y - .2 * uTension + .1 * uBassS;
   pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // jitter as tension rises
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
   pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);
   gl_Position = cp;
   float zc = max(cp.w, .05);                                  // distance along the view axis
-  float sz = uRes.y * .0055 * (.55 + 2.4 * amp * amp + uHat * h.y * 1.2 + uKick * .5) / max(zc, .2);
+  float sz = uRes.y * .0055 * (.55 + 2.4 * amp * amp + spark * 2.2 + kick * 1. + ring * 3.) / max(zc, .2);
   gl_PointSize = clamp(sz, 1., 48.);
-  float bright = (.22 + 3.2 * amp * amp + .7 * uKick * h.z + uDrop) * (.5 + 1.1 * uLevel);
+  float bright = (.22 + 3.2 * amp * amp + 1.5 * kick + 4. * ring + 1.8 * spark + .5 * uVoice.w * wLow + uDrop) * (.5 + 1.1 * uLevel);
   bright *= min(1., sz) * min(1., 50000. / uCount);           // energy-conserving: sub-pixel points fade, and more particles are each dimmer
   vCol = palM(fx * .9 + h.y * .12 + .1 * length(pos)) * bright * uAlive;
 }`;

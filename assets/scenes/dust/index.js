@@ -4,6 +4,7 @@
 import { VS_DUST, FS_DUST } from './shaders.js';
 import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
+import { mkSub, mkVoice, ringR, ringW, sub, voice } from './voices.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
@@ -34,8 +35,10 @@ const SELF = {
   id: 1,
   tag: 'a swarm of dust, one frequency band per grain',
   card: { title: 'DUST', blurb: 'a swarm of particles in a flow field, one frequency band per grain, the Hopf fibres threaded through' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/dust.jpg from tools/thumbs.sh
-  feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'kick', 'dropEnv', 'tension', 'hat',
-    'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt', 'arc', 'punchy', 'regularity'],
+  feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'dropEnv', 'tension',
+    'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt',
+    'kick2', 'kickAge', 'snare2', 'snareAge', 'hat2', 'hatAge', 'subNoteEvt', 'subGate',
+    'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
   fibresOn: 1,                  // hooks.fibres — the A/B switch; set before init(), so never reset there
@@ -53,8 +56,12 @@ const SELF = {
     this.formA = 0; this.formB = 0; this.formT = 1; this.nRef = 0;
     this.dropHi = false;
     this.spin = 0; this.spinG = 0; this.trig = mkTrigger(); this.why = 'init';
+    // the three transient voices and the sub (voices.js): decay time constants longer than the levels' own, which
+    // is what "slow decay" means, and a floor so a soft hit is still a hit
+    this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
-    this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, kick: 0, drop: 0, tension: 0, hat: 0, alive: 0, spin: 0, spinG: 0 };
+    this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, drop: 0, tension: 0, alive: 0,
+      spin: 0, spinG: 0, vk: 0, vs: 0, vh: 0, vb: 0, ringR: 0, ringW: 1 };
     this.mood = { hue: 0, sat: 0, bri: 0, spread: 0, invert: 0, angular: 0 };
     lookVP(this.vp, 0, 0, this.dist, 1, 55 * DEG, 0.1, 10.1);
     this.L = ctx.lines.mk(CAP);                          // the fibre overlay's own segment buffer (CONTRACTS 1.12 A)
@@ -76,6 +83,14 @@ const SELF = {
     this.spin = ease(this.spin, spinTarget(MS), dt);
     this.spinG = GAL_K * this.spin;
 
+    // The three transient voices. Fast attack on the level's own rising edge, slow decay on the onset's age —
+    // and the age is the engine's when the two agree to a frame, the voice's own otherwise (voices.js measured
+    // the gap: kick +7 ms, snare +101, hat +92).
+    voice(this.vK, dt, MS.kick2, MS.kickAge);
+    voice(this.vS, dt, MS.snare2, MS.snareAge);
+    voice(this.vH, dt, MS.hat2, MS.hatAge);
+    sub(this.vB, dt, MS);
+
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
     // never while a pour is still running. The drop is the one exception: it re-pours wherever it lands.
     const why = trigger(this.trig, MS, this.formT >= 1);
@@ -84,7 +99,7 @@ const SELF = {
     if (dropOn && !this.dropHi) { this.why = 'drop'; this.reform(); }   // DETONATE: the cloud re-pours on the drop
     this.dropHi = dropOn;
     // the cross-fade advances with the music: energy pushes, kicks shove
-    if (this.formT < 1) this.formT = Math.min(1, this.formT + dt * (0.08 + 0.5 * MS.lvl + 0.8 * MS.kick));
+    if (this.formT < 1) this.formT = Math.min(1, this.formT + dt * (0.08 + 0.5 * MS.lvl + 0.8 * this.vK.e));
 
     // camera: a slow orbit that breathes with GROOVE, dollying in on bass and on the drop
     this.yaw = 0.35 * GROOVE.rot + 0.05 * MS.flow;
@@ -94,7 +109,9 @@ const SELF = {
     const m = this.m;
     m.flow = MS.flow; m.flowMid = MS.flowMid; m.flowBass = MS.flowBass; m.bassS = MS.bassS; m.midS = MS.midS;
     m.highS = MS.highS; m.lvl = MS.lvl;
-    m.kick = MS.kick; m.drop = MS.dropEnv; m.tension = MS.tension; m.hat = MS.hat; m.alive = MS.alive;
+    m.drop = MS.dropEnv; m.tension = MS.tension; m.alive = MS.alive;
+    m.vk = this.vK.e; m.vs = this.vS.e; m.vh = this.vH.e; m.vb = this.vB.e;
+    m.ringR = ringR(this.vS); m.ringW = ringW(this.vS);
     m.spin = this.spin % (Math.PI * 2); m.spinG = this.spinG % (Math.PI * 2);   // wrapped: fp32 in the shader
     const q = LOOK.mood, d = this.mood;
     d.hue = q.hue; d.sat = q.sat; d.bri = q.bri; d.spread = q.spread; d.invert = q.invert; d.angular = q.angular;
@@ -120,10 +137,10 @@ const SELF = {
     gl.uniform1f(P.u('uBassS'), m.bassS);
     gl.uniform1f(P.u('uMidS'), m.midS);
     gl.uniform1f(P.u('uLevel'), m.lvl);
-    gl.uniform1f(P.u('uKick'), m.kick);
+    gl.uniform4f(P.u('uVoice'), m.vk, m.vs, m.vh, m.vb);
+    gl.uniform2f(P.u('uSnareR'), m.ringR, m.ringW);
     gl.uniform1f(P.u('uDrop'), m.drop);
     gl.uniform1f(P.u('uTension'), m.tension);
-    gl.uniform1f(P.u('uHat'), m.hat);
     gl.uniform1f(P.u('uAlive'), m.alive);
     gl.uniform1f(P.u('uHue'), d.hue);
     gl.uniform1f(P.u('uSat'), d.sat);
@@ -158,7 +175,7 @@ const SELF = {
     o.flowMid = m.flowMid; o.lvl = m.lvl; o.alive = m.alive;
     o.band[0] = m.bassS; o.band[1] = m.midS; o.band[2] = m.highS;
     o.alpha = 0.06 * m.flowBass;                         // the tumble: bass time turns the whole family on S3
-    o.s = S0 * (1 - 0.3 * m.tension) * (1 + 0.6 * m.drop + 0.08 * m.kick);
+    o.s = S0 * (1 - 0.3 * m.tension) * (1 + 0.6 * m.drop + 0.08 * m.vk);
     o.wpx = 1.5 * (h / 720); o.dist = this.dist;
     const n = emit(this.segs, cap, o);
     this.rt.log = 'fib ' + o.nl + 'x' + o.nF + 'x' + o.N + ' seg ' + n + '/' + cap;
@@ -173,7 +190,9 @@ const SELF = {
     fibres(v) { SELF.fibresOn = +v; },
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
-        why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : 0, nRef: SELF.nRef };
+        why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
+        nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
+        ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age, ringR: ringR(SELF.vS) };
     },
   },
 
@@ -206,10 +225,18 @@ const SELF = {
       highS: 'lights the third ring: the highest tori brighten with the top of the mix',
       lvl: 'how far each grain is pushed out by its own band, overall brightness, how fast a re-pour completes, and '
         + 'the overall brightness of the rings',
-      kick: 'a kick shoves grains outward and brightens them, swells the rings a little, and hurries a pour along',
+      kick2: 'a kick shoves the inner grains outward and brightens them, swells the rings a little and hurries a '
+        + 'pour along — the reactive drums v2, which fire on 808 notes as well as beaters',
+      kickAge: 'exactly how long ago that kick was, so the shove is placed between frames instead of on one',
+      snare2: 'a snare launches a bright ring at the centre that travels out through the middle of the cloud — '
+        + 'the snare\'s own voice, which this screen never had before',
+      snareAge: 'how long ago the snare was: it is what puts the ring where it has got to',
+      hat2: 'grains sparkle bigger and brighter at the edge, and only at the edge',
+      hatAge: 'how long ago the hat was, so the sparkle fades from the hit and not from the frame',
+      subNoteEvt: 'a new bass note swells the core of the cloud',
+      subGate: 'no bass at all and the core lets go entirely: silence is quiet',
       dropEnv: 'the cloud re-pours on the drop, grains fly outward, the rings swell, the camera dollies in',
       tension: 'the cloud contracts and jitters, and the rings draw in with it',
-      hat: 'grains sparkle bigger at the edge',
       alive: 'silence fades every grain, and every ring, to black',
       beatCount: 'the beat grid: the whole cloud is nudged a thirty-second of a turn on every beat, the torus a '
         + 'little further and the galaxy arms further still in their core than at their rim',
