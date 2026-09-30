@@ -69,6 +69,7 @@ def series(tr, field, unit):
     if unit == 'beats': return np.where(np.isnan(v) | (v < 0) | np.isnan(bl), -1.0, v * bl)
     # phase: the published v3 clock moved onto heard time -> the next beat line
     bc = colf(tr, 'beatCount'); lead = colf(tr, 'leadT')
+    if bc is None: return None      # a trace without the v3 count (caplag's FIELDS) has no phase baseline
     L = np.zeros(len(v)) if lead is None else np.nan_to_num(lead)
     if not np.any(L) and tr.get('mode') in ('file-det', 'node'): L = np.full(len(v), -(tr.get('detLead') or 0.0427))
     B = np.nan_to_num(bc) + np.nan_to_num(v) + L / np.where(np.isnan(bl), 1, bl)

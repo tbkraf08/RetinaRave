@@ -708,3 +708,23 @@ What it says:
   with Up 0.5 → **0.33** (= 0.4·0.825), Up 0 → **0.26**, Up 1 → **0.40**; `CARD.clearParams('torus2')` → the derived 0.270 again;
   `paramsString()` '' after, `localStorage['ew.routes.v1']` null throughout, `CARD.ERRS` 0; the queue on the demo lists beat / bar
   entries (0.149 / 0.627 s ahead). Not run here: the audible capture run (the orchestrator's; `FIELDSX` recipe in HARNESS "Queue").
+
+### Step 5 addendum — the audible capture run (orchestrator, 2026-09-29)
+
+`FIELDSX='nextBeatIn,nextKickIn,nextSnareIn,nextHatIn,nextDropIn,nextKickConf,nextKickUp,predKickIn,buildLive,dropLiveIn,queueN'
+node tools/caplag.js track SeeYouDrop 0 110 27` → `tools/work/caplag/SeeYouDrop-cap-sync27-fx.json` (6715 frames), `queuecheck.py`
+(fixed on the way: a trace without `beatCount` — caplag's FIELDS — has no phase baseline row instead of a crash):
+
+| field | F (P R; chance) ±30 ms | lag med / p90 | horizon med (p25; ioi) | jumps /min (withdraw insert jitter) | live |
+|---|---|---|---|---|---|
+| `nextKickIn` | 0.38 (0.60 0.28; 0.05) | +3 / 18 ms | 0.39 s (0.33; 0.39) | 309 (37 8 173) | 38 % |
+| `nextSnareIn` | 0.45 (0.72 0.33; 0.09) | +0 / 19 | 0.30 (0.17; 0.27) | 335 (12 6 253) | 43 % |
+| `nextHatIn` | 0.38 (0.69 0.26; 0.09) | +2 / 14 | 0.30 (0.19; 0.22) | 344 (10 7 262) | 44 % |
+| `nextBeatIn` | 0.68 (0.83 0.58; 0.16) | −8 / 23 | 0.39 (0.39; 0.40) | 1.6 (1 0 2) | 100 % |
+| `nextDropIn` | 14.0 / 8.0 beats ahead (err +2.0 / 0.0), 0 false/min, armed 8 % | | | | |
+| base `predKickIn` | 0.25 (0.47 0.17; 0.04) | −20 / 28 | 0.38 (0.10; 0.39) | 130 (74 7 0) | 33 % |
+
+Live, the hits' zero crossings land +0…+3 ms (the base `predKickIn` −20), the beat line −8 ms, both drops queued 14 / 8 beats
+ahead with no false entry. The hit count-downs' "jitter" (173–262 / min, |dv + dt| > 10 ms) is the real-time frame: the beat's
+own count-down (2 jitter frames in 110 s) shows the clock is smooth, so the hits' jitter is the store's per-class offsets
+moving under it in real time — sub-frame, an open item to measure by eye rather than tighten.

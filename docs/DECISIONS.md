@@ -2738,3 +2738,8 @@ ANTICIPATION — a motion that winds up and PEAKS at the hit — not a replaceme
   (`CARD.params('torus2.wave=nextKickUp*0.35+0.65')`: the wave depth winds up 0.26 → 0.40 over the 250 ms before each predicted
   kick, the default 0.26 in between; `CARD.clearParams('torus2')` back) — proved headless on the real page with `CARD.fix`;
   the audible capture run is the orchestrator's. Not tagged, not pushed.
+
+**§55 addendum — the audible capture run (2026-09-29).** SeeYouDrop from 0 in tab capture: `nextKickIn` zero crossings +3 ms
+(P 0.60, chance 0.05; the base `predKickIn` −20 ms), `nextSnareIn` +0, `nextBeatIn` −8 (P 0.83), both drops queued 14 / 8 beats
+ahead, 0 false. The A/B for the user is a live PARAM route on the capture page (TORUS2's `wave` winding up over the 250 ms before
+each predicted kick); no default moves until their word. Not tagged, not pushed.
