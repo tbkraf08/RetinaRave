@@ -25,20 +25,45 @@ const FRESH = 0.06;              // an engine age this close to the edge is the 
 // heard-time step later than det — so at 0.04 a live hit was placed on its frame, ~45 ms late to the ear. No two
 // logged kicks were within 80 ms, so 0.06 cannot pick up the previous hit; 60–80 (hat 29, snare 21) stays unseeded.
 
+// THE ATTACK FIRES ON WHICHEVER COMES FIRST (§58 task B). The level's rising edge is one detector and the ears'
+// event is another, and they are not the same picker (§51: the v2 kick IS the ears' low lane, the v2 snare and hat are
+// synapse's). Graded against the TRUTH onsets on SeeYouDrop 20–110 s `&map=0` (tools/truth/drumcheck.py), neither is
+// late — the matched hits read ears +3 / v2 +4 ms (kick), ears +0 / v2 −13 (snare), ears +2 / v2 −11 (hat) — but they
+// MISS different hits: recall ears 0.35 / v2 0.50 (kick), 0.71 / 0.50 (snare), 0.82 / 0.70 (hat). So §57's "+101 ms"
+// was never a lag; it was the last ears' snare being a DIFFERENT onset from the one the level was confirming. What
+// the union buys is coverage — and, on the capture path, the earlier of the two (§57 addendum: at every level edge the
+// engine's age sits in the 40–60 ms band).
+//
+// The event only PLACES the hit; the level still SIZES it. The ears' velocity saturates (§51: `kickVel` p50 1.0, "the
+// uniform brightness of the predicted route"), so it is not read here: a fire starts at the floor and the level's own
+// edge raises the amplitude when it arrives, without moving the age. A hit the level never confirms therefore stays
+// small — a false positive costs a flicker, not a flash.
+export const REFRACT = 0.06;     // s: the event and the level's edge for one hit must never fire twice (no two logged
+// kicks were within 80 ms on the capture path, §57 addendum), and it also stops the level's own chatter (184 edges
+// for 120 logged kicks there).
+
 // tc: the voice's decay in seconds (longer than the level's own, which is what "slow decay" means).
 // floor: the smallest amplitude a hit is allowed to have, so a soft hit is still a hit.
 export function mkVoice(tc, floor) {
-  return { e: 0, amp: 0, age: 99, prev: 0, tc, floor };
+  return { e: 0, amp: 0, age: 99, prev: 0, since: 99, lastA: 99, tc, floor };
 }
 
-export function voice(v, dt, lvl, msAge) {
+export function voice(v, dt, lvl, msAge, evt) {
   v.age += dt;
-  if (lvl >= THR && lvl > v.prev + 0.02) {            // the attack: a follower steps up on the hit frame only
-    const a = msAge === undefined || msAge === null ? 99 : msAge;
-    v.age = a >= -0.03 && a < FRESH ? Math.max(0, a) : 0;
+  v.since += dt;
+  const a = msAge === undefined || msAge === null ? 99 : msAge;
+  const fresh = a >= -0.03 && a < FRESH;              // the ears' onset is this frame's, or a hair before it
+  const ev = !!evt || (fresh && a < v.lastA);         // the event flag, or the age crossing back to fresh
+  const edge = lvl >= THR && lvl > v.prev + 0.02;     // a follower steps up on the hit frame only
+  if ((ev || edge) && v.since >= REFRACT) {
+    v.age = fresh ? Math.max(0, a) : 0;
     v.amp = Math.max(v.floor, lvl);
+    v.since = 0;
+  } else if (edge && lvl > v.amp) {
+    v.amp = lvl;                                      // the level confirms a hit already started: same hit, its size
   }
   v.prev = lvl;
+  v.lastA = a;
   v.e = Math.max(v.amp * Math.exp(-v.age / v.tc), lvl);
   return v.e;
 }

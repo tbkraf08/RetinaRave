@@ -16,7 +16,15 @@ const TAU = Math.PI * 2;
 
 export const STEP = TAU / 32;     // radians of cloud spin per beat: one turn every 32 beats (12.8 s at 150 BPM)
 export const DOWN = 0.5;          // the downbeat is worth this much of a beat step on top of its own
-export const TC = 0.22;           // the nudge's time constant (well inside a 0.4 s beat at 150 BPM)
+// The nudge is a SHAPED IMPULSE, not one exponential (§58 task B, the user: "visuals almost seem slow to register on
+// the beat"). One ease with tau 0.22 s had its peak VELOCITY on the beat but only half the step done 167 ms later and
+// 90 % of it 417 ms later — a beat at 150 BPM is 400 ms, so the cloud was still travelling when the next beat came
+// (84 % of the step done by then) and the eye read a glide, not a hit. So: a fast attack that puts most of the step
+// on the screen inside a tenth of a second, and the last fifth of it as a slower settle, which is what stops the
+// motion reading as a mechanical snap.
+export const TC = 0.055;          // the attack: 50 % of the step in 38 ms, 82 % in 94 ms
+export const TC_S = 0.14;         // the settle, once less than NEAR of a step is left
+export const NEAR = 0.18;
 export const TORUS_K = 0.7;       // the torus's main circle turns this much again on top of the cloud's spin
 export const GAL_K = 0.9;         // the galaxy's winding rate, divided by (r + .35) so the core winds faster
 
@@ -33,12 +41,13 @@ export function spinTarget(MS) {
   return STEP * (MS.beatCount + DOWN * barIndex(MS));
 }
 
-// One eased step toward the target. The delta is taken the short way round, so a clock re-seat that moves the count
-// by more than half a turn nudges the cloud the near way instead of spinning it all the way round.
+// One step toward the target. The delta is taken the short way round, so a clock re-seat that moves the count by more
+// than half a turn nudges the cloud the near way instead of spinning it all the way round. The rate is the attack's
+// while there is more than NEAR of a step still to cover and the settle's after that — the shaped impulse above.
 export function ease(cur, target, dt) {
   let d = target - cur;
   d -= TAU * Math.floor(d / TAU + 0.5);
-  return cur + d * (1 - Math.exp(-dt / TC));
+  return cur + d * (1 - Math.exp(-dt / (Math.abs(d) > NEAR * STEP ? TC : TC_S)));
 }
 
 // The trigger state: the last phrase position seen, and what fired last.
