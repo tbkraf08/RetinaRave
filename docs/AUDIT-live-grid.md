@@ -956,3 +956,23 @@ exactly (phase advance − heardT advance 0.00 ms) and heardT in capture steps 1
 16.1 / 16.7 / 17.0). Fix: the clock is evaluated at `now` + median(heardT − now, 64 frames) — DECISIONS §56 addendum has the numbers
 (the emulation on the capture trace: 16.7 / 16.7 / 16.7 per frame, 0 % of frames off by > 10 ms; det bit-identical; RT file 16.6 /
 16.7 / 16.8). `tools/work/clock/rt-{v3,pcm}.json`.
+
+### Step 6 addendum 2 — the audible capture runs (orchestrator, 2026-09-30)
+
+SeeYouDrop 0–110 s in tab capture (`&sync=27`), three runs: the default clock (`cap-v3`), `&clock=pcm` before the heardT
+smoothing (`cap-pcm`), and after it at `5648097` (`cap-pcm2`). gridcheck (the published clock vs the truth grid), predcheck,
+queuecheck:
+
+| | v3 (default) | pcm, before 5648097 | pcm, after |
+|---|---|---|---|
+| beatPhase lag med / p50 / p90 | +11 / 15 / 45 ms | +1 / 5 / 12 | **+0 / 6 / 14** |
+| beatPhase jitter p50 / p90 | 9 / 53 ms | 4 / 11 | 6 / 14 |
+| beat events F ±50 ms | 0.876 | 0.949 | 0.938 |
+| pred kick F (P) · lag | 0.189 (0.34) · +24.5 ms | 0.299 (0.55) · +9.5 | **0.384 (0.66) · +4.2** |
+| `nextBeatIn` F (P) · lag · jumps/min | 0.65 (0.79) · +11 · 3.2 | 0.77 (0.95) · +1 · **1479** | 0.75 (0.92) · −0 · 16 |
+| `nextKickIn` F (P) · lag · jumps/min | 0.18 (0.29) · +22 · 262 | 0.37 (0.61) · +8 · 1532 | 0.43 (0.65) · +4 · 281 |
+| `nextDropIn` beats ahead · false | 12.1 / 8.0 · 0 | 14.0 / 8.0 · 0 | 14.0 / 8.0 · 0 |
+
+The 1479 / min was heardT stepping in capture (10.7 / 21.3 ms per frame), which the PCM clock followed faithfully and v3
+(integrated on dt) never saw; evaluated at `now` + the median heardT offset the count-down advances evenly (16 / min, the cold
+start). The remaining `nextKickIn` jumps (281 vs v3's 262) are the store's per-class offsets, not the clock.

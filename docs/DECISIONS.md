@@ -2850,3 +2850,8 @@ before on v3 (`bpm` / `beatPhase` / `regularity` / `kickEvt` 0.00) and page = no
 17.5) reads the PCM clock's advance 16.6 / 16.7 / 16.8 ms per frame (v3 16.3 / 16.7 / 17.1) and 5 count-down jumps after 10 s
 (28–37 ms Kalman corrections while the intro settles; 42 / min over the whole minute is the cold start). The capture re-run is the
 orchestrator's.
+
+**§56 addendum 2 — the audible capture runs (2026-09-30).** SeeYouDrop in tab capture, PCM clock vs v3 (AUDIT Step 6 addendum 2):
+beat line +0 / 6 / 14 ms (med / p50 / p90) vs +11 / 15 / 45, jitter 6 / 14 vs 9 / 53, beat F 0.938 vs 0.876; the predicted kicks on it
+F 0.38 (P 0.66) at +4 ms vs 0.19 (P 0.34) at +25; `nextBeatIn` P 0.92 vs 0.79, drops 14 / 8 beats ahead both. The A/B for the user is
+the live switch (`CARD.setClock('pcm')` / `'v3'`); the default stays v3 until their word. Not tagged, not pushed.
