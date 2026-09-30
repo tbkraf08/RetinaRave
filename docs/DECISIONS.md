@@ -2670,3 +2670,12 @@ and the study), then build (B.2), then prove (B.3). The leans, each with the num
 before the two drops, 0 false arms in 111 s, armed 7.3 % of the time; `dropLiveEvt` +61 / +89 ms (reactive, as expected in
 capture). The A/B for the user is a live route on the capture page (`CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')`);
 no default moves until their word. Not tagged, not pushed.
+
+**§54 addendum 2 — NAV reads the live detector by default (2026-09-29).** The user's stream-mode A/B on NAV (A = v3's `build` /
+`dropEvt`, B = the live route): "B looks good"; to "where should it be the default" (NAV only · every scene reading build / dropEvt ·
+opt-in): "#1". NAV's `feats` `build` → `buildLive` (the park at the cusp, the director's bid `score`) and `dropEvt` → `dropLiveEvt`
+(the exit along a ray); `dropStrength` / `dropEnv` stay v3's (what the A/B showed). MAXWELL, POLYTOPE, GIELIS unchanged. The old
+look by route: `nav.buildLive=build,nav.dropLiveEvt=dropEvt`. Fake-timeline md5 s0: f360 `fb74fee4` unchanged, f840 `7225ea02` →
+`8a0715df` (the fake timeline has v3 builds and drops, none of the live detector's — NAV no longer parks or exits there; the
+landing's demo synth runs the real stages, so it does). check 0 fail, npm test OK. The trade: in file mode v3's `build` armed
+before 2 of 6 truth drops on its own, the live detector 5 of 6 (§54); a scene on `buildLive` gives up the first for the second.

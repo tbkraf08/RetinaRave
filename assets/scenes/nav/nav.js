@@ -83,9 +83,9 @@ export function updateNav(dt, now, S, env) {
   const N = NAV, tgt = (N.baby ? N.baby.bulbs : BULBS)[S.interval];
   if (BABIES.length) N.want = N.forceBaby >= 0 ? BABIES[N.forceBaby % BABIES.length] : S.repeat ? BABIES[Math.floor(S.seed.a * BABIES.length) % BABIES.length] : null;
   if ((S.beat && N.mode === 'INT') || N.mode === 'EXT') N.target = tgt; // never retarget on the root<->ray bridge (v2 did: c jumped between roots)
-  if (S.dropEvt) navDrop(S, now);
+  if (S.dropLiveEvt) navDrop(S, now);   // the live detector's slam (§54; v3's dropEvt until 2026-09-29)
   const b = N.target, I = S.intensity;
-  const park = clamp(Math.max(sstep(0.45, 0.85, S.build), sstep(0.5, 0.8, S.suspension)), 0, 1);
+  const park = clamp(Math.max(sstep(0.45, 0.85, S.buildLive), sstep(0.5, 0.8, S.suspension)), 0, 1);
   if (N.mode === 'INT') {
     const idle = S.presence < 0.15, hp = N.h.x, want = N.leave ? null : N.want;
     if (N.hold) { // parked on the root while the view dives to matched zoom

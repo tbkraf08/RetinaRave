@@ -3,7 +3,7 @@
 // not), `dropLiveEvt` (the slam). Causal in every mode — the stream-mode (tab capture) answer to the file map's buildProg /
 // toDrop / mapDropEvt. Additive: reads synapse's `hp` / `bassS` / bar line, v3's clock, the lead's estimate and the ears'
 // CAUSAL low-onset lane (EARS.ears — never the file map's onsets), writes only its own fields; no scene reads them by
-// default (a route does: nav.build=buildLive, nav.dropEvt=dropLiveEvt). Registered after 'drums' (main.js import order),
+// default except NAV (since 2026-09-29, the user's word; the old look by route: nav.buildLive=build,nav.dropLiveEvt=dropEvt). Registered after 'drums' (main.js import order),
 // so it runs BEFORE the lead, on the raw clocks, like the bars stage (the time base: features-bars.js).
 // The release: an onset is taken when heard time + the display lead (dispNow(): 40 ms in file modes, 0 live) reaches it, so
 // in file modes the slam can land with the other lead-timed visuals; live it lands when the ears release the onset.

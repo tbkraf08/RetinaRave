@@ -29,8 +29,8 @@ export default {
   home: true,       // the director's home scene: drops cut here, builds park here
   always: true,     // updated every frame (the director reads its rt, the PiP path must stay continuous)
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
-  feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropEvt', 'dropStrength', 'dropEnv', 'intensity',
-    'build', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
+  feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
+    'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
     'bass', 'mid', 'high', 'peaks', 'clarity'], // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
   state: NAV,
   rt: { c: NAV.c, label: 'nav', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
@@ -52,11 +52,11 @@ export default {
       beat: 'retargeting happens on the beat, never on the root-to-ray bridge; loud beats are counted toward leaving',
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
       beatCount: 'beats since the last exit: settling back inside, which ray to take, the landing time',
-      dropEvt: 'the exit: c is thrown out of M along an external ray',
+      dropLiveEvt: 'the exit: c is thrown out of M along an external ray — the live detector\'s slam (2026-09-29, the user\'s stream-mode A/B: "B looks good", "#1" = NAV only)',
       dropStrength: 'how deep outside the ray lands (log2 of the potential, -2.2 down to -0.5)',
       dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings',
       intensity: 'how deep into the bulb c sits, and the loud count that leads to leaving',
-      build: 'parks c at the bulb\'s root (the cusp) while a build runs',
+      buildLive: 'parks c at the bulb\'s root (the cusp) while the void before a drop runs (the live build detector, §54; v3\'s build until 2026-09-29)',
       suspension: 'also parks at the root: a held tension waits at the gateway',
       presence: 'silence freezes c and slows the visual clock; the picture-in-picture fades out',
       harmUnw: 'the interior angle alpha and the exterior angle theta: the harmony walks c around the bulb, and along the rays outside',
@@ -79,7 +79,7 @@ export default {
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
-  score: (S) => 0.5 + S.build,
+  score: (S) => 0.5 + S.buildLive,
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 

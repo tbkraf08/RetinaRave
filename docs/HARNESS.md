@@ -668,8 +668,8 @@ node tools/test_build.js                                                        
 Page traces of the new fields: `filetrace.js <Track> 0 <dur> out.json 'heardT,…,buildLive,dropLiveIn,dropLiveEvt' '&map=0&lead=0'`
 (the causal path, `dispNow()` 0 — compare with a `--disp 0` node run: `build-node.js --cmp page.json node.json buildLive,dropLiveIn,dropLiveEvt`).
 The stream-mode A/B is a ROUTE, set live on the running page (never under `#test`: its card is hidden, so no capture can start):
-open `http://127.0.0.1:8765/`, key `1` (NAV), Share a tab, then in the console `CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')`
-= B, `CARD.clearRoutes('nav')` = A (or the panel: key `p`, NAV's build / dropEvt rows — that one is stored in localStorage:
+open `http://127.0.0.1:8765/`, key `1` (NAV), Share a tab, then in the console `CARD.routes('nav.buildLive=build,nav.dropLiveEvt=dropEvt')`
+= the v3 look (NAV reads the live detector by default since 2026-09-29 — "B looks good", "#1"), `CARD.clearRoutes('nav')` = the default (or the panel: key `p`, NAV's build / dropEvt rows — that one is stored in localStorage:
 "reset scene" after). Headless, the route itself is provable on the real page (`PORT=8845 FAKECAP=1 NOAUTO=1 GPU=1 node tools/cdp.js real '[{"until":"window.CARD"},
 {"clickSel":"#go"},…]'` then `CARD.fix={buildLive:0.7,dropLiveEvt:true}`, `CARD.routes(…)` → `CARD.view('nav').build` 0.7, `dropEvt` true,
 `localStorage` untouched; `CARD.clearRoutes('nav')` → `MS.build` again) — but headless Chrome never resolves `getDisplayMedia`
