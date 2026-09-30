@@ -24,6 +24,22 @@
 
 export const SPHERE = 0, TORUS = 1, GALAXY = 2, RIBBON = 3;
 
+// Where each shape keeps its MID band, in scene units (§58 task A). A grain's band rank is now its radius
+// (shaders.js form()), so the mid band is a shell, and this is that shell's radius at the band weight's own centre
+// (`wMid` peaks at fx = .46, which is band rank .594):
+//   sphere  1.05 * (.05 + .95 * cbrt(.594))          = 0.89
+//   torus   1.1 + .38 * cos(pi * (1 - .594))         = 1.21
+//   galaxy  sqrt(.594) * 1.7 + .05                   = 1.36
+//   ribbon  (.02 + .98 * .594) * 1.9                 = 1.14
+// The snare's ring is launched from HERE rather than from the origin, so it lands on the body on the hit's own frame
+// instead of when a shell expanding from nothing happens to arrive (0.24 s in the sphere, 0.21 s in the torus).
+export const MIDR = [0.89, 1.21, 1.36, 1.14];
+
+// The mid-band radius of the shape on screen — the pour's own mix of the two it is between.
+export function midR(a, b, tt) {
+  return MIDR[a] + (MIDR[b] - MIDR[a]) * Math.max(0, Math.min(1, tt));
+}
+
 // The thresholds, each read off tools/work/d/syd-*.json and cn-*.json (SeeYouDrop 20–110 s and CyborgNinja
 // 20–80 s, `&map=0`) — see docs/workers/DUST-OVERHAUL-PASS1.md for the distributions they come from.
 export const K = {

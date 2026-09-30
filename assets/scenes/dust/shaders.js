@@ -23,6 +23,7 @@ export const VS_DUST = `#version 300 es
 precision highp float;
 precision highp int;
 #define TAU 6.2831853
+#define PI 3.14159265
 
 uniform mat4 uVP;          // view-projection built on the CPU in update()
 uniform vec2 uRes;         // target size in pixels
@@ -36,7 +37,9 @@ uniform float uBassS;      // MS.bassS
 uniform float uMidS;       // MS.midS
 uniform float uLevel;      // MS.lvl
 uniform vec4 uVoice;       // the four voices' envelopes: kick, snare, hat, sub (voices.js)
-uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gaussian half-width
+uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gaussian half-width. The radius starts
+                           // at the CURRENT shape's mid-band radius (formations.js MIDR) and travels out from there,
+                           // so the ring lands on the body on the hit's own frame in every formation (§58 task A).
 uniform float uDrop;       // MS.dropEnv
 uniform float uTension;    // MS.tension — the roughness, as JITTER and nothing else
 uniform vec2 uBuild;       // x = the void's contraction 0..1 (buildLive + the last bar's wind-up), y = the release
@@ -67,24 +70,42 @@ vec3 palM(float t){
 }
 
 // Four formations. n = particle's normalised index, h = three fixed hashes, id = gl_VertexID.
+//
+// §58 task A: A GRAIN'S BAND IS ITS PLACE. h.x is the rank of the bin a grain owns — uniform on 0..1, and fx
+// (the bin itself) is a monotone function of it — so the rank is the one coordinate every shape can share. Each
+// formation turns it into a radius the way its own DIMENSION keeps its density: the galaxy's sqrt(rank) is uniform
+// per unit AREA (§57's own line, and the shape this task was told to make the others match — unchanged here), a ball
+// is uniform per unit VOLUME at cbrt(rank), a line is uniform per unit LENGTH at the rank itself, and the torus's
+// tube is already flat in its own angle, so the rank goes straight onto it. The result is that in all four shapes the
+// low bins are the CORE, the mids the BODY and the highs the RIM: the kick's shove, the snare's ring and the hat's
+// sparkle are three places as well as three bands (CONTRACTS §1.18, one element one channel). MIDR in formations.js
+// is where each shape's mid band sits, which is where the snare's ring is launched from.
 vec3 form(int k, float n, vec3 h, float id){
   // 0: Fibonacci sphere — y sweeps the poles linearly (equal-area bands) and the azimuth advances by the
   //    golden angle 2pi/phi^2 = 2.39996 rad per particle, which is the most irrational turn there is,
-  //    so no two particles ever line up into a seam.
-  if (k == 0){ float y = 1. - 2. * n, rr = sqrt(max(0., 1. - y * y)), ph = id * 2.39996; return vec3(cos(ph) * rr, y, sin(ph) * rr) * 1.05; }
+  //    so no two particles ever line up into a seam. The DIRECTION is still that lattice-free set; the RADIUS is the
+  //    grain's band rank, cube-rooted, so the ball is of even density and the low bins are its nucleus.
+  if (k == 0){ float y = 1. - 2. * n, rr = sqrt(max(0., 1. - y * y)), ph = id * 2.39996;
+               return vec3(cos(ph) * rr, y, sin(ph) * rr) * (1.05 * (.05 + .95 * pow(h.x, 1. / 3.))); }
   // 1: torus — (R + r cos v) around the main circle u, r sin v up the tube; r breathes with the slow bass.
   //    u turns with the beat, a little faster than the cloud around it, so the ring reads as the thing being nudged,
   //    and the tube thins to a wire through the void before a drop (uBuild.x) — the build IS the ring tightening.
-  if (k == 1){ float u = TAU * h.x + uSpin * .7, v = TAU * h.y + uFlowMid * .3; float R = 1.1, rr = max(.06, .38 + .2 * uBassS - .26 * uBuild.x);
+  //    The tube angle v is the band rank: the low bins ride the INNER wall of the tube (v = +-pi, radius R - r) and
+  //    the highs its outer wall (v = 0, R + r), with a small dither and a slow breath left on mid time.
+  if (k == 1){ float sg = h.y < .5 ? -1. : 1.;
+               float u = TAU * h.z + uSpin * .7, v = sg * (PI * (1. - h.x) + (fract(h.y * 2.) - .5) * .45 + uFlowMid * .05);
+               float R = 1.1, rr = max(.06, .38 + .2 * uBassS - .26 * uBuild.x);
                return vec3((R + rr * cos(v)) * cos(u), rr * sin(v), (R + rr * cos(v)) * sin(u)); }
   // 2: three-arm galaxy — radius is sqrt-distributed (uniform area), the arm is a log-ish spiral whose
   //    winding rate falls off as 1/(r + .35) so the core turns faster than the rim. It winds per beat, so every
   //    beat shears the arms a little — most in the core, least at the rim, which is what a spiral arm is.
   if (k == 2){ float rr = sqrt(h.x) * 1.7 + .05; float arm = floor(h.y * 3.) / 3. * TAU; float an = rr * 2.6 + arm + uSpinG / (rr + .35) + (h.z - .5) * .5;
                return vec3(cos(an) * rr, (h.z - .5) * .22 / (rr + .4), sin(an) * rr); }
-  // 3: the waveform itself as a twisting ribbon.
-  float x = n * 2. - 1.; float w = wave(n);
-  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (h.y - .5) * .12 + (h.z - .5) * .5 * uMidS);
+  // 3: the waveform itself as a twisting ribbon. A grain's place ALONG it is its band rank, mirrored about the middle,
+  //    so the low bins are the centre of the ribbon and the highs its two ends — and the wave is sampled where the
+  //    grain actually is, so the ribbon is still literally the waveform.
+  float x = (h.z < .5 ? -1. : 1.) * (.02 + .98 * h.x); float w = wave(.5 + .5 * x);
+  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);
   pz.yz *= rot(x * 2.5 + uFlowMid * .4);
   return pz;
 }
@@ -109,9 +130,11 @@ void main(){
 
   // the three transient voices, each on its own band and each placed by its onset's age (voices.js)
   float kick = uVoice.x * wLow * (.55 + .9 * h.z);            // a shove outward through the inner grains
-  pos += dir * kick * .5;
+  pos += dir * kick * .5 * (.3 + .7 * R);                     // ...in PROPORTION to where the grain is: a fixed half a
+  // unit was most of the core's own radius, so a kick emptied the core out of the middle of the frame instead of
+  // swelling it (§58 task A: the low bins are the core now, so the shove has to leave them there).
   pos += dir * uVoice.w * .3 * wLow * wLow;                   // the sub swells the core while it sounds
-  float ring = uVoice.y * wMid * exp(-pow((R - uSnareR.x) / max(uSnareR.y, .02), 2.));
+  float ring = uVoice.y * (.2 + .8 * wMid) * exp(-pow((R - uSnareR.x) / max(uSnareR.y, .02), 2.));
   pos += dir * ring * .38;                                    // the snare's flash ring, travelling out
   float spark = uVoice.z * wHigh * (.35 + 1.5 * h.y);         // the hat sparkles the edge
 

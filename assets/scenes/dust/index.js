@@ -5,7 +5,7 @@ import { VS_DUST, FS_DUST } from './shaders.js';
 import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
 import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
-import { GALAXY, TORUS, file, mkMem, recall, returning, shapeFor } from './formations.js';
+import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
@@ -42,6 +42,7 @@ const SELF = {
   cuts: 'onset',
   rt: {},
   fibresOn: 1,                  // hooks.fibres — the A/B switch; set before init(), so never reset there
+  pinF: -1,                     // hooks.form — test only: pin the formation so a ruler can measure one shape at a time
 
   // the director's home scene owns builds; DUST bids on punchy, steady music
   score(MS) {
@@ -117,6 +118,7 @@ const SELF = {
     }
     this.dropHi = dropOn;
     file(this.mem, MS, this.formB);                      // this section's shape is whatever it ends on
+    if (this.pinF >= 0) { this.formA = this.formB = this.pinF; this.formT = 1; }   // &form=<k> under #test: one shape, held
     // the cross-fade advances with the music: energy pushes, kicks shove
     if (this.formT < 1) this.formT = Math.min(1, this.formT + dt * (0.08 + 0.5 * MS.lvl + 0.8 * this.vK.e));
 
@@ -131,7 +133,7 @@ const SELF = {
     m.drop = MS.dropEnv; m.tension = MS.tension; m.alive = MS.alive;
     m.build = Math.min(1.25, this.vT.build + 0.3 * this.vT.wind); m.rel = this.vT.rel;
     m.vk = this.vK.e; m.vs = this.vS.e; m.vh = this.vH.e; m.vb = this.vB.e;
-    m.ringR = ringR(this.vS); m.ringW = ringW(this.vS);
+    m.ringR = ringR(this.vS, midR(this.formA, this.formB, this.formT)); m.ringW = ringW(this.vS);
     m.spin = this.spin % (Math.PI * 2); m.spinG = this.spinG % (Math.PI * 2);   // wrapped: fp32 in the shader
     const q = LOOK.mood, d = this.mood;
     // the void drains the palette: the colour goes out of the cloud and the hue family closes toward one hue,
@@ -213,13 +215,15 @@ const SELF = {
   // that reports must not mutate).
   hooks: {
     fibres(v) { SELF.fibresOn = +v; },
+    form(v) { SELF.pinF = v === '' || v === undefined || v === null ? -1 : +v; },   // -1 = the music chooses (the default)
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
         want: shapeFor(SELF.lastMS || {}),
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
-        ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age, ringR: ringR(SELF.vS) };
+        ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age,
+        ringR: ringR(SELF.vS, midR(SELF.formA, SELF.formB, SELF.formT)), form: SELF.formT >= 1 ? SELF.formB : -1 };
     },
   },
 
@@ -243,8 +247,8 @@ const SELF = {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
       flow: 'the scene clock, and the phase of the jitter the roughness shakes the cloud with; the camera drifts on it',
-      flowMid: 'the torus and ribbon formations twist on mid-band time; it also twists the fibre rings and wobbles '
-        + 'how high up the sphere each ring sits',
+      flowMid: 'the ribbon twists and the doughnut\'s tube breathes on mid-band time; it also twists the fibre '
+        + 'rings and wobbles how high up the sphere each ring sits',
       flowBass: 'bass time tumbles the whole family of fibre rings rigidly, so the linked circles roll through '
         + 'each other',
       bassS: 'the torus tube fattens, the whole cloud grows, the camera dollies in; it also lights the first ring',
@@ -252,13 +256,14 @@ const SELF = {
       highS: 'lights the third ring: the highest tori brighten with the top of the mix',
       lvl: 'how far each grain is pushed out by its own band, overall brightness, how fast a re-pour completes, and '
         + 'the overall brightness of the rings',
-      kick2: 'a kick shoves the inner grains outward and brightens them, swells the rings a little and hurries a '
+      kick2: 'a kick shoves the core of the cloud outward and brightens it, swells the rings a little and hurries a '
         + 'pour along — the reactive drums v2, which fire on 808 notes as well as beaters',
       kickAge: 'exactly how long ago that kick was, so the shove is placed between frames instead of on one',
-      snare2: 'a snare launches a bright ring at the centre that travels out through the middle of the cloud — '
-        + 'the snare\'s own voice, which this screen never had before',
-      snareAge: 'how long ago the snare was: it is what puts the ring where it has got to',
-      hat2: 'grains sparkle bigger and brighter at the edge, and only at the edge',
+      snare2: 'a snare flashes the middle of the cloud and the flash travels outward from there — the snare\'s '
+        + 'own voice, which this screen never had before',
+      snareAge: 'how long ago the snare was: it is what puts the ring where it has got to, counted from the body '
+        + 'of the cloud outward',
+      hat2: 'the rim of the cloud sparkles bigger and brighter, and only the rim',
       hatAge: 'how long ago the hat was, so the sparkle fades from the hit and not from the frame',
       subNoteEvt: 'a new bass note swells the core of the cloud',
       subGate: 'no bass at all and the core lets go entirely: silence is quiet',
@@ -290,8 +295,9 @@ const SELF = {
       regularity: 'the bid: a steady rhythm invites the swarm',
     },
     eli5: 'Every dot is a particle that owns one frequency band of the spectrum. When its band gets loud the dot '
-      + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: bass grains breathe near the '
-      + 'centre, hi-hat grains sparkle at the edge. The whole swarm keeps pouring from one shape into another — a '
+      + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: the bass grains ARE the core of '
+      + 'the cloud and breathe there, the snare\'s band is its body and the hi-hats are its rim, so you can tell the '
+      + 'drums apart by where they happen as well as by what they do. The whole swarm keeps pouring from one shape into another — a '
       + 'ball, a doughnut, a galaxy, a ribbon of the waveform — and which one it is tells you where you are in the '
       + 'song: a ball in the quiet parts, a galaxy in the groove, a doughnut that tightens through the build, the '
       + 'bare waveform when one instrument is left alone. The drop bursts the doughnut into the galaxy. Threading through it '
@@ -306,17 +312,22 @@ const SELF = {
       + 'Every turn in the picture is on the beat grid: the cloud, the doughnut and the galaxy arms are nudged a '
       + 'step on each beat and a bigger step on the downbeat, and a shape change waits for the phrase line or for a '
       + 'bar the engine says begins something new — so you can count the bars off the screen with the sound off.',
-    math: 'Fibonacci sphere: y = 1 - 2n spreads the particles evenly in height (a sphere\'s area per unit height is '
-      + 'constant), ring radius r = sqrt(1 - y^2), and the azimuth advances by the golden angle 2pi/phi^2 ~ 2.39996 '
-      + 'rad per particle. Because phi is the hardest number to approximate by rationals, successive points never '
-      + 'fall into arms or seams, so the sphere is as uniform as a lattice-free point set gets. Torus: with the tube '
-      + 'angle v and the ring angle u, p = ((R + r cos v) cos u, r sin v, (R + r cos v) sin u); r = .38 + .2*bassS, '
-      + 'so the tube fattens with the low end. Galaxy: radius r = sqrt(h) gives uniform density per unit area, and '
-      + 'the arm angle r*2.6 + 0.9*spin/(r + .35) winds the core faster than the rim, which is what makes spiral '
-      + 'arms. The grid: spin eases toward (2pi/32)*(beatCount + bar/2), a target read off the COUNTS and never '
+    math: 'A grain\'s BAND is its PLACE: the rank of the bin it owns (uniform on 0..1) becomes its distance from the '
+      + 'centre, and each shape maps that rank the way its own dimension keeps its density even — a ball at the cube '
+      + 'root, a disc at the square root, a line at the rank itself. Fibonacci sphere: y = 1 - 2n spreads the '
+      + 'directions evenly in height (a sphere\'s area per unit height is constant), ring radius sqrt(1 - y^2), and '
+      + 'the azimuth advances by the golden angle 2pi/phi^2 ~ 2.39996 rad per particle, the hardest turn to '
+      + 'approximate by rationals, so successive points never fall into arms or seams; the radius is '
+      + '1.05*(.05 + .95*cbrt(rank)), which is uniform density per unit VOLUME, so it is a ball whose nucleus is the '
+      + 'bass. Torus: p = ((R + r cos v) cos u, r sin v, (R + r cos v) sin u) with r = .38 + .2*bassS, so the tube '
+      + 'fattens with the low end; the tube angle v is pi*(1 - rank), so the low bins ride the inner wall at R - r '
+      + 'and the highs the outer wall at R + r. Galaxy: radius r = sqrt(rank) gives uniform density per unit area '
+      + '(the rule the other three now follow), and the arm angle r*2.6 + 0.9*spin/(r + .35) winds the core faster '
+      + 'than the rim, which is what makes spiral arms. The grid: spin eases toward (2pi/32)*(beatCount + bar/2), a target read off the COUNTS and never '
       + 'integrated, so it cannot drift however the tempo moves; the ease has a 0.22 s time constant, which is half '
       + 'a beat at 150 BPM, so each beat lands as a nudge and the bar line lands as one and a half. '
-      + 'Ribbon: the waveform texture sampled along x, twisted by rot(2.5x). Projection: a standard '
+      + 'Ribbon: the place along the ribbon is +-rank, so the lows are its middle and the highs its two ends, and the '
+      + 'waveform texture is sampled where the grain actually is; twisted by rot(2.5x). Projection: a standard '
       + 'perspective matrix, fov 55 deg, near .1, far 10.1; point size falls as 1/w (w = distance along the view '
       + 'axis) and brightness carries min(1, 50000/count) so adding particles never adds total light. The rings are '
       + 'Hopf fibres: the circle psi -> (cos(t/2) e^i(psi+phi/2), sin(t/2) e^i(psi-phi/2)) on the 3-sphere, sent to a '

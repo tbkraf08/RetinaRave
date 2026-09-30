@@ -43,13 +43,18 @@ export function voice(v, dt, lvl, msAge) {
   return v.e;
 }
 
-// The snare's flash ring: launched at the centre on the hit and travelling outward at SPEED, spreading as it goes.
-// The cloud's body sits between radius 1.0 (sphere) and 1.7 (galaxy rim), so SPEED crosses it in about 0.4 s —
-// a shell you watch leave, not a flash you only infer.
+// The snare's flash ring: launched ON THE MID BAND (`r0` = formations.js midR(), §58 task A) and travelling outward
+// from there at SPEED, spreading as it goes — a shell you watch leave, not a flash you only infer.
+//
+// It used to launch at the ORIGIN, which was right only while a grain's band said nothing about where it was: once
+// the mid band is a shell at radius r0, a front expanding from nothing does not reach it until r0 / SPEED, and the
+// gaussian's own width brings that forward only a little. Measured from the shader's own geometry (the front shows
+// where |R − ringR| < 0.83 · ringW): the ring first touched the sphere's mid grains at 0.24 s and the torus's at
+// 0.21 s after the hit. Launching it on the band makes that 0 in all four shapes.
 export const RING_SPEED = 3.4;
-export const RING_W0 = 0.16;
+export const RING_W0 = 0.2;
 export const RING_WK = 0.5;
-export function ringR(v) { return RING_SPEED * Math.min(v.age, 1.2); }
+export function ringR(v, r0) { return r0 + RING_SPEED * Math.min(v.age, 1.2); }
 export function ringW(v) { return RING_W0 + RING_WK * Math.min(v.age, 1.2); }
 
 // The sub: not a transient. A new sub note swells the core and the swell settles back to a held size while the sub

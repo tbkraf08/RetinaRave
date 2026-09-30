@@ -12,6 +12,7 @@
 //   lum    mean luminance of the COMPOSITED default framebuffer (readPixels of a centred half-size window,
 //          every 4th pixel — post-composite, so the vignette and the tonemap are in it, as the eye sees them)
 //   lumC   the centre 20 % · lumR the 60-90 % rim annulus (the same split tools/lum.py uses on a shot)
+//   lumM   the 25-55 % BODY annulus between them, where the snare's ring travels (added for §58 task A)
 //   <ms>   the named MS fields (numbers and booleans)
 //   <k>    every numeric key of the scene's `hooks.dinfo()` (a read-only hook; absent = no scene columns)
 // Output is the same {track, mode, at, fps, fields, f, t, cols} shape tools/truth/*.py read, so dropcheck.py and
@@ -58,15 +59,16 @@ const INSTALL = `(()=>{
   function lum() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.readPixels(X, Y, W, H, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    let s = 0, n = 0, sc2 = 0, nc = 0, sr = 0, nr = 0;
+    let s = 0, n = 0, sc2 = 0, nc = 0, sr = 0, nr = 0, sm = 0, nm = 0;
     const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2;
     for (let y = 0; y < H; y += SX) for (let x = 0; x < W; x += SX) {
       const i = (y * W + x) * 4, v = (buf[i] + buf[i + 1] + buf[i + 2]) / 3;
       s += v; n++;
       const d = Math.hypot(x - cx, y - cy) / R;
       if (d < 0.2) { sc2 += v; nc++; } else if (d >= 0.6 && d <= 0.9) { sr += v; nr++; }
+      if (d >= 0.25 && d < 0.55) { sm += v; nm++; }        /* the BODY, where the snare's ring travels (§58 task A) */
     }
-    return [n ? s / n : 0, nc ? sc2 / nc : 0, nr ? sr / nr : 0];
+    return [n ? s / n : 0, nc ? sc2 / nc : 0, nr ? sr / nr : 0, nm ? sm / nm : 0];
   }
   function tick() {
     if (!C.on) return;
@@ -74,10 +76,10 @@ const INSTALL = `(()=>{
     try {
       const MS = CARD.MS, L = lum(), o = info ? info() : null;
       if (!C.keys) {
-        C.keys = ['lum', 'lumC', 'lumR'].concat(C.ms);
+        C.keys = ['lum', 'lumC', 'lumR', 'lumM'].concat(C.ms);
         if (o) for (const k in o) if (typeof o[k] === 'number' || typeof o[k] === 'boolean') C.keys.push('d_' + k);
       }
-      const r = [L[0], L[1], L[2]];
+      const r = [L[0], L[1], L[2], L[3]];
       for (const k of C.ms) { const v = MS[k]; r.push(typeof v === 'boolean' ? (v ? 1 : 0) : typeof v === 'number' ? (Number.isFinite(v) ? v : null) : typeof v === 'string' ? v : null); }
       if (o) for (const k of C.keys) { if (k.slice(0, 2) !== 'd_') continue; const v = o[k.slice(2)]; r.push(typeof v === 'boolean' ? (v ? 1 : 0) : Number.isFinite(v) ? v : null); }
       C.f.push(CARD.ENGINE.frameN); C.t.push(CARD.MS.heardT); C.rows.push(r);
