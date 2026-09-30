@@ -4,7 +4,7 @@
 import { VS_DUST, FS_DUST } from './shaders.js';
 import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
-import { mkSub, mkVoice, ringR, ringW, sub, voice } from './voices.js';
+import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
@@ -38,6 +38,7 @@ const SELF = {
   feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'dropEnv', 'tension',
     'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt',
     'kick2', 'kickAge', 'snare2', 'snareAge', 'hat2', 'hatAge', 'subNoteEvt', 'subGate',
+    'buildLive', 'nextDropIn', 'dropLiveEvt',
     'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
@@ -59,9 +60,10 @@ const SELF = {
     // the three transient voices and the sub (voices.js): decay time constants longer than the levels' own, which
     // is what "slow decay" means, and a floor so a soft hit is still a hit
     this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
+    this.vT = mkTens();             // the void's contraction, the last bar's wind-up, the drop's release
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
     this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, drop: 0, tension: 0, alive: 0,
-      spin: 0, spinG: 0, vk: 0, vs: 0, vh: 0, vb: 0, ringR: 0, ringW: 1 };
+      spin: 0, spinG: 0, vk: 0, vs: 0, vh: 0, vb: 0, ringR: 0, ringW: 1, build: 0, rel: 0 };
     this.mood = { hue: 0, sat: 0, bri: 0, spread: 0, invert: 0, angular: 0 };
     lookVP(this.vp, 0, 0, this.dist, 1, 55 * DEG, 0.1, 10.1);
     this.L = ctx.lines.mk(CAP);                          // the fibre overlay's own segment buffer (CONTRACTS 1.12 A)
@@ -90,6 +92,9 @@ const SELF = {
     voice(this.vS, dt, MS.snare2, MS.snareAge);
     voice(this.vH, dt, MS.hat2, MS.hatAge);
     sub(this.vB, dt, MS);
+    // The real tension: the void before a drop (§54), not the roughness. The last bar winds up on top of it, and
+    // the slam lets everything go at once.
+    tens(this.vT, dt, MS);
 
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
     // never while a pour is still running. The drop is the one exception: it re-pours wherever it lands.
@@ -110,11 +115,16 @@ const SELF = {
     m.flow = MS.flow; m.flowMid = MS.flowMid; m.flowBass = MS.flowBass; m.bassS = MS.bassS; m.midS = MS.midS;
     m.highS = MS.highS; m.lvl = MS.lvl;
     m.drop = MS.dropEnv; m.tension = MS.tension; m.alive = MS.alive;
+    m.build = Math.min(1.25, this.vT.build + 0.3 * this.vT.wind); m.rel = this.vT.rel;
     m.vk = this.vK.e; m.vs = this.vS.e; m.vh = this.vH.e; m.vb = this.vB.e;
     m.ringR = ringR(this.vS); m.ringW = ringW(this.vS);
     m.spin = this.spin % (Math.PI * 2); m.spinG = this.spinG % (Math.PI * 2);   // wrapped: fp32 in the shader
     const q = LOOK.mood, d = this.mood;
-    d.hue = q.hue; d.sat = q.sat; d.bri = q.bri; d.spread = q.spread; d.invert = q.invert; d.angular = q.angular;
+    // the void drains the palette: the colour goes out of the cloud and the hue family closes toward one hue,
+    // and the drop's release puts it back (the mood object is the fibres' palette too, so the rings drain with it)
+    const dr = 1 - 0.55 * Math.min(1, m.build);
+    d.hue = q.hue; d.sat = q.sat * dr; d.bri = q.bri; d.spread = q.spread * (1 - 0.35 * Math.min(1, m.build));
+    d.invert = q.invert; d.angular = q.angular;
 
     this.rt.time = MS.flow;                              // the visual clock is musical time, not the wall clock
     this.rt.label = FORMS[this.formA] + (this.formT < 1 ? '>' + FORMS[this.formB] + ' ' + this.formT.toFixed(2) : '') + ' ' + this.spin.toFixed(1);
@@ -141,6 +151,7 @@ const SELF = {
     gl.uniform2f(P.u('uSnareR'), m.ringR, m.ringW);
     gl.uniform1f(P.u('uDrop'), m.drop);
     gl.uniform1f(P.u('uTension'), m.tension);
+    gl.uniform2f(P.u('uBuild'), m.build, m.rel);
     gl.uniform1f(P.u('uAlive'), m.alive);
     gl.uniform1f(P.u('uHue'), d.hue);
     gl.uniform1f(P.u('uSat'), d.sat);
@@ -175,7 +186,7 @@ const SELF = {
     o.flowMid = m.flowMid; o.lvl = m.lvl; o.alive = m.alive;
     o.band[0] = m.bassS; o.band[1] = m.midS; o.band[2] = m.highS;
     o.alpha = 0.06 * m.flowBass;                         // the tumble: bass time turns the whole family on S3
-    o.s = S0 * (1 - 0.3 * m.tension) * (1 + 0.6 * m.drop + 0.08 * m.vk);
+    o.s = S0 * (1 - 0.32 * Math.min(1, m.build)) * (1 + 0.6 * m.drop + 0.12 * m.rel + 0.08 * m.vk);
     o.wpx = 1.5 * (h / 720); o.dist = this.dist;
     const n = emit(this.segs, cap, o);
     this.rt.log = 'fib ' + o.nl + 'x' + o.nF + 'x' + o.N + ' seg ' + n + '/' + cap;
@@ -192,6 +203,7 @@ const SELF = {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
+        build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
         ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age, ringR: ringR(SELF.vS) };
     },
   },
@@ -236,7 +248,12 @@ const SELF = {
       subNoteEvt: 'a new bass note swells the core of the cloud',
       subGate: 'no bass at all and the core lets go entirely: silence is quiet',
       dropEnv: 'the cloud re-pours on the drop, grains fly outward, the rings swell, the camera dollies in',
-      tension: 'the cloud contracts and jitters, and the rings draw in with it',
+      tension: 'the roughness shakes the grains where they stand — jitter, and nothing else; it no longer shrinks '
+        + 'the cloud, because a dissonant chord is not a build',
+      buildLive: 'the void before a drop draws the whole cloud in, thins the doughnut\'s tube to a wire, pulls the '
+        + 'rings tight and drains the colour out of everything',
+      nextDropIn: 'inside the last bar before the expected drop the contraction winds up a little further',
+      dropLiveEvt: 'the slam: everything the void was holding lets go at once, and the grains overshoot outward',
       alive: 'silence fades every grain, and every ring, to black',
       beatCount: 'the beat grid: the whole cloud is nudged a thirty-second of a turn on every beat, the torus a '
         + 'little further and the galaxy arms further still in their core than at their rim',

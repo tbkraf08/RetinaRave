@@ -307,6 +307,12 @@ under the outgoing section's `sectionAlt`; when synapse identifies a return (`se
 back at the next soft switch (see §4: that switch lands on a bar line). Before synapse has identified any section
 (`sectionAlt` < 0) v3's seed carries the memory (`sectionEvt` saves, `identifyEvt` with `repeat` restores). Keep `set`
 cheap and continuous-safe (it may be called while you are on screen). Both are called with `this` = your scene object.
+A scene may keep its **own** copy of the same memory under the same key and act earlier: the director's restore lands at the
+next soft switch, a few beats after the boundary, while the bar store's `barReturnEvt` lands on the return's FIRST bar (DUST
+does this for its formation, DECISIONS §57 step 4). Measured caveat for anyone who copies it: `sectionAlt` did not repeat on
+either test track (SeeYouDrop 2→3→4→5, CyborgNinja 1→2→3) and `sectionReturn` stayed 0 for all of SeeYouDrop while
+`barReturnEvt` fired twice — the return signals say THAT material is coming back, not WHICH, so a scene needs a fallback
+(DUST's: the last look filed under a different section).
 
 ### 1.12 Lines — `ctx.lines`
 
@@ -556,6 +562,13 @@ are the scene author's rules:
 - **Events placed by their age.** `kickEvt` / `snareEvt` / `hatEvt` fire on the frame the onset is heard; `kickAge` etc. is
   the heard time since the onset (99 before any; it can be a few ms below 0 on the release frame — clamp `max(0, age)`). A fast
   motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
+  **A level and an age are not always the same onset (v0.20+, DECISIONS §57).** `kickAge` / `snareAge` / `hatAge` are the EARS'
+  onsets; `kick2` / `snare2` / `hat2` are the reactive drums v2, whose kick is the ears' low lane but whose snare and hat are
+  synapse's (§51). Measured at every rising edge of the level on SeeYouDrop 20–110 s `&map=0` (5401 frames), the matching age
+  reads p50 **+7 ms** for the kick (p90 1720, 4 of 224 edges with no fresh age at all), **+101 ms** for the snare and **+92 ms**
+  for the hat. So a scene that wants both — the level's amplitude and the age's placement — keeps its OWN age, reset by the
+  level's rising edge and seeded from the engine's age only when that age is fresh (DUST uses 40 ms): the sub-frame placement
+  where it is real, and never a motion started 100 ms late. Pairing `kick`/`kickAge` or `snare2`/`snareAge` blind is a bug.
 - **Predicted hits (live step 3).** `predKickEvt` / `predSnareEvt` / `predHatEvt` are released ON the heard hit (median
   +1…+5 ms in capture) from the bar fingerprint store — use them where a reaction would be 38–52 ms late; `predKickAge` etc. place
   a motion like `kickAge` (within half a frame of 0 on the release frame), `predKick` / `predSnare` / `predHat` are the same hits

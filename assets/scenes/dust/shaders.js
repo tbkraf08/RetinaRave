@@ -12,6 +12,12 @@
 // onsets' ages: the kick shoves the inner grains outward, the snare launches a flash RING that travels out through
 // the mid grains (uSnareR), the hat sparkles the edge, and a sub note swells the core. uKick / uHat are gone —
 // the scene reads the reactive drums v2 now (kick2 / snare2 / hat2, §51).
+//
+// §57 step 3: the tension the scene used to shrink with was `tension`, v3's ROUGHNESS — how dissonant the music is,
+// which on a clean dubstep track sits around 0.35 all day and reads as a build that never arrives. The real build is
+// the void, `buildLive` (§54): uBuild.x pulls the whole cloud in, thins the torus's tube and (CPU side) drains the
+// palette and tightens the fibre rings; uBuild.y is the drop's release, which lets all of it go at once and leaves
+// the fling to uDrop. uTension is now the jitter and nothing else.
 
 export const VS_DUST = `#version 300 es
 precision highp float;
@@ -32,7 +38,8 @@ uniform float uLevel;      // MS.lvl
 uniform vec4 uVoice;       // the four voices' envelopes: kick, snare, hat, sub (voices.js)
 uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gaussian half-width
 uniform float uDrop;       // MS.dropEnv
-uniform float uTension;    // MS.tension
+uniform float uTension;    // MS.tension — the roughness, as JITTER and nothing else
+uniform vec2 uBuild;       // x = the void's contraction 0..1 (buildLive + the last bar's wind-up), y = the release
 uniform float uAlive;      // MS.alive
 uniform float uHue;        // LOOK.mood.hue
 uniform float uSat;        // LOOK.mood.sat
@@ -66,8 +73,9 @@ vec3 form(int k, float n, vec3 h, float id){
   //    so no two particles ever line up into a seam.
   if (k == 0){ float y = 1. - 2. * n, rr = sqrt(max(0., 1. - y * y)), ph = id * 2.39996; return vec3(cos(ph) * rr, y, sin(ph) * rr) * 1.05; }
   // 1: torus — (R + r cos v) around the main circle u, r sin v up the tube; r breathes with the slow bass.
-  //    u turns with the beat, a little faster than the cloud around it, so the ring reads as the thing being nudged.
-  if (k == 1){ float u = TAU * h.x + uSpin * .7, v = TAU * h.y + uFlowMid * .3; float R = 1.1, rr = .38 + .2 * uBassS;
+  //    u turns with the beat, a little faster than the cloud around it, so the ring reads as the thing being nudged,
+  //    and the tube thins to a wire through the void before a drop (uBuild.x) — the build IS the ring tightening.
+  if (k == 1){ float u = TAU * h.x + uSpin * .7, v = TAU * h.y + uFlowMid * .3; float R = 1.1, rr = max(.06, .38 + .2 * uBassS - .26 * uBuild.x);
                return vec3((R + rr * cos(v)) * cos(u), rr * sin(v), (R + rr * cos(v)) * sin(u)); }
   // 2: three-arm galaxy — radius is sqrt-distributed (uniform area), the arm is a log-ish spiral whose
   //    winding rate falls off as 1/(r + .35) so the core turns faster than the rim. It winds per beat, so every
@@ -107,8 +115,8 @@ void main(){
   pos += dir * ring * .38;                                    // the snare's flash ring, travelling out
   float spark = uVoice.z * wHigh * (.35 + 1.5 * h.y);         // the hat sparkles the edge
 
-  pos *= 1. + uDrop * 1.6 * h.y * h.y - .2 * uTension + .1 * uBassS;
-  pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // jitter as tension rises
+  pos *= 1. - .3 * uBuild.x + .17 * uBuild.y + uDrop * 1.6 * h.y * h.y + .1 * uBassS;
+  pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // roughness: jitter, and nothing else
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
   pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);
