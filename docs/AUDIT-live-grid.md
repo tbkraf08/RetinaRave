@@ -540,3 +540,18 @@ outside an armed window (by construction), 0 false. Malicious' drop: no void, no
   routed, 0.1 / false after the clear; `localStorage['ew.routes.v1']` null throughout; `CARD.ERRS` []. Route kinds: level ←
   level, event ← event. What NAV does with them: `build` ≥ 0.45…0.85 parks `c` at the bulb's root (so B parks through the void
   and springs at the slam), `dropEvt` runs `navDrop` (the ray launch; its `dropStrength` stays v3's).
+
+### B.3 addendum — the audible capture run (orchestrator, 2026-09-29)
+
+`FIELDSX='buildLive,dropLiveIn,dropLiveEvt,hp,bassS,sub,presence' node tools/caplag.js track SeeYouDrop 0 110 27` →
+`tools/work/caplag/SeeYouDrop-cap-sync27-fx.json` (6720 frames, listener time −1.0 → 111.0 s, sync 27 ms, outLat 32 ms), graded
+with `dropcheck.py --rule 'buildLive>=0.4' --rule 'dropLiveEvt:evt'`:
+
+| rule | SYD 1 | SYD 2 | false/min | armed |
+|---|---|---|---|---|
+| `buildLive>=0.4` | 14.0 beats ahead | 6.0 beats ahead | 0.00 | 7.3 % (chance hit 0.08) |
+| `dropLiveEvt` | +61 ms | +89 ms | 0.00 | 2 events |
+
+Live, the detector arms 14 / 6 beats (3.5 / 1.5 bars) before both SeeYouDrop drops with no false arm in 111 s; the slam event
+is reactive in capture (+61 / +89 ms: the low onset's capture lag + the bass confirmation, the same order as v3's `dropEvt`
++63 ms) — the anticipation is `buildLive` / `dropLiveIn`, the event only marks the slam.

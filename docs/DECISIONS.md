@@ -2665,3 +2665,8 @@ and the study), then build (B.2), then prove (B.3). The leans, each with the num
   stream-mode A/B. **Page `&map=0`: armed 15.9 8.0 · 8.0 7.0 11.0 · 0 beats, 0.28 false / min, 0 on CyborgNinja;
   `dropLiveEvt` −6 +21 · +10 +48 +12 ms, 0 false.** Not done: the audible capture run (the orchestrator's), a second no-drop
   control, a hand check of WhoLikesToParty's / Malicious' drops.
+
+**§54 addendum — the audible capture run (2026-09-29).** SeeYouDrop from 0 in tab capture (`&sync=27`): `buildLive` arms 14 / 6 beats
+before the two drops, 0 false arms in 111 s, armed 7.3 % of the time; `dropLiveEvt` +61 / +89 ms (reactive, as expected in
+capture). The A/B for the user is a live route on the capture page (`CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')`);
+no default moves until their word. Not tagged, not pushed.
