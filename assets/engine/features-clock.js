@@ -1,0 +1,90 @@
+// THE PCM CLOCK STAGE (live step 6, 2026-09-30; engine/clock/clock.js, docs/AUDIT-live-grid.md "Step 6", DECISIONS §56): the
+// beat clock estimated on the PCM bus — the ears' sample-timed onsets as its ticks, tempo.js's comb on a per-hop spectral
+// flux as its tempo and lattice, a Kalman filter on (beat position, rate) — published beside v3's under its own names:
+//   bpmPcm · beatPhasePcm · beatCountPcm · beatPcm (event) · clockConfPcm · clockPcm (1 while the switch below is on)
+// evaluated at the same time the lead publishes v3's clock (heard time + the display lead; the raw analysis time under
+// &lead=0 — the same rule, so the two beat lines are comparable frame for frame). Additive: no scene reads them by default.
+// THE SWITCH (`&clock=pcm` under #test, `CARD.setClock('pcm' | 'v3')` live, ENGINE.CLOCK.src): with it on, this stage —
+// which runs after 'ears' and BEFORE bars / drums / build / queue and the lead — writes the PCM clock's RAW values (at the
+// analysers' time, heardT − LEAD.L) into bpm / beatPhase / beat / beatCount, so every stage after it and every scene rides
+// the PCM clock through the lead exactly as they ride v3's; v3's own values are saved and put back by restore() at the top
+// of the next frame (engine.js, beside the lead's), so the PLL and the tempo comb never see the swap. Default 'v3'.
+// The work: the PCM listener (outside frame(); the cost is drained into ENGINE.ms like the ears') runs the clock's FFT per
+// 512-sample hop and hands it the ears' new percussion onsets; a new Ears (a new stream, a seek) starts a new Clock.
+import { AU } from './audio.js';
+import { ENGINE } from './engine.js';
+import { PCM } from './pcm.js';
+import { LEAD, dispNow } from './lead.js';
+import { EARS } from './features-ears.js';
+import { Clock, CLOCK } from './clock/clock.js';
+
+export const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
+const KEYS = ['bpm', 'beatPhase', 'beat', 'beatCount'];
+const CLS = { kick: 0, snare: 1, hat: 2 };
+
+export const CLOCKS = {
+  src: 'v3',            // 'v3' | 'pcm': which clock bpm / beatPhase / beat / beatCount publish
+  clk: null, E: null, subscribed: false, cpu: 0, blocks: 0, mono: new Float32Array(PCM.BLOCK),
+  seen: [-1, -1, -1],   // the newest onset time handed over per class (the ears keep an onset pending until its release)
+  pub: { n: null },     // the published PCM count's memory (it never steps back: a beat fires once; clock.js read())
+  rawSt: { n: null },   // the swapped-in raw count's
+  raw: null,            // v3's own bpm / beatPhase / beat / beatCount this frame, put back by restore()
+  ev: {},
+  K: CLOCK,             // the knobs (tools / the console)
+};
+ENGINE.CLOCK = CLOCKS;
+
+function onBlock(L, R, t0) {
+  if (ENGINE.fakeOn || !AU.ctx) return;
+  if (t0 < 0) return;
+  const c0 = performance.now();
+  const E = EARS.ears;
+  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; }
+  const m = CLOCKS.mono, n = L.length;
+  for (let i = 0; i < n; i++) m[i] = 0.5 * (L[i] + R[i]);
+  CLOCKS.clk.push(n === m.length ? m : m.subarray(0, n), t0);
+  if (E) {
+    const p = E.pending, seen = CLOCKS.seen;
+    for (let i = 0; i < p.length; i++) { const e = p[i], c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; CLOCKS.clk.onset(e.t, c, e.vel); } }
+  }
+  CLOCKS.blocks++;
+  CLOCKS.cpu += performance.now() - c0;
+}
+
+// v3's own clock back before the extractor integrates it (engine.js frame(), beside the lead's restore)
+export function restore(S) {
+  const r = CLOCKS.raw;
+  if (!r) return;
+  for (let i = 0; i < KEYS.length; i++) S[KEYS[i]] = r[KEYS[i]];
+  CLOCKS.raw = null;
+}
+
+export function setClock(src) {
+  if (src !== 'v3' && src !== 'pcm') throw new Error('setClock: v3 | pcm');
+  CLOCKS.src = src;
+  return src;
+}
+
+export function clockStage(dt, now, S) {
+  S.beatPcm = false;
+  if (ENGINE.fakeOn || !AU.ctx || AU.mode === 'none') { S.clockPcm = 0; return; }
+  if (!CLOCKS.subscribed) { CLOCKS.subscribed = true; PCM.on(onBlock); }
+  ENGINE.extraMs += CLOCKS.cpu; CLOCKS.cpu = 0;
+  const C = CLOCKS.clk;
+  if (!C) { S.clockPcm = 0; return; }
+  const ev = CLOCKS.ev, T = S.heardT;
+  // the additive fields: at heard time + the display lead with the lead on, else at the analysers' time (v3's raw base)
+  const tPub = LEAD.on && LEAD.L !== null ? T + dispNow() : LEAD.L !== null ? T - LEAD.L : C.t;
+  C.read(tPub, CLOCKS.pub, ev);
+  S.bpmPcm = ev.bpm; S.beatPhasePcm = ev.phase; S.beatCountPcm = ev.count; S.beatPcm = ev.beat; S.clockConfPcm = C.conf;
+  S.clockPcm = CLOCKS.src === 'pcm' ? 1 : 0;
+  if (CLOCKS.src !== 'pcm') { CLOCKS.rawSt.n = null; return; }
+  // the switch: the PCM clock's raw values (at the analysers' time) replace v3's for every stage after this one and the lead
+  const r = CLOCKS.raw = {};
+  for (let i = 0; i < KEYS.length; i++) r[KEYS[i]] = S[KEYS[i]];
+  C.read(LEAD.L !== null ? T - LEAD.L : C.t, CLOCKS.rawSt, ev);
+  S.bpm = ev.bpm; S.beatPhase = ev.phase; S.beatCount = ev.count; S.beat = ev.beat;
+}
+
+ENGINE.addStage('clock-pcm', clockStage, CLOCK_OUT);
+ENGINE.restores.push(restore);

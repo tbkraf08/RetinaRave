@@ -1,4 +1,4 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -16,6 +16,7 @@ import { HASH, TEST } from './hash.js';
 import { restore as restorePanel } from './panel.js';
 import { MANUAL, manual, applyPosts, postString, POST_PARAMS, snapshotDefaults, resetManual } from './manual.js';
 import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRoutes, routesString, parseRoute, serialiseRoute, sources, view, pulse } from './route.js';
+import { setClock } from '../engine/features-clock.js';
 import { PROUTES, PROUTE, setParam, clearParams, applyParams, paramsString, paramsOf, paramDeps, paramSources, derived } from './params.js';
 import { getGrid } from '../math/mandel.js';
 
@@ -42,6 +43,8 @@ export const CARD = {
   set fix(v) { ENGINE.fix = v; },
   get GRID() { return getGrid(); },
   get QUEUE() { return ENGINE.QUEUE ? ENGINE.QUEUE.list : []; }, // live step 5: the predicted-event queue's entries [{ cls, t (heard s), conf }], by t
+  setClock,                                                      // live step 6: 'pcm' | 'v3' — which beat clock bpm / beatPhase / beat / beatCount publish (features-clock.js; &clock=pcm under #test)
+  get clock() { return ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'; },
   get home() { const E = REG[SC.home]; return E ? E.scene.state : null; }, // the home scene's state (parity/monitor tools)
   goScene: (id, hard) => goScene(id, hard, MS),
   setColour, // colour variant by name for every scene that declares it (CONTRACTS §1.4); &colour=<name> under #test
@@ -156,6 +159,9 @@ export function initHarness(hideLanding) {
   // live step 3.0: &map=0 skips the file's track map, so the ears stay causal (the live path on a file, deterministic under
   // CLOCK=1) — what every live-mode stage is developed against; the default builds the map as v0.15 did
   if (HASH.has('map')) ENGINE.useMap = HASH.get('map') !== '0';
+  // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
+  // the default 'v3' is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
+  if (HASH.has('clock')) setClock(HASH.get('clock'));
   if (track) {
     hideLanding();
     ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),

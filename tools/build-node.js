@@ -25,6 +25,7 @@ import { Bars, BARS_OUT } from '../assets/engine/bars/bars.js';
 import { feed as barsFeed } from '../assets/engine/bars/feed.js';
 import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
 import { feed as queueFeed } from '../assets/engine/queue/feed.js';
+import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -57,6 +58,11 @@ const DISP = +opt('--disp', 0) / 1000;
 if (process.env.BUILDK) Object.assign(BUILD, JSON.parse(process.env.BUILDK));
 // live step 5: the bars store and the queue run too (as features-bars.js / features-queue.js feed them); QUEUEK='{"HOLD":0.1}'
 if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
+// live step 6: the PCM beat clock runs too (as features-clock.js feeds it: the mono block, then the ears' new onsets); CLOCKK='{"R_ON":1e-3}'
+// overrides knobs; CLOCKSRC=pcm is the page's &clock=pcm — the bars / build / queue stages ride the PCM clock's raw values
+if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
+const CLOCKSRC = process.env.CLOCKSRC === 'pcm' ? 'pcm' : 'v3';
+const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 
 const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'kickVel'];
@@ -87,17 +93,28 @@ for (const track of TRACKS) {
   let detMs = 0; tap.clock = () => detMs;
   const an = tap.an, A = an.A, ears = new Ears(sr), v3 = V3 ? await makeV3(pcm) : null;
   const names = [...EARS_K, ...Object.keys(SYN_A), ...Object.keys(SYN_EV), ...Object.keys(SYN_IN), 'rollRate', 'phrase16Pos', 'barPos',
-    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
+    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...CLOCK_OUT, ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
   const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
+  const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {};
   const EARS_B = ['kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'bassReg', 'subGate', 'subPure', 'denK', 'denS', 'denH'];
   const wrap = (x, n) => ((x % n) + n) % n;
   detStream(pcm, {
     pre(fr) { detMs = (fr + F0) * 1000 / FPS; },   // file.js tickFile: the frame clock's ms, then this frame's pushes
-    block(bl, br, mono, t0) { tap.pushBlock(mono, detMs); ears.push(bl, br, t0); },
+    block(bl, br, mono, t0) {
+      tap.pushBlock(mono, detMs); ears.push(bl, br, t0);
+      clk.push(mono, t0);                                  // features-clock.js onBlock: the mono block, then the ears' new onsets
+      for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
+    },
     frame(fr, heard, dt) {
-      if (v3) { const S = v3.step(fr, heard, dt); for (const k of V3_K) cols[k].push(r4(k === 'arcN' ? ARC[S.arc] ?? -1 : S[k])); }
+      const M0 = v3 ? v3.step(fr, heard, dt) : null;
+      // the PCM clock (features-clock.js): the additive fields at the analysers' time (the &lead=0 page), then the switch
+      clk.read(heard + DET_LEAD, cpub, cev);
+      cols.bpmPcm.push(r4(cev.bpm)); cols.beatPhasePcm.push(r4(cev.phase)); cols.beatCountPcm.push(cev.count); cols.beatPcm.push(cev.beat ? 1 : 0);
+      cols.clockConfPcm.push(r4(clk.conf)); cols.clockPcm.push(CLOCKSRC === 'pcm' ? 1 : 0);
+      const CK = CLOCKSRC === 'pcm' ? clk.read(heard + DET_LEAD, craw, {}) : null;
+      if (v3) { const S = M0; for (const k of V3_K) cols[k].push(r4(k === 'arcN' ? ARC[S.arc] ?? -1 : S[k])); }
       tap.frame(dt);
       const o = ears.read(heard);
       for (const k of EARS_K) cols[k].push(r4(o[k]));
@@ -108,6 +125,7 @@ for (const track of TRACKS) {
       if (v3) {   // the build stage, fed as features-build.js feeds it (v3's count - 1: the page's, B.1)
         const M = v3.MS, S = bst.S;
         S.beatCount = M.beatCount - 1; S.beatPhase = M.beatPhase; S.bpm = M.bpm; S.presence = M.presence;
+        if (CK) { S.beatCount = CK.count; S.beatPhase = CK.phase; S.bpm = CK.bpm; }   // the switch: the PCM clock's raw values (features-clock.js)
         S.barConf = A.barConf; S.bpmSyn = A.bpm; S.barPos = wrap(A.beat - an.o4, 4); S.hp = A.ev.hp; S.bassS = A.bassS; S.sub = A.sub; S.heardT = heard;
         // the bars store first (the page's stage order: bars, drums, build, queue)
         for (const k of EARS_B) S[k] = o[k];

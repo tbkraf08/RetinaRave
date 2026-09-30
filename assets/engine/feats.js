@@ -114,6 +114,13 @@ export const FEATS = {
   nextSnareUp: L('the wind-up to the next predicted snare', 'as nextKickUp, the snare class', 'a param route'),
   nextHatUp: L('the wind-up to the next predicted hat', 'as nextKickUp, the hat class', 'a param route'),
   queueN: { kind: 'count', eli5: 'how many events the queue lists within the next 2 bars', formula: 'the beat lines, the bar lines, the predicted hits and the drop inside 8 beats (ENGINE.QUEUE.list / CARD.QUEUE has them)', drives: 'nothing visual: the harness and the help view read it', range: [0, 64] },
+  // --- the PCM beat clock (engine/clock, features-clock.js, live step 6) — additive; `&clock=pcm` / CARD.setClock('pcm') makes bpm / beatPhase / beat / beatCount publish it ---
+  bpmPcm: R('the tempo of the beat clock estimated on the PCM bus', 'tempo.js\'s harmonic-comb ACF on a per-hop (512-sample) spectral flux of the PCM bus, then a Kalman rate state corrected by the ears\' onsets', 'nothing by default; bpm with the switch on'),
+  beatPhasePcm: L('where the PCM clock is inside its beat, 0→1', 'the Kalman beat position (ears\' kick / snare / hat onsets as sample-timed ticks, the comb line as the lattice vote) evaluated at heard time + the display lead (the lead\'s own base; raw under &lead=0)', 'nothing by default; beatPhase with the switch on'),
+  beatCountPcm: { kind: 'count', eli5: 'the PCM clock\'s beats since its start', formula: 'floor of the beat position; never steps back (a pull back across a line holds on it)', drives: 'nothing by default; beatCount with the switch on', range: [0, Infinity] },
+  beatPcm: E('the PCM clock crossed a beat line this frame', 'beatCountPcm stepped', 'nothing by default; beat with the switch on'),
+  clockConfPcm: L('how sure the PCM clock is of its phase', '1 − σ(beat position) / 0.25 beat, from the Kalman covariance', 'nothing by default; a scene may gate on it'),
+  clockPcm: { kind: 'level', eli5: 'is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock\'s', formula: 'ENGINE.CLOCK.src === \'pcm\' (\'&clock=pcm\' / CARD.setClock)', drives: 'nothing: the harness and the HUD read it', range: [0, 1] },
   kickCount: { kind: 'count', eli5: 'kicks since start', formula: 'increments per kick', drives: 'MANDALA fold epoch (every 64 kicks; synapse used 32)', range: [0, Infinity] },
   alive: L('is sound present (synapse)', 'silentFor<.7 s, attack .25 s release .9 s', 'idle behaviour'),
   hush: L('the silence before a drop', 'tension>.35 & fast energy < 32% of short energy', 'DUST/MANDALA hold'),

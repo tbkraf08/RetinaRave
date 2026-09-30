@@ -28,6 +28,8 @@ export const ENGINE = {
   tex: TEX,         // engine-owned texture arrays (spec/wave/hist); the core uploads them
   extraMs: 0,       // CPU spent outside frame() by stages (worklet port handler), drained into ms
   stages: [],       // [{ name, fn(dt, now, MS), feats:[...] }]
+  restores: [],     // fn(MS) run at the top of frame() after the lead's restore: a stage that swaps a published field puts the owner's value back here
+  CLOCK: null,      // live step 6: the PCM clock stage (features-clock.js sets it; .src = 'v3' | 'pcm', the switch)
   fix: null,        // test hook: Object.assign(MS, fix) every frame after extraction
   QUEUE: null,      // live step 5: the predicted-event queue's stage object (features-queue.js sets it; .list = the entries)
   fakeOn: false,    // #test without fake=0: the deterministic timeline replaces the extractor
@@ -88,6 +90,7 @@ export const ENGINE = {
       }
     }
     leadRestore(MS);  // the clocks' own values back before anything integrates them (engine/lead.js; a no-op when off)
+    for (const r of this.restores) r(MS); // live step 6: the PCM clock switch puts v3's bpm / beatPhase / beat / beatCount back the same way (features-clock.js)
     if (this.fakeOn) fake.update(dt, now);
     else {
       // v0.15 E1: the file source advances the playhead here — the analyser shims are seeked and the synapse tap is fed

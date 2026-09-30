@@ -34,6 +34,8 @@ export const MS = {
   // the predicted-event queue (engine/queue, features-queue.js, live step 5) — idle: nothing listed
   nextBeatIn: -1, nextBarIn: -1, nextKickIn: -1, nextSnareIn: -1, nextHatIn: -1, nextDropIn: -1,
   nextKickConf: 0, nextSnareConf: 0, nextHatConf: 0, nextKickUp: 0, nextSnareUp: 0, nextHatUp: 0, queueN: 0,
+  // the PCM beat clock (engine/clock, features-clock.js, live step 6) — idle: the prior tempo, no beat, no confidence, the switch off
+  bpmPcm: 124, beatPhasePcm: 0, beatCountPcm: 0, beatPcm: false, clockConfPcm: 0, clockPcm: 0,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

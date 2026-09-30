@@ -774,3 +774,84 @@ blocks), so the flux of one frame is the rise over 1 or 2 blocks. The onset EVEN
 frame's analysis time, det): **+17 ms median, p90 33 ms** on SeeYouDrop, +32 / 40 on CyborgNinja, +32 / 42 on WhoLikesToParty,
 +23 / 36 on Malicious — late by half a frame plus the window, and the `phaseCorr` PLL then bleeds each correction over τ 0.18 s.
 The comb target itself carries a hand-tuned `+0.03` beat (12 ms early at 150 BPM) that hides part of that lag in the phase rows.
+
+### T.1 — the PCM onset stream (`engine/clock/clock.js` `push()` + the ears' onsets; `tools/clock-study.js`)
+
+Three candidate inputs, each measured in node on the page's det time base (`tools/node-stream.js`: the same blocks the page
+pushes, `tools/clock-study.js` writes a compare.py trace + every onset into its `log`), against the truth kicks (`onsets.click`,
+±50 ms match, the whole track after 10 s):
+
+| onset stream (sample-timed) | SeeYouDrop err med / p90 (sd) | CyborgNinja | WhoLikesToParty | Malicious |
+|---|---|---|---|---|
+| v3's frame onsets, for reference (the frame's analysis time) | +17.0 / 32.5 (8.8) | +32.5 / 40 (6.9) | +32.0 / 42 (12.8) | +22.7 / 36 (11.7) |
+| the ears' 7-band dB flux (perc.js), picked at mean + 1.5 sd | — rejected before timing: not periodic (below) | | | |
+| v3's spectral flux per 512 hop, picked at mean + 1.5 sd, hop centre − 6 ms | −0.5 / 16.7 (10.0) | +14.7 / 22.8 (6.1) | +14.0 / 22.7 (7.5) | +4.2 / 18.0 (10.8) |
+| … timed by the rise's split between hops k / k+1 | +3.2 / 20.4 (9.5) | +18.3 / 25.0 (5.2) | +18.8 / 26.7 (6.8) | +9.1 / 22.1 (10.0) |
+| **the ears' kicks** (perc.js, ONSET_LAG 6 ms) | **+3.0 / 10.8 (7.6)** | **+7.7 / 14.3 (6.2)** | **+6.0 / 14.3 (8.4)** | **+2.5 / 35 (19)** |
+| the ears' snares / hats | −0.7 / −1.3 (10 / 10) | +2.7 / +0.7 (8 / 5) | +0.7 / +1.7 (10 / 8) | −1.0 / −1.7 (17 / 8) |
+
+- **The ears' band flux is a detector's, not a periodicity function.** Its autocorrelation at the beat lag reads 0.11 in
+  SeeYouDrop's intro (8–26 s) and 0.44 in its groove (30–50 s) where v3's full-spectrum log flux reads 0.59 / 0.79 (the same
+  audio, both resampled to 100 Hz): the HPSS-residual dB rise, gated at −34 dB under each band's own level, is nearly binary
+  per hop. Fed to tempo.js's comb it locked SeeYouDrop's intro to 121 BPM for 20 s (v3: 150 within 5 s).
+- **The comb's input is therefore v3's own onset function, per hop:** a 2048-point FFT (the ears' FFT class) on the PCM
+  bus's newest 2048 samples every 512, the positive log-magnitude flux over bins 1..419 plus 3× the bass bins' (< 150 Hz),
+  timed by the sample count. Synapse's Analyzer has this FFT already but on its own tap without sample stamps (a relative
+  `t`), so the clock runs its own: 0.045 ms per hop in node = **0.07 ms per 60 Hz frame** at 48 kHz. The comb on it reads the
+  same tempo as v3's (95 / 98 / 99 / 79 % of frames within ±1 BPM on the four tracks; v3 95.5 / 99.2 / 99.2 / 78.8).
+- **The ticks are the ears' onsets, not onsets picked from that flux.** A kick's full-spectrum flux peaks a hop after its
+  click on two of the four tracks (+15 / +14 ms, and the rise-split timing makes it worse: +18 / +19), where the ears' per-band
+  detectors with the beater-click rule place the kicks +3 / +8 / +6 / +2.5 ms (sd 6–8) and snares / hats within ±3 — sample-
+  timed, already computed, already validated (v0.15). So `push()` feeds the comb and `onset(t, cls, vel)` takes the ears'
+  pending events (features-clock.js reads `EARS.ears.pending` after the ears' own PCM listener ran; in node the same loop).
+  KICK_LAG 4 ms = the median of the four kick placements; snares / hats none.
+
+### T.2 — the clock (`engine/clock/period.js` + `clock.js`; `tools/test_clock.js`)
+
+- **`Period`** is tempo.js's steps 1–6 copied to the letter (the high-pass / loudness-normalised / recency-tapered 8 s ring, the
+  ACF over lags 8..410, the harmonic comb under the 130-centred prior on the 0.25-lag grid, the vertex refinement, the contrast
+  / y1 gates, the 6 % track, the 25 % margin, the metrical-relative votes, the 2.5 s 3:2 arbitration) with its state in the
+  object instead of MS / XS — v3's estimator is untouched (its trace stays byte-identical, T.4). Its ring is written by AUDIO
+  time (`ring(t, o)`: the 100 Hz slot of the hop's end, zero-order hold over a skipped slot — the 512 hop is 10.7 ms, so one
+  slot in 15 is held), never by a frame clock. `line(bps)` is v3's comb-aligned PLL target (8 beats of the comb on the
+  envelope's peaks) with a parabolic vertex over the offset and WITHOUT the `+0.03` beat fudge, returned as an audio time.
+- **`Clock`** is a 2-state Kalman filter, x = [beat position b, rate f] at audio time `t`: predict `b += f·dt`, P grows by the
+  constant-rate model's noise (Q_B 0.01² beats²/s, Q_F 0.003² (beats/s)²/s); every ears onset is a phase measurement "a line is
+  at t" (z = round(b), R = R_ON·R_CLS[cls] / vel, R_ON 0.03², R_CLS kick 1 / snare 1.5 / hat 3) applied as a probabilistic-
+  data-association step: the gain is scaled by beta = N(y; 0, S) / (N + CLUTTER), the posterior weight of "on the grid" against
+  "one of CLUTTER off-grid hits per beat" — at y = 0 beta ≈ 0.9, three sigma out 0.6, four sigma out 0.06. Cold (P00 = 1) the
+  first onset sets the phase outright; locked (σ ≈ 0.02 beat) a stray 16th moves the line by nothing (test: a vel-1.5 hit half a
+  beat off moves the next beat 0.4 ms). Every 0.5 s of audio the comb's tempo is a rate measurement (R_F 0.01² / y1) when it is
+  within 6 % of f, a re-seat of f (P11 reset) when the votes switched; the comb's LINE is one more phase measurement (R_LINE
+  0.08² / y1) — and, first, the **lattice vote**: 7 of the last 8 clear lines more than 0.3 beat from the clock's line move it
+  onto the comb's, always forward (the count never steps back). No presence gate: the clock coasts through silence on its rate
+  (P grows, the next onsets pull harder).
+- **Why the vote and not a pull.** On a half-beat kick pattern (CyborgNinja, WhoLikesToParty: kicks on every 8th) the onsets fit
+  both lattices and the gate keeps whichever the cold start chose (WhoLikesToParty first read −249 ms = exactly half its
+  beat); a continuous pull toward the comb line is what tears v3 on CyborgNinja (the line itself flips lattice on ~30 % of its
+  8 s windows there). A 3-consecutive vote flipped CyborgNinja 4 times in 40 s (p90 72 ms); 7 of 8 (4 s) never flips it and
+  still moves WhoLikesToParty onto the comb's lattice within its first bars (+7 ms from then on).
+- **`read(t, st)`** publishes with the lead's rule: the count never steps back — a pull back across a line holds on it (phase
+  0) until the clock catches up, so `beatPcm` fires exactly once per line.
+- **`tools/test_clock.js`** (in `npm test`): a synthetic click train at 48 kHz (a 4 ms noise burst + a decaying 60 Hz thump
+  per hit, ±4 ms jitter) through `push()` in 512 blocks with each hit handed to `onset()` — lock at 4.5 s, then |median| 2.0
+  ms / p90 3.5 against the true grid, tempo 127.91; a 128 → 132 ramp over 20 s followed within 0.48 BPM (1.27 mid-ramp); 6 s
+  of silence coasted within 21 ms (p90) and 16 ms at the return, no jump; the outlier above; kicks on every 8th with the
+  on-beat ones louder → the loud lattice within 0.7 ms (the other reads ±234); two runs bit-identical.
+- **Knobs (round, few) and their sensitivity** (`tools/clock-study.js` on the four tracks, node, heard time; "lag jitter-p50/p90
+  lock" per track — SeeYouDrop · CyborgNinja · WhoLikesToParty · Malicious):
+
+| knobs | SeeYouDrop | CyborgNinja | WhoLikesToParty | Malicious |
+|---|---|---|---|---|
+| default | +2 6/19 7.6 s | −184 1/2 (the other lattice, stable) | +7 2/6 10.9 | +22 6/23 6.1 |
+| R_LINE ∞ (no comb line) | −1 7/21 7.6 | −185 1/19 | **−21 25/50 27.4** | **+65 21/65** |
+| R_ON 0.02² / 0.05² | +0 6/28 · +2 7/16 | −184 1/3 · −179 2/6 | +7 2/6 · +4 4/10 | +20 6/21 · +27 6/23 |
+| CLUTTER 3 | +1 7/24 **22.4** | −184 1/3 | +7 2/5 | +22 5/17 |
+| Q_F ×10 · Q_B ×10 | +2 6/18 · +2 7/21 | −184 · −183 1/4 | +7 · +8 3/12 | +22 · +23 7/26 |
+| KICK_LAG 0 · R_CLS all 1 | +2 · −1 | −183 · −184 | +9 · +8 | +23 · +18 |
+| LINE_N 5 of 8 | +2 6/19 | −184 **1/186** (flips) | +7 | +21 6/34 |
+| EVERY 1 s | −0 7/30 23.2 | −184 2/187 | +6 2/6 14.0 | +21 6/21 11.1 |
+
+The comb line is the one input that matters (without it two tracks lose 20–65 ms and their jitter triples); the vote's
+majority must be near-unanimous (5 of 8 flips CyborgNinja); the rest move things by ±3 ms. The onset ruler, the phase
+ruler and the lattice are three different questions, and the sweep says the answers do not trade against each other.
