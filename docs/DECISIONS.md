@@ -2834,3 +2834,19 @@ the user's word: every scene reads `bpm` / `beatPhase` / `beat` / `beatCount` an
   and would not survive a count jump (why k is set at the flip); CyborgNinja's lattice needs a musical rule (the truth's own
   is a 9 % margin); a published-line bleed (v3's 0.18 s) is a knob to add if the user's eye reads the cold start's steps (0.7 %
   of frames > 5 ms, 58 of 66 in the first 10 s) as a twitch; mic / capture not re-measured with the switch (the caplag command).
+
+**§56 addendum — the publish time is heard time smoothed onto the frame clock (2026-09-30, after the audible capture run).** The
+orchestrator's two capture runs (SeeYouDrop 0–110, sync 27) had the PCM clock winning live (lag +1 vs +11 ms, jitter p50/p90 4/11 vs
+9/53, beat F 0.949 vs 0.876, pred kick F 0.30 vs 0.19, `nextBeatIn` P 0.95 vs 0.79) — but `queuecheck` read the count-downs jumping
+1479 / min under it (v3 3.2). The cause was not a held state: the clock WAS extrapolated to heardT (its phase advance minus heardT's
+advance reads 0.00 ms p50 on the trace) — heardT itself steps in whole render blocks in capture (10.7 / 21.3 ms per 16.7 ms frame,
+p10 / p50), and v3, integrated on the frame's dt, does not follow it (its advance 16.1 / 16.7 / 17.0 ms; the ruler's "one frame's
+worth" is the median 21.3). So `features-clock.js` now evaluates the clock at `now` + the median of (heardT − now) over the last
+64 frames (lead.js's device; a jump > 0.1 s re-seats it): the same beat position on average, advancing evenly per frame on the
+glass. Replayed on the capture trace's heardT this advances 16.7 / 16.7 / 16.7 ms per frame with 0 % of frames off by > 10 ms
+(42.9 % before). In det mode heardT − now is a constant, so nothing moves: the 25 s det page traces are bit-identical to the ones
+before on v3 (`bpm` / `beatPhase` / `regularity` / `kickEvt` 0.00) and page = node on the PCM fields (`beatPhasePcm` 2.4e-4,
+`predKickIn` / `nextKickIn` exact under the switch). A real-time file trace (`RT=1`, 0–60 s, heardT smooth there: dt 15.9 / 16.6 /
+17.5) reads the PCM clock's advance 16.6 / 16.7 / 16.8 ms per frame (v3 16.3 / 16.7 / 17.1) and 5 count-down jumps after 10 s
+(28–37 ms Kalman corrections while the intro settles; 42 / min over the whole minute is the cold start). The capture re-run is the
+orchestrator's.

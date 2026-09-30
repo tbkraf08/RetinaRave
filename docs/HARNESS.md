@@ -718,7 +718,8 @@ Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatC
 every scene reads) and the PCM clock's (`bpmPcm` / `beatPhasePcm` / `beatPcm` / `beatCountPcm` / `clockConfPcm` — tempo.js's comb on a
 per-hop spectral flux of the PCM bus, the ears' sample-timed onsets as ticks, a Kalman filter on (beat position, rate); `engine/clock/`).
 Both are published on the lead's time base (heard time + the display lead; the raw analysis time under `&lead=0`), so their beat lines
-compare frame for frame. **The switch:** `&clock=pcm` under `#test`, `CARD.setClock('pcm' | 'v3')` live (`CARD.clock` reads it, `clockPcm`
+compare frame for frame — the PCM clock at heard time SMOOTHED onto the frame clock (`now` + a 64-frame median of heardT − now: in capture
+heardT steps in render blocks, 10.7 / 21.3 ms per frame, and a clock that follows it steps on the glass; §56 addendum). **The switch:** `&clock=pcm` under `#test`, `CARD.setClock('pcm' | 'v3')` live (`CARD.clock` reads it, `clockPcm`
 in MS says it) makes `bpm` / `beatPhase` / `beat` / `beatCount` publish the PCM clock's RAW values before the bars / drums / build / queue
 stages and the lead, so everything downstream — every scene included — rides it; v3's own values come back at the next frame
 (`ENGINE.restores`), so its PLL never sees the swap. Default `'v3'` (a default moves only on the user's word).

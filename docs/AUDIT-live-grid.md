@@ -948,3 +948,11 @@ both traces — the switch changes what `bpm` / `beatPhase` publish, not the clo
   27` (caplag's own FIELDS carry heardT / beat / beatPhase / bpm / leadT / the ears' events; FIELDSX must not repeat them), once
   as is and once with `HASHX='&clock=pcm'`; then `gridcheck.py` (the pcm rows beside v3's, no `--heard`: a capture trace is on
   heard time already), `predcheck.py`, `queuecheck.py` on both.
+
+### Step 6 addendum — the publish time (after the audible capture run, 2026-09-30)
+
+The capture run had `nextBeatIn` jumping 1479 / min under the PCM clock (v3 3.2) with a small phase jitter: the clock followed heardT
+exactly (phase advance − heardT advance 0.00 ms) and heardT in capture steps 10.7 / 21.3 ms per frame (v3 integrates the frame's dt:
+16.1 / 16.7 / 17.0). Fix: the clock is evaluated at `now` + median(heardT − now, 64 frames) — DECISIONS §56 addendum has the numbers
+(the emulation on the capture trace: 16.7 / 16.7 / 16.7 per frame, 0 % of frames off by > 10 ms; det bit-identical; RT file 16.6 /
+16.7 / 16.8). `tools/work/clock/rt-{v3,pcm}.json`.

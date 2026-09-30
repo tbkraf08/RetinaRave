@@ -21,6 +21,8 @@ import { Clock, CLOCK } from './clock/clock.js';
 export const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
 const KEYS = ['bpm', 'beatPhase', 'beat', 'beatCount'];
 const CLS = { kick: 0, snare: 1, hat: 2 };
+const RING = 64;               // frames in the heardT − now median (~1 s at 60 fps; lead.js uses the same length)
+const SEEK = 0.1;              // s: an offset this far from the median is a seek / a new stream, not jitter
 
 export const CLOCKS = {
   src: 'v3',            // 'v3' | 'pcm': which clock bpm / beatPhase / beat / beatCount publish
@@ -31,6 +33,7 @@ export const CLOCKS = {
   k: null,              // the swapped-in count's whole-beat offset onto v3's count (set at lock / at the flip; below)
   raw: null,            // v3's own bpm / beatPhase / beat / beatCount this frame, put back by restore()
   ev: {},
+  ring: [], off: 0,     // (heardT − now) samples and their median: the smoothed heard time (below)
   K: CLOCK,             // the knobs (tools / the console)
 };
 ENGINE.CLOCK = CLOCKS;
@@ -74,7 +77,18 @@ export function clockStage(dt, now, S) {
   ENGINE.extraMs += CLOCKS.cpu; CLOCKS.cpu = 0;
   const C = CLOCKS.clk;
   if (!C) { S.clockPcm = 0; return; }
-  const ev = CLOCKS.ev, T = S.heardT;
+  const ev = CLOCKS.ev;
+  // THE PUBLISH TIME is heard time SMOOTHED onto the frame clock: heardT advances in whole render blocks in the live modes (a
+  // capture trace: 10.7 / 21.3 ms per 16.7 ms frame — the audible run of 2026-09-30 read the count-downs 'jumping' 1479 / min
+  // where v3, integrated on the frame's dt, read 3), so the clock is evaluated at `now` + the median of (heardT − now) over the
+  // last RING frames (lead.js's own device): the same beat position on average, advancing evenly per frame on the glass. In
+  // det mode heardT − now is a constant and this is heardT itself. A jump of the offset (a seek, a new stream) re-seats it.
+  const off = S.heardT - now, rg = CLOCKS.ring;
+  if (rg.length && Math.abs(off - CLOCKS.off) > SEEK) rg.length = 0;
+  rg.push(off); if (rg.length > RING) rg.shift();
+  const sorted = rg.slice().sort((a, b) => a - b), m = sorted.length >> 1;
+  CLOCKS.off = sorted.length & 1 ? sorted[m] : 0.5 * (sorted[m - 1] + sorted[m]);
+  const T = now + CLOCKS.off;
   // the additive fields: at heard time + the display lead with the lead on, else at the analysers' time (v3's raw base)
   const tPub = LEAD.on && LEAD.L !== null ? T + dispNow() : LEAD.L !== null ? T - LEAD.L : C.t;
   C.read(tPub, CLOCKS.pub, ev);
