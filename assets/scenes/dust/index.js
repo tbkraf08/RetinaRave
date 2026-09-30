@@ -5,14 +5,12 @@ import { VS_DUST, FS_DUST } from './shaders.js';
 import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
 import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
+import { GALAXY, TORUS, file, mkMem, recall, returning, shapeFor } from './formations.js';
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 const DEG = Math.PI / 180;
 const S0 = 0.7;                 // fibre scale at rest. The pole gate caps a projected ring at sqrt(1.86/.14) = 3.64,
                                 // so 0.7 keeps the widest sweep inside the 2.3-unit frame half-height at dist 4.4.
-
-// A deterministic integer hash: the formation shuffle must repeat run to run (#test is bit-identical).
-const h11 = (i) => { let p = (i * 0.1031) % 1; p *= p + 33.33; p *= p + p; return p % 1; };
 
 // view-projection for an eye orbiting the origin at `dist`, looking at it. Writes column-major into `m`.
 // Right-handed, vertical fov `fov` radians, near/far as VS_SWARM's depth convention (0.1 .. 10.1).
@@ -39,6 +37,7 @@ const SELF = {
     'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt',
     'kick2', 'kickAge', 'snare2', 'snareAge', 'hat2', 'hatAge', 'subNoteEvt', 'subGate',
     'buildLive', 'nextDropIn', 'dropLiveEvt',
+    'eM', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
     'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
@@ -61,6 +60,7 @@ const SELF = {
     // is what "slow decay" means, and a floor so a soft hit is still a hit
     this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
     this.vT = mkTens();             // the void's contraction, the last bar's wind-up, the drop's release
+    this.mem = mkMem();             // the section memory: which shape each section had (formations.js)
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
     this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, drop: 0, tension: 0, alive: 0,
       spin: 0, spinG: 0, vk: 0, vs: 0, vh: 0, vb: 0, ringR: 0, ringW: 1, build: 0, rel: 0 };
@@ -72,14 +72,21 @@ const SELF = {
     this.rt.label = FORMS[0];
   },
 
-  // formA -> formB with a fresh target; the jump of 1..3 keeps it from ping-ponging between two shapes
-  reform() {
+  // formA -> formB. `target` is the shape the music is asking for (formations.js); asking for the one already on
+  // screen is not a change at all, which is why a phrase line in the middle of a steady groove leaves the picture
+  // alone. `force` re-pours even into the same shape — the drop's burst, which must always be visible.
+  reform(target, force) {
+    const k = ((target | 0) % 4 + 4) % 4;
+    if (!force && k === this.formB && this.formT >= 1) return false;
     this.formA = this.formB;
-    this.formB = (this.formB + 1 + Math.floor(h11(this.nRef++ * 7.7 + 3.1) * 3)) % 4;
+    this.formB = k;
     this.formT = 0;
+    this.nRef++;
+    return true;
   },
 
   update(dt, MS, GROOVE, LOOK, env) {
+    this.lastMS = MS;                                    // hooks.dinfo() reads it; nothing else does (§1.15: never across frames)
     // The beat grid (grid.js): one angle, read off the beat COUNT so it can never drift, eased so every beat is a
     // nudge. The galaxy's winding rides the same angle at its own rate.
     this.spin = ease(this.spin, spinTarget(MS), dt);
@@ -97,12 +104,19 @@ const SELF = {
     tens(this.vT, dt, MS);
 
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
-    // never while a pour is still running. The drop is the one exception: it re-pours wherever it lands.
+    // never while a pour is still running. WHICH shape is the section's energy (formations.js); a return pours back
+    // into the shape that section had. The drop is the one exception to the seam: it bursts wherever it lands.
+    const ret = returning(this.mem, MS);
     const why = trigger(this.trig, MS, this.formT >= 1);
-    if (why) { this.why = why; this.reform(); }
+    if (ret && this.formT >= 1 && this.reform(Math.max(0, recall(this.mem, MS)), false)) this.why = 'return';
+    else if (why && this.reform(shapeFor(MS), false)) this.why = why;
     const dropOn = MS.dropEnv > 0.5;
-    if (dropOn && !this.dropHi) { this.why = 'drop'; this.reform(); }   // DETONATE: the cloud re-pours on the drop
+    if (dropOn && !this.dropHi) {                        // DETONATE: the drop bursts the torus into the galaxy
+      this.why = 'drop';
+      this.reform(this.formB === TORUS ? GALAXY : shapeFor(MS), true);
+    }
     this.dropHi = dropOn;
+    file(this.mem, MS, this.formB);                      // this section's shape is whatever it ends on
     // the cross-fade advances with the music: energy pushes, kicks shove
     if (this.formT < 1) this.formT = Math.min(1, this.formT + dt * (0.08 + 0.5 * MS.lvl + 0.8 * this.vK.e));
 
@@ -202,6 +216,7 @@ const SELF = {
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
+        want: shapeFor(SELF.lastMS || {}),
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
         ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age, ringR: ringR(SELF.vS) };
@@ -262,6 +277,14 @@ const SELF = {
       barPos: 'which beat of the bar this is: the downbeat gets the bigger nudge',
       phrase16Pos: 'when the sixteen-beat phrase comes round, the swarm pours into a new shape',
       barNovelEvt: 'a bar that starts something new pours the swarm into a new shape, wherever in the phrase it falls',
+      barReturnEvt: 'a bar that brings back something from earlier pours the swarm back into the shape that part of '
+        + 'the song had',
+      sectionAlt: 'which part of the song this is: the swarm files the shape it ended each part in, and goes back '
+        + 'to it on a return',
+      sectionReturn: 'the slower second opinion that this part of the song is one we have heard before',
+      eM: 'how loud this stretch is: a quiet one is a plain ball, a loud one is a galaxy',
+      denK: 'how many kicks a second there are: with no bass and almost no kicks the swarm becomes the waveform '
+        + 'itself, a single line',
       arc: 'the bid: never auto-picked during a build',
       punchy: 'the bid: punchy music invites the swarm',
       regularity: 'the bid: a steady rhythm invites the swarm',
@@ -269,14 +292,17 @@ const SELF = {
     eli5: 'Every dot is a particle that owns one frequency band of the spectrum. When its band gets loud the dot '
       + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: bass grains breathe near the '
       + 'centre, hi-hat grains sparkle at the edge. The whole swarm keeps pouring from one shape into another — a '
-      + 'ball, a doughnut, a galaxy, a ribbon of the waveform — and it re-pours on every drop. Threading through it '
+      + 'ball, a doughnut, a galaxy, a ribbon of the waveform — and which one it is tells you where you are in the '
+      + 'song: a ball in the quiet parts, a galaxy in the groove, a doughnut that tightens through the build, the '
+      + 'bare waveform when one instrument is left alone. The drop bursts the doughnut into the galaxy. Threading through it '
       + 'are a few faint rings that are all hooked through one another like links of a chain, and can never come '
       + 'apart however the music turns them.',
     why: 'A spectrum bar chart wastes the third dimension and hides how many things are happening at once. Giving '
       + 'each of 20k-150k grains its own bin turns the spectrum into a texture you feel rather than read: you see '
       + 'the density of the mix, not just its loudness. Formations change only on kicks and drops (cuts: onset) so '
       + 'the change always lands with the music, and the cross-fade is per-particle so the cloud pours instead of '
-      + 'snapping. The camera orbits with GROOVE and dollies in on bass, so the body of the track is also motion. '
+      + 'snapping. Which shape is not a shuffle: it is read off the section\'s energy, and a section that comes back '
+      + 'gets its own shape back, so the sequence of shapes is the sequence of the song\'s parts. The camera orbits with GROOVE and dollies in on bass, so the body of the track is also motion. '
       + 'Every turn in the picture is on the beat grid: the cloud, the doughnut and the galaxy arms are nudged a '
       + 'step on each beat and a bigger step on the downbeat, and a shape change waits for the phrase line or for a '
       + 'bar the engine says begins something new — so you can count the bars off the screen with the sound off.',
