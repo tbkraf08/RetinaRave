@@ -2,12 +2,16 @@
 """Grade the engine's LIVE beat / bar / phrase clocks against the offline truth grid — the ruler compare.py does not have.
 Engine-independent (numpy only); reuses compare.py's Table and matcher.
 
-    python3 tools/truth/gridcheck.py tools/work/grid/SeeYouDrop-det.json [--truth <json>] [--md <out.md>] [--sections] [--win t0,t1]
+    python3 tools/truth/gridcheck.py tools/work/grid/SeeYouDrop-det.json [--truth <json>] [--md <out.md>] [--sections] [--win t0,t1] [--heard]
+    --heard (live step 6): a det / node trace with the lead off carries the raw clocks; move v3's and the PCM clock's beat position
+    by -detLead at their tempo (the lead's rule, &disp=0) so the lag rows read each clock's own error on heard time.
 
 What it grades (every clock the scenes read):
   v3       bpm, beatPhase, beat        engine/features.js + tempo.js (canonical, uBeat)
   synapse  bpmSyn, beatSyn, barPos,    engine/features-synapse.js (the bar / phrase grid the director quantises to)
            phrase16Pos, dropExpectedIn
+  pcm      bpmPcm, beatPhasePcm,        engine/clock (live step 6: the beat clock on the PCM bus, Kalman) — graded like v3's
+           beatPcm, clockConfPcm        when the trace carries them; plus the frame-to-frame |dlag| (wobble) of both clocks
 against the truth tool's grid (`beats`, `downbeats`, `bpm_grid`; trackmap.py) and its drops / section starts.
 
 Conventions. Truth beat phase phi(t) = (t - b_k) / (b_k+1 - b_k) on the truth beat list. An engine clock's LAG is how
@@ -96,6 +100,25 @@ def lock_time(tb, good, win=4.0, frac=0.9):
     ix = np.where(s >= frac)[0]
     return float(tb[ix[0]]) if len(ix) else None
 
+def rebase(trace):
+    """--heard: a det / node trace recorded with the lead OFF carries the RAW clocks (at the analysers' time, detLead before heard
+    time). Move v3's and the PCM clock's beat position by -detLead at their own tempo — the lead's rule with &disp=0 — so the lag
+    rows read each clock's own error on heard time (0 = the truth beat) and the lock rows work. A no-op when leadT is not 0."""
+    c = trace['cols']; L = trace.get('detLead') or 0
+    lt = colf(trace, 'leadT')
+    if not L or lt is None or np.nanmax(np.abs(lt)) > 1e-6: return trace
+    for ph, cn, bp in (('beatPhase', 'beatCount', 'bpm'), ('beatPhasePcm', 'beatCountPcm', 'bpmPcm')):
+        p, n, b = colf(trace, ph), colf(trace, cn), colf(trace, bp)
+        if p is None or b is None: continue
+        B = (n if n is not None else 0) + p - L * b / 60
+        c[ph] = [None if not np.isfinite(v) else float(v) for v in np.mod(B, 1.0)]
+        if n is not None:
+            fl = np.floor(B); c[cn] = [None if not np.isfinite(v) else float(v) for v in fl]
+            ev = 'beat' if ph == 'beatPhase' else 'beatPcm'
+            if ev in c: c[ev] = [0] + [1 if (np.isfinite(fl[i]) and np.isfinite(fl[i - 1]) and fl[i] > fl[i - 1]) else 0 for i in range(1, len(fl))]
+    trace['rebased'] = L
+    return trace
+
 def run(trace, truth, md=None, ann=None, per_section=False, win=None):
     tb = np.array(trace['t'], float)
     G = Grid(truth)
@@ -105,7 +128,8 @@ def run(trace, truth, md=None, ann=None, per_section=False, win=None):
     ref = 60 / per
     T = Table()
     g = truth.get('bpm_grid', {})
-    print(f"trace: {trace.get('track')} mode {trace.get('mode')} {len(tb)} frames {tb[0]:.2f}-{tb[-1]:.2f} s | truth "
+    print(f"trace: {trace.get('track')} mode {trace.get('mode')} {len(tb)} frames {tb[0]:.2f}-{tb[-1]:.2f} s"
+          + (f" | clocks rebased onto heard time (-{1000 * trace['rebased']:.1f} ms)" if trace.get('rebased') else '') + f" | truth "
           f"{g.get('bpm')} BPM, beat {g.get('beat')} s, downbeat mod4 {g.get('downbeat_mod4')} "
           f"(scores {g.get('downbeat_scores')}), dp residual {g.get('dp_residual_ms')} ms")
     # ---- v3: bpm, beatPhase, beat
@@ -125,6 +149,36 @@ def run(trace, truth, md=None, ann=None, per_section=False, win=None):
         good = np.zeros(len(tb), bool); ii = np.where(sel & okv3)[0]; good[ii] = np.abs(lag3) <= LOCK_MS
         lt = lock_time(tb, good)
         T.add('beatPhase first 4 s locked', 'v3', f'{lt:.1f} s' if lt is not None else 'never', '-', None, f'>= 90 % of frames within +-{LOCK_MS:.0f} ms')
+    # ---- the PCM clock (live step 6, engine/clock): bpmPcm, beatPhasePcm, beatPcm — the same rows as v3's, when the trace carries them
+    bpp = colf(trace, 'bpmPcm'); okp = None
+    if bpp is not None:
+        okp = tempo_row(T, 'bpmPcm', bpp, ref, sel, 'pcm')
+        pp = colf(trace, 'beatPhasePcm')
+        lagp = phase_rows(T, 'beatPhasePcm', pp, phi, per, sel & okp if okp is not None else sel, 'pcm') if pp is not None else None
+        pev = trace['cols'].get('beatPcm')
+        if pev is not None:
+            bt = tb[[i for i in evframes(pev) if sel[i]]]
+            ref_b = G.b[(G.b >= tb[sel][0]) & (G.b <= tb[sel][-1])]
+            F, p, r, tp, ms, ex = fmeasure(bt, ref_b, TOL_BEAT)
+            pairs, _, _ = match(bt, ref_b, TOL_BEAT)
+            lg = np.array([d - q for d, q in pairs]) * 1000 if pairs else np.array([np.nan])
+            T.add(f'beat events F +-{1000 * TOL_BEAT:.0f} ms', 'pcm', f'{F:.3f} (P {p:.3f} R {r:.3f})', '-', None,
+                  f'tp {tp} miss {ms} extra {ex}; lag med {np.nanmedian(lg):+.0f} p90 {np.nanpercentile(np.abs(lg), 90):.0f} ms')
+        if lagp is not None:
+            good = np.zeros(len(tb), bool); ii = np.where(sel & okp)[0]; good[ii] = np.abs(lagp) <= LOCK_MS
+            lt = lock_time(tb, good)
+            T.add('beatPhasePcm first 4 s locked', 'pcm', f'{lt:.1f} s' if lt is not None else 'never', '-', None, f'>= 90 % of frames within +-{LOCK_MS:.0f} ms')
+            # the frame-to-frame change of the error: what the eye sees as wobble (the bias rows above remove only a constant)
+            for name, lg_, ok_ in (('beatPhase', lag3, okv3), ('beatPhasePcm', lagp, okp)):
+                if lg_ is None: continue
+                ii = np.where(sel & ok_)[0]; d = np.diff(lg_)[np.diff(ii) == 1]
+                T.add(f'{name} frame-to-frame |dlag|', 'v3' if name == 'beatPhase' else 'pcm',
+                      f'p50 {np.median(np.abs(d)):.1f} p90 {np.percentile(np.abs(d), 90):.1f} ms', '-', None, f'{100 * np.mean(np.abs(d) > 5):.1f} % of frames move > 5 ms')
+        conf = colf(trace, 'clockConfPcm')
+        if conf is not None and lagp is not None:
+            ii = np.where(sel & okp)[0]; cc = conf[ii]; al = np.abs(lagp)
+            T.add('clockConfPcm when on / off the beat', 'pcm', f'{np.nanmedian(cc[al <= LOCK_MS]) if (al <= LOCK_MS).any() else float("nan"):.2f} / '
+                  f'{np.nanmedian(cc[al > LOCK_MS]) if (al > LOCK_MS).any() else float("nan"):.2f}', '-', None, 'median; a useful confidence separates these')
     # ---- synapse: bpmSyn, beatSyn, barPos, phrase16Pos
     bs = colf(trace, 'bpmSyn'); oks = tempo_row(T, 'bpmSyn', bs, ref, sel, 'synapse')
     bsy = colf(trace, 'beatSyn')
@@ -203,4 +257,5 @@ if __name__ == '__main__':
     ap = tp.replace('.json', '.sections.json')
     md = next((a[i + 1] for i, x in enumerate(a) if x == '--md'), None)
     wn = next((tuple(float(v) for v in a[i + 1].split(',')) for i, x in enumerate(a) if x == '--win'), None)
+    if '--heard' in a: tr = rebase(tr)
     run(tr, ld(tp), md, ld(ap) if os.path.isfile(ap) else None, '--sections' in a, wn)

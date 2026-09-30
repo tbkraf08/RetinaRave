@@ -728,3 +728,49 @@ Live, the hits' zero crossings land +0…+3 ms (the base `predKickIn` −20), th
 ahead with no false entry. The hit count-downs' "jitter" (173–262 / min, |dv + dt| > 10 ms) is the real-time frame: the beat's
 own count-down (2 jitter frames in 110 s) shows the clock is smooth, so the hits' jitter is the store's per-class offsets
 moving under it in real time — sub-frame, an open item to measure by eye rather than tighten.
+
+## Step 6 — the beat clock on the PCM bus (`engine/clock/`, `features-clock.js`; one worker, 2026-09-30)
+
+The user (2026-09-30): "on the PCM bus seems more accurate and would be wanted regardless … still need to work on the predictions
+→ continue onto step 6". The plan's last step (§49): tempo + phase from the raw samples on the audio's own clock instead of once
+per video frame, and a proper filter so one odd onset cannot yank the beat line. Measure first (T.0), then the input (T.1), then
+the clock (T.2), then the numbers with the bar store / build / queue riding it (T.3), then the proofs and the A/B (T.4).
+
+### T.0 — the clock we have, precisely
+
+Page traces `&map=0&lead=0` det, whole tracks (`tools/work/clock/t0-<Track>.json`, 38 fields: the clocks, the hits, the pred* /
+next* / build fields), graded by `gridcheck.py --heard` (new: a det trace with the lead off carries the RAW clocks, 42.7 ms before
+heard time; `--heard` moves v3's and the PCM clock's beat position by −detLead at their own tempo — the lead's rule under `&disp=0` —
+so every lag below is the clock's OWN error on heard time, 0 = the truth beat; `tools/accept/live-grid/clock/t0-<Track>.md`).
+"Lock" = the first second from which 4 s have ≥ 90 % of frames within ±30 ms; "jitter" = |lag − its median|.
+
+| v3 clock (T.0) | tempo ±1 BPM | lag med (|lag| p50 / p90) | jitter p50 / p90 | `beat` F ±50 ms (lag med / p90) | lock from cold |
+|---|---|---|---|---|---|
+| SeeYouDrop | 95.5 % | −4 ms (8 / 30) | 8 / 32 ms | 0.91 (+3 / 22) | 10.5 s |
+| CyborgNinja | 99.2 % | **−87 ms (111 / 183)** | **43 / 244 ms** | **0.05** (−45 / 45) | never |
+| WhoLikesToParty | 99.2 % | +3 ms (4 / 13) | 4 / 11 ms | 0.945 (+11 / 20) | 8.0 s |
+| Malicious | 78.8 % | +22 ms (22 / 88) | 10 / 67 ms | 0.75 (+27 / 41) | 6.1 s |
+
+SeeYouDrop by section (the same trace): intro 0–25.6 s lag −9, jitter p90 76 (tempo right 72 %); groove 25.6–57.6 −16 / p90 30;
+after drop 1 (57.6–70) −12 / 12; groove-return 89.6–105.6 −5 / 23; after drop 2 (105.6–120) +1 / 8; outro 130–157 the p90 climbs
+to 38. v3 does not LOSE lock at either drop — it wobbles: the 5 s bins 45–55 s (climb / void / slides) read p90 62 / 46 against
+4–9 around them. The synapse clock beside it (bpmSyn / beatSyn): SeeYouDrop 61.6 % / lag −43 (p50 45), CyborgNinja +64 (68 / 126),
+WhoLikesToParty −41 (45 / 207), Malicious 34.3 % — not a candidate.
+
+**CyborgNinja's "half-beat offset" is a tearing, not an offset.** Its kicks sit on EVERY 8th (the ears' 460 kicks against the
+truth grid: 162 in the beat's first eighth, 158 in its fifth — two lattices half a beat apart, near-equal), and the truth's
+own downbeat rests on a 9 % low-band margin (`tools/truth/CyborgNinja.json` anchor). v3's PLL is pulled by the comb target
+toward one lattice and by its `bassFast` onset corrections toward whichever kick came last: median −87 ms with a jitter p50 of 43
+ms and p90 244 — torn between the two, on neither. (The truth's beats were re-anchored onto its kicks in step 3.1, so "kick-
+anchored" here means one of the two kick lattices.)
+
+**The input, as timed today.** `features.js` computes ONE spectral-flux value per video frame from an AnalyserNode read at rAF
+time (the newest 2048 samples the analyser holds when the frame runs; `o = (flux + 3·bflux)/100`), and writes it into the 100 Hz
+ring `XS.env` by zero-order hold: `envAcc += (now − envNow)·100` from the raw frame clock, so a 16.7 ms frame fills 1–2 slots, a
+33 ms frame fills 3 with the same value — an onset's position in the ring is the FRAME's time, quantised to the frame interval
+(± half a frame, 8 ms at 60 Hz, 17 at a dropped frame) plus wherever the analyser's window happened to sit. In capture the
+analyser's own time advances in 512-sample blocks (a trace's heardT steps 10.7 / 21.3 ms per frame: 55 % of frames see two
+blocks), so the flux of one frame is the rise over 1 or 2 blocks. The onset EVENTS v3 fires against the truth kicks (the
+frame's analysis time, det): **+17 ms median, p90 33 ms** on SeeYouDrop, +32 / 40 on CyborgNinja, +32 / 42 on WhoLikesToParty,
++23 / 36 on Malicious — late by half a frame plus the window, and the `phaseCorr` PLL then bleeds each correction over τ 0.18 s.
+The comb target itself carries a hand-tuned `+0.03` beat (12 ms early at 150 BPM) that hides part of that lag in the phase rows.
