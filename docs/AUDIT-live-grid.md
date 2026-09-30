@@ -555,3 +555,156 @@ with `dropcheck.py --rule 'buildLive>=0.4' --rule 'dropLiveEvt:evt'`:
 Live, the detector arms 14 / 6 beats (3.5 / 1.5 bars) before both SeeYouDrop drops with no false arm in 111 s; the slam event
 is reactive in capture (+61 / +89 ms: the low onset's capture lag + the bass confirmation, the same order as v3's `dropEvt`
 +63 ms) — the anticipation is `buildLive` / `dropLiveIn`, the event only marks the slam.
+
+## Step 5 — the predicted-event queue (`engine/queue/`, `features-queue.js`; one worker, 2026-09-29)
+
+Step 3 releases predicted hits, step 4 counts to a drop, the lead moves the clocks — three places a scene must read to know
+what comes next, and none of them a count-down in seconds. Step 5 puts ONE ordered list of the expected events on heard time
+net of the display lead (`ENGINE.QUEUE.list` / `CARD.QUEUE`: `{ cls, t, conf }`), and hands MS the numbers a scene wants:
+`nextBeatIn` / `nextBarIn` / `nextKickIn` / `nextSnareIn` / `nextHatIn` / `nextDropIn` (s, −1 = none), `next<Cls>Conf`,
+`next<Cls>Up` (a wind-up 0 → 1 over the last 0.25 s), `queueN`. Measure first (Q.0), build (Q.1), numbers (Q.2), proofs + the
+A/B (Q.3). The lesson it serves (the 2026-09-28 A/B: reactive beats predicted for "in sync"): a queue is for ANTICIPATION — a
+motion that winds up and PEAKS at the hit — not a second copy of the hit.
+
+### Q.0 — the ruler (`tools/truth/queuecheck.py`) and the baseline
+
+A count-down field is graded by its ROLL-OVERS: the last frame of an entry (v < 1.5 frames, then a larger v or none) predicts
+the event at t + v. Per class: P / R / F within ±30 ms of the truth onsets (kick `click`, snare `mid`, hat `high`, beat `beats`,
+bar `downbeats`, drop `drops`), the lag (+ = late), a CHANCE F (the same arrivals circularly shifted in time, 50×), the HORIZON
+delivered (s before a matched hit the field first pointed at it, back through consecutive frames within ±40 ms of the same
+time), and the JUMP RATE per live minute — frames where v moved by other than one frame's worth ± 10 ms — split into
+roll-overs (legit), withdraws (v jumped up or to none before reaching 0), inserts (a nearer entry appeared) and jitter (the
+clock nudged). The drop goes through `dropcheck.py`'s `grade_level` (beats ahead, pointing error, false arms / min).
+`--selftest` (17 checks): a perfect count-down reads F 1, lag 0, horizon = the interval, 0 jumps; 20 ms late reads +20; one
+entry pulled to none reads one withdraw; a nearer entry for 0.1 s reads one insert + one withdraw; a field always −1 reads R 0;
+the beat phase → next beat reads F 1; an 8-beat drop count-down reads 8.0 beats, pointing error 0. Baselines graded from the
+same trace: `predKickIn` (beats → s at `bpm`), `beatPhase` (the clock moved by `leadT`, or −`detLead` on a det / node trace with the
+lead off, to its next line), `dropLiveIn` (beats → s).
+
+**Baseline, node det `&map=0` whole tracks** (`tools/build-node.js` now runs the bars store too; `tools/accept/live-grid/queue-q2-sweep.txt`):
+
+| field | track | F (P R; chance) | lag med / p90 | horizon (truth ioi) | jumps /min live (withdraw insert jitter) |
+|---|---|---|---|---|---|
+| `predKickIn` | SeeYouDrop | 0.38 (0.54 0.29; 0.04) | **−18** / 27 ms | 0.39 s (0.39) | **90** (93 7 0) |
+| `predKickIn` | CyborgNinja | 0.36 (0.64 0.26; 0.13) | −3 / 21 | 0.19 (0.20) | 99 (155 19 0) |
+| `predKickIn` | WhoLikesToParty | 0.55 (0.80 0.42; 0.16) | −10 / 18 | 0.25 (0.25) | 34 (93 20 0) |
+| `beatPhase` → next beat | SeeYouDrop | 0.88 (0.88 0.87; 0.14) | −2 / 19 | 0.39 (0.40) | 0.8 (0 1 1) |
+| `beatPhase` → next beat | CyborgNinja | **0.00** | — | — (0.38) | 0.3 |
+| `beatPhase` → next beat | WhoLikesToParty · Malicious | 0.93 · 0.69 | +2 · +17 | 0.50 · 0.42 | 0.9 · 0.5 |
+| `dropLiveIn` | SYD 1 2 · WLTP 1 2 3 · Mal | 15.9 7.9 · 11 7 11 · 0 beats (§54's node row) | | | |
+
+What it says: `predKickIn` is not a count-down a scene can use — it jumps ~90 times a minute (93 withdrawals against 122
+roll-overs on SeeYouDrop; the store's confidence gate flickers under 0.35 between 16ths and the field goes to −1), and it
+points −18 ms early (it is the step line without the kick's +25 ms micro-timing offset the release itself carries). The moved
+beat clock IS a count-down (F 0.88 / 0.93, 0.8 jumps / min) except on CyborgNinja, whose v3 clock sits 80–180 ms off its
+kick-anchored truth (§50 addendum: F 0). The drop's count-down is §54's.
+
+### Q.1 — the stage (`engine/queue/queue.js` + `feed.js`, `features-queue.js` after 'build'; `Bars.upcoming`)
+
+The queue predicts nothing: every frame it rebuilds the list from what the other stages decided — the lead-moved v3 clock's
+next beat lines (at least 4), the bar lines of the build detector's phase (v3's count, or synapse's sure anchor held 8 beats:
+the bars store's rule, no third line), the store's own steps still to come (`Bars.upcoming`: the decided ones waiting for their
+class offset + the bits `release()` reads for this bar and the next, at `predConf`; nothing under `CONF_MIN`) and, while armed,
+the drop on `dropLiveIn`'s line at `buildLive`. The time base is the store's release position (`rel` = the heard v3 beat +
+`dispNow()`), so `nextKickIn` reaches 0 on the frame `predKickEvt` fires. An entry whose time passes is dropped; a step the
+store's re-vote clears is gone — unless it was already inside **HOLD** (below); a seek, silence, a tempo jump flush.
+`tools/test_queue.js` (38 checks, in `npm test`): order, the count-down decreases by dt and rolls over, the beat / bar lines,
+a withdrawn step gone (HOLD 0) / kept inside HOLD, the flushes, the drop entry follows the detector (its line, `buildLive` as
+conf, gone on disarm), the wind-up levels, `Bars.upcoming` lists every released prediction ahead of its release (112 of 112 on a
+taught loop, median 5.4 beats ahead; nothing under `CONF_MIN`), the feed.
+
+**HOLD — the one deviation from "withdrawn is withdrawn", measured first.** Rebuilt from the store alone, `nextKickIn` jumped
+96 times a live minute on SeeYouDrop: 97 withdrawals against 148 roll-overs, 87 of them TO NONE (the confidence gate, not a
+bit flipping), and 56 / 76 / 67 % of the withdrawn kick / snare / hat entries pointed at a real onset. A hit entry already
+inside HOLD s stays for its time when the store withdraws it. Sweep (node, `QUEUEK`, `queue-q2-sweep.txt`):
+
+| HOLD | SeeYouDrop kick F (P R) · jumps/min | snare · jumps | hat · jumps | CyborgNinja kick F (P R) · jumps | WLTP kick F (P R) · jumps |
+|---|---|---|---|---|---|
+| 0 | 0.46 (0.59 0.38) · 96 | 0.53 (0.77 0.41) · 88 | 0.48 (0.71 0.36) · 73 | 0.37 (0.66 0.26) · 106 | 0.56 (0.82 0.43) · 42 |
+| 0.1 | 0.47 (0.59 0.39) · 92 | 0.55 (0.75 0.43) · 75 | 0.51 (0.70 0.40) · 54 | 0.38 (0.63 0.27) · 87 | 0.57 (0.81 0.44) · 34 |
+| **0.25** | **0.48 (0.58 0.41) · 39** | **0.59 (0.73 0.50) · 25** | **0.54 (0.70 0.45) · 20** | **0.39 (0.59 0.29) · 54** | **0.60 (0.80 0.48) · 19** |
+| 0.5 | 0.50 (0.58 0.44) · 20 | 0.59 (0.70 0.52) · 8 | 0.55 (0.68 0.47) · 7 | 0.39 (**0.52** 0.32) · 22 | 0.61 (0.79 0.50) · 9 |
+| HORIZON 4 (HOLD 0) | = HOLD 0 on every `next*In` (only `queueN` moves) | | | | |
+
+0.25 s = the wind-up's own length is the knee: the jump rate falls 2.4–3.7× (SeeYouDrop kick 96 → 39, hat 73 → 20), F rises
+0.02–0.06 through recall, precision holds (−0.01 … −0.07); 0.5 buys smoothness with precision (CyborgNinja kick P 0.66 → 0.52).
+The cost of HOLD: a held entry the store then decides against still rolls over (a `nextKickIn` arrival `predKickEvt` does not
+fire) — inside 250 ms. HORIZON bounds the list, not the reach: the hit fields see this bar and the next (the store's), the
+drop's `dropLiveIn`'s (≤ 4 beats).
+
+**Page = node** (SeeYouDrop `&map=0&lead=0`, HOLD 0 both): `nextBeatIn` is a pure function of the page's own clock — `(ceil(B) − B) /
+bps`, B = beatCount + beatPhase − detLead·bps — to 1e-14 on 9442 of 9444 frames (the 2 others: presence < 0.2, none);
+`nextDropIn` = `dropLiveIn` / bps on every armed frame outside the detector's ⅛-beat hold after a line (median 0.0000 s);
+listed on 0 unarmed frames, none on 0 armed frames. The hits follow the store: within 20 ms on 97.1 / 97.1 / 96.6 % of frames
+(kick / snare / hat), the rest the confidence gate at its threshold (213–219 frames "none" on one side, 2 %; `predKickEvt` itself
+differs page vs node on 33 frames); `nextKickConf` within 0.05 on 96.6 %, `nextKickUp` within 0.1 on 98.8 %, `queueN`
+within 2 on 96.9 %. (The v3 clock itself differs page vs node by 0.048 beat at p90 — 19 ms — so the beat / bar count-downs
+agree to 20 ms on 89 %, to 1e-3 on 12 %; the pure-function check above is the proof that holds.)
+
+### Q.2 — the numbers (page `&map=0&lead=0` det, whole tracks, HOLD 0.25; `tools/accept/live-grid/queue-q2-page-map0.md`)
+
+| track | class | F (P R; chance) ±30 ms | lag med / |p90| | horizon med (truth ioi) | jumps /min (withdraw insert jitter) | baseline: F · lag · jumps |
+|---|---|---|---|---|---|---|
+| SeeYouDrop | kick | **0.50** (0.59 0.43; 0.05) | **+1** / 15 ms | 0.39 s (0.39) | **39** (44 5 0) | `predKickIn` 0.33 · −20 · 95; HOLD 0 0.45 · +1 · 102 |
+| | snare | 0.60 (0.73 0.51; 0.09) | −2 / 14 | 0.31 (0.27) | 25 (19 14 0) | HOLD 0 0.53 · −2 · 96 |
+| | hat | 0.56 (0.70 0.46; 0.15) | −0 / 11 | 0.20 (0.22) | 22 (18 11 0) | HOLD 0 0.49 · −0 · 79 |
+| | beat | 0.87 (0.87 0.86; 0.13) | −4 / 21 | 0.39 (0.40) | 0.4 | `beatPhase` 0.87 · −4 · 0.4 |
+| | bar | 0.87 (0.88 0.87; 0.08) | −5 / 21 | 1.59 (1.60) | 0.4 | — |
+| | drop | 15.9 / 8.0 beats ahead, pointing err 0.0 / 0.0, 0.38 false / min, armed 6.6 % | | | | `dropLiveIn` the same |
+| SeeYouDrop groove 25.6–44.8 | kick · snare · hat | 0.67 (0.76 0.59) · 0.57 (0.62 0.53) · 0.49 (0.51 0.48) | +5 · −0 · +2 | 0.39 · 0.21 · 0.20 | | predcheck §50: 0.67 · 0.64 · 0.55 |
+| CyborgNinja | kick | 0.39 (0.56 0.30; 0.16) | +5 / 25 | 0.20 (0.20) | 49 (57 35 7) | `predKickIn` 0.36 · −5 · 101 |
+| | snare | 0.43 (0.63 0.32; 0.23) | +1 / 24 | 0.18 (0.19) | 23 (26 22 1) | |
+| | hat | 0.57 (0.70 0.48; 0.37) | +0 / 25 | 0.10 (0.10) | 15 (3 19 10) | |
+| | beat · bar | **0.01 · 0.00** (the v3 clock 80–180 ms off its kick-anchored truth, §50 addendum) | | | 0.3 | `beatPhase` 0.01 |
+| | drop | no drops; 0 false arms, armed 0 % | | | | |
+| WhoLikesToParty | kick | 0.54 (0.78 0.41; 0.18) | +6 / 17 | 0.25 (0.25) | 39 (86 33 0) | `predKickIn` 0.48 · −10 · 67 |
+| | snare | 0.49 (0.64 0.39; 0.23) | +2 / 20 | 0.13 (0.16) | 24 (49 26 1) | |
+| | hat | 0.66 (0.80 0.56; 0.23) | +2 / 15 | 0.24 (0.25) | 10 (23 7 1) | |
+| | beat | 0.93 (0.93 0.93; 0.10) | +2 / 10 | 0.50 (0.51) | 0.0 | `beatPhase` 0.93 |
+| | bar | **0.30** (the unverified downbeat, §54: its drops sit at v3's bar phase 3) | +3 / 11 | 2.04 (2.05) | 0.2 | |
+| | drop | 8.0 / 7.0 / 11.0 beats ahead (err +4.0 +1.0 +1.0), 0 false, armed 5.2 % | | | | `dropLiveIn` 8 7 11 (err 0 +1 +1) |
+| Malicious | kick · snare · hat | 0.00 · 0.01 · 0.03 (3 / 9 / 7 roll-overs in 223 s: the store releases nothing — "never invent", §50) | | | | |
+| | beat · bar | 0.66 (0.66; 0.15) · 0.00 | +16 / 25 | 0.42 (0.43) | 0.3 | `beatPhase` 0.66 · +16 |
+| | drop | 0 beats (no void, as accepted §54), 0.54 false / min (the end fade), armed 0.5 % | | | | |
+
+What it says:
+1. **The count-downs to the hits land where the store's events land.** Kick lag +1 / +5 / +6 ms (SeeYouDrop / CyborgNinja /
+   WhoLikesToParty), snare −2 / +1 / +2, hat 0 / 0 / +2 — the class offsets are in the count-down (`predKickIn` without them
+   reads −20 / −5 / −10); F 0.39–0.66 against a chance 0.05–0.37, the groove window reproduces predcheck's step-3 row (kick
+   0.67 = 0.67). Recall is the store's (0.30–0.56): a "next" field can only count to what will be released.
+2. **A "next" field's horizon is the class's inter-onset interval, and no more.** SeeYouDrop's kicks are on every beat, so
+   `nextKickIn` first points at a kick 0.39 s before it (median; p25 0.33 with HOLD, 0.12 without) — the hit before hides the
+   one after. A wind-up longer than a beat needs the list (`CARD.QUEUE`), not the field.
+3. **Smooth enough to drive a motion, with HOLD.** The beat / bar count-downs jump ≤ 0.4 times a minute (the moved clock is
+   steady); the hits 10–49 times a minute (CyborgNinja's kick the worst: 35 inserts — a nearer step appearing as the vote
+   firms up — plus 57 withdrawals), against 67–102 for `predKickIn` / HOLD 0. What remains is the store's own vote moving
+   between 16ths, not the queue's.
+4. **The drop count-down is §54's**, in seconds: 15.9 / 8.0 · 8.0 7.0 11.0 · 0 beats ahead, the same false arms (0.38 / 0 /
+   0.54 per min on SeeYouDrop / WhoLikesToParty / Malicious — the SeeYouDrop bar with the bass out 14 s after drop 2, Malicious'
+   end fade), the same +1.0-beat pointing on WhoLikesToParty (its bar phase); WhoLikesToParty 1's "+4.0" and the node
+   SeeYouDrop 2 "+3.9" are the ruler reading the frame before the truth after the queue's line has passed and rolled to the
+   next bar (the detector holds 0 for ⅛ beat there, the queue does not).
+5. **The bar line's truth is open where it was open:** WhoLikesToParty's downbeat (F 0.30 — the page's phase, 0.00 in node),
+   CyborgNinja's clock (beat F 0.01). The queue inherits them; it adds no error of its own (SeeYouDrop bar F 0.87 = beat F).
+
+### Q.3 — the proofs and the A/B
+
+- `node tools/check.js` 0 fail (193 MS keys, help.feats gaps 0) · `npm test` OK with `tools/test_queue.js` · `node tools/bundle.js`
+  → 1267 KB, 145 modules; from `file://` 347 frames in 6 s, `ERRS` [], `nonFinite` [], the 12 `next*` keys on MS, `CARD.QUEUE`
+  empty on the fake timeline (by design: no source).
+- **Additive:** SeeYouDrop whole-track det traces from a `git archive e23db09` tree on its own port against this tree — the 32-field
+  caplag set (default hash) md5 `87f5c70d`, its `&lead=0` twin `5128572a` (both §54's values), a 72-field set `6eecc7f9`: all three
+  `cmp`-identical, event log included. No existing value moved.
+- `GPU=1 node tools/parity.js fake`: the 72 MS fields identical to 1e-9 on both trees; the `nav.*` rows mismatch **identically on
+  the e23db09 tree** (nav.c 2.09, nav.lg 7.85, …) — pre-existing since 22eb969 (NAV reads `buildLive` / `dropLiveEvt` by default and
+  the fake timeline has no live drops, so NAV no longer parks or exits where cardioid3's does; the s0 f840 md5 move recorded in
+  §54 addendum 2). The tool's verdict line is red for that reason, not this step's; noted in OPEN-ITEMS.
+- **The A/B is a PARAM route on TORUS2** (CONTRACTS §1.16; TORUS2 is the user's favourite mapping): `torus2.wave` (the kick bump's
+  depth, range [0, 0.4], default `WAVE0 + 0.1·kick2` = 0.26–0.36) fed by `nextKickUp` with `k 0.35 b 0.65` → u = clamp01(0.35·Up +
+  0.65): 0.26 with no prediction (the default look), rising to 0.40 over the 250 ms before each predicted kick, back to 0.26 as
+  the entry passes. Why a level and not the count-down: a wind-up on `nextKickIn` needs k < 0 and its −1 "none" then clamps to the
+  TOP (clamp01(−4·−1 + 1) = 1: the wave deepest exactly when nothing is predicted). Proved headless on the real page (demo source,
+  key `4`, `CARD.fix`): unrouted `paramsOf('torus2').wave` = the derived 0.264 (kick2 0.04); `CARD.params('torus2.wave=nextKickUp*0.35+0.65')`
+  with Up 0.5 → **0.33** (= 0.4·0.825), Up 0 → **0.26**, Up 1 → **0.40**; `CARD.clearParams('torus2')` → the derived 0.270 again;
+  `paramsString()` '' after, `localStorage['ew.routes.v1']` null throughout, `CARD.ERRS` 0; the queue on the demo lists beat / bar
+  entries (0.149 / 0.627 s ahead). Not run here: the audible capture run (the orchestrator's; `FIELDSX` recipe in HARNESS "Queue").

@@ -1,0 +1,52 @@
+== .
+SeeYouDrop   nextKickIn         0.46 (P 0.59 R 0.38; chance 0.05)          lag +1 / 11 ms       hz 0.39 s (p25 0.12; ioi 0.39)      jumps 95.8 /min (w 97 i 10 j 0; roll 148)  
+SeeYouDrop   nextSnareIn        0.53 (P 0.77 R 0.41; chance 0.06)          lag -2 / 13 ms       hz 0.21 s (p25 0.10; ioi 0.27)      jumps 88.1 /min (w 85 i 17 j 0; roll 206)  
+SeeYouDrop   nextHatIn          0.48 (P 0.71 R 0.36; chance 0.14)          lag -1 / 11 ms       hz 0.20 s (p25 0.10; ioi 0.22)      jumps 72.5 /min (w 73 i 11 j 0; roll 239)  
+CyborgNinja   nextKickIn         0.37 (P 0.66 R 0.26; chance 0.15)          lag +7 / 25 ms       hz 0.29 s (p25 0.18; ioi 0.20)      jumps 106.3 /min (w 161 i 23 j 3; roll 272
+CyborgNinja   nextSnareIn        0.38 (P 0.72 R 0.26; chance 0.18)          lag +2 / 22 ms       hz 0.19 s (p25 0.10; ioi 0.19)      jumps 105.2 /min (w 161 i 18 j 6; roll 391
+CyborgNinja   nextHatIn          0.49 (P 0.74 R 0.36; chance 0.29)          lag +0 / 22 ms       hz 0.11 s (p25 0.09; ioi 0.10)      jumps 85.9 /min (w 136 i 12 j 3; roll 668)
+WhoLikesToParty   nextKickIn         0.56 (P 0.82 R 0.43; chance 0.10)          lag +6 / 16 ms       hz 0.26 s (p25 0.25; ioi 0.25)      jumps 41.8 /min (w 118 i 23 j 0; roll 
+WhoLikesToParty   nextSnareIn        0.51 (P 0.69 R 0.40; chance 0.24)          lag +2 / 19 ms       hz 0.14 s (p25 0.13; ioi 0.16)      jumps 48.1 /min (w 122 i 37 j 3; roll 
+WhoLikesToParty   nextHatIn          0.68 (P 0.83 R 0.58; chance 0.27)          lag +2 / 15 ms       hz 0.25 s (p25 0.13; ioi 0.25)      jumps 28.8 /min (w 88 i 9 j 0; roll 79
+== hold0.1
+SeeYouDrop   nextKickIn         0.47 (P 0.59 R 0.39; chance 0.05)          lag +1 / 12 ms       hz 0.39 s (p25 0.12; ioi 0.39)      jumps 92.1 /min (w 93 i 10 j 0; roll 152)  
+SeeYouDrop   nextSnareIn        0.55 (P 0.75 R 0.43; chance 0.07)          lag -2 / 13 ms       hz 0.21 s (p25 0.10; ioi 0.27)      jumps 75.1 /min (w 71 i 17 j 0; roll 220)  
+SeeYouDrop   nextHatIn          0.51 (P 0.70 R 0.40; chance 0.15)          lag -1 / 11 ms       hz 0.19 s (p25 0.10; ioi 0.22)      jumps 54.0 /min (w 53 i 11 j 0; roll 264)  
+CyborgNinja   nextKickIn         0.38 (P 0.63 R 0.27; chance 0.16)          lag +7 / 25 ms       hz 0.20 s (p25 0.16; ioi 0.20)      jumps 86.9 /min (w 129 i 23 j 3; roll 303)
+CyborgNinja   nextSnareIn        0.41 (P 0.68 R 0.29; chance 0.21)          lag +3 / 23 ms       hz 0.18 s (p25 0.09; ioi 0.19)      jumps 67.7 /min (w 99 i 18 j 6; roll 457) 
+CyborgNinja   nextHatIn          0.52 (P 0.71 R 0.41; chance 0.33)          lag +0 / 24 ms       hz 0.10 s (p25 0.09; ioi 0.10)      jumps 27.7 /min (w 37 i 12 j 3; roll 794) 
+WhoLikesToParty   nextKickIn         0.57 (P 0.81 R 0.44; chance 0.10)          lag +6 / 17 ms       hz 0.25 s (p25 0.24; ioi 0.25)      jumps 34.0 /min (w 92 i 23 j 0; roll 5
+WhoLikesToParty   nextSnareIn        0.52 (P 0.68 R 0.43; chance 0.26)          lag +2 / 20 ms       hz 0.13 s (p25 0.12; ioi 0.16)      jumps 31.3 /min (w 66 i 37 j 3; roll 7
+WhoLikesToParty   nextHatIn          0.70 (P 0.83 R 0.60; chance 0.28)          lag +2 / 14 ms       hz 0.24 s (p25 0.12; ioi 0.25)      jumps 19.2 /min (w 56 i 9 j 0; roll 83
+== hold0.25
+SeeYouDrop   nextKickIn         0.48 (P 0.58 R 0.41; chance 0.06)          lag +1 / 11 ms       hz 0.39 s (p25 0.38; ioi 0.39)      jumps 39.4 /min (w 42 i 6 j 0; roll 161)   
+SeeYouDrop   nextSnareIn        0.59 (P 0.73 R 0.50; chance 0.08)          lag -2 / 13 ms       hz 0.31 s (p25 0.20; ioi 0.27)      jumps 25.4 /min (w 16 i 17 j 0; roll 263)  
+SeeYouDrop   nextHatIn          0.54 (P 0.70 R 0.45; chance 0.16)          lag -0 / 12 ms       hz 0.20 s (p25 0.10; ioi 0.22)      jumps 20.0 /min (w 16 i 10 j 0; roll 299)  
+CyborgNinja   nextKickIn         0.39 (P 0.59 R 0.29; chance 0.17)          lag +7 / 24 ms       hz 0.29 s (p25 0.18; ioi 0.20)      jumps 54.1 /min (w 76 i 23 j 4; roll 351) 
+CyborgNinja   nextSnareIn        0.43 (P 0.64 R 0.32; chance 0.23)          lag +3 / 24 ms       hz 0.18 s (p25 0.10; ioi 0.19)      jumps 31.6 /min (w 38 i 18 j 7; roll 534) 
+CyborgNinja   nextHatIn          0.54 (P 0.67 R 0.45; chance 0.36)          lag +0 / 24 ms       hz 0.10 s (p25 0.09; ioi 0.10)      jumps 9.4 /min (w 2 i 13 j 5; roll 929)   
+WhoLikesToParty   nextKickIn         0.60 (P 0.80 R 0.48; chance 0.11)          lag +6 / 17 ms       hz 0.25 s (p25 0.24; ioi 0.25)      jumps 19.0 /min (w 43 i 23 j 0; roll 5
+WhoLikesToParty   nextSnareIn        0.55 (P 0.68 R 0.46; chance 0.27)          lag +2 / 21 ms       hz 0.13 s (p25 0.12; ioi 0.16)      jumps 19.7 /min (w 31 i 35 j 3; roll 8
+WhoLikesToParty   nextHatIn          0.71 (P 0.82 R 0.62; chance 0.28)          lag +2 / 15 ms       hz 0.24 s (p25 0.12; ioi 0.25)      jumps 6.6 /min (w 14 i 9 j 0; roll 875
+== hold0.5
+SeeYouDrop   nextKickIn         0.50 (P 0.58 R 0.44; chance 0.06)          lag +1 / 13 ms       hz 0.39 s (p25 0.39; ioi 0.39)      jumps 20.4 /min (w 20 i 6 j 0; roll 171)   
+SeeYouDrop   nextSnareIn        0.59 (P 0.70 R 0.52; chance 0.08)          lag -2 / 13 ms       hz 0.38 s (p25 0.20; ioi 0.27)      jumps 7.9 /min (w 0 i 11 j 0; roll 289)    
+SeeYouDrop   nextHatIn          0.55 (P 0.68 R 0.47; chance 0.16)          lag -0 / 12 ms       hz 0.21 s (p25 0.10; ioi 0.22)      jumps 7.1 /min (w 1 i 9 j 0; roll 325)     
+CyborgNinja   nextKickIn         0.39 (P 0.52 R 0.32; chance 0.19)          lag +7 / 24 ms       hz 0.34 s (p25 0.18; ioi 0.20)      jumps 21.5 /min (w 13 i 28 j 6; roll 432) 
+CyborgNinja   nextSnareIn        0.44 (P 0.58 R 0.35; chance 0.26)          lag +3 / 25 ms       hz 0.18 s (p25 0.09; ioi 0.19)      jumps 21.5 /min (w 8 i 31 j 10; roll 650) 
+CyborgNinja   nextHatIn          0.54 (P 0.61 R 0.49; chance 0.39)          lag +0 / 24 ms       hz 0.09 s (p25 0.08; ioi 0.10)      jumps 17.5 /min (w 0 i 28 j 13; roll 1101)
+WhoLikesToParty   nextKickIn         0.61 (P 0.79 R 0.50; chance 0.11)          lag +6 / 17 ms       hz 0.25 s (p25 0.24; ioi 0.25)      jumps 9.4 /min (w 15 i 19 j 0; roll 61
+WhoLikesToParty   nextSnareIn        0.56 (P 0.67 R 0.48; chance 0.28)          lag +2 / 21 ms       hz 0.13 s (p25 0.12; ioi 0.16)      jumps 10.6 /min (w 8 i 28 j 3; roll 88
+WhoLikesToParty   nextHatIn          0.72 (P 0.81 R 0.64; chance 0.29)          lag +2 / 15 ms       hz 0.24 s (p25 0.12; ioi 0.25)      jumps 2.4 /min (w 1 i 8 j 0; roll 926)
+== hz4
+SeeYouDrop   nextKickIn         0.46 (P 0.59 R 0.38; chance 0.05)          lag +1 / 11 ms       hz 0.39 s (p25 0.12; ioi 0.39)      jumps 97.4 /min (w 97 i 10 j 0; roll 148)  
+SeeYouDrop   nextSnareIn        0.53 (P 0.77 R 0.41; chance 0.06)          lag -2 / 13 ms       hz 0.21 s (p25 0.10; ioi 0.27)      jumps 88.1 /min (w 85 i 17 j 0; roll 206)  
+SeeYouDrop   nextHatIn          0.48 (P 0.71 R 0.36; chance 0.14)          lag -1 / 11 ms       hz 0.20 s (p25 0.10; ioi 0.22)      jumps 72.5 /min (w 73 i 11 j 0; roll 239)  
+CyborgNinja   nextKickIn         0.37 (P 0.66 R 0.26; chance 0.15)          lag +7 / 25 ms       hz 0.29 s (p25 0.18; ioi 0.20)      jumps 106.4 /min (w 161 i 23 j 3; roll 272
+CyborgNinja   nextSnareIn        0.38 (P 0.72 R 0.26; chance 0.18)          lag +2 / 22 ms       hz 0.19 s (p25 0.10; ioi 0.19)      jumps 105.2 /min (w 161 i 18 j 6; roll 391
+CyborgNinja   nextHatIn          0.49 (P 0.74 R 0.36; chance 0.29)          lag +0 / 22 ms       hz 0.11 s (p25 0.09; ioi 0.10)      jumps 85.9 /min (w 136 i 12 j 3; roll 668)
+WhoLikesToParty   nextKickIn         0.56 (P 0.82 R 0.43; chance 0.10)          lag +6 / 16 ms       hz 0.26 s (p25 0.25; ioi 0.25)      jumps 41.8 /min (w 118 i 23 j 0; roll 
+WhoLikesToParty   nextSnareIn        0.51 (P 0.69 R 0.40; chance 0.24)          lag +2 / 19 ms       hz 0.14 s (p25 0.13; ioi 0.16)      jumps 48.1 /min (w 122 i 37 j 3; roll 
+WhoLikesToParty   nextHatIn          0.68 (P 0.83 R 0.58; chance 0.27)          lag +2 / 15 ms       hz 0.25 s (p25 0.13; ioi 0.25)      jumps 28.8 /min (w 88 i 9 j 0; roll 79
+
+[exited with code 0]
