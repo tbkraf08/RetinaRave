@@ -569,6 +569,16 @@ are the scene author's rules:
   for the hat. So a scene that wants both — the level's amplitude and the age's placement — keeps its OWN age, reset by the
   level's rising edge and seeded from the engine's age only when that age is fresh (DUST uses 40 ms): the sub-frame placement
   where it is real, and never a motion started 100 ms late. Pairing `kick`/`kickAge` or `snare2`/`snareAge` blind is a bug.
+  **Corrected in v0.21+ (DECISIONS §58): that +101 ms is not a LAG.** Graded against the truth onsets on the same window
+  (`tools/truth/drumcheck.py`), the hits each source MATCHES are on time — ears +3 / v2 +4 ms (kick), +0 / −13 (snare),
+  +2 / −11 (hat) — and what differs is WHICH onsets each one finds: recall ears 0.35 / v2 0.50 (kick), 0.71 / 0.50 (snare),
+  0.82 / 0.70 (hat). The +101 ms was the last ears' snare being a different onset from the one the level was confirming.
+  So the rule for a scene is: fire the attack on whichever of the two comes first, with a refractory (DUST: 60 ms) so one
+  hit cannot fire twice, let the EVENT place it and the LEVEL size it — the ears' `kickVel` / `snareVel` / `hatVel`
+  saturate (§51, p50 1.0) and carry almost no dynamics.
+- **A travelling front must be launched where the thing it lights actually is.** A shell expanding from the origin reaches
+  a feature at radius r only after r / speed: DUST's snare ring was 0.24 s late to the sphere's grains until §58 launched
+  it on the band's own radius. Geometry is latency too.
 - **Predicted hits (live step 3).** `predKickEvt` / `predSnareEvt` / `predHatEvt` are released ON the heard hit (median
   +1…+5 ms in capture) from the bar fingerprint store — use them where a reaction would be 38–52 ms late; `predKickAge` etc. place
   a motion like `kickAge` (within half a frame of 0 on the release frame), `predKick` / `predSnare` / `predHat` are the same hits

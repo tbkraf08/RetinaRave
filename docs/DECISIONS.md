@@ -2998,3 +2998,131 @@ the DUST overhaul pass 1 (§57 + addendum, `FRESH` 0.06). `releases/retinarave-v
 on scene 1: errs [], nonFinite [], clock pcm), package.json 0.21.0. Not pushed (retinarave.com serves v0.15). The user's first look:
 "Overall it is looking good, but something still feels out of sync. Visuals almost seem slow to register on the beat" — the
 accuracy review is next (§58).
+
+## §58 DUST, pass 1.5 — a grain's band is its place, and the accuracy review (2026-09-30, one worker; report `docs/workers/DUST-OVERHAUL-PASS1.md` "Pass 1.5")
+
+**The ask** (the user, after the pass-1 A/B in stream mode): *"Overall it is looking good, but something still feels out of
+sync. Visuals almost seem slow to register on the beat"* — plus §57's own open item 1 (a grain's band was not its position
+in two of the four formations). Two tasks, each measured on the deterministic path (`#test&track=SeeYouDrop&map=0`,
+`CLOCK=1`, 20 → 110 s = 5401 frames, control CyborgNinja 20 → 80 s) and committed with its numbers. **Not tagged, not
+pushed, not deployed.**
+
+New in the ruler: `tools/dust-trace.js` records a fourth zone, `lumM` (the 25–55 % BODY annulus, where the snare's ring
+travels), and DUST has a test hook `&form=<k>` that pins the formation so one shape can be measured at a time.
+
+### Task A — a grain's band is its place (`fc590c0`)
+
+The rank of the bin a grain owns (`h.x`, uniform on 0..1 and monotone with `fx`) is now its distance from the centre, and
+each shape maps that rank the way its own DIMENSION keeps its density even: **the galaxy's `sqrt(rank)` is uniform per unit
+AREA and is untouched** (the shape the brief said to match), a ball is uniform per unit VOLUME at `cbrt(rank)`, a line is
+uniform per unit LENGTH at the rank itself, and the torus's tube is flat in its own angle so the rank goes straight onto it
+— the low bins ride the tube's INNER wall (R − r), the highs its outer wall (R + r). Every shape's density is therefore
+unchanged; only which grain sits where is. The ribbon samples the waveform where the grain actually is, so it is still
+literally the waveform.
+
+Two things that only broke once a band meant a place, both found by geometry and fixed in the same commit:
+
+- **the snare's ring was launched at the ORIGIN.** With the mid band a shell at radius r0, a front expanding from nothing
+  does not reach it until r0 / 3.4 — from the shader's own condition (`|R − ringR| < 0.83·ringW`), **0.24 s in the sphere
+  and 0.21 s in the torus after the hit**, and that was true of the OLD sphere too (a hollow shell at 1.05). It is now
+  launched ON the band (`formations.js MIDR = 0.89 / 1.21 / 1.36 / 1.14`, mixed through a pour) and travels out from
+  there: **0 ms in all four shapes**; the body's luminance clears +2sd at p90 161.7 → **119.7 ms** after the truth onset.
+- **the kick's shove was a fixed half a unit**, which is most of the core's own radius — a kick EMPTIED the core out of the
+  middle of the frame. It is now in proportion to where the grain is (`.5·(.3 + .7R)`), so the core swells instead.
+
+Measured with the formation pinned (SeeYouDrop 30–60 s, clean hits only — no other voice within 100 ms — peak lift as % of
+that zone's own pre-hit level): **sphere** kick centre/rim 5.3/3.9 % → **4.9/2.6 %** (C/R 1.36 → **1.91**) · **torus** hat
+centre share 27.3 → **15.6 %** and body share 29.0 → **46.9 %** · **ribbon** hat rim share 51.8 → **61.7 %**, the kick's
+centre lift 7.6 → 8.4 % · **galaxy** unchanged by design (kick C/R 1.44 → 1.39, hat rim share 89.6 → 88.6 %).
+
+**Stated, not hidden:** the torus's KICK moves from the centre to the body and rim (C share 35.6 → 23.1 %), because a
+doughnut's "inward" is the inner wall of its tube at 31 % of the frame — its centre is a hole and nothing can be there; and
+a ball's shell projects onto the whole disc, so the sphere's separation is real in three dimensions and diluted in two.
+Cost flat (`CARD.bench(1,300)`, tier 3, q 0.95, three pairs interleaved with NAV: DUST 1.131 → 1.112 ms).
+
+### Task B — the accuracy review, in ms (`b93ef4f`)
+
+| what | was | now |
+|---|---|---|
+| the beat nudge, 50 % of the step | 167 ms | **50 ms** |
+| the beat nudge, 90 % of the step | 417 ms | **183 ms** |
+| of the step done when the next beat arrives (400 ms at 150 BPM) | 84 % | **98 %** |
+| the snare's voice, coverage of the truth's mid onsets | 54 % | **85 %** |
+| the snare's envelope, p90 after the truth onset | +196 ms | **+128 ms** |
+| the hat's voice, coverage | 85 % | **96 %** |
+| the hat's envelope, p90 | +87 ms | **+79 ms** |
+| the kick (`kick2` IS the ears' low lane — nothing to win on det) | 85 %, +16 ms | 85 %, +16 ms |
+| the snare's ring reaching the body (sphere) | 0.24 s | **0 s** (task A) |
+
+1. **The nudge is a shaped impulse.** One exponential with τ 0.22 s had its peak VELOCITY on the beat but put only half the
+   step on the screen 167 ms later, so the cloud was still travelling when the next beat came and the eye read a glide.
+   Now τ 0.055 s until less than 18 % of the step is left, then 0.14 s to settle. The picture is STILL between the nudges
+   (spin velocity p50 0.486 → **0.121 rad/s**) while the peak more than doubles (p95 1.059 → **2.854**). The target is
+   still read off the beat COUNT, so it cannot drift.
+2. **The attack fires on whichever detector hears the hit first** — the ears' event (`kickEvt` / `snareEvt` / `hatEvt`) or
+   the v2 level's rising edge — with a 60 ms refractory per voice. **This corrects §57: neither detector is late.** Graded
+   against the truth by `tools/truth/drumcheck.py` on the same window, the matched hits read ears **+3** / v2 **+4** ms
+   (kick), ears **+0** / v2 **−13** (snare), ears **+2** / v2 **−11** (hat). §57's "+101 ms" was the last ears' snare being
+   a DIFFERENT onset from the one the level was confirming, not a lag. What the two do is MISS different hits — recall ears
+   0.35 / v2 0.50 (kick), **0.71 / 0.50** (snare), 0.82 / 0.70 (hat) — so the union buys COVERAGE, which is what the user's
+   own A/B said the eye reads as in sync (memory `feedback_reactive_over_predicted`). **The event only PLACES the hit; the
+   level still SIZES it** — the ears' velocity saturates (§51: `kickVel` p50 1.0, "the uniform brightness of the predicted
+   route"), so `kickVel` / `snareVel` / `hatVel` are NOT read: a fire starts at the floor and the level raises it without
+   moving the age, so a hit the level never confirms costs a flicker, not a flash. Attacks per 90 s: kick 261 → 261, snare
+   152 → **319** (297 truth mid onsets), hat 250 → **379** (295 truth high) — the snare now matches the truth's own
+   density, the hat fires 1.28× it.
+3. **The trail: `post.fb.decay` 0.95 → 0.88.** 0.95 is a 0.22 s half-life on the encoded picture — most of a beat at
+   150 BPM, so the last hit's ghost was still a third of its size when the next one landed (§57's open item 2, "the first
+   knob to reach for"). Measured over SeeYouDrop 30–60 s at 0.95 / 0.88 / 0.85: per-beat peak/trough **1.261 / 1.431 /
+   1.470**, the rim 1.323 / 1.545 / 1.575, |Δlum| per frame 1.40 / 1.72 / 1.74, mean luminance 117 / 96 / 92. 0.88 takes
+   nearly all of the contrast for the least light; 0.85 is TORUS2's own.
+
+**Everything else DUST could smooth was measured and is zero or deliberate:** all twenty `m.*` copies in `index.js` are
+direct assignments (no EMA between MS and the uniform); `this.rt.time = MS.flow` is musical time; the voices' attack is
+instant and only the DECAY has a τ (0.24 / 0.30 / 0.09 s); the slow envelopes are slow on purpose (`buildLive` 0.35 s, the
+last bar's wind-up 0.12, the sub's gate 0.28, the drop's release 0.55 — all with instant attacks on their events); the
+fibre rings read `build` / `drop` / `rel` / `vk` with no filter of their own; the camera's dolly rides `bassS`, an engine
+band follower. The spectrum texture the grains are pushed by is peak-hold with a 0.11 s RELEASE and an instant attack
+(`synapse/analyzer.js`), so nothing is smoothed on the way in either.
+
+**Whole window, before → after (SeeYouDrop 20–110 s):** per-beat peak/trough lum 1.189 → **1.319**, centre 1.284 → 1.386,
+rim 1.231 → **1.400**; |Δlum| p50 1.11 → **1.54**, p99 10.15 → 17.38; the window's own range p95/p05 lum 2.80 → **3.24**,
+centre 3.70 → 4.30, rim 2.82 → **3.71** (§57's open item 3 — the dynamic range is back and past where it was); the mean is
+14 % darker (121.0 → 103.9); the shape sequence is untouched (10 changes, the same ones). **The one number that got
+worse:** the drop's slam, drop 1 +392.3 → +383.1 % but drop 2 **+117.2 → +88.5 %** — a shorter trail accumulates less over
+the burst. Kept, because the range over the whole window went UP and the brief's own measure is that a viewer can read the
+song, not that one frame is bright. Control CyborgNinja: still **0 formation changes**, no build, per-beat peak/trough
+1.229 → 1.350, hat coverage 94 % both ways.
+
+### Engine-side, for the orchestrator — measured here, NOT changed (no engine file touched)
+
+- **The beat clock's own offset against the truth beat grid.** SeeYouDrop, file-det: **−35.7 ms** (p10 −43.3, p90 −28.5) —
+  the det lead net of the 40 ms display lead, i.e. the count increments 36 ms BEFORE the audible beat. Harmless while the
+  nudge took 417 ms to land; now that it lands in 183 ms the eye sees the clock's offset directly, so it is worth knowing
+  that in stream mode (`dispNow()` 0, §53) that −36 ms becomes roughly 0 and the capture path's own +27 ms (CONTRACTS
+  §1.18) is then the whole of it.
+- **CyborgNinja: the PCM beat clock sits +146.8 ms off the truth grid** (p10 −45.0, p90 +155.1 — locked to the OFF-BEAT for
+  most of the window, 159 of 160 beats matched). Every beat-locked motion in every scene is a third of a beat out on that
+  track. A clock item (§56), not a scene one.
+- **The ears' and synapse's mid/high pickers disagree about WHICH onsets** (recall 0.71 vs 0.50 on the snare, precision
+  0.68 vs 0.93). A scene can only take the union, as DUST now does; a better mid picker is an engine job.
+- **`snare2` / `hat2` are synapse's hits held by `max(0, ahead − SYN_DELAY)`** (`drums/drums.js`): in capture `ahead` ≤ 0,
+  so nothing is held and they arrive with synapse's own 31 ms confirm delay after the analyser sees them.
+- The 40 ms display lead is file-mode only (§53) — recorded again because it is the largest single number in the chain and
+  the user watches in the mode that has none.
+
+### Proofs
+
+`check` 0 fail · `npm test` OK · `CARD.bench(1,300)` tier 3 (150k points), q pinned 0.95, first call discarded, three pairs
+interleaved with NAV in the same page: DUST/NAV ratio 0.794 (HEAD) → 0.758 (task A) → 0.813 (task B) — flat inside the
+run-to-run spread. s1 fake-timeline md5 **f360 `6696c6eb` → `0526245e` → `a73fbe67`, f840 `01143b8d` → `123033ed` →
+`35fe02c6`** (per task). Against `tools/accept/v0.14/scene-md5-v014.txt` the only other lines that differ are the two
+pre-existing ones (s0-f840 `7225ea02` → `8a0715df`, s4-f840 `be2e3c8d` → `05bf21c0`, both from `22eb969` / §54 addendum 2)
+and s11, which post-dates that list; s2, s3, s5, s6, s7, s8, s9, s10 and s0-f360, s4-f360 are byte-identical. `help` moved
+to `assets/scenes/dust/help.js` (index.js was one line over the 350 soft cap) — data only, not a word changed by the move.
+No audible run (the worker's brief forbids it): every number above is the deterministic file path.
+
+**Look changes the user may notice beyond the two tasks:** the picture is ~14 % darker and its trails are much shorter
+(the decay); the sphere is a filled ball instead of a hollow shell and every shape is now colour-graded from the core out,
+because a grain's band is both its hue and its radius; the doughnut's tube no longer rolls on mid time (a slow breath
+instead), since the roll would have scrambled the band ordering around the tube.

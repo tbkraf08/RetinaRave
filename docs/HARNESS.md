@@ -745,7 +745,7 @@ four times in 40 s; and `R_LINE` off loses 20–65 ms on two tracks (the onsets 
 `filetrace.js` records MS, and MS says nothing about what a SCENE did with it; `probe.js` reads the canvas but needs a
 real window. `dust-trace.js` is the two of them on the deterministic file path — it forces the scene, registers its own
 rAF after the loop's (so it runs once the frame is drawn AND composited) and records per frame the composited
-framebuffer's mean luminance (`lum`, plus the centre 20 % `lumC` and the 60–90 % rim `lumR`, the split `lum.py` uses),
+framebuffer's mean luminance (`lum`, plus the centre 20 % `lumC`, the 25–55 % body `lumM` and the 60–90 % rim `lumR`),
 the named MS fields, and every number of the scene's own `hooks.dinfo()`:
 
 ```
@@ -760,7 +760,16 @@ recorder costs a `readPixels` per frame (a centred half of the buffer): 90 s of 
 
 A scene that wants columns exports `hooks.dinfo()` returning a flat object of numbers; it must not mutate (CONTRACTS
 §1.4). The tool passes the eval blocks to `cdp.js` as ONE line: cdp logs `EVAL <expr.slice(0,60)> => <value>`, so a
-newline inside the first 60 characters splits the log line and the driver can no longer find the value.
+newline inside the first 60 characters splits the log line and the driver can no longer find the value.  The same rule
+bites the recorder's own source: a `//` comment inside the installed block swallows the rest of it once it is flattened.
+
+**Grade against the TRUTH, not against a detector** (DECISIONS §58): the lag of a scene's response is the time from a
+`tools/truth/<track>.json` onset (`onsets.low` / `mid` / `high`) or beat to the frame the scene's own envelope moves, and
+the coverage is the share of those onsets that get a response at all. Reading one detector's age at another detector's
+edge measures the distance between two pickers, not a latency — the mistake §57 made and §58 corrected.
+
+A scene may add a test hook to hold a state still for the ruler — DUST's `&form=<k>` pins the formation, because on
+SeeYouDrop three of its four shapes are on screen for seconds and the fourth for 76 of 90 s.
 
 ## Single-file build
 
