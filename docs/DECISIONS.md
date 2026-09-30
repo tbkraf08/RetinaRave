@@ -2867,3 +2867,106 @@ bpmPcm` on all, `beatPhase` vs `beatPhasePcm` within 1.4e-14, conf median 0.93, 
 live step 6, the beat clock on the PCM bus (§56) as the default clock. All six steps of the live plan (§49) are in. `releases/
 retinarave-v0.20.html` (1301 KB, 148 modules; from `file://` 348 frames in 6 s, errs [], nonFinite [], clock pcm), package.json
 0.20.0. Not pushed (retinarave.com serves v0.15).
+
+## §57 DUST, pass 1 — the legibility overhaul: on the grid, three transient voices, real tension, formations as sections (2026-09-30, one worker; `DUST-OVERHAUL-SESSION-PROMPT.md`, report `docs/workers/DUST-OVERHAUL-PASS1.md`)
+
+**The ask** (the user, 2026-09-30): *"lets go one scene at a time; start with DUST (can do a full overhaul in place, not
+limited to whats new)"*, against a brief that is now **the acceptance standard for every scene**: a viewer with the sound off
+should be able to roughly reconstruct the song's structure · transients sharp, fast-attack / slow-decay, from band-limited
+onset detection · bands mapped to distinct visual behaviours so instruments are separable · motion phase-locked to the beat
+grid, emphasis on downbeats and phrase boundaries · a tension accumulator that visibly tightens through builds and releases
+all at once on the drop · timbral novelty gets a new voice, sustained sounds habituate · preserve dynamic range · zero
+perceptible latency, nothing moves without an audible reason. Pass 1 is four steps, each measured and committed with its
+numbers; pass 2 (dynamic range against the track's peak, per-bin habituation, harmony) is next session.
+
+**What DUST was.** 20k–150k `gl_VertexID` grains, each owning one bin of the 256-bin log spectrum and pushed out by it
+(the core idea — kept). Four formations cross-faded per grain, Hopf-fibre rings threaded through. Fifteen fields, and **no
+beat grid at all**: `flow`/`flowMid`/`flowBass` drove every rotation, the 64th kick re-poured to a random shape, `tension`
+(which is v3's ROUGHNESS) shrank the cloud, and there was one drum channel and no snare.
+
+**The ruler, because there was none.** `filetrace.js` records MS and MS says nothing about what a scene did with it;
+`probe.js` reads the canvas but needs a real window. New **`tools/dust-trace.js`** (HARNESS "Scene ruler on a real track"):
+forces the scene on the deterministic live-on-a-file path (`#test&track=<T>&at=<t0−WARM>&map=0&scene=1`, `CLOCK=1 GPU=1`),
+registers its own rAF after the loop's, and records per frame the COMPOSITED framebuffer's luminance (whole / centre 20 % /
+60–90 % rim) beside the MS fields and every number of the scene's new read-only `hooks.dinfo()`. Reference window
+SeeYouDrop 20 → 110 s at `at` 0 (5401 frames, both drops and the 16 bars before each; the detector needs 32 s of history
+before it can arm, §54); control CyborgNinja 20 → 80 s. Two runs are bit-identical.
+
+- **Step 1, on the grid (`3425e5a`).** One angle: `spin ← ease((2π/32)·(beatCount + ½·barIndex), τ 0.22 s)`, the target read
+  off the COUNTS so it cannot drift (TORUS2's rule, §36), `barIndex = round((beatCount + beatPhase − barPos)/4)` so the
+  downbeat is synapse's bar line and not the count's mod 4. Torus turn ×0.7, galaxy winding ×0.9/(r+.35). Measured:
+  **0.2207 rad/beat over 225 beats against a design 0.2209** — no drift in 90 s; spin velocity p05 0.192 / p50 0.487 / p95
+  1.088 rad/s, **peak/mean 2.28** (a steady spin would be flat); the downbeat advances **0.1791 rad** in its first 200 ms
+  against **0.1320** for the other three. The 64-kick re-pour is gone: a change lands on a phrase wrap or `barNovelEvt`,
+  never on a kick count — **16 changes in 90 s, every one on a seam**. corr(lum, lvl) 0.469 → 0.592, eS 0.407 → 0.601,
+  bassS 0.356 → 0.558, highS 0.093 → 0.431.
+- **Step 2, three transient voices (`5a5f857`), and the measurement that shaped them.** The spec pairs `kick2`/`kickAge`,
+  `snare2`/`snareAge`, `hat2`/`hatAge` — **they are not always the same onsets.** At every rising edge of the level the
+  matching age reads p50 **+7 ms** (kick, p90 1720, 4 of 224 edges with no fresh age), **+101 ms** (snare), **+92 ms** (hat):
+  the v2 kick IS the ears' low lane (§51), the v2 snare and hat are synapse's and the ears' are a different picker. So each
+  voice keeps its OWN age, reset by the level's edge and seeded from the engine's age only within 40 ms of it — the
+  sub-frame placement where it is real, never a motion started 100 ms late (now a rule in CONTRACTS §1.18). The three are
+  separated by the BAND a grain owns: `wLow` the kick's outward shove and the sub's swell, `wMid` a NEW voice (a flash ring
+  launched at the centre on every snare, travelling out at 3.4 units/s), `wHigh` the hat sparkle. Peak luminance lift at the
+  hit: kick **+6.1 → +9.5** (p90 +15.4 → +26.3, 223 hits), snare **+8.1 → +11.0**, hat **+4.3 → +8.3**; the picture's own
+  motion |Δlum| per frame p50 **0.79 → 1.34**, p99 **6.08 → 11.22**; corr(lum, kick2) **−0.12 → +0.07**. A first, timider cut
+  was measured and rejected (kick +7.1, hat +7.1).
+- **Step 3, real tension (`9bc2b3c`).** `tension` is v3's roughness and sits at 0.42 through SeeYouDrop's groove, so the
+  cloud was permanently ~8 % small for nothing audible and did not move into a drop. The build is the VOID, `buildLive`
+  (§54): it arms 5.6 s before drop 1 (reaching 1.00) and 3.2 s before drop 2 (0.75), **never on CyborgNinja**. It pulls the
+  cloud in −30 %, thins the torus's tube from `.38+.2·bassS` to a .06 wire, draws the fibre rings in 32 % and drains the
+  palette (sat ×(1−.55b), spread ×(1−.35b) — the rings share the mood object, so they drain too); `dropLiveEvt` releases it
+  all at once over 0.55 s with a +17 % overshoot and leaves `dropEnv`'s fling alone; `tension` is jitter and nothing else.
+  **`nextDropIn` was measured before it was used and is NOT a runway**: while armed it never points further than one bar
+  ahead (1.56 s at the arm, 529 armed frames), because it is the count-down to the bar LINE — so it winds the last bar up
+  (+0.3 of the contraction over 1.7 s) and claims nothing more. Drop 1: contraction 0 → **0.85** (peak 1.25) → 0.09,
+  saturation 0.66 → **0.34** → 0.71, the slam **+171.7 % → +181.9 %**, lum through the void **+23.3 % → +8.1 %**. Drop 2:
+  the slam **+168.9 % → +194.2 %**, lum through the void **−15.2 % → −36.6 %**.
+- **Step 4, formations as sections (`fff7569`).** `buildLive > .35` → torus · no sub and `denK < 1.6` → ribbon (a lone
+  voice) · `eM < .74` → sphere (quiet for this track) · else galaxy; asked only on a seam, so it cannot chatter, and the
+  drop bursts the torus into the galaxy. **`eM / eMax` was tried first and is useless**: `eMax` is the loudest `eM` seen
+  lately and follows it (ratio p05 0.700, p25 0.972, p50 1.000), and `lvl` is worse — the AGC flattens it. The absolute `eM`
+  (0.30 → 0.88 through SeeYouDrop's intro), `subGate` (0 for the first 12 s) and `denK` (0.5–1.5 intro vs 2.0–2.3 groove)
+  are what separate. **The returns say THAT, not WHICH**: `sectionAlt` never repeats on either track (2→3→4→5, 1→2→3) and
+  `sectionReturn` is 0 for all of SeeYouDrop while `barReturnEvt` fires twice — so the memory is keyed on `sectionAlt` as
+  the contract says and falls back to the last shape filed under a different section (CONTRACTS §1.11 now carries the
+  caveat). The sequence on SeeYouDrop is the song: galaxy → **ribbon 50.1** (the sub leaves) → **torus 55.9** (the void) →
+  **galaxy 57.6 (THE DROP bursts it)** → ribbon 101.3 → torus 104.5 → **galaxy 105.6 (THE DROP)** → sphere 107.7; **7
+  changes against 16 at random**, dwell galaxy 75.9 s / ribbon 8.9 / torus 2.8 / sphere 2.3 (before, at random: 25.5 / 25.7 /
+  20.2 / 18.5). With the picture no longer churning a shape a phrase, the slam reads **+347.1 %** (drop 1) and **+234.1 %**
+  (drop 2), lumC/lumR through drop 1's void goes 0.834 → **1.713**, and the centre's peak lift is kick **+10.9** (p90 +50.3),
+  snare **+14.0** (p90 +50.5), hat **+9.4** (p90 +44.4). **The trade, stated:** whole-frame |Δlum| p50 1.32 → 0.93 and the
+  window's p95/p05 2.95 → 2.54, because sixteen pours a minute were themselves much of the old motion and range. What is
+  left is the music's.
+
+**The control.** CyborgNinja 20 → 80 s, no drop: **0 formation changes** (dwell galaxy 60.0 s; the old 64-kick counter would
+have given ~2), `buildLive` never armed, so no contraction, no drain, no release — the scene invents no structure. And the
+drums read better there than anywhere: the kick's peak lift in the centre **+13.4 → +18.7** (p90 +39.4 → +51.6, +7.5 % →
+**+19.6 %** of the pre-level), corr(lum, kick2) **0.035 → 0.241**, whole-frame |Δlum| p50 1.72 → 1.19 while the CENTRE's goes
+2.15 → 2.38: on a track that is one long groove, what moves is now the drums.
+
+**Cost — it got 13 % CHEAPER** (`CARD.bench(1,300)` interleaved with NAV, `q` pinned 0.95, tier 3, first call discarded,
+three pairs, machine otherwise idle): DUST **1.181 → 1.023 ms**, NAV 1.795 → 1.821 in the same pages (ratio 0.658 → 0.562).
+The reason is fill, not luck: `hat` and `kick` used to enlarge EVERY grain (`+uHat·h.y·1.2 + uKick·.5`), so a hit was a
+whole-cloud overdraw event; the new voices enlarge only their own band (`wHigh` ~28 % of grains, `wLow` ~43 %). No Q trace:
+the cost did not rise.
+
+**Proofs.** `check` 0 fail · `npm test` OK · the full eleven-scene `scene-md5.sh` list against
+`tools/accept/v0.14/scene-md5-v014.txt` differs on **exactly three lines**: s1 f360 `c6166af9` → `6696c6eb` and f840
+`7ca6598c` → `01143b8d` (this session), and the two pre-existing ones from `22eb969` / §54 addendum 2 — s0 f840 `7225ea02` →
+`8a0715df` (recorded there) and **s4 f840 `be2e3c8d` → `05bf21c0`, which §54 addendum 2 did NOT record**: s4 is NAV's DRUM
+variant and renders through NAV's `draw`, so NAV going onto the live detector moved it exactly as it moved s0. Everything
+else is byte-identical. Per step, s1: f360 `c6166af9` → `7c824cd1` → `910e95f7` → `6696c6eb` → `6696c6eb` (step 4 moves
+nothing at frame 360: no seam that early on the fake timeline) · f840 `7ca6598c` → `479410ba` → `bb1540c6` → `30d06982` →
+`01143b8d`. The per-beat montage `tools/work/d/syd-d1.jpg` (50 → 62 s across drop 1) reads breakdown → void → slam → groove.
+
+**Open, in the report:** a grain's BAND is not its POSITION in the sphere and ribbon formations (it is in the galaxy, where
+`r = sqrt(h.x)`), so the three voices are separated by colour family there rather than by place — a band→radius bias would
+fix it and would change all four shapes, so it is the user's call, not pass 1's; `post.fb.decay` 0.95 (the highest in the
+set, half-life 0.22 s = most of a beat) is the knob to reach for first if the user reads the transients as soft; the window's
+p95/p05 fell 2.95 → 2.54 because sixteen pours a minute were themselves range, and pass 2's `eM`-against-the-track's-peak is
+where it returns; three thresholds are fitted on two tracks; the return path could not be exercised; no audible run was done
+(the worker's brief forbids it — the one capture run is the orchestrator's).
+
+**Not tagged, not pushed, not deployed**; the A/B for the user is `releases/retinarave-v0.20.html` from `file://` against the
+dev server, key 2, the same track, in stream mode.
