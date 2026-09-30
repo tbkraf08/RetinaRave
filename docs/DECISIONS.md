@@ -2749,3 +2749,88 @@ the predicted-event queue (§55; no scene reads it by default). `releases/retina
 `file://` 347 frames in 6 s, errs [], nonFinite [], the fake timeline has no queue: queueN 0), package.json 0.19.0. Not pushed
 (retinarave.com serves v0.15). The user's direction for what follows: "still need to work on the predictions"; step 6 (tempo on
 the PCM bus) next — "on the PCM bus seems more accurate and would be wanted regardless".
+
+## §56 live step 6 — the beat clock on the PCM bus: `bpmPcm` / `beatPhasePcm` / `beatPcm` / `beatCountPcm` / `clockConfPcm`, the `&clock=pcm` switch (2026-09-30, one worker; `docs/AUDIT-live-grid.md` "Step 6")
+
+**The ask** (the user, 2026-09-30: "on the PCM bus seems more accurate and would be wanted regardless … still need to work on the
+predictions → continue onto step 6"; the six-step plan's last step, §49): tempo + phase estimated from the raw samples on the
+audio's own clock instead of once per video frame, and a proper filter so one odd onset cannot yank the beat line — a steadier
+line for the bar store's offsets and the queue's count-downs to ride. Measure first, additive, A/B by a switch, a default only on
+the user's word: every scene reads `bpm` / `beatPhase` / `beat` / `beatCount` and none of them moves by default. The leans:
+
+- **What v3's clock actually is (T.0).** One spectral-flux value per rAF frame from an AnalyserNode read at frame time, into the
+  100 Hz ring by zero-order hold from the raw frame clock — an onset lands in the ring at the FRAME's time, ± half a frame — then
+  a PLL whose target is the comb line with a hand-tuned `+0.03` beat and whose onset corrections (`bassFast` hits) bleed over
+  0.18 s. Its onset events read +17 / +32 / +32 / +23 ms after the truth kicks on the four tracks (p90 33–42). Graded on heard
+  time (`gridcheck.py --heard`, new): lag −4 / −87 / +3 / +22 ms with jitter p50/p90 8/32 · 43/244 · 4/11 · 10/67 on SeeYouDrop /
+  CyborgNinja / WhoLikesToParty / Malicious. CyborgNinja's "half-beat offset" (§50 addendum) turned out to be a TEARING: its
+  kicks sit on every 8th (two lattices half a beat apart, 162 vs 158 of the ears' kicks), the comb target pulls one way and the
+  last kick the other, and the PLL sits between them at p90 247 ms.
+- **The comb's input is v3's own onset function, per hop — not the ears' band flux (T.1).** The ears' 7-band dB flux was the
+  obvious reuse and was measured first: its beat-lag autocorrelation reads 0.11 in SeeYouDrop's intro and 0.44 in its groove
+  where v3's full-spectrum log flux reads 0.59 / 0.79 (the HPSS residual gated at −34 dB is nearly binary per hop: a detector's
+  signal, not a periodicity function), and tempo.js's comb on it held SeeYouDrop's intro at 121 BPM for 20 s. So `engine/clock`
+  computes v3's `(flux + 3·bassFlux)/100` from a 2048-point FFT on the PCM bus's newest 2048 samples every 512, timed by the
+  sample count. Synapse's Analyzer has that FFT but on its own tap without sample stamps: the clock runs its own (the ears' FFT
+  class), 0.045 ms per hop.
+- **The ticks are the ears' onsets (T.1).** Onsets picked from that flux (first hop over mean + 1.5 sd, timed by the rise's split
+  between hops) sit +3 / +18 / +19 / +9 ms after the truth kicks — a kick's full-spectrum flux peaks a hop after its click on two
+  tracks — where the ears' kicks (perc.js, the beater-click rule, ONSET_LAG 6 ms) sit +3 / +8 / +6 / +2.5 (sd 6–8) and their
+  snares / hats within ±3. Sample-timed, already computed, already validated (v0.15): `features-clock.js` reads `EARS.ears.pending`
+  right after the ears' own PCM listener ran and hands each new kick / snare / hat to the clock with its class and velocity.
+  KICK_LAG 4 ms = the median of the four kick placements.
+- **The filter is a 2-state Kalman with PDA gating, not a PLL (T.2).** x = [beat position, rate]; each onset says "a line is
+  here" with R = R_ON·R_CLS[class] / vel (0.03² beats²; kick 1 / snare 1.5 / hat 3) and its gain is scaled by
+  beta = N(y; 0, S) / (N + CLUTTER) — the posterior weight of "on the grid" against one off-grid hit per beat: 0.9 on the line,
+  0.6 three sigma out, 0.06 four sigma out. Cold, the first onset sets the phase; locked, a vel-1.5 hit half a beat off moves the
+  next beat 0.4 ms (test_clock). The comb's tempo (period.js = tempo.js's steps 1–6 copied to the letter with its state in the
+  object; v3's estimator untouched) is a rate measurement every 0.5 s of audio, a re-seat on a vote switch; no presence gate —
+  the line coasts through silence on its rate (6 s of silence: 21 ms p90, no jump).
+- **The comb line VOTES the lattice; it never pulls.** The onsets alone cannot pick between two half-beat lattices (WhoLikesToParty
+  first locked exactly half a beat off: −249 ms), and a continuous pull toward the 8-beat comb line is what tears v3 on
+  CyborgNinja (the line itself flips lattice on ~30 % of its 8 s windows there). So the line is one more gated phase measurement
+  (R_LINE 0.08²) and, first, a vote: 7 of the last 8 clear lines more than 0.3 beat from the clock's line move it onto the comb's,
+  always forward (the count never steps back). 3 consecutive flipped CyborgNinja 4 times in 40 s (p90 72 ms); 7 of 8 never
+  flips it and still puts WhoLikesToParty on the comb's lattice within its first bars. The sweep (11 knob variants × 4 tracks):
+  R_LINE off loses 20–65 ms on two tracks; LINE_N 5 flips CyborgNinja; CLUTTER 3 triples SeeYouDrop's lock time; the rest ±3 ms.
+- **What it measures to (T.3, page `&map=0&lead=0` det, heard time):** lag +2 / +179 / +7 / +11 ms with jitter p50/p90 6/19 ·
+  1/3 · 2/6 · 7/25, `beatPcm` F 0.97 / — / 0.96 / 0.94, lock 7.6 / never / 10.9 / 6.1 s (v3: −4 / −66 / +3 / +9, 8/32 · 93/247 ·
+  4/11 · 10/92, F 0.91 / 0.14 / 0.945 / 0.77, 10.5 / never / 8.0 / 6.1). Through SeeYouDrop's drop 1 p90 1–6 ms against v3's
+  46–62. CyborgNinja's +179 is the OTHER lattice, exactly half a beat, stable to 3 ms: the truth's downbeat rests on a 9 %
+  low-band margin, the comb's on 70 % of its windows — undecidable from the audio; the stable line is the useful one.
+- **The switch, and what it keeps.** `&clock=pcm` under #test, `CARD.setClock('pcm' | 'v3')` live, `ENGINE.CLOCK.src`: the stage
+  (after 'ears', before bars / drums / build / queue and the lead) writes the PCM clock's RAW values (at the analysers' time,
+  heardT − LEAD.L) into `bpm` / `beatPhase` / `beat` / `beatCount`, so everything downstream rides it through the lead exactly as
+  it rides v3's; v3's own values come back at the top of the next frame (`ENGINE.restores`, beside the lead's), so the PLL and
+  the comb never see the swap. A whole-beat offset k is set AT THE FLIP so the swapped-in count matches v3's to within half a
+  beat: the line moves, `beatCount` and the bar phase (which the stages hold in count units) do not. k set at lock time instead
+  was measured and rejected: the count jump under the anchored stages put the bar line 2 beats off for 50 s.
+- **Do the predictions improve? Yes, where the clock was the limit.** With the switch on, CyborgNinja's predicted hits go from F
+  0.33 / 0.33 / 0.43 to 0.70 / 0.68 / 0.86 (P 0.95–1.00), `nextKickIn` 0.36 → 0.72 with a quarter of the jumps; WhoLikesToParty
+  +0.05 / +0.02 / +0.05; every release-lag p90 tightens. SeeYouDrop reads −0.02…−0.06 — the bar phase, not the clock: the
+  stages' bar line is the count's mod 4 wherever synapse is not sure (0–30 % of frames outside 60–90 s), v3's count from t = 0
+  lands on the truth downbeat by the accident of a track that starts on one, the PCM clock's own cold-start count lands 2 beats
+  off (`nextBarIn` 0.87 → 0.63). With the same bar phase under both (node, `CLOCKKOFF=14`) the PCM clock wins on SeeYouDrop
+  too (0.470 / 0.585 / 0.532 vs 0.465 / 0.586 / 0.524, `nextBarIn` 0.94 vs 0.87) and by more on WhoLikesToParty (0.611 / 0.557 /
+  0.723). No live start is at t = 0, so v3's luck is not a property the A/B has. Malicious predicts nothing either way; its
+  `nextBeatIn` goes 0.72 → 0.91.
+- **Cost, on the main thread:** 0.17 ms per frame in the headless page (`CARD.ENGINE.CLOCK.cpuTotal / frameN`: the mono mix, the
+  FFT per hop, the flux, the ring, the filter, the pending scan; node 0.09 against the ears' 0.12) — under the 0.2 target,
+  where the PCM bus and the ears' onsets already are. A worklet would have to re-derive the ears' onsets or ship them back.
+- **Proofs (T.4):** check 0 fail, `npm test` + `test_clock.js` (13 checks: lock 4.5 s, phase 2.0 / 3.5 ms, a 128 → 132 ramp
+  within 0.48 BPM, 6 s of silence coasted within 21 ms, the outlier, the lattice, bit-identical runs); parity fake 72 fields 0
+  diff (the `nav.*` rows red as since 22eb969); the bundle 1299 KB / 148 modules clean from `file://`; additive: SeeYouDrop
+  whole-track det traces from a `git archive 4a1e24c` tree against this tree `cmp`-identical on the 32-field default set
+  (`22bfb9e9`), its `&lead=0` twin (`01d9c307`) and an 80-field set (`25107502`); page = node on the PCM fields (2.4e-4) and,
+  under the switch, on `predKickIn` / `nextKickIn` (5e-5); the switch flips the published clock headless on the real page
+  (`bpm === bpmPcm`, `beatPhase === beatPhasePcm` to 1e-14, the count continuous) and back. Found on the way: v3 is not
+  deterministic run to run at the 1e-8 level HOURS apart (its `regularity` at the first comb estimate moves by 4e-7; on
+  CyborgNinja's torn cold start that becomes a different lock, −87 vs −66 ms) — three runs within one hour on two trees are
+  bit-identical, so the code is deterministic and something in the decode or Chrome's state is not. The A/B for the user is
+  the switch itself on the capture page (`CARD.setClock('pcm')` on TORUS2 / NAV, back with 'v3'; AUDIT T.4 has the caplag
+  command); the audible run is the orchestrator's. Not tagged, not pushed. Default 'v3' until the user's word.
+- **Open:** the bar phase is the count's mod 4 wherever synapse is not sure — a bar-line source of its own (the store's fingerprints,
+  the low-band-on-beat test the truth tool uses) would end the from-0 luck for both clocks; the stages hold `a` in count units
+  and would not survive a count jump (why k is set at the flip); CyborgNinja's lattice needs a musical rule (the truth's own
+  is a 9 % margin); a published-line bleed (v3's 0.18 s) is a knob to add if the user's eye reads the cold start's steps (0.7 %
+  of frames > 5 ms, 58 of 66 in the first 10 s) as a twitch; mic / capture not re-measured with the switch (the caplag command).
