@@ -58,3 +58,10 @@ question). The six `tools/accept/v0.8/{ew,v3}-t*.jpg` deletions were committed 2
 
 **Not this:** a MAXWELL bid or retune, a full acceptance sweep, 3D, an OKLCH default, a carrier "bed" behind MAXWELL's hits, the
 Hertzian-dipole hedge, fallback B (the `vec4` Yee), a new scene other than GIELIS (the user asked for GIELIS on 2026-09-27 — `GIELIS-SESSION-PROMPT.md`, id 10; every other new scene waits for the user's ask; see the memory).
+
+**2026-09-29, live step 5 (the queue):** `tools/parity.js fake` reports `nav.*` mismatches (nav.c 2.09, nav.lg 7.85 …) since
+`22eb969` — NAV reads `buildLive` / `dropLiveEvt` by default and the fake timeline carries v3's builds and drops, none of the live
+detector's, so NAV no longer parks or exits where cardioid3's NAV does (§54 addendum 2's f840 md5 move). The 72 MS fields are still
+0 diff; the verdict line is red for the NAV rows alone (identical on the e23db09 tree). Either exempt NAV's rows on the fake path
+or give the fake timeline a live-detector drop — a tool decision, not a scene one. Also open from step 5: the bar line's truth on
+WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`nextBeatIn` F 0.01) — the queue inherits both.

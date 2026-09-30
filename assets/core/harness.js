@@ -41,6 +41,7 @@ export const CARD = {
   get fix() { return ENGINE.fix; },
   set fix(v) { ENGINE.fix = v; },
   get GRID() { return getGrid(); },
+  get QUEUE() { return ENGINE.QUEUE ? ENGINE.QUEUE.list : []; }, // live step 5: the predicted-event queue's entries [{ cls, t (heard s), conf }], by t
   get home() { const E = REG[SC.home]; return E ? E.scene.state : null; }, // the home scene's state (parity/monitor tools)
   goScene: (id, hard) => goScene(id, hard, MS),
   setColour, // colour variant by name for every scene that declares it (CONTRACTS §1.4); &colour=<name> under #test

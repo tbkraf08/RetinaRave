@@ -675,6 +675,43 @@ open `http://127.0.0.1:8765/`, key `1` (NAV), Share a tab, then in the console `
 `localStorage` untouched; `CARD.clearRoutes('nav')` → `MS.build` again) — but headless Chrome never resolves `getDisplayMedia`
 (FAKECAP or not: `AU.mode` 'none', then 'demo' as "declined"), so capture mode itself is only proved HEADED (`tools/caplag.js`).
 
+## Queue — the predicted-event queue (live step 5; a change to `engine/queue/`, `features-queue.js`, `Bars.upcoming`, or anything a scene reads as "what comes next")
+
+One list, rebuilt every frame from the other stages' decisions: `ENGINE.QUEUE.list` / `CARD.QUEUE` = `[{ cls: 'beat' | 'bar' |
+'kick' | 'snare' | 'hat' | 'drop', t: heard s (net of the display lead), conf }]` by `t`; MS carries numbers only — `nextBeatIn`,
+`nextBarIn`, `nextKickIn` / `nextSnareIn` / `nextHatIn`, `nextDropIn` (s to the next entry, −1 = none inside 2 bars), `next<Cls>Conf`,
+`next<Cls>Up` (the wind-up 0 → 1 over the last 0.25 s: the route-friendly form) and `queueN`. Develop on the causal path (`&map=0&lead=0`,
+`dispNow()` 0), in node first:
+```
+node tools/build-node.js [Track …] [--out dir] [--disp 40]        # runs the bars store + the queue too (QUEUEK='{"HOLD":0}' overrides a knob)
+python3 tools/truth/queuecheck.py tools/work/build/node-*.json [--rows kick,snare,hat,beat,bar,drop] [--win a,b] [--md out.md]
+python3 tools/truth/queuecheck.py --selftest                       # 17 checks on synthetic count-downs
+node tools/test_queue.js                                          # in npm test: order, the count-down, HOLD, flushes, the drop entry, Bars.upcoming = release()
+```
+`queuecheck.py` grades a count-down by its ROLL-OVERS (the last frame of an entry, v < 1.5 frames, predicts the event at t + v): P / R / F
+±30 ms against the truth onsets (kick = `click`, snare = `mid`, hat = `high`, beat = `beats`, bar = `downbeats`, drop = `drops`), the lag,
+a chance F (the arrivals circularly shifted), the HORIZON delivered (s before the hit the field first pointed at it — capped by the class's
+inter-onset interval, a "next" field never sees past the hit before), and the JUMP RATE per live minute (frames where v moved by other than
+one frame's worth ± 10 ms), split into roll-overs (legit) / withdraws / inserts / jitter; the drop through `dropcheck.py`'s `grade_level`.
+The baselines it grades from the same trace: `predKickIn` (beats → s at `bpm`; no class offset — its kick reads −18 ms), `beatPhase` (the
+clock moved by `leadT`, or −`detLead` on a det / node trace with the lead off), `dropLiveIn`.
+Page traces: `PORT=8850 node tools/filetrace.js <Track> 0 <dur> out.json 'heardT,leadT,beatCount,beatPhase,bpm,presence,predKickIn,…,nextBeatIn,
+nextBarIn,nextKickIn,nextSnareIn,nextHatIn,nextDropIn,nextKickConf,nextSnareConf,nextHatConf,nextKickUp,nextSnareUp,nextHatUp,queueN' '&map=0&lead=0'`.
+Page = node: `nextBeatIn` is a pure function of the trace's own clock (`(ceil(B) − B) / bps`, B = beatCount + beatPhase − detLead·bps: 1e-14),
+`nextDropIn` = `dropLiveIn / bps` outside the detector's ⅛-beat hold after a line; the hits follow the store (within 20 ms on 97 % of frames;
+the rest is the confidence gate at its threshold, as `predKickEvt` page vs node). A lead-on trace (capture) reads the same way: `t` is
+heard time and `next*In` is already net of `dispNow()`.
+
+The A/B the user watches is a PARAM route (CONTRACTS §1.16), set live on the running page (never under `#test`: no capture button):
+open `http://127.0.0.1:8765/`, key `4` (TORUS2), Share a tab, then in the console
+`CARD.params('torus2.wave=nextKickUp*0.35+0.65')` = B (the wave depth winds up 0.26 → 0.40 over the 250 ms before each predicted kick, the default
+0.26 in between; the transfer works in the parameter's unit interval, range [0, 0.4]) and `CARD.clearParams('torus2')` = A (the default
+`WAVE0 + 0.1·kick2`). Nothing stored (the panel `p` stores its preset). `~0.05` on the spec smooths the fall after the hit. Headless the route is provable on the real
+page: `CARD.fix = { nextKickUp: 0.5 }` → `CARD.paramsOf('torus2').wave` 0.33 routed (0.4 · clamp01(0.35 · 0.5 + 0.65)), the derived value
+after the clear — TORUS2 must be on screen (its `update()` refreshes `env.params`). A capture run: `FIELDSX='nextBeatIn,nextKickIn,nextSnareIn,
+nextHatIn,nextDropIn,nextKickConf,nextKickUp,predKickIn,buildLive,dropLiveIn,queueN' node tools/caplag.js track SeeYouDrop 0 110 27` (AUDIBLE;
+`beatPhase`, `beat`, `bpm`, `leadT`, `kickEvt` … are already in caplag's FIELDS — naming them again doubles their columns).
+
 ## Single-file build
 
 ```

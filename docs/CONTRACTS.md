@@ -757,9 +757,22 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kick2` | level | a kick or an 808 note just hit, decaying (0.16 s) — the reactive drums v2 | route a kick channel to it (TORUS2 A/B): fewer false flashes than kick, more real hits |
 | `snare2` | level | a snare just hit, decaying (0.13 s) — the reactive drums v2 | route a snare channel to it |
 | `hat2` | level | a hat just hit, decaying (0.06 s) — the reactive drums v2 | route a hat channel to it |
-| `buildLive` | level | a drop is coming: the bass has been pulled out for a bar or more (the void before a drop), rising with its length | park / wind up through the void (NAV route: nav.build=buildLive) |
+| `buildLive` | level | a drop is coming: the bass has been pulled out for a bar or more (the void before a drop), rising with its length | park / wind up through the void (NAV reads it by default since 2026-09-29; the old look: nav.buildLive=build) |
 | `dropLiveIn` | raw | beats until the next bar line while a drop is coming (-1 = nothing armed) | a count-down to the candidate drop line |
-| `dropLiveEvt` | event | THE DROP, live: the bass slams back on a beat after the void (one frame) | the drop flash / spring (NAV route: nav.dropEvt=dropLiveEvt) |
+| `dropLiveEvt` | event | THE DROP, live: the bass slams back on a beat after the void (one frame) | the drop flash / spring (NAV reads it by default since 2026-09-29; the old look: nav.dropLiveEvt=dropEvt) |
+| `nextBeatIn` | raw | seconds until the next beat line (-1 = no clock / silence) | a count-down to the beat (a motion that lands on it) |
+| `nextBarIn` | raw | seconds until the next bar line (-1 = none) | a count-down to the bar |
+| `nextKickIn` | raw | seconds until the next PREDICTED kick (-1 = none within 2 bars / not confident) | wind up before the kick lands (TORUS2 A/B: torus2.wave=nextKickUp*0.35+0.65) |
+| `nextSnareIn` | raw | seconds until the next predicted snare (-1 = none) | wind up before the snare |
+| `nextHatIn` | raw | seconds until the next predicted hat (-1 = none) | wind up before the hat |
+| `nextDropIn` | raw | seconds until the bar line the live build detector expects the drop on (-1 = nothing armed) | a count-down to the drop in seconds (dropLiveIn is the same line in beats) |
+| `nextKickConf` | level | how sure the queue is of its next kick (0 = none listed) | weight the wind-up |
+| `nextSnareConf` | level | how sure the queue is of its next snare | weight the wind-up |
+| `nextHatConf` | level | how sure the queue is of its next hat | weight the wind-up |
+| `nextKickUp` | level | the wind-up to the next predicted kick: 0 until 0.25 s before it, rising to 1 on the hit, 0 when none | a param route: torus2.wave=nextKickUp*0.35+0.65 (the wave depth winds up over the 250 ms before each predicted kick, the default look in between) |
+| `nextSnareUp` | level | the wind-up to the next predicted snare | a param route |
+| `nextHatUp` | level | the wind-up to the next predicted hat | a param route |
+| `queueN` | count | how many events the queue lists within the next 2 bars | nothing visual: the harness and the help view read it |
 | `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |

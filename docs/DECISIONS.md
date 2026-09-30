@@ -2684,3 +2684,57 @@ before 2 of 6 truth drops on its own, the live detector 5 of 6 (§54); a scene o
 v0.17.1 + the display lead file-mode only (§53) + the live build / drop detector (§54) + NAV on it by default (§54 addendum 2).
 `releases/retinarave-v0.18.html` (1252 KB, 142 modules; from `file://` 348 frames in 6 s, errs [], nonFinite []), package.json
 0.18.0. Not pushed (retinarave.com serves v0.15).
+
+## §55 live step 5 — the predicted-event queue: `next*In` / `next*Conf` / `next*Up` / `queueN` (2026-09-29, one worker; `docs/AUDIT-live-grid.md` "Step 5")
+
+**The ask** (the six-step live plan, §49; NEXT-SESSION-PROMPT item 2): one queue of the events the engine expects — the bar
+store's `pred*` hits, `dropLiveIn`'s bar line, the beat lines — released on heard time minus the display lead, so a scene reads
+"what comes next" from one place instead of three. Measure first, additive, A/B by route in stream mode, a default only on the
+user's word. The lesson behind it (2026-09-28's A/B): reactive levels look more in sync than predicted ones, so a queue is for
+ANTICIPATION — a motion that winds up and PEAKS at the hit — not a replacement for the hit itself. The leans, each with the number:
+
+- **The queue predicts nothing.** `engine/queue/queue.js` rebuilds ONE list `{ cls, t, conf }` every frame from what the other
+  stages already decided: the lead-moved v3 clock's next beat lines (at least 4), the bar lines of the build detector's phase
+  (v3's count, or synapse's sure anchor — the same rule the bars store keeps; no third bar line), the store's own steps still to
+  come (`Bars.upcoming`: the decided ones waiting for their class offset + the bits `release()` reads for this bar and the next,
+  at `predConf`), and, while armed, the drop on `dropLiveIn`'s line at `buildLive`. A step the next re-vote clears is gone from
+  the next call; below `CONF_MIN` nothing is listed, as nothing is released. Proof: on a taught loop every one of 112 released
+  predictions was listed ahead of its release (median 5.4 beats), `nextBeatIn` is the page's own moved clock to 1e-14, `nextDropIn`
+  = `dropLiveIn`/bps outside the detector's ⅛-beat hold after a line.
+- **The time base is the bars store's release position** (`rel` = the heard v3 beat + `dispNow()`), so an entry's `t` is when the
+  eye should see it and `nextKickIn` reaches 0 on the frame `predKickEvt` fires: graded by its roll-overs, the kick's lag reads
+  +1 ms on SeeYouDrop (det, `&map=0`) where `predKickIn` — the same step without the class offset — reads −18 ms. The
+  half-frame release lead is not in the count-down (a scene wants 0 on the hit, not −8 ms).
+- **HOLD 0.25 s — the one deviation from "withdrawn is withdrawn", measured.** With the list rebuilt from the store alone,
+  `nextKickIn` jumped 96 times a live minute on SeeYouDrop (97 withdrawals against 148 roll-overs; 87 of them emptied the list:
+  the store's confidence gate flickering under 0.35 between 16ths, not a bit flipping), and 56–76 % of the withdrawn entries
+  pointed at a real onset. A hit entry already inside HOLD s stays for its time when the store withdraws it. The sweep
+  (node, four tracks): HOLD 0 / 0.1 / 0.25 / 0.5 → SeeYouDrop kick jumps 96 / 92 / 39 / 20 per minute, F 0.46 / 0.47 / 0.48 /
+  0.50 (P 0.59 / 0.59 / 0.58 / 0.58); CyborgNinja kick P 0.66 / 0.63 / 0.59 / 0.52 — 0.25 = the wind-up's own length is the
+  knee where precision holds (−0.01…−0.07) and the wind-up can complete; 0.5 buys smoothness with precision. A held entry
+  the store then decides against still rolls over (a `nextKickIn` arrival `predKickEvt` does not fire) — the cost, inside 250 ms.
+- **`-1` is "none", and three levels beside the count-downs.** `next*In` keep the −1 of `predKickIn` / `dropLiveIn` / `toDrop`
+  (a scene author learns one convention). But a param route is `u = clamp01(k·x + b)`: a wind-up needs k < 0, and then −1 lands
+  at the TOP (`clamp01(−4·−1 + 1) = 1` — the wave at its deepest exactly when nothing is predicted). So `nextKickUp` /
+  `nextSnareUp` / `nextHatUp` = `clamp01(1 − in / WIND)` (WIND 0.25 s), 0 with no entry: the route-friendly form, and the A/B's
+  source. `next*Conf` beside them for a scene that weights instead of gates.
+- **Horizon 8 beats bounds the list, not the reach.** `queueN` counts inside 2 bars; the hit fields' reach is the store's (this bar
+  + the next), the drop's `dropLiveIn`'s (≤ 4 beats): HORIZON 4 changes no `next*In` on any track. The horizon actually
+  DELIVERED by a "next" field is the class's inter-onset interval — SeeYouDrop's kicks are on every beat, so `nextKickIn` first
+  points at a kick 0.39 s before it (its median) and can never see further: a wind-up longer than a beat needs the list, not the
+  field (`CARD.QUEUE`).
+- **Additive, every mode, no default moves.** A new stage after 'build' (before the lead, on the raw clocks like bars / build);
+  13 new MS fields (`feats.js`, `state.js` defaults, Appendix A regenerated), `ENGINE.QUEUE.list` / `CARD.QUEUE`. No scene reads
+  them. The three §54 whole-track SeeYouDrop det traces from a `git archive e23db09` tree against this tree `cmp`-identical
+  (32-field default, its `&lead=0` twin, the 72-field set); check 0 fail; `npm test` + `test_queue.js` (38 checks); parity fake: the 72 MS
+  fields 0 diff, the `nav.*` rows red identically on the e23db09 tree (pre-existing since 22eb969 — NAV on the live detector,
+  no live drops on the fake timeline; OPEN-ITEMS); the bundle from `file://` clean.
+- **What it says (page `&map=0` det, four tracks; AUDIT Step 5 table):** the count-downs to the hits land where the store's
+  events land (kick lag +1 / +5 / +6 ms, F 0.50 / 0.39 / 0.54 against a chance 0.05 / 0.16 / 0.18 on SeeYouDrop / CyborgNinja /
+  WhoLikesToParty, the groove window = predcheck's step-3 row; Malicious releases nothing, as before), the beat and bar count-downs are the moved clock (F 0.88 / 0.93 / 0.69 on SeeYouDrop /
+  WhoLikesToParty / Malicious, 0.2–0.4 jumps per minute) — CyborgNinja's beat F 0 is the v3 clock 80–180 ms off its
+  kick-anchored truth (§50 addendum, still open), WhoLikesToParty's bar F 0 is its unverified downbeat (§54) — and `nextDropIn`
+  reproduces §54's arms (15.9 / 8.0 · 8.0 7.0 11.0 · 0 beats). The A/B for the user is a PARAM route on TORUS2 in stream mode
+  (`CARD.params('torus2.wave=nextKickUp*0.35+0.65')`: the wave depth winds up 0.26 → 0.40 over the 250 ms before each predicted
+  kick, the default 0.26 in between; `CARD.clearParams('torus2')` back) — proved headless on the real page with `CARD.fix`;
+  the audible capture run is the orchestrator's. Not tagged, not pushed.
