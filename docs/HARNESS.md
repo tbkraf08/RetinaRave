@@ -653,6 +653,28 @@ Node-only names: `synTension` (synapse's tension), `synDropEvt` / `synFakeoutEvt
 `synEvS`, `rollRate`, `kickGap`, `bShort` / `bLong`, `dens`, `arcN` (v3's arc: idle 0 valley 1 sustain 2 build 3 peak 4).
 v3's `beatCount` in node = the page's + 1 (the page's pre-roll frames); the phase agrees to 0.01 beat.
 
+**The live build stage in node (B.2, `engine/build`):** `build-node.js` also runs the detector exactly as `features-build.js`
+feeds it (v3's count − 1 = the page's, the lead −DET_LEAD, the ears' low lane) and records `buildLive` / `dropLiveIn` /
+`dropLiveEvt` plus its inputs (`lowT`: the low onsets taken each frame); `--disp <ms>` is the display lead the onsets are taken
+ahead by (0 = the `&lead=0` page, 40 = the default file page); `BUILDK='{"RET":1.6}'` overrides knobs for one run. The knob
+sweep replays the recorded inputs instead (< 1 s a track; replay = node = page):
+```
+node tools/build-node.js --out tools/work/build [--disp 40]                                   # node-<Track>.json with the stage
+node tools/build-replay.js tools/work/build/node-*.json [--set RET=1.6,SUB_RET=0] [--out dir]  # -> rp-<Track>.json + dropcheck rows
+node tools/build-replay.js --sweep tools/work/build/node-*.json                                 # each knob one step either side
+python3 tools/truth/dropcheck.py <traces> --summary --rule 'buildLive>=0.4' --rule 'dropLiveIn<=16' --rule 'dropLiveEvt:evt'
+node tools/test_build.js                                                                        # the unit test (in npm test)
+```
+Page traces of the new fields: `filetrace.js <Track> 0 <dur> out.json 'heardT,…,buildLive,dropLiveIn,dropLiveEvt' '&map=0&lead=0'`
+(the causal path, `dispNow()` 0 — compare with a `--disp 0` node run: `build-node.js --cmp page.json node.json buildLive,dropLiveIn,dropLiveEvt`).
+The stream-mode A/B is a ROUTE, set live on the running page (never under `#test`: its card is hidden, so no capture can start):
+open `http://127.0.0.1:8765/`, key `1` (NAV), Share a tab, then in the console `CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')`
+= B, `CARD.clearRoutes('nav')` = A (or the panel: key `p`, NAV's build / dropEvt rows — that one is stored in localStorage:
+"reset scene" after). Headless, the route itself is provable on the real page (`PORT=8845 FAKECAP=1 NOAUTO=1 GPU=1 node tools/cdp.js real '[{"until":"window.CARD"},
+{"clickSel":"#go"},…]'` then `CARD.fix={buildLive:0.7,dropLiveEvt:true}`, `CARD.routes(…)` → `CARD.view('nav').build` 0.7, `dropEvt` true,
+`localStorage` untouched; `CARD.clearRoutes('nav')` → `MS.build` again) — but headless Chrome never resolves `getDisplayMedia`
+(FAKECAP or not: `AU.mode` 'none', then 'demo' as "declined"), so capture mode itself is only proved HEADED (`tools/caplag.js`).
+
 ## Single-file build
 
 ```

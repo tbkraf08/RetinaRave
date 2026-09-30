@@ -2622,3 +2622,46 @@ glass path is the same screen in both modes; why the eye wants it in file mode a
 27 ms may be under-measured, or file mode's own lead estimate off by about that much) — recorded, not chased.
 Proofs: SeeYouDrop 20–50 s file-det trace identical before / after (1801 frames × 170 fields, log too); `dispNow()` per mode
 default `file .04 demo .04 capture 0 mic 0`, `&disp=40` → .04 everywhere, `&lead=0` → 0 everywhere; check 0 fail, npm test OK.
+
+## §54 live step 4 — the live build / drop detector: `buildLive` / `dropLiveIn` / `dropLiveEvt` (2026-09-29, orchestrator + one worker for B.2–B.3; `LIVE-STEP4-BUILD-SESSION-PROMPT.md`, `docs/AUDIT-live-grid.md` "Step 4")
+
+**The ask.** Live (tab capture — the user's real use) nothing anticipated a drop: the v0.15 track map's `buildProg` / `toDrop` /
+`mapDropEvt` need the whole file; v3's `build` is "the energy went up" (2 of 6 drops, as often armed on CyborgNinja as on the
+drop tracks) and synapse's anticipation chain is dead on the live path (B.0). Measure first (B.0 the ruler, B.1 the node loop
+and the study), then build (B.2), then prove (B.3). The leans, each with the number that decided it:
+
+- **A drop is announced by the void, 2–5 bars out — not by a 16-bar build.** Over 16 bars no causal candidate separates a
+  build from elsewhere (AUC ≤ 0.76, CyborgNinja-safe ones ≤ 0.73); the last 2–5 bars do: the bass and sub pulled, the highs
+  left, synapse's high-pass evidence `hp` on — one signature on all five SeeYouDrop / WhoLikesToParty drops (`subConf` 5 s
+  deviation AUC 0.94, `hp` 8 s rise 0.91). So the detector reads the void, and its arm can only be 2–4 bars ahead.
+- **The arm is synapse's `hp` (5 s mean > 0.1) or `bassS` (2 s mean < 0.6 × its 32 s mean), after 32 s of music.** `hp` alone
+  arms 5 of 6 drops with 0 false arms on every track (0.05 and 0.2 change nothing but false arms at 0.05); the bass term
+  buys WhoLikesToParty 3 a bar (7 → 11 beats) for two 0.9 s false arms (0.19 / min: a bass-less bar 14 s after SeeYouDrop's
+  drop 2, Malicious' end fade). 32 s of history before anything arms: the 32 s mean IS the reference (16 s lets Malicious'
+  intro bass cuts arm and fire, 48 s changes nothing). `subConf` / `subGate` (the study's best AUC) were not added: the ears'
+  sub fields are the map's in file mode — a detector on them would run two different inputs in file and stream mode — and
+  `hp` + `bassS` already reach the 5 of 6 the study predicted.
+- **No hold before the arm; armed on the next bar line.** B.1 proposed "held ≥ 1 bar"; measured, a bar of hold costs a bar
+  of anticipation on every drop (15.9 7.9 · 11 7 11 → 12 4 · 7 7 7 beats) and buys nothing (0 false arms either way) — the
+  5 s mean is the hold. The arm waits for a bar line of the heard grid (v3's count, or synapse's sure bar phase after 8 beats,
+  the bars store's rule); WhoLikesToParty's drops sit at v3's bar phase 3, so its arms are 4k + 3 beats and `dropLiveIn`
+  points +1.0 beat late there (0.0 on SeeYouDrop) — the WhoLikesToParty downbeat is the unverified one (the map's own drop
+  sits 2 beats before the truth, synapse's anchor 1 beat after).
+- **The slam needs the bass back, not a bar line.** Every void carries kicks on bar lines (SeeYouDrop 1: one on every beat,
+  bass-less) and a bar gate on the detector's phase fires 2 of 6 — so the slam is an ears low onset (the drums v2's causal
+  lane: SeeYouDrop 2's drop is an 808, no kick) within ⅛ beat of a BEAT line, confirmed within ¼ beat by `bassS` ≥ 1.75 ×
+  its 2 s mean (the gap: pickup kicks' bumps reach 1.56, the softest drop 1.87; 1.5 fires a beat early on WhoLikesToParty
+  1 and 3, 2 loses two drops) or `sub` ≥ 5 × its own (SeeYouDrop 2's 808 return, +87 → +21 ms; void kicks reach 3.0, the
+  drop 17). **No slam in the void's first bar** (`SLAM_AFTER` 1): a pickup 2 beats into WhoLikesToParty 3's arm read 1.72 —
+  a void is 2–5 bars, a bass return inside its first bar is a pickup. Six drops tune a slam, they do not prove one; on
+  WhoLikesToParty the truth itself is ±2 beats. Result det: −6 +21 · +10 +48 +12 ms, 5 of 6, 0 false on every track.
+- **Additive, causal in every mode, no default moves.** A new stage after the drums, on the bars stage's heard time base,
+  reading synapse's levels, v3's clock and the ears' causal lane (never the map's onsets), writing three new fields; disarm
+  on the slam, after 8 bars armed (a breakdown), on silence, a seek, a tempo jump. The 32-field whole-track det trace, its
+  `&lead=0` twin and a 72-field one `cmp`-identical to the pre-change tree; check 0 fail, npm test + `test_build.js` OK,
+  parity fake 0 diff; page = node (`dropLiveEvt` identical on all four tracks, the arms within a bar at the thresholds).
+  No scene reads the fields by default; NAV takes them by route (`nav.build=buildLive,nav.dropEvt=dropLiveEvt`, set live on
+  the capture page with `CARD.routes(...)` — `&route=` needs `#test`, which hides the capture button) for the user's
+  stream-mode A/B. **Page `&map=0`: armed 15.9 8.0 · 8.0 7.0 11.0 · 0 beats, 0.28 false / min, 0 on CyborgNinja;
+  `dropLiveEvt` −6 +21 · +10 +48 +12 ms, 0 false.** Not done: the audible capture run (the orchestrator's), a second no-drop
+  control, a hand check of WhoLikesToParty's / Malicious' drops.

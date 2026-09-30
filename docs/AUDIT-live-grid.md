@@ -498,3 +498,45 @@ What it says:
 3. **A bar gate on the slam does not work live** (measured, not kept): requiring the onset on a BAR line of the detector's
    phase fires 2/6 (WhoLikesToParty's phase is off by a beat, and SeeYouDrop 1's void carries a kick on every bar line — only
    the bass return tells the slam from the build's own kicks).
+
+### B.3 — the proofs (no audible run in this pass; the capture run is the orchestrator's)
+
+- `node tools/check.js` 0 fail (180 MS keys, help.feats gaps 0) · `npm test` OK with `tools/test_build.js` (20 cases: steady music
+  never arms, nothing arms before 32 s, a void arms on a bar line and ramps, the slam fires once on its frame and disarms, an
+  off-beat onset / a bass-less onset / a slam when not armed never fire, silence decays, a seek resets, 8 bars time out, a tempo
+  jump disarms) · `GPU=1 node tools/parity.js fake` 0 diff (72 fields to 1e-9; the new fields "missing in v3" = info).
+- **Additive:** SeeYouDrop whole-track det traces from a `git archive d216ec3` tree on its own port against this tree — the
+  32-field caplag set (default hash) md5 `87f5c70d`, its `&lead=0` twin `5128572a`, and a 72-field set (build-rec's fields +
+  `kick2/snare2/hat2`, `kickEvt/kickAge`, `subConf`, the bars' `predKickEvt/predKick/predConf/barMatch`) `a9aa9c80`: all three
+  `cmp`-identical, event log included (1270 entries). No existing value moved.
+- **Page = node** (`build-node.js --cmp`, the four `&map=0&lead=0` page traces vs the `--disp 0` node runs): `dropLiveEvt`
+  identical frame for frame on all four tracks; `buildLive` / `dropLiveIn` equal on 92.8–100 % of frames (CyborgNinja 100 %),
+  the rest at the thresholds — the page's WhoLikesToParty 1 arm lands one bar later (53.4 s vs 51.9: `hp` differs by ≤ 0.007
+  on 51 of its frames, enough to move the 5 s mean across 0.1 at that bar line) and Malicious has one more 0.2 s flicker
+  (113.7 s); synapse's `hp` / `bassS` / `sub` agree to ≤ 2.3e-4.
+- **Page `&map=0` (the numbers for the table; `tools/accept/live-grid/build-b2-page-map0.md`, node `build-b2-node.md`, the sweep
+  `build-b2-sweep.txt`; traces `tools/work/build/pg-*-map0.json`):**
+
+| rule | anticipation beats / event lag ms (SYD 1 2 · WLTP 1 2 3 · Mal) | armed at drop | false /min drop tracks | false /min CN | armed % drop / CN | chance hit |
+|---|---|---|---|---|---|---|
+| **`buildLive>=0.4`** | **15.9 8.0 · 8.0 7.0 11.0 · 0** | 5/6 | 0.28 | **0** | 4.0 / 0 | 0.05 |
+| `dropLiveIn<=16` | same; pointing err −0.0 −0.0 · −0.0 +1.0 +1.0 · — | 5/6 | 0.28 | 0 | 3.9 / 0 | 0.06 |
+| **`dropLiveEvt`** | **−6 +21 · +10 +48 +12 · —** | 5/6 | **0** | **0** | — | 0.02 |
+| v3 `build>=0.5` | 7.9 2.2 · 0 0 0 · 0 | 2/6 | 0.57 | 0.33 | 6.5 / 7.0 | 0.06 |
+| v3 `dropEvt` | −6 +4 · — — — · — | 2/6 | 0.28 | 0 | — | 0.01 |
+| ceiling map `toDrop<=16` / `mapDropEvt` (B.0) | 16 16 · 0 0 0 · 15.9 / +11 +4 · −1007 −1019 −1021 · +39 | 3/6 / 6/6 | 0 | 0 | 7.0 / 0 | 0.07 |
+
+Against the targets: armed 5/6 (target ≥ 5/6) — 2–4 bars ahead on SeeYouDrop 1 (4.0 bars) and WhoLikesToParty 3 (2.75),
+2.0 / 2.0 / 1.75 bars on the other three (the 4k + 3 quantisation of WhoLikesToParty's phase, and SeeYouDrop 2's void is the
+short one, 8.6 beats of `hp` in B.1); false arms 0.28 / min (target ≤ 0.3; three 0.2–1 s flickers), CyborgNinja 0 (target 0);
+`dropLiveEvt` 5/6 at −6…+48 ms det (target "±1 frame-ish": three within a frame, +21 and +48 are the bass confirmation), 0
+outside an armed window (by construction), 0 false. Malicious' drop: no void, not armed, no event (accepted in B.1).
+- **The stream-mode A/B is a route on the running page**, not a link: `&route=` is applied under `#test` only, and `#test` hides the
+  card with the capture button (no key starts a capture; headless Chrome never resolves `getDisplayMedia`, so the headless proof
+  covers the route, the headed caplag run covers capture). Recipe (HARNESS "Build"): `http://127.0.0.1:8765/`, key `1` (NAV),
+  Share a tab; console `CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')` = B, `CARD.clearRoutes('nav')` = A — the
+  same capture, toggled live, nothing stored (the panel `p` stores its preset). Proved headless on the real page: with
+  `CARD.fix={buildLive:0.7,dropLiveEvt:true,build:0.1}` NAV's view reads `build` 0.1 / `dropEvt` false unrouted, 0.7 / true
+  routed, 0.1 / false after the clear; `localStorage['ew.routes.v1']` null throughout; `CARD.ERRS` []. Route kinds: level ←
+  level, event ← event. What NAV does with them: `build` ≥ 0.45…0.85 parks `c` at the bulb's root (so B parks through the void
+  and springs at the slam), `dropEvt` runs `navDrop` (the ray launch; its `dropStrength` stays v3's).

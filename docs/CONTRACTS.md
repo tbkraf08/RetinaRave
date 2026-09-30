@@ -757,6 +757,9 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kick2` | level | a kick or an 808 note just hit, decaying (0.16 s) — the reactive drums v2 | route a kick channel to it (TORUS2 A/B): fewer false flashes than kick, more real hits |
 | `snare2` | level | a snare just hit, decaying (0.13 s) — the reactive drums v2 | route a snare channel to it |
 | `hat2` | level | a hat just hit, decaying (0.06 s) — the reactive drums v2 | route a hat channel to it |
+| `buildLive` | level | a drop is coming: the bass has been pulled out for a bar or more (the void before a drop), rising with its length | park / wind up through the void (NAV route: nav.build=buildLive) |
+| `dropLiveIn` | raw | beats until the next bar line while a drop is coming (-1 = nothing armed) | a count-down to the candidate drop line |
+| `dropLiveEvt` | event | THE DROP, live: the bass slams back on a beat after the void (one frame) | the drop flash / spring (NAV route: nav.dropEvt=dropLiveEvt) |
 | `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |
