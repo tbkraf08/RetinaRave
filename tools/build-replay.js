@@ -48,7 +48,7 @@ function run(knobs, dir) {
 
 if (!SWEEP) console.log(run(parseSet(SET), OUT));
 else {
-  const STEPS = { HP_ARM: [0.05, 0.2], BASS_ARM: [0, 0.4, 0.8], MIN_HIST: [16, 48], HOLD: [0.5, 1], MAX: [4, 16], ON_BEAT: [0.0625, 0.25],
+  const STEPS = { HP_ARM: [0.05, 0.2], BASS_ARM: [0, 0.4, 0.8], MIN_HIST: [16, 48], HOLD: [0.5, 1], MAX: [4, 16], SLAM_AFTER: [0, 2], ON_BEAT: [0.0625, 0.25],
     CONF: [0.125, 0.5], RET: [1.5, 2], SUB_RET: [0, 3, 8] };
   console.log('default ' + JSON.stringify(parseSet(SET)) + '\n' + run(parseSet(SET), OUT));
   for (const kk in STEPS) for (const v of STEPS[kk]) console.log(`\n${kk}=${v}\n` + run(Object.assign(parseSet(SET), { [kk]: v }), OUT + '-sweep'));

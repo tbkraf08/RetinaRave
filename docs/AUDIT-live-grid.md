@@ -416,3 +416,85 @@ event (the drop cannot be released early live; in file modes the lead can). **Di
 at 8.6–16.6 beats (2–4 bars), ≤ 0.2–0.3 false arms / min on drop tracks, 0 on CyborgNinja, `dropLiveEvt` 4–5 / 6 within ±20 ms
 (det). Needed first: a second no-drop control and a hand check of WhoLikesToParty's / Malicious' drops (the map disagrees with
 the truth by 2 beats on WhoLikesToParty, B.0).
+
+### B.2 — the detector (`engine/build/build.js`, stage `features-build.js`; `buildLive` / `dropLiveIn` / `dropLiveEvt`)
+
+Built as B.1 proposed, then every knob measured on the node loop (`tools/build-node.js` runs the stage on the det time base
+and records its inputs; `tools/build-replay.js` replays a knob change over the recorded inputs in < 1 s — replay = node, the
+same `feed()` and `Build`). Additive: a new stage after the drums (registered before the lead, on the raw clocks, the bars
+stage's heard time base `B = beatCount + beatPhase + LEAD.L·bpm/60`); it reads synapse's `hp` / `bassS` / `sub` / bar line,
+v3's clock and presence, and the ears' CAUSAL low-onset lane (`Ears.lowReleased` + `pendLow` — never the file map's onsets,
+so a file with its map and a capture run the same detector); no scene reads the new fields by default.
+
+**The detector.** `void` = `hp` 5 s mean > 0.1 **or** `bassS` 2 s mean < 0.6 × its 32 s mean, after 32 s of music
+(presence ≥ 0.15), gaps ≤ 1 beat bridged. **Arm** on the next bar line of the heard grid once the void is on (`HOLD` 0 —
+below); `buildLive` = 0.4 + 0.15 per bar of void (1 at 4 bars); `dropLiveIn` = beats to the next bar line (0 through the
+first ⅛ beat after a line: "now"), −1 when not armed. The bar phase: v3's own count (`beatCount` mod 4) until synapse proposes
+a sure bar line (`barConf` ≥ 0.9, same octave) for 8 beats running — the bars store's rule. **The slam** (`dropLiveEvt`): a low
+onset within ⅛ beat of a beat line while armed for ≥ 1 bar (a bass return inside a void's first bar is a pickup — a void is
+2–5 bars, B.1), confirmed within ¼ beat by the bass coming back — `bassS` ≥ 1.75 × its 2 s
+mean as the onset arrived, or `sub` ≥ 5 × its own — released on the confirming frame (never before the onset less the display
+lead), then disarmed (`buildLive` 0). **Disarm** also after 8 bars armed with no slam, on silence, a seek (the heard beat
+jumps), a tempo jump (> 4 %); after a slam or a timeout it re-arms only once the void has been gone a bar.
+
+**Node, `&map=0`, det (`dropcheck.py`; drops SeeYouDrop 1 2 · WhoLikesToParty 1 2 3 · Malicious):**
+
+| rule | anticipation beats / event lag ms | armed at drop | false /min drop tracks | false /min CN | armed % drop / CN | chance hit |
+|---|---|---|---|---|---|---|
+| **`buildLive>=0.4`** | **15.9 7.9 · 11.0 7.0 11.0 · 0** | 5/6 | 0.19 | **0** | 4.1 / 0 | 0.05 |
+| `dropLiveIn<=16` (pointing error) | same runs; err −0.0 −0.0 · +1.0 +1.0 +1.0 · — | 5/6 | 0.19 | 0 | 4.1 / 0 | 0.06 |
+| **`dropLiveEvt`** (event) | **−6 +21 · +10 +48 +12 · —** | 5/6 | **0** | **0** | — | 0.02 |
+| v3 `build>=0.5` (B.0, same traces) | 7.9 2.2 · 0 0 0 · 0 | 2/6 | 0.57 | 0.33 | 6.5 / 7.0 | 0.08 |
+| v3 `dropEvt` (B.0) | −6 +4 · — — — · — | 2/6 | 0.28 | 0 | — | 0.01 |
+| ceiling: map `toDrop<=16` / `mapDropEvt` (B.0) | 16 16 · 0 0 0 · 15.9 / +11 +4 · −1007 −1019 −1021 · +39 | 3/6 / 6/6 | 0 | 0 | 7.0 / 0 | 0.07 |
+
+The two false arms are 0.9 s long: SeeYouDrop 120.0–120.9 (a bar with the bass out, 14 s after drop 2; peak 0.49) and
+Malicious 222.0–222.9 (the fade at the track's end; 0.54). The WhoLikesToParty arms are quantised to 4k + 3 beats because
+its truth drops sit at v3's bar phase 3 (the map put them 2 beats early, synapse's anchor 1 beat late — the WhoLikesToParty
+downbeat is the unverified one, B.0); hence `dropLiveIn` points +1.0 beat late there and 0.0 on SeeYouDrop. With the display
+lead (`--disp 40`, the default file page) the WhoLikesToParty events land a frame earlier (−7 +31 −5 ms); SeeYouDrop's are
+bound by the bass confirmation (−6 +21). Malicious' drop has no void (B.1) — not armed, no event, as accepted.
+
+**Knob sensitivity** (`build-replay.js --sweep`, one step either side; "=" = the default row above):
+
+| knob (default) | step | anticipation SYD 1 2 · WLTP 1 2 3 | false /min drop · CN | `dropLiveEvt` lags / hits |
+|---|---|---|---|---|
+| `HP_ARM` 0.1 | 0.05 | 15.9 7.9 · 11 11 11 | 0.38 · 0 | = |
+| | 0.2 | = | = | = |
+| `BASS_ARM` 0.6 | 0 (hp alone) | 15.9 7.9 · 11 7 **7** | **0** · 0 | = |
+| | 0.4 | 15.9 7.9 · 11 7 7 | 0.09 · 0 | = |
+| | 0.8 | 15.9 7.9 · **0** 11 11 | **1.23** · 0 | 4/6 |
+| `MIN_HIST` 32 s | 16 | = | 0.28 · 0 | +1 false event (Malicious' intro bass cuts, 19.4 s) |
+| | 48 | = | = | = |
+| `HOLD` 0 bars | 0.5 or 1 | **12 4 · 7 7 7** | 0 · 0 | = |
+| `MAX` 8 bars | 4 | = | = | SeeYouDrop 1 lost (armed 15.9 beats: the timeout lands first) |
+| | 16 | = | = | = |
+| `SLAM_AFTER` 1 bar | 0 | = | = | a pickup 2 beats after WLTP 3's arm reads 1.72 × — one step from a false slam |
+| | 2 | = | = | WLTP 2 lost (armed 7 beats) |
+| `ON_BEAT` ⅛ beat | 1/16 | = | = | SeeYouDrop 2 lost (its 808 lands 0.09 beat off the line) |
+| | ¼ | = | = | WLTP 1 3 fire a ¼ beat early (−124 −121: an off-beat pickup) |
+| `CONF` ¼ beat | ⅛ | = | = | = |
+| | ½ | 15.9 7.9 · 11 7 **0** | 0.19 · 0 | WLTP 1 −290, WLTP 3 fires a beat early (a pickup kick's bass bump) |
+| `RET` 1.75 | 1.5 | · · 11 7 0 | | WLTP 1 3 fire a beat early (−407; the pickup's bassS 1.56 × its mean) |
+| | 1.6 | = | = | −6 +71 +10 +15 +12 (no sub path) |
+| | 2 | = | = | **3/6**: WLTP 1 2 lost (their bass comes back to 1.87–1.93 ×) |
+| `SUB_RET` 5 | 0 (off) | = | = | −6 **+87** +10 +48 +12 (SeeYouDrop 2's 808 return: `bassS` reaches 1.75 × only at +87 ms) |
+| | 3 | · · **0** 7 11 | | WLTP 1 fires early on a void kick's sub (0.09 false /min) |
+| | 8 | = | = | −6 +37 |
+
+What it says:
+1. **The arm is the B.1 proposal and it is not sensitive:** `HP_ARM` 0.1–0.2 and `MIN_HIST` 32–48 change nothing; 0.05 and
+   16 s add false arms (Malicious' intro). The bass term buys WhoLikesToParty 3 one bar (7 → 11 beats) for 0.19 false /min
+   (the two 0.9 s arms); `hp` alone is the zero-false variant. A hold before the arm costs a bar of anticipation on every
+   drop (12 4 · 7 7 7) and buys nothing here: the 5 s mean is the hold.
+2. **The slam is the tight one.** Within ¼ beat of an on-beat low onset, `bassS` over its 2 s mean reaches 1.56 at most on a
+   void's pickup kicks (WhoLikesToParty, 1 beat before drop 3) and at least 1.87 on a drop (WhoLikesToParty 2) — 1.75 is the
+   middle of that gap (−11 % / +7 %); 1.5 fires on the pickups (−407 ms), 2 loses two drops. Without `SLAM_AFTER` a pickup two
+   beats into WhoLikesToParty 3's arm reads 1.72 — the rule "no slam in the void's first bar" (a void is 2–5 bars) is what
+   keeps the gap. The sub path (`SUB_RET` 5) exists for one drop — SeeYouDrop 2, an 808 return whose `bassS` climbs slowly
+   (+87 → +21 ms); its margin is 3.0 (a void kick's sub, WhoLikesToParty 1) to 17. On-beat ⅛ and confirm ¼ beat are each one
+   step from losing a drop or firing on a pickup. Six drops tune a slam, they do not prove one — the capture run and more
+   tracks decide; on WhoLikesToParty the truth itself is ±2 beats (the map's non-causal drop fires 1 s before it, B.0).
+3. **A bar gate on the slam does not work live** (measured, not kept): requiring the onset on a BAR line of the detector's
+   phase fires 2/6 (WhoLikesToParty's phase is off by a beat, and SeeYouDrop 1's void carries a kick on every bar line — only
+   the bass return tells the slam from the build's own kicks).

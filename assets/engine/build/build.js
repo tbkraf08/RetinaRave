@@ -10,7 +10,7 @@
 //   level   buildLive = L0 at the arm, ramping with the void's length to 1 at FULL bars; 0 on the slam
 //   count   dropLiveIn = beats to the next bar line while armed (every truth drop lands on a downbeat), -1 when not
 //   SLAM    dropLiveEvt: a low onset (the ears' 40-150 Hz lane, kick or 808 note start) ON a beat line (+-ON_BEAT) while
-//           armed, confirmed by the bass coming back (synapse's bassS >= RET x its 2 s mean as the onset arrived, or its sub
+//           armed for SLAM_AFTER bars, confirmed by the bass coming back (synapse's bassS >= RET x its 2 s mean as the onset arrived, or its sub
 //           >= SUB_RET x its own) within CONF beats of the onset; released on the confirming frame, then disarmed
 //   DISARM  the slam; MAX bars armed with no slam (a breakdown, not a void); silence; a seek (the heard beat jumps); a
 //           tempo jump (> 4 %). After a slam or a timeout it re-arms only once the void has been gone a bar.
@@ -26,6 +26,7 @@ export const BUILD = {
   FULL: 4,         // bars of void at which buildLive reaches 1
   L0: 0.4,         // buildLive on the arm
   MAX: 8,          // bars armed with no slam -> disarm (a breakdown)
+  SLAM_AFTER: 1,   // bars armed before a slam counts (a void is 2-5 bars: a bass return inside its first bar is a pickup)
   ON_BEAT: 0.125,  // beats: a slam onset this close to a beat line
   CONF: 0.25,      // beats after the onset in which the bass must come back
   RET: 1.75,          // bassS >= RET x its 2 s mean (as the onset arrived) = the bass is back
@@ -117,6 +118,7 @@ export class Build {
       if (B - this.armB > 4 * k.MAX) { this.disarm(false); this.decay(dt); return o; }  // a breakdown, not a void
       // the slam: an on-beat low onset, confirmed by the bass coming back within CONF beats
       for (const e of i.onsets) {
+        if (e.x - this.armB < 4 * k.SLAM_AFTER) continue;
         if (Math.abs(e.x - Math.round(e.x)) <= k.ON_BEAT && (!this.cand || e.x > this.cand.x + 0.5)) this.cand = { x: e.x, ref: b2prev, sref: s2prev };
       }
       if (this.cand) {
