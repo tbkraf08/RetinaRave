@@ -14,6 +14,7 @@ import { Analyzer } from '../assets/engine/synapse/analyzer.js';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
 import { loadPcm } from './test_ears.js';
 import * as D2 from '../assets/engine/drums/drums.js';
+import { detStream, DET_LEAD, FPS } from './node-stream.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -26,7 +27,7 @@ if (SET) for (const kv of SET.split(',')) { const [k, v] = kv.split('='); if (!(
 const PERC = opt('--perc', null), PO = {};
 if (PERC) for (const kv of PERC.split(',')) { const [k, v] = kv.split('='); PO[k] = +v; }
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
-const DET_LEAD = 0.0427, FPS = 60, B = 512, SYN = ['kick', 'snare', 'hat'], TAU = [0.16, 0.13, 0.06];
+const SYN = ['kick', 'snare', 'hat'], TAU = [0.16, 0.13, 0.06];
 const KEEP = ['kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 'kickVel', 'snareVel', 'hatVel', 'subNoteEvt', 'subGate', 'subPure', 'bassReg'];
 
 for (const track of TRACKS) {
@@ -40,32 +41,26 @@ for (const track of TRACKS) {
   const cols = { lowEvt: [], lowVel: [] };
   for (const k of [...SYN, ...KEEP, ...D2.DRUMS_OUT]) cols[k] = [];
   const t = [], f = [];
-  const mono = new Float32Array(B), bl = new Float32Array(B), br = new Float32Array(B);
-  let s = 0, li = 0, cpu = 0;
-  const nF = Math.floor((pcm.n / sr - DET_LEAD) * FPS) - 1;
-  for (let fr = 1; fr <= nF; fr++) {
-    const heard = fr / FPS, upto = Math.floor((heard + DET_LEAD) * sr);
-    while (s + B <= upto && s + B <= pcm.n) {
-      bl.set(pcm.L.subarray(s, s + B)); br.set(pcm.R.subarray(s, s + B));
-      for (let i = 0; i < B; i++) mono[i] = 0.5 * (bl[i] + br[i]);
-      an.push(mono); ears.push(bl, br, s / sr); if (ears2 !== ears) ears2.push(bl, br, s / sr);
-      s += B;
-    }
-    const A = an.A, d = 1 / FPS;
-    A.kick *= Math.exp(-d / TAU[0]); A.snare *= Math.exp(-d / TAU[1]); A.hat *= Math.exp(-d / TAU[2]);
-    const o = ears.read(heard);
-    // the ears' low onsets, released on the frame nearest their audio time (the ears' own rule: heard + half a frame)
-    let low = 0, lowVel = 0, lowFl = 0;
-    while (li < lows.length && lows[li].t <= heard + 0.5 / FPS) { low = 1; lowVel = Math.max(lowVel, lows[li].vel); lowFl = Math.max(lowFl, lows[li].fl); li++; }
-    cols.lowEvt.push(low); cols.lowVel.push(+lowVel.toFixed(3));
-    for (const k of SYN) cols[k].push(+A[k].toFixed(4));
-    for (const k of KEEP) cols[k].push(typeof o[k] === 'number' ? +o[k].toFixed(4) : o[k] ? 1 : 0);
-    const c0 = performance.now();
-    const v = drums.step({ syn: A, ears: o, low, lowFl, bassN: an.bands.bass.n, ahead: DET_LEAD, dt: d });
-    cpu += performance.now() - c0;
-    for (const k of D2.DRUMS_OUT) cols[k].push(typeof v[k] === 'number' ? +v[k].toFixed(4) : v[k] ? 1 : 0);
-    t.push(+heard.toFixed(6)); f.push(fr);
-  }
+  let li = 0, cpu = 0;
+  detStream(pcm, {
+    block(bl, br, mono, t0) { an.push(mono); ears.push(bl, br, t0); if (ears2 !== ears) ears2.push(bl, br, t0); },
+    frame(fr, heard) {
+      const A = an.A, d = 1 / FPS;
+      A.kick *= Math.exp(-d / TAU[0]); A.snare *= Math.exp(-d / TAU[1]); A.hat *= Math.exp(-d / TAU[2]);
+      const o = ears.read(heard);
+      // the ears' low onsets, released on the frame nearest their audio time (the ears' own rule: heard + half a frame)
+      let low = 0, lowVel = 0, lowFl = 0;
+      while (li < lows.length && lows[li].t <= heard + 0.5 / FPS) { low = 1; lowVel = Math.max(lowVel, lows[li].vel); lowFl = Math.max(lowFl, lows[li].fl); li++; }
+      cols.lowEvt.push(low); cols.lowVel.push(+lowVel.toFixed(3));
+      for (const k of SYN) cols[k].push(+A[k].toFixed(4));
+      for (const k of KEEP) cols[k].push(typeof o[k] === 'number' ? +o[k].toFixed(4) : o[k] ? 1 : 0);
+      const c0 = performance.now();
+      const v = drums.step({ syn: A, ears: o, low, lowFl, bassN: an.bands.bass.n, ahead: DET_LEAD, dt: d });
+      cpu += performance.now() - c0;
+      for (const k of D2.DRUMS_OUT) cols[k].push(typeof v[k] === 'number' ? +v[k].toFixed(4) : v[k] ? 1 : 0);
+      t.push(+heard.toFixed(6)); f.push(fr);
+    },
+  });
   fs.mkdirSync(OUT, { recursive: true });
   const p = path.join(OUT, `node-${track}.json`);
   fs.writeFileSync(p, JSON.stringify({ track, mode: 'node', sr, fps: FPS, detLead: DET_LEAD, t, f, fields: Object.keys(cols), cols, log: [] }));

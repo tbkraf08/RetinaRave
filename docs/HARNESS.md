@@ -638,6 +638,21 @@ a chance hit rate (the mask circularly shifted). `--summary` pools the tracks (d
 WhoLikesToParty ×3, Malicious ×1; CyborgNinja = the false-alarm control) and takes each map rule from the `&map=1` trace.
 MS `tension` is v3's roughness; synapse's own tension and drop event are not in MS (the node harness below has them).
 
+**The fast loop (node, seconds per track):** synapse's Analyzer behind its own Tap + the causal ears + v3's `updateMusic` on the
+det analyser shims, on the page's det time base (`tools/node-stream.js`, shared with drums-node) — page = node on the ears
+(`&map=0`), synapse's anatomy and v3's build / drop (AUDIT-live-grid Step 4 B.1). One process per track (v3's MS is a module
+singleton; the multi-track call spawns them).
+```
+node tools/build-node.js [Track …] [--out tools/work/build] [--no-v3]        # -> node-<Track>.json, 80 fields, 6-9 s a track
+node tools/build-node.js --cmp tools/work/build/SeeYouDrop-map0.json tools/work/build/node-SeeYouDrop.json [fields]   # page = node
+python3 tools/truth/dropcheck.py tools/work/build/node-{SeeYouDrop,WhoLikesToParty,Malicious,CyborgNinja}.json --summary
+python3 tools/truth/buildstudy.py tools/work/build/node-{SeeYouDrop,WhoLikesToParty,Malicious,CyborgNinja}.json [--pre 4] [--sig] [--png dir] [--md out.md]
+python3 tools/truth/buildstudy.py tools/work/build/node-{SeeYouDrop,WhoLikesToParty,Malicious,CyborgNinja}.json --arms
+```
+Node-only names: `synTension` (synapse's tension), `synDropEvt` / `synFakeoutEvt` / `synBoundaryEvt`, `synAll` (ev.all),
+`synEvS`, `rollRate`, `kickGap`, `bShort` / `bLong`, `dens`, `arcN` (v3's arc: idle 0 valley 1 sustain 2 build 3 peak 4).
+v3's `beatCount` in node = the page's + 1 (the page's pre-roll frames); the phase agrees to 0.01 beat.
+
 ## Single-file build
 
 ```

@@ -336,3 +336,83 @@ What it says:
    the truth drop). On SeeYouDrop and Malicious the ceiling is the ideal: 16 / 32 beats of warning, 0 false.
 5. The rows marked "node" come from the B.1 harness (`tools/build-node.js` — synapse's internals MS does not carry); it
    agrees with the page runs field for field (B.1), so they are the live code too.
+
+### B.1 — the node harness and the candidate study
+
+**The harness** (`tools/build-node.js`, on `tools/node-stream.js` — the det time base now shared with `drums-node.js`, whose
+output is byte-identical after the move, md5 `94a34ac0`): a track's PCM through synapse's Analyzer behind its own `Tap`
+(`frame()` decays, beat-clock lead, as the page), the causal ears, and **v3 itself** — `features.js updateMusic` runs in node
+on the det analyser shims (`engine/shim.js`, as `file.js armDet`), one process per track (MS is a module singleton). 80 fields
+per frame, 6–9 s per track (the page: ~3 min). **Page = node** (`build-node.js --cmp`), whole tracks: the ears on the `&map=0`
+traces — `denK/S/H`, `subGate`, `subIn`, `subOut`, `lpSweep` equal (≤ 5e-5) on 100 % of frames on SeeYouDrop, CyborgNinja,
+WhoLikesToParty (subGate / subOut 2 frames of 15366 off), Malicious 99.1 % (`denS` / `denH` 120 frames); synapse `hp`,
+`dropConf`, `dropExpectedIn`, `hush` 99.7–100 % (riser 96.5–99.9 %, max 0.036); v3 `dropEvt` identical, `build` / `eM` within
+0.015, v3's beat position = the page's + 1.00 beat (a count offset from the page's pre-roll frames) ± 0.01 beat, `bpm` differs
+by > 1 on 0.03 % of frames. On `&map=1` the ears read the map (not causal), so parity is graded on `&map=0`.
+
+**The study** (`tools/truth/buildstudy.py`, numpy): 60 candidates (levels; events as rates) × the user's seven grains
+(8 5 3 2 1 0.569 0.224 s) × four causal transforms (trailing mean `lvl`, its change across one grain `rise`, and against the
+last 32 s `dev` / `rel`), graded as a directional AUC of "in the PRE window before a truth drop" vs "elsewhere" (after 10 s),
+per drop track and pooled with CyborgNinja; CyborgNinja apart (AUC vs CN, the share of its frames past the PRE median); the
+lead in beats at the elsewhere p90 and that arm's false arms / min. Rows `tools/accept/live-grid/build-study-pre{16,8,4}.md`,
+per-drop signatures `build-signature.txt`, arms `build-arms.txt`, strip plots `build-<Track>.png`.
+
+| PRE window | best candidates (transform, grain): pooled AUC · worst track · vs CN | lead beats (SYD 1 2 · WLTP 1 2 3 · Mal) at the elsewhere p90 · false/min drop / CN |
+|---|---|---|
+| **16 bars** (the brief's) | nothing separates: best `phraseConf` rel 8 s **0.73** · 0.70 · 0.66; `width` rel 8 s 0.76 · 0.49; `high` rel 8 s 0.68; the densities `denK/S/H`, `lpSweep`, `riser` ≤ 0.62 | ≤ 1 drop anticipated by any |
+| 8 bars | `subConf` rise 5 s 0.81 · 0.78 · 0.87; `subPure` dev 5 s 0.83 · 0.71; `subGate` rise 5 s 0.78; `bassS` rise 5 s 0.76 · 0.64 · 0.80 | bassS: 15 7 · 13 12 11 · 12 · 2.37 / 0 |
+| **4 bars** | `subConf` dev 5 s **0.94** · 0.95 · 0.97; `subGate` dev 5 s 0.92 · 0.95 · 0.96; `subOut` rise 8 s 0.90; `bassS` rise 5 s 0.87 · 0.81 · 0.92; `eFast` rise 5 s 0.88; synapse `hp` rise 8 s 0.91 · 0.68 (Malicious) · 0.94 | subGate: 17 9 · 13 12 12 · 17 · 1.38 / 0.35 · hp: 18 10 · 14 13 13 · 0 · 1.19 / 0.35 |
+
+**By grain** (4 bars): the build is a **2–8 s** thing — `subConf` / `subGate` dev peak at 3–5 s (0.94 / 0.93), `bassS` / `eFast`
+rise at 5 s (0.87 / 0.88), `hp` rise at 8 s (0.91); at 0.224–0.569 s every one of them falls to 0.50–0.88 (the rises to chance).
+
+**The signature** (`build-signature.txt`: per drop, each bar's mean as a percentile of that track's non-build frames) is one
+shape on all five SeeYouDrop / WhoLikesToParty drops — **a void of 2–5 bars before the slam**: `bassS` and `eShort` at the
+0–3rd percentile (SeeYouDrop drop 1 from bar −5, drop 2 from −3, WhoLikesToParty from −3), the sub gate open, the centroid at
+the 86–99th (only highs left), synapse's `hp` (bass pulled + the low edge rising) on through it and `riser` set in 4 of 5;
+before the void a climb shows on SeeYouDrop only (`denH` at the 100th in bars −8…−6 of drop 1, −6…−4 of drop 2). The drop bar
+itself: bass back (percentile 11–80). Malicious' tool-made drop has no void (`bassS` 26–43 through bars −3…−1; `lvl` dips only
+in −2…−1) — no candidate anticipates it, and its intro (10–30 s) carries three bass cuts with slams that look like builds (v3
+`dropEvt` fires on them, B.0).
+
+**Arms** (`buildstudy.py --arms`, causal trailing means, graded like dropcheck):
+
+| arm rule | anticipation beats, SYD 1 2 · WLTP 1 2 3 · Mal | false /min drop tracks | CN | armed % SYD / WLTP / Mal / CN |
+|---|---|---|---|---|
+| **synapse `hp`, 5 s mean > 0.1** | **16.6 8.6 · 11.1 10.0 10.2 · 0** | **0.20** | **0** | 11.7 / 8.3 / 8.8 / 0 |
+| `hp` 5 s > 0.05 | 17.5 9.5 · 12.9 12.1 12.2 · 0 | 0.69 | 0 | 15.8 / 11.3 / 13.0 / 0 |
+| `bassS` 2 s < 0.6 × its 32 s mean | 16.0 8.0 · 11.2 11.0 11.1 · 0 | 0.59 | 0 | 8.3 / 7.2 / 5.2 / 0 |
+| `hp` 5 s > 0.1 & `bassS` 2 s < 0.8 × | 16.6 8.6 · 11.1 10.0 10.2 · 0 | 0.30 | 0 | 8.4 / 7.4 / 5.0 / 0 |
+| `subGate` 5 s < 0.7 × its 32 s | 14.0 5.4 · 6.5 0 0 · 16.5 | 1.38 | 0 | 10.6 / 1.3 / 28.7 / 0 |
+| v3 `build >= 0.5` (B.0's best, same traces) | 7.9 2.2 · 0 0 0 · 0 | 0.59 | 0.35 | 8.1 / 0.9 / 2.0 / 2.8 |
+
+`hp 5 s > 0.1`: 5 of 6 drops 8.6–16.6 beats (2–4 bars) ahead, against a chance hit of ~0.1 at 10 % armed; its only false
+arms are Malicious' intro (10.0–29.6 s, the bass-cut figures) and the last 0.3 s of WhoLikesToParty (the fade); nothing on
+CyborgNinja. Its run outlives the drop by 2–4 s (the 5 s mean) — a detector disarms on the slam. The slam itself: the ears'
+nearest `kickEvt` lands −6 / +10 / +15 / +12 ms from four of the drops (SeeYouDrop drop 2 −396, Malicious +106); `subIn`
++44…+312 ms; `bassS` back to 0.8× its mean −255…+571 ms — the kick on the bar line is the only on-time slam cue.
+
+What it says:
+1. **Live, a drop is announced 2–5 bars ahead, not 16.** Over 16 bars no causal signal separates build from elsewhere (AUC ≤
+   0.76, CyborgNinja-safe ones ≤ 0.73); the separable part is the **void** — the bass and sub pulled out for the last 2–5 bars,
+   highs left, synapse's high-pass evidence on. A 16-bar build ramp (`buildProg`'s shape) cannot be read live on these tracks.
+2. **The climb is not a general cue.** Hat / snare density climbs (`denH` / `denS`) show before SeeYouDrop's drops only; on
+   WhoLikesToParty the densities stay mid-range through the void. `lpSweep` never moves before a drop (0 or ~70 flat); `width`
+   rises in SeeYouDrop's voids only. The riser is set in the void, not before it (`riser` AUC ≤ 0.62 at every window).
+3. **The best existing field is synapse's `hp`, smoothed** — 0 CyborgNinja false at every threshold tried; synapse's own
+   chain throws it away (`hp` feeds `ev.all` at weight 0.5 behind a grid gate; `tension` never climbs, B.0).
+4. Malicious is the open case: a truth drop with no void, and an intro whose bass cuts look like builds; its drops are the
+   tool's, not hand-checked (the ruler's weakest truth).
+
+**Proposal for B.2 (not built).** Inputs: synapse `hp` (5 s mean), `bassS` against its 32 s mean, the ears' `kickEvt` /
+`subGate`, the v3 grid (`beatCount`, `beatPhase`, `bpm`) with synapse's `barConf` ≥ 0.9 gate, `presence`. **Arm** (`buildLive`
+0..1): `hp5 > 0.1` or `bassS2 < 0.6×` held ≥ 1 bar, starting on a bar line; the level ramps with the void's length in bars
+(1 bar 0.4 → 4 bars 1.0). **`dropLiveIn`**: beats to the next bar line while armed (the drop is on a bar line — every truth
+drop is; the void's length varies 2–5 bars, so the count is to the NEXT candidate line, not to a phrase end; a 4-bar phrase
+counter re-anchored at the void's start is the alternative to A/B). **`dropLiveEvt`**: the first ears kick within ±⅛ beat of a
+bar line while armed (or while armed within the last beat) — expected lag −6…+15 ms (det), capture +38…52 ms like every reactive
+event (the drop cannot be released early live; in file modes the lead can). **Disarm**: the slam; 8 bars armed with no slam
+(a breakdown, not a void); silence (`presence` < 0.15), a seek, a v3 tempo jump. Expected on these four tracks: armed 5 / 6
+at 8.6–16.6 beats (2–4 bars), ≤ 0.2–0.3 false arms / min on drop tracks, 0 on CyborgNinja, `dropLiveEvt` 4–5 / 6 within ±20 ms
+(det). Needed first: a second no-drop control and a hand check of WhoLikesToParty's / Malicious' drops (the map disagrees with
+the truth by 2 beats on WhoLikesToParty, B.0).
