@@ -5,6 +5,7 @@ import './engine/features-ears.js'; // v0.15: the ears + the track map (additive
 import './engine/features-bars.js'; // live step 3: the bar fingerprint store (additive stage after the ears, before the lead)
 import './engine/features-drums.js'; // the reactive drums v2: kick2 / snare2 / hat2 (additive stage after the ears)
 import './engine/features-build.js'; // live step 4: the live build / drop detector — buildLive / dropLiveIn / dropLiveEvt (additive, after drums)
+import './engine/features-queue.js'; // live step 5: the predicted-event queue — next*In / next*Conf / next*Up / queueN (additive, after build)
 import { G, initGL, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, addResizeHook, resize, ERRS, ETEX } from './core/gl.js';
 import { Q, tier, budget } from './core/quality.js';
 import { LOOK } from './core/look.js';

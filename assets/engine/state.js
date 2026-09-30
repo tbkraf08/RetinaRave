@@ -31,6 +31,9 @@ export const MS = {
   predKick: 0, predSnare: 0, predHat: 0, predKickIn: -1, predConf: 0, barMatch: 0, barNovelEvt: false, barReturnEvt: false,
   kick2: 0, snare2: 0, hat2: 0,                       // the reactive drums v2 (engine/drums, features-drums.js)
   buildLive: 0, dropLiveIn: -1, dropLiveEvt: false,   // the live build / drop detector (engine/build, features-build.js) — idle
+  // the predicted-event queue (engine/queue, features-queue.js, live step 5) — idle: nothing listed
+  nextBeatIn: -1, nextBarIn: -1, nextKickIn: -1, nextSnareIn: -1, nextHatIn: -1, nextDropIn: -1,
+  nextKickConf: 0, nextSnareConf: 0, nextHatConf: 0, nextKickUp: 0, nextSnareUp: 0, nextHatUp: 0, queueN: 0,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

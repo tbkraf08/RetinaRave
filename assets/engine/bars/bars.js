@@ -297,6 +297,28 @@ export class Bars {
     if (NOV_STEPS.includes(s)) this.change(kc, s, ok);
   }
 
+  // THE STEPS STILL TO COME (live step 5, the queue): every hit the store will release after the release position yr0
+  // (bar-relative beats, no half-frame lead) — the decided ones waiting for their class offset (q) and the predicted ones of
+  // this bar and the next (pred[], the same bits release() reads), each as { c, dy: beats ahead, conf }. Nothing is
+  // re-predicted: a bit the next re-vote clears is gone from the next call (a withdrawal), and below CONF_MIN the store
+  // releases nothing, so nothing is listed. `out` is reused. Read-only: the store's state is untouched.
+  upcoming(yr0, out) {
+    out.length = 0;
+    for (let j = 0; j < this.q.length; j++) { const e = this.q[j]; if (e.y > yr0) out.push({ c: e.c, dy: e.y - yr0, conf: this.conf }); }
+    if (this.predK === null || this.conf < CONF_MIN) return out;
+    const g0 = this.gRel === null ? Math.floor(yr0 * 4) + 1 : this.gRel;
+    for (let g = g0; g < (this.predK + 2) * STEPS; g++) {
+      const k = Math.floor(g / STEPS), st = g - k * STEPS, row = k === this.predK ? 0 : k === this.predK + 1 ? STEPS : -1;
+      if (row < 0) continue;
+      for (let c = 0; c < 3; c++) {
+        if (!this.pred[c * 2 * STEPS + row + st]) continue;
+        const dy = (g + this.off[c]) / 4 - yr0;
+        if (dy > 0) out.push({ c, dy, conf: this.conf });
+      }
+    }
+    return out;
+  }
+
   // beats from the release position to the next predicted kick (this bar's and the next bar's prediction), -1 if none
   kickIn(yr) {
     if (this.predK === null || this.conf < CONF_MIN) return -1;

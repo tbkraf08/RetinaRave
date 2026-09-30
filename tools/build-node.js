@@ -21,6 +21,10 @@ import { loadPcm } from './test_ears.js';
 import { detStream, makeV3, DET_LEAD, FPS, F0 } from './node-stream.js';
 import { Build, BUILD, BUILD_OUT } from '../assets/engine/build/build.js';
 import { feed, laneTake } from '../assets/engine/build/feed.js';
+import { Bars, BARS_OUT } from '../assets/engine/bars/bars.js';
+import { feed as barsFeed } from '../assets/engine/bars/feed.js';
+import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
+import { feed as queueFeed } from '../assets/engine/queue/feed.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -51,6 +55,8 @@ const V3 = !flag('--no-v3');
 // file page); BUILDK='{"HP_ARM":0.05}' overrides knobs (the sweep uses tools/build-replay.js on the recorded inputs instead)
 const DISP = +opt('--disp', 0) / 1000;
 if (process.env.BUILDK) Object.assign(BUILD, JSON.parse(process.env.BUILDK));
+// live step 5: the bars store and the queue run too (as features-bars.js / features-queue.js feed them); QUEUEK='{"HOLD":0.1}'
+if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 
 const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'kickVel'];
@@ -81,10 +87,11 @@ for (const track of TRACKS) {
   let detMs = 0; tap.clock = () => detMs;
   const an = tap.an, A = an.A, ears = new Ears(sr), v3 = V3 ? await makeV3(pcm) : null;
   const names = [...EARS_K, ...Object.keys(SYN_A), ...Object.keys(SYN_EV), ...Object.keys(SYN_IN), 'rollRate', 'phrase16Pos', 'barPos',
-    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT'] : [])];
+    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
-  const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {} };
+  const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
+  const EARS_B = ['kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'bassReg', 'subGate', 'subPure', 'denK', 'denS', 'denH'];
   const wrap = (x, n) => ((x % n) + n) % n;
   detStream(pcm, {
     pre(fr) { detMs = (fr + F0) * 1000 / FPS; },   // file.js tickFile: the frame clock's ms, then this frame's pushes
@@ -102,10 +109,18 @@ for (const track of TRACKS) {
         const M = v3.MS, S = bst.S;
         S.beatCount = M.beatCount - 1; S.beatPhase = M.beatPhase; S.bpm = M.bpm; S.presence = M.presence;
         S.barConf = A.barConf; S.bpmSyn = A.bpm; S.barPos = wrap(A.beat - an.o4, 4); S.hp = A.ev.hp; S.bassS = A.bassS; S.sub = A.sub; S.heardT = heard;
+        // the bars store first (the page's stage order: bars, drums, build, queue)
+        for (const k of EARS_B) S[k] = o[k];
+        S.midS = A.midS; S.highS = A.highS; S.lvl = A.level; S.centroid = A.centroid;
+        const ro = bst.bars.step(barsFeed(S, -DET_LEAD, DISP, dt, bst.binp));
+        for (const k of BARS_OUT) cols[k].push(r4(ro[k]));
         const ts = laneTake(ears, heard + DISP + 0.5 / FPS, bst.lane, bst.ts);
         cols.lowT.push(ts.length ? ts.map((x) => +x.toFixed(6)) : null);
         const bo = bst.b.step(feed(S, -DET_LEAD, DISP, dt, ts, bst.inp));
         for (const k of BUILD_OUT) cols[k].push(r4(bo[k]));
+        S.buildLive = bo.buildLive; S.dropLiveIn = bo.dropLiveIn;
+        const qo = bst.q.step(queueFeed(S, -DET_LEAD, DISP, dt, bst.bars, bst.b, bst.qinp));
+        for (const k of QUEUE_OUT) cols[k].push(r4(qo[k]));
       }
       for (const k in SYN_A) cols[k].push(r4(A[SYN_A[k]]));
       for (const k in SYN_EV) cols[k].push(r4(A.ev[SYN_EV[k]]));

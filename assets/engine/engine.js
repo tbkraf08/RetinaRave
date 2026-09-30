@@ -29,6 +29,7 @@ export const ENGINE = {
   extraMs: 0,       // CPU spent outside frame() by stages (worklet port handler), drained into ms
   stages: [],       // [{ name, fn(dt, now, MS), feats:[...] }]
   fix: null,        // test hook: Object.assign(MS, fix) every frame after extraction
+  QUEUE: null,      // live step 5: the predicted-event queue's stage object (features-queue.js sets it; .list = the entries)
   fakeOn: false,    // #test without fake=0: the deterministic timeline replaces the extractor
   ms: 0,
   frameN: 0,        // v0.15: frames run by frame(); the trace's `f` and the event log's `f`
