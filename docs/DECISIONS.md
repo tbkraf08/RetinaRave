@@ -2743,3 +2743,9 @@ ANTICIPATION — a motion that winds up and PEAKS at the hit — not a replaceme
 (P 0.60, chance 0.05; the base `predKickIn` −20 ms), `nextSnareIn` +0, `nextBeatIn` −8 (P 0.83), both drops queued 14 / 8 beats
 ahead, 0 false. The A/B for the user is a live PARAM route on the capture page (TORUS2's `wave` winding up over the 250 ms before
 each predicted kick); no default moves until their word. Not tagged, not pushed.
+
+**v0.19 tagged locally (2026-09-30) on the user's word ("tag what we currently have as v0.19 (don't deploy)"):** v0.18 + live step 5,
+the predicted-event queue (§55; no scene reads it by default). `releases/retinarave-v0.19.html` (1267 KB, 145 modules; from
+`file://` 347 frames in 6 s, errs [], nonFinite [], the fake timeline has no queue: queueN 0), package.json 0.19.0. Not pushed
+(retinarave.com serves v0.15). The user's direction for what follows: "still need to work on the predictions"; step 6 (tempo on
+the PCM bus) next — "on the PCM bus seems more accurate and would be wanted regardless".
