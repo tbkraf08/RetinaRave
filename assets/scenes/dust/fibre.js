@@ -69,7 +69,9 @@ export function fit(c, cap) {
 // o: {nl, nF, N, flowMid, alpha, band[3], lvl, alive, s, wpx, dist, mood, vp}
 export function emit(segs, cap, o) {
   const d = o.mood, vp = o.vp, s = o.s, col = [0, 0, 0], z = [0, 0, 0, 0], p = [0, 0, 0];
-  const it = 0.3 * (0.35 + o.lvl);             // synapse's intensity: 0.3 * lv
+  // synapse's intensity 0.3 * lv, now under the same dynamic range as the cloud (§60 step 1): the rings are part of
+  // the picture, so a breakdown must dim them too. At the groove's dyn (~0.88) the factor is 0.96 — unchanged.
+  const it = 0.3 * (0.35 + o.lvl) * (0.3 + 0.75 * o.dyn);
   let n = 0;
   for (let l = 0; l < o.nl; l++) {
     // colatitude of torus l, wobbling on mid-band time; odd tori twist the other way so the family never moves as one

@@ -43,6 +43,9 @@ uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gau
 uniform float uDrop;       // MS.dropEnv
 uniform float uTension;    // MS.tension — the roughness, as JITTER and nothing else
 uniform vec2 uBuild;       // x = the void's contraction 0..1 (buildLive + the last bar's wind-up), y = the release
+uniform float uDyn;        // the dynamic range, 0..1: eM against the TRACK's own running peak (dyn.js). It is the
+                           // cloud's BASE brightness, grain size and overall radius; the hits ride on top of it and
+                           // barely move with it, so a quiet section's kick is still a kick.
 uniform float uAlive;      // MS.alive
 uniform float uHue;        // LOOK.mood.hue
 uniform float uSat;        // LOOK.mood.sat
@@ -138,16 +141,24 @@ void main(){
   pos += dir * ring * .38;                                    // the snare's flash ring, travelling out
   float spark = uVoice.z * wHigh * (.35 + 1.5 * h.y);         // the hat sparkles the edge
 
-  pos *= 1. - .3 * uBuild.x + .17 * uBuild.y + uDrop * 1.6 * h.y * h.y + .1 * uBassS;
+  // the whole swarm's radius. R above was taken BEFORE this line, so the snare ring's own radius is unaffected.
+  pos *= (1. - .3 * uBuild.x + .17 * uBuild.y + uDrop * 1.6 * h.y * h.y + .1 * uBassS) * (.82 + .18 * uDyn);
   pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // roughness: jitter, and nothing else
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
   pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);
   gl_Position = cp;
   float zc = max(cp.w, .05);                                  // distance along the view axis
-  float sz = uRes.y * .0055 * (.55 + 2.4 * amp * amp + spark * 2.2 + kick * 1. + ring * 3.) / max(zc, .2);
+  // DYNAMIC RANGE (§60 step 1). The base — the grain's own band and the ambient floor — carries the range; the
+  // three voices and the sub ride on top of it and barely move with it. gBase lands on 1.47 at the groove's own
+  // dyn, which is what the old (.5 + 1.1 * uLevel) gave there (lvl p50 .882), so the groove is unchanged and
+  // everything quieter than the groove falls away from it. uLevel no longer gates the light at all: it is
+  // AGC-normalised and a quiet verse was as bright as the drop.
+  float gBase = .22 + 1.42 * uDyn, gHit = 1.05 + .45 * uDyn, gSz = .55 + .45 * uDyn;
+  float sz = uRes.y * .0055 * ((.55 + 2.4 * amp * amp) * gSz + spark * 2.2 + kick * 1. + ring * 3.) / max(zc, .2);
   gl_PointSize = clamp(sz, 1., 48.);
-  float bright = (.22 + 3.2 * amp * amp + 1.5 * kick + 4. * ring + 1.8 * spark + .5 * uVoice.w * wLow + uDrop) * (.5 + 1.1 * uLevel);
+  float bright = (.22 + 3.2 * amp * amp) * gBase
+    + (1.5 * kick + 4. * ring + 1.8 * spark + .5 * uVoice.w * wLow + uDrop) * gHit;
   bright *= min(1., sz) * min(1., 50000. / uCount);           // energy-conserving: sub-pixel points fade, and more particles are each dimmer
   vCol = palM(fx * .9 + h.y * .12 + .1 * length(pos)) * bright * uAlive;
 }`;

@@ -13,8 +13,9 @@ export const HELP = {
     bassS: 'the torus tube fattens, the whole cloud grows, the camera dollies in; it also lights the first ring',
     midS: 'the wobble of every grain and the ribbon\'s thickness; it also lights the second ring',
     highS: 'lights the third ring: the highest tori brighten with the top of the mix',
-    lvl: 'how far each grain is pushed out by its own band, overall brightness, how fast a re-pour completes, and '
-      + 'the overall brightness of the rings',
+    lvl: 'how far each grain is pushed out by its own band, how fast a re-pour completes, and part of the '
+      + 'brightness of the rings; it no longer sets the brightness of the cloud, because it is levelled out '
+      + 'automatically and made a quiet verse as bright as the drop',
     kick2: 'a kick shoves the core of the cloud outward and brightens it, swells the rings a little and hurries a '
       + 'pour along — the reactive drums v2, which fire on 808 notes as well as beaters',
     kickAge: 'exactly how long ago that kick was, so the shove is placed between frames instead of on one',
@@ -51,7 +52,11 @@ export const HELP = {
     sectionAlt: 'which part of the song this is: the swarm files the shape it ended each part in, and goes back '
       + 'to it on a return',
     sectionReturn: 'the slower second opinion that this part of the song is one we have heard before',
-    eM: 'how loud this stretch is: a quiet one is a plain ball, a loud one is a galaxy',
+    eM: 'how loud this stretch is, measured against the loudest this track has been: a quiet part of the song is a '
+      + 'small, dim cloud of small grains and a loud one is a big bright one, and a quiet one is also a plain ball '
+      + 'where a loud one is a galaxy. The drums are not dimmed with it — a quiet section\'s kick is still a kick',
+    eS: 'the same loudness measured over a third of a second instead of two and a half, so the moment a drop '
+      + 'lands counts as loud even though the two seconds before it were the silence of the build',
     denK: 'how many kicks a second there are: with no bass and almost no kicks the swarm becomes the waveform '
       + 'itself, a single line',
     arc: 'the bid: never auto-picked during a build',
