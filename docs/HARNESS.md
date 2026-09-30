@@ -769,7 +769,27 @@ the coverage is the share of those onsets that get a response at all. Reading on
 edge measures the distance between two pickers, not a latency — the mistake §57 made and §58 corrected.
 
 A scene may add a test hook to hold a state still for the ruler — DUST's `&form=<k>` pins the formation, because on
-SeeYouDrop three of its four shapes are on screen for seconds and the fourth for 76 of 90 s.
+SeeYouDrop three of its four shapes are on screen for seconds and the fourth for 76 of 90 s. Two more kinds of hook
+earn their place: one that **restores the previous behaviour exactly**, so the A/B is one build and not two
+(DUST's `&hab=0` is bit-identical to the commit before it over 5401 frames), and one that **pins a slow state for a
+bench**, because `CARD.bench` runs on the fake timeline and a scene whose cost depends on the music will be
+measured at the fake timeline's own value (DUST's `&dyn=<v>`: the fake `eM` is 0.374, which put the grains at 73 %
+of their size).
+
+**A before/after is only valid if the ENGINE did not move between the two traces** (DECISIONS §60). Two workers in
+one worktree is normal here, and an engine worker editing `assets/engine/clock/clock.js` mid-session moved
+SeeYouDrop 20–110 s from 225 beats to 227: the build and a scene's formation sequence then land differently and one
+drop's mean luminance moved 160 → 106 for reasons that were not the scene's. So: **take the before and the after
+back to back, and prove it with the md5 of the MS columns of both traces.** `beatCount`, `dropEnv` and `eM` are
+enough — between them they catch a clock change, an analyser change and a source change:
+
+```python
+import json, hashlib
+c = json.load(open(p))['cols']
+''.join(hashlib.md5(json.dumps(c[k]).encode()).hexdigest()[:8] for k in ('beatCount', 'dropEnv', 'eM'))
+```
+The pre-change build is `git checkout <sha> -- assets/scenes/<name>/` (stash your own work first), which is a few
+seconds; re-tracing is minutes, and re-deciding on a contaminated table is an hour.
 
 ## Single-file build
 
