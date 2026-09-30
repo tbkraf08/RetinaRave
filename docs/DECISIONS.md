@@ -2862,3 +2862,8 @@ beatCount` publish the PCM clock for every stage and scene; `&clock=v3` / `CARD.
 fail, npm test OK, feats appendix regenerated (188 fields); the fake timeline never runs the clock stage, so s0 f360 / f840 md5
 `fb74fee4` / `8a0715df` unchanged; a SeeYouDrop det trace (`&map=0`, 20–40 s): `clockPcm` 1 on 1201 / 1201 frames, `bpm ==
 bpmPcm` on all, `beatPhase` vs `beatPhasePcm` within 1.4e-14, conf median 0.93, ENGINE.ms 0.09–0.14.
+
+**v0.20 tagged locally (2026-09-30) on the user's word ("default and tag what has been done so far"; deploy still held):** v0.19 +
+live step 6, the beat clock on the PCM bus (§56) as the default clock. All six steps of the live plan (§49) are in. `releases/
+retinarave-v0.20.html` (1301 KB, 148 modules; from `file://` 348 frames in 6 s, errs [], nonFinite [], clock pcm), package.json
+0.20.0. Not pushed (retinarave.com serves v0.15).
