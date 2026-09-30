@@ -1,19 +1,27 @@
-# Next session — Retina Rave (written 2026-09-29)
+# Next session — Retina Rave (written 2026-09-29, evening)
 
-**State:** v0.17.1 tagged LOCALLY (`bcf0e9d`), **not deployed** (the user: "tag as v0.17.1, don't deploy yet"); retinarave.com
-serves v0.15; `main` 21+ commits ahead of origin. Since v0.16: live step 3 (bar store, predictions — opt-in, unused by default),
-its warm-up, the reactive drums v2 (`kick2` / `snare2` / `hat2`; TORUS2 reads them by default), the 40 ms display lead (§52).
+**State:** **v0.18 tagged LOCALLY** (`6e4f1d1`), **not deployed** (the user, earlier the same day: "don't deploy"); retinarave.com
+serves v0.15; `main` 31 commits ahead of origin. Since v0.17.1: the display lead is file-mode only (§53: 40 ms in file / demo,
+0 in capture / mic — the user's stream A/B "B looks better"); **live step 4, the build / drop detector** (§54: `engine/build/`,
+`buildLive` / `dropLiveIn` / `dropLiveEvt`; page causal 5/6 drops armed 7–16 beats ahead, 0.28 false/min, 0 on CyborgNinja;
+capture 14 / 6 beats ahead, 0 false in 111 s); NAV reads it by default ("B looks good" → "#1" = NAV only), MAXWELL / POLYTOPE /
+GIELIS still on v3's `build` / `dropEvt`.
 
-**The user's words this session (verbatim, in order):** "I think the reactive still looks better (ie. seems like it moves in
-sync with the music better)" · "do #1" · "v2 looks good" · (TORUS2 default) "Default on TORUS2 only" · "it seems like v0.15 is
-better then what we have now (was looking on scene 0 …), in theory v0.16 should be on par with v0.15" · (&lead=0 / &disp=40)
-"second and third look good" · "ok I can see that" (v2 in SeeYouDrop's drumless walk) · "tag as v0.17.1, don't deploy yet".
+**The user's words this session (verbatim, in order):** "B looks better" (stream, `#disp=0`) · "don't deploy, go to live step 4" ·
+"B looks good" (NAV on the live route, stream) · "#1" (default on NAV only).
 
 **Do, in order:**
-1. **The stream-mode look at the display lead** (NAV + TORUS2, capture) — the clocks run 40 ms further ahead there since
-   `afaa40d`; v0.16 was approved in stream mode at 0. Good → deploy only on their word (push `main`). Early → make the display
-   lead file-mode only (`&disp`), re-look.
-2. **Live step 4 — the build-up / drop detector:** `LIVE-STEP4-BUILD-SESSION-PROMPT.md` (live, nothing anticipates a drop today).
-3. Smaller, only on the user's go: the ears' events (`kickEvt` …, CHLADNI) released by the display lead in file modes; v2
-   drums on other scenes (DUST / MANDALA kick flares); CyborgNinja's v3 clock (80–180 ms off its truth, hunting near half a
-   beat); prediction as a supplement (`predKickIn` anticipation). Everything else: `docs/OPEN-ITEMS.md`.
+1. **Deploy only on their word** (push `main` + tags; a push deploys). Ask once at the start whether v0.18 goes live.
+2. **Live step 5 — the predicted-event queue** (the six-step plan, DECISIONS §49): one queue of the events the engine expects
+   (the bar store's `pred*` hits, `dropLiveIn`'s bar line, the beat lines) released on heard time minus the display lead, so a
+   scene can read "what comes next" from one place instead of three. Measure first (predcheck / dropcheck rulers exist); additive;
+   A/B by route in stream mode; a default only on their word.
+3. Smaller, only on the user's go: the other three build readers (MAXWELL / POLYTOPE / GIELIS) onto the live detector; a
+   second no-drop control track + a hand check of WhoLikesToParty's drops (truth ±2 beats — its drops sit at v3 bar phase 3);
+   the slam threshold `RET` 1.75 (margin 1.56–1.87 rests on two WLTP pickups); the fake-timeline thumbnails (NAV's f840 moved:
+   no live drops on the fake timeline — `site/thumbs/nav.jpg` may want a file-mode frame like CHLADNI's); the earlier list
+   (CyborgNinja's v3 clock 80–180 ms off, the ears' events under the display lead in file modes, v2 drums on other scenes).
+   Everything else: `docs/OPEN-ITEMS.md`.
+
+**Read first:** DECISIONS §53–§54, `docs/AUDIT-live-grid.md` "Step 4", HARNESS "Build", memory `project_live_mode`,
+`feedback_display_lead`, `feedback_reactive_over_predicted`. Step 6 (tempo on the PCM bus / Kalman) only if jitter demands it.
