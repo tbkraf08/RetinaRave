@@ -488,3 +488,11 @@ one line over the 350 soft cap) — data only, not a word changed by the move. N
 
 Shots for the A/B, one per formation at 40.0 s on SeeYouDrop (`&form=<k>`, `tools/work/d15/`): `before-forms.jpg`
 (v0.21) · `final-forms.jpg` (both tasks).
+
+---
+
+# Pass 2
+
+Pass 2 (dynamic range, per-bin habituation, harmony, and the intro guard the measurements forced) is in its own
+file — this one was past 300 lines: **`docs/workers/DUST-OVERHAUL-PASS2.md`**, DECISIONS **§60**, commits `10bde08`
+`54e3033` `5bd7d7d` `55f7021`. It carries the A/B watch-list for the user in track time.

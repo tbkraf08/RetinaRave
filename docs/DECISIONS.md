@@ -3126,3 +3126,125 @@ No audible run (the worker's brief forbids it): every number above is the determ
 (the decay); the sphere is a filled ball instead of a hollow shell and every shape is now colour-graded from the core out,
 because a grain's band is both its hue and its radius; the doughnut's tube no longer rolls on mid time (a slow breath
 instead), since the roll would have scrambled the band ordering around the tube.
+
+## §60 DUST, pass 2 — dynamic range, per-bin habituation, harmony (2026-09-30, one worker; report `docs/workers/DUST-OVERHAUL-PASS2.md`)
+
+**The ask**: the three items `DUST-OVERHAUL-SESSION-PROMPT.md` deferred out of pass 1, against the same acceptance
+standard — a viewer with the sound off can reconstruct the song. The user's word on pass 1 + 1.5 was *"is looking
+good"*, so nothing already signed off was allowed to get worse: the groove keeps the brightness it has, and every
+step is calibrated on it. Four commits, each measured and committed with its numbers. **Not tagged, not pushed, not
+deployed.** `§59` is unused at the time of writing (the engine worker's).
+
+**New rulers** (all in `tools/work/d2/`, scratch): `spec-trace.js` records the 256 bytes of `ENGINE.tex.spec` — the
+grains' own input — every frame, so a per-bin detector can be swept OFFLINE in python (`nov.py`, `nov2.py`) instead
+of costing a page run per candidate; `sim.py` does the same for the dynamic-range drive, which is a pure function of
+`eM` / `eS` / `dropEnv` and so can be simulated on a trace that already exists. Three of the four steps were decided
+on recorded music before anything was rendered. New DUST test hooks: `&dyn=<v>` pins the drive (a bench must not run
+at the fake timeline's own `eM` of 0.374), `&hab=0` restores pass 1's drive exactly (verified bit-identical over
+5401 frames), `&key=<k>` pins the key.
+
+### Step 1 — quiet is quiet, loud is loud (`10bde08`)
+
+`lvl` was the whole of the cloud's brightness and it is AGC-normalised (p05 0.513 / p50 0.882 / p95 0.992 over
+SeeYouDrop 20–110 s); §57 had already measured `eM / eMax` useless (p25 0.972). `dyn.js` holds the TRACK's own peak
+— instant attack, 25 s release, floored (step 4) — and `eM / peak` drives the BASE brightness, the grain size and
+the swarm's radius, with the three voices and the sub on a gain that barely moves: between the groove and the
+breakdown the base loses 76 % and the hits 24 %, because a quiet section's kick is still a kick. The rings dim with
+the cloud. The energy is `eM + ½·max(0, eS − eM)` — the slow window plus half of what the fast one hears above it —
+picked from four candidates simulated first: on `eM` alone the drops read 0.75 / 0.70 against the groove's 0.91
+(a 2.5 s mean on the frame of a slam is still half-full of the void), on `max(eM, eS)` the drops are right but the
+intro opens at 0.74. `dropEnv` / the drop's release floor the drive for the same reason at a shorter timescale.
+
+### Step 2 — novelty and per-bin habituation (`54e3033`)
+
+Each grain's drive is its bin's level minus that bin's own 1.2 s average — what is NEW in the band — floored at
+0.35, so a sustained pad settles to 35 % of a fully novel band and never to nothing. The state is a 256×1 ping-pong
+of the scene's own targets (one 256-pixel pass, one extra fetch per grain): a CPU-side EMA is impossible (the array
+behind `ctx.engineTex.spec` is core state), and building the average out of `hist` taps would be 600 k fetches a
+frame at tier 3 and capped at 1.3 s.
+
+**The brief's own form of the detector measures as nothing.** `uSpec` is floor-subtracted and peak-normalised, so a
+bin's level is a spectral SHAPE and barely moves: `(level − slow) / level` has a per-bin median of 0.010 and a p90
+of 0.090, i.e. a flat 0.35 on every grain — a 65 % dimming, not a detector. A z-score on the bin's own deviation has
+range but goes hypersensitive as a bin settles (a new bar reads ×1.02 against the bars after it). An **absolute**
+step of 0.10 of full scale is right, because the spectrum is already normalised, and τ 1.2 s habituates hardest
+(a sustained bin-onset's drive 0.776 → 0.502 in 2.5 s) while keeping the new-bar signal (×1.20).
+
+**The gain is normalised every frame**, by its own RMS over the bins weighted by the grain density AND by `raw²`.
+Three weaker divisors were measured on the picture first (mean lum, step 1 = 100.3): raw gain → four times darker;
+its mean over the window → 125.1; its RMS over the window → 117.5 and the void 24.2 → 54.2; its unweighted
+per-frame RMS → 107.9 and the void 39.9. The bins that read novel are preferentially the LOUD ones, most so where
+the mix is sparse, so a fixed divisor raises the quiet end far more than the loud one and half undoes step 1.
+
+### Step 3 — harmony (`5bd7d7d`)
+
+The palette's centre is the key anchor from `assets/math/keycolour.js`, the module TORUS2 (id 3) and POLYTOPE (id 5)
+already share, with DUST's own `mkAnchor()` state. **The two scenes are bit-for-bit the same colour**: forced on
+SeeYouDrop `&at=12&map=0` and sampled at frames 2400 / 3600 / 4800, DUST and TORUS2 both read key 8 mode 1 and
+unwrapped hue −0.33410 / 0.92363 / 1.85418. Against the truth grids the engine reads **the fifth above the tonic**
+(G# for C# minor on both test tracks) — the known v0.14 `key` behaviour on sub-heavy tracks that CONTRACTS §1.18
+already records, an engine reading and not a scene one; the MODE, which is what warm-or-cool turns on, is right on
+both. On SeeYouDrop `keyConf` p50 is 0.154, so the gate sits at 0.27 and the palette is mostly `LOOK.mood` slid a
+quarter of the way toward G# minor — the designed behaviour for an untrusted read. The hue moves as an ease
+(p50 0.029 turns/s, p99 0.361), never a jump.
+
+### Step 4 — the intro guard, and two rejected fixes for the same problem (`55f7021`)
+
+The intro came out BRIGHTER than the groove (SeeYouDrop 8–14 s at 1.56× the groove against 0.92× before the
+overhaul). Two causes. **The peak hold's floor was too low** (0.70, against the track's own `eM` of 0.697 there):
+0.84 — at or a little above the resting `eM` of a normal groove on both test tracks — puts the drive at 0.681 there
+and 0.268 through 2–8 s, and above the floor the peak is the track's own, so the floor only binds while the hold
+warms up. **And the habituation leaks light into a sparse mix**, because holding the mean of `amp²` is not holding
+the light: the brightness carries `min(1, sz)` and a grain's area buys overdraw, so the novel grains grow past a
+pixel and stop being attenuated. Both fixes for that — the gain to the power 0.6, and leaving the grain's SIZE on
+the raw level — were measured and **rejected**: each fixes the intro and each gives back almost all of what step 2
+bought, because the per-frame motion and the per-beat contrast ARE the novelty and they travel through the size
+(|Δlum| p50 2.10 → 1.72 / 1.63, per-beat 1.436 → 1.366 / 1.366).
+
+### Pass 2 end to end — `765b61c` (pre-§60) against HEAD, traced BACK TO BACK on one clock
+
+| SeeYouDrop 20–110 s | before | after | | CyborgNinja 20–80 s (no drop) | before | after |
+|---|---|---|---|---|---|---|
+| the window's range p95/p05 lum | 2.921 | **4.179** (+43 %) | | p95/p05 | 1.982 | **2.380** (+20 %) |
+| mean luminance | 101.8 | 101.0 | | mean luminance | 106.2 | 106.2 |
+| \|Δlum\| per frame p50 | 1.52 | **2.08** (+37 %) | | \|Δlum\| p50 | 1.64 | **2.17** (+32 %) |
+| per-beat peak/trough | 1.349 | **1.440** | | per-beat peak/trough | 1.364 | **1.446** |
+| the hat's rim lift p50 / mean | 0.1 / 6.4 % | **8.6 / 14.8 %** | | the hat's rim lift | −0.8 / 2.8 % | **0.2 / 9.0 %** |
+| the snare's body lift p50 / mean | 3.2 / 9.5 % | 5.5 / 11.3 % | | the snare's body p50 | 41.3 % | 46.8 % |
+| the void before drop 1 (55–57.6 s) | 49.9 | **29.6** (−41 %) | | formation changes | 0 | 0 |
+| breakdown 1 (49–55 s) · drop 1 | 59.8 · 103.3 | 57.9 · 106.0 | | | | |
+| the void / drop 1 | 0.483 | **0.279** | | | | |
+| breakdown 2 (100.5–104) · drop 2 | 103.8 · 127.8 | 106.9 · 121.3 | | | | |
+
+The intro (SeeYouDrop 2–40 s): the first eight seconds against the groove at 28–40 s, **0.671 → 0.633**; 8–14 s,
+where the track assembles itself and almost every band is new, 0.922 → 1.283 — there the novelty channel beats the
+dynamic-range one, which is the brief's own "a new sound gets a fresh voice" beating its own "quiet is quiet".
+**Breakdown 2 is the one section pass 2 does not improve**: the engine's energy does not say drop 2 is louder than
+the breakdown before it (`eM` 0.729 against 0.771, `eS` 0.78 against 0.62) and its bands are all new, so both
+channels read it as loud. An engine question — a loudness that is not AGC-flattened — not a scene one.
+
+### A MEASUREMENT HAZARD, for the harness
+
+An engine worker was editing `assets/engine/clock/clock.js` in the same worktree and its md5 moved from `45eb547f`
+to `3ddf490b` mid-session. Only `beatCount` changed — the md5s of the `dropEnv` and `eM` columns are identical
+across every trace either side of it — but that was enough: on the second clock SeeYouDrop 20–110 s reads **227
+beats instead of 225**, the build and the formation sequence land differently, and drop 1's mean luminance moved
+160 → 106 for reasons that are not the scene's. Two candidate tables had to be thrown away. **The rule this buys:
+when two workers share a worktree, a scene's before/after is only valid if the two traces were taken back to back,
+and the proof is the md5 of the MS columns of both traces** — `beatCount`, `dropEnv`, `eM` are enough to catch a
+clock change, an analyser change and a source change. Every headline number above was re-taken that way.
+
+### Proofs
+
+`check` 0 fail (help.feats gaps 0) · `npm test` 0 FAIL · s1 fake-timeline md5 per step: f360 `a73fbe67` →
+`8934dc86` → `5f1b796b` → `4781f104` → `5a9b6bc7`, f840 `35fe02c6` → `d3545bc8` → `984ed577` → `b70a98e1` →
+`b70a98e1` (step 4 does not move frame 840: the peak has already grown past 0.84 there, so the floor does not
+bind). No other scene's folder was touched, and DUST's files are imported by nothing else, so the other ten scenes'
+lines cannot move for anything in this pass. Cost, HEAD and FINAL benched back to back on the same machine (5 pairs
+interleaved with NAV, `q` pinned 0.95, tier 3, `&dyn=1`): **DUST/NAV 0.527 → 0.580, DUST 1.169 → 1.238 ms** — the
+whole of pass 2 is **+0.07 ms** at 150 k points. Within it: the two new passes and the two extra per-vertex fetches
+about +0.07 ms and the novel grains' extra fill about +0.03 ms (isolated with `&hab=0`, which leaves the passes
+running); sampling the normaliser on every fourth bin would save 5 % of the step and was rejected because it would
+put sampling noise on the brightness of the whole cloud. No audible run (the worker's brief forbids it): every
+number is the deterministic file path. Files: `dust/dyn.js` (new, 70), `dust/habit.js` (new, 162), and index /
+shaders / fibre / help — all under the 350-line soft cap.
