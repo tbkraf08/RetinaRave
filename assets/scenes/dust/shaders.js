@@ -55,12 +55,20 @@ uniform float uInvert;     // LOOK.mood.invert
 uniform float uAngular;    // LOOK.mood.angular
 uniform sampler2D uSpec;   // 256x1 log spectrum: each particle owns one bin
 uniform sampler2D uWave;   // 512x1 waveform: the ribbon formation is literally the waveform
+uniform sampler2D uEma;    // 256x1 SLOW spectrum: the same bins, averaged over 1.2 s (habit.js). A grain answers to
+                           // its bin's level MINUS this, so a sustained sound habituates and a new one is fresh.
+uniform sampler2D uNorm;   // 1x1: the RMS of the habituation gain over the bins THIS FRAME (habit.js FS_NORM).
+                           // Dividing by it is what makes the habituation redistribute the cloud's light between
+                           // the steady bands and the changing ones instead of changing how much there is.
+uniform vec3 uHab;         // x = the habituation on/off (hooks.hab, the A/B), y = the floor a sustained band
+                           // habituates TO, z = the step in the spectrum that counts as fully new
 
 out vec3 vCol;
 
 float hash11(float p){ p = fract(p * .1031); p *= p + 33.33; p *= p + p; return fract(p); }
 mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
 float spec(float x){ return texture(uSpec, vec2(clamp(x, 0.002, 0.998), .5)).r; }
+float slow(float x){ return texture(uEma, vec2(clamp(x, 0.002, 0.998), .5)).r; }
 float wave(float x){ return texture(uWave, vec2(clamp(x, 0.002, 0.998), .5)).r * 2. - 1.; }
 
 // The mood palette: hue centre, spread, saturation and brightness all steered by the music on the CPU side.
@@ -117,7 +125,15 @@ void main(){
   float id = float(gl_VertexID), n = id / uCount;
   vec3 h = vec3(hash11(id * 1.31 + 1.), hash11(id * 2.17 + 7.), hash11(id * 3.73 + 13.));
   float fx = pow(h.x, 1.4) * .95;                             // more particles own the low bins
-  float amp = spec(fx);                                       // this particle's band, right now
+  // §60 step 2: NOVELTY. raw is this particle's band right now; slow(fx) is the same band averaged over 1.2 s
+  // (habit.js), so nov is how much of an ONSET the band is showing — an absolute step of uHab.z of full scale,
+  // because the spectrum is peak-normalised and its bins' resting levels differ. A sustained sound's average
+  // catches up with it and the grain settles back to uHab.y of a fully novel one — never to nothing. The three
+  // transient voices below are driven by the onsets' ages, not by this, so a habituated pad cannot dim a kick.
+  float raw = spec(fx);
+  float nov = clamp((raw - slow(fx)) / uHab.z, 0., 1.);
+  float nrm = max(texture(uNorm, vec2(.5)).r, uHab.y);
+  float amp = raw * mix(1., (uHab.y + (1. - uHab.y) * nov) / nrm, uHab.x);
   // Which drum a grain answers to is the band it owns. wLow: the inner, low-bin grains the kick and the sub move.
   // wMid: a band around the snare's body. wHigh: the edge grains the hats live on. The three barely overlap, so
   // the three voices are separable on screen instead of all brightening the same cloud.

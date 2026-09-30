@@ -6,6 +6,7 @@ import { HELP } from './help.js';
 import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
 import { dyn, mkDyn } from './dyn.js';
+import { HAB, NW, ema, emaK, mkEma } from './habit.js';
 import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
 
@@ -48,6 +49,7 @@ const SELF = {
   pinF: -1,                     // hooks.form — test only: pin the formation so a ruler can measure one shape at a time
   pinD: -1,                     // hooks.dyn — test only: pin the dynamic-range drive (a bench must not run at the
                                 // fake timeline's own eM, which is 0.374 → drive 0.40 → grains at 73 % of their size)
+  habOn: 1,                     // hooks.hab — the A/B switch for the habituation (0 = pass 1's drive exactly)
 
   // the director's home scene owns builds; DUST bids on punchy, steady music
   score(MS) {
@@ -67,6 +69,7 @@ const SELF = {
     this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
     this.vT = mkTens();             // the void's contraction, the last bar's wind-up, the drop's release
     this.vD = mkDyn();              // the track's own running peak: quiet is quiet, loud is loud (dyn.js)
+    this.E = mkEma(ctx);            // the slow spectrum: a 256x1 ping-pong, one bin per grain (habit.js)
     this.mem = mkMem();             // the section memory: which shape each section had (formations.js)
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
     this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, drop: 0, tension: 0, alive: 0,
@@ -114,6 +117,7 @@ const SELF = {
     // 2.5 s mean and is still half-full of the void on the frame the slam lands.
     dyn(this.vD, dt, MS, this.vT.rel);
     if (this.pinD >= 0) this.vD.dyn = this.pinD;
+    this.E.k = emaK(dt);            // the slow spectrum's step for this frame; the pass itself runs in draw()
 
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
     // never while a pour is still running. WHICH shape is the section's energy (formations.js); a return pours back
@@ -160,6 +164,7 @@ const SELF = {
   draw(target, { w, h }) {
     const ctx = this.ctx, gl = ctx.gl, P = this.pr;
     if (!P || !P.p) return;
+    ema(ctx, this.E);                                    // the slow spectrum, first: the swarm's pass rebinds after it
     const count = ctx.budget('points'), m = this.m, d = this.mood;   // the core's particle budget for the current tier (CONTRACTS §1.4)
     lookVP(this.vp, this.yaw, this.pitch, this.dist, Math.max(w, 1) / Math.max(h, 1), 55 * DEG, 0.1, 10.1);
     ctx.use(P, target, w, h);
@@ -189,6 +194,9 @@ const SELF = {
     gl.uniform1f(P.u('uAngular'), d.angular);
     ctx.tex(P, 'uSpec', 0, ctx.engineTex.spec);
     ctx.tex(P, 'uWave', 1, ctx.engineTex.wave);
+    ctx.tex(P, 'uEma', 2, this.E.a);                     // the slow spectrum the pass above just wrote
+    ctx.tex(P, 'uNorm', 3, this.E.n);                    // ...and this frame's normaliser for it, one texel
+    gl.uniform3f(P.u('uHab'), this.habOn ? 1 : 0, HAB, NW);
     const wasDepth = gl.isEnabled(gl.DEPTH_TEST);
     gl.disable(gl.DEPTH_TEST);                           // additive points are order-independent; the target may have no depth buffer
     gl.clearColor(0, 0, 0, 1);
@@ -229,6 +237,7 @@ const SELF = {
     fibres(v) { SELF.fibresOn = +v; },
     form(v) { SELF.pinF = v === '' || v === undefined || v === null ? -1 : +v; },   // -1 = the music chooses (the default)
     dyn(v) { SELF.pinD = v === '' || v === undefined || v === null ? -1 : +v; },     // -1 = the music chooses (the default)
+    hab(v) { SELF.habOn = +v; },                                                    // &hab=0: pass 1's drive, for the A/B
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
