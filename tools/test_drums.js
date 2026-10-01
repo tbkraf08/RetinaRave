@@ -115,5 +115,109 @@ console.log('the low lane under a sub drone (§68)');
     `last ${den[den.length - 1]} /s`);
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// §69 THE SNARE LANE, on the two cases the five real tracks could not isolate. Both are graded against the OLD lane
+// in its own tree (`git worktree add --detach <dir> 4e175e5`, the same file run there), quoted per case.
+//
+// (a) A RIM ON 2 AND 4 UNDER 16th HATS — CyborgNinja's geometry. 20 bars at 120 BPM, 48 kHz: a continuous mid BED
+//     (300 / 700 / 1500 Hz at 0.10 — without one, a hat on silence is an infinite rise in every band it touches,
+//     however faint, and the test would say nothing), a hat on every 16th (white noise through a first-difference
+//     high-pass, 10 ms decay, 0.40 — a real hat bleeds into 150-2500, which is why the truth's own `mid` list
+//     counts hats on that track) and a rim on beats 2 and 4 (a 220 Hz body plus noise, 45 ms decay, 0.50).
+//       the 150-2500 flux lane (old)   snare 51 fires for 40 rims   P 0.78  R 1.00   lag p50 -4.7 ms
+//       the two-band rise lane         snare 40 fires for 40 rims   P 1.00  R 1.00   lag p50 -8.7 ms
+//     The hat lane is untouched by the change: 310 fires for 320 hats either way.
+//
+// (b) A SNARE UNDER A MID PAD SWELL — §64's "a median lags a swell", on the MID band this time. A 330/440/550/1100
+//     Hz pad at 0.15 of its level, swelling to full over 1.5 s from t = 1 s and held, with one rim at 3.0 s. A rise
+//     over an 85 ms LOCAL MEAN cannot see a ramp that slow; a median-9 residual's flux steps up all the way through
+//     it. The old lane fires twice inside the swell (1.034 and 1.162 s); the new one fires only on the stick.
+//     (The boundary is honest: at a 0.4 s swell the new lane fires once too — that fast a rise IS an onset.)
+const SYN_SR = 48000;
+function rngf(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 2147483648 - 1; }; }
+function runEars(L, SR) {
+  const ears = new Ears(SR), B = 512, bl = new Float32Array(B);
+  const snare = [], hat = [], vel = [], den = [];
+  let next = 0;
+  for (let s = 0; s + B <= L.length; s += B) {
+    bl.set(L.subarray(s, s + B)); ears.push(bl, bl, s / SR);
+    const tEnd = (s + B) / SR;
+    while (next <= tEnd) {
+      const o = ears.read(next);
+      for (const e of ears.events) { if (e.type === 'snare') { snare.push(e.t); vel.push(o.snareVel); } else if (e.type === 'hat') hat.push(e.t); }
+      den.push(o.denS);
+      next += 1 / 60;
+    }
+  }
+  return { snare, hat, vel, den };
+}
+function gradeAt(det, ref, tol = 0.030) {
+  const used = new Array(ref.length).fill(false); let tp = 0; const lag = [];
+  for (const d of det) {
+    let j = -1, best = tol + 1e-9;
+    for (let i = 0; i < ref.length; i++) { if (used[i]) continue; const e = Math.abs(d - ref[i]); if (e <= tol && e < best) { best = e; j = i; } }
+    if (j >= 0) { used[j] = true; tp++; lag.push(d - ref[j]); }
+  }
+  lag.sort((a, b) => a - b);
+  return { n: det.length, P: tp / Math.max(1, det.length), R: tp / ref.length,
+    p50: 1000 * (lag[lag.length >> 1] || 0), p90: 1000 * (lag[Math.floor(0.9 * lag.length)] || 0) };
+}
+
+console.log('the snare lane: a rim on 2 and 4 under 16th hats (§69)');
+{
+  const SR = SYN_SR, BEAT = 0.5, BARS = 20, N = Math.round(BARS * 4 * BEAT * SR);
+  const rims = [], hats = [];
+  for (let bar = 0; bar < BARS; bar++) {
+    for (const b of [1, 3]) rims.push((bar * 4 + b) * BEAT);
+    for (let k = 0; k < 16; k++) hats.push(bar * 4 * BEAT + k * BEAT / 4);
+  }
+  const rnd = rngf(12345), nz = new Float32Array(N);
+  for (let i = 0; i < N; i++) nz[i] = rnd();
+  const hp = new Float32Array(N);                           // a first difference: +6 dB / octave, so the hat is a
+  for (let i = 1; i < N; i++) hp[i] = nz[i] - nz[i - 1];    // high-band burst that still bleeds into 150-2500
+  const L = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const t = i / SR;
+    L[i] = 0.10 * (Math.sin(2 * Math.PI * 300 * t) + Math.sin(2 * Math.PI * 700 * t) + Math.sin(2 * Math.PI * 1500 * t)) / 3; }
+  for (const h of hats) { const i0 = Math.round(h * SR);
+    for (let i = i0; i < Math.min(N, i0 + Math.round(0.05 * SR)); i++) L[i] += 0.40 * Math.exp(-(i - i0) / SR / 0.010) * hp[i]; }
+  for (const r of rims) { const i0 = Math.round(r * SR);
+    for (let i = i0; i < Math.min(N, i0 + Math.round(0.20 * SR)); i++) { const d = (i - i0) / SR;
+      L[i] += 0.50 * Math.exp(-d / 0.045) * (0.7 * Math.sin(2 * Math.PI * 220 * d) + 0.5 * nz[i]); } }
+  const { snare, hat, vel, den } = runEars(L, SR);
+  const g = gradeAt(snare, rims);
+  ok('the snare lane finds every rim (P >= 0.95, R >= 0.95)', g.P >= 0.95 && g.R >= 0.95,
+    `n ${g.n}/${rims.length}  P ${g.P.toFixed(3)}  R ${g.R.toFixed(3)}`);
+  ok('... on time (|median lag| <= 10 ms)', Math.abs(g.p50) <= 10, `p50 ${g.p50.toFixed(1)} ms, p90 ${g.p90.toFixed(1)} ms`);
+  ok('... and never twice for one rim (the 75 ms refractory)', g.n <= rims.length + 1, `${g.n} fires for ${rims.length} rims`);
+  ok('... and the 320 16th hats under it fire the HAT lane, not this one', hat.length > 250 && g.n - g.P * g.n < 2,
+    `${Math.round(g.n * (1 - g.P))} of the snare lane's ${g.n} fires are not a rim; the hat lane has ${hat.length}`);
+  ok('snareVel is a share of the lane\'s own p95, not a constant', vel.length > 8 && Math.min(...vel) < Math.max(...vel) && Math.max(...vel) <= 1,
+    `min ${Math.min(...vel).toFixed(3)} max ${Math.max(...vel).toFixed(3)}`);
+  ok('denS counts the lane\'s hits in the last second (1 rim/s here)', den.length > 8 && Math.abs(den[den.length - 1] - 1) <= 0.5,
+    `last ${den[den.length - 1]} /s`);
+}
+
+console.log('the snare lane: a snare under a mid pad swell (§69)');
+{
+  const SR = SYN_SR, DUR = 8, N = Math.round(DUR * SR), HIT = 3.0, T0 = 1, TC = 1.5;
+  const rnd = rngf(999), L = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const t = i / SR, a = 0.15 + 0.85 * Math.max(0, Math.min(1, (t - T0) / TC));
+    L[i] = 0.30 * a * (Math.sin(2 * Math.PI * 330 * t) + Math.sin(2 * Math.PI * 440 * t)
+      + Math.sin(2 * Math.PI * 550 * t) + Math.sin(2 * Math.PI * 1100 * t)) / 4;
+  }
+  const i0 = Math.round(HIT * SR);
+  for (let i = i0; i < Math.min(N, i0 + Math.round(0.20 * SR)); i++) { const d = (i - i0) / SR;
+    L[i] += 0.50 * Math.exp(-d / 0.045) * (0.7 * Math.sin(2 * Math.PI * 220 * d) + 0.5 * rnd()); }
+  const { snare } = runEars(L, SR);
+  const onHit = snare.filter((t) => Math.abs(t - HIT) <= 0.030);
+  const inSwell = snare.filter((t) => t >= T0 - 0.1 && t <= HIT - 0.2);
+  ok('the snare fires on the stick', onHit.length === 1, `${onHit.length} fire(s) within 30 ms of ${HIT} s`);
+  ok('... and the SWELL itself fires nothing (0.9-2.8 s; the old lane fired twice)', inSwell.length === 0,
+    `${inSwell.length} fires during the swell`);
+  ok('... and the held pad after it fires nothing either', snare.filter((t) => t > HIT + 0.3).length === 0,
+    `${snare.filter((t) => t > HIT + 0.3).length} after the stick, ${snare.length} in the whole ${DUR} s`);
+}
+
 console.log(FAIL ? `test_drums: ${FAIL} FAILED` : 'test_drums: OK');
 process.exit(FAIL ? 1 : 0);

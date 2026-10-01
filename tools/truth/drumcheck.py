@@ -20,6 +20,11 @@ level picker and on a track whose low end is a continuous 38-46 Hz 808 drone (Vi
 475 onsets = 2.46 /s where the groove has 1.74 kicks /s, and §66 proved the front end that made it cannot see the thud.
 The reference is validated where `click` is trustworthy — it reproduces CyborgNinja's `click` at P 0.99 / R 0.89 and
 §66's own Vienna hand-grid list at P 0.96 / R 0.92.
+
+A FOURTH SNARE reference, when tools/truth/<track>.snare.json exists (DECISIONS §69, tools/truth/snaretruth.py):
+`snare` is the OFFLINE 150-800 Hz rise at the same 16th grid. It exists for the same reason: `mid` is a 150-2500 Hz
+MEDIAN-residual flux list, and on Vienna it reads 201 onsets = 1.04 /s where §66's hand-built rim/clap list reads
+2.0 /s. Validated against that hand list at P 1.00 / R 0.97 (lag +0 ms) and against CyborgNinja's `mid` at P 0.97.
 """
 import json, os, sys
 import numpy as np
@@ -29,7 +34,8 @@ sys.path.insert(0, HERE)
 from compare import match, evframes, riseframes  # noqa: E402
 
 SRC = {'syn': ('kick', 'snare', 'hat', 'rise'), 'ears': ('kickEvt', 'snareEvt', 'hatEvt', 'evt'), 'v2': ('kick2', 'snare2', 'hat2', 'rise')}
-REFS = (('kick', 0, 'low'), ('kick', 0, 'click'), ('kick', 0, 'kick'), ('snare', 1, 'mid'), ('hat', 2, 'high'))
+REFS = (('kick', 0, 'low'), ('kick', 0, 'click'), ('kick', 0, 'kick'),
+        ('snare', 1, 'mid'), ('snare', 1, 'snare'), ('hat', 2, 'high'))
 
 def frames(tr, col, kind):
     c = tr['cols'].get(col)
@@ -42,6 +48,8 @@ def grade(tr, tol, srcs):
     ons = dict(T['onsets'])
     kp = os.path.join(HERE, f"{tr['track']}.kick.json")       # §68's offline 60-150 Hz rise reference, when built
     if os.path.exists(kp): ons['kick'] = json.load(open(kp))['t']
+    sp = os.path.join(HERE, f"{tr['track']}.snare.json")      # §69's offline 150-800 Hz rise reference, when built
+    if os.path.exists(sp): ons['snare'] = json.load(open(sp))['t']
     tb = np.array(tr['t'], float); t0, t1 = tb[0], tb[-1]
     rows = []
     for name, ci, key in REFS:

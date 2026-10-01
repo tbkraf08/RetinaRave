@@ -24,8 +24,10 @@ const SET = opt('--set', null);                   // --set K=v,...: drums.js DRU
 if (SET) for (const kv of SET.split(',')) { const [k, v] = kv.split('='); if (!(k in D2.DRUMS)) { console.error('drums-node: no DRUMS.' + k); process.exit(2); } D2.DRUMS[k] = +v; }
 // --perc rise=5,base=8,lag=0.012,refract=0.085,gateDb=-34: a SECOND ears instance with these LOW-lane knobs feeds the low
 // stream (the first keeps the page's constants for everything else) — the low picker's tuning sweep. Since §68 the low
-// lane is the 60-150 Hz RISE, so `rise` / `base` / `lag` are its knobs; `thrK` and `floor` are the SNARE/HAT flux lane's
-// and no longer reach the kick.
+// lane is the 60-150 Hz RISE, so `rise` / `base` / `lag` are its knobs; since §69 the SNARE lane is the two mid bands'
+// RISE and has its own — `srise` / `sbase` / `slag` / `srefract` — so `thrK` and `floor` now reach the HAT alone.
+// The second instance's whole `read()` is taken when any snare knob is set, so `snareEvt` / `snareAge` / `snareVel` /
+// `denS` in the trace are the swept lane's (otherwise they stay the page's, as the low sweep needs).
 const PERC = opt('--perc', null), PO = {};
 if (PERC) for (const kv of PERC.split(',')) { const [k, v] = kv.split('='); PO[k] = +v; }
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
@@ -36,10 +38,13 @@ for (const track of TRACKS) {
   const pcm = loadPcm(track, 48000), sr = pcm.sr;
   const an = new Analyzer(sr), ears = new Ears(sr), drums = new D2.Drums();
   const lows = [];
+  const SPERC = PERC && (PO.srise !== undefined || PO.sbase !== undefined || PO.slag !== undefined || PO.srefract !== undefined);
   const ears2 = PERC ? new Ears(sr, { perc: { thrK: PO.thrK, gateDb: PO.gateDb,
     kickRise: PO.rise, kickBase: PO.base, kickLag: PO.lag,
+    snareRise: PO.srise, snareBase: PO.sbase, snareLag: PO.slag,
     thrFloor: PO.floor !== undefined ? [PO.floor, 1.2, 1.2] : undefined,
-    refract: PO.refract !== undefined ? [PO.refract, 0.060, 0.045] : undefined } }) : ears;
+    refract: (PO.refract !== undefined || PO.srefract !== undefined)
+      ? [PO.refract === undefined ? 0.085 : PO.refract, PO.srefract === undefined ? 0.075 : PO.srefract, 0.045] : undefined } }) : ears;
   const take = ears2.perc.take.bind(ears2.perc);
   ears2.perc.take = () => { const o = take(); for (const e of o) if (e.type === 'low') lows.push(e); return o; };
   const cols = { lowEvt: [], lowVel: [] };
@@ -51,7 +56,9 @@ for (const track of TRACKS) {
     frame(fr, heard) {
       const A = an.A, d = 1 / FPS;
       A.kick *= Math.exp(-d / TAU[0]); A.snare *= Math.exp(-d / TAU[1]); A.hat *= Math.exp(-d / TAU[2]);
-      const o = ears.read(heard);
+      const o2 = ears2 !== ears ? ears2.read(heard) : null;
+      const o = SPERC ? o2 : ears.read(heard);
+      if (SPERC) ears.read(heard);              // the page instance is still stepped, so its own state stays honest
       // the ears' low onsets, released on the frame nearest their audio time (the ears' own rule: heard + half a frame)
       let low = 0, lowVel = 0, lowFl = 0;
       while (li < lows.length && lows[li].t <= heard + 0.5 / FPS) { low = 1; lowVel = Math.max(lowVel, lows[li].vel); lowFl = Math.max(lowFl, lows[li].fl); li++; }
