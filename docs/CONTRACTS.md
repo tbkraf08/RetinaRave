@@ -588,15 +588,21 @@ are the scene author's rules:
   track's own future: wind up exactly to `mapDropEvt`. In live modes `mapOn` is 0 — fall back to `dropConf`, `dropExpectedIn`,
   `build`, `dropEvt`, and never invent a countdown.
 - **Silence is quiet.** `subGate` 0 / `presence` low means the channel it drives rests; no carrier animation.
-- **Pitch against the tonic.** `tonic` / `tonicMinor` include the sub's root (the v0.14 `key` reads the fifth on sub-heavy
-  tracks); the interval of the bass is `((subNote − tonic + 12) % 12) + subCents/100` (`subCents` is from the nearest note).
+- **Pitch against the tonic.** `tonic` / `tonicMinor` include the sub's root; the interval of the bass is
+  `((subNote − tonic + 12) % 12) + subCents/100` (`subCents` is from the nearest note). **Since §62 `key` / `mode` ARE
+  that tonic** whenever the ears have one, so the palette anchor and the interval ruler agree: up to v0.22 `key` was
+  synapse's own Krumhansl–Kessler on a 65 Hz-floored chroma and read the FIFTH above the tonic on sub-heavy tracks
+  (G# for C# minor), 1 of 5 truth tonics against the ears' 3 of 5. `keyConf` is still synapse's clarity — the gate's
+  scale, deliberately unchanged (docs/OPEN-ITEMS.md).
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`
 (`FEATS[name] = {eli5, formula, kind, range, drives}`) — scene authors read Appendix A below instead of that file. A new analysis stage registers with
 `ENGINE.addStage(name, fn(dt, now, MS), feats)`; stages run after the v3 extractor in registration order; each may only
-add the fields it declares in `feats.js`, never overwrite another stage's. `check.js` fails on an `MS` key without a
+add the fields it declares in `feats.js`, never overwrite another stage's — with ONE exception, declared both ways:
+the `ears` stage takes `key` / `mode` over from `synapse` (§62), because a better detector of the same quantity wins,
+the way the track map already takes the drums and the sub over from the causal ears. `check.js` fails on an `MS` key without a
 `FEATS` entry. A source is `{name, start(), stop(), tick?(nowMs)}` plugged into `ENGINE.sources`.
 
 ## 3. Effect contract
@@ -827,9 +833,9 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `phrase16Pos` | raw | position inside the 16-beat phrase | director: a phrase-triggered soft switch lands when it wraps (§10) |
 | `beatSyn` | raw | synapse beat clock (continuous beats) | grid fields |
 | `bpmSyn` | raw | synapse tempo estimate (rival to bpm; bpm is canonical) | HUD, DECISIONS.md comparison |
-| `key` | count | the key, 0=C … 11=B | TORUS knot / palette anchor |
+| `key` | count | the key, 0=C … 11=B (the ears' `tonic` whenever it has one, else synapse's KK — §62) | TORUS knot / palette anchor |
 | `mode` | count | 0 major, 1 minor | valence |
-| `keyConf` | level | how sure the key is | TORUS |
+| `keyConf` | level | how sure the key is (on SYNAPSE's chroma, still the gate where `key` is the ears' — §62) | TORUS |
 | `novelty` | level | timbre just changed (quick, causal) | early warning for the director |
 | `foote` | level | Foote novelty at the last beat (careful, 4-beat kernel) | boundaries |
 | `boundaryEvt` | event | a section boundary was just declared (synapse) | director: files the outgoing section's scene + looks (§10) |

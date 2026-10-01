@@ -3376,3 +3376,93 @@ shaders / fibre / help — all under the 350-line soft cap.
 0.22.0. Not pushed (retinarave.com serves v0.15). The user's next observations: "still finding some observations on the
 visualization that make it feel jerky" — a new test track, Vienna (Thom Sonny Green, `~/Music/RetinaRave/Vienna.flac`; "fast
 elements … but actually a slow rolling flowy groove"; "the nudge on this looked weird and jerky around 1:40–1:50 (probably more)").
+
+## §62 `key` is the TONIC — the engine read the fifth above it, and the fix is which detector answers (2026-09-30, one worker; the miss found by §60 step 3, the user: "fix it")
+
+§60 step 3 measured DUST and TORUS2 taking a bit-identical hue out of `assets/math/keycolour.js` and the engine
+handing both of them **G# for C# minor on SeeYouDrop** — "the known v0.14 `key` behaviour". Three candidates for where
+the fifth came from, and the measurement that settles it: the engine's `MS.key` against the truth grids' tonic over
+20–100 s of all five tracks (`filetrace.js … 'key,mode,keyConf,tonic,tonicMinor,tonicConf,eM'`, PORT 8890), the modal
+read per track.
+
+| track | truth tonic | `MS.key` **before** | d | the ears' `tonic` | d | the map's whole-track KK | d |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop | C#m (conf .277, **human**) | **G#m 93 %** | +7 | **C#m 76 %** | 0 | C#m (.222) | 0 |
+| CyborgNinja | C#m (.174) | G#m 53 % | +7 | G#M 40 % | +7 | Dm (.019) | +1 |
+| Malicious | GM (.159) | Cm 50 % | +5 | Cm 53 % | +5 | CM (.036) | +5 |
+| WhoLikesToParty | DM (.191) | **Bm 100 %** | +9 | **DM 47 %** | 0 | Em (.277) | +2 |
+| Vienna | D#m (.451) | D#m 100 % | 0 | D#m 100 % | 0 | D#m (.362) | 0 |
+
+**The diagnosis is (a), the detector — and NOT (b), the mapping.** (b) was §60's lean and a one-line fix, and it is
+refuted by the second column: the error is +7, +7, +5, +9, 0, not a constant. A circle-of-fifths offset in
+`keycolour.js` cannot produce that, and `hueKey = ((7k) mod 12)/12` is a correct circle of fifths besides (C G D A E B
+F# C# G# D# A# F at positions 0…11) — rotating it would have hidden a detector fault inside the colour layer while
+leaving GIELIS's shapes and CHLADNI's interval table reading the wrong root. The three errors are instead the three
+classic Krumhansl–Kessler confusions: the **dominant** (SeeYouDrop, CyborgNinja), the **subdominant** (Malicious) and
+the **relative minor** (WhoLikesToParty, B minor for D major — the same twelve notes, a different profile weighting).
+(c) is **partly true and recorded as an open item**: only SeeYouDrop's C# minor has a human annotation behind it
+(`SeeYouDrop.sections.json`, the sub loop C#1–A1–F#1–E1 = i–VI–iv–III); on CyborgNinja and Malicious the "truth" is
+itself a low-margin KK read of the same signal.
+
+**Where the fifth comes from, exactly.** `MS.key` was synapse's own KK (`synapse/anatomy.js` `longFrame`): a chroma
+peak-picked from a 8192 FFT over **65–2100 Hz**, `sqrt(magnitude)` weights, a 12 s EMA, 2.5 s hysteresis. On a track
+whose root is a 34.6 Hz C#1 that floor is below the first harmonic and the bins near it are a whole tone wide
+(5.4 Hz bins: bin 6 is C1, bin 7 is D1), so the root's own pitch class is not reliably in the chroma at all. The
+engine already solved that once: `ears/tonic.js` bins 130–2100 Hz by **power** and adds the sub's own **YIN** pitch
+class weighted by its energy share, which is why its header has carried the sentence "the engine reports the fifth
+(G# instead of C#)" since v0.15 — the diagnosis was in the tree, unacted on, while five scenes read the wrong field.
+Both solvers' rotation conventions were checked and are identical (`c[k]` aligns with `P[0]`), so the fault is the
+chroma, not the correlation.
+
+**The fix — `engine/features-ears.js`, two lines in the stage.** The `ears` stage runs after `synapse` and takes
+`key` / `mode` over from it when `tonic >= 0`: `if (o.tonic >= 0) { S.key = o.tonic | 0; S.mode = o.tonicMinor | 0; }`.
+This is the move the track map already makes on the drums and the sub (§48 addendum 1) — a better detector of the same
+quantity wins — so CONTRACTS §2's "never overwrite another stage's" gained its one declared exception, and the two
+fields are declared on the stage. **Rejected: fixing `anatomy.js`.** Its chroma also feeds `MS.chroma`, which TORUS2,
+POLYTOPE, MAXWELL, GIELIS and DUST all read, and resolving a 35 Hz root out of a 5.4 Hz-bin FFT needs the YIN the ears
+already run — the fix would have been a duplicate of `ears/tonic.js` paid for by moving every chroma scene.
+**Rejected: the map's whole-track tonic** (2/5, the table's last column) — it is non-causal and so file-mode only, and
+it is *worse* than the causal ears on three tracks, because one average over the loud half throws away the fact that
+the key is a thing that holds for a while.
+
+**`keyConf` deliberately does NOT move.** The ears' own clarity on synapse's documented `(best r − .35)/.45` scale was
+built and measured — p50 0.548 / 0.648 / 0.767 / 0.976 / 1.000 — and **reverted**: `keycolour.js` gates on `keyConf`
+at `KEYC1` 0.3, so each of those opens the gate to 1.0 and the hue stops being `LOOK.mood` slid part of the way toward
+the key and becomes the key's own hue outright, on all five scenes that call `mkAnchor()`. SeeYouDrop's gate would go
+§60's measured **0.27 → 1.00**. Which key the hue anchors on was the user's ask; how far the hue travels toward it is a
+look change that wants its own A/B (`docs/OPEN-ITEMS.md`).
+
+**Proof, on the music.** The same five traces re-taken after the fix: `MS.key`/`MS.mode` equal the ears' tonic on
+**4801 / 4801** frames of every track, `keyConf` p50 **identical** on all five (0.154 / 0.706 / 0.778 / 0.755 / 1.000
+before and after), SeeYouDrop **G# → C#** and WhoLikesToParty **B → D**, Vienna unchanged, CyborgNinja and Malicious
+unchanged and never worse. §60's own recipe re-run on TORUS2 (`#test&track=SeeYouDrop&at=12&map=0&scene=3`, `info()` at
+frames 2400 / 3600 / 4800, errs []), **back to back on this tree**:
+
+| | key / mode | unwrapped hue | `keyConf` |
+|---|---|---|---|
+| before (`12f63a1`) | 8 / 1 | −0.3341 · 0.9236 · 1.8542 (= §60's −0.33410 / 0.92363 / 1.85418) | 0.1661 · 0.1095 · 0.1720 |
+| after | **1 / 1** | −0.3538 · 0.9191 · 1.8389 | 0.1661 · 0.1095 · 0.1720 (unchanged) |
+
+The hue moved **−0.0197 / −0.0045 / −0.0153 turns** — small, because the held gate is 0.04–0.36 there, which is the
+open item above stated as a number: the right key is at present barely more visible than the wrong one was.
+
+**Proof, on the fake timeline: NOTHING moved.** The ears never run under `#test` (`earsStage` returns on
+`ENGINE.fakeOn`), so `tonic` is −1, the override cannot fire and `state.js`' defaults stand. The full sweep
+(`PORT=8890 tools/scene-md5.sh s62`, all 12 ids, errs [] on every one) is **equal to `tools/accept/v0.14/scene-md5-v014.txt`
+line for line** apart from the four already accounted for: s0-f840 `8a0715df` and s4-f840 `05bf21c0`, the two
+pre-existing moves from `22eb969` / §54 addendum 2; s1 `5a9b6bc7` / `b70a98e1`, exactly §60's recorded DUST values (the
+parallel DUST worker had not moved them); s11, which post-dates that list. So §62 moved **0 of 25 lines** — the
+stronger result than the "three key-colour scenes move" the brief expected, and the right one: a change gated behind
+the ears cannot touch a timeline the ears do not run on. (Five scenes read `mkAnchor()`, not three: DUST, TORUS2,
+POLYTOPE, MAXWELL, GIELIS, and CHLADNI reads `tonic` with `key` as its fallback.)
+
+**Proofs.** `node tools/check.js` **0 fail** (154 modules, MS keys 199, help.feats gaps 0, 5 pre-existing line-cap
+warns) · `npm test` **0 FAIL** (all 10 groups OK) · a new **`node tools/test_ears.js --keys`** ruler: the modal
+`(tonic, tonicMinor)` over 20–100 s of every track with a PCM dump against that track's truth tonic, with the page's
+synapse read recorded beside it, asserting the three tracks that must match, the two recorded misses, `ears > synapse`
+on the pitch class and `0 tracks where synapse wins and the ears lose` — **8 pass**, 4.0 s (a `stopAt` option on
+`stream()` keeps it to the graded window). `tools/test_ears.js` itself still reports its four known causal-path misses
+(subNote 88.4 %, the walk arrivals, kick F 0.786, 13.9 % on bare 808s — AUDIT-v0.15 §1's published numbers, which is
+why it is not in `npm test`); the diff touches neither `ears/sub.js` nor `ears/perc.js` and `test_ears` never imports
+`features-ears.js`, so it cannot have moved them. No audible run. Files: `engine/features-ears.js`, `engine/feats.js`
+(the three FEATS entries), `tools/test_ears.js`, `docs/CONTRACTS.md` (§1.18, §2, Appendix A), `docs/OPEN-ITEMS.md`.

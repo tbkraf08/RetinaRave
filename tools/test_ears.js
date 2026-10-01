@@ -5,6 +5,7 @@
 //   node tools/test_ears.js --sr=44100 --verbose
 //   node tools/test_ears.js --trace tools/work/ears-node-SeeYouDrop.json   # write the frozen trace format
 //   node tools/test_ears.js --cost                 # the cost table only
+//   node tools/test_ears.js --keys                 # §62: the key ruler only — the ears' tonic against every truth tonic
 // The PCM comes from `python3 tools/truth/trackmap.py SeeYouDrop --pcm --sr=48000`.
 import fs from 'fs';
 import path from 'path';
@@ -42,7 +43,10 @@ export function stream(pcm, opts = {}) {
   let nextRead = 0, k = 0, pushNs = 0, readNs = 0, pushes = 0, reads = 0;
   const per = [];
   const bl = new Float32Array(B), br = new Float32Array(B);
-  for (let s = 0; s + B <= pcm.n; s += B) {
+  // `stopAt` (s) stops the stream early — the key ruler grades a 20-100 s window on five tracks and has no use for the
+  // 150 s after it. Omitted = the whole track, which is what every other ruler takes.
+  const nEnd = opts.stopAt ? Math.min(pcm.n, Math.ceil(opts.stopAt * sr)) : pcm.n;
+  for (let s = 0; s + B <= nEnd; s += B) {
     bl.set(pcm.L.subarray(s, s + B)); br.set(pcm.R.subarray(s, s + B));
     const t0 = s / sr;
     const a = process.hrtime.bigint();
@@ -265,6 +269,56 @@ function toneRulers(R, truth, label) {
   ok(`[${label}] width per section`, true, secs.map(([a, b, n]) => `${n} ${avg(R.cols.width, a, b).toFixed(3)}`).join(' '), 'reported');
 }
 
+// ------------------------------------------------------------------------------- the KEY ruler (§62), --keys
+// `MS.key` / `MS.mode` are the ears' tonic (engine/features-ears.js). This grades that claim on every track with a
+// PCM dump: the MODAL (tonic, tonicMinor) over WIN, against the track's truth tonic.
+//
+// SYN is what the PAGE's synapse read on the same 20-100 s window, recorded once by
+// `PORT=8890 node tools/filetrace.js <t> 20 100 <out> 'key,mode,keyConf,tonic,tonicMinor,tonicConf,eM'` (2026-09-30,
+// the §62 session) — it cannot be recomputed here, because synapse's Analyzer needs an AudioWorklet. It is in the
+// table so a reader sees WHY the ears won, and so a regression that drags the ears down to synapse's reads is visible.
+export const KEY_WIN = [20, 100];
+export const KEY_TRACKS = {
+  //                 truth pc, minor   synapse's page read (pc, minor, % of frames)
+  SeeYouDrop:      { pc: 1, minor: 1, syn: [8, 1, 93], expect: true },
+  CyborgNinja:     { pc: 1, minor: 1, syn: [8, 1, 53], expect: false },   // KK is a coin flip here: truth's own margin is C#m .521 / C#M .430 (conf .174)
+  Malicious:       { pc: 7, minor: 0, syn: [0, 1, 50], expect: false },   // truth GM .639 / CM .537 / Gm .529 / Cm .516 — a .10 race over four candidates
+  WhoLikesToParty: { pc: 2, minor: 0, syn: [11, 1, 100], expect: true },
+  Vienna:          { pc: 3, minor: 1, syn: [3, 1, 100], expect: true },
+};
+const PCN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const nameOf = (pc, mi) => (pc < 0 ? '--' : PCN[pc]) + (mi ? 'm' : 'M');
+
+function keyRulers() {
+  let nEars = 0, nSyn = 0, nWorse = 0;
+  for (const track of Object.keys(KEY_TRACKS)) {
+    const T = KEY_TRACKS[track];
+    let pcm;
+    try { pcm = loadPcm(track, 48000); } catch { console.log(`  skip  ${track} (no tools/work/${track}.48000.st.f32 — trackmap.py --pcm --sr=48000)`); continue; }
+    const R = stream(pcm, { stopAt: KEY_WIN[1] + 1 });
+    const seen = new Map();
+    for (let i = 0; i < R.t.length; i++) {
+      if (R.t[i] < KEY_WIN[0] || R.t[i] >= KEY_WIN[1]) continue;
+      const k = (R.cols.tonic[i] | 0) + ':' + (R.cols.tonicMinor[i] | 0);
+      seen.set(k, (seen.get(k) || 0) + 1);
+    }
+    const tot = [...seen.values()].reduce((a, b) => a + b, 0) || 1;
+    const rank = [...seen.entries()].sort((a, b) => b[1] - a[1]);
+    const [pc, mi] = rank[0][0].split(':').map(Number);
+    const earsOk = pc === T.pc, synOk = T.syn[0] === T.pc;
+    if (earsOk) nEars++;
+    if (synOk) nSyn++;
+    if (synOk && !earsOk) nWorse++;
+    const top = rank.slice(0, 2).map(([k, n]) => { const [p, m] = k.split(':').map(Number); return `${nameOf(p, m)} ${Math.round(100 * n / tot)}%`; }).join(' ');
+    console.log(`  ${track.padEnd(16)} truth ${nameOf(T.pc, T.minor).padEnd(4)} | ears ${top.padEnd(22)} ${earsOk ? 'pc ok' : 'pc +' + (((pc - T.pc) % 12 + 12) % 12)}`
+      + `, mode ${mi === T.minor ? 'ok ' : 'NO '} | synapse ${nameOf(T.syn[0], T.syn[1])} ${String(T.syn[2]).padStart(3)}% ${synOk ? 'pc ok' : 'pc +' + (((T.syn[0] - T.pc) % 12 + 12) % 12)}`);
+    ok(`[key] ${track}: ears tonic vs truth`, earsOk === T.expect, `${nameOf(pc, mi)} (${T.expect ? 'must match' : 'known miss, KK ambiguous'})`,
+      T.expect ? nameOf(T.pc, T.minor) : 'not ' + nameOf(T.pc, T.minor) + ' (recorded)');
+  }
+  ok('[key] ears beat synapse on the pitch class', nEars > nSyn, `ears ${nEars}/5, synapse ${nSyn}/5`, 'ears > synapse');
+  ok('[key] ears never worse on a track', nWorse === 0, `${nWorse} track(s) synapse gets and the ears lose`, '0');
+}
+
 function costTable(R, label) {
   console.log(`  cost [${label}]: push+read per 512 block  median ${R.cost.pushMed.toFixed(4)} ms  p99 ${R.cost.p99.toFixed(4)} ms`
     + `  (push ${R.cost.pushMs.toFixed(4)} mean, read ${R.cost.readMs.toFixed(4)} mean, ${R.cost.blocks} blocks, ${R.cost.reads} reads)`);
@@ -302,6 +356,12 @@ function writeTrace(R, out, track, map) {
 const ENTRY = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename);
 if (!ENTRY) { /* nothing runs on import */ } else main();
 function main() {
+if (has('keys')) {                 // §62: the key ruler alone, across every track with a PCM dump
+  console.log('\n=== the key ruler: MS.key / MS.mode are the ears\' tonic (§62), modal over 20-100 s');
+  keyRulers();
+  console.log(FAIL ? `\n${FAIL} FAILED` : '\nall key rulers pass');
+  process.exit(FAIL ? 1 : 0);
+}
 const truth = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/truth/SeeYouDrop.json'), 'utf8'));
 const rates = arg('sr') ? [Number(arg('sr'))] : [44100, 48000];
 let last = null;

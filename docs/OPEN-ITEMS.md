@@ -65,3 +65,20 @@ detector's, so NAV no longer parks or exits where cardioid3's NAV does (§54 add
 0 diff; the verdict line is red for the NAV rows alone (identical on the e23db09 tree). Either exempt NAV's rows on the fake path
 or give the fake timeline a live-detector drop — a tool decision, not a scene one. Also open from step 5: the bar line's truth on
 WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`nextBeatIn` F 0.01) — the queue inherits both.
+
+**2026-09-30, §62 (`key` = the tonic):** two items the fix left standing, both measured.
+1. **`keyConf` is the clarity of a read that is no longer published.** `key` / `mode` are the ears' tonic; `keyConf`
+   is still synapse's `keyClar` = `clamp01((best r − .35)/.45)` on synapse's own chroma. The same formula on the EARS'
+   chroma was built, measured over 20–100 s of the five tracks (p50 **0.548** SeeYouDrop / 0.648 CyborgNinja / 0.767
+   Malicious / 0.976 WhoLikesToParty / 1.000 Vienna) and reverted: `keycolour.js` gates at `KEYC1` 0.3, so every one
+   of those opens the gate to 1.0 and the hue stops being `LOOK.mood` slid part of the way toward the key and becomes
+   the key's own hue outright, on all five scenes that read `mkAnchor()`. SeeYouDrop's gate would go **0.27 → 1.00**.
+   The consequence of holding it: the hue only moved −0.0197 / −0.0045 / −0.0153 turns at TORUS2 f2400 / f3600 / f4800
+   on SeeYouDrop, so the *right* key is now barely more visible than the wrong one was. **This wants the user's A/B**
+   (`&key=<k>` pins the key on DUST and GIELIS; the gate itself has no switch yet — one would be the first step).
+2. **CyborgNinja and Malicious are still wrong, and so may the truth be.** The ears read G#M for C#m (+7) and Cm for
+   GM (+5). On both, the TRUTH's own Krumhansl–Kessler margin is nearly nothing — CyborgNinja C#m .521 / C#M .430
+   (conf .174), Malicious GM .639 / CM .537 / Gm .529 / Cm .516 (conf .159, a .10 race over four candidates) — and
+   only SeeYouDrop has a human annotation to corroborate it (`SeeYouDrop.sections.json`: the sub loop C#1–A1–F#1–E1 =
+   i–VI–iv–III). Before any further tuning of the tonic tracker, those two tracks want a human key, the way
+   SeeYouDrop got one; tuning KK against a KK read of the same signal proves nothing.
