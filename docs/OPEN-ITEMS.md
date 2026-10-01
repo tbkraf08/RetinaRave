@@ -103,3 +103,23 @@ WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`
    2 s mean and `sub` 1.32 ×. It is a density / texture jump (the double-time layer thickening). Every candidate that
    would arm it also arms on CyborgNinja (0.35–6.71 false arms / min). If the user wants something there it has to come
    from the file map (`&map=1` has it) or a hand annotation.
+
+**2026-09-30, §66 (the bounce and the second drop on Vienna):** two items, both measured, both engine-side.
+1. **The ears' LOW lane is blind to a MASKED kick** — the third picker of the same shape, after §64's HIGH and MID.
+   On Vienna 24–60 s, graded against the kick lines the 60–150 Hz band's own RISE puts at **AUC 0.999** (+11.21 dB at a
+   kick against +4.56 at the other 16ths), `kick2`'s AUC is **0.316** — *below* chance. It reads **0.031** at a kick and
+   **0.130** at a non-kick 16th, and its mean shape from the beat-1 line over 13 bars peaks at **+200 ms** (0.07 →
+   0.35). Nothing else low carries it either: `bassS` 0.546, `eS` 0.543, `eM` 0.515, `subGate` 0.500; only `lvl` does
+   (0.925), and that is the beat grid in disguise. The cause is specific: Vienna's low end is a loud continuous 38–46 Hz
+   808 drone (the sub band has **no pulse at all** — a 7 dB span over all 16 slots of the bar) with a soft thud above
+   it, so a lane that reads a LEVEL over a band wide enough to include the drone cannot see the thud. DUST's kick voice
+   — the shove on the low grains, the CENTRE of the picture — therefore fires **2.03 /s at P 0.21 / R 0.27**, with its
+   biggest slot bins on the 16th and the third 16th AFTER the beat, and the two real kicks getting the smallest shoves
+   in the window. **No scene-side gate can rescue a signal with AUC 0.316**, which §66 proved by trying: the remedy is a
+   60–150 Hz lane kept SEPARATE from the sub and graded on its RISE, inside the picker, where every reader benefits.
+2. **§64's swell veto does not transfer to the SNARE** (§64 open item 2, now with the scene-side number). On Vienna
+   24–60 s the snare voice fires **4.81 /s** against a truth `mid` of 1.81 (**P 0.35**, 39 % at the floor, gap p50
+   167 ms so tc 0.30 s leaves **57 %** of each hit on the body annulus). `midS` / its own 2 s EMA separates its matched
+   from its unmatched fires at **AUC 0.615** — the hat's was 0.93 — and every ratio from 1.03 to 1.18 holds precision at
+   **0.34–0.36** while taking recall **0.92 → 0.83**. The snare's flash ring is the loudest of DUST's three voices, so
+   this is the one that is still wrong on the user's own track.

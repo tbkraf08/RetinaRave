@@ -266,3 +266,174 @@ the only thing that should look different at all is a slightly thinner hat spark
   threshold, it does not prove one.
 - **Vienna's second drop** — above. If the user wants something to happen there, it has to be the file map's
   (`&map=1` has the drop) or a hand annotation, not a causal read.
+
+---
+
+# Vienna — the bounce and the second drop (worker report, 2026-09-30; DECISIONS §66)
+
+The user's notes, verbatim, after watching Vienna on DUST (key 2, stream mode):
+
+> "something still feels off about 0:25-1m the bounce feel slow and jerky on the kick and high hat (?is what I think
+> is there); drop 2 -> at 1:46 what plays? it feels like there is bass starting"
+
+Both halves of the first note are right, and they are two different things. The second note is right and is a
+register change, not an addition.
+
+## Q1 — what actually plays at 0:25–1:00, and what the eye was given instead
+
+**The music, from the PCM** (Butterworth band envelopes, the peak in [line − 10 ms, line + 120 ms] at each 16th line
+of the 90.00 BPM hand grid, bars 9–21, odd and even bars averaged apart — the groove's own cycle is TWO bars). dB over
+the window mean, the four beats first:
+
+| band | beat 1 | beat 2 | beat 3 | beat 4 | the four off-8ths | the odd 16ths |
+|---|---|---|---|---|---|---|
+| sub 20–60 | 6.7 / 8.9 | 5.1 / 5.5 | 8.3 / 9.6 | 7.3 / 4.0 | 3.7–8.8 | 4.8–8.1 |
+| **kick 60–150** | **11.4 / 10.1** | 4.2 / 6.5 | **10.8 / 12.4** | 4.2 / 3.5 | 1.6–6.3 | 1.5–6.0 (**slot 15: 5.7 / 11.1**) |
+| **click 150–800** | 2.8 / 6.1 | **13.3 / 12.0** | 4.4 / 6.3 | **13.0 / 11.9** | −3.4–5.2 | odd bars: slots 3 and 7 at 6.4 |
+| mid 800–5 k | 4.4 / 3.6 | 3.3 / 2.0 | 3.6 / **11.5** | 5.2 / 8.2 | −5.7–10.8 | — |
+| **hat > 5 k** | 10.0 / 10.9 | **13.0 / 12.4** | 6.4 / 10.8 | **12.6 / 12.6** | **9.3–12.4** | **−8.8 to +4.3** |
+
+**In plain words.** There is no kick on every beat and no hi-hat on 16ths.
+
+- **the kick** is a soft, masked 60–150 Hz thud on **beats 1 and 3** plus a **16th pickup into the next bar** (loud on
+  the even bars) — **2–3 hits a bar, 0.75–1.125 Hz**, not 1.5.
+- **what sits on beats 2 and 4** is a **dry rim / clap in 150–800 Hz** (+12 to +13 dB), with 16th pickups into them on
+  the odd bars. That is almost certainly what the ear takes for the second half of the "kick" pattern.
+- **the hats** are **dead-straight 8ths** — **3.00 Hz**, swing ratio **1.000:1** (the median off-8th phase is 0.5001 of
+  the beat, 0.1 ms late; the on-8ths land 7.9 ms off the line) — and they fill to **16ths on bars 17 and 21 only**
+  (45.3–48.0 and 56.0–58.7 s).
+- **the sub** is a **continuous D♯1 / F♯1 drone with no pulse at all** (a 7 dB span over all 16 slots).
+- **the 800–5 kHz layer gates on a two-bar cycle**: −6 dB over the first half of every even bar, +8 to +11.5 over the
+  second. That is "lots of modulation".
+
+**The clock is right.** 89.98 bpm, **1.500 ticks/s** against the music's 1.500, **100 %** of them on the beat at a
+constant −35.9 ms, **zero** line moves over 24–60 s. §61's fix holds and the jerk is not the clock.
+
+**What the eye was given.** Four things, ranked:
+
+| # | what | the number |
+|---|---|---|
+| **1** | **the KICK voice fires in the wrong place** | **73 fires** for 56 kicks (2.03 /s); its biggest slot bins are **slot 1 (14)** and **slot 3 (10)** where there is no kick, against **6 on slot 0** and **2 on slot 8** which are the kick; **P 0.21 / R 0.27**; the real kicks flash at the voice's **floor (0.250)** and the false ones **bigger (0.371)** |
+| **2** | **the SNARE voice fires 2.7× too often** | **4.81 /s** against a truth `mid` of 1.81; **P 0.35**; 39 % at the floor; gap p50 167 ms = the 16th, so tc 0.30 s leaves **57 %** of each hit on the body annulus |
+| **3** | **the nudge's crest is 67 % longer at 90 BPM than at 150** | **367 ms** against 220, peaking at **1.08 rad/s** against 1.78, starting **183 ms** before the line instead of 110; only **53 of 108** 8th lines carry a nudge |
+| 4 | the HAT voice is **fine** | §64's veto leaves it **96 %** on the truth's 16th grid, |dev| p50 **2.6 ms**, amp p50 **0.757**, **8 %** at the floor |
+
+**Item 1 is not fixable in the scene, and the proof is one number.** `kick2`'s AUC against the kick lines is **0.316**
+— below chance. It reads **0.031** at a kick and **0.130** at a non-kick 16th, and its mean shape from the beat-1 line
+peaks at **+200 ms** (0.07 → 0.35), which is exactly the slot-1 / slot-3 bins. The **60–150 Hz band's own rise**
+separates the same lines at **AUC 0.999** (+11.21 dB against +4.56), so the information is in the audio; the lane
+throws it away because Vienna's low end is a loud continuous drone and the kick is a soft thud above it. `bassS` 0.546,
+`eS` 0.543, `subGate` 0.500 — nothing low carries it. An **engine** item (DECISIONS §66 open, `docs/OPEN-ITEMS.md`).
+
+## Q1 — what changed: the accent is a wall-clock shape (`assets/scenes/dust/grid.js`, `c027e8c`)
+
+`W` is a width in BEATS, so §61's own pair gave a different crest at every tempo — 206 / 220 / 236 / 282 / **367 ms**
+on CyborgNinja / SeeYouDrop / Malicious / WhoLikesToParty / **Vienna**. Below `K.WREF` (145 BPM) the accent now keeps
+its width in **milliseconds** (`wFor`), and the glide is raised by exactly as much as holds the velocity floor/peak
+**ratio** where the reference pair puts it (`gFor`) — narrowing the accent alone put §61's dead time back at **52.6 %**.
+Both are exact identities at `w = K.W`, so every track at or above 145 BPM is untouched.
+
+Page A/B, Vienna 24–60 s, the only difference being this file, **all 50 MS columns md5-identical**:
+
+| | before | after |
+|---|---|---|
+| the accent · the lead · GLIDE · W | 366.8 ms · 183.3 ms · .450 · .550 | **227.3 ms · 113.7 ms · .569 · .341** |
+| the spin's own rate | 0.3300 rad/s | **0.3300** |
+| velocity p05 / p99 | 0.132 / 1.074 | **0.167** (+26 %) / **1.339** (+25 %) |
+| floor/peak · dead time · backward frames | 11.27 % · 0.0 % · 0 | 11.43 % · **0.0 %** · **0** |
+| \|a\| p50 / p99 / max | 1.3154 / 16.62 / 26.46 | **0.0042** / 20.68 / 37.59 (SeeYouDrop's own: 25.44 / 93.67) |
+| the three voices · pours · re-seats | 2.028 / 4.806 / 2.639 /s · 1 · 37 | **identical** |
+
+**The controls do not move**: SeeYouDrop 20–110 s and CyborgNinja 20–80 s have `d_nv`, `d_nu`, `d_nstep` and `d_noff`
+**md5-identical on all 5401 / 3601 frames**, and the only difference anywhere is a constant **0.053° / 0.103°** offset
+on the absolute angle from the un-recorded warm-up.
+
+## The A/B for the user — in track time
+
+New = `http://127.0.0.1:8765/` on this tree. **Key 2** (DUST), stream mode, Vienna
+(`~/Music/RetinaRave/Vienna.flac`, loaded with the landing control). Watch the CLOUD'S TURN, not the hits.
+
+| time | what to watch | what should be different |
+|---|---|---|
+| **0:25–1:00** | the cloud's turn between hits | OLD: the crest is a 367 ms push that starts 183 ms before the beat and only reaches 1.08 rad/s. NEW: a **227 ms** crest starting **114 ms** early and reaching **1.34** — SeeYouDrop's own shape — on top of a glide that is **26 % faster** between crests. The RATE is unchanged (1.5 /s, 0.330 rad/s): same tempo, crisper pop. |
+| **0:25–1:00** | the CENTRE of the cloud (the kick's shove) | **STILL WRONG, and known.** The shove fires 2.03 /s mostly on the 16th AFTER the beat and the 16th after that, and the two real kicks (beats 1 and 3) get the SMALLEST shoves in the window. This is the engine's low lane, not the scene: `kick2`'s AUC on this track is 0.316, below chance, and it peaks 200 ms late. Nothing in DUST can fix it. |
+| 0:25–1:00 | the RIM's sparkle | unchanged and correct since §64: an even 8th sparkle, 96 % on the grid. |
+| 0:25–1:00 | the BODY annulus (the snare's ring) | **STILL WRONG, and known.** 4.81 flashes/s against 1.81 real ones, each leaving 57 % of itself behind — a 6 Hz smear. §64's swell veto does not work on it (AUC 0.615). |
+| **1:25.3** (drop 1) | the slam | unchanged from §64: contraction over the last 1.2 bars, palette drain, release on the drop. |
+| **1:40–1:56** | the cloud's turn | the clock still reads 120 BPM here (§61's open item), but the dead time in that window halves — **19.6 → 8.4 %** — because the crest no longer stretches with the wrong tempo. |
+| **1:46.7** (drop 2) | the CORE and the RIM | no detector fires (see Q2), but the picture does read the hand-over: the kick voice **+144 %** and the hat **+51 %** on the drop's own beat, then over two bars the core's sub swell drains **−33 %**, the rim darkens **−20 %** and the rim's sparkle rate **doubles** (1.69 → 3.37 /s). |
+
+**SeeYouDrop** and **CyborgNinja** should look EXACTLY as they did — their nudge columns are md5-identical.
+
+**The knob**: `&nudge=<g>,<w>` / `hooks.nudge(g, w)` still moves the REFERENCE pair and both derivations follow it.
+`hooks.nudge(0.45, 0.55)` is what shipped (0.569 / 0.341 at 90 BPM); **`hooks.nudge(0.45, 0.917)` is §61's old look
+back** at 90 BPM (0.917 × 90 / 145 = 0.55); `hooks.nudge(0.45, 0.341)` is the narrow crest WITHOUT the glide
+correction, which is the 52.6 %-dead row and is there to show why the correction exists.
+
+## Q2 — 1:46.7: the bass is starting, one octave up
+
+Band RMS per beat, dB over the 8 bars before the drop:
+
+| beat of the drop bar | sub 20–60 | bass 60–150 | lowmid 150–800 | mid 800–5 k | high > 5 k |
+|---|---|---|---|---|---|
+| +0 (106.669) | **−2.1** | +1.7 | +0.6 | −5.6 | **+7.6** |
+| +1 | **−5.7** | +3.2 | +4.0 | −4.8 | +5.3 |
+| +2 | **−9.8** | +5.1 | +4.9 | −4.0 | +7.0 |
+| +3 | **−15.7** | **+6.5** | **+5.1** | −1.3 | +7.0 |
+| the 4 bars after | **−3.6** | **+2.6** | **+3.8** | −0.4 | **+5 to +10** |
+
+**What enters** is a **60–150 Hz bass line** (+6.5 dB over four beats) with the 150–800 layer (+5.1) and a **hat /
+noise layer above 5 kHz (+7.6 dB on the very first beat** — the biggest single jump). **What leaves** is the **20–60 Hz
+sub drone** that has held the whole track (−15.7 dB by beat 4; the engine's `subGate` closes at 108.30 s). The
+800–5 kHz band does not move at all.
+
+**It is the same instrument moving up an octave.** The bass/sub band ratio goes from **p50 −0.31 dB over the 30 beats
+before** to **+3.6 / +8.8 / +14.8 / +22.1 dB** across the drop bar, and the sub note goes from **D♯1 / F♯1 (38–46 Hz)**
+to **A1 / F♯2 / D♯2 (46–92 Hz)** (the truth's f0: p50 46.4 Hz over the 4 bars before, **77.0** over the 4 after). A
+40 Hz drone is felt; an 80–92 Hz line is heard. That is exactly "it feels like there is bass starting".
+
+**BS.1770** (the existing `tools/work/Vienna.loud.json`; `trackmap.py --loud` was NOT re-run, so the truth dir was not
+touched): short-term **−7.16 → −6.08 LUFS = +1.1 LU**, against **drop 1's +3.2 LU**. And the drop's own beat is the
+**quietest momentary in the window** (−7.92 LUFS, 1.9 LU under beat −3) because the sub leaves before the bass arrives.
+
+**No detector, and the pitch channel does not help.** §64 searched 60 energy candidates and got 0 beats of lead; the
+new hypothesis was a sub-register / pitch precursor. It is not one: the bass/sub ratio at **beat −1 (106.003) reads
+−0.01 dB**, inside the 30-beat pre-window (p50 −0.31, max +2.78), and the crossover starts **on the drop beat**
+(+3.64) — **0 beats of lead**. The truth's `sub_runs` does carry an F♯2 at 106.0, one beat early, but F♯2 also appears
+at 100.20, 101.10 and 103.00 in the same four bars (the bass slides constantly: `sub_slides` has ten 1.6-semitone
+glides) and the band ratio cannot see it. A ratio threshold is not gateable either — **+8 dB fires on 14 consecutive
+beats in the dream section (70.3–81.0 s)**. **Nothing was shipped for drop 2**, and the eye's own read of it is the
+row in the watch-list above.
+
+## The one-line diff NOT applied (another worker holds `index.js`)
+
+If the user ever wants Vienna's rim to keep CyborgNinja's tail instead of SeeYouDrop's, this is the whole change, in
+`update()` just before the hat's `voice()` call:
+
+```js
+    // the hat's decay is the one voice decay that travels with tempo (§66): tc / median inter-fire gap reads
+    // 0.45 / 0.90 / 0.27 on SeeYouDrop / CyborgNinja / Vienna. 0.09 s is 0.23 beat at WREF; below WREF hold the
+    // share of the BEAT instead of the seconds.
+    this.vH.tc = 0.09 * Math.max(1, NUDGE.WREF / (MS.bpm || NUDGE.WREF));
+```
+
+Replayed exactly off the recorded `d_ageH` / `d_aH` / `hat2` columns (`tools/work/v66/hattc.py`, which reproduces
+`d_vh` to 2.5e-6): SeeYouDrop and CyborgNinja are **identical on every number** (their bpm is ≥ 145); Vienna's tc goes
+**90 → 145 ms**, its rim envelope p50 **0.068 → 0.151**, the envelope just before the next flash **0.0224 → 0.0851**
+and the time under 0.05 **43.0 → 21.9 %**. The reason it was NOT shipped: SeeYouDrop's own envelope just before a
+flash is **0.0265**, so Vienna at 0.0224 already matches the control; the change would move it PAST SeeYouDrop toward
+CyborgNinja's 0.1043. It is a taste call, not a correction.
+
+## Open, for the orchestrator
+
+- **The ears' LOW lane is blind to a masked kick** — `kick2` AUC **0.316** on Vienna (below chance), peaking 200 ms
+  late, while the 60–150 Hz rise separates the same lines at **0.999**. DUST's kick voice is the shove at the centre of
+  the picture and it fires in the wrong places on this track. The third picker of the same shape, after §64's HIGH and
+  MID. The remedy: a 60–150 Hz lane kept separate from the sub, graded on its RISE.
+- **The snare voice**: 4.81 /s at P 0.35 on Vienna, and §64's swell veto does not transfer (AUC 0.615). §64 open item 2
+  stands, now with the scene-side number.
+- **`barPos` is still 2 beats off on Vienna**: the engine's bar wrap lags the truth downbeats by **+1297 ms** over
+  24–60 s, so the downbeat's bigger nudge is on the wrong beat of the bar.
+- **Vienna's hats fill to 16ths on bars 17 and 21** (45.3–48.0, 56.0–58.7 s) and nothing in the engine reads a lattice
+  change; `denH` is a count.
+- **`tools/truth/Vienna.json` is still `provisional`** — nobody has listened to the grid against the track.
