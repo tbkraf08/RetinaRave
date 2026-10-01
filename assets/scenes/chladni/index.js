@@ -118,6 +118,10 @@ function dinfo() {
     kJ: KICKJ * U.kickSz, snF: U.snF, snR: U.snR, ripD: U.ripD,
     amp: U.amp, drive: U.drive, gate: U.gate, lift: U.lift, spiral: U.spiral, glow: U.glow, fog: U.fog,
     s: U.s, h: U.h, bnd: U.bnd, away: U.away, hue: U.hue, pitch: U.pitch, dist: U.dist,
+    // the three numbers the FIGURE is made of (§75's ruler): the sub note the vote sits on, the tonic the interval is
+    // measured from, and the raw latch behind it — `s` alone cannot say which of the three moved it.
+    note: U.note, win: sc.win === undefined ? -1 : sc.win, ton: U.tonic, latch: sc.ton === undefined ? -1 : sc.ton,
+    sTgt: sc.sTgt === undefined ? -1 : sc.sTgt,
     set: st.settled, air: st.air };
 }
 
