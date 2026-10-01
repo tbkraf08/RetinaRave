@@ -2,6 +2,11 @@
 // Everything is pushed through the PCM bus's own 512-sample stereo blocks, exactly as features-loud.js feeds it.
 //
 //   node tools/test_loud.js            synthetic only, ~1 s — what npm test runs
+//   node tools/test_loud.js --truth    + the five tracks, frame by frame against TWO references, and the truth-graded
+//                                      breakdown -> drop pairs (phase 3). Needs the 48 kHz stereo PCM dumps in
+//                                      tools/work/ — `trackmap.py <Track> --pcm --sr=48000` makes them, but note that
+//                                      it runs the FULL analysis and REWRITES tools/truth/<Track>.json, so never run
+//                                      it on a track another worker is annotating (use the dump that is already there).
 //
 // The synthetic cases:
 //   coef48      kcoef(48000) equals the BS.1770-4 table (the spec tabulates 48 kHz only; every other rate is derived)
@@ -198,6 +203,106 @@ const sineAmp = (sr, f, l) => Math.sqrt(Math.pow(10, (l - LOUD_OFS) / 10) / (Mat
   console.log(`cost: ${us.toFixed(2)} µs/block over ${nb} blocks -> ${perFrame.toFixed(2)} µs/frame at 48 kHz / 60 fps ` +
     `(${(100 * perFrame / 16666.7).toFixed(3)} % of a 60 fps frame)`);
   ok(perFrame < 40, `cost: ${perFrame.toFixed(2)} µs/frame, under the 40 µs budget`);
+}
+
+// ====================================================================================================== --truth
+// Phase 3: the engine against the offline reference, and the truth-graded breakdown -> drop ratios.
+//
+// TWO references, because they answer different questions:
+//  (a) an EXACT in-test one, on the same 48 kHz dump the stage is fed: the same K-weighting coefficients (pinned to the
+//      spec table by `coef48` above, and independently re-derived in python to 9e-16), but a straight whole-file
+//      cumulative sum in Float64 with NO ring, NO block quantisation and NO interpolation. This is what grades the
+//      engine's machinery — the ring, `cumAt`'s interpolation, the heard-time read — frame by frame, to 0.1 LU.
+//  (b) tools/truth/<name>.loud.json, python's own implementation, which ran at the FILE's rate (44.1 kHz) while the
+//      stage runs on the 48 kHz resample. The two signals are not the same samples, so a per-frame gate on it would be
+//      grading `resample_poly`; it is reported, and gated only on the 3 s window (insensitive to resampling) and on the
+//      aggregate numbers (the integrated loudness and every drop pair's dLU), which is the real cross-implementation check.
+function exactRef(raw, n, sr) {
+  const kl = new KChainRef(kcoef(sr)), kr = new KChainRef(kcoef(sr)), cs = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    const a = kl.step(raw[2 * i]), b = kr.step(raw[2 * i + 1]);
+    cs[i + 1] = cs[i] + a * a + b * b;
+  }
+  return (t, W) => {
+    const i1 = Math.min(n, Math.max(0, Math.round(t * sr))), i0 = Math.min(n, Math.max(0, i1 - Math.round(W * sr)));
+    if (i1 - i0 < Math.round(W * sr)) return null;                 // not a full window: not graded
+    const z = (cs[i1] - cs[i0]) / (i1 - i0);
+    return z > 0 ? LOUD_OFS + 10 * Math.log10(z) : null;
+  };
+}
+class KChainRef {   // the same two biquads, written the obvious way (arrays, direct form I) — a second spelling of the filter
+  constructor(c) { this.c = c; this.x = [[0, 0], [0, 0]]; this.y = [[0, 0], [0, 0]]; }
+  step(v) {
+    for (let k = 0; k < 2; k++) {
+      const b = k ? this.c.hp : this.c.shelf, x = this.x[k], y = this.y[k];
+      const o = b[0] * v + b[1] * x[0] + b[2] * x[1] - b[3] * y[0] - b[4] * y[1];
+      x[1] = x[0]; x[0] = v; y[1] = y[0]; y[0] = o; v = o;
+    }
+    return v;
+  }
+}
+if (process.argv.includes('--truth')) {
+  const TRACKS = ['SeeYouDrop', 'CyborgNinja', 'Malicious', 'WhoLikesToParty', 'Vienna'];
+  const LOUDDIR = { Vienna: 'tools/work' };                     // Vienna's reference lives outside tools/truth (another worker owns that folder)
+  const FPS = 60, TOL = 0.02, PY_TOL_S = 0.4, WARM = 8;
+  console.log('\n--truth: the stage against (a) an exact in-test reference on the same samples and (b) python\'s');
+  let graded = 0, pairsOk = 0, pairsN = 0;
+  for (const name of TRACKS) {
+    const pcm = path.join(ROOT, 'tools/work', name + '.48000.st.f32');
+    const lj = path.join(ROOT, LOUDDIR[name] || 'tools/truth', name + '.loud.json');
+    if (!fs.existsSync(pcm) || !fs.existsSync(lj)) { console.log(`skip ${name}: ${fs.existsSync(pcm) ? 'no .loud.json' : 'no PCM dump (trackmap.py --pcm --sr=48000)'}`); continue; }
+    const meta = JSON.parse(fs.readFileSync(pcm + '.json', 'utf8')), sr = meta.sr;
+    const raw = new Float32Array(fs.readFileSync(pcm).buffer, 0, meta.n * 2);
+    const REF = JSON.parse(fs.readFileSync(lj, 'utf8'));
+    const ex = exactRef(raw, meta.n, sr);
+    const hop = REF.contour.hop, cm = REF.contour.mom, cps = REF.contour.short;
+    const pyAt = (c, t) => { const i = Math.round(t / hop); return i >= 0 && i < c.length ? c[i] : null; };
+    const lo = new Loud(sr), bl = new Float32Array(B), br = new Float32Array(B), o = {};
+    const rows = [];
+    let eM = 0, eS = 0, nE = 0, pM = 0, pS = 0, nP = 0, nextF = 0;
+    for (let s = 0; s + B <= meta.n; s += B) {
+      for (let i = 0; i < B; i++) { bl[i] = raw[2 * (s + i)]; br[i] = raw[2 * (s + i) + 1]; }
+      const t0 = s / sr;
+      lo.push(bl, br, t0);
+      const tEnd = t0 + B / sr;
+      while (nextF / FPS <= tEnd) {                              // one read per 60 fps frame, as the page does
+        const t = nextF / FPS; nextF++;
+        lo.read(t, o);
+        rows.push({ t, S: o.loudS, Pk: o.loudPk, rel: o.loudRel, rg: o.loudRange });
+        if (t < WARM) continue;
+        const xm = ex(t, MOM_W), xs = ex(t, SHORT_W);
+        if (xm !== null && xs !== null) { eM = Math.max(eM, Math.abs(o.loudM - xm)); eS = Math.max(eS, Math.abs(o.loudS - xs)); nE++; }
+        const qm = pyAt(cm, t), qs = pyAt(cps, t);
+        if (qm !== null && qs !== null) { pM = Math.max(pM, Math.abs(o.loudM - qm)); pS = Math.max(pS, Math.abs(o.loudS - qs)); nP++; }
+      }
+    }
+    const p = (v, q) => { const a = v.slice().sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(q / 100 * a.length))]; };
+    const win = (a, b, f) => rows.filter((r) => r.t >= a && r.t < b).map(f);
+    console.log(`\n${name} (${(meta.n / sr).toFixed(1)} s, ${sr} Hz, ${rows.length} frames, ${nE} graded):`);
+    console.log(`  (a) exact, same samples:  max |loudM - ref| ${eM.toFixed(4)} LU · max |loudS - ref| ${eS.toFixed(4)} LU`);
+    console.log(`  (b) python at ${REF.sr} Hz:   max |loudM - ref| ${pM.toFixed(3)} LU · max |loudS - ref| ${pS.toFixed(3)} LU ` +
+      `(the 44.1 -> 48 kHz resample is in this number)`);
+    console.log(`  loudRange p50 ${p(win(WARM, 1e9, (r) => r.rg), 50).toFixed(2)} LU against the reference's whole-track p95-p10 ${REF.short.range.toFixed(2)}`);
+    ok(eM <= TOL && eS <= TOL, `${name}: within ${TOL} LU of the exact reference on all ${nE} graded frames (the ring, the sub-block edge, the heard-time read)`);
+    ok(pS <= PY_TOL_S, `${name}: within ${PY_TOL_S} LU of python's 3 s window across the resample`);
+    graded++;
+    for (const pr of REF.pairs) {
+      const b = pr.before, a = pr.after;
+      const sB = p(win(b.t0, b.t1, (r) => r.S), 50), sA = p(win(a.t0, a.t1, (r) => r.S), 50);
+      const rB = p(win(b.t0, b.t1, (r) => r.rel), 50), rA = p(win(a.t0, a.t1, (r) => r.rel), 50);
+      const good = sA > sB, agree = Math.abs((sA - sB) - pr.d_lu_short) <= 0.05;
+      pairsN++; if (good) pairsOk++;
+      console.log(`  drop ${pr.drop.toFixed(2)}: loudS p50 ${sB.toFixed(2)} -> ${sA.toFixed(2)} = ${(sA - sB >= 0 ? '+' : '') + (sA - sB).toFixed(2)} LU ` +
+        `(x${Math.pow(10, (sA - sB) / 10).toFixed(3)} in power; the truth says ${pr.d_lu_short >= 0 ? '+' : ''}${pr.d_lu_short.toFixed(2)}${agree ? '' : '  DISAGREE'}) · ` +
+        `loudRel p50 ${rB.toFixed(3)} -> ${rA.toFixed(3)} = x${(rA / Math.max(rB, 1e-9)).toFixed(3)}${good ? '' : '   MISS'}`);
+      ok(agree, `${name} drop ${pr.drop.toFixed(2)}: the stage's dLU agrees with the truth's to 0.05 LU`);
+    }
+    if (!REF.pairs.length) console.log('  no drops in the truth — the control: nothing may claim one');
+  }
+  ok(graded >= 4, `--truth: ${graded} tracks graded against the reference`);
+  // Malicious's drop at 148.29 s is the ONE recorded exception: its 5.1 s short-term p50 reads -0.20 LU while the
+  // window-integrated loudness says +1.17 (phase 1's commit) — its "breakdown" is already loud. Every other pair must rise.
+  ok(pairsOk >= pairsN - 1, `--truth: ${pairsOk} of ${pairsN} truth drops read LOUDER than the breakdown before them (1 recorded exception: Malicious 148.29 s)`);
 }
 
 console.log(`\ntest_loud: ${fail ? 'FAIL ' + fail + ' of ' + (pass + fail) : 'OK ' + pass + ' pass'}`);

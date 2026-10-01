@@ -3718,7 +3718,7 @@ nothing committed was lost — but **anything that worker had not yet committed 
 on a track another worker is annotating; `--loud` is safe because it writes its own file, and the dumps are already in
 `tools/work/`.
 
-### Phase 2 — the stage: `engine/loud.js` + `features-loud.js`, six fields (`PENDING`)
+### Phase 2 — the stage: `engine/loud.js` + `features-loud.js`, six fields (`70c6624`)
 
 `assets/engine/loud.js` is pure DSP (no DOM, no clock, no imports) so `tools/test_loud.js` runs it in node;
 `features-loud.js` subscribes it to the PCM bus with `PCM.on`, registers `ENGINE.addStage('loud', …)` **after `ears`
@@ -3784,3 +3784,48 @@ as "missing in v3" info as every post-v3 field is. The `nav.*` snapshot differs 
 `nav.cyc.has`) — **pre-existing drift of this engine's NAV from cardioid3's**, not reachable from here: MS is identical
 frame for frame, so a scene difference can only be the two programs' own NAV code (this NAV has read `dropLiveEvt`
 since §54, and the event log shows `ew`'s extra `FILE@` / `RESTORE@` look-memory lines, "absent in v3"). No audible run.
+
+### Phase 3 — the truth grading: `test_loud.js --truth` (`PENDING`)
+
+`--truth` runs the stage over the 48 kHz stereo dumps of all five tracks, one `read()` per 60 fps frame as the page
+does, against **two** references, because they answer different questions:
+
+- **(a) an exact in-test reference on the same samples** — the same K-weighting coefficients (pinned to the spec table
+  by the `coef48` case and independently re-derived in python to 9e-16), but written the obvious way: a second spelling
+  of the biquads in direct form I, a whole-file Float64 cumulative sum, no ring, no sub-block edge, no interpolation.
+  This is what grades the engine's MACHINERY. Result, max |error| per frame after 8 s of warm-up:
+  **loudM 0.0009 / 0.0000 / 0.0063 / 0.0000 / 0.0000 LU and loudS 0.0000 LU on all five**
+  (SeeYouDrop 8977 frames · CyborgNinja 10324 · Malicious 12896 · WhoLikesToParty 14901 · Vienna 11080 — 58 179 graded
+  frames). The plan asked for 0.1 LU; the gate is set at 0.02.
+- **(b) `tools/truth/<name>.loud.json`, python's own implementation**, which ran at the FILE's rate (44.1 kHz) while
+  the stage runs on the 48 kHz resample — so a per-frame gate on it would be grading `resample_poly`. Reported, and
+  gated only on the 3 s window, which is insensitive to it: **0.018 / 0.028 / 0.260 / 0.051 / 0.028 LU**. (Momentary:
+  0.3–1.9 LU, all of it in fades and near-silent bars, where a 400 ms window's dB is wild and two different sample
+  sets diverge.)
+
+**Proof 2, the assertion §60 could not make** — for every annotated drop on the five tracks, is the drop head louder
+than the breakdown before it? Equal 5.1 s windows, `loudS` p50 as the page reads it:
+
+| track | drop | `loudS` p50 before → after | ΔLU | in power | truth | `loudRel` p50 before → after |
+|---|---|---|---|---|---|---|
+| SeeYouDrop | 57.61 | −6.46 → −3.98 | **+2.48** | ×1.77 | +2.50 | 0.648 → 0.792 (×1.222) |
+| SeeYouDrop | **105.60** | **−4.84 → −1.97** | **+2.88** | **×1.94** | +2.88 | 0.790 → 0.957 (×1.212) |
+| CyborgNinja | — | the control: 0 drops in the truth, and nothing claims one | | | | |
+| Malicious | 148.29 | −10.88 → −11.07 | −0.19 | ×0.96 | −0.20 | 0.972 → 0.966 (×0.995) |
+| WhoLikesToParty | 57.51 | −13.24 → −9.70 | +3.54 | ×2.26 | +3.54 | 0.737 → 0.939 (×1.274) |
+| WhoLikesToParty | 131.35 | −12.60 → −10.82 | +1.78 | ×1.51 | +1.79 | 0.786 → 0.891 (×1.134) |
+| WhoLikesToParty | 188.79 | −12.26 → −10.22 | +2.05 | ×1.60 | +2.05 | 0.786 → 0.903 (×1.149) |
+| Vienna | 85.34 | −9.07 → −8.03 | +1.04 | ×1.27 | +1.06 | 0.881 → 0.945 (×1.072) |
+| Vienna | 106.67 | −6.38 → −6.05 | +0.33 | ×1.08 | +0.32 | 0.999 → 0.987 (×0.988) |
+
+**7 of 8**, and every one of the eight agrees with the offline truth's own ΔLU to **0.05 LU** — the stage and the
+reference are measuring the same thing. The one miss is **Malicious's drop at 148.29 s**, and it is a miss in the
+TRUTH, not in the engine: its 5.1 s short-term p50 reads −0.20 LU while the same window's integrated loudness reads
++1.17 (phase 1), i.e. its "breakdown" is already loud and the drop's own head is ducked. Recorded as the one
+exception, asserted as such. **`eM` on the headline pair is ×0.994.**
+
+**The number to carry into the scenes.** `loudRel`'s own ratio on the headline pair is **×1.212**, not ×1.94: its span
+is a fixed 18 LU (`LOUDK.RANGE`) while the section ladders of real tracks span 1.4–7.8 LU, so the whole ladder lives in
+`loudRel`'s top third. That is the plan's design, not a fault — `loudRange` is published beside it so a scene can
+expand onto the track's own contrast, and `(loudRel − 1)·18 = loudS − loudPk` exactly. A scene that divides by
+`max(loudRange, R_MIN)` instead of 18 recovers the power ratio; phase 5 does that and measures it.
