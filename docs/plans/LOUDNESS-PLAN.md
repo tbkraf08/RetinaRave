@@ -1,10 +1,10 @@
 # An AGC-free loudness for the engine — a plan (2026-09-30)
 
 Written on the user's word ("plan it") after DECISIONS §60 step 1 / §60's pass-2 table.
-**STATUS, 2026-09-30, on the user's word "loudness plan approved": phases 1, 2, 3, 5, 7 are BUILT — see the phase
-table in §8 for the commit of each and `docs/DECISIONS.md` §63 for the numbers. Phase 4 (DUST) and phase 6 (NAV2) are
-NOT built: DUST was being edited by another worker in the same worktree, and NAV2 is paused. Nothing is tagged, pushed
-or deployed.** The measured numbers below are from the planning session; where the build disagreed with them §63 says
+**STATUS, 2026-09-30, on the user's word "loudness plan approved": phases 1, 2, 3, **4**, 5, 7 are BUILT — see the
+phase table in §8 for the commit of each, `docs/DECISIONS.md` §63 for phases 1–3/5/7 and **§65 for phase 4 (DUST)**.
+Only phase 6 (NAV2) is NOT built, still blocked on the user un-pausing NAV2. Nothing is tagged, pushed or deployed.
+The user's eye on the look — four scenes now — is the one gate still open.** The measured numbers below are from the planning session; where the build disagreed with them §63 says
 so (the headline pair is +2.88 LU / ×1.94 in power, not +2.65 / ×1.84).
 
 ## 1. The problem, in numbers
@@ -137,7 +137,7 @@ One scene per commit, `IDS=<id> tools/scene-md5.sh` as the proof each time.
 | 1 | `trackmap.py --loud`: BS.1770 momentary / short-term / integrated + the section ladder, into `tools/truth/<name>.loud.json`. No engine change. | **S** | the five tracks' numbers match this plan's table | **DONE `a3a3a0e`** |
 | 2 | `engine/loud.js` + `features-loud.js`: the K-weighted PCM-bus stage, the six fields, FEATS + CONTRACTS Appendix A + `fake.js`'s mirror, `tools/test_loud.js` against phase 1 | **M** | proofs 1, 3, 6 | **DONE `70c6624`** |
 | 3 | the truth grading: `loudRel` on every annotated breakdown/drop pair, in `test_loud.js` | **S** | proof 2 | **DONE `fec7131`** |
-| 4 | **DUST** migrates (`dyn.js` → `loudPk`/`loudRel`, `&loud=0` for the A/B) | **M** | §60's pass-2 table re-taken back to back, breakdown 2 improves, proof 4 | **DONE `PENDING`** — breakdown 2 → drop 2 **×0.875 → ×1.154** on §60's own windows (×1.039 → ×1.290 on equal 5.1 s ones), `&loud=0` bit-exact, DECISIONS §65 |
+| 4 | **DUST** migrates (`dyn.js` → `loudPk`/`loudRel`, `&loud=0` for the A/B) | **M** | §60's pass-2 table re-taken back to back, breakdown 2 improves, proof 4 | **DONE `94e4d8b`** — breakdown 2 → drop 2 **×0.875 → ×1.154** on §60's own windows (×1.039 → ×1.290 on equal 5.1 s ones), `&loud=0` bit-exact, DECISIONS §65 |
 | 5 | **FEIGEN**, then **MANDALA**, then **POLYTOPE** — one commit each, `IDS=<id>` md5 each | **M** | the user's look per scene | **DONE `99c9cb7` / `f94b1c0` / `630fdf1`** (the user's look is still OPEN) |
 | 6 | **NAV2** `ePk` → `loudRel` | **M** | blocked on the user un-pausing NAV2 | **SKIPPED** — still blocked |
 | 7 | **NAV** + **GIELIS** review (expect ≤ 2 lines); the `eG` decision (proof 5) | **S** | — | **DONE `05b06cf`** — 0 lines changed; `eG` kept, documented as a rank |

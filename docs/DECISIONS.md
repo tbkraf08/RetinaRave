@@ -4200,7 +4200,7 @@ does not know the drop after it is louder (`eM` ×0.994 where the music is +2.88
 causal, AGC-free loudness that answers it and migrated FEIGEN, MANDALA and POLYTOPE onto the shared mapping
 `assets/math/loudlight.js` `baseLight(loudRel, loudRange, loudAbs, fallback)`. This is phase 4: **DUST, the scene that
 paid for the problem privately, gives up its private peak and reads the same mapping**, so there is ONE definition and
-ONE calibration across four scenes. Commit `PENDING`. **Not tagged, not pushed, not deployed.**
+ONE calibration across four scenes. Commit `94e4d8b`. **Not tagged, not pushed, not deployed.**
 
 ### The lean — one line of drive, and what deliberately did NOT come across
 
