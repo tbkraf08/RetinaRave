@@ -178,6 +178,44 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
+**2026-10-01, §75 (why CHLADNI's shape does not move in the opening):** the user, watching scene 11 in stream mode —
+*"opening 10 secs the pitch is changing but the shape isn't?"*, low priority unless it is the engine. **Measured on
+all five tracks cold (`WARM=0`), and it is the SCENE on SeeYouDrop and an engine fault on Malicious** (DECISIONS §75,
+commits `3186ed9` the `dinfo()` figure columns + `d67890c` the gate's cold start). **The complaint is right and the
+engine is right:** SeeYouDrop's first 12.9 s hold **no sub at all** (the 22-70 band is 0.1-0.8 % of 22-600 Hz), the
+pitch the user hears move is the **70-110 Hz mid-bass** walking C#2 E2 A2 E2 F#2 E2 C#2 — six changes at 2.25 / 3.25 /
+5.25 / 6.00 / 9.50 / 12.75 s — and `sub.js` rejects that layer on purpose, so `subNote` is −1 from 0.77 to 13.02 s and
+the scene holds the last figure (its own header says it does, and drop 2's 60 ms ducks are why). **The engine half,
+fixed:** the gate's level test cannot say no at a cold start (`Quantile` is a running mean of its first 16 samples, so
+`rel` ≡ 1), and the share test was seeded at 1 and re-fed 1 on every silent block — so `subGate` / `subIn` /
+`subNote` fired on the FIRST YIN frame of all five tracks (0.167 s). The share now starts at 0 and is held while there
+is no low end: 4 false reports removed on Malicious inside its first 0.62 s, 0 frames changed on the other four
+tracks, same first open 0.1707 s to the frame, 0 md5 lines, `test_ears.js --cold` 16 pass. **Open:**
+- **The frozen figure itself is NOT fixed and was deliberately not touched** (the user's own priority). Two
+  candidates, measured, for the user to choose: **(1) an absolute floor on CHLADNI's vote evidence, one constant** —
+  `win` is taken outright on the first voted frame, and SeeYouDrop's first vote is worth 0.0014 against the drop's
+  0.096, so a floor near 0.01 refuses it and leaves the plate on the home figure (1,2) at interval 0 instead of on an
+  arbitrary fifth, figure (1,3), for 10.8 s. It makes the held shape honest; it does not make it move. **(2) Let the
+  figure follow the bass where the bass LIVES** — the scene already knows (`bassReg` reads 1.000 through that intro);
+  what is missing is a PITCH for the 60-200 Hz layer, which the ears do not publish. Offline the intro's intervals to
+  C# are 0, 3, 8, 3, 5, 3, 0 → figures (1,2) (1,5) (2,5) (2,3), four shapes distinct by eye on the six bar lines the
+  user heard. (1) is a constant; (2) is a new engine field and a second pitch channel in a scene whose premise is one
+  element, one channel.
+- **CHLADNI's TONIC LATCH does not engage for 2.7-16.4 s from cold** (`TONMIN` 0.60 of evidence accumulated at
+  `max(0.05, tonicConf)` per second, and `tonicConf` is 0.02-0.27 through these openings): measured 2.67 s
+  SeeYouDrop, 16.42 s CyborgNinja, **never inside 20 s** Malicious, 11.62 s WhoLikesToParty, 4.98 s Vienna. Until it
+  engages `E.tonic` tracks the RAW `MS.tonic`, which wobbles **11 times in 12 s** on CyborgNinja and **8 times in
+  6.5 s** on WhoLikesToParty — and every change re-maps every figure at once, which is the exact churn the latch
+  exists to stop. The latch is right; its warm-up is not. A confidence-weighted seed (take the first tonic outright
+  and defend it with `TONMARG`) is the obvious lever and was not measured.
+- **The level half of the sub gate is structurally blind at a cold start** and nothing above fixes that. `rel` is
+  `ms / q90` and `Quantile` is a running mean for its first 16 pushes, so the level test passes at ANY absolute level
+  for the first 128 ms — and the first frame's own `ms` is an RMS over the 171 ms pre-roll (`rmsAcc` accumulates from
+  input sample 0 while `frame()` first runs at `need`), where every later frame covers one 7.3 ms hop. On SeeYouDrop
+  that is how YIN came to read a confident A1 off the −45 dB tail of a real −3.8 dB opening hit. Fixing it means
+  either an absolute floor (against the ears' AGC-proof design) or a longer, differently seeded quantile shared with
+  §73's other three readers — neither was in this session's scope.
+
 **2026-10-01, §74 (CHLADNI's kick, snare and fog):** §70's open items 2 (above) and the CHLADNI half of §73's 1 and 2
 are **CLOSED** (DECISIONS §74, commits `64a9b19` the `dinfo()` ruler + `c8a8d6a` the leans). **What §73 alone had done
 to CHLADNI, which no one had measured:** the throw's height is `(v·w)²/2g` in the size fed to `uLeap.y`, so an honest

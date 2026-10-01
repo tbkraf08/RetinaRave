@@ -6400,9 +6400,137 @@ live mode or `&map=0` to see the lane's.
   the hit was, and the ring in particular is now attached to the RIGHT hit (its correlation with its own hit was
   −0.01 to 0.31 in v0.25).
 
+## §75 the shape did not move because the sub was not there — and the one engine fault behind it: the gate's cold start assumed the sub owned the low end (2026-10-01, one worker; the user on CHLADNI in stream mode: "opening 10 secs the pitch is changing but the shape isn't?", rated low priority *unless* it is the engine)
+
+Three commits: `3186ed9` the `dinfo()` figure columns, `d67890c` the engine fix plus `test_ears.js --cold`, this
+section plus OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run.
+
+### The ruler
+
+`WARM=0 PORT=8916 node tools/dust-trace.js <T> 0 20 <out> 11 '<21 MS fields>'` on all five tracks — `WARM=0` so the
+engine starts cold at t = 0 exactly as the user's play button does — and `dinfo()` gained the three numbers the FIGURE
+is made of, because `s` alone cannot say which of them moved it: `note` (the sub note the vote sits on), `win` (the
+vote's winner), `ton` (the tonic the interval is measured from), `latch` (the scene's raw TONIC LATCH) and `sTgt`.
+The audible pitch is measured offline from the decoded PCM, independent of the engine: a 0.25 s harmonic-product
+spectrum over the **70-200 Hz mid-bass** (the layer the ear hears when there is no sub) beside a 22-130 Hz YIN and the
+22-70 / 70-150 / 150-600 band shares. The rulers are in `tools/work/v75/` (gitignored, as §73's were):
+`openpitch.py` the two offline contours per track, `midbass.py` the 70-200 Hz HPS contour of SeeYouDrop's intro,
+`firstblocks.py` the zero-phase band levels of the first 0.6 s, `cold2.js` the gate's internals block by block,
+`gateab.js` the whole-track A/B, `an.js` the trace reader.
+
+### The timeline, per track (cold, file-det, scene 11, 0-20 s)
+
+| track | the audible pitch changes at | the sub's own share of the low end | `tonic` / `key` first report | `subGate` first open | `subNote` first / first change | the FIGURE first change / **held** |
+|---|---|---|---|---|---|---|
+| **SeeYouDrop** | **2.25 · 3.25 · 5.25 · 6.00 · 9.50 · 12.75 s** (the mid-bass walks C#2 E2 A2 E2 F#2 E2 C#2 at 70-110 Hz, −12 to −20 dB) | **0.001-0.008 to 12.9 s**, then 0.92 | 0.35 s (F) → **0.68 s C#**, held to 8.5 | 0.17 s, shuts 0.77 s | 0.20 s (A1) / 0.48 s, then −1 | 0.20 s … then **FROZEN at s = 7.000, figure (1,3), 2.23 → 13.02 s** |
+| **CyborgNinja** | continuously (C2 / C#2 / D2 sub from the first beat) | 0.47 by 0.075 s, 0.23-0.38 throughout | 0.35 s (G), then **11 changes in 12 s** | 0.17 s, 98.5 % of 0-10 s | 0.17 s / 0.23 s | 0.35 s, then ~40 changes in 0-10 s |
+| **Malicious** | from 0 s (a 98 Hz G2 lead; the track fades in from digital silence, \|x\| 4e-4 at t = 0) | **never above 0.011 to 0.63 s**, real sub at 5.37 s | 0.35 s (G) → 1.37 s (D) | **was 0.17 s (FALSE) → now 5.37 s** | **was 0.28 s (FALSE) → now 5.42 s** | **was 0.40 s then s = 2.000 held to 5.42 → now s = 0.000 (home) to 5.47 s** |
+| **WhoLikesToParty** | continuously (a D2/F#2 bass + a sub from the first beat) | 0.42 by 0.117 s, 0.01-0.71 | 0.35 s (D), then **8 changes in 6.5 s** | 0.17 s, 84.5 % of 0-10 s | 0.17 s / 0.32 s | 0.40 s, then ~40 changes in 0-10 s |
+| **Vienna** | continuously (D#1 → A#0 → F#0 → F1 → E1, every bar) | 0.51 by 0.053 s, 0.39-0.54 | 0.35 s (D#), **never changes** | 0.17 s, never shuts in 0-20 s | 0.17 s / 0.20 s | 0.28 s, then every bar | 
+
+### The answer: on SeeYouDrop it is (c), the scene — and the engine is right
+
+**(b), the §62 override, is eliminated outright.** `tonic` first reports at **0.35 s on all five tracks** and `key` /
+`mode` take it over on the same frame. 0.35 s is `tonic.js`'s structure and not a ramp: the chroma FFT needs `CH_N`
+8192 samples in the ring (0.17 s at 48 kHz) and `CH_EVERY` 32 blocks (0.34 s) before the FIRST `solve()`, after which
+`tonicConf` is the KK margin and is available immediately (0.04-0.27 at 0.5 s). `HIST` is the read-back ring (512
+frames, ~4 s of history to interpolate at heard time), not a warm-up. **Nothing the figure reads is late.**
+
+**On SeeYouDrop the figure is frozen for 10.8 s, and every field feeding it is correct.** The first 12.9 s of that
+track contain **no sub at all** — the 22-70 Hz band holds 0.1-0.8 % of 22-600 Hz, measured zero-phase offline — and
+the pitch the user hears move is the **70-110 Hz mid-bass**, which `sub.js` rejects on purpose (`SUB_LP` 100, `SUB_FMAX`
+130, `GATE_BAND` 22-60 and `GATE_SHARE_ON` 0.30: *"without this the intro's 109 Hz mid-bass … read as a sub"*). So
+`subNote` is −1 from 0.77 s to 13.02 s, CHLADNI's vote has nothing to vote on, and `index.js` **holds the last figure
+while the sub is gone** — stated in its own header, and right: drop 2's 60 ms ducks must not reset the plate. **This
+is (c), by design, and nothing in the engine is at fault for it.**
+
+What makes it look worse than a held home figure is which figure is held. The gate DID open at 0.17 s on
+SeeYouDrop, and honestly: there is a **real −3.8 dB 22-70 Hz hit at 0.050-0.125 s** (share 0.96, 40 dB over the intro
+that follows), a sub impact at the top of the track. The first YIN frame cannot run before 0.167 s (`need` = W + tmax
++ 2 = 334 decimated samples), by which time that hit is over, so YIN read its **−45 dB tail** — A1, then G#1, G1,
+A1, C#1 — at conf 0.86-0.98, and the scene's vote took `win` = 8 off 0.28 s of it. The plate then sat on interval 7
+(a fifth above C#), figure **(1,3)**, from 2.23 s to 13.02 s. Removing that reading would not make the shape move; it
+would make the held shape the **home figure (1,2) on the tonic**, which is the honest picture of "no sub".
+
+### The engine fault: two defaults that said "the sub owns the low end" before anything had been measured
+
+The gate has two halves and **at a cold start the level half cannot say no.** `rel = ms / q90` and `Quantile` is a
+running MEAN of its first 16 samples, so on the first frame `rel` ≡ 1.000 whatever the absolute level, against
+`GATE_ON` 0.020 — and the first frame's `ms` is worse than that: `rmsAcc` / `rmsN` accumulate from input sample 0
+while `frame()` does not run until 0.167 s, so the first level sample is an RMS over a **171 ms** window where every
+later one covers one 7.3 ms hop. That leaves the SHARE half as the only half that can refuse — and it was seeded
+`this.share = 1` and re-fed `sh = 1` on every block with `den === 0`. So:
+
+- `subGate`, `subIn` and `subNote` fired on the **first YIN frame of every one of the five tracks, 0.167 s**, and the
+  share then needed `SHARE_DOWN` (0.45 s) to decay off a claim no sample supported: the gate shut at 0.63-0.77 s.
+- On **Malicious** that is unambiguously false. The track fades in from digital silence (the first 512-block's peak
+  sample is 4e-4; the 22-70 band runs −107 → −54 dB over 0-0.6 s) and its share of the low end **never exceeds 0.011**
+  against `GATE_SHARE_ON` 0.30. Only the seed held the gate open. CHLADNI then latched `win` = 4 and walked the plate
+  through figures 11, 10, 9, 10, 11, 0, 1, 2 and sat on s = 2.000 until 5.42 s — all of it off two notes read in a
+  0.63 s window with no sub in it.
+
+**The fix, two lines.** `sub.js`: `this.share = 0` — the honest prior, and it costs a real sub nothing, because
+`SHARE_UP` is 0.012 s (two 512-blocks, 21 ms) and the first YIN frame is at 0.167 s regardless. `ears.js`: with
+`den === 0` the share is UNDEFINED, so it is **held**, not set to 1. **Rejected: a time-based warm-up** that forces
+the gate shut for N seconds — three of the five tracks have their sub in the first beat and report truthfully on the
+first possible frame, and a dead plate for the first half-second of a live set is a visible regression bought for
+nothing. **Rejected: an absolute level floor** — the ears are relative by design (AGC-proof) and at t = 0 there is no
+loud reference to be relative to; the share is the one measurement that is meaningful on the first block.
+
+**Proof, on the music.** The whole-track gate timeline of all five tracks, per YIN frame, before and after
+(`tools/work/v75/gateab.js`):
+
+| | frames differing | window | gate-open share | `subIn` | `subNote` | events lost |
+|---|---|---|---|---|---|---|
+| SeeYouDrop | **0 / 14775** | — | 81.32 % → 81.32 % | 30 → 30 | 365 → 365 | none |
+| CyborgNinja | **0 / 16880** | — | 99.60 % → 99.60 % | 8 → 8 | 975 → 975 | none |
+| Malicious | 43 / 20899 (**99.794 %**) | **0.171-0.619 s only** | 49.63 % → **49.42 %** | 127 → **126** | 408 → **406** | `subIn@0.167` `subNote@0.167` `subNote@0.471` `subOut@0.623` |
+| WhoLikesToParty | **0 / 24032** | — | 77.31 % → 77.31 % | 510 → 510 | 1076 → 1076 | none |
+| Vienna | **0 / 18061** | — | 80.73 % → 80.73 % | 38 → 38 | 736 → 736 | none |
+
+So the change is **43 frames of one track, all inside its first 0.62 s**, and it removes exactly the four false
+reports. **No true report is lost or delayed**: the four tracks whose sub is in the first beat still open the gate on
+the very first YIN frame, 0.1707 s, to the frame. The two §73 numbers it touches are Malicious's gate-open share
+(49.7 → 49.4 %) and its `subIn` count (127 → 126) — stated here because §73 published them.
+
+**A new ruler, `node tools/test_ears.js --cold`, 16 pass.** Per track: the first gate open, the first `subNote`, and
+the invariant the fix buys — **the gate may not open before the share has been measured to say the sub owns the low
+end** (`open >= the first block whose raw share reaches GATE_SHARE_ON`), plus `new SubTrack(sr).share === 0`. Run
+against the two old defaults it reports **4 FAIL** (the negative control).
+
+**Proofs.** `node tools/check.js` **0 fail** (159 modules, MS keys 207, help.feats gaps 0, the same 6 line-cap warns
+as HEAD) · `npm test` **0 FAIL** (all 12 groups) · `node tools/test_ears.js --cold` **16 pass** ·
+`node tools/test_ears.js --keys` (§62's table) **byte-identical to HEAD** · `node tools/test_ears.js --sr=48000`
+**ruler output byte-identical to HEAD** (the same 5 recorded causal-path misses; only the wall-clock cost line
+differs) · `node tools/test_chladni.js` **OK, 12 figures** · the 12-scene md5 sweep **24 / 24 lines identical** to an isolated `git worktree` at `1a5eadb`, `errs []` on every scene (the ears never run under `#test`). The offline map is untouched:
+`map/map.js` ASSIGNS `sub.share` at `i % PHOP === 0` starting at i = 0, so the constructor's value is never read
+there. Nothing but the sub gate reads `sub.share`. Files: `assets/engine/ears/sub.js`, `assets/engine/ears/ears.js`,
+`assets/engine/ears/feats.js` (the `subGate` formula), `assets/scenes/chladni/index.js` (`dinfo()` only),
+`tools/test_ears.js`, `docs/DECISIONS.md`, `docs/OPEN-ITEMS.md`.
+
+### What the SCENE would do about the frozen figure — for the user to decide, NOT shipped
+
+The user rated this low priority unless it was the engine, and the part of it that is the engine is fixed above; the
+rest is the scene, so nothing in `assets/scenes/chladni/` moved but the read-only `dinfo()`. Two candidates, measured
+but not applied. **(1) An absolute floor on the vote's evidence, one constant.** `win` is taken outright the first
+time any note is voted (`this.win < 0 || …`), and on SeeYouDrop that first vote is worth `dt · sub² · conf` ≈
+**0.0014** of accumulated evidence against the drop's **0.096** — a 70x margin, so a floor anywhere near 0.01 would
+refuse the intro's reading and leave the plate on the home figure (1,2) at interval 0 until a real sub arrives. It
+makes the held figure honest; it does not make the shape move. **(2) Let the figure follow the bass where the bass
+LIVES.** The scene already computes exactly that for its camera and its drive — `lvl = sub + (bass − sub)·reg` through
+the `REGLO` / `REGHI` knee, and on SeeYouDrop's intro `bassReg` reads 1.000 — so the information "the bass has moved
+an octave up" is already in the frame; what is missing is a PITCH for that layer, which the ears do not publish
+(`subNote` is the 22-130 Hz sub and nothing else). Offline, the intro's mid-bass is C#2 E2 A2 E2 F#2 E2 C#2 =
+intervals 0, 3, 8, 3, 5, 3, 0 to the C# tonic, which would draw **(1,2) → (1,5) → (2,5) → (2,3)**: four figures
+distinct by eye, changing on the six bar lines the user heard. That is the fix that answers the complaint as asked,
+and it costs a new engine field (a 60-200 Hz pitch track) and a second pitch channel in a scene whose whole premise is
+one element, one channel (CONTRACTS §0). (1) is a constant; (2) is a milestone.
+
 **v0.26 tagged locally (2026-10-01) on the user's word ("tag what we have so far"; deploy still held):** v0.25 + §72 (Malicious's
 grid re-phased +23.22 ms, the `dp_beats` t0 bug), §73 (`Quantile(q)` returned the (1−q) quantile — fixed, four consumers
 re-calibrated, `*Vel` an honest rank), §74 (CHLADNI's kick / snare on `kickAmp` / `snareAmp`, the fog knee).
 `releases/retinarave-v0.26.html` (from `file://` on scene 11: errs [], nonFinite [], clock pcm), package.json 0.26.0. Not pushed
 (retinarave.com serves v0.15). The user on CHLADNI: "opening 10 secs the pitch is changing but the shape isn't?" — lower priority
-unless it is the engine (§75 to measure).
+unless it is the engine. **§75 measured it:** on SeeYouDrop it is the SCENE and by design (the first 12.9 s have no sub; the pitch
+that moves is the mid-bass the ears reject on purpose), and the one engine fault beside it — the sub gate's cold start assumed the
+sub owned the low end — is fixed on top of v0.26, untagged.
