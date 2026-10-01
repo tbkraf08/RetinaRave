@@ -106,12 +106,25 @@ export class RunMedian {
 // An exponential quantile tracker: `v` chases the q-th percentile of the stream (Robbins-Monro). Cheap, no history.
 // `mode` 'rel' scales the step by |v| (for a positive, multiplicative quantity: an RMS, a ratio); 'abs' does not (for dB).
 // The step is per push, so a hop rate fh and a wanted settling time T give step ~ 1/(fh*T) in 'rel' mode.
+//
+// THE WEIGHTS (DECISIONS §73). Write p = P(x > v). At equilibrium the up-pushes and the down-pushes balance, so
+// the two weights FIX p and nothing else does. Up-weight q against down-weight (1 - q) balances at
+//     p * q = (1 - p) * (1 - q)   ->   p = 1 - q
+// — q of the stream sits BELOW `v`, which is the q-th quantile, the thing the class is named for. From §44 to
+// v0.25 the two weights were the other way round ((1 - q) up, q down), which balances at p = q and settles on
+// the **(1 - q)** quantile: `Quantile(0.95)` on U(0,10) read 0.508 instead of 9.495 (tools/test_dsp.js records
+// the whole table). Every consumer had been calibrated against the number it was actually getting, so the fix
+// is the sign here plus a per-consumer decision, all of it in §73.
+//
+// The weights also set the two SPEEDS, and they are deliberately lopsided: a q near 1 climbs at step*q and
+// falls at step*(1 - q), so a p95 follower leaps onto a new loud level and leaks away from it slowly — a peak
+// follower, which is what a "loud level" reference should be. A q near 0 is the mirror image, a floor follower.
 export class Quantile {
   constructor(q, step, mode = 'rel') { this.q = q; this.step = step; this.abs = mode === 'abs'; this.v = 0; this.n = 0; }
   push(x) {
     if (this.n++ < 16) { this.v = this.v + (x - this.v) / this.n; return this.v; }
     const s = this.abs ? this.step : this.step * (Math.abs(this.v) + 1e-9);
-    this.v += x > this.v ? s * (1 - this.q) : -s * this.q;
+    this.v += x > this.v ? s * this.q : -s * (1 - this.q);
     return this.v;
   }
 }
