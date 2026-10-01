@@ -656,7 +656,10 @@ v3's `beatCount` in node = the page's + 1 (the page's pre-roll frames); the phas
 **The live build stage in node (B.2, `engine/build`):** `build-node.js` also runs the detector exactly as `features-build.js`
 feeds it (v3's count − 1 = the page's, the lead −DET_LEAD, the ears' low lane) and records `buildLive` / `dropLiveIn` /
 `dropLiveEvt` plus its inputs (`lowT`: the low onsets taken each frame); `--disp <ms>` is the display lead the onsets are taken
-ahead by (0 = the `&lead=0` page, 40 = the default file page); `BUILDK='{"RET":1.6}'` overrides knobs for one run. The knob
+ahead by (0 = the `&lead=0` page, 40 = the default file page); `BUILDK='{"RET":1.6}'` overrides knobs for one run. Its SECOND
+arming path (the sub void, §64) reads the ears' CAUSAL `subGate` — the page passes `EARS.ears.out.subGate` to `feed()` because
+`MS.subGate` is the file map's when a map is ready, and node / the replay take it from the trace, where it is already causal;
+its knobs are `SUBV_OFF` / `SUBV_HOLD` / `SUBV_RET` and `SUBV_OFF=0` turns the path off (§54's detector exactly). The knob
 sweep replays the recorded inputs instead (< 1 s a track; replay = node = page):
 ```
 node tools/build-node.js --out tools/work/build [--disp 40]                                   # node-<Track>.json with the stage
@@ -665,6 +668,9 @@ node tools/build-replay.js --sweep tools/work/build/node-*.json                 
 python3 tools/truth/dropcheck.py <traces> --summary --rule 'buildLive>=0.4' --rule 'dropLiveIn<=16' --rule 'dropLiveEvt:evt'
 node tools/test_build.js                                                                        # the unit test (in npm test)
 ```
+Vienna is the fifth track in the set since §64 (`tools/truth/Vienna.json`): its `drops` is the HAND list (85.3359 / 106.6693,
+the user's own bar 32 and bar 40) and `drops_tool` keeps trackmap.py's automatic 105.639. `build-replay.js` sorts it last, so
+the pooled drop order is SeeYouDrop ×2 · WhoLikesToParty ×3 · Malicious ×1 · Vienna ×2.
 Page traces of the new fields: `filetrace.js <Track> 0 <dur> out.json 'heardT,…,buildLive,dropLiveIn,dropLiveEvt' '&map=0&lead=0'`
 (the causal path, `dispNow()` 0 — compare with a `--disp 0` node run: `build-node.js --cmp page.json node.json buildLive,dropLiveIn,dropLiveEvt`).
 The stream-mode A/B is a ROUTE, set live on the running page (never under `#test`: its card is hidden, so no capture can start):
@@ -728,6 +734,10 @@ node tools/test_loud.js --truth                              # + the five tracks
                                                              #   truth-graded breakdown -> drop ratios (needs the --pcm dumps)
 python3 tools/truth/trackmap.py <Track> --pcm --sr=48000      # the dumps --truth reads (tools/work/<Track>.48000.st.f32)
 ```
+**`--pcm` is not a dump switch — it runs the FULL analysis and REWRITES `tools/truth/<Track>.json`.** It cost this
+project the Vienna worker's uncommitted provisional truth once (DECISIONS §63 phase 1): never run the truth tool on a
+track somebody is annotating; the dumps for all five tracks are already in `tools/work/`. `--loud` is safe — it writes
+its own file and reads `<name>.json` without touching it.
 `--loud` runs **only** the loudness analysis: it reads `tools/truth/<name>.json` (sections, drops) and writes
 `<name>.loud.json` — it never rewrites `<name>.json`, so it is safe on a track another worker is annotating (`--loud-out=`
 puts the file elsewhere). The JSON carries the whole momentary (400 ms) and short-term (3 s) contours on a 10 ms hop
@@ -811,7 +821,17 @@ earn their place: one that **restores the previous behaviour exactly**, so the A
 (DUST's `&hab=0` is bit-identical to the commit before it over 5401 frames), and one that **pins a slow state for a
 bench**, because `CARD.bench` runs on the fake timeline and a scene whose cost depends on the music will be
 measured at the fake timeline's own value (DUST's `&dyn=<v>`: the fake `eM` is 0.374, which put the grains at 73 %
-of their size).
+of their size). A third kind: one that **hands the user the knob the measurement landed on**, so the A/B is theirs and
+not a rebuild — DUST's `&nudge=<glide>,<width>` (§61) and `&bed=<ratio>,<seconds>` (§64, the hat's swell veto; `99`
+turns it off), both also callable as `CARD.REG[1].scene.hooks.<name>(…)` from the console on a live page.
+
+**Grading a TRIGGER, not a lag (§64).** When the question is "does this voice fire on the right thing", precision is
+the number, not coverage: match each of the scene's own fires (a `dinfo()` fire counter — DUST's `fK` / `fS` / `fH`,
+with `aK` / `aS` / `aH` for the amplitude it fired at and `srcK` / `srcS` / `srcH` for which detector fired it) to the
+truth's onsets within ±50 ms, and report **P, the share at the voice's floor, and the share landing on the truth's own
+16th grid** beside the §58 coverage. On Vienna 20–110 s DUST's hat voice fired at 3.44/s against a truth of 2.49 with a
+coverage of 96.8 % — and 41 % of those fires were not hats. Coverage alone cannot see that, and the floor share and the
+grid share are what the eye is actually reading.
 
 **A before/after is only valid if the ENGINE did not move between the two traces** (DECISIONS §60). Two workers in
 one worktree is normal here, and an engine worker editing `assets/engine/clock/clock.js` mid-session moved

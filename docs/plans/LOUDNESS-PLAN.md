@@ -1,7 +1,11 @@
 # An AGC-free loudness for the engine — a plan (2026-09-30)
 
-Written on the user's word ("plan it") after DECISIONS §60 step 1 / §60's pass-2 table. **Nothing here is built.**
-Measured numbers below are from this session; everything else is a proposal.
+Written on the user's word ("plan it") after DECISIONS §60 step 1 / §60's pass-2 table.
+**STATUS, 2026-09-30, on the user's word "loudness plan approved": phases 1, 2, 3, 5, 7 are BUILT — see the phase
+table in §8 for the commit of each and `docs/DECISIONS.md` §63 for the numbers. Phase 4 (DUST) and phase 6 (NAV2) are
+NOT built: DUST was being edited by another worker in the same worktree, and NAV2 is paused. Nothing is tagged, pushed
+or deployed.** The measured numbers below are from the planning session; where the build disagreed with them §63 says
+so (the headline pair is +2.88 LU / ×1.94 in power, not +2.65 / ×1.84).
 
 ## 1. The problem, in numbers
 
@@ -128,15 +132,39 @@ One scene per commit, `IDS=<id> tools/scene-md5.sh` as the proof each time.
 
 ## 8. Phases
 
-| # | phase | size | gate |
-|---|---|---|---|
-| 1 | `trackmap.py --loud`: BS.1770 momentary / short-term / integrated + the section ladder, into `tools/truth/<name>.loud.json`. No engine change. | **S** | the five tracks' numbers match this plan's table |
-| 2 | `engine/loud.js` + `features-loud.js`: the K-weighted PCM-bus stage, the six fields, FEATS + CONTRACTS Appendix A + `fake.js`'s mirror, `tools/test_loud.js` against phase 1 | **M** | proofs 1, 3, 6 |
-| 3 | the truth grading: `loudRel` on every annotated breakdown/drop pair, in `test_loud.js` | **S** | proof 2 |
-| 4 | **DUST** migrates (`dyn.js` → `loudPk`/`loudRel`, `&loud=0` for the A/B) | **M** | §60's pass-2 table re-taken back to back, breakdown 2 improves, proof 4 |
-| 5 | **FEIGEN**, then **MANDALA**, then **POLYTOPE** — one commit each, `IDS=<id>` md5 each | **M** | the user's look per scene |
-| 6 | **NAV2** `ePk` → `loudRel` | **M** | blocked on the user un-pausing NAV2 |
-| 7 | **NAV** + **GIELIS** review (expect ≤ 2 lines); the `eG` decision (proof 5) | **S** | — |
+| # | phase | size | gate | status |
+|---|---|---|---|---|
+| 1 | `trackmap.py --loud`: BS.1770 momentary / short-term / integrated + the section ladder, into `tools/truth/<name>.loud.json`. No engine change. | **S** | the five tracks' numbers match this plan's table | **DONE `a3a3a0e`** |
+| 2 | `engine/loud.js` + `features-loud.js`: the K-weighted PCM-bus stage, the six fields, FEATS + CONTRACTS Appendix A + `fake.js`'s mirror, `tools/test_loud.js` against phase 1 | **M** | proofs 1, 3, 6 | **DONE `70c6624`** |
+| 3 | the truth grading: `loudRel` on every annotated breakdown/drop pair, in `test_loud.js` | **S** | proof 2 | **DONE `fec7131`** |
+| 4 | **DUST** migrates (`dyn.js` → `loudPk`/`loudRel`, `&loud=0` for the A/B) | **M** | §60's pass-2 table re-taken back to back, breakdown 2 improves, proof 4 | **SKIPPED** — another worker held `assets/scenes/dust/` in this worktree. The field is ready and §63 says what to do; see the note below. |
+| 5 | **FEIGEN**, then **MANDALA**, then **POLYTOPE** — one commit each, `IDS=<id>` md5 each | **M** | the user's look per scene | **DONE `99c9cb7` / `f94b1c0` / `630fdf1`** (the user's look is still OPEN) |
+| 6 | **NAV2** `ePk` → `loudRel` | **M** | blocked on the user un-pausing NAV2 | **SKIPPED** — still blocked |
+| 7 | **NAV** + **GIELIS** review (expect ≤ 2 lines); the `eG` decision (proof 5) | **S** | — | **DONE `05b06cf`** — 0 lines changed; `eG` kept, documented as a rank |
+
+### What phase 4 (DUST) should do, written after phases 1–3 and 5 (for the next worker)
+
+`dust/dyn.js` holds a private track-level running peak on `eM + ½·max(0, eS − eM)` (instant attack, 25 s release,
+floored 0.84) and drives the base brightness, the grain size and the swarm radius with `energy / peak`. The engine now
+publishes the same shape, measured: **replace `dyn.js`'s peak with `MS.loudPk` and its drive with
+`baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, <the old drive>)`** from `assets/math/loudlight.js` — the shared
+mapping the other three migrated scenes use, so there is one definition and one calibration. Three things to carry
+over from this session:
+
+1. **Do NOT reuse the 25 s release.** On a mean square that is 0.174 dB/s, which forgets 6.6 LU in the 38 s between
+   SeeYouDrop's drop 1 and its breakdown 2 — more than the whole track's 4.96 LU of range. `loudPk` releases at
+   **0.02 LU/s** for that reason (§63 phase 2 decision 1). `dyn.js` got away with 25 s only because it holds an
+   AGC-normalised 0..1 quantity whose peak barely moves.
+2. **The 0.84 floor has no analogue and must not be re-invented as an absolute one** — the other four test tracks
+   master 8–9 LU quieter than SeeYouDrop, so an absolute floor binds for their whole length (§63 phase 2 decision 2).
+   `loudPk`'s warm-up guard already solves the problem the 0.84 was solving (§60 step 4's bright intro).
+3. **`&loud=0` must restore §60 exactly**, which `baseLight`'s `loudAbs < 0` fallback gives for free: the other three
+   scenes' `&loud=0` md5 lines are v0.14's own, bit for bit. That is the A/B, and it is also the proof that the
+   migration is the only thing that moved.
+
+The gate is unchanged: §60's pass-2 table re-taken BACK TO BACK on one tree (§60's own measurement hazard), and
+**breakdown 2 must improve** — the field says it is +2.88 LU / ×1.94 in power louder than the breakdown before it,
+where `eM` said ×0.994. The mapping's own ratio there is ×1.935 and the void → drop 1 pair is ×4.87.
 
 Phase 4 is the one that answers the user's §60 observation; 1–3 are the engine work that makes it provable.
 Phases 5–7 are opt-in and want the user's eye one scene at a time, the way §57–§60 ran DUST.

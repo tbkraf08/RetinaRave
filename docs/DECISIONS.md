@@ -3785,7 +3785,7 @@ as "missing in v3" info as every post-v3 field is. The `nav.*` snapshot differs 
 frame for frame, so a scene difference can only be the two programs' own NAV code (this NAV has read `dropLiveEvt`
 since §54, and the event log shows `ew`'s extra `FILE@` / `RESTORE@` look-memory lines, "absent in v3"). No audible run.
 
-### Phase 3 — the truth grading: `test_loud.js --truth` (`PENDING`)
+### Phase 3 — the truth grading: `test_loud.js --truth` (`fec7131`)
 
 `--truth` runs the stage over the 48 kHz stereo dumps of all five tracks, one `read()` per 60 fps frame as the page
 does, against **two** references, because they answer different questions:
@@ -3884,7 +3884,7 @@ The shaders' constant terms are what keep the ratio under the field's own ×1.93
 being black: FEIGEN's filaments idle at 0.45/1.75 = 26 % of full, MANDALA's body at 0.35/1.65 = 21 %, POLYTOPE's stroke
 at 0.35/1.35 = 26 %. On the void → drop 1 pair the same terms read ×1.84 / ×1.75 / ×2.01 / ×1.83.
 
-#### FEIGEN (id 6) — `PENDING`
+#### FEIGEN (id 6) — `99c9cb7`
 
 One line: the `glow` param's `from()`. `uLevel` in both colour passes IS "the brightness of the filaments, the bands
 and the interior" (the scene's own comment since v0.5), so it is the one thing here that must not ride an AGC. `dive`
@@ -3904,7 +3904,7 @@ rather than 1e-3 (at `eM` 0 the first frames read −60 LKFS and seeded `loudRan
 spent 40 s forgetting — it read 34.1 LU), and the mirror now applies the real stage's own warm-up guard, so it has the
 field's SHAPE and not just its units. The fake loop now spans about −11.1 … −2.1 LKFS with ~9–11 LU of range.
 
-#### MANDALA (id 2) — `PENDING`
+#### MANDALA (id 2) — `f94b1c0`
 
 One line: `S.lvl = baseLight(…)`. `uLevel` here is the BODY's brightness and nothing else —
 `palM(…) · pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` — and the per-hit lift needed no new term, because in this scene
@@ -3914,7 +3914,7 @@ section's kick is still a kick). `feats` + the three fields with a `help.feats` 
 **md5** (`IDS=2`, errs []): s2-f360 `9a57626c` → **`1124721c`**, s2-f840 `5e59be93` → **`cb3442e9`**; **`&loud=0`
 reads `9a57626c` / `5e59be93`, v0.14's own two lines.** The body's own ratio on the headline pair: **×1.297 → ×1.591**.
 
-#### POLYTOPE (id 5) — `PENDING`
+#### POLYTOPE (id 5) — `630fdf1`
 
 One line: the stroke's base brightness, `GAIN · 0.75 · (0.35 + base) · presence`, where `base` was `MS.lvl`. The
 per-hit lift is `p.pulse = 1 + 0.4·MS.hit` and the beads are `grooves.js`'s own trains — both untouched, both still on
@@ -3975,7 +3975,7 @@ so benching it would have measured their work in progress; FEIGEN, a scene this 
 - `node tools/parity.js fake` was run after phase 2 (every MS field identical to 1e-9); phases 3, 5 and 7 add no
   engine field and no scene edit can move MS, `NAV`, `GROOVE`, `SC` or `Q`, which is all that run compares.
 
-### Phase 7 — NAV and GIELIS reviewed, nothing changed, and the `eG` decision (`PENDING`)
+### Phase 7 — NAV and GIELIS reviewed, nothing changed, and the `eG` decision (`05b06cf`)
 
 The plan budgeted "≤ 2 lines" here and the answer is **0**. Both reviews, with the reason.
 
