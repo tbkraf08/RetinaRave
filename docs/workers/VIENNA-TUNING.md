@@ -155,3 +155,114 @@ byte-identical.
   therefore on the wrong beat of the bar there — a consistent 4-cycle, so it reads as a pattern rather than a jerk.
 - **`bpmSyn` reads 164.93 on Vienna** (median) — synapse's own tempo is a third voice and it is wrong on this track too.
 - "Lots of panning": DUST reads no stereo field at all (its 42 `feats` are mono), so panning cannot drive a flicker here.
+
+---
+
+# Vienna — the hat and the drop (worker report, 2026-09-30; DECISIONS §64)
+
+The user's notes, verbatim, after watching Vienna on DUST (key 2, stream mode):
+
+> "looks better on vienna, but the high hat that starts at 0:25-1:00 still seems jerky also (wonder if the sparkly /
+> dreamy sounds are interfering in the high section?)"
+
+and, on §61's open item "`dropLiveEvt` never fires on Vienna":
+
+> "fix it"
+
+Both guesses were right, and both had a number behind them.
+
+## Task 1 — the hat voice
+
+**What "jerky" is.** It is not the rate and it is not the decay. Over Vienna 20–110 s the hat voice fires **310 times
+for 224 truth hats** — about the right density — but only **59 % of those fires are hats**. The 125 that are not land
+a median **86 ms off the 8th-note line** (the real ones land 3 ms off), they flash at the voice's **floor 0.200**
+against a confirmed hat's **0.757**, and they happen where `highS` reads **0.643 against the real hats' 0.283** and is
+RISING. Only **76.8 %** of the fires sit on the truth's 16th grid, against the truth's own 91.1 %. So the eye is given
+an uneven, stumbling rhythm where the ear hears even 8ths — and the flashes alternate big and tiny on it.
+
+**Where it comes from.** `ears/perc.js` is an HPSS-lite whose harmonic part is a RUNNING MEDIAN of each band's dB
+envelope. A median lags a swell, so the leading edge of a pad, an arp or a reverb tail rises above it and is published
+as a percussive onset. The user's "sparkly / dreamy sounds" are exactly that. Synapse's `hat2` is the precise picker
+here (P 0.96–0.99 on all three tracks) and it confirms **90 % of the real ears events and 2 % of the false ones** on
+Vienna (75 / 30 % on SeeYouDrop, 98 % / — on CyborgNinja, which has no false ones).
+
+**The fix, in the scene.** The ears' hat EVENT no longer fires the voice while the high band is more than **1.05 ×**
+its own **2 s** average — a band getting louder on its own is a swell, and a swell's edge is not a stick. `hat2`'s
+rising edge still fires the voice, and the ears' age still places a hit the level confirms, so no timing moves.
+Knob: `&bed=<ratio>,<seconds>` under `#test`, or `CARD.REG[1].scene.hooks.bed(r, tc)` from the console on a live page.
+
+| page window | fires/s | P | §58 coverage | at the floor | on the 16th grid |
+|---|---|---|---|---|---|
+| **Vienna 20–110** (truth 2.49/s) | 3.44 → **2.38** | 0.59 → **0.80** | 96.8 → 91.9 % | 49 → **26 %** | 76.8 → **88.8 %** |
+| **Vienna 85–107** (the double time, 3.00/s) | 4.32 → **3.23** | 0.60 → **0.77** | 95.4 → 93.8 % | 45 → **27 %** | 76.8 → **88.7 %** |
+| SeeYouDrop 20–110 (3.29/s) | 4.33 → 3.91 | 0.71 → **0.74** | 95.9 → **94.9 %** | 51 → 44 % | 80.0 → 80.7 % |
+| CyborgNinja 20–50 (7.67/s) | 7.63 → 7.57 | 0.99 → 0.99 | 94.7 → **94.7 %** | 8 → 7 % | 79.5 → 79.3 % |
+
+The median gap between flashes on Vienna becomes the 8th note itself — 250 → **333 ms**, against the truth's 325. The
+rim's own picture is untouched where it was right: `lumR` p95/p05 range 4.572 → 4.632 on Vienna, 4.196 → 4.199 on
+SeeYouDrop, 2.794 unchanged on CyborgNinja.
+
+## Task 2 — `dropLiveEvt` on Vienna
+
+**Why it never armed.** Not a bug: **Vienna has no void of the kind §54 reads.** `bassS` sits at 0.51–0.83 for the whole
+track, its 2 s / 32 s ratio bottoms at **0.514** for 4.6 s (the dream section, 1:09–1:14) and is back over 0.85 **eleven
+seconds** before the drop; `hp`'s 5 s mean peaks at **0.166** over the same 4.6 s and is 0 from 1:14 on. One void run in
+192 s, armed 69.3–76.3 s, and the drop is at 1:25.3. The slam could not have fired either: at 85.343 s `bassS` reads
+**0.97 ×** its own 2 s mean (the rule wants 1.75) and `sub` **2.14 ×** (the rule wants 5) — against SeeYouDrop drop 1's
+2.80 × and 15.7 ×, where the bass had been at 0.04.
+
+**What IS out: the sub.** The ears' causal sub gate is shut from **69.7 to 85.8 s — 6.02 bars** — and the drop is the sub
+note coming back (`sub` 0.356 → 0.991 on one frame, two low onsets on the beat line, +7 ms from the truth). A **four-bar
+hold** on that reading separates Vienna's 6.02 bars from the longest sub-gate-shut run on any other track in the set
+(SeeYouDrop 3.85, Malicious 3.37, WhoLikesToParty and CyborgNinja none) by 57 %, so the new path cannot arm anywhere
+else: the replayed traces for all four control tracks are **md5-identical with the path on and off**.
+
+**Result, on the page** (`&map=0&lead=0`, whole track): `buildLive` arms **4.9 beats** before the drop and runs
+82.10 → 85.35 s at max 1.00, `dropLiveEvt` fires at **+14 ms**, and there are **0 false arms in 3.2 minutes**. In node
+the same path reads 4.4 beats and −3 ms. SeeYouDrop 15.9 / 7.9 beats and −6 / +21 ms, WhoLikesToParty 11 / 7 / 11 and
++10 / +48 / +12, Malicious 0, CyborgNinja **0 arms and 0 events** — all unchanged. DUST's whole tension machinery (the
+contraction over the last 1.2 bars, the palette drain, the slam's release) therefore does something on this track for
+the first time.
+
+One caveat the user will not see but the next worker should: `dropLiveIn` points **+3.0 beats late** on Vienna, because
+synapse's `barConf` never reaches the 0.9 anchor gate here and §61 measured its bar line 2 beats off, so the detector
+sits on v3's own arbitrary count mod 4. The EVENT is right anyway — the slam keys on BEAT lines — but the last-bar
+wind-up a scene builds from `nextDropIn` is on the wrong beat of the bar on this track.
+
+**Vienna's SECOND drop (2:06.7) is not detectable and nothing was shipped for it.** Of 60 candidates × 7 grains × 4
+causal transforms in `buildstudy.py`, at 4 bars and at 8 bars, **every one gives it a lead of 0 beats**. In the 20 s
+before it `hp`'s 5 s mean is 0.000, `bassS` 2 s / 32 s bottoms at 0.887, the sub gate is open throughout, and at the
+drop `bassS` reaches 1.25 × its 2 s mean and `sub` 1.32 ×. It is a density / texture jump — the double-time layer
+thickening — and every candidate that would arm it also arms on CyborgNinja (0.35–6.71 false arms / min).
+
+## The A/B for the user — in track time
+
+New = `http://127.0.0.1:8765/` on this tree. **Key 2** (DUST), stream mode, Vienna
+(`~/Music/RetinaRave/Vienna.flac`, loaded with the landing control).
+
+| time | what to watch | what should be different |
+|---|---|---|
+| **0:25–1:00** | the RIM's sparkle, not the cloud | OLD: the sparkle stumbles — flashes between the hats, and big/tiny/big/tiny. NEW: an even 8th-note sparkle; the extra flashes between the hats are gone and the ones that stay are bigger. This is the whole of task 1. |
+| **1:05–1:25** (the dream) | the rim | the swelling pad no longer sparkles. If the section now looks too dark, that is the knob: `hooks.bed(1.18, 2)` lets more through, `hooks.bed(99)` turns the veto off entirely. |
+| **1:22.7 → 1:25.3** | the whole cloud | NEW only: the cloud CONTRACTS over the last bar and the palette drains, then everything lets go on the drop. OLD: nothing at all happened here. |
+| **1:25.3** (the drop) | the slam | NEW: the release lands within a frame of the double time arriving. |
+| **2:06.7** (the second drop) | — | UNCHANGED, and known: no void, no bass return, no sub return — nothing announces it. See above. |
+| 1:50–2:10 | the cloud's turn | STILL WRONG in both, and known (§61): the clock reads 120 BPM there. |
+
+**SeeYouDrop** and **CyborgNinja** are the controls: their drops, their clocks and their formations are untouched, and
+the only thing that should look different at all is a slightly thinner hat sparkle on SeeYouDrop (coverage 95.9 →
+94.9 %, precision 0.71 → 0.74).
+
+## Open, for the orchestrator
+
+- **The ears' high-class picker is the engine item.** `hatEvt`'s precision against the truth's `high` onsets is **0.56
+  on Vienna, 0.71 on SeeYouDrop, 1.00 on CyborgNinja**; the scene now vetoes the swell case, but the picker itself
+  publishes those onsets to every reader. `ears/perc.js`: the harmonic part is a running median, and a median lags a
+  swell. A spectral-flatness or a per-bin habituation term inside the picker would fix it for everyone.
+- **The snare's picker has the same shape and is worse**: on Vienna 20–65 s, `snareEvt` vs the truth's `mid` onsets
+  reads P 0.38 / R 0.75, `snare2` P 0.51 / R 0.84 (`drumcheck.py`). The snare's flash ring is the louder voice on the
+  body annulus, so this is the next one to measure — not done here.
+- **`SUBV_RET` 2 is tuned on one drop.** 1.5 changes nothing, 3 loses it; Vienna's own ratio is 2.14. One drop tunes a
+  threshold, it does not prove one.
+- **Vienna's second drop** — above. If the user wants something to happen there, it has to be the file map's
+  (`&map=1` has the drop) or a hand annotation, not a causal read.

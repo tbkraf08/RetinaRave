@@ -14,6 +14,24 @@
 //           >= SUB_RET x its own) within CONF beats of the onset; released on the confirming frame, then disarmed
 //   DISARM  the slam; MAX bars armed with no slam (a breakdown, not a void); silence; a seek (the heard beat jumps); a
 //           tempo jump (> 4 %). After a slam or a timeout it re-arms only once the void has been gone a bar.
+//
+// A SECOND ARMING PATH — THE SUB VOID (DECISIONS §64 task 2). A drop whose bass band never leaves is invisible to the rule
+// above. Vienna is one: `bassS` reads 0.51-0.83 for the whole track, its 2 s / 32 s ratio bottoms at 0.514 for 4.6 s and is
+// back over 0.85 eleven seconds before the drop, and `hp`'s 5 s mean peaks at 0.166 over the same 4.6 s — so the detector
+// armed ONCE in 192 s, 69.3-76.3 s, and the first drop is at 85.34. What is out there is the SUB: the ears' causal sub gate
+// is shut from 69.7 to 85.8 s (6.02 bars at 90 BPM) and the drop IS the sub note coming back (`sub` 0.356 -> 0.991 on one
+// frame, +7 ms from the truth, with two low onsets on the beat line). Measured over all five truth tracks, the longest
+// sub-gate-shut run anywhere else is SeeYouDrop's 3.85 bars (before its own drop 1, which the void path already arms 15.9
+// beats ahead) and Malicious' 3.37 (twelve runs, 0.70-3.37 bars); WhoLikesToParty and CyborgNinja never shut it for a bar.
+// So a FOUR-BAR HOLD on the sub void clears Vienna's 6.02 by 57 % and changes nothing on any other track in the set.
+//   SUB VOID = the ears' causal sub gate's 2 s mean < SUBV_OFF, after MIN_HIST, gaps <= 1 beat bridged
+//   ARM      once it has held SUBV_HOLD bars, on the next bar line (the same line rule)
+//   SLAM     the same on-beat low onset, confirmed by `sub` >= SUBV_RET x its 2 s mean (Vienna reads 2.14 x; the void
+//            path's RET 1.75 / SUB_RET 5 cannot see it because the bass never left) and with no SLAM_AFTER wait — the
+//            void has already run four bars before this path arms, so the first bass return is not a pickup
+// The gate must be the CAUSAL one: in file mode with the map ready `MS.subGate` is the map's (features-ears.js), and this
+// stage runs the same inputs in every mode (as it takes the ears' low lane rather than the map's onsets). features-build.js
+// passes `EARS.ears.out.subGate`; node and the replay read it from the trace, where it is already causal.
 // THE TIME BASE is the bars stage's (DECISIONS §50): B = the v3 beat moved onto heard time with the lead's estimate; an
 // onset's position x = B - (T - t) x bpm / 60 (t may be ahead of T by the display lead in file modes: features-build.js).
 // THE BAR LINE: v3's own count (beatCount mod 4) until synapse proposes a sure bar phase (barConf >= 0.9, same octave) for
@@ -33,6 +51,9 @@ export const BUILD = {
   SUB_RET: 5,      // or synapse's sub >= SUB_RET x its 2 s mean (the 808 / sub coming back first; 0 = off)
   PRESENT: 0.15,   // presence below this is silence
   REL: 0.5,        // s: buildLive's decay after a disarm that is not a slam
+  SUBV_OFF: 0.2,   // the ears' CAUSAL sub gate, 2 s mean, below which the sub is out (0 = the sub-void path off)
+  SUBV_HOLD: 4,    // bars the sub must be out before the sub-void path arms (Vienna 6.02; the longest elsewhere 3.85)
+  SUBV_RET: 2,     // on a sub-void arm: sub >= SUBV_RET x its 2 s mean = the sub is back (Vienna's drop reads 2.14)
 };
 export const BUILD_OUT = ['buildLive', 'dropLiveIn', 'dropLiveEvt'];
 const TEMPO_JUMP = 0.04, ANCHOR_BEATS = 8;
@@ -56,6 +77,7 @@ export class Build {
     this.k = k;
     this.out = { buildLive: 0, dropLiveIn: -1, dropLiveEvt: 0 };
     this.hp5 = new BoxMean(5); this.b2 = new BoxMean(2); this.b32 = new BoxMean(32); this.s2 = new BoxMean(2);
+    this.sg2 = new BoxMean(2);
     this.pB = null; this.pBpm = 0;
     this.a = 0; this.aCand = -1; this.aT = 0;       // the bar phase (0..3) and a proposed one
     this.reset();
@@ -63,13 +85,14 @@ export class Build {
 
   // a seek / a new stream: nothing carries across
   reset() {
-    this.hp5.reset(); this.b2.reset(); this.b32.reset(); this.s2.reset();
+    this.hp5.reset(); this.b2.reset(); this.b32.reset(); this.s2.reset(); this.sg2.reset();
     this.hist = 0; this.disarm(true); this.rearm = true; this.voidB = 0; this.gapB = 0; this.offB = 0;
+    this.svB = 0; this.svGap = 0;
     this.out.buildLive = 0;
   }
 
   disarm(slam) {
-    this.armed = false; this.armB = 0; this.cand = null;
+    this.armed = false; this.armB = 0; this.cand = null; this.sv = false;
     this.out.dropLiveIn = -1;
     if (slam) this.out.buildLive = 0;
     this.rearm = false;
@@ -93,42 +116,52 @@ export class Build {
     if (!(i.bpm > 0) || !isFinite(B)) { this.disarm(false); this.decay(dt); return o; }
     if (this.pB !== null) {
       if (B < this.pB - 0.5 || B > this.pB + 2) { this.reset(); this.pB = B; this.pBpm = i.bpm; return o; }   // a seek
-      if (Math.abs(i.bpm / this.pBpm - 1) > TEMPO_JUMP) { this.disarm(false); this.voidB = 0; }                // a tempo jump
+      if (Math.abs(i.bpm / this.pBpm - 1) > TEMPO_JUMP) { this.disarm(false); this.voidB = this.svB = 0; }      // a tempo jump
     }
     const dB = this.pB === null ? 0 : Math.max(0, B - this.pB), pB = this.pB === null ? B : this.pB;
     this.pB = B; this.pBpm = i.bpm;
     this.phase(i.anchor, B);
-    if (!i.ok) { if (this.armed) this.disarm(false); this.voidB = 0; this.decay(dt); return o; }   // silence
+    if (!i.ok) { if (this.armed) this.disarm(false); this.voidB = this.svB = 0; this.decay(dt); return o; }   // silence
     this.hist += dt;
     const hp5 = this.hp5.push(i.hp, dt), b2prev = this.b2.mean, b2 = this.b2.push(i.bassS, dt), b32 = this.b32.push(i.bassS, dt);
     const s2prev = this.s2.mean; this.s2.push(i.sub || 0, dt);
+    const sg2 = this.sg2.push(i.subGate === undefined ? 1 : i.subGate, dt);
     const isVoid = this.hist >= k.MIN_HIST && (hp5 > k.HP_ARM || (k.BASS_ARM > 0 && b2 < k.BASS_ARM * b32));
+    // the sub void, counted in beats of its own with the same gap bridging
+    const isSubVoid = this.hist >= k.MIN_HIST && k.SUBV_OFF > 0 && sg2 < k.SUBV_OFF;
+    if (isSubVoid) { this.svB += dB + this.svGap; this.svGap = 0; }
+    else { this.svGap += dB; if (this.svGap > 1) { this.svB = 0; this.svGap = 0; if (this.armed && this.sv) this.disarm(false); } }
     // the void's length in beats, gaps <= 1 beat bridged; gone for a bar = over (and re-arming allowed again)
     if (isVoid) { this.voidB += dB + this.gapB; this.gapB = 0; this.offB = 0; }
     else {
       this.gapB += dB; this.offB += dB;
-      if (this.gapB > 1) { this.voidB = 0; this.gapB = 0; if (this.armed) this.disarm(false); }
+      // the bass/hp void lifting disarms a BASS/HP arm only: a sub-void arm has its own gap counter below, and on
+      // Vienna the bass void lifted eleven seconds before the drop (§64).
+      if (this.gapB > 1) { this.voidB = 0; this.gapB = 0; if (this.armed && !this.sv) this.disarm(false); }
       if (this.offB >= 4) this.rearm = true;
     }
     const bar = (x) => Math.floor((x - this.a) / 4);
-    if (!this.armed && this.rearm && this.voidB > 0 && this.voidB >= 4 * k.HOLD && bar(B) > bar(pB)) {   // armed on a bar line
-      this.armed = true; this.armB = 4 * bar(B) + this.a;
+    const vOn = this.voidB > 0 && this.voidB >= 4 * k.HOLD;
+    const svOn = k.SUBV_OFF > 0 && this.svB >= 4 * k.SUBV_HOLD;
+    if (!this.armed && this.rearm && (vOn || svOn) && bar(B) > bar(pB)) {   // armed on a bar line
+      this.armed = true; this.armB = 4 * bar(B) + this.a; this.sv = !vOn;   // `sv`: armed by the sub void alone
     }
     if (this.armed) {
       if (B - this.armB > 4 * k.MAX) { this.disarm(false); this.decay(dt); return o; }  // a breakdown, not a void
       // the slam: an on-beat low onset, confirmed by the bass coming back within CONF beats
       for (const e of i.onsets) {
-        if (e.x - this.armB < 4 * k.SLAM_AFTER) continue;
+        if (!this.sv && e.x - this.armB < 4 * k.SLAM_AFTER) continue;
         if (Math.abs(e.x - Math.round(e.x)) <= k.ON_BEAT && (!this.cand || e.x > this.cand.x + 0.5)) this.cand = { x: e.x, ref: b2prev, sref: s2prev };
       }
       if (this.cand) {
         if (B - this.cand.x > k.CONF) this.cand = null;
         else if ((i.rel === undefined ? B : i.rel) >= this.cand.x - 0.05 && ((i.bassS >= k.RET * this.cand.ref && this.cand.ref > 0) ||
-          (k.SUB_RET > 0 && (i.sub || 0) >= k.SUB_RET * this.cand.sref && this.cand.sref > 0))) {
+          (k.SUB_RET > 0 && (i.sub || 0) >= k.SUB_RET * this.cand.sref && this.cand.sref > 0) ||
+          (this.sv && k.SUBV_RET > 0 && (i.sub || 0) >= k.SUBV_RET * this.cand.sref && this.cand.sref > 0))) {
           o.dropLiveEvt = 1; this.disarm(true); return o;
         }
       }
-      const vb = this.voidB / 4;
+      const vb = Math.max(this.voidB, this.sv ? this.svB : 0) / 4;
       o.buildLive = Math.min(1, k.L0 + (1 - k.L0) * Math.max(0, vb - k.HOLD) / Math.max(1e-6, k.FULL - k.HOLD));
       // beats to the next bar line; 0 through the first ON_BEAT after a line (the drop may be landing now; not on the arm's line)
       const r = (((B - this.a) % 4) + 4) % 4;

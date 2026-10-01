@@ -4028,3 +4028,167 @@ of phase 7** is that CHLADNI's one `eG` term becomes `baseLight(…)`, which wor
 — but CHLADNI's look is the user's, signed off at v0.15, so it is a phase of its own and not a review's two lines.
 `eG` keeps its place as the only non-causal whole-track arc, which is the right input for a *file-mode* section-level
 decision (where its rank normalisation is a feature, not a fault).
+
+## §64 the hat's trigger quality, and the sub void — Vienna's sparkle and Vienna's drop (2026-09-30, one worker; the user on DUST: "the high hat that starts at 0:25-1:00 still seems jerky also (wonder if the sparkly / dreamy sounds are interfering in the high section?)" and, on §61's open item, "fix it"; report `docs/workers/VIENNA-TUNING.md`, `docs/AUDIT-live-grid.md` "B.4")
+
+### Task 1 — the hat voice is jerky on Vienna 0:25–1:00
+
+**What "jerky" measured as.** Not the rate, not the decay, not an amplitude chatter the rim can see: it is **fires in
+the wrong place**. Over Vienna 20–110 s (`tools/dust-trace.js`, DUST, `&map=0`, graded against `tools/truth/Vienna.json`
+`onsets.high` within ±50 ms, with a new `dinfo()` fire counter `fH` / `aH` / `srcH`) the hat voice fires **310 times for
+224 truth hats** — the right density — and only **59 %** of those fires are hats. The 125 that are not land a median
+**86 ms off the 8th-note line** (the real ones land 3 ms off), they flash at the voice's **floor 0.200** against a
+confirmed hat's **0.757**, and only **76.8 %** of all fires sit on the truth's 16th grid against the truth's own 91.1 %.
+The user's control, CyborgNinja, reads **P 0.99** with 8 % of its fires at the floor. So the eye is handed an uneven
+rhythm, big and tiny alternating, where the ear hears even 8ths.
+
+**The cause is the SCENE's trigger reading an ENGINE picker that is wrong there.** The user's hypothesis is confirmed
+and the mechanism is specific: the false fires happen where `highS` reads **0.643 against the real hats' 0.283** and is
+RISING (`highS` − its own 2 s EMA: **+0.058** at a false event, **0.000** at a real one), and `ears/perc.js` is an
+HPSS-lite whose harmonic part is a RUNNING MEDIAN of each band's dB envelope — a median lags a swell, so a pad's, an
+arp's or a reverb tail's leading edge rises above it and is released as a percussive onset. Per track, the share of the
+ears' hat events that synapse's `hat2` confirms (≥ 0.10 within ±2 frames) is **90 % of the real ones and 2 % of the
+false ones** on Vienna, 75 / 30 % on SeeYouDrop, 98 % / — on CyborgNinja. `hat2` is the precise picker here (P
+0.96–0.99 everywhere); `hatEvt` is the loose one (P **0.56** Vienna, 0.71 SeeYouDrop, 1.00 CyborgNinja). §58's union
+was chosen for coverage, before anyone measured precision.
+
+**The fix (`assets/scenes/dust/voices.js`, `index.js`).** The ears' hat EVENT does not fire the voice while the high
+band is more than **R = 1.05** times its own **TC = 2 s** average — a band getting louder on its own is a swell, and a
+swell's edge is not a stick. `hat2`'s rising edge still fires the voice, and the ears' age still places a hit the level
+confirms, so no timing moves. The picker itself is untouched (the engine item: `docs/OPEN-ITEMS.md` §64 items 1–2).
+Knob for the user's own A/B: `&bed=<ratio>,<seconds>` under `#test`, `hooks.bed(r, tc)` from the console, `99` = off.
+
+| page window (truth hats/s) | fires/s | P | §58 coverage | at the floor | on the 16th grid |
+|---|---|---|---|---|---|
+| **Vienna 20–110** (2.49) | 3.44 → **2.38** | 0.59 → **0.80** | 96.8 → 91.9 % | 49 → **26 %** | 76.8 → **88.8 %** |
+| **Vienna 85–107**, the double time (3.00) | 4.32 → **3.23** | 0.60 → **0.77** | 95.4 → 93.8 % | 45 → **27 %** | 76.8 → **88.7 %** |
+| SeeYouDrop 20–110, §58's window (3.29) | 4.33 → 3.91 | 0.71 → **0.74** | 95.9 → **94.9 %** | 51 → 44 % | 80.0 → 80.7 % |
+| CyborgNinja 20–50 (7.67) | 7.63 → 7.57 | 0.99 → 0.99 | 94.7 → **94.7 %** | 8 → 7 % | 79.5 → 79.3 % |
+
+The brief's floor was SeeYouDrop coverage ≥ 93 %; it reads **94.9 %**, and its precision went UP. The median gap between
+flashes on Vienna becomes the 8th note itself — 250 → **333 ms** against the truth's 325. The rim's own picture is
+untouched where it was right: `lumR` p95/p05 range 4.572 → 4.632 (Vienna), 4.196 → 4.199 (SeeYouDrop), 2.794 → 2.794
+(CyborgNinja); `|ΔlumR|` p50 1.420 → 1.419 / 2.431 → 2.438 / 2.546 → 2.547. The fires that survive are bigger (amp p50
+0.229 → 0.374; the matched ones 0.522 → 0.659) because the ones that went were the floor-sized ones.
+
+**Measured and REJECTED**, each with the number:
+- **The DIFFERENCE form the brief proposed** (`highS` minus a slow EMA of itself, "a real step above the high-band
+  bed"): it discriminates (real +0.000 / false +0.058) but its operating point does not travel — the bed is 0.28 on
+  Vienna and 0.62 on SeeYouDrop, so one absolute step is 7 % of the band on one and 3 % on the other, and the threshold
+  that cleans Vienna (0.02) takes SeeYouDrop's coverage to **92.2 %**, under the floor. The RATIO is the same idea,
+  normalised; swept over TC 1 / 2 / 3 / 5 / 8 / 12 s × R 1.03 / 1.05 / 1.08 / 1.12 / 1.18, 1.05 at 2 s is the knee with
+  the most SeeYouDrop margin (1.03 → SeeYouDrop 92.2 %, 1.08 → SeeYouDrop 94.6 % for 3 points of Vienna's precision).
+- **Dropping `hat2`'s edge and keeping the ears alone** (the brief's first candidate, "band-limited onset detection"):
+  the ears are the unreliable half — Vienna 3.44 → 3.08 fires/s at P 0.59 → **0.56** with 55 % at the floor.
+- **Gating the ears' event on `hat2` confirming it** — the cleanest discriminator by AUC (0.93 Vienna 20–65, 0.99
+  Vienna 85–107, 0.77 SeeYouDrop): Vienna P 0.59 → **0.95**, but SeeYouDrop's coverage falls to **85.4 %**, because half
+  of its real hats are invisible to synapse's picker. Same for the edge alone (85.4 %). This is §58's reason for the
+  union, and it still holds.
+- **A self-calibrating version of that gate** (require confirmation only while the level's own recent confirmed hits are
+  loud — a 20 s peak-hold, 0.74 on Vienna against 0.34 on SeeYouDrop over 20–50 s): over the full 20–110 s window
+  SeeYouDrop's hold reads 0.52 (p50), the gate switches on there too, coverage **92.2 %**. A 20–50 s window was not
+  representative; the knee moved with the window, which is the sign of a fit rather than a rule.
+- **A smaller floor for an unconfirmed fire** (0.08 instead of 0.20): it keeps every coverage number — the envelope
+  still rises — and dims SeeYouDrop's real-but-unconfirmed hats (amp p50 0.22 there) by the same factor as Vienna's
+  false ones. It makes the metric pass without making the picture better.
+- **A rate limit** (§61 rejected it already, re-measured here): at 8 Hz, Vienna P 0.59 → 0.63 and CyborgNinja loses
+  69 of 229 fires.
+
+### Task 2 — `dropLiveEvt` never fired on Vienna
+
+**Why.** Not a bug: **Vienna has no void of the kind §54 reads.** Whole-track node run (`tools/build-node.js Vienna`):
+`bassS` sits at 0.51–0.83 all through, its 2 s / 32 s ratio bottoms at **0.514** for 4.6 s (the dream, 68.9–73.5 s) and
+is back over 0.85 **eleven seconds** before the drop; `hp`'s 5 s mean peaks at **0.166** over the same 4.6 s and is 0
+from 74 s. **One** void run in 192.6 s, armed 69.3–76.3 s, and the drop is at 85.336. The slam could not have fired
+either: at 85.343 `bassS` reads **0.97 ×** its own 2 s mean (`RET` 1.75) and `sub` **2.14 ×** (`SUB_RET` 5), against
+SeeYouDrop drop 1's 2.80 × and 15.7 × — SeeYouDrop's bass had been at 0.04, Vienna's never left. (The clock is also in
+the wrong octave from 88 to 108 s, `bpm` 119.9 against 90 — §61's open item — and `barConf` 0.02–0.75, so synapse's bar
+anchor is never taken; neither of those is why it did not fire.)
+
+**What IS out: the SUB.** The ears' causal sub gate is shut from **69.7 to 85.8 s — 16.05 s, 6.02 bars** — and the drop
+IS the sub note coming back (`sub` 0.356 → 0.991 on one frame, two low onsets at 85.343 / 85.354, **+7 ms** from the
+truth). Over all five tracks the longest sub-gate-shut run (2 s box mean < 0.2, after `MIN_HIST`) is Vienna's 6.02 bars,
+then **SeeYouDrop 3.85** (before its own drop 1, which the void path already arms 15.9 beats ahead), **Malicious 3.37**
+(twelve runs, 0.70–3.37), and WhoLikesToParty and CyborgNinja **never reach a bar**.
+
+**The change (`assets/engine/build/build.js`, `feed.js`, `features-build.js`): a SECOND arming path, the sub void.**
+`SUBV_OFF` 0.2 (the gate's 2 s mean below which the sub is out; 0 = the path off), **`SUBV_HOLD` 4 bars** — the hold
+that clears Vienna's 6.02 and every other track's longest by 57 % — armed on the next bar line as before; the slam is
+the same on-beat low onset confirmed by `sub` ≥ **`SUBV_RET` 2** × its 2 s mean, with no `SLAM_AFTER` wait (the void has
+already run four bars before this path arms, so the first bass return is not a pickup); and the bass/hp void lifting now
+disarms a bass/hp arm only. **The gate is the CAUSAL one**: `MS.subGate` is the file map's when a map is ready
+(`features-ears.js mapOverride`), and this stage must read the same inputs in every mode — the same reason §54 took the
+ears' low lane over the map's onsets — so `features-build.js` passes `EARS.ears.out.subGate` to `feed()`, and node and
+`build-replay.js` read it from the trace where it is already causal. §54's objection to `subGate` is answered, not
+overruled.
+
+**Node, `&map=0`, det, five tracks** (`build-replay.js`; SeeYouDrop 1 2 · WhoLikesToParty 1 2 3 · Malicious · Vienna 1 2):
+
+| rule | before | after |
+|---|---|---|
+| `buildLive>=0.4` anticipation, beats | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **0 0** | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **4.4 0** |
+| `dropLiveEvt` lag | −6 +21 · +10 +48 +12 · — · **— —** | −6 +21 · +10 +48 +12 · — · **−3 —** |
+| armed at drop · events | 5/8 · 5 | **6/8 · 6** |
+| false arms / min drop tracks · CyborgNinja | 0.14 · **0** | 0.14 · **0** |
+| false events anywhere | 0 | **0** |
+
+The replayed traces for SeeYouDrop, WhoLikesToParty, Malicious and CyborgNinja are **md5-identical with the path on and
+off** (`d61565e3` / `498acde0` / `cb8e2724` / `54759f6d`): only Vienna moves. Sweep: `SUBV_OFF` 0.5 arms Malicious 3.9
+beats before its drop and takes false arms 0.14 → **0.36**; `SUBV_HOLD` 3 gives Vienna 8.3 beats for false arms →
+**0.22**; 5 loses the anticipation (the arm lands inside the last beat, the event still fires); `SUBV_RET` 1.5 changes
+nothing and **3 loses the event**. So 4 bars is the only hold that buys the drop and changes nothing else, and
+`SUBV_RET` 2 is tuned on one drop — noted as open.
+
+**Vienna's SECOND drop (106.6693) is not detectable causally, and nothing was shipped for it.** `buildstudy.py` over all
+five tracks: of 60 candidates × 7 grains × 4 causal transforms, at PRE 4 bars and PRE 8 bars, **every one gives it a
+lead of 0 beats**. In the 20 s before it `hp`'s 5 s mean is 0.000, `bassS` 2 s / 32 s bottoms at 0.887, the sub gate is
+open throughout, and at the drop `bassS` reaches 1.25 × its 2 s mean and `sub` 1.32 ×. The brief's second lean (a
+tension accumulator: energy slope, centroid rise, onset density) was measured in that study — the candidates that would
+arm it at all (`presence` dev 5 s, `novelty`, `flux` dev, `eFast`, `eShort`) carry **0.35–6.71 CyborgNinja false arms /
+min**. Vienna's bar 40 is a density / texture jump (the double-time layer thickening) with no causal precursor.
+
+**`tools/truth/Vienna.json`:** `drops` is now the HAND list **85.3359 / 106.6693** (bar 32, the user's own "first drop at
+1:25", and bar 40 — trackmap's 105.639 snapped to the bar, an independent Foote novelty peak at 106.626 and the one full
+low+click+mid+high hit there); `drops_tool` keeps trackmap.py's own list, `drops_note` says why. Every ruler that reads
+`drops` (`dropcheck.py`, `buildstudy.py`) now grades the drops the user named; `trackmap.py` already preferred
+`drops_user`.
+
+**Page `&map=0&lead=0`, Vienna whole track** (`tools/filetrace.js`, graded by `dropcheck.py`): **armed 4.9 beats
+before the drop, `dropLiveEvt` +14 ms, 0 false arms / min over 3.2 min, 1 event, 0 on the second drop.** `buildLive`
+runs 71.42–76.23 (the dream, max 0.66) and **82.10–85.35 (max 1.00)** — so DUST's contraction and palette drain get
+the last 1.2 bars and the slam releases on the drop. `dropLiveIn` points **+3.0 beats late**, because synapse's
+`barConf` never reaches the 0.9 anchor gate on this track (and §61 measured its bar line 2 beats off), so the detector
+is on v3's own arbitrary count mod 4; the EVENT is right anyway because the slam keys on BEAT lines, not bar lines.
+A scene's last-bar wind-up (`nextDropIn`) is therefore on the wrong beat of the bar on Vienna — the same open item
+§61 raised, not a new one.
+
+**Page = node** (`build-node.js --cmp`, the `&map=0&lead=0` page trace against the `--disp 0` node run, 11520 frames):
+**`subGate` identical on 11520/11520 frames (max |diff| 0.00)** — the causal gate is the same quantity in both, which
+is the claim the implementation rests on; `bassS` / `sub` to ≤ 5.8e-5; `dropLiveEvt` 11519/11520 (the one frame is the
+event itself, node −3 ms / page +14 ms — one frame apart); `buildLive` 94.7 % and `dropLiveIn` 95.8 % of frames, the
+difference being the arm's bar line (node 82.38, page 82.10).
+**The causal gate, proved:** the same Vienna page run with `&map=1` (the file map on, so `MS.subGate` IS the map's)
+against `&map=0`. `MS.subGate` differs on **1748 of 11520 frames** (a boolean flip, max |diff| 1) — and `buildLive`,
+`dropLiveIn` and `dropLiveEvt` are **identical on all 11520 frames**, with `dropLiveEvt` at 85.35 s and the arm at
+82.10 s in both. The stage reads `EARS.ears.out.subGate`, so the map cannot reach it.
+**A finding worth recording:** on Vienna the NODE harness's v3 clock is in the wrong octave for part of the track
+(`bpm` p50 143.1 / 119.9 / 120.0 over 0–20, 80–100 and 140–160 s) while **the page reads 90.1 for the whole track**.
+Vienna's octave margin is the thinnest in the set (§61: its 40–150 Hz on-beat / half-beat ratio is 1.031), so the
+small input differences between `tools/node-stream.js`'s det stream and the page's file source flip it. The page is
+the one that is right, and it is the page the user watches; but **a node-only grading of anything clock-dependent on
+Vienna is not the page's answer** — the numbers above are the page's.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (157 modules, 205 MS keys, help.feats gaps 0, 5 pre-existing soft-cap warns) ·
+  `npm test` **OK**, `tools/test_build.js` now 26 cases (six new for the sub void: too short does not arm; longer arms
+  on a bar line with the BASS STILL IN; the void's own bass-less on-beat kicks never fire; the sub back at 2.5 × its 2 s
+  mean fires once on the onset's frame with `bassS` flat and under `SUB_RET`; `SUBV_OFF` 0 makes the same stream inert;
+  an input with no `subGate` reads as "the sub is there", so every caller written before §64 behaves as it did; and
+  `SLAM_AFTER` 4 bars does not gate the sub-void slam).
+- **s1 fake-timeline md5 UNCHANGED: f360 `42e4871c`, f840 `6eae9916`** — §61's own two lines. The hat veto cannot move
+  it (the ears stage never runs under `#test`, so `highS` and `hatEvt` are state.js's defaults there) and the build
+  stage returns early on `ENGINE.fakeOn`. The other accounted-for lines are untouched for the same reason (s0-f840
+  `8a0715df`, s4-f840 `05bf21c0`); the loudness worker's own lines moved in parallel and are not this worker's.
+- `CARD.bench` not re-run: the cost added is one scalar EMA per frame in the scene and one `BoxMean.push` per frame in
+  the build stage.

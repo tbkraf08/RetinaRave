@@ -556,6 +556,132 @@ Live, the detector arms 14 / 6 beats (3.5 / 1.5 bars) before both SeeYouDrop dro
 is reactive in capture (+61 / +89 ms: the low onset's capture lag + the bass confirmation, the same order as v3's `dropEvt`
 +63 ms) — the anticipation is `buildLive` / `dropLiveIn`, the event only marks the slam.
 
+### B.4 — the SUB VOID, a second arming path (one worker, 2026-09-30; DECISIONS §64 task 2)
+
+**The ask.** The user watched Vienna on DUST and, on the §61 open item "`dropLiveEvt` never fires on Vienna", said "fix it".
+Vienna's own truth (`tools/truth/Vienna.json`, hand grid): 90.00 BPM, drops at **bar 32 = 85.3359** (the user: "first drop at
+1:25 where it adds a double time") and **bar 40 = 106.6693**. `drops` in that file is now the hand list; `drops_tool` keeps
+trackmap.py's own 105.639.
+
+**Why it never armed** (`tools/build-node.js Vienna`, whole track, `&map=0`, det):
+
+| the arming rule's own reading, over 192.6 s | Vienna | SeeYouDrop | CyborgNinja |
+|---|---|---|---|
+| `hp` 5 s mean: max · % of frames over `HP_ARM` 0.1 | **0.166** · 2.2 % | 0.744 · 11.7 % | 0.119 · 0.5 % |
+| `bassS` 2 s / 32 s: min · % under `BASS_ARM` 0.6 | **0.514** · 1.2 % | 0.048 · 8.3 % | 0.836 · 0 % |
+| void runs ≥ 0.3 s, after `MIN_HIST` | **one: 68.90–73.50 s** | seven | none |
+| `buildLive` armed · `dropLiveEvt` | 69.3–76.3 s only · **0 in 192 s** | 15.9 / 7.9 beats · 2 | never · 0 |
+
+So the detector is not broken on Vienna — **the track has no void of the kind §54 reads.** `bassS` sits at 0.51–0.83 for the
+whole track (the groove rolls through), the one dip is the dream section at 1:09–1:14, and it is back over 0.85 **eleven
+seconds** before the drop; `hp` is 0 from 74 s on. And the slam could not have fired either: at 85.343 s `bassS` reads
+**0.97 ×** its own 2 s mean (`RET` 1.75) and `sub` **2.14 ×** (`SUB_RET` 5) — against SeeYouDrop drop 1's 2.80 × and 15.7 ×,
+where the bass had been at 0.04. The clock is also in the wrong octave from 88 to 108 s (`bpm` 119.9 against the truth's 90,
+§61's open item) and `barConf` reads 0.02–0.75, so synapse's bar anchor is never taken.
+
+**What IS out before the drop: the SUB.** The ears' causal sub gate is shut from **69.7 to 85.8 s** — 16.05 s, **6.02 bars** —
+and the drop is the sub note coming back (`sub` 0.356 → 0.991 on one frame, with two low onsets at 85.343 / 85.354, +7 ms
+from the truth). Over all five tracks, the sub-gate-shut runs (2 s box mean < 0.2, after `MIN_HIST`, in bars of each track's
+own tempo):
+
+| track | runs ≥ 1 bar | the longest | ends on a truth drop |
+|---|---|---|---|
+| **Vienna** | 1 | **6.02 bars** (69.7–85.8) | yes, 85.34 |
+| SeeYouDrop | 2 | 3.85 (51.9–58.1) · 1.03 | both — but the void path already arms them 15.9 / 7.9 beats ahead |
+| WhoLikesToParty | 0 | — | — |
+| Malicious | 12 | **3.37** (0.70–3.37 bars; 200.8–206.6) | no |
+| CyborgNinja | 0 | — | — |
+
+**A four-bar hold is the separation**: Vienna's 6.02 clears the longest run on any other track (3.85) by 57 %, so the path
+cannot arm anywhere else in the set. The slam needs its own confirmation — the void path's `RET` / `SUB_RET` key on a bass
+that left, and Vienna's never did — so on a sub-void arm the bass-return test is `sub` ≥ **`SUBV_RET` 2** × its 2 s mean, and
+`SLAM_AFTER` does not apply (the void has already run four bars before the arm, so the first bass return is not a pickup).
+The bass/hp void lifting now disarms a bass/hp arm only.
+
+**The gate must be the causal one.** In file mode with the map ready, `MS.subGate` is the MAP's (`features-ears.js`
+`mapOverride`), and this stage runs the same inputs in every mode — which is why §54 took the ears' low lane rather than the
+map's onsets. `features-build.js` therefore passes `EARS.ears.out.subGate` to `feed()` explicitly; node and `build-replay.js`
+read it from the trace, where it is already causal. §54's own objection to `subGate` ("a detector on them would run two
+different inputs in file and stream mode") is answered, not overruled.
+
+**Knobs** (`engine/build/build.js`): `SUBV_OFF` 0.2 (the gate's 2 s mean below which the sub is out; 0 = the path off),
+`SUBV_HOLD` 4 bars, `SUBV_RET` 2.
+
+**Node, `&map=0`, det, five tracks** (`tools/build-replay.js tools/work/v64/b/node-*.json`; drops SeeYouDrop 1 2 ·
+WhoLikesToParty 1 2 3 · Malicious · **Vienna 1 2**):
+
+| rule | before | after |
+|---|---|---|
+| `buildLive>=0.4`, anticipation beats | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **0 0** | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **4.4 0** |
+| `dropLiveIn<=16` | the same runs | the same runs |
+| `dropLiveEvt`, lag | −6 +21 · +10 +48 +12 · — · **— —** | −6 +21 · +10 +48 +12 · — · **−3 —** |
+| armed at drop · events | 5/8 · 5 | **6/8 · 6** |
+| false arms / min, drop tracks · CyborgNinja | 0.14 · **0** | 0.14 · **0** |
+| false events anywhere | 0 | **0** |
+
+The replayed traces for SeeYouDrop, WhoLikesToParty, Malicious and CyborgNinja are **md5-identical with the path on and off**
+(`d61565e3` / `498acde0` / `cb8e2724` / `54759f6d`): only Vienna moves.
+
+**Page `&map=0&lead=0`, Vienna whole track** (`tools/filetrace.js Vienna 0 192 … '&map=0&lead=0'`, `dropcheck.py`):
+
+| rule | Vienna 1 (85.3359) | Vienna 2 (106.6693) | false/min | armed |
+|---|---|---|---|---|
+| `buildLive>=0.4` | **4.9 beats ahead** | 0 | **0.00** | 3.2 % (chance hit 0.03) |
+| `dropLiveIn<=16` | 4.9, pointing **+3.0 beats** | 0 | 0.00 | 3.1 % |
+| `dropLiveEvt` | **+14 ms** | — | **0.00** | 1 event |
+
+`buildLive` runs 71.42–76.23 (the dream, max 0.66) and **82.10–85.35 (max 1.00)**, so a scene's contraction gets the last
+1.2 bars and its release lands on the drop. The `dropLiveIn` pointing error is the bar phase, not the path: synapse's
+`barConf` never reaches the 0.9 anchor gate on Vienna (§61 measured its bar line 2 beats off), so the detector is on v3's
+own arbitrary count mod 4 — the EVENT is right because the slam keys on BEAT lines.
+
+**Page = node** (`build-node.js --cmp`, 11520 frames): **`subGate` identical on 11520/11520 frames, max |diff| 0.00** — the
+causal gate is the same quantity in both, which is what the implementation rests on; `bassS` / `sub` to ≤ 5.8e-5; `hp`
+99.8 %; `dropLiveEvt` 11519/11520 (the one frame is the event, node −3 ms / page +14 ms, one frame apart); `buildLive`
+94.7 % and `dropLiveIn` 95.8 %, the difference being the arm's bar line (node 82.38, page 82.10).
+
+**The causal gate, proved:** the same Vienna page run with `&map=1` (the file map on, so `MS.subGate` IS the map's)
+against `&map=0`. `MS.subGate` differs on **1748 of 11520 frames** (a boolean flip, max |diff| 1) — and `buildLive`,
+`dropLiveIn` and `dropLiveEvt` are **identical on all 11520 frames**, with `dropLiveEvt` at 85.35 s and the arm at
+82.10 s in both. The stage reads `EARS.ears.out.subGate`, so the map cannot reach it.
+
+**A node-only grading of anything clock-dependent on Vienna is not the page's answer.** The node harness's v3 clock is in
+the wrong octave for part of this track (`bpm` p50 **143.1 / 119.9 / 120.0** over 0–20, 80–100, 140–160 s) while the page
+reads **90.1 for the whole track**. Vienna's octave margin is the thinnest in the set (§61: its 40–150 Hz on-beat /
+half-beat ratio is 1.031), so the small input differences between `tools/node-stream.js`'s det stream and the page's file
+source flip it. The page is the one that is right, and it is the page the user watches.
+
+**Knob sensitivity** (`build-replay.js --set`, one step either side; "=" = the row above):
+
+| knob | step | Vienna 1 anticipation / event | elsewhere |
+|---|---|---|---|
+| `SUBV_OFF` 0.2 | 0.1 | = | = |
+| | 0.5 | 8.3 beats / = | **Malicious arms 3.9 beats before its drop, false arms 0.14 → 0.36** |
+| `SUBV_HOLD` 4 | 3 | 8.3 beats / = | **false arms 0.14 → 0.22** (Malicious' 3.23 and 3.37-bar runs) |
+| | 5 | 0.0 beats / +14 ms (the arm lands inside the last beat) | = |
+| `SUBV_RET` 2 | 1.5 | = | = |
+| | 3 | **the event is lost** (Vienna's ratio is 2.14) | = |
+
+So 4 bars is the only hold that buys the drop and changes nothing else; `SUBV_RET` 2 sits between 1.5 (no change) and 3 (the
+drop lost) — **one drop tunes that threshold, it does not prove it.**
+
+**Vienna's SECOND drop (106.6693) is not detectable causally, and nothing was shipped for it.** `tools/truth/buildstudy.py`
+over all five tracks: of 60 candidates × 7 grains × 4 transforms, at PRE 4 bars and PRE 8 bars, **every one gives it a lead
+of 0 beats.** In the 20 s before it, `hp`'s 5 s mean is **0.000**, `bassS` 2 s / 32 s bottoms at **0.887**, `subGate` is 1.00
+throughout, and at the drop `bassS` reaches 1.25 × its 2 s mean and `sub` 1.32 × — there is no void, no bass return and no sub
+return. The brief's second lean (a tension accumulator: energy slope, centroid rise, onset density) was measured in the same
+study: the candidates that would arm it at all (`presence` dev 5 s, `novelty`, `flux` dev, `eFast`, `eShort`) all carry
+CyborgNinja false arms of 0.35–6.71 / min. Vienna's bar 40 is a **density / texture jump** — the double-time layer thickening
+— with no causal precursor, and reading it would mean firing on CyborgNinja.
+
+#### B.4's tests
+
+`tools/test_build.js` gains six cases for the sub-void path: a sub void shorter than `SUBV_HOLD` does not arm; one longer arms
+on a bar line **with the bass still in** (which the §54 path cannot see); the void's own bass-less on-beat kicks never fire;
+the sub coming back at 2.5 × its 2 s mean fires once on the onset's frame with `bassS` flat (so `RET` cannot fire) and under
+`SUB_RET`; `SUBV_OFF` 0 makes the same stream inert; an input with no `subGate` at all reads as "the sub is there" (so every
+caller written before §64 behaves exactly as it did); and `SLAM_AFTER` raised to 4 bars does not gate the sub-void slam.
+
 ## Step 5 — the predicted-event queue (`engine/queue/`, `features-queue.js`; one worker, 2026-09-29)
 
 Step 3 releases predicted hits, step 4 counts to a drop, the lead moves the clocks — three places a scene must read to know

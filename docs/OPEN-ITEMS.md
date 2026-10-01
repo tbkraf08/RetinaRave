@@ -82,3 +82,24 @@ WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`
    only SeeYouDrop has a human annotation to corroborate it (`SeeYouDrop.sections.json`: the sub loop C#1–A1–F#1–E1 =
    i–VI–iv–III). Before any further tuning of the tonic tracker, those two tracks want a human key, the way
    SeeYouDrop got one; tuning KK against a KK read of the same signal proves nothing.
+
+**2026-09-30, §64 (the hat's trigger quality, and the sub void):** four items, all measured.
+1. **The ears' HIGH-class picker publishes swells as hats.** `ears/perc.js` is an HPSS-lite whose harmonic part is a
+   RUNNING MEDIAN of each band's dB envelope, and a median lags a swell — so the leading edge of a pad, an arp or a
+   reverb tail rises above it and is released as a percussive onset. `hatEvt`'s precision against the truth's `high`
+   onsets (±50 ms, `&map=0`): **0.56 Vienna 20–110 · 0.71 SeeYouDrop 20–110 · 1.00 CyborgNinja 20–50**. §64 vetoes the
+   swell case in DUST's own trigger (`highS` > 1.05 × its 2 s average), but the onsets still go to every other reader —
+   `engine/drums` does not use them for the hat, the queue's `predHat*` and the bars store do. A spectral-flatness or a
+   per-bin habituation term INSIDE the picker would fix it for everyone; an engine change, not a scene one.
+2. **The SNARE's picker has the same shape and is worse.** On Vienna 20–65 s (`drumcheck.py`): `snareEvt` vs the truth's
+   `mid` onsets P **0.38** / R 0.75, `snare2` P **0.51** / R 0.84. DUST's snare voice drives the flash ring on the body
+   annulus — the loudest of the three voices — so this is the next one to measure. Not touched in §64.
+3. **`SUBV_RET` 2 is tuned on one drop.** The sub-void slam's threshold: 1.5 changes nothing on any of the five tracks,
+   3 loses Vienna's drop, and Vienna's own ratio is 2.14. One drop tunes a threshold, it does not prove one — another
+   track with a sub-return drop would.
+4. **Vienna's second drop (106.6693 s) is not detectable causally.** Of 60 candidates × 7 grains × 4 transforms in
+   `buildstudy.py`, at PRE 4 and PRE 8 bars, every one gives it a lead of **0 beats**; `hp`'s 5 s mean is 0.000 before
+   it, `bassS` 2 s / 32 s bottoms at 0.887, the sub gate is open throughout, and at the drop `bassS` reaches 1.25 × its
+   2 s mean and `sub` 1.32 ×. It is a density / texture jump (the double-time layer thickening). Every candidate that
+   would arm it also arms on CyborgNinja (0.35–6.71 false arms / min). If the user wants something there it has to come
+   from the file map (`&map=1` has it) or a hand annotation.

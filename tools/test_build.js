@@ -5,6 +5,9 @@
 //   · the slam — a low onset on a beat line with the bass back — fires dropLiveEvt on that frame and disarms (level 0)
 //   · an off-beat onset, or one with the bass still out, does not fire; nothing fires when not armed
 //   · silence disarms (the level decays), a seek resets, a void with no slam times out after MAX bars
+//   · THE SUB VOID (§64 task 2): the sub gate shut for SUBV_HOLD bars arms with the BASS STILL IN (which the void path
+//     above cannot see), not before, and its slam is the sub coming back at SUBV_RET x its own 2 s mean with no
+//     SLAM_AFTER wait; an absent subGate in the input means "the sub is there" and leaves the detector as it was
 //   node tools/test_build.js
 import { Build, BUILD } from '../assets/engine/build/build.js';
 
@@ -13,8 +16,8 @@ const ok = (name, pass, value) => { if (!pass) FAIL++; console.log('  ' + (pass 
 const dt = 1 / 60, BPM = 120, bps = BPM / 60;
 
 // a synthetic stream: run(seconds, { hp, bassS, sub, ok, onsets: (B) => [x...] }) advances the clock; every output is logged
-function mk() {
-  const b = new Build(), st = { b, B: 0, out: [] };
+function mk(knobs) {
+  const b = new Build(knobs ? Object.assign({}, BUILD, knobs) : BUILD), st = { b, B: 0, out: [] };
   st.run = (secs, p = {}) => {
     const n = Math.round(secs / dt);
     let last = null;
@@ -23,8 +26,10 @@ function mk() {
       const ons = [];
       if (p.onBeat && Math.floor(st.B) > Math.floor(B0)) ons.push({ x: Math.floor(st.B) });          // an onset ON each beat line
       if (p.offBeat && Math.floor(st.B - 0.5) > Math.floor(B0 - 0.5)) ons.push({ x: Math.floor(st.B - 0.5) + 0.5 });   // on the off-beat
-      const o = b.step({ B: st.B, rel: st.B, bpm: p.bpm || BPM, ok: p.ok === undefined ? true : p.ok, hp: p.hp || 0, bassS: p.bassS === undefined ? 0.5 : p.bassS,
-        sub: p.sub === undefined ? 0.5 : p.sub, anchor: -1, onsets: ons, dt });
+      const i = { B: st.B, rel: st.B, bpm: p.bpm || BPM, ok: p.ok === undefined ? true : p.ok, hp: p.hp || 0, bassS: p.bassS === undefined ? 0.5 : p.bassS,
+        sub: p.sub === undefined ? 0.5 : p.sub, anchor: -1, onsets: ons, dt };
+      if (p.subGate !== undefined) i.subGate = p.subGate;
+      const o = b.step(i);
       last = { B: st.B, buildLive: o.buildLive, dropLiveIn: o.dropLiveIn, dropLiveEvt: o.dropLiveEvt };
       st.out.push(last);
     }
@@ -110,6 +115,52 @@ console.log('disarm');
   st4.run(40); st4.run(6, { hp: 0.6, bassS: 0.02, sub: 0.02 });
   const o4 = st4.run(0.05, { hp: 0.6, bassS: 0.02, sub: 0.02, bpm: 130 });   // a tempo jump
   ok('a tempo jump disarms', o4.dropLiveIn === -1, `${o4.dropLiveIn}`);
+}
+console.log('the sub void (\u00a764 task 2)');
+{
+  // The case the void path cannot see: the BASS stays in (bassS flat 0.5, hp 0) and only the SUB leaves.
+  const base = { hp: 0, bassS: 0.5, onBeat: true };
+  const st = mk();
+  st.run(40, Object.assign({ sub: 0.5, subGate: 1 }, base));
+  const n0 = st.out.length;
+  // the gate's 2 s box mean takes ~1.6 s to fall under SUBV_OFF, so the counted void starts there: 8 s of shut gate
+  // is 3.2 bars of it, under the hold, and 14 s is 6.2 — the shape Vienna's own 6.02 bars has.
+  st.run(8, Object.assign({ sub: 0.1, subGate: 0 }, base));
+  ok(`a sub void shorter than ${BUILD.SUBV_HOLD} bars does not arm`, !armedAt(st, n0), `buildLive ${st.out[st.out.length - 1].buildLive}`);
+  st.run(6, Object.assign({ sub: 0.1, subGate: 0 }, base));                              // past the hold
+  const a = armedAt(st, n0);
+  ok('the sub void arms with the bass still in', !!a, a ? `at B ${a.B.toFixed(2)}` : 'never');
+  ok('on a bar line, no earlier than the hold', !!a && Math.abs(a.B - Math.round(a.B / 4) * 4) < bps * dt + 1e-9 && a.B >= 4 * BUILD.SUBV_HOLD - 1e-9,
+    a ? `B ${a.B.toFixed(3)}` : '');
+  ok('the void\'s bass-less on-beat kicks never fired', fired(st, n0).length === 0, `${fired(st, n0).length} events`);
+  // the slam: the SUB comes back at 2.5 x its 2 s mean, with bassS flat (so RET 1.75 cannot fire) and under SUB_RET 5
+  const n1 = st.out.length;
+  st.run(0.6, Object.assign({ sub: 0.25, subGate: 1 }, base));
+  const ev = fired(st, n1);
+  ok('the sub coming back on a beat line fires once (bassS flat, under SUB_RET)', ev.length === 1, `${ev.length} events`);
+  ok('on the onset\'s own frame, and it disarms', ev.length === 1 && Math.abs(ev[0].B - Math.round(ev[0].B)) < bps * dt + 1e-9 && ev[0].buildLive === 0,
+    ev[0] ? `B ${ev[0].B.toFixed(3)} level ${ev[0].buildLive}` : '');
+  // the same stream with the path off is the detector as §54 left it: nothing at all
+  const off = mk({ SUBV_OFF: 0 });
+  off.run(40, Object.assign({ sub: 0.5, subGate: 1 }, base));
+  off.run(14, Object.assign({ sub: 0.1, subGate: 0 }, base));
+  off.run(0.6, Object.assign({ sub: 0.25, subGate: 1 }, base));
+  ok('SUBV_OFF 0: the same stream never arms and never fires', !armedAt(off, 0) && !fired(off).length, `buildLive ${off.out[off.out.length - 1].buildLive}`);
+  // an input with no subGate at all (every caller before \u00a764) reads as "the sub is there"
+  const none = mk();
+  none.run(40, Object.assign({ sub: 0.5 }, base));
+  none.run(14, Object.assign({ sub: 0.1 }, base));
+  ok('no subGate in the input: the sub void never arms', !armedAt(none, 0), `buildLive ${none.out[none.out.length - 1].buildLive}`);
+  // SLAM_AFTER does not gate this path: raised to 4 bars (which would block a slam 8 beats after the arm on the
+  // bass/hp path) the sub-void slam still fires, because the void has already run four bars before the arm.
+  const late = mk({ SLAM_AFTER: 4 });
+  late.run(40, Object.assign({ sub: 0.5, subGate: 1 }, base));
+  late.run(14, Object.assign({ sub: 0.1, subGate: 0 }, base));
+  const la = armedAt(late, 0), l0 = late.out.length;
+  late.run(0.6, Object.assign({ sub: 0.25, subGate: 1 }, base));
+  const le = fired(late, l0);
+  ok('SLAM_AFTER 4 bars does not gate the sub-void slam', !!la && le.length === 1 && le[0].B - la.B < 4 * 4,
+    la && le.length ? `${(le[0].B - la.B).toFixed(2)} beats after the arm` : `${le.length} events`);
 }
 console.log(FAIL ? `test_build: ${FAIL} FAILED` : 'test_build: OK');
 process.exit(FAIL ? 1 : 0);

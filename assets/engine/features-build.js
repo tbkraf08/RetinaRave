@@ -26,7 +26,10 @@ export function buildStage(dt, now, S) {
   if (dt > 0 && dt < 0.05) BUILDS.dt += (dt - BUILDS.dt) * 0.2;
   const disp = dispNow(), lead = Math.min(1 / 120, 0.5 * BUILDS.dt);
   const ts = laneTake(E, S.heardT + disp + lead, BUILDS.lane, BUILDS.ts);
-  const o = BUILDS.b.step(feed(S, LEAD.L === null ? 0 : LEAD.L, disp, dt, ts, BUILDS.inp));
+  // the ears' CAUSAL sub gate for the sub-void arm (§64): MS.subGate is the file map's when a map is ready, and this
+  // stage reads the same inputs in every mode.
+  const sg = E && E.out ? E.out.subGate : S.subGate;
+  const o = BUILDS.b.step(feed(S, LEAD.L === null ? 0 : LEAD.L, disp, dt, ts, BUILDS.inp, sg));
   S.buildLive = o.buildLive; S.dropLiveIn = o.dropLiveIn; S.dropLiveEvt = !!o.dropLiveEvt;
 }
 
