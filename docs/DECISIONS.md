@@ -5954,6 +5954,12 @@ formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToP
   5e-5, `lpSweep` within 3.9e-3. `buildLive` / `dropLiveIn` / `nextKickIn` / `predKickIn` disagree more, for the
   reason HARNESS already records and not for a §73 reason: the node run takes its low onsets at the default
   `--disp 40` and the page ran `&lead=0`, and the v3 queue path differs page/node in its first seconds (B.1).
+  CyborgNinja's page trace agrees with node on only 94 % of `kickEvt` frames and 3 of 10800 `beatPhasePcm` ones —
+  and it agrees with the **BASE** node trace EXACTLY as badly (`kickEvt` 10102/10800, `hatEvt` 9235/10800,
+  `beatCountPcm` 109/10800 against both), while base-node vs final-node is **10800/10800 identical** on `kickEvt`
+  and `hatEvt`. So that gap is the harness's own on this track — its page frame grid lands one frame off node's
+  (10801 against 10800) and §59 already recorded CyborgNinja's PCM clock flipping between its two kick lattices —
+  and §73 cannot have caused it: the comparison is unchanged by the patch, which is the stronger statement.
 - Cost: flat — the fix changes two multiplications in one branch and nothing else; `test_loud`'s own budget row
   reads 5.79 µs/frame against its 40 µs cap.
 - No audible run. Every number here is the deterministic file path, the node harness or the fake timeline.
@@ -5975,3 +5981,127 @@ formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToP
 - Malicious's row above is from the v0.25 truth grid, by construction (both worktrees at `35242cf`). When the
   parallel re-phase lands, its drum / clock rows move with the RULER and this section's base and final move
   together — the DELTAS stand, the absolute numbers do not.
+
+## §72 Malicious's truth grid is RE-PHASED by +23.22 ms — the bias was `dp_beats`'s frame-index conversion, not the track (2026-10-01, one worker; §71's open items 1 and 2, the user's word "ensure Malicious truth grid is accurate"; `docs/AUDIT-live-grid.md` "Step 6 addendum 5")
+
+**The ask:** §71 proved Malicious's +30 ms clock bias IS its truth grid and left two open items — hand-mark the beats
+and re-phase (item 1), and look at `trackmap.py`'s `index / fps` frame conversion (item 2). They are the same item.
+
+**It was the ruler, and it bit exactly one grid.** `tools/truth/trackmap.py` and `gridcheck.py` changed; `tools/truth/Malicious.*`
+and three of its ten grain tables were regenerated. `assets/` is untouched. Not tagged, not pushed, not deployed.
+
+### Step 0: the +23 ms IS `t0`, and it reached one grid of five
+
+`dp_beats()` returns FRAME-INDEX times (`index / fps`). The short STFT's frame i is really centred at
+`t2[i] = t0 + i / fps`, `t0 = 1024 / 44100 = 23.2200 ms` (nperseg 2048, `boundary=None`, `padded=False`). The
+`dpres > 0.06` branch wrote those straight out as `beats`, so such a grid sits `t0` BEFORE the audio. Three facts
+nail it:
+
+1. **Malicious's `beats` are exact multiples of the hop.** Residual against `512 / 44100` = **0.0025 of a hop**
+   (0.03 ms, the json's own 4-decimal rounding); against `512 / 48000` it is 0.287. The other four are sub-hop
+   (0.288–0.289) — they are refit / anchored / hand grids. One grid of five is on the DP branch.
+2. **Its own `mid` onset list (REAL times, `t2[pk]`) sits +23.3 ms after its own beats, p25 +23.0 / p75 +23.6** — a
+   near-delta 0.1 ms from `t0`, because both sides are the same STFT frames and the only difference is the missing `t0`.
+3. **A global conversion fix is WRONG.** Adding `t0` to all five grids and re-measuring each against its own attacks
+   (zero-phase, five bands, no engine, no truth list): the band-median profile moves to −23.7 / −23.0 / −16.7 / −24.5 ms
+   on SeeYouDrop / CyborgNinja / WhoLikesToParty / Vienna, i.e. every validated grid lands 17–25 ms off its own music,
+   while Malicious moves to −5.9. `refit_grid`'s phase is in the same frame-index units and is DELIBERATELY left there:
+   its own lag against the attacks cancels `t0` (SeeYouDrop's refit grid sits +2.9 ms from its kick list as it is, and
+   the hand-pass PNGs show its line landing on the waveform's attack while `+t0` lands 23 ms inside the hit). The fix
+   is therefore in the `dpres > 0.06` branch alone: `beats = bdp + t2[0]`. `dpres` itself is a frame-coordinate
+   comparison on both sides and does not move, so no branch decision changes on any track.
+
+### The three rulers, and they agree
+
+| ruler | number | how |
+|---|---|---|
+| the tool's own onset lists | **+23.3 ms** (p25 +23.0 / p75 +23.6) | `mid` / `click` / `high` against its own beats; the other four read within ±7 |
+| zero-phase band profile | **+21.0 ms** (flat 20–24, rms 4.0 ms) | `filtfilt` band → `filtfilt` envelope → the 20 % crossing, 1 ms step, 25 Hz–12 kHz, scanned for the shift that makes this track's per-band profile match the four controls' mean (+17.2 / +8.2 / +0.4 / −3.1 / −2.1 ms) |
+| the ears' lanes | **+18.1 ms** | `drums-node.js` at HEAD in an isolated worktree: all-lane mean +20.1 ms here against +1.9 / +3.4 / +0.3 / +2.2 on the four controls. The coarsest (60 Hz frames + the lanes' own detection lag) |
+| **the hand pass** | **+21.0 / +20.7 / +26.4 ms** | 16 beats marked one by one at SAMPLE resolution in the native 44.1 kHz dump, 5–12 kHz (the one lane with a clean on-beat transient here): the 20 % crossing (+18.5, sd 3.6), the envelope peak (+36.6, sd 6.5), the first sample the 100 Hz-highpassed \|x\| leaves its pre-attack floor (+28.6, sd **1.6**) — each MINUS the same estimator on the four validated grids, 16 marks each |
+
+Four numbers, 18.1 … 23.3, spread 5.2 ms, around `t0` = 23.22. **`t0` exactly is what was applied** — the cause is
+identified, not fitted. The 40–150 Hz lane is not usable as a hand ruler on this track (808 kicks with a slow rise over
+the previous note's tail: sd 19 ms); the montages are `tools/work/v72/hand3-*.png`, and the Malicious one shows every
+one of 16 beats with the shipped line in flat floor and the attack starting at the `+t0` line.
+
+### The DP beat list is KEPT, measured against the alternative
+
+The track is dead constant: its onset lattice is coherent over all 222 s (resultant **0.552** `click` / **0.590** `mid`
+at P = 0.42850–0.42856 s = **140.00–140.02 BPM**), which a moving tempo could not give over 520 beats. So §71's
+`bpm_grid.bpm` 139.675 is wrong — it is the median of hop-quantised DP gaps (0.429569 s; the least-squares line through
+the DP beats reads 140.033 BPM and they sit 15.9 ms rms / 59 ms max off it). **But a linear grid grades WORSE against
+the track's own attacks than the DP beats do**, each at its own best phase — mean \|offset\| p50 over the five bands:
+
+| grid | 25–60 | 40–150 | 150–800 | 0.8–2.5 k | 5–12 k | mean \|off\| p50 |
+|---|---|---|---|---|---|---|
+| **DP + t0 (ships)** | 33.7 | 28.6 | 19.5 | 17.8 | **10.2** | **22.0 ms** |
+| linear 140.000 BPM | 37.3 | 30.2 | 25.2 | 24.1 | 3.0 (p90 **43**) | 24.0 |
+| linear LS 140.033 | 37.0 | 24.9 | 20.8 | 22.2 | 15.6 | 24.1 |
+| linear lattice 140.023 | 36.0 | 24.6 | 20.6 | 21.9 | 17.3 | 24.1 |
+
+The hats lock to a 140.000 line at p50 3.0 ms but with p90 43 — the groove is on that lattice in places and off it
+elsewhere, which one straight line cannot follow and the DP beats can. **So: the phase moved, the beat list did not.**
+Every one of the 520 beats moved by the same +23.2 ms (`bpm_grid.phase` 0.04644 → 0.06966); the period, the shape, the
+`downbeat_mod4` = 2 and the bar line are untouched. `bpm_grid.bpm` still reads 139.6748 — inside `gridcheck.py`'s ±1 BPM
+tolerance, so no table moves, but **140.00 is this track's tempo** and `bpm_grid.hand.tempo_note` says so.
+
+### What the fix bought, measured
+
+| Malicious, whole track | before | after |
+|---|---|---|
+| PCM clock, node, `--heard` | **+30 ms**, \|lag\| p50 30 / p90 49, **50 %** within ±30, jitter p50 7 / p90 24, lock 6.1 s | **+7 ms**, p50 9 / p90 28, **92 %**, jitter p50 7 / p90 23, lock 6.1 s |
+| v3 clock, node | +23 ms, p50 23 / p90 82, 72 % | **−1 ms**, p50 8 / p90 59, 82 % |
+| PCM clock, PAGE (`&map=0&lead=0`, `--heard`) | **+19 ms**, p50 19 / p90 38, **81 %**, beat events F **0.916** | **−4 ms**, p50 9 / p90 25, **94 %**, F **0.980** |
+| `gridcheck.py`'s un-anchored-grid caveat | fires | silent |
+
+**§71 predicted +7 node and −4 page. Both land exactly.** The four other tracks' rows are byte-identical to §71's HEAD
+column — their truth files did not change (verified by md5) and were re-measured anyway: SeeYouDrop +3 ms / 97 % /
+lock 12.0 s · CyborgNinja +1 / 97 % / 3.4 s · WhoLikesToParty +6 / 99 % / 5.6 s · Vienna +4 / 74 % / p90 67 ms.
+
+The §68/§69 drum references are built ON the grid's 16th lines, so they moved with it and the lanes graded against them
+rose (`drumcheck.py`, node, ±30 ms; `vs low` / `click` / `mid` / `high` are real-time onset lists and did not move at all):
+
+| Malicious | `kick vs kick` (§68, n 644 → 654) | `snare vs snare` (§69, n 639 → 633) |
+|---|---|---|
+| ears | P 0.40 → **0.50**, R 0.10 → 0.13, F 0.16 → **0.20**, lag +9 → **+3** | P 0.50 → 0.52, R 0.42 → 0.45, F 0.46 → **0.48**, lag +14 → **+3** |
+| v2 | P 0.41 → 0.43, R 0.37 → 0.38, F 0.39 → 0.40, lag +5 → **+2** | P 0.26 → **0.69**, R 0.04 → 0.12, F 0.08 → **0.20**, lag +26 → **+7** |
+| syn | P 0.16 → 0.15, R 0.26 → 0.24, F 0.20 → 0.19, lag −4 → **−1** | P 0.54 → **0.68**, R 0.09 → 0.11, F 0.15 → **0.19**, lag +13 → **−10** |
+
+### A hand annotation now survives a re-run
+
+`--pcm` once destroyed a worker's uncommitted Vienna truth (§63 phase 1). `analyse()` now carries `bpm_grid.hand` and the
+top-level hand keys (`sections_hand`, `drops_hand`, `drops_user*`, `drops_tool`, `drops_note`, `provisional`, `notes`,
+`feel`) over from the file on disk — never computed, only preserved. Verified: SeeYouDrop / CyborgNinja /
+WhoLikesToParty regenerate **byte-identical** (json + all ten grain tables each) with the whole patch in, and a second
+`trackmap.py Malicious` reproduces the new json bit for bit, hand block included.
+
+`Malicious.json`'s `bpm_grid` gains `dp_t0` (the tool's own record: src, `t0_ms`, sr, hop, nperseg) and `hand` (the
+human record: what moved, the cause, the four rulers, the 16 marks, the DP-vs-linear comparison, the tempo note, the bar
+line, `not_checked`, and what it replaced). `gridcheck.py`'s caveat now takes `anchor | hand`; `dp_t0` ALONE is
+deliberately not enough — the conversion would be right but the line would still be the tracker's, and the printed note
+says so.
+
+### What moved on disk
+
+`tools/truth/Malicious.json` (phase, the 520 beats, 130 downbeats, 15 sections, the one drop 148.294 → 148.317, novelty,
+energy, the three beat-synchronous `slices`, the tonic's confidence 0.159 → 0.138 — G major unchanged; the seven
+fixed-time grains, the onset lists, the contour and the sub runs are byte-identical), `Malicious.kick.json`,
+`Malicious.snare.json`, `Malicious.loud.json` (its `sections` and drop `pairs`; the contour did not move), and
+`tools/truth/Malicious/grain-{beat,bar,4bar}.txt`. The other seven grain tables are byte-identical.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (157 modules, 202 uniforms, 207 MS keys, help.feats gaps 0, the 5 pre-existing soft-cap
+  warns) · **`npm test` OK** (test_clock 14 checks) · `node tools/test_loud.js --truth` **OK on all five**, Malicious's drop
+  148.32 agreeing to 0.05 LU on the moved boundary. `tools/test_map.js` / `test_ears.js` cannot run in this environment at
+  all (they want `tools/work/<T>.st.f32`, a native-rate stereo dump that has never been made; pre-existing, not in `npm test`).
+- **`assets/` is byte-identical to HEAD** — the change is two python tools and the truth data — so no md5 sweep, no bar /
+  queue tables, no `Clock.push` µs/hop. Every engine number above was taken in an isolated `git worktree` at `35242cf`
+  (`/tmp/rr-v72`) because a parallel worker has `assets/engine/ears/dsp.js` dirty in the main tree.
+- **No audible run.** One page Chrome at a time, `PORT=8910` on the worktree; the first page trace was discarded on
+  `filetrace`'s own `frame0 is -1` determinism warning and re-taken (`f0 2`).
+- Scratch, committed: `tools/work/v72/` — `prov.py` (provenance + the tool's own lists), `ruler_a.py` / `shift.py` (the
+  zero-phase ruler and the shift scan), `hand2.py` / `hand3.py` (the hand pass, any track / any lane, + the PNGs and the
+  mark lists), `laneoff.py` (the ears' lanes), `tempo.py` (the 140.00 BPM lattice), `cand.py` (DP+t0 vs linear),
+  `pickrun.py` / `clean.py` (choosing the beats), `writehand.py` (the provenance block).
