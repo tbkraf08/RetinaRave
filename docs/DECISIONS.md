@@ -3369,3 +3369,10 @@ running); sampling the normaliser on every fourth bin would save 5 % of the step
 put sampling noise on the brightness of the whole cloud. No audible run (the worker's brief forbids it): every
 number is the deterministic file path. Files: `dust/dyn.js` (new, 70), `dust/habit.js` (new, 162), and index /
 shaders / fibre / help — all under the 350-line soft cap.
+
+**v0.22 tagged locally (2026-09-30) on the user's word ("dust looks good -> tag what we have so far"; deploy still held):** v0.21 +
+§58 (band = radius, the accuracy review), §59 (the beat clock's half-beat lattice is the low band's call), §60 (DUST pass 2).
+`releases/retinarave-v0.22.html` (1368 KB, 154 modules; from `file://` on scene 1: errs [], nonFinite [], clock pcm), package.json
+0.22.0. Not pushed (retinarave.com serves v0.15). The user's next observations: "still finding some observations on the
+visualization that make it feel jerky" — a new test track, Vienna (Thom Sonny Green, `~/Music/RetinaRave/Vienna.flac`; "fast
+elements … but actually a slow rolling flowy groove"; "the nudge on this looked weird and jerky around 1:40–1:50 (probably more)").
