@@ -7,9 +7,13 @@
 //   gap         6 s with no hits: the line coasts on its rate and is within GAP_MS when the hits return (no re-lock needed)
 //   outlier     one loud off-grid hit (half a beat off) moves the line by < OUT_MS
 //   lattice     kicks on every 8th with the on-beat ones louder: the line lands on the loud lattice (the comb line's vote)
+//   band        kicks on the beat and LOUDER snares (no low band) on the off-beat: the line lands on the KICKS (§59's
+//               lattice check — the full-spectrum comb line and the onsets both prefer the louder off-beat)
+//   band flip   the same audio, but only the snares for the first 8 s: the cold start locks to them and the check MOVES the line
 //   determinism two runs are identical to the last bit
 //   node tools/test_clock.js            -> per-case lines + OK / FAIL
 import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
+if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 
 const SR = 48000, B = 512;
 const LOCK_S = 6, PH_MS = 12, BPM_TOL = 0.5, RAMP_TOL = 1.0, GAP_MS = 30, OUT_MS = 6;
@@ -22,8 +26,8 @@ function synth(secs, plan) {
   for (const h of plan) {
     const tj = h.t + (rnd() - 0.5) * 2 * (h.jit === undefined ? 0.004 : h.jit), i0 = Math.round(tj * SR), a = h.loud === undefined ? 1 : h.loud;
     for (let i = 0; i < 0.004 * SR && i0 + i < n; i++) pcm[i0 + i] += a * 0.6 * (rnd() * 2 - 1);                       // the click
-    for (let i = 0; i < 0.08 * SR && i0 + i < n; i++) pcm[i0 + i] += a * 0.8 * Math.sin(2 * Math.PI * 60 * i / SR) * Math.exp(-i / (0.03 * SR)); // the thump
-    hits.push({ t: h.t, tj, vel: a });
+    if (!h.noLow) for (let i = 0; i < 0.08 * SR && i0 + i < n; i++) pcm[i0 + i] += a * 0.8 * Math.sin(2 * Math.PI * 60 * i / SR) * Math.exp(-i / (0.03 * SR)); // the thump
+    hits.push({ t: h.t, tj, vel: h.vel === undefined ? a : h.vel, cls: h.cls || 0 });
   }
   for (let i = 0; i < n; i++) pcm[i] += 0.002 * (rnd() * 2 - 1);                                                     // a noise floor
   return { pcm, hits };
@@ -50,7 +54,7 @@ function run(pcm, hits, gap) {
     const t0 = s / SR, t1 = t0 + B / SR;
     clk.push(blk, t0);
     // the ears would emit the onsets found in this block one hop later; hand them over at the block's end
-    while (hi < hits.length && hits[hi].tj < t1) { const h = hits[hi++]; if (!(gap && h.t >= gap[0] && h.t < gap[1])) clk.onset(h.tj, 0, h.vel); }
+    while (hi < hits.length && hits[hi].tj < t1) { const h = hits[hi++]; if (!(gap && h.t >= gap[0] && h.t < gap[1])) clk.onset(h.tj, h.cls || 0, h.vel); }
     t = t1;
     rows.push({ t, b: clk.at(t).b, bpm: clk.bpm, conf: clk.conf });
   }
@@ -111,6 +115,38 @@ const check = (name, ok, msg) => { if (!ok) fail++; console.log(`${ok ? 'ok  ' :
   console.log(`lattice (8ths, on-beat louder): err vs the loud lattice med ${med(e).toFixed(1)} p90 ${p90(e).toFixed(1)} ms (half a beat = ${half.toFixed(0)}) · bpm ${clk.bpm.toFixed(2)} jumps ${clk.jumps}`);
   check('lattice', Math.abs(med(e)) <= 2 * PH_MS, `on the loud lattice within ${2 * PH_MS} ms (the other lattice reads ±${half.toFixed(0)})`);
   check('lattice tempo', Math.abs(clk.bpm - 128) <= BPM_TOL, `the beat, not the 8th (${clk.bpm.toFixed(2)})`);
+}
+// 6. band (§59): hits on every 8th — a KICK (click + 60 Hz thump) on the beat and a LOUDER SNARE (click only, no low band)
+//    on the off-beat. This is CyborgNinja's shape: the onsets fit both lattices and the full-spectrum comb line, which the
+//    louder off-beat dominates, prefers the WRONG one; only the 40-150 Hz band says which lattice is the beat.
+{
+  const SECS = 70, beat = 60 / 128, plan = [];
+  for (let t = 0.2, k = 0; t < SECS; t += beat / 2, k++) plan.push(k % 2 === 0 ? { t } : { t, loud: 2.2, vel: 1, cls: 1, noLow: true });
+  const beats = plan.filter((h, i) => i % 2 === 0).map((h) => h.t);
+  const { pcm, hits } = synth(SECS, plan), { rows, clk } = run(pcm, hits);
+  const half = beat / 2 * 1000;
+  const late = beats.filter((T) => T > 40), e = late.map((T) => errAt(rows, T));
+  const on = (v) => Math.abs(v) <= 2 * PH_MS, first = beats.find((T) => T > 8 && on(errAt(rows, T)) && beats.filter((U) => U > T && U < T + 8).every((U) => on(errAt(rows, U))));
+  console.log(`band (8ths, off-beat 2.2x louder but no low band): err vs the KICK lattice after 40 s med ${med(e).toFixed(1)} p90 ${p90(e).toFixed(1)} ms (half a beat = ${half.toFixed(0)}) · on the kicks from ${first === undefined ? '-' : first.toFixed(1) + ' s'} · bpm ${clk.bpm.toFixed(2)} lat ${clk.lat.toFixed(3)} latJumps ${clk.latJumps}`);
+  check('band', Math.abs(med(e)) <= 2 * PH_MS && p90(e) <= 3 * PH_MS, `on the kick lattice within ${2 * PH_MS} ms (the snares' lattice reads ±${half.toFixed(0)})`);
+  check('band tempo', Math.abs(clk.bpm - 128) <= BPM_TOL, `the beat, not the 8th (${clk.bpm.toFixed(2)})`);
+}
+// 7. band, from the wrong lattice (§59): the same audio, but the first 8 s carry ONLY the loud snares, so the cold start
+//    locks to them; the kicks then come in on the beat and the lattice check has to MOVE the line (latJumps 1).
+{
+  const SECS = 80, beat = 60 / 128, plan = [];
+  for (let t = 0.2, k = 0; t < SECS; t += beat / 2, k++) {
+    if (k % 2 === 0) { if (t > 8) plan.push({ t }); }                       // the kick, only after 8 s
+    else plan.push({ t, loud: 2.2, vel: 1, cls: 1, noLow: true });          // the loud snare, all the way through
+  }
+  const beats = [];
+  for (let t = 0.2, k = 0; t < SECS; t += beat / 2, k++) if (k % 2 === 0) beats.push(t);
+  const { pcm, hits } = synth(SECS, plan), { rows, clk } = run(pcm, hits);
+  const before = beats.filter((T) => T > 5 && T < 8).map((T) => errAt(rows, T));
+  const after = beats.filter((T) => T > 50).map((T) => errAt(rows, T));
+  const on = (v) => Math.abs(v) <= 2 * PH_MS, moved = beats.find((T) => T > 8 && on(errAt(rows, T)) && beats.filter((U) => U > T && U < T + 8).every((U) => on(errAt(rows, U))));
+  console.log(`band flip (snares only for 8 s, then the kicks): err vs the KICK lattice before ${med(before).toFixed(0)} ms -> after 50 s med ${med(after).toFixed(1)} p90 ${p90(after).toFixed(1)} ms · moved at ${moved === undefined ? '-' : moved.toFixed(1) + ' s'} · lat ${clk.lat.toFixed(3)} latJumps ${clk.latJumps} jumps ${clk.jumps}`);
+  check('band flip', Math.abs(med(before)) > 100 && Math.abs(med(after)) <= 2 * PH_MS && clk.latJumps >= 1, `off the kicks cold, on them after the check moves the line`);
 }
 console.log(fail ? `test_clock: ${fail} FAIL` : 'test_clock: OK');
 process.exit(fail ? 1 : 0);

@@ -47,8 +47,13 @@ const fStart = fOf(t0), fEnd = fOf(t1);
 const head = 'JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,sr:CARD.ENGINE.AU.file.sr,dur:CARD.ENGINE.AU.file.dur,det:CARD.ENGINE.AU.file.det,at:CARD.ENGINE.AU.file.at,lat:CARD.ENGINE.AU.lat()})';
 const START = 'CARD.TRACE.start(' + JSON.stringify(fields) + '), CARD.ENGINE.frameN';
 const STOP = '(()=>{const j=CARD.TRACE.stop();window.__tj=JSON.stringify(j);return JSON.stringify({len:window.__tj.length,frames:j.f.length,fields:j.fields.length,mode:j.mode,log:j.log.length,t0:j.t[0],t1:j.t[j.t.length-1],cpu:+CARD.ENGINE.ms.toFixed(3),an:CARD.ENGINE.AU.fast.analyses||null,blocks:CARD.ENGINE.AU.file.pushed})})()';
+// CLOCKK='{"LAT_MARG":1e9}' overrides the PCM clock's knobs (ENGINE.CLOCK.K = engine/clock/clock.js's CLOCK) before the
+// audio opens — the same env the node tools take (clock-study.js, test_clock.js), so an engine A/B of one knob is one run
+// each instead of two trees (§59: LAT_MARG 1e9 turns the lattice check off and gives §56's published clock exactly).
+const KNOBS = process.env.CLOCKK ? JSON.parse(process.env.CLOCKK) : null;
 const steps = [
   { until: 'window.CARD', timeout: 60000 },
+  ...(KNOBS ? [{ eval: 'Object.assign(CARD.ENGINE.CLOCK.K, ' + JSON.stringify(KNOBS) + '), JSON.stringify(CARD.ENGINE.CLOCK.K)' }] : []),
   { until: 'window.CARD.ENGINE.AU.file && window.CARD.ENGINE.AU.file.open', timeout: 300000 },
   { eval: head },
   ...(rt
@@ -73,7 +78,7 @@ ch.on('exit', (code) => {
   const errs = lines.filter((l) => l.startsWith('[EXC]') || l.startsWith('[console.error]') || l.startsWith('TIMEOUT') || l.startsWith('[EVAL-ERR]'));
   const un = (s) => { try { return JSON.parse(s); } catch (e) { return null; } };
   const dbl = (s) => un(un(s || 'null') || 'null');
-  const H = dbl(evals[0]);                                     // the f0 / sr / dur / latency eval, the first {eval} step
+  const H = dbl(evals[KNOBS ? 1 : 0]);                         // the f0 / sr / dur / latency eval (CLOCKK adds one {eval} before it)
   const meta = dbl(evals[evals.length - MAX_CHUNKS - 1]);
   if (errs.length) console.log('page errors:', errs.slice(0, 4).join(' | '));
   if (!meta) { console.log('filetrace: no trace came back (exit ' + code + ')'); console.log(lines.slice(-12).join('\n')); process.exit(1); }

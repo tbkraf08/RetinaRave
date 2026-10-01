@@ -3127,6 +3127,127 @@ No audible run (the worker's brief forbids it): every number above is the determ
 because a grain's band is both its hue and its radius; the doughnut's tube no longer rolls on mid time (a slow breath
 instead), since the roll would have scrambled the band ordering around the tube.
 
+## §59 the beat clock's half-beat lattice — the low band decides it, and CyborgNinja comes onto the beat (2026-09-30, one worker; the miss found by §58's accuracy review, `docs/AUDIT-live-grid.md` "Step 6 addendum 3")
+
+**The miss** (§58, `docs/workers/DUST-OVERHAUL-PASS1.md` "Pass 1.5", its engine-side list): on CyborgNinja the DEFAULT beat clock —
+the PCM clock, §56 addendum 3 — sits **+146.8 ms** off the truth beat grid with 159 of 160 beats matched, so every beat-locked
+motion in every scene is out on that track. Re-measured here on the page's det path (`#test&track=CyborgNinja&map=0&lead=0`,
+`CLOCK=1`, the whole track, `gridcheck.py --heard`): **+179 ms, |lag| p50 179 p90 181, jitter p50 1 p90 3, `beatPcm` F 0.004, never
+locked** — §56's own recorded number. CyborgNinja is 160.0003 BPM, so half a beat is **187.5 ms**, and the ears' kicks sit +4 ms
+after the truth beat: +179 is the OTHER LATTICE, held to 2 ms for 180 s. Not a drift, and not the "third of a beat" the review read
+— §58 measured the same line through the 40 ms file-mode display lead (146.8 + 40 = 186.8). SeeYouDrop's −35.7 ms in the same
+review IS that display lead (§52–§53) and was left alone.
+
+**The truth grid is right, so this is a clock miss.** §56 called the choice "undecidable from the audio … the stable line is the
+useful one", on the 9 % low-band margin the truth tool recorded. Three pieces of evidence outside the low band say otherwise: the
+five novelty peaks the truth tool's downbeat vote runs on (34.895, 48.02, 84.02, 96.02, 168.02 s) are **integer beats from the
+grid's phase to within 1 ms** — 93, 128, 224, 256 and 448 beats after 0.02005 s — so the section boundaries land on the chosen
+beat, not on the offbeat eighth; the file's first attack is at 25 ms, on the chosen grid; and the hats are stronger on the offbeat,
+90 against 64, which is the classic offbeat hat (`docs/workers/truth-grid-s3.md`). Sections do not start on an offbeat eighth.
+
+**Why the clock picks the offbeat — three measurements, no guesses.**
+
+- **The ears' onsets cannot tell the two lattices apart on this track.** Its kicks land on every 8th. Counted within ±0.15 beat of
+  each lattice: kick **236** on the truth beat against **213** on the offbeat, snare 307 / 303, hat 405 / 449; the Kalman's own
+  weight (velocity / `R_CLS`) **485.3 against 477.1**. A coin flip. And the onsets are not what holds the line there: with the comb
+  line's measurement off (`R_LINE` 1e9) the clock still read −185 ms. The cold start picks the lattice, the PDA gate keeps it, and
+  nothing ever asks again.
+- **The comb line agrees with the wrong lattice, so §56's lattice vote never fires.** `period.js line()` maximises the 8-beat comb
+  on the FULL-spectrum flux (`flux + 3·bassFlux`), and this track's flux is on the offbeat hats: over its 344 clear windows the
+  comb's line is half a beat off the truth's on **264 of them** (SeeYouDrop 3 of 279, WhoLikesToParty 4 of 496, Malicious 110 of
+  423). Clock and comb sit on the same wrong lattice, so `LINE_N` of `LINE_W` never counts — `jumps 0` for the whole track.
+- **The LOW BAND does tell them apart, on all four tracks.** The positive 40–150 Hz flux summed over the hops within 0.15 beat of
+  each lattice, truth lattice against its half-beat: **CyborgNinja 1.199** · SeeYouDrop 1.299 · WhoLikesToParty 1.684 · Malicious
+  1.009. Every wider band loses it — 20–150 Hz 1.178 / 1.303 / 1.614 / 1.010, 150–800 Hz 1.043 / 1.208 / 1.217 / 1.034, above
+  800 Hz 1.064 / 1.101 / 1.260 / 1.039, the whole flux 1.074 / 1.124 / 1.289 / 1.035. 40–150 Hz is the truth tool's own band and
+  the truth tool's own rule (`trackmap.py anchor_grid`: "the beat is the one with more 40–150 Hz onset strength on it").
+
+**The rule — THE LATTICE CHECK** (`engine/clock/clock.js` `lattice()`, the `LAT_*` knobs). Two leaky energies of the 40–150 Hz
+flux: one over the hops within `LAT_W` 0.15 beat of the clock's own beat line, one over the hops within `LAT_W` of its half-beat,
+both leaking with `LAT_TAU` 90 s; `lat` is their log ratio. The two windows are the same width and they SWAP under a half-beat
+shift, so `lat` is exactly antisymmetric — the clock reading its own line against the only other candidate, with no grid in it.
+Read in the loop over the four tracks (t > 15 s, the move disabled; min / p50): the three lattices the clock already had right read
+**+0.213 / +0.363** SeeYouDrop · **+0.054 / +0.399** WhoLikesToParty · **+0.110 / +0.151** Malicious — and that last track has NO
+lattice (its kicks are uniform over the beat, DP residual 90 ms) yet still never crosses zero — while CyborgNinja, half a beat off,
+reads **−0.193 / −0.167** with a maximum of −0.044. `LAT_MARG` **0.06** sits in that gap: 0.11 clear of the nearest "right"
+reading, 0.11 past CyborgNinja's median. When `lat` has been past the margin for `LAT_SUS` 4 s of NET time (time inside the margin
+counts back down, floor 0) and the clock is locked, the line moves FORWARD half a beat — the comb vote's own rule, so the count
+never steps back — and the two energies swap with it. Three things keep the cold start out of the decision:
+
+- **the evidence only counts while the comb is clear** (`per.clear`). Cold, the Kalman rate is dragged down by the first onsets
+  before the first comb estimate lands — the page read **116 → 57 → 34 → 9.7 → 5.0 BPM over the first 2 s** — and at 5 BPM every
+  hop falls inside the on-window: 2 s of one-sided energy that a 90 s leak then carries for 90 s. Without this gate the page moved
+  the line at 63 s where node moved it at 14.
+- **a period re-seat throws the evidence away** (`reseat()` → `latClear()`): every window measured before a tempo switch was the
+  wrong width.
+- **the hold is net time, not an unbroken run.** The margin is 0.06 wide, so an unbroken-run rule turned a 1e-4 page/node
+  difference into tens of seconds of delay (19 s against 63 s).
+
+One gate the other way: **the comb line's vote may not move the line onto a lattice the low band has ruled against** — `lat >
+LAT_MARG` vetoes the jump. Without it CyborgNinja's full-spectrum comb line, which prefers the offbeat on 77 % of its windows,
+drags the line straight back (7 of 8 windows "far" fires with probability 0.42 per window). Cold, both energies are ~0, `lat` is 0
+and §56's vote is untouched.
+
+**Before → after: the four tracks, both clocks, the page's det path** (`&map=0&lead=0`, `CLOCK=1`, `gridcheck.py --heard`, so every
+lag is that clock's own error on heard time; CyborgNinja the whole track, the other three 0–120 s). "Before" is this same tree with
+`CLOCKK='{"LAT_MARG":1e9}'`, which turns both halves of the rule off and gives §56's published clock exactly — a new `filetrace.js`
+env (the one `clock-study.js` and `test_clock.js` already take), so a one-knob engine A/B is one run each instead of two trees.
+
+| track | clock | beat lag med / p50 / p90 | `beat` F ±50 ms | locked | synapse bar line |
+|---|---|---|---|---|---|
+| **CyborgNinja** | **pcm before** | **+179 / 179 / 181 ms** | **0.004** | never | 10.7 % |
+| | **pcm after** | **−9 / 9 / 13 ms** | **0.896** | **19.3 s** | 10.7 % — identical |
+| | v3 (`&clock=v3`) | −65 / 144 / 183 | 0.138 | never | — |
+| SeeYouDrop | pcm before | −0 / 5 / 13 | 0.959 | 7.6 s | 74.6 % |
+| | pcm after | −0 / 5 / 13 — every row identical | 0.959 | 7.6 s | 74.6 % — identical |
+| **WhoLikesToParty** | pcm before | +7 / 7 / 10 (jitter p90 7) | 0.906 | 10.9 s | not verified (truth) |
+| | pcm after | +7 / 7 / 10 (jitter p90 **5**) | **0.949** | **5.6 s** | not verified (truth) |
+| Malicious | pcm before | +10 / 11 / 27 | 0.960 | 6.1 s | tempo only (truth) |
+| | pcm after | +10 / 11 / 27 — every row identical | 0.960 | 6.1 s | tempo only (truth) |
+
+The same A/B in node over the WHOLE of each track (`tools/clock-study.js`, no browser): CyborgNinja **−184 / 184 / 186 ms, never
+locked → +3 / 3 / 5 ms, locked 17.9 s**; SeeYouDrop and WhoLikesToParty traces **byte-identical** to the ones before the change on
+every field except WhoLikesToParty's own improvement (lock 10.9 → 5.6 s, 97 → 99 % of frames within ±30 ms); Malicious' graded lag
+identical (+22 / 23 / 34, locked 6.1 s) with its jitter p90 23 → 22 ms. v3's rows are identical before and after on all four tracks
+— none of v3's code is touched and the switch still restores its values every frame.
+
+**What moved, track by track.** CyborgNinja's line comes onto the beat 19 s in and stays there: its phase against the truth beats
+then reads p10 −0.011 / p50 −0.007 / p90 −0.001 beat (−2.6 ms median), and `beatPcm` goes from matching 2 of 479 beats to 429. The
+cold start costs three line moves in the first 18 s — a lattice move at 9.2 s, a comb-line jump at 12.0 s in the window where a
+re-seat had just voided the evidence, the final lattice move at 18.3 s — and then nothing for 162 s. Each forward move advances
+`beatCount` by up to a beat and so shifts the bar phase the bars / build / queue stages hold in count units; that is the same cost
+§56 already pays on WhoLikesToParty and Malicious, and the count still never steps back. SeeYouDrop triggers neither half of the
+rule. WhoLikesToParty's cold-start half-beat error — the one §56 built the comb-line vote for — is now corrected by the lattice
+check at 6.0 s instead of by the vote's 8 windows, and that is where its lock time and its F come from. Malicious' two comb-line
+jumps are now vetoed (`lat` sits at +0.115…+0.185 for the whole track: the low band backs the clock's own line) with no change to
+its grade.
+
+**The bar / downbeat line does not move, because it is not the clock's.** `barPos` / `beatSyn` / `barConf` / `phrase16Pos` come from
+synapse's own grid (`features-synapse.js` reads `A.beat`, not the published clock), and a trace carrying them reads **every one of
+those rows identical before and after** on both gradeable tracks: CyborgNinja's bar line 10.7 % of in-octave frames on the truth
+downbeat (bar 1 on truth beat +1 in 70 %), its `beatSyn` +58 / 61 / 113 ms and its 16-beat line 1 of 5 section starts within a beat;
+SeeYouDrop's bar line 74.6 %, `beatSyn` −39 / 40 / 60, 1 of 8 section starts, 0 of 2 drops. CyborgNinja's synapse bar line being
+wrong is a separate, pre-existing miss (`docs/workers/truth-grid-s3.md` recorded 0 % in live step 3.1) and is NOT this item.
+
+**Cost: flat.** One more accumulator inside the FFT loop that already runs, over the six bins below 150 Hz, plus ~10 operations per
+512-sample hop (94 hops/s). Node microbenchmark of `Clock.push` over 60 s of CyborgNinja, best of 5, three pairs interleaved
+against a `git archive HEAD` tree: **56.50 / 56.99 / 56.93 µs per hop before against 56.44 / 56.77 / 56.98 after** — 0.089 ms per
+60 Hz frame either way, §56's own node figure. On the page `CLOCK.cpuTotal / frameN` over 3600 frames reads 0.205 (HEAD) against
+0.217 ms (this tree), inside the run-to-run spread of a machine with a second worker's Chrome on it.
+
+**Proofs.** `node tools/check.js` 0 fail (153 modules, the 5 pre-existing line-cap warns) · `npm test` OK · `test_clock.js` now 17
+checks: the two new ones are **`band`** (hits on every 8th, the off-beat one 2.2× louder but with NO low band, and the line has to
+land on the KICKS — it reads −231 ms with the check disabled and −2.6 ms with it on) and **`band flip`** (the same audio with only
+the loud snares for the first 8 s so the cold start locks to them: −227 → −2.6 ms, the line moved at 21.8 s, `latJumps 1`) · **the
+full fake-timeline md5 sweep** (`PORT=8884 tools/scene-md5.sh s59`, all 12 scene ids × f360 / f840) is unchanged where §56 said it
+must be: s0-f360, s2, s3, s4-f360, s5, s6, s7, s8, s9, s10 byte-identical to `tools/accept/v0.14/scene-md5-v014.txt`, s0-f840
+`8a0715df` and s4-f840 `05bf21c0` the two pre-existing moves from `22eb969`, s11 post-dating that list. The clock stage returns at
+its first line under `ENGINE.fakeOn`, so the fake timeline never runs it. **s1 read `5a9b6bc7` / `b70a98e1`, not §58's `a73fbe67` /
+`35fe02c6`** — those are §60 step 4's own recorded pair: the DUST pass-2 worker was in `assets/scenes/dust/` in the same tree while
+this sweep ran. Not this change, and not chased; this session touched no file under `assets/scenes/`.
+
+**Not tagged, not pushed, not deployed.**
+
 ## §60 DUST, pass 2 — dynamic range, per-bin habituation, harmony (2026-09-30, one worker; report `docs/workers/DUST-OVERHAUL-PASS2.md`)
 
 **The ask**: the three items `DUST-OVERHAUL-SESSION-PROMPT.md` deferred out of pass 1, against the same acceptance

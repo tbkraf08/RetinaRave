@@ -58,6 +58,13 @@ export const CLOCK = {
   P0_B: 1, P0_F: 0.3 * 0.3,     // the cold covariance: any phase; the rate ±18 BPM around the prior
   TRACK: 0.06,                  // a comb tempo within this ratio of f is a measurement; beyond it, a switch (period.js decides)
   PRESENT: 1e-7,                // hop strength below which nothing is written (silence)
+  // THE LATTICE CHECK (§59): the half-beat choice is the LOW BAND's, re-read while the period stays locked
+  LAT_LO: 40,                   // Hz: the band the check reads, 40..150 (the truth tool's own: trackmap.py anchor_grid)
+  LAT_W: 0.15,                  // beats: the half-width of the two windows — the clock's line, and its half-beat
+  LAT_TAU: 90,                  // s: the two energies' leak (the margin is a whole-arrangement fact, not a bar's)
+  LAT_MARG: 0.06,               // the natural-log margin: the half-beat must carry 6 % more low band to move the line
+  LAT_SUS: 4,                   // s of NET time past the margin before the line moves (below: time inside it counts down)
+  LAT_EPS: 1e-9,                // the ratio's floor: silence reads 0, not ±Infinity
 };
 
 export class Clock {
@@ -68,11 +75,14 @@ export class Clock {
     this.pkAll = 1e-5;                         // v3's XS.pkAll: the spectrum's peak follower (τ 40 s), the log gain's reference
     const binF = sr / NFFT;
     this.iB = Math.max(2, Math.min(40, Math.round(150 / binF))); this.iT = Math.min(NFFT / 2 - 1, Math.round(9843.75 / binF));   // v3: bins 1..419 at 48 kHz
+    this.i40 = Math.max(1, Math.round(CLOCK.LAT_LO / binF));   // the lattice check's band floor (bins i40..iB = 40..150 Hz)
     this.per = new Period(bpm0);
     this.b = 0; this.f = bpm0 / 60; this.t = NaN;
     this.P00 = CLOCK.P0_B; this.P01 = 0; this.P11 = CLOCK.P0_F;
     this.tEst = -Infinity;
     this.onsets = 0; this.hits = 0; this.est = 0; this.lines = 0; this.lineN = 0; this.jumps = 0;
+    this.s40 = 0;                                                      // the newest hop's 40–150 Hz flux (the lattice check's input)
+    this.lat = 0; this.latOn = 0; this.latOff = 0; this.latHold = 0; this.latT = NaN; this.latJumps = 0;   // the lattice check's state (below)
     this.lastOnset = null;                     // { t, cls, vel, y, beta } of the last onset seen (tests, the trace)
     this.hops = 0;
   }
@@ -119,7 +129,10 @@ export class Clock {
   reseat(bps) {
     this.f = bps; this.P11 = CLOCK.R_F; this.P01 = 0;
     if (this.P00 < CLOCK.R_ON) this.P00 = CLOCK.R_ON;
+    this.latClear();                     // the lattice windows were a different period wide: the evidence is void (below)
   }
+  // the lattice check's evidence, thrown away
+  latClear() { this.latOn = 0; this.latOff = 0; this.lat = 0; this.latHold = 0; }
 
   // one block of mono samples; runs a hop every HOP samples
   push(mono, t0) {
@@ -136,13 +149,14 @@ export class Clock {
     let mx = 0;
     for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
     this.pkAll = Math.max(this.pkAll * Math.exp(-(HOP / this.sr) / 40), mx, 1e-5);
-    const g = 100 / this.pkAll, iB = this.iB, iT = this.iT;
-    let flux = 0, bflux = 0;
+    const g = 100 / this.pkAll, iB = this.iB, iT = this.iT, i40 = this.i40;
+    let flux = 0, bflux = 0, f40 = 0;
     for (let i = 1; i <= iT; i++) {
       const v = Math.log(1 + g * mag[i]), d = v - prev[i];
       prev[i] = v;
-      if (d > 0) { flux += d; if (i <= iB) bflux += d; }
+      if (d > 0) { flux += d; if (i <= iB) { bflux += d; if (i >= i40) f40 += d; } }
     }
+    this.s40 = f40 * 0.01;                                   // the lattice check's band; the published strength is unchanged
     return (flux + CLOCK.BASS * bflux) * 0.01;
   }
   // an onset from the ears (perc.js: kick 0 / snare 1 / hat 2) at audio time t with velocity vel in (0, 1]: a phase measurement
@@ -182,13 +196,63 @@ export class Clock {
             const bl = this.b + this.f * (tl - this.t), y = Math.round(bl) - bl, far = Math.abs(y) > CLOCK.LINE_JUMP;
             this.lineN = ((this.lineN << 1) | (far ? 1 : 0)) & ((1 << CLOCK.LINE_W) - 1);
             let n = 0; for (let m = this.lineN; m; m >>= 1) n += m & 1;
-            if (n >= CLOCK.LINE_N) { this.b += y < 0 ? y + 1 : y; this.lineN = 0; this.jumps++; if (this.P00 < CLOCK.R_LINE) this.P00 = CLOCK.R_LINE; }   // always FORWARD onto the comb's lattice: the count never steps back
+            // the LOW BAND's veto (§59): the comb line is the FULL-spectrum envelope's, and on a track whose hats sit on the
+            // offbeat that envelope peaks there (CyborgNinja: the comb's line is half a beat off the truth's on 264 of its
+            // 344 windows). When the lattice check below says the clock's own line carries the low band by the margin, the
+            // vote does not move it. Cold, both energies are ~0, the ratio is 0 and §56's vote is untouched.
+            const veto = this.lat > CLOCK.LAT_MARG;
+            if (n >= CLOCK.LINE_N) { if (!veto) { this.b += y < 0 ? y + 1 : y; this.jumps++; if (this.P00 < CLOCK.R_LINE) this.P00 = CLOCK.R_LINE; } this.lineN = 0; }   // always FORWARD onto the comb's lattice: the count never steps back
             else if (!far) this.measureLine(tl, CLOCK.R_LINE / Math.max(per.y1, 0.15));
           }
         }
       }
     }
     this.predict(t);
+    this.lattice(t);
+  }
+  // THE LATTICE CHECK (§59): which of the two half-beat lattices is the beat, re-read while the period stays locked.
+  // The ears' onsets cannot tell them apart on a track whose kicks land on every 8th (CyborgNinja: 236 of them on the truth
+  // beat against 213 on the offbeat, and the Kalman's own weight 485 against 477 — a coin flip the cold start wins and the
+  // PDA gate then keeps for the whole track), and the comb line cannot either: it is the FULL-spectrum flux's line, and this
+  // track's hats sit on the offbeat (the truth tool measured 90 against 64), so the comb's line is half a beat off the truth's
+  // on 264 of its 344 windows. The LOW BAND does tell them apart — it is the truth tool's own rule (trackmap.py anchor_grid:
+  // "the beat is the one with more 40–150 Hz onset strength on it") and it holds on all four truth tracks.
+  // So: two leaky energies of the 40–150 Hz flux, one over the hops within LAT_W of the clock's beat line and one over the
+  // hops within LAT_W of its half-beat, leaking with LAT_TAU; `lat` is their log ratio, and the two windows are the same
+  // width and swap under a half-beat shift, so it is exactly antisymmetric — the clock reading its own line, not a grid.
+  // Measured in the loop over the four truth tracks (t > 15 s, the flip disabled, min / p50): the three the clock already
+  // has right read +0.213 / +0.363 SeeYouDrop · +0.054 / +0.399 WhoLikesToParty · +0.110 / +0.151 Malicious (a track with
+  // NO lattice — its kicks are uniform over the beat — and still on the right side of 0), and CyborgNinja, half a beat off,
+  // reads −0.193 / −0.167 with a maximum of −0.044. LAT_MARG 0.06 sits in that gap with the nearest 'right' reading 0.11
+  // away and CyborgNinja's median 0.11 past it; LAT_SUS keeps a momentary excursion from moving anything. CyborgNinja's
+  // line moves 19 s in. FORWARD by half a beat, like the comb line's vote: the count never steps back.
+  lattice(t) {
+    const K = CLOCK, s = this.s40;
+    const dt = this.latT === this.latT ? t - this.latT : 0;
+    if (dt > 0) { const g = Math.exp(-dt / K.LAT_TAU); this.latOn *= g; this.latOff *= g; }
+    this.latT = t;
+    // NOT while the rate is still a guess: on a cold start the Kalman rate is dragged down by the first onsets before the
+    // first comb estimate arrives (measured on the page, CyborgNinja: 116 -> 57 -> 34 -> 9.7 -> 5.0 BPM over the first 2 s),
+    // and at 5 BPM every hop is inside the on-window — 2 s of one-sided energy that a 90 s leak then carries for 90 s (the
+    // page read the flip at 63 s where node read it at 14). The comb's own evidence gate is the condition; reseat() throws
+    // the evidence away as well, because a period switch makes every window before it the wrong width.
+    if (!this.per.clear) return;
+    const d = this.b - Math.round(this.b), a = d < 0 ? -d : d;   // the phase against the clock's own line, |d| <= 0.5
+    if (a < K.LAT_W) this.latOn += s;
+    else if (a > 0.5 - K.LAT_W) this.latOff += s;                 // the two windows are the same width and swap under a half-beat shift
+    this.lat = Math.log((this.latOn + K.LAT_EPS) / (this.latOff + K.LAT_EPS));
+    // the hold is NET time past the margin, not an unbroken run: the margin is only 0.06 wide, so a run rule turns a 1e-4
+    // difference between the page and node into tens of seconds of delay (measured: 19 s against 63 s). Time past the margin
+    // counts up, time inside it counts down, and the floor is 0.
+    const past = this.locked && this.lat < -K.LAT_MARG;
+    this.latHold += past ? dt : -dt;
+    if (this.latHold < 0) this.latHold = 0;
+    if (this.latHold >= K.LAT_SUS) {
+      this.b += 0.5;
+      const o = this.latOn; this.latOn = this.latOff; this.latOff = o;   // the windows swapped roles with the line
+      this.lat = -this.lat; this.latHold = 0; this.latJumps++; this.jumps++;
+      if (this.P00 < K.R_LINE) this.P00 = K.R_LINE;
+    }
   }
   at(t, out = {}) {
     const b = this.t === this.t ? this.b + this.f * (t - this.t) : this.b;

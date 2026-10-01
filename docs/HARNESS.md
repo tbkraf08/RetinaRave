@@ -724,11 +724,12 @@ in MS says it) makes `bpm` / `beatPhase` / `beat` / `beatCount` publish the PCM 
 stages and the lead, so everything downstream — every scene included — rides it; v3's own values come back at the next frame
 (`ENGINE.restores`), so its PLL never sees the swap. Default `'v3'` (a default moves only on the user's word).
 ```
-node tools/test_clock.js                                                   # in npm test: synthetic clicks — lock, phase, ramp, gap, outlier, lattice, determinism
+node tools/test_clock.js                                                   # in npm test: synthetic clicks — lock, phase, ramp, gap, outlier, lattice, band, band flip, determinism
 node tools/clock-study.js <Track> [--out f.json] [--raw]                   # node, the det time base: both clocks on heard time + every onset in `log`; CLOCKK='{"R_ON":1e-3}' knobs
 node tools/build-node.js [Track …] [--out dir]                             # runs the clock too; CLOCKSRC=pcm = the page's &clock=pcm (bars / build / queue ride it)
 python3 tools/truth/gridcheck.py <trace> --heard                           # the 'pcm' rows beside v3's: tempo %, lag, jitter, beat F, lock, frame-to-frame |dlag|, clockConfPcm on / off the beat
 PORT=8864 node tools/filetrace.js <Track> 0 <dur> out.json 'heardT,leadT,bpm,beatPhase,beat,beatCount,bpmPcm,beatPhasePcm,beatPcm,beatCountPcm,clockConfPcm,clockPcm,…' '&map=0&lead=0[&clock=pcm]'
+CLOCKK='{"LAT_MARG":1e9}' PORT=8864 node tools/filetrace.js …              # the page with one knob overridden (ENGINE.CLOCK.K, set before the audio opens): a one-knob engine A/B is one run each, not two trees (§59)
 node tools/build-node.js --cmp page.json node.json bpmPcm,beatPhasePcm,beatCountPcm,beatPcm,predKickIn,nextKickIn   # page = node
 ```
 `gridcheck.py --heard` (a det / node trace recorded with the lead off carries the RAW clocks, `detLead` before heard time): moves v3's and the
@@ -736,7 +737,11 @@ PCM clock's beat position by −detLead at their own tempo — the lead's rule u
 on heard time (0 = the truth beat) and the lock rows work. Page = node: the PCM fields agree to 2.4e-4 (`beatPhasePcm`), and under the
 switch `predKickIn` / `nextKickIn` to 5e-5 (the v3 path itself differs page / node in its first seconds — pre-existing, B.1). The cost:
 `CARD.ENGINE.CLOCK.cpuTotal / CARD.ENGINE.frameN` (ms per frame the PCM listener spent: the FFT per hop + the filter). Knobs:
-`CARD.ENGINE.CLOCK.K` (= `CLOCK` in `engine/clock/clock.js`; the sweep in AUDIT-live-grid Step 6 T.2). Pitfall: the comb line's
+`CARD.ENGINE.CLOCK.K` (= `CLOCK` in `engine/clock/clock.js`; the sweep in AUDIT-live-grid Step 6 T.2). **The half-beat lattice is the
+LOW BAND's call** (§59, `lattice()`): the 40–150 Hz flux at the clock's line against the same window at its half-beat, leaked over 90 s, and
+the line moves forward half a beat when the half-beat wins by `LAT_MARG` for `LAT_SUS` of net time — the comb line's own vote may not move
+the line onto a lattice that check has ruled against. It only counts evidence while `per.clear` and a `reseat()` throws the evidence away:
+cold, the Kalman rate is a guess (5 BPM two seconds in) and every hop then falls in one window. Pitfall: the comb line's
 lattice vote must be near-unanimous (7 of 8 four-second windows) — 3 consecutive flipped CyborgNinja between its two kick lattices
 four times in 40 s; and `R_LINE` off loses 20–65 ms on two tracks (the onsets alone cannot pick a lattice).
 

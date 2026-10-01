@@ -976,3 +976,30 @@ queuecheck:
 The 1479 / min was heardT stepping in capture (10.7 / 21.3 ms per frame), which the PCM clock followed faithfully and v3
 (integrated on dt) never saw; evaluated at `now` + the median heardT offset the count-down advances evenly (16 / min, the cold
 start). The remaining `nextKickIn` jumps (281 vs v3's 262) are the store's per-class offsets, not the clock.
+
+### Step 6 addendum 3 — the half-beat lattice is the low band's call (one worker, 2026-09-30; DECISIONS §59)
+
+§58's accuracy review found the DEFAULT clock (the PCM clock) **half a beat off on CyborgNinja** — page det
+`&map=0&lead=0`, whole track: `beatPhasePcm` **+179 ms** (p50 179, p90 181; half a beat is 187.5 ms at 160.0003 BPM),
+`beatPcm` F **0.004**, never locked. The truth grid is right (its five downbeat-novelty peaks are integer beats from its
+phase to within 1 ms, so the section starts are on the chosen beat); the clock is wrong, because neither of its two phase
+inputs can tell the lattices apart there — the ears' kicks land on every 8th (236 against 213, Kalman weight 485 / 477)
+and the comb's 8-beat line, which is the FULL-spectrum flux's, follows this track's offbeat hats (half a beat off the
+truth's on 264 of its 344 clear windows, so §56's lattice vote never fires). The 40–150 Hz flux does tell them apart on
+all four tracks (truth lattice / its half-beat: 1.199 CyborgNinja · 1.299 SeeYouDrop · 1.684 WhoLikesToParty · 1.009
+Malicious), which is the truth tool's own rule. `engine/clock/clock.js lattice()` now reads it every hop and moves the
+line forward half a beat when the half-beat carries it by `LAT_MARG`; the comb line's vote may not move the line onto a
+lattice the low band has ruled against. The A/B is one knob: `CLOCKK='{"LAT_MARG":1e9}' node tools/filetrace.js …`
+(new in `filetrace.js`) gives §56's published clock exactly.
+
+| page det, `gridcheck.py --heard` | before | after |
+|---|---|---|
+| CyborgNinja (whole track) lag med / p50 / p90 · `beat` F · locked | +179 / 179 / 181 ms · 0.004 · never | **−9 / 9 / 13 ms · 0.896 · 19.3 s** |
+| SeeYouDrop 0–120 s | −0 / 5 / 13 · 0.959 · 7.6 s | −0 / 5 / 13 · 0.959 · 7.6 s (identical) |
+| WhoLikesToParty 0–120 s | +7 / 7 / 10 · 0.906 · 10.9 s | +7 / 7 / 10 · **0.949** · **5.6 s** |
+| Malicious 0–120 s | +10 / 11 / 27 · 0.960 · 6.1 s | +10 / 11 / 27 · 0.960 · 6.1 s (identical) |
+| CyborgNinja v3 (`&clock=v3`, untouched) | −65 / 144 / 183 · 0.138 · never | the same |
+
+Synapse's grid is untouched (`barPos` / `beatSyn` / `barConf` / `phrase16Pos` identical before and after: CyborgNinja's
+bar line 10.7 % on the truth downbeat, SeeYouDrop's 74.6 %). Cost flat (node `Clock.push` 56.5–57.0 µs per hop either
+way). `tools/work/clock/s59/*`. Not tagged, not pushed, not deployed.
