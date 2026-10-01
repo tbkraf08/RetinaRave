@@ -49,7 +49,7 @@ const SELF = {
   card: { title: 'DUST', blurb: 'a swarm of particles in a flow field, one frequency band per grain, the Hopf fibres threaded through' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/dust.jpg from tools/thumbs.sh
   feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'dropEnv', 'tension',
     'alive', 'beatCount', 'beatPhase', 'barPos', 'phrase16Pos', 'barNovelEvt',
-    'kick2', 'kickAge', 'kickEvt', 'snare2', 'snareAge', 'snareEvt', 'hat2', 'hatAge', 'hatEvt',
+    'kick2', 'kickAge', 'kickEvt', 'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'hat2', 'hatAge', 'hatEvt',
     'subNoteEvt', 'subGate',
     'buildLive', 'nextDropIn', 'dropLiveEvt',
     'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
@@ -127,11 +127,17 @@ const SELF = {
     this.spin = spin(this.sp, MS, dt);
     this.spinG = GAL_K * this.spin;
 
-    // The three transient voices. The attack fires on whichever comes first — the ears' event or the v2 level's
-    // rising edge — because the two pickers miss different hits (voices.js: the numbers, graded against the truth);
-    // the age places it sub-frame, the level sizes it, and the decay is slow off that age.
+    // The three transient voices. The KICK and the HAT fire on whichever comes first — the ears' event or the v2
+    // level's rising edge — because those two pickers miss different hits (voices.js: the numbers, graded against the
+    // truth); the age places it sub-frame, the level sizes it, and the decay is slow off that age.
     voice(this.vK, dt, MS.kick2, MS.kickAge, MS.kickEvt);
-    voice(this.vS, dt, MS.snare2, MS.snareAge, MS.snareEvt);
+    // THE SNARE FIRES ON THE EARS' LANE ALONE, AT ITS OWN SIZE (§70). Since §69 the snare event is the two mid bands'
+    // RISE and since §70 it carries `snareAmp`, so the union's reason — "the event only PLACES the hit, the level
+    // SIZES it" — is gone: `snare2` is synapse's, ~+5…+12 ms late, and on Vienna it fires on hats and pad swells.
+    // Measured on the three windows (voices.js has the table): the ring goes 3.19 → 1.39 flashes/s at P 0.45 → 0.80
+    // on Vienna against a groove of 1.94, and SeeYouDrop and CyborgNinja — the controls — improve too. `snare2` is
+    // still passed, and is still the FLOOR under the envelope; it just cannot start a hit any more.
+    voice(this.vS, dt, MS.snare2, MS.snareAge, MS.snareEvt, false, MS.snareAmp);
     // the hat's trigger quality: while the high band is swelling (more than BED.R x its own 2 s average) the ears'
     // hat EVENT is not a hat — the sparkly / dreamy layer the user heard, and the ears' running-median picker cannot
     // tell its leading edge from a stick (voices.js: the numbers). The level's edge still fires the voice.

@@ -109,18 +109,35 @@ export function bed(v, dt, x) {
   return v.s > 1e-6 && y > BED.R * v.s;
 }
 
-// `veto` (the hat's, above) suppresses the EARS' EVENT as a trigger only: the level's own rising edge still fires the
-// voice, and a fire the level makes on the same frame still takes the ears' age for its sub-frame placement.
-export function voice(v, dt, lvl, msAge, evt, veto) {
+// THE LANE ALONE, WITH ITS OWN SIZE (§70, `amp`). The union above exists because the ears' event and the v2 level
+// are two different pickers and the EVENT had no amplitude of its own — "the event only PLACES the hit, the level
+// SIZES it". Since §69 the snare EVENT is the two mid bands' RISE and since §70 it carries `snareAmp`, so the second
+// half of that sentence no longer needs the level: pass `amp` and the voice fires on the event alone, at its own
+// size. The level's rising edge is then NOT a trigger (and its confirm branch is dead), which is the whole point —
+// on Vienna it is the loose half.
+//
+// Measured (`tools/work/v70/voicesim.js` replaying this very function over a `dust-trace.js` trace's columns, graded
+// against `tools/truth/<T>.snare.json` at ±50 ms, §64's tolerance; fires/s · P · F):
+//   Vienna 24-60 (truth 1.94 /s)   UNION 3.19 · 0.45 · 0.56     LANE+amp 1.39 · 0.80 · 0.67
+//   SeeYouDrop 20-110 (3.41 /s)    UNION 4.08 · 0.66 · 0.72     LANE+amp 3.88 · 0.68 · 0.73
+//   CyborgNinja 20-50 (3.67 /s)    UNION 6.43 · 0.53 · 0.68     LANE+amp 3.17 · 0.94 · 0.87
+// — better on all three windows including the control §64's same question about the HAT had to protect, which is
+// why the hat keeps the union and the snare does not.
+//
+// `lvl` STAYS the floor under the envelope (`Math.max(…, lvl)`) and is measured, not assumed: taking it out drops
+// the three windows' flash sizes with it (amp p50 is the voice's own, but `v.e` is what the shader reads, and the
+// level is 0.27-0.41 of the picture between hits on these tracks). What it CANNOT do any more is start a hit.
+export function voice(v, dt, lvl, msAge, evt, veto, amp) {
+  const lane = amp !== undefined && amp !== null;     // §70: the event fires AND sizes the hit; the level only floors it
   v.age += dt;
   v.since += dt;
   const a = msAge === undefined || msAge === null ? 99 : msAge;
   const fresh = a >= -0.03 && a < FRESH;              // the ears' onset is this frame's, or a hair before it
   const ev = (!!evt || (fresh && a < v.lastA)) && !veto;   // the event flag, or the age crossing back to fresh
-  const edge = lvl >= THR && lvl > v.prev + 0.02;     // a follower steps up on the hit frame only
+  const edge = !lane && lvl >= THR && lvl > v.prev + 0.02;  // a follower steps up on the hit frame only
   if ((ev || edge) && v.since >= REFRACT) {
     v.age = fresh ? Math.max(0, a) : 0;
-    v.amp = Math.max(v.floor, lvl);
+    v.amp = Math.max(v.floor, lane ? amp : lvl);
     v.since = 0;
     v.n++; v.src = (ev ? 1 : 0) | (edge ? 2 : 0);
   } else if (edge && lvl > v.amp) {

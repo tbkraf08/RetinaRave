@@ -21,12 +21,14 @@ export const HELP = {
     kickAge: 'exactly how long ago that kick was, so the shove is placed between frames instead of on one',
     kickEvt: 'the ears\' own word that a kick just landed: whichever of the two hears it first starts the shove, so '
       + 'a kick the level is slow to confirm still moves the cloud on time',
-    snare2: 'a snare flashes the middle of the cloud and the flash travels outward from there — the snare\'s '
-      + 'own voice, which this screen never had before',
+    snare2: 'how bright the middle of the cloud stays between snares — the snare level underneath the ring, '
+      + 'which no longer launches one of its own',
     snareAge: 'how long ago the snare was: it is what puts the ring where it has got to, counted from the body '
       + 'of the cloud outward',
-    snareEvt: 'the ears\' own word that a snare just landed — it launches the ring the moment either detector '
-      + 'hears it, and the level sets how big it is when it catches up',
+    snareEvt: 'the ears\' own word that a snare just landed — it is the one thing that launches the flash ring, '
+      + 'so a pad swelling or a hi-hat spilling into the snare band no longer sets one off',
+    snareAmp: 'how big that flash is: the snare\'s own loudness, measured as how far it rose above the half-second '
+      + 'before it, so a soft rim is a small ring and a hard snare fills the body',
     hat2: 'the rim of the cloud sparkles bigger and brighter, and only the rim',
     hatAge: 'how long ago the hat was, so the sparkle fades from the hit and not from the frame',
     hatEvt: 'the ears\' own word that a hat just landed: it starts the sparkle even on the hats the level misses',
