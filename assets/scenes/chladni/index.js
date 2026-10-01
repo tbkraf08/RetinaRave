@@ -20,17 +20,11 @@ import { mkNudge } from '../../math/nudge.js';
 import { clamp, ema, sstep, TAU } from '../../math/util.js';
 import { PLATE_FS, SAND_FS, SAND_VS, SAND_FS_DRAW, SETTLE_FS, KICKJ } from './shaders.js';
 import { mkSand, DELTA } from './sand.js';
+import { BAS, BOUNCE, camera, CAMTC, DIST_MID, DIST_SUB, EYE, FOCAL, lookVP, PITCH_MID, PITCH_SUB, TILTB } from './cam.js';
+import { ears, figure, PINS, readEars } from './ears.js';
 import { HELP } from './help.js';
 
 // --- the leans. Every constant named for what it does; the user corrects them at the first montage. ---
-const FOV = 1.05;            // vertical field of view (rad, ~60 deg) — the plate fills the frame without fisheye
-const PITCH_SUB = 0.58;      // bassReg 0 (a 35 Hz sub): the camera is LOW and heavy, almost in the plate
-const PITCH_MID = 1.24;      // bassReg 1 (a 140 Hz mid-bass): nearly overhead, the plate small — the 1:38 climb
-const DIST_SUB = 1.78;       // and close
-const DIST_MID = 3.70;       // and far away
-const CAMTC = 0.45;          // the camera eases over ~1.4 s: a register change is music, never a cut
-const BOUNCE = 0.05;         // the thump per felt beat, on the camera distance (TORUS2's number, the user's own)
-const TILTB = 0.55;          // how far the build tilts the camera up through the void
 const SLIDETC = 0.07;        // the figure's own ease. A SLIDE (the pitch moving a fraction of a semitone) tracks it
 const JUMPTC = 3.0;          // exactly; a JUMP to another table entry is slowed by up to this factor, because the
                              // table is ordered by consonance and not chromatically, so neighbouring semitones are
@@ -51,7 +45,21 @@ const RIPD = 0.09;           // and how deep it cuts into the figure at hatVel 1
 const SNAMP = 0.55;          // the snare's flash: how bright its ring is
 const SNSPD = 1.9;           // how fast that ring crosses the plate (plate radii per second)
 const SNTC = 0.16;           // and how fast it dies
-const DROPV = 2.40;          // the drop's slam: the throw a mapDropEvt gives the sand, in kickVel units
+const DROPV = 2.40;          // the drop's slam: the throw a mapDropEvt gives the sand, as a launch VELOCITY (below)
+const KSFLOOR = 0.3125;      // the kick's size has a floor: 5.0 / 16 is the low lane's own threshold mapped over the
+                             // SPAN kickAmp is built on (DECISIONS §70), i.e. "a hit that only just fired". A real
+                             // fire's `kickAmp` cannot read below it, so this only bites where there is no amp to read
+                             // at all — a PREDICTED kick (the chladni.kickAge=predKickAge route) before the first real
+                             // one, and the frames of a track before any kick has been heard. No throw is invisible.
+const FOGLO = 0.80;          // the fog's knee on `lpSweep`, which §73 brought to life. The field is 1 - roll / roll's
+const FOGHI = 0.97;          // own running p90, so its MIDDLE is where a track normally sits and not where a filter is
+                             // closed: its p50 over the five whole tracks is 0.35 / 0.55 / 0.73 / 0.41 / 0.35 and it is
+                             // over 0.5 on 27-74 % of their frames. Fed straight in the fog was a permanent veil on
+                             // four tracks of five. Through this knee it is OFF through the body of every track and
+                             // full exactly where a filter really closes — SeeYouDrop's last 20 s read 0.96 against
+                             // 0.00 for the rest (DECISIONS §74 for the sweep)
+const FOGTC = 0.50;          // and it is EASED: `lpSweep` itself steps by 0.13-0.20 in ONE frame at its p99, a jump on
+                             // a channel that greys the whole plate (CONTRACTS §1.9). Eased, that p99 is 0.007-0.018
 const NOTEHUE = 0.42;        // how far round the fifths wheel the sub note's own hue sits from the tonic's
 const ANTIHUE = 0.11;        // and the antinodes' hue, a shade off the lines'
 const BASSON = 0.18;         // the bass is SOUNDING when its level, wherever it lives, is above this (the void reads
@@ -63,11 +71,6 @@ const REGTC = 0.60;          // and the knee's OUTPUT is eased: bassReg crosses 
                              // caught exactly that — docs/workers/chladni.md (h))
 const HPAD = 0.25;           // the purity knee: the ears read this track's pure 808 at subPure 0.65, not 1, so the
                              // harmonic mix only starts below 1 − HPAD (the intro's 0.05 still gives h 0.93)
-const TONTC = 10.0;           // the TONIC is latched the same way, over a much longer window, because a change of
-const TONMIN = 0.60;         // and it is not latched at all until that much evidence has come in — otherwise the
-                             // FIRST frame with any tonic at all wins and TONMARG then defends it
-const TONMARG = 3.0;         // tonic re-maps every figure at once: SeeYouDrop's tonic wobbles C# -> A -> F# over
-                             // 18-25 s and this holds it at C# (the truth's hypothesis) through the whole track
 const CONF = 0.15;           // below this subConf a new pitch is not accepted — the figure holds
 const VOTETC = 0.15;         // the sub's note is decided by a decaying VOTE over the twelve, with this time constant,
 const VOTEMARG = 3.0;        // and a challenger must beat the sitting note by this much to take the figure. Re-tuned
@@ -77,7 +80,6 @@ const VOTEMARG = 3.0;        // and a challenger must beat the sitting note by t
                              // YIN arrival is +0.14, +0.04, +0.05, +0.05 of that (docs/workers/chladni.md (f))
 const LIFTWAIT = 0.40;       // the sand only starts to float after the bass has been gone this long — drop 2's
                              // 60 ms ducks are a stomp, not a void
-const KEYC = 0.25;           // below this tonicConf the old `key` is used instead of `tonic` (Appendix A's fallback)
 const WALK = 4.40;           // the random walk's step, plate units per second at |u| = 1 and full drive: the plate
                              // throws a grain hardest where it moves most, which is the whole mechanism
 const DESC = 1.00;           // the descent on u^2, per second: what makes a thrown grain LAND on a line and stay
@@ -85,72 +87,14 @@ const GRAV = 32.0;           // the leap's gravity, plate units per second squar
 const LEAPK = 5.50;          // throw peak at a quarter of the plate's half-width and land in 0.25 s — inside one beat
 const PTPX = 2.3;            // a grain's size in px at 720 p, at unit view depth
 const SANDB = 1.15;          // how bright the sand is
-const NEAR = 0.05;           // the points pass's near / far planes: the plate is 2 units across at 1.8 to 4.2 away
-const FAR = 20;
 const AWAYTC = 2.5;          // how long the plate remembers that the bass is AWAY from the tonic. A held root is a
 const AWAY0 = 0.25;          // square plate; a bass that walks (13-25 s, the climbs, the outro) rounds it into the
 const AWAY1 = 0.55;          // circular plate's Bessel figure. The measured alternatives are in docs/workers/chladni.md
 
-const SU = { s: 0, h: 0, bnd: 0, walk: 0, desc: DESC, dt: 1 / 60, gate: 0, amp: 0, lift: 0, spiral: 0, kickAge: 99, kickVel: 0 };
-const U = { s: 0, h: 0, bnd: 0, amp: 0, gate: 0, lift: 0, spiral: 0, glow: GLOW0, fog: 0, hue: 0, yaw: 0, pitch: PITCH_SUB, dist: DIST_SUB, bounce: 0, ripA: 99, ripK: 0, ripD: 0, snA: 99, snR: 0, tonic: 0, note: -1, fig: '1/2', drive: 0, kickAge: 99, kickVel: 0, snF: 0, away: 0 };
+const SU = { s: 0, h: 0, bnd: 0, walk: 0, desc: DESC, dt: 1 / 60, gate: 0, amp: 0, lift: 0, spiral: 0, kickAge: 99, kickSz: 0 };
+const U = { s: 0, h: 0, bnd: 0, amp: 0, gate: 0, lift: 0, spiral: 0, glow: GLOW0, fog: 0, hue: 0, yaw: 0, pitch: PITCH_SUB, dist: DIST_SUB, bounce: 0, ripA: 99, ripK: 0, ripD: 0, snA: 99, snR: 0, tonic: 0, note: -1, fig: '1/2', drive: 0, kickAge: 99, kickSz: 0, snF: 0, away: 0 };
 const MOOD = [0, 1, 1];
-const EYE = [0, 0, 0];
-const BAS = new Float32Array(9);
 let ASP = 16 / 9;
-let figPin = -1;             // hooks.figure(s): pin the fractional interval so a montage compares figures, not music
-let earsPin = -1;            // hooks.ears(k): pin the ear block to a named preset (#test never fills the new fields)
-
-// The ear block the scene actually reads, so one place decides what a pin means. `p` = the preset, −1 = the real ears.
-const EARS = { note: -1, cents: 0, conf: 0, pure: 1, gate: 0, sub: 0, bass: 0, eG: 0, reg: 0, tonic: 0, minor: 1, tconf: 0 };
-const PRESETS = [
-  { note: 1, cents: 0, conf: 1, pure: 1, gate: 1, sub: 0.85, bass: 0.8, eG: 0.8, reg: 0, tonic: 1, minor: 1, tconf: 1 },   // 1: the groove — a pure 808 on the tonic
-  { note: 1, cents: 0, conf: 1, pure: 0.1, gate: 1, sub: 0.8, bass: 0.8, eG: 0.7, reg: 1, tonic: 1, minor: 1, tconf: 1 },  // 2: the intro — a harmonic mid-bass, overhead
-  { note: -1, cents: 0, conf: 0, pure: 1, gate: 0, sub: 0, bass: 0, eG: 0.25, reg: 0.5, tonic: 1, minor: 1, tconf: 1 },  // 3: the void — no sub at all
-];
-
-// The camera: eye on a circle of radius `dist` at elevation `pitch`, looking at the plate's centre. The basis is
-// (right, up, forward) as the three columns of uCamB, so the plate pass's ray is sc.x·right + sc.y·up + focal·forward.
-function camera(yaw, pitch, dist) {
-  const cp = Math.cos(pitch), sp = Math.sin(pitch);
-  EYE[0] = dist * cp * Math.sin(yaw);
-  EYE[1] = -dist * cp * Math.cos(yaw);
-  EYE[2] = dist * sp;
-  const fx = -EYE[0] / dist, fy = -EYE[1] / dist, fz = -EYE[2] / dist;
-  // right = normalize(forward x worldUp), worldUp = (0, 0, 1) — the plate's own normal
-  let rx = fy, ry = -fx, rz = 0;
-  const rl = Math.hypot(rx, ry) || 1;
-  rx /= rl;
-  ry /= rl;
-  const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
-  BAS[0] = rx; BAS[1] = ry; BAS[2] = rz;
-  BAS[3] = ux; BAS[4] = uy; BAS[5] = uz;
-  BAS[6] = fx; BAS[7] = fy; BAS[8] = fz;
-}
-
-// test hook: pin the fractional interval (0..12, fractional allowed). Called with nothing or < 0, it releases.
-function figure(v) {
-  figPin = v === null || v === undefined || +v < 0 ? -1 : +v % NFIG;
-  return figPin;
-}
-
-// test hook: pin the ears to a preset — #test's fake timeline never fills subNote / subGate / subPure / tonic, and the
-// harness has no &fix= hash param (docs/workers/chladni.md friction 1), so a headless md5 or montage says &ears=1.
-function ears(v) {
-  earsPin = v === null || v === undefined || +v < 1 ? -1 : Math.min(PRESETS.length, +v | 0);
-  return earsPin;
-}
-
-// The view-projection for the sand's points, column-major, built from the same yaw / pitch / dist as the plate's ray
-// cast so a grain and the line it sits on are drawn by the same camera. Right-handed, looking down -z in view space.
-function lookVP(m, aspect, focal) {
-  const rx = BAS[0], ry = BAS[1], rz = BAS[2], ux = BAS[3], uy = BAS[4], uz = BAS[5], fx = BAS[6], fy = BAS[7], fz = BAS[8];
-  const de = fx * EYE[0] + fy * EYE[1] + fz * EYE[2];
-  const A = (FAR + NEAR) / (NEAR - FAR), Bp = (2 * FAR * NEAR) / (NEAR - FAR), sx = focal / aspect;
-  m[0] = sx * rx; m[4] = sx * ry; m[8] = sx * rz; m[12] = -sx * (rx * EYE[0] + ry * EYE[1] + rz * EYE[2]);
-  m[1] = focal * ux; m[5] = focal * uy; m[9] = focal * uz; m[13] = -focal * (ux * EYE[0] + uy * EYE[1] + uz * EYE[2]);
-  m[2] = -A * fx; m[6] = -A * fy; m[10] = -A * fz; m[14] = A * de + Bp;
-  m[3] = fx; m[7] = fy; m[11] = fz; m[15] = -de;
-}
 
 // test hook, read-only: the settle instrument — the fraction of the sand within DELTA of a nodal line, by one byte
 // readback of a pass over the grain texture (a pipeline stall, so it is only ever called from a harness eval).
@@ -164,17 +108,14 @@ function settle() {
 // reports must not mutate). `set` / `air` come from the settle instrument — a readback, so a pipeline stall, which is
 // why it is here and never in update()/draw(): only a trace calls dinfo.
 //
-// `kH` is the number the eye actually reads for "how high that kick throws the sand": the shaders' leap is
-// z = v·w·a − g·a²/2, whose PEAK is (v·w)²/(2g), so the throw height is QUADRATIC in the kick's size. A size of 0.63
-// throws 0.40x as high as a size of 1.0 — which is why §73's move of `kickVel` from a saturated 1.0 to an honest rank
-// is a much bigger visual change than the field's own numbers suggest. `w` here is the median grain's
-// (the hash's mean is 1.0 and |u|'s is taken at the 0.55 floor, so this is the conservative figure).
+// `kH` is what the eye reads for "how high that kick throws the sand": the leap's PEAK, (v·w)²/(2g), at the median
+// grain's `w` (the hash's mean is 1.0 and |u| is taken at its 0.55 floor, so it is the conservative figure).
 function dinfo() {
   const sc = SELF;
   const st = sc.sand && sc.ctx ? sc.sand.settle(SU, sc.ctx.budget('points')) : { settled: 0, air: 0 };
   const w = (sc.pLeap === undefined ? LEAPK : sc.pLeap) * 0.55;
-  return { kAge: U.kickAge, kVel: U.kickVel, kH: (U.kickVel * w) * (U.kickVel * w) / (2 * GRAV),
-    kJ: KICKJ * U.kickVel, snF: U.snF, snR: U.snR, ripD: U.ripD,
+  return { kAge: U.kickAge, kVel: U.kickSz, kH: (U.kickSz * w) * (U.kickSz * w) / (2 * GRAV),
+    kJ: KICKJ * U.kickSz, snF: U.snF, snR: U.snR, ripD: U.ripD,
     amp: U.amp, drive: U.drive, gate: U.gate, lift: U.lift, spiral: U.spiral, glow: U.glow, fog: U.fog,
     s: U.s, h: U.h, bnd: U.bnd, away: U.away, hue: U.hue, pitch: U.pitch, dist: U.dist,
     set: st.settled, air: st.air };
@@ -182,7 +123,7 @@ function dinfo() {
 
 // test hook, read-only (CONTRACTS §1.4: a hook that reports must not mutate): the live look numbers.
 function info() {
-  return JSON.stringify({ s: +U.s.toFixed(4), fig: U.fig, h: +U.h.toFixed(3), bnd: +U.bnd.toFixed(3), away: +U.away.toFixed(3), amp: +U.amp.toFixed(4), gate: +U.gate.toFixed(3), lift: +U.lift.toFixed(3), spiral: +U.spiral.toFixed(3), glow: +U.glow.toFixed(3), fog: +U.fog.toFixed(3), note: U.note, win: SELF.win === undefined ? -1 : SELF.win, tonic: U.tonic, hue: +U.hue.toFixed(4), yaw: +U.yaw.toFixed(4), pitch: +U.pitch.toFixed(4), dist: +U.dist.toFixed(4), drive: +U.drive.toFixed(4), figPin, earsPin });
+  return JSON.stringify({ s: +U.s.toFixed(4), fig: U.fig, h: +U.h.toFixed(3), bnd: +U.bnd.toFixed(3), away: +U.away.toFixed(3), amp: +U.amp.toFixed(4), gate: +U.gate.toFixed(3), lift: +U.lift.toFixed(3), spiral: +U.spiral.toFixed(3), glow: +U.glow.toFixed(3), fog: +U.fog.toFixed(3), note: U.note, win: SELF.win === undefined ? -1 : SELF.win, tonic: U.tonic, hue: +U.hue.toFixed(4), yaw: +U.yaw.toFixed(4), pitch: +U.pitch.toFixed(4), dist: +U.dist.toFixed(4), drive: +U.drive.toFixed(4), figPin: PINS.fig, earsPin: PINS.ears });
 }
 
 const SELF = {
@@ -193,7 +134,7 @@ const SELF = {
   feats: ['subNote', 'subCents', 'subConf', 'subGate', 'subPure', 'sub', 'eG', 'mapOn', 'bassReg',
     'lpSweep', 'tonic', 'tonicMinor', 'tonicConf', 'key', 'mode', 'keyConf', 'valence', 'harmAngle', 'beatPhase',
     'beatCount', 'pulse', 'hush', 'calm', 'flow', 'buildProg', 'dropConf',
-    'kickEvt', 'kickAge', 'kickVel', 'bass', 'hatAge', 'hatVel', 'snareAge', 'snareVel', 'mapDropEvt', 'dropEvt',
+    'kickEvt', 'kickAge', 'kickAmp', 'bass', 'hatAge', 'hatVel', 'snareAge', 'snareAmp', 'mapDropEvt', 'dropEvt',
 ],
   cuts: 'continuous',
   rt: {},
@@ -230,40 +171,10 @@ const SELF = {
     camera(0, PITCH_SUB, DIST_SUB);
   },
 
-  // Read the ears once, through the pin, so update() has one source. #test leaves the new fields at their defaults
-  // (subNote −1, subGate 0, tonic −1), which is why &ears= exists at all.
-  readEars(MS) {
-    const P = earsPin > 0 ? PRESETS[earsPin - 1] : null;
-    if (P) {
-      Object.assign(EARS, P);
-      return EARS;
-    }
-    EARS.note = MS.subNote | 0;
-    EARS.cents = MS.subCents;
-    EARS.conf = MS.subConf;
-    EARS.pure = MS.subPure;
-    EARS.gate = MS.subGate;
-    EARS.sub = MS.sub;
-    EARS.bass = MS.bass;
-    EARS.eG = MS.eG;
-    EARS.reg = MS.bassReg;
-    // the tonic, latched: a raw reading feeds a slow vote, and a challenger must beat the sitting tonic by TONMARG
-    const T = this.tvote, dec = Math.exp(-this.lastDt / TONTC);
-    for (let k = 0; k < NFIG; k++) T[k] *= dec;
-    if (MS.tonic >= 0) T[MS.tonic | 0] += this.lastDt * Math.max(0.05, MS.tonicConf);
-    let bt = 0;
-    for (let k = 1; k < NFIG; k++) if (T[k] > T[bt]) bt = k;
-    if (T[bt] > TONMIN && (this.ton < 0 || (bt !== this.ton && T[bt] > TONMARG * T[this.ton]))) this.ton = bt;
-    EARS.tonic = this.ton >= 0 ? this.ton : MS.tonic >= 0 ? MS.tonic | 0 : MS.keyConf > KEYC ? MS.key | 0 : 0;
-    EARS.minor = MS.tonic >= 0 ? MS.tonicMinor | 0 : MS.mode | 0;
-    EARS.tconf = MS.tonic >= 0 ? MS.tonicConf : MS.keyConf;
-    return EARS;
-  },
-
   update(dt, MS, GROOVE, LOOK, env) {
     const P = env.params;                // §1.16: exactly from(view) while nothing is routed
     this.lastDt = dt;                    // readEars() runs the tonic's vote and needs the step (it is called with MS only)
-    const E = this.readEars(MS);
+    const E = readEars(this, MS);
     U.tonic = E.tonic;
     U.note = E.note;
 
@@ -271,8 +182,8 @@ const SELF = {
     // a slide by construction: subCents is cents from the NEAREST note, so when the note flips at the halfway point the
     // cents flip the other way and interval + cents/100 does not move. The ease takes the short way round the twelve
     // (a note jump is a fast morph, not a cut) and holds the last figure while the sub is gone.
-    if (figPin >= 0) {
-      U.s = figPin;
+    if (PINS.fig >= 0) {
+      U.s = PINS.fig;
     } else {
       // Per FRAME the ears' pitch wanders — and so does the truth's own grain track: the 808's attack and decay read
       // as G1 / D1 between the C#1 body, so C#1 is only ~62 % of the groove's grains in tools/truth/SeeYouDrop.json
@@ -330,11 +241,23 @@ const SELF = {
     // shaders.js), so the throw is placed to a fraction of a frame and is the same in every run at the same age;
     // nothing about it is integrated. Appendix A warns the age may go slightly negative on the release frame after
     // EARS pass 2 — clamp it. The kick touches no figure and no colour: one element, one channel.
+    //
+    // THE SIZE IS `kickAmp`, AND IT GOES IN AS AN ENERGY (§74). Two measured reasons, both of which the v0.25 look
+    // hid because `kickVel` was pinned at 1.0 on 83-87 % of its hits:
+    //   (a) `kickVel` is a CONT history field and the ears read one by interpolating the ring AT heard time, while an
+    //       onset's audio time is ~16 ms BEFORE the hop that found it — so ON THE EVENT FRAME it still holds the
+    //       PREVIOUS hit's velocity (§70). Armed there, it correlates 0.172 with the hit it is throwing for;
+    //       `kickAmp`, which rides the released event, correlates 0.986 (CyborgNinja 20-50 s, 85 kicks).
+    //   (b) the leap's peak height is (v·w)² / 2g, so a 0-1 field fed in as a LAUNCH VELOCITY is read SQUARED. The
+    //       brief's channel is the HEIGHT, so the size is the throw's ENERGY and its square root the velocity: at a
+    //       size of 1 this is exactly the validated v0.15 throw, so the loud hits keep the look they were tuned at
+    //       and only the soft ones come down. The scatter (CH_KICKJ) is a velocity too and takes the same root.
     U.kickAge = Math.max(0, MS.kickAge);
-    if (MS.kickEvt) U.kickVel = clamp(MS.kickVel, 0, 1.5);
+    if (MS.kickEvt) U.kickSz = Math.sqrt(clamp(Math.max(KSFLOOR, MS.kickAmp), 0, 1.5));
     // THE DROP'S SLAM — the map knows the drop's exact bar line, so the sand is thrown on that frame and lands into
-    // the root figure a beat later. It rides the kick's own ballistic channel: one throw, one mechanism.
-    if (MS.mapDropEvt || (MS.mapOn <= 0.5 && MS.dropEvt)) { U.kickAge = 0; U.kickVel = DROPV; }
+    // the root figure a beat later. It rides the kick's own ballistic channel: one throw, one mechanism. DROPV is a
+    // launch VELOCITY, not a size, so it is unchanged by the energy reading above: the slam throws 5.8x plate height.
+    if (MS.mapDropEvt || (MS.mapOn <= 0.5 && MS.dropEvt)) { U.kickAge = 0; U.kickSz = DROPV; }
 
     // 3c. SNARE and HAT — a second and third hit channel that never touch the figure or the sub's own channels.
     // The hat is a fine high-mode ripple travelling out across the surface (the user's "skinnier waves" at 50-57 s);
@@ -344,7 +267,12 @@ const SELF = {
     U.ripD = RIPD * clamp(MS.hatVel, 0, 1.5);
     const sa = Math.max(0, MS.snareAge);
     U.snR = SNSPD * sa;
-    U.snF = SNAMP * clamp(MS.snareVel, 0, 1.5) * Math.exp(-sa / SNTC);
+    // the ring's brightness is `snareAmp` (§74), for the same two reasons as the kick's size, minus the square:
+    // brightness is LINEAR in the field, so no root is wanted and SNAMP is unchanged — the loudest hits on
+    // SeeYouDrop and CyborgNinja still reach the validated 0.55 (their per-track p95 is 0.94 / 1.00) and the quiet
+    // masters' loudest read 0.35-0.41, which is §70's whole point: a soft track reads soft. `snareVel` was read on
+    // the frame the event fires, where it is one hit stale exactly as `kickVel` is.
+    U.snF = SNAMP * clamp(MS.snareAmp, 0, 1.5) * Math.exp(-sa / SNTC);
 
     // 4. THE VOID — no sub, so nothing settles: the sand lifts and floats, a soft mid light takes over, and the build
     // spirals what is left inward. `buildProg` in file mode, `dropConf` live (Appendix A's fallback).
@@ -391,7 +319,7 @@ const SELF = {
     const nh = E.note >= 0 ? NOTEHUE * wrap((((7 * E.note) % 12) - ((7 * E.tonic) % 12)) / 12) : 0;
     U.hue = ema(U.hue, nh, dt, SLIDETC * 4);
     U.glow = P.glow * (GLOWQ + (1 - GLOWQ) * clamp(0.3 + U.amp, 0, 1));
-    U.fog = P.fog;
+    U.fog = ema(U.fog, P.fog, dt, FOGTC);      // the knee is in params.fog's own from(); this is its ease (FOGTC)
 
     // the sand's own block: one place the state pass and the settle instrument both read
     SU.s = U.s;
@@ -405,7 +333,7 @@ const SELF = {
     SU.lift = U.lift;
     SU.spiral = U.spiral;
     SU.kickAge = U.kickAge;
-    SU.kickVel = U.kickVel;
+    SU.kickSz = U.kickSz;
     this.pLeap = P.leap;                 // draw() has no env.params, so the two the shaders need are held here
     this.pSand = P.sand;
 
@@ -415,7 +343,7 @@ const SELF = {
     st.cPath[0] = U.yaw;
     st.cPath[1] = U.pitch;
     st.mode = U.bnd > 0.5 ? 'round' : 'square';
-    st.kick.x = U.kickVel * Math.exp(-U.kickAge * 6);   // the monitor's declared cut: a kick is allowed to jump
+    st.kick.x = U.kickSz * Math.exp(-U.kickAge * 6);    // the monitor's declared cut: a kick is allowed to jump
   },
 
   draw(target, { w, h }) {
@@ -426,7 +354,7 @@ const SELF = {
     ctx.use(pr, target, w, h);
     g.uniform3f(pr.u('uEye'), EYE[0], EYE[1], EYE[2]);
     g.uniformMatrix3fv(pr.u('uCamB'), false, BAS);
-    g.uniform2f(pr.u('uLens'), 1 / Math.tan(FOV * 0.5), ASP);
+    g.uniform2f(pr.u('uLens'), FOCAL, ASP);
     g.uniform4f(pr.u('uFig'), U.s, U.h, U.bnd, LINEW);
     g.uniform4f(pr.u('uDyn'), U.amp, U.glow, U.ripD, U.snF);
     g.uniform4f(pr.u('uHue'), U.hue, ANTIHUE, U.fog, U.lift);
@@ -443,14 +371,14 @@ const SELF = {
   grains(target, w, h, count) {
     const ctx = this.ctx, g = ctx.gl, pr = this.prDraw;
     if (!pr || !pr.p) return;
-    lookVP(this.vp, ASP, 1 / Math.tan(FOV * 0.5));
+    lookVP(this.vp, ASP, FOCAL);
     ctx.use(pr, target, w, h);
     ctx.tex(pr, 'uPos', 0, this.sand.tex());
     g.uniformMatrix4fv(pr.u('uVP'), false, this.vp);
     g.uniform2f(pr.u('uGrid'), this.sand.grid[0], this.sand.grid[1]);
     g.uniform2f(pr.u('uRes'), w, h);
     g.uniform4f(pr.u('uFig'), U.s, U.h, U.bnd, 0);
-    g.uniform4f(pr.u('uLeap'), U.kickAge, U.kickVel, GRAV, this.pLeap);
+    g.uniform4f(pr.u('uLeap'), U.kickAge, U.kickSz, GRAV, this.pLeap);
     g.uniform4f(pr.u('uSand'), PTPX, SANDB * (0.55 + 0.45 * Math.min(1, U.amp + U.lift)), U.gate, U.lift);
     g.uniform4f(pr.u('uHue'), U.hue, ANTIHUE, U.fog, U.lift);
     g.uniform3f(pr.u('uMood'), MOOD[0], MOOD[1], MOOD[2]);
@@ -482,7 +410,7 @@ const SELF = {
     leap: { eli5: 'how high a kick throws the sand', range: [0, 14], from: () => LEAPK },
     tilt: { eli5: 'how far the coming drop has tilted the camera up off the plate', range: [0, TILTB], from: (MS) => TILTB * (MS.buildProg * (MS.mapOn > 0.5 ? 1 : 0) + MS.dropConf * (MS.mapOn > 0.5 ? 0 : 1)) },
     glow: { eli5: 'how brightly the nodal lines glow when the plate is driven hard', range: [0, 1.6], from: () => GLOW0 },
-    fog: { eli5: 'how much fog the closing low-pass has put over the plate', range: [0, 1], from: (MS) => MS.lpSweep },
+    fog: { eli5: 'how much fog the closing low-pass has put over the plate', range: [0, 1], from: (MS) => sstep(FOGLO, FOGHI, MS.lpSweep) },
   },
 
   // look memory (CONTRACTS §1.11): a section that returns gets its plate shape back, so the outro's walk comes back

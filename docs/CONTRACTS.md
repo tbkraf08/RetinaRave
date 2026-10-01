@@ -593,9 +593,25 @@ are the scene author's rules:
   this track" — the right question for a RANK, the wrong one for a SIZE that must look the same on every track — and
   `*Amp` answers it with one absolute dB mapping. Both are published and nothing in §73 moved a scene.
   **So a scene with its own picker-quality judgement may now fire on the EVENT ALONE and take its size from `*Amp`**,
-  which is what DUST's flash ring and TORUS2's snare wave do since §70: the level `snare2` is still published and still
-  routable, it is simply no longer the only thing that knows how big a hit was. `hatAmp` does not exist — the hat is the
-  one class still on the HPSS-lite flux, which has no rise in dB to publish.
+  which is what DUST's flash ring and TORUS2's snare wave do since §70 and CHLADNI's sand throw and plate ring do since
+  §74: the level `snare2` is still published and still routable, it is simply no longer the only thing that knows how
+  big a hit was. `hatAmp` does not exist — the hat is the one class still on the HPSS-lite flux, which has no rise in dB
+  to publish.
+- **NEVER read `*Vel` ON the frame its event fires — there it is the PREVIOUS hit's velocity.** `kickVel` / `snareVel` /
+  `hatVel` are `CONT` history fields and the ears read one by interpolating the history ring AT heard time, while an
+  onset's audio time is about **16 ms BEFORE the hop that found it** (§70). So on the release frame the ring still holds
+  the hit before. Measured on CyborgNinja 20–50 s, 85 kicks (DECISIONS §74): the velocity read on the event frame
+  correlates **0.172** with the velocity of the hit it is arming — noise — while `kickAmp`, which rides the released
+  event (`perc.js emit(c, t, vel, amp)` → `lastAmp[cls]`), correlates **0.986** and changes on event frames and on no
+  others. Up to v0.25 this was invisible because `*Vel` was pinned at 1.0 on 46–87 % of hits; §73 made the field honest
+  and so made the staleness bite. **A scene that arms a one-shot on an event therefore sizes it from `*Amp`**; a scene
+  that reads the velocity continuously (a few frames in) gets the right hit, which is what the ring in CHLADNI did
+  before §74 and why its PEAK frame was the wrong one.
+- **A 0–1 size fed in as a VELOCITY is read by the eye SQUARED.** Any ballistic channel — a throw, a leap, a launched
+  front — has peak height (v·w)²/2g, so a field of 0.55 fed in as `v` shows 0.30 of the full motion, not 0.55. Decide
+  which quantity the FIELD names: if it is the height (CHLADNI's brief says "how high that kick throws the sand"), the
+  field is the throw's ENERGY and its square root is the velocity, which also keeps the look a scene was tuned at when
+  its size used to be pinned at 1 (DECISIONS §74).
 - **A travelling front must be launched where the thing it lights actually is.** A shell expanding from the origin reaches
   a feature at radius r only after r / speed: DUST's snare ring was 0.24 s late to the sphere's grains until §58 launched
   it on the band's own radius. Geometry is latency too.
@@ -607,6 +623,14 @@ are the scene author's rules:
 - **Anticipation only from what is known.** In file mode (`mapOn` 1) `toDrop`, `buildProg`, `toBoundary`, `mapNext` are the
   track's own future: wind up exactly to `mapDropEvt`. In live modes `mapOn` is 0 — fall back to `dropConf`, `dropExpectedIn`,
   `build`, `dropEvt`, and never invent a countdown.
+- **`lpSweep` is a RELATIVE measure, so its middle means nothing — only its top does.** The field is
+  `clamp01(1 − roll / roll's own running p90)`, so by construction a track normally sits part of the way up it: over
+  the whole of the five tracks its p50 is **0.35 / 0.55 / 0.73 / 0.41 / 0.35** and it is above 0.5 on **27–74 %** of
+  every track's frames, while a genuinely closing filter reads **0.94–0.98** (SeeYouDrop's last 20 s p50 0.956 against
+  0.371 for the rest; on CyborgNinja, WhoLikesToParty and Malicious the last 20 s read LOWER than the body). A channel
+  driven by the raw field is therefore on nearly all the time. Take it through a KNEE (CHLADNI: `smoothstep(0.80, 0.97, ·)`,
+  §74) and EASE the result: the raw field steps by **0.13–0.20 in one frame** at its p99, which is a jump under §1.9.
+  Dead until DECISIONS §73 fixed `dsp.js`'s quantile sign, so nothing before v0.26 was tuned against it.
 - **Silence is quiet.** `subGate` 0 / `presence` low means the channel it drives rests; no carrier animation.
 - **Pitch against the tonic.** `tonic` / `tonicMinor` include the sub's root; the interval of the bass is
   `((subNote − tonic + 12) % 12) + subCents/100` (`subCents` is from the nearest note). **Since §62 `key` / `mode` ARE
@@ -916,7 +940,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
 | `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
 | `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
-| `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
+| `lpSweep` | level | how closed a low-pass is RELATIVE to this track's own recent brightest (1 = the highs are gone); its p50 is 0.35-0.73 on normal material, a real closing filter 0.94-0.98 | blur, softness, the outro's closing filter - through a knee near the top of the range and eased (§1, §74) |
 | `width` | level | how wide the stereo image is | spread, how far the figure reaches off-centre |
 | `kickEvt` | event | a kick just hit (one read) | the hit: a flash, a shove, a ring |
 | `snareEvt` | event | a snare or clap just hit | a second, different hit channel |
@@ -924,11 +948,11 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kickAge` | raw | seconds since the last kick (99 before any; slightly NEGATIVE on the frame it fires) | place a fast animation exactly, sub-frame |
 | `snareAge` | raw | seconds since the last snare (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
 | `hatAge` | raw | seconds since the last hat (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
-| `kickVel` | level | how hard the last kick hit, against this track's own loudest kicks | amplitude of the hit, ranked within the track |
-| `snareVel` | level | how hard the last snare hit, against this track's own loudest snares | amplitude of the hit, ranked within the track |
+| `kickVel` | level | how hard the last kick hit, against this track's own loudest kicks | amplitude of the hit, ranked within the track - NOT on the event frame, where it is still the previous hit's (§1) |
+| `snareVel` | level | how hard the last snare hit, against this track's own loudest snares | amplitude of the hit, ranked within the track - NOT on the event frame (§1) |
 | `hatVel` | level | how hard the last hat hit, against this track's own loudest hats | amplitude of the hit, ranked within the track |
-| `kickAmp` | level | how big the last kick was, on an absolute dB scale (the same hit reads the same on every track) | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength |
-| `snareAmp` | level | how big the last snare was, on an absolute dB scale (the same hit reads the same on every track) | as kickAmp - DUST's flash ring and TORUS2's snare wave take their size from it |
+| `kickAmp` | level | how big the last kick was, on an absolute dB scale (the same hit reads the same on every track); changes ONLY on an event frame, and never reads under the lane's own 0.31 after the first hit | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength, CHLADNI's sand throw (as its ENERGY - §1, §74) |
+| `snareAmp` | level | how big the last snare was, on an absolute dB scale (the same hit reads the same on every track) | as kickAmp - DUST's flash ring, TORUS2's snare wave and CHLADNI's plate ring take their size from it |
 | `denK` | raw | kicks per second over the last second | busy-ness of the low end |
 | `denS` | raw | snares per second over the last second | the climbs: 1.7x the groove on this track |
 | `denH` | raw | hats per second over the last second | double time, the rising intro |
@@ -948,7 +972,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `predKickEvt` | event | a kick is PREDICTED on this 16th, released on time (before the audio when the capture path lags) | hit a kick motion ON the beat instead of 38-52 ms after it |
 | `predSnareEvt` | event | a snare is predicted on this 16th | snare motion on time |
 | `predHatEvt` | event | a hat is predicted on this 16th | hat motion on time |
-| `predKickAge` | raw | seconds since the last PREDICTED kick (99 before any; within half a frame of 0 on its frame) | place a kick animation from the prediction (CHLADNI route: chladni.kickAge=predKickAge) |
+| `predKickAge` | raw | seconds since the last PREDICTED kick (99 before any; within half a frame of 0 on its frame) | place a kick animation from the prediction (CHLADNI route: chladni.kickAge=predKickAge - it carries no size, so the throw keeps the LAST REAL kick's `kickAmp`, floored at the lane's own 0.31 before there is one: measured 24 predicted throws in SeeYouDrop 60-80 s, size p50 0.69, lumC lift p50 +66, nothing invisible) |
 | `predSnareAge` | raw | seconds since the last predicted snare | snare animation from the prediction |
 | `predHatAge` | raw | seconds since the last predicted hat | hat animation from the prediction |
 | `predKick` | level | the predicted kick, decaying over 0.16 s (1 on the predicted hit) | a kick-level channel on time (TORUS2 route: torus2.kick=predKick) |
