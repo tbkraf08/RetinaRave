@@ -712,6 +712,38 @@ after the clear — TORUS2 must be on screen (its `update()` refreshes `env.para
 nextHatIn,nextDropIn,nextKickConf,nextKickUp,predKickIn,buildLive,dropLiveIn,queueN' node tools/caplag.js track SeeYouDrop 0 110 27` (AUDIBLE;
 `beatPhase`, `beat`, `bpm`, `leadT`, `kickEvt` … are already in caplag's FIELDS — naming them again doubles their columns).
 
+## Loudness — the BS.1770 ruler (`tools/truth/trackmap.py --loud`, `assets/engine/loud.js`, `features-loud.js`)
+
+"How loud does this sound" has one measure with a standard behind it — **ITU-R BS.1770-4 K-weighting** (a +4 dB high shelf,
+then an RLB high-pass, per channel, and a mean square: `L = −0.691 + 10·log10(Σ_ch mean(y_ch²))`, `G_L = G_R = 1`) — and the
+engine's AGC-normalised energies (`eM`, `eS`, `lvl`, `eMax`) actively lie about it: on SeeYouDrop's breakdown 2 → drop 2 pair
+`eM` reads ×0.994 where the music is **+2.88 LU louder** (DECISIONS §63). The OFFLINE reference is `--loud`; the engine's
+causal copy of the same measure is the `loud` stage.
+
+```
+python3 tools/truth/trackmap.py SeeYouDrop --loud            # -> tools/truth/SeeYouDrop.loud.json + the section ladder
+python3 tools/truth/trackmap.py Vienna --loud --loud-out=tools/work [--loud-win=5.1]
+node tools/test_loud.js                                     # in npm test: the stage against the spec (synthetic only, ~1 s)
+node tools/test_loud.js --truth                              # + the five tracks: the stage against <name>.loud.json, and the
+                                                             #   truth-graded breakdown -> drop ratios (needs the --pcm dumps)
+python3 tools/truth/trackmap.py <Track> --pcm --sr=48000      # the dumps --truth reads (tools/work/<Track>.48000.st.f32)
+```
+`--loud` runs **only** the loudness analysis: it reads `tools/truth/<name>.json` (sections, drops) and writes
+`<name>.loud.json` — it never rewrites `<name>.json`, so it is safe on a track another worker is annotating (`--loud-out=`
+puts the file elsewhere). The JSON carries the whole momentary (400 ms) and short-term (3 s) contours on a 10 ms hop
+(`contour.mom` / `contour.short`, `null` where the window is not yet full), the gated integrated loudness, the section
+ladder and, per bar-pinned drop, the equal-window breakdown/drop pair. The 48 kHz biquads are the spec's table; every other
+rate comes from the same bilinear recipe, which reproduces that table to **9e-16** (asserted in both the python and the node
+tool). Measured (2026-09-30): SeeYouDrop integrates to **−3.88 LKFS**, CyborgNinja −9.05, WhoLikesToParty −10.03,
+Malicious −12.46, Vienna −6.89; short-term p95−p10 4.96 / 1.37 / 2.86 / 7.82 / 3.25 LU.
+
+In the page the fields are `loudM` `loudS` `loudPk` `loudRel` `loudRange` `loudAbs` (Appendix A). **`loudRel` is the one a
+scene reads**: it is a difference of two loudnesses, so a constant gain cancels and it behaves identically in file and
+capture mode, where `loudM` / `loudS` / `loudPk` are only as absolute as the tab's own mixer (`loudAbs` = 1 absolute,
+0 relative, −1 the stage is off). `&loud=0` turns the stage off and every migrated scene falls back to the `lvl` formula it
+had before — the A/B, and the receipt that the migration is the only thing that moved (the `#test` md5 list under `&loud=0`
+is the pre-migration list, line for line).
+
 ## Clock — the beat clock on the PCM bus (live step 6; a change to `engine/clock/`, `features-clock.js`, the ears' onsets, or anything that reads `bpm` / `beatPhase` / `beat` / `beatCount`)
 
 Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatCount` — the PLL on the frame-rate flux, the default until 2026-09-30 — the PCM clock is the default since §56 addendum 3; `&clock=v3` brings v3's back

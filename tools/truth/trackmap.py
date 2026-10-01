@@ -8,6 +8,8 @@ numpy + scipy + soundfile, whole-file STFTs, no causal constraint, no AGC.
     python3 tools/truth/trackmap.py SeeYouDrop --pcm      # also dump mono float32 PCM to tools/work/<name>.f32 (node tests)
     python3 tools/truth/trackmap.py CyborgNinja Malicious --brief   # one summary line per track
     python3 tools/truth/trackmap.py SeeYouDrop --grains=8,5,3,2,1,0.569,0.224   # the default grains (s); one table per grain
+    python3 tools/truth/trackmap.py SeeYouDrop --loud    # ONLY the BS.1770 loudness reference -> tools/truth/<name>.loud.json
+                                                         # --loud-out=<dir> writes elsewhere; --loud-win=<s> the drop-pair window (5.1)
 
 Grains: every grain gets a table in tools/truth/<name>/grain-<g>.txt and a list under "slices" in the JSON (keyed by the grain);
 the 5 s table also goes to stdout. A grain uses the longest STFT window <= 40 % of itself (16384 / 8192 / 4096), so a slice is not
@@ -262,6 +264,150 @@ def find_slides(f0, voiced, fps):
                                 **{'from': round(float(f0[i]), 2), 'to': round(float(f0[j2]), 2)}))
                 i = j2 + 1; continue
         i += 1
+    return out
+
+# ---------------------------------------------------------------------------------------------------------------------
+# THE LOUDNESS REFERENCE (--loud, 2026-09-30, docs/plans/LOUDNESS-PLAN.md phase 1). ITU-R BS.1770-4 K-weighting:
+# a +4 dB high shelf, then an RLB high-pass, per channel, and a mean square:
+#     L = -0.691 + 10*log10( sum_ch G_ch * mean(y_ch^2) ),  G_L = G_R = 1.0
+# The spec tabulates the two biquads at 48 kHz ONLY; every other rate comes from the same bilinear recipe below
+# (the shelf's analog prototype at fc 1681.974450955533 Hz / Q 0.7071752369554196 / G 3.999843853973347 dB and the
+# high-pass's at fc 38.13547087602444 Hz / Q 0.5003270373238773), which reproduces the tabulated 48 kHz constants to
+# 1e-12 — asserted by K48 below and by tools/test_loud.js case `coef48`. This is the measure the engine's
+# assets/engine/loud.js implements causally; the two are graded against each other to 0.1 LU.
+# Nothing here touches any other output of this file: --loud writes ONLY <name>.loud.json and never <name>.json.
+K48 = dict(shelf=(1.53512485958697, -2.69169618940638, 1.19839281085285, -1.69065929318241, 0.73248077421585),
+           hp=(1.0, -2.0, 1.0, -1.99004745483398, 0.99007225036621))
+LOUD_OFS = -0.691                      # the spec's offset, so a full-scale 997 Hz stereo sine reads ~0 LKFS
+MOM_W, SHORT_W = 0.4, 3.0              # the momentary and short-term windows (s)
+GATE_ABS, GATE_REL = -70.0, -10.0      # the integrated measure's absolute gate (LKFS) and relative gate (LU below the ungated mean)
+LOUD_HOP = 0.01                        # the hop the loud.json contours are sampled on (s): 10 ms, ~7 x the engine's frame
+
+def kcoef(sr):
+    """The two K-weighting biquads at `sr` as (b0, b1, b2, a1, a2), a0 normalised to 1."""
+    import math
+    G, Qs, fs_ = 3.999843853973347, 0.7071752369554196, 1681.974450955533
+    K = math.tan(math.pi * fs_ / sr)
+    Vh = 10 ** (G / 20.0); Vb = Vh ** 0.4996667741545416
+    a0 = 1.0 + K / Qs + K * K
+    shelf = ((Vh + Vb * K / Qs + K * K) / a0, 2.0 * (K * K - Vh) / a0, (Vh - Vb * K / Qs + K * K) / a0,
+             2.0 * (K * K - 1.0) / a0, (1.0 - K / Qs + K * K) / a0)
+    Qh, fh = 0.5003270373238773, 38.13547087602444
+    K = math.tan(math.pi * fh / sr)
+    a0 = 1.0 + K / Qh + K * K
+    hp = (1.0, -2.0, 1.0, 2.0 * (K * K - 1.0) / a0, (1.0 - K / Qh + K * K) / a0)
+    return dict(shelf=shelf, hp=hp)
+
+def kweight(x, sr):
+    """x (n, ch) -> the K-weighted signal, same shape. Zero-phase is WRONG here: the spec's filters are causal IIR."""
+    from scipy.signal import lfilter
+    c = kcoef(sr); y = np.asarray(x, dtype=np.float64)
+    for b0, b1, b2, a1, a2 in (c['shelf'], c['hp']):
+        y = lfilter([b0, b1, b2], [1.0, a1, a2], y, axis=0)
+    return y
+
+def loud_windows(x, sr, hop=LOUD_HOP):
+    """-> (t, momentary, short_term, z400, blocks_t) in LKFS on a `hop` grid, plus the gated integrated loudness.
+    The window sums come from a cumulative sum of the K-weighted squares, so a window is two subtractions and the
+    value at t is EXACTLY the mean square over (t - W, t] — the same quantity assets/engine/loud.js keeps in its ring."""
+    y = kweight(x, sr)
+    p = (y * y).sum(1)                                  # sum over channels (G_L = G_R = 1)
+    cs = np.concatenate(([0.0], np.cumsum(p, dtype=np.float64)))
+    n = len(p); dur = n / sr
+    t = np.arange(0.0, dur + 1e-9, hop)
+    def win(W):
+        i1 = np.clip(np.round(t * sr).astype(np.int64), 0, n)
+        i0 = np.clip(i1 - int(round(W * sr)), 0, n)
+        m = np.maximum(i1 - i0, 1)
+        z = (cs[i1] - cs[i0]) / m
+        out = np.full(len(t), -np.inf)
+        ok = (z > 0) & (i1 - i0 >= int(round(W * sr)))   # only a FULL window is a reading
+        out[ok] = LOUD_OFS + 10 * np.log10(z[ok])
+        return out, z
+    mom, _ = win(MOM_W); sh, _ = win(SHORT_W)
+    # the integrated measure: 400 ms blocks, 75 % overlap, the absolute then the relative gate (BS.1770-4 3.2)
+    step = int(round(0.1 * sr)); bl = int(round(MOM_W * sr))
+    i0 = np.arange(0, max(1, n - bl + 1), step); i1 = i0 + bl
+    zb = (cs[i1] - cs[i0]) / bl
+    lb = np.where(zb > 0, LOUD_OFS + 10 * np.log10(np.maximum(zb, 1e-30)), -np.inf)
+    a = lb > GATE_ABS
+    integ = -np.inf
+    if a.any():
+        thr = LOUD_OFS + 10 * np.log10(zb[a].mean()) + GATE_REL
+        g = a & (lb > thr)
+        if g.any(): integ = LOUD_OFS + 10 * np.log10(zb[g].mean())
+    return t, mom, sh, cs, float(integ)
+
+def lkfs_window(cs, sr, t0, t1):
+    """The window-integrated loudness of [t0, t1] (LKFS) from the cumulative square sum."""
+    n = len(cs) - 1
+    i0 = int(np.clip(round(t0 * sr), 0, n)); i1 = int(np.clip(round(t1 * sr), 0, n))
+    if i1 <= i0: return float('-inf')
+    z = (cs[i1] - cs[i0]) / (i1 - i0)
+    return float(LOUD_OFS + 10 * np.log10(z)) if z > 0 else float('-inf')
+
+def pct(v, q):
+    v = v[np.isfinite(v)]
+    return float(np.percentile(v, q)) if len(v) else float('nan')
+
+def loudness(path, outdir=None, win=5.1):
+    """--loud: the BS.1770 reference for one track -> <outdir>/<name>.loud.json + the section ladder on stdout.
+    Reads tools/truth/<name>.json (sections, drops, beats) when it exists; NEVER writes it."""
+    d48 = max(abs(a - b) for k in ('shelf', 'hp') for a, b in zip(kcoef(48000)[k], K48[k]))
+    assert d48 < 1e-12, f'the bilinear recipe disagrees with the spec table at 48 kHz by {d48:.2e}'
+    x, sr = sf.read(path, always_2d=True)
+    if x.shape[1] == 1: x = np.repeat(x, 2, 1)
+    name = os.path.splitext(os.path.basename(path))[0]
+    t, mom, sh, cs, integ = loud_windows(x, sr)
+    dur = x.shape[0] / sr
+    tj = os.path.join(HERE, name + '.json')
+    T = json.load(open(tj)) if os.path.isfile(tj) else {}
+    secs, drops = T.get('sections', []), T.get('drops', [])
+    print(f"{name}: {dur:.1f} s at {sr} Hz, {x.shape[1]} ch — integrated (gated) {integ:+.2f} LKFS; "
+          f"short-term p10 {pct(sh, 10):+.2f} / p50 {pct(sh, 50):+.2f} / p95 {pct(sh, 95):+.2f} LKFS "
+          f"(range p95-p10 {pct(sh, 95) - pct(sh, 10):.2f} LU)")
+    def slab(t0, t1):
+        m = (t >= t0) & (t < t1)
+        return dict(t0=round(t0, 3), t1=round(t1, 3), lkfs=round(lkfs_window(cs, sr, t0, t1), 3),
+                    mom_p50=round(pct(mom[m], 50), 3), short_p50=round(pct(sh[m], 50), 3))
+    ladder = []
+    if secs:
+        print('\nthe section ladder (bar-synchronous sections of <name>.json; LKFS = the window-integrated loudness):')
+        print('   t0      t1     bars id label   LKFS   mom p50  short p50')
+        for s_ in secs:
+            r = slab(s_['t0'], s_['t1']); r.update(id=s_['id'], label=s_['label'], bars=s_['bars']); ladder.append(r)
+            print(f"  {s_['t0']:7.3f} {s_['t1']:7.3f} {s_['bars']:4d} {s_['id']:3d} {s_['label']:5d}  "
+                  f"{r['lkfs']:+7.2f}  {r['mom_p50']:+7.2f}  {r['short_p50']:+7.2f}")
+    pairs = []
+    if drops:
+        print(f"\nthe breakdown -> drop pairs ({win} s windows either side of each bar-pinned drop; "
+              f"+LU = the drop is louder, which is what an AGC-normalised energy cannot say):")
+        print('    drop     breakdown window      drop window        LKFS before / after   dLU   power x')
+        for d in drops:
+            b0, b1 = max(0.0, d - win), d
+            a0, a1 = d, min(dur, d + win)
+            lb = lkfs_window(cs, sr, b0, b1); la = lkfs_window(cs, sr, a0, a1)
+            mb, ma = pct(mom[(t >= b0) & (t < b1)], 50), pct(mom[(t >= a0) & (t < a1)], 50)
+            sb, sa = pct(sh[(t >= b0) & (t < b1)], 50), pct(sh[(t >= a0) & (t < a1)], 50)
+            pairs.append(dict(drop=round(d, 3), win=win, before=dict(t0=round(b0, 3), t1=round(b1, 3), lkfs=round(lb, 3), mom_p50=round(mb, 3), short_p50=round(sb, 3)),
+                              after=dict(t0=round(a0, 3), t1=round(a1, 3), lkfs=round(la, 3), mom_p50=round(ma, 3), short_p50=round(sa, 3)),
+                              d_lu=round(la - lb, 3), d_lu_short=round(sa - sb, 3)))
+            print(f"  {d:7.3f}  {b0:7.3f}-{b1:7.3f}  {a0:7.3f}-{a1:7.3f}   {lb:+7.2f} / {la:+7.2f}   "
+                  f"{la - lb:+5.2f}  x{10 ** ((la - lb) / 10):.3f}")
+    out = dict(track=name, sr=int(sr), ch=int(x.shape[1]), dur=round(dur, 3), hop=LOUD_HOP,
+               spec='ITU-R BS.1770-4 K-weighting, G_L = G_R = 1, L = -0.691 + 10 log10 sum_ch mean(y^2)',
+               momentary_w=MOM_W, short_w=SHORT_W, integrated=round(integ, 3),
+               short=dict(p10=round(pct(sh, 10), 3), p50=round(pct(sh, 50), 3), p90=round(pct(sh, 90), 3), p95=round(pct(sh, 95), 3),
+                          range=round(pct(sh, 95) - pct(sh, 10), 3)),
+               mom=dict(p10=round(pct(mom, 10), 3), p50=round(pct(mom, 50), 3), p95=round(pct(mom, 95), 3)),
+               sections=ladder, pairs=pairs,
+               contour=dict(hop=LOUD_HOP, t0=0.0,
+                            mom=[None if not np.isfinite(v) else round(float(v), 3) for v in mom],
+                            short=[None if not np.isfinite(v) else round(float(v), 3) for v in sh]))
+    d = outdir or HERE
+    os.makedirs(d, exist_ok=True)
+    jp = os.path.join(d, name + '.loud.json'); json.dump(out, open(jp, 'w'))
+    print('\nloud json ->', os.path.relpath(jp), f"({os.path.getsize(jp) / 1024:.0f} KB)")
     return out
 
 def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), show=5, dumpsr=None):
@@ -589,4 +735,9 @@ if __name__ == '__main__':
     gr = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--grains=')), '8,5,3,2,1,0.569,0.224')
     grains = [float(x) if '.' in x else int(x) for x in gr.split(',')]
     ds = next((int(a.split('=', 1)[1]) for a in sys.argv if a.startswith('--sr=')), None)
+    if '--loud' in sys.argv:     # the BS.1770 reference ONLY: writes <name>.loud.json, never <name>.json
+        od = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--loud-out=')), None)
+        lw = float(next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--loud-win=')), 5.1))
+        for a in args: loudness(find(a), outdir=od, win=lw)
+        sys.exit(0)
     for a in args: analyse(find(a), brief='--brief' in sys.argv, pcm='--pcm' in sys.argv, grains=grains, show=5 if 5 in grains else grains[0], dumpsr=ds)
