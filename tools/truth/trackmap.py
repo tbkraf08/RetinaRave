@@ -362,7 +362,11 @@ def loudness(path, outdir=None, win=5.1):
     dur = x.shape[0] / sr
     tj = os.path.join(HERE, name + '.json')
     T = json.load(open(tj)) if os.path.isfile(tj) else {}
-    secs, drops = T.get('sections', []), T.get('drops', [])
+    # A track whose truth has been HAND-CORRECTED wins: `sections_hand` / `drops_user` / `drops_hand` are the
+    # annotating worker's bar-snapped numbers (Vienna's at the time of writing), and grading the engine against the
+    # automatic drop when the human named a different bar would grade the wrong instant. Read-only, as everything here.
+    secs = T.get('sections_hand') or T.get('sections', [])
+    drops = T.get('drops_user') or [d['t'] for d in T.get('drops_hand', [])] or T.get('drops', [])
     print(f"{name}: {dur:.1f} s at {sr} Hz, {x.shape[1]} ch — integrated (gated) {integ:+.2f} LKFS; "
           f"short-term p10 {pct(sh, 10):+.2f} / p50 {pct(sh, 50):+.2f} / p95 {pct(sh, 95):+.2f} LKFS "
           f"(range p95-p10 {pct(sh, 95) - pct(sh, 10):.2f} LU)")
@@ -370,6 +374,10 @@ def loudness(path, outdir=None, win=5.1):
         m = (t >= t0) & (t < t1)
         return dict(t0=round(t0, 3), t1=round(t1, 3), lkfs=round(lkfs_window(cs, sr, t0, t1), 3),
                     mom_p50=round(pct(mom[m], 50), 3), short_p50=round(pct(sh[m], 50), 3))
+    if secs and 't1' not in secs[0]:                      # `sections_hand` carries t0 / label / id only
+        for i, s_ in enumerate(secs):
+            s_ = dict(s_); s_['t1'] = secs[i + 1]['t0'] if i + 1 < len(secs) else dur
+            s_.setdefault('bars', 0); secs[i] = s_
     ladder = []
     if secs:
         print('\nthe section ladder (bar-synchronous sections of <name>.json; LKFS = the window-integrated loudness):')
