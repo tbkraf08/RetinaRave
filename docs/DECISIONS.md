@@ -3923,3 +3923,108 @@ the end of the statement line rather than above it, because the file was at 349 
 **md5** (`IDS=5`, errs []): s5-f360 `06b46063` → **`4bcf26a3`**, s5-f840 `cccb0094` → **`c7469414`**; **`&loud=0`
 reads `06b46063` / `cccb0094`, v0.14's own two lines.** The stroke's own ratio on the headline pair:
 **×1.272 → ×1.532**.
+
+#### Phase 5 end to end — the fake-timeline sweep, and the cost in the page
+
+`PORT=8892 tools/scene-md5.sh p5all`, all 12 ids, `errs []` and `hop 840 row 72` on every one. **Exactly the three
+migrated scenes' six lines moved and nothing else**, against `tools/accept/v0.14/scene-md5-v014.txt`:
+
+| | f360 | f840 |
+|---|---|---|
+| s2 MANDALA | `9a57626c` → **`1124721c`** | `5e59be93` → **`cb3442e9`** |
+| s5 POLYTOPE | `06b46063` → **`4bcf26a3`** | `cccb0094` → **`c7469414`** |
+| s6 FEIGEN | `8d6ac4a6` → **`39d51392`** | `9adb1f5b` → **`f4032da8`** |
+
+s0 `fb74fee4` / `8a0715df`, s3, s4 `0bff278a` / `05bf21c0`, s7, s8, s9, s10 are **line for line equal** to the v0.14
+list (s0-f840 and s4-f840 being §54 addendum 2's recorded moves); s1 is `42e4871c` / `6eae9916`, the parallel DUST
+worker's, unmoved between the phase-2 and the phase-5 sweeps of this session; s11 `8a930b26` / `5a5c795a` post-dates
+that list and is also unmoved between the two sweeps. **And under `&loud=0` all three scenes read their v0.14 lines
+bit for bit** — so the six md5 lines that moved are the migration and nothing else in the engine is reachable from here.
+
+**The cost in the page.** `#test&track=SeeYouDrop&at=20&scene=6`, CLOCK=1 GPU=1, 1800 frames (heard 20 → 49.97 s),
+`errs []`, `nonFinite []`, three pairs interleaved with `&loud=0`:
+`ENGINE.LOUD.cpuTotal / blocks` = **10.99 / 11.84 / 12.02 µs per 512-sample block → 17.2 / 18.5 / 18.8 µs/frame** at
+48 kHz / 60 fps, i.e. **0.11 % of a 16.7 ms frame**. That is 3× the 3.73 µs/block node measures, which is the per-sample
+loop under headless Chrome's JIT (the accounting's own two `performance.now()` calls are nanoseconds); in **deterministic
+file mode the source pushes on the main thread inside `file.tick`**, so this is synchronous frame work and the honest
+number. It is invisible in the frame: `ENGINE.ms` ON 3.607 / 2.817 / 2.691 ms against OFF 3.137 / 2.438 / 3.894 — the
+stage is **inside the ±1.2 ms run-to-run spread of a headless det run** — and `CARD.bench(6, 300)` ON 1.406 / 1.187 /
+1.629 against OFF 1.337 / 1.303 / 1.555 ms, which is the same number twice, as it must be: the stage is CPU and
+`bench` measures the draw. (DUST, which the plan's proof 4 names, was being edited by another worker in this worktree,
+so benching it would have measured their work in progress; FEIGEN, a scene this phase moved, is benched instead.)
+
+#### Det / capture parity — what `loudRel` does when the gain is the tab's (the plan §6)
+
+- **The capture path's gain is the TAB's**, set by the user's OS / browser mixer, so `loudM` / `loudS` / `loudPk` are
+  not absolute there. `loudAbs` says so (0), and `baseLight` never reads an absolute value — only the DIFFERENCE
+  `loudS − loudPk` (through `loudRel`) and `loudRange`.
+- **`loudRel` and `loudRange` are gain-invariant, and that is measured, not argued**: `tools/test_loud.js` `gain`
+  multiplies a whole 60 s signal by 0.1 and reads `loudS` exactly **−20.00 LU** lower (max |error| 8.3e-10 LU) while
+  `loudRel` and `loudRange` are **identical to 8.0e-13 and 0.0e+0**. A constant gain `g` adds `20·log10(g)` to `loudS`
+  *and* to `loudPk`, which cancels in the difference, and shifts both of `loudRange`'s percentiles equally. **A scene
+  that reads only `loudRel` / `loudRange` behaves identically in file and capture mode.** That is why the three
+  migrated scenes read exactly those two and `loudAbs`, and nothing absolute.
+- **No new lag term.** The ring is read at `MS.heardT` like every ears field, so `SYNC_OFS` (`&sync=27`) aligns it the
+  way it aligns the ears' `…Age` fields and nothing else has to be declared. In deterministic file mode the bus is
+  `PCM.local` and the source pushes exact 512-sample blocks, so two runs are byte-identical — `test_loud.js`'s `determ`
+  case asserts it in node and the md5 sweep asserts it in the page.
+- **The ring's lookback is the one hard limit**: `read(t)` needs `t − 3 s` to still be in the ring, which the default
+  12 288 entries put at **5.2 s** behind the newest block (48 kHz). heardT is at most `DET_LEAD` 43 ms + the display
+  lead behind it, so that is ~50× the worst lag; past the limit a read returns the floor rather than a wrong number
+  (asserted).
+- `node tools/parity.js fake` was run after phase 2 (every MS field identical to 1e-9); phases 3, 5 and 7 add no
+  engine field and no scene edit can move MS, `NAV`, `GROOVE`, `SC` or `Q`, which is all that run compares.
+
+### Phase 7 — NAV and GIELIS reviewed, nothing changed, and the `eG` decision (`PENDING`)
+
+The plan budgeted "≤ 2 lines" here and the answer is **0**. Both reviews, with the reason.
+
+**NAV (ids 0 / 4).** Four `eM` / `eS` reads, and the plan's guess ("one a bloom param") is not what is there:
+1. `post.fb.decay = 0.7 + 0.16·eM` — the FEEDBACK decay, not the bloom (whose `thr` is the constant 0.35). It is the
+   only `eM` in NAV's look path, and **the term is dead**: §57 measured `eM`'s p25 at 0.972 on this material, so the
+   decay sits at ~0.855 whatever the music does. Moving it to the base light is **not** a one-line drop-in: a feedback
+   decay's steady-state gain is `1/(1 − d)`, so 0.72 → 0.84 is **3.6× → 6.3× of accumulated brightness** — four times
+   the lever the three migrated scenes got, on the HOME scene, where a long trail is also a motion decision and not
+   only a brightness one. **Recommended, not done**: it wants its own A/B in front of the user, like §57–§60 ran DUST.
+2. `score` on the DRUM variant, `0.3·(1 − eM)` — a **bid**. The AGC is what makes a bid comparable across tracks
+   (CONTRACTS §1.13 marks it "the bid:"). No change, by the plan's own rule that every detector keeps the AGC.
+3. `reach`, `clamp(mix(−2.6, −9, 0.55·eS + 0.5·tension) + 3.2·dropEnv, …)` — how far outside the set a drop throws the
+   picture. Geometry on a transient, not base light. No change.
+4. `modes[j·4+2] = … · (0.3 + 0.7·eS) · presence` (the DRUM variant's membrane amplitudes) — `eS` is the 0.3 s window,
+   a transient channel, and the plan's own rule is "scale the base, not the hits". No change.
+   (`nav.js:238`'s `eS > 0.3` is a gate. No change.)
+
+**GIELIS (id 10).** One read: `breath`, `0.5 + 0.5·eS` — "how deep every shape pinches on the beat". That is a SHAPE
+on a transient, not light; GIELIS's own light is `glow`, which is `FLOOR·(1 − GLOWQ·max(hush, calm))` and touches no
+AGC energy at all. **Nothing to move**, and the plan's "expect one `feats` param" overestimated it.
+
+#### The `eG` decision (the plan's proof 5): KEEP it, and never read it as a loudness
+
+`eG` is the track map's own energy arc — the per-100 ms sum of the analysis bands, mapped **p5 → 0, p98 → 1 over the
+whole track** (`engine/map/map.js`, `EG_FPS` 10) — non-causal and file-mode only (`mapOn` 0 in every live mode). The
+plan called it "the proof that the quantity is useful". Measured against the causal field, by building the real map in
+node on each 48 kHz dump (2.98–4.33 s per track) and reading `eG` at every 60 fps frame:
+
+| track | r(eG, loudRel) | r(eG smoothed to 3 s, loudRel) | ρ | eG's own drop ratios | the music's (power) |
+|---|---|---|---|---|---|
+| SeeYouDrop | 0.480 | 0.656 | 0.638 | ×5.92 (×2.84 smoothed) on the headline pair | **×1.94** |
+| CyborgNinja | 0.065 | 0.553 | 0.566 | — (no drops) | — |
+| Malicious | 0.234 | 0.423 | 0.431 | **×1.84** at 148.29 s | **×0.96** |
+| WhoLikesToParty | 0.109 | 0.583 | 0.251 | ×3.21 / ×2.35 / ×2.08 | ×2.26 / ×1.51 / ×1.60 |
+| Vienna | 0.479 | 0.679 | 0.597 | **×8.90** at 85.34 s · **×2.45** at 106.67 s | ×1.27 · **×1.08** |
+
+**They are not the same quantity.** Even smoothed onto the same 3 s timescale the two agree at r 0.42–0.68, and `eG`
+**over-states** every transition by 2–7×, because a percentile map over a whole track is a **RANK, not a loudness**: a
+quiet bar sits near 0 however few LU down it actually is. On two of the eight drops it claims a rise the music does
+not have — Vienna's 106.67 s reads ×2.45 against +0.34 LU (×1.08) and Malicious's 148.29 s reads ×1.84 against
+−0.19 LU (×0.96). A scene that put its base light on `eG` would be lying about the music in file mode and reading 0 in
+every live one.
+
+**So: `eG` is kept, unchanged, and documented as a rank.** Retiring it is not free — one scene already reads it.
+`scenes/chladni/index.js:299`: `U.drive = AMPK · lvl · (mapOn > 0.5 ? 0.35 + 0.65·eG : 1)`, i.e. **CHLADNI's plate is
+driven differently in file mode and in every live mode**, which is exactly the split `loudRel` exists to close (the
+plan's phase-5 table says CHLADNI "reads `hush` only — nothing changes"; it reads `eG` too). **The recommendation out
+of phase 7** is that CHLADNI's one `eG` term becomes `baseLight(…)`, which works in every mode and does not over-state
+— but CHLADNI's look is the user's, signed off at v0.15, so it is a phase of its own and not a review's two lines.
+`eG` keeps its place as the only non-causal whole-track arc, which is the right input for a *file-mode* section-level
+decision (where its rank normalisation is a feature, not a fault).
