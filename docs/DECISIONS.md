@@ -6399,3 +6399,10 @@ live mode or `&map=0` to see the lane's.
   validated default could not show: the height of the throw and the brightness of the ring now follow how big
   the hit was, and the ring in particular is now attached to the RIGHT hit (its correlation with its own hit was
   −0.01 to 0.31 in v0.25).
+
+**v0.26 tagged locally (2026-10-01) on the user's word ("tag what we have so far"; deploy still held):** v0.25 + §72 (Malicious's
+grid re-phased +23.22 ms, the `dp_beats` t0 bug), §73 (`Quantile(q)` returned the (1−q) quantile — fixed, four consumers
+re-calibrated, `*Vel` an honest rank), §74 (CHLADNI's kick / snare on `kickAmp` / `snareAmp`, the fog knee).
+`releases/retinarave-v0.26.html` (from `file://` on scene 11: errs [], nonFinite [], clock pcm), package.json 0.26.0. Not pushed
+(retinarave.com serves v0.15). The user on CHLADNI: "opening 10 secs the pitch is changing but the shape isn't?" — lower priority
+unless it is the engine (§75 to measure).
