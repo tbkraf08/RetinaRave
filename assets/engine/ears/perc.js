@@ -49,7 +49,20 @@ export const ONSET_OFS = 0.5;        // the onset's audio time is (hop end) - ON
 // 48 kHz — near-constant in MILLISECONDS across the two hop lengths, which is why the correction is in seconds.
 export const ONSET_LAG = 0.006;
 export const DEN_WIN = 1.0;          // den* window (s)
-export const GATE_DB = -34;          // ignore flux while a band sits this far under its own running p90 level
+// Ignore flux while a band sits this far under its own running p90 level.
+// §73 −34 -> −54. The number is NOT a new judgement about how quiet is quiet: it is the OLD judgement re-expressed
+// against a reference that has moved. Until v0.25 `lvl[i]` settled on the band's p10 (dsp.js's swapped weights), so
+// the gate sat at p10 − 34 dB and §68 measured it to be a no-op — "swept with and without and on three bands,
+// identical to every digit, so it costs nothing and still protects a silent band's noise floor". With the sign
+// right `lvl[i]` is the p90, which on this material is 10-30 dB above the p10 per band, so the SAME offset suddenly
+// had teeth: it blocked 0.0-24.2 % of hops instead of 0.0-1.1 %, and cost SeeYouDrop 4 of its 192 kicks in the
+// ducked 51-56 s bar before drop 1 (kick F 0.40 -> 0.38 against `low`, 0.50 -> 0.48 against `click`) — real hits in
+// a high-passed build-up, which is the one thing the gate must not eat. Swept −34 / −44 / −54: of the 60 rows in
+// the five-track drum table (5 tracks x {ears, v2} x {kick,snare,hat} x their references), −34 moves 22 rows with
+// |dF| up to 0.02, −44 moves 8 with one dF, and **−54 moves 6 rows by 1-3 fires with every F identical**. −54 is
+// therefore the offset that keeps §68's measured posture: insurance against a silent band's noise floor, costing
+// nothing, now measured from the loud level the comment has always named.
+export const GATE_DB = -54;
 export const FM_A = 0.02;            // the flux mean / deviation smoothing per hop (~0.6 s)
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -117,14 +130,18 @@ export const SNARE_LAG = 0.010;
 
 // ---------------------------------------------------------------------------------------------------------------
 // THE HIT'S SIZE: `kickAmp` / `snareAmp` (DECISIONS §70). The two rise lanes already know how hard a hit was — the
-// rise itself, in dB — and `kickVel` / `snareVel` do NOT publish it: they divide the rise by `p95[c]`, and
-// `Quantile(0.95, …)` as this engine's `dsp.js` writes it settles on the (1 − q) quantile, so that divisor is the
-// lane's **p5** (measured: the snare lane's estimator sits at 3.86–4.41 dB against a true-hit p95 of 7.7–23.1).
-// That is §51's "the velocity saturates, p50 1.0" — 52–91 % of the five tracks' hits read exactly 1.000 — and it is
-// a sign convention inside `Quantile`, not a property of the music. The convention is NOT changed here: the same
-// class carries every band's level gate (`lvl`, p90), the sub gate's p90 and `lpSweep`'s, so flipping it moves the
-// whole engine, the map and the clock (docs/OPEN-ITEMS.md). `*Vel` therefore stays exactly as it is, and the SIZE a
-// scene wants is published beside it as a second field with no quantile in it at all:
+// rise itself, in dB — and `kickVel` / `snareVel` divide that rise by `p95[c]`, a RUNNING quantile of the lane's own
+// fire magnitudes. In v0.25 that divisor was the lane's **p5**, not its p95, because `dsp.js`'s `Quantile` had its
+// two weights swapped and settled on the (1 − q) quantile: the snare lane's estimator sat at 3.86–4.41 dB against a
+// true-hit p95 of 7.7–23.1 dB, so 52–91 % of the five tracks' hits read exactly 1.000. That is §51's "the velocity
+// saturates, p50 1.0", and §73 fixed it at the source — `*Vel` now spreads p10 0.18-0.63 / p50 0.43-0.76 with
+// 7-20 % at the ceiling, which is `*Amp`'s own spread to the digit.
+//
+// `*Amp` IS STILL THE SIZE A SCENE SHOULD READ, and §73 measured why: `*Vel`'s divisor is a running quantile of
+// THIS TRACK's fire magnitudes, so the same 12 dB snare reads 1.00 on Malicious (fire-stream p95 7.5 dB) and 0.55
+// on WhoLikesToParty (21.8 dB) — it answers "how hard for this track", which is the right question for a RANK and
+// the wrong one for a SIZE that has to look the same on every track. `*Amp` is the rise over a fixed dB SPAN, so
+// one absolute mapping travels. Both are published; nothing in §73 moved a scene.
 //
 //     amp = clamp01(rise_dB / SPAN)
 //
@@ -190,10 +207,28 @@ export class PercTrack {
     this.res = new Float32Array(BANDS.length);     // the percussive residual, dB
     this.prev = new Float32Array(BANDS.length);
     this.flux = new Float32Array(BANDS.length);
+    // §73: the sign fix made this the p90 it is named for. The step is NOT re-fitted — the weights set which
+    // DIRECTION is fast, not how fast: the fast leg was step*(1-q) = 0.045 dB/hop down and is now 0.045 dB/hop up,
+    // so "~3 s at the 86 Hz hop" still holds, as a peak follower instead of a floor follower. Measured per band
+    // over the five tracks, the estimator's own p50 now lands within 0.1-2.4 dB of the track's TRUE p90 (it used to
+    // land within 0.1-8.0 dB of the true p10). What DID have to move is `GATE_DB`, the offset read off it — see
+    // its own note above.
     this.lvl = BANDS.map(() => new Quantile(0.9, 0.05, 'abs'));      // dB: absolute step, ~3 s at the 86 Hz hop
     this.fm = new Float32Array(BANDS.length);
     this.fd = new Float32Array(BANDS.length);
-    this.p95 = [0, 1, 2].map(() => new Quantile(0.95, 0.02, 'abs'));
+    // §73: `*Vel`'s divisor, and the one consumer whose CONSTANT had to move with the sign. `p95[c]` is pushed only
+    // AT A FIRE, so its stream is a few hundred values per track, and the step has to carry it across the whole
+    // range of a lane's fire magnitudes. The old sign made the fast leg DOWNWARD (step*(1-q) = 0.019 dB/fire) and
+    // the trip short — from the 16-fire warm-up mean down ~2 dB to the p5 — so 0.02 settled in ~100 fires. With the
+    // sign right the trip is UPWARD to the p95, 5-30 dB, which 0.019 dB/fire cannot finish inside a track: at 0.02
+    // the estimator still read 7.9 / 15.6 / 25.3 / 8.2 / 6.8 dB against a true fire-stream p95 of 16.5 / 23.2 /
+    // 36.5 / 9.1 / 10.2 (the low lane, the five tracks) and 45 % of hits still saturated. **0.2** — the same
+    // 1/(rate x settling time) rule with the real distance — puts the estimator within 9-19 % of the true p95 on
+    // every lane and track (tools/work/v73/sweep.js p95). Swept 0.02 / 0.05 / 0.1 / 0.2 / 0.4 / 0.8: the ceiling
+    // share over the five tracks' TRUE hits falls 39-93 % -> 37 -> 27 -> **7-20 %** -> 5-15 -> 5-11, and past 0.2
+    // the estimator starts over-tracking the top so the loudest hits no longer reach 1.000 at all (vel p90 0.88-0.99
+    // on three tracks at 0.4). 0.2 is the end of the plateau where a `*Vel` of 1 still MEANS the top of the lane.
+    this.p95 = [0, 1, 2].map(() => new Quantile(0.95, 0.2, 'abs'));
     this.vel = new Float32Array(3);
     this.amp = new Float32Array(3);                // the rise lanes' own unsaturated size, 0-1 (§70; [2] is always 0)
     this.den = new Float32Array(3);

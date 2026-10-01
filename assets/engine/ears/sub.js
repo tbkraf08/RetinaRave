@@ -14,7 +14,20 @@ export const SUB_WIN = 0.120;     // the YIN window (s): 4.2 cycles of 35 Hz. 0.
 export const SUB_HOP = 0.008;     // the YIN hop (s): the brief's ceiling is 0.010
 export const SUB_FMIN = 22, SUB_FMAX = 130;   // the truth tool searches 28-130 Hz
 export const SUB_THR = 0.16;      // the YIN CMND threshold
-export const GATE_ON = 0.16, GATE_OFF = 0.075;   // hysteresis on the sub band's RMS as a share of its running p90
+// Hysteresis on the sub band's RMS as a share of its running p90. §73 RE-FITTED the pair: until v0.25 `q90` settled
+// on the p10 (dsp.js's swapped weights), so `rel = ms / q90` ran 3-25x larger than the number this pair was written
+// against and the level half of the gate was all but always satisfied — the gate was effectively the SHARE gate
+// below. With the sign fixed and `P90_STEP` corrected, `q90` lands within 0-7 % of the trailing-32 s p90 on all five
+// tracks, so the pair is divided by 8 to hold the gate's OWN TIMELINE: frame agreement with the v0.25 gate
+// 98.1 / 98.9 / 93.0 / 100.0 / 99.5 %, gate-open share 81.5 / 99.7 / 77.6 / 49.7 / 80.8 % against 83.2 / 98.6 /
+// 81.0 / 49.6 / 80.4, and `subIn` 29 / 7 / 506 / 127 / 38 against 29 / 41 / 533 / 127 / 55 (the two that fall are
+// CyborgNinja and Vienna, where the old gate chattered at the edge of a gate that is open 99 % and 80 % of the
+// track). The factor is fitted to that timeline and NOT derived, because the old reference's own error varies
+// 3-25x across the five tracks — one scale factor cannot be right for all of them (tools/work/v73/sweep.js sub).
+// What the fix buys beside the timeline: `rel` is also the `vel` of every subIn / subOut / subNote event, and
+// `clamp01(rel)` with a p50 of 1.23-15.99 was 1.000 almost always — the sub's note velocity was saturated exactly
+// the way `*Vel` was (§51, §73). It now spreads with a p50 of 0.22-0.62.
+export const GATE_ON = 0.020, GATE_OFF = 0.0094;
 // The gate also needs the sub to be the DOMINANT part of the low end, not merely present: without this the intro's 109 Hz
 // mid-bass and the 101-105 s harmonic bass read as a sub (the truth's own per-beat note there is G#2 / A#2, an octave up).
 // `share` = the 22-70 band's power over 22-70 + 70-150 + 150-600, set once per block from PercTrack's filter bank.
@@ -23,8 +36,17 @@ export const GATE_DWELL = 0.045;  // ... and once it has changed it holds for th
                                   // suppresses flutter)
 export const GATE_CONFIRM = 1;    // ... and the new state must hold this many frames (16 ms) before subIn / subOut fire, so
                                   // a flutter in the void does not announce the drop 150 ms early
-export const P90_STEP = 2.5e-4;   // the running p90 of that RMS: ~32 s at the 125 Hz sub hop. A 4 s follower collapsed inside the
-                                  // 8 s void and the gate then opened on its rumble, firing three false notes before the drop.
+// The running p90 of that RMS: ~32 s at the 125 Hz sub hop. A 4 s follower collapsed inside the 8 s void and the
+// gate then opened on its rumble, firing three false notes before the drop.
+// §73 2.5e-4 -> 2.5e-3. The two weights set the two SPEEDS as well as the quantile: the SLOW leg is the (1 - q) one,
+// so for q = 0.9 it is step/10. Under the old (swapped) weights the slow leg was step*q and 2.5e-4 bought the stated
+// ~32 s; with the sign right the slow leg is step*(1 - q) and the same 32 s needs ten times the step. Measured
+// against the trailing-32 s p90 of the same stream, the estimator's median ratio to it reads 0.04 / 0.24 / 0.07 /
+// 0.04 / 0.33x in v0.25, 0.28 / 0.87 / 0.67 / 0.35 / 0.95x with the sign alone, and **0.93 / 1.00 / 0.97 / 0.96 /
+// 1.00x** at 2.5e-3 (tools/work/v73/sweep.js sub). The direction the 32 s applies to has flipped, which is what the
+// void wanted all along: the fast leg now carries the level UP onto a new sub and the slow one leaks it away, so an
+// 8 s void can no longer drag the reference down onto its own rumble.
+export const P90_STEP = 2.5e-3;
 export const CONF_MIN = 0.55;     // below this the pitch is not reported (subHz 0)
 export const NOTE_HOLD = 0.032;   // a pitch change of >= 1 semitone must hold this long to be a new note
 // A YIN window straddles a pitch change, so the FIRST frame showing the new pitch already sits ~W/2 after the real change.

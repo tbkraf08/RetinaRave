@@ -12,7 +12,17 @@ export const CTR = [39.2, 102.5, 300.0];  // the geometric band centres of BANDS
 export class TextureTrack {
   constructor(sr) {
     this.sr = sr; this.sAcc = 0; this.mAcc = 0; this.n = 0;
-    this.rollP90 = new Quantile(0.9, 4e-4);   // the track's p90, not the last second's: ~30 s at the 86 Hz hop
+    // The track's p90, not the last second's: ~30 s at the 86 Hz hop. §73 4e-4 -> 4e-3, by P90_STEP's derivation in
+    // sub.js — the SLOW leg of a q = 0.9 tracker is step/10, and with the weights the right way round that is the
+    // DOWNWARD one, so holding the stated 30 s needs ten times the step. It matters more here than anywhere else
+    // because `lpSweep` was a DEAD CHANNEL in v0.25: with `rollP90` settling on the p10, `roll / p10` is above 1
+    // nearly always and `1 - that` clamps to 0, so `lpSweep` read a p50 of exactly 0.000 on all five tracks and was
+    // non-zero on 0.3-35 % of hops. Against the offline reference the contract names (1 - roll / p90 over a trailing
+    // 30 s), the mean |error| per track reads 0.30 / 0.47 / 0.63 / 0.30 / 0.42 in v0.25, 0.074 / 0.199 / 0.382 /
+    // 0.265 / 0.420 with the sign alone (Vienna still dead), and **0.070 / 0.058 / 0.086 / 0.067 / 0.112** at 4e-3,
+    // with the estimator at 0.91-1.01x the offline p90 on every track (tools/work/v73/sweep.js tex). `lpSweep`'s
+    // p50 goes 0.000 -> 0.407 / 0.547 / 0.732 / 0.413 / 0.347: the outro's closing filter is a channel again.
+    this.rollP90 = new Quantile(0.9, 4e-3);
     this.roll = 0; this.lpSweep = 0; this.width = 0; this.bassReg = 0; this.subPure = 0;
     this.tPrev = 0;
   }
