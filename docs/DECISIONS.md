@@ -4319,10 +4319,15 @@ are imported by nothing else, so no other scene's line can move (`IDS=1` is the 
 warns** — `dyn.js` 99 lines, `index.js` 336, both under the 350 soft cap) · `npm test` **0 FAIL** (test_loud 38 pass) ·
 `feats` + `loudRel` / `loudRange` / `loudAbs` with a `help.feats` line each; `eM` / `eS` keep theirs, reworded as the
 fallback they now are · **no audible run** — every number is the deterministic file path.
-**Cost**, `q` pinned 0.95, tier 3, `&dyn=1`, five pairs interleaved with NAV back to back on an otherwise idle
-machine (medians): **DUST 1.346 → 1.383 ms, NAV 2.086 → 2.155 ms, DUST/NAV 0.645 → 0.641**. The machine drifted by
-more than the change did; the ratio is the same number twice, as it must be — the drive is one divide and one clamp a
-frame, and the stage's own 5.85 µs/frame was already being paid before DUST read it.
+**Cost**, `q` pinned 0.95, tier 3, `&dyn=1`, five pairs interleaved with NAV, the two legs taken back to back 20 s
+apart (medians): **DUST 1.346 → 1.383 ms, NAV 2.086 → 2.155 ms, DUST/NAV 0.645 → 0.641**. **The machine was NOT
+idle** — another worker (`tools/work/v66/`) was running its own `dust-trace.js` pages throughout, which is why both
+legs sit ~0.9 ms above §60's 1.238 ms and why NAV, which this phase does not touch, "moved" by more (+0.07 ms) than
+DUST did (+0.04 ms). **That is exactly the case the interleaved-pair ratio exists for** (HARNESS "Bench protocol"),
+and the ratio is the same number twice, as it must be: the drive is one divide and one clamp a frame, and the stage's
+own 5.85 µs/frame was already being paid before DUST read it. The absolute ms here are not comparable to §60's.
+The TRACES are unaffected by that load — the deterministic file path is frame-locked, so load changes wall time and
+not one number — and the six before/after pairs' MS columns are md5-identical, which is the proof.
 
 ### Open items
 
