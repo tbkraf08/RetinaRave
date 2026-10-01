@@ -78,7 +78,7 @@ export function fakeMusic(dt, now) {
   S.rms = 0.2;
   S.peaks = [[110, 1], [220, .6], [330, .5], [550, .3]];
   fakeSynapse(dt, now, S, sec, T, e, kp, kickOn);
-  fakeLoud(dt, S);
+  fakeLoud(dt, now, S);
 }
 
 // The six TRUE-LOUDNESS fields, mirrored from the synthetic energy (the plan's §6 obligation: without this the fake
@@ -90,14 +90,21 @@ export function fakeMusic(dt, now) {
 // The map from a 0..1 energy to LKFS is `-0.691 + 20*log10(e)`, i.e. the energy read as an amplitude, so the loop
 // spans about -13 .. -1 LKFS — the range a modern master actually occupies (the five test tracks integrate to
 // -3.9 .. -12.5). Deterministic: a function of dt and the fake state, no Math.random, no clock.
-function fakeLoud(dt, S) {
+function fakeLoud(dt, now, S) {
   if (!LOUDK.on) { S.loudAbs = -1; return; }
-  const lkfs = (x) => LOUD_OFS + 20 * Math.log10(clamp(x, 1e-3, 1));
+  // the floor is 0.12, not 0, so the first frames (eM 0) do not read -60 LKFS and seed `loudRange` with a 54 LU swing
+  // the EMAs then spend 40 s forgetting. The loop's eM spans about 0.30-0.85, i.e. -11.1 .. -2.1 LKFS and ~9 LU of
+  // range, which is a plausible modern master and gives a migrated scene the full 0..1 of base light over the loop.
+  const lkfs = (x) => LOUD_OFS + 20 * Math.log10(clamp(x, 0.12, 1));
   S.loudM = lkfs(0.5 * S.eS + 0.5 * clamp(S.eS + 0.6 * S.hit, 0, 1));   // the 400 ms window: the fast energy plus the hit
   S.loudS = lkfs(S.eM);                                                 // the 3 s window: the 2.5 s energy
   const zs = Math.pow(10, S.loudS / 10);
   FL.pk = Math.max(zs, FL.pk * Math.pow(10, -LOUDK.PK_REL * dt / 10));
-  const pk = Math.max(LOUD_OFS + 10 * Math.log10(Math.max(FL.pk, 1e-12)), S.loudS);
+  // the same WARM-UP GUARD the real stage applies (engine/loud.js): until the stream has heard something louder the
+  // peak sits WARM_LU above the present loudness, decaying with the stream's age — so the mirror has the real field's
+  // SHAPE and not just its units, and `#test`'s first seconds are not the brightest of the loop.
+  const pk = Math.max(LOUD_OFS + 10 * Math.log10(Math.max(FL.pk, 1e-12)),
+    S.loudS + LOUDK.WARM_LU * Math.exp(-Math.max(0, now) / LOUDK.WARM_T));
   S.loudPk = pk;
   S.loudRel = clamp((S.loudS - pk + LOUDK.RANGE) / LOUDK.RANGE, 0, 1);
   // the range: the loop's own p95 - p10, approached as two one-sided EMAs of loudS (a histogram on 24 s of a 24 s loop
@@ -106,7 +113,7 @@ function fakeLoud(dt, S) {
   FL.n++;
   FL.hi += (S.loudS - FL.hi) * (S.loudS > FL.hi ? 1 - Math.exp(-dt / 0.5) : 1 - Math.exp(-dt / 40));
   FL.lo += (S.loudS - FL.lo) * (S.loudS < FL.lo ? 1 - Math.exp(-dt / 0.5) : 1 - Math.exp(-dt / 40));
-  S.loudRange = Math.max(0, FL.hi - FL.lo);
+  S.loudRange = clamp(FL.hi - FL.lo, 0, 14);
   S.loudAbs = 1;
 }
 

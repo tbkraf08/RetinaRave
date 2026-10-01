@@ -3829,3 +3829,77 @@ is a fixed 18 LU (`LOUDK.RANGE`) while the section ladders of real tracks span 1
 `loudRel`'s top third. That is the plan's design, not a fault — `loudRange` is published beside it so a scene can
 expand onto the track's own contrast, and `(loudRel − 1)·18 = loudS − loudPk` exactly. A scene that divides by
 `max(loudRange, R_MIN)` instead of 18 recovers the power ratio; phase 5 does that and measures it.
+
+### Phase 5 — the base light onto true loudness: FEIGEN, MANDALA, POLYTOPE
+
+One scene-side mapping, in `assets/math/loudlight.js` (pure, `assets/math/` the way `keycolour.js` is shared, so there
+is one definition to tune and one place the numbers live). `baseLight(loudRel, loudRange, loudAbs, fallback)`:
+
+    loudAbs < 0  ->  fallback                     the stage is off (&loud=0): the pre-loudness value, bit for bit
+    else         ->  clamp01((loudRel - 1) / (max(loudRange, 7) / 18) + 1)
+
+**Why not just `loudRel`.** `loudRel`'s span is a fixed 18 LU, and real section ladders span 1.4–7.8 LU, so a whole
+song lives in the top fifth of it and the headline pair reads ×1.21 where the music is ×1.94 in power. Dividing by the
+range the track has ACTUALLY shown (`loudRange`, itself gain-invariant, so this stays gain-invariant) puts that ladder
+across the full 0..1. The identity `(loudRel − 1)·18 = loudS − loudPk` makes it exact: "how many LU under the track's
+own peak, over how many LU the track uses". **The top is anchored** — at the track's own loudest it returns 1.0,
+exactly where `lvl` sat (p95 0.99) — which is what keeps a migrated scene recognisable; what changes is the bottom.
+
+**`L_RNG_MIN` = 7 LU, swept over 4 … 18 on all five tracks.** The headline breakdown 2 → drop 2 ratio of the mapping:
+
+| `R` | 4 | 5 | 6 | **7** | 8 | 10 | 12 | 18 |
+|---|---|---|---|---|---|---|---|---|
+| ratio | ×14.5 | ×3.46 | ×2.36 | **×1.93** | ×1.71 | ×1.48 | ×1.37 | ×1.21 |
+
+7 is where the picture moves **by as much as the sound does and no more** (the music's own power ratio is ×1.936), and
+where the other four tracks keep the median `lvl` already had — base light p50 **0.857 / 0.861 / 0.866 / 0.900**
+(CyborgNinja / Malicious / WhoLikesToParty / Vienna) against `lvl`'s measured p50 0.882 (§60 step 1) — so they look as
+they did, while SeeYouDrop, the one track with real breakdowns, gets the dynamic: p05 0.150 / p50 0.474 / p95 0.907,
+and **52 % of the base light lost between the groove (28–40 s) and breakdown 1 (49–55 s)**, against the 76 % §60 step 1
+measured for DUST and the user signed off as "dust looks good". Below 6 LU the void before drop 1 clamps to 0 and the
+ratio stops meaning anything (×738 at R = 4); above 10 LU the ladder is back inside the top third it came from.
+
+**The field, measured on all five tracks** (`node tools/test_loud.js --truth`; `loudS` p50 over equal 5.1 s windows,
+and the mapping's own p50):
+
+| track | drop | `loudS` ΔLU (power) | `loudRel` | **`baseLight`** |
+|---|---|---|---|---|
+| SeeYouDrop | 57.61 | +2.48 (×1.77) | 0.648 → 0.792 ×1.22 | 0.096 → 0.466 **×4.87** (the void is near-silent) |
+| SeeYouDrop | **105.60** | **+2.87 (×1.94)** | 0.790 → 0.958 ×1.21 | 0.460 → 0.891 **×1.935** |
+| CyborgNinja | — | the control: 0 drops, and nothing claims one | | |
+| Malicious | 148.29 | −0.19 (×0.96) | ×0.995 | ×0.990 — the recorded exception (its breakdown is already loud) |
+| WhoLikesToParty | 57.51 / 131.35 / 188.79 | +3.54 / +1.79 / +2.04 | ×1.27 / ×1.13 / ×1.15 | **×2.61 / ×1.61 / ×1.67** |
+| Vienna | 85.34 / 106.67 | +1.04 / +0.34 | ×1.07 / ×0.99 | ×1.24 / ×0.97 |
+
+**In each scene's own units** (what the shader actually multiplies by, on the headline pair), against what `lvl` gave:
+
+| scene | the term | on `lvl` (0.606 → 0.866) | on the base light (0.460 → 0.891) |
+|---|---|---|---|
+| FEIGEN | `0.45 + 1.3·uLevel` (filaments) | ×1.273 | **×1.535** |
+| FEIGEN | `0.4 + uLevel` (Green bands, interior) | ×1.258 | **×1.501** |
+| MANDALA | `0.35 + 1.3·uLevel` (the fractal body) | ×1.297 | **×1.591** |
+| POLYTOPE | `0.35 + lvl` (the stroke) | ×1.272 | **×1.532** |
+
+The shaders' constant terms are what keep the ratio under the field's own ×1.93 — and what keep a base light of 0 from
+being black: FEIGEN's filaments idle at 0.45/1.75 = 26 % of full, MANDALA's body at 0.35/1.65 = 21 %, POLYTOPE's stroke
+at 0.35/1.35 = 26 %. On the void → drop 1 pair the same terms read ×1.84 / ×1.75 / ×2.01 / ×1.83.
+
+#### FEIGEN (id 6) — `PENDING`
+
+One line: the `glow` param's `from()`. `uLevel` in both colour passes IS "the brightness of the filaments, the bands
+and the interior" (the scene's own comment since v0.5), so it is the one thing here that must not ride an AGC. `dive`
+keeps `lvl`: how FAST the fall goes is motion, not light, and the AGC's "there is a lot going on" is the right input
+for it. The param stays routable (CONTRACTS §1.15), so the listener can put anything back on it.
+`feats` + `loudRel` / `loudRange` / `loudAbs` with a `help.feats` line each; `lvl`'s line now says "how fast the dive
+falls (the brightness moved to loudRel)".
+**md5** (`IDS=6 PORT=8892 tools/scene-md5.sh`, errs []): s6-f360 `8d6ac4a6` → **`39d51392`**, s6-f840 `9adb1f5b` →
+**`f4032da8`**. **And `&loud=0` reads `8d6ac4a6` / `9adb1f5b` — v0.14's own two lines, bit for bit**: the A/B is exact
+and the migration is the only thing that moved.
+
+**A bug this found, in phase 2's own stage.** FEIGEN's md5 did not move on the first attempt: `loudStage` wrote
+`S.loudAbs = -1` under `ENGINE.fakeOn` and so CLOBBERED the mirror `sources/fake.js` had just written, leaving every
+migrated scene on its fallback on the one timeline every md5 proof in this project is taken on. The stage now returns
+without touching the six fields under `fakeOn`. Two more fake-mirror fixes came with it: the amplitude floor is 0.12
+rather than 1e-3 (at `eM` 0 the first frames read −60 LKFS and seeded `loudRange` with a 54 LU swing the EMAs then
+spent 40 s forgetting — it read 34.1 LU), and the mirror now applies the real stage's own warm-up guard, so it has the
+field's SHAPE and not just its units. The fake loop now spans about −11.1 … −2.1 LKFS with ~9–11 LU of range.

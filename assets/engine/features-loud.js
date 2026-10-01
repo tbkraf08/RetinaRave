@@ -47,7 +47,11 @@ function onBlock(L, R, t0) {
 }
 
 export function loudStage(dt, now, S) {
-  if (ENGINE.fakeOn || !LOUDK.on || !AU.ctx || AU.mode === 'none') { S.loudAbs = -1; return; }
+  // #test: sources/fake.js has ALREADY written the six fields from the synthetic energy this frame. Returning without
+  // touching them is the point — an `S.loudAbs = -1` here would clobber the mirror and every migrated scene would sit
+  // on its fallback on the one timeline every md5 proof is taken on (found by FEIGEN's md5 not moving).
+  if (ENGINE.fakeOn) return;
+  if (!LOUDK.on || !AU.ctx || AU.mode === 'none') { S.loudAbs = -1; return; }
   if (!LOUD.subscribed) { LOUD.subscribed = true; PCM.on(onBlock); }
   ENGINE.extraMs += LOUD.cpu; LOUD.cpu = 0;
   const Lo = LOUD.loud;

@@ -7,6 +7,7 @@
 // bounded band of rows per draw, one rung ahead of the dive; every frame the colour pass (`colour.js`) samples the
 // built rung through the current camera and does the music. Steady state is a colour pass plus one slice of the next
 // rung at ANY depth, instead of 30*L^2 iterations per pixel per frame. See help.why / help.math.
+import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the base light is TRUE loudness, not the AGC's `lvl`
 import { FS_FIELD } from './field.js';
 import { FS_COLOUR, upload as upOK } from './colour.js';
 import { FS_COLOUR_V2, upload as upV2 } from './colour-v2.js';
@@ -85,7 +86,7 @@ export default {
   card: { title: 'FEIGEN', blurb: 'a dive down the Feigenbaum cascade: ever-smaller copies of the set along the real axis' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/feigen.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() the first four, update()/draw() the rest
   feats: ['arc', 'regularity', 'clarity', 'calm', 'bpm', 'lvl', 'tension', 'alive', 'kick', 'dropEvt', 'sectionEvt',
-    'seed', 'flow', 'flowMid', 'bass', 'dropEnv', 'hat', 'midS'],
+    'seed', 'flow', 'flowMid', 'bass', 'dropEnv', 'hat', 'midS', 'loudRel', 'loudRange', 'loudAbs'],
   // 'event': the zoom itself is scale-free and continuous; the only jump is the tricorn flip on a section event
   cuts: 'event',
 
@@ -97,7 +98,12 @@ export default {
       from: (MS) => 1 + 0.25 * MS.tension - 0.18 * MS.dropEnv - 0.03 * MS.kick },
     dive: { eli5: 'how fast the dive falls', range: [0, 2], from: (MS) => 0.25 + 1.5 * MS.lvl },
     roll: { eli5: 'how far the frame rocks from side to side', range: [0, 0.4], from: () => 0.04 },
-    glow: { eli5: 'how brightly the filaments burn', range: [0, 1], from: (MS) => MS.lvl },
+    // §63 phase 5: `uLevel` in both colour passes IS "the brightness of the filaments, the bands and the interior",
+    // so it is the one thing in this scene that must not ride an AGC — a breakdown read as bright as the drop after
+    // it (`eM` x0.994 where the music is x1.94). `dive` above keeps `lvl`: how FAST the fall goes is motion, not
+    // light, and the AGC's own "there is a lot going on" is the right input for it. The param stays routable, so the
+    // listener can put anything back on it (CONTRACTS §1.15); `&loud=0` restores `MS.lvl` bit for bit.
+    glow: { eli5: 'how brightly the filaments burn', range: [0, 1], from: (MS) => baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, MS.lvl) },
     thick: { eli5: 'how thick the glowing filaments are', range: [0, 1], from: (MS) => MS.bass },
   },
 
@@ -286,7 +292,10 @@ export default {
       clarity: 'the bid: clearly tonal music',
       calm: 'the bid: quiet and unhurried',
       bpm: 'sets the dive\'s clock: one Feigenbaum level per 32 beats at full level',
-      lvl: 'how fast the dive falls, and the overall brightness',
+      lvl: 'how fast the dive falls (the brightness moved to loudRel)',
+      loudRel: 'the overall brightness: how loud this passage is for THIS track, so a breakdown is dim and its drop is not',
+      loudRange: 'how far the brightness travels — the track\'s own dynamic range sets the contrast',
+      loudAbs: '&loud=0 (or no loudness yet): the brightness falls back to lvl exactly as before',
       tension: 'slows the dive, widens the view, and lights the interior',
       alive: 'silence freezes the dive and fades to black',
       kick: 'a brightness pulse, a slight zoom in, and the hidden level wrap',

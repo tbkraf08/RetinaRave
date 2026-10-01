@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Loud, kcoef, K48, LOUDK, LOUD_OFS, MOM_W, SHORT_W } from '../assets/engine/loud.js';
+import { baseLight, L_RNG_MIN } from '../assets/math/loudlight.js';   // the scenes' own mapping (phase 5), measured here
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const B = 512, SR = 48000;
@@ -268,7 +269,7 @@ if (process.argv.includes('--truth')) {
       while (nextF / FPS <= tEnd) {                              // one read per 60 fps frame, as the page does
         const t = nextF / FPS; nextF++;
         lo.read(t, o);
-        rows.push({ t, S: o.loudS, Pk: o.loudPk, rel: o.loudRel, rg: o.loudRange });
+        rows.push({ t, S: o.loudS, Pk: o.loudPk, rel: o.loudRel, rg: o.loudRange, base: baseLight(o.loudRel, o.loudRange, 1, 0) });
         if (t < WARM) continue;
         const xm = ex(t, MOM_W), xs = ex(t, SHORT_W);
         if (xm !== null && xs !== null) { eM = Math.max(eM, Math.abs(o.loudM - xm)); eS = Math.max(eS, Math.abs(o.loudS - xs)); nE++; }
@@ -282,7 +283,11 @@ if (process.argv.includes('--truth')) {
     console.log(`  (a) exact, same samples:  max |loudM - ref| ${eM.toFixed(4)} LU · max |loudS - ref| ${eS.toFixed(4)} LU`);
     console.log(`  (b) python at ${REF.sr} Hz:   max |loudM - ref| ${pM.toFixed(3)} LU · max |loudS - ref| ${pS.toFixed(3)} LU ` +
       `(the 44.1 -> 48 kHz resample is in this number)`);
-    console.log(`  loudRange p50 ${p(win(WARM, 1e9, (r) => r.rg), 50).toFixed(2)} LU against the reference's whole-track p95-p10 ${REF.short.range.toFixed(2)}`);
+    console.log(`  loudRange p50 ${p(win(WARM, 1e9, (r) => r.rg), 50).toFixed(2)} LU against the reference's whole-track p95-p10 ${REF.short.range.toFixed(2)} ` +
+      `(the scenes divide by max(loudRange, ${L_RNG_MIN}))`);
+    const bs = win(WARM, 1e9, (r) => r.base);
+    console.log(`  baseLight p05 ${p(bs, 5).toFixed(3)} p25 ${p(bs, 25).toFixed(3)} p50 ${p(bs, 50).toFixed(3)} p95 ${p(bs, 95).toFixed(3)} ` +
+      `(p95/p05 x${(p(bs, 95) / Math.max(p(bs, 5), 1e-9)).toFixed(2)})`);
     ok(eM <= TOL && eS <= TOL, `${name}: within ${TOL} LU of the exact reference on all ${nE} graded frames (the ring, the sub-block edge, the heard-time read)`);
     ok(pS <= PY_TOL_S, `${name}: within ${PY_TOL_S} LU of python's 3 s window across the resample`);
     graded++;
@@ -292,9 +297,11 @@ if (process.argv.includes('--truth')) {
       const rB = p(win(b.t0, b.t1, (r) => r.rel), 50), rA = p(win(a.t0, a.t1, (r) => r.rel), 50);
       const good = sA > sB, agree = Math.abs((sA - sB) - pr.d_lu_short) <= 0.05;
       pairsN++; if (good) pairsOk++;
+      const gB = p(win(b.t0, b.t1, (r) => r.base), 50), gA = p(win(a.t0, a.t1, (r) => r.base), 50);
       console.log(`  drop ${pr.drop.toFixed(2)}: loudS p50 ${sB.toFixed(2)} -> ${sA.toFixed(2)} = ${(sA - sB >= 0 ? '+' : '') + (sA - sB).toFixed(2)} LU ` +
         `(x${Math.pow(10, (sA - sB) / 10).toFixed(3)} in power; the truth says ${pr.d_lu_short >= 0 ? '+' : ''}${pr.d_lu_short.toFixed(2)}${agree ? '' : '  DISAGREE'}) · ` +
-        `loudRel p50 ${rB.toFixed(3)} -> ${rA.toFixed(3)} = x${(rA / Math.max(rB, 1e-9)).toFixed(3)}${good ? '' : '   MISS'}`);
+        `loudRel ${rB.toFixed(3)} -> ${rA.toFixed(3)} = x${(rA / Math.max(rB, 1e-9)).toFixed(3)} · ` +
+        `baseLight ${gB.toFixed(3)} -> ${gA.toFixed(3)} = x${(gA / Math.max(gB, 1e-9)).toFixed(3)}${good ? '' : '   MISS'}`);
       ok(agree, `${name} drop ${pr.drop.toFixed(2)}: the stage's dLU agrees with the truth's to 0.05 LU`);
     }
     if (!REF.pairs.length) console.log('  no drops in the truth — the control: nothing may claim one');
