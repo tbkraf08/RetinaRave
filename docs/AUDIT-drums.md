@@ -63,3 +63,72 @@ pre-change tree (no existing MS value moved), the bundle from `file://` clean, t
 - **TORUS2 reads v2 by default since 2026-09-29** (the user: "v2 looks good" → "default on TORUS2 only"); every other scene
   keeps synapse's `kick` / `snare` / `hat`. TORUS2's old look: `&route=torus2.kick2=kick,torus2.snare2=snare,torus2.hat2=hat`.
   The TORUS2 md5s are unchanged (7189a6ba / 48113eda: on the fake timeline v2 mirrors synapse).
+
+---
+
+## §68 — the low lane is a 60–150 Hz RISE (2026-10-01, DECISIONS §68, commit `fbc57ae`)
+
+**Why.** §51 built the kick on "the ears' low onsets" because they were "the truth's own `low` definition computed
+causally". On Vienna that definition is the bug: the track's low end is a continuous **D♯1 / F♯1 808 drone with no
+pulse** and a soft thud above it, so a 40–150 Hz band whose high-pass is 3 dB down at 40 Hz *is the drone*, and
+`kick2`'s AUC against the kick lines came out **0.316 — below chance** (§66 Q1), peaking 200 ms late. The truth's own
+`low` list shares the blindness: it reads **2.46 onsets/s where the groove has 1.74 kicks/s**.
+
+**The change** (`assets/engine/ears/perc.js`, the only engine file). `BANDS[2]` **40–150 → 60–150 Hz** (band 2 is the
+lane's own; `map.js` already left it out of every energy sum) and the onset function from `flux = res[i] − res[i−1]`
+on a median-9 residual to the band's **RISE over a short local baseline**: `rise = dB[i] − mean(dB[i−1 … i−8])`,
+rectified, against an **absolute 5.0 dB floor with no adaptive term**, the same 85 ms refractory — now applied to the
+LANE (`lastLow`; `last[0]` is set only in `emit()`, so a bare 808 never reached it) — and the lane's own
+`KICK_LAG` 0.012 s. Snare and hat keep the HPSS-lite flux untouched.
+
+Each piece was swept and sits on a plateau: floor 4.5 / 5.0 / 5.5 / 6.0 dB → mean F .594 / **.605** / .604 / .596 ·
+baseline 7 / 8 / 9 hops → .589 / **.605** / .600 · 60–150 Hz against 40–150 .570, 70–150 .595, 60–120 .571. An
+adaptive `fm + 3·fd` term on the rise costs CyborgNinja **R 0.96 → 0.53** — a rise is a RATIO, so one dB floor
+travels and an adaptive one does not.
+
+**AUC against the kick truth**, old lane → the new one: SeeYouDrop 0.653 → **0.816** · CyborgNinja 0.954 → **0.997** ·
+WhoLikesToParty 0.790 → **0.892** · Malicious 0.522 → **0.811** · **Vienna 0.511 → 0.713**. The band alone buys
+Vienna 0.666 and the onset function alone 0.600, so neither half is the fix. §66's 0.999 was a zero-phase
+`sosfiltfilt` measurement of the statistic that DEFINES the truth and is not a causal target; a finer hop (256 / 128
+/ 64) buys 0.02 and was rejected.
+
+**Result** (`tools/drums-node.js` + `tools/truth/drumcheck.py`, whole track, `kick2` F):
+
+| | vs `low` | vs `click` | vs `kick` (new) |
+|---|---|---|---|
+| SeeYouDrop | 0.49 → **0.54** | 0.46 → **0.48** | 0.40 → **0.53** |
+| CyborgNinja | 0.78 → **0.83** | 0.79 → **0.84** | 0.84 → **0.90** |
+| WhoLikesToParty | 0.67 → **0.72** | 0.74 → **0.78** | 0.71 → **0.78** |
+| Malicious | 0.26 → **0.32** | 0.10 → **0.13** | 0.23 → **0.39** |
+| **Vienna** | 0.26 → 0.23 | **0.08 → 0.30** | **0.19 → 0.42** |
+
+14 of 15 rows up; the one that falls is Vienna against the contaminated `low`, where its precision still rises
+(0.30 → 0.39). Lag p50 vs `low` **+4 / +5 / +3 / +6 / +4 ms** against the old +4 / +7 / +7 / +2 / +2 — the same mean,
+§58's +3/+4 ms preserved. The page's det traces (`&map=0`, 20–110 s) agree: Vienna `kick2` vs `kick` **F 0.16 → 0.51**
+(P 0.15 → 0.56), vs `click` 0.11 → **0.41**; CyborgNinja 0.87 → 0.91; WhoLikesToParty 0.70 → 0.77; Malicious 0.21 →
+0.38; SeeYouDrop 0.50 → 0.62.
+
+**DUST's kick voice** (`tools/dust-trace.js`, scene 1, `&map=0`, `tools/work/v68/dustkick.py`, ±50 ms): Vienna 24–60 s
+**74 fires at P 0.11 / R 0.14 → 54 fires at P 0.72 / R 0.68**, the voice's rate 2.06 → **1.50 /s** against the music's
+1.58, and §66's signature inverted — the amp at a MATCHED fire goes 0.323 → **0.458** while the unmatched ones fall
+0.374 → 0.292. Control SeeYouDrop 20–110 s is better too: 271 fires at P 0.68 / R 0.54 → **305 at P 0.79 / R 0.70**.
+
+**A fourth kick reference.** `tools/truth/kicktruth.py` writes `tools/truth/<T>.kick.json` — the offline 60–150 Hz
+rise at the truth beat grid's 16th lines (`tools/work/v66/kick3.py`'s method off each track's own `beats`) — and
+`drumcheck.py` grades `kick` against it beside `low` and `click`. Validated where `click` is trustworthy: CyborgNinja
+P 0.99 / R 0.89, WhoLikesToParty 0.82 / 0.66, and §66's Vienna hand-grid list P 0.96 / R 0.92.
+
+**Unmoved:** the whole-track map byte-identical on all five tracks (its `densE` input moved, no drop or section line
+did) · §59's lattice jumps and lock times (CyborgNinja +3 → +1 ms, still 17.9 s) · the fake-timeline md5 sweep, 0 of
+24 lines, taken as an isolated pair in a worktree of HEAD · cost `Ears.push` 70.36 → 70.92 µs/block (+0.6 %).
+
+### Open after §68
+
+- Malicious still has no stable kicks (§51's own note); the lane doubles its F (0.23 → 0.39 against the kick
+  reference) and that is all the track allows.
+- SeeYouDrop's BEATER-gated `kick` class loses a little (`ears` vs `click` P 0.71 → 0.66 / R 0.57 → 0.51 on the page):
+  its kicks are 808-ish with fundamentals under 60 Hz, which is §51's own "a sub below the 40 Hz band edge" from the
+  other side. The LOW lane — what `kick2` and the scenes read — gains there.
+- **The snare / rim lane is the same shape and was not built** (DECISIONS §68 "Open"): the same rise on the EXISTING
+  150–2500 Hz band takes the snare's mean F against the truth's `mid` from **0.528 → 0.633**, Vienna's P from **0.22
+  → 0.76**, at the cost of CyborgNinja's recall 0.61 → 0.51 — one decision, not a measurement.

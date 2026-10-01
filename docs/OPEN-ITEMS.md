@@ -104,8 +104,25 @@ WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`
    would arm it also arms on CyborgNinja (0.35–6.71 false arms / min). If the user wants something there it has to come
    from the file map (`&map=1` has it) or a hand annotation.
 
+**2026-10-01, §68 (the low lane):** item 1 below is **CLOSED** — `assets/engine/ears/perc.js`'s low lane is now a
+60-150 Hz band graded on its RISE over a short local baseline against an absolute 5 dB floor (commit `fbc57ae`,
+DECISIONS §68, `docs/AUDIT-drums.md` "§68"). Vienna `kick2` F **0.19 -> 0.42** against the kick truth (P 0.18 ->
+0.56) and DUST's kick voice **P 0.11 / R 0.14 -> P 0.72 / R 0.68** at 1.50 fires/s against the music's 1.58; all
+four controls up as well, lag unchanged, the map and §59's clock tables unmoved, 0 md5 lines. The §66 text below is
+kept as the diagnosis. **Two things it leaves open:**
+- **The SNARE / rim lane is the same shape, measured, and deliberately NOT built** (the §68 brief forbade it). The
+  same rise on the EXISTING 150-2500 Hz band (`B_SNARE`, no new filter) against the truth's `mid` onsets: mean F over
+  the five tracks **0.528 -> 0.633** at a 3.5-4.5 dB floor — SeeYouDrop 0.58 -> **0.70**, WhoLikesToParty 0.70 ->
+  **0.78**, Malicious 0.29 -> 0.37, **Vienna P 0.22 -> 0.76 / F 0.34 -> 0.66** — and on Vienna's own rim/clap list
+  (§66's `clap-ref-rise.json`) the rise on 150-600 Hz reads **P 0.83 / F 0.67 at +2 ms** against the current lane's
+  **P 0.37 / F 0.48**. The one number that needs a decision first: **CyborgNinja's recall 0.61 -> 0.51**. Item 2
+  below (and §64 open item 2) therefore stands with an engine answer in hand.
+- **SeeYouDrop's beater-gated `kick` class lost a little** (`ears` vs `click` P 0.71 -> 0.66 / R 0.57 -> 0.51): its
+  kicks are 808-ish with fundamentals under the new 60 Hz edge — §51's "a sub below the 40 Hz band edge" from the
+  other side. `kick2` and every scene read the LOW lane, which gained there (F 0.50 -> 0.62 vs the kick truth).
+
 **2026-09-30, §66 (the bounce and the second drop on Vienna):** two items, both measured, both engine-side.
-1. **The ears' LOW lane is blind to a MASKED kick** — the third picker of the same shape, after §64's HIGH and MID.
+1. ~~**The ears' LOW lane is blind to a MASKED kick**~~ **(CLOSED by §68, above)** — the third picker of the same shape, after §64's HIGH and MID.
    On Vienna 24–60 s, graded against the kick lines the 60–150 Hz band's own RISE puts at **AUC 0.999** (+11.21 dB at a
    kick against +4.56 at the other 16ths), `kick2`'s AUC is **0.316** — *below* chance. It reads **0.031** at a kick and
    **0.130** at a non-kick 16th, and its mean shape from the beat-1 line over 13 bars peaks at **+200 ms** (0.07 →
