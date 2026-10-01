@@ -6120,8 +6120,8 @@ fixed-time grains, the onset lists, the contour and the sub runs are byte-identi
 
 ## §74 CHLADNI's kick is `kickAmp`, and the throw is an ENERGY — the stale-on-the-event-frame trap, and `lpSweep`'s knee (2026-10-01, one worker; §70's open items 2 and 3 and §73's open items 1 and 2, the user's word: priority 3, "`kickAmp` → CHLADNI")
 
-Two commits: `64a9b19` the `dinfo()` ruler, `c8a8d6a` the kick / snare / fog leans and the file split.
-**Not tagged, not pushed, not deployed.**
+Three commits: `64a9b19` the `dinfo()` ruler, `c8a8d6a` the kick / snare / fog leans and the file split,
+`5a24fb6` this section plus CONTRACTS and OPEN-ITEMS. **Not tagged, not pushed, not deployed.**
 
 ### What §73 alone did to CHLADNI — because no scene was measured in that session
 
