@@ -5962,6 +5962,12 @@ formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToP
   and `hatEvt`. So that gap is the harness's own on this track — its page frame grid lands one frame off node's
   (10801 against 10800) and §59 already recorded CyborgNinja's PCM clock flipping between its two kick lattices —
   and §73 cannot have caused it: the comparison is unchanged by the patch, which is the stronger statement.
+  **WhoLikesToParty, Malicious and Vienna were NOT page-traced.** The loop reached WhoLikesToParty and died:
+  something outside this session removed the measurement worktrees under `/tmp` and SIGKILLed the dev server on
+  8912 mid-run (exit 137), so the last two never started. They were redundancy rather than evidence — SeeYouDrop is
+  the clean row and CyborgNinja is the stronger one, since a gap identical against base AND final cannot have been
+  opened by the patch — but a reader should not infer from this section that five tracks were walked. Re-running
+  them is a fresh worktree at this commit plus three `filetrace.js` calls.
 - Cost: flat — the fix changes two multiplications in one branch and nothing else; `test_loud`'s own budget row
   reads 5.79 µs/frame against its 40 µs cap.
 - No audible run. Every number here is the deterministic file path, the node harness or the fake timeline.
