@@ -17,6 +17,7 @@ import { PCM } from './pcm.js';
 import { LEAD, dispNow } from './lead.js';
 import { EARS } from './features-ears.js';
 import { Clock, CLOCK } from './clock/clock.js';
+import { Tongues, TONGUEK } from './clock/tongues.js';   // §76: a new Clock gets its tongue bank here, so page = node from the first hop (features-tongues.js publishes)
 
 export const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
 const KEYS = ['bpm', 'beatPhase', 'beat', 'beatCount'];
@@ -43,7 +44,7 @@ function onBlock(L, R, t0) {
   if (t0 < 0) return;
   const c0 = performance.now();
   const E = EARS.ears;
-  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; CLOCKS.k = null; }
+  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); if (TONGUEK.on) CLOCKS.clk.tongues = new Tongues(TONGUEK); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; CLOCKS.k = null; }
   const m = CLOCKS.mono, n = L.length;
   for (let i = 0; i < n; i++) m[i] = 0.5 * (L[i] + R[i]);
   CLOCKS.clk.push(n === m.length ? m : m.subarray(0, n), t0);

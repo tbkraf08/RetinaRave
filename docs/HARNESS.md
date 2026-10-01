@@ -823,6 +823,26 @@ cold, the Kalman rate is a guess (5 BPM two seconds in) and every hop then falls
 lattice vote must be near-unanimous (7 of 8 four-second windows) — 3 consecutive flipped CyborgNinja between its two kick lattices
 four times in 40 s; and `R_LINE` off loses 20–65 ms on two tracks (the onsets alone cannot pick a lattice).
 
+## Tongues — the circle-map phase-locking descriptor on the PCM clock (DECISIONS §76; a change to `engine/clock/tongues.js`, `features-tongues.js`, the clock's band fluxes, or anything that reads a `tongue*` field)
+
+`engine/clock/tongues.js` is pure and fed inside `Clock.hop()` (clock.js) when a `Tongues` is attached — `features-clock.js`
+attaches one to every new Clock while `TONGUEK.on`, `features-tongues.js` only publishes. So the bank runs in node wherever the
+clock does, and the det page equals node hop for hop (the first hop already feeds it).
+```
+node tools/test_tongues.js                                                 # in npm test: synthetic click trains — 1:1, 2:1, the 2.46 dB accent at K 0.5 / 1 / 2, swing, silence, a re-seat, determinism
+node tools/tongues-node.js [Track …] [--out tools/work/tongues] [--md out.md] [--amb 0.9]   # node, the det time base: the twelve fields per frame (node-<Track>.json) + per clock beat (`beats`), and the probe's table
+TONGUEK='{"K":2}' node tools/tongues-node.js Vienna                        # one knob (= TONGUEK in tongues.js; CLOCKK still takes the clock's)
+PORT=8920 node tools/filetrace.js <Track> 0 60 out.json 'heardT,bpmPcm,beatCountPcm,tongueP,tongueQ,tongueDepth,tongueK,tongueAmbig,tongue11,tongue21,tongue41,tongueLat,tongueLatConf,swing,tongueOn' '&map=0&lead=0'
+node tools/build-node.js --cmp page.json tools/work/tongues/node-<Track>.json tongue11,tongue21,tongue41,tongueAmbig,tongueLat,tongueLatConf,tongueDepth,swing,tongueOn   # page = node
+python3 tools/truth/tongues/env.py && python3 tools/truth/tongues/probe.py --md tools/work/tongues/probe-K1.md              # the plan's TRUTH-centred probe (the target table)
+```
+`tongues-node.js`'s table is the probe's table re-taken on the CLOCK-centred bank (the one thing the probe did not do): the
+medians over the full windows from 8 s, the Ω = 1 oscillator's lock phase at the TRUTH beats, the ambiguity runs (≥ 8 beats of
+`tongueAmbig ≥ --amb`), the first full window, and the bank's own µs per hop (the clock's FFT excluded). `tongueDepth` in the
+node trace carries the page's per-frame ease; `tongue11` is the raw per-beat depth. The switch: `&tongues=0` (no bank runs,
+`tongueOn` −1). Pitfall: a clock re-seat or a lattice move clears the windows (`tongueOn` 0 for 16 beats) — a trace that reads
+0 mid-track is the clock moving, not the bank failing; `tools/clock-study.js`'s `jumps` says when.
+
 ## Scene ruler on a real track — `tools/dust-trace.js` (a scene edit whose point is the SYNC, v0.20+ / DECISIONS §57)
 
 `filetrace.js` records MS, and MS says nothing about what a SCENE did with it; `probe.js` reads the canvas but needs a

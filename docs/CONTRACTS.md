@@ -649,8 +649,23 @@ the `ears` stage takes `key` / `mode` over from `synapse` (§62), because a bett
 the way the track map already takes the drums and the sub over from the causal ears. `check.js` fails on an `MS` key without a
 `FEATS` entry. A source is `{name, start(), stop(), tick?(nowMs)}` plugged into `ENGINE.sources`.
 
-**Stage order** (registration order, 2026-09-30): `clock` (heard time) · `synapse` · `ears` (+ the track map) · **`loud`**
-(true loudness, `engine/loud.js`) · `clock-pcm` · `bars` · `drums` · `build` · `queue`.
+**Stage order** (registration order, 2026-10-01): `clock` (heard time) · `synapse` · `ears` (+ the track map) · **`loud`**
+(true loudness, `engine/loud.js`) · `clock-pcm` · **`tongues`** (`engine/clock/tongues.js`, §76) · `bars` · `drums` · `build` · `queue`.
+
+**The Arnold tongues** (`tongues`, 2026-10-01, DECISIONS §76, `docs/plans/TONGUES-PLAN.md`): `tongueP` `tongueQ`
+`tongueDepth` `tongueK` `tongueAmbig` `tongue11` `tongue21` `tongue41` `tongueLat` `tongueLatConf` `swing` `tongueOn` —
+a bank of sine circle-map oscillators driven per 512-sample hop by the PCM clock's own mid- (150–2500 Hz) and low-band
+(40–150 Hz) onset novelty, centred on the clock's beat, read once per clock beat over a 16-beat window: which rationals of
+the beat the music LOCKS, how deep inside its tongue each sits (0 the edge, 1 a click train), the 1:1 tongue's width as an
+implied coupling, and 1 − the octave ladder's best depth as a tension. **Shadow by default**: no scene reads one. Rules for
+a scene that does: (1) `tongueOn` is 1 running · 0 warming (< 16 beats since the start or a clock re-seat) · **−1 off**
+(`&tongues=0`), and on −1 the scene falls back to its pre-tongues formula — `&tongues=0` is an md5 receipt, `loudAbs`'s
+convention; (2) `tongue21` / `tongue41` are DEEPER than `tongue11` on every test track (the hats are the most complete
+click train in the music) — the ladder says what is there, never which lattice is the beat (§61's `alive` decides the
+octave), so read a CHANGE in a depth over bars, not its level, and never make an 8th-note nudge of it (§66); (3) read
+`tongueLat` only while `tongueLatConf ≥ 0.06`. The fake timeline mirrors the twelve as constants from its phase
+(`sources/fake.js`); the 8th / 16th depths and the swing are the same constants in every phase, so a scene reading a change
+sees nothing there and the md5 list does not move.
 
 **True loudness** (`loud`, 2026-09-30, DECISIONS §63): `loudM` `loudS` `loudPk` `loudRel` `loudRange` `loudAbs` —
 ITU-R BS.1770-4 K-weighted loudness on the PCM bus, read at heard time, graded to 0.006 LU per frame against a
@@ -794,6 +809,18 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `loudRel` | level | how loud this is FOR THIS TRACK, 0 = 18 LU down on its own peak, 1 = at it | base brightness, base size, base radius — "how bright is the picture right now" |
 | `loudRange` | raw | how much dynamic range this track has shown, in LU | a scene that wants the track's OWN contrast instead of the fixed 18 LU span expands loudRel with it |
 | `loudAbs` | count | are loudM / loudS / loudPk absolute? 1 yes (file, demo) · 0 no, the gain is the tab's or the mic's (capture, mic) · -1 the loudness stage is not running (&loud=0, #test with the switch off) | the A/B gate: a migrated scene falls back to its pre-loudness formula on -1, and may not read an absolute field on 0 |
+| `tongueP` | count | the numerator of the rhythm the music locks most robustly, relative to the clock's beat (1/1 the beat, 2/1 the 8th, 1/2 the half-note, 3/2, 4/1 ...) | nothing by default (shadow); a scene may show the ladder's winner |
+| `tongueQ` | count | its denominator | nothing by default (shadow) |
+| `tongueDepth` | level | how firmly the music locks the clock's OWN beat: 0 at the tongue's edge (barely a beat), 1 at its centre (a click train) | nothing by default (shadow): a beat-sized motion's confidence |
+| `tongueK` | level | how salient the periodic accent is: the implied coupling K of the 1:1 tongue, 0 none .. 1 a clean click train | nothing by default (shadow) |
+| `tongueAmbig` | level | the TENSION of a beat the music is not committing to: 1 − the octave ladder's best depth — 1.0 when nothing locks (Vienna's dream, 16 s before drop 1), 0.3-0.6 in a groove | nothing by default (shadow); the build detector's third arming path (phase 3) |
+| `tongue11` | level | the beat's own tongue depth (the un-eased tongueDepth) | nothing by default (shadow); the accent-vs-drive ladder with tongue21 / tongue41 |
+| `tongue21` | level | the 8th-note tongue depth: how complete the double-time layer is as a click train | nothing by default (shadow); a scene's accent AMPLITUDE (never an 8th nudge, §66) on a CHANGE of it over bars |
+| `tongue41` | level | the 16th-note tongue depth | nothing by default (shadow) |
+| `tongueLat` | raw | the LOW band's half-beat verdict in circle-map form: where the kick lattice sits against the clock's line, in cycles (-0.5..0.5; 0 = on it, ±0.5 = half a beat off) | nothing by default (shadow); phase 2's alternative to §59's lattice() behind CLOCKK |
+| `tongueLatConf` | level | how much lattice the low band has at all: the Ω = 1 low-band oscillator's depth | nothing by default (shadow): the gate on tongueLat |
+| `swing` | raw | the eighth-pair ratio: 1.0 straight 8ths, 1.5 a shuffle, 2.0 triplet swing | nothing by default (shadow); the test set has nothing for it to show |
+| `tongueOn` | count | is the tongues stage running? 1 yes (a full 16-beat window) · 0 warming (< 16 beats since the start or a clock re-seat) · -1 off (&tongues=0, #test with the switch off) | the A/B gate: a scene that reads a tongue field falls back to its pre-tongues formula on -1 |
 | `presence` | level | is there music at all | idle behaviour, palette wobble |
 | `bass` | level | how strong the bass is right now | uBands.x, view scale, orbit size |
 | `mid` | level | how strong the mids are | uBands.y, trap radius |
@@ -940,7 +967,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
 | `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
 | `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
-| `lpSweep` | level | how closed a low-pass is RELATIVE to this track's own recent brightest (1 = the highs are gone); its p50 is 0.35-0.73 on normal material, a real closing filter 0.94-0.98 | blur, softness, the outro's closing filter - through a knee near the top of the range and eased (§1, §74) |
+| `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
 | `width` | level | how wide the stereo image is | spread, how far the figure reaches off-centre |
 | `kickEvt` | event | a kick just hit (one read) | the hit: a flash, a shove, a ring |
 | `snareEvt` | event | a snare or clap just hit | a second, different hit channel |
@@ -948,11 +975,11 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kickAge` | raw | seconds since the last kick (99 before any; slightly NEGATIVE on the frame it fires) | place a fast animation exactly, sub-frame |
 | `snareAge` | raw | seconds since the last snare (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
 | `hatAge` | raw | seconds since the last hat (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
-| `kickVel` | level | how hard the last kick hit, against this track's own loudest kicks | amplitude of the hit, ranked within the track - NOT on the event frame, where it is still the previous hit's (§1) |
-| `snareVel` | level | how hard the last snare hit, against this track's own loudest snares | amplitude of the hit, ranked within the track - NOT on the event frame (§1) |
+| `kickVel` | level | how hard the last kick hit, against this track's own loudest kicks | amplitude of the hit, ranked within the track |
+| `snareVel` | level | how hard the last snare hit, against this track's own loudest snares | amplitude of the hit, ranked within the track |
 | `hatVel` | level | how hard the last hat hit, against this track's own loudest hats | amplitude of the hit, ranked within the track |
-| `kickAmp` | level | how big the last kick was, on an absolute dB scale (the same hit reads the same on every track); changes ONLY on an event frame, and never reads under the lane's own 0.31 after the first hit | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength, CHLADNI's sand throw (as its ENERGY - §1, §74) |
-| `snareAmp` | level | how big the last snare was, on an absolute dB scale (the same hit reads the same on every track) | as kickAmp - DUST's flash ring, TORUS2's snare wave and CHLADNI's plate ring take their size from it |
+| `kickAmp` | level | how big the last kick was, on an absolute dB scale (the same hit reads the same on every track) | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength |
+| `snareAmp` | level | how big the last snare was, on an absolute dB scale (the same hit reads the same on every track) | as kickAmp - DUST's flash ring and TORUS2's snare wave take their size from it |
 | `denK` | raw | kicks per second over the last second | busy-ness of the low end |
 | `denS` | raw | snares per second over the last second | the climbs: 1.7x the groove on this track |
 | `denH` | raw | hats per second over the last second | double time, the rising intro |
@@ -972,7 +999,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `predKickEvt` | event | a kick is PREDICTED on this 16th, released on time (before the audio when the capture path lags) | hit a kick motion ON the beat instead of 38-52 ms after it |
 | `predSnareEvt` | event | a snare is predicted on this 16th | snare motion on time |
 | `predHatEvt` | event | a hat is predicted on this 16th | hat motion on time |
-| `predKickAge` | raw | seconds since the last PREDICTED kick (99 before any; within half a frame of 0 on its frame) | place a kick animation from the prediction (CHLADNI route: chladni.kickAge=predKickAge - it carries no size, so the throw keeps the LAST REAL kick's `kickAmp`, floored at the lane's own 0.31 before there is one: measured 24 predicted throws in SeeYouDrop 60-80 s, size p50 0.69, lumC lift p50 +66, nothing invisible) |
+| `predKickAge` | raw | seconds since the last PREDICTED kick (99 before any; within half a frame of 0 on its frame) | place a kick animation from the prediction (CHLADNI route: chladni.kickAge=predKickAge) |
 | `predSnareAge` | raw | seconds since the last predicted snare | snare animation from the prediction |
 | `predHatAge` | raw | seconds since the last predicted hat | hat animation from the prediction |
 | `predKick` | level | the predicted kick, decaying over 0.16 s (1 on the predicted hit) | a kick-level channel on time (TORUS2 route: torus2.kick=predKick) |

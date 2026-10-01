@@ -3,6 +3,7 @@
 import { TAU, clamp, ema, frac, sstep } from '../../math/util.js';
 import { MS, TEX } from '../state.js';
 import { LOUDK, LOUD_OFS } from '../loud.js';
+import { TONGUEK } from '../clock/tongues.js';
 
 const lib = {};
 let hatPh = 0;
@@ -79,6 +80,21 @@ export function fakeMusic(dt, now) {
   S.peaks = [[110, 1], [220, .6], [330, .5], [550, .3]];
   fakeSynapse(dt, now, S, sec, T, e, kp, kickOn);
   fakeLoud(dt, now, S);
+  fakeTongues(S, sec);
+}
+
+// The twelve TONGUE fields (engine/clock/tongues.js, DECISIONS §76), mirrored as CONSTANTS from the phase: the beat locks
+// where the kick is on (sustain / peak: depth 0.6, the 1:1 tongue wins) and the beat locks nothing in the valleys and the
+// build (depth 0) — so a scene that reads a tongue field headlessly is not dark. The 8th / 16th depths and the swing
+// are the SAME constants in every phase (0.5 / 0.4 / 1.0, so the tension reads 0.5 throughout): the loop has no double-time layer, so a scene that
+// reads a CHANGE in tongue21 over bars (DUST's accent amplitude, phase 4) sees nothing here and s1's md5 does not move —
+// the mirror that keeps the fake timeline an md5 reference. `tongueOn` is -1 under `&tongues=0`, the A/B convention.
+function fakeTongues(S, sec) {
+  if (!TONGUEK.on) { S.tongueOn = -1; return; }
+  const on = sec === 'sustain' || sec === 'peak', d = on ? 0.6 : 0;
+  S.tongueP = 1; S.tongueQ = 1; S.tongueDepth = d; S.tongue11 = d; S.tongueK = on ? 0.3 : 0;
+  S.tongue21 = 0.5; S.tongue41 = 0.4; S.tongueAmbig = 1 - Math.max(d, 0.5);
+  S.tongueLat = 0; S.tongueLatConf = on ? 0.2 : 0; S.swing = 1; S.tongueOn = 1;
 }
 
 // The six TRUE-LOUDNESS fields, mirrored from the synthetic energy (the plan's §6 obligation: without this the fake

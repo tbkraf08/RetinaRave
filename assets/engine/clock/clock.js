@@ -76,12 +76,15 @@ export class Clock {
     const binF = sr / NFFT;
     this.iB = Math.max(2, Math.min(40, Math.round(150 / binF))); this.iT = Math.min(NFFT / 2 - 1, Math.round(9843.75 / binF));   // v3: bins 1..419 at 48 kHz
     this.i40 = Math.max(1, Math.round(CLOCK.LAT_LO / binF));   // the lattice check's band floor (bins i40..iB = 40..150 Hz)
+    this.iM = Math.min(this.iT, Math.round(2500 / binF));      // the tongues' mid band ceiling (bins iB+1..iM = 150..2500 Hz, §69's snare lane band; §76)
     this.per = new Period(bpm0);
     this.b = 0; this.f = bpm0 / 60; this.t = NaN;
     this.P00 = CLOCK.P0_B; this.P01 = 0; this.P11 = CLOCK.P0_F;
     this.tEst = -Infinity;
     this.onsets = 0; this.hits = 0; this.est = 0; this.lines = 0; this.lineN = 0; this.jumps = 0;
     this.s40 = 0;                                                      // the newest hop's 40–150 Hz flux (the lattice check's input)
+    this.smid = 0;                                                     // the newest hop's 150–2500 Hz flux (the tongues' mid drive, §76)
+    this.tongues = null;                                               // an engine/clock/tongues.js Tongues, fed per hop when attached (features-tongues.js; §76)
     this.lat = 0; this.latOn = 0; this.latOff = 0; this.latHold = 0; this.latT = NaN; this.latJumps = 0;   // the lattice check's state (below)
     this.lastOnset = null;                     // { t, cls, vel, y, beta } of the last onset seen (tests, the trace)
     this.hops = 0;
@@ -132,7 +135,7 @@ export class Clock {
     this.latClear();                     // the lattice windows were a different period wide: the evidence is void (below)
   }
   // the lattice check's evidence, thrown away
-  latClear() { this.latOn = 0; this.latOff = 0; this.lat = 0; this.latHold = 0; }
+  latClear() { this.latOn = 0; this.latOff = 0; this.lat = 0; this.latHold = 0; if (this.tongues) this.tongues.clear(); }
 
   // one block of mono samples; runs a hop every HOP samples
   push(mono, t0) {
@@ -149,14 +152,15 @@ export class Clock {
     let mx = 0;
     for (let i = 0; i < mag.length; i++) if (mag[i] > mx) mx = mag[i];
     this.pkAll = Math.max(this.pkAll * Math.exp(-(HOP / this.sr) / 40), mx, 1e-5);
-    const g = 100 / this.pkAll, iB = this.iB, iT = this.iT, i40 = this.i40;
-    let flux = 0, bflux = 0, f40 = 0;
+    const g = 100 / this.pkAll, iB = this.iB, iT = this.iT, i40 = this.i40, iM = this.iM;
+    let flux = 0, bflux = 0, f40 = 0, fmid = 0;
     for (let i = 1; i <= iT; i++) {
       const v = Math.log(1 + g * mag[i]), d = v - prev[i];
       prev[i] = v;
-      if (d > 0) { flux += d; if (i <= iB) { bflux += d; if (i >= i40) f40 += d; } }
+      if (d > 0) { flux += d; if (i <= iB) { bflux += d; if (i >= i40) f40 += d; } else if (i <= iM) fmid += d; }
     }
     this.s40 = f40 * 0.01;                                   // the lattice check's band; the published strength is unchanged
+    this.smid = fmid * 0.01;                                 // the tongues' mid band (§76); the published strength is unchanged
     return (flux + CLOCK.BASS * bflux) * 0.01;
   }
   // an onset from the ears (perc.js: kick 0 / snare 1 / hat 2) at audio time t with velocity vel in (0, 1]: a phase measurement
@@ -209,6 +213,7 @@ export class Clock {
     }
     this.predict(t);
     this.lattice(t);
+    if (this.tongues) this.tongues.hop(t, this.smid, this.s40, this.f, this.b);   // the tongues (§76): after the line is settled for this hop
   }
   // THE LATTICE CHECK (§59): which of the two half-beat lattices is the beat, re-read while the period stays locked.
   // The ears' onsets cannot tell them apart on a track whose kicks land on every 8th (CyborgNinja: 236 of them on the truth

@@ -1,10 +1,11 @@
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
 import { GROOVE } from '../engine/groove.js';
 import { FEATS } from '../engine/feats.js';
 import { LOUDK } from '../engine/loud.js';   // &loud=0: the true-loudness stage's switch (a leaf module — see loud.js on why it is not on ENGINE)
+import { TONGUEK } from '../engine/clock/tongues.js';   // &tongues=0: the tongues stage's switch (§76; the same convention)
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS, CHAIN } from './post.js';
@@ -163,6 +164,8 @@ export function initHarness(hideLanding) {
   // true loudness (engine/loud.js, DECISIONS §63): &loud=0 turns the stage off — loudAbs stays -1 and every migrated
   // scene falls back to the `lvl` / `eM` formula it had before, which is the A/B and the md5 receipt
   if (HASH.has('loud')) LOUDK.on = HASH.get('loud') !== '0';
+  // the Arnold tongues (engine/clock/tongues.js, DECISIONS §76): &tongues=0 turns the stage off — tongueOn stays -1, no bank runs
+  if (HASH.has('tongues')) TONGUEK.on = HASH.get('tongues') !== '0';
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
   // pcm is the default since 2026-09-30 (§56 addendum 3); &clock=v3 is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
   if (HASH.has('clock')) setClock(HASH.get('clock'));

@@ -39,6 +39,9 @@ export const MS = {
   // true loudness (engine/loud.js, features-loud.js, 2026-09-30) — idle: silence, no peak, no range, and loudAbs -1 =
   // "the stage is not running", which is the sentinel a migrated scene falls back to its pre-loudness formula on
   loudM: -100, loudS: -100, loudPk: -100, loudRel: 0, loudRange: 0, loudAbs: -1,
+  // the Arnold tongues (engine/clock/tongues.js, features-tongues.js, 2026-10-01, §76) — idle: the beat itself, nothing locked,
+  // full tension, straight 8ths, and tongueOn -1 = "the stage is not running" (the A/B sentinel, loudAbs's convention)
+  tongueP: 1, tongueQ: 1, tongueDepth: 0, tongueK: 0, tongueAmbig: 1, tongue11: 0, tongue21: 0, tongue41: 0, tongueLat: 0, tongueLatConf: 0, swing: 1, tongueOn: -1,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,
