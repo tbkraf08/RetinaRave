@@ -5927,8 +5927,10 @@ velocities read 12–14 %, below `*Amp`'s own 17–26 % — and §51's observati
 **The verdict is still `*Amp` for a SIZE, and the per-track rows are why.** `*Vel`'s divisor is a running quantile
 of THIS TRACK's fire magnitudes, so its per-track p95 reads **1.000 on every one of the five tracks** — it
 renormalises, which is the right answer for "how hard, for this track" and the wrong one for "how big". `*Amp`'s
-per-track p95 reads 0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare): Malicious and Vienna never reach 1 because they are
-genuinely quieter tracks, and one absolute dB mapping says so. The same 12 dB snare reads **1.00 on Malicious**
+per-track p95, measured at the fire frames of the shipped engine, reads **1.00 / 1.00 / 1.00 / 0.62 / 0.59** (kick)
+and **0.96 / 1.00 / 1.00 / 0.63 / 0.73** (snare): Malicious and Vienna never reach 1 because they are genuinely
+quieter tracks, and one absolute dB mapping says so (§70 recorded 0.99 / 1.00 / 1.00 / 0.65 / 0.75 for the snare,
+reproduced here to two digits). The same 12 dB snare reads **1.00 on Malicious**
 (fire-stream p95 7.5 dB) and **0.55 on WhoLikesToParty** (21.8 dB). **Both stay published**: `*Vel` is the honest
 per-track RANK the reactive drums' own `kick2` strength was hand-built to be in §51, `*Amp` is the absolute SIZE a
 scene reads. **No scene changed in this session**, and at the shipped constants the scenes' own
