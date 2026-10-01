@@ -99,7 +99,12 @@ export class SubTrack {
     this.st = null;                   // the held semitone value (log pitch) of the current note
     this.candSt = null; this.candT = 0;
     this.lastSt = null; this.lastT = 0;
-    this.gateN = 0; this.gateT = -9; this.share = 1;
+    // §75: the share starts at 0, NOT at 1. `share` is the one half of the gate that can say "that is not a sub", and
+    // seeded at 1 it said "the sub owns the low end" before a single sample had been measured — on a cold start that
+    // claim then took SHARE_DOWN (0.45 s) to decay, which is 0.6 s of an OPEN gate the evidence never supported. 0 is
+    // the honest prior and it costs a real sub nothing: SHARE_UP is 0.012 s, so two 512-sample blocks (21 ms) put the
+    // share on its measured value, and the first YIN frame cannot run until 0.167 s anyway.
+    this.gateN = 0; this.gateT = -9; this.share = 0;
     this.lastNote = -9;               // audio time of the last subNote event
     this.mbuf = new Float32Array(MED_N); this.msrt = new Float32Array(MED_N); this.mk = 0; this.mn = 0;
     this.nbuf = new Int8Array(NOTE_MODE).fill(-1); this.nk = 0; this.ncnt = new Int32Array(12);

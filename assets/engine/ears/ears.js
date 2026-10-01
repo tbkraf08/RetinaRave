@@ -88,9 +88,14 @@ export class Ears {
     // The sub gate needs to know whether the sub OWNS the low end; PercTrack's bank already has the three low bands.
     // Smoothed over SHARE_TAU: which layer owns the low end is a section-level fact, and the per-hop value swings with
     // every kick (unsmoothed it made the gate chatter 5.4 times a bar through drop 2 and cut the slide count in half).
+    // §75: with NO low end at all the share is UNDEFINED, so it is HELD — the old `: 1` fed the gate "the sub owns the
+    // low end" on every block of digital silence, which is how Malicious (a fade-in from 0: the first block's peak
+    // sample is 4e-4) had an open gate and two `subNote` events inside its first 0.63 s. No measurement, no update.
     const pe = perc.e, den = pe[B_SUB] + pe[B_LOWBASS] + pe[B_HARM];
-    const sh = den > 0 ? pe[B_SUB] / den : 1;
-    sub.share += (sh - sub.share) * (1 - Math.exp(-(n / sr) / (sh > sub.share ? SHARE_UP : SHARE_DOWN)));
+    if (den > 0) {
+      const sh = pe[B_SUB] / den;
+      sub.share += (sh - sub.share) * (1 - Math.exp(-(n / sr) / (sh > sub.share ? SHARE_UP : SHARE_DOWN)));
+    }
     for (let i = 0; i < n; i++) {
       const l = L[i], r = R ? R[i] : l, m = 0.5 * (l + r), t = t0 + (i + 1) / sr;
       mid[this.w & mask] = m; this.w++;

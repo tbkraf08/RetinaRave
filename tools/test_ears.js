@@ -6,10 +6,13 @@
 //   node tools/test_ears.js --trace tools/work/ears-node-SeeYouDrop.json   # write the frozen trace format
 //   node tools/test_ears.js --cost                 # the cost table only
 //   node tools/test_ears.js --keys                 # §62: the key ruler only — the ears' tonic against every truth tonic
+//   node tools/test_ears.js --cold                 # §75: the cold-start ruler only — the sub gate's first report on all five tracks
 // The PCM comes from `python3 tools/truth/trackmap.py SeeYouDrop --pcm --sr=48000`.
 import fs from 'fs';
 import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
+import { SubTrack, GATE_SHARE_ON } from '../assets/engine/ears/sub.js';
+import { B_SUB, B_LOWBASS, B_HARM } from '../assets/engine/ears/perc.js';
 import { buildMap, mapAt, mapCross } from '../assets/engine/map/map.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -339,6 +342,51 @@ function keyRulers() {
   ok('[key] ears never worse on a track', nWorse === 0, `${nWorse} track(s) synapse gets and the ears lose`, '0');
 }
 
+// ------------------------------------------------------------------------- the COLD-START ruler (§75), --cold
+// The sub gate's two halves are a level (`rel` against the running p90) and a SHARE (the 22-70 band's share of the low
+// end). At a cold start the level half cannot say no — `Quantile` is a running mean of its first 16 samples, so
+// `rel` is ~1 whatever the absolute level — which leaves the share half as the only half that can. §75: it was seeded
+// at 1 ("the sub owns the low end") and fed 1 again on every block with no low end at all, so it could not say no
+// either for the first ~0.6 s, and `subGate` / `subIn` / `subNote` all fired on the FIRST YIN frame of every track.
+//
+// The invariant this ruler holds: THE GATE MAY NOT OPEN BEFORE THE SUB HAS BEEN MEASURED TO OWN THE LOW END. The
+// recorded `open` / `note` are the measured first report per track — three of the five have a sub in their first
+// beat and still report on the first possible YIN frame (0.1707 s at 48 kHz), so the fix costs no true report.
+export const COLD_TRACKS = {
+  SeeYouDrop:      { open: 0.1707, note: 0.167 },   // a real -3.8 dB 22-70 Hz hit at 0.050-0.125 s (share 0.96): the gate is right
+  CyborgNinja:     { open: 0.1707, note: 0.167 },   // the sub is in the first beat (raw share 0.47 by 0.075 s)
+  Malicious:       { open: 5.5253, note: 5.519 },   // a fade-in from digital silence (|x| 4e-4 at t=0): no sub until 5.5 s
+  WhoLikesToParty: { open: 0.1707, note: 0.167 },   // raw share 0.42 by 0.117 s
+  Vienna:          { open: 0.1707, note: 0.167 },   // raw share 0.51 by 0.053 s
+};
+function coldRulers() {
+  ok('[cold] SubTrack.share starts at 0', new SubTrack(48000).share === 0, new SubTrack(48000).share, '0');
+  for (const track of Object.keys(COLD_TRACKS)) {
+    const T = COLD_TRACKS[track];
+    let pcm;
+    try { pcm = loadPcm(track, 48000); } catch { console.log(`  skip  ${track} (no tools/work/${track}.48000.st.f32)`); continue; }
+    const sr = pcm.sr, B = 512, ears = new Ears(sr, {}), sub = ears.sub;
+    const bl = new Float32Array(B), br = new Float32Array(B);
+    let tOpen = null, tShare = null, nEnd = Math.min(pcm.n, Math.ceil((T.open + 2) * sr));
+    for (let s = 0; s + B <= nEnd; s += B) {
+      bl.set(pcm.L.subarray(s, s + B)); br.set(pcm.R.subarray(s, s + B));
+      ears.push(bl, br, s / sr);
+      const t = (s + B) / sr, pe = ears.perc.e, den = pe[B_SUB] + pe[B_LOWBASS] + pe[B_HARM];
+      if (tShare === null && den > 0 && pe[B_SUB] / den >= GATE_SHARE_ON) tShare = t;
+      if (tOpen === null && sub.gate) tOpen = t;
+    }
+    const ev = ears.pending.filter((e) => e.type === 'subNote');
+    const t1 = ev.length ? ev[0].t : null;
+    console.log(`  ${track.padEnd(16)} gate opens ${String(tOpen === null ? 'never' : tOpen.toFixed(4)).padStart(8)}`
+      + ` | sub first OWNS the low end ${String(tShare === null ? 'never' : tShare.toFixed(4)).padStart(8)}`
+      + ` | first subNote ${String(t1 === null ? 'never' : t1.toFixed(3)).padStart(7)}`);
+    ok(`[cold] ${track}: first gate open`, tOpen !== null && Math.abs(tOpen - T.open) < 0.012, tOpen === null ? 'never' : tOpen.toFixed(4), T.open.toFixed(4));
+    ok(`[cold] ${track}: gate not open before the share says sub`, tShare !== null && tOpen !== null && tOpen >= tShare,
+      `open ${tOpen === null ? 'never' : tOpen.toFixed(4)} >= share ${tShare === null ? 'never' : tShare.toFixed(4)}`, 'open >= share');
+    ok(`[cold] ${track}: first subNote`, t1 !== null && Math.abs(t1 - T.note) < 0.012, t1 === null ? 'never' : t1.toFixed(3), T.note.toFixed(3));
+  }
+}
+
 function costTable(R, label) {
   console.log(`  cost [${label}]: push+read per 512 block  median ${R.cost.pushMed.toFixed(4)} ms  p99 ${R.cost.p99.toFixed(4)} ms`
     + `  (push ${R.cost.pushMs.toFixed(4)} mean, read ${R.cost.readMs.toFixed(4)} mean, ${R.cost.blocks} blocks, ${R.cost.reads} reads)`);
@@ -376,6 +424,12 @@ function writeTrace(R, out, track, map) {
 const ENTRY = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename);
 if (!ENTRY) { /* nothing runs on import */ } else main();
 function main() {
+if (has('cold')) {                 // §75: the cold-start gate ruler alone, across every track with a PCM dump
+  console.log('\n=== the cold-start ruler: the sub gate may not open before the share says the sub owns the low end (§75)');
+  coldRulers();
+  console.log(FAIL ? `\n${FAIL} FAILED` : '\nall cold-start rulers pass');
+  process.exit(FAIL ? 1 : 0);
+}
 if (has('keys')) {                 // §62: the key ruler alone, across every track with a PCM dump
   console.log('\n=== the key ruler: MS.key / MS.mode are the ears\' tonic (§62), modal over 20-100 s');
   keyRulers();
