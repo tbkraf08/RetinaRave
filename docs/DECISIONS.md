@@ -3377,6 +3377,218 @@ shaders / fibre / help — all under the 350-line soft cap.
 visualization that make it feel jerky" — a new test track, Vienna (Thom Sonny Green, `~/Music/RetinaRave/Vienna.flac`; "fast
 elements … but actually a slow rolling flowy groove"; "the nudge on this looked weird and jerky around 1:40–1:50 (probably more)").
 
+## §61 the nudge is a velocity profile, and the clock does not leave a live tempo — the jerk hunt on Vienna and on SeeYouDrop (2026-09-30, one worker; report `docs/workers/VIENNA-TUNING.md`)
+
+**The asks**, in the order the user gave them, verbatim:
+
+> "still finding some observations on the visualization that make it feel jerky -> just downloaded a new flac file to pull into
+> the test folder … this track has fast elements to it but actually has a slow rolling flowy groove to it. The nudge on this
+> looked weird and jerky around 1:40-1:50 (probably more) -> run test tuning on new song"
+
+> "lots of modularization and some panning; 1:05 - 1:25 sound gets interesting and feels like in a dream before first drop at
+> 1:25 where it adds a double time; the double time should be accenting rather than driving."
+
+> "rewatching see you drop, think nudge is jerky there also."
+
+The third note re-ranked the hunt: the jerk is not Vienna's, it is **§58 task B's own nudge shape**, and Vienna is where it was
+loudest because Vienna's clock was also running at twice the felt beat there. Three commits, each measured. Not tagged, not
+pushed, not deployed.
+
+### The track — Vienna is 90.00 BPM and `trackmap.py` got the octave wrong
+
+`~/Music/RetinaRave/Vienna.flac`, Thom Sonny Green — *Vienna (Original Mix)*, 192.4 s. trackmap read **178.21 BPM with a
+68.0 ms DP residual**, so it kept the WOBBLING DP beats (the first five gaps 0.3367 / 0.3251 / 0.3250 / 0.3251 / 0.3367 s); its
+log-normal tempo prior scores 180 at 0.84 against 90 at 0.70. The onset-envelope ACF settles it: the LOW lane (kicks) reads
+**−0.005 at lag 0.3333 s and +0.052 at 0.6667 s** — no 180 BPM periodicity at all — the MID lane (snare / clap) **0.038 at
+0.3333 and 0.299 at 0.6667** (0.414 at the half-bar, 0.310 at the bar, 0.379 at the 4-bar phrase), and only the HIGH lane has
+0.3333 (0.329) and 0.1667 (0.229): **the hats ARE the "fast elements"** and the beat a listener nods to is 0.6667 s. The mid
+lane fits P 0.666779 s = 89.985 BPM at resultant 0.642 over the whole track, and with P pinned to 0.666667 its phase per 20 s
+slice moves 37 ms in 180 s — dead constant.
+
+`tools/truth/Vienna.json` now carries that hand grid — phase **0.00260 s**, bar 2.666667 s, `downbeat_mod4` **0** — the user's
+notes verbatim, and a `provisional` flag (measured, never listened to). The bar line has two independent votes: the kick onsets
+per beat of bar read **169 / 117 / 117 / 72** (40–150 Hz flux mean 0.819 / 0.808 / 0.636 / 0.722), and a grid-free Foote
+novelty (12 log band shares, 46 ms hop, 4-bar checkerboard kernel) puts the track's five boundaries at 21.223 / 43.514 /
+66.502 / 85.310 / 106.626 s with a **median 113 ms** from these bar lines against 667 for a random set (220 ms with the grid
+shifted half a beat, 244 with trackmap's own +0.31 s bias). Those boundaries are the user's own structure: the dream is bar 25
+(66.669 s) → bar 32, **the first drop is bar 32 = 85.336 s** — which trackmap's `drops` list missed entirely, having only
+105.639 → bar 40 — and the jerk window 1:40–1:50 = 100–110 s sits inside the double-time section. `tools/truth/Vienna.180.json`
+is the same grid subdivided, so a clock that locks to the double can still be graded on phase.
+
+### The jerk sources, ranked by what they measure
+
+| # | source | before | after |
+|---|---|---|---|
+| **1** | **the nudge's own velocity shape** | max \|a\| **187 / 187 / 187 rad/s²** · **75 / 73 / 75 %** of every beat under a tenth of the peak velocity · the floor **0.9 / 1.2 / 0 %** of the peak · SeeYouDrop turned BACKWARD on **103 of 5400 frames** | **19 / 16 / 26** · **0 / 0 / 0 %** · **17 / 18 / 11 %** · **0 of 5400** |
+| **2** | **the clock at twice the felt beat** (Vienna's double-time section, 85–107 s) | 100–110 s: **2.90** nudges/s against the music's 1.50 (**1.93×**), the spin at **0.647 rad/s** against 0.327 where the clock is locked; whole track 1.890 ticks/s and **62.3 %** of frames in the right octave | **1.60** /s (**1.07×**), spin **0.362** · 1.548 ticks/s, **95.6 %** |
+| **3** | **a clock re-seat delivered on one frame** | the frame's own \|a\| up to **605 rad/s²** (SeeYouDrop's cold start walks the lattice at 22.00 / 29.02 / 30.40 s; Vienna six times) | **36** |
+| **4** | **a pour re-started on top of one 1 % done** | Vienna 73.27 s phrase galaxy→torus, 73.28 s the drop's burst at `formT` 0.009: one frame OF torus | 0 |
+| 5 | the snare ring re-launches before it has left its band | it travels **0.85 / 0.62 / 0.51** units p50 between launches; the mid band is at 0.89–1.36 | not changed (open) |
+| 6 | `buildLive` / `dropLiveEvt` never fire at the user's own drop | `buildLive` arms once, 70.1–74.5 s, max 0.67; **`dropLiveEvt` 0 times in 190 s** | not changed (an engine item) |
+
+(SeeYouDrop 20–110 s / CyborgNinja 20–80 s / Vienna 0–190 s throughout.)
+
+### Step 1 — the clock does not leave a tempo whose own ACF lag is still alive (`c4dbedf`)
+
+`period.js`: `alive` is the FIRST test in the switch-vote cost. tempo.js already had exactly this rule but only on the
+DOWN-octave branch (`alive ? 1e9 : 16`), so a half-time track could be **doubled on 4 votes (2 s) and then could not come
+back**, and an unrelated lag could take it on 3. The default PCM clock read **179.5 BPM over 85–107 s and 120.0 over 132–161**
+on a 90.00 BPM track, ticking 1.890 beats/s against 1.500, with 55 % of its ticks in 100–110 s landing 186 ms off the music —
+that is the double time DRIVING. Whole-track node A/B (`tools/clock-study.js`, every column compared):
+
+| track | in-octave | lag med | \|lag\| p50 / p90 | line moves | jumps |
+|---|---|---|---|---|---|
+| Vienna before | 62.3 % | +11.9 ms | 29.7 / 314.9 ms | 6 | 5 |
+| **Vienna after** | **95.6 %** | **+6.3 ms** | **8.6 / 86.1 ms** | **4** | **3** |
+| SeeYouDrop · CyborgNinja · WhoLikesToParty · Malicious | 94.9 / 98.1 / 98.8 / 97.8 % | +1.5 / +2.8 / +7.1 / +22.2 | 6.3/19.2 · 3.0/5.0 · 7.2/10.1 · 22.3/33.9 | 0 / 4 / 2 / 0 | 0 / 3 / 1 / 0 |
+
+— and all four control traces are **byte-identical** before and after. Per 10 s on Vienna, \|lag\| p50/p90 and the clock's own
+tick rate against 1.50 Hz: 20–30 s 167/300 → **4.9/30** (2.90 → 1.50 Hz) · 90–100 165/299 → **3.8/11** (3.10 → 1.50) ·
+**100–110 164.6/299.3 → 11.2/53.1** (3.00 → 1.70) · 130–160 166/301 → **5.6/10** (2.00 → 1.50). The escape hatch is the one
+that was already there (the held lag DIES → `tempoAge > 16` → 3 votes), which is how a real tempo change is followed; the cost,
+stated, is that a track moving to a genuinely unrelated tempo while the old lag stays a live peak is not followed.
+
+**Measured and rejected inside the clock** (so nobody re-runs them): a **mid-band lattice voter** — Vienna's mid band separates
+its beat from its 8th by +0.325 ln, but CyborgNinja's reads **−0.282**, preferring the OFF-beat, so the voter would drag
+CyborgNinja onto the wrong lattice (§59's own finding that every band wider than 40–150 Hz loses it); an **even/odd
+"the clock is at the double" test** — Vienna reads +0.325 ln in the mid band but a correctly locked clock reads up to +0.206 on
+CyborgNinja's low band and +0.302 on Malicious' high band, and any track whose snare is only on 2 and 4 is a false positive by
+construction.
+
+### Step 2 — the nudge is a velocity profile: a glide plus a raised-cosine accent on the beat
+
+The two shapes before it each fixed the other's complaint: §57's single exponential (τ 0.22) was "slow to register on the beat";
+§58's shaped impulse (0.055 / 0.14, 50 % of the step in 50 ms) is "jerky". §58 bought its 50 ms by making the angle's VELOCITY
+jump from nothing to 3.14 rad/s in one frame and fall back to nothing — a floor 1 % of the peak, 75 % of every beat under a
+tenth of it, 187 rad/s² of acceleration, and **1.91 % of frames turning backward**. For comparison TORUS2, the user's own
+favourite mapping (`scenes/torus2/motion.js`: a 2π/16 step eased with ONE τ of 0.3 s), never stops at all: floor 28 % of peak,
+75 rad/s².
+
+So the angle is a CLOSED FORM of `beatCount` / `beatPhase` whose derivative is `GLIDE + (1 − GLIDE)·bump(u)` with
+`bump = (1/W)(1 + cos(2π(u − W/2)/W))` on `u ∈ [0, W]`, integrated exactly: `ang = A(m) + step(m)·PHI(u)` with `PHI(0) = 0`,
+`PHI(1) = 1`. Nothing is integrated per frame, so §57's no-drift rule survives (measured: **0.220916 rad/beat over 2500 beats
+against a design 0.220893**). `u` is the phase of `beatCount + beatPhase + W/2`, so the accent STARTS a quarter-beat before the
+beat line and PEAKS ON it — the eye sees the crest on the beat instead of the motion starting there, which is how a dancer
+anticipates, and the acceleration is finite everywhere by construction. The downbeat is still worth half a step more, and it is
+the accent's AMPLITUDE that grows, not its sharpness. `GLIDE 0.45`, `W 0.55`, chosen from a sweep at 150 / 90 / 160 BPM and then
+on the three real traces (.20/.40 still 67 % dead; .30/.50 still 50 % dead; .40/.50 already clean at max \|a\| 23/21/32 and a
+13/14/9 % floor; .45/.55 keeps §58's own 90 % completion time to the frame and lands nearest TORUS2's 28 % floor).
+`&nudge=<g>,<w>` / `hooks.nudge(g, w)` moves both live, so the next A/B is one page and not one build.
+
+**The A/B is exact and cost no page run**: the nudge is a pure function of `beatCount` / `beatPhase` / `barPos`, all three in
+`dust-trace.js`'s field set, so `tools/work/v/replay.py` replays BOTH designs on the SAME recorded clock — and its "§58" row
+reproduces the traced `d_spin` to the digit. Per-beat medians, from the real traces:
+
+| | SeeYouDrop 20–110 | CyborgNinja 20–80 | Vienna 0–190 |
+|---|---|---|---|
+| max \|a\| per beat (the jerk) | **186.6 → 19.1** | **187.1 → 15.6** | **186.6 → 16.8** |
+| \|a\| p99 over the window | 187.1 → **28.2** | 187.3 → **23.2** | 187.8 → **26.0** |
+| \|a\| max over the window | 291.8 → **101.0** | 279.5 → **31.9** | 277.5 → **101.0** |
+| dead time (v < 10 % of peak) | **75 % → 0 %** | **73 % → 0 %** | **75 % → 0 %** |
+| velocity floor / peak | 0.9 % → **16.7 %** | 1.2 % → **18.3 %** | 0.4 % → **14.2 %** |
+| velocity peaks at | −8.3 ms → −8.3 ms | −8.3 → −8.3 | −8.3 → −8.3 |
+| 25 % of the step | +16.7 ms → **+0.0** | +16.7 → **+0.0** | +33 → **+0** |
+| 50 % / 90 % of the step | +200 / +467 → +200 / +467 | +183 / +433 → +183 / +433 | +333 / +733 → +333 / +767 |
+| spin rad/s (the design rate) | 0.559 → **0.558** | 0.591 → **0.589** | 0.419 → 0.344 (step 1: 27 % fewer ticks) |
+| frames turning BACKWARD | **1.91 % → 0.00 %** | 0 → 0 | **3.64 % → 0.00 %** (415 of 11400 frames) |
+
+Three things the closed form needed that the ease hid, each measured:
+
+- **a re-seat is not motion.** §56 sets a whole-beat offset at the flip, §59's lattice check advances the line half a beat, and
+  `Clock.read()` publishes a forward jump as it comes: measured per frame as |advance − rate·dt|, SeeYouDrop 20–110 s has
+  **three +0.5 beat moves** (22.00 / 29.02 / 30.40 s — a cold start 12 s into the track lands on the wrong lattice and the check
+  walks it back) and Vienna six. The ease absorbed them because it only ever travelled part of the way; the closed form
+  delivered half a step on ONE frame and measured **605 rad/s²**, three times the jerk this step exists to remove. So a frame
+  may never carry more beat phase than its own tempo says (`JUMP` 1.05 × `dt·bpm/60`) and the excess is given back at `BLEED`
+  0.75 beat/s. **Two looser gates were measured and rejected**: a fixed 0.25 beat (391 rad/s² on a half-beat re-seat, whatever
+  the bleed did) and 3× the frame's own advance (238) — both let the excess through ON the accent's peak, where the profile's
+  own gain is 2/W, and that IS the spike. A time constant instead of a rate limit was also rejected (393): what matters is not
+  how long the catch-up takes but how fast the beat phase may run while it happens.
+- **the step must not change mid-beat.** The step is the SCALE on the whole profile, so a bar line that wobbles under a re-seat
+  and credits a downbeat mid-beat moves the angle by `dstep·PHI(u)` — half a step is 8° of instant turn. The accumulator absorbs
+  the difference; what it costs is that the window's total is the design total only to that amount.
+- **the cloud must never turn backward.** §58's ease could and did (103 of 5400 frames on SeeYouDrop, worst 0.024 rad), because
+  it takes its delta the short way round and a clock that re-publishes a lower phase pulls the target back. The closed form is
+  monotone by construction and guarded anyway: 0 of 5400.
+
+**The picture, SeeYouDrop 20–110 s, before → after**: the window's own range p95/p05 lum **4.195 → 4.482 (+6.9 %)**, the rim
+3.986 → **4.196 (+5.3 %)**, mean luminance 100.4 → 99.8, |Δlum| per frame p50 **2.085 → 1.967 (−5.6 %)** and p99 18.34 → 17.51,
+the body's p99 29.5 → **26.7 (−9.7 %)**, per-beat peak/trough 1.408 → 1.381 (−2.0 %), formation changes 8 → 8 (the same ones).
+**CyborgNinja**: mean luminance 109.05 → 109.02, |Δlum| p50 2.243 → 2.170, per-beat peak/trough 1.446 → 1.418, 0 pours both
+ways — and **the one number that got worse anywhere**: CyborgNinja's window range p95/p05 2.314 → **2.152 (−7.0 %)**, because
+on a track that is one long groove the old spike's own overdraw WAS some of the range. SeeYouDrop's range went up by as much as
+CyborgNinja's came down, the per-frame flicker is down on both, and the brief's measure is that a viewer can read the song.
+
+### Step 3 — a pour that lands on one barely started is re-aimed, not re-started
+
+`formA` / `formB` / `formT` are a single interpolation, so `formA = formB` while the cloud is 1 % of the way across declares it
+to be AT a shape it has not reached: the picture snaps there for a frame and then pours back. Measured **once** in the three
+traces and it is a real snap — Vienna 73.27 s a phrase pour galaxy → torus, 73.28 s the drop's burst on top of it with `formT`
+at 0.009. Under `RETARGET` 0.2 a pour that far in or less keeps `formA` and `formT` and only re-aims `formB`. SeeYouDrop's own
+two drop bursts land at `formT` **0.933** and **0.721** and CyborgNinja never pours, so nothing already signed off moves.
+
+### Measured and REJECTED, scene-side
+
+- **A per-beat weight from the beat's own strength** — the brief's own first candidate ("a beat with no kick is a smaller
+  nudge"), and the measurement is unambiguous that it cannot work on this track. At every clock tick in 100–110 s, on-beat
+  against off-beat: the voices' energy `max(vk, vs)` **0.248 / 0.232** (ratio 1.07), the raw levels `max(kick2, snare2)`
+  **0.121 / 0.148** (0.82 — the off-beat ticks are LOUDER), `bassS` 0.630 / 0.646, `lvl` 0.812 / 0.803, and "an attack within
+  80 ms of the tick" 54 % against 38 %. Vienna's double-time layer puts REAL transients on the off-eighths — which is exactly
+  the user's point — so PRESENCE cannot separate them and only periodicity can, which is the clock's job.
+- **A tempo-feel SCALE on the step** (step ∝ the beat's period, so the angular rate is immune to the octave). It works
+  arithmetically — at 179.5 BPM it gives 0.476 rad/s against 0.481 at 90 instead of 0.647 against 0.327 — but it speeds every
+  track that is not 150 BPM up or down (Vienna's correctly locked groove 0.29 → 0.48 rad/s, +67 %), and step 1 removes the need.
+- **A rate limit on each voice** (the brief's candidate b, "hits faster than ~6–8 Hz merge into a level"). The voices' own fire
+  rates: kick 3.01 / 3.23 / 2.04 Hz, snare 3.70 / **6.37** / 4.17, hat 4.32 / **7.62** / 3.94, worst single second 10 / 10 / 11
+  and 12 / 9 / 9 — **CyborgNinja is the densest of the three and it is the control the user has already signed off**. A 6–8 Hz
+  limiter would fire hardest there and barely on Vienna.
+- **A longer formation cross-fade / a no-pour rule in a steady groove** (candidate d): Vienna has 11 pours in 189 s (3.47/min,
+  against §57's 7 in 90 s on SeeYouDrop) and **none at all in 100–110 s** (0.0 % of frames mid-pour there), so pours are not the
+  user's jerk. `barNovelEvt` fires **once** in 190 s and there is no storm to guard against.
+
+### Open, and all of it is for the orchestrator
+
+- **`dropLiveEvt` never fires on Vienna** in 190 s, and `buildLive` arms only in the dream section (70.1–74.5 s, max 0.67). The
+  user names a drop at 1:25 and the independent novelty agrees (85.310 s). DUST's whole tension machinery — the contraction, the
+  palette drain, the slam — therefore does nothing on this track. §54's detector, not the scene.
+- **Vienna sits on the wrong half-beat lattice for 110–130 s** (\|lag\| 314 ms). Its 40–150 Hz on-beat / half-beat margin is
+  **+0.082 ln**, the thinnest of the five tracks and barely past §59's `LAT_MARG` 0.06, so the check needs ~18 s after a re-seat
+  to move the line. Step 1's four fewer re-seats already help; the rest is §59's own cost structure.
+- **the snare ring never leaves its band** on any of the three tracks (0.85 / 0.62 / 0.51 units of travel p50 against a band at
+  0.89–1.36): §58 task A launched it ON the band so it lands at 0 ms, and it then re-launches before it has gone anywhere, so
+  the eye gets a flicker on the band instead of a shell leaving. Changing it moves all three tracks equally, so it is the user's
+  call, not this session's.
+- **synapse's bar line is 2 beats off on Vienna** (`barPos`: engine bar 1 is truth beat +2 in 82 % of frames, `barConf` 0.00
+  when right and 0.67 when wrong), and its 16-beat line hits 2 of 22 section starts and 0 of 1 drop. The downbeat's bigger
+  nudge is therefore on the wrong beat of the bar there — a consistent 4-cycle, so it reads as a pattern, not a jerk.
+  `bpmSyn` reads **164.93** on Vienna (median), so synapse's tempo is a third voice and wrong on this track too.
+- "Lots of panning": DUST reads no stereo field at all (its 42 `feats` are mono), so panning cannot drive a flicker here.
+- `tools/truth/Vienna.json` is **provisional** — nobody has listened to the grid against the track.
+
+### Proofs
+
+`node tools/check.js` **0 fail** (154 modules, the 5 pre-existing line-cap warns) · `npm test` **7/7 OK** · `test_clock.js` all
+17 checks OK including the 128 → 132 ramp (±0.48 BPM), 6 s of silence coasted within 21 ms, the outlier and both lattice cases ·
+the four control tracks' whole-track clock traces `cmp`-identical · `node -e` on `grid.js` alone: `PHI(0) = 0`, `PHI(1) = 1`,
+0.220916 rad/beat over 2500 beats against a design 0.220893, and re-seats of +0.5 / +1 / −0.3 / −1 beat give max \|a\| 35.5 /
+35.5 / 106.6 / 106.6 with the velocity never negative. **The §60 harness rule was honoured on every pair**: the MS columns'
+md5s (`beatCount`, `bpm`, `beatPhase`, `dropEnv`, `eM`, `eS`, `kick2`, `snare2`, `hat2`, `subNoteEvt`, `buildLive`) are
+IDENTICAL between the head and final traces on SeeYouDrop and CyborgNinja, and on Vienna only the three clock columns moved
+(step 1) with every analyser and source column identical — so each before/after is valid. s1 fake-timeline md5 f360
+**`5a9b6bc7` → `42e4871c`**, f840 **`b70a98e1` → `6eae9916`** — and the "before" pair is exactly §60's own recorded one, taken
+in THIS tree with only `dust/{grid,index}.js` reverted to HEAD, which isolates this section's change from §62's (the fake
+timeline gives the ears no tonic, so `key` never moved there). No other scene's folder was touched and DUST's files are imported
+by nothing else, so no other line can move. Cost: **flat**. `CARD.bench(1, 300)` at tier 3 (150 k points), `q` pinned 0.95 and
+settled over 600 frames, the first call discarded, four pairs interleaved with NAV, THREE runs of each tree alternating:
+DUST/NAV medians **0.723 / 0.816 / 0.768 (before)** against **0.837 / 0.776 / 0.797 (after)** — 0.768 against 0.797, inside a
+within-run spread of 0.50 to 1.37 on a machine carrying a second worker's Chrome; DUST's own ms 1.078 against 1.134. The change
+adds one `cos` per FRAME on the CPU in place of one `exp` and touches no shader and no per-grain work, so no cost number could
+honestly move. No Q trace (the cost did not rise). A second worker was committing `assets/engine/{feats,features-ears}.js` (§62) in the same
+worktree throughout; its change is `key` / `mode`, which DUST reads only for the hue, and the md5s above prove it did not reach
+any number in this section. No audible run (the worker's brief forbids it): every number is the deterministic file path.
+
+**Not tagged, not pushed, not deployed.** The A/B for the user, in track time, is `docs/workers/VIENNA-TUNING.md`.
+
 ## §62 `key` is the TONIC — the engine read the fifth above it, and the fix is which detector answers (2026-09-30, one worker; the miss found by §60 step 3, the user: "fix it")
 
 §60 step 3 measured DUST and TORUS2 taking a bit-identical hue out of `assets/math/keycolour.js` and the engine

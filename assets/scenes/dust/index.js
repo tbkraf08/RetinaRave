@@ -4,7 +4,7 @@
 import { VS_DUST, FS_DUST } from './shaders.js';
 import { HELP } from './help.js';
 import { CAP, counts, emit, fit } from './fibre.js';
-import { GAL_K, ease, mkTrigger, spinTarget, trigger } from './grid.js';
+import { GAL_K, K as NUDGE, mkSpin, mkTrigger, spin, trigger } from './grid.js';
 import { dyn, mkDyn } from './dyn.js';
 import { HAB, NW, ema, emaK, mkEma } from './habit.js';
 import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
@@ -22,6 +22,7 @@ const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 // in one crossfade fight over one variable — so DUST builds its own.
 const KEY = mkAnchor();
 const DEG = Math.PI / 180;
+const RETARGET = 0.2;           // a pour this far in or less is RE-AIMED instead of restarted (§61 step 3, reform())
 const S0 = 0.7;                 // fibre scale at rest. The pole gate caps a projected ring at sqrt(1.86/.14) = 3.64,
                                 // so 0.7 keeps the widest sweep inside the 2.3-unit frame half-height at dist 4.4.
 
@@ -75,7 +76,7 @@ const SELF = {
     this.vp = new Float32Array(16);
     this.formA = 0; this.formB = 0; this.formT = 1; this.nRef = 0;
     this.dropHi = false;
-    this.spin = 0; this.spinG = 0; this.trig = mkTrigger(); this.why = 'init';
+    this.spin = 0; this.spinG = 0; this.sp = mkSpin(); this.trig = mkTrigger(); this.why = 'init';
     // the three transient voices and the sub (voices.js): decay time constants longer than the levels' own, which
     // is what "slow decay" means, and a floor so a soft hit is still a hit
     this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
@@ -97,9 +98,18 @@ const SELF = {
   // formA -> formB. `target` is the shape the music is asking for (formations.js); asking for the one already on
   // screen is not a change at all, which is why a phrase line in the middle of a steady groove leaves the picture
   // alone. `force` re-pours even into the same shape — the drop's burst, which must always be visible.
+  //
+  // A pour that lands on one that has BARELY STARTED is a RE-TARGET, not a new pour (§61 step 3): `formA` / `formB` /
+  // `formT` are a single interpolation, so setting `formA = formB` while the cloud is still 1 % of the way across
+  // declares it to be AT a shape it has not reached — the picture snaps there in one frame and then pours back.
+  // Measured once in the three traces, and it is a real snap: Vienna 73.27 s a phrase pour galaxy -> torus, 73.28 s
+  // the drop's burst on top of it with `formT` at 0.009, so `formA` jumped galaxy -> torus on one frame. Keeping
+  // `formA` and `formT` and only re-aiming `formB` is continuous and is what the music asked for. SeeYouDrop's own
+  // two drop bursts land at `formT` 0.933 and 0.721 and CyborgNinja never pours, so nothing already signed off moves.
   reform(target, force) {
     const k = ((target | 0) % 4 + 4) % 4;
     if (!force && k === this.formB && this.formT >= 1) return false;
+    if (this.formT < RETARGET) { if (k === this.formB) return false; this.formB = k; this.nRef++; return true; }
     this.formA = this.formB;
     this.formB = k;
     this.formT = 0;
@@ -109,9 +119,10 @@ const SELF = {
 
   update(dt, MS, GROOVE, LOOK, env) {
     this.lastMS = MS;                                    // hooks.dinfo() reads it; nothing else does (§1.15: never across frames)
-    // The beat grid (grid.js): one angle, read off the beat COUNT so it can never drift, eased so every beat is a
-    // nudge. The galaxy's winding rides the same angle at its own rate.
-    this.spin = ease(this.spin, spinTarget(MS), dt);
+    // The beat grid (grid.js): one angle, a closed form of the beat COUNT and PHASE so it can never drift, whose
+    // velocity is a base glide plus a raised-cosine accent peaking ON the beat (§61 step 2 — §58's shaped impulse
+    // was the stop-start the user called jerky). The galaxy's winding rides the same angle at its own rate.
+    this.spin = spin(this.sp, MS, dt);
     this.spinG = GAL_K * this.spin;
 
     // The three transient voices. The attack fires on whichever comes first — the ears' event or the v2 level's
@@ -253,10 +264,20 @@ const SELF = {
     form(v) { SELF.pinF = v === '' || v === undefined || v === null ? -1 : +v; },   // -1 = the music chooses (the default)
     dyn(v) { SELF.pinD = v === '' || v === undefined || v === null ? -1 : +v; },     // -1 = the music chooses (the default)
     hab(v) { SELF.habOn = +v; },                                                    // &hab=0: pass 1's drive, for the A/B
+    // &nudge=<glide>,<width> (and hooks.nudge(g, w) from a page): the beat nudge's velocity profile, for the user's
+    // own A/B of how much glide the motion wants (§61 step 2). '' restores the measured default.
+    nudge(g, w) {
+      const a = typeof g === 'string' ? g.split(',') : [g, w];
+      if (a[0] !== '' && a[0] !== undefined && a[0] !== null && +a[0] >= 0 && +a[0] < 1) NUDGE.GLIDE = +a[0];
+      if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] > 0.02 && +a[1] <= 1) NUDGE.W = +a[1];
+      return JSON.stringify(NUDGE);
+    },
     // &key=<k> (and hooks.key(k, m) from a page) pins the key so a shot can prove one hue at a time
     key(k, m) { SELF.keyPin = k === null || k === undefined || k === '' || k < 0 ? null : { k: ((k | 0) % 12 + 12) % 12, m: (m | 0) ? 1 : 0 }; return JSON.stringify(SELF.keyPin); },
     dinfo() {
-      return { spin: SELF.spin, spinG: SELF.spinG, formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
+      return { spin: SELF.spin, spinG: SELF.spinG, nv: SELF.sp.v, nu: SELF.sp.u, nstep: SELF.sp.step,
+        noff: SELF.sp.off, njump: SELF.sp.jumps,
+        formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
         want: shapeFor(SELF.lastMS || {}),
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
