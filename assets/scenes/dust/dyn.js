@@ -15,8 +15,9 @@
 //     `LOUDK.PK_REL` is 0.02 LU/s instead: a straight line in dB, 3 LU over a 150 s track (§63 phase 2 decision 1).
 //   * the 0.84 FLOOR. An absolute floor is not gain-invariant, and the other four test tracks master 8-9 LU quieter
 //     than SeeYouDrop, so it would bind for their whole length and a quietly mastered track would be permanently
-//     darker — the AGC's own sin inverted. `loudPk`'s RELATIVE warm-up guard (`loudS + 4·exp(-age/6 s)`) solves the
-//     problem §60 step 4 paid the floor to solve — a track's first frames reading as its brightest (§63 decision 2).
+//     darker — the AGC's own sin inverted. `loudPk`'s RELATIVE warm-up guard (`loudS + 4·exp(-age/20 s)`, a 6 s
+//     time constant until §67) solves the problem §60 step 4 paid the floor to solve — a track's first frames
+//     reading as its brightest (§63 decision 2).
 //
 // What it replaces. The cloud's whole brightness was `(.5 + 1.1 * lvl)`, and `lvl` is AGC-normalised: measured over
 // SeeYouDrop 20–110 s `&map=0` it reads p05 0.513 / p50 0.882 / p95 0.992, i.e. a 1.5x swing over a track whose

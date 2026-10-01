@@ -1,7 +1,7 @@
 # An AGC-free loudness for the engine — a plan (2026-09-30)
 
 Written on the user's word ("plan it") after DECISIONS §60 step 1 / §60's pass-2 table.
-**STATUS, 2026-09-30, on the user's word "loudness plan approved": phases 1, 2, 3, **4**, 5, 7 are BUILT — see the
+**STATUS, 2026-09-30, on the user's word "loudness plan approved": phases 1, 2, 3, **4**, 5, 7, **8** are BUILT — see the
 phase table in §8 for the commit of each, `docs/DECISIONS.md` §63 for phases 1–3/5/7 and **§65 for phase 4 (DUST)**.
 Only phase 6 (NAV2) is NOT built, still blocked on the user un-pausing NAV2. Nothing is tagged, pushed or deployed.
 The user's eye on the look — four scenes now — is the one gate still open.** The measured numbers below are from the planning session; where the build disagreed with them §63 says
@@ -141,6 +141,7 @@ One scene per commit, `IDS=<id> tools/scene-md5.sh` as the proof each time.
 | 5 | **FEIGEN**, then **MANDALA**, then **POLYTOPE** — one commit each, `IDS=<id>` md5 each | **M** | the user's look per scene | **DONE `99c9cb7` / `f94b1c0` / `630fdf1`** (the user's look is still OPEN) |
 | 6 | **NAV2** `ePk` → `loudRel` | **M** | blocked on the user un-pausing NAV2 | **SKIPPED** — still blocked |
 | 7 | **NAV** + **GIELIS** review (expect ≤ 2 lines); the `eG` decision (proof 5) | **S** | — | **DONE `05b06cf`** — 0 lines changed; `eG` kept, documented as a rank |
+| 8 | **the `loudPk` seeding defect** (§65 open item 1) + the re-calibration it forces: the peak and the range histogram attack only on a FULL 3 s window, `L_RNG_MIN` and the warm-up guard re-swept on the five tracks | **M** | `test_loud.js`'s new `transient` case, §65's three gates re-taken, the md5 list | **DONE `__H8__`** — SeeYouDrop's `loudPk` at 100 s **−1.03 → −2.72** against a true max of −1.69 (the overshoot 3.01 → 0.00 LU); `L_RNG_MIN` **7 → 6**, `LOUDK.WARM_T` **6 → 20 s**, DECISIONS §67 |
 
 ### What phase 4 (DUST) should do, written after phases 1–3 and 5 (for the next worker)
 

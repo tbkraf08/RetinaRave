@@ -4559,3 +4559,265 @@ what §60's harness rule exists to catch (that pair was discarded and re-taken).
   over 24–60 s, so the downbeat's bigger nudge is on the wrong beat of the bar on this track.
 - **Vienna's hats fill to 16ths on bars 17 and 21 only** (45.3–48.0 and 56.0–58.7 s). Nothing in the engine reads that,
   and §58's `denH` is a count, not a lattice. Noted, not acted on.
+
+## §67 the peak hold was seeded by a window that did not exist — the `loudPk` defect, and the re-calibration it forces (2026-09-30, one worker; §65 open item 1, `docs/plans/LOUDNESS-PLAN.md` phase 8)
+
+§65 left one open item and called it "a phase of its own": **`Loud.push` fed a partially-filled short-term window into
+the peak hold's instant attack**. `loudM` and `loudS` are read-only functions of the ring and `zAt` will answer a
+"3 s" window from as few as 32 samples — which is the honest causal answer for them, and the warm-up guard covers it.
+The **peak hold** and the **range histogram** are not read-only: they are recursive state, and what they take in on the
+first block they keep. At `PK_REL` 0.02 LU/s a wrong seed is kept for minutes. **SeeYouDrop's file starts on a
+transient**: its first block read **+0.97 LKFS** against a true track maximum `loudS` of **−1.69**, and the hold needed
+**147 s** — longer than the track — to walk that off. The other four tracks begin in silence, which is why §63's
+synthetic `peak` case (one level for 30 s, silence first) did not catch it. Fixed here, with `L_RNG_MIN` and the
+warm-up guard re-swept on the five tracks as §65 said they would have to be. **Not tagged, not pushed, not deployed.**
+
+### The fix — BS.1770's own gating, one condition
+
+BS.1770-4 measures **complete gating blocks only**, and that is all this is: `zAt` now also reports the sample count
+its mean was taken over, and the hold and the histogram attack only when that count is `SHORT_W * sr` (exact at the
+boundary — `cn` is linear in `t` inside a sub-block, so `dn` crosses 144 000 samples one block after 3.0 s). `loudM` /
+`loudS` are untouched: a partial window is still measured over what there is, because a track's first frames reading
+as silence would be worse than reading as a short mean, and `loudRel` does not care — during warm-up the guard sets
+`loudPk = loudS + WARM_LU·exp(−age/WARM_T)`, so `loudRel` is `1 − guard/18` **whatever `loudS` says**. That is the
+whole reason the guard is relative, and it is why the partial window was invisible in every field except the one that
+remembers.
+
+**Two alternatives measured and rejected.** *Weighting the partial window by its fill* (zero-padding the mean, so the
+hold ramps over the first 3 s) is **identical from the moment the window fills** — the ramp is monotone and reaches
+exactly `loudS(3 s)` there — and before it fills, its deficit (4.77 LU at 1 s, 1.76 at 2 s, 0.15 at 2.9 s) is smaller
+than the guard at the same instants (4.80 / 4.62 / 4.45 LU at the chosen 5 LU / 25 s), so the guard wins every frame
+and the extra term buys nothing. *Seeding from the gated momentary* re-introduces the overshoot by construction: a
+transient's 400 ms loudness is the quantity that was too loud in the first place.
+
+**The same hazard, checked in the other fields.** `loudRel` — covered by the guard, shown above, and gain-invariant
+either way. `loudRange` — it **had** the hazard, through the same histogram, and the same condition fixes it: the first
+~3 s of partial windows used to enter the percentiles (first non-zero range at **0.18 s**, now at **3.3–4.3 s**), and
+dropping them moves Malicious 8.50 → **8.00** LU against the reference's whole-track 7.82 and Vienna 3.00 → **3.50**
+against 3.25. `loudAbs` is a mode flag with no window in it. The **warm-up guard** has no partial-window hazard — it is
+a difference, not a level — but it needed re-tuning for a different reason (below). `sources/fake.js`'s mirror has no
+window at all (`loudS = lkfs(eM)`, `eM` floored at 0.12), so the fake timeline never had this defect.
+One more wart, found while checking the guard: `LKFS_MIN` was only the value digital silence mapped to, not a floor, so
+the first ~70 ms of WhoLikesToParty read `loudS` **−158 LKFS** — outside the range FEATS publishes, and the one way
+`loudPk` (which *is* floored) could sit above `loudS` with no guard involved. `lk` now clamps. No graded frame of the
+five tracks is near it (min `loudS` −38.6, min `loudM` −86.8 LKFS), so it moves no measured number.
+
+### The defect, in numbers
+
+| `loudPk`, LKFS | t=5 s | 10 s | 20 s | 50 s | **100 s** | end | max overshoot of the HOLD over the honest running max, t ≥ 30 s |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop, before | +0.87 | +0.77 | +0.57 | −0.03 | **−1.03** | −2.18 | **+3.01 LU** |
+| SeeYouDrop, after | −6.22 | −3.38 | −2.18 | −3.38 | **−2.72** | −2.49 | **0.00 LU** |
+
+The track's true full-window `loudS` maximum is **−1.69 LKFS**. At 100 s the hold was **1.46 LU above** it and is now
+**1.03 LU below** it — the 0.02 LU/s release doing its job over the 38 s between drop 1 and breakdown 2, which is the
+honest answer. (In the page `loudPk` reads −1.13 → −2.73 at the same instant: the extra 0.1 LU is the display lead.)
+
+**It was not only SeeYouDrop.** The defect needs a loud first 3 s, not a loud first block: a partial window over a
+sparse-but-loud lead-in beats the eventual 3 s mean. Max overshoot of the hold, t ≥ 30 s: **SeeYouDrop +3.01 ·
+CyborgNinja +1.46 · Vienna +1.37 · WhoLikesToParty +0.02 · Malicious +0.01 LU** → **0.00 LU** on all five after.
+Vienna's first block reads −7.24 LKFS against its own track maximum of −4.96, so it carried 1.4 LU of it for the whole
+song; §65's "Vienna is the control that the migration does not invent dynamics" was measured through that.
+
+`tools/test_loud.js` grows a **`transient`** case: a −13 LKFS burst at t = 0 with **no silence first**, then −26 LKFS
+to 20 s and −20 LKFS after (true short-term max −20.00, graded against the file's exact in-test reference, which moved
+above the synthetic cases so they can use it). It asserts that `loudPk` never exceeds the loudest FULL 3 s window heard
+so far plus the guard by more than **0.1 LU**, that the hold alone (guard subtracted) never exceeds it at all, and that
+inside the first 3 s `loudPk − loudS` **is** the guard and nothing else. Against HEAD's `loud.js` the same case reads
+**+8.3 LU** of guarded overshoot at 3.2 s and **+7.9 LU** of hold at 21 s, and **3 of its 4 assertions fail** — which
+is the receipt that the case tests the defect and not the fix.
+
+### The re-calibration — `L_RNG_MIN` 7 → 6, and the guard 4 LU / 6 s → 5 LU / 25 s
+
+§63 fitted `L_RNG_MIN` against the broken hold and §65 said so. With the hold honest the whole sweep moves, and it
+moves for a structural reason worth writing down: **a causal hold pins the track's own loudest moment to `loudRel` 1.0
+and `baseLight` 1.0**, so a breakdown can only sit at `1 − dLU/max(loudRange, R)` and the ratio the mapping can show on
+a breakdown → drop pair is bounded by `1/(1 − dLU/R)`. The inflated hold used to push the whole track down into the
+bottom of 0..1, where the *same* dLU is a bigger *ratio* — that is where §63's ×1.93 came from, and it was a loan
+against a wrong number.
+
+Re-swept 3 … 18 LU on all five tracks (`tools/work/v67/{sweep,warm,clamp}.mjs`, one `read()` per 60 fps frame as the
+page does, 58 179 graded frames):
+
+| `R` | 4 | 4.5 | 5 | **6** | 7 | 8 |
+|---|---|---|---|---|---|---|
+| headline breakdown 2 → drop 2, base light (equal 5.1 s windows) | ×2.04 | ×1.82 | ×1.68 | **×1.51** | ×1.40 | ×1.34 |
+| SeeYouDrop base light p05 | 0.000 | 0.000 | 0.015 | **0.179** | 0.296 | 0.384 |
+| frames clamped to 0 — SeeYouDrop | 6.1 % | 6.0 % | 4.5 % | **0.0 %** | 0.0 % | 0.0 % |
+| ... WhoLikesToParty (from 52 s, **mid-track**) | 4.2 % | 3.3 % | 1.2 % | **0.0 %** | 0.0 % | 0.0 % |
+| ... Vienna (from 69 s, **mid-track**) | 3.6 % | 1.4 % | 0.7 % | **0.0 %** | 0.0 % | 0.0 % |
+
+**§63's two criteria no longer meet.** The music's own power ratio on that pair is ×1.936, which now needs R ≈ 4.3 —
+and there the mapping clamps 4.2 % of WhoLikesToParty and 3.6 % of Vienna to the shader's idle **mid-track**, which is
+exactly what §63 rejected R < 6 for ("the ratio stops meaning anything"). A clamped frame carries no information at
+all, so that is the hard constraint and it wins: **6 is the smallest floor that clamps no frame of any of the five
+tracks** (Malicious's 43 clamped frames are the last 0.7 s of the file), and it takes the largest ratio available under
+it. §63's rule was "the picture moves by as much as the sound does **and no more**"; ×1.51 is under the music's ×1.94,
+which is the safe side of it. 6 also puts §63's other anchor back: the four tracks that are not SeeYouDrop read base
+light p50 **0.914 / 0.803 / 0.814 / 0.880** (CyborgNinja / Malicious / WhoLikesToParty / Vienna), mean **0.853**
+against §63's measured 0.871 and `lvl`'s own p50 0.882 (§60 step 1).
+
+**The warm-up guard had to grow, and this is the one thing here that is not just "the measure being honest".** A
+causal hold means every moment that is a NEW loudest reads 1.0 — and SeeYouDrop's **8–14 s**, where the track
+assembles itself, is a new loudest almost every frame. At the old 4 LU / 6 s (gone to 0.03 LU by 30 s, long before a
+14 s intro ends) that stretch came out **brighter than the groove**, which is the exact failure §60 step 4 paid the
+0.84 floor to fix and §65 reported closed at 1.021×. Swept on **DUST's own luminance** — because the gate is a
+luminance ratio and the scene's own channels multiply the base light by ~1.2–1.5× there, so the base light's ratio is
+not the gate (one 2–40 s trace per candidate, `tools/work/v67/intro.mjs`):
+
+| `WARM_LU` / `WARM_T` | intro 2–8 s / groove | intro 8–14 s / groove | four-track base p50 mean |
+|---|---|---|---|
+| 4 / 6 s (§65, on the broken hold) | 0.357 | 1.021 | 0.894 |
+| 4 / 20 s | 0.787 | **1.177** ✗ | 0.868 |
+| 4 / 30 s | 0.757 | **1.094** ✗ | 0.850 |
+| 5 / 20 s | 0.673 | **1.047** ✗ | 0.866 |
+| **5 / 25 s** | **0.650** | **0.984** ✓ | **0.853** |
+| 6 / 20 s | 0.556 | 0.918 ✓ | 0.860 |
+
+**5 LU / 25 s** is the only candidate that clears the gate *and* lands 2–8 s on **§60's own signed-off 0.633**; 6 LU
+clears it by more but takes the first bars under that figure. `FEATS` has described a 6 LU / 20 s guard since the plan
+while the code did 4 / 6; both are now one number, and it is the measured one.
+
+### §65's pass-2 table, re-taken BACK TO BACK — and the compression, stated plainly
+
+Every trace below was taken in a **separate git worktree at `66e9977`** on its own server (see "the machine was
+shared"), before leg = that commit, after leg = that commit plus this section's files and nothing else, `WARM=20` so
+the file opens at t = 0 as §65's did. **The before leg reproduces §65's table to the digit** (mean lum 81.4, p95/p05
+4.251, base light 0.248 / 0.532 / 0.764, breakdown 2 114.5 / 128.0, drop 2 147.7, groove 69.9, breakdown 1 45.1,
+intro 0.357 / 1.021), which is the receipt that the isolation works. The **MS columns the loudness stage does not own
+are md5-identical across all nine pairs** (`lvl` / `eM` / `eS` / `alive` / `beatCount` / `dropEnv`) — §60's validity
+rule, and the engine did not move anywhere else.
+
+| DUST, SeeYouDrop 20–110 s (`&map=0`, CLOCK=1) | §65 | §67 |
+|---|---|---|
+| mean luminance | 81.4 | **97.1 (+19 %)** |
+| the window's range p95/p05 lum | 4.251 | 3.189 |
+| base light p05 / p50 / p95 | 0.248 / 0.532 / 0.764 | **0.581 / 0.849 / 0.966** |
+| `loudPk` at 100 s | −1.13 | **−2.73** (true max −1.69) |
+| **breakdown 2 → drop 2, equal 5.1 s windows** | 114.5 → 147.7 = ×1.290 | 126.9 → 155.1 = **×1.222** |
+| **breakdown 2 (§60's own 100.5–104 window) → drop 2** | 128.0 → 147.7 = ×1.154 | 141.5 → 155.1 = **×1.096** |
+| the void before drop 1 (55–57.6) · drop 1 | 37.3 · 91.6 — void/drop **0.407** | 53.2 · 116.8 — void/drop **0.456** |
+| groove (28–40) · breakdown 1 (49–55) | 69.9 · 45.1 — break1/groove 0.645 | 89.4 · 65.6 — **0.733** |
+| **intro 2–8 s / groove** | 0.357 | **0.650** (§60's signed-off figure: 0.633) |
+| **intro 8–14 s / groove** | 1.021 | **0.984** — §60's open item 2 stays closed |
+
+**The one thing that got worse, and why `L_RNG_MIN` cannot fix it.** The breakdown → drop separation in the PICTURE
+falls (×1.290 → ×1.222 on equal windows, ×1.154 → ×1.096 on §60's), even though the base light's own ratio rose from
+×1.21 (`loudRel`) to ×1.51. Every migrated scene's shader is affine with a large constant term — DUST's
+`gBase = .22 + 1.42·uDyn`, and in this window the measured map is `lum ≈ 79.1 + 77.0·base` — so a base light nearer 1
+compresses the ratio. §65's ×1.290 was **bought by the defect**: a hold 1.46 LU too high pushed the breakdown's base
+light down to 0.460, where the same 2.9 LU is a bigger fraction. Lowering R does not buy it back (R = 4 gives only
+×1.33 in luminance, and it clamps mid-track), so the lever for absolute contrast is the scene's own gain, which §65's
+watch-list item 4 already named. **The gate is still met in the sense §60 set it** — the drop is brighter than the
+breakdown before it, where §60 had it *darker* at ×0.875.
+
+**The quiet masters are still not dim** (DUST, 20–110 s, mean luminance and base light p50):
+
+| track | master (gated LKFS) | mean lum §65 → §67 | base light p50 §65 → §67 |
+|---|---|---|---|
+| SeeYouDrop | −3.88 | 81.4 → **97.1 (+19 %)** | 0.532 → 0.849 |
+| CyborgNinja | −9.05 | 99.5 → 106.0 (+7 %) | 0.719 → 0.897 |
+| Vienna | −6.89 | 93.9 → 92.4 (−2 %) | 0.833 → 0.847 |
+| WhoLikesToParty | −10.03 | 120.0 → 115.2 (−4 %) | 0.848 → 0.795 |
+| Malicious | −12.46 | 114.4 → 112.7 (−1 %) | 0.906 → 0.855 |
+
+The track that moves is the one that had the defect; the two quietest masters move by 1–4 % and stay at the top of the
+range, which is what the relative guard and the relative floor are for. **WhoLikesToParty's three drops get a bigger
+base-light step** (×2.61 / ×1.61 / ×1.67 → ×3.88 / ×1.89 / ×1.98): its hold was already honest, so all it got was the
+new floor.
+
+**The other three migrated scenes** (SeeYouDrop 20–110 s, one trace each, same pair rule):
+
+| scene | mean lum | drop 2 / breakdown 2 (§60 win) | breakdown 1 / groove |
+|---|---|---|---|
+| FEIGEN (6) | 155.5 → 163.4 (+5 %) | 1.159 → 1.124 | 0.753 → 0.804 |
+| MANDALA (2) | 165.7 → 170.5 (+3 %) | 1.293 → 1.286 | 0.795 → 0.846 |
+| POLYTOPE (5) | 37.3 → 52.9 (**+42 %**) | 2.438 → 1.966 | 0.613 → 0.690 |
+
+Same shape on all four: brighter, and a little less contrast, because all four read one mapping. POLYTOPE moves most
+because its own gain is the smallest (`0.75·(0.35 + base)·presence`), so it sat lowest on the compressed part of the
+curve.
+
+### The fake timeline — exactly the four migrated scenes, and `&loud=0` is bit-exact
+
+`PORT=8900 tools/scene-md5.sh`, all twelve ids, both legs on the current HEAD (`937c510`) in the isolated worktree,
+`errs []` and `hop 840 row 72` on every one:
+
+| id | scene | HEAD | HEAD + §67 | HEAD + §67, `&loud=0` |
+|---|---|---|---|---|
+| **1** | **DUST** | `eef2dd9a` / `80956d08` | **`6afe61f2` / `d3bed410`** | `e970e8dc` / `466b5d3b` |
+| **2** | **MANDALA** | `1124721c` / `cb3442e9` | **`f2df3a81` / `c93dcf77`** | `9a57626c` / `5e59be93` |
+| **5** | **POLYTOPE** | `4bcf26a3` / `c7469414` | **`e6aed873` / `e6ec96a0`** | `06b46063` / `cccb0094` |
+| **6** | **FEIGEN** | `39d51392` / `f4032da8` | **`fac80f37` / `6251d7e9`** | `8d6ac4a6` / `9adb1f5b` |
+| 0, 3, 4, 7, 8, 9, 10, 11 | the rest | — | **identical, line for line** | — |
+
+**Exactly 8 of the 24 lines moved, and they are the four scenes that read `baseLight`.** Nothing else is reachable:
+the only files touched are `engine/loud.js`, `engine/feats.js` (text) and `math/loudlight.js`, and the only scene-side
+consumer of either is `baseLight`. The move comes through `sources/fake.js`'s mirror, which reads `LOUDK.WARM_LU` /
+`WARM_T` — the fake timeline has no real `Loud`, so the full-window condition itself cannot move it; the guard and
+`L_RNG_MIN` can, and did.
+
+**`&loud=0` is BIT-EXACT.** The right-hand column is **identical to the same four lines taken at HEAD under
+`&loud=0`** (`IDS="1 2 5 6" tools/scene-md5.sh b67x '&loud=0'`), and s2 / s5 / s6 are **v0.14's own lines**
+(`9a57626c` / `5e59be93`, `06b46063` / `cccb0094`, `8d6ac4a6` / `9adb1f5b`) bit for bit, exactly as §63 phase 5 left
+them. **s1's is `e970e8dc` / `466b5d3b` and NOT §65's recorded `42e4871c` / `6eae9916`** — because §66 committed
+`dust/grid.js` between the two phases and moved DUST's pre-loudness rendering; the receipt that this phase did not
+touch it is that the `&loud=0` line is the same number on both legs of this phase's own pair.
+
+### §65's open item 2, measured and left alone
+
+§65 suggested that if the user's eye wants §60's dark void back, the honest way is a short-window term — `loudM`
+(400 ms) resolving a 2.6 s void where `loudS` (3 s) cannot. Measured as the one-line variant (the base light's
+numerator becomes `min(loudS, loudM)`, so a brief void darkens at once and a transient cannot brighten anything), at
+R = 6: **void 1 / drop 1 does not move at all** (0.712 → 0.712) and breakdown 2 / drop 2 moves only 0.606 → 0.591. It
+is not a win, and the reason is in the truth: that void is a riser and a reverb tail, it integrates to −4.68 LKFS
+against the groove's −3.99, and a 400 ms window agrees with the 3 s one that it is loud. **Not implemented.** The eye's
+complaint about the void is not a window-length problem — `eM`'s AGC crashing there was the thing the eye liked, and
+recovering it would mean deliberately un-measuring the loudness, which is not a worker's unilateral call.
+
+### Proofs
+
+`node tools/check.js` **0 fail** (157 modules, uniforms 202, MS keys 205, help.feats gaps 0, **the same 5 pre-existing
+line-cap warns**) · `npm test` **0 FAIL** — taken in the isolated worktree at HEAD + §67, because the main tree's
+`test_drums` has **3 failures from the parallel worker's uncommitted `ears/perc.js`** and its own new "§68" block;
+`test_drums` is **OK** both at clean HEAD and at HEAD + §67's five files, which is the attribution · `node
+tools/test_loud.js` **43 pass** (38 before: the `transient` case's 4
+and one re-spelt `rel` assertion) · `node tools/test_loud.js --truth` **63 pass**: the engine is still within
+**0.0000–0.0063 LU** of the exact reference on all 58 179 graded frames and within 0.018–0.260 LU of python's 3 s
+window across the resample, and **7 of 8** truth drops still read louder than the breakdown before them with every
+dLU agreeing with the truth's to 0.05 LU (Malicious 148.29 s remains the one recorded exception). **No audible run** —
+every number is the deterministic file path or pure node.
+
+**Cost**: `test_loud`'s own line, **3.76–3.83 µs/block → 5.88–5.99 µs/frame** at 48 kHz / 60 fps (0.036 % of a frame)
+against §63's 3.73 / 5.83. The fix adds one array write per block to a loop that already runs 1024 biquad sections per
+block, which is inside this measurement's run-to-run noise, so `CARD.bench` was not re-taken.
+
+**THE MACHINE WAS SHARED.** Another worker was running its own pages on port 8898 (`assets/scenes/dust/grid.js`,
+`ears/perc.js`, `tools/work/v66/`) throughout, and it **committed `grid.js`** (§66) while this section was being
+measured. Two consequences, both handled. (1) Its uncommitted `grid.js` would have contaminated a DUST trace taken in
+the main tree, so every trace above was taken in a **separate worktree** (`/tmp/rr67`, its own server on port 8900) at
+`66e9977` — before §66 — with both legs on that one tree; the before leg reproducing §65's table to the digit is the
+receipt. (2) The md5 list below is instead taken at the **current HEAD (`937c510`, i.e. with §66's `grid.js`)**, both
+legs, because that is what "nothing else may move" has to be proved against; §65's recorded s1 lines
+(`11ca47d0` / `d21222ba`) therefore do **not** appear — §66 moved them before this phase ran, which is why the before
+column is measured here rather than quoted. Wall-clock load does not reach any of these numbers: the deterministic
+file path is frame-locked (HARNESS), which is why a bench would have needed the interleaved-pair protocol and a trace
+does not.
+
+### Open items
+
+1. **The look is the user's, and this moves it on all four migrated scenes.** §65 was never signed off; §67 moves it
+   again, and towards §60's approved brightness (SeeYouDrop's base light p50 0.532 → 0.849 against the `dyn` drive's
+   own signed-off 0.873, and `lvl`'s 0.882). The intro is back under the groove and 2–8 s lands on §60's own 0.633,
+   but the **void before drop 1 keeps getting brighter** (void/drop 0.268 at §60 → 0.407 at §65 → 0.456 here) and the
+   **breakdown → drop step in the picture is smaller than §65's**, for the measured reason above.
+2. **A seek now warms up over ~25 s, not ~6.** `features-loud.js` starts a fresh `Loud` on a stamp jump, so a scrub
+   re-arms the full 5 LU guard. Nobody has looked at a scrub with the loudness on; if it reads as a long fade-in, the
+   fix is to carry the previous hold across a seek within the same source, not to shorten the guard.
+3. **`L_RNG_MIN` 6 is a compromise, stated plainly**: §63's ratio criterion wants 4.3 and the no-clamping constraint
+   wants ≥ 6. If the user's eye says the breakdown → drop step is too small, the knob is the SCENE's gain first
+   (§65 watch-list item 4) and this floor second, and the floor's price is the shader's idle mid-track on
+   WhoLikesToParty and Vienna.
+4. **`shapeFor()` still reads the absolute `eM < 0.74`** (§60 open item 5, §65 open item 3) — untouched, still the last
+   AGC absolute in DUST's look path.
+5. `tools/accept.sh` still has not been run since v0.14.

@@ -15,6 +15,7 @@
 //   windows     the momentary window IS 400 ms and the short-term one IS 3 s (the step's rise time measures them)
 //   heard       read(t) behind the newest block = the window ending at t, not the newest window
 //   peak        loudPk: instant attack, PK_REL LU/s release (a straight line in dB), and the warm-up guard
+//   transient   a file that STARTS on a -13 LKFS burst: the peak never outruns the loudest FULL 3 s window heard (§67)
 //   range       loudRange = p95 - p10 of loudS, inside 0.6 LU of the truth on a two-level signal
 //   gain        x0.1 on the whole signal: loudS exactly -20 LU, loudRel and loudRange IDENTICAL (the capture path)
 //   sr44        44.1 kHz reads the same LKFS as 48 kHz on the same tone (the derived coefficients)
@@ -64,6 +65,35 @@ const kmag = (sr, f) => { const c = kcoef(sr), w = 2 * Math.PI * f / sr; return 
 const sineLkfs = (sr, f, a) => LOUD_OFS + 10 * Math.log10(2 * Math.pow(kmag(sr, f) * a, 2) / 2);
 // the amplitude a 997 Hz stereo sine needs to read `l` LKFS
 const sineAmp = (sr, f, l) => Math.sqrt(Math.pow(10, (l - LOUD_OFS) / 10) / (Math.pow(kmag(sr, f), 2)));
+
+// THE EXACT REFERENCE, used by the `transient` case below and by --truth: the same K-weighting coefficients (pinned
+// to the spec table by `coef48`), but written the obvious way — arrays, direct form I, a whole-signal Float64
+// cumulative sum, no ring, no sub-block edge, no interpolation. `(t, W)` returns the loudness of the window
+// ending at t, or null when the signal does not yet HAVE W seconds behind t (which is the whole of §67).
+function exactRef(raw, n, sr) {
+  const kl = new KChainRef(kcoef(sr)), kr = new KChainRef(kcoef(sr)), cs = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) {
+    const a = kl.step(raw[2 * i]), b = kr.step(raw[2 * i + 1]);
+    cs[i + 1] = cs[i] + a * a + b * b;
+  }
+  return (t, W) => {
+    const i1 = Math.min(n, Math.max(0, Math.round(t * sr))), i0 = Math.min(n, Math.max(0, i1 - Math.round(W * sr)));
+    if (i1 - i0 < Math.round(W * sr)) return null;                 // not a full window: not graded
+    const z = (cs[i1] - cs[i0]) / (i1 - i0);
+    return z > 0 ? LOUD_OFS + 10 * Math.log10(z) : null;
+  };
+}
+class KChainRef {   // the same two biquads, written the obvious way (arrays, direct form I) — a second spelling of the filter
+  constructor(c) { this.c = c; this.x = [[0, 0], [0, 0]]; this.y = [[0, 0], [0, 0]]; }
+  step(v) {
+    for (let k = 0; k < 2; k++) {
+      const b = k ? this.c.hp : this.c.shelf, x = this.x[k], y = this.y[k];
+      const o = b[0] * v + b[1] * x[0] + b[2] * x[1] - b[3] * y[0] - b[4] * y[1];
+      x[1] = x[0]; x[0] = v; y[1] = y[0]; y[0] = o; v = o;
+    }
+    return v;
+  }
+}
 
 // ---------------------------------------------------------------------------------------------------- coef48
 {
@@ -136,13 +166,15 @@ const sineAmp = (sr, f, l) => Math.sqrt(Math.pow(10, (l - LOUD_OFS) / 10) / (Mat
   const sig = tone(70, SR, (t) => (t < 30 ? aL : aQ));           // 30 s loud, 40 s quiet
   const { rows } = run(sig, [29.5, 34, 44, 54, 64, 69.5]);
   const at = (t) => rows.find((r) => Math.abs(r.t - t) < 1e-6);
-  near(at(29.5).loudPk, -6, 0.05, 'peak: the hold is at the loud level while it plays (instant attack)');
+  const gu = (t) => LOUDK.WARM_LU * Math.exp(-t / LOUDK.WARM_T);   // the warm-up guard at the stream's age t
+  near(at(29.5).loudPk - gu(29.5), -6, 0.05, 'peak: the hold is at the loud level while it plays (instant attack)');
   const d10 = at(44).loudPk - at(34).loudPk;
   near(d10 / 10, -LOUDK.PK_REL, 1e-4, 'peak: the release is PK_REL LU/s — a straight line in dB');
   near(at(64).loudPk - at(34).loudPk, -30 * LOUDK.PK_REL, 1e-3, 'peak: ... and it holds that rate over 30 s');
   ok(at(69.5).loudPk > at(69.5).loudS - 1e-6, 'peak: the hold never falls below the present loudness');
   // loudRel: the loud section is at the peak, the quiet one 12 LU under it while the hold still remembers
-  near(at(29.5).loudRel, 1, 0.01, 'rel: loudRel is 1 at the track\'s own loudest');
+  near(at(29.5).loudRel, 1 - gu(29.5) / LOUDK.RANGE, 0.01, 'rel: loudRel is at its top at the track\'s own loudest (1, less whatever the warm-up guard still holds)');
+  ok(gu(29.5) < 2, `rel: ... and the guard has mostly let go half a minute in (${gu(29.5).toFixed(2)} LU, loudRel ${at(29.5).loudRel.toFixed(3)})`);
   const want = (at(34).loudS - at(34).loudPk + LOUDK.RANGE) / LOUDK.RANGE;
   near(at(34).loudRel, want, 1e-6, 'rel: loudRel is clamp01((loudS - loudPk + RANGE) / RANGE)');
   ok(at(34).loudRel < at(29.5).loudRel - 0.3, `rel: 12 LU down reads ${at(34).loudRel.toFixed(3)} against 1.000`);
@@ -151,6 +183,43 @@ const sineAmp = (sr, f, l) => Math.sqrt(Math.pow(10, (l - LOUD_OFS) / 10) / (Mat
   ok(w[0].loudRel < 0.92, `rel: the warm-up guard holds the first seconds at loudRel ${w[0].loudRel.toFixed(3)} (< 0.92), not 1.0`);
   near(w[0].loudPk - w[0].loudS, LOUDK.WARM_LU * Math.exp(-4 / LOUDK.WARM_T), 0.01, 'rel: the guard is WARM_LU decayed by the stream\'s age');
   ok(w[1].loudRel > w[0].loudRel, 'rel: ... and it lets go as the stream ages');
+}
+// ---------------------------------------------------------------------------------------------------- transient
+// A FILE THAT STARTS ON A TRANSIENT — what SeeYouDrop does, and what the `peak` case above (one level for 30 s, and
+// in every other case silence first) could not express. DECISIONS §67, the defect §65 open item 1 found: the hold has
+// an INSTANT ATTACK and a 0.02 LU/s release, so whatever it takes in on the first block it keeps for minutes, and
+// `zAt` will answer a "3 s" window from as few as 32 samples. Fed that, the hold read SeeYouDrop's first block as
+// +0.97 LKFS against a true track maximum `loudS` of -1.69 and needed 147 s — longer than the track — to walk it off.
+// The property asserted here: the peak NEVER sits above the loudest FULL short-term window the stream has actually
+// heard, except by the warm-up guard, which is deliberate, relative and decays. The reference is the exact one above.
+{
+  const aB = sineAmp(SR, 997, -13), aQ = sineAmp(SR, 997, -26), aL = sineAmp(SR, 997, -20);
+  const sig = tone(45, SR, (t) => (t < 0.3 ? aB : t < 20 ? aQ : aL));   // a -13 LKFS burst AT t = 0, no silence first
+  const times = [];
+  for (let t = 0.05; t <= 44.5; t += 0.05) times.push(+t.toFixed(3));
+  const { rows } = run(sig, times);
+  const n = sig.L.length, inter = new Float32Array(2 * n);
+  for (let i = 0; i < n; i++) { inter[2 * i] = sig.L[i]; inter[2 * i + 1] = sig.R[i]; }
+  const ex = exactRef(inter, n, SR);
+  const gud = (t) => LOUDK.WARM_LU * Math.exp(-t / LOUDK.WARM_T);
+  let hi = -Infinity, worst = -Infinity, worstT = 0, late = -Infinity, lateT = 0;
+  for (const r of rows) {
+    const v = ex(r.t, SHORT_W); if (v !== null && v > hi) hi = v;        // the honest causal running max
+    const d = r.loudPk - Math.max(hi, r.loudS + gud(r.t));
+    if (d > worst) { worst = d; worstT = r.t; }
+    // ... and the HOLD on its own, with the guard's own contribution taken back off it
+    if (r.t >= SHORT_W && r.loudPk - gud(r.t) - hi > late) { late = r.loudPk - gud(r.t) - hi; lateT = r.t; }
+  }
+  ok(worst <= 0.1, `transient: a file that starts on a -13 LKFS burst — loudPk never exceeds the loudest FULL 3 s ` +
+    `window heard so far (plus the warm-up guard) by more than 0.1 LU (worst ${worst.toFixed(3)} LU at ${worstT.toFixed(2)} s)`);
+  ok(late <= 0.1, `transient: ... and the HOLD alone, with the guard's own term taken back off, is never above `
+    + `that honest running max at all (worst ${late.toFixed(3)} LU at ${lateT.toFixed(2)} s; before §67 the same `
+    + `signal read +7.9 LU here and +8.3 LU of guarded overshoot at 3.2 s — the burst's own loudness, which the `
+    + '0.02 LU/s release would have needed 390 s to give back)');
+  const one = rows.find((r) => r.t >= 1);
+  near(one.loudPk - one.loudS, gud(one.t), 0.02,
+    'transient: inside the first 3 s the peak IS the warm-up guard and nothing else — no seed from a partial window');
+  near(hi, -20, 0.3, 'transient: the signal\'s own true short-term max');
 }
 // ---------------------------------------------------------------------------------------------------- range
 {
@@ -218,30 +287,6 @@ const sineAmp = (sr, f, l) => Math.sqrt(Math.pow(10, (l - LOUD_OFS) / 10) / (Mat
 //      stage runs on the 48 kHz resample. The two signals are not the same samples, so a per-frame gate on it would be
 //      grading `resample_poly`; it is reported, and gated only on the 3 s window (insensitive to resampling) and on the
 //      aggregate numbers (the integrated loudness and every drop pair's dLU), which is the real cross-implementation check.
-function exactRef(raw, n, sr) {
-  const kl = new KChainRef(kcoef(sr)), kr = new KChainRef(kcoef(sr)), cs = new Float64Array(n + 1);
-  for (let i = 0; i < n; i++) {
-    const a = kl.step(raw[2 * i]), b = kr.step(raw[2 * i + 1]);
-    cs[i + 1] = cs[i] + a * a + b * b;
-  }
-  return (t, W) => {
-    const i1 = Math.min(n, Math.max(0, Math.round(t * sr))), i0 = Math.min(n, Math.max(0, i1 - Math.round(W * sr)));
-    if (i1 - i0 < Math.round(W * sr)) return null;                 // not a full window: not graded
-    const z = (cs[i1] - cs[i0]) / (i1 - i0);
-    return z > 0 ? LOUD_OFS + 10 * Math.log10(z) : null;
-  };
-}
-class KChainRef {   // the same two biquads, written the obvious way (arrays, direct form I) — a second spelling of the filter
-  constructor(c) { this.c = c; this.x = [[0, 0], [0, 0]]; this.y = [[0, 0], [0, 0]]; }
-  step(v) {
-    for (let k = 0; k < 2; k++) {
-      const b = k ? this.c.hp : this.c.shelf, x = this.x[k], y = this.y[k];
-      const o = b[0] * v + b[1] * x[0] + b[2] * x[1] - b[3] * y[0] - b[4] * y[1];
-      x[1] = x[0]; x[0] = v; y[1] = y[0]; y[0] = o; v = o;
-    }
-    return v;
-  }
-}
 if (process.argv.includes('--truth')) {
   const TRACKS = ['SeeYouDrop', 'CyborgNinja', 'Malicious', 'WhoLikesToParty', 'Vienna'];
   const LOUDDIR = { Vienna: 'tools/work' };                     // Vienna's reference lives outside tools/truth (another worker owns that folder)

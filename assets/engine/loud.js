@@ -28,6 +28,21 @@
 // only `loudRel` behaves identically in file and capture mode. That is why `loudRel` is the field scenes are told to
 // use, and why `loudPk` has NO absolute floor (an absolute floor would make a quietly mastered track permanently
 // darker, which is the AGC's own sin inverted) — the warm-up guard below is relative instead.
+//
+// WHY THE PEAK WAITS FOR A FULL WINDOW (DECISIONS §67, the defect §65 open item 1 found). `loudM` and `loudS` are
+// read-only functions of the ring and may be answered from a partial window — that is the honest causal answer and
+// the warm-up guard covers the first seconds of it. The PEAK HOLD and the RANGE HISTOGRAM are RECURSIVE STATE: what
+// they take in on the first block they keep. An instant attack fed a 32-sample "3 s" window is therefore a seed, and
+// on a file that starts on a transient it is a wrong one that nothing can undo: SeeYouDrop's first block read
+// **+0.97 LKFS** against a true track maximum `loudS` of **-1.69**, and at PK_REL (0.02 LU/s) the hold needed 147 s
+// to walk 2.66 LU off — longer than the track. At 100 s `loudPk` was still 1.46 LU too high, which is 1.46/7 = 0.21
+// of every base light on that track (`assets/math/loudlight.js`). The other four tracks start in silence and were
+// unaffected, which is why §63's synthetic `peak` case missed it. BS.1770-4 measures COMPLETE gating blocks only, and
+// that is the fix: the hold and the histogram attack only once `zAt` reports `W * sr` samples behind `t`. Measured
+// alternatives, both rejected as strictly worse or equal: weighting the partial window by its fill (zero-padding the
+// mean) is IDENTICAL from the moment the window fills and is dominated by the warm-up guard before it, so it buys
+// nothing for an extra term; seeding from the gated momentary (400 ms) re-introduces the overshoot, because a
+// transient's 400 ms loudness is the thing that was too loud in the first place.
 
 export const LOUD_OFS = -0.691;            // the spec's offset
 export const MOM_W = 0.4, SHORT_W = 3.0;   // the momentary and short-term windows (s)
@@ -47,12 +62,30 @@ export const LOUDK = {
                     // more than the whole track's 4.96 LU of range, so the hold would have decayed under the present
                     // loudness and `loudRel` would read 1.000 at both ends of the pair this field exists to separate.
                     // dyn.js got away with 25 s because it held an AGC-normalised 0..1 energy, whose peak barely moves.
-  WARM_LU: 4,       // LU: the warm-up guard — until the stream has heard something louder, assume the track will reach
-  WARM_T: 6,        // ... this far above what it is playing now, decaying with this time constant (gone to 0.03 LU by
-                    // 30 s). Without it the first frames of a track read `loudS == loudPk` and so `loudRel` 1.0: the
-                    // intro would be the brightest thing in the song (DECISIONS §60 step 4 paid for exactly this with
-                    // DUST's peak floor). It is RELATIVE — `loudS + guard`, not an absolute floor — so a quietly
-                    // mastered track is not permanently darker, which is the AGC's own sin inverted.
+  WARM_LU: 5,       // LU: the warm-up guard — until the stream has heard something louder, assume the track will reach
+  WARM_T: 25,       // ... this far above what it is playing now, decaying with this time constant (1.54 LU by 25 s,
+                    // 0.37 by 65 s, 0.03 by 128 s). Without it the first frames of a track read `loudS == loudPk` and
+                    // so `loudRel` 1.0: the intro would be the brightest thing in the song (DECISIONS §60 step 4 paid
+                    // for exactly this with DUST's peak floor). It is RELATIVE — `loudS + guard`, not an absolute
+                    // floor — so a quietly mastered track is not permanently darker, the AGC's own sin inverted.
+                    // 4 LU / 6 s UNTIL §67, where the peak stopped being pre-seeded by a partial window. A causal
+                    // hold is the loudest the track HAS BEEN, so every moment that is a NEW loudest reads `loudRel`
+                    // 1.0 — and SeeYouDrop's 8-14 s, where the track assembles itself, is a new loudest almost every
+                    // frame. At 4 LU / 6 s (gone to 0.03 LU by 30 s, long before a 14 s intro ends) that stretch came
+                    // out at 1.177x the GROOVE's luminance in DUST, i.e. the intro brighter than the groove — the
+                    // exact failure §60 step 4's 0.84 floor was paid to fix and §65 reported closed at 1.021x. The
+                    // guard is the only honest answer to it ("assume there is more to come"). SWEPT 4..6 LU x 6..30 s
+                    // on DUST's own luminance over SeeYouDrop 2-40 s (one trace each, tools/work/v67/intro.mjs),
+                    // intro / groove 28-40 s:
+                    //   LU/s     2-8 s   8-14 s        (the gate is <= 1.0; §60's signed-off 2-8 s is 0.633)
+                    //   4 / 6    0.357   1.021         §65, on the broken hold
+                    //   4 / 20   0.787   1.177   x
+                    //   4 / 30   0.757   1.094   x
+                    //   5 / 20   0.673   1.047   x
+                    //   5 / 25   0.650   0.984   <-    and 2-8 s lands on §60's own 0.633
+                    //   6 / 20   0.556   0.918         clears it, but the first bars go under §60's figure
+                    // The cost of a 25 s time constant: a SEEK starts a fresh Loud (`features-loud.js` JUMP), so the
+                    // picture warms up over ~25 s after a scrub instead of ~6 (§67 open item 2).
   RANGE_GATE: 40,   // LU below `loudPk`: quieter than this does not enter the range histogram (a silent lead-in is not
                     // dynamic range). Relative, so it is gain-invariant like everything else here.
   RANGE_LO: 10,     // the range percentiles: p10 ...
@@ -159,11 +192,16 @@ export class Loud {
     this.tEnd = tEnd;
     if (acc) this.mark(this.sum += s, this.cnt += acc, tEnd);
     const i = (this.w - 1 + this.N) % this.N;                      // the entry the block's own peak / range go on
-    // the peak hold, on the SHORT-TERM mean square at this block's end: instant attack, PK_REL LU/s release
-    const zS = this.zAt(tEnd, SHORT_W);
-    this.pk = Math.max(zS, this.pk * Math.pow(10, -LOUDK.PK_REL * Math.max(dt, 0) / 10));
-    // the range histogram: this block's short-term loudness, gated RANGE_GATE LU under the peak so a lead-in is not range
-    if (zS > 0 && this.pk > 0 && zS > this.pk * Math.pow(10, -LOUDK.RANGE_GATE / 10)) {
+    // the peak hold, on the SHORT-TERM mean square at this block's end: instant attack, PK_REL LU/s release — but it
+    // may only ATTACK on a window the stream has actually filled (see WHY THE PEAK WAITS FOR A FULL WINDOW above).
+    const nS = this._ns || (this._ns = [0]);
+    const zS = this.zAt(tEnd, SHORT_W, nS);
+    const held = this.pk * Math.pow(10, -LOUDK.PK_REL * Math.max(dt, 0) / 10);
+    const full = nS[0] >= SHORT_W * sr - 0.5;                      // the 3 s window is complete (dn is exact, see zAt)
+    this.pk = full ? Math.max(zS, held) : held;
+    // the range histogram: this block's short-term loudness, gated RANGE_GATE LU under the peak so a lead-in is not
+    // range — and, for the same reason the peak waits, only once the window it is a percentile OF exists.
+    if (full && zS > 0 && this.pk > 0 && zS > this.pk * Math.pow(10, -LOUDK.RANGE_GATE / 10)) {
       const l = LOUD_OFS + 10 * Math.log10(zS), b = Math.floor((l - BIN_LO) / BIN_W);
       if (b >= 0 && b < BINS) { this.hist[b]++; this.histN++; }
     }
@@ -209,21 +247,30 @@ export class Loud {
     return true;
   }
 
-  // The mean square over (t - W, t]. A window the stream cannot fill yet is measured over what there is (>= 32 samples),
-  // which is the honest causal answer and keeps the first frames of a track from reading as silence; the offline
-  // reference marks those samples "not a full window" and tools/test_loud.js grades only where it has one.
-  zAt(t, W) {
+  // The mean square over (t - W, t], and (in `nout[0]`, if given) the SAMPLE COUNT the mean was taken over — which is
+  // how the caller knows whether the window is full. A window the stream cannot fill yet is measured over what there
+  // is (>= 32 samples), which is the honest causal answer for `loudM` / `loudS` and keeps the first frames of a track
+  // from reading as silence; the offline reference marks those samples "not a full window" and tools/test_loud.js
+  // grades only where it has one. `dn` is EXACT at the boundary: `cn` is linear in `t` inside a sub-block, so once the
+  // stream is W seconds old `cumAt(t - W)` interpolates to exactly `cnt - W*sr` and `dn` is exactly `W*sr`.
+  zAt(t, W, nout) {
     const o = this._o || (this._o = [0, 0]), p = this._p || (this._p = [0, 0]);
     this.cumAt(t, o);
     this.cumAt(t - W, p);
     const dn = o[1] - p[1];
+    if (nout) nout[0] = dn;
     return dn >= 32 ? Math.max(0, o[0] - p[0]) / dn : 0;
   }
 
   // Everything, at heard time. The reused `out` object (or `dst`).
   read(t, dst) {
     const out = dst || this.out;
-    const lk = (z) => (z > 0 ? LOUD_OFS + 10 * Math.log10(z) : LKFS_MIN);
+    // LKFS_MIN is a FLOOR, not just the value digital silence maps to (§67): the first ~70 ms of a file that fades up
+    // from silence can read -158 LKFS, which is below the range FEATS publishes for these fields and — because the
+    // peak hold is floored and `loudS` was not — was the one way `loudPk` could sit above `loudS` with no guard in it.
+    // No graded frame of the five tracks is anywhere near it (min `loudS` -38.6, min `loudM` -86.8 LKFS), so this
+    // changes no measured number; it makes the documented range true.
+    const lk = (z) => (z > 0 ? Math.max(LKFS_MIN, LOUD_OFS + 10 * Math.log10(z)) : LKFS_MIN);
     out.loudM = lk(this.zAt(t, MOM_W));
     out.loudS = lk(this.zAt(t, SHORT_W));
     // the peak and the range are recursive state, so they come from the per-block snapshot ring, read at t like the

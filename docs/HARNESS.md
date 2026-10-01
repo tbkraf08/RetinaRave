@@ -754,6 +754,13 @@ capture mode, where `loudM` / `loudS` / `loudPk` are only as absolute as the tab
 had before — the A/B, and the receipt that the migration is the only thing that moved (the `#test` md5 list under `&loud=0`
 is the pre-migration list, line for line).
 
+**The peak hold waits for a full window** (§67). `loudM` / `loudS` are answered from whatever the stream has, which is the
+honest causal answer; the hold and the range histogram are recursive and attack only once there are 3 s behind `t`, because
+an instant attack fed a 32-sample "3 s" window is a SEED and a 0.02 LU/s release needs minutes to undo it. SeeYouDrop's file
+starts on a transient and paid 1.46 LU of `loudPk` — 0.21 of every base light — for its whole length before this. If a
+scene's base light looks wrong on a file whose first block is loud, this is the shape of the bug: check `loudPk` against
+`node tools/test_loud.js --truth`'s per-track true maximum, and `tools/test_loud.js`'s `transient` case is the regression.
+
 ## Clock — the beat clock on the PCM bus (live step 6; a change to `engine/clock/`, `features-clock.js`, the ears' onsets, or anything that reads `bpm` / `beatPhase` / `beat` / `beatCount`)
 
 Two beat clocks publish every frame: v3's (`bpm` / `beatPhase` / `beat` / `beatCount` — the PLL on the frame-rate flux, the default until 2026-09-30 — the PCM clock is the default since §56 addendum 3; `&clock=v3` brings v3's back

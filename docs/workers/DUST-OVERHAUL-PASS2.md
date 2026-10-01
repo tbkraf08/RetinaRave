@@ -309,3 +309,50 @@ Everything else from pass 1, 1.5 and 2 is untouched: the nudge per beat, the thr
 travelling ring, the per-bin habituation, the void's contraction and the slam, the key-anchored palette, the shape
 sequence. **`shapeFor()` deliberately still reads the absolute `eM`**, so the formation sequence §58 verified has
 not moved.
+
+---
+
+# Pass 2 addendum 2 — the `loudPk` seeding defect, fixed (LOUDNESS phase 8, DECISIONS §67)
+
+§65's watch-list item 3 told you the intro "clamps to the cloud's idle there, partly because of a measured `loudPk`
+defect on this one track". That defect is now fixed, and fixing it re-calibrated the shared mapping, so **all four
+migrated scenes moved again** — DUST, FEIGEN, MANDALA, POLYTOPE. One commit. Not tagged, not pushed, not deployed.
+
+**What was wrong.** The peak hold had an instant attack and was being fed a "3 s" loudness measured over as little as
+32 samples. SeeYouDrop's file starts on a transient, so its very first block read **+0.97 LKFS** against the track's
+true loudest 3 s of **−1.69**, and at 0.02 LU/s the hold needed **147 s** — longer than the song — to give it back.
+Every base light on that track was **0.21 too low** for its whole length. CyborgNinja and Vienna were each carrying ~1.4 LU
+of the same thing. The fix is BS.1770's own rule: measure complete windows only.
+
+**What to watch, in order of how much the numbers say you should see it** (SeeYouDrop, drops at **57.6** and
+**105.6** s; A = the v0.21 release or `&loud=0`, B = the dev server):
+
+1. **The whole of SeeYouDrop is brighter again, and close to what you signed off at §60.** Base light p50 **0.532 →
+   0.849** against §60's own `dyn` drive p50 of 0.873, and the groove at 0:28–0:40 comes back up. §65 took 16 % of the
+   mean luminance off this track; most of that was the defect, not the measure.
+2. **Breakdown 2 → drop 2 (1:40 → 1:46) is a SLIGHTLY SMALLER step than §65's** — ×1.096 against ×1.154 on §60's own
+   window, ×1.222 against ×1.290 on equal 5.1 s ones. The drop is still clearly brighter than the breakdown (§60 had
+   it *darker*, ×0.875), but §65's bigger figure was bought by the defect: a hold 1.46 LU too high pushed the
+   breakdown's base light down to 0.460, where the same 2.9 LU of music is a bigger fraction. `gBase = .22 + 1.42·uDyn`
+   is affine with a large constant, so a base light nearer 1 compresses every ratio. **If the step should be bigger,
+   the lever is that one line in `dust/shaders.js`** — watch-list item 4 of §65, still true.
+3. **0:08–0:14 is back under the groove, and 0:02–0:08 lands on the figure you signed off at §60.** With an honest
+   hold, every moment that is a new loudest reads full — and that stretch is a new loudest almost every frame, because
+   the track is assembling itself. It came out at **1.18× the groove** until the peak's warm-up guard was re-swept on
+   DUST's own luminance; at 5 LU / 25 s it reads **0.984×**, and 0:02–0:08 reads **0.650×** against §60's signed-off
+   **0.633×** (§65 had 0.357× — too dark, which that watch-list flagged). Watch 0:02–0:14 against 0:28–0:40.
+4. **The void before drop 1 (0:55–0:57.6) is brighter again — the third time this has moved the wrong way for your
+   eye.** §60 had void/drop 0.268, §65 0.416, this is higher still. The truth keeps saying that void is LOUD (a riser
+   and a reverb tail, −4.68 LKFS against the groove's −3.99). §65's proposed fix — a 400 ms window term — was measured
+   here and **does nothing** (void/drop moves 0.712 → 0.712 in base light), because a 400 ms window agrees that it is
+   loud. In the picture it goes 0.407 → 0.456. If you want §60's blackout back it has to be a deliberate un-measuring,
+   and you have to ask for it.
+5. **The quiet masters are still not dim.** Base light p50 over the whole track: CyborgNinja 0.914, Vienna 0.880,
+   WhoLikesToParty 0.814, Malicious 0.803, against `lvl`'s own 0.882 — mean 0.853, where §63's calibration put them
+   (0.871). Their mean luminance moves by only −4 … +7 % where SeeYouDrop's moves +19 %, which is the point: the one
+   track that had the defect is the one that changes.
+   **WhoLikesToParty's three drops got a bigger step** (×2.61 / ×1.61 / ×1.67 → ×3.88 / ×1.89 / ×1.98): its hold was
+   already honest, so all it got was the new floor.
+6. **A SCRUB now warms up over ~25 s, not ~6.** Seeking starts a fresh loudness stream, which re-arms the 5 LU guard.
+   Nobody has looked at that. If it reads as a long fade-in, say so — the fix is to carry the hold across a seek.
+7. **The drums and the shape sequence are untouched**; nothing in `dust/` changed but one comment.

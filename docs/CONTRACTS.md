@@ -622,6 +622,11 @@ question the AGC actively lies about (on SeeYouDrop's breakdown 2 → drop 2 pai
 2. **`loudM` / `loudS` / `loudPk` are LKFS and absolute only when `loudAbs` is 1** (file, demo). 0 = the gain is the
    tab's or the mic's (capture, mic); **−1 = the stage is not running** (`&loud=0`), and on −1 a migrated scene must
    fall back to the formula it had before — which is what makes `&loud=0` a true A/B and an md5 receipt.
+3. **The peak hold and the range histogram are RECURSIVE state and attack only on a FULL short-term window**
+   (DECISIONS §67). `loudM` / `loudS` may be answered from a partial one — the honest causal answer, and the warm-up
+   guard covers it — but what the hold takes in on the first block it keeps for minutes at 0.02 LU/s, so a file that
+   starts on a transient (SeeYouDrop: first block +0.97 LKFS against a true track max of −1.69) used to pay 1.46 LU of
+   base light for its whole length. BS.1770-4 measures complete gating blocks only, and so does the hold.
 
 ## 3. Effect contract
 
@@ -741,7 +746,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 |---|---|---|---|
 | `loudM` | raw | how loud it is right now, in LKFS (0 = a full-scale sine, -23 = broadcast reference) | a transient-scale brightness that does not lie about a breakdown |
 | `loudS` | raw | how loud this passage is, in LKFS (the 3 s window — a section, not a hit) | the base light of a scene, through loudRel |
-| `loudPk` | raw | the loudest this track has been, in LKFS | the reference every relative loudness is measured against |
+| `loudPk` | raw | the loudest this track has been, in LKFS (instant attack on a FULL 3 s window only, then 0.02 LU/s release, plus a 4 LU warm-up guard with a 20 s time constant) | the reference every relative loudness is measured against |
 | `loudRel` | level | how loud this is FOR THIS TRACK, 0 = 18 LU down on its own peak, 1 = at it | base brightness, base size, base radius — "how bright is the picture right now" |
 | `loudRange` | raw | how much dynamic range this track has shown, in LU | a scene that wants the track's OWN contrast instead of the fixed 18 LU span expands loudRel with it |
 | `loudAbs` | count | are loudM / loudS / loudPk absolute? 1 yes (file, demo) · 0 no, the gain is the tab's or the mic's (capture, mic) · -1 the loudness stage is not running (&loud=0, #test with the switch off) | the A/B gate: a migrated scene falls back to its pre-loudness formula on -1, and may not read an absolute field on 0 |
