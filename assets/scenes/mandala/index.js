@@ -1,6 +1,7 @@
 // MANDALA (id 2) — a kaleidoscope whose mirrors are a real fold group, lifted from synapse scene 2.
 // An N-fold angular fold feeds an iterated box-fold / sphere-inversion map; an orbit trap lights the result.
 // Fullscreen fragment scene: no camera, no geometry, no CPU particles.
+import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the body's brightness is TRUE loudness, not the AGC's `lvl`
 import { FS_MANDALA } from './shaders.js';
 
 // Everything update() reads out of MS / LOOK, held for draw(). No hidden timers: every entry traces to MS.
@@ -19,7 +20,7 @@ export default {
   card: { title: 'MANDALA', blurb: 'a box-fold fractal seen through a kaleidoscope' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/mandala.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() reads the first three, update() the rest
   feats: ['arc', 'regularity', 'onsetRate', 'seed', 'kickCount', 'flow', 'flowMid', 'bass', 'bassS',
-    'midS', 'kick', 'tension', 'dropEnv', 'lvl', 'high', 'hat', 'alive'],
+    'midS', 'kick', 'tension', 'dropEnv', 'lvl', 'high', 'hat', 'alive', 'loudRel', 'loudRange', 'loudAbs'],
   // 'event': the only discontinuity is N, the fold count, and it moves only with the section seed / 64-kick epoch
   cuts: 'event',
 
@@ -49,7 +50,13 @@ export default {
     S.kick = MS.kick;
     S.tension = MS.tension;
     S.drop = MS.dropEnv;
-    S.lvl = MS.lvl;
+    // §63 phase 5: `uLevel` is the BODY's brightness and nothing else — `palM(...) * pow(acc*3.2, 2.6) * (0.35 + 1.3*uLevel)`
+    // — so it rides true loudness: a breakdown is dim and the drop after it is not (`eM` reads x0.994 across
+    // SeeYouDrop's, where the music is x1.94 in power). The PER-HIT lift is untouched and still rides the AGC, which
+    // is right: a quiet section's kick is still a kick (§60 step 1's rule). In this scene the hits are their own
+    // uniforms on their own terms — the trap ring `0.12 + 1.4*uBands.z + 0.8*uHat`, the centre flare
+    // `uKick*0.8 + uDrop*1.2` — so the split needs no new term here. `&loud=0` restores `MS.lvl` bit for bit.
+    S.lvl = baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, MS.lvl);
     S.hat = MS.hat;
     S.alive = MS.alive;
     S.q = this.ctx.Q.q;
@@ -117,7 +124,10 @@ export default {
       kick: 'a zoom pulse and the centre flare',
       tension: 'zooms out: more of the fold\'s outer structure',
       dropEnv: 'zooms in hard and the centre flares',
-      lvl: 'overall brightness',
+      lvl: 'the fallback brightness when the loudness stage is off',
+      loudRel: 'the body\'s brightness: how loud this passage is for THIS track, so a breakdown is dim and its drop is not',
+      loudRange: 'how far that brightness travels — the track\'s own dynamic range sets the contrast',
+      loudAbs: '&loud=0 (or no loudness yet): the brightness falls back to lvl exactly as before',
       high: 'the brightness of the orbit-trap ring',
       hat: 'sparkle on the trap ring',
       alive: 'silence fades to black',

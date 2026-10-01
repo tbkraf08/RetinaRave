@@ -3903,3 +3903,13 @@ without touching the six fields under `fakeOn`. Two more fake-mirror fixes came 
 rather than 1e-3 (at `eM` 0 the first frames read −60 LKFS and seeded `loudRange` with a 54 LU swing the EMAs then
 spent 40 s forgetting — it read 34.1 LU), and the mirror now applies the real stage's own warm-up guard, so it has the
 field's SHAPE and not just its units. The fake loop now spans about −11.1 … −2.1 LKFS with ~9–11 LU of range.
+
+#### MANDALA (id 2) — `PENDING`
+
+One line: `S.lvl = baseLight(…)`. `uLevel` here is the BODY's brightness and nothing else —
+`palM(…) · pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` — and the per-hit lift needed no new term, because in this scene
+the hits are already their own uniforms on their own terms: the trap ring `0.12 + 1.4·uBands.z + 0.8·uHat` and the
+centre flare `uKick·0.8 + uDrop·1.2`, both untouched and both still on the AGC, which is right (§60 step 1: a quiet
+section's kick is still a kick). `feats` + the three fields with a `help.feats` line each.
+**md5** (`IDS=2`, errs []): s2-f360 `9a57626c` → **`1124721c`**, s2-f840 `5e59be93` → **`cb3442e9`**; **`&loud=0`
+reads `9a57626c` / `5e59be93`, v0.14's own two lines.** The body's own ratio on the headline pair: **×1.297 → ×1.591**.
