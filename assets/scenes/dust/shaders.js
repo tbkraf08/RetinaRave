@@ -43,7 +43,8 @@ uniform vec2 uSnareR;      // the snare's flash ring: radius in scene units, gau
 uniform float uDrop;       // MS.dropEnv
 uniform float uTension;    // MS.tension — the roughness, as JITTER and nothing else
 uniform vec2 uBuild;       // x = the void's contraction 0..1 (buildLive + the last bar's wind-up), y = the release
-uniform float uDyn;        // the dynamic range, 0..1: eM against the TRACK's own running peak (dyn.js). It is the
+uniform float uDyn;        // the dynamic range, 0..1: the engine's TRUE loudness against the TRACK's own peak, through
+                           // math/loudlight.js (dyn.js, §65; &loud=0 falls back to §60's eM/peak). It is the
                            // cloud's BASE brightness, grain size and overall radius; the hits ride on top of it and
                            // barely move with it, so a quiet section's kick is still a kick.
 uniform float uAlive;      // MS.alive

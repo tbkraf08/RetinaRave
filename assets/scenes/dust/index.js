@@ -52,7 +52,7 @@ const SELF = {
     'kick2', 'kickAge', 'kickEvt', 'snare2', 'snareAge', 'snareEvt', 'hat2', 'hatAge', 'hatEvt',
     'subNoteEvt', 'subGate',
     'buildLive', 'nextDropIn', 'dropLiveEvt',
-    'eM', 'eS', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
+    'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
     'harmAngle', 'key', 'mode', 'keyConf', 'valence',
     'arc', 'punchy', 'regularity'],
   cuts: 'onset',
@@ -141,9 +141,10 @@ const SELF = {
     // The real tension: the void before a drop (§54), not the roughness. The last bar winds up on top of it, and
     // the slam lets everything go at once.
     tens(this.vT, dt, MS);
-    // The track's own loud, held with a 25 s release: `eM / peak` is the one honest reading of "how loud is this
-    // part of the song" the engine can give a scene (dyn.js). The drop's own envelope floors it, because `eM` is a
-    // 2.5 s mean and is still half-full of the void on the frame the slam lands.
+    // "How loud is this part of the song" — since §65 the engine's own TRUE loudness (BS.1770 K-weighting on the PCM
+    // bus) through `math/loudlight.js`, the mapping FEIGEN, MANDALA and POLYTOPE read too, so one calibration serves
+    // every scene. `&loud=0` falls back to §60's private peak on `eM`, bit for bit. The drop's envelope still floors
+    // the drive, because a 3 s loudness window on the frame the slam lands is still full of the void before it.
     dyn(this.vD, dt, MS, this.vT.rel);
     if (this.pinD >= 0) this.vD.dyn = this.pinD;
     this.E.k = emaK(dt);            // the slow spectrum's step for this frame; the pass itself runs in draw()
@@ -297,7 +298,7 @@ const SELF = {
         want: shapeFor(SELF.lastMS || {}),
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
-        dyn: SELF.m.dyn, pk: SELF.vD.pk, dr: SELF.vD.r,
+        dyn: SELF.m.dyn, pk: SELF.vD.pk, dr: SELF.vD.r, base: SELF.vD.base, fb: SELF.vD.fb, lpk: SELF.vD.lpk,
         hue: SELF.mood.hue, hsat: SELF.mood.sat, key: KEY.OUT.key, kmode: KEY.OUT.mode, kconf: KEY.OUT.conf,
         fifth: KEY.OUT.fifth,
         ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age,

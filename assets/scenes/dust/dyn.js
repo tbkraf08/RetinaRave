@@ -1,4 +1,22 @@
-// DUST — dynamic range: "quiet is quiet, loud is loud" (DECISIONS §60 step 1).
+// DUST — dynamic range: "quiet is quiet, loud is loud" (DECISIONS §60 step 1, §65).
+//
+// SINCE §65 (LOUDNESS phase 4) THE DRIVE IS THE ENGINE'S TRUE LOUDNESS, not this file's own peak. `assets/math/
+// loudlight.js`'s `baseLight(loudRel, loudRange, loudAbs, fallback)` is the ONE scene-side mapping of the `loud`
+// stage (ITU-R BS.1770-4 K-weighting on the PCM bus, `assets/engine/loud.js`) onto "how bright is the picture right
+// now", and FEIGEN, MANDALA and POLYTOPE already read it — so there is one definition, one calibration and one place
+// the numbers are measured in, instead of DUST paying for its own privately. Everything below the `baseLight` line
+// is now the FALLBACK: it runs unchanged, it is what `&loud=0` (or any mode with no loudness) returns, and keeping it
+// live is what makes that A/B bit-exact against §60.
+//
+// Two things §60's peak did that the engine's does NOT copy, and must not (docs/plans/LOUDNESS-PLAN.md §8):
+//   * the 25 s RELEASE. On an AGC-normalised 0..1 energy a 25 s hold barely moves; on a mean square it is 0.174 dB/s,
+//     which forgets 6.6 LU in the 38 s between SeeYouDrop's drop 1 and its breakdown 2 — more than the whole track's
+//     range, so the hold would decay UNDER the present loudness and both ends of that pair would read 1.000.
+//     `LOUDK.PK_REL` is 0.02 LU/s instead: a straight line in dB, 3 LU over a 150 s track (§63 phase 2 decision 1).
+//   * the 0.84 FLOOR. An absolute floor is not gain-invariant, and the other four test tracks master 8-9 LU quieter
+//     than SeeYouDrop, so it would bind for their whole length and a quietly mastered track would be permanently
+//     darker — the AGC's own sin inverted. `loudPk`'s RELATIVE warm-up guard (`loudS + 4·exp(-age/6 s)`) solves the
+//     problem §60 step 4 paid the floor to solve — a track's first frames reading as its brightest (§63 decision 2).
 //
 // What it replaces. The cloud's whole brightness was `(.5 + 1.1 * lvl)`, and `lvl` is AGC-normalised: measured over
 // SeeYouDrop 20–110 s `&map=0` it reads p05 0.513 / p50 0.882 / p95 0.992, i.e. a 1.5x swing over a track whose
@@ -24,10 +42,11 @@
 //
 // LO is where the range bottoms out: below 55 % of the track's peak the base of the cloud is at its floor. It is
 // not 0, because an energy ratio of 0 is silence and `alive` already handles silence.
+import { baseLight } from '../../math/loudlight.js';
 
-export const PK_REL = 25;        // s: the peak's release time constant (instant attack)
-export const PK_FLOOR = 0.84;    // the peak can never sit below this — the intro guard
-export const LO = 0.55;          // eM/peak at or under this reads fully quiet
+export const PK_REL = 25;        // s: the FALLBACK peak's release time constant (instant attack). &loud=0 only.
+export const PK_FLOOR = 0.84;    // the fallback peak can never sit below this — §60 step 4's intro guard. &loud=0 only.
+export const LO = 0.55;          // fallback: eM/peak at or under this reads fully quiet
 
 // The gains. BASE is the cloud itself — the grains' own spectrum push and the ambient 0.22 — and it carries the
 // whole range: at the groove's dyn ~0.88 it lands on 1.47, which is exactly what `(.5 + 1.1 * lvl)` was giving at
@@ -40,9 +59,10 @@ export const HIT0 = 1.05, HIT1 = 0.45;
 export const SZ0 = 0.55, SZ1 = 0.45;
 export const CLOUD0 = 0.82, CLOUD1 = 0.18;
 
-export function mkDyn() { return { pk: PK_FLOOR, r: 1, dyn: 1 }; }
+export function mkDyn() { return { pk: PK_FLOOR, r: 1, dyn: 1, base: 1, lpk: 0, fb: 1 }; }
 
-// The energy the peak is held on is the SLOW window plus half of whatever the FAST window hears above it:
+// THE FALLBACK's energy (§60 step 1, and all that is left under `&loud=0`). The peak is held on the SLOW window
+// plus half of whatever the FAST window hears above it:
 // `eM + .5 · max(0, eS − eM)`. MEASURED, and this is why neither one alone will do. On `eM` (2.5 s) alone the drop
 // is not the loud part of the track: over SeeYouDrop's drops the drive reads 0.75 and 0.70 against 0.91–0.94 through
 // the groove, because a 2.5 s mean on the frame of a slam is still half-full of the void the slam came out of. On
@@ -64,7 +84,16 @@ export function dyn(D, dt, MS, rel) {
   const fl = Math.max(PK_FLOOR, e);
   D.pk = e > D.pk ? e : fl + (D.pk - fl) * Math.exp(-dt / PK_REL);
   D.r = e / Math.max(D.pk, 1e-4);
-  const d = Math.min(1, Math.max(0, (D.r - LO) / (1 - LO)));
-  D.dyn = Math.min(1, Math.max(d, MS.dropEnv || 0, rel || 0));
+  // the fallback drive, kept running so `&loud=0` is §60 bit for bit — and so flipping the switch mid-stream does
+  // not hand the scene a peak that has been frozen since the track started
+  D.fb = Math.min(1, Math.max(0, (D.r - LO) / (1 - LO)));
+  // ...and the drive itself: the engine's TRUE loudness, through the shared mapping (§65). `loudPk` is the peak this
+  // file used to hold privately and `loudRange` is how much of its own range the track has actually shown, so the
+  // section ladder lands across the full 0..1 instead of inside `loudRel`'s own fixed 18 LU span (loudlight.js).
+  D.lpk = MS.loudPk === undefined ? 0 : MS.loudPk;
+  D.base = baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, D.fb);
+  // the drop's own envelope and its release still FLOOR the drive, for the reason they always did: a 3 s loudness
+  // window on the frame a slam lands is still two thirds full of the void the slam came out of.
+  D.dyn = Math.min(1, Math.max(D.base, MS.dropEnv || 0, rel || 0));
   return D.dyn;
 }

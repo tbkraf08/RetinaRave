@@ -52,10 +52,17 @@ export const HELP = {
     sectionAlt: 'which part of the song this is: the swarm files the shape it ended each part in, and goes back '
       + 'to it on a return',
     sectionReturn: 'the slower second opinion that this part of the song is one we have heard before',
-    eM: 'how loud this stretch is, measured against the loudest this track has been: a quiet part of the song is a '
-      + 'small, dim cloud of small grains and a loud one is a big bright one, and a quiet one is also a plain ball '
-      + 'where a loud one is a galaxy. The drums are not dimmed with it — a quiet section\'s kick is still a kick',
-    eS: 'the same loudness measured over a third of a second instead of two and a half, so the moment a drop '
+    loudRel: 'how loud this stretch really is for THIS track — a true loudness, not a levelled-out one: a quiet '
+      + 'part of the song is a small, dim cloud of small grains and a loud one is a big bright one, and a quiet one '
+      + 'is also a plain ball where a loud one is a galaxy. The drums are not dimmed with it — a quiet section\'s '
+      + 'kick is still a kick',
+    loudRange: 'how much loud-to-quiet the track has actually shown: it sets how far the cloud\'s brightness, size '
+      + 'and spread are allowed to travel, so a flat track stays even and a dynamic one gets the whole swing',
+    loudAbs: 'with the loudness off (&loud=0) the cloud falls back to the levelled-out energy it used before, '
+      + 'exactly as it was',
+    eM: 'the fallback for the above when the loudness is off: how loud this stretch is against the loudest this '
+      + 'track has been, measured on the levelled-out energy',
+    eS: 'the same fallback loudness over a third of a second instead of two and a half, so the moment a drop '
       + 'lands counts as loud even though the two seconds before it were the silence of the build',
     harmAngle: 'where the harmony sits on the circle of fifths: it is the fallback the whole palette is centred '
       + 'on when the key itself is not trusted',

@@ -4192,3 +4192,155 @@ Vienna is not the page's answer** — the numbers above are the page's.
   `8a0715df`, s4-f840 `05bf21c0`); the loudness worker's own lines moved in parallel and are not this worker's.
 - `CARD.bench` not re-run: the cost added is one scalar EMA per frame in the scene and one `BoxMean.push` per frame in
   the build stage.
+
+## §65 DUST migrates onto true loudness — LOUDNESS phase 4, and §60's one failure is fixed (2026-09-30, one worker; `docs/plans/LOUDNESS-PLAN.md` §8, report `docs/workers/DUST-OVERHAUL-PASS2.md` "Pass 2 addendum")
+
+§60's one failure was SeeYouDrop's **breakdown 2**: the picture did not get dimmer there, because the engine's energy
+does not know the drop after it is louder (`eM` ×0.994 where the music is +2.88 LU / ×1.94 in power). §63 built the
+causal, AGC-free loudness that answers it and migrated FEIGEN, MANDALA and POLYTOPE onto the shared mapping
+`assets/math/loudlight.js` `baseLight(loudRel, loudRange, loudAbs, fallback)`. This is phase 4: **DUST, the scene that
+paid for the problem privately, gives up its private peak and reads the same mapping**, so there is ONE definition and
+ONE calibration across four scenes. Commit `PENDING`. **Not tagged, not pushed, not deployed.**
+
+### The lean — one line of drive, and what deliberately did NOT come across
+
+`dust/dyn.js` held a track-level running peak on `eM + ½·max(0, eS − eM)` (instant attack, 25 s release, floored 0.84)
+and drove the cloud's base brightness, grain size and swarm radius with `eM / peak`. Now:
+
+    D.fb   = clamp01((D.r - LO) / (1 - LO))                        §60's drive, kept LIVE as the fallback
+    D.base = baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, D.fb) the drive (loudlight.js, the shared mapping)
+    D.dyn  = min(1, max(D.base, MS.dropEnv, rel))                  the slam's floor, unchanged
+
+The private peak **keeps running** rather than being deleted: it is what `baseLight`'s `loudAbs < 0` branch returns, so
+`&loud=0` is bit-exact against §60, and so flipping the switch mid-stream does not hand the scene a peak frozen since
+the track began. `PK_REL` / `PK_FLOOR` / `LO` survive as the fallback's constants and are documented as such.
+
+**The 25 s release did not come across** (§63 phase 2 decision 1): on a mean square that is 0.174 dB/s, which forgets
+6.6 LU in the 38 s between SeeYouDrop's drop 1 and its breakdown 2 — more than the whole track's 4.96 LU of range, so
+the hold would decay *under* the present loudness and both ends of the very pair this migration exists to separate
+would read 1.000. `loudPk` releases at 0.02 LU/s. **The 0.84 floor was not re-invented as an absolute one** (§63
+decision 2): the other four test tracks master 8–9 LU quieter, so an absolute floor binds for their whole length and a
+quietly mastered track is permanently darker — the AGC's own sin inverted. `loudPk`'s relative warm-up guard
+(`loudS + 4·exp(−age/6 s)`) already solves §60 step 4's bright intro, and the table below shows it does.
+
+### §60's pass-2 table, re-taken BACK TO BACK on one tree
+
+**The measurement condition changed on purpose**: §60 traced with `WARM=8`, i.e. the file opened 8 s before the window.
+`loudPk` and `loudRange` are *causal* — they are what the stage has heard so far — so a mid-track start measures a
+field the listener never sees. Every number below opens the file at **t = 0** (`WARM=20`), the real listening
+condition and the one §63's `L_RNG_MIN` sweep was done in. Both sides of every pair were traced back to back, and
+**the MS columns are md5-identical across all six pairs** (`beatCount` / `dropEnv` / `eM` / `loudRel` / `loudPk` /
+`loudRange`, §60's own validity rule) — the engine did not move, only the scene did.
+
+| SeeYouDrop 20–110 s (`&map=0`, CLOCK=1) | before | after |
+|---|---|---|
+| **breakdown 2 → drop 2, equal 5.1 s windows** | 120.5 → 125.2 = **×1.039** | 114.5 → 147.7 = **×1.290** |
+| **breakdown 2 (§60's own 100.5–104 window) → drop 2** | 143.2 → 125.2 = **×0.875** (the breakdown was BRIGHTER) | 128.0 → 147.7 = **×1.154** |
+| the void before drop 1 (55–57.6 s) · drop 1 | 27.9 · 104.0 — void/drop **0.268** | 36.2 · 86.8 — void/drop **0.416** |
+| groove (28–40) · breakdown 1 (49–55) | 92.8 · 60.9 (−34 %) | 69.9 · 45.1 (−35 %) |
+| the window's range p95/p05 lum | **4.593** | 4.251 |
+| mean luminance | 96.5 | 81.4 (−16 %) |
+| base light p05 / p50 / p95 | — (`dyn` 0.261 / 0.873 / 1.000) | **0.248 / 0.532 / 0.764** |
+
+**The gate is met: breakdown 2 improves, and it is the headline.** Where §60 left the second breakdown *brighter* than
+the drop that follows it (×0.875), the drop is now half again as bright as the breakdown on §60's own windows and
+×1.29 on equal 5.1 s ones. The music's own figure is ×1.94 in power; the picture now moves ×1.29 of it, the rest being
+the shader's constant terms (`gBase = .22 + 1.42·uDyn` idles at 13 % of full rather than black) — the same compression
+§63 measured for the other three scenes.
+
+**The intro, SeeYouDrop 2–40 s** (`WARM` leaves the file at t = 0 either way, so this pair is directly §60's):
+
+| / groove 28–40 | before (§60) | after |
+|---|---|---|
+| intro 2–8 s | 0.634 | **0.357** |
+| intro 8–14 s | **1.268** | **1.021** |
+
+The 0.84 floor is gone and the intro is *more* clearly the quietest part of the song, not less — `loudPk`'s relative
+guard does the floor's job without the floor's cost. §60's **open item 2 is closed as a side effect**: 8–14 s, where
+the track assembles itself and the novelty channel used to beat the loudness one (1.268× the groove), now reads
+1.021×. The truth agrees with the new reading: the intro integrates to −8.32 LKFS against the groove's −3.99, i.e.
+4.3 LU down, and 6.6 LU under the track's peak — which is `L_RNG_MIN`'s whole 7 LU span, so the intro clamps near 0
+and is drawn at the shader's idle. That is the measure being honest, not the scene being broken.
+
+**Vienna 20–110 s** (`~/Music/RetinaRave/Vienna.flac`, truth `tools/truth/Vienna.json`, drops 85.336 / 106.669):
+mean lum 91.1 → 93.9, range 3.656 → 3.702, pre-drop/drop 0.601 → 0.627 (drop 1) and 0.743 → 0.767 (drop 2). Almost
+unmoved, and it should be: §63 phase 3 measured Vienna's two drops at only **+1.04 and +0.33 LU**, so there is nothing
+there for a loudness to find. Vienna is the control that the migration does not invent dynamics.
+
+**The quiet tracks are NOT dim for their whole length** — the §8 hazard the absolute floor would have caused:
+
+| track | master (gated LKFS) | mean lum before → after |
+|---|---|---|
+| SeeYouDrop | −3.88 | 96.5 → 81.4 (**−16 %**) |
+| CyborgNinja | −9.05 | 105.8 → 97.1 (−8 %) |
+| WhoLikesToParty | −10.03 | 111.1 → **120.9 (+9 %)** |
+| Malicious | −12.46 | 90.0 → **109.6 (+22 %)** |
+| Vienna | −6.89 | 91.1 → 93.9 (+3 %) |
+
+The two quietest masters got **brighter**, and the only track that dims materially is the **loudest** one — the one
+with real breakdowns, which is the whole point. Base light p50 per track: SeeYouDrop **0.532**, CyborgNinja 0.690,
+Vienna 0.833, WhoLikesToParty 0.836, Malicious 0.855 — §63's sweep predicted 0.857 / 0.861 / 0.866 / 0.900 for the
+four and 0.474 for SeeYouDrop, so DUST lands where the shared calibration said it would.
+
+**The hits are untouched**, within the noise of §58 / §64 (per-hit lum lift, clean hits only, p50 / mean %):
+
+| | snare (body) | hat (rim) | kick (centre) | per-beat peak/trough |
+|---|---|---|---|---|
+| SeeYouDrop | 5.7/10.4 → 6.5/10.7 | 1.7/8.1 → 3.6/11.3 | — (no clean hits) | 1.409 → 1.458 |
+| CyborgNinja | 17.7/28.7 → 16.0/23.7 | 0.6/8.5 → 2.1/8.9 | — | 1.446 → 1.423 |
+| Vienna | 3.8/11.9 → 2.7/11.4 | 4.1/11.1 → 3.6/10.6 | 7.4/7.5 → 7.9/7.8 | 1.417 → 1.394 |
+
+`gHit = 1.05 + .45·uDyn` moves one third as far as `gBase` by construction (§60 step 1: a quiet section's kick is
+still a kick), and that is what these say.
+
+**The two regressions, stated plainly.** (a) **The void before drop 1 brightens**, 27.9 → 36.2, and void/drop goes
+0.268 → 0.416 — §60's best-measured win. The reason is not a bug: the truth says that void integrates to
+**−4.68 LKFS against the groove's −3.99**, i.e. it is 0.7 LU quieter than the groove, because it is a riser and a
+reverb tail and those are broadband and loud. `eM`'s AGC crashed there and the eye liked it; BS.1770 says it should
+not. **This is the one thing in this phase the user may want back**, and it is one term, not a redesign — see the
+watch-list. (b) **SeeYouDrop's p95/p05 falls 4.593 → 4.251 and its mean −16 %**, because the whole track moves down
+into a band whose bottom the shader's 0.22 idle holds up.
+
+### `&loud=0` — the A/B is bit-exact
+
+| s1, `IDS=1 PORT=8896 tools/scene-md5.sh`, errs [] | f360 | f840 |
+|---|---|---|
+| before (HEAD `7096ffd`) | `42e4871c` | `6eae9916` |
+| **after, default** | **`11ca47d0`** | **`d21222ba`** |
+| **after, `&loud=0`** | **`42e4871c`** | **`6eae9916`** — the pre-migration lines, bit for bit |
+
+So the two lines that moved are the migration and nothing else is reachable from here. Only `assets/scenes/dust/`
+was touched (`dyn.js`, `index.js`, `help.js`, `shaders.js` — a comment), `loudlight.js` is unchanged, and DUST's files
+are imported by nothing else, so no other scene's line can move (`IDS=1` is the whole proof, HARNESS "What to re-prove").
+
+### Proofs
+
+`node tools/check.js` **0 fail** (157 modules, MS keys 205, help.feats gaps 0, **the same 5 pre-existing line-cap
+warns** — `dyn.js` 99 lines, `index.js` 336, both under the 350 soft cap) · `npm test` **0 FAIL** (test_loud 38 pass) ·
+`feats` + `loudRel` / `loudRange` / `loudAbs` with a `help.feats` line each; `eM` / `eS` keep theirs, reworded as the
+fallback they now are · **no audible run** — every number is the deterministic file path.
+**Cost**, `q` pinned 0.95, tier 3, `&dyn=1`, five pairs interleaved with NAV back to back on an otherwise idle
+machine (medians): **DUST 1.346 → 1.383 ms, NAV 2.086 → 2.155 ms, DUST/NAV 0.645 → 0.641**. The machine drifted by
+more than the change did; the ratio is the same number twice, as it must be — the drive is one divide and one clamp a
+frame, and the stage's own 5.85 µs/frame was already being paid before DUST read it.
+
+### Open items
+
+1. **`loudPk` is seeded by a partially-filled window on the first block, and SeeYouDrop pays 1.46 LU for it.**
+   `Loud.push` feeds `zAt(tEnd, SHORT_W)` into the instant-attack peak from the very first block, and `zAt` returns a
+   mean over as few as 32 samples (`dn >= 32`). SeeYouDrop's file **starts on a loud transient**: its first block
+   reads **+0.97 LKFS** (`loudPk` +4.96 with the warm-up guard) against a true track maximum `loudS` of **−1.69**, and
+   the 0.02 LU/s release needs **147 s** to walk that off — longer than the track. Measured at 100 s: `loudPk` −1.03,
+   **1.46 LU above the honest peak**, so every base light on this track is 1.46/7 = **0.21 too low** and SeeYouDrop's
+   intro clamps to 0 where it should sit near 0.06. The other four tracks begin in silence (first block −51 to
+   −105 LKFS) and are unaffected, which is why §63's synthetic `peak` case did not catch it. The fix is one condition
+   — let the peak attack only on a FULL short-term window, the guard already covering the first 3 s — but it is an
+   ENGINE change that silently re-calibrates FEIGEN, MANDALA, POLYTOPE and now DUST, and `L_RNG_MIN` was swept against
+   the current behaviour. **A phase of its own, with `L_RNG_MIN` re-swept after it.** Not touched here.
+2. **The void before drop 1 (above).** If the user's eye wants §60's dark void back, the honest way is a short-window
+   term, not a louder floor: `loudM` (400 ms) resolves a 2.6 s void where `loudS` (3 s) cannot. One term in
+   `baseLight`, measured across four scenes, and again not a DUST worker's unilateral call.
+3. **`shapeFor()` still uses the absolute `eM < 0.74`** (§60 open item 5), untouched here on purpose so the shape
+   sequence §58 verified does not move. It is now the last AGC absolute left in DUST's look path.
+4. **The look is the user's**, one scene at a time, the way §57–§60 ran DUST. The watch-list is in
+   `docs/workers/DUST-OVERHAUL-PASS2.md`. `tools/accept.sh` still has not been run since v0.14.

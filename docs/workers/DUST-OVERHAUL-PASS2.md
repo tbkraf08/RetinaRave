@@ -254,3 +254,58 @@ cloud. No audible run (the worker's brief forbids it): every number is the deter
    shape sequence §58 verified is untouched. Moving it onto the drive would make the shape rule track-independent
    and is the obvious next tidy.
 6. **No audible run**, and `tools/accept.sh` has still not been run since v0.14.
+
+---
+
+# Pass 2 addendum — DUST on true loudness (LOUDNESS phase 4, DECISIONS §65)
+
+One commit. `dyn.js` no longer holds its own running peak on `eM`: the drive is the engine's **true loudness**
+(ITU-R BS.1770-4 K-weighting on the PCM bus, §63) through `assets/math/loudlight.js`, the same mapping FEIGEN,
+MANDALA and POLYTOPE read — so the four scenes share one calibration. §60's drive survives as the fallback, and
+**`&loud=0` restores §60 bit for bit** (s1 md5 `42e4871c` / `6eae9916`, the pre-migration lines exactly).
+**Not tagged, not pushed, not deployed.**
+
+## The A/B for the user — stream mode, tab capture, in TRACK TIME
+
+Same two windows as pass 2, key **2** (DUST is scene id 1):
+
+- **A (old):** the dev server with **`&loud=0`** on the hash — this is §60 exactly, bit for bit, so you can flip
+  between the two in one window instead of two. (`http://127.0.0.1:8765/#loud=0`, press 2.)
+- **B (new):** the dev server with no switch.
+
+**SeeYouDrop** is the reference (drops at **57.6** and **105.6** s). Start it from the beginning — the loudness is
+*causal*, so it reads what it has heard, and starting mid-track is not what it is tuned for. In order of how much
+the numbers say you should see it:
+
+1. **1:40 → 1:46 (100.5 → 105.6 s), the second breakdown — this is the one thing this change exists for.** In §60
+   this breakdown came out BRIGHTER than the drop after it (×0.875 on the picture's own luminance); it now comes out
+   **dimmer, ×1.154 the other way**. The music is +2.88 LU / ×1.94 in power louder at the drop and the engine finally
+   knows it. **The question for you: does 1:40–1:46 now read as the quiet part it is, and does 1:46 land?**
+2. **0:55 → 0:57.6, the void before the first drop — this one went the WRONG way and we want your eye on it.**
+   §60 drew it at 0.268 of drop 1; it is now **0.416** — brighter, less of a blackout. That is not a bug: by
+   BS.1770 that void is only **0.7 LU quieter than the groove** (it is a riser plus a reverb tail, and those are
+   broadband and loud). The old reading was the AGC exaggerating, and you may well have *liked* the exaggeration.
+   **If you want the blackout back, say so** — it is one short-window term (`loudM`, 400 ms, which can resolve a
+   2.6 s void where the 3 s window cannot), not a redesign. §65 open item 2.
+3. **0:02 → 0:14, the intro.** The first six seconds are now **0.357 of the groove** where §60 had 0.634 — clearly
+   the quietest thing in the song. And **8–14 s, pass 2's open item 2, is fixed**: it used to come out 1.27× the
+   groove (the novelty channel winning the argument) and now reads 1.02×. Watch whether 0:02–0:08 is now *too* dark:
+   it clamps to the cloud's idle there, partly because of a measured `loudPk` defect on this one track (§65 open
+   item 1 — SeeYouDrop's file starts on a transient, which over-holds the peak by 1.46 LU for the whole track).
+4. **The whole track is about 16 % dimmer on SeeYouDrop** (mean lum 96.5 → 81.4) and **the groove is dimmer than
+   you signed off at §60** (92.8 → 69.9). That is the deliberate consequence of anchoring to the track's real peak
+   instead of a levelled-out one. If the groove should keep its §60 brightness, the lever is the shader's
+   `gBase = .22 + 1.42·uDyn` (one line, `dust/shaders.js`), not the field.
+5. **The quiet tracks should look BETTER, not worse** — this is the thing an absolute floor would have broken.
+   **Malicious is +22 %** brighter and **WhoLikesToParty +9 %**; CyborgNinja is −8 % and Vienna +3 %. Put
+   SeeYouDrop and Malicious side by side: they master 8.6 LU apart and should now both use the full range.
+6. **Vienna (0:20 → 1:50) should look almost unchanged** (mean lum 91.1 → 93.9), and that is the control: its two
+   drops are only +1.04 and +0.33 LU, so there is nothing for a loudness to find. If Vienna's drops now feel bigger
+   than they did, something is over-reaching.
+7. **The drums must not have moved.** Per-hit lift is inside the noise of §58 / §64 on all three tracks (snare,
+   hat, kick; per-beat peak/trough 1.409 → 1.458 on SeeYouDrop). A quiet section's kick is still a kick.
+
+Everything else from pass 1, 1.5 and 2 is untouched: the nudge per beat, the three drum voices and the snare's
+travelling ring, the per-bin habituation, the void's contraction and the slam, the key-anchored palette, the shape
+sequence. **`shapeFor()` deliberately still reads the absolute `eM`**, so the formation sequence §58 verified has
+not moved.
