@@ -3913,3 +3913,13 @@ centre flare `uKick·0.8 + uDrop·1.2`, both untouched and both still on the AGC
 section's kick is still a kick). `feats` + the three fields with a `help.feats` line each.
 **md5** (`IDS=2`, errs []): s2-f360 `9a57626c` → **`1124721c`**, s2-f840 `5e59be93` → **`cb3442e9`**; **`&loud=0`
 reads `9a57626c` / `5e59be93`, v0.14's own two lines.** The body's own ratio on the headline pair: **×1.297 → ×1.591**.
+
+#### POLYTOPE (id 5) — `PENDING`
+
+One line: the stroke's base brightness, `GAIN · 0.75 · (0.35 + base) · presence`, where `base` was `MS.lvl`. The
+per-hit lift is `p.pulse = 1 + 0.4·MS.hit` and the beads are `grooves.js`'s own trains — both untouched, both still on
+the AGC. `feats` + the three fields, `help.js` + a line each. `index.js` stays at **349 lines** (the comment went onto
+the end of the statement line rather than above it, because the file was at 349 and the import spends the last one).
+**md5** (`IDS=5`, errs []): s5-f360 `06b46063` → **`4bcf26a3`**, s5-f840 `cccb0094` → **`c7469414`**; **`&loud=0`
+reads `06b46063` / `cccb0094`, v0.14's own two lines.** The stroke's own ratio on the headline pair:
+**×1.272 → ×1.532**.

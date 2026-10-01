@@ -2,6 +2,7 @@
 // projected stereographically into the room. Edges are subdivided on S^3, so every edge arrives as a circular
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).
 import { clamp, ema } from '../../math/util.js';
+import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the stroke's base brightness is TRUE loudness, not the AGC's `lvl`
 import * as CO from './colour.js';
 import { HELP } from './help.js';
 import * as DA from './dance.js';
@@ -133,7 +134,7 @@ export default {
   id: 5,
   tag: 'regular 4-polytopes on S³ — the planes lock to the beat and are nudged by the groove, the cage is a wheel of the twelve keys',
   card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and dancing: the bass shoves the cage round, the rhythm runs in beads along its edges, and the twelve keys are its colours' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
-  feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'presence',
+  feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'loudRel', 'loudRange', 'loudAbs', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
     'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence',
@@ -250,8 +251,7 @@ export default {
     p.gbri = PBRI * P.groove;
     p.gwid = PWID * P.groove;
     const m = LOOK.mood;
-    // 0.75·(0.35 + lvl)·presence, with a presence floor so muted audio still idles visibly (§0) instead of black
-    const bright = GAIN * 0.75 * (0.35 + MS.lvl) * (0.15 + 0.85 * MS.presence);
+    const bright = GAIN * 0.75 * (0.35 + baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, MS.lvl)) * (0.15 + 0.85 * MS.presence);   // 0.75·(0.35 + base)·presence, with the §0 presence floor so muted audio idles instead of going black. §63 phase 5: the BASE is TRUE loudness (`math/loudlight.js`), not the AGC's `lvl`, which reads a breakdown as bright as the drop after it; the per-hit lift `p.pulse = 1 + 0.4·MS.hit` above and GR's beads keep the AGC, because a quiet section's kick is still a kick (§60 step 1). `&loud=0` restores `MS.lvl` bit for bit.
     // spec 5: the twelve sector colours of the wheel — the key sets the anchor, chroma lights the sounding notes
     CO.step(dt, MS, m, this.ctx.hsv, P.glow, bright);
     this.rt.time = MS.flow;
