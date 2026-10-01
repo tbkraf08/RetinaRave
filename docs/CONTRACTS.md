@@ -576,16 +576,22 @@ are the scene author's rules:
   +2 / −11 (hat) — and what differs is WHICH onsets each one finds: recall ears 0.35 / v2 0.50 (kick), 0.71 / 0.50 (snare),
   0.82 / 0.70 (hat). The +101 ms was the last ears' snare being a different onset from the one the level was confirming.
   So the rule for a scene is: fire the attack on whichever of the two comes first, with a refractory (DUST: 60 ms) so one
-  hit cannot fire twice, let the EVENT place it and the LEVEL size it — the ears' `kickVel` / `snareVel` / `hatVel`
-  saturate (§51, p50 1.0) and carry almost no dynamics.
+  hit cannot fire twice, let the EVENT place it and the LEVEL size it — **in v0.25 and earlier** the ears' `kickVel` /
+  `snareVel` / `hatVel` saturated (§51, p50 1.0) and carried almost no dynamics.
   **Since v0.24+ (DECISIONS §70) the EVENT can size itself: `kickAmp` / `snareAmp`.** Those two are the rise lane's own
   magnitude in dB over an absolute span (16 dB for the kick, 12 for the snare — each lane's median track's p95 rise at a
   true hit), with no running quantile in them, so they do NOT saturate: pooled over the five tracks' true hits, p10 0.34 /
-  p50 0.54 / p95 1.00 against `snareVel`'s 1.000 / 1.000 / 1.000. Each lane's own threshold maps to **0.31** in both, so
-  "a hit that only just fired" is the same soft size in either channel. Why `*Vel` saturates is now diagnosed and is not
-  the music: `dsp.js`'s `Quantile(q, …)` settles on the **(1 − q)** quantile, so the `p95[c]` the velocity divides by is
-  the lane's p5 (3.86–4.41 dB on the snare lane against a true-hit p95 of 7.7–23.1). The convention is deliberately NOT
-  changed — the same class carries every band's level gate, the sub gate's p90 and `lpSweep`'s (docs/OPEN-ITEMS.md).
+  p50 0.54 / p95 1.00 against `snareVel`'s 1.000 / 1.000 / 1.000 as v0.25 published it. Each lane's own threshold maps to
+  **0.31** in both, so "a hit that only just fired" is the same soft size in either channel.
+  **`*Vel`'s saturation was a BUG in `dsp.js` and DECISIONS §73 fixed it.** `Quantile(q, …)` had its two Robbins-Monro
+  weights swapped and settled on the **(1 − q)** quantile, so the `p95[c]` the velocity divides by was the lane's p5
+  (3.86–4.41 dB on the snare lane against a true-hit p95 of 7.7–23.1). With the sign right and the step re-fitted,
+  `*Vel` spreads p10 0.18–0.63 / p50 0.43–0.76 / p90 0.91–1.00 with **7–20 %** of true hits at the ceiling, against
+  39–93 % before — `*Amp`'s own spread to the digit. **`*Amp` is still the channel a scene should size itself from**,
+  and §73 measured why: `*Vel`'s divisor is a running quantile of THIS TRACK's fire magnitudes, so the same 12 dB snare
+  reads 1.00 on Malicious (fire-stream p95 7.5 dB) and 0.55 on WhoLikesToParty (21.8 dB). `*Vel` answers "how hard for
+  this track" — the right question for a RANK, the wrong one for a SIZE that must look the same on every track — and
+  `*Amp` answers it with one absolute dB mapping. Both are published and nothing in §73 moved a scene.
   **So a scene with its own picker-quality judgement may now fire on the EVENT ALONE and take its size from `*Amp`**,
   which is what DUST's flash ring and TORUS2's snare wave do since §70: the level `snare2` is still published and still
   routable, it is simply no longer the only thing that knows how big a hit was. `hatAmp` does not exist — the hat is the
@@ -760,7 +766,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 |---|---|---|---|
 | `loudM` | raw | how loud it is right now, in LKFS (0 = a full-scale sine, -23 = broadcast reference) | a transient-scale brightness that does not lie about a breakdown |
 | `loudS` | raw | how loud this passage is, in LKFS (the 3 s window — a section, not a hit) | the base light of a scene, through loudRel |
-| `loudPk` | raw | the loudest this track has been, in LKFS (instant attack on a FULL 3 s window only, then 0.02 LU/s release, plus a 4 LU warm-up guard with a 20 s time constant) | the reference every relative loudness is measured against |
+| `loudPk` | raw | the loudest this track has been, in LKFS | the reference every relative loudness is measured against |
 | `loudRel` | level | how loud this is FOR THIS TRACK, 0 = 18 LU down on its own peak, 1 = at it | base brightness, base size, base radius — "how bright is the picture right now" |
 | `loudRange` | raw | how much dynamic range this track has shown, in LU | a scene that wants the track's OWN contrast instead of the fixed 18 LU span expands loudRel with it |
 | `loudAbs` | count | are loudM / loudS / loudPk absolute? 1 yes (file, demo) · 0 no, the gain is the tab's or the mic's (capture, mic) · -1 the loudness stage is not running (&loud=0, #test with the switch off) | the A/B gate: a migrated scene falls back to its pre-loudness formula on -1, and may not read an absolute field on 0 |
@@ -918,11 +924,11 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kickAge` | raw | seconds since the last kick (99 before any; slightly NEGATIVE on the frame it fires) | place a fast animation exactly, sub-frame |
 | `snareAge` | raw | seconds since the last snare (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
 | `hatAge` | raw | seconds since the last hat (99 before any; slightly NEGATIVE on the frame it fires) | as kickAge |
-| `kickVel` | level | how hard the last kick hit | amplitude of the hit |
-| `snareVel` | level | how hard the last snare hit | amplitude of the hit |
-| `hatVel` | level | how hard the last hat hit | amplitude of the hit |
-| `kickAmp` | level | how big the last kick was (an honest size, unlike kickVel) | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength |
-| `snareAmp` | level | how big the last snare was (an honest size, unlike snareVel) | as kickAmp - DUST's flash ring and TORUS2's snare wave take their size from it |
+| `kickVel` | level | how hard the last kick hit, against this track's own loudest kicks | amplitude of the hit, ranked within the track |
+| `snareVel` | level | how hard the last snare hit, against this track's own loudest snares | amplitude of the hit, ranked within the track |
+| `hatVel` | level | how hard the last hat hit, against this track's own loudest hats | amplitude of the hit, ranked within the track |
+| `kickAmp` | level | how big the last kick was, on an absolute dB scale (the same hit reads the same on every track) | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength |
+| `snareAmp` | level | how big the last snare was, on an absolute dB scale (the same hit reads the same on every track) | as kickAmp - DUST's flash ring and TORUS2's snare wave take their size from it |
 | `denK` | raw | kicks per second over the last second | busy-ness of the low end |
 | `denS` | raw | snares per second over the last second | the climbs: 1.7x the groove on this track |
 | `denH` | raw | hats per second over the last second | double time, the rising intro |

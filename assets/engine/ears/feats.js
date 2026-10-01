@@ -25,7 +25,7 @@ export const EARS_FEATS = {
   subGlide: R('how fast the sub is sliding, in semitones per second (+ = rising)', 'd(12·log2(subHz))/dt, smoothed over 30 ms, clamped to +-48', 'morph between neighbouring figures during a slide', [-48, 48]),
   subNoteEvt: E('a new sub note just started', 'the gate opened, or the sub\'s own level jumped 7 dB, or the pitch moved >= 1 semitone and held 32 ms. FILE mode: on the map\'s centred grid, so the event time IS the change. LIVE: backdated by NOTE_LAG = 0.125 s (the ring\'s 46 ms YIN guard + half the 120 ms window + two median frames + half the hold), measured to land the walk\'s notes within 8 ms', 'retarget the figure, kick the sand'),
   subPure: L('how sine-like the bass is (1 = a pure 808 sine, 0 = a harmonic-rich bass)', '1 - logmap(E(150-600) / E(22-150), 0.05, 1) — the truth tool\'s h/f', 'mix in the 2nd / 3rd harmonic figures: clean lines vs busy ones'),
-  subGate: C('is the sub sounding at all (0/1, hysteresis)', 'the 22-60 Hz RMS over its running p90 crosses 0.16 up / 0.075 down AND the 22-70 band owns >= 30 % of 22-600 Hz, with a 45 ms dwell', 'silence the sand when there is no bass ("no sound -> quiet")', [0, 1]),
+  subGate: C('is the sub sounding at all (0/1, hysteresis)', 'the 22-60 Hz RMS over its running p90 crosses 0.020 up / 0.0094 down AND the 22-70 band owns >= 30 % of 22-600 Hz, with a 45 ms dwell. The pair was 0.16 / 0.075 until v0.25, against a "p90" that was really the p10 (§73): the level half of the gate was all but always satisfied and the gate was effectively the share test alone. The pair is re-fitted so the gate keeps its own five-track timeline (93-100 % frame agreement with v0.25)', 'silence the sand when there is no bass ("no sound -> quiet")', [0, 1]),
   subIn: E('the sub just came in', 'subGate 0 -> 1', 'the drop\'s first frame, a burst'),
   subOut: E('the sub just left', 'subGate 1 -> 0', 'let the figure relax, the sand settle'),
   // --- the tonic (engine/ears/tonic.js) ---
@@ -34,7 +34,9 @@ export const EARS_FEATS = {
   tonicConf: L('how clearly one key wins', '(best - second best) / |best| over the 24 KK correlations', 'fade harmony-driven channels in'),
   // --- register / texture (engine/ears/texture.js) ---
   bassReg: L('where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above', 'the log-frequency centroid of the 22-70 / 70-150 / 150-600 Hz band powers, mapped between 35 and 140 Hz', 'which octave the visual sits in; the 1:38 climb and the intro'),
-  lpSweep: L('how closed a low-pass is (1 = the highs are gone)', '1 - roll / p90(roll), roll = E(5-12k)/E(150-2.5k) smoothed 0.25 s, p90 over ~30 s of the track', 'blur, softness, the outro\'s closing filter'),
+  // §73: this read a p50 of exactly 0.000 on all five tracks until v0.25 — `rollP90` settled on the p10, so
+  // `roll / p10` was above 1 nearly always and the field clamped to 0. It is a live 0-1 channel now (p50 0.35-0.73).
+  lpSweep: L('how closed a low-pass is (1 = the highs are gone)', '1 - roll / p90(roll), roll = E(5-12k)/E(150-2.5k) smoothed 0.25 s, p90 over ~30 s of the track (the p90 fixed in §73)', 'blur, softness, the outro\'s closing filter'),
   width: L('how wide the stereo image is', 'RMS(side) / RMS(mid), side = (L-R)/2, smoothed 0.35 s', 'spread, how far the figure reaches off-centre'),
   // --- percussion (engine/ears/perc.js) ---
   kickEvt: E('a kick just hit (one read)', 'FILE mode: the track map\'s non-causal 40-150 Hz HPSS onset WITH a 2-12 kHz onset within 15 ms (the truth tool\'s own rule). LIVE: a causal 60-150 Hz RISE over its own 85 ms local mean, >= 5 dB (§68), with a 2.5-8 kHz beater click within 25 ms. Either way a bare low onset is an 808 note start and goes to subNoteEvt instead', 'the hit: a flash, a shove, a ring'),
@@ -43,15 +45,20 @@ export const EARS_FEATS = {
   kickAge: R('seconds since the last kick (99 before any; slightly NEGATIVE on the frame it fires)', 'heard time - the kick\'s own audio time. The event is released on the frame NEAREST the onset, so on that one frame the age is in [-1/120, 0) s - clamp at 0 if a scene cannot take it', 'place a fast animation exactly, sub-frame', [-0.0084, 99]),
   snareAge: R('seconds since the last snare (99 before any; slightly NEGATIVE on the frame it fires)', 'heard time - the snare\'s own audio time; as kickAge, in [-1/120, 0) on the release frame', 'as kickAge', [-0.0084, 99]),
   hatAge: R('seconds since the last hat (99 before any; slightly NEGATIVE on the frame it fires)', 'heard time - the hat\'s own audio time; as kickAge, in [-1/120, 0) on the release frame', 'as kickAge', [-0.0084, 99]),
-  kickVel: L('how hard the last kick hit', 'its RISE in dB over the lane\'s running p95 (§68; a flux peak before it)', 'amplitude of the hit'),
-  snareVel: L('how hard the last snare hit', 'its two-band RISE in dB over the lane\'s running p95 (§69; a flux peak before it)', 'amplitude of the hit'),
-  hatVel: L('how hard the last hat hit', 'its flux over the class\'s running p95', 'amplitude of the hit'),
-  // §70 — the SIZE of a hit, with no quantile in it. `kickVel` / `snareVel` divide the rise by `p95[c]`, and
-  // `Quantile(0.95, …)` in dsp.js settles on the (1 - q) quantile, so that divisor is the lane's p5 and 52-91 % of
-  // the five tracks' hits read exactly 1.000 (§51's "the velocity saturates"). These two are the rise itself over an
-  // absolute dB span, so a scene that fires on `kickEvt` / `snareEvt` ALONE still has a size for the hit.
-  kickAmp: L('how big the last kick was (an honest size, unlike kickVel)', 'LIVE: the LOW lane\'s own RISE in dB over a fixed 16 dB span, clamped - 5 dB (the lane\'s threshold) reads 0.31, 16 dB and up reads 1. The span is the five tracks\' MEDIAN track\'s p95 rise at a true kick (16.5 dB), so no running quantile and no saturation (§70). FILE+map mode: the map\'s own velocity, which is already a proper offline p95 normalisation', 'the amplitude of a hit fired by the EVENT alone - a flash\'s size, a shove\'s strength'),
-  snareAmp: L('how big the last snare was (an honest size, unlike snareVel)', 'LIVE: the SNARE lane\'s two-band RISE in dB over a fixed 12 dB span, clamped - 3.75 dB (the lane\'s threshold) reads 0.31, 12 dB and up reads 1. The span is the median track\'s p95 rise at a true snare (11.9 dB), so the same 0.31 "only just fired" size as kickAmp and no saturation (§70). FILE+map mode: the map\'s own velocity', 'as kickAmp - DUST\'s flash ring and TORUS2\'s snare wave take their size from it'),
+  // §73 — the three velocities are a per-track RANK and no longer saturate. Until v0.25 `Quantile(0.95, …)` settled
+  // on the p5 (dsp.js's weights were swapped) and 52-91 % of hits read exactly 1.000; the divisor is a real running
+  // p95 now, so pooled over the five tracks' true hits they spread p10 0.24-0.30 / p50 0.51-0.63 / p90 1.00 with
+  // 12-14 % at the ceiling. They are normalised against THIS TRACK's own fire magnitudes, which is the right
+  // question for a rank and the wrong one for a size — use `*Amp` when a scene wants a size (§70).
+  kickVel: L('how hard the last kick hit, against this track\'s own loudest kicks', 'its RISE in dB over the lane\'s running p95 (§68; a flux peak before it; the p95 fixed in §73)', 'amplitude of the hit, ranked within the track'),
+  snareVel: L('how hard the last snare hit, against this track\'s own loudest snares', 'its two-band RISE in dB over the lane\'s running p95 (§69; a flux peak before it; the p95 fixed in §73)', 'amplitude of the hit, ranked within the track'),
+  hatVel: L('how hard the last hat hit, against this track\'s own loudest hats', 'its flux over the class\'s running p95 (fixed in §73)', 'amplitude of the hit, ranked within the track'),
+  // §70 — the ABSOLUTE size of a hit, with no quantile in it at all, so the same hit reads the same on every track.
+  // The two are complementary and both published: `*Vel` ranks a hit inside its track (a 12 dB snare reads 1.00 on
+  // Malicious and 0.55 on WhoLikesToParty), `*Amp` sizes it against a fixed dB span. A scene that fires on
+  // `kickEvt` / `snareEvt` ALONE wants the size.
+  kickAmp: L('how big the last kick was, on an absolute dB scale (the same hit reads the same on every track)', 'LIVE: the LOW lane\'s own RISE in dB over a fixed 16 dB span, clamped - 5 dB (the lane\'s threshold) reads 0.31, 16 dB and up reads 1. The span is the five tracks\' MEDIAN track\'s p95 rise at a true kick (16.5 dB), so no running quantile and no saturation (§70). FILE+map mode: the map\'s own velocity, which is already a proper offline p95 normalisation', 'the amplitude of a hit fired by the EVENT alone - a flash\'s size, a shove\'s strength'),
+  snareAmp: L('how big the last snare was, on an absolute dB scale (the same hit reads the same on every track)', 'LIVE: the SNARE lane\'s two-band RISE in dB over a fixed 12 dB span, clamped - 3.75 dB (the lane\'s threshold) reads 0.31, 12 dB and up reads 1. The span is the median track\'s p95 rise at a true snare (11.9 dB), so the same 0.31 "only just fired" size as kickAmp (§70). FILE+map mode: the map\'s own velocity', 'as kickAmp - DUST\'s flash ring and TORUS2\'s snare wave take their size from it'),
   denK: R('kicks per second over the last second', 'a 1 s sliding count', 'busy-ness of the low end'),
   denS: R('snares per second over the last second', 'a 1 s sliding count', 'the climbs: 1.7x the groove on this track'),
   denH: R('hats per second over the last second', 'a 1 s sliding count', 'double time, the rising intro'),

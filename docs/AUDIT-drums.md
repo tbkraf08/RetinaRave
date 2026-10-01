@@ -221,3 +221,73 @@ interleaved runs — the two disagree in sign, so it is under the ±0.5 % a mach
 - Malicious's PCM clock bias moves +23 → +30 ms (its bias-removed steadiness is unchanged at 94 → 95 %); on a
   track whose own truth grid is "tempo only" and 0.33 BPM off, the 30 ms gate cliff-edges from 80 % to 50 %.
 - `tools/accept.sh` still has not been run since v0.14 (§65 item 5, unchanged).
+
+## §73 — the `Quantile` sign: the `*Vel` saturation was never the music
+
+DECISIONS §73. `assets/engine/ears/dsp.js`'s `Quantile(q)` had its two Robbins-Monro weights swapped and settled on
+the **(1 − q)** quantile, so `perc.js`'s `p95[c]` — the divisor of `kickVel` / `snareVel` / `hatVel` — was the
+lane's **p5**. The receipt is `tools/test_dsp.js` (in `npm test`): `Quantile(0.95)` on U(0,10) read **0.508**
+against a true p95 of 9.495, and on a two-level signal (80 % at 1.0, 20 % at 9.0 — a band that is quiet most of the
+time with hits in it) `Quantile(0.90)` read **0.925** instead of 8.999.
+
+**The drum table did not move.** 5 tracks x {`ears`, `v2`} x {kick, snare, hat} x their references = 60 rows,
+`tools/drums-node.js` + `tools/truth/drumcheck.py`, both runs from `git worktree`s at `35242cf`:
+
+| `GATE_DB` | rows differing from v0.25 | worst |
+|---|---|---|
+| −34 (the sign alone) | 22 | SeeYouDrop kick 192 → 188 fires, F 0.40 → 0.38 (`low`) / 0.50 → 0.48 (`click`) |
+| −44 | 8 | WhoLikesToParty v2 kick F 0.78 → 0.77 |
+| **−54 (shipped)** | **6** | 1–3 fires, **every P / R / F identical to two decimals** |
+
+`GATE_DB` had to move because `lvl[i]` was the band's **p10** and is now its **p90**, 10–30 dB higher per band on
+this material, so the same −34 offset suddenly had teeth: it blocked 0.0–24.2 % of hops instead of 0.0–1.1 %, and
+what it blocked on SeeYouDrop was four real kicks in the **ducked 51–56 s bar before drop 1**, where the 60–150 Hz
+band genuinely sits 34–44 dB under its own p90. −54 restores §68's measured posture — *"swept with and without and
+on three bands, identical to every digit, so it costs nothing and still protects a silent band's noise floor"* —
+now read off the loud level the comment always named. (At −34 the intro also lost SeeYouDrop's 2.4–4.0 s hats as
+silence at −51 dB: hat F unchanged at 0.72, but `denH` 7/s → 0/s through four seconds of "the intro's rising hats".)
+
+**`*Vel` after the fix**, pooled over the five tracks' TRUE hits (every lane fire matched to
+`tools/truth/<T>.{kick,snare}.json` at ±50 ms; the hat has no truth list, so its row is every fire):
+
+| field | =1.000 per track, v0.25 | pooled =1.000 after | pooled p10 / p50 / p90 after |
+|---|---|---|---|
+| `kickVel` | 87 / 46 / 50 / 83 / 83 % | **14 %** | 0.301 / 0.627 / 1.000 |
+| `snareVel` | 91 / 53 / 59 / 72 / 47 % | **13 %** | 0.285 / 0.585 / 1.000 |
+| `hatVel` | 92 / 61 / 43 / 81 / 89 % | **12 %** | 0.237 / 0.511 / 1.000 |
+| `kickAmp` / `snareAmp` (§70, unchanged) | — | 26 % / 17 % | 0.34 / 0.55 / 1.00 |
+
+`p95`'s step had to move with the sign, 0.02 → **0.2**: the estimator is pushed only AT A FIRE (a few hundred
+values a track) and the trip became a 5–30 dB climb instead of a ~2 dB descent, so at 0.02 the low lane still read
+7.9 / 15.6 / 25.3 / 8.2 / 6.8 dB against a true fire-stream p95 of 16.5 / 23.2 / 36.5 / 9.1 / 10.2. Swept
+0.02 / 0.05 / 0.1 / 0.2 / 0.4 / 0.8: the pooled kick ceiling share reads 32 / 24 / 18 / **14** / 10 / 8 %, and past
+0.2 the estimator over-tracks the top so the LOUDEST hits stop reaching 1.000 (`vel` p90 0.88–0.99 at 0.4).
+
+**The verdict: `*Amp` is still the SIZE, `*Vel` is now an honest RANK.** `*Vel`'s divisor is a running quantile of
+THIS track's fire magnitudes, so its per-track p95 is **1.000 on all five tracks** — the same 12 dB snare reads
+1.00 on Malicious (fire-stream p95 7.5 dB) and 0.55 on WhoLikesToParty (21.8 dB). `*Amp`'s per-track p95 reads
+0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare), which is one absolute mapping saying that two of the five tracks are
+quieter. Both stay published. **No scene changed**: DUST's flash ring and TORUS2's snare wave read `snareAmp`,
+bit-identical on four tracks and within 0.004 of its mean on the fifth, so their rings cannot have moved.
+
+**Unmoved:** §64's build table identical (`buildLive>=0.4` 6/8 armed, Vienna drop 1 at 4.4 beats, CyborgNinja
+0.14 false arms/min) and all 18 of `dropcheck.py`'s default rules · every v3 clock row identical on all five
+tracks, the PCM clock's beat F 0.903 → **0.915** on SeeYouDrop and within 0.003 elsewhere · the queue's every F
+identical to 2 dp but SeeYouDrop `nextHatIn` 0.56 → 0.55 · the bar store within 0.002 · the OFFLINE map
+byte-identical (bpm, phase, bar, `drops`, `dropWhy`, sections, every onset list, beats, downbeats, novelty) and so
+is the map's own `SubTrack` gate · the fake-timeline md5 sweep, 0 of 24 lines (nothing on the `#test` path imports
+from `engine/ears/` at all; `engine/clock/clock.js` takes only `FFT` from `dsp.js`) · cost flat.
+
+### Open after §73
+
+- **CHLADNI reads `kickVel` and `snareVel`.** Its plate ring flashed at full brightness on 52–91 % of hits and now
+  flashes at a graded one on 86–88 %. Priority 3 (`kickAmp` → CHLADNI) has a third option: keep `*Vel`, which
+  finally means something. `SNAMP` wants a re-tune either way, and the user's A/B.
+- **`lpSweep` is live for the first time.** It read a p50 of exactly **0.000 on all five tracks** in v0.25
+  (`rollP90` was a p10, so `1 − roll/p10` clamped to 0); it now reads 0.407 / 0.547 / 0.732 / 0.413 / 0.347.
+  CHLADNI's `fog` is its only reader and the plate now takes fog through the outro where it never did.
+- **The reactive drums' `kick2` RANK vs `kickAmp` vs the now-honest `kickVel`** — §70's open question, still not
+  measured.
+- Malicious's rows above are from the **v0.25 truth grid** by construction (both worktrees at `35242cf`, while a
+  parallel worker re-phases that grid). When the re-phase lands, its base and final move together: the deltas
+  stand, the absolute numbers do not.

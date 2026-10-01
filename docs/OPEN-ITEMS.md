@@ -137,18 +137,22 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 0.125, so the channel was dead on the user's own reference track; CyborgNinja F 0.53 -> **0.87**, Vienna 0.46 ->
 **0.66**, luminance within 2-4 % everywhere. Cost flat (interleaved bench ratios 0.538 -> 0.541 and 0.577 -> 0.567).
 **Five things it leaves open:**
-1. **`dsp.js`'s `Quantile(q)` settles on the (1 - q) quantile** — the update's sign is inverted, proved directly
-   (`Quantile(0.95)` on U(0,10) reads **0.384**, the p05). That is why `kickVel` / `snareVel` / `hatVel` saturate
-   (§51's "p50 1.0"): they divide the rise by the lane's **p5**, which sits at 3.86-4.41 dB against a true-hit p95
-   of 7.7-23.1. **It was deliberately NOT fixed.** Four live readers are calibrated against the number they get:
-   `perc.js lvl` (every band's level gate, with `GATE_DB -34`), `perc.js p95` (the `*Vel`s), `sub.js q90` (the sub
-   gate) and `texture.js rollP90` (`lpSweep`). Flipping it moves the picker's gates, so the map, the bar store, the
-   queue and §59's clock tables all move with it: its own engine session. **Nothing should be tuned against a
-   `*Vel` until then** — read `kickAmp` / `snareAmp` instead.
-2. **CHLADNI's plate ring still reads `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`), so it
-   flashes at full brightness on 52-91 % of hits. Moving it to `snareAmp` takes that to 0.33-0.69 — a BRIGHTNESS
-   recalibration of a validated scene's default (`SNAMP` would be re-tuned with it), not a trigger change. It wants
-   the user's A/B, which is why §70 left it.
+1. ~~**`dsp.js`'s `Quantile(q)` settles on the (1 - q) quantile**~~ — **CLOSED by DECISIONS §73** (2026-10-01,
+   commits `4264bce` / `dee2190`). The two Robbins-Monro weights were swapped; `Quantile(0.95)` on U(0,10) read
+   **0.508** against a true p95 of 9.495, and that is why `kickVel` / `snareVel` / `hatVel` saturated (§51's
+   "p50 1.0"): they divided the rise by the lane's **p5**. All four readers were re-calibrated with it — `lvl`'s
+   `GATE_DB` -34 -> -54, `p95`'s step 0.02 -> 0.2, `sub.js` `P90_STEP` x10 with `GATE_ON` / `GATE_OFF` /8, and
+   `rollP90`'s step x10 — and the five-track tables HELD: every P / R / F in the 60-row drum table identical,
+   §64's build table identical, every v3 clock row identical (the PCM clock's beat F 0.903 -> 0.915 on
+   SeeYouDrop), the offline map byte-identical. `*Vel` now spreads p10 0.24-0.30 / p50 0.51-0.63 with **12-14 %**
+   of true hits at the ceiling instead of 43-92 %, so it CAN be tuned against — but it is a per-track RANK (its
+   per-track p95 is 1.000 on all five tracks) and `kickAmp` / `snareAmp` remain the absolute SIZE a scene reads.
+   `lpSweep`, which read a p50 of exactly 0.000 on all five tracks, is a live channel for the first time.
+2. **CHLADNI's plate ring still reads `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`). It
+   flashed at full brightness on 52-91 % of hits; since §73 fixed the quantile it flashes at a GRADED brightness on
+   86-88 % and the ring is no longer a binary. Moving it to `snareAmp` instead takes it to 0.33-0.69 — a BRIGHTNESS
+   recalibration of a validated scene's default (`SNAMP` would be re-tuned either way), not a trigger change. The
+   worker on priority 3 (`kickAmp` -> CHLADNI) now has three options, not two, and it wants the user's A/B.
 3. **`kickAmp` is published and no kick consumer moved** (the §70 brief forbade it). DUST's kick voice and TORUS2's
    kick wave still size themselves from `kick2`, whose strength RANK §51 built precisely because `kickVel`
    saturated. Rank vs `kickAmp` is now a measurable question and is not measured.

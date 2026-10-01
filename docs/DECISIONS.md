@@ -5746,3 +5746,220 @@ still held):** v0.24 + §70 (`kickAmp` / `snareAmp`; DUST's ring and TORUS2's wa
 its truth grid). `releases/retinarave-v0.25.html` (from `file://` on scene 3: errs [], nonFinite [], clock pcm), package.json
 0.25.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: 1. Malicious's truth grid, 2. the `Quantile` sign
 session, 3. `kickAmp` → CHLADNI.
+
+## §73 the `Quantile` sign — a p95 that was a p5, a p90 that was a p10, and the four readers that had been calibrated against the wrong number (2026-10-01, one worker; §70's open item 1, the user's word: priority 2, "the `Quantile` sign engine session"; `docs/AUDIT-drums.md` "§73")
+
+### The bug, in one line
+
+`assets/engine/ears/dsp.js`'s `Quantile(q)` had its two Robbins-Monro weights swapped and settled on the
+**(1 − q)** quantile.
+
+```js
+this.v += x > this.v ? s * (1 - this.q) : -s * this.q;      // v0.25 and back to §44
+this.v += x > this.v ? s * this.q : -s * (1 - this.q);      // §73
+```
+
+Write `p = P(x > v)`. At equilibrium the up-pushes and the down-pushes balance, so the two weights fix `p` and
+nothing else does: `p·w_up = (1 − p)·w_down`. The old pair balances at `p·(1 − q) = (1 − p)·q`, i.e. **p = q** —
+`q` of the stream lies ABOVE `v`, which is the (1 − q) quantile. The fixed pair balances at `p = 1 − q`: `q` of
+the stream lies BELOW `v`, the q-th quantile, the thing the class is named for.
+
+**The receipt is `tools/test_dsp.js`** (in `npm test`, first in the list), 200 000 draws per distribution,
+`abs` mode, step 0.02, the estimate read as the mean of `v` over the last 40 000 pushes because a Robbins-Monro
+tracker never stops dithering:
+
+| distribution | q | true | BEFORE | AFTER |
+|---|---|---|---|---|
+| U(0,10) | 0.10 | 0.998 | 8.986 | 0.999 |
+| U(0,10) | 0.50 | 5.001 | 5.008 | 5.008 |
+| U(0,10) | 0.90 | 8.994 | 0.999 | 8.986 |
+| U(0,10) | 0.95 | 9.495 | **0.508** | 9.487 |
+| two-level (80 % at 1.0, 20 % at 9.0) | 0.50 | 1.025 | 1.026 | 1.026 |
+| two-level | 0.90 | 8.999 | **0.925** | 9.000 |
+| two-level | 0.95 | 9.049 | **0.912** | 9.051 |
+
+The two-level row is the engine's own case: a band that is quiet most of the time with loud hits in it. Nine of
+the file's assertions failed before and all pass after — the sign guard (`v` must RISE with `q`; before it read
+8.99 < 5.01 < 1.00 < 0.51), convergence within 2 % of the range at all four `q`, a 20 dB step change reached in
+1960 pushes (before: never), `rel`-mode scale invariance, determinism, the 16-push warm-up. A monotone ramp's rows
+are printed and NOT asserted: a causal tracker has no stationary quantile on a non-stationary stream, and a low-q
+floor follower on a rising stream is dragged to the top by its up-pushes alone.
+
+**The weights also set the two SPEEDS, and that is the half of the fix that forced three of the four
+re-calibrations.** For `q` near 1 the FAST leg is `step·q` and the slow one `step·(1 − q)`: a peak follower that
+leaps onto a new loud level and leaks away from it slowly. Under the old weights the same `q` was a FLOOR
+follower — fast down, slow up — so the magnitude of the fast leg is unchanged by the fix (0.045 dB/hop for `lvl`
+either way; "~3 s at the 86 Hz hop" still holds) but the DIRECTION it applies to flips. A consumer whose stated
+time constant describes the *slow* leg therefore needs ten times the step to keep it, for `q = 0.9`. Every comment
+in these files already wanted the peak follower: *"a 4 s follower collapsed inside the 8 s void and the gate then
+opened on its rumble"* is a floor follower's failure, and a peak follower cannot have it.
+
+### The consumer table — meant / got / decided
+
+The method: `tools/work/v73/rec.js` runs the real `Ears` over each of the five tracks on the page's det time base
+(`tools/node-stream.js`, the path `drums-node.js` takes) and records **the stream each estimator is pushed with**;
+`tools/work/v73/sweep.js` then replays both signs and sweeps that consumer's own constant in milliseconds. Only
+`fires` depends on the sign at all (through the level gate); `sms` / `ssh` / `roll` / `bdb` are raw band powers and
+are the same stream either way. **Every base number below is from a `git worktree` at `35242cf`** and every after
+number from a second worktree at the same commit with the patch applied, because a parallel worker is re-phasing
+Malicious's truth grid — no row in this section can move under the measurement.
+
+| consumer | what it MEANT | what it GOT | decided |
+|---|---|---|---|
+| **`perc.js lvl`** — `Quantile(0.9, 0.05, 'abs')` x 7 bands; the `GATE_DB` level gate, "ignore flux while a band sits this far under its own running p90" | the band's dB envelope p90, a LOUD reference | the **p10** — its p50 landed within 0.1–8.0 dB of the track's true p10 on every band | **keep q = 0.9, keep step 0.05, re-fit `GATE_DB` −34 → −54.** The step needs nothing (the fast leg's magnitude is unchanged); the offset does, because the reference moved up by the band's own p10→p90 spread, 10–30 dB on this material |
+| **`perc.js p95`** — `Quantile(0.95, STEP, 'abs')` x 3; `*Vel = clamp01(fire / p95.push(fire))` | the p95 of the lane's own fire magnitudes, so `*Vel` = 1 means the top 5 % of hits | the **p5** — 3.86–4.41 dB on the snare lane against a true-hit p95 of 7.7–23.1, so 52–91 % of hits read exactly 1.000 (§51's "the velocity saturates", diagnosed in §70) | **keep q = 0.95, re-fit step 0.02 → 0.2.** This is the one consumer whose bug was the point, and the one constant fitted to an outcome rather than derived |
+| **`sub.js q90`** — `Quantile(0.9, P90_STEP)`; `rel = ms / q90`, the gate hysteresis `GATE_ON` / `GATE_OFF`, and the `vel` of every `subIn` / `subOut` / `subNote` event | the p90 of the gate band's RMS, so `0.16` means "16 % of the sub's own loud level" | **0.04 / 0.24 / 0.07 / 0.04 / 0.33x** the trailing-32 s p90 on the five tracks — not a p90 at all, and `rel`'s p50 of 1.23–15.99 made `clamp01(rel)` 1.000 almost always, so the sub's note velocity was saturated exactly the way `*Vel` was | **keep q = 0.9, `P90_STEP` 2.5e-4 → 2.5e-3 (derived), `GATE_ON` / `GATE_OFF` 0.16 / 0.075 → 0.020 / 0.0094 (fitted to the gate's own five-track timeline)** |
+| **`texture.js rollP90`** — `Quantile(0.9, 4e-4)`; `lpSweep = clamp01(1 − roll / p90)` | the p90 of `roll` over ~30 s | the **p10**, so `roll / p10` was above 1 nearly always and the field clamped to 0: `lpSweep` read a p50 of **exactly 0.000 on all five tracks** and was non-zero on 0.3–35 % of hops. A DEAD CHANNEL | **keep q = 0.9, step 4e-4 → 4e-3 (derived).** Nothing to preserve — the field had no validated behaviour, it had no behaviour |
+
+**The two derived steps.** For `q = 0.9` the slow leg is `step/10`, and after the fix the slow leg is the one the
+stated time constant belongs to, so the step must be ten times bigger. Measured against the offline trailing-window
+p90 of the same stream, as a median ratio per track:
+
+```
+sub.q90 vs the trailing-32 s p90   v0.25  0.04 / 0.24 / 0.07 / 0.04 / 0.33x
+                                   sign only  0.28 / 0.87 / 0.67 / 0.35 / 0.95x
+                                   + 2.5e-3   0.93 / 1.00 / 0.97 / 0.96 / 1.00x
+tex.rollP90: mean |lpSweep - the offline 1 - roll/p90(30 s)|
+                                   v0.25  0.30 / 0.47 / 0.63 / 0.30 / 0.42
+                                   sign only  0.074 / 0.199 / 0.382 / 0.265 / 0.420   (Vienna still dead)
+                                   + 4e-3     0.070 / 0.058 / 0.086 / 0.067 / 0.112
+```
+(order: SeeYouDrop / CyborgNinja / WhoLikesToParty / Malicious / Vienna.) `lpSweep`'s own p50 goes
+**0.000 → 0.407 / 0.547 / 0.732 / 0.413 / 0.347** — the outro's closing filter is a channel again.
+
+**`p95`'s step is fitted, and why it had to be.** `p95[c]` is pushed only AT A FIRE, so its stream is a few hundred
+values a track. Under the old sign the fast leg was downward and the trip short — from the 16-fire warm-up mean
+down ~2 dB to the p5 — so 0.02 settled in ~100 fires. With the sign right the trip is UPWARD to the p95, 5–30 dB,
+which 0.019 dB/fire cannot finish inside a track: at step 0.02 the low lane's estimator still read
+**7.9 / 15.6 / 25.3 / 8.2 / 6.8 dB** against a true fire-stream p95 of **16.5 / 23.2 / 36.5 / 9.1 / 10.2**, and
+32 % of pooled true hits still saturated. Swept 0.02 / 0.05 / 0.1 / **0.2** / 0.4 / 0.8 — the ceiling share over
+the five tracks' true hits reads 32 % → 24 → 18 → **14** → 10 → 8 (kick), and past 0.2 the estimator over-tracks
+the top so the LOUDEST hits stop reaching 1.000 at all (`vel` p90 0.88–0.99 on three tracks at 0.4). 0.2 is the end
+of the plateau where a `*Vel` of 1 still means the top of the lane; at 0.2 the estimator's own p50 sits within
+9–19 % of the true fire-stream p95 on every lane and track.
+
+**`GATE_DB` and the sub pair are fitted to BEHAVIOUR, not scaled.** They have to be: the old reference's error is
+10–30 dB per band for `lvl` and 3–25x per track for `q90`, so no single scale factor is right for all five tracks.
+
+### The five tracks, before → after
+
+**The drum table** — 5 tracks x {`ears`, `v2`} x {kick, snare, hat} x their references (`low` / `click` / `kick`,
+`mid` / `snare`, `high`), 60 rows, `tools/drums-node.js` + `tools/truth/drumcheck.py`:
+
+| `GATE_DB` | rows that differ from base | worst change |
+|---|---|---|
+| −34 (the sign alone) | 22 | SeeYouDrop kick 192 → 188 fires, F 0.40 → 0.38 (`low`), 0.50 → 0.48 (`click`); WhoLikesToParty kick F 0.75 → 0.76 |
+| −44 | 8 | WhoLikesToParty v2 kick F 0.78 → 0.77 |
+| **−54 (shipped)** | **6** | **1–3 fires; every P / R / F identical to two decimals** |
+
+The 4 kicks −34 cost are in SeeYouDrop's **ducked 51–56 s bar before drop 1** — real hits in a high-passed
+build-up, where the 60–150 Hz band genuinely sits 34–44 dB under its own p90. That is the one thing the gate must
+not eat, and it is the whole reason the offset moved. −54 restores §68's measured posture exactly: *"swept with and
+without and on three bands, identical to every digit, so it costs nothing and still protects a silent band's noise
+floor"* — insurance, now read off the loud level the comment has always named. (At −34 SeeYouDrop's intro also lost
+the 2.4–4.0 s hats as silence at −51 dB; the hat F was unchanged at 0.72 either way, but `denH` went 7/s → 0/s
+through four seconds of "the intro's rising hats", which is a look, not a score.)
+
+**The sub gate** — `tools/work/v73/sweep.js sub`, the gate replayed off the recorded `(ms, share)` stream with the
+full hysteresis / dwell / confirm:
+
+| track | gate OPEN base → final | `subIn` base → final | frame agreement with v0.25 |
+|---|---|---|---|
+| SeeYouDrop | 83.2 % → 81.5 % | 29 → 29 | 98.1 % |
+| CyborgNinja | 98.6 % → 99.7 % | 41 → 7 | 98.9 % |
+| WhoLikesToParty | 81.0 % → 77.6 % | 533 → 506 | 93.0 % |
+| Malicious | 49.6 % → 49.7 % | 127 → 127 | 100.0 % |
+| Vienna | 80.4 % → 80.8 % | 55 → 38 | 99.5 % |
+
+The two `subIn` counts that FALL are CyborgNinja's and Vienna's, where the old gate chattered at the edge of a gate
+that is open 99 % and 80 % of the track. At the un-refitted 0.16 / 0.075 the new gate chatters instead:
+`subIn` 29 / **283** / 591 / 136 / 133 and the open share drops as far as 65.3 % — the pathology the author already
+fought once ("made the gate chatter 5.4 times a bar through the ducked drop 2 and halved the slide count"), which
+is why the pair moved.
+
+**§64's build table** — `tools/build-node.js` + `tools/truth/dropcheck.py --summary`, pooled over the 8 truth drops
+(SeeYouDrop x2 · WhoLikesToParty x3 · Malicious x1 · Vienna x2):
+
+```
+base   `buildLive>=0.4`  15.9 7.9 11.0 7.0 11.0 0.0 4.4 0.0   6/8  false 0.14/min  chance 0.00  armed 4.1 %
+final  `buildLive>=0.4`  15.9 7.9 11.0 7.0 11.0 0.0 4.4 0.0   6/8  false 0.14/min  chance 0.00  armed 4.1 %
+base   `dropLiveEvt:evt`  -6 +21 +10 +48 +12  —  -3  —         6/8
+final  `dropLiveEvt:evt`  -6 +21 +10 +48 +12  —  -3  —         6/8
+```
+**Identical** — Vienna drop 1 still fires (4.4 beats armed, the event +12 ms) and CyborgNinja, the false-alarm
+control, still reads 0.14 false arms/min. All 18 of `dropcheck.py`'s default rules are identical too, including
+`hush`, `tension`, `roll`, `swell`, `hp` and synapse's own anatomy.
+
+**§59's clock table** — `tools/truth/gridcheck.py --heard`. **Every v3 row is identical on all five tracks**
+(`bpm`, `beatPhase`, its jitter, its lock, the bar line, `dropEvt`). The PCM clock moves slightly and net upward:
+
+| track | beat-event F ±50 ms | `beatPhasePcm` \|lag\| p50 |
+|---|---|---|
+| SeeYouDrop | 0.903 → **0.915** | 40 → 39 ms |
+| CyborgNinja | 0.966 → 0.966 | 42 → 43 ms |
+| WhoLikesToParty | 0.973 → 0.973 | 37 → 38 ms |
+| Malicious | 0.987 → 0.986 | 14 → 12 ms (med −13 → −9) |
+| Vienna | 0.865 → 0.862 | 39 → 40 ms |
+
+`clockConfPcm` on/off the beat moves by at most 0.03. **The queue** (`queuecheck.py`): every F identical to two
+decimals except SeeYouDrop `nextHatIn` 0.56 → 0.55. **The bar store** (`predcheck.py`): every F within 0.002 on all
+five tracks. **The OFFLINE map** (`tools/work/v73/mapsum.js` — bpm, phase, bar, `drops`, `dropWhy`, sections, every
+onset list's length, beats, downbeats, novelty): **byte-identical** on all five tracks, and so is the map's own sub
+gate (`map.js` builds a `SubTrack` too, so this was the one place the sub re-fit could have moved the FILE+map path).
+`kickAmp` / `snareAmp` / `subPure` / `bassReg` / `width` / `tension` / v3's `bpm` / `beatCount`: unmoved.
+
+### `*Vel` after the fix, and the `*Vel` vs `*Amp` verdict
+
+Pooled over the five tracks' TRUE hits (every lane fire matched to `tools/truth/<T>.{kick,snare}.json` at ±50 ms;
+the hat has no truth list of its own so its row is every fire):
+
+| field | share at exactly 1.000, per track, v0.25 | pooled =1.000 after | pooled p10 / p50 / p90 after |
+|---|---|---|---|
+| `kickVel` | 87 / 46 / 50 / 83 / 83 % | **14 %** | 0.301 / 0.627 / 1.000 |
+| `snareVel` | 91 / 53 / 59 / 72 / 47 % | **13 %** | 0.285 / 0.585 / 1.000 |
+| `hatVel` | 92 / 61 / 43 / 81 / 89 % | **12 %** | 0.237 / 0.511 / 1.000 |
+| `kickAmp` (§70, unchanged) | — | 26 % | 0.34 / 0.55 / 1.00 |
+| `snareAmp` (§70, unchanged) | — | 17 % | 0.34 / 0.54 / 1.00 |
+
+So **`*Vel` is now as good a SPREAD as `*Amp`** — the brief's target was ≤ 25 % at the ceiling and the three
+velocities read 12–14 %, below `*Amp`'s own 17–26 % — and §51's observation finally has its true cause on record.
+
+**The verdict is still `*Amp` for a SIZE, and the per-track rows are why.** `*Vel`'s divisor is a running quantile
+of THIS TRACK's fire magnitudes, so its per-track p95 reads **1.000 on every one of the five tracks** — it
+renormalises, which is the right answer for "how hard, for this track" and the wrong one for "how big". `*Amp`'s
+per-track p95 reads 0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare): Malicious and Vienna never reach 1 because they are
+genuinely quieter tracks, and one absolute dB mapping says so. The same 12 dB snare reads **1.00 on Malicious**
+(fire-stream p95 7.5 dB) and **0.55 on WhoLikesToParty** (21.8 dB). **Both stay published**: `*Vel` is the honest
+per-track RANK the reactive drums' own `kick2` strength was hand-built to be in §51, `*Amp` is the absolute SIZE a
+scene reads. **No scene changed in this session** — DUST's flash ring and TORUS2's snare wave read `snareAmp`,
+which is bit-identical on four tracks and within 0.004 of its mean on the fifth, so their rings cannot have moved.
+
+### The proofs
+
+- `node tools/check.js` **0 fail** · `npm test` clean with `tools/test_dsp.js` first in the list
+- **The fake-timeline md5 sweep**, `PORT=8912 tools/scene-md5.sh q73` in an isolated `git worktree`: checked first
+  that nothing on the `#test` path can reach a `Quantile` at all — `sources/fake.js`, `features.js` and `shim.js`
+  import nothing from `engine/ears/`, and `engine/clock/clock.js` (which DOES run in every mode) imports only
+  `FFT` from `dsp.js`. So the expectation was **0 of the 24 lines move**, and that is what the sweep says.
+- One page det trace per track (`tools/filetrace.js`, `&map=0`, `CLOCK=1`) to confirm the node tables on the page.
+- Cost: flat — the fix changes two multiplications in one branch and nothing else; `test_loud`'s own budget row
+  reads 5.79 µs/frame against its 40 µs cap.
+- No audible run. Every number here is the deterministic file path, the node harness or the fake timeline.
+- The lab scripts are `tools/work/v73/{rec,sweep,mapsum}.js`, gitignored like §68's, §69's and §70's.
+
+### Open, for the orchestrator
+
+- **CHLADNI reads `kickVel` and `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`). It flashed
+  at full brightness on 52–91 % of hits and now flashes at a graded one on 86–88 % — the ring is no longer a binary.
+  §70 left a `snareAmp` move pending the user's A/B and priority 3 is `kickAmp` → CHLADNI; that worker now has a
+  THIRD option (keep `*Vel`, which finally means something) and a re-tune of `SNAMP` either way.
+- **`lpSweep` is live for the first time** and CHLADNI's `fog` is its only reader. On a real track the plate now
+  takes fog through the outro (p50 0.35–0.73) where it never did. Nothing was tuned against it, because nothing
+  could be; it wants the user's eye.
+- **The reactive drums' `kick2` RANK vs `kickAmp` vs the now-honest `kickVel`** is still the measurable question
+  §70 left open, and is still not measured.
+- `tools/accept.sh` has not been run since v0.14, and SeeYouDrop's PCM lock 9.2 → 12.0 s is still open (both
+  carried from §69).
+- Malicious's row above is from the v0.25 truth grid, by construction (both worktrees at `35242cf`). When the
+  parallel re-phase lands, its drum / clock rows move with the RULER and this section's base and final move
+  together — the DELTAS stand, the absolute numbers do not.
