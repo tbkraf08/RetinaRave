@@ -44,21 +44,85 @@ export const REFRACT = 0.06;     // s: the event and the level's edge for one hi
 
 // tc: the voice's decay in seconds (longer than the level's own, which is what "slow decay" means).
 // floor: the smallest amplitude a hit is allowed to have, so a soft hit is still a hit.
+// `n` counts the fires and `src` says what fired the last one (1 = the ears' event, 2 = the level's edge, 3 = both on
+// one frame) — read-only bookkeeping for tools/dust-trace.js (§64 task 1), never read by the look.
 export function mkVoice(tc, floor) {
-  return { e: 0, amp: 0, age: 99, prev: 0, since: 99, lastA: 99, tc, floor };
+  return { e: 0, amp: 0, age: 99, prev: 0, since: 99, lastA: 99, n: 0, src: 0, tc, floor };
 }
 
-export function voice(v, dt, lvl, msAge, evt) {
+// TRIGGER QUALITY — THE HAT, AND THE SWELL THAT IS NOT A STICK (§64 task 1, the user: "the high hat that starts at
+// 0:25-1:00 still seems jerky also (wonder if the sparkly / dreamy sounds are interfering in the high section?)").
+//
+// MEASURED (tools/dust-trace.js, DUST, `&map=0`, the truth's `high` onsets within +-50 ms): on Vienna 20-110 s the hat
+// voice fires 310 times for 224 truth hats and only **59 %** of those fires are hats. The 127 that are not land a
+// median **103 ms off the 8th-note line** (the real ones land 3 ms off) and they happen where `highS` reads **0.63
+// against the real hats' 0.27** and is RISING (highS minus its own 2 s EMA: +0.058 at a false event, 0.000 at a real
+// one). The user's guess was right, and the mechanism is in the picker: `ears/perc.js` is an HPSS-lite whose harmonic
+// part is a RUNNING MEDIAN of the band's dB envelope, and a median lags a swell — so the leading edge of a pad, an arp
+// or a reverb tail rises above it and is published as a percussive onset. Per track, the share of the ears' hat events
+// the level confirms (`hat2` >= 0.10 within +-2 frames) is 90 % of the REAL ones and 2 % of the false ones on Vienna,
+// 75 / 30 % on SeeYouDrop, 98 % / — on CyborgNinja (which has no false ones at all).
+//
+// THE FIX IS THE EVENT'S TRIGGER, NOT THE PICKER (the picker is an engine item, docs/OPEN-ITEMS.md): the ears' hat
+// EVENT does not fire the voice while the high band is more than R times its own TC-second average — a band that is
+// getting louder on its own is a swell, and a swell's edge is not a stick. The level's rising edge still fires the
+// voice there (it is the precise picker: P 0.96-0.99 on all three tracks), and the ears' AGE still places a hit the
+// level confirms, so nothing about the timing moves.
+//
+// WHAT THE RATIO BUYS, on the page (fires/s · P · §58 coverage · fires at the floor · fires on the truth's 16th grid):
+//   Vienna 20-110      3.44 0.59 96.8 % 49 % 76.8 %  ->  **2.38 0.80** 91.9 % **26 % 88.8 %**   (truth 2.49 hats/s)
+//   Vienna 85-107      4.32 0.60 95.4 % 45 % 76.8 %  ->  **3.23 0.77** 93.8 % **27 % 88.7 %**   (the double time, truth 3.00/s)
+//   SeeYouDrop 20-110  4.33 0.71 95.9 % 51 % 80.0 %  ->    3.91 **0.74** **94.9 %** 44 % 80.7 %  (the §58 window, floor 93 %)
+//   CyborgNinja 20-50  7.63 0.99 94.7 %  8 % 79.5 %  ->    7.57   0.99    94.7 %     7 % 79.3 %  (227 of 229: no swells)
+// On Vienna the median gap between flashes becomes the 8th note itself — 250 -> **333 ms**, against the truth's 325 — and
+// the rim's own picture is untouched where it was right: lumR p95/p05 range 4.572 -> 4.632 (SeeYouDrop 4.196 -> 4.199,
+// CyborgNinja 2.794 unchanged), |dlumR| p50 1.420 -> 1.419 / 2.431 -> 2.438 / 2.546 -> 2.547. The fires that survive are
+// bigger (amp p50 0.229 -> 0.374 on Vienna, the matched ones 0.522 -> 0.659) because the ones that went were the floor.
+// R 1.03 takes SeeYouDrop's coverage to 92.2 % (under the floor) for one more point of Vienna's precision; R 1.08 gives
+// SeeYouDrop 94.6 % back for three points of Vienna's. 1.05 is the knee. TC 2 s was measured against 1, 3, 5, 8 and 12:
+// at the same SeeYouDrop coverage they all reach Vienna 0.75-0.81, and 2 s has the most SeeYouDrop margin.
+//
+// REJECTED, with the number that rejected it:
+//  · THE DIFFERENCE form the brief proposed (`highS` minus a slow EMA of itself, "a real step above the bed"): it
+//    discriminates (real +0.000 / false +0.058) but its operating point does not travel — the bed is 0.28 on Vienna and
+//    0.62 on SeeYouDrop, so one absolute step is 7 % of the band on one track and 3 % on the other, and the threshold
+//    that cleans Vienna (0.02) takes SeeYouDrop's coverage to 92.2 %. The RATIO is the same idea, normalised.
+//  · DROPPING `hat2`'S EDGE and keeping the ears alone (the brief's first candidate): the ears ARE the unreliable half
+//    here — Vienna 3.44 -> 3.08 fires/s at P 0.59 -> **0.56** and 55 % of the fires at the floor; SeeYouDrop 0.71 ->
+//    0.72 with 66 % at the floor. The level's edge is the half worth keeping, not the half worth dropping.
+//  · THE EARS' EVENT GATED ON `hat2` CONFIRMING IT (the cleanest discriminator by AUC: 0.93 Vienna, 0.99 Vienna 85-107,
+//    0.77 SeeYouDrop): Vienna P 0.59 -> 0.95, but SeeYouDrop's coverage falls to 85.4 % — half of its real hats are
+//    invisible to synapse's picker, which is the whole reason §58 took the union. Same for the edge alone (85.4 %).
+//  · A SELF-CALIBRATING version of that gate (require confirmation only while the level's own recent hits are loud — a
+//    20 s peak-hold of the confirmed amplitude, 0.74 on Vienna against 0.34 on SeeYouDrop over 20-50 s): over the FULL
+//    20-110 s window SeeYouDrop's hold reads 0.52 (p50) and the gate switches on there too — coverage 92.2 %.
+//  · A SMALLER FLOOR for an unconfirmed fire (0.08 instead of 0.20): it keeps every coverage number, because the
+//    envelope still rises, and it dims SeeYouDrop's real-but-unconfirmed hats (amp p50 0.22 there) by the same factor
+//    as Vienna's false ones. It makes the metric pass without making the picture better.
+//  · A RATE LIMIT (§61 already rejected it): at 8 Hz, Vienna P 0.59 -> 0.63 and CyborgNinja loses 69 of 229 fires.
+export const BED = { R: 1.05, TC: 2.0 };
+export function mkBed() { return { s: 0 }; }
+// true when the band is swelling. The EMA includes this frame's sample, so a step up is seen on the frame it happens.
+export function bed(v, dt, x) {
+  const y = +x || 0;
+  v.s += (y - v.s) * (1 - Math.exp(-dt / BED.TC));
+  return v.s > 1e-6 && y > BED.R * v.s;
+}
+
+// `veto` (the hat's, above) suppresses the EARS' EVENT as a trigger only: the level's own rising edge still fires the
+// voice, and a fire the level makes on the same frame still takes the ears' age for its sub-frame placement.
+export function voice(v, dt, lvl, msAge, evt, veto) {
   v.age += dt;
   v.since += dt;
   const a = msAge === undefined || msAge === null ? 99 : msAge;
   const fresh = a >= -0.03 && a < FRESH;              // the ears' onset is this frame's, or a hair before it
-  const ev = !!evt || (fresh && a < v.lastA);         // the event flag, or the age crossing back to fresh
+  const ev = (!!evt || (fresh && a < v.lastA)) && !veto;   // the event flag, or the age crossing back to fresh
   const edge = lvl >= THR && lvl > v.prev + 0.02;     // a follower steps up on the hit frame only
   if ((ev || edge) && v.since >= REFRACT) {
     v.age = fresh ? Math.max(0, a) : 0;
     v.amp = Math.max(v.floor, lvl);
     v.since = 0;
+    v.n++; v.src = (ev ? 1 : 0) | (edge ? 2 : 0);
   } else if (edge && lvl > v.amp) {
     v.amp = lvl;                                      // the level confirms a hit already started: same hit, its size
   }

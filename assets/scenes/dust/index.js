@@ -7,7 +7,7 @@ import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, K as NUDGE, mkSpin, mkTrigger, spin, trigger } from './grid.js';
 import { dyn, mkDyn } from './dyn.js';
 import { HAB, NW, ema, emaK, mkEma } from './habit.js';
-import { mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
+import { BED, bed, mkBed, mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
 import { mkAnchor } from '../../math/keycolour.js';
 
@@ -80,10 +80,12 @@ const SELF = {
     // the three transient voices and the sub (voices.js): decay time constants longer than the levels' own, which
     // is what "slow decay" means, and a floor so a soft hit is still a hit
     this.vK = mkVoice(0.24, 0.25); this.vS = mkVoice(0.30, 0.25); this.vH = mkVoice(0.09, 0.2); this.vB = mkSub();
+    this.hBed = mkBed();            // the high band's own average: a swell is not a stick (voices.js, §64 task 1)
     this.vT = mkTens();             // the void's contraction, the last bar's wind-up, the drop's release
     this.vD = mkDyn();              // the track's own running peak: quiet is quiet, loud is loud (dyn.js)
     this.E = mkEma(ctx);            // the slow spectrum: a 256x1 ping-pong, one bin per grain (habit.js)
     this.mem = mkMem();             // the section memory: which shape each section had (formations.js)
+    this.hSwell = false;
     this.yaw = 0; this.pitch = 0; this.dist = 4.4;
     this.m = { flow: 0, flowMid: 0, flowBass: 0, bassS: 0, midS: 0, highS: 0, lvl: 0, drop: 0, tension: 0, alive: 0,
       spin: 0, spinG: 0, vk: 0, vs: 0, vh: 0, vb: 0, ringR: 0, ringW: 1, build: 0, rel: 0, dyn: 1 };
@@ -130,7 +132,11 @@ const SELF = {
     // the age places it sub-frame, the level sizes it, and the decay is slow off that age.
     voice(this.vK, dt, MS.kick2, MS.kickAge, MS.kickEvt);
     voice(this.vS, dt, MS.snare2, MS.snareAge, MS.snareEvt);
-    voice(this.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt);
+    // the hat's trigger quality: while the high band is swelling (more than BED.R x its own 2 s average) the ears'
+    // hat EVENT is not a hat — the sparkly / dreamy layer the user heard, and the ears' running-median picker cannot
+    // tell its leading edge from a stick (voices.js: the numbers). The level's edge still fires the voice.
+    this.hSwell = bed(this.hBed, dt, MS.highS);
+    voice(this.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt, this.hSwell);
     sub(this.vB, dt, MS);
     // The real tension: the void before a drop (§54), not the roughness. The last bar winds up on top of it, and
     // the slam lets everything go at once.
@@ -264,6 +270,15 @@ const SELF = {
     form(v) { SELF.pinF = v === '' || v === undefined || v === null ? -1 : +v; },   // -1 = the music chooses (the default)
     dyn(v) { SELF.pinD = v === '' || v === undefined || v === null ? -1 : +v; },     // -1 = the music chooses (the default)
     hab(v) { SELF.habOn = +v; },                                                    // &hab=0: pass 1's drive, for the A/B
+    // &bed=<ratio>,<seconds> (and hooks.bed(r, tc)): the hat voice's swell veto, for the user's own A/B (§64 task 1).
+    // '' restores the measured default 1.05,2. `1,0.05` is effectively off (every frame is a swell is never true at
+    // ratio 1 only if the band is flat — use 99 to turn it off outright).
+    bed(r, tc) {
+      const a = typeof r === 'string' ? r.split(',') : [r, tc];
+      if (a[0] !== '' && a[0] !== undefined && a[0] !== null && +a[0] >= 1 && +a[0] <= 99) BED.R = +a[0];
+      if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] >= 0.05 && +a[1] <= 60) BED.TC = +a[1];
+      return JSON.stringify(BED);
+    },
     // &nudge=<glide>,<width> (and hooks.nudge(g, w) from a page): the beat nudge's velocity profile, for the user's
     // own A/B of how much glide the motion wants (§61 step 2). '' restores the measured default.
     nudge(g, w) {
@@ -286,6 +301,10 @@ const SELF = {
         hue: SELF.mood.hue, hsat: SELF.mood.sat, key: KEY.OUT.key, kmode: KEY.OUT.mode, kconf: KEY.OUT.conf,
         fifth: KEY.OUT.fifth,
         ageK: SELF.vK.age, ageS: SELF.vS.age, ageH: SELF.vH.age,
+        fK: SELF.vK.n, fS: SELF.vS.n, fH: SELF.vH.n,
+        aK: SELF.vK.amp, aS: SELF.vS.amp, aH: SELF.vH.amp,
+        srcK: SELF.vK.src, srcS: SELF.vS.src, srcH: SELF.vH.src,
+        hBed: SELF.hBed.s, hSwell: SELF.hSwell ? 1 : 0,
         ringR: ringR(SELF.vS, midR(SELF.formA, SELF.formB, SELF.formT)), form: SELF.formT >= 1 ? SELF.formB : -1 };
     },
   },
