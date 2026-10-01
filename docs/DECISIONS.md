@@ -4570,7 +4570,8 @@ first block they keep. At `PK_REL` 0.02 LU/s a wrong seed is kept for minutes. *
 transient**: its first block read **+0.97 LKFS** against a true track maximum `loudS` of **−1.69**, and the hold needed
 **147 s** — longer than the track — to walk that off. The other four tracks begin in silence, which is why §63's
 synthetic `peak` case (one level for 30 s, silence first) did not catch it. Fixed here, with `L_RNG_MIN` and the
-warm-up guard re-swept on the five tracks as §65 said they would have to be. **Not tagged, not pushed, not deployed.**
+warm-up guard re-swept on the five tracks as §65 said they would have to be. Commit `ff747da`.
+**Not tagged, not pushed, not deployed.**
 
 ### The fix — BS.1770's own gating, one condition
 

@@ -141,7 +141,7 @@ One scene per commit, `IDS=<id> tools/scene-md5.sh` as the proof each time.
 | 5 | **FEIGEN**, then **MANDALA**, then **POLYTOPE** — one commit each, `IDS=<id>` md5 each | **M** | the user's look per scene | **DONE `99c9cb7` / `f94b1c0` / `630fdf1`** (the user's look is still OPEN) |
 | 6 | **NAV2** `ePk` → `loudRel` | **M** | blocked on the user un-pausing NAV2 | **SKIPPED** — still blocked |
 | 7 | **NAV** + **GIELIS** review (expect ≤ 2 lines); the `eG` decision (proof 5) | **S** | — | **DONE `05b06cf`** — 0 lines changed; `eG` kept, documented as a rank |
-| 8 | **the `loudPk` seeding defect** (§65 open item 1) + the re-calibration it forces: the peak and the range histogram attack only on a FULL 3 s window, `L_RNG_MIN` and the warm-up guard re-swept on the five tracks | **M** | `test_loud.js`'s new `transient` case, §65's three gates re-taken, the md5 list | **DONE `__H8__`** — SeeYouDrop's `loudPk` at 100 s **−1.03 → −2.72** against a true max of −1.69 (the overshoot 3.01 → 0.00 LU); `L_RNG_MIN` **7 → 6**, `LOUDK.WARM_T` **6 → 20 s**, DECISIONS §67 |
+| 8 | **the `loudPk` seeding defect** (§65 open item 1) + the re-calibration it forces: the peak and the range histogram attack only on a FULL 3 s window, `L_RNG_MIN` and the warm-up guard re-swept on the five tracks | **M** | `test_loud.js`'s new `transient` case, §65's three gates re-taken, the md5 list | **DONE `ff747da`** — SeeYouDrop's `loudPk` at 100 s **−1.03 → −2.72** against a true max of −1.69 (the overshoot 3.01 → 0.00 LU); `L_RNG_MIN` **7 → 6**, `LOUDK.WARM_T` **6 → 20 s**, DECISIONS §67 |
 
 ### What phase 4 (DUST) should do, written after phases 1–3 and 5 (for the next worker)
 
