@@ -18,7 +18,7 @@ import { blendOf, figOf, NFIG } from '../../math/chladni.js';
 import { mkAnchor, wrap } from '../../math/keycolour.js';
 import { mkNudge } from '../../math/nudge.js';
 import { clamp, ema, sstep, TAU } from '../../math/util.js';
-import { PLATE_FS, SAND_FS, SAND_VS, SAND_FS_DRAW, SETTLE_FS } from './shaders.js';
+import { PLATE_FS, SAND_FS, SAND_VS, SAND_FS_DRAW, SETTLE_FS, KICKJ } from './shaders.js';
 import { mkSand, DELTA } from './sand.js';
 import { HELP } from './help.js';
 
@@ -160,6 +160,26 @@ function settle() {
   return JSON.stringify(sc.sand.settle(SU, sc.ctx.budget('points')));
 }
 
+// dinfo(): the scene's own numbers, frame by frame, for tools/dust-trace.js. Read-only (CONTRACTS §1.4: a hook that
+// reports must not mutate). `set` / `air` come from the settle instrument — a readback, so a pipeline stall, which is
+// why it is here and never in update()/draw(): only a trace calls dinfo.
+//
+// `kH` is the number the eye actually reads for "how high that kick throws the sand": the shaders' leap is
+// z = v·w·a − g·a²/2, whose PEAK is (v·w)²/(2g), so the throw height is QUADRATIC in the kick's size. A size of 0.63
+// throws 0.40x as high as a size of 1.0 — which is why §73's move of `kickVel` from a saturated 1.0 to an honest rank
+// is a much bigger visual change than the field's own numbers suggest. `w` here is the median grain's
+// (the hash's mean is 1.0 and |u|'s is taken at the 0.55 floor, so this is the conservative figure).
+function dinfo() {
+  const sc = SELF;
+  const st = sc.sand && sc.ctx ? sc.sand.settle(SU, sc.ctx.budget('points')) : { settled: 0, air: 0 };
+  const w = (sc.pLeap === undefined ? LEAPK : sc.pLeap) * 0.55;
+  return { kAge: U.kickAge, kVel: U.kickVel, kH: (U.kickVel * w) * (U.kickVel * w) / (2 * GRAV),
+    kJ: KICKJ * U.kickVel, snF: U.snF, snR: U.snR, ripD: U.ripD,
+    amp: U.amp, drive: U.drive, gate: U.gate, lift: U.lift, spiral: U.spiral, glow: U.glow, fog: U.fog,
+    s: U.s, h: U.h, bnd: U.bnd, away: U.away, hue: U.hue, pitch: U.pitch, dist: U.dist,
+    set: st.settled, air: st.air };
+}
+
 // test hook, read-only (CONTRACTS §1.4: a hook that reports must not mutate): the live look numbers.
 function info() {
   return JSON.stringify({ s: +U.s.toFixed(4), fig: U.fig, h: +U.h.toFixed(3), bnd: +U.bnd.toFixed(3), away: +U.away.toFixed(3), amp: +U.amp.toFixed(4), gate: +U.gate.toFixed(3), lift: +U.lift.toFixed(3), spiral: +U.spiral.toFixed(3), glow: +U.glow.toFixed(3), fog: +U.fog.toFixed(3), note: U.note, win: SELF.win === undefined ? -1 : SELF.win, tonic: U.tonic, hue: +U.hue.toFixed(4), yaw: +U.yaw.toFixed(4), pitch: +U.pitch.toFixed(4), dist: +U.dist.toFixed(4), drive: +U.drive.toFixed(4), figPin, earsPin });
@@ -177,7 +197,7 @@ const SELF = {
 ],
   cuts: 'continuous',
   rt: {},
-  hooks: { figure, ears, info, settle },
+  hooks: { figure, ears, info, settle, dinfo },
   // the continuity monitor's shape (tools/monitor.js reads CARD.NAV || CARD.home, so a run points CARD.NAV here):
   // cPath is where the camera is looking from, in radians — the thing that must never jump on this screen. `pathCut`
   // is 3, not 0: the monitor's legality test starts `N.pathCut <= 2 ||`, so a scene that publishes 0 is never measured

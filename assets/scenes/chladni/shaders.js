@@ -7,6 +7,10 @@
 
 import { GLSL as CH } from '../../math/chladni.js';
 
+// The one state-pass constant the SCENE also needs (index.js's dinfo reports the kick's scatter): exported so there
+// is one number, not two. The template below prints it back exactly as it was written.
+export const KICKJ = 4.5;
+
 // The plate pass's own leans, named here because this is the module they act in.
 const LEANS = `
 #define CH_ANTI 0.80       // how bright the antinodes (the parts that MOVE) are against the nodal lines
@@ -89,7 +93,7 @@ uniform vec4 uStep;        // walk step, descent gain, frame counter, dt
 uniform vec4 uAir;         // gate (1 = the plate is driven), amplitude, the void's lift, the drop's spiral
 uniform vec2 uKick;        // the kick: its age in seconds, and how hard it hit
 uniform vec2 uGrid;        // the state texture's size
-#define CH_KICKJ 4.5       // how far a kick of velocity 1 scatters a grain, plate units per second. The user:
+#define CH_KICKJ ${KICKJ.toFixed(1)}       // how far a kick of velocity 1 scatters a grain, plate units per second. The user:
                            // "I don't want it to be so bright that can't see the shapes" — 9.0 buried the figure
 #define CH_KICKTC 0.05     // and how fast that shake dies
 
