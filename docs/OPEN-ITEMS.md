@@ -116,16 +116,50 @@ onsets it drops are HATS** (median two-band rise 2.46 dB against the kept 7.56; 
 byte-identical; the bar store and the predicted-snare queue improve on 4-5 of 5; **§59's clock tables moved** —
 CyborgNinja's PCM lock **17.9 -> 3.4 s** and Vienna's |lag| p90 82 -> 67 ms, against SeeYouDrop's lock 9.2 -> 12.0 s
 and **Malicious's bias +23 -> +30 ms** (its bias-removed steadiness unchanged). **Three things it leaves open:**
-- **`snare2` did NOT move** and is now the loose half of DUST's union. Measured: the lane beats synapse's `snare2`
-  on the grid reference on 5 of 5 tracks and on `mid` on 3 of 5, at a lag of ~0 against `snare2`'s +5…+12 ms, so
-  §51's "synapse's are better on 3 of 4" has flipped. Moving it needs a new `snare` / `snareFl` stream out of the
-  ears and a strength rank in `engine/drums/drums.js`, and it would move TORUS2's DEFAULT look — the user's word.
-- **DUST's snare voice could take the lane ALONE** (`assets/scenes/dust/index.js`, one argument). Simulated off the
-  trace with `voices.js`'s own rule (`tools/work/v69/voicesim.js`): see DECISIONS §69's table. This is §64's hat
-  question one band down, and §64's answer there was that coverage matters more than precision — so it needs the
-  user's eye, not another number.
+- ~~**`snare2` did NOT move** and is now the loose half of DUST's union~~ **(ANSWERED by §70, below: the scenes
+  moved instead of the level. `snare2` stays synapse's and stays published — DUST and TORUS2 now fire on the lane
+  itself, so no new `snare` / `snareFl` stream out of the ears was needed.)**
+- ~~**DUST's snare voice could take the lane ALONE**~~ **(DONE in §70, below, with a size: the "not another number"
+  it needed turned out to be one — `snareAmp`.)**
 - ~~**Malicious's PCM clock bias**~~ **(ANSWERED by §71: it is the TRUTH GRID, and the clock is not changed)** — see
   the new item below.
+
+**2026-10-01, §70 (the scenes' snare onto the lane, and a hit's SIZE):** §69's first two open items above are
+**CLOSED**. The ears publish `kickAmp` / `snareAmp` = `clamp01(rise_dB / SPAN)` with SPAN 16 / 12 dB — each lane's
+MEDIAN TRACK's p95 rise at a true hit, rounded, FLOOR 0 so both lanes' thresholds map to the same 0.31 "only just
+fired" size (DECISIONS §70, commits `074061b` / `e2c950a` / `7d679d2`). **DUST's flash ring and TORUS2's snare wave
+now fire on `snareEvt` ALONE and take their size from `snareAmp`**; `snare2` stays published, routable and the floor
+under DUST's envelope. DUST on Vienna 24-60 s: **3.17 -> 1.36 flashes/s at P 0.45 -> 0.80** against a groove of
+1.94, the median gap 267 -> **667 ms** (the half note at 90 BPM), **11 % -> 0 %** of flashes floor-sized, lumC lift
+per flash +13.9 -> **+26.1**; SeeYouDrop F 0.72 -> 0.73 with 72 % -> **0 %** at the floor and CyborgNinja F 0.68 ->
+**0.87** — both controls better, which is the test §64's hat had to fail. TORUS2 on **SeeYouDrop 20-110 s: 17
+launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 and its mean at a snare line there is
+0.125, so the channel was dead on the user's own reference track; CyborgNinja F 0.53 -> **0.87**, Vienna 0.46 ->
+**0.66**, luminance within 2-4 % everywhere. Cost flat (interleaved bench ratios 0.538 -> 0.541 and 0.577 -> 0.567).
+**Five things it leaves open:**
+1. **`dsp.js`'s `Quantile(q)` settles on the (1 - q) quantile** — the update's sign is inverted, proved directly
+   (`Quantile(0.95)` on U(0,10) reads **0.384**, the p05). That is why `kickVel` / `snareVel` / `hatVel` saturate
+   (§51's "p50 1.0"): they divide the rise by the lane's **p5**, which sits at 3.86-4.41 dB against a true-hit p95
+   of 7.7-23.1. **It was deliberately NOT fixed.** Four live readers are calibrated against the number they get:
+   `perc.js lvl` (every band's level gate, with `GATE_DB -34`), `perc.js p95` (the `*Vel`s), `sub.js q90` (the sub
+   gate) and `texture.js rollP90` (`lpSweep`). Flipping it moves the picker's gates, so the map, the bar store, the
+   queue and §59's clock tables all move with it: its own engine session. **Nothing should be tuned against a
+   `*Vel` until then** — read `kickAmp` / `snareAmp` instead.
+2. **CHLADNI's plate ring still reads `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`), so it
+   flashes at full brightness on 52-91 % of hits. Moving it to `snareAmp` takes that to 0.33-0.69 — a BRIGHTNESS
+   recalibration of a validated scene's default (`SNAMP` would be re-tuned with it), not a trigger change. It wants
+   the user's A/B, which is why §70 left it.
+3. **`kickAmp` is published and no kick consumer moved** (the §70 brief forbade it). DUST's kick voice and TORUS2's
+   kick wave still size themselves from `kick2`, whose strength RANK §51 built precisely because `kickVel`
+   saturated. Rank vs `kickAmp` is now a measurable question and is not measured.
+4. **The fake timeline carries no percussion EVENTS**, so `#test` cannot exercise an event-driven channel at all:
+   `snareEvt` false, `snareAge` 99, `snareAmp` 0 (read off the page at f840), while `snare2` is synapse's own fake
+   level. That is why **4 of the 24 md5 lines moved** (DUST s1 and TORUS2 s3, f360 + f840) and the other 20 did
+   not — both scenes' snare channels are simply silent there, as **CHLADNI's has been since v0.15** for the same
+   reason. Giving `sources/fake.js` the ears' event channels would move CHLADNI's lines too: a tools decision, like
+   the `parity.js` NAV rows above, not a scene one.
+5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
+   `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
 **2026-10-01, §68 (the low lane):** item 1 below is **CLOSED** — `assets/engine/ears/perc.js`'s low lane is now a
 60-150 Hz band graded on its RISE over a short local baseline against an absolute 5 dB floor (commit `fbc57ae`,

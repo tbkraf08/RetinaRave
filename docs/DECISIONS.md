@@ -5334,6 +5334,246 @@ v0.23 + §69 (the ears' snare / rim lane). `releases/retinarave-v0.24.html` (146
 errs [], nonFinite [], clock pcm), package.json 0.24.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: the
 scenes' snare size onto the lane (`snare2` → the lane's own velocity) and Malicious's +30 ms clock bias (§70, §71).
 
+## §70 the SCENES' snare is the lane alone, and a hit now has a SIZE — `kickAmp` / `snareAmp`, and the saturation was a sign (2026-10-01, one worker; §69's open item, the user's word; `docs/AUDIT-drums.md` "§69")
+
+Three commits: `074061b` the engine's new fields, `e2c950a` DUST's flash ring, `7d679d2` TORUS2's snare wave.
+**Not tagged, not pushed, not deployed.**
+
+### What §69 handed over
+
+§69 simulated DUST's snare voice on the lane ALONE and found it best on all three windows (Vienna 1.39 /s at
+P 0.80 against the union's 3.19 /s at P 0.45; SeeYouDrop P 0.68 / F 0.73; CyborgNinja P 0.94 / F 0.87) and did not
+ship it, for two reasons: it changes cross-scene defaults, and **a lane-only hit has no size** — `voices.js`
+deliberately does not read the ears' velocity, because §51 measured it saturated ("`kickVel` p50 1.0, the uniform
+brightness of the predicted route"), so every lane-only flash came out at the voice's floor 0.200.
+
+### The saturation is a SIGN, not the music
+
+`dsp.js`'s stochastic quantile is
+
+```js
+this.v += x > this.v ? s * (1 - this.q) : -s * this.q;      // q = 0.95 → up 0.001, down 0.019
+```
+
+At equilibrium the fraction of samples BELOW `v` satisfies `(1 − F)·(1 − q) = F·q`, i.e. **F = 1 − q**. So
+`new Quantile(0.95, …)` settles on the **5th** percentile, not the 95th — confirmed directly
+(`tools/work/v70/qtest.mjs`: 200 000 draws from U(0, 10) give `Quantile(0.95).v` = **0.384** and
+`Quantile(0.05).v` = **9.376**, against the true p05 0.5 and p95 9.5). The snare lane's `p95[1]` therefore sits at
+**3.86 / 4.41 / 4.18 / 3.84 / 4.31 dB** on the five tracks — a hair over `SNARE_RISE` 3.75 — against a true-hit p95
+of **11.9 / 19.4 / 23.1 / 7.7 / 9.0**, and `snareVel = clamp01(rise / p5)` reads exactly 1.000 for **91 / 54 / 55 /
+74 / 52 %** of the hits. §51's observation was right and its explanation was wrong.
+
+**The convention is deliberately NOT fixed.** The same class carries every percussion band's level gate
+(`perc.js lvl`, p90, the `GATE_DB −34` reference), the sub gate's own p90 (`sub.js q90`) and `lpSweep`'s
+(`texture.js rollP90`) — four live readers, every one of them calibrated against the number it actually gets.
+Flipping the sign moves every band gate in the picker, which moves the map, the bar store, the queue and §59's clock
+tables all at once. It is an engine item with its own session (docs/OPEN-ITEMS.md), not a side-effect of a scene
+change.
+
+### The field: `amp = clamp01(rise_dB / SPAN)`
+
+No quantile at all — §68's own principle, one band up: *a rise is a RATIO, so one absolute dB number travels across
+tracks and loudnesses.*
+
+`tools/work/v70/{risedist,ampsweep}.js` run the engine's own `PercTrack` over the whole of all five tracks, record
+the rise that fired every lane fire, and match each fire to `tools/truth/<T>.snare.json` / `<T>.kick.json` at
+±50 ms. The rise at a TRUE hit, in dB:
+
+| | p10 | p50 | p95 | | p10 | p50 | p95 |
+|---|---|---|---|---|---|---|---|
+| | **snare lane** | | | | **low lane** | | |
+| SeeYouDrop | 4.08 | 6.32 | **11.90** | | 5.36 | 7.75 | **16.47** |
+| CyborgNinja | 4.23 | 6.95 | 19.45 | | 5.98 | 9.69 | 23.15 |
+| WhoLikesToParty | 4.65 | 8.78 | 23.08 | | 6.35 | 19.15 | 37.26 |
+| Malicious | 3.90 | 4.73 | 7.75 | | 5.21 | 6.28 | 9.55 |
+| Vienna | 4.20 | 5.62 | 8.97 | | 5.39 | 6.81 | 10.74 |
+| pooled | 4.13 | 6.47 | 19.62 | | 5.45 | 8.76 | 30.37 |
+
+**SPAN is the MEDIAN TRACK's p95, rounded** — 11.9 → **12 dB** for the snare, 16.5 → **16 dB** for the kick. One
+absolute mapping cannot put a 7.7 dB track and a 23 dB track both at 1, and the median track is the honest centre of
+that spread; the pooled p95 (19.6 / 30.4) would leave Vienna's hardest rim at 0.46 and Malicious's at 0.40.
+
+Each lane's **FLOOR is 0**, which is not a convenience: it makes each lane's own threshold map to itself over its
+span, and `3.75/12` and `5.0/16` are both exactly **0.3125**. So "a hit that only just fired" is the same soft
+0.31-sized hit in BOTH lanes, the two channels are directly comparable, and — the thing a lane-only trigger needs —
+no fire is ever invisible. (A FLOOR term was swept at 1 / 2 / 2.5 / 3 dB and only pushes a threshold hit toward
+invisibility. The SPAN sweep: snare 10 / 12 / 14 / 16 dB puts the threshold at 0.38 / 0.31 / 0.27 / 0.23 and the
+ceiling share at 23 / 17 / 13 / 9 %; **12 is where the threshold IS the brief's "a soft hit ≈ 0.3"**.)
+
+What the published fields read at each event, `tools/drums-node.js` whole track (`tools/work/v70/ampnode.js`):
+
+| | `snareVel` p10/p50/p90 · at 1.000 | `snareAmp` p10/p50/p90 · at 1.000 |
+|---|---|---|
+| SeeYouDrop | 1.000 / 1.000 / 1.000 · 91 % | 0.330 / 0.477 / 0.828 · 3 % |
+| CyborgNinja | 0.612 / 1.000 / 1.000 · 54 % | 0.346 / 0.561 / 1.000 · 18 % |
+| WhoLikesToParty | 0.472 / 1.000 / 1.000 · 55 % | 0.339 / 0.586 / 1.000 · 23 % |
+| Malicious | 0.835 / 1.000 / 1.000 · 74 % | 0.323 / 0.382 / 0.545 · 0 % |
+| Vienna | 0.753 / 1.000 / 1.000 · 52 % | 0.329 / 0.427 / 0.689 · 0 % |
+
+### The amp RIDES THE EVENT — and that is why `*Vel` is one hit stale
+
+`kickAmp` / `snareAmp` are NOT `CONT` history fields. `kickVel` / `snareVel` are, and the ears read a `CONT` field
+by interpolating the history ring AT heard time — while an onset's audio time is `(hop end) − half a hop − the
+lane's lag`, about **16 ms BEFORE the hop that found it**. So on the frame the event is released, the ring still
+holds the PREVIOUS hit's velocity. `snareAge` has always been exact because it comes from the released event; the
+amp does the same (`perc.js emit(c, t, vel, amp)` → `Ears.read` holds `lastAmp[cls]`). Caught by the first
+synthetic probe, where the amp was non-monotone in the hit's amplitude, and now a `test_drums.js` case: on the frame
+the first synthetic rim fires, `snareVel` reads **0.000** and `snareAmp` reads its own **0.322**.
+
+There is no `hatAmp`: the hat is the one class still on the HPSS-lite flux (§69), whose onset function is a one-hop
+difference of a median residual and has no magnitude in dB to publish.
+
+In **FILE + map** mode `kickAmp` / `snareAmp` are the map's own velocity, which is an OFFLINE `numpy` p95 over the
+class's peak fluxes (`map/onsets.js` `VEL_P`) and so does not saturate — the honest size the causal path had to
+build is simply what the map already published. As in §69, this is therefore a **LIVE-mode and `&map=0` change**.
+
+### DUST's flash ring: the lane alone, sized by `snareAmp`
+
+`voices.js voice()` takes a 7th argument `amp`. Given it, the voice is in LANE mode: the level's rising edge is not a
+trigger and its confirm branch is dead; a fire's size is `max(floor, amp)`. **`snare2` is still passed and is still
+the FLOOR under the envelope** — measured, not assumed (`tools/work/v70/voicesim.js`, five policies over the same
+traces): dropping it takes Vienna's `v.e` p50 0.285 → 0.245 and p95 0.659 → 0.595, so the level still holds the body
+annulus up BETWEEN hits. The KICK and the HAT keep the union: the v2 kick IS the ears' low lane (§51), and §64's
+answer for the hat was that coverage matters more than precision there.
+
+`tools/dust-trace.js` scene 1 `&map=0`, graded by `tools/work/v70/dustsnare.py` against `<T>.snare.json` at ±50 ms.
+Each pair back to back in an isolated `git worktree` of `074061b` with only `assets/scenes/dust/` different, and the
+pair proved by the md5 of each trace's `beatCount` / `dropEnv` / `eM` columns (identical on all three windows).
+
+| | before (the union) | after (the lane + `snareAmp`) |
+|---|---|---|
+| **Vienna 24–60 s** (truth 70 = 1.94 /s) | 114 fires (3.17 /s), P 0.45 / R 0.73 / F 0.55 | **49 (1.36 /s), P 0.80** / R 0.56 / F **0.66** |
+| … at the voice's FLOOR · amp p10 / p50 | 11 % · 0.259 / 0.495 | **0 %** · **0.407** / 0.590 |
+| … median gap between flashes | 267 ms | **667 ms** — the half note at 90 BPM, the backbeat itself |
+| … lumC lift per flash p50 · lag p90 | +13.85 · +14 ms | **+26.05** · **−3 ms** |
+| **SeeYouDrop 20–110 s** (307 = 3.41 /s) | 367 (4.08 /s), P 0.66 / R 0.79 / F 0.72 | 349 (3.88 /s), P **0.68** / R 0.78 / F **0.73** |
+| … at the floor · amp p50 | **72 %** · 0.250 | **0 %** · **0.494** |
+| **CyborgNinja 20–50 s** (110 = 3.67 /s) | 193 (6.43 /s), P 0.53 / R 0.94 / F 0.68 | **95 (3.17 /s), P 0.94** / R 0.81 / F **0.87** |
+| … at the floor · lumC lift · gap p50 | 15 % · +11.23 · 183 ms | **0 %** · **+17.37** · **367 ms** (the 8th at 160 BPM) |
+
+Every number reproduces §69's own simulation of this policy to the digit, and **both controls are better than the
+union** — which is the test §64's same question about the HAT had to fail. The one row that gets worse is stated:
+**Vienna's recall 0.73 → 0.56**, 49 flashes against 70 reference hits on the one track whose truth beat grid is still
+`provisional`. §66's complaint was the opposite one ("the snare voice is still the loudest wrong voice", 4.81 /s
+against a groove of 1.94); what is left now lands one flash per backbeat at P 0.80 with none of them floor-sized.
+
+### TORUS2's snare wave — and the channel that was dead on SeeYouDrop
+
+`math/waves.js step()` takes an optional `hits` array: a non-negative entry replaces that band's LEVEL EDGE with "an
+event just fired, launch at this amplitude", anything else leaves the band on the edge detector. GIELIS, the other
+`mkWaves()` caller, is untouched (its md5 lines are identical). TORUS2 passes
+`[-1, snareEvt ? max(0.01, snareAmp) : 0, -1]`.
+
+The edge detector needed `snare2 > HI (0.45)` having been under `LO (0.25)`, and **synapse's `snare2` never gets
+there on SeeYouDrop** — §69 measured its mean at 0.125 at a snare line (0.370 CyborgNinja, 0.422 Vienna). So
+TORUS2's snare band launched **17 waves in 90 s** of the user's own reference track against a groove of 3.41 /s. The
+channel was effectively dead and no ruler had ever counted it: `info()` reported wave POSITIONS, never LAUNCHES.
+`mkWaves` now keeps a per-band launch count and last amplitude (`fires()` / `lastAmp()`, reset with the buffer, never
+read by the look), TORUS2 reports them from a new read-only `hooks.dinfo()`, and `tools/work/v70/t2snare.py` grades a
+step in `d_fS`. The BEFORE side of each pair is the same tree with only the `hits` argument removed.
+
+| | before (`snare2`'s edge) | after (the lane + `snareAmp`) |
+|---|---|---|
+| **SeeYouDrop 20–110 s** (truth 307 = 3.41 /s) | **17 launches (0.19 /s)**, P 0.59 / R 0.03 / F 0.06 | **349 (3.88 /s), P 0.68 / R 0.78 / F 0.73** |
+| **CyborgNinja 20–50 s** (110 = 3.67 /s) | 55 (1.83 /s), P 0.80 / R 0.40 / F 0.53 | **95 (3.17 /s), P 0.94 / R 0.81 / F 0.87** |
+| **Vienna 24–60 s** (70 = 1.94 /s) | 56 (1.56 /s), P 0.52 / R 0.41 / F 0.46 | **49 (1.36 /s), P 0.80** / R 0.56 / F **0.66** |
+| lag p50/p90 · launch amp p10 (SYD · CN · Vienna) | −21/−14 · −16/−12 · −3/+1 ms · 0.551 / 0.475 / 0.566 | **−4/+16 · −12/−2 · −3/−3 ms** · **0.334 / 0.345 / 0.407** |
+
+`HI`/`LO` also meant a wave could only ever launch at 0.45 or more; the lane's amplitude starts at 0.31, so a soft
+rim now sends a small wave where before it sent none. **The look is otherwise the same picture:** mean luminance p50
+Vienna 100.10 → 98.23, CyborgNinja 99.99 → 100.32, SeeYouDrop 60.60 → 62.79; lumC 166.27 → 164.60 / 160.85 → 161.96
+/ 103.23 → 107.74; lumR 116.10 → 113.60 / 119.65 → 120.11 / 83.43 → 85.72. Waves alive p50 8 → 13 on SeeYouDrop (its
+snare band now has some). `hooks.train('4x4'|'sync')` is unaffected — `step` returns before the band loop while a
+pattern is pinned.
+
+### Every consumer of the snare, and what each now reads
+
+`grep -rn "snare2\|snareVel\|snareEvt\|snareAmp" assets` — six readers, three of them documentation:
+
+| reader | before | now |
+|---|---|---|
+| `scenes/dust` (flash ring) | the earlier of `snareEvt` and the `snare2` edge; `snare2` sizes it | **`snareEvt` alone; `snareAmp` sizes it**; `snare2` is the envelope's floor |
+| `scenes/torus2` (snare wave) | the `snare2` edge; `min(1, snare2)` sizes it | **`snareEvt` alone; `snareAmp` sizes it**; `snare2` still in `feats` |
+| `scenes/chladni` (the plate's ring) | `snareAge` + `snareVel` | **unchanged** — see below |
+| `engine/bars/feed.js` | `snareEvt` / `snareAge` / `denS` | unchanged (it does not read `snareVel`, so §70 cannot move the bar store) |
+| `engine/features-ears.js` | the map override | **publishes `snareAmp` = the map's velocity in file+map mode** |
+| `scenes/{dust,torus2,chladni}/help.js` | — | the two new entries, and `snare2` re-described as the level underneath |
+
+**CHLADNI is left alone, with the number.** It already reads the lane (`snareAge`), and its size is
+`U.snF = SNAMP(0.55) · clamp(snareVel, 0, 1.5) · exp(−snareAge/SNTC(0.16))`. Moving it to `snareAmp` would take the
+ring from full brightness on 52–91 % of hits to 0.33–0.69 — a **brightness recalibration** of a scene's validated
+default (the user OK'd CHLADNI in v0.15), not a trigger change, and `SNAMP` would have to be re-tuned with it. It
+wants its own A/B. `snare2` likewise stays published and routable: nothing was deleted.
+
+### Proofs
+
+- **The existing engine is byte-identical.** Every column of a `tools/drums-node.js` trace on all five tracks, against
+  an isolated worktree of `9b164e2` (`tools/work/v70/diffcols.js`: 21 identical, 0 moved, only `+kickAmp +snareAmp`).
+  The event log's vocabulary is unchanged (it writes `vel` only).
+- **The fake-timeline md5 sweep: 4 of the 24 lines move — DUST (s1) and TORUS2 (s3), f360 and f840 — and the other
+  20 (ten scenes, GIELIS among them) are identical.** Taken as an isolated pair in `git worktree`s, `errs []` on
+  every scene on both sides. **Why they move, measured, not guessed:** under `#test` the ears never run, so
+  `snareEvt` is `false`, `snareAge` 99 and `snareAmp` 0, while `snare2` is synapse's own fake snare level — read
+  straight off the page at f840: `{snareEvt: false, snareAmp: 0, snareAge: 99, snare2: 0.001, dustFS: 0, dustFK: 14,
+  t2FS: 0}`. So both scenes' snare channels are simply SILENT on the fake timeline, where the level used to drive
+  them. **CHLADNI's snare ring has been dark there since v0.15 for exactly this reason** (`exp(−99/0.16)` = 0), which
+  is the precedent — and the open item: the fake timeline should carry the ears' event channels so the md5 sweep
+  exercises them. Giving it `snareEvt` / `snareAge` / `snareAmp` would move CHLADNI's lines too, so it is a tools
+  decision like the `parity.js` NAV rows, not a scene one.
+- **`tools/parity.js fake`:** 72 fields compared, unchanged — the only MISMATCH is the pre-existing NAV block
+  (`nav.lg 7.852`, OPEN-ITEMS 2026-09-29, to the digit), and `kickAmp` / `snareAmp` appear as "missing in v3" INFO,
+  which is what an additive field is supposed to do.
+- **Cost is flat.** `CARD.bench(id, 300)` interleaved with NAV, three pairs each, warm-up discarded, `q` pinned 0.95
+  for 9 s (HARNESS bench protocol): DUST **1.323 → 1.286 ms** against NAV 2.458 → 2.376, ratio **0.538 → 0.541**;
+  TORUS2 **1.392 → 1.374** against NAV 2.412 → 2.422, ratio **0.577 → 0.567**. Both moves are inside the ±2 % spread
+  of the three pairs themselves. Expected: one MS read and one branch per frame in each scene. **The machine was not
+  idle** (load average 3.3–3.8, a parallel session's processes), which is why only interleaved pairs are quoted.
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, MS keys 205 → **207**, help.feats gaps 0, the 5
+  pre-existing soft-cap warns — `torus2/index.js` was kept under its own cap) · **`npm test` OK** with **6 new
+  `test_drums.js` cases**: a hit under the 3.75 dB floor does not fire at all; a SOFT rim reads `snareAmp` **0.322**
+  and a HARD one **1.000** (± 0.1); 3.2× the hit amplitude moves the amp 0.322 → 0.901, so the SPAN and not the clamp
+  does the work; `kickAmp` reads 0.313–0.562 with **0** at the ceiling where `kickVel` puts **12 of 39** identical
+  synthetic kicks at 1.000; and `snareVel` reads 0.000 on the frame `snareAmp` reads 0.322. The synthetic hits are
+  ONE rim template scaled and placed ON a hop boundary — a rim that starts mid-hop shows only part of its rise in the
+  hop that fires, and that phase swamps the amplitude itself.
+- **No audible run.** Every number is the deterministic file path, the node harness or the fake timeline.
+- The lab scripts are `tools/work/v70/{risedist,veldist,ampsweep,ampnode,ampsyn,ampsyn2,voicesim,diffcols,qtest}.js`
+  and `{dustsnare,t2snare}.py`, gitignored like §68's and §69's.
+
+### Open, for the orchestrator
+
+- **`dsp.js`'s `Quantile(q)` returns the (1 − q) quantile** (above). Four live readers depend on the number they
+  actually get: `perc.js lvl` (every band's level gate, with `GATE_DB`), `perc.js p95` (`*Vel`), `sub.js q90` (the
+  sub gate) and `texture.js rollP90` (`lpSweep`). Fixing the sign is an engine session with the map, the bar store,
+  the queue and §59's clock tables all downstream of it. **Nothing should be tuned against `*Vel` until it is.**
+- **CHLADNI's ring still reads `snareVel`** (above) — a brightness recalibration with `SNAMP`, wants the user's A/B.
+- **`kickAmp` is published and no kick consumer moved** (the brief's instruction). DUST's kick voice and TORUS2's
+  kick wave still fire on the union / the `kick2` edge and size themselves from `kick2`, which §51 built a RANK for
+  precisely because `kickVel` saturated. Whether the rank or `kickAmp` is the better size is now a measurable
+  question and is not measured here.
+- **The fake timeline carries no percussion EVENTS** (above), so the md5 sweep cannot see a scene's event-driven
+  channel at all — three scenes' snare rings are silent under `#test`.
+- **Vienna's recall** on both scenes (0.73 → 0.56 DUST, 0.41 → 0.56 TORUS2 — one down, one up) against a
+  `provisional` truth grid. The user's eye decides.
+- Carried from §69 and still open: `tools/accept.sh` has not been run since v0.14; SeeYouDrop's PCM lock 9.2 → 12.0 s.
+
+**The A/B watch list, in TRACK time** (stream / live mode or `&map=0`: in file + map mode `snareEvt` and `snareAmp`
+are the map's own list, so DUST and TORUS2 change there too but to the MAP's snares, not the lane's):
+- **SeeYouDrop 0:20–1:50, TORUS2** — the biggest change of the session and the one to look at first. The snare band
+  launched 17 waves in that whole 90 s and now launches 349: the sharp bright pulse along the loudest family should
+  go from "almost never" to one per snare. This is the user's own favourite music-to-viz mapping.
+- **Vienna 0:24–1:00, DUST** — §66's complaint. The flash ring should land ON the backbeat and stop flickering:
+  3.17 → 1.36 flashes/s against a groove of 1.94, the median gap 267 → 667 ms (the half note at 90 BPM), nothing
+  floor-sized any more and each flash lifting the centre nearly twice as much (+13.9 → +26.1). Watch for the
+  opposite failure: a rim the lane misses is now a flash that does not happen at all.
+- **Vienna 1:46–2:00 (drop 2), DUST + TORUS2** — the ring and the wave over the octave change, where the lane's
+  precision gain is largest.
+- **CyborgNinja 0:20–0:50, both** — the 160 BPM control. DUST's ring 6.43 → 3.17 /s at P 0.53 → 0.94 and TORUS2's
+  waves 1.83 → 3.17 /s: on this track BOTH scenes get the backbeat they were missing, from opposite directions.
+- **Any track, a soft rim vs a hard snare** — the new thing to look for: the size of a flash and the height of a
+  wave now follow how hard the hit was, where before they were one brightness (`snareVel` 1.000 on 52–91 % of hits)
+  or a follower's level.
+
 ## §71 Malicious's +30 ms is its TRUTH GRID, not the clock — the one track whose beat line was never put on the audio (2026-10-01, one worker; §69's open item, the user's word; `docs/AUDIT-live-grid.md` "Step 6 addendum 4")
 
 **The ask:** §69 re-measured §59's clock tables after the snare lane and found the PCM clock's beat line on Malicious a
