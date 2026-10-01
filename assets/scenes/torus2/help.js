@@ -36,7 +36,12 @@ export const HELP = {
       keyConf: 'how far the key is trusted: below a third of the way the last confident key is held and the colours slide back to the mood palette',
       valence: 'brighter music adds a little more warmth on top of the mode',
       kick2: 'flashes the quiet inner fibres, and launches the big slow bump that travels along every thread',
-      snare2: 'launches a sharp bright pulse that travels along the loudest family and the knot',
+      snare2: 'how bright the loudest family and the knot stay between snares — the snare level, which no longer '
+        + 'launches a pulse of its own',
+      snareEvt: 'the ears\' own word that a snare just landed: it is the one thing that launches the sharp bright '
+        + 'pulse travelling along the loudest family and the knot',
+      snareAmp: 'how tall that pulse is: the snare\'s own loudness, measured as how far it rose above the half-second '
+        + 'before it, so a soft rim sends a small wave and a hard snare a big one',
       hat2: 'a fine shimmer running round every ring, and tiny fast ripples travelling with it',
       beat: 'a track with no drums still breathes: a faint bump is launched on the beat when no band hit came',
       alive: 'the shimmer only happens while there is sound',

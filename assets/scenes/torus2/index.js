@@ -6,7 +6,7 @@
 // inner families, a hat shimmer along every fibre.
 import { fibre, torusRadii } from '../../math/hopf.js';
 import { mkVS, mkFS } from './shaders.js';
-import { BANDS, SLOTS, fill as wfill, live as wlive, positions as wpos, step as wstep, train } from './waves.js';
+import { BANDS, SLOTS, fill as wfill, fires as wfires, lastAmp as wlastAmp, live as wlive, positions as wpos, step as wstep, train } from './waves.js';
 import { COUNT as ATN, EXT as ATEXT, H as ATH, NAMES as ATNAMES } from './attractors.js';
 import { anchor } from './colour.js';
 import { HELP } from './help.js';
@@ -113,6 +113,8 @@ function fib(v) {
   fibPin = v > 0 ? Math.min(FIBN, v | 0) : -1;
   return fibPin;
 }
+// dinfo(): per-frame columns for tools/dust-trace.js — a step in `fS` IS a snare wave launch, `aS` its size (§70). Read-only, as info() (CONTRACTS §1.4).
+const dinfo = () => ({ fK: wfires(0), fS: wfires(1), fH: wfires(2), aK: wlastAmp(0), aS: wlastAmp(1), aH: wlastAmp(2), live: wlive(U.beatNow), beat: U.beatNow, flash: U.flash, shim: U.shim, wave: U.wave });
 
 // test hook: the live look numbers, so a shot can be read as numbers as well as pixels
 function info() {
@@ -124,10 +126,10 @@ export default {
   id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
   cuts: 'continuous',
   rt: {},
-  hooks: { probe, info, train, fib, key, motion, morph, unwind },
+  hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo },
 
   // TORUS's bid, verbatim (§4 / §37): never during a build, else clarity and a steady rhythm
   score(MS) {
@@ -183,7 +185,9 @@ export default {
 
     // spec 2: musical time drives the waves — beatNow never drifts, so a bump launched on a beat stays on its grid
     U.beatNow = MS.beatCount + MS.beatPhase;
-    wstep([MS.kick2, MS.snare2, MS.hat2], U.beatNow, MS.beat);   // the reactive drums v2 (the user, 2026-09-29: "v2 looks good")
+    // The reactive drums v2 (the user, 2026-09-29: "v2 looks good") — EXCEPT the SNARE, which since §70 launches on the
+    // ears' lane at its own size (`snareEvt` / `snareAmp`), not on a `snare2` edge (math/waves.js `step`'s `hits`).
+    wstep([MS.kick2, MS.snare2, MS.hat2], U.beatNow, MS.beat, [-1, MS.snareEvt ? Math.max(0.01, MS.snareAmp) : 0, -1]);
     wfill(WB, WA, U.beatNow);
     U.wave = P.wave;                                  // the kick bump's displacement (params.wave)
 

@@ -34,6 +34,8 @@ export function mkWaves() {
   const AM = new Float32Array(BANDS * SLOTS);    // amplitude at launch
   const W = new Int32Array(BANDS);               // next slot to write per band
   const PREV = new Float32Array(BANDS);          // last frame's level per band, for the edge detector
+  const NF = new Int32Array(BANDS);              // launches per band since reset, and the last one's amplitude —
+  const LA = new Float32Array(BANDS);            // read-only bookkeeping for a scene's dinfo() ruler, never the look
   let lastHit = -1e9;                            // beat of the last hit in any band
   let mode = null, sched = -1e9;
 
@@ -42,6 +44,8 @@ export function mkWaves() {
     AM.fill(0);
     W.fill(0);
     PREV.fill(0);
+    NF.fill(0);
+    LA.fill(0);
     lastHit = -1e9;
     sched = -1e9;
   }
@@ -52,6 +56,7 @@ export function mkWaves() {
     AT[i] = beat;
     AM[i] = amp;
     W[band] = (W[band] + 1) % SLOTS;
+    NF[band]++; LA[band] = amp;
     lastHit = Math.max(lastHit, beat);
   }
 
@@ -65,7 +70,13 @@ export function mkWaves() {
   const trainMode = () => mode;
 
   // One frame. levels = [kick, snare, hat]; beatNow = beatCount + beatPhase; beatEvt = MS.beat.
-  function step(levels, beatNow, beatEvt) {
+  // `hits` (DECISIONS §70, optional, per band): a number >= 0 replaces that band's LEVEL EDGE with "an event just
+  // fired, launch at this amplitude", and a negative / null / undefined entry leaves the band on the edge detector.
+  // It exists because the engine now publishes an unsaturated SIZE for the two rise lanes (`kickAmp` / `snareAmp`), so
+  // a caller with a better picker than a follower's rising edge can use it and still have an amplitude to launch at.
+  // The level is still passed for that band (the caller may want it elsewhere) and its PREV is still tracked, so
+  // switching a band back costs nothing.
+  function step(levels, beatNow, beatEvt, hits) {
     if (mode) {
       const P = PAT[mode], bar = Math.floor(beatNow / 4);
       for (let b = bar - 1; b <= bar; b++) {
@@ -78,7 +89,9 @@ export function mkWaves() {
     }
     for (let b = 0; b < BANDS; b++) {
       const x = levels[b];
-      if (x > HI && PREV[b] < LO) launch(b, beatNow, Math.min(1, x));
+      const h = hits ? hits[b] : undefined;
+      if (h !== undefined && h !== null && h >= 0) { if (h > 0) launch(b, beatNow, Math.min(1, h)); }
+      else if (x > HI && PREV[b] < LO) launch(b, beatNow, Math.min(1, x));
       PREV[b] = x;
     }
     // a track with no drums still breathes: the beat itself launches a faint kick-class wave
@@ -113,5 +126,9 @@ export function mkWaves() {
     return out.sort((a, b) => a - b);
   }
 
-  return { reset, launch, train, trainMode, step, fill, live, positions };
+  // read-only: how many waves each band has launched, and the last one's amplitude (a scene's dinfo() ruler)
+  const fires = (band) => NF[band];
+  const lastAmp = (band) => LA[band];
+
+  return { reset, launch, train, trainMode, step, fill, live, positions, fires, lastAmp };
 }

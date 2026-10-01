@@ -20,3 +20,5 @@ export const step = WV.step;
 export const fill = WV.fill;
 export const live = WV.live;
 export const positions = WV.positions;
+export const fires = WV.fires;
+export const lastAmp = WV.lastAmp;
