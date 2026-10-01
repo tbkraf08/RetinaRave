@@ -1,6 +1,7 @@
 // Percussion: a causal HPSS-lite (a short running median of each band's dB envelope is the harmonic part; what rises above
 // it is percussive) and one onset stream per class — EXCEPT the LOW lane, which is a 60-150 Hz band graded on its RISE
-// (see "THE LOW LANE" below, DECISIONS §68). THE rule that matters on this music: a kick needs the beater click —
+// (see "THE LOW LANE" below, DECISIONS §68), and the SNARE lane, which is the two mid bands' RISE (DECISIONS §69).
+// Only the HAT still runs the HPSS-lite flux. THE rule that matters on this music: a kick needs the beater click —
 // a 2.5-8 kHz transient within CLICK_W hops of the low onset. A bare low onset is an 808 note start and belongs to subNoteEvt.
 //
 // Two things were measured and rejected here: a 128-sample hop (finer timing, but 2-5x the false onsets, kick F 0.21-0.61
@@ -21,7 +22,8 @@ export const INT_N = [1, 1, 1, 1, 1, 1, 1];      // hops each band integrates (m
 export const MED_N = 9;              // the harmonic median window, in hops (~105 ms)
 export const THR_K = 3.0;            // flux threshold = running mean + THR_K * running deviation of the band's flux
 export const THR_FLOOR = [1.2, 1.2, 1.2];        // ... and never under this many dB, per class (kick, snare, hat).
-// [0] is DEAD since §68: the low lane does not use `fire()` at all. Kept so the three arrays stay class-indexed.
+// [0] is DEAD since §68 and [1] since §69: neither the low nor the snare lane uses `fire()` at all, and `thrK` now
+// reaches the HAT alone. Kept so the three arrays stay class-indexed.
 export const CLICK_FLOOR = 1.0;      // the same floor for the beater-click band
 // A kick also has a BODY: 150-600 Hz rises with it. A pure 808 (h/f 0.05 on this track) has none, so requiring the body as
 // well as the beater is what separates a kick from an 808 note start far better than the 2.5-8 kHz click alone (hats fire
@@ -29,7 +31,12 @@ export const CLICK_FLOOR = 1.0;      // the same floor for the beater-click band
 export const BODY_REQ = false;    // measured: requiring the body cost F (0.73 -> 0.62) without reliably cutting bare hits
 export const BODY_FLOOR = 0.8;
 export const BODY_W = 0.035;         // the body may lag the beater: a kick's 150-600 Hz thud decays over tens of ms
-export const REFRACT = [0.085, 0.060, 0.045];    // per-class refractory (s); [0] is the LOW lane's (fireLow, §68)
+// per-class refractory (s); [0] is the LOW lane's (fireLow, §68) and [1] the SNARE lane's (fireSnare, §69).
+// [1] 0.060 -> 0.075: a rise against an 8-hop baseline still reads ~7/8 of itself on the hop after a hit, so the
+// lane needs the refractory explicitly. Swept (§69): 0.060 costs 0.045 of the mean F, 0.070 / 0.075 / 0.085 / 0.100
+// are equal to three decimals. 0.075 is the shortest of those — 0.085 would block a 16th above 176 BPM, and no
+// track here goes there, which is exactly why the margin is taken on the material we do not have.
+export const REFRACT = [0.085, 0.075, 0.045];
 // The beater window. The truth tool's own definition is 15 ms; measured on SeeYouDrop, 15 ms gives kick F 0.37 on 25-45 s with
 // 6.0 % of kicks on a truth bare808 (chance is 5.3 %: a 15 ms window around 275 bare onsets covers 5.3 % of 157 s), and 25 ms
 // gives F 0.73 with 12.6 %. 25 ms is chosen: it matches the truth's kick COUNT (207 against 229) and gives a usable channel.
@@ -77,9 +84,41 @@ export const KICK_RISE = 5.0;        // dB: the rise that IS a low onset. No ada
 // flux lane's own clock; like ONSET_LAG it is in SECONDS because the residual is near-constant in milliseconds.
 export const KICK_LAG = 0.012;
 
+// ---------------------------------------------------------------------------------------------------------------
+// THE SNARE LANE (DECISIONS §69). Class 1 — which feeds `snareEvt` / `snareAge` / `snareVel` / `denS` and DUST's
+// flash ring — leaves the HPSS-lite flux for the same reason class 0 did, and for a second one of its own.
+//   · the FUNCTION. §64 proved the running median lags a swell on the HIGH band, and the MID band is where the
+//     pads, the arps and the reverb tails live: on Vienna the old lane fired 663 times = 3.44 /s against a groove
+//     of 1.83 rim / clap / kick-body hits a second, at P 0.22 against the truth `mid` and P 0.37 against §66's own
+//     hand-built rim/clap list. A rise over a short LOCAL MEAN cancels a steady layer and shows a stick whole.
+//   · the BAND, and why it is TWO. A snare is a body (150-600 Hz) and a noise (up to ~2.5 kHz) at once, and the two
+//     references disagree about which band to grade on because each was built on one of them: the truth's `mid` is
+//     a 150-2500 Hz list and §69's grid reference a 150-800 Hz one. Measured against BOTH (mean F over the five
+//     tracks, mid + snare): 150-2500 alone .647 + .570, 150-600 alone .571 + .594, a new 150-800 filter .615 +
+//     .601 — and the plain MEAN of the two EXISTING bands' rises .621 + .609, the best sum of the lot and the only
+//     candidate near the top on both. It also needs no new filter: B_HARM and B_SNARE are already in the bank.
+//     (MAX of the two is a union and keeps the loose band's false fires, mid .586; MIN is a hard AND and costs
+//     CyborgNinja's recall, .628 + .573. The weight sweep 0 / .25 / .4 / .5 / .6 / .75 / 1 plateaus at .25-.6, so
+//     the plain half-and-half is the centre, not a fit.)
+// Each band's rise is RECTIFIED BEFORE the mean, and level-gated like the flux lane, so a band that is falling
+// contributes 0 rather than cancelling the other; measured against the other order, identical to three decimals.
+export const SNARE_BASE = 8;         // hops of local baseline, as KICK_BASE (85 ms at 48 kHz). Swept 6 / 7 / 8 / 9:
+                                     // the sum of the two mean Fs reads 1.270 / 1.275 / 1.270 / 1.194 — one number
+                                     // for both lanes, inside the plateau.
+// dB: the mean rise that IS a snare. No adaptive `fm + k*fd` term, for §68's reason — a rise is a RATIO, so one
+// number travels. (Swept here too: k 1 buys 0.02 and k 3 takes CyborgNinja's recall 0.57 -> 0.40.) The floor
+// plateaus over 3.5-4.25 dB (sum 1.262 / 1.270 / 1.275 / 1.275); 3.75 is the end of it where CyborgNinja keeps the
+// most recall (0.57 against 0.55 at 4.0) and Vienna fires closest to its own rate (1.25 /s against a truth 1.83).
+export const SNARE_RISE = 3.75;
+// The lane's own onset lag, replacing ONSET_LAG for class 1 — KICK_LAG's story on the mid band. Measured against
+// the truth `mid`, the median lag per track at ONSET_LAG is +3 / +5 / +5 / +5 / +4 ms; the extra 4 ms puts it at
+// -1 / +1 / +1 / +1 / 0, mean +0.4 ms, which is the OLD lane's own mean to the digit (§58: "ears +0").
+export const SNARE_LAG = 0.010;
+
 export class PercTrack {
-  // `o` overrides the constants above (thrK, thrFloor, refract, clickW, gateDb, clickFloor, intN, medN, and the low
-  // lane's kickBase / kickRise / kickLag) — the tuning sweeps use it, the page does not.
+  // `o` overrides the constants above (thrK, thrFloor, refract, clickW, gateDb, clickFloor, intN, medN, the low
+  // lane's kickBase / kickRise / kickLag and the snare lane's snareBase / snareRise / snareLag) — the tuning
+  // sweeps use it, the page does not.
   constructor(sr, o = {}) {
     this.sr = sr;
     this.thrK = o.thrK === undefined ? THR_K : o.thrK;
@@ -92,6 +131,9 @@ export class PercTrack {
     this.kBase = Math.max(1, o.kickBase === undefined ? KICK_BASE : o.kickBase | 0);
     this.kRise = o.kickRise === undefined ? KICK_RISE : o.kickRise;
     this.kickLag = o.kickLag === undefined ? KICK_LAG : o.kickLag;
+    this.sBase = Math.max(1, o.snareBase === undefined ? SNARE_BASE : o.snareBase | 0);
+    this.sRiseThr = o.snareRise === undefined ? SNARE_RISE : o.snareRise;
+    this.snareLag = o.snareLag === undefined ? SNARE_LAG : o.snareLag;
     this.bodyReq = o.bodyReq === undefined ? BODY_REQ : o.bodyReq;
     this.bodyFloor = o.bodyFloor === undefined ? BODY_FLOOR : o.bodyFloor;
     this.bodyW = o.bodyW === undefined ? BODY_W : o.bodyW;
@@ -116,6 +158,10 @@ export class PercTrack {
     this.den = new Float32Array(3);
     this.kbuf = new Float32Array(this.kBase); this.kk = 0; this.kn = 0;   // the low lane's local baseline ring (dB)
     this.rise = 0;                                 // ... and this hop's rise above it, half-wave rectified (dB)
+    this.sbufH = new Float32Array(this.sBase);     // the snare lane's two local baseline rings (dB): 150-600 ...
+    this.sbufS = new Float32Array(this.sBase);     // ... and 150-2500
+    this.sk = 0; this.sn = 0;
+    this.sRise = 0;                                // ... and this hop's MEAN of the two rectified rises (dB)
     this.hist = [[], [], []];                      // onset times per class, last DEN_WIN s
     this.last = [-9, -9, -9]; this.lastLow = -9;   // ... and the LOW lane's own last fire (bare 808s never reach emit)
     this.clickT = -99; this.bodyT = -99; this.pendKick = null;
@@ -158,8 +204,25 @@ export class PercTrack {
       this.rise = r;
       kb[this.kk] = d; this.kk = (this.kk + 1) % KB; if (this.kn < KB) this.kn++;
     }
+    // THE SNARE LANE (§69): the MEAN of the 150-600 and 150-2500 bands' rises over the mean of the PREVIOUS sBase
+    // hops, each rectified and level-gated first. Same ring discipline as the low lane's: read before this hop
+    // joins it, silent until the ring is full.
+    {
+      const SB = this.sBase, bh = this.sbufH, bs = this.sbufS, dh = this.db[B_HARM], ds = this.db[B_SNARE];
+      let r = 0;
+      if (this.sn >= SB) {
+        let sh = 0, ss = 0;
+        for (let q = 0; q < SB; q++) { sh += bh[q]; ss += bs[q]; }
+        const rh = dh < this.lvl[B_HARM].v + this.gateDb ? 0 : Math.max(0, dh - sh / SB);
+        const rs = ds < this.lvl[B_SNARE].v + this.gateDb ? 0 : Math.max(0, ds - ss / SB);
+        r = 0.5 * (rh + rs);
+      }
+      this.sRise = r;
+      bh[this.sk] = dh; bs[this.sk] = ds; this.sk = (this.sk + 1) % SB; if (this.sn < SB) this.sn++;
+    }
     const ot = t - ONSET_OFS * this.hopDur - this.onsetLag;
     const otK = t - ONSET_OFS * this.hopDur - this.kickLag;     // the low lane's own clock (KICK_LAG, not ONSET_LAG)
+    const otS = t - ONSET_OFS * this.hopDur - this.snareLag;    // ... and the snare lane's (SNARE_LAG)
     // the click band decides what a low onset was
     if (this.flux[B_CLICK] > Math.max(this.fm[B_CLICK] + this.thrK * this.fd[B_CLICK], this.clickFloor)) this.clickT = ot;
     if (this.flux[B_HARM] > Math.max(this.fm[B_HARM] + this.thrK * this.fd[B_HARM], this.bodyFloor)) this.bodyT = ot;
@@ -175,7 +238,7 @@ export class PercTrack {
       if (clicked) this.emit(0, otK, this.vel[0]);
       else this.pendKick = { t: otK, w: ot, vel: this.vel[0] };
     }
-    if (this.fire(1, B_SNARE, ot)) this.emit(1, ot, this.vel[1]);
+    if (this.fireSnare(otS)) this.emit(1, otS, this.vel[1]);
     if (this.fire(2, B_HAT, ot)) this.emit(2, ot, this.vel[2]);
     for (let c = 0; c < 3; c++) {
       const h = this.hist[c];
@@ -183,6 +246,7 @@ export class PercTrack {
       this.den[c] = h.length / DEN_WIN;
     }
   }
+  // the HAT's fire (class 2 is the only one left on the HPSS-lite flux since §69)
   fire(c, band, ot) {
     const fl = this.flux[band], thr = Math.max(this.fm[band] + this.thrK * this.fd[band], this.thrFloor[c]);
     if (fl <= thr || ot - this.last[c] < this.refract[c]) return false;
@@ -201,6 +265,16 @@ export class PercTrack {
     if (r <= this.kRise || ot - this.lastLow < this.refract[0]) return false;
     this.lastLow = ot;
     this.vel[0] = clamp01(r / (this.p95[0].push(r) + 1e-6));
+    return true;
+  }
+  // the SNARE lane's own fire (§69): the two-band mean rise against an absolute dB floor, no adaptive term.
+  // `vel[1]` keeps its meaning — the onset's strength as a share of the lane's own running p95 — so `snareVel` is
+  // the same quantity, now measured on the rise instead of the flux. Unlike the low lane this one needs no private
+  // `last`: `emit(1)` is unconditional (a snare has no beater gate), so `last[1]` IS the lane's last fire.
+  fireSnare(ot) {
+    const r = this.sRise;
+    if (r <= this.sRiseThr || ot - this.last[1] < this.refract[1]) return false;
+    this.vel[1] = clamp01(r / (this.p95[1].push(r) + 1e-6));
     return true;
   }
   emit(c, t, vel) {
