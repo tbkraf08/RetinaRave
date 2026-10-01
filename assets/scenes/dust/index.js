@@ -52,6 +52,7 @@ const SELF = {
     'kick2', 'kickAge', 'kickEvt', 'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'hat2', 'hatAge', 'hatEvt',
     'subNoteEvt', 'subGate',
     'buildLive', 'nextDropIn', 'dropLiveEvt',
+    'tongue21', 'tongue41', 'tongueOn',
     'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
     'harmAngle', 'key', 'mode', 'keyConf', 'valence',
     'arc', 'punchy', 'regularity'],
@@ -298,7 +299,7 @@ const SELF = {
     key(k, m) { SELF.keyPin = k === null || k === undefined || k === '' || k < 0 ? null : { k: ((k | 0) % 12 + 12) % 12, m: (m | 0) ? 1 : 0 }; return JSON.stringify(SELF.keyPin); },
     dinfo() {
       return { spin: SELF.spin, spinG: SELF.spinG, nv: SELF.sp.v, nu: SELF.sp.u, nstep: SELF.sp.step,
-        noff: SELF.sp.off, njump: SELF.sp.jumps,
+        noff: SELF.sp.off, njump: SELF.sp.jumps, nacc: SELF.sp.acc,
         formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
         want: shapeFor(SELF.lastMS || {}),

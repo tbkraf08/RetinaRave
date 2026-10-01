@@ -62,7 +62,7 @@ class Bank {
     const n = om.length;
     this.om = om; this.k = k; this.n = n;
     this.th = new Float64Array(n); this.lam = new Float64Array(n);
-    this.base = NaN; this.ema = 1e-6;
+    this.base = NaN; this.ema = 1e-6; this.nh = 0;
     const W = k.WIN + 1;
     this.rTh = new Float64Array(W * n); this.rLam = new Float64Array(W * n); this.rPh = new Float64Array(W);   // the ring: θ, λ per oscillator, (θ₁ − b) per beat
     this.rho = new Float64Array(n); this.d = new Float64Array(n);
@@ -77,7 +77,11 @@ class Bank {
     if (!(this.base === this.base)) this.base = o;                                                            // the first hop seeds the baseline (causal)
     const nov = o > this.base ? o - this.base : 0;
     this.base += (o - this.base) * (1 - Math.exp(-dt / k.BASE_TAU));
-    this.ema += (nov - this.ema) * (1 - Math.exp(-dt / k.EMA_TAU));
+    // the normaliser: the running MEAN of the novelty until EMA_TAU has passed, the EMA after (the same memory) — an EMA
+    // from 1e-6 is 1.6x too small 8 s in and the first windows read 0.2 too deep (CyborgNinja's d₂:₁ 0.67 → 0.88 → 0.73
+    // over 20–30 s of a cold start), which a reader of a CHANGE in depth (§78) took for a double time arriving
+    this.nh++;
+    this.ema += (nov - this.ema) * Math.max(1 / this.nh, 1 - Math.exp(-dt / k.EMA_TAU));
     const n0 = nov / (this.ema > 1e-9 ? this.ema : 1e-9) * bps * dt;                                         // ô_i = n0 · Ω_i
     if (nov <= 0) for (let i = 0; i < n; i++) th[i] += om[i] * bps * dt;                                                     // no drive this hop: free rotation, λ unchanged (half the hops; the sin / cos / log are the cost)
     else for (let i = 0; i < n; i++) {

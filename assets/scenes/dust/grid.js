@@ -141,6 +141,30 @@ export const K = { GLIDE: 0.45, W: 0.55, WREF: 145 };
 //    reads 0.35 / 0.68 / 0.27 and is the only one that travels; that is a tc in index.js, not this file (§66).
 export const lead = (w) => w / 2;    // beats: the accent starts here before the line and so peaks ON it
 
+// THE DOUBLE TIME ACCENTS, IT DOES NOT DRIVE (DECISIONS §78, the user at Vienna 1:25 — §61/§66's standing instruction). The
+// engine's tongue bank (§76) publishes the 8th- and 16th-note tongue DEPTHS, `tongue21` / `tongue41`: how complete the
+// double-time layer is as a click train over the last 16 beats. §66 measured and rejected an 8th NUDGE (CyborgNinja's 16ths
+// fire the same gate at 5.33 crests/s); here the nudge stays on the beat and the double time raises the ACCENT'S AMPLITUDE —
+// the step, as DOWN does for the downbeat: a bigger crest, never a faster one. The lean that separates Vienna's layer from
+// CyborgNinja's steady hats is a CHANGE of depth over bars, not its level: CyborgNinja's `tongue21` sits at 0.61 all track
+// and its 16-beat rise never passes 0.13 (0.13 on `tongue41`), Vienna's rises 0 -> 0.52 over 87-101 s as the double time
+// arrives after drop 1 (and 0.15-0.3 at 24-39 s, the hats the user heard start at 0:25), SeeYouDrop's at its returns (up to
+// 0.51). So: at the beat line, rise = max(tongue21, tongue41) now minus the same 16 beats ago, ACC_LO under it nothing,
+// ACC_HI and above the full ACC_K; the ring resets whenever the stage is warming (`tongueOn` 0) so a gap cannot read as a
+// rise; `tongueOn` -1 (&tongues=0) is §66's step bit for bit. The fake timeline's depths are constants (fake.js), so s1's md5
+// does not move.
+export const ACC = { K: 0.25, LO: 0.15, HI: 0.45, N: 16 };
+export const accentOf = (rise) => rise <= ACC.LO ? 0 : rise >= ACC.HI ? 1 : (rise - ACC.LO) / (ACC.HI - ACC.LO);
+function accent21(S, MS) {           // at a beat line: the double-time accent 0..1 from the tongue depths' 16-beat rise
+  if (MS.tongueOn !== 1) { S.rn = 0; S.acc = 0; return 0; }
+  const d2 = +MS.tongue21 || 0, d4 = +MS.tongue41 || 0, N = ACC.N, i = S.ri;
+  let rise = 0;
+  if (S.rn >= N) rise = Math.max(d2 - S.r21[i], d4 - S.r41[i]);
+  S.r21[i] = d2; S.r41[i] = d4; S.ri = (i + 1) % N; if (S.rn < N) S.rn++;
+  S.acc = accentOf(rise);
+  return S.acc;
+}
+
 // The accent's own width, in beats, for a beat of this tempo (see WREF above). Quantised to 1e-3 so a clock whose
 // bpm wobbles by a tenth cannot re-derive the shape every frame; an identity at and above WREF.
 export function wFor(bpm) {
@@ -203,7 +227,7 @@ export const JUMP = 1.05;         // the gate is this many times the frame's OWN
                                   // where the profile's own gain is 2/W, and that IS the spike.
 export const BLEED = 0.75;        // beats/s: how fast the offset is given back (a half-beat re-seat in 0.67 s)
 
-export function mkSpin() { return { ang: 0, last: 0, m: NaN, step: STEP, down: -9, downM: -9, u: 0, v: 0, raw: NaN, off: 0, jumps: 0, w: K.W, g: K.GLIDE }; }
+export function mkSpin() { return { ang: 0, last: 0, m: NaN, step: STEP, down: -9, downM: -9, u: 0, v: 0, raw: NaN, off: 0, jumps: 0, w: K.W, g: K.GLIDE, r21: new Float64Array(ACC.N), r41: new Float64Array(ACC.N), ri: 0, rn: 0, acc: 0 }; }
 
 // One frame. `S.ang` is the angle, exact: a sum of whole steps plus this beat's own PHI(u). Only the re-seat offset
 // above uses dt, and it decays to zero, so two runs at different frame rates land on the same angle — §57's
@@ -234,7 +258,7 @@ export function spin(S, MS, dt) {
     // the downbeat's bigger step, at most once in three beats so a wobbling bar line cannot double it
     const isDown = b !== S.down && m - S.downM >= 3;
     if (isDown) { S.down = b; S.downM = m; }
-    const st = STEP * (1 + (isDown ? DOWN : 0));
+    const st = STEP * (1 + (isDown ? DOWN : 0) + ACC.K * accent21(S, MS));   // §78: the double time's accent, on the step
     // The step is the SCALE on this beat's whole profile, so changing it moves the angle by (dstep · PHI(u)) — at a
     // tick PHI(u) is ~0 and that is nothing, but a bar line that wobbles under a re-seat can land one mid-beat and
     // half a step is 8 degrees of instant turn. The accumulator absorbs the difference, so the angle is continuous

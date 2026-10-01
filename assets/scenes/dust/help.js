@@ -47,6 +47,11 @@ export const HELP = {
     beatPhase: 'together with the bar position it says where the downbeat is, so the first beat of the bar gets '
       + 'half a nudge more than the other three',
     barPos: 'which beat of the bar this is: the downbeat gets the bigger nudge',
+    tongue21: 'how complete the eighth-note layer is as a click train: when a double time ARRIVES (the depth rises over '
+      + 'four bars) every beat\'s nudge gets up to a quarter bigger — a stronger accent, never a faster one; a steady '
+      + 'eighth pattern changes nothing',
+    tongue41: 'the same for the sixteenth-note layer',
+    tongueOn: 'with the tongues off (&tongues=0) the nudge is exactly what it was before them',
     phrase16Pos: 'when the sixteen-beat phrase comes round, the swarm pours into a new shape',
     barNovelEvt: 'a bar that starts something new pours the swarm into a new shape, wherever in the phrase it falls',
     barReturnEvt: 'a bar that brings back something from earlier pours the swarm back into the shape that part of '
