@@ -5037,3 +5037,294 @@ FEIGEN / MANDALA / POLYTOPE / DUST base light on true loudness, the peak-hold fi
 path), §66 (Vienna in numbers, `K.WREF`), §68 (the ears' low lane is a 60–150 Hz rise). `releases/retinarave-v0.23.html` (1454 KB,
 157 modules; from `file://` on scene 1: errs [], nonFinite [], clock pcm), package.json 0.23.0. Not pushed (retinarave.com serves
 v0.15). The user's next word: the snare / rim lane — "yes" (§69).
+
+## §69 the ears' SNARE lane is the two MID bands' RISE — the rim the picker could not hear, and the hat it called a snare (2026-10-01, one worker; §68 open item 1, §66 open item 2, §64 open item 2, the user on the trade: "yes"; `docs/AUDIT-drums.md` "§69")
+
+One engine commit (`e136243`, `assets/engine/ears/perc.js` + its feature docs), one tooling commit (`7f80a8d`,
+the new ruler, the harness knobs and the test cases), one docs commit. **Not tagged, not pushed, not deployed.**
+
+### What §68 handed over, reproduced
+
+§68 measured the snare lane and did not build it, leaving one number for the user: *CyborgNinja's recall
+0.61 → 0.51*. Reproduced on the node harness over the whole of all five tracks (`tools/drums-node.js`,
+`drumcheck.py`), `snareEvt` against the truth's `mid` — the baseline: SeeYouDrop P 0.52 R 0.69 F **0.59** ·
+CyborgNinja 0.92 / 0.59 / **0.72** · WhoLikesToParty 0.79 / 0.62 / **0.69** · Malicious 0.20 / 0.56 / **0.29** ·
+Vienna 0.24 / 0.71 / **0.35**; mean F **0.528**, §68's own number to the digit.
+
+### A fourth reference, because `mid` is the same kind of picker as the lane
+
+`tools/truth/snaretruth.py` (new, beside `kicktruth.py`) writes `tools/truth/<T>.snare.json`: the **offline
+150–800 Hz rise at the truth beat grid's 16th lines**, `kicktruth.py`'s method moved to the mid band — a 4th-order
+zero-phase envelope, `rise = 20log10(peak[−5, +60] ms / mean[−85, −5] ms)`, a hit = rise ≥ 4.0 dB and a local max
+over ±1 line. `drumcheck.py` grades `snare` against it as a fourth reference beside `mid` / `click` / `kick`.
+
+It exists for §68's reason, one band up: **the truth's `mid` is itself a 150–2500 Hz MEDIAN-residual flux list at a
+3 dB threshold** (`trackmap.py`), so on the one track that matters it shares the detector's blindness — Vienna's
+`mid` lists **201 onsets = 1.04 /s** where §66's hand-built rim/clap reference reads **2.0 /s** over 24–60 s.
+
+**The band was chosen on the one hand-made list there is** (§66's `tools/work/v66/clap-ref-rise.json`, 72 rim/clap
+hits on Vienna's beats 2 and 4). At 4.0 dB, 150–800 Hz reproduces it at **P 1.00 / R 0.97 (70 of 72) at lag +0 ms**
+against 150–600's 0.87 / 0.81, 150–1200's 0.95 / 0.96 and 150–2500's 0.98 / 0.90, and it lists **1.83 hits/s** on
+Vienna against §66's own measured 1.81. The floor plateaus at 3.0–4.0 dB (R 0.97 both) and breaks at 5.0 (R 0.67),
+so 4.0 is the top of the plateau, as it is for the kick. Validated where the control is trustworthy: **CyborgNinja's
+`mid` at P 0.97**, WhoLikesToParty's at 0.81. Like the kick reference it is a MID-BAND TRANSIENT list, not a
+snare-only one — a kick's 150–800 Hz body is a rise at a grid line too, exactly as `mid` and the engine's own
+`snareEvt` count it.
+
+### The lane, and why its band is TWO bands
+
+`tools/work/v69/{lab,sweep,cmp,fine,grid,final}.js` run the ENGINE's own filter bank at PHOP over each track and
+score candidate lanes against both references, so band, floor, baseline and refractory move independently.
+
+The honest difficulty is that **the two references disagree about the band because each was built on one of them**.
+Mean F over the five tracks against both, each candidate at its own best floor:
+
+| lane | vs `mid` | vs `snare` | sum |
+|---|---|---|---|
+| the old `flux(res9)` on 150–2500 | 0.528 | 0.498 | 1.026 |
+| `rise8` 150–2500 alone (`B_SNARE`) | **0.647** | 0.570 | 1.217 |
+| `rise8` 150–600 alone (`B_HARM`) | 0.571 | 0.594 | 1.165 |
+| `rise8` on a NEW 150–800 filter | 0.615 | **0.601** | 1.216 |
+| `rise8` 150–1200 (new filter) | 0.627 | 0.586 | 1.213 |
+| **`rise8` MEAN of 150–600 and 150–2500** | 0.621 | 0.609 | **1.230** |
+| `rise8` MAX of the two (a union) | 0.586 | 0.589 | 1.176 |
+| `rise8` MIN of the two (a hard AND) | 0.628 | 0.573 | 1.201 |
+
+So the lane is
+
+```
+rise = ½·[ rect(dB[B_HARM]  − mean of the previous 8 hops of dB[B_HARM])
+         + rect(dB[B_SNARE] − mean of the previous 8 hops of dB[B_SNARE]) ]
+```
+
+against an absolute floor. Three properties earn each piece, and each sits on a measured plateau:
+
+- **TWO EXISTING bands, averaged.** A snare is a BODY (150–600) and a NOISE (up to ~2.5 kHz) at once, and a pad's
+  or an arp's swell is usually one band only, so averaging halves it. It is the only candidate near the top on both
+  references, and it needs **no new filter** — a 150–800 Hz lane of its own scores the same sum and would add an
+  eighth band to the bank. MAX is a union and keeps the loose band's false fires (Vienna P 0.46 against 0.59); MIN
+  is a hard AND and costs CyborgNinja's recall (0.48). Each band's rise is **rectified BEFORE the mean**, so a
+  falling band contributes 0 rather than cancelling the other; the other order was measured and is identical to
+  three decimals. The weight sweep 0 / .25 / .4 / .5 / .6 / .75 / 1 on the 150–600 term gives sums 1.220 / 1.228 /
+  1.226 / **1.224** / 1.216 / 1.195 / 1.149 — a plateau over .25–.6, so **plain half-and-half is the centre, not a
+  fit**.
+- **`SNARE_BASE` 8 hops (~85 ms), `KICK_BASE`'s own number.** Swept 6 / 7 / 8 / 9 → sum 1.270 / 1.275 / 1.270 /
+  1.194. One number serves both lanes and sits inside the plateau.
+- **`SNARE_RISE` 3.75 dB, with NO adaptive `fm + k·fd` term**, for §68's reason: a rise is a RATIO, so one dB number
+  travels across tracks and loudnesses. (Swept here too — `k` 1 buys 0.02 of sum and `k` 3 takes CyborgNinja's
+  recall 0.57 → 0.40.) Floor plateau 3.5 / 3.75 / 4.0 / 4.25 dB → 1.262 / 1.270 / 1.275 / 1.275; **3.75 is the end
+  of it where CyborgNinja keeps the most recall (0.57 against 0.55 at 4.0) and Vienna fires closest to its own rate
+  (1.25 /s against a truth of 1.83)**.
+- **`REFRACT[1]` 0.060 → 0.075 s.** The single biggest knob after the onset function: a rise against an 8-hop
+  baseline still reads ~7/8 of itself on the hop AFTER a hit (§68's own observation for the low lane), so the lane
+  needs the refractory explicitly. Swept 0.060 / 0.070 / 0.075 / 0.085 / 0.100 s → sum 1.224 / 1.275 / 1.275 /
+  1.275 / 1.266. **0.075 is the shortest on the plateau**: 0.085 (the low lane's) would block a 16th note above
+  176 BPM, and no track here goes there — which is exactly why the margin is taken on material we do not have.
+  Unlike the low lane this one needs no private `last`: `emit(1)` is unconditional (a snare has no beater gate), so
+  `last[1]` already IS the lane's last fire.
+- **`SNARE_LAG` 0.010 s**, the lane's own, replacing `ONSET_LAG`'s 0.006 — `KICK_LAG`'s story on the mid band. At
+  `ONSET_LAG` the median lag per track against `mid` reads +3 / +5 / +5 / +5 / +4 ms; the extra 4 ms puts it at
+  **−1 / +1 / +1 / +1 / 0 ms, mean +0.4**, which is the OLD lane's own mean to the digit (§58: "ears +0").
+- The existing level gate (`dB < p90 + GATE_DB`) is kept, per band, as the flux lane applied it.
+
+### The five-track table
+
+**`snareEvt`, node, whole track** (before → after), against both references:
+
+| | vs `mid` | vs `snare` (§69) |
+|---|---|---|
+| SeeYouDrop | 0.59 → **0.69** (P 0.52→0.63, R 0.69→0.77) | 0.51 → **0.59** (P 0.51→0.62, R 0.51→0.57) |
+| CyborgNinja | 0.72 → 0.72 (P 0.92→**0.99**, R 0.59→0.57) | 0.78 → **0.90** (P 0.77→0.94, R 0.79→0.87) |
+| WhoLikesToParty | 0.69 → **0.82** (P 0.79→0.82, R 0.62→0.81) | 0.52 → **0.64** (P 0.46→0.52, R 0.58→0.84) |
+| Malicious | 0.29 → **0.41** (P 0.20→0.30, R 0.56→0.68) | 0.28 → **0.46** (P 0.28→0.50, R 0.29→0.42) |
+| **Vienna** | 0.35 → **0.59** (P 0.24→**0.54**, R 0.71→0.65) | 0.32 → **0.53** (P 0.25→0.65, R 0.43→0.44) |
+| **mean F** | **0.528 → 0.646** | **0.482 → 0.624** |
+
+**10 of 10 rows up or flat**, and on Vienna's own rim/clap list the lane reads **P 0.84 / R 0.57 / F 0.68 at +2 ms**
+against the old lane's **P 0.37 / R 0.68 / F 0.48**. Lag p50 vs `mid` **+1 / +1 / +1 / +1 / −2 ms** against the old
++0 / +2 / +1 / −2 / +1.
+
+**Page, det, `&map=0`, `CLOCK=1`, 20–110 s, one `tools/filetrace.js` trace per track, `drumcheck.py`** — `snareEvt` F:
+
+| | vs `mid` | vs `snare` | lag p50 vs `mid` |
+|---|---|---|---|
+| SeeYouDrop | 0.69 → **0.73** | 0.63 → **0.68** | +0 → +1 ms |
+| CyborgNinja | 0.70 → **0.71** (P 0.92→**1.00**) | 0.78 → **0.91** | −9 → −12 |
+| WhoLikesToParty | 0.70 → **0.82** | 0.54 → **0.65** | +1 → +1 |
+| Malicious | 0.32 → **0.46** | 0.25 → **0.45** | −11 → −10 |
+| **Vienna** | 0.42 → **0.72** (P 0.29→**0.77**) | 0.32 → **0.55** (P 0.24→0.68) | −1 → −3 |
+
+### CyborgNinja's recall: the question was mis-framed
+
+The user accepted a recall loss. It is smaller than §68's preview (0.59 → **0.57**, not 0.61 → 0.51 — §68's figure
+came from the lab's own picker, the engine's reads 0.59), and the diagnosis says it should not be bought back.
+
+Of the **101** `mid` onsets the old lane found and the new one drops (`tools/work/v69/final.js --diag --diag2`):
+
+| | median two-band rise | median hat-band (5–12 k) rise | on the truth `high` list | on the §69 snare reference | on the `click` list |
+|---|---|---|---|---|---|
+| the 101 LOST | **2.46 dB** | 9.18 dB | 97 % | **21 %** | 41 % |
+| the 627 KEPT | **7.56 dB** | 9.63 dB | 99 % | **92 %** | 94 % |
+
+They are **hats** — a 150–2500 Hz flux list counts a hat's spill and a mid-band RISE rightly does not. Hat
+co-incidence is not the discriminator (94 % of the lost and 90 % of the kept have a hat within 30 ms; on this track
+almost everything does); the absence of a mid-band BODY is. Measured and **rejected**: a lower floor for the mid
+lane does buy the recall back and buys hats with it — floor 2.0 dB takes CyborgNinja R 0.58 → 0.69 and **92 % of
+the lane's fires onto a hat**, while its F against the snare reference falls 0.89 → 0.84. Also measured and not
+needed: excluding the >2.5 kHz band is what the 150–600 term already does inside the mean, and gating on the HIGH
+lane's own onset would veto 90 % of the real snares on this track. **Nothing was added.** The row the user was
+warned about moves −0.02 and the same track's F against the grid reference moves 0.78 → **0.90**.
+
+### What DUST does with it — §66's own complaint
+
+`tools/dust-trace.js` on the final tree, scene 1, `&map=0`, graded by `tools/work/v69/dustsnare.py` against
+`<T>.snare.json` at ±50 ms (§64's tolerance). The two traces of each pair differ only in `perc.js`. DUST's snare
+voice is the flash ring on the body annulus, and it fires on **the earlier of** `snareEvt` and the `snare2` edge
+(§58 task B), so it sees the lane through a union with a level that did NOT change.
+
+| | before | after |
+|---|---|---|
+| **Vienna 24–60 s** (truth 70 hits = 1.94 /s) | **173 fires (4.81 /s), P 0.29 / R 0.71 / F 0.41** | **114 fires (3.17 /s), P 0.45 / R 0.73 / F 0.55** |
+| … share of fires at the voice's FLOOR | **39 %** | **11 %** |
+| … amp at a matched fire / at an unmatched one | 0.618 / 0.263 | 0.642 / **0.417** |
+| **SeeYouDrop 20–110 s** (truth 307 = 3.41 /s) | 333 (3.70 /s), P 0.64 / R 0.70 / F 0.67 | **367 (4.08 /s), P 0.66 / R 0.79 / F 0.72** |
+| **CyborgNinja 20–50 s** (truth 110 = 3.67 /s) | 197 (6.57 /s), P 0.52 / R 0.93 / F 0.66 | 193 (6.43 /s), P 0.53 / R 0.94 / **F 0.68** |
+
+§66's own number is reproduced to the digit — **4.81 /s** — and it falls to 3.17, with the share of floor-sized
+flashes (the uneven big-and-tiny rhythm §64 named) going **39 % → 11 %**. Both controls are better too.
+
+**The remaining over-firing on Vienna is `snare2`'s, and that is measurable.** `tools/work/v69/voicesim.js` replays
+`voices.js`'s own `voice()` rule over each trace's columns under three trigger policies:
+
+| after the change | Vienna 24–60 (truth 1.94 /s) | SeeYouDrop 20–110 (3.41 /s) | CyborgNinja 20–50 (3.67 /s) |
+|---|---|---|---|
+| UNION (what ships) | 3.19 /s · P 0.45 · F 0.56 | 4.08 /s · P 0.66 · F 0.72 | 6.43 /s · P 0.53 · F 0.68 |
+| **the LANE alone** | **1.39 /s · P 0.80 · F 0.67** | 3.88 /s · P 0.68 · **F 0.73** | **3.17 /s · P 0.94 · F 0.87** |
+| `snare2` alone (unchanged) | 3.03 /s · P 0.42 · F 0.51 | 1.72 /s · P 0.74 · F 0.50 | 6.30 /s · P 0.53 · F 0.68 |
+
+The lane alone is now the best policy on **all three windows, including SeeYouDrop** — which is where §64's same
+question about the HAT had to keep the union, because coverage fell there. It is not taken here: it is a SCENE
+change the user has not seen, and a voice that drops the level loses its SIZE (the amp p50 sits at the floor 0.200,
+because `voices.js` deliberately does not read the ears' velocity — §51's "the velocity saturates"). It is §69's
+open item with the numbers already in hand.
+
+### The `snare2` decision: it stays synapse's
+
+`snare2` — the level the scenes read for SIZE, and TORUS2's default since 2026-09-29 — **does not move.** Measured
+both ways on the whole of all five tracks (`drumcheck.py --src ears,v2`): synapse's `snare2` reads mean F **0.664**
+against `mid` and **0.448** against the snare reference, the new lane **0.646** and **0.624**; per track the lane
+now wins on `mid` on 3 of 5 (SeeYouDrop 0.69 vs 0.63, WhoLikesToParty 0.82 vs 0.79, Vienna 0.59 vs 0.52) and on
+the grid reference on **5 of 5**, and its lag is ≈ 0 against `snare2`'s +5 / +10 / +10 / +6 / +12 ms. §51's own
+criterion — "synapse's are better than the ears' on 3 of 4 tracks" — has therefore flipped.
+
+It stays anyway, for three reasons that are not about the measurement: moving it needs a new `snare` / `snareFl`
+stream out of the ears and a strength rank in `engine/drums/drums.js` (the brief is the picker, not the reactive
+stage); it would move a scene's DEFAULT look, and §51's rule is that the default moves only on the user's word; and
+DUST's voice already fires on **the earlier of** `snareEvt` and the `snare2` edge, so the lane reaches the picture
+without it, with the level still SIZING each hit (voices.js: "the event only PLACES the hit"). The numbers that
+would justify moving it are in DUST's own table below, and it is the §69 open item.
+
+Note where each field comes from, because it decides what the lane reaches: in FILE + MAP mode
+`snareEvt` / `snareAge` / `snareVel` / `denS` are the map's own non-causal list (`features-ears.js mapOverride`),
+so **§69 is a LIVE-mode and `&map=0` change** — which is where the user's attention has been since 2026-09-28 —
+while `snare2`, being synapse's, is causal in every mode. The kick lane has the same split.
+
+### Everything else that reads these onsets, proved
+
+- **The whole-track MAP is byte-identical on all five tracks** (`md5 d809f6e7`, §68's own hash). `map.js` runs its
+  own `PercTrack` but collects only `'kick'` from it (`densE` is kicks per second), and `map.onsets.snare` is the
+  offline picker in `map/onsets.js` — 387 / 1078 / 1219 / 236 / 201, the truth's `mid` counts exactly.
+- **The LOW lane and the HAT are byte-identical**, column for column, on all five node traces: `lowEvt`, `lowFl`,
+  `lowT`, `kickEvt`, `kickVel`, `denK`, `hatEvt`, `denH`. The two lanes share only `BANDS`, and class 1 touches
+  `p95[1]` / `last[1]` / `hist[1]` and nothing else.
+- **The live build / drop detector (§54) is byte-identical** on all five tracks: `buildLive`, `dropLiveIn`,
+  `dropLiveEvt`, `dropEvt`, `dropEnv`, `tension`, `subGate`, `bassReg`. `build/feed.js` reads bass / hp / sub, not
+  snares. 89 of the 122 columns of `tools/build-node.js`'s trace are identical on every track.
+- **The bar store (§50) moves and improves.** `bars/feed.js` takes `denS` in `FEAT_NAMES` and `snareEvt` / `snareAge`
+  in `EVT`, so `barMatch` and the bar events move. Graded by `predcheck.py` on the same node traces, the store's
+  SNARE route: SeeYouDrop pred F 0.562 → **0.608**, reactive 0.591 → **0.693**; Vienna pred F 0.300 → **0.337** with
+  P 0.420 → **0.796** and lag p90 +14.0 → **+1.6 ms**, reactive 0.353 → **0.590** with P 0.235 → 0.542. The kick and
+  hat routes of the same ruler are unmoved to the digit.
+- **The predicted-event queue (§55) moves and improves on 4 of 5.** `nextSnareIn` (`queuecheck.py`): SeeYouDrop
+  0.59 → **0.64** (jumps 23.7 → **9.4** /min) · CyborgNinja 0.45 → 0.39 (31.3 → 25.9) · WhoLikesToParty 0.55 →
+  **0.66** (18.6 → **5.5**) · Malicious 0.10 → **0.25** (75.0 → 33.6) · **Vienna 0.30 → 0.33 with P 0.42 → 0.76,
+  lag p90 13 → 8 ms and 8.1 → 0.0 jumps/min** — and Vienna's predicted snare PERIOD becomes 0.66 s, the half note
+  at 90 BPM, against 0.33 before. `nextKickIn` / `nextHatIn` / `nextBeatIn` / `nextBarIn` / `nextDropIn` are
+  unmoved on every track.
+- **§59's clock tables move; they were re-measured on all five tracks** (`tools/clock-study.js` + `gridcheck.py
+  --heard`, the whole track). The PCM clock takes every percussion onset as a phase measurement
+  (`clock.js R_CLS[1]` = 1.5), so this is the one stage §68 could prove unmoved and §69 cannot:
+
+  | | lock | lag med | \|lag\| p50 / p90 | within ±30 ms | conf on / off beat |
+  |---|---|---|---|---|---|
+  | SeeYouDrop | 9.2 → 12.0 s | +1 → +3 ms | 8/19 → 8/21 | 98 → 97 % | 0.93/0.47 → 0.93/0.80 |
+  | **CyborgNinja** | **17.9 → 3.4 s** | +1 → +1 | 2/4 → **1/3** | 93 → **97 %** | 0.93/0.93 → 0.94/0.92 |
+  | WhoLikesToParty | 5.6 → 5.6 s | +6 → +6 | 6/9 → 6/10 | 99 → 99 % | 0.93/0.92 → = |
+  | Malicious | 6.1 → 6.1 s | +23 → **+30** | 23/36 → 30/49 | 80 → **50 %** | 0.90/0.90 → 0.91/0.90 |
+  | **Vienna** | 20.9 → 20.9 s | +6 → **+4** | 7/82 → **5/67** | 73 → 74 % | 0.91/0.86 → 0.92/0.81 |
+
+  **CyborgNinja's lock — §59's own worst number — falls from 17.9 s to 3.4 s** and its in-octave accuracy rises to
+  97 %. The two rows that get worse are stated, not hidden: SeeYouDrop's lock (9.2 → 12.0 s) and the confidence
+  separation §68 had just won there (off-beat 0.47 → 0.80), and **Malicious's bias** (+23 → +30 ms), which drops it
+  through the 30 ms gate from 80 % to 50 % — on the one track whose truth grid is marked "tempo only" and whose own
+  tempo is 0.33 BPM from the clock's, and whose BIAS-REMOVED steadiness is unchanged (94 → **95 %** within ±30 ms
+  of its own median). Nothing in the lane is tuned on the clock.
+- **The fake-timeline md5 sweep: 0 of the 24 lines move.** The ears never run under `#test`; taken as an ISOLATED
+  pair in a `git worktree` of HEAD (`PORT=8906 tools/scene-md5.sh`) with only `perc.js` different, per §60's harness
+  rule. 12 scenes, `errs []` on every one, both sides.
+- **Cost: inside the noise.** `Ears.push` over the whole of Vienna, three interleaved old/new pairs per run, two
+  runs: best **72.85 → 72.92** µs per 512-sample block (+0.1 %) and **73.36 → 73.03** (−0.4 %) — the two runs
+  disagree in sign, so the change is under the ±0.5 % this machine can resolve. **The machine was NOT idle** (load
+  average 3.5–3.8 throughout; the busy processes are outside this session and could not be stopped), which is why
+  only the interleaved pair is quoted. Expected: the band COUNT is unchanged — both bands were already in the bank
+  — and the lane adds 16 adds and 2 divides per hop at 94 hops/s against a 7-band 4th-order filter bank running at
+  48 kHz. `test_ears.js`'s own gate reads 0.0605 → 0.0579 ms median per block against a 0.19 ms budget.
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing
+  soft-cap warns) · **`npm test` OK**. `tools/test_drums.js` has **9 new cases** on two synthetics, each graded
+  against the old lane in a worktree of HEAD: **a rim on 2 and 4 under 16th hats over a continuous mid bed** (the
+  CyborgNinja geometry — without the bed a hat on silence is an infinite rise in every band it touches, however
+  faint, and the test would say nothing) reads **40 fires for 40 rims, P 1.000 / R 1.000 at lag p50 −8.7 ms**
+  against the old lane's **51 fires, P 0.78**, with the hat lane untouched at 310 fires for 320 hats either way;
+  and **a snare under a 1.5 s mid pad swell** fires once, on the stick, where the old lane fires twice inside the
+  swell (1.034 and 1.162 s) — §64's "a median lags a swell", one band down. `snareEvt` / `snareVel` / `denS` all
+  follow the lane in the same cases. `tools/test_ears.js`'s own windows read snare F (25–45 / 57–90 / 105–130 s)
+  **0.72 / 0.73 / 0.64 → 0.67 / 0.83 / 0.72** at n 513 → 470 and its onset-error row snare med −1 p90 6 → −1 p90
+  11 ms; its 4 failures at 48 kHz are pre-existing and unmoved.
+- **No audible run.** Every number above is the deterministic file path or node.
+
+### Open, for the orchestrator
+
+- **§68 open item 1 is CLOSED, and with it §66 open item 2 and §64 open item 2.** The lane is in the picker, so
+  every reader benefits: `snareEvt`, `snareAge`, `snareVel`, `denS`, DUST's flash ring, the bar store's
+  fingerprints, the predicted queue's snare row and the PCM clock's phase measurements.
+- **`snare2` is the next decision and it is the user's** (above): the lane now beats synapse's level on the grid
+  reference 5 of 5 and on `mid` 3 of 5, at ~0 ms against +5…+12, but moving it needs a new stream out of the ears
+  and it moves TORUS2's DEFAULT look.
+- **DUST's snare voice could take the lane ALONE** — better on all three windows, including the control §64 had to
+  protect. One argument in `assets/scenes/dust/index.js`; it needs the user's eye and a size for an unconfirmed
+  hit, not another number.
+- **Malicious's PCM clock bias** +23 → +30 ms (80 % → 50 % within ±30 ms of a truth grid marked "tempo only" and
+  0.33 BPM away; bias-removed 94 → 95 %). The one row that gets worse and cannot be blamed on the reference.
+- **SeeYouDrop's PCM lock** 9.2 → 12.0 s and the confidence separation §68 had just won there (off-beat 0.47 →
+  0.80). Both are the same track's clock finding fewer, cleaner snare measurements early.
+- `tools/truth/<T>.snare.json` is built from the truth BEAT grid, so like the kick reference it inherits each
+  track's grid — Vienna's `Vienna.json` is still `provisional` and Malicious is "tempo only", which is why `mid` is
+  still graded beside it rather than replaced.
+- The lab and sweep scripts are `tools/work/v69/{lab,sweep,cmp,fine,grid,final,lagsel,snarelab,voicesim,dustsnare,
+  diffcols,cost,syndbg*}.js|py`, gitignored like §68's; the reference BUILDER was promoted to
+  `tools/truth/snaretruth.py` because `drumcheck.py` now depends on its output.
+- **`tools/accept.sh` still has not been run since v0.14** (§65 item 5, unchanged by this session).
+
+**The A/B watch list, in TRACK time** (the user listens in stream / live mode, where the lane is what the scenes read;
+in file + map mode `snareEvt` is still the map's own list and only `snare2` is causal):
+- **Vienna 0:24–1:00** — the rim/clap on beats 2 and 4. DUST's flash ring should now land ON the backbeat and stop
+  flickering between hits: 4.81 → 3.17 flashes/s against a groove of 1.94, and the tiny floor-sized flashes 39 % →
+  11 %. This is §66's own complaint ("the snare voice is still the loudest wrong voice").
+- **Vienna 1:46–2:00** (drop 2) — the same ring over the octave change; the lane's precision there is where the
+  biggest gain is.
+- **CyborgNinja 0:20–0:50** — the control for "does it still fire enough at 160 BPM". The ring's rate is unchanged
+  (6.57 → 6.43 /s) but the beat should sit tighter: the PCM clock locks at **3.4 s instead of 17.9**.
+- **SeeYouDrop 0:20–1:50** — the second control; the ring fires a little MORE often (3.70 → 4.08 /s against a truth
+  of 3.41) and better placed. Watch whether its clock feels slower to settle (lock 9.2 → 12.0 s).
+- **Malicious** — the one track that gets worse: the beat grid sits ~7 ms further off the truth. Nothing else on
+  this track is reliable either (§51: neither detector finds its kicks).

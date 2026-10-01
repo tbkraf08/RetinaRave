@@ -104,6 +104,28 @@ WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`
    would arm it also arms on CyborgNinja (0.35–6.71 false arms / min). If the user wants something there it has to come
    from the file map (`&map=1` has it) or a hand annotation.
 
+**2026-10-01, §69 (the snare lane):** §68's first open item below is **CLOSED**, and with it **§66 item 2 and §64
+item 2** — `assets/engine/ears/perc.js`'s snare lane is now the MEAN of the 150-600 and 150-2500 Hz bands' RISE
+over their own 85 ms local means, against an absolute 3.75 dB floor, refractory 75 ms, lag 10 ms (DECISIONS §69,
+`docs/AUDIT-drums.md` "§69"). `snareEvt` mean F over the five tracks **0.528 -> 0.646** against the truth's `mid`
+and **0.482 -> 0.624** against the new `<T>.snare.json` grid reference — 10 of 10 rows up or flat — with Vienna
+**P 0.24 -> 0.54** (page 0.29 -> **0.77**) and its rim/clap list **P 0.37 -> 0.84 / F 0.48 -> 0.68 at +2 ms**. Lag
+unchanged (mean +0.4 ms). **CyborgNinja's recall is 0.59 -> 0.57, not the 0.51 §68 previewed, and the 101 `mid`
+onsets it drops are HATS** (median two-band rise 2.46 dB against the kept 7.56; 21 % on the snare reference against
+92 %), so nothing was added to buy them back. The map, the LOW lane, the HAT and the live build / drop detector are
+byte-identical; the bar store and the predicted-snare queue improve on 4-5 of 5; **§59's clock tables moved** —
+CyborgNinja's PCM lock **17.9 -> 3.4 s** and Vienna's |lag| p90 82 -> 67 ms, against SeeYouDrop's lock 9.2 -> 12.0 s
+and **Malicious's bias +23 -> +30 ms** (its bias-removed steadiness unchanged). **Three things it leaves open:**
+- **`snare2` did NOT move** and is now the loose half of DUST's union. Measured: the lane beats synapse's `snare2`
+  on the grid reference on 5 of 5 tracks and on `mid` on 3 of 5, at a lag of ~0 against `snare2`'s +5…+12 ms, so
+  §51's "synapse's are better on 3 of 4" has flipped. Moving it needs a new `snare` / `snareFl` stream out of the
+  ears and a strength rank in `engine/drums/drums.js`, and it would move TORUS2's DEFAULT look — the user's word.
+- **DUST's snare voice could take the lane ALONE** (`assets/scenes/dust/index.js`, one argument). Simulated off the
+  trace with `voices.js`'s own rule (`tools/work/v69/voicesim.js`): see DECISIONS §69's table. This is §64's hat
+  question one band down, and §64's answer there was that coverage matters more than precision — so it needs the
+  user's eye, not another number.
+- **Malicious's PCM clock bias** (above), on a track whose truth grid is "tempo only".
+
 **2026-10-01, §68 (the low lane):** item 1 below is **CLOSED** — `assets/engine/ears/perc.js`'s low lane is now a
 60-150 Hz band graded on its RISE over a short local baseline against an absolute 5 dB floor (commit `fbc57ae`,
 DECISIONS §68, `docs/AUDIT-drums.md` "§68"). Vienna `kick2` F **0.19 -> 0.42** against the kick truth (P 0.18 ->

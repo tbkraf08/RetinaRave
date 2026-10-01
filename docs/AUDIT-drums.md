@@ -132,3 +132,92 @@ did) · §59's lattice jumps and lock times (CyborgNinja +3 → +1 ms, still 17.
 - **The snare / rim lane is the same shape and was not built** (DECISIONS §68 "Open"): the same rise on the EXISTING
   150–2500 Hz band takes the snare's mean F against the truth's `mid` from **0.528 → 0.633**, Vienna's P from **0.22
   → 0.76**, at the cost of CyborgNinja's recall 0.61 → 0.51 — one decision, not a measurement.
+
+---
+
+## §69 — the snare lane is the two MID bands' RISE (2026-10-01, DECISIONS §69, commit `e136243`)
+
+**Why.** §51 kept the snare on the HPSS-lite flux because "synapse's are better than the ears' on 3 of 4 tracks".
+§64 then found the mechanism that makes that family wrong — *a running median lags a swell* — on the HIGH band, and
+§66 found its scene-side cost on the MID one: on Vienna DUST's snare voice fires **4.81 /s against a groove of
+1.94 /s at P 0.29**, and §64's own swell veto does not transfer (AUC 0.615). §68 built the same fix for the LOW
+lane and measured the snare's, leaving one decision — CyborgNinja's recall — which the user took ("yes").
+
+**The change** (`assets/engine/ears/perc.js`, the only engine file). Class 1 leaves `flux = res9[i] − res9[i−1]`
+for `rise = ½·[rect(dB₃[i] − mean₈(dB₃)) + rect(dB₄[i] − mean₈(dB₄))]` over the two EXISTING mid bands — `B_HARM`
+150–600 Hz (the body) and `B_SNARE` 150–2500 Hz (the noise) — against an **absolute 3.75 dB floor with no adaptive
+term**, `REFRACT[1]` **0.060 → 0.075 s**, and the lane's own `SNARE_LAG` 0.010 s. No new filter: both bands are
+already in the bank. The hat keeps the flux; the low lane is untouched.
+
+**Why TWO bands.** The two references disagree about which band to grade on *because each was built on one of them*
+— the truth's `mid` is a 150–2500 Hz list and §69's new grid reference a 150–800 Hz one. Mean F over the five
+tracks against both, at each candidate's own best floor:
+
+| lane | vs `mid` | vs `snare` | sum |
+|---|---|---|---|
+| the old flux lane | 0.528 | 0.498 | 1.026 |
+| rise on 150–2500 alone | **0.647** | 0.570 | 1.217 |
+| rise on 150–600 alone | 0.571 | 0.594 | 1.165 |
+| rise on a NEW 150–800 filter | 0.615 | **0.601** | 1.216 |
+| **the MEAN of 150–600 and 150–2500** | 0.621 | 0.609 | **1.230** |
+| MAX of the two (a union) | 0.586 | 0.589 | 1.176 |
+| MIN of the two (a hard AND) | 0.628 | 0.573 | 1.201 |
+
+The mean is the only candidate near the top on both, it needs no new filter, and the weight sweep (0 / .25 / .4 /
+.5 / .6 / .75 / 1 on the 150–600 term) plateaus over .25–.6, so plain half-and-half is the centre rather than a fit.
+Each knob sits on a plateau too: floor 3.5 / 3.75 / 4.0 / 4.25 dB → sum 1.262 / 1.270 / 1.275 / 1.275, baseline
+6 / 7 / 8 / 9 hops → 1.270 / 1.275 / 1.270 / 1.194, refractory 0.060 / 0.070 / 0.075 / 0.085 / 0.100 s → 1.224 /
+1.275 / 1.275 / 1.275 / 1.266. 3.75 dB is the end of the floor plateau where CyborgNinja keeps the most recall and
+Vienna fires closest to its own rate; 8 hops is `KICK_BASE`, one number for both lanes; 0.075 s is the shortest
+refractory on its plateau (0.085 would block a 16th above 176 BPM).
+
+**Result** (`tools/drums-node.js` + `tools/truth/drumcheck.py`, whole track, `snareEvt`):
+
+| | vs `mid` | vs `snare` (new) |
+|---|---|---|
+| SeeYouDrop | 0.59 → **0.69** (P 0.52→0.63, R 0.69→0.77) | 0.51 → **0.59** |
+| CyborgNinja | 0.72 → 0.72 (P 0.92→**0.99**, R 0.59→0.57) | 0.78 → **0.90** (P 0.77→0.94, R 0.79→0.87) |
+| WhoLikesToParty | 0.69 → **0.82** (P 0.79→0.82, R 0.62→0.81) | 0.52 → **0.64** |
+| Malicious | 0.29 → **0.41** | 0.28 → **0.46** |
+| **Vienna** | 0.35 → **0.59** (P 0.24→**0.54**) | 0.32 → **0.53** (P 0.25→0.65) |
+| **mean F** | **0.528 → 0.646** | **0.482 → 0.624** |
+
+**10 of 10 rows up or flat.** Lag p50 vs `mid` **+1 / +1 / +1 / +1 / −2 ms** against the old +0 / +2 / +1 / −2 / +1
+— the same mean (+0.4 ms), §58's "ears +0" preserved. The page agrees (`&map=0`, 20–110 s): vs `mid` 0.69 → 0.73 ·
+0.70 → 0.71 · 0.70 → **0.82** · 0.32 → **0.46** · Vienna 0.42 → **0.72** (P 0.29 → **0.77**); vs `snare` 0.63 →
+0.68 · 0.78 → **0.91** · 0.54 → 0.65 · 0.25 → 0.45 · Vienna 0.32 → 0.55.
+
+**CyborgNinja's recall, diagnosed rather than bought back.** The 101 `mid` onsets the new lane drops have a median
+two-band rise of **2.46 dB** against the kept ones' 7.56 and a median HAT-band rise of 9.18 against 9.63 — they are
+**hats**, which a 150–2500 Hz flux list counts and a mid-band rise rightly does not: **21 %** of them are on the
+§69 snare reference against **92 %** of the kept ones, and **97 %** are on the truth's `high` list. A lower floor
+does buy the recall back (2.0 dB → R 0.69) and takes **92 % of the lane's fires onto a hat**; at 3.75 dB that
+share is 98 % *of fires that are also snares*, and the lane's F against the snare reference goes the other way,
+0.78 → **0.90**. So the measured "recall 0.61 → 0.51" the user accepted is really 0.59 → 0.57 here, and it is a
+precision gain in disguise. Nothing was added to recover it.
+
+**A fourth snare reference.** `tools/truth/snaretruth.py` writes `tools/truth/<T>.snare.json` — the offline
+150–800 Hz rise at the truth beat grid's 16th lines, `kicktruth.py`'s method on the mid band — and `drumcheck.py`
+grades `snare` against it beside `mid`. It exists because `mid` is itself a median-residual flux list and on Vienna
+reads **1.04 onsets/s where §66's hand-built rim/clap list reads 2.0**. Validated: it reproduces that hand list at
+**P 1.00 / R 0.97 at lag +0 ms** (150–600 reads 0.87 / 0.81, 150–2500 0.98 / 0.90), lists **1.83 hits/s** on Vienna
+against §66's own measured 1.81, and reproduces CyborgNinja's `mid` at **P 0.97** and WhoLikesToParty's at 0.81.
+
+**DUST's snare voice** (`tools/dust-trace.js`, scene 1, `&map=0`, `tools/work/v69/dustsnare.py`, ±50 ms): Vienna
+24–60 s **173 fires at 4.81 /s, P 0.29 → 114 at 3.17 /s, P 0.45** against a groove of 1.94 /s — §66's own 4.81 /s
+reproduced to the digit — with the share of floor-sized flashes **39 % → 11 %**. Controls: SeeYouDrop 20–110 s
+333 → 367 fires, P 0.64 → 0.66 / F 0.67 → **0.72**; CyborgNinja 20–50 s 197 → 193, F 0.66 → **0.68**.
+
+**Unmoved:** the whole-track map byte-identical on all five tracks (`md5 d809f6e7`) · the LOW lane, the HAT and the
+live build / drop detector byte-identical, column for column · the fake-timeline md5 sweep, 0 of 24 lines, taken as
+an isolated pair in a worktree of HEAD · cost `Ears.push` 72.85 → 72.92 and 73.36 → 73.03 µs/block over two
+interleaved runs — the two disagree in sign, so it is under the ±0.5 % a machine at load 3.5 can resolve.
+
+### Open after §69
+
+- **`snare2` did NOT move** (DECISIONS §69 "the `snare2` decision"): it is still synapse's level, and it is now the
+  loose half of DUST's union. On Vienna 24–60 s the voice's three policies read **union 3.19 /s at P 0.45 · the
+  lane alone 1.39 /s at P 0.80 · `snare2` alone 3.03 /s at P 0.42** against a truth of 1.94 /s.
+- Malicious's PCM clock bias moves +23 → +30 ms (its bias-removed steadiness is unchanged at 94 → 95 %); on a
+  track whose own truth grid is "tempo only" and 0.33 BPM off, the 30 ms gate cliff-edges from 80 % to 50 %.
+- `tools/accept.sh` still has not been run since v0.14 (§65 item 5, unchanged).
