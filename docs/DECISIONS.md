@@ -5740,3 +5740,9 @@ snare / hat term: both would be fitted to a 23 ms annotation offset.
   re-made, but it is a RULER change with every table downstream of it: not taken here.
 - **SeeYouDrop's PCM lock 9.2 → 12.0 s** (§69's other losing row) is untouched and still open.
 - The +11 ms page/node gap on Malicious's clock (§59 recorded it; neither reading is the one in doubt).
+
+**v0.25 tagged locally (2026-10-01) on the user's word ("I looked at torus2 and dust both look better -> tag what we have"; deploy
+still held):** v0.24 + §70 (`kickAmp` / `snareAmp`; DUST's ring and TORUS2's waves on the lane alone) + §71 (Malicious's bias is
+its truth grid). `releases/retinarave-v0.25.html` (from `file://` on scene 3: errs [], nonFinite [], clock pcm), package.json
+0.25.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: 1. Malicious's truth grid, 2. the `Quantile` sign
+session, 3. `kickAmp` → CHLADNI.
