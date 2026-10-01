@@ -243,7 +243,7 @@ const SELF = {
     // EARS pass 2 — clamp it. The kick touches no figure and no colour: one element, one channel.
     //
     // THE SIZE IS `kickAmp`, AND IT GOES IN AS AN ENERGY (§74). Two measured reasons, both of which the v0.25 look
-    // hid because `kickVel` was pinned at 1.0 on 83-87 % of its hits:
+    // hid because `kickVel` was pinned at 1.0 on 46-87 % of its hits (87 % on this scene's own SeeYouDrop):
     //   (a) `kickVel` is a CONT history field and the ears read one by interpolating the ring AT heard time, while an
     //       onset's audio time is ~16 ms BEFORE the hop that found it — so ON THE EVENT FRAME it still holds the
     //       PREVIOUS hit's velocity (§70). Armed there, it correlates 0.172 with the hit it is throwing for;
@@ -264,7 +264,8 @@ const SELF = {
     // the snare is one bright ring crossing the plate. Both placed by their own age, both dying with it.
     U.ripA = Math.max(0, MS.hatAge);
     U.ripK = RIPK;
-    U.ripD = RIPD * clamp(MS.hatVel, 0, 1.5);
+    U.ripD = RIPD * clamp(MS.hatVel, 0, 1.5);   // the hat keeps the RANK: there is no `hatAmp` (§70 — the hat is the
+                                                // one class on the HPSS-lite flux, with no rise in dB to publish)
     const sa = Math.max(0, MS.snareAge);
     U.snR = SNSPD * sa;
     // the ring's brightness is `snareAmp` (§74), for the same two reasons as the kick's size, minus the square:

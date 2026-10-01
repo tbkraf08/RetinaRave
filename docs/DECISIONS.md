@@ -6117,3 +6117,285 @@ fixed-time grains, the onset lists, the contour and the sub runs are byte-identi
   preserves across a re-run.
 - **A note on this file:** the §72 section below §73 is where a concurrent worker's `git add docs/DECISIONS.md` put it
   (commit `2a8670b`, which swept this section in with its own seven lines). Both sections are intact; the order is not.
+
+## §74 CHLADNI's kick is `kickAmp`, and the throw is an ENERGY — the stale-on-the-event-frame trap, and `lpSweep`'s knee (2026-10-01, one worker; §70's open items 2 and 3 and §73's open items 1 and 2, the user's word: priority 3, "`kickAmp` → CHLADNI")
+
+Two commits: `64a9b19` the `dinfo()` ruler, `c8a8d6a` the kick / snare / fog leans and the file split.
+**Not tagged, not pushed, not deployed.**
+
+### What §73 alone did to CHLADNI — because no scene was measured in that session
+
+§73's own words were *"at the shipped constants the scenes' own inputs barely did"* move. For CHLADNI that is
+wrong, and the reason is in this scene's own shaders: **`kickVel` is fed in as a LAUNCH VELOCITY and the leap's
+peak height is (v·w)² / 2g, so the field is read SQUARED.** The scene had no ruler at all (no `hooks.dinfo()`),
+so nothing had ever counted it.
+
+`tools/dust-trace.js <T> <t0> <t1> <out> 11` (`&map=0`, `CLOCK=1`, `GPU=1`) on the four A/B windows, the v0.25
+side in an isolated `git worktree` at `35242cf` with only `assets/scenes/chladni/` carrying the new read-only
+`dinfo()` (and nothing else: the s11 md5 pair below is byte-identical across all three trees, so the ruler
+cannot have moved the picture). `kH` is the leap's peak at the median grain's `w`, as a multiple of the
+validated full throw (0.1430 plate units):
+
+| | v0.25 | HEAD = §73 |
+|---|---|---|
+| **SeeYouDrop** kick size p50 · at 1.000 | 1.000 · 68 % | **0.629 · 23 %** |
+| … throw height p50, x the validated throw | **1.00** | **0.40** |
+| … lum lift per kick p50 · settle dip p50 | +24.0 · 0.340 | +15.8 · 0.270 |
+| **CyborgNinja** throw height p50 · lumC lift | 0.45 · +58.6 | 0.33 · +49.0 |
+| **Vienna** throw height p50 · lumC lift | 0.86 · +92.2 | 0.55 · +72.2 |
+| **Malicious** throw height p50 · lumC lift | 1.00 · +75.6 | 0.48 · +62.6 |
+| **the plate ring** snF p50 · at the 0.55 ceiling (SYD/CN/VI/MAL) | 0.54 / 0.48 / 0.55 / 0.53 · 40 / 16 / 53 / 30 % | 0.42 / 0.43 / 0.49 / 0.42 · 9 / 11 / 31 / 6 % |
+| **`lpSweep`** p50 · frames over 0.5 (same order) | 0.00 / 0.00 / 0.00 / 0.00 · 0 / 0 / 0 / 3 % | **0.35 / 0.45 / 0.19 / 0.33 · 15 / 39 / 24 / 22 %** |
+| … and so the fog: lumC p50 | 185.2 / 150.4 / 151.7 / 147.2 | **168.4 / 131.8 / 145.7 / 137.7** |
+
+So §73 **more than halved the median kick's throw** on three of the four tracks and **switched a dead channel
+on**: the plate's centre lost 4-12 % of its brightness to a fog that had never existed, permanently, because
+the field drives it raw. Both are the honest fields finally arriving; neither is the look anyone tuned.
+
+### The kick: `kickAmp`, and the size is the throw's ENERGY
+
+**`kickVel` is unusable for this read, and not because of its spread.** It is a `CONT` history field and the
+ears read one by interpolating the ring AT heard time, while an onset's audio time is ~16 ms BEFORE the hop
+that found it (§70). So on the frame the event fires it still holds the **previous** hit's velocity. Measured
+on CyborgNinja 20-50 s, 85 kicks: the velocity read on the event frame correlates **0.172** with the velocity
+of the hit it is arming; `kickAmp` on the same frame correlates **0.986**, and `kickAmp` changes on event
+frames and on **no others** (75 changes, all 75 on an event frame, min 0.3135 = the lane's own threshold).
+Up to v0.25 this was invisible because the velocity was pinned at 1.0 on 46-87 % of hits. **§73 made the field
+honest and so made the staleness bite.** That kills the third option §73 offered as well as the first.
+
+**And the field must go in as the throw's ENERGY, not its velocity.** `uLeap.y` is multiplied by the age, so
+the height is quadratic: a size of 0.55 fed in as `v` shows **0.30** of the full throw. The brief's channel is
+*"how high that kick throws the sand"* — a HEIGHT — so `v = sqrt(size)` and the height is linear in the field.
+At a size of 1 that is byte-for-byte the validated v0.15 throw, so **the loud hits keep the look they were
+tuned at and only the soft ones come down**, which is exactly the shape the ask names. The scatter
+(`CH_KICKJ`) is a velocity too and takes the same root. `DROPV` 2.40 was always a velocity and is unchanged.
+
+Both readings were measured, the raw one in a second isolated worktree at `64a9b19` with that one line changed:
+
+| track | | v0.25 | HEAD (§73) | `kickAmp` raw | **§74** |
+|---|---|---|---|---|---|
+| **SeeYouDrop 20-110 s** | throw height p10 / p50 / p95, x the validated throw | 0.66 / 1.00 / **1.00** | 0.18 / 0.40 / **1.00** | 0.13 / 0.32 / **1.00** | 0.36 / 0.56 / **1.00** |
+| | the size armed, p50 · at 1.000 | 1.000 · 68 % | 0.629 · 23 % | 0.563 · 9 % | 0.750 · 9 % |
+| | lumC lift per kick p50 · lum lift p50 | +54.9 · +24.0 | +56.5 · +15.8 | +53.5 · +15.0 | **+58.1 · +18.6** |
+| | settle DIP per kick p50 | 0.340 | 0.270 | 0.212 | 0.281 |
+| **CyborgNinja 20-50 s** | throw height p10 / p50 / p95 | 0.23 / 0.45 / **1.00** | 0.14 / 0.33 / **1.00** | — | 0.39 / 0.56 / **1.00** |
+| | lumC lift · lum lift · settle dip | +58.6 · +12.7 · 0.334 | +49.0 · +9.8 · 0.355 | — | **+52.5 · +13.3 · 0.391** |
+| **Vienna 24-60 s** (kick p95 amp 0.57) | throw height p10 / p50 / p95 | 0.74 / 0.86 / **1.00** | 0.36 / 0.55 / **1.00** | 0.11 / 0.19 / **0.32** | 0.34 / 0.44 / **0.57** |
+| | lumC lift · lum lift · settle dip | +92.2 · +18.5 · 0.462 | +72.2 · +15.2 · 0.390 | **+47.2 · +9.8 · 0.267** | +66.8 · +12.5 · 0.363 |
+| **Malicious 20-80 s** (kick p95 amp 0.79) | throw height p10 / p50 / p95 | 0.70 / 1.00 / **1.00** | 0.28 / 0.48 / **1.00** | 0.10 / 0.16 / **0.63** | 0.32 / 0.40 / **0.79** |
+| | lumC lift · lum lift · settle dip | +75.6 · +12.3 · 0.445 | +62.6 · +8.9 · 0.354 | +42.0 · +6.2 · 0.272 | +57.7 · +8.7 · 0.363 |
+
+**The raw reading is rejected on Vienna's row and nothing else.** A quiet master's LOUDEST kick would throw
+**32 %** of the validated height (Malicious 63 %) and its lumC lift per kick would fall 92 → 47, below §73's
+already-reduced 72 — limp, which is precisely what the ask said to check. The energy reading holds Vienna's
+loudest at **57 %** and Malicious's at **79 %**, with the lift at 67 and 58 (HEAD: 72 and 63). **A per-track
+slow normaliser was therefore not needed and is declined**: §73 already measured where it leads — `kickVel`'s
+per-track p95 is 1.000 on all five tracks, so it would put every track's loudest kick at full height and
+delete §70's whole point, that a soft track reads soft. A soft track now reads soft in the one channel the
+brief gives the kick, and the FLOOR (0.3125, the lane's own threshold over its 16 dB span) means no throw is
+invisible: the smallest possible kick still throws 31 % of the validated height.
+
+On the two reference tracks the result is **above v0.25 on the per-kick lift** (SeeYouDrop +54.9 → +58.1 lumC,
+CyborgNinja +12.7 → +13.3 lum) with the median hit at 0.56 of the full throw instead of 1.00 — the grading is
+there and the loud kicks are not weaker than they were. The one number that does not come back is the plate's
+standing brightness (SeeYouDrop lumC p50 185 → 169 with the fog off entirely): less airborne sand at any one
+moment is the direct, intended consequence of grading the throw.
+
+### The predicted route carries no size, and does not need one
+
+`chladni.kickAge=predKickAge` (CONTRACTS Appendix A) replaces only the AGE; the SIZE is still armed by the real
+`kickEvt`, and `kickAmp` is HELD between events, so **a predicted kick is thrown at the last real kick's size** —
+the right answer on a four-on-the-floor, and no code. Proved end to end with the route in the hash
+(`&route=chladni.kickAge%3DpredKickAge`, SeeYouDrop 60-80 s): `d_kAge` equals `max(0, predKickAge)` on
+**1201 / 1201** frames and the real age on 0, **24 predicted throws in 20 s**, size p10 / p50 / p95
+0.566 / 0.694 / 0.812, lumC lift per throw p50 **+65.5**, and the armed size never below **0.560** = `sqrt(KSFLOOR)`.
+`KSFLOOR` is what answers "before the first real kick": the lane's own 0.3125, so the first predicted throw of a
+track is a threshold-sized throw and not a dead one.
+
+### The snare: `snareAmp`, `SNAMP` unchanged — and the ring was the wrong size all along
+
+§70 held this back as *"a brightness recalibration of a validated default"*. The recalibration is real, and it
+is not the reason to move: **the ring's brightest frame is the event frame** (`exp(-snareAge/SNTC)` = 1 there),
+which is exactly where `snareVel` is stale. So the flash's size correlated with the hit it belonged to at
+**−0.011 / 0.305 / −0.027 / 0.073** on the four tracks in v0.25 — nothing at all on SeeYouDrop and Vienna —
+and 0.183-0.453 after §73. With `snareAmp` it is **0.997-1.000**.
+
+| the plate ring | v0.25 | HEAD (§73) | **§74 (`snareAmp`)** |
+|---|---|---|---|
+| **SeeYouDrop** snF p10/p50/p95 · at the 0.55 ceiling | 0.517 / 0.537 / 0.550 · 40 % | 0.262 / 0.419 / 0.550 · 9 % | 0.181 / 0.265 / **0.510** · 1 % |
+| … corr(the flash's peak, its own hit) · lumM lift p50 (349) | **−0.011** · +27.0 | 0.379 · +23.7 | **0.999** · +19.8 |
+| **CyborgNinja** snF p10/p50/p95 · at the ceiling | 0.365 / 0.482 / 0.550 · 16 % | 0.268 / 0.426 / 0.550 · 11 % | 0.187 / 0.270 / **0.550** · 6 % |
+| … corr · lumM lift p50 (95) | 0.305 · +41.3 | 0.453 · +38.2 | **0.999** · **+39.7** |
+| **Vienna** snF p10/p50/p95 · at the ceiling | 0.463 / 0.550 / 0.550 · 53 % | 0.390 / 0.487 / 0.550 · 31 % | 0.224 / 0.325 / **0.412** · 0 % |
+| … corr · lumM lift p50 (49) | **−0.027** · +49.3 | 0.183 · +37.6 | **1.000** · +35.3 |
+| **Malicious** snF p10/p50/p95 · at the ceiling | 0.470 / 0.532 / 0.550 · 30 % | 0.342 / 0.422 / 0.550 · 6 % | 0.177 / 0.210 / **0.346** · 0 % |
+| … corr · lumM lift p50 (145) | 0.073 · +22.8 | 0.331 · +17.4 | **0.997** · +16.7 |
+
+**`SNAMP` stays 0.55** and the arithmetic says why: brightness is LINEAR in the field, so there is no square to
+undo, and the loudest hits on the two reference tracks still reach the validated ceiling (snF p95 0.510 and
+0.550 — their `snareAmp` p95 on these windows is 0.94 and 1.00). The quiet masters' loudest read 0.41 and 0.35,
+which is §70's sentence in this channel. Raising `SNAMP` to keep the MEDIAN at the validated brightness would
+need **1.11** and would push the loud hits past 1.0 — against the user's own *"I don't want it to be so bright
+that can't see the shapes"*. **The ring is NOT left binary**: it never was one in the eye, it was one brightness
+attached to the wrong hit, and the measured cost of fixing it is a 4-27 % smaller median flash in the body
+annulus (lumM lift p50 +41.3 → +39.7 CyborgNinja, +27.0 → +19.8 SeeYouDrop).
+
+The HAT keeps the rank: `hatVel` is all there is — §70 established there is no `hatAmp`, the hat being the one
+class still on the HPSS-lite flux with no rise in dB to publish. Its ripple is stale on its own event frame for
+the same reason, and that is an open item below, not something this session can fix.
+
+### `lpSweep`: live, and a RELATIVE measure — so a knee, and an ease
+
+CHLADNI's `params.fog` is `lpSweep`'s only reader anywhere. Run over the WHOLE of all five tracks with the real
+`Ears` on the page's det time base (`tools/work/v74/lpprof.js`):
+
+```
+lpSweep p25 / p50 / p75 / p90 / p99      last 20 s p50  vs the rest
+SeeYouDrop        0.238 0.407 0.559 0.967 0.999      0.956  vs 0.371     <- a real closing filter
+CyborgNinja       0.321 0.547 0.658 0.745 0.853      0.456  vs 0.555     <- LOWER at the end
+WhoLikesToParty   0.464 0.732 0.840 0.897 0.956      0.627  vs 0.746     <- LOWER at the end
+Malicious         0.226 0.413 0.586 0.736 0.920      0.325  vs 0.423     <- (its last 10 s do read 0.955)
+Vienna            0.039 0.348 0.592 0.766 0.962      0.403  vs 0.340
+```
+
+The field is `clamp01(1 − roll / roll's own running p90)`, so **a track sits part of the way up it by
+construction** and its middle says nothing about a filter. Only SeeYouDrop's outro is the thing the help text
+promises, and it reads 0.96 there against 0.37 for the body. Fed raw, the fog greyed the plate 34 % and dimmed
+the sand 25 % on CyborgNinja for the whole track.
+
+**The lean is a knee in `params.fog`'s own `from()`** — `smoothstep(FOGLO 0.80, FOGHI 0.97, lpSweep)` — swept
+0 / 1 (raw), 0.55 / 0.95, 0.65 / 0.95, 0.72 / 0.96, **0.80 / 0.97**, 0.85 / 0.98, eased, over whole tracks:
+
+| knee | frames with fog over 0.5 (SYD / CN / WLTP / MAL / VI) | SeeYouDrop last 20 s vs the rest |
+|---|---|---|
+| raw | 27 / 55 / 74 / 30 / 30 % | 0.993 vs 0.288 |
+| 0.72 / 0.96 | 18 / 0 / 18 / 2 / 4 % | 0.992 vs 0.000 |
+| **0.80 / 0.97** | **17 / 0 / 7 / 1 / 2 %** | **0.964 vs 0.000** |
+| 0.85 / 0.98 | 17 / 0 / 2 / 1 / 2 % | 0.883 vs 0.000 |
+
+0.80 / 0.97 is where the body of every track is off and the one real closing filter still reaches 0.96; 0.85
+starts eating that outro and 0.72 leaves WhoLikesToParty an 18 % veil. **And the output is EASED at `FOGTC`
+0.50 s, which is its own fix:** the raw field steps by 0.13-0.26 at its p99 and by **0.20-0.66 in a single
+frame** at its worst on the four A/B windows — a jump under CONTRACTS §1.9, on a channel that greys the whole
+plate, and it was there in v0.25 too (max step 0.20 / 0.24 / 0.37 / 0.56) where the field was merely too dead
+for it to matter. Eased, the per-frame step's p99 is 0.000-0.020 and its max 0.000-0.028.
+
+| the fog, on the A/B window | v0.25 | HEAD (§73) | **§74** |
+|---|---|---|---|
+| **SeeYouDrop** fog p50 / p90 · over 0.5 · max step | 0.000 / 0.098 · 0 % · 0.200 | 0.353 / 0.530 · 15 % · 0.456 | 0.000 / 0.000 · 0 % · **0.000** |
+| **CyborgNinja** | 0.000 / 0.157 · 0 % · 0.244 | 0.454 / 0.653 · 39 % · 0.404 | 0.000 / 0.000 · 0 % · **0.001** |
+| **Vienna** | 0.000 / 0.000 · 0 % · 0.369 | 0.193 / 0.682 · 24 % · 0.661 | 0.000 / 0.024 · 3 % · **0.028** |
+| **Malicious** | 0.000 / 0.281 · 3 % · 0.555 | 0.327 / 0.657 · 22 % · 0.625 | 0.000 / 0.001 · 0 % · **0.010** |
+| … and the plate: lumC p50 (same four) | 185 / 150 / 152 / 147 | 168 / 132 / 146 / 138 | 169 / **142** / 141 / 138 |
+
+The fog is now a channel that waits for the music it is named after. **Nothing about it is validated** — it had
+no behaviour before §73 — so it is on the watch list below.
+
+### The file split, and the ruler
+
+`index.js` was 479 lines before this session and the changes took it to 536, past check.js's **hard 500 cap**
+(not the 350 soft one). Two subjects came out, both mechanical: **`cam.js`** — the eye's own geometry
+(`FOV` / the two registers' pitch and distance / `CAMTC` / `BOUNCE` / `TILTB` / near-far, `EYE`, `BAS`,
+`camera()`, `lookVP()`) — and **`ears.js`** — the ear block the scene reads, the tonic's slow latch and the two
+test pins (`EARS`, `PRESETS`, `PINS`, `figure()`, `ears()`, `readEars()`). `index.js` is **428 lines**, 51 fewer
+than at HEAD; the soft-cap warn stands and is one of six in the repo (the others 361-467). The split is proved
+byte-identical by the md5 pair below and by the four traces.
+
+**`hooks.dinfo()` is new** (commit `64a9b19`): `tools/dust-trace.js` records every numeric key of a scene's
+read-only `dinfo()`, and CHLADNI published none, which is why no ruler had ever counted a throw. It reports the
+kick's held size / age / `kH` / scatter, the ring, the drive, gate, lift, spiral, glow, fog, the figure, and
+`set` / `air` from the **settle instrument** — the fraction of the sand within `DELTA` of a nodal line, which is
+the number a throw actually moves (a readback, so a pipeline stall, which is why it lives in `dinfo` and never
+in `update()` / `draw()`). `CH_KICKJ` became `export const KICKJ` in `shaders.js` so the scene and the shader
+share one number; the template prints it back byte-identical.
+
+### The proofs
+
+- **`node tools/check.js` 0 fail** (159 modules, 202 uniforms, MS keys 207, `help.feats` gaps 0, the 6 soft-cap
+  warns) · **`npm test` exit 0**, every suite clean. `tools/test_chladni.js` needed **no change**: it tests
+  `assets/math/chladni.js`'s numerics (the figure, the table, the slide's continuity, the Bessel rings, the GLSL
+  twin) and encodes no scene-side size at all, and `math/` was not touched.
+- **The s11 fake-timeline md5, the first time it is recorded** (`IDS="11" tools/scene-md5.sh`, `GPU=1`,
+  1280x720), as an isolated pair — a pristine worktree at `35242cf` against this tree:
+  ```
+  s11-f360.jpg  8a930b26be89a46ec070dae9a897ce03     <- IDENTICAL on v0.25, §73 and §74
+  s11-f840.jpg  5a5c795afac268921e60ae09b18fdbbb
+  ```
+  `scene 11 errs []` on both, `hop 840 row 72`. **0 of the 2 lines move**, and that is the prediction, not a
+  surprise: under `#test` the ears never run, so `kickEvt` is false and `kickAmp` / `snareAmp` 0 and `snareAge`
+  99 and `lpSweep` 0 — and `smoothstep(0.80, 0.97, 0)` is 0, so the eased fog never leaves 0 either. It is §70
+  open item 4 in this scene: **the fake timeline cannot exercise any of the three channels this session changed.**
+  No other scene's lines can have moved — the diff is `assets/scenes/chladni/` and nothing else, not `math/`,
+  not `core/`, not `engine/` (HARNESS "What to re-prove": a scene-folder change is proven on its own lines).
+- **The continuity monitor on scene 11, on a real track** (`tools/monitor.js` with
+  `CARD.NAV = CARD.REG[11].scene.state`, SeeYouDrop from 20 s, 70 s, `GPU=1`): **`n` 4206 frames, `viol` [],
+  `fast` 0, the worst undeclared jump 0.0289** against the 0.06 threshold. `CARD.ERRS` 0.
+- **Cost flat.** `CARD.bench(11, 300)` interleaved with `bench(0, 300)` in the same page, `q` **and `Q.ceil`**
+  pinned 0.95 (the pacer's own step sinks `q` after a blocking bench — the plain `setInterval` of the HARNESS
+  recipe left it at 0.75, tier 2, and the grain count follows the tier), 9 s warm-up, the first pair of each run
+  discarded, two runs per tree, `points` 150000 and `gl.getError()` 0 on every one: **ratio median 0.856 (v0.25,
+  eight pairs 0.762-0.900) → 0.837 (§74, eight pairs 0.708-0.871)**. The two spreads overlap completely and
+  NAV's own absolute ms drifted 13 % between runs, which is why only the ratio is quoted. Expected: one
+  `Math.sqrt` per kick event and one `ema` + one `smoothstep` per frame. **The machine was not idle** (load
+  2.5-3.8, the user's own Chrome).
+- **`tools/parity.js` was not run**: it compares the core / engine against v3 and this diff is one scene folder.
+- **No audible run.** Every number is the deterministic file path (`&map=0`, `CLOCK=1`), the node harness or the
+  fake timeline. At most two page Chromes, on `PORT=8914` / `8915`; the user's server on 8765 was never touched.
+  A 19-hour-old orphaned headless Chrome from an earlier session (`tools/chr9678`, reparented to systemd) was
+  killed by pid before the bench.
+- Scratch, gitignored like §70's and §73's: `tools/work/v74/` — `chl.py` (the per-hit ruler), `cmp.py` (the
+  before/after tables), `lpprof.js` (`lpSweep` over whole tracks + the knee sweep), `bench.sh`, and the
+  16 traces `{base,head,varA,after}-{SYD,CN,VI,MAL}.json` plus `route-SYD.json`. The two worktrees
+  (`/tmp/rr-v73base` at `35242cf`, `/tmp/rr-v74A` at `64a9b19`) are removed.
+
+### Open, for the orchestrator
+
+- **The fog has never been validated by anyone** — it had no behaviour until §73 and no tuning until now. The
+  knee's two numbers are fitted to five tracks' distributions, not to an eye. **SeeYouDrop's last 20 s is the
+  one place on the four A/B tracks where it does anything at all**, and the A/B window (20-110 s) does not
+  reach it: watching the fog means watching the outro.
+- **The hat's ripple is stale on its own event frame** and there is nothing to move it to: `hatVel` read at
+  `hatAge` ≈ 0 is the previous hat's rank, and §70 established there is no `hatAmp` because the hat's onset
+  function is a median-residual flux with no magnitude in dB. Either the hat lane grows a rise in dB (an engine
+  item) or the ripple's depth is read a frame or two late on purpose (a scene item). Measured consequence not
+  yet taken: the hat fires 8-16/s, so consecutive hats are usually similar and the error is small.
+- **`kickVel` / `snareVel` are no longer read by this scene** and came out of `feats` and `help.feats`
+  accordingly (a route to a field nobody reads is a lie — `route.js`). They are still published, still routable
+  on other scenes, and `snare2` / `kick2` are untouched. **DUST's kick voice and TORUS2's kick wave still size
+  themselves from `kick2`'s rank** — §70 open item 3 and §73 open item 3, still unmeasured, and this session is
+  evidence for `kickAmp` there too: the staleness argument applies to any one-shot armed on an event.
+- **The plate's standing brightness fell and did not come back** (SeeYouDrop lumC p50 185 → 169 with no fog at
+  all), because there is less sand in the air at any moment once the throw is graded. If the user wants the old
+  density back, the lever is `LEAPK` or `SANDB`, not the field — and raising `LEAPK` would take the loud hits
+  past the validated throw.
+- **Vienna and Malicious now read visibly softer than SeeYouDrop and CyborgNinja in the kick AND the ring**
+  (loudest throw 57 % / 79 % of full, loudest ring 0.41 / 0.35 against 0.51 / 0.55). That is §70's design
+  working, and it is the first time this scene has shown it. If the user reads it as "those tracks look weak",
+  the per-track normaliser is the lever and the decision is theirs, not the measurement's.
+- Carried and still open: `tools/accept.sh` has not been run since v0.14; SeeYouDrop's PCM lock 9.2 → 12.0 s;
+  the fake timeline carries no percussion events (§70 item 4, which is why s11's md5 cannot see this session);
+  `tools/parity.js fake`'s pre-existing NAV rows.
+
+**The A/B watch list, in TRACK time.** Old = `releases/retinarave-v0.25.html` from `file://` (pre-§73 CHLADNI);
+new = `http://127.0.0.1:8765/`. **Scene 11 has no digit key** — press **`n`** to cycle to it (ids 9+ have none),
+or open `#scene=11`. In FILE + map mode `kickAmp` / `snareAmp` are the map's own velocities, so use stream /
+live mode or `&map=0` to see the lane's.
+- **SeeYouDrop 0:20-1:50, the kick** — the one to look at first and the track this scene was tuned on. In v0.25
+  essentially every kick threw the sand to the same full height (68 % of hits at size 1.000); now the loud ones
+  still reach that height and the median reaches 56 % of it. Watch for the throw reading as GRADED rather than
+  as weaker: the per-kick lift is slightly ABOVE v0.25 (+54.9 → +58.1 lumC) even though the median throw is
+  lower. What genuinely did go down and stayed down is how much sand is in the air between kicks.
+- **SeeYouDrop 2:17-2:37 (the outro), the FOG** — the only place on these four tracks where `lpSweep` reaches a
+  real closing filter (p50 0.956 against 0.371 for the body). The plate should grey and dim into its figure
+  there, and nowhere else. **Against the OLD build the comparison is three-way**: v0.25 had no fog at all, HEAD
+  had 0.35 everywhere, and this has it only here.
+- **Vienna 0:24-1:00 and Malicious, the kick** — the quiet-master test. Their loudest kicks now throw 57 % and
+  79 % of the full height where v0.25 threw ~100 %. If that reads as limp rather than as honest, say so: the
+  raw absolute reading (rejected here at 32 % / 63 %) is the direction NOT to go, and the per-track normaliser
+  is the other way.
+- **CyborgNinja 0:20-0:50, the fog** — the control. Its whole track sat at fog 0.45-0.55 under HEAD (39 % of
+  frames over 0.5) and now sits at 0.000. The plate's centre goes 132 → 142 and the sand stops being dimmed.
+- **Any track, a soft kick against a hard one** — the new thing to look for in this scene, and the thing the
+  validated default could not show: the height of the throw and the brightness of the ring now follow how big
+  the hit was, and the ring in particular is now attached to the RIGHT hit (its correlation with its own hit was
+  −0.01 to 0.31 in v0.25).

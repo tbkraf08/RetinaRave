@@ -147,15 +147,28 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
    SeeYouDrop), the offline map byte-identical. `*Vel` now spreads p10 0.24-0.30 / p50 0.51-0.63 with **12-14 %**
    of true hits at the ceiling instead of 43-92 %, so it CAN be tuned against — but it is a per-track RANK (its
    per-track p95 is 1.000 on all five tracks) and `kickAmp` / `snareAmp` remain the absolute SIZE a scene reads.
-   `lpSweep`, which read a p50 of exactly 0.000 on all five tracks, is a live channel for the first time.
-2. **CHLADNI's plate ring still reads `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`). It
-   flashed at full brightness on 52-91 % of hits; since §73 fixed the quantile it flashes at a GRADED brightness on
-   86-88 % and the ring is no longer a binary. Moving it to `snareAmp` instead takes it to 0.33-0.69 — a BRIGHTNESS
-   recalibration of a validated scene's default (`SNAMP` would be re-tuned either way), not a trigger change. The
-   worker on priority 3 (`kickAmp` -> CHLADNI) now has three options, not two, and it wants the user's A/B.
-3. **`kickAmp` is published and no kick consumer moved** (the §70 brief forbade it). DUST's kick voice and TORUS2's
-   kick wave still size themselves from `kick2`, whose strength RANK §51 built precisely because `kickVel`
-   saturated. Rank vs `kickAmp` is now a measurable question and is not measured.
+   `lpSweep`, which read a p50 of exactly 0.000 on all five tracks, is a live channel for the first time —
+   **and §74 found it is a RELATIVE measure whose middle means nothing**: its p50 over the five whole tracks is
+   0.35 / 0.55 / 0.73 / 0.41 / 0.35 and it is over 0.5 on 27-74 % of their frames, while a real closing filter
+   reads 0.94-0.98 (only SeeYouDrop's outro, 0.956 against 0.371 for the body; on CyborgNinja, WhoLikesToParty
+   and Malicious the last 20 s read LOWER than the body). Its one reader anywhere, CHLADNI's fog, now takes it
+   through `smoothstep(0.80, 0.97, ·)` eased at 0.5 s; **nothing about that channel is validated by an eye.**
+2. ~~**CHLADNI's plate ring still reads `snareVel`**~~ — **CLOSED by DECISIONS §74** (2026-10-01, commits
+   `64a9b19` / `c8a8d6a`), and the reason to move turned out not to be the brightness at all. The ring's
+   BRIGHTEST frame is the event frame (`exp(-snareAge/0.16)` = 1 there) and that is exactly where a `*Vel` is one
+   hit stale, so the flash's size correlated with the hit it belonged to at **-0.011 / 0.305 / -0.027 / 0.073**
+   on SeeYouDrop / CyborgNinja / Vienna / Malicious in v0.25 — nothing at all on two of them — and 0.18-0.45
+   after §73. On `snareAmp` it is **0.997-1.000**. `SNAMP` is UNCHANGED at 0.55: brightness is linear in the
+   field so there is no square to undo, and the loudest hits on the two reference tracks still reach the
+   validated ceiling (snF p95 0.510 / 0.550) while the quiet masters' loudest read 0.41 / 0.35, which is §70's
+   own sentence in this channel. The median flash in the body annulus is 4-27 % smaller (lumM lift p50 +41.3 ->
+   +39.7 CyborgNinja, +27.0 -> +19.8 SeeYouDrop). Still wants the user's A/B, now as a look and not a question.
+3. **`kickAmp` is published and DUST's and TORUS2's kick consumers still have not moved** (the §70 brief forbade
+   it; CHLADNI's did, in §74). DUST's kick voice and TORUS2's kick wave still size themselves from `kick2`, whose
+   strength RANK §51 built precisely because `kickVel` saturated. Rank vs `kickAmp` is still not measured there —
+   but §74 adds an argument that applies to any one-shot armed on an event: a `*Vel` read ON the event frame is
+   the PREVIOUS hit's velocity (correlation **0.172** with the hit it arms, against `kickAmp`'s **0.986**), so a
+   rank is only usable a frame or two late.
 4. **The fake timeline carries no percussion EVENTS**, so `#test` cannot exercise an event-driven channel at all:
    `snareEvt` false, `snareAge` 99, `snareAmp` 0 (read off the page at f840), while `snare2` is synapse's own fake
    level. That is why **4 of the 24 md5 lines moved** (DUST s1 and TORUS2 s3, f360 + f840) and the other 20 did
@@ -164,6 +177,34 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
    the `parity.js` NAV rows above, not a scene one.
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
+
+**2026-10-01, §74 (CHLADNI's kick, snare and fog):** §70's open items 2 (above) and the CHLADNI half of §73's 1 and 2
+are **CLOSED** (DECISIONS §74, commits `64a9b19` the `dinfo()` ruler + `c8a8d6a` the leans). **What §73 alone had done
+to CHLADNI, which no one had measured:** the throw's height is `(v·w)²/2g` in the size fed to `uLeap.y`, so an honest
+`kickVel` p50 of 0.63 threw **0.40x** as high as the validated look, not 0.63x — the median kick's throw more than
+halved on three of four tracks (SeeYouDrop 1.00 -> 0.40 of full, Malicious 1.00 -> 0.48, Vienna 0.86 -> 0.55) — and a
+raw `lpSweep` put a **permanent** fog on the plate (CyborgNinja fog p50 0.45 for the whole track, the plate's centre
+150 -> 132). **The leans:** the kick's size is `kickAmp` floored at the lane's own 0.3125 and goes in as the throw's
+ENERGY (`v = sqrt(size)`, so the HEIGHT is linear in the field and a size of 1 is byte-for-byte the validated v0.15
+throw); the ring is `snareAmp` with `SNAMP` unchanged; the fog is `smoothstep(0.80, 0.97, lpSweep)` eased at 0.5 s.
+`feats` / `help.feats` moved with the reads. **Measured:** the loud hits keep the validated throw on all four tracks
+and the median reaches 0.40-0.56 of it; the per-kick lift is ABOVE v0.25 on both reference tracks (+54.9 -> +58.1 lumC
+SeeYouDrop); Vienna's loudest throws 57 % of full where the RAW absolute reading left it at **32 %** (lumC lift per
+kick 92 -> 47), which is the row that rejected it. s11's two fake-timeline md5 lines are **byte-identical across
+v0.25, §73 and §74** (recorded for the first time: `8a930b26…` / `5a5c795a…`) because `#test` cannot exercise any of
+the three channels. Continuity monitor on scene 11, SeeYouDrop 70 s: **4206 frames, 0 violations**, worst undeclared
+jump 0.0289 of 0.06. Cost flat (interleaved ratio median 0.856 -> 0.837, eight pairs each side, spreads overlapping).
+`index.js` 479 -> **428** lines with `cam.js` and `ears.js` split out (it had passed the hard 500 cap). **Open:**
+- **The fog is tuned to five tracks' distributions and to no eye.** On the four A/B tracks the only place it does
+  anything is **SeeYouDrop's last 20 s** — the A/B window 20-110 s never reaches it.
+- **The hat's ripple is stale on its own event frame** and there is nothing to move it to: `hatVel` at `hatAge` 0 is
+  the previous hat's rank and there is no `hatAmp` (§70 — the hat is the one class on the HPSS-lite flux, no dB rise).
+  Either the hat lane grows a rise in dB (engine) or the depth is read a frame or two late (scene).
+- **The plate's standing brightness fell and stays down** (SeeYouDrop lumC p50 185 -> 169 with the fog off entirely):
+  grading the throw means less sand in the air at any moment. The lever is `LEAPK` / `SANDB`, not the field.
+- **Vienna and Malicious now read softer than SeeYouDrop and CyborgNinja in BOTH hit channels** (loudest throw 57 % /
+  79 % of full, loudest ring 0.41 / 0.35 against 0.51 / 0.55). That is §70's design showing for the first time on this
+  scene; if the user reads it as weakness the per-track normaliser is the lever and the call is theirs.
 
 **2026-10-01, §68 (the low lane):** item 1 below is **CLOSED** — `assets/engine/ears/perc.js`'s low lane is now a
 60-150 Hz band graded on its RISE over a short local baseline against an absolute 5 dB floor (commit `fbc57ae`,
