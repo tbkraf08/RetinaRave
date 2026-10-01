@@ -77,7 +77,7 @@ console.log('the low lane under a sub drone (§68)');
     L[i] = x;
   }
   const ears = new Ears(SR), B = 512, bl = new Float32Array(B);
-  const low = [], kick = [], vel = [], den = [];
+  const low = [], kick = [], vel = [], den = [], amp = [];
   let next = 0;
   for (let s = 0; s + B <= N; s += B) {
     bl.set(L.subarray(s, s + B)); ears.push(bl, bl, s / SR);
@@ -85,7 +85,7 @@ console.log('the low lane under a sub drone (§68)');
     while (next <= tEnd) {
       const o = ears.read(next);
       for (const e of ears.lowReleased) low.push(e.t);
-      for (const e of ears.events) if (e.type === 'kick') { kick.push(e.t); vel.push(o.kickVel); den.push(o.denK); }
+      for (const e of ears.events) if (e.type === 'kick') { kick.push(e.t); vel.push(o.kickVel); den.push(o.denK); amp.push(o.kickAmp); }
       next += 1 / 60;
     }
   }
@@ -113,6 +113,14 @@ console.log('the low lane under a sub drone (§68)');
     `min ${Math.min(...vel).toFixed(3)} max ${Math.max(...vel).toFixed(3)}`);
   ok('denK counts the lane\'s hits in the last second (2 kicks/s here)', den.length > 8 && Math.abs(den[den.length - 1] - 2) <= 1,
     `last ${den[den.length - 1]} /s`);
+  // §70: the same synthetic thud, +9 dB over the drone it is masked by, read through the 16 dB span -> ~0.31-0.56.
+  // The spread is the attack's intra-hop PHASE (a 0.5 s beat is 46.875 hops, so each kick lands differently inside
+  // its hop and a part-filled hop shows part of the rise); what matters is that NOTHING reads 1.000, where `kickVel`
+  // puts 28 of these 39 identical kicks at the ceiling.
+  const ceil = (a) => a.filter((x) => x >= 0.9995).length;
+  ok('kickAmp is the rise over the 16 dB span, and never the ceiling (§70)',
+    amp.length > 8 && Math.max(...amp) < 0.95 && Math.min(...amp) > 0.2 && ceil(amp) === 0 && ceil(vel) > 8,
+    `amp ${Math.min(...amp).toFixed(3)}-${Math.max(...amp).toFixed(3)}, ${ceil(amp)} at 1.000; kickVel ${Math.min(...vel).toFixed(3)}-${Math.max(...vel).toFixed(3)}, ${ceil(vel)} of ${vel.length} at 1.000`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -217,6 +225,47 @@ console.log('the snare lane: a snare under a mid pad swell (§69)');
     `${inSwell.length} fires during the swell`);
   ok('... and the held pad after it fires nothing either', snare.filter((t) => t > HIT + 0.3).length === 0,
     `${snare.filter((t) => t > HIT + 0.3).length} after the stick, ${snare.length} in the whole ${DUR} s`);
+}
+
+// THE HIT'S SIZE (§70): `snareAmp` is the lane's own two-band RISE over an absolute 12 dB span, so a soft hit and a
+// hard one read different sizes where `snareVel` reads 1.000 for 52-91 % of the five tracks' hits (the velocity's
+// divisor is `Quantile(0.95, ...)`, which in this engine's dsp.js settles on the (1 - q) quantile = the lane's p5).
+// ONE rim template, scaled: the only difference between the three runs is the hit's amplitude, so the amp's own
+// mapping is what is being measured. The hit starts ON a hop boundary — a rim that starts mid-hop shows only part of
+// its rise in the hop that fires, and that phase swamps the amplitude itself.
+console.log('the hit\'s size: a soft and a hard snare (§70)');
+{
+  const SR = SYN_SR, HOP = 512 / SR, AT = 470 * HOP;
+  const RN = Math.round(0.20 * SR), rnd = rngf(4242), RIM = new Float32Array(RN);
+  for (let i = 0; i < RN; i++) { const d = i / SR; RIM[i] = Math.exp(-d / 0.045) * (0.7 * Math.sin(2 * Math.PI * 220 * d) + 0.5 * rnd()); }
+  const hit = (a) => {
+    const N = Math.round((AT + 1.5) * SR), L = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const t = i / SR;         // the same continuous mid bed the rim test uses
+      L[i] = 0.10 * (Math.sin(2 * Math.PI * 300 * t) + Math.sin(2 * Math.PI * 700 * t) + Math.sin(2 * Math.PI * 1500 * t)) / 3; }
+    for (let i = 0; i < RN && 470 * 512 + i < N; i++) L[470 * 512 + i] += a * RIM[i];
+    const ears = new Ears(SR), B = 512, bl = new Float32Array(B), out = [];
+    let next = 0;
+    for (let s0 = 0; s0 + B <= N; s0 += B) {
+      bl.set(L.subarray(s0, s0 + B)); ears.push(bl, bl, s0 / SR);
+      const tEnd = (s0 + B) / SR;
+      while (next <= tEnd) { const o = ears.read(next);
+        for (const e of ears.events) if (e.type === 'snare') out.push({ t: e.t, amp: o.snareAmp, vel: o.snareVel });
+        next += 1 / 60; }
+    }
+    return { all: out, at: out.filter((x) => Math.abs(x.t - AT) < 0.05) };
+  };
+  const soft = hit(0.11), mid = hit(0.30), hard = hit(0.35), under = hit(0.10);
+  ok('a hit under the lane\'s 3.75 dB floor does not fire at all', under.all.length === 0 && soft.at.length === 1,
+    `${under.all.length} fires at a=0.10, ${soft.at.length} at a=0.11`);
+  ok('a SOFT snare (just over the floor) reads snareAmp 0.3 +- 0.1', Math.abs(soft.at[0].amp - 0.3) <= 0.1,
+    `${soft.at[0].amp.toFixed(3)} (the floor itself maps to 3.75/12 = 0.3125)`);
+  ok('a HARD snare reads snareAmp 1.0 +- 0.1', hard.at.length === 1 && Math.abs(hard.at[0].amp - 1.0) <= 0.1,
+    `${hard.at[0].amp.toFixed(3)} at a=0.35, ${mid.at[0].amp.toFixed(3)} at a=0.30`);
+  ok('... and the SPAN does the work, not the clamp: 3.2x the amplitude is +10 dB of rise',
+    mid.at[0].amp > soft.at[0].amp + 0.4 && mid.at[0].amp < 1,
+    `a 0.11 -> 0.30 moves the amp ${soft.at[0].amp.toFixed(3)} -> ${mid.at[0].amp.toFixed(3)} (20log10(0.30/0.11)/12 = ${(20 * Math.log10(0.30 / 0.11) / 12).toFixed(3)})`);
+  ok('snareVel on that same frame carries nothing (the ring is one hit stale)',
+    soft.at[0].vel === 0 && hard.at[0].vel === 0, `vel ${soft.at[0].vel} soft / ${hard.at[0].vel} hard, amp ${soft.at[0].amp.toFixed(3)} / ${hard.at[0].amp.toFixed(3)}`);
 }
 
 console.log(FAIL ? `test_drums: ${FAIL} FAILED` : 'test_drums: OK');

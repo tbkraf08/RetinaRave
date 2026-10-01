@@ -34,8 +34,10 @@ const KEY_FIELDS = ['key', 'mode'];
 const EVT = ['subNoteEvt', 'subIn', 'subOut', 'kickEvt', 'snareEvt', 'hatEvt'];
 const MAP_FIELDS = ['mapOn', 'toDrop', 'toBoundary', 'buildProg', 'mapSection', 'mapNext', 'mapReturn', 'eG', 'mapDropEvt', 'mapBoundaryEvt'];
 // the three percussion classes the map overrides, and the sub fields it overrides
-const PCLS = [['kick', 'kickEvt', 'kickAge', 'kickVel', 'denK'], ['snare', 'snareEvt', 'snareAge', 'snareVel', 'denS'],
-  ['hat', 'hatEvt', 'hatAge', 'hatVel', 'denH']];
+// `amp` is §70's unsaturated size (`kickAmp` / `snareAmp`); the HAT has none (perc.js: the hat is still the flux
+// lane, which has no rise in dB to publish), so its slot is null and `mapOverride` skips it.
+const PCLS = [['kick', 'kickEvt', 'kickAge', 'kickVel', 'denK', 'kickAmp'], ['snare', 'snareEvt', 'snareAge', 'snareVel', 'denS', 'snareAmp'],
+  ['hat', 'hatEvt', 'hatAge', 'hatVel', 'denH', null]];
 const SUB_EVT = [['noteT', 'subNoteEvt', 'subNote'], ['inT', 'subIn', 'subIn'], ['outT', 'subOut', 'subOut']];
 
 export const EARS = {
@@ -136,7 +138,7 @@ function mapOverride(M, t, S) {
   EARS.tRead = t;
   const rel = t + Math.min(REL_LEAD, 0.5 * EARS.dtRead);
   for (let c = 0; c < 3; c++) {
-    const [cls, ev, age, vf, den] = PCLS[c], list = M.onsets[cls];
+    const [cls, ev, age, vf, den, af] = PCLS[c], list = M.onsets[cls];
     let fired = false;
     while (EARS.oi[c] < list.length && list[EARS.oi[c]].t <= rel) {
       const e = list[EARS.oi[c]++];
@@ -149,6 +151,11 @@ function mapOverride(M, t, S) {
     S[ev] = fired;
     S[age] = EARS.last[c] === -9 ? 99 : t - EARS.last[c];      // may be negative by up to `lead` on the release frame
     S[vf] = EARS.vel[c];
+    // §70: in FILE+map mode the hit's SIZE is the map's own velocity. That one is an OFFLINE numpy p95 over the
+    // class's own peak fluxes (`map/onsets.js` VEL_P), so unlike the causal `*Vel` it does not saturate and needs no
+    // second definition — `kickAmp` / `snareAmp` are the same number as `kickVel` / `snareVel` on this path, and the
+    // honest size the causal path had to build is simply what the map already published.
+    if (af) S[af] = EARS.vel[c];
     S[den] = h.length / DEN_WIN;
   }
   mapSubAt(M, t, EARS.sub);

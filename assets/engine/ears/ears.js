@@ -16,6 +16,7 @@ export const EARS_FIELDS = [
   'subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subNoteEvt', 'subPure', 'subGate', 'subIn', 'subOut',
   'tonic', 'tonicMinor', 'tonicConf', 'bassReg',
   'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 'kickVel', 'snareVel', 'hatVel',
+  'kickAmp', 'snareAmp',
   'denK', 'denS', 'denH', 'pulse', 'lpSweep', 'width',
 ];
 // the continuous fields, in the order the history ring stores them
@@ -24,6 +25,11 @@ const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 
   'pulse', 'lpSweep', 'width'];
 const EVENTS = { subNote: 'subNoteEvt', subIn: 'subIn', subOut: 'subOut', kick: 'kickEvt', snare: 'snareEvt', hat: 'hatEvt' };
 const AGES = { kick: 'kickAge', snare: 'snareAge', hat: 'hatAge' };
+// §70 — the two rise lanes' unsaturated SIZE. NOT a CONT field: `kickVel` / `snareVel` are read back from the history
+// ring at heard time, and an onset's audio time is ~16 ms before the hop that found it, so on the release frame the
+// ring still holds the PREVIOUS hit's velocity. A size a scene reads on the frame it fires has to be the hit's own, so
+// it rides the released event the way the AGE does (perc.js `emit`). Held until the next hit of that class, 0 before any.
+const AMPS = { kick: 'kickAmp', snare: 'snareAmp' };
 // The sub-share smoothing the gate sees, asymmetric: the sub ARRIVING must be seen at once (a symmetric 0.45 s made subIn
 // 262 ms late at drop 1), the sub losing ownership of the low end is a section-level fact and may take its time (a fast
 // fall made the gate chatter 5.4 times a bar through the ducked drop 2 and halved the slide count).
@@ -62,6 +68,7 @@ export class Ears {
     this.pendLow = []; this.lowReleased = [];   // the LOW onsets (every 40-150 Hz onset, kick or 808 note start): their own lane,
                                      // released by the same rule, read by the reactive drums v2 (engine/drums) — nothing else
     this.lastEv = Object.create(null);
+    this.lastAmp = { kick: 0, snare: 0 };            // §70: the last hit's own size per class, from the event itself
     this.out = {};
     for (const k of EARS_FIELDS) this.out[k] = 0;
     for (const k of Object.values(AGES)) this.out[k] = 99;
@@ -132,6 +139,7 @@ export class Ears {
       if (e.t <= rel) {
         const f = EVENTS[e.type];
         if (f) { out[f] = 1; this.lastEv[e.type] = e.t; }
+        if (AMPS[e.type]) this.lastAmp[e.type] = +e.amp || 0;
         this.released.push(e);
       } else this.pending[k++] = e;
     }
@@ -140,6 +148,7 @@ export class Ears {
     for (let i = 0; i < this.pendLow.length; i++) { const e = this.pendLow[i]; if (e.t <= rel) this.lowReleased.push(e); else this.pendLow[k++] = e; }
     this.pendLow.length = k;
     for (const cls in AGES) out[AGES[cls]] = this.lastEv[cls] === undefined ? 99 : tHeard - this.lastEv[cls];
+    for (const cls in AMPS) out[AMPS[cls]] = this.lastAmp[cls];
     // continuous fields at tHeard: the bracketing history frames, interpolated (newest when tHeard is past them)
     const n = this.hn;
     if (n === 0) return out;

@@ -115,9 +115,47 @@ export const SNARE_RISE = 3.75;
 // -1 / +1 / +1 / +1 / 0, mean +0.4 ms, which is the OLD lane's own mean to the digit (§58: "ears +0").
 export const SNARE_LAG = 0.010;
 
+// ---------------------------------------------------------------------------------------------------------------
+// THE HIT'S SIZE: `kickAmp` / `snareAmp` (DECISIONS §70). The two rise lanes already know how hard a hit was — the
+// rise itself, in dB — and `kickVel` / `snareVel` do NOT publish it: they divide the rise by `p95[c]`, and
+// `Quantile(0.95, …)` as this engine's `dsp.js` writes it settles on the (1 − q) quantile, so that divisor is the
+// lane's **p5** (measured: the snare lane's estimator sits at 3.86–4.41 dB against a true-hit p95 of 7.7–23.1).
+// That is §51's "the velocity saturates, p50 1.0" — 52–91 % of the five tracks' hits read exactly 1.000 — and it is
+// a sign convention inside `Quantile`, not a property of the music. The convention is NOT changed here: the same
+// class carries every band's level gate (`lvl`, p90), the sub gate's p90 and `lpSweep`'s, so flipping it moves the
+// whole engine, the map and the clock (docs/OPEN-ITEMS.md). `*Vel` therefore stays exactly as it is, and the SIZE a
+// scene wants is published beside it as a second field with no quantile in it at all:
+//
+//     amp = clamp01(rise_dB / SPAN)
+//
+// — §68's own principle, one band up: a rise is a RATIO, so one absolute dB number travels across tracks and
+// loudnesses. SPAN is each lane's MEDIAN TRACK'S p95 rise at a TRUE hit, rounded (`tools/work/v70/ampsweep.js`,
+// every lane fire over the whole of all five tracks matched to `tools/truth/<T>.{snare,kick}.json` at ±50 ms):
+//
+//   snare, true-hit rise p95 per track 11.9 / 19.4 / 23.1 / 7.7 / 9.0 dB (SeeYouDrop / CyborgNinja /
+//     WhoLikesToParty / Malicious / Vienna) → median 11.9 → SPAN 12
+//   low,   16.5 / 23.2 / 37.3 / 9.6 / 10.7 dB → median 16.5 → SPAN 16
+//
+// What that buys, pooled over the five tracks' true hits: snare amp p10 0.34 / p50 0.54 / p95 1.00 with 17 % at the
+// ceiling; low 0.34 / 0.55 / 1.00 with 26 %. Per track the p95 reads 0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare) and
+// 1.00 / 1.00 / 1.00 / 0.60 / 0.67 (low) — one absolute mapping cannot put a 7.7 dB track and a 23 dB track both at
+// 1, and the median track is the honest centre of that spread. The two SPANs are NOT independently fitted: each
+// lane's own FLOOR is 0, so each lane's own threshold maps to itself over the span — 3.75/12 and 5.0/16 are both
+// **0.3125**, so "a hit that only just fired" is the same 0.31-sized hit in both lanes and the two channels are
+// directly comparable. (Swept: snare SPAN 10 / 12 / 14 / 16 puts the threshold at 0.38 / 0.31 / 0.27 / 0.23 and the
+// ceiling share at 23 / 17 / 13 / 9 %; 12 is where the threshold IS the brief's "a soft hit ≈ 0.3". A FLOOR term was
+// swept too — 1, 2, 2.5, 3 dB — and only pushes a threshold hit toward invisibility, which is the one thing a
+// lane-only trigger must not do.)
+export const SNARE_AMP = 12;         // dB of rise that IS a full-sized snare
+export const KICK_AMP = 16;          // ... and a full-sized kick
+// There is no `hatAmp`: the HAT is the one class still on the HPSS-lite flux (§69), whose onset function is a one-hop
+// difference of a median residual and not a rise in dB, so it has no comparable magnitude to publish. `hatVel` keeps
+// its meaning and its saturation.
+
 export class PercTrack {
   // `o` overrides the constants above (thrK, thrFloor, refract, clickW, gateDb, clickFloor, intN, medN, the low
-  // lane's kickBase / kickRise / kickLag and the snare lane's snareBase / snareRise / snareLag) — the tuning
+  // lane's kickBase / kickRise / kickLag / kickAmp and the snare lane's snareBase / snareRise / snareLag /
+  // snareAmp) — the tuning
   // sweeps use it, the page does not.
   constructor(sr, o = {}) {
     this.sr = sr;
@@ -134,6 +172,8 @@ export class PercTrack {
     this.sBase = Math.max(1, o.snareBase === undefined ? SNARE_BASE : o.snareBase | 0);
     this.sRiseThr = o.snareRise === undefined ? SNARE_RISE : o.snareRise;
     this.snareLag = o.snareLag === undefined ? SNARE_LAG : o.snareLag;
+    this.sAmp = o.snareAmp === undefined ? SNARE_AMP : o.snareAmp;
+    this.kAmp = o.kickAmp === undefined ? KICK_AMP : o.kickAmp;
     this.bodyReq = o.bodyReq === undefined ? BODY_REQ : o.bodyReq;
     this.bodyFloor = o.bodyFloor === undefined ? BODY_FLOOR : o.bodyFloor;
     this.bodyW = o.bodyW === undefined ? BODY_W : o.bodyW;
@@ -155,6 +195,7 @@ export class PercTrack {
     this.fd = new Float32Array(BANDS.length);
     this.p95 = [0, 1, 2].map(() => new Quantile(0.95, 0.02, 'abs'));
     this.vel = new Float32Array(3);
+    this.amp = new Float32Array(3);                // the rise lanes' own unsaturated size, 0-1 (§70; [2] is always 0)
     this.den = new Float32Array(3);
     this.kbuf = new Float32Array(this.kBase); this.kk = 0; this.kn = 0;   // the low lane's local baseline ring (dB)
     this.rise = 0;                                 // ... and this hop's rise above it, half-wave rectified (dB)
@@ -229,17 +270,17 @@ export class PercTrack {
     const clicked = ot - this.clickT <= this.clickW && (!this.bodyReq || ot - this.bodyT <= this.bodyW);
     // a low onset held from an earlier hop: confirm it as a kick if the beater has arrived since
     if (this.pendKick !== null) {
-      if (clicked) { this.emit(0, this.pendKick.t, this.pendKick.vel); this.pendKick = null; }
+      if (clicked) { this.emit(0, this.pendKick.t, this.pendKick.vel, this.pendKick.amp); this.pendKick = null; }
       else if (ot - this.pendKick.w > this.clickW) this.pendKick = null;   // bare: it was an 808 note start
     }                                             // (`w` is the hold's time on the CLICK band's clock, `t` its own)
     if (this.fireLow(otK)) {
       this.out.push({ type: 'low', t: otK, vel: this.vel[0], fl: this.rise });   // every low-band onset, kick or bare 808
                                                  // note start (fl: its rise in dB — the reactive drums' strength)
-      if (clicked) this.emit(0, otK, this.vel[0]);
-      else this.pendKick = { t: otK, w: ot, vel: this.vel[0] };
+      if (clicked) this.emit(0, otK, this.vel[0], this.amp[0]);
+      else this.pendKick = { t: otK, w: ot, vel: this.vel[0], amp: this.amp[0] };
     }
-    if (this.fireSnare(otS)) this.emit(1, otS, this.vel[1]);
-    if (this.fire(2, B_HAT, ot)) this.emit(2, ot, this.vel[2]);
+    if (this.fireSnare(otS)) this.emit(1, otS, this.vel[1], this.amp[1]);
+    if (this.fire(2, B_HAT, ot)) this.emit(2, ot, this.vel[2], 0);   // the hat has no rise, so no amp (§70)
     for (let c = 0; c < 3; c++) {
       const h = this.hist[c];
       while (h.length && t - h[0] > DEN_WIN) h.shift();
@@ -265,6 +306,7 @@ export class PercTrack {
     if (r <= this.kRise || ot - this.lastLow < this.refract[0]) return false;
     this.lastLow = ot;
     this.vel[0] = clamp01(r / (this.p95[0].push(r) + 1e-6));
+    this.amp[0] = clamp01(r / this.kAmp);          // §70: the rise itself over an absolute dB span, no quantile
     return true;
   }
   // the SNARE lane's own fire (§69): the two-band mean rise against an absolute dB floor, no adaptive term.
@@ -275,10 +317,16 @@ export class PercTrack {
     const r = this.sRise;
     if (r <= this.sRiseThr || ot - this.last[1] < this.refract[1]) return false;
     this.vel[1] = clamp01(r / (this.p95[1].push(r) + 1e-6));
+    this.amp[1] = clamp01(r / this.sAmp);          // §70: as fireLow
     return true;
   }
-  emit(c, t, vel) {
+  // `amp` RIDES THE EVENT (§70) instead of being read back from the ears' history ring, which is what `vel` does and
+  // why `vel` is one hit stale on the release frame: an onset's audio time is (hop end) - half a hop - the lane's lag,
+  // ~16 ms BEFORE the hop that found it, so a continuous field interpolated AT that time still holds the previous
+  // hit's value. `snareAge` has always been exact for the same reason — it comes from the released event, not the ring
+  // — and a SIZE that a scene reads on the frame it fires must be exact in the same way.
+  emit(c, t, vel, amp) {
     this.last[c] = t; this.hist[c].push(t);
-    this.out.push({ type: c === 0 ? 'kick' : c === 1 ? 'snare' : 'hat', t, vel });
+    this.out.push({ type: c === 0 ? 'kick' : c === 1 ? 'snare' : 'hat', t, vel, amp });
   }
 }

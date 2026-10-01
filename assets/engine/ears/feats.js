@@ -46,6 +46,12 @@ export const EARS_FEATS = {
   kickVel: L('how hard the last kick hit', 'its RISE in dB over the lane\'s running p95 (§68; a flux peak before it)', 'amplitude of the hit'),
   snareVel: L('how hard the last snare hit', 'its two-band RISE in dB over the lane\'s running p95 (§69; a flux peak before it)', 'amplitude of the hit'),
   hatVel: L('how hard the last hat hit', 'its flux over the class\'s running p95', 'amplitude of the hit'),
+  // §70 — the SIZE of a hit, with no quantile in it. `kickVel` / `snareVel` divide the rise by `p95[c]`, and
+  // `Quantile(0.95, …)` in dsp.js settles on the (1 - q) quantile, so that divisor is the lane's p5 and 52-91 % of
+  // the five tracks' hits read exactly 1.000 (§51's "the velocity saturates"). These two are the rise itself over an
+  // absolute dB span, so a scene that fires on `kickEvt` / `snareEvt` ALONE still has a size for the hit.
+  kickAmp: L('how big the last kick was (an honest size, unlike kickVel)', 'LIVE: the LOW lane\'s own RISE in dB over a fixed 16 dB span, clamped - 5 dB (the lane\'s threshold) reads 0.31, 16 dB and up reads 1. The span is the five tracks\' MEDIAN track\'s p95 rise at a true kick (16.5 dB), so no running quantile and no saturation (§70). FILE+map mode: the map\'s own velocity, which is already a proper offline p95 normalisation', 'the amplitude of a hit fired by the EVENT alone - a flash\'s size, a shove\'s strength'),
+  snareAmp: L('how big the last snare was (an honest size, unlike snareVel)', 'LIVE: the SNARE lane\'s two-band RISE in dB over a fixed 12 dB span, clamped - 3.75 dB (the lane\'s threshold) reads 0.31, 12 dB and up reads 1. The span is the median track\'s p95 rise at a true snare (11.9 dB), so the same 0.31 "only just fired" size as kickAmp and no saturation (§70). FILE+map mode: the map\'s own velocity', 'as kickAmp - DUST\'s flash ring and TORUS2\'s snare wave take their size from it'),
   denK: R('kicks per second over the last second', 'a 1 s sliding count', 'busy-ness of the low end'),
   denS: R('snares per second over the last second', 'a 1 s sliding count', 'the climbs: 1.7x the groove on this track'),
   denH: R('hats per second over the last second', 'a 1 s sliding count', 'double time, the rising intro'),

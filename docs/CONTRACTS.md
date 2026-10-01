@@ -578,6 +578,18 @@ are the scene author's rules:
   So the rule for a scene is: fire the attack on whichever of the two comes first, with a refractory (DUST: 60 ms) so one
   hit cannot fire twice, let the EVENT place it and the LEVEL size it — the ears' `kickVel` / `snareVel` / `hatVel`
   saturate (§51, p50 1.0) and carry almost no dynamics.
+  **Since v0.24+ (DECISIONS §70) the EVENT can size itself: `kickAmp` / `snareAmp`.** Those two are the rise lane's own
+  magnitude in dB over an absolute span (16 dB for the kick, 12 for the snare — each lane's median track's p95 rise at a
+  true hit), with no running quantile in them, so they do NOT saturate: pooled over the five tracks' true hits, p10 0.34 /
+  p50 0.54 / p95 1.00 against `snareVel`'s 1.000 / 1.000 / 1.000. Each lane's own threshold maps to **0.31** in both, so
+  "a hit that only just fired" is the same soft size in either channel. Why `*Vel` saturates is now diagnosed and is not
+  the music: `dsp.js`'s `Quantile(q, …)` settles on the **(1 − q)** quantile, so the `p95[c]` the velocity divides by is
+  the lane's p5 (3.86–4.41 dB on the snare lane against a true-hit p95 of 7.7–23.1). The convention is deliberately NOT
+  changed — the same class carries every band's level gate, the sub gate's p90 and `lpSweep`'s (docs/OPEN-ITEMS.md).
+  **So a scene with its own picker-quality judgement may now fire on the EVENT ALONE and take its size from `*Amp`**,
+  which is what DUST's flash ring and TORUS2's snare wave do since §70: the level `snare2` is still published and still
+  routable, it is simply no longer the only thing that knows how big a hit was. `hatAmp` does not exist — the hat is the
+  one class still on the HPSS-lite flux, which has no rise in dB to publish.
 - **A travelling front must be launched where the thing it lights actually is.** A shell expanding from the origin reaches
   a feature at radius r only after r / speed: DUST's snare ring was 0.24 s late to the sphere's grains until §58 launched
   it on the band's own radius. Geometry is latency too.
@@ -909,6 +921,8 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `kickVel` | level | how hard the last kick hit | amplitude of the hit |
 | `snareVel` | level | how hard the last snare hit | amplitude of the hit |
 | `hatVel` | level | how hard the last hat hit | amplitude of the hit |
+| `kickAmp` | level | how big the last kick was (an honest size, unlike kickVel) | the amplitude of a hit fired by the EVENT alone - a flash's size, a shove's strength |
+| `snareAmp` | level | how big the last snare was (an honest size, unlike snareVel) | as kickAmp - DUST's flash ring and TORUS2's snare wave take their size from it |
 | `denK` | raw | kicks per second over the last second | busy-ness of the low end |
 | `denS` | raw | snares per second over the last second | the climbs: 1.7x the groove on this track |
 | `denH` | raw | hats per second over the last second | double time, the rising intro |

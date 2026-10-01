@@ -37,7 +37,7 @@ if (!track || t0s === undefined || t1s === undefined || !out) {
 }
 const t0 = +t0s, t1 = +t1s, sid = sceneArg === undefined || sceneArg === '' ? 1 : +sceneArg;
 const MS_DEFAULT = ['heardT', 'lvl', 'alive', 'eM', 'eS', 'bassS', 'midS', 'highS', 'kick', 'kick2', 'kickAge', 'kickEvt',
-  'snare2', 'snareAge', 'snareEvt', 'hat2', 'hatAge', 'hatEvt', 'beat', 'beatPhase', 'beatCount', 'bpm', 'barPos',
+  'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'kickAmp', 'hat2', 'hatAge', 'hatEvt', 'beat', 'beatPhase', 'beatCount', 'bpm', 'barPos',
   'barPhase', 'phrase16Pos', 'barNovelEvt', 'barReturnEvt', 'sectionAlt', 'sectionReturn', 'buildLive', 'dropLiveIn',
   'dropLiveEvt', 'dropEnv', 'dropEvt', 'tension', 'nextDropIn', 'nextBarIn', 'subGate', 'subNoteEvt', 'hush', 'denK', 'arc',
   'eMax', 'eG', 'mapOn', 'riser', 'roll', 'denH', 'presence', 'build'];

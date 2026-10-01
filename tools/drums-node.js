@@ -32,7 +32,8 @@ const PERC = opt('--perc', null), PO = {};
 if (PERC) for (const kv of PERC.split(',')) { const [k, v] = kv.split('='); PO[k] = +v; }
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 const SYN = ['kick', 'snare', 'hat'], TAU = [0.16, 0.13, 0.06];
-const KEEP = ['kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 'kickVel', 'snareVel', 'hatVel', 'subNoteEvt', 'subGate', 'subPure', 'bassReg'];
+const KEEP = ['kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 'kickVel', 'snareVel', 'hatVel',
+  'kickAmp', 'snareAmp', 'subNoteEvt', 'subGate', 'subPure', 'bassReg'];
 
 for (const track of TRACKS) {
   const pcm = loadPcm(track, 48000), sr = pcm.sr;
