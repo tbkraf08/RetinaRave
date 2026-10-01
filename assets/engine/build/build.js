@@ -32,6 +32,15 @@
 // The gate must be the CAUSAL one: in file mode with the map ready `MS.subGate` is the map's (features-ears.js), and this
 // stage runs the same inputs in every mode (as it takes the ears' low lane rather than the map's onsets). features-build.js
 // passes `EARS.ears.out.subGate`; node and the replay read it from the trace, where it is already causal.
+// A THIRD ARMING PATH — THE AMBIGUITY (DECISIONS §77, docs/plans/TONGUES-PLAN.md phase 3). The tongues stage (engine/clock/
+// tongues.js, §76) publishes `tongueAmbig` = 1 − the octave ladder's best tongue depth: the music locks NONE of the clock's
+// beat family. Vienna's dream reads ≥ 0.9 for 22 clock beats (72.0–86.0 s) where the sub void arms only at 82.1 (4.9 beats
+// of lead, §64); CyborgNinja, WhoLikesToParty and Malicious never hold ≥ 0.8 for 4 beats, SeeYouDrop's outro reaches 7 at
+// 0.9 (tools/tongues-node.js --amb). So:
+//   AMBIGUITY = tongueOn 1 and tongueAmbig >= AMB_ARM, after MIN_HIST, counted in beats, gaps <= 1 beat bridged
+//   ARM       once it has held AMB_HOLD beats, on the next bar line; the slam and the release are the sub-void path's (no
+//             SLAM_AFTER wait, the sub's own return confirms); the ambiguity lifting for a beat disarms an ambiguity arm only
+// `tongueOn` −1 (the stage off) or an input without the field reads as "not ambiguous": every caller before §77 is unchanged.
 // THE TIME BASE is the bars stage's (DECISIONS §50): B = the v3 beat moved onto heard time with the lead's estimate; an
 // onset's position x = B - (T - t) x bpm / 60 (t may be ahead of T by the display lead in file modes: features-build.js).
 // THE BAR LINE: v3's own count (beatCount mod 4) until synapse proposes a sure bar phase (barConf >= 0.9, same octave) for
@@ -54,6 +63,8 @@ export const BUILD = {
   SUBV_OFF: 0.2,   // the ears' CAUSAL sub gate, 2 s mean, below which the sub is out (0 = the sub-void path off)
   SUBV_HOLD: 4,    // bars the sub must be out before the sub-void path arms (Vienna 6.02; the longest elsewhere 3.85)
   SUBV_RET: 2,     // on a sub-void arm: sub >= SUBV_RET x its 2 s mean = the sub is back (Vienna's drop reads 2.14)
+  AMB_ARM: 0.9,    // the tongues' tongueAmbig at or above which the beat is ambiguous (0 = the ambiguity path off; §77)
+  AMB_HOLD: 8,     // beats the ambiguity must hold before the path arms (Vienna's dream 22; the longest elsewhere 7)
 };
 export const BUILD_OUT = ['buildLive', 'dropLiveIn', 'dropLiveEvt'];
 const TEMPO_JUMP = 0.04, ANCHOR_BEATS = 8;
@@ -87,12 +98,12 @@ export class Build {
   reset() {
     this.hp5.reset(); this.b2.reset(); this.b32.reset(); this.s2.reset(); this.sg2.reset();
     this.hist = 0; this.disarm(true); this.rearm = true; this.voidB = 0; this.gapB = 0; this.offB = 0;
-    this.svB = 0; this.svGap = 0;
+    this.svB = 0; this.svGap = 0; this.amB = 0; this.amGap = 0;
     this.out.buildLive = 0;
   }
 
   disarm(slam) {
-    this.armed = false; this.armB = 0; this.cand = null; this.sv = false;
+    this.armed = false; this.armB = 0; this.cand = null; this.sv = false; this.am = false;
     this.out.dropLiveIn = -1;
     if (slam) this.out.buildLive = 0;
     this.rearm = false;
@@ -105,7 +116,7 @@ export class Build {
     if (B - this.aT >= ANCHOR_BEATS) { this.a = p; this.aCand = -1; }
   }
 
-  // one frame. i = { B, rel, bpm, ok, hp, bassS, anchor, onsets: [{ x }], dt }:
+  // one frame. i = { B, rel, bpm, ok, hp, bassS, sub, subGate, tongueAmbig, tongueOn, anchor, onsets: [{ x }], dt }:
   //   B  heard beat position (continuous) · rel  the position events are released at (B + the display lead, beats)
   //   bpm  the grid's tempo · ok  music present (presence)
   //   hp  synapse's high-pass evidence · bassS  synapse's bass level · anchor  a proposed bar phase 0..3 or -1
@@ -131,37 +142,42 @@ export class Build {
     const isSubVoid = this.hist >= k.MIN_HIST && k.SUBV_OFF > 0 && sg2 < k.SUBV_OFF;
     if (isSubVoid) { this.svB += dB + this.svGap; this.svGap = 0; }
     else { this.svGap += dB; if (this.svGap > 1) { this.svB = 0; this.svGap = 0; if (this.armed && this.sv) this.disarm(false); } }
+    // the ambiguity (§77), the same counting
+    const isAmb = this.hist >= k.MIN_HIST && k.AMB_ARM > 0 && i.tongueOn === 1 && i.tongueAmbig >= k.AMB_ARM;
+    if (isAmb) { this.amB += dB + this.amGap; this.amGap = 0; }
+    else { this.amGap += dB; if (this.amGap > 1) { this.amB = 0; this.amGap = 0; if (this.armed && this.am) this.disarm(false); } }
     // the void's length in beats, gaps <= 1 beat bridged; gone for a bar = over (and re-arming allowed again)
     if (isVoid) { this.voidB += dB + this.gapB; this.gapB = 0; this.offB = 0; }
     else {
       this.gapB += dB; this.offB += dB;
-      // the bass/hp void lifting disarms a BASS/HP arm only: a sub-void arm has its own gap counter below, and on
-      // Vienna the bass void lifted eleven seconds before the drop (§64).
-      if (this.gapB > 1) { this.voidB = 0; this.gapB = 0; if (this.armed && !this.sv) this.disarm(false); }
+      // the bass/hp void lifting disarms a BASS/HP arm only: a sub-void arm and an ambiguity arm have their own gap
+      // counters, and on Vienna the bass void lifted eleven seconds before the drop (§64).
+      if (this.gapB > 1) { this.voidB = 0; this.gapB = 0; if (this.armed && !this.sv && !this.am) this.disarm(false); }
       if (this.offB >= 4) this.rearm = true;
     }
     const bar = (x) => Math.floor((x - this.a) / 4);
     const vOn = this.voidB > 0 && this.voidB >= 4 * k.HOLD;
     const svOn = k.SUBV_OFF > 0 && this.svB >= 4 * k.SUBV_HOLD;
-    if (!this.armed && this.rearm && (vOn || svOn) && bar(B) > bar(pB)) {   // armed on a bar line
-      this.armed = true; this.armB = 4 * bar(B) + this.a; this.sv = !vOn;   // `sv`: armed by the sub void alone
+    const amOn = k.AMB_ARM > 0 && this.amB >= k.AMB_HOLD;
+    if (!this.armed && this.rearm && (vOn || svOn || amOn) && bar(B) > bar(pB)) {   // armed on a bar line
+      this.armed = true; this.armB = 4 * bar(B) + this.a; this.sv = !vOn && svOn; this.am = !vOn && !svOn;   // `sv` / `am`: armed by the sub void / the ambiguity alone
     }
     if (this.armed) {
       if (B - this.armB > 4 * k.MAX) { this.disarm(false); this.decay(dt); return o; }  // a breakdown, not a void
       // the slam: an on-beat low onset, confirmed by the bass coming back within CONF beats
       for (const e of i.onsets) {
-        if (!this.sv && e.x - this.armB < 4 * k.SLAM_AFTER) continue;
+        if (!this.sv && !this.am && e.x - this.armB < 4 * k.SLAM_AFTER) continue;
         if (Math.abs(e.x - Math.round(e.x)) <= k.ON_BEAT && (!this.cand || e.x > this.cand.x + 0.5)) this.cand = { x: e.x, ref: b2prev, sref: s2prev };
       }
       if (this.cand) {
         if (B - this.cand.x > k.CONF) this.cand = null;
         else if ((i.rel === undefined ? B : i.rel) >= this.cand.x - 0.05 && ((i.bassS >= k.RET * this.cand.ref && this.cand.ref > 0) ||
           (k.SUB_RET > 0 && (i.sub || 0) >= k.SUB_RET * this.cand.sref && this.cand.sref > 0) ||
-          (this.sv && k.SUBV_RET > 0 && (i.sub || 0) >= k.SUBV_RET * this.cand.sref && this.cand.sref > 0))) {
+          ((this.sv || this.am) && k.SUBV_RET > 0 && (i.sub || 0) >= k.SUBV_RET * this.cand.sref && this.cand.sref > 0))) {
           o.dropLiveEvt = 1; this.disarm(true); return o;
         }
       }
-      const vb = Math.max(this.voidB, this.sv ? this.svB : 0) / 4;
+      const vb = Math.max(this.voidB, this.sv ? this.svB : 0, this.am ? this.amB : 0) / 4;
       o.buildLive = Math.min(1, k.L0 + (1 - k.L0) * Math.max(0, vb - k.HOLD) / Math.max(1e-6, k.FULL - k.HOLD));
       // beats to the next bar line; 0 through the first ON_BEAT after a line (the drop may be landing now; not on the arm's line)
       const r = (((B - this.a) % 4) + 4) % 4;

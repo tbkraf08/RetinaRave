@@ -8,6 +8,9 @@
 //   · THE SUB VOID (§64 task 2): the sub gate shut for SUBV_HOLD bars arms with the BASS STILL IN (which the void path
 //     above cannot see), not before, and its slam is the sub coming back at SUBV_RET x its own 2 s mean with no
 //     SLAM_AFTER wait; an absent subGate in the input means "the sub is there" and leaves the detector as it was
+//   · THE AMBIGUITY (§77): the tongues' tension held >= AMB_ARM for AMB_HOLD beats arms with the bass AND the sub still in
+//     (Vienna's dream: 7 bars at 1.0), a dense unambiguous train (CyborgNinja's hats: tension 0.32) never does, a run
+//     shorter than the hold does not, the tongues stage OFF (tongueOn -1) is inert, and the slam is the sub-void's
 //   node tools/test_build.js
 import { Build, BUILD } from '../assets/engine/build/build.js';
 
@@ -29,6 +32,7 @@ function mk(knobs) {
       const i = { B: st.B, rel: st.B, bpm: p.bpm || BPM, ok: p.ok === undefined ? true : p.ok, hp: p.hp || 0, bassS: p.bassS === undefined ? 0.5 : p.bassS,
         sub: p.sub === undefined ? 0.5 : p.sub, anchor: -1, onsets: ons, dt };
       if (p.subGate !== undefined) i.subGate = p.subGate;
+      if (p.tongueAmbig !== undefined) { i.tongueAmbig = p.tongueAmbig; i.tongueOn = p.tongueOn === undefined ? 1 : p.tongueOn; }
       const o = b.step(i);
       last = { B: st.B, buildLive: o.buildLive, dropLiveIn: o.dropLiveIn, dropLiveEvt: o.dropLiveEvt };
       st.out.push(last);
@@ -161,6 +165,42 @@ console.log('the sub void (\u00a764 task 2)');
   const le = fired(late, l0);
   ok('SLAM_AFTER 4 bars does not gate the sub-void slam', !!la && le.length === 1 && le[0].B - la.B < 4 * 4,
     la && le.length ? `${(le[0].B - la.B).toFixed(2)} beats after the arm` : `${le.length} events`);
+}
+console.log('the ambiguity (§77)');
+{
+  // bass and sub both IN, hp 0: neither the void nor the sub void can see anything; the tongues say the beat locks nothing
+  const base = { hp: 0, bassS: 0.5, sub: 0.5, subGate: 1, onBeat: true };
+  const st = mk();
+  st.run(40, Object.assign({ tongueAmbig: 0.45 }, base));                 // a groove: the ladder locks (Vienna 0.4-0.6)
+  const n0 = st.out.length;
+  st.run(3, Object.assign({ tongueAmbig: 1.0 }, base));                   // 6 beats of full tension: under the hold
+  ok(`an ambiguous run shorter than ${BUILD.AMB_HOLD} beats does not arm`, !armedAt(st, n0), `buildLive ${st.out[st.out.length - 1].buildLive}`);
+  st.run(11, Object.assign({ tongueAmbig: 1.0 }, base));                  // 7 bars of it in all (the dream)
+  const a = armedAt(st, n0);
+  ok('7 bars of tongueAmbig 1.0 arm with the bass and the sub still in', !!a, a ? `at B ${a.B.toFixed(2)}` : 'never');
+  ok('on a bar line, no earlier than the hold', !!a && Math.abs(a.B - Math.round(a.B / 4) * 4) < bps * dt + 1e-9 && a.B - st.out[n0].B >= BUILD.AMB_HOLD - 1e-9, a ? `B ${a.B.toFixed(3)}` : '');
+  const held = st.out[st.out.length - 1];
+  ok('the arm HOLDS while the ambiguity lasts (the bass void\'s own gap rule must not release it)', held.dropLiveIn >= 0 && held.buildLive >= BUILD.L0 - 1e-9, `dropLiveIn ${held.dropLiveIn.toFixed(2)} level ${held.buildLive.toFixed(3)}`);
+  ok('the on-beat kicks under the ambiguity never fired', fired(st, n0).length === 0, `${fired(st, n0).length} events`);
+  const n1 = st.out.length;
+  st.run(0.6, Object.assign({}, base, { sub: 1.25, tongueAmbig: 0.4 }));  // the sub at 2.5 x its 2 s mean on a beat line: the sub-void's slam
+  const ev = fired(st, n1);
+  ok('the sub coming back at SUBV_RET x fires once on the onset\'s frame and disarms', ev.length === 1 && ev[0].buildLive === 0, `${ev.length} events`);
+  // the dense unambiguous train: CyborgNinja's 16th hats lock the 4:1 tongue at 0.68 (tension 0.32) all track
+  const cn = mk();
+  cn.run(120, Object.assign({ tongueAmbig: 0.32 }, base));
+  ok('120 s of a dense unambiguous train (tension 0.32) never arms', !armedAt(cn, 0) && !fired(cn).length, `buildLive ${cn.out[cn.out.length - 1].buildLive}`);
+  // the ambiguity lifting for more than a beat releases an ambiguity arm (the sub void's own rule)
+  const rel = mk();
+  rel.run(40, Object.assign({ tongueAmbig: 0.45 }, base)); rel.run(14, Object.assign({ tongueAmbig: 1.0 }, base));
+  const ra = armedAt(rel, 0), r0 = rel.out.length;
+  rel.run(2, Object.assign({ tongueAmbig: 0.4 }, base));
+  ok('the ambiguity gone for a beat releases the arm (no slam, the level decays)', !!ra && rel.out[rel.out.length - 1].dropLiveIn === -1 && !fired(rel, r0).length && rel.out[rel.out.length - 1].buildLive < 0.1, `dropLiveIn ${rel.out[rel.out.length - 1].dropLiveIn} level ${rel.out[rel.out.length - 1].buildLive.toFixed(3)}`);
+  // the stage off (tongueOn -1), or the path off, or no field at all: inert
+  const off = mk(); off.run(40, Object.assign({ tongueAmbig: 0.45, tongueOn: -1 }, base)); off.run(14, Object.assign({ tongueAmbig: 1.0, tongueOn: -1 }, base));
+  const off2 = mk({ AMB_ARM: 0 }); off2.run(40, Object.assign({ tongueAmbig: 0.45 }, base)); off2.run(14, Object.assign({ tongueAmbig: 1.0 }, base));
+  const none = mk(); none.run(54, base);
+  ok('tongueOn -1 / AMB_ARM 0 / no field: the same stream never arms', !armedAt(off, 0) && !armedAt(off2, 0) && !armedAt(none, 0), `${off.out[off.out.length - 1].buildLive} ${off2.out[off2.out.length - 1].buildLive} ${none.out[none.out.length - 1].buildLive}`);
 }
 console.log(FAIL ? `test_build: ${FAIL} FAILED` : 'test_build: OK');
 process.exit(FAIL ? 1 : 0);

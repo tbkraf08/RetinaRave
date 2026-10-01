@@ -685,8 +685,10 @@ feeds it (v3's count − 1 = the page's, the lead −DET_LEAD, the ears' low lan
 ahead by (0 = the `&lead=0` page, 40 = the default file page); `BUILDK='{"RET":1.6}'` overrides knobs for one run. Its SECOND
 arming path (the sub void, §64) reads the ears' CAUSAL `subGate` — the page passes `EARS.ears.out.subGate` to `feed()` because
 `MS.subGate` is the file map's when a map is ready, and node / the replay take it from the trace, where it is already causal;
-its knobs are `SUBV_OFF` / `SUBV_HOLD` / `SUBV_RET` and `SUBV_OFF=0` turns the path off (§54's detector exactly). The knob
-sweep replays the recorded inputs instead (< 1 s a track; replay = node = page):
+its knobs are `SUBV_OFF` / `SUBV_HOLD` / `SUBV_RET` and `SUBV_OFF=0` turns the path off (§54's detector exactly). Its THIRD
+arming path (the ambiguity, §77) reads the tongues' `tongueAmbig` / `tongueOn` (§76) — `build-node.js` attaches the bank to its
+clock and records both columns, the replay takes them from the trace, `AMB_ARM=0` turns the path off (a trace without the
+columns is inert). The knob sweep replays the recorded inputs instead (< 1 s a track; replay = node = page):
 ```
 node tools/build-node.js --out tools/work/build [--disp 40]                                   # node-<Track>.json with the stage
 node tools/build-replay.js tools/work/build/node-*.json [--set RET=1.6,SUB_RET=0] [--out dir]  # -> rp-<Track>.json + dropcheck rows

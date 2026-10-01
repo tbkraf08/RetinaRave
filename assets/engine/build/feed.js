@@ -5,7 +5,7 @@ import { ANCHOR_CONF } from '../bars/feed.js';
 import { BUILD } from './build.js';
 
 // the MS fields feed() reads
-export const FEED_IN = ['beatCount', 'beatPhase', 'bpm', 'presence', 'barConf', 'bpmSyn', 'barPos', 'hp', 'bassS', 'sub', 'subGate', 'heardT'];
+export const FEED_IN = ['beatCount', 'beatPhase', 'bpm', 'presence', 'barConf', 'bpmSyn', 'barPos', 'hp', 'bassS', 'sub', 'subGate', 'tongueAmbig', 'tongueOn', 'heardT'];
 
 // The ears' low onsets due by `due` (heard s) and after lane.t (the last one taken): the released ones and, when a display
 // lead lets the release run ahead of the ear (file modes), the pending ones too. lane = { t: -Infinity } per stream.
@@ -35,6 +35,8 @@ export function feed(S, L, disp, dt, ts, into, sg) {
   into.hp = +S.hp || 0; into.bassS = +S.bassS || 0; into.sub = +S.sub || 0;
   const g = sg === undefined || sg === null ? S.subGate : sg;
   into.subGate = g === undefined || g === null || !isFinite(+g) ? 1 : +g;
+  // the tongues' tension (§77): absent or the stage off (-1) reads as "not ambiguous"
+  into.tongueOn = S.tongueOn === 1 ? 1 : 0; into.tongueAmbig = +S.tongueAmbig || 0;
   into.anchor = sure ? ((Math.round(raw - S.barPos) % 4) + 4) % 4 : -1;
   return into;
 }

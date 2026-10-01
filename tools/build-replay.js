@@ -27,6 +27,7 @@ export function replay(tr, knobs) {
   for (let i = 0; i < n; i++) {
     S.beatCount = C.beatCount[i] - 1; S.beatPhase = C.beatPhase[i]; S.bpm = C.bpm[i]; S.presence = C.presence[i];
     S.barConf = C.barConf[i]; S.bpmSyn = C.bpmSyn[i]; S.barPos = C.barPos[i]; S.hp = C.hp[i]; S.bassS = C.bassS[i]; S.sub = C.sub[i]; S.subGate = C.subGate[i]; S.heardT = tr.t[i];
+    S.tongueAmbig = C.tongueAmbig ? C.tongueAmbig[i] : undefined; S.tongueOn = C.tongueOn ? C.tongueOn[i] : undefined;   // §77: a trace without them = the path inert
     ts.length = 0; if (C.lowT[i]) for (const x of C.lowT[i]) ts.push(x);
     const o = b.step(feed(S, -DET_LEAD, DISP, 1 / 60, ts, inp));
     out.buildLive.push(+o.buildLive.toFixed(4)); out.dropLiveIn.push(+o.dropLiveIn.toFixed(4)); out.dropLiveEvt.push(o.dropLiveEvt ? 1 : 0);
@@ -49,7 +50,7 @@ function run(knobs, dir) {
 if (!SWEEP) console.log(run(parseSet(SET), OUT));
 else {
   const STEPS = { HP_ARM: [0.05, 0.2], BASS_ARM: [0, 0.4, 0.8], MIN_HIST: [16, 48], HOLD: [0.5, 1], MAX: [4, 16], SLAM_AFTER: [0, 2], ON_BEAT: [0.0625, 0.25],
-    CONF: [0.125, 0.5], RET: [1.5, 2], SUB_RET: [0, 3, 8], SUBV_OFF: [0, 0.1, 0.5], SUBV_HOLD: [3, 5], SUBV_RET: [1.5, 3] };
+    CONF: [0.125, 0.5], RET: [1.5, 2], SUB_RET: [0, 3, 8], SUBV_OFF: [0, 0.1, 0.5], SUBV_HOLD: [3, 5], SUBV_RET: [1.5, 3], AMB_ARM: [0, 0.85, 0.95], AMB_HOLD: [6, 12] };
   console.log('default ' + JSON.stringify(parseSet(SET)) + '\n' + run(parseSet(SET), OUT));
   for (const kk in STEPS) for (const v of STEPS[kk]) console.log(`\n${kk}=${v}\n` + run(Object.assign(parseSet(SET), { [kk]: v }), OUT + '-sweep'));
 }

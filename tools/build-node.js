@@ -26,6 +26,7 @@ import { feed as barsFeed } from '../assets/engine/bars/feed.js';
 import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
 import { feed as queueFeed } from '../assets/engine/queue/feed.js';
 import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
+import { Tongues, TONGUEK } from '../assets/engine/clock/tongues.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -64,7 +65,7 @@ if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
 // v3 − pcm count difference, so a from-0 grading holds the BAR PHASE equal to the v3 run's (the stores keep it in count units)
 if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 const CLOCKSRC = process.env.CLOCKSRC === 'pcm' ? 'pcm' : 'v3';
-const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm'];
+const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm', 'tongueAmbig', 'tongueOn'];   // + the tongues' tension (§76/§77: the build stage's third arming input)
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 
 const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'kickVel'];
@@ -100,6 +101,7 @@ for (const track of TRACKS) {
   const t = [], f = [];
   const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
   const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {}, ck = { k: null };
+  if (TONGUEK.on) clk.tongues = new Tongues(TONGUEK);   // as features-clock.js attaches it (§76)
   const EARS_B = ['kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'bassReg', 'subGate', 'subPure', 'denK', 'denS', 'denH'];
   const wrap = (x, n) => ((x % n) + n) % n;
   detStream(pcm, {
@@ -115,6 +117,7 @@ for (const track of TRACKS) {
       clk.read(heard + DET_LEAD, cpub, cev);
       cols.bpmPcm.push(r4(cev.bpm)); cols.beatPhasePcm.push(r4(cev.phase)); cols.beatCountPcm.push(cev.count); cols.beatPcm.push(cev.beat ? 1 : 0);
       cols.clockConfPcm.push(r4(clk.conf)); cols.clockPcm.push(CLOCKSRC === 'pcm' ? 1 : 0);
+      const tgo = clk.tongues ? clk.tongues.out : null; cols.tongueAmbig.push(r4(tgo ? tgo.tongueAmbig : 1)); cols.tongueOn.push(tgo ? tgo.tongueOn : -1);
       let CK = null;
       if (CLOCKSRC === 'pcm') {   // features-clock.js: the count offset k onto v3's count, set at the flip (here: the first frame)
         // (v3's raw count here, not the page's count − 1: on the first frame both pages read 0 — the −1 is a later cold-start quirk of v3's shim)
@@ -134,6 +137,7 @@ for (const track of TRACKS) {
         S.beatCount = M.beatCount - 1; S.beatPhase = M.beatPhase; S.bpm = M.bpm; S.presence = M.presence;
         if (CK) { S.beatCount = CK.count; S.beatPhase = CK.phase; S.bpm = CK.bpm; }   // the switch: the PCM clock's raw values (features-clock.js)
         S.barConf = A.barConf; S.bpmSyn = A.bpm; S.barPos = wrap(A.beat - an.o4, 4); S.hp = A.ev.hp; S.bassS = A.bassS; S.sub = A.sub; S.heardT = heard;
+        S.tongueAmbig = tgo ? tgo.tongueAmbig : 1; S.tongueOn = tgo ? tgo.tongueOn : -1;   // the tongues' tension (§77)
         // the bars store first (the page's stage order: bars, drums, build, queue)
         for (const k of EARS_B) S[k] = o[k];
         S.midS = A.midS; S.highS = A.highS; S.lvl = A.level; S.centroid = A.centroid;
