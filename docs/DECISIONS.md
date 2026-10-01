@@ -5328,3 +5328,8 @@ in file + map mode `snareEvt` is still the map's own list and only `snare2` is c
   of 3.41) and better placed. Watch whether its clock feels slower to settle (lock 9.2 → 12.0 s).
 - **Malicious** — the one track that gets worse: the beat grid sits ~7 ms further off the truth. Nothing else on
   this track is reliable either (§51: neither detector finds its kicks).
+
+**v0.24 tagged locally (2026-10-01) on the user's word ("it does look better, tag what has been done already"; deploy still held):**
+v0.23 + §69 (the ears' snare / rim lane). `releases/retinarave-v0.24.html` (1460 KB, 157 modules; from `file://` on scene 1:
+errs [], nonFinite [], clock pcm), package.json 0.24.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: the
+scenes' snare size onto the lane (`snare2` → the lane's own velocity) and Malicious's +30 ms clock bias (§70, §71).
