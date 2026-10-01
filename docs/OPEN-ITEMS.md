@@ -124,7 +124,8 @@ and **Malicious's bias +23 -> +30 ms** (its bias-removed steadiness unchanged). 
   trace with `voices.js`'s own rule (`tools/work/v69/voicesim.js`): see DECISIONS §69's table. This is §64's hat
   question one band down, and §64's answer there was that coverage matters more than precision — so it needs the
   user's eye, not another number.
-- **Malicious's PCM clock bias** (above), on a track whose truth grid is "tempo only".
+- ~~**Malicious's PCM clock bias**~~ **(ANSWERED by §71: it is the TRUTH GRID, and the clock is not changed)** — see
+  the new item below.
 
 **2026-10-01, §68 (the low lane):** item 1 below is **CLOSED** — `assets/engine/ears/perc.js`'s low lane is now a
 60-150 Hz band graded on its RISE over a short local baseline against an absolute 5 dB floor (commit `fbc57ae`,
@@ -162,3 +163,32 @@ kept as the diagnosis. **Two things it leaves open:**
    from its unmatched fires at **AUC 0.615** — the hat's was 0.93 — and every ratio from 1.03 to 1.18 holds precision at
    **0.34–0.36** while taking recall **0.92 → 0.83**. The snare's flash ring is the loudest of DUST's three voices, so
    this is the one that is still wrong on the user's own track.
+
+**2026-10-01, §71 (Malicious's +30 ms clock bias) — ANSWERED, and the engine was NOT changed.** §69's one losing clock
+row is the **truth grid's own annotation offset**, not the clock. The PCM clock's line is the β-weighted centre of its
+phase measurements, and on Malicious **all three** ears classes sit late together against the grid (kick +21.4, snare
++31.1, hat +13.8 ms β-weighted; the "all" column +24.2 predicts the measured +30 within 6 ms, as it does on all five
+tracks) — a common mode, so no class weighting can remove it. Four independent rulers put the grid's lines ~20 ms
+BEFORE the music: the truth tool's own offline `mid` list sits at **+23.3 ms** (p25 +23.0 / p75 +23.6 — a near-delta)
+where the other four tracks read within ±7; a zero-phase `filtfilt` attack measurement finds **every** band from 25 Hz
+to 12 kHz late (+11.5 … +22.9 ms) where the controls straddle the line; `trackmap.py anchor_grid`'s own 40–150 Hz rule
+as a continuous scan reads only **0.53** of the best line's energy at the grid's own line in 150–800 Hz (the only
+reading under 0.82 in the set); and the provenance — `if dpres > 0.06: beats = bdp` fires on its **89.7 ms** DP
+residual, so Malicious's `beats` are the raw Ellis DP tracker's and the kick-anchor branch is skipped entirely, where
+the other four grids each have an anchor, a drift fit or a hand. Its kicks could not have anchored it either
+(eighth-lattice resultant **0.134** against `ANCHOR_R` 0.5). With the ~23 ms off, the ears' lanes there are ordinary
+(kick +0.0 / snare +8.2 / hat +0.0 ms against their own bands' attacks) and the clock reads +7 ms in node, −4 on the
+page. All three candidate fixes were measured by knob and all three make Malicious WORSE (+36 / +37 / +39, within ±30
+down to 33 / 29 / 24 %) while giving back CyborgNinja's lock (3.4 → 17.1 s) and Vienna's p90 (67 → 320+ ms).
+**Three things it leaves open:**
+- **Malicious's truth grid itself, and it is the real item.** Its beat PHASE needs a hand check or a new anchor — the
+  measured offset is **+23 ms** — and until then its beat-phase rows are not evidence (`gridcheck.py` now prints that
+  caveat automatically for any such track; it fires on Malicious alone). Cheapest honest fix: hand-mark 8–16 beats and
+  re-phase, as live step 3.1 did for CyborgNinja. **Do not fit the engine to it in the meantime.**
+- **`trackmap.py` converts frame indices with `index / fps` in `dp_beats()` / `refit_grid()`** while its onset lists use
+  `t2[pk]`, which includes the STFT's `t0 = 1024/sr = 23.2 ms`. On sharp attacks the omission cancels against the
+  flux's own half-window delay (SeeYouDrop's grid lands +2.9 ms off its kicks), which is why four of five grids are
+  fine; on a smeared track it does not. Worth a look when Malicious's grid is re-made — but it is a RULER change with
+  every table downstream of it, so it was not taken here.
+- **SeeYouDrop's PCM lock 9.2 → 12.0 s** (§69's other losing row) is untouched and still open, as is the ~11 ms
+  page/node gap on Malicious's clock (recorded in `AUDIT-live-grid` Step 6 addendum 3).

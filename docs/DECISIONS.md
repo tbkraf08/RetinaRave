@@ -5333,3 +5333,170 @@ in file + map mode `snareEvt` is still the map's own list and only `snare2` is c
 v0.23 + §69 (the ears' snare / rim lane). `releases/retinarave-v0.24.html` (1460 KB, 157 modules; from `file://` on scene 1:
 errs [], nonFinite [], clock pcm), package.json 0.24.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: the
 scenes' snare size onto the lane (`snare2` → the lane's own velocity) and Malicious's +30 ms clock bias (§70, §71).
+
+## §71 Malicious's +30 ms is its TRUTH GRID, not the clock — the one track whose beat line was never put on the audio (2026-10-01, one worker; §69's open item, the user's word; `docs/AUDIT-live-grid.md` "Step 6 addendum 4")
+
+**The ask:** §69 re-measured §59's clock tables after the snare lane and found the PCM clock's beat line on Malicious a
+constant **+30 ms late** (was +23; within ±30 ms 80 % → 50 %, bias-removed 94 → 95 %). Every scene's nudge crests ~30 ms
+after the beat there, at the edge of the 40 ms the user's eye reads (§52–§53). Remove it without moving the four tracks
+§69 improved — **or prove it is the reference and fix nothing.**
+
+**It is the reference.** `engine/clock/` and `engine/ears/` are untouched. Two tool files changed: a `test_clock.js`
+case that nails the property the diagnosis rests on, and a printed caveat in `gridcheck.py` so the next worker is not
+sent after this again. **Not tagged, not pushed, not deployed.**
+
+### Reproduced first, both trees, in isolated worktrees
+
+`tools/clock-study.js` + `gridcheck.py --heard`, node, whole track, five tracks, at HEAD (`9b164e2`) and at `4e175e5`
+(pre-§69) in two `git worktree`s — §69's table to the digit:
+
+| node, whole track | lag med | \|lag\| p50 / p90 | within ±30 ms | bias-removed | lock |
+|---|---|---|---|---|---|
+| SeeYouDrop | +1 → +3 ms | 8/19 → 8/21 | 98 → 97 % | 98 → 96 % | 9.2 → 12.0 s |
+| CyborgNinja | +1 → +1 | 2/4 → **1/3** | 93 → **97 %** | 93 → 97 % | **17.9 → 3.4 s** |
+| WhoLikesToParty | +6 → +6 | 6/9 → 6/10 | 99 → 99 % | 99 → 99 % | 5.6 → 5.6 s |
+| **Malicious** | +23 → **+30** | 23/36 → 30/49 | 80 → **50 %** | 94 → **95 %** | 6.1 → 6.1 s |
+| Vienna | +6 → **+4** | 7/82 → **5/67** | 73 → 74 % | 76 → 75 % | 20.9 → 20.9 s |
+
+### What moved the phase, exactly: the clock's line IS the weighted mean of its phase measurements
+
+Every ears onset is a PDA phase measurement with weight `vel / R_CLS[cls]` scaled by the gate's `beta` (`clock.js
+measureLine`). Summed over the whole track from `clock-study.js`'s own `log` — each onset's offset to the nearest truth
+beat, kept where it is inside ±0.15 beat (§59's own window), weighted by `beta·vel/R_CLS`:
+
+| β-weighted offset to the truth beat (ms) | kick | snare | hat | **all** | the clock's own lag |
+|---|---|---|---|---|---|
+| SeeYouDrop pre-§69 → HEAD | +2.5 → +3.0 | −2.7 → −1.4 | −4.9 → −4.3 | **−1.3 → −0.5** | +1 → +3 |
+| CyborgNinja | −0.4 → −0.5 | +2.7 → +1.3 | +3.0 → +3.0 | **+1.4 → +0.9** | +1 → +1 |
+| WhoLikesToParty | +2.9 → +3.0 | +4.7 → +6.4 | +4.8 → +4.9 | **+3.8 → +4.7** | +6 → +6 |
+| **Malicious** | **+18.5 → +21.4** | **+21.0 → +31.1** | **+12.9 → +13.8** | **+18.0 → +24.2** | **+23 → +30** |
+| Vienna | +2.8 → +2.5 | +11.1 → +3.5 | +4.0 → +3.6 | **+7.3 → +3.2** | +6 → +4 |
+
+The "all" column predicts the clock's lag on every track to within 6 ms, which is what the model says it should: the
+Kalman line settles on the weighted centre of its measurements. §69 moved Malicious because the snare lane's own
+placement went +21.0 → +31.1 ms **and** its share of the weight grew (β·w sum 119.5 → 142.8, 43 % → 49 % of the
+total) — so the centre went +18.0 → +24.2 and the line with it. Nothing about the lane is wrong: the SAME change took
+Vienna's snare term +11.1 → +3.5 and its clock +6 → +4.
+
+**But on Malicious ALL THREE classes are late** — kick +21, snare +31, hat +14 — and the kick lane, which is the
+reference the other four tracks sit on (−0.5…+3.0), is +21 there. A common-mode offset on all three inputs cannot be a
+class-weighting artefact, so no re-weighting of the classes can remove it. Measured, not argued (below).
+
+### Four independent rulers: Malicious's truth beat lines sit ~20 ms before the music's attacks
+
+1. **The truth tool's own offline onset lists against its own beats** (median offset, onsets inside ±0.15 beat; these
+   lists are zero-latency by construction and read within ±7 ms on the other four tracks):
+
+   | median ms | `low` | `click` (kicks) | `mid` | `high` |
+   |---|---|---|---|---|
+   | SeeYouDrop | +6.6 | +4.3 | −2.4 | −3.9 |
+   | CyborgNinja | +0.2 | +0.2 | +2.0 | +3.1 |
+   | WhoLikesToParty | +4.2 | +4.3 | +6.5 | +6.0 |
+   | **Malicious** | **+11.6** | **+23.5** | **+23.3** (p25 +23.0, p75 +23.6) | **+22.8** |
+   | Vienna | +0.1 | +1.4 | +2.1 | −1.9 |
+
+   Malicious's `mid` offsets are a near-delta at **+23.3 ms** — a constant, not a spread.
+2. **A zero-phase attack-time measurement that uses no engine and no truth list** (4th-order `filtfilt` band, its
+   `filtfilt`-smoothed envelope, the 20 % crossing of each rise; median offset to the nearest truth beat):
+
+   | median ms | 25–60 | 40–150 | 150–800 | 800–2500 | 5 k–12 k |
+   |---|---|---|---|---|---|
+   | SeeYouDrop | +28.5 | +12.2 | −0.7 | −8.8 | −11.1 |
+   | WhoLikesToParty | +15.2 | +13.4 | +5.1 | +5.1 | +6.3 |
+   | **Malicious** | **+11.5** | **+21.4** | **+22.9** | **+17.3** | **+13.8** |
+
+   On the two controls the bands straddle the grid line (the sub leads, the hats trail it). **On Malicious every band
+   from 25 Hz to 12 kHz is late** — the grid's line sits in a gap where nothing is. So this is NOT the "beats marked on
+   the kick while the felt beat is the snare" case: there is no band it is marked on.
+3. **The truth tool's own rule, as a continuous scan** (`trackmap.py anchor_grid`: "the beat is the one with more
+   40–150 Hz onset strength on it") — the positive zero-phase rise summed within ±0.05 beat of `beats + d`, over d.
+   `E(0)/E(dmax)`, the energy at the grid's own line as a share of the best line's: SeeYouDrop 0.87 / 0.99,
+   CyborgNinja 0.995 / 0.83, WhoLikesToParty 0.98 / 0.995, Vienna 0.88 / 0.98 — and **Malicious 0.89 (40–150) /
+   0.53 (150–800)**, the only reading under 0.82, with the argmax at **+41 / +45 ms**.
+4. **The provenance, in `trackmap.py` itself.** The beat LINE is put on the audio in exactly three ways: the kick
+   anchor + drift fit (`bpm_grid.anchor`), a hand-made grid (`bpm_grid.hand`), or the hand check `gridcheck.py`'s
+   docstring records. Four of the five have one — SeeYouDrop hand-checked (+2.9 ms off its own kick list),
+   CyborgNinja re-anchored (+0.1), WhoLikesToParty re-anchored + drift-fitted (+0.0), Vienna hand-made (90.000 BPM,
+   dp residual 0.0). **Malicious has none**: `if dpres > 0.06: beats = bdp` fires on its 89.7 ms DP residual, so its
+   `beats` are the raw Ellis DP tracker's output (hop-quantised at 11.6 ms, 15.9 ms rms off a straight line, period sd
+   5.05 ms), and the whole anchor branch — `if dpres <= 0.06` — is skipped. And the anchor could not have run anyway:
+   its kicks' eighth-lattice resultant is **0.134** against the tool's own `ANCHOR_R` floor of 0.5 (CyborgNinja 0.959,
+   WhoLikesToParty 0.544, SeeYouDrop 0.500, Vienna 0.351). `gridcheck.py`'s docstring already said so —
+   *"Malicious' kicks are uniform over the beat (DP residual 90 ms): TEMPO rows only"* — and §69 graded a row the ruler
+   disclaims.
+
+**So, with the grid's own ~+23 ms taken off, the ears' three lanes on Malicious are not outliers at all** (lane's
+β-weighted offset minus the same band's independently measured attack offset): kick **+0.0**, snare **+8.2**, hat
+**+0.0** ms, against SeeYouDrop −9.2 / −0.7 / +6.8 · CyborgNinja −2.5 / +3.8 / +2.7 · WhoLikesToParty −10.4 / +1.3 /
+−1.4 · Vienna −0.9 / +5.1 / +12.2. The hat lane lands within **0.5 ms** of the track's own 5–12 kHz attacks. And the
+clock: **+30 − 23 = +7 ms** in node, which is WhoLikesToParty's row. On the **page** (one `filetrace.js` det run,
+`&map=0&lead=0`, whole track) the same clock reads **+19 ms, 81 % within ±30 ms, bias-removed p50 8 / p90 24** — the
+page/node gap of ~11 ms on this track is §59's own recorded pre-existing one (§59: page +10 vs node +22) and is not
+this item. Against the music the page's line is therefore ~4 ms **early**.
+
+### The three candidate fixes, measured — all three make Malicious worse and cost the others
+
+One knob each (`CLOCKK`, no code change), the same five node runs, `gridcheck.py --heard`:
+
+| `R_CLS` (kick / snare / hat) | SeeYouDrop | CyborgNinja | WhoLikesToParty | **Malicious** | Vienna |
+|---|---|---|---|---|---|
+| **1 / 1.5 / 3 (ships)** | +3 ms, 97 %, lock 12.0 s | +1, 97 %, **3.4 s** | +6, 99 %, 5.6 s | **+30, 50 %** | +4, 74 %, p90 **67** |
+| (a) kick only (1 / 1e9 / 1e9) | +13, **84 %**, 12.6 s | −0, **92 %**, **17.1 s** | +6, 99 %, 3.3 s | **+36, 33 %**, lock **27.4 s** | +6, **63 %**, p90 **329** |
+| (c) kick-weighted 1 / 3 / 12 | +6, 94 %, 12.2 s | −2, 93 %, 18.7 s | +5, 99 %, 5.6 s | **+37, 29 %** | +4, **69 %**, p90 **320** |
+| (c) kick-weighted 1 / 6 / 24 | +8, **89 %**, 13.1 s | −2, 93 %, 18.7 s | +4, 99 %, 5.6 s | **+39, 24 %** | +4, 73 %, p90 **320** |
+
+Kicks-define-the-beat is **backwards on this track**: its hat lane is the one at +14, so dropping the hats moves the
+line LATER, +30 → +36. It also gives back exactly what §69 bought — CyborgNinja's lock 3.4 → 17.1 s — and takes
+Vienna's p90 from 67 ms to 320+. Candidate (b), a per-class lag compensation at the clock's input, has nothing to
+compensate: the per-class spread on the four anchored tracks is **±3 ms** (kick −0.5…+3.0, snare −1.4…+6.4, hat
+−4.3…+4.9), and on Malicious the three classes are late TOGETHER, which a per-class constant cannot touch. The only
+thing that removes a common-mode +30 on one track is a global constant — and the other four sit at +1 / +1 / +6 / +4.
+
+### The rule
+
+**A truth grid whose beat PHASE was never placed on the audio cannot grade a clock's phase.** `gridcheck.py` now prints
+that, per track, from the truth file itself — no `bpm_grid.anchor`, no `bpm_grid.hand`, and `dp_residual_ms > 60` ⇒ a
+caveat above the table saying the lag MEDIAN is the grid's offset plus the clock's error and the "jitter (bias removed)"
+row is the gradeable one. It fires on Malicious and on none of the other four. **Printed, not applied: no number in the
+table moves** (verified: the five tables above are byte-identical with and without it).
+
+`CLOCK.KICK_LAG` (0.004 s, §56's median of the four kick placements) is **left alone**, and so is the absence of a
+snare / hat term: both would be fitted to a 23 ms annotation offset.
+
+### Proofs
+
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing soft-cap
+  warns) · **`npm test` OK** — `test_clock.js` is **14 checks** now (12 at HEAD), the two new ones being **`backbeat`**: kicks on every
+  beat and snares **40 ms late on 2 and 4** (loud 1.3, no low band, cls 1 — a laid-back backbeat, the shape §69's row was
+  blamed on). Every snare is a phase measurement at `R_CLS[1]` 1.5, so an averaging filter would settle ~10 ms late; the
+  clock reads **med +3.20 ms, p90 4.17 ms** against the kicks after 20 s, 127.90 BPM, `jumps 0` — the gate is `BACK_MS`
+  **5 ms**. This is the characterisation the diagnosis needs: the clock does NOT follow a late backbeat, so the +30 on
+  Malicious cannot be one.
+- **The engine is byte-identical to `9b164e2`** (v0.24, the tree every number here was taken on; a parallel worker has since
+  landed `074061b` §70 step 1 on `assets/engine/ears/`) — `git diff` touches `tools/test_clock.js` and `tools/truth/gridcheck.py`
+  and nothing else, so the fake-timeline md5 sweep, the bar store / queue tables (§55/§56) and node `Clock.push`
+  µs/hop are HEAD's by construction. The sweep was taken anyway as the receipt (an isolated `git worktree` of HEAD +
+  the two tool files, `PORT=8908 tools/scene-md5.sh s71`, 12 scene ids × f360/f840, `errs []` on every one): the three
+  lines §56/§59 pinned read exactly as recorded — **s0-f360 `fb74fee4`, s0-f840 `8a0715df`, s4-f840 `05bf21c0`** — so
+  the clock stage is still inert under `#test` (it returns at its first line under `ENGINE.fakeOn`). The full list is
+  `tools/work/s71-md5.txt`; it differs from `tools/accept/v0.14/scene-md5-v014.txt` on s1 / s2 / s4-f840 / s5 / s6 /
+  s0-f840, which is seven releases of scene work (DUST §57–§60/§65, the colour and loudness passes) and not this
+  session — a parallel worker was in `assets/engine/ears/` and the snare-reading scenes while this ran.
+- **No audible run.** Every number here is the deterministic node path or one det `filetrace.js` page run.
+- Scratch: `/tmp/rr/{head,pre69}` worktrees, `tools/work/clock/{h,p}-<Track>.json` inside them, the three `R_CLS`
+  sweeps, `indep.py` / `scan.py` / `perclass.py` (the zero-phase rulers, scratch — the reproducible path is in the
+  AUDIT addendum).
+
+### Open
+
+- **Malicious's truth grid is the real open item.** Its beat phase needs a hand check or a new anchor, and until then
+  its beat-phase rows are not evidence. The measured offset is **+23 ms** (the `mid` list's near-delta; the 150–800 Hz
+  scan says +41 at the argmax of a ±21 ms window). Cheapest honest fix: hand-mark 8–16 beats and re-phase, as live
+  step 3.1 did for CyborgNinja. **Do not fit the engine to it in the meantime.**
+- `trackmap.py`'s `dp_beats()` / `refit_grid()` work in FRAME INDEX units and convert with `index / fps`, while the
+  onset lists use `t2[pk]` — real times that include the STFT's `t0 = 1024/sr = 23.2 ms`. On a track with sharp
+  attacks the omission cancels against the flux's own half-window delay (SeeYouDrop's grid lands +2.9 ms off its
+  kicks), which is why four of five grids are fine; on a smeared track it does not. Worth a look when the grid is
+  re-made, but it is a RULER change with every table downstream of it: not taken here.
+- **SeeYouDrop's PCM lock 9.2 → 12.0 s** (§69's other losing row) is untouched and still open.
+- The +11 ms page/node gap on Malicious's clock (§59 recorded it; neither reading is the one in doubt).

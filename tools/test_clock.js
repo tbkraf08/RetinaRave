@@ -10,13 +10,15 @@
 //   band        kicks on the beat and LOUDER snares (no low band) on the off-beat: the line lands on the KICKS (§59's
 //               lattice check — the full-spectrum comb line and the onsets both prefer the louder off-beat)
 //   band flip   the same audio, but only the snares for the first 8 s: the cold start locks to them and the check MOVES the line
+//   backbeat    kicks on the beat and snares 40 ms LATE on 2 and 4: the line stays on the KICKS within BACK_MS (§71 — the
+//               clock does not follow a laid-back backbeat, so a track-wide late bias cannot be one)
 //   determinism two runs are identical to the last bit
 //   node tools/test_clock.js            -> per-case lines + OK / FAIL
 import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
 if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 
 const SR = 48000, B = 512;
-const LOCK_S = 6, PH_MS = 12, BPM_TOL = 0.5, RAMP_TOL = 1.0, GAP_MS = 30, OUT_MS = 6;
+const LOCK_S = 6, PH_MS = 12, BPM_TOL = 0.5, RAMP_TOL = 1.0, GAP_MS = 30, OUT_MS = 6, BACK_MS = 5;
 let seed = 12345;
 const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
 
@@ -147,6 +149,24 @@ const check = (name, ok, msg) => { if (!ok) fail++; console.log(`${ok ? 'ok  ' :
   const on = (v) => Math.abs(v) <= 2 * PH_MS, moved = beats.find((T) => T > 8 && on(errAt(rows, T)) && beats.filter((U) => U > T && U < T + 8).every((U) => on(errAt(rows, U))));
   console.log(`band flip (snares only for 8 s, then the kicks): err vs the KICK lattice before ${med(before).toFixed(0)} ms -> after 50 s med ${med(after).toFixed(1)} p90 ${p90(after).toFixed(1)} ms · moved at ${moved === undefined ? '-' : moved.toFixed(1) + ' s'} · lat ${clk.lat.toFixed(3)} latJumps ${clk.latJumps} jumps ${clk.jumps}`);
   check('band flip', Math.abs(med(before)) > 100 && Math.abs(med(after)) <= 2 * PH_MS && clk.latJumps >= 1, `off the kicks cold, on them after the check moves the line`);
+}
+// 8. a LAID-BACK BACKBEAT (§71): kicks on every beat and snares 40 ms LATE on 2 and 4 — the shape §69's Malicious row was
+//    blamed on. Every snare is a phase measurement too (R_CLS[1] 1.5), so if the filter averaged the two classes the line
+//    would settle a quarter of the way to the snares (~10 ms late). It does not: the kicks are twice as many, carry the low
+//    band the comb's line is built on, and have the smaller R, so the line stays ON THE KICKS within BACK_MS. This is the
+//    characterisation that says the +30 ms on Malicious cannot be a snare-weighting artefact (DECISIONS §71).
+{
+  const SECS = 70, beat = 60 / 128, LATE = 0.040, plan = [], beats = [];
+  for (let t = 0.2, k = 0; t < SECS; t += beat, k++) {
+    plan.push({ t, jit: 0 }); beats.push(t);                                        // the kick, on the beat
+    if (k % 2 === 1) plan.push({ t: t + LATE, loud: 1.3, vel: 1, cls: 1, noLow: true, jit: 0 });   // the snare, 40 ms behind it
+  }
+  plan.sort((a, b) => a.t - b.t);
+  const { pcm, hits } = synth(SECS, plan), { rows, clk } = run(pcm, hits);
+  const e = beats.filter((T) => T > 20).map((T) => errAt(rows, T));
+  console.log(`backbeat (kicks on the beat, snares +${1000 * LATE} ms on 2 and 4): err vs the KICKS after 20 s med ${med(e).toFixed(2)} p90 ${p90(e).toFixed(2)} ms · bpm ${clk.bpm.toFixed(2)} onsets ${clk.onsets} hits ${clk.hits} jumps ${clk.jumps}`);
+  check('backbeat', Math.abs(med(e)) <= BACK_MS && p90(e) <= 2 * BACK_MS, `the line is on the kicks within ${BACK_MS} ms, not pulled toward the snares (+${1000 * LATE} ms)`);
+  check('backbeat tempo', Math.abs(clk.bpm - 128) <= BPM_TOL, `the beat, not the 8th (${clk.bpm.toFixed(2)})`);
 }
 console.log(fail ? `test_clock: ${fail} FAIL` : 'test_clock: OK');
 process.exit(fail ? 1 : 0);

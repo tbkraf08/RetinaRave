@@ -132,6 +132,19 @@ def run(trace, truth, md=None, ann=None, per_section=False, win=None):
           + (f" | clocks rebased onto heard time (-{1000 * trace['rebased']:.1f} ms)" if trace.get('rebased') else '') + f" | truth "
           f"{g.get('bpm')} BPM, beat {g.get('beat')} s, downbeat mod4 {g.get('downbeat_mod4')} "
           f"(scores {g.get('downbeat_scores')}), dp residual {g.get('dp_residual_ms')} ms")
+    # THE GRID'S PHASE, graded or not (DECISIONS §71). trackmap.py places the beat LINE on the audio's attacks in exactly
+    # three ways: the kick anchor / drift fit (`bpm_grid.anchor`), a hand-made grid (`bpm_grid.hand`), or a hand check
+    # recorded in the docstring above. A track whose DP residual is over 60 ms never enters the anchor branch at all — its
+    # `beats` are the raw Ellis DP tracker's output, hop-quantised, with its phase wherever the onset envelope's cost put
+    # it — so its beat-PHASE rows below are the GRID's own offset plus the clock's error and cannot separate the two.
+    # Malicious is the one such track in the set (dp residual 90 ms, kicks' eighth-lattice resultant 0.13 against the
+    # anchor's own 0.5 floor): its truth onset lists sit +23 ms after its own beat lines where the other four read within
+    # +-7, so a lag median near +23 ms there IS the grid. This note is printed, not applied: no number below moves.
+    _anch = bool(g.get('anchor') or g.get('hand'))
+    if not _anch and (g.get('dp_residual_ms') or 0) > 60:
+        print(f"  !! the truth beat PHASE was never anchored on this track (dp residual {g.get('dp_residual_ms')} ms > 60, no kick "
+              f"anchor, no hand grid): the `beats` are the raw DP tracker's. TEMPO rows only — the phase rows' MEDIAN is the\n"
+              f"     grid's own offset plus the clock's error; the 'jitter (bias removed)' row is the gradeable one. DECISIONS §71.")
     # ---- v3: bpm, beatPhase, beat
     bpm = colf(trace, 'bpm'); okv3 = tempo_row(T, 'bpm', bpm, ref, sel, 'v3')
     bp = colf(trace, 'beatPhase')

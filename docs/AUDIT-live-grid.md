@@ -1129,3 +1129,75 @@ lattice the low band has ruled against. The A/B is one knob: `CLOCKK='{"LAT_MARG
 Synapse's grid is untouched (`barPos` / `beatSyn` / `barConf` / `phrase16Pos` identical before and after: CyborgNinja's
 bar line 10.7 % on the truth downbeat, SeeYouDrop's 74.6 %). Cost flat (node `Clock.push` 56.5–57.0 µs per hop either
 way). `tools/work/clock/s59/*`. Not tagged, not pushed, not deployed.
+
+### Step 6 addendum 4 — Malicious's +30 ms is its TRUTH GRID (one worker, 2026-10-01; DECISIONS §71)
+
+§69's clock table had one losing row: the PCM clock's line on Malicious **+23 → +30 ms**, within ±30 ms **80 → 50 %**,
+bias-removed steadiness **94 → 95 %** (a pure offset — jitter p50 7 / p90 24 ms, frame-to-frame |dlag| p50 0.0). Both
+numbers reproduced here in isolated `git worktree`s of HEAD (`9b164e2`) and `4e175e5`, node, whole track.
+
+**The mechanism, stated in the clock's own terms.** `clock.js measureLine()` is a PDA update, so the line settles on
+the **β-weighted centre** of its phase measurements (weight `vel / R_CLS[cls]` × the gate's `beta`). Summed over the
+whole track from `clock-study.js`'s `log` — each onset's offset to the nearest truth beat, inside ±0.15 beat:
+
+| β-weighted offset (ms), pre-§69 → HEAD | kick | snare | hat | all | the clock's lag |
+|---|---|---|---|---|---|
+| SeeYouDrop | +2.5 → +3.0 | −2.7 → −1.4 | −4.9 → −4.3 | −1.3 → −0.5 | +1 → +3 |
+| CyborgNinja | −0.4 → −0.5 | +2.7 → +1.3 | +3.0 → +3.0 | +1.4 → +0.9 | +1 → +1 |
+| WhoLikesToParty | +2.9 → +3.0 | +4.7 → +6.4 | +4.8 → +4.9 | +3.8 → +4.7 | +6 → +6 |
+| **Malicious** | +18.5 → **+21.4** | +21.0 → **+31.1** | +12.9 → **+13.8** | +18.0 → **+24.2** | +23 → **+30** |
+| Vienna | +2.8 → +2.5 | +11.1 → +3.5 | +4.0 → +3.6 | +7.3 → +3.2 | +6 → +4 |
+
+The "all" column predicts the lag within 6 ms on every track. §69 moved Malicious both ways at once: the snare lane's
+placement +21.0 → +31.1 ms and its share of the weight 43 → 49 % (β·w 119.5 → 142.8). But **all three classes there
+are late together** (+21 / +31 / +14), including the kick lane that reads −0.5…+3.0 on the other four — a common mode,
+which no class weighting can remove.
+
+**Four rulers say the grid's lines are ~20 ms before the music's attacks, and only on this track.** (1) the truth
+tool's own offline onset lists against its own beats: `mid` median **+23.3 ms, p25 +23.0 / p75 +23.6** — a near-delta —
+`click` +23.5, `high` +22.8, where the other four read within ±7; (2) a zero-phase `filtfilt` attack-time measurement
+using no engine and no truth list: **every** band from 25 Hz to 12 kHz late (+11.5 / +21.4 / +22.9 / +17.3 / +13.8 for
+25–60 / 40–150 / 150–800 / 0.8–2.5 k / 5–12 k), where the controls straddle the line (SeeYouDrop +28.5 … −11.1); (3)
+`trackmap.py anchor_grid`'s own 40–150 Hz rule run as a continuous offset scan — the energy at the grid's own line is
+**0.53** of the best line's in 150–800 Hz (argmax +41 ms), the only reading under 0.82 in the set; (4) the provenance:
+`if dpres > 0.06: beats = bdp` fires on its 89.7 ms DP residual, so its `beats` are the raw Ellis DP tracker's
+(hop-quantised 11.6 ms, 15.9 ms rms off a straight line) and the whole kick-anchor branch is skipped — and the anchor
+could not have run anyway, its kicks' eighth-lattice resultant being **0.134** against `ANCHOR_R` 0.5 (CyborgNinja
+0.959 / WhoLikesToParty 0.544 / SeeYouDrop 0.500 / Vienna 0.351). The other four grids all have an anchor, a drift fit
+or a hand.
+
+With that ~23 ms off, the ears' lanes on Malicious are ordinary — kick **+0.0**, snare **+8.2**, hat **+0.0** ms against
+their own bands' measured attacks — and the clock reads **+7 ms** (node) / **−4 ms** (page). The page's own det run
+(`&map=0&lead=0`, whole track, one `filetrace.js`) reads **+19 ms, 81 % within ±30**, the ~11 ms page/node gap being
+addendum 3's own recorded one (page +10 vs node +22 there).
+
+**The three candidates, measured by knob, no code change** (`CLOCKK='{"R_CLS":[…]}'`, five node runs each):
+
+| `R_CLS` | SeeYouDrop | CyborgNinja | WhoLikesToParty | **Malicious** | Vienna |
+|---|---|---|---|---|---|
+| **1 / 1.5 / 3 (ships)** | +3, 97 %, 12.0 s | +1, 97 %, **3.4 s** | +6, 99 %, 5.6 s | **+30, 50 %** | +4, 74 %, p90 **67** |
+| kick only (1 / 1e9 / 1e9) | +13, 84 %, 12.6 s | −0, 92 %, 17.1 s | +6, 99 %, 3.3 s | **+36, 33 %**, 27.4 s | +6, 63 %, p90 329 |
+| 1 / 3 / 12 | +6, 94 %, 12.2 s | −2, 93 %, 18.7 s | +5, 99 %, 5.6 s | **+37, 29 %** | +4, 69 %, p90 320 |
+| 1 / 6 / 24 | +8, 89 %, 13.1 s | −2, 93 %, 18.7 s | +4, 99 %, 5.6 s | **+39, 24 %** | +4, 73 %, p90 320 |
+
+Kicks-define-the-beat is backwards here (the hat lane is the early one, so dropping hats moves the line LATER) and it
+gives back exactly what §69 bought. A per-class lag compensation has nothing to compensate: ±3 ms of spread on the four
+anchored tracks. **So nothing in `engine/clock/` changed.**
+
+**What did change, both in tools.** `tools/test_clock.js` gains a **`backbeat`** case — kicks on every beat, snares
+**40 ms late on 2 and 4** (loud 1.3, no low band, class 1) — and the clock's line stays on the kicks at **med +3.20 /
+p90 4.17 ms**, gate 5 ms: the property the diagnosis rests on, now guarded (14 checks, 12 before). And
+`tools/truth/gridcheck.py` prints a caveat above the table when the truth file says the beat phase was never placed on
+the audio (no `bpm_grid.anchor`, no `bpm_grid.hand`, `dp_residual_ms > 60`) — it fires on Malicious alone, and the five
+tables are byte-identical with and without it.
+
+```
+node tools/clock-study.js <Track> --no-v3 --out tools/work/clock/x-<Track>.json   # in a worktree; the PCM clock + every onset in `log`
+python3 tools/truth/gridcheck.py tools/work/clock/x-<Track>.json --heard          # the pcm rows, now with the un-anchored-grid caveat
+CLOCKK='{"R_CLS":[1,1e9,1e9]}' node tools/clock-study.js <Track> --no-v3 …        # the kick-only phase A/B, one knob, no tree
+```
+
+`node tools/check.js` 0 fail · `npm test` OK · the engine byte-identical to `9b164e2` (so the md5 sweep, the bar / queue
+tables and `Clock.push` µs/hop are HEAD's by construction; the sweep was taken anyway in an isolated worktree,
+`PORT=8908 tools/scene-md5.sh s71`, `errs []` on all 12 ids, and the three lines §56/§59 pinned read `fb74fee4` /
+`8a0715df` / `05bf21c0`). No audible run. Not tagged, not pushed, not deployed.
