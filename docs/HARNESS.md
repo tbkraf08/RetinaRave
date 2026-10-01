@@ -845,7 +845,10 @@ medians over the full windows from 8 s, the Ω = 1 oscillator's lock phase at th
 `tongueAmbig ≥ --amb`), the first full window, and the bank's own µs per hop (the clock's FFT excluded). `tongueDepth` in the
 node trace carries the page's per-frame ease; `tongue11` is the raw per-beat depth. The switch: `&tongues=0` (no bank runs,
 `tongueOn` −1). Pitfall: a clock re-seat or a lattice move clears the windows (`tongueOn` 0 for 16 beats) — a trace that reads
-0 mid-track is the clock moving, not the bank failing; `tools/clock-study.js`'s `jumps` says when.
+0 mid-track is the clock moving, not the bank failing; `tools/clock-study.js`'s `jumps` says when. A SCENE that reads a tongue
+field is graded with `tools/dust-trace.js` **with the engine started at 0:00** (`WARM=<t0>`): the bank's depths need 16 beats
+plus a warm normaliser, and a window that starts the engine cold inside the track (the default WARM 8) is not what the user's
+play button does (§78 found CyborgNinja's cold start reading two false accents that way).
 
 ## Scene ruler on a real track — `tools/dust-trace.js` (a scene edit whose point is the SYNC, v0.20+ / DECISIONS §57)
 

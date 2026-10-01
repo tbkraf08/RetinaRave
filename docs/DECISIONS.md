@@ -6619,6 +6619,9 @@ clock's first beat, plus any re-seat: SeeYouDrop re-seats at 9–18 s and refill
   `PORT=8921 tools/scene-md5.sh base76` against `PORT=8920 tools/scene-md5.sh new76` on the new tree, `errs []` on all 12 ids;
   `tools/work/tongues/md5-{base76,new76}.txt`). The stage never runs under `#test`; the mirror is written by fake.js; no scene
   reads a field.
+- **Re-taken on §78's warm normaliser (`c849b38`)**: SeeYouDrop 0–60 s page = node 3600 / 3600 within 1e-3 on eleven of the
+  twelve fields (max |diff| 1e-4 on the depths, 4e-3 on `tongue41`; `tongueP` differs on 143 frames by a width tie); the
+  §77 page rows re-taken whole-track: Vienna 8.9 beats / −3 ms / 0 false, CyborgNinja 0 arms — unchanged.
 - **Cost.** Node: the bank alone **1.0–1.7 µs per hop = 1.6–2.7 µs per 60 Hz frame** (`tongues-node.js`'s last column; the
   first cut with two 84-oscillator banks and no fast path read 4.1–4.7 µs/hop, and the PAGE read it at +0.035–0.044 ms per
   frame on `CLOCK.cpuTotal / frameN` — 5× node, so two things were cut: a hop with zero novelty rotates freely without the
@@ -6717,3 +6720,88 @@ against node's 72.0–86.0.
 fires once and disarms; 120 s of a dense train at 0.32 never arms; the ambiguity gone for a beat releases; `tongueOn` −1 /
 `AMB_ARM` 0 / no field are inert) · the four controls' replays md5-identical on / off (above) · the s1 fake-timeline md5
 cannot move (the build stage returns early on `fakeOn`; no scene edit in this commit).
+
+## §78 DUST: the double time ACCENTS, it does not drive — the nudge's amplitude on the tongue ladder's rise (2026-10-01, one worker; `docs/plans/TONGUES-PLAN.md` phase 4; the user at Vienna 1:25 since §61: "the double time should be accenting rather than driving")
+
+Commit `c849b38` (grid.js, index.js, help.js; plus one engine line in `clock/tongues.js` the receipt forced — below), this
+section plus the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the
+user's, stream mode, the watch-list at the end.
+
+### The lever, and the lean
+
+§66 measured and rejected an 8th-note NUDGE: CyborgNinja's 16th hats fire the same gate at 5.33 crests/s. The nudge stays on
+the beat. What the tongues add (§76) is the 8th / 16th tongue DEPTHS, `tongue21` / `tongue41` — and the level alone cannot be
+the lever either, because **CyborgNinja's `tongue21` sits at 0.61 for the whole track and Vienna's groove reads 0.46**: by level
+the control would be accented harder than the headline. What separates them is a **CHANGE over bars**: the 16-beat window's
+depth 16 beats ago against now. CyborgNinja's never rises more than **0.13** (`tongue41` 0.13) from the cold start to the end;
+Vienna's rises **0.00 → 0.52** over 87–101 s as the double time arrives after drop 1, and 0.15–0.30 over 27–39 s as the hats the
+user heard at 0:25 come in; SeeYouDrop's rise at every return (up to 0.51); WhoLikesToParty's 0.14 / 0.31 and Malicious's
+0.16 / 0.26 on a few bars. So, `assets/scenes/dust/grid.js`: at the beat line, `rise = max(tongue21, tongue41) − the same 16
+beats ago` (a ring per step), `acc = 0 under ACC.LO 0.15, 1 at ACC.HI 0.45`, and the step is `STEP · (1 + DOWN·isDown + ACC.K
+0.25 · acc)` — **the accent's AMPLITUDE, the way DOWN already treats the downbeat: a bigger crest on the same beat, never a
+faster one.** The ring resets whenever `tongueOn` is not 1, so a warming gap cannot read as a rise, and `tongueOn` −1
+(`&tongues=0`) is §66's step bit for bit. `hooks.dinfo()` gains `nacc`; the scene's `feats` gain `tongue21` / `tongue41` /
+`tongueOn` with `help.feats` lines. Not touched: the hat voice's gain (the second lever the brief allowed) — one lever, one
+receipt; it is open.
+
+**The engine line the receipt forced (`clock/tongues.js`).** The first `dust-trace.js` run (WARM 8, the engine cold at 12 s)
+put two accented bars on CyborgNinja at 26–27 s (acc 0.78 → 0.13) where the whole-track rise never passes 0.13: the bank's
+drive normaliser was an EMA started from 1e-6, 1.6× too small 8 s in, so the first windows after a cold start read 0.2 too
+deep (`tongue21` 0.67 → 0.88 → 0.73 over 20–30 s) and the FALL back read as a rise 16 beats later. The normaliser is now the
+running MEAN of the novelty until `EMA_TAU` has passed and the EMA after (the same memory): the §76 table re-taken moves no
+mid-band median by more than 0.014 (Malicious 0.359 → 0.345; SeeYouDrop's low band 0.172 → 0.156, nearer the probe's 0.116),
+the 1:1 click train's width 0.50 → 0.44 oct (theory 0.46), §77's replay hashes are unchanged to the byte, and CyborgNinja's
+cold-start rise is 0.13. The §76 proofs below were re-taken on it.
+
+### The ruler (`tools/dust-trace.js`, DUST forced, `&map=0`, the engine started at 0:00 — `WARM = t0` — in two worktrees: HEAD `67d98c1` and this; `tools/work/v78/nudge78.py`, the §61 / §66 grader on the trace's own `d_spin` plus the step per bar)
+
+| window (clock) | peak @ | floor / peak | dead | 25 / 50 / 90 % | max \|a\| p50 / p99 | step / STEP mean (max) | bars accented (acc max) | hat fires |
+|---|---|---|---|---|---|---|---|---|
+| **Vienna 80–110** (90.1) before | −8.3 ms | 16.4 % | 0.0 % | +0 / +317 / +767 | 16.3 / 49.2 | 1.130 (1.146) | 0 / 12 | 87 |
+| after | −8.3 ms | 14.5 % | 0.0 % | +0 / +317 / +767 | 16.9 / 49.8 | **1.223 (1.395)** | **7 / 12 (1.00)** | 87 |
+| **Vienna 24–60** (90.0) before | +8.3 ms | 17.2 % | 0.0 % | +0 / +308 / +767 | 11.7 / 19.1 | 1.119 (1.144) | 0 / 14 | 95 |
+| after | +8.3 ms | 16.7 % | 0.0 % | +0 / +317 / +767 | 12.4 / 19.8 | 1.138 (1.219) | **6 / 14 (0.37)** | 95 |
+| SeeYouDrop 20–110 (150.0) before | −8.3 ms | 17.5 % | 0.0 % | +0 / +200 / +467 | 17.4 / 35.9 | 1.123 (1.219) | 0 / 57 | 351 |
+| after | −8.3 ms | 16.7 % | 0.0 % | +0 / +200 / +467 | 17.6 / 36.7 | 1.153 (1.353) | 28 / 57 (0.91) | 351 |
+| **CyborgNinja 20–80** (160.0) before | −8.3 ms | 18.4 % | 0.0 % | +0 / +183 / +433 | 15.6 / 23.9 | 1.123 (1.217) | 0 / 41 | 454 |
+| after | −8.3 ms | 18.4 % | 0.0 % | +0 / +183 / +433 | 15.6 / 23.9 | 1.123 (1.217) | **0 / 41 (0.00)** | 454 |
+
+The §61 / §66 metrics hold on every window: the crest peaks at the same frame (±8.3 ms), the dead time stays 0, the 25 / 50 /
+90 % completion times are the frame they were, the velocity floor is unchanged (0.165–0.236 rad/s) and the floor / peak ratio
+moves only where the peak does (16.4 → 14.5 % on Vienna 80–110, inside §66's 12.3–17 % band); the jerk's p99 moves ≤ 0.8
+rad/s² (Vienna 80–110's 49 is the drop's own re-seat, before and after). The hat fires are identical on all four windows
+(flashes/s unchanged). **CyborgNinja is identical to the digit** — every metric, every bar, the luminance columns. Vienna's
+accent, per bar on the page: 1:27 0.07 · **1:30 0.93 · 1:32 1.00 · 1:35 1.00 · 1:38 0.90 · 1:40 0.45** · 1:43 0.00 — the step
+reads 1.25× on the ordinary beats and 1.75× on the downbeats through 1:30–1:38 and is back to §66's by 1:43; **nothing moves
+at drop 2 (1:46.7)**, where the ladder's depth does not change. Luminance: Vienna 80–110 p05 / p50 / p95 44.5 / 129.9 / 188.1
+→ 48.2 / 127.6 / 188.6, |Δlum| p50 1.29 → 1.29 — the accent is motion, not light.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (help.feats gaps 0; grid.js 302 lines, index.js 343 — under the soft cap) · `npm test` OK
+  (`test_tongues.js`'s `tongueK` case loosened to one bank step: the warm normaliser reads 0.956 where the cold one's 1.6×
+  drive read 1.00 against a theory of 1.00 at infinite resolution).
+- **s1 fake-timeline md5 UNCHANGED with the tongues on AND under `&tongues=0`: f360 `d16d35f7`, f840 `57a9c49c`** (= HEAD's
+  `base76` lines). The mirror's `tongue21` / `tongue41` are constants (0.5 / 0.4) in every phase of the loop, so the rise is 0
+  and the accent never fires there — the mirror that keeps the timeline an md5 reference, as §76 planned.
+- `CARD.bench(1, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: this tree **DUST 1.03 / 0.79 / 0.81 ms
+  against NAV 1.94 / 2.00 / 1.95** (ratio 0.42); the base worktree DUST 1.32 / 1.20 / 1.22 against NAV 1.96 / 1.94 / 1.94
+  (0.63) — the scene's new work is two ring writes and a max per beat; the difference is the machine's drift between the two
+  pages, not a cost.
+- Page = node on the warm normaliser (SeeYouDrop 0–60 s, the twelve fields): see the line appended to §76's proofs.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.26.html` from `file://`, new = `http://127.0.0.1:8765/`, key `2` for DUST, `&tongues=0` on the new page = the exact before)
+
+- **Vienna 1:25 → 1:43.** At the drop the nudge is §66's; over the next bar the double-time layer fills the 16-beat window and
+  from **1:30 to 1:38 every beat's crest is a quarter bigger** (the downbeat's 1.75× instead of 1.5×), fading through 1:40 and
+  gone by 1:43. The RATE of crests does not change (1.50 /s — one per beat), the hats flash exactly as before. Look for a
+  heavier swing of the whole cloud on each beat, not a faster one.
+- **Vienna 1:40–1:50.** The accent is fading (0.45 at 1:40) and is 0 before drop 2 at 1:46.7: this change does nothing there,
+  by measurement (the ladder's depth is flat across that drop). If 1:46.7 wants an accent it is a different field.
+- **Vienna 0:27–0:40.** The hats' arrival the user heard at 0:25 reads as a rise of 0.15–0.30: a smaller accent (0.26–0.37,
+  the step 1.07–1.09×) on four bars. Subtle by design — it is under the dead zone's knee.
+- **SeeYouDrop** 0:23–0:28, 0:34–0:39, 0:41–0:48 (0.91 at the return after breakdown 1), 1:28–1:33: the same accent at its
+  returns.
+- **CyborgNinja, anywhere:** nothing. Identical to the digit — the control the brief named.
+- **WhoLikesToParty / Malicious:** a few bars at 0.1–0.5 (their 16th-note depth rises at 0:50–0:55 and 2:03–2:10 on
+  WhoLikesToParty; 1:40–1:45, 2:51–2:56 on Malicious) — not graded here, named so the eye is not surprised.
