@@ -5030,3 +5030,10 @@ here, 73 there — so it is the same picture, measured against a slightly differ
   gitignored like §66's; the reference BUILDER was promoted to `tools/truth/kicktruth.py` because `drumcheck.py` now
   depends on its output.
 - **`tools/accept.sh` still has not been run since v0.14** (§65 item 5, unchanged by this session).
+
+**v0.23 tagged locally (2026-10-01) on the user's word ("tag what has been done so far"; deploy still held):** v0.22 + §61 (the
+nudge as a velocity profile, Vienna's clock octave), §62 (`key` is the tonic), §63/§65/§67 (LOUDNESS: the BS.1770 `loud` stage,
+FEIGEN / MANDALA / POLYTOPE / DUST base light on true loudness, the peak-hold fix), §64 (the hat bed gate, the sub-void arming
+path), §66 (Vienna in numbers, `K.WREF`), §68 (the ears' low lane is a 60–150 Hz rise). `releases/retinarave-v0.23.html` (1454 KB,
+157 modules; from `file://` on scene 1: errs [], nonFinite [], clock pcm), package.json 0.23.0. Not pushed (retinarave.com serves
+v0.15). The user's next word: the snare / rim lane — "yes" (§69).
