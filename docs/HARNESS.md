@@ -33,7 +33,25 @@ node tools/test_misi.js        # ... OK
 node tools/test_hopf.js        # circle error 2e-12 · torus distance 2e-13 · ... OK   (§4 Hopf fibration)
 node tools/test_tempo.js       # tempo estimator on a synthetic onset envelope: 120/128/140/174 within ±0.5, 6 s gap held,
                                #   tempo changes picked up (§9). TEMPO_DEBUG=1 prints the ACF peaks, =2 every estimate.
+node tools/test_dsp.js         # engine/ears/dsp.js's streaming primitives. Prints a CHARACTERISATION table first —
+                               #   Quantile(q) on U(0,10), a two-level signal and a monotone ramp at q 0.1/0.5/0.9/0.95,
+                               #   the estimate read as the mean of v over the last fifth of 200k pushes — then asserts
+                               #   the SIGN (v must rise with q: the §73 bug had Quantile(0.95) read 0.508 on U(0,10)),
+                               #   convergence within 2 % of the range, a tracked 20 dB step change, rel-mode scale
+                               #   invariance, determinism and the 16-push warm-up. The ramp's rows are informational:
+                               #   a causal tracker has no stationary quantile on a non-stationary stream.
 ```
+
+**A change to `engine/ears/dsp.js` reaches everything the ears feed**, so `Quantile`, `RunMedian`, `Band` or `FFT` is the
+one place in the engine where the whole live-grid list is the proof, not a slice of it (DECISIONS §73 ran it): the drum
+table (five tracks x {`ears`, `v2`} x their references), §64's build table, §59's clock, the queue, the bar store, the
+OFFLINE map (`tools/work/v73/mapsum.js` — `map.js` builds its own `PercTrack` and `SubTrack`, so the file+map path moves
+with the causal one) and the fake-timeline md5 sweep. Nothing on the `#test` path imports from `engine/ears/` —
+`sources/fake.js`, `features.js` and `shim.js` do not, and `engine/clock/clock.js` takes only `FFT` from `dsp.js` — so
+**0 of the 24 md5 lines may move**, and that is worth checking as an isolated pair in two worktrees rather than against a
+recorded list (jpg bytes drift with the driver). Record each consumer's input stream ONCE per track
+(`tools/work/v73/rec.js`: the real `Ears` on the det time base, hooked) and sweep the constants off the recording in
+milliseconds instead of a 20 s engine run each.
 
 ## OKLab (change to `core/oklch.js`, `math/oklab.js`, or a scene that uses `ctx.oklch`)
 
