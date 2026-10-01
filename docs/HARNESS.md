@@ -832,6 +832,8 @@ clock does, and the det page equals node hop for hop (the first hop already feed
 node tools/test_tongues.js                                                 # in npm test: synthetic click trains — 1:1, 2:1, the 2.46 dB accent at K 0.5 / 1 / 2, swing, silence, a re-seat, determinism
 node tools/tongues-node.js [Track …] [--out tools/work/tongues] [--md out.md] [--amb 0.9]   # node, the det time base: the twelve fields per frame (node-<Track>.json) + per clock beat (`beats`), and the probe's table
 TONGUEK='{"K":2}' node tools/tongues-node.js Vienna                        # one knob (= TONGUEK in tongues.js; CLOCKK still takes the clock's)
+node tools/tongues-cold.js [Track …] [--starts 10,25,…] [--md out.md]        # the cold-start table (§76a): 10 starts a track, the lattice landed on, lock s, lag p50 / p90, within 30 ms, lattice moves
+CLOCKK='{"LAT_SRC":"tongue"}' node tools/tongues-cold.js                     # the same with the clock's lattice decision read from the bank (the knob; default 'low' = §59)
 PORT=8920 node tools/filetrace.js <Track> 0 60 out.json 'heardT,bpmPcm,beatCountPcm,tongueP,tongueQ,tongueDepth,tongueK,tongueAmbig,tongue11,tongue21,tongue41,tongueLat,tongueLatConf,swing,tongueOn' '&map=0&lead=0'
 node tools/build-node.js --cmp page.json tools/work/tongues/node-<Track>.json tongue11,tongue21,tongue41,tongueAmbig,tongueLat,tongueLatConf,tongueDepth,swing,tongueOn   # page = node
 python3 tools/truth/tongues/env.py && python3 tools/truth/tongues/probe.py --md tools/work/tongues/probe-K1.md              # the plan's TRUTH-centred probe (the target table)

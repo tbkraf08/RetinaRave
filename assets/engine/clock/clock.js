@@ -65,6 +65,14 @@ export const CLOCK = {
   LAT_MARG: 0.06,               // the natural-log margin: the half-beat must carry 6 % more low band to move the line
   LAT_SUS: 4,                   // s of NET time past the margin before the line moves (below: time inside it counts down)
   LAT_EPS: 1e-9,                // the ratio's floor: silence reads 0, not ±Infinity
+  // §76 phase 2 (the plan's "tongueLat as the lattice input", a KNOB, default off): with LAT_SRC 'tongue' the half-beat
+  // decision reads the tongue bank's Ω = 1 oscillator phase against the clock's line (low band first, the mid band where the
+  // low has no lattice, tongues.js) instead of the two leaky window energies — the same LAT_SUS net-time hold, the same
+  // forward move. The cold-start table (DECISIONS §76a) said no: 46 / 46 cold starts land on the truth lattice under BOTH
+  // rules, and the tongue rule moves lines §59's never does (Vienna 4 moves, p90 lag 109 → 160 ms; CyborgNinja 2 → 4).
+  // 'low' stays the default; the knob is kept for the next track that fools the low band.
+  LAT_SRC: 'low',               // 'low' (§59's two leaky energies) | 'tongue' (the bank's lattice phase)
+  LAT_TJUMP: 0.3,               // cycles: |tongue lattice phase| past this = the kick lattice is the other half-beat
 };
 
 export class Clock {
@@ -249,7 +257,11 @@ export class Clock {
     // the hold is NET time past the margin, not an unbroken run: the margin is only 0.06 wide, so a run rule turns a 1e-4
     // difference between the page and node into tens of seconds of delay (measured: 19 s against 63 s). Time past the margin
     // counts up, time inside it counts down, and the floor is 0.
-    const past = this.locked && this.lat < -K.LAT_MARG;
+    let past;
+    if (K.LAT_SRC === 'tongue' && this.tongues) {
+      const T = this.tongues, o = T.out, dm = T.k.LAT_DMIN, lo = o.tongueLatConf >= dm, mi = T.latMidConf >= dm;
+      past = this.locked && o.tongueOn === 1 && (lo || mi) && Math.abs(lo ? o.tongueLat : T.latMid) > K.LAT_TJUMP;
+    } else past = this.locked && this.lat < -K.LAT_MARG;
     this.latHold += past ? dt : -dt;
     if (this.latHold < 0) this.latHold = 0;
     if (this.latHold >= K.LAT_SUS) {

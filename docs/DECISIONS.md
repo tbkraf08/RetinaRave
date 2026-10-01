@@ -6635,3 +6635,34 @@ and on a pure 1:1 train), it re-derives §59's low-band lattice statistic with a
 groove), and it carries the one thing nothing in MS carried: Vienna's dream as **22 beats of `tongueAmbig ≥ 0.9` ending at the
 drop** — §77 reads it. Open: the "1:1 wins" statistic is a tie-breaker's and should not be read as a tempo vote; the bank
 re-centres on `bpmPcm`, so on the two tracks whose page clock is not node's the fields inherit that gap.
+
+### §76a phase 2 — `tongueLat` as the lattice input: the knob is built and stays OFF (the cold-start table said so)
+
+`CLOCK.LAT_SRC` (`'low'` = §59's two leaky 40–150 Hz energies, the default; `'tongue'` = the bank's Ω = 1 phase against the
+clock's line, the low band while `tongueLatConf ≥ 0.06`, the mid band's otherwise, |phase| > `LAT_TJUMP` 0.3 for `LAT_SUS`
+of net time → forward half a beat, exactly §59's hold and move) and `tools/tongues-cold.js`: **the cold-start table the engine
+never had** — the clock started cold at 10, 25, 40 … 145 s of each truth track in node on the det time base (46 starts), graded
+at the truth beats: the lattice it lands on (the median lag over the last 30 s within ±0.25 beat), the lock time (|lag| <
+0.1 beat for 8 s), lag p50 / p90 and the share within 30 ms from 15 s after the start, the lattice moves. `CLOCKK='{"LAT_SRC":
+"tongue"}'` is the one-knob A/B. `tools/work/tongues/cold-{low,tongue}.md` hold every row.
+
+| track | starts on the truth lattice, low / tongue | lock s p50 (max) | within 30 ms p50 | lag p90 p50 (ms) | lattice moves |
+|---|---|---|---|---|---|
+| SeeYouDrop | 7 / 7 · 7 / 7 | 11.2 (24.8) · 11.2 (24.8) | **98.8** · 94.3 % | **18** · 21 | 3 · 2 |
+| CyborgNinja | 9 / 9 · 9 / 9 | 2.8 (14.0) · 2.8 (12.9) | 100.0 · 100.0 % | 3 · 3 | **2** · 4 |
+| WhoLikesToParty | 10 / 10 · 10 / 10 | 3.3 (13.1) · 3.3 (13.1) | 100.0 · 100.0 % | 9 · 9 | 0 · 0 |
+| Malicious | 10 / 10 · 10 / 10 | 8.9 (17.1) · 8.9 **(12.3)** | 82.5 · 82.4 % | 36 · 35 | 2 · 1 |
+| Vienna | 10 / 10 · 10 / 10 | 15.7 (44.0) · 15.7 (44.0) | **80.5** · 77.6 % | **109** · 160 | **0** · 4 |
+
+**Both rules land on the truth lattice from every one of the 46 starts** — §59's rule is not right "by cold-start luck" on
+Vienna (§66's reading): ten starts, ten right. The tongue rule is better on one cell (Malicious's worst lock 17.1 → 12.3 s, the
+start-10 run 17.1 → 11.1) and worse on three tracks: Vienna's low band has no lattice (d 0.04), so the rule falls to the mid
+band, and the mid band's Ω = 1 phase sits +8 ms with a fat tail that crosses 0.3 cycle for 4 s on four starts — **four
+lattice moves §59's rule never made**, p90 lag 109 → 160 ms, within-30 80.5 → 77.6 %; SeeYouDrop 98.8 → 94.3 % (start 85: p90
+15 → 38 ms, one spurious move); CyborgNinja's moves 2 → 4 (start 40: 100 → 93.4 %). The plan's stop line — "any track §59 wins
+and the tongue loses" — is met three times. **`LAT_SRC` stays `'low'`.** What the knob is kept for: a track whose kicks fool the
+low-band ratio but lock the Ω = 1 oscillator; none of the five is one. WhoLikesToParty is identical under both.
+
+Commit: `assets/engine/clock/clock.js` (the knob, 6 lines of decision), `tongues.js` (`latMid` / `latMidConf`, unpublished),
+`tools/tongues-cold.js`. The default's behaviour is bit-identical to `de64fa5` (the `'low'` branch is the same line; the cold
+table's `low` rows re-run after the bank's cost cut are identical to the first run's, row for row).

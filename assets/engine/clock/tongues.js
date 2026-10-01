@@ -151,6 +151,7 @@ export class Tongues {
     this.i1 = this.mid.i1; this.i2 = -1; this.i4 = -1;
     for (let i = 0; i < om.length; i++) { if (Math.abs(om[i] - 2) < 1e-9) this.i2 = i; if (Math.abs(om[i] - 4) < 1e-9) this.i4 = i; }
     this.pb = NaN; this.pt = NaN; this.lastN = 0; this.beats = 0; this.hops = 0; this.w11 = 0; this.bestW = 0;
+    this.latMid = 0; this.latMidConf = 0;                                                                     // the MID band's lattice phase and depth (clock.js LAT_SRC 'tongue' falls back to it; not published)
     this.out = { tongueP: 1, tongueQ: 1, tongueDepth: 0, tongueK: 0, tongueAmbig: 1, tongue11: 0, tongue21: 0, tongue41: 0, tongueLat: 0, tongueLatConf: 0, swing: 1, tongueOn: 0 };
   }
   // the windows are void (a re-seat, a lattice move, a seek): the phases run on
@@ -199,6 +200,8 @@ export class Tongues {
     o.tongueAmbig = 1 - dl;
     const [ph] = this.low.lat();
     o.tongueLat = ph; o.tongueLatConf = this.low.d[this.low.i1];
+    const [pm] = M.lat();
+    this.latMid = pm; this.latMidConf = o.tongue11;
     const sw = o.tongue11 > this.k.DMIN ? M.swing() : NaN;                                                   // the Ω = 1 phase means nothing unless it is locked
     o.swing = sw === sw ? Math.min(3, Math.max(0.33, sw)) : 1;
     o.tongueOn = 1;
