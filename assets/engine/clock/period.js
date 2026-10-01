@@ -144,7 +144,23 @@ export class Period {
         for (const q of REL) if (Math.abs(r / q - 1) < 0.04) rel = q;
         const alive = vertex(acf, Math.round(Lcur), 1)[1] > 0.5 * h1;
         if (y1 > 0.3 && !alive) X.tempoAge++;
-        const need = X.tempoAge > 16 ? 3 : !rel ? (alive ? 3 : 2) : rel > 1 ? 4 : alive ? 1e9 : 16;
+        // `alive` IS THE FIRST TEST (DECISIONS §61, Vienna): the tempo the clock already holds is not abandoned while its
+        // own ACF lag is still a peak at least half as tall as the comb's winner. tempo.js already had exactly this rule,
+        // but only on the DOWN-octave branch (`alive ? 1e9 : 16`) — so a half-time track could be doubled on 4 votes
+        // (2 s) and then could not come back, and an unrelated lag could take it on 3. Measured on Thom Sonny Green's
+        // Vienna, which is dead-constant 90.00 BPM with its hats on the 8ths and 16ths and a double-time layer from
+        // 85 s (the user: "the double time should be accenting rather than driving"): the clock read 179.5 BPM over
+        // 85-107 s and 120.0 over 132-161, ticking 1.89 beats/s against the music's 1.50 and putting every beat-locked
+        // motion in every scene twice per felt beat. Promoting `alive` to the first test leaves the FOUR other truth
+        // tracks' whole-track node traces BYTE-IDENTICAL (tools/clock-study.js, every column) and takes Vienna from
+        // 62.3 % of frames in the right tempo octave to 95.6 %, |lag| p50 29.7 -> 8.6 ms and p90 314.9 -> 86.1 ms,
+        // 1.890 -> 1.548 ticks/s against the music's 1.500. The escape hatch is unchanged and is the only one: when the
+        // held lag DIES (`y1 > 0.3 && !alive` for 16 estimates = 8 s) `tempoAge` opens the gate at 3 votes, which is how
+        // a real tempo change is followed; a drift inside TRACK is the `|r - 1| < 0.06` branch above and never a vote,
+        // and the 3:2 arbitration is before this and untouched. The cost, stated: a track that moves to a genuinely
+        // unrelated tempo while the old lag stays a live peak is not followed. test_clock.js's 17 checks cover the lock,
+        // the 128 -> 132 ramp, 6 s of silence, the outlier and both lattice cases.
+        const need = X.tempoAge > 16 ? 3 : alive ? 1e9 : !rel ? 2 : rel > 1 ? 4 : 16;
         X.dbg.sw = { cand: +X.candBpm.toFixed(1), n: X.candN, rel, alive, need, age: X.tempoAge };
         if (X.candN >= need) { X.bpm = bpm; X.candN = 0; X.tempoAge = 0; X.switched = true; }
       }
