@@ -1201,3 +1201,57 @@ CLOCKK='{"R_CLS":[1,1e9,1e9]}' node tools/clock-study.js <Track> --no-v3 …    
 tables and `Clock.push` µs/hop are HEAD's by construction; the sweep was taken anyway in an isolated worktree,
 `PORT=8908 tools/scene-md5.sh s71`, `errs []` on all 12 ids, and the three lines §56/§59 pinned read `fb74fee4` /
 `8a0715df` / `05bf21c0`). No audible run. Not tagged, not pushed, not deployed.
+
+### Step 6 addendum 5 — Malicious's grid re-phased: the +23 ms was the ruler's own `t0` (one worker, 2026-10-01; DECISIONS §72)
+
+§71 left two open items — hand-mark Malicious's beats and re-phase (1), and look at `trackmap.py`'s `index / fps` frame
+conversion (2). **They are one item.** `dp_beats()` returns FRAME-INDEX times; the short STFT's frame i is centred at
+`t2[i] = t0 + i / fps` with `t0 = 1024 / 44100 = 23.2200 ms`, and the `dpres > 0.06` branch wrote those out as the beat
+list. Malicious's `beats` are exact multiples of the hop (residual **0.0025** of `512/44100`, i.e. the json's own
+rounding) where the other four are sub-hop or kick-anchored or hand-made — **one grid of five was on that branch**, and
+its own `mid` list reads the deficit back as a near-delta at **+23.3 ms**, 0.1 ms from `t0`.
+
+**The conversion was NOT fixed globally.** Adding `t0` to all five grids and re-measuring each against its own attacks
+(zero-phase, five bands, no engine, no truth list) moves every validated grid 17–25 ms OFF its music (−23.7 SeeYouDrop /
+−23.0 CyborgNinja / −16.7 WhoLikesToParty / −24.5 Vienna) while moving Malicious to −5.9: `refit_grid`'s phase is in the
+same units and its own lag cancels `t0`, which is why four of five grids were always fine. So the branch alone was
+fixed (`beats = bdp + t2[0]`); `dpres` compares frame coordinates on both sides and does not move, so no branch
+decision changes anywhere.
+
+**Four rulers, 18.1 … 23.3 ms, spread 5.2 ms:** the tool's own onset lists **+23.3** (p25 +23.0 / p75 +23.6); a
+zero-phase band-profile shift scan **+21.0** (flat 20–24, rms 4.0 ms to the four controls' mean profile); the ears'
+lanes via `drums-node.js` **+18.1** (all-lane mean +20.1 here against +0.3…+3.4 on the controls); and a **hand pass** —
+16 beats marked at sample resolution in the native dump, 5–12 kHz, three estimators each minus the SAME estimator on
+the four validated grids — **+21.0 / +20.7 / +26.4**. `t0` exactly was applied: the cause is identified, not fitted.
+
+**The DP beat list is kept.** The track is dead constant (onset lattice resultant 0.55 `click` / 0.59 `mid` at
+140.00–140.02 BPM over all 222 s, so `bpm_grid.bpm` 139.675 — the median of hop-quantised gaps — is not its tempo), but
+every linear candidate grades WORSE against its own attacks than the DP beats do (mean |offset| p50 over five bands
+**22.0** ms for DP+t0 against 24.0 / 24.1 / 24.1). Phase moved +23.2 ms on all 520 beats; period, shape, `downbeat_mod4`
+= 2 and the bar line untouched.
+
+| Malicious, whole track | before | after |
+|---|---|---|
+| PCM clock, node, `--heard` | +30 ms, p50 30 / p90 49, **50 %** within ±30, lock 6.1 s | **+7 ms**, p50 9 / p90 28, **92 %**, lock 6.1 s |
+| v3 clock, node | +23 ms, p50 23 / p90 82, 72 % | **−1 ms**, p50 8 / p90 59, 82 % |
+| PCM clock, PAGE (`&map=0&lead=0`) | +19 ms, 81 %, beat events F 0.916 | **−4 ms**, **94 %**, F **0.980** |
+| ears `kick vs kick` (§68) / `snare vs snare` (§69) | F 0.16 lag +9 / F 0.46 lag +14 | F **0.20** lag **+3** / F **0.48** lag **+3** |
+
+§71 predicted +7 node and −4 page; both land exactly. The other four tracks' truth files are byte-identical (md5) and
+their clock rows reproduce §71's HEAD column to the digit: SeeYouDrop +3 / 97 % / 12.0 s · CyborgNinja +1 / 97 % /
+3.4 s · WhoLikesToParty +6 / 99 % / 5.6 s · Vienna +4 / 74 % / p90 67 ms. `gridcheck.py`'s un-anchored-grid caveat
+fires before and is silent after; `bpm_grid` now carries `dp_t0` (the tool's record) and `hand` (the human record, with
+all four rulers and the 16 marks), and `trackmap.py` carries a hand annotation over on a re-run so `--pcm` can no longer
+destroy one.
+
+```
+python3 tools/truth/trackmap.py Malicious                       # the grid (dp + t0); --loud for Malicious.loud.json
+python3 tools/truth/{kicktruth,snaretruth}.py Malicious         # the §68 / §69 references: they ride the grid's 16th lines
+python3 tools/work/v72/{prov,ruler_a,shift,tempo,cand}.py       # the provenance and the three offline rulers
+python3 tools/work/v72/hand3.py <Track> high 16 [--ofs=23.22]   # the hand pass, any track, + its PNG montage
+node tools/drums-node.js <Track> --out <dir> ; python3 tools/work/v72/laneoff.py <dir>/node-*.json
+```
+
+`node tools/check.js` 0 fail · `npm test` OK · `test_loud.js --truth` OK on all five · `assets/` byte-identical to
+`35242cf` (every engine number taken in an isolated worktree, a parallel worker being in `assets/engine/ears/`). No
+audible run. Not tagged, not pushed, not deployed.

@@ -762,7 +762,10 @@ python3 tools/truth/trackmap.py <Track> --pcm --sr=48000      # the dumps --trut
 ```
 **`--pcm` is not a dump switch — it runs the FULL analysis and REWRITES `tools/truth/<Track>.json`.** It cost this
 project the Vienna worker's uncommitted provisional truth once (DECISIONS §63 phase 1): never run the truth tool on a
-track somebody is annotating; the dumps for all five tracks are already in `tools/work/`. `--loud` is safe — it writes
+track somebody is annotating; the dumps for all five tracks are already in `tools/work/`. Since §72 a HAND annotation
+does survive a re-run — `bpm_grid.hand` and the top-level `sections_hand` / `drops_hand` / `drops_user*` / `drops_tool` /
+`drops_note` / `provisional` / `notes` / `feel` are carried over from the file on disk, never recomputed — but
+everything the tool DOES compute is still overwritten, so the rule stands. `--loud` is safe — it writes
 its own file and reads `<name>.json` without touching it.
 `--loud` runs **only** the loudness analysis: it reads `tools/truth/<name>.json` (sections, drops) and writes
 `<name>.loud.json` — it never rewrites `<name>.json`, so it is safe on a track another worker is annotating (`--loud-out=`

@@ -6103,7 +6103,11 @@ fixed-time grains, the onset lists, the contour and the sub runs are byte-identi
   (`/tmp/rr-v72`) because a parallel worker has `assets/engine/ears/dsp.js` dirty in the main tree.
 - **No audible run.** One page Chrome at a time, `PORT=8910` on the worktree; the first page trace was discarded on
   `filetrace`'s own `frame0 is -1` determinism warning and re-taken (`f0 2`).
-- Scratch, committed: `tools/work/v72/` — `prov.py` (provenance + the tool's own lists), `ruler_a.py` / `shift.py` (the
+- Scratch (on disk, `tools/work/` is git-ignored, as §71's `v71/` is): `tools/work/v72/` — `prov.py` (provenance + the tool's own lists), `ruler_a.py` / `shift.py` (the
   zero-phase ruler and the shift scan), `hand2.py` / `hand3.py` (the hand pass, any track / any lane, + the PNGs and the
   mark lists), `laneoff.py` (the ears' lanes), `tempo.py` (the 140.00 BPM lattice), `cand.py` (DP+t0 vs linear),
-  `pickrun.py` / `clean.py` (choosing the beats), `writehand.py` (the provenance block).
+  `pickrun.py` / `clean.py` (choosing the beats), `writehand.py` (the provenance block). The 16 hand marks themselves
+  are NOT only there: they are written into `tools/truth/Malicious.json`'s `bpm_grid.hand.hand_marks`, which the tool now
+  preserves across a re-run.
+- **A note on this file:** the §72 section below §73 is where a concurrent worker's `git add docs/DECISIONS.md` put it
+  (commit `2a8670b`, which swept this section in with its own seven lines). Both sections are intact; the order is not.

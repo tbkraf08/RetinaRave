@@ -219,14 +219,39 @@ the other four grids each have an anchor, a drift fit or a hand. Its kicks could
 page. All three candidate fixes were measured by knob and all three make Malicious WORSE (+36 / +37 / +39, within ±30
 down to 33 / 29 / 24 %) while giving back CyborgNinja's lock (3.4 → 17.1 s) and Vienna's p90 (67 → 320+ ms).
 **Three things it leaves open:**
-- **Malicious's truth grid itself, and it is the real item.** Its beat PHASE needs a hand check or a new anchor — the
-  measured offset is **+23 ms** — and until then its beat-phase rows are not evidence (`gridcheck.py` now prints that
-  caveat automatically for any such track; it fires on Malicious alone). Cheapest honest fix: hand-mark 8–16 beats and
-  re-phase, as live step 3.1 did for CyborgNinja. **Do not fit the engine to it in the meantime.**
-- **`trackmap.py` converts frame indices with `index / fps` in `dp_beats()` / `refit_grid()`** while its onset lists use
-  `t2[pk]`, which includes the STFT's `t0 = 1024/sr = 23.2 ms`. On sharp attacks the omission cancels against the
-  flux's own half-window delay (SeeYouDrop's grid lands +2.9 ms off its kicks), which is why four of five grids are
-  fine; on a smeared track it does not. Worth a look when Malicious's grid is re-made — but it is a RULER change with
-  every table downstream of it, so it was not taken here.
+- ~~**Malicious's truth grid itself, and it is the real item.**~~ **(DONE in §72, below: re-phased +23.22 ms, three
+  rulers plus a 16-beat hand pass, `bpm_grid.hand` written, the clock +30 → +7 ms node / +19 → −4 ms page.)**
+- ~~**`trackmap.py` converts frame indices with `index / fps`**~~ **(ANSWERED by §72, below: that IS the whole bias, and
+  it reached exactly one shipping grid — the `dpres > 0.06` DP branch. `refit_grid`'s phase is deliberately left in
+  frame-index units; adding `t0` there moves all four validated grids 17–25 ms off their own music.)**
 - **SeeYouDrop's PCM lock 9.2 → 12.0 s** (§69's other losing row) is untouched and still open, as is the ~11 ms
   page/node gap on Malicious's clock (recorded in `AUDIT-live-grid` Step 6 addendum 3).
+
+**2026-10-01, §72 (Malicious's truth grid) — DONE; §71's items 1 and 2 are the SAME item and both close.**
+`trackmap.py`'s `dp_beats()` returns FRAME-INDEX times (`index / fps`) and the `dpres > 0.06` branch wrote them out as
+the beat list, so such a grid sits `t0 = 1024/44100 = 23.2200 ms` BEFORE the audio. Malicious's `beats` are exact
+multiples of the hop (residual 0.0025 of one) where the other four grids are sub-hop refits, kick anchors or hands —
+**one grid of five was on that branch**, and its own `mid` list read the deficit back as a near-delta at +23.3 ms.
+Fixed in that branch alone (`beats = bdp + t2[0]`): adding `t0` globally moves every validated grid 17–25 ms OFF its own
+attacks, because `refit_grid`'s own lag cancels it. Four rulers agree on the correction — the tool's own lists **+23.3**,
+a zero-phase band-profile shift scan **+21.0**, the ears' lanes **+18.1**, and a **16-beat hand pass at sample
+resolution +21.0 / +20.7 / +26.4** (each minus the same estimator on the four validated grids). The beat LIST is kept:
+the track is dead constant at **140.00 BPM** (lattice resultant 0.55 / 0.59 over 222 s, so `bpm_grid.bpm` 139.675 is not
+its tempo and `bpm_grid.hand.tempo_note` says so), but every linear candidate grades worse against its own attacks than
+the DP beats do. **The clock on Malicious: node +30 → +7 ms (50 → 92 % within ±30), page +19 → −4 ms (81 → 94 %, beat
+events F 0.916 → 0.980)** — §71 predicted +7 and −4 exactly — with the other four tracks' rows byte-identical. The §68 /
+§69 drum references ride the grid's 16th lines, so they were rebuilt and the lanes graded against them rose (ears kick
+F 0.16 → 0.20 lag +9 → +3; ears snare F 0.46 → 0.48 lag +14 → +3). `gridcheck.py`'s un-anchored caveat is silent on
+Malicious now, and `trackmap.py` carries a hand annotation over on a re-run (the §63 Vienna lesson: `--pcm` can no
+longer destroy one). **What this leaves open:**
+- **Malicious's BAR line is still not verified** — `downbeat_mod4` = 2 on `downbeat_phase`'s vote alone (the DP branch
+  never runs `downbeat_novelty`). Its scores moved [5.031, 4.265, 5.038, 4.502] → [4.032, 3.864, 4.448, 4.278] with the
+  shift and beat 2 still wins, by a wider margin — but do not grade `barPos` or phrase on this track.
+- **Nobody has LISTENED to the new grid** (no audible run was allowed). Every number is offline and deterministic; the
+  16 hand marks and their waveform montages are in `tools/work/v72/`.
+- **`bpm_grid.bpm` / `beat` / `bar` are still the median of hop-quantised DP gaps on any DP-branch track** (139.6748
+  where the track is 140.00). Inside `gridcheck.py`'s ±1 BPM tolerance, so nothing is mis-graded, but the field is a
+  biased estimator and a future pass could fit the period from the onset lattice instead.
+- **`downbeat_phase` indexes `int(t * fps)`**, two frames late, which `at_time` documents and step 3.1 left for byte
+  compatibility. On a DP-branch grid the beats are now real times, so that sampling is 23 ms late there; it is absorbed
+  by the function's own ±1-frame max and it did not change Malicious's winner, but it is still a latent.

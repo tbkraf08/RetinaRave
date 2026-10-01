@@ -134,7 +134,13 @@ def tempo_peak(env, fps, lo=0.25, hi=1.0):
     return lags[s.argmax()] / fps, s, lags
 
 def dp_beats(env, fps, per, alpha=DP_ALPHA):
-    """Ellis 2007 dynamic-programming beat tracker on the percussive onset envelope. -> beat times (s), hop-quantised."""
+    """Ellis 2007 dynamic-programming beat tracker on the percussive onset envelope. -> FRAME-INDEX times (index / fps),
+    hop-quantised. These are NOT real times: frame i of the short STFT is centred at t2[i] = t0 + i / fps (t0 = 1024 / sr
+    = 23.2 ms with nperseg 2048, boundary=None), so a caller that writes these out as a beat list must add t0 — which the
+    `dpres > 0.06` branch does (DECISIONS §72). `refit_grid` is in the same units and is deliberately NOT corrected: its
+    phase is the onset envelope's beat-rate Fourier phase, whose own lag against the attacks happens to cancel t0, and
+    that cancellation is MEASURED, track by track, not assumed (§72: adding t0 to the four anchored / refit grids moves
+    every one of them 17-25 ms off its own attacks, and SeeYouDrop's refit phase sits +2.9 ms from its kick list as it is)."""
     o = env / (env.std() + 1e-12); o = np.convolve(o, np.hanning(5) / np.hanning(5).sum(), 'same')
     P = per * fps; tmin, tmax = max(1, int(round(P * 0.5))), int(round(P * 2.0))
     F = -alpha * (np.log(np.arange(tmin, tmax + 1) / P) ** 2)
@@ -573,8 +579,14 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
     pg, phg, coh = refit_grid(oenv, fps2, float(np.median(np.diff(bdp))) if len(bdp) > 4 else per0)
     nb = int((t2[-1] - phg) / pg) + 1; beats = phg + pg * np.arange(max(0, nb))
     dpres = float(np.sqrt(np.mean((bdp - beats[np.clip(np.round((bdp - phg) / pg).astype(int), 0, nb - 1)]) ** 2))) if len(bdp) > 4 else 0.0
+    dpt0 = None
     if dpres > 0.06:                                       # the linear grid does not fit: the track's tempo moves, keep the DP beats
-        beats = bdp; pg = float(np.median(np.diff(bdp))); phg = float(beats[0])
+        # ... IN REAL TIME. dp_beats returns index / fps; frame i is centred at t2[i] = t0 + i / fps, and `dpres` above
+        # (a frame-coordinate comparison on both sides) is unaffected by the conversion. DECISIONS §72: without it this
+        # branch's grid is t0 = 1024/sr = 23.2 ms EARLY of the audio, which is exactly the +23.3 ms near-delta Malicious'
+        # own onset lists read against its own beats, and the +21 ms three independent rulers measure there.
+        beats = bdp + t2[0]; pg = float(np.median(np.diff(bdp))); phg = float(beats[0])
+        dpt0 = dict(src='dp+t0', t0_ms=round(float(t2[0]) * 1000, 4), sr=int(sr), hop=int(h2), nperseg=int(n2))
     anc = None; anchor = {}
     if dpres <= 0.06:                                      # live step 3.1: put the linear grid on the kicks (phase, then drift)
         ka = kick if len(kick) >= 64 else low; g0 = dict(beat=round(float(pg), 6), phase=round(float(phg), 5))
@@ -700,7 +712,7 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
           f"({100 * len(bare) / max(1, len(low)):.0f} %); kick candidates {len(kick)}")
     out.update(bpm_grid=dict(bpm=round(60 / pg, 4), beat=round(pg, 6), phase=round(phg, 5), coherence=round(coh, 4),
                              dp_residual_ms=round(dpres * 1000, 1), downbeat_mod4=dphase, downbeat_scores=dscores, bar=round(bar, 6),
-                             **({} if anc is None else {'anchor': anchor})),
+                             **({} if anc is None else {'anchor': anchor}), **({} if dpt0 is None else {'dp_t0': dpt0})),
                beats=np.round(beats, 4).tolist(), downbeats=np.round(downbeats, 4).tolist(),
                sections=sections, novelty=dict(bars=np.round(downbeats[:len(nov)], 3).tolist(), v=np.round(nov, 4).tolist(), thr=round(float(thr), 4)),
                drops=[round(v, 3) for v in drops], tonic=dict(pc=tpc, name=NAMES[tpc], minor=tmin_, conf=round(tconf, 4), scores=tsc),
@@ -734,7 +746,20 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
             la, lb = labat(mids[0]), labat(mids[1])
             print(f"    {r_['a']:24s} <-> {r_['b']:24s}  labels {la} / {lb}  {'OK' if la == lb and la >= 0 else 'MISS'}")
     # =========================================================================================================================
-    jp = os.path.join(HERE, name + '.json'); json.dump(out, open(jp, 'w')); print('\njson ->', os.path.relpath(jp))
+    # A HAND ANNOTATION SURVIVES A RE-RUN (DECISIONS §72; the Vienna lesson, §63 phase 1: a `--pcm` re-run destroyed a
+    # worker's uncommitted hand truth). `bpm_grid.hand` and the top-level hand keys are a human's work, not the tool's:
+    # they are carried over from the file on disk, never computed, and `hand.replaced` is left to say what they replaced.
+    HANDK = ('sections_hand', 'drops_hand', 'drops_user', 'drops_user_note', 'drops_tool', 'drops_note',
+             'provisional', 'notes', 'feel', 'hand')
+    jp = os.path.join(HERE, name + '.json')
+    if os.path.isfile(jp):
+        old = json.load(open(jp))
+        for k in HANDK:
+            if k in old and k not in out: out[k] = old[k]
+        if 'hand' in old.get('bpm_grid', {}) and 'hand' not in out['bpm_grid']:
+            out['bpm_grid']['hand'] = old['bpm_grid']['hand']
+            print('  (carried over bpm_grid.hand from the file on disk)')
+    json.dump(out, open(jp, 'w')); print('\njson ->', os.path.relpath(jp))
     return summ
 
 if __name__ == '__main__':

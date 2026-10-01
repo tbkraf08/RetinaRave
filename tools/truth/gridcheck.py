@@ -19,10 +19,14 @@ late its beat line is: lag = (phi - enginePhase) * P, wrapped to half a beat, in
 after the audible one. Phase is only graded on frames whose tempo is in the right octave (a double-time clock has no
 meaningful phase against a single-time grid); the tempo rows say how many frames that is.
 
-Truth caveat (2026-09-28): only SeeYouDrop's grid is hand-checked (its kicks sit +4 ms after its beats). CyborgNinja's
-grid phase was re-anchored onto its kicks in live step 3.1 (f0e69e8, docs/workers/truth-grid-s3.md: median |kick error| 72 ->
-3 ms; beat and bar gradeable — the half-beat choice rests on a 9 % low-band margin), WhoLikesToParty's tempo was re-fitted
-(beat phase gradeable, the bar line NOT verified), Malicious' kicks are uniform over the beat (DP residual 90 ms): TEMPO rows only.
+Truth caveat (2026-09-28, Malicious' line rewritten 2026-10-01): only SeeYouDrop's grid is hand-checked (its kicks sit
++4 ms after its beats). CyborgNinja's grid phase was re-anchored onto its kicks in live step 3.1 (f0e69e8,
+docs/workers/truth-grid-s3.md: median |kick error| 72 -> 3 ms; beat and bar gradeable — the half-beat choice rests on a
+9 % low-band margin), WhoLikesToParty's tempo was re-fitted (beat phase gradeable, the bar line NOT verified).
+Malicious' beat PHASE was re-placed on the audio in §72 (+23.22 ms = t0 = 1024/sr, the frame-index conversion
+`dp_beats` was missing; three independent rulers +21.0 / +18.1 / +21 ms, 16 hand marks, `bpm_grid.hand`), so its beat
+phase is gradeable now — its BAR line is not (mod4 = 2 on `downbeat_phase` alone; this track takes the DP branch, so
+`downbeat_novelty` never ran). Its tempo is 140.00 BPM, not the 139.67 `bpm_grid.bpm` reports.
 
 Caveat, stated where it is printed: the trace's `t` is heardT. In a deterministic file trace the analysers see the
 audio DET_LEAD (42.7 ms) before it is heard, as in a real-time window; a CAPTURE run sees it L after (the capture lag,
@@ -132,19 +136,25 @@ def run(trace, truth, md=None, ann=None, per_section=False, win=None):
           + (f" | clocks rebased onto heard time (-{1000 * trace['rebased']:.1f} ms)" if trace.get('rebased') else '') + f" | truth "
           f"{g.get('bpm')} BPM, beat {g.get('beat')} s, downbeat mod4 {g.get('downbeat_mod4')} "
           f"(scores {g.get('downbeat_scores')}), dp residual {g.get('dp_residual_ms')} ms")
-    # THE GRID'S PHASE, graded or not (DECISIONS §71). trackmap.py places the beat LINE on the audio's attacks in exactly
-    # three ways: the kick anchor / drift fit (`bpm_grid.anchor`), a hand-made grid (`bpm_grid.hand`), or a hand check
-    # recorded in the docstring above. A track whose DP residual is over 60 ms never enters the anchor branch at all — its
-    # `beats` are the raw Ellis DP tracker's output, hop-quantised, with its phase wherever the onset envelope's cost put
-    # it — so its beat-PHASE rows below are the GRID's own offset plus the clock's error and cannot separate the two.
-    # Malicious is the one such track in the set (dp residual 90 ms, kicks' eighth-lattice resultant 0.13 against the
-    # anchor's own 0.5 floor): its truth onset lists sit +23 ms after its own beat lines where the other four read within
-    # +-7, so a lag median near +23 ms there IS the grid. This note is printed, not applied: no number below moves.
+    # THE GRID'S PHASE, graded or not (DECISIONS §71, §72). trackmap.py places the beat LINE on the audio's attacks in
+    # exactly three ways: the kick anchor / drift fit (`bpm_grid.anchor`), a hand-made or hand-checked grid
+    # (`bpm_grid.hand`), or a hand check recorded in the docstring above. A track whose DP residual is over 60 ms never
+    # enters the anchor branch at all — its `beats` are the raw Ellis DP tracker's output, hop-quantised, with its phase
+    # wherever the onset envelope's cost put it — so without one of the three its beat-PHASE rows below are the GRID's
+    # own offset plus the clock's error and cannot separate the two. Malicious was that track (§71: its own onset lists
+    # sat +23 ms after its own beat lines, where the other four read within +-7); §72 found the cause in `dp_beats`'s
+    # frame-index conversion, re-phased it by +t0 = 23.22 ms and recorded the three rulers and 16 hand marks in
+    # `bpm_grid.hand`, so the caveat no longer fires on it. `bpm_grid.dp_t0` alone (a DP grid from the fixed tool, no
+    # hand check) is NOT enough: the conversion is right, but the line is still the tracker's, hop-quantised, and the
+    # note below says so. Printed, not applied: no number below moves either way.
     _anch = bool(g.get('anchor') or g.get('hand'))
     if not _anch and (g.get('dp_residual_ms') or 0) > 60:
         print(f"  !! the truth beat PHASE was never anchored on this track (dp residual {g.get('dp_residual_ms')} ms > 60, no kick "
-              f"anchor, no hand grid): the `beats` are the raw DP tracker's. TEMPO rows only — the phase rows' MEDIAN is the\n"
-              f"     grid's own offset plus the clock's error; the 'jitter (bias removed)' row is the gradeable one. DECISIONS §71.")
+              f"anchor, no hand grid): the `beats` are the raw DP tracker's"
+              + (f", converted to real time ({g['dp_t0']['src']}, t0 {g['dp_t0']['t0_ms']} ms) but never checked against the\n"
+                 f"     audio" if g.get('dp_t0') else "")
+              + f". TEMPO rows only — the phase rows' MEDIAN is the\n"
+              f"     grid's own offset plus the clock's error; the 'jitter (bias removed)' row is the gradeable one. DECISIONS §71 / §72.")
     # ---- v3: bpm, beatPhase, beat
     bpm = colf(trace, 'bpm'); okv3 = tempo_row(T, 'bpm', bpm, ref, sel, 'v3')
     bp = colf(trace, 'beatPhase')
