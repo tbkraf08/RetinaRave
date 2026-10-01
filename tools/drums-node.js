@@ -6,7 +6,7 @@
 //   python3 tools/truth/drumcheck.py tools/work/drums/node-*.json
 // The page's det time base: the analysers see the audio DET_LEAD before it is heard, so each 1/60 s frame pushes the audio
 // up to heard + DET_LEAD, decays synapse's levels by the frame (tap.js frame()), reads them, then reads the ears at heard
-// time (they release an onset on the frame nearest its own audio time). The ears' `low` onsets (every 40-150 Hz onset, kick
+// time (they release an onset on the frame nearest its own audio time). The ears' `low` onsets (every 60-150 Hz RISE onset, kick
 // or bare 808 note start; ears.js drops them) are collected by wrapping perc.take() and released by the same rule.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,8 +22,10 @@ const opt = (k, d) => (a.includes(k) ? a.splice(a.indexOf(k), 2)[1] : d);
 const OUT = opt('--out', path.join(ROOT, 'tools/work/drums'));
 const SET = opt('--set', null);                   // --set K=v,...: drums.js DRUMS knobs (the tuning sweeps)
 if (SET) for (const kv of SET.split(',')) { const [k, v] = kv.split('='); if (!(k in D2.DRUMS)) { console.error('drums-node: no DRUMS.' + k); process.exit(2); } D2.DRUMS[k] = +v; }
-// --perc thrK=2.5,floor=1.0,refract=0.07,gateDb=-34: a SECOND ears instance with these low-onset thresholds feeds the low
-// stream (the first keeps the page's constants for everything else) — the low picker's tuning sweep
+// --perc rise=5,base=8,lag=0.012,refract=0.085,gateDb=-34: a SECOND ears instance with these LOW-lane knobs feeds the low
+// stream (the first keeps the page's constants for everything else) — the low picker's tuning sweep. Since §68 the low
+// lane is the 60-150 Hz RISE, so `rise` / `base` / `lag` are its knobs; `thrK` and `floor` are the SNARE/HAT flux lane's
+// and no longer reach the kick.
 const PERC = opt('--perc', null), PO = {};
 if (PERC) for (const kv of PERC.split(',')) { const [k, v] = kv.split('='); PO[k] = +v; }
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
@@ -34,7 +36,9 @@ for (const track of TRACKS) {
   const pcm = loadPcm(track, 48000), sr = pcm.sr;
   const an = new Analyzer(sr), ears = new Ears(sr), drums = new D2.Drums();
   const lows = [];
-  const ears2 = PERC ? new Ears(sr, { perc: { thrK: PO.thrK, gateDb: PO.gateDb, thrFloor: PO.floor !== undefined ? [PO.floor, 1.2, 1.2] : undefined,
+  const ears2 = PERC ? new Ears(sr, { perc: { thrK: PO.thrK, gateDb: PO.gateDb,
+    kickRise: PO.rise, kickBase: PO.base, kickLag: PO.lag,
+    thrFloor: PO.floor !== undefined ? [PO.floor, 1.2, 1.2] : undefined,
     refract: PO.refract !== undefined ? [PO.refract, 0.060, 0.045] : undefined } }) : ears;
   const take = ears2.perc.take.bind(ears2.perc);
   ears2.perc.take = () => { const o = take(); for (const e of o) if (e.type === 'low') lows.push(e); return o; };

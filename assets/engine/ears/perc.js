@@ -20,7 +20,8 @@ export const B_SUB = 0, B_LOWBASS = 1, B_KICK = 2, B_HARM = 3, B_SNARE = 4, B_CL
 export const INT_N = [1, 1, 1, 1, 1, 1, 1];      // hops each band integrates (measured: > 1 smears the attack and costs F)
 export const MED_N = 9;              // the harmonic median window, in hops (~105 ms)
 export const THR_K = 3.0;            // flux threshold = running mean + THR_K * running deviation of the band's flux
-export const THR_FLOOR = [1.2, 1.2, 1.2];        // ... and never under this many dB, per class (kick, snare, hat)
+export const THR_FLOOR = [1.2, 1.2, 1.2];        // ... and never under this many dB, per class (kick, snare, hat).
+// [0] is DEAD since §68: the low lane does not use `fire()` at all. Kept so the three arrays stay class-indexed.
 export const CLICK_FLOOR = 1.0;      // the same floor for the beater-click band
 // A kick also has a BODY: 150-600 Hz rises with it. A pure 808 (h/f 0.05 on this track) has none, so requiring the body as
 // well as the beater is what separates a kick from an 808 note start far better than the 2.5-8 kHz click alone (hats fire
@@ -28,7 +29,7 @@ export const CLICK_FLOOR = 1.0;      // the same floor for the beater-click band
 export const BODY_REQ = false;    // measured: requiring the body cost F (0.73 -> 0.62) without reliably cutting bare hits
 export const BODY_FLOOR = 0.8;
 export const BODY_W = 0.035;         // the body may lag the beater: a kick's 150-600 Hz thud decays over tens of ms
-export const REFRACT = [0.085, 0.060, 0.045];    // per-class refractory (s)
+export const REFRACT = [0.085, 0.060, 0.045];    // per-class refractory (s); [0] is the LOW lane's (fireLow, §68)
 // The beater window. The truth tool's own definition is 15 ms; measured on SeeYouDrop, 15 ms gives kick F 0.37 on 25-45 s with
 // 6.0 % of kicks on a truth bare808 (chance is 5.3 %: a 15 ms window around 275 bare onsets covers 5.3 % of 157 s), and 25 ms
 // gives F 0.73 with 12.6 %. 25 ms is chosen: it matches the truth's kick COUNT (207 against 229) and gives a usable channel.
