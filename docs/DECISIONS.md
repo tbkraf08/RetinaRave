@@ -6666,3 +6666,54 @@ low-band ratio but lock the Ω = 1 oscillator; none of the five is one. WhoLikes
 Commit: `assets/engine/clock/clock.js` (the knob, 6 lines of decision), `tongues.js` (`latMid` / `latMidConf`, unpublished),
 `tools/tongues-cold.js`. The default's behaviour is bit-identical to `de64fa5` (the `'low'` branch is the same line; the cold
 table's `low` rows re-run after the bank's cost cut are identical to the first run's, row for row).
+
+## §77 the build detector's third arming path — the beat the music is not committing to (2026-10-01, one worker; `docs/plans/TONGUES-PLAN.md` phase 3; the user's approval of the plan)
+
+Commit `a761b43` (the path, the node / replay tools, nine `test_build.js` cases), this section plus the plan's table and
+OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run.
+
+**What it reads.** §64 left Vienna's first drop with 4.9 beats of lead (the sub void) and §54 / §64 / §66 together found
+nothing causal before its second. The tongues (§76) publish the one quantity none of the detector's inputs carried: Vienna's
+dream is **22 clock beats of `tongueAmbig ≥ 0.9`, 72.0–86.0 s** — the music locks none of the clock's beat family — and no
+other track in the set holds 0.8 for four beats (SeeYouDrop's outro holds 7 beats at 0.9). So `engine/build/build.js` gains
+a third arm beside the void and the sub void: `tongueOn` 1 and `tongueAmbig ≥ AMB_ARM` (0.9) after `MIN_HIST`, counted in
+beats with gaps ≤ 1 beat bridged, **`AMB_HOLD` 8 beats** → armed on the next bar line; the slam is the sub-void's (an on-beat
+low onset confirmed by `sub ≥ SUBV_RET ×` its 2 s mean, no `SLAM_AFTER` wait), the ambiguity lifting for more than a beat
+releases an ambiguity arm only, `MAX` bars times it out. `feed.js` passes `tongueAmbig` / `tongueOn` from MS; absent, or the
+stage off (−1), reads as "not ambiguous", so every caller before §77 is unchanged. **The one bug the receipt caught**: the
+bass / hp void's "gone for a beat" branch disarmed any arm that was not the sub void's — it fired every beat of a groove and
+killed an ambiguity arm within a beat (the replay showed Vienna flapping 78 → 79 → 80 s at 0.24 / 0.03 / 0.87); it now
+spares `am` as it spared `sv`, and `test_build.js` asserts the arm HOLDS while the ambiguity lasts.
+
+**Node, `&map=0`, det, the §64 table re-taken** (`build-node.js` with the bank attached to its clock, `build-replay.js`; drops
+in order SeeYouDrop 1 2 · WhoLikesToParty 1 2 3 · Malicious · Vienna 1 2):
+
+| rule | path off (`AMB_ARM=0`) | path on (0.9 / 8) |
+|---|---|---|
+| `buildLive>=0.4` anticipation, beats | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **4.4 0** | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **12.2 0** |
+| `dropLiveEvt` lag ms | −6 +21 · +10 +48 +12 · — · −3 — | −6 +21 · +10 +48 +12 · — · −3 — |
+| armed at drop · events · armed % | 6/8 · 6 · 4.1 | 6/8 · 6 · 4.8 |
+| false arms / min drop tracks · **CyborgNinja** · false events | 0.14 · **0** · 0 | 0.14 · **0** · 0 |
+
+The replayed traces for SeeYouDrop, WhoLikesToParty, Malicious and CyborgNinja are **md5-identical with the path on and off,
+and identical to §64's own hashes** (`d61565e3` / `498acde0` / `cb8e2724` / `54759f6d`): only Vienna moves (`d0793af7` →
+`5064fb54`). Sweep: `AMB_ARM` 0.85 or `AMB_HOLD` 6 → one false arm (SeeYouDrop's outro, 0.14 → 0.22 / min); 0.95 → Vienna back
+to 4.4 (the dream's depth hovers at 0.05); `AMB_HOLD` 12 → 8.3. **0.9 / 8 is the one setting that buys the lead and changes
+nothing else.**
+
+**Page, `&map=0&lead=0`, whole tracks** (`filetrace.js`, `WARM=0`, graded by `dropcheck.py`): **Vienna armed 8.9 beats before
+drop 1** (79.38 → 85.33 s; §64: 4.9), `dropLiveEvt` **−3 ms**, 0 false arms / min over 3.2 min, 1 event, **drop 2: 0 beats** —
+the plan claimed nothing there and the engine confirms it (`tongueAmbig` 0.53–0.77 through 100–108 s, a groove). The page
+reads 8.9 where the replay reads 12.2 because the bass void (71.4–74.4 s on the page) disarms first and the detector re-arms
+only once that void has been gone a bar (77.1 s) and on the next BAR line (79.38 — the lines fall at 76.7 / 79.4 on the
+page's clock, which is the PCM clock; node's build stage rides v3's), so the ambiguity's 8 beats (ready at 77.3) wait for the
+bar. **CyborgNinja: 0 arms, 0 events, 0.00 / min over 3.0 min** — the hard gate. The page's ambiguity run is 72.0–86.7 s
+against node's 72.0–86.0.
+
+### Proofs
+
+`node tools/check.js` 0 fail · `npm test` OK, `test_build.js` **38 pass** (nine new: a 6-beat run does not arm; 7 bars of
+1.0 arm on a bar line with the bass AND the sub in, and the arm holds; the kicks under it never fire; the sub at `SUBV_RET ×`
+fires once and disarms; 120 s of a dense train at 0.32 never arms; the ambiguity gone for a beat releases; `tongueOn` −1 /
+`AMB_ARM` 0 / no field are inert) · the four controls' replays md5-identical on / off (above) · the s1 fake-timeline md5
+cannot move (the build stage returns early on `fakeOn`; no scene edit in this commit).

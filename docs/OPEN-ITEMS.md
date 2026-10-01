@@ -178,6 +178,14 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
+**2026-10-01, §77 (the build detector's ambiguity path — `a761b43`):** Vienna drop 1 now has 8.9 beats of lead on the page
+(12.2 in the replay). Open: (1) `AMB_ARM` 0.9 / `AMB_HOLD` 8 are tuned on ONE drop with a 7-beat margin to SeeYouDrop's
+outro at 0.9 (18 beats at 0.85) — the next track with a long breakdown that locks nothing will arm, which is the design, and
+the next with a 2-bar one will not; (2) the page's lead is bar-quantised and waits for the bass void's re-arm rule (77.1 s)
+— an ambiguity arm could be allowed to re-arm without the bass void's bar, worth 0 beats here (the next bar line is 79.4
+either way) and untested elsewhere; (3) Vienna's drop 2 stays at 0 beats (§64, §66, §77 all measured it: a texture jump with
+no causal precursor in any of energy, sub, bass octave or the tongue ladder).
+
 **2026-10-01, §76 (the Arnold tongues, shadow mode — `de64fa5`):** built on the user's word; the twelve `tongue*` fields are
 published and no scene reads one. Open: (1) **the page / node clock gap on CyborgNinja and Malicious** (§59's cold start,
 AUDIT-live-grid Step 6 addendum 3) now reaches the tongue fields too — they close their windows on the clock's beats, so on
