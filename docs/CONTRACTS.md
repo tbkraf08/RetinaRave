@@ -564,7 +564,9 @@ are the scene author's rules:
   motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
   **A level and an age are not always the same onset (v0.20+, DECISIONS §57).** `kickAge` / `snareAge` / `hatAge` are the EARS'
   onsets; `kick2` / `snare2` / `hat2` are the reactive drums v2, whose kick is the ears' low lane but whose snare and hat are
-  synapse's (§51). Measured at every rising edge of the level on SeeYouDrop 20–110 s `&map=0` (5401 frames), the matching age
+  synapse's (§51). **The low lane is a 60-150 Hz band graded on its RISE since v0.22+ (DECISIONS §68)** — not a median
+  residual's flux over 40-150 Hz, which on a track whose low end is a continuous 38-46 Hz 808 drone was reading the drone
+  and not the kick (Vienna `kick2` F 0.16 -> 0.51 against the kick truth, and every other track up as well). Measured at every rising edge of the level on SeeYouDrop 20–110 s `&map=0` (5401 frames), the matching age
   reads p50 **+7 ms** for the kick (p90 1720, 4 of 224 edges with no fresh age at all), **+101 ms** for the snare and **+92 ms**
   for the hat. So a scene that wants both — the level's amplitude and the age's placement — keeps its OWN age, reset by the
   level's rising edge and seeded from the engine's age only when that age is fresh (DUST uses 40 ms): the sub-frame placement

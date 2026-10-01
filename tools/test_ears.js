@@ -40,6 +40,7 @@ export function stream(pcm, opts = {}) {
   const cols = {}; for (const f of EARS_FIELDS) cols[f] = [];
   const t = [], frames = [];
   const evs = [];
+  const lows = [];                      // §68: the LOW lane's own released onsets (ears.js keeps them off `events`)
   let nextRead = 0, k = 0, pushNs = 0, readNs = 0, pushes = 0, reads = 0;
   const per = [];
   const bl = new Float32Array(B), br = new Float32Array(B);
@@ -63,13 +64,14 @@ export function stream(pcm, opts = {}) {
       for (const f of EARS_FIELDS) cols[f].push(typeof out[f] === 'number' && Number.isFinite(out[f]) ? out[f] : null);
       t.push(Math.round(nextRead * 1e6) / 1e6); frames.push(k++);
       for (const e of ears.events) evs.push({ type: e.type, t: Math.round(e.t * 1e6) / 1e6, vel: e.vel, note: e.note });
+      for (const e of ears.lowReleased) lows.push({ t: Math.round(e.t * 1e6) / 1e6, vel: e.vel, fl: e.fl });
       nextRead += 1 / fps;
     }
     readNs += rns;
     per.push((Number(b - a) + rns) / 1e6);
   }
   per.sort((x, y) => x - y);
-  return { ears, cols, t, frames, evs, sr,
+  return { ears, cols, t, frames, evs, lows, sr,
     cost: { blocks: pushes, reads, pushMed: med(per), p99: per[Math.min(per.length - 1, Math.floor(0.99 * per.length))],
       pushMs: pushNs / 1e6 / pushes, readMs: readNs / 1e6 / reads } };
 }
@@ -203,6 +205,11 @@ export function traceSlides(t, hz) {
   return out;
 }
 
+// §68's offline kick reference, when tools/work/v68/kicktruth.py has been run for this track (this file grades SeeYouDrop)
+function kickRef() {
+  try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/truth/SeeYouDrop.kick.json'), 'utf8')).t; } catch (e) { return null; }
+}
+
 // -------------------------------------------------------------------------------------------- percussion / feel / texture
 function percRulers(R, truth, label) {
   const T = truth.onsets, bare = truth.bare808;
@@ -210,6 +217,19 @@ function percRulers(R, truth, label) {
   const k2545 = fm(inw(kicks, 25, 45), inw(T.click, 25, 45), 0.030);
   ok(`[${label}] kick F 25-45 s`, k2545.F >= 0.90,
     `${k2545.F.toFixed(3)} (P ${k2545.p.toFixed(2)} R ${k2545.r.toFixed(2)}, tp ${k2545.tp} miss ${k2545.missed} extra ${k2545.extra})`, '>= 0.90');
+  // §68 — the LOW lane itself (`kick2`'s source: every 60-150 Hz rise onset, kick or bare 808 note start). Graded
+  // against the truth's own `low` list and, when it has been built, against tools/truth/<T>.kick.json (the offline
+  // 60-150 Hz rise at the truth beat grid). Reported, because `low` is a 40-150 Hz level picker and on a drone track
+  // it is not the kick — see the note in tools/truth/drumcheck.py.
+  if (R.lows) {
+    const lw = R.lows.map((e) => e.t);
+    const kj = kickRef();
+    const rows = [['low', T.low], ...(kj ? [['kick', kj]] : [])].map(([nm, ref]) => {
+      const m = fm(lw, ref, 0.030), lg = match(lw, ref, 0.045).pairs.map(([x, y]) => x - y).sort((x, y) => x - y);
+      return `${nm} P ${m.p.toFixed(2)} R ${m.r.toFixed(2)} F ${m.F.toFixed(2)} lag ${(1000 * med(lg)).toFixed(0)}/${(1000 * pct(lg, 0.9)).toFixed(0)} ms`;
+    });
+    ok(`[${label}] the LOW lane (n ${lw.length})`, R.lows.every((e) => e.fl > 0), rows.join('  |  '), 'reported; fl > 0');
+  }
   let onBare = 0;
   for (const v of kicks) { let d = 9; for (const b of bare) { const e = Math.abs(b - v); if (e < d) d = e; } if (d <= 0.015) onBare++; }
   ok(`[${label}] kicks on bare 808s`, onBare / Math.max(1, kicks.length) <= 0.05,

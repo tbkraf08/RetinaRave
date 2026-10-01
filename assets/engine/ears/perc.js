@@ -1,5 +1,6 @@
 // Percussion: a causal HPSS-lite (a short running median of each band's dB envelope is the harmonic part; what rises above
-// it is percussive) and one onset stream per class. THE rule that matters on this music: a kick needs the beater click —
+// it is percussive) and one onset stream per class — EXCEPT the LOW lane, which is a 60-150 Hz band graded on its RISE
+// (see "THE LOW LANE" below, DECISIONS §68). THE rule that matters on this music: a kick needs the beater click —
 // a 2.5-8 kHz transient within CLICK_W hops of the low onset. A bare low onset is an 808 note start and belongs to subNoteEvt.
 //
 // Two things were measured and rejected here: a 128-sample hop (finer timing, but 2-5x the false onsets, kick F 0.21-0.61
@@ -7,7 +8,11 @@
 import { Band, RunMedian, Quantile, clamp01 } from './dsp.js';
 
 export const PHOP = 512;             // the analysis hop, in samples (11.6 ms at 44.1 kHz, 10.7 ms at 48 kHz)
-export const BANDS = [[22, 70], [70, 150], [40, 150], [150, 600], [150, 2500], [2500, 8000], [5000, 12000]];
+// BANDS[2] is the LOW LANE's own band and nothing else reads it (map.js leaves it out of every energy sum as a
+// duplicate of 22-70 + 70-150). §68 moved it 40-150 -> 60-150: a 4th-order high-pass at 40 Hz passes a D#1 / F#1
+// 808 drone (38.9 / 46.3 Hz) at full level, so on Vienna the lane's band WAS the drone and the kick a soft thud
+// inside it. 60 Hz puts the two fundamentals 15 and 9 dB down and still clears the 150-800 Hz rim / clap.
+export const BANDS = [[22, 70], [70, 150], [60, 150], [150, 600], [150, 2500], [2500, 8000], [5000, 12000]];
 // the four low bands need steep skirts (the sub, the bass and the kick band are within an octave of each other and of the
 // 150-600 Hz harmonic band that `subPure` divides by); the three upper bands are more than two octaves wide, so wide is fine
 export const BAND_KIND = ['steep', 'steep', 'steep', 'steep', 'wide', 'wide', 'wide'];
@@ -39,9 +44,41 @@ export const DEN_WIN = 1.0;          // den* window (s)
 export const GATE_DB = -34;          // ignore flux while a band sits this far under its own running p90 level
 export const FM_A = 0.02;            // the flux mean / deviation smoothing per hop (~0.6 s)
 
+// ---------------------------------------------------------------------------------------------------------------
+// THE LOW LANE (DECISIONS §68). Classes 1 and 2 (snare, hat) keep the HPSS-lite flux above. Class 0 — the LOW lane,
+// which feeds `kickEvt` / `kickAge` / `kickVel` / `denK` and (through the `low` stream) the reactive drums' `kick2` —
+// does NOT, because a running median of the whole band's level cannot see a kick that a continuous sub drone masks.
+// Measured on Vienna (90 BPM, a continuous D#1 / F#1 808 drone with NO pulse and a soft thud on beats 1 and 3,
+// §66 Q1): the old lane's AUC against the kick lines was 0.511 — chance — and it fired 550 times for 336 kicks at
+// P 0.12. The reason is the ONSET FUNCTION, not only the band: `flux = res[i] - res[i-1]` with
+// `res = dB - median9(dB)` is a ONE-HOP difference of a median residual, and both halves fail here — the median
+// tracks the drone's own slow wobble, and a thud whose attack spans two or three 10.7 ms hops shows only a fraction
+// of its rise in any single one of them.
+// The lane is now the band's RISE over a short LOCAL baseline: `rise = dB[i] - mean(dB[i-1 .. i-KICK_BASE])`,
+// half-wave rectified, against an ABSOLUTE floor in dB. Three properties earn each piece:
+//   · a MEAN of the last ~85 ms, not a median of the whole mix: a steady drone contributes the same level to the hop
+//     and to its own baseline, so it cancels, while a thud's whole rise shows at once (Vienna AUC 0.511 -> 0.713).
+//   · an ABSOLUTE dB floor, with NO adaptive `fm + k*fd` term: a rise is a RATIO, so one number travels across
+//     tracks and loudnesses. The adaptive term is what used to cost the recall — on CyborgNinja its own kicks
+//     inflate `fd` and suppress the quieter ones (swept: k 3.0 takes CyborgNinja R 0.96 -> 0.53 at the same floor).
+//   · the same 85 ms refractory as before, which the rise also enforces by itself: for KICK_BASE hops after a hit
+//     the baseline contains the hit, so the rise is negative and rectifies to 0.
+// Swept on five tracks against tools/truth/<T>.kick.json (the offline 60-150 Hz rise at the truth beat grid, built
+// by tools/truth/kicktruth.py — §66's own method): the floor plateaus over 4.5-6.0 dB (mean F .594 / .605 /
+// .604 / .596) and the baseline over 7-9 hops (.589 / .605 / .600), and 10 hops breaks CyborgNinja (P .80).
+// 60-150 Hz beats 40-150 (mean F .605 vs .570), 70-150 (.595) and 60-120 (.571).
+export const KICK_BASE = 8;          // hops of local baseline the rise is measured against (85 ms at 48 kHz, 93 at 44.1)
+export const KICK_RISE = 5.0;        // dB: the rise that IS a low onset. No adaptive term — see above.
+// The lane's own onset lag, replacing ONSET_LAG for class 0. A rise against an 85 ms baseline needs the hop to be
+// most of the way up before it clears 5 dB, where a 1.2 dB flux floor cleared on the hop that merely CONTAINED the
+// attack: measured against the kick truth, the raw median lag went +11/+7/+10/-4/-1 ms (SeeYouDrop / CyborgNinja /
+// WhoLikesToParty / Malicious / Vienna) to +14/+9/+12/+3/+13 at ONSET_LAG. The extra 6 ms puts the lane back on the
+// flux lane's own clock; like ONSET_LAG it is in SECONDS because the residual is near-constant in milliseconds.
+export const KICK_LAG = 0.012;
+
 export class PercTrack {
-  // `o` overrides the constants above (thrK, thrFloor, refract, clickW, gateDb, clickFloor, intN, medN) — the tuning sweeps
-  // use it, the page does not.
+  // `o` overrides the constants above (thrK, thrFloor, refract, clickW, gateDb, clickFloor, intN, medN, and the low
+  // lane's kickBase / kickRise / kickLag) — the tuning sweeps use it, the page does not.
   constructor(sr, o = {}) {
     this.sr = sr;
     this.thrK = o.thrK === undefined ? THR_K : o.thrK;
@@ -51,6 +88,9 @@ export class PercTrack {
     this.gateDb = o.gateDb === undefined ? GATE_DB : o.gateDb;
     this.onsetLag = o.onsetLag === undefined ? ONSET_LAG : o.onsetLag;
     this.clickFloor = o.clickFloor === undefined ? CLICK_FLOOR : o.clickFloor;
+    this.kBase = Math.max(1, o.kickBase === undefined ? KICK_BASE : o.kickBase | 0);
+    this.kRise = o.kickRise === undefined ? KICK_RISE : o.kickRise;
+    this.kickLag = o.kickLag === undefined ? KICK_LAG : o.kickLag;
     this.bodyReq = o.bodyReq === undefined ? BODY_REQ : o.bodyReq;
     this.bodyFloor = o.bodyFloor === undefined ? BODY_FLOOR : o.bodyFloor;
     this.bodyW = o.bodyW === undefined ? BODY_W : o.bodyW;
@@ -73,8 +113,10 @@ export class PercTrack {
     this.p95 = [0, 1, 2].map(() => new Quantile(0.95, 0.02, 'abs'));
     this.vel = new Float32Array(3);
     this.den = new Float32Array(3);
+    this.kbuf = new Float32Array(this.kBase); this.kk = 0; this.kn = 0;   // the low lane's local baseline ring (dB)
+    this.rise = 0;                                 // ... and this hop's rise above it, half-wave rectified (dB)
     this.hist = [[], [], []];                      // onset times per class, last DEN_WIN s
-    this.last = [-9, -9, -9];
+    this.last = [-9, -9, -9]; this.lastLow = -9;   // ... and the LOW lane's own last fire (bare 808s never reach emit)
     this.clickT = -99; this.bodyT = -99; this.pendKick = null;
     this.out = [];                                 // onsets found since the last take()
   }
@@ -104,7 +146,19 @@ export class PercTrack {
       this.flux[i] = fl;
       this.fm[i] += (fl - this.fm[i]) * FM_A; this.fd[i] += (Math.abs(fl - this.fm[i]) - this.fd[i]) * FM_A;
     }
+    // THE LOW LANE (§68): the 60-150 Hz band's rise over the mean of the PREVIOUS kBase hops, rectified. Read from
+    // the ring before this hop joins it, so the baseline is strictly the local past; silent until the ring is full.
+    {
+      const d = this.db[B_KICK], kb = this.kbuf, KB = this.kBase;
+      let r = 0;
+      if (this.kn >= KB) { let s = 0; for (let q = 0; q < KB; q++) s += kb[q]; r = d - s / KB; }
+      // the same gate the flux lane uses: a band far below its own loud level cannot produce an onset
+      if (d < this.lvl[B_KICK].v + this.gateDb || r < 0) r = 0;
+      this.rise = r;
+      kb[this.kk] = d; this.kk = (this.kk + 1) % KB; if (this.kn < KB) this.kn++;
+    }
     const ot = t - ONSET_OFS * this.hopDur - this.onsetLag;
+    const otK = t - ONSET_OFS * this.hopDur - this.kickLag;     // the low lane's own clock (KICK_LAG, not ONSET_LAG)
     // the click band decides what a low onset was
     if (this.flux[B_CLICK] > Math.max(this.fm[B_CLICK] + this.thrK * this.fd[B_CLICK], this.clickFloor)) this.clickT = ot;
     if (this.flux[B_HARM] > Math.max(this.fm[B_HARM] + this.thrK * this.fd[B_HARM], this.bodyFloor)) this.bodyT = ot;
@@ -112,13 +166,13 @@ export class PercTrack {
     // a low onset held from an earlier hop: confirm it as a kick if the beater has arrived since
     if (this.pendKick !== null) {
       if (clicked) { this.emit(0, this.pendKick.t, this.pendKick.vel); this.pendKick = null; }
-      else if (ot - this.pendKick.t > this.clickW) this.pendKick = null;   // bare: it was an 808 note start
-    }
-    if (this.fire(0, B_KICK, ot)) {
-      this.out.push({ type: 'low', t: ot, vel: this.vel[0], fl: this.flux[B_KICK] });   // every low-band onset, kick or bare 808
-                                                               // note start (fl: its raw dB flux — the reactive drums' strength)
-      if (clicked) this.emit(0, ot, this.vel[0]);
-      else this.pendKick = { t: ot, vel: this.vel[0] };
+      else if (ot - this.pendKick.w > this.clickW) this.pendKick = null;   // bare: it was an 808 note start
+    }                                             // (`w` is the hold's time on the CLICK band's clock, `t` its own)
+    if (this.fireLow(otK)) {
+      this.out.push({ type: 'low', t: otK, vel: this.vel[0], fl: this.rise });   // every low-band onset, kick or bare 808
+                                                 // note start (fl: its rise in dB — the reactive drums' strength)
+      if (clicked) this.emit(0, otK, this.vel[0]);
+      else this.pendKick = { t: otK, w: ot, vel: this.vel[0] };
     }
     if (this.fire(1, B_SNARE, ot)) this.emit(1, ot, this.vel[1]);
     if (this.fire(2, B_HAT, ot)) this.emit(2, ot, this.vel[2]);
@@ -132,6 +186,20 @@ export class PercTrack {
     const fl = this.flux[band], thr = Math.max(this.fm[band] + this.thrK * this.fd[band], this.thrFloor[c]);
     if (fl <= thr || ot - this.last[c] < this.refract[c]) return false;
     this.vel[c] = clamp01(fl / (this.p95[c].push(fl) + 1e-6));
+    return true;
+  }
+  // the LOW lane's own fire (§68): the rise against an absolute dB floor, no adaptive term. `vel[0]` keeps its
+  // meaning — the onset's strength as a share of the lane's own running p95 — so `kickVel` is the same quantity.
+  // The refractory is the LANE's (`lastLow`), not the confirmed kick's (`last[0]`, set only in `emit`): a bare 808
+  // note start never reached `emit`, so under the old flux lane only the adaptive threshold held the low stream
+  // apart, and a rise against a mean baseline needs the refractory explicitly — the hop after a hit still reads
+  // ~7/8 of its rise, because the hit is only 1 of the 8 hops in that hop's own baseline. Measured: without it the
+  // lane fires 1042 / 1035 / 2458 / 1796 / 412 times on the five tracks against 488 / 616 / 1155 / 821 / 290 with.
+  fireLow(ot) {
+    const r = this.rise;
+    if (r <= this.kRise || ot - this.lastLow < this.refract[0]) return false;
+    this.lastLow = ot;
+    this.vel[0] = clamp01(r / (this.p95[0].push(r) + 1e-6));
     return true;
   }
   emit(c, t, vel) {

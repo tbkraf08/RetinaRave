@@ -13,6 +13,13 @@ Sources (each graded when its columns are in the trace):
 Truth (tools/truth/<track>.json onsets): kick vs `low` (40-150 Hz: kicks AND 808 note starts — what the eye sees move on a
 bass-heavy track) and vs `click` (kicks with a beater); snare vs `mid`; hat vs `high`. Per source and class: n, P, R, F within
 +-tol and the median / p90 lag of the matched hits (+ = late, heard time).
+
+A FOURTH kick reference, when tools/truth/<track>.kick.json exists (DECISIONS §68, built by tools/truth/kicktruth.py):
+`kick` is the OFFLINE 60-150 Hz rise at the truth beat grid's 16th lines. It exists because `low` is itself a 40-150 Hz
+level picker and on a track whose low end is a continuous 38-46 Hz 808 drone (Vienna) that band IS the drone: `low` lists
+475 onsets = 2.46 /s where the groove has 1.74 kicks /s, and §66 proved the front end that made it cannot see the thud.
+The reference is validated where `click` is trustworthy — it reproduces CyborgNinja's `click` at P 0.99 / R 0.89 and
+§66's own Vienna hand-grid list at P 0.96 / R 0.92.
 """
 import json, os, sys
 import numpy as np
@@ -22,7 +29,7 @@ sys.path.insert(0, HERE)
 from compare import match, evframes, riseframes  # noqa: E402
 
 SRC = {'syn': ('kick', 'snare', 'hat', 'rise'), 'ears': ('kickEvt', 'snareEvt', 'hatEvt', 'evt'), 'v2': ('kick2', 'snare2', 'hat2', 'rise')}
-REFS = (('kick', 0, 'low'), ('kick', 0, 'click'), ('snare', 1, 'mid'), ('hat', 2, 'high'))
+REFS = (('kick', 0, 'low'), ('kick', 0, 'click'), ('kick', 0, 'kick'), ('snare', 1, 'mid'), ('hat', 2, 'high'))
 
 def frames(tr, col, kind):
     c = tr['cols'].get(col)
@@ -32,10 +39,14 @@ def frames(tr, col, kind):
 
 def grade(tr, tol, srcs):
     T = json.load(open(os.path.join(HERE, f"{tr['track']}.json")))
+    ons = dict(T['onsets'])
+    kp = os.path.join(HERE, f"{tr['track']}.kick.json")       # §68's offline 60-150 Hz rise reference, when built
+    if os.path.exists(kp): ons['kick'] = json.load(open(kp))['t']
     tb = np.array(tr['t'], float); t0, t1 = tb[0], tb[-1]
     rows = []
     for name, ci, key in REFS:
-        ref = np.array(T['onsets'][key], float); ref = ref[(ref >= t0) & (ref <= t1)]
+        if key not in ons: continue
+        ref = np.array(ons[key], float); ref = ref[(ref >= t0) & (ref <= t1)]
         for s in srcs:
             fr = frames(tr, SRC[s][ci], SRC[s][3])
             if fr is None: continue

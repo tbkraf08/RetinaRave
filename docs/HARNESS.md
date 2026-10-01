@@ -616,8 +616,16 @@ core flash on the predicted hits; drop the `route=` for the reactive synapse lev
 python3 tools/truth/trackmap.py <Track> --pcm --sr=48000       # once per track (tools/work/<Track>.48000.st.f32)
 node tools/drums-node.js [Track …] [--out dir] [--set S0=0.2,G=2.5,HOLD=0] [--perc thrK=2.5]   # seconds per track
 python3 tools/truth/drumcheck.py tools/work/drums/node-*.json [--src syn,ears,v2] [--tol 0.03]
-node tools/test_drums.js                                          # in npm test
+python3 tools/truth/kicktruth.py [Track …] [--rise 4.0] [--sweep]  # -> tools/truth/<T>.kick.json, the KICK reference
+node tools/test_drums.js                                          # in npm test (incl. the §68 synthetic masked kick)
 ```
+**The kick has FOUR references now** (§68). `drumcheck.py` grades it against the truth's `low` (40-150 Hz: kicks AND 808
+note starts), its `click` (kicks with a beater) and — when `tools/truth/<T>.kick.json` has been built — `kick`, the
+OFFLINE 60-150 Hz rise at the truth beat grid's 16th lines. The fourth one exists because `low` is itself a 40-150 Hz
+level picker, and on Vienna that band IS the 38-46 Hz 808 drone: `low` lists 2.46 onsets/s where the groove has 1.74
+kicks/s. The reference is validated where `click` is trustworthy — it reproduces CyborgNinja's `click` at P 0.99 / R 0.89
+and §66's own Vienna hand-grid list at P 0.96 / R 0.92. A one-track scene-side view: `python3 tools/work/v68/dustkick.py
+tools/work/v68/dust/after-Vienna.json` grades DUST's kick VOICE (its `d_fK` steps) against the same list.
 The node run = the page's det run (`kick2` identical frame by frame). TORUS2 reads v2 by default (2026-09-29); its old look for an A/B: `#test&track=SeeYouDrop&scene=3&route=torus2.kick2=kick,torus2.snare2=snare,torus2.hat2=hat`. A capture run: `FIELDSX='kick2,snare2,hat2' node tools/caplag.js track SeeYouDrop 24 50 27`
 (AUDIBLE; `kick` / `snare` / `hat` are already in caplag's FIELDS — naming them again doubles their columns).
 
