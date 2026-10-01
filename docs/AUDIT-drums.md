@@ -267,8 +267,12 @@ values a track) and the trip became a 5–30 dB climb instead of a ~2 dB descent
 THIS track's fire magnitudes, so its per-track p95 is **1.000 on all five tracks** — the same 12 dB snare reads
 1.00 on Malicious (fire-stream p95 7.5 dB) and 0.55 on WhoLikesToParty (21.8 dB). `*Amp`'s per-track p95 reads
 0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare), which is one absolute mapping saying that two of the five tracks are
-quieter. Both stay published. **No scene changed**: DUST's flash ring and TORUS2's snare wave read `snareAmp`,
-bit-identical on four tracks and within 0.004 of its mean on the fifth, so their rings cannot have moved.
+quieter. Both stay published. **No scene changed**, and field by field over every frame of all five tracks
+`snareAmp` is bit-identical on all five and `snareEvt` too, so DUST's flash ring and TORUS2's snare wave — whose
+whole input that is since §70 — cannot have moved. `kickAmp` is identical on four tracks and differs on 0.1 % of
+WhoLikesToParty's frames (mean 0.0006). The two fields a scene reads that DID move are `subGate` (0.0 / 1.1 /
+**7.2** / 0.0 / 0.5 % of frames) and `subNoteEvt` (0.4 / 0.8 / **3.8** / 0.0 / 0.3 %): DUST's core hold, its core
+swell and the RIBBON formation test read them, so WhoLikesToParty is the track to look at.
 
 **Unmoved:** §64's build table identical (`buildLive>=0.4` 6/8 armed, Vienna drop 1 at 4.4 beats, CyborgNinja
 0.14 false arms/min) and all 18 of `dropcheck.py`'s default rules · every v3 clock row identical on all five

@@ -5931,8 +5931,15 @@ per-track p95 reads 0.99 / 1.00 / 1.00 / 0.65 / 0.75 (snare): Malicious and Vien
 genuinely quieter tracks, and one absolute dB mapping says so. The same 12 dB snare reads **1.00 on Malicious**
 (fire-stream p95 7.5 dB) and **0.55 on WhoLikesToParty** (21.8 dB). **Both stay published**: `*Vel` is the honest
 per-track RANK the reactive drums' own `kick2` strength was hand-built to be in §51, `*Amp` is the absolute SIZE a
-scene reads. **No scene changed in this session** — DUST's flash ring and TORUS2's snare wave read `snareAmp`,
-which is bit-identical on four tracks and within 0.004 of its mean on the fifth, so their rings cannot have moved.
+scene reads. **No scene changed in this session**, and at the shipped constants the scenes' own
+inputs barely did. Field by field, base vs final over every frame of all five tracks: `snareAmp` **bit-identical on
+all five**, `kickAmp` identical on four and different on 0.1 % of WhoLikesToParty's frames (mean 0.0006);
+`snareEvt` identical on all five, `kickEvt` on four, `hatEvt` on three and 0.0-0.1 % on the other two; `bassReg`
+and `subPure` identical everywhere. So **DUST's flash ring and TORUS2's snare wave cannot have moved at all** —
+`snareEvt` + `snareAmp` is the whole of their input since §70. `*Vel` differs on 74-92 % of frames, which is the
+session. The two fields a scene DOES read that moved are `subGate` (0.0 / 1.1 / **7.2** / 0.0 / 0.5 % of frames)
+and `subNoteEvt` (0.4 / 0.8 / **3.8** / 0.0 / 0.3 %) — DUST's core hold, its core swell and the RIBBON
+formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToParty is the track to look at.
 
 ### The proofs
 
