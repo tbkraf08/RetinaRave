@@ -178,6 +178,15 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
+**2026-10-01, §76 (the Arnold tongues, shadow mode — `de64fa5`):** built on the user's word; the twelve `tongue*` fields are
+published and no scene reads one. Open: (1) **the page / node clock gap on CyborgNinja and Malicious** (§59's cold start,
+AUDIT-live-grid Step 6 addendum 3) now reaches the tongue fields too — they close their windows on the clock's beats, so on
+those two tracks page ≠ node by the clock's own difference (SeeYouDrop / WhoLikesToParty / Vienna agree to 1e-3); the fix is
+the clock's, not the bank's. (2) `tongueP` / `tongueQ` rank tongues by WIDTH and the width tie-breaker decides most windows
+(a pure 1:1 click train reads 2/1) — a scene wanting "the beat family's winner" should read the depths. (3) the swing field is
+measurable (a 0.6 train reads 1.51) and the test set has nothing for it to show (1.00–1.02 on all five). (4) phase 5 of the
+plan (TORUS2's fog on `tongueAmbig`) is not in scope and is the one scene read the plan still names.
+
 **2026-10-01, §75 (why CHLADNI's shape does not move in the opening):** the user, watching scene 11 in stream mode —
 *"opening 10 secs the pitch is changing but the shape isn't?"*, low priority unless it is the engine. **Measured on
 all five tracks cold (`WARM=0`), and it is the SCENE on SeeYouDrop and an engine fault on Malicious** (DECISIONS §75,

@@ -6534,3 +6534,104 @@ re-calibrated, `*Vel` an honest rank), §74 (CHLADNI's kick / snare on `kickAmp`
 unless it is the engine. **§75 measured it:** on SeeYouDrop it is the SCENE and by design (the first 12.9 s have no sub; the pitch
 that moves is the mid-bass the ears reject on purpose), and the one engine fault beside it — the sub gate's cold start assumed the
 sub owned the low end — is fixed on top of v0.26, untagged.
+
+## §76 the Arnold tongues in shadow mode — a circle-map phase-locking descriptor on the PCM clock, twelve fields no scene reads yet (2026-10-01, one worker; the user: "rec for tongues approved (do work with fable)"; `docs/plans/TONGUES-PLAN.md` phase 1; the probe `tools/truth/tongues/{env,probe}.py` is the target)
+
+Commit `de64fa5` (the stage, the fields, the tests, the node tool), this section plus the plan's table and OPEN-ITEMS. **Not
+tagged, not pushed, not deployed.** No audible run. Phase 2's receipt table and its decision are in §76a below (the knob is
+built, left OFF); phase 3 is §77, phase 4 §78; phase 5 (TORUS2's fog) is not in scope.
+
+### What was built
+
+`assets/engine/clock/tongues.js` (pure, 200 lines): a bank of sine circle maps θ += Ω·f_beat·dt − (K/2π)·ô·sin 2πθ with
+λ += ln|1 − K·ô·cos 2πθ|, driven per 512-sample hop by the PCM clock's own band-flux NOVELTY (the flux minus a causal 0.5 s
+EMA, rectified, normalised so ô sums to ~1 per oscillator cycle — the probe's definition, §2 of the plan), the bank's natural
+rates following the CLOCK's rate (`Clock.f`), the windows closing on the CLOCK's beats (`floor(b)` stepping, in audio time)
+over a ring of 16 beat snapshots. The MID band (150–2500 Hz, §69's snare lane band; one new accumulator `smid` over bins 7–107 in
+`strength()`'s existing loop) carries the ladder: Ω ∈ [0.25, 4] at 1/16 oct plus every p/q with q ≤ 4 — **84 oscillators**;
+the LOW band (40–150 Hz, §59's `s40`) carries **one** oscillator, Ω = 1, for `tongueLat` / `tongueLatConf`. Per beat: ρ_i =
+Δθ_i / 16, d_i = (1 − exp(Δλ_i / (Ω_i·16))) / K; a tongue p/q = the contiguous run with |ρ − p/q| < 0.02 and d > 0.05; its width
+in octaves (+ one bank step), the 1:1 width → K_impl = 2π × its half-width in Ω. `Clock.hop()` calls `tongues.hop()` when one is
+attached; `features-clock.js` attaches one to every new Clock while `TONGUEK.on` (so the first hop feeds it and page = node);
+`features-tongues.js` (after `clock-pcm`, before bars) only publishes, easing `tongueDepth` 0.3 s. A clock re-seat or lattice
+move (|Δb − f·dt| > 0.3 in a hop) clears the ring (`tongueOn` 0 for 16 beats); an onset's small backward correction does not
+(the first cut cleared on ANY backward step and Vienna's dream read "warming" for 20 s). `&tongues=0` / `ENGINE.TONGUEK.on`:
+no bank, `tongueOn` −1 (`loudAbs`'s A/B convention). `sources/fake.js` mirrors the twelve as constants from its phase, the
+8th / 16th depths and the swing the SAME constant in every phase (§78 reads a change in `tongue21`: it must see none here).
+
+**Three definitions settled against the numbers, each with the one that lost:**
+- `tongueAmbig` = **1 − max(tongue11, tongue21, tongue41)** — the music locks none of the clock's beat family. The plan's
+  "1 − the ladder winner's depth" was built first and read 0.84–0.94 through Vienna's dream where the beat's own depth is
+  0.00: on a window where nothing is wide a 1-step run at d 0.1 wins the width tie. The octave ladder's best depth reads
+  **1.00** there and 0.4–0.6 in a groove.
+- the ladder's winner (`tongueP`/`tongueQ`): the widest tongue, ties to the LOWER q then the lower p (the probe's rule).
+  Ties to the deeper give 2:1 every tie on every track (Vienna's "1:1 wins" 74 → 29 %), which is the plan's own finding that
+  depth prefers the denser lattice. On a PURE 1:1 click train the field reads **2/1** (the Ω = 2 oscillator takes twice the
+  drive per cycle under the per-cycle normalisation) — a width ranking, honest to the probe's 39–82 %, not an octave verdict.
+- `swing`: the drive's histogram over the CLOCK's phase (64 bins), the beat's own peak found within ±0.15 of the line, the
+  off-8th the parabolic mode in 0.4–0.75 of it — and 1.0 unless the Ω = 1 oscillator is locked (d > 0.05) and the mode is a
+  local maximum carrying ≥ 25 % of the beat's peak. Over the oscillator's OWN phase (the probe's axis) a swung train at 0.6
+  read 2.0 (the phase jumps at every click it is pulled by); over the clock's phase alone the five straight tracks read
+  1.16–1.30 (the hats' flux peaks a hop after the line); referenced to the flux's own on-beat peak they read 1.00–1.02 and the
+  swung train 1.51.
+
+### Node = probe (`tools/tongues-node.js`, the clock-centred bank; the probe's truth-centred `smid` / `s40` rows in brackets)
+
+| track | 1:1 wins | d 1:1 p50 | d 2:1 | d 4:1 | w 1:1 oct (K) | low d 1:1 | lock phase mid / low ms | swing | ambig ≥ 0.9 runs ≥ 8 beats |
+|---|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 150 | 29 % (43) | **0.288** (0.287) | 0.400 (0.409) | 0.394 (0.376) | 0.125 (0.125; K 0.27 = 0.27) | 0.172 (0.116) | +61 / +51 (+46 / +48) | 1.000 | none |
+| CyborgNinja 160 | 0 % (0) | **0.073** (0.073) | 0.607 (0.613) | 0.680 (0.679) | 0.063 (0.062; 0.14 = 0.14) | 0.178 (0.204) | −90 / +22 (−91 / +18) | 1.018 | none |
+| WhoLikesToParty 117 | 21 % (20) | **0.169** (0.161) | 0.443 (0.446) | 0.546 (0.546) | 0.063 (0.062) | 0.251 (0.253) | +9 / +49 (+10 / +48) | 1.024 | none |
+| Malicious 140 | 35 % (13) | **0.359** (0.359) | 0.438 (0.438) | 0.174 (0.184) | 0.187 (0.187; 0.41 = 0.41) | 0.122 (0.109) | +71 / +96 (+75 / +93) | 1.000 | none |
+| Vienna 90 | 74 % (82) | **0.352** (0.363) | 0.459 (0.453) | 0.414 (0.420) | 0.187 (0.187; 0.41 = 0.41) | 0.037 (0.032) | +8 / +176 (−7 / +179) | 1.000 | **72.0–86.0 s (22 beats)** |
+
+Every MID-band depth within **±0.016** of the probe and the low band's within ±0.056 (the plan's stop line was ±0.05 — one low-band cell, SeeYouDrop, sits 0.006 past it, explained below), the widths to the bank step, the lock phases within
+15 ms, the low band's half-beat reading on Vienna (+176 at d 0.04) and the kick lattice on CyborgNinja (+22 at d 0.18) both
+reproduced. Where the engine differs and why: SeeYouDrop's low d 0.172 against 0.116 and CyborgNinja's 0.178 against 0.204 —
+the probe's medians are over 16-beat windows on the TRUTH downbeats every four bars, the engine's over every clock beat (the
+trailing window steps once a beat, so 4× the samples, and the bank's rates follow `bpmPcm`, which wanders in the first 20 s);
+the "1:1 wins" column is the noisiest (a width tie decides it) and Malicious's 35 against 13 is that. Vienna's dream: `tongue11`
+= `tongue21` = 0.00 from 73.4 to 89.3 s, `tongueAmbig ≥ 0.9` for **22 clock beats, 72.0–86.0 s** (the probe's `o`-drive run
+74.0–86.0); at ≥ 0.8 none of CyborgNinja / WhoLikesToParty / Malicious holds 4 beats, SeeYouDrop's outro holds 7 at 0.9 and 18
+at 0.85 (150–157 s). Swing: all five straight, 1.00–1.02. First full window 9.8–18.4 s after a cold start (16 beats after the
+clock's first beat, plus any re-seat: SeeYouDrop re-seats at 9–18 s and refills at 18.4).
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (161 modules, 219 MS keys, 12 new FEATS entries + Appendix A rows, help.feats gaps 0; the six
+  pre-existing soft-cap warns) · `npm test` **OK** with `tools/test_tongues.js` (16 cases: a 1:1 train d 0.976 / width 0.50 oct
+  against the sine map's K/π = 0.46 / K_impl 1.00 / `tongueLat` 0.02 at conf 0.98; a 2:1 train d₂:₁ 0.965 with d₁:₁ 0.273;
+  8ths 2.46 dB under the quarters: d₁:₁ − d₂:₁ = −1.00 / −0.74 / +0.27 at K 0.5 / 1 / 2 — **at the engine's K 1 the denser
+  train is still the deeper**, so the plan's "1:1 > 2:1 only when K is in the probe's range" holds only at K 2, and the octave
+  stays with §61; a swung train at 0.6 reads 1.51; silence d 0 / ambig 1; a 0.5-beat jump clears and refills at +16; two runs
+  bit-identical) · `node tools/parity.js fake`: the same max |diff| 7.852 and the same `nav.*` MISMATCH line as HEAD in the
+  base worktree (pre-existing, v3's reference page; the twelve fields show as "missing in v3" info).
+- **Page = node** (`filetrace.js <T> 0 60 … '&map=0&lead=0'`, `WARM=0`, against `tongues-node.js`'s trace, `build-node.js --cmp`):
+  SeeYouDrop and WhoLikesToParty **3600 / 3600 frames within 1e-3 on all twelve** (max |diff| 1e-4 on the depths, 2.6e-3 on one
+  `tongue41` window); Vienna 0–110 s 84–100 % within 1e-3 (max 0.015 on `tongue11`, 0.116 on one `tongue21` window — the
+  page's `bpmPcm` differs from node's by up to 1.6 BPM transiently and the windows close on the clock's beats). **CyborgNinja and
+  Malicious do not agree — because the page's CLOCK is not node's there**: `bpmPcm` max |diff| 46 / 31 BPM in the first seconds
+  and `beatCountPcm` 1–3 off for the whole minute, and the HEAD worktree's `build-node.js` clock is **bit-identical** to the new
+  node's (10800 / 10800 on `bpmPcm` / `beatCountPcm` / `beatPhasePcm`), so this is §59's cold-start page / node gap (OPEN-ITEMS,
+  AUDIT-live-grid Step 6 addendum 3), pre-existing; the depths agree to ±0.02 once both clocks are locked. Two Vienna det runs
+  `cmp`-identical (1.25 MB).
+- **The fake-timeline md5 sweep in an isolated worktree: 0 of 24 lines moved** (`git worktree add --detach /tmp/rr-base HEAD`,
+  `PORT=8921 tools/scene-md5.sh base76` against `PORT=8920 tools/scene-md5.sh new76` on the new tree, `errs []` on all 12 ids;
+  `tools/work/tongues/md5-{base76,new76}.txt`). The stage never runs under `#test`; the mirror is written by fake.js; no scene
+  reads a field.
+- **Cost.** Node: the bank alone **1.0–1.7 µs per hop = 1.6–2.7 µs per 60 Hz frame** (`tongues-node.js`'s last column; the
+  first cut with two 84-oscillator banks and no fast path read 4.1–4.7 µs/hop, and the PAGE read it at +0.035–0.044 ms per
+  frame on `CLOCK.cpuTotal / frameN` — 5× node, so two things were cut: a hop with zero novelty rotates freely without the
+  sin / cos / log (half the hops), bit-identical to the full step, and the low bank became its one Ω = 1 oscillator). Page,
+  SeeYouDrop 20–60 s det, interleaved on / off: `CLOCK.cpuTotal / frameN` **0.230 / 0.235 against 0.234 / 0.222 ms** — inside the
+  noise, under the plan's +0.01; `ENGINE.ms` 3.36 / 3.11 against 3.09 / 3.15. The ladder's per-beat pass (24 rationals × 84) is
+  not measurable.
+
+### What the shadow stage says about the plan's five questions, in the engine's numbers
+
+The bank reproduces the probe and the plan's verdict stands: it does not decide the octave (2:1 deeper than 1:1 on all five,
+and on a pure 1:1 train), it re-derives §59's low-band lattice statistic with a confidence (`tongueLatConf` 0.18 on CyborgNinja,
+0.04 on Vienna where §59's rule is silent), it sees nothing at Vienna's drop 2 (`tongueAmbig` 0.53–0.77 through 100–108 s, a
+groove), and it carries the one thing nothing in MS carried: Vienna's dream as **22 beats of `tongueAmbig ≥ 0.9` ending at the
+drop** — §77 reads it. Open: the "1:1 wins" statistic is a tie-breaker's and should not be read as a tempo vote; the bank
+re-centres on `bpmPcm`, so on the two tracks whose page clock is not node's the fields inherit that gap.

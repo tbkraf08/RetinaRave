@@ -1,7 +1,8 @@
 # Arnold tongues for the engine — a circle-map phase-locking descriptor, a plan (2026-10-01)
 
-Written on the user's word ("start planning tongues"), on v0.26 (`1a5eadb`). **STATUS: PLAN ONLY — nothing under
-`assets/` changed; the probe in `tools/truth/tongues/{env,probe}.py` is measurement, not a build.** The brief, in one
+Written on the user's word ("start planning tongues"), on v0.26 (`1a5eadb`). **STATUS: phases 1–4 built on the user's word
+("rec for tongues approved"), 2026-10-01 — see the phase table in §8 for the hashes; DECISIONS §76 / §77 / §78.** The probe in
+`tools/truth/tongues/{env,probe}.py` is the measurement the build was graded against. The brief, in one
 line: θₙ₊₁ = θₙ + Ω − (K/2π)·sin(2πθₙ); the winding number locks to p/q over whole intervals of Ω (the tongues, width
 ~ K^q, Farey-ordered); a bank of such oscillators driven by the onset envelope gives, per window, which rationals lock,
 how deep inside the tongue each sits (robustness), the implied K (accent salience) and 1 − depth as tension. The plan
@@ -196,7 +197,7 @@ identical, capture adds no lag term. `&tongues=0` → `tongueOn` −1 and no PCM
 | # | phase | size | gate | stop if |
 |---|---|---|---|---|
 | 0 | **this probe** — `env.py` + `probe.py`, the five-track tables above | S | done | — |
-| 1 | `clock/tongues.js` + `features-tongues.js`: the two banks, 12 fields, FEATS / Appendix A / `fake.js`, `tools/test_tongues.js`, `tools/tongues-node.js`; **shadow mode — no consumer** | M | proofs 1–5 | node ≠ probe beyond ±0.05 d (the clock-centred bank would be a different object); > 10 µs/frame |
+| 1 | `clock/tongues.js` + `features-tongues.js`: the two banks, 12 fields, FEATS / Appendix A / `fake.js`, `tools/test_tongues.js`, `tools/tongues-node.js`; **shadow mode — no consumer** | M | **DONE `de64fa5` (DECISIONS §76)**: node = probe to ±0.016 d on the mid band, md5 0/24, 1.6–2.7 µs/frame in node, page cost inside the noise | node ≠ probe beyond ±0.05 d (the clock-centred bank would be a different object); > 10 µs/frame |
 | 2 | the clock's lattice reads `tongueLat` / `tongueLatConf` (low, then mid) behind `CLOCKK LAT_SRC`, §59's rule kept as the default until the cold-start table says otherwise | M | §59's table identical on 3 tracks, CyborgNinja held, the cold-start table | any track §59 wins and the tongue loses; any line move on SeeYouDrop / WhoLikesToParty / Malicious |
 | 3 | the build detector's third path | S | `dropcheck --summary`: Vienna drop 1 ≥ 8 beats, pooled false ≤ 0.28 / min, CyborgNinja 0 | one CyborgNinja arm, or false arms above §54's |
 | 4 | DUST's accent on `tongue21` / `tongue41` | M | flashes/s identical, the user's eye on Vienna 0:25–1:00 and 1:25–2:00 | the user sees a crest, or any `d_nstep` change |
