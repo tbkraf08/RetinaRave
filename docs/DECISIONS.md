@@ -5948,7 +5948,12 @@ formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToP
   that nothing on the `#test` path can reach a `Quantile` at all — `sources/fake.js`, `features.js` and `shim.js`
   import nothing from `engine/ears/`, and `engine/clock/clock.js` (which DOES run in every mode) imports only
   `FFT` from `dsp.js`. So the expectation was **0 of the 24 lines move**, and that is what the sweep says.
-- One page det trace per track (`tools/filetrace.js`, `&map=0`, `CLOCK=1`) to confirm the node tables on the page.
+- **Page = node** (`tools/filetrace.js <T> 0 <dur> … '&map=0&lead=0'`, `CLOCK=1`, then `build-node.js --cmp`), on
+  the fields §73 touches: `kickEvt` / `hatEvt` / `subGate` / `beatCountPcm` identical on all 9450 frames of
+  SeeYouDrop, `snareEvt` on 9449, `kickVel` within 4.8e-4, `beatPhasePcm` within 2.1e-4, `denK` / `denH` within
+  5e-5, `lpSweep` within 3.9e-3. `buildLive` / `dropLiveIn` / `nextKickIn` / `predKickIn` disagree more, for the
+  reason HARNESS already records and not for a §73 reason: the node run takes its low onsets at the default
+  `--disp 40` and the page ran `&lead=0`, and the v3 queue path differs page/node in its first seconds (B.1).
 - Cost: flat — the fix changes two multiplications in one branch and nothing else; `test_loud`'s own budget row
   reads 5.79 µs/frame against its 40 µs cap.
 - No audible run. Every number here is the deterministic file path, the node harness or the fake timeline.
