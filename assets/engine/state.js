@@ -36,6 +36,9 @@ export const MS = {
   nextKickConf: 0, nextSnareConf: 0, nextHatConf: 0, nextKickUp: 0, nextSnareUp: 0, nextHatUp: 0, queueN: 0,
   // the PCM beat clock (engine/clock, features-clock.js, live step 6) — idle: the prior tempo, no beat, no confidence, the switch off
   bpmPcm: 124, beatPhasePcm: 0, beatCountPcm: 0, beatPcm: false, clockConfPcm: 0, clockPcm: 0,
+  // true loudness (engine/loud.js, features-loud.js, 2026-09-30) — idle: silence, no peak, no range, and loudAbs -1 =
+  // "the stage is not running", which is the sentinel a migrated scene falls back to its pre-loudness formula on
+  loudM: -100, loudS: -100, loudPk: -100, loudRel: 0, loudRange: 0, loudAbs: -1,
 };
 
 // Engine-owned texture sources (uploaded by the core when hop changes): log spectrum 256×1, waveform 512×1,

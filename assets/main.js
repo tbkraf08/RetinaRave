@@ -2,6 +2,7 @@
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';
 import './engine/features-ears.js'; // v0.15: the ears + the track map (additive stage after synapse)
+import './engine/features-loud.js'; // true loudness on the PCM bus — loudM / loudS / loudPk / loudRel / loudRange / loudAbs (additive, after the ears; &loud=0 off)
 import './engine/features-clock.js'; // live step 6: the beat clock on the PCM bus — bpmPcm / beatPhasePcm / beatCountPcm / beatPcm / clockConfPcm (additive; &clock=pcm / CARD.setClock the switch; after the ears, before bars)
 import './engine/features-bars.js'; // live step 3: the bar fingerprint store (additive stage after the ears, before the lead)
 import './engine/features-drums.js'; // the reactive drums v2: kick2 / snare2 / hat2 (additive stage after the ears)

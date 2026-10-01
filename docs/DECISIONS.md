@@ -3678,3 +3678,109 @@ on the pitch class and `0 tracks where synapse wins and the ears lose` — **8 p
 why it is not in `npm test`); the diff touches neither `ears/sub.js` nor `ears/perc.js` and `test_ears` never imports
 `features-ears.js`, so it cannot have moved them. No audible run. Files: `engine/features-ears.js`, `engine/feats.js`
 (the three FEATS entries), `tools/test_ears.js`, `docs/CONTRACTS.md` (§1.18, §2, Appendix A), `docs/OPEN-ITEMS.md`.
+
+## §63 an AGC-free loudness for the engine — ITU-R BS.1770-4 on the PCM bus (2026-09-30, one worker; the user: "loudness plan approved", `docs/plans/LOUDNESS-PLAN.md`)
+
+§60's one failure: DUST's pass 2 did not improve SeeYouDrop's breakdown 2, because **the engine's energy does not know
+the drop after it is louder**. Every energy in `MS` is AGC-normalised — the band followers divide by a running peak with
+a 14 s release (`synapse/dsp.js`), and 14 s is shorter than a dubstep breakdown, so by the end of one the peak has
+decayed onto the breakdown's own level and `eM` reads near full. The plan's answer: the one measure of "how loud does
+this sound" with a standard behind it, added as a stage, with **the AGC left on every detector** and only a scene's
+BASE light, base size and base radius moved onto it. Phases 1, 2, 3, 5, 7 of the plan are below; **4 (DUST) and 6
+(NAV2) were out of this worker's scope** — DUST was being edited in the same worktree and NAV2 is paused.
+Not tagged, not pushed, not deployed.
+
+### Phase 1 — `trackmap.py --loud`: the offline reference (`a3a3a0e`)
+
+`--loud` runs ONLY the loudness analysis and writes ONLY `tools/truth/<name>.loud.json` (`--loud-out=<dir>`,
+`--loud-win=<s>`): it reads `<name>.json` for the sections and the bar-pinned drops — preferring the hand-corrected
+`sections_hand` / `drops_user` / `drops_hand` when a worker has put them there — and never rewrites it. The measure is
+K-weighting (a +4 dB high shelf, then the RLB high-pass, per channel, **causal** IIR) and
+`L = −0.691 + 10·log10(Σ_ch mean(y_ch²))`, G_L = G_R = 1. The spec tabulates the biquads at 48 kHz only; `kcoef(sr)`
+derives them from the analog prototypes by the spec's bilinear recipe and reproduces that table to **8.9e-16**.
+Windows: momentary 400 ms, short-term 3 s, both as two subtractions on a cumulative sum of the K-weighted squares, so
+the value at `t` is EXACTLY the mean square over (t − W, t] — the same quantity the engine's ring holds.
+
+The plan's table reproduces (window-integrated, SeeYouDrop): intro 2–8 s **−8.32**, groove 28–40 **−3.99**, breakdown 1
+49–55 **−6.09**, void 55–57.6 **−4.68** (plan −4.67), breakdown 2 100.5–105.596 **−4.02**, whole track gated **−3.88**
+(plan −3.89). **The headline pair**, equal 5.1 s windows: breakdown 2 short-term p50 **−4.845** (plan −4.84) → drop 2's
+head −1.967 (plan −2.19) = **+2.88 LU, ×1.94 in power**, against `eM`'s **×0.994**. The 0.22 LU on the drop side is the
+one number that did not reproduce; the breakdown side, the one `eM` gets wrong, is exact to 0.005 LU.
+The other four: CyborgNinja −9.05 LKFS and **0 drops** (the control), WhoLikesToParty −10.03 (+2.27 / +1.34 / +1.54 LU
+over its three drops), Malicious −12.46 (+1.17 over its one), Vienna −6.89 (+0.92 / +0.26 over the two the Vienna
+worker's `drops_user` names). Short-term p95−p10: 4.96 / 1.37 / 2.86 / 7.82 / 3.25 LU.
+
+**A hazard paid for here, for the harness.** `trackmap.py <Track>` — including `--pcm` — runs the FULL analysis and
+**rewrites `tools/truth/<Track>.json`**. Regenerating Vienna's 48 kHz dump (which already existed) destroyed the Vienna
+worker's provisional truth in the same worktree: `bpm_grid`, `beats`, `downbeats`, `sections_hand`, `drops_hand`,
+`drops_user`, `provisional`, `notes`. It was restored from `HEAD` (commit `c4dbedf`) and verified key by key, so
+nothing committed was lost — but **anything that worker had not yet committed was**. The rule: never run the truth tool
+on a track another worker is annotating; `--loud` is safe because it writes its own file, and the dumps are already in
+`tools/work/`.
+
+### Phase 2 — the stage: `engine/loud.js` + `features-loud.js`, six fields (`PENDING`)
+
+`assets/engine/loud.js` is pure DSP (no DOM, no clock, no imports) so `tools/test_loud.js` runs it in node;
+`features-loud.js` subscribes it to the PCM bus with `PCM.on`, registers `ENGINE.addStage('loud', …)` **after `ears`
+and before the PCM beat clock**, and reads it at `MS.heardT` exactly as the ears are read. The cost is paid in the PCM
+listener, outside `frame()`, and drained through `ENGINE.extraMs`.
+
+| field | kind | what |
+|---|---|---|
+| `loudM` | raw | momentary loudness, LKFS (the 400 ms window) |
+| `loudS` | raw | short-term loudness, LKFS (3 s) |
+| `loudPk` | raw | the loudest `loudS` this track has reached, LKFS |
+| `loudRel` | level | **the one a scene reads**: `clamp01((loudS − loudPk + 18) / 18)`, gain-invariant |
+| `loudRange` | raw | p95 − p10 of `loudS` so far, LU |
+| `loudAbs` | count | 1 absolute (file, demo) · 0 the tab's / the mic's gain (capture, mic) · **−1 the stage is off** |
+
+The plan's `kind: level` for the first three became **`raw`**: `FEATS`' own legend says `level` is 0..1 and LKFS is not.
+
+**Three decisions the plan did not settle, each measured:**
+
+1. **The peak's release is 0.02 LU/s, not a 25 s exponential.** DUST's `dyn.js` holds its peak with a 25 s release,
+   which on a mean square is 0.174 dB/s — and that forgets **6.6 LU in the 38 s** between SeeYouDrop's drop 1 and its
+   breakdown 2, more than the whole track's 4.96 LU of range. The hold would have decayed *under* the present loudness
+   and `loudRel` would read 1.000 at both ends of the very pair this field exists to separate. `dyn.js` got away with
+   25 s because it holds an AGC-normalised 0..1 energy, whose peak barely moves. 0.02 LU/s = 3 LU over a 150 s track.
+2. **No absolute floor on the peak; a relative warm-up guard instead.** §60 step 4 floored DUST's peak at 0.84 of its
+   normalised scale. The same move here (a floor at, say, −6 LKFS) is NOT gain-invariant: CyborgNinja, Malicious and
+   WhoLikesToParty all master 8–9 LU quieter than SeeYouDrop, so the floor would bind for their whole length and a
+   quietly mastered track would be permanently darker — the AGC's own sin inverted. The guard is
+   `loudPk ≥ loudS + 4·exp(−age/6 s)`: until the stream has heard something louder it assumes 4 LU of headroom,
+   decaying to 0.03 LU by 30 s. Without it a track's first frames read `loudS == loudPk`, i.e. `loudRel` 1.0 — the
+   intro would be the brightest thing in the song, which is exactly what §60 step 4 paid to fix.
+3. **The ring holds one entry per 32 samples, not per 512-sample block.** The window edge cutting a ring entry is the
+   WHOLE of this stage's error against a sample-exact reference, and it is not small on a transient in a quiet passage.
+   Measured over the five tracks (`test_loud.js --truth`, max |error| per frame, loudM / loudS): sub **512 → 4.45 /
+   0.19 LU** · 128 → 0.30 / 0.13 · 64 → 0.16 / 0.02 · **32 → 0.006 / 0.000 LU**, for 3.53 → 3.80 µs/block. 32 is also
+   not a taste: at 48 kHz a 60 fps frame is exactly 800 samples and the two windows exactly 19 200 and 144 000, all
+   multiples of 32, so every page read lands ON an entry and the interpolation never runs. 0.27 µs bought all of it.
+
+The switch lives on **`LOUDK.on`** (`&loud=0`), not on `ENGINE` — `sources/fake.js` has to read it and `engine.js`
+imports `fake.js`, so an `ENGINE.useLoud` would close an import cycle `check.js` fails. `fake.js` mirrors the six
+fields from its own synthetic energy (`−0.691 + 20·log10(e)`, so the 24 s loop spans about −13 … −1 LKFS): without it
+the fake timeline — where every md5 proof in this project is taken — would be a hole where `loudRel` is 0 and a
+migrated scene goes dark. Under `&loud=0` it leaves `loudAbs` at −1 instead, which is what makes `&loud=0` reproduce
+the pre-migration md5 list line for line.
+
+**Proofs.** `node tools/check.js` **0 fail** (156 modules, MS keys 205, help.feats gaps 0, 5 pre-existing line-cap
+warns) · `npm test` **0 FAIL**, now with `tools/test_loud.js` in it (**38 pass**, 1.4 s): the 48 kHz coefficients
+against the spec table, the K curve's two sections, a **−23 → −13 LKFS step of a 997 Hz stereo sine reading each level
+to 0.0001 LU and the step to +9.9999 LU**, the 400 ms and 3.0 s windows measured from the step's own rise time
+(0.4000 / 3.0000 s), the heard-time read and the ring's lookback limit, the peak's attack / release / warm-up guard,
+`loudRange` on a signal whose true span is 8 LU (reads 8.50), **gain invariance** (×0.1 moves `loudS` by −20.00 LU and
+leaves `loudRel` and `loudRange` identical to 8e-13 — the capture path), 44.1 kHz through the derived coefficients
+(the same waveform reads the same LKFS at both rates to 0.0025 LU), determinism, and the cost.
+**Cost: 3.73 µs/block → 5.83 µs/frame at 48 kHz / 60 fps = 0.035 % of a frame**, against the plan's estimate of
+4.08 µs/frame.
+**The fake timeline: NOTHING moved.** `PORT=8892 tools/scene-md5.sh p2loud`, all 12 ids, `errs []` and `hop 840
+row 72` on every one, is **equal to `tools/accept/v0.14/scene-md5-v014.txt` line for line** apart from the four already
+accounted for: s0-f840 `8a0715df` and s4-f840 `05bf21c0` (the §54 addendum 2 moves), s1 `42e4871c` / `6eae9916` (DUST —
+the parallel worker's, moved past §60's `5a9b6bc7` / `b70a98e1`; noted, not chased) and s11 `8a930b26` / `5a5c795a`,
+which post-dates that list. **0 of 25 lines** — the six fields move no scene until a scene reads them.
+`node tools/parity.js fake`: **every MS field identical to 1e-9** (62 numeric fields compared), the six new ones listed
+as "missing in v3" info as every post-v3 field is. The `nav.*` snapshot differs (`nav.lg` 7.85, `nav.mode`,
+`nav.cyc.has`) — **pre-existing drift of this engine's NAV from cardioid3's**, not reachable from here: MS is identical
+frame for frame, so a scene difference can only be the two programs' own NAV code (this NAV has read `dropLiveEvt`
+since §54, and the event log shows `ew`'s extra `FILE@` / `RESTORE@` look-memory lines, "absent in v3"). No audible run.

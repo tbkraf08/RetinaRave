@@ -2,9 +2,12 @@
 // build 10–13, DROP at 13, peak 13–21, valley 21–24. Drives MS directly (no audio). Lifted from cardioid3 fakeMusic.
 import { TAU, clamp, ema, frac, sstep } from '../../math/util.js';
 import { MS, TEX } from '../state.js';
+import { LOUDK, LOUD_OFS } from '../loud.js';
 
 const lib = {};
 let hatPh = 0;
+// the fake timeline's loudness state (fakeLoud below): the peak hold and the window the range percentiles come from
+const FL = { pk: 0, lo: 0, hi: 0, n: 0 };
 
 export function fakeMusic(dt, now) {
   const S = MS, T = now % 24;
@@ -75,6 +78,36 @@ export function fakeMusic(dt, now) {
   S.rms = 0.2;
   S.peaks = [[110, 1], [220, .6], [330, .5], [550, .3]];
   fakeSynapse(dt, now, S, sec, T, e, kp, kickOn);
+  fakeLoud(dt, S);
+}
+
+// The six TRUE-LOUDNESS fields, mirrored from the synthetic energy (the plan's §6 obligation: without this the fake
+// timeline is a hole where `loudRel` is 0 and every migrated scene goes dark under #test, which is where every md5
+// proof in this project is taken). The same obligation fake.js already meets for `eM` / `lvl`.
+// `loudAbs` is 1 here — the timeline's gain is the timeline's own — EXCEPT under `&loud=0`, where it stays -1 and every
+// migrated scene falls back to its pre-loudness formula: that is what makes `&loud=0` reproduce the pre-migration md5
+// list line for line.
+// The map from a 0..1 energy to LKFS is `-0.691 + 20*log10(e)`, i.e. the energy read as an amplitude, so the loop
+// spans about -13 .. -1 LKFS — the range a modern master actually occupies (the five test tracks integrate to
+// -3.9 .. -12.5). Deterministic: a function of dt and the fake state, no Math.random, no clock.
+function fakeLoud(dt, S) {
+  if (!LOUDK.on) { S.loudAbs = -1; return; }
+  const lkfs = (x) => LOUD_OFS + 20 * Math.log10(clamp(x, 1e-3, 1));
+  S.loudM = lkfs(0.5 * S.eS + 0.5 * clamp(S.eS + 0.6 * S.hit, 0, 1));   // the 400 ms window: the fast energy plus the hit
+  S.loudS = lkfs(S.eM);                                                 // the 3 s window: the 2.5 s energy
+  const zs = Math.pow(10, S.loudS / 10);
+  FL.pk = Math.max(zs, FL.pk * Math.pow(10, -LOUDK.PK_REL * dt / 10));
+  const pk = Math.max(LOUD_OFS + 10 * Math.log10(Math.max(FL.pk, 1e-12)), S.loudS);
+  S.loudPk = pk;
+  S.loudRel = clamp((S.loudS - pk + LOUDK.RANGE) / LOUDK.RANGE, 0, 1);
+  // the range: the loop's own p95 - p10, approached as two one-sided EMAs of loudS (a histogram on 24 s of a 24 s loop
+  // would read the loop's full span from the second lap and nothing before it)
+  if (FL.n === 0) { FL.lo = FL.hi = S.loudS; }
+  FL.n++;
+  FL.hi += (S.loudS - FL.hi) * (S.loudS > FL.hi ? 1 - Math.exp(-dt / 0.5) : 1 - Math.exp(-dt / 40));
+  FL.lo += (S.loudS - FL.lo) * (S.loudS < FL.lo ? 1 - Math.exp(-dt / 0.5) : 1 - Math.exp(-dt / 40));
+  S.loudRange = Math.max(0, FL.hi - FL.lo);
+  S.loudAbs = 1;
 }
 
 // Plausible, deterministic values for the synapse stage's fields so DUST / MANDALA / TORUS react headlessly.

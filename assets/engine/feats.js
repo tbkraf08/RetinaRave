@@ -13,6 +13,17 @@ const E = (eli5, formula, drives) => ({ kind: 'event', eli5, formula, drives, ra
 const I = (eli5, formula) => ({ kind: 'internal', eli5, formula, drives: '-', range: null });
 
 export const FEATS = {
+  // --- TRUE LOUDNESS (engine/loud.js + features-loud.js, 2026-09-30; DECISIONS §63, docs/plans/LOUDNESS-PLAN.md) ---
+  // The one measure of "how loud does this sound" with a standard behind it, and the one quantity the AGC-normalised
+  // energies above actively lie about: on SeeYouDrop's breakdown 2 -> drop 2 pair `eM` reads x0.994 where the music is
+  // +2.88 LU (x1.94 in power) louder. The AGC stays on every DETECTOR; this is for BASE light, size and radius.
+  loudM: R('how loud it is right now, in LKFS (0 = a full-scale sine, -23 = broadcast reference)', 'ITU-R BS.1770-4 K-weighted mean square over the last 400 ms: L = -0.691 + 10 log10 sum_ch mean(y^2), two biquads per channel (a +4 dB high shelf, then the RLB high-pass). ABSOLUTE only when loudAbs is 1', 'a transient-scale brightness that does not lie about a breakdown'),
+  loudS: R('how loud this passage is, in LKFS (the 3 s window — a section, not a hit)', 'the same measure over the last 3 s. ABSOLUTE only when loudAbs is 1', 'the base light of a scene, through loudRel'),
+  loudPk: R('the loudest this track has been, in LKFS', 'the running peak of loudS: instant attack, a 25 s release on the mean square (0.174 dB/s), plus a warm-up guard that sits 6 LU above the present loudness and decays with a 20 s time constant so a track\'s first seconds are not its brightest. ABSOLUTE only when loudAbs is 1', 'the reference every relative loudness is measured against'),
+  loudRel: L('how loud this is FOR THIS TRACK, 0 = 18 LU down on its own peak, 1 = at it', 'clamp01((loudS - loudPk + 18) / 18) — a difference of two loudnesses, so the tab\'s or the master\'s gain cancels and it reads the same in file and capture mode. THE FIELD A SCENE SHOULD READ', 'base brightness, base size, base radius — "how bright is the picture right now"'),
+  loudRange: R('how much dynamic range this track has shown, in LU', 'p95 - p10 of loudS so far, from a 0.5 LU histogram gated 40 LU under the peak. Gain-invariant. Measured whole-track: SeeYouDrop 4.96, CyborgNinja 1.37, WhoLikesToParty 2.86, Malicious 7.82, Vienna 3.25 LU', 'a scene that wants the track\'s OWN contrast instead of the fixed 18 LU span expands loudRel with it'),
+  loudAbs: { kind: 'count', eli5: 'are loudM / loudS / loudPk absolute? 1 yes (file, demo) · 0 no, the gain is the tab\'s or the mic\'s (capture, mic) · -1 the loudness stage is not running (&loud=0, #test with the switch off)', formula: 'the source mode; -1 while the stage returns early', drives: 'the A/B gate: a migrated scene falls back to its pre-loudness formula on -1, and may not read an absolute field on 0', range: [-1, 1] },
+
   // --- loudness / bands (features.js) ---
   presence: L('is there music at all', 'ema(smoothstep(-62,-44, dB(rms)))', 'idle behaviour, palette wobble'),
   bass: L('how strong the bass is right now', 'pow(band(20-150Hz)/peakFollower, .8)·presence', 'uBands.x, view scale, orbit size'),
