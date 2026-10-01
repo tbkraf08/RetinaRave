@@ -68,31 +68,110 @@ export const TORUS_K = 0.7;       // the torus's main circle turns this much aga
 export const GAL_K = 0.9;         // the galaxy's winding rate, divided by (r + .35) so the core winds faster
 
 // The profile. GLIDE is the share of each step the angle carries at an even speed right through the beat, so the
-// cloud is never still; the rest is the accent. W is the accent's width in beats — wider is smoother and flatter.
+// cloud is never still; the rest is the accent. W is the accent's width in beats at WREF and above, and a width in
+// MILLISECONDS below it (see WREF) — wider is smoother and flatter.
 // Swept at 150 / 90 / 160 BPM and then on the three real traces: GLIDE .20 W .40 still leaves 67 % of the beat
 // under a tenth of the peak (the accent is 20x the glide); .30 / .50 still reads 50 % dead; .40 / .50 is already
 // clean (max |a| 23 / 21 / 32, floor 13 / 14 / 9 %); .45 / .55 is the pick because it keeps §58's own 90 %
 // completion time to the frame and lands nearest TORUS2's measured 28 % floor, which is the feel the user calls
 // their favourite. `hooks.nudge(g, w)` / `&nudge=<g>,<w>` under #test moves both live, so the next A/B is one page
 // and not one build.
-export const K = { GLIDE: 0.45, W: 0.55 };
-export const lead = () => K.W / 2;   // beats: the accent starts here before the line and so peaks ON it
+export const K = { GLIDE: 0.45, W: 0.55, WREF: 145 };
 
-// The accent's cumulative on [0, W]: the integral of (1/W)(1 + cos(2 pi x / W)) is x/W + sin(2 pi x / W)/(2 pi),
-// written on x = u/W - 1/2 so that B(0) = 0 and B(W) = 1.
-function accent(u) {
+// WREF: THE ACCENT IS A WALL-CLOCK SHAPE, NOT A SHARE OF THE BEAT (DECISIONS §66 Q1, the user on Vienna at 90 BPM:
+// "something still feels off about 0:25-1m the bounce feel slow and jerky on the kick and high hat").
+//
+// W is a width in BEATS, so the crest the eye actually sees gets LONGER and WEAKER the slower the track is. The
+// same .45 / .55 pair, measured at the set's five tempos (tools/work/v66/nudge66b.py, grid.js's own spin()
+// reproduced at 60 fps on an exact clock):
+//
+//   track              bpm     accent    lead     v peak    v floor   floor/peak   dead   |a| p99
+//   CyborgNinja       160.0   206 ms   103 ms   1.916     0.236        12.3 %     0 %     23.4
+//   SeeYouDrop        150.0   220 ms   110 ms   1.776     0.221        12.4 %     0 %     20.4
+//   Malicious         139.7   236 ms   118 ms   1.674     0.206        12.3 %     0 %     17.8
+//   WhoLikesToParty   117.0   282 ms   141 ms   1.404     0.172        12.3 %     0 %     12.6
+//   Vienna             90.0   367 ms   183 ms   1.076     0.133        12.3 %     0 %      7.4
+//
+// Vienna's crest is 67 % LONGER than SeeYouDrop's and 40 % lower, and it starts 183 ms before the line instead of
+// 110 — on a track whose clock is dead locked (measured on the page over 24-60 s: 89.98 bpm, 54 ticks in 36 s =
+// 1.500 /s against the music's 1.500, 100 % of them on the beat, ZERO line moves) and whose hats are dead straight
+// 8ths. That is the whole of "slow": not the rate, the crest.
+//
+// So below WREF the accent keeps its width in MILLISECONDS instead of in beats: `wFor()` is W at and above WREF and
+// W * bpm / WREF under it, so the crest the eye sees lasts W * 60 / WREF seconds whatever the tempo. WREF is 145
+// and not 150 for one measured reason: it must sit BELOW the clock floor of every track the user has already signed
+// off, so that nothing about them can move. Over the graded windows the published `bpm` reads 149.798 to 150.820 on
+// SeeYouDrop (33 % of its frames are under 150.000) and 159.966 to 160.112 on CyborgNinja, so at WREF 150 the cap
+// bit on 18 of SeeYouDrop's 5401 frames and left a constant 4.4e-4 rad offset on the angle; at 145 both controls
+// return K.W on every frame and their `d_spin`, `d_nv`, `d_nu`, `d_nstep` and `d_noff` columns are md5-IDENTICAL.
+// 0.55 beat at 145 BPM is 227.6 ms, which is the crest this scene now holds at every tempo under it — Vienna's
+// becomes 227 ms with a 114 ms lead, against 367 and 183 before.
+//
+// Narrowing the accent alone would bring §61's dead time straight back, because the accent's AREA is fixed at
+// (1 - GLIDE) and a narrower bump is a taller one: at GLIDE .45 and W .330 the floor is 8.1 % of the peak and
+// 52.6 % of the beat falls under a tenth of it (measured, same script) — §58's complaint. So `gFor()` raises the
+// glide by exactly as much as holds the floor/peak RATIO where the reference pair puts it, which is again an
+// identity at w = K.W. Vienna therefore lands on GLIDE .577, W .330:
+//
+//   Vienna 90 BPM        accent   lead     v peak   v floor   floor/peak   dead     |a| p99
+//   .45 / .55 (before)   367 ms   183 ms   1.076    0.133       12.3 %     0.0 %      7.4
+//   .45 / .33            220 ms   110 ms   1.644    0.133        8.1 %    52.6 %     20.4   <- the dead time is back
+//   .577 / .33 (after)   220 ms   110 ms   1.366    0.133       12.4 %     0.0 %     15.7
+//   SeeYouDrop 150       220 ms   110 ms   1.776    0.221       12.4 %     0.0 %     20.4   <- the control, unmoved
+//
+// — the crest's duration, its lead and the floor/peak ratio all become the control's, the jerk stays BELOW the
+// control's, and the only thing still proportional to tempo is the glide's own rad/s, which is the tempo and must
+// be. The step is untouched, so the cloud's rate is untouched (0.332 rad/s before and after on Vienna).
+//
+// `&nudge=<g>,<w>` still moves the REFERENCE pair and both derivations follow it, so the user's live A/B is
+// unchanged: `hooks.nudge(0.45, 0.55)` at 90 BPM is what shipped, `hooks.nudge(0.45, 0.917)` is §61's old look
+// back (0.917 * 90 / 150 = 0.55), and `hooks.nudge(0.45, 0.33)` is the no-glide-correction row above.
+//
+// MEASURED AND REJECTED, each with the number (DECISIONS §66):
+//  · A NUDGE ON THE 8TH (the brief's first lean: Vienna's hats are straight 8ths at 3.00 /s and only 53 of the
+//    window's 108 8th lines carry a nudge). A half step twice per beat keeps the rate (0.313 against 0.332 rad/s)
+//    and would double the crests to 3.00 /s — which is EXACTLY the 2.90 nudges/s §61 measured as Vienna's jerk
+//    source #2 and removed, on the user's own instruction that "the double time should be accenting rather than
+//    driving". It is also not gateable: the test would have to be "the fine lattice is dense", and CyborgNinja's
+//    hats are 16ths at 160 BPM, so the same test fires there and gives 5.33 crests/s at |a| p99 39.3 (SeeYouDrop
+//    5.00 /s at 36.8) — double the control's jerk on the two tracks the user has signed off.
+//  · A DECAY IN BEATS for the voices (the brief's lean b): measured, the voices' decays are ALREADY fair against
+//    their own hit rate — tc / median inter-fire gap reads 0.72 / 0.77 / 0.76 for the kick on SeeYouDrop /
+//    CyborgNinja / Vienna, so 27 % of a kick is still on screen when the next one lands on all three. The hat's
+//    reads 0.35 / 0.68 / 0.27 and is the only one that travels; that is a tc in index.js, not this file (§66).
+export const lead = (w) => w / 2;    // beats: the accent starts here before the line and so peaks ON it
+
+// The accent's own width, in beats, for a beat of this tempo (see WREF above). Quantised to 1e-3 so a clock whose
+// bpm wobbles by a tenth cannot re-derive the shape every frame; an identity at and above WREF.
+export function wFor(bpm) {
+  const b = bpm > 0 ? bpm : K.WREF;
+  if (b >= K.WREF) return K.W;
+  return Math.max(0.04, Math.round(K.W * b / K.WREF * 1000) / 1000);
+}
+// ... and the glide that holds the velocity floor / peak ratio at the reference pair's value. The ratio is
+// GLIDE / (GLIDE + (1 - GLIDE) * 2 / W) — the accent's peak is 2/W steps per beat — and inverting it for g at a
+// narrower w is one line. An identity at w = K.W.
+export function gFor(w) {
+  if (w >= K.W) return K.GLIDE;
+  const r = K.GLIDE / (K.GLIDE + (1 - K.GLIDE) * 2 / K.W), k = 2 * r / w;
+  return k / (1 - r + k);
+}
+
+// The accent's cumulative on [0, w]: the integral of (1/w)(1 + cos(2 pi x / w)) is x/w + sin(2 pi x / w)/(2 pi),
+// written on x = u/w - 1/2 so that B(0) = 0 and B(w) = 1.
+function accent(u, w) {
   if (u <= 0) return 0;
-  if (u >= K.W) return 1;
-  const x = u / K.W - 0.5;
+  if (u >= w) return 1;
+  const x = u / w - 0.5;
   return x + 0.5 + Math.sin(TAU * x) / TAU;
 }
 // The share of beat m's step that has landed at phase u: the glide's own ramp plus the accent's.
-export function phi(u) {
-  return K.GLIDE * u + (1 - K.GLIDE) * accent(u);
+export function phi(u, g = K.GLIDE, w = K.W) {
+  return g * u + (1 - g) * accent(u, w);
 }
 // ... and its derivative in steps per beat, which is what the ruler and `dinfo()` read.
-export function phiDot(u) {
-  return K.GLIDE + (1 - K.GLIDE) * (u > 0 && u < K.W ? (1 + Math.cos(TAU * (u / K.W - 0.5))) / K.W : 0);
+export function phiDot(u, g = K.GLIDE, w = K.W) {
+  return g + (1 - g) * (u > 0 && u < w ? (1 + Math.cos(TAU * (u / w - 0.5))) / w : 0);
 }
 
 // The bar LINE in beat-count units, on synapse's own grid: `barPos` is the position inside the bar in beats, so the
@@ -124,7 +203,7 @@ export const JUMP = 1.05;         // the gate is this many times the frame's OWN
                                   // where the profile's own gain is 2/W, and that IS the spike.
 export const BLEED = 0.75;        // beats/s: how fast the offset is given back (a half-beat re-seat in 0.67 s)
 
-export function mkSpin() { return { ang: 0, last: 0, m: NaN, step: STEP, down: -9, downM: -9, u: 0, v: 0, raw: NaN, off: 0, jumps: 0 }; }
+export function mkSpin() { return { ang: 0, last: 0, m: NaN, step: STEP, down: -9, downM: -9, u: 0, v: 0, raw: NaN, off: 0, jumps: 0, w: K.W, g: K.GLIDE }; }
 
 // One frame. `S.ang` is the angle, exact: a sum of whole steps plus this beat's own PHI(u). Only the re-seat offset
 // above uses dt, and it decays to zero, so two runs at different frame rates land on the same angle — §57's
@@ -138,7 +217,10 @@ export function spin(S, MS, dt) {
   }
   S.raw = raw;
   if (S.off !== 0) { const k = BLEED * (dt > 0 ? dt : 0); S.off = S.off > 0 ? Math.max(0, S.off - k) : Math.min(0, S.off + k); }
-  const bp = raw - S.off + lead();
+  // This beat's own profile, fixed at the beat line below. It is never re-derived mid-beat, for the same reason the
+  // step is not: the shape is the SCALE on what the angle has already delivered.
+  const g = S.g, w = S.w;
+  const bp = raw - S.off + lead(w);
   const m = Math.floor(bp), u = bp - m;
   if (!(S.m === S.m)) S.m = m;                    // the first frame: start here
   let dm = m - S.m;
@@ -157,15 +239,26 @@ export function spin(S, MS, dt) {
     // tick PHI(u) is ~0 and that is nothing, but a bar line that wobbles under a re-seat can land one mid-beat and
     // half a step is 8 degrees of instant turn. The accumulator absorbs the difference, so the angle is continuous
     // whatever the bar line does; what it costs is that the window's total is the design total only to that amount.
-    if (st !== S.step) { S.ang -= (st - S.step) * phi(u); S.step = st; }
+    if (st !== S.step) { S.ang -= (st - S.step) * phi(u, g, w); S.step = st; }
     S.m = m;
+    // The next beat's profile, from this frame's tempo (WREF above). Changing w moves the LEAD by (w2 - w)/2, which
+    // would move the angle on one frame, so it goes into the same offset a re-seat uses and is given back at BLEED;
+    // changing g changes phi at the same u, and the accumulator absorbs that difference exactly as it does the
+    // step's. At a tick u is ~0 and both corrections are a thousandth of a step, but they are exact, so the angle
+    // is continuous and monotone whatever the clock's tempo does.
+    const w2 = wFor(MS.bpm), g2 = gFor(w2);
+    if (w2 !== w || g2 !== g) {
+      S.ang -= S.step * (phi(u, g2, w2) - phi(u, g, w));
+      S.off += (w2 - w) / 2;
+      S.w = w2; S.g = g2;
+    }
   }
   S.u = u;
-  S.v = S.step * phiDot(u) * (MS.bpm || 150) / 60;      // rad/s, for the ruler: the angle's own velocity
+  S.v = S.step * phiDot(u, g, w) * (MS.bpm || 150) / 60;   // rad/s, for the ruler: the angle's own velocity
   // PHI is monotone and `ang` only grows, so this guard is a no-op in normal running; it exists because a clock that
   // re-publishes a lower phase (`Clock.read()` pins the phase to 0 while the count catches up) must not make the
   // cloud turn BACKWARD for a frame, which is the most visible snap of all. §58's ease could and did.
-  const out = S.ang + S.step * phi(u);
+  const out = S.ang + S.step * phi(u, g, w);
   if (out > S.last) S.last = out;
   return S.last;
 }
