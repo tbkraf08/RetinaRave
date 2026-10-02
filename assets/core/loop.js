@@ -13,6 +13,7 @@ import { drawHelp } from './help.js';
 import { CARD, logFrame } from './harness.js';
 import { refreshRoutes, view } from './route.js';
 import { refreshParams } from './params.js';
+import { recFrame } from './rec.js'; // the recorder's post-frame hook (DECISIONS §89): a no-op unless REC.on
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -53,6 +54,7 @@ export function frame(tms) {
   const full = tio.uvS && tio.uvS[0] === 1 && tio.uvS[1] === 1; // the transition re-rendered the whole target (CONTRACTS §5)
   runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q, k: LOOK.k }); // k: the frame's tonemap knee (v0.5 item 4)
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
+  recFrame(); // after the last GL draw, before the DOM: the compositor copies the WebGL canvas on this same task (no preserveDrawingBuffer; rec.js)
   drawHUD(S, frameN);
   drawHelp(S, frameN); // after drawHUD so it inherits the document.hidden early return; returns at once when closed
   logFrame(S, now, frameN);

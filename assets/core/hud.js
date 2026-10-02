@@ -1,5 +1,5 @@
 // HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
@@ -10,6 +10,7 @@ import { G } from './gl.js';
 import { GROOVE } from '../engine/groove.js';
 import { toggleHelp, openHelpAt, keys } from './help.js';
 import { LANDING, initLanding, pick, leavePeek } from './landing.js'; // v0.8.1: the scene tiles + the live preview ("peek")
+import { REC, toggleRec } from './rec.js'; // the recorder (DECISIONS §89): R toggles; the red dot and the toasts are DOM, never in the clip
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
@@ -56,6 +57,8 @@ export function initHUD() {
   // the L key's one-line notice, on touch.js's #toast element (touch.js imports this module, so not its toast(): a cycle)
   let toastT = 0;
   const toast = (text) => { const t = $('toast'); if (!t) return; t.textContent = text; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); };
+  REC.toast = toast;
+  REC.onChange = (on) => { const d = $('recdot'); if (d) d.classList.toggle('on', on); }; // the red dot, top-right of the HUD layer: for the user only
   addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (k !== 'escape' && e.target && e.target.matches && e.target.matches('input,select,textarea')) return; // typing in the panel is not a shortcut (v0.6)
@@ -70,6 +73,7 @@ export function initHUD() {
     else if (k === 'l') { // live step 2: the lead on / off (engine/lead.js), for an A/B by eye in stream mode
       ENGINE.LEAD.on = !ENGINE.LEAD.on;
       setTimeout(() => toast(ENGINE.LEAD.on ? 'beat clocks on heard time (lead ' + Math.round(1000 * ENGINE.MS.leadT) + ' ms)' : 'beat clocks as analysed (lead off)'), 200); // leadT is set on the next frame
+    } else if (k === 'r') { if (!REC.hidden) toggleRec(); // the recorder: what you see and hear → a file on this device, nothing uploaded (&rec=0 hides it)
     } else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
     else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });

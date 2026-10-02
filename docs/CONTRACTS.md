@@ -642,6 +642,25 @@ are the scene author's rules:
   0.3 gate (and the shade's `keyW`) closes on a wrong key and opens on a right one; synapse's clarity only while the ears
   have no tonic and on the fake timeline (0.8). `&kc=0` is the §62–§83 gate (synapse's clarity on every path), the A/B.
 
+### 1.19 The recorder — `R`, `core/rec.js` (v0.30, DECISIONS §89)
+
+Not a scene contract: a core hook and a key, named here because both touch what every scene relies on.
+- **The post-frame hook.** `loop.js` calls `recFrame()` once per frame after the last GL draw (the scene overlays) and before
+  the DOM (`drawHUD`). It is the frame's one read of the WebGL canvas: a 2D compositor canvas of the same size `drawImage`s
+  it on the SAME rAF task (the canvas has no `preserveDrawingBuffer`; after the task the drawing buffer is presented and
+  cleared), burns the watermark `@retinarave · <scene> · v<ver>` in and feeds `captureStream(60)`. **With `REC.on` false
+  it returns on its first line** — no GL call, no DOM, no allocation — so the CLOCK=1 md5 sweep is the receipt that the
+  engine and every scene are untouched by it. Nothing in the engine or a scene may read or write `REC`.
+- **The key.** `R` toggles a take (`hud.js`; the help row of record is `help.js` `keys()`, so the landing hint shows `R record`);
+  `&rec=0` removes the row and makes the key inert (`REC.hidden`). The red dot (`#recdot`), the toasts, the HUD and the card
+  are DOM and are never in the clip. The file: `retinarave-v<ver>-<scene at the start>-<stamp>.webm` + the sidecar `.json`
+  (SOCIAL-PLAN §2.4), through the browser's download — **there is no upload path, and none may be added.**
+- **The version.** `core/version.js` (`VER`) is the page's one version source — the watermark, the file name, the sidecar.
+  The tag step bumps it with `package.json` (`tools/test_rec.js` fails when they differ).
+- **The audio tap.** `AU.rec = ctx.createMediaStreamDestination()` is connected to `AU.bus` once the AudioContext exists:
+  one dead-end node, upstream of the analysers and the file source's shims, so a stage's taps and the recording never
+  interact.
+
 ## 2. Engine contract — see `docs/ENGINE.md`
 
 Short form: `MS` is produced by the engine (`assets/engine/`), documented field-by-field in `assets/engine/feats.js`

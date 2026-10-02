@@ -7702,3 +7702,95 @@ those bars is the user's A/B (`&kc=0`); the knob is `KEYC0 / KEYC1`. CHLADNI rea
 **Open.** OPEN-ITEMS 2026-10-02 §84: the user's ear on CyborgNinja (0:48) and Malicious (2:28) — then `tonic_hand` in the json; the
 three residues above; CHLADNI's `tconf` now carries this scale (not re-tuned); the §62 correction stands in KEY-PLAN §1 and
 `test_ears.js` — "Malicious: the ears were right".
+
+## §89 the `R` recorder — a compositor canvas on the frame's last task, one tap on `AU.bus`, a webm + a sidecar on the visitor's own disk (2026-10-02, one worker on the `rec` branch; NEXT-SESSION-PROMPT item 4 phase 1; the spec is `docs/plans/SOCIAL-PLAN.md` §0–§2, the user's interview answers in its §1 — nothing re-asked)
+
+Six commits on `rec` (a worktree of `db41dcc`), in the brief's order. **Not tagged, not pushed, not deployed, package.json untouched** —
+the tag (v0.30) is the user's step and now bumps TWO lines: `package.json` and `assets/core/version.js` (`tools/test_rec.js` fails when
+they differ). No audible run (every take here is headless with the demo synth). The user's dev server on 8765 untouched; this worker's
+pages on 8861 / 8862, killed by port. ffmpeg is NOT installed on this machine (the user's sudo): `tools/clip.js` is built against the CLI
+and dry-run only — open below.
+
+### What was built (`assets/core/rec.js` 165 lines, `version.js` 5, `loop.js` +2, `hud.js` +6, `help.js` +2, `index.html` +5, `tools/test_rec.js` 144, `tools/clip.js` 87, `site/about.html` +6)
+
+**The frame-end seam.** `loop.js`'s `frame()` runs: engine → scene updates → director → look → fx → scene pass(es) → `runChain` (the
+composite draws to the screen) → scene overlays (NAV's map, GL) → `drawHUD` (DOM) → `drawHelp` (DOM) → `logFrame`. The hook,
+`recFrame()`, sits **after the overlays and before `drawHUD`**: the last GL draw of the frame is behind it, the first DOM write is
+ahead. With `REC.on` false it returns on its first line (no GL call, no DOM, no allocation).
+
+**preserveDrawingBuffer — not needed, and the reason the copy lives in `frame()`.** `gl.js:28` creates the context without it
+(`{ antialias: false, alpha: false, powerPreference: 'high-performance' }` — the default is false). The rule (WebGL §2.2 "The
+Drawing Buffer"): the buffer is presented to the compositor and cleared *after the task that drew it returns*, and a read **inside the
+same task, after the draws** sees the frame. `tools/probe.js` has read the GL canvas through a 2D canvas this way since v0.2 ("same
+task, before compositing"). Measured here: the compositor's mean luminance mid-take **29.0** (NAV at 1 s; `test_rec.js`'s check,
+> 1.5) and a frame decoded from the webm (`tools/work/rec/frame.jpg`) shows the scene, NAV's overlay map and the watermark. A copy
+in a `setTimeout`, a promise, or a second rAF would read black; nothing in `rec.js` is async on the frame path.
+
+**The compositor.** A 2D canvas that is never in the DOM, `G.PW × G.PH` (re-sized on the frame a resize / fullscreen changes the
+WebGL canvas — the track follows); per frame `drawImage(G.cv)` then the watermark `@retinarave · <scene> · v0.29` (bottom-right,
+600-weight system sans at h/51 px — 14 px at 720p — white at 0.7 on a 0.6-black shadow; constants `WM` in rec.js, not a panel), the
+scene name live from `REG[SC.logical]` (it follows the director; a variant appends `-<variant>`). `captureStream(60)` on it is the
+video track. The HUD, the card, the toast, the red dot are DOM — out of the clip by construction, and `frame.jpg` is the receipt (the
+test turns the HUD on before `R`; the frame has no HUD text).
+
+**The audio.** `AU.rec = ctx.createMediaStreamDestination()`, `AU.bus.connect(AU.rec)` — once, from `AU.onInit` (or at module
+load when the context already exists). The bus is upstream of the analysers, the mute gain and file mode's shimmed analysers
+(`file.js:169`), so one tap covers tab capture / mic / file / demo, and a stage's own taps never see it. A take started before any
+source (no AudioContext yet) is a silent clip rather than a refusal.
+
+**MediaRecorder.** `isTypeSupported` picks `video/webm;codecs=vp9,opus` → `vp8,opus` → `video/webm`; `videoBitsPerSecond` 12e6;
+chunks every 2.5 s into memory; one toast at 5 minutes. Stop → one Blob → `<a download>` for the `.webm` and the `.json`
+(two downloads = one "allow multiple downloads" prompt in Chrome, the first time; accepted by the plan). Name:
+`retinarave-v0.29-<scene at the START>-<yyyy-mm-ddThh-mm-ss>.webm` (the stamp UTC, from the start). The sidecar is §2.4's schema plus
+`frames` (compositor frames drawn), `mime`, and `flags.clock` / `flags.map`:
+`{ app, version: "0.29.0", engineMd5: null, started, durationS, source: capture|mic|file|demo, track: <file name or null>,
+size: [w, h], fps: 60, frames, mime, scenes: [{ t, id, name }, …], flags: { lead, shade, clock, map }, ua }`.
+
+**The key.** `R` was unbound (`hud.js`'s handler: f d m h ? p escape l n 0–9). The help row of record (`help.js keys()`):
+`['R', 'record what you see and hear to a file on this device — nothing is uploaded; the music you capture is yours to clear',
+'record']` — the landing hint shows `R record` for free; `&rec=0` removes the row and makes the key inert (`REC.hidden`; a kiosk).
+The red dot `#recdot` sits top-right of the HUD layer (`z-index` 12, `pointer-events: none`, a 1.2 s blink), for the user only.
+`site/about.html` gets a "Recording" paragraph: on-device, through the browser's download, nothing uploaded, no upload or share
+button, the rights to the music are the visitor's to clear. **No upload path exists in the page, and none may be added** (the whole
+liability posture, SOCIAL-PLAN §1 row 7, §2.5; CONTRACTS §1.19).
+
+**`tools/clip.js`** (node + the ffmpeg CLI): `<take.webm> [--ss --to] [--out] [--dry]` → `tools/work/clips/<yyyy-mm-dd>T<hh-mm>-<scene>-v<ver>/`
+with `clip.webm` (copied), `meta.json` (the sidecar with `durationS` trimmed, `scenes[].t` shifted — the scene in effect at `ss`
+becomes t 0 —, `trim: [ss, to]`), `clip.mp4` (`-c:v libx264 -pix_fmt yuv420p -crf 18 -r 60 -c:a aac -b:a 192k -movflags +faststart`),
+`clip-9x16.mp4` (`-vf crop=trunc(ih*9/16/2)*2:ih` — even width, the plan's `ih*9/16` can be odd), `poster.jpg` (`ss + 1 s`, `scale=1920:-2`).
+Without ffmpeg it prints the exact commands and exits 2; `--dry` the same with exit 0. Dry-run on the test take with `--ss 3 --to 5.5`:
+folder `2026-10-02T21-57-nav-v0.29`, 2.5 s, scenes `torus2@0 dust@1.075` (the take's `nav@0 torus2@2.074 dust@4.075`).
+
+### Proofs
+
+- **`node tools/check.js` 0 fail** (166 modules; rec.js 165 lines).
+- **`tools/test_rec.js` 36 ok / 0 FAIL** (`GPU=1 PORT=8861`, headless, the real clock, `#test&fake=0`, keys `d R 4 2 R` through the
+  public handler, 6 s): `retinarave-v0.29-nav-2026-10-02T21-57-20.webm` + `.json` downloaded (6,996,260 bytes, `vp9,opus`); the
+  sidecar `source demo`, `track null`, `size [1280, 633]`, `durationS 6.007` vs the keys' 6.00; the timeline
+  `nav@0 → torus2@2.074 → dust@4.075` vs the key presses at 2.06 / 4.07; the webm's EBML-walked duration **5.96 s** (7 clusters)
+  vs `durationS` 6.007; **355 compositor frames = 59.1 fps**; the compositor's luminance 29.0; the frame from the webm decoded
+  (120 KB) with the HUD on in the DOM — `tools/work/rec/frame.jpg`: the scene, the watermark, no HUD.
+- **The md5 sweep did not move with the recorder idle.** Spot check first (`IDS="1 3" PORT=8861 tools/scene-md5.sh rec1`): s1
+  `1faaa64e` / `25dfdc48`, s3 `3122036e` / `a1e941af` = `tools/accept/v0.29/scene-md5-v029.txt`. Then the full sweep — below.
+- **The stop rule (SOCIAL-PLAN §2.2: the compositor halving fps at 1080p) does NOT fire.** `GPU=1 WIN=1920,1080` headless (the
+  window chrome leaves 1920×993), TORUS2 forced, the demo synth, `CARD.frameN` counted per 5 s window, `__REC.start()` between:
+  **off 300 · on 235 · off 301 · on 233 · off 301 frames / 5 s = 60 → 47 fps, 0.78×** (`CARD.ERRS` []). `Q.q` sank 0.53 → 0.00 while
+  on (the quality knob absorbed it; `ENGINE.ms` 1.16 → 1.15, the engine untouched). The compositor's own share, measured alone
+  (100 × `drawImage(gl)` + the shadowed text, `getImageData(1 px)`-synced, three medians): **1.36 / 1.23 / 1.39 ms per frame** at
+  1920×993; the bench pair in the same page `CARD.bench(3, 300)` 3.49 / `bench(0, 300)` 5.46 / 3.53 / 5.35 ms (TORUS2 / NAV). So
+  ~1.3 ms of the ~4.6 ms/frame lost is the compositor; the rest is Chrome's VP9 software encode at 12 Mb/s — which the alternative
+  (a watermark quad in `post.js` + `captureStream` on the WebGL canvas) would not remove. Headless with the user's desktop Chrome
+  loaded (HARNESS "Bench protocol" 4); the headed number is the user's by-hand receipt. Open: a take renders at the low `q` tier on
+  this machine — whether to pin `q` during a take is the user's call after they see one (OPEN-ITEMS).
+- **`accept.sh` in this worktree, recorder idle** (`GPU=1 PORT=8862 ACC=v0.29`): **199 lines, 0 FAIL, EXIT 0** (`tools/work/accept-rec.log`) — all 24 scene lines
+  "= reference" against `scene-md5-v029.txt` (44 "= reference" lines with the NAV2 / GIELIS stills), the mixs 0→3 f178 `cb3d4048` =
+  recorded, parity fake / real as §83 left them, the 60 s monitor clean, 9 tiles / 9 thumbnails, exceptions 0, the bundle (166 modules,
+  rec.js inlined) errs []. The engine and every scene are where v0.29 left them with the recorder idle.
+- **`&rec=0`**: `REC.hidden` true, the landing hint has no "record", `R` leaves `REC.on` false and `REC.n` 0; the default hash: the hint
+  shows `R record`. **The bundle from `file://`** (`dist/retinarave.html`, `#test&fake=0`): `__REC.start()` → `REC.on` true,
+  `vp9,opus`, the compositor 1280×633, `CARD.ERRS` [].
+
+### Open (also in OPEN-ITEMS)
+ffmpeg (the user's sudo) → `clip.js` for real + the ffprobe line 60 fps / yuv420p / AAC; the `HEADED=1` by-hand receipts (30 s tab
+capture, 30 s file, Chrome + VLC with sound, the watermark by eye; HARNESS "Recorder"); the `q` tier during a take; phones; the
+offline render (§2.7, deferred on the user's word); a resize mid-take's resolution change through a transcode.
