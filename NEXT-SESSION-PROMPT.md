@@ -1,6 +1,6 @@
 # Next session — Retina Rave (written 2026-10-02, after the v0.29 deploy)
 
-**State:** **v0.29 DEPLOYED 2026-10-02** (`dca98f5`; retinarave.com serves v0.29 — everything from §49 to §82 is live: the six live
+**State:** **v0.29 DEPLOYED 2026-10-02**; the Share plan (recorder / releases / landing) is written, not built — item 4 below (`dca98f5`; retinarave.com serves v0.29 — everything from §49 to §82 is live: the six live
 steps, the DUST overhaul passes 1–2, LOUDNESS, the ears' kick/snare lanes + `kickAmp`/`snareAmp`, the Quantile fix, key = tonic,
 the clock fixes, the Arnold tongues §76–§80, `tension` normalised §81, `modeShade` ON by default §82). `main` == origin.
 Tracks: `~/Music/RetinaRave/{SeeYouDrop.flac, CyborgNinja.mp3, WhoLikesToParty.mp3, Malicious.mp3, Vienna.flac}`; truth grids
@@ -67,6 +67,41 @@ no other scene's may), `check.js` 0 fail, files < 350 lines (split `grid.js` / `
 stream mode: old = `releases/retinarave-v0.29.html` from `file://`, new = `http://127.0.0.1:8765/`, key 3, same track;
 their eye is the ruler, a look remark = a retune request. DECISIONS §-numbered per step; a session prompt
 `MANDALA-OVERHAUL-SESSION-PROMPT.md` written first (Fable), shown to the user, then built (Fable).
+
+### 4. Share — the recorder, the release notes, the landing (planned 2026-10-02, not built; `docs/plans/SOCIAL-PLAN.md`)
+The plan is the spec; it records the user's two interview rounds (§1 there) — do not re-ask. Three phases, in this order, each
+a Fable-planned / Fable-built step with its own commit and DECISIONS section:
+1. **The `R` recorder (→ tag v0.30).** Step 0: `ffmpeg` is NOT installed — install it. `R` (free; key table of record
+   `assets/core/help.js:32-39`, handler `assets/core/hud.js:59-76`) toggles a `MediaRecorder` (VP9/Opus, VP8 fallback) on a
+   **compositor** 2D canvas that `drawImage`s the WebGL canvas at the end of the engine's frame (a post-frame hook, no-op
+   unless `REC.on`) and burns in `@retinarave · <scene> · v<ver>`; audio = `AU.bus → createMediaStreamDestination()` (one tap
+   covers tab capture / mic / file / demo — `assets/engine/audio.js:53-71`). HUD and card are DOM and never in the clip; a red
+   dot in the HUD layer for the user only. Stop → download `retinarave-v0.30-<scene>-<stamp>.webm` + the sidecar `.json`
+   (schema SOCIAL-PLAN §2.4: version, source, scene timeline, length, flags). **Public**, with the liability posture in the
+   help row + `site/about.html`: on-device, nothing uploaded, the visitor clears their own music — **no upload / share
+   affordance, ever**. `tools/clip.js` (node + ffmpeg): trim → `clip.mp4` (H.264 yuv420p + AAC), `clip-9x16.mp4` centre
+   crop, `poster.jpg`, `meta.json`, into `tools/work/clips/<stamp>-<scene>-v<ver>/` (the contract SocialMediaManager reads,
+   SOCIAL-PLAN §0). Receipts: `CLOCK=1` md5 lists identical to v0.29 with the recorder idle (the engine did not move);
+   `tools/test_rec.js` (name, sidecar, timeline); `HEADED=1` by hand — 30 s tab capture + 30 s file, plays in Chrome and VLC
+   with sound, watermark reads, ffprobe shows 60 fps / yuv420p / AAC. Stop rule: the compositor halving fps at 1080p → the
+   watermark becomes a textured quad in `post.js` and `captureStream` the WebGL canvas directly. Frame drops are accepted
+   (the user); the offline deterministic render is deferred (§2.7). Tab capture first, file second.
+2. **`releases.json` + `/whats-new`.** One visitor-facing entry per version, newest first, `class` ∈ scene / engine /
+   tuning (schema §3.1); `tools/check.js` fails a tag whose top entry ≠ `package.json`'s version; `tools/whatsnew.js` renders
+   `site/whats-new.html` at `npm run build` (static, per-version anchors, click-to-load YouTube embeds behind a self-hosted
+   poster so no third-party request leaves the page before a click); `site/sitemap.xml` + `about.html` gain the link.
+   **Backfill v0.6 → v0.29** from DECISIONS / the AUDIT files, in a visitor's words, one sitting, the user reads once; the
+   evolution series' historical clips come from `releases/retinarave-vX.html` headed via `tools/record-old.sh` (ffmpeg
+   `x11grab` + the PulseAudio monitor — the old pages have no `R`); an old file that no longer runs gets a then / now note.
+3. **The landing (→ tag v0.31 with 2).** One line on the card between the sub line and the picker, in the user's voice:
+   "Everything runs on this device — no account, no trackers, no ads. I built this for myself and wanted to share it." plus
+   "New in vX: <title> → what's new" inlined from the top of `releases.json` by `tools/bundle.js` (no fetch). `about.html`
+   gets the long form (how it works, what it does not do, the recording paragraph). DOM only — md5s cannot move. Verify cold
+   on a phone and a desktop; `curl -I` shows no third-party request from `/` or `/whats-new` before a click.
+**Not in this repo:** posting. SocialMediaManager is a NEW repo (`~/Documents/Kraftek/SocialMediaManager`, prod-eng); the
+user copies `docs/plans/SOCIAL-MANAGER-BRIEF.md` there and starts that session themself once phase 1 has produced a real
+clip bundle. **Everything is local to this computer — no Slack, no remote service in the loop**; only the approved posts
+(Reddit, YouTube — the user provides credentials; Instagram is a copy-paste bundle) leave it. Deploy on the user's word.
 
 ## Validating a truth grid (the user asked; do this before item 2 leans on the keys)
 A grid is right when the audio agrees with it four ways; `tools/truth/gridcheck.py` already prints the provenance flag
