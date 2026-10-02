@@ -3,6 +3,7 @@
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
+export FORCE_COLOR=0 NO_COLOR=1   # v0.27: node colours util.inspect output; the params block parsed "\e[33m0.4\e[39m" as a number
 export OUT=tools/accept/${ACC:-v0.9}; mkdir -p $OUT
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1

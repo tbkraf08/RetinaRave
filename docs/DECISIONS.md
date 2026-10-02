@@ -6805,3 +6805,14 @@ at drop 2 (1:46.7)**, where the ladder's depth does not change. Luminance: Vienn
 - **CyborgNinja, anywhere:** nothing. Identical to the digit — the control the brief named.
 - **WhoLikesToParty / Malicious:** a few bars at 0.1–0.5 (their 16th-note depth rises at 0:50–0:55 and 2:03–2:10 on
   WhoLikesToParty; 1:40–1:45, 2:51–2:56 on Malicious) — not graded here, named so the eye is not surprised.
+
+**v0.27 tagged AND DEPLOYED (2026-10-02) on the user's word ("tag and deploy; what i've seen so far is beautiful"):** v0.26 + §75
+(the sub gate's cold start), §76–§78 (the Arnold tongues: shadow stage, the clock knob built and left off, the ambiguity arming
+path, DUST's accent amplitude). First push to `main` since v0.15 (128 commits, v0.16–v0.27). Pre-deploy: `tools/accept.sh`
+(ACC=v0.27, first run since v0.14): check 0 fail, all 11 scenes `errs [] bad []` on `#test`, monitor 60 s 0 violations, route /
+manual / param smokes 0 fail; the FAIL lines are stale md5 references (s6 POLYTOPE moved at §63/§67 as recorded, NAV2 stills and the
+`mixs` 0→3 route moved with the scenes) plus one script bug — node now colours `util.inspect`, so the params block parsed
+`\e[33m0.4\e[39m` as a number (`FORCE_COLOR=0 NO_COLOR=1` added; the routes themselves verified: PROUTE.n 1, width 0.4 vs 1.8).
+Landing tiles regenerated (`tools/thumbs.sh`: dust / feigen / mandala / polytope / torus2 moved, nav / maxwell byte-identical);
+`site/` copy has no version text. `releases/retinarave-v0.27.html` (1522 KB, 161 modules; `file://` smoke on scenes 1 and 3:
+errs [], nonFinite [], clock pcm), package.json 0.27.0.
