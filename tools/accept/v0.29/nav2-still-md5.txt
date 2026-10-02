@@ -1,0 +1,8 @@
+# NAV2 &still=1 (hooks.still: every NAV2-only uniform at its IEEE-identity rest), CLOCK=1 GPU=1 1280x720 — re-based at v0.29
+# (DECISIONS §83, 2026-10-02) from accept.sh's own shots on the deployed tree (dca98f5 + the tools/truth commits, worktree, PORT 8830);
+# the v0.8 values (9021eac8 / a1e037f5 / 62c73a6f / 7e3f34cb) were tools/accept/v0.8/nav2-still-md5.txt — NAV2 moved between v0.8 and v0.29
+# (§39 → §49-§82: the engine's clocks and the look memory moved under every scene; the still pair had no re-base since v0.8).
+202c5a8a147346f86f6746300b29d4ad  still-f360
+36c8a02fd22ccc06624195b77033b866  still-f480
+1ee726cd717d95b28eff1d976266ee5a  still-f720
+d60bc5c8247ab71ea1e9ca0b1570986e  still-f840

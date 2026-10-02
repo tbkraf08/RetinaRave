@@ -1,10 +1,13 @@
-# Acceptance sweep -> tools/accept/${ACC:-v0.9}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/, v0.4/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
-# Acceptance sweep -> tools/accept/${ACC:-v0.9}/ (earlier sweeps stay in tools/accept/v0.2/, v0.3/). Run with GPU=1. Prints one line per check; grep FAIL. The real-path and
+# Acceptance sweep -> tools/accept/$ACC/ (default v0.29; earlier sweeps stay in tools/accept/v0.2/ … v0.14/). Run with GPU=1. Prints one line per check; grep FAIL.
+# EVERY md5 reference (the scene list, the NAV2 / GIELIS stills, the mixs transition) is read from tools/accept/$ACC/ — the next
+# re-base is the one default below plus the files it names (DECISIONS §83). The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
 export FORCE_COLOR=0 NO_COLOR=1   # v0.27: node colours util.inspect output; the params block parsed "\e[33m0.4\e[39m" as a number
-export OUT=tools/accept/${ACC:-v0.9}; mkdir -p $OUT
+ACC=${ACC:-v0.29}                                  # THE reference version (§83): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
+export OUT=tools/accept/$ACC; mkdir -p $OUT
+SCN=$OUT/scene-md5-$(echo $ACC | tr -d .).txt      # the CLOCK=1 f360/f840 list of every scene id (tools/scene-md5.sh's format: "<md5>  s<id>-f<N>.jpg")
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
@@ -19,6 +22,13 @@ IDS=$(grep -ho "^  id: [0-9]*" assets/scenes/*/index.js | grep -o "[0-9]*" | sor
 for i in $IDS; do
   node tools/cdp.js "test&scene=$i" "[{\"wait\":6000},{\"eval\":\"'scene $i ERRS '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' | '+(CARD.REG[$i]?CARD.REG[$i].scene.name:'?')\"},{\"shot\":\"s$i-t6\"},{\"wait\":8200},{\"shot\":\"s$i-t14\"}]" | grep EVAL | sed 's/.*=> //'
 done
+echo "== scene md5 (every id, CLOCK=1 f360 / f840 against $SCN)"   # §83: until v0.29 only s3 / s5 / s6 / s8 / s10 had a reference line in this sweep; the list is the one tools/scene-md5.sh writes
+for i in $IDS; do
+  CLOCK=1 node tools/cdp.js "test&scene=$i" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"s'$i'-f360"},{"until":"window.__FRAME>=840"},{"shot":"s'$i'-f840"},{"eval":"'"'"'scene '$i' errs '"'"'+JSON.stringify(CARD.ERRS)+'"'"' hop '"'"'+CARD.ENGINE.tex.hop+'"'"' row '"'"'+CARD.ENGINE.tex.row"}]' | grep EVAL | sed 's/.*=> //'
+  for f in 360 840; do M=$(md5sum $OUT/s$i-f$f.jpg | cut -c1-32); REF=$(grep "s$i-f$f.jpg" $SCN | cut -c1-32)
+    [ -n "$REF" ] && [ "$M" = "$REF" ] && echo "s$i f$f md5 $M = reference" || echo "FAIL s$i f$f md5 $M != reference ${REF:-(no line in $SCN)}"
+  done
+done
 # v0.2 §13/§15: a scene that samples the hist texture must shoot the same CLOCK=1 frame with the whole-texture upload (&histfull=1) and the row-delta upload
 for d in $(grep -l "engineTex.hist" assets/scenes/*/index.js); do i=$(grep -o "^  id: [0-9]*" $d | grep -o "[0-9]*"); n=$(basename $(dirname $d))
   CLOCK=1 node tools/cdp.js "test&scene=$i" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"hist-s'$i'-f360"},{"until":"window.__FRAME>=840"},{"shot":"hist-s'$i'-f840"}]' > /dev/null
@@ -29,7 +39,7 @@ done
 # v0.2 §16: FEIGEN's steady-state cost at the deepest level, tier 3, must stay at or under NAV's (interleaved in the same page; 1.5× covers the load drift) and under 2.9 ms; feigen-bench.sh writes feigen-bench-accept.txt
 echo "== feigen cost";   R=$(tools/feigen-bench.sh accept 3.6 2>/dev/null | grep "^feig=3.6: L .* feigen" | head -1); F=$(echo "$R" | sed 's/.* feigen \([0-9.]*\) ms.*/\1/'); N=$(echo "$R" | sed 's/.* nav \([0-9.]*\) ms.*/\1/'); echo "$R" | cut -c1-120
 [ -n "$F" ] && awk -v f="$F" -v n="$N" 'BEGIN{lim=(n*1.5>2.9)?n*1.5:2.9; if (f<=lim) print "feigen L3.6 steady " f " ms <= " lim " (nav " n ")"; else print "FAIL feigen L3.6 steady " f " ms > " lim " (nav " n ")"}' || echo "FAIL feigen-bench.sh gave no L3.6 line"
-echo "== transition";  MD5=f0c9d637cfba1de4a67c6e651f27a8f2   # mixs, director-blind, re-based at v0.9 (§41: v0.8.1's core/hud.js + harness.js moved it to f0c9d637… — the user tagged v0.8.1 on a look, no sweep; proven the same before and after the POLYTOPE merge on 753f985 vs de6a5fe; 641f6633… was the v0.7–v0.8 value), re-based when TORUS2 took id 3 (v0.7 §37: the 0→3 fade lands on TORUS2; 5892ddc5… with TORUS at 3), before that re-based for the v2 colour default (v0.3 §26; 425a66e5… under the §24/§25 OKLCH default, a6e2b8cd… on the v0.2 chain, v0.2 §15): scene 0 forced, released at frame 120 with goScene(3), shot at 178 (m .499), GPU=1 1280×720. v3's crossfade byte-identical since §11; re-based from the frame-290 director pick (4ac523e9…) when FEIGEN's registration changed that pick — same pixels with FEIGEN unregistered (DECISIONS §15)
+echo "== transition";  MD5=$(grep trans-mixs-0-3-f178 $OUT/trans-mixs-md5.txt | cut -c1-32)   # mixs, read from $OUT/trans-mixs-md5.txt since v0.29 (§83: the lattice moves TORUS2, the 0→3 fade's target, so the value re-bases with the list); the history — director-blind, re-based at v0.9 (§41: v0.8.1's core/hud.js + harness.js moved it to f0c9d637… — the user tagged v0.8.1 on a look, no sweep; proven the same before and after the POLYTOPE merge on 753f985 vs de6a5fe; 641f6633… was the v0.7–v0.8 value), re-based when TORUS2 took id 3 (v0.7 §37: the 0→3 fade lands on TORUS2; 5892ddc5… with TORUS at 3), before that re-based for the v2 colour default (v0.3 §26; 425a66e5… under the §24/§25 OKLCH default, a6e2b8cd… on the v0.2 chain, v0.2 §15): scene 0 forced, released at frame 120 with goScene(3), shot at 178 (m .499), GPU=1 1280×720. v3's crossfade byte-identical since §11; re-based from the frame-290 director pick (4ac523e9…) when FEIGEN's registration changed that pick — same pixels with FEIGEN unregistered (DECISIONS §15)
 TR='{"until":"window.CARD"},{"until":"window.__FRAME>=120"},{"eval":"CARD.SC.forced=-1;CARD.goScene(3,false);CARD.SC.next"},{"until":"window.__FRAME>=178"}'
 CLOCK=1 node tools/cdp.js 'test&scene=0&trans=mixs' "[$TR,{\"shot\":\"trans-mixs-0-3-f178\"}]" > /dev/null; M=$(md5sum $OUT/trans-mixs-0-3-f178.jpg | cut -c1-32); [ "$M" = "$MD5" ] && echo "mixs 0→3 f178 md5 $M = recorded" || echo "FAIL mixs 0→3 f178 md5 $M != recorded $MD5"
 CLOCK=1 node tools/cdp.js 'test&scene=0&trans=morph' "[$TR,{\"shot\":\"trans-morph-0-3-f178\"},{\"eval\":\"'MORPH 0→3 f178 '+JSON.stringify({sc:[CARD.SC.cur,CARD.SC.next,+CARD.SC.m.toFixed(3)],errs:CARD.ERRS,bench:CARD.benchTransition(300)})\"}]" | grep "EVAL.*MORPH" | sed 's/.*=> //'
@@ -40,7 +50,7 @@ echo "== hidden worklet" # v0.3 §26 audit: the same on the worklet path (synaps
 R=$(node tools/cdp.js 'test&fake=0&demo=dnb&scene=1' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=>PROBE.start())"},{"wait":14000},{"tab":"about:blank"},{"activate":"tab"},{"wait":20000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k===\"back\"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,150);return JSON.stringify({n:fr.length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k===\"drop\"&&e.t>=b.t}).length,srMax:+Math.max.apply(null,fr.map(function(f){return f.sr})).toFixed(2),hop:CARD.ENGINE.tex.hop,resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]' | grep EVAL | tail -1 | sed 's/.*=> //'); echo "$R"; echo "$R" | tr -d '\\' | grep -q '"n":150,"surprise":0,"drops":0,"srMax":\(0\|1\.[0-3]\)' && echo "hidden worklet: 150 frames back, 0 surprise, srMax < 1.4" || echo "FAIL hidden worklet: $R"
 echo "== routes"         # v0.4: the node smokes; the view path is exact (an identity route leaves FEIGEN's f360 md5 = the reference, a real route moves it); the manual post the same way (the v2 default's own bloom thr = identical, bloom off moves it); the panel opened (key p) then closed before the shot leaves the canvas md5 identical; a panel-open shot for the eyes
 node tools/route-smoke.js | tail -1; node tools/manual-smoke.js | tail -1
-REF6=$(grep "s6-f360" tools/accept/v0.7/scene-md5-v07.txt | cut -c1-32)
+REF6=$(grep "s6-f360" $SCN | cut -c1-32)
 for r in "route-id:route=feigen.bass=bass:same" "route-hi:route=feigen.bass=high:diff" "post-same:post=feigen.bloom.thr=0.3:same" "post-off:post=feigen.bloom.thr=2:diff"; do t=${r%%:*}; q=${r#*:}; q=${q%:*}; want=${r##*:}
   CLOCK=1 node tools/cdp.js "test&scene=6&$q" "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=360\"},{\"shot\":\"$t-s6-f360\"}]" > /dev/null; M=$(md5sum $OUT/$t-s6-f360.jpg | cut -c1-32)
   if [ "$want" = same ]; then [ "$M" = "$REF6" ] && echo "$t: s6 f360 md5 = reference ($M)" || echo "FAIL $t: s6 f360 md5 $M != reference $REF6"; else [ "$M" != "$REF6" ] && echo "$t: s6 f360 md5 $M != reference (moved, as it must)" || echo "FAIL $t: s6 f360 md5 did not move"; fi
@@ -63,7 +73,7 @@ done
 [ "$(md5sum $OUT/param-lo-s6-f360.jpg | cut -c1-32)" != "$(md5sum $OUT/param-hi-s6-f360.jpg | cut -c1-32)" ] && echo "param lo != hi on $P" || echo "FAIL param lo == hi on $P"
 R=$(CLOCK=1 node tools/cdp.js 'test&scene=6' "[{\"until\":\"window.CARD\"},{\"key\":\"p\"},{\"until\":\"window.__FRAME>=120\"},{\"eval\":\"var s=document.getElementById('pe-psrc-feigen-$P');s.value='centroid';s.dispatchEvent(new Event('change'));1\"},{\"until\":\"window.__FRAME>=126\"},{\"eval\":\"'SET '+CARD.PROUTES.feigen.$P.src+' n '+CARD.PROUTE.n\"},{\"eval\":\"document.getElementById('pe-prst-feigen-$P').click();document.getElementById('pe-phi-feigen-$P').click();1\"},{\"until\":\"window.__FRAME>=140\"},{\"eval\":\"'PREVIEW f140 '+CARD.PROUTES.feigen.$P.src+' c '+CARD.PROUTES.feigen.$P.c\"},{\"until\":\"window.__FRAME>=300\"},{\"eval\":\"'PREVIEW f300 n '+CARD.PROUTE.n+' store '+localStorage.getItem('ew.routes.v1')\"},{\"shot\":\"panel-params-s6-f300\"}]" | grep EVAL | sed 's/.*=> //' | tr -d '"'); echo "$R" | grep -q "SET centroid n 1" && echo "$R" | grep -q "PREVIEW f140 const c $HI" && echo "$R" | grep -q "PREVIEW f300 n 0 store null" && echo "panel params: set by select, hi preview for 2 s of ticks, back, storage null" || echo "FAIL panel params: $R"
 echo "== torus2"         # v0.7: TORUS2 (id 3 since §37, TORUS's bid; torus-v1 is id 7 forced-only): its own f360/f840 md5s against tools/accept/v0.7/scene-md5-v07.txt; the interior is lit (tools/lum.py: centre 20 % of the frame vs the 60–90 % rim annulus, ratio >= .35 and centre >= .4 at f360); the pinned kick train (hooks.train) puts four bumps per ring evenly spaced for 4x4 and unevenly for sync (positions from hooks.info, de-duplicated: a wave a bar old sits where a new one launches — one ring per bar); a param route moves the s7 md5; ids 0–6 unchanged is the "== params" identity diff above
-R7=tools/accept/v0.7/scene-md5-v07.txt
+R7=$SCN   # v0.29 (§83): the one list; the per-version lists below it were v0.7 / v0.8 / v0.9 / v0.14's
 for f in 360 840; do M=$(md5sum $OUT/t2-s3-f$f.jpg 2>/dev/null | cut -c1-32); REF=$(grep "s3-f$f" $R7 | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=3' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"t2-s3-f$f\"},{\"eval\":\"'s3 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())\"}]" | grep EVAL | sed 's/.*=> //'
   M=$(md5sum $OUT/t2-s3-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "torus2 f$f md5 $M = reference" || echo "FAIL torus2 f$f md5 $M != reference $REF"
@@ -77,22 +87,22 @@ CLOCK=1 node tools/cdp.js 'test&scene=3&param=torus2.morph=c:1' '[{"until":"wind
 [ "$(md5sum $OUT/t2-par-morph1-s3-f360.jpg | cut -c1-32)" != "$(grep s3-f360 $R7 | cut -c1-32)" ] && echo "torus2 param morph=1 moves the f360 md5" || echo "FAIL torus2 param morph=1 moved nothing"
 python3 tools/montage.py $OUT/montage-torus2.jpg 2 $OUT/s7-t6.jpg $OUT/s3-t6.jpg $OUT/s7-t14.jpg $OUT/s3-t14.jpg $OUT/t2-train-4x4.jpg $OUT/t2-train-sync.jpg 2>/dev/null && echo "montage $OUT/montage-torus2.jpg"
 echo "== nav2"           # v0.8: NAV2 (id 8, forced-only, score 0 — DECISIONS §39): its own f360/f840 md5s against tools/accept/v0.8/scene-md5-v08.txt, the &still=1 four against nav2-still-md5.txt (every NAV2-only uniform at its IEEE-identity rest), the two node tests, and the continuity monitor over 30 s with NAV2's state injected (max must stay under 0.06: every non-cut frame moves cPath by <= V_MAX*dt by construction)
-R8=tools/accept/v0.8/scene-md5-v08.txt
+R8=$SCN
 for f in 360 840; do REF=$(grep "s8-f$f" $R8 | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=8' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-s8-f$f\"},{\"eval\":\"'s8 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[8].scene.hud().slice(0,60)\"}]" | grep EVAL | sed 's/.*=> //'
   M=$(md5sum $OUT/n2-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 f$f md5 $M = reference" || echo "FAIL nav2 f$f md5 $M != reference $REF"
 done
-for f in 360 480 720 840; do REF=$(grep "still-f$f" tools/accept/v0.8/nav2-still-md5.txt | cut -c1-32)
+for f in 360 480 720 840; do REF=$(grep "still-f$f" $OUT/nav2-still-md5.txt | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=8&still=1' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-still-s8-f$f\"}]" > /dev/null
   M=$(md5sum $OUT/n2-still-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 still f$f md5 $M = reference" || echo "FAIL nav2 still f$f md5 $M != reference $REF"
 done
 node tools/test_field.js | tail -1; node tools/test_nav2.js | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
-R=$(node tools/cdp.js 'test&fake=0&scene=8' "[{\"until\":\"window.CARD\"},{\"wait\":1500},{\"eval\":\"CARD.NAV=CARD.REG[8].scene.state;$MON;'ok'\"},{\"wait\":30000},{\"eval\":\"'MON8 '+JSON.stringify({n:MON.n,fast:MON.fast,max:+MON.max.toFixed(4),viol:MON.viol})\"}]" | grep MON8 | sed 's/.*=> //' | tr -d '"'); echo "$R"
+R=$(node tools/cdp.js 'test&fake=0&scene=8' "[{\"until\":\"window.CARD\"},{\"wait\":1500},{\"eval\":\"CARD.NAV=CARD.REG[8].scene.state;$MON;'ok'\"},{\"wait\":30000},{\"eval\":\"'MON8 '+JSON.stringify({n:MON.n,fast:MON.fast,max:+MON.max.toFixed(4),viol:MON.viol})\"}]" | grep MON8 | sed 's/.*=> //' | tr -d '"\\'); echo "$R"
 echo "$R" | grep -q 'viol:\[\]' && echo "nav2 monitor clean" || echo "FAIL nav2 monitor: $R"
 python3 tools/montage.py $OUT/montage-nav2.jpg 2 $OUT/n2-s8-f360.jpg $OUT/n2-s8-f840.jpg $OUT/n2-still-s8-f360.jpg $OUT/n2-still-s8-f840.jpg 2>/dev/null && echo "montage $OUT/montage-nav2.jpg"
 echo "== polytope"       # v0.9: POLYTOPE (id 5, modified in place — DECISIONS §41): its own f360/f840 md5s against tools/accept/v0.9/scene-md5-v09.txt (= the v0.8 list with s5 re-based; ids 0–4, 6–8 are the "== scenes" identity); the pinned bass train (hooks.train) puts four bumps per edge evenly spaced for 4x4 and unevenly for sync (positions from hooks.info().bass.pos, de-duplicated); the key pair hooks.key(0,0) vs (7,1) differ (warm vs cool, the wheel turned); a param route (groove=c:0) moves the s5 md5; the node test
-R9=tools/accept/v0.9/scene-md5-v09.txt
+R9=$SCN
 for f in 360 840; do REF=$(grep "s5-f$f" $R9 | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=5' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"pd-s5-f$f\"},{\"eval\":\"'s5 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[5].scene.hud()\"}]" | grep EVAL | sed 's/.*=> //'
   M=$(md5sum $OUT/pd-s5-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "polytope f$f md5 $M = reference" || echo "FAIL polytope f$f md5 $M != reference $REF"
@@ -110,12 +120,12 @@ CLOCK=1 node tools/cdp.js 'test&scene=5&param=polytope.groove=c:0' '[{"until":"w
 node tools/test_polytope.js | tail -1
 python3 tools/montage.py $OUT/montage-polytope-accept.jpg 2 $OUT/pd-s5-f360.jpg $OUT/pd-s5-f840.jpg $OUT/pd-train-4x4.jpg $OUT/pd-train-sync.jpg $OUT/pd-key-0-0.jpg $OUT/pd-key-7-1.jpg 2>/dev/null && echo "montage $OUT/montage-polytope-accept.jpg"
 echo "== gielis"         # v0.14: GIELIS (id 10, forced-only, score 0, no digit key — DECISIONS §47): its own f360/f840 md5s against tools/accept/v0.14/scene-md5-v014.txt, the &still=1 pair against gielis-still-md5.txt (every music-driven uniform at rest: n1 at N1_REST, no waves, no flash/shimmer, morph 0), the node test, the pinned kick train (hooks.train('4x4') puts four bumps per ring at gaps of exactly .25 — positions from hooks.info().kick, doubled because a wave a bar old sits where a new one launches), and the continuity monitor over 30 s with GIELIS's state injected (viol [])
-R10=tools/accept/v0.14/scene-md5-v014.txt
+R10=$SCN
 for f in 360 840; do REF=$(grep "s10-f$f" $R10 | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=10' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"gi-s10-f$f\"},{\"eval\":\"'s10 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[10].scene.hud().slice(0,70)\"}]" | grep EVAL | sed 's/.*=> //'
   M=$(md5sum $OUT/gi-s10-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "gielis f$f md5 $M = reference" || echo "FAIL gielis f$f md5 $M != reference $REF"
 done
-for f in 360 840; do REF=$(grep "still-f$f" tools/accept/v0.14/gielis-still-md5.txt | cut -c1-32)
+for f in 360 840; do REF=$(grep "still-f$f" $OUT/gielis-still-md5.txt | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=10&still=1' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"gi-still-s10-f$f\"}]" > /dev/null
   M=$(md5sum $OUT/gi-still-s10-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "gielis still f$f md5 $M = reference" || echo "FAIL gielis still f$f md5 $M != reference $REF"
 done
@@ -130,7 +140,8 @@ echo "$R" | grep -q 'viol:\[\]' && echo "gielis monitor clean" || echo "FAIL gie
 python3 tools/montage.py $OUT/montage-gielis.jpg 2 $OUT/gi-s10-f360.jpg $OUT/gi-s10-f840.jpg $OUT/gi-still-s10-f360.jpg $OUT/gi-train-4x4-f480.jpg 2>/dev/null && echo "montage $OUT/montage-gielis.jpg"
 echo "== landing"        # v0.8.1: the scene tiles on the real path (steps in tools/landing-steps.json, HARNESS "Landing tiles"): one tile per `card` scene + DIRECTOR, thumbnails loaded (480 wide), a tile click previews on the muted demo with the card in peek, the director tile releases, the demo link starts the show and keeps the forced scene
 R=$(GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"); echo "$R" | grep EVAL | sed 's/.*=> //'
-echo "$R" | grep -q "TILES 6 imgs 480,480,480,480,480,480" && echo "landing: 6 tiles, 6 thumbnails" || echo "FAIL landing tiles/thumbnails"
+NT=$(grep -l "^  card:" assets/scenes/*/index.js | wc -l)   # §83: one tile per scene with a `card` slot (9 at v0.29; the line said 6 since v0.8.1)
+echo "$R" | grep -q "TILES $NT imgs $(yes 480 | head -$NT | paste -sd,)" && echo "landing: $NT tiles, $NT thumbnails" || echo "FAIL landing tiles/thumbnails (want $NT)"
 echo "$R" | grep -q "PEEK true 6 6 demo 0 peek" && echo "landing: FEIGEN tile previews on the muted demo in peek" || echo "FAIL landing peek"
 echo "$R" | grep -q "DIRECTOR -1" && echo "$R" | grep -q "START demo false 3 hide true \[\]" && echo "landing: director tile releases, the demo link starts on the forced scene" || echo "FAIL landing start path"
 MOBILE=1 GPU=1 node tools/cdp.js real '[{"until":"window.CARD"},{"wait":1500},{"shot":"landing-mobile"}]' >/dev/null 2>&1 && echo "landing-mobile.jpg for the eyes"

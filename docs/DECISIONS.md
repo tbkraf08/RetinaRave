@@ -7339,3 +7339,54 @@ to the track's own 30 s p10/p98, `&rough=0` = old) + §82 (`modeShade`; the key-
 `&shade=0` = the v0.28 look) — the user saw the A/B. Fake-timeline md5 unmoved (s1 `d16d35f7`/`57a9c49c`, s3 `0c81f92e`/
 `e71f2f38`; the fake mirrors shade 0); landing tiles regenerated, none moved; `releases/retinarave-v0.29.html` (1551 KB, 164
 modules; `file://` smoke on scenes 1, 3, 11: errs [], nonFinite []), package.json 0.29.0. Pushed `main` + tags v0.28, v0.29.
+
+## §83 the guard rails cover what we built — `accept.sh` re-based at v0.29 on one `ACC` variable, and the fake timeline gets a percussion lattice (2026-10-02, one worker; NEXT-SESSION-PROMPT item 1, on the user's word; the orchestrator's brief)
+
+Two commits, in order. **Not tagged, not pushed, not deployed.** No audible run. Every before / after pair in an isolated
+`git worktree` (the user's dev server on 8765 untouched; the worker's pages on PORT 8830 / 8831, killed by port).
+
+### Step A — the references, re-based at v0.29 (`tools/accept.sh`, `tools/accept/v0.29/`)
+
+**What.** `accept.sh` hard-coded its md5 references from four versions — `REF6` from `tools/accept/v0.7/scene-md5-v07.txt`,
+TORUS2 from the same v0.7 list, NAV2 from `v0.8/scene-md5-v08.txt` + `v0.8/nav2-still-md5.txt`, POLYTOPE from `v0.9/…v09.txt`,
+GIELIS from `v0.14/…v014.txt` + `v0.14/gielis-still-md5.txt`, the mixs 0→3 value inline (`f0c9d637`, v0.9) — and the "== scenes"
+block never compared s0 / s1 / s2 / s4 / s6 / s7 / s9 / s11 against any list at all (it shot t6 / t14 and read `CARD.ERRS`), so the
+sweep could not say whether DUST had moved. Now: **`ACC=${ACC:-v0.29}` is the one variable at the top**; shots go to
+`tools/accept/$ACC/` and every reference is read from the same directory — `scene-md5-v029.txt` (all twelve ids at CLOCK=1
+f360 / f840, `tools/scene-md5.sh`'s format), `nav2-still-md5.txt`, `gielis-still-md5.txt`, `trans-mixs-md5.txt` (the inline mixs
+value moved into a file, with its history in the header). A new **"== scene md5" loop checks every id's f360 / f840 line against
+the list** (the torus2 / nav2 / polytope / gielis blocks keep their own named shots and read the same list). The v0.7 / v0.8 /
+v0.9 / v0.14 lists stay on disk as history. The next re-base is: a new directory, those four files, that one default (HARNESS
+"Acceptance sweep" — that HARNESS edit rode into the other worker's `616f212` by the shared tree's `git add docs/HARNESS.md`; the
+text is this step's).
+
+**The before — the unmodified `accept.sh` on the deployed tree** (a worktree of `ffc6a62` = `dca98f5` + the tools/truth commits, no
+engine file between; `GPU=1 PORT=8830 ACC=v0.29`, 165 lines, `EXIT 0`): **16 FAIL lines** —
+- the mixs 0→3 f178 md5 `8a1a768d` ≠ the recorded `f0c9d637` (TORUS2, the fade's target, moved in §70 / §79 / §82; this machine
+  had read `641f6633` from v0.14 on, scene-md5-v014.txt's note);
+- s6 f360 `fac80f37` ≠ v0.7's `8d6ac4a6` on three lines (route-id, post-same, panel opened-then-closed — the `same` checks of the
+  routes block compare FEIGEN against v0.7; FEIGEN moved with LOUDNESS §63);
+- torus2 f360 / f840 `0c81f92e` / `e71f2f38` ≠ v0.7's `7189a6ba` / `48113eda`;
+- nav2 f360 / f840 `2daaa2c0` / `f2342b7f` ≠ v0.8's `9021eac8` / `f6299795` (= v0.14's own lines — the block read the v0.8 list) and
+  the four `&still=1` frames `202c5a8a` / `36c8a02f` / `1ee726cd` / `d60bc5c8` ≠ v0.8's;
+- polytope f360 / f840 `e6aed873` / `e6ec96a0` ≠ v0.9's `06b46063` / `cccb0094`;
+- **two stale assertions, not references:** "nav2 monitor" printed FAIL on `viol:[]` because the `tr -d '"'` left the JSON's
+  backslashes (`\viol\:[]` never matched `viol:\[\]` — the gielis block already stripped them; fixed the same way), and "landing
+  tiles" wanted `TILES 6` since v0.8.1 while nine scenes carry a `card` slot at v0.29 (DUST, GIELIS, MAXWELL, FEIGEN, MANDALA,
+  POLYTOPE, NAV, CHLADNI, TORUS2) — the count is now read from the scene folders.
+Everything else passed: check 0 fail, the math tests, the smokes, parity real, the 60 s monitor, hist rows == full, the feigen
+cost, hidden tab / worklet, routes / params (the `diff` halves), gielis md5 + still + train + monitor, help, the real start path,
+the bundle.
+
+**The v0.29 list** (`PORT=8830 tools/scene-md5.sh v029pre` in the same worktree, errs [] and hop 840 row 72 on all twelve;
+`tools/accept/v0.29/scene-md5-v029.txt`, = §82's proof numbers): against v0.14's list **s0-f840, s1, s2, s3, s4-f840, s5, s6 moved
+and s11 was never recorded**; s0-f360, s4-f360, s7, s8, s9, s10 are v0.14's lines to the byte. Exactly the set NEXT-SESSION-PROMPT
+item 1 named. The NAV2 stills are the sweep's own four shots; the GIELIS still pair is v0.14's pass-1 values, measured again
+(`fd8e256b` / `88f6d5cb`); the mixs value is `8a1a768d`.
+
+**Parity fake, before:** `max |diff| 7.852 · 72 fields`, the `nav.*` MISMATCH line (nav.c … nav.cyc.has) — the same line §76 and
+§79 recorded against HEAD; the MS fields themselves identical. accept.sh prints that line without the word FAIL (its grep looks
+for "parity|MISMATCH|max |diff|"), so it is not in the 16.
+
+**After:** `accept.sh` on the tree at this commit, in its own worktree — the receipt is in the Step B subsection below (the run
+that follows the commit).
