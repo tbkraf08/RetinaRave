@@ -192,3 +192,84 @@ clicks; 140–160 s) — the user: **"is good"**. The beats, the bar line (mod4 
 by ear in the drop window; §5's proposal to move the downbeat to the grid's beat 3 is **dropped** — the percussion-weight ruler
 and the two-bar novelty ruler were reading the track's "3"-heavy groove, not the bar line. Recorded in `Malicious.json` as
 `bpm_grid.hand.checked` + a `notes` entry. The 20–60 s intro render (`Malicious-click.wav`): **"is good also"** — both windows pass; `bpm_grid.hand.anchor: hand` dated 2026-10-02. Malicious's grid is validated by ear.
+
+## 9. Vienna — the user's ear, 2026-10-02 evening (one worker, headless; `tools/truth/v85-*.py`, plots `docs/truth/v85/`)
+
+The user listened to `Vienna-bar-line-only.wav` (track 60–112 s, a click on every truth DOWNBEAT only) and said, verbatim:
+*"in the begining the grid is off, feels too slow. I think it ends up catching up new the end"*. §2 had said the beat phase is
+right within 2.4 ms with no drift. Both are true: §2's rulers fold kick / snare / hat attacks, and **the window the user heard
+first (66.669–85.336, the dream) has none** — the drift table's `·` slice. The sub stops at 66.003 (`sub_runs`: a 20.8 s `.`
+run to 85.4), there is no kick, no clap, no hat; only a pad. What the ear has there is the pad's chord changes, and those are
+**1–1.5 s crescendos that start one beat BEFORE the bar line** (an anacrusis) and peak ~600 ms after it.
+
+Sign convention: residual = attack − grid beat; **negative = the music sounds before the click = the click is late = "too slow"**.
+
+| bin (track s) | §72 band attack: low / mid / high (ms) | grid-free spectral flux: low / mid / high (ms, n) | the pad: 10 % start of each chord swell vs the nearest grid beat (ms) | what is there |
+|---|---|---|---|---|
+| 55–65 ("60") | −69† / −2 / −5 | −3 (18) / +4 (13) / +4 (7) | 62.029 +26 (b2) · 63.391 +55 (b4) · 64.658 −11 (b2) | kick + clap + hats, on the line |
+| 65–75 ("70") | — / — / — | −3 (11) / — / — | 65.920 −82 (b4) · 67.432 +96 (b2) · **68.699 +30 (b4)** · 72.755 +85 (b2) · 73.952 −51 (b4) | the dream: pad only, no transient |
+| 75–85 ("80") | — / — / — | −13 (7) / — / — | 75.888 −115 (b3) · 76.591 −78 (b4) · 78.112 +110 (b2) · **79.360 +24 (b4)** · 83.420 +84 (b4) | the dream: pad only |
+| 85–95 ("90") | −1 / −4 / −9 | +2 (16) / +1 (14) / −1 (8) | 85.301 −35 (b1, a 20 ms attack) · 85.975 −28 (b2) | the drop: kick on 1, clap 2/4, hats at 180 |
+| 95–105 ("100") | −1 / — / −8 | −6 (19) / +4 (11) / +2 (6) | — | drums |
+| 105–115 ("110") | +8 / −0 / −39‡ | +17 (18) / +7 (13) / +6 (10) | 106.64 −33 (b1) | the second drop |
+
+† the 40–150 Hz 20 % crossing on a held sub (the §2 note: the sub's slow rise), not an attack. ‡ hats at 16ths, not a beat transient
+(§1). "—" = fewer than 3 attacks with snr ≥ 3 in the bin. `b2` = the grid's beat-of-bar. Full per-beat series:
+`docs/truth/v85/vienna-resid.png` (top: the residual per lane; bottom: the mid envelope — flat 66.7–85.3), the swell table
+`tools/truth/v85-swell.py`, the per-section bar fold `tools/truth/v85-barphase.py`.
+
+**H1 — local tempo / drift inside 60–112: no.** Where there is an attack the residual is −13…+17 ms (flux) / −9…+8 (band attack),
+no sign change across 85.336, slope +0.05 ms/s (§2). 60 → 110 s: −3 / (none) / (none) / +2 / −6 / +17 ms on the kick lane. The
+only bins where "late" could be heard are the two with no attack to be late against. A piecewise fit 60–85 vs 85–112 fits
+nothing: 60–85 has 4 kick attacks (all at 60–64 s, −3 ms) and 85–112 has 50 (+2 ms).
+
+**H2 — the bar line, as heard: YES, this is the user's sentence.** Per-section fold (`vienna-barphase.py` §2): kick max on the
+grid's 1 in 61–67, 85–101, 112–145, 145–192 (1.00 vs 0.2–0.6 on 2/4); clap/hat on 2 and 4 everywhere there are drums; the
+chord-change fold maxes on 1 in every section; both drops' first kick on 1 (85.301 −35 ms, 106.64 −33 ms); the chord arrivals
+after the drop are on grid beats within ±33 ms (85.33 / 86.68 / 87.98 / 89.32 / 90.66 / 93.34 / 96.00 / 97.37 / 98.64 / 99.99 /
+106.64). **The grid's bar line is right.** But in the dream the pad's chords are swells of 0.9–1.8 s (`vienna-swell.py`): their
+10 % points sit ON grid beats (median +30 ms, all within ±115) — on beats **2 and 4**, never on 1 — and the three big 2-bar
+chord changes begin at **68.669 / 74.003 / 79.336 = beat 4 of bars 25 / 27 / 29, one beat before the bar lines 69.336 / 74.669
+/ 80.003**, reaching 50 % at 69.9 / 75.1 / 80.5 and 90 % at 70.2 / 75.3 / 80.9. A bar-only click at 69.336 therefore lands 667 ms
+AFTER the swell the ear just heard begin, and 600 ms BEFORE it arrives: the click is a beat late against the swell's start
+("feels too slow"), and nothing else in the dream can contradict it. At 85.336 the kick is on the click (−35 ms, a 20 ms attack)
+and from there every attack is on the line: "catching up near the end". The bar line was not off; the dream's pad is an
+anacrusis, and a bar-only render has no beat clicks to show that the swell starts on the "4". The 180 reading
+(`Vienna.180.json`, bar 1.333 s) changes nothing here: its bar line is the 90 grid's beats 1 and 3, and the swells start on 2
+and 4 of the 90 bar either way. Half-time is not the user's "too slow": the 90 feel is the user's own ("slow rolling groove",
+the hand block), and the kick/clap/hat folds put the beat on P = 0.6667 s, not 1.333 (§2 half-beat check).
+
+**H3 — the render: clean.** `Vienna-bar-line-only.wav` vs `tools/work/Vienna.48000.st.f32`: correlation lag **+0.000 ms** at
+60.000 s (48 kHz both, no resampling); 19 clicks found = 19 json downbeats in 60–112, click − downbeat = −2.7 ms for every
+one (the 1 kHz band-pass detector's ramp; the click's first sample is at the json time); first click 61.336, last 109.336. The
+music's own inter-onset drift (H1b flux, kick lane) is −3 → +17 ms over 55–115 s, i.e. none the ear could follow.
+
+**Proposed json edit** (nothing in `beats` / `downbeats` / `bpm_grid` moves):
+- DONE today: `notes.user_verbatim_2026_10_02` = the user's sentence + the window + the render + the one-line reading (this
+  commit).
+- When the user has heard A/B below and agrees the drop sits: `bpm_grid.hand.anacrusis` = `"the dream's pad swells (66.7–85.3)
+  start on the grid's beat 4 — 68.669 / 74.003 / 79.336, one beat before bars 26 / 28 / 30 — and peak ~600 ms after the bar
+  line (10 % points +30 ms median vs the beat, 0.9–1.8 s rise); a bar-only click there sounds a beat late; the bar line is
+  confirmed by the drop (85.336 on 1, −35 ms), the chord arrivals after it (±33 ms) and the kick-on-1 folds"`, then §5's
+  `not_checked` → `checked` and `provisional` → `anchor: hand, 2026-10-02` as proposed there. Not applied until the ear says so.
+
+**The A/B** (all 60–112 s of the track, 16-bit 48 kHz, `tools/truth/v85-vienna-ab.py`, the json never written):
+- `! paplay ~/Music/RetinaRave-clicks/Vienna-A-current-beats.wav` — the grid as it is, every beat clicked, the bar line a lower
+  louder click: at WAV 0:08.7 / 0:14.0 / 0:19.3 (track 68.7 / 74.0 / 79.3) the pad swell starts on a plain beat click and the
+  low bar click comes one click later — if that beat click sits on the swell's start, the beat is right and only the bar-only
+  render was blind.
+- `! paplay ~/Music/RetinaRave-clicks/Vienna-B-bar-minus1-until-drop.wav` — the same, with the bar line moved to the grid's
+  beat 4 (onto the swell starts) until the drop, the grid's own bar line from 85.336: the dream should now feel "on", and
+  at WAV 0:25.3 (track 85.3) the drop must still land on the low click — it does by the numbers; if it does by ear, the
+  user's sentence is the anacrusis and the json stays.
+- `! paplay ~/Music/RetinaRave-clicks/Vienna-B-bar-line-only-minus1-until-drop.wav` — the render the user heard, with that
+  same −1-beat bar line before the drop (bar clicks at 68.7 / 74.0 / 79.3 instead of 69.3 / 74.7 / 80.0): the direct A/B
+  against `Vienna-bar-line-only.wav` for "too slow" vs not.
+- `! paplay ~/Music/RetinaRave-clicks/Vienna-C-bar-shift-2.wav` — the half-bar alternative (the kick/clap pattern is
+  symmetric under 2 beats; the tool's own section boundaries 62.65 / 84.3 / 113.65 sit on the grid's beat 3): from WAV 0:25.3
+  the low click should fall on the clap, not the kick — hear it as wrong and the half-bar is closed.
+
+Reproduce: `python3 tools/truth/v85-resid.py` (H1 + H3 + the png), `python3 tools/truth/v85-dream.py` (the dream's
+pulse ACF / phase / per-beat chroma), `python3 tools/truth/v85-barphase.py` (chord-change times, per-section bar fold),
+`python3 tools/truth/v85-swell.py` (the swells' 10 / 50 / 90 % points), then the four `v85-vienna-ab.py` lines in §9's A/B
+(`--shift-bar=-1 --shift-until=85.3 [--bar-only]`, `--shift-bar=2`). `trackmap.py Vienna --pcm` was not run.
