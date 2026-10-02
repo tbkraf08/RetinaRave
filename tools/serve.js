@@ -13,7 +13,7 @@ const PORT = +(process.argv[2] || process.env.PORT || 8765);
 const ROOT = path.resolve(process.argv[3] || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'));
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css', '.json': 'application/json', '.md': 'text/markdown', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
-  '.wasm': 'application/wasm', '.txt': 'text/plain' };
+  '.wasm': 'application/wasm', '.txt': 'text/plain', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.flac': 'audio/flac' };   // .wav: tools/work/<T>-click.wav plays in a tab (clicktrack.py, 2026-10-02)
 
 // --- /music/ (v0.15 E1) ---
 const MUSIC = path.resolve(process.env.MUSIC || path.join(os.homedir(), 'Music/RetinaRave'));
