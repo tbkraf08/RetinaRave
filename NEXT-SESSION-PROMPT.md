@@ -1,6 +1,6 @@
 # Next session — Retina Rave (written 2026-09-30)
 
-**State:** **v0.27 DEPLOYED 2026-10-02** (`311d09a`; retinarave.com serves v0.27). **v0.28 tagged locally** (`368aec5`, §79 + §80 + the pitch plan) and, after it, **§81 (`tension`'s p10 / p98 normaliser, `53c2ae9`) + §82 (`modeShade`, the per-bar pull behind `&shade=1`, `55da70e` `2efc3fd`) — untagged, not pushed**; the user has seen none of §79–§82 (the A/B watch-list is at the end of §82).
+**State:** **v0.29 DEPLOYED 2026-10-02** (`dca98f5`; retinarave.com serves v0.29: §49–§82 all live, modeShade on). `main` == origin.
 serves v0.15; `main` ~45 commits ahead of origin. **All six steps of the live plan (DECISIONS §49) are in:** the lead (§49), the bar
 store + warm-up (§50), reactive drums v2 (§51), display lead 40 ms file-mode only (§52–§53), the live build / drop detector (§54, NAV
 reads it by default), the predicted-event queue (§55, no scene reads it by default), the PCM beat clock (§56, THE DEFAULT CLOCK).
