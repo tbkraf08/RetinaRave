@@ -185,3 +185,10 @@ Outputs kept: `tools/work/v83/{ruler_a,prov,laneoff,drift,barfold,nov,hand-high,
   settles it (140–160 s) was not made because the brief said not to regenerate WAVs.
 - WhoLikesToParty: provenance only (not in scope); its bar line is still "NOT verified" per the gridcheck docstring.
 - SeeYouDrop's 0.02 BPM walk is below every ruler's resolution here; a hand re-fit would need the §72 `refit_grid` path.
+
+## 7. Malicious — the user's ear, 2026-10-02 evening (the orchestrator)
+`~/Music/RetinaRave-clicks/Malicious-drop-140-160.wav` (every beat, downbeat accented, the drop click at 148.317, the section
+clicks; 140–160 s) — the user: **"is good"**. The beats, the bar line (mod4 = 2, the grid's 1) and the drop click are confirmed
+by ear in the drop window; §5's proposal to move the downbeat to the grid's beat 3 is **dropped** — the percussion-weight ruler
+and the two-bar novelty ruler were reading the track's "3"-heavy groove, not the bar line. Recorded in `Malicious.json` as
+`bpm_grid.hand.checked` + a `notes` entry. Still open: the 20–60 s intro render (`Malicious-click.wav`), not yet reported on.
