@@ -3,10 +3,14 @@
 import { TAU, clamp, ema, mix, wrap1 } from '../math/util.js';
 import { AU } from './audio.js';
 import { MS, XS } from './state.js';
+import { ROUGHK, RoughNorm } from './roughnorm.js';
+
+export { ROUGHK };               // &rough=0 (core/harness.js): the pre-§81 follower pair, the A/B
+const RN = new RoughNorm(ROUGHK);  // the windowed p10 / p98 of `rough` over the last 30 s (DECISIONS §81)
 
 const A2M = 0.1151292546; // ln(10)/20: dB -> linear magnitude
 
-export function slowAnalysis(dt) {
+export function slowAnalysis(dt, now) {
   const S = MS, X = XS, d = X.sdb;
   AU.slow.getFloatFrequencyData(d);
   const ch = X._ch || (X._ch = new Float32Array(12)), bc = X._bc || (X._bc = new Float32Array(12));
@@ -90,9 +94,15 @@ export function slowAnalysis(dt) {
   }
   const r = W > 0 ? R / W : 0;
   S.rough = r;
+  // §81: `rLo` / `rHi` are the p10 / p98 of `rough` over the last 30 s (roughnorm.js; `&rough=0` = the follower pair
+  // v0.28 had: rLo creeping up 0.002/step, rHi leaping onto any maximum and leaking back at 0.002/step, floor rLo + 0.03).
+  // Both run only while there is music (presence > 0.3): silence is not a roughness.
   if (S.presence > 0.3) {
-    S.rLo = Math.min(S.rLo + (r - S.rLo) * 0.002 + 1e-5, r);
-    S.rHi = Math.max(S.rHi - (S.rHi - r) * 0.002, r, S.rLo + 0.03);
+    if (ROUGHK.win) { RN.push(r, now); S.rLo = RN.lo; S.rHi = RN.hi; }
+    else {
+      S.rLo = Math.min(S.rLo + (r - S.rLo) * 0.002 + 1e-5, r);
+      S.rHi = Math.max(S.rHi - (S.rHi - r) * 0.002, r, S.rLo + 0.03);
+    }
   }
   S.tension = ema(S.tension, clamp((r - S.rLo) / (S.rHi - S.rLo), 0, 1) * S.presence, dt, 0.35);
 }

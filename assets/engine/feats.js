@@ -96,9 +96,9 @@ export const FEATS = {
   peaks: { kind: 'vector', eli5: 'the four strongest partials [Hz, amp]', formula: 'parabolic-refined spectral peaks', drives: 'DRUM Koenigs modes', range: null },
   // --- tension ---
   rough: R('Sethares roughness of the strongest partials', 'Σ a·(e^{-3.51 s}-e^{-5.75 s})/Σa', 'tension'),
-  rLo: I('running floor of roughness', 'slow min follower'),
-  rHi: I('running ceiling of roughness', 'slow max follower'),
-  tension: L('how dissonant / tense it feels', 'ema((rough-rLo)/(rHi-rLo))·presence, .35 s', 'uArc.z, exterior depth, park, mood'),
+  rLo: I('the floor roughness is measured from', 'the p10 of rough over the last 30 s (engine/roughnorm.js, §81; blended from a 0.010 prior over the first 5 s). &rough=0: v0.28\'s slow min follower'),
+  rHi: I('the ceiling roughness is measured to', 'the p98 of rough over the same 30 s (at least rLo + 0.01; a 0.050 prior over the first 5 s). &rough=0: v0.28\'s slow max follower'),
+  tension: L('how dissonant / tense it feels — how rough, relative to this track lately', 'ema((rough-rLo)/(rHi-rLo))·presence, .35 s; rLo / rHi the p10 / p98 of rough over the last 30 s (§81)', 'uArc.z, exterior depth, park, mood'),
   suspension: L('tension held high for a while', 'ema(smoothstep(.55,.8,tension))·presence, 1.3 s', 'park at the root'),
   resolveEvt: E('a held tension just released', 'suspension was >.6 and tension fell <.4', 'visual time release'),
   _susHi: I('latch for resolveEvt', 'suspension>.6'),

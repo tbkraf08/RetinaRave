@@ -205,7 +205,7 @@ export function updateMusic(dt, now) {
     if (Math.abs(S.eM - X.eAtChange) > 0.12 && now - S.lastSection > 8) S.sectionEvt = true;
   }
   // --- harmony / tension from the long window (every other frame) ---
-  if (live && (reseed || (X.slowTick++ & 1) === 0)) slowAnalysis(reseed ? dtF : dt * 2); // the resume frame always runs it, with the gap: chroma snaps too (same audit)
+  if (live && (reseed || (X.slowTick++ & 1) === 0)) slowAnalysis(reseed ? dtF : dt * 2, now); // the resume frame always runs it, with the gap: chroma snaps too (same audit)
   S.suspension = ema(S.suspension, sstep(0.55, 0.8, S.tension) * S.presence, dt, 1.3);
   if (S._susHi && S.tension < 0.4) {
     S.resolveEvt = true;
