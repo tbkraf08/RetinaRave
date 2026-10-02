@@ -7675,7 +7675,7 @@ those bars is the user's A/B (`&kc=0`); the knob is `KEYC0 / KEYC1`. CHLADNI rea
   (the §83 lattice baseline):** step 1 (`4c79b12`, PORT 8843) **24 lines, 0 moved**; step 2 (`0983335`, PORT 8844) **24 lines, 0 moved**; step 3
   (`6ad80c5`, PORT 8846) **24 lines, 0 moved**; `errs []` on every id. The ears never run on the fake, and no scene reads `tonicConf` there
   (CHLADNI reads it only behind `tonic ≥ 0`); the fake's `keyConf` 0.8 is unchanged.
-- **Two sweeps of the final tree byte-identical** (run after this section's commit, in its worktree — the receipt commit that follows, as §83's `db41dcc`).
+- **Two sweeps of the final tree byte-identical** (`13b1435`'s worktree, PORT 8849, `fa` / `fb`: the 24-line lists `diff`-identical, 24 lines 0 moved against the baseline, errs [] on all twelve).
 - `node tools/check.js` **0 fail** (164 modules, MS keys 220, the 6 pre-existing line-cap warns; tonic.js 106 lines, shade.js 92,
   features-ears.js 187) · `npm test` **exit 0, 0 FAIL** (test_shade.js's three new cases: the walk under `keyConf` 0.05 with a
   tonic reads |shade| 0.000 — the gate closes the shade too; 0.2 → −0.49; `KEYOWN.ears` false → −0.97, §82's rule) ·
@@ -7683,8 +7683,8 @@ those bars is the user's A/B (`&kc=0`); the knob is `KEYC0 / KEYC1`. CHLADNI rea
   Malicious **Cm 63 %, expect true** on KEY-PLAN §1's measurement — the row says the user's ear is pending and the json is not
   edited; CyborgNinja G♯M 50 %, the recorded miss) + the new ruler that would have caught §62's table: `tonicConf` p50 **0.005** on
   CyborgNinja (< 0.1), **0.543** on SeeYouDrop 60–100 s and **0.348** on Vienna (≥ 0.3); ears 4/5 > synapse 2/5, 0 tracks worse.
-- `tools/parity.js fake` (inside accept.sh, below): expected the same line as §83 — `max |diff| 7.852 · 72 fields` and the `nav.*` MISMATCH that pre-dates §76; the MS fields 0 diff.
-- **`GPU=1 tools/accept.sh` in a worktree of the last commit** — the receipt commit that follows.
+- `tools/parity.js fake` (inside accept.sh): **`max |diff| 7.852 · 72 fields`** and the `nav.*` MISMATCH line — the same line as §83 (it pre-dates §76; the MS fields 0 diff), not a regression.
+- **`GPU=1 PORT=8849 ACC=v0.29 tools/accept.sh` in a worktree of `13b1435`: 199 lines, 0 FAIL, EXIT 0** (all 24 scene lines = reference, mixs `cb3d4048` = recorded, nav2 + gielis monitors clean, 9 tiles, exceptions 0, bundle errs []).
 
 ### The user's A/B (stream mode, in track time; `&kc=0` = the v0.29 gate, default = this; key `2` DUST, key `4` TORUS2)
 
