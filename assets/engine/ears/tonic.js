@@ -1,6 +1,9 @@
 // The tonic, on a chroma the sub is PART OF. Synapse's key chroma starts at 65 Hz (anatomy.js:106), so on this track the
 // 35 Hz root is invisible and the engine reports the fifth (G# instead of C#). Here the spectrum above CH_LO is binned by
-// pitch class and the sub's own YIN pitch class is added with a weight proportional to its energy share, then
+// pitch class and the sub's own YIN pitch class LEANS on it while the note is SETTLED (subConf >= SUB_HELD), at a rate
+// times its confidence (§84 — until then every gated frame leaned equally hard: the old `SUB_W x conf` one-bin vector was
+// normalised to exactly 1 by blend(), so a 10 %-confidence glide frame of an 808 attack leaned like a settled note; the
+// held lean is +9 points RIGHT on SeeYouDrop and WhoLikesToParty, +11 on SeeYouDrop's mode, nothing lost), then
 // Krumhansl-Kessler over a long window.
 import { FFT, clamp01 } from './dsp.js';
 
@@ -9,7 +12,7 @@ export const CH_EVERY = 32;       // one chroma FFT per this many hops (~0.37 s)
 export const CH_LO = 130, CH_HI = 2100;
 export const TAU = 11;            // the chroma's time constant (s) — the brief's lean is 20-30 s
 export const SUB_WGT = 0.6;       // how much of the chroma's update budget the sub's own class gets (the FFT gets 1)
-export const SUB_W = 2.5;         // how hard the sub's pitch class leans on the chroma, times its energy share
+export const SUB_HELD = 0.8;      // the least subConf at which the sub's class leans on the chroma (§82's own "settled" rule for the shade)
 // §84 — tonicConf: "is the TONIC clear, and does the bass agree?". The KS margin over the best r of any OTHER tonic (the
 // parallel mode ignored: C#M vs C#m is a coin toss about the MODE, not the tonic) rescaled at TM1, times the share of the
 // settled sub note's exponential histogram (tau TAU_H, counted while gated and conf >= H_CONF) on the tonic's bin. Measured
@@ -24,7 +27,7 @@ export const KK_MIN = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.6
 export class TonicTrack {
   constructor(sr, o = {}) {
     this.sr = sr; this.fft = new FFT(CH_N); this.mag = new Float32Array(CH_N >> 1);
-    this.tau = o.tau === undefined ? TAU : o.tau; this.subW = o.subW === undefined ? SUB_W : o.subW;
+    this.tau = o.tau === undefined ? TAU : o.tau;
     this.binPc = new Int8Array(CH_N >> 1);
     const df = sr / CH_N;
     for (let i = 0; i < (CH_N >> 1); i++) {
@@ -55,11 +58,12 @@ export class TonicTrack {
     const dt = Math.max(0, t - this.tLean); this.tLean = t;
     const H = this.H, hd = Math.exp(-dt / TAU_H);
     for (let i = 0; i < 12; i++) H[i] *= hd;                  // the whole histogram decays together: its SHAPE holds while the sub is silent
-    if (!sub || !sub.gate || sub.note < 0 || sub.conf <= 0) return;
-    if (sub.conf >= H_CONF) H[sub.note] += sub.conf;
+    if (!sub || !sub.gate || sub.note < 0 || !(sub.conf >= H_CONF)) return;
+    H[sub.note] += sub.conf;
+    if (!(sub.conf >= SUB_HELD)) return;                      // a glide frame names no root
     const acc = this.acc; acc.fill(0);
-    acc[sub.note] = this.subW * sub.conf;
-    this.blend(acc, dt, SUB_WGT);
+    acc[sub.note] = 1;
+    this.blend(acc, dt, SUB_WGT * Math.min(1, sub.conf));
   }
   blend(acc, dt, wgt) {
     let s = 0; for (let i = 0; i < 12; i++) s += acc[i];

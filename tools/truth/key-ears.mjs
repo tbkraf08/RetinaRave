@@ -10,7 +10,7 @@ import path from 'node:path';
 import { Analyzer } from '../../assets/engine/synapse/analyzer.js';
 import { Tap } from '../../assets/engine/synapse/tap.js';
 import { Ears } from '../../assets/engine/ears/ears.js';
-import { KK_MAJ, KK_MIN, TonicTrack, SUB_WGT } from '../../assets/engine/ears/tonic.js';
+import { KK_MAJ, KK_MIN, TonicTrack, SUB_HELD } from '../../assets/engine/ears/tonic.js';
 import { loadPcm } from '../test_ears.js';
 import { detStream, DET_LEAD, FPS, F0 } from '../node-stream.js';
 
@@ -20,20 +20,23 @@ fs.mkdirSync(OUT, { recursive: true });
 const TRACKS = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 // --variant=<name>: a detector EXPERIMENT patched onto TonicTrack.prototype in this process only (the engine file is not
 // touched); the output goes to ears-<T>.<variant>.json so tools/truth/key-confusion.py --suffix .<variant> grades it.
-//   held    the sub leans on the chroma only while settled (subConf >= 0.8), the lean rate x conf (SUB_W is dead today:
-//           blend() normalises acc by its sum, so a one-bin acc is 1 whatever SUB_W x conf was)
-//   held1   held, and the sub's share of the update budget SUB_WGT 0.6 -> 1.0 (the FFT's)
+//   held1   the sub's share of the update budget SUB_WGT 0.6 -> 1.0 (the FFT's); measured in KEY-PLAN §5, not taken.
+//   (`held` — the sub leans only while settled, subConf >= SUB_HELD, the rate x conf — IS the engine since §84 step 2;
+//   the old always-lean is history: blend() normalised the one-bin `SUB_W x conf` vector to 1, so SUB_W was dead.)
 const VARIANT = (process.argv.find((a) => a.startsWith('--variant=')) || '').slice(10);
-if (VARIANT) {
-  const wgt = VARIANT === 'held1' ? 1.0 : SUB_WGT;
+if (VARIANT === 'held1') {
   TonicTrack.prototype.subLean = function (t, sub) {
     const dt = Math.max(0, t - this.tLean); this.tLean = t;
-    if (!sub || !sub.gate || sub.note < 0 || !(sub.conf >= 0.8)) return;
+    const H = this.H, hd = Math.exp(-dt / 12);
+    for (let i = 0; i < 12; i++) H[i] *= hd;
+    if (!sub || !sub.gate || sub.note < 0 || !(sub.conf >= 0.5)) return;
+    H[sub.note] += sub.conf;
+    if (!(sub.conf >= SUB_HELD)) return;
     const acc = this.acc; acc.fill(0);
     acc[sub.note] = 1;
-    this.blend(acc, dt, wgt * Math.min(1, sub.conf));
+    this.blend(acc, dt, 1.0 * Math.min(1, sub.conf));
   };
-}
+} else if (VARIANT) throw new Error('unknown --variant ' + VARIANT);
 if (!TRACKS.length) TRACKS.push('SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious', 'Vienna');
 const r4 = (v) => (Number.isFinite(v) ? +v.toFixed(4) : null);
 
