@@ -12,8 +12,8 @@
 // THE SWITCH: `&tongues=0` under #test / `ENGINE.TONGUEK.on = false` — no Tongues is attached (no PCM work) and `tongueOn`
 // reads -1, which is `loudAbs`'s A/B convention: a scene that reads a tongue field falls back to its pre-tongues formula on
 // -1, so `&tongues=0` is an md5 receipt. #test (the fake timeline) never runs this stage — sources/fake.js mirrors the
-// twelve fields from its own phase instead (constants; the ladder never changes there, so a scene reading a CHANGE in a
-// depth sees nothing, and s1's md5 does not move).
+// twelve fields from its own percussion lattice instead (§83: the 8th / 16th depths follow the hats, 0 in a valley, so the
+// ladder DOES change there and a scene reading a change in a depth is on the md5 list; until v0.29 they were constants).
 import { AU } from './audio.js';
 import { ENGINE } from './engine.js';
 import { CLOCKS } from './features-clock.js';

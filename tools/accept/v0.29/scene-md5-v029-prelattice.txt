@@ -1,0 +1,31 @@
+# v0.29 PRE-LATTICE (DECISIONS §83 Step A, 2026-10-02; the list accept.sh read at 85bac82 — superseded by scene-md5-v029.txt, the post-lattice baseline): every scene id 0..11 at CLOCK=1 GPU=1 f360 / f840 (`PORT=8830 tools/scene-md5.sh v029pre` in an
+# isolated worktree of the deployed tree — dca98f5 plus the tools/truth commits up to ffc6a62, no engine file between them —
+# errs [] and hop 840 row 72 on all twelve). Against tools/accept/v0.14/scene-md5-v014.txt: s0-f840, s1, s2, s3, s4-f840, s5 and s6
+# moved between v0.14 and v0.29 (DUST §57–§80, TORUS2 §70 / §79, POLYTOPE + FEIGEN + the others through LOUDNESS §63 / the clocks /
+# the look memory — each move is in its own DECISIONS section), s0-f360, s4-f360, s7, s8, s9, s10 are v0.14's lines, s11 (CHLADNI)
+# had never been recorded. The lines equal DECISIONS §82's proof run (s1 d16d35f7 / 57a9c49c, s3 0c81f92e / e71f2f38, s5 e6aed873 /
+# e6ec96a0, s9 95fd7d73 / 4e2108a7, s10 4f6c8cb0 / 1dc4cb4c).
+fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
+8a0715dfb90ecf20d484578932a2f115  s0-f840.jpg
+d16d35f7486d32b0cb0c64db5d16f9c7  s1-f360.jpg
+57a9c49cc76fb3050046b49d7f9dbde9  s1-f840.jpg
+f2df3a8142affd49f17dedd228212d5d  s2-f360.jpg
+c93dcf77e9806dafa1b2453128c2f389  s2-f840.jpg
+0c81f92e9ebefdcbec76a1fc4b239ab9  s3-f360.jpg
+e71f2f38367f9ce3b09e2c11eac1e59d  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
+e6aed873d09af02eba2d618a347a6665  s5-f360.jpg
+e6ec96a07804ef5643b5d3d59ac8786a  s5-f840.jpg
+fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
+6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+2daaa2c0cbc80d96879049d1631fb74b  s8-f360.jpg
+f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg
+95fd7d73b17a3e26b4b77b9cddb6206a  s9-f360.jpg
+4e2108a7f958a280953eabfc1a595f20  s9-f840.jpg
+4f6c8cb0967dc1a84bda3b3a297b575f  s10-f360.jpg
+1dc4cb4c398172f5339af25aac1cd469  s10-f840.jpg
+8a930b26be89a46ec070dae9a897ce03  s11-f360.jpg
+5a5c795afac268921e60ae09b18fdbbb  s11-f840.jpg

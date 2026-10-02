@@ -151,8 +151,8 @@ export const lead = (w) => w / 2;    // beats: the accent starts here before the
 // arrives after drop 1 (and 0.15-0.3 at 24-39 s, the hats the user heard start at 0:25), SeeYouDrop's at its returns (up to
 // 0.51). So: at the beat line, rise = max(tongue21, tongue41) now minus the same 16 beats ago, ACC_LO under it nothing,
 // ACC_HI and above the full ACC_K; the ring resets whenever the stage is warming (`tongueOn` 0) so a gap cannot read as a
-// rise; `tongueOn` -1 (&tongues=0) is §66's step bit for bit. The fake timeline's depths are constants (fake.js), so s1's md5
-// does not move.
+// rise; `tongueOn` -1 (&tongues=0) is §66's step bit for bit. The fake timeline's 8th / 16th depths follow its hat lattice
+// since §83 (0 in a valley, 0.5 / 0.4 elsewhere), so the accent fires at every valley's end there and s1's md5 sees ACC.
 export const ACC = { K: 0.25, LO: 0.15, HI: 0.45, N: 16 };
 export const accentOf = (rise) => rise <= ACC.LO ? 0 : rise >= ACC.HI ? 1 : (rise - ACC.LO) / (ACC.HI - ACC.LO);
 function accent21(S, MS) {           // at a beat line: the double-time accent 0..1 from the tongue depths' 16-beat rise

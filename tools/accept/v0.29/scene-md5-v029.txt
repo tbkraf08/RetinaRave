@@ -1,31 +1,31 @@
-# v0.29 (DECISIONS §83, 2026-10-02): every scene id 0..11 at CLOCK=1 GPU=1 f360 / f840 (`PORT=8830 tools/scene-md5.sh v029pre` in an
-# isolated worktree of the deployed tree — dca98f5 plus the tools/truth commits up to ffc6a62, no engine file between them —
-# errs [] and hop 840 row 72 on all twelve). Against tools/accept/v0.14/scene-md5-v014.txt: s0-f840, s1, s2, s3, s4-f840, s5 and s6
-# moved between v0.14 and v0.29 (DUST §57–§80, TORUS2 §70 / §79, POLYTOPE + FEIGEN + the others through LOUDNESS §63 / the clocks /
-# the look memory — each move is in its own DECISIONS section), s0-f360, s4-f360, s7, s8, s9, s10 are v0.14's lines, s11 (CHLADNI)
-# had never been recorded. The lines equal DECISIONS §82's proof run (s1 d16d35f7 / 57a9c49c, s3 0c81f92e / e71f2f38, s5 e6aed873 /
-# e6ec96a0, s9 95fd7d73 / 4e2108a7, s10 4f6c8cb0 / 1dc4cb4c).
+# v0.29 + the percussion lattice (DECISIONS §83 Step B, 2026-10-02): every scene id 0..11 at CLOCK=1 GPU=1 f360 / f840
+# (`PORT=8831 tools/scene-md5.sh lat1` on the lattice tree, errs [] and hop 840 row 72 on all twelve; a second run `lat2` was
+# byte-identical — the lattice is a pure function of the fake clock). Against scene-md5-v029-prelattice.txt (the same tree one
+# commit earlier) EXACTLY the six scenes that read a voice / the shade moved — s1 DUST (events, ages, snareAmp, tongue21/41, modeShade),
+# s3 TORUS2 (snareEvt + snareAmp, tongueAmbig, modeShade), s5 POLYTOPE, s9 MAXWELL, s10 GIELIS (modeShade through keycolour's anchor),
+# s11 CHLADNI (kickEvt / kickAge / kickAmp, snareAge / snareAmp, hatAge) — and s0, s2, s4, s6, s7, s8 (no voice, no shade) are the
+# pre-lattice lines to the byte. THIS is the baseline: nothing may move after it without a DECISIONS section saying why.
 fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
 8a0715dfb90ecf20d484578932a2f115  s0-f840.jpg
-d16d35f7486d32b0cb0c64db5d16f9c7  s1-f360.jpg
-57a9c49cc76fb3050046b49d7f9dbde9  s1-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
 f2df3a8142affd49f17dedd228212d5d  s2-f360.jpg
 c93dcf77e9806dafa1b2453128c2f389  s2-f840.jpg
-0c81f92e9ebefdcbec76a1fc4b239ab9  s3-f360.jpg
-e71f2f38367f9ce3b09e2c11eac1e59d  s3-f840.jpg
+3122036e95e0120e10a99ae00c578354  s3-f360.jpg
+a1e941aff486e1206a30e45b36effa0d  s3-f840.jpg
 0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
 05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
-e6aed873d09af02eba2d618a347a6665  s5-f360.jpg
-e6ec96a07804ef5643b5d3d59ac8786a  s5-f840.jpg
+9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
+04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
 fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
 6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
 d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
 7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
 2daaa2c0cbc80d96879049d1631fb74b  s8-f360.jpg
 f2342b7f13ee899b30b2e4b1961ce834  s8-f840.jpg
-95fd7d73b17a3e26b4b77b9cddb6206a  s9-f360.jpg
-4e2108a7f958a280953eabfc1a595f20  s9-f840.jpg
-4f6c8cb0967dc1a84bda3b3a297b575f  s10-f360.jpg
-1dc4cb4c398172f5339af25aac1cd469  s10-f840.jpg
-8a930b26be89a46ec070dae9a897ce03  s11-f360.jpg
-5a5c795afac268921e60ae09b18fdbbb  s11-f840.jpg
+fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
+02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
+6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
+1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
+380d0255eb88707cb2de637d9e335d83  s11-f360.jpg
+b0407176d15f916b9f96713111864737  s11-f840.jpg

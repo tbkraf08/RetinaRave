@@ -664,9 +664,11 @@ the dream from every groove); every other scene reads none. Rules for a scene th
 convention; (2) `tongue21` / `tongue41` are DEEPER than `tongue11` on every test track (the hats are the most complete
 click train in the music) — the ladder says what is there, never which lattice is the beat (§61's `alive` decides the
 octave), so read a CHANGE in a depth over bars, not its level, and never make an 8th-note nudge of it (§66); (3) read
-`tongueLat` only while `tongueLatConf ≥ 0.06`. The fake timeline mirrors the twelve as constants from its phase
-(`sources/fake.js`); the 8th / 16th depths and the swing are the same constants in every phase, so a scene reading a change
-sees nothing there and the md5 list does not move.
+`tongueLat` only while `tongueLatConf ≥ 0.06`. The fake timeline mirrors the twelve from its percussion LATTICE
+(`sources/fake.js`, §83): the beat's depth 0.6 where the kick plays, the 8th / 16th depths 0.5 / 0.4 where the hats play and
+0 in a valley — so `tongueAmbig` reads 1.0 in the valleys (TORUS2's fog hazes them) and the 8th depth RISES at every
+valley's end (DUST's accent fires there). Until v0.29 the depths were the same constants in every phase and the md5 list
+could not see a scene that read a change; since §83 it is meant to.
 
 **True loudness** (`loud`, 2026-09-30, DECISIONS §63): `loudM` `loudS` `loudPk` `loudRel` `loudRange` `loudAbs` —
 ITU-R BS.1770-4 K-weighted loudness on the PCM bus, read at heard time, graded to 0.006 LU per frame against a
@@ -711,10 +713,12 @@ have a tonic, else keycolour's 0.1 … 0.3 ramp on `keyConf`; eased over a third
 diatonic SET, not on which note is the tonic: the relative major / minor agree on every note and a fifth-off key on five
 of seven degrees (SeeYouDrop's walk reads −1 +1 −1 +1 under C♯m, E, F♯m and A alike). **Consumer: `math/keycolour.js`
 only, behind a flag** — `anchor(…, pin, shade)` adds `SHADE.K · |shade| · wrap((shade > 0 ? WARM : COOL) − hueKey)` to the
-mode's own pull; `SHADE.K` is **0 by default** (every scene's pixels are the v0.28 ones to the bit; the five anchor scenes'
-fake-timeline md5 lines are unchanged with the flag off) and `&shade=1` sets it to `SHADE.ON` = 0.25, `&shade=<k>` to k
-(core/harness.js). DUST, TORUS2, POLYTOPE, MAXWELL and GIELIS pass `MS.modeShade` and declare it; CHLADNI (its own ears) does not.
-The fake timeline mirrors 0.
+mode's own pull; **`SHADE.K` is 0.25 (= `SHADE.ON`) by default since v0.29** — the user's word after the §82 A/B — and
+`&shade=0` is the v0.28 look to the bit, `&shade=<k>` sets the pull (core/harness.js; §82 shipped it at 0 "until the user's
+eye", v0.29 turned it on). DUST, TORUS2, POLYTOPE, MAXWELL and GIELIS pass `MS.modeShade` and declare it; CHLADNI (its own
+ears) does not. The fake timeline mirrors it from its percussion lattice since §83: −1 on even bars, +1 on odd bars where
+the kick plays, 0 (no bass) in the valleys and the build, eased over a third of a bar like `shade.js` — so the five anchor
+scenes' md5 lines SEE the pull (until §83 the mirror was 0 and the pull had nothing to multiply).
 
 ## 3. Effect contract
 
@@ -995,7 +999,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tonic` | count | the key's root, as a pitch class (C = 0) | the reference note every interval is measured from; palette root |
 | `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
 | `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
-| `modeShade` | raw | is THIS BAR major (+1, warm) or minor (-1, cool): the chord quality the key implies for the bass's scale degree; 0 when the bass or the key is unknown | math/keycolour.js: a per-bar PULL of the key hue toward WARM / COOL behind &shade=1 (default off until the user's eye) |
+| `modeShade` | raw | is THIS BAR major (+1, warm) or minor (-1, cool): the chord quality the key implies for the bass's scale degree; 0 when the bass or the key is unknown | math/keycolour.js: a per-bar PULL of the key hue toward WARM / COOL (ON by default since v0.29, `&shade=0` = the v0.28 look); the fake timeline mirrors ±1 per bar from its lattice (§83) |
 | `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
 | `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
 | `width` | level | how wide the stereo image is | spread, how far the figure reaches off-centre |

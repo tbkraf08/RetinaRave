@@ -410,3 +410,6 @@ longer destroy one). **What this leaves open:**
 - **`downbeat_phase` indexes `int(t * fps)`**, two frames late, which `at_time` documents and step 3.1 left for byte
   compatibility. On a DP-branch grid the beats are now real times, so that sampling is 23 ms late there; it is absorbed
   by the function's own ±1-frame max and it did not change Malicious's winner, but it is still a latent.
+- **GIELIS `&still=1` is not shade-blind (§83):** `hooks.still(1)` rests the music-driven uniforms but keycolour's anchor still
+  reads `MS.modeShade`, which the fake timeline now mirrors as ±1 per bar — the still md5 pair re-based with the lattice. If the
+  pair is meant to be the rest state, the still should pin the shade at 0. Also: the fake's hat has no size (no `hatAmp` exists).

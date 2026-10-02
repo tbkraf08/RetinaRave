@@ -1,5 +1,8 @@
 # GIELIS &still=1 (hooks.still(1): every music-driven uniform at rest — n1 at N1_REST, no waves, no flash/shimmer, morph 0, the
 # fallback key), CLOCK=1 GPU=1 1280x720 — carried to v0.29 unchanged (DECISIONS §83, 2026-10-02): the v0.14 pass-1 values measured
 # again by accept.sh on the deployed tree (worktree of dca98f5 + the tools/truth commits, PORT 8830) = tools/accept/v0.14/gielis-still-md5.txt.
-fd8e256b9f1b8c9a5d38000bfa0d4d47  still-f360.jpg
-88f6d5cbc667aac1d39321e3b32fd46b  still-f840.jpg
+# §83 Step B: the lattice MOVED the still pair (fd8e256b / 88f6d5cb -> b7d52757 / ca912a8d): `hooks.still(1)` rests the music-driven
+# uniforms but the key-colour anchor still reads MS.modeShade (keycolour.js), which the fake now mirrors as +-1 per bar — the still
+# is not shade-blind. Open item (§83): a still should pin the shade at 0 if the pair is meant to be the rest state.
+b7d527572d19a7a099e4b6ca8bc41d52  still-f360.jpg
+ca912a8dd655d2c029be9d5d3b6855f0  still-f840.jpg

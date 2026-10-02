@@ -7390,3 +7390,82 @@ for "parity|MISMATCH|max |diff|"), so it is not in the 16.
 
 **After:** `accept.sh` on the tree at this commit, in its own worktree — the receipt is in the Step B subsection below (the run
 that follows the commit).
+
+### Step B — the fake timeline's percussion lattice (`assets/engine/sources/fake.js`, 200 → 239 lines)
+
+**What.** Until v0.29 `kickEvt` / `snareEvt` / `hatEvt`, `kickAge` / `snareAge` / `hatAge`, `kickAmp` / `snareAmp` were
+`state.js`'s defaults under `#test` (false / 99 / 0 — the ears stage returns on `ENGINE.fakeOn`), `modeShade` was mirrored as 0
+and the twelve tongue fields as the same constants in every phase. So every voice built in §57–§80 and §82's pull were
+invisible to the CLOCK=1 md5 sweep — DUST's snare voice (lane mode since §70) had NEVER fired on the fake timeline. Now the
+fake carries a **4-bar lattice on its own beat grid, on the SAME crossings its levels already use**, so an event and its
+level are one onset (CONTRACTS §1.18): kick every beat (`kickAmp` 1.0 on beats 1 / 3, 0.55 on 2 / 4), snare on beats 2 / 4
+(`snareAmp` 0.9 on even bars, 0.5 on odd), hat on every 8th (no `hatAmp` exists — CONTRACTS; its soft / hard would have to
+ride the level, which is left at 0.5 so that HARNESS's pitfall, v3 parity's `hat` and every level-only scene stay put) —
+where the kick / snare levels play (sustain, peak) and where the hat level plays (everything but the valleys). An event is
+true for exactly one frame; its age on that frame is the crossing's sub-frame remainder (0 … dt, never negative here) and
+grows by dt after; 99 before the first event (the sentinel); the ages run through the valleys and the build (the kick's
+reaches ~7 s at the drop). `modeShade` is eased (τ = a third of a bar, as `shade.js`) toward −1 on even bars / +1 on odd bars
+where the kick plays and 0 (no bass) elsewhere. The tongue mirror follows the lattice: 1:1 depth 0.6 where the kick plays,
+8th / 16th depths 0.5 / 0.4 where the hats play and 0 in a valley — so `tongueAmbig` reads 0.4 / 0.5 / **1.0** (groove / build /
+valley: TORUS2's fog §79 hazes the valleys) and the 8th depth rises 0 → 0.5 at every valley's end (DUST's §78 / §80 accent
+fires there). The kick / snare / hat LEVELS are byte-for-byte what they were. Everything is a function of the fake clock —
+no Date, no Math.random. Stale comments corrected in the same commit: `features-tongues.js`, `dust/grid.js`, CONTRACTS §2
+(the tongue mirror, and `SHADE.K` — it said "0 by default, behind `&shade=1`" while v0.29 shipped it ON at 0.25; Appendix A's
+`modeShade` row likewise).
+
+**The sweep moved exactly where a scene reads a voice or the shade** (`PORT=8831 tools/scene-md5.sh lat1` on this tree against
+`scene-md5-v029-prelattice.txt`, the Step A list of one commit earlier; errs [] on all twelve):
+
+| id | scene | reads (of the fields the lattice now drives) | f360 | f840 |
+|---|---|---|---|---|
+| 0 | NAV | none | did not move | did not move |
+| 1 | DUST | kickEvt/Age, snareEvt/Age/Amp, hatEvt/Age, tongue21/41 (acc), modeShade | `d16d35f7` → **`1faaa64e`** | `57a9c49c` → **`25dfdc48`** |
+| 2 | MANDALA | none (levels only) | did not move | did not move |
+| 3 | TORUS2 | snareEvt + snareAmp (the wave), tongueAmbig (the fog), modeShade | `0c81f92e` → **`3122036e`** | `e71f2f38` → **`a1e941af`** |
+| 4 | DRUM | none | did not move | did not move |
+| 5 | POLYTOPE | modeShade (colour.js anchor) | `e6aed873` → **`9c3be023`** | `e6ec96a0` → **`04fc1ffb`** |
+| 6 | FEIGEN | none | did not move | did not move |
+| 7 | TORUS v1 | none | did not move | did not move |
+| 8 | NAV2 | none | did not move | did not move |
+| 9 | MAXWELL | modeShade (anchor) | `95fd7d73` → **`fb52b874`** | `4e2108a7` → **`02c317b8`** |
+| 10 | GIELIS | modeShade (anchor) | `4f6c8cb0` → **`6ab60297`** | `1dc4cb4c` → **`1fe93f2c`** |
+| 11 | CHLADNI | kickEvt/Age/Amp, snareAge/Amp, hatAge | `8a930b26` → **`380d0255`** | `5a5c795a` → **`b0407176`** |
+
+Six moved, six did not, and the six that moved are exactly the readers (`grep -l` over `assets/scenes/`: kickEvt → dust,
+chladni; snareEvt → torus2, dust; hatEvt → dust; the ages → dust, chladni; kickAmp → chladni; snareAmp → torus2, dust,
+chladni; modeShade → dust, torus2, polytope, maxwell, gielis; tongue* → dust, torus2). Also moved, for the same reasons:
+the mixs 0→3 fade at f178 (`8a1a768d` → `cb3d4048`: TORUS2 is the target and frames 120–178 sit in the sustain) and the
+**GIELIS `&still=1` pair** (`fd8e256b` / `88f6d5cb` → `b7d52757` / `ca912a8d`): `hooks.still(1)` rests the music-driven uniforms
+but keycolour's anchor still reads `MS.modeShade`, so the "rest state" was never shade-blind — open below. The NAV2 stills
+are unchanged (`202c5a8a` / `36c8a02f` / `1ee726cd` / `d60bc5c8`). **Determinism:** two full sweeps (`lat1`, `lat2`) are
+byte-identical lists. **`node tools/check.js` 0 fail** (fake.js 239 lines). **Parity fake:** `max |diff| 7.852 · 72 fields`
+and the `nav.*` MISMATCH line are the SAME as before the lattice (Step A's run; §76 / §79 recorded it against HEAD too) — the
+lattice's fields (`kickEvt` … `modeShade`, `tongue*`) are "missing in v3" info lines, never a diff, and the MS fields v3 has
+(`kick` / `snare` / `hat` levels, `beatPhase`, `bpm` …) are untouched; not a regression.
+
+**The receipt — a one-constant change in DUST's `voices.js` moves s1, then it is back** (`IDS=1 PORT=8831 tools/scene-md5.sh`,
+GPU=1, errs []): `RING_SPEED` 3.4 → 2.0 (the snare ring's speed, §58) — s1 **f360 `1faaa64e` → `3560b637`, f840 `25dfdc48` →
+`169ac112`**; `git checkout -- assets/scenes/dust/voices.js` → **`1faaa64e` / `25dfdc48`** again, the baseline. The kick voice's
+own decay constant is not in voices.js (it is `mkVoice(0.24, 0.25)` in `dust/index.js:83`, the brief's "kick-voice decay"): 0.24 →
+0.12 moves s1 to `f38e4360` / `2005cc9e`, reverted. **Honest caveat, measured:** both of those constants also moved s1 BEFORE the
+lattice (the same two edits in the HEAD worktree: RING_SPEED → `54cd4722` / `3c49b505`, the kick decay → `0e12c87c` / `288246cf`
+against `d16d35f7` / `57a9c49c`) — the kick voice fired on the LEVEL's edge all along (`voice()`'s `edge` branch, kick2 = 1 on
+the beat), and the snare ring was drawn at the level's size (`v.e = max(…, lvl)`, snare2 0.7) at a STATIC radius (`age` 99 →
+`min(age, 1.2)`), which RING_SPEED moves. What the sweep was blind to is the EVENT path — the snare voice's fire and its
+`snareAmp` size, the sub-frame ages, CHLADNI's `kickAmp` throw, the shade's pull, the accent's rise — and the proof of that is
+the lattice commit itself: six scenes moved, each through a field that was a constant one commit earlier, and six did not.
+
+**What did not move.** s0, s2, s4, s6, s7, s8 (every scene without a voice or the shade), the NAV2 stills, the hist rows ==
+full identity, the levels `kick` / `snare` / `hat` (and so v3 parity's compared fields), `check.js`, the node tests
+(`test_nav2.js` re-implements the fake's lines itself and is untouched).
+
+**Receipts after both commits:** `accept.sh` on a worktree of each commit, below.
+
+**Open.**
+- The hat has no `*Amp` field (CONTRACTS: the hat lane is the HPSS-lite flux, no rise in dB to publish), so the fake's hat
+  has events and ages but one size; a soft / hard hat on the fake would have to ride the `hat` level (0.5 / 0.35), which would
+  move v3 parity's `hat` and every level-only scene — not done. The day the ears publish `hatAmp`, the lattice takes it.
+- GIELIS `&still=1` is not shade-blind: `hooks.still(1)` should pin `modeShade`'s contribution at 0 if the still pair is meant
+  to be the scene's rest state (the re-based pair carries the shade's bar-by-bar pull).
+- `parity.js fake` has carried a `nav.*` MISMATCH (max |diff| 7.852) since at least §76; `accept.sh` prints it without the word
+  FAIL. Pre-existing, not this section's.
