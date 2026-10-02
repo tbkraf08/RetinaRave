@@ -592,7 +592,7 @@ PORT=8812 GPU=1 node tools/cdp.js real '[{"until":"window.CARD"},{"wait":600},{"
 
 `node tools/check.js` · `npm test` · `node tools/test_shim.js` · two `filetrace.js` runs + `cmp` · `node tools/parity.js
 fake` (0 diff — `heardT` and `fileOn` show as "missing in v3" **info**, never a diff) · `tools/scene-md5.sh` full list
-against `tools/accept/v0.14/scene-md5-v014.txt` · the mixs md5 ("Transition") · the bundle. Nothing in the file path runs
+against `tools/accept/v0.29/scene-md5-v029.txt` (the list `accept.sh` reads, §83) · the mixs md5 ("Transition") · the bundle. Nothing in the file path runs
 on the fake timeline, so a scene's pixels cannot move — but the `clock` stage runs in every mode, which is what the md5
 list and the parity run are checking.
 
@@ -941,12 +941,24 @@ A worker's brief names the tier; the orchestrator runs the sweep once, at the ta
 
 ## Acceptance sweep
 
-Every trace/bench tool and `parity.js` write into `tools/accept/${ACC:-v0.5}/` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier
-files; the v0.2 "before"/"none"/"after" traces referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
+`tools/accept.sh` writes its shots into `tools/accept/$ACC/` and — since v0.29, DECISIONS §83 — reads **every md5 reference from
+the same directory**: `scene-md5-v029.txt` (every scene id at CLOCK=1 f360 / f840, `tools/scene-md5.sh`'s format — the "== scene
+md5" loop checks all twelve ids against it, and the torus2 / nav2 / polytope / gielis blocks read their lines from the same
+list), `nav2-still-md5.txt`, `gielis-still-md5.txt` and `trans-mixs-md5.txt` (the 0→3 mixs fade at f178). `ACC` is the ONE
+variable at the top of the script (`ACC=${ACC:-v0.29}`); a re-base is: a new directory, those four files, that one default.
+The earlier per-version lists (v0.7 / v0.8 / v0.9 / v0.14) stay on disk as history. `parity.js` and the trace / bench tools
+honour the same `ACC` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier files; the v0.2 "before"/"none"/"after" traces
+referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 
 ```
-GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v0.2/
+GPU=1 tools/accept.sh                        # everything above, shots → tools/accept/v0.29/, 0 FAIL lines is the pass
+GPU=1 PORT=8830 ACC=v0.29 tools/accept.sh    # a worker: own port (never the user's 8765), the reference directory named
+# re-base (after a commit that legitimately moves lines — see §83 for what the fake timeline's lattice reaches):
+#   mkdir tools/accept/v0.NN; PORT=88xx tools/scene-md5.sh vNN; cp tools/work/vNN-md5.txt tools/accept/v0.NN/scene-md5-v0NN.txt
+#   (then the stills and the mixs value from a sweep's own shots), ACC's default → v0.NN, DECISIONS says which lines moved and why
 ```
+The jpgs under `tools/accept/` are NOT ignored (`.gitignore`: `!tools/accept/**/*.jpg`) but past sweeps left them untracked;
+add a sweep's shots only when a DECISIONS section cites them.
 
 ## Pitfalls already paid for
 
@@ -1010,3 +1022,12 @@ Comptine (Tiersen, solo piano, no drums — added 2026-10-02) is the case that n
 hand's broken-chord notes; the felt pulse is an octave or two below, to be settled by ear.
 The user listens from the session: copy every render to `~/Music/RetinaRave-clicks/` (not the tracks folder) and hand them the
 line `! paplay ~/Music/RetinaRave-clicks/<name>.wav` — one per file, in listening order.
+
+**The other three rulers, headless** (NEXT-SESSION-PROMPT "Validating a truth grid" steps 2–4; the 2026-10-02 pass on Vienna +
+Malicious with SeeYouDrop + CyborgNinja as controls is `docs/truth/GRID-VALIDATION-2026-10-02.md` — tables, montages, proposed
+edits, and the sentence per track the user needs to hear): `python3 tools/truth/gridcheck.py <T> …` (the provenance line per
+track, no trace needed), `tools/truth/v83-hand.py <T> [low|mid|high]` (the 16-beat waveform montage, the attack should start ON
+the line), `tools/work/v72/ruler_a.py` + `node tools/drums-node.js <T> --out <dir>` folded by `tools/truth/v83-drift.py` +
+`tools/work/v72/prov.py` (the three automatic rulers, ±5 ms), `tools/truth/v83-barfold.py` / `v83-nov.py` (the bar line: the
+percussion weight and the grid-free structural boundaries per beat of the bar). The grid is re-phased to the hand, never the
+other way: the scripts measure, the doc proposes, the json is edited only after the user has listened.
