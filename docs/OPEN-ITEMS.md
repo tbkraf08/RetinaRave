@@ -178,6 +178,35 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
+**2026-10-02, §81 (`tension`'s normaliser: the p10 / p98 of `rough` over the last 30 s — `53c2ae9`):** the user has NOT seen it (no
+audible run; the A/B watch-list is at the end of §82, `&rough=0` the exact v0.28). Open: (1) **CyborgNinja is the one track whose
+ordinary moment moved** (0.32 → 0.26: DUST's cloud jitters less, the mood saturates ~8 % more, TORUS2's rim 3 % dimmer, the whole
+track) — if the eye prefers the old, the knob is `ROUGHK.HI` (0.98; p95 moves SeeYouDrop and Vienna up by the same amount instead)
+or `&rough=0`; (2) the plan's gate "the groove ≤ 0.3" is not met and cannot be by a quantile pair that keeps the medians — if the
+user wants the groove LOW rather than UNCHANGED, that is a different design (a p40 floor, or the 3-point map `sim.mjs` carries that
+pins the median to 0.3) and a look change on every scene; (3) `tension`'s direction across SeeYouDrop's drop 1 is the measure's
+(the void is rougher than the drop) — a scene wanting the build-to-drop shape reads `buildLive` (§54) / `tongueAmbig` (§79), and
+every reader of `tension` today reads it as roughness, which is right; (4) the prior pair 0.010 / 0.050 is the five test tracks' —
+a track whose roughness lives elsewhere reads against it for its first 5 s only; (5) the mood hue's ORBIT (`look.js`, speed
+0.10 · intensity²) lands on a different seat of the wheel after a minute of slightly different `tension` (SeeYouDrop DUST 0.26 turns
+p95 against the before) — not a mapping change, but the before / after screenshots of a scene with a free mood hue will not match
+pixel for pixel on real music.
+
+**2026-10-02, §82 (`modeShade` — the chord quality of the bass's degree in the key; the per-bar pull on the key hue behind
+`&shade=1` — `55da70e` + `2efc3fd`):** the pull is OFF by default and the user has NOT seen it (no audible run; the headline is
+TORUS2 on SeeYouDrop 0:13–0:26 with `&shade=1`). Open: (1) **`SHADE.ON` 0.25 is coarse**: on the A bar of the walk it crosses the cosine
+palette's teal → orange band (HSV hue 0.446 → 0.089) while `&shade=0.1` barely moves it (→ 0.432) — the eye picks the K, and the band
+structure of `palM` may want the pull expressed in the palette's own terms; (2) the pull is asymmetric in a minor key by
+construction (the key's hue already sits at the COOL pull, so i / iv / v bars move 0.008 of a turn and III / VI / VII bars the full
+K) — a major key is the mirror; (3) the field is exactly as good as the key under it: **CyborgNinja (G for C♯) and Malicious (C for
+G) read wrong degrees** — §62's open `tonicConf` item is the lever, not this one; (4) the ease is the anchor's 0.7 s on top of the
+field's third of a bar, so a bar's shade lands ~1–1.5 s in — right for a two-bar walk, late for Vienna's one-beat III; `SHADEK.TAU_BARS`
+and `HUETC` are the knobs; (5) in file mode the sub is the map's centred YIN and in stream mode the causal ears' — the walk reads
+the same on both (8 / 8), the per-track distributions were taken on the map's; (6) the harmonic-minor V (a bass on the raised 7th
+or a major V) is read as the natural v / 0 — on the five tracks it never occurs; a track that leans on V–i would want the table
+to say so; (7) `keyConf` still gates the hue (the §62 note): on SeeYouDrop's drops `keyConf` is 0.10, so the pull — like the key's
+own hue — is off there whatever the bass does.
+
 **2026-10-02, §79 (TORUS2's fog on the tongues — `1f77931`):** the user has NOT seen it (no audible run; the A/B watch-list is in
 §79, Vienna 1:05–1:25 then 1:25.3 the headline, `&tongues=0` the exact before). Open: (1) **the mist starts at 1:10, the user's
 dream at 1:05** — `tongueAmbig` is a 16-beat trailing window and reads 0.75 only at 1:09; a leading read would be the engine's

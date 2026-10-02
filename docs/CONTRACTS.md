@@ -688,6 +688,34 @@ question the AGC actively lies about (on SeeYouDrop's breakdown 2 → drop 2 pai
    starts on a transient (SeeYouDrop: first block +0.97 LKFS against a true track max of −1.69) used to pay 1.46 LU of
    base light for its whole length. BS.1770-4 measures complete gating blocks only, and so does the hold.
 
+**`tension`'s normaliser** (`engine/roughnorm.js`, 2026-10-02, DECISIONS §81): `tension` is still Sethares roughness
+(`rough`, features-slow.js) through a normaliser and a 0.35 s ema, but the two references are now the **p10 and the p98 of
+`rough` over the last 30 s** (`rLo` / `rHi`, a time-evicted histogram; a 0.010 / 0.050 prior blended out over the first 5 s —
+no partial-window attack, §67) instead of a creeping min follower and a leaping max follower. The field means *how rough,
+relative to this track lately*: the five tracks' whole-track medians are where they were (±0.06), the sections move. Three
+facts a reader must know: (1) **a noise riser IS rough** — SeeYouDrop's void before drop 1 (raw 0.038) outranks the drop
+(0.028) in the measure itself, so `tension` is never the build-to-drop tension; the void (`buildLive`, §54) is; (2) Vienna's
+dream (66.7–84.3 s) is the LEAST rough stretch of the track (raw 0.010) and reads 0.09 — a scene wanting the dream reads
+`tongueAmbig` (§79), not `tension`; (3) a stationary stretch, rough or smooth, reads the middle of its own jitter — the
+field says "rougher than lately", not "rough". `&rough=0` is the v0.28 follower pair exactly (the A/B and the md5 receipt);
+the fake timeline writes `tension` itself, so the md5 list cannot move.
+
+**`modeShade`** (`engine/ears/shade.js`, published by the ears stage, 2026-10-02, DECISIONS §82): the chord quality the key
+implies for the BASS's scale degree, per bar, −1 (minor, cool) … +1 (major, warm), 0 when the bass or the key is unknown.
+`quality[(subNote − key) mod 12]` on the natural-minor / major diatonic set (i iv v minor, III VI VII major; ii° / vii° −1;
+a non-diatonic bass, the raised 7th included, 0), the sub while `subGate` is open, `subConf ≥ 0.8` and the note has held
+60 ms (the 808 glide is kept out) — the last such note holding for a bar after the sub stops (a plucked bass is the bar's
+bass between its plucks) — else `bchroma`'s root at 0.6 when it holds ≥ 35 % of the bass chroma; against a
+(key, mode) that has held 2 s (the ears' parallel-mode flips at tonicConf 0.01 last 0.35–0.67 s); × 1 when the ears
+have a tonic, else keycolour's 0.1 … 0.3 ramp on `keyConf`; eased over a third of a bar. The table depends on the
+diatonic SET, not on which note is the tonic: the relative major / minor agree on every note and a fifth-off key on five
+of seven degrees (SeeYouDrop's walk reads −1 +1 −1 +1 under C♯m, E, F♯m and A alike). **Consumer: `math/keycolour.js`
+only, behind a flag** — `anchor(…, pin, shade)` adds `SHADE.K · |shade| · wrap((shade > 0 ? WARM : COOL) − hueKey)` to the
+mode's own pull; `SHADE.K` is **0 by default** (every scene's pixels are the v0.28 ones to the bit; the five anchor scenes'
+fake-timeline md5 lines are unchanged with the flag off) and `&shade=1` sets it to `SHADE.ON` = 0.25, `&shade=<k>` to k
+(core/harness.js). DUST, TORUS2, POLYTOPE, MAXWELL and GIELIS pass `MS.modeShade` and declare it; CHLADNI (its own ears) does not.
+The fake timeline mirrors 0.
+
 ## 3. Effect contract
 
 An effect is one file `assets/effects/<name>.js`:
@@ -814,7 +842,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tongueQ` | count | its denominator | nothing by default (shadow) |
 | `tongueDepth` | level | how firmly the music locks the clock's OWN beat: 0 at the tongue's edge (barely a beat), 1 at its centre (a click train) | nothing by default (shadow): a beat-sized motion's confidence |
 | `tongueK` | level | how salient the periodic accent is: the implied coupling K of the 1:1 tongue, 0 none .. 1 a clean click train | nothing by default (shadow) |
-| `tongueAmbig` | level | the TENSION of a beat the music is not committing to: 1 − the octave ladder's best depth — 1.0 when nothing locks (Vienna's dream, 16 s before drop 1), 0.3-0.6 in a groove | the build detector's third arming path (§77); TORUS2's fog (§79: smoothstep 0.75 → 0.95, cleared on `dropLiveEvt`) |
+| `tongueAmbig` | level | the TENSION of a beat the music is not committing to: 1 − the octave ladder's best depth — 1.0 when nothing locks (Vienna's dream, 16 s before drop 1), 0.3-0.6 in a groove | nothing by default (shadow); the build detector's third arming path (phase 3) |
 | `tongue11` | level | the beat's own tongue depth (the un-eased tongueDepth) | nothing by default (shadow); the accent-vs-drive ladder with tongue21 / tongue41 |
 | `tongue21` | level | the 8th-note tongue depth: how complete the double-time layer is as a click train | nothing by default (shadow); a scene's accent AMPLITUDE (never an 8th nudge, §66) on a CHANGE of it over bars |
 | `tongue41` | level | the 16th-note tongue depth | nothing by default (shadow) |
@@ -862,7 +890,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `interval` | count | the interval (semitones) between the bass note and the strongest other note | which bulb / torus knot |
 | `peaks` | vector | the four strongest partials [Hz, amp] | DRUM Koenigs modes |
 | `rough` | raw | Sethares roughness of the strongest partials | tension |
-| `tension` | level | how dissonant / tense it feels | uArc.z, exterior depth, park, mood |
+| `tension` | level | how dissonant / tense it feels — how rough, relative to this track lately | uArc.z, exterior depth, park, mood |
 | `suspension` | level | tension held high for a while | park at the root |
 | `resolveEvt` | event | a held tension just released | visual time release |
 | `intensity` | level | overall intensity | depth into a bulb, palette |
@@ -967,6 +995,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tonic` | count | the key's root, as a pitch class (C = 0) | the reference note every interval is measured from; palette root |
 | `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
 | `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
+| `modeShade` | raw | is THIS BAR major (+1, warm) or minor (-1, cool): the chord quality the key implies for the bass's scale degree; 0 when the bass or the key is unknown | math/keycolour.js: a per-bar PULL of the key hue toward WARM / COOL behind &shade=1 (default off until the user's eye) |
 | `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
 | `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
 | `width` | level | how wide the stereo image is | spread, how far the figure reaches off-centre |

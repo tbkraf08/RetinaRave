@@ -1,7 +1,8 @@
 # Arnold tongues on PITCH — consonance as phase-locking, a plan and a probe (2026-10-02)
 
-Written on the user's word ("plan — do not build — the pitch side"), on v0.27 (`311d09a`). **STATUS: planned, not built;
-the probe says phase 1 is NOT worth building as proposed — see §9.** The brief, in one line: the same circle map as
+Written on the user's word ("plan — do not build — the pitch side"), on v0.27 (`311d09a`). **STATUS: phases 2 and 3 BUILT 2026-10-02
+(DECISIONS §81 `53c2ae9`, §82 `55da70e` + `2efc3fd`; phase 2's stop rule was reached and is answered in §81 — the void outranks
+the drop in the MEASURE, not the normaliser; phase 3's pull is behind `&shade=1`); phase 1 declined — see §9.** The brief, in one line: the same circle map as
 the rhythm bank (`docs/plans/TONGUES-PLAN.md`, §76–§78), with Ω the frequency ratio of two tones; inside the p/q tongue
 the partials phase-lock and fuse, just outside they drift and beat; tongue width ~ K^q is the mistuning tolerance, so
 consonance follows the Farey order (2:1 > 3:2 > 4:3 > 5:4 …) and equal temperament works because the ET fifth (1.4983)
@@ -169,8 +170,8 @@ SeeYouDrop 0:25–1:00 with `&tension=raw`, the §57 receipt table re-taken. Pha
 |---|---|---|---|---|
 | 0 | **this probe** — `pitch-probe.py`, the three tables in §3, the K sweep (0.5 / 1.0) | S | done | — |
 | 1 | `ears/pitch.js` + 7 fields in shadow mode (§4), `test_pitch.js`, node = probe | M | **NOT RECOMMENDED** (§9); built only on the user's explicit override | node ≠ probe beyond ±0.02 fusion; > 2 µs/frame on the shared FFT |
-| 2 | `tension`'s normaliser: raw `rough` on a 30 s p10/p90, measured on the five section tables, no scene moved | S | the section table shows the groove at ≤ 0.3 and the drop ≥ the void on ≥ 3 of 4 drops; else the fix is dropped | SYD's void still outranks its drop; any `d_nstep` change in DUST |
-| 3 | `modeShade` from the key + the bass degree; `keycolour.js` per-bar PULL behind a flag | S | SeeYouDrop's walk reads i / VI / iv / III bar by bar; `scene-md5.sh` 0 / 24 with the flag off | the walk misreads > 1 bar in 8; Vienna's drone flickers |
+| 2 | `tension`'s normaliser: raw `rough` on a 30 s p10/p90, measured on the five section tables, no scene moved | S | **done 2026-10-02, §81 `53c2ae9`** — p10 / **p98** (p90 lifts every groove +0.13; p98 keeps the five medians ±0.06); drop ≥ void on **3 of 4** (v0.28: 2 of 4) and the new field moves WITH the raw roughness across all eight truth drops (v0.28 against it on three); the groove reads 0.40 (was 0.36, never ≤ 0.3 on the page); `d_nstep` and every drum / grid column bit-identical; `&rough=0` the exact before | **reached and answered**: SYD's void outranks its drop in the MEASURE (raw 0.038 vs 0.028 — a noise riser is rough) and Vienna's dream is the measure's minimum (raw 0.010); the fix is kept for what it does fix (the history dependence) and `tension` is declared not a build-to-drop tension (that is `buildLive` / `tongueAmbig`) |
+| 3 | `modeShade` from the key + the bass degree; `keycolour.js` per-bar PULL behind a flag | S | **done 2026-10-02, §82 `55da70e` + `2efc3fd`** — the walk reads −1 +1 −1 +1 on **8 of 8 bars** (file and causal paths; the degree is a property of the diatonic SET, so the tonic's C♯ / A / F♯ wander on the walk does not matter); `scene-md5.sh` **24 / 24 identical** flag off AND flag on (the fake mirrors 0); `&shade=1` on real music moves the major bars warm (A: teal → orange) and the minor bars not at all | not reached: 0 misreads; Vienna's dream has NO sub (the drone leaves) and reads a steady cool lean through the bass chroma; its grooves are a riff (i / v / III within the bar), not a drone |
 | 4 | `fusionDepth` to one scene's palette, opt-in | S | only if a scene asks; Vienna vs SeeYouDrop reads on screen | nobody asks |
 | 5 | the build detector's fourth path | — | **not proposed** (§6 c) | — |
 

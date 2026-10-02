@@ -7030,3 +7030,306 @@ The rim's p95 on Vienna 80–110 moves 191.6 → 196.4 (max per bar 209 → 213;
 v0.27 + §79 (TORUS2's fog on `tongueAmbig`, cleared on the slam), §80 (DUST's hat voice gain 1 + 0.5·acc, the second accent
 lever), `docs/plans/TONGUES-PITCH-PLAN.md` (the pitch bank measured and NOT recommended; phases 2–3 approved instead).
 `releases/retinarave-v0.28.html` (`file://` smoke on scenes 1 and 3: errs [], nonFinite []), package.json 0.28.0.
+
+## §81 `tension`'s normaliser — the p10 / p98 of roughness over the last 30 s, and what the measure itself says about a drop (2026-10-02, one worker; `docs/plans/TONGUES-PITCH-PLAN.md` phase 2, on the user's word; the plan's finding in §6 (a))
+
+Commit `53c2ae9` (`assets/engine/roughnorm.js` new, `features-slow.js`, `features.js` — `slowAnalysis` takes `now`, `feats.js`,
+`core/harness.js` — `&rough=0`, `tools/test_rough.js` in `npm test`), this section, CONTRACTS §2, the plan's table and
+OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the user's, the watch-list at the end of §82
+(both phases on one list). `&rough=0` is the v0.28 normaliser to the bit.
+
+### What was wrong, measured on the engine's own numbers first
+
+The plan's §6 (a) named `tension`'s normaliser from the probe's offline replica. Before touching it the PAGE's `rough` and
+`tension` were recorded on all five tracks (`tools/filetrace.js`, det file mode, 0 s to the end; `tools/work/pitch/before-*.json`)
+and the v0.28 follower pair was re-run on that series in a 30-line replica: **max |replica − page| 0.0000 over 9420 frames** — the
+normaliser is pure arithmetic on `rough`, so every variant below was tried offline on the real series and then confirmed in the
+engine (`tools/node-stream.js makeV3` runs v3 in node on the PCM dumps: `rough` page = node to 4e-6 p50, `tension` to 6e-5 p50
+/ 0.007 p99 — `tools/work/pitch/{sim.mjs,v3node.mjs,table81.py}`).
+
+What the page said (SeeYouDrop, p50 per truth section; raw `rough` · v0.28 `tension`): walk 0.0139 · 0.220, groove 0.0233 ·
+0.356, **void 0.0383 · 0.469, drop 1 0.0277 · 0.379**, breakdown 2 (96.0–105.6) **0.0300 · 0.429, drop 2 0.0310 · 0.396**. Two
+different things in one table. (1) **SeeYouDrop's void before drop 1 is ROUGHER than the drop, in the measure itself** — raw
+0.038 against 0.028 — because a noise riser is many partials a few bins apart and a sine sub under hats is not; §57 step 3's
+"a build that never arrived" is Sethares roughness doing exactly what it says, and no normaliser that preserves the order of
+`rough` can put the drop above it. (2) **Drop 2's void is NOT rougher than drop 2** (raw 0.0300 vs 0.0310) and the v0.28
+normaliser put it above anyway (0.429 vs 0.396) — that one IS the normaliser: `rHi` leaps onto any maximum and leaks back at
+0.002 per step (~17 s), `rLo` creeps up at 0.002 per step + 1e-5 and only ever falls onto a new minimum, so the same roughness
+reads differently depending on what happened in the preceding quarter minute (SeeYouDrop 0–4 s: `rHi` leapt to 0.071 on the
+fourth frame and held the first 17 s against it; Malicious 81–95 s read 0.397 on a raw 0.0287 that the next window read 0.19).
+And (3) **Vienna's dream (66.7–84.3 s) is the LEAST rough stretch of the track in the measure itself**: raw 0.0102 against
+0.017–0.033 everywhere else — a D♯/F♯ drone of octaves and fifths with the sub pulled out is the one place the partials do
+not beat. §79's "tension reads LOWER in the dream" (0.15) is the measure, not a defect, and the fog on `tongueAmbig` is the
+honest dream cue; `tension` cannot be made one.
+
+### The normaliser
+
+`engine/roughnorm.js`: `rLo` / `rHi` are the **p10 and the p98 of `rough` over the last 30 s** — a 256-bin histogram (0.0005 per
+bin, 0–0.128) over a ring evicted by TIME (the slow stage runs every other frame: 30/s at 60 Hz, 60/s at 120 — a count would
+have made the window display-rate dependent), three 256-bin scans per slow frame; `tension = ema((rough − rLo) / max(rHi − rLo,
+0.01), 0.35 s) · presence` as before. A window has no attack / release asymmetry: what left it is forgotten, what is in it counts
+once, and the same roughness reads the same whichever order the sections came in.
+
+**Why p98 and not the plan's p90.** Roughness is spiky — its p90 sits ~1.8× its median and its p98 ~3× — and the ceiling it
+replaces was a max follower, in effect a p99+. The quantile pair was swept offline on SeeYouDrop and Vienna (`sim.mjs`:
+p10/p90, p10/p95, p10/p98, p25/p98, a 3-point map pinning the median, W 20 / 30 / 60 s): p90 lifts both tracks' whole-track
+MEDIANS by 0.12–0.13 (SeeYouDrop groove 0.36 → 0.57) and every scene's groove with them; **p98 leaves the five tracks' medians
+where v0.28 had them** — SeeYouDrop 0.325 → 0.325, Vienna 0.277 → 0.289, Malicious 0.350 → 0.326, WhoLikesToParty 0.226 →
+0.261, CyborgNinja 0.320 → 0.259 — so no scene's groove moves beyond CyborgNinja's, and the SECTIONS move because the
+references no longer depend on history. **The plan's gate "the groove at ≤ 0.3" is not met by any quantile pair that keeps
+the medians** (SeeYouDrop's groove reads 0.40, v0.28 read 0.36; it needs a p40 floor, which would read 0 for the quieter half
+of every track); the gate was written against the probe's 0.28 and the page's groove was already above it.
+
+**The cold start (§67 / §75).** The references are a blend of a PRIOR pair — 0.010 / 0.050, the five tracks' own p10 / p98 of
+`rough` — and the window's measured quantiles, by how much of SEED = 5 s the window spans: the first frame reads against the
+prior exactly, the window owns the references from 5 s on, nothing recursive is seeded from the first spike. SeeYouDrop's
+first 4 s (hats rising, raw 0.03–0.045) read 0.29 → 0.80 against the prior where v0.28 read 0.07–0.27 against its 0.12 seed
+ceiling — the intro IS rough relative to a typical track, and the window agrees from 3 s on (its own p98 0.054).
+
+### The five-track section table (node v3 on the PCM dumps, `&rough=0` = before to the bit; p50 per truth section; the full table in `tools/work/pitch/table81.py`)
+
+| track · section | raw `rough` | before | **after** | the plan's question |
+|---|---|---|---|---|
+| **SeeYouDrop** walk 12.8–25.6 | 0.0139 | 0.220 | **0.150** | |
+| groove 25.6–38.4 | 0.0232 | 0.356 | **0.404** | the groove: +0.05 |
+| climb 38.4–44.8 | 0.0216 | 0.374 | **0.373** | |
+| **void 44.8–49.6** | **0.0383** | 0.467 | **0.593** | the void: the roughest 5 s of the first minute, read as such |
+| last 5 bars 49.6–57.6 | 0.0267 | 0.342 | **0.364** | |
+| **drop 1 57.6–62.4** | 0.0277 | 0.379 | **0.377** | **drop < void — the measure's order (raw 0.028 < 0.038)** |
+| drop 1 body 62.4–78.4 | 0.0311 | 0.373 | **0.423** | |
+| breakdown 2 / climb 89.6–96.0 | 0.0216 | 0.266 | **0.184** | |
+| **void 2 96.0–105.6** | 0.0300 | 0.429 | **0.326** | |
+| **drop 2 105.6–115.2** | 0.0310 | 0.396 | **0.411** | **drop ≥ void restored** (v0.28 had it inverted) |
+| outro walk 131.2–156.8 | 0.0227 | 0.278 | **0.167** | |
+| **Vienna** intro 0–62.6 | 0.0189 | 0.261 | **0.309** | |
+| **dream 66.7–84.3** | **0.0102** | 0.145 | **0.093** | **the track's minimum — the measure's (raw 0.010, the least rough stretch)** |
+| **drop 1 84.3–101.6** (85.34) | 0.0194 | 0.312 | **0.408** | drop ≥ the dream before it ✓ (both) |
+| 101.6–107.0 | 0.0146 | 0.231 | **0.220** | |
+| **drop 2 bar 107.0–109.7** | **0.0328** | 0.510 | **0.671** | the roughest bar of the track reads near the top ✓ (both; +0.16) |
+| after 109.7–113.7 | 0.0241 | 0.245 | **0.430** | v0.28's `rHi` had just leapt on the drop bar and held it under 0.25 |
+| **CyborgNinja** 12–34.5 / 34.5–48 / 48–84 / 84–108 | 0.0204 / 0.0202 / 0.0213 / 0.0314 | 0.287 / 0.310 / 0.347 / 0.328 | **0.157 / 0.210 / 0.274 / 0.388** | the control: no drop; its 84–108 s section is its roughest and now reads as such; the groove −0.07 … −0.13 |
+| **WhoLikesToParty** drops 57.5 / 131.4 / 188.8 (the section before each → the drop's) | 0.0203 → 0.0215 / 0.0197 → 0.0162 / 0.0194 → 0.0151 | 0.291 → 0.246 / 0.284 → 0.225 / 0.322 → 0.207 | **0.264 → 0.291 / 0.301 → 0.245 / 0.342 → 0.215** | drop 1: raw rises and v0.28 read it FALLING (0.291 → 0.246) — the normaliser's inversion, gone; drops 2 and 3 are smoother than the sections before them in the measure and read so under both |
+| **Malicious** 54–67.7 / 67.7–81.5 / 81.5–95.2 | 0.0390 / 0.0357 / 0.0287 | 0.515 / 0.353 / 0.397 | **0.736 / 0.531 / 0.189** | its two roughest sections read 0.74 / 0.53; the third, still rougher than the track's median, reads 0.19 after them — "relative to lately" (v0.28's 0.397 was against a floor the quiet intro had set) |
+
+**The eight drops at the 4-bar scale** (p50 over the 4 bars before → the 4 bars after each truth drop; raw · v0.28 · new):
+
+| drop | raw | v0.28 | **new** | |
+|---|---|---|---|---|
+| SeeYouDrop 57.6 | 0.0260 → 0.0277 ↑ | 0.340 → 0.389 ↑ | **0.357 → 0.386 ↑** | (the void is 8 s earlier; the last 4 bars are the climb's tail) |
+| SeeYouDrop 105.6 | 0.0254 → 0.0298 ↑ | 0.298 → 0.409 ↑ | **0.232 → 0.405 ↑** | |
+| WhoLikesToParty 57.5 | 0.0210 → 0.0227 ↑ | **0.319 → 0.235 ↓** | **0.279 → 0.294 ↑** | v0.28 read a rise as a fall |
+| WhoLikesToParty 131.4 | 0.0197 → 0.0175 ↓ | 0.284 → 0.239 ↓ | **0.301 → 0.249 ↓** | the measure falls |
+| WhoLikesToParty 188.8 | 0.0194 → 0.0167 ↓ | 0.322 → 0.214 ↓ | **0.342 → 0.220 ↓** | the measure falls |
+| Malicious 148.3 | 0.0217 → 0.0220 ↑ | **0.351 → 0.338 ↓** | **0.240 → 0.252 ↑** | v0.28 read a rise as a fall |
+| Vienna 85.3 | 0.0101 → 0.0199 ↑ | 0.168 → 0.313 ↑ | **0.109 → 0.424 ↑** | the dream → the drop: ×2 raw, +0.32 |
+| Vienna 106.7 | 0.0170 → 0.0234 ↑ | **0.285 → 0.259 ↓** | **0.329 → 0.415 ↑** | v0.28 read the drop-2 bar's rise as a fall (its `rHi` had leapt on it) |
+
+**The new normaliser moves with the raw roughness on all eight; v0.28 moved against it on three.** That is the whole of the
+fix: the direction of `tension` across a section change is now the direction of the measure, not of the follower's state.
+
+Against the plan's gate: **drop ≥ its void on 3 of the 4 named drops** (SeeYouDrop 105.6, Vienna 85.3, Vienna 106.7; v0.28
+managed 2 of 4) — the fourth, SeeYouDrop 57.6, is the measure's own order and stays so under any normaliser; **the groove is
+NOT ≤ 0.3** (0.40 — nor was it, 0.36); **the dream IS the minimum** — because it is. The plan's stop rule "SYD's void still
+outranks its drop" is therefore reached, and the honest reading is that it was always going to be: the rule assumed the
+inversion was the normaliser's, and on the page it is the measure's. The fix is kept on what it does fix — the history
+dependence (drop 2 ≥ its void; Malicious 81–95 and Vienna 109–114 no longer read against a ceiling one spike set; a bounded,
+display-rate-independent memory; an honest cold start) — with the medians held and `&rough=0` the exact before. What
+`tension` is NOT, and never was, is a build-to-drop tension: that is `buildLive` (§54) and, for the dream, `tongueAmbig` (§79).
+
+### Every consumer of `tension`, and what moved on screen
+
+Readers (`grep MS.tension`): **DUST** jitter only (§57: `uTension` → `pos += … · uTension · sin(…)`); **TORUS2 / TORUS** `U.delta =
+0.6 · tension` (the pole pinch) and `morph = 0.9 · tension` (the attractor); **GIELIS** `lean = MORPHK · tension`; **POLYTOPE** size
+× (1 − 0.3 t), jitter 0.05 t²; **MAXWELL** `shearE → 0.55 t`, `lens = 1.6 + 1.4 build + 0.6 t`; **NAV / NAV2** `reach` (0.5 t in
+the log-gain) and NAV2's bid; **MANDALA / FEIGEN** `uTension` + FEIGEN's dive brake (1 − 0.8 t) and width (1 + 0.25 t); and
+the ENGINE itself: `intensity = 0.62 eS + 0.38 t · presence` (→ `core/look.js`: the mood's `sat × (1 − 0.55 t)`, `bri + 0.25 t`,
+`spread + 0.2 t`, and the hue ORBIT's speed 0.10 · I²), `suspension` / `resolveEvt` (t > 0.55 … < 0.4), v3's `build` (+0.25 t
+inside the absent-bass term) and so the `arc`. Synapse's `A.tension` is its own accumulator and untouched.
+
+Measured with `tools/dust-trace.js` (DUST id 1 and TORUS2 id 3, `&map=0`, the before in a HEAD worktree on its own server, back
+to back; `tools/work/v81/{dust,torus2}-{before,after}-{syd,vie,cn}.json`, `cmp81.py`): **the engine's `beatCount` / `dropEnv` /
+`eM` md5 is identical before / after on all three windows** (SeeYouDrop 20–110 `54a5545d1bcdeaeacd659e01`, Vienna 60–110
+`ea31378366af460ef5b9e80e`, CyborgNinja 20–80 `c13ff0e99064cdaac6365a29`), every drum / grid / voice column is bit-identical
+(DUST: `d_nstep` `d_spin` `d_nacc` `d_fK/fS/fH` `d_aK/aS/aH` `d_form*` `d_build` `d_con`; TORUS2: fires, `d_haze` — 0.917 through
+the dream — `d_wave` `d_flash` `d_shim`), v3's `arc` differs on ONE frame of 5401 (SeeYouDrop 55.23 s, 'sustain' → 'build' a frame
+earlier; `build` max |Δ| 0.023), and what moved is the luminance and the mood:
+
+| window · scene | lum p50 before / after | the section that moved most | mood `sat` (DUST `d_sat`) | per-frame \|Δ\| between the two, p50, against the frame noise \|Δlum\| p50 |
+|---|---|---|---|---|
+| SeeYouDrop 20–110 · DUST | 100.4 / 100.5 | the void 44.8–49.6: lum 97.8 → 101.2, lumC 66.5 → 72.0 (more jitter, +8 %) | void 0.608 → 0.558, walk 0.677 → 0.707, groove 0.620 → 0.606 | 1.85 vs 2.14 — inside the noise |
+| SeeYouDrop 20–110 · TORUS2 | 62.8 / 62.6 | the void: lumC 105.7 → 112.5 (the pinch 0.28 → 0.36, +6 %) | — | 1.43 vs 1.34 |
+| Vienna 60–110 · DUST | 93.3 / 94.4 | drop 1 (84.3–101.6): lum 151 → 158 (+4 %), the drop-2 bar: lumC 127 → 139 (+9 %) | drop 1 0.594 → 0.558, the drop-2 bar 0.526 → 0.474; the dream 0.559 → 0.557 | 1.11 vs 1.08 |
+| Vienna 60–110 · TORUS2 | 73.9 / 73.2 | the drop-2 bar: lumC 105 → 111, lumR 86 → 91 (the pinch 0.31 → 0.40); the dream's pinch 0.087 → 0.055 (lumC 125 → 123) | — | 1.28 vs 0.88 |
+| **CyborgNinja 20–80 · DUST** | **100.9 / 98.1 (−3 %)** | every section: the groove reads 0.16–0.26 for 0.32–0.36 | **0.79 → 0.86 (+8 %), 0.75 → 0.78** | 2.77 vs 2.10 — **the one look that moves past its noise** |
+| CyborgNinja 20–80 · TORUS2 | 100.2 / 100.5 | lumR 121 → 117 (−3 %, less pinch) | — | 2.38 vs 1.72 |
+
+The groove reads as before on SeeYouDrop and Vienna (±0.05 in `tension`, lum within 1 %), the sections differ in the direction
+the raw roughness says (the void, the drop-2 bar, the dream), and **CyborgNinja is the one track whose ordinary moment moved**
+— down by 0.1–0.16, so the mood saturates ~8 % more and DUST's cloud jitters less, the whole 60 s. It is the control track
+(no drop, no breakdown, a 16th lattice all the way), its roughness is as spiky as SeeYouDrop's (p10 / p50 / p90 0.013 / 0.023 /
+0.042) and the v0.28 pair had been reading it against a floor that crept under everything; p98 puts its ordinary moment at
+0.26 where v0.28 said 0.32. No scene's gain was rescaled: the shift is the normaliser's calibration, not a scene's, and it is
+the smallest any quantile pair gives (p95 moves SeeYouDrop and Vienna UP by the same amount instead). The hue: on SeeYouDrop
+DUST's `d_hue` differs by 0.047 turns p50 / 0.26 p95 — `look.js`'s mood hue is a free-running ORBIT whose speed rides
+`intensity` (0.38 t), so a 0.05 change in t over 90 s is a different seat on the same wheel, not a different mapping; on
+Vienna (keyConf 1.0, the key's hue) `d_hue` is bit-identical.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (features-slow.js 142 lines, roughnorm.js 74) · `npm test` exit 0 with `tools/test_rough.js`: rough
+  10 s / smooth 10 s / rough again reads 0.78 → **0.015 → 0.88**, and **0.21 → 0.013 → 0.87 at 0.3× the absolute level**; the first
+  sample reads against the prior pair exactly; a 0.07 plateau through the 5 s seed climbs the ceiling from 0.050 to 0.077 and
+  never past it; 30 s after a half-second 0.12 spike the ceiling is the plateau's own p98 (0.029); the `&rough=0` path is the
+  v0.28 formula (rLo 0.02146 / rHi 0.11534 after 30 steps at 0.04); two runs bit-identical.
+- **`&rough=0` = before to the bit** on all five tracks in node (`rough`, `tension`, `rLo`, `rHi`: max |Δ| 0.0).
+- **The fake-timeline md5 list cannot move and did not**: `sources/fake.js` writes `tension` itself (0.9 / 0.6 / 0.2 by phase); the
+  twelve ids' f360 / f840 lines are recorded under §82 (one list for both phases, HEAD's worktree against this tree).
+- Page = node on `tension` after: `tools/work/pitch/after-SeeYouDrop.json` against `node-after-SeeYouDrop.json` (the §82 traces carry it).
+- Cost: three 256-bin scans and one histogram update per slow frame (every other frame), no allocation after construction.
+
+## §82 `modeShade` — is THIS BAR major or minor: the chord quality the key implies for the bass's degree, and a per-bar pull on the key hue behind a flag (2026-10-02, one worker; `docs/plans/TONGUES-PITCH-PLAN.md` phase 3, on the user's word; the plan's §6 (b))
+
+Commits `55da70e` (`assets/engine/ears/shade.js` new, `features-ears.js`, `state.js`, `ears/feats.js`, `sources/fake.js`,
+`math/keycolour.js`, `core/harness.js` — `&shade=`, DUST / TORUS2 / POLYTOPE / MAXWELL / GIELIS `index.js` + `help.js` +
+`polytope/colour.js`, `tools/test_shade.js` in `npm test`) and `2efc3fd` (the held note), this section, CONTRACTS §2 + Appendix A,
+the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed. The pull is OFF by default** (`SHADE.K` 0): every scene's
+pixels are v0.28's to the bit until the user's eye has judged `&shade=1`. No audible run.
+
+### The rule
+
+The probe (the plan's §3 item 3) showed a per-bar major / minor cannot come from the pitch bank — the harmonic series is a
+major chord, so every track read major. It is a KEY-relative fact and costs nothing: in a diatonic key the triad on each
+scale degree has a fixed quality — natural minor **i iv v minor, III VI VII major** (ii diminished); major **I IV V major, ii
+iii vi minor** (vii diminished) — so `modeShade = quality[(bassNote − key) mod 12]` with `key` / `mode` the ears' tonic (§62).
+SeeYouDrop's annotated walk C♯1 A1 F♯1 E1 in C♯ minor is i VI iv III = **−1 +1 −1 +1**, every two bars. Three decisions the
+table carries, each stated in `shade.js`: a diminished triad reads −1 (its third is minor — the brief's axis); the **raised 7th
+of minor and every other non-diatonic bass reads 0** (the natural-minor set is what the KK minor profile the key came from
+describes; the harmonic-minor V would call every minor track's dominant bar warm, and on the five tracks the bass never sits
+on the leading tone); and the table depends on the **diatonic SET, not on which note is the tonic** — the relative major and
+minor agree on every note (C♯ minor = E major), the PARALLEL modes disagree on every shared note (C♯ is I in one, i in the
+other), a fifth-off key (§62's synapse failure) agrees on five of seven degrees. That last fact decided a design question
+before it was asked: on SeeYouDrop's walk the ears' tonic wanders C♯m → A major (18.1–19.8 s) → F♯m (19.8–24.6) → C♯m, because the
+sub is 70 % of the energy and leans on the chroma (§62 SUB_W 2.5), and the four bars read −1 +1 −1 +1 under every one of
+those readings (`test_shade.js` proves the table under all four).
+
+**The bass note.** `subNote` while `subGate` is open, `subConf ≥ 0.8` and the note has HELD 60 ms — the map's YIN shows every
+808 attack gliding F♯ → E → D♯ → C♯ in 50 ms before it settles (SeeYouDrop 12.90–12.95 s), and without the hold each attack
+would flash two wrong degrees. **The last settled note holds for a bar after the sub stops** (`2efc3fd`): WhoLikesToParty's
+bass is plucked — 50 ms sub runs, the gate open 59 % of the time, a settled note on 22 % of frames — and against "0 between
+notes" its field never left ±0.1 (p10 / p90 −0.14 / +0.02 over the track); a plucked bass is still the bar's bass between its
+plucks. Then `bchroma`'s root (v3's < 240 Hz pitch-class chroma, ema 0.35 s) stands in at weight 0.6 when its largest bin
+holds ≥ 35 % of the sum — SeeYouDrop's intro has no sub at all (§75) and its 70–110 Hz mid-bass walk C♯2 E2 A2 … reads through
+this path (−0.5 / −0.6 / +0.57 on bars 4–7); and with no bass at all the target is 0 and the field eases back to it.
+
+**The key.** The (key, mode) the degree is taken against must have HELD 2 s before the shade adopts it: measured on the walk,
+the tonic flips C♯m → C♯ MAJOR for 0.35 s at 14.0 s and 0.67 s at 15.0 s (tonicConf 0.01 — the KK coin toss between the parallel
+modes), and before the hold the C♯ bars read −0.36 / −0.16 instead of −1 (after: −0.59 / −0.98). A flip shorter than a bar is
+noise about the mode; a modulation holds. The weight is 1 when the ears have a tonic (`tonic ≥ 0`: the published `key` /
+`mode` ARE the tonic), else keycolour's own 0.1 … 0.3 ramp on synapse's `keyConf`, so the field and the hue it pulls agree on
+when the key counts. Eased with τ = a third of a bar (0.53 s at 150 BPM): settled within the bar it belongs to, and the first
+bar of a new note reads its transition (±0.45 at p50 on a −1 → +1 swing), the second ±0.97.
+
+### SeeYouDrop's walk — i / VI / iv / III, bar by bar (the page, det file mode, `tools/work/pitch/after-SeeYouDrop.json`; the truth's downbeats; p50 (min … max) per bar)
+
+| bar | t | truth note · degree | **modeShade p50** (min … max) — the map's sub (file mode) | the CAUSAL ears (`&map=0`, stream mode's path; `tools/work/v81/syd-walk-causal.json`) | the tonic the ears read |
+|---|---|---|---|---|---|
+| 8 | 12.81 | C♯1 · **i** | **−0.59** (−0.91 … +0.42) | **−0.50** (−0.89 … +0.42) | C♯m |
+| 9 | 14.41 | C♯1 · i | **−0.98** (−1.00 … −0.91) | **−0.93** | C♯m (the C♯M flips held out) |
+| 10 | 16.01 | A1 · **VI** | **+0.47** (−1.00 … +0.88) | **+0.84** | C♯m |
+| 11 | 17.61 | A1 · VI | **+0.97** (+0.88 … +0.99) | **+0.99** | A major (the set agrees) |
+| 12 | 19.21 | F♯1 · **iv** | **−0.45** (−0.88 … +1.00) | **−0.32** | F♯m (the set agrees) |
+| 13 | 20.81 | F♯1 · iv | **−0.97** (−0.99 … −0.88) | **−0.97** | F♯m |
+| 14 | 22.41 | E1 · **III** | **+0.45** (−1.00 … +0.88) | **+0.30** | F♯m (E = VII there: major too) |
+| 15 | 24.01 | E1 · III | **+0.97** (+0.88 … +0.99) | **+0.97** | C♯m |
+
+**8 of 8 bars carry the right sign at p50 on both paths** (the plan's stop rule was "> 1 bar in 8 misreads"); the first bar
+of each note is the ease's transition and the second its plateau. The outro walk (131–157 s, the same four notes) reads the
+same way. Drop 1 (57.6–66 s, C♯1 all the way) reads −0.69 / −0.98 / −1.00 / −0.19 (the bar where the sub ducks) / −0.68 / −0.98.
+
+### Vienna — the D♯ drone, the dream, the riff, and what the octave-up line implies after 1:46.7
+
+Vienna's key read is D♯ minor on every frame (keyConf 1.0, the tonic from 0 s). **The intro's drone (0–62.6 s)** is D♯1 / F♯1 /
+A♯1 (§66 Q1 — the map's sub: D♯ 21–30 % of frames, A♯ 15 %, F♯ 9–10 %, none 30–41 %) = i / III / v, so the field sits cool with
+warm bars where the F♯ leads (bar 23 −0.99, bar 24 +0.65). **The dream (66.7–84.3 s): the sub is gated OFF on every frame** — the
+drone the user hears is the 40 Hz drone LEAVING (§79's dream, §66's "the sub pulled out"), so there is no D♯ sub to read; the
+first dream bar holds bar 24's F♯ (+0.93) and from 69.3 s the mid-bass chroma stands in at −0.23 … −0.57 (its root D♯ / A♯, i / v,
+at the fallback weight 0.6). **Not −1 throughout, and not a flicker**: a steady cool lean. **The grooves (85–106 s)** are a
+2-bar riff, D♯ (4 beats, i) → A♯ (2 beats, v) → F♯ (1 beat, III) → F / E passing — so the D♯ bars read −0.63 … −0.98 and the riff
+bars swing −0.9 → +0.3 … +0.6 within the bar (the per-beat trace: D♯ beats −0.4 … −0.8, the A♯ beats −0.7, the F♯ beat → +0.0 …
++0.4). That is a riff, not a drone, and per bar it is honest: Vienna's bass IS i for most of every bar and III for one beat
+in eight. **After drop 2 (106.67 s)**: the sub is pulled out across the drop bar (gate 34 %; the held F♯ carries +0.74 through
+it), then the octave-up line the map's YIN reads as **A♯** (60–69 % of its gated frames; §66 wrote A1 from the truth tool's 0.372 s STFT labels — 55 vs 58 Hz,
+one semitone; the map's centred YIN is ±30 cents on 100 % of frames, so A♯ it is; in D♯ minor A♯ is v, A is nothing) → **−0.95 at bar 41** and −0.4 … −0.6 after as the
+line thins (gate 10–23 %, the chroma standing in). The octave-up line implies the DOMINANT, minor: the drop reads cool.
+
+### The five tracks' per-bar distribution (bars from 8 s; a bar's p50; `tools/work/pitch/shade82.py`)
+
+| track · truth key · the ears' key | bars | **minor (< −0.5)** | **major (> +0.5)** | between | unknown (\|v\| ≤ 0.1) | frame p50 | the bass it read |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop · C♯m · C♯m (F♯m / A on the walk, the set agrees) | 93 | **42 %** | **12 %** | 25 % | 22 % | −0.26 | C♯1 (i) under every groove and drop; the walk's VI / III bars are the major share |
+| Vienna · D♯m · D♯m (every frame) | 69 | **61 %** | **7 %** | 26 % | 6 % | −0.60 | i / v with III one beat in eight; the dream through the chroma |
+| WhoLikesToParty · DM · DM 51 % / Bm 23 % / Em 23 % (one set) | 120 | 28 % | 14 % | 32 % | 26 % | −0.07 | a plucked walking bass E B G D C F♯ = ii vi IV I · iii (C non-diatonic): a major key whose bass lives on its minor degrees |
+| **CyborgNinja · C♯m · G major 48 % / G♯M 33 %** (§62: the ears' miss) | 114 | 11 % | 16 % | 41 % | 32 % | +0.04 | **as wrong as its key** — C (46 % of its settled sub) is IV in G and the raised 7th (0) in C♯m; the control reads a coin toss |
+| **Malicious · GM · C minor 62 % / GM 31 %** (the ears' other miss; no settled sub at all — 0 % of frames at conf 0.8) | 124 | 20 % | 10 % | 42 % | 27 % | −0.12 | the chroma fallback only (hence the 42 % "between" at weight 0.6) against a key read a fifth off: five of seven degrees right by the set argument, the rest noise |
+
+The field is exactly as good as the key under it: on the three tracks where the ears' tonic is the truth's (§62: 3 of 5) the
+per-bar reading follows the bass's degree; on the two where it is not, it follows the wrong degrees — the shade cannot
+repair the key and does not try (the next lever is §62's open item, `tonicConf`).
+
+### The consumer — `math/keycolour.js`, behind `&shade=1`
+
+`anchor(dt, key, mode, keyConf, valence, harmAngle, moodHue, pin, shade = 0)`: the mode's PULL (0.45 toward WARM / COOL) is
+joined by **`SHADE.K · |shade| · wrap((shade > 0 ? WARM : COOL) − hueKey)`** — a major bar drags the key's hue a further K toward
+WARM, a minor bar toward COOL, the short way round, on the same `kw` gate (the hue only moves where the key is trusted) and the
+same HUETC ease (0.7 s) as the key itself. **`SHADE.K` is 0 by default**: the added term is `0 · (finite)` = 0 exactly, so the
+hue is v0.28's to the bit; `&shade=1` sets K = `SHADE.ON` = 0.25, `&shade=<k>` sets k. In a minor key the i / iv / v bars sit
+0.45 toward COOL and the III / VI / VII bars 0.45 COOL − 0.25 WARM: the alternation reads as the key's hue breathing warmer on
+the major bars. The five anchor scenes (DUST, TORUS2, POLYTOPE through `polytope/colour.js`, MAXWELL, GIELIS) pass `MS.modeShade`
+and declare it; CHLADNI anchors on its own ears and does not. The ease is the anchor's on top of the field's third-of-a-bar,
+so a bar's shade lands ~1–1.5 s into it — fine for a two-bar walk, late for a one-beat III (Vienna); the τ is the first knob
+if the eye wants it quicker (open item).
+
+### Proofs
+
+- `node tools/check.js` 0 fail (shade.js 83 lines, features-ears.js 191, keycolour.js 94) · `npm test` exit 0 with
+  `tools/test_shade.js`: the walk under C♯m / E / F♯m / A, Vienna's i / v / III, a chromatic bass 0, the 808 glide held out, C♯
+  held 2 s → −0.97 and A one bar → +0.90, the last note holds a bar then the field is back under 0.06, a 100 ms pluck every beat
+  reads +0.90, the chroma root at 0.6 and the sub outranking it, the parallel-mode flip of 0.5 s not moving the tonic bar and a
+  held modulation adopted, the keyConf ramp at 0.2 → +0.49.
+- **The fake-timeline md5 list, twelve ids, HEAD's worktree against this tree, flag off: IDENTICAL line for line** (`PORT=8929
+  tools/scene-md5.sh base81` / `PORT=8928 … new81`; the lists in `tools/work/{base81,new81}-md5.txt`): s0 f360 / f840 fb74fee4 / 8a0715df, s1 (DUST) d16d35f7 / 57a9c49c, s3 (TORUS2) 0c81f92e / e71f2f38, s5 e6aed873 / e6ec96a0, s9 95fd7d73 / 4e2108a7, s10 4f6c8cb0 / 1dc4cb4c — and the other six ids likewise; `errs []` on all twelve. With
+  `&shade=1` on the five anchor ids (1 3 5 9 10): **also identical** — the fake timeline mirrors `modeShade` 0 (`fake.js`), so the
+  pull has nothing to multiply; the flag's effect exists only on real music.
+- **The flag on, on real music** (TORUS2, SeeYouDrop, det file mode, frame-exact: `test&track=SeeYouDrop&at=0&scene=3[&shade=1]`, CLOCK=1 GPU=1, shots at frames 902 / 1106 / 1298 / 1490 = 15.0 / 18.4 / 21.6 / 24.8 s,
+  the second bar of each walk note, `MS.modeShade` reading **−0.970 / +0.973 / −0.972 / +0.972** on both runs; `tools/work/v81/walk-{c,a,f,e}-{off,on}.jpg`):
+  the four shot pairs differ, and the mean HSV hue of the saturated pixels moves **only on the major bars** — A1 (VI) 0.446 → 0.089
+  turns (teal → orange, the montage `walk-montage.jpg`), E1 (III) 0.371 → 0.408 — and not on the minor ones (C♯1 +0.003, F♯1
+  −0.001): by construction, since a minor key's hue already sits at the COOL pull and the shade's extra 0.25 toward COOL is
+  0.008 of a turn there, while 0.25 toward WARM crosses the cosine palette's teal → orange band. The band is sharp: `&shade=0.1`
+  moves the A bar 0.446 → 0.432 only (`walk-a-k01.jpg`), so the knob is coarse between 0.1 and 0.25 — the user's eye picks).
+- Page = node on `tension` after both commits (SeeYouDrop: p50 1.9e-4, p99 9e-3 — v3's shim parity, §81's number).
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.28.html` from `file://`; new = `http://127.0.0.1:8765/`, `&shade=1` for the pull, `&rough=0` for v0.28's tension; key `2` DUST, key `4` TORUS2)
+
+- **SeeYouDrop 0:13–0:26, TORUS2 with `&shade=1` — the headline.** The sub walks C♯ A F♯ E, two bars each: the key hue (C♯ minor,
+  pulled cool) should **breathe warmer on the A and E bars (0:16–0:19, 0:22–0:26) and back cool on the C♯ and F♯ bars**, landing
+  ~1 s into each pair. Without the flag the hue holds. The same walk returns at 2:11–2:37 (the outro). DUST shows it on its
+  cloud's palette.
+- **SeeYouDrop 0:45–0:50 (the void) — `tension`.** DUST's grains jitter harder and the mood drains a little more saturation
+  (0.61 → 0.56) through the risers; TORUS2's pole pinch is deeper (centre +6 %). The drop at 0:57.6 itself reads as before.
+  `&rough=0` = the old.
+- **SeeYouDrop 1:36–1:45 → 1:45.6 (void 2 → drop 2).** The drop now reads at least as rough as the breakdown before it (0.33 → 0.41;
+  it used to read 0.43 → 0.40): DUST's jitter and TORUS2's pinch no longer RELAX into the drop.
+- **Vienna 1:06–1:24 (the dream).** `tension` reads lower still (0.09 for 0.15): TORUS2's rings a touch less pulled, the fog
+  (§79) unchanged. With `&shade=1` the hue leans steadily cool (the chroma's D♯ / A♯) — no bar-to-bar movement expected.
+- **Vienna 1:25–1:41 (drop 1, the riff).** `tension` 0.31 → 0.41: DUST brighter by ~4 % with ~6 % less saturation, TORUS2's
+  centre +1 %. With `&shade=1`: cool on the D♯ bars, a warm flick on the F♯ beat every second bar (late by a second — the τ).
+- **Vienna 1:46.7 (drop 2) → 1:50.** The roughest bar of the track reads 0.67 (was 0.51): DUST's centre +9 %, TORUS2's pinch
+  0.31 → 0.40 for the 2.7 s bar, then 0.43 for 0.25 through 1:49–1:53 (v0.28's ceiling had leapt on the bar). With `&shade=1`
+  the octave-up line (v) reads cool.
+- **CyborgNinja, anywhere — the control.** The ordinary moment reads 0.16–0.26 for 0.32–0.36: DUST's cloud jitters less and
+  the mood saturates ~8 % more, the whole track; TORUS2's rim 3 % dimmer (less pinch). **This is the one look that moves past
+  its own noise** (§81) — if the eye prefers the old, `&rough=0` is it, and the knob is `ROUGHK.HI` (0.98). With `&shade=1`
+  the key is wrong (G for C♯) and so is the shade: expect nothing meaningful.
+- **WhoLikesToParty / Malicious:** `tension`'s direction across each drop now follows the raw roughness (§81's table); the shade
+  on Malicious is against a wrong key.
