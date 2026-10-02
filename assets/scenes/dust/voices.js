@@ -127,8 +127,14 @@ export function bed(v, dt, x) {
 // `lvl` STAYS the floor under the envelope (`Math.max(…, lvl)`) and is measured, not assumed: taking it out drops
 // the three windows' flash sizes with it (amp p50 is the voice's own, but `v.e` is what the shader reads, and the
 // level is 0.27-0.41 of the picture between hits on these tracks). What it CANNOT do any more is start a hit.
-export function voice(v, dt, lvl, msAge, evt, veto, amp) {
+//
+// `gain` (§80, the hat): a multiplier on the HIT'S size — the amplitude the fire starts from and the level's confirm —
+// and on nothing else: the age, the refractory and the triggers are untouched (the rate and the timing of the flashes
+// cannot move, by construction), and the level under the envelope (`Math.max(…, lvl)`, the sustained part of the
+// band) is not scaled, so what grows is the stick and not the bed. Absent or 1 is the voice as it was, bit for bit.
+export function voice(v, dt, lvl, msAge, evt, veto, amp, gain) {
   const lane = amp !== undefined && amp !== null;     // §70: the event fires AND sizes the hit; the level only floors it
+  const G = gain > 0 ? +gain : 1;                     // §80: the hit's own gain (1 = none)
   v.age += dt;
   v.since += dt;
   const a = msAge === undefined || msAge === null ? 99 : msAge;
@@ -137,17 +143,42 @@ export function voice(v, dt, lvl, msAge, evt, veto, amp) {
   const edge = !lane && lvl >= THR && lvl > v.prev + 0.02;  // a follower steps up on the hit frame only
   if ((ev || edge) && v.since >= REFRACT) {
     v.age = fresh ? Math.max(0, a) : 0;
-    v.amp = Math.max(v.floor, lane ? amp : lvl);
+    v.amp = G * Math.max(v.floor, lane ? amp : lvl);
     v.since = 0;
     v.n++; v.src = (ev ? 1 : 0) | (edge ? 2 : 0);
-  } else if (edge && lvl > v.amp) {
-    v.amp = lvl;                                      // the level confirms a hit already started: same hit, its size
+  } else if (edge && G * lvl > v.amp) {
+    v.amp = G * lvl;                                  // the level confirms a hit already started: same hit, its size
   }
   v.prev = lvl;
   v.lastA = a;
   v.e = Math.max(v.amp * Math.exp(-v.age / v.tc), lvl);
   return v.e;
 }
+
+// THE HAT VOICE AS THE SECOND ACCENT LEVER (§80; §78's open item). The double-time layer that arrives after Vienna's first
+// drop is the hats at 2x, so the layer's arrival should land on the RIM — the hat voice's own place (§58: the high bins are
+// the edge) — as well as in the nudge's swing. The hit's `gain` above is `1 + K · acc`, with `acc` the SAME per-beat accent
+// the nudge reads (grid.js accent21: the 16-beat RISE of the 8th / 16th tongue depths, dead under 0.15, full at 0.45): a
+// layer ARRIVING, never its level, so CyborgNinja's steady 16ths (depth 0.6 all track, rise <= 0.13) are untouched, bit for
+// bit — the control §78 named. The gain reads `acc` itself and not a held copy: on Vienna the depth it came from falls
+// back on its own (tongue41 0.63 at 1:35 → 0.49 at 1:43 → 0.37 at 1:48) while the nudge's acc is already 0 at 1:43, so a
+// copy that held the gain "while the layer plays" would have carried it across drop 2 (1:46.7), where §78 moves nothing;
+// and the brief's "let sustained sounds habituate" says the arrival is the accent and the texture after it is the new
+// ordinary. `&hatacc=<K>` is the user's knob (0 = the exact before).
+//
+// K MEASURED (tools/dust-trace.js, DUST `&map=0`, the engine from 0:00, tools/work/v80/rim80.py: the rim annulus `lumR`'s
+// lift per hat fire — its peak in the 4 frames from the fire minus the frame before — on Vienna 1:30-1:38, the 30 fires
+// where acc reads 0.97-1.00; the fires, the ages, the spin and the step are bit-identical in every run):
+//   K       gain   amp/hit p50   lumR lift/hit p50 / p90 / mean   the lift's gain over the rim's own frame noise (|dlumR| 2.58)
+//   0       1.00   0.348         20.3 / 39.8 / 21.5                -
+//   0.25    1.25   0.432         23.2 / 44.8 / 24.9   (+14 %)      +2.9 = 1.1x the noise: does not read
+//   0.5     1.5    0.516         26.0 / 52.1 / 28.2   (+28 %)      +5.7 = 2.2x the noise, the three full bars' rim median +4 / +0 / +10
+//   1       2.0    0.685         31.2 / 61.1 / 34.5   (+54 %)      +10.9; amp p90 1.5 and a bar's rim median +16 (+10 %): driving
+// 0.5 is the smallest gain whose per-hit lift clears twice the rim's own frame-to-frame noise. The reference the brief named,
+// 1:00-1:20, has 20 fires at 1.0 /s and a lift of 1.0 / 3.7 (p50 / mean): the layer's arrival is already on the rim
+// reactively (3.76 fires/s there), and the gain is what makes the arrival land harder than the groove's own sticks.
+export const HATACC = { K: 0.5 };
+export const hatGain = (acc) => 1 + HATACC.K * (acc > 0 ? Math.min(1, acc) : 0);
 
 // The snare's flash ring: launched ON THE MID BAND (`r0` = formations.js midR(), §58 task A) and travelling outward
 // from there at SPEED, spreading as it goes — a shell you watch leave, not a flash you only infer.

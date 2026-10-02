@@ -7,7 +7,7 @@ import { CAP, counts, emit, fit } from './fibre.js';
 import { GAL_K, K as NUDGE, mkSpin, mkTrigger, spin, trigger } from './grid.js';
 import { dyn, mkDyn } from './dyn.js';
 import { HAB, NW, ema, emaK, mkEma } from './habit.js';
-import { BED, bed, mkBed, mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
+import { BED, HATACC, bed, hatGain, mkBed, mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
 import { mkAnchor } from '../../math/keycolour.js';
 
@@ -143,7 +143,10 @@ const SELF = {
     // hat EVENT is not a hat — the sparkly / dreamy layer the user heard, and the ears' running-median picker cannot
     // tell its leading edge from a stick (voices.js: the numbers). The level's edge still fires the voice.
     this.hSwell = bed(this.hBed, dt, MS.highS);
-    voice(this.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt, this.hSwell);
+    // §80: the double time ARRIVES on the rim too — the hit's gain rides the same per-beat accent the nudge reads
+    // (grid.js accent21, `this.sp.acc`): a layer arriving sparkles harder on every stick, CyborgNinja's steady 16ths
+    // never do, and the rate and timing are the voice's own (voices.js). The numbers that chose K are in voices.js.
+    voice(this.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt, this.hSwell, undefined, hatGain(this.sp.acc));
     sub(this.vB, dt, MS);
     // The real tension: the void before a drop (§54), not the roughness. The last bar winds up on top of it, and
     // the slam lets everything go at once.
@@ -287,6 +290,9 @@ const SELF = {
       if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] >= 0.05 && +a[1] <= 60) BED.TC = +a[1];
       return JSON.stringify(BED);
     },
+    // &hatacc=<K> (and hooks.hatacc(k)): the hat voice's accent gain, 1 + K · acc at a hit (§80). '' restores the
+    // measured 0.5; 0 is the exact before.
+    hatacc(k) { HATACC.K = k !== '' && k !== undefined && k !== null && +k >= 0 && +k <= 4 ? +k : 0.5; return JSON.stringify(HATACC); },
     // &nudge=<glide>,<width> (and hooks.nudge(g, w) from a page): the beat nudge's velocity profile, for the user's
     // own A/B of how much glide the motion wants (§61 step 2). '' restores the measured default.
     nudge(g, w) {
@@ -312,7 +318,7 @@ const SELF = {
         fK: SELF.vK.n, fS: SELF.vS.n, fH: SELF.vH.n,
         aK: SELF.vK.amp, aS: SELF.vS.amp, aH: SELF.vH.amp,
         srcK: SELF.vK.src, srcS: SELF.vS.src, srcH: SELF.vH.src,
-        hBed: SELF.hBed.s, hSwell: SELF.hSwell ? 1 : 0,
+        hBed: SELF.hBed.s, hSwell: SELF.hSwell ? 1 : 0, hG: hatGain(SELF.sp.acc),
         ringR: ringR(SELF.vS, midR(SELF.formA, SELF.formB, SELF.formT)), form: SELF.formT >= 1 ? SELF.formB : -1 };
     },
   },
