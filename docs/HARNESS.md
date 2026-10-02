@@ -991,3 +991,20 @@ GPU=1 tools/accept.sh               # everything above, shots → tools/accept/v
 - Scene palettes are **cosine**, `0.5 + 0.5·cos(TAU·(h + [0, .33, .67]))`, not HSV: a hue number in a report is in **palette
   turns** (0–1, recovered by `probe.js hueFit`), and a proof that quotes HLS degrees against a constant in turns compares nothing.
 
+
+## Hearing a truth grid (`tools/truth/clicktrack.py`, 2026-10-02)
+
+The user's own ruler for a grid (NEXT-SESSION-PROMPT "Validating a truth grid"): the track with a click on every truth beat
+(the downbeat a lower, louder click; `--drops` a long low click on each `drops_user` / `drops`; `--sections` a double-click on each
+section start; `--every=N` every Nth beat — the half-time / quarter-time octaves, to hear which lattice the music nods to;
+`--from/--to` a window). Reads `tools/truth/<T>.json` + `tools/work/<T>.48000.st.f32` (make the PCM once with `trackmap.py <T>
+--pcm --sr=48000` ONLY while `<T>` has no truth dir yet — `--pcm` regenerates the grid). Prints the grid's provenance
+(`provisional` / `hand` / `anchor` / tool-only). A late grid is a flam, a wrong bar line is the accent on the wrong beat, a wrong
+drop is a click where nothing happens, a wrong octave is twice or half the clicks the music wants.
+
+```
+python3 tools/truth/clicktrack.py Vienna --drops --sections --from=60 --to=112      # tools/work/Vienna-click.wav
+python3 tools/truth/clicktrack.py Comptine --every=4 --from=0 --to=60              # tools/work/Comptine-click-every4.wav (53.8 BPM heard)
+```
+Comptine (Tiersen, solo piano, no drums — added 2026-10-02) is the case that needs it: trackmap locked 215 BPM onto the left
+hand's broken-chord notes; the felt pulse is an octave or two below, to be settled by ear.
