@@ -50,6 +50,10 @@ export const HELP = {
       clarity: 'the bid: a clear harmony',
       regularity: 'the bid: a steady rhythm',
       calm: 'quiet music dims the brightness floor the same way',
+      tongueAmbig: 'when the music locks none of the beat\'s family for bars the nest sinks into mist: the far side falls '
+        + 'into fog, the colours wash pale, the black behind it lifts to a veil — and the groove\'s return clears it',
+      tongueOn: 'the tongues\' switch: off, the mist never comes and the nest is exactly the pre-tongues TORUS',
+      dropLiveEvt: 'the drop\'s slam clears the mist on the beat, before the fog\'s own slow reading has caught up',
     },
     eli5: 'Every ring is one fibre of the Hopf map, as in TORUS, and this version is built to move with the music: nothing inside the nest is allowed to fall dark, every kick flashes the quiet fibres at the core, and the hats run a fine shimmer round each ring.',
     why: 'The first TORUS drew the geometry right but stayed dark inside: a quiet pitch class sat at a twentieth of the brightness of the loud one and disappeared into the fog. Here a brightness floor keeps every fibre visible, the fog only ever dims the far side by half, the kick lights the innermost (quietest) families rather than the loud rim, and the hats shimmer along the ring parameter — so the bass lights the core and the melody lights the rim.',

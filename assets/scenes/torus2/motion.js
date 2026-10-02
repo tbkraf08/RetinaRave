@@ -73,3 +73,13 @@ export function reframe(dt, th, ch, psi0, alpha, delta, CEN) {
   CEN[3] += (rad - CEN[3]) * e;
   return CEN;
 }
+
+// CPU reference: a few points of one fibre straight out of assets/math/hopf.js, for comparing against the GPU port
+// (hooks.probe; moved here from index.js in §79 for the 350-line cap — the same function, the scene's th / U passed in).
+export function probe(k, th, U) {
+  const i = Math.max(0, Math.min(11, k | 0));
+  const phi = i * TAU / 12;
+  const out = [];
+  for (let j = 0; j < 4; j++) out.push(fibre(th[i], phi, j / 4 * TAU, U.psi0, U.alpha, U.delta).map((x) => +x.toFixed(6)));
+  return JSON.stringify({ theta: +th[i].toFixed(6), phi: +phi.toFixed(6), psi0: +U.psi0.toFixed(6), alpha: +U.alpha.toFixed(6), delta: +U.delta.toFixed(6), pts: out });
+}

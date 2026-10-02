@@ -4,13 +4,14 @@
 // TORUS's bid; TORUS v1 lives on as id 7 (torus-v1, forced-only) for one release.
 // Step 1 of the brief's Process: the inside lights up — a brightness floor, a fog floor, a kick flash on the quiet
 // inner families, a hat shimmer along every fibre.
-import { fibre, torusRadii } from '../../math/hopf.js';
+import { torusRadii } from '../../math/hopf.js';
 import { mkVS, mkFS } from './shaders.js';
 import { BANDS, SLOTS, fill as wfill, fires as wfires, lastAmp as wlastAmp, live as wlive, positions as wpos, step as wstep, train } from './waves.js';
 import { COUNT as ATN, EXT as ATEXT, H as ATH, NAMES as ATNAMES } from './attractors.js';
 import { anchor } from './colour.js';
 import { HELP } from './help.js';
-import { BOUNCE, dist, reframe, turn as turnEase } from './motion.js';
+import { BOUNCE, dist, probe as fibreProbe, reframe, turn as turnEase } from './motion.js';
+import { HAZE, haze as hazeNow, level as hazeLevel, step as hazeStep, veil as hazeVeil } from './haze.js';   // §79: the fog on the tongues
 
 const TAU = Math.PI * 2;
 const TH0 = 0.12;
@@ -56,8 +57,9 @@ let KSEG = 640;       // segments on the knot strand (it winds p+q times, so it 
 
 const th = new Float32Array(12);
 const ch = new Float32Array(12);
-const U = { twist: 0, slip: 0, morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0 };
+const U = { twist: 0, slip: 0, morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0, haze: 0 };
 const MOOD = new Float32Array(3);
+const VEIL = [0, 0, 0];   // §79: the clear colour behind the nest — exactly black while the haze is 0
 const PSI = new Float32Array(3);
 const WB = new Float32Array(BANDS * SLOTS);   // wave ages in beats, uploaded every frame
 const WA = new Float32Array(BANDS * SLOTS);   // wave amplitudes at launch
@@ -75,14 +77,7 @@ let att = 0, attPrev = 0, attFade = 0, attSel = -2;
 let pqOff = 0;        // spec 6: sectionEvt rotates the knot table
 let unwindPin = -1;   // hooks.unwind(v)      // hooks.fib: pin the drawn slot count so a proof shot can show one thread per family
 
-// CPU reference: a few points of one fibre straight out of assets/math/hopf.js, for comparing against the GPU port.
-function probe(k) {
-  const i = Math.max(0, Math.min(11, k | 0));
-  const phi = i * TAU / 12;
-  const out = [];
-  for (let j = 0; j < 4; j++) out.push(fibre(th[i], phi, j / 4 * TAU, U.psi0, U.alpha, U.delta).map((x) => +x.toFixed(6)));
-  return JSON.stringify({ theta: +th[i].toFixed(6), phi: +phi.toFixed(6), psi0: +U.psi0.toFixed(6), alpha: +U.alpha.toFixed(6), delta: +U.delta.toFixed(6), pts: out });
-}
+const probe = (k) => fibreProbe(k, th, U);   // CPU reference points of one fibre (motion.js), for comparing against the GPU port
 
 // test hook: pin the riser that unwinds the rings into helices
 function unwind(v) {
@@ -114,11 +109,11 @@ function fib(v) {
   return fibPin;
 }
 // dinfo(): per-frame columns for tools/dust-trace.js — a step in `fS` IS a snare wave launch, `aS` its size (§70). Read-only, as info() (CONTRACTS §1.4).
-const dinfo = () => ({ fK: wfires(0), fS: wfires(1), fH: wfires(2), aK: wlastAmp(0), aS: wlastAmp(1), aH: wlastAmp(2), live: wlive(U.beatNow), beat: U.beatNow, flash: U.flash, shim: U.shim, wave: U.wave });
+const dinfo = () => ({ fK: wfires(0), fS: wfires(1), fH: wfires(2), aK: wlastAmp(0), aS: wlastAmp(1), aH: wlastAmp(2), live: wlive(U.beatNow), beat: U.beatNow, flash: U.flash, shim: U.shim, wave: U.wave, haze: U.haze });
 
 // test hook: the live look numbers, so a shot can be read as numbers as well as pixels
 function info() {
-  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), slip: +U.slip.toFixed(3), twist: +U.twist.toFixed(3), pqOff, att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow) });
+  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), haze: +U.haze.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), slip: +U.slip.toFixed(3), twist: +U.twist.toFixed(3), pqOff, att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow) });
 }
 
 export default {
@@ -126,7 +121,7 @@ export default {
   id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],
   cuts: 'continuous',
   rt: {},
   hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo },
@@ -221,6 +216,7 @@ export default {
     U.shim = SHIM * MS.hat2 * (0.3 + 0.7 * MS.alive) * (0.5 + 0.5 * MS.novelty);
     // spec 6: hush and calm dim the floor
     U.glow = P.glow;
+    U.haze = hazeStep(dt, P.haze, MS);   // §79: the fog on the tongues — ambiguity hazes the nest, the live drop's slam clears it (haze.js)
 
     KSEG = Math.min(1600, SEG * Math.max(2, pq[0] + pq[1]));
     const p = MS.presence;
@@ -243,6 +239,7 @@ export default {
     U.fifth = A.fifth;
     U.hue = A.hue;
     U.sat = A.sat;
+    hazeVeil(MOOD, U.haze, VEIL);
 
     // spec 5: which attractor, and how much of it. sectionAlt picks (each section its own shape, a returning section
     // returns to it; -1 before synapse has identified anything). A change cross-fades over ~1 s, never jumps.
@@ -280,7 +277,7 @@ export default {
     const g = this.ctx.gl;
     const pr = this.pr;
     this.ctx.use(pr, target, w, h);
-    g.clearColor(0, 0, 0, 1);
+    g.clearColor(VEIL[0], VEIL[1], VEIL[2], 1);   // §79: the mist behind the nest in the dream; (0, 0, 0) at haze 0
     g.clear(g.COLOR_BUFFER_BIT);
     g.uniform4f(pr.u('uCam'), CAM[0], CAM[1], CAM[2], CAM[3]);
     g.uniform4f(pr.u('uCen'), CEN[0], CEN[1], CEN[2], CEN[3]);
@@ -309,6 +306,7 @@ export default {
     g.uniform2f(pr.u('uGlowM'), U.glow, U.briMax);
     g.uniform1f(pr.u('uFlashK'), U.flash);
     g.uniform1f(pr.u('uShim'), U.shim);
+    g.uniform1f(pr.u('uHaze'), U.haze);
     g.uniform1fv(pr.u('uWaveB[0]'), WB);
     g.uniform1fv(pr.u('uWaveA[0]'), WA);
     g.uniform3f(pr.u('uWaveW'), WAVEW[0], WAVEW[1], WAVEW[2]);
@@ -327,7 +325,7 @@ export default {
 
   hud() {
     const { R, r } = torusRadii(th[loudest]);
-    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2);
+    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2) + ' haze ' + U.haze.toFixed(2);
   },
 
   // The six visual parameters (CONTRACTS §1.16), named for what the eye sees. Every from() is the expression that
@@ -340,9 +338,10 @@ export default {
     glow: { eli5: 'how brightly the fibres inside the nest are kept lit', range: [0, 0.5], from: (MS) => GLOW * (1 - GLOWQ * Math.max(MS.hush, MS.calm)) },
     morph: { eli5: 'how far the rings are pulled out of shape along a strange attractor', range: [0, 1], from: (MS) => MORPHK * MS.tension * (MS.arc === 'idle' ? 0 : 1) },
     wave: { eli5: 'how deep the bump a kick sends travelling along every thread', range: [0, 0.4], from: (MS) => WAVE0 + 0.1 * MS.kick2 },
+    haze: { eli5: 'how far the nest is lost in mist: the music has let go of its beat', range: [0, 1], from: (MS) => hazeLevel(MS.tongueAmbig, MS.tongueOn) },
   },
 
-  post: { fb: { decay: 0.85 }, bloom: { thr: 0.3 }, kaleido: 0, morph: { flow: 0.4 } },
+  post: { fb: { decay: 0.85 }, bloom: { thr: () => 0.3 - HAZE.BLOOM * hazeNow() }, kaleido: 0, morph: { flow: 0.4 } },   // §79: the mist scatters the light (exactly 0.3 at haze 0)
   colour: { default: 'v2', variants: { v2: {} } },
 
   help: HELP,

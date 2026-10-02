@@ -18,12 +18,17 @@ const K = {
 };
 
 import { GLSL as ATTRACTORS } from './attractors.js';
+import { HAZE } from './haze.js';
 
 const BODY = ATTRACTORS + `
 #define TAU 6.2831853
 #define NEAR 0.05
 #define SHIMK ${K.SHIMK.toFixed(1)}
 #define FLASH ${K.FLASH.toFixed(2)}
+#define HZFOGK ${HAZE.FOGK.toFixed(2)}
+#define HZDEEP ${HAZE.DEEP.toFixed(2)}
+#define HZNEAR ${HAZE.NEAR.toFixed(2)}
+#define HZSAT ${HAZE.SAT.toFixed(2)}
 uniform vec4  uCam;      // yaw, pitch, distance, focal (1/tan(fov/2))
 uniform vec4  uCen;      // centroid of the tumbled family in R3 (xyz) and its radius (w)
 uniform vec3  uPsi3;     // Hopf flow per family band: low (pc 0-3), mid (4-7), high (8-11) — beat + flowBass/Mid/High
@@ -49,6 +54,7 @@ uniform vec2  uKnotBH;   // knot brightness, knot hue
 uniform vec2  uGlowM;    // the brightness floor (0..0.5) and the loudest family's brightness
 uniform float uFlashK;   // the kick follower that lights the core, 0..1
 uniform float uShim;     // shimmer gain (hat x alive x novelty)
+uniform float uHaze;     // §79: the fog on the tongues' ambiguity, 0..1 — exactly 0 off (&tongues=0) and in every groove
 uniform float uWaveB[24];  // spec 2: age in beats of the last 8 launches per band (kick, snare, hat); < 0 = empty
 uniform float uWaveA[24];  // the amplitude each was launched with
 uniform vec3  uWaveW;    // bump width along the ring parameter per band
@@ -211,11 +217,22 @@ void main() {
   float v0, v1;
   vec4 c0 = proj(p0, v0);
   vec4 c1 = open ? vec4(0.0, 0.0, 0.0, -1.0) : proj(p1, v1);
-  // depth cue: with 'over' the far strokes are already hidden where they are behind, and a fog on the colour keeps the
-  // near shell reading as the near one. Its floor is high (spec 1b): a depth cue, never a wall.
-  float fog = clamp(${K.FOGHI.toFixed(2)} - ${K.FOGK.toFixed(2)} * (0.5 * (v0 + v1) / max(uCam.z, 0.5)), ${K.FOGLO.toFixed(2)}, ${K.FOGHI.toFixed(2)});
   vA = min(f0, f1);                           // the dimmer end wins, so a segment that leaps to infinity stays dark
-  vCol = palM(hueT) * bri * fog * uGain;
+  if (uHaze > 0.0) {                          // §79: the dream. Beyond the near shell (x > HZNEAR, in units of the camera
+    // distance) the depth fog falls faster and its floor drops — the far side of the nest sinks into mist while the near
+    // strokes keep their light — and the colours wash toward their own luminance.
+    float x = 0.5 * (v0 + v1) / max(uCam.z, 0.5);
+    float fog = clamp(${K.FOGHI.toFixed(2)} - ${K.FOGK.toFixed(2)} * x - HZFOGK * uHaze * max(0.0, x - HZNEAR), ${K.FOGLO.toFixed(2)} - HZDEEP * uHaze, ${K.FOGHI.toFixed(2)});
+    vec3 col = palM(hueT);
+    col = mix(col, vec3(dot(col, vec3(0.3, 0.59, 0.11))), HZSAT * uHaze);
+    vCol = col * bri * fog * uGain;
+  } else {
+    // depth cue: with 'over' the far strokes are already hidden where they are behind, and a fog on the colour keeps the
+    // near shell reading as the near one. Its floor is high (spec 1b): a depth cue, never a wall. The two lines are the
+    // pre-§79 scene's, verbatim: this branch IS the &tongues=0 picture.
+    float fog = clamp(${K.FOGHI.toFixed(2)} - ${K.FOGK.toFixed(2)} * (0.5 * (v0 + v1) / max(uCam.z, 0.5)), ${K.FOGLO.toFixed(2)}, ${K.FOGHI.toFixed(2)});
+    vCol = palM(hueT) * bri * fog * uGain;
+  }
   gl_Position = lineCorner(c0, c1, clamp(uSize * wm / v0, 0.3, 9.0), clamp(uSize * wm / v1, 0.3, 9.0));
 }
 `;
