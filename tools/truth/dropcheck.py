@@ -91,7 +91,8 @@ class Truth:
     @classmethod
     def load(cls, track):
         T = json.load(open(os.path.join(HERE, f'{track}.json')))
-        return cls(T['drops'], T['beats'])
+        # the user's own drop list first (NEXT-SESSION-PROMPT "Validating a truth grid" step 4; clicktrack.py / trackmap.py --loud do the same)
+        return cls(T.get('drops_user') or T['drops'], T['beats'])
     def beat(self, t):
         """The local median beat length around t (s)."""
         b = self.beats
