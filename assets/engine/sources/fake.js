@@ -211,6 +211,7 @@ function fakeSynapse(dt, now, S, sec, T, e, kp, kickOn, hatX) {
   S.key = 9;
   S.mode = 1;
   S.keyConf = 0.8;
+  S.tonicConf = 0;   // §84: the ears never run here (tonic -1), so the conf of a tonic that is not there is 0 — stated, not left to state.js
   S.novelty = S.sectionEvt ? 1 : S.novelty * Math.exp(-dt / 0.8);
   S.foote = S.novelty;
   S.boundaryEvt = S.sectionEvt;

@@ -998,7 +998,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `subOut` | event | the sub just left | let the figure relax, the sand settle |
 | `tonic` | count | the key's root, as a pitch class (C = 0) | the reference note every interval is measured from; palette root |
 | `tonicMinor` | count | is that key minor (1) or major (0) | warm / cold palette, consonance table |
-| `tonicConf` | level | how clearly one key wins | fade harmony-driven channels in |
+| `tonicConf` | level | how clearly the TONIC wins and the bass agrees with it (§84: the KS tonic margin × a 12 s histogram of the settled sub note on the tonic's bin; < 0.02 on a wrong key, 0.3–0.7 on a right one with the bass under it) | fade harmony-driven channels in; `keyConf` is this field whenever the ears have a tonic |
 | `modeShade` | raw | is THIS BAR major (+1, warm) or minor (-1, cool): the chord quality the key implies for the bass's scale degree; 0 when the bass or the key is unknown | math/keycolour.js: a per-bar PULL of the key hue toward WARM / COOL (ON by default since v0.29, `&shade=0` = the v0.28 look); the fake timeline mirrors ±1 per bar from its lattice (§83) |
 | `bassReg` | level | where the bass lives: 0 = a 35 Hz sub, 1 = a 140 Hz mid-bass or above | which octave the visual sits in; the 1:38 climb and the intro |
 | `lpSweep` | level | how closed a low-pass is (1 = the highs are gone) | blur, softness, the outro's closing filter |
