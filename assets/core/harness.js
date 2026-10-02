@@ -8,6 +8,7 @@ import { LOUDK } from '../engine/loud.js';   // &loud=0: the true-loudness stage
 import { TONGUEK } from '../engine/clock/tongues.js';   // &tongues=0: the tongues stage's switch (§76; the same convention)
 import { ROUGHK } from '../engine/roughnorm.js';   // &rough=0: tension's pre-§81 normaliser (the rLo / rHi follower pair)
 import { SHADE } from '../math/keycolour.js';   // &shade=0 / &shade=<k>: the per-bar major / minor pull on the key hue (§82; ON by default since v0.29)
+import { KEYOWN } from '../engine/ears/tonic.js';   // &kc=0: keyConf back to synapse's clarity (the §62-§83 gate; §84 made it the ears' tonicConf)
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS, CHAIN } from './post.js';
@@ -172,6 +173,8 @@ export function initHarness(hideLanding) {
   if (HASH.has('rough')) ROUGHK.win = HASH.get('rough') !== '0';
   // modeShade's pull on the key hue (math/keycolour.js SHADE, DECISIONS §82): &shade=0 turns it off (the v0.28 look), &shade=1 = SHADE.ON, &shade=<k> sets the pull; ON by default since v0.29
   if (HASH.has('shade')) { const v = HASH.get('shade'); SHADE.K = v === '1' ? SHADE.ON : v === '0' || v === '' ? 0 : +v; if (!isFinite(SHADE.K)) throw new Error('&shade= must be a number'); }
+  // keyConf's owner (engine/ears/tonic.js KEYOWN, DECISIONS §84): &kc=0 restores synapse's keyClar as the key-hue gate and the shade's "1 when the ears have a tonic" — the A/B of the v0.29 look
+  if (HASH.has('kc')) KEYOWN.ears = HASH.get('kc') !== '0';
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
   // pcm is the default since 2026-09-30 (§56 addendum 3); &clock=v3 is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
   if (HASH.has('clock')) setClock(HASH.get('clock'));

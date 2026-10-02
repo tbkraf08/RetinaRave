@@ -35,10 +35,14 @@
 // 15.0 s (tonicConf 0.01: the KK coin toss between the PARALLEL modes, which share four notes and disagree on the
 // quality of every one of them — C# is I in one and i in the other), and the C# bars read -0.36 / -0.16 instead of -1.
 // A flip shorter than a bar is noise about the mode; a real modulation holds. The first read is adopted at once.
-// THE KEY'S CONFIDENCE: `keyW` is 1 when the ears have a tonic (`tonic >= 0`: the read `key` / `mode` ARE), else
-// keycolour.js's own ramp on synapse's `keyConf` (KEYC0 0.1 .. KEYC1 0.3), so the field and the hue it pulls agree
-// on when the key counts. The result is eased with a time constant of a THIRD of a bar (240 / bpm / 3 s: settled
-// within the bar it belongs to, 0.53 s at 150 BPM), the brief's "eased over ~1 bar".
+// THE KEY'S CONFIDENCE: `keyW` is keycolour.js's own ramp on `keyConf` (KEYC0 0.1 .. KEYC1 0.3), so the field and the
+// hue it pulls agree on when the key counts — since §84 `keyConf` is the ears' tonicConf whenever they have a tonic
+// (the bass agreeing with the KS tonic: CyborgNinja's G major reads < 0.02 and closes the shade too). Until §84 keyW
+// was 1 whenever the ears had a tonic; `&kc=0` (KEYOWN.ears false) restores that with synapse's keyConf, the A/B.
+// The result is eased with a time constant of a THIRD of a bar (240 / bpm / 3 s: settled within the bar it belongs
+// to, 0.53 s at 150 BPM), the brief's "eased over ~1 bar".
+import { KEYOWN } from './tonic.js';
+
 export const SHADEK = {
   // quality by semitone above the key: +1 major, -1 minor / diminished, 0 non-diatonic
   MAJ: [1, 0, -1, 0, -1, 1, 0, 1, 0, -1, 0, -1],     // I . ii . iii IV . V . vi . vii°
@@ -50,7 +54,7 @@ export const SHADEK = {
   TAU_BARS: 1 / 3, // the ease, in bars
   LAST_BARS: 1,    // bars: the last settled sub note stays the bass this long after the sub stops
   KEY_HOLD: 2,     // s: a new (key, mode) must hold this long before the degree is taken against it
-  KEYC0: 0.1, KEYC1: 0.3,   // keycolour.js's ramp on keyConf, for the synapse-key case
+  KEYC0: 0.1, KEYC1: 0.3,   // keycolour.js's ramp on keyConf (restated: a scene may import only math/*, and this file imports nothing of the core)
 };
 
 export const degreeShade = (note, key, minor) => (note < 0 || key < 0) ? 0 : (minor ? SHADEK.MIN : SHADEK.MAJ)[(((note - key) % 12) + 12) % 12];
@@ -77,7 +81,7 @@ export class ModeShade {
     const key = S.key | 0, minor = S.mode | 0;
     if (key === this.candKey && minor === this.candMinor) this.candT += dt; else { this.candKey = key; this.candMinor = minor; this.candT = 0; }
     if (this.key < 0 || this.candT >= K.KEY_HOLD) { this.key = this.candKey; this.minor = this.candMinor; }
-    const keyW = S.tonic >= 0 ? 1 : Math.min(1, Math.max(0, (S.keyConf - K.KEYC0) / (K.KEYC1 - K.KEYC0)));
+    const keyW = (!KEYOWN.ears && S.tonic >= 0) ? 1 : Math.min(1, Math.max(0, (S.keyConf - K.KEYC0) / (K.KEYC1 - K.KEYC0)));
     const d = note >= 0 ? degreeShade(note, this.key, this.minor) : 0;
     const target = d * w * keyW;
     this.v += (target - this.v) * (1 - Math.exp(-dt / (K.TAU_BARS * bar)));

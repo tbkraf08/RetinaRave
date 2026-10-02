@@ -301,13 +301,19 @@ function toneRulers(R, truth, label) {
 // the §62 session) — it cannot be recomputed here, because synapse's Analyzer needs an AudioWorklet. It is in the
 // table so a reader sees WHY the ears won, and so a regression that drags the ears down to synapse's reads is visible.
 export const KEY_WIN = [20, 100];
+// `conf` (§84): the ears' tonicConf p50 over `win` (default KEY_WIN) must sit on the right side of the keycolour gate —
+// < KEYC0 0.1 where the key is wrong (CyborgNinja: the bass is a wobble the chroma has no tonic for), >= KEYC1 0.3 where it
+// is right and the bass is under it (SeeYouDrop's grooves and drops, Vienna). The ruler that would have caught §62's table.
 export const KEY_TRACKS = {
   //                 truth pc, minor   synapse's page read (pc, minor, % of frames)
-  SeeYouDrop:      { pc: 1, minor: 1, syn: [8, 1, 93], expect: true },
-  CyborgNinja:     { pc: 1, minor: 1, syn: [8, 1, 53], expect: false },   // KK is a coin flip here: truth's own margin is C#m .521 / C#M .430 (conf .174)
-  Malicious:       { pc: 7, minor: 0, syn: [0, 1, 50], expect: false },   // truth GM .639 / CM .537 / Gm .529 / Cm .516 — a .10 race over four candidates
+  SeeYouDrop:      { pc: 1, minor: 1, syn: [8, 1, 93], expect: true, conf: ['>=', 0.3], win: [60, 100] },
+  CyborgNinja:     { pc: 1, minor: 1, syn: [8, 1, 53], expect: false, conf: ['<', 0.1] },   // KK is a coin flip here: truth's own margin is C#m .521 / C#M .430 (conf .174); KEY-PLAN §1: the audio is ambiguous (a C2-D2 wobble bass, no C# in the mid band), the user's ear pending
+  // KEY-PLAN.md §1 (2026-10-02): C MINOR by the independent KS + bass histogram (Cm .737 / CM .723 / GM .652, bass C 55 %) —
+  // §62's "GM" was the map's whole-track KK, the subdominant miss; the ears had it. tools/truth/Malicious.json's `tonic` is
+  // not edited until the user's ear confirms (the cue: the bass under the drop at 2:28 is home).
+  Malicious:       { pc: 0, minor: 1, syn: [0, 1, 50], expect: true },
   WhoLikesToParty: { pc: 2, minor: 0, syn: [11, 1, 100], expect: true },
-  Vienna:          { pc: 3, minor: 1, syn: [3, 1, 100], expect: true },
+  Vienna:          { pc: 3, minor: 1, syn: [3, 1, 100], expect: true, conf: ['>=', 0.3] },
 };
 const PCN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const nameOf = (pc, mi) => (pc < 0 ? '--' : PCN[pc]) + (mi ? 'm' : 'M');
@@ -337,6 +343,12 @@ function keyRulers() {
       + `, mode ${mi === T.minor ? 'ok ' : 'NO '} | synapse ${nameOf(T.syn[0], T.syn[1])} ${String(T.syn[2]).padStart(3)}% ${synOk ? 'pc ok' : 'pc +' + (((T.syn[0] - T.pc) % 12 + 12) % 12)}`);
     ok(`[key] ${track}: ears tonic vs truth`, earsOk === T.expect, `${nameOf(pc, mi)} (${T.expect ? 'must match' : 'known miss, KK ambiguous'})`,
       T.expect ? nameOf(T.pc, T.minor) : 'not ' + nameOf(T.pc, T.minor) + ' (recorded)');
+    if (T.conf) {                  // §84: tonicConf's p50 over the window against the gate
+      const w = T.win || KEY_WIN, c = [];
+      for (let i = 0; i < R.t.length; i++) if (R.t[i] >= w[0] && R.t[i] < w[1]) c.push(R.cols.tonicConf[i]);
+      c.sort((a, b) => a - b); const p50 = c[c.length >> 1];
+      ok(`[key] ${track}: tonicConf p50 ${T.conf[0]} ${T.conf[1]} over ${w[0]}-${w[1]} s`, T.conf[0] === '<' ? p50 < T.conf[1] : p50 >= T.conf[1], p50.toFixed(3), `${T.conf[0]} ${T.conf[1]}`);
+    }
   }
   ok('[key] ears beat synapse on the pitch class', nEars > nSyn, `ears ${nEars}/5, synapse ${nSyn}/5`, 'ears > synapse');
   ok('[key] ears never worse on a track', nWorse === 0, `${nWorse} track(s) synapse gets and the ears lose`, '0');

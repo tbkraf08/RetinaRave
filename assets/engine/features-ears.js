@@ -17,6 +17,7 @@ import { PCM } from './pcm.js';
 // The release rule is the same in both paths: an event fires on the frame NEAREST its onset (`t <= heardT + lead`,
 // `lead = min(1/120, half the frame interval)`), so `<x>Age` may be negative by up to `lead` on the release frame.
 import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX } from './ears/ears.js';
+import { KEYOWN } from './ears/tonic.js';
 import { DEN_WIN } from './ears/perc.js';
 import { buildMap, mapAt, mapCross, mapSubAt } from './map/map.js';
 import { ModeShade } from './ears/shade.js';
@@ -26,12 +27,13 @@ import { ModeShade } from './ears/shade.js';
 // already makes on the drums and the sub: a better detector of the SAME quantity wins. Measured against the truth
 // grids over 20-100 s of all five tracks, the pitch class: synapse 1/5 right (SeeYouDrop G# for C#, CyborgNinja G#
 // for C#, Malicious C for G, WhoLikesToParty B for D, Vienna D# right), the ears 3/5 and never worse on any track.
-// `keyConf` deliberately stays synapse's `keyClar` — see the long note on KEY_FIELDS below.
+// §84: `keyConf` is taken over too — it is the ears' `tonicConf` (the KS tonic margin × the bass's agreement) whenever
+// the ears have a tonic; `&kc=0` (KEYOWN.ears false) is the §62–§83 behaviour, synapse's keyClar as the gate.
 export const JUMP = 0.05;            // s: a block stamp this far from the expected one starts a fresh Ears
-// The two fields this stage takes over from synapse, and the rule: `MS.tonic >= 0` — the tracker has a read at all.
+// The three fields this stage takes over from synapse, and the rule: `MS.tonic >= 0` — the tracker has a read at all.
 // The same rule CHLADNI already applies scene-side (scenes/chladni/index.js: `MS.tonic >= 0 ? MS.tonic : … MS.key`),
 // which is now the engine's rule instead of one scene's.
-const KEY_FIELDS = ['key', 'mode'];
+const KEY_FIELDS = ['key', 'mode', 'keyConf'];
 // §82: `modeShade` — the chord quality of the bass's degree in that key, per bar (ears/shade.js). Written last, once the
 // key (ears or synapse) and the sub (map or causal) are both final for the frame.
 const SHADE_FIELDS = ['modeShade'];
@@ -109,7 +111,9 @@ export function earsStage(dt, now, S) {
     for (const k of EARS_FIELDS) S[k] = o[k];
     for (const k of EVT) S[k] = !!o[k];
     // §62: the key the scenes anchor their hue on is the tonic, not synapse's band-limited read of it.
-    if (o.tonic >= 0) { S.key = o.tonic | 0; S.mode = o.tonicMinor | 0; }
+    // §84: and the gate on that key is the tonic's own confidence — until §84 it stayed synapse's clarity of a read nobody
+    // published, fully open on CyborgNinja's wrong G major (85 % of frames ≥ KEYC1) and 37 % open on SeeYouDrop's right C#m.
+    if (o.tonic >= 0) { S.key = o.tonic | 0; S.mode = o.tonicMinor | 0; if (KEYOWN.ears) S.keyConf = o.tonicConf; }
     if (!M) for (const e of E.events) ENGINE.log(e.type, e.t, e.vel !== undefined ? { vel: +(+e.vel).toFixed(3) } : undefined);
   }
   if (M) {
@@ -176,16 +180,8 @@ function mapOverride(M, t, S) {
 }
 
 AU.onFile.push(armMap);
-// `KEY_FIELDS` is declared here so the stage's feat list states what it writes; `key` / `mode` keep synapse's FEATS
-// entries, because the quantity has not changed — only which detector answers for it.
-//
-// WHY `keyConf` IS NOT IN THAT LIST. Its documented formula is `clamp01((best r - .35)/.45)`, the winning KK
-// correlation on synapse's chroma. The same formula on the EARS' chroma was built and measured over 20-100 s of the
-// five tracks — p50 0.548 (SeeYouDrop) / 0.648 / 0.767 / 0.976 / 1.000 — and REVERTED: `keycolour.js` gates on it at
-// KEYC1 0.3, so every one of those opens the gate to 1.0 and the hue would stop being `LOOK.mood` slid part of the way
-// toward the key and become the key's own hue outright, on all five scenes that read the anchor. SeeYouDrop's gate
-// would go 0.27 -> 1.00 (§60 measured the 0.27 and the user has watched it). Which key the hue anchors on is the bug
-// the user asked to fix; how far the hue travels toward it is a look change that wants its own A/B, so the margin-based
-// `tonicConf` and the clarity rescale both stay out until then. The cost of leaving it: `keyConf` is now the clarity of
-// a read that is no longer published (docs/OPEN-ITEMS.md).
+// `KEY_FIELDS` is declared here so the stage's feat list states what it writes; `key` / `mode` / `keyConf` keep synapse's
+// FEATS entries, because the quantity has not changed — only which detector answers for it. §62 held `keyConf` back
+// (synapse's clarity, so the gate's SCALE would not move before an A/B); DECISIONS §84 measured that gate on the five
+// tracks — open on 85-100 % of frames on four tracks, wrong keys included — and handed it to the ears' tonicConf.
 ENGINE.addStage('ears', earsStage, [...EARS_FIELDS, ...MAP_FIELDS, ...KEY_FIELDS, ...SHADE_FIELDS]);

@@ -7,8 +7,11 @@
 // the field eases to 0; no key -> 0; (4) the
 // sub's note outranks the bass chroma's root, and the chroma root stands in at 0.6 when the sub is gated off;
 // (5) synapse's key counts by keycolour's ramp when the ears have no tonic; (6) a (key, mode) must hold 2 s before the
-// degree is taken against it (the parallel-mode flips on SeeYouDrop's walk are 0.35 / 0.67 s).
+// degree is taken against it (the parallel-mode flips on SeeYouDrop's walk are 0.35 / 0.67 s); (7) §84: the ramp applies
+// with a tonic too — keyConf 0.05 (a wrong key, CyborgNinja's reading) closes the shade, 0.2 halves it, and `&kc=0`
+// (KEYOWN.ears false) restores §82's "1 when the ears have a tonic".
 import { SHADEK, ModeShade, degreeShade } from '../assets/engine/ears/shade.js';
+import { KEYOWN } from '../assets/engine/ears/tonic.js';
 
 let fails = 0;
 const ok = (name, cond, detail = '') => { console.log(`${cond ? 'ok  ' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`); if (!cond) fails++; };
@@ -81,6 +84,20 @@ const DT = 1 / 60, BAR = 240 / 150;
   const m = new ModeShade(); let v = 0;
   for (let i = 0; i < 120; i++) v = m.step(DT, S({ subNote: N.A, subGate: 1, subConf: 1, tonic: -1, keyConf: 0.2 }));
   ok('no tonic, keyConf 0.2 (half the ramp): VI at +0.5', Math.abs(v - 0.5) < 0.02, `v ${v.toFixed(3)}`);
+}
+// (7) §84: keyConf gates the shade on the ears' key too (keyConf IS the tonic's confidence now)
+{
+  const m = new ModeShade(); let v = 0;
+  for (let i = 0; i < 120; i++) v = m.step(DT, S({ subNote: N['C#'], subGate: 1, subConf: 1, keyConf: 0.05 }));
+  ok('the walk under keyConf 0.05 with a tonic (a wrong key\'s conf): |shade| < 0.1 — the gate closes the shade too', Math.abs(v) < 0.1 && m.w === 0, `v ${v.toFixed(3)} w ${m.w}`);
+  const m2 = new ModeShade(); let v2 = 0;
+  for (let i = 0; i < 120; i++) v2 = m2.step(DT, S({ subNote: N['C#'], subGate: 1, subConf: 1, keyConf: 0.2 }));
+  ok('… keyConf 0.2 (half the ramp) with a tonic: i at -0.5', Math.abs(v2 + 0.5) < 0.02, `v ${v2.toFixed(3)}`);
+  KEYOWN.ears = false;
+  const m3 = new ModeShade(); let v3 = 0;
+  for (let i = 0; i < 120; i++) v3 = m3.step(DT, S({ subNote: N['C#'], subGate: 1, subConf: 1, keyConf: 0.05 }));
+  KEYOWN.ears = true;
+  ok('&kc=0 (KEYOWN.ears false): §82\'s rule — 1 when the ears have a tonic, keyConf 0.05 ignored: -1', v3 < -0.95, `v ${v3.toFixed(3)}`);
 }
 console.log(fails ? `${fails} FAIL` : 'all ok');
 process.exit(fails ? 1 : 0);

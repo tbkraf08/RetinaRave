@@ -636,8 +636,11 @@ are the scene author's rules:
   `((subNote − tonic + 12) % 12) + subCents/100` (`subCents` is from the nearest note). **Since §62 `key` / `mode` ARE
   that tonic** whenever the ears have one, so the palette anchor and the interval ruler agree: up to v0.22 `key` was
   synapse's own Krumhansl–Kessler on a 65 Hz-floored chroma and read the FIFTH above the tonic on sub-heavy tracks
-  (G# for C# minor), 1 of 5 truth tonics against the ears' 3 of 5. `keyConf` is still synapse's clarity — the gate's
-  scale, deliberately unchanged (docs/OPEN-ITEMS.md).
+  (G# for C# minor), 1 of 5 truth tonics against the ears' 3 of 5 (4 of 5 since §84: Malicious is C minor). **Since §84
+  `keyConf` IS the ears' `tonicConf`** whenever they have a tonic — the KS tonic margin × the bass's agreement with it
+  (< 0.02 on CyborgNinja's wrong G major, 0.3–0.7 on a right key with the bass under it) — so keycolour's KEYC0 0.1 … KEYC1
+  0.3 gate (and the shade's `keyW`) closes on a wrong key and opens on a right one; synapse's clarity only while the ears
+  have no tonic and on the fake timeline (0.8). `&kc=0` is the §62–§83 gate (synapse's clarity on every path), the A/B.
 
 ## 2. Engine contract — see `docs/ENGINE.md`
 
@@ -645,8 +648,8 @@ Short form: `MS` is produced by the engine (`assets/engine/`), documented field-
 (`FEATS[name] = {eli5, formula, kind, range, drives}`) — scene authors read Appendix A below instead of that file. A new analysis stage registers with
 `ENGINE.addStage(name, fn(dt, now, MS), feats)`; stages run after the v3 extractor in registration order; each may only
 add the fields it declares in `feats.js`, never overwrite another stage's — with ONE exception, declared both ways:
-the `ears` stage takes `key` / `mode` over from `synapse` (§62), because a better detector of the same quantity wins,
-the way the track map already takes the drums and the sub over from the causal ears. `check.js` fails on an `MS` key without a
+the `ears` stage takes `key` / `mode` (§62) and `keyConf` (§84: the ears' `tonicConf`) over from `synapse`, because a better
+detector of the same quantity wins, the way the track map already takes the drums and the sub over from the causal ears. `check.js` fails on an `MS` key without a
 `FEATS` entry. A source is `{name, start(), stop(), tick?(nowMs)}` plugged into `ENGINE.sources`.
 
 **Stage order** (registration order, 2026-10-01): `clock` (heard time) · `synapse` · `ears` (+ the track map) · **`loud`**
@@ -708,8 +711,9 @@ implies for the BASS's scale degree, per bar, −1 (minor, cool) … +1 (major, 
 a non-diatonic bass, the raised 7th included, 0), the sub while `subGate` is open, `subConf ≥ 0.8` and the note has held
 60 ms (the 808 glide is kept out) — the last such note holding for a bar after the sub stops (a plucked bass is the bar's
 bass between its plucks) — else `bchroma`'s root at 0.6 when it holds ≥ 35 % of the bass chroma; against a
-(key, mode) that has held 2 s (the ears' parallel-mode flips at tonicConf 0.01 last 0.35–0.67 s); × 1 when the ears
-have a tonic, else keycolour's 0.1 … 0.3 ramp on `keyConf`; eased over a third of a bar. The table depends on the
+(key, mode) that has held 2 s (the ears' parallel-mode flips last 0.35–0.67 s); × keycolour's 0.1 … 0.3 ramp on `keyConf`
+(since §84 the ears' `tonicConf` when they have a tonic — a wrong key closes the shade too; §82 had × 1 whenever the ears
+had a tonic, which `&kc=0` restores); eased over a third of a bar. The table depends on the
 diatonic SET, not on which note is the tonic: the relative major / minor agree on every note and a fifth-off key on five
 of seven degrees (SeeYouDrop's walk reads −1 +1 −1 +1 under C♯m, E, F♯m and A alike). **Consumer: `math/keycolour.js`
 only, behind a flag** — `anchor(…, pin, shade)` adds `SHADE.K · |shade| · wrap((shade > 0 ? WARM : COOL) − hueKey)` to the
@@ -968,7 +972,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `bpmSyn` | raw | synapse tempo estimate (rival to bpm; bpm is canonical) | HUD, DECISIONS.md comparison |
 | `key` | count | the key, 0=C … 11=B | TORUS knot / palette anchor |
 | `mode` | count | 0 major, 1 minor | valence |
-| `keyConf` | level | how sure the key is | TORUS |
+| `keyConf` | level | how sure the key is — the ears' `tonicConf` whenever they have a tonic (§84), synapse's clarity otherwise and on the fake (0.8) | the KEYC0 0.1 … KEYC1 0.3 gate on every key-anchored scene (math/keycolour.js) and on the shade; TORUS |
 | `novelty` | level | timbre just changed (quick, causal) | early warning for the director |
 | `foote` | level | Foote novelty at the last beat (careful, 4-beat kernel) | boundaries |
 | `boundaryEvt` | event | a section boundary was just declared (synapse) | director: files the outgoing section's scene + looks (§10) |

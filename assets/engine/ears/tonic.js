@@ -21,6 +21,10 @@ export const SUB_HELD = 0.8;      // the least subConf at which the sub's class 
 export const TM1 = 0.08;          // the KS tonic margin (r units) at which the margin term reads 1
 export const TAU_H = 12;          // s: the bass histogram's time constant (~ the chroma's own TAU) — it holds through a silent sub
 export const H_CONF = 0.5;        // the least subConf a sub note is counted into the histogram at
+// §84: who owns `keyConf` — the ears' tonicConf whenever the ears have a tonic (the key the scenes anchor on IS the tonic
+// since §62, so its gate is the tonic's confidence). `&kc=0` (core/harness.js) hands it back to synapse's keyClar and the
+// shade's keyW back to §82's "1 when the ears have a tonic": the A/B of the old look, the `&shade=` pattern.
+export const KEYOWN = { ears: true };
 export const KK_MAJ = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
 export const KK_MIN = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
 
