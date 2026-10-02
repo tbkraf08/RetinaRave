@@ -104,6 +104,10 @@
   #toast.on{opacity:1}
   @media (max-width:520px){.card{padding:28px 20px}h1{font-size:30px;letter-spacing:.4em;padding-left:.4em}.sub{font-size:14.5px;margin-bottom:22px}
     .seo{font-size:11.5px}.tile{flex:0 0 calc(25% - 6px);max-width:none}.peek .card{padding:14px 16px 18px}.tile span{font-size:9px;letter-spacing:.1em}}
+  /* the recorder's red dot (core/rec.js, DECISIONS §89): DOM in the HUD layer, for the user only — never in the clip */
+  #recdot{position:fixed;right:14px;top:14px;width:12px;height:12px;border-radius:50%;background:#e33;box-shadow:0 0 6px #e33;display:none;z-index:12;pointer-events:none;animation:recblink 1.2s ease-in-out infinite}
+  #recdot.on{display:block}
+  @keyframes recblink{0%,100%{opacity:1}50%{opacity:.35}}
   #hud{position:fixed;left:10px;top:10px;font:11px/1.35 ui-monospace,Menlo,monospace;color:#9f9;white-space:pre;
     background:rgba(0,0,0,.55);padding:8px 10px;border-radius:6px;display:none;z-index:12;pointer-events:none}
   /* the help view (core/help.js): a scrolling DOM page over the still-rendering canvas; display:none costs nothing */
@@ -200,6 +204,7 @@
   <p class="seo">A free, audio-reactive music visualizer that runs in the browser on WebGL2. The music steers a camera through real mathematical objects: the Mandelbrot set and its Julia sets, the Feigenbaum period-doubling cascade, a particle swarm, a box-fold mandala, the Hopf fibration, and four-dimensional polytopes. Beats, drops and sections are detected live and a director picks and crossfades the scenes.</p>
 </div></div>
 <div id="hud"></div>
+<div id="recdot"></div>
 <div id="tbar"><button data-k="help" aria-label="help">?</button><button data-k="prev" aria-label="previous scene">‹</button><button data-k="next" aria-label="next scene">›</button><button data-k="fs" aria-label="fullscreen">⛶</button></div>
 <div id="toast"></div>
 <div id="help"><div class="hinner" id="helpBody"></div></div>
