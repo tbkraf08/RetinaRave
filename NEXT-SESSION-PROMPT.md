@@ -1,6 +1,6 @@
 # Next session — Retina Rave (written 2026-09-30)
 
-**State:** **v0.20 tagged LOCALLY**, **not deployed** (the user has held every deploy since v0.15: "don't deploy"); retinarave.com
+**State:** **v0.27 DEPLOYED 2026-10-02** (`311d09a`, first push since v0.15; retinarave.com serves v0.27). `main` == origin.
 serves v0.15; `main` ~45 commits ahead of origin. **All six steps of the live plan (DECISIONS §49) are in:** the lead (§49), the bar
 store + warm-up (§50), reactive drums v2 (§51), display lead 40 ms file-mode only (§52–§53), the live build / drop detector (§54, NAV
 reads it by default), the predicted-event queue (§55, no scene reads it by default), the PCM beat clock (§56, THE DEFAULT CLOCK).
