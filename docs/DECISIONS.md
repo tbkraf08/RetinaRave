@@ -7333,3 +7333,9 @@ if the eye wants it quicker (open item).
   the key is wrong (G for C♯) and so is the shade: expect nothing meaningful.
 - **WhoLikesToParty / Malicious:** `tension`'s direction across each drop now follows the raw roughness (§81's table); the shade
   on Malicious is against a wrong key.
+
+**v0.29 tagged AND DEPLOYED (2026-10-02) on the user's word ("default on; tag; deploy"):** v0.28 + §81 (`tension` normalised
+to the track's own 30 s p10/p98, `&rough=0` = old) + §82 (`modeShade`; the key-colour pull **ON by default, `SHADE.K` 0.25**,
+`&shade=0` = the v0.28 look) — the user saw the A/B. Fake-timeline md5 unmoved (s1 `d16d35f7`/`57a9c49c`, s3 `0c81f92e`/
+`e71f2f38`; the fake mirrors shade 0); landing tiles regenerated, none moved; `releases/retinarave-v0.29.html` (1551 KB, 164
+modules; `file://` smoke on scenes 1, 3, 11: errs [], nonFinite []), package.json 0.29.0. Pushed `main` + tags v0.28, v0.29.

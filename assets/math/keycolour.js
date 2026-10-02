@@ -34,10 +34,10 @@ export const KEYC1 = 0.3;    // at or above this the key wins; below it the held
 // §82: the per-BAR pull. `modeShade` (engine/ears/shade.js: the chord quality the key implies for the bass's degree,
 // -1 minor … +1 major) drags the key's hue a further SHADE.K · |modeShade| toward WARM (a major bar) or COOL (a minor
 // bar) on top of the mode's own PULL — so in a minor key the III / VI / VII bars lean warm and the i / iv / v bars cool.
-// K is 0 by default (the pull is OFF: every scene's pixels are the v0.28 ones to the bit) until the user's eye has
-// judged it; `&shade=1` sets it to SHADE.ON, `&shade=<k>` to k (core/harness.js). The pull rides the same ease as the
+// K defaults to ON (0.25) since v0.29 — the user's word after the §82 A/B, 2026-10-02: "default on". `&shade=0` is the
+// v0.28 look to the bit, `&shade=<k>` sets the pull (core/harness.js). The pull rides the same ease as the
 // key (HUETC) and the same keyConf gate (kw): a bar's shade moves the hue only where the key itself is trusted.
-export const SHADE = { K: 0, ON: 0.25 };
+export const SHADE = { K: 0.25, ON: 0.25 };
 
 export const wrap = (x) => x - Math.round(x);   // the short way round a hue wheel measured in turns
 
