@@ -179,13 +179,20 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
 **2026-10-01, §78 (DUST's accent on the tongue ladder — `c849b38`):** the user has NOT seen it (no audible run; the A/B
-watch-list is in §78). Open: (1) the hat voice's gain is the second lever the brief allowed and is untouched — if the eye
-wants the double time to SPARKLE rather than swing, that is where; (2) `ACC.K` 0.25 / `LO` 0.15 / `HI` 0.45 are set from
+watch-list is in §78). Open: (1) ~~the hat voice's gain is the second lever the brief allowed and is untouched~~ **done 2026-10-02,
+§80 (`0da9fb2`): the hit's gain 1 + 0.5·acc on the same accent, `&hatacc=0` the exact before — the user has NOT seen it**; (2) `ACC.K` 0.25 / `LO` 0.15 / `HI` 0.45 are set from
 five tracks' rise statistics (CyborgNinja's max 0.13 under the knee by 0.02) — a track with a steady 16th layer whose depth
 breathes by 0.2 would accent on the breathing; (3) Vienna's 0:27–0:40 accent is 0.26–0.37 (a 7–9 % step), under what an eye
 may notice — raise `ACC.K` or lower `LO` only on the user's word; (4) the §76 cold-normaliser line changed every depth by
 ≤ 0.014 and the 1:1 width by one bank step: the §76 table in DECISIONS carries the first run's numbers and the re-taken
 ones are in `tools/work/tongues/node-table.md` (gitignored) — within the noise, named so the next reader is not surprised.
+
+**2026-10-02, §80 (DUST's hat voice as the second accent lever — `0da9fb2`):** the user has NOT seen it (no audible run; the A/B
+watch-list is in §80, Vienna 1:25–1:43 the headline, `&hatacc=0` the exact before). Open: (1) `HATACC.K` 0.5 was chosen on one
+window (Vienna 1:30–1:38) by a noise criterion (the rim lift per hit ≥ 2× |ΔlumR|) — the eye may want 0.25 (a quarter, §78's
+own number) or 1.0; the knob is there; (2) the hit's `gain` is wired for the hat only — the kick and the snare voices accept it
+and read 1; a kick accent on the 2:1 depth was not asked for and is not measured; (3) SeeYouDrop's returns get the gain on hats
+of amp 0.23, so the rim lift there is 0.76 → 0.93 — if the eye wants the returns to sparkle, the floor (0.2) is the lever, not K.
 
 **2026-10-01, §77 (the build detector's ambiguity path — `a761b43`):** Vienna drop 1 now has 8.9 beats of lead on the page
 (12.2 in the replay). Open: (1) `AMB_ARM` 0.9 / `AMB_HOLD` 8 are tuned on ONE drop with a 7-beat margin to SeeYouDrop's

@@ -6816,3 +6816,100 @@ manual / param smokes 0 fail; the FAIL lines are stale md5 references (s6 POLYTO
 Landing tiles regenerated (`tools/thumbs.sh`: dust / feigen / mandala / polytope / torus2 moved, nav / maxwell byte-identical);
 `site/` copy has no version text. `releases/retinarave-v0.27.html` (1522 KB, 161 modules; `file://` smoke on scenes 1 and 3:
 errs [], nonFinite [], clock pcm), package.json 0.27.0.
+
+## §80 DUST: the hat voice as the second accent lever — the double time arrives on the rim too (2026-10-02, one worker; §78's open item (1), on the user's word; the user at Vienna 1:25 since §61: "the double time should be accenting rather than driving")
+
+Commit `0da9fb2` (`assets/scenes/dust/voices.js`, `index.js` — the voices, not the grid; no engine file), this section plus
+the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the user's, stream mode,
+the watch-list at the end. §79 is another worker's number.
+
+### The lever, and the carrier
+
+§78 put the double time's arrival into the nudge's SWING (the step × (1 + 0.25·acc)) and left the brief's second lever — the
+hat voice's gain — open. The layer that arrives after Vienna's first drop IS the hats at 2× (the truth's `feel`: "from
+85.336 s the track adds a double-time layer … the hats / percussion run at 180"), and the hat voice's place is the RIM (§58:
+the high bins are the edge; `lumR` in `dust-trace.js` is its own ruler). So `voice()` gains a `gain` argument that multiplies
+the HIT'S size and nothing else — the amplitude the fire starts from and the level's confirm (`G · Math.max(floor, lvl)`),
+never the age, the refractory or the triggers, so **the rate and the timing of the flashes cannot move, by construction**
+(reactive, the user's preference since 2026-09-28), and never the level under the envelope (`Math.max(…, lvl)`, the sustained
+part of the band): what grows is the stick, not the bed — "let sustained sounds habituate". `index.js` passes `hatGain(this.sp.acc)`
+= `1 + HATACC.K · acc`, with `acc` **the same per-beat accent the nudge reads** (grid.js `accent21`: the 16-beat RISE of
+max(`tongue21`, `tongue41`), dead under 0.15, full at 0.45) — a layer ARRIVING, never its level, which is what keeps
+CyborgNinja (depth 0.6 all track, rise ≤ 0.13) at the digit. `&hatacc=<K>` is the knob (0 = the exact before, '' = 0.5);
+`hooks.dinfo()` gains `hG`, the gain this frame.
+
+**K, measured** (`tools/dust-trace.js`, DUST `&map=0`, the engine from 0:00 — `WARM = t0` — on this tree with `&hatacc=K`;
+`tools/work/v80/rim80.py`: `lumR`'s lift per hat fire = its peak in the 4 frames from the fire minus the frame before, on
+Vienna 1:30–1:38, the 30 fires where acc reads 0.97–1.00; fires, ages, `d_spin`, `d_nstep` bit-identical in every run):
+
+| K | gain at acc 1 | amp / hit p50 | lumR lift / hit p50 / p90 / mean | against the rim's own frame noise (\|ΔlumR\| p50 2.58) |
+|---|---|---|---|---|
+| 0 (before) | 1.00 | 0.348 | 20.3 / 39.8 / 21.5 | — |
+| 0.25 | 1.25 | 0.432 | 23.2 / 44.8 / 24.9 (+14 %) | +2.9 = 1.1× the noise — does not read |
+| **0.5** | **1.5** | **0.516** | **26.0 / 52.1 / 28.2 (+28 %)** | **+5.7 = 2.2× the noise; the three full bars' rim median +4 / +0 / +10, p95 +6 / +3 / +4** |
+| 1 | 2.0 | 0.685 | 31.2 / 61.1 / 34.5 (+54 %) | +10.9; amp p90 1.5 (past the voice's own range) and one bar's rim median +16 (+10 %) — driving |
+
+0.5 is the smallest gain whose per-hit lift clears twice the rim's own frame-to-frame noise. The reference the brief named,
+Vienna 1:00–1:20, has 20 fires at 1.0 /s and a lift of 1.0 / 3.7 (p50 / mean): the layer's arrival is already on the rim
+reactively (3.76 fires/s at 1:30–1:38 against 1.0), and the gain is what makes the arrival land harder than the groove's own
+sticks. The spatial reach was not touched: the sparkle's point size already scales with the amplitude (`spark * 2.2` in the
+shader), so a gain IS a reach, and widening `wHigh` would have been a shader change with no measured need.
+
+**The carrier: `acc` itself, not a held copy.** The question was whether the rim should fade with the nudge's acc (gone by
+1:43) or hold while the layer plays. Measured: the depth the accent came from falls back on its own — `tongue41` 0.63 at
+1:35 → 0.59 (1:38) → 0.55 (1:40) → 0.49 (1:43) → 0.43 (1:46) → 0.37 (1:48), the hats thinning to 1–4 fires a bar at 1:40–1:45
+— so there is no sustained plateau to hold on. A decaying-max copy with τ = one bar (2.7 s, `&hatacc=0.5,2.7` on the
+measuring build) differed from `acc` only on the bars at 1:40 / 1:43 / 1:46 (gain 1.13 → 1.23, 1.00 → 1.09, 1.00 → 1.03) where
+the rim's per-bar median and p95 moved **+0.0** against the before (the hats are sparse there) — and it carried a 3 % gain
+across drop 2 (1:46.7), where §78 moves nothing by measurement. Nothing visible bought, one invariant spent: the knob was
+removed. The brief argues the same way: the arrival is the accent, the texture after it is the new ordinary.
+
+### The four windows, before (HEAD `311d09a`, worktree) / after (this; `tools/work/v80/{before,after}-*.json`, `rim80.py`, `../v78/nudge78.py`)
+
+The before traces are bit-identical to §78's `after-w0-*.json` on every column (Vienna 80–110 re-taken in the worktree to
+prove it: 0.0 on `lumR`, `d_spin`, `d_fH`, `d_nacc`, `d_vh`, `d_aH`), so §78's files serve as HEAD's before on the other three.
+
+| window (clock) | hat fires | §61/§66 nudge (peak @ · floor/peak · dead · 25/50/90 % · \|a\| p99) | step/STEP mean (max) · bars acc>0 | amp / hit p50 | lumR lift / hit p50 / mean, accented beats | lumR p50 / p95 |
+|---|---|---|---|---|---|---|
+| **Vienna 80–110** (90.1) before | 86 | −8.3 ms · 14.5 % · 0 · +0/+317/+767 · 49.8 | 1.223 (1.395) · 7 / 12 | 0.316 | 13.8 / 16.1 (49 hits) | 132.2 / 191.6 |
+| after | **86** | **identical** | **identical** | 0.389 | **16.7 / 20.6** (unaccented 5.46 / 12.41 identical) | 132.4 / 196.4 |
+| **Vienna 1:30–1:38** before | 30 (3.76 /s) | — | acc 0.97 / 1.00 / 1.00 | 0.348 | 20.3 / 21.5 (p90 39.8) | 172.0 / 200.0 |
+| after | **30** | — | identical | 0.516 | **26.0 / 28.2 (p90 52.1)** | 175.1 / 208.5 |
+| Vienna 24–60 (90.0) before | 95 | +8.3 ms · 16.7 % · 0 · +0/+317/+767 · 19.8 | 1.138 (1.219) · 6 / 14 | 0.757 | 11.5 / 14.2 (34 hits, acc p50 0.30) | 70.3 / 130.0 |
+| after | 95 | identical | identical | 0.757 | 12.1 / 14.9 (gain 1.13–1.19) | 70.5 / 130.1 |
+| SeeYouDrop 20–110 (150.0) before | 350 | −8.3 ms · 16.7 % · 0 · +0/+200/+467 · 36.7 | 1.153 (1.353) · 28 / 57 | 0.233 | 0.76 / 4.30 (146 hits, acc p50 0.36) | 97.3 / 191.6 |
+| after | 350 | identical | identical | 0.248 | 0.93 / 4.44 (gain to 1.50) | 97.3 / 191.6 |
+| **CyborgNinja 20–80** (160.0) before | 454 | −8.3 ms · 18.4 % · 0 · +0/+183/+433 · 23.9 | 1.123 (1.217) · 0 / 41 | 0.343 | 1.47 / 6.94 (none accented) | 94.8 / 153.8 |
+| after | **454** | **identical** | **identical** | **0.343** | **identical** | **identical — every frame of `lumR`** |
+
+Vienna 60–80 (the 1:00–1:20 reference): after identical to before on every column (acc 0 there). The nudge metrics are the
+same numbers in every window because the grid is not touched — proven on `d_spin` / `d_nstep` / `d_nacc`, not assumed.
+The rim's p95 on Vienna 80–110 moves 191.6 → 196.4 (max per bar 209 → 213; nothing near 255). Luminance elsewhere: Vienna
+80–110 `lum` p50 127.6 → 127.6, |Δlum| p50 1.29 → 1.36 — the accent is on the rim's sticks, not the frame.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (index.js 349 lines, under the soft cap; voices.js 219) · `npm test` OK.
+- **s1 fake-timeline md5 UNCHANGED three ways: default, `&tongues=0`, `&hatacc=0` — f360 `d16d35f7`, f840 `57a9c49c`**
+  (= HEAD's). The default is unchanged because the fake's depths are constants (`fake.js`: 0.5 / 0.4) → rise 0 → acc 0 →
+  gain 1, the mirror §76 planned — the timeline stays an md5 reference with the lever on.
+- `CARD.bench(1, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: this tree **DUST 1.06 / 1.02 / 1.00 ms
+  against NAV 1.78 / 1.74 / 1.73** (0.59) and, re-run, 1.11 / 1.07 / 1.12 against 1.59 / 1.62 / 1.62 (0.68); the HEAD
+  worktree 1.18 / 1.23 / 1.27 against 1.75 / 1.70 / 1.66 (0.72). Flat — the scene's new work is one multiply per hat fire.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.27.html` from `file://`, new = `http://127.0.0.1:8765/`, key `2` for DUST; `&hatacc=0` on the new page = the exact before, `&tongues=0` = §66's DUST)
+
+- **Vienna 1:25 → 1:43, the headline.** At the drop the hats go to 2× and sparkle the rim as before. From **1:30 to 1:38
+  every hat stick on the rim is half again as bright** (the gain 1.5 on acc 0.97–1.00) on top of §78's heavier swing — the
+  same flashes, at the same moments, bigger; fading through 1:40 (1.13) and gone by 1:43. The rate does not change (3.76
+  flashes/s there, before and after). Look for the edge of the cloud lighting harder on each tick of the double time, not
+  for more ticks.
+- **Vienna 1:43–1:50.** Nothing from this change (gain 1.00 from 1:43), and nothing at drop 2 (1:46.7) — the depth falls on
+  its own, the held copy was measured and rejected above.
+- **Vienna 0:27–0:40.** The hats' arrival the user heard at 0:25 reads acc 0.26–0.37 → gain 1.13–1.19 on four bars: the
+  sticks a sixth brighter, subtle by design (the same knee as §78's 7–9 % step).
+- **SeeYouDrop** 0:23–0:28, 0:34–0:39, 0:41–0:48 (gain to 1.45–1.50 at the return after breakdown 1), 1:28–1:33: the hat
+  sticks brighter at the returns; its hats are small there (amp p50 0.23) so the lift is modest (0.76 → 0.93 on the rim).
+- **CyborgNinja, anywhere:** nothing. Identical to the digit on every frame — the control.
+- **WhoLikesToParty / Malicious:** the few bars §78 named (0:50–0:55 / 2:03–2:10; 1:40–1:45 / 2:51–2:56) get the same
+  gain on their hat sticks, 1.05–1.25 — not graded here.
