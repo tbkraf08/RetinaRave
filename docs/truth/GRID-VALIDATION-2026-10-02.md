@@ -191,4 +191,4 @@ Outputs kept: `tools/work/v83/{ruler_a,prov,laneoff,drift,barfold,nov,hand-high,
 clicks; 140–160 s) — the user: **"is good"**. The beats, the bar line (mod4 = 2, the grid's 1) and the drop click are confirmed
 by ear in the drop window; §5's proposal to move the downbeat to the grid's beat 3 is **dropped** — the percussion-weight ruler
 and the two-bar novelty ruler were reading the track's "3"-heavy groove, not the bar line. Recorded in `Malicious.json` as
-`bpm_grid.hand.checked` + a `notes` entry. Still open: the 20–60 s intro render (`Malicious-click.wav`), not yet reported on.
+`bpm_grid.hand.checked` + a `notes` entry. The 20–60 s intro render (`Malicious-click.wav`): **"is good also"** — both windows pass; `bpm_grid.hand.anchor: hand` dated 2026-10-02. Malicious's grid is validated by ear.

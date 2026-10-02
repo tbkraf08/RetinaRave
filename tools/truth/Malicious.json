@@ -106336,9 +106336,11 @@
    "checked": {
     "date": "2026-10-02",
     "by": "the user, by ear",
-    "render": "~/Music/RetinaRave-clicks/Malicious-drop-140-160.wav (clicktrack.py Malicious --drops --sections --from=140 --to=160: every beat, downbeat accented, the drop click at 148.317, section clicks)",
-    "verdict": "\"is good\" \u2014 the beats, the accent on the grid's 1 (mod4 = 2) and the drop click at 148.317 all confirmed in the 140-160 s window; the \u00a783 proposal to move the bar line to the grid's beat 3 (docs/truth/GRID-VALIDATION-2026-10-02.md \u00a75) is DROPPED. The 20-60 s intro render (Malicious-click.wav) is not yet reported on."
-   }
+    "render": "~/Music/RetinaRave-clicks/Malicious-drop-140-160.wav (clicktrack.py Malicious --drops --sections --from=140 --to=160: every beat, downbeat accented, the drop click at 148.317, section clicks) + Malicious-click.wav (20-60 s, the intro)",
+    "verdict": "\"is good\" \u2014 the beats, the accent on the grid's 1 (mod4 = 2) and the drop click at 148.317 all confirmed in the 140-160 s window; the \u00a783 proposal to move the bar line to the grid's beat 3 (docs/truth/GRID-VALIDATION-2026-10-02.md \u00a75) is DROPPED. The 20-60 s intro render (Malicious-click.wav): \"is good also\" \u2014 both windows confirmed."
+   },
+   "anchor": "hand",
+   "anchor_date": "2026-10-02"
   }
  },
  "beats": [
@@ -108698,6 +108700,15 @@
    ],
    "render": "Malicious-drop-140-160.wav",
    "user": "is good"
+  },
+  {
+   "date": "2026-10-02",
+   "window_s": [
+    20,
+    60
+   ],
+   "render": "Malicious-click.wav",
+   "user": "is good also"
   }
  ]
 }
