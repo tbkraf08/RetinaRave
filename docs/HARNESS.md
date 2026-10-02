@@ -911,6 +911,36 @@ c = json.load(open(p))['cols']
 The pre-change build is `git checkout <sha> -- assets/scenes/<name>/` (stash your own work first), which is a few
 seconds; re-tracing is minutes, and re-deciding on a contaminated table is an hour.
 
+## Recorder (`R` — change to `core/rec.js`, `loop.js`'s frame end, `hud.js`'s keys, `core/version.js`; DECISIONS §89)
+
+```
+GPU=1 PORT=8861 node tools/test_rec.js        # headless, the REAL clock, #test&fake=0 (the demo synth on the bus); 36 checks, exit 1 on a FAIL
+node tools/clip.js <take.webm> --ss 4 --to 49.5 [--dry]    # the clip bundle (needs ffmpeg; --dry prints the commands)
+```
+- `test_rec.js` is its own CDP driver (it needs `Browser.setDownloadBehavior` and the download events, which `cdp.js` has no
+  step for): keys through the public handler (`d` HUD on, `R`, `4`, `2`, `R`), the two downloads into `tools/work/rec/`, the
+  name regex, the sidecar's schema and scene timeline against the key times (±0.6 s), the webm's duration (its EBML clusters
+  walked in node — a MediaRecorder webm has no Duration header) against `durationS` (±0.8 s), the compositor's mean luminance
+  mid-take (> 1.5: the WebGL canvas was readable on the same task), a frame decoded from the webm → `tools/work/rec/frame.jpg`
+  (the watermark in it, the HUD not — look at it), `version.js` == `package.json`. Not in `npm test` (it needs Chrome). It
+  runs under `CLOCK=1`'s absence on purpose: the fake clock would starve MediaRecorder.
+- Under `#test` the page exposes `window.__REC = { REC, start(), stop(), cv() }` (`rec.js`, never on `CARD`); `stop()` downloads.
+- **The md5 receipt after any change here:** the full `tools/scene-md5.sh` list (or `accept.sh`) with the recorder idle must be
+  the v0.29 list to the byte — `recFrame()` returns on its first line when `REC.on` is false, and the sweep is the proof.
+- **The cost at 1080p (the stop rule, SOCIAL-PLAN §2.2):** `GPU=1 WIN=1920,1080 node tools/cdp.js 'test&fake=0&scene=3' …` counting
+  `CARD.frameN` over 5 s with `__REC.start()` between windows (§89 has the run: off 300 / on 235 / off 301 / on 233 / off 301 frames
+  per 5 s — 60 → 47 fps, 0.78×, NOT halved), and the compositor's own share measured alone (100 × drawImage + the shadowed text,
+  `getImageData(1 px)`-synced: ~1.3 ms per frame at 1920×993). The rest of the loss is the VP9 software encode, which the
+  alternative (a watermark quad in `post.js` + `captureStream` on the WebGL canvas) would not remove.
+- **The by-hand receipts (`HEADED=1`, the user's desktop, sound on):** (1) 30 s in tab-capture mode — `HEADED=1 WIN=1920,1080
+  CAPTITLE=<the music tab's title> node tools/cdp.js 'real' '[{"wait":1500},{"clickSel":"#go"},{"wait":4000}]'` then press `R`,
+  wait 30 s, `R`; (2) 30 s in file mode — drop a track on the card (or `#track=SeeYouDrop.flac` on the dev server), `R`, 30 s, `R`;
+  (3) each saved `.webm` plays in Chrome AND VLC **with sound**; (4) the watermark reads bottom-right, the red dot and the HUD
+  are not in it; (5) after `sudo apt install ffmpeg`: `node tools/clip.js ~/Downloads/<take>.webm --ss 2 --to 28` and
+  `ffprobe -v error -select_streams v -show_entries stream=r_frame_rate,pix_fmt -of csv=p=0 tools/work/clips/<dir>/clip.mp4`
+  prints `60/1,yuv420p`, `-select_streams a -show_entries stream=codec_name` prints `aac`; (6) one take with `&shade=0` and one
+  with the default, for the first post (SOCIAL-PLAN §2.8).
+
 ## Single-file build
 
 ```
