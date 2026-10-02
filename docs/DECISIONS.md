@@ -7472,3 +7472,233 @@ the post-lattice list, mixs `cb3d4048` = recorded, nav2 + gielis monitors clean,
   to be the scene's rest state (the re-based pair carries the shade's bar-by-bar pull).
 - `parity.js fake` has carried a `nav.*` MISMATCH (max |diff| 7.852) since at least §76; `accept.sh` prints it without the word
   FAIL. Pre-existing, not this section's.
+
+## §84 `tonicConf` — the key's confidence is the bass agreeing with the KS tonic; `keyConf` changes owner; Malicious is C minor (2026-10-02, one worker; NEXT-SESSION-PROMPT item 2, the measurement + plan `docs/plans/KEY-PLAN.md` `4118f6f`, on the user's word)
+
+Three engine commits, in the plan's order — `4c79b12` (step 1: `tonicConf`, `assets/engine/ears/tonic.js`, `ears/feats.js`,
+`sources/fake.js` one constant line, CONTRACTS App. A), `0983335` (step 2: the held sub lean, `tonic.js`, `tools/truth/key-ears.mjs`),
+`6ad80c5` (step 3: `keyConf`'s owner — `features-ears.js`, `ears/shade.js`, `engine/feats.js`, `core/harness.js` `&kc=`, `tools/test_ears.js`
+`--keys` + `tools/test_shade.js`, CONTRACTS §1.18 / §2 / App. A) — then this section, OPEN-ITEMS and the memory line. **Not tagged, not
+pushed, not deployed; the user has not seen it.** No audible run. `tools/truth/<T>.json` `tonic` fields NOT edited (the user's ear is
+still owed on two of them — OPEN-ITEMS). Every before / after pair in an isolated `git worktree` (`db41dcc` the before, each commit its
+own), the user's 8765 untouched, the worker's pages on PORT 8842–8849, killed by port, one page at a time.
+
+### The truth, independent of the detector (KEY-PLAN §1, `tools/truth/key-truth.py` — numpy STFTs, KS on KK + Temperley, the bass-note histogram)
+
+| track | §62's "truth" | **the measurement** | the user's ear |
+|---|---|---|---|
+| SeeYouDrop | C♯m (human) | **C♯ minor, CONFIRMED** (whole C♯m +0.794 over F♯m +0.587; bass C♯ 34 %, 47 % loud) | confirmed already |
+| CyborgNinja | C♯m (KK .174) | **C♯, AMBIGUOUS in the audio**: the bass tonic is C♯ at 87–95 % by the 1.7 s peak picker but the bass is a WOBBLE spanning C2–D2 (YIN p10/p50/p90 61 / 67 / 76 Hz; pitch classes C 33 / C♯ 16 / D 22 %), and the mid band carries no C♯ at all (2–11 %; G 15–41 %) — KS on the drops C♯M / C♯m at margin 0.001–0.007 | **owed**: hum the wobble under the drop at 0:48 — is its centre C♯, SeeYouDrop's drop bass? dark or bright at 0:48–1:24? |
+| WhoLikesToParty | DM (KK .191) | **D major, CONFIRMED by KS** (DM +0.723 over Bm +0.575, every profile) — but NO bass pedal: the bass WALKS E B G D F♯, the sections sit on G (IV), B (vi) and E (ii) in turn | the drop at 0:57 is home; 0:37 / 1:49 / 2:48 lean to B minor; the same seven notes |
+| **Malicious** | GM (KK .159) | **C MINOR — §62's GM is REFUTED.** Whole Cm +0.737 / CM +0.723 / GM +0.652; bass C 55 % / G 40 %; the track ALTERNATES an intro on D♯ (the relative major, 0.9–54 s) with C sections (84–95 % C, KS Cm first on every one) and G sections (72–100 % G: the fifth) ~14 s each; the drop (148.3 s) is on C (Cm +0.811). §62's "GM" was the map's whole-track KK — the subdominant confusion §62 itself named, on the detector it trusted; **the ears were right** (Cm 53 % in §62's own table, graded as a miss) | **owed**: the bass under the drop at 2:28 — if it sounds like home, C minor (`tonic_hand`) |
+| Vienna | D♯m (KK .451) | **D♯ minor, CONFIRMED** (D♯m +0.934, margin 0.339; every graded section) | no question |
+
+Where the ambiguity is in the AUDIO, not the detector: the PARALLEL modes (an electronic bass + a fifth carries no third — C♯M / C♯m
+on CyborgNinja 0.001–0.007, Cm / CM on Malicious 0.008–0.065); the RELATIVE pair on WhoLikesToParty (per section, in the audio);
+the FIFTH on SeeYouDrop's walk (C♯m / F♯m / AM, §82's "the set agrees") and Malicious's G sections; and LOCAL roots that are not the
+key (SeeYouDrop's climb on G 97 %, its void on D 85 %; Malicious's G sections; WhoLikesToParty's E sections) — a detector that
+follows them is early, not confused. KEY-PLAN §1 has the 90-row table (`tools/work/v84/truth.md`, git-ignored).
+
+### The confusion table — the ears' `tonic` against the key, per frame from 15 s (`key-ears.mjs` → `key-confusion.py`; RIGHT = the key's tonic, LOCAL = the section's bass pedal, WRONG = neither)
+
+| track | key | frames | RIGHT / LOCAL / WRONG **before** (v0.29) | **after** (step 2, the held lean) | mode right (of RIGHT) before → after | `tonicConf` RIGHT p10 / p50 / p90 after | WRONG p10 / p50 / p90 after | mean gate `kw` before (synapse's `keyConf`) → **after** (`tonicConf`) |
+|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop | C♯m | 8553 | 73 / 1 / 26 | **82 / 0 / 18** | 85 % → 96 % | 0.30 / **0.52** / 0.71 | 0.02 / 0.24 / 0.39 | 0.57 → **0.87** |
+| CyborgNinja | C♯m | 9901 | 0 / 0 / 100 | **2 / 0 / 98** | – | 0.04 / 0.17 / 0.22 | 0.00 / **0.01** / 0.02 | 0.94 → **0.04** |
+| WhoLikesToParty | DM | 14478 | 50 / 10 / 40 | **59 / 2 / 39** | 100 % → 100 % | 0.04 / 0.14 / 0.17 | 0.02 / 0.07 / 0.16 | 1.00 → **0.15** |
+| Malicious | Cm | 12473 | 66 / 18 / 17 | **67 / 17 / 16** | 96 % → 99 % | 0.03 / **0.65** / 0.73 | 0.02 / 0.06 / 0.17 | 1.00 → **0.54** |
+| Vienna | D♯m | 10656 | 100 / 0 / 0 | **100 / 0 / 0** | 100 % → 100 % | 0.26 / 0.37 / 0.46 | – | 1.00 → **0.97** |
+
+So §62's row for CyborgNinja was worse than it read — not a low-margin miss but 0 of 9901 frames (the bass is a wobble the YIN cannot
+name, and the lead's G / D wins the mid band: not a detector problem, no step here claims it); its Malicious row was the ears being
+RIGHT against a wrong truth. The ears are 4 of 5 (`tools/test_ears.js --keys`: ears 4/5, synapse 2/5 on the pitch class).
+
+**`keyConf` before, what KEYC1 0.3 did:** synapse's `keyClar` (`(best r − .35)/.45`, ema 2 s, on a 65 Hz-floored chroma) — p50 0.20 /
+0.60 / 0.80 / 0.78 / 1.00, RIGHT and WRONG frames the same distribution on every track (SeeYouDrop 0.20 vs 0.36, Malicious 0.78 vs
+0.76), the gate fully open on **85–100 % of frames on four tracks, CyborgNinja's wrong G / G♯ included (`kw` 0.94)**, and 37 % open on
+the one human-confirmed key. §62 held it so the gate's scale would not move before an A/B; the measurement says the gate was already
+open everywhere else, on the wrong keys. And the published `tonicConf` (`(best − second) / |best|` over all 24) could not replace it:
+its "second" is usually the PARALLEL mode, so it measured the mode's clarity — RIGHT p50 0.07 vs WRONG 0.11 on SeeYouDrop (the wrong
+frames read HIGHER), below 0.3 on 79 % of right frames.
+
+### The conf — the candidates, replayed on the chroma the ears saw (KEY-PLAN §3: 17 candidates per frame from the dumped `TonicTrack.ch` and the gated sub note; a section RIGHT when ≥ 60 % of its frames carry the key's tonic, WRONG when ≥ 60 % carry neither the key's nor the local root; open = p50 ≥ KEYC1 0.3, closed = p50 < KEYC0 0.1)
+
+| candidate | RIGHT p10 (min over tracks) | right sections OPEN | min right section | WRONG sections CLOSED | max wrong section |
+|---|---|---|---|---|---|
+| `cur` (the published formula) | 0.010 | 16 / 46 | 0.013 | 10 / 17 | 0.204 |
+| `tmargR` = clamp01((r_best − r_bestOtherTonic) / 0.08) — the KS tonic margin alone | 0.167 | 46 / 46 | 0.420 | **0 / 17** | 1.000 |
+| `agree × stab` (the bass histogram's share on the tonic × the tonic's 12 s stability) | 0.039 | 26 / 46 | 0.000 | 17 / 17 | 0.099 |
+| **`tmargR × agreeE12`** — the chosen one | 0.022 | **38 / 46** | 0.059 | **16 / 17** | 0.377 |
+
+The KS margin alone is HIGH on the wrong keys: CyborgNinja's G major is a perfectly clear, stable, wrong read, because the chroma it
+is read from has no tonic in it. The bass histogram alone reads 0 wherever the sub is silent (Vienna's dream, 17 s with the sub gated
+off) and cannot tell a right key from a wrong one on a walking bass; `stab` multiplied in closes all 17 wrong sections but kills the
+dream and half of Malicious's right sections. **The product of the KS tonic margin and an EXPONENTIAL histogram's agreement holds
+both halves** — the histogram's numerator and denominator decay together, so its SHAPE holds through a silent sub (the dream at
+0.25 instead of 0).
+
+**Built (`tonic.js`):** `tonicConf = clamp01((r_best − r_bestOtherTonic) / TM1) · H[tonic] / ΣH`, `TM1` 0.08; `H[12]` per hop
+`H *= e^(−dt / TAU_H)` (12 s ≈ the chroma's own TAU 11) and `H[sub.note] += sub.conf` while gated and `conf ≥ H_CONF` 0.5; 0 until a
+bass has ever been heard (ΣH < 1e-6). Set in `solve()` (every 0.37 s, with the margin); `r[24]` kept so the best OTHER tonic is one
+pass. The parallel mode is not a rival: C♯M vs C♯m is a coin toss about the MODE, §82's 2 s hold already keeps it off the shade.
+**The receipt that the build is the replay** (step 1, the tonic itself untouched — 73 / 0 / 50 / 66 / 100 RIGHT, the before table
+to the frame): the published `tonicConf` against the replayed `tmargR × agreeE12` on the same dump, RIGHT p50 **0.545 / – / 0.138 /
+0.654 / 0.373 vs 0.539 / – / 0.137 / 0.657 / 0.372**, WRONG p50 0.081 / 0.009 / 0.070 / 0.050 vs 0.127 / 0.010 / 0.070 / 0.045 (the
+one gap, SeeYouDrop's wrong frames, is the engine's margin updating every 0.37 s against the replay's every frame — lower, the safe
+side); per-section |published − replay| ≤ 0.032.
+
+**Separation as built, after step 2** (per-section p50 of the published field, 49 right / 16 wrong sections): **39 of 49 right
+sections open, 16 of 16 wrong sections closed; max wrong section 0.08** (WhoLikesToParty s4, Bm), CyborgNinja's nine sections
+0.00–0.01, Malicious's D♯ intro (GM) 0.06. The right sections that are NOT open are the stated residues: WhoLikesToParty's seven
+(0.07–0.17: a walking bass in a major key gives no pedal to agree with — the conf is honest that the key is not stable there, and
+the hue stops swinging a third of the wheel between D's hue and B's at every section, which it did at `kw` 1.00; the lever if the
+user wants D major's hue is the `hooks.key` pin), Vienna's dream s2 at **0.24** (75 % open: τ 12 s halves D♯ once over 17 s of no sub;
+τ 20 would hold ~0.3 at the cost of a slower close on a real modulation — not a knob) and Malicious's FIRST C section after the D♯
+intro (s3, 54–68 s) at **0.06** — the histogram still remembers the intro's D♯ for one τ; s4 (68–82 s) reads 0.59 and the rest of the
+C sections 0.66–0.71. SeeYouDrop's grooves and drops **0.32–0.71**, Vienna's riffs 0.30–0.48. The walk (s1 / s14, KEY-PLAN's residue 1)
+is no longer a WRONG section under the held lean — it is mixed (C♯m / F♯m) and reads 0.31–0.38, open: F♯m is one twelfth of a turn
+from C♯m on the wheel with the same COOL pull, the hue wobbles a twelfth, it does not flip warm.
+
+### The detector — the one measured fix (step 2, `tonic.js` `subLean()`)
+
+**`SUB_W` was dead code.** `subLean()` built a one-bin `acc[sub.note] = SUB_W · conf` and handed it to `blend()`, which divides `acc`
+by its own sum — a one-bin vector normalises to exactly 1 whatever `SUB_W · conf` was. The header's "added with a weight proportional
+to its energy share" never ran: the sub's lean was a fixed TIME share (`SUB_WGT` 0.6 of the hop's `1 − e^(−dt/τ)`) and a 10 %-confidence
+glide frame of an 808 attack (F♯ → E → D♯ → C♯ in 50 ms, §82) leaned exactly as hard as a settled note. Now the sub leans **only while
+settled** (`sub.conf ≥ SUB_HELD` 0.8 — §82's own rule for the shade's bass note), at `SUB_WGT · min(1, conf)`; `SUB_W` deleted, the
+header corrected. KEY-PLAN §5 measured it as a prototype patch (`--variant=held`) and the engine reproduces the table **to the
+point**: RIGHT / LOCAL / WRONG **82 / 0 / 18 · 2 / 0 / 98 · 59 / 2 / 39 · 67 / 17 / 16 · 100 / 0 / 0**, SeeYouDrop's mode 85 → 96 %,
+WhoLikesToParty's LOCAL 10 → 2 (the E sections stop reading Em), nothing lost anywhere; `kw` SeeYouDrop 0.76 → 0.87 (the plan's
+0.87). `held1` (+ `SUB_WGT` 0.6 → 1.0) traded WhoLikesToParty for Malicious and was not taken. The KK dominant tie (degree 4 weighted
+4.38 over degree 2's 3.48: with the tonic, fourth and fifth equal in the chroma the MAJOR profile prefers the fifth above) is real
+and is what CyborgNinja's drops read; the designed counter is the sub lean, which on a wobble bass spread over C / C♯ / D cannot
+work — the fix is the conf (≤ 0.02 there), not the detector.
+
+### `keyConf`'s new owner (step 3, `features-ears.js`)
+
+Where §62 already takes `key` / `mode` over from synapse when `tonic ≥ 0`, **`S.keyConf = o.tonicConf`** too; `KEY_FIELDS` =
+`['key', 'mode', 'keyConf']`; the long "WHY keyConf IS NOT IN THAT LIST" note (whose reason was a look change — the look change is the
+point) replaced by a pointer here. **`KEYC0 0.1 / KEYC1 0.3` stay**: the new conf lands on them (wrong ≤ 0.08 → closed; right
+0.32–0.71 → open). `ears/shade.js`'s `keyW` is the same ramp on `keyConf` whether or not the ears have a tonic (§82 had × 1 whenever
+they did — so the shade trusted CyborgNinja's G major completely); on SeeYouDrop's walk the conf is 0.31–0.38 → `keyW` 1, nothing
+moves there. **`&kc=0`** (`KEYOWN.ears`, a leaf constant in `tonic.js`, the `LOUDK` / `TONGUEK` / `ROUGHK` / `SHADE` convention,
+parsed in `core/harness.js`) restores synapse's `keyClar` as the gate AND the shade's "1 when the ears have a tonic" — the v0.29 look,
+the A/B. Under `#test` the ears do not run (`tonic` −1): the fake writes `keyConf` 0.8 as before and (step 1) `tonicConf` 0 as one
+stated constant, so the fake timeline cannot move.
+
+**What the gate does after, per track** (the `kw` column above): SeeYouDrop **0.57 → 0.87** — the grooves and drops fully on C♯m's hue;
+§62's "the right key is barely more visible than the wrong one was" ends, and this IS the look change §62 deferred (the smallest one
+on the table); CyborgNinja **0.94 → 0.04** — off a wrong key onto the mood palette; WhoLikesToParty **1.00 → 0.15** — off the D / B
+swing; Malicious **1.00 → 0.54** — on in the C sections, closed through the intro's GM and the G sections' Cm / GM flips; Vienna
+1.00 → 0.97.
+
+**The page publishes it** (`tools/filetrace.js`, det file mode, 20–80 s of every track, `'key,mode,keyConf,tonic,tonicMinor,tonicConf'`,
+PORT 8847): `keyConf == tonicConf` on **3601 / 3601 frames on every track** of the frames where `tonic ≥ 0` (5 × 100 %), and under `&kc=0` on SeeYouDrop
+`keyConf` is synapse's again (0 of 3601 frames equal; `keyConf` p50 0.222 against `tonicConf` 0.412 — the switch is real).
+
+### The hue tables — the receipt that a wrong key no longer drives the hue (the §82 recipe: `CLOCK=1 GPU=1 node tools/cdp.js 'test&track=<T>&at=<t>&scene=<id>'`, the mean HSV hue in turns of the SATURATED pixels (S ≥ 0.35, V ≥ 0.25) of each 1280×720 shot; SeeYouDrop at frames 902 / 1106 / 1298 / 1490 = 15.0 / 18.4 / 21.6 / 24.8 s, the second bar of each walk note C♯ / A / F♯ / E; the others at `at = t − 25`, frame 1502 = t: CyborgNinja 60 s, Malicious 100 s, WhoLikesToParty 60 s, Vienna 90 s; before = `db41dcc`'s worktree, after step 2 = `0983335`'s, after step 3 = `6ad80c5`'s; `tools/work/v84/hue-{before,s2,s3}/`, git-ignored)
+
+| scene | shot | **before** (`db41dcc`): key · `keyConf` · `tonicConf` → hue | **after step 2** (the held lean) | **after step 3** (`keyConf` = `tonicConf`) |
+|---|---|---|---|---|
+| DUST | SYD 15.0 s C# | C#m 0.74 0.01 → **0.290** | C#m 0.74 0.93 → **0.290** | C#m 0.93 0.93 → **0.290** |
+| DUST | SYD 18.4 s A | AM 0.71 0.02 → **0.125** | C#m 0.71 0.06 → **0.236** | C#m 0.06 0.06 → **0.306** |
+| DUST | SYD 21.6 s F# | F#m 0.61 0.28 → **0.376** | F#m 0.61 0.33 → **0.379** | F#m 0.33 0.33 → **0.523** |
+| DUST | SYD 24.8 s E | C#m 0.57 0.04 → **0.444** | C#m 0.57 0.07 → **0.358** | C#m 0.07 0.07 → **0.377** |
+| DUST | CN 60 s | G#M 0.86 0.33 → **0.976** | G#M 0.86 0.01 → **0.976** | G#M 0.01 0.01 → **0.952** |
+| DUST | MAL 100 s | CM 0.91 0.02 → **0.866** | GM 0.91 0.08 → **0.849** | GM 0.08 0.08 → **0.312** |
+| DUST | WLTP 60 s | Em 0.63 0.17 → **0.459** | Bm 0.63 0.02 → **0.454** | Bm 0.02 0.02 → **0.232** |
+| DUST | VIE 90 s | D#m 1.00 0.39 → **0.438** | D#m 1.00 0.67 → **0.438** | D#m 0.67 0.67 → **0.439** |
+| TORUS2 | SYD 15.0 s C# | C#m 0.74 0.01 → **0.457** | C#m 0.74 0.93 → **0.457** | C#m 0.93 0.93 → **0.457** |
+| TORUS2 | SYD 18.4 s A | AM 0.71 0.02 → **0.085** | C#m 0.71 0.06 → **0.222** | C#m 0.06 0.06 → **0.290** |
+| TORUS2 | SYD 21.6 s F# | F#m 0.61 0.28 → **0.517** | F#m 0.61 0.33 → **0.518** | F#m 0.33 0.33 → **0.716** |
+| TORUS2 | SYD 24.8 s E | C#m 0.57 0.04 → **0.395** | C#m 0.57 0.07 → **0.324** | C#m 0.07 0.07 → **0.338** |
+| TORUS2 | CN 60 s | G#M 0.86 0.33 → **0.308** | G#M 0.86 0.01 → **0.308** | G#M 0.01 0.01 → **0.338** |
+| TORUS2 | MAL 100 s | CM 0.91 0.02 → **0.146** | GM 0.91 0.08 → **0.121** | GM 0.08 0.08 → **0.516** |
+| TORUS2 | WLTP 60 s | Em 0.63 0.17 → **0.457** | Bm 0.63 0.02 → **0.453** | Bm 0.02 0.02 → **0.268** |
+| TORUS2 | VIE 90 s | D#m 1.00 0.39 → **0.413** | D#m 1.00 0.67 → **0.413** | D#m 0.67 0.67 → **0.414** |
+| POLYTOPE | SYD 15.0 s C# | C#m 0.74 0.01 → **0.630** | C#m 0.74 0.93 → **0.630** | C#m 0.93 0.93 → **0.630** |
+| POLYTOPE | SYD 18.4 s A | AM 0.71 0.02 → **0.806** | C#m 0.71 0.06 → **0.653** | C#m 0.06 0.06 → **0.594** |
+| POLYTOPE | SYD 21.6 s F# | F#m 0.61 0.28 → **0.547** | F#m 0.61 0.33 → **0.546** | F#m 0.33 0.33 → **0.517** |
+| POLYTOPE | SYD 24.8 s E | C#m 0.57 0.04 → **0.542** | C#m 0.57 0.07 → **0.619** | C#m 0.07 0.07 → **0.616** |
+| POLYTOPE | CN 60 s | G#M 0.86 0.33 → **0.815** | G#M 0.86 0.01 → **0.815** | G#M 0.01 0.01 → **0.800** |
+| POLYTOPE | MAL 100 s | CM 0.91 0.02 → **0.985** | GM 0.91 0.08 → **0.012** | GM 0.08 0.08 → **0.615** |
+| POLYTOPE | WLTP 60 s | Em 0.63 0.17 → **0.428** | Bm 0.63 0.02 → **0.435** | Bm 0.02 0.02 → **0.616** |
+| POLYTOPE | VIE 90 s | D#m 1.00 0.39 → **0.626** | D#m 1.00 0.67 → **0.626** | D#m 0.67 0.67 → **0.614** |
+| MAXWELL | SYD 15.0 s C# | C#m 0.74 0.01 → **0.951** | C#m 0.74 0.93 → **0.951** | C#m 0.93 0.93 → **0.951** |
+| MAXWELL | SYD 18.4 s A | AM 0.71 0.02 → **0.000** | C#m 0.71 0.06 → **0.997** | C#m 0.06 0.06 → **0.012** |
+| MAXWELL | SYD 21.6 s F# | F#m 0.61 0.28 → **0.040** | F#m 0.61 0.33 → **0.040** | F#m 0.33 0.33 → **0.074** |
+| MAXWELL | SYD 24.8 s E | C#m 0.57 0.04 → **0.012** | C#m 0.57 0.07 → **0.994** | C#m 0.07 0.07 → **0.998** |
+| MAXWELL | CN 60 s | G#M 0.86 0.33 → **0.957** | G#M 0.86 0.01 → **0.957** | G#M 0.01 0.01 → **0.935** |
+| MAXWELL | MAL 100 s | CM 0.91 0.02 → **0.261** | GM 0.91 0.08 → **0.260** | GM 0.08 0.08 → **0.157** |
+| MAXWELL | WLTP 60 s | Em 0.63 0.17 → **0.975** | Bm 0.63 0.02 → **0.975** | Bm 0.02 0.02 → **0.948** |
+| MAXWELL | VIE 90 s | D#m 1.00 0.39 → **0.865** | D#m 1.00 0.67 → **0.865** | D#m 0.67 0.67 → **0.866** |
+| GIELIS | SYD 15.0 s C# | C#m 0.74 0.01 → **0.450** | C#m 0.74 0.93 → **0.450** | C#m 0.93 0.93 → **0.450** |
+| GIELIS | SYD 18.4 s A | AM 0.71 0.02 → **0.110** | C#m 0.71 0.06 → **0.233** | C#m 0.06 0.06 → **0.297** |
+| GIELIS | SYD 21.6 s F# | F#m 0.61 0.28 → **0.528** | F#m 0.61 0.33 → **0.530** | F#m 0.33 0.33 → **0.712** |
+| GIELIS | SYD 24.8 s E | C#m 0.57 0.04 → **0.339** | C#m 0.57 0.07 → **0.267** | C#m 0.07 0.07 → **0.286** |
+| GIELIS | CN 60 s | G#M 0.86 0.33 → **0.392** | G#M 0.86 0.01 → **0.392** | G#M 0.01 0.01 → **0.415** |
+| GIELIS | MAL 100 s | CM 0.91 0.02 → **0.181** | GM 0.91 0.08 → **0.163** | GM 0.08 0.08 → **0.552** |
+| GIELIS | WLTP 60 s | Em 0.63 0.17 → **0.500** | Bm 0.63 0.02 → **0.474** | Bm 0.02 0.02 → **0.326** |
+| GIELIS | VIE 90 s | D#m 1.00 0.39 → **0.438** | D#m 1.00 0.67 → **0.438** | D#m 0.67 0.67 → **0.438** |
+| CHLADNI | SYD 15.0 s C# | C#m 0.74 0.01 → **0.369** | C#m 0.74 0.93 → **0.369** | C#m 0.93 0.93 → **0.369** |
+| CHLADNI | SYD 18.4 s A | AM 0.71 0.02 → **0.419** | C#m 0.71 0.06 → **0.509** | C#m 0.06 0.06 → **0.509** |
+| CHLADNI | SYD 21.6 s F# | F#m 0.61 0.28 → **0.402** | F#m 0.61 0.33 → **0.403** | F#m 0.33 0.33 → **0.403** |
+| CHLADNI | SYD 24.8 s E | C#m 0.57 0.04 → **0.496** | C#m 0.57 0.07 → **0.496** | C#m 0.07 0.07 → **0.496** |
+| CHLADNI | CN 60 s | G#M 0.86 0.33 → **0.066** | G#M 0.86 0.01 → **0.083** | G#M 0.01 0.01 → **0.083** |
+| CHLADNI | MAL 100 s | CM 0.91 0.02 → **0.821** | GM 0.91 0.08 → **0.828** | GM 0.08 0.08 → **0.828** |
+| CHLADNI | WLTP 60 s | Em 0.63 0.17 → **0.566** | Bm 0.63 0.02 → **0.532** | Bm 0.02 0.02 → **0.532** |
+| CHLADNI | VIE 90 s | D#m 1.00 0.39 → **0.361** | D#m 1.00 0.67 → **0.361** | D#m 0.67 0.67 → **0.361** |
+
+Reading it. **Step 2 moves the look only where `key` / `mode` changed** — SeeYouDrop's A and E bars (18.4 / 24.8 s: the held lean keeps
+C♯m where the old lean had wandered to AM; TORUS2 0.085 → 0.222, DUST 0.125 → 0.236) and Malicious 100 s (CM → GM, a G section: the
+fifth) — and nowhere else (CyborgNinja, WhoLikesToParty, Vienna, SeeYouDrop's C♯ and F♯ bars to the third decimal). **Step 3 moves the
+look only where the gate changed:** (a) **a wrong or unstable key no longer drives the hue** — Malicious 100 s at `keyConf` 0.08 (closed:
+DUST 0.849 → 0.312, TORUS2 0.121 → 0.516, POLYTOPE 0.012 → 0.615, GIELIS 0.163 → 0.552 — the mood palette), WhoLikesToParty 60 s at 0.02
+(closed: DUST 0.454 → 0.232, TORUS2 0.453 → 0.268, GIELIS 0.474 → 0.326 — off the Bm hue), CyborgNinja 60 s at 0.01 (the gate is 0 exactly:
+`hTgt` = the mood hue; the measured whole-frame hue moves 0.015–0.03 turns on the five anchor scenes because the mood hue there sits near
+the warm G♯-major hue the wrong key had been pulling toward — what changes on this track is that the hue no longer FOLLOWS the wrong
+key's flips, GM on the breakdowns / G♯M on the drops / Cm, §2's table; the user's A/B is the ruler); (b) **the right key where the bass is
+under it is unchanged** — SeeYouDrop's C♯ bar (15.0 s, `keyConf` 0.74 → 0.93, open both ways: every scene identical) and Vienna 90 s
+(1.00 → 0.67, open: identical); (c) **the one look consequence, stated:** on SeeYouDrop's WALK the conf on the A and E bars is **0.06 /
+0.07** (the histogram shares C♯ / A / F♯ / E, the KS margin thins while the sub sits on A for two bars) → `kw` 0 → the hue slides to the
+mood palette on those bars (TORUS2 18.4 s 0.222 → 0.290, DUST 0.236 → 0.306; MAXWELL 0.997 → 0.012 is the wrap) and comes back on the F♯
+bar (0.33, open — mid-ease at 21.6 s: TORUS2 0.518 → 0.716). §82's "the key hue breathing warmer on the A and E bars" is therefore
+GATED on the walk's first cycle (the conf is 0.93 on the first C♯ bars, when the histogram is all C♯, and settles to the section's 0.31–0.38
+p50 as the walk fills it) — the shade's `keyW` rides the same gate. Whether the eye prefers the mood palette or §82's warm breathing on
+those bars is the user's A/B (`&kc=0`); the knob is `KEYC0 / KEYC1`. CHLADNI reads `tonic` / `tonicConf` directly and does not pass
+`keyConf` to an anchor, so step 3 cannot move it (identical to step 2 on every shot); step 2 moved its CyborgNinja figure 0.066 → 0.083
+(its `tconf` is the new scale).
+
+### Proofs
+
+- **The fake-timeline md5 sweep, all twelve ids, CLOCK=1 f360 / f840, each step's worktree against `tools/accept/v0.29/scene-md5-v029.txt`
+  (the §83 lattice baseline):** step 1 (`4c79b12`, PORT 8843) **24 lines, 0 moved**; step 2 (`0983335`, PORT 8844) **24 lines, 0 moved**; step 3
+  (`6ad80c5`, PORT 8846) **24 lines, 0 moved**; `errs []` on every id. The ears never run on the fake, and no scene reads `tonicConf` there
+  (CHLADNI reads it only behind `tonic ≥ 0`); the fake's `keyConf` 0.8 is unchanged.
+- **Two sweeps of the final tree byte-identical** (run after this section's commit, in its worktree — the receipt commit that follows, as §83's `db41dcc`).
+- `node tools/check.js` **0 fail** (164 modules, MS keys 220, the 6 pre-existing line-cap warns; tonic.js 106 lines, shade.js 92,
+  features-ears.js 187) · `npm test` **exit 0, 0 FAIL** (test_shade.js's three new cases: the walk under `keyConf` 0.05 with a
+  tonic reads |shade| 0.000 — the gate closes the shade too; 0.2 → −0.49; `KEYOWN.ears` false → −0.97, §82's rule) ·
+  **`node tools/test_ears.js --keys` 10 pass**: the five modal keys (SeeYouDrop C♯m 87 %, WhoLikesToParty DM 57 %, Vienna D♯m 100 %,
+  Malicious **Cm 63 %, expect true** on KEY-PLAN §1's measurement — the row says the user's ear is pending and the json is not
+  edited; CyborgNinja G♯M 50 %, the recorded miss) + the new ruler that would have caught §62's table: `tonicConf` p50 **0.005** on
+  CyborgNinja (< 0.1), **0.543** on SeeYouDrop 60–100 s and **0.348** on Vienna (≥ 0.3); ears 4/5 > synapse 2/5, 0 tracks worse.
+- `tools/parity.js fake` (inside accept.sh, below): expected the same line as §83 — `max |diff| 7.852 · 72 fields` and the `nav.*` MISMATCH that pre-dates §76; the MS fields 0 diff.
+- **`GPU=1 tools/accept.sh` in a worktree of the last commit** — the receipt commit that follows.
+
+### The user's A/B (stream mode, in track time; `&kc=0` = the v0.29 gate, default = this; key `2` DUST, key `4` TORUS2)
+
+- **SeeYouDrop 0:12–0:30, TORUS2 / DUST — the headline.** The grooves and the walk should sit ON C♯ minor's hue (cool, the §82 shade
+  breathing warmer on the A and E bars as before) instead of the mood palette slid a third of the way toward it; §60's 0.27 is 0.87.
+  `&kc=0` is the old.
+- **CyborgNinja 0:48–1:24.** The mood palette, no G / G♯ hue and no shade — the key the engine reads there is wrong and it now says so
+  (conf 0.01). With `&kc=0` the old G-major hue is back, fully trusted. **If the eye misses a key colour here, the answer is the
+  user's ear on the key (OPEN-ITEMS), not the gate.**
+- **Malicious 0:54–1:21 → 2:28.** The hue closes through the intro and opens on the C sections (C minor's hue); the G sections flicker
+  the gate rather than the hue. **WhoLikesToParty:** the mood palette throughout (the D / B swing is gone).
+- **Vienna:** D♯ minor's hue as before (0.97); the dream a little less saturated with it (0.24 → `kw` 0.7).
+- The knob if the grooves read too saturated with the key's hue: `KEYC0 / KEYC1` in `math/keycolour.js` (0.1 / 0.3 — unchanged here).
+
+**Open.** OPEN-ITEMS 2026-10-02 §84: the user's ear on CyborgNinja (0:48) and Malicious (2:28) — then `tonic_hand` in the json; the
+three residues above; CHLADNI's `tconf` now carries this scale (not re-tuned); the §62 correction stands in KEY-PLAN §1 and
+`test_ears.js` — "Malicious: the ears were right".

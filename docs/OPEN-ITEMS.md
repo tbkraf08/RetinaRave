@@ -66,8 +66,11 @@ detector's, so NAV no longer parks or exits where cardioid3's NAV does (§54 add
 or give the fake timeline a live-detector drop — a tool decision, not a scene one. Also open from step 5: the bar line's truth on
 WhoLikesToParty (`nextBarIn` F 0.30 page / 0.00 node) and CyborgNinja's clock (`nextBeatIn` F 0.01) — the queue inherits both.
 
-**2026-09-30, §62 (`key` = the tonic):** two items the fix left standing, both measured.
-1. **`keyConf` is the clarity of a read that is no longer published.** `key` / `mode` are the ears' tonic; `keyConf`
+**2026-09-30, §62 (`key` = the tonic):** two items the fix left standing, both measured. **Item 1 is CLOSED by DECISIONS §84**
+(2026-10-02: `keyConf` is the ears' `tonicConf` = the KS tonic margin × the bass's agreement; `&kc=0` is the A/B the item asked for);
+**item 2 is half closed** — Malicious is C MINOR by an independent ruler (KEY-PLAN §1; the ears had it) and CyborgNinja is ambiguous
+in the audio itself; both still wait for the user's ear (the cues at the end of this file).
+1. ~~**`keyConf` is the clarity of a read that is no longer published.**~~ (CLOSED by §84) `key` / `mode` are the ears' tonic; `keyConf`
    is still synapse's `keyClar` = `clamp01((best r − .35)/.45)` on synapse's own chroma. The same formula on the EARS'
    chroma was built, measured over 20–100 s of the five tracks (p50 **0.548** SeeYouDrop / 0.648 CyborgNinja / 0.767
    Malicious / 0.976 WhoLikesToParty / 1.000 Vienna) and reverted: `keycolour.js` gates at `KEYC1` 0.3, so every one
@@ -413,3 +416,23 @@ longer destroy one). **What this leaves open:**
 - **GIELIS `&still=1` is not shade-blind (§83):** `hooks.still(1)` rests the music-driven uniforms but keycolour's anchor still
   reads `MS.modeShade`, which the fake timeline now mirrors as ±1 per bar — the still md5 pair re-based with the lattice. If the
   pair is meant to be the rest state, the still should pin the shade at 0. Also: the fake's hat has no size (no `hatAmp` exists).
+
+**2026-10-02, §84 (`tonicConf`, `keyConf`'s owner, the held lean — `docs/plans/KEY-PLAN.md`):** built, NOT deployed; the user has not seen it.
+- **The user's ear on two keys** (KEY-PLAN §7; `tools/truth/<T>.json` `tonic` untouched until then): **CyborgNinja** — the wobble bass
+  under the drop at 0:48: is its centre C♯ (SeeYouDrop's drop bass), and does the lead at 0:48–1:24 feel dark (minor)? Every ruler
+  puts the centre on C♯, the YINs hear it swing C–D, the mode is a coin toss; the engine treats the track as "closed gate, mood
+  palette" either way (tonicConf 0.01). **Malicious** — the bass under the drop at 2:28 (148.3 s): if it sounds like home the track
+  is C minor (`tonic_hand`), §62's "GM" was the map's subdominant miss, and the G sections at 0:54 / 1:21 / 1:49 / 2:18 / 3:11 are the
+  fifth. `tools/test_ears.js --keys` already grades Malicious as Cm (expect true) on the plan's measurement — a one-line revert if the
+  ear says otherwise.
+- **The three residues of the conf, stated in §84:** SeeYouDrop's walk (F♯m 0.31–0.38, open — one twelfth of a turn, same COOL pull);
+  WhoLikesToParty stays CLOSED (right p50 0.14: a walking bass in a major key gives no pedal to agree with — the lever is the
+  `hooks.key` pin, not the conf); Vienna's dream at 0.24 (75 % open; τ 20 s would hold ~0.3 at a slower close). Also Malicious's first
+  C section after the D♯ intro (s3, 54–68 s) reads 0.06: the histogram still remembers D♯ for one τ — open by s4 (0.59).
+- **The user's A/B:** `&kc=0` (synapse's keyConf, the v0.29 gate) vs default on TORUS2 / DUST over SeeYouDrop 12–30 s (the grooves
+  should land ON C♯m's hue) and CyborgNinja 48–84 s (the mood palette, no G / G♯ hue); the knob if the eye wants the grooves less
+  saturated with the key's hue is `KEYC0 / KEYC1` in `math/keycolour.js`.
+- **CHLADNI** reads `tonicConf` directly (`chladni/ears.js` `tconf`, its `KEYC` 0.25 fallback threshold): its figure's confidence
+  channel now carries §84's scale (0.3–0.7 right, < 0.02 wrong) instead of the mode-clarity one; not re-tuned, the user's eye
+  (§75's open items on CHLADNI stand).
+

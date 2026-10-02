@@ -1,5 +1,7 @@
 # The key itself — the five-track truth, tonic.js's confusion table, `tonicConf`, `keyConf`'s re-fit (2026-10-02)
 
+**BUILT 2026-10-02 — DECISIONS §84** (`4c79b12` step 1, `0983335` step 2, `6ad80c5` step 3): every receipt below reproduced; the §5 `held` table to the point. Not deployed; the user's ear on CyborgNinja / Malicious still owed (§7).
+
 NEXT-SESSION-PROMPT item 2, the MEASUREMENT and the PLAN, on v0.29 (`616f212`). **Nothing in the engine moved**: `assets/`
 untouched, no Chrome, no audible run. Everything here is reproducible from three scripts (the raw outputs sit in
 `tools/work/v84/`, git-ignored):
