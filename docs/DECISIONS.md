@@ -7025,3 +7025,8 @@ The rim's p95 on Vienna 80–110 moves 191.6 → 196.4 (max per bar 209 → 213;
 - **CyborgNinja, anywhere:** nothing. Identical to the digit on every frame — the control.
 - **WhoLikesToParty / Malicious:** the few bars §78 named (0:50–0:55 / 2:03–2:10; 1:40–1:45 / 2:51–2:56) get the same
   gain on their hat sticks, 1.05–1.25 — not graded here.
+
+**v0.28 tagged locally (2026-10-02) on the user's word ("tag what has been done"; NOT pushed — retinarave.com serves v0.27):**
+v0.27 + §79 (TORUS2's fog on `tongueAmbig`, cleared on the slam), §80 (DUST's hat voice gain 1 + 0.5·acc, the second accent
+lever), `docs/plans/TONGUES-PITCH-PLAN.md` (the pitch bank measured and NOT recommended; phases 2–3 approved instead).
+`releases/retinarave-v0.28.html` (`file://` smoke on scenes 1 and 3: errs [], nonFinite []), package.json 0.28.0.
