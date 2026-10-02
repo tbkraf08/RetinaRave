@@ -1008,3 +1008,5 @@ python3 tools/truth/clicktrack.py Comptine --every=4 --from=0 --to=60           
 ```
 Comptine (Tiersen, solo piano, no drums — added 2026-10-02) is the case that needs it: trackmap locked 215 BPM onto the left
 hand's broken-chord notes; the felt pulse is an octave or two below, to be settled by ear.
+The user listens from the session: copy every render to `~/Music/RetinaRave-clicks/` (not the tracks folder) and hand them the
+line `! paplay ~/Music/RetinaRave-clicks/<name>.wav` — one per file, in listening order.
