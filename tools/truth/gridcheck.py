@@ -3,6 +3,7 @@
 Engine-independent (numpy only); reuses compare.py's Table and matcher.
 
     python3 tools/truth/gridcheck.py tools/work/grid/SeeYouDrop-det.json [--truth <json>] [--md <out.md>] [--sections] [--win t0,t1] [--heard]
+    python3 tools/truth/gridcheck.py Vienna [Malicious ...]      # a bare TRACK name (no trace): print the grid's provenance line only
     --heard (live step 6): a det / node trace with the lead off carries the raw clocks; move v3's and the PCM clock's beat position
     by -detLead at their tempo (the lead's rule, &disp=0) so the lag rows read each clock's own error on heard time.
 
@@ -42,6 +43,23 @@ LOCK_MS = 30.0          # a frame is "on the beat" when |lag| <= this (under two
 BPM_TOL = 1.0
 
 def wrap(x, m=1.0): return (x + m / 2) % m - m / 2
+
+def provenance(truth):
+    """The grid's beat-PHASE provenance from the truth file alone (DECISIONS §71 / §72; NEXT-SESSION-PROMPT "Validating a truth
+    grid"): 'hand' (bpm_grid.hand or a top-level hand), 'anchor' (bpm_grid.anchor), 'provisional' (hand-made but nobody has
+    listened — top-level `provisional` or bpm_grid.hand.provisional), else 'tool' (the tracker's own line). -> (flag, one line)."""
+    g = truth.get('bpm_grid', {}) or {}
+    h = g.get('hand') or truth.get('hand')
+    prov = (truth.get('provisional') or (isinstance(h, dict) and h.get('provisional')))
+    flag = 'provisional' if prov else ('hand' if h else ('anchor' if g.get('anchor') else 'tool'))
+    dpres = g.get('dp_residual_ms')
+    unanch = (not (g.get('anchor') or h)) and (dpres or 0) > 60
+    line = (f"{flag:12} bpm {g.get('bpm')} beat {g.get('beat')} s phase {g.get('phase')} s dp_residual_ms {dpres} mod4 {g.get('downbeat_mod4')} "
+            f"| hand {'yes' if h else 'no'} anchor {'yes' if g.get('anchor') else 'no'} provisional {'yes' if prov else 'no'} dp_t0 {'yes' if g.get('dp_t0') else 'no'}"
+            + (f" | hand date {h.get('date')}" if isinstance(h, dict) and h.get('date') else '')
+            + (f" | not_checked: {h.get('not_checked')[:90]}…" if isinstance(h, dict) and h.get('not_checked') else '')
+            + (" | !! beat phase never placed on the audio (dp residual > 60, no anchor, no hand)" if unanch else ''))
+    return flag, line
 
 class Grid:
     def __init__(self, truth):
@@ -275,6 +293,15 @@ def run(trace, truth, md=None, ann=None, per_section=False, win=None):
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a: sys.exit(__doc__)
+    # a bare TRACK name (tools/truth/<T>.json exists, no such trace file): the provenance line per track, no trace needed.
+    # The 2026-10-02 call `gridcheck.py <T>` died in ld('<T>') — the first argument has always been a TRACE path; the
+    # provenance print lived only inside run(), behind a trace. Now it is reachable from the truth file alone.
+    names = [x for x in a if not x.startswith('--') and not os.path.isfile(x) and os.path.isfile(os.path.join(HERE, x + '.json'))]
+    if names and not os.path.isfile(a[0]):
+        for n in names:
+            flag, line = provenance(ld(os.path.join(HERE, n + '.json')))
+            print(f'{n:17}{line}')
+        sys.exit(0)
     tr = ld(a[0])
     tp = next((a[i + 1] for i, x in enumerate(a) if x == '--truth'), None) or os.path.join(HERE, (tr.get('track') or 'SeeYouDrop') + '.json')
     ap = tp.replace('.json', '.sections.json')
