@@ -7459,7 +7459,10 @@ the lattice commit itself: six scenes moved, each through a field that was a con
 full identity, the levels `kick` / `snare` / `hat` (and so v3 parity's compared fields), `check.js`, the node tests
 (`test_nav2.js` re-implements the fake's lines itself and is untouched).
 
-**Receipts after both commits:** `accept.sh` on a worktree of each commit, below.
+**Receipts after both commits** (`GPU=1 tools/accept.sh` in an isolated worktree of each commit, the user's 8765 untouched):
+Step A's commit on PORT 8832 — **199 lines, 0 FAIL** (all 24 scene lines "= reference", mixs `8a1a768d` = recorded, nav2 monitor
+clean, 9 tiles / 9 thumbnails, exceptions 0, the bundle errs []); this commit on PORT 8833 — **199 lines, 0 FAIL** (all 24 lines =
+the post-lattice list, mixs `cb3d4048` = recorded, nav2 + gielis monitors clean, 9 tiles, exceptions 0, bundle errs []).
 
 **Open.**
 - The hat has no `*Amp` field (CONTRACTS: the hat lane is the HPSS-lite flux, no rise in dB to publish), so the fake's hat
