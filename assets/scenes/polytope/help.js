@@ -31,6 +31,7 @@ export const HELP = {
       key: 'the key anchors the colour wheel painted round the cage: a modulation turns the whole wheel',
       mode: 'major warms the anchor, minor cools it',
       keyConf: 'how far the key is trusted; below a third the last confident key is held and the colour slides back to the palette',
+      modeShade: 'whether THIS BAR\'s bass sits on a major or a minor degree of the key: a major bar leans the wheel warm, a minor bar cool — only with &shade=1 until the eye has judged it',
       chroma: 'the sounding notes light their own sectors of the wheel; the rest sit at the floor',
       harmAngle: 'stands in for the chroma when the chroma carries no energy, so the wheel is never dead',
       valence: 'a little extra warmth when the music is bright',

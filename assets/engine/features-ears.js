@@ -19,6 +19,7 @@ import { PCM } from './pcm.js';
 import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX } from './ears/ears.js';
 import { DEN_WIN } from './ears/perc.js';
 import { buildMap, mapAt, mapCross, mapSubAt } from './map/map.js';
+import { ModeShade } from './ears/shade.js';
 
 // §62 — `key` / `mode` are the EARS' tonic once it has one. They are synapse's fields (features-synapse.js writes them
 // from the Analyzer's own Krumhansl-Kessler), and this stage runs after synapse, so this is the same move the map
@@ -31,6 +32,10 @@ export const JUMP = 0.05;            // s: a block stamp this far from the expec
 // The same rule CHLADNI already applies scene-side (scenes/chladni/index.js: `MS.tonic >= 0 ? MS.tonic : … MS.key`),
 // which is now the engine's rule instead of one scene's.
 const KEY_FIELDS = ['key', 'mode'];
+// §82: `modeShade` — the chord quality of the bass's degree in that key, per bar (ears/shade.js). Written last, once the
+// key (ears or synapse) and the sub (map or causal) are both final for the frame.
+const SHADE_FIELDS = ['modeShade'];
+const SHADE = new ModeShade();
 const EVT = ['subNoteEvt', 'subIn', 'subOut', 'kickEvt', 'snareEvt', 'hatEvt'];
 const MAP_FIELDS = ['mapOn', 'toDrop', 'toBoundary', 'buildProg', 'mapSection', 'mapNext', 'mapReturn', 'eG', 'mapDropEvt', 'mapBoundaryEvt'];
 // the three percussion classes the map overrides, and the sub fields it overrides
@@ -128,6 +133,7 @@ export function earsStage(dt, now, S) {
   } else if (S.mapOn) {
     S.mapOn = 0; S.toDrop = S.toBoundary = S.mapSection = S.mapNext = -1; S.buildProg = S.mapReturn = S.eG = 0;
   }
+  S.modeShade = SHADE.step(dt, S);
 }
 
 // File mode: replace the causal percussion events / ages / velocities / densities and the sub's pitch and gate fields
@@ -182,4 +188,4 @@ AU.onFile.push(armMap);
 // the user asked to fix; how far the hue travels toward it is a look change that wants its own A/B, so the margin-based
 // `tonicConf` and the clarity rescale both stay out until then. The cost of leaving it: `keyConf` is now the clarity of
 // a read that is no longer published (docs/OPEN-ITEMS.md).
-ENGINE.addStage('ears', earsStage, [...EARS_FIELDS, ...MAP_FIELDS, ...KEY_FIELDS]);
+ENGINE.addStage('ears', earsStage, [...EARS_FIELDS, ...MAP_FIELDS, ...KEY_FIELDS, ...SHADE_FIELDS]);

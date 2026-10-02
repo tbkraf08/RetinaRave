@@ -35,6 +35,7 @@ export const HELP = {
       mode: 'major bends the whole palette warm, minor cool',
       keyConf: 'how far the key is trusted: below a third of the way the last confident key is held and the colours slide back to the mood palette',
       valence: 'brighter music adds a little more warmth on top of the mode',
+      modeShade: 'whether THIS BAR\'s bass sits on a major or a minor degree of the key: a major bar leans the palette warm, a minor bar cool — only with &shade=1 until the eye has judged it',
       kick2: 'flashes the quiet inner fibres, and launches the big slow bump that travels along every thread',
       snare2: 'how bright the loudest family and the knot stay between snares — the snare level, which no longer '
         + 'launches a pulse of its own',

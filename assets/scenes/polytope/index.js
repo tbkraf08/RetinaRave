@@ -137,7 +137,7 @@ export default {
   feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'loudRel', 'loudRange', 'loudAbs', 'presence',
     'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
-    'key', 'mode', 'keyConf', 'chroma', 'harmAngle', 'valence',
+    'key', 'mode', 'keyConf', 'modeShade', 'chroma', 'harmAngle', 'valence',
     'phrase16Pos', 'dropEvt', 'build', 'intensity', 'arousal'],
   cuts: 'continuous',
   rt: {},

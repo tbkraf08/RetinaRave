@@ -7,6 +7,7 @@ import { FEATS } from '../engine/feats.js';
 import { LOUDK } from '../engine/loud.js';   // &loud=0: the true-loudness stage's switch (a leaf module — see loud.js on why it is not on ENGINE)
 import { TONGUEK } from '../engine/clock/tongues.js';   // &tongues=0: the tongues stage's switch (§76; the same convention)
 import { ROUGHK } from '../engine/roughnorm.js';   // &rough=0: tension's pre-§81 normaliser (the rLo / rHi follower pair)
+import { SHADE } from '../math/keycolour.js';   // &shade=1: the per-bar major / minor pull on the key hue (§82; off by default)
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS, CHAIN } from './post.js';
@@ -169,6 +170,8 @@ export function initHarness(hideLanding) {
   if (HASH.has('tongues')) TONGUEK.on = HASH.get('tongues') !== '0';
   // tension's normaliser (engine/roughnorm.js, DECISIONS §81): &rough=0 restores the v0.28 rLo / rHi follower pair exactly — the A/B
   if (HASH.has('rough')) ROUGHK.win = HASH.get('rough') !== '0';
+  // modeShade's pull on the key hue (math/keycolour.js SHADE, DECISIONS §82): &shade=1 turns it on at SHADE.ON, &shade=<k> sets the pull; off by default
+  if (HASH.has('shade')) { const v = HASH.get('shade'); SHADE.K = v === '1' ? SHADE.ON : v === '0' || v === '' ? 0 : +v; if (!isFinite(SHADE.K)) throw new Error('&shade= must be a number'); }
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
   // pcm is the default since 2026-09-30 (§56 addendum 3); &clock=v3 is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
   if (HASH.has('clock')) setClock(HASH.get('clock'));

@@ -74,7 +74,7 @@ export function chroma(v) {
 // One frame. S is everything read from MS, `mood` is LOOK.mood, `hsv` is ctx.hsv, `glow` the parameter, `bright`
 // today's brightness law. Fills IN and OUT with twelve premultiplied RGB triples each.
 export function step(dt, S, mood, hsv, glow, bright) {
-  const An = A.anchor(dt, S.key, S.mode, S.keyConf, S.valence, S.harmAngle, mood.hue, keyPin);
+  const An = A.anchor(dt, S.key, S.mode, S.keyConf, S.valence, S.harmAngle, mood.hue, keyPin, S.modeShade);
   const spread = SPREAD0 + SPREAD1 * mood.spread;
   const sat = Math.min(1.2, mood.sat * An.sat);
   const v = 0.55 + 0.45 * mood.bri;

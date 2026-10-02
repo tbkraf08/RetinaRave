@@ -80,6 +80,7 @@ export const HELP = {
     keyConf: 'how sure the engine is of the key: while it is unsure the last confident key is held and the colour '
       + 'slides back toward the plain mood palette, so a keyless stretch is never a random hue',
     valence: 'happy music warms the palette a little further, sad music cools it',
+    modeShade: 'whether THIS BAR\'s bass sits on a major or a minor degree of the key: a major bar leans the hue warm, a minor bar cool — only with &shade=1 until the eye has judged it',
     denK: 'how many kicks a second there are: with no bass and almost no kicks the swarm becomes the waveform '
       + 'itself, a single line',
     arc: 'the bid: never auto-picked during a build',

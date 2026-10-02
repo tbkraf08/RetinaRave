@@ -9,6 +9,7 @@ export const HELP = {
     mode: 'major bends the whole palette warm, minor cool',
     keyConf: 'how far the key is trusted: below a third of the way the last confident key is held, for the colours and the shapes alike',
     valence: 'brighter music adds a little more warmth on top of the mode, and leans every shape\'s lobes the opposite way from dark music',
+    modeShade: 'whether THIS BAR\'s bass sits on a major or a minor degree of the key: a major bar leans the palette warm, a minor bar cool — only with &shade=1 until the eye has judged it',
     beat: 'a track with no drums still breathes: a faint bump is launched on the beat when no drum hit came',
     beatPhase: 'the thump: every beat pinches all twelve shapes from their resting lobes down to a star, and bounces the camera',
     beatCount: 'the whole beats of that same clock — sixteen of them make one turn of the nest',

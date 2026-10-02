@@ -31,6 +31,13 @@ export const VALW = 0.08;    // valence adds ±0.04 turns of warmth on top of th
 export const HUETC = 0.7;    // the ease: ~2 s to settle (three time constants)
 export const KEYC0 = 0.1;
 export const KEYC1 = 0.3;    // at or above this the key wins; below it the held key slides to the mood palette
+// §82: the per-BAR pull. `modeShade` (engine/ears/shade.js: the chord quality the key implies for the bass's degree,
+// -1 minor … +1 major) drags the key's hue a further SHADE.K · |modeShade| toward WARM (a major bar) or COOL (a minor
+// bar) on top of the mode's own PULL — so in a minor key the III / VI / VII bars lean warm and the i / iv / v bars cool.
+// K is 0 by default (the pull is OFF: every scene's pixels are the v0.28 ones to the bit) until the user's eye has
+// judged it; `&shade=1` sets it to SHADE.ON, `&shade=<k>` to k (core/harness.js). The pull rides the same ease as the
+// key (HUETC) and the same keyConf gate (kw): a bar's shade moves the hue only where the key itself is trusted.
+export const SHADE = { K: 0, ON: 0.25 };
 
 export const wrap = (x) => x - Math.round(x);   // the short way round a hue wheel measured in turns
 
@@ -47,8 +54,9 @@ export function mkAnchor() {
     haveKey = 0;
   }
 
-  // key/mode/keyConf/valence/harmAngle in, the eased anchor out. `pin` is hooks.key's {k, m} or null.
-  function anchor(dt, key, mode, keyConf, valence, harmAngle, moodHue, pin) {
+  // key/mode/keyConf/valence/harmAngle in, the eased anchor out. `pin` is hooks.key's {k, m} or null; `shade` is
+  // MS.modeShade (§82), -1..+1, and does nothing while SHADE.K is 0.
+  function anchor(dt, key, mode, keyConf, valence, harmAngle, moodHue, pin, shade = 0) {
     // The fallback for real audio whose key is not trusted: the nearest fifth of harmAngle, mode 0. The circle of
     // fifths sends pitch class k to position (7k mod 12), and 7 is its own inverse mod 12, so the pitch class at
     // fifths position j is (7j mod 12). On #test keyConf is 0.8, so the real key wins there and this is only a fallback.
@@ -58,7 +66,8 @@ export function mkAnchor() {
     const kk = pin ? pin.k : haveKey ? lastKey : fifthKey;
     const km = pin ? pin.m : haveKey ? lastMode : 0;
     const hueKey = ((7 * kk) % 12) / 12;
-    const hMode = hueKey + PULL * wrap((km ? COOL : WARM) - hueKey) + VALW * (valence - 0.5);
+    const hMode = hueKey + PULL * wrap((km ? COOL : WARM) - hueKey) + VALW * (valence - 0.5)
+      + SHADE.K * Math.abs(shade) * wrap((shade > 0 ? WARM : COOL) - hueKey);
     const kw = pin ? 1 : Math.min(1, Math.max(0, (keyConf - KEYC0) / (KEYC1 - KEYC0)));
     const hTgt = moodHue + kw * wrap(hMode - moodHue);
     hueU += wrap(hTgt - hueU) * (1 - Math.exp(-dt / HUETC));

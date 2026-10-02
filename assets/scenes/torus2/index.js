@@ -121,7 +121,7 @@ export default {
   id: 3,
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],
   cuts: 'continuous',
   rt: {},
   hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo },
@@ -226,7 +226,7 @@ export default {
     U.slip = UNWIND * (unwindPin >= 0 ? unwindPin : Math.max(MS.riser, MS.roll)) * (1 - U.collapse);
 
     const m = (LOOK && LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
-    const A = anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, m.hue, keyPin);
+    const A = anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, m.hue, keyPin, MS.modeShade);
     MOOD[0] = A.hue;
     MOOD[1] = Math.min(1.2, (0.35 + 0.65 * m.sat) * A.sat);
     MOOD[2] = 0.5 + 0.7 * m.bri;

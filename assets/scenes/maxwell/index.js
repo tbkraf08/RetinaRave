@@ -271,7 +271,7 @@ export default {
   id: 9,
   tag: "maxwell's equations, solved live — every sound a wavefront in its note's hue, a dipole nudged per beat, the section a lens or a mirror cavity",
   card: { title: 'MAXWELL', blurb: "Maxwell's four equations solved live on a grid: every sound sends out a real ripple of light in its own note's colour, through a lens or a hall of mirrors — and silence sends out nothing" },
-  feats: ['chroma', 'bchroma', 'onset', 'kickCount', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
+  feats: ['chroma', 'bchroma', 'onset', 'kickCount', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'kick', 'snare', 'hat', 'bpm', 'beatPhase',
     'beatCount', 'barPos', 'phrase16Pos', 'bass', 'sub', 'build', 'intensity', 'arousal', 'tension', 'dropEvt',
     'arc', 'sectionAlt', 'sectionEvt', 'surpriseEvt', 'flowBass', 'flowMid',
     'hush', 'calm', 'alive', 'clarity', 'presence', 'absentT', 'bassFast', 'centroid', 'dirty',
@@ -335,7 +335,7 @@ export default {
 
     // the key as a hue ANCHOR on the circle of fifths, and clarity as the hue PURITY of the twelve
     const m = (LOOK && LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
-    const A = AN.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, m.hue, keyPin);
+    const A = AN.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, m.hue, keyPin, MS.modeShade);
     U.hue = A.hue;
     U.sat = Math.min(1.2, (0.45 + 0.55 * m.sat) * A.sat);
     U.bri = 0.62 + 0.55 * m.bri;

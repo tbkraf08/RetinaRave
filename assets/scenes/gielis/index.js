@@ -116,7 +116,7 @@ export default {
   id: 10,
   tag: 'superformula nest, breathing — twelve pitch classes as twelve supershapes, the lobes from the interval to the key, a pinch on every beat',
   card: { title: 'GIELIS', blurb: 'the superformula: twelve nested shapes, one per note, that close up on every beat and open again in the silence' },
-  feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'beat', 'beatPhase', 'beatCount', 'bpm', 'barPos',
+  feats: ['chroma', 'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'beat', 'beatPhase', 'beatCount', 'bpm', 'barPos',
     'phrase16Pos', 'kick', 'snare', 'hat', 'sub', 'bass', 'eS', 'build', 'tension', 'intensity', 'arousal', 'arc',
     'sectionAlt', 'sectionEvt', 'dropEvt', 'dropEnv', 'surpriseEvt', 'riser', 'roll', 'flowBass', 'flowMid', 'flowHigh',
     'presence', 'hush', 'calm', 'alive', 'novelty'],
@@ -146,7 +146,7 @@ export default {
     // colour: the key as a hue ANCHOR on the circle of fifths, major warm / minor cool by PULL, the keyConf gate and
     // the ~2 s ease are all inside math/keycolour.js — imported, never re-derived (DECISIONS §36 spec 3).
     const mood = (this.ctx.LOOK && this.ctx.LOOK.mood) || { hue: 0, sat: 0.7, bri: 0.8, spread: 0.5 };
-    const A = KC.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, mood.hue, KEYPIN);
+    const A = KC.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, mood.hue, KEYPIN, MS.modeShade);
     MOOD[0] = A.hue;
     MOOD[1] = Math.min(1.2, (0.35 + 0.65 * mood.sat) * A.sat);
     MOOD[2] = 0.5 + 0.7 * mood.bri;

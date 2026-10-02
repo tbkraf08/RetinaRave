@@ -41,6 +41,7 @@ export function fakeMusic(dt, now) {
   S.eMax = 0.6;
   S.build = ema(S.build, sec === 'build' ? 1 : 0, dt, 1);
   S.tension = ema(S.tension, sec === 'build' ? 0.9 : sec === 'peak' ? 0.6 : 0.2, dt, 0.5);
+  S.modeShade = 0;                                     // §82: the per-bar major / minor shade — the fake has no bass note, so the mirror is the unknown value
   S.suspension = ema(S.suspension, sstep(0.55, 0.8, S.tension), dt, 1.3);
   if (sec !== S.arc) {
     if (sec === 'peak') {

@@ -22,7 +22,7 @@ export const MS = {
   heardT: -1, fileOn: 0, leadT: 0,
   // ears stage (features-ears.js, v0.15 E3) — idle defaults: no sub, no onset yet (ages 99), no map
   subHz: 0, subCents: 0, subNote: -1, subConf: 0, subGlide: 0, subNoteEvt: false, subPure: 0, subGate: 0, subIn: false, subOut: false,
-  tonic: -1, tonicMinor: 0, tonicConf: 0, bassReg: 0, lpSweep: 0, width: 0,
+  tonic: -1, tonicMinor: 0, tonicConf: 0, bassReg: 0, lpSweep: 0, width: 0, modeShade: 0,
   kickEvt: false, snareEvt: false, hatEvt: false, kickAge: 99, snareAge: 99, hatAge: 99, kickVel: 0, snareVel: 0, hatVel: 0, kickAmp: 0, snareAmp: 0,
   denK: 0, denS: 0, denH: 0, pulse: 1,
   mapOn: 0, toDrop: -1, toBoundary: -1, buildProg: 0, mapSection: -1, mapNext: -1, mapReturn: 0, eG: 0, mapDropEvt: false, mapBoundaryEvt: false,

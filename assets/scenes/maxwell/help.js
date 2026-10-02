@@ -16,6 +16,7 @@ export const HELP = {
     mode: 'major pulls the anchor warm, minor cool, so the drums and the walls change colour with the mode while the notes do not',
     keyConf: 'how far the key is trusted: below a third of the way the last confident key is held and the colours slide back to the mood palette',
     valence: 'brighter music adds a little more warmth on top of the mode',
+    modeShade: 'whether THIS BAR\'s bass sits on a major or a minor degree of the key: a major bar leans the anchor warm, a minor bar cool — only with &shade=1 until the eye has judged it',
     kick: 'how hard the kick\'s own ring comes out of the middle',
     snare: 'a sharp pulse from the charge whose note just rose most — its own ring, launched from the ring and not the middle, and it retriggers however fast the snares come',
     hat: 'a tiny launch on all twelve at once, one per hat, however fast they come',

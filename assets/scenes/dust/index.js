@@ -54,7 +54,7 @@ const SELF = {
     'buildLive', 'nextDropIn', 'dropLiveEvt',
     'tongue21', 'tongue41', 'tongueOn',
     'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
-    'harmAngle', 'key', 'mode', 'keyConf', 'valence',
+    'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'modeShade',
     'arc', 'punchy', 'regularity'],
   cuts: 'onset',
   rt: {},
@@ -193,7 +193,7 @@ const SELF = {
     const q = LOOK.mood, d = this.mood;
     // The palette's centre is the KEY, not the mood's own hue: `LOOK.mood` is still the base the anchor eases
     // AWAY from, and is all that is left when the key is not trusted (keycolour.js gates on `keyConf`).
-    const A = KEY.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, q.hue, this.keyPin);
+    const A = KEY.anchor(dt, MS.key, MS.mode, MS.keyConf, MS.valence, MS.harmAngle, q.hue, this.keyPin, MS.modeShade);
     // the void drains the palette: the colour goes out of the cloud and the hue family closes toward one hue,
     // and the drop's release puts it back (the mood object is the fibres' palette too, so the rings drain with it)
     const dr = 1 - 0.55 * Math.min(1, m.build);
