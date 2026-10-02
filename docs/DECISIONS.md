@@ -7291,7 +7291,7 @@ if the eye wants it quicker (open item).
 
 ### Proofs
 
-- `node tools/check.js` 0 fail (shade.js 83 lines, features-ears.js 191, keycolour.js 94) · `npm test` exit 0 with
+- `node tools/check.js` 0 fail (shade.js 88 lines, features-ears.js 191, keycolour.js 94) · `npm test` exit 0 with
   `tools/test_shade.js`: the walk under C♯m / E / F♯m / A, Vienna's i / v / III, a chromatic bass 0, the 808 glide held out, C♯
   held 2 s → −0.97 and A one bar → +0.90, the last note holds a bar then the field is back under 0.06, a 100 ms pluck every beat
   reads +0.90, the chroma root at 0.6 and the sub outranking it, the parallel-mode flip of 0.5 s not moving the tonic bar and a
