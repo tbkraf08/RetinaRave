@@ -25,6 +25,10 @@
 // hold keeps the glide out). When the sub is gated off (SeeYouDrop's intro, Vienna's dream) the fallback is
 // `bchroma`'s root (v3's < 240 Hz pitch-class chroma, ema 0.35 s) when it DOMINATES — its largest bin >= CHROMA of the
 // sum — at CHROMA_W of the weight. No bass at all -> the target is 0 and the field eases back to it: 0 when unknown.
+// A PLUCKED bass is still the bar's bass between its plucks: WhoLikesToParty's sub notes are 50 ms runs with the gate
+// open 59 % of the time and a settled note on 22 % of frames, and read against "0 between notes" the field never left
+// ±0.1 (p10 / p90 -0.14 / +0.02). So the last settled sub note HOLDS for LAST_BARS = 1 bar after the gate closes
+// (source 3), and only then does the chroma stand in or the field fall to 0.
 //
 // THE KEY: the (key, mode) the degree is taken against must have HELD for KEY_HOLD = 2 s before the shade adopts it.
 // Measured on SeeYouDrop's walk (page, file mode): the ears' tonic flips C#m -> C#M for 0.35 s at 14.0 s and 0.67 s at
@@ -44,6 +48,7 @@ export const SHADEK = {
   CHROMA: 0.35,    // the least share of the bass chroma its largest bin needs to stand in for the sub
   CHROMA_W: 0.6,   // the weight that fallback carries against a sub note's 1
   TAU_BARS: 1 / 3, // the ease, in bars
+  LAST_BARS: 1,    // bars: the last settled sub note stays the bass this long after the sub stops
   KEY_HOLD: 2,     // s: a new (key, mode) must hold this long before the degree is taken against it
   KEYC0: 0.1, KEYC1: 0.3,   // keycolour.js's ramp on keyConf, for the synapse-key case
 };
@@ -51,15 +56,18 @@ export const SHADEK = {
 export const degreeShade = (note, key, minor) => (note < 0 || key < 0) ? 0 : (minor ? SHADEK.MIN : SHADEK.MAJ)[(((note - key) % 12) + 12) % 12];
 
 export class ModeShade {
-  constructor(K = SHADEK) { this.K = K; this.v = 0; this.note = -1; this.held = 0; this.src = 0; this.deg = 0; this.w = 0; this.key = -1; this.minor = 0; this.candKey = -1; this.candMinor = 0; this.candT = 0; }
+  constructor(K = SHADEK) { this.K = K; this.v = 0; this.note = -1; this.held = 0; this.src = 0; this.deg = 0; this.w = 0; this.key = -1; this.minor = 0; this.candKey = -1; this.candMinor = 0; this.candT = 0; this.last = -1; this.lastAge = 9; }
   // One frame. `S` is read for key, mode, tonic, keyConf, subNote, subGate, subConf, bchroma (Float32Array(12)), bpm.
   step(dt, S) {
     const K = this.K;
     // the bass note: the sub when it is there and settled, else the bass chroma's root when it dominates
     const subOk = S.subGate > 0 && S.subNote >= 0 && S.subConf >= K.CONF;
     if (subOk && S.subNote === this.note) this.held += dt; else { this.note = subOk ? S.subNote : -1; this.held = 0; }
+    const bar = 240 / (S.bpm > 0 ? S.bpm : 124);
     let note = -1, w = 0, src = 0;
-    if (subOk && this.held >= K.HOLD) { note = this.note; w = 1; src = 1; }
+    this.lastAge += dt;
+    if (subOk && this.held >= K.HOLD) { note = this.note; w = 1; src = 1; this.last = note; this.lastAge = 0; }
+    else if (this.last >= 0 && this.lastAge < K.LAST_BARS * bar) { note = this.last; w = 1; src = 3; }
     else if (S.bchroma) {
       let sum = 0, best = -1, bv = 0;
       for (let i = 0; i < 12; i++) { const c = S.bchroma[i]; sum += c; if (c > bv) { bv = c; best = i; } }
@@ -72,10 +80,9 @@ export class ModeShade {
     const keyW = S.tonic >= 0 ? 1 : Math.min(1, Math.max(0, (S.keyConf - K.KEYC0) / (K.KEYC1 - K.KEYC0)));
     const d = note >= 0 ? degreeShade(note, this.key, this.minor) : 0;
     const target = d * w * keyW;
-    const bar = 240 / (S.bpm > 0 ? S.bpm : 124);
     this.v += (target - this.v) * (1 - Math.exp(-dt / (K.TAU_BARS * bar)));
     this.deg = d; this.w = w * keyW; this.src = note >= 0 ? src : 0;
     return this.v;
   }
-  reset() { this.v = 0; this.note = -1; this.held = 0; this.src = 0; this.deg = 0; this.w = 0; this.key = -1; this.minor = 0; this.candKey = -1; this.candT = 0; }
+  reset() { this.v = 0; this.note = -1; this.held = 0; this.src = 0; this.deg = 0; this.w = 0; this.key = -1; this.minor = 0; this.candKey = -1; this.candT = 0; this.last = -1; this.lastAge = 9; }
 }

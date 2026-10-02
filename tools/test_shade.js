@@ -3,7 +3,8 @@
 // Cases: (1) the table: SeeYouDrop's walk C# A F# E in C# minor is i VI iv III = -1 +1 -1 +1, and reads the SAME under
 // the relative major (E) and under the keys the ears actually wander to on that walk (F# minor, A major); Vienna's
 // D# / A# / F# in D# minor are i / v / III = -1 / -1 / +1; a chromatic bass is 0; (2) the 808 glide (F# E D# C# in 50 ms)
-// does not count — the note has to hold 60 ms; (3) no bass and no key -> the field eases to 0 within a bar; (4) the
+// does not count — the note has to hold 60 ms; (3) the last settled note holds a bar after the sub stops (a plucked bass), then
+// the field eases to 0; no key -> 0; (4) the
 // sub's note outranks the bass chroma's root, and the chroma root stands in at 0.6 when the sub is gated off;
 // (5) synapse's key counts by keycolour's ramp when the ears have no tonic; (6) a (key, mode) must hold 2 s before the
 // degree is taken against it (the parallel-mode flips on SeeYouDrop's walk are 0.35 / 0.67 s).
@@ -40,7 +41,13 @@ const DT = 1 / 60, BAR = 240 / 150;
   const m = new ModeShade(); let v = 0;
   for (let i = 0; i < 60; i++) v = m.step(DT, S({ subNote: N['C#'], subGate: 1, subConf: 1 }));
   for (let i = 0; i < Math.round(BAR / DT); i++) v = m.step(DT, S({}));
-  ok('the sub leaves: back within 0.06 of 0 after a bar', Math.abs(v) < 0.06, `v ${v.toFixed(3)}`);
+  ok('the sub leaves: the last note HOLDS for a bar (a plucked bass is still the bass between plucks)', v < -0.9 && m.src === 3, `v ${v.toFixed(3)} src ${m.src}`);
+  for (let i = 0; i < Math.round(BAR / DT); i++) v = m.step(DT, S({}));
+  ok('… and a bar later the field is back within 0.06 of 0', Math.abs(v) < 0.06 && m.src === 0, `v ${v.toFixed(3)}`);
+  // a plucked bass: 50 ms notes every beat, the gate closed between them
+  const mp = new ModeShade(); let vp = 0;
+  for (let i = 0; i < 8 * 24; i++) { const on = (i % 24) < 6; vp = mp.step(DT, S(on ? { subNote: N.A, subGate: 1, subConf: 1 } : {})); }
+  ok('a 100 ms pluck on A every beat (the gate closed 75 % of the time) reads VI, not 0', vp > 0.9, `v ${vp.toFixed(3)}`);
   const m2 = new ModeShade(); let v2 = 0;
   for (let i = 0; i < 60; i++) v2 = m2.step(DT, S({ subNote: N.A, subGate: 1, subConf: 1, tonic: -1, keyConf: 0.05 }));
   ok('no tonic and keyConf under the ramp: 0 exactly', v2 === 0, `v ${v2}`);
@@ -53,6 +60,8 @@ const DT = 1 / 60, BAR = 240 / 150;
   ok('sub gated off, A dominates the bass chroma: VI at the fallback weight 0.6', m.src === 2 && Math.abs(v - 0.6) < 0.02, `v ${v.toFixed(3)} src ${m.src}`);
   for (let i = 0; i < 120; i++) v = m.step(DT, S({ bchroma: bc, subNote: N['C#'], subGate: 1, subConf: 1 }));
   ok('the sub comes back on C#: it outranks the chroma, i at weight 1', m.src === 1 && v < -0.95, `v ${v.toFixed(3)}`);
+  for (let i = 0; i < Math.round(2.5 * BAR / DT); i++) v = m.step(DT, S({ bchroma: bc }));
+  ok('the sub gone 2.5 bars: the hold has lapsed and the chroma root stands in again', m.src === 2 && v > 0.5, `v ${v.toFixed(3)} src ${m.src}`);
   const flat = new Float32Array(12).fill(0.1);
   const m3 = new ModeShade(); let v3 = 0; for (let i = 0; i < 60; i++) v3 = m3.step(DT, S({ bchroma: flat }));
   ok('a flat bass chroma names no root: 0', v3 === 0 && m3.src === 0);
