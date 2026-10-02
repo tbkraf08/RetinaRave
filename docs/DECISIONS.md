@@ -6817,6 +6817,118 @@ Landing tiles regenerated (`tools/thumbs.sh`: dust / feigen / mandala / polytope
 `site/` copy has no version text. `releases/retinarave-v0.27.html` (1522 KB, 161 modules; `file://` smoke on scenes 1 and 3:
 errs [], nonFinite [], clock pcm), package.json 0.27.0.
 
+## §79 TORUS2: the fog on the tongues — the dream hazes the nest, the drop clears it (2026-10-02, one worker; `docs/plans/TONGUES-PLAN.md` phase 5, on the user's word; the user's Vienna note: "1:05–1:25 … feels like in a dream before first drop at 1:25")
+
+Commit `1f77931` (`assets/scenes/torus2/haze.js` new, `shaders.js`, `index.js`, `help.js`, `motion.js` — the scene's folder only, no
+engine file), this section plus the plan's table, CONTRACTS and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible
+run; the A/B is the user's, stream mode, the watch-list at the end. Before / after pairs were taken across two worktrees
+(`/tmp/rr-base79` = `311d09a` on port 8923, this tree on 8922), removed when done.
+
+### What TORUS2 did before, measured (`tools/dust-trace.js … 3`, the engine started at 0:00, `&map=0`; `tools/work/v79/*-before.json`)
+
+The scene had a FOG but no haze: `fog = clamp(1.25 − 0.55 · depth / cam, 0.55, 1.25)` per segment — a static depth cue (brief
+spec 1b: "a depth cue, never a wall"), the same on every frame of every track. `tension` (v3's roughness) drives two things
+there and neither is a haze: `uDelta = 0.6 · tension` (the projection pole pushed into the picture) and `params.morph = 0.9 ·
+tension` (the rings pulled along the attractor). And `tension` reads LOWER in Vienna's dream than in its grooves — p50 0.15
+(p95 0.37) over 72–86 s against 0.23 / 0.31 / 0.30 in 60–72 / 86–100 / 100–110 — so nothing the scene read said "dream":
+luminance p50 79 in the dream, 66 in the groove before it, 93 after the drop. **Two hazes do not fight because there was no
+first one**; `tension`'s role is untouched. One more finding the design had to route around: with no track map, v3's `dropEvt`
+fires on Vienna at **73.28 s — inside the dream** (the bass void's "bass returns" rule) and NOT at 85.336, so TORUS2's collapse
+already fires there today, and `dropEvt` cannot be the fog's clear. The live detector's `dropLiveEvt` fires at **85.333 s** (§77).
+
+### The design, and the two forms that lost
+
+`tongueAmbig` on the page (a 16-beat trailing window stepping once a clock beat): Vienna climbs 0.54 → 0.90 over 64–72 s, holds
+**0.95–0.98 through 72–86 s**, falls 0.96 → 0.91 → 0.80 → 0.72 at 85.7 / 86.0 / 86.7 / 87.3 (one locked beat per beat refilling the
+window) and is ≤ 0.65 everywhere else in 60–110. The controls over their whole windows: CyborgNinja max **0.367**, SeeYouDrop
+**0.686** (its intro, 20–24 s, before the drums; the breakdown at 50–58 s peaks 0.61), WhoLikesToParty **0.567**, Malicious **0.636**.
+The LEVEL separates the dream from every groove in the set by 0.26 or more, so — against §78's lean — the level is the read here:
+
+- **the change over bars (§78's form) — rejected**: SeeYouDrop's breakdown RISES 0.25 → 0.61 over 50–55 s, nearly the dream's own
+  0.54 → 0.90 over 64–72; a change read hazes the breakdown. The lean belongs where the levels do not separate (§78: CyborgNinja's
+  `tongue21` 0.61 above Vienna's 0.46); here they do.
+- **the sustained run (§77's form, ≥ 0.9 for 8 beats) — rejected**: binary, and late — it would first haze at 77.3 s where the
+  eased level is already 0.5 at 72.6 and 0.9 at 75.2; and its release has the same 3-beat lag the level has, so it needs the
+  slam as much.
+- **the level, chosen** (`haze.js`): `smoothstep(LO 0.75, HI 0.95)` of `tongueAmbig` (the `haze` param's `from()`, routable like the
+  other six), eased **1.5 s in / 0.4 s out**, 0 while `tongueOn ≠ 1`, and **cleared ON the slam**: `dropLiveEvt` sets the target to 0
+  and holds it there until the window has fallen under LO (or 16 beats — the window's own length — if the ambiguity is still
+  there a bar later the music really is ambiguous and the fog is right to return). Without the hold the level re-hazes at 85.7
+  (0.96) and fights the slam. LO's margin: 0.064 to SeeYouDrop's intro, 0.10 to Vienna's own grooves, 0.38 to CyborgNinja.
+
+**What a full haze does to the picture** (`HAZE` in haze.js, the shader's `uHaze` behind `if (uHaze > 0.0)`): beyond the near shell
+(`NEAR` 0.5 of the camera distance, the nest's 1 − R/cam ≈ 0.54) the depth fog falls faster (`FOGK` +0.6 per unit depth) and its
+floor drops 0.55 → **0.25** (`DEEP`; TORUS v1's wall was 0.32 — here only in the dream) — the far side sinks into mist while the
+near strokes keep their light; the colours wash toward their own luminance by **0.45** (`SAT`: the key's hue is there, paler); the
+black behind the nest lifts to **0.045** of the mood palette's own colour (`VEIL`, the clear colour — the feedback is a `max`, so a
+constant veil does not accumulate); the bloom threshold falls 0.30 → **0.15** (`BLOOM`, `post.bloom.thr` as a function — exactly 0.3
+at haze 0): the mist scatters the light into soft halos. **The first cut dimmed the whole nest**: a fog rate × 2.2 from depth 0
+put the centroid at the floor (dream `lum` p50 79 → **33**, the bloom gone) — pivoting the extra fog at the near shell and
+lowering the bloom knee brought it to 62.5 with the near shell at full light. `tools/work/v79/vi80-{before,after,after2}.jpg`.
+
+### The ruler — the three tracks before / after (`dust-trace.js … 3`, WARM = t0, `&map=0`; `tools/work/v79/fog79.py`)
+
+| window (clock) | `tongueAmbig` p50 / p95 | ≥ 0.9 % | `tension` p50 / p95 | `lum` p05 / p50 / p95 before → after | `lumR` p50 | haze p50 / p95 | frames hazed (> 0.05) |
+|---|---|---|---|---|---|---|---|
+| Vienna 60–72 (groove) | 0.62 / 0.87 | 0.0 | 0.23 / 0.35 | 46.9 / 65.9 / 110.0 → 46.9 / 65.8 / 108.4 | 94.4 → 92.2 | 0.00 / 0.19 | **14.0 %** (the ramp, 70.3–72) |
+| **Vienna 72–86 (the dream)** | **0.96 / 0.98** | **100.0** | 0.15 / 0.37 | 58.7 / 79.2 / 111.1 → **43.4 / 62.5 / 98.6** | 88.3 → **68.5** | **0.99 / 1.00** | **100.0 %** |
+| Vienna 86–100 (drop 1) | 0.42 / 0.80 | 4.8 | 0.31 / 0.64 | 55.7 / 92.7 / 143.9 → 55.7 / 92.7 / 143.9 | 133.8 → 133.8 | 0.00 / 0.03 | 3.7 % (85.3–86.5, the release) |
+| Vienna 100–110 (drop 2 at 106.7) | 0.52 / 0.60 | 0.0 | 0.30 / 0.64 | identical | identical | 0.00 / 0.00 | **0.0 %** |
+| SeeYouDrop 20–50 | 0.40 / 0.66 | 0.0 | 0.35 / 0.64 | **identical** | identical | 0.00 / 0.00 | **0.0 %** |
+| SeeYouDrop 50–58 (breakdown) | 0.48 / 0.62 | 0.0 | 0.34 / 0.48 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| SeeYouDrop 58–100 (groove) | 0.46 / 0.58 | 0.0 | 0.34 / 0.54 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| SeeYouDrop 100–110 | 0.31 / 0.42 | 0.0 | 0.41 / 0.75 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| **CyborgNinja 20–50** | 0.31 / 0.34 | 0.0 | 0.33 / 0.46 | **identical** | identical | 0.00 / 0.00 | **0.0 %** |
+| CyborgNinja 50–80 | 0.32 / 0.35 | 0.0 | 0.36 / 0.52 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| WhoLikesToParty 20–110 (after only) | 0.46 / 0.54 | 0.0 | 0.24 / 0.43 | 50.1 / 74.6 / 111.2 | 94.0 | 0.00 / 0.00 | 0.0 % |
+| Malicious 20–110 (after only) | 0.55 / 0.61 | 0.0 | 0.34 / 0.56 | 47.6 / 76.8 / 116.1 | 105.4 | 0.00 / 0.00 | 0.0 % |
+
+"Identical" means every column of the trace, luminance included, is equal before and after to the digit (SeeYouDrop 5401 frames,
+CyborgNinja 3601: `columns differing: []`). Vienna's `lum` differs on exactly the 1181 frames with haze > 0 plus 15 frames at
+89.02–89.28 s (−0.001 → −0.000) — the feedback's trail of the last hazed frames after the haze snaps to an exact 0 at 89.02.
+The dream by annulus, p50 before → after: centre 142 → 115 · body 111 → 90 · rim 88 → 68 · whole frame 79 → 62.5 (−21 %); the
+frame's p95 111 → 99, its p05 59 → 43 (the far side sinking). **Timing on the page**: haze > 0.05 at **70.32 s**, 0.5 at 72.57,
+0.9 at 75.22, 1.00 from 80 to the slam at **85.333**: 0.63 at 85.50, 0.18 at 86.00, 0.05 at 86.50, exactly 0 at 89.02 — where the
+window itself would first have read under LO at 87.3 s. **Nothing moves at drop 2** (1:46.7): the ambiguity there is 0.43–0.60.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (help.feats gaps 0; `haze.js` 66 lines; `index.js` **348** — it was 349 and the fog's eight
+  lines took it to 357, so the CPU `probe()` reference hook moved whole to `motion.js` as `probe(k, th, U)` with a one-line
+  wrapper; `hooks.probe(3)` answers as before) · `npm test` OK.
+- **The s3 fake-timeline md5 UNCHANGED three ways: HEAD `311d09a`, this tree by default, this tree under `&tongues=0` — f360
+  `0c81f92e`, f840 `e71f2f38`** (`IDS="3" PORT=8923 tools/scene-md5.sh base79` in the base worktree; `PORT=8922 … new79` /
+  `… new79off '&tongues=0'` here; `errs []`). The mirror's `tongueAmbig` is 0.4 in sustain / peak and 0.5 in the valleys (fake.js:
+  `1 − max(d, 0.5)`), both under LO 0.75, so the fog term is 0 at the fake's constants — the plan's "`IDS=3` moves by exactly that
+  scene" turned out not to be needed: it does not move at all.
+- **Bit-exact at haze 0 on a real track, not just on the JPEG**: CyborgNinja 20–50 s, this tree against HEAD, `lum` / `lumC` /
+  `lumR` / `lumM` **0 of 1801 frames differ**. The first shader cut — one `col` and one `fog` variable rewritten inside a uniform
+  branch — differed from HEAD by **one 8-bit step in a single pixel on 4–6 % of frames** (max |Δlum| 0.0001) with the haze at 0:
+  the compiler's scheduling of the same arithmetic, not a value change, invisible to the JPEG md5. The shader is now an
+  `if (uHaze > 0.0) { … } else { <the pre-§79 two lines, verbatim> }`, and two HEAD runs of the same window are themselves
+  identical (0 / 1801), so the receipt is real.
+- `&tongues=0` (`tongueOn` −1): the `haze` param's `from()` is `× (on === 1 ? 1 : 0)`, `step()` forces the target to 0, the eased
+  value snaps to an exact 0 under 1e-4, the veil is `0.045 · 0 · …` = (0, 0, 0), the bloom threshold `0.3 − 0.15 · 0` = 0.3, and the
+  shader takes the old branch — the pre-tongues TORUS2 bit for bit (the md5 line above, and the real-track line).
+- `CARD.bench(3, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: **haze forced on** (`&route=torus2.tongueAmbig=c:1`,
+  haze 0.9987) **0.95 / 0.93 / 0.94 ms against NAV 1.54 / 1.56 / 1.53** (ratio 0.61); this tree off 0.90 / 0.93 / 0.91 against
+  1.57 / 1.49 / 1.56 (0.59); HEAD 1.00 / 0.90 / 0.92 against 1.55 / 1.56 / 1.55 (0.60). Flat: one uniform, one clear colour, one
+  branch per vertex.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.27.html` from `file://`, new = `http://127.0.0.1:8765/`, key `4` for TORUS2 (keys 1–9 → ids 0–8), `&tongues=0` on the new page = the exact before)
+
+- **Vienna 1:05 → 1:25, the headline.** The nest is unchanged until **1:10**; from there the mist gathers — half at 1:12.5, full by
+  1:15 — and holds through 1:25: the far side of the nest sinks into fog, the colours go pale (the green stays green, washed), a
+  faint veil of the same colour lifts the black behind it, and the strokes' glow softens into halos. The near shell keeps its
+  light. (The user's dream starts at 1:05; the field is a 16-beat trailing window and reads 0.75 only at 1:09 — see open item 1.)
+- **1:25.3.** The slam clears it: a third of it in the first fifth of a second, four fifths within two thirds, gone by 1:26.5 — the groove is in full colour on the drop,
+  not three beats after it. The collapse TORUS2 already does on v3's `dropEvt` is NOT at 1:25.3 (it fires at 1:13.3, inside the
+  dream, before and after this change — open item 3).
+- **Vienna 1:40 → 1:50.** Nothing changes at drop 2 (1:46.7); nothing changes anywhere in 1:26 → 1:50.
+- **CyborgNinja and SeeYouDrop, any minute: nothing should change** — every frame of 20–80 / 20–110 s is identical to the digit.
+  SeeYouDrop's breakdown (0:50–0:58) and its intro (0:20–0:24) stay clear by 0.14 and 0.06 of ambiguity. WhoLikesToParty and
+  Malicious: no frame hazed over 20–110 s.
+
 ## §80 DUST: the hat voice as the second accent lever — the double time arrives on the rim too (2026-10-02, one worker; §78's open item (1), on the user's word; the user at Vienna 1:25 since §61: "the double time should be accenting rather than driving")
 
 Commit `0da9fb2` (`assets/scenes/dust/voices.js`, `index.js` — the voices, not the grid; no engine file), this section plus

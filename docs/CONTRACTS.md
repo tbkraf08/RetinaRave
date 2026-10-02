@@ -657,8 +657,9 @@ the way the track map already takes the drums and the sub over from the causal e
 a bank of sine circle-map oscillators driven per 512-sample hop by the PCM clock's own mid- (150–2500 Hz) and low-band
 (40–150 Hz) onset novelty, centred on the clock's beat, read once per clock beat over a 16-beat window: which rationals of
 the beat the music LOCKS, how deep inside its tongue each sits (0 the edge, 1 a click train), the 1:1 tongue's width as an
-implied coupling, and 1 − the octave ladder's best depth as a tension. **Shadow by default**: no scene reads one. Rules for
-a scene that does: (1) `tongueOn` is 1 running · 0 warming (< 16 beats since the start or a clock re-seat) · **−1 off**
+implied coupling, and 1 − the octave ladder's best depth as a tension. **Opt-in, one scene at a time**: DUST reads `tongue21` /
+`tongue41` (§78, §80) and TORUS2 reads `tongueAmbig` (§79, its fog — a LEVEL with a dead zone to 0.75, where the fields DO separate
+the dream from every groove); every other scene reads none. Rules for a scene that does: (1) `tongueOn` is 1 running · 0 warming (< 16 beats since the start or a clock re-seat) · **−1 off**
 (`&tongues=0`), and on −1 the scene falls back to its pre-tongues formula — `&tongues=0` is an md5 receipt, `loudAbs`'s
 convention; (2) `tongue21` / `tongue41` are DEEPER than `tongue11` on every test track (the hats are the most complete
 click train in the music) — the ladder says what is there, never which lattice is the beat (§61's `alive` decides the
@@ -813,7 +814,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `tongueQ` | count | its denominator | nothing by default (shadow) |
 | `tongueDepth` | level | how firmly the music locks the clock's OWN beat: 0 at the tongue's edge (barely a beat), 1 at its centre (a click train) | nothing by default (shadow): a beat-sized motion's confidence |
 | `tongueK` | level | how salient the periodic accent is: the implied coupling K of the 1:1 tongue, 0 none .. 1 a clean click train | nothing by default (shadow) |
-| `tongueAmbig` | level | the TENSION of a beat the music is not committing to: 1 − the octave ladder's best depth — 1.0 when nothing locks (Vienna's dream, 16 s before drop 1), 0.3-0.6 in a groove | nothing by default (shadow); the build detector's third arming path (phase 3) |
+| `tongueAmbig` | level | the TENSION of a beat the music is not committing to: 1 − the octave ladder's best depth — 1.0 when nothing locks (Vienna's dream, 16 s before drop 1), 0.3-0.6 in a groove | the build detector's third arming path (§77); TORUS2's fog (§79: smoothstep 0.75 → 0.95, cleared on `dropLiveEvt`) |
 | `tongue11` | level | the beat's own tongue depth (the un-eased tongueDepth) | nothing by default (shadow); the accent-vs-drive ladder with tongue21 / tongue41 |
 | `tongue21` | level | the 8th-note tongue depth: how complete the double-time layer is as a click train | nothing by default (shadow); a scene's accent AMPLITUDE (never an 8th nudge, §66) on a CHANGE of it over bars |
 | `tongue41` | level | the 16th-note tongue depth | nothing by default (shadow) |

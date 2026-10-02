@@ -1,7 +1,7 @@
 # Arnold tongues for the engine — a circle-map phase-locking descriptor, a plan (2026-10-01)
 
-Written on the user's word ("start planning tongues"), on v0.26 (`1a5eadb`). **STATUS: phases 1–4 built on the user's word
-("rec for tongues approved"), 2026-10-01 — see the phase table in §8 for the hashes; DECISIONS §76 / §77 / §78.** The probe in
+Written on the user's word ("start planning tongues"), on v0.26 (`1a5eadb`). **STATUS: phases 1–5 built on the user's word
+("rec for tongues approved"; phase 5 on 2026-10-02) — see the phase table in §8 for the hashes; DECISIONS §76 / §77 / §78 / §79 / §80.** The probe in
 `tools/truth/tongues/{env,probe}.py` is the measurement the build was graded against. The brief, in one
 line: θₙ₊₁ = θₙ + Ω − (K/2π)·sin(2πθₙ); the winding number locks to p/q over whole intervals of Ω (the tongues, width
 ~ K^q, Farey-ordered); a bank of such oscillators driven by the onset envelope gives, per window, which rationals lock,
@@ -178,7 +178,8 @@ identical, capture adds no lag term. `&tongues=0` → `tongueOn` −1 and no PCM
   `dust-trace.js` Vienna 24–60 / 82–118 s, flashes/s unchanged (`d_nstep` md5-identical), amplitude histogram moves; the
   user's eye. Gated on the DUST brief's standard.
 - **TORUS2.** One opt-in read, `tongueAmbig` on the fog (the dream = 1.0, the groove 0.6); `IDS=3 tools/scene-md5.sh` moves
-  by exactly that scene. Last, S.
+  by exactly that scene. Last, S. **Built (§79): it did not move at all — the fake's ambiguity (0.4 / 0.5) sits under the fog's dead
+  zone (0.75), by design.**
 
 ## 7. Proofs
 
@@ -202,7 +203,7 @@ identical, capture adds no lag term. `&tongues=0` → `tongueOn` −1 and no PCM
 | 3 | the build detector's third path | S | **DONE `a761b43` (§77)**: Vienna drop 1 4.4 → 12.2 beats (replay) / 4.9 → 8.9 (page), pooled false 0.14 / min unchanged, CyborgNinja 0, the four controls md5-identical | one CyborgNinja arm, or false arms above §54's |
 | 4 | DUST's accent on `tongue21` / `tongue41` | M | **DONE `c849b38` (§78)**: the nudge's step on the depths' 16-beat RISE — flashes/s identical, the §61/§66 metrics held, CyborgNinja identical to the digit, s1 md5 unchanged on and off; the user's eye on Vienna 0:27–0:40 and 1:30–1:38 | the user sees a crest, or any `d_nstep` change |
 | 4b | the second lever — the hat voice's gain on the same `acc` | S | **DONE `0da9fb2` (§80)**: the hit's gain 1 + 0.5·acc (K from a ×1.25 / ×1.5 / ×2.0 sweep: the smallest whose rim lift per hit clears 2× the rim's frame noise), `acc` itself and not a held copy (measured, rejected) — Vienna 1:30–1:38 `lumR` lift per hit 20.3 → 26.0, fires / timing / nudge metrics identical, CyborgNinja identical on every frame, s1 md5 unchanged on / off / `&hatacc=0` | any fire or `d_ageH` change; CyborgNinja's `lumR` moving |
-| 5 | TORUS2 fog on `tongueAmbig`, opt-in | S | **not in scope** (the user's word, 2026-10-01) | — |
+| 5 | TORUS2 fog on `tongueAmbig`, opt-in | S | **DONE `1f77931` (§79)**: the LEVEL (smoothstep 0.75 → 0.95, eased 1.5 s in / 0.4 s out), cleared ON `dropLiveEvt`'s slam — Vienna 72–86 s hazed 100 % (`lum` p50 79 → 62.5), clear at 85.33 s, nothing at drop 2; SeeYouDrop / CyborgNinja / WhoLikesToParty / Malicious 0 frames hazed (the two controls identical to the digit); s3 md5 unchanged on / off (the fake's ambiguity 0.4 / 0.5 is under the dead zone); the change-over-bars form rejected here (SeeYouDrop's breakdown rises 0.25 → 0.61) | a control track hazing; the s3 `&tongues=0` line moving |
 
 **The A/B shape for the user**, stream mode, track time: phase 2 is invisible unless a lattice moves — the test is the
 cold-start table and CyborgNinja's first 20 s on the capture page (`CARD.setClock`-style `CARD.setLat('tongue' | 'low')`);

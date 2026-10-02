@@ -178,6 +178,19 @@ launches in 90 s -> 349** (F 0.06 -> **0.73**) — `snare2`'s edge needed 0.45 a
 5. **Vienna's recall** — DUST 0.73 -> 0.56 and TORUS2 0.41 -> 0.56 against a truth beat grid still marked
    `provisional`. One down, one up, on the track the user watches most. The eye decides.
 
+**2026-10-02, §79 (TORUS2's fog on the tongues — `1f77931`):** the user has NOT seen it (no audible run; the A/B watch-list is in
+§79, Vienna 1:05–1:25 then 1:25.3 the headline, `&tongues=0` the exact before). Open: (1) **the mist starts at 1:10, the user's
+dream at 1:05** — `tongueAmbig` is a 16-beat trailing window and reads 0.75 only at 1:09; a leading read would be the engine's
+(a shorter window, or the ambiguity's own rise as §77 reads it) and nothing in the scene can bring it earlier without hazing
+SeeYouDrop's intro (0.686, 0.064 under the dead zone); (2) the look's five numbers (`DEEP` 0.30, `SAT` 0.45, `VEIL` 0.045, `BLOOM`
+0.15, `FOGK` 0.6) were set by one eye on one frame (Vienna 80 s) after the first cut dimmed the whole nest to the fog's floor — the
+user's remark retunes them, all in `haze.js`; (3) **v3's `dropEvt` fires at 73.3 s on Vienna with no track map — inside the
+dream — and not at 85.3**, so TORUS2's collapse-and-bloom lands mid-dream under the mist (pre-existing, measured here for the
+first time; the fog reads `dropLiveEvt`, the collapse still reads `dropEvt` — moving it is a look change the user has not asked
+for); (4) after a slam the fog is held off for up to 16 beats — a false `dropLiveEvt` inside a real dream would clear it for a bar;
+(5) a track whose intro locks nothing for 20 s (SeeYouDrop reads 0.64–0.67 over 20–24 s) sits 0.06 under the dead zone — the
+next such intro may haze faintly, which may be right.
+
 **2026-10-01, §78 (DUST's accent on the tongue ladder — `c849b38`):** the user has NOT seen it (no audible run; the A/B
 watch-list is in §78). Open: (1) ~~the hat voice's gain is the second lever the brief allowed and is untouched~~ **done 2026-10-02,
 §80 (`0da9fb2`): the hit's gain 1 + 0.5·acc on the same accent, `&hatacc=0` the exact before — the user has NOT seen it**; (2) `ACC.K` 0.25 / `LO` 0.15 / `HI` 0.45 are set from
@@ -208,8 +221,9 @@ AUDIT-live-grid Step 6 addendum 3) now reaches the tongue fields too — they cl
 those two tracks page ≠ node by the clock's own difference (SeeYouDrop / WhoLikesToParty / Vienna agree to 1e-3); the fix is
 the clock's, not the bank's. (2) `tongueP` / `tongueQ` rank tongues by WIDTH and the width tie-breaker decides most windows
 (a pure 1:1 click train reads 2/1) — a scene wanting "the beat family's winner" should read the depths. (3) the swing field is
-measurable (a 0.6 train reads 1.51) and the test set has nothing for it to show (1.00–1.02 on all five). (4) phase 5 of the
-plan (TORUS2's fog on `tongueAmbig`) is not in scope and is the one scene read the plan still names.
+measurable (a 0.6 train reads 1.51) and the test set has nothing for it to show (1.00–1.02 on all five). (4) ~~phase 5 of the
+plan (TORUS2's fog on `tongueAmbig`) is not in scope and is the one scene read the plan still names~~ **done 2026-10-02, §79
+(`1f77931`) — the user has NOT seen it.**
 
 **2026-10-01, §75 (why CHLADNI's shape does not move in the opening):** the user, watching scene 11 in stream mode —
 *"opening 10 secs the pitch is changing but the shape isn't?"*, low priority unless it is the engine. **Measured on
