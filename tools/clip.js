@@ -1,6 +1,12 @@
 // The clip bundle (SOCIAL-PLAN §0 / §2.6, DECISIONS §89): a recording saved by R → the contract folder SocialMediaManager reads.
 //   node tools/clip.js <clip.webm> [--ss 4.0] [--to 49.5] [--out dir] [--dry]
-// Beside <clip.webm> its sidecar <clip>.json (R downloads the two together). Output, under tools/work/clips/ (gitignored):
+// The sidecar, in this order (§92): <clip>.json beside it (`&recjson=1`, or a take from before v0.32) · the one R embeds in the
+// webm itself since v0.32 (a Matroska Tags element before the first cluster, TagName COMMENT: `ffprobe -show_entries format_tags`
+// prints it; without ffprobe the EBML walk in rec_probe.js finds it) · none: the file name gives version / scene / stamp, the
+// EBML walk gives duration / size / frames, and meta.json carries `sidecar: null` with `derived: 'name+ebml'`.
+// The frame rate: MediaRecorder stamps every frame at the compositor's rAF time in whole ms (time_base 1/1000; intervals 13–20 ms),
+// so ffprobe's r_frame_rate on a take is a guess (60000/1001 on one, 120/1 on another) — `-r 60` below makes the clip CFR 60/1.
+// Output, under tools/work/clips/ (gitignored):
 //   <yyyy-mm-dd>T<hh-mm>-<scene>-v<ver>/   (the stamp from the sidecar's `started`, UTC like the file name's, the scene at the start, the version)
 //     clip.webm       the recording as saved (copied)
 //     meta.json       the sidecar with the trim applied: durationS, scenes[].t shifted (the scene in effect at ss becomes t 0), trim: [ss, to]
@@ -13,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { walk } from './rec_probe.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -28,9 +35,19 @@ for (let i = 0; i < args.length; i++) {
 }
 if (!src) { console.log('usage: node tools/clip.js <clip.webm> [--ss s] [--to s] [--out dir] [--dry]'); process.exit(1); }
 if (!fs.existsSync(src)) { console.log('no such file: ' + src); process.exit(1); }
-const sidePath = src.replace(/\.webm$/, '.json');
-if (!fs.existsSync(sidePath)) { console.log('no sidecar beside it: ' + sidePath + ' (R downloads <name>.json with <name>.webm)'); process.exit(1); }
-const side = JSON.parse(fs.readFileSync(sidePath, 'utf8'));
+const sidePath = src.replace(/\.(webm|mp4)$/, '.json');
+export function sidecarOf(file) { // → { side, from }: the .json beside it · the Tags element R embeds · derived from the name + the EBML walk
+  const jp = file.replace(/\.(webm|mp4)$/, '.json');
+  if (fs.existsSync(jp)) return { side: JSON.parse(fs.readFileSync(jp, 'utf8')), from: 'json' };
+  const w = walk(fs.readFileSync(file));
+  if (w.sidecar) return { side: w.sidecar, from: 'embedded' };
+  const m = /retinarave-v(\d+\.\d+)-([a-z0-9-]+)-(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)-(\d\d)\.(webm|mp4)$/.exec(path.basename(file));
+  const v = w.tracks.find((t) => t.type === 1);
+  const side = { app: 'retinarave', version: m ? m[1] + '.0' : null, started: m ? m[3] + 'T' + m[4] + ':' + m[5] + ':' + m[6] + 'Z' : new Date(fs.statSync(file).mtimeMs).toISOString(),
+    durationS: +w.s.toFixed(3), size: v ? [v.w, v.h] : null, fps: 60, frames: v ? v.blocks : null, scenes: [{ t: 0, id: -1, name: m ? m[2] : 'scene' }], sidecar: null, derived: 'name+ebml' };
+  return { side, from: 'derived' };
+}
+const { side, from: sideFrom } = sidecarOf(src);
 
 // --- the folder name: <yyyy-mm-dd>T<hh-mm>-<scene>-v<ver> ---
 const stamp = String(side.started).slice(0, 16).replace(':', '-'); // the sidecar's `started` (UTC, as the file name's stamp) to the minute
@@ -65,7 +82,7 @@ const cmds = [
 const q = (s) => (/[^\w./:+=,*()-]/.test(s) ? "'" + s.replace(/'/g, "'\\''") + "'" : s);
 const have = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8' }).status === 0;
 
-console.log('clip bundle → ' + path.relative(ROOT, dir) + '  (trim ' + ss + ' → ' + to + ' s, ' + meta.durationS + ' s, scenes ' + meta.scenes.map((s) => s.name + '@' + s.t).join(' '));
+console.log('clip bundle → ' + path.relative(ROOT, dir) + '  (sidecar ' + sideFrom + ' · trim ' + ss + ' → ' + to + ' s, ' + meta.durationS + ' s, scenes ' + meta.scenes.map((s) => s.name + '@' + s.t).join(' ') + ')');
 if (opt.dry || !have) {
   if (!have) console.log('ffmpeg is NOT on PATH — install it (sudo apt install ffmpeg) and run this again. The commands it would run:');
   console.log('mkdir -p ' + q(dir) + ' && cp ' + q(src) + ' ' + q(path.join(dir, 'clip.webm')));

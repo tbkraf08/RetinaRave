@@ -42,11 +42,12 @@ function vint(b, i, keepMarker) {
   for (let k = 1; k < len; k++) { v = v * 256 + b[i + k]; if (b[i + k] !== 0xff) unknown = false; }
   return { v, len, unknown: unknown && !keepMarker };
 }
-const CONTAINERS = new Set([0x18538067, 0x1f43b675, 0x1549a966, 0xa0, 0x1654ae6b, 0xae, 0xe0]); // Segment, Cluster, Info, BlockGroup, Tracks, TrackEntry, Video
+const CONTAINERS = new Set([0x18538067, 0x1f43b675, 0x1549a966, 0xa0, 0x1654ae6b, 0xae, 0xe0, 0x1254c367, 0x7373, 0x67c8]); // Segment, Cluster, Info, BlockGroup, Tracks, TrackEntry, Video, Tags, Tag, SimpleTag
 const uint = (b, i, end) => { let t = 0; for (let k = i; k < end; k++) t = t * 256 + b[k]; return t; };
 export function walk(buf) {
   let i = 0, tcScale = 1e6, clusterTc = 0, last = 0, clusters = 0, cur = null;
   const tracks = {}, perSec = [];
+  let tagName = '', sidecar = null;
   while (i < buf.length - 2) {
     const id = vint(buf, i, true); i += id.len;
     const sz = vint(buf, i, false); i += sz.len;
@@ -60,6 +61,8 @@ export function walk(buf) {
     else if (cur && id.v === 0x86) cur.codec = buf.toString('latin1', i, end);
     else if (cur && id.v === 0xb0) cur.w = uint(buf, i, end);
     else if (cur && id.v === 0xba) cur.h = uint(buf, i, end);
+    else if (id.v === 0x45a3) tagName = buf.toString('utf8', i, end);
+    else if (id.v === 0x4487 && tagName === 'COMMENT') { try { const o = JSON.parse(buf.toString('utf8', i, end)); if (o && o.app === 'retinarave') sidecar = o; } catch (e) {} }
     else if (id.v === 0xa3 || id.v === 0xa1) {
       const tr = vint(buf, i, false), rel = buf.readInt16BE(i + tr.len), t = clusterTc + rel, tk = tracks[tr.v];
       last = Math.max(last, t);
@@ -67,7 +70,7 @@ export function walk(buf) {
     }
     i = end;
   }
-  return { s: last * tcScale / 1e9, clusters, tracks: Object.values(tracks), perSec };
+  return { s: last * tcScale / 1e9, clusters, tracks: Object.values(tracks), perSec, sidecar }; // sidecar: the one R embeds (§92), or null
 }
 
 export function ebmlReport(file) {
@@ -75,6 +78,7 @@ export function ebmlReport(file) {
   const o = { file: path.basename(file), bytes: buf.length, durationS: +r.s.toFixed(3), clusters: r.clusters, mbps: +(buf.length * 8 / r.s / 1e6).toFixed(2) };
   if (v) Object.assign(o, { codec: v.codec, size: [v.w, v.h], frames: v.blocks, fps: +(v.blocks / r.s).toFixed(2), keyframes: v.key, videoMbps: +(v.bytes * 8 / r.s / 1e6).toFixed(2), perSecMbps: r.perSec.map((b) => +(b * 8 / 1e6).toFixed(1)) });
   if (a) Object.assign(o, { audio: a.codec, audioBlocks: a.blocks, audioKbps: +(a.bytes * 8 / r.s / 1e3).toFixed(0) });
+  o.sidecar = r.sidecar;
   return o;
 }
 

@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walk } from './rec_probe.js'; // the EBML walk: the embedded sidecar (§92)
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.resolve(HERE, '..');
 const PORT = +(process.env.PORT || 8861), N = +(process.env.N || 6), WIN = process.env.WIN || '1280,720';
@@ -92,7 +93,7 @@ async function ensureServer() {
     await key('r');
     await sleep(300);
     ok(await ev('__REC.REC.on === true'), 'R starts a take (REC.on)');
-    ok(await ev('CARD.Q.hold === 1 && CARD.Q.q === 1 && CARD.Q.scale === 1'), 'the tier is pinned during the take: Q.hold 1, q 1, scale 1 (§92)');
+    ok(await ev('CARD.Q.hold === 0.75 && CARD.Q.q === 0.75 && CARD.Q.scale === 0.875'), 'the tier is pinned during the take: Q.hold 0.75, q 0.75, scale 0.875 (§92)');
     ok(await ev("getComputedStyle(document.getElementById('recdot')).display === 'block'"), 'the red dot is on (DOM)');
     await sleep(700);
     const lum = await ev("(()=>{const c=document.createElement('canvas');c.width=64;c.height=36;const x=c.getContext('2d');x.drawImage(__REC.cv(),0,0,64,36);const d=x.getImageData(0,0,64,36).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]+d[i+1]+d[i+2];return s/(d.length/4)/3})()");
@@ -106,22 +107,26 @@ async function ensureServer() {
     await sleep(Math.max(0, N * 1000 - (Date.now() - t0)));
     await key('r');
     const tStop = (Date.now() - t0) / 1000;
-    for (let i = 0; i < 150; i++) { const l = Object.values(downloads); if (l.length >= 2 && l.every((d) => d.state === 'completed')) break; await sleep(100); }
+    for (let i = 0; i < 150; i++) { const l = Object.values(downloads); if (l.length >= 1 && l.every((d) => d.state === 'completed')) break; await sleep(100); }
+    await sleep(500);
     const dls = Object.values(downloads);
-    ok(dls.length === 2 && dls.every((d) => d.state === 'completed'), 'two downloads completed: ' + dls.map((d) => d.name + ' ' + d.state).join(', '));
+    ok(dls.length === 1 && dls[0].state === 'completed', 'ONE download completed (the sidecar is inside the webm, §92): ' + dls.map((d) => d.name + ' ' + d.state).join(', '));
     ok(await ev('__REC.REC.on === false'), 'R again stops it (REC.on false)');
     ok(await ev("getComputedStyle(document.getElementById('recdot')).display === 'none'"), 'the red dot is off');
-    const webm = dls.find((d) => d.name.endsWith('.webm')), json = dls.find((d) => d.name.endsWith('.json'));
+    const webm = dls.find((d) => d.name.endsWith('.webm'));
     const re = /^retinarave-v\d+\.\d+-[a-z0-9-]+-\d{4}-\d\d-\d\dT\d\d-\d\d-\d\d\.webm$/;
     ok(webm && re.test(webm.name), 'the name: ' + (webm && webm.name));
-    ok(json && json.name === webm.name.replace(/\.webm$/, '.json'), 'the sidecar beside it: ' + (json && json.name));
-    const sc = JSON.parse(fs.readFileSync(path.join(DL, json.name), 'utf8'));
-    for (const k of ['app', 'version', 'engineMd5', 'started', 'durationS', 'source', 'track', 'size', 'fps', 'scenes', 'flags', 'ua']) ok(k in sc, 'sidecar has ' + k + ': ' + JSON.stringify(sc[k]).slice(0, 80));
+    const buf = fs.readFileSync(path.join(DL, webm.name)), w = walk(buf);
+    ok(!!w.sidecar && await ev('__REC.REC.last.embedded === true'), 'the sidecar is embedded (a Tags element before the first Cluster; ffprobe -show_entries format_tags prints tag:COMMENT)');
+    const sc = w.sidecar || {};
+    ok(JSON.stringify(sc) === await ev('JSON.stringify(__REC.REC.last.sidecar)'), 'the embedded sidecar == REC.last.sidecar byte for byte');
+    for (const k of ['app', 'version', 'engineMd5', 'started', 'durationS', 'source', 'track', 'size', 'render', 'dpr', 'fps', 'frames', 'mime', 'bps', 'q', 'q0', 'scenes', 'flags', 'ua']) ok(k in sc, 'sidecar has ' + k + ': ' + JSON.stringify(sc[k]).slice(0, 80));
     ok(sc.app === 'retinarave' && sc.version === pkg.version, 'sidecar app/version = retinarave ' + pkg.version);
     ok(sc.source === 'demo' && sc.track === null, 'sidecar source demo, track null');
     ok(Array.isArray(sc.size) && sc.size[0] >= 16 && sc.fps === 60, 'sidecar size ' + sc.size + ' fps ' + sc.fps);
     ok(Math.abs(sc.durationS - tStop) < 0.7, 'sidecar durationS ' + sc.durationS + ' ≈ ' + tStop.toFixed(2) + ' (the keys)');
-    ok(sc.q === 1 && typeof sc.q0 === 'number', 'sidecar q 1 (the tier held for the take, &recq= default) · q0 ' + sc.q0 + ' (the governor at R; DECISIONS §92)');
+    ok(sc.q === 0.75 && typeof sc.q0 === 'number', 'sidecar q 0.75 (the tier held for the take, &recq= default) · q0 ' + sc.q0 + ' (the governor at R; DECISIONS §92)');
+    ok(sc.bps === 30e6 && sc.mime === 'video/webm;codecs=vp9,opus' && sc.size[0] === sc.render[0], 'sidecar bps 30e6 · mime vp9,opus · size == render (no &recsize=)');
     ok(await ev('CARD.Q.hold === null && Math.abs(CARD.Q.q - ' + sc.q0 + ') < 0.05'), 'after the stop the governor is free again (Q.hold null) from q0 ' + sc.q0);
     ok(webm.name.includes('-' + sc.scenes[0].name + '-'), 'the name carries the scene at the START: ' + sc.scenes[0].name);
     const ids = sc.scenes.map((s) => s.id);
@@ -129,7 +134,6 @@ async function ensureServer() {
     const e3 = sc.scenes.find((s) => s.id === 3), e1 = sc.scenes.find((s) => s.id === 1);
     ok(e3 && Math.abs(e3.t - t4) < 0.6 && e1 && Math.abs(e1.t - t2) < 0.6, 'timeline times within 0.6 s of the key presses (' + (e3 && e3.t) + ' vs ' + t4.toFixed(2) + ', ' + (e1 && e1.t) + ' vs ' + t2.toFixed(2) + ')');
     ok(typeof sc.flags.lead === 'boolean' && typeof sc.flags.shade === 'boolean', 'flags lead/shade are booleans: ' + JSON.stringify(sc.flags));
-    const buf = fs.readFileSync(path.join(DL, webm.name));
     ok(buf.length > 50000, 'webm bytes ' + buf.length);
     ok(buf.readUInt32BE(0) === 0x1a45dfa3, 'webm EBML magic');
     const dur = webmDurationS(buf);
