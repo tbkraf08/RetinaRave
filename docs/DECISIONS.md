@@ -8051,3 +8051,169 @@ Vienna **1:12–1:26**: the dream tightens (from ~1:13 on a from-0 start), 1:25.
 third harder, the crest a quarter bigger, gone by 1:43; **1:46.7**: nothing happens on purpose (§77). CyborgNinja **0:20–1:20**: the
 control — N never changes, nothing accents, nothing tightens, the groove just turns (one wedge every two bars at N 4). The knobs
 that step back one lean at a time on the new page: `&nudge=`, `&step=`, `&bed=`, `&hatacc=0`, `&kc=0`, `&shade=0`, `&rough=0`.
+
+## §90 IBelongHere's three times — DUST's sync at 0:10 / 0:47 / 1:04: the kick lane takes a clickless kick ON the clock's line, the clock holds its tempo through a kick-less passage, and the cold 4:3 lock is measured and left (2026-10-02, one worker; the diagnosis `docs/truth/IBELONGHERE-2026-10-02.md` §4, on the user's word: "on dust it feels like the beat is out of sync (at ~10s in, ~47s in, ~1m04s in)")
+
+Three commits in the diagnosis's order, each behind its knob (`&`-flag on the page, `CLOCKK` / `PERCK` in node; the knob at 0 =
+the v0.29 behaviour): **`54cfbe8` step 1 (0:10, a knob left OFF)**, **`a45f5d6` step 2 (0:47)**, **`9985bcf` step 3 (1:04)**. Every
+before / after pair in isolated worktrees (`../RetinaRave-v90-before` = `78feceb`, `../RetinaRave-v90-after` = `9985bcf`; the
+user's 8765 untouched, the worker's ports 8901–8905 killed by port; one page Chrome at a time). No audible run. **Not tagged, not
+pushed, not deployed.** Scratch (git-ignored): `tools/work/v90/{clk.py, combdbg.mjs, kickwin.py, linesim.py, dustwin.py}` and the
+traces under `tools/work/v90/{clock,drums}/`. Conventions as the diagnosis: a clock lag is its beat line minus the truth beat, + =
+late; the ruler is `tools/clock-study.js` (node, no display lead) graded per window by `clk.py` (lock = the first of 8 consecutive
+lines within ±30 ms); the kick lane by `tools/truth/drumcheck.py` (`kick vs kick`, ±30 ms, whole track) and `kickwin.py` (±60 ms,
+the diagnosis's windows).
+
+### Step 1 — 0:10: the comb-strength gate on a cold / unrelated tempo switch, measured and REJECTED (`CLOCK.SW_Y1`, default 0)
+
+The diagnosis proposed `need = !rel ? (y1 >= 0.3 ? 2 : 1e9)`: a cold switch needs comb strength ≥ 0.3, because the wrong lock read
+y1 0.18–0.30 and the right one 0.32 → 0.75. Built as `CLOCK.SW_Y1` (period.js `estimate()` — `Period` now takes the clock's knob
+object; `&swy1=` on the page), the gate covers both routes a cold prior can take (`tempoAge > 16 ? 3` — the prior starts at
+tempoAge 99 — and `!rel ? 2`). **At 0.3 it does not remove the plateau and it costs three tracks:** IBelongHere switches to 157.6 at
+10.0 s instead of 9.0 (y1 0.30) and holds it to 12.5 as before; Vienna's lock 21.4 → 27.4 s (held at the 124 prior for 20 s —
+its real tempo's y1 is 0.17–0.26 for 22 s), Malicious 3.5 → 13.8, WhoLikesToParty 6.2 → 25.7 (the 124 prior slid to 117 through
+the 6 % tracking branch and the lattice landed half a beat off; +244 ms until 25 s).
+
+**Why no gate on the comb can see it** (`combdbg.mjs`: every estimate of every cold start, SW_Y1 0): the five RIGHT cold locks
+switch at y1 **0.19** (Malicious, votes 0.15 / 0.17 / 0.19), **0.22** (Vienna, 0.22 / 0.22 / 0.22, `alive` on all three — its y1
+comes from the 2L lag), **0.26** (WhoLikesToParty), **0.29** (CyborgNinja), **0.64** (SeeYouDrop); the WRONG one at **0.25** (0.17 /
+0.23 / 0.25). Contrast at the switch 6.0 / 19.2 / 11.5 / 12.9 / 4.2 right vs 10.5 wrong; `best / cur` 0.35 / 0.09 / 0.37 / 0.45 /
+0.91 vs 0.29; the ACF at 2L over L 0.95 / ∞ / 0.77 / 0.97 / 0.73 vs 0.60; the 40–150 Hz share of the comb's strength (a 2 s leak
+of `s40` over `flux + 3·bflux`) **0.012 / 0.097 / 0.020 / 0.022 / 0.026 right vs 0.032 wrong** — the drumless intro carries MORE
+low band than four of the five drum intros; the PDA hit rate over the vote 2/4, 1/1, 3/7, 3/7, 1/2 vs 2/2. Nothing separates them.
+**What the 157.6 is:** 0.381 s = three 16ths of 118 = a dotted 8th — the echo period of the sung / pad intro, and the comb's
+candidate from 0.5 s on (155–157 at y1 0.10–0.13, under the gates, then 7.5 / 8.5 / 9.0 at 0.17 / 0.23 / 0.25 with the one
+non-vote at 8.0 reading the prior's own lag); the 8ths at 0.254 s that start at 9.8 s are not on its grid (1.5 of them per period),
+and they take the 8 s ring until 11.5 s (the comb says 117.8 at y1 0.18, held by the 25 % margin), 12.0 (vote 1, `alive`), 12.5
+(vote 2, `alive` dead → the switch). A vote-consistency rule (the 8.0 non-vote resets the count) moves the switch 9.0 → 9.5 s;
+nothing on the comb moves it past 10. The plateau is the audio's; the receipt the diagnosis asked for ("the plateau gone, lock ≤ 15.4")
+cannot be bought on the clock side without the three tracks above. **Left at 0:** the six clock-study traces byte-identical to
+`78feceb` (cols md5 `402f2d5d f95e8d3d dee488ec 758f5fc4 d5a2ceb6 f89fe950`); `CLOCKK='{"SW_Y1":0.3}'` / `&swy1=0.3` reproduces the
+table. The scene-side alternative in the diagnosis (publish `clockConfPcm × min(1, y1 / 0.3)`, let the nudge amplitude ride it) is
+the open item — `clockConfPcm` reads 0.77–0.80 inside the wrong lock, so confidence alone is no gate either.
+
+### Step 2 — 0:47: a CLICKLESS low onset ON the PCM clock's beat line is a kick (`PERCK.lineKick`, ears only)
+
+**Measured first, the two cheap variants** (`PERCK` env on `drums-node.js`, six tracks, `drumcheck.py` kick vs `.kick.json`):
+`CLICK_FLOOR` 0.7 / 0.5 are **byte-identical** to 1.0 (the adaptive term `fm + thrK·fd` is always above it — the floor never binds);
+`CLICK_W` 25 → 35 / 45 ms lifts IBelongHere's recall **0.40 → 0.42 / 0.42** (42–52 s: 9 → 10 of 21) and costs SeeYouDrop P 0.79 →
+0.72 / 0.66, Vienna P 0.69 → 0.55 / 0.52: this soft deep-house kick under its A1 pedal has **no beater click inside 45 ms**, while
+the low lane hears 90 % of it. **Then the line rule, simulated offline** (`linesim.py`: the base drums trace joined with the
+clock-study trace at the same frame; a clickless `lowEvt` with |wrap(beatPhasePcm)| < ph and `clockConfPcm` ≥ conf promoted):
+at the diagnosis's gate (0.08 / 0.75) IBelongHere F 0.55 → 0.67 with 18 of 110 promoted on its bare-808 truth; at **0.06 / 0.85**
+F 0.55 → **0.67 with P 0.89 → 0.90** and every other track up (CyborgNinja 0.90 → 0.95, WhoLikesToParty 0.70 → 0.76, SeeYouDrop 0.40 →
+0.47 at P 0.79 → 0.81, Malicious 0.20 → 0.31, Vienna 0.33 → 0.37), 9 of SeeYouDrop's 233 kicks on a bare-808 note start (**3.9 %**;
+§68's guard 6.0 %). The **8th line** (`lineSub 2`) reads IBelongHere 0.70 and takes the syncopated "and" kicks (42–52 s 14 of 21)
+but puts **52 of SeeYouDrop's 312 kicks (17 %) on 808 note starts** — its bass line runs on 8ths and the kick voice would fire on
+every note. A knob, OFF.
+
+**Built:** `perc.js` `PERCK = { clickW, clickFloor, lineKick 1, linePh 0.06, lineConf 0.85, lineSub 1 }` (a mutable object: `PERCK`
+env in node, `&kline=0|1|2` / `&clickw=<ms>` on the page; `o` in the constructor still wins per instance); `PercTrack.line` is a hook
+`(t) → { phase, conf }` — `clock.js lineHook(clk)` predicts the clock's state (the previous block's; the clock stage runs after the
+ears) to the onset's time — attached by `features-clock.js` when it makes a Clock for an Ears, and by the five node tools that run
+the ears beside a Clock (page = node). A clickless low onset on the line is **emitted at once, flagged `line`**, and the beater hold
+stays: a click inside `CLICK_W` drops the flag in place (the clicked path is unchanged to the hop). **The clock stage never takes a
+line kick as a tick** — it is on the line by construction, so it would only confirm the clock's own phase (a self-locking loop;
+fed, Vienna's clock read |p50| 4.8 → 11.3 ms, |p90| 119 → 328): with the flag honoured in all six feed loops the six clock-study
+traces are **byte-identical to `78feceb`** again.
+
+| `drumcheck.py` kick vs `.kick.json`, ears, ±30 ms | P | R | F | lag med / p90 ms |
+|---|---|---|---|---|
+| **IBelongHere** | 0.89 → 0.90 | **0.40 → 0.54** | **0.55 → 0.68** | +7 / +18 → +7 / +18 |
+| CyborgNinja | 1.00 → 1.00 | 0.82 → 0.91 | 0.90 → 0.95 | +5 / +16 → +5 / +14 |
+| WhoLikesToParty | 0.74 → 0.75 | 0.67 → 0.78 | 0.70 → 0.77 | +7 / +18 → +7 / +19 |
+| SeeYouDrop | 0.79 → 0.78 | 0.27 → 0.33 | 0.40 → 0.47 | +8 / +23 → +8 / +23 |
+| Malicious | 0.50 → 0.49 | 0.13 → 0.21 | 0.20 → 0.30 | +3 / +21 → +5 / +25 |
+| Vienna | 0.69 → 0.69 | 0.21 → 0.25 | 0.33 → 0.37 | +14 / +14 → +14 / +14 |
+
+No track down by more than 0.01 P; the lag medians are §71's (the promoted kicks carry `otK`, the low lane's own clock). IBelongHere
+per window (`kickwin.py`, ±60 ms, hits / truth kicks, false): **42–52 s 9 → 12 of 21 (false 0 → 1)**, 59–69 9 → 14 (1 → 1), 26–36
+15 → 20, 69–80 22 → 27; the intro's 5 vocal "kicks" (5–15 s, 3 of 20 truth, 2 false) are untouched — they are clicked. `lineKick 0`
+is byte-identical to the base.
+
+### Step 3 — 1:04: the kick-less passage (`HOLD_Y1` 0.3 / `R_Y1` 0.2 / `RATE_Y1` 0.15)
+
+**The diagnosis's `R_CLS` [1, 1.5, 3] → [1, 3, 6], re-run on all six:** IBelongHere 59–65 s +21.2 → **+11.9** (p90 36 → 30, within
+75 → 92 %) as measured — and SeeYouDrop |p50| / |p90| 7.9 / 24.8 → 8.7 / 27.6, CyborgNinja 1.1 / 2.9 → 2.1 / 5.2, Malicious 11.1 /
+28.3 → 14.0 / 29.9, **Vienna 4.8 / 119 → 8.1 / 322** (§71's hat row: Vienna's line is held by its hats). Not taken. **What the +21
+is:** `bpmPcm` leans 117.97 (52–59 s) → 117.87 (59–65) against 118.00, and 0.74 ms a beat over the breakdown's 26 beats IS the +21;
+the lean enters while y1 is 0.16–0.21 (52–59: `clear`, so the comb's sung-passage tempo is blended into `X.bpm` at 0.3 per estimate
+and the Kalman follows it) and continues under 0.15 (59–65, y1 0.03–0.11: `clear` is false, the comb is silent, and the late vocal
+onsets drag the RATE through the phase–rate coupling). The §61 nudge then crests late and the drop re-seats it by −22 ms in one
+beat. **Three knobs** (`clock.js CLOCK`; `&holdy1=` / `&ry1=` / `&ratey1=`; each 0 = the pre-§90 clock): `HOLD_Y1` — period.js
+holds its tracking blend while y1 < 0.3; `R_Y1` / `R_Y1P` — a snare / hat onset's variance × max(1, (R_Y1 / y1)^P), 0.2 linear;
+`RATE_Y1` — an onset moves the beat position only, not the rate, while y1 < 0.15 (Vienna's y1 never goes under 0.15 outside its
+cold start; IBelongHere's breakdowns sit at 0.06–0.08).
+
+| `clk.py`, node | IBelongHere 52–59 / **59–65** (med, p90, within) / 65–69 | SeeYouDrop p50/p90, lock | CyborgNinja | WhoLikesToParty | Malicious | Vienna |
+|---|---|---|---|---|---|---|
+| `78feceb` | +7.3 / **+21.2, 36, 75 %** / −1.2 | 7.9/24.8, 12.4 s | 1.1/2.9, 3.4 | 5.1/8.6, 6.2 | 11.1/28.3, 3.5 | 4.8/119, 21.4 |
+| R_Y1 0.3 | +1.7 / +12.1, 32, 75 % / −2.1 | 7.9/25.0 | 1.1/3.0 | = | 11.1/28.4 | **7.4/314** |
+| R_Y1 0.2 | +7.1 / +14.9, 35, 75 % / −1.5 | 7.9/24.8 | 1.1/2.9 | = | = | 5.0/112 |
+| R_Y1 0.15² · 0.12³ | +7.3 / **+21.7** · **+23.7** | = | = | = | = | 4.8/110 · 5.1/96 |
+| HOLD 0.2 · 0.25 | +7.3 / +21.2 · +20.4 (no effect: y1 < `clear`'s 0.15 there) | = | = | = | = | **7.2/314** · 4.8/119 |
+| HOLD 0.3 + R_Y1 0.2 | +7.1 / +13.7, 34, 75 % / −1.5 | 7.9/24.2 | 1.1/2.9 | 5.1/8.7 | 11.0/28.3 | 5.1/112 |
+| RATE 0.15 alone | +7.1 / +16.0, 32, 83 % / −1.1 | 8.1/23.8, **9.6 s** | 1.1/3.0, 3.8 | = | 11.3/29.0, **5.6 s** | 5.0/119 |
+| **HOLD 0.3 + R_Y1 0.2 + RATE 0.15 (ships)** | **+3.5 / +8.0, 29, 92 % / −1.6** | **8.0/23.2, 9.6 s** | 1.1/3.0, 3.8 | 5.1/8.7 | 11.3/29.0, 5.6 s | 4.9/116, 21.4 |
+
+Vienna's whole-track |p90| is a knife edge (119 ↔ 314: a half-beat stretch after 80 s flips on any perturbation of its onset
+weights — `HOLD_Y1` 0.2 flips it, 0.25 and 0.3 do not), which is why the receipt is per track and not a mean. The shipped row: the
+five within ±1 ms of before on p50 / p90, SeeYouDrop's lock 2.8 s earlier, **Malicious's lock 2.1 s later** (the rate frozen through
+a cold start at y1 0.08–0.19; `RATE_Y1` 0.12 does not recover it) — the one cost, in OPEN-ITEMS. IBelongHere's cold start also moves
+(lock 14.9 → 13.8 s, 10–16 s within 29 → 43 %); the 157.6 plateau is step 1's and stays. The six `clock-study` traces at the shipped
+defaults are byte-identical to the sweep's `h03r02rt015` run (the knobs reproduce the measurement).
+
+### DUST on the file path — `dust-trace.js IBelongHere 0 75`, scene 1, `WARM=0`, `&map=0`, before (`78feceb`) / after (`9985bcf`); `dustwin.py` per window (file mode: the 40 ms display lead is in the page's clock, so −40 is the design)
+
+| window | §61 crest vs the TRUTH beat, med (p10 / p90) ms | the page's clock line vs the truth beat, med / p90 |·| | kick voice on truth kicks (±60 ms), false | page `bpm` med |
+|---|---|---|---|---|
+| 5–15 (the intro; 157.6 from 9.0 to 12.5 s both) | +4.0 (−242 / +236) → −76.0 (−210 / +128) | +6.1 / 238 → −88.4 / 229 | 3 of 20, 2 → 3 of 20, 2 | 157.6 → 157.6 (9–12.5) |
+| 13–16 (the lock forms) | +125.5 (−133 / +216) → **−49.9 (−87 / −38)** | +220 / 230 → **−45.2 / 82** | 0 of 4 → 0 of 4 | 118.1 → 118.0 |
+| **42–52** | **−37.2 (−47 / −26) → −37.2 (−47 / −26)** (= the 40 ms lead, the design) | −38.4 / 43.6 → −38.4 / 43.6 | **9 of 21, 0 → 12 of 21, 1** | 118.01 → 118.01 |
+| **59–65** | −16.6 (−39 / **−3.6**) → **−27.3 (−46 / −16.0)** | **−19.9 / 32.9 → −30.4 / 39.0** | 4 of 10 → 5 of 10 | **117.81 → 118.07** |
+| 65–69 (the drop) | −38.4 → −39.2 | −42.3 → −42.0 (the re-seat: **22 → 12 ms** inside one beat) | 5 of 11, 1 → **9 of 11**, 1 | 118.1 → 118.1 |
+| 69–75 | −36.9 → −36.9 | −40.3 → −40.3 | 13 of 17 → **15 of 17** | 117.99 → 117.99 |
+
+The crest at 0:47 is unchanged because the clock there was never the cause (+1.5 ms in node); the kick voice is. At 1:04 the crest
+is back to −27 of the −40 design (half the lead was gone: p90 −3.6 → −16.0) and the drop's snap is 12 ms. At 0:10 the plateau is the
+same 157.6 for the same 3.5 s (step 1); the lock then forms earlier on the page (13–16 s: the clock line +220 → −45 ms), which is
+step 3's `RATE_Y1` through the cold start. `CARD.ERRS 0`, 4500 frames, both runs.
+
+### Receipts
+
+- **check.js 0 fail** at every commit (171 modules; the license-header warn is MANDALA's / `math/*`'s paths, a parallel worker's) ·
+  **npm test exit 0** (`test_clock` 17, `test_drums`, `test_tempo` among them) · `test_ears.js` not runnable (the native-rate dumps,
+  §86's note).
+- **The fake-timeline md5 sweep, both worktrees** (`GPU=1 PORT=8903 / 8904 tools/scene-md5.sh`): {MD5}
+- **`accept.sh`** on the after worktree (`GPU=1 PORT=8905 ACC=v0.29`): {ACCEPT}
+- The parallel MANDALA worker's files (`assets/scenes/mandala/**`, `assets/scenes/dust/**`, `assets/math/**`, §85–§88) untouched;
+  the worktrees `../RetinaRave-m*` untouched.
+
+### What the user should look at (DUST, file mode, `http://127.0.0.1:8765/`, key 1, IBelongHere; the old behaviour = the same URL with `#test&track=IBelongHere&scene=1&kline=0&holdy1=0&ry1=0&ratey1=0`, or `releases/retinarave-v0.29.html` from `file://`)
+
+- **0:10** — unchanged by design: the wedge still turns at the 4:3 rate from 0:09 to 0:12.5 (the dotted-8th echo), the kick pulse on
+  the sung low onsets is the §68 lane's (those five are clicked). Nothing beat-locked before 0:12.5 is the warm-up and expected.
+- **0:47** — the kick pulse now fires on 12 of the 21 kicks of 0:42–0:52 (was 9) and on 14 of 21 through 0:59–1:09 (was 9); the
+  "and" kicks (0:43.6, 0:44.7, 0:45.6, 0:47.7, 0:48.2, 0:48.8) still do not fire — `&kline=2` fires them, at the price of SeeYouDrop's
+  808 notes.
+- **1:04** — the beat line through the sung breakdown now sits +8 ms (was +21) and the drop's snap is 10 ms (was 22); in file mode
+  the crest is back near the −40 ms lead through 0:59–1:05 instead of eating half of it.
+
+### The receipts — `accept.sh` in a worktree of `3bad667` (`../RetinaRave-m88c`, `GPU=1 PORT=8886 ACC=v0.29 tools/accept.sh`, 24 sections, 202 lines)
+
+**One FAIL line, then none:** `hidden tab back {n:60, onsets:1, …, hitmax:0.64}` — the v0.3 resume-hold check on the live demo synth
+(`&fake=0&scene=6`, a 15 s hide, the first 60 frames back may fire nothing). Re-run in isolation it read `onsets:2` twice — and the
+cause was this session's own: two headless Chromes orphaned by the two self-killed chain scripts (the `pkill -f` pattern matching its
+own shell, exit 144) were still alive, the load average 5.0. Killed by pid, the check reads **`{n:60, onsets:0, surprise:0, drops:0,
+gmax:0, hitmax:0, resumeAt:24.4}` four times out of four** — twice in the base worktree (`8294d82`, the control) and twice in the
+`3bad667` worktree — HARNESS's own reference line to the digit, as v0.5's sweep found the same line (DECISIONS v0.5: "a machine moment
+… re-run twice in isolation → onsets:0"). Everything else green: **the scene md5 loop 24 / 24 lines `= reference`** (s0–s11 at f360 /
+f840 against the re-recorded `scene-md5-v029.txt`, errs [] hop 840 row 72 on every id — the s2 lines `62515d49` / `f3a3721c` shot on
+the stamped tree match the unstamped m88 sweep: comments move no pixel), the NAV2 / GIELIS stills and the torus2 / polytope blocks
+`= reference`, **`parity fake` `max |diff| 7.852 · 72 fields` with the same `nav.*` MISMATCH line §83 and §84 recorded** (not a
+regression; the MS fields 0 diff), parity real `bpm within 1 of 126 … true · arc sequence identical: true · drops within 0.5 s: true`,
+**`mixs 0→3 f178 md5 cb3d4048 = recorded`**, the bundle **171 modules → dist/retinarave.html (1633 KB)**, help counts, routes, params,
+the hidden worklet, the 60 s monitor — 0 FAIL. `npm test` OK, `check.js` 0 fail (9 warn: the six soft caps and the license audit's 19
+public files still unstamped — DUST's other files and the rest of `math/`, left as `27617b5` left them; `node tools/license.js` is the
+one command). The worktrees `../RetinaRave-m-base` / `-m85` / `-m86` / `-m87` / `-m88` / `-m88c` are left in place for the A/B shots
+(`git worktree remove <dir>` each when done); the user's 8765 was never touched, no port of this session is open.

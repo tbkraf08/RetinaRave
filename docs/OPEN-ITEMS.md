@@ -482,9 +482,25 @@ dream reads ambiguous from 76.7 s on a 40 s cold start (72.0 on §77's from-0 ru
 the one number the user's eye should rule on first (0:40–1:00 on SeeYouDrop: the picture goes to ~40 % before 0:57.6).
 
 **2026-10-02, §88 (MANDALA's accent + key hue — step 4; the pass's last step):** built, NOT deployed, NOT tagged; `accept.sh` run in a
-worktree of the step's commit (DECISIONS §88 has the receipt). Default taken: `sp.acc` from the lifted spinner (open question 5).
+worktree of the step's commit (DECISIONS §88: 202 lines, the one FAIL — `hidden tab back onsets:1` — this session's two orphaned headless
+Chromes, onsets:0 ×4 once they were killed; 24/24 md5 = reference, parity fake §83's line, mixs recorded, bundle 171 modules). Default taken: `sp.acc` from the lifted spinner (open question 5).
 Open: (1) SeeYouDrop's accent fires at 1.00 on the 16ths arriving with drop 1 (58–61 s) and 0.5–0.6 in the build before it, not only at
 the returns — the engine's tongue rise, identical for DUST on this engine; the user's eye says whether the heavier crest at 0:58–1:02
 is right; (2) the user's A/B of the whole pass (the watch-list in §88) — a look remark is a retune request; (3) pass 2 (per-bin
 habituation of the trap radius, novelty as a new trap, the fold's own dynamic range on `eM` — the yellow clip is the first thing it
 should fix).
+
+**2026-10-02, §90 (IBelongHere's three times — DUST's sync at 0:10 / 0:47 / 1:04):** three commits, NOT deployed; the diagnosis
+`docs/truth/IBELONGHERE-2026-10-02.md`. **0:10 is NOT fixed and is now a known class:** a drumless sung intro with a dotted-8th
+echo locks the comb at 4:3 of the tempo (157.6 at 118) for 3.5 s on evidence the five right cold locks share to the digit —
+`CLOCK.SW_Y1` is the knob that was measured and left OFF (0.3 costs Vienna / Malicious / WhoLikesToParty's cold locks 6–20 s).
+Open: a cold lock could hold the display at low confidence until the comb's own strength clears 0.3 — scene-side, not clock-side
+(`clockConfPcm × min(1, y1 / 0.3)`, the diagnosis's alternative; no scene reads `clockConf` today). **0:47 fixed** (the kick lane's
+clock-line rule, `PERCK.lineKick`); its 8th-line variant (`lineSub 2`) is a knob OFF because SeeYouDrop's 808 notes would take the
+kick voice (17 % of its kicks). **1:04 fixed to +8 ms** (`HOLD_Y1` / `R_Y1` / `RATE_Y1`); the residual is the rate's drift through a
+13 s kick-less passage. **The `SeeYouDrop PCM lock 9.2 → 12.0 s` item above (§69 / §71) MOVED with `RATE_Y1`: 12.4 → 9.6 s** on the
+§90 ruler (the first 8 lines within ±30 ms) — not chased, recorded; the same knob costs **Malicious's lock 3.5 → 5.6 s** (its cold
+start sits at y1 0.08–0.19, under the 0.15 knee, so the onsets cannot refine the rate until the comb clears) — open, small.
+Also open: `test_ears.js` still dies before its key rulers (the native-rate stereo dumps are absent, §86's note); the fix-2 rule
+feeds on `clockConfPcm ≥ 0.85`, which reads 0.77–0.80 inside the wrong 0:10 lock — a line kick there would be on the wrong line,
+and none fired (the intro has no low onsets on it), but a 4:3 lock in a passage WITH soft kicks would promote onto the wrong lattice.
