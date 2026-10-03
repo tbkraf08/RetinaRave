@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The key as a hue ANCHOR on the circle of fifths — shared by TORUS2 (id 3) and POLYTOPE (id 5).
 // Lifted verbatim out of assets/scenes/torus2/colour.js (DECISIONS §36 spec 3) when POLYTOPE wanted the same
 // language (v0.9); that file is now a thin re-export of this one and its pixels did not move. Pure: no GL, no DOM,

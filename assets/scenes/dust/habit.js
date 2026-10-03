@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — per-bin habituation: what is NEW in a grain's band (DECISIONS §60 step 2).
 //
 // The brief: "Detect timbral novelty and give new sounds a new visual voice; let sustained sounds habituate."

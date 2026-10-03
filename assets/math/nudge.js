@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The beat-nudge spring ease — shared. Lifted out of assets/scenes/torus2/motion.js (its `turn`, TURNTC, reset,
 // angle) the way keycolour.js was lifted out of torus2/colour.js (DECISIONS §36), so MAXWELL (id 9) can speak the
 // same motion language without importing another scene's folder (CONTRACTS §0: shared code goes to assets/math/*).

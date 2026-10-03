@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — dynamic range: "quiet is quiet, loud is loud" (DECISIONS §60 step 1, §65).
 //
 // SINCE §65 (LOUDNESS phase 4) THE DRIVE IS THE ENGINE'S TRUE LOUDNESS, not this file's own peak. `assets/math/

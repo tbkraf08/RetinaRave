@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The launch ring buffer — shared. Lifted out of assets/scenes/torus2/waves.js (v0.14, for GIELIS, id 10) the way
 // keycolour.js was lifted out of torus2/colour.js (DECISIONS §36) and nudge.js out of torus2/motion.js (§42), so a
 // second scene can speak TORUS2's wave language without importing another scene's folder (CONTRACTS §0: shared code

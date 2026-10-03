@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Baby Mandelbrot copies (tuning). Pure, node-importable. Lifted from cardioid3 "MATH".
 // A period-P copy with centre c0 is charted exactly as M is, by multipliers: its cardioid is the period-P
 // component (lambda in the disc), its p/q bulb the period-P*q satellite whose root is the point where the

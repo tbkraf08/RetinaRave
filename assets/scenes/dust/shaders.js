@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — GPU particle swarm lifted from synapse scene 4 ("swarm").
 // No vertex buffer: every particle is derived from gl_VertexID, so the whole cloud is one drawArrays(POINTS).
 // The helpers below (hash11, rot, spec, wave, palM) are the GLSL_COMMON functions this scene actually uses,

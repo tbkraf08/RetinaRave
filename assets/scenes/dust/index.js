@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — a swarm of gl_VertexID particles that pours between four formations, threaded by a few Hopf tori.
 // Lifted from synapse scene 4 ("swarm"); the Hopf-fibre line overlay is back (ctx.lines, CONTRACTS 1.12 path A) —
 // faint linked rings drawn additively over the cloud in the same camera, no depth test. See fibre.js.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // OKLab / OKLCH in JS (Björn Ottosson, 2020) — the twin of assets/core/oklch.js's GLSL chunk, for tests and for any
 // palette computed on the CPU. Pure functions, no state. Hue is a turn (0..1), L 0..1, C in OKLab units (≈ 0..0.37).
 // Linear sRGB in and out; encode/decode with linToSrgb / srgbToLin. The GLSL chunk uses the same constants: the smoke

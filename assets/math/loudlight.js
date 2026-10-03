@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // BASE LIGHT FROM TRUE LOUDNESS — the one scene-side mapping of the engine's `loud` stage onto "how bright is the
 // picture right now" (DECISIONS §63 phase 5, docs/plans/LOUDNESS-PLAN.md §5). Pure, no imports: `assets/math/`, shared
 // the way `keycolour.js` is shared, so there is ONE definition to tune and one place the numbers are measured in.

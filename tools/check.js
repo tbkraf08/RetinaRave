@@ -13,7 +13,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WARN = 350, FAIL = 500;
 // License headers: a public file without the exact header is a warn while the paths the MANDALA worker holds
 // (assets/scenes/mandala/**, dust/**, math/**) are still unstamped; flip to true once `node tools/license.js --check` is clean.
-const LICENSE_FAIL = false;
+const LICENSE_FAIL = true;
 const COMMON = ['uRes', 'uTime', 'uBands', 'uBeat', 'uArc', 'uHarm', 'uPal', 'uTint'];
 let fails = 0, warns = 0;
 const fail = (m) => { fails++; console.log('FAIL', m); };

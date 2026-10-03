@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST's Hopf-fibre overlay — geometry, palette and segment packing, kept out of index.js.
 //
 // Over the swarm, in the same camera, a few Hopf tori. For each of `nl` latitude circles of the base S2 (colatitude

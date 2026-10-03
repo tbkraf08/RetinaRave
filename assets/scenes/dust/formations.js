@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — which shape the swarm pours into, and the memory that brings a section's shape back (§57 step 4).
 //
 // The four formations used to be a shuffle: every 64 kicks, jump 1..3 shapes on. They are the scene's reading of

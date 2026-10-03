@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Charts on the Mandelbrot set. Pure functions, node-importable, no DOM (the ray-grid worker is
 // started explicitly by whoever needs the exterior chart). Lifted from cardioid3 "MATH".
 import { TAU, clamp, mix, frac } from './util.js';

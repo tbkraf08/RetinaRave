@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's numerics (docs/workers/brief-nav2.md §1): the force model needs no chart and no table, so everything it
 // asks of the Mandelbrot set is computed from c itself.
 //

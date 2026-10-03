@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The Hopf fibration, pure and node-importable.
 //   S³ ⊂ C²  ∋ (z1, z2), |z1|²+|z2|² = 1.   Hopf map h(z1,z2) = (2 z1 z̄2, |z1|²−|z2|²) ∈ S².
 //   The fibre over the base point (θ, φ) (colatitude θ ∈ [0,π], longitude φ) is the circle
