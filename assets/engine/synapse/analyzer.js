@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Synapse ANALYZER — everything musical derived from raw PCM at a fixed ~10 ms hop, independent of the render loop.
 // Lifted from synapse2.html 217–336 (constructor, push, hopStep). anatomy/longFrame live in anatomy.js, the beat-
 // synchronous structure (grid, Foote novelty, sections) in structure.js; both are mixed into the prototype below.

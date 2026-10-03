@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // LINES: anti-aliased, depth-testable strokes drawn as instanced quads, one instance per segment (docs/CONTRACTS.md §1.12).
 // Two paths share the same GLSL:
 //  A. CPU segments — L = mk(maxSegs); set(L, Float32Array, n); draw(L, target, w, h, {mvp, depth, blend}). Built-in program:

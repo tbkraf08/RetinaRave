@@ -1,6 +1,9 @@
-MIT License
+Retina Rave License (MIT + the Guest-List Clause)
 
 Copyright (c) 2026 Thomas Kraft
+
+This is the MIT License with one additional condition (3, the Guest-List
+Clause). It is therefore not the plain OSI MIT License.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -9,8 +12,22 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice (including condition
+   3) shall be included in all copies or substantial portions of the Software.
+
+2. Any copy or substantial portion of the Software that is distributed, served,
+   or otherwise made available to others shall carry this license in full, or a
+   notice naming it and stating where its full text can be obtained.
+
+3. The Guest-List Clause. If the Software, or any work derived from it in whole
+   or in part, is used at, for, or as part of a function, party, concert,
+   festival, club night, exhibition, performance, or any other event, the
+   copyright holder (Thomas Kraft, "Toma") is entitled to free entry to that
+   event on request, for themself and one guest, for the duration of the event.
+   This entitlement is a condition of the permission granted above; it is not
+   waived by the Software being a small or incidental part of the event, and it
+   passes with the Software to every derived work and every further
+   distribution. It does not oblige the copyright holder to attend.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

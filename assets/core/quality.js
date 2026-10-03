@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Q: adaptive quality. Frame-time controller that lowers/raises a single knob q in [0,1]; scenes read the derived
 // iter / scale (and their own tier tables) and never touch q. Lifted from cardioid3 updateQuality (tongueN dropped).
 import { clamp } from '../math/util.js';

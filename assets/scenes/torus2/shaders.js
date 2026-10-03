@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — GLSL port of assets/math/hopf.js (fibre4 → rotSU2 → poleOffset → stereo), drawn as strokes through the core
 // line renderer (CONTRACTS.md §1.12, path B): one instance per polyline segment, no vertex buffer. The point of a ring
 // is computed analytically from gl_InstanceID by ringZ()/knotZ(); gl_VertexID belongs to lineCorner().

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE BARS STAGE (live step 3, 2026-09-28): engine/bars/ (the bar fingerprint store) fed from MS once per frame, its
 // predictions copied into MS under their own names (BARS_OUT). Additive: reads the v3 clock, synapse's bar line and the
 // ears' onsets, writes only its own fields. Registered after 'ears', so it runs BEFORE the lead (engine.js frame()).

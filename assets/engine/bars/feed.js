@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // What the bars stage hands the store each frame, from an MS-shaped object — pure, so features-bars.js (the page) and
 // tools/bars-replay.js (a recorded trace, node) build the SAME input. See features-bars.js for the time base.
 import { DIM } from './bars.js';

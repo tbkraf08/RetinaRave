@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's navigator (docs/workers/brief-nav2.md §1): "the melody draws the path". c is never looked up in a table and
 // never walks a chart — it is a ball rolling inside M under three forces.
 //   the melody's pull  pitch height is Im c (a critically damped spring), the spectral balance is Re c (an ema in

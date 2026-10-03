@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE LEAD (live step 2, 2026-09-28; docs/AUDIT-live-grid.md). The v3 clock (beatPhase / beat / beatCount) and the synapse
 // grid (beatSyn / barPos / barPhase / phrasePos / phrase16Pos / bar) lock to the audio the ANALYSERS see, and the listener
 // hears different audio: in a real-time file or the demo the analysers are the output latency AHEAD of the ear (measured:

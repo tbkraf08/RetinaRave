@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The landing card's scene picker (v0.8.1). One tile per registered scene that declares `card` (CONTRACTS §1.17), rendered
 // from the registry — nothing here names a scene. A click forces that scene and shows it live on the built-in demo synth,
 // which is silent unless monitored (key m): the card slims to the bottom of the screen ("peek") and the canvas, which was

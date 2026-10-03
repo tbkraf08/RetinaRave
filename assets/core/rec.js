@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The recorder (`R`, docs/plans/SOCIAL-PLAN.md §2; DECISIONS §89). What you see and hear → one .webm + one .json sidecar,
 // saved on THIS device through the browser's own download; nothing is uploaded, there is no upload path in this file.
 //

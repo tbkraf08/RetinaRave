@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The tonic, on a chroma the sub is PART OF. Synapse's key chroma starts at 65 Hz (anatomy.js:106), so on this track the
 // 35 Hz root is invisible and the engine reports the fifth (G# instead of C#). Here the spectrum above CH_LO is binned by
 // pitch class and the sub's own YIN pitch class LEANS on it while the note is SETTLED (subConf >= SUB_HELD), at a rate

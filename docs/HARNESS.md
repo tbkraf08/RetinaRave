@@ -25,6 +25,11 @@ The 500-line cap is a hard fail and is where a growing scene's budget goes (v0.1
 a brief that adds a subsystem to a 400-line scene says first which lines leave; a split module, `colour.js`/`onsets.js`, is the
 usual answer, and `check.js` only tells you after the edit).
 
+**License headers** — every public file (index.html, site/**/*.html, assets/**/*.js) opens with the 3-line Retina Rave License
+header (MIT + the Guest-List Clause; full text in `LICENSE`, served at `/LICENSE`, copied to `dist/` by `npm run build`).
+`node tools/license.js` stamps the files missing it (idempotent, byte-stable; `--check` lists them and exits 1, `--only` /
+`--exclude <glob>` restrict); `check.js` runs the same audit and reports a missing header (a warn until `LICENSE_FAIL` is flipped).
+
 ## Math tests (node, plain import)
 
 ```

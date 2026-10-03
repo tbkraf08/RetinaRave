@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE TONGUES STAGE (2026-10-01, docs/plans/TONGUES-PLAN.md phase 1, DECISIONS §76): `engine/clock/tongues.js`'s circle-map
 // phase-locking descriptor — a bank of sine circle maps driven per 512-sample hop by the PCM beat clock's own mid- and
 // low-band onset novelty, centred on the clock's beat — published under its own twelve names:

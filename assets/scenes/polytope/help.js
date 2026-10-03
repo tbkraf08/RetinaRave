@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POLYTOPE — the help view's three depths and the per-field lines (CONTRACTS §1.13). Kept out of index.js so the
 // scene module stays inside the 350-line soft cap; nothing here runs, it is all text the `?` overlay reads.
 export const HELP = {

@@ -2,7 +2,8 @@
 // dead uniforms (declared in a GLSL string, never fetched anywhere) · import discipline (only core/engine/main.js may
 // import core/gl.js; scenes/effects/transitions import nothing from core) · no 'nav' in core/ or transitions/ · every MS
 // key has a FEATS entry · scene help has three depths, help.feats ⊂ feats (warn on a feats entry without a line) · help.js /
-// panel.js name no MS field and no scene as a quoted literal (the help and the panel show data, never a special case).
+// panel.js name no MS field and no scene as a quoted literal (the help and the panel show data, never a special case) ·
+// license header on every public file (tools/license.js audit(): index.html, site/**/*.html, assets/**/*.js — warn until LICENSE_FAIL).
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -10,6 +11,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WARN = 350, FAIL = 500;
+// License headers: a public file without the exact header is a warn while the paths the MANDALA worker holds
+// (assets/scenes/mandala/**, dust/**, math/**) are still unstamped; flip to true once `node tools/license.js --check` is clean.
+const LICENSE_FAIL = false;
 const COMMON = ['uRes', 'uTime', 'uBands', 'uBeat', 'uArc', 'uHarm', 'uPal', 'uTint'];
 let fails = 0, warns = 0;
 const fail = (m) => { fails++; console.log('FAIL', m); };
@@ -166,6 +170,12 @@ for (const d of sceneDirs) {
     for (const k of ['title', 'blurb']) if (!(typeof sc.card[k] === 'string' && sc.card[k].trim())) fail('scene ' + d + ': card.' + k + ' is missing or empty');
     if (!fs.existsSync(path.join(ROOT, 'site/thumbs', sc.name + '.jpg'))) warn('scene ' + d + ': card without site/thumbs/' + sc.name + '.jpg — run tools/thumbs.sh');
   }
+}
+
+{ // license headers (tools/license.js): every public file carries the canonical header; stamp with `node tools/license.js`
+  const { audit } = await import(path.join(ROOT, 'tools/license.js'));
+  const missing = audit();
+  if (missing.length) (LICENSE_FAIL ? fail : warn)('license header missing on ' + missing.length + ' public file(s): ' + missing.slice(0, 6).join(', ') + (missing.length > 6 ? ', …' : '') + ' — run node tools/license.js');
 }
 
 console.log(`check: ${files.length} modules · uniforms ${decl.size} · MS keys ${Object.keys(MS).length} · scenes ${sceneDirs.length} (help.feats gaps ${helpGaps}) · ${fails} fail · ${warns} warn`);

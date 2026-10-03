@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE LOUDNESS STAGE (2026-09-30, docs/plans/LOUDNESS-PLAN.md phase 2, DECISIONS §63): `assets/engine/loud.js`'s
 // ITU-R BS.1770-4 K-weighted loudness on the PCM bus, copied into MS under its own names, evaluated at heard time
 // (MS.heardT, the clock stage). Registered AFTER 'ears' and BEFORE the PCM beat clock, and additive: it writes only

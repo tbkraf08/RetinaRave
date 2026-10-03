@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The beat and bar grid, non-causally, from a percussive onset envelope. A JS port of tools/truth/trackmap.py's E0 grid, and
 // it is graded against it: on SeeYouDrop the python tool gives 150.030 BPM, beat 0.39992 s, phase 0.0172 s, downbeat = beat
 // index 0 mod 4.

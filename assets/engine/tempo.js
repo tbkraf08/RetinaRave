@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Canonical tempo (MS.bpm, regularity, comb-PLL phase target) from the 100 Hz onset envelope XS.env — v0.2 §9,
 // replacing cardioid3's tempoEstimate (DECISIONS §9). Called every 0.5 s by features.js.
 //   1. ACF of the 8 s window (high-passed and loudness-normalised — 1 s running mean, 2 s running RMS — so ramps and

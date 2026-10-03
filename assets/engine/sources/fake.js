@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Deterministic fake music state for the headless self-test (#test): 24 s loop — sustain 0–6, valley 6–10,
 // build 10–13, DROP at 13, peak 13–21, valley 21–24. Drives MS directly (no audio). Lifted from cardioid3 fakeMusic.
 // Since v0.29+ (DECISIONS §83) it also carries a PERCUSSION LATTICE — kick / snare / hat EVENTS with their ages and sizes,

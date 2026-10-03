@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The frame loop. Order (same as cardioid3): quality → resize → engine (music + groove + test pins) → scene updates →
 // director → look → fx → scene pass(es) + transition → effect chain → overlays → HUD → help view → test log.
 import { ENGINE } from '../engine/engine.js';

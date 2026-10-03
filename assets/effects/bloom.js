@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // BLOOM: threshold + two downsampled separable blurs (1/4 and 1/8). Publishes io.aux.bloom = {b1, b2} for the
 // composite; leaves io.src untouched. Scene slot: post.bloom.thr (number or fn(MS)). Lifted from cardioid3 FS.down/blur.
 // Linear chain (io.linear, v0.3 §20): the input is linear radiance; the threshold slot keeps its encoded meaning —

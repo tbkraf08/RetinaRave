@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Help view (v0.2 §12): the `?` overlay — the machine explains itself. DOM only, the second module after hud.js that
 // touches it. Built lazily on the first open; while hidden nothing here runs per frame (drawHelp returns on its first
 // line). Every word shown is data: FEATS (engine/feats.js) for the MS vector, each scene's tag / cuts / feats / help /

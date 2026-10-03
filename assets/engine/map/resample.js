@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Resampling for the track map's NON-CAUSAL channels only (file mode). Nothing causal and nothing live uses it.
 //
 // Why it exists: `tools/truth/trackmap.py` analyses a track at the FILE's own rate — 44.1 kHz for SeeYouDrop.flac — and

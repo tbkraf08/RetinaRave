@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Analyzer mixin: beat-synchronous structure. Per-beat 23-dim feature vectors, Foote novelty (checkerboard kernel on
 // the self-similarity of centred beat features), section boundaries + fingerprint clustering (returns), and the
 // bar / 16 / 32-beat phrase grid with confidences. Lifted from synapse2.html 417–494.

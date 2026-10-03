@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // PARAMS (v0.5): per-scene *visual parameters* and the routes into them — "in FEIGEN, the filament sharpness is fed by the
 // centroid". The second level of the routes panel: v0.4 re-wires the fields a scene reads (its jacks); this re-wires what
 // the eye sees. A scene declares its parameters as a slot (CONTRACTS §1.16):

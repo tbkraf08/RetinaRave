@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEIGEN's COLOUR pass, colour mapping `oklch` (CONTRACTS §1.4) — v0.2 §16's pass recoloured in OKLCH (§19/§24).
 // OPT-IN, not the default: `&colour=oklch` (DECISIONS §26 — the user kept the v0.2 look, which is colour-v2.js).
 // The music, every frame, one texture read of the field plus a few of spec/hist.

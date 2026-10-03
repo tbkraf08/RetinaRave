@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // GIELIS — the GLSL. Every stroke point is built in the VERTEX shader from gl_InstanceID → (slot, ring, segment) and
 // the generated twin of the superformula (assets/math/gielis.js GLSL: sfR / sfPoint, whose constants are written from
 // the JS values so the port cannot drift — tools/test_gielis.js checks them to 0). Path B of the line renderer

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — colour from the key (brief-torus2 spec 3; the user: the key colour is an ANCHOR, major warm, minor cool).
 //
 // The maths moved to `assets/math/keycolour.js` in v0.9 so POLYTOPE (id 5) could speak the same language without

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Bars mixin: the SECTION tests on the bar being heard (live step 3; bars.js assigns these to Bars.prototype, as synapse's
 // structure.js is to its Analyzer). A section start and a return are found on the first steps of a bar (NOV_STEPS), from
 // the bar's heard part against the recent bars and the history — see change().

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — the ? overlay's text (CONTRACTS §1.13): one clause per field of `feats` saying what it moves on THIS
 // screen, and the three depths. Data only, kept out of index.js so the scene object stays readable.
 

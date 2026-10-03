@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DOM helpers for part E of the help view (core/panel.js, v0.4.1) — split out of panel.js when the panel-legibility work
 // pushed it past its 350-line cap. A leaf: it imports nothing at all (never panel.js, help.js or harness.js — core must
 // stay an import DAG, the bundler cannot order a cycle), touches no state and knows no scene and no MS field: every name

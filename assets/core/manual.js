@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MANUAL (v0.4): one place for the overrides the keys already do — the forced scene, the transition, a scene's colour
 // variant — plus the per-scene post params (bloom.thr, fb.decay, kaleido, exposure.on) merged over the resolved post by
 // scenes.js postOf(). `scene` / `trans` / `colour` are live views of the director's own state (SC.forced, the current

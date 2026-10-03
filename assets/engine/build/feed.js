@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // What the build stage hands the detector each frame, from an MS-shaped object and the ears' low-onset lane — pure, so
 // features-build.js (the page) and tools/build-node.js (node) build the SAME input. The time base is the bars stage's
 // (DECISIONS §50): the RAW v3 clock (the stages run before the lead) moved onto heard time with the lead's estimate L.

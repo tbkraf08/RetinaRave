@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Microphone via getUserMedia (v0.6): the phone-at-the-speakers path, and a laptop mic at a gig. Same bus, same
 // analyser tap and silence watchdog as capture.js (tick), so the demo takes over until real signal is heard.
 // Source interface: { name, start(), stop(), tick(nowMs) }. No processing on the track: the extractor wants the room as it is.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Synapse stages grafted into the engine as ONE additive stage: the Analyzer runs off an AudioWorklet tap (its own
 // FFTs, ~10 ms hop) and this stage copies its output into MS under names that never collide with v3's fields.
 // Canonical = v3 for every shared concept (bpm/beat/drop/section/chroma/tension); everything here is additive.

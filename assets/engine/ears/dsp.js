@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The ears' own DSP primitives. Pure: no DOM, no window, no clock, no Math.random, no imports outside engine/ears.
 // `FFT` is copied verbatim from assets/engine/synapse/dsp.js (the brief allows copying a small function rather than
 // importing synapse/dsp.js, so the ears stay node-importable on their own); everything else is new.

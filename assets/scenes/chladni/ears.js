@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI's EARS — everything that decides what the scene is allowed to hear, and the two pins that let a test lie
 // to it. Split out of index.js in §74 (the file passed its 500-line cap); one subject, and update() still has one
 // source for the ear block.

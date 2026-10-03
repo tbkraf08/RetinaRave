@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // EXPOSURE: GPU auto-exposure, lifted from synapse2's FS_LUM/FS_EXPO. Three passes, no CPU readback:
 //   1) io.src -> 16x16 tile luminance (mean in .r, mean-square in .g), 4x4 subsamples per tile
 //   2) 16x16 -> 1x1, folded with the previous 1x1 (ping-pong) so the exposure adapts over time

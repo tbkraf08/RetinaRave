@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The sub's pitch, NON-CAUSALLY, for the track map (file mode only). A port of `tools/truth/trackmap.py`'s own contour —
 // the same 130 Hz zero-phase low-pass, the same decimation to sr/20, the same 100 ms / 10 ms YIN with the same threshold,
 // walk-down, two octave checks and parabolic refinement, and the same voiced rule. It is the reference the ±30-cents

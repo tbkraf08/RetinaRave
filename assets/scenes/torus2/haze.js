@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — the fog on the tongues (DECISIONS §79; docs/plans/TONGUES-PLAN.md phase 5). Ambiguity hazes the nest,
 // resolution clears it: `tongueAmbig` (§76: 1 − the octave ladder's best depth, a 16-beat trailing window stepping once a
 // clock beat) reads 0.95–0.98 through Vienna's dream (72–86 s), 0.25–0.35 on CyborgNinja, ≤ 0.69 anywhere on SeeYouDrop

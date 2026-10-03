@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Bar-synchronous sections: self-similarity on band shares + purity + voiced share + onset densities + a SUB-INCLUSIVE
 // chroma, Foote novelty with a Gaussian checkerboard kernel, boundaries at bar lines, greedy cosine clustering for labels,
 // `ret` for a return. A JS port of tools/truth/trackmap.py's E0 sections, graded against it.

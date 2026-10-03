@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The bar store's shared constants and helpers (bars.js and its sections.js mixin both import them — no cycle).
 export const NBAR = 256;          // bars of history (~7 min at 150 BPM)
 export const DIM = 12;            // the per-beat energy vector (bars/feed.js FEAT_NAMES)

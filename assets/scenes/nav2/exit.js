@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2 outside the set: the drop (the one declared cut), EXT/HOME on the exterior potential, and the bridge home.
 // Split out of nav2.js at the 500-line hard cap — and it is the right seam anyway, because nothing here touches the
 // multiplier chart: the interior half navigates by rho = |lambda|, this half by the Green's potential log2 G.

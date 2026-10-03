@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEIGEN's FIELD pass (v0.2 §16) — the mathematics, rendered once per zoom rung, a band of rows per draw.
 //
 // Everything the per-pixel loop produces depends on `c` alone: the escape count, |z| and |z'| at escape, the escape

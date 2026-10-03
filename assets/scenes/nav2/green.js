@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's ruler, by Green's theorem (v0.13, the user: "no beat == more of a circle … the edge of the set should always be
 // moving with the music. How can Green's theorem help?"). The Julia set's edge is a fractal — its length is infinite and
 // "how round is it" has no answer on the edge itself — but its EQUIPOTENTIALS are smooth closed curves that shrink onto

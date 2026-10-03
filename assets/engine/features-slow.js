@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Slow stages of the v3 extractor: harmony/tension from the long window, section fingerprint identification.
 // Lifted from cardioid3 slowAnalysis / identifySection (tempoEstimate moved to tempo.js and was rewritten in v0.2 §9).
 import { TAU, clamp, ema, mix, wrap1 } from '../math/util.js';

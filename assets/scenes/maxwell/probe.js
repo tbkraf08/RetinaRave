@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL — the readback-based test hooks, kept out of index.js so the scene object stays readable.
 //   hooks.energy()  Sum(eps Ez^2 + Hx^2 + Hy^2) over the WHOLE field, from a readback. A test hook may stall the
 //                   pipeline; the per-frame path (render.js's H lines) may not, and reads one band of rows instead.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // LOOK: the shared palette and the common uniform block every shader gets (uTime uBands uBeat uArc uHarm uPal uTint).
 // Derived from MS every frame. Lifted from cardioid3 COMMON. Synapse's mood palette (valence/arousal) lands here in §2.
 import { TAU, clamp, ema, frac, mix, sstep, hsv } from '../math/util.js';

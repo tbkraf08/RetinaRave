@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // EARS_FEATS: the FEATS entries for every field the ears add, in engine/feats.js's entry shape
 // { kind, eli5, formula, drives, range }. The orchestrator spreads this into FEATS; tools/check.js then finds every MS key
 // documented. Names checked against CONTRACTS Appendix A — none collides (`mode`, `key`, `sub`, `kick`, `snare`, `hat` are

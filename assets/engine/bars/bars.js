@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE BAR FINGERPRINT STORE (live step 3, 2026-09-28; docs/AUDIT-live-grid.md "Step 3", DECISIONS §50). Pure DSP: no DOM,
 // no clock, no Math.random — node-testable (tools/test_bars.js), fed once per frame by features-bars.js.
 //

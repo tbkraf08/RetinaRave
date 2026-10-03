@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — where the nest is and how the camera looks at it (brief-torus2 spec 4).
 //
 // reframe(): the SU(2) tumble and the pole offset slide the whole nest around the stereographic window, so the camera

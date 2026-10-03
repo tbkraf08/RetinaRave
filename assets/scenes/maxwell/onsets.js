@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL — the detectors (v0.12 item B): WHAT hit, WHERE it is on the ring, and in WHICH NOTE'S HUE.
 // Pure arithmetic, no GL, no DOM, no wall clock (the only clock is the `dt` handed in). sources.js turns what this
 // module finds into launches; nothing here touches the field.

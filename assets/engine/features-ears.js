@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE EARS STAGE (v0.15 E3 + E4): engine/ears/ (causal DSP on the PCM bus) and engine/map/ (the whole track, file mode)
 // copied into MS under their own names, evaluated at heard time (MS.heardT, the clock stage). Additive: writes only
 // EARS_FIELDS + the map fields, never another stage's. #test (the fake timeline) never runs it — the state.js defaults stand.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI (v0.15, id 11, "slot 12") — sand on a vibrating plate, driven by the sub. A Chladni plate is sound made
 // visible by resonance: sand gathers on the nodal lines of the plate's eigenmode and the figure is set by the pitch.
 // Built to show the v0.15 engine's ears (the sub's pitch / slides / purity / gate, kicks placed by their onset age, and

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // GL: context, program builder, shared GLSL head, render targets, resize, tri(), tex(). Knows nothing about scenes.
 // Lifted from cardioid3 "GL". Scenes never import this module: they receive a ctx (see docs/CONTRACTS.md).
 import { LOOK } from './look.js';

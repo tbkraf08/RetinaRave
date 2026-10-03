@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Synapse DSP primitives: radix-2 FFT with Hann window, AGC band follower, median-thresholded onset detector, comb/PLL
 // tempo tracker with hysteresis and rival-tempo arbitration. Lifted from synapse2.html 131–215 (reformatted only).
 export const SPEC_W = 256, WAVE_W = 512, HIST_H = 128;

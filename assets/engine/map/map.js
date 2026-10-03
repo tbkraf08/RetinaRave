@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The track map: the music is known in advance in file mode, so use it. One non-causal pass over the decoded track gives
 // the beat / bar grid, bar-synchronous sections with returns, bar-pinned drops, the whole-track energy arc and the tonic.
 // Pure and deterministic: no DOM, no window, no clock, no Math.random — two calls give identical JSON.

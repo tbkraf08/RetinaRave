@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The PERIOD estimator of the PCM beat clock (live step 6, docs/AUDIT-live-grid.md "Step 6"): tempo.js's harmonic-comb ACF
 // (DECISIONS §9, §21) as a pure object over its own 100 Hz onset ring, so the same math that reads ±1 BPM on every demo style
 // runs on the sample-timed onset stream instead of the frame-rate one. The math is tempo.js's steps 1–6 to the letter

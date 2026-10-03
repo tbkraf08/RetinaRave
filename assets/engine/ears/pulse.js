@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The felt beat, as a RATE multiple of the grid beat: 0.5 = half time (SeeYouDrop's drop sections), 1, 2 = double time.
 // `pulse = grid beat / felt period`, so a felt period twice the grid beat gives 0.5.
 //

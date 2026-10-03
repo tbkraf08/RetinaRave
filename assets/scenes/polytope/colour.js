@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POLYTOPE — the cage as a colour wheel that turns with the key (brief-polytope-dance spec 5; the user: "I liked
 // color tied to circle of fifths"). The anchor maths is TORUS2's, shared through assets/math/keycolour.js.
 //

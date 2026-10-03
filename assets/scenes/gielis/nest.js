@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // GIELIS — the nest: twelve pitch classes as twelve nested supershapes, and everything the music does to their shape.
 // index.js owns the scene object, the camera and the MS → uniform mapping (TORUS2's index.js:159–177 is the model);
 // this file owns

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL (v0.12, id 9) — the four equations that dance: a live 2D Yee-grid FDTD solution of Maxwell's equations in the
 // TE mode (Ez, Hx, Hy on ping-pong RGBA16F/32F targets), driven by the music in TORUS2's language — twelve charges on a
 // ring by pitch class lit by chroma, a magnetic dipole at the centre that turns one nudge per beat, EVERY SOUND a real

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POLYTOPE — a groove per band (brief-polytope-dance spec 1; the user: "should extract grooves from bass, mid, highs").
 //
 // A groove is an ONSET TRAIN, not a level and not a learned pattern: the scene watches `bass`, `mid` and `high`

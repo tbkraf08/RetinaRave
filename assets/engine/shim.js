@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // PCM-BACKED ANALYSER SHIMS (v0.15 E1). makeAnalyser(fftSize, smoothing) returns an object with the AnalyserNode surface
 // the v3 extractor uses (getFloatFrequencyData / getFloatTimeDomainData / the byte variants / fftSize /
 // frequencyBinCount / smoothingTimeConstant / minDecibels / maxDecibels), computed from a Float32Array of mono samples

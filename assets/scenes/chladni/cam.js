@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI's camera. Split out of index.js in §74 (the file passed its 500-line cap): the eye's own geometry is one
 // subject and nothing else in the scene touches it.
 //

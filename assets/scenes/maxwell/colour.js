@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL — the colour field (v0.11 item 2): the wave carries the colour of the note that launched it.
 //
 // The user, on v0.10: "the color of the wave should match the color associated with the coord/note (it seems to just

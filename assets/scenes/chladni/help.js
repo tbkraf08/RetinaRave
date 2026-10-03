@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI's help entry — data only (CONTRACTS §1.13): the three depths, and one clause per field of `feats` saying
 // what that field moves on THIS screen. No code, no imports; index.js hands it straight to the help view.
 

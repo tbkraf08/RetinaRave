@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE REACTIVE DRUMS v2 STAGE (2026-09-28; engine/drums/drums.js, docs/AUDIT-drums.md): `kick2` / `snare2` / `hat2`, levels
 // shaped like synapse's `kick` / `snare` / `hat` (a scene takes them by route, no edit). Additive: reads synapse's analyzer,
 // the ears' LOW onset lane (Ears.lowReleased) and the lead's audio-lead estimate; writes only its own fields. Registered

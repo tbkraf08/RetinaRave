@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE EVENT LOG + THE TRACE RECORDER (v0.15 E1/E2). Two things, one leaf module (it imports nothing, so anything may
 // import it): the ring `LOG` behind ENGINE.log(type, t, extra) — the hook later stages hang sub-frame onsets on
 // (CARD.EARS.log in ENGINE-CHLADNI-SESSION-PROMPT.md is this) — and TRACE, which records named MS fields per frame into

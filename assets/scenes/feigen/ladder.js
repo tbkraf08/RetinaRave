@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEIGEN's zoom ladder (v0.2 §16): rung geometry, rung resolution and the progressive tile schedule.
 // Pure JS — no `gl`, no `MS`, no clock, no Math.random(). Everything here is a function of (L, tier, aspect, the slot
 // records) alone, which is what makes the progressive build bit-identical between runs. Node test:

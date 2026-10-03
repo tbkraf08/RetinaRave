@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Percussion: a causal HPSS-lite (a short running median of each band's dB envelope is the harmonic part; what rises above
 // it is percussive) and one onset stream per class — EXCEPT the LOW lane, which is a 60-150 Hz band graded on its RISE
 // (see "THE LOW LANE" below, DECISIONS §68), and the SNARE lane, which is the two mid bands' RISE (DECISIONS §69).

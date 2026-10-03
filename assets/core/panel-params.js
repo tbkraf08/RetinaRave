@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The parameters table of part E (v0.5, CONTRACTS §1.16) — the second level of the panel: part E's jacks re-wire the
 // fields a scene *reads*, this table re-wires **what the eye sees** ("in FEIGEN, the filament sharpness is fed by the
 // centroid"). One table per scene that declares `params`, above its jacks (which fold into a <details> once this table

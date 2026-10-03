@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2 shaders = NAV's colour mapping `v2` (assets/scenes/nav/shaders-v2.js) lifted verbatim + the critical-orbit point program from nav/shaders.js, plus NAV2's own uniforms.
 // NAV2's additions, each with a rest value that is an EXACT IEEE identity, so `&still=1` (hooks.still) renders byte-identically to the lifted shader for the same c:
 //   uKoen vec2  rest (0,0)  the pitch slides the Koenigs bands (Lk) and rotates the spokes (ai)      -- x + 0

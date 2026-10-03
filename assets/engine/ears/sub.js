@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The sub track: the 25-70 Hz 808 that IS this music's identity. Low-pass, decimate to ~2 kHz, YIN over >= 120 ms
 // (40 ms holds 1.4 cycles of 35 Hz — measured in tools/truth, it fails), octave check, parabolic refinement, hop <= 10 ms.
 // Pure and causal: every value it reports is derived from samples at or before the newest one pushed.

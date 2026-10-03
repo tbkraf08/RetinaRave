@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Synapse's built-in test synth. Six styles exercise the analysis: four-on-the-floor build/hush/drop (house), halftime
 // 140, DnB 174, beatless ambient, a fake-out build, and an A-B-A-B form (section memory). 'mix' tours them.
 // Selected by &demo=<style>. Lifted from synapse2.html makeDemo (526–583). Uses Math.random() noise: runs are not

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEEDBACK: previous frame re-injected with decay, zoom and twist (the trails). Ping-pong pair f0/f1.
 // Scene slot: post.fb.decay (number or fn(MS) → 0..1). Lifted from cardioid3 FS.fb.
 // Linear chain (io.linear, v0.3 §20): this is the chain's first pass, so it decodes the scene's sRGB output here

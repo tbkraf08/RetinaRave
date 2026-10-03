@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 — waves on the threads (brief-torus2 spec 2, the user's own sentence: "can we add a wave to the thread?").
 //
 // v0.14: the ring buffer itself now lives in assets/math/waves.js (mkWaves(), per caller) so GIELIS (id 10) can launch

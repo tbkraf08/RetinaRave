@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POLYTOPE — how the figure moves to the grooves (brief-polytope-dance spec 2; the user: "how can this shape dance
 // to the music?"). The port of TORUS2's motion.js `turn`, with an impulse per onset on top.
 //

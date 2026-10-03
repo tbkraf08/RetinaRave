@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE PREDICTED-EVENT QUEUE (live step 5, 2026-09-29; docs/AUDIT-live-grid.md "Step 5", DECISIONS §55). Pure: no DOM, no
 // clock — node-testable (tools/test_queue.js, tools/build-node.js), fed once per frame by features-queue.js. Additive: new
 // fields only, nothing existing moves, no scene reads them by default.

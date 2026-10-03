@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE PCM CLOCK STAGE (live step 6, 2026-09-30; engine/clock/clock.js, docs/AUDIT-live-grid.md "Step 6", DECISIONS §56): the
 // beat clock estimated on the PCM bus — the ears' sample-timed onsets as its ticks, tempo.js's comb on a per-hop spectral
 // flux as its tempo and lattice, a Kalman filter on (beat position, rate) — published beside v3's under its own names:

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Register, purity, the low-pass, the stereo width. All four read the filter bank PercTrack already runs, so nothing is
 // filtered twice; only the side/mid sums need the raw L and R.
 import { Quantile, clamp01, logmap } from './dsp.js';

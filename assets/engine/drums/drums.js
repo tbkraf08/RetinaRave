@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE REACTIVE DRUMS v2 (2026-09-28; docs/AUDIT-drums.md). Pure: no DOM, no clock — node-testable (tools/drums-node.js),
 // fed once per frame by features-drums.js. Additive: `kick2` / `snare2` / `hat2` are levels shaped like synapse's `kick` /
 // `snare` / `hat` (a hit sets the level to its strength, then it decays over the same 0.16 / 0.13 / 0.06 s), so a scene takes

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's beat: the press, the note, the interior's speed cap and its slew — moved out of nav2.js at the 500-line hard cap
 // (v0.13 pass 8; nav2.js was 473 lines). A pure move: the same operations in the same order, s8 md5 identical. Imports detect.js
 // and math/util alone, so nav2.js -> beat.js -> detect.js is a chain, never a cycle (tools/check.js fails on cycles); the wall's

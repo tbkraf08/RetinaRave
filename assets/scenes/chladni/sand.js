@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI's sand: the particle state, on the GPU, and the one instrument that measures it.
 //
 // The grains live in a float texture, one texel per grain — (x, y) on the plate, z the height it floats at, w a

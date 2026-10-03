@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // ROUTES (v0.4): per-scene, per-field routing of the music state — "in FEIGEN, `bass` is fed by `centroid`". The core hands
 // each scene a *view* of MS: the same MS object while the scene has no routes (identity by construction, zero cost), or a
 // per-scene object created once with Object.create(MS) whose routed fields are own properties refreshed every frame

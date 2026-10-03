@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Boot: engine → core (GL, effects, transitions, scenes) → registry → harness → loop.
 import { ENGINE } from './engine/engine.js';
 import './engine/features-synapse.js';

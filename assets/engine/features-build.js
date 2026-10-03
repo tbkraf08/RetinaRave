@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE LIVE BUILD / DROP STAGE (live step 4 B.2, 2026-09-29; engine/build/build.js, docs/AUDIT-live-grid.md "Step 4",
 // DECISIONS §54): `buildLive` (the void before a drop, 0..1), `dropLiveIn` (beats to the next bar line while armed, -1 when
 // not), `dropLiveEvt` (the slam). Causal in every mode — the stream-mode (tab capture) answer to the file map's buildProg /

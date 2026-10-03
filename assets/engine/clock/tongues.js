@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // ARNOLD TONGUES — a circle-map phase-locking descriptor on the PCM clock's own onset stream (docs/plans/TONGUES-PLAN.md,
 // DECISIONS §76). Pure: no DOM, no clock, no MS — fed per 512-sample hop by Clock.hop() (clock.js) with the clock's two
 // band fluxes and its own beat position; node-importable (tools/test_tongues.js, tools/tongues-node.js).

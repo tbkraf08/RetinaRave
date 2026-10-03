@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE MUSIC ENGINE facade: audio in, MS out. No GL, no DOM.
 //   ENGINE.frame(dt, now, nowMs) runs: source tick → v3 extractor (or the fake timeline) → registered stages →
 //   test pins (ENGINE.fix) → GROOVE. ENGINE.ms is an EMA of the CPU cost per frame.

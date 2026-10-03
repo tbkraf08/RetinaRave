@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // AudioContext graph: bus -> two AnalyserNodes (2048 fast, 8192 slow) -> muted sink. Sources plug into AU.bus.
 // No DOM: UI reactions to run/stop go through AU.onRun / AU.onStop hooks set by core/hud.js.
 // Lifted from cardioid3 "AUDIO".

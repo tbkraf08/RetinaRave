@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POLYTOPE — the regular 4-polytopes as tilings of the 3-sphere, turned by a double rotation in SO(4) and
 // projected stereographically into the room. Edges are subdivided on S^3, so every edge arrives as a circular
 // arc: nothing is drawn curved, the projection does it. Drawn with the core line renderer (path A, CONTRACTS §1.12).

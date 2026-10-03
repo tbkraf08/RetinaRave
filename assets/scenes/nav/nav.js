@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // LAYER 2: THE NAVIGATOR. The music moves c through charts on M: interior (multiplier of a bulb), exterior
 // (external angle, potential), and zoom-matched cuts into baby copies. Lifted verbatim from cardioid3 NAV.
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';

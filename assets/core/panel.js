@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Part E of the help view — the routes control panel (v0.4 item 3; v0.4.1 "the panel you can read": docs/workers/brief-panel-2.md).
 // DOM only: no GL, no wall clock, no timer and no second requestAnimationFrame. The core calls exactly five things:
 // buildE(section) once on the first open, markE() when the logical scene changes, refreshE(frameN, hot) on the help view's

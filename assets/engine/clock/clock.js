@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE PCM BEAT CLOCK (live step 6, 2026-09-30; docs/AUDIT-live-grid.md "Step 6", DECISIONS §56): tempo + phase estimated
 // from a sample-timed onset stream instead of once per video frame from the frame-rate flux, and a Kalman filter on
 // (beat position, beat rate) instead of a PLL — so one odd onset cannot yank the beat line, the line coasts through silence

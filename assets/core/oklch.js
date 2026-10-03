@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // OKLCH palette chunk (v0.3 §19, CONTRACTS §1.14) — opt-in GLSL a scene or effect prepends to its own fragment source:
 //   ctx.mkProg(ctx.oklch + FS, name)     (HEAD goes first, so TAU and the common uniforms are in scope)
 // Functions: linToOkLab / okLabToLin (Ottosson's matrices), srgbToLin / linToSrgb (the piecewise sRGB curve),

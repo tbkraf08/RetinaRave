@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV shaders. Fragment sources get HEAD (uRes uTime uBands uBeat uArc uHarm uPal uTint, pal/cmul/rot/hash) prepended
 // by ctx.mkProg, then ctx.oklch (CONTRACTS §1.14: palOK/palOKs/okClip) and OK_NAV below. Lifted from cardioid3
 // FS.julia / FS.mandel / VS_PT / FS_PT; the colour of both escape branches is now OKLCH (v0.3 items 5 + 6).

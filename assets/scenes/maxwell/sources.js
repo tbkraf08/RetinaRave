@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL — the sources: where the field comes from. Pure arithmetic, no GL, no DOM (node-importable).
 //
 // v0.12, the user's own sentence — "no sound -> quiet (ie. wave not generated)". **THERE IS NO CARRIER.** Nothing in

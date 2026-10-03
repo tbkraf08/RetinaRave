@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // SC: scene registry, director (pickScene / precedence), crossfade (through the transition slot), variants, forced/sticky.
 // Knows nothing about any specific scene: everything it reads from a scene is a contract slot (docs/CONTRACTS.md).
 // Lifted from cardioid3 "SCENES" (goScene / pickScene / updateScenes). v0.2 §10: look memory keyed on synapse's

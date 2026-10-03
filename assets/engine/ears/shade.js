@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // `modeShade` (DECISIONS §82, docs/plans/TONGUES-PITCH-PLAN.md phase 3): the chord quality the key implies for the
 // BASS's scale degree, per bar — minor cool (-1) … major warm (+1). Pure, node-importable (tools/test_shade.js).
 //

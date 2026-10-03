@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // AudioWorklet tap: posts contiguous mono PCM in 512-sample blocks; the analyzer runs in the port handler, not in the
 // render loop. Fallback: poll an AnalyserNode's time domain and append exactly the samples that are new.
 // frame(dt) does the per-rendered-frame work: impulse decays, energy-integrated "musical time" (flow), beat-clock lead.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The roughness normaliser behind `tension` (DECISIONS §81, docs/plans/TONGUES-PITCH-PLAN.md phase 2). Pure: no DOM, no
 // GL, node-importable (tools/test_rough.js).
 //

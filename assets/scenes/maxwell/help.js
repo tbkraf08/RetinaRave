@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MAXWELL's help (CONTRACTS §1.13): the three depths and, per feats entry, what it moves on THIS screen — one clause,
 // the visual consequence, never the formula. Data only, kept out of index.js so the scene object stays readable.
 export const HELP = {

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Built-in demo signal: a small techno sketch at 126 BPM with intro / groove / break / build / drop so every
 // event type occurs. Lifted from cardioid3 startDemo. Source interface: { name, start(), stop() }.
 import { AU, initAudio } from '../audio.js';

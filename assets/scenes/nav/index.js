@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV scene: the Julia set of f_c while the music navigates c through the Mandelbrot set. DRUM is its interior
 // variant (Koopman modes from the spectral peaks). Overlay: picture-in-picture of M with the path of c.
 // Lifted from cardioid3 renderScene id 0 / PiP block, expressed through docs/CONTRACTS.md.

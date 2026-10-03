@@ -43,7 +43,8 @@ const server = http.createServer((req, res) => {
   if (p.endsWith('/')) p += 'index.html';
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
-  const send = (f, data) => { res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data); };
+  // /LICENSE (no extension; the license headers link to https://retinarave.com/LICENSE) is text, as site/_headers makes it on the deploy
+  const send = (f, data) => { res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || (path.basename(f) === 'LICENSE' ? 'text/plain; charset=utf-8' : 'application/octet-stream'), 'Cache-Control': 'no-store' }); res.end(data); };
   fs.readFile(file, (err, data) => {
     if (!err) return send(file, data);
     // what `npm run build` copies to the dist root (site/: favicon, thumbs/…) is served from site/ here, so dev == deploy for those paths (v0.8.1)

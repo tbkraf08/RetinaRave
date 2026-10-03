@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // POST: the FX state derived from MS, and the effect-chain runner. Effects are plug-ins (assets/effects/*.js,
 // docs/CONTRACTS.md §3); post.js only orders and runs them. Lifted from cardioid3 frame() fx block + post chain.
 import { ema } from '../math/util.js';

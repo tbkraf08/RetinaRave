@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MIXS: v3's crossfade, moved verbatim from core/scenes.js (v0.2 §11) — two counter-rotating, counter-zooming samples
 // of the outgoing (uA) and incoming (uB) scene blended along a luminance-biased front driven by uM = the crossfade
 // position. The default transition (docs/CONTRACTS.md §5); pixel-identical to the v0.1 core pass.

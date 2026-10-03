@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // GIELIS (v0.14, id 10, no digit key — `n` cycles to it, or &scene=10) — "the superformula nest that breathes with the
 // music". Twelve pitch classes as twelve nested 3D supershapes drawn as latitude rings of strokes: the interval above
 // the key sets each family's lobe count, the beat pinches them all down to a star and the silence lets them relax back

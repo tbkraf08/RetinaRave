@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // CHLADNI's GLSL. The plate is not geometry: every pixel casts one ray from the scene's camera and intersects the
 // plane z = 0, so the plate is exact at any elevation and the whole pass is one ctx.tri(). The figure comes from
 // math/chladni.js's GLSL twin (`chField`, `chIn`), prepended below, so the shader and the node test share one table.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // GROOVE: one rotation angle shared by the scenes. drift turns at a rate set by energy (direction per section),
 // sway is a pendulum locked to pairs of beats (amplitude from bass, only when the rhythm is regular), nod is an
 // onset jerk — kicks and snares pull opposite ways. Lifted from cardioid3 updateGroove.

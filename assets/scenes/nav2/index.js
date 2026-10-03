@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2 (v0.8, id 8, key 9): "the melody draws the path" — the successor to NAV, built from docs/workers/brief-nav2.md.
 // Where NAV chooses among tables (12 bulbs by interval, 3 baby copies, 14 Misiurewicz points) and walks a chart inside
 // the choice, NAV2 has no tables and no charts: c is a ball rolling inside M (nav2.js), pitch is up, the build presses it

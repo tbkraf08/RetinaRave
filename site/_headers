@@ -4,6 +4,9 @@
   Cache-Control: public, max-age=300
 /about
   Cache-Control: public, max-age=300
+/LICENSE
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
 /og.jpg
   Cache-Control: public, max-age=604800
 /icon-192.png

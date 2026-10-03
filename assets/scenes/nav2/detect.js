@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's detectors (docs/workers/brief-nav2.md §3): pure followers of MS, no wall clock, no Math.random. Every
 // constant is a named manual setting at the top of this module — these are the leans the user retunes first.
 //

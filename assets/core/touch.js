@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Touch controls (v0.6): what replaces the keys on a coarse-pointer device. A bottom bar (#tbar in index.html, shown by
 // CSS only under (pointer:coarse) while running) with help · previous scene · next scene · fullscreen, a horizontal swipe on
 // the canvas that steps the forced scene through the registry, and a press held still for 600 ms that toggles the help

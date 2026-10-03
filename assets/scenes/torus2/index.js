@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS2 (v0.7) — the Hopf torus that is alive with the music. A from-scratch successor to TORUS (id 3) that keeps the
 // Hopf fibration geometry (math/hopf.js, DECISIONS §4) and answers the user's five points of 2026-09-24
 // (docs/workers/brief-torus2.md). Promoted to id 3 on 2026-09-24 ("torus2 looks good, promote it" — DECISIONS §37): it carries

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TRUE LOUDNESS, causally, on the PCM bus — ITU-R BS.1770-4 K-weighting (docs/plans/LOUDNESS-PLAN.md, DECISIONS §63).
 // Pure DSP: no DOM, no window, no clock, no Math.random, no imports — so tools/test_loud.js runs it in node and
 // assets/engine/features-loud.js is the only thing that knows about MS. Blocks of 512 stereo samples go in, one reused

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MORPH: synapse's flow-field crossfade as a transition (v0.2 §11). The incoming scene eats through the outgoing one
 // along a value-noise front; both textures are advected by a noise flow field (uA pushed forward by t, uB pulled back
 // by 1-t, both scaled by the kick) and a bright additive edge rides the front. Lifted from synapse2.html's FS_MORPH

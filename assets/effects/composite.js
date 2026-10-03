@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // COMPOSITE: chromatic aberration + glitch rows + kaleidoscope + flash + bloom add + tonemap + vignette + dither,
 // straight to the screen. Always last. Scene slot: post.kaleido (0..1 damping of the kaleidoscope, default 1).
 // Lifted from cardioid3 FS.comp.

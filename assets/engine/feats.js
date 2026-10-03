@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEATS: the self-documenting schema of MS. Every key of MS has an entry here (tools/check.js enforces it).
 // Each entry: { eli5, formula, kind, range, drives }.
 //   kind: 'level' 0..1 smoothed | 'raw' unbounded | 'event' true for exactly one frame | 'count' | 'angle' rad |

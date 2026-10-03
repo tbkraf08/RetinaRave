@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
 // Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.

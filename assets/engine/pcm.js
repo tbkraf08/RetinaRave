@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE PCM BUS (v0.15 E1): contiguous 512-sample STEREO blocks, each stamped with the audio time of its first sample.
 // A stage that wants the samples themselves (the EARS stage) subscribes with PCM.on(fn); fn(L, R, t0) where L and R are
 // Float32Array(512) and t0 is in the engine's time base (docs/ENGINE.md "Time": track seconds in file mode, AudioContext

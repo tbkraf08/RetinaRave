@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // NON-CAUSAL percussion onsets for the track map (file mode only). This is the truth tool's own front end, ported:
 // a 2048-point STFT at hop 512, Fitzgerald-2010 HPSS, per-band dB flux, peak picking, and the beater-click test at the
 // truth's OWN definition (15 ms) — not the causal ears' 25 ms compromise. Nothing here is causal and nothing here runs

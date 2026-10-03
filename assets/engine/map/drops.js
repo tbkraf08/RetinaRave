@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Bar-pinned drops, defined by the WHOLE track, not by a causal "the bass came back" rule. A JS port of
 // tools/truth/trackmap.py's E0 drops: on SeeYouDrop it must give 57.606 and 105.596 and NOTHING at 9-13 s (the sub's first
 // entry at 12.815 is a layer entry into a quiet walk, which the "the bars after are among the track's loudest" gate rejects).

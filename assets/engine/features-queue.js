@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE QUEUE STAGE (live step 5, 2026-09-29; engine/queue/queue.js, docs/AUDIT-live-grid.md "Step 5", DECISIONS §55): one
 // ordered list of the events the engine expects next — the beat lines, the bar lines, the bar store's upcoming hits, the
 // drop the build detector counts to — on heard time net of the display lead, so a scene reads "what comes next" from one

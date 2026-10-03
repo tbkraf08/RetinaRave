@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // A FILE SOURCE (v0.15 E1): a real track as the engine's input, decoded locally, in two modes.
 //
 //  · REAL TIME (a real window, or headless without the deterministic clock): an AudioBufferSourceNode into AU.bus AND

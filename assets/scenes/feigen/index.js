@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // FEIGEN (id 6) — an endless dive down the real axis of the Mandelbrot set toward the Feigenbaum point, lifted from
 // synapse scene 6. One unit of level L is one Feigenbaum factor delta = 4.669...; the period-doubling cascade is
 // asymptotically self-similar under exactly that factor, so level L+1 looks like level L and the zoom can loop forever.

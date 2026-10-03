@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The four regular convex 4-polytopes as tilings of S^3: vertex coordinates → unit vertices → edges as
 // nearest-neighbour pairs; a general SO(4) double rotation; edges subdivided ON the sphere and projected
 // stereographically from the pole (0,0,0,1), which turns every great-circle arc into a circular arc in R^3.

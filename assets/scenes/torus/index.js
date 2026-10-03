@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // TORUS (§4) — the Hopf fibration as nested tori of Villarceau circles.
 // The 12 pitch classes are 12 base-point families on S2: chroma[k] sets family k's colatitude (louder → nearer the
 // equator → fatter torus) and its brightness. Every ring on screen is one genuine fibre; the highlighted strand is the

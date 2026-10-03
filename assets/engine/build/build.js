@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // THE LIVE BUILD / DROP DETECTOR (live step 4 B.2, 2026-09-29; docs/AUDIT-live-grid.md "Step 4", DECISIONS §54). Pure: no
 // DOM, no clock — node-testable (tools/test_build.js, tools/build-node.js), fed once per frame by features-build.js. Additive:
 // `buildLive` / `dropLiveIn` / `dropLiveEvt` are new fields; nothing existing moves, no scene reads them by default.

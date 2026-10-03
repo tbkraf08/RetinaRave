@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // Analyzer mixin: DROP ANATOMY (five kinds of evidence, a phrase-snapped expected line, detonate-or-resolve) and the
 // LONG FRAME (chroma → Krumhansl–Kessler key/mode, texture axes, the slow mood plane). Lifted from synapse2.html 338–410.
 import { clamp, clamp01, smooth, smoothAR } from './dsp.js';
