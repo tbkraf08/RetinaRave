@@ -139,7 +139,10 @@ export class Period {
     if (y1 > 0.08) {
       const r = bpm / X.bpm;
       if (!clear) { /* hold */ } else if (Math.abs(r - 1) < 0.06) {
-        X.bpm += (bpm - X.bpm) * 0.3;
+        // §90: the tracking blend is HELD while the comb's strength is under K.HOLD_Y1 (0 = never): a sung, kick-less passage
+        // reads a tempo a tenth of a BPM off the groove's (IBelongHere 52-65 s: 117.8-117.9 against 118.00 at y1 0.16-0.21), and
+        // 0.74 ms a beat over 26 beats is the +21 ms the user saw at 1:04. The clock keeps the groove's tempo until the kick is back.
+        if (!(y1 < (this.K && this.K.HOLD_Y1 || 0))) X.bpm += (bpm - X.bpm) * 0.3;
         X.tempoAge = 0;
       } else if (best < 1.25 * cur && !(X.tempoAge > 16)) {
         // the 25 % margin: a 16th-note build lights every lag; hold

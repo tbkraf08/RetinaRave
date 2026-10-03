@@ -188,6 +188,8 @@ export function initHarness(hideLanding) {
   // = the 8th line too; &clickw=<ms> the beater window (25 = the §68 default)
   if (HASH.has('kline')) { const v = +HASH.get('kline'); if (!(v === 0 || v === 1 || v === 2)) throw new Error('&kline= 0 | 1 | 2'); PERCK.lineKick = v ? 1 : 0; if (v) PERCK.lineSub = v; }
   if (HASH.has('clickw')) { PERCK.clickW = +HASH.get('clickw') / 1000; if (!isFinite(PERCK.clickW)) throw new Error('&clickw= must be ms'); }
+  // the kick-less passage knobs (§90): &holdy1=0&ry1=0&ratey1=0 = the pre-§90 clock through a breakdown
+  for (const [k, K] of [['holdy1', 'HOLD_Y1'], ['ry1', 'R_Y1'], ['ratey1', 'RATE_Y1']]) if (HASH.has(k)) { ENGINE.CLOCK.K[K] = +HASH.get(k); if (!isFinite(ENGINE.CLOCK.K[K])) throw new Error('&' + k + '= must be a number'); }
   if (HASH.has('swy1')) { ENGINE.CLOCK.K.SW_Y1 = +HASH.get('swy1'); if (!isFinite(ENGINE.CLOCK.K.SW_Y1)) throw new Error('&swy1= must be a number'); }
   if (track) {
     hideLanding();

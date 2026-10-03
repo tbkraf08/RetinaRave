@@ -51,6 +51,19 @@ export function lineHook(clk) { const o = { phase: 0, conf: 0 }; return (t) => {
 export const CLOCK = {
   BASS: 3,                      // the bass bins' extra weight in the strength (v3: flux + 3·bflux)
   R_CLS: [1, 1.5, 3],           // the onset variance per class: kick, snare, hat (a hat is the subdivision; a kick is the beat)
+  // THE KICK-LESS PASSAGE (§90, IBelongHere 1:04): through a sung breakdown the comb's own strength y1 reads 0.03-0.11 (the
+  // grooves 0.5-0.75) and the clock has only vocal / hat onsets to ride; it leaned 0.1-0.2 BPM slow from 52 s and sat +21 ms late
+  // by 59-65 s (p90 36, within +-30 ms 75 %), then re-seated by -22 ms inside one beat at the drop — the jerk the user saw. Three
+  // knobs, each 0 = the pre-§90 clock (&holdy1= / &ry1= / &ratey1= on the page):
+  HOLD_Y1: 0.3,                 // period.js holds its tracking blend (the comb's tempo) while y1 is under this — the blend read 117.8-117.9 against 118.00 at y1 0.16-0.21
+  R_Y1: 0.2, R_Y1P: 1,          // a snare / hat onset's variance is scaled by max(1, (R_Y1 / y1)^R_Y1P): a consonant is not a drum. 0.3 breaks Vienna (|p90| 119 → 314 ms: its line is held by the hats at y1 0.15-0.26); a steep low knee (0.15^2, 0.12^3) makes IBelongHere LATER (+22 / +28 ms: the lean is the rate's, and the onsets were half-correcting it)
+  RATE_Y1: 0.15,                // an onset moves the beat POSITION only, not the rate, while y1 is under this (Vienna's y1 never goes under 0.15 outside its cold start; IBelongHere's breakdowns sit at 0.06-0.08)
+  // Measured on the six truth tracks (tools/clock-study.js + tools/work/v90/clk.py): IBelongHere 59-65 s +21.2 → +8.0 ms median,
+  // p90 36 → 29, within 75 → 92 %, 52-59 +7.3 → +3.5, the drop re-seat 22 → 10 ms; the five others' whole-track |lag| p50 / p90
+  // within 1 ms of before (SeeYouDrop 7.9/24.8 → 8.0/23.2, lock 12.4 → 9.6 s; CyborgNinja 1.1/2.9 → 1.1/3.0; WhoLikesToParty
+  // 5.1/8.6 → 5.1/8.7; Malicious 11.1/28.3 → 11.3/29.0, its lock 3.5 → 5.6 s — the rate frozen through a cold start at y1 0.08-0.19,
+  // the one cost; Vienna 4.8/119 → 4.9/116). The static R_CLS [1, 3, 6] the diagnosis proposed reads +11.9 on IBelongHere but
+  // moves four tracks (Vienna |p90| 119 → 322, §71's hat row), so it is not taken.
   KICK_LAG: 0.004,              // s: the ears' kicks read +3 / +8 / +6 / +2.5 ms against the four truth tracks' kicks (median 4.5); snares / hats +-2
   EVERY: 0.5,                   // s between comb estimates (tempo.js: every 0.5 s)
   R_ON: 0.03 * 0.03,            // beats²: an onset's timing variance at strength 1 (±12 ms at 150 BPM)
@@ -125,7 +138,7 @@ export class Clock {
     const y = Math.round(this.b) - this.b, S = this.P00 + R;
     const N = Math.exp(-0.5 * y * y / S) / Math.sqrt(2 * Math.PI * S), beta = N / (N + CLOCK.CLUTTER);
     const K0 = this.P00 / S, K1 = this.P01 / S;
-    this.b += beta * K0 * y; this.f += beta * K1 * y;
+    this.b += beta * K0 * y; if (!(CLOCK.RATE_Y1 > 0 && this.per.y1 < CLOCK.RATE_Y1)) this.f += beta * K1 * y;
     // PDA covariance: P − beta·K S Kᵀ + beta(1−beta)·(K y)(K y)ᵀ
     const sp = beta * (1 - beta) * y * y;
     this.P00 += -beta * K0 * K0 * S + sp * K0 * K0;
@@ -181,7 +194,10 @@ export class Clock {
   // an onset from the ears (perc.js: kick 0 / snare 1 / hat 2) at audio time t with velocity vel in (0, 1]: a phase measurement
   onset(t, cls, vel) {
     this.onsets++;
-    const R = CLOCK.R_ON * (CLOCK.R_CLS[cls] || 1) / Math.max(+vel || 0, 0.25), ot = t - (cls === 0 ? CLOCK.KICK_LAG : 0);
+    // §90: while the comb's own strength is low (no kick-driven periodicity; the sung breakdown) a snare / hat onset is a vocal
+    // consonant as often as a drum, so its variance is inflated by R_Y1 / y1 (R_Y1 0 = off). The kick lane keeps R_CLS[0].
+    const g = CLOCK.R_Y1 > 0 && cls > 0 ? Math.max(1, Math.pow(CLOCK.R_Y1 / Math.max(this.per.y1, 0.02), CLOCK.R_Y1P)) : 1;
+    const R = CLOCK.R_ON * (CLOCK.R_CLS[cls] || 1) * g / Math.max(+vel || 0, 0.25), ot = t - (cls === 0 ? CLOCK.KICK_LAG : 0);
     const [y, beta] = this.measureLine(ot, R);
     if (beta > 0.5) this.hits++;
     this.lastOnset = { t: ot, cls, vel, y, beta };
