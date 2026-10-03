@@ -473,3 +473,10 @@ alike: `pow(acc·3.2, 2.6)·(0.35 + 1.3·uLevel)` at `baseLight` 1 — the base 
 fold's own dynamic range on eM"; (2) the snare flash is a wedge the annulus ruler under-reads (`lumM` 1.3× on SeeYouDrop) — a wedge
 ruler, and the user's eye on whether one lit arm of N reads as a snare; (3) the kick's coverage 0.70 / 0.68 against the §68 kick truth
 on SeeYouDrop / Vienna is the union's recall (DUST's too), not the scene's.
+
+**2026-10-02, §87 (MANDALA's tension — step 3):** built, NOT deployed. Default taken: N + 1 (odd N) under tension (open question 4).
+Open: (1) **the arm-time receipts** — `tight` is `buildLive` to the digit (0.347 at 52.0 s, 0.716 at 105.6), so "≥ 0.9 by 52.0 / ≥ 0.75
+by 102.4" is the detector's reach, not the scene's; if the user wants the fold tighter sooner the knob is §54's `0.4 + 0.15/bar`;
+(2) `dropLiveEvt` lands 21 ms after the truth on SeeYouDrop's drop 2 (105.617 vs 105.596) — 1.3 frames, the engine's; (3) Vienna's
+dream reads ambiguous from 76.7 s on a 40 s cold start (72.0 on §77's from-0 run) — measured from 0 under §88; (4) the 0.6 body dim is
+the one number the user's eye should rule on first (0:40–1:00 on SeeYouDrop: the picture goes to ~40 % before 0:57.6).

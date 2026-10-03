@@ -7959,3 +7959,50 @@ fH aK aS aH srcK srcS srcH hBed hSwell seg kAmp`. Hooks: `&bed=` (the shared BED
 yellow disc in v0.29 and after alike — `pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` with §63's `baseLight` at 1 clips the centre on
 every track's drop; it is inherited, step 4 is told not to touch `baseLight`, and it is logged as the first open item of this pass
 (the one knob that would give the fold its own dynamic range, "pass 2: the fold's own dynamic range on eM" in the prompt).
+
+## §87 MANDALA's real tension — the void before a drop and the beat the music will not commit to tighten the fold (N + 1, the palette drains, the body dims, the inversion clamps), the slam lets go on one frame; roughness becomes jitter (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 3; default 4 taken: +1, odd N)
+
+The scene read `tension` — v3's roughness, how DISSONANT the music is — as a build and zoomed OUT on it (`+0.5·uTension`), a build that
+never arrived (§57's finding on DUST). The brief: "a slow tension accumulator that visibly tightens the scene during builds and
+releases all at once on the drop". One commit; before = `../RetinaRave-m86`'s traces (§86), after = `../RetinaRave-m87` (= HEAD +
+this step), PORT 8884, one page at a time, no audible run.
+
+### What was built (`mandala/voices.js` `tension()`, shaders.js)
+
+`tens(vT, dt, MS)` (lifted in §86) gives `build` (`buildLive` eased, τ .35), `wind` (the last bar, `nextDropIn` < 1.7 s) and `rel`
+(`dropLiveEvt`, τ .55). MANDALA adds §77 / §79's ambiguity through TORUS2's dead zone, `amb = max(0, (tongueAmbig − 0.75) / 0.25)`
+(`tongueOn` 1 only), eased on τ .35 because it steps once per beat; **`tight = max(build, ambE)`** — the build is read as `tens()`
+already eases it. While `tight` is past the knee (0.55 on, 0.45 off — hysteresis around the prompt's 0.5) the mirror count is **N + 1**
+(odd — the fold's `mod` / `abs` is exact for any N and an odd count is itself the visible sign of the void; open question 4's default;
+the wedge STEP stays on N, so §85's numbers cannot move with the tension), the palette drains (`sat × (1 − 0.55·tight)`, DUST's number),
+the body dims (`× (1 − 0.6·tight)`), the fold pulls in (`+0.3·uTight` on the zoom) and the inversion's clamp tightens (`clamp(dot(z,z),
+0.07 + 0.1·tight, 3 − 1.5·tight)`). **The slam springs it all back on one frame**: `dropLiveEvt` zeroes `tight`, the ambiguity's ease
+and the build's, and `rel` adds to the centre flare (`+1.0·uRel`) and the zoom (`−0.3·uRel`). **Roughness is jitter only**: the zoom's
+`+0.5·uTension` became `0.03·tension·sin(flow)`. `feats` + `buildLive nextDropIn dropLiveEvt tongueAmbig` (`tongueOn` since §85).
+`dinfo()` + `build wind rel amb tight Nt drain`.
+
+### Measured (`tools/work/v87/tens87.py`; the engine columns md5-identical to the before on every window; s2's lines `a360e08f` / `39f90ef8`, the only two that differ from v0.29's list — the full sweep on m87 before the tunes `7079a200` / `3e21a2ee`, 22 lines identical; the tunes touched voices.js and one shader constant, re-shot with `IDS=2`)
+
+**As first built** (a second τ .35 ease on `tight` over `tens()`'s, the body dim 0.4): SeeYouDrop `tight` 0.168 at 52.0 s, 0.683 at 105.6
+(against `build`'s own 0.347 / 0.716 — the double ease); the per-bar median `lum` before drop 1 **136.6 / 134.5 / 125.9 / 136.7 — NOT
+monotone**, before drop 2 175.0 / 125.5 / 128.8 / 112.6 — not either: §63's `baseLight` rises 0.47 → 0.73 into the drop (the music
+gets louder, and it is right that the body does) and outran a 0.4 dim. **Two tunes, one each: the ease comes off `build` (`tight` =
+`build` exactly where the ambiguity is 0), the dim goes to 0.6.** After:
+
+| receipt | SeeYouDrop | Vienna | CyborgNinja 20–80 |
+|---|---|---|---|
+| `tight` at the §57 arm times | 52.0 s **0.347** (= `buildLive`'s arm value, 0.4 eased), 56.0 s 0.858, the last bar's median **0.93**, max 0.990 before 57.6; 102.4 s **0.000** (the arm's first frame), 105.6 s **0.716** (= `build`, §57's "reaching 0.75") | — | **max 0.000 on every frame** |
+| `rel` on the drop frame | **57.600** (truth 57.606, −6 ms) and **105.617** (truth 105.596, +21 ms: the engine's event frame, 1.3 frames late to the truth — the scene fires ON the event) at 0.970 (`tens()`'s own first-frame decay) | **85.333** (truth 85.336, −3 ms); **106.669: nothing** — `tight` 0.00 over the 4 bars before, `lum` 1.07× — §77's "nothing causal before drop 2", measured and recorded | **never** |
+| per-bar median `lum`, 4 bars before → the drop frame | **125.5 / 107.1 / 92.8 / 91.5 → 245.3 = 2.68×** the bar before; **175.0 / 125.5 / 106.2 / 88.6 → 244.1 = 2.75×** (both monotone falling, both ≥ 1.5×) | 64.9 / 60.6 / 73.7 → 189.5 = **2.57×** (not monotone: the dream swells into 1:25, `lvl` 0.80 → 0.89) | — |
+| `amb` across the dream 72.0–86.0 | — | p50 0.776, **≥ 0.75 on 67 % of the frames — every frame from 76.68 s on, none from 72.00 to 76.67**: `tongueAmbig` p10 0.388 there (p50 0.944 over the run); this page started at 40 s (WARM 30) and the tongues' 16-beat windows read the dream as ambiguous 4.7 s later than §77's from-0 run (72.0); and the receipt's 0.75 needs `tongueAmbig` ≥ 0.9375 under the 0.75 / 0.25 dead zone — §77's "22 beats ≥ 0.9" gives `amb` ≥ 0.6. Both recorded, neither the scene's | — |
+| `Nt` | N + 1 on 388 of 5401 frames (the two voids) | N + 1 on 408 of 1801 (80–110) / 587 of 1201 (70–90) — the dream | **`Nt` = N on 3601 of 3601** |
+
+Bench (m87 before the tunes; the tunes are two constants): `bench(2,300)` / `bench(0,300)` **4.024 / 4.224 ms = 0.953** (§86 0.994, §85
+0.920, base 0.898 — all inside ±10 % of each other). `check.js` 0 fail.
+
+### Open
+
+The two arm-time receipts as the prompt wrote them ("`tight` ≥ 0.9 by 52.0 s and ≥ 0.75 by 102.4") read §57's arm TIMES as reach times:
+`buildLive` IS 0.4 at the arm and climbs 0.15 per bar of void (§54), so 0.9 comes 4.3 s after the arm and 0.75 never before the second
+drop (0.716). The scene follows the engine to the digit; a faster reach is the detector's (OPEN-ITEMS). Vienna's dream from a cold 40 s
+start reads ambiguous from 76.7 s, not 72.0 — a from-0 trace is queued below (§88's receipts) to say which it is on the user's path.

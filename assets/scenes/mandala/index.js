@@ -1,20 +1,20 @@
 // MANDALA (id 2) — a kaleidoscope whose mirrors are a real fold group, lifted from synapse scene 2.
 // An N-fold angular fold feeds an iterated box-fold / sphere-inversion map; an orbit trap lights the result.
 // Fullscreen fragment scene: no camera, no geometry, no CPU particles.
-// The overhaul (DECISIONS §85–§88, MANDALA-OVERHAUL-SESSION-PROMPT.md): the beat grid is grid.js (§85), the voices voices.js (§86).
+// The overhaul (DECISIONS §85–§88, MANDALA-OVERHAUL-SESSION-PROMPT.md): the beat grid is grid.js (§85), the voices and the tension voices.js (§86, §87).
 import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the body's brightness is TRUE loudness, not the AGC's `lvl`
 import { K as NUDGE } from '../../math/beatgrid.js';
 import { FS_MANDALA } from './shaders.js';
 import { HELP } from './help.js';
 import { WEDGE, grid, mkGrid, setN, stepFor } from './grid.js';
-import { mkVoices, voices } from './voices.js';
+import { mkVoices, tension, voices } from './voices.js';
 import { BED } from '../../math/voice.js';
 
 const TAU = Math.PI * 2;
 
 // Everything update() reads out of MS / LOOK, held for draw(). No hidden timers: every entry traces to MS.
 const S = {
-  N: 8, rot: 0, fold: 0, flow: 0, bassS: 0, midS: 0, kick: 0, snare: 0, seg: 0, tension: 0,
+  N: 8, rot: 0, fold: 0, flow: 0, bassS: 0, midS: 0, kick: 0, snare: 0, seg: 0, tension: 0, tight: 0, rel: 0,
   drop: 0, lvl: 0, hat: 0, alive: 0, q: 0,
   hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, angular: 0,
 };
@@ -31,6 +31,7 @@ const SELF = {
   feats: ['arc', 'regularity', 'onsetRate', 'seed', 'beatCount', 'beatPhase', 'bpm', 'barPos', 'phrase16Pos',
     'barNovelEvt', 'barReturnEvt', 'tongue21', 'tongue41', 'tongueOn', 'flow', 'bass', 'bassS',
     'midS', 'kick2', 'kickAge', 'kickEvt', 'kickAmp', 'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'hat2', 'hatAge', 'hatEvt', 'highS',
+    'buildLive', 'nextDropIn', 'dropLiveEvt', 'tongueAmbig',
     'tension', 'dropEnv', 'lvl', 'high', 'alive', 'loudRel', 'loudRange', 'loudAbs'],
   // 'event': the only discontinuity is N, the fold count, and it moves only on a seam of the music (grid.js)
   cuts: 'event',
@@ -61,6 +62,12 @@ const SELF = {
     S.midS = MS.midS;
     // the hits: three voices on the ears' lanes (voices.js) — the level `kick` / `hat` no longer is the hit (§86)
     voices(V, dt, MS, G.N);
+    // the real tension: the void before a drop and the beat the music will not commit to (voices.js, §87); the
+    // roughness `tension` is jitter only from here
+    tension(V, dt, MS, G.N);
+    S.N = V.Nt;
+    S.tight = V.tight;
+    S.rel = V.vT.rel;
     S.kick = V.vK.e;
     S.snare = V.vS.e;
     S.seg = V.seg;
@@ -77,7 +84,7 @@ const SELF = {
     S.alive = MS.alive;
     S.q = this.ctx.Q.q;
     S.hue = m.hue;
-    S.sat = m.sat;
+    S.sat = m.sat * V.drain;         // the void drains the palette; the slam puts it back on one frame (§87)
     S.bri = m.bri;
     S.spread = m.spread;
     S.invert = m.invert;
@@ -101,6 +108,8 @@ const SELF = {
     gl.uniform1f(pr.u('uSnare'), S.snare);
     gl.uniform1f(pr.u('uSnareSeg'), S.seg);
     gl.uniform1f(pr.u('uTension'), S.tension);
+    gl.uniform1f(pr.u('uTight'), S.tight);
+    gl.uniform1f(pr.u('uRel'), S.rel);
     gl.uniform1f(pr.u('uDrop'), S.drop);
     gl.uniform1f(pr.u('uLevel'), S.lvl);
     gl.uniform1f(pr.u('uHat'), S.hat);
@@ -156,7 +165,8 @@ const SELF = {
         njump: G.sp.jumps, nacc: G.sp.acc, why: G.why,
         vk: V.vK.e, vs: V.vS.e, vh: V.vH.e, ageK: V.vK.age, ageS: V.vS.age, ageH: V.vH.age,
         fK: V.vK.n, fS: V.vS.n, fH: V.vH.n, aK: V.vK.amp, aS: V.vS.amp, aH: V.vH.amp,
-        srcK: V.vK.src, srcS: V.vS.src, srcH: V.vH.src, hBed: V.hBed.s, hSwell: V.hSwell ? 1 : 0, seg: V.seg, kAmp: V.kAmp };
+        srcK: V.vK.src, srcS: V.vS.src, srcH: V.vH.src, hBed: V.hBed.s, hSwell: V.hSwell ? 1 : 0, seg: V.seg, kAmp: V.kAmp,
+        build: V.vT.build, wind: V.vT.wind, rel: V.vT.rel, amb: V.amb, tight: V.tight, Nt: V.Nt, drain: V.drain };
     },
   },
 

@@ -12,7 +12,9 @@ uniform float uMidS;
 uniform float uKick;      // the kick VOICE (voices.js, §86): the fold-depth pulse
 uniform float uSnare;     // the snare voice: the segment flash
 uniform float uSnareSeg;  // which of the N wedges it lights
-uniform float uTension;
+uniform float uTension;   // roughness: jitter only (§87)
+uniform float uTight;     // the real tension: the void before a drop / the uncommitted beat (voices.js, §87)
+uniform float uRel;       // the slam's release
 uniform float uDrop;
 uniform float uLevel;
 uniform float uHat;       // the hat voice: the trap-ring glint
@@ -53,7 +55,9 @@ void main(){
   float a = mod(a0 + uRot, seg);
   a = abs(a - seg * 0.5);
   vec2 z = r0 * vec2(cos(a), sin(a));
-  z *= 1.55 - 0.45 * uBands.x - 0.25 * uKick + 0.5 * uTension - 0.5 * uDrop;
+  // the zoom: the kick voice pulls in, the void TIGHTENS the fold (in, never out), the slam and the drop pull in hard;
+  // the roughness is a jitter on the flow clock and nothing more (§87: it used to zoom OUT, a build that never arrived)
+  z *= 1.55 - 0.45 * uBands.x - 0.25 * uKick + 0.03 * uTension * sin(uFlow) - 0.5 * uDrop - 0.3 * uRel + 0.3 * uTight;
 
   // the fold constant: its phase advances on the beat angle (uFold); flow is only the slow drift underneath (§85)
   vec2 c = vec2(0.58 + 0.22 * sin(uFlow * 0.13 + uFold) + 0.10 * uBassS,
@@ -65,7 +69,7 @@ void main(){
   for (int i = 0; i < 10; i++) {
     if (i >= IT) break;
     // box-fold (abs) + sphere inversion (/dot(z,z), clamped) + translate + rotate: a Kleinian-style contraction
-    z = abs(z) / clamp(dot(z, z), 0.07, 3.) - c;
+    z = abs(z) / clamp(dot(z, z), 0.07 + 0.1 * uTight, 3. - 1.5 * uTight) - c;   // the void tightens the inversion's clamp (§87)
     z = R * z;
     float s = specM(fract(float(i) * 0.137 + 0.05));
     acc += exp(-13. * abs(length(z) - (0.35 + 0.5 * s)));   // orbit trap on a spectrum-driven radius
@@ -77,13 +81,13 @@ void main(){
   col += palM(0.55 + r0) * exp(-tr * 26.) * (0.12 + 1.4 * uBands.z + 0.8 * uHat);
   float sp = specM(abs(fract(a0 / TAU * N * 0.5) * 2. - 1.) * 0.9);
   col += palM(0.2 + sp) * exp(-abs(r0 - (0.3 + 0.08 * uBassS + sp * 0.2)) * mix(90., 40., uBands.x)) * (0.4 + sp * 2.);
-  col += palM(0.9) * exp(-r0 * r0 * 60.) * (uKick * 0.8 + uDrop * 1.2);   // centre flare: kick + drop
+  col += palM(0.9) * exp(-r0 * r0 * 60.) * (uKick * 0.8 + uDrop * 1.2 + uRel * 1.0);   // centre flare: kick + drop + the slam
   // the snare's SEGMENT FLASH (§86): one wedge of the N, lit through its own trap structure for the voice's decay —
   // additive, so the picture never jumps; the wedge index is taken on the same turned angle the fold uses
   float wi = mod(floor((a0 + uRot) / seg), N);
   float onSeg = 1. - smoothstep(0.4, 0.6, abs(wi - uSnareSeg));
   col += palM(0.75 + r0 * 0.3) * onSeg * uSnare * smoothstep(0.03, 0.12, r0) * (0.25 + 1.6 * acc);
-  col *= 1. - smoothstep(0.2, 1.25, r0);
+  col *= (1. - smoothstep(0.2, 1.25, r0)) * (1. - 0.6 * uTight);   // the void dims the body too: a build tightens AND darkens (§87; 0.4 measured first — the loudness rising into the drop outran it)
   o = vec4(col * uAlive, 1.);
 }
 `;
