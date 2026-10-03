@@ -3,7 +3,8 @@
 // import core/gl.js; scenes/effects/transitions import nothing from core) · no 'nav' in core/ or transitions/ · every MS
 // key has a FEATS entry · scene help has three depths, help.feats ⊂ feats (warn on a feats entry without a line) · help.js /
 // panel.js name no MS field and no scene as a quoted literal (the help and the panel show data, never a special case) ·
-// license header on every public file (tools/license.js audit(): index.html, site/**/*.html, assets/**/*.js — warn until LICENSE_FAIL).
+// license header on every public file (tools/license.js audit(): index.html, site/**/*.html, assets/**/*.js — warn until LICENSE_FAIL) ·
+// releases.json validates (tools/releases.js) and its top entry's version == package.json's (the §3.2 tag ritual).
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -170,6 +171,14 @@ for (const d of sceneDirs) {
     for (const k of ['title', 'blurb']) if (!(typeof sc.card[k] === 'string' && sc.card[k].trim())) fail('scene ' + d + ': card.' + k + ' is missing or empty');
     if (!fs.existsSync(path.join(ROOT, 'site/thumbs', sc.name + '.jpg'))) warn('scene ' + d + ': card without site/thumbs/' + sc.name + '.jpg — run tools/thumbs.sh');
   }
+}
+
+{ // releases.json (tools/releases.js, SOCIAL-PLAN §3.1–§3.2): the schema, newest first, unique versions, and the tag ritual — the top entry's
+  // version is package.json's, so a tag cut without its release note fails here (bump package.json + core/version.js, then add the entry)
+  const { load, validate } = await import(path.join(ROOT, 'tools/releases.js'));
+  let rel = null;
+  try { rel = load(); } catch (e) { fail('releases.json: ' + e.message); }
+  if (rel) for (const p of validate(rel)) fail(p);
 }
 
 { // license headers (tools/license.js): every public file carries the canonical header; stamp with `node tools/license.js`
