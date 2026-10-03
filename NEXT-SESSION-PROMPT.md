@@ -1,6 +1,6 @@
 # Next session — Retina Rave (written 2026-10-02 late, updated 2026-10-03: **v0.30 + v0.31 tagged + pushed** — `70e4c2e`, `537f967`)
 
-**State:** **v0.30 TAGGED + PUSHED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; v0.30 live ~40 min after the push; **v0.31 NOT live 85 min after its push** (`537f967` + two doc pushes behind it) — a clean clone builds it, whatsnew.js runs on Node 18/20/22, `_headers` valid, `wrangler deploy --dry-run` reads 24 assets; the cause is only visible in the Cloudflare dashboard (Workers & Pages → retinarave → Builds) or fixable by `npx wrangler login` + `npm run build && npx wrangler deploy`) — the user said
+**State:** **v0.30 TAGGED + PUSHED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; v0.30 live ~40 min after the push; **v0.31 LIVE** (user-confirmed ~13:20, ~85 min after the push) (`537f967` + two doc pushes behind it) — a clean clone builds it, whatsnew.js runs on Node 18/20/22, `_headers` valid, `wrangler deploy --dry-run` reads 24 assets; the cause is only visible in the Cloudflare dashboard (Workers & Pages → retinarave → Builds) or fixable by `npx wrangler login` + `npm run build && npx wrangler deploy`) — the user said
 "tag and deploy" BEFORE running the gates in §0, so every §0 item is now a retune input on the live build, not a pre-deploy gate. Today's session landed, each with receipts in DECISIONS: **§83** accept.sh re-based at v0.29 (`ACC` variable,
 `tools/accept/v0.29/scene-md5-v029.txt`, all 12 ids guarded) + the fake timeline's deterministic kick/snare/hat lattice (the md5 sweep
 now sees the voices: s1 s3 s5 s9 s10 s11 moved once, the baseline re-recorded) · **§84** `tonicConf` (KS margin × sub-note histogram)
@@ -48,6 +48,8 @@ on any new public file; memory `project_session_2026_10_02_pm` is the running lo
 - **The recorder by hand** (HARNESS "Recorder"): `sudo apt install -y ffmpeg` in a real terminal first (the `!` prefix has no tty);
   30 s tab capture + 30 s file, each webm plays in Chrome and VLC with sound, watermark reads, dot/HUD absent; then
   `node tools/clip.js ~/Downloads/<take>.webm --ss 2 --to 28` and `ffprobe … clip.mp4` → `60/1,yuv420p`, aac.
+- **The recorder's quality** — the user's first take (`~/Downloads/retinarave-v0.31-nav-2026-10-03T13-23-24.webm`): "the recording quality
+  isn't very good" → §92 (the `Q.q` tier drop during a take, the encoder mime / bitrate, the capture size) — judge the fix with a new take.
 - **Read once:** `LICENSE` (the clause names Thomas Kraft, "Toma", you + one guest) and `MANDALA-OVERHAUL-SESSION-PROMPT.md`.
 
 ### 1. ~~Tag v0.30~~ — done 2026-10-03 (`70e4c2e`; the recipe that worked: bump `package.json` + `assets/core/version.js`, `node tools/bundle.js
