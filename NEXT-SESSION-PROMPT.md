@@ -57,7 +57,11 @@ retinarave.com still served v0.29 byte-for-byte and `/LICENSE` was 404 — the C
 `main` builds fine); wrangler is not logged in on this machine. Check the dashboard (Workers & Pages → retinarave → Builds) or
 `npx wrangler login` + `npm run build && npx wrangler deploy`.
 
-### 2. Share phase 2 + 3 (→ v0.31; `docs/plans/SOCIAL-PLAN.md` §3–§4 is the spec, the user's answers are in §1 — do not re-ask)
+### 2. ~~Share phase 2 + 3~~ — BUILT 2026-10-03 (§91, merged `a4942b5`, NOT tagged/pushed): `releases.json` 28 entries v0.6→v0.30, `tools/releases.js` +
+`tools/whatsnew.js` → `site/whats-new.html` (0 scripts, no third party), the card's two lines, about.html long form; check.js enforces top entry ==
+package.json. **v0.31 tag = on the user's word**, recipe in §91 / HARNESS "Release notes" (bump both versions → add the entry → build → checks → tag → push).
+Open: the historical clips (`tools/record-old.sh`), the user's one read of the 28 bodies, the `decisions` links point at the private GitHub.
+The original spec, for reference:
 `releases.json` + `tools/whatsnew.js` → `site/whats-new.html` at `npm run build` (static, per-version anchors, click-to-load YouTube
 behind a self-hosted poster, no third-party request before a click); `check.js` fails a tag whose top entry ≠ `package.json`;
 backfill v0.6 → v0.30 from DECISIONS / the AUDIT files in a visitor's words, one sitting; `tools/record-old.sh` for the old releases'
