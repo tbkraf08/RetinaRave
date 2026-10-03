@@ -8225,3 +8225,13 @@ the hidden worklet, the 60 s monitor — 0 FAIL. `npm test` OK, `check.js` 0 fai
 public files still unstamped — DUST's other files and the rest of `math/`, left as `27617b5` left them; `node tools/license.js` is the
 one command). The worktrees `../RetinaRave-m-base` / `-m85` / `-m86` / `-m87` / `-m88` / `-m88c` are left in place for the A/B shots
 (`git worktree remove <dir>` each when done); the user's 8765 was never touched, no port of this session is open.
+
+## v0.30 — tagged + deployed 2026-10-03 on the user's word ("tag and deploy")
+`package.json` + `assets/core/version.js` 0.30.0 (§89: one version source); `releases/retinarave-v0.30.html` = `tools/bundle.js`
+(171 modules, 1648 KB); the deploy = the push to `main` (Cloudflare Git-connected `npm run build`). What ships over v0.29: §83 (accept
+re-base + the fake lattice — engine unchanged for the viewer), §84 `tonicConf` owns `keyConf`, §85–§88 MANDALA pass 1, §89 the `R`
+recorder, §90 the DUST sync on vocals (`lineKick`, `HOLD_Y1/R_Y1/RATE_Y1`), LICENSE = MIT + the Guest-List Clause with the header on
+every public file and `/LICENSE` served. Receipts at `39a17e4`: accept.sh 201 lines 0 FAIL, 24/24 md5 = `scene-md5-v029.txt`, two
+sweeps byte-identical; at the tag: check.js 0 fail, license --check 0 missing, npm test exit 0, test_rec all ok (VER 0.30.0 ==
+package.json), the release bundle from `file://` errs 0. The user's A/B gates (MANDALA, the key, DUST on IBelongHere, the recorder by
+hand) were NOT run before this deploy — the user chose to ship; their remarks become retunes (NEXT-SESSION-PROMPT §0).
