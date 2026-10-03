@@ -637,7 +637,9 @@ core flash on the predicted hits; drop the `route=` for the reactive synapse lev
 
 ```
 python3 tools/truth/trackmap.py <Track> --pcm --sr=48000       # once per track (tools/work/<Track>.48000.st.f32)
-node tools/drums-node.js [Track …] [--out dir] [--set S0=0.2,G=2.5,HOLD=0] [--perc thrK=2.5]   # seconds per track
+node tools/drums-node.js [Track …] [--out dir] [--set S0=0.2,G=2.5,HOLD=0] [--perc thrK=2.5]   # seconds per track; runs the PCM clock beside the ears since §90 (the kick lane reads its line)
+PERCK='{"lineKick":0}' node tools/drums-node.js IBelongHere                       # the kick lane's knobs on the FIRST ears instance (perc.js PERCK, §90): lineKick 0 = the §68 lane, lineSub 2 = the 8th line too, linePh / lineConf the gate, clickW / clickFloor the beater gate (= &kline= / &clickw= on the page)
+python3 tools/work/v90/kickwin.py tools/work/drums/node-IBelongHere.json            # per-window kick-lane hits on the .kick.json truth at ±60 ms (the IBELONGHERE doc's rule); linesim.py simulates the line rule offline on a base trace + a clock-study trace
 python3 tools/truth/drumcheck.py tools/work/drums/node-*.json [--src syn,ears,v2] [--tol 0.03]
 python3 tools/truth/kicktruth.py [Track …] [--rise 4.0] [--sweep]  # -> tools/truth/<T>.kick.json, the KICK reference
 node tools/test_drums.js                                          # in npm test (incl. the §68 synthetic masked kick)
@@ -811,12 +813,19 @@ stages and the lead, so everything downstream — every scene included — rides
 ```
 node tools/test_clock.js                                                   # in npm test: synthetic clicks — lock, phase, ramp, gap, outlier, lattice, band, band flip, determinism
 node tools/clock-study.js <Track> [--out f.json] [--raw]                   # node, the det time base: both clocks on heard time + every onset in `log`; CLOCKK='{"R_ON":1e-3}' knobs
+python3 tools/work/v90/clk.py study.json [--win 42,52 59,65] [--bpm 5,17] [--md5]   # §90: per-window beat-line lag med / sd / |p90| / within ±30 / bpm / conf / y1 against the truth beats, the lock (8 lines within 30 ms), the BPM trace per 0.5 s, a cols md5 for a byte-check
+CLOCKK='{"SW_Y1":0.3}' node tools/work/v90/combdbg.mjs IBelongHere 17              # §90: every comb estimate of a cold start — held / comb bpm, y1, contrast, cur / best, the ACF at 4/3 L / 3/4 L / 2L, the low-band share, the PDA rate, the switch vote
+CLOCKK='{"HOLD_Y1":0,"R_Y1":0,"RATE_Y1":0}' node tools/clock-study.js IBelongHere     # §90's kick-less-passage knobs OFF (= &holdy1=0&ry1=0&ratey1=0 on the page); SW_Y1 (the cold-switch strength gate) is 0 by default — measured and rejected
 node tools/build-node.js [Track …] [--out dir]                             # runs the clock too; CLOCKSRC=pcm = the page's &clock=pcm (bars / build / queue ride it)
 python3 tools/truth/gridcheck.py <trace> --heard                           # the 'pcm' rows beside v3's: tempo %, lag, jitter, beat F, lock, frame-to-frame |dlag|, clockConfPcm on / off the beat
 PORT=8864 node tools/filetrace.js <Track> 0 <dur> out.json 'heardT,leadT,bpm,beatPhase,beat,beatCount,bpmPcm,beatPhasePcm,beatPcm,beatCountPcm,clockConfPcm,clockPcm,…' '&map=0&lead=0[&clock=pcm]'
 CLOCKK='{"LAT_MARG":1e9}' PORT=8864 node tools/filetrace.js …              # the page with one knob overridden (ENGINE.CLOCK.K, set before the audio opens): a one-knob engine A/B is one run each, not two trees (§59)
 node tools/build-node.js --cmp page.json node.json bpmPcm,beatPhasePcm,beatCountPcm,beatPcm,predKickIn,nextKickIn   # page = node
 ```
+**Page = node has one more wire since §90:** every node tool that runs the ears beside a `Clock` attaches `ears.perc.line = lineHook(clk)`
+(clock.js) so the kick lane's clock-line rule runs there as on the page (features-clock.js), and the clock's feed loop skips a
+line-promoted kick (`e.line`) — the five tools (`drums-node`, `clock-study`, `build-node`, `tongues-node`, `tongues-cold`) carry
+both lines; a new tool must too, or its `kickEvt` is not the page's.
 `gridcheck.py --heard` (a det / node trace recorded with the lead off carries the RAW clocks, `detLead` before heard time): moves v3's and the
 PCM clock's beat position by −detLead at their own tempo — the lead's rule under `&disp=0` — so the lag rows read each clock's own error
 on heard time (0 = the truth beat) and the lock rows work. Page = node: the PCM fields agree to 2.4e-4 (`beatPhasePcm`), and under the

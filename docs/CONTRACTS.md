@@ -602,7 +602,8 @@ are the scene author's rules:
   onset's audio time is about **16 ms BEFORE the hop that found it** (§70). So on the release frame the ring still holds
   the hit before. Measured on CyborgNinja 20–50 s, 85 kicks (DECISIONS §74): the velocity read on the event frame
   correlates **0.172** with the velocity of the hit it is arming — noise — while `kickAmp`, which rides the released
-  event (`perc.js emit(c, t, vel, amp)` → `lastAmp[cls]`), correlates **0.986** and changes on event frames and on no
+  event (`perc.js emit(c, t, vel, amp, line)` → `lastAmp[cls]`; `line` (§90) marks a kick the clock-line rule promoted — the
+  scenes take it like any kick, the clock stage never takes it as a tick), correlates **0.986** and changes on event frames and on no
   others. Up to v0.25 this was invisible because `*Vel` was pinned at 1.0 on 46–87 % of hits; §73 made the field honest
   and so made the staleness bite. **A scene that arms a one-shot on an event therefore sizes it from `*Amp`**; a scene
   that reads the velocity continuously (a few frames in) gets the right hit, which is what the ring in CHLADNI did

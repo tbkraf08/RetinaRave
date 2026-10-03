@@ -8184,8 +8184,16 @@ step 3's `RATE_Y1` through the cold start. `CARD.ERRS 0`, 4500 frames, both runs
 - **check.js 0 fail** at every commit (171 modules; the license-header warn is MANDALA's / `math/*`'s paths, a parallel worker's) ·
   **npm test exit 0** (`test_clock` 17, `test_drums`, `test_tempo` among them) · `test_ears.js` not runnable (the native-rate dumps,
   §86's note).
-- **The fake-timeline md5 sweep, both worktrees** (`GPU=1 PORT=8903 / 8904 tools/scene-md5.sh`): {MD5}
-- **`accept.sh`** on the after worktree (`GPU=1 PORT=8905 ACC=v0.29`): {ACCEPT}
+- **The fake-timeline md5 sweep, both worktrees** (`GPU=1 PORT=8903 / 8904 tools/scene-md5.sh`): `../RetinaRave-v90-before` (`78feceb`) `tools/work/v90b-md5.txt` against `../RetinaRave-v90-after`
+  (`9985bcf`) `v90a-md5.txt`, 12 ids × f360 / f840, `errs []` on every one: **10 lines byte-identical; s2-f360 / s2-f840 moved
+  `87aca86d` / `f2c644ac` → `62515d49` / `f3a3721c`** — and that pair is the parallel MANDALA worker's: `f18785f` (§87) and `3bad667`
+  (§88) landed on `main` between `78feceb` and step 1 (this section's commits sit on `3bad667`), the after values ARE the lines
+  `3bad667` re-recorded in `tools/accept/v0.29/scene-md5-v029.txt`, and no commit here touches `assets/scenes/` or `assets/math/`
+  (`git diff --stat 78feceb..9985bcf -- assets/scenes assets/math` lists only the two MANDALA files from §87/§88). The honest
+  statement: the before worktree should have been `3bad667`; against the reference the after list is 24 / 24 (`accept.sh` below).
+  The clock stage and the ears return at their first line under `ENGINE.fakeOn`, so the line hook never runs on the fake.
+- **`accept.sh`** on the after worktree (`GPU=1 PORT=8905 ACC=v0.29`): **201 lines, 0 FAIL, EXIT 0** — every scene line "= reference" (s2 included), the mixs md5, nav2 / gielis stills + monitors,
+  parity fake (the §83 `nav.*` MISMATCH line, pre-existing), help, the real start path, the bundle. The user's 8765 untouched.
 - The parallel MANDALA worker's files (`assets/scenes/mandala/**`, `assets/scenes/dust/**`, `assets/math/**`, §85–§88) untouched;
   the worktrees `../RetinaRave-m*` untouched.
 
