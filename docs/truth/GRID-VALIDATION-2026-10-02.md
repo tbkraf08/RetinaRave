@@ -273,3 +273,9 @@ Reproduce: `python3 tools/truth/v85-resid.py` (H1 + H3 + the png), `python3 tool
 pulse ACF / phase / per-beat chroma), `python3 tools/truth/v85-barphase.py` (chord-change times, per-section bar fold),
 `python3 tools/truth/v85-swell.py` (the swells' 10 / 50 / 90 % points), then the four `v85-vienna-ab.py` lines in §9's A/B
 (`--shift-bar=-1 --shift-until=85.3 [--bar-only]`, `--shift-bar=2`). `trackmap.py Vienna --pcm` was not run.
+
+## 10. Vienna — the user's ear on the A/B, 2026-10-02 evening (the orchestrator)
+`Vienna-A-current-beats.wav` (the current grid, every beat clicked) vs `Vienna-B-bar-line-only-minus1-until-drop.wav` — the user:
+**A "is right"**. The current grid stands, the bar line stays; what the user heard on the bar-only render was §9's anacrusis (the
+dream's chord swells start a beat before each bar line). `Vienna.json`: `provisional` → false, `hand.anchor: hand` 2026-10-02,
+`hand.anacrusis` noted, `checked`, a `notes` entry. All six truth grids are now validated by ear except WhoLikesToParty (tool anchor).
