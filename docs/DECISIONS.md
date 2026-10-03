@@ -7794,3 +7794,99 @@ folder `2026-10-02T21-57-nav-v0.29`, 2.5 s, scenes `torus2@0 dust@1.075` (the ta
 ffmpeg (the user's sudo) → `clip.js` for real + the ffprobe line 60 fps / yuv420p / AAC; the `HEADED=1` by-hand receipts (30 s tab
 capture, 30 s file, Chrome + VLC with sound, the watermark by eye; HARNESS "Recorder"); the `q` tier during a take; phones; the
 offline render (§2.7, deferred on the user's word); a resize mid-take's resolution change through a transcode.
+
+## §85 MANDALA on the grid — the wedge turns one step per beat on the shared beat grid, N moves only on a seam the bar store calls, and the §61 profile is lifted into `assets/math/beatgrid.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 1, on the orchestrator's brief; the user has not read the prompt — its defaults were taken, each named below)
+
+MANDALA (id 2, key 3) had no beat grid: the kaleidoscope's wedge ROTATED on `flowMid · 0.11`, the fold's twist on `flowMid · 0.3`,
+and the mirror count N was re-drawn every 64 kicks (`floor(kickCount / 64)` in the shader's hash) — the shape DUST had before §57.
+The brief ("motion is phase-locked to the beat grid with emphasis on downbeats and phrase boundaries") is the standard; the pattern is
+DUST's §57 / §61 / §66 / §78, and the rule is LIFT, NOT COPY (CONTRACTS §0: a scene imports only `math/*`). One commit; the before /
+after pairs in isolated worktrees (`../RetinaRave-m-base` at `8294d82` the before, `../RetinaRave-m85` = HEAD + this step the after),
+the user's 8765 untouched, this worker's pages on PORT 8881–8884 killed by pid, one page at a time, no audible run, nothing pushed.
+
+### The lift — `assets/math/beatgrid.js` (receipt: s1 DUST byte-identical)
+
+`dust/grid.js`'s K (GLIDE .45 / W .55 / WREF 145), STEP, DOWN, `lead`, `wFor`, `gFor`, `phi`, `phiDot`, `barIndex`, JUMP, BLEED,
+`mkSpin`, `spin`, ACC, `accentOf`, `accent21`, `mkTrigger`, `trigger` moved verbatim — comments included — into `assets/math/beatgrid.js`
+(306 lines); `dust/grid.js` keeps TORUS_K / GAL_K and re-exports the rest (`import` then `export`, 11 lines). THE ONE CHANGE at the lift:
+the step is per spinner — `mkSpin(step = STEP)` stores `S.base` and `spin()` scales `S.base · (1 + DOWN + ACC.K · acc)` instead of the
+module's STEP — so MANDALA can own 2π/(4N) while DUST's `mkSpin()` is the same arithmetic on the same double. `tools/check.js`'s static
+read check now follows a scene's `../../math/*` imports (one level), so DUST's `beatCount` / `tongue21` / … reads — now inside
+beatgrid.js — are still found and the scene's `feats` stay honest without a friction-log waiver. **s1's two lines are byte-identical**
+to `tools/accept/v0.29/scene-md5-v029.txt` (`1faaa64e` / `25dfdc48`) in the full 24-line sweep (`PORT=8882 tools/scene-md5.sh s1` in
+the m85 worktree, errs [] hop 840 row 72 ×12): the lift moved nothing. `npm test` OK, `check.js` 0 fail (the six soft-cap warns are
+the pre-existing ones).
+
+### MANDALA's grid — `mandala/grid.js`, `help.js` split out, `index.js` 144 → the scene object only
+
+- **The wedge angle** `rot = spin(G.sp, MS, dt)` replaces `uFlowMid · 0.11` in `a = mod(a0 + uRot, seg)`; the fold's twist R and the
+  constant c's phase advance on the same angle (`uFold = rot · FOLD_K`, FOLD_K 1 — the prompt left k unstated; 1 is one cycle of
+  the morph per N bars, the slowest that is still the beat's); `flow` stays only as c's slow drift and `rt.time`; `flowMid` is no
+  longer read (the prompt's ":57–58" uses `flow` alone). Uniforms: `uN`, `uRot`, `uFold` replace `uKickCount`, `uFlowMid`, `uSeed`;
+  `hash11` moved from the GLSL to grid.js as the N draw. `rot` / `fold` are wrapped mod 2π before upload (fp32).
+- **The step is 2π/(4N) — one wedge per bar (open question 1's default), `&step=<beats per wedge>` the knob** — re-derived at every
+  N change through `S.base`, which `spin()` picks up at the next beat line with its accumulator absorbing the difference (continuous).
+  **Capped at DUST's 2π/32** after the measurement below.
+- **N moves only on a seam**: the draw is the shader's own (`4 + 2·floor(5·hash11(seed·5.7 + k))`, N ∈ {4,6,8,10,12}) with `k` the
+  count of NOVEL seams (the old 64-kick epoch); `barReturnEvt` restores the N before the last change; look memory (CONTRACTS §1.11)
+  files N itself (`look.get/set`, the `epochOff` machinery gone). `cuts: 'event'` stays — N is the one discontinuity.
+- `feats`: − `kickCount`, `flowMid`; + `beatCount beatPhase bpm barPos phrase16Pos barNovelEvt barReturnEvt` and — because the lifted
+  `spin()` reads them for §78's accent from this step on — `tongue21 tongue41 tongueOn` (the prompt lists them under step 4; they are
+  read now). `dinfo()`: `N nN rot fold nv nu nstep noff njump nacc why`. Hooks: `&nudge=` (the SAME K object as DUST's) and `&step=`.
+
+### Measured (`tools/dust-trace.js … 2`, `tools/work/v85/nudge85.py` on `d_rot`; the four windows SeeYouDrop 20–110 WARM 20 / Vienna 24–60 WARM 24 / Vienna 80–110 WARM 40 / CyborgNinja 20–80 WARM 20; before = the base worktree, after = m85; the engine did not move: `beatCount` / `dropEnv` / `eM` md5 `54a5545d1bcdeaeacd659e01` / `c72502e2b368cb7a8481c48d` / `d0db00f91230a0866aa62d52` / `c13ff0e99064cdaac6365a29` identical before and after on all four)
+
+**Run 1 — as specified (a phrase wrap re-draws N from the current seed; the step 2π/(4N) uncapped):**
+
+| window | n | crest | v peak / floor | floor/peak | dead | max\|a\| p50 / p99 | N (p50) | N changes |
+|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 | 223 | −8.3 ms | 1.101 / 0.177 | 16.1 % | 0 % | 14.7 / 29.3 | 10 | 6: 24.28 phrase, 62.37 phrase, 70.35 phrase, 91.67 / 98.05 / 109.27 return |
+| Vienna 24–60 | 52 | +8.3 ms | 0.804 / 0.134 | 16.7 % | 0 % | 9.9 / 15.8 | 10 | 0 |
+| Vienna 80–110 | 44 | −8.3 ms | 1.185 / 0.168 | 14.2 % | 0 % | 16.8 / 50.2 | 8 | 1: 82.48 phrase |
+| CyborgNinja 20–80 | 158 | −8.3 ms | 1.022 / 0.189 | 18.4 % | 0 % | 12.5 / 19.1 | 10 | **1: 20.95 phrase — the control's receipt is 0** |
+
+The profile is DUST's to the frame (crest ±8.3 ms = half a frame either side, dead 0 %, floor ≥ 12 %, 25 / 50 / 90 % of the step at
++0 / +200 / +467 ms on SeeYouDrop = §61's own). The Vienna 80–110 p99 of 50 is one clock re-seat at 82.7 s (`noff` 0.131, BLEED giving
+it back — §61's mechanism, not a nudge). **What failed: CyborgNinja's N moved once, at 20.95 s.** Why: synapse's `seed` moves at ITS
+section events, not at the truth's lines — on CyborgNinja between 15 and 21 s (the truth's line is 12.02), on Vienna at ~82 s (the
+truth's 84.3), on SeeYouDrop at 24.3 / 62.4 / 70.4 — and the next phrase wrap turned each move into an N change. The bar store's
+novel / return events, by contrast, fell at 50.47 (novel) and 91.67 / 98.05 / 109.27 (return) on SeeYouDrop and NOWHERE on Vienna
+80–110 or CyborgNinja 20–80.
+
+**The one tune (run 2): a phrase line is still reported as a seam (`why` 1) but does not re-draw N; only `novel` draws and `return`
+restores.** CyborgNinja 20–80 → **0** N changes, Vienna 24–60 0, Vienna 80–110 0 (the bar store called no novel bar there — the §82
+lines 84.3 / 101.6 / 107.0 pass without one; measured, recorded, not assumed), SeeYouDrop **4: 50.47 novel (4→10), 91.67 return (10→4),
+98.05 return (4→10), 109.27 return (10→4)** — every one on a seam, the returns pouring back the earlier N. What it exposed: the first
+draw on CyborgNinja and Vienna 24–60 is **N = 4**, and at N = 4 the uncapped step is 2π/16 — twice DUST's — so the same profile reads
+**max|a| p50 31.2 on CyborgNinja (receipt ≤ 30) and 24.8 on Vienna 24–60**, v peak 2.56 rad/s. The jerk is the step, not the shape.
+
+**The one tune for that (run 3, what shipped): `stepFor(N) = min(2π/(4N), 2π/32)` — the swing per beat is never more than DUST's; at
+N = 4 the picture lands every two bars, from N = 8 up every bar.** s2's lines after run 3: **`f54761b7` (f360) / `39985f25` (f840)** — the only two lines of the 24 that differ from `scene-md5-v029.txt` (the full sweep was taken on run 1, `bfc81876` / `2b5c04ac`, 22 lines identical; runs 2 and 3 touched `mandala/grid.js` only, re-shot with `IDS=2`).
+
+**Run 3, the shipped grid (`tools/work/v85/s1c-*.json`; the same engine columns as the before, md5 identical ×4):**
+
+| window | n | crest | v peak / floor | floor/peak | dead | max\|a\| p50 / p99 | 25/50/90 % | N | rad/beat · design | N changes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 | 223 | −8.3 ms | 1.228 / 0.188 | 15.3 % | 0 % | 15.6 / 36.7 | +0 / +200 / +467 ms | 4 → 10 → 4 → 10 → 4 | 0.2004 (N mixed, 28 accented bars) | 4: 50.47 novel, 91.67 / 98.05 / 109.27 return |
+| Vienna 24–60 | 52 | +8.3 ms | 1.005 / 0.167 | 16.7 % | 0 % | 12.4 / 19.8 | +0 / +317 / +767 ms | 4 | 0.2239 · 0.2209 (6 accented bars) | 0 |
+| Vienna 80–110 | 44 | −8.3 ms | 0.963 / 0.134 | 13.9 % | 0 % | 13.4 / 40.1 (the 82.7 s re-seat) | +0 / +333 / +767 ms | 10 | 0.1894 · 0.1767 (7 accented, acc 1.00) | 0 |
+| CyborgNinja 20–80 | 158 | −8.3 ms | 1.278 / 0.236 | 18.4 % | 0 % | 15.6 / 23.9 | +0 / +183 / +433 ms | 4 | **0.2210 · 0.2209** (no accent: the control, to 3 decimals) | **0** |
+
+(design = STEP · (1 + DOWN/4) at the window's N with the cap; the per-bar step/STEP mean 1.124 on CyborgNinja = 1 + DOWN/4 exactly, the
+downbeat's bigger step 1.500 × the plain beat; SeeYouDrop's rad/beat mixes N = 4 and N = 10 bars.) Every receipt of the prompt's step 1
+holds on run 3: the crest within ±10 ms of the beat line on all four, max|a| ≤ 30, dead 0 %, floor/peak ≥ 12 %, the downbeat 1.5×,
+CyborgNinja 0 N changes with the accent never firing (41 of 41 bars at acc 0), SeeYouDrop's four on seams, Vienna's none (the
+§82 lines passed without a novel bar), `check.js` 0 fail, `&nudge=` reaches the scene (`hooks.nudge` on the shared K).
+
+### What the user sees, and what is open
+
+The kaleidoscope's N arms now sweep one wedge per bar (two at N = 4) and crest on every beat line, the bigger step on one beat of the
+four (the per-beat histogram on SeeYouDrop: 105 beats at 1.000 × STEP, 34 at 1.500, the accented ones in between); the fold's morph
+breathes on the same angle; N changes only where the bar store hears a new bar or a return. Open: (1) the lifted `spin()` lands the
+downbeat's bigger step on the FIRST SPINNER BEAT LINE INSIDE THE NEW BAR — the spinner's line is `lead(w)` = 0.275 beats before the
+beat, so at the bar line `barIndex` is still the old bar's and the 1.5× step is beat 2's, for DUST as for MANDALA (verbatim, s1
+unchanged is the receipt that nothing was touched); a fix moves DUST's s1 and is for a §-section of its own. (2) `trigger()`'s `ready`
+is always true here (N is a jump, not a pour), so two novel bars in one phrase (SeeYouDrop 101.57 / 104.45 fired `why` 2 but drew
+the same N) can re-draw twice; the draw's 20 % chance of the same N is the only damping. (3) Bench: `CARD.bench(2,300)` interleaved
+with `bench(0,300)`, q .95, three pairs, the medians — base **2.880 ms / NAV 3.207 = 0.898**, after **2.444 / 2.655 = 0.920**: flat
+(+2.4 % on the ratio, inside ±10 %; the ms moved with the machine, the ratio is the number).

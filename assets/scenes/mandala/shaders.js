@@ -1,12 +1,12 @@
 // MANDALA fragment shader. HEAD (docs/CONTRACTS.md §1.2) is prepended by ctx.mkProg, so vUv / o / uRes / uBands /
 // TAU / rot() / pal() already exist here. The helpers below are the GLSL_COMMON functions this scene actually uses,
-// renamed (palM / hash11 / angM / specM) so they never collide with HEAD's pal() / hash() / rot().
+// renamed (palM / angM / specM; hash11 moved to grid.js with the N draw, §85) so they never collide with HEAD's pal() / hash() / rot().
 export const FS_MANDALA = `
 uniform sampler2D uSpec;
-uniform float uSeed;
-uniform float uKickCount;
+uniform float uN;        // the mirror count, drawn on a seam of the music (grid.js, §85)
+uniform float uRot;      // the wedge angle: one step per beat, one wedge per bar, crest on the beat line (math/beatgrid.js)
+uniform float uFold;     // the fold's phase on the same angle: R's twist and c's advance
 uniform float uFlow;
-uniform float uFlowMid;
 uniform float uBassS;
 uniform float uMidS;
 uniform float uKick;
@@ -25,7 +25,6 @@ uniform float uAngular;
 
 // the engine's 256x1 log spectrum, 30 Hz .. 16 kHz, peak-normalised
 float specM(float x){ return texture(uSpec, vec2(clamp(x, 0.002, 0.998), 0.5)).r; }
-float hash11(float p){ p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
 // one visual grammar: sine bends toward triangle and then toward a stepped wave as the mood turns angular
 float angM(float x){
   float s = sin(x);
@@ -46,20 +45,21 @@ void main(){
   float r0 = length(p);
   float a0 = atan(p.y, p.x);
 
-  // the mirror group: N in {4,6,8,10,12}, redrawn only when the section seed or the 64-kick epoch changes
-  float N = 4. + 2. * floor(hash11(uSeed * 5.7 + floor(uKickCount / 64.)) * 5.);
+  // the mirror group: N in {4,6,8,10,12}, drawn in grid.js and moved only on a seam (§85); the wedge turns on the beat
+  float N = uN;
   float seg = TAU / N;
-  float a = mod(a0 + uFlowMid * 0.11, seg);
+  float a = mod(a0 + uRot, seg);
   a = abs(a - seg * 0.5);
   vec2 z = r0 * vec2(cos(a), sin(a));
   z *= 1.55 - 0.45 * uBands.x - 0.25 * uKick + 0.5 * uTension - 0.5 * uDrop;
 
-  vec2 c = vec2(0.58 + 0.22 * sin(uFlow * 0.13) + 0.10 * uBassS,
-                0.62 + 0.22 * cos(uFlow * 0.11) + 0.06 * uMidS) + 0.03 * uKick;
+  // the fold constant: its phase advances on the beat angle (uFold); flow is only the slow drift underneath (§85)
+  vec2 c = vec2(0.58 + 0.22 * sin(uFlow * 0.13 + uFold) + 0.10 * uBassS,
+                0.62 + 0.22 * cos(uFlow * 0.11 + uFold) + 0.06 * uMidS) + 0.03 * uKick;
   float acc = 0.;
   float tr = 9.;
   int IT = 7 + int(clamp(uQuality, 0., 1.) * 3. + 0.5);
-  mat2 R = rot(0.35 + 0.25 * uMidS + 0.1 * angM(uFlowMid * 0.3));
+  mat2 R = rot(0.35 + 0.25 * uMidS + 0.1 * angM(uFold));   // the twist on the beat angle too (§85)
   for (int i = 0; i < 10; i++) {
     if (i >= IT) break;
     // box-fold (abs) + sphere inversion (/dot(z,z), clamped) + translate + rotate: a Kleinian-style contraction

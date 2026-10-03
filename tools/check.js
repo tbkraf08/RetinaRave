@@ -121,6 +121,9 @@ function bidCheck(d, hf, feats) {
   const dir = path.join(ROOT, 'assets/scenes', d), srcs = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
   let inScore = '', rest = '';
   for (const s of srcs) { const [b, r] = cutScores(s); inScore += b + '\n'; rest += r + '\n'; }
+  // a read inside a math/* module the folder imports counts as the scene's (§85: the beat grid's `MS.tongue21` moved to
+  // math/beatgrid.js and DUST / MANDALA declare it) — one level, the math modules have no score()
+  for (const s of srcs) for (const m of s.matchAll(/from\s+['"]\.\.\/\.\.\/math\/([\w.-]+\.js)['"]/g)) { const f = path.join(ROOT, 'assets/math', m[1]); if (fs.existsSync(f)) rest += fs.readFileSync(f, 'utf8') + '\n'; }
   const bidOnly = [], notBid = [], stale = [];
   for (const k of feats) {
     const bid = /^the bid:/.test(hf[k] || ''), sc = /\b(S|MS|M)\.\w+/.test(inScore) && reads(inScore, k), rs = reads(rest, k);

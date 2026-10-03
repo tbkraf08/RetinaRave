@@ -1,33 +1,40 @@
 // MANDALA (id 2) — a kaleidoscope whose mirrors are a real fold group, lifted from synapse scene 2.
 // An N-fold angular fold feeds an iterated box-fold / sphere-inversion map; an orbit trap lights the result.
 // Fullscreen fragment scene: no camera, no geometry, no CPU particles.
+// The overhaul (DECISIONS §85–§88, MANDALA-OVERHAUL-SESSION-PROMPT.md): the beat grid is grid.js (§85).
 import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the body's brightness is TRUE loudness, not the AGC's `lvl`
+import { K as NUDGE } from '../../math/beatgrid.js';
 import { FS_MANDALA } from './shaders.js';
+import { HELP } from './help.js';
+import { WEDGE, grid, mkGrid, setN, stepFor } from './grid.js';
+
+const TAU = Math.PI * 2;
 
 // Everything update() reads out of MS / LOOK, held for draw(). No hidden timers: every entry traces to MS.
 const S = {
-  seed: 0, kickCount: 0, flow: 0, flowMid: 0, bassS: 0, midS: 0, kick: 0, tension: 0,
+  N: 8, rot: 0, fold: 0, flow: 0, bassS: 0, midS: 0, kick: 0, tension: 0,
   drop: 0, lvl: 0, hat: 0, alive: 0, q: 0,
   hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, angular: 0,
 };
+const G = mkGrid();   // the beat state: the wedge angle, N and its seams (grid.js)
 
-let epochOff = 0; // set by look.set(): kicks to add so floor(kickCount/64) equals the remembered epoch
-
-export default {
+const SELF = {
   name: 'mandala',
   id: 2,
   tag: 'N-fold Kleinian fold · box-fold + sphere inversion, orbit-trapped',
   card: { title: 'MANDALA', blurb: 'a box-fold fractal seen through a kaleidoscope' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/mandala.jpg from tools/thumbs.sh
-  // every MS field this scene reads: score() reads the first three, update() the rest
-  feats: ['arc', 'regularity', 'onsetRate', 'seed', 'kickCount', 'flow', 'flowMid', 'bass', 'bassS',
+  // every MS field this scene reads: score() reads the first three, update() the rest (the tongue fields through
+  // beatgrid.js's accent21 inside spin(), §78 — the static read check cannot see into math/, friction log)
+  feats: ['arc', 'regularity', 'onsetRate', 'seed', 'beatCount', 'beatPhase', 'bpm', 'barPos', 'phrase16Pos',
+    'barNovelEvt', 'barReturnEvt', 'tongue21', 'tongue41', 'tongueOn', 'flow', 'bass', 'bassS',
     'midS', 'kick', 'tension', 'dropEnv', 'lvl', 'high', 'hat', 'alive', 'loudRel', 'loudRange', 'loudAbs'],
-  // 'event': the only discontinuity is N, the fold count, and it moves only with the section seed / 64-kick epoch
+  // 'event': the only discontinuity is N, the fold count, and it moves only on a seam of the music (grid.js)
   cuts: 'event',
 
-  // look memory (CONTRACTS §1.11): N = f(seed, floor(kickCount/64)); the seed returns with the section, the epoch via this
+  // look memory (CONTRACTS §1.11): N itself — a returning section gets its mirror count back
   look: {
-    get: () => Math.floor(S.kickCount / 64),
-    set: (v) => { epochOff = v * 64 - Math.floor((S.kickCount - epochOff) / 64) * 64; },
+    get: () => G.N,
+    set: (v) => { if (v >= 4) setN(G, v); },
   },
   score(MS) {
     if (MS.arc === 'build') return 0;
@@ -41,10 +48,11 @@ export default {
 
   update(dt, MS, GROOVE, LOOK) {
     const m = LOOK.mood;
-    S.seed = MS.seed.a * 100;
-    S.kickCount = MS.kickCount + epochOff; // look memory shifts the 64-kick epoch so a returning section keeps its N
+    grid(G, MS, dt);                 // the seam, the draw, the angle (grid.js)
+    S.N = G.N;
+    S.rot = G.rot % TAU;             // wrapped: fp32 in the shader
+    S.fold = G.fold % TAU;
     S.flow = MS.flow;
-    S.flowMid = MS.flowMid;
     S.bassS = MS.bassS;
     S.midS = MS.midS;
     S.kick = MS.kick;
@@ -75,10 +83,10 @@ export default {
     const gl = ctx.gl;
     const pr = this.pr;
     ctx.use(pr, target, w, h);
-    gl.uniform1f(pr.u('uSeed'), S.seed);
-    gl.uniform1f(pr.u('uKickCount'), S.kickCount);
+    gl.uniform1f(pr.u('uN'), S.N);
+    gl.uniform1f(pr.u('uRot'), S.rot);
+    gl.uniform1f(pr.u('uFold'), S.fold);
     gl.uniform1f(pr.u('uFlow'), S.flow);
-    gl.uniform1f(pr.u('uFlowMid'), S.flowMid);
     gl.uniform1f(pr.u('uBassS'), S.bassS);
     gl.uniform1f(pr.u('uMidS'), S.midS);
     gl.uniform1f(pr.u('uKick'), S.kick);
@@ -108,42 +116,29 @@ export default {
 
   rt: {},
 
-  help: {
-    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
-    feats: {
-      arc: 'the bid: never auto-picked during a build',
-      regularity: 'the bid: a steady rhythm',
-      onsetRate: 'the bid: dense hits',
-      seed: 'how many mirrors: N = 4, 6, 8, 10 or 12 from the section seed',
-      kickCount: 'every 64 kicks the mirror count is drawn again',
-      flow: 'the fold constant drifts on musical time and the colours cycle slowly',
-      flowMid: 'the wedge rotates and the fold\'s twist turns on mid-band time',
-      bass: 'zooms in (the fold pushes harder) and sharpens the lit ring',
-      bassS: 'shifts the fold constant and the lit ring\'s radius',
-      midS: 'the fold\'s rotation angle and the constant\'s other half',
-      kick: 'a zoom pulse and the centre flare',
-      tension: 'zooms out: more of the fold\'s outer structure',
-      dropEnv: 'zooms in hard and the centre flares',
-      lvl: 'the fallback brightness when the loudness stage is off',
-      loudRel: 'the body\'s brightness: how loud this passage is for THIS track, so a breakdown is dim and its drop is not',
-      loudRange: 'how far that brightness travels — the track\'s own dynamic range sets the contrast',
-      loudAbs: '&loud=0 (or no loudness yet): the brightness falls back to lvl exactly as before',
-      high: 'the brightness of the orbit-trap ring',
-      hat: 'sparkle on the trap ring',
-      alive: 'silence fades to black',
+  // dinfo(): the scene's own numbers, frame by frame, for tools/dust-trace.js. Read-only (CONTRACTS §1.4).
+  hooks: {
+    // &nudge=<glide>,<width> (and hooks.nudge(g, w)): the beat nudge's velocity profile — the SAME K object DUST's
+    // hook moves (math/beatgrid.js), so one knob serves both scenes. '' restores the measured default.
+    nudge(g, w) {
+      const a = typeof g === 'string' ? g.split(',') : [g, w];
+      if (a[0] !== '' && a[0] !== undefined && a[0] !== null && +a[0] >= 0 && +a[0] < 1) NUDGE.GLIDE = +a[0];
+      if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] > 0.02 && +a[1] <= 1) NUDGE.W = +a[1];
+      return JSON.stringify(NUDGE);
     },
-    eli5: 'A kaleidoscope whose mirrors are a real Kleinian-style fold: abs() folds the plane onto itself and a '
-      + 'sphere inversion turns it inside out, over and over. The music picks how many mirrors there are, how far '
-      + 'the fold pushes, and which ring of the orbit lights up.',
-    why: 'The symmetry is exact because it comes from the map, not from smearing a mirrored copy over the picture '
-      + 'afterwards. Every pixel is folded into one wedge before any shading happens, so the N arms are the same '
-      + 'arm — there is no seam to hide. That is why the post-kaleidoscope is damped to 0.6 here: the scene already '
-      + 'owns its symmetry group, and a second one fights it.',
-    math: 'Per pixel take polar (r, a), fold a into one wedge of width 2pi/N (N = 4 + 2*floor(5*hash) in {4,6,8,10,12}), '
-      + 'and iterate z -> R * (|z| / clamp(<z,z>, 0.07, 3) - c). |z| is the box-fold (reflect in the axes); dividing '
-      + 'by <z,z> is inversion in the unit circle, clamped so the origin does not blow up; -c translates and R rotates. '
-      + 'Composing reflections and inversions generates a discrete group, so the limit set is self-similar. An orbit '
-      + 'trap records how near the orbit passed a target — here a ring of radius 0.35 + 0.5*spectrum(i), summed as '
-      + 'exp(-13*|‖z‖ - radius|), plus a cross trap min|z.x*z.y| — and that nearness, not any escape time, is the glow.',
+    // &step=<beats per wedge> (and hooks.step(b)): the kaleidoscope's step is 2pi / (N · b). 4 = one wedge per bar (the
+    // default, the prompt's open question 1), 1 = one wedge per beat. '' restores 4.
+    step(b) {
+      WEDGE.PER = b !== '' && b !== undefined && b !== null && +b >= 0.25 && +b <= 64 ? +b : 4;
+      G.sp.base = stepFor(G.N || 8);
+      return JSON.stringify(WEDGE);
+    },
+    dinfo() {
+      return { N: G.N, nN: G.nN, rot: G.rot, fold: G.fold, nv: G.sp.v, nu: G.sp.u, nstep: G.sp.step, noff: G.sp.off,
+        njump: G.sp.jumps, nacc: G.sp.acc, why: G.why };
+    },
   },
+
+  help: HELP,
 };
+export default SELF;
