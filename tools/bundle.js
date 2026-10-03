@@ -1,10 +1,13 @@
 // Single-file build: inlines assets/**/*.js reachable from assets/main.js into dist/retinarave.html as one classic
 // script (works from file://). Each module becomes an IIFE registered in a module table __m[path] in dependency order;
 // import/export statements are rewritten (they only appear at line starts in this codebase, never inside GLSL strings).
+// The landing card's "New in vX" line is inlined from releases.json's top entry (tools/releases.js newIn) — the page never fetches it.
 // usage: node tools/bundle.js [out.html]     then: FILE=$PWD/dist/retinarave.html node tools/cdp.js 'test' '[...]'
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { load as loadReleases, hasNewIn, patchNewIn } from './releases.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.argv[2] || path.join(ROOT, 'dist/retinarave.html');
@@ -87,9 +90,12 @@ const order = [], seen = new Set();
 })(ENTRY);
 
 const bundle = `(function () {\nconst __m = {};\n${order.map((r) => mods.get(r).code).join('\n')}})();\n`;
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
+let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script type="module" src="assets\/main\.js"><\/script>/, () => `<script>\n${bundle}</script>`);
 if (!html.includes('const __m')) throw new Error('module script tag not found in index.html');
+// the card's "New in vX: <title> → what's new" line is releases.json's top entry, inlined here (SOCIAL-PLAN §4: no fetch at runtime)
+if (!hasNewIn(html)) throw new Error('index.html: the card lost its <a id="newin"> line');
+html = patchNewIn(html, loadReleases()[0]);
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
 console.log(`bundled ${order.length} modules → ${path.relative(ROOT, OUT)} (${(html.length / 1024).toFixed(0)} KB)`);

@@ -973,6 +973,26 @@ node tools/bundle.js                                  # → dist/retinarave.html
 FILE=$PWD/dist/retinarave.html GPU=1 node tools/cdp.js 'test&scene=0' '[{"wait":6000},{"eval":"JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite()})"}]'
 ```
 
+## Release notes — `releases.json`, `/whats-new`, the card's "New in vX" line (v0.31, DECISIONS §91; SOCIAL-PLAN §3–§4)
+
+```
+node tools/releases.js check                 # the schema (class scene|engine|tuning, ISO date, unique versions, newest first, no § in the prose) + the ritual (top entry == package.json)
+node tools/whatsnew.js [--check]             # releases.json → site/whats-new.html, and index.html's <a id="newin"> line; --check exits 1 when either is stale
+node tools/releases.js set v0.29 clip.youtube <id>   # SocialMediaManager's post log writes the id back; the poster is site/thumbs/whats-new/<tag>.jpg (self-hosted)
+npm run build                                # = whatsnew.js → bundle.js (inlines the line) → cp site/. dist/ → dist/whats-new.html, dist/index.html
+```
+- `releases.json` (repo root) is the one visitor-facing source: one entry per tag, newest first, `body` in a visitor's words (no
+  section numbers — `decisions` carries the § list; check.js refuses a § in the prose). `tools/releases.js` is the one reader.
+- **The tag ritual, in this order or check.js fails:** bump `package.json` + `assets/core/version.js` together (§89) → add the
+  top entry to `releases.json` → `npm run build` (regenerates `site/whats-new.html` and the card line; both are committed sources)
+  → `node tools/check.js` (0 fail: the top entry == package.json, index.html's line == the top entry's title) → the usual
+  (license --check, npm test, test_rec, the release from `file://`) → commit, `git tag -a`, push.
+- The page is static: no script unless an entry has a clip, and then only a click builds the YouTube iframe (youtube-nocookie)
+  behind the self-hosted poster. **The no-third-party receipt** (SOCIAL-PLAN §4) on `/` and `/whats-new`:
+  `node tools/cdp.js '' '[{"wait":1200},{"eval":"JSON.stringify([...new Set(performance.getEntriesByType(\"resource\").map(e=>new URL(e.name).host))])"}]' http://127.0.0.1:<port>/whats-new`
+  → the one host is the page's own (`NOAUTO=1 … real` for `/`). `serve.js` resolves `/about` and `/whats-new` to `site/<p>.html` as the deploy does.
+- The landing line is DOM only: the "Landing tiles" row in the table below is its proof tier (the card recipe + one full `scene-md5.sh` list).
+
 ## What to re-prove after a change (v0.7, the user: "when building/updating a scene only need to test that one scene")
 
 The proof is sized to what the diff can reach. Scenes import nothing from `core/` or `engine/` and a forced shot runs one
@@ -983,7 +1003,7 @@ after every scene edit (the v0.5–v0.7 habit, four lists in the TORUS2 session)
 |---|---|---|
 | **one scene folder only** (`assets/scenes/<x>/`) | `node tools/check.js` · `IDS=<id> tools/scene-md5.sh <tag>` (that scene's f360/f840 lines, diff against the reference) · its own proof shots · `CARD.bench(id, 300)` interleaved with NAV when cost could move | ~1 min |
 | **`main.js` registration** (a new id, an id swap, the list order) | one full `tools/scene-md5.sh` list, the mixs md5, the help counts — the one file that touches every scene (`REG` order, the key row, the cast, every `init` at boot) | ~6 min, once |
-| **the landing card only** (`core/landing.js`, `hud.js`'s hooks, `index.html`'s card CSS/markup, `site/`) | `check.js` · the "Landing tiles" recipe (desktop + `MOBILE=1`) · the bundle from `file://` · one full `scene-md5.sh` list as the "nothing underneath moved" receipt (DOM cannot move a pixel of the canvas, the list says so in 5 min) | 6 min |
+| **the landing card only** (`core/landing.js`, `hud.js`'s hooks, `index.html`'s card CSS/markup, `site/`, `releases.json` / `tools/whatsnew.js`) | `check.js` · the "Landing tiles" recipe (desktop + `MOBILE=1`) · the bundle from `file://` · one full `scene-md5.sh` list as the "nothing underneath moved" receipt (DOM cannot move a pixel of the canvas, the list says so in 5 min) | 6 min |
 | **`core/`, `engine/`, `effects/`, `transitions/`, `main.js` beyond registration** | the full list (v2 + `&colour=oklch`), parity fake, mixs, and the Q trace when cost could move — i.e. `tools/accept.sh` | 25 min + 16 per trace |
 | **a scene enters the director's rotation** (a bid that was 0 becomes live) | the Q trace on house + aba *after* the promotion — a scene with bid 0 cannot be picked, so a trace before it measures nothing | 16 min |
 

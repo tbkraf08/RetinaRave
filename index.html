@@ -48,6 +48,12 @@
   h1{font-weight:200;letter-spacing:.55em;font-size:40px;margin:0 0 6px;padding-left:.55em;
     background:linear-gradient(90deg,#8cf,#f6c,#fc8);-webkit-background-clip:text;background-clip:text;color:transparent}
   .sub{font-size:16px;line-height:1.5;font-weight:300;letter-spacing:.02em;opacity:.72;margin-bottom:26px}
+  /* v0.31 (SOCIAL-PLAN §4, DECISIONS §91): one line in the user's voice on what this is, and the "New in vX" line — its text is
+     releases.json's top entry, written here by tools/whatsnew.js and inlined by tools/bundle.js at build time (main.js never fetches it) */
+  .why{font-size:13.5px;line-height:1.5;opacity:.62;margin:-10px auto 6px;max-width:470px}
+  .newin{font-size:12px;letter-spacing:.04em;opacity:.6;margin:0 0 24px}
+  .newin a{color:#9cf;text-decoration:none}
+  .newin a:hover{text-decoration:underline}
   /* v0.8.1 — the scene tiles (core/landing.js renders them from the registry): a click previews the scene live on the silent demo */
   #pick{margin:0 0 28px}
   .pickhead{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;margin-bottom:10px}
@@ -68,7 +74,7 @@
   #landing.peek{background:linear-gradient(to top,rgba(2,2,7,.9) 0%,rgba(2,2,7,.5) 40%,rgba(2,2,7,0) 100%)}
   .peek .card{margin:auto auto 0;max-width:680px;padding:18px 40px 22px}
   .peek h1{font-size:16px;letter-spacing:.45em;margin:0 0 12px;padding-left:.45em}
-  .peek .sub,.peek ol,.peek .mob,.peek .seo,.peek .hint,.peek .pickhead{display:none}
+  .peek .sub,.peek .why,.peek .newin,.peek ol,.peek .mob,.peek .seo,.peek .hint,.peek .pickhead{display:none}
   .peek #pick{margin-bottom:16px}
   .peek .tile{max-width:104px}
   .peek #peekmsg{display:block}
@@ -108,7 +114,7 @@
     opacity:0;pointer-events:none;transition:opacity .3s;text-align:center}
   #toast.on{opacity:1}
   @media (max-width:520px){.card{padding:28px 20px}h1{font-size:30px;letter-spacing:.4em;padding-left:.4em}.sub{font-size:14.5px;margin-bottom:22px}
-    .seo{font-size:11.5px}.tile{flex:0 0 calc(25% - 6px);max-width:none}.peek .card{padding:14px 16px 18px}.tile span{font-size:9px;letter-spacing:.1em}}
+    .seo{font-size:11.5px}.why{font-size:13px}.newin{font-size:11.5px}.tile{flex:0 0 calc(25% - 6px);max-width:none}.peek .card{padding:14px 16px 18px}.tile span{font-size:9px;letter-spacing:.1em}}
   /* the recorder's red dot (core/rec.js, DECISIONS §89): DOM in the HUD layer, for the user only — never in the clip */
   #recdot{position:fixed;right:14px;top:14px;width:12px;height:12px;border-radius:50%;background:#e33;box-shadow:0 0 6px #e33;display:none;z-index:12;pointer-events:none;animation:recblink 1.2s ease-in-out infinite}
   #recdot.on{display:block}
@@ -192,6 +198,8 @@
 <div id="landing"><div class="card">
   <h1>RETINA RAVE</h1>
   <div class="sub">I taught a computer to listen to music.<br>This is what it sees.</div>
+  <p class="why">Everything runs on this device — no account, no trackers, no ads. I built this for myself and wanted to share it.</p>
+  <p class="newin"><a id="newin" href="/whats-new">New in v0.30: Sure of the key, a kaleidoscope on the beat, and a record button → what's new</a></p>  <!-- the text is releases.json's top entry: tools/whatsnew.js writes it here, tools/bundle.js inlines it -->
   <div id="pick"><div class="pickhead">the scenes · click one to see it move</div>
     <div id="scenes"></div><div id="peekmsg"></div></div>
   <ol>
