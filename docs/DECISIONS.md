@@ -8420,3 +8420,9 @@ filaments in NAV and the kick lane in DUST keep their edges. The old look: `#rec
 The user's `q` at a real take is still unseen (the next take's sidecar carries `q0`) · the headed receipts (HARNESS "Recorder": Chrome +
 VLC with sound, the watermark by eye, now also: the embedded tag in VLC's metadata) · a fullscreen take on the 5120×1440 screen is 2560×720
 by `gl.js`'s long-edge cap · phones · the offline render (§2.7).
+
+**§92 addendum (the orchestrator, 2026-10-03, ffmpeg installed by the user):** the §89 `tools/clip.js` receipt is closed on the user's
+own 71 s DUST take (`retinarave-v0.29-dust-2026-10-03T05-51-15.webm`, no sidecar — derived): `clip.mp4` h264 1282×1308 yuv420p 60/1 +
+aac, `clip-9x16.mp4` 736×1308, `poster.jpg`, `meta.json` in `tools/work/clips/2026-10-03T05-51-dust-v0.29/`. One fix on the way: the
+take was 1282×**1309** (the window's size) and libx264 refuses an odd height for yuv420p — clip.js now scales / crops to even dims, and
+rec.js's `recDims()` is always even (`even(G.PW), even(G.PH)`) so a new take never carries an odd side. test_rec all ok, check.js 0 fail.

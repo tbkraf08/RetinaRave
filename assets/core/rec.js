@@ -43,7 +43,7 @@ const RECQ = (() => { const v = HASH.get('recq'); if (v === null) return RECQ_DE
 // gl.js) unless &recsize=<height> scales it to that height (the width follows the aspect; both even for yuv420). Scaling UP buys nothing.
 const RECSIZE = Math.max(0, +HASH.get('recsize') || 0);
 const even = (n) => Math.max(16, Math.round(n / 2) * 2);
-const recDims = () => (RECSIZE ? [even(G.PW * RECSIZE / G.PH), even(RECSIZE)] : [G.PW, G.PH]);
+const recDims = () => (RECSIZE ? [even(G.PW * RECSIZE / G.PH), even(RECSIZE)] : [even(G.PW), even(G.PH)]);   // always even: yuv420 encoders and clip.js's libx264 refuse an odd height (the user's window was 1282x1309)
 // The sidecar (§92): INSIDE the webm since v0.32 — a Matroska Tags element before the first Cluster (TagName COMMENT, TagString the
 // JSON); `ffprobe -show_entries format_tags` prints it, tools/rec_probe.js's walk returns it, tools/clip.js reads it. One download per
 // take: Chrome's "download multiple files" prompt swallowed the second one (none of the user's three takes had its .json beside it).

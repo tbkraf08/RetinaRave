@@ -75,8 +75,8 @@ const meta = trimSidecar(side, ss, to);
 const T = ['-ss', String(ss), '-to', String(to)];
 const V = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-r', '60', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart'];
 const cmds = [
-  ['ffmpeg', '-y', ...T, '-i', src, ...V, path.join(dir, 'clip.mp4')],
-  ['ffmpeg', '-y', ...T, '-i', src, '-vf', 'crop=trunc(ih*9/16/2)*2:ih', ...V, path.join(dir, 'clip-9x16.mp4')],
+  ['ffmpeg', '-y', ...T, '-i', src, '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', ...V, path.join(dir, 'clip.mp4')],   // yuv420p needs even dims: a pre-§92 take is the window's size (1282x1309 on the user's)
+  ['ffmpeg', '-y', ...T, '-i', src, '-vf', 'crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2', ...V, path.join(dir, 'clip-9x16.mp4')],
   ['ffmpeg', '-y', '-ss', String(Math.min(ss + 1, Math.max(ss, to - 0.1))), '-i', src, '-frames:v', '1', '-vf', 'scale=1920:-2', '-q:v', '2', path.join(dir, 'poster.jpg')],
 ];
 const q = (s) => (/[^\w./:+=,*()-]/.test(s) ? "'" + s.replace(/'/g, "'\\''") + "'" : s);
