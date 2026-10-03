@@ -11,7 +11,8 @@ import { LOUDK } from '../engine/loud.js';   // &loud=0: the true-loudness stage
 import { TONGUEK } from '../engine/clock/tongues.js';   // &tongues=0: the tongues stage's switch (§76; the same convention)
 import { ROUGHK } from '../engine/roughnorm.js';   // &rough=0: tension's pre-§81 normaliser (the rLo / rHi follower pair)
 import { SHADE } from '../math/keycolour.js';   // &shade=0 / &shade=<k>: the per-bar major / minor pull on the key hue (§82; ON by default since v0.29)
-import { KEYOWN } from '../engine/ears/tonic.js';   // &kc=0: keyConf back to synapse's clarity (the §62-§83 gate; §84 made it the ears' tonicConf)
+import { KEYOWN } from '../engine/ears/tonic.js';
+import { PERCK } from '../engine/ears/perc.js';   // &kline= / &clickw=: the ears' kick-lane knobs (§90)   // &kc=0: keyConf back to synapse's clarity (the §62-§83 gate; §84 made it the ears' tonicConf)
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
 import { FX, EFFECTS, CHAIN } from './post.js';
@@ -183,6 +184,10 @@ export function initHarness(hideLanding) {
   if (HASH.has('clock')) setClock(HASH.get('clock'));
   // the PCM clock's knobs for an A/B on the page (engine/clock/clock.js CLOCK, DECISIONS §90): &swy1=<y1> gates a cold / unrelated
   // tempo switch on the comb's strength (default 0 = off: measured and rejected in §90, kept for the A/B)
+  // the ears' kick lane (engine/ears/perc.js PERCK, DECISIONS §90): &kline=0 = no clock-line rule (the §68-§69 lane exactly), &kline=2
+  // = the 8th line too; &clickw=<ms> the beater window (25 = the §68 default)
+  if (HASH.has('kline')) { const v = +HASH.get('kline'); if (!(v === 0 || v === 1 || v === 2)) throw new Error('&kline= 0 | 1 | 2'); PERCK.lineKick = v ? 1 : 0; if (v) PERCK.lineSub = v; }
+  if (HASH.has('clickw')) { PERCK.clickW = +HASH.get('clickw') / 1000; if (!isFinite(PERCK.clickW)) throw new Error('&clickw= must be ms'); }
   if (HASH.has('swy1')) { ENGINE.CLOCK.K.SW_Y1 = +HASH.get('swy1'); if (!isFinite(ENGINE.CLOCK.K.SW_Y1)) throw new Error('&swy1= must be a number'); }
   if (track) {
     hideLanding();

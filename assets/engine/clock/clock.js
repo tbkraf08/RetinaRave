@@ -45,6 +45,9 @@ import { FFT } from '../ears/dsp.js';
 import { Period, RATE } from './period.js';
 
 export const HOP = 512, NFFT = 2048;
+// §90: the ears' clock-line hook (perc.js PercTrack.line): the clock's phase and confidence predicted to audio time t. Attached by
+// features-clock.js on the page and by every node tool that runs the ears beside a Clock (page = node).
+export function lineHook(clk) { const o = { phase: 0, conf: 0 }; return (t) => { clk.at(t, o); o.conf = clk.conf; return o; }; }
 export const CLOCK = {
   BASS: 3,                      // the bass bins' extra weight in the strength (v3: flux + 3·bflux)
   R_CLS: [1, 1.5, 3],           // the onset variance per class: kick, snare, hat (a hat is the subdivision; a kick is the beat)

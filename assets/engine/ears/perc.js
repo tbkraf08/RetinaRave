@@ -44,6 +44,20 @@ export const REFRACT = [0.085, 0.075, 0.045];
 // 6.0 % of kicks on a truth bare808 (chance is 5.3 %: a 15 ms window around 275 bare onsets covers 5.3 % of 157 s), and 25 ms
 // gives F 0.73 with 12.6 %. 25 ms is chosen: it matches the truth's kick COUNT (207 against 229) and gives a usable channel.
 export const CLICK_W = 0.025;
+// THE KNOBS (§90): the beater gate's two constants as a mutable object so a node tool (PERCK='{"clickW":0.035}' in
+// drums-node.js) or the page (&clickw=<ms> / &clickf=<dB>, core/harness.js) can A/B them on the FIRST ears instance — the one
+// the scenes read; `o` in the constructor still wins per instance (the tuning sweeps' second instance).
+export const PERCK = { clickW: CLICK_W, clickFloor: CLICK_FLOOR,
+  // THE CLOCK-LINE RULE (§90, IBelongHere 0:47): a CLICKLESS low onset is a kick when it lands ON the PCM clock's beat line —
+  // |phase - round(phase)| < linePh beat with the clock's confidence >= lineConf — read through `PercTrack.line` (a hook the
+  // clock stage attaches: clock.js lineHook(); null in a bare PercTrack = the rule is off). lineSub 2 = the 8th line too.
+  // Measured first offline (tools/work/v90/linesim.py on the six truth tracks, the base traces joined with the clock's):
+  // IBelongHere's soft deep-house kick under its A1 pedal has no beater click inside 45 ms (CLICK_W 35 / 45 ms lift its kick
+  // recall 0.40 -> 0.42 and cost SeeYouDrop P 0.79 -> 0.66), while the low lane hears 90 % of it; on the line at this gate
+  // the kick lane reads F 0.55 -> 0.67 and every other track's F rises too (CyborgNinja 0.90 -> 0.95), with 3.9 % of
+  // SeeYouDrop's kicks on a bare 808 note start (§68's guard: 6 %). The 8th line reads 0.70 on IBelongHere but 17 % of
+  // SeeYouDrop's kicks on 808 notes — a knob, off. lineKick 0 / &kline=0 = the §68-§69 lane exactly.
+  lineKick: 1, linePh: 0.06, lineConf: 0.85, lineSub: 1 };
 export const ONSET_OFS = 0.5;        // the onset's audio time is (hop end) - ONSET_OFS * hopDur: the transient sits inside the hop
 // ... minus a fixed ONSET_LAG. The hop-centre guess above is not enough: the flux at hop i is the RISE from hop i-1 to
 // hop i, so a transient that starts anywhere inside hop i-1 is only visible at hop i, and the residual is a LAG, not a
@@ -182,10 +196,10 @@ export class PercTrack {
     this.thrK = o.thrK === undefined ? THR_K : o.thrK;
     this.thrFloor = o.thrFloor || THR_FLOOR;
     this.refract = o.refract || REFRACT;
-    this.clickW = o.clickW === undefined ? CLICK_W : o.clickW;
+    this.clickW = o.clickW === undefined ? PERCK.clickW : o.clickW;
     this.gateDb = o.gateDb === undefined ? GATE_DB : o.gateDb;
     this.onsetLag = o.onsetLag === undefined ? ONSET_LAG : o.onsetLag;
-    this.clickFloor = o.clickFloor === undefined ? CLICK_FLOOR : o.clickFloor;
+    this.clickFloor = o.clickFloor === undefined ? PERCK.clickFloor : o.clickFloor;
     this.kBase = Math.max(1, o.kickBase === undefined ? KICK_BASE : o.kickBase | 0);
     this.kRise = o.kickRise === undefined ? KICK_RISE : o.kickRise;
     this.kickLag = o.kickLag === undefined ? KICK_LAG : o.kickLag;
@@ -194,6 +208,7 @@ export class PercTrack {
     this.snareLag = o.snareLag === undefined ? SNARE_LAG : o.snareLag;
     this.sAmp = o.snareAmp === undefined ? SNARE_AMP : o.snareAmp;
     this.kAmp = o.kickAmp === undefined ? KICK_AMP : o.kickAmp;
+    this.line = null;                              // §90: the clock-line hook, (t) -> { phase, conf } (clock.js lineHook())
     this.bodyReq = o.bodyReq === undefined ? BODY_REQ : o.bodyReq;
     this.bodyFloor = o.bodyFloor === undefined ? BODY_FLOOR : o.bodyFloor;
     this.bodyW = o.bodyW === undefined ? BODY_W : o.bodyW;
@@ -308,14 +323,20 @@ export class PercTrack {
     const clicked = ot - this.clickT <= this.clickW && (!this.bodyReq || ot - this.bodyT <= this.bodyW);
     // a low onset held from an earlier hop: confirm it as a kick if the beater has arrived since
     if (this.pendKick !== null) {
-      if (clicked) { this.emit(0, this.pendKick.t, this.pendKick.vel, this.pendKick.amp); this.pendKick = null; }
-      else if (ot - this.pendKick.w > this.clickW) this.pendKick = null;   // bare: it was an 808 note start
+      const pk = this.pendKick;
+      // §90: a hold that was already emitted on the clock's line becomes a clicked kick in place (the flag drops, so the clock
+      // takes it at this hop — exactly when the pre-§90 lane emitted it); a hold that was not is emitted now, as before
+      if (clicked) { if (pk.e) pk.e.line = false; else this.emit(0, pk.t, pk.vel, pk.amp); this.pendKick = null; }
+      else if (ot - pk.w > this.clickW) this.pendKick = null;   // bare: it was an 808 note start (or stays a line kick)
     }                                             // (`w` is the hold's time on the CLICK band's clock, `t` its own)
     if (this.fireLow(otK)) {
       this.out.push({ type: 'low', t: otK, vel: this.vel[0], fl: this.rise });   // every low-band onset, kick or bare 808
                                                  // note start (fl: its rise in dB — the reactive drums' strength)
       if (clicked) this.emit(0, otK, this.vel[0], this.amp[0]);
-      else this.pendKick = { t: otK, w: ot, vel: this.vel[0], amp: this.amp[0] };
+      else {   // §90: on the clock's beat line it is a kick NOW (flagged `line`); the hold still waits for the beater either way
+        const e = this.onLine(otK) ? this.emit(0, otK, this.vel[0], this.amp[0], true) : null;
+        this.pendKick = { t: otK, w: ot, vel: this.vel[0], amp: this.amp[0], e };
+      }
     }
     if (this.fireSnare(otS)) this.emit(1, otS, this.vel[1], this.amp[1]);
     if (this.fire(2, B_HAT, ot)) this.emit(2, ot, this.vel[2], 0);   // the hat has no rise, so no amp (§70)
@@ -324,6 +345,16 @@ export class PercTrack {
       while (h.length && t - h[0] > DEN_WIN) h.shift();
       this.den[c] = h.length / DEN_WIN;
     }
+  }
+  // §90: is audio time t on the PCM clock's beat line (or the 8th line with lineSub 2), with the clock confident? The clock
+  // state is the previous block's (the clock stage runs after the ears), predicted to t by the hook; false without a hook.
+  onLine(t) {
+    const K = PERCK, L = this.line;
+    if (!K.lineKick || !L) return false;
+    const o = L(t);
+    if (!o || !(o.conf >= K.lineConf)) return false;
+    const p = o.phase * K.lineSub, w = p - Math.round(p);
+    return Math.abs(w) < K.linePh * K.lineSub;
   }
   // the HAT's fire (class 2 is the only one left on the HPSS-lite flux since §69)
   fire(c, band, ot) {
@@ -363,8 +394,13 @@ export class PercTrack {
   // ~16 ms BEFORE the hop that found it, so a continuous field interpolated AT that time still holds the previous
   // hit's value. `snareAge` has always been exact for the same reason — it comes from the released event, not the ring
   // — and a SIZE that a scene reads on the frame it fires must be exact in the same way.
-  emit(c, t, vel, amp) {
+  // `line` (§90): the kick was promoted by the clock-line rule. The clock stage does NOT take it as a tick — it is on the line
+  // by construction, so it would only confirm the clock's own phase (a self-locking loop; measured: Vienna's clock |p50|
+  // 4.8 → 11.3 ms with them fed). The scenes' kick voice takes it like any kick.
+  emit(c, t, vel, amp, line = false) {
     this.last[c] = t; this.hist[c].push(t);
-    this.out.push({ type: c === 0 ? 'kick' : c === 1 ? 'snare' : 'hat', t, vel, amp });
+    const e = { type: c === 0 ? 'kick' : c === 1 ? 'snare' : 'hat', t, vel, amp, line };
+    this.out.push(e);
+    return e;
   }
 }

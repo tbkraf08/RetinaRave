@@ -12,9 +12,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Analyzer } from '../assets/engine/synapse/analyzer.js';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
+import { PERCK } from '../assets/engine/ears/perc.js';
 import { loadPcm } from './test_ears.js';
 import * as D2 from '../assets/engine/drums/drums.js';
 import { detStream, DET_LEAD, FPS } from './node-stream.js';
+import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';   // §90: the ears' kick lane reads the clock's line
+if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -28,6 +31,9 @@ if (SET) for (const kv of SET.split(',')) { const [k, v] = kv.split('='); if (!(
 // RISE and has its own — `srise` / `sbase` / `slag` / `srefract` — so `thrK` and `floor` now reach the HAT alone.
 // The second instance's whole `read()` is taken when any snare knob is set, so `snareEvt` / `snareAge` / `snareVel` /
 // `denS` in the trace are the swept lane's (otherwise they stay the page's, as the low sweep needs).
+// PERCK='{"clickW":0.035,"clickFloor":0.7}': the beater gate's knobs on the FIRST ears instance (perc.js PERCK, §90) — the one
+// `kickEvt` comes from, which `--perc` cannot reach.
+if (process.env.PERCK) Object.assign(PERCK, JSON.parse(process.env.PERCK));
 const PERC = opt('--perc', null), PO = {};
 if (PERC) for (const kv of PERC.split(',')) { const [k, v] = kv.split('='); PO[k] = +v; }
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
@@ -38,6 +44,10 @@ const KEEP = ['kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 
 for (const track of TRACKS) {
   const pcm = loadPcm(track, 48000), sr = pcm.sr;
   const an = new Analyzer(sr), ears = new Ears(sr), drums = new D2.Drums();
+  // §90: the PCM clock beside the ears, exactly as features-clock.js runs it (the ears' onsets are its ticks; the kick lane reads its
+  // line through the hook), so `kickEvt` here is the page's
+  const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1];
+  ears.perc.line = lineHook(clk);
   const lows = [];
   const SPERC = PERC && (PO.srise !== undefined || PO.sbase !== undefined || PO.slag !== undefined || PO.srefract !== undefined);
   const ears2 = PERC ? new Ears(sr, { perc: { thrK: PO.thrK, gateDb: PO.gateDb,
@@ -53,7 +63,11 @@ for (const track of TRACKS) {
   const t = [], f = [];
   let li = 0, cpu = 0;
   detStream(pcm, {
-    block(bl, br, mono, t0) { an.push(mono); ears.push(bl, br, t0); if (ears2 !== ears) ears2.push(bl, br, t0); },
+    block(bl, br, mono, t0) {
+      an.push(mono); ears.push(bl, br, t0); if (ears2 !== ears) ears2.push(bl, br, t0);
+      clk.push(mono, t0);
+      for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
+    },
     frame(fr, heard) {
       const A = an.A, d = 1 / FPS;
       A.kick *= Math.exp(-d / TAU[0]); A.snare *= Math.exp(-d / TAU[1]); A.hat *= Math.exp(-d / TAU[2]);

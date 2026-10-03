@@ -10,7 +10,7 @@ import path from 'node:path';
 import { Ears } from '../assets/engine/ears/ears.js';
 import { loadPcm } from './test_ears.js';
 import { detStream } from './node-stream.js';
-import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
+import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';
 import { Tongues, TONGUEK } from '../assets/engine/clock/tongues.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -39,6 +39,7 @@ for (const track of TRACKS) {
     const s0 = Math.round(at * sr), pcm = { L: full.L.subarray(s0), R: full.R.subarray(s0), n: full.n - s0, sr };
     const beats = truth.beats.map((b) => b - at).filter((b) => b > 0);
     const ears = new Ears(sr), clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1];
+    ears.perc.line = lineHook(clk);   // §90: the kick lane reads the clock's line (page = node)
     if (TONGUEK.on) clk.tongues = new Tongues(TONGUEK);
     const hopT = [], hopB = [], hopF = [];
     const hop0 = clk.hop.bind(clk);
@@ -46,7 +47,7 @@ for (const track of TRACKS) {
     detStream(pcm, {
       block(bl, br, mono, t0) {
         clk.push(mono, t0); ears.push(bl, br, t0);
-        for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
+        for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
       },
       frame(fr, heard) { ears.read(heard); },
     });

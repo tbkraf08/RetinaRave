@@ -25,7 +25,7 @@ import { Bars, BARS_OUT } from '../assets/engine/bars/bars.js';
 import { feed as barsFeed } from '../assets/engine/bars/feed.js';
 import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
 import { feed as queueFeed } from '../assets/engine/queue/feed.js';
-import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
+import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';
 import { Tongues, TONGUEK } from '../assets/engine/clock/tongues.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -101,6 +101,7 @@ for (const track of TRACKS) {
   const t = [], f = [];
   const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
   const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {}, ck = { k: null };
+  ears.perc.line = lineHook(clk);   // §90: the kick lane reads the clock's line (page = node)
   if (TONGUEK.on) clk.tongues = new Tongues(TONGUEK);   // as features-clock.js attaches it (§76)
   const EARS_B = ['kickEvt', 'kickAge', 'snareEvt', 'snareAge', 'hatEvt', 'hatAge', 'bassReg', 'subGate', 'subPure', 'denK', 'denS', 'denH'];
   const wrap = (x, n) => ((x % n) + n) % n;
@@ -109,7 +110,7 @@ for (const track of TRACKS) {
     block(bl, br, mono, t0) {
       tap.pushBlock(mono, detMs); ears.push(bl, br, t0);
       clk.push(mono, t0);                                  // features-clock.js onBlock: the mono block, then the ears' new onsets
-      for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
+      for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
     },
     frame(fr, heard, dt) {
       const M0 = v3 ? v3.step(fr, heard, dt) : null;

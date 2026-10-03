@@ -11,7 +11,7 @@ import path from 'node:path';
 import { Ears } from '../assets/engine/ears/ears.js';
 import { loadPcm } from './test_ears.js';
 import { detStream, makeV3, DET_LEAD, FPS, F0 } from './node-stream.js';
-import { Clock, CLOCK } from '../assets/engine/clock/clock.js';
+import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -25,6 +25,7 @@ const OUT = opt('--out', path.join(ROOT, 'tools/work/clock', `study-${track}.jso
 const c0 = performance.now();
 const pcm = loadPcm(track, 48000), sr = pcm.sr;
 const ears = new Ears(sr), clk = new Clock(sr), v3 = V3 ? await makeV3(pcm) : null;
+ears.perc.line = lineHook(clk);   // §90: the kick lane reads the clock's line (page = node)
 const names = ['bpm', 'beatPhase', 'beatCount', 'onset', 'bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'clockConfPcm', 'pcmY1', 'pcmSd'];
 const cols = Object.fromEntries(names.map((k) => [k, []]));
 const t = [], f = [], log = [];
@@ -36,7 +37,7 @@ detStream(pcm, {
     ears.push(bl, br, t0);
     clk.push(mono, t0);
     // the ears' new percussion onsets (still pending release), in the order perc.js emitted them
-    for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); const o = clk.lastOnset; log.push({ type: 'pcmOnset', t: +o.t.toFixed(5), cls: c, vel: +(+e.vel).toFixed(3), y: +o.y.toFixed(4), beta: +o.beta.toFixed(3) }); } }
+    for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); const o = clk.lastOnset; log.push({ type: 'pcmOnset', t: +o.t.toFixed(5), cls: c, vel: +(+e.vel).toFixed(3), y: +o.y.toFixed(4), beta: +o.beta.toFixed(3) }); } }
   },
   frame(fr, heard, dt) {
     const ta = heard + DET_LEAD;
