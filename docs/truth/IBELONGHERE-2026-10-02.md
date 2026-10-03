@@ -180,3 +180,9 @@ lane"); this track is the first in the set with a sung intro and sung breakdowns
 - `! paplay ~/Music/RetinaRave-clicks/IBelongHere-bar-line-only.wav` — one click per bar (the grid's "1"). From 0:16 the accent
   should sit on the heavy kick of each bar (the first kick at 0:16.4 is a pickup; the accent is the next one at 0:17.9); at 1:04.7 it
   should be the drop's first kick. If it sits one beat late or early, the bar line is off by one (it is not, by the kick weight).
+
+## The user's ear, 2026-10-02 evening (the orchestrator)
+`~/Music/RetinaRave-clicks/IBelongHere-click.wav` (0–75 s, every beat, downbeat accented, drops + sections) — the user: **"good"**.
+The grid is confirmed by ear across all three disputed times (0:10, 0:47, 1:04.7), so the DUST sync complaint is the engine's —
+the three fixes above (period.js cold gate, perc.js click gate, clock.js R_CLS) are being built as DECISIONS §90. `IBelongHere.json`:
+`bpm_grid.hand.anchor: hand` 2026-10-02, `checked`, `tempo_note` 118.00, a `notes` entry. Still for the ear: the key (Am vs the ears' Dm).
