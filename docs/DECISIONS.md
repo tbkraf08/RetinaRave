@@ -8235,3 +8235,87 @@ every public file and `/LICENSE` served. Receipts at `39a17e4`: accept.sh 201 li
 sweeps byte-identical; at the tag: check.js 0 fail, license --check 0 missing, npm test exit 0, test_rec all ok (VER 0.30.0 ==
 package.json), the release bundle from `file://` errs 0. The user's A/B gates (MANDALA, the key, DUST on IBelongHere, the recorder by
 hand) were NOT run before this deploy — the user chose to ship; their remarks become retunes (NEXT-SESSION-PROMPT §0).
+
+## §91 Share phases 2 + 3 — `releases.json` and `/whats-new`, the tag ritual in `check.js`, and the landing's one line (2026-10-03, one worker on the `share` branch; NEXT-SESSION-PROMPT item 2; the spec is `docs/plans/SOCIAL-PLAN.md` §3–§4, the user's interview answers in its §1 — nothing re-asked)
+
+Four commits on `share` from `dda7733`: `53f6ac3` the file, `f4914a2` the check, `e9ebfb0` the page, `27eda4d` the landing; this
+section + HARNESS "Release notes" + OPEN-ITEMS the fifth. **Not tagged, not pushed, not deployed** — v0.31 is the orchestrator's tag
+step (the ritual below). **DOM only:** no scene, engine or math file changed; the receipt is the full `CLOCK=1` sweep on this tree (`PORT=8931 tools/scene-md5.sh share31`, every id 0..11, errs [] hop 840 row 72 ×12): **24/24 lines = `tools/accept/v0.29/scene-md5-v029.txt`** to the byte (`diff` of the sorted lists against the reference's non-comment lines: empty).
+
+### The file — `releases.json` (SOCIAL-PLAN §3.1), 28 entries, v0.6 → v0.30
+One entry per tag, newest first: `version` / `tag` / `date` (the tag's date, `git tag --format=%(taggerdate)`) / `class` ∈ `scene`
+(a new scene or one rebuilt: v0.7 v0.8 v0.9 v0.10 v0.12 v0.14 v0.15 v0.21 — 8) · `engine` (a feature the viewer sees or hears — 14) ·
+`tuning` (looks retuned, thresholds moved: v0.11 v0.12.1 v0.13 v0.17.1 v0.26 v0.28 — 6) / `title` / `body` / `scenes` (ids) /
+`decisions` (the § list) / `clip` (`null` on all 28 — the historical clips are §3.3's `record-old.sh`, not built, OPEN-ITEMS). The
+bodies are written for a visitor — what they see and hear, 2–5 sentences, no section numbers in the prose (`check.js` refuses a `§`
+there; the pointer lives in `decisions`) — from the tag messages (`git tag -n9`), each §'s heading + first paragraph and the AUDIT
+files, in one sitting. v0.30's names the five things the user asked to be said plainly: `tonicConf` (the colour follows the key only
+when the ears are sure), MANDALA pass 1 (the kaleidoscope on the beat, three voices, the tension), the `R` recorder (on your device,
+nothing uploaded, no share button), the DUST sync on vocal tracks, and the licence (MIT + the Guest-List Clause, in the user's words:
+"if it runs at a party, I get in free, with a guest"). v0.29's is the plan's own example. v0.27's says what a visitor to the site
+actually met that day — the first deploy since v0.15, everything from v0.16 on at once — because the local-only tags v0.16–v0.26
+never reached retinarave.com. The three least sure (the user reads them once): v0.26, v0.22, v0.6 (OPEN-ITEMS).
+
+### The check — `tools/releases.js` + `check.js` (§3.2)
+`tools/releases.js` (84 lines) is the one reader: `load()`, `validate()` (x.y.z versions, `tag` == `v` + the version without a
+trailing `.0`, ISO dates, the class enum, non-empty title/body, no `§` in the prose, `scenes` ids, a non-empty `decisions` of `§N`,
+`clip` null or `{ youtube, poster }` with the poster present under `site/` when the id is set, unique versions, newest first by
+semver and by date, **the top entry's `version` == `package.json`'s**), `save()` (the file's own four-line-per-entry layout,
+byte-stable: two saves md5 `419304aa…` twice), `newIn()` (the card line's text), and the §3.2 CLI `set <tag> clip.youtube <id>`
+(fills the poster path `thumbs/whats-new/<tag>.jpg` when none is set, validates, saves) for SocialMediaManager's post log.
+`check.js` runs `validate()` and fails on every line; the negative test: the top entry edited to `0.31.0` on package.json 0.30.0 →
+`FAIL releases.json[0] (0.31.0): tag v0.30 != v0.31` + `FAIL releases.json: top entry is 0.31.0, package.json is 0.30.0 — the tag
+ritual…`, 2 fail; restored, 0 fail. `check.js` also fails when `index.html`'s `<a id="newin">` text is not the top entry's
+(`newIn()`), with "run node tools/whatsnew.js" in the message — proven before the first `whatsnew.js` run (1 fail), 0 after.
+
+### The page — `tools/whatsnew.js` → `site/whats-new.html` (§3.4)
+137 lines; `npm run build` = `whatsnew.js → bundle.js → cp site/. dist/ → cp LICENSE`, so the page is regenerated on every
+build, and the generated file is committed (site/ files are static sources; `--check` exits 1 when it or the card line is stale).
+Static: 28 `<article class="rel" id="v0.NN">` with the date, the class as a small label (`new scene` / `engine` / `tuning`), the
+title, the body, the scene thumbnails from `site/thumbs/` (the id → name map is the scene folders' `index.js` imported in node,
+as check.js does; a thumb only where `site/thumbs/<name>.jpg` exists — torus-v1 and DRUM have none), and the `decisions` list
+linking the DECISIONS file on GitHub. **The look is about.html's:** its `<style>` block is read at build time and reused as-is
+(one style source; the few rules the list needs are appended, and the tag anchors opt out of its uppercase `h2`). **The embed:**
+only an entry with `clip.youtube` gets a `.clip` block — the self-hosted poster, a `▶ play the clip` button and a one-line note —
+and only then is the 8-line inline click handler emitted that builds the `youtube-nocookie.com` iframe on a press; today no entry
+has a clip, so the page carries **no script at all** (`grep -c '<script\|<iframe\|youtube'` = 0). The licence header is
+`license.js`'s `stamp()`. `site/sitemap.xml` + `/whats-new` weekly 0.7, `about.html` links it under Follow, `_headers` gives it
+`/about`'s `max-age=300`. `tools/serve.js` now resolves an extensionless `/about` / `/whats-new` to `site/<p>.html`, as Cloudflare's
+static assets do on the deploy (dev == deploy for the links; a missing path is still 404).
+
+### The landing — SOCIAL-PLAN §4, DOM only
+`index.html`'s card, between the sub line and the picker: `<p class="why">` with the user's line verbatim — *Everything runs on this
+device — no account, no trackers, no ads. I built this for myself and wanted to share it.* — and `<p class="newin"><a id="newin"
+href="/whats-new">New in v0.30: Sure of the key, a kaleidoscope on the beat, and a record button → what's new</a>`. **The text is
+`releases.json`'s top entry and nothing fetches it:** `tools/whatsnew.js` writes it into the committed `index.html` (so the dev
+server page shows the same line as the deploy, not a default), `tools/bundle.js` inlines it again at build time from the same
+`newIn()` (and throws if the card lost the anchor), `check.js` fails a stale committed line. Both lines hide in peek with `.sub`
+(`.peek .why, .peek .newin { display: none }` — eval'd `none` / `none` with FEIGEN's tile pressed) and shrink a step under 520 px.
+`about.html`: a new "How it works and what it does not do" (the tab's audio analysed in the page, no server on the other end, the
+share dialog is Chrome's and the page receives the one ticked tab, the microphone and a dropped file the same; no accounts /
+cookies / analytics / trackers / ads, nothing third-party until play is pressed on a clip, the recording paragraph referenced not
+repeated; the why) and the three scenes its list had never gained (NAV2, GIELIS, CHLADNI — the card blurbs).
+
+### Receipts
+- **The two shots** (`tools/accept/v0.31/landing-{390,1440}.jpg`, committed since this section cites them): `MOBILE=1` 390 px —
+  `.why` [20, 370] × 59 px, `#newin` [31, 359] × 28 px inside the card [0, 390], `scrollWidth > innerWidth` **false**; 1440 px —
+  `.why` [478, 948] × 41, `#newin` [449, 976] × 28 inside the card [385, 1041], no x-scroll; both `tiles 9`, `errs []`.
+- **No third-party request before a click** (`performance.getEntriesByType('resource')` hosts): `/` (real path) → `["127.0.0.1:8931"]`
+  on both viewports; `/whats-new` → `["127.0.0.1:8931"]`, 28 articles, `#v0.30` resolves. The built `dist/` served on a throwaway port (python `http.server` 8932, killed by port): `/whats-new.html` hosts `["127.0.0.1:8932"]`, 28 articles, `document.scripts.length` **0**; `/` (real path) hosts `["127.0.0.1:8932"]`, the inlined line reads `New in v0.30: …`, errs [].
+- **accept.sh's landing steps** (`tools/landing-steps.json`): `TILES 9 imgs 480×9`, `PEEK true 6 6 demo 0 peek`, `DIRECTOR -1`,
+  `START demo false 3 hide true []`, 0 `[EXC]` — the tile count the block greps is `card:` slots, untouched.
+- `check.js` 0 fail (9 warn, the standing line-cap ones) · `license --check` 174 public files, 0 missing (whats-new.html is the 174th)
+  · `npm test` exit 0 · `npm run build` → `dist/whats-new.html` 33 KB, `dist/index.html` 1649 KB with the line inlined, `_headers` +
+  `sitemap.xml` carry `/whats-new` · `whatsnew.js --check` up to date after the build.
+- No audible run. The user's dev server on 8765 untouched; this worker's on 8931.
+
+### The v0.31 tag ritual (the orchestrator's step — in this order, or `check.js` fails)
+1. `package.json` + `assets/core/version.js` → 0.31.0 together (§89). 2. Add the v0.31 entry at the top of `releases.json`
+(`class` `engine`; the body: the what's-new page, the landing line, the about page — in a visitor's words). 3. `npm run build`
+(regenerates `site/whats-new.html` and the card line — commit both). 4. `node tools/check.js` 0 fail · `node tools/license.js --check`
+· `npm test` · `GPU=1 PORT=88xx node tools/test_rec.js` (VER == package.json) · `node tools/bundle.js releases/retinarave-v0.31.html`
++ the release from `file://` errs 0. 5. This section's tag note, commit, `git tag -a v0.31`, push on the user's word.
+
+### Open (also in OPEN-ITEMS)
+The historical clips (`tools/record-old.sh`, §3.3) and the posters' directory · the user's one read of the 28 bodies · the
+DECISIONS link on a private repo · the cold read of about.html on a phone · SocialMediaManager not started.

@@ -504,3 +504,17 @@ start sits at y1 0.08–0.19, under the 0.15 knee, so the onsets cannot refine t
 Also open: `test_ears.js` still dies before its key rulers (the native-rate stereo dumps are absent, §86's note); the fix-2 rule
 feeds on `clockConfPcm ≥ 0.85`, which reads 0.77–0.80 inside the wrong 0:10 lock — a line kick there would be on the wrong line,
 and none fired (the intro has no low onsets on it), but a 4:3 lock in a passage WITH soft kicks would promote onto the wrong lattice.
+
+**2026-10-03, §91 (Share phases 2 + 3 — `releases.json`, `/whats-new`, the landing line; branch `share`, NOT tagged, NOT deployed):**
+built for v0.31 (the orchestrator's tag step: bump `package.json` + `assets/core/version.js`, add the v0.31 entry, `npm run build`,
+check.js — HARNESS "Release notes"). Open: (1) **the historical clips** — SOCIAL-PLAN §3.3's `tools/record-old.sh` (ffmpeg `x11grab` + the
+PulseAudio monitor on `releases/retinarave-vX.html`, v0.15+ headed with the file source, tab capture before) is NOT built; every
+`clip` is `null`, so the page carries no embed and no script yet; the poster directory `site/thumbs/whats-new/` does not exist until
+the first clip; (2) the 28 backfilled bodies are one sitting's reading of the tag messages + DECISIONS' first paragraphs — the user
+reads them once (the three least sure: v0.26 "thresholds measured against the right number" (the Quantile sign, said without the
+word), v0.22 (pass 1.5 + 2 + the half beat folded into one entry), v0.6 (the rename + the public launch — nothing a returning visitor
+"saw change" on the day)); (3) the `decisions` links point at `github.com/tbkraf08/RetinaRave/blob/main/docs/DECISIONS.md` (the header
+on every public file names that URL) — dead for a visitor while the repo is private; (4) `about.html`'s long form has not been read
+cold on a phone and a desktop (§4's verify step is the user's, on the deployed page); (5) the card's `about.html` link stays relative
+while the new line links `/whats-new` — the dev server now resolves both; (6) SocialMediaManager (the separate repo) is not started.
+
