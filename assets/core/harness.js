@@ -181,6 +181,9 @@ export function initHarness(hideLanding) {
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);
   // pcm is the default since 2026-09-30 (§56 addendum 3); &clock=v3 is v0.19's clock. CARD.setClock('pcm' | 'v3') flips it live.
   if (HASH.has('clock')) setClock(HASH.get('clock'));
+  // the PCM clock's knobs for an A/B on the page (engine/clock/clock.js CLOCK, DECISIONS §90): &swy1=<y1> gates a cold / unrelated
+  // tempo switch on the comb's strength (default 0 = off: measured and rejected in §90, kept for the A/B)
+  if (HASH.has('swy1')) { ENGINE.CLOCK.K.SW_Y1 = +HASH.get('swy1'); if (!isFinite(ENGINE.CLOCK.K.SW_Y1)) throw new Error('&swy1= must be a number'); }
   if (track) {
     hideLanding();
     ENGINE.start('file', { src: track, at: +(HASH.get('at') || 0), sync: +(HASH.get('sync') || 0),

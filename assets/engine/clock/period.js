@@ -31,7 +31,10 @@ function vertex(acf, L0, span) {
 }
 
 export class Period {
-  constructor(bpm0 = 124) {
+  // `K` is the clock's knob object (clock.js CLOCK; CLOCKK in node / the page's &swy1=): SW_Y1 is the comb strength a COLD or
+  // UNRELATED tempo switch needs before its votes count. OFF (0) by default — measured and rejected, see estimate() (§90).
+  constructor(bpm0 = 124, K = { SW_Y1: 0 }) {
+    this.K = K;
     this.env = new Float32Array(N); this.ei = 0;   // the ring: env[ei] is the OLDEST slot (tempo.js's convention)
     this.slot = -1;                                // the 100 Hz slot index of the newest written sample
     this.tNew = NaN;                               // the audio time of the newest slot's END
@@ -163,8 +166,21 @@ export class Period {
         // and the 3:2 arbitration is before this and untouched. The cost, stated: a track that moves to a genuinely
         // unrelated tempo while the old lag stays a live peak is not followed. test_clock.js's 17 checks cover the lock,
         // the 128 -> 132 ramp, 6 s of silence, the outlier and both lattice cases.
-        const need = X.tempoAge > 16 ? 3 : alive ? 1e9 : !rel ? 2 : rel > 1 ? 4 : 16;
-        X.dbg.sw = { cand: +X.candBpm.toFixed(1), n: X.candN, rel, alive, need, age: X.tempoAge };
+        // THE STRENGTH GATE (§90, IBelongHere) — A KNOB THAT IS OFF: the cold prior (tempoAge 99 at the start) and an unrelated lag
+        // take the clock on 3 / 2 votes with no test of the comb's own strength, and IBelongHere's drumless sung intro locked
+        // 157.6 BPM (a dotted-8th echo period, 0.381 s = 3 16ths of 118; not an octave, so the §59 half-beat check cannot see it)
+        // at y1 0.17 / 0.23 / 0.25 from 9.0 to 12.5 s. K.SW_Y1 makes the cold and the unrelated routes need y1 >= it. MEASURED on
+        // the six truth tracks (tools/work/v90/combdbg.mjs, every estimate of every cold start): the five RIGHT cold locks switch
+        // at y1 0.19 (Malicious), 0.22 (Vienna, whose y1 then stays under 0.3 for 22 s), 0.26, 0.29, 0.64 — the wrong one at 0.25.
+        // SW_Y1 0.3 delays the wrong lock by 1 s (it switches at 10.0 s, y1 0.30) and costs Vienna's lock 21.4 -> 27.4 s,
+        // Malicious's 3.5 -> 13.8, WhoLikesToParty's 6.2 -> 25.7 (held at the 124 prior, the lattice lands wrong). Contrast,
+        // best / cur, the ACF at 2L / L, the 40-150 Hz share of the strength (0.032 at the wrong lock against 0.012-0.097 at the
+        // right ones) and the PDA hit rate separate them no better. The plateau is the audio's: nothing in the comb's own
+        // evidence tells a dotted-8th echo from a beat until the 8ths fill the 8 s ring (11.5 s), and the clock follows them 1 s
+        // later. Left at 0 = the pre-§90 rule, byte-identical traces; CLOCKK='{"SW_Y1":0.3}' / &swy1=0.3 reproduces the table.
+        const sw = y1 >= (this.K && this.K.SW_Y1 !== undefined ? this.K.SW_Y1 : 0);
+        const need = X.tempoAge > 16 ? (sw ? 3 : 1e9) : alive ? 1e9 : !rel ? (sw ? 2 : 1e9) : rel > 1 ? 4 : 16;
+        X.dbg.sw = { cand: +X.candBpm.toFixed(1), n: X.candN, rel, alive, need, age: X.tempoAge, y1: +y1.toFixed(3) };
         if (X.candN >= need) { X.bpm = bpm; X.candN = 0; X.tempoAge = 0; X.switched = true; }
       }
     }

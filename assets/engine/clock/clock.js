@@ -60,6 +60,7 @@ export const CLOCK = {
   CLUTTER: 1,                   // off-grid onsets per beat (the PDA clutter density)
   P0_B: 1, P0_F: 0.3 * 0.3,     // the cold covariance: any phase; the rate ±18 BPM around the prior
   TRACK: 0.06,                  // a comb tempo within this ratio of f is a measurement; beyond it, a switch (period.js decides)
+  SW_Y1: 0,                     // the comb strength (period.js y1) a COLD / UNRELATED tempo switch needs before its votes count — OFF: measured and rejected in §90 (0.3 costs three tracks' cold locks and only delays IBelongHere's 157.6 by 1 s); the knob stays for the A/B
   PRESENT: 1e-7,                // hop strength below which nothing is written (silence)
   // THE LATTICE CHECK (§59): the half-beat choice is the LOW BAND's, re-read while the period stays locked
   LAT_LO: 40,                   // Hz: the band the check reads, 40..150 (the truth tool's own: trackmap.py anchor_grid)
@@ -88,7 +89,7 @@ export class Clock {
     this.iB = Math.max(2, Math.min(40, Math.round(150 / binF))); this.iT = Math.min(NFFT / 2 - 1, Math.round(9843.75 / binF));   // v3: bins 1..419 at 48 kHz
     this.i40 = Math.max(1, Math.round(CLOCK.LAT_LO / binF));   // the lattice check's band floor (bins i40..iB = 40..150 Hz)
     this.iM = Math.min(this.iT, Math.round(2500 / binF));      // the tongues' mid band ceiling (bins iB+1..iM = 150..2500 Hz, §69's snare lane band; §76)
-    this.per = new Period(bpm0);
+    this.per = new Period(bpm0, CLOCK);   // the knobs ride in (SW_Y1, §90)
     this.b = 0; this.f = bpm0 / 60; this.t = NaN;
     this.P00 = CLOCK.P0_B; this.P01 = 0; this.P11 = CLOCK.P0_F;
     this.tEst = -Infinity;
