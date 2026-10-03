@@ -179,6 +179,12 @@ for (const d of sceneDirs) {
   let rel = null;
   try { rel = load(); } catch (e) { fail('releases.json: ' + e.message); }
   if (rel) for (const p of validate(rel)) fail(p);
+  if (rel && rel[0]) { // the landing card's committed "New in vX" line (index.html #newin) is the top entry's — `node tools/whatsnew.js` refreshes it
+    const { newIn, readNewIn } = await import(path.join(ROOT, 'tools/releases.js'));
+    const cur = readNewIn(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));
+    if (cur === undefined) fail('index.html: no <a id="newin"> line on the card (SOCIAL-PLAN §4)');
+    else if (cur !== newIn(rel[0])) fail('index.html #newin is stale (' + JSON.stringify(cur) + ' != ' + JSON.stringify(newIn(rel[0])) + ') — run node tools/whatsnew.js');
+  }
 }
 
 { // license headers (tools/license.js): every public file carries the canonical header; stamp with `node tools/license.js`
