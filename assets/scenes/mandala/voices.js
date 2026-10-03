@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MANDALA — the three transient voices (DECISIONS §86, step 2 of the MANDALA overhaul; the pattern is DUST's §57 / §58 /
 // §64 / §70, the voices themselves assets/math/voice.js).
 //
@@ -17,7 +20,7 @@
 //         -> the TRAP-RING GLINT: `vh.e` is the ring's sparkle (uHat)
 // The decays (tc) and floors start at DUST's measured numbers (0.24/0.25, 0.30/0.25, 0.09/0.2) and are MANDALA's own
 // constants from here. `kick2` / `snare2` / `hat2` stay the floors under the envelopes (`Math.max(…, lvl)` in voice()).
-import { bed, mkBed, mkTens, mkVoice, tens, voice } from '../../math/voice.js';
+import { bed, hatGain, mkBed, mkTens, mkVoice, tens, voice } from '../../math/voice.js';
 import { hash11 } from './grid.js';
 
 export const TC = { K: 0.24, S: 0.30, H: 0.09 };
@@ -28,14 +31,16 @@ export function mkVoices() {
     vT: mkTens(), amb: 0, ambE: 0, tight: 0, Nt: 0, drain: 1 };
 }
 
-// One frame. `N` is the current mirror count (grid.js), for the snare's wedge.
-export function voices(V, dt, MS, N) {
+// One frame. `N` is the current mirror count (grid.js), for the snare's wedge; `acc` the beat's double-time accent (§78,
+// beatgrid.js accent21 in `sp.acc`): §80's hat lever, `1 + 0.5·acc` on the glint's size — a layer ARRIVING sparkles harder
+// on every stick, never faster (the rate and the timing are the voice's own, math/voice.js). Step 4, §88.
+export function voices(V, dt, MS, N, acc) {
   voice(V.vK, dt, MS.kick2, MS.kickAge, MS.kickEvt);
   const n0 = V.vS.n;
   voice(V.vS, dt, MS.snare2, MS.snareAge, MS.snareEvt, false, MS.snareAmp);
   if (V.vS.n !== n0) V.seg = Math.floor(hash11(V.vS.n * 0.731 + 0.17) * N) % N;   // a new flash: its wedge, from the count
   V.hSwell = bed(V.hBed, dt, MS.highS);
-  voice(V.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt, V.hSwell);
+  voice(V.vH, dt, MS.hat2, MS.hatAge, MS.hatEvt, V.hSwell, undefined, hatGain(acc));
   V.kAmp = +MS.kickAmp || 0;         // traced (dinfo), never read by the look — open question 3
   return V;
 }

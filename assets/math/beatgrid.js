@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The beat grid — a scene's angle as a closed form of the beat clock (DECISIONS §57 step 1, §58 task B, §61 step 2, §66, §78;
 // lifted verbatim from assets/scenes/dust/grid.js in §85 so MANDALA could read the same profile — a scene imports only from
 // math/*, never from another scene's folder (CONTRACTS §0). DUST's grid.js keeps its own two constants and re-exports this.

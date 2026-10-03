@@ -480,3 +480,11 @@ by 102.4" is the detector's reach, not the scene's; if the user wants the fold t
 (2) `dropLiveEvt` lands 21 ms after the truth on SeeYouDrop's drop 2 (105.617 vs 105.596) — 1.3 frames, the engine's; (3) Vienna's
 dream reads ambiguous from 76.7 s on a 40 s cold start (72.0 on §77's from-0 run) — measured from 0 under §88; (4) the 0.6 body dim is
 the one number the user's eye should rule on first (0:40–1:00 on SeeYouDrop: the picture goes to ~40 % before 0:57.6).
+
+**2026-10-02, §88 (MANDALA's accent + key hue — step 4; the pass's last step):** built, NOT deployed, NOT tagged; `accept.sh` run in a
+worktree of the step's commit (DECISIONS §88 has the receipt). Default taken: `sp.acc` from the lifted spinner (open question 5).
+Open: (1) SeeYouDrop's accent fires at 1.00 on the 16ths arriving with drop 1 (58–61 s) and 0.5–0.6 in the build before it, not only at
+the returns — the engine's tongue rise, identical for DUST on this engine; the user's eye says whether the heavier crest at 0:58–1:02
+is right; (2) the user's A/B of the whole pass (the watch-list in §88) — a look remark is a retune request; (3) pass 2 (per-bin
+habituation of the trap radius, novelty as a new trap, the fold's own dynamic range on `eM` — the yellow clip is the first thing it
+should fix).

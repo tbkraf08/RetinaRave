@@ -5,12 +5,15 @@
 # s3 TORUS2 (snareEvt + snareAmp, tongueAmbig, modeShade), s5 POLYTOPE, s9 MAXWELL, s10 GIELIS (modeShade through keycolour's anchor),
 # s11 CHLADNI (kickEvt / kickAge / kickAmp, snareAge / snareAmp, hatAge) — and s0, s2, s4, s6, s7, s8 (no voice, no shade) are the
 # pre-lattice lines to the byte. THIS is the baseline: nothing may move after it without a DECISIONS section saying why.
+# s2 MANDALA re-recorded after the MANDALA overhaul pass 1 (DECISIONS §85–§88, 2026-10-02): f2df3a81 / c93dcf77 → 62515d49 / f3a3721c
+# (the §88 worktree's full sweep, errs [] hop 840 row 72 ×12; the 22 other lines identical). Per step the lines were §85 f54761b7 /
+# 39985f25, §86 87aca86d / f2c644ac, §87 a360e08f / 39f90ef8 — the scene reads the lattice's events, ages, amps, tongues and shade now.
 fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
 8a0715dfb90ecf20d484578932a2f115  s0-f840.jpg
 1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
 25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
-f2df3a8142affd49f17dedd228212d5d  s2-f360.jpg
-c93dcf77e9806dafa1b2453128c2f389  s2-f840.jpg
+62515d49261070922f23ce68f94fc877  s2-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
 3122036e95e0120e10a99ae00c578354  s3-f360.jpg
 a1e941aff486e1206a30e45b36effa0d  s3-f840.jpg
 0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg

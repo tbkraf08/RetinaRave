@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MANDALA — the ? overlay's text (CONTRACTS §1.13): one clause per field of `feats` saying what it moves on THIS
 // screen, and the three depths. Data only, kept out of index.js so the scene object stays inside the line cap (§85).
 
@@ -14,7 +17,7 @@ export const HELP = {
     phrase16Pos: 'when the 16-beat phrase wraps the mirror count may be drawn again (a seam, never a count of kicks)',
     barNovelEvt: 'a bar that starts something new is the other seam: a fresh draw of the mirror count',
     barReturnEvt: 'a bar that returns earlier material brings back the mirror count that material had',
-    tongue21: 'a double-time layer ARRIVING over 16 beats makes the per-beat crest bigger, never faster',
+    tongue21: 'a double-time layer ARRIVING over 16 beats makes the per-beat crest bigger and the hat glints harder, never faster',
     tongue41: 'the same for a 16th-note layer',
     tongueOn: 'the gate on that accent: off while the tongues stage warms up or is switched off',
     flow: 'the fold constant\'s slow drift underneath the beat-locked phase, and the colours cycle slowly',
@@ -45,6 +48,12 @@ export const HELP = {
     loudAbs: '&loud=0 (or no loudness yet): the brightness falls back to lvl exactly as before',
     high: 'the brightness of the orbit-trap ring',
     alive: 'silence fades to black',
+    key: 'the palette\'s centre hue: the key on the circle of fifths, so a modulation turns the whole wheel a twelfth',
+    mode: 'major pulls that hue toward warm and lifts the saturation, minor toward cool',
+    keyConf: 'how far the key is trusted: below it the colours slide back to the mood palette',
+    valence: 'a little extra warmth or cool on top of the mode',
+    harmAngle: 'the chroma centroid on the fifths circle, read by the anchor beside the key',
+    modeShade: 'is THIS bar major or minor: a per-bar warm / cool lean on the key hue',
   },
   eli5: 'A kaleidoscope whose mirrors are a real Kleinian-style fold: abs() folds the plane onto itself and a '
     + 'sphere inversion turns it inside out, over and over. The music picks how many mirrors there are, how far '

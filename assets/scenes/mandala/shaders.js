@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MANDALA fragment shader. HEAD (docs/CONTRACTS.md §1.2) is prepended by ctx.mkProg, so vUv / o / uRes / uBands /
 // TAU / rot() / pal() already exist here. The helpers below are the GLSL_COMMON functions this scene actually uses,
 // renamed (palM / angM / specM; hash11 moved to grid.js with the N draw, §85) so they never collide with HEAD's pal() / hash() / rot().

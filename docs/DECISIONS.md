@@ -8006,3 +8006,48 @@ The two arm-time receipts as the prompt wrote them ("`tight` ≥ 0.9 by 52.0 s a
 `buildLive` IS 0.4 at the arm and climbs 0.15 per bar of void (§54), so 0.9 comes 4.3 s after the arm and 0.75 never before the second
 drop (0.716). The scene follows the engine to the digit; a faster reach is the detector's (OPEN-ITEMS). Vienna's dream from a cold 40 s
 start reads ambiguous from 76.7 s, not 72.0 — a from-0 trace is queued below (§88's receipts) to say which it is on the user's path.
+
+## §88 MANDALA's dynamic range, the accent and the key hue — the double time ACCENTS (a bigger crest, a harder glint, never a faster one), the palette's centre is the key through `keycolour.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 4; default 5 taken: `sp.acc` from the lifted spinner, no second copy)
+
+Base light stays `baseLight(loudRel, loudRange, loudAbs, lvl)` (§63, untouched). **The accent is §78's `acc`** — `accent21` inside the lifted
+`spin()` (the 16-beat RISE of `tongue21` / `tongue41`, dead under 0.15, full at 0.45), read as `G.sp.acc` (open question 5: lifted with
+the grid, one copy). The rotation step has carried `STEP · (1 + DOWN + ACC.K · acc)` since §85; this step adds **§80's hat lever**,
+`voice(vH, …, hatGain(sp.acc))` = `1 + 0.5·acc` on the glint's size (the shared HATACC, `&hatacc=`). **Harmony**: `KEY = mkAnchor()`,
+`A = KEY.anchor(dt, key, mode, keyConf, valence, harmAngle, m.hue, keyPin, modeShade)` as DUST's :196; `S.hue = A.hue`, `S.sat =
+m.sat · A.sat · drain` — the key hue, `modeShade`'s per-bar warm / cool pull (§82) and §84's `tonicConf` gate come from `keycolour.js`
+as-is (`&kc=0`, `&shade=0`, `&key=<k>` through `CARD.REG[2].scene.hooks.key`). `feats` + `key mode keyConf valence harmAngle modeShade`.
+`dinfo()` + `hG hue kconf key kmode sat`. One commit; before = `../RetinaRave-m87`'s traces, after = `../RetinaRave-m88`, PORT 8885.
+
+### Measured (`tools/work/v88/acc88.py`; the engine columns md5-identical to the before on all four windows; `fK fS fH` md5-identical between the step-2 and step-4 traces on all four — `375c20f3 99085f2c 6402e61f` SeeYouDrop, `2cc7b7f4 7d0bacc5 e976b706`, `cafd85c7 c3c36595 0fe5541e`, `3f190548 ec8d8225 d4f294ea`: the rate and timing of every fire unchanged, by construction)
+
+| receipt | measured |
+|---|---|
+| Vienna 1:30–1:38, `nacc` 0.97–1.00 | **p50 1.00** (p10 0.91, max 1.00); exactly §80's **30 hat fires** (3.75 /s), amp/hit p50 0.512 (§80's K .5 row: 0.516) |
+| the crest a quarter bigger there, 0 by 1:43 | `nstep/STEP` p50 **1.250** over 1:30–1:38 (= 1 + ACC.K), 1.212 over 1:38–1:43 (`nacc` p50 0.75, falling), **1.000 over 1:43–1:50 (`nacc` max 0.02)** |
+| the glint's lift per fire at acc 1 ≥ 2× the rim noise | **lumR +32.5 per hit (p50) against \|dlumR\| 4.29 = 7.6×** (1:38–1:43 12.1×, 1:43–1:50 at acc 0: 24.1 = 11.3× — the glint itself is already legible, the lever adds a third to it: 32.5 vs 24.1) |
+| CyborgNinja 20–80, `nacc` = 0 on every frame | **0 on 3601 / 3601**, `hG` 1.000 throughout — the control: the accent never fires |
+| SeeYouDrop `nacc` ≤ 0.51 at its returns, 0 elsewhere | at the returns (91.67 / 98.05 / 109.27, 7 s after each) **max 0.47** ✓; **elsewhere up to 1.00** — the 16ths ARRIVING with drop 1 (bars at 58.0 / 59.6 / 61.2 s: 1.00 / 1.00 / 0.71, `tongue41` 0.42 → 0.46 → 0.48 rising) and the build's own layer (46.8 / 48.4: 0.52 / 0.57, `tongue41` 0.70 → 0.75). The same `accent21` on the same MS gives DUST the same numbers on this engine — §78's "up to 0.51" was a different engine state; what the eye gets is the brief's own case (a layer arriving at the drop accents the beat), recorded, not tuned |
+| dynamic range: `lum` p50 breakdown 90–105 / drop 106–110 not larger than before step 1 | **0.958 after (186.2 / 194.3) against 0.975 before (158.4 / 162.4)** — not larger; the picture as a whole is brighter by the voices (the glint, the flash) |
+| the hue per truth section = DUST's | **identical to the frame** — a same-engine DUST trace (`s4-dust-syd-20-110.json`, scene 1) against MANDALA's `d_hue`: 0.460 (12.8–25.6, key F♯ at kconf 0.93), **0.555 on every C♯ section at kconf 1.00** (0.548–0.563 with the bars' shade), 0.621 on the drop bar 57.6–62.4; max \|Δ\| 0.0000 turns over the eleven sections, frame-wise p50 / max 0.0000 — one `mkAnchor()` on the same inputs |
+| Vienna's dream (§87's open item), from a 0 s start | `amb` ≥ 0.75 on **91 %** of 72.0–86.0 (p50 0.834, every frame from **73.32 s**; the 40 s cold start had it from 76.68): the tongues' 16-beat window, not the scene |
+
+Bench `bench(2,300)` / `bench(0,300)`, q .95, three pairs: **4.064 / 4.148 ms = 0.980** (§87 0.953, §86 0.994, §85 0.920, base 0.898 — the
+four steps inside ±10 % of each other and of the base; the ms doubled with the machine's load between §85 and §86, NAV's too).
+**s2's lines `62515d49` (f360) / `f3a3721c` (f840), the only two of the 24 that differ from v0.29's list** (full sweep on m88, errs []
+hop 840 row 72 ×12) — **re-recorded into `tools/accept/v0.29/scene-md5-v029.txt` in this commit** (the orchestrator's brief: the last
+step re-records s2's line; the header says which lines and why); `accept.sh` in a worktree of this commit is the receipt below.
+`check.js` 0 fail; the license header (`27617b5`, landed between §86 and §87) stamped on this pass's files (`node tools/license.js
+--only …`: math/beatgrid.js, math/voice.js, scenes/mandala/*, scenes/dust/grid.js + voices.js) — comments, no pixel.
+
+### The look (base vs m88 shots): SeeYouDrop 55 s — v0.29 a bright green full-frame lattice, after: the body at ~40 %, drained, an
+ELEVEN-armed fold (N 10 + 1) with the trap ring glinting — the void reads; 57.6 s — the drop frame is a white-out with horizontal
+slice bands in v0.29 and after alike (the post chain's own drop effect, inherited); Vienna 94 s — v0.29 green (the mood hue), after
+yellow-green (D♯ minor's hue pulled warm by the bars' shade), the body blown out in both (§86's open item).
+
+### The user's A/B, stream mode, key 3, in track time (old = `releases/retinarave-v0.29.html` from file://, new = 8765)
+SeeYouDrop **0:40–1:00**: the fold goes dark and odd-armed through the void, 0:57.6 lets go (2.7× the bar before); **1:30–1:50**: the same
+at 1:45.6 (the fold back to even on the slam); **0:58–1:02**: the 16ths arrive — a heavier crest per beat and harder glints, never faster.
+Vienna **1:12–1:26**: the dream tightens (from ~1:13 on a from-0 start), 1:25.3 releases; **1:30–1:38**: the double time — the glints a
+third harder, the crest a quarter bigger, gone by 1:43; **1:46.7**: nothing happens on purpose (§77). CyborgNinja **0:20–1:20**: the
+control — N never changes, nothing accents, nothing tightens, the groove just turns (one wedge every two bars at N 4). The knobs
+that step back one lean at a time on the new page: `&nudge=`, `&step=`, `&bed=`, `&hatacc=0`, `&kc=0`, `&shade=0`, `&rough=0`.

@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // The transient voices and the slow envelopes — shared (DECISIONS §57 steps 2 and 3, §58 task B, §64 task 1, §70, §80;
 // lifted verbatim from assets/scenes/dust/voices.js in §86 so MANDALA could read the same voices — a scene imports only
 // from math/*, never from another scene's folder (CONTRACTS §0). DUST's voices.js keeps its own ring and sub and re-exports

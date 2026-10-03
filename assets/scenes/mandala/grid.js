@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // MANDALA — the beat state (DECISIONS §85, step 1 of the MANDALA overhaul; the pattern is DUST's §57 / §61 / §78).
 //
 // The kaleidoscope's wedge used to ROTATE on `flowMid · 0.11` and the mirror count N was re-drawn every 64 kicks — no

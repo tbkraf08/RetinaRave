@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — the beat grid (DECISIONS §57 step 1, §58 task B, §61 step 2, §66, §78). Since §85 the profile itself — K, STEP,
 // DOWN, the nudge (`spin`), the accent (`accent21` / ACC), the re-seat offset (JUMP / BLEED) and the seam trigger — is
 // `assets/math/beatgrid.js`, lifted verbatim so MANDALA could read it (a scene imports only math/*, CONTRACTS §0). What is

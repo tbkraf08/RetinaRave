@@ -1,3 +1,6 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
 // DUST — the transient voices and the slow envelopes (DECISIONS §57 steps 2 and 3). Since §86 the voices themselves —
 // THR / FRESH / REFRACT, `voice()` (the union of the ears' event and the level's edge, the lane-alone snare, the §80 gain),
 // the hat's swell veto (BED / `bed()`), the accent gain (HATACC / `hatGain`) and the tension envelope (`tens()`, WIND_BAR)
