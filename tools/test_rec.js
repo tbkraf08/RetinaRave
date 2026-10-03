@@ -92,6 +92,7 @@ async function ensureServer() {
     await key('r');
     await sleep(300);
     ok(await ev('__REC.REC.on === true'), 'R starts a take (REC.on)');
+    ok(await ev('CARD.Q.hold === 1 && CARD.Q.q === 1 && CARD.Q.scale === 1'), 'the tier is pinned during the take: Q.hold 1, q 1, scale 1 (§92)');
     ok(await ev("getComputedStyle(document.getElementById('recdot')).display === 'block'"), 'the red dot is on (DOM)');
     await sleep(700);
     const lum = await ev("(()=>{const c=document.createElement('canvas');c.width=64;c.height=36;const x=c.getContext('2d');x.drawImage(__REC.cv(),0,0,64,36);const d=x.getImageData(0,0,64,36).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]+d[i+1]+d[i+2];return s/(d.length/4)/3})()");
@@ -120,6 +121,8 @@ async function ensureServer() {
     ok(sc.source === 'demo' && sc.track === null, 'sidecar source demo, track null');
     ok(Array.isArray(sc.size) && sc.size[0] >= 16 && sc.fps === 60, 'sidecar size ' + sc.size + ' fps ' + sc.fps);
     ok(Math.abs(sc.durationS - tStop) < 0.7, 'sidecar durationS ' + sc.durationS + ' ≈ ' + tStop.toFixed(2) + ' (the keys)');
+    ok(sc.q === 1 && typeof sc.q0 === 'number', 'sidecar q 1 (the tier held for the take, &recq= default) · q0 ' + sc.q0 + ' (the governor at R; DECISIONS §92)');
+    ok(await ev('CARD.Q.hold === null && Math.abs(CARD.Q.q - ' + sc.q0 + ') < 0.05'), 'after the stop the governor is free again (Q.hold null) from q0 ' + sc.q0);
     ok(webm.name.includes('-' + sc.scenes[0].name + '-'), 'the name carries the scene at the START: ' + sc.scenes[0].name);
     const ids = sc.scenes.map((s) => s.id);
     ok(sc.scenes[0].t === 0 && ids.includes(3) && ids.includes(1) && ids.indexOf(3) < ids.indexOf(1), 'timeline: start ' + ids[0] + ' → 3 → 1: ' + JSON.stringify(sc.scenes));

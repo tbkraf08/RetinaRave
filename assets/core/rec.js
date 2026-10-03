@@ -21,6 +21,7 @@ import { SC, REG } from './scenes.js';
 import { HASH, TEST } from './hash.js';
 import { VER } from './version.js';
 import { SHADE } from '../math/keycolour.js';
+import { Q, pinQ } from './quality.js';
 
 // The watermark: bottom-right, white at WM.alpha on a soft shadow; the size follows the canvas height (14 px at 720p).
 const WM = { alpha: 0.7, pad: 0.018, px: (h) => Math.max(12, Math.round(h / 51)), font: '600 {px}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' };
@@ -28,6 +29,10 @@ const SLICE_MS = 2500;             // MediaRecorder timeslice: a chunk every 2.5
 const WARN_S = 300;                // one toast at 5 minutes (a 10-minute set at 12 Mb/s is ~900 MB, still fine on a desktop)
 const BPS = 12e6;                  // videoBitsPerSecond
 const MIMES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+// The tier during a take (DECISIONS §92: the governor sank q to 0 under the encoder's load and the take was an upscaled 0.375× render).
+// &recq=<0..1> pins Q at that tier for the take (1 = the top: every scene at full resolution and its top iteration/particle tier) ·
+// &recq=hold freezes q where the governor had it when R was pressed · &recq=off leaves the governor free (v0.30's behaviour).
+const RECQ = (() => { const v = HASH.get('recq'); if (v === null) return 1; if (v === 'off') return null; if (v === 'hold') return 'hold'; const n = +v; return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 1; })();
 
 export const REC = {
   on: false,
@@ -36,6 +41,8 @@ export const REC = {
   t0: 0, started: null,            // performance.now() at start · the ISO stamp (local wall time is the user's, not the engine's)
   scenes: [],                      // the timeline: [{ t, id, name }], a row per scene change during the take (t in seconds from start)
   last: null,                      // after a stop: { name, bytes, sidecar, mime } (tools/test_rec.js reads it)
+  q: null,                         // the tier pinned for this take (null = the governor is free; &recq=)
+  q0: null,                        // the governor's q when the take started (restored at stop)
   n: 0,                            // takes started this page
   toast: (text) => {},             // hud.js sets this (hud.js imports this module, never the reverse)
   onChange: (on) => {},            // hud.js: the red dot
@@ -86,6 +93,9 @@ export function startRec() {
   REC.started = new Date();
   REC.scenes = [{ t: 0, id: sceneId(), name: sceneName() }];
   REC.warned = false;
+  REC.q0 = Q.q;
+  REC.q = RECQ === 'hold' ? Q.q : RECQ;
+  if (REC.q !== null) pinQ(REC.q); // held for the take: quality.js's controller sets q back to it at every window
   REC.on = true;
   REC.n++;
   mr.start(SLICE_MS);
@@ -98,6 +108,7 @@ export function stopRec() {
   if (!REC.on) return false;
   REC.on = false;
   REC.onChange(false);
+  if (REC.q !== null) { pinQ(null); Q.q = Q.ceil = REC.q0; } // the governor resumes from where it was before the take
   if (mr && mr.state !== 'inactive') mr.stop(); else finish();
   return true;
 }
@@ -137,6 +148,7 @@ function sidecar(durationS) {
     started: REC.started.toISOString(), durationS: +durationS.toFixed(3),
     source: AU.mode || 'none', track: AU.mode === 'file' && AU.file ? AU.file.name : null,
     size: [cv.width, cv.height], fps: 60, frames, mime: REC.mime,
+    q: REC.q, q0: +REC.q0.toFixed(3), // the tier held for the take (null = the governor was free) · the governor's q at R
     scenes: REC.scenes.slice(),
     flags: { lead: !!(ENGINE.LEAD && ENGINE.LEAD.on), shade: SHADE.K > 0, clock: ENGINE.CLOCK ? ENGINE.CLOCK.src : null, map: ENGINE.useMap },
     ua: navigator.userAgent,

@@ -8,7 +8,15 @@ import { clamp } from '../math/util.js';
 // A coarse-pointer device (phone, tablet) starts lower so the first two seconds do not stutter before the controller catches
 // up (v0.6); the controller then finds the device's level as before. Headless Chrome and node have a fine pointer: unchanged.
 export const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches;
-export const Q = { q: COARSE ? 0.35 : 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60 };
+export const Q = { q: COARSE ? 0.35 : 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60, hold: null };
+// hold: null = the controller is free. A number = the recorder's pin (DECISIONS §92): the controller still measures (Q.fps), but q and
+// its ceiling are set back to the pin at every window, so a take renders at one tier. Set through pinQ(), never by a scene.
+
+const derive = () => { Q.iter = Math.round(64 + 200 * Q.q); Q.scale = Math.round((0.38 + 0.62 * Q.q) * 16) / 16; };
+export function pinQ(q) { // q: the tier to hold (0..1) · null: release (the controller resumes from the current q)
+  Q.hold = q === null ? null : clamp(q, 0, 1);
+  if (Q.hold !== null) { Q.q = Q.ceil = Q.hold; derive(); }
+}
 
 export function updateQuality(dtRaw) {
   Q.acc += dtRaw;
@@ -33,12 +41,12 @@ export function updateQuality(dtRaw) {
       }
     }
     Q.ceil = Math.min(1, Q.ceil + 0.002);
+    if (Q.hold !== null) Q.q = Q.ceil = Q.hold;
     Q.q = clamp(Q.q, 0, 1);
     Q.acc = 0;
     Q.n = 0;
     Q.worst = 0;
-    Q.iter = Math.round(64 + 200 * Q.q);
-    Q.scale = Math.round((0.38 + 0.62 * Q.q) * 16) / 16;
+    derive();
   }
 }
 
