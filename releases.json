@@ -1,141 +1,461 @@
 [
-  { "version": "0.30.0", "tag": "v0.30", "date": "2026-10-03", "class": "engine",
-    "title": "Sure of the key, a kaleidoscope on the beat, and a record button",
-    "body": "The colour now follows the song's key only when the ears are sure of it: the bass has to agree with the harmony before the palette commits, so a wrong guess no longer flips the hue mid-track. MANDALA has been rebuilt from the ground up: the kaleidoscope turns one step per beat, kick, snare and hat each have their own voice in it, and the stretch before a drop tightens the fold and drains the colour until the drop lets go. Press R to record what you see and hear to a video file on your own device, and R again to stop; nothing is uploaded and there is no share button. DUST stays in step on tracks where the vocals carry the beat, and the code is now open under MIT with one clause of my own: if it runs at a party, I get in free, with a guest.",
-    "scenes": [1,2], "decisions": ["§83","§84","§85","§86","§87","§88","§89","§90"], "clip": null },
-
-  { "version": "0.29.0", "tag": "v0.29", "date": "2026-10-02", "class": "engine",
-    "title": "Colour follows the chord",
-    "body": "Major bars pull the palette warm, minor bars leave it alone, so the hue breathes with the chord changes instead of sitting on one key for the whole track. The tension field is now measured against the track itself over the last half minute, so a quiet intro and a wall of noise both use the whole range and a drop reads as a drop on every song.",
-    "scenes": [1,3,5,9,10], "decisions": ["§81","§82"], "clip": null },
-
-  { "version": "0.28.0", "tag": "v0.28", "date": "2026-10-02", "class": "tuning",
-    "title": "A haze before the drop",
-    "body": "In TORUS2 the dreamy stretch before a drop now hazes the nest of rings, and the drop clears the fog in one go. DUST's hi-hat voice joins the double-time accent: when the rhythm doubles, the rim flicks harder rather than faster.",
-    "scenes": [1,3], "decisions": ["§79","§80"], "clip": null },
-
-  { "version": "0.27.0", "tag": "v0.27", "date": "2026-10-02", "class": "engine",
-    "title": "Everything since v0.15 goes live",
-    "body": "The first update to reach the site in two weeks: every change from v0.16 on arrives at once. New in this one: the engine notices when the music hesitates on a beat it will not commit to, and treats it as a build-up; DUST's double time accents the picture instead of driving it faster; CHLADNI's figure follows the bass from the very first seconds of a track instead of waiting for a sub note that is not there.",
-    "scenes": [1,11], "decisions": ["§75","§76","§77","§78"], "clip": null },
-
-  { "version": "0.26.0", "tag": "v0.26", "date": "2026-10-01", "class": "tuning",
-    "title": "Thresholds measured against the right number",
-    "body": "A statistic deep in the ears had its sign backwards, so several thresholds had been calibrated against the wrong end of the distribution; they have been re-based and hits land more honestly. CHLADNI now throws its sand by how hard the kick hit, and one of the reference tracks had its beat grid re-aligned by a few hundredths of a second.",
-    "scenes": [11], "decisions": ["§72","§73","§74"], "clip": null },
-
-  { "version": "0.25.0", "tag": "v0.25", "date": "2026-10-01", "class": "engine",
-    "title": "Every hit has a size",
-    "body": "A kick and a snare now carry how hard they were hit, so DUST's flash ring and TORUS2's wave scale with the hit instead of firing at one size. The scenes' snare is the snare lane alone, so a hi-hat is no longer mistaken for one.",
-    "scenes": [1,3], "decisions": ["§70","§71"], "clip": null },
-
-  { "version": "0.24.0", "tag": "v0.24", "date": "2026-10-01", "class": "engine",
-    "title": "The snare the ears could not hear",
-    "body": "The snare and the rim are now heard as a rise in the two middle bands, so a rim shot that used to vanish is seen and a hi-hat that used to be called a snare is not.",
-    "scenes": [], "decisions": ["§69"], "clip": null },
-
-  { "version": "0.23.0", "tag": "v0.23", "date": "2026-10-01", "class": "engine",
-    "title": "True loudness, the right key, and a smoother beat",
-    "body": "The beat's nudge is now a smooth velocity profile, so the picture bounces instead of jerking, and the clock no longer wanders off a live tempo. The key the colours follow is the song's tonic: until now the engine had been reading the fifth above it, so every key-coloured scene was a fifth off. Loudness is measured the way broadcast meters do it, so a drop that comes back louder after a quiet breakdown actually reads louder on screen. The kick that hides under a bass note is found, the hi-hat fires cleanly on sparkly passages, and the quiet void before a drop is drawn as one.",
-    "scenes": [1,2,3,5,6], "decisions": ["§61","§62","§63","§64","§65","§66","§67","§68"], "clip": null },
-
-  { "version": "0.22.0", "tag": "v0.22", "date": "2026-09-30", "class": "engine",
-    "title": "DUST pass 2, and the half beat",
-    "body": "In DUST a grain's frequency band is now its place in the formation, a repeated sound fades while a new one pops, and the harmony shows in the colour. The beat clock lets the low end decide where the half beat falls, which brings a fast track that had drifted half a beat off back onto the kick.",
-    "scenes": [1], "decisions": ["§58","§59","§60"], "clip": null },
-
-  { "version": "0.21.0", "tag": "v0.21", "date": "2026-09-30", "class": "scene",
-    "title": "DUST rebuilt: read the song with the sound off",
-    "body": "DUST has been overhauled against one standard: someone with the sound off should be able to roughly reconstruct the song from the picture. The swarm moves on the beat grid, the kick, snare and hat each have their own sharp voice, the stretch before a drop pulls the formation tight and the drop releases it, and each section of the track has its own formation.",
-    "scenes": [1], "decisions": ["§57"], "clip": null },
-
-  { "version": "0.20.0", "tag": "v0.20", "date": "2026-09-30", "class": "engine",
-    "title": "The beat clock moves onto the raw samples",
-    "body": "Tempo and beat phase are now worked out from the audio samples themselves, on the audio's own clock, rather than once per video frame, and filtered so one odd hit cannot yank the beat line. This is the new default: the beat holds steadier through a build-up and lands on the drop.",
-    "scenes": [], "decisions": ["§56"], "clip": null },
-
-  { "version": "0.19.0", "tag": "v0.19", "date": "2026-09-30", "class": "engine",
-    "title": "What comes next, in one place",
-    "body": "The engine keeps one queue of the events it expects: the hits the bar pattern predicts, the next bar line, the drop it sees coming. Scenes read what comes next from one place and can get there in time.",
-    "scenes": [], "decisions": ["§55"], "clip": null },
-
-  { "version": "0.18.0", "tag": "v0.18", "date": "2026-09-29", "class": "engine",
-    "title": "Seeing the drop coming, live",
-    "body": "A build-up and the drop at its end are now detected live, from a shared tab, without knowing the track in advance; NAV rides it by default and leans into the edge of the set as the drop approaches. The small head start the picture takes on the sound applies to files only: live, your eye wants it exactly on time.",
-    "scenes": [0], "decisions": ["§53","§54"], "clip": null },
-
-  { "version": "0.17.1", "tag": "v0.17.1", "date": "2026-09-29", "class": "tuning",
-    "title": "Forty milliseconds early",
-    "body": "When you play a file, the picture now runs a hair ahead of the sound, because the eye wants to see a hit a touch before the ear hears it. TORUS2 moves onto the new reactive drums.",
-    "scenes": [3], "decisions": ["§52"], "clip": null },
-
-  { "version": "0.17.0", "tag": "v0.17", "date": "2026-09-29", "class": "engine",
-    "title": "The bar remembers",
-    "body": "The engine fingerprints each bar as it goes by, so it knows a section coming back when it starts and can predict where the next bar's hits will fall. The kick, the snare and the hi-hat are heard as three separate lanes, so a scene can give each one its own move.",
-    "scenes": [], "decisions": ["§50","§51"], "clip": null },
-
-  { "version": "0.16.0", "tag": "v0.16", "date": "2026-09-28", "class": "engine",
-    "title": "Live mode, measured",
-    "body": "The delay between a sound in a shared tab and the moment the page hears it has been measured, and the clocks now run ahead by that much, so what you see lands on what you hear.",
-    "scenes": [], "decisions": ["§49"], "clip": null },
-
-  { "version": "0.15.0", "tag": "v0.15", "date": "2026-09-27", "class": "scene",
-    "title": "CHLADNI, and the engine grows ears",
-    "body": "A new scene: sand on a vibrating plate. The bass note draws the figure, every kick throws the sand into the air, a slide melts one figure into the next, and when the bass stops the sand floats free. You can also play a file from your own device now, decoded in the page and never uploaded. Under it all the engine has new ears: a sharper read of onsets, the bass note and the song's structure, tuned on a dubstep track with a map of its drops.",
-    "scenes": [11], "decisions": ["§48"], "clip": null },
-
-  { "version": "0.14.0", "tag": "v0.14", "date": "2026-09-27", "class": "scene",
-    "title": "GIELIS: twelve shapes that breathe",
-    "body": "A new scene built on the superformula: twelve nested shapes, one per note, that pinch shut on every beat and open again in the silence. Each kick sends a bump travelling round every ring, the whole nest turns once every sixteen beats, and it fills the screen as the track builds.",
-    "scenes": [10], "decisions": ["§47"], "clip": null },
-
-  { "version": "0.13.0", "tag": "v0.13", "date": "2026-09-27", "class": "tuning",
-    "title": "NAV2 bumps with the beat",
-    "body": "The Mandelbrot set now bumps with the beat: with no beat it relaxes towards a circle, and as the beat comes in it spirals into its own detail. The edge of the set is always moving with the music.",
-    "scenes": [8], "decisions": ["§46"], "clip": null },
-
-  { "version": "0.12.1", "tag": "v0.12.1", "date": "2026-09-26", "class": "tuning",
-    "title": "Thin waves and fat waves",
-    "body": "In MAXWELL the bass sends out fat waves and the highs skinny ones, and a quiet breakdown keeps rippling instead of going dark for seven seconds.",
-    "scenes": [9], "decisions": ["§45"], "clip": null },
-
-  { "version": "0.12.0", "tag": "v0.12", "date": "2026-09-26", "class": "scene",
-    "title": "MAXWELL: every sound a wave",
-    "body": "Every sound now sends out its own wave from the centre, in the colour of the note being played, so double time looks like double time. The constant carrier is gone, and so is the lattice of small circles in the background.",
-    "scenes": [9], "decisions": ["§44"], "clip": null },
-
-  { "version": "0.11.0", "tag": "v0.11", "date": "2026-09-26", "class": "tuning",
-    "title": "The wave remembers its note",
-    "body": "MAXWELL after its first viewing: quiet when there is no sound, each wave in the colour of its own note instead of two colours that swap, and a wobble that follows the bass so dubstep looks like dubstep.",
-    "scenes": [9], "decisions": ["§43"], "clip": null },
-
-  { "version": "0.10.0", "tag": "v0.10", "date": "2026-09-26", "class": "scene",
-    "title": "MAXWELL: the four equations that dance",
-    "body": "A new scene: Maxwell's equations solved live on a grid. Twelve charges sit at the twelve notes, a magnet turns one notch a beat, and every drum hit is a real ripple of light. The N key cycles through the scenes.",
-    "scenes": [9], "decisions": ["§42"], "clip": null },
-
-  { "version": "0.9.0", "tag": "v0.9", "date": "2026-09-25", "class": "scene",
-    "title": "POLYTOPE: the cage dances",
-    "body": "The four-dimensional polytopes dance: the bass shoves the cage round, the rhythm runs in beads along its edges, and the twelve keys are its colours on the circle of fifths.",
-    "scenes": [5], "decisions": ["§41"], "clip": null },
-
-  { "version": "0.8.1", "tag": "v0.8.1", "date": "2026-09-25", "class": "engine",
-    "title": "This is what it sees",
-    "body": "The front page now says what this is: I taught a computer to listen to music, and this is what it sees. Below it, one tile per scene — click one and it plays live behind the card before you share anything.",
-    "scenes": [], "decisions": ["§40"], "clip": null },
-
-  { "version": "0.8.0", "tag": "v0.8", "date": "2026-09-25", "class": "scene",
-    "title": "NAV2: the melody draws the path",
-    "body": "A second walk over the Mandelbrot set where the melody drives the camera: when the tune goes up the whole shape floats up with it, a swirl in the music curls the spiral arms tighter, and a build presses the picture against the very edge of the set until the drop breaks through.",
-    "scenes": [8], "decisions": ["§39"], "clip": null },
-
-  { "version": "0.7.0", "tag": "v0.7", "date": "2026-09-24", "class": "scene",
-    "title": "TORUS2: alive with the music",
-    "body": "The Hopf torus rebuilt to move with the music: nothing inside the nest of rings falls dark any more, every kick flashes the quiet fibres at the core, the hi-hats run a shimmer round each ring, the colour follows the key, and the whole thing turns once every sixteen beats with a bounce on the beat. It takes the old TORUS's place.",
-    "scenes": [3], "decisions": ["§36","§37"], "clip": null },
-
-  { "version": "0.6.0", "tag": "v0.6", "date": "2026-09-24", "class": "engine",
-    "title": "Retina Rave goes public",
-    "body": "Eigenwobble becomes Retina Rave and goes live at retinarave.com. It works on a phone now — put the music on a speaker and let the page listen with the microphone, with a touch bar in place of the keyboard — and there is an about page that says who made it and why.",
-    "scenes": [], "decisions": ["§34","§35"], "clip": null }
+ {
+  "version": "0.31.0",
+  "tag": "v0.31",
+  "date": "2026-10-03",
+  "class": "engine",
+  "title": "A what's-new page, and a line about what this is",
+  "body": "Retina Rave now has a what's-new page: one short entry per version, newest first, going back to the first public build, written for someone who watches rather than reads code. The front card says plainly what this is: everything runs on your device, with no account, no trackers and no ads; I built it for myself and wanted to share it. A small line under it points at what changed in the latest version. The about page grew a longer explanation of how it works and what it will never do. Nothing in the visuals or the sound analysis changed in this release.",
+  "clip": null,
+  "decisions": [
+   "§91"
+  ],
+  "scenes": []
+ },
+ {
+  "version": "0.30.0",
+  "tag": "v0.30",
+  "date": "2026-10-03",
+  "class": "engine",
+  "title": "Sure of the key, a kaleidoscope on the beat, and a record button",
+  "body": "The colour now follows the song's key only when the ears are sure of it: the bass has to agree with the harmony before the palette commits, so a wrong guess no longer flips the hue mid-track. MANDALA has been rebuilt from the ground up: the kaleidoscope turns one step per beat, kick, snare and hat each have their own voice in it, and the stretch before a drop tightens the fold and drains the colour until the drop lets go. Press R to record what you see and hear to a video file on your own device, and R again to stop; nothing is uploaded and there is no share button. DUST stays in step on tracks where the vocals carry the beat, and the code is now open under MIT with one clause of my own: if it runs at a party, I get in free, with a guest.",
+  "scenes": [
+   1,
+   2
+  ],
+  "decisions": [
+   "§83",
+   "§84",
+   "§85",
+   "§86",
+   "§87",
+   "§88",
+   "§89",
+   "§90"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.29.0",
+  "tag": "v0.29",
+  "date": "2026-10-02",
+  "class": "engine",
+  "title": "Colour follows the chord",
+  "body": "Major bars pull the palette warm, minor bars leave it alone, so the hue breathes with the chord changes instead of sitting on one key for the whole track. The tension field is now measured against the track itself over the last half minute, so a quiet intro and a wall of noise both use the whole range and a drop reads as a drop on every song.",
+  "scenes": [
+   1,
+   3,
+   5,
+   9,
+   10
+  ],
+  "decisions": [
+   "§81",
+   "§82"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.28.0",
+  "tag": "v0.28",
+  "date": "2026-10-02",
+  "class": "tuning",
+  "title": "A haze before the drop",
+  "body": "In TORUS2 the dreamy stretch before a drop now hazes the nest of rings, and the drop clears the fog in one go. DUST's hi-hat voice joins the double-time accent: when the rhythm doubles, the rim flicks harder rather than faster.",
+  "scenes": [
+   1,
+   3
+  ],
+  "decisions": [
+   "§79",
+   "§80"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.27.0",
+  "tag": "v0.27",
+  "date": "2026-10-02",
+  "class": "engine",
+  "title": "Everything since v0.15 goes live",
+  "body": "The first update to reach the site in two weeks: every change from v0.16 on arrives at once. New in this one: the engine notices when the music hesitates on a beat it will not commit to, and treats it as a build-up; DUST's double time accents the picture instead of driving it faster; CHLADNI's figure follows the bass from the very first seconds of a track instead of waiting for a sub note that is not there.",
+  "scenes": [
+   1,
+   11
+  ],
+  "decisions": [
+   "§75",
+   "§76",
+   "§77",
+   "§78"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.26.0",
+  "tag": "v0.26",
+  "date": "2026-10-01",
+  "class": "tuning",
+  "title": "Thresholds measured against the right number",
+  "body": "A statistic deep in the ears had its sign backwards, so several thresholds had been calibrated against the wrong end of the distribution; they have been re-based and hits land more honestly. CHLADNI now throws its sand by how hard the kick hit, and one of the reference tracks had its beat grid re-aligned by a few hundredths of a second.",
+  "scenes": [
+   11
+  ],
+  "decisions": [
+   "§72",
+   "§73",
+   "§74"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.25.0",
+  "tag": "v0.25",
+  "date": "2026-10-01",
+  "class": "engine",
+  "title": "Every hit has a size",
+  "body": "A kick and a snare now carry how hard they were hit, so DUST's flash ring and TORUS2's wave scale with the hit instead of firing at one size. The scenes' snare is the snare lane alone, so a hi-hat is no longer mistaken for one.",
+  "scenes": [
+   1,
+   3
+  ],
+  "decisions": [
+   "§70",
+   "§71"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.24.0",
+  "tag": "v0.24",
+  "date": "2026-10-01",
+  "class": "engine",
+  "title": "The snare the ears could not hear",
+  "body": "The snare and the rim are now heard as a rise in the two middle bands, so a rim shot that used to vanish is seen and a hi-hat that used to be called a snare is not.",
+  "scenes": [],
+  "decisions": [
+   "§69"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.23.0",
+  "tag": "v0.23",
+  "date": "2026-10-01",
+  "class": "engine",
+  "title": "True loudness, the right key, and a smoother beat",
+  "body": "The beat's nudge is now a smooth velocity profile, so the picture bounces instead of jerking, and the clock no longer wanders off a live tempo. The key the colours follow is the song's tonic: until now the engine had been reading the fifth above it, so every key-coloured scene was a fifth off. Loudness is measured the way broadcast meters do it, so a drop that comes back louder after a quiet breakdown actually reads louder on screen. The kick that hides under a bass note is found, the hi-hat fires cleanly on sparkly passages, and the quiet void before a drop is drawn as one.",
+  "scenes": [
+   1,
+   2,
+   3,
+   5,
+   6
+  ],
+  "decisions": [
+   "§61",
+   "§62",
+   "§63",
+   "§64",
+   "§65",
+   "§66",
+   "§67",
+   "§68"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.22.0",
+  "tag": "v0.22",
+  "date": "2026-09-30",
+  "class": "engine",
+  "title": "DUST pass 2, and the half beat",
+  "body": "In DUST a grain's frequency band is now its place in the formation, a repeated sound fades while a new one pops, and the harmony shows in the colour. The beat clock lets the low end decide where the half beat falls, which brings a fast track that had drifted half a beat off back onto the kick.",
+  "scenes": [
+   1
+  ],
+  "decisions": [
+   "§58",
+   "§59",
+   "§60"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.21.0",
+  "tag": "v0.21",
+  "date": "2026-09-30",
+  "class": "scene",
+  "title": "DUST rebuilt: read the song with the sound off",
+  "body": "DUST has been overhauled against one standard: someone with the sound off should be able to roughly reconstruct the song from the picture. The swarm moves on the beat grid, the kick, snare and hat each have their own sharp voice, the stretch before a drop pulls the formation tight and the drop releases it, and each section of the track has its own formation.",
+  "scenes": [
+   1
+  ],
+  "decisions": [
+   "§57"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.20.0",
+  "tag": "v0.20",
+  "date": "2026-09-30",
+  "class": "engine",
+  "title": "The beat clock moves onto the raw samples",
+  "body": "Tempo and beat phase are now worked out from the audio samples themselves, on the audio's own clock, rather than once per video frame, and filtered so one odd hit cannot yank the beat line. This is the new default: the beat holds steadier through a build-up and lands on the drop.",
+  "scenes": [],
+  "decisions": [
+   "§56"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.19.0",
+  "tag": "v0.19",
+  "date": "2026-09-30",
+  "class": "engine",
+  "title": "What comes next, in one place",
+  "body": "The engine keeps one queue of the events it expects: the hits the bar pattern predicts, the next bar line, the drop it sees coming. Scenes read what comes next from one place and can get there in time.",
+  "scenes": [],
+  "decisions": [
+   "§55"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.18.0",
+  "tag": "v0.18",
+  "date": "2026-09-29",
+  "class": "engine",
+  "title": "Seeing the drop coming, live",
+  "body": "A build-up and the drop at its end are now detected live, from a shared tab, without knowing the track in advance; NAV rides it by default and leans into the edge of the set as the drop approaches. The small head start the picture takes on the sound applies to files only: live, your eye wants it exactly on time.",
+  "scenes": [
+   0
+  ],
+  "decisions": [
+   "§53",
+   "§54"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.17.1",
+  "tag": "v0.17.1",
+  "date": "2026-09-29",
+  "class": "tuning",
+  "title": "Forty milliseconds early",
+  "body": "When you play a file, the picture now runs a hair ahead of the sound, because the eye wants to see a hit a touch before the ear hears it. TORUS2 moves onto the new reactive drums.",
+  "scenes": [
+   3
+  ],
+  "decisions": [
+   "§52"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.17.0",
+  "tag": "v0.17",
+  "date": "2026-09-29",
+  "class": "engine",
+  "title": "The bar remembers",
+  "body": "The engine fingerprints each bar as it goes by, so it knows a section coming back when it starts and can predict where the next bar's hits will fall. The kick, the snare and the hi-hat are heard as three separate lanes, so a scene can give each one its own move.",
+  "scenes": [],
+  "decisions": [
+   "§50",
+   "§51"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.16.0",
+  "tag": "v0.16",
+  "date": "2026-09-28",
+  "class": "engine",
+  "title": "Live mode, measured",
+  "body": "The delay between a sound in a shared tab and the moment the page hears it has been measured, and the clocks now run ahead by that much, so what you see lands on what you hear.",
+  "scenes": [],
+  "decisions": [
+   "§49"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.15.0",
+  "tag": "v0.15",
+  "date": "2026-09-27",
+  "class": "scene",
+  "title": "CHLADNI, and the engine grows ears",
+  "body": "A new scene: sand on a vibrating plate. The bass note draws the figure, every kick throws the sand into the air, a slide melts one figure into the next, and when the bass stops the sand floats free. You can also play a file from your own device now, decoded in the page and never uploaded. Under it all the engine has new ears: a sharper read of onsets, the bass note and the song's structure, tuned on a dubstep track with a map of its drops.",
+  "scenes": [
+   11
+  ],
+  "decisions": [
+   "§48"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.14.0",
+  "tag": "v0.14",
+  "date": "2026-09-27",
+  "class": "scene",
+  "title": "GIELIS: twelve shapes that breathe",
+  "body": "A new scene built on the superformula: twelve nested shapes, one per note, that pinch shut on every beat and open again in the silence. Each kick sends a bump travelling round every ring, the whole nest turns once every sixteen beats, and it fills the screen as the track builds.",
+  "scenes": [
+   10
+  ],
+  "decisions": [
+   "§47"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.13.0",
+  "tag": "v0.13",
+  "date": "2026-09-27",
+  "class": "tuning",
+  "title": "NAV2 bumps with the beat",
+  "body": "The Mandelbrot set now bumps with the beat: with no beat it relaxes towards a circle, and as the beat comes in it spirals into its own detail. The edge of the set is always moving with the music.",
+  "scenes": [
+   8
+  ],
+  "decisions": [
+   "§46"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.12.1",
+  "tag": "v0.12.1",
+  "date": "2026-09-26",
+  "class": "tuning",
+  "title": "Thin waves and fat waves",
+  "body": "In MAXWELL the bass sends out fat waves and the highs skinny ones, and a quiet breakdown keeps rippling instead of going dark for seven seconds.",
+  "scenes": [
+   9
+  ],
+  "decisions": [
+   "§45"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.12.0",
+  "tag": "v0.12",
+  "date": "2026-09-26",
+  "class": "scene",
+  "title": "MAXWELL: every sound a wave",
+  "body": "Every sound now sends out its own wave from the centre, in the colour of the note being played, so double time looks like double time. The constant carrier is gone, and so is the lattice of small circles in the background.",
+  "scenes": [
+   9
+  ],
+  "decisions": [
+   "§44"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.11.0",
+  "tag": "v0.11",
+  "date": "2026-09-26",
+  "class": "tuning",
+  "title": "The wave remembers its note",
+  "body": "MAXWELL after its first viewing: quiet when there is no sound, each wave in the colour of its own note instead of two colours that swap, and a wobble that follows the bass so dubstep looks like dubstep.",
+  "scenes": [
+   9
+  ],
+  "decisions": [
+   "§43"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.10.0",
+  "tag": "v0.10",
+  "date": "2026-09-26",
+  "class": "scene",
+  "title": "MAXWELL: the four equations that dance",
+  "body": "A new scene: Maxwell's equations solved live on a grid. Twelve charges sit at the twelve notes, a magnet turns one notch a beat, and every drum hit is a real ripple of light. The N key cycles through the scenes.",
+  "scenes": [
+   9
+  ],
+  "decisions": [
+   "§42"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.9.0",
+  "tag": "v0.9",
+  "date": "2026-09-25",
+  "class": "scene",
+  "title": "POLYTOPE: the cage dances",
+  "body": "The four-dimensional polytopes dance: the bass shoves the cage round, the rhythm runs in beads along its edges, and the twelve keys are its colours on the circle of fifths.",
+  "scenes": [
+   5
+  ],
+  "decisions": [
+   "§41"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.8.1",
+  "tag": "v0.8.1",
+  "date": "2026-09-25",
+  "class": "engine",
+  "title": "This is what it sees",
+  "body": "The front page now says what this is: I taught a computer to listen to music, and this is what it sees. Below it, one tile per scene — click one and it plays live behind the card before you share anything.",
+  "scenes": [],
+  "decisions": [
+   "§40"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.8.0",
+  "tag": "v0.8",
+  "date": "2026-09-25",
+  "class": "scene",
+  "title": "NAV2: the melody draws the path",
+  "body": "A second walk over the Mandelbrot set where the melody drives the camera: when the tune goes up the whole shape floats up with it, a swirl in the music curls the spiral arms tighter, and a build presses the picture against the very edge of the set until the drop breaks through.",
+  "scenes": [
+   8
+  ],
+  "decisions": [
+   "§39"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.7.0",
+  "tag": "v0.7",
+  "date": "2026-09-24",
+  "class": "scene",
+  "title": "TORUS2: alive with the music",
+  "body": "The Hopf torus rebuilt to move with the music: nothing inside the nest of rings falls dark any more, every kick flashes the quiet fibres at the core, the hi-hats run a shimmer round each ring, the colour follows the key, and the whole thing turns once every sixteen beats with a bounce on the beat. It takes the old TORUS's place.",
+  "scenes": [
+   3
+  ],
+  "decisions": [
+   "§36",
+   "§37"
+  ],
+  "clip": null
+ },
+ {
+  "version": "0.6.0",
+  "tag": "v0.6",
+  "date": "2026-09-24",
+  "class": "engine",
+  "title": "Retina Rave goes public",
+  "body": "Eigenwobble becomes Retina Rave and goes live at retinarave.com. It works on a phone now — put the music on a speaker and let the page listen with the microphone, with a touch bar in place of the keyboard — and there is an about page that says who made it and why.",
+  "scenes": [],
+  "decisions": [
+   "§34",
+   "§35"
+  ],
+  "clip": null
+ }
 ]

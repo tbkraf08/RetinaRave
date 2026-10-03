@@ -8319,3 +8319,11 @@ repeated; the why) and the three scenes its list had never gained (NAV2, GIELIS,
 ### Open (also in OPEN-ITEMS)
 The historical clips (`tools/record-old.sh`, §3.3) and the posters' directory · the user's one read of the 28 bodies · the
 DECISIONS link on a private repo · the cold read of about.html on a phone · SocialMediaManager not started.
+
+## v0.31 — tagged + pushed 2026-10-03 on the user's word ("tag push and deploy")
+§91 ships: `releases.json` (29 entries, v0.6 → v0.31), `tools/releases.js` + `tools/whatsnew.js` → `site/whats-new.html`, the card's two
+lines ("Everything runs on this device…" + "New in v0.31: … → what's new"), about.html's long form. `package.json` + `version.js` 0.31.0,
+`releases/retinarave-v0.31.html` (171 modules, 1649 KB). Receipts at the tag: `releases.js check` 0 problems, check.js 0 fail, license
+--check 174 / 0 missing, npm test exit 0, test_rec all ok (VER 0.31.0), the release from `file://` errs 0; the scene md5 lines were
+24/24 = v0.29's on the `share` branch (§91) and no scene / engine file changed since. Note: at the time of this tag the live site had
+still not picked up v0.30 (the Cloudflare Git-connected build had not landed for 30+ min; wrangler not logged in here).
