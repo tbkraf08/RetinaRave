@@ -7890,3 +7890,72 @@ is always true here (N is a jump, not a pour), so two novel bars in one phrase (
 the same N) can re-draw twice; the draw's 20 % chance of the same N is the only damping. (3) Bench: `CARD.bench(2,300)` interleaved
 with `bench(0,300)`, q .95, three pairs, the medians — base **2.880 ms / NAV 3.207 = 0.898**, after **2.444 / 2.655 = 0.920**: flat
 (+2.4 % on the ratio, inside ±10 %; the ms moved with the machine, the ratio is the number).
+
+## §86 MANDALA's three transient voices on the ears' lanes — the fold-depth pulse, the segment flash, the trap-ring glint; `voice()` / `bed()` / `hatGain()` / `tens()` lifted into `assets/math/voice.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 2; the prompt's defaults 2 and 3 taken, named below)
+
+The scene read synapse's `kick` LEVEL as the hit (the zoom `−0.25·uKick`, the shove `c += 0.03·uKick`, the centre flare) and the `hat`
+level as the ring's sparkle: a follower's shape, not the hit's (§57's finding), and no snare at all. The brief: "transients produce
+sharp, fast-attack / slow-decay impulses driven by band-limited onset detection; frequency bands map to distinct visual behaviours so
+instruments are separable". One commit; before = `../RetinaRave-m-base` (`8294d82`) and the §85 traces, after = `../RetinaRave-m86`
+(= HEAD + this step), PORT 8883–8884, one page at a time, no audible run.
+
+### The lift — `assets/math/voice.js` (receipt: s1 DUST byte-identical, again)
+
+THR / FRESH / REFRACT, `mkVoice`, `voice` (the union of the ears' event and the v2 level's edge, the lane-alone snare of §70, the
+§80 `gain`), BED / `mkBed` / `bed` (§64's swell veto), HATACC / `hatGain` (§80), WIND_BAR / `mkTens` / `tens` (§57 step 3) moved
+verbatim with their comments (210 lines; THR and FRESH exported now); `dust/voices.js` keeps RING_* / `ringR` / `ringW` / `mkSub` /
+`sub` and re-exports the rest (34 lines). Nothing in a function moved. **s1's two lines are byte-identical to `scene-md5-v029.txt`**
+in the full 24-line sweep on the m86 worktree (`PORT=8883 tools/scene-md5.sh s2`, errs [] hop 840 row 72 ×12); so are s0 and s3–s11:
+**only s2 moved — `87aca86d` (f360) / `f2c644ac` (f840)**. CONTRACTS §1.18 names both modules; `check.js` 0 fail; `npm test` OK.
+
+### MANDALA's voices — `mandala/voices.js`, exactly DUST's three calls (dust/index.js :134 / :141 / :149)
+
+| voice | the call | what it moves (shaders.js) |
+|---|---|---|
+| kick | `voice(vK, dt, kick2, kickAge, kickEvt)` — the union, lane-less, the level sizes it (**open question 3: DUST's call exactly**, so one receipt covers both scenes; `kickAmp` is declared, traced as `kAmp`, not read) | **the fold-depth pulse**: `vk.e` is `uKick` — the zoom-in `−0.25·uKick`, the shove on c, the centre flare `0.8·uKick` |
+| snare (new) | `voice(vS, dt, snare2, snareAge, snareEvt, false, snareAmp)` — the lane alone at its own size (§70) | **the segment flash (open question 2: the flash, not the flip)**: ONE of the N wedges, picked by a hash of the fire count, lit through its own trap structure `palM(0.75 + 0.3·r0) · onSeg · uSnare · (0.25 + 1.6·acc)` for the decay — additive, so it cannot jump the picture and `cuts: 'event'` stays true |
+| hat | `voice(vH, dt, hat2, hatAge, hatEvt, bed(hBed, dt, highS))` — the union with the §64 veto | **the trap-ring glint**: `vh.e` is `uHat` in `0.12 + 1.4·uBands.z + 0.8·uHat` |
+
+tc / floor start at DUST's measured 0.24 / 0.25, 0.30 / 0.25, 0.09 / 0.2 and are MANDALA's constants (`TC`, `FLOOR`) from here; the
+levels `kick2` / `snare2` / `hat2` stay the floors under the envelopes (`Math.max(…, lvl)` inside `voice()`). `feats`: − `kick hat`, +
+`kick2 kickAge kickEvt kickAmp snare2 snareAge snareEvt snareAmp hat2 hatAge hatEvt highS`. `dinfo()` + `vk vs vh ageK ageS ageH fK fS
+fH aK aS aH srcK srcS srcH hBed hSwell seg kAmp`. Hooks: `&bed=` (the shared BED object).
+
+### Measured (`tools/work/v86/voice86.py` — P / coverage / floor share / 16th-grid share against `tools/truth/<T>.kick.json` / `.snare.json` / `onsets.high` at ±50 ms, the lag = the first frame the envelope rises after a truth onset, the annulus lift per fire against the annulus's own frame noise; validated first on DUST's §80 traces, where it reproduces §70's table — snare P 0.68 / 0.80 / 0.94; the engine columns md5-identical to the before on all four windows)
+
+| window · voice | fires /s (truth) | P | cov | floor | grid | lag p50 | lift / fire (p50) vs noise |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 · kick | 3.40 (3.82) | 0.79 | 0.70 | 0.33 | 0.38 | **+13.2 ms** | lumC 7.3 vs 2.0 = **3.7×** |
+| · snare | 3.88 (3.41) | **0.68** | 0.78 | 0.00 | 0.62 | −3.6 ms | lumM 2.7 vs 2.0 = 1.3× |
+| · hat | 3.90 (3.29) | **0.74** | 0.87 | 0.37 | 0.32 | −7.7 ms | lumR 14.1 vs 2.1 = **6.6×** |
+| Vienna 24–60 · kick | 1.50 (1.58) | 0.72 | 0.68 | 0.22 | 0.74 | **+14.0 ms** | lumC 12.8 vs 4.0 = **3.2×** |
+| · snare | 1.36 (1.94) | **0.80** | 0.56 | 0.00 | 0.94 | −2.6 ms | lumM 48.8 vs 4.1 = 11.9× |
+| · hat | **2.64 (3.33) = 0.79× the truth's rate** | 0.94 | 0.74 | 0.08 | 0.94 | +0.7 ms | lumR 65.7 vs 4.0 = **16.4×** |
+| Vienna 80–110 · kick | 1.77 (1.63) | 0.58 | 0.63 | 0.23 | 0.77 | −2.6 ms | lumC 14.9 vs 2.7 = 5.5× |
+| · snare | 1.33 (1.63) | 0.47 | 0.39 | 0.00 | 0.90 | −2.6 ms | lumM 20.6 vs 3.0 = 7.0× |
+| · hat | 2.90 (2.70) | 0.79 | 0.85 | 0.20 | 0.80 | −3.8 ms | lumR 24.8 vs 3.1 = 8.1× |
+| CyborgNinja 20–50 · kick | 3.33 (3.50) | **1.00** | **0.95** | 0.31 | 0.83 | −7.5 ms | lumC 10.0 vs 3.0 = **3.3×** |
+| · snare | 3.17 (3.67) | **0.94** | 0.81 | 0.00 | 0.64 | −11.7 ms | lumM 13.6 vs 3.2 = 4.2× |
+| · hat | 7.57 (7.67) | **0.99** | 0.98 | 0.04 | 0.31 | +27.8 ms (20–80: −4.7) | lumR 16.6 vs 3.7 = **4.5×** |
+
+- **The fires are DUST's to the count** (SeeYouDrop 306 / 349 / 351, the same P, coverage, floor and grid shares as the §80 traces under
+  this ruler): the same function on the same MS — the receipt "not worse than DUST's table" holds by construction (snare P 0.80 /
+  0.68 / 0.94, hat 0.94 / 0.74 / 0.99 on Vienna 24–60 / SeeYouDrop / CyborgNinja 20–50). The kick's coverage against the §68 kick
+  truth is 0.70 / 0.68 / 0.95 — DUST's own numbers on this ruler, not the prompt's "≥ 0.9 everywhere"; the shortfall is the
+  union's (ears + v2) recall on the two tracks, a §68 matter, not the scene's.
+- **Lag**: the kick's envelope first moves +13.2 / +14.0 / −2.6 / −7.5 ms after the truth onset (p50) — inside the receipt's one frame
+  (+17 ms); the snare and hat lead it (the ears' event is early, §58). CyborgNinja 20–50's hat +27.8 ms is the 16ths at 160 BPM
+  against a 60 Hz envelope that is still decaying from the last stick (the rise is masked), DUST's own number; 20–80 reads −4.7.
+- **Legibility (§80's rule, ≥ 2× the annulus's own frame noise)**: the kick's lift of the centre 3.2–5.5× on all four, the hat's lift
+  of the rim 4.5–16.4× — against DUST's 1.9–2.8× and 0.6–5.6× on the same traces: the fold's zoom and the ring's glint carry a hit
+  further than a grain cloud does. The snare's segment flash is a WEDGE, not an annulus, so `lumM` under-reads it (1.3× on
+  SeeYouDrop's already-bright body, 4.2–11.9× elsewhere); a wedge ruler is pass 2's.
+- **No false voice in silence**: Vienna 24–60's pad swells fire the hat at 0.79× the truth's rate (receipt ≤ 1.2×), the §64 veto doing
+  there what it does for DUST.
+- Bench `CARD.bench(2,300)` / `bench(0,300)`, q .95, three pairs: **4.094 / 4.117 ms = 0.994** against §85's 0.920 (+8 %, inside ±10 %;
+  the machine was 1.5× busier — NAV's own ms went 2.66 → 4.12 — the ratio is the number; re-benched with steps 3–4 below).
+
+### The look (base vs m86 shots, SeeYouDrop 60 s and CyborgNinja 30 s, `CLOCK=1 GPU=1`): the body at a loud passage is a BLOWN-OUT
+yellow disc in v0.29 and after alike — `pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` with §63's `baseLight` at 1 clips the centre on
+every track's drop; it is inherited, step 4 is told not to touch `baseLight`, and it is logged as the first open item of this pass
+(the one knob that would give the fold its own dynamic range, "pass 2: the fold's own dynamic range on eM" in the prompt).

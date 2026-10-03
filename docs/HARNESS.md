@@ -888,6 +888,17 @@ of their size). A third kind: one that **hands the user the knob the measurement
 not a rebuild — DUST's `&nudge=<glide>,<width>` (§61) and `&bed=<ratio>,<seconds>` (§64, the hat's swell veto; `99`
 turns it off), both also callable as `CARD.REG[1].scene.hooks.<name>(…)` from the console on a live page.
 
+**MANDALA's columns (id 2, `&scene=2`; DECISIONS §85–§88).** `hooks.dinfo()` publishes the grid — `N` (the mirror count), `nN` (its
+change count), `rot` (the wedge angle, the column `nudge85.py` grades), `fold`, `nv` / `nu` / `nstep` / `noff` / `njump` / `nacc` (as
+DUST's `d_spin` set, from the shared `math/beatgrid.js` spinner), `why` (the seam on this frame: 0 / 1 phrase / 2 novel / 4 return) —
+the voices as DUST's (`vk vs vh ageK ageS ageH fK fS fH aK aS aH srcK srcS srcH hBed hSwell`, plus `seg`, the snare's lit wedge, and
+`kAmp`, `kickAmp` traced beside the kick) — the tension (`build wind rel amb tight Nt drain`) — and the accent / key (`hG hue kconf
+key kmode sat`). The rulers: `tools/work/v85/nudge85.py` (§61's metrics on `d_rot`, the design step from `d_N`, the N changes with
+reason), `tools/work/v86/voice86.py` (P / coverage / floor share / 16th-grid share / lag / annulus lift per fire for all three voices),
+`tools/work/v87/tens87.py` (`tight` at named times, `rel` on the drop frame, the per-bar `lum` before each drop, the control's
+numbers). The four windows and their WARM: `tools/work/v85/trace4b.sh <tree> <outdir> <prefix> <port>` (SeeYouDrop 20–110 WARM 20,
+Vienna 24–60 WARM 24, Vienna 80–110 WARM 40, CyborgNinja 20–80 WARM 20; it also records the tongue and key MS fields).
+
 **Grading a TRIGGER, not a lag (§64).** When the question is "does this voice fire on the right thing", precision is
 the number, not coverage: match each of the scene's own fires (a `dinfo()` fire counter — DUST's `fK` / `fS` / `fH`,
 with `aK` / `aS` / `aH` for the amplitude it fired at and `srcK` / `srcS` / `srcH` for which detector fired it) to the

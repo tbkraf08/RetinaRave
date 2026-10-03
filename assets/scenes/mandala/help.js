@@ -21,7 +21,18 @@ export const HELP = {
     bass: 'zooms in (the fold pushes harder) and sharpens the lit ring',
     bassS: 'shifts the fold constant and the lit ring\'s radius',
     midS: 'the fold\'s rotation angle and the constant\'s other half',
-    kick: 'a zoom pulse and the centre flare',
+    kick2: 'the floor under the kick\'s pulse: between hits the fold sits at the level\'s own depth',
+    kickAge: 'exactly how long ago the kick was, so the fold-depth pulse is placed between frames, not on one',
+    kickEvt: 'the ears\' own word that a kick landed: whichever of the two hears it first starts the pulse — a zoom in, a shove on the fold constant, the centre flare',
+    kickAmp: 'how hard that kick was, in dB — traced beside the pulse, not yet read by it',
+    snare2: 'the floor under the snare\'s flash',
+    snareAge: 'how long ago the snare was: the flash is placed by it',
+    snareEvt: 'a snare lights ONE of the N wedges for its decay — the segment flash, which wedge drawn from the count',
+    snareAmp: 'how big that flash is: the snare lane\'s own rise in dB',
+    hat2: 'the floor under the hat\'s glint',
+    hatAge: 'how long ago the hat was: the glint is placed by it',
+    hatEvt: 'a hat is a glint on the orbit-trap ring',
+    highS: 'while the high band is swelling (a pad, a sparkle) the ears\' hat is not a hat: no glint on a swell',
     tension: 'zooms out: more of the fold\'s outer structure',
     dropEnv: 'zooms in hard and the centre flares',
     lvl: 'the fallback brightness when the loudness stage is off',
@@ -29,12 +40,12 @@ export const HELP = {
     loudRange: 'how far that brightness travels — the track\'s own dynamic range sets the contrast',
     loudAbs: '&loud=0 (or no loudness yet): the brightness falls back to lvl exactly as before',
     high: 'the brightness of the orbit-trap ring',
-    hat: 'sparkle on the trap ring',
     alive: 'silence fades to black',
   },
   eli5: 'A kaleidoscope whose mirrors are a real Kleinian-style fold: abs() folds the plane onto itself and a '
     + 'sphere inversion turns it inside out, over and over. The music picks how many mirrors there are, how far '
-    + 'the fold pushes, and which ring of the orbit lights up — and the wedge turns one step per beat, landing on the downbeat.',
+    + 'the fold pushes, and which ring of the orbit lights up — the wedge turns one step per beat, landing on the downbeat, '
+    + 'a kick pulses the fold deeper, a snare lights one wedge, a hat glints on the ring.',
   why: 'The symmetry is exact because it comes from the map, not from smearing a mirrored copy over the picture '
     + 'afterwards. Every pixel is folded into one wedge before any shading happens, so the N arms are the same '
     + 'arm — there is no seam to hide. That is why the post-kaleidoscope is damped to 0.6 here: the scene already '

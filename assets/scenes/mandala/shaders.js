@@ -9,11 +9,13 @@ uniform float uFold;     // the fold's phase on the same angle: R's twist and c'
 uniform float uFlow;
 uniform float uBassS;
 uniform float uMidS;
-uniform float uKick;
+uniform float uKick;      // the kick VOICE (voices.js, §86): the fold-depth pulse
+uniform float uSnare;     // the snare voice: the segment flash
+uniform float uSnareSeg;  // which of the N wedges it lights
 uniform float uTension;
 uniform float uDrop;
 uniform float uLevel;
-uniform float uHat;
+uniform float uHat;       // the hat voice: the trap-ring glint
 uniform float uAlive;
 uniform float uQuality;
 uniform float uHue;
@@ -76,6 +78,11 @@ void main(){
   float sp = specM(abs(fract(a0 / TAU * N * 0.5) * 2. - 1.) * 0.9);
   col += palM(0.2 + sp) * exp(-abs(r0 - (0.3 + 0.08 * uBassS + sp * 0.2)) * mix(90., 40., uBands.x)) * (0.4 + sp * 2.);
   col += palM(0.9) * exp(-r0 * r0 * 60.) * (uKick * 0.8 + uDrop * 1.2);   // centre flare: kick + drop
+  // the snare's SEGMENT FLASH (§86): one wedge of the N, lit through its own trap structure for the voice's decay —
+  // additive, so the picture never jumps; the wedge index is taken on the same turned angle the fold uses
+  float wi = mod(floor((a0 + uRot) / seg), N);
+  float onSeg = 1. - smoothstep(0.4, 0.6, abs(wi - uSnareSeg));
+  col += palM(0.75 + r0 * 0.3) * onSeg * uSnare * smoothstep(0.03, 0.12, r0) * (0.25 + 1.6 * acc);
   col *= 1. - smoothstep(0.2, 1.25, r0);
   o = vec4(col * uAlive, 1.);
 }

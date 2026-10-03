@@ -641,6 +641,19 @@ are the scene author's rules:
   (< 0.02 on CyborgNinja's wrong G major, 0.3–0.7 on a right key with the bass under it) — so keycolour's KEYC0 0.1 … KEYC1
   0.3 gate (and the shade's `keyW`) closes on a wrong key and opens on a right one; synapse's clarity only while the ears
   have no tonic and on the fake timeline (0.8). `&kc=0` is the §62–§83 gate (synapse's clarity on every path), the A/B.
+- **The beat grid and the voices are shared math (v0.30, DECISIONS §85 / §86).** `assets/math/beatgrid.js` is §61's velocity
+  profile — `mkSpin(step)` / `spin(S, MS, dt)` (one angle, a closed form of `beatCount` / `beatPhase`: a glide plus a raised-cosine
+  accent peaking ON the beat line, `K` = GLIDE .45 / W .55 / WREF 145, the downbeat's `DOWN` .5, §78's double-time accent `ACC` on the
+  step from `tongue21` / `tongue41` / `tongueOn`, the re-seat offset `JUMP` / `BLEED`), `barIndex`, `wFor` / `gFor` / `phi` / `phiDot`,
+  and the seam trigger `mkTrigger` / `trigger(T, MS, ready)` (`'phrase'` on the 16-beat wrap, `'novel'` on `barNovelEvt`). The step is
+  per spinner (`mkSpin(step)`, `S.base`): DUST's is 2π/32 per beat, MANDALA's 2π/(4N) — one wedge per bar. `assets/math/voice.js` is
+  the transient voice — `mkVoice(tc, floor)` / `voice(v, dt, lvl, msAge, evt, veto, amp, gain)` (the union of the ears' event and the
+  v2 level's edge, THR .18 / FRESH .06 / REFRACT .06; `amp` = the lane alone at its own size, §70; `gain` = §80's accent lever), the
+  swell veto `mkBed` / `bed(v, dt, highS)` (BED R 1.05 / TC 2), `hatGain(acc)` (HATACC K .5) and the tension envelope `mkTens` /
+  `tens(v, dt, MS)` (`build` from `buildLive` τ .35, `wind` under WIND_BAR 1.7 s of `nextDropIn`, `rel` from `dropLiveEvt` τ .55).
+  A scene that reads them declares every MS field they read in its `feats` (`tools/check.js` follows a scene's `math/*` imports for
+  the static read check). `scenes/dust/grid.js` and `scenes/dust/voices.js` re-export them (DUST's own constants and its ring / sub
+  stay there); the hooks `&nudge=`, `&bed=`, `&hatacc=` move the SHARED K / BED / HATACC objects, so one knob serves every scene on them.
 
 ### 1.19 The recorder — `R`, `core/rec.js` (v0.30, DECISIONS §89)
 

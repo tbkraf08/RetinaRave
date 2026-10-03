@@ -452,3 +452,24 @@ longer destroy one). **What this leaves open:**
 - **A resize mid-take** (fullscreen) changes the video track's resolution inside one webm; Chrome's VP9 encoder follows it,
   VLC plays it, but a transcode may want `-vf scale` pinned — untested.
 
+
+**2026-10-02, §85 (MANDALA on the grid — `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 1, `2a5f4af`):** built, NOT deployed; the user has not
+read the prompt or seen the scene. Defaults taken without the user's word: one wedge per bar (`STEP = 2π/(4N)`, open question 1) — then
+capped at DUST's 2π/32 after the jerk measurement, so at N = 4 the picture lands every two bars; the fold phase `FOLD_K` 1; a phrase
+wrap does not re-draw N (the one tune — the control demanded it). Left open:
+1. **The downbeat's bigger step lands one beat late in the lifted `spin()`** — the spinner's beat line is `lead(w)` = 0.275 beats before
+   the beat, where `barIndex` is still the old bar's, so DOWN's 1.5× is beat 2's step on DUST and on MANDALA alike (the per-beat
+   histogram: one beat in four at 1.500, the wrong one). Touching it moves DUST's s1; a section of its own, with DUST's receipts re-run.
+2. **`trigger()`'s `ready` is always true for N** (a jump, not a pour): two novel bars in one phrase re-draw twice (SeeYouDrop 101.57 /
+   104.45 fired, drew the same N by the hash's 20 % chance). A one-per-phrase damper if the user's eye catches an N flap before drop 2.
+3. **The N draw at engine start sets the window's N** (CyborgNinja and Vienna 24–60 read N = 4 for the whole window because the bar
+   store called no novel bar after 20 s): the first draw is the fake-seed hash at frame 1, not a musical choice. Fine on the fake and
+   on a track from 0 s; the user's stream mode starts cold too.
+4. The user's A/B of the grid itself (stream mode, key 3): CyborgNinja 0:20–1:20 is the control — N never changes, the wedge just turns.
+
+**2026-10-02, §86 (MANDALA's voices — step 2):** built, NOT deployed. Defaults taken: the segment flash (open question 2), DUST's kick
+call exactly / `kickAmp` traced not read (3). Open: (1) **the body clips to a yellow disc at every loud passage** (v0.29 and after
+alike: `pow(acc·3.2, 2.6)·(0.35 + 1.3·uLevel)` at `baseLight` 1 — the base shots at SeeYouDrop 60 s / CyborgNinja 30 s) — pass 2's "the
+fold's own dynamic range on eM"; (2) the snare flash is a wedge the annulus ruler under-reads (`lumM` 1.3× on SeeYouDrop) — a wedge
+ruler, and the user's eye on whether one lit arm of N reads as a snare; (3) the kick's coverage 0.70 / 0.68 against the §68 kick truth
+on SeeYouDrop / Vienna is the union's recall (DUST's too), not the scene's.

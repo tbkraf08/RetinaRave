@@ -1,22 +1,25 @@
 // MANDALA (id 2) — a kaleidoscope whose mirrors are a real fold group, lifted from synapse scene 2.
 // An N-fold angular fold feeds an iterated box-fold / sphere-inversion map; an orbit trap lights the result.
 // Fullscreen fragment scene: no camera, no geometry, no CPU particles.
-// The overhaul (DECISIONS §85–§88, MANDALA-OVERHAUL-SESSION-PROMPT.md): the beat grid is grid.js (§85).
+// The overhaul (DECISIONS §85–§88, MANDALA-OVERHAUL-SESSION-PROMPT.md): the beat grid is grid.js (§85), the voices voices.js (§86).
 import { baseLight } from '../../math/loudlight.js';   // §63 phase 5: the body's brightness is TRUE loudness, not the AGC's `lvl`
 import { K as NUDGE } from '../../math/beatgrid.js';
 import { FS_MANDALA } from './shaders.js';
 import { HELP } from './help.js';
 import { WEDGE, grid, mkGrid, setN, stepFor } from './grid.js';
+import { mkVoices, voices } from './voices.js';
+import { BED } from '../../math/voice.js';
 
 const TAU = Math.PI * 2;
 
 // Everything update() reads out of MS / LOOK, held for draw(). No hidden timers: every entry traces to MS.
 const S = {
-  N: 8, rot: 0, fold: 0, flow: 0, bassS: 0, midS: 0, kick: 0, tension: 0,
+  N: 8, rot: 0, fold: 0, flow: 0, bassS: 0, midS: 0, kick: 0, snare: 0, seg: 0, tension: 0,
   drop: 0, lvl: 0, hat: 0, alive: 0, q: 0,
   hue: 0, sat: 1, bri: 1, spread: 1, invert: 0, angular: 0,
 };
 const G = mkGrid();   // the beat state: the wedge angle, N and its seams (grid.js)
+const V = mkVoices(); // the three transient voices (voices.js)
 
 const SELF = {
   name: 'mandala',
@@ -27,7 +30,8 @@ const SELF = {
   // beatgrid.js's accent21 inside spin(), §78 — the static read check cannot see into math/, friction log)
   feats: ['arc', 'regularity', 'onsetRate', 'seed', 'beatCount', 'beatPhase', 'bpm', 'barPos', 'phrase16Pos',
     'barNovelEvt', 'barReturnEvt', 'tongue21', 'tongue41', 'tongueOn', 'flow', 'bass', 'bassS',
-    'midS', 'kick', 'tension', 'dropEnv', 'lvl', 'high', 'hat', 'alive', 'loudRel', 'loudRange', 'loudAbs'],
+    'midS', 'kick2', 'kickAge', 'kickEvt', 'kickAmp', 'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'hat2', 'hatAge', 'hatEvt', 'highS',
+    'tension', 'dropEnv', 'lvl', 'high', 'alive', 'loudRel', 'loudRange', 'loudAbs'],
   // 'event': the only discontinuity is N, the fold count, and it moves only on a seam of the music (grid.js)
   cuts: 'event',
 
@@ -55,7 +59,12 @@ const SELF = {
     S.flow = MS.flow;
     S.bassS = MS.bassS;
     S.midS = MS.midS;
-    S.kick = MS.kick;
+    // the hits: three voices on the ears' lanes (voices.js) — the level `kick` / `hat` no longer is the hit (§86)
+    voices(V, dt, MS, G.N);
+    S.kick = V.vK.e;
+    S.snare = V.vS.e;
+    S.seg = V.seg;
+    S.hat = V.vH.e;
     S.tension = MS.tension;
     S.drop = MS.dropEnv;
     // §63 phase 5: `uLevel` is the BODY's brightness and nothing else — `palM(...) * pow(acc*3.2, 2.6) * (0.35 + 1.3*uLevel)`
@@ -65,7 +74,6 @@ const SELF = {
     // uniforms on their own terms — the trap ring `0.12 + 1.4*uBands.z + 0.8*uHat`, the centre flare
     // `uKick*0.8 + uDrop*1.2` — so the split needs no new term here. `&loud=0` restores `MS.lvl` bit for bit.
     S.lvl = baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, MS.lvl);
-    S.hat = MS.hat;
     S.alive = MS.alive;
     S.q = this.ctx.Q.q;
     S.hue = m.hue;
@@ -90,6 +98,8 @@ const SELF = {
     gl.uniform1f(pr.u('uBassS'), S.bassS);
     gl.uniform1f(pr.u('uMidS'), S.midS);
     gl.uniform1f(pr.u('uKick'), S.kick);
+    gl.uniform1f(pr.u('uSnare'), S.snare);
+    gl.uniform1f(pr.u('uSnareSeg'), S.seg);
     gl.uniform1f(pr.u('uTension'), S.tension);
     gl.uniform1f(pr.u('uDrop'), S.drop);
     gl.uniform1f(pr.u('uLevel'), S.lvl);
@@ -133,9 +143,20 @@ const SELF = {
       G.sp.base = stepFor(G.N || 8);
       return JSON.stringify(WEDGE);
     },
+    // &bed=<ratio>,<seconds> (and hooks.bed(r, tc)): the hat voice's swell veto (§64 task 1) — the SAME BED object as
+    // DUST's (math/voice.js). '' restores the measured default 1.05,2; 99 turns it off outright.
+    bed(r, tc) {
+      const a = typeof r === 'string' ? r.split(',') : [r, tc];
+      if (a[0] !== '' && a[0] !== undefined && a[0] !== null && +a[0] >= 1 && +a[0] <= 99) BED.R = +a[0];
+      if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] >= 0.05 && +a[1] <= 60) BED.TC = +a[1];
+      return JSON.stringify(BED);
+    },
     dinfo() {
       return { N: G.N, nN: G.nN, rot: G.rot, fold: G.fold, nv: G.sp.v, nu: G.sp.u, nstep: G.sp.step, noff: G.sp.off,
-        njump: G.sp.jumps, nacc: G.sp.acc, why: G.why };
+        njump: G.sp.jumps, nacc: G.sp.acc, why: G.why,
+        vk: V.vK.e, vs: V.vS.e, vh: V.vH.e, ageK: V.vK.age, ageS: V.vS.age, ageH: V.vH.age,
+        fK: V.vK.n, fS: V.vS.n, fH: V.vH.n, aK: V.vK.amp, aS: V.vS.amp, aH: V.vH.amp,
+        srcK: V.vK.src, srcS: V.vS.src, srcH: V.vH.src, hBed: V.hBed.s, hSwell: V.hSwell ? 1 : 0, seg: V.seg, kAmp: V.kAmp };
     },
   },
 
