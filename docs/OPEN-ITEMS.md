@@ -436,15 +436,17 @@ longer destroy one). **What this leaves open:**
   channel now carries §84's scale (0.3–0.7 right, < 0.02 wrong) instead of the mode-clarity one; not re-tuned, the user's eye
   (§75's open items on CHLADNI stand).
 
-**The recorder (`R`, v0.30, DECISIONS §89, built 2026-10-02 on the `rec` branch) — open after the build:**
-- **The stop rule did not fire** (SOCIAL-PLAN §2.2: "the compositor halves the frame rate at 1080p"): headless GPU at 1920×993,
-  TORUS2 forced, 60 fps idle → 47 fps recording (0.78×), the compositor's own share ~1.3 ms/frame; the rest is the VP9 encode.
-  `Q.q` sinks to 0 while a take runs (the quality knob absorbs the encode), so a clip is rendered at the low tier on this
-  machine — the user's headed number decides whether that is acceptable or the engine should pin `q` during a take. The
-  alternative path (a watermark quad in `post.js`, `captureStream` on the WebGL canvas) saves the 1.3 ms, not the encode.
-- **ffmpeg is not installed** (`sudo apt install ffmpeg`): `tools/clip.js` is built and dry-run only; the ffprobe receipt
-  (60 fps / yuv420p / AAC) and the three outputs are the user's.
-- **The headed receipts** (HARNESS "Recorder"): 30 s tab capture + 30 s file, Chrome + VLC with sound, the watermark by eye.
+**The recorder (`R`, v0.30, DECISIONS §89; the quality pass §92, 2026-10-03) — open:**
+- **Closed by §92:** the `q` tier during a take is held (`&recq=`, default 0.75; `off` = the old governor), the encoder at 30 Mb/s
+  (`&recbps=`, `&recmime=`), the sidecar inside the webm (one download; the user's three takes had none beside them), `clip.js` without
+  a sidecar, ffmpeg installed (the user, 2026-10-03). Still unseen: the user's `q` at a real take (the next take's sidecar has `q0`), and
+  whether 0.75 / 30 Mb/s holds 60 fps on the user's loaded desktop — the sidecar's `frames / durationS` says.
+- **A fullscreen take on the 5120×1440 screen renders 2560×720** (`gl.js`'s long-edge cap): a 21:9 clip of 720 lines, soft by construction.
+  A per-take render size (lift the cap while recording) is a §92 follow-up if the user records fullscreen on that screen.
+- **The stop rule's alternative** (a watermark quad in `post.js`, `captureStream` on the WebGL canvas) saves the compositor's ~1.3 ms,
+  not the encode: not built, the measurement says the encoder is the cost.
+- **The headed receipts** (HARNESS "Recorder"): 30 s tab capture + 30 s file, Chrome + VLC with sound, the watermark by eye, one file per
+  stop, the COMMENT tag in VLC's media information.
 - **Phones:** no tap target for the recorder (MediaRecorder on mobile Chrome is a different animal; SOCIAL-PLAN §2.1).
 - **The offline deterministic render** (`tools/render.js`, SOCIAL-PLAN §2.7) stays deferred on the user's word; the sidecar's
   `scenes[]` + `started` are enough to re-render a stretch later.

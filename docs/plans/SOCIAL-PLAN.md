@@ -101,7 +101,9 @@ the muted gain and `ctx.destination` are untouched. File mode's shimmed analyser
 here: the bus is upstream of them.
 
 ### 2.4 Container, name, sidecar
-`MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus', videoBitsPerSecond: 12e6 })`, fallback vp8. Chunks
+`MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus', videoBitsPerSecond: 12e6 })`, fallback vp8. **v0.32 (DECISIONS §92):
+30e6 by default (`&recbps=`), the codec by `&recmime=` (vp9 / vp8 / h264 / av1 / mp4), the quality tier held at 0.75 for the take
+(`&recq=`), the clip scaled by `&recsize=`.** Chunks
 every 2.5 s into memory (a 90 s clip at 12 Mb/s is ~135 MB — fine; a 10-minute set is 900 MB and still fine on a
 desktop; a toast warns at 5 minutes). On stop: one Blob → `<a download>`. Name:
 `retinarave-v0.29-torus2-2026-10-02T14-03-22.webm` (version, the scene at the START, the start stamp). Sidecar
@@ -111,13 +113,18 @@ desktop; a toast warns at 5 minutes). On stop: one Blob → `<a download>`. Name
 { "app": "retinarave", "version": "0.29.0", "engineMd5": null,
   "started": "2026-10-02T14:03:22.418Z", "durationS": 42.3,
   "source": "capture|mic|file|demo", "track": "<file name if file mode, else null>",
-  "size": [1920, 1080], "fps": 60,
+  "size": [1920, 1080], "render": [1920, 1080], "dpr": 1, "fps": 60, "frames": 2538,
+  "mime": "video/webm;codecs=vp9,opus", "bps": 30000000, "q": 0.75, "q0": 0.43,
   "scenes": [{ "t": 0, "id": 3, "name": "torus2" }, { "t": 18.2, "id": 1, "name": "dust" }],
-  "flags": { "lead": true, "shade": true }, "ua": "<navigator.userAgent>" }
+  "flags": { "lead": true, "shade": true, "clock": "pcm", "map": true }, "ua": "<navigator.userAgent>" }
 ```
+(v0.32 added `render` the WebGL canvas's size, `dpr`, `frames` the compositor's count, `mime`, `bps` asked of MediaRecorder, `q` the tier
+held — null when `&recq=off` — and `q0` the governor's q at R.)
 
-Two downloads per stop is one Chrome "allow multiple downloads" prompt the first time; acceptable (the alternative, a zip,
-needs a library the bundle does not have). `url` flags: `&rec=0` hides the key (a kiosk), nothing else.
+**The sidecar rides inside the webm since v0.32 (§92)**: a Matroska Tags element before the first Cluster (`COMMENT` = the JSON) —
+`ffprobe -show_entries format_tags` prints it, `tools/clip.js` and `tools/rec_probe.js` read it. One download per stop: the plan's two
+files met Chrome's "allow multiple downloads" prompt and the user's three takes had no `.json` beside them. `&recjson=1` restores the
+second file. `url` flags: `&rec=0` hides the key (a kiosk), `&recq= &recbps= &recmime= &recsize= &recjson=` above.
 
 ### 2.5 Public surface (help, landing, about)
 `help.js` key table gets `['R', 'record what you see and hear to a file on this device — nothing is uploaded; the music you

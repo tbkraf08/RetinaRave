@@ -665,10 +665,15 @@ Not a scene contract: a core hook and a key, named here because both touch what 
   cleared), burns the watermark `@retinarave · <scene> · v<ver>` in and feeds `captureStream(60)`. **With `REC.on` false
   it returns on its first line** — no GL call, no DOM, no allocation — so the CLOCK=1 md5 sweep is the receipt that the
   engine and every scene are untouched by it. Nothing in the engine or a scene may read or write `REC`.
+- **The tier during a take (v0.32, §92).** `quality.js` carries `Q.hold` (null idle) and `pinQ(q)`: while a take runs the controller
+  sets `q` and its ceiling back to the pin at every window (`&recq=`, default 0.75; `hold` freezes the governor's value; `off` frees it).
+  Only `rec.js` calls `pinQ()`; a scene never reads `Q.hold`. With `hold` null the controller's path is byte-for-byte v0.29's — the
+  md5 sweep is the receipt. The clip is the canvas's backing size (`G.PW × G.PH`) unless `&recsize=<height>` scales it down.
 - **The key.** `R` toggles a take (`hud.js`; the help row of record is `help.js` `keys()`, so the landing hint shows `R record`);
   `&rec=0` removes the row and makes the key inert (`REC.hidden`). The red dot (`#recdot`), the toasts, the HUD and the card
   are DOM and are never in the clip. The file: `retinarave-v<ver>-<scene at the start>-<stamp>.webm` + the sidecar `.json`
-  (SOCIAL-PLAN §2.4), through the browser's download — **there is no upload path, and none may be added.**
+  (SOCIAL-PLAN §2.4), through the browser's download — **there is no upload path, and none may be added.** Since v0.32 the sidecar
+  rides INSIDE the webm (a Matroska Tags element before the first Cluster, `COMMENT` = the JSON; `&recjson=1` downloads the `.json` too).
 - **The version.** `core/version.js` (`VER`) is the page's one version source — the watermark, the file name, the sidecar.
   The tag step bumps it with `package.json` (`tools/test_rec.js` fails when they differ).
 - **The audio tap.** `AU.rec = ctx.createMediaStreamDestination()` is connected to `AU.bus` once the AudioContext exists:

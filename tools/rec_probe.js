@@ -189,7 +189,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.log(`${e.file}: ${e.bytes} bytes · ${e.durationS} s · ${e.clusters} clusters · ${e.mbps} Mb/s total (video ${e.videoMbps} Mb/s, audio ${e.audioKbps} kb/s ${e.audio})`);
     console.log(`video ${e.codec} ${e.size[0]}x${e.size[1]} · ${e.frames} frames = ${e.fps} fps · ${e.keyframes} keyframes · per-second Mb/s ${e.perSecMbps.join(' ')}`);
     if (out.play) {
-      const p = out.play, laps = p.rows.map((r) => r.lap).sort((a, b) => a - b), med = laps[laps.length >> 1];
+      const p = out.play, medOf = (k) => p.rows.map((x) => x[k]).sort((a, b) => a - b)[p.rows.length >> 1], laps = p.rows.map((x) => x.lap).sort((a, b) => a - b), med = medOf('lap'), r14 = medOf('r14'), r18 = medOf('r18');
       console.log(`decoded ${p.size[0]}x${p.size[1]} · ${p.decoded} frames presented, ${p.dropped} dropped · ${p.rows.length} samples every ${STEP} s · lap median ${med} min ${laps[0]} max ${laps[laps.length - 1]} · r14 median ${r14} · r18 median ${r18}`);
       for (const r of p.rows) console.log(`  t ${r.t.toFixed(2).padStart(7)}  lum ${String(r.lum).padStart(6)}  lap ${String(r.lap).padStart(9)}  l4 ${String(r.l4).padStart(8)}  l8 ${String(r.l8).padStart(8)}  r14 ${r.r14}  r18 ${r.r18}`);
     }

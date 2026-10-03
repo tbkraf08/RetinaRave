@@ -8327,3 +8327,96 @@ lines ("Everything runs on this device…" + "New in v0.31: … → what's new")
 --check 174 / 0 missing, npm test exit 0, test_rec all ok (VER 0.31.0), the release from `file://` errs 0; the scene md5 lines were
 24/24 = v0.29's on the `share` branch (§91) and no scene / engine file changed since. Note: at the time of this tag the live site had
 still not picked up v0.30 (the Cloudflare Git-connected build had not landed for 30+ min; wrangler not logged in here).
+
+## §92 the recorder's quality — the user's take measured, the tier held for a take, the encoder at 30 Mb/s, the sidecar inside the webm (2026-10-03, one worker on main; the user: "the recording quality isn't very good", a look remark = a retune request)
+
+Four commits on main, in order: `9c77b63` the measuring tool · `79f789d` the held tier · `711d7b7` the encoder, the clip size, the
+embedded sidecar, `clip.js` without a sidecar · this note. **Not tagged, not pushed, not deployed** (v0.32 is the user's word). No
+audible run; the dev server on 8765 untouched; this worker's pages on 8951–8956, killed by port. ffmpeg landed on the machine mid-task
+(the user's install): the EBML walk stays the Chrome-side path, ffprobe confirms it.
+
+### The user's take, measured (`tools/rec_probe.js`, then ffprobe)
+
+`~/Downloads/retinarave-v0.31-nav-2026-10-03T13-23-24.webm`: **VP9 1282×1309** (the user's window, not fullscreen; `dpr` 1 — the
+compositor records the WebGL canvas's backing size, so this IS what the engine rendered into), 3.38 s, **202 frames = 59.7 fps**
+(ffprobe `60000/1001`, 202 frames; 0 dropped on playback), **11.5 Mb/s realised of the 12 asked — the cap bound every second
+(11.2 / 12.0 / 11.7)**, opus 130 kb/s. Two older takes beside it (`v0.29-dust`, 71 s, 4276 frames, 11.25 Mb/s; `v0.29-gielis`, 6.7 s)
+are the same shape. **None of the three has its `.json` sidecar beside it** — the second download of a stop never landed (Chrome asks
+"download multiple files?" once per site, the user never saw / allowed it) — so the user's `Q.q` at the take is not on record.
+
+The sharpness measure (no ffmpeg needed, `rec_probe.js` LAPVAR): a frame → luma → the Laplacian variance at 1× (`lap`) and on the 2× /
+4× / 8× box-downsampled frame; **r14 = lap/l4 and r18 = lap/l8** are the numbers that survive a change of content — an upscaled
+soft render, or a starved encoder, has little 1-px energy against what it keeps at 4–8 px. The same NAV frame live (CLOCK=1 frame 420,
+1920×993, PNG): **q 1 (scale 1, iter 264): lap 206, r14 0.591, r18 0.370 · q 0 (scale 0.375, iter 64): lap 140, r14 0.389, r18 0.210**
+— the tier drop alone takes a third of the fine detail. **The user's frame: lap 64, r14 0.142, r18 0.081** (median over the take 0.14 /
+0.08) — a quarter of the live q=1 frame, below even the live q=0 frame: the frame is a low-tier render AND VP9 at a binding 12 Mb/s on top
+(`tools/work/rec/retinarave-v0.31-nav-…-frame.jpg`: the escape bands show the 0.375× staircase, the filaments are smeared). The 71 s
+DUST take (36 frames sampled every 2 s): **r14 0.18, r18 0.148, lap median 28** — the same signature over a whole track (DUST is a
+particle scene, so its tier drop is the point count 20k vs 150k rather than a scale; the encoder's smear is the same).
+
+### The causes, with numbers (headless `GPU=1 WIN=1920,1080` → canvas 1920×993, NAV, the demo synth, 10 s takes)
+
+| | v0.31 (q free, VP9 12 Mb/s) | measured |
+|---|---|---|
+| (a) the tier | on the user's desktop `Q.q` sinks under the encoder's load (§89 saw 0.53 → 0.00 on TORUS2); headless today NAV held 0.43 → 0.55 (the machine was idle) — the sink is load-dependent, the user's is not on record (no sidecar) | q 0 renders at 0.375× = 720×372 of a 1920×993 canvas, upscaled: r14 0.59 → 0.39 on the same frame |
+| (b) the encoder | VP9 realtime at 12 Mb/s on 1.9 MP × 60: the cap binds every second; the encoded frame keeps r14 ≈ 0.35 whatever the tier (q 1: 0.374 · hold 0.43: 0.41 · free: 0.346) — **the encoder is the floor at 12** | 30 Mb/s: r14 0.40–0.46, +25 %; the encode no slower (loop 57 vs 55.6 fps) |
+| (c) the size | the compositor = `G.PW × G.PH` = CSS × min(dpr, 1.5), long edge ≤ 2560 (`gl.js`): the take IS the backing size, not 1× CSS on a 2× screen. The user's 1282×1309 is their window at dpr 1. Fullscreen on the user's 5120×1440 screen renders 2560×720 (the cap) — a 21:9 clip of 720 lines | not a cause here; `&recsize=` scales the clip down, never up |
+| (d) frames | 59.7 fps encoded, 0 dropped: no judder. MediaRecorder stamps frames at the rAF time in whole ms (`time_base 1/1000`, intervals 13–20 ms: 151× 17, 116× 16, 56× 18 …), so ffprobe's `r_frame_rate` on a take is a guess — `60000/1001` on two takes, **`120/1` on the DUST take** — `clip.js`'s `-r 60` makes the clip CFR | not a cause |
+
+### What changed (`rec.js` 165 → 222 lines, `quality.js` +9, `clip.js`, `test_rec.js`, the new `rec_probe.js`)
+
+- **The tier is held for a take — `&recq=`** (the §89 open item). `quality.js`: `Q.hold` (null = the controller is free) and `pinQ(q)`;
+  the controller still measures (`Q.fps`) but sets `q` and its ceiling back to the pin at every window and derives `iter` / `scale` from it.
+  `rec.js` pins at R, restores `q0` at stop. **Default 0.75** (scale 0.875, tier 2); `&recq=1` the top; `&recq=hold` freezes q where the
+  governor had it; **`&recq=off` = v0.31**. Idle: `hold` null, the controller's path unchanged — the md5 sweep is the proof.
+- **The encoder — `&recmime=` / `&recbps=`.** `CODECS` by name (vp9 / vp8 / h264 / av1 / mp4 = `video/mp4;codecs=avc1.640028,opus`, the
+  file then `.mp4`), `ORDER` vp9 → vp8 → h264 for the default (unchanged). **Default 30 Mb/s** (was 12). The ladder (NAV, top tier, 10 s;
+  encoded fps / realised Mb/s / r14 / r18): vp9 12: 48.8 / 10.6 / 0.350 / 0.195 · **vp9 20: 56.5 / 16.2 / 0.372 / 0.216 · vp9 30: 56.1 /
+  23.2 / 0.400 / 0.243** · h264 12: 52.3 / 10.6 / 0.352 / 0.217 · h264 20: 54.6 / 18.2 / 0.403 / 0.254 · h264 30: 55.0 / 27.4 · av1 12:
+  55.5 / 9.7 / 0.441 / 0.274 · av1 20: 53.4 / 15.5 / 0.380 / 0.226 · vp8 20: 48.3 / 20.5 / 0.433 / 0.294. No hardware encode on this
+  Linux Chrome (h264 is OpenH264, av1 libaom realtime — both software, both ~the same fps as VP9 on 28 cores); AV1 keeps the most
+  detail per bit but plays on fewer devices and costs more on a weaker machine, so VP9 stays the default and `&recmime=av1` is the knob.
+  The tier at 30 Mb/s: q 1 → 54.6 fps encoded, 0.384 / 0.245 · **0.75 → 57.6 fps, 0.413 / 0.271** · hold (0.39) → 60 fps, 0.459 / 0.308
+  (the metric rewards the lower tier here: less fine content for the encoder to smear; the eye saw the 0.375× staircase in the user's frame,
+  so the pin is a floor on the render, not a sharpness maximiser). **0.75 is the ≥ 55 fps pick** on this machine.
+- **The clip's size — `&recsize=<height>`**: the compositor scaled to that height (width by the aspect, both even), the watermark with it;
+  `recsize=720` on 1920×993 → 1392×720 at 59.9 fps. Default: the canvas (backing) size, as before.
+- **The sidecar inside the webm — one download.** `finish()` splices a Matroska **Tags** element (`Tags > Tag > SimpleTag { TagName
+  COMMENT, TagString <the JSON> }`) before the first Cluster of the first chunk (an EBML walk of ~200 bytes). `ffprobe -show_entries
+  format_tags` prints `tag:COMMENT={…}`, ffmpeg decodes the file clean (357/357 frames), Chrome plays it (`test_rec`'s frame grab,
+  `rec_probe`'s playback). A tag appended AFTER the clusters is NOT seen by ffprobe (tested) — before the first cluster it is. `&recjson=1`
+  downloads the `.json` too (v0.30's two files; Chrome asks once). If the splice finds no cluster the `.json` download is the fallback.
+  New sidecar fields: `render [G.PW, G.PH]`, `dpr`, `bps`, `q` (the pin, null = free), `q0` (the governor at R); `REC.last.embedded`.
+- **`clip.js` without a sidecar**: `sidecarOf(file)` — the `.json` beside it, else the embedded tag (`rec_probe.js`'s `walk`), else one
+  derived from the name (`retinarave-v<ver>-<scene>-<stamp>`) + the EBML walk (duration, size, frames), written to `meta.json` with
+  `sidecar: null, derived: 'name+ebml'`; the bundle line says which (`sidecar derived | embedded | json`). `clip.js` on the user's take:
+  `2026-10-03T13-23-nav-v0.31 (sidecar derived · 3.383 s)`.
+- **`tools/rec_probe.js`** — HARNESS "Recorder" has the usage: a take's EBML (codec, size, frames, fps, Mb/s per second, the embedded
+  sidecar), its frames played headless through LAPVAR, and `--take` (a headless take with the `Q.q` trace, the live frame scored before
+  and after, the blob walked and played). `serve.js` serves `.webm`.
+
+### Before → after (headless NAV 1920×993, 10 s, the default of each build)
+
+| | v0.31 (`711d7b7` with `&recq=off&recbps=12`) | v0.32 default (`recq=0.75`, vp9 30 Mb/s) |
+|---|---|---|
+| `Q.q` during the take | 0.43 → 0.55 (free; sinks to 0 under desktop load, §89) | 0.75 flat (scale 0.875) |
+| loop / encoded fps | 60.0 / 60.0 | 60.0 / 59.9 |
+| realised Mb/s | 10.8 | 24.0 |
+| encoded r14 / r18 | 0.346 / 0.197 | **0.425 / 0.275** |
+| downloads per stop | 2 (the second swallowed by Chrome's prompt) | 1, the sidecar inside |
+
+### Receipts
+check.js 0 fail (171 modules; rec.js 222 lines) · npm test exit 0 · `test_rec.js` all ok (41 checks: the pin during the take, the release
+after, ONE download, the embedded sidecar == `REC.last.sidecar` byte for byte, the new fields) · **the CLOCK=1 md5 sweep at `711d7b7`
+(worktree, `PORT=8955`): 24/24 lines = `scene-md5-v029.txt`** (and 24/24 at `79f789d`) — the recorder idle and `Q.hold` null leave the
+engine where v0.29 left it · license headers on `rec_probe.js`.
+
+### What the user sees
+Press `R` on the dev server (any scene; NAV or DUST with a track, where the remark came from) — the HUD's `q` line reads 0.75 / scale
+0.875 for the length of the take and springs back after; one file lands (no second prompt); the clip is ~2× the bytes (3 MB/s); the
+filaments in NAV and the kick lane in DUST keep their edges. The old look: `#recq=off&recbps=12&recjson=1`.
+
+### Open (also in OPEN-ITEMS)
+The user's `q` at a real take is still unseen (the next take's sidecar carries `q0`) · the headed receipts (HARNESS "Recorder": Chrome +
+VLC with sound, the watermark by eye, now also: the embedded tag in VLC's metadata) · a fullscreen take on the 5120×1440 screen is 2560×720
+by `gl.js`'s long-edge cap · phones · the offline render (§2.7).
