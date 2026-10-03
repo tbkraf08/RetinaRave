@@ -313,7 +313,13 @@ export const KEY_TRACKS = {
   // not edited until the user's ear confirms (the cue: the bass under the drop at 2:28 is home).
   Malicious:       { pc: 0, minor: 1, syn: [0, 1, 50], expect: true },
   WhoLikesToParty: { pc: 2, minor: 0, syn: [11, 1, 100], expect: true },
-  Vienna:          { pc: 3, minor: 1, syn: [3, 1, 100], expect: true, conf: ['>=', 0.3] },
+  Vienna:          { pc: 3, minor: 1, syn: [3, 1, 100], expect: true, conf: ['>=', 0.3] },  // IBelongHere (Set Mo feat. Woodes, added 2026-10-02, docs/truth/IBELONGHERE-2026-10-02.md): A MINOR by the independent
+  // KS + bass histogram (key-truth.py: Am .598 / Dm .582 — a FIFTH pair, margin 0.017; bass A 51 %, the grooves' A1 pedal 54.8 Hz
+  // held 49 %), Dm by trackmap's whole-track KK (.760, conf .178) and by the ears (Dm 80 % of frames 20-100 s, tonicConf p50
+  // 0.13 — under the 0.3 gate, so modeShade does not open on it); the breakdowns 50-65 / 113-130 s sit on a D pedal and read Dm
+  // locally. `syn` is key-ears.mjs's node read (synapse Am, keyConf 0.97 — its saturated scale), not a page read. The user's
+  // ear decides the fifth; `expect: false` records the ears' Dm as the known read until then.
+  IBelongHere:     { pc: 9, minor: 1, syn: [9, 1, 100], expect: false },
 };
 const PCN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const nameOf = (pc, mi) => (pc < 0 ? '--' : PCN[pc]) + (mi ? 'm' : 'M');

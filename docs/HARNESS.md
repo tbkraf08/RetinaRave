@@ -1066,6 +1066,11 @@ python3 tools/truth/clicktrack.py Comptine --every=4 --from=0 --to=60           
 ```
 Comptine (Tiersen, solo piano, no drums — added 2026-10-02) is the case that needs it: trackmap locked 215 BPM onto the left
 hand's broken-chord notes; the felt pulse is an octave or two below, to be settled by ear.
+IBelongHere (Set Mo feat. Woodes, deep house with a sung intro and sung breakdowns — added 2026-10-02, `docs/truth/IBELONGHERE-2026-10-02.md`):
+118.00 BPM (`bpm_grid.bpm` 117.45 is the DP list's hop-median, as Malicious's §72 `tempo_note`); the `beats` list is on the audio
+(three rulers −2.2 / +1.6 / +0.3 ms, hand montage +0.1), bar line = the kick's 1 (21 dB vs 10–13 on 2/3/4, drops 96/128/96 beats
+apart), key Am by bass vs Dm by the ears — the user's ear decides; the sixth row of `test_ears.js` KEY_TRACKS (`expect: false`).
+`python3 tools/truth/clicktrack.py IBelongHere --drops --sections --from=0 --to=75` + `--every=4` are the two WAVs the user has.
 The user listens from the session: copy every render to `~/Music/RetinaRave-clicks/` (not the tracks folder) and hand them the
 line `! paplay ~/Music/RetinaRave-clicks/<name>.wav` — one per file, in listening order.
 
