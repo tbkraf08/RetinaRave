@@ -1,6 +1,6 @@
 # Next session — Retina Rave (written 2026-10-02 late, updated 2026-10-03: **v0.30 tagged + deployed** `70e4c2e`)
 
-**State:** **v0.30 DEPLOYED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; retinarave.com serves §83–§90 + the licence) — the user said
+**State:** **v0.30 TAGGED + PUSHED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; **the live site had not picked it up — see §1**) — the user said
 "tag and deploy" BEFORE running the gates in §0, so every §0 item is now a retune input on the live build, not a pre-deploy gate. Today's session landed, each with receipts in DECISIONS: **§83** accept.sh re-based at v0.29 (`ACC` variable,
 `tools/accept/v0.29/scene-md5-v029.txt`, all 12 ids guarded) + the fake timeline's deterministic kick/snare/hat lattice (the md5 sweep
 now sees the voices: s1 s3 s5 s9 s10 s11 moved once, the baseline re-recorded) · **§84** `tonicConf` (KS margin × sub-note histogram)
@@ -52,7 +52,10 @@ on any new public file; memory `project_session_2026_10_02_pm` is the running lo
 
 ### 1. ~~Tag v0.30~~ — done 2026-10-03 (`70e4c2e`; the recipe that worked: bump `package.json` + `assets/core/version.js`, `node tools/bundle.js
 releases/retinarave-vX.html`, `npm run build`, check / license --check / npm test / test_rec (VER == package.json) / the release from
-`file://` errs 0, a DECISIONS note, commit, `git tag -a`, `git push origin main --tags`; live within ~2 min).
+`file://` errs 0, a DECISIONS note, commit, `git tag -a`, `git push origin main --tags`). **Live NOT confirmed:** 18 min after the push
+retinarave.com still served v0.29 byte-for-byte and `/LICENSE` was 404 — the Cloudflare Git-connected build did not land (a clean clone of
+`main` builds fine); wrangler is not logged in on this machine. Check the dashboard (Workers & Pages → retinarave → Builds) or
+`npx wrangler login` + `npm run build && npx wrangler deploy`.
 
 ### 2. Share phase 2 + 3 (→ v0.31; `docs/plans/SOCIAL-PLAN.md` §3–§4 is the spec, the user's answers are in §1 — do not re-ask)
 `releases.json` + `tools/whatsnew.js` → `site/whats-new.html` at `npm run build` (static, per-version anchors, click-to-load YouTube
