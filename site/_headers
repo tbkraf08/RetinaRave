@@ -4,6 +4,8 @@
   Cache-Control: public, max-age=300
 /about
   Cache-Control: public, max-age=300
+/whats-new
+  Cache-Control: public, max-age=300
 /LICENSE
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=300

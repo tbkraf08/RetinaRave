@@ -49,7 +49,13 @@ const server = http.createServer((req, res) => {
     if (!err) return send(file, data);
     // what `npm run build` copies to the dist root (site/: favicon, thumbs/…) is served from site/ here, so dev == deploy for those paths (v0.8.1)
     const alt = path.join(ROOT, 'site', p);
-    fs.readFile(alt, (err2, d2) => { if (err2) { res.writeHead(404); return res.end('not found: ' + p); } send(alt, d2); });
+    fs.readFile(alt, (err2, d2) => {
+      if (!err2) return send(alt, d2);
+      // an extensionless page (/about, /whats-new) is site/<p>.html, as Cloudflare's static assets serve it on the deploy (v0.31)
+      const page = path.extname(p) ? null : alt + '.html';
+      if (!page) { res.writeHead(404); return res.end('not found: ' + p); }
+      fs.readFile(page, (err3, d3) => { if (err3) { res.writeHead(404); return res.end('not found: ' + p); } send(page, d3); });
+    });
   });
 });
 server.listen(PORT, '127.0.0.1', () => console.log(`serving ${ROOT} at http://127.0.0.1:${PORT}/ (music: ${MUSIC})`));
