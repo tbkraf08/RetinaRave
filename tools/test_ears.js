@@ -343,7 +343,7 @@ function keyRulers() {
     const earsOk = pc === T.pc, synOk = T.syn[0] === T.pc;
     if (earsOk) nEars++;
     if (synOk) nSyn++;
-    if (synOk && !earsOk) nWorse++;
+    if (synOk && !earsOk && T.expect) nWorse++;   // a track whose truth is still the ear's (expect: false) is not a 'worse' until the ear has spoken (IBelongHere: Am by the ruler, Dm by the ears, synapse Am)
     const top = rank.slice(0, 2).map(([k, n]) => { const [p, m] = k.split(':').map(Number); return `${nameOf(p, m)} ${Math.round(100 * n / tot)}%`; }).join(' ');
     console.log(`  ${track.padEnd(16)} truth ${nameOf(T.pc, T.minor).padEnd(4)} | ears ${top.padEnd(22)} ${earsOk ? 'pc ok' : 'pc +' + (((pc - T.pc) % 12 + 12) % 12)}`
       + `, mode ${mi === T.minor ? 'ok ' : 'NO '} | synapse ${nameOf(T.syn[0], T.syn[1])} ${String(T.syn[2]).padStart(3)}% ${synOk ? 'pc ok' : 'pc +' + (((T.syn[0] - T.pc) % 12 + 12) % 12)}`);
