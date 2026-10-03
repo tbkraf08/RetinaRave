@@ -1,7 +1,7 @@
-# Next session — Retina Rave (written 2026-10-02 late, after the §83–§90 session; v0.29 still the deploy)
+# Next session — Retina Rave (written 2026-10-02 late, updated 2026-10-03: **v0.30 tagged + deployed** `70e4c2e`)
 
-**State:** `main` at `39a17e4`+ (ahead of origin — **nothing pushed, tagged or deployed since v0.29 `dca98f5`**; a push to `main`
-deploys). Today's session landed, each with receipts in DECISIONS: **§83** accept.sh re-based at v0.29 (`ACC` variable,
+**State:** **v0.30 DEPLOYED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; retinarave.com serves §83–§90 + the licence) — the user said
+"tag and deploy" BEFORE running the gates in §0, so every §0 item is now a retune input on the live build, not a pre-deploy gate. Today's session landed, each with receipts in DECISIONS: **§83** accept.sh re-based at v0.29 (`ACC` variable,
 `tools/accept/v0.29/scene-md5-v029.txt`, all 12 ids guarded) + the fake timeline's deterministic kick/snare/hat lattice (the md5 sweep
 now sees the voices: s1 s3 s5 s9 s10 s11 moved once, the baseline re-recorded) · **§84** `tonicConf` (KS margin × sub-note histogram)
 owns `keyConf`; the dead `SUB_W` lean fixed (`held`); `&kc=0` = synapse's old keyConf; Malicious is **C minor** (§62's "GM" refuted)
@@ -31,7 +31,7 @@ on any new public file; memory `project_session_2026_10_02_pm` is the running lo
 
 ## Do, in order
 
-### 0. The user's gates (nothing deploys before these; each remark is a retune)
+### 0. The user's eye and ear on v0.30 (each remark is a retune; old = `releases/retinarave-v0.29.html` from `file://`)
 - **MANDALA A/B** in stream mode, key 3: old = `releases/retinarave-v0.29.html` from `file://`, new = `http://127.0.0.1:8765/`.
   Watch: SeeYouDrop 0:40–1:02 (the void darkens, odd N, 0:57.6 lets go; 16ths arrive = heavier crest, harder glints), 1:30–1:50;
   Vienna 1:12–1:26 (the dream tightens, 1:25.3 releases), 1:30–1:38 (double time accents, gone by 1:43), 1:46.7 nothing on purpose;
@@ -50,10 +50,9 @@ on any new public file; memory `project_session_2026_10_02_pm` is the running lo
   `node tools/clip.js ~/Downloads/<take>.webm --ss 2 --to 28` and `ffprobe … clip.mp4` → `60/1,yuv420p`, aac.
 - **Read once:** `LICENSE` (the clause names Thomas Kraft, "Toma", you + one guest) and `MANDALA-OVERHAUL-SESSION-PROMPT.md`.
 
-### 1. Tag v0.30 (on the user's word, after 0)
-Bump `package.json` AND `assets/core/version.js` together (§89: the page's one version source); `npm run build` →
-`releases/retinarave-v0.30.html` + `dist/`; `tools/check.js`; accept.sh 0 FAIL; `git tag v0.30`; push = deploy; `accept.sh` refs stay at
-v0.29 unless a scene moved on purpose (s2 already re-recorded in §88). Memory `project_retinarave_public` gets the line.
+### 1. ~~Tag v0.30~~ — done 2026-10-03 (`70e4c2e`; the recipe that worked: bump `package.json` + `assets/core/version.js`, `node tools/bundle.js
+releases/retinarave-vX.html`, `npm run build`, check / license --check / npm test / test_rec (VER == package.json) / the release from
+`file://` errs 0, a DECISIONS note, commit, `git tag -a`, `git push origin main --tags`; live within ~2 min).
 
 ### 2. Share phase 2 + 3 (→ v0.31; `docs/plans/SOCIAL-PLAN.md` §3–§4 is the spec, the user's answers are in §1 — do not re-ask)
 `releases.json` + `tools/whatsnew.js` → `site/whats-new.html` at `npm run build` (static, per-version anchors, click-to-load YouTube
