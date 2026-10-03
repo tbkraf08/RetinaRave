@@ -48,8 +48,11 @@ on any new public file; memory `project_session_2026_10_02_pm` is the running lo
 - **The recorder by hand** (HARNESS "Recorder"): `sudo apt install -y ffmpeg` in a real terminal first (the `!` prefix has no tty);
   30 s tab capture + 30 s file, each webm plays in Chrome and VLC with sound, watermark reads, dot/HUD absent; then
   `node tools/clip.js ~/Downloads/<take>.webm --ss 2 --to 28` and `ffprobe … clip.mp4` → `60/1,yuv420p`, aac.
-- **The recorder's quality** — the user's first take (`~/Downloads/retinarave-v0.31-nav-2026-10-03T13-23-24.webm`): "the recording quality
-  isn't very good" → §92 (the `Q.q` tier drop during a take, the encoder mime / bitrate, the capture size) — judge the fix with a new take.
+- **The recorder's quality** — the user: "the recording quality isn't very good" → **§92 BUILT** (not tagged): the tier held at q 0.75 during a
+  take (was sinking to 0 = 0.375× render), VP9 30 Mb/s (was 12), the sidecar embedded in the webm (one download — Chrome swallowed the
+  second file on every take), `&recmime/&recbps/&recsize/&recq/&recjson` knobs, even capture dims; clip.js works without a sidecar and ran
+  on the user's DUST take. **Judge it with a new take on the dev server** (R on NAV or DUST with a track; one file lands, ~2× the bytes;
+  look at NAV's filaments and DUST's kick-lane edges); old look `#recq=off&recbps=12&recjson=1`. ffmpeg is installed now. → **tag v0.32 on the user's word.**
 - **Read once:** `LICENSE` (the clause names Thomas Kraft, "Toma", you + one guest) and `MANDALA-OVERHAUL-SESSION-PROMPT.md`.
 
 ### 1. ~~Tag v0.30~~ — done 2026-10-03 (`70e4c2e`; the recipe that worked: bump `package.json` + `assets/core/version.js`, `node tools/bundle.js
