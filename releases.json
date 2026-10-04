@@ -1,5 +1,25 @@
 [
  {
+  "version": "0.32.0",
+  "tag": "v0.32",
+  "date": "2026-10-04",
+  "class": "engine",
+  "title": "A slower director, and sharper recordings",
+  "body": "The director now moves between three scenes — NAV, DUST and TORUS — and lets each one play for at least thirty seconds to a minute and a half before it looks for a change, so a scene has time to settle into the music instead of flipping every few bars. Drops still cut back to NAV at once and a build still parks there, waiting. The other scenes are still a key press away. A forced scene no longer sticks across a reload: open the page and the director is in charge again. Recordings made with R keep the full picture quality for the whole take and come down as one file with their notes inside.",
+  "clip": null,
+  "decisions": [
+   "§92",
+   "§93",
+   "§94",
+   "§95"
+  ],
+  "scenes": [
+   0,
+   1,
+   3
+  ]
+ },
+ {
   "version": "0.31.0",
   "tag": "v0.31",
   "date": "2026-10-03",
