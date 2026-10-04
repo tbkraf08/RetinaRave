@@ -325,7 +325,12 @@ export function restore() {                                        // boot, outs
   let s = null;
   try { s = localStorage.getItem(KEY); } catch (e) { return; }
   if (!s) return;
-  try { loadRoutes(s); } catch (e) { console.warn('panel: the stored preset no longer loads (' + e.message + ') — ignored'); }
+  // §94 (2026-10-04): a boot never revives a forced scene. The preset carries manual.scene (the panel's force / release and
+  // the forced-scene select save it like every other change), and until today a page that had once saved with a scene
+  // forced started on that scene for ever after — the user: "hard reload -> click share a tab -> the viz that shows first
+  // is not director but gielis". Routes, transition, colours and post still load; the scene is the director's at boot.
+  // A preset pasted into the textarea (loadRoutes from the panel) still applies its scene: that is the user acting now.
+  try { const o = JSON.parse(s); if (o && o.manual) delete o.manual.scene; loadRoutes(o); } catch (e) { console.warn('panel: the stored preset no longer loads (' + e.message + ') — ignored'); }
 }
 
 export function closeE() { endPreviews(); }   // v0.4.1: every running preview (a jack's, a parameter's) ends with the view

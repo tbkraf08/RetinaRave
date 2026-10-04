@@ -99,6 +99,7 @@ export function postString() {
 
 // The preset block: { scene, trans, colour: {scene: variant}, post: {scene: {…}} }. set() applies what is present; a
 // missing key leaves that setting alone; post replaces the whole override table. Checked first, then applied.
+// The boot restore (panel.js restore()) strips `scene` first — a forced scene never survives a reload (§94).
 BLOCKS.manual = {
   get: () => ({ scene: SC.forced, trans: MANUAL.trans, colour: MANUAL.colour, post: JSON.parse(JSON.stringify(MANUAL_POST)) }),
   set: (o) => {
