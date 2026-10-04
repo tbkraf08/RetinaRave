@@ -85,3 +85,13 @@ the drop frame's white-out bands (inherited from v0.29); the lifted `spin()` lan
 torus2 / dust index.js over the 350 soft cap by the header · `tools/accept/*/` jpgs stay untracked · `tools/test_ears.js` wants
 `tools/work/SeeYouDrop.st.f32.json` (pre-existing) · accept.sh's `== scene md5` grep misses DRUM id 4 (22 vs 24 lines; `scene-md5.sh`
 has all 24) · WhoLikesToParty's grid never listened to. Everything else: `docs/OPEN-ITEMS.md`.
+
+## 2026-10-04 — v0.32 tagged + pushed (`dc8c874`; §92–§95)
+
+The user's word: "tag and deploy". In the tag: §92 (the recorder's quality), §93 + addendum (the director's roster — only NAV, DUST, TORUS2
+bid; the territory formulas for the others stay in their score() comments), §94 (a boot never revives a forced scene — the panel's preset
+carried `manual.scene`; this is why the user's tab share "defaulted to GIELIS" after every reload), §95 (each scene stays 30–90 s, drawn
+per landing; drops / silence / builds still go home at once). Live status: poll `VER = '` on retinarave.com (0.31.0 right after the push;
+the last two builds took 40–85 min — do not re-push to kick it). Open from the session: the user's eye on the three-scene rotation over
+real tracks (remarks in track time → retune DUST / TORUS2 bids or the dwell), whether build parks should respect the dwell too (one
+flag), and the pre-existing tile-mark / force-button desync noted in §94.
