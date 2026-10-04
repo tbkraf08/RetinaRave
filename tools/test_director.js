@@ -10,6 +10,8 @@
 //   7. a phrase hold (16-beat cap) replaced by an identify decision restarts the 4-beat cap instead of firing at once
 //   8. (v0.3 §21) synapse renumbers its sections (a fresh one merged, the ring shifted): the filed looks follow the
 //      id — a return under the new id restores them; with SC.renumberOn = false (the §10 behaviour) it does not
+//   9. (§95) a scene stays at least SC.dwellMin s (drawn in SC.dwell at the landing): phrase and identify triggers inside
+//      the dwell do nothing, the first trigger after it switches; drops still cut home inside it
 //   node tools/test_director.js -> per-step lines + OK / FAIL
 import { MS } from '../assets/engine/state.js';
 import { SC, REG, register, updateScenes } from '../assets/core/scenes.js';
@@ -28,6 +30,7 @@ register(mk(2, 'two', (S) => (S.sectionAlt === 3 ? 0.9 : 0.1)));
 
 // clock: 120 BPM, 60 Hz → 30 frames per beat; the grid mirrors the fake timeline (barPos from the beat count)
 const S = MS, DT = 1 / 60;
+SC.dwell = [0, 0]; SC.dwellMin = 0; // §95 off for steps 1–8 (their switches are beats apart); step 9 turns it on
 S.presence = 1; S.bpm = 120; S.build = 0; S.beatCount = 0; S.beatPhase = 0; S.gridTrust = 0; S.sectionAlt = -1;
 let grid = true; // false = the bar position stops advancing (a stalled grid, to exercise the cap)
 function frame(ev = {}) {
@@ -160,6 +163,27 @@ ok(landed >= 0 && landed < 4 && landBar < 0.1, `landed on the bar line at barPos
   ok(on.keys === '4,5', 'renumber on: the keys 5,6 became 4,5 (' + on.keys + ')');
   ok(on.restored === 'filed-under-5', 'renumber on: restored looks are the filed ones');
   ok(off.restored !== 'filed-under-5', 'renumber off (§10): the return under 4 finds nothing (the stale restore the brief measured)');
+}
+console.log('9. dwell (§95): the event branch waits dwellMin seconds');
+{
+  SC.renumberOn = true; S.gridTrust = 0; SC.due = -1; SC.pend = null; SC.dwell = [30, 30];
+  while (S.beatCount - SC.lastBeat < 8 || SC.since < SC.dwellMin || SC.next >= 0) frame(); // open every gate (a phrase landing on the way draws 30 and is waited out)
+  S.sectionAlt = SC.logical === 1 ? 3 : 2;                                  // the stub that bids .9 is not the one on screen
+  frame({ surpriseEvt: true });                                              // a hard cut lands now and draws the dwell
+  const lg = SC.logical;
+  ok(lg === (S.sectionAlt === 3 ? 2 : 1) && SC.dwellMin === 30 && SC.since < 0.1, 'landed on ' + lg + ' with dwellMin 30 (since ' + SC.since.toFixed(2) + ')');
+  beats(40);                                                                 // 20 s: the phrase trigger passes (32 beats, every 16) — blocked
+  ok(SC.logical === lg && !SC.pend, 'no switch in the first 20 s (logical ' + SC.logical + ', since ' + SC.since.toFixed(1) + ')');
+  boundary(); beats(4); identify(lg === 1 ? 3 : 2, 0, true);               // an identify at 22 s — blocked
+  ok(SC.logical === lg, 'an identify inside the dwell does nothing');
+  beats(14);                                                                 // 29 s: still inside
+  ok(SC.logical === lg && SC.since > 28, 'still ' + lg + ' at ' + SC.since.toFixed(1) + ' s');
+  beats(20);                                                                 // 39 s: the first phrase line after the dwell switches
+  ok(SC.logical !== lg, 'switched after the dwell (logical ' + SC.logical + ')');
+  ok(SC.since < 10 && SC.dwellMin === 30, 'the dwell clock restarted at that landing (since ' + SC.since.toFixed(1) + ' s)');
+  beats(2); frame({ dropEvt: true });
+  ok(SC.logical === 0, 'a drop still cuts home inside the dwell');
+  SC.dwell = [0, 0];
 }
 console.log(fails ? `test_director: ${fails} FAIL` : 'test_director: OK');
 process.exit(fails ? 1 : 0);

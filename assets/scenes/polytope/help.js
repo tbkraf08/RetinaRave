@@ -44,8 +44,6 @@ export const HELP = {
       arc: 'nothing sweeps until the music has started, and the bid: never auto-picked during a build',
       phrase16Pos: 'a phrase boundary cues the inside-out sweep: one cell is carried through the pole over a beat',
       dropEvt: 'the drop cues the same sweep',
-      regularity: 'the bid: steady',
-      clarity: 'the bid: tonal',
       calm: 'slows the springs with the hush, and the bid: unhurried',
     },
     eli5: 'These are the cubes and pyramids of four-dimensional space, seen from the inside — and they dance. Every thump in the bass shoves the cage round; the beat makes it bounce; the colours are a wheel of the twelve musical keys painted round it, and the notes that are sounding are the ones that light up.',

@@ -8426,3 +8426,95 @@ own 71 s DUST take (`retinarave-v0.29-dust-2026-10-03T05-51-15.webm`, no sidecar
 aac, `clip-9x16.mp4` 736×1308, `poster.jpg`, `meta.json` in `tools/work/clips/2026-10-03T05-51-dust-v0.29/`. One fix on the way: the
 take was 1282×**1309** (the window's size) and libx264 refuses an odd height for yuv420p — clip.js now scales / crops to even dims, and
 rec.js's `recDims()` is always even (`even(G.PW), even(G.PH)`) so a new take never carries an odd side. test_rec all ok, check.js 0 fail.
+
+## §93 the director's roster and the fit model — seven scenes, each with a musical territory (2026-10-04, on the user's word; nothing in the engine or the precedence changed)
+
+- **The ask.** The user: *"update the director to show these scenes -> NAV, DUST, TORUS, GIELIS, MANDALA, CHLADNI, MAXWELL; how does the
+  director pick the scene? want to make sure its the best fit for the section."* Talked through first (the user's rule for the session),
+  then built. The answers that shaped it: TORUS is TORUS2 (id 3; v1 stays forced-only) · DRUM (NAV's variant, id 4) is zeroed — NAV means
+  the navigator alone · FEIGEN (6) and POLYTOPE (5) go forced-only, not deleted · *"dust does a really good job at showing slow / sparse
+  sounds"* · lower weights for MAXWELL and CHLADNI (*"the most boring to watch"*) and MANDALA third, *"only slightly lower, is more
+  interesting than the other two"*.
+- **What was wrong with the §5 bids.** Six scenes read the same three features (regularity, clarity, punchy / calm) with weights all
+  landing in the 0.25–1.0 band, so on steady dance music the bids sat within a tenth or two of each other and the 0.25 hash noise plus
+  the history dock (−0.6 current, −0.25 previous) decided: a per-section shuffle with repeat avoidance, not a fit. The only section
+  awareness was consistency — the hash keyed on `sectionId` keeps a section on one scene, and look memory (§10) brings it back on a
+  return. Both stay; the bids now carry the fit.
+- **The fit model.** Each of the seven owns a territory, read from fields the engine already has, peaking near 1.1 inside it and
+  sitting near 0.3 outside, so the music decides and the hash only breaks ties — `pickScene`'s noise is 0.1 (was 0.25), the one change
+  in `core/scenes.js`. Every non-home bid is still 0 during a build (`arc === 'build'`, home parks there by precedence).
+
+  | scene | id | bid | max | territory |
+  |---|---|---|---|---|
+  | NAV (home) | 0 | `0.5 + buildLive` (unchanged) | — | builds, drops, silence, by precedence |
+  | DUST | 1 | `0.3 + 0.4 punchy + 0.4 calm` | 1.1 | transients, and slow / sparse sound (was `.3 + .5 punchy + .2 regularity`) |
+  | TORUS2 | 3 | `0.35 + 0.35 clarity + 0.4 regularity` | 1.1 | tonal, steady grooves; the +0.1 standing bonus is the user's favourite mapping (was `.25 + .45 clarity + .3 regularity`) |
+  | GIELIS | 10 | `0.2 + 0.3 clarity + 0.45 min(1, keyConf/0.6) + 0.1 regularity` | 1.05 | a sure key, harmony-rich, rhythm loose (the ears' tonicConf reads .3–.7 on a right key, hence /0.6) — was 0 |
+  | MANDALA | 2 | `0.2 + 0.35 regularity + 0.2 min(1, onsetRate/6) + 0.25 eS` | 1.0 | the dense, regular peaks; a notch under DUST / TORUS2 (was `.25 + .55 regularity + .2 min(1, onsetRate/6)`) |
+  | CHLADNI | 11 | `0.1 + 0.45 sub + 0.3 (1 − centroid)` | 0.85 | sub-driven, dark passages — was 0 |
+  | MAXWELL | 9 | `0.1 + 0.3 clarity + 0.3 calm + 0.15 (1 − punchy)` | 0.85 | calm, tonal, un-punchy — single sounds as wavefronts — was 0 |
+  | DRUM 4 · FEIGEN 6 · POLYTOPE 5 · TORUS v1 7 · NAV2 8 | | 0 | | forced-only (digit keys / `&scene=`) |
+
+  The low caps are how "lower weights" is meant: CHLADNI and MAXWELL win outright only when the sub or the calm owns the mix, and
+  otherwise come in through the rotation — the −0.6 / −0.25 history dock takes the two scenes just shown out of the race, so a 0.7
+  bid wins the third pick of a long steady section. Fields each bid reads were added to the scene's `feats` and `help.feats` ("the
+  bid: …" lines, the check.js rule); fields nobody reads any more came off (DUST `regularity`, NAV `clarity`, FEIGEN's and POLYTOPE's
+  bid fields). check.js 0 fail, `help.feats gaps 0`.
+- **Bid table on synthetic profiles** (the formulas alone, before the trace; punchy / calm / clarity / regularity / keyConf / onsetRate /
+  eS / sub / centroid set by hand): steady tonal groove → TORUS2 0.99 over GIELIS 0.91 · percussive + dense → MANDALA 0.88 · slow
+  sparse intro → DUST 0.90 · calm tonal pad → GIELIS 0.90, MAXWELL 0.74 · sub breakdown → CHLADNI 0.77 over DUST 0.70 · dense peak →
+  MANDALA 0.98 over TORUS2 0.94 · key-rich loose chords → GIELIS 0.95. The first GIELIS draft (`.25 + .35 clarity + …`) tied TORUS2
+  at 0.99 on the steady groove; trimmed by 0.1 so TORUS2 keeps it.
+- **What this does and does not move.** `parity.js fake` forces `&scene=0`, so parity and the §11 transition md5s are untouched (the
+  reference frame is director-blind since §15). The director traces (`tools/director-trace.sh`, `tools/accept/v0.32/`) change — that
+  is the point; the counts to compare are returns vs restores and switches on the bar line, which the mechanism (§10) still owns.
+  `test_director` OK (stub scenes, unaffected by the noise change). **Not validated by the user's eye yet**: the territories are a
+  first cut from the formulas and the demo traces, to be retuned from the user's remarks in track time (HARNESS "Director traces";
+  the real tracks in `~/Music/RetinaRave`).
+
+**§93 addendum (2026-10-04, the same session — the user: *"remove mandala, gielis from bidding; only rotate through NAV, DUST,
+TORUS2"*):** MANDALA, GIELIS, CHLADNI and MAXWELL are forced-only again (`score()` 0; each file's comment keeps the §93 formula
+for the day they come back), their bid-only fields off `feats` / `help.feats` (MANDALA's `arc` / `regularity` / `onsetRate` had
+no reader besides the bid). The roster is NAV (home, by precedence) + DUST + TORUS2; with two away scenes the −0.6 / −0.25 history
+dock makes the event-branch picks alternate DUST ↔ TORUS2 unless one bid clearly wins (DUST: transients and slow / sparse sound;
+TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fail, help.feats gaps 0.
+
+## §94 a boot never revives a forced scene — the panel's preset carried `manual.scene` (2026-10-04, found while the user looked at §93)
+
+- **The report.** The user, on the local page: *"when I share a tab with out clicking anything it defaults to GIELIS"*, then, after a
+  hard reload: *"click share a tab -> the viz that shows first is not director but gielis"*. GIELIS bids 0 (§93 addendum), the landing
+  starts on the director tile, nothing in the share path touches `SC.forced` — yet the page started forced on id 10.
+- **The cause.** The panel's preset (`localStorage['ew.routes.v1']`, v0.4 §16) is `routesJSON()`: the routes plus every `BLOCKS`
+  block, and `BLOCKS.manual.get()` includes `scene: SC.forced`. The panel saves on every change it makes — the force / release
+  buttons and the forced-scene select among them — and `restore()` at boot (outside `#test`) replays the whole preset through
+  `loadRoutes`, so `MANUAL.scene = 10` landed before the first frame. Once saved with a scene forced, every later boot of that
+  browser started on it, with the landing's tile marks (`LANDING.picked`, −1) saying "director". Today's trigger was almost
+  certainly a panel save while GIELIS was on screen during the §93 interim.
+- **The fix.** `restore()` parses the stored preset, deletes `manual.scene`, then loads it: routes, transition, colours and post
+  come back, the scene is the director's at boot. The textarea's load (`loadRoutes` from the panel) still applies a pasted
+  preset's scene — that is the user acting now, not a stale boot. `routesJSON()` is unchanged (the copied preset still says which
+  scene was forced). manual-smoke, route-smoke, param-smoke, check.js green. Not a director change: `core/scenes.js` untouched.
+- **Open, small:** the force button and the forced-scene select set `SC.forced` without `LANDING.picked`, so the tile marks can
+  disagree with the forced scene inside one session (pre-existing, v0.8.1 ↔ v0.4). Left as is.
+
+## §95 the dwell — a scene stays at least 30–90 s (2026-10-04, the user: *"it rotates too quickly through the scenes, let each scene go atleast 30-90 seconds"*)
+
+- **What churned.** With NAV, DUST and TORUS2 alone (§93 addendum) the event branch still switched on every identify / return /
+  phrase / settled trigger past 8 beats from the last switch (~4 s at 120 BPM), and the −0.6 / −0.25 history dock turned that into
+  a DUST ↔ TORUS2 ping-pong a few bars long. The §10 bar-line hold places a switch, it does not space them.
+- **The gate.** `SC.since` counts seconds on the current logical scene (reset in `goScene`); `SC.dwellMin` is drawn at every landing
+  in `SC.dwell = [30, 90]` by the director's own hash (the first stay — home from the start, no landing yet — gets `dwell[0]`: the first
+  house trace left NAV after 15.6 s before that seed) (`frac(sin(lands · 12.9898) · 43758.5)`, so a `CLOCK=1` trace is reproducible
+  and `Math.random` stays out of the director). The event branch — surprise hard cuts and the four soft triggers — is closed until
+  `since ≥ dwellMin`. **Not gated, by design:** the precedence above it — a drop hard-cuts home, silence drifts home, a build
+  parks home — because those are the track's structure, and the user's rule for drops stands (NAV owns them). A return whose scene
+  is owed (`SC.due`, §10 A) stays armed through the dwell and lands at the first open gate; an identify or phrase inside the dwell is
+  simply missed (the next one picks). The 8-beat spacing and the 16-beat away rule stay as the floor under the dwell.
+- **Knobs.** `&dwell=a[:b]` under `#test` (seconds; `&dwell=0` is the pre-§95 director), `CARD.SC.dwell` live, `DWELL=` on
+  `tools/director-trace.sh`. test_director step 9: a landing draws 30, two phrase lines and an identify inside it do nothing, the
+  first phrase line after it switches, the clock restarts, a drop still cuts home inside the dwell. The fake and house traces change
+  (fewer switches; the counts to read are returns vs restores — a return inside a dwell restores at the gate, so RESTORE may lag the
+  return by up to the dwell).
+- **Measured, house 120 s** (`tools/accept/v0.32/director-house-dwell.txt` vs `-addendum.txt`, the dwell off): scene changes 14 → 4.
+  Stays: NAV 0–53.3 s (through two drops), TORUS2 53.3–75.7 (22.4 s — ended by the build parking home before the 90.5 s drop, the
+  ungated precedence), NAV 75.7–107.3, TORUS2 from 107.3 (a return, on the bar line). 4 returns → 4 restores, as before.

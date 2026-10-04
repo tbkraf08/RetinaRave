@@ -129,9 +129,10 @@ export default {
   rt: {},
   hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo },
 
-  // TORUS's bid, verbatim (§4 / §37): never during a build, else clarity and a steady rhythm
+  // TORUS2's territory (§93): tonal, steady grooves — regularity leads, clarity second, a +0.1 standing bonus as the user's
+  // favourite mapping. Was TORUS's bid verbatim, .25 + .45 clarity + .3 regularity (§4 / §37). Never during a build.
   score(MS) {
-    return MS.arc === 'build' ? 0 : 0.25 + 0.45 * MS.clarity + 0.3 * MS.regularity;
+    return MS.arc === 'build' ? 0 : 0.35 + 0.35 * MS.clarity + 0.4 * MS.regularity;
   },
 
   init(ctx) {

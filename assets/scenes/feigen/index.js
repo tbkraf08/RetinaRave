@@ -88,7 +88,7 @@ export default {
   tag: 'Feigenbaum dive · perturbed Mandelbrot, one delta per level',
   card: { title: 'FEIGEN', blurb: 'a dive down the Feigenbaum cascade: ever-smaller copies of the set along the real axis' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/feigen.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() the first four, update()/draw() the rest
-  feats: ['arc', 'regularity', 'clarity', 'calm', 'bpm', 'lvl', 'tension', 'alive', 'kick', 'dropEvt', 'sectionEvt',
+  feats: ['bpm', 'lvl', 'tension', 'alive', 'kick', 'dropEvt', 'sectionEvt',
     'seed', 'flow', 'flowMid', 'bass', 'dropEnv', 'hat', 'midS', 'loudRel', 'loudRange', 'loudAbs'],
   // 'event': the zoom itself is scale-free and continuous; the only jump is the tricorn flip on a section event
   cuts: 'event',
@@ -116,9 +116,10 @@ export default {
     set: (v) => { if (Array.isArray(v)) { S.feigL = +v[0] || 0; S.tricorn = +v[1] ? 1 : 0; } },
   },
 
-  score(MS) {
-    if (MS.arc === 'build') return 0;   // home owns builds
-    return 0.2 + 0.4 * MS.regularity + 0.25 * MS.clarity + 0.15 * MS.calm;
+  // §93 (2026-10-04): forced-only (key 7) — off the director's roster on the user's word. Was .2 + .4 regularity + .25 clarity
+  // + .15 calm, 0 in a build.
+  score() {
+    return 0;
   },
 
   init(ctx) {
@@ -290,10 +291,6 @@ export default {
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13)
     feats: {
-      arc: 'the bid: never auto-picked during a build',
-      regularity: 'the bid: a steady rhythm',
-      clarity: 'the bid: clearly tonal music',
-      calm: 'the bid: quiet and unhurried',
       bpm: 'sets the dive\'s clock: one Feigenbaum level per 32 beats at full level',
       lvl: 'how fast the dive falls (the brightness moved to loudRel)',
       loudRel: 'the overall brightness: how loud this passage is for THIS track, so a breakdown is dim and its drop is not',

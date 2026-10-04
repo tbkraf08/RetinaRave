@@ -153,7 +153,11 @@ const SELF = {
   // cut — measure every frame", and the only free passes left are a kick's rise and a mode change.
   state: { mode: 'plate', cPath: [0, PITCH_SUB], pathCut: 3, kick: { x: 0 }, baby: null },
 
-  // never auto-picked until the user approves it
+  // CHLADNI's territory (§93, 2026-10-04, the user's word): sub-driven, dark passages — the sub band and a low centroid.
+  // Deliberately a low bid (max .85 against the others' 1.1): the user ranks it among the most boring to watch, so it wins
+  // only when the sub owns the mix or the rotation dock has taken the others out. Never during a build.
+  // §93 addendum (2026-10-04, the user: "only rotate through NAV, DUST, TORUS2"): forced-only again. The §93 bid was
+  // .1 + .45 sub + .3 (1 − centroid), 0 in a build.
   score() {
     return 0;
   },

@@ -88,7 +88,7 @@ export const HELP = {
       + 'itself, a single line',
     arc: 'the bid: never auto-picked during a build',
     punchy: 'the bid: punchy music invites the swarm',
-    regularity: 'the bid: a steady rhythm invites the swarm',
+    calm: 'the bid: slow, sparse sound is the swarm\'s (§93)',
   },
   eli5: 'Every dot is a particle that owns one frequency band of the spectrum. When its band gets loud the dot '
     + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: the bass grains ARE the core of '

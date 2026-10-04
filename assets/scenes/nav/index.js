@@ -34,13 +34,14 @@ export default {
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
-    'bass', 'mid', 'high', 'peaks', 'clarity'], // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
+    'bass', 'mid', 'high', 'peaks'], // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
   state: NAV,
   rt: { c: NAV.c, label: 'nav', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   variants: [{
     id: 4, name: 'drum', tag: 'DRUM: the interior as a membrane, modes from the spectral peaks',
     // v3: eligible only while the navigator is interior with a converged cycle (cycBase, before the kick hides it)
-    score: (S, rt) => (rt.home && rt.cycBase ? 0.85 * S.clarity + 0.3 * (1 - S.eM) + 0.1 : 0),
+    // v3: 0.85 clarity + 0.3 (1 − eM) + 0.1 while interior with a cycle. §93 (2026-10-04): forced-only — NAV means the navigator alone
+    score: () => 0,
   }],
   hooks: {
     baby: (i) => { NAV.forceBaby = +i; },
@@ -75,7 +76,6 @@ export default {
       mid: 'the radius of the circular orbit trap',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
-      clarity: 'the bid: DRUM\'s — a clear tonal interior with a converged cycle invites the membrane',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
     why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',

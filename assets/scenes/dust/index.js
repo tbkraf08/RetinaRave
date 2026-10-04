@@ -58,7 +58,7 @@ const SELF = {
     'tongue21', 'tongue41', 'tongueOn',
     'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
     'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'modeShade',
-    'arc', 'punchy', 'regularity'],
+    'arc', 'punchy', 'calm'],
   cuts: 'onset',
   rt: {},
   fibresOn: 1,                  // hooks.fibres — the A/B switch; set before init(), so never reset there
@@ -68,9 +68,10 @@ const SELF = {
   habOn: 1,                     // hooks.hab — the A/B switch for the habituation (0 = pass 1's drive exactly)
   keyPin: null,                 // hooks.key(k, m) — test only: pin the key inside update(), never touching MS
 
-  // the director's home scene owns builds; DUST bids on punchy, steady music
+  // the director's home scene owns builds; DUST's territory (§93): transients and slow, sparse sound — the user: "dust does a
+  // really good job at showing slow / sparse sounds". Was .3 + .5 punchy + .2 regularity (§5).
   score(MS) {
-    return MS.arc === 'build' ? 0 : 0.3 + 0.5 * MS.punchy + 0.2 * MS.regularity;
+    return MS.arc === 'build' ? 0 : 0.3 + 0.4 * MS.punchy + 0.4 * MS.calm;
   },
 
   init(ctx) {

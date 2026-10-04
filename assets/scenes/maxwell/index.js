@@ -282,7 +282,11 @@ export default {
   cuts: 'continuous',
   always: false,
   rt: {},
-  score() { return 0; },   // forced-only until the user's word (MAXWELL-SESSION-PROMPT.md step 4)
+  // MAXWELL's territory (§93, 2026-10-04, the user's word): calm, tonal, un-punchy sections — single sounds seen as wavefronts.
+  // Deliberately a low bid (max .85): the user ranks it among the most boring to watch. Never during a build.
+  // §93 addendum (2026-10-04, the user: "only rotate through NAV, DUST, TORUS2"): forced-only again. The §93 bid was
+  // .1 + .3 clarity + .3 calm + .15 (1 − punchy), 0 in a build.
+  score() { return 0; },
 
   hooks: { tier: hTier, lines: hLines, lab: hLab, reset: hReset, train: hTrain, key: hKey, medium: hMedium, drop: hDrop, quiet: hQuiet, wob: hWob, timbre: hTimbre, mxchroma: hMxchroma, launches: () => SRC.launches(medPin === -2 ? -2 : U.geoA), energy: () => hEnergy(ST), probe: () => hProbe(ST), mxinfo: () => hInfo(ST), mxcol: () => hMxcol(ST) },
 

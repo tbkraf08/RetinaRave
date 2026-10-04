@@ -13,7 +13,7 @@ one() {
   case $s in aba) W=190000;; house) W=120000;; mix) W=360000;; fake) W=72000;; *) W=120000;; esac
   local pre='{"until":"window.CARD"}'; [ -n "$QOFF" ] && pre='{"until":"window.CARD"},{"eval":"CARD.SC.quantise=false"}'
   [ -n "$RENUMOFF" ] && pre='{"until":"window.CARD"},{"eval":"CARD.SC.renumberOn=false"}'   # v0.3 §21: the §10 behaviour (SC.mem keys not renumbered) for the before trace
-  if [ "$s" = fake ]; then hash="test"; steps="[$pre,{\"until\":\"window.__FRAME>=4320\",\"timeout\":200000}"; else hash="test&fake=0&demo=$s"; steps="[$pre,{\"wait\":$W}"; fi
+  if [ "$s" = fake ]; then hash="test${DWELL:+&dwell=$DWELL}"; steps="[$pre,{\"until\":\"window.__FRAME>=4320\",\"timeout\":200000}"; else hash="test&fake=0&demo=$s${DWELL:+&dwell=$DWELL}"; steps="[$pre,{\"wait\":$W}"; fi   # DWELL=0 traces the pre-§95 director
   steps="$steps,{\"eval\":\"CARD.log.filter(l=>/@|\\\\|/.test(l)).join('\\\\n')\"}]"
   if [ "$s" = fake ]; then CLOCK=1 node tools/cdp.js "$hash" "$steps"; else node tools/cdp.js "$hash" "$steps"; fi \
     | grep '^EVAL' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | sed 's/\\n/\n/g' > "tools/accept/${ACC:-v0.5}/director-$s-$TAG.txt"

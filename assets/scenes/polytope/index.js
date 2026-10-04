@@ -138,7 +138,7 @@ export default {
   tag: 'regular 4-polytopes on S³ — the planes lock to the beat and are nudged by the groove, the cage is a wheel of the twelve keys',
   card: { title: 'POLYTOPE', blurb: 'the regular four-dimensional polytopes, turning on the 3-sphere and dancing: the bass shoves the cage round, the rhythm runs in beads along its edges, and the twelve keys are its colours' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/polytope.jpg from tools/thumbs.sh
   feats: ['flow', 'flowHigh', 'tension', 'dropEnv', 'kick', 'hit', 'lvl', 'loudRel', 'loudRange', 'loudAbs', 'presence',
-    'seed', 'sectionEvt', 'arc', 'regularity', 'clarity', 'calm',
+    'seed', 'sectionEvt', 'arc', 'calm',
     'bass', 'mid', 'high', 'snare', 'hat', 'beat', 'beatCount', 'beatPhase', 'gridTrust', 'barPos', 'hush',
     'key', 'mode', 'keyConf', 'modeShade', 'chroma', 'harmAngle', 'valence',
     'phrase16Pos', 'dropEvt', 'build', 'intensity', 'arousal'],
@@ -146,9 +146,10 @@ export default {
   rt: {},
   hooks: { train: GR.train, info, motion, pole, cast, sweep, key: CO.key, chroma: CO.chroma },
 
-  score(MS) {
-    if (MS.arc === 'build') return 0;
-    return 0.2 + 0.4 * MS.regularity + 0.3 * MS.clarity + 0.2 * MS.calm;
+  // §93 (2026-10-04): forced-only (key 6) — off the director's roster on the user's word. Was .2 + .4 regularity + .3 clarity
+  // + .2 calm, 0 in a build.
+  score() {
+    return 0;
   },
 
   init(ctx) {

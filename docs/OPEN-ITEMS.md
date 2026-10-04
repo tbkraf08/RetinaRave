@@ -1,5 +1,10 @@
 # Open items outside the v0.15 session (moved out of NEXT-SESSION-PROMPT.md on 2026-09-27)
 
+**Director roster + fit model (DECISIONS §93 + addendum, 2026-10-04):** only NAV, DUST, TORUS2 bid; MANDALA, GIELIS, CHLADNI, MAXWELL,
+DRUM, FEIGEN, POLYTOPE, TORUS v1, NAV2 forced-only (the §93 territory formulas are kept in each scene's comment). **§95:** each scene
+stays at least 30–90 s (drawn per landing; drops / silence / builds still go home at once). §94: a boot never revives a forced scene. The territories are a first cut from the formulas and the demo traces — **open: the user's eye on
+the picks over the real tracks** (remarks in track time → retune the bids; `tools/director-trace.sh`, `tools/accept/v0.32/`).
+
 The user (2026-09-27): *"next session prompt should just be the engine update and new scene (and any offline analysis that might be
 needed)"*. Everything the old next-session prompt carried besides that work lives here, unchanged, for when the user brings it back:
 the GIELIS look (v0.14 tagged and pushed 2026-09-27, not validated), NAV2 (paused), the validated scenes, the standing list.
@@ -9,7 +14,7 @@ the GIELIS look (v0.14 tagged and pushed 2026-09-27, not validated), NAV2 (pause
 v0.15) · the section test's features (synapse per-beat `F`), recall (the 0.35 gate / a soft `predKickP`), section annotations for a
 second track · the headless `file://` demo: the ears hear no onsets (`kickAge` 99, before step 3 too) · step 4 (build detector v2).
 
-**GIELIS (id 10, "slot 11", no digit key: `n` / `&scene=10`, forced-only, `score()` 0)** — the superformula nest the user asked for on
+**GIELIS (id 10, "slot 11", no digit key: `n` / `&scene=10`; forced-only; it bid for part of 2026-10-04, DECISIONS §93 + addendum)** — the superformula nest the user asked for on
 2026-09-27 ("goal new scene (slot 11); use 'see you drop' as the inspiration … how can we use the superformula to visualize music?"),
 built on TORUS2's music model (the user: "torus2 is my favorite visually for how music lines up to the viz"). Spec `GIELIS-SESSION-PROMPT.md`,
 brief `docs/workers/brief-gielis.md`, the worker's report `docs/workers/gielis.md`, the audit `docs/AUDIT-v0.14.md`, DECISIONS §47,
@@ -34,7 +39,7 @@ stays id 8 / key `9`, forced-only; **the swap question (§39: NAV2 → id 0 / ho
 
 **Validated by the user (2026-09-27):**
 - **MAXWELL v0.12 / v0.12.1 is good** (*"I validated v0.12 maxwell scene and is good now"*; the user also said "done with maxwell for now"
-  on 2026-09-26). It stays as it is: id 9, forced-only (key `9` then `n`), no bid. Do not retune it unasked. Still owed, not urgent: the
+  on 2026-09-26). It stays as it is: id 9 (key `9` then `n`); no bid (§93 addendum, 2026-10-04). Do not retune its look unasked. Still owed, not urgent: the
   launch-weighted expected hue in `tools/accept/v0.12/det12.py` (the instrument for the per-note gate on two-note basslines) and the `CDIP`
   comment in `assets/scenes/maxwell/colour.js` (describes v0.11's workaround). The retune menu of the old prompt (REARM / HATA / FGAIN /
   the waveguide / the hat by chroma) is retired unless the user brings it back.

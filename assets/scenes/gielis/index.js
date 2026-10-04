@@ -7,6 +7,7 @@
 // to their resting lobes (pass 1: the rest state shows the species, it is not a circle). Built on TORUS2's music-to-visual model (id 3, the user's favourite mapping — DECISIONS §36/§37) from
 // docs/workers/brief-gielis.md; the numerics are assets/math/gielis.js, the ruler Green's theorem. Forced-only until the
 // user approves it: score() is 0, so the director never picks it and the reference md5s of ids 0–9 stay where they are.
+// §93 (2026-10-04): on the user's word GIELIS bids — see score().
 //
 // This file: the scene object, the camera, and the MS → uniform mapping (TORUS2's index.js:159–177 is the model).
 // nest.js: the families, the species, the breath, the lean templates, the waves, the ruler. shaders.js: the GLSL.
@@ -129,7 +130,10 @@ export default {
   state: { n1: N1_REST, Q: 1, cPath: CPATH, pathCut: 9, kick: { x: 0 }, baby: null, mode: 'nest' },
   hooks: { info, green, still, key, pinch, train, template, timeUpdate },
 
-  // never auto-picked until the user approves it (DECISIONS §15: a registered scene must not move a reference pick)
+  // GIELIS's territory (§93, 2026-10-04, the user's word): harmonically rich sections where the key is sure — keyConf leads
+  // (the ears' tonicConf reads .3–.7 on a right key, so /0.6), clarity second, a little regularity. Never during a build.
+  // §93 addendum (2026-10-04, the user: "only rotate through NAV, DUST, TORUS2"): forced-only again. The §93 bid was
+  // .2 + .3 clarity + .45 min(1, keyConf/.6) + .1 regularity, 0 in a build.
   score() {
     return 0;
   },

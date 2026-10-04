@@ -33,7 +33,7 @@ const SELF = {
   card: { title: 'MANDALA', blurb: 'a box-fold fractal seen through a kaleidoscope' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/mandala.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() reads the first three, update() the rest (the tongue fields through
   // beatgrid.js's accent21 inside spin(), §78 — the static read check cannot see into math/, friction log)
-  feats: ['arc', 'regularity', 'onsetRate', 'seed', 'beatCount', 'beatPhase', 'bpm', 'barPos', 'phrase16Pos',
+  feats: ['seed', 'beatCount', 'beatPhase', 'bpm', 'barPos', 'phrase16Pos',
     'barNovelEvt', 'barReturnEvt', 'tongue21', 'tongue41', 'tongueOn', 'flow', 'bass', 'bassS',
     'midS', 'kick2', 'kickAge', 'kickEvt', 'kickAmp', 'snare2', 'snareAge', 'snareEvt', 'snareAmp', 'hat2', 'hatAge', 'hatEvt', 'highS',
     'buildLive', 'nextDropIn', 'dropLiveEvt', 'tongueAmbig',
@@ -48,9 +48,13 @@ const SELF = {
     get: () => G.N,
     set: (v) => { if (v >= 4) setN(G, v); },
   },
-  score(MS) {
-    if (MS.arc === 'build') return 0;
-    return 0.25 + 0.55 * MS.regularity + 0.2 * Math.min(1, MS.onsetRate / 6);
+  // MANDALA's territory (§93): the dense, regular peaks — regularity, onset density and short energy, capped a notch under
+  // DUST / TORUS2. Was .25 + .55 regularity
+  // + .2 min(1, onsetRate/6) (§5). Never during a build.
+  // §93 addendum (2026-10-04, the user: "only rotate through NAV, DUST, TORUS2"): forced-only. The §93 bid was
+  // .2 + .35 regularity + .2 min(1, onsetRate/6) + .25 eS, 0 in a build (§5's: .25 + .55 regularity + .2 min(1, onsetRate/6)).
+  score() {
+    return 0;
   },
 
   init(ctx) {

@@ -79,7 +79,8 @@ frames under-fill the 100 Hz envelope ring (dt is clamped at 1/24 s) and the tem
 ```
 GPU=1 tools/director-trace.sh after [aba house mix fake]   # every @-event + the 1 Hz line -> tools/accept/v0.2/director-<style>-after.txt
 node tools/director-stats.js tools/accept/v0.2/director-aba-after.txt   # returns vs RESTORE@, SWITCH@ on/off the bar line, scene sequence
-node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel
+node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel, the §95 dwell
+DWELL=0 GPU=1 tools/director-trace.sh before house          # §95: the dwell off (&dwell=0) for a before/after; &dwell=a[:b] seconds under #test
 ```
 Under `#test` the log carries `SCENE@t -> id bar<pos> gt<trust>`, `RESTORE@t alt<id> scene<id>` (a section's looks came
 back) and `SWITCH@t -> id bar<pos> (held N beats, <trigger>)` (an event-branch soft switch landed); the 1 Hz line ends

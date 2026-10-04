@@ -147,6 +147,7 @@ export function initHarness(hideLanding) {
     hideLanding();
     if (HASH.get('fake') === '0') ENGINE.start('demo');
     if (HASH.has('scene')) SC.forced = +HASH.get('scene');
+    if (HASH.has('dwell')) { const [a, b] = HASH.get('dwell').split(':').map(Number); if (!(a >= 0)) throw new Error('&dwell= must be seconds a[:b]'); SC.dwell = [a, b >= a ? b : a]; SC.dwellMin = a; } // §95: the minimum stay per scene (0 = the pre-§95 director)
     if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
     if (HASH.has('colour')) setColour(HASH.get('colour'));     // a scene's colour variant (CONTRACTS §1.4, v0.3 §26)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)

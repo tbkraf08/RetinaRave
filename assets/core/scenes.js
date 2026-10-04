@@ -21,6 +21,7 @@ export const SC = {
   renumberOn: true, renumbers: 0, renumbered: null, filed: null, // v0.3 §21: SC.mem follows synapse's id renumbering (renumberOn=false = the §10 behaviour, for the before/after trace)
   quantise: true, pend: null,            // grid-held soft switch (§10 B): the one pending {id, why, beat0, ...}
   restored: null, switched: null,        // this frame's director records (the harness logs them)
+  dwell: [30, 90], since: 0, dwellMin: 30, lands: 0, // §95: a scene stays at least dwellMin s (drawn in dwell at each landing; the first stay, home from the start, gets dwell[0]); since = s on the current scene
 };
 
 // REG[id] = { id, base, scene, variant }  (variant = null for a scene's own id)
@@ -92,6 +93,8 @@ export function goScene(id, hard, S) {
   SC.hist.length = Math.min(SC.hist.length, 3);
   SC.logical = id;
   SC.lastBeat = S.beatCount;
+  SC.since = 0; // §95: the dwell clock restarts; its minimum is drawn here (deterministic — the traces stay comparable)
+  SC.dwellMin = SC.dwell[0] + (SC.dwell[1] - SC.dwell[0]) * frac(Math.sin((++SC.lands) * 12.9898) * 43758.5);
   const b = E.base;
   if (hard) {
     SC.cur = b;
@@ -124,7 +127,7 @@ export function pickScene(S) {
     const V = view(E.scene); // a variant reads its parent's fields, so its parent's view (§1.4)
     const sc = E.variant ? E.variant.score(V, E.scene.rt, SC) : E.scene.score(V, E.scene.rt, SC);
     if (!(sc > 0)) continue;
-    let v = sc + 0.25 * frac(Math.sin((S.sectionId + 1) * (E.id + 1) * 12.9898) * 43758.5);
+    let v = sc + 0.1 * frac(Math.sin((S.sectionId + 1) * (E.id + 1) * 12.9898) * 43758.5); // §93: 0.1 (was 0.25) — the bids decide, the hash only breaks ties and keeps a section on one scene
     const hi = SC.hist.indexOf(E.id);
     if (hi === 0) v -= 0.6;
     else if (hi === 1) v -= 0.25;
@@ -137,6 +140,9 @@ export function pickScene(S) {
 }
 
 // Precedence (v3): forced → drop hard-cuts home → low presence drifts home → build parks home → event-gated soft switches.
+// §95 (2026-10-04, the user: "it rotates too quickly through the scenes, let each scene go at least 30-90 seconds"): the
+// event branch (surprise, identify, return, phrase, settled) is closed until the scene has been on for SC.dwellMin seconds,
+// drawn in SC.dwell = [30, 90] at every landing. A return owed (SC.due) stays armed through it. `&dwell=a[:b]` under #test.
 // The home scene's rt slots: home (bool, in its stable state), awayBeat (beat it last left home), settledAt (beat it
 // settled back; consumed here).
 // Look memory (§10): when a boundary is declared (boundaryEvt) the outgoing section — synapse's sectionAlt as it was
@@ -215,6 +221,7 @@ export function updateScenes(dt, S) {
   const H = REG[SC.home].scene.rt, inHome = H.home !== false, away = H.awayBeat !== undefined ? H.awayBeat : -99;
   const { M, ret } = memory(S);
   SC.switched = null;
+  SC.since += dt;
   if (SC.forced >= 0) {
     SC.pend = null;
     if (SC.logical !== SC.forced) goScene(SC.forced, true, S);
@@ -228,7 +235,7 @@ export function updateScenes(dt, S) {
       SC.pend = null;
       if (SC.logical !== SC.home) goScene(SC.home, false, S);
     }
-    else if ((inHome || S.beatCount - away >= 16) && S.build < 0.4 && S.beatCount - SC.lastBeat >= 8 && SC.next < 0) {
+    else if ((inHome || S.beatCount - away >= 16) && S.build < 0.4 && S.beatCount - SC.lastBeat >= 8 && SC.next < 0 && SC.since >= SC.dwellMin) { // §95: the event branch waits out the dwell (drops, silence and builds above do not)
       const phrase = S.beat && S.beatCount - SC.lastBeat >= 32 && (S.beatCount - away) % 16 === 0;
       if (S.surpriseEvt) { SC.pend = null; goScene(pickScene(S), true, S); }
       else if (S.identifyEvt || ret || phrase || (H.settledAt && S.beatCount - H.settledAt >= 4)) {

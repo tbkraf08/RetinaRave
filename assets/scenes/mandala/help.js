@@ -6,9 +6,6 @@
 
 export const HELP = {
   feats: {
-    arc: 'the bid: never auto-picked during a build',
-    regularity: 'the bid: a steady rhythm',
-    onsetRate: 'the bid: dense hits',
     seed: 'how many mirrors: N = 4, 6, 8, 10 or 12 is drawn from the section seed — and only re-drawn on a seam of the music',
     beatCount: 'the wedge turns one step per beat on the beat count itself, so it cannot drift from the music',
     beatPhase: 'where inside the beat the turn is: the motion crests ON the beat line, glides between',
