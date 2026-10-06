@@ -6,6 +6,15 @@
 import { AU, initAudio, run, stopAll } from '../audio.js';
 import { startDemo } from './demo.js';
 
+// §96: Firefox and Safari implement getDisplayMedia for video only — the audio constraint is ignored, no error, no track
+// (Mozilla bug 1541425, open since 2019), and their share dialogs offer windows and screens, never a tab. There is no feature
+// test for it (the constraint is silently dropped), so the user agent decides. The landing card hides the tab steps on these
+// browsers (core/hud.js #landing.notab) and the microphone prompt's loopback device is the way to hear what the computer plays.
+const UA = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+export const NO_TAB_AUDIO = /Firefox\//.test(UA) || (/Safari\//.test(UA) && !/Chrom(e|ium)\//.test(UA));
+export const LOOPBACK = /Windows/.test(UA) ? '“Stereo Mix”' : /Mac OS X|Macintosh/.test(UA) ? 'a loopback device such as BlackHole' : '“Monitor of …”';
+export const NO_TAB_MSG = 'This browser cannot share tab audio. Use the microphone and pick ' + LOOPBACK + ' in its prompt, or play a file from this device';
+
 export async function startCapture() {
   initAudio();
   try {
@@ -16,7 +25,7 @@ export async function startCapture() {
     AU.stream = stream;
     if (!stream.getAudioTracks().length) {
       stream.getTracks().forEach((t) => t.stop());
-      run('demo', 'No audio track was shared — running the demo signal.');
+      run('demo', (NO_TAB_AUDIO ? NO_TAB_MSG : 'No audio track was shared') + ' — running the demo signal.');
       return;
     }
     const src = AU.ctx.createMediaStreamSource(stream);
@@ -29,7 +38,7 @@ export async function startCapture() {
     stream.getVideoTracks().forEach((t) => t.addEventListener('ended', stopAll));
     run('capture');
   } catch (e) {
-    run('demo', 'Capture was declined — running the demo signal.');
+    run('demo', (NO_TAB_AUDIO ? NO_TAB_MSG : 'Capture was declined') + ' — running the demo signal.');
   }
 }
 

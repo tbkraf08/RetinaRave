@@ -8518,3 +8518,20 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
 - **Measured, house 120 s** (`tools/accept/v0.32/director-house-dwell.txt` vs `-addendum.txt`, the dwell off): scene changes 14 → 4.
   Stays: NAV 0–53.3 s (through two drops), TORUS2 53.3–75.7 (22.4 s — ended by the build parking home before the 90.5 s drop, the
   ungated precedence), NAV 75.7–107.3, TORUS2 from 107.3 (a return, on the bar line). 4 returns → 4 restores, as before.
+
+## §96 Firefox and Safari share no tab audio — the card routes around it (2026-10-06, the user: *"retina rave doesn't work on firefox"*)
+
+- **What failed.** Nothing in the engine: headless Firefox 146 (Playwright) runs the bundle at 60 fps, WebGL2, both worklets, no
+  console error. The failure is the front door. Firefox implements `getDisplayMedia` for video only — the `audio` constraint is
+  silently dropped (Mozilla bug 1541425, open since 2019, still open 2026-02) and its share dialog offers windows and screens, never a
+  tab; Safari is the same. A Firefox user followed the three steps, found no tab and no "Also share tab audio" box, shared something,
+  and landed in `startCapture`'s zero-audio-tracks branch: the demo signal ran under "No audio track was shared". That is "doesn't work".
+- **No feature test exists** (the constraint is dropped without an error), so `engine/sources/capture.js` decides on the user agent:
+  `NO_TAB_AUDIO` = Firefox, or Safari that is not Chromium. `LOOPBACK` names the microphone prompt's system-audio device for the OS —
+  "Monitor of …" (PipeWire / PulseAudio, Linux), "Stereo Mix" (Windows, where the driver offers it), "a loopback device such as
+  BlackHole" (Mac). The Linux and Windows routes need nothing installed: Firefox lists the monitor as a microphone.
+- **Four changes.** (1) `#landing.notab` (core/hud.js, desktop only — `mobile` already hides the tab path): the three steps and
+  *Share a tab* go, `#notab` says why and names the loopback device, the microphone button takes the mobile layout's weight, the file
+  link stays. (2) The capture fallback and the declined-share messages name the browser's gap and the two ways in instead of
+  "No audio track was shared". (3) `site/about.html` *How to use it* carries the same paragraph with the bug link. (4) This entry.
+- **Not done.** No UA probe for Safari-on-iOS (the `mobile` class already owns phones). No attempt to make tab audio work: there is none.

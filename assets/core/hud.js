@@ -14,6 +14,7 @@ import { GROOVE } from '../engine/groove.js';
 import { toggleHelp, openHelpAt, keys } from './help.js';
 import { LANDING, initLanding, pick, leavePeek } from './landing.js'; // v0.8.1: the scene tiles + the live preview ("peek")
 import { REC, toggleRec } from './rec.js'; // the recorder (DECISIONS §89): R toggles; the red dot and the toasts are DOM, never in the clip
+import { NO_TAB_AUDIO, LOOPBACK } from '../engine/sources/capture.js'; // §96: Firefox / Safari share no tab audio — the card routes around it
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
@@ -55,6 +56,15 @@ export function initHUD() {
   // primary way in, the share-a-tab steps are noise. Desktop keeps Share a tab first, the microphone second.
   const mobile = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) || (matchMedia && matchMedia('(pointer:coarse)').matches);
   if (mobile) $('landing').classList.add('mobile');
+  // §96: a desktop browser whose share dialog has no tab and no audio (Firefox, Safari): the tab steps and the button go, the
+  // microphone leads with the loopback device named for this OS, the file link stays. Not the mobile layout: a laptop has no speaker to listen to.
+  if (NO_TAB_AUDIO && !mobile) {
+    $('landing').classList.add('notab');
+    const n = $('notab');
+    if (n) n.replaceChildren(
+      Object.assign(document.createElement('b'), { textContent: 'This browser cannot share tab audio.' }),
+      document.createTextNode(' Press the microphone button and pick ' + LOOPBACK + ' in the prompt to listen to what this computer is playing, or play a file from this device.'));
+  }
   initLanding(); // the tiles, from REG (after every register — main.js calls initHUD after the loop)
   renderHint();
   // the L key's one-line notice, on touch.js's #toast element (touch.js imports this module, so not its toast(): a cycle)

@@ -95,6 +95,11 @@
   .mobile ol,.mobile button#go{display:none}
   .mobile .mob{display:block;font-size:15px;line-height:1.5;opacity:.9;margin:0 0 26px}
   .mobile button#mic{font-size:15px;letter-spacing:.25em;padding:16px 38px;margin-top:0;opacity:1}
+  /* §96 no tab audio (Firefox, Safari — #landing.notab, set by core/hud.js): the tab steps and the button are noise, the microphone leads */
+  .notab ol,.notab button#go{display:none}
+  #notab{display:none}
+  .notab #notab{display:block;font-size:14.5px;line-height:1.55;opacity:.9;margin:0 auto 22px;max-width:520px}
+  .notab button#mic{font-size:15px;letter-spacing:.25em;padding:16px 38px;margin-top:0;opacity:1}
   .alt{margin-top:18px;font-size:12.5px;opacity:.55}
   .alt a{color:#9cf;cursor:pointer;text-decoration:underline}
   .hint{margin-top:22px;font-size:12px;opacity:.45;letter-spacing:.06em;line-height:1.9}
@@ -199,7 +204,7 @@
   <h1>RETINA RAVE</h1>
   <div class="sub">I taught a computer to listen to music.<br>This is what it sees.</div>
   <p class="why">Everything runs on this device — no account, no trackers, no ads. I built this for myself and wanted to share it.</p>
-  <p class="newin"><a id="newin" href="/whats-new">New in v0.32: A slower director, and sharper recordings → what's new</a></p>  <!-- the text is releases.json's top entry: tools/whatsnew.js writes it here, tools/bundle.js inlines it -->
+  <p class="newin"><a id="newin" href="/whats-new">New in v0.33: Firefox and Safari find their way in → what's new</a></p>  <!-- the text is releases.json's top entry: tools/whatsnew.js writes it here, tools/bundle.js inlines it -->
   <div id="pick"><div class="pickhead">the scenes · click one to see it move</div>
     <div id="scenes"></div><div id="peekmsg"></div></div>
   <ol>
@@ -208,6 +213,7 @@
     <li>Tick <b>“Also share tab audio”</b> — without it there is nothing to hear.</li>
   </ol>
   <p class="mob">Play music on a speaker, then let this page <b>listen</b>. Loud and close works best.</p>
+  <p id="notab"></p>  <!-- §96: filled by core/hud.js on a browser that shares no tab audio (Firefox, Safari) -->
   <button id="go">Share a tab</button>
   <button id="mic">Listen with the microphone</button>
   <div class="alt">no music handy? <a id="demo">run the built-in demo signal</a> · <a id="pickfile" href="#">play a file from this device</a> · <a href="about.html">about &amp; support</a></div>
