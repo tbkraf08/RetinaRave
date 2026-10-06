@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.33.0",
+  "tag": "v0.33",
+  "date": "2026-10-06",
+  "class": "engine",
+  "title": "Firefox and Safari find their way in",
+  "body": "Firefox and Safari cannot share a tab's audio — their share dialog offers windows and screens only, and the sound is left out. The page now notices and shows those browsers the two ways in that work: listen with the microphone, picking the device that carries what the computer is playing (“Monitor of …” on Linux, “Stereo Mix” on Windows, a loopback device on a Mac), or play a file from this device. The message after a share with no sound says the same instead of a shrug. Chrome and the other Chromium browsers are unchanged.",
+  "clip": null,
+  "decisions": [
+   "§96"
+  ],
+  "scenes": []
+ },
+ {
   "version": "0.32.0",
   "tag": "v0.32",
   "date": "2026-10-04",
