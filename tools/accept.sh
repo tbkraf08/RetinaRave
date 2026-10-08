@@ -1,11 +1,11 @@
-# Acceptance sweep -> tools/accept/$ACC/ (default v0.29; earlier sweeps stay in tools/accept/v0.2/ … v0.14/). Run with GPU=1. Prints one line per check; grep FAIL.
-# EVERY md5 reference (the scene list, the NAV2 / GIELIS stills, the mixs transition) is read from tools/accept/$ACC/ — the next
+# Acceptance sweep -> tools/accept/$ACC/ (default v0.34; earlier sweeps stay in tools/accept/v0.2/ … v0.29/). Run with GPU=1. Prints one line per check; grep FAIL.
+# EVERY md5 reference (the scene list, the GIELIS still, the mixs transition) is read from tools/accept/$ACC/ — the next
 # re-base is the one default below plus the files it names (DECISIONS §83). The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
 export FORCE_COLOR=0 NO_COLOR=1   # v0.27: node colours util.inspect output; the params block parsed "\e[33m0.4\e[39m" as a number
-ACC=${ACC:-v0.29}                                  # THE reference version (§83): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
+ACC=${ACC:-v0.34}                                  # THE reference version (§83; v0.34 = §97's NAV2 re-base): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
 export OUT=tools/accept/$ACC; mkdir -p $OUT
 SCN=$OUT/scene-md5-$(echo $ACC | tr -d .).txt      # the CLOCK=1 f360/f840 list of every scene id (tools/scene-md5.sh's format: "<md5>  s<id>-f<N>.jpg")
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
@@ -86,21 +86,17 @@ grep -q "even true" $OUT/t2-train-4x4.txt && grep -q "even false" $OUT/t2-train-
 CLOCK=1 node tools/cdp.js 'test&scene=3&param=torus2.morph=c:1' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"t2-par-morph1-s3-f360"},{"eval":"'"'"'n '"'"'+CARD.PROUTE.n+'"'"' p '"'"'+JSON.stringify(CARD.paramsOf('"'"'torus2'"'"'))"}]' | grep EVAL | sed 's/.*=> //'
 [ "$(md5sum $OUT/t2-par-morph1-s3-f360.jpg | cut -c1-32)" != "$(grep s3-f360 $R7 | cut -c1-32)" ] && echo "torus2 param morph=1 moves the f360 md5" || echo "FAIL torus2 param morph=1 moved nothing"
 python3 tools/montage.py $OUT/montage-torus2.jpg 2 $OUT/s7-t6.jpg $OUT/s3-t6.jpg $OUT/s7-t14.jpg $OUT/s3-t14.jpg $OUT/t2-train-4x4.jpg $OUT/t2-train-sync.jpg 2>/dev/null && echo "montage $OUT/montage-torus2.jpg"
-echo "== nav2"           # v0.8: NAV2 (id 8, forced-only, score 0 — DECISIONS §39): its own f360/f840 md5s against tools/accept/v0.8/scene-md5-v08.txt, the &still=1 four against nav2-still-md5.txt (every NAV2-only uniform at its IEEE-identity rest), the two node tests, and the continuity monitor over 30 s with NAV2's state injected (max must stay under 0.06: every non-cut frame moves cPath by <= V_MAX*dt by construction)
+echo "== nav2"           # v0.8 NAV2 (id 8, forced-only, score 0 — DECISIONS §39) is a byte-faithful clone of NAV since §97 (2026-10-08, "all work in NAV2"): its own f360/f840 md5s against $SCN (= NAV's s0 pair while nothing is retuned — the lines re-base per retune commit, §83), the node smoke (the clone's registration shape, the byte copies, 48 s of the navigator against NAV's own trajectory, the continuity invariant), green.js's node test, and the continuity monitor over 30 s with the clone's state injected (max under 0.06: NAV's invariant, HARNESS "Continuity monitor"). The &still=1 four are gone with the hook (the clone has none, like NAV).
 R8=$SCN
 for f in 360 840; do REF=$(grep "s8-f$f" $R8 | cut -c1-32)
   CLOCK=1 node tools/cdp.js 'test&scene=8' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-s8-f$f\"},{\"eval\":\"'s8 f$f errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())+' '+CARD.REG[8].scene.hud().slice(0,60)\"}]" | grep EVAL | sed 's/.*=> //'
   M=$(md5sum $OUT/n2-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 f$f md5 $M = reference" || echo "FAIL nav2 f$f md5 $M != reference $REF"
 done
-for f in 360 480 720 840; do REF=$(grep "still-f$f" $OUT/nav2-still-md5.txt | cut -c1-32)
-  CLOCK=1 node tools/cdp.js 'test&scene=8&still=1' "[{\"until\":\"window.CARD\"},{\"until\":\"window.__FRAME>=$f\"},{\"shot\":\"n2-still-s8-f$f\"}]" > /dev/null
-  M=$(md5sum $OUT/n2-still-s8-f$f.jpg | cut -c1-32); [ "$M" = "$REF" ] && echo "nav2 still f$f md5 $M = reference" || echo "FAIL nav2 still f$f md5 $M != reference $REF"
-done
-node tools/test_field.js | tail -1; node tools/test_nav2.js | tail -1
+node tools/test_field.js | tail -1; node tools/test_nav2.js | tail -1; node tools/test_green.js | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
 R=$(node tools/cdp.js 'test&fake=0&scene=8' "[{\"until\":\"window.CARD\"},{\"wait\":1500},{\"eval\":\"CARD.NAV=CARD.REG[8].scene.state;$MON;'ok'\"},{\"wait\":30000},{\"eval\":\"'MON8 '+JSON.stringify({n:MON.n,fast:MON.fast,max:+MON.max.toFixed(4),viol:MON.viol})\"}]" | grep MON8 | sed 's/.*=> //' | tr -d '"\\'); echo "$R"
 echo "$R" | grep -q 'viol:\[\]' && echo "nav2 monitor clean" || echo "FAIL nav2 monitor: $R"
-python3 tools/montage.py $OUT/montage-nav2.jpg 2 $OUT/n2-s8-f360.jpg $OUT/n2-s8-f840.jpg $OUT/n2-still-s8-f360.jpg $OUT/n2-still-s8-f840.jpg 2>/dev/null && echo "montage $OUT/montage-nav2.jpg"
+python3 tools/montage.py $OUT/montage-nav2.jpg 2 $OUT/n2-s8-f360.jpg $OUT/n2-s8-f840.jpg 2>/dev/null && echo "montage $OUT/montage-nav2.jpg"
 echo "== polytope"       # v0.9: POLYTOPE (id 5, modified in place — DECISIONS §41): its own f360/f840 md5s against tools/accept/v0.9/scene-md5-v09.txt (= the v0.8 list with s5 re-based; ids 0–4, 6–8 are the "== scenes" identity); the pinned bass train (hooks.train) puts four bumps per edge evenly spaced for 4x4 and unevenly for sync (positions from hooks.info().bass.pos, de-duplicated); the key pair hooks.key(0,0) vs (7,1) differ (warm vs cool, the wheel turned); a param route (groove=c:0) moves the s5 md5; the node test
 R9=$SCN
 for f in 360 840; do REF=$(grep "s5-f$f" $R9 | cut -c1-32)

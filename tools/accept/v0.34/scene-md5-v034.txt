@@ -1,0 +1,29 @@
+# v0.34 (DECISIONS §97, 2026-10-08): the v0.29 + lattice list (tools/accept/v0.29/scene-md5-v029.txt, §83 Step B) with ONLY the
+# two NAV2 (id 8) lines re-based — NAV2 is a byte-faithful clone of NAV (id 0) now, so its pair equals NAV's pair to the byte
+# (2daaa2c0 / f2342b7f were the v0.13-era NAV2's values). Measured `IDS="0 8" PORT=8821 tools/scene-md5.sh` on the clone tree,
+# twice, errs [] hop 840 row 72 on both ids; every other line is v0.29's, untouched (a scene-folder change cannot move them —
+# HARNESS "What to re-prove"). nav2-still-md5.txt is gone with the &still=1 hook (the clone has none, like NAV).
+fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
+8a0715dfb90ecf20d484578932a2f115  s0-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
+62515d49261070922f23ce68f94fc877  s2-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
+3122036e95e0120e10a99ae00c578354  s3-f360.jpg
+a1e941aff486e1206a30e45b36effa0d  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
+9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
+04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
+fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
+6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+fb74fee47170b2d1f043db9f96319c7e  s8-f360.jpg
+8a0715dfb90ecf20d484578932a2f115  s8-f840.jpg
+fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
+02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
+6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
+1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
+380d0255eb88707cb2de637d9e335d83  s11-f360.jpg
+b0407176d15f916b9f96713111864737  s11-f840.jpg

@@ -1,0 +1,8 @@
+# The mixs 0→3 transition at f178 (scene 0 forced, released at frame 120 with goScene(3), shot at 178, m .499; CLOCK=1 GPU=1
+# 1280x720) — the value accept.sh "== transition" reads since v0.29 (DECISIONS §83, 2026-10-02). History: 5892ddc5 (v0.7, TORUS at
+# id 3) → 641f6633 (v0.7–v0.8, TORUS2 at 3) → f0c9d637 (v0.9, the recorded value until §83; this machine read 641f6633 from v0.14 on,
+# a mismatch noted in scene-md5-v014.txt) → 8a1a768d at v0.29 (TORUS2 moved: §70 snare wave, §79 fog, §82 shade). The 0→3 fade lands
+# on TORUS2, so any commit that moves s3 moves this line too.
+# §83 Step B: 8a1a768d -> cb3d4048 on the lattice commit (TORUS2 reads snareEvt / snareAmp / tongueAmbig / modeShade; frames 120-178 sit in
+# the fake's sustain where the kick, the snare and the shade all play).
+cb3d4048ec8481a41afdb1980230475c  trans-mixs-0-3-f178.jpg

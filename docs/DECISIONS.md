@@ -8535,3 +8535,61 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   link stays. (2) The capture fallback and the declined-share messages name the browser's gap and the two ways in instead of
   "No audio track was shared". (3) `site/about.html` *How to use it* carries the same paragraph with the bug link. (4) This entry.
 - **Not done.** No UA probe for Safari-on-iOS (the `mobile` class already owns phones). No attempt to make tab audio work: there is none.
+
+## §97 NAV2 reset to a clone of NAV — the navigator's workbench (2026-10-08, the user: *"I like NAV better than NAV2 → reset NAV2 as NAV → all work in NAV2"*)
+
+- **What changed.** `assets/scenes/nav2/` is `nav/{index.js, nav.js, shaders.js, shaders-v2.js}` again — `nav.js`, `shaders.js` and
+  `shaders-v2.js` are byte copies (tools/test_nav2.js checks that every run), `index.js` differs from `nav/index.js` only in the
+  registration (`name 'nav2'`, `id 8`, `home: false`, `always: true`, `score: () => 0`, no `card`, no `variants` — NAV's DRUM is
+  id 4 and an id registers once), the program names (`julia2-v2`, `mandel2-v2`, `julia2`, `mandel2`, `pt2`), `rt.label 'nav2'`,
+  the hud prefix, the two first-frame guards a forced scene needs (`draw()` and `overlay()` return until the first `update()`),
+  `measure()` once per update and the hooks: `baby` (the clone's own `forceBaby` — `./nav.js` is a second module instance, so its
+  `NAV` object is not id 0's), `clipdbg`, `green()` (Green's ruler, unchanged) and `n2info()` — NAV's state in one object (`mode, c,
+  cPath, h, alpha, rho = e^lnr, phi, par, bulb, q, has, baby, kick, theta, lg, pathCut, tscale, cycBase, extBeat, loudBeats`) so the
+  §46 trace tools `tools/accept/v0.13/nav2-window.py` / `det13.py` still find `REG[8].scene.hooks.n2info()` and `.green()`; the
+  melody fields they also printed (`wind, bump, pulse, pitch, lift, …`) went with detect.js and read as null there now.
+  **Deleted:** `beat.js`, `detect.js`, `exit.js`, `nav2.js`, the v0.8–v0.13 `index.js` / `shaders.js` (§39's chart-free navigator,
+  §46's melody detector — paused mid-tune, never validated). **Kept:** `green.js` (no imports; the user wants Green's roundness /
+  edge-speed ruler as a steering fitness for the retune), `assets/math/field.js` + `tools/test_field.js` (NAV2's numerics, proven
+  against NAV's charts — still the node-side reference), `tools/test_green.js`. `assets/main.js` needed nothing (nav2 was imported and
+  registered at id 8); key `9` → id 8 and the `n` cycle (7 → 8) both reach it (headless: `logical 8, name nav2, home 0, errs []`).
+- **The one deviation from the review's recipe (`docs/plans/nav-retune-review-2026-10-08/nav-review.md` §5): `always: true`, not
+  `false`.** loop.js updates `always || on` scenes, and on the first frame `SC.cur` is still home when the update pass runs (the
+  forced scene lands in `updateScenes()` after it) — so an `always: false` clone misses frame 0's `update()`, one dt on every spring,
+  and its pair read `ec4459870a0e9906e61933db20f12ec7 / a46c37f645017d3cfe6aff3f59581529` — a picture nobody can tell from NAV's by eye,
+  but not NAV's bytes. With `always: true` the pair IS NAV's (below). The second reason is the point of the workbench: a scene that is
+  updated from boot like NAV has NAV's navigator state at every moment, so key `1` against key `9` mid-track compares control and
+  retune at one c, one mode, one history — a cold start on `9` would confound every A/B. Cost: one more `updateNav` + Green's ruler
+  per frame on every scene (node: median 0.042 ms, p95 0.088 ms), CPU only — an off-screen scene's `draw()` is never called and its
+  overlay returns at `PIP.a ≤ 0.01`, so no other scene's pixels can move (and the scene-folder row of HARNESS "What to re-prove" holds).
+- **The proof** (`IDS="0 8" PORT=8821 tools/scene-md5.sh`, CLOCK=1 GPU=1, errs [] hop 840 row 72 on both ids every run):
+
+  | | s0-f360 / s0-f840 | s8-f360 / s8-f840 |
+  |---|---|---|
+  | before, the clean tree (`base1`) | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | `2daaa2c0cbc80d96879049d1631fb74b` / `f2342b7f13ee899b30b2e4b1961ce834` |
+  | after, run 1 (`clone3`) | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` |
+  | after, run 2 (`clone4`) | identical | identical |
+
+  s0 is untouched and s8 = s0 to the byte: the clone is a visual no-op at the frames the guard reads. On the way there the first clone
+  (no `draw()` guard) threw `this._S` undefined on frame 0 and the fake clock froze (`hop 1 row 1`, f360 = f840 = `496ce9a8…`, errs []
+  — the exception never reaches `CARD.ERRS`, cdp's `[EXC]` line has it): CONTRACTS §1's `always: false` note and §39's lesson, now
+  asserted in node by `test_nav2.js` ("draw()/overlay() before the first update() returns"). Also measured: the 30 s continuity
+  monitor with the clone's state injected on `fake=0` (accept.sh's own line) — `n 1806, fast 0, max 0.0327, viol [], errs [], bad []`.
+- **What broke and how it was handled.** `tools/test_nav2.js` imported the deleted `nav2.js` / `detect.js` — rewritten as the clone's
+  node smoke: the three byte copies, the registration shape, own state and the monitor's shape, `hooks.baby` on the clone only, the
+  two guards, then 48 s at 60 Hz on the Worker's table seeded in node (`setGrid(buildRayGrid(...GRIDP))`, 62 ms — NAV was "untestable
+  in node" only for want of that line) with the clone's real `update()` driven beside NAV's on one fake timeline: identical to the bit
+  (max |Δc, Δh, Δvtime| 0, no frame with another mode), monitor viol [] (fast 67 — v3's smooth EXT frames, as HARNESS says), the exit
+  at f780 (13 s), INT→EXT→HOME→IN→INT before the second drop, `n2info()` finite, Green's ruler measured on all 2880 frames. `tools/
+  test_green.js` unchanged (green.js survived). `tools/accept.sh` "== nav2": the `&still=1` four are gone with the hook (the clone has
+  none, like NAV), `test_green.js` joins the node line, the monitor injection `CARD.NAV = REG[8].scene.state` stays (NAV's state has
+  its shape). **Guard re-base per §83:** `tools/accept/v0.34/scene-md5-v034.txt` = the v0.29 list with only the s8 pair changed (to
+  s0's values), `gielis-still-md5.txt` and `trans-mixs-md5.txt` copied unchanged, `nav2-still-md5.txt` dropped; `ACC` default →
+  v0.34; HARNESS "Acceptance sweep" / "File source" pointers; CONTRACTS §1.8's id-8 row; `site/about.html`'s NAV2 line ("the
+  navigator's workbench: a clone of NAV being retuned"). `node tools/check.js` 0 fail (the clone's index.js is 246 lines), `npm test`
+  passes, `test_field` OK. The full `accept.sh` was not run (25 min; its nav2 section is not separable from the script's header, so its
+  pieces were run by hand — the s8 pair, the three node tests, the monitor line — all above). No tag, `releases.json` untouched.
+- **From here.** Every retune is a commit on `assets/scenes/nav2/` alone, proven on `IDS=8 tools/scene-md5.sh` against its last recorded
+  pair (the scene-folder row of HARNESS "What to re-prove"), by eye on key `1` vs `9`, and — the user's wish — by Green's ruler through
+  `hooks.green()`; id 0 is the byte-identical control until the user says swap (then §39's replacement recipe: `home`, `always`, the
+  `card`, `parity.js`'s `&scene=0`). Commit 6f6e42a is the clone; the guard re-base and these notes follow it.
