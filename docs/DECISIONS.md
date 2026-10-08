@@ -8593,3 +8593,8 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   pair (the scene-folder row of HARNESS "What to re-prove"), by eye on key `1` vs `9`, and — the user's wish — by Green's ruler through
   `hooks.green()`; id 0 is the byte-identical control until the user says swap (then §39's replacement recipe: `home`, `always`, the
   `card`, `parity.js`'s `&scene=0`). Commit 6f6e42a is the clone; the guard re-base and these notes follow it.
+- **A history note for bisecting.** Two workers shared this working tree (one index): the six `git rm`s of the old NAV2 modules were
+  staged when the other worker's commit `3f6bcdd` (tools/lumtrace.js) was made, and that commit carries them — on its own it deletes
+  `assets/scenes/nav2/index.js` while `main.js` still imports it, so that one commit does not load; `6f6e42a` (the clone) restores the
+  path. Nothing was pushed; a fixup that moves the six deletions into `6f6e42a` is the orchestrator's call once both workers are done.
+  Pitfall for next time: in a shared tree, stage and commit in one step, never leave deletions sitting in the index.
