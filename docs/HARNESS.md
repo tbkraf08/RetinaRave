@@ -937,6 +937,78 @@ c = json.load(open(p))['cols']
 The pre-change build is `git checkout <sha> -- assets/scenes/<name>/` (stash your own work first), which is a few
 seconds; re-tracing is minutes, and re-deciding on a contaminated table is an hour.
 
+## Luminance ruler — `tools/lumtrace.js` (a scene's legibility over a track window; the NAV retune's number, 2026-10-08)
+
+The user's NAV complaint — "it blows out to near white at the loudest sustained bars and the fractal disappears" — is a
+luminance question, so a retune is judged by this ruler, not only by eye (the model is the per-frame `YAVG`/`YHIGH` study
+on the v0.32 clip in `docs/plans/nav-retune-review-2026-10-08/lum.csv`, moved into the deterministic file-mode harness).
+
+```
+node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path]
+# -> <out>.csv  <out>.txt  <out>-sheet.jpg  <out>.log     (default out: tools/work/lum/<Track>-s<scene>-<from>-<to>, gitignored)
+```
+It is a `filetrace.js`-shaped run: `CLOCK=1 GPU=1` cdp on `#test&track=<Track>&at=<from − warm>&scene=<N>` (file mode, the
+deterministic clock, `heardT = at + (frame − 2)/60`, the file-mode display lead), and a rAF hook registered after
+`core/loop.js`'s (which re-registers at the top of its callback) reads the GL canvas on the frame's own task — after the
+last draw, before the compositor takes the buffer, the read `rec.js` and `probe.js` rely on — on every frame where
+`(frame − fStart) % (60/fps) == 0`: so the samples are at exact TRACK times (`t` = heard seconds, 25.0, 25.1, …), not wall
+times. Each sampled frame is `drawImage`d into a `--w` px wide 2-D canvas (the page is 1280×633 at the default `WIN`, so
+640×317) and read with `getImageData`; nothing is decoded in node. `--port` is the server cdp spawns and kills for the run —
+never the user's 8765. One headless Chrome at a time (a second one skews nothing here, but it skews every bench).
+
+Columns (all 0..1, on the sRGB bytes, `Y = .2126 R + .7152 G + .0722 B`):
+- `meanY` mean luma · `p95` its 95th percentile (256-bin histogram) · `clipFrac` the fraction of pixels with `Y ≥ 0.9` — the
+  "near white" the complaint names · `grad` the **structure score**, mean `|∇Y|` over the interior (central differences, per
+  pixel at the `--w` scale): a washed flat field scores low, legible fractal filaments score high, and it is the number that
+  must NOT fall when a retune dims the picture · `centre` / `rim` `tools/lum.py`'s centred 20 % box and the 0.6–0.9 annulus.
+- The `.txt` summary: one row per 5 s (`medY` median meanY, `p90Y` its 90th percentile, `clip` mean clipFrac, `clipMx` its
+  max, `grad` mean, `ctr` / `rim` medians, `n` frames) and an `ALL` row; the counts of frames with `clipFrac ≥ 0.25` and
+  `meanY ≥ 0.6`; the min-grad frame; page errors / nonFinite / `ENGINE.ms`. `lum.csv`'s "frac > 110" (8-bit YAVG) is
+  `meanY > 0.43` here.
+- The sheet: one 320-px tile per `--sheet` s (8 per row), captioned `t · Y · clip · grad` — one image per window for review.
+  The HUD minimap inset is in the GL frame, so it is in the numbers too (a ~2 % patch, the same on every frame).
+
+**Determinism:** two runs on the same tree are byte-identical CSVs (`cmp`): the clock, the seeded PRNG and the GL render are
+deterministic; the ruler's own reads are too (no wall time anywhere). A different GPU / driver may move a byte by 1/255.
+Measured 2026-10-08: SeeYouDrop 25–60 s scene 0, two runs → `cmp` identical (351 rows).
+
+**Baseline v0.33 (NAV, scene 0 — what every retune is judged against; the `.txt` + sheets persist under
+`docs/plans/nav-retune-review-2026-10-08/baseline/`, the CSVs are in `tools/work/lum/baseline-v0.33/`):**
+
+```
+lumtrace SeeYouDrop scene 0 [25, 60] s · 10 fps · 640x317 from 1280x633 · 351 frames · heard 25.000 → 60.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+25-30     0.150  0.218  0.005  0.054  0.0127  0.453  0.264   50
+30-35     0.218  0.274  0.012  0.118  0.0114  0.490  0.400   50
+35-40     0.244  0.333  0.038  0.176  0.0140  0.576  0.472   50
+40-45     0.318  0.384  0.023  0.124  0.0127  0.825  0.546   50
+45-50     0.218  0.268  0.001  0.002  0.0122  0.397  0.432   50
+50-55     0.190  0.240  0.013  0.100  0.0168  0.417  0.347   50
+55-60     0.157  0.217  0.001  0.001  0.0116  0.285  0.255   51
+ALL       0.204  0.322  0.013  0.176  0.0131  0.496  0.399  351
+
+lumtrace Vienna scene 0 [60, 95] s · 10 fps · 640x317 from 1280x633 · 351 frames · heard 60.000 → 95.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+60-65     0.213  0.290  0.006  0.048  0.0169  0.355  0.346   50
+65-70     0.103  0.145  0.001  0.003  0.0151  0.180  0.238   50
+70-75     0.186  0.248  0.002  0.043  0.0125  0.132  0.423   50
+75-80     0.060  0.094  0.001  0.001  0.0097  0.036  0.196   50
+80-85     0.173  0.217  0.002  0.009  0.0144  0.253  0.320   50
+85-90     0.193  0.262  0.008  0.092  0.0182  0.236  0.417   50
+90-95     0.149  0.326  0.003  0.044  0.0117  0.075  0.262   51
+ALL       0.158  0.262  0.003  0.092  0.0141  0.165  0.301  351
+```
+Peak frames (the CSV): SeeYouDrop **39.2 s centre 0.965 · p95 0.961 · clipFrac 0.176** (the centre blow-out at the root
+bars) and **57.6 s meanY 0.596 · grad 0.0046** (the drop flash — bright AND flat, a third of the window's grad: the
+complaint's signature is a high `meanY` with a low `grad`, more than `clipFrac` alone, because a saturated pink or yellow
+wash keeps `Y` under 0.9 while the structure is gone); Vienna 86.2 s centre 0.922 · clipFrac 0.092. A retune is a win when
+the 35–45 s / 85–90 s `clip` and `ctr` come down **and** `grad` does not — a dimmer picture with the same `grad` is a wash
+turned into detail, a dimmer picture with a lower `grad` is just a dimmer wash.
+
+Limitations: the HUD minimap inset is inside the frame (a constant ~2 % patch); `clipFrac` is a luma threshold, so a saturated
+single-hue wash reads as `centre`/`p95`, not `clip`; the page is 1280×633 headless (`innerHeight`, "Pitfalls"), not a 16:9 glass;
+and the numbers are post-tonemap / post-vignette, as the viewer sees them — compare scenes and tunes measured the same way only.
+
 ## Recorder (`R` — change to `core/rec.js`, `core/quality.js`'s hold, `loop.js`'s frame end, `hud.js`'s keys, `core/version.js`; DECISIONS §89, §92)
 
 ```
