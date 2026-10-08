@@ -17,7 +17,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc; // z-scale of the (little) Julia set, 1/P
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl; // uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -34,10 +34,11 @@ void main(){
   if(esc){
     float sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
-    float edge=exp(-e*.3),halo=1./(1.+e*.011);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
+    float edge=exp(-e*.3),halo=1./(1.+e*.011*uExtK);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
     col=pal(t)*(.07+.93*halo*halo);
     col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
-    col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
+    if(uN2.z>.5)col=mix(col,mix(pal(t+.2)*2.,vec3(1.),uFl.x)*uPal.w,edge*(uFl.y+uFl.z*uFl.w)); /* §99: the flash is the SNARE's (uFl.w = snareAmp's envelope, not v3's hit) with uFl.x white instead of .4 */
+    else col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
@@ -46,8 +47,11 @@ void main(){
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
-    col+=pal(.5+.1*bands)*uPar*uPar*(.35+.3*uBands.x)*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
-  }else{col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*uPar*uPar*(.16+.2*uBands.x);}
+    float sg=uN2.y>.5?uSmo:uPar*uPar*(.35+.3*uBands.x); /* §99: the smoulder follows the track's loudness (look2.js), not the root */
+    col+=pal(.5+.1*bands)*sg*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
+  }else{float sg=uN2.y>.5?uSmo*.5:uPar*uPar*(.16+.2*uBands.x);col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*sg;}
+  if(uN2.x>.5){float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?uLum.zw:uLum.xy;col*=1./(1.+kn.y*max(0.,L-kn.x));}
+  if(esc)col*=uExtG; /* §99: the soft knee on the luminance before bloom — the interior stays dark whatever the palette's phase, the dust stops washing out; uExtG dims the exterior while c is outside the set */
   o=vec4(col,1.);
 }`;
 

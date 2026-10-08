@@ -22,7 +22,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else con
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 console.log('1. the byte copies and the registration');
-for (const f of ['nav.js', 'shaders.js', 'shaders-v2.js']) {
+for (const f of ['nav.js', 'shaders.js']) {   // §99: shaders-v2.js and index.js carry the legibility pass now; the navigator and the OKLCH mapping are still NAV's bytes
   ok(fs.readFileSync(`assets/scenes/nav/${f}`).equals(fs.readFileSync(`assets/scenes/nav2/${f}`)), `assets/scenes/nav2/${f} is a byte copy of nav/${f}`);
 }
 ok(scene.name === 'nav2' && scene.id === 8, `name ${scene.name} id ${scene.id}`);
@@ -31,8 +31,9 @@ ok(scene.always === true, 'always true (like NAV: the forced scene is updated fr
 ok(!scene.variants, 'no variants (NAV\'s DRUM is id 4, registered once)');
 ok(!scene.card, 'no card (no landing tile for the workbench)');
 ok(typeof scene.hooks.baby === 'function' && typeof scene.hooks.n2info === 'function' && typeof scene.hooks.green === 'function', 'hooks baby / n2info / green');
-ok(same(scene.feats, nav.feats), `feats = NAV's ${nav.feats.length}`);
-ok(same(Object.keys(scene.help.feats), Object.keys(nav.help.feats)), 'help.feats keys = NAV\'s');
+ok(nav.feats.every((k) => scene.feats.includes(k)) && scene.feats.length > nav.feats.length, `feats ⊇ NAV's ${nav.feats.length} (+${scene.feats.length - nav.feats.length} for §99's look2.js)`);
+ok(Object.keys(nav.help.feats).every((k) => k in scene.help.feats) && scene.feats.every((k) => k in scene.help.feats), 'help.feats ⊇ NAV\'s, and a line for every feats entry');
+ok(['n2lum', 'n2smo', 'n2fl', 'n2ext', 'n2key', 'key'].every((k) => typeof scene.hooks[k] === 'function'), 'hooks n2lum / n2smo / n2fl / n2ext / n2key / key (§99\'s A/B knobs)');
 ok(same(Object.keys(scene.params), Object.keys(nav.params)) && same(Object.values(scene.params).map((p) => p.range), Object.values(nav.params).map((p) => p.range)), `params ${Object.keys(scene.params).join(' ')} with NAV's ranges`);
 ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === nav.post.kaleido && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s (fb decay, bloom thr, kaleido)');
 ok(scene.colour.default === 'v2' && same(Object.keys(scene.colour.variants), Object.keys(nav.colour.variants)), 'colour v2 default, the same two mappings');
@@ -61,6 +62,8 @@ const MS = {
   eS: 0, eM: 0, buildLive: 0, tension: 0, suspension: 0, arc: 'idle', dropLiveEvt: false, dropStrength: 0, dropEnv: 0, resolveEvt: false,
   intensity: 0, interval: 7, repeat: false, harmUnw: 0, peaks: [[110, 1], [220, 0.6], [330, 0.5], [550, 0.3]],
   seed: { hue: 0.6, th: -0.29, a: 0.17, scene: -1 },
+  // §99 look2.js reads: a trusted key, a loud track, no snare, the phrase position from the beat count
+  key: 7, mode: 0, keyConf: 0.5, valence: 0.5, harmAngle: 0, modeShade: 0, snareEvt: false, snareAmp: 0, loudRel: 0.8, loudRange: 5, loudAbs: 1, phrase16Pos: 0,
 };
 // The lines of sources/fake.js that NAV reads (24 s loop, DROP at 13 s; the live detector's dropLiveEvt is the drop here).
 function fake(S, dt, now) {
@@ -93,6 +96,9 @@ function fake(S, dt, now) {
   S.dropEnv *= Math.exp(-dt / 1.1);
   S.intensity = clamp(0.62 * S.eS + 0.38 * S.tension, 0, 1);
   S.harmUnw += dt * 0.25;
+  S.phrase16Pos = S.beatCount % 16 + S.beatPhase;
+  S.snareEvt = S.beat && kickOn && (S.beatCount & 1) === 1;
+  S.snareAmp = S.snareEvt ? 0.7 : S.snareAmp;
   S.interval = [7, 5, 4, 0, 9, 3][Math.floor(now / 4) % 6];
 }
 
@@ -145,6 +151,9 @@ ok(modes.indexOf('INT') >= 0 && modes.indexOf('EXT') >= 0 && modes.indexOf('HOME
 ok(scene.rt.label.startsWith(N2.mode) && typeof scene.rt.time === 'number' && scene.rt.time === N2.vtime, `rt filled: label "${scene.rt.label}" time ${scene.rt.time.toFixed(2)}`);
 const info = scene.hooks.n2info(), bad = Object.entries(info).filter(([k, v]) => typeof v === 'number' && !isFinite(v)).map(([k]) => k);
 ok(bad.length === 0 && info.c[0] === N2.c[0] && typeof info.mode === 'string' && /^\d+\/\d+$/.test(info.bulb), `n2info() finite: ${JSON.stringify({ mode: info.mode, bulb: info.bulb, rho: +info.rho.toFixed(3), h: +info.h.toFixed(3), lg: +info.lg.toFixed(2), theta: +info.theta.toFixed(3) })}${bad.length ? ' NON-FINITE ' + bad : ''}`);
+const i2 = scene.hooks.n2info();
+ok(isFinite(i2.hueT) && i2.hueT >= 0 && i2.hueT < 1 && i2.key === 7 && i2.keyConf === 1 && i2.phr >= 5 && isFinite(i2.smo) && i2.smo >= 0 && i2.smo <= 0.3 && i2.base > 0 && i2.base <= 1 && i2.fl >= 0 && i2.fl <= 1,
+  `§99 look2 state finite and in range: hueT ${i2.hueT.toFixed(3)} key ${i2.key} kc ${i2.keyConf} phrases ${i2.phr} base ${i2.base.toFixed(3)} smo ${i2.smo.toFixed(3)} fl ${i2.fl.toFixed(3)} extG ${i2.extG.toFixed(3)}`);
 const g = scene.hooks.green();
 ok(g === G && g.n === FR && g.ok === 1 && g.Q > 0 && g.Q <= 1 + 1e-9, `green(): measured every update (n ${g.n}), ok ${g.ok}, Q ${g.Q.toFixed(4)} A ${g.A.toFixed(3)} v ${g.v.toFixed(2)}`);
 

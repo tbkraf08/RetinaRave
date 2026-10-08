@@ -2,17 +2,20 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // NAV2 — the navigator's workbench (DECISIONS §97, 2026-10-08, the user: "I like NAV better than NAV2 → reset NAV2 as NAV
-// → all work in NAV2"): a byte-faithful clone of NAV (id 0) at id 8, key `9`, forced-only. nav.js / shaders.js /
-// shaders-v2.js are byte copies of ../nav/'s; this file differs from ../nav/index.js only in the registration (name, id,
-// home, always, score, no card, no DRUM variant), the program names, the `always: false` overlay guard, and the hooks
-// (`n2info()` + `green()` for the §46 trace tools; Green's ruler green.js survives as a steering fitness). Every retune
-// lands here and is proven on `IDS=8 tools/scene-md5.sh`; id 0 stays the byte-identical control.
+// → all work in NAV2"): a clone of NAV (id 0) at id 8, key `9`, forced-only, being retuned step by step
+// (docs/plans/NAV2-RETUNE-PLAN.md). nav.js and shaders.js (the OKLCH mapping) are still byte copies of ../nav/'s; this
+// file differs from ../nav/index.js in the registration (name, id, home, always, score, no card, no DRUM variant), the
+// program names, the `always: false` overlay guard, the hooks (`n2info()` + `green()` for the §46 trace tools; Green's
+// ruler green.js survives as a steering fitness) — and since §99 the legibility pass of look2.js (the exposure knee, the
+// loudness smoulder, the snare flash, colour on key — four knobs, every one at rest = NAV's bytes) on the v2 Julia shader.
+// Every retune lands here and is proven on `IDS="0 8" tools/scene-md5.sh`; id 0 stays the byte-identical control.
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { startGridWorker, LG_MIN, LG_MAX } from '../../math/mandel.js';   // LG_*: the exterior potential's own bounds — the `reach` parameter's range
 import { NAV, updateNav } from './nav.js';
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
+import { K2, L2, LUM_IN, LUM_EX, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n2lum / &n2smo / &n2fl / &n2ext / &n2key
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
@@ -38,13 +41,22 @@ export default {
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
-    'bass', 'mid', 'high', 'peaks'], // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
+    'bass', 'mid', 'high', 'peaks', // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
+    'snareEvt', 'snareAmp', 'loudRel', 'loudRange', 'loudAbs', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'harmAngle', 'phrase16Pos', 'bpm'], // §99: look2.js
   state: NAV,       // ./nav.js's own object — a second module instance, not ../nav/nav.js's; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
   rt: { c: NAV.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   // no `variants`: NAV's DRUM is id 4 and an id is registered once (core/scenes.js throws on a second)
   hooks: {
     baby: (i) => { NAV.forceBaby = +i; },      // this clone's forceBaby (its own NAV object, above)
     clipdbg: (v) => { clipDbg = +v || 0; },   // the gamut probe of both escape branches, read back through an RGBA8 target
+    // §99's knobs (look2.js knob()): &n2lum=0 knee off · &n2smo=0 the old par² smoulder · &n2fl=0 the old flash · &n2ext=0 no
+    // exterior dim / halo narrowing · &n2key=0 the old hue drift; a comma list sets a term's numbers (look2.js knob() says which)
+    n2lum: (v) => knob('lum', v),
+    n2smo: (v) => knob('smo', v),
+    n2fl: (v) => knob('fl', v),
+    n2ext: (v) => knob('ext', v),
+    n2key: (v) => knob('key', v),
+    key: pinKey,                              // &key=<0..11>: pin the key (mode by the second argument from the console), as TORUS2 / GIELIS
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green: () => GREEN,
@@ -56,6 +68,7 @@ export default {
       rho: Math.exp(NAV.cyc.lnr), phi: NAV.phi.x, par: NAV.par, bulb: NAV.bulb.p + '/' + NAV.bulb.q, q: NAV.cyc.q, has: NAV.cyc.has,
       baby: NAV.baby ? NAV.baby.P : 0, kick: NAV.kick.x, theta: NAV.th.x, lg: NAV.lg.x, pathCut: NAV.pathCut, tscale: NAV.timeScale,
       cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, loudBeats: NAV.loudBeats,
+      hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
     }),
   },
   help: {
@@ -87,6 +100,19 @@ export default {
       mid: 'the radius of the circular orbit trap',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
+      snareEvt: 'the flash on the set\'s edge is the snare\'s: the ears\' snare event places it (§99)',
+      snareAmp: 'how bright that edge flash is: the size of the last snare',
+      loudRel: 'the interior\'s smoulder follows the track\'s own loudness, not the root (§99): loudRel against the range the track has shown',
+      loudRange: 'how many LU the track has shown so far: the ladder the smoulder is stretched over (loudlight.js)',
+      loudAbs: 'whether the loudness stage runs: when it does not (&loud=0) the smoulder falls back to eS',
+      key: 'the hue: the key\'s place on the circle of fifths anchors the palette (keycolour.js, as TORUS2 / GIELIS)',
+      mode: 'minor pulls the key hue toward the cool half of the wheel, major toward the warm',
+      keyConf: 'how far the key is trusted: below a third the hue slides back to the old drift',
+      valence: 'a touch of warmth on the key hue (keycolour.js VALW)',
+      modeShade: 'whether THIS bar sits on a major or a minor degree: a per-bar lean of the key hue warm or cool (§82)',
+      harmAngle: 'the key hue\'s fallback when no key is trusted: the nearest fifth of the harmony angle',
+      phrase16Pos: 'the hue steps a twelfth of a turn around the key hue when the 16-beat phrase wraps, eased over a beat',
+      bpm: 'how long that hue step takes to settle (a beat)',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
     why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',
@@ -143,6 +169,7 @@ export default {
     rt.label = N.mode + (N.baby ? ' P' + N.baby.P : '') + ' ' + N.bulb.p + '/' + N.bulb.q;
     rt.log = `${N.mode} h${N.h.x.toFixed(2)} lg${N.lg.x.toFixed(1)} par${N.par.toFixed(2)}`;
     measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms, pure CPU — no pixel reads it): hooks.green()
+    update2(dt, S, N, LOOK);       // §99: the base light, the smoulder, the exterior dim, the snare flash, the key hue
     this._groove = GROOVE;
     this._S = S;
   },
@@ -152,6 +179,17 @@ export default {
     const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
     const u = pr.u, B = N.baby;
+    const hueT = K2.key ? L2.hueT : LOOK.hueT;   // §99: colour on key — uPal.x and the tint (use() uploaded LOOK's; the knob off leaves them)
+    if (K2.key) {
+      gl.uniform4f(u('uPal'), hueT, LOOK.pal[1], LOOK.pal[2], LOOK.pal[3]);
+      gl.uniform3fv(u('uTint'), ctx.hsv(hueT, 0.75, 1));
+    }
+    gl.uniform4f(u('uN2'), K2.lum, K2.smo, K2.fl, 0);   // §99's three shader terms, each a knob; all 0 (and uExtG / uExtK 1) = NAV's bytes
+    gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
+    gl.uniform1f(u('uExtG'), L2.extG);
+    gl.uniform1f(u('uExtK'), L2.extK);
+    gl.uniform1f(u('uSmo'), L2.smo);
+    gl.uniform4f(u('uFl'), FL.WHITE, FL.ON, FL.HIT, L2.fl);
     const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
     // inside a baby the same view is conjugated by w=A z (matched at the cut), then eased out (bz) until the host's decorations frame the copy
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
@@ -190,7 +228,7 @@ export default {
     gl.uniform4f(pt.u('uView'), 0, 0, scale, rotv);
     gl.uniform1f(pt.u('uAsp'), asp);
     gl.uniform1f(pt.u('uSize'), h * 0.012 * P.dots);
-    const oc = ctx.hsv(frac(LOOK.hue + 0.5), 0.35, 0.5 * LOOK.pal[3]);
+    const oc = ctx.hsv(frac((K2.key ? L2.hueT : LOOK.hue) + 0.5), 0.35, 0.5 * LOOK.pal[3]);   // §99: the dots follow the key hue too
     gl.uniform3f(pt.u('uCol'), oc[0], oc[1], oc[2]);
     gl.uniform1f(pt.u('uLine'), 0);
     ctx.upload(B_ORB, N.orbit, 160 * 3);
@@ -221,8 +259,9 @@ export default {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(x0, y0, sz, sz);
     gl.uniform2f(pr.u('uRes'), sz, sz);
-    gl.uniform4fv(pr.u('uPal'), [LOOK.pal[0], 0.2, 0.6, 1]);
-    gl.uniform3fv(pr.u('uTint'), LOOK.tint);
+    const hueT = K2.key ? L2.hueT : LOOK.hueT;   // §99: the PiP and its path on the same key hue
+    gl.uniform4fv(pr.u('uPal'), [hueT, 0.2, 0.6, 1]);
+    gl.uniform3fv(pr.u('uTint'), K2.key ? ctx.hsv(hueT, 0.75, 1) : LOOK.tint);
     gl.uniform4f(pr.u('uView'), PIP.cx.x, PIP.cy.x, pipS, 0);
     gl.uniform1i(pr.u('uIter'), Math.round(N.baby ? 256 : 90 + 120 * Q.q));
     gl.uniform1f(pr.u('uAlpha'), PIP.a);
@@ -233,7 +272,7 @@ export default {
       pipPath[j * 3 + 2] = (N.pathCut >= j * 3 && N.pathCut < j * 3 + 3) ? 0 : (1 - j / 32) * (j ? 1 : 1 + S.hit);
     }
     gl.uniform3fv(pr.u('uPath[0]'), pipPath);
-    gl.uniform3fv(pr.u('uPc'), ctx.hsv(frac(LOOK.hueT + 0.45), 0.55, 1));
+    gl.uniform3fv(pr.u('uPc'), ctx.hsv(frac(hueT + 0.45), 0.55, 1));
     ctx.tri();
     gl.disable(gl.BLEND);
     gl.disable(gl.SCISSOR_TEST);
@@ -241,6 +280,6 @@ export default {
 
   hud() {
     const N = NAV, f = (x) => x.toFixed(2);
-    return `nav2 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  h ${f(N.h.x)} alpha ${N.alpha.x.toFixed(3)}  theta ${N.th.x.toFixed(3)} log2G ${f(N.lg.x)}  par ${f(N.par)} tscale ${f(N.timeScale)}  bulb ${N.bulb.p}/${N.bulb.q}${N.baby ? ' baby P' + N.baby.P : ''}  cycBase ${N.cycBase | 0}`;
+    return `nav2 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  h ${f(N.h.x)} alpha ${N.alpha.x.toFixed(3)}  theta ${N.th.x.toFixed(3)} log2G ${f(N.lg.x)}  par ${f(N.par)} tscale ${f(N.timeScale)}  bulb ${N.bulb.p}/${N.bulb.q}${N.baby ? ' baby P' + N.baby.P : ''}  cycBase ${N.cycBase | 0}  key ${L2.key}${L2.mode ? 'm' : 'M'} kc ${L2.conf.toFixed(2)} hue ${L2.hueT.toFixed(3)} base ${L2.base.toFixed(2)} smo ${L2.smo.toFixed(3)}`;
   },
 };

@@ -1,0 +1,12 @@
+lumtrace CyborgNinja scene 8 [40, 70] s · 10 fps · 640x317 from 1280x633 · 301 frames · heard 40.000 → 70.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+40-45     0.205  0.331  0.001  0.002  0.0154  0.563  0.355   50
+45-50     0.228  0.295  0.001  0.001  0.0132  0.571  0.402   50
+50-55     0.271  0.330  0.001  0.002  0.0151  0.664  0.504   50
+55-60     0.137  0.286  0.001  0.001  0.0108  0.432  0.249   50
+60-65     0.192  0.287  0.001  0.001  0.0161  0.464  0.407   50
+65-70     0.192  0.252  0.001  0.001  0.0121  0.265  0.400   51
+ALL       0.218  0.307  0.001  0.002  0.0138  0.474  0.408  301
+clipFrac >= 0.25 on 0 of 301 frames · meanY >= 0.6 on 0 · min grad 0.0069 at t 46.80
+tiles 7 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 3.1 · f0 2 · sr 48000 · end frame 2282 heard 70
+files: tools/work/lum/s99/final-CyborgNinja-s8-40-70.csv · tools/work/lum/s99/final-CyborgNinja-s8-40-70.txt · tools/work/lum/s99/final-CyborgNinja-s8-40-70-sheet.jpg

@@ -28,7 +28,7 @@ the song's structure … quiet is quiet, loud is loud").
 ### 0. The clone (§97) + the ruler (§98)
 `assets/scenes/nav2/*` = NAV; `tools/lumtrace.js` baseline on SeeYouDrop 25–60 and Vienna 60–95 at id 0.
 
-### 1. Legibility — exposure and colour (§99)
+### 1. Legibility — exposure and colour (§99) — BUILT 2026-10-08 (look2.js; the numbers in §99; the eye still owed)
 Three brightness terms (nav-review §3): the interior smoulder `par²·.35`, the boundary flash `edge·(.3+.4 hit)` with its 40 % white,
 the hue wheel through green/yellow. Build:
 - **Exposure knee** on the final colour before bloom (port NAV2's `uLum` knee (0.2, 3) + `uExtG` .35 from the old nav2 shaders, git

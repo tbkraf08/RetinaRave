@@ -944,7 +944,7 @@ luminance question, so a retune is judged by this ruler, not only by eye (the mo
 on the v0.32 clip in `docs/plans/nav-retune-review-2026-10-08/lum.csv`, moved into the deterministic file-mode harness).
 
 ```
-node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path]
+node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path] [--x='n2lum=0.28,2.2&n2smo=.12,.5']
 # -> <out>.csv  <out>.txt  <out>-sheet.jpg  <out>.log     (default out: tools/work/lum/<Track>-s<scene>-<from>-<to>, gitignored)
 ```
 It is a `filetrace.js`-shaped run: `CLOCK=1 GPU=1` cdp on `#test&track=<Track>&at=<from − warm>&scene=<N>` (file mode, the
@@ -954,7 +954,7 @@ last draw, before the compositor takes the buffer, the read `rec.js` and `probe.
 `(frame − fStart) % (60/fps) == 0`: so the samples are at exact TRACK times (`t` = heard seconds, 25.0, 25.1, …), not wall
 times. Each sampled frame is `drawImage`d into a `--w` px wide 2-D canvas (the page is 1280×633 at the default `WIN`, so
 640×317) and read with `getImageData`; nothing is decoded in node. `--port` is the server cdp spawns and kills for the run —
-never the user's 8765. One headless Chrome at a time (a second one skews nothing here, but it skews every bench).
+never the user's 8765. `--x=` appends hash knobs (a scene's hooks, `&n2lum=…` on NAV2 — §99's sweep was one run per setting). One headless Chrome at a time (a second one skews nothing here, but it skews every bench).
 
 Columns (all 0..1, on the sRGB bytes, `Y = .2126 R + .7152 G + .0722 B`):
 - `meanY` mean luma · `p95` its 95th percentile (256-bin histogram) · `clipFrac` the fraction of pixels with `Y ≥ 0.9` — the
@@ -967,6 +967,12 @@ Columns (all 0..1, on the sRGB bytes, `Y = .2126 R + .7152 G + .0722 B`):
   `meanY > 0.43` here.
 - The sheet: one 320-px tile per `--sheet` s (8 per row), captioned `t · Y · clip · grad` — one image per window for review.
   The HUD minimap inset is in the GL frame, so it is in the numbers too (a ~2 % patch, the same on every frame).
+
+**Windows are comparable only at the same `at`.** The navigator's trajectory (where c is, whether it is parked on a root) is a
+function of the whole run from `at = from − warm`, so a 35–45 s window warmed from 27 s is NOT the 35–45 rows of a 25–60 s window
+warmed from 17 s (§99 measured SeeYouDrop 40–45 centre 0.558 against 0.223 on the same tree). To probe a sub-window of a long run
+bit-comparably, keep its `at`: `--from=35 --to=45 --warm=18` for the 25–60 run's rows. id 0 and id 8 share a trajectory on the same
+window (nav.js is a byte copy and reads the same fields), so the clone's rows ARE comparable to the baseline's.
 
 **Determinism:** two runs on the same tree are byte-identical CSVs (`cmp`): the clock, the seeded PRNG and the GL render are
 deterministic; the ruler's own reads are too (no wall time anywhere). A different GPU / driver may move a byte by 1/255.

@@ -8598,3 +8598,103 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   `assets/scenes/nav2/index.js` while `main.js` still imports it, so that one commit does not load; `6f6e42a` (the clone) restores the
   path. Nothing was pushed; a fixup that moves the six deletions into `6f6e42a` is the orchestrator's call once both workers are done.
   Pitfall for next time: in a shared tree, stage and commit in one step, never leave deletions sitting in the index.
+
+## §99 NAV2 legibility — the exposure knee, the smoulder on loudness, the snare flash, colour on key (2026-10-08, one worker; NAV2-RETUNE-PLAN step 1, the user's answers "color on key" + the exposure lean; review `nav-retune-review-2026-10-08/nav-review.md` §3)
+
+- **The complaint and the diagnosis (review §3).** Zurna clip on NAV v0.32: *"@38s too bright"*, *"@1m10s the boundary section is too
+  bright and unable to see the fractal shapes"*, spirals *"a little too bright"*; liked: *"when it turns green"*, the circles on the
+  filaments, the spirals inward. Three brightness terms: (1) the interior smoulder `par²·(.35+.3 bass)` maxes when loud intensity pins
+  ρ→.98 beside a root, so the loudest STEADY bars wash the centre to near-white (baseline SeeYouDrop 39.2 s centre 0.965, Vienna 86.2 s
+  0.922); (2) the boundary flash `mix(col, mix(white, pal·2, .6)·uPal.w, edge·(.3+.4 hit))` never scales with how much boundary is on
+  screen; (3) "green" was the hue wheel (`LOOK.hue` drifts ~a turn per 20 s at eS 1) passing the green third, 3–10× the luminance of
+  the blues. Policy taken (plan row 3): the loudest sustained bars are the MOST legible — dark interior, bright rim; white is spent on
+  transients and the drop slam only.
+- **What was built — `assets/scenes/nav2/look2.js` (new, 104 lines; the palette / exposure state index.js uploads) + four terms in
+  `shaders-v2.js`'s FS_JULIA_V2, each behind a knob whose rest is NAV's bytes:**
+  1. **The knee** (`uN2.x`, `uLum`): `col /= 1 + K·max(0, L − L0)` on the final colour before bloom, L = Rec.709 luma — the old NAV2
+     pass-6 knee back (git `3f6bcdd~1:assets/scenes/nav2/shaders.js`), interior (xy) and exterior (zw) separately. Final numbers
+     `LUM_IN = (0.3, 1.5)`, `LUM_EX = (0.45, 1.5)` (the sweep below).
+  2. **The smoulder follows loudness, not the root** (`uN2.y`, `uSmo`): `sg = mix(SMO.LO, SMO.HI, baseLight(loudRel, loudRange,
+     loudAbs, eS)) · pw`, `pw = sstep(SMO.R0, SMO.R1, ρ)` in INT (ρ = e^lnr of the cycle chart — the old `sstep(.8,.98,ρ)` step
+     widened to a gradient from ρ .5) and the navigator's own `par` elsewhere (the bridge's 1 − t). `baseLight()` is §63/§67's
+     `loudlight.js` as DUST uses it (fallback `eS` when `&loud=0`, so that A/B stays exact). The shader multiplies by the old
+     `(.3 + .7 bands)`; the no-chart branch takes half. Final `SMO = {LO .12, HI .4, R0 .5, R1 .98}` — against the old gain .35 + .3 bass (up to .65 at a root).
+  3. **The boundary flash is the snare's** (`uN2.z`, `uFl`): `mix(col, mix(pal(t+.2)·2, white, WHITE)·uPal.w, edge·(ON + HIT·env))`,
+     `env` = `snareAmp` placed by `snareEvt` (§70's lane, decaying over .14 s) instead of v3's `hit`; `FL = {WHITE .15, ON .3, HIT .4, TAU .14}` (white .4 → .15).
+     No edge-coverage estimate: nothing on the CPU side knows how much boundary is on screen for free, so the always-on part stays .3
+     and the exterior knee caps it (plan row's "else" branch).
+  4. **Outside the set** (`uExtG`, `uExtK`, knob `&n2ext`): while c is not in INT the exterior branch's gain eases to `EXT.GAIN` and the
+     halo's reach `1/(1 + .011 e)` narrows to `1/(1 + .011 e · EXT.SHARP)` over .5 s. The first cut was the old `uExtG .35` dim alone:
+     CyborgNinja 55–60 (the dust after the 0:48 drop) read medY 0.059 / grad 0.0067 against the baseline's 0.213 / 0.0119 — a dim keeps
+     a flat wash flat, only darker. A narrower halo gives the dust back its edges. Final `EXT = {GAIN 1 (no dim), SHARP 1.5, TAU .5}`.
+  5. **Colour on key** (`K2.key`, CPU side): `uPal.x` and `uTint` (and the orbit dots `uCol`, the PiP's `uPal`/`uTint`/`uPc`) take the
+     hue of `mkAnchor()` from `keycolour.js` with `key / mode / keyConf / valence / harmAngle / modeShade` — the recipe TORUS2 / GIELIS /
+     DUST use, so one key is one colour across scenes — with the OLD drift (`LOOK.hueT`) as the mood hue the anchor slides back to when
+     `keyConf` < KEYC1 (.3): a keyless section is the v0.2 drift, not a random hue. **Convention:** keycolour's hue is palM's cosine
+     wheel (.02 red-pink, .55 teal, .67 green); NAV's `pal()`/`uTint` are hsv's (.33 green) — the mirror image, so `hueT = frac(−hue)`.
+     The drift becomes a **step per phrase**: on each `phrase16Pos` wrap the offset walks `0, +1/12, 0, −1/12` turns around the key
+     hue (the dominant's side, back, the subdominant's side, back — one fifth on the wheel), eased over a beat (τ = 60/bpm/3), weighted
+     by the anchor's confidence. `&key=<0..11>` pins the key as on TORUS2 / GIELIS (`hooks.key(k, m)`); `&kc=0` and `&shade=` act through
+     keycolour.js as everywhere.
+     **Which keys are green** (`keyHue(k, m)` in look2.js, hsv hue at rest — no shade, valence .5; green ≈ .22–.42):
+     major: C .99 red · C# **.22 green** · D .90 magenta · D# .13 yellow · E .81 violet · F .04 red · F# .72 blue · G .95 magenta · G# .17
+     yellow · A .85 magenta · A# .08 orange · B .76 violet. minor: **Cm .20 green** · **C#m .43 green** · Dm .66 blue · **D#m .34 green** ·
+     Em .57 blue · **Fm .25 green** · F#m .48 cyan · Gm .71 blue · **G#m .39 green** · Am .62 blue · **A#m .29 green** · Bm .52 cyan. So the
+     green the user likes is the MINOR keys' colour (the mode's pull toward COOL lands the odd fifths on green, the even ones on blue);
+     Malicious (C minor, §84) is green, and `modeShade` leans a minor key's III / VI / VII bars toward yellow-green per bar.
+- **The knobs (hooks on `#test`, so `&n2lum=0` etc. in the URL; `look2.js knob()`):** `&n2lum=0` knee off · `&n2smo=0` the old par²
+  smoulder · `&n2fl=0` the old flash · `&n2ext=0` no exterior dim / narrowing · `&n2key=0` the old hue drift; a comma list sets a term's
+  numbers and turns it on (`n2lum=L0,K[,L0x,Kx]`, `n2smo=LO,HI[,R0,R1]`, `n2fl=WHITE,ON,HIT`, `n2ext=GAIN,SHARP[,TAU]`) — `tools/lumtrace.js
+  --x='…'` passes them, one run per setting. Key 1 (id 0) is the old look whole.
+- **The identity proof.** `PORT=8841 IDS="0 8" tools/scene-md5.sh v034id '&n2lum=0&n2smo=0&n2fl=0&n2key=0'` → s8 = s0 = `fb74fee4… /
+  8a0715df…` (the uniforms' rest values are IEEE identities: `uN2` 0 takes the old branches, `uExtG`/`uExtK` 1 are `x·1.`), and s0 is
+  unchanged in every run of this step. Default-on s8: `a6551c69… / d4cfb4b1…`.
+- **The ruler, before (id 0, v0.33 baselines) → after (id 8, this tree), `tools/lumtrace.js` on the three windows, per 5 s** (medY ·
+  grad · ctr · clipMx; the CyborgNinja id-0 baseline was taken for this step and added to `baseline/`; sheets under `after-s99/`):
+
+  ```
+  SeeYouDrop 25-60   medY         grad            ctr          clipMx        Vienna 60-95    medY         grad            ctr          clipMx
+  25-30  .150→.152  .0127→.0132  .453→.448  .054→.001           60-65  .213→.170  .0169→.0175  .355→.325  .048→.002
+  30-35  .218→.202  .0114→.0166  .490→.523  .118→.002           65-70  .103→.105  .0151→.0159  .180→.328  .003→.001
+  35-40  .244→.298  .0140→.0135  .576→.572  .176→.001           70-75  .186→.204  .0125→.0171  .132→.321  .043→.007
+  40-45  .318→.244  .0127→.0134  .825→.661  .124→.002  (root)   75-80  .060→.070  .0097→.0120  .036→.037  .001→.001  (breakdown)
+  45-50  .218→.201  .0122→.0152  .397→.521  .002→.002           80-85  .173→.186  .0144→.0174  .253→.419  .009→.001
+  50-55  .190→.124  .0168→.0160  .417→.358  .100→.002  (brkdn)  85-90  .193→.217  .0182→.0163  .236→.245  .092→.002  (loudest)
+  55-60  .157→.170  .0116→.0125  .285→.279  .001→.001  (drop)   90-95  .149→.276  .0117→.0147  .075→.410  .044→.001
+  ALL    .204→.200  .0131→.0143  .496→.515  .176→.002           ALL    .158→.177  .0141→.0158  .165→.324  .092→.007
+  CyborgNinja 40-70  medY         grad            ctr          clipMx     frame maxima (p95 / centre) baseline → after:
+  40-45  .211→.205  .0147→.0154  .636→.563  .090→.002             SeeYouDrop  .961 / .966 → .796 / .788 (40-45 row max .792 / .788)
+  45-50  .279→.228  .0136→.0132  .633→.571  .094→.001             Vienna      .937 / .922 → .855 / .759 (the .855 is ONE frame, 73.3 s,
+  50-55  .186→.271  .0116→.0151  .604→.664  .043→.002                          meanY .602 — the only meanY ≥ .6 frame of the three windows)
+  55-60  .213→.137  .0119→.0108  .591→.432  .091→.001  (dust)     CyborgNinja .949 / .944 → .776 / .776
+  60-65  .250→.192  .0158→.0161  .663→.464  .149→.001
+  65-70  .198→.192  .0119→.0121  .256→.265  .087→.001
+  ALL    .225→.218  .0133→.0138  .600→.474  .149→.002
+  ```
+  The sweep that chose the numbers (`tools/work/lum/s99/sweep*.out`, the 35–45 / 50–60 rows warmed from the long runs' own `at`):
+  the first cut (knee (0.2, 3), ext dim .35) 40-45 medY .102 / grad .0086, CN 55-60 .059 / .0067 · exposure alone (`n2key=0`) .103 — the
+  hue is luminance-neutral here, the dim is the whole story · dim .6 + halo ×3: .125 / .0098, .076 / .0075 · dim .8 ×4: .157 / .0108,
+  .091 / .0083 · no dim ×4: .195 / .0115, .107 / .0091 · **no dim ×1.5 (shipped): .244 / .0134, .152 / .0108** · a stronger exterior knee
+  (0.4, 2) ×2: .208 / .0123, .132 / .0099 · (0.35, 2.5) ×1: .234 / .0127, .156 / .0105.
+
+- **Goals, ticked or missed:**
+  - knee: centre at the loudest rows ≤ .75 — **hit** on the 5-s medians (SeeYouDrop 40-45 .661, Vienna 85-90 .245, CyborgNinja 50-55
+    .664; baseline .825 / .236 / .604) and on every frame but SeeYouDrop's 35-45 peaks (.787 / .788 — the lean's "white on the slam" is
+    now a .79); p95 ≤ .85 — **hit** on every frame except Vienna 73.3 s (.855); window-median meanY within 15 % — **hit** (SeeYouDrop
+    −2 %, Vienna +12 %, CyborgNinja −3 %); clipMx < .02 per row — **hit** everywhere (.176 → .002 at worst).
+  - smoulder: `grad` at the loudest rows ≥ the window median — **hit** on SeeYouDrop 35-40 (.0135 = the median) and within 1 % on 40-45
+    (.0134), hit on Vienna 85-90 (.0163 = the median) and CyborgNinja 50-55 (.0151 ≥ .0142); **missed** on CyborgNinja 55-60, the dust
+    after the 0:48 drop (.0108 against the median .0142 — the baseline's own .0119 was under its median too; the dust is an EXT picture,
+    not the smoulder's) and on Vienna 90-95 (.0147 vs .0163). Breakdowns darker than drops — **hit**, and better than the baseline:
+    SeeYouDrop breakdown 50-55 .124 < drop 55-60 .170 (the baseline had them REVERSED, .190 > .157); Vienna 75-80 .070 is the window's
+    darkest row. `grad` on the whole window rose on all three (+9 %, +12 %, +4 %).
+  - flash: white .4 → .15 and the hit part on `snareAmp` — built; the edge-coverage estimate — not built (nothing free gives it), the
+    knee caps the always-on part instead (clipMx says it does).
+  - colour on key: built, same anchor as TORUS2 / GIELIS; green is a key now (the table above), not a clock. Not measured by eye.
+- **Pitfalls.** (1) A short lumtrace window is NOT the long run's rows: the navigator's trajectory is a function of `at = from − warm`
+  (SeeYouDrop 40–45 centre 0.558 warmed from 27 s vs 0.223 from 17 s on one tree); probe a sub-window with `--warm` chosen so `at`
+  matches (HARNESS "Luminance ruler"). (2) The hue change alone moves luminance (green/yellow vs blue is 3–10×), so a medY delta on a
+  window confounds exposure and colour — `&n2key=0` separates them. (3) The user's `node tools/serve.js` on 8765 is never touched:
+  every run here was `PORT=8841` / `--port=8841`.
+- **Not done / open for the user's eye.** The OKLCH mapping (`shaders.js`, `&colour=oklch`) carries none of the four terms — it is still
+  NAV's bytes; the sheets are numbers, not a look — step 4 of the plan is the eye in file mode (key 9 vs key 1 on the six windows).

@@ -1,6 +1,6 @@
 // Luminance ruler: a legibility trace of one scene over a window of a real track, deterministically (docs/HARNESS.md "Luminance ruler").
 //   node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831]
-//                          [--out=tools/work/lum/<Track>-s<scene>-<from>-<to>]
+//                          [--out=tools/work/lum/<Track>-s<scene>-<from>-<to>] [--x='n2lum=0.28,2.2&n2smo=.12,.5']  (extra hash knobs)
 // Plays <Track> from ~/Music/RetinaRave in FILE mode on the forced scene, under cdp.js's CLOCK=1 deterministic clock (the
 // recipe filetrace.js follows: heardT = at + (frame − 2)/60 exactly, WARM seconds of engine warm-up before --from), and
 // measures a frame every 1/fps s of TRACK time — in the page, from the GL canvas, on the frame's own task (a rAF registered
@@ -44,7 +44,7 @@ const at = Math.max(0, from - WARM);
 const step = Math.round(FPS / fps), sheetStep = sheet > 0 ? Math.round(sheet * FPS) : 0;
 const fOf = (T) => F0 + Math.round((T - at) * FPS);
 const fStart = fOf(from), fEnd = fOf(to);
-const hash = `test&track=${track}&at=${at}&scene=${scene}`;
+const hash = `test&track=${track}&at=${at}&scene=${scene}${opt.x ? '&' + opt.x.replace(/^&/, '') : ''}`;   // --x='n2lum=0.28,2.2&n2smo=…': extra hash knobs for a sweep (§99)
 
 // The in-page hook. Runs once per frame after the engine's draw; measures when (f − fStart) % step == 0 inside [fStart, fEnd].
 const INSTALL = `(() => {
