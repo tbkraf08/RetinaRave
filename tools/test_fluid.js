@@ -9,7 +9,8 @@
 // and the user's pad take — HARNESS "Real-music acceptance"):
 //   feats      every FLUID_FEATS key is a FEATS entry; no pred* / *Vel / dropEvt among them (CONTRACTS §1.18, DECISIONS §76)
 //   proxy      plan() on a Proxy of MS that throws on any read outside FLUID_FEATS — over SeeYouDrop's 6600 real frames
-//   gate       subGate 0 → no sub emitter splat; subGate 1 → exactly one, at the fifths sector of subNote, y by bassReg
+//   gate       subGate 0 → no sub emitter splat; subGate 1 → exactly one, at the fifths sector of subNote RELATIVE to the tonic (§111: the
+//              tonic at the centre, the fifth right, the fourth left, the tritone at the wall; the axis follows the pinned key), y by bassReg
 //   kick       kickEvt → one impulse from the floor with dy = KICK_V·√(AMP0 + (1 − AMP0)·rank) (radius ×2) — §111 the rank in the lane's own
 //              last 64 hits (the prior .3 / .95 until 8): a lane in .5–.6 spreads over the whole law; the two frames after keep 40 %; none at age 99
 //   snare      snareEvt → the two shears, equal and opposite, dx = SNARE_V·(AMP0 + (1 − AMP0)·rank)
@@ -122,13 +123,22 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   const on = run(base({ subGate: 1, subNote: 3, bassReg: 0.4, subHz: 50 }));
   ok(on.splats.length === 1, 'gate: subGate 1 → one sub splat (' + on.splats.length + ')');
   const s = on.splats[0];
-  near(s.x, (sectorPc(3) + 0.5) / 12, 1e-9, 'gate: x at the fifths sector of the bass note (half a sector in)');
+  near(s.x, (((sectorPc(3) + 6) % 12) + 0.5) / 12, 1e-9, 'gate: §111 x at the fifths sector of the bass note RELATIVE to the tonic (C here): E♭ three fifths flat of C → left of centre');
+  near(run(base({ subGate: 1, subNote: 0 })).splats[0].x, 6.5 / 12, 1e-9, 'gate: the tonic itself at the centre (6.5 / 12)');
+  near(run(base({ subGate: 1, subNote: 7 })).splats[0].x, 7.5 / 12, 1e-9, 'gate: the fifth one sector to the right');
+  near(run(base({ subGate: 1, subNote: 5 })).splats[0].x, 5.5 / 12, 1e-9, 'gate: the fourth one sector to the left');
+  near(run(base({ subGate: 1, subNote: 6 })).splats[0].x, 0.5 / 12, 1e-9, 'gate: the tritone at the wall');
+  const stK = mkState(); for (let i = 0; i < 120; i++) run(base({ key: 7, keyConf: 0.8 }), stK);
+  near(run(base({ key: 7, keyConf: 0.8, subGate: 1, subNote: 7 }), stK).splats[0].x, 6.5 / 12, 1e-9, 'gate: with G pinned, a G sub is the centre — the axis follows the key');
+  near(run(base({ kickEvt: true, kickAmp: 1, kickAge: 0 })).splats[0].x, 6.5 / 12, 1e-9, 'gate: a kick before any sub lifts at the tonic\'s place (xSub starts at the centre)');
   near(s.y, 0.12 + 0.25 * 0.4, 1e-9, 'gate: y by the register');
   ok(s.dy > 0 && s.dx === 0, 'gate: it rises (dy ' + s.dy.toFixed(4) + '), no lean without a glide');
   const lean = run(base({ subGate: 1, subNote: 3, subGlide: 24 })).splats[0];
   near(lean.dx, K.SUB_X, 1e-9, 'gate: a +24 st/s glide leans it by the full SUB_X');
   const noNote = run(base({ subGate: 1, subNote: -1, harmAngle: Math.PI })).splats[0];
-  near(noNote.x, 0.5, 1e-9, 'gate: subNote -1 with the gate open → x from harmAngle (π → .5)');
+  near(noNote.x, 6.5 / 12, 1e-9, 'gate: subNote -1 with the gate open and no key pinned → x from harmAngle\'s nearest fifth, which IS the tonic before any pin → the centre');
+  const stP = mkState(); for (let i = 0; i < 120; i++) run(base({ key: 0, keyConf: 0.8 }), stP);
+  near(run(base({ key: 0, keyConf: 0.8, subGate: 1, subNote: -1, harmAngle: Math.PI }), stP).splats[0].x, 0.5 / 12, 1e-9, 'gate: with C pinned, subNote -1 and harmAngle π (F♯, the tritone) → the wall');
 }
 
 // kick (§111: the size is the hit's RANK in the lane's own recent range — AMP0 + (1 − AMP0)·rank, then the sqrt law)
@@ -264,7 +274,7 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     const s = p.splats[0];
     ok(s.dx === 0 && s.dy === 0, 'floor: dye only — dx ' + s.dx + ' dy ' + s.dy);
     ok(s.r + s.g + s.b > 0, 'floor: it inks (' + (s.r + s.g + s.b).toFixed(4) + ')');
-    near(s.x, (sectorPc(4) + 0.5) / 12, 1e-9, 'floor: x at the KEY\'s fifths sector (half a sector in)');
+    near(s.x, 6.5 / 12, 1e-9, 'floor: x at the KEY\'s place on the tonic-relative axis — the centre (§111)');
     near(s.y, 0.5, 1e-9, 'floor: y at mid height');
     near(s.rad, K.RADIUS * 2, 1e-12, 'floor: radius ×2');
     near(p.floor, K.FLOOR_DYE * 0.9, 1e-9, 'floor: FLOOR_DYE·mid·g·f above the knee (' + p.floor.toFixed(5) + ')');
@@ -437,6 +447,10 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     ok(pct >= 95, `music: ${name} injects on ≥ 95 % of the seconds with music (${inj.length} / ${music.length} = ${pct.toFixed(1)} %)`);
     ok(moved === 0, `music: ${name} — a frame with presence 0 moves nothing and inks nothing (${moved} of ${silentFrames.length} silent frames did)`);
     ok(held === clears.length && confirmedOk === clears.length, `music: ${name} — every clear sits within ${K.CLEAR_PEND} beats of a trigger with the sub open, and holds a beat (${confirmedOk} / ${held} of ${clears.length})`);
+    // §111 item 6: the sub emitter's x on the tonic's axis — off the walls on CyborgNinja (its held C sat at .04 before)
+    const xs = rows.filter((r) => r.S.subGate > 0).map((r) => r.P.splats.find((p) => p.k === 'sub').x).sort((a, b) => a - b);
+    if (xs.length) { const p10 = xs[Math.floor(0.1 * xs.length)], p50 = xs[xs.length >> 1], p90 = xs[Math.floor(0.9 * xs.length)]; console.log(`     ${name.padEnd(22)} sub x p10 / p50 / p90 ${p10.toFixed(2)} / ${p50.toFixed(2)} / ${p90.toFixed(2)} over ${xs.length} open frames`);
+      if (/^CyborgNinja-/.test(name)) ok(p50 >= 0.3 && p50 <= 0.7 && p90 - p10 >= 0.3, `music: ${name} — the held bass sits near the centre (p50 ${p50.toFixed(2)} in .3–.7; before .29 / .21 with the C at .04, the left wall) with a span ≥ .3 (${(p90 - p10).toFixed(2)}; its chromatic C♯ is the key's tritone, at the wall by design)`); }
     const expectClears = { 'SeeYouDrop-map1': [57.6, 105.6], 'SeeYouDrop-map0': [57.6, 105.6], 'Vienna-map1': [85.34], 'Vienna-map0': [85.34], 'WhoLikesToParty-map1': [56.5], 'WhoLikesToParty-map0': [57.52], 'IBelongHere-map1': [16.4, 32.67, 65.22], 'IBelongHere-map0': [], 'Comptine-map1': [], 'Comptine-map0': [], 'CyborgNinja-map1': [], 'CyborgNinja-map0': [], 'rec-map0': [] };
     if (name in expectClears) {
       const want = expectClears[name], okN = clearT.length === want.length && want.every((w) => clearT.some((c) => Math.abs(c - w) <= 0.15));

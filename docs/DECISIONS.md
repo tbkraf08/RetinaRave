@@ -9891,3 +9891,23 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   the music block: every clear within 1.5 beats of a trigger with the sub open and held a beat, and the clears per trace ARE the expected
   list (SeeYouDrop 2, Vienna 1, WhoLikesToParty 1 in 110 s, IBelongHere's three map lines, Comptine / CyborgNinja / the pad none).
   check 0 fail, npm test exit 0 (`test_fluid` 200 ok).
+- **Item 6 — the bass end relative to the tonic** (`inject.js`: `relX(pc) = ((sectorPc(pc − tonic) + 6) mod 12 + ½) / 12`, the tonic = the
+  pinned key, or the harmony's centre's fifth before any pin; `xSub` starts at the tonic's place 6.5 / 12; the floor's cloud sits at the
+  tonic's place too — the centre). Before, the sub emitter's x was the bass note's ABSOLUTE fifths sector (C at .04, the left wall):
+  CyborgNinja's held C sat at the wall for 1161 of its 3699 open frames in file mode and 99 % on the live lanes, IBelongHere's A♯ / A
+  at .04–.12, and the kicks launched from the same x. Now the tonic is the centre, its fifth one sector to the right, its fourth one to
+  the left, the tritone at the walls — every track's "where" on one musical axis, which follows the key as the pin moves. **The sub
+  emitter's x p10 / p50 / p90 (span), whole tracks, before → after**: CyborgNinja file .04 / .29 / .88 (.83) → **.04 / .46 / .71** (.67),
+  live .04 / .21 / .79 → .04 / .46 / .88 — the held C (G's fourth) at .46, centre-left; its p10 stays at the wall because its chromatic
+  bass walks C C♯ D D♯ and C♯ is G's tritone (12 % of the open frames: at the wall by design, and the key on this track is a guess at
+  keyConf p50 .01) · IBelongHere .09 / .29 / .88 (.79) → .21 / .54 / .71 (.50) — off the left wall, the tune's A♯ / A / D / G now round
+  the centre · Vienna .54 / .74 / .88 → .29 / .54 / .63 (D♯ minor's G♯ / D♯ / A♯ were the right third, now the centre) · SeeYouDrop
+  .28 / .54 / .63 → .21 / .46 / .54 (C♯ at the centre, F♯ left) · WhoLikesToParty .13 / .32 / .63 → .29 / .63 / .79 · the pad's YIN ghost
+  .88 / .90 / .94 → .38 / .46 / .46 · Comptine (no sub) the kick at .54 instead of .50 (`i6.md`). **The shots**: CyborgNinja's 8 windows
+  re-shot (items 1–6 together): the column off the wall by the replay's numbers, the grey means groove-40 70 → 48, busy-88 68 → 43,
+  mid-100 77 → 46, loudest-138 75 → 47, quiet-157 71 → 44, end-178 70 → 42 — the boil is gone on every window (item 1), intro-3 36 → 35,
+  early-10 47 → 51. `tools/work/fluid-s111/CyborgNinja-i6/shots/`. Tests: `test_fluid` gate (E♭ three fifths flat of C → left of
+  centre; the tonic at the centre, the fifth right, the fourth left, the tritone at the wall; with G pinned a G sub is the centre; a kick
+  before any sub at the tonic; subNote −1 → harmAngle's fifth, the centre before a pin and the wall for F♯ with C pinned), floor (x =
+  the centre), the music block prints the sub x per trace and asserts CyborgNinja's held bass near the centre (p50 in .3–.7) with a span
+  ≥ .3. check 0 fail, npm test exit 0 (`test_fluid` 209 ok).

@@ -81,7 +81,7 @@ export const K = {
                    //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
 };
 
-export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0,
+export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 6.5 / 12, snarePrev: 0, chordLeft: 0,   // xSub starts at the tonic's place (§111 item 6)
   rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0,       // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
   pin: null, ev: new Float64Array(24),                        //   the key the pool is coloured by ({k, m}: the one with the evidence), null until one is trusted; the 24 keys' evidence
   hx: 0, hy: 0, mSlow: 0,                                     //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
@@ -129,11 +129,15 @@ export function plan(S, dt, st) {
   const col = hsv(frac(A.hue), clamp(A.sat * (0.4 + 0.6 * S.tonicConf), 0, 1), 1).map(srgbToLin1);
   const splats = [];
   const add = (x, y, dx, dy, dye, rad, k) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad, k });
-  // the sub emitter: x on the circle of fifths (the sector of the bass note, half a sector in from the wall), y by the register
+  // the sub emitter: x on the circle of fifths RELATIVE TO THE TONIC (§111 item 6): the pinned key (or, before any, the harmony's
+  // centre) sits at the centre, its fifth one sector to the right, its fourth one to the left, the tritone at the walls — every track's
+  // "where" on the same musical axis (before: the bass note's absolute sector — CyborgNinja's held C sat at x .04, the left wall, all
+  // track; IBelongHere's A♯ / A at .04–.12), y by the register
   st.subAge = S.subGate > 0 ? 0 : st.subAge + dt;
+  const tonic = st.pin ? st.pin.k : (7 * jf) % 12;   // the pitch class at the centre's fifths position (7 is its own inverse mod 12)
+  const relX = (pc) => (((sectorPc(pc - tonic + 12) + 6) % 12) + 0.5) / 12;
   if (S.subGate > 0) {
-    const sec = S.subNote >= 0 ? sectorPc(S.subNote) + 0.5 : 12 * frac(S.harmAngle / (2 * Math.PI));
-    st.xSub = sec / 12;
+    st.xSub = S.subNote >= 0 ? relX(S.subNote | 0) : relX((7 * ((((Math.round((S.harmAngle || 0) / (2 * Math.PI) * 12) % 12) + 12) % 12))) % 12);
     const y = 0.12 + 0.25 * S.bassReg;
     const wide = 1 + 0.5 * (1 - clamp((S.subHz - 30) / 90, 0, 1)); // a lower sub is a wider mouth
     add(st.xSub, y, K.SUB_X * clamp(S.subGlide / 12, -1, 1) * g * f, K.SUB_V * g * f, K.SUB_DYE * g * f, wide, 'sub');
@@ -178,8 +182,8 @@ export function plan(S, dt, st) {
     for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5, 'hat');
   }
   // §108 the harmonic floor: the mid band's level as continuous ink — pads, chords, vocals, the 95 % of a track the drum channels
-  // never see — entering at the KEY's sector on the circle of fifths (the sub emitter's x rule on the tonic instead of the bass
-  // note) at mid height, radius ×2, in the key's hue. Dye only, dx = dy = 0: the pool shows the music's level and colour from the
+  // never see — entering at the KEY's place on the sub emitter's axis (§111: the tonic is the centre of that axis, so the floor is
+  // the centre cloud, x 6.5/12) at mid height, radius ×2, in the key's hue. Dye only, dx = dy = 0: the pool shows the music's level and colour from the
   // first second of sound and the hits' shears land in ink that is already there, while no roster trail moves (feedback.js reads
   // the velocity). The knee on `mid` keeps silence and a residue at nothing; the §107 clear still empties it (DROP_DISS 12 beats
   // 0.004 per frame).
@@ -187,7 +191,7 @@ export function plan(S, dt, st) {
   let floor = 0;
   if (floorLvl > 0 && g > 0) {
     floor = K.FLOOR_DYE * floorLvl * g * f;
-    add((sectorPc(S.key | 0) + 0.5) / 12, 0.5, 0, 0, floor, 2, 'floor');
+    add(relX(tonic), 0.5, 0, 0, floor, 2, 'floor');
   }
   // §111 the ink budget: this frame's injected ink, area-weighted (a kick's ×2 radius is 4× the pool ink of a snare's at the same dye),
   // as a rate (ema INK_TAU: a transient — a build's roll, a drop's bars — passes, a steady boil is governed) — the drop below is one impulse, not counted
