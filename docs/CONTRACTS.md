@@ -94,6 +94,28 @@ ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINE
                               ctx.tex(pr, 'uSpec', unit, ctx.engineTex.spec). Under #test the fake timeline fills them.
                               The core uploads only the hist rows written since the last frame (§13), so sampling hist
                               costs nothing extra; `hist` rows older than 128 hops (~1.3 s) are overwritten in place.
+                              vel   RG16F LINEAR, simW×simH (the sim grid: short edge 64/96/128/128 by ctx.tier(), the canvas
+                                    aspect): the fluid substrate's velocity in SCREEN FRACTIONS PER SECOND (uv/s, y up) — sample
+                                    `texture(uVel, uv).xy`, back-trace with `uv − v·dt`. GPU-written every frame (DECISIONS §104).
+                              dye   RGBA16F LINEAR, dyeW×dyeH (short edge 256/384/512/512): the substrate's ink, LINEAR colour
+                                    (the key hue; encode before you show it, §1.10). Both are `{t, w, h}` like spec; both are 1×1
+                                    black placeholders while `ctx.fluid.on` is false (no float render targets, `&fluid=0`, key W) —
+                                    a sampler always binds, so read them without a guard and let black mean "still".
+                              simW simH dyeW dyeH: the live grid sizes (0 while off).
+ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/fluid.js): `on` (read it — never set it; the W key and
+                              `&fluid=0` do) · `avail` (false on a device without EXT_color_buffer_float) · `tex` = `{vel, dye}`, the
+                              same objects as `engineTex.vel / .dye` · `splat(x, y, dx, dy, rgb, r?)` adds an impulse this frame: x y in
+                              uv, dx dy in uv/s (added once to the field), rgb LINEAR 0..1 (the ink), r the Gaussian's radius
+                              (`params.radius` = 0.0025 by default, ×2 for a kick, ×4 for a drop) · `force(fx, fy)` a uniform body
+                              force this frame in uv/s² (a uniform force in a closed pool is a pure pressure gradient the projection
+                              absorbs — splat where you want motion) · `params` `{curl, velDiss, dyeDiss, pressure, iters, radius}`
+                              the live values the grammar set this frame; a scene may override them for the frame (`params.curl += 10`)
+                              — the core rewrites them every step. The step runs BEFORE update(): a scene's splat lands on the
+                              next step. A scene that is not on screen must not splat (gate on `visibility`, env.SC) — the
+                              substrate is one pool under every scene. The grammar itself (the sub → where the ink enters, the
+                              kick → up, the snare → sideways, the hats → droplets, the key → colour, the beat → the breath,
+                              lpSweep → syrup, the void → the ink accumulates, the live drop → it clears) is the core's
+                              (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's part B); a scene adds on top.
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
 ctx.budget(kind)              the count for the current tier from the core's tables (§1.4): 'points' → particles of a
                               gl_VertexID cloud, 'segs' → segments of a ctx.lines path-A buffer. Read it every draw.
@@ -168,6 +190,9 @@ needed, now generic:
 - **Variants** (`variants: [...]`): a sub-mode with its own id and `score`. The director treats it as a scene for
   picking, history and forcing, but it renders through the parent's `draw` with `variant` = its name and `vmix` = a
   0.8 s eased 0→1 (the parent decides what that means: NAV's DRUM fades the interior membrane in).
+- **The substrate** (`ctx.fluid`, §1.1; DECISIONS §104): the fluid every scene can read (`engineTex.vel` / `.dye`) and stir
+  (`splat`, `force`, `params`). It is on by default where float render targets exist, off with `&fluid=0` / key `W`, and in
+  Step 1 nothing consumes it — the feedback pass rides its velocity from Step 2 (`fb.advect`), FLUID (id 12) shows the dye from Step 3.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).

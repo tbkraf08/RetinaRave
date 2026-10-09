@@ -197,6 +197,39 @@ two lists must be identical (`diff`), and `tools/scene-md5.sh x '&histfull=1'` i
 The list at the §20 re-base (linear chain, FEIGEN OKLCH, NAV hue, TORUS morph slot) is `tools/accept/v0.3/scene-md5-v03.txt`;
 the v0.2 tag's list is what `git worktree add --detach <dir> v0.2` + `PORT=8766 tools/scene-md5.sh base` reproduces.
 
+## Fluid (the substrate — `core/fluid/`, `loop.js`'s step, anything that reads `engineTex.vel` / `.dye` or calls `ctx.fluid`; DECISIONS §104)
+
+One Stam step per frame right after `uploadEngineTex`, on the finished MS, before any scene updates (`core/fluid/fluid.js`); the
+MS → force grammar is `core/fluid/inject.js` (pure, `FLUID_FEATS` = its reads, checked by `main.js` at boot and by `check.js`'s
+fluid block — a read outside the list FAILS, stricter than a scene's warn). Velocity is in screen fractions per second, everywhere.
+
+- **Switches** (under `#test`): `&fluid=0` — no step, the two 1×1 black placeholders stay bound on `engineTex.vel / .dye` (the
+  identity proof below); `&fluiddbg=1` — the dye drawn over the composite (encoded for the eye) with the velocity as an inset
+  bottom-right (0.5 + v, ±0.5 uv/s spans the range), `&fluiddbg=2` the velocity alone; harness only — `FLUID.dbg` is 0 on every
+  normal path. Key `W` toggles the substrate live (`CARD.setFluid(on)`), a toast says so; where there are no float render
+  targets (`CARD.fluid.avail` false) it stays off.
+- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue}` — `ms` the step's CPU
+  submission time (EMA, like `ENGINE.ms`; the GPU cost is the bench below), `nSplat` the last step's splat count, `params` the
+  grammar's live values. The HUD (`D`) has the line `fluid <ms> ms sim WxH dye WxH tier N iters I splats n curl c vd … dd …`;
+  the help view's part B says the same and lists `FLUID_FEATS` ("the substrate reads: …", data, never literals).
+- **Tiers** (`ctx.tier()`): sim short edge `64 / 96 / 128 / 128`, dye `256 / 384 / 512 / 512`, Jacobi `10 / 14 / 20 / 20` — at
+  the canvas aspect, so the cost is set by the short edge and not by DPR (1280×633 headless: sim 259×128, dye 1035×512; a 1440p
+  canvas costs the same sim). A tier change re-allocates with a bilinear copy of the old velocity and dye (the picture never
+  resets). Under `CLOCK=1` the tier never drops (dtRaw is 1/60), so the md5 runs are one tier.
+- **Bench** (the "Bench protocol" above): `CARD.benchFluid(300)` = ms per step at the current tier, readPixels-synced on the dye
+  target, interleaved with `bench(0, 300)` as pairs, q pinned (`setInterval(()=>CARD.Q.q=0.95,16)`, wait 8 s), `CLOCK=0`, GPU=1,
+  nothing else on the machine. Budget **≤ 1.0 ms at tier 3**, ≤ 0.4 ms at tier 0 (§104 has the numbers on this machine).
+- **The identity proof**: `GPU=1 PORT=88xx tools/scene-md5.sh <tag>` with the substrate on must equal the reference list while
+  nothing consumes it (Step 1: `tools/accept/v0.34/scene-md5-v034.txt`, every line), and `tools/scene-md5.sh <tag>off '&fluid=0'`
+  must equal it too. From Step 2 on (the feedback pass rides the velocity) the default list re-bases to `tools/accept/v0.35/`
+  and the `&fluid=0` list is what must still equal v0.34 line for line.
+- **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
+  tail, the snare's two shears, the seeded hats, the drop's one-beat clear, the parameter maps, the gain, the colour, determinism
+  (two fresh states → identical JSON), and a Proxy of MS that throws on any read outside `FLUID_FEATS`.
+- **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
+  `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
+  consumer exists; two runs of a shot are md5-equal (the four rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
+
 ## Effect chain (change to `core/post.js`, an effect, or the chain's colour space — v0.3 §20)
 
 ```

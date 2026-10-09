@@ -9031,3 +9031,100 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
 - **Not in this tag (carried from §101/§102):** the user's first look at key `1` as home in stream mode; the two mid-excursion EXT monitor
   steps on the full SeeYouDrop; the 1/2 ladder's calm candidate; id 8's own root-crossing hazard (the control, left); parity's §83 `nav.*`
   MISMATCH line (pre-existing, v3 vs NAV's live fields); `accept.sh` in full not run (its pieces by hand in §102).
+
+## §104 the fluid substrate — a Stam solver under every scene, no consumer yet (2026-10-09, one worker; FLUID-PLAN Step 1; the user: *"1) the fluid as the engine's substrate, not a scene … be sure to give credit where credit is due"*)
+
+- **What changed.** `assets/core/fluid/fluid.js` (the GL stepper), `inject.js` (the MS → force grammar, pure), `shaders.js` (the GLSL);
+  `core/loop.js` — one line, `stepFluid(dt, S, ENGINE.resumed)` right after `uploadEngineTex`: MS is final, no scene has updated, so a
+  scene's `update` / `draw` sees this frame's field; `&fluiddbg=` draws after the chain and before the overlays. `core/gl.js` — `ETEX`
+  gains `vel`, `dye` (`{t, w, h}` like `spec`, GPU-written, never uploaded, not in `bytes`), `simW / simH / dyeW / dyeH`. `main.js` —
+  `ctx.fluid` in the ctx literal, `FLUID_FEATS ⊂ ENGINE.FEATS` checked at boot exactly as a scene's feats, `initFluid(ctx)` after
+  `initLines()` (its targets come from the first resize hook, like an effect's). `harness.js` — `&fluid=0`, `&fluiddbg=1|2`,
+  `CARD.fluid`, `CARD.setFluid`, `CARD.benchFluid(n)`. `hud.js` — key `W` (a toast), the HUD line. `help.js` — the `W` row, part B's
+  "the substrate" line built from `FLUID_FEATS` (data; `check.js` still forbids an MS literal there). `tools/check.js` — a fluid block
+  after the scene loop: every `FLUID_FEATS` key in `FEATS` (fail), every `S.x` / `MS.x` read in `inject.js` in `FLUID_FEATS`
+  (**fail** — stricter than a scene's warn, the substrate feeds every scene), a declared key never read (warn). `tools/test_fluid.js`
+  in `npm test`. `tools/q-trace.sh` — `X='&fluid=0'` reaches the page (the A/B below). Docs: CONTRACTS §1.1 (`vel` / `dye` rows,
+  `ctx.fluid`), §1.4 (the substrate slot), HARNESS "## Fluid".
+- **The solver** (shaders.js, the reference's pass order): splats (one draw per target, the frame's splats in a uniform array of 16 —
+  not the reference's ping-pong per splat) → curl → vorticity confinement (`curl` from `tension`) → divergence (closed walls: the
+  neighbour outside the pool is the mirrored centre) → pressure warm-started × 0.8 → Jacobi × ITER → gradient subtract → advect the
+  velocity (dissipation `velDiss`, the breath) → advect the dye at its own resolution (`dyeDiss`). Velocity RG16F LINEAR ping-pong,
+  dye RGBA16F LINEAR ping-pong, pressure R16F NEAREST ping-pong, divergence and curl R16F — allocated raw in fluid.js (`mkTarget` is
+  RGBA-only). **One unit: screen fractions per second.** The field stores uv/s; the stencils convert to texel units with
+  `uScale = (simW, simH)` (square texels, so u_texel = v_uv · uScale) and back, and the back-trace is exactly `vUv − v·dt` — the
+  feedback pass (Step 2) and a scene sample it with no conversion. `dt` is the loop's (1/60 under `CLOCK=1`). Tiers by `tier()`:
+  sim short edge 64 / 96 / 128 / 128, dye 256 / 384 / 512 / 512, Jacobi 10 / 14 / 20 / 20, the canvas aspect — the cost is set by the
+  short edge, not DPR; a tier flip re-allocates with a bilinear copy of the old velocity and dye (the picture never resets). Under
+  `CLOCK=1` the tier cannot drop (dtRaw is the shim's 1/60), so every md5 run is one tier. No float render targets (`G.FLOAT` false):
+  `avail` false, `on` false, the two 1×1 black placeholders stay on `engineTex.vel / .dye` so a sampler always binds; key `W` says so.
+- **The grammar** (inject.js, the plan's table; the constants in one `K` table): the sub emitter at `x = (sectorPc(subNote) + ½)/12`
+  (the circle of fifths — half a sector in from the wall, the plan's `((7·subNote) mod 12)/12` put C ON the left edge), `y = 0.12 +
+  0.25·bassReg`, `+0.08` uv/s per frame while `subGate` is open (×60·dt: a 30 fps machine injects the same per second), a lean of
+  0.02 per 12 st/s of `subGlide`, the mouth wider for a lower `subHz` (×1 at 120 Hz … ×1.5 at 30 Hz — the field was in the table
+  with no mapping; this is the level → size kind §1.18 asks for); `subNote −1` with the gate open → x from `harmAngle`. The kick: one
+  impulse `(xSub, 0.06)`, `dy = 0.9·sqrt(kickAmp)`, radius ×2; the two frames after (`max(0, kickAge) < 2/60`, never age 99) keep
+  40 %. The snare: `(0.3, 0.5, +0.6·snareAmp)` and `(0.7, 0.5, −0.6·snareAmp)`. The hats: `min(3, round(denH))` droplets at `y 0.9`,
+  `x = hash(beatCount·7 + i, seed.a)`, `dy −0.15`, radius ×0.5, dye 0.3, while `hat2 > 0.3` — seeded, the same beat gives the same x.
+  The breath: `fy = −0.35·cos⁴(π·beatPhase)` — **shaped `cos(π(2x−1))` in the advect pass (centre down, edges up), not uniform**: a
+  uniform body force in a closed pool is a pure pressure gradient (∇·F = 0, n·F = n·∇φ at every wall ⇒ F = ∇φ) that the projection
+  removes to the Jacobi residual — the plan's "the pool breathes" would have been a no-op; the profile has curl, so the beat kneads two
+  cells. `beat` (the event) is not read: it would duplicate `beatPhase`'s wrap. The colour: `mkAnchor().anchor(dt, key, mode,
+  keyConf, valence, harmAngle, LOOK.mood.hue, null, modeShade)` → `hsv(hue, sat·(0.4 + 0.6·tonicConf), 1)`, decoded to linear once —
+  the hue every key-anchored scene shows. `curl = 10 + 40·tension`; `velDiss = 0.2 + 2.8·smoothstep(0.80, 0.97, lpSweep) + 2·hush`;
+  `dyeDiss = 1.0 → 0.05` as `max(buildLive, tongueOn === 1 ? tongueAmbig : 0)` rises; `dropLiveEvt` → one impulse `(xSub, 0.06, 0,
+  2.5)` radius ×4 and `dyeDiss 6` for `60/bpm` s (a countdown on dt — `st.clearLeft` — not a clock field, which would be a read
+  outside the list); the gain `g = presence·(0.3 + 0.7·loudRel)·(1 − 0.8·hush)·(1 − 0.5·calm)` on every injected velocity, every drop
+  of dye and the breath. Not read: `pred*`, `*Vel`, `dropEvt`, `heardT`. Dye amounts (the table left them open): sub 0.015 per
+  frame (≈ 0.9 at the mouth at dyeDiss 1), kick 0.5, snare 0.25, hats 0.3, drop 1.0 — in linear units, the key colour scaled.
+  `ctx.fluid.splat` queues into the same list and the step drains it; the step runs before `update()`, so a scene's splat lands on
+  the next step (one frame, said in CONTRACTS). `ctx.fluid.force` is a uniform body force — the same caveat, written on the slot.
+- **Numbers** (this machine, Intel UHD 770-class iGPU, headless `GPU=1`, the 1280×720 window = a 1280×633 canvas, so the sim is
+  259×128 and the dye 1035×512 at tier 3 — wider than the plan's 228×128 at a true 16:9; the budget holds anyway). Bench protocol
+  (q pinned, 8 s, three pairs of `benchFluid(300)` / `bench(0, 300)`): tier 3 (q .95) **0.581 / 0.553 / 0.591 ms** against NAV
+  1.414 / 1.35 / 1.335 → median **0.58 ms, ratio 0.43** (budget ≤ 1.0); tier 0 (q .1, sim 129×64, dye 518×256) **0.300 / 0.315 /
+  0.288** against NAV 1.717 / 1.678 / 1.585 → median **0.30 ms** (budget ≤ 0.4). CPU submission (`CARD.fluid.ms`, EMA) 0.12–0.18 ms
+  on the SeeYouDrop windows, 0.15 on the fake. ≈ 27 + 2 draws per step at tier 3 (2 splat, curl, vorticity, divergence, clear, 20
+  Jacobi, gradient, 2 advect). `test_fluid.js` 50 ok. `check.js` 0 fail / 8 warn (the eight pre-existing soft caps). `license.js
+  --check` 178 public files, 0 without the header. **Q trace** (`tools/accept/v0.35/q-{house,aba}-{after,fluidoff}.txt`, 3 runs each, the §16 visit; `X='&fluid=0'` is the new
+  knob in `q-trace.sh`): house 0–40 / 40–70 / 70–100 s means **0.56 / 0.71 / 0.83** with the substrate on and **0.56 / 0.71 / 0.83**
+  off (q mean 0.73 both, min .35 both); aba **0.56 / 0.71 / 0.83 / 0.98** on and the same off (mean 0.83 both) — a difference of
+  0.00 against the ≤ 0.05 gate: a 0.6 ms step never trips the 17.5 ms good-frame line on this machine, so the knob does not see it.
+- **Proof — nothing moved.** `GPU=1 PORT=8842 tools/scene-md5.sh s1` with the substrate ON: all 24 lines (s0–s11, f360 / f840) **=
+  `tools/accept/v0.34/scene-md5-v034.txt`**, errs [] hop 840 row 72 on every id; `tools/scene-md5.sh s1off '&fluid=0'`: the same 24
+  lines, identical. `parity.js fake` (ACC v0.35): MS 0 diff, the pre-existing §83 `nav.*` MISMATCH line to the digit (`max
+  7.852214593751443`, 72 fields — §102's number). Monitor 60 s on the home: `n 3606 fast 0 max .0313 viol []`, errs [], the
+  substrate on at tier 2 the whole minute (3676 steps, q .74 at the end). Help: 209 rows = the non-internal FEATS count (no new
+  entry), top table 51 = DUST's feats, the `W` row in part D, part B's line `fluid 0.06 ms sim 259x128 dye 1035x512 tier 2 … · the
+  substrate reads: subNote, subGate, …`; a synthetic `keydown w` turns it off (`engineTex.vel.w` 259 → 1 → 259 on the second press),
+  errs [], glerr 0. `&fluid=0`: `on false, steps 0, vel 1×1, dye 1×1, the same texture`. Bundle (174 modules, 1670 KB) from
+  `file://`: errs [], the substrate on, 345 steps in 6 s, 3 "Dobryakov" lines in the single file, 0 EXC. SwiftShader (no `GPU=1`):
+  `EXT_color_buffer_float` is there too, 120 steps, glerr 0 — the `G.FLOAT` fallback has still never been seen on a device.
+- **The eye** (`tools/accept/v0.35/fluid-s1-*.jpg`, `&track=SeeYouDrop&scene=1&fluiddbg=1` — the dye itself, encoded, the velocity
+  as the inset bottom-right; the montage `tools/work/fluid-s1-m.jpg`): intro 10 s — only hat droplets at the surface, the pool black
+  (no sub, no drums: right); groove 35 s — a stirred blue-teal pool, the sub's column at its sector, `n 1` splat per frame (the
+  emitter); drop 1 57.6 / 58.0 s — the pool full, the two snare shears at mid height as two bright blobs, `dyeDiss .49` (the void's
+  ink carried in); build 90 / 100 s — magenta then grey-blue as the key anchor and the shade move, `curl 39` at 100 s (tension);
+  drop 2 105.6 / 105.8 s — the big impulse at the floor, lilac. Two runs of the intro shot: md5 equal. The velocity inset shows
+  fine grain everywhere (vorticity confinement amplifying half-float curl noise, the reference does the same at CURL 30) under the
+  large-scale cells — a consumer that samples it bilinearly at a coarser rate (feedback, Step 2) will not see the grain; a scene
+  that shades from it should blur first. Whether the pool reads as *music* to the user's eye is Step 3's question, where it is shown.
+- **Lineage.** The solver is Pavel Dobryakov's WebGL-Fluid-Simulation (MIT, 2017) re-implemented on this repo's `gl.js` helpers —
+  nothing vendored, the notice in `THIRD-PARTY.md`. Three forks informed the design and no code was taken from them:
+  michaelbrusegard/WebGL-Fluid-Enhanced (the ESM API shape — a simulation object with config, splat and pause, which `ctx.fluid`
+  follows), oliver-kopcik/fluid-music-visualizer (spectral-flux onsets as splat force and size, pitch classes as hue — here the ears'
+  `kickEvt`/`kickAmp` and the key anchor), little-noob/Fero-Fluild-Lamp (the band split bass / mid / high into deformation,
+  turbulence and edge detail — here the register axis). The grammar's sources are the user's own validated mappings: TORUS2's waves at
+  beat speed and the measured drum channels (DECISIONS §57, §58, §70, §74, §79, §81).
+- **Credit, where it is.** Line 4 of `fluid.js`, `inject.js`, `shaders.js`, `tools/test_fluid.js` (`shaders.js` also "after GPU Gems
+  ch. 38 (Harris 2004)" on line 5); `THIRD-PARTY.md` at the root with the full MIT notice, copied into `dist/` by the build next to
+  `LICENSE`; README "## Credits"; `site/about.html`'s License section (the plan's sentence, verbatim — the substrate is under every
+  scene from this step, so the public page says so now, not at Step 3); the bundle carries the header lines (`bundle.js` rewrites
+  import / export lines only). `grep -l Dobryakov` lists all four new files; `license.js --check` 0 missing.
+- **Not done / open.** The user's eye on the drop windows (the dye is only visible through `&fluiddbg=` until Step 3). HiDPI phones:
+  a 390×844 DPR-3 canvas is capped at 1600 long edge → sim 128×277 portrait at tier 2, untested on a device. The `G.FLOAT` fallback
+  never seen on a device. The velocity grain (above). `ctx.fluid.force`'s uniform body force is honest but weak by construction.
+  Scene splats land one frame late (by design: the step precedes `update`). `accept.sh` in full not run (its pieces by hand above);
+  `ACC` stays v0.34 — Step 2 is the re-base. Step 2's worker: `io.fluid` is `ctx.fluid` (add it to `runChain`'s io in `loop.js`);
+  sample `engineTex.vel` with `texture(uVel, c).xy` and back-trace `c −= advect · dt · v` — uv/s, no scaling, CLAMP_TO_EDGE; the
+  `&fluid=0` list must still equal v0.34 line for line.

@@ -14,7 +14,8 @@
 # the first `before` runs showed q untouched), at 70 s released into a soft switch home, so every run has one 30 s deep
 # FEIGEN visit at the same place on the clock and the 1 Hz windows [40,70) (during) and [70,100) (after) compare
 # across tags. Tag `none` (or NONE=1): FEIGEN's score is made 0 after load (never auto-picked, CONTRACTS §4) and the visit is skipped — the run with FEIGEN as good as unregistered, same clock, same windows.
-# VISIT= (empty) traces the director's own picks only.
+# VISIT= (empty) traces the director's own picks only. X='&fluid=0' (any extra hash) reaches the page: the fluid substrate's A/B (DECISIONS §104) is
+# `X='&fluid=0' tools/q-trace.sh fluidoff` against `tools/q-trace.sh after` — the same visit, the same clock, the substrate off vs on.
 cd "$(dirname "$0")/.." || exit 1
 TAG=${1:-after}; shift
 STYLES=${*:-house aba}
@@ -35,7 +36,7 @@ one() {
     steps="[$pre,{\"wait\":$W}"
   fi
   steps="$steps,{\"eval\":\"CARD.log.filter(l=>/@|\\\\|/.test(l)).join('\\\\n')\"},{\"eval\":\"'END errs '+JSON.stringify(CARD.ERRS)+' bad '+JSON.stringify(CARD.nonFinite())\"}]"
-  node tools/cdp.js "test&fake=0&demo=$s" "$steps" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | sed 's/\\n/\n/g'
+  node tools/cdp.js "test&fake=0&demo=$s$X" "$steps" | grep -E '^EVAL|^\[EXC\]' | sed 's/^EVAL.*=> //; s/^"//; s/"$//' | sed 's/\\n/\n/g'
 }
 for s in $STYLES; do
   f="tools/accept/${ACC:-v0.5}/q-$s-$TAG.txt"; : > "$f"
