@@ -1,12 +1,14 @@
-// NAV2 is a byte-faithful clone of NAV (DECISIONS §97, 2026-10-08: "I like NAV better than NAV2 → reset NAV2 as NAV → all work
+// NAV2 is a clone of NAV being retuned (DECISIONS §97, 2026-10-08: "I like NAV better than NAV2 → reset NAV2 as NAV → all work
 // in NAV2") — this is the node smoke of the workbench. NAV could never be tested in node because the exterior ray grid comes
 // from a Worker; seeded with setGrid(buildRayGrid(...GRIDP)) (62 ms, the table the Worker builds) its navigator runs here,
-// so the clone's update() is driven 48 s at 60 Hz against NAV's own update() on the same fake timeline (the lines of
-// assets/engine/sources/fake.js it reads, re-implemented as tools/test_nav2.js always did) and the two trajectories must be
-// the same to the bit — two module instances of one navigator. Also: the three byte copies, the registration shape (§97's
-// list: id 8, home false, score 0, no variants, no card, own state, hooks n2info / green / baby), the first-frame guards
-// draw() and overlay() need as a forced scene (the §39 freeze), the continuity monitor's rule (tools/monitor.js) on the
-// clone, Green's ruler live, and the cost of one update().
+// so the clone's update() is driven at 60 Hz against NAV's own update() on the same fake timeline (the lines of
+// assets/engine/sources/fake.js it reads, re-implemented as tools/test_nav2.js always did, plus §83's percussion lattice and a
+// sub lattice for §100's terms). Pass A (48 s): every §100 knob OFF — the two trajectories must be the same to the bit (two
+// module instances of one navigator: the retune's rest is NAV). Pass B (48 s more): the knobs ON — the continuity monitor's
+// rule (tools/monitor.js) must stay clean while the kick lane, the beat breath, the sub press, the pitch lean and the trap per
+// bar all move c; the numbers are printed. Also: the registration shape (§97's list: id 8, home false, score 0, no variants,
+// no card, own state, hooks n2info / green / baby), the first-frame guards draw() and overlay() need as a forced scene (the
+// §39 freeze), Green's ruler live, and the cost of one update().
 // node tools/test_nav2.js            N2TRACE=1 prints one line per half second
 import fs from 'node:fs';
 import scene from '../assets/scenes/nav2/index.js';
@@ -21,9 +23,12 @@ let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-console.log('1. the byte copies and the registration');
-for (const f of ['nav.js', 'shaders.js']) {   // §99: shaders-v2.js and index.js carry the legibility pass now; the navigator and the OKLCH mapping are still NAV's bytes
-  ok(fs.readFileSync(`assets/scenes/nav/${f}`).equals(fs.readFileSync(`assets/scenes/nav2/${f}`)), `assets/scenes/nav2/${f} is a byte copy of nav/${f}`);
+console.log('1. the byte copy, the navigator\'s diff, the registration');
+ok(fs.readFileSync('assets/scenes/nav/shaders.js').equals(fs.readFileSync('assets/scenes/nav2/shaders.js')), 'assets/scenes/nav2/shaders.js (the OKLCH mapping) is a byte copy of nav/shaders.js');
+{ // §100: nav.js differs from NAV's at the move2.js hooks only — the import, the tighten() call, the two h targets, the φ target, the kick gate
+  const A = fs.readFileSync('assets/scenes/nav/nav.js', 'utf8').split('\n'), B = fs.readFileSync('assets/scenes/nav2/nav.js', 'utf8').split('\n');
+  const sa = new Set(A), sb = new Set(B), gone = A.filter((l) => !sb.has(l)).length, added = B.filter((l) => !sa.has(l)).length;
+  ok(gone <= 10 && added <= 18 && B.some((l) => l.includes("from './move2.js'")), `nav2/nav.js = nav/nav.js + the §100 hooks: ${gone} lines gone, ${added} added (caps 10 / 18), imports move2.js`);
 }
 ok(scene.name === 'nav2' && scene.id === 8, `name ${scene.name} id ${scene.id}`);
 ok(scene.home === false, 'home false (core/scenes.js keeps the LAST registered home — a cloned true would steal the director)');
@@ -34,6 +39,8 @@ ok(typeof scene.hooks.baby === 'function' && typeof scene.hooks.n2info === 'func
 ok(nav.feats.every((k) => scene.feats.includes(k)) && scene.feats.length > nav.feats.length, `feats ⊇ NAV's ${nav.feats.length} (+${scene.feats.length - nav.feats.length} for §99's look2.js)`);
 ok(Object.keys(nav.help.feats).every((k) => k in scene.help.feats) && scene.feats.every((k) => k in scene.help.feats), 'help.feats ⊇ NAV\'s, and a line for every feats entry');
 ok(['n2lum', 'n2smo', 'n2fl', 'n2ext', 'n2key', 'key'].every((k) => typeof scene.hooks[k] === 'function'), 'hooks n2lum / n2smo / n2fl / n2ext / n2key / key (§99\'s A/B knobs)');
+ok(['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap'].every((k) => typeof scene.hooks[k] === 'function'), 'hooks n2kick / n2breath / n2sub / n2pitch / n2trap (§100\'s knobs)');
+ok(['kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'].every((k) => scene.feats.includes(k)), 'feats carry §100\'s reads (the lane, the sub, the clock confidence, barPos + the tongue ladder for spin())');
 ok(same(Object.keys(scene.params), Object.keys(nav.params)) && same(Object.values(scene.params).map((p) => p.range), Object.values(nav.params).map((p) => p.range)), `params ${Object.keys(scene.params).join(' ')} with NAV's ranges`);
 ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === nav.post.kaleido && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s (fb decay, bloom thr, kaleido)');
 ok(scene.colour.default === 'v2' && same(Object.keys(scene.colour.variants), Object.keys(nav.colour.variants)), 'colour v2 default, the same two mappings');
@@ -55,7 +62,8 @@ ok(guard === 'returned', 'overlay() before the first update() returns (loop.js c
 const info0 = scene.hooks.n2info();
 ok(info0.mode === 'INT' && info0.bulb === '1/2' && info0.c[0] === 0 && info0.c[1] === 0, `n2info() at rest: ${info0.mode} bulb ${info0.bulb} c ${info0.c}`);
 
-console.log('3. 48 s at 60 Hz: the clone\'s update() against NAV\'s, the continuity rule, Green\'s ruler');
+console.log('3. pass A, 48 s at 60 Hz with every §100 knob OFF: the clone\'s update() against NAV\'s, the continuity rule, Green\'s ruler');
+for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hooks[k]('0');
 setGrid(buildRayGrid(...GRIDP));   // the table the Worker builds in the browser (mandel.js GRIDP) — navDrop and the EXT chart need it
 const MS = {
   presence: 1, bass: 0, mid: 0, high: 0, hit: 0, hitStrength: 0, onset: false, beat: false, beatPhase: 0, beatCount: 0, bpm: 124,
@@ -64,6 +72,9 @@ const MS = {
   seed: { hue: 0.6, th: -0.29, a: 0.17, scene: -1 },
   // §99 look2.js reads: a trusted key, a loud track, no snare, the phrase position from the beat count
   key: 7, mode: 0, keyConf: 0.5, valence: 0.5, harmAngle: 0, modeShade: 0, snareEvt: false, snareAmp: 0, loudRel: 0.8, loudRange: 5, loudAbs: 1, phrase16Pos: 0,
+  // §100 move2.js reads: §83's percussion lattice (a kick every beat, kickAmp 1 / .55), a sub lattice (open 6 beats of 8 while the kick plays,
+  // the note walking the key's degrees), the bar position, the tongue ladder (the 8th depth rises when the kick comes back), the PCM clock's confidence
+  kickEvt: false, kickAge: 99, kickAmp: 0, subGate: 0, subNote: -1, clockConfPcm: 0.9, barPos: 0, barPhase: 0, tongue21: 0, tongue41: 0, tongueOn: 1,
 };
 // The lines of sources/fake.js that NAV reads (24 s loop, DROP at 13 s; the live detector's dropLiveEvt is the drop here).
 function fake(S, dt, now) {
@@ -72,12 +83,20 @@ function fake(S, dt, now) {
   const sec = T < 6 ? 'sustain' : T < 10 ? 'valley' : T < 13 ? 'build' : T < 21 ? 'peak' : 'valley';
   const kickOn = sec === 'sustain' || sec === 'peak';
   S.beatPhase += dt * S.bpm / 60;
+  S.kickEvt = false;
+  S.kickAge += dt;
   if (S.beatPhase >= 1) {
     S.beatPhase -= 1;
     S.beatCount++;
     S.beat = true;
-    if (kickOn) { S.onset = true; S.hitStrength = 0.8; S.hit = 1; }
+    if (kickOn) { S.onset = true; S.hitStrength = 0.8; S.hit = 1; S.kickEvt = true; S.kickAge = S.beatPhase * 60 / S.bpm; S.kickAmp = S.beatCount & 1 ? 0.55 : 1; }
   }
+  S.barPos = (S.beatCount % 4) + S.beatPhase;
+  S.barPhase = S.barPos / 4;
+  S.tongue21 = kickOn ? 0.5 : 0;
+  S.tongue41 = kickOn ? 0.4 : 0;
+  S.subGate = kickOn && (S.beatCount % 8) < 6 ? 1 : 0;
+  S.subNote = S.subGate ? [7, 7, 2, 2, 0, 9][Math.floor(now / 2) % 6] : -1;
   S.hit *= Math.exp(-dt / 0.14);
   const kp = kickOn ? Math.exp(-S.beatPhase * 5) : 0;
   S.bass = kp * 0.9;
@@ -143,7 +162,7 @@ for (let f = 1; f <= FR; f++) {
 }
 console.log('  modes seen: ' + modes.join(' ') + '   transitions: ' + events.map((e) => 'f' + e[0] + ' ' + e[1]).join(', '));
 ok(nonFinite === 0, 'nothing non-finite in 2880 frames (' + nonFinite + ')');
-ok(maxDiff === 0 && modeDiff === 0, `the clone's trajectory is NAV's to the bit: max |c, h, vtime difference| ${maxDiff}, frames with another mode or parameter ${modeDiff}`);
+ok(maxDiff === 0 && modeDiff === 0, `knobs off: the clone's trajectory is NAV's to the bit: max |c, h, vtime difference| ${maxDiff}, frames with another mode or parameter ${modeDiff}`);
 ok(MON.viol.length === 0, 'continuity monitor (tools/monitor.js\'s rule): viol ' + JSON.stringify(MON.viol) + ' (n ' + MON.n + ', fast ' + MON.fast + ', max ' + MON.max.toFixed(4) + ')');
 ok(dropFrame >= 779 && dropFrame <= 781, `the exit is at frame ${dropFrame} (13 s = f780 +- 1: navDrop on dropLiveEvt)`);
 ok(backFrame > dropFrame && backFrame < 36 * 60, `back inside at frame ${backFrame} (EXT -> HOME -> IN -> INT before the second drop at 37 s)`);
@@ -156,6 +175,46 @@ ok(isFinite(i2.hueT) && i2.hueT >= 0 && i2.hueT < 1 && i2.key === 7 && i2.keyCon
   `§99 look2 state finite and in range: hueT ${i2.hueT.toFixed(3)} key ${i2.key} kc ${i2.keyConf} phrases ${i2.phr} base ${i2.base.toFixed(3)} smo ${i2.smo.toFixed(3)} fl ${i2.fl.toFixed(3)} extG ${i2.extG.toFixed(3)}`);
 const g = scene.hooks.green();
 ok(g === G && g.n === FR && g.ok === 1 && g.Q > 0 && g.Q <= 1 + 1e-9, `green(): measured every update (n ${g.n}), ok ${g.ok}, Q ${g.Q.toFixed(4)} A ${g.A.toFixed(3)} v ${g.v.toFixed(2)}`);
+
+console.log('3b. pass B, 48 s more with the §100 knobs ON (the defaults): the lane fires, the breath / sub / lean / trap move, the continuity rule holds');
+for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hooks[k]('1');
+{
+  const B = { n: 0, fast: 0, max: 0, viol: [] };
+  let jumps = 0, bc0 = MS.beatCount, bars = 0, diff = 0, trapBack = 0, trapPrev = -1, lo = 9, hi = -9, leanMax = 0, breathMax = 0, nf = 0, pc2 = null, pk2 = N2.kick.x, pm2 = N2.mode, pd2 = 0, tm2 = -999, off = 0, fires0 = scene.hooks.n2info().fires, trap0 = scene.hooks.n2info().trapA;
+  for (let f = FR + 1; f <= 2 * FR; f++) {
+    const now = f * dt;
+    fake(MS, dt, now);
+    for (const k in scene.params) { P[k] = scene.params[k].from(MS); P0[k] = nav.params[k].from(MS); }
+    scene.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P, now, Q: {} });
+    nav.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P0, now, Q: {} });
+    const i = scene.hooks.n2info(), c = [N2.cPath[0], N2.cPath[1]];
+    if (!isFinite(N2.c[0]) || !isFinite(N2.c[1]) || !isFinite(N2.h.x) || !isFinite(i.tight) || !isFinite(i.lean) || !isFinite(i.trapA)) nf++;
+    diff = Math.max(diff, Math.abs(N2.c[0] - N0.c[0]), Math.abs(N2.c[1] - N0.c[1]));
+    if (i.trapA < trapPrev) trapBack++;
+    trapPrev = i.trapA;
+    lo = Math.min(lo, i.tight); hi = Math.max(hi, i.tight); leanMax = Math.max(leanMax, Math.abs(i.lean)); breathMax = Math.max(breathMax, i.breath);
+    if (MS.kickEvt && N2.mode === 'INT' && MS.buildLive < 0.4 && i.lastK > 0 && N2.kick.x > 0.5 && !(i.tight === 0)) off++;
+    if (pc2) {
+      if (N2.mode !== pm2) tm2 = f;
+      const d = Math.hypot(c[0] - pc2[0], c[1] - pc2[1]) / (N2.baby ? N2.baby.size : 1);
+      const rise = N2.kick.x > pk2 + 0.05, legal = N2.pathCut <= 2 || rise || N2.mode !== pm2 || f - tm2 < 18;
+      if (rise) jumps++;
+      B.n++;
+      if (!legal) { B.max = Math.max(B.max, d); if (d > 0.06) { if (d > 2.5 * pd2 + 0.01) B.viol.push([f, +d.toFixed(4), +pd2.toFixed(4), N2.mode]); else B.fast++; } }
+      pd2 = d;
+    }
+    pc2 = c; pk2 = N2.kick.x; pm2 = N2.mode;
+  }
+  bars = (MS.beatCount - bc0) / 4;
+  const i = scene.hooks.n2info();
+  ok(nf === 0, 'pass B: nothing non-finite (' + nf + ')');
+  ok(B.viol.length === 0, 'pass B continuity monitor: viol ' + JSON.stringify(B.viol) + ' (n ' + B.n + ', fast ' + B.fast + ', max cPath step ' + B.max.toFixed(4) + ')');
+  ok(i.fires > fires0 && jumps > 0 && jumps / bars < 2.5, `pass B the lane: ${i.fires - fires0} fires, ${jumps} kick rises over ${bars.toFixed(1)} bars = ${(jumps / bars).toFixed(2)} per bar (the lattice has a kick every beat; THR ${i.lastK > 0 ? 'passed' : '?'}, last size ${i.lastK.toFixed(3)})`);
+  ok(breathMax > 0.05 && hi > 0.05 && lo < -0.05 && hi <= 0.6 && lo >= -0.6, `pass B the breath + the sub press: breath max ${breathMax.toFixed(3)}, tight ${lo.toFixed(3)} .. ${hi.toFixed(3)} (sub seen ${i.subSeen})`);
+  ok(leanMax > 0.05 && leanMax <= 0.6, `pass B the pitch lean: |lean| max ${leanMax.toFixed(3)} rad (cap .6)`);
+  ok(trapBack === 0 && i.trapA - trap0 > Math.PI * bars && i.trapA - trap0 < 2.2 * Math.PI * bars, `pass B the trap per bar: monotone (${trapBack} backward frames), ${((i.trapA - trap0) / Math.PI / bars).toFixed(2)} π per bar over the pass (a quarter turn + .12 per beat, ×1.5 downbeats, the double time's accent; NAV: 4 π)`);
+  ok(diff > 0.01, `pass B differs from NAV (max |c| difference ${diff.toFixed(4)})`);
+}
 
 console.log('4. cost');
 {

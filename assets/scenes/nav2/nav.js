@@ -3,9 +3,12 @@
 // Source: https://github.com/tbkraf08/RetinaRave
 // LAYER 2: THE NAVIGATOR. The music moves c through charts on M: interior (multiplier of a bulb), exterior
 // (external angle, potential), and zoom-matched cuts into baby copies. Lifted verbatim from cardioid3 NAV.
+// NAV2 (§100): the groove moves c — move2.js's five terms enter here at three lines (the h target, the φ target, the kick gate);
+// every one off (&n2kick=0 &n2breath=0 &n2sub=0 &n2pitch=0) is NAV's navigator to the bit (tools/test_nav2.js proves it).
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
 import { BULBS, extC, getGrid, LG_MIN, solveMult } from '../../math/mandel.js';   // LG_MAX left with the `reach` parameter's range in index.js
 import { BABIES, MISI, cardChart } from '../../math/baby.js';
+import { tighten, kickGate, M2 } from './move2.js';   // §100: the beat breath, the sub press, the pitch lean, the kick lane
 
 export const NAV = {
   mode: 'INT', alpha: new Spring(0.5, 3), h: new Spring(-1, 3.5), phi: new Spring(0, 2.5), bulb: BULBS[7], target: BULBS[7],
@@ -89,6 +92,7 @@ export function updateNav(dt, now, S, env) {
   if (S.dropLiveEvt) navDrop(S, now);   // the live detector's slam (§54; v3's dropEvt until 2026-09-29)
   const b = N.target, I = S.intensity;
   const park = clamp(Math.max(sstep(0.45, 0.85, S.buildLive), sstep(0.5, 0.8, S.suspension)), 0, 1);
+  const T = tighten(dt, S, N);   // §100: + presses the h target toward the rim (the beat's crest, the sub), − relaxes it toward the centre; 0 at rest
   if (N.mode === 'INT') {
     const idle = S.presence < 0.15, hp = N.h.x, want = N.leave ? null : N.want;
     if (N.hold) { // parked on the root while the view dives to matched zoom
@@ -101,7 +105,7 @@ export function updateNav(dt, now, S, env) {
       else {
         N.bulb = BULBS[0];
         N.alpha.step(idle ? N.alpha.x : S.harmUnw / TAU * 0.5 + S.seed.a, dt, 1.2);
-        N.h.step(idle ? -1 : -(1 - 0.93 * Math.max(I, park)), dt, idle ? 0.8 : 3);
+        N.h.step(idle ? -1 : -(1 - 0.93 * Math.max(I, park)) * (1 - T), dt, idle ? 0.8 : 3);
       }
     } else {
       const aT = b.alpha + Math.round(N.alpha.x - b.alpha), atRoot = Math.abs(N.alpha.x - aT) < 0.0015 && Math.abs(N.alpha.v) < 0.02;
@@ -114,7 +118,7 @@ export function updateNav(dt, now, S, env) {
         N.bulb = b;
         const exit = N.loud > 14 && env.isLogical;
         N.leave = exit && N.baby ? 1 : 0;
-        N.h.step(exit ? (N.baby ? -0.01 : 0) : mix(clamp(1 - (0.12 + 0.8 * I), 0.02, 1), 0.004, park), dt, park > 0.5 ? 2.6 : 3.5);
+        N.h.step(exit ? (N.baby ? -0.01 : 0) : clamp(mix(clamp(1 - (0.12 + 0.8 * I), 0.02, 1), 0.004, park) * (1 - T), 0.004, 1), dt, park > 0.5 ? 2.6 : 3.5);
         if (exit && !N.baby && N.h.x < 0.02 && getGrid()) {
           N.mode = 'OUT';
           N.s = 0;
@@ -123,7 +127,7 @@ export function updateNav(dt, now, S, env) {
         }
       }
     }
-    N.phi.step((1 - park) * 1.3 * Math.sin(S.harmUnw * 0.7 + S.seed.a * TAU), dt);
+    N.phi.step(clamp((1 - park) * 1.3 * Math.sin(S.harmUnw * 0.7 + S.seed.a * TAU) + M2.lean, -1.3, 1.3), dt);   // §100: + the bass pitch lean
     // root event: h changed sign, so c is exactly a parabolic root this frame — the only place the chart may be transplanted
     if (!N.hold && (hp <= 0) !== (N.h.x <= 0) && N.baby !== want) {
       N.h.x = 0;
@@ -136,9 +140,9 @@ export function updateNav(dt, now, S, env) {
       else N.loud = 0;
     }
     // chart -> c
-    const B = N.baby, zsc = B ? 1 / B.A : 1;
+    const B = N.baby, zsc = B ? 1 / B.A : 1, hb = N.h.x * (1 - M2.breath);   // §100: the beat breath presses the chart's radius toward the rim on the crest (the profile is the smoothing; the spring and the mode logic see the real h)
     if (N.h.x <= 0) {
-      const r = 1 + N.h.x, a = TAU * N.alpha.x, lr = r * Math.cos(a), li = r * Math.sin(a);
+      const r = 1 + hb, a = TAU * N.alpha.x, lr = r * Math.cos(a), li = r * Math.sin(a);
       if (B) {
         const st = cardChart(B, lr, li);
         if (st) {
@@ -157,7 +161,7 @@ export function updateNav(dt, now, S, env) {
       }
       N.par = sstep(0.9, 0.995, r) * (b.q > 1 ? 1 : 0.4);
     } else {
-      const bb = N.bulb, h = N.h.x, rho = Math.min(1 - h, bb.rhoMax || 0.985), ph = N.phi.x * sstep(0, 0.3, h), st = bulbChart(bb, rho, ph);
+      const bb = N.bulb, h = hb, rho = Math.min(1 - h, bb.rhoMax || 0.985), ph = N.phi.x * sstep(0, 0.3, h), st = bulbChart(bb, rho, ph);
       if (st) {
         const t = clamp(h / 0.015, 0, 1);
         N.cPath[0] = mix(bb.root[0], st.cr, t);
@@ -237,8 +241,10 @@ export function updateNav(dt, now, S, env) {
     N.cyc.has = 0;
     N.par = 0;
   }
-  // beat hits: jump-cut toward the nearest Misiurewicz point, spring back
-  if (S.onset && S.hitStrength > 0.55 && S.eS > 0.3 && N.kick.x < 0.15 && !env.drum && N.mode !== 'IN' && N.mode !== 'OUT' && park < 0.6) {
+  // beat hits: jump-cut toward the nearest Misiurewicz point, spring back. §100: the gate is move2.js's — the ears' kick lane
+  // sized by kickAmp (the goldilocks THR), or v3's onset picker exactly as NAV has it when the lane is off / not published
+  const kk = kickGate(S, N, park, env);
+  if (kk > 0) {
     let bd = 1e9;
     (N.baby ? N.baby.misi : MISI).forEach((m, i) => {
       if (!m) return;
@@ -249,7 +255,8 @@ export function updateNav(dt, now, S, env) {
         N.kickI = i;
       }
     });
-    N.kick.set(clamp(0.3 + 0.55 * S.hitStrength, 0, 0.85) * (N.mode === 'INT' ? 1 : 0.5));
+    N.kick.set(kk);
+    if (M2.lastK === kk && S.kickAge > 0 && S.kickAge < 0.03) N.kick.step(0, S.kickAge);   // placed by the age: the hit was a hair before this frame
   }
   N.kick.step(0, dt);
   const k = N.kick.x;

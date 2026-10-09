@@ -16,6 +16,7 @@ import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
 import { K2, L2, LUM_IN, LUM_EX, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n2lum / &n2smo / &n2fl / &n2ext / &n2key
+import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
@@ -42,7 +43,8 @@ export default {
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
     'bass', 'mid', 'high', 'peaks', // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
-    'snareEvt', 'snareAmp', 'loudRel', 'loudRange', 'loudAbs', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'harmAngle', 'phrase16Pos', 'bpm'], // §99: look2.js
+    'snareEvt', 'snareAmp', 'loudRel', 'loudRange', 'loudAbs', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'harmAngle', 'phrase16Pos', 'bpm', // §99: look2.js
+    'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'], // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
   state: NAV,       // ./nav.js's own object — a second module instance, not ../nav/nav.js's; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
   rt: { c: NAV.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   // no `variants`: NAV's DRUM is id 4 and an id is registered once (core/scenes.js throws on a second)
@@ -57,6 +59,12 @@ export default {
     n2ext: (v) => knob('ext', v),
     n2key: (v) => knob('key', v),
     key: pinKey,                              // &key=<0..11>: pin the key (mode by the second argument from the console), as TORUS2 / GIELIS
+    // §100's knobs (move2.js knob3()): &n2kick=0 v3's onset picker · =THR[,REFR,GAIN,VOID] the lane's numbers · &n2breath=AMP · &n2sub=DEPTH · &n2pitch=GAIN · &n2trap=0 the old π per beat / =ACC
+    n2kick: (v) => knob3('kick', v),
+    n2breath: (v) => knob3('breath', v),
+    n2sub: (v) => knob3('sub', v),
+    n2pitch: (v) => knob3('pitch', v),
+    n2trap: (v) => knob3('trap', v),
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green: () => GREEN,
@@ -69,6 +77,7 @@ export default {
       baby: NAV.baby ? NAV.baby.P : 0, kick: NAV.kick.x, theta: NAV.th.x, lg: NAV.lg.x, pathCut: NAV.pathCut, tscale: NAV.timeScale,
       cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, loudBeats: NAV.loudBeats,
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
+      tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
     }),
   },
   help: {
@@ -113,6 +122,16 @@ export default {
       harmAngle: 'the key hue\'s fallback when no key is trusted: the nearest fifth of the harmony angle',
       phrase16Pos: 'the hue steps a twelfth of a turn around the key hue when the 16-beat phrase wraps, eased over a beat',
       bpm: 'how long that hue step takes to settle (a beat)',
+      kickEvt: 'the Misiurewicz jump fires on the ears\' own kick (§100), not v3\'s onset picker: c jump-cuts toward the nearest Misiurewicz point and springs back',
+      kickAge: 'places that jump between frames: the spring is stepped by the age on the event frame',
+      kickAmp: 'how far the jump goes (the sqrt law of §74, floor .31) and the goldilocks gate: a kick smaller than the threshold does not jump',
+      subGate: 'the sub sounding presses c toward the bulb\'s rim (the Koenigs arms tighten); the sub leaving relaxes it toward the centre — nothing until the gate has opened once',
+      subNote: 'the bass note leans c\'s internal angle within the bulb: above the key one way, below it the other, a glide becomes a lean',
+      clockConfPcm: 'how big the beat breath is allowed to be: the clock\'s own confidence scales the per-beat press of the radius',
+      barPos: 'the downbeat: the beat breath and the trap\'s turn take a step and a half on the bar\'s first beat (beatgrid.js)',
+      tongue21: 'the double time arriving (a RISE of the 8th-note depth over 16 beats) makes the breath\'s crest bigger — never faster (§78)',
+      tongue41: 'the same accent from the 16th-note depth\'s rise',
+      tongueOn: 'the accent\'s A/B gate: −1 (the stage off) is the plain profile',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
     why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',
@@ -202,7 +221,7 @@ export default {
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
     gl.uniform2f(u('uSc'), B ? 1 / B.A : 1, B ? 1 / B.P : 1);
-    const ta = Math.PI * br;
+    const ta = K3.trap ? M2.trapA : Math.PI * br;   // §100: a quarter turn per beat (π per bar) + ACC turns on each crest, beatgrid's profile; off = NAV's half turn per beat
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
     gl.uniform1f(u('uTrapR'), P.trap);
     gl.uniform1f(u('uDrum'), vmix);
