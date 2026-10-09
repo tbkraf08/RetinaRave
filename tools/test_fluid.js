@@ -13,6 +13,11 @@
 //   hats       hat2 > .3 → min(3, round(denH)) droplets, seeded by beatCount — the same beat gives the same x, the next beat another
 //   drop       dropLiveEvt → dyeDiss DROP_DISS (12) for one beat (60/bpm s on dt), then back to the void mapping; the impulse radius ×4
 //   mapdrop    §107: a mapDropEvt frame arms the same clear (file mode's bar line); a dropEvt-only frame does NOT (CONTRACTS §1.18: not a clear)
+//   floor      §108: a pad-only frame (mid up, no events) → one dye-only splat at the key's fifths sector, y .5, radius ×2, dx = dy = 0;
+//              the knee (mid .1 → nothing); silence → nothing; 120 pad frames → never a velocity; the §107 clear holds it under 5 %
+//   chord      §108: the v1 `snare` level rising > CHORD_RISE with no snareEvt → two shears at a third of the snare's force, sized by the
+//              rise, then the refractory (a further rise inside CHORD_REF → nothing; after it → again); a held level → nothing; a
+//              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep closes (+2·hush); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
 //   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf
@@ -142,6 +147,72 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   ok(K.DROP_DISS === 12 && Math.pow(1 / (1 + K.DROP_DISS * DT), 24) < 0.02, 'mapdrop: DROP_DISS 12 keeps < 2 % of the ink after 24 frames (' + Math.pow(1 / (1 + K.DROP_DISS * DT), 24).toFixed(4) + ')');
 }
 
+// floor (§108): the harmonic floor — dye only, at the key's sector, knee'd on mid, nothing in silence
+{
+  const p = run(base({ mid: 0.9, key: 4 }));
+  ok(p.splats.length === 1, 'floor: a pad-only frame → one splat (' + p.splats.length + ')');
+  if (p.splats.length === 1) {
+    const s = p.splats[0];
+    ok(s.dx === 0 && s.dy === 0, 'floor: dye only — dx ' + s.dx + ' dy ' + s.dy);
+    ok(s.r + s.g + s.b > 0, 'floor: it inks (' + (s.r + s.g + s.b).toFixed(4) + ')');
+    near(s.x, (sectorPc(4) + 0.5) / 12, 1e-9, 'floor: x at the KEY\'s fifths sector (half a sector in)');
+    near(s.y, 0.5, 1e-9, 'floor: y at mid height');
+    near(s.rad, K.RADIUS * 2, 1e-12, 'floor: radius ×2');
+    near(p.floor, K.FLOOR_DYE * 0.9, 1e-9, 'floor: FLOOR_DYE·mid·g·f above the knee (' + p.floor.toFixed(5) + ')');
+  }
+  ok(run(base({ mid: 0.1 })).splats.length === 0 && run(base({ mid: 0.1 })).floor === 0, 'floor: mid .1 is under the knee → nothing');
+  ok(run(base({ mid: 0 })).splats.length === 0, 'floor: mid 0 → nothing');
+  const q = run(base({ mid: 0.9, presence: 0 }));
+  ok(q.splats.length === 0 && q.floor === 0, 'floor: silence (presence 0) → nothing (' + q.splats.length + ' splats)');
+  ok(run(base({ mid: 0.9, mode: 0, key: 4 })).floor < run(base({ mid: 0.9, key: 4, loudRel: 1 })).floor + 1e-12 && run(base({ mid: 0.9, hush: 1 })).floor < run(base({ mid: 0.9 })).floor, 'floor: rides the gain (hush lowers it)');
+  const st = mkState();
+  let vel = 0, n = 0;
+  for (let i = 0; i < 120; i++) { const r = run(base({ mid: 0.6 + 0.3 * Math.sin(i / 7), key: i % 12, beatPhase: (i % 30) / 30 }), st); for (const s of r.splats) { n++; vel += Math.abs(s.dx) + Math.abs(s.dy); } }
+  ok(n === 120 && vel === 0, 'floor: 120 pad frames → 120 splats, Σ|v| ' + vel + ' (never a velocity: no roster trail moves)');
+  const hold = K.FLOOR_DYE * (1 + K.DROP_DISS * DT) / (K.DROP_DISS * DT);
+  ok(hold < 0.05, 'floor: under the §107 clear the pool holds ' + hold.toFixed(4) + ' of the floor\'s ink (< .05)');
+}
+
+// chord (§108): a chord attack the lane does not call a snare — the v1 `snare` level's rise, with a refractory
+{
+  near(K.CHORD_V, K.SNARE_V * 0.3, 1e-12, 'chord: CHORD_V is a third of SNARE_V (' + K.CHORD_V + ')');
+  const st = mkState();
+  run(base({ snare: 0 }), st);
+  const c = run(base({ snare: 0.5 }), st);
+  ok(c.splats.length === 2 && c.chord > 0, 'chord: a rise 0 → .5 with no snareEvt → two shears (' + c.splats.length + ', chord ' + c.chord + ')');
+  if (c.splats.length === 2) {
+    const [l, r] = c.splats;
+    ok(l.x === 0.3 && r.x === 0.7 && l.y === 0.5 && r.y === 0.5, 'chord: at (.3, .5) and (.7, .5), as the snare');
+    near(l.dx, -r.dx, 1e-12, 'chord: equal and opposite');
+    near(l.dx, K.CHORD_V * 0.5, 1e-9, 'chord: dx = CHORD_V·Δsnare');
+    near(l.r + l.g + l.b, (K.CHORD_DYE * 0.5) * (c.colour[0] + c.colour[1] + c.colour[2]), 1e-9, 'chord: ink CHORD_DYE·Δsnare in the key colour');
+  }
+  const again = run(base({ snare: 0.9 }), st);
+  ok(again.splats.length === 0 && again.chord === 0, 'chord: a further rise .5 → .9 one frame later → nothing (the refractory)');
+  let n = 0; while (n < 20 && run(base({ snare: 0.9 }), st).chord === 0 && n++ < 20) { if (n >= Math.ceil(K.CHORD_REF / DT)) break; }
+  const late = run(base({ snare: 1.0 }), st); // a rise after the refractory → fires
+  ok(late.splats.length === 2 && Math.abs(late.chord - 0.1) < 1e-9, 'chord: a rise after CHORD_REF → fires again (Δ ' + late.chord.toFixed(2) + ')');
+  const st2 = mkState();
+  let fired = 0; for (let i = 0; i < 60; i++) fired += run(base({ snare: 0.6 }), st2).chord > 0 ? 1 : 0;
+  ok(fired === 1, 'chord: a level held at .6 for 60 frames → one shear, then nothing (' + fired + ')');
+  const st3 = mkState();
+  run(base({ snare: 0 }), st3);
+  const ev = run(base({ snare: 0.7, snareEvt: true, snareAmp: 0.5 }), st3);
+  ok(ev.splats.length === 2 && ev.chord === 0 && Math.abs(ev.splats[0].dx - K.SNARE_V * 0.5) < 1e-9, 'chord: a snareEvt frame → the lane\'s two shears only (dx ' + ev.splats[0].dx.toFixed(3) + ')');
+  const after = run(base({ snare: 0.9 }), st3);
+  ok(after.splats.length === 0, 'chord: the level\'s own rise on the frame after a snareEvt → nothing (the event armed the refractory)');
+  const st4 = mkState();
+  run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4);
+  for (let i = 0; i < 12; i++) run(base({ snare: 0.3 }), st4);
+  const small = run(base({ snare: 0.34 }), st4);
+  ok(small.splats.length === 0, 'chord: a rise of .04 (< CHORD_RISE .05) → nothing');
+  const st5 = mkState();
+  run(base({ snare: 0, presence: 0 }), st5);
+  const silent = run(base({ snare: 0.8, presence: 0 }), st5);
+  ok(silent.splats.length === 0 && silent.chord === 0, 'chord: silence (presence 0) → nothing');
+  ok(FLUID_FEATS.includes('mid') && FLUID_FEATS.includes('snare') && !FLUID_FEATS.includes('hit') && !FLUID_FEATS.includes('eS'), 'chord/floor: FLUID_FEATS gained mid and snare (' + FLUID_FEATS.length + ')');
+}
+
 // params
 {
   near(run(base({ tension: 0 })).params.curl, 10, 1e-9, 'params: curl 10 at tension 0');
@@ -182,7 +253,7 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
 
 // determ
 {
-  const sweep = (st) => { const out = []; for (let i = 0; i < 400; i++) out.push(run(base({ subGate: i % 3 ? 1 : 0, subNote: i % 12, kickEvt: i % 25 === 0, kickAmp: 0.7, hat2: i % 6 < 2 ? 0.9 : 0, denH: 2.4, beatCount: i >> 4, beatPhase: (i % 16) / 16, dropLiveEvt: i === 200, tension: (i % 37) / 37 }), st)); return JSON.stringify(out); };
+  const sweep = (st) => { const out = []; for (let i = 0; i < 400; i++) out.push(run(base({ subGate: i % 3 ? 1 : 0, subNote: i % 12, kickEvt: i % 25 === 0, kickAmp: 0.7, hat2: i % 6 < 2 ? 0.9 : 0, denH: 2.4, beatCount: i >> 4, beatPhase: (i % 16) / 16, dropLiveEvt: i === 200, tension: (i % 37) / 37, mid: 0.3 + 0.6 * ((i % 50) / 50), snare: i % 20 === 0 ? 0.6 : 0.6 * Math.exp(-(i % 20) / 8) }), st)); return JSON.stringify(out); };
   const a = sweep(mkState()), b = sweep(mkState());
   ok(a === b, 'determ: two fresh states on the same 400-frame sweep → identical output (' + a.length + ' chars)');
 }

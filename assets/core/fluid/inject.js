@@ -9,7 +9,10 @@
 // The mappings are CONTRACTS §1.18's kind: levels at heard time, events placed on their frame, *Amp for size, never *Vel,
 // never pred*, never dropEvt (the drop is dropLiveEvt || mapDropEvt — §107). One musical element → one channel: the sub is
 // WHERE the ink enters, the kick LIFTS it, the snare SHEARS it, the hats are droplets from the surface, the key is its COLOUR,
-// the beat kneads the pool, the filter makes it syrup.
+// the beat kneads the pool, the filter makes it syrup — and since §108 the HARMONIC content has its own two: the mid band's
+// level is a FLOOR of ink (dye only, no velocity) at the key's sector, and a chord attack the snare lane does not call a snare
+// (the v1 `snare` level rising with no `snareEvt`) is a smaller SHEAR with its own refractory. Before §108 a pad / chord /
+// vocal piece (FLUID-DIAG-2026-10-09: sub 0 %, bass 20 %, low-mid 75 %) had no channel at all — 0 splats on 17 of 22 seconds.
 // Units: positions in uv (0..1, y up), velocities in uv/s — a splat ADDS its dx/dy to the field once (an impulse); the
 // persistent emitters (the sub, the hats while hat2 is up) add per frame scaled by 60·dt so a 30 fps machine injects the
 // same per second. Seeded, never random: the hats' x is hash(beatCount·7 + i, seed.a).
@@ -19,7 +22,8 @@ import { srgbToLin1 } from '../../math/oklab.js';
 
 export const FLUID_FEATS = ['subNote', 'subGate', 'subGlide', 'subHz', 'bassReg', 'kickEvt', 'kickAmp', 'kickAge', 'snareEvt', 'snareAmp',
   'hat2', 'denH', 'beatCount', 'seed', 'beatPhase', 'key', 'mode', 'keyConf', 'tonicConf', 'modeShade', 'valence', 'harmAngle',
-  'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'mapDropEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm'];
+  'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'mapDropEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm',
+  'mid', 'snare'];
 
 // The grammar's constants, one table (DECISIONS §104 says where each came from). Velocities in uv/s, dye in linear units.
 export const K = {
@@ -37,14 +41,24 @@ export const K = {
   DROP_V: 2.5,     // the drop: one impulse up from the sub's x, radius ×4, and the pool clears (dyeDiss DROP_DISS) for one beat
   DROP_DYE: 1.0,
   DROP_DISS: 12,   // §107: 12 keeps 1 % of the ink 0.4 s after the drop ((1/(1+.2))²⁴); 6 kept 10 % and the pool read as full
+  FLOOR_DYE: 0.004, // §108 the harmonic floor: ink per frame (×60·dt) × mid × gain at the key's sector — a quarter of the sub's,
+                   //   ≈ 0.24 at the mouth at dyeDiss 1; NO velocity, so no roster trail moves (the feedback pass reads vel only)
+  FLOOR_LO: 0.15,  //   the knee on `mid` (pow(band/peak, .7)·presence): below LO nothing, full above HI — silence and a residue
+  FLOOR_HI: 0.40,  //   read as nothing, a sustained pad (mid .84–.99 on the take) as a slowly fed cloud
+  CHORD_V: 0.18,   // §108 a chord attack: ±CHORD_V·Δsnare sideways at mid height — SNARE_V × 0.3, a third of the lane's shear
+  CHORD_DYE: 0.08, //   its ink (SNARE_DYE × 0.3), × Δsnare
+  CHORD_RISE: 0.05, //  the v1 `snare` level must rise by more than this in one frame (the take's chord attacks: Δ .08–.88)
+  CHORD_REF: 0.15, //   s of refractory after a chord shear OR a snareEvt — a sustained chord is one attack, a snare is not doubled
 };
 
-export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5 });
+export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0 });
 
 const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
 
 // plan(S, dt, st, moodHue) → { splats: [{x, y, dx, dy, r, g, b, rad}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
-// gain, colour: [r, g, b] (linear) }. `st` is mkState()'s (the anchor's ease, the drop's countdown, the last emitter x);
+// gain, colour: [r, g, b] (linear), floor, chord }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
+// floor, drop (tools/fluid-replay.js classifies them by it). `st` is mkState()'s (the anchor's ease, the drop's countdown, the last
+// emitter x, the last frame's `snare` level and the chord refractory);
 // `moodHue` is LOOK.mood.hue — the hue the anchor slides to while the key is not trusted (the same fallback every key-anchored scene has).
 export function plan(S, dt, st, moodHue = 0.6) {
   const f = 60 * dt; // per-frame emitters as a rate
@@ -73,10 +87,37 @@ export function plan(S, dt, st, moodHue = 0.6) {
     add(0.3, 0.5, K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
     add(0.7, 0.5, -K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
   }
+  // §108 a chord attack: the v1 `snare` level (the extractor's mid-band flux peak, 0.13 s decay) rising by more than CHORD_RISE in
+  // one frame with no snareEvt on it — the pad's 2.5–2.9 dB attacks the 3.75 dB lane rightly does not call a snare — gives the same
+  // two shears at a third of the force, sized by the rise; one refractory for both so a chord is one attack and a snare is never
+  // doubled by its own rise on the frame after. The lane's hit keeps its full size above.
+  const dS = S.snare - st.snarePrev;
+  st.snarePrev = S.snare;
+  st.chordLeft = Math.max(0, st.chordLeft - dt);
+  let chord = 0;
+  if (S.snareEvt) st.chordLeft = K.CHORD_REF;
+  else if (dS > K.CHORD_RISE && st.chordLeft <= 0 && g > 0) {
+    st.chordLeft = K.CHORD_REF;
+    chord = dS;
+    add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
+    add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
+  }
   // the hats: up to three droplets from the surface, seeded by the beat
   if (S.hat2 > 0.3) {
     const n = Math.min(3, Math.round(S.denH));
     for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5);
+  }
+  // §108 the harmonic floor: the mid band's level as continuous ink — pads, chords, vocals, the 95 % of a track the drum channels
+  // never see — entering at the KEY's sector on the circle of fifths (the sub emitter's x rule on the tonic instead of the bass
+  // note) at mid height, radius ×2, in the key's hue. Dye only, dx = dy = 0: the pool shows the music's level and colour from the
+  // first second of sound and the hits' shears land in ink that is already there, while no roster trail moves (feedback.js reads
+  // the velocity). The knee on `mid` keeps silence and a residue at nothing; the §107 clear still empties it (DROP_DISS 12 beats
+  // 0.004 per frame).
+  const floorLvl = sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid;
+  let floor = 0;
+  if (floorLvl > 0 && g > 0) {
+    floor = K.FLOOR_DYE * floorLvl * g * f;
+    add((sectorPc(S.key | 0) + 0.5) / 12, 0.5, 0, 0, floor, 2);
   }
   // the drop: the pool clears in one beat (the countdown runs on dt, not on a clock field). The trigger is the live detector
   // OR the map's bar line (§107): in file mode with the map built the live detector never fires on SeeYouDrop's drop 1 and
@@ -98,5 +139,6 @@ export function plan(S, dt, st, moodHue = 0.6) {
     pressure: 0.8,
     radius: K.RADIUS,
   };
-  return { splats, body, params, gain: g, colour: col };
+  return { splats, body, params, gain: g, colour: col, floor, chord }; // floor = this frame's floor ink, chord = the rise that sheared (0: none) — for the replay ruler
+
 }

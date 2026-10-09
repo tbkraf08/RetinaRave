@@ -13,7 +13,7 @@ import { G, ETEX, mkProg, use, tex, tri } from '../gl.js';
 import { tier } from '../quality.js';
 import { LOOK } from '../look.js';
 import { ema } from '../../math/util.js';
-import { plan, mkState } from './inject.js';
+import { plan, mkState, K } from './inject.js';
 import * as SH from './shaders.js';
 
 export const SIM = [64, 96, 128, 128];     // the sim grid's short edge per tier (ctx.tier())
@@ -28,6 +28,7 @@ export const FLUID = {
   tex: null,        // { vel, dye }: the same objects as ctx.engineTex.vel / .dye
   queue: [],        // this frame's splats: {x, y, dx, dy, r, g, b, rad} — inject.js fills it, scenes add through splat(), the step drains it
   body: [0, 0],     // a scene's uniform body force this frame (uv/s²), through force(); the beat's breath is inject.js's and shaped
+  K,                // the grammar's constants (inject.js), live — harness only: `CARD.fluid.K.FLOOR_DYE = 0` from an eval is a one-knob A/B (§108)
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
@@ -146,13 +147,18 @@ export function stepFluid(dt, S, resumed) {
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.SCISSOR_TEST);
   const sx = vel[0].w, sy = vel[0].h, aspect = G.PW / G.PH;
-  // splats: every one of the frame in one draw per target (chunks of MAXS), velocity then dye
+  // splats: every one of the frame in one draw per target (chunks of MAXS), velocity then dye. A chunk with no force in it (§108's
+  // harmonic floor is dye only, and on a pad it is the frame's only splat) skips the velocity draw: "dye only" then means the
+  // velocity target is not touched at all, not "re-written with + 0" (that re-write was measured bit-exact — the s0 md5 pair is the
+  // same with and without this skip — so this is a guard and one draw saved per pad frame, not a fix).
   if (q.length) {
     const A = new Float32Array(MAXS * 4), C = new Float32Array(MAXS * 4);
     for (let i0 = 0; i0 < q.length; i0 += MAXS) {
       const n = Math.min(MAXS, q.length - i0);
-      for (let i = 0; i < n; i++) { const s = q[i0 + i]; A.set([s.x, s.y, s.dx, s.dy], i * 4); C.set([s.r, s.g, s.b, Math.max(1e-5, s.rad)], i * 4); }
+      let anyV = false;
+      for (let i = 0; i < n; i++) { const s = q[i0 + i]; A.set([s.x, s.y, s.dx, s.dy], i * 4); C.set([s.r, s.g, s.b, Math.max(1e-5, s.rad)], i * 4); if (s.dx || s.dy) anyV = true; }
       for (const [pair, isDye] of [[vel, 0], [dye, 1]]) {
+        if (!isDye && !anyV) continue;
         pr = pass(P.splat, pair[1]);
         tex(pr, 'uSrc', 0, pair[0]);
         gl.uniform4fv(pr.u('uSplat'), A);
