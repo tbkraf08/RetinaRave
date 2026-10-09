@@ -27,7 +27,7 @@ const WARM = process.env.WARM === undefined ? 8 : +process.env.WARM;  // s of en
 const FPS = 60;              // the deterministic clock's rate (assets/engine/sources/file.js FPS)
 const F0 = 2;                // the frame the playhead starts on: file.js holds the clock at DET_HOLD_FRAME = 1, so f0 = 2
 const CHUNK = 400000;        // characters per chunk eval
-const MAX_CHUNKS = 40;       // 16 MB
+const MAX_CHUNKS = 64;       // 25.6 MB (§109: a 110 s '*' trace of SeeYouDrop is 16.2 MB)
 
 const [track, t0s, t1s, out, fieldsArg, extraHash] = process.argv.slice(2);
 if (!track || t0s === undefined || t1s === undefined || !out) {

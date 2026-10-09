@@ -3,10 +3,12 @@
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
 // Node test of the fluid substrate's injection grammar (assets/core/fluid/inject.js — pure, no GL): FLUID-PLAN Step 1's gate.
-//   node tools/test_fluid.js        ~0.1 s — what npm test runs
-// The cases:
+//   node tools/test_fluid.js        ~3 s — what npm test runs (the real traces are 16 MB of JSON each)
+// The cases — the PURE RULES on hand-made frames (a knee, a refractory, a law: units), then THE MUSIC (§109: every "this behaves
+// right on music" claim is tested on the real MS traces of tools/truth/traces/, recorded by tools/traces.sh from every library track
+// and the user's pad take — HARNESS "Real-music acceptance"):
 //   feats      every FLUID_FEATS key is a FEATS entry; no pred* / *Vel / dropEvt among them (CONTRACTS §1.18, DECISIONS §76)
-//   proxy      plan() on a Proxy of MS that throws on any read outside FLUID_FEATS — a synthetic sweep of 600 frames
+//   proxy      plan() on a Proxy of MS that throws on any read outside FLUID_FEATS — over SeeYouDrop's 6600 real frames
 //   gate       subGate 0 → no sub emitter splat; subGate 1 → exactly one, at the fifths sector of subNote, y by bassReg
 //   kick       kickEvt → one impulse from the floor with dy ∝ sqrt(kickAmp) (radius ×2); the two frames after keep 40 %; none at age 99
 //   snare      snareEvt → the two shears, equal and opposite
@@ -21,15 +23,50 @@
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep closes (+2·hush); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
 //   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf
-//   determ     two fresh states on the same sweep → byte-identical output (JSON)
+//   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
+//   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
+//              a frame with presence 0 moves nothing and inks nothing; the drop clear (dyeDiss DROP_DISS) is armed ON the frame of
+//              every mapDropEvt / dropLiveEvt and held for one beat; on SeeYouDrop (the tuning track) mapDropEvt lands within one
+//              frame of each truth drop (57.606 / 105.596, tools/truth/SeeYouDrop.json); the pad take: nothing moves or inks while
+//              the room is silent (presence 0, the first 2.5 s), every second from 3 s on injects (§108's 22 / 22); the numbers per track print
 import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { MS } from '../assets/engine/state.js';
 import { sectorPc } from '../assets/math/keycolour.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
+// a real trace (tools/traces.sh): {cols, t, f}; missing → the one-line fix, and the test FAILS (the claims below are on music)
+const traces = {};
+function trace(name) {
+  if (traces[name]) return traces[name];
+  const f = path.join(HERE, 'truth/traces', name + '.json');
+  if (!fs.existsSync(f)) { console.log('FAIL no trace ' + name + ' — record it: PORT=88xx tools/traces.sh ' + name); fail++; return null; }
+  return (traces[name] = JSON.parse(fs.readFileSync(f, 'utf8')));
+}
+// replay plan() over a trace: per-frame {t, S, P}; the hats' x is seeded here (seed is an object, not traced) as fluid-replay.js does
+function replay(J, st = mkState()) {
+  const C = J.cols, T = J.t, out = [];
+  let prev = null;
+  for (let i = 0; i < J.f.length; i++) {
+    const S = {};
+    for (const k in C) S[k] = C[k][i];
+    S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+    const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev));
+    prev = T[i];
+    out.push({ t: T[i], S, P: plan(S, dt, st, 0.6) });
+  }
+  return out;
+}
+const med = (a) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[s.length >> 1] : NaN; };
 
 let pass = 0, fail = 0;
-const ok = (c, m) => { if (c) { pass++; console.log('ok   ' + m); } else { fail++; console.log('FAIL ' + m); } };
+let gate = true;   // false on a track that is not a gate (windows.json `gate`: Malicious, pending the user's validation of the map's sub ruler): its claims print as notes, never FAIL
+const ok = (c, m) => { if (!gate) { console.log((c ? 'note ' : 'NOTE ') + m + (c ? '' : '  [would FAIL; not a gate]')); return; } if (c) { pass++; console.log('ok   ' + m); } else { fail++; console.log('FAIL ' + m); } };
 const near = (a, b, tol, m) => ok(Math.abs(a - b) <= tol, `${m}: ${a} vs ${b} (tol ${tol})`);
 const DT = 1 / 60;
 
@@ -47,21 +84,22 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   ok(banned.length === 0, 'feats: no pred* / *Vel / dropEvt read' + (banned.length ? ' — ' + banned.join(',') : ''));
 }
 
-// proxy: a synthetic 600-frame sweep through a Proxy that throws on any undeclared read
+// proxy: every frame of SeeYouDrop's real trace through a Proxy that throws on any undeclared read (§109: on music, not a sweep)
 {
   const allowed = new Set(FLUID_FEATS);
-  let reads = 0, thrown = null;
+  let reads = 0, thrown = null, n = 0;
   const guard = (S) => new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allowed.has(k)) throw new Error('undeclared read ' + k); reads++; return t[k]; } });
-  const st = mkState();
-  try {
-    for (let i = 0; i < 600; i++) {
-      const S = base({ subGate: i % 7 < 4 ? 1 : 0, subNote: i % 12, subHz: 40 + i % 60, bassReg: (i % 10) / 10, subGlide: (i % 5) - 2, kickEvt: i % 30 === 0, kickAmp: 0.6, kickAge: i % 30 === 0 ? 0 : (i % 30) / 60,
-        snareEvt: i % 30 === 15, snareAmp: 0.5, hat2: i % 8 < 3 ? 0.8 : 0, denH: 2 + i % 3, beatCount: Math.floor(i / 30), beatPhase: (i % 30) / 30, dropLiveEvt: i === 300,
-        tension: (i % 100) / 100, lpSweep: (i % 50) / 50, buildLive: i > 200 && i < 300 ? (i - 200) / 100 : 0, tongueAmbig: 0.4, tongueOn: i % 2, hush: i > 500 ? 0.5 : 0, calm: 0.2 });
-      run(guard(S), st);
-    }
-  } catch (e) { thrown = e.message; }
-  ok(thrown === null, 'proxy: 600 frames, no read outside FLUID_FEATS' + (thrown ? ' — ' + thrown : ' (' + reads + ' reads)'));
+  const J = trace('SeeYouDrop-map1');
+  if (J) {
+    const st = mkState(), C = J.cols;
+    try {
+      for (let i = 0; i < J.f.length; i++) {
+        const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+        run(guard(S), st); n++;
+      }
+    } catch (e) { thrown = e.message; }
+    ok(thrown === null && n === J.f.length, 'proxy: SeeYouDrop ' + n + ' real frames, no read outside FLUID_FEATS' + (thrown ? ' — ' + thrown : ' (' + reads + ' reads)'));
+  }
 }
 
 // gate
@@ -251,11 +289,13 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   ok(g.join() !== c0.join(), 'colour: another key, another hue');
 }
 
-// determ
+// determ: two fresh states over the same REAL trace → byte-identical plans (§109)
 {
-  const sweep = (st) => { const out = []; for (let i = 0; i < 400; i++) out.push(run(base({ subGate: i % 3 ? 1 : 0, subNote: i % 12, kickEvt: i % 25 === 0, kickAmp: 0.7, hat2: i % 6 < 2 ? 0.9 : 0, denH: 2.4, beatCount: i >> 4, beatPhase: (i % 16) / 16, dropLiveEvt: i === 200, tension: (i % 37) / 37, mid: 0.3 + 0.6 * ((i % 50) / 50), snare: i % 20 === 0 ? 0.6 : 0.6 * Math.exp(-(i % 20) / 8) }), st)); return JSON.stringify(out); };
-  const a = sweep(mkState()), b = sweep(mkState());
-  ok(a === b, 'determ: two fresh states on the same 400-frame sweep → identical output (' + a.length + ' chars)');
+  const J = trace('SeeYouDrop-map0');
+  if (J) {
+    const a = JSON.stringify(replay(J, mkState()).map((r) => r.P)), b = JSON.stringify(replay(J, mkState()).map((r) => r.P));
+    ok(a === b, 'determ: two fresh states on SeeYouDrop\'s ' + J.f.length + ' real frames → identical output (' + a.length + ' chars)');
+  }
 }
 
 // breath
@@ -265,5 +305,48 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   near(run(base({ beatPhase: 0, hush: 1 })).body, -K.BODY * 0.2, 1e-9, 'breath: rides the gain');
 }
 
+// music (§109): the grammar on every library track, both map modes, and the pad take — what the user hears is what is asserted
+{
+  const names = [];
+  for (const t in WIN) { if (WIN[t].map0only) names.push(t + '-map0'); else names.push(t + '-map1', t + '-map0'); }
+  const beat = (bpm) => Math.round(60 / Math.max(60, bpm) * 60);   // the clear's length in frames at that tempo
+  for (const name of names) {
+    const J = trace(name); if (!J) continue;
+    gate = WIN[name.replace(/-map[01]$/, '')].gate !== false;
+    const rows = replay(J), by = new Map();
+    for (const r of rows) { const s = Math.floor(r.t); if (!by.has(s)) by.set(s, []); by.get(s).push(r); }
+    const secs = [...by.entries()].filter(([s, rs]) => rs.length >= 30);   // whole seconds only
+    const music = secs.filter(([s, rs]) => med(rs.map((r) => r.S.presence)) > 0.3);
+    const inj = music.filter(([s, rs]) => rs.some((r) => r.P.splats.length > 0));
+    const pct = music.length ? 100 * inj.length / music.length : 0;
+    const silentFrames = rows.filter((r) => r.S.presence === 0);
+    const moved = silentFrames.filter((r) => r.P.splats.some((p) => Math.abs(p.dx) + Math.abs(p.dy) + p.r + p.g + p.b > 0)).length;
+    const drops = rows.filter((r) => r.S.mapDropEvt || r.S.dropLiveEvt);
+    let armed = 0, held = 0;
+    for (const r of drops) {
+      const i = rows.indexOf(r); if (r.P.params.dyeDiss === K.DROP_DISS) armed++;
+      const n = beat(r.S.bpm); let h = 0; for (let j = i; j < Math.min(rows.length, i + n - 1); j++) if (rows[j].P.params.dyeDiss === K.DROP_DISS) h++;
+      if (h >= n - 2) held++;
+    }
+    const mapDrops = rows.filter((r) => r.S.mapDropEvt).map((r) => +r.t.toFixed(3)), liveDrops = rows.filter((r) => r.S.dropLiveEvt).map((r) => +r.t.toFixed(3));
+    console.log(`     ${name.padEnd(22)} ${rows.length} frames · music s ${music.length} / ${secs.length} · inject ${inj.length} (${pct.toFixed(1)} %) · silent frames ${silentFrames.length} moved ${moved} · drops armed ${armed}/${drops.length} held ${held} · mapDropEvt ${JSON.stringify(mapDrops)} dropLiveEvt ${JSON.stringify(liveDrops)}`);
+    ok(pct >= 95, `music: ${name} injects on ≥ 95 % of the seconds with music (${inj.length} / ${music.length} = ${pct.toFixed(1)} %)`);
+    ok(moved === 0, `music: ${name} — a frame with presence 0 moves nothing and inks nothing (${moved} of ${silentFrames.length} silent frames did)`);
+    ok(armed === drops.length && held === drops.length, `music: ${name} — the clear is armed ON every mapDropEvt / dropLiveEvt frame and held a beat (${armed} / ${held} of ${drops.length})`);
+    if (name === 'SeeYouDrop-map1') {
+      const truth = WIN.SeeYouDrop.drops, near = truth.map((d) => mapDrops.some((m) => Math.abs(m - d) <= 1 / 60 + 1e-6));
+      ok(near.every(Boolean) && mapDrops.length === truth.length, `music: SeeYouDrop's mapDropEvt lands within one frame of each truth drop ${JSON.stringify(truth)} → ${JSON.stringify(mapDrops)}`);
+    }
+    if (name === 'rec-map0') {
+      const from3 = [...by.entries()].filter(([s]) => s >= 3 && s <= 24), inj3 = from3.filter(([s, rs]) => rs.some((r) => r.P.splats.length > 0));   // 24 is the take's last, partial second (§108 counted it)
+      ok(inj3.length === from3.length && from3.length === 22, `music: the pad take injects on every second from 3 s (${inj3.length} / ${from3.length}; §108's 22 / 22)`);
+      const silentT = silentFrames.length ? silentFrames[silentFrames.length - 1].t : 0;
+      const forced = rows.filter((r) => r.t <= silentT && r.P.splats.some((p) => Math.abs(p.dx) + Math.abs(p.dy) + p.r + p.g + p.b > 0)).length;
+      ok(silentFrames.length >= 100 && forced === 0, `music: the pad take's silent room (presence 0 to ${silentT.toFixed(2)} s, ${silentFrames.length} frames) moves and inks nothing (${forced} frames did)`);
+    }
+  }
+}
+
+gate = true;
 console.log(`test_fluid: ${pass} ok, ${fail} fail`);
 process.exit(fail ? 1 : 0);

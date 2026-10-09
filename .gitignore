@@ -10,3 +10,4 @@ node_modules/
 !site/thumbs/*.jpg
 __pycache__/
 tools/.pylib/
+tools/truth/traces/*.json
