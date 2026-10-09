@@ -9,6 +9,7 @@ import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
 import { BULBS, extC, getGrid, LG_MIN, solveMult } from '../../math/mandel.js';   // LG_MAX left with the `reach` parameter's range in index.js
 import { BABIES, MISI, cardChart } from '../../math/baby.js';
 import { tighten, kickGate, M2 } from './move2.js';   // §100: the beat breath, the sub press, the pitch lean, the kick lane
+import { walkTarget, dropLaunch, extTheta } from './walk2.js';   // §101: the phrase walk along the Farey ladder, Green's ruler as the fitness, drops that land somewhere new
 
 export const NAV = {
   mode: 'INT', alpha: new Spring(0.5, 3), h: new Spring(-1, 3.5), phi: new Spring(0, 2.5), bulb: BULBS[7], target: BULBS[7],
@@ -76,6 +77,7 @@ export function navDrop(S, now) {
     const ra = b.rays[S.beatCount & 1];
     N.th.set(ra + Math.round(N.th.x - ra));
   }
+  dropLaunch(S, N, N.mode !== 'EXT' && N.mode !== 'HOME');   // §101: the drop steps the walk and launches along the NEW place's ray (off: NAV's θ above stands)
   N.mode = 'EXT';
   N.lg.set(-2.2 + 1.7 * S.dropStrength);
   N.lg.v = 0;
@@ -86,8 +88,9 @@ export function navDrop(S, now) {
 
 // env: { isLogical: this scene is the director's logical scene, drum: the drum variant is the target, P: the scene's visual parameters (§1.16) }
 export function updateNav(dt, now, S, env) {
-  const N = NAV, tgt = (N.baby ? N.baby.bulbs : BULBS)[S.interval];
+  const N = NAV;
   if (BABIES.length) N.want = N.forceBaby >= 0 ? BABIES[N.forceBaby % BABIES.length] : S.repeat ? BABIES[Math.floor(S.seed.a * BABIES.length) % BABIES.length] : null;
+  const tgt = walkTarget(dt, S, N, (N.baby ? N.baby.bulbs : BULBS)[S.interval]);   // §101: interval names the species; the walk steps to its Farey neighbours per phrase (off / in a baby: the species itself = NAV's line)
   if ((S.beat && N.mode === 'INT') || N.mode === 'EXT') N.target = tgt; // never retarget on the root<->ray bridge (v2 did: c jumped between roots)
   if (S.dropLiveEvt) navDrop(S, now);   // the live detector's slam (§54; v3's dropEvt until 2026-09-29)
   const b = N.target, I = S.intensity;
@@ -219,7 +222,7 @@ export function updateNav(dt, now, S, env) {
       N.homeB = b;
     }
     if (N.mode === 'EXT') {
-      N.th.step(S.harmUnw / TAU + S.seed.th, dt);
+      N.th.step(extTheta(S), dt);   // §101: the harmony's drift from the launch ray (off: NAV's harmUnw / TAU + seed.th)
       N.lg.step(env.P.reach, dt);   // the exterior depth is index.js's `reach` parameter (§1.16); its from() is this expression
     } else {
       N.target = N.homeB;

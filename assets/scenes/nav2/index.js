@@ -17,6 +17,7 @@ import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
 import { K2, L2, LUM_IN, LUM_EX, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n2lum / &n2smo / &n2fl / &n2ext / &n2key
 import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar
+import { W2, knob4 } from './walk2.js';   // §101: the phrase walk along the Farey ladder, Green's ruler as the fitness, drops that land somewhere new
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
@@ -44,7 +45,8 @@ export default {
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
     'bass', 'mid', 'high', 'peaks', // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
     'snareEvt', 'snareAmp', 'loudRel', 'loudRange', 'loudAbs', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'harmAngle', 'phrase16Pos', 'bpm', // §99: look2.js
-    'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'], // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
+    'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn', // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
+    'barNovelEvt', 'sectionEvt'], // §101: walk2.js (+ phrase16Pos, loudRel, intensity, presence, harmUnw already above)
   state: NAV,       // ./nav.js's own object — a second module instance, not ../nav/nav.js's; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
   rt: { c: NAV.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   // no `variants`: NAV's DRUM is id 4 and an id is registered once (core/scenes.js throws on a second)
@@ -65,6 +67,10 @@ export default {
     n2sub: (v) => knob3('sub', v),
     n2pitch: (v) => knob3('pitch', v),
     n2trap: (v) => knob3('trap', v),
+    // §101's knobs (walk2.js knob4()): &n2walk=0 the species only (NAV) · =DEPTH[,MINSIZE[,PER]] · &n2green=0 no ruler in the choice / no early step · =W[,QMAX[,BARS]] · &n2drop=0 NAV's launch ray + θ target
+    n2walk: (v) => knob4('walk', v),
+    n2green: (v) => knob4('green', v),
+    n2drop: (v) => knob4('drop', v),
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green: () => GREEN,
@@ -78,12 +84,13 @@ export default {
       cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, loudBeats: NAV.loudBeats,
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
+      wk: W2.k, wplace: W2.place ? W2.place.p + '/' + W2.place.q : '', wcands: W2.cands.join(' '), wpick: W2.pick, wq: W2.qPred, wsteps: W2.steps, wdue: W2.due, wdwell: W2.dwell, wearly: W2.early, wover: W2.over, wdrops: W2.drops, wbase: W2.base, Q: GREEN.Q,   // §101
     }),
   },
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
-      interval: 'which bulb c heads for: the interval picks the p/q bulb (of the baby copy when inside one)',
+      interval: 'which bulb c heads for: the interval picks the p/q bulb (of the baby copy when inside one) — the SPECIES; §101\'s walk visits its Farey neighbours phrase by phrase',
       repeat: 'a repeated section may dive into a baby copy of M (which one comes from the seed)',
       seed: 'the section\'s constants: which baby copy, the interior angle offset, the exterior angle',
       beat: 'retargeting happens on the beat, never on the root-to-ray bridge; loud beats are counted toward leaving',
@@ -132,6 +139,8 @@ export default {
       tongue21: 'the double time arriving (a RISE of the 8th-note depth over 16 beats) makes the breath\'s crest bigger — never faster (§78)',
       tongue41: 'the same accent from the 16th-note depth\'s rise',
       tongueOn: 'the accent\'s A/B gate: −1 (the stage off) is the plain profile',
+      barNovelEvt: 'a bar that starts something new is a reason to move: the phrase walk takes its step early (§101)',
+      sectionEvt: 'a new section is a reason to move: the phrase walk steps (§101)',
     },
     eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
     why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',

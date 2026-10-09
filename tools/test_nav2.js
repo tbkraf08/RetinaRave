@@ -25,10 +25,10 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 console.log('1. the byte copy, the navigator\'s diff, the registration');
 ok(fs.readFileSync('assets/scenes/nav/shaders.js').equals(fs.readFileSync('assets/scenes/nav2/shaders.js')), 'assets/scenes/nav2/shaders.js (the OKLCH mapping) is a byte copy of nav/shaders.js');
-{ // §100: nav.js differs from NAV's at the move2.js hooks only — the import, the tighten() call, the two h targets, the φ target, the kick gate
+{ // §100 / §101: nav.js differs from NAV's at the move2.js + walk2.js hooks only — the imports, the tighten() call, the two h targets, the φ target, the kick gate, the target line, the drop launch, the exterior θ target
   const A = fs.readFileSync('assets/scenes/nav/nav.js', 'utf8').split('\n'), B = fs.readFileSync('assets/scenes/nav2/nav.js', 'utf8').split('\n');
   const sa = new Set(A), sb = new Set(B), gone = A.filter((l) => !sb.has(l)).length, added = B.filter((l) => !sa.has(l)).length;
-  ok(gone <= 10 && added <= 18 && B.some((l) => l.includes("from './move2.js'")), `nav2/nav.js = nav/nav.js + the §100 hooks: ${gone} lines gone, ${added} added (caps 10 / 18), imports move2.js`);
+  ok(gone <= 12 && added <= 22 && B.some((l) => l.includes("from './move2.js'")) && B.some((l) => l.includes("from './walk2.js'")), `nav2/nav.js = nav/nav.js + the §100 / §101 hooks: ${gone} lines gone, ${added} added (caps 12 / 22), imports move2.js + walk2.js`);
 }
 ok(scene.name === 'nav2' && scene.id === 8, `name ${scene.name} id ${scene.id}`);
 ok(scene.home === false, 'home false (core/scenes.js keeps the LAST registered home — a cloned true would steal the director)');
@@ -40,6 +40,7 @@ ok(nav.feats.every((k) => scene.feats.includes(k)) && scene.feats.length > nav.f
 ok(Object.keys(nav.help.feats).every((k) => k in scene.help.feats) && scene.feats.every((k) => k in scene.help.feats), 'help.feats ⊇ NAV\'s, and a line for every feats entry');
 ok(['n2lum', 'n2smo', 'n2fl', 'n2ext', 'n2key', 'key'].every((k) => typeof scene.hooks[k] === 'function'), 'hooks n2lum / n2smo / n2fl / n2ext / n2key / key (§99\'s A/B knobs)');
 ok(['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap'].every((k) => typeof scene.hooks[k] === 'function'), 'hooks n2kick / n2breath / n2sub / n2pitch / n2trap (§100\'s knobs)');
+ok(['n2walk', 'n2green', 'n2drop'].every((k) => typeof scene.hooks[k] === 'function') && ['barNovelEvt', 'sectionEvt', 'phrase16Pos', 'loudRel'].every((k) => scene.feats.includes(k)), 'hooks n2walk / n2green / n2drop (§101\'s knobs); feats carry barNovelEvt sectionEvt phrase16Pos loudRel');
 ok(['kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'].every((k) => scene.feats.includes(k)), 'feats carry §100\'s reads (the lane, the sub, the clock confidence, barPos + the tongue ladder for spin())');
 ok(same(Object.keys(scene.params), Object.keys(nav.params)) && same(Object.values(scene.params).map((p) => p.range), Object.values(nav.params).map((p) => p.range)), `params ${Object.keys(scene.params).join(' ')} with NAV's ranges`);
 ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === nav.post.kaleido && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s (fb decay, bloom thr, kaleido)');
@@ -62,8 +63,8 @@ ok(guard === 'returned', 'overlay() before the first update() returns (loop.js c
 const info0 = scene.hooks.n2info();
 ok(info0.mode === 'INT' && info0.bulb === '1/2' && info0.c[0] === 0 && info0.c[1] === 0, `n2info() at rest: ${info0.mode} bulb ${info0.bulb} c ${info0.c}`);
 
-console.log('3. pass A, 48 s at 60 Hz with every §100 knob OFF: the clone\'s update() against NAV\'s, the continuity rule, Green\'s ruler');
-for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hooks[k]('0');
+console.log('3. pass A, 48 s at 60 Hz with every §100 / §101 knob OFF: the clone\'s update() against NAV\'s, the continuity rule, Green\'s ruler');
+for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap', 'n2walk', 'n2green', 'n2drop']) scene.hooks[k]('0');
 setGrid(buildRayGrid(...GRIDP));   // the table the Worker builds in the browser (mandel.js GRIDP) — navDrop and the EXT chart need it
 const MS = {
   presence: 1, bass: 0, mid: 0, high: 0, hit: 0, hitStrength: 0, onset: false, beat: false, beatPhase: 0, beatCount: 0, bpm: 124,
@@ -118,7 +119,7 @@ function fake(S, dt, now) {
   S.phrase16Pos = S.beatCount % 16 + S.beatPhase;
   S.snareEvt = S.beat && kickOn && (S.beatCount & 1) === 1;
   S.snareAmp = S.snareEvt ? 0.7 : S.snareAmp;
-  S.interval = [7, 5, 4, 0, 9, 3][Math.floor(now / 4) % 6];
+  S.interval = [7, 5, 4, 0, 9, 3][Math.floor(now / 12) % 6];   // §101: a species per 12 s (was 4 s — NAV's own rim walks left the phrase walk no room to dwell)
 }
 
 const dt = 1 / 60, FR = 48 * 60, P = {}, P0 = {};
@@ -176,10 +177,11 @@ ok(isFinite(i2.hueT) && i2.hueT >= 0 && i2.hueT < 1 && i2.key === 7 && i2.keyCon
 const g = scene.hooks.green();
 ok(g === G && g.n === FR && g.ok === 1 && g.Q > 0 && g.Q <= 1 + 1e-9, `green(): measured every update (n ${g.n}), ok ${g.ok}, Q ${g.Q.toFixed(4)} A ${g.A.toFixed(3)} v ${g.v.toFixed(2)}`);
 
-console.log('3b. pass B, 48 s more with the §100 knobs ON (the defaults): the lane fires, the breath / sub / lean / trap move, the continuity rule holds');
-for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hooks[k]('1');
+console.log('3b. pass B, 48 s more with the §100 + §101 knobs ON (the defaults): the lane fires, the breath / sub / lean / trap move, the walk steps, the drops launch elsewhere, the continuity rule holds');
+for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap', 'n2walk', 'n2green', 'n2drop']) scene.hooks[k]('1');
 {
   const B = { n: 0, fast: 0, max: 0, viol: [] };
+  const places = new Set(), bases = new Set(); let walkFrames = 0, steps0 = scene.hooks.n2info().wsteps;
   let jumps = 0, bc0 = MS.beatCount, bars = 0, diff = 0, trapBack = 0, trapPrev = -1, lo = 9, hi = -9, leanMax = 0, breathMax = 0, nf = 0, pc2 = null, pk2 = N2.kick.x, pm2 = N2.mode, pd2 = 0, tm2 = -999, off = 0, fires0 = scene.hooks.n2info().fires, trap0 = scene.hooks.n2info().trapA;
   for (let f = FR + 1; f <= 2 * FR; f++) {
     const now = f * dt;
@@ -192,6 +194,9 @@ for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hook
     diff = Math.max(diff, Math.abs(N2.c[0] - N0.c[0]), Math.abs(N2.c[1] - N0.c[1]));
     if (i.trapA < trapPrev) trapBack++;
     trapPrev = i.trapA;
+    if (N2.mode === 'INT' && N2.h.x > 0.02) places.add((N2.baby ? 'P' + N2.baby.P + ':' : '') + N2.bulb.p + '/' + N2.bulb.q);
+    if (N2.bulb.walk && N2.mode === 'INT' && N2.h.x > 0.02) walkFrames++;
+    if (N2.mode === 'EXT') bases.add(+frac(i.wbase).toFixed(3));
     lo = Math.min(lo, i.tight); hi = Math.max(hi, i.tight); leanMax = Math.max(leanMax, Math.abs(i.lean)); breathMax = Math.max(breathMax, i.breath);
     if (MS.kickEvt && N2.mode === 'INT' && MS.buildLive < 0.4 && i.lastK > 0 && N2.kick.x > 0.5 && !(i.tight === 0)) off++;
     if (pc2) {
@@ -214,6 +219,8 @@ for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap']) scene.hook
   ok(leanMax > 0.05 && leanMax <= 0.6, `pass B the pitch lean: |lean| max ${leanMax.toFixed(3)} rad (cap .6)`);
   ok(trapBack === 0 && i.trapA - trap0 > Math.PI * bars && i.trapA - trap0 < 2.2 * Math.PI * bars, `pass B the trap per bar: monotone (${trapBack} backward frames), ${((i.trapA - trap0) / Math.PI / bars).toFixed(2)} π per bar over the pass (a quarter turn + .12 per beat, ×1.5 downbeats, the double time's accent; NAV: 4 π)`);
   ok(diff > 0.01, `pass B differs from NAV (max |c| difference ${diff.toFixed(4)})`);
+  ok(i.wsteps - steps0 >= 3 && walkFrames > 60 && places.size >= 4, `pass B the walk (§101): ${i.wsteps - steps0} steps (phrase / section / drop / early ${i.wearly}), ${walkFrames} frames inside a Farey neighbour, ${places.size} distinct bulbs dwelt: ${[...places].join(' ')} — last pick "${i.wpick}" of [${i.wcands}]`);
+  ok(i.wdrops >= 2 && bases.size >= 2, `pass B the drops (§101): ${i.wdrops} launches, ${bases.size} distinct θ bases ${[...bases].join(' ')}`);
 }
 
 console.log('4. cost');
