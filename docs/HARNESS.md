@@ -274,16 +274,40 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   the three scenes whose event voices fire on the fixed fake — and s12's idle pair), what must still equal line for line — the standing
   proof that the scalar pass is byte-identical. **Since §109's advect-off default the two lists are the SAME on every line but s12's**
   (no roster scene reads the velocity or the dye; FLUID shows the dye): a solver / grammar change moves the s12 pair alone, the roster
-  moves only when a scene opts into `fb.advect` or reads the substrate. **Both are the SMOKE since §109; the proof is
-  `real-md5-v035.txt` ("Real-music acceptance" above).**
+  moves only when a scene opts into `fb.advect` or reads the substrate (§111 re-proved it: the eight grammar items moved s12's pair
+  and no other line of the fake list, and none of `real-md5-v035.txt`'s 174 roster lines). **Both are the SMOKE since §109; the proof is
+  `real-md5-v035.txt` ("Real-music acceptance" above; its 58 FLUID lines re-based at §111).**
   A DYE-only change moves the s12 pair alone (no roster scene reads the dye — proven at §108 with the floor off / on through `CARD.fluid.K`).
-- **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
-  tail, the snare's two shears, the seeded hats, the drop's one-beat clear (armed by `dropLiveEvt` OR `mapDropEvt`, never by a
-  `dropEvt`-only frame — §107), the harmonic floor (§108: a pad-only frame → one dye-only splat at the key's sector, the knee on
-  `mid`, silence → nothing, 120 pad frames → never a velocity, the §107 clear holds it under 5 %), the chord shears (§108: the v1
-  `snare` level's rise with no `snareEvt` → two shears at a third of the snare's force, the 0.15 s refractory, a held level → one
-  attack, a `snareEvt` frame → the lane's shears only), the parameter maps, the gain, the colour, determinism
-  (two fresh states → identical JSON), and a Proxy of MS that throws on any read outside `FLUID_FEATS`.
+- **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate (the tonic-relative axis, §111), the
+  kick's sqrt law on the lane's RANK and its two-frame tail (§111), the snare's two shears at the ranked size, the seeded hats out of
+  the token bucket (§111), the ink budget (§111), the drop's clear — armed by `dropLiveEvt` OR `mapDropEvt`, never by a `dropEvt`-only
+  frame (§107), CONFIRMED by the sub emitter within 1.5 beats, one per bar (§111) —, the harmonic floor (§108: a pad-only frame → one
+  dye-only splat at the key's place, the knee on `mid`, silence → nothing, 120 pad frames → never a velocity, the §107 clear holds it
+  under 5 %; §111: on the track's own range), the chord shears (§108: the v1 `snare` level's rise with no `snareEvt` → two shears at a
+  third of the snare's force, the 0.15 s refractory, a held level → one attack, a `snareEvt` frame → the lane's shears only), the
+  harmonic branch and the noise guard (§111), the parameter maps (syrup only while closing, the void's bound and latch — §111), the
+  gain, the colour (the key pinned by evidence, the harmony's centre, LOOK's mood ignored — §111), determinism (two fresh states →
+  identical JSON), a Proxy of MS that throws on any read outside `FLUID_FEATS`, and the `music` block on the real traces (the per-track
+  claims of §109 and §111: the clears per trace, the pinned key, syrup ≤ 30 %, the void's bound, the sub's x, the harmonic branch).
+  A pair test (the snare's / chord's two shears) seeds the sub first (`drumSt()`): a fresh state is in the harmonic branch (§111 item 8).
+- **The per-track tuning recipe** (§111; CONTRACTS §1.1: a grammar change is tuned and proven on every library track, Malicious for the
+  record only). (1) **The table first, no GL**: `node tools/fluid-tracks.js` replays `plan()` over the whole-track traces
+  (`tools/work/fluid-tracks/<Track>/trace-map{1,0}.json` — the survey's, `WARM=0 node tools/filetrace.js <Track> 0 <dur> <out> '<FLUID_FEATS
+  + the survey's fields>' ['&map=0']`; `tools/truth/traces/` 0–110 s when absent) and the pad take, one row per track × mode: the
+  coverage per channel, hits / droplets per second, the injected ink per second (area-weighted) and the governor's factor, Σ|dv|, void /
+  deep-void / syrup %, the clears (true · in IBelongHere's breakdown), the sub emitter's x span, the hit splats' x range (the "three
+  fixed points" ruler), the harmonic / noise seconds, the kick's dy range, the hue's trust % / bins / hue at the survey's windows.
+  `INJECT=<file>` replays another grammar (`git show <rev>:assets/core/fluid/inject.js > /tmp/before.js`) for a before → after on the
+  same traces; `FLUIDK='{"K":v}'` an A/B of one knob; `JSON=` the rows. Every §111 item's numbers are this table's columns
+  (`tools/work/fluid-s111/before.md`, `i1.md` … `i8.md`). (2) **Then the shots**: the survey's deterministic FLUID run per track
+  (`tools/work/fluid-s111/shots.sh <track> <tag> "<name:t …>"`: `test&track=<T>&at=0&scene=12`, `CLOCK=1 GPU=1`, keyed on `__FRAME`,
+  `frame0` 2, the whole-frame grey mean / p99 per shot) at the survey's windows (`tools/work/fluid-tracks/windows.txt`) and its two 31 s
+  strips; `cmp.py <track> <tags…>` prints the survey's grey beside each tag's and the strips' band counts (< 28 empty · 28–45 · 46–60
+  SeeYouDrop's groove · > 60 packed), `hue.py` the dominant hue per window; the montages `montage.sh` → `tools/accept/v0.35/fluid-s111-<track>-*.jpg`.
+  The two "it changed" rulers the survey set: SeeYouDrop's windows (the reference) and CyborgNinja's busiest 31 s (the packing). (3) The
+  pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=12 tools/real-md5.sh` twice (cmp-equal; the
+  roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=12 tools/real-rulers.sh`, the fake
+  smoke (only s12 moves), parity.
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
