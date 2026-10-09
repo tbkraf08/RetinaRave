@@ -149,7 +149,7 @@ export default {
 
   score: () => 0,   // forced-only (key 9, &scene=8; §93's forced-only row): the director never picks the workbench
 
-  post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
+  post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 0 },   // §102: the kaleidoscope OFF (the user: "it distracts from the beauty of the set") — composite.js's uFx.z = FX.kal · 0, the mirror never mixes in, as TORUS2 / GIELIS / FEIGEN; NAV (id 8) keeps 1
 
   // The visual parameters of this screen, and what feeds each one by default (CONTRACTS §1.16). Every `from(S)` is
   // the expression `draw()` / `nav.js` computed inline before v0.5 — moved verbatim, never rewritten, so the picture

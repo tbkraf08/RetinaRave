@@ -43,7 +43,7 @@ ok(['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap'].every((k) => typeof scen
 ok(['n2walk', 'n2green', 'n2drop'].every((k) => typeof scene.hooks[k] === 'function') && ['barNovelEvt', 'sectionEvt', 'phrase16Pos', 'loudRel'].every((k) => scene.feats.includes(k)), 'hooks n2walk / n2green / n2drop (§101\'s knobs); feats carry barNovelEvt sectionEvt phrase16Pos loudRel');
 ok(['kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'].every((k) => scene.feats.includes(k)), 'feats carry §100\'s reads (the lane, the sub, the clock confidence, barPos + the tongue ladder for spin())');
 ok(same(Object.keys(scene.params), Object.keys(nav.params)) && same(Object.values(scene.params).map((p) => p.range), Object.values(nav.params).map((p) => p.range)), `params ${Object.keys(scene.params).join(' ')} with NAV's ranges`);
-ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === nav.post.kaleido && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s (fb decay, bloom thr, kaleido)');
+ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === 0 && nav.post.kaleido === 1 && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s fb decay + bloom thr; kaleido 0 (§102: the kaleidoscope is off on the retune, NAV keeps 1)');
 ok(scene.colour.default === 'v2' && same(Object.keys(scene.colour.variants), Object.keys(nav.colour.variants)), 'colour v2 default, the same two mappings');
 ok(nav.score({ buildLive: 0 }) === 0.5 && scene.score({ buildLive: 0 }) === 0 && scene.score({ buildLive: 1 }) === 0, 'score 0 whatever the music (forced-only, §93); NAV bids 0.5 + buildLive');
 
