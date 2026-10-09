@@ -24,7 +24,7 @@
 // CyborgNinja (31 ink/s, 1 LU of dynamics) drains as fast as it fills, SeeYouDrop's groove (12) is untouched. Every splat carries
 // its kind (`k`) for the replay rulers (tools/fluid-tracks.js, tools/fluid-replay.js).
 import { clamp, frac, sstep, hsv, mix, ema } from '../../math/util.js';
-import { mkAnchor, sectorPc } from '../../math/keycolour.js';
+import { mkAnchor, sectorPc, WARM, COOL, PULL, wrap } from '../../math/keycolour.js';
 import { srgbToLin1 } from '../../math/oklab.js';
 
 export const FLUID_FEATS = ['subNote', 'subGate', 'subGlide', 'subHz', 'bassReg', 'kickEvt', 'kickAmp', 'kickAge', 'snareEvt', 'snareAmp',
@@ -62,10 +62,20 @@ export const K = {
   INK_BUDGET: 14,  // §111 the ink budget, area-weighted dye per second (Σ dye·(rad/RADIUS)²; SeeYouDrop's groove p50 12): the excess scales dyeDiss
   INK_TAU: 12,     //   the rate's ema, s — three bars at 150 bpm: a build's roll or a drop's bars pass through (SeeYouDrop's build-100 / drop2 read as before),
                    //   a constant boil does not (CyborgNinja's 27 ink/s on every second of 180)
+  KEY_TRUST: 0.1,  // §111 the pool takes the key at this keyConf (keycolour's KEYC0; its KEYC1 .3 held the key on 2 of 6 tracks) and holds it until the next trusted one
+  KEY_TAU: 30,     //   s: each key's EVIDENCE (Σ keyConf·dt over the trusted frames, decaying) — the first key pins at KEY_EV0 of it, another
+  KEY_MARGIN: 1.5, //   key re-pins only when its evidence is KEY_MARGIN × the pinned key's: WhoLikesToParty's KK flips D ↔ Bm (relative keys,
+                   //   the same diatonic set) every 10–23 s, IBelongHere's Dm / F / Am / C re-pinned each other every few seconds at a plain pin
+  KEY_EV0: 0.5,    //   the evidence the first pin needs (5 s at trust .1, 1 s at .5): a cold start's first trusted guess is often wrong
+                   //   (SeeYouDrop C# major at 0.7 s, WhoLikesToParty B minor at 0.3 s) — the harmony's centre colours the pool until then
+  HARM_TAU: 15,    //   s: the fallback hue (no trusted key yet) is the HARMONY'S CENTRE — harmAngle's unit vector and the mode, each an ema this
+                   //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
 };
 
 export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0,
-  rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0 });   // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
+  rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0,       // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
+  pin: null, ev: new Float64Array(24),                        //   the key the pool is coloured by ({k, m}: the one with the evidence), null until one is trusted; the 24 keys' evidence
+  hx: 0, hy: 0, mSlow: 0 });                                  //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -78,16 +88,32 @@ function rank(buf, amp) {
 
 const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
 
-// plan(S, dt, st, moodHue) → { splats: [{x, y, dx, dy, r, g, b, rad, k}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
+// plan(S, dt, st) → { splats: [{x, y, dx, dy, r, g, b, rad, k}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
 // gain, colour: [r, g, b] (linear), floor, chord, ink }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
 // floor, drop, each tagged with its kind `k` (tools/fluid-replay.js / fluid-tracks.js read it). `st` is mkState()'s (the anchor's ease,
-// the drop's countdown, the last emitter x, the last frame's `snare` level, the chord refractory, the §111 ranks / bucket / ink rate);
-// `moodHue` is LOOK.mood.hue — the hue the anchor slides to while the key is not trusted (the same fallback every key-anchored scene has).
-export function plan(S, dt, st, moodHue = 0.6) {
+// the drop's countdown, the last emitter x, the last frame's `snare` level, the chord refractory, the §111 ranks / bucket / ink rate / key).
+// §111: the pool's colour never reads LOOK's mood (before: the key at keyConf ≥ .3, else the anchor slid to LOOK.mood.hue — the mood
+// family's hue swung by intensity × arousal, so IBelongHere, whose keyConf p50 is .13 in one key, walked seven hues; CyborgNinja,
+// WhoLikesToParty, Comptine never reached .3). Now: the key is PINNED at KEY_TRUST (.1) and held between trusted frames; until the
+// first trusted key the hue is the harmony's own — harmAngle's nearest fifth with the mode's pull (the anchor's own fallback, with
+// the mode) — so the hue moves only when the harmony does, never with arousal. The fourth argument is accepted and ignored (the call's shape).
+export function plan(S, dt, st) {
   const f = 60 * dt; // per-frame emitters as a rate
   const g = S.presence * (0.3 + 0.7 * S.loudRel) * (1 - 0.8 * S.hush) * (1 - 0.5 * S.calm); // quiet is quiet
-  // the dye colour: the shared key hue (keycolour.js) — warm / cool by the mode and the bar's shade, saturation by how sure the tonic is
-  const A = st.anchor.anchor(dt, S.key | 0, S.mode | 0, S.keyConf || 0, isFinite(S.valence) ? S.valence : 0.5, S.harmAngle || 0, moodHue, null, S.modeShade || 0);
+  // the dye colour: the shared key hue (keycolour.js) — warm / cool by the mode and the bar's shade, saturation by how sure the tonic is;
+  // §111 the key pinned at KEY_TRUST and held, the harmonic fallback before any (the hue of harmAngle's nearest fifth, pulled by the mode)
+  const ev = st.ev, decay = Math.exp(-dt / K.KEY_TAU);
+  for (let i = 0; i < 24; i++) ev[i] *= decay;
+  if ((S.keyConf || 0) >= K.KEY_TRUST) {
+    const k = S.key | 0, m = S.mode ? 1 : 0, i = (k % 12) * 2 + m;
+    ev[i] += S.keyConf * dt;
+    if (!st.pin ? ev[i] >= K.KEY_EV0 : ev[i] > K.KEY_MARGIN * ev[(st.pin.k % 12) * 2 + st.pin.m]) st.pin = { k, m };
+  }
+  st.hx = ema(st.hx, Math.cos(S.harmAngle || 0), dt, K.HARM_TAU); st.hy = ema(st.hy, Math.sin(S.harmAngle || 0), dt, K.HARM_TAU);
+  st.mSlow = ema(st.mSlow, S.mode ? 1 : 0, dt, K.HARM_TAU);
+  const jf = ((Math.round(Math.atan2(st.hy, st.hx) / (2 * Math.PI) * 12) % 12) + 12) % 12, hueF = jf / 12;   // the fifths position of the centre's nearest fifth IS its hue
+  const harmHue = hueF + PULL * wrap((st.mSlow > 0.5 ? COOL : WARM) - hueF);
+  const A = st.anchor.anchor(dt, S.key | 0, S.mode | 0, S.keyConf || 0, isFinite(S.valence) ? S.valence : 0.5, S.harmAngle || 0, harmHue, st.pin, S.modeShade || 0);
   const col = hsv(frac(A.hue), clamp(A.sat * (0.4 + 0.6 * S.tonicConf), 0, 1), 1).map(srgbToLin1);
   const splats = [];
   const add = (x, y, dx, dy, dye, rad, k) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad, k });

@@ -11,7 +11,6 @@
 // Step 1 has no consumer: every md5 holds (the proof is in §104). Velocity unit: screen fractions per second, everywhere.
 import { G, ETEX, mkProg, use, tex, tri } from '../gl.js';
 import { tier } from '../quality.js';
-import { LOOK } from '../look.js';
 import { ema } from '../../math/util.js';
 import { plan, mkState, K } from './inject.js';
 import * as SH from './shaders.js';
@@ -137,7 +136,7 @@ export function stepFluid(dt, S, resumed) {
   let pr;
   let breath = 0;
   if (!resumed) {
-    const R = plan(S, dt, st, LOOK.mood.hue);
+    const R = plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
     for (const s of R.splats) q.push(s);
     breath = R.body;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;

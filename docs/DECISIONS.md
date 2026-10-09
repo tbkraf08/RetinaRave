@@ -9800,3 +9800,33 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   the tail's 40 % of the ranked size, a .5–.6 lane over the whole law, the 64-hit buffer), snare (the ranked dx, the floor), hats (the
   bucket: a 12-frame burst → 3 + 1, 10 s ≤ 83, the refill), budget (nothing → the grammar's; 60 s of hits → the factor; the void's
   .05 scaled; 60 s of nothing decays it; a 5 s burst reaches a third; the drop not counted; INK_BUDGET 14). check 0 fail, npm test exit 0.
+- **Item 2 — the pool's colour is the key's, never the mood's** (`KEY_TRUST` .1, `KEY_TAU` 30, `KEY_MARGIN` 1.5, `KEY_EV0` .5, `HARM_TAU` 15;
+  `mkState` gains `pin`, the 24 keys' evidence, the harmony's eased centre; `fluid.js` no longer passes `LOOK.mood.hue` — the fourth
+  argument is accepted and ignored). Before: the anchor took the key at `keyConf` ≥ .3 and slid to `LOOK.mood.hue` (the mood family's
+  hue swung by intensity × arousal) below it — SeeYouDrop (p50 .43) and Vienna (.36) held their key, IBelongHere (p50 .13), WhoLikesToParty
+  (.11), CyborgNinja (.01), Comptine (.00) rode the mood: IBelongHere walked seven hues in one key (the survey's shots: magenta →
+  green → cyan → yellow → salmon → olive → lilac). Now the pool PINS the key: each key's evidence is Σ `keyConf`·dt over the frames it is
+  the ears' key at trust ≥ .1, an ema of 30 s; the first key pins when its evidence reaches .5 (5.5 s at trust .1, 1 s at .5 — a cold
+  start's first trusted guess is often wrong: SeeYouDrop C♯ major at 0.7 s, WhoLikesToParty B minor at 0.3 s), another key re-pins
+  only when its evidence is 1.5× the pinned key's (10–40 s of equal trust; the KK's relative-key flicker — WhoLikesToParty's D ↔ Bm in
+  10–23 s stretches — mostly does not reach it), and the pin holds through any run of no trust. Until the first pin the hue is the
+  HARMONY'S CENTRE: `harmAngle`'s unit vector and the mode, each an ema of 15 s, the centre's nearest fifth with the mode's pull — a
+  diatonic progression (IBelongHere's Dm F Am C: four fifths sectors) is one hue, not four, and it moves only when the harmony moves,
+  never with arousal. The pin's key per trace (the truth traces, 0–110 s, both modes agree): SeeYouDrop C♯ 1.7 s → **C♯m 13.9 s** ·
+  Vienna **D♯m 0.8 s** · IBelongHere Am 22.5 s → **Dm 65.8 s** · WhoLikesToParty **D 8.9 s** (never re-pinned to 110 s) · CyborgNinja Dm 4.8
+  s → Cm 51.5 s (keyConf p50 .01: the pin is the ears' guess, held) · Comptine **never** (keyConf 0 throughout: the harmony's centre all
+  piece) · the pad A♯ 3.6 s. The whole-track survey traces: IBelongHere Dm at 43 s to the end; WhoLikesToParty D 2.6 → Bm 60 → D 92 →
+  Bm 141 → D 163 s (four relative-key flips in 256 s against the KK's dozens); CyborgNinja Gm 8 → G 102 s; SeeYouDrop C♯ 2.4 → C♯m 8.0 s.
+  (The two trace sets disagree on the ears' key timeline for IBelongHere — Am 22.5 → Dm 65.8 against Dm at 43 — and CyborgNinja — Dm /
+  Cm against Gm / G: recorded at different HEADs; open below.) The key-coloured frames (the anchor's `conf` 1): IBelongHere **2 → 81 %**,
+  WhoLikesToParty 1 → 100, CyborgNinja 4 → 95, SeeYouDrop 75 → 99, Vienna 77 → 100, the pad 53 → 100 (`i2.md`). **The shots** —
+  IBelongHere's 14 windows re-shot, the dominant hue (the circular mean of the pixels with V > 60, S > .25; `tools/work/fluid-s111/hue.py`):
+  survey **273° 295° 101° 142° 185° 59° 5° 32° 292° 213° 56° 260°** (every window its own hue) → item 2 **348° 16° 16° 16°** (the vocal intro,
+  the harmony's warm centre) **· 151° · 134° 128° 124° 122° 129° 129° 125°** (D minor held from 30 s to the end) — two hues on the track:
+  the intro's and the key's. Its grey means moved by ≤ 3.6 (dye only: groove-30 54 → 52, groove3-200 59 → 55, falsedropp-157.5 24 → 24).
+  `tools/work/fluid-s111/IBelongHere-i2/shots/`. Tests: `test_fluid` colour (keyConf .15 takes the key within 10 s; the hold through 5 s
+  of no trust while the harmony and the mood move; two harmAngles → two fallback hues; the fourth argument ignored; a fifth flipping
+  every half second moves the fallback < .02 / frame; 5 s of another key → no re-pin, 10–40 s → re-pin; the first pin's 5.5 s at trust
+  .1), the music block prints the pin per trace and asserts IBelongHere D minor from < 70 s (≤ 2 pins) with one hue over 2 / 10 / 16 s and
+  one over 60 / 100 s, WhoLikesToParty D major from < 10 s never re-pinned, SeeYouDrop C♯ minor from < 15 s, Comptine never trusted.
+  check 0 fail, npm test exit 0 (`test_fluid` 157 ok).

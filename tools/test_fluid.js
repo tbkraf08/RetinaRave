@@ -26,14 +26,19 @@
 //              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep closes (+2·hush); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
-//   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf
+//   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf; §111: the key
+//              pinned at KEY_TRUST .1 (keyConf .15 = .8), held through no trust, the harmony's eased centre before any trust (two
+//              harmAngles → two hues; a fifth flipping every half second moves it < .02/frame), LOOK's mood ignored, the evidence
+//              tally (5 s of another key: no re-pin; 20–40 s: re-pin)
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; the drop clear (dyeDiss DROP_DISS) is armed ON the frame of
 //              every mapDropEvt / dropLiveEvt and held for one beat; on SeeYouDrop (the tuning track) mapDropEvt lands within one
 //              frame of each truth drop (57.606 / 105.596, tools/truth/SeeYouDrop.json); the pad take: nothing moves or inks while
-//              the room is silent (presence 0, the first 2.5 s), every second from 3 s on injects (§108's 22 / 22); the numbers per track print
+//              the room is silent (presence 0, the first 2.5 s), every second from 3 s on injects (§108's 22 / 22); the numbers per track print;
+//              §111 the key: IBelongHere D minor from < 70 s to the end (≤ 2 pins), one hue over the intro and one over the grooves; WhoLikesToParty
+//              D major from < 10 s, never re-pinned; SeeYouDrop C# minor from < 15 s (≤ 2 pins); Comptine never trusted (the harmony's centre)
 import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { MS } from '../assets/engine/state.js';
@@ -62,7 +67,7 @@ function replay(J, st = mkState()) {
     S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
     const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev));
     prev = T[i];
-    out.push({ t: T[i], S, P: plan(S, dt, st, 0.6) });
+    out.push({ t: T[i], S, P: plan(S, dt, st), pin: st.pin ? (st.pin.k % 12) * 2 + st.pin.m : -1, conf: st.anchor.OUT.conf });
   }
   return out;
 }
@@ -78,7 +83,7 @@ const DT = 1 / 60;
 const base = (o = {}) => Object.assign({}, MS, { presence: 1, loudRel: 1, hush: 0, calm: 0, key: 0, mode: 0, keyConf: 0.8, tonicConf: 0.7, valence: 0.5, harmAngle: 0,
   modeShade: 0, tension: 0.3, lpSweep: 0.2, buildLive: 0, tongueAmbig: 0, tongueOn: 1, bpm: 120, beatPhase: 0.5, beatCount: 10, seed: { hue: 0.6, th: 0, a: 0.3, scene: -1 },
   subGate: 0, subNote: -1, subGlide: 0, subHz: 0, bassReg: 0, kickEvt: false, kickAmp: 0, kickAge: 99, snareEvt: false, snareAmp: 0, hat2: 0, denH: 0, dropLiveEvt: false }, o);
-const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
+const run = (S, st = mkState()) => plan(S, DT, st);
 
 // feats
 {
@@ -318,20 +323,37 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   ok(full === 1 && Math.abs(hushed - 0.2) < 1e-9 && Math.abs(calm - 0.5) < 1e-9 && Math.abs(soft - 0.3) < 1e-9, `gain: 1 / hush .2 / calm .5 / quiet .3 (${full} ${hushed.toFixed(2)} ${calm} ${soft.toFixed(2)})`);
 }
 
-// colour
+// colour (§111: the key pinned at KEY_TRUST .1 and held by its evidence, the harmony's centre before any trust — never LOOK's mood)
 {
   const c = run(base()).colour;
   ok(c.length === 3 && c.every((x) => x >= 0 && x <= 1), 'colour: linear rgb in [0, 1] (' + c.map((x) => x.toFixed(3)).join(' ') + ')');
   const sat = (col) => Math.max(...col) - Math.min(...col);
   const lo = run(base({ tonicConf: 0 })).colour, hi = run(base({ tonicConf: 1 })).colour;
   ok(sat(hi) > sat(lo), 'colour: more saturated with tonicConf (' + sat(lo).toFixed(3) + ' → ' + sat(hi).toFixed(3) + ')');
-  const st = mkState();
-  for (let i = 0; i < 300; i++) run(base({ key: 7 }), st);
-  const g = run(base({ key: 7 }), st).colour;
-  const st2 = mkState();
-  for (let i = 0; i < 300; i++) run(base({ key: 0 }), st2);
-  const c0 = run(base({ key: 0 }), st2).colour;
+  const settle = (o, st, n = 300) => { let col; for (let i = 0; i < n; i++) col = run(base(o), st).colour; return col; };
+  const same = (a, b, tol = 1e-6) => a.every((x, i) => Math.abs(x - b[i]) <= tol);
+  const g = settle({ key: 7 }, mkState()), c0 = settle({ key: 0 }, mkState());
   ok(g.join() !== c0.join(), 'colour: another key, another hue');
+  const trusted = settle({ key: 7, mode: 1, keyConf: 0.8 }, mkState(), 600), low = settle({ key: 7, mode: 1, keyConf: 0.15 }, mkState(), 600);
+  ok(same(trusted, low, 1e-3), 'colour: keyConf .15 (under keycolour\'s KEYC1 .3) takes the key within 10 s — the pool pins at KEY_TRUST ' + K.KEY_TRUST + ' once the evidence is in');
+  const st = mkState(); settle({ key: 7, mode: 1, keyConf: 0.5 }, st);
+  const held = settle({ key: 7, mode: 1, keyConf: 0, harmAngle: Math.PI, valence: 0.9, modeShade: 0 }, st);
+  ok(same(held, settle({ key: 7, mode: 1, keyConf: 0.5, valence: 0.9 }, mkState()), 1e-3), 'colour: the key holds through 5 s of no trust while the harmony and the mood move (before: it slid to LOOK.mood.hue)');
+  const fa = settle({ keyConf: 0, harmAngle: 0 }, mkState()), fb = settle({ keyConf: 0, harmAngle: Math.PI }, mkState());
+  ok(fa.join() !== fb.join(), 'colour: no trusted key yet → the harmony\'s centre colours the pool: harmAngle 0 and π give two hues');
+  const stA = mkState(), stB = mkState();
+  ok(JSON.stringify(plan(base({ keyConf: 0 }), DT, stA, 0.1)) === JSON.stringify(plan(base({ keyConf: 0 }), DT, stB, 0.9)), 'colour: the old fourth argument (LOOK.mood.hue) is ignored');
+  const stC = mkState(); let drift = 0, prev = null;
+  for (let i = 0; i < 1200; i++) { const col = run(base({ keyConf: 0, harmAngle: (i % 4) * Math.PI / 2 * 0 + (i % 60 < 30 ? 0 : Math.PI / 6) }), stC).colour; if (prev) drift = Math.max(drift, Math.abs(col[0] - prev[0]) + Math.abs(col[1] - prev[1]) + Math.abs(col[2] - prev[2])); prev = col; }
+  ok(drift < 0.02, 'colour: a harmony flipping a fifth every half second moves the fallback hue by < .02 per frame (the centre is an ema of HARM_TAU ' + K.HARM_TAU + ' s; max |Δrgb| ' + drift.toFixed(4) + ')');
+  const st2 = mkState(); settle({ key: 7, mode: 0, keyConf: 0.5 }, st2, 600);
+  settle({ key: 2, mode: 0, keyConf: 0.5 }, st2, 300);
+  ok(st2.pin.k === 7, 'colour: 5 s of another key at the same trust does not re-pin (its evidence must reach KEY_MARGIN ' + K.KEY_MARGIN + ' × the pinned key\'s, ema KEY_TAU ' + K.KEY_TAU + ' s)');
+  let n = 300; while (st2.pin.k !== 2 && n < 60 * 90) { run(base({ key: 2, mode: 0, keyConf: 0.5 }), st2); n++; }
+  ok(st2.pin.k === 2 && n > 60 * 8 && n < 60 * 40, 'colour: it re-pins after ' + (n / 60).toFixed(1) + ' s of the new key at equal trust (a modulation shows in 10–40 s, sooner when the old key\'s evidence is young)');
+  const st3 = mkState(); let m = 0; while (!st3.pin && m < 600) { run(base({ key: 5, mode: 0, keyConf: 0.1 }), st3); m++; }
+  const tEv = -K.KEY_TAU * Math.log(1 - K.KEY_EV0 / (0.1 * K.KEY_TAU));   // the ema's rise to KEY_EV0 at trust .1
+  ok(st3.pin && st3.pin.k === 5 && Math.abs(m / 60 - tEv) < 0.2, 'colour: the first pin needs KEY_EV0 ' + K.KEY_EV0 + ' of evidence — ' + (m / 60).toFixed(1) + ' s at trust .1 (' + tEv.toFixed(1) + ' expected; a cold start\'s first trusted guess is often wrong)');
 }
 
 // determ: two fresh states over the same REAL trace → byte-identical plans (§109)
@@ -382,6 +404,22 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
       const truth = WIN.SeeYouDrop.drops, near = truth.map((d) => mapDrops.some((m) => Math.abs(m - d) <= 1 / 60 + 1e-6));
       ok(near.every(Boolean) && mapDrops.length === truth.length, `music: SeeYouDrop's mapDropEvt lands within one frame of each truth drop ${JSON.stringify(truth)} → ${JSON.stringify(mapDrops)}`);
     }
+    // §111 the colour on music: the pinned key per track (the hue the pool is coloured by), the hue's walk at the survey's windows
+    const NOTE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], kname = (p) => (p < 0 ? '—' : NOTE[p >> 1] + (p & 1 ? 'm' : ''));
+    const firstPin = rows.find((r) => r.pin >= 0), pins = [...new Set(rows.filter((r) => r.pin >= 0).map((r) => r.pin))];
+    const hueOf = (col) => { const [r, g, b] = col, M = Math.max(r, g, b), m = Math.min(r, g, b), d = M - m; if (d < 1e-9) return 0; const h = M === r ? ((g - b) / d) % 6 : M === g ? (b - r) / d + 2 : (r - g) / d + 4; return ((h / 6) + 1) % 1; };
+    const hueAt = (t) => { const r = rows.find((x) => x.t >= t); return r ? hueOf(r.P.colour) : NaN; };
+    const hdist = (a, b) => { const d = Math.abs(a - b) % 1; return Math.min(d, 1 - d); };
+    console.log(`     ${name.padEnd(22)} key: first pin ${firstPin ? firstPin.t.toFixed(1) + ' s ' + kname(firstPin.pin) : 'never'} · pins ${pins.map(kname).join(' ')} · key-coloured frames ${(100 * rows.filter((r) => r.conf >= 0.999).length / rows.length).toFixed(0)} %`);
+    const lastPin = pins.length ? rows.find((r) => r.pin === pins[pins.length - 1]) : null;
+    if (name === 'IBelongHere-map1' || name === 'IBelongHere-map0') {
+      ok(firstPin && pins.length <= 2 && kname(pins[pins.length - 1]) === 'Dm' && lastPin.t < 70, `music: ${name} — the pool's key is D minor from ${lastPin ? lastPin.t.toFixed(1) : '—'} s to the end of the trace (pins ${pins.map(kname).join(' → ')}; before: keyConf ≥ .3 on 2 % of frames, the mood hue walked seven hues)`);
+      const after = [60, 100].map(hueAt), before = [2, 10, 16].map(hueAt);
+      ok(hdist(after[0], after[1]) < 0.1 && hdist(before[0], before[1]) < 0.1 && hdist(before[1], before[2]) < 0.1, `music: ${name} — one hue over the vocal intro (2 / 10 / 16 s: ${before.map((h) => h.toFixed(2)).join(' ')} turns, the harmony's centre) and one over the grooves (60 / 100 s: ${after.map((h) => h.toFixed(2)).join(' ')}, the key's)`);
+    }
+    if (name === 'WhoLikesToParty-map1') ok(pins.length === 1 && kname(pins[0]) === 'D' && firstPin.t < 10, `music: ${name} — D major is the pool's key from ${firstPin.t.toFixed(1)} s to 110 s, never re-pinned (the KK's D ↔ Bm flicker, 10–23 s stretches, does not reach the pin here; pins ${pins.map(kname).join(' → ')})`);
+    if (name === 'SeeYouDrop-map1') ok(pins.length <= 2 && kname(pins[pins.length - 1]) === 'C#m' && lastPin.t < 15, `music: ${name} — C# minor from ${lastPin.t.toFixed(1)} s to the end (pins ${pins.map(kname).join(' → ')}: the tonic's mode settles in the first bars; the reference's colour as before)`);
+    if (name === 'Comptine-map1') ok(!firstPin, `music: ${name} — the piano never reaches the trust (keyConf 0 throughout): the harmony's centre colours it, never a mood`);
     if (name === 'rec-map0') {
       const from3 = [...by.entries()].filter(([s]) => s >= 3 && s <= 24), inj3 = from3.filter(([s, rs]) => rs.some((r) => r.P.splats.length > 0));   // 24 is the take's last, partial second (§108 counted it)
       ok(inj3.length === from3.length && from3.length === 22, `music: the pad take injects on every second from 3 s (${inj3.length} / ${from3.length}; §108's 22 / 22)`);
