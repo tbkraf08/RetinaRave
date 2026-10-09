@@ -1,0 +1,35 @@
+# v0.35 §109 (2026-10-09): the `&fluid=0` identity list — `GPU=1 PORT=8911 tools/scene-md5.sh s109off '&fluid=0'` on the fake timeline with
+# the substrate OFF (the two 1×1 black placeholders bound; HARNESS "## Fluid"). = tools/accept/v0.34/scene-md5-v034.txt line for line
+# EXCEPT s0 (NAV2 reads kickEvt / snareEvt), s3 (TORUS2's snare wave on snareEvt) and s11 (CHLADNI's sand throw on kickEvt) — the three
+# scenes whose event voices fire on the §83 lattice now that features-ears.js lets its events through (§109) — and s12's idle pair
+# (70405a78 / f048c5a2, unchanged since §106). DUST (s1) and MANDALA (s2) read the events too and did NOT move: their voices
+# (math/voice.js) fire on the union of the event and the v2 level's edge with a refractory, and the level's edge already fired.
+# A change to the solver, the grammar or the feedback pass moves scene-md5-v035.txt and holds THIS list — the standing proof that
+# the scalar pass is byte-identical. Old → new (f360 / f840): s0 a8de2f03 / 7a65fd16 → a6c725fa / a12256fd · s3 3122036e / a1e941af →
+# 80c43f0f / 248ad4c9 · s11 380d0255 / b0407176 → 3b12b8b3 / a56a64ce.
+a6c725fa86d56e0b954a3bf34548f88c  s0-f360.jpg
+a12256fdbc334215c31f9851f9638647  s0-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
+62515d49261070922f23ce68f94fc877  s2-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s3-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
+9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
+04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
+fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
+6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+fb74fee47170b2d1f043db9f96319c7e  s8-f360.jpg
+8a0715dfb90ecf20d484578932a2f115  s8-f840.jpg
+fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
+02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
+6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
+1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
+3b12b8b362e53ef1c5d7c2222961682f  s11-f360.jpg
+a56a64cefaf8b43295cd63e830f15327  s11-f840.jpg
+70405a78893495a269ea87e119f3ece0  s12-f360.jpg
+f048c5a259537493fc992c48195cfeb2  s12-f840.jpg

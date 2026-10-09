@@ -4,5 +4,7 @@
 # The still rests the scene's uniforms, not the chain: the feedback pass under it now rides the substrate, which the fake timeline
 # stirs (the sub emitter, the drums) whatever the scene shows, so the pair moved with every other line. Measured twice (PORT 8858), equal.
 # → §108 (2026-10-09): aadb70d9 / 81039422 — the chord shears (scene-md5-v035.txt's header). Measured twice (PORT 8914), equal.
-aadb70d9b0c9a5d6f52e11784849f91a  still-f360.jpg
-810394228886e83a5f8cc6e6102279c9  still-f840.jpg
+# → §109 (2026-10-09): e8dd5f0a / b996f158 — the lattice's events reach the substrate (the kick impulses, the snare shears; the fake
+# smoke list's header). Measured twice (PORT 8911), equal.
+e8dd5f0a16c264e8a671b6d02879fe14  still-f360.jpg
+b996f158f55f63f84322614e592d797f  still-f840.jpg

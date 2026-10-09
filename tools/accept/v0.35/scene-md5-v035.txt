@@ -15,29 +15,36 @@
 # moved). Measured `GPU=1 PORT=8903 tools/scene-md5.sh s108c` and again on PORT 8904 (`s108d`): the two 26-line lists byte-equal
 # (cmp), errs [] hop 840 row 72 on every id. The `&fluid=0` list (`s108off2`) = tools/accept/v0.34/scene-md5-v034.txt line for line,
 # s12's idle pair 70405a78 / f048c5a2 unchanged.
-6930dffcd52bde4770e8edb1eac3f894  s0-f360.jpg
-af295f183ca809e4172a2fcac6d13151  s0-f840.jpg
-2a2f5da8f05104b2b6fc80829c75a3dd  s1-f360.jpg
-46a6a8cd2e58eafaaee86b6a39c71a59  s1-f840.jpg
-39004d775c91ae9f29941a55d7558287  s2-f360.jpg
-feb58038cd57ff869966e6cdd5e2972d  s2-f840.jpg
-f3c8f96fd07a186a1cc75eb07fcfc682  s3-f360.jpg
-00c14a4a1e719e41f9300d689167864b  s3-f840.jpg
-704bbe0b26574981a6835244d0bd046d  s4-f360.jpg
-5cd068da884f47f7fa8d520d23b19c05  s4-f840.jpg
-5d6307e18cd8dd3566c9d1555ac3cc59  s5-f360.jpg
-0397295f753655baa90f99bc65d52d8a  s5-f840.jpg
-b1a656e9efa54f5a6f33ed3f52c8aa53  s6-f360.jpg
-09743c0ec9d703780f2e2c470c74ada8  s6-f840.jpg
-d600f191c27d346a6e7bd5d2f8e2b394  s7-f360.jpg
-c296ac6d7da94289699f185df413875b  s7-f840.jpg
-3ce7343e651cda3a7d280c9f59af4ee2  s8-f360.jpg
-fca2f0b411583345812b272626c887af  s8-f840.jpg
-4aad218749d1640f408face752387af2  s9-f360.jpg
-8fd11445fba3c82a614b25df2a7646d9  s9-f840.jpg
-a580cb9c581a7bd937a69d124c63af1c  s10-f360.jpg
-71e64c5500cae3a6f7ebcd5cb7eeb224  s10-f840.jpg
-967354f131a7b509781ab621110c45b8  s11-f360.jpg
-4029b81bbab634ded39a5ae8c4084837  s11-f840.jpg
-1d7f9f90488a2a66df6fda8d1485dfde  s12-f360.jpg
-94040549fb17d7a3416c118d9c3d4e1b  s12-f840.jpg
+# §109 (2026-10-09): the FAKE EVENTS re-base — features-ears.js no longer zeroes the §83 lattice's kickEvt / snareEvt / hatEvt before
+# its fakeOn return (the defect §108 found), so the lattice's events reach every scene and the substrate's step for the first time:
+# EVERY line moved (the kick's impulses and the snare's shears now fire on the fake, and the feedback pass rides that velocity).
+# This list is the FAST SMOKE from here on (HARNESS "Real-music acceptance"): a scene or engine change is proven on real tracks
+# (tools/real-md5.sh → real-md5-v035.txt), the fake only says the page still runs. Measured `GPU=1 PORT=8911 tools/scene-md5.sh s109a`
+# and `s109b`: byte-equal (cmp), errs [] hop 840 row 72 on every id. The `&fluid=0` list is scene-md5-v035-fluid0.txt beside this
+# file (v0.34's 24 lines with s0 / s3 / s11 moved — the three scenes whose event voices fire on the fake now — plus s12's idle pair).
+b76fb74efa8412fc3592610d38f10b34  s0-f360.jpg
+a75534d11246233a54b84bea5c0482cf  s0-f840.jpg
+6e33c1fde6fa4498db80e52a478fecbe  s1-f360.jpg
+4a4663bf320401c502c5f5a0a1774a33  s1-f840.jpg
+4de238067c19547febf157e4cd846ec0  s2-f360.jpg
+6ae629d0b3d776940f1e50940efe940b  s2-f840.jpg
+bb79bda7e2d60a729e6d33265ed0d1d2  s3-f360.jpg
+0e40bfac9cb22fccf4ac3920dc91c6ac  s3-f840.jpg
+5254d9d1655103a14d1cad588f3e30d0  s4-f360.jpg
+1d24969349ca5e3526b327d3677216b3  s4-f840.jpg
+fa18b61ee99cdfbdfac0979eeccf79df  s5-f360.jpg
+66d9eaff9f29a2fb3c5f70231a0dd5ac  s5-f840.jpg
+b4b5ca05c5706ad25f8430408ede000e  s6-f360.jpg
+15cbef2d18b072c53220143f69d77ed1  s6-f840.jpg
+9ffb7d02ec6a64945dd0160de816ff1e  s7-f360.jpg
+2a730c0db510bffc5db848185b3bc690  s7-f840.jpg
+98f95f359fd01cb53263b4469b5c1cee  s8-f360.jpg
+89497847fabbddd893deb61a3bedd1c4  s8-f840.jpg
+c7192b7dac0909564f6c8dafaed5d0d7  s9-f360.jpg
+ecc84a13bbfd5b3687aea5079e4eb139  s9-f840.jpg
+6d70690a3fa44f39c9433ac054de71cd  s10-f360.jpg
+77e19182ff1b71c64ca50ff018249d8b  s10-f840.jpg
+1ddf41138b6c4477626a814ec775437a  s11-f360.jpg
+c2d305fb62939c9da0ad405e447ff131  s11-f840.jpg
+bf9bcc3e83c0d19596ebabff1c2752af  s12-f360.jpg
+35e85096d882e6ad6e034729113bd751  s12-f840.jpg

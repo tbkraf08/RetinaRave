@@ -98,9 +98,13 @@ function armMap(F) {
 }
 
 export function earsStage(dt, now, S) {
-  for (const k of EVT) S[k] = false;
   S.mapDropEvt = S.mapBoundaryEvt = false;
-  if (ENGINE.fakeOn || !AU.ctx || AU.mode === 'none') return;
+  // §109: on the fake timeline the §83 lattice (sources/fake.js) has ALREADY written kickEvt / snareEvt / hatEvt this frame —
+  // fake.update runs before the stages — so only the sub events (which the fake never sets) are cleared here. Until §109 the
+  // whole of EVT was zeroed before this return and no lattice event ever reached a scene or the substrate (DECISIONS §108).
+  if (ENGINE.fakeOn) { for (const k of SUB_EVT) S[k[1]] = false; return; }
+  for (const k of EVT) S[k] = false;
+  if (!AU.ctx || AU.mode === 'none') return;
   if (!EARS.subscribed) { EARS.subscribed = true; PCM.on(onBlock); }
   ENGINE.extraMs += EARS.cpu; EARS.cpu = 0;         // the push work happens in the PCM listener, outside frame()
   const t = S.heardT, E = EARS.ears;

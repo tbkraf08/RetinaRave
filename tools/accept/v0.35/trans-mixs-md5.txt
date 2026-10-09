@@ -5,4 +5,7 @@
 # (the current is one field under both scenes; CONTRACTS §5's blended frame is fed to one advected pass). Measured twice (PORT 8858,
 # m .499, errs []), equal. → 1c487222 at §108 (2026-10-09, the harmonic channels: the chord shears are a velocity the fake's seven
 # snare-level jumps fire — scene-md5-v035.txt's header says why). Measured twice (PORT 8914, m .499, errs []), equal.
-1c48722223adeea7a4e3abfb361d088a  trans-mixs-0-3-f178.jpg
+# → fb6010b0 at §109 (2026-10-09, the fake events reach the step and the scenes: the kick's impulses and the snare's shears now fire
+# on the lattice, and NAV2 / TORUS2 — both sides of this fade — fire their event voices). Measured twice (PORT 8911, m .499, errs []),
+# equal. The fake timeline is the SMOKE from §109 on; the real-track lists (real-md5-v035.txt) are the proof.
+fb6010b0b9166bd2f4b8f58dd3e8bc2d  trans-mixs-0-3-f178.jpg
