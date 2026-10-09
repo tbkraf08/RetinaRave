@@ -9830,3 +9830,20 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   .1), the music block prints the pin per trace and asserts IBelongHere D minor from < 70 s (≤ 2 pins) with one hue over 2 / 10 / 16 s and
   one over 60 / 100 s, WhoLikesToParty D major from < 10 s never re-pinned, SeeYouDrop C♯ minor from < 15 s, Comptine never trusted.
   check 0 fail, npm test exit 0 (`test_fluid` 157 ok).
+- **Item 3 — syrup only on a sweep that moves** (`LP_RISE0` .03, `LP_RISE1` .12; `mkState` gains `lpSlow`, lpSweep's 1 s ema; the dead
+  `2·hush` term dropped — `hush` read 0.00 on all seven tracks). `velDiss = .2 + 2.8·sstep(.80, .97, lpSweep)·sstep(.03, .12, lpSweep −
+  lpSlow)`: the filter must be in its dark range AND closing against its own last second; a closed filter that is not closing is a dark
+  mix (Comptine's piano, lpSweep p50 .93; IBelongHere's vocal mix, .83; SeeYouDrop's outro, ≥ .8 on its last 30 s with no sweep in the
+  music), and the hits keep travelling there; opening is a release. The probe that set the knee: the rise's p50 / p90 on the frames with
+  lpSweep > .8 — Comptine .014 / .095, SeeYouDrop .017 / .181 (its 10 s before each truth drop .084 / .257), IBelongHere .061 / .234,
+  Vienna .204 / .341. **Syrup (velDiss > 1) on the music frames, whole tracks, before → after: Comptine 62 → 7 %, IBelongHere 46 → 20,
+  SeeYouDrop 18 → 4 (its outro 57 → 11), WhoLikesToParty 19 → 15, Vienna 5 → 4, CyborgNinja 1 → 1**; and a finding: SeeYouDrop's syrup in
+  the 10 s before its truth drops was 0 % BEFORE too — the §104 knee never fired on its builds (lpSweep < .8 there), only on the outro and
+  the dark mixes (the truth traces, 0–110 s: Comptine 8.4, IBelongHere 24.3, SeeYouDrop 2.3, WhoLikesToParty 11.8, Vienna 4.6, the pad
+  0 %). **The shots** — Comptine's 13 windows + its busiest 31 s re-shot (items 1–3 together): the grey means rise where the shears now
+  travel and spread (busy-50 29 → 33, late-90 33 → 41, void-64 44 → 49, falsedrop-47 28 → 34), the busiest strip 31 → 33 (p99 max 153 →
+  180); and item 2's hue on the piano: survey 245° 298° 336° 314° 318° 191° 71° 226° 279° 178° 231° 221° (twelve windows, nine hues) → **52–84°
+  on every window** (the harmony's centre in D major, warm — the piece's key, never trusted by the ears, read from its harmony).
+  `tools/work/fluid-s111/Comptine-i3/shots/`. Tests: `test_fluid` params (velDiss 3 on the frame the filter closes; hush adds nothing; held
+  closed 6 s → .2; a sweep .5 → 1 over 2 s reaches 3.0; opening → .2), the music block prints the syrup share per trace and gates it at
+  ≤ 30 %. check 0 fail, npm test exit 0 (`test_fluid` 173 ok).

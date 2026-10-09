@@ -68,6 +68,8 @@ export const K = {
                    //   the same diatonic set) every 10–23 s, IBelongHere's Dm / F / Am / C re-pinned each other every few seconds at a plain pin
   KEY_EV0: 0.5,    //   the evidence the first pin needs (5 s at trust .1, 1 s at .5): a cold start's first trusted guess is often wrong
                    //   (SeeYouDrop C# major at 0.7 s, WhoLikesToParty B minor at 0.3 s) — the harmony's centre colours the pool until then
+  LP_RISE0: 0.03,  // §111 syrup only on a sweep that MOVES: lpSweep's rise over its 1 s ema, nothing below LP_RISE0, the full syrup at
+  LP_RISE1: 0.12,  //   LP_RISE1 — a closed filter that is not closing is a dark mix (Comptine lpSweep p50 .93: velDiss 3 on 62 % of its frames)
   HARM_TAU: 15,    //   s: the fallback hue (no trusted key yet) is the HARMONY'S CENTRE — harmAngle's unit vector and the mode, each an ema this
                    //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
 };
@@ -75,7 +77,8 @@ export const K = {
 export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0,
   rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0,       // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
   pin: null, ev: new Float64Array(24),                        //   the key the pool is coloured by ({k, m}: the one with the evidence), null until one is trusted; the 24 keys' evidence
-  hx: 0, hy: 0, mSlow: 0 });                                  //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
+  hx: 0, hy: 0, mSlow: 0,                                     //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
+  lpSlow: 0 });                                               //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -194,9 +197,13 @@ export function plan(S, dt, st) {
   const body = -K.BODY * c2 * c2 * g;
   // the solver's parameters
   const voidT = Math.max(S.buildLive, S.tongueOn === 1 ? S.tongueAmbig : 0); // ink accumulates through the void
+  // §111 item 3: syrup (velDiss up to 3) only while the filter is CLOSING — lpSweep in its dark range AND rising against its own 1 s
+  // ema; a dark mix that stays dark (Comptine's piano, IBelongHere's vocal mix, SeeYouDrop's outro: lpSweep ≥ .8 with no sweep) keeps
+  // the hits travelling. The `2·hush` term is gone: hush read 0.00 on all seven tracks (a dead term).
+  st.lpSlow = ema(st.lpSlow, S.lpSweep, dt, 1);
   const params = {
     curl: 10 + 40 * S.tension,
-    velDiss: 0.2 + 2.8 * sstep(0.80, 0.97, S.lpSweep) + 2 * S.hush,
+    velDiss: 0.2 + 2.8 * sstep(0.80, 0.97, S.lpSweep) * sstep(K.LP_RISE0, K.LP_RISE1, S.lpSweep - st.lpSlow),
     // the void's dissipation × the budget's excess (§111): at twice INK_BUDGET the ink drains twice as fast, in the void too (it still
     // accumulates there, at half the pace) — the pool's ink saturates at the budget on a track with no range of its own
     dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : mix(1.0, 0.05, clamp(voidT, 0, 1)) * Math.max(1, st.inkRate / K.INK_BUDGET),

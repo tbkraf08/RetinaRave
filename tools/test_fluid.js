@@ -24,7 +24,8 @@
 //   chord      §108: the v1 `snare` level rising > CHORD_RISE with no snareEvt → two shears at a third of the snare's force, sized by the
 //              rise, then the refractory (a further rise inside CHORD_REF → nothing; after it → again); a held level → nothing; a
 //              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
-//   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep closes (+2·hush); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
+//   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep CLOSES (§111: its rise over a 1 s ema through LP_RISE0 / LP_RISE1 — a filter held
+//              closed is a dark mix, .2; opening is a release; hush adds nothing); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
 //   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf; §111: the key
 //              pinned at KEY_TRUST .1 (keyConf .15 = .8), held through no trust, the harmony's eased centre before any trust (two
@@ -306,8 +307,15 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   near(run(base({ tension: 0 })).params.curl, 10, 1e-9, 'params: curl 10 at tension 0');
   near(run(base({ tension: 1 })).params.curl, 50, 1e-9, 'params: curl 50 at tension 1');
   near(run(base({ lpSweep: 0.5 })).params.velDiss, 0.2, 1e-9, 'params: velDiss .2 with the filter open');
-  near(run(base({ lpSweep: 1 })).params.velDiss, 3.0, 1e-9, 'params: velDiss 3 with the filter closed');
-  near(run(base({ lpSweep: 0, hush: 1 })).params.velDiss, 2.2, 1e-9, 'params: +2·hush');
+  near(run(base({ lpSweep: 1 })).params.velDiss, 3.0, 1e-9, 'params: velDiss 3 on the frame the filter closes (lpSweep 1 against a 1 s ema of 0: the full rise)');
+  near(run(base({ lpSweep: 0, hush: 1 })).params.velDiss, 0.2, 1e-9, 'params: hush adds nothing (§111: the 2·hush term read 0.00 on all seven tracks — dropped)');
+  const stL = mkState(); let vd; for (let i = 0; i < 360; i++) vd = run(base({ lpSweep: 1 }), stL).params.velDiss;
+  near(vd, 0.2, 1e-3, 'params: §111 a filter held closed for 6 s is a dark mix, not syrup — velDiss back to .2 (' + vd.toFixed(3) + ')');
+  const stR = mkState(); let peak = 0; for (let i = 0; i < 120; i++) run(base({ lpSweep: 0.5 }), stR);
+  for (let i = 0; i < 120; i++) peak = Math.max(peak, run(base({ lpSweep: 0.5 + 0.5 * (i + 1) / 120 }), stR).params.velDiss);
+  ok(peak > 2.5, 'params: §111 a sweep closing .5 → 1 over 2 s reaches velDiss ' + peak.toFixed(2) + ' (> 2.5: the syrup is for the sweep that moves)');
+  const stO = mkState(); let vo; for (let i = 0; i < 120; i++) run(base({ lpSweep: 1 }), stO); for (let i = 0; i < 60; i++) vo = run(base({ lpSweep: 1 - 0.5 * (i + 1) / 60 }), stO).params.velDiss;
+  near(vo, 0.2, 1e-6, 'params: §111 the filter opening is a release, not syrup (' + vo.toFixed(3) + ')');
   near(run(base({ buildLive: 0 })).params.dyeDiss, 1, 1e-9, 'params: dyeDiss 1 outside the void');
   near(run(base({ buildLive: 1 })).params.dyeDiss, 0.05, 1e-9, 'params: dyeDiss .05 deep in the void');
   near(run(base({ tongueAmbig: 1, tongueOn: 1 })).params.dyeDiss, 0.05, 1e-9, 'params: tongueAmbig counts while tongueOn 1');
@@ -412,6 +420,10 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     const hdist = (a, b) => { const d = Math.abs(a - b) % 1; return Math.min(d, 1 - d); };
     console.log(`     ${name.padEnd(22)} key: first pin ${firstPin ? firstPin.t.toFixed(1) + ' s ' + kname(firstPin.pin) : 'never'} · pins ${pins.map(kname).join(' ')} · key-coloured frames ${(100 * rows.filter((r) => r.conf >= 0.999).length / rows.length).toFixed(0)} %`);
     const lastPin = pins.length ? rows.find((r) => r.pin === pins[pins.length - 1]) : null;
+    // §111 item 3: syrup (velDiss > 1) on the frames with music — before: Comptine 62 %, IBelongHere 46 %, SeeYouDrop 18 % (its outro 57 %)
+    const musFr = rows.filter((r) => r.S.presence > 0.5), syrup = 100 * musFr.filter((r) => r.P.params.velDiss > 1).length / Math.max(1, musFr.length);
+    console.log(`     ${name.padEnd(22)} syrup (velDiss > 1) on ${syrup.toFixed(1)} % of the music frames`);
+    ok(syrup <= 30, `music: ${name} — syrup on ≤ 30 % of the music frames (${syrup.toFixed(1)} %; a dark mix that is not closing is not syrup)`);
     if (name === 'IBelongHere-map1' || name === 'IBelongHere-map0') {
       ok(firstPin && pins.length <= 2 && kname(pins[pins.length - 1]) === 'Dm' && lastPin.t < 70, `music: ${name} — the pool's key is D minor from ${lastPin ? lastPin.t.toFixed(1) : '—'} s to the end of the trace (pins ${pins.map(kname).join(' → ')}; before: keyConf ≥ .3 on 2 % of frames, the mood hue walked seven hues)`);
       const after = [60, 100].map(hueAt), before = [2, 10, 16].map(hueAt);
