@@ -16,7 +16,14 @@
 // Units: positions in uv (0..1, y up), velocities in uv/s — a splat ADDS its dx/dy to the field once (an impulse); the
 // persistent emitters (the sub, the hats while hat2 is up) add per frame scaled by 60·dt so a 30 fps machine injects the
 // same per second. Seeded, never random: the hats' x is hash(beatCount·7 + i, seed.a).
-import { clamp, frac, sstep, hsv, mix } from '../../math/util.js';
+// §111 (FLUID-TRACKS-2026-10-09 §10.1, the seven-track survey; the user: "tune and test with all the real songs"): the DENSITY
+// GOVERNOR — a hit's size is its RANK in the lane's own recent distribution (loudRel's idea on the hits: the kick's sqrt law had no
+// room under the lane's .31 amp floor, dy p10–p90 .49–.84 on every track), the hat droplets are a token bucket (every hat hit's
+// first three, refilled at HAT_RATE — 29 droplets/s on CyborgNinja packed the surface), and the INK BUDGET: the injected ink per
+// second (area-weighted) above INK_BUDGET scales the dissipation up, so the pool's ink saturates at the budget on every track —
+// CyborgNinja (31 ink/s, 1 LU of dynamics) drains as fast as it fills, SeeYouDrop's groove (12) is untouched. Every splat carries
+// its kind (`k`) for the replay rulers (tools/fluid-tracks.js, tools/fluid-replay.js).
+import { clamp, frac, sstep, hsv, mix, ema } from '../../math/util.js';
 import { mkAnchor, sectorPc } from '../../math/keycolour.js';
 import { srgbToLin1 } from '../../math/oklab.js';
 
@@ -49,16 +56,32 @@ export const K = {
   CHORD_DYE: 0.08, //   its ink (SNARE_DYE × 0.3), × Δsnare
   CHORD_RISE: 0.05, //  the v1 `snare` level must rise by more than this in one frame (the take's chord attacks: Δ .08–.88)
   CHORD_REF: 0.15, //   s of refractory after a chord shear OR a snareEvt — a sustained chord is one attack, a snare is not doubled
+  AMP0: 0.2,       // §111 the hit-size floor: a hit at the bottom of its lane's own range is AMP0 of the top (the kick launches √AMP0 = .45 of it; the lane's .31 floor gave every track .56)
+  RANK_N: 64,      //   the hits a lane's running rank is taken over (its last 64: 20–60 s of music); under 8 hits the pooled prior .3 / .95
+  HAT_RATE: 8,     // §111 the hat droplets' budget: tokens per second into a bucket of 3 — every hat hit's first three droplets, then the refill
+  INK_BUDGET: 14,  // §111 the ink budget, area-weighted dye per second (Σ dye·(rad/RADIUS)²; SeeYouDrop's groove p50 12): the excess scales dyeDiss
+  INK_TAU: 12,     //   the rate's ema, s — three bars at 150 bpm: a build's roll or a drop's bars pass through (SeeYouDrop's build-100 / drop2 read as before),
+                   //   a constant boil does not (CyborgNinja's 27 ink/s on every second of 180)
 };
 
-export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0 });
+export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0,
+  rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0 });   // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
+
+const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
+// a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
+function rank(buf, amp) {
+  buf.push(amp); if (buf.length > K.RANK_N) buf.shift();
+  let lo = RANK_PRIOR[0], hi = RANK_PRIOR[1];
+  if (buf.length >= 8) { const s = buf.slice().sort((a, b) => a - b); lo = s[Math.floor(0.1 * s.length)]; hi = s[Math.floor(0.9 * s.length)]; }
+  return clamp((amp - lo) / Math.max(0.05, hi - lo), 0, 1);
+}
 
 const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
 
-// plan(S, dt, st, moodHue) → { splats: [{x, y, dx, dy, r, g, b, rad}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
-// gain, colour: [r, g, b] (linear), floor, chord }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
-// floor, drop (tools/fluid-replay.js classifies them by it). `st` is mkState()'s (the anchor's ease, the drop's countdown, the last
-// emitter x, the last frame's `snare` level and the chord refractory);
+// plan(S, dt, st, moodHue) → { splats: [{x, y, dx, dy, r, g, b, rad, k}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
+// gain, colour: [r, g, b] (linear), floor, chord, ink }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
+// floor, drop, each tagged with its kind `k` (tools/fluid-replay.js / fluid-tracks.js read it). `st` is mkState()'s (the anchor's ease,
+// the drop's countdown, the last emitter x, the last frame's `snare` level, the chord refractory, the §111 ranks / bucket / ink rate);
 // `moodHue` is LOOK.mood.hue — the hue the anchor slides to while the key is not trusted (the same fallback every key-anchored scene has).
 export function plan(S, dt, st, moodHue = 0.6) {
   const f = 60 * dt; // per-frame emitters as a rate
@@ -67,25 +90,29 @@ export function plan(S, dt, st, moodHue = 0.6) {
   const A = st.anchor.anchor(dt, S.key | 0, S.mode | 0, S.keyConf || 0, isFinite(S.valence) ? S.valence : 0.5, S.harmAngle || 0, moodHue, null, S.modeShade || 0);
   const col = hsv(frac(A.hue), clamp(A.sat * (0.4 + 0.6 * S.tonicConf), 0, 1), 1).map(srgbToLin1);
   const splats = [];
-  const add = (x, y, dx, dy, dye, rad) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad });
+  const add = (x, y, dx, dy, dye, rad, k) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad, k });
   // the sub emitter: x on the circle of fifths (the sector of the bass note, half a sector in from the wall), y by the register
   if (S.subGate > 0) {
     const sec = S.subNote >= 0 ? sectorPc(S.subNote) + 0.5 : 12 * frac(S.harmAngle / (2 * Math.PI));
     st.xSub = sec / 12;
     const y = 0.12 + 0.25 * S.bassReg;
     const wide = 1 + 0.5 * (1 - clamp((S.subHz - 30) / 90, 0, 1)); // a lower sub is a wider mouth
-    add(st.xSub, y, K.SUB_X * clamp(S.subGlide / 12, -1, 1) * g * f, K.SUB_V * g * f, K.SUB_DYE * g * f, wide);
+    add(st.xSub, y, K.SUB_X * clamp(S.subGlide / 12, -1, 1) * g * f, K.SUB_V * g * f, K.SUB_DYE * g * f, wide, 'sub');
   }
-  // the kick: an impulse up from the floor under the sub, sized by the hit; the two frames after keep 40 %
+  // the kick: an impulse up from the floor under the sub, sized by the hit's RANK in the lane's own range (§111: AMP0 + (1 − AMP0)·rank,
+  // then the sqrt law — the smallest kick of a track launches √AMP0 of its biggest, not √.31 as the lane's floor gave every track);
+  // the two frames after keep 40 % of the same size
   const kAge = S.kickAge < 99 ? Math.max(0, S.kickAge) : 99;
+  if (S.kickEvt) st.kickSz = K.AMP0 + (1 - K.AMP0) * rank(st.rkK, Math.max(0, S.kickAmp));
   if (S.kickEvt || kAge < 2 / 60) {
     const w = S.kickEvt ? 1 : 0.4;
-    add(st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(Math.max(0, S.kickAmp)) * g * w, K.KICK_DYE * g * w, 2);
+    add(st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(st.kickSz) * g * w, K.KICK_DYE * g * w, 2, 'kick');
   }
-  // the snare: a lateral shear at mid height
+  // the snare: a lateral shear at mid height, its force by the hit's rank in the snare lane's own range (§111)
   if (S.snareEvt) {
-    add(0.3, 0.5, K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
-    add(0.7, 0.5, -K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
+    const sz = K.AMP0 + (1 - K.AMP0) * rank(st.rkS, Math.max(0, S.snareAmp));
+    add(0.3, 0.5, K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
+    add(0.7, 0.5, -K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
   }
   // §108 a chord attack: the v1 `snare` level (the extractor's mid-band flux peak, 0.13 s decay) rising by more than CHORD_RISE in
   // one frame with no snareEvt on it — the pad's 2.5–2.9 dB attacks the 3.75 dB lane rightly does not call a snare — gives the same
@@ -99,13 +126,17 @@ export function plan(S, dt, st, moodHue = 0.6) {
   else if (dS > K.CHORD_RISE && st.chordLeft <= 0 && g > 0) {
     st.chordLeft = K.CHORD_REF;
     chord = dS;
-    add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
-    add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
+    add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
+    add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
   }
-  // the hats: up to three droplets from the surface, seeded by the beat
+  // the hats: up to three droplets from the surface, seeded by the beat — out of a token bucket (§111: 3 tokens, HAT_RATE per second
+  // back), so a hat hit's first frames give their droplets and the frames after wait for the refill: 29 droplets/s (CyborgNinja,
+  // WhoLikesToParty: hat2 up on 15 % of frames at denH 5–8) → 6–8, SeeYouDrop's bursts keep their first three
+  st.hatTok = Math.min(3, st.hatTok + K.HAT_RATE * dt);
   if (S.hat2 > 0.3) {
-    const n = Math.min(3, Math.round(S.denH));
-    for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5);
+    const n = Math.min(3, Math.round(S.denH), Math.floor(st.hatTok));
+    st.hatTok -= n;
+    for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5, 'hat');
   }
   // §108 the harmonic floor: the mid band's level as continuous ink — pads, chords, vocals, the 95 % of a track the drum channels
   // never see — entering at the KEY's sector on the circle of fifths (the sub emitter's x rule on the tonic instead of the bass
@@ -117,14 +148,19 @@ export function plan(S, dt, st, moodHue = 0.6) {
   let floor = 0;
   if (floorLvl > 0 && g > 0) {
     floor = K.FLOOR_DYE * floorLvl * g * f;
-    add((sectorPc(S.key | 0) + 0.5) / 12, 0.5, 0, 0, floor, 2);
+    add((sectorPc(S.key | 0) + 0.5) / 12, 0.5, 0, 0, floor, 2, 'floor');
   }
+  // §111 the ink budget: this frame's injected ink, area-weighted (a kick's ×2 radius is 4× the pool ink of a snare's at the same dye),
+  // as a rate (ema INK_TAU: a transient — a build's roll, a drop's bars — passes, a steady boil is governed) — the drop below is one impulse, not counted
+  let ink = 0;
+  for (const s of splats) ink += (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2;
+  st.inkRate = ema(st.inkRate, ink / dt, dt, K.INK_TAU);
   // the drop: the pool clears in one beat (the countdown runs on dt, not on a clock field). The trigger is the live detector
   // OR the map's bar line (§107): in file mode with the map built the live detector never fires on SeeYouDrop's drop 1 and
   // `mapDropEvt` does (frame-exact); live mode has no map, so the detector is the whole truth there. NEVER `dropEvt` — it
   // fires inside Vienna's dream (CONTRACTS §1.18) and a missed live drop is the detector's gap to close, not the grammar's.
   if (S.dropLiveEvt || S.mapDropEvt) {
-    add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4);
+    add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4, 'drop');
     st.clearLeft = 60 / Math.max(60, S.bpm);
   } else st.clearLeft = Math.max(0, st.clearLeft - dt);
   // the beat's breath on the whole pool
@@ -135,10 +171,12 @@ export function plan(S, dt, st, moodHue = 0.6) {
   const params = {
     curl: 10 + 40 * S.tension,
     velDiss: 0.2 + 2.8 * sstep(0.80, 0.97, S.lpSweep) + 2 * S.hush,
-    dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : mix(1.0, 0.05, clamp(voidT, 0, 1)),
+    // the void's dissipation × the budget's excess (§111): at twice INK_BUDGET the ink drains twice as fast, in the void too (it still
+    // accumulates there, at half the pace) — the pool's ink saturates at the budget on a track with no range of its own
+    dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : mix(1.0, 0.05, clamp(voidT, 0, 1)) * Math.max(1, st.inkRate / K.INK_BUDGET),
     pressure: 0.8,
     radius: K.RADIUS,
   };
-  return { splats, body, params, gain: g, colour: col, floor, chord }; // floor = this frame's floor ink, chord = the rise that sheared (0: none) — for the replay ruler
+  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate — for the replay rulers
 
 }

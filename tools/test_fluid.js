@@ -10,9 +10,13 @@
 //   feats      every FLUID_FEATS key is a FEATS entry; no pred* / *Vel / dropEvt among them (CONTRACTS §1.18, DECISIONS §76)
 //   proxy      plan() on a Proxy of MS that throws on any read outside FLUID_FEATS — over SeeYouDrop's 6600 real frames
 //   gate       subGate 0 → no sub emitter splat; subGate 1 → exactly one, at the fifths sector of subNote, y by bassReg
-//   kick       kickEvt → one impulse from the floor with dy ∝ sqrt(kickAmp) (radius ×2); the two frames after keep 40 %; none at age 99
-//   snare      snareEvt → the two shears, equal and opposite
-//   hats       hat2 > .3 → min(3, round(denH)) droplets, seeded by beatCount — the same beat gives the same x, the next beat another
+//   kick       kickEvt → one impulse from the floor with dy = KICK_V·√(AMP0 + (1 − AMP0)·rank) (radius ×2) — §111 the rank in the lane's own
+//              last 64 hits (the prior .3 / .95 until 8): a lane in .5–.6 spreads over the whole law; the two frames after keep 40 %; none at age 99
+//   snare      snareEvt → the two shears, equal and opposite, dx = SNARE_V·(AMP0 + (1 − AMP0)·rank)
+//   hats       hat2 > .3 → min(3, round(denH)) droplets, seeded by beatCount — the same beat gives the same x, the next beat another;
+//              §111 out of a token bucket: 3 tokens, HAT_RATE back per second — a burst's first three, 10 s of hats ≤ HAT_RATE·10 + 3
+//   budget     §111 the ink budget: Σ dye·(rad/RADIUS)² per second (ema INK_TAU 12 s) above INK_BUDGET scales dyeDiss (the void's .05 too); the drop not counted;
+//              a 5 s burst reaches a third of its rate (a build passes), 60 s of nothing decays it
 //   drop       dropLiveEvt → dyeDiss DROP_DISS (12) for one beat (60/bpm s on dt), then back to the void mapping; the impulse radius ×4
 //   mapdrop    §107: a mapDropEvt frame arms the same clear (file mode's bar line); a dropEvt-only frame does NOT (CONTRACTS §1.18: not a clear)
 //   floor      §108: a pad-only frame (mid up, no events) → one dye-only splat at the key's fifths sector, y .5, radius ×2, dx = dy = 0;
@@ -118,19 +122,30 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   near(noNote.x, 0.5, 1e-9, 'gate: subNote -1 with the gate open → x from harmAngle (π → .5)');
 }
 
-// kick
+// kick (§111: the size is the hit's RANK in the lane's own recent range — AMP0 + (1 − AMP0)·rank, then the sqrt law)
 {
   const a = run(base({ kickEvt: true, kickAmp: 0.25, kickAge: 0 })), b = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0 }));
   ok(a.splats.length === 1 && b.splats.length === 1, 'kick: kickEvt → one impulse');
-  near(b.splats[0].dy / a.splats[0].dy, 2, 1e-9, 'kick: dy ∝ sqrt(kickAmp) (amp 1 vs .25 → ×2)');
-  near(a.splats[0].dy, K.KICK_V * 0.5, 1e-9, 'kick: dy = KICK_V·sqrt(amp)');
+  near(a.splats[0].dy, K.KICK_V * Math.sqrt(K.AMP0), 1e-9, 'kick: a hit under the lane\'s prior p10 (.25 < .3) → dy = KICK_V·√AMP0 (the floor of the law)');
+  near(b.splats[0].dy, K.KICK_V, 1e-9, 'kick: a hit at the prior\'s p90 or above → dy = KICK_V');
+  near(b.splats[0].dy / a.splats[0].dy, 1 / Math.sqrt(K.AMP0), 1e-9, 'kick: the law\'s room is 1/√AMP0 (' + (1 / Math.sqrt(K.AMP0)).toFixed(2) + '×, was √(1/.31) = 1.8× under the lane\'s floor)');
   near(a.splats[0].y, 0.06, 1e-9, 'kick: from the floor');
   near(a.splats[0].rad, K.RADIUS * 2, 1e-12, 'kick: radius ×2');
-  const tail = run(base({ kickEvt: false, kickAmp: 1, kickAge: 1 / 60 }));
-  ok(tail.splats.length === 1 && Math.abs(tail.splats[0].dy - 0.4 * K.KICK_V) < 1e-9, 'kick: the frame after keeps 40 % (' + (tail.splats.length ? tail.splats[0].dy.toFixed(3) : 'none') + ')');
-  const late = run(base({ kickEvt: false, kickAmp: 1, kickAge: 3 / 60 }));
+  ok(a.splats[0].k === 'kick', 'kick: tagged k = kick (§111: every splat carries its kind)');
+  const st = mkState();
+  run(base({ kickEvt: true, kickAmp: 1, kickAge: 0 }), st);
+  const tail = run(base({ kickEvt: false, kickAmp: 1, kickAge: 1 / 60 }), st);
+  ok(tail.splats.length === 1 && Math.abs(tail.splats[0].dy - 0.4 * K.KICK_V) < 1e-9, 'kick: the frame after keeps 40 % of the same ranked size (' + (tail.splats.length ? tail.splats[0].dy.toFixed(3) : 'none') + ')');
+  const late = run(base({ kickEvt: false, kickAmp: 1, kickAge: 3 / 60 }), st);
   ok(late.splats.length === 0, 'kick: nothing 3 frames after');
   ok(run(base({ kickAge: 99 })).splats.length === 0, 'kick: nothing before any kick (age 99)');
+  // the rank is the TRACK's own: a lane whose hits all sit in .5–.6 (no room under the old √amp law) spreads them over the whole law
+  const st2 = mkState(), dys = [];
+  for (let i = 0; i < 20; i++) dys.push(run(base({ kickEvt: true, kickAmp: 0.5 + 0.1 * ((i * 7) % 11) / 10, kickAge: 0 }), st2).splats[0].dy);
+  const lo = run(base({ kickEvt: true, kickAmp: 0.5, kickAge: 0 }), st2).splats[0].dy, hi = run(base({ kickEvt: true, kickAmp: 0.6, kickAge: 0 }), st2).splats[0].dy;
+  near(lo, K.KICK_V * Math.sqrt(K.AMP0), 1e-9, 'kick: after 20 hits in .5–.6, a .5 hit is the lane\'s p10 → the floor of the law (' + lo.toFixed(3) + ')');
+  near(hi, K.KICK_V, 1e-9, 'kick: and a .6 hit its p90 → the full law (' + hi.toFixed(3) + ') — the track\'s own range, not the lane\'s');
+  ok(st2.rkK.length === 22 && st2.rkK.length <= K.RANK_N, 'kick: the rank buffer holds the last ' + K.RANK_N + ' hits (' + st2.rkK.length + ' so far)');
 }
 
 // snare
@@ -141,20 +156,50 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
     const [l, rr] = r.splats;
     ok(l.x === 0.3 && rr.x === 0.7 && l.y === 0.5 && rr.y === 0.5, 'snare: at (.3, .5) and (.7, .5)');
     near(l.dx, -rr.dx, 1e-12, 'snare: equal and opposite');
-    near(l.dx, K.SNARE_V * 0.5, 1e-9, 'snare: dx = SNARE_V·snareAmp');
+    near(l.dx, K.SNARE_V * (K.AMP0 + (1 - K.AMP0) * (0.5 - 0.3) / 0.65), 1e-9, 'snare: dx = SNARE_V·(AMP0 + (1 − AMP0)·rank) — rank on the prior .3 / .95 until the lane has 8 hits (§111)');
+    ok(l.k === 'snare' && rr.k === 'snare', 'snare: tagged k = snare');
   }
+  ok(run(base({ snareEvt: true, snareAmp: 1 })).splats[0].dx === K.SNARE_V && Math.abs(run(base({ snareEvt: true, snareAmp: 0.1 })).splats[0].dx - K.SNARE_V * K.AMP0) < 1e-9, 'snare: the biggest hit the full SNARE_V, one under the p10 the floor AMP0');
 }
 
-// hats
+// hats (§111: a token bucket — 3 tokens, HAT_RATE per second back)
 {
   const r3 = run(base({ hat2: 0.8, denH: 2.6 })), r1 = run(base({ hat2: 0.8, denH: 1.2 })), r0 = run(base({ hat2: 0.2, denH: 3 })), r5 = run(base({ hat2: 0.8, denH: 7 }));
-  ok(r3.splats.length === 3 && r1.splats.length === 1 && r0.splats.length === 0 && r5.splats.length === 3, `hats: min(3, round(denH)) while hat2 > .3 (${r3.splats.length} ${r1.splats.length} ${r0.splats.length} ${r5.splats.length})`);
-  ok(r3.splats.every((s) => s.y === 0.9 && s.dy < 0 && s.x >= 0 && s.x < 1), 'hats: from the surface, falling, x in [0, 1)');
+  ok(r3.splats.length === 3 && r1.splats.length === 1 && r0.splats.length === 0 && r5.splats.length === 3, `hats: min(3, round(denH)) while hat2 > .3 on a full bucket (${r3.splats.length} ${r1.splats.length} ${r0.splats.length} ${r5.splats.length})`);
+  ok(r3.splats.every((s) => s.y === 0.9 && s.dy < 0 && s.x >= 0 && s.x < 1 && s.k === 'hat'), 'hats: from the surface, falling, x in [0, 1), tagged k = hat');
   const again = run(base({ hat2: 0.8, denH: 2.6 }));
   ok(again.splats.map((s) => s.x).join() === r3.splats.map((s) => s.x).join(), 'hats: the same beat → the same x (seeded)');
   const next = run(base({ hat2: 0.8, denH: 2.6, beatCount: 11 }));
   ok(next.splats.map((s) => s.x).join() !== r3.splats.map((s) => s.x).join(), 'hats: the next beat → another x');
   near(r3.splats[0].rad, K.RADIUS * 0.5, 1e-12, 'hats: radius ×.5');
+  const st = mkState(), per = [];
+  for (let i = 0; i < 12; i++) per.push(run(base({ hat2: 0.8, denH: 3 }), st).splats.length);
+  ok(per[0] === 3 && per.slice(1, 8).every((n) => n === 0) && per[8] === 1 && per.reduce((a, b) => a + b, 0) === 4, 'hats: a 12-frame burst at denH 3 → 3 on the first frame, nothing until the bucket refills one (frame 9), 4 in all [' + per.join(' ') + ']');
+  const st2 = mkState(); let n = 0;
+  for (let i = 0; i < 600; i++) n += run(base({ hat2: 0.8, denH: 3 }), st2).splats.length;
+  ok(n >= 10 * K.HAT_RATE && n <= 10 * K.HAT_RATE + 3, 'hats: 10 s of hats at denH 3 → ' + n + ' droplets (≤ HAT_RATE·10 + 3 = ' + (10 * K.HAT_RATE + 3) + '; was 1800)');
+  const st3 = mkState();
+  run(base({ hat2: 0.8, denH: 3 }), st3); for (let i = 0; i < 30; i++) run(base({ hat2: 0 }), st3);
+  ok(run(base({ hat2: 0.8, denH: 3 }), st3).splats.length === 3, 'hats: half a second of quiet refills the bucket — the next hit\'s first three again');
+}
+
+// budget (§111: the injected ink per second, area-weighted, above INK_BUDGET scales dyeDiss; the drop is not counted)
+{
+  const st = mkState();
+  ok(run(base(), st).params.dyeDiss === 1 && run(base(), st).ink === 0, 'budget: nothing injected → the grammar\'s dyeDiss, ink rate 0');
+  let p; for (let i = 0; i < 60 * 60; i++) p = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0, snareEvt: true, snareAmp: 1 }), st);
+  const inkFrame = p.splats.reduce((a, s) => a + (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2, 0);
+  ok(p.ink > 0.9 * inkFrame * 60 && p.params.dyeDiss > 2 && Math.abs(p.params.dyeDiss - Math.max(1, p.ink / K.INK_BUDGET)) < 1e-9, `budget: a kick + a snare every frame for 60 s → ink ${p.ink.toFixed(0)}/s (frame ${inkFrame.toFixed(2)} × 60), dyeDiss = ink / INK_BUDGET = ${p.params.dyeDiss.toFixed(2)}`);
+  const v = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0, snareEvt: true, snareAmp: 1, buildLive: 1 }), st);
+  ok(v.params.dyeDiss > 0.05 && Math.abs(v.params.dyeDiss - 0.05 * Math.max(1, v.ink / K.INK_BUDGET)) < 1e-9, 'budget: in the void it scales the void\'s .05 (' + v.params.dyeDiss.toFixed(3) + ') — the ink still accumulates, slower');
+  for (let i = 0; i < 60 * 60; i++) p = run(base(), st);
+  ok(p.params.dyeDiss === 1 && p.ink < 0.1 * K.INK_BUDGET, 'budget: 60 s of nothing → the rate decays (ema INK_TAU ' + K.INK_TAU + ' s) and dyeDiss is the grammar\'s again (ink ' + p.ink.toFixed(2) + ')');
+  const st5 = mkState(); let p5;
+  for (let i = 0; i < 5 * 60; i++) p5 = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0, snareEvt: true, snareAmp: 1 }), st5);
+  ok(p5.ink < 0.4 * inkFrame * 60 && p5.ink > 0.3 * inkFrame * 60, 'budget: a 5 s burst reaches only ' + (100 * p5.ink / (inkFrame * 60)).toFixed(0) + ' % of its rate (INK_TAU ' + K.INK_TAU + ' s: a build\'s roll passes, a steady boil is governed)');
+  const d = run(base({ dropLiveEvt: true }), mkState());
+  ok(d.ink < 1e-9, 'budget: the drop\'s impulse is not counted in the rate (' + d.ink + ')');
+  near(K.INK_BUDGET, 14, 1e-9, 'budget: INK_BUDGET 14 (SeeYouDrop\'s groove p50 12 area-weighted ink/s; CyborgNinja 31 → ×2.2 — tools/fluid-tracks.js)');
 }
 
 // drop
@@ -236,7 +281,7 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   const st3 = mkState();
   run(base({ snare: 0 }), st3);
   const ev = run(base({ snare: 0.7, snareEvt: true, snareAmp: 0.5 }), st3);
-  ok(ev.splats.length === 2 && ev.chord === 0 && Math.abs(ev.splats[0].dx - K.SNARE_V * 0.5) < 1e-9, 'chord: a snareEvt frame → the lane\'s two shears only (dx ' + ev.splats[0].dx.toFixed(3) + ')');
+  ok(ev.splats.length === 2 && ev.chord === 0 && Math.abs(ev.splats[0].dx - K.SNARE_V * (K.AMP0 + (1 - K.AMP0) * (0.5 - 0.3) / 0.65)) < 1e-9, 'chord: a snareEvt frame → the lane\'s two shears only, at the ranked size (dx ' + ev.splats[0].dx.toFixed(3) + ')');
   const after = run(base({ snare: 0.9 }), st3);
   ok(after.splats.length === 0, 'chord: the level\'s own rise on the frame after a snareEvt → nothing (the event armed the refractory)');
   const st4 = mkState();

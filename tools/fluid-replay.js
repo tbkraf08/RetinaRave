@@ -8,7 +8,8 @@
 //   FLUIDK='{"FLOOR_DYE":0,"CHORD_V":0}' node tools/fluid-replay.js …   — K overrides for an A/B of one knob (the grammar before §108)
 // The trace must carry FLUID_FEATS (filetrace.js with the field list, or '*'); `seed` is an object in MS and is not traced, so
 // the hats' x is seeded here (0.37). 'sec' = one line per second (the channels' splat counts, the injected Σ|dv|, the dye);
-// 'events' = every frame that injects; 'frame' = every frame. Splats are classified by the grammar's emit order.
+// 'events' = every frame that injects; 'frame' = every frame. Splats are classified by the kind tag `k` each carries (§111).
+// The per-track TABLE over every library track is tools/fluid-tracks.js (HARNESS "## Fluid", the per-track tuning recipe).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +26,7 @@ console.log(`# ${path.relative(HERE + '/..', path.resolve(file))}: ${N} frames, 
 const st = mkState();
 const rows = [];
 let prev = null;
-const ORDER = ['sub', 'kick', 'snare', 'chord', 'hat', 'floor', 'drop']; // the grammar's emit order (inject.js)
+const ORDER = ['sub', 'kick', 'snare', 'chord', 'hat', 'floor', 'drop']; // the grammar's kinds, in its emit order (inject.js: each splat's `k` since §111)
 for (let i = 0; i < N; i++) {
   const S = {};
   for (const k in C) S[k] = C[k][i];
@@ -35,12 +36,9 @@ for (let i = 0; i < N; i++) {
   const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev));
   prev = T[i];
   const P = plan(S, dt, st, 0.6);
-  const kAge = S.kickAge < 99 ? Math.max(0, S.kickAge) : 99;
-  const want = { sub: S.subGate > 0 ? 1 : 0, kick: S.kickEvt || kAge < 2 / 60 ? 1 : 0, snare: S.snareEvt ? 2 : 0, chord: P.chord > 0 ? 2 : 0,
-    hat: S.hat2 > 0.3 ? Math.min(3, Math.round(S.denH)) : 0, floor: P.floor > 0 ? 1 : 0, drop: S.dropLiveEvt || S.mapDropEvt ? 1 : 0 };
-  const kinds = {}; let j = 0;
-  for (const k of ORDER) { kinds[k] = want[k] ? P.splats[j] : null; j += want[k]; }
-  if (j !== P.splats.length) kinds.unclassified = P.splats.length - j;
+  // §111: every splat carries its kind (`k`) — the first of each kind is the row's representative, the hats are counted
+  const kinds = {}, want = {}; for (const k of ORDER) { kinds[k] = null; want[k] = 0; }
+  for (const s of P.splats) { const k = s.k || '?'; if (!(k in want)) { kinds.unclassified = (kinds.unclassified || 0) + 1; continue; } want[k]++; if (!kinds[k]) kinds[k] = s; }
   rows.push({ t: +T[i], S, P, kinds, want, dt });
 }
 const t0 = +t0s, t1 = +t1s;

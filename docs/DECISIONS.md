@@ -9755,3 +9755,48 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
 - **Not done.** The user's eye on `#glitch=0` in stream mode; whether the tear should be off by default (it stays ON: the v0.2 look is
   the default, the switch is the opt-out — the user asked how to disable it, not for a new default); the kaleidoscope's `FX.kal` has no
   page-wide gain of this kind (per scene only, `post.kaleido`; §102 turned it off on the home scene).
+
+## §111 the fluid grammar tuned on all seven tracks — the density governor, the key's colour, the sweep's syrup, the void's bound, the confirmed clear, the tonic's axis, the floor's range (2026-10-09, one worker; FLUID-TRACKS-2026-10-09 §10.1 built in its ranked order; the user: *"tune and test with all the real songs"*, *"can ignore malicious until I validate the ruler"*)
+
+- **The ask and the method.** The seven-track survey (`docs/plans/FLUID-TRACKS-2026-10-09.md`) measured §104–§109's grammar on every
+  library track and ranked what was wrong on ≥ 3 of the six (Malicious measured, never a gate or a target). This section builds §10.1's
+  list in that order, one commit per item, each with its own per-track numbers, so the user can see what each change bought. The
+  rulers: (1) `tools/fluid-tracks.js` (new, committed) — `plan()` replayed with no GL over the survey's whole-track traces
+  (`tools/work/fluid-tracks/<Track>/trace-map{1,0}.json`, both map modes) and the pad take, one row per track × mode: coverage per
+  channel, hits / droplets per second, the injected ink per second (area-weighted) and the governor's factor, Σ|dv|, void / syrup %,
+  the clears (true · in IBelongHere's breakdown), the sub emitter's x span, the hit splats' x range, the kick's dy range, the hue's
+  trust % and bins — `tools/work/fluid-s111/before.md` is HEAD 9658d8f's, `i<N>.md` each item's; (2) the survey's deterministic FLUID
+  shots (`tools/work/fluid-s111/shots.sh <track> <tag> "<name:t …>"`: scene 12, file mode, `at=0`, `CLOCK=1 GPU=1`, keyed on
+  `__FRAME`, whole-frame grey mean / p99 per shot — rec-strip.sh's metric; the survey's own shots are the "before") at the survey's
+  windows — the two "it changed" rulers §10.1 named: SeeYouDrop's windows must stay (the reference), CyborgNinja's busiest 31 s must
+  stop packing (31 / 31 seconds above grey 60 before). Every splat `plan()` emits now carries its kind (`k`: sub kick snare chord hat
+  floor drop) — `fluid-replay.js` and the table read it instead of re-deriving the emit order. The user's taste the items serve: hits
+  must launch something that travels; coverage + dynamics over ms timing; major warm / minor cool, the key the hue anchor; "I like the
+  bright glowy look but want to see the shapes".
+- **Item 1 — the density governor** (`inject.js`: `AMP0` .2, `RANK_N` 64, `HAT_RATE` 8, `INK_BUDGET` 14, `INK_TAU` 12; `mkState` gains
+  the two rank buffers, the kick's ranked size, the hat bucket, the ink rate). Three parts. (a) **A hit's size is its rank in its
+  lane's own recent range**: `sz = AMP0 + (1 − AMP0)·clamp((amp − p10) / (p90 − p10))` over the lane's last 64 hits (the pooled prior
+  .3 / .95 until it has 8), the kick's `dy = KICK_V·√sz`, the snare's `dx = SNARE_V·sz` — the lane's .31 amp floor had given every
+  track the same bottom (dy p10 .49–.63, the smallest kick 56 % of the biggest); now dy p10 / p50 / p90 reads **.39 / .56–.64 / .82–.89
+  on all six** (the floor √.2 = .45 of the top), a lane whose hits all sit in .5–.6 spreads over the whole law (the test). SeeYouDrop's
+  own p10 / p90 (.32 / 1.00) is the prior, so its hits map near-identity (p50 .61 → .58). (b) **The hat droplets out of a token bucket**
+  (3 tokens, 8 / s back): a hat hit's first three droplets, the frames after wait for the refill — droplets per music second
+  CyborgNinja **29.3 → 7.7**, WhoLikesToParty **26.1 → 6.1**, Vienna 11.1 → 3.5, IBelongHere 8.7 → 3.1, SeeYouDrop 5.5 → 2.4 (10 s of
+  hats ≤ 83, was 1800; half a second of quiet refills it). (c) **The ink budget**: the injected ink per second, AREA-WEIGHTED (Σ dye ·
+  (rad / RADIUS)² — a kick's ×2 radius is four snares' worth), as an ema over `INK_TAU` 12 s, scales the dissipation by
+  `max(1, rate / INK_BUDGET)` — multiplying the void's `dyeDiss` too (a governed build still accumulates, at half the pace), the drop's
+  impulse not counted. At twice the budget the pool drains twice as fast, so its ink saturates at the budget on a track with no
+  range of its own. The factor, p50 / p90 over music frames: **CyborgNinja ×2.1 / 2.1, WhoLikesToParty ×1.8 / 2.0**, IBelongHere ×1.0 /
+  1.4, SeeYouDrop ×1.1 / 1.4 (its builds' end), Vienna / Comptine / the pad ×1.0 (never). The τ was measured, not guessed: at 1 s
+  SeeYouDrop's build-100 read 42 (61 before) and drop2 55 (78); at 6 s 49 / 60; at 12 s (three bars at 150 bpm) 54 / 67 — a 10 s
+  roll passes, a 180 s boil does not. **The shots** (survey → item 1, grey mean): SeeYouDrop groove-35 **51 → 52**, drop1p-58.0
+  **37 → 37**, drop2p-106.0 **37 → 36**, outro-150 33 → 33, intro / subin unchanged; build-100 61 → 54, the two drop flashes drop1-57.5
+  71 → 60 and drop2-105.5 78 → 67 (the bucket takes the drop second's 22 droplets to 11 and the budget's factor reads 1.3–1.4 at the
+  end of a 15 s build; the smaller mid-rank forces light less relief) — outside the survey's ±5 on the three transient windows, inside
+  it on the groove and the clears; recorded, not hidden. **CyborgNinja's busiest 31 s (79–109 s): mean of means 73 → 46, min–max 66–79
+  → 42–52, seconds above grey 60 31 → 0 (20 of 31 in SeeYouDrop's groove band 46–60), p99 max 205 → 179** — it stops packing.
+  The replay per track is `tools/work/fluid-s111/i1.md`; the shots `tools/work/fluid-s111/{SeeYouDrop,CyborgNinja}-i1c/shots/`
+  (the final per-track montages are below, after item 7). Tests: `test_fluid` kick (the rank's floor, the law's room 1/√AMP0 = 2.24×,
+  the tail's 40 % of the ranked size, a .5–.6 lane over the whole law, the 64-hit buffer), snare (the ranked dx, the floor), hats (the
+  bucket: a 12-frame burst → 3 + 1, 10 s ≤ 83, the refill), budget (nothing → the grammar's; 60 s of hits → the factor; the void's
+  .05 scaled; 60 s of nothing decays it; a 5 s burst reaches a third; the drop not counted; INK_BUDGET 14). check 0 fail, npm test exit 0.
