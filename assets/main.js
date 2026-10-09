@@ -46,6 +46,7 @@ import nav2 from './scenes/nav2/index.js'; // §102 (2026-10-08): id 0, key 1, t
 import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (score 0; the `n` key cycles to it — the number keys ran out) — MAXWELL-SESSION-PROMPT.md
 import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
 import chladni from './scenes/chladni/index.js'; // v0.15: id 11 ("slot 12"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=11) — ENGINE-CHLADNI-SESSION-PROMPT.md
+import fluid from './scenes/fluid/index.js'; // §106: id 12 ("slot 13"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=12) — the fluid substrate shown as itself (FLUID-PLAN Step 3)
 
 const $ = (id) => document.getElementById(id);
 
@@ -74,7 +75,7 @@ initFluid(ctx); // before resize(): its targets are allocated on the first resiz
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
-for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis, chladni]) {
+for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis, chladni, fluid]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);
