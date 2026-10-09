@@ -22,7 +22,8 @@
 //              one beat (60/bpm s on dt) + the impulse (radius ×4), then CLEAR_REF beats of refractory; no sub inside the window → no clear
 //   mapdrop    §107: a mapDropEvt frame arms the same clear (file mode's bar line); a dropEvt-only frame does NOT (CONTRACTS §1.18: not a clear)
 //   floor      §108: a pad-only frame (mid up, no events) → one dye-only splat at the key's fifths sector, y .5, radius ×2, dx = dy = 0;
-//              the knee (mid .1 → nothing); silence → nothing; 120 pad frames → never a velocity; the §107 clear holds it under 5 %
+//              the knee (mid .1 → nothing); silence → nothing; 120 pad frames → never a velocity; the §107 clear holds it under 5 %;
+//              §111 on the track's own range: 40 s of a steady level → FLOOR_BASE of it, a swell above its p80 → the full floor, a dip → half
 //   chord      §108: the v1 `snare` level rising > CHORD_RISE with no snareEvt → two shears at a third of the snare's force, sized by the
 //              rise, then the refractory (a further rise inside CHORD_REF → nothing; after it → again); a held level → nothing; a
 //              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
@@ -290,6 +291,14 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   ok(n === 120 && vel === 0, 'floor: 120 pad frames → 120 splats, Σ|v| ' + vel + ' (never a velocity: no roster trail moves)');
   const hold = K.FLOOR_DYE * (1 + K.DROP_DISS * DT) / (K.DROP_DISS * DT);
   ok(hold < 0.05, 'floor: under the §107 clear the pool holds ' + hold.toFixed(4) + ' of the floor\'s ink (< .05)');
+  // §111 item 7: the floor on the track's own range
+  const stR = mkState(); let fl;
+  for (let i = 0; i < 60 * 40; i++) fl = run(base({ mid: 0.8 }), stR).floor;
+  near(fl, K.FLOOR_DYE * 0.8 * K.FLOOR_BASE, 1e-9, 'floor: §111 40 s of a steady mid .8 → FLOOR_BASE ' + K.FLOOR_BASE + ' of the plain floor (a level that does not move is half the ink; before: the full floor on 94–100 % of every track\'s frames)');
+  near(run(base({ mid: 0.95 }), stR).floor, K.FLOOR_DYE * 0.95, 1e-9, 'floor: §111 a swell to .95 — above the track\'s own p80 — the full floor');
+  near(run(base({ mid: 0.6 }), stR).floor, K.FLOOR_DYE * 0.6 * K.FLOOR_BASE, 1e-9, 'floor: §111 a dip to .6 — under its p20 — half');
+  near(run(base({ mid: 0.9 }), mkState()).floor, K.FLOOR_DYE * 0.9, 1e-9, 'floor: §111 the first 5 s (no range known yet) → the plain floor');
+  ok(run(base({ mid: 0.1 }), stR).floor === 0, 'floor: §111 the absolute knee still zeroes a residue under FLOOR_LO');
 }
 
 // chord (§108): a chord attack the lane does not call a snare — the v1 `snare` level's rise, with a refractory

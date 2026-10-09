@@ -73,6 +73,10 @@ export const K = {
   VOID_FLOOR: 0.3, // §111 the void's dissipation never goes under this unless the void is LATCHED on drums: buildLive > .5 with the sub
   VOID_BARS: 8,    //   seen within VOID_BARS bars — the tongues' ambiguity is a clock-lock measure (dyeDiss < .5 on 30–48 % of four tracks
                    //   from it alone) and a piano crescendo arms buildLive 1.0; a real build (SeeYouDrop's, Vienna's dream) had the bass
+  FLOOR_BASE: 0.5, // §111 the floor on the track's OWN range: × (FLOOR_BASE + (1 − FLOOR_BASE)·sstep(p20, p80, mid)) over the last FLOOR_WIN
+  FLOOR_WIN: 30,   //   seconds of `mid` — a swell above the track's own p80 is the full floor, a steady level half of it, a dip under its
+                   //   p20 half (before: mid > FLOOR_HI on 94–100 % of every track's frames — the floor was a constant .24–.32 dye/s, "the
+                   //   lights are on"); the absolute knee FLOOR_LO / FLOOR_HI still zeroes silence and a residue
   CLEAR_PEND: 1.5, // §111 the clear is CONFIRMED: a trigger (dropLiveEvt || mapDropEvt) waits up to CLEAR_PEND beats for the sub emitter to
   CLEAR_REF: 4,    //   open — every true drop on the library brings it within 0.03 s, IBelongHere's four false live arms and Comptine's six
                    //   never — then CLEAR_REF beats of refractory (WhoLikesToParty's map line and live detector fired 1.0–1.1 s apart: two
@@ -87,7 +91,8 @@ export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 6.5 / 12
   hx: 0, hy: 0, mSlow: 0,                                     //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
   lpSlow: 0,                                                  //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
   subAge: 1e9,                                                //   s since the sub emitter was last open (§111 item 4: the void's latch)
-  pendLeft: 0, refLeft: 0 });                                 //   the pending clear's window and the refractory, s (§111 item 5)
+  pendLeft: 0, refLeft: 0,                                    //   the pending clear's window and the refractory, s (§111 item 5)
+  midRing: [], midAcc: 0, midN: 0 });                         //   `mid`'s one-second means over the last FLOOR_WIN s (§111 item 7), the second being summed
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -187,7 +192,15 @@ export function plan(S, dt, st) {
   // first second of sound and the hits' shears land in ink that is already there, while no roster trail moves (feedback.js reads
   // the velocity). The knee on `mid` keeps silence and a residue at nothing; the §107 clear still empties it (DROP_DISS 12 beats
   // 0.004 per frame).
-  const floorLvl = sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid;
+  // §111 item 7: the level's place in the track's own last FLOOR_WIN seconds — one-second means in a ring, the p20 / p80 of the ring
+  st.midAcc += (S.mid || 0) * dt; st.midN += dt;
+  if (st.midN >= 1) { st.midRing.push(st.midAcc / st.midN); if (st.midRing.length > K.FLOOR_WIN) st.midRing.shift(); st.midAcc = 0; st.midN = 0; }
+  let own = 1;
+  if (st.midRing.length >= 5) {
+    const r = st.midRing.slice().sort((a, b) => a - b), lo = r[Math.floor(0.2 * r.length)], hi = Math.max(r[Math.floor(0.8 * r.length)], lo + 0.05);
+    own = K.FLOOR_BASE + (1 - K.FLOOR_BASE) * sstep(lo, hi, S.mid || 0);
+  }
+  const floorLvl = sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid * own;
   let floor = 0;
   if (floorLvl > 0 && g > 0) {
     floor = K.FLOOR_DYE * floorLvl * g * f;

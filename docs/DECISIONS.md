@@ -9911,3 +9911,18 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   before any sub at the tonic; subNote −1 → harmAngle's fifth, the centre before a pin and the wall for F♯ with C pinned), floor (x =
   the centre), the music block prints the sub x per trace and asserts CyborgNinja's held bass near the centre (p50 in .3–.7) with a span
   ≥ .3. check 0 fail, npm test exit 0 (`test_fluid` 209 ok).
+- **Item 7 — the floor on the track's own range** (`FLOOR_BASE` .5, `FLOOR_WIN` 30; `mkState` gains the ring of `mid`'s one-second means).
+  `mid` sat above `FLOOR_HI` .40 on 94–100 % of every track's frames, so the §108 floor was a constant .24–.32 dye / s everywhere — "the
+  lights are on" (§108's open question). Now the floor is × (.5 + .5·sstep(p20, p80, mid)) over the last 30 s of `mid` (one-second means
+  in a ring; the plain floor until the ring has 5 s; the absolute knee still zeroes silence and a residue): a swell above the track's
+  own p80 is the full floor, a steady level half of it, a dip under its p20 half. **The floor's ink / s (area-weighted) p10 / p50 / p90,
+  before → after**: SeeYouDrop .90 / 1.20 / 1.38 → **.53 / .86 / 1.22**, Vienna .80 / 1.07 / 1.19 → .53 / .79 / 1.07, IBelongHere .49 / .99 /
+  1.22 → .28 / .80 / 1.14, CyborgNinja .96 / 1.31 / 1.50 → .53 / 1.06 / 1.36, Comptine .68 / 1.17 / 1.64 → .35 / .89 / 1.58, the pad .15 /
+  1.03 / 1.45 → .15 / .93 / 1.45 — the p10 : p90 ratio .65 → .43: the floor has a range now; its share of all ink 4–18 % → 4–15 %, the pad's
+  77 → 75 % (the floor is still the pad's picture; its seconds with ink unchanged, 22 / 22). **The shots**: the pad's take re-run
+  (`tools/rec-strip.sh … s111-i7`, 2 fps, against §108's `tools/work/rec/after/grey.txt`): the room's silence 15.6 → 15.6, the first
+  sound at 3 s 22.3 → 21.7, the chords 12 s 27.6 → 26.8, 17 s 29.7 → 28.1, 18 s 29.8 → 28.1 (p99 110 → 94 at 12 s: the steady pad's cloud
+  at half the floor after its first 5 s) — the take still reads from 3 s on; Vienna's dream-75 (the floor is the dream's only ink): mean
+  29.7 → 29.4, p99 100 → 68 (the dream's `mid` sits under the groove's p20 → half the floor — for the user's eye: `tools/work/rec/s111-i7/`
+  and `tools/work/fluid-s111/Vienna-i7/shots/`). Tests: `test_fluid` floor (40 s of a steady .8 → half; a swell to .95 → full; a dip to
+  .6 → half; the first 5 s → plain; the knee). check 0 fail, npm test exit 0 (`test_fluid` 214 ok).
