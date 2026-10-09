@@ -10047,3 +10047,59 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   still constant per hit (only the force is ranked); the hats' ink too. (7) Malicious: every number for the record in the tables,
   nothing asserted (the user's ruler validation pending). (8) `accept.sh` end to end not run (its real-music block ran as the sweeps
   above; its `== real traces` and fake blocks are the node tests and the smoke here). (9) Not pushed; no version bump.
+
+## §112 v0.35 tagged — a pool of ink under every scene (2026-10-09 evening, one worker; the user: *"tag and deploy once done ; (i'll validate once i'm home later)"*)
+
+- **What ships** (§104–§111, 35 commits ahead of origin's `39c4a78`): the fluid substrate — a Stam solver on the GPU stepped once per frame
+  under every scene, after Pavel Dobryakov's WebGL-Fluid-Simulation (MIT; the credit on about.html, in README and THIRD-PARTY.md, all three
+  in `dist/`) (§104) · advection in the feedback pass, **opt-in since §109** (`post.fb.advect` default 0; only FLUID sets 1; `&post=<scene>.fb.advect=1`
+  is the one-run A/B) (§105, §109) · **FLUID, id 12** — the dye lit as a liquid surface, forced-only, `n` cycles to it, `&scene=12` (§106) ·
+  the drop clears the pool on `dropLiveEvt || mapDropEvt`, confirmed by the sub within 1.5 beats (§107, §111) · the harmonic floor from `mid`
+  on the track's own range and the chord shears from the v1 `snare` level (§108, §111) · the real-music harness — the fake's lattice events
+  reach the scenes, `real-md5-v035.txt` / `real-rulers-v035.txt` / the music traces are the proof, the fake lists the smoke (§109) · the glitch
+  rows' switch — `#glitch=0` on any page, key `G`, `post.glitch` (§110) · the grammar tuned on all seven tracks: the density governor, the
+  ranked hits, the hat bucket, the pinned key, syrup only while closing, the void's bound and latch, the tonic-relative axis, the floor on the
+  track's range, the harmonic branch and the noise guard (§111).
+- **The recipe (§91's ritual, as §103).** `package.json` + `assets/core/version.js` 0.34.0 → 0.35.0 · `releases.json` top entry (`v0.35`,
+  2026-10-09, class `scene`, title *"A pool of ink under every scene — FLUID"*, decisions §104–§111, scenes `[12]`, no clip; the body credits
+  Dobryakov by name with the repo path — `esc()` renders it as text, no link tag) · `npm run build` (33 entries → `site/whats-new.html` 41 KB,
+  the card's `#newin` line *New in v0.35: A pool of ink under every scene — FLUID*, `dist/` with about.html's credit sentence and THIRD-PARTY.md)
+  · `node tools/bundle.js releases/retinarave-v0.35.html` (**177 modules, 1714 KB** — the frozen page; v0.34's was 171 / 1642 KB).
+- **The gates, each green, on the tree AFTER the bump (so the sweep saw the release's own files):** `node tools/check.js` 178 modules, **0 fail**
+  / 8 warn (the soft-cap line counts) · `node tools/releases.js check` 33 entries, top v0.35 == package.json, 0 problems · `node tools/whatsnew.js
+  --check` up to date · `node tools/license.js --check` **181 public files, 0 without the header** · `npm test` **exit 0** (`test_fluid` 243 ok,
+  `test_music` 129 ok) · `GPU=1 PORT=8861 node tools/test_rec.js` **all ok** (`retinarave-v0.35-nav2-…webm`, VER == package.json) · the frozen
+  page from `file://` headless (GPU=1, 6 s): `test&scene=0` **errs [] bad [] frameN 345, VER 0.35.0, fluid on**; `test&scene=12` **errs [] bad []
+  frameN 341** · the no-third-party receipt on `/` (`NOAUTO=1 … real`) and `/whats-new`: the one host `127.0.0.1:8863` on both · the fake smoke
+  (`tools/accept.sh`'s blocks before `== real music`, PORT 8830, ACC v0.35 — the real-music block is NOT re-run here: §109 / §111 ran it, see
+  below): **0 FAIL lines in 1331 s** — check 0 fail, the node tests, parity fake (the montage `tools/accept/v0.35/parity-fake.jpg`), parity real (bpm 125.99 vs v3 125.86, arcs identical, drops within 0.5 s), the monitor 60 s on the home `n 3606 fast 2 viol []` errs [] bad [], **24 / 24 scene lines = `scene-md5-v035.txt`** and **24 / 24 = `scene-md5-v035-fluid0.txt`** (s12 `3e483039 / 2274bb4e`, the §111 pair), feigen L3.6 steady 1.32 ms ≤ 3.405 (nav 2.27), the transition, hidden tab / worklet clean, routes, params, landing 10 tiles / 10 thumbnails, help 209 / 209 fields on 13 / 13 ids, the real start path, the bundle 30 s errs [] bad [] · `SCENES=12 tools/real-md5.sh` once more at this HEAD (PORT 8971): **58 / 58 FLUID lines = `real-md5-v035.txt`** (721 s, 58 runs, `f0 2` and errs [] on every one — the §111 references hold at this HEAD, a third cmp-equal run) — the roster's 174 lines stand on §111's
+  proof (117 runs, 174 / 174, the grammar's velocity reaches no roster scene on advect 0); the rulers on §111's run (0 FAIL on FLUID's 8 rows).
+- **The bench at this HEAD** (HARNESS "## Fluid": q pinned .95, tier 3, sim 259×128, dye 1035×512, `benchFluid(300)` / `bench(0, 300)` interleaved,
+  the fake, GPU=1 headless, `CLOCK=0`). The machine was NOT idle — the user's desktop Chrome had two renderers at ~50 % CPU each, load 3.7 —
+  so two sets: (a) first, before the sweep: substrate **1.04 (cold, discarded) / 1.01 / 0.96 / 0.95 ms** against NAV **2.21 / 2.18 / 2.22 / 2.16**
+  → median **0.96 ms, ratio 0.44**; (b) after the sweep (18:15): load 3.86, the same two renderers: substrate **1.05 (cold) / 1.00 / 1.05 / 0.99 ms** against NAV **2.49 / 2.44 / 2.40 / 2.22** → median **1.00 ms, ratio 0.41**. §104's idle reading was 0.58 ms at NAV 1.35–1.41 (ratio 0.43); §108's 2.68
+  at NAV 4.66–4.98 (ratio 0.58) was under desktop load. The ratio is the decidable number (the bench protocol's rule 5): at 0.41–0.44 the substrate
+  costs what it cost at §104 relative to NAV, and NAV itself read 1.6× §104's — the load. On the absolute ms the budget (≤ 1.0 ms at tier 3) holds
+  at 0.96 / 1.00 under that load — at the line, not over it; a truly idle re-measure is owed (the open list) and would read ≈ 0.6 ms by the ratio. Not a stop.
+- **What is live when.** One release commit (this note, `NEXT-SESSION-PROMPT.md`, the generated `site/whats-new.html` + `index.html`'s line, the
+  two versions, the entry, the frozen page), `git tag -a v0.35`, `git push origin main --tags` (35 commits — §104–§111 were never pushed; the
+  deploy carries all of them). Cloudflare's Git-connected build: 40–85 min on v0.30–v0.33, ~5 min on v0.32 / v0.34 — poll `VER = '0.35.0'` in
+  the bundle at retinarave.com, the *New in v0.35* card line, `/whats-new` top card, `/THIRD-PARTY.md` 200. Do not re-push to kick it.
+- **What the user validates at home (every remark in track time is a retune request):** (1) **FLUID on every track** — key `n` to the scene (or
+  `#scene=12`), file mode, the eye's references are §111's montages `tools/accept/v0.35/fluid-s111-<Track>-montage.jpg` (Comptine, CyborgNinja,
+  IBelongHere, Malicious, SeeYouDrop, Vienna, WhoLikesToParty) and the window shots beside them; (2) **the drop flashes dimmer** (§111 item 1: the
+  bucket halves the drop second's droplets — SeeYouDrop drop1-57.5 / drop2-105.5); (3) **Vienna's dream at half the floor** (§111 item 7, dream-75:
+  the dream's `mid` under the groove's p20 — whether it should keep the full floor); (4) **Comptine's melody placement** (§111 item 8: the hits walk
+  with the melody on the tonic axis, .46–.63 — do they read as the melody? and the applause 137–144 s inked as noise, nothing); (5) **the pad at
+  half the floor** after 5 s (`fluid-s111-rec-strip.jpg` — the user's own take replayed); (6) **`fb.advect` is opt-in** — NAV / DUST / TORUS2 look as
+  v0.34 did (the user: not on nav / particles / torus); `#post=nav2.fb.advect=1` under `#test` is the §105 look for comparison; (7) **the glitch
+  switch** — `G` toggles the tear, `retinarave.com/#glitch=0` is the bookmark with it off; the toast says which.
+- **Open findings carried into the tag (none retuned — findings, not regressions):** §109's **seven ruler FAILs on DUST (3) and TORUS2 (4)**
+  (`real-rulers-v035.txt`: DUST black 391 on IBelongHere 159–219, black 1409 on the take, a jump at Vienna 184.35; TORUS2 jump viol on CyborgNinja
+  121.1, IBelongHere 189.8 / 196.9, SeeYouDrop 42.4–44.2 / 76.8, WhoLikesToParty 12.4–53.4 — each a finding to look at on the track, not a gate
+  moved) · **the map-vs-ears sub ruler** on Malicious the user will validate (windows.json `gate: false`; every Malicious number is for the record,
+  nothing asserted — "can ignore malicious until I validate the ruler") · **the trace-set key-timeline disagreement** (§111 open 2: IBelongHere Am
+  22.5 → Dm 65.8 on the truth traces vs Dm at 43 s on the survey's; CyborgNinja Dm / Cm vs Gm / G — recorded at different HEADs; re-record the
+  survey's traces at this HEAD before the next grammar pass) · §111's open 3–6 (CyborgNinja's key a guess at the wall; WhoLikesToParty's clear on
+  the map's line a bar early; the rec rulers row one frame off §109's; the kick / snare / hat INK constant per hit) · the idle bench re-measure ·
+  `accept.sh` end to end (its real-music block = §109 / §111's sweeps) · the §110 `G` key and `#glitch=0` unseen by the user.

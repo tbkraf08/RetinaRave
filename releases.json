@@ -1,5 +1,27 @@
 [
  {
+  "version": "0.35.0",
+  "tag": "v0.35",
+  "date": "2026-10-09",
+  "class": "scene",
+  "title": "A pool of ink under every scene — FLUID",
+  "body": "There is now a fluid under every scene: a pool of ink that the music stirs, simulated on the graphics card every frame, built after Pavel Dobryakov’s WebGL-Fluid-Simulation (MIT, github.com/PavelDoGreat/WebGL-Fluid-Simulation). The new scene FLUID shows that pool as itself, lit like oil on water — press n to cycle to it, or open the page with #scene=12. Where the ink enters is the note: the bass sits at the song’s key, its fifth to one side, its fourth to the other, the odd notes out at the walls. How hard the music hits is how big the splash: every kick lifts the ink, the snare shears it, the hats sprinkle it, and the loud bars throw more than the quiet ones. The song’s key is the colour, and it stays put once the ears are sure of it. The drop clears the pool — a beat of empty water, then the drop’s kicks refill it. Pads and chords keep a faint floor of ink moving so a quiet passage is never a black screen, sized to the track’s own range. All of this was tuned on every track in the library, one at a time. The other scenes are unchanged: the fluid only reaches a scene that asks for it. And the glitch rows — the screen tear on a drop — can be switched off: press G, or open the page with #glitch=0 for a bookmark that stays off.",
+  "clip": null,
+  "decisions": [
+   "§104",
+   "§105",
+   "§106",
+   "§107",
+   "§108",
+   "§109",
+   "§110",
+   "§111"
+  ],
+  "scenes": [
+   12
+  ]
+ },
+ {
   "version": "0.34.0",
   "tag": "v0.34",
   "date": "2026-10-08",

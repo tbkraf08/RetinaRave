@@ -1,102 +1,61 @@
-# Next session — Retina Rave (written 2026-10-02 late, updated 2026-10-03: **v0.30 + v0.31 tagged + pushed** — `70e4c2e`, `537f967`)
+# Next session — Retina Rave (rewritten 2026-10-09 evening: **v0.35 tagged + pushed — a pool of ink under every scene**)
 
-**2026-10-08 ~23:35 EST: v0.34 TAGGED + PUSHED — the navigator moves with the music** (§97–§103, tag `v0.34`, on the user's word "do the work now, then tag and deploy"). The swap is the truth of the tree now: the **retuned navigator** (`assets/scenes/nav2/`, name `nav2`, §97–§101: the exposure knee + smoulder on loudness + snare flash + colour on key in `look2.js`, the kick-lane goldilocks / beat breath / sub press / pitch lean / trap π per bar in `move2.js`, the phrase walk on the Farey ladder + Green's ruler + drops on a new ray in `walk2.js`) is **id 0, key `1`, `home: true`, the director's NAV, card title NAV, thumb `nav2.jpg`, `post.kaleido 0`** (the user: "remove the kaleidoscope — it distracts from the beauty of the set"); the **v0.33 navigator** (`assets/scenes/nav/`, name `nav`) is **id 8, key `9`, `home: false`, `always: true`, score 0, no card — the control**, DRUM (id 4) stays its variant. md5 pairs (§102): s0 `a8de2f03 / 7a65fd16`, s8 `fb74fee4 / 8a0715df`, s4 unchanged. **Poll retinarave.com ~40 min after the push:** `VER = '0.34.0'` in the bundle, the card's *New in v0.34: NAV moves with the music* line, `/whats-new` top card, key `9` present (forced 8). Do not re-push to kick Cloudflare. **Open (§101/§102/§103):** the user's first look at key `1` as home in stream mode (EYE-GUIDE's six windows, now on key `1`) · two mid-excursion EXT monitor steps on the full SeeYouDrop (the spring family, not the launch) · the 1/2 ladder has no "calm" candidate (all four read Q .69) · id 8's own root-crossing hazard (the control, left) · parity's §83 `nav.*` MISMATCH line is pre-existing (v3 reads `build`/`dropEvt`, NAV `buildLive`/`dropLiveEvt`) · `accept.sh` in full not run (25 min; its nav / nav2 pieces run by hand in §102).
+**2026-10-09 ~18:16 EDT: v0.35 TAGGED + PUSHED** (DECISIONS §104–§112, tag `v0.35`, on the user's word *"tag and deploy once done ;
+(i'll validate once i'm home later)"*). Cloudflare's Git-connected build deploys it (5–85 min on v0.30–v0.34): poll `curl -s https://retinarave.com/ | grep -o "VER = '[0-9.]*'"` for `0.35.0`, `/whats-new` and `/THIRD-PARTY.md` 200, the *New in v0.35* card line; do not re-push to kick it (the live time is in the release report / memory). The push carried 35 commits (§104–§111 were never pushed; origin sat at `39c4a78`).
 
+## What is live (the truth of the tree)
+- **The fluid substrate** (§104, `assets/core/fluid/`): a Stam solver on the GPU, one step per frame under every scene, after Pavel Dobryakov's
+  WebGL-Fluid-Simulation (MIT — the credit on about.html, README, THIRD-PARTY.md, all served). `CARD.fluid`, key `W` toggles it, `&fluid=0` under `#test`.
+- **Advection is opt-in** (§105 built it as the default; **§109 turned it off** on the user's look: "I don't like the fluid dynamics effecting the
+  other scenes … nav, particles, torus"): `post.fb.advect` default 0, only FLUID sets 1. NAV / DUST / TORUS2 render the v0.2 scalar program —
+  the `&fluid=0` list equals the default list on every line but s12's (HARNESS "## Fluid").
+- **FLUID, id 12** (§106): the dye lit as a liquid surface; forced-only, `n` cycles to it, `#scene=12`; card + thumb. The grammar (`inject.js`,
+  pure, `FLUID_FEATS`): the bass note at the key's place on the tonic axis (§111 item 6), kicks lift / snares shear / hats sprinkle at ranked sizes
+  (§111 items 2–4), the key is the colour and pins on evidence (item 5), the drop clears the pool — confirmed by the sub within 1.5 beats (§107, item 9),
+  the harmonic floor from `mid` on the track's own range (§108, item 7), chord shears (§108), the harmonic branch + the noise guard (item 8).
+- **The real-music harness** (§109): the fake's lattice events reach the scenes now; `tools/accept/v0.35/real-md5-v035.txt` (232 lines: the roster +
+  FLUID × 7 tracks × both map modes × 4 windows + the take) and `real-rulers-v035.txt` are the PROOF, the fake lists the smoke; `tools/real-md5.sh`,
+  `tools/real-rulers.sh`, `tools/traces.sh`, `tools/test_music.js`. Malicious is in every sweep for the record but is NOT a gate.
+- **The glitch switch** (§110): `#glitch=0` on any page, key `G`, `post.glitch` per scene.
+- **The release** (§112): releases.json top entry v0.35 (class scene, scenes [12]), `releases/retinarave-v0.35.html` 177 modules, the gates all green.
 
-**2026-10-06 ~19:50 EST: v0.33 TAGGED + PUSHED, LIVE ~20:00 EST** (`676a303`, tag `v0.33`, on the user's word "deploy" after "do all 4 fixes"): **§96** — Firefox and Safari share no tab audio (Mozilla bug 1541425; no feature test → UA sniff `NO_TAB_AUDIO` / `LOOPBACK` in `engine/sources/capture.js`): `#landing.notab` hides the tab steps + *Share a tab* and names the microphone prompt's loopback device per OS, the capture fallback / declined messages say the same, about.html paragraph. Engine untouched: headless Firefox (Playwright `firefox-1509`, installed 2026-10-06, `npx playwright install firefox`) runs the bundle clean at 60 fps. Poll `id="notab"` on retinarave.com; the "Monitor of …" route is not yet confirmed by ear. A GitHub-side README edit (`ad26e1f`, the www link) was rebased under it. `releases.json` `class` ∈ scene|engine|tuning (whatsnew.js fails on anything else).
+## What the user validates at home (each remark in track time = a retune request; DECISIONS §112 has the list with the file paths)
+1. **FLUID on every track** — key `n` (or `#scene=12`), file mode; the references are §111's montages `tools/accept/v0.35/fluid-s111-<Track>-montage.jpg`.
+2. **The drop flashes dimmer** (§111 item 1, SeeYouDrop drop1 57.5 / drop2 105.5).
+3. **Vienna's dream at half the floor** (item 7, dream-75) — should the dream keep the full floor?
+4. **Comptine's melody placement** (item 8: the hits walk with the melody; the applause 137–144 s reads as noise, nothing inked).
+5. **The pad take at half the floor** after 5 s (`fluid-s111-rec-strip.jpg`).
+6. **The roster scenes look as v0.34 did** (advect opt-in). `#post=nav2.fb.advect=1` under `#test` is the §105 look for an A/B.
+7. **The glitch switch** — `G`, `retinarave.com/#glitch=0`.
+8. **The map's sub ruler on Malicious** (the user's ruler validation, pending since §109 — until then Malicious is ignored in every gate).
 
-**State (2026-10-03):** **v0.30 TAGGED + PUSHED 2026-10-03** (`70e4c2e`, tag `v0.30`, `main` == origin; v0.30 live ~40 min after the push; **v0.31 LIVE** (user-confirmed ~13:20, ~85 min after the push) (`537f967` + two doc pushes behind it) — a clean clone builds it, whatsnew.js runs on Node 18/20/22, `_headers` valid, `wrangler deploy --dry-run` reads 24 assets; the cause is only visible in the Cloudflare dashboard (Workers & Pages → retinarave → Builds) or fixable by `npx wrangler login` + `npm run build && npx wrangler deploy`) — the user said
-"tag and deploy" BEFORE running the gates in §0, so every §0 item is now a retune input on the live build, not a pre-deploy gate. Today's session landed, each with receipts in DECISIONS: **§83** accept.sh re-based at v0.29 (`ACC` variable,
-`tools/accept/v0.29/scene-md5-v029.txt`, all 12 ids guarded) + the fake timeline's deterministic kick/snare/hat lattice (the md5 sweep
-now sees the voices: s1 s3 s5 s9 s10 s11 moved once, the baseline re-recorded) · **§84** `tonicConf` (KS margin × sub-note histogram)
-owns `keyConf`; the dead `SUB_W` lean fixed (`held`); `&kc=0` = synapse's old keyConf; Malicious is **C minor** (§62's "GM" refuted)
-· **§85–§88 MANDALA pass 1** (grid on the PCM clock via `assets/math/beatgrid.js`, three voices via `assets/math/voice.js`, real
-tension from `buildLive`/`tongueAmbig`, the §78 accent + key hue) — built on the prompt's five defaults, **the user has not seen it** ·
-**§89 the `R` recorder** (compositor canvas on the frame's last task, `AU.bus` tap, VP9/Opus webm + sidecar json, watermark,
-`&rec=0`; 60 → 47 fps at 1080p, stop rule closed; `tools/test_rec.js` 36 ok; `tools/clip.js` needs ffmpeg) · **§90 the DUST sync on
-IBelongHere** (`PERCK.lineKick`: a clickless low onset on the clock's line is a kick, kick F 0.55 → 0.68; `CLOCK.HOLD_Y1/R_Y1/RATE_Y1`:
-the clock no longer slides late on vocals, 59–65 s +21 → +8 ms, the drop re-seat 22 → 10 ms; the 0:10 4:3 cold lock measured and
-**left**, `CLOCK.SW_Y1` off) · **LICENSE** = MIT + the Guest-List Clause (Toma gets into the party), the 3-line header on all 173
-public files (`tools/license.js`, `check.js` fails without it), `/LICENSE` served and in `dist/`.
-Tracks (six): `~/Music/RetinaRave/{SeeYouDrop.flac, CyborgNinja.mp3, WhoLikesToParty.mp3, Malicious.mp3, Vienna.flac, IBelongHere.flac}`.
-**Truth grids validated by the user's ear today:** Malicious (both windows), Vienna (the current grid; the dream's chord swells are an
-anacrusis, noted), IBelongHere (0–75 s) — `anchor: hand` 2026-10-02 in each json; SeeYouDrop + CyborgNinja hand since §72;
-WhoLikesToParty tool-anchored. `docs/truth/GRID-VALIDATION-2026-10-02.md`, `docs/truth/IBELONGHERE-2026-10-02.md`.
-The user's words that still govern: "lets go one scene at a time" · the legibility brief in `DUST-OVERHAUL-SESSION-PROMPT.md` ·
-reactive over predicted · "the double time should be accenting rather than driving" · **plan AND build with Fable** · click tracks go to
-`~/Music/RetinaRave-clicks/` with a ready `! paplay` line · a look remark = a retune request.
+## Open items (findings, none retuned; DECISIONS §111 "Open" + §112)
+- §109's **seven ruler FAILs**: DUST 3 rows (black 391 on IBelongHere 159–219, black 1409 on the take, a jump at Vienna 184.35), TORUS2 4 rows (jump
+  viol on CyborgNinja 121.1, IBelongHere 189.8 / 196.9, SeeYouDrop 42.4–44.2 / 76.8, WhoLikesToParty 12.4–53.4) — look at each on the track.
+- **The two trace sets disagree on the ears' key timeline** (IBelongHere, CyborgNinja — different HEADs): re-record the survey's whole-track traces
+  (`tools/work/fluid-tracks/<Track>/trace-map{1,0}.json`, `WARM=0 node tools/filetrace.js …`) at this HEAD before the next grammar pass.
+- CyborgNinja's key is a guess (keyConf p50 .01), its C♯ at the wall · WhoLikesToParty's clear in file mode is the map's line a bar early ·
+  the rec rulers row one frame off §109's (244 / 1463 vs 245 / 1464) · the kick / snare / hat INK constant per hit (only the force is ranked).
+- **The bench at idle** is owed: §112 read 0.96 ms (ratio 0.44 to NAV, = §104's 0.43) with the desktop Chrome at 2 × 50 % CPU; the budget ≤ 1.0 ms
+  at tier 3 holds on the ratio; an idle run should read ≈ 0.6 ms (HARNESS "## Fluid" bench).
+- `accept.sh` end to end (its real-music block = §109 / §111's sweeps, ~1 h with PAR 1) · the §83 `nav.*` parity MISMATCH line (pre-existing).
 
-**Rules (unchanged):** the orchestrator delegates; planners AND builders are `model: fable`; push / tag / deploy only on the user's word;
-the user's dev server is `node tools/serve.js` on **8765 with no port in its command line — never `pkill -f serve.js`, kill test servers
-by port only**; one page Chrome per worker, two workers at most in parallel on disjoint files (a third is fine if it needs no Chrome);
-**two workers committing in one tree fold each other's hunks — give a builder its own `git worktree` + branch and merge** (§83/§90 both
-rode into another worker's commit); every before/after pair in an isolated worktree; never `trackmap.py <T> --pcm` on any of the six
-(all have truth dirs); no audible runs without saying so; commit per step with the numbers; DECISIONS §91+; `node tools/license.js`
-on any new public file; memory `project_session_2026_10_02_pm` is the running log.
+## The saved next piece — do not start unasked
+**`GRAMMAR-SESSION-PROMPT.md`** (saved 2026-10-09): one fixed cross-scene visual grammar — one musical question → one pre-attentive channel
+(WHEN = motion onset, HOW HARD = size, WHAT = position then hue, WHERE in the phrase = fullness, HOW ROUGH = texture, HOW LOUD = the brightness
+floor); CONTRACTS §1.19, then the audit of NAV / DUST / TORUS2 against it (`docs/plans/GRAMMAR-AUDIT.md`). §111's grammar on FLUID is the first
+scene already on it (CONTRACTS §1.1's grammar sentence).
 
-## Do, in order
-
-### 0. The user's eye and ear on v0.30 (each remark is a retune; old = `releases/retinarave-v0.29.html` from `file://`)
-- **MANDALA A/B** in stream mode, key 3: old = `releases/retinarave-v0.29.html` from `file://`, new = `http://127.0.0.1:8765/`.
-  Watch: SeeYouDrop 0:40–1:02 (the void darkens, odd N, 0:57.6 lets go; 16ths arrive = heavier crest, harder glints), 1:30–1:50;
-  Vienna 1:12–1:26 (the dream tightens, 1:25.3 releases), 1:30–1:38 (double time accents, gone by 1:43), 1:46.7 nothing on purpose;
-  CyborgNinja 0:20–1:20 the control (N never changes, nothing accents). The five defaults taken (§85–§88 "defaults"): one wedge per
-  bar, snare = segment flash, kick sized by the level's confirm, N+1 literal, `acc` from the lifted `spin()`.
-- **The key A/B** (`&kc=0` = old), DUST key 1: SeeYouDrop's walk (0:20–0:57) — the A/E bars now slide to the mood palette (conf
-  0.06–0.07 there); CyborgNinja — the hue stops following the wrong key's flips (gate 0.94 → 0.04); Malicious 1:40 — CM → the mood
-  palette on the intro's D♯. The user's ear on the tonic: CyborgNinja "the wobble bass under the drop at 0:48 — is it C♯?";
-  Malicious "the bass under the drop at 2:28 is the tonic (C)"; IBelongHere "the bass at 1:04.7 — A (the ruler) or D (the ears)?" →
-  `tonic_hand` in the json, `tools/test_ears.js` KEY_TRACKS `expect`.
-- **DUST on IBelongHere** (file mode, key 1): 0:47 the kick pulse on 12 of 21 kicks and through the breakdown; 1:04 the line no longer
-  slides late, the drop snap halved; 0:10 unchanged by design (the 4:3 lock on the drumless dotted-8th intro — a scene-side
-  `clockConf × min(1, y1/0.3)` gate is the open design, §90). Old: `&kline=0&holdy1=0&ry1=0&ratey1=0`.
-- **The recorder by hand** (HARNESS "Recorder"): `sudo apt install -y ffmpeg` in a real terminal first (the `!` prefix has no tty);
-  30 s tab capture + 30 s file, each webm plays in Chrome and VLC with sound, watermark reads, dot/HUD absent; then
-  `node tools/clip.js ~/Downloads/<take>.webm --ss 2 --to 28` and `ffprobe … clip.mp4` → `60/1,yuv420p`, aac.
-- **The recorder's quality** — the user: "the recording quality isn't very good" → **§92 BUILT** (not tagged): the tier held at q 0.75 during a
-  take (was sinking to 0 = 0.375× render), VP9 30 Mb/s (was 12), the sidecar embedded in the webm (one download — Chrome swallowed the
-  second file on every take), `&recmime/&recbps/&recsize/&recq/&recjson` knobs, even capture dims; clip.js works without a sidecar and ran
-  on the user's DUST take. **Judge it with a new take on the dev server** (R on NAV or DUST with a track; one file lands, ~2× the bytes;
-  look at NAV's filaments and DUST's kick-lane edges); old look `#recq=off&recbps=12&recjson=1`. ffmpeg is installed now. → **tag v0.32 on the user's word.**
-- **Read once:** `LICENSE` (the clause names Thomas Kraft, "Toma", you + one guest) and `MANDALA-OVERHAUL-SESSION-PROMPT.md`.
-
-### 1. ~~Tag v0.30~~ — done 2026-10-03 (`70e4c2e`; the recipe that worked: bump `package.json` + `assets/core/version.js`, `node tools/bundle.js
-releases/retinarave-vX.html`, `npm run build`, check / license --check / npm test / test_rec (VER == package.json) / the release from
-`file://` errs 0, a DECISIONS note, commit, `git tag -a`, `git push origin main --tags`). **Live ~40 min after the push** (v0.30 confirmed 2026-10-03 ~06:50: `VER = '0.30.0'`, `/LICENSE` 200) — the Cloudflare Git-connected build
-is slow / queued, not broken; do not re-push to "kick" it. wrangler is not logged in here (`npx wrangler login` would allow a manual
-`npm run build && npx wrangler deploy`).
-
-### 2. ~~Share phase 2 + 3~~ — BUILT + **tagged v0.31, pushed** 2026-10-03 (§91, merged `a4942b5`, tag `537f967`): `releases.json` 28 entries v0.6→v0.30, `tools/releases.js` +
-`tools/whatsnew.js` → `site/whats-new.html` (0 scripts, no third party), the card's two lines, about.html long form; check.js enforces top entry ==
-package.json. The v0.31 recipe worked (bump both versions → `releases.json` entry WITH `scenes: []` → `npm run build` → checks → tag → push). Live status: see §1.
-Open: the historical clips (`tools/record-old.sh`), the user's one read of the 28 bodies, the `decisions` links point at the private GitHub.
-The original spec, for reference:
-`releases.json` + `tools/whatsnew.js` → `site/whats-new.html` at `npm run build` (static, per-version anchors, click-to-load YouTube
-behind a self-hosted poster, no third-party request before a click); `check.js` fails a tag whose top entry ≠ `package.json`;
-backfill v0.6 → v0.30 from DECISIONS / the AUDIT files in a visitor's words, one sitting; `tools/record-old.sh` for the old releases'
-clips (ffmpeg x11grab + the PulseAudio monitor). Then the landing line on the card ("Everything runs on this device — no account, no
-trackers, no ads. I built this for myself and wanted to share it." + "New in vX: <title> → what's new" inlined by `tools/bundle.js`) and
-`about.html`'s long form. DOM only — md5s cannot move. SocialMediaManager stays a separate repo the user starts themself once a real
-clip bundle exists (`docs/plans/SOCIAL-MANAGER-BRIEF.md`).
-
-### 3. Then, on the user's word: the next scene (one at a time) or MANDALA pass 2 from the A/B remarks
-
-## Smaller, on their go
-The 0:10 class: a scene-side clock-confidence gate (no scene reads `clockConf`) · Malicious cold lock 3.5 → 5.6 s (§90's one cost) ·
-SeeYouDrop's walk reads F♯m at 0.31–0.38 (one twelfth, same cool pull) · WhoLikesToParty stays gated (walking bass → mood palette) ·
-CHLADNI's `tconf` on the new scale, not re-tuned · the recorder's `Q.q` sinks to 0 during a take (pin `q`?) · the fake's hat has no size
-(no `hatAmp`) · GIELIS `&still=1` reads `modeShade` through the anchor · MANDALA: the body clips to a yellow disc at loud passages +
-the drop frame's white-out bands (inherited from v0.29); the lifted `spin()` lands DOWN's step one beat late (DUST too) · polytope /
-torus2 / dust index.js over the 350 soft cap by the header · `tools/accept/*/` jpgs stay untracked · `tools/test_ears.js` wants
-`tools/work/SeeYouDrop.st.f32.json` (pre-existing) · accept.sh's `== scene md5` grep misses DRUM id 4 (22 vs 24 lines; `scene-md5.sh`
-has all 24) · WhoLikesToParty's grid never listened to. Everything else: `docs/OPEN-ITEMS.md`.
-
-## 2026-10-04 — v0.32 tagged + pushed (`dc8c874`; §92–§95)
-
-The user's word: "tag and deploy". In the tag: §92 (the recorder's quality), §93 + addendum (the director's roster — only NAV, DUST, TORUS2
-bid; the territory formulas for the others stay in their score() comments), §94 (a boot never revives a forced scene — the panel's preset
-carried `manual.scene`; this is why the user's tab share "defaulted to GIELIS" after every reload), §95 (each scene stays 30–90 s, drawn
-per landing; drops / silence / builds still go home at once). Live status: poll `VER = '` on retinarave.com (0.31.0 right after the push;
-the last two builds took 40–85 min — do not re-push to kick it). Open from the session: the user's eye on the three-scene rotation over
-real tracks (remarks in track time → retune DUST / TORUS2 bids or the dwell), whether build parks should respect the dwell too (one
-flag), and the pre-existing tile-mark / force-button desync noted in §94.
+## Rules (unchanged)
+The orchestrator delegates; planners AND builders are `model: fable`; push / tag / deploy only on the user's word; the user's dev server is
+`node tools/serve.js` on **8765 with no port in its command line — never `pkill -f serve.js`, kill test servers by port only**; one page Chrome
+per worker, two workers at most in parallel on disjoint files (a third is fine if it needs no Chrome); **two workers committing in one tree fold
+each other's hunks — give a builder its own `git worktree` + branch and merge**; every before/after pair in an isolated worktree; never
+`trackmap.py <T> --pcm` on any of the seven (all have truth dirs); no audible runs without saying so; commit per step with the numbers;
+DECISIONS §113+; `node tools/license.js` on any new public file; **a grammar change is tuned and proven on every library track** (CONTRACTS §1.1,
+HARNESS "## Fluid" the per-track recipe: the table first, then the shots, then the real-music gates); the tag ritual is HARNESS "## Release notes"
+(bump both versions → the entry → `npm run build` → check → the gates → the frozen page → commit, `git tag -a`, push; poll, never re-push).
+Tracks (seven): `~/Music/RetinaRave/{SeeYouDrop.flac, CyborgNinja.mp3, WhoLikesToParty.mp3, Malicious.mp3, Vienna.flac, IBelongHere.flac, Comptine.flac}`;
+the user's pad take `tools/work/rec/<tag>/music/rec.wav` through `tools/rec-strip.sh`. The user's words that still govern: reactive over predicted ·
+"the double time should be accenting rather than driving" · a look remark = a retune request · plan AND build with Fable · click tracks to
+`~/Music/RetinaRave-clicks/` with a ready `! paplay` line · "lets go one scene at a time".
