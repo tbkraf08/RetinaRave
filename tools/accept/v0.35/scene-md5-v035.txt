@@ -5,6 +5,9 @@
 # The standing identity proof is the OTHER list: `tools/scene-md5.sh <tag>off '&fluid=0'` = tools/accept/v0.34/scene-md5-v034.txt
 # line for line (the scalar pass is the same compiled program object, untouched), and `IDS=1 … '&post=dust.fb.advect=0'` = v0.34's
 # s1 pair. A change to the solver (core/fluid/), the grammar (inject.js) or the feedback pass moves this list and holds v0.34's.
+# §106 (2026-10-09): the two s12 lines appended — FLUID, id 12, the substrate shown as itself (`IDS=12 tools/scene-md5.sh`, PORT 8874,
+# twice, equal); the 24 lines above unchanged (one full list, PORT 8882, = these to the byte). FLUID is NOT in the `&fluid=0` identity
+# list (v0.34 has no id 12): under `&fluid=0` it paints its empty-pool idle, s12 70405a78 / f048c5a2 (twice).
 f82a9174d18d14dfe2e32c26799d2eeb  s0-f360.jpg
 6abfd71e71ef8cf53a7f514b460c8331  s0-f840.jpg
 9d7f4504e41da84d1619ba2e626b1644  s1-f360.jpg
@@ -29,3 +32,5 @@ fd7851f6e1f6f402a173b6029b75179f  s9-f840.jpg
 cbc891d70cde16a6fe704937c96fd6d7  s10-f840.jpg
 d05204e5cccd6b99d291bca00af3d918  s11-f360.jpg
 347c628476f4a5910470b45f4dc3b4c2  s11-f840.jpg
+13e9acae1ed63a78e805cefa887e7070  s12-f360.jpg
+85cd30238e1fe016821c93e988f43370  s12-f840.jpg
