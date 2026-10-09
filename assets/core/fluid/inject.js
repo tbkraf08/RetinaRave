@@ -70,6 +70,9 @@ export const K = {
                    //   (SeeYouDrop C# major at 0.7 s, WhoLikesToParty B minor at 0.3 s) — the harmony's centre colours the pool until then
   LP_RISE0: 0.03,  // §111 syrup only on a sweep that MOVES: lpSweep's rise over its 1 s ema, nothing below LP_RISE0, the full syrup at
   LP_RISE1: 0.12,  //   LP_RISE1 — a closed filter that is not closing is a dark mix (Comptine lpSweep p50 .93: velDiss 3 on 62 % of its frames)
+  VOID_FLOOR: 0.3, // §111 the void's dissipation never goes under this unless the void is LATCHED on drums: buildLive > .5 with the sub
+  VOID_BARS: 8,    //   seen within VOID_BARS bars — the tongues' ambiguity is a clock-lock measure (dyeDiss < .5 on 30–48 % of four tracks
+                   //   from it alone) and a piano crescendo arms buildLive 1.0; a real build (SeeYouDrop's, Vienna's dream) had the bass
   HARM_TAU: 15,    //   s: the fallback hue (no trusted key yet) is the HARMONY'S CENTRE — harmAngle's unit vector and the mode, each an ema this
                    //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
 };
@@ -78,7 +81,8 @@ export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, sna
   rkK: [], rkS: [], kickSz: 0, hatTok: 3, inkRate: 0,       // §111: the lanes' rank buffers, the kick's ranked size (its two tail frames), the hat bucket, the ink rate (ema INK_TAU)
   pin: null, ev: new Float64Array(24),                        //   the key the pool is coloured by ({k, m}: the one with the evidence), null until one is trusted; the 24 keys' evidence
   hx: 0, hy: 0, mSlow: 0,                                     //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
-  lpSlow: 0 });                                               //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
+  lpSlow: 0,                                                  //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
+  subAge: 1e9 });                                             //   s since the sub emitter was last open (§111 item 4: the void's latch)
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -121,6 +125,7 @@ export function plan(S, dt, st) {
   const splats = [];
   const add = (x, y, dx, dy, dye, rad, k) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad, k });
   // the sub emitter: x on the circle of fifths (the sector of the bass note, half a sector in from the wall), y by the register
+  st.subAge = S.subGate > 0 ? 0 : st.subAge + dt;
   if (S.subGate > 0) {
     const sec = S.subNote >= 0 ? sectorPc(S.subNote) + 0.5 : 12 * frac(S.harmAngle / (2 * Math.PI));
     st.xSub = sec / 12;
@@ -197,6 +202,11 @@ export function plan(S, dt, st) {
   const body = -K.BODY * c2 * c2 * g;
   // the solver's parameters
   const voidT = Math.max(S.buildLive, S.tongueOn === 1 ? S.tongueAmbig : 0); // ink accumulates through the void
+  // §111 item 4: the deep void (.05) only when it is a real one — the live build detector armed past .5 AND the bass was here within
+  // VOID_BARS bars (the void before a drop is the bass leaving); otherwise the void is bounded at VOID_FLOOR, so a tongue ambiguity or a
+  // piano crescendo cannot hold the ink still for most of a track (Comptine: dyeDiss .05 on 44 % of frames, Malicious 73 %)
+  const latched = S.buildLive > 0.5 && st.subAge < K.VOID_BARS * 4 * 60 / Math.max(60, S.bpm);
+  const voidDiss = latched ? mix(1.0, 0.05, clamp(voidT, 0, 1)) : Math.max(K.VOID_FLOOR, mix(1.0, 0.05, clamp(voidT, 0, 1)));
   // §111 item 3: syrup (velDiss up to 3) only while the filter is CLOSING — lpSweep in its dark range AND rising against its own 1 s
   // ema; a dark mix that stays dark (Comptine's piano, IBelongHere's vocal mix, SeeYouDrop's outro: lpSweep ≥ .8 with no sweep) keeps
   // the hits travelling. The `2·hush` term is gone: hush read 0.00 on all seven tracks (a dead term).
@@ -206,7 +216,7 @@ export function plan(S, dt, st) {
     velDiss: 0.2 + 2.8 * sstep(0.80, 0.97, S.lpSweep) * sstep(K.LP_RISE0, K.LP_RISE1, S.lpSweep - st.lpSlow),
     // the void's dissipation × the budget's excess (§111): at twice INK_BUDGET the ink drains twice as fast, in the void too (it still
     // accumulates there, at half the pace) — the pool's ink saturates at the budget on a track with no range of its own
-    dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : mix(1.0, 0.05, clamp(voidT, 0, 1)) * Math.max(1, st.inkRate / K.INK_BUDGET),
+    dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : voidDiss * Math.max(1, st.inkRate / K.INK_BUDGET),
     pressure: 0.8,
     radius: K.RADIUS,
   };

@@ -9847,3 +9847,21 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   `tools/work/fluid-s111/Comptine-i3/shots/`. Tests: `test_fluid` params (velDiss 3 on the frame the filter closes; hush adds nothing; held
   closed 6 s → .2; a sweep .5 → 1 over 2 s reaches 3.0; opening → .2), the music block prints the syrup share per trace and gates it at
   ≤ 30 %. check 0 fail, npm test exit 0 (`test_fluid` 173 ok).
+- **Item 4 — the void bounded, and latched on the bass that left** (`VOID_FLOOR` .3, `VOID_BARS` 8; `mkState` gains `subAge`). The deep
+  void (`dyeDiss` → .05, the ink accumulating for the drop) only when the live build detector is armed past .5 AND the sub emitter was
+  open within 8 bars — the void before a drop IS the bass leaving; otherwise `dyeDiss ≥ .3` whatever `buildLive` or the tongues say
+  (`tongueAmbig` is a clock-lock measure, `buildLive` reads 1.0 on a piano crescendo and a vocal swell). The budget's factor multiplies
+  the result as before. **The deep void (dyeDiss < .3) on the music frames, whole tracks, before → after: Comptine 40 → 0 %, the pad
+  42 → 0, IBelongHere 14 → 7, SeeYouDrop 12 → 2, Vienna 12 → 5, WhoLikesToParty 1 → 0**; the latched windows keep it: Vienna's dream
+  64–86 s min dyeDiss .05 (deep on 40 % of its frames), SeeYouDrop's build 1 (47–57.5 s) min .055, IBelongHere's 144–178 s breakdown deep
+  on 16 % (its first 8 bars, then bounded); SeeYouDrop's build 2 (95–105.5 s) was never a void in file mode (min .48 — the live
+  detector does not arm there; a note). The dd < .5 column is unchanged (the bound sits under .5). **The shots**: Vienna's 9 windows
+  re-shot — the dream keeps its ink exactly (dream-75 **30.1 → 29.7**, subout-64 50.4 → 50.0, return-85.0 33.1 → 31.9, returnp 33.9 → 34.1;
+  groove-30 49.9 → 45.5 and late-130 38.3 → 35.5 are items 1–3's); Comptine's 13 windows re-shot against item 3's: the stale tri-blob
+  drains — void-64 **49.1 → 44.3 (p99 181 → 160)**, falsedrop-47 34.4 → 29.3, late-90 40.5 → 35.0, fade-125 32.0 → 29.3 — the piano's ink
+  now decays at τ 3.3 s where it sat still for 44 % of the piece. `tools/work/fluid-s111/{Vienna,Comptine}-i4/shots/`. The table
+  (`tools/fluid-tracks.js`) gained the deep-void column and `INJECT=<path>` (another grammar's file, for a before → after of the same
+  traces; `before.md` is now HEAD 9658d8f's grammar replayed by the final tool). Tests: `test_fluid` params (buildLive 1 with no sub →
+  .3; with the sub seen → .05; .4 → the mapping's .62; .9 with no sub → .3; the latch expires 8 bars after the sub; tongueAmbig 1 →
+  .3, .5 → .525), the music block prints the deep-void share per trace and asserts Comptine and the pad never under .3, Vienna's dream
+  and SeeYouDrop's build 1 under .1. check 0 fail, npm test exit 0 (`test_fluid` 182 ok).

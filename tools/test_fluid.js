@@ -25,7 +25,8 @@
 //              rise, then the refractory (a further rise inside CHORD_REF → nothing; after it → again); a held level → nothing; a
 //              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep CLOSES (§111: its rise over a 1 s ema through LP_RISE0 / LP_RISE1 — a filter held
-//              closed is a dark mix, .2; opening is a release; hush adds nothing); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
+//              closed is a dark mix, .2; opening is a release; hush adds nothing); dyeDiss 1 → .05 as buildLive rises — §111 only LATCHED (buildLive
+//              > .5 with the sub seen within VOID_BARS bars), else bounded at VOID_FLOOR .3; tongueAmbig only while tongueOn 1, bounded
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
 //   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf; §111: the key
 //              pinned at KEY_TRUST .1 (keyConf .15 = .8), held through no trust, the harmony's eased centre before any trust (two
@@ -196,8 +197,9 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   let p; for (let i = 0; i < 60 * 60; i++) p = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0, snareEvt: true, snareAmp: 1 }), st);
   const inkFrame = p.splats.reduce((a, s) => a + (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2, 0);
   ok(p.ink > 0.9 * inkFrame * 60 && p.params.dyeDiss > 2 && Math.abs(p.params.dyeDiss - Math.max(1, p.ink / K.INK_BUDGET)) < 1e-9, `budget: a kick + a snare every frame for 60 s → ink ${p.ink.toFixed(0)}/s (frame ${inkFrame.toFixed(2)} × 60), dyeDiss = ink / INK_BUDGET = ${p.params.dyeDiss.toFixed(2)}`);
+  run(base({ subGate: 1, subNote: 0 }), st);   // the sub seen: the void latches (item 4)
   const v = run(base({ kickEvt: true, kickAmp: 1, kickAge: 0, snareEvt: true, snareAmp: 1, buildLive: 1 }), st);
-  ok(v.params.dyeDiss > 0.05 && Math.abs(v.params.dyeDiss - 0.05 * Math.max(1, v.ink / K.INK_BUDGET)) < 1e-9, 'budget: in the void it scales the void\'s .05 (' + v.params.dyeDiss.toFixed(3) + ') — the ink still accumulates, slower');
+  ok(v.params.dyeDiss > 0.05 && Math.abs(v.params.dyeDiss - 0.05 * Math.max(1, v.ink / K.INK_BUDGET)) < 1e-9, 'budget: in the (latched) void it scales the void\'s .05 (' + v.params.dyeDiss.toFixed(3) + ') — the ink still accumulates, slower');
   for (let i = 0; i < 60 * 60; i++) p = run(base(), st);
   ok(p.params.dyeDiss === 1 && p.ink < 0.1 * K.INK_BUDGET, 'budget: 60 s of nothing → the rate decays (ema INK_TAU ' + K.INK_TAU + ' s) and dyeDiss is the grammar\'s again (ink ' + p.ink.toFixed(2) + ')');
   const st5 = mkState(); let p5;
@@ -317,8 +319,15 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   const stO = mkState(); let vo; for (let i = 0; i < 120; i++) run(base({ lpSweep: 1 }), stO); for (let i = 0; i < 60; i++) vo = run(base({ lpSweep: 1 - 0.5 * (i + 1) / 60 }), stO).params.velDiss;
   near(vo, 0.2, 1e-6, 'params: §111 the filter opening is a release, not syrup (' + vo.toFixed(3) + ')');
   near(run(base({ buildLive: 0 })).params.dyeDiss, 1, 1e-9, 'params: dyeDiss 1 outside the void');
-  near(run(base({ buildLive: 1 })).params.dyeDiss, 0.05, 1e-9, 'params: dyeDiss .05 deep in the void');
-  near(run(base({ tongueAmbig: 1, tongueOn: 1 })).params.dyeDiss, 0.05, 1e-9, 'params: tongueAmbig counts while tongueOn 1');
+  near(run(base({ buildLive: 1 })).params.dyeDiss, K.VOID_FLOOR, 1e-9, 'params: §111 buildLive 1 with no sub ever seen → the void is BOUNDED at VOID_FLOOR ' + K.VOID_FLOOR + ' (a piano crescendo arms the detector too)');
+  const stV = mkState(); run(base({ subGate: 1, subNote: 0 }), stV);
+  near(run(base({ buildLive: 1, bpm: 120 }), stV).params.dyeDiss, 0.05, 1e-9, 'params: §111 buildLive 1 with the sub seen → the deep void .05 (the latch: the void before a drop is the bass leaving)');
+  near(run(base({ buildLive: 0.4, bpm: 120 }), stV).params.dyeDiss, 1 - 0.95 * 0.4, 1e-9, 'params: §111 buildLive .4 (armed, under .5) → the mapping\'s .62, above the bound anyway');
+  near(run(base({ buildLive: 0.9, bpm: 120 }), mkState()).params.dyeDiss, K.VOID_FLOOR, 1e-9, 'params: §111 buildLive .9 with no sub seen → bounded at ' + K.VOID_FLOOR + ' (the mapping would say .145)');
+  for (let i = 0; i < 60 * (K.VOID_BARS * 4 * 60 / 120) + 2; i++) run(base({ buildLive: 1, bpm: 120 }), stV);
+  near(run(base({ buildLive: 1, bpm: 120 }), stV).params.dyeDiss, K.VOID_FLOOR, 1e-9, 'params: §111 ' + K.VOID_BARS + ' bars after the sub was last seen the latch expires → bounded');
+  near(run(base({ tongueAmbig: 1, tongueOn: 1 })).params.dyeDiss, K.VOID_FLOOR, 1e-9, 'params: tongueAmbig counts while tongueOn 1 — bounded (§111: a clock-lock measure, never the deep void on its own)');
+  near(run(base({ tongueAmbig: 0.5, tongueOn: 1 })).params.dyeDiss, Math.max(K.VOID_FLOOR, 1 - 0.95 * 0.5), 1e-9, 'params: tongueAmbig .5 → .525 (the mapping under the bound)');
   near(run(base({ tongueAmbig: 1, tongueOn: 0 })).params.dyeDiss, 1, 1e-9, 'params: not while warming');
   ok(run(base()).params.pressure === 0.8 && run(base()).params.radius === K.RADIUS, 'params: pressure .8, radius K.RADIUS');
 }
@@ -424,6 +433,13 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     const musFr = rows.filter((r) => r.S.presence > 0.5), syrup = 100 * musFr.filter((r) => r.P.params.velDiss > 1).length / Math.max(1, musFr.length);
     console.log(`     ${name.padEnd(22)} syrup (velDiss > 1) on ${syrup.toFixed(1)} % of the music frames`);
     ok(syrup <= 30, `music: ${name} — syrup on ≤ 30 % of the music frames (${syrup.toFixed(1)} %; a dark mix that is not closing is not syrup)`);
+    // §111 item 4: the void's bound and latch
+    const ddMin = (a, b) => Math.min(...rows.filter((r) => r.t >= a && r.t <= b).map((r) => r.P.params.dyeDiss));
+    const deep = 100 * musFr.filter((r) => r.P.params.dyeDiss < 0.3).length / Math.max(1, musFr.length);
+    console.log(`     ${name.padEnd(22)} deep void (dyeDiss < .3) on ${deep.toFixed(1)} % of the music frames`);
+    if (/^(Comptine|rec)-/.test(name)) ok(deep === 0 && ddMin(0, 1e9) >= K.VOID_FLOOR - 1e-9, `music: ${name} — no sub ever: the void never under VOID_FLOOR (min dyeDiss ${ddMin(0, 1e9).toFixed(3)}; before: .05 on 44 % of Comptine's frames)`);
+    if (name === 'Vienna-map1') ok(ddMin(64, 86) < 0.1, `music: ${name} — the dream (64–86 s) keeps its deep void, latched on the bass that left (min dyeDiss ${ddMin(64, 86).toFixed(3)})`);
+    if (name === 'SeeYouDrop-map1') ok(ddMin(47, 57.5) < 0.1, `music: ${name} — the build before drop 1 keeps its deep void (min dyeDiss ${ddMin(47, 57.5).toFixed(3)})`);
     if (name === 'IBelongHere-map1' || name === 'IBelongHere-map0') {
       ok(firstPin && pins.length <= 2 && kname(pins[pins.length - 1]) === 'Dm' && lastPin.t < 70, `music: ${name} — the pool's key is D minor from ${lastPin ? lastPin.t.toFixed(1) : '—'} s to the end of the trace (pins ${pins.map(kname).join(' → ')}; before: keyConf ≥ .3 on 2 % of frames, the mood hue walked seven hues)`);
       const after = [60, 100].map(hueAt), before = [2, 10, 16].map(hueAt);

@@ -8,6 +8,7 @@
 //   node tools/fluid-tracks.js                       the table (markdown) on stdout; every track + the pad
 //   TRACKS="SeeYouDrop rec" MODES="1" node …          a scope; FLUIDK='{"HAT_RATE":99}' node …   a K override (an A/B of one knob)
 //   JSON=tools/work/x.json node …                    also the rows as JSON (for a before → after diff)
+//   INJECT=/tmp/inject-before.js node …              replay another grammar (git show <rev>:assets/core/fluid/inject.js > /tmp/inject-before.js)
 // The traces: tools/work/fluid-tracks/<Track>/trace-map{1,0}.json (the whole track, FLUID-TRACKS-2026-10-09 §1: filetrace.js with
 // FLUID_FEATS + the fields below) when present, else tools/truth/traces/<Track>-map{1,0}.json (0 → 110 s, every field; tools/traces.sh);
 // the pad take is tools/truth/traces/rec-map0.json. Missing → the row says so. Malicious is in the table for the record only
@@ -19,7 +20,7 @@
 //                at the same dye) — p50 / p90 over music seconds; the governor's budget (K.INK_BUDGET) is in these units, and
 //                (gov) is its factor on dyeDiss, max(1, rate / INK_BUDGET), p50 / p90 over music frames (1.0 = never governed)
 //   dv/s         Σ|dv| injected per second, p50 (uv/s)
-//   void %       frames with dyeDiss < .5 · syrup % frames with velDiss > 1
+//   void %       frames with dyeDiss < .5 · deep void % frames with dyeDiss < .3 (the latched void, §111 item 4) · syrup % frames with velDiss > 1
 //   clears       confirmed clears (the count, then each one's second; a clear = the frame dyeDiss first reads DROP_DISS);
 //                true = within 1.5 s of a truth drop (tools/truth/windows.json) or of a map bar line; brk = inside IBelongHere's
 //                144–178 s breakdown (the false-arm window the survey found)
@@ -31,9 +32,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
+import { pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE, '..');
+// INJECT=<path to another inject.js> replays THAT grammar (a `git show <rev>:assets/core/fluid/inject.js > /tmp/x.js` is the before)
+const { plan, mkState, FLUID_FEATS, K } = await import(process.env.INJECT ? pathToFileURL(path.resolve(process.env.INJECT)).href : '../assets/core/fluid/inject.js');
 if (process.env.FLUIDK) Object.assign(K, JSON.parse(process.env.FLUIDK));
 const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
 const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious rec').split(/\s+/).filter(Boolean);
@@ -94,6 +97,7 @@ function row(track, mode) {
   const hits = { kick: mus.reduce((a, x) => a + x.kicks, 0), snare: mus.reduce((a, x) => a + x.snares, 0), chord: mus.reduce((a, x) => a + x.chords, 0), hat: mus.reduce((a, x) => a + x.cnt.hat, 0) };
   const musFr = rows.filter((r) => r.S.presence > 0.5);
   const voidPct = 100 * musFr.filter((r) => r.P.params.dyeDiss < 0.5).length / Math.max(1, musFr.length);
+  const deepPct = 100 * musFr.filter((r) => r.P.params.dyeDiss < 0.3).length / Math.max(1, musFr.length);
   const govA = musFr.map((r) => Math.max(1, (r.P.ink || 0) / K.INK_BUDGET)), gov = { p50: q(govA, 0.5), p90: q(govA, 0.9) };   // §111 the budget's factor on dyeDiss
   const syrupPct = 100 * musFr.filter((r) => r.P.params.velDiss > 1).length / Math.max(1, musFr.length);
   const clears = rows.filter((r) => r.clearEdge).map((r) => +r.t.toFixed(2));
@@ -108,21 +112,21 @@ function row(track, mode) {
   const wins = SURVEY[track] || (WIN[track] ? WIN[track].runs.flatMap((r) => r.shots.map((s) => s.t)) : []);
   const hueAt = wins.filter((t) => t <= T[N - 1]).map((t) => { const x = secs.find((y) => y.s === Math.floor(t)); return x ? Math.floor(x.hue * 12) % 12 : '—'; });
   return { track, mode, whole: tr.whole, frames: N, dur: +T[N - 1].toFixed(1), musicS: mus.length, injPct: 100 * inj / ms, chan, hits, perS: { kick: hits.kick / ms, snare: hits.snare / ms, hat: hits.hat / ms },
-    ink: { p50: q(mus.map((x) => x.ink), 0.5), p90: q(mus.map((x) => x.ink), 0.9) }, gov, dv: q(mus.map((x) => x.dv), 0.5), voidPct, syrupPct,
+    ink: { p50: q(mus.map((x) => x.ink), 0.5), p90: q(mus.map((x) => x.ink), 0.9) }, gov, dv: q(mus.map((x) => x.dv), 0.5), voidPct, deepPct, syrupPct,
     clears, trueN, brk, xSub: xs.length ? { p10: q(xs, 0.1), p50: q(xs, 0.5), p90: q(xs, 0.9), span: q(xs, 0.9) - q(xs, 0.1), n: xs.length } : null,
     hitX: hitX.length ? { p10: q(hitX, 0.1), p90: q(hitX, 0.9) } : null, kickDy: kickDy.length ? { p10: q(kickDy, 0.1), p50: q(kickDy, 0.5), p90: q(kickDy, 0.9) } : null,
     huePct, hueBins: bins.size, hueAt, gate: !WIN[track] || WIN[track].gate !== false };
 }
 
 const out = [], rowsJ = [];
-out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % | syrup % | clears (true · brk) | x sub p10/p50/p90 (span) | x hits p10/p90 | kick dy p10/p50/p90 | hue: key % · bins · at windows |');
+out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | x sub p10/p50/p90 (span) | x hits p10/p90 | kick dy p10/p50/p90 | hue: key % · bins · at windows |');
 out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const t of TRACKS) for (const mode of MODES) {
   if (t === 'rec' && mode !== '0') continue;
   const r = row(t, mode); rowsJ.push(r);
   if (r.missing) { out.push(`| ${t} | ${mode} | — no trace (tools/traces.sh ${t}-map${mode}) |`); continue; }
   const c = r.chan, h = r.hits;
-  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} |`);
+  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} |`);
 }
 console.log(out.join('\n'));
 if (process.env.JSON) fs.writeFileSync(process.env.JSON, JSON.stringify(rowsJ, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v)));
