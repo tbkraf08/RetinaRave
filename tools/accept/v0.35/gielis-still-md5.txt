@@ -1,0 +1,7 @@
+# GIELIS &still=1 (hooks.still(1): every music-driven uniform at rest — n1 at N1_REST, no waves, no flash/shimmer, morph 0, the
+# fallback key), CLOCK=1 GPU=1 1280x720. History: v0.14 pass-1 (fd8e256b / 88f6d5cb) → §83 Step B, the lattice (b7d52757 / ca912a8d:
+# the key-colour anchor reads MS.modeShade, so the still is not shade-blind — open item) → v0.35 (§105, 2026-10-09): 3edc1fbc / b3c0dda0.
+# The still rests the scene's uniforms, not the chain: the feedback pass under it now rides the substrate, which the fake timeline
+# stirs (the sub emitter, the drums) whatever the scene shows, so the pair moved with every other line. Measured twice (PORT 8858), equal.
+3edc1fbc2e0aa7ff2d0b8f3ff1477d19  still-f360.jpg
+b3c0dda0a2197169909c088851718134  still-f840.jpg

@@ -1,0 +1,31 @@
+# v0.35 (DECISIONS §105, 2026-10-09): the ADVECTION re-base. The feedback pass back-traces every scene's trail along the fluid
+# substrate's velocity (post.fb.advect, default 1), so EVERY line of v0.34's list moved — the first whole-list re-base since §83.
+# Measured `GPU=1 PORT=8853 tools/scene-md5.sh v35a` and again on PORT 8856 (`v35b`): the two lists byte-equal (cmp), errs []
+# hop 840 row 72 on every id, the substrate on at tier 3 (sim 259x128, dye 1035x512, the 1280x633 headless canvas).
+# The standing identity proof is the OTHER list: `tools/scene-md5.sh <tag>off '&fluid=0'` = tools/accept/v0.34/scene-md5-v034.txt
+# line for line (the scalar pass is the same compiled program object, untouched), and `IDS=1 … '&post=dust.fb.advect=0'` = v0.34's
+# s1 pair. A change to the solver (core/fluid/), the grammar (inject.js) or the feedback pass moves this list and holds v0.34's.
+f82a9174d18d14dfe2e32c26799d2eeb  s0-f360.jpg
+6abfd71e71ef8cf53a7f514b460c8331  s0-f840.jpg
+9d7f4504e41da84d1619ba2e626b1644  s1-f360.jpg
+5b06a809528f208008725a42e63a8075  s1-f840.jpg
+e87cfa4bbb1497e228a734ec5ddcae87  s2-f360.jpg
+ee7956e3629b13c32d9fab4cf61326c3  s2-f840.jpg
+e6fffff82db3eb5faa44de09b41d17ca  s3-f360.jpg
+8d3635a84646dc7cdeb8e95051c6df47  s3-f840.jpg
+45b27bc90f7feb856a82179cfb3c0e82  s4-f360.jpg
+2bf0e217ba5a8c23afdd860535e842a0  s4-f840.jpg
+3c8d8ac7ca1eb4468b1a62f0cfea9461  s5-f360.jpg
+dc9e57835b47ad6168090e084b754ac5  s5-f840.jpg
+73b7b0ea1ca42f995ac8acaf98a96209  s6-f360.jpg
+3fc6a766126340b14af177488cde821f  s6-f840.jpg
+c1c0afa7b67657f581c2978731259b19  s7-f360.jpg
+3ce3f944e3df856f4664d68cddb49a50  s7-f840.jpg
+83c3018465156b3300744c9748bc7f37  s8-f360.jpg
+b6257fe588d8b8e78f6dc8268fc3d444  s8-f840.jpg
+839f321027f80a28821238e35a2801a3  s9-f360.jpg
+fd7851f6e1f6f402a173b6029b75179f  s9-f840.jpg
+6e51a957c7a11ea1b91083b3cb09358a  s10-f360.jpg
+cbc891d70cde16a6fe704937c96fd6d7  s10-f840.jpg
+d05204e5cccd6b99d291bca00af3d918  s11-f360.jpg
+347c628476f4a5910470b45f4dc3b4c2  s11-f840.jpg

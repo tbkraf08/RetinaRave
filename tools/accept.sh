@@ -1,11 +1,11 @@
-# Acceptance sweep -> tools/accept/$ACC/ (default v0.34; earlier sweeps stay in tools/accept/v0.2/ … v0.29/). Run with GPU=1. Prints one line per check; grep FAIL.
+# Acceptance sweep -> tools/accept/$ACC/ (default v0.35; earlier sweeps stay in tools/accept/v0.2/ … v0.34/). Run with GPU=1. Prints one line per check; grep FAIL.
 # EVERY md5 reference (the scene list, the GIELIS still, the mixs transition) is read from tools/accept/$ACC/ — the next
 # re-base is the one default below plus the files it names (DECISIONS §83). The real-path and
 # bundle lines also count cdp's [EXC] lines (uncaught exceptions never reach CARD.ERRS — the bundle was dead for months
 # of commits with errs [] until §11 counted them).
 cd "$(dirname "$0")/.." || exit 1
 export FORCE_COLOR=0 NO_COLOR=1   # v0.27: node colours util.inspect output; the params block parsed "\e[33m0.4\e[39m" as a number
-ACC=${ACC:-v0.34}                                  # THE reference version (§83; v0.34 = §97's NAV2 re-base): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
+ACC=${ACC:-v0.35}                                  # THE reference version (§83; v0.35 = §105's advection re-base, every line; v0.34 = §97's NAV2 re-base): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
 export OUT=tools/accept/$ACC; mkdir -p $OUT
 SCN=$OUT/scene-md5-$(echo $ACC | tr -d .).txt      # the CLOCK=1 f360/f840 list of every scene id (tools/scene-md5.sh's format: "<md5>  s<id>-f<N>.jpg")
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"

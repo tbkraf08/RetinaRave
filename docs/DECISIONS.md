@@ -9128,3 +9128,101 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   `ACC` stays v0.34 — Step 2 is the re-base. Step 2's worker: `io.fluid` is `ctx.fluid` (add it to `runChain`'s io in `loop.js`);
   sample `engineTex.vel` with `texture(uVel, c).xy` and back-trace `c −= advect · dt · v` — uv/s, no scaling, CLAMP_TO_EDGE; the
   `&fluid=0` list must still equal v0.34 line for line.
+
+## §105 advection replaces the scalar feedback decay — every trail rides the substrate's current (2026-10-09, one worker; FLUID-PLAN Step 2; the user: *"2) replace the scalar feedback decay with advection"*)
+
+- **What changed.** `assets/effects/feedback.js` — a second program object `prA`: the v0.2 shader plus `uniform sampler2D uVel;
+  uniform vec2 uAdv;` and, after the zoom/twist, `c += .5; c -= uAdv.x·uAdv.y·texture(uVel, c).xy; c = clamp(c, 0, 1); p =
+  texture(uPrev, c)` — Stam's semi-Lagrangian step (the reference's advect pass): the velocity is read at the frame's own position
+  and the previous frame is fetched from where that parcel was `dt` ago. `uVel` is `engineTex.vel` (screen fractions per second, y
+  up, sim res, bilinear — §104's grain averages out at frame res), `uAdv = (gain, dt)`. `pr` is the old program, byte for byte, and
+  runs whenever the substrate is off (`&fluid=0`, key W, no float targets, `io.fluid` absent as in chain-smoke) or the gain is 0 —
+  the same compiled program with the same uniforms, so the old path is bit-exact by construction. The slot: `post.fb.advect`,
+  number or `fn(MS)` like `decay`, **default 1** (the user said replace) — a gain on the substrate's velocity, which already carries
+  the unit (a cap in uv/s would alias on the drop impulse). `decay` is unchanged (still the dissipation, `pow(d, 2.2)` in linear),
+  `max(s, p)` stays, zoom and twist stay — the back-trace adds to them. `core/loop.js` — `fluid: FLUID` in `runChain`'s io.
+  `core/manual.js` — `fb.advect` is the fifth post param (`PARAMS`, the `ONE` alternation, the parse hint;
+  `&post=<scene>.fb.advect=0`); the panel's `postCtl` walks `POST_PARAMS`, so the box appears with nothing added; `scenes.js`'s
+  `nested()` already resolves any nested fn slot against a routed view, so a routed scene's `advect: (S) => …` works as `decay` does.
+  `tools/manual-smoke.js` — the fifth param, the merge beside `fb.decay`, the grammar (46 checks). Docs: CONTRACTS §1.4 (the slot),
+  §3 (`io.fluid`), HARNESS "## Effect chain" (the two programs, the identity proof), "## Fluid" and "## Acceptance sweep" (the re-base).
+- **Numbers** (this machine, headless `GPU=1`, the 1280×633 canvas, q pinned .95 → tier 3, sim 259×128; the feedback pass alone,
+  300 runs per sample, readPixels-synced on its output target, three pairs advect 1 / advect 0 interleaved, medians): first eval
+  **0.470 / 0.420 ms** (pairs 0.484/0.425, 0.470/0.420, 0.470/0.396), second eval **0.241 / 0.208 ms** (0.310/0.223, 0.241/0.208,
+  0.226/0.199) → the back-trace costs **+0.03–0.05 ms** per frame at frame res against the ≤ 0.15 gate (one bilinear fetch of a
+  259×128 RG16F texture per frame pixel; the first eval ran while the GPU clock was still ramping, both deltas agree). The
+  substrate's own step is §104's 0.58 ms (CPU submission 0.06 ms here). Check 0 fail / 8 warn (the pre-existing soft caps), `npm
+  test` green (test_fluid 50 ok), `license.js --check` 178 files 0 missing, `chain-smoke: OK` unchanged (fringe 0.745 / 0.998,
+  white 198 / 255, grey18 134 / 150 / 177 — the smoke's io has no `fluid`, so it exercises the scalar program as before).
+- **Proof — the old path is intact.** `GPU=1 PORT=8852 tools/scene-md5.sh v35off '&fluid=0'`: all 24 lines **= `tools/accept/v0.34/
+  scene-md5-v034.txt`** (diff empty), errs [] hop 840 row 72 on every id. `IDS=1 … '&post=dust.fb.advect=0'`: s1's pair = v0.34's
+  s1 pair (`1faaa64e / 25dfdc48`) — the per-scene slot reaches the old program too. `'&post=dust.fb.advect=0.5'` moves s1
+  (`879220fc / ab480a46`), `'&post=dust.fb.advect=1'` = the new reference's s1 pair (the §392 pattern). `parity.js fake` (ACC v0.35):
+  MS 0 diff, the pre-existing §102 `nav.*` MISMATCH line to the digit (`max 7.852214593751443`, 72 fields). Monitor 60 s on the
+  home (`test&fake=0`): `n 3603 fast 3 max .0655 viol []`, errs [], bad [], the substrate on at tier 2 (3675 steps, q .74) — the
+  monitor watches the navigator's state, which does not read the fluid; `fast 3 / max .0655` are the real-clock run's own noise
+  (HARNESS's example reads fast 97; the gate is viol []). GL error 0, errs [] on every shot.
+- **Proof — the re-base (`tools/accept/v0.35/`, `ACC` default v0.35).** `tools/scene-md5.sh v35a` (PORT 8853) and `v35b` (PORT
+  8856): the two 24-line lists byte-equal (`cmp`), errs [] on every id → `scene-md5-v035.txt`. Every line moved, as the plan said
+  it would (the feedback pass is under every scene; the fake timeline stirs the pool from frame 0 — the sub emitter, the drums):
+
+  | id | scene | frame | v0.34 | v0.35 |
+  |---|---|---|---|---|
+  | s0 nav2 (home) | f360 | `a8de2f03` | `f82a9174` |
+  | s0 nav2 (home) | f840 | `7a65fd16` | `6abfd71e` |
+  | s1 dust | f360 | `1faaa64e` | `9d7f4504` |
+  | s1 dust | f840 | `25dfdc48` | `5b06a809` |
+  | s2 mandala | f360 | `62515d49` | `e87cfa4b` |
+  | s2 mandala | f840 | `f3a3721c` | `ee7956e3` |
+  | s3 torus2 | f360 | `3122036e` | `e6fffff8` |
+  | s3 torus2 | f840 | `a1e941af` | `8d3635a8` |
+  | s4 drum (variant of 8) | f360 | `0bff278a` | `45b27bc9` |
+  | s4 drum (variant of 8) | f840 | `05bf21c0` | `2bf0e217` |
+  | s5 polytope | f360 | `9c3be023` | `3c8d8ac7` |
+  | s5 polytope | f840 | `04fc1ffb` | `dc9e5783` |
+  | s6 feigen | f360 | `fac80f37` | `73b7b0ea` |
+  | s6 feigen | f840 | `6251d7e9` | `3fc6a766` |
+  | s7 torus-v1 | f360 | `d3e73b38` | `c1c0afa7` |
+  | s7 torus-v1 | f840 | `7e77c7b3` | `3ce3f944` |
+  | s8 nav (control) | f360 | `fb74fee4` | `83c30184` |
+  | s8 nav (control) | f840 | `8a0715df` | `b6257fe5` |
+  | s9 maxwell | f360 | `fb52b874` | `839f3210` |
+  | s9 maxwell | f840 | `02c317b8` | `fd7851f6` |
+  | s10 gielis | f360 | `6ab60297` | `6e51a957` |
+  | s10 gielis | f840 | `1fe93f2c` | `cbc891d7` |
+  | s11 chladni | f360 | `380d0255` | `d05204e5` |
+  | s11 chladni | f840 | `b0407176` | `347c6284` |
+
+  The mixs 0→3 line: `724bbd72` → **`1ccfd0c1`** (twice, m .499, errs []) — the current is one field under both sides of the fade.
+  The GIELIS `&still=1` pair: `b7d52757 / ca912a8d` → **`3edc1fbc / b3c0dda0`** (twice): the still rests the scene's uniforms, not
+  the chain under it. `hist rows == full` still holds by construction (the same frame both ways; the advection is identical on both).
+  How far a line moved (f840, grey-level mean |Δ| old vs new, % of pixels > 8): s0 0.44 / 0.4 %, s1 1.81 / 4.1 %, s2 1.10 / 0.8 %,
+  s3 0.92 / 2.7 %, s4 0.57 / 0.5 %, s5 1.38 / 3.2 %, s6 0.21 / 0.1 %, s7 1.30 / 4.3 %, s8 0.38 / 0.4 %, s9 0.49 / 0.4 %, s10 1.07 /
+  3.3 %, s11 2.19 / 7.7 % — small everywhere, largest on the particle and line scenes (DUST, CHLADNI, TORUS-v1) whose trails are the
+  thinnest; the navigators barely move (their trail is short and the picture is the set, not the trail).
+- **The eye** (`tools/accept/v0.35/fb-advect{1,0}-s{0,3}-*.jpg`, 16 shots, SeeYouDrop `at=25` f602 groove 35 s / f1958 drop 1 57.6
+  s and `at=80` f1202 build 100 s / f1538 drop 2 105.6 s; the montage `tools/work/fluid-s2-m.jpg`, rows HOME 1 / HOME 0 / TORUS2 1 /
+  TORUS2 0; the ×6 difference images `tools/work/fluid-s2-diff-m.jpg`). Nothing smears into mush and nothing loses legibility: at
+  640 px the pairs read as the same picture. The difference (mean |Δ|, % > 8): HOME groove 2.1 / 7.5 %, build 3.3 / 10.5 %; TORUS2
+  groove 4.8 / 16.4 %, build 4.4 / 14.7 %; **both drops ≈ 0** (0.02–0.13) — at a drop `decay` falls to 0.2 and the flash washes the
+  frame, so there is no trail left to carry. Where it moves: along the trail strokes themselves (the ×6 images show the strokes'
+  edges displaced coherently, not a haze), strongest on TORUS2's lower-left where the sub emitter sits in its sector. **The gain-1
+  effect is subtle on these two scenes**: the substrate's ambient field is a few hundredths of a uv/s (§104's grammar: the sub
+  column +0.08 uv/s, the snare shears ±0.6·snareAmp, kicks 0.9·√kickAmp as impulses that the projection and `velDiss` damp within a
+  beat), so a parcel moves ~1 px per frame between hits and a few px on a hit — the trail rides, it does not travel. Whether that is
+  the right amount is the user's eye; if he wants the current to be *seen* in the trails, `fb.advect` 2–4 on the long-trail scenes
+  (TORUS2 decay .74-class) is the knob, per scene, not a retune of the grammar — reported, not done.
+- **Lineage.** The solver is Pavel Dobryakov's WebGL-Fluid-Simulation (MIT, 2017) re-implemented on this repo's `gl.js` helpers —
+  nothing vendored, the notice in `THIRD-PARTY.md`. Three forks informed the design and no code was taken from them:
+  michaelbrusegard/WebGL-Fluid-Enhanced (the ESM API shape — a simulation object with config, splat and pause, which `ctx.fluid`
+  follows), oliver-kopcik/fluid-music-visualizer (spectral-flux onsets as splat force and size, pitch classes as hue — here the ears'
+  `kickEvt`/`kickAmp` and the key anchor), little-noob/Fero-Fluild-Lamp (the band split bass / mid / high into deformation,
+  turbulence and edge detail — here the register axis). The grammar's sources are the user's own validated mappings: TORUS2's waves at
+  beat speed and the measured drum channels (DECISIONS §57, §58, §70, §74, §79, §81). The feedback pass's back-trace is the
+  reference's advect pass (Stam 1999, GPU Gems ch. 38): `feedback.js` carries the two credit lines on its 4th and 5th header lines.
+- **Not done / open.** `tools/accept.sh` in full was not run at a tag (there is none for Step 2); its pieces ran by hand above and
+  every reference it reads is in `tools/accept/v0.35/`. The user's eye on the gain (above). A scene that wants the trail still
+  (`advect: 0`) or faster declares it in its `post` — none does yet; `fb.advect` as `fn(MS)` (a trail that rides harder on
+  `buildLive`) is a slot nobody fills. The HiDPI / `G.FLOAT`-false paths from §104 are unchanged and still unseen on a device.
+  Step 3's worker: `io.fluid` is in the chain's io now; the FLUID scene's `post: { fb: { decay: 0.35, advect: 1 } }` is the plan's;
+  the full list is v0.35's 24 lines + the two s12 lines it appends; the `&fluid=0` list stays v0.34's.
