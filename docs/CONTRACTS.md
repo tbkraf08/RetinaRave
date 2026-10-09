@@ -210,7 +210,11 @@ needed, now generic:
   since §109** = the v0.2 scalar pass, the identical compiled program — a scene OPTS IN: 1 = the trail moves at the current's own
   speed, 0.5 = half; FLUID (id 12) sets 1, no roster scene does (the user, 2026-10-09: the advection on nav / particles / torus is
   not wanted); it is also the scalar pass whenever the substrate is off — `&fluid=0`, key W, no float render targets), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
-  `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
+  `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene),
+  `glitch` (0..1 gain on the composite's glitch rows — the screen tear on a drop, a surprise or a hard scene cut — for
+  this scene: 1 = as the music drives it, 0 = never on this scene; DECISIONS §110. The page-wide gain is `FX.glitchGain`,
+  `&glitch=<gain>` / key `G`; the composite applies the product and takes the un-applied share out of `FX.ca`, so 0 = no
+  rows and no extra fringe).
   Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
   Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
 - **Colour variants** (`colour: { default: 'v2', variants: { v2: {…}, oklch: {…} } }`, v0.3 §26): every scene declares its colour mappings by name (v0.5 item 3: the four one-mapping scenes carry a single `v2`,
@@ -321,7 +325,8 @@ Anything else is a bug.
 
 After your `draw` and the crossfade, the chain is feedback (trails: `max(scene, prev·decay)` with a zoom/twist) →
 bloom (added at `0.4 + 0.4·eS + 0.3·dropEnv`) → composite: chromatic aberration (`FX.ca`), glitch row shifts on
-surprises/drops, kaleidoscope on peaks, flash on drops, tonemap, vignette `1 − 0.9·|uv−.5|²`, dither.
+surprises/drops (× `FX.glitchGain` × your `post.glitch`, §1.4 — `&glitch=0` / key `G` turns the tear off, §110),
+kaleidoscope on peaks, flash on drops, tonemap, vignette `1 − 0.9·|uv−.5|²`, dither.
 A flat colour therefore arrives on screen as a vignetted, tonemapped field with trails — that is not a bug in your scene.
 **A plane under a rotating or nudged camera needs a porthole (v0.10 §42):** a rectangular field yawed or zoomed per beat shows its
 corners and its edge against the letterbox on every step (MAXWELL's dipole nudge), and the trails smear that edge; mask the
@@ -835,7 +840,10 @@ its meaning; `ctx.oklch` (§1.14) gives the GLSL side.
   set `io.uvS = [1, 1]` (feedback does; so anything after order 10 sees `[1,1]`). The target you return stays yours:
   the core never frees or recycles it, and it reads it only until the next effect runs.
 - `aux` is a scratch object for side-chains: bloom publishes `aux.bloom = {b1, b2}` for the composite.
-- `FX` is the core's per-frame fx state `{glitch, flash, kal, ca, seed}` (derived from `MS`; you read it).
+- `FX` is the core's per-frame fx state `{glitch, flash, kal, ca, seed, glitchGain}` (derived from `MS`; you read it).
+  `glitch` is the drive the music fired (drop 1 · surprise ≥ .8 · surprising onset surprisal·.7 · hard cut 1, τ .22 s);
+  `glitchGain` (default 1; `&glitch=`, key `G`, §110) is the user's page-wide gain on it — the composite applies
+  `glitch · glitchGain · post.glitch` and subtracts `0.03 · (glitch − that)` from `ca` (exactly 0 at the defaults).
 - `post` is the current scene's `post` object; read your params as `post.<name>`. The core skips you when
   `post.<name>.on === false`, and runs an `enabled: false` effect only when `post.<name>.on === true`.
 - The composite draws to the screen and is always last. Anything after it draws over it.

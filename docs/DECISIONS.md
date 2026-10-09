@@ -9696,3 +9696,62 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   (5) `kick2`'s rises read half the truth's clicks on the 8th-lattice tracks (CyborgNinja ×0.51, WhoLikesToParty ×0.47, the .3 threshold) —
   a number, not a defect; the ×4 gate is wide on purpose until a tighter one is measured. (6) `accept.sh` in full not run end to end at §109
   (its real-music block was run as the two sweeps above). Nothing pushed.
+## §110 the glitch rows get a switch — `&glitch=0`, key `G`, `post.glitch` (2026-10-09, one worker in a worktree off 39c4a78, rebased onto §109's 9658d8f; the user: *"how can I disable the glitch effect (ie. where it tears the screen)?"*)
+
+- **What the tear is.** The composite's glitch rows (`assets/effects/composite.js`, the `if(uFx.y>.01)` line): the frame is cut into
+  14–34 horizontal bands (a seeded hash per frame, `FX.seed`), and a band whose hash lands in the top `0.6 · glitch` of the range is
+  slid sideways by up to ±12.5 % of the width · `glitch`, wrapping (`fract`). `glitch` is `FX.glitch` (`core/post.js updateFX`): a drop
+  sets it to 1, a surprise lifts it to ≥ .8, an onset with surprisal > .4 to surprisal·.7, and it decays with τ .22 s (~13 frames);
+  a hard scene cut sets it to 1 as well (`core/scenes.js`); a resume from a hidden tab zeroes it (`loop.js`). It also feeds the
+  chromatic aberration: `FX.ca` carries a `0.03 · glitch` term, so a drop fringes the whole frame while the rows tear. Until now
+  there was no switch: the rows fired on every drop, surprise and hard cut on every scene.
+- **The three switches, one mechanism.** `FX.glitchGain` (default 1) in `post.js`, and a per-scene `post.glitch` slot (0..1, default
+  1 when absent). The gain is applied **in the composite**, not where `FX.glitch` is set: `g = FX.glitch · FX.glitchGain · post.glitch`
+  goes to the shader as the rows' amount, and the aberration is handed `FX.ca − 0.03 · (FX.glitch − g)` — the share of the fringe
+  the un-applied glitch would have added is removed, so gain 0 = no rows AND no extra aberration. Why there and not at the source:
+  the per-scene slot is only knowable at the composite (`io.post`), `FX.glitch` stays the DRIVE the music fired (`CARD.FX.glitch`
+  still says what happened; `tools/probe.js`'s `g` column keeps its meaning), and at the defaults the product is exactly
+  `FX.glitch` and the correction exactly `0` (IEEE: `x·1·1 === x`, `x − x === 0`), which is the md5 identity below.
+  1. `&glitch=0` in the page hash — **any page, no `#test`** (it sits with `&lead=` / `&shade=` in `harness.js`): `retinarave.com/#glitch=0`
+     is a bookmark with the tear off for good; `&glitch=0.5` halves it; a value outside 0..1 throws at init like the other switches
+     (`&glitch=2` → `[EXC] &glitch= must be a gain 0..1`, `frameN` 0).
+  2. **Key `G`** (`hud.js`; `G` was free — the table is `? H P Esc D F M L 1–9 N R 0`): the gain 1 ↔ 0 live, a toast (*glitch rows off
+     (no screen tear)* / *glitch rows on*), and the dev HUD (`D`) prints `glitch rows gain 0.00 (off)  drive 0.xx  (key G · &glitch=)`
+     while the gain is not 1. The help view (`?`) lists it in part D; no short label, so the landing card's hint row is unchanged.
+  3. **`post.glitch`** — the sixth manual post param (`manual.js PARAMS`, after `bloom.thr fb.decay fb.advect kaleido exposure.on`,
+     §105's `fb.advect` pattern; the `&post=` grammar's alternation and its parse hint; the panel walks `POST_PARAMS`, so it has the
+     number box without a change):
+     `&post=nav2.glitch=0` under `#test`, `CARD.manual('post', 'nav2', 'glitch', 0)`, or a scene's own `post: { glitch: 0 }` (a
+     number or `fn(MS)`, resolved by `postOf` like `kaleido`). It travels in the panel's preset block like the others; the page-wide
+     gain does not persist (the URL is its memory).
+- **The md5 proof (identity at the defaults), on the rebased tree** (this worktree's two commits rebased onto §109's `9658d8f`; the
+  conflicts were all "both added a line here" — `harness.js`'s header list, `help.js`'s `W` / `G` rows, `hud.js`'s key note, `manual.js`'s
+  five → six params and the `&post=` alternation, the smoke, DECISIONS §104–§109 / §110, CONTRACTS §1.4's `fb.advect` / `glitch` rows,
+  HARNESS's `&post=` line — resolved by keeping both). The fake smoke: `GPU=1 PORT=8941 tools/scene-md5.sh g110r`, all thirteen ids,
+  `errs [] hop 840 row 72` on every id: **every one of the 26 lines equals `tools/accept/v0.35/scene-md5-v035.txt`** (§109's re-based
+  list, FLUID's s12 pair included). The real-music proof (HARNESS "Real-music acceptance"): `GPU=1 PORT=8951 SCENES=0 TRACKS=SeeYouDrop
+  tools/real-md5.sh g110r` — the home scene on SeeYouDrop, both map modes, intro / groove / build1 / drop1 (`f0 2`, errs `[]`, bad `[]`
+  on every run): **all 8 lines equal `real-md5-v035.txt`'s** (`73d742c6 / 7255a07d` build1, `beed9b9d / adeadd29` drop1, `cc7db288 /
+  140df669` groove, `9b481b9d / 0e2e4721` intro). Before the rebase the same change held v0.34's 24-line list at the base 39c4a78.
+- **The drop-frame proof.** The director fake's first drop is `DROP@13.00` (`tools/accept/v0.34/director-fake-s102.txt`) = frame 780.
+  `CLOCK=1 GPU=1 PORT=8932 OUT=tools/work/glitch node tools/cdp.js 'test' '[{"until":"window.CARD"},{"until":"window.__FRAME>=780"},
+  {"eval":"…CARD.FX…"},{"shot":"on-f780"}]'` and the same with `'test&glitch=0'` → `off-f780`: on both pages `FX.glitch` 0.927,
+  `dropEvt` true, `SC.cur` 0, errs `[]`; `FX.glitchGain` 1 vs 0. A per-row circular cross-correlation of the two shots (PIL + numpy,
+  1280 × 633): `on` has **4 torn bands, 114 rows displaced** — rows 89–127 by −58 px, 245–263 by +148 px, 266–282 by +21 px,
+  400–438 by +22 px — and the other 474 rows differ by ≤ 2 levels (the removed `0.03 · 0.927` fringe; mean |ΔY| over all rows 1.02);
+  `off` is the navigator whole. Frame 781 (`FX.glitch` 0.859): one band of 129 rows at −54 px on `on`, none on `off`. The per-scene
+  route shoots the same frame **byte-identical** to the page switch's: `'test&post=nav2.glitch=0'` → `scene-off-f780.jpg`
+  `78cc27b5` = `off-f780.jpg` `78cc27b5` (the same product 0 and the same correction). Shots under `tools/work/glitch/` (gitignored):
+  `on-f780 c65353f2`, `off-f780 78cc27b5`, `on-f781 95fd2786`, `off-f781 fc48ec33`.
+- **The smoke.** Headless on `'test&post=nav2.glitch=0'`: `postString()` = `nav2.glitch=0`; key `g` → `FX.glitchGain` 0, the toast and
+  the HUD line above; `g` again → 1; `?` → the help row present; the panel's `glitch` box present. `node tools/manual-smoke.js` 50
+  checks · 0 fail (the five params, set / clear / identity, `beta.glitch=0.5` through `applyPosts`, a non-number throws).
+- **Gates.** `node tools/check.js` 0 fail · 8 warn (the seven soft-cap line counts, pre-existing) · `npm test` exit 0 · the smoke above.
+  No scene folder touched; no uniform added (the gain rides the existing `uFx.y`).
+- **Docs.** CONTRACTS §1.4 (the post table: `glitch`), §1.10 (the composite line), §3 (the `FX` line: `glitchGain`, the drive, the
+  correction); HARNESS "Routes and manual overrides" (the five params, `&post=nav2.glitch=0`) and "Effect chain" (the *Glitch rows*
+  bullet under the chain's switches: the URL, the key, the HUD line, the proof recipe).
+- **Credit: none needed** — the rows, the aberration term and the switch convention are this repo's own.
+- **Not done.** The user's eye on `#glitch=0` in stream mode; whether the tear should be off by default (it stays ON: the v0.2 look is
+  the default, the switch is the opt-out — the user asked how to disable it, not for a new default); the kaleidoscope's `FX.kal` has no
+  page-wide gain of this kind (per scene only, `post.kaleido`; §102 turned it off on the home scene).

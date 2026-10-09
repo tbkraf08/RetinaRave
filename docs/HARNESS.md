@@ -347,7 +347,15 @@ shows the dye), and `IDS=1 tools/scene-md5.sh <tag> '&post=dust.fb.advect=1'` mo
 of the §105 look on any scene. The cost is one bilinear fetch per frame pixel; the pass runs at frame res (§105 has the number).
 
 `&linear=0|1` under `#test` picks the chain's space (`CARD.CHAIN.linear`; the default is linear since §20, 0 is the
-v0.2 chain for A/B). The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
+v0.2 chain for A/B).
+- **Glitch rows** (DECISIONS §110): `&glitch=0` on ANY page (no `#test`, like `&lead=`) turns the composite's screen tear off, `&glitch=0.5`
+  halves it, a value outside 0..1 throws; key `G` toggles the gain 1 ↔ 0 live (a toast; the dev HUD prints a `glitch rows gain …
+  drive …` line while the gain is not 1); `&post=<scene>.glitch=<0..1>` is the per-scene slot (`#test`, the panel's fifth post param).
+  `CARD.FX.glitch` stays the drive the music fired, `CARD.FX.glitchGain` the gain. Proof: the director fake's first drop frame
+  (`CLOCK=1 GPU=1 … 'test[&glitch=0]' '[{"until":"window.CARD"},{"until":"window.__FRAME>=780"},{"shot":…}]'`, drive 0.927 on both)
+  with and without → `tools/work/glitch/on-f780.jpg` / `off-f780.jpg`; a per-row circular cross-correlation (PIL + numpy) finds 4 torn
+  bands of 114 rows shifted −58 / +148 / +21 / +22 px on `on`, none on `off`; the md5 list at the defaults is unchanged.
+The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
 composite into white-where-any-channel ≥ 1; the §20 number is DUST at the fake drop frame (`CLOCK=1`, shot at
 `__FRAME>=781` with the mask set at 780; count pixels > 128 with PIL): 10.6 % encoded → 0.12 % linear. The A/B set
 is `scene-md5.sh <tag> '&linear=0'` against `scene-md5.sh <tag>` tiled with `montage.py`.
@@ -493,7 +501,8 @@ Per-scene routing of `MS` fields (CONTRACTS §1.15) and the manual overrides, al
 ```
 &route=feigen.bass=centroid*1.5+0.1~0.2!,feigen.kick=snare      # scene.field=src[*k][+b|-b][~tau][!] — several with ','
 &route=feigen.bass=c:0.4                                        # a constant source (transfer still applies)
-&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the five post params: bloom.thr fb.decay fb.advect kaleido exposure.on
+&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the six post params: bloom.thr fb.decay fb.advect kaleido exposure.on glitch
+&post=nav2.glitch=0                                             # §110: no glitch rows (screen tear) on that scene; 0..1 a gain (the page-wide one is &glitch=)
 ```
 A `+` in a hash reaches the page as a space through `URLSearchParams` — the parser reads both. An unknown scene, field,
 source, kind mismatch (`flow` → `bass`), a transfer on an event, or an unknown post param **throws at init** (cdp prints
