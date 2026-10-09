@@ -115,8 +115,12 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               substrate is one pool under every scene. The grammar itself (the sub → where the ink enters, the
                               kick → up, the snare → sideways, the hats → droplets, the key → colour, the beat → the breath,
                               lpSweep → syrup, the void → the ink accumulates, the drop → it clears: `dropLiveEvt || mapDropEvt`,
-                              the live detector or the map's bar line, never `dropEvt` — DECISIONS §107) is the core's
-                              (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's part B); a scene adds on top.
+                              the live detector or the map's bar line, never `dropEvt` — DECISIONS §107; and since §108 the
+                              harmonic content: `mid` → a FLOOR of ink at the key's sector, dye only, never a velocity, so no
+                              roster trail moves; the v1 `snare` level rising with no `snareEvt` → a chord attack, the snare's
+                              shear at a third of the force with a 0.15 s refractory — pads, chords and vocals had no channel
+                              before) is the core's (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's
+                              part B); a scene adds on top.
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
 ctx.budget(kind)              the count for the current tier from the core's tables (§1.4): 'points' → particles of a
                               gl_VertexID cloud, 'segs' → segments of a ctx.lines path-A buffer. Read it every draw.

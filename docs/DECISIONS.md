@@ -9374,3 +9374,155 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   take mid-track on a FLUID night. Live mode is unchanged by construction and unseen here: on a live night the clear is still the
   detector's call alone.
 
+
+## §108 the harmonic channels — a dye floor from `mid` and chord shears from the v1 `snare` level; the take replayed (2026-10-09, one worker; FLUID-DIAG-2026-10-09 §9 proposals 1 + 2; the user on his recording: *"don't see first viz elements till 12 seconds in but there is sound. Then at 17/18s it seems like is working, but then at 19 seems to miss the same sounds"*; the user: *"start"*)
+
+- **The report and the root cause** (`docs/plans/FLUID-DIAG-2026-10-09.md`, the take `retinarave-v0.34-fluid-2026-10-09T14-50-22.webm`:
+  capture mode, a pad / bass-chord piece — sub 0 %, bass 20 %, low-mid 75 %, mid 4 %, high 0 %, two clickless 42 Hz kick tails in
+  22 s). The grammar maps sub, kick, snare, hats, drop, beat — **it had no channel for pads, chords, mids or vocals, 95 % of that
+  track**: on the take the only channel that fired was the snare lane, six floor-sized hits, **0 splats on 17 of 22 seconds**. The
+  19–21 s "miss" was the same lane under its fixed 3.75 dB rise (the chord attacks rose 2.5–2.9 dB) with the 18.7 s ink still moving
+  on screen. Not warm-ups, not gates, not a refractory (DIAG §8).
+- **What changed.** `core/fluid/inject.js` — two channels, two reads (`FLUID_FEATS` 36: `mid`, `snare`), six `K` rows, two state
+  fields (`snarePrev`, `chordLeft`), `plan()` returns `floor` and `chord` for the replay ruler.
+  (1) **The harmonic floor**: while `mid` is above a knee (`sstep(FLOOR_LO .15, FLOOR_HI .40, mid) · mid` — `mid` is
+  `pow(band(150–2000 Hz)/peak, .7)·presence`, so silence reads 0 and a residue stays under the knee), one splat per frame at the
+  KEY's sector on the circle of fifths (`(sectorPc(key) + ½)/12` — the sub emitter's x rule on the tonic instead of the bass note),
+  y 0.5, radius ×2, ink `FLOOR_DYE 0.004 · level · g · 60·dt` (a quarter of the sub's 0.015; ≈ 0.24 at the mouth at `dyeDiss` 1), in
+  the key's hue, **dx = dy = 0** — dye only, never a velocity. On the take `mid` reads .84–.99 from 3 s: the pool shows the music's
+  level and the key's colour from the first second of sound, and the attacks' shears land in ink that is already there.
+  (2) **Chord shears**: the v1 `snare` level (the extractor's mid-band flux peak, 0.13 s decay — the field whose rises matched the
+  truth's chord attacks at 19.42 / 20.16 s on the take) rising by more than `CHORD_RISE 0.05` in one frame with no `snareEvt` on it
+  → the snare's two shears at `(0.3, 0.5)` / `(0.7, 0.5)`, `±CHORD_V 0.18 · Δsnare` (SNARE_V × 0.3 — a third of the lane's force,
+  sized by the rise: Δ .27–.88 on the take → 0.05–0.16 uv/s against the lane's 0.19–0.26 at amp .31–.44), ink `CHORD_DYE 0.08 · Δ`;
+  one refractory `CHORD_REF 0.15 s` armed by a chord shear OR a `snareEvt`, so a sustained chord is one attack (the level is a peak
+  hold, it rises once) and a snare is never doubled by its own rise on the frame after. The lane's hit keeps its full size.
+  `core/fluid/fluid.js` — the splat pass skips the velocity draw for a chunk with no force in it (the floor on a pad is the frame's
+  only splat), and `CARD.fluid.K` exposes the grammar's constants for a one-knob A/B from an eval. `tools/test_fluid.js` **83 ok**
+  (+27: the floor's splat, knee, silence, 120 pad frames with Σ|v| 0, the §107 clear holding it < 5 %; the chord's two shears, the
+  force, the ink, the refractory, a held level, a `snareEvt` frame, a sub-threshold rise, silence, the feats). `tools/fluid-replay.js`
+  (the DIAG's replay promoted: `plan()` over a filetrace JSON, per second / events / frame, `FLUIDK=` for an A/B) and
+  `tools/rec-strip.sh` (the recording replay ruler, HARNESS "## Fluid"). Docs: CONTRACTS §1.1 (the grammar sentence), HARNESS "## Fluid"
+  (the node bullet, the ruler), this section.
+- **The take, before and after** (`tools/work/fluid-diag/rec-live.json` — the DIAG's cold `&map=0` trace of the take's audio on the
+  live lanes, replayed through `plan()`; `before` = `FLUIDK='{"FLOOR_LO":9,"FLOOR_HI":10,"CHORD_RISE":9}'`, the two channels out of
+  reach; rec Y / p99 = the take's own frames at 2 fps (PIL `convert('L')`, mean and p99 of the whole frame); headless = the same audio
+  served as `&track=rec&map=0&scene=12` cold under `CLOCK=1` on this machine, `tools/rec-strip.sh`, mean / p99 of the shot on the
+  second; the empty pool reads 22 here at the ladder's bottom, 24–26 with the exposure up):
+
+  | s | mid | snare lane (amp) | before: splats · Σ\|dv\| | after: chords (Δsnare) · floor ink/s · splats · Σ\|dv\| | the take Y / p99 | headless before Y / p99 | headless after Y / p99 |
+  |---|---|---|---|---|---|---|---|
+  | 2 | 0.28 | 3 (0.74 1.00 1.00) | 125 · 3.74 | 2 (0.32 0.16) · 0.035 · 156 · 3.82 | 16 / 29 | 16 / 21 | 16 / 21 |
+  | 3 | 0.95 | 0 () | 9 · 0.49 | 0 () · 0.187 · 69 · 0.49 | 19 / 32 | 22 / 90 | 22 / 90 |
+  | 4 | 0.98 | 0 () | 0 · 0.00 | 1 (0.51) · 0.292 · 62 · 0.13 | 26 / 40 | 22 / 61 | 22 / 61 |
+  | 5 | 0.94 | 0 () | 0 · 0.00 | 1 (0.47) · 0.266 · 62 · 0.14 | 29 / 42 | 22 / 45 | 22 / 51 |
+  | 6 | 0.84 | 0 () | 0 · 0.00 | 0 () · 0.238 · 60 · 0.00 | 30 / 41 | 22 / 33 | 22 / 44 |
+  | 7 | 0.98 | 0 () | 0 · 0.00 | 1 (0.28) · 0.252 · 62 · 0.09 | 29 / 38 | 22 / 29 | 23 / 44 |
+  | 8 | 0.99 | 1 (0.34) | 2 · 0.35 | 1 (0.56) · 0.335 · 64 · 0.52 | 29 / 37 | 22 / 29 | 23 / 45 |
+  | 9 | 0.98 | 0 () | 0 · 0.00 | 0 () · 0.328 · 60 · 0.00 | 29 / 38 | 24 / 65 | 25 / 78 |
+  | 10 | 0.67 | 0 () | 0 · 0.00 | 1 (0.34) · 0.231 · 62 · 0.11 | 29 / 38 | 24 / 61 | 26 / 86 |
+  | 11 | 0.69 | 1 (0.44) | 2 · 0.46 | 0 () · 0.251 · 62 · 0.46 | 28 / 37 | 24 / 61 | 26 / 89 |
+  | 12 | 0.83 | 0 () | 0 · 0.00 | 0 () · 0.304 · 60 · 0.00 | 29 / 82 | 25 / 85 | 28 / 110 |
+  | 13 | 0.97 | 0 () | 0 · 0.00 | 1 (0.27) · 0.358 · 62 · 0.09 | 29 / 103 | 26 / 80 | 28 / 111 |
+  | 14 | 0.98 | 0 () | 0 · 0.00 | 1 (0.88) · 0.365 · 62 · 0.28 | 30 / 75 | 26 / 77 | 28 / 115 |
+  | 15 | 0.91 | 0 () | 0 · 0.00 | 0 () · 0.334 · 60 · 0.00 | 30 / 55 | 26 / 72 | 29 / 116 |
+  | 16 | 0.95 | 0 () | 0 · 0.00 | 1 (0.38) · 0.282 · 62 · 0.12 | 30 / 44 | 26 / 67 | 30 / 115 |
+  | 17 | 0.94 | 1 (0.34) | 2 · 0.37 | 2 (0.36 0.86) · 0.334 · 66 · 0.77 | 30 / 40 | 26 / 62 | 30 / 109 |
+  | 18 | 0.86 | 1 (0.40) | 2 · 0.44 | 0 () · 0.267 · 62 · 0.44 | 31 / 88 | 26 / 62 | 30 / 103 |
+  | 19 | 0.89 | 0 () | 0 · 0.00 | 1 (0.75) · 0.292 · 62 · 0.25 | 32 / 104 | 26 / 62 | 29 / 81 |
+  | 20 | 0.87 | 0 () | 0 · 0.00 | 1 (0.55) · 0.287 · 62 · 0.18 | 32 / 97 | 26 / 49 | 28 / 62 |
+  | 21 | 0.84 | 0 () | 0 · 0.00 | 0 () · 0.259 · 60 · 0.00 | 34 / 112 | 26 / 39 | 27 / 52 |
+  | 22 | 0.55 | 0 () | 0 · 0.00 | 0 () · 0.216 · 60 · 0.00 | 33 / 86 | 26 / 34 | 27 / 51 |
+  | 23 | 0.57 | 2 (0.43 0.36) | 4 · 0.86 | 0 () · 0.199 · 64 · 0.86 | 29 / 55 | 26 / 34 | 27 / 52 |
+  | 24 | 0.81 | 0 () | 0 · 0.00 | 0 () · 0.123 · 25 · 0.00 | 31 / 121 | 27 / 94 | 28 / 96 |
+
+  **Seconds with any injection, 3–24 s: before 6 of 22 → after 22 of 22** (the floor on every second of sound, a chord shear on 11 of
+  them; Σ|dv| injected 3–24 s: 2.5 → 4.5 uv/s, the floor adds none). The chord channel fires at 19.417 (Δ .75) and 20.150 (Δ .55) —
+  the two attacks the user heard "missed" — and at 17.533 (Δ .36) / 17.900 (Δ .86), the frame before the lane's own 17.917 hit (the
+  level rises on the hop before the lane confirms, as §57 measured; the lane's hit is never gated, only the chord is, so both land —
+  0.139 then 0.19 uv/s, one frame apart — and the lane's event then arms the refractory). It fires once on the silence step (2.5 s, Δ .32 at
+  g .15) and never on the 2.03 s digital-zero ghost (`g` 0).
+  **The grey line** (whole frame, headless, per second 3 → 24 s): before **22 22 22 22 22 22 24 24 24 25 26 26 26 26 26 26 26 26 26 26 26 26**,
+  after **22 22 22 23 23 23 25 26 26 28 28 28 29 30 30 30 29 28 27 27 27 28** — the mean moves 1–4 levels (one cloud at one sector
+  is 5 % of the frame); the p99 is where the floor shows: before **90 61 45 33 29 29 65 61 61 85 80 77 72 67 62 62 62 49 39 34 34 94**,
+  after **90 61 51 44 44 45 78 86 89 110 111 115 116 115 109 103 81 62 52 51 52 96** — from 5 s the p99 sits 15–50 levels above
+  the empty pool's 29–34 where it sat at 29 before, and 103–116 through 12–17 s (the cloud fed at 0.3 dye/s against `dyeDiss`
+  .13–.20 in the void), then 52 against 34 at 21–23 s. The floor's ink is the difference between "flat grey, nothing" (DIAG §5, s4–s10)
+  and a lilac cloud at the key's sector that the 11.6 s shears then stir.
+- **The eye** (`tools/accept/v0.35/fluid-s108-rec-strip.jpg` — per half second, rec | before | after, 0–24 s; the take's own frames from
+  `ffmpeg -vf fps=2`, the headless frames from `tools/rec-strip.sh`): 0–2.5 s nothing on all three (digital silence; the "RETINA RAVE"
+  card on the headless at 0 s is the landing before the track opens); 3–4 s the start burst's blue droplets on both headless columns
+  (the silence-step artefact, DIAG §7.3) — and from **3.5 s a magenta cloud at the right in the after column** that the before column
+  never has, growing to 8 s while the before stays flat; 9–11 s the floor cloud beside the first lilac pair (the 8.6 s floor hit that
+  the take did not show — DIAG §4); 11.5–17 s the take's lilac pair / the headless pair, with the after column's cloud lit cream-white
+  where the shears' ink meets it; 18–20 s the take's bright magenta pairs — the after column has the same pairs AND a stirred cloud,
+  the before only the pairs; 19–21 s the after's shears at 19.4 / 20.2 s visible as the pairs' edges moving where the before's are
+  advected only. The colours differ between the take and the headless (the key anchor's hue and its timing: capture `SYNC_OFS` vs
+  `DET_LEAD`, the 2 s ema — DIAG §3) and the aspect differs (1282×1310 portrait vs 1280×633); the placements agree to the half second.
+- **The md5 re-base — and what moved it.** All 26 lines of `tools/accept/v0.35/scene-md5-v035.txt` moved, as the DIAG said a velocity
+  channel would; `trans-mixs-md5.txt` (`1ccfd0c1` → **`1c487222`**) and `gielis-still-md5.txt` (`3edc1fbc / b3c0dda0` → **`aadb70d9 /
+  81039422`**) with them — each measured twice (PORTs 8903 / 8904 for the list, `cmp` equal; 8914 twice for the other two), errs []
+  hop 840 row 72 on every id, re-based in place. The `&fluid=0` list (PORT 8905) **= `tools/accept/v0.34/scene-md5-v034.txt` line for
+  line (24 of 24)**, s12's idle pair `70405a78 / f048c5a2` as before. **But the fake timeline cannot fire the chord channel as
+  written**: its `snare` level jumps to 0.7 on the same beat crossings its lattice sets `snareEvt` (fake.js, §83), and a node replay of
+  `fakeMusic` through `plan()` gives 0 chord fires in 840 frames. The in-page A/B through `CARD.fluid.K` on s0 (an eval at
+  `__FRAME>=1`, then f360 / f840): chord off → **`f82a9174 / 6abfd71e`, the §105 pair to the byte**; floor off → still moved; both
+  off → the §105 pair. So the chord DID fire in the page, and a `CARD.TRACE` of the fake (CLOCK=1, 839 frames) says why: `snareEvt`
+  and `kickEvt` are **0 on every frame**, including the seven beat frames where `snare` jumps 0.7 — `features-ears.js`'s `earsStage`
+  zeroes `EVT` (`kickEvt, snareEvt, hatEvt, subNoteEvt, subIn, subOut`) on every frame BEFORE its `ENGINE.fakeOn` return, and the
+  stages run after `fake.update`. **The §83 lattice's events have never reached MS at the step or at any scene** (DUST's `kickEvt`
+  voice, TORUS2's and CHLADNI's event-fired attacks all see `false` on the fake; the ages and `*Amp` do get through — they are not in
+  `EVT`); the same early clear is why §107 found `mapDropEvt` never set on the fake. On what the fake actually publishes — a level
+  that rises with no event — the chord rule is right to fire, and that is the whole of the 26-line move. The defect is left as found
+  (open, below): fixing the clear moves every line again for a reason unrelated to this step and changes what three roster scenes do
+  on the fake. The old → new table (f360 / f840):
+
+  | id | scene | v0.35 (§105–§107) | §108 |
+  |---|---|---|---|
+  | s0 nav2 (home) | `f82a9174` / `6abfd71e` | `6930dffc` / `af295f18` |
+  | s1 dust | `9d7f4504` / `5b06a809` | `2a2f5da8` / `46a6a8cd` |
+  | s2 mandala | `e87cfa4b` / `ee7956e3` | `39004d77` / `feb58038` |
+  | s3 torus2 | `e6fffff8` / `8d3635a8` | `f3c8f96f` / `00c14a4a` |
+  | s4 drum | `45b27bc9` / `2bf0e217` | `704bbe0b` / `5cd068da` |
+  | s5 polytope | `3c8d8ac7` / `dc9e5783` | `5d6307e1` / `0397295f` |
+  | s6 feigen | `73b7b0ea` / `3fc6a766` | `b1a656e9` / `09743c0e` |
+  | s7 torus-v1 | `c1c0afa7` / `3ce3f944` | `d600f191` / `c296ac6d` |
+  | s8 nav (control) | `83c30184` / `b6257fe5` | `3ce7343e` / `fca2f0b4` |
+  | s9 maxwell | `839f3210` / `fd7851f6` | `4aad2187` / `8fd11445` |
+  | s10 gielis | `6e51a957` / `cbc891d7` | `a580cb9c` / `71e64c55` |
+  | s11 chladni | `d05204e5` / `347c6284` | `967354f1` / `4029b81b` |
+  | s12 fluid | `13e9acae` / `85cd3023` | `1d7f9f90` / `94040549` |
+
+  The velocity-skip in `fluid.js` was written on the first hypothesis (a zero-force splat re-sampling the field) and the A/B killed
+  it: the s0 pair is identical with and without the skip, so a `+ 0` re-write is bit-exact on this GPU. It stays as a guard — "dye
+  only" now means the velocity target is not drawn at all on a pad frame — and its comment says it is not a fix.
+- **The roster trails** (`tools/accept/v0.35/fb-s108-s{0,3}-{groove-35,build-100}.jpg` against §105's `fb-advect1-*` pairs; mean |Δ|
+  grey, % of pixels > 8): HOME groove **1.44 / 3.9 %**, build **2.58 / 7.3 %**; TORUS2 groove **3.42 / 11.7 %**, build **3.23 / 11.5 %**
+  — the §105 pairs were 2.1–4.8, so the chord shears (0.05–0.16 uv/s impulses at mid height, 1–2 per second on SeeYouDrop) move the
+  trails by less than the advection itself did. Two runs of a pair: |Δ| 0.00. FLUID's own shots (`fluid-s108-{intro-10, groove-35}.jpg`
+  against §106's): intro **1.62 / 5.2 %** — the hat droplets as before and a soft lilac floor cloud at the centre (the key's sector)
+  where §106 had the empty pool; groove **7.61 / 25.4 %** — the sub's blue-teal column and the stirred pool carry the frame as
+  before, the floor is one more cloud at the sector: not drowned (the eye, both shots).
+- **The numbers** (this machine, headless `GPU=1`, 1280×633; the user's desktop Chrome at 44 % CPU, Slack and gnome-shell loaded it
+  through this step — NAV read 4.7 ms against §104's 1.4, so only pair ratios compare). `check.js` 0 fail / 8 warn (the pre-existing
+  soft caps); `npm test` exit 0, `test_fluid` 83 ok; `license.js --check` 181 public files, 0 missing. Help: `rows()` **209** = the
+  non-internal FEATS count (no new entry); part B's substrate line gained `mid, snare` (data). Parity fake (ACC v0.35): max
+  7.852214593751443, 72 fields, the §102 `nav.*` line to the digit. Monitor 60 s on `test&track=SeeYouDrop&at=25&scene=12` (`CARD.NAV =
+  REG[12].scene.state`, 25 → 86.5 s across drop 1): **`n 3197 fast 0 max .0117 viol []`**, errs [], bad []; on the home (`test&fake=0`):
+  **`n 3045 fast 3 max .0896 viol []`**, errs [], bad [] — both at tier 0 / q 0 under the load (the gate is `viol []`). **Bench** (q
+  pinned .95, tier 3, sim 259×128, dye 1035×512, three interleaved pairs `benchFluid(300)` / `bench(0, 300)`, the fake): the
+  substrate step **2.68 / 2.66 / 3.41 ms** against NAV 4.98 / 4.66 / 4.66 → median 2.68, **ratio 0.58** (§104: 0.58 ms at ratio
+  0.43); the floor alone, interleaved on / off in one page through `CARD.fluid.K`: **2.24 / 2.69 / 2.34 vs 1.50 / 2.08 / 1.91 ms**
+  → +0.43 ms here, ≈ +0.13 ms at §104's clock — one more 1035×512 dye draw on a frame that had no splat. On the FAKE 812 of 840
+  frames had none (its `subGate` is 0); on music the sub emitter runs that pass every frame already, so the floor's cost there is
+  one more term in a draw that is paid. Against the 1.0 ms budget: 0.58 × 1.4 ≈ 0.8 ms under §104's conditions — inside, by less
+  than before; to be re-measured on an idle machine. CPU `CARD.fluid.ms` 0.09.
+- **Not done / open.** (1) **The §83 lattice events never reach the scenes** (above): `earsStage` zeroes `EVT` before its `fakeOn`
+  return — a one-line move of the clear under the return would publish them and move every md5 line, plus DUST / TORUS2 / CHLADNI's
+  event voices on the fake; the orchestrator's call, not this step's. (2) The user's eye on the take replay and on SeeYouDrop:
+  the floor's amount (0.004 — a quarter of the sub's), its radius (×2), whether a cloud at the key's sector reads as "the music"
+  or as "the lights are on" (DIAG §9.1's open question), and the chord shears' force (a third). (3) The bench on an idle machine.
+  (4) Proposals 3–6 of the DIAG (the bass lift from the v1 `kick` level, a `high` sparkle for the scene, the void rule latched on
+  drums, the ears' start guard) are not built. (5) The take's colours differ from the headless replay's (the key anchor's timing
+  in capture vs file-det, DIAG §3) — the ruler places events, it does not reproduce the hue. (6) `accept.sh` in full not run; its
+  md5 references are the re-based ones above. Nothing pushed.

@@ -208,7 +208,8 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   bottom-right (0.5 + v, ±0.5 uv/s spans the range), `&fluiddbg=2` the velocity alone; harness only — `FLUID.dbg` is 0 on every
   normal path. Key `W` toggles the substrate live (`CARD.setFluid(on)`), a toast says so; where there are no float render
   targets (`CARD.fluid.avail` false) it stays off.
-- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue}` — `ms` the step's CPU
+- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue, K}` — `K` the grammar's constants
+  (inject.js), live: `CARD.fluid.K.FLOOR_LO=9` from an eval after `__FRAME>=1` is a one-knob A/B of the same run (§108) — `ms` the step's CPU
   submission time (EMA, like `ENGINE.ms`; the GPU cost is the bench below), `nSplat` the last step's splat count, `params` the
   grammar's live values. The HUD (`D`) has the line `fluid <ms> ms sim WxH dye WxH tier N iters I splats n curl c vd … dd …`;
   the help view's part B says the same and lists `FLUID_FEATS` ("the substrate reads: …", data, never literals).
@@ -222,12 +223,34 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
 - **The identity proof**: `GPU=1 PORT=88xx tools/scene-md5.sh <tag>` with the substrate on must equal the reference list while
   nothing consumes it (Step 1: `tools/accept/v0.34/scene-md5-v034.txt`, every line), and `tools/scene-md5.sh <tag>off '&fluid=0'`
   must equal it too. **Since §105 (Step 2)** the feedback pass rides the velocity, so the default list is `tools/accept/v0.35/scene-md5-v035.txt`
-  (every line moved, `ACC` default v0.35) and the `&fluid=0` list is what must still equal v0.34 line for line — the standing proof
+  (every line moved, `ACC` default v0.35; re-based in place at §108 — the chord channel is a velocity, and the fake timeline's
+  `snare` level jumps with no `snareEvt` at the step, so every line moved again, `trans-mixs-md5.txt` and `gielis-still-md5.txt`
+  with it) and the `&fluid=0` list is what must still equal v0.34 line for line — the standing proof
   that the scalar pass is byte-identical. A change to the solver, the grammar or the feedback pass moves the v0.35 list and holds the v0.34 one.
+  A DYE-only change moves the s12 pair alone (no roster scene reads the dye — proven at §108 with the floor off / on through `CARD.fluid.K`).
 - **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
   tail, the snare's two shears, the seeded hats, the drop's one-beat clear (armed by `dropLiveEvt` OR `mapDropEvt`, never by a
-  `dropEvt`-only frame — §107), the parameter maps, the gain, the colour, determinism
+  `dropEvt`-only frame — §107), the harmonic floor (§108: a pad-only frame → one dye-only splat at the key's sector, the knee on
+  `mid`, silence → nothing, 120 pad frames → never a velocity, the §107 clear holds it under 5 %), the chord shears (§108: the v1
+  `snare` level's rise with no `snareEvt` → two shears at a third of the snare's force, the 0.15 s refractory, a held level → one
+  attack, a `snareEvt` frame → the lane's shears only), the parameter maps, the gain, the colour, determinism
   (two fresh states → identical JSON), and a Proxy of MS that throws on any read outside `FLUID_FEATS`.
+- **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
+  engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
+  `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
+  `tools/work/rec/<tag>/music/rec.wav`, cdp runs `CLOCK=1 GPU=1` on `test&track=rec&at=<t0>&map=0&scene=12` with `MUSIC=` pointing
+  at that directory (`&map=0` = the live path on a file, "File source" above; capture mode has no map either), one shot per
+  `60/fps` frames keyed on `__FRAME` (rule 1: heard `t = (frame − 2)/60`), and prints the whole-frame grey line per shot —
+  the mean (the §106/§107 metric) AND the p99 (a cloud at one sector moves the p99 by 20–80 levels and the mean by 1–3).
+  `GREYONLY=1` recomputes the line on shots already taken. Pair it with the pure replay: `PORT=88xx WARM=0 node tools/filetrace.js
+  rec 0 <t1> <trace.json> '<FLUID_FEATS + what you want>' '&map=0'` with the same `MUSIC=`, then `node tools/fluid-replay.js
+  <trace.json> [t0 t1] [sec|events|frame]` — `plan()` over the trace with no GL, one line per second: every channel's splat count,
+  Σ|dv| injected, the floor's ink, `dyeDiss`; `FLUIDK='{"FLOOR_LO":9,"FLOOR_HI":10,"CHORD_RISE":9}'` is the §108 "before" (the
+  two channels out of reach) for an A/B of the same trace. The take's own frames (`ffmpeg -vf fps=2`) go beside the strip's in one
+  montage (`tools/accept/v0.35/fluid-s108-rec-strip.jpg`: rec | before | after per half second) so "it heard that one, why not
+  this one" is answered on the frame. The two things that differ from the user's session (DIAG §4): `heardT` through `DET_LEAD`
+  rather than `SYNC_OFS`, the display lead 40 vs 0 ms — ≤ 45 ms placements; the lanes' 8-hop baselines can differ on a hit at
+  the floor (one of six in the DIAG). `frame0` must read 2 in the first eval (a shared GPU moves it — nothing else on the machine).
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
   consumer exists; two runs of a shot are md5-equal (the four rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
