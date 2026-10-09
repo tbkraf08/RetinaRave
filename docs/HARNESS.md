@@ -944,7 +944,7 @@ luminance question, so a retune is judged by this ruler, not only by eye (the mo
 on the v0.32 clip in `docs/plans/nav-retune-review-2026-10-08/lum.csv`, moved into the deterministic file-mode harness).
 
 ```
-node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path] [--x='n2lum=0.28,2.2&n2smo=.12,.5']
+node tools/lumtrace.js <Track> --scene=0 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path] [--x='n2lum=0.28,2.2&n2smo=.12,.5']
 # -> <out>.csv  <out>.txt  <out>-sheet.jpg  <out>.log     (default out: tools/work/lum/<Track>-s<scene>-<from>-<to>, gitignored)
 ```
 It is a `filetrace.js`-shaped run: `CLOCK=1 GPU=1` cdp on `#test&track=<Track>&at=<from − warm>&scene=<N>` (file mode, the
@@ -1125,7 +1125,7 @@ md5" loop checks all twelve ids against it, and the torus2 / nav2 / polytope / g
 list), `gielis-still-md5.txt` and `trans-mixs-md5.txt` (the 0→3 mixs fade at f178). `ACC` is the ONE
 variable at the top of the script (`ACC=${ACC:-v0.34}`); a re-base is: a new directory, those three files, that one default.
 The earlier per-version lists (v0.7 / v0.8 / v0.9 / v0.14 / v0.29) stay on disk as history (v0.34 = §97's NAV2 re-base: the v0.29
-list with only the s8 pair changed, to NAV's s0 values — NAV2 is a clone of NAV; `nav2-still-md5.txt` went with the `&still=1` hook). `parity.js` and the trace / bench tools
+list with only the s8 pair changed, to NAV's s0 values — NAV2 is a clone of NAV; `nav2-still-md5.txt` went with the `&still=1` hook; **re-based in place by §102**, 2026-10-08, the swap: s0 = the retuned navigator `a8de2f03 / 7a65fd16`, s8 = the v0.33 navigator `fb74fee4 / 8a0715df` — the file's header says which). `parity.js` compares cardioid3's navigator against id 8 since §102 (`NAVID=8` default; the home is the retuned walk). `parity.js` and the trace / bench tools
 honour the same `ACC` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier files; the v0.2 "before"/"none"/"after" traces
 referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 

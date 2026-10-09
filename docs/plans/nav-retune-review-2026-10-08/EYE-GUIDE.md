@@ -1,6 +1,11 @@
-# EYE-GUIDE — NAV2 (key 9) against NAV (key 1), the six windows of plan step 4 (2026-10-08, after §99 / §100 / §101)
+# EYE-GUIDE — NAV2 (key 1) against the v0.33 NAV (key 9), the six windows of plan step 4 (2026-10-08, after §99 / §100 / §101; keys SWAPPED by §102)
 
-Everything built in `assets/scenes/nav2/` is behind a knob whose rest is NAV's line; id 0 (key 1) is the byte-identical control
+> **§102 (2026-10-08, after the look):** the user said *"nav2 is better than nav now; swap them so nav is key 9 and nav2 is key 1 (and used
+> by the director); also remove the kaleidoscope"*. Since then the retuned navigator is **id 0, key `1`, the home** (kaleidoscope off) and the
+> v0.33 navigator is **id 8, key `9`, the control**. Every "key 1 / key 9", "id 0 / id 8" below is read with that swap; the knobs apply to the
+> retuned scene wherever it is registered (they are the scene's own `hooks`, keyed on the scene, not on an id) — id 0 now.
+
+Everything built in `assets/scenes/nav2/` is behind a knob whose rest is NAV's line; id 8 (key 9, since §102 — id 0 before) is the byte-identical control
 (`IDS="0 8" tools/scene-md5.sh`: s0 `fb74fee4… / 8a0715df…` unchanged through §97–§101). Nothing is tagged or deployed: v0.34 and the
 home swap (id 8 → the director's home) wait for the word after this look.
 
@@ -10,9 +15,9 @@ home swap (id 8 → the director's home) wait for the word after this look.
 2. Open `http://127.0.0.1:8765/#test&track=SeeYouDrop&at=25` — `&track=` starts the file source on the real extractor (no landing
    card), `&at=` the track second the playhead starts at. The page plays the file; the HUD (`d`) shows the scene's `rt.label`
    (`INT 1/2`, `EXT …`) and `rt.log`.
-3. Press **`1`** for NAV (id 0) or **`9`** for NAV2 (id 8); press the other key to A/B at the same bar — both navigators are updated
+3. Press **`1`** for NAV2, the retune (id 0 since §102) or **`9`** for the v0.33 NAV (id 8, the control); press the other key to A/B at the same bar — both navigators are updated
    every frame (`always: true`), so the two keys compare the same state, only the retune differs. Reload with a new `&at=` to re-cue.
-4. A term off: append its knob to the hash and reload — the knobs only apply on `#test` and only to id 8:
+4. A term off: append its knob to the hash and reload — the knobs only apply on `#test` and only to the retuned scene (id 0 since §102):
    - §99 look: `&n2lum=0` (the exposure knee off) · `&n2smo=0` (the old root smoulder) · `&n2fl=0` (the old white flash) ·
      `&n2ext=0` (no exterior dim / halo narrowing) · `&n2key=0` (the old drifting hue instead of colour on key) · `&key=7` pins a key.
    - §100 motion: `&n2kick=0` (v3's onset picker instead of the kick lane; `=THR,HOLD` sweeps it, chosen .45,2) · `&n2breath=0` (no beat

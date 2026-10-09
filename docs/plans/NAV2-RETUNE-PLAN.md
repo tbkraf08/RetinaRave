@@ -67,3 +67,8 @@ the hue wheel through green/yellow. Build:
 File mode, key 9 vs key 1… SeeYouDrop 0:25–1:00, Vienna 1:00–1:35, CyborgNinja 0:40–1:10, Malicious 2:20–2:40, IBelongHere 0:40–1:10,
 WhoLikesToParty one drop. Contact sheets from lumtrace per window in `docs/plans/nav-retune-review-2026-10-08/after/`. Tag v0.34
 only on the user's word; the home swap (id 8 → home) only on the user's word.
+
+**DONE 2026-10-08 (DECISIONS §102).** The user looked and said *"nav2 is better than nav now; swap them so nav is key 9 and nav2 is key 1
+(and used by the director); also remove the kaleidoscope — it distracts from the beauty of the set."* The retuned navigator is id 0,
+key `1`, the home, with the kaleidoscope off; the v0.33 navigator is id 8, key `9`, the control. The keys in the EYE-GUIDE recipe are
+swapped accordingly (1 = the retune now). Still not tagged: v0.34 waits for the user's word.

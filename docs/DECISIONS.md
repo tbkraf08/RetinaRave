@@ -8939,3 +8939,76 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   full track (NAV's spring family, not the launch). The root-crossing hazard in NAV itself (id 0, its own retarget line) — left, it is
   the control. A per-ladder quiet candidate for 1/2 (all four read .69) if the eye wants calm there — the cardioid IS the calm place and
   the even phrases do not visit it; a `0/1` entry in every ladder for quiet rows is a line.
+
+## §102 the swap — the retuned navigator is home, the kaleidoscope is off (2026-10-08, one worker; the user, after looking at the retune: *"nav2 is better than nav now; swap them so nav is key 9 and nav2 is key 1 (and used by the director); also remove the kaleidoscope — it distracts from the beauty of the set."*)
+
+- **What changed.** Two scene registrations and nothing in `core/`. `assets/scenes/nav2/` (name `nav2`, the §97–§101 retune) is
+  **id 0, key `1`, `home: true`, `always: true`, NAV's bid `(S) => 0.5 + S.buildLive`, NAV's `card` (title **NAV** — the public name
+  of the home scene stays) and `post.kaleido: 0`**. `assets/scenes/nav/` (name `nav`, the v0.33 navigator) is **id 8, key `9`,
+  `home: false`, `always: true`, `score: () => 0`, no `card`** — the control, forced-only, so key `1` against key `9` still compares one
+  navigator state mid-track (§97's reason for `always: true`, unchanged). `main.js` registers `nav` before `nav2` as before, so the
+  last `home: true` is id 0 (`core/scenes.js:50`, the §97 gotcha, now working for us). Names stayed as the user says them (`nav2`
+  at 0, `nav` at 8): nothing in check.js or the HUD needed otherwise; the HUD prefix and `rt.label` are the scene's own.
+
+  | | id | key | home | always | score | card | variants |
+  |---|---|---|---|---|---|---|---|
+  | `nav2` — the retuned navigator (`assets/scenes/nav2/`) | 0 | `1` | **true** | true | `0.5 + buildLive` | NAV · `site/thumbs/nav2.jpg` | — |
+  | `nav` — the v0.33 navigator (`assets/scenes/nav/`) | 8 | `9` | false | true | 0 | — | DRUM id 4 (base 8) |
+
+- **DRUM (id 4).** Stays a variant of `nav` — the code that draws it (`uDrum` in the v0.33 Julia shader) is there, an id registers once,
+  and the least churn is no move. It bids 0 (§93), is not home, renders base 8 now; its pair `0bff278a / 05bf21c0` is unchanged.
+- **The thumb.** `core/landing.js` loads `thumbs/<name>.jpg` — by `name`, not by the card title — so the tile needed
+  `site/thumbs/nav2.jpg`: `PORT=8871 tools/thumbs.sh "0:360"` (headless, one shot, the frame the s0 reference vouches for; 16.7 kB).
+  `site/thumbs/nav.jpg` stays: `site/whats-new.html` (built from `releases.json`, untouched) shows it for v0.31–v0.33.
+- **The kaleidoscope (step 1, commit `46fbe5c`).** `post.kaleido: 1 → 0` on the retuned scene only; `effects/composite.js` uploads
+  `uFx.z = FX.kal · kd` and the shader's `if (uFx.z > .01)` never runs — fully off, as TORUS2 / GIELIS / FEIGEN. The s0 / s8 pairs
+  cannot prove it: `core/post.js` arms `FX.kal` only on a `peak` arc, beats 12–15 of 16, `eS > .45`, no drop ringing — on the fake
+  timeline one window ending at f942. Proof at f930 (`FX.kal` .498): kaleido 0 `fd72bf62` vs `&post=nav2.kaleido=1` `bab7e883`.
+  NAV (now id 8) keeps 1.
+- **Browser (headless, `#test`, no scene forced).** `SC.home 0`, `REG[0] nav2 home true`, `REG[8] nav home false`, `REG[4] base 8
+  drum`, `CARD.home === REG[0].scene.state`, bids 0 → .5 / 8 → 0, kaleido 0 → 0 / 8 → 1; key `9` → forced 8 `nav`, `n` → 9 MAXWELL,
+  key `1` → forced 0 `nav2`, key `0` → −1, errs []. The landing has the NAV tile (id 0) and no tile for id 8.
+- **The director's proof** (`ACC=v0.34 tools/director-trace.sh s102 fake`, 72 s CLOCK=1, `tools/accept/v0.34/director-fake-s102.txt`,
+  `director-stats.js`): scene sequence **0 1 0 3** — the three drops (13 / 37 / 61 s) hard-cut to 0, two SWITCH@ on the bar line (DUST
+  at 30.98, TORUS2 at 69.68, both `phrase`), 11 RESTORE@ (10 to 0, 1 to 1), 65 of 72 one-second lines on `sc0`, **id 8 never** — the
+  roster is id 0 + DUST + TORUS2 as §93's addendum says, and the drop / build / silence precedence reads `SC.home` (`updateScenes`'s
+  `H = REG[SC.home].scene.rt`), so NAV's drop ownership (§95) moved with the home without a line changed.
+- **The md5s** (`PORT=8871 tools/scene-md5.sh`, CLOCK=1 GPU=1, errs [] hop 840 row 72):
+
+  | | s0-f360 / s0-f840 | s8-f360 / s8-f840 | s4 |
+  |---|---|---|---|
+  | before (§101 tree, `s102a` after step 1) | `fb74fee4…` / `8a0715df…` | `a8de2f03…` / `7a65fd16…` | `0bff278a…` / `05bf21c0…` |
+  | after the swap, run 1 (`s102b`) | `a8de2f034a7b2d3a1219f75f7d507a69` / `7a65fd16f9d697cb97f6cfbd3db90c74` | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | unchanged |
+  | run 2 (`s102c`) | identical | identical | — |
+
+  Each navigator's pair moved with it across the ids to the byte (the §97 symmetry: a forced scene at 8 or at 0 sees the same
+  frames). **The full list** (`s102full`, HARNESS "What to re-prove" for a registration change) equals the re-based reference on all
+  24 lines: no other scene moved. **The mixs 0→3 at f178 moved**, `cb3d4048 → 724bbd72` (twice) — the fade's source is the retuned
+  picture now, s3 is unchanged; `tools/accept/v0.34/trans-mixs-md5.txt` re-based with the history line.
+- **The harness.** `tools/accept.sh` "== nav2": both pairs (s0 = the retune, s8 = the control) against the list, the hud / nonFinite
+  line on each, the continuity monitor on the home's state (`CARD.NAV = REG[0].scene.state`, `fake=0&scene=0`: `n 1781 fast 0 max
+  .0232 viol [] errs []`), the montage of the four. `tools/accept/v0.34/scene-md5-v034.txt` re-based **in place** (§83's rule asks a
+  new directory per re-base; v0.34 is today's unreleased directory, made by §97 and never tagged — the header carries both re-bases;
+  `v0.35/` is the tag's) — note the §99–§101 retunes never re-based their s8 line, so the list was already stale against the §101
+  tree. `tools/parity.js`: cardioid3's navigator is the v0.33 one, so the ew side forces `&scene=NAVID` (default 8) and samples
+  `REG[NAVID].scene.state` (`CARD.home` would be the retuned walk); `sc` reads the forced id as 0 on both sides. Result: **the
+  pre-existing §83 / §84 / §91 MISMATCH line to the last digit** — `max |diff| 7.852214593751443 · 72 fields`, `nav.c nav.mode nav.h
+  nav.alpha nav.th nav.lg nav.par nav.vtime nav.kick nav.cyc.has` (NAV reads `buildLive` / `dropLiveEvt` since §54, v3 reads `build` /
+  `dropEvt`), the MS fields 0 diff; the pre-swap commit `1974e85` in a throwaway worktree gives the same line — the v0.33 navigator
+  at id 8 is sample-for-sample what it was at id 0. `tools/test_nav2.js`: the registration asserts after the swap (ids, home, the
+  bid, the card, DRUM on the control, kaleido 0 vs 1), and each navigator is driven as the logical scene **at its own id**
+  (`isLogical` gates the loud exit — with `logical: 0` on both, the control never exits and pass A still "passes"; a trap). Pass A
+  (knobs off) is still the control to the bit, pass B viol []. `npm test` exit 0; `node tools/check.js` 0 fail, 8 warn (the
+  thumb warning came and went with `nav2.jpg`).
+- **Docs.** CONTRACTS §1.8 (0 nav2 home · 4 drum of 8 · 8 nav the control); `site/about.html` (NAV describes the retuned walk; "key 9
+  is the v0.33 navigator, kept as the control"); `EYE-GUIDE.md` (keys swapped, the knobs apply to the scene not an id);
+  `NAV2-RETUNE-PLAN.md` step 4 DONE note; HARNESS (the lumtrace example `--scene=0`, the list's re-base, parity's `NAVID`);
+  `tools/accept/v0.13/{nav2-window,det13}.py` read `REG[0]` now (the §97 pointer, trivial); `look2.js`'s header; `navkicks.js` records
+  on `&scene=0` (MS is scene-independent, the comment says so); `lumtrace.js`'s usage line.
+- **Not done.** No tag, no `package.json` / `version.js` bump, `releases.json` untouched, nothing pushed or deployed (the user's word).
+  `accept.sh` in full was not run (25 min); every piece that reads nav / nav2 was run by hand above. `NEXT-SESSION-PROMPT.md` still
+  describes the pre-swap tree. The user's eye on the swap itself (the landing tile is the f360 frame; the first look at key `1` as
+  home in stream mode is owed).
+- **Open, carried from §101.** The two mid-excursion exterior steps on the full track (the spring family, not the launch). The
+  root-crossing hazard on the v0.33 navigator's own retarget line — now id 8, still the control, left. A per-ladder quiet candidate for
+  1/2 (all four read Q .69) if the eye wants calm there. The six EYE-GUIDE windows are now read on key `1`.
