@@ -9864,4 +9864,30 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   traces; `before.md` is now HEAD 9658d8f's grammar replayed by the final tool). Tests: `test_fluid` params (buildLive 1 with no sub →
   .3; with the sub seen → .05; .4 → the mapping's .62; .9 with no sub → .3; the latch expires 8 bars after the sub; tongueAmbig 1 →
   .3, .5 → .525), the music block prints the deep-void share per trace and asserts Comptine and the pad never under .3, Vienna's dream
-  and SeeYouDrop's build 1 under .1. check 0 fail, npm test exit 0 (`test_fluid` 182 ok).
+  and SeeYouDrop's build 1 under .1. check 0 fail, npm test exit 0 (`test_fluid` 183 ok).
+- **Item 5 — the clear is confirmed by the bass coming back, once per bar** (`CLEAR_PEND` 1.5 beats, `CLEAR_REF` 4 beats; `mkState` gains
+  `pendLeft`, `refLeft`; `plan()` returns `drop` 1 on the frame a clear is confirmed; `scenes/fluid/index.js` throws its ring on the frame
+  `ctx.fluid.params.dyeDiss` first reads the clear's 12 instead of its own slam rule — its `feats` lose `dropLiveEvt mapDropEvt mapOn
+  dropEvt`, `help.js` the four rows). Both triggers stay, in both modes (`dropLiveEvt || mapDropEvt`: the map fires SeeYouDrop's drop 1
+  where the detector never does; the detector fires Vienna's 85.33 s return where the map has no line — §10.1's "map only in file mode"
+  would have lost Vienna's one clear in the mode the user hears, so it was not built that way), but a trigger only ARMS a pending window
+  of 1.5 beats; the clear and the impulse fire on the first frame inside it that the sub emitter opens, then 4 beats of refractory (a
+  trigger inside it is dropped; one inside a pending window re-arms it). The probe that chose the sub as the witness: every true trigger
+  on the library opens the gate within 0.00–0.03 s (SeeYouDrop ×4, Vienna, IBelongHere's four map lines, WhoLikesToParty ×6); IBelongHere's
+  four live arms in its 144–178 s breakdown have bass .07–.36 and no sub, Comptine's six (five live, one map line) no sub ever —
+  `bass ≥ .5` alone would have confirmed four of Comptine's (its left hand reads .55–.89). **The clears, before → after (whole tracks,
+  file mode / live lanes): SeeYouDrop 57.6 105.6 → 57.62 105.63 / 57.65 105.67 (1–3 frames after the trigger, the sub's frame) · Vienna
+  85.33 → 85.33 / 85.4 · IBelongHere 9 (the five map lines + the four false arms) → 5 (16.43 32.68 65.23 130.3 179.13 — the breakdown's
+  four GONE: 4 → 0) and on the live lanes 5 → 1 (179.18: the 178.58 live arm confirmed by the sub at 179.13) · WhoLikesToParty 6 (two per
+  drop) → 3 (56.5 130.35 187.78: one per drop; the map's line a bar early is the one that wins in file mode — §109's open map finding,
+  not the grammar's) / 57.52 131.38 188.78 · Comptine 5 → 0 / 5 → 0 · CyborgNinja, Malicious, the pad 0 → 0.** **The shots**:
+  IBelongHere's falsedropp-157.5 — the survey's ruler for this item — **24.2 → 35.5** (p99 52 → 137: the breakdown's pool stays; before, the
+  empty pool with the ring over nothing), falsedrop-157.0 35.9 → 34.1, returnp-179.2 22.0 → 25.6 (the clear now at 179.13, four frames
+  before the shot, instead of 178.58); WhoLikesToParty's drop-57.0 23.8 → 23.3, drop2-131.0 24.9 → 25.2, drop3-188.0 31.4 → 25.3 (one
+  clear each), its grooves 61–75 → 48–57 (item 1's budget: mid-112 75 → 53, groove2-160 74 → 49, end-252 71 → 57).
+  `tools/work/fluid-s111/{WhoLikesToParty,IBelongHere}-i5/shots/`. Tests: `test_fluid` drop (pending → the sub confirms 11 frames later;
+  the countdown; a second trigger inside the refractory → nothing, after the bar → at once; no sub for 1 s → never, and not after the
+  window; trigger + sub on one frame → that frame), mapdrop (the line with the sub clears; both on one frame → one impulse; dropEvt never),
+  the music block: every clear within 1.5 beats of a trigger with the sub open and held a beat, and the clears per trace ARE the expected
+  list (SeeYouDrop 2, Vienna 1, WhoLikesToParty 1 in 110 s, IBelongHere's three map lines, Comptine / CyborgNinja / the pad none).
+  check 0 fail, npm test exit 0 (`test_fluid` 200 ok).

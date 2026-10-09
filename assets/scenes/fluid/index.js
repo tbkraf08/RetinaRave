@@ -12,10 +12,10 @@
 // READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js); it adds two injections of its own through
 // ctx.fluid.splat, gated on being on screen (the pool is one under every scene): a ring of six droplets outward on the
 // drop and a sparkle on the surface while the hats are up. Its own reads are exactly `feats`: the loudness ladder for the
-// exposure (math/loudlight.js, as NAV2), the drop, the hats and presence. THE DROP IS CHLADNI's SLAM RULE — the map's bar line
-// in file mode, the live detector or the extractor's drop otherwise (mapDropEvt || dropLiveEvt || (mapOn <= .5 && dropEvt)):
-// the plan's dropLiveEvt alone never fires on SeeYouDrop's drop 1 in file mode (the §106 strip: dropEvt f578, mapDropEvt f579,
-// dropLiveEvt never), and the grammar's own clear is keyed on it alone — reported in §106 for the user's decision. A scene must not import core/fluid (check.js):
+// exposure (math/loudlight.js, as NAV2), the hats and presence. THE RING FOLLOWS THE GRAMMAR'S CLEAR (§111 item 5): the frame
+// `ctx.fluid.params.dyeDiss` reaches the clear's value is the frame the substrate confirmed a drop (a trigger — the map's bar line
+// or the live detector — with the sub emitter opening within 1.5 beats; one per bar), so the ring is never thrown over a pool that
+// did not clear (IBelongHere's four false live arms, Comptine's six: the §106–§109 slam rule threw it on every one). A scene must not import core/fluid (check.js):
 // everything through ctx.fluid. The plan's `ctx.fluid.params.curl += 10` is NOT done: the step runs BEFORE update() and
 // rewrites params from the grammar, so a scene's write there is overwritten before any step reads it (reported, §106).
 //
@@ -48,7 +48,8 @@ const HAT_DYE = 0.2;       // its ink at hat2 1 (white-ish: a sparkle, not the k
 const HAT_RAD = 0.4;       // its radius × the grammar's
 const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15..0.85 on the scene's own count
 
-const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0 };
+const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
+const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0 };
 let ASP = 16 / 9;
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
@@ -66,7 +67,7 @@ const SELF = {
   id: 12,
   tag: 'the fluid substrate as itself — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the key colours it, the drop clears it',
   card: { title: 'FLUID', blurb: 'ink in a pool: the bass note is where it enters, every kick lifts it, the snare shears it, the key is its colour' },
-  feats: ['loudRel', 'loudRange', 'loudAbs', 'dropLiveEvt', 'mapDropEvt', 'mapOn', 'dropEvt', 'hat2', 'presence'],
+  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence'],
   cuts: 'continuous',
   rt: {},
   hooks: { flinfo, fldbg },
@@ -99,7 +100,8 @@ const SELF = {
     U.nSplat = 0;
     if (U.vis > 0 && U.on) {                       // the pool is one under every scene: only an on-screen FLUID stirs it
       const g = MS.presence, rad = F.params.radius;
-      const drop = MS.mapDropEvt || MS.dropLiveEvt || (MS.mapOn <= 0.5 && MS.dropEvt); // the slam rule (CHLADNI's): where the drop IS
+      const clearing = F.params.dyeDiss >= CLEAR_DD ? 1 : 0, drop = clearing && !U.clearing;   // §111: the grammar's confirmed clear, on its first frame
+      U.clearing = clearing;
       if (drop) {                                  // the ring: six droplets thrown outward — the picture empties from the middle
         U.ring = 1;
         for (let i = 0; i < RING_N; i++) {
@@ -115,7 +117,7 @@ const SELF = {
         F.splat(0.15 + 0.7 * frac(U.nHat * GOLD), HAT_Y, 0, HAT_V * g, [k, k, k * 1.1], rad * HAT_RAD);
         U.nSplat++;
       }
-    }
+    } else U.clearing = F && F.on && F.params.dyeDiss >= CLEAR_DD ? 1 : 0;   // off screen: track it, never splat
     this.rt.label = 'pool expo ' + U.expo.toFixed(2);
     const st = this.state;
     st.cPath[0] = U.expo;

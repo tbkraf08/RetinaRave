@@ -73,6 +73,10 @@ export const K = {
   VOID_FLOOR: 0.3, // §111 the void's dissipation never goes under this unless the void is LATCHED on drums: buildLive > .5 with the sub
   VOID_BARS: 8,    //   seen within VOID_BARS bars — the tongues' ambiguity is a clock-lock measure (dyeDiss < .5 on 30–48 % of four tracks
                    //   from it alone) and a piano crescendo arms buildLive 1.0; a real build (SeeYouDrop's, Vienna's dream) had the bass
+  CLEAR_PEND: 1.5, // §111 the clear is CONFIRMED: a trigger (dropLiveEvt || mapDropEvt) waits up to CLEAR_PEND beats for the sub emitter to
+  CLEAR_REF: 4,    //   open — every true drop on the library brings it within 0.03 s, IBelongHere's four false live arms and Comptine's six
+                   //   never — then CLEAR_REF beats of refractory (WhoLikesToParty's map line and live detector fired 1.0–1.1 s apart: two
+                   //   clears per drop, the second emptying what the first's ring and the drop's kicks had just put back)
   HARM_TAU: 15,    //   s: the fallback hue (no trusted key yet) is the HARMONY'S CENTRE — harmAngle's unit vector and the mode, each an ema this
                    //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
 };
@@ -82,7 +86,8 @@ export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, sna
   pin: null, ev: new Float64Array(24),                        //   the key the pool is coloured by ({k, m}: the one with the evidence), null until one is trusted; the 24 keys' evidence
   hx: 0, hy: 0, mSlow: 0,                                     //   the harmony's centre (HARM_TAU): harmAngle's unit vector and the mode, eased
   lpSlow: 0,                                                  //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
-  subAge: 1e9 });                                             //   s since the sub emitter was last open (§111 item 4: the void's latch)
+  subAge: 1e9,                                                //   s since the sub emitter was last open (§111 item 4: the void's latch)
+  pendLeft: 0, refLeft: 0 });                                 //   the pending clear's window and the refractory, s (§111 item 5)
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -96,7 +101,7 @@ function rank(buf, amp) {
 const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
 
 // plan(S, dt, st) → { splats: [{x, y, dx, dy, r, g, b, rad, k}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
-// gain, colour: [r, g, b] (linear), floor, chord, ink }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
+// gain, colour: [r, g, b] (linear), floor, chord, ink, drop }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
 // floor, drop, each tagged with its kind `k` (tools/fluid-replay.js / fluid-tracks.js read it). `st` is mkState()'s (the anchor's ease,
 // the drop's countdown, the last emitter x, the last frame's `snare` level, the chord refractory, the §111 ranks / bucket / ink rate / key).
 // §111: the pool's colour never reads LOOK's mood (before: the key at keyConf ≥ .3, else the anchor slid to LOOK.mood.hue — the mood
@@ -191,11 +196,23 @@ export function plan(S, dt, st) {
   st.inkRate = ema(st.inkRate, ink / dt, dt, K.INK_TAU);
   // the drop: the pool clears in one beat (the countdown runs on dt, not on a clock field). The trigger is the live detector
   // OR the map's bar line (§107): in file mode with the map built the live detector never fires on SeeYouDrop's drop 1 and
-  // `mapDropEvt` does (frame-exact); live mode has no map, so the detector is the whole truth there. NEVER `dropEvt` — it
-  // fires inside Vienna's dream (CONTRACTS §1.18) and a missed live drop is the detector's gap to close, not the grammar's.
-  if (S.dropLiveEvt || S.mapDropEvt) {
+  // `mapDropEvt` does (frame-exact); live mode has no map, so the detector is the whole truth there; Vienna's return at 85.33 s has
+  // no map line and the detector fires (file mode too) — so both triggers stay, in both modes. NEVER `dropEvt` — it fires inside
+  // Vienna's dream (CONTRACTS §1.18) and a missed live drop is the detector's gap to close, not the grammar's.
+  // §111 item 5: a trigger only ARMS a pending clear; the clear and the impulse fire on the first frame within CLEAR_PEND beats that
+  // the sub emitter opens — a drop IS the bass slamming back (every true drop on the library opens the gate within 0.03 s; the live
+  // detector's false arms on IBelongHere's breakdown (bass .07–.36, no sub) and Comptine's piano (no sub ever) never do), then CLEAR_REF
+  // beats of refractory so the map's line and the live detector a second apart are one clear, not two. A trigger inside the refractory
+  // is dropped; a trigger inside a pending window re-arms it.
+  const beat = 60 / Math.max(60, S.bpm);
+  st.refLeft = Math.max(0, st.refLeft - dt);
+  st.pendLeft = Math.max(0, st.pendLeft - dt);
+  if ((S.dropLiveEvt || S.mapDropEvt) && st.refLeft <= 0) st.pendLeft = K.CLEAR_PEND * beat;
+  let drop = 0;
+  if (st.pendLeft > 0 && S.subGate > 0) {
+    drop = 1; st.pendLeft = 0; st.refLeft = K.CLEAR_REF * beat;
     add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4, 'drop');
-    st.clearLeft = 60 / Math.max(60, S.bpm);
+    st.clearLeft = beat;
   } else st.clearLeft = Math.max(0, st.clearLeft - dt);
   // the beat's breath on the whole pool
   const c = Math.cos(Math.PI * S.beatPhase), c2 = c * c;
@@ -220,6 +237,6 @@ export function plan(S, dt, st) {
     pressure: 0.8,
     radius: K.RADIUS,
   };
-  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate — for the replay rulers
+  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate, drop }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate, drop = 1 on the frame a clear is confirmed — for the replay rulers
 
 }

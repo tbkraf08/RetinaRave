@@ -17,7 +17,8 @@
 //              §111 out of a token bucket: 3 tokens, HAT_RATE back per second — a burst's first three, 10 s of hats ≤ HAT_RATE·10 + 3
 //   budget     §111 the ink budget: Σ dye·(rad/RADIUS)² per second (ema INK_TAU 12 s) above INK_BUDGET scales dyeDiss (the void's .05 too); the drop not counted;
 //              a 5 s burst reaches a third of its rate (a build passes), 60 s of nothing decays it
-//   drop       dropLiveEvt → dyeDiss DROP_DISS (12) for one beat (60/bpm s on dt), then back to the void mapping; the impulse radius ×4
+//   drop       §111: dropLiveEvt ARMS a pending clear; the sub emitter opening within CLEAR_PEND beats confirms it → dyeDiss DROP_DISS (12) for
+//              one beat (60/bpm s on dt) + the impulse (radius ×4), then CLEAR_REF beats of refractory; no sub inside the window → no clear
 //   mapdrop    §107: a mapDropEvt frame arms the same clear (file mode's bar line); a dropEvt-only frame does NOT (CONTRACTS §1.18: not a clear)
 //   floor      §108: a pad-only frame (mid up, no events) → one dye-only splat at the key's fifths sector, y .5, radius ×2, dx = dy = 0;
 //              the knee (mid .1 → nothing); silence → nothing; 120 pad frames → never a velocity; the §107 clear holds it under 5 %
@@ -35,8 +36,9 @@
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
-//              a frame with presence 0 moves nothing and inks nothing; the drop clear (dyeDiss DROP_DISS) is armed ON the frame of
-//              every mapDropEvt / dropLiveEvt and held for one beat; on SeeYouDrop (the tuning track) mapDropEvt lands within one
+//              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
+//              mapDropEvt / dropLiveEvt with the sub open and holds a beat, and the clears per trace are the expected list (§111: one per
+//              drop — SeeYouDrop 2, Vienna 1, WhoLikesToParty 1 in 110 s, IBelongHere's three map lines, Comptine none); on SeeYouDrop (the tuning track) mapDropEvt lands within one
 //              frame of each truth drop (57.606 / 105.596, tools/truth/SeeYouDrop.json); the pad take: nothing moves or inks while
 //              the room is silent (presence 0, the first 2.5 s), every second from 3 s on injects (§108's 22 / 22); the numbers per track print;
 //              §111 the key: IBelongHere D minor from < 70 s to the end (≤ 2 pins), one hue over the intro and one over the grooves; WhoLikesToParty
@@ -210,30 +212,46 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   near(K.INK_BUDGET, 14, 1e-9, 'budget: INK_BUDGET 14 (SeeYouDrop\'s groove p50 12 area-weighted ink/s; CyborgNinja 31 → ×2.2 — tools/fluid-tracks.js)');
 }
 
-// drop
+// drop (§111 item 5: a trigger ARMS a pending clear; the sub emitter opening within CLEAR_PEND beats CONFIRMS it — the clear, the impulse,
+// then CLEAR_REF beats of refractory; no sub → no clear)
 {
   const st = mkState();
   const d = run(base({ dropLiveEvt: true, bpm: 120 }), st);
-  ok(d.splats.length === 1 && d.splats[0].rad === K.RADIUS * 4 && d.splats[0].dy === K.DROP_V, 'drop: one impulse, radius ×4, dy DROP_V');
-  ok(d.params.dyeDiss === K.DROP_DISS, 'drop: dyeDiss ' + d.params.dyeDiss + ' on the frame');
-  let n = 0, p;
+  ok(d.splats.length === 0 && d.params.dyeDiss === 1 && d.drop === 0, 'drop: a dropLiveEvt frame with no sub → nothing yet (pending; dyeDiss ' + d.params.dyeDiss + ', ' + d.splats.length + ' splats)');
+  for (let i = 0; i < 10; i++) run(base(), st);
+  const c = run(base({ subGate: 1, subNote: 0, bpm: 120 }), st);
+  ok(c.drop === 1 && c.params.dyeDiss === K.DROP_DISS && c.splats.some((p) => p.k === 'drop' && p.rad === K.RADIUS * 4 && p.dy === K.DROP_V), 'drop: the sub opening 11 frames later confirms it — dyeDiss ' + c.params.dyeDiss + ', the impulse (radius ×4, dy DROP_V) on that frame');
+  let n = 1, p;
   do { p = run(base({ buildLive: 0 }), st); n++; } while (p.params.dyeDiss === K.DROP_DISS && n < 100);
-  near(n, 30, 1, 'drop: the clear lasts one beat at 120 bpm (' + n + ' frames)');
+  near(n, 31, 1, 'drop: the clear lasts the confirmation frame + one beat at 120 bpm (' + n + ' frames)');
   ok(p.params.dyeDiss === 1, 'drop: then back to the void mapping (' + p.params.dyeDiss + ')');
+  const r = run(base({ dropLiveEvt: true, subGate: 1, subNote: 0, bpm: 120 }), st);
+  ok(r.drop === 0 && r.params.dyeDiss === 1, 'drop: a second trigger 0.5 s after a confirmed clear is inside the refractory (CLEAR_REF ' + K.CLEAR_REF + ' beats) → nothing');
+  for (let i = 0; i < 60 * 2 + 5; i++) run(base(), st);
+  const r2 = run(base({ dropLiveEvt: true, subGate: 1, subNote: 0, bpm: 120 }), st);
+  ok(r2.drop === 1, 'drop: after the bar a trigger with the sub on the same frame clears at once');
+  const st2 = mkState();
+  run(base({ dropLiveEvt: true, bpm: 120 }), st2);
+  let fired = 0; for (let i = 0; i < 60; i++) fired += run(base({ bpm: 120 }), st2).drop;
+  const late = run(base({ subGate: 1, subNote: 0, bpm: 120 }), st2);
+  ok(fired === 0 && late.drop === 0, 'drop: a trigger with no sub for 1 s (> CLEAR_PEND ' + K.CLEAR_PEND + ' beats) never clears, and a sub after the window does not either (IBelongHere\'s breakdown arms, Comptine\'s piano)');
+  const st3 = mkState();
+  const same = run(base({ dropLiveEvt: true, subGate: 1, subNote: 0, bpm: 120 }), st3);
+  ok(same.drop === 1 && same.params.dyeDiss === K.DROP_DISS, 'drop: the trigger and the sub on one frame → the clear on that frame (SeeYouDrop\'s drops: the sub within 0–2 frames)');
 }
 
-// mapdrop (§107): the map's bar line arms the clear exactly as the live detector does; the extractor's dropEvt never does
+// mapdrop (§107 + §111): the map's bar line arms the clear exactly as the live detector does; the extractor's dropEvt never does
 {
   const st = mkState();
-  const m = run(base({ mapDropEvt: true, dropLiveEvt: false, bpm: 120 }), st);
-  ok(m.splats.length === 1 && m.splats[0].rad === K.RADIUS * 4 && m.params.dyeDiss === K.DROP_DISS, 'mapdrop: a mapDropEvt frame arms the clear (dyeDiss ' + m.params.dyeDiss + ', ' + m.splats.length + ' splat)');
-  let n = 0, p;
+  const m = run(base({ mapDropEvt: true, dropLiveEvt: false, subGate: 1, subNote: 0, bpm: 120 }), st);
+  ok(m.drop === 1 && m.splats.some((p) => p.k === 'drop') && m.params.dyeDiss === K.DROP_DISS, 'mapdrop: a mapDropEvt frame (the sub there) clears (dyeDiss ' + m.params.dyeDiss + ')');
+  let n = 1, p;
   do { p = run(base(), st); n++; } while (p.params.dyeDiss === K.DROP_DISS && n < 100);
-  near(n, 30, 1, 'mapdrop: the same one-beat countdown (' + n + ' frames)');
-  const both = run(base({ mapDropEvt: true, dropLiveEvt: true }), mkState());
-  ok(both.splats.length === 1, 'mapdrop: both on one frame → still one impulse');
-  const e = run(base({ dropEvt: true, dropStrength: 1 }), mkState());
-  ok(e.splats.length === 0 && e.params.dyeDiss === 1, 'mapdrop: a dropEvt-only frame does NOT arm it (dyeDiss ' + e.params.dyeDiss + ', ' + e.splats.length + ' splats)');
+  near(n, 31, 1, 'mapdrop: the same countdown (' + n + ' frames)');
+  const both = run(base({ mapDropEvt: true, dropLiveEvt: true, subGate: 1, subNote: 0 }), mkState());
+  ok(both.splats.filter((q) => q.k === 'drop').length === 1, 'mapdrop: both on one frame → still one impulse');
+  const e = run(base({ dropEvt: true, dropStrength: 1, subGate: 1, subNote: 0 }), mkState());
+  ok(e.drop === 0 && e.params.dyeDiss === 1, 'mapdrop: a dropEvt-only frame does NOT arm it (dyeDiss ' + e.params.dyeDiss + ')');
   ok(!FLUID_FEATS.includes('dropEvt') && FLUID_FEATS.includes('mapDropEvt'), 'mapdrop: FLUID_FEATS has mapDropEvt and not dropEvt');
   ok(K.DROP_DISS === 12 && Math.pow(1 / (1 + K.DROP_DISS * DT), 24) < 0.02, 'mapdrop: DROP_DISS 12 keeps < 2 % of the ink after 24 frames (' + Math.pow(1 / (1 + K.DROP_DISS * DT), 24).toFixed(4) + ')');
 }
@@ -406,17 +424,24 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     const silentFrames = rows.filter((r) => r.S.presence === 0);
     const moved = silentFrames.filter((r) => r.P.splats.some((p) => Math.abs(p.dx) + Math.abs(p.dy) + p.r + p.g + p.b > 0)).length;
     const drops = rows.filter((r) => r.S.mapDropEvt || r.S.dropLiveEvt);
-    let armed = 0, held = 0;
-    for (const r of drops) {
-      const i = rows.indexOf(r); if (r.P.params.dyeDiss === K.DROP_DISS) armed++;
-      const n = beat(r.S.bpm); let h = 0; for (let j = i; j < Math.min(rows.length, i + n - 1); j++) if (rows[j].P.params.dyeDiss === K.DROP_DISS) h++;
+    // §111 item 5: the clears are the frames the grammar CONFIRMED (P.drop): each within CLEAR_PEND beats after a trigger with the sub open, held a beat
+    const clears = rows.filter((r) => r.P.drop === 1);
+    let held = 0, confirmedOk = 0;
+    for (const r of clears) {
+      const i = rows.indexOf(r), n = beat(r.S.bpm); let h = 0; for (let j = i; j < Math.min(rows.length, i + n - 1); j++) if (rows[j].P.params.dyeDiss === K.DROP_DISS) h++;
       if (h >= n - 2) held++;
+      if (r.S.subGate > 0 && drops.some((d) => r.t - d.t >= -1e-9 && r.t - d.t <= K.CLEAR_PEND * 60 / Math.max(60, r.S.bpm) + 1e-6)) confirmedOk++;
     }
-    const mapDrops = rows.filter((r) => r.S.mapDropEvt).map((r) => +r.t.toFixed(3)), liveDrops = rows.filter((r) => r.S.dropLiveEvt).map((r) => +r.t.toFixed(3));
-    console.log(`     ${name.padEnd(22)} ${rows.length} frames · music s ${music.length} / ${secs.length} · inject ${inj.length} (${pct.toFixed(1)} %) · silent frames ${silentFrames.length} moved ${moved} · drops armed ${armed}/${drops.length} held ${held} · mapDropEvt ${JSON.stringify(mapDrops)} dropLiveEvt ${JSON.stringify(liveDrops)}`);
+    const mapDrops = rows.filter((r) => r.S.mapDropEvt).map((r) => +r.t.toFixed(3)), liveDrops = rows.filter((r) => r.S.dropLiveEvt).map((r) => +r.t.toFixed(3)), clearT = clears.map((r) => +r.t.toFixed(2));
+    console.log(`     ${name.padEnd(22)} ${rows.length} frames · music s ${music.length} / ${secs.length} · inject ${inj.length} (${pct.toFixed(1)} %) · silent frames ${silentFrames.length} moved ${moved} · triggers ${drops.length} (mapDropEvt ${JSON.stringify(mapDrops)} dropLiveEvt ${JSON.stringify(liveDrops)}) · clears ${JSON.stringify(clearT)} held ${held}`);
     ok(pct >= 95, `music: ${name} injects on ≥ 95 % of the seconds with music (${inj.length} / ${music.length} = ${pct.toFixed(1)} %)`);
     ok(moved === 0, `music: ${name} — a frame with presence 0 moves nothing and inks nothing (${moved} of ${silentFrames.length} silent frames did)`);
-    ok(armed === drops.length && held === drops.length, `music: ${name} — the clear is armed ON every mapDropEvt / dropLiveEvt frame and held a beat (${armed} / ${held} of ${drops.length})`);
+    ok(held === clears.length && confirmedOk === clears.length, `music: ${name} — every clear sits within ${K.CLEAR_PEND} beats of a trigger with the sub open, and holds a beat (${confirmedOk} / ${held} of ${clears.length})`);
+    const expectClears = { 'SeeYouDrop-map1': [57.6, 105.6], 'SeeYouDrop-map0': [57.6, 105.6], 'Vienna-map1': [85.34], 'Vienna-map0': [85.34], 'WhoLikesToParty-map1': [56.5], 'WhoLikesToParty-map0': [57.52], 'IBelongHere-map1': [16.4, 32.67, 65.22], 'IBelongHere-map0': [], 'Comptine-map1': [], 'Comptine-map0': [], 'CyborgNinja-map1': [], 'CyborgNinja-map0': [], 'rec-map0': [] };
+    if (name in expectClears) {
+      const want = expectClears[name], okN = clearT.length === want.length && want.every((w) => clearT.some((c) => Math.abs(c - w) <= 0.15));
+      ok(okN, `music: ${name} — the clears are ${JSON.stringify(want)} ± .15 s → ${JSON.stringify(clearT)} (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)`);
+    }
     if (name === 'SeeYouDrop-map1') {
       const truth = WIN.SeeYouDrop.drops, near = truth.map((d) => mapDrops.some((m) => Math.abs(m - d) <= 1 / 60 + 1e-6));
       ok(near.every(Boolean) && mapDrops.length === truth.length, `music: SeeYouDrop's mapDropEvt lands within one frame of each truth drop ${JSON.stringify(truth)} → ${JSON.stringify(mapDrops)}`);
