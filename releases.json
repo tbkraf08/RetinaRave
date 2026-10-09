@@ -1,5 +1,26 @@
 [
  {
+  "version": "0.34.0",
+  "tag": "v0.34",
+  "date": "2026-10-08",
+  "class": "scene",
+  "title": "NAV moves with the music",
+  "body": "The home scene, NAV, was rebuilt to move with the music. The picture no longer washes out to white at the loudest bars: the brightest moments are now the most detailed, with a dark interior and a bright rim, and white is spent on the snare and the drop. The colours sit on the song’s key — minor keys land on green — and step once per phrase instead of drifting around the wheel. The set jumps on the real kicks, about once a bar, breathes with the beat, presses to the rim when the sub-bass is in and relaxes when it drops out, leans with the bass note, and the exterior filaments turn once per bar instead of twice a beat. At each phrase it walks to a new part of the set instead of sitting in one place for a whole section, preferring busier shapes when the music is loud and calmer ones when it is quiet, and every drop lands on a new ray. The kaleidoscope mirror is off on NAV, so the set itself is what you see. The previous navigator is still a key press away on 9 for anyone who prefers it.",
+  "clip": null,
+  "decisions": [
+   "§97",
+   "§98",
+   "§99",
+   "§100",
+   "§101",
+   "§102"
+  ],
+  "scenes": [
+   0,
+   8
+  ]
+ },
+ {
   "version": "0.33.0",
   "tag": "v0.33",
   "date": "2026-10-06",

@@ -9012,3 +9012,22 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
 - **Open, carried from §101.** The two mid-excursion exterior steps on the full track (the spring family, not the launch). The
   root-crossing hazard on the v0.33 navigator's own retarget line — now id 8, still the control, left. A per-ladder quiet candidate for
   1/2 (all four read Q .69) if the eye wants calm there. The six EYE-GUIDE windows are now read on key `1`.
+
+## §103 v0.34 tagged — the navigator moves with the music (2026-10-08 ~23:35 EST, one worker; the user: *"do the work now, then tag and deploy"*)
+
+- **The recipe (§91's ritual, the one that worked for v0.30–v0.33).** `package.json` + `assets/core/version.js` 0.33.0 → 0.34.0 ·
+  `releases.json` top entry (`v0.34`, 2026-10-08, class `scene`, title *"NAV moves with the music"*, decisions §97–§102, scenes `[0, 8]`,
+  no clip) · `node tools/whatsnew.js` (32 entries → `site/whats-new.html`, the card's `#newin` line refreshed) · `node tools/bundle.js
+  releases/retinarave-v0.34.html` (171 modules, 1642 KB — the frozen page, the first since v0.31; v0.32 / v0.33 skipped it) · `npm run build`.
+- **The gates, each green:** `node tools/check.js` 0 fail / 8 warn (the three soft-cap line counts) · `node tools/license.js --check` 175
+  public files, 0 without the header · `npm test` exit 0 · `node tools/test_rec.js` all ok (VER == package.json) · `node tools/test_nav2.js`
+  all ok (pass A to the bit, pass B viol [], cost median .024 ms) · the release page from `file://` headless (GPU=1, `#test&scene=0`, 6 s):
+  `errs [] bad [] home 0 forced 0`, `VER = '0.34.0'` in the bundle, key `9` → forced 8 (the control), errs [] · `wrangler.jsonc` / `_headers`
+  untouched. The md5 pairs are §102's, unchanged by a version bump (DOM only): s0 `a8de2f03 / 7a65fd16` (the retuned navigator, home),
+  s8 `fb74fee4 / 8a0715df` (the v0.33 navigator, key `9`), s4 `0bff278a / 05bf21c0`.
+- **What is live when.** One release commit (this note, `NEXT-SESSION-PROMPT.md`, the four generated files, the two versions, the entry),
+  `git tag -a v0.34`, `git push origin main --tags`; Cloudflare's Git-connected build takes ~40 min (v0.30–v0.33: 40–85 min) — poll
+  `VER = '0.34.0'` in the bundle at retinarave.com, the *New in v0.34* card line, `/whats-new` top card, key `9` present. Do not re-push to kick it.
+- **Not in this tag (carried from §101/§102):** the user's first look at key `1` as home in stream mode; the two mid-excursion EXT monitor
+  steps on the full SeeYouDrop; the 1/2 ladder's calm candidate; id 8's own root-crossing hazard (the control, left); parity's §83 `nav.*`
+  MISMATCH line (pre-existing, v3 vs NAV's live fields); `accept.sh` in full not run (its pieces by hand in §102).
