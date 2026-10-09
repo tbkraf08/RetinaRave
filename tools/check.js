@@ -173,6 +173,20 @@ for (const d of sceneDirs) {
   }
 }
 
+{ // the fluid substrate's reads (DECISIONS §104): core/fluid/inject.js is pure and declares FLUID_FEATS. Every key in FEATS (fail);
+  // every `S.<field>` / `MS.<field>` read in its source in FLUID_FEATS (FAIL — stricter than a scene's warn: the substrate feeds every
+  // scene); a declared key the source never reads (warn). main.js checks the same list against ENGINE.FEATS at boot.
+  const { FLUID_FEATS } = await import(path.join(ROOT, 'assets/core/fluid/inject.js'));
+  const src = fs.readFileSync(path.join(ROOT, 'assets/core/fluid/inject.js'), 'utf8');
+  const undecl = FLUID_FEATS.filter((k) => !(k in FEATS));
+  if (undecl.length) fail('fluid substrate: FLUID_FEATS not in FEATS: ' + undecl.join(','));
+  const read = new Set([...src.matchAll(/\b(?:S|MS)\.(\w+)/g)].map((m) => m[1]));
+  const outside = [...read].filter((k) => !FLUID_FEATS.includes(k));
+  if (outside.length) fail('fluid substrate: inject.js reads MS fields outside FLUID_FEATS: ' + outside.join(','));
+  const unread = FLUID_FEATS.filter((k) => !read.has(k));
+  if (unread.length) warn('fluid substrate: FLUID_FEATS entries inject.js never reads: ' + unread.join(','));
+}
+
 { // releases.json (tools/releases.js, SOCIAL-PLAN §3.1–§3.2): the schema, newest first, unique versions, and the tag ritual — the top entry's
   // version is package.json's, so a tag cut without its release note fails here (bump package.json + core/version.js, then add the entry)
   const { load, validate } = await import(path.join(ROOT, 'tools/releases.js'));

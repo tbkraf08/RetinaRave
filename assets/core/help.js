@@ -14,6 +14,8 @@ import { SC, REG, TRANSITIONS, currentTransition } from './scenes.js';
 import { EFFECTS } from './post.js';
 import { REC } from './rec.js'; // the recorder's key row is offered unless &rec=0 (DECISIONS §89)
 import { buildE, refreshE, markE, closeE } from './panel.js'; // part E, the routes panel (v0.4; panel.js never imports help.js)
+import { FLUID, fluidLine } from './fluid/fluid.js'; // part B's substrate line (DECISIONS §104)
+import { FLUID_FEATS } from './fluid/inject.js'; // the fields the substrate reads — shown as data, never as literals here (check.js)
 
 // on: shown · scene: the logical id part A (and E's mark) was built for · ticks: live refreshes so far (the harness counts them) ·
 // nTop: rows in the top table · rows(topOnly): the field names in part A's tables, read back from the DOM
@@ -38,6 +40,7 @@ export const keys = () => [['?', 'or H — this view', 'help'],
   ['D', 'the developer HUD (numbers, every 6th frame)', 'dev HUD'], ['F', 'fullscreen (or double-click)', 'fullscreen'],
   ['M', 'monitor the demo synth in the speakers', 'monitor demo'],
   ['L', 'the lead on / off: the beat, bar and phrase clocks moved onto the audio you hear (on by default; &lead=0 starts with it off)', null],
+  ['W', 'the fluid substrate on / off: the pool of ink under the scenes that the music stirs (on by default where the browser renders to float textures; part B says what it reads)', null],
   ['1–' + Math.min(9, REG.length), 'force the scene with id 0 – ' + (Math.min(9, REG.length) - 1) + ' (the ids are in part C)', 'force a scene'],
   ['N', 'the next scene, cycling through all ' + REG.length + ' (a swipe on a phone does the same)', 'next scene'],
   ...(REC.hidden ? [] : [['R', 'record what you see and hear to a file on this device — nothing is uploaded; the music you capture is yours to clear', 'record']]),
@@ -150,7 +153,7 @@ function buildB() {
   B.appendChild(el('h2', null, 'B · the director'));
   const dl = el('dl', 'hdl');
   bRows = {};
-  for (const [k, label] of [['scene', 'on screen'], ['fade', 'crossfade'], ['held', 'held switch'], ['mem', 'look memory'], ['engine', 'engine'], ['fx', 'effect chain']]) {
+  for (const [k, label] of [['scene', 'on screen'], ['fade', 'crossfade'], ['held', 'held switch'], ['mem', 'look memory'], ['engine', 'engine'], ['fx', 'effect chain'], ['substrate', 'the substrate']]) {
     dl.appendChild(el('dt', null, label));
     bRows[k] = dl.appendChild(el('dd'));
   }
@@ -176,6 +179,7 @@ function refreshB() {
   bRows.engine.textContent = 'source ' + AU.mode + ' · stages: ' + (ENGINE.fakeOn ? 'fake timeline' : 'v3 extractor')
     + ENGINE.stages.map((s) => ' + ' + s.name).join('') + ' · ' + ENGINE.ms.toFixed(2) + ' ms per frame';
   bRows.fx.textContent = EFFECTS.map((e) => e.name).join(' → ');
+  bRows.substrate.textContent = fluidLine() + (FLUID.avail ? ' · the substrate reads: ' + FLUID_FEATS.join(', ') : '');
 }
 
 // (C) the cast: every registered scene and variant with its tag and three depths; the current one is marked

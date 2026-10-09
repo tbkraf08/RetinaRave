@@ -2,7 +2,7 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · w the fluid substrate on / off (fluid.js) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
@@ -15,6 +15,7 @@ import { toggleHelp, openHelpAt, keys } from './help.js';
 import { LANDING, initLanding, pick, leavePeek } from './landing.js'; // v0.8.1: the scene tiles + the live preview ("peek")
 import { REC, toggleRec } from './rec.js'; // the recorder (DECISIONS §89): R toggles; the red dot and the toasts are DOM, never in the clip
 import { NO_TAB_AUDIO, LOOPBACK } from '../engine/sources/capture.js'; // §96: Firefox / Safari share no tab audio — the card routes around it
+import { FLUID, setFluid, fluidLine } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): W toggles it, the HUD has its line
 
 const $ = (id) => document.getElementById(id);
 export const HUD = { on: false };
@@ -87,6 +88,9 @@ export function initHUD() {
       ENGINE.LEAD.on = !ENGINE.LEAD.on;
       setTimeout(() => toast(ENGINE.LEAD.on ? 'beat clocks on heard time (lead ' + Math.round(1000 * ENGINE.MS.leadT) + ' ms)' : 'beat clocks as analysed (lead off)'), 200); // leadT is set on the next frame
     } else if (k === 'r') { if (!REC.hidden) toggleRec(); // the recorder: what you see and hear → a file on this device, nothing uploaded (&rec=0 hides it)
+    } else if (k === 'w') { // the fluid substrate on / off (DECISIONS §104); stays off where there are no float render targets
+      const on = setFluid(!FLUID.on);
+      toast(FLUID.avail ? (on ? 'fluid substrate on' : 'fluid substrate off') : 'fluid substrate unavailable here (no float render targets)');
     } else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
     else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });
@@ -142,6 +146,7 @@ export function hudText(S) {
     `tension ${f(S.tension)} (rough ${S.rough.toFixed(3)})  suspension ${f(S.suspension)}  surprisal ${f(S.surprisal)}  section ${S.sectionId}${S.repeat ? ' (repeat)' : ''}`,
     `scene ${SC.logical} ${sc ? sc.name : ''}${SC.variant ? '/' + SC.variant : ''} (cur ${SC.cur} next ${SC.next} m ${f(SC.m)}) vmix ${f(SC.vmix)}${SC.forced >= 0 ? ' FORCED' : ''}`,
     `groove rot ${f(GROOVE.rot)}  drift ${f(GROOVE.drift)} sway ${f(GROOVE.sway)} nod ${f(GROOVE.nod.x)}`,
+    fluidLine(),
   ];
   if (sc && sc.hud) lines.push(sc.hud());
   return lines.join('\n');

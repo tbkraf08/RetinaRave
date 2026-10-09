@@ -24,6 +24,8 @@ import { OKLCH_GLSL } from './core/oklch.js';
 import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
 import { hsv } from './math/util.js';
+import { FLUID, initFluid } from './core/fluid/fluid.js'; // the fluid substrate (DECISIONS §104): ctx.fluid, engineTex.vel / .dye
+import { FLUID_FEATS } from './core/fluid/inject.js'; // its MS reads, checked like a scene's feats
 
 import feedback from './effects/feedback.js';
 import bloom from './effects/bloom.js';
@@ -57,13 +59,18 @@ try {
 // The ctx every scene and effect receives (docs/CONTRACTS.md §1.1). Never the module namespace of core/gl.js.
 const ctx = {
   gl: G.gl, mkProg, use, tri, tex, dynBuf, upload, mkTarget, freeTarget, onResize: addResizeHook,
-  targets: G.RT, Q, tier, budget, LOOK, hsv, engineTex: ETEX, oklch: OKLCH_GLSL,
+  targets: G.RT, Q, tier, budget, LOOK, hsv, engineTex: ETEX, oklch: OKLCH_GLSL, fluid: FLUID,
   lines: { VS: VS_CHUNK, FS: FS_CHUNK, mk: mkLines, set: setLines, draw: drawLines, drawN: drawLinesN },
   log: (s) => { if (TEST) CARD.log.push(s); },
 };
 CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
 initLines();
+{ // the substrate's reads are declared in FLUID_FEATS (core/fluid/inject.js) and checked here exactly as a scene's feats are below
+  const missing = FLUID_FEATS.filter((f) => !(f in ENGINE.FEATS));
+  if (missing.length) ERRS.push('fluid substrate reads undeclared MS fields: ' + missing.join(','));
+}
+initFluid(ctx); // before resize(): its targets are allocated on the first resize hook, like an effect's
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away

@@ -153,7 +153,9 @@ export function freeTarget(t) {
 // Engine textures (R8): spec 256×1, wave 512×1, hist 256×128 ring. Uploaded when the engine reports a new hop: spec and
 // wave whole, hist only the rows written since the last upload (one per hop — v0.2 §13; `full` = the v0.1 whole-texture
 // path, kept for the harness's `&histfull=1` proof). `bytes` counts what went over the bus (harness readout).
-export const ETEX = { spec: null, wave: null, hist: null, row: 0, hop: -1, full: false, bytes: 0 };
+// vel / dye (DECISIONS §104): the fluid substrate's velocity (RG16F, uv/s, simW×simH) and dye (RGBA16F linear, dyeW×dyeH),
+// GPU-written by core/fluid/fluid.js — never uploaded here, not in `bytes`; 1×1 black placeholders while the fluid is off.
+export const ETEX = { spec: null, wave: null, hist: null, row: 0, hop: -1, full: false, bytes: 0, vel: null, dye: null, simW: 0, simH: 0, dyeW: 0, dyeH: 0 };
 function r8(w, h) {
   const gl = G.gl, t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);

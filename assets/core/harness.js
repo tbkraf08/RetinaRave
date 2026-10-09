@@ -1,7 +1,7 @@
 // Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / &fluid= / &fluiddbg= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -28,6 +28,7 @@ import { ROUTES, ROUTE, setRoute, clearRoutes, routesJSON, loadRoutes, applyRout
 import { setClock } from '../engine/features-clock.js';
 import { PROUTES, PROUTE, setParam, clearParams, applyParams, paramsString, paramsOf, paramDeps, paramSources, derived } from './params.js';
 import { getGrid } from '../math/mandel.js';
+import { FLUID, setFluid, benchFluid } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): &fluid=0 / &fluiddbg= under #test, CARD.fluid, CARD.benchFluid
 
 export { HASH, TEST }; // parsed in hash.js (a leaf the panel can read too)
 
@@ -48,6 +49,9 @@ export const CARD = {
   LOG: ENGINE.LOG,     // v0.15 E2: the event ring (fileStart / fileEnd, and the ears' onsets later)
   hooks: {},
   frameN: 0,
+  fluid: FLUID,                                                  // the substrate's state (on, avail, ms, tier, sim / dye sizes, params, nSplat, tex) — core/fluid/fluid.js
+  setFluid,                                                      // CARD.setFluid(true | false): the W key's switch
+  benchFluid: (n = 300) => benchFluid(n, MS),                    // ms per fluid step at the current tier, readPixels-synced on the dye (HARNESS "Fluid")
   get fix() { return ENGINE.fix; },
   set fix(v) { ENGINE.fix = v; },
   get GRID() { return getGrid(); },
@@ -151,6 +155,8 @@ export function initHarness(hideLanding) {
     if (HASH.has('trans')) setTransition(HASH.get('trans')); // A/B between registered transitions (CONTRACTS §5)
     if (HASH.has('colour')) setColour(HASH.get('colour'));     // a scene's colour variant (CONTRACTS §1.4, v0.3 §26)
     if (HASH.get('histfull') === '1') ETEX.full = true;      // v0.1 whole-hist upload every hop (§13 proof: same md5)
+    if (HASH.has('fluid')) setFluid(HASH.get('fluid') !== '0'); // the fluid substrate off (§104): no step, the 1×1 placeholders bound — the identity proof against the v0.34 list
+    if (HASH.has('fluiddbg')) FLUID.dbg = +HASH.get('fluiddbg') || 0; // 1: the dye over the composite with the velocity inset · 2: the velocity alone (harness only)
     if (HASH.has('linear')) CHAIN.linear = HASH.get('linear') === '1'; // the effect chain's colour space (v0.3 §20)
     if (HASH.has('k')) { CHAIN.k = +HASH.get('k'); if (!(CHAIN.k > 0)) throw new Error('&k= must be a positive number'); }           // v0.5 item 4: the tonemap knee's base
     if (HASH.has('kmood')) { CHAIN.kMood = +HASH.get('kmood'); if (!isFinite(CHAIN.kMood)) throw new Error('&kmood= must be a number'); } // and its mood gain (arousal → harder knee)

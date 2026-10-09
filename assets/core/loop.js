@@ -17,6 +17,7 @@ import { CARD, logFrame } from './harness.js';
 import { refreshRoutes, view } from './route.js';
 import { refreshParams } from './params.js';
 import { recFrame } from './rec.js'; // the recorder's post-frame hook (DECISIONS §89): a no-op unless REC.on
+import { FLUID, stepFluid, drawFluidDbg } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): one step per frame on the finished MS, before the scenes update
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -35,6 +36,7 @@ export function frame(tms) {
   if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap
   uploadEngineTex(ENGINE.tex);
   const S = MS;
+  stepFluid(dt, S, ENGINE.resumed); // §104: MS is final, no scene has updated yet — a scene's update/draw sees this frame's field; returns at once when off
   refreshRoutes(dt); // v0.4: routed views refreshed from the finished MS (returns at once while no route exists)
   // scene updates: scenes flagged always, plus the ones on screen — each reads its own view of MS (MS itself unless routed)
   const env = { SC, Q, now };
@@ -56,6 +58,7 @@ export function frame(tms) {
   const src = drawScenes(sw, sh, tio);
   const full = tio.uvS && tio.uvS[0] === 1 && tio.uvS[1] === 1; // the transition re-rendered the whole target (CONTRACTS §5)
   runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q, k: LOOK.k }); // k: the frame's tonemap knee (v0.5 item 4)
+  if (FLUID.dbg) drawFluidDbg(); // harness only (&fluiddbg=): the dye / velocity over the composite, before the overlays
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
   recFrame(); // after the last GL draw, before the DOM: the compositor copies the WebGL canvas on this same task (no preserveDrawingBuffer; rec.js)
   drawHUD(S, frameN);
