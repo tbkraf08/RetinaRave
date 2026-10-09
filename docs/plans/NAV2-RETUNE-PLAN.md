@@ -42,7 +42,7 @@ the hue wheel through green/yellow. Build:
   is then a chosen state: a key, not a clock.
 - Measure: lumtrace on the two baseline windows + CyborgNinja 40–70 (the 0:48 drop), before/after table in §99.
 
-### 2. Motion — the groove moves c (§100)
+### 2. Motion — the groove moves c (§100) — BUILT 2026-10-08 (move2.js: kick lane THR .45 / HOLD 2 beats = .69–1.29 jumps per bar on the six, breath on h AMP .3, sub press, pitch lean, trap π per bar; the numbers in DECISIONS §100; the eye still owed)
 - **Kick → Misiurewicz** on `kickEvt`/`kickAge`, size by `kickAmp` (sqrt law §74, floor .31), NAV's refractory kept, veto while
   `buildLive` parks. **Goldilocks:** count jumps/bar on the six tracks' drop windows; target ≈ 1 per bar on a 4/4 groove and ≤ 2 on
   double-time; expose `&kjump=` to sweep; the §46 "no beat = circle, beat = pinch" rebound becomes a real beat response.

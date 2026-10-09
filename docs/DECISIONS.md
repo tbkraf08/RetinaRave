@@ -8698,3 +8698,120 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   every run here was `PORT=8841` / `--port=8841`.
 - **Not done / open for the user's eye.** The OKLCH mapping (`shaders.js`, `&colour=oklch`) carries none of the four terms — it is still
   NAV's bytes; the sheets are numbers, not a look — step 4 of the plan is the eye in file mode (key 9 vs key 1 on the six windows).
+
+## §100 NAV2 motion — the groove moves c: the kick lane's goldilocks, the beat breath, the sub press, the pitch lean, the trap per bar (2026-10-08, one worker; NAV2-RETUNE-PLAN step 2, the user's answer on the kick "find the goldilocks, not too much, not too little"; review `nav-retune-review-2026-10-08/nav-review.md` §2, `engine-review.md` D1 D2 D6 D7)
+
+- **The complaint and the diagnosis (review §2).** *"The set doesn't move to the music completely as I'd expect"*, *"seems like we are
+  stuck in defined locations of the set"*; liked the 33 s moment on the Zurna clip (the Misiurewicz kick landing: the interior goes dark
+  mid-flight, the old interior re-fills with exterior spirals); the spirals at 42 s *"too chaotic"*. Inside a bulb only `intensity` (the
+  radius) and `harmUnw` (±1.3 rad of φ) moved c, both slow emas; the beat reached c only through v3's onset picker (`onset ∧ hitStrength
+  > .55 ∧ eS > .3` — rare on a groove, 1.4–2.8 jumps per bar when it did fire, see the table); the trap line's half turn per beat
+  re-threaded every filament each beat; nothing read the kick's size, the sub, the bass note or the bar.
+- **What was built — `assets/scenes/nav2/move2.js` (new, 98 lines: the state, the numbers, `tighten()`, `kickGate()`, `knob3()`) + seven
+  lines in `nav.js` (the import, `tighten()` before the chart, the two h targets ×(1 − T), the chart's `hb = h·(1 − breath)`, the φ target
+  + lean, the kick gate) + index.js (the knobs as hooks, feats, help, n2info, the trap angle). Every term behind a knob whose rest is
+  NAV's bytes: `tools/test_nav2.js` pass A drives the clone 48 s with the five knobs off against NAV's own update() on one fake timeline
+  and the two trajectories are the same to the bit (max |c, h, vtime difference| 0); the real-music replay below says the same (the all-off
+  row = NAV's row on all six windows).**
+  1. **The kick → Misiurewicz on the ears' kick lane** (`kickEvt`, placed by `kickAge`: the spring is stepped by the age on the event frame,
+     ≤ 30 ms), sized by `kickAmp` through §74's sqrt law `k = .3 + .55·√max(amp, .31)` (a size-1 hit = NAV's .85; the floor .31 is the
+     lane's own honest-hit threshold) — `kickAmp` is read on the event frame, where it is already the hit it belongs to (§74: `kickVel`
+     there is the PREVIOUS hit's). NAV's refractory kept (`kick.x < .15`), the drum / bridge vetoes kept, and two new ones: **INT only**
+     (no half-size jump in EXT: the exterior is the drop's, §95) and **the void** (`buildLive ≥ .4` = the live detector armed, or `park ≥
+     .6`: a jump in the void reads as a twitch). **The gate has two numbers, THR (the smallest `kickAmp` that jumps) and HOLD (beats since
+     the last jump before another may — in BEATS, so 90 and 150 BPM get the same jumps per bar; 0 = the spring refractory alone).**
+  2. **The beat breath on the radius** — `beatgrid.js spin()`'s profile (§61: the crest ON the line, the glide between, the downbeat ×1.5,
+     §78's `acc` from the tongue ladder's 16-beat rise = the double time makes the crest BIGGER, never faster), read as `crest = (step/base)
+     ·(φ'(u) − g)/((1 − g)·2/w)` (1 on a plain beat's line, 1.5 on the downbeat, up to 1.875 with the accent), scaled by `clockConfPcm`.
+     The press is applied to the chart's h itself, AFTER the spring (`hb = h·(1 − AMP·conf·crest)`: ρ = 1 − hb in a bulb, r = 1 + hb on
+     the cardioid, toward the rim on the crest, back between) — the raised cosine IS the smoothing; through the w 3.5 spring (the first
+     build) the realised swing was a third of the press. `BREATH.AMP = .3`.
+  3. **The sub press** — `subGate` open → the h TARGET ×(1 − DEPTH·subE), shut → ×(1 + DEPTH·|subE|) (toward the bulb's centre), `subE` an
+     ema (τ .12 s) of ±1. §75's cold start honoured: nothing until the gate has been seen open once in the run (`subSeen`), so a track's
+     sub-less intro and the fake timeline (no sub) are NAV. `SUB.DEPTH = .2`.
+  4. **The bass pitch lean** — `subNote` while the gate is open: the interval from `key` wrapped to −6..5 semitones leans φ by `GAIN·d/6`
+     (ema τ .15 s), released toward 0 over .6 s when the sub leaves; added to NAV's `1.3·sin(harmUnw…)` target and clamped to the bulb's
+     ±1.3 rad. `PITCH.GAIN = .6` (a tritone = .6 rad). A glide up leans one way, down the other; never a jump (the ema).
+  5. **The trap line turns per bar** — `ta = π·(¼ + ACC)·ang` with `ang` the same spinner in beat units: a quarter turn per beat = π per
+     bar, plus `ACC = .12` turns per beat as the accent, all on the profile (the crest on the line, ×1.5 on the downbeat, the double time's
+     accent) — 1.80 π per bar measured on the fake lattice against NAV's 4 π (the half turn per beat); monotone, never backward.
+  6. feats: `kickEvt kickAge kickAmp subGate subNote clockConfPcm barPos tongue21 tongue41 tongueOn` (spin() reads the last four), each
+     with a help line; unpublished fields leave their term at rest (node without the lane → v3's picker; the fake timeline → no sub, no
+     breath because its `clockConfPcm` is 0 — the PCM clock publishes it in the file and live modes).
+- **The ruler — `tools/navkicks.js` (new).** `record <Track> <from> <to>` is one deterministic headless run (CLOCK=1, GPU=1, port 8851) that
+  saves every MS field per frame (CARD.TRACE, the frozen trace format) plus arc / seed.a / seed.th from a rAF hook; `replay <json> --x=…`
+  drives nav2's real update() over the recorded MS at 60 Hz in node with the knobs applied through the scene's hooks (the navigator warms
+  over the trace's first 8 s, the window is counted); `sweep` runs one replay per (window, setting) in its own process. Counted: jumps (a
+  kick rise, whichever gate), bars, jumps per bar (+ per 5 s), the monitor's rule, the max per-frame cPath step (all / INT only / p99 /
+  mean) and the radius's swing per beat inside a bulb (max − min of ρ over each beat). `NAV` in the list is id 0 itself, the control. The
+  traces are `tools/work/navkicks/*.json` (gitignored, ~5.5 MB each; one minute each to record).
+- **The goldilocks sweep — jumps per bar, six windows, the final code (`tools/work/navkicks/sweepF.txt`; the full 22-row grid THR
+  {.45 .55 .65 .75} × HOLD {0 1.5 2 2.5 3} beats in `sweep6.txt`):**
+
+  | setting | SeeYouDrop 28–58 (4/4, 150) | Vienna 25–55 (90, kick on 1 & 3) | Vienna 85–100 (double time) | CyborgNinja 40–70 (16ths, 808s) | Malicious 140–170 | IBelongHere 40–75 |
+  |---|---|---|---|---|---|---|
+  | NAV (id 0, v3's picker) | 2.40 (45/19) | 2.81 (40/14) | 1.55 (12/8) | 1.75 (35/20) | 1.43 (25/18) | 1.57 (27/17) |
+  | `n2kick=0` (the clone, picker) | 2.40 | 2.81 | 1.55 | 1.75 | 1.43 | 1.57 |
+  | THR .45, HOLD 0 — the most | 1.55 | 1.82 | 1.81 | **2.35** | 0.91 | **2.03** |
+  | THR .31, HOLD 2 | 0.80 | 1.12 | 1.29 | 1.30 | 0.69 | 1.10 |
+  | THR .45, HOLD 1.5 | 0.91 | 1.40 | 1.29 | 1.45 | 0.80 | 1.22 |
+  | **THR .45, HOLD 2 — chosen** | **0.80** | **1.12** | **1.29** | **1.20** | **0.69** | **1.04** |
+  | THR .45, HOLD 2.5 | 0.69 | 1.12 | 1.16 | 0.90 | 0.57 | 0.87 |
+  | THR .45, HOLD 3 | 0.59 | 0.84 | 1.03 | 0.85 | 0.51 | 0.70 |
+  | THR .55, HOLD 2 | 0.75 | 1.12 | 1.29 | 1.15 | 0.46 | 0.81 |
+  | THR .65, HOLD 2 | 0.64 | 0.77 | 1.03 | 1.00 | 0.23 | 0.70 |
+  | THR .75, HOLD 2 — the least | 0.43 | 0.49 | 0.90 | 0.70 | **0** | 0.64 |
+  | THR .75, HOLD 0 | 0.59 | 0.70 | 1.03 | 0.90 | 0 | 0.93 |
+
+  The chosen row's 5-s rows: SeeYouDrop 1.67 1.54 1.0 **0** 0.67 **0** (43–48 the void + the drop's EXT, 53–58 the breakdown: 0 as asked);
+  Vienna 1.07 1.33 1.0 1.14 0.5 1.14; Vienna 85–100 1.6 0.73 1.6 (≤ 2 on the double time); CyborgNinja 1.43 1.54 1.54 **0** 1.23 1.54
+  (55–60 the 0:48 drop's exterior); Malicious 0.33 0.36 1.0 0.67 1.0 0.73; IBelongHere 1.6 1.2 0.44 0.44 0.4 1.6 1.6. **Why this row:**
+  every window lands in .69–1.29 (median 1.08) — the only rows with all six inside .5–1.5 are THR .31–.45 at HOLD 2, and .45 is the one that
+  keeps CyborgNinja's 808 notes (denK up to 7/s) from being the thing that jumps (THR .31 = the lane's floor, every honest note passes);
+  the hold does the per-bar rationing a threshold cannot (on a 4/4 groove every kick reads ~the same `kickAmp`, so THR alone is all or
+  nothing per section — HOLD 0 gives 1.5–2.4). THR .55 loses Malicious to .46 and .65 to .23 ("too little"); HOLD 2.5–3 drags SeeYouDrop
+  under .7. v3's picker, the "too little" guess, was in fact the MOST (1.4–2.8/bar, and in EXT at half size) — its hits were many and
+  un-rationed, which is the "chaotic" the user saw after drops as much as the trap.
+- **The breath's size and the continuity ruler.** ρ swing per beat inside a bulb (median / p90 over the window's beats, `sweepT.txt`): all
+  terms off = NAV's own .007/.056 · .003 · .008 · .004 · .006 · .047/.185 (SeeYouDrop · Vienna · Vienna-dt · CyborgNinja · Malicious ·
+  IBelongHere; the walk between bulbs); the breath alone **.070/.101 · .006 · .016 · .104/.169 · .080/.111 · .145/.187**; everything on
+  .072 · .004 · .049 · .125 · .111 · .141 (Vienna 25–55 sits on the cardioid: r breathes there, ρ is not counted). The AMP sweep
+  (`n2breath=.2 .3 .45 .6`, four windows): swing .047/.071/.115 → .070/.104/.145 → .086/.157/.191 → .101/.210/.234; the max per-frame cPath
+  step on INT frames stays at NAV's walk (.050/.052/.051 at .3 — NAV .048/.052/.051) through .3, reaches **.067** on IBelongHere at .45 (over
+  the monitor's .06) and 2 violations at .6 — **.3 is the largest amplitude with margin under the rule, and ρ .07–.15 per beat is a visible
+  breath (1 − ρ changes by a half)**. Max per-frame cPath step, all six windows, everything on: INT-only .050 .064 .060 .052 .038 .051
+  (NAV .048 .064 .060 .052 .036 .051), p99 .045 .060 .057 .043 .033 .045, the whole trace .20 .064 .060 .17 .038 .051 — the .17–.20 are
+  EXT, the exterior spring's launch after a drop, NAV's own (its row has them).
+- **The monitor.** `tools/test_nav2.js` pass A and pass B viol [] (pass B n 2879, fast 106, max step .176 in EXT); the fake timeline in the
+  page (`accept.sh`'s MON8 injection, 30 s) viol [] (n 1007, fast 8, max .0832, 25 jumps on its lattice); SeeYouDrop 25–60 file mode on id 8: **10 violations, all EXT,
+  all inside 1.1 s after the drop at 43 s** (page ms 26378–27396; the replay sees 4 of the same family, its 300 ms rule is in frames) — and
+  **id 0, NAV itself, on the same window: 8 violations, all EXT, the same second** (the first chain's MONF0, 26381–27214). The exterior
+  spring's launch along a landing ray after `navDrop` (lg from −2.2 + 1.7·dropStrength toward `reach` while θ settles) steps .1–.27 per
+  frame right where the ray table is densest; v3's picker hid them behind its own half-size EXT kicks (a kick rise is a legal frame).
+  Pre-existing, not §100's — logged as an open item below, not fixed here (the exterior is NAV's drop, §95).
+- **Luminance (the §99 ruler must not regress)** — `tools/lumtrace.js` at id 8 on the three windows, the sheets in
+  `nav-retune-review-2026-10-08/after-s100/` (§99's in `after-s99/`); ALL rows, §99 → §100: SeeYouDrop 25–60 medY .200 → .192, p90Y
+  .286 → .277, clip .001 = .001, grad .0143 → **.0145**, centre .515 → .380, rim .380 → .372; Vienna 60–95 medY .177 → .176, grad .0158 →
+  .0157, centre .324 → .323, rim .320 → .317; CyborgNinja 40–70 medY .218 → .213, p90Y .307 → .298, grad .0138 = .0138, centre .474 → .426,
+  rim .408 → .409. No clipped frame on any window (clipFrac ≥ .25 on 0 of 1003), grad (the structure) equal or up on all three, p95 down a
+  hair; the one real move is the centre on SeeYouDrop and CyborgNinja — darker, because the kick flights (14 on the SeeYouDrop window
+  against v3's picker, which the §99 sheet had) and the breath put the interior mid-flight more often; that IS the moment the user liked
+  (Zurna 33 s), and the loudest rows keep their order (SeeYouDrop 35–40 .276 > 50–55 .112, Vienna 75–80 .073 the darkest).
+- **Knobs** (`#test`, hooks, `knob3()`): `&n2kick=0` v3's picker · `&n2kick=THR[,HOLD[,REFR[,GAIN[,VOID]]]]` · `&n2breath=0` / `=AMP` ·
+  `&n2sub=0` / `=DEPTH[,TAU]` · `&n2pitch=0` / `=GAIN[,TAU[,REL]]` · `&n2trap=0` the half turn per beat / `=ACC`. `n2info()` carries
+  `tight breath crest subE subSeen lean trapA fires lastK acc`.
+- **Proof.** `IDS="0 8" tools/scene-md5.sh s100`: s0 `fb74fee4… / 8a0715df…` unchanged (s8 `95da6a49… / 56869e79…`, the workbench's own — it moves with every retune);
+  `node tools/check.js` 0 fail (nav2: index.js 304, nav.js 295, move2.js 98 lines); `node tools/test_nav2.js` all ok (the identity pass,
+  the knobs-on pass with its numbers, the cost median .023 ms); `node tools/license.js` clean. **The event-frame trap, met once more:** a rAF hook on `#test` (the fake
+  timeline, 12 s) saw `CARD.MS.kickEvt` true on 0 frames while the lattice had set `kickAmp` — a one-frame flag set inside an engine frame
+  is gone by the time a rAF-paced reader looks — so the gate fires on voice.js's rule, the flag OR the age crossing back under FRESH (.06
+  s) — with it the same 12 s give 4 jumps (HOLD 2 beats in a 6-s sustain), and the file-mode window (frame-locked) is unchanged: 14 fires.
+- **Pitfalls.** (1) `clockConfPcm` is 0 on the fake timeline (the PCM clock does not run there) — the breath is silent on `#test` without
+  a track; the trap, the kick lane (its lattice) and the sub (absent) are what the s8 md5 pair sees. (2) The replay's warm-up is the
+  trace's own 8 s, like lumtrace's — the page runs from `at`, so the two agree; a window counted from a cold navigator reads the first bar's
+  walk as motion. (3) The replay reconstructs `arc`, `seed.a`, `seed.th` from the rAF hook (the trace format drops strings and objects):
+  2280 of 2280 rows aligned on every window. (4) `pkill -f` with a pattern that is also in your own command line kills your own shell.
+- **Not done / open.** The eye (step 4 of the plan: key 9 vs key 1 on the six windows). NAV's exterior launch after a drop violates the
+  continuity rule on real music (id 0 as much as id 8; the fake timeline never showed it) — a §101+ item for the exterior, not touched
+  here. The `oklch` mapping (`shaders.js`) is still NAV's bytes. The pitch lean is relative to `key`; when `keyConf` is 0 it leans relative
+  to C — a `tonic` fallback is a line if the eye wants it. Items 1–5 landed in one code commit (one module, one harness) rather than five.

@@ -1,0 +1,13 @@
+lumtrace SeeYouDrop scene 8 [25, 60] s · 10 fps · 640x317 from 1280x633 · 351 frames · heard 25.000 → 60.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+25-30     0.130  0.189  0.001  0.001  0.0131  0.138  0.256   50
+30-35     0.188  0.240  0.001  0.002  0.0165  0.403  0.388   50
+35-40     0.276  0.307  0.001  0.001  0.0138  0.490  0.494   50
+40-45     0.254  0.282  0.001  0.002  0.0133  0.645  0.441   50
+45-50     0.201  0.221  0.001  0.001  0.0160  0.487  0.418   50
+50-55     0.112  0.151  0.001  0.001  0.0162  0.325  0.219   50
+55-60     0.161  0.202  0.001  0.001  0.0127  0.281  0.302   51
+ALL       0.192  0.277  0.001  0.002  0.0145  0.380  0.372  351
+clipFrac >= 0.25 on 0 of 351 frames · meanY >= 0.6 on 0 · min grad 0.0045 at t 57.60
+tiles 8 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 3.377 · f0 2 · sr 48000 · end frame 2582 heard 60
+files: tools/work/lum/s100f/SeeYouDrop-s8-25-60.csv · tools/work/lum/s100f/SeeYouDrop-s8-25-60.txt · tools/work/lum/s100f/SeeYouDrop-s8-25-60-sheet.jpg
