@@ -9926,3 +9926,31 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   29.7 → 29.4, p99 100 → 68 (the dream's `mid` sits under the groove's p20 → half the floor — for the user's eye: `tools/work/rec/s111-i7/`
   and `tools/work/fluid-s111/Vienna-i7/shots/`). Tests: `test_fluid` floor (40 s of a steady .8 → half; a swell to .95 → full; a dip to
   .6 → half; the first 5 s → plain; the knee). check 0 fail, npm test exit 0 (`test_fluid` 214 ok).
+- **Item 8 — the harmonic branch, and the noise guard** (`HARM_BARS` 2, `HARM_LIFT` .3, `NOISE_DIRTY` .7, `NOISE_BASS` .2; `FLUID_FEATS`
+  gains `centroid dirty bass`; `mkState` the guard's two emas; `plan()` returns `harmonic` / `noise`). Built because items 1–7 left
+  Comptine and the pad unreadable BY THESE NUMBERS: the hit splats' x p10 / p90 still read **.30 / .70 on every track** — Comptine's 379
+  hits and the pad's on the fixed pair, the kick at the centre (`i7.md`'s `x hits` column) — "where = what" absent on a piece with no
+  sub. Now, with the sub emitter shut for 2 bars (a piano, a pad, a vocal breakdown), every hit goes to the HARMONY'S place on the
+  tonic axis: x = `harmAngle`'s nearest fifth through item 6's `relX`, y = .25 + .5·`centroid` (a high note high), the snare-lane and
+  chord hits ONE directed splat each (the pair's force as a push away from the centre, HARM_LIFT of it upward, the pair's ink), the
+  kick-lane hits (a piano's low notes) lifting from under that place instead of the stale sub x; the drum grammar is back the frame
+  the sub returns. And NOISE — `dirty` > .7 with `bass` < .2 (1 s emas) AND the sub gone 8 bars — injects nothing, no hit and no floor:
+  the guard was set on the fields (Comptine's applause 133–144 s: dirty .84, bass .10, high .88, no sub ever; its piano .02 / .59; the
+  pad .60 / .91; SeeYouDrop's build riser 52–57 s dirty 1.0 / bass .04 — a per-frame guard without the sub condition read it as noise and
+  silenced the last 6 s of the build; IBelongHere's 148–150 and 213–216 s the same). **The numbers, before → after (whole tracks)**:
+  Comptine's hits x p10 / p90 **.30 / .70 → .46 / .63** (the melody's fifths walk round D; 555 hits on 0–110 s with a p10–p90 span .17), the
+  harmonic branch on 100 % of its frames, its applause **137–144 s read as noise: 8 seconds, 0 splats** (the 94 % injection on that
+  trace's "music" seconds is those 8 — the test's music count excludes noise seconds; on the live lanes the YIN ghost's one sub second
+  keeps the applause inside 8 bars: 0 noise seconds, a note); the pad .30 / .79, the branch on 80 % of its frames (after the ghost), its
+  32 hits over a span .49; IBelongHere's breakdowns 84 s in the branch (file), Vienna's dream 18, SeeYouDrop 13, CyborgNinja 28 (its
+  map-mode sub gaps), WhoLikesToParty 0; noise seconds 0 on every other track (`i8.md`). **The shots**: Comptine's 13 windows re-shot
+  (items 1–8): applause-140 **33.7 → 32.1, p99 130 → 84** (nothing injected; the residue draining), falsedropp-47.5 26.8 → 24.7, late-110 28.7
+  → 31.4, busy-50 31.7 → 32.1 (p99 146 → 157: the hits spread along the melody, no longer the tri-blob — the eye: `fluid-s111-Comptine-*`
+  below), the busiest strip 31 → 31 (min–max 18–38); the pad's take re-run (`s111-i8b`) within .3 grey of item 7's on every half second
+  (the floor is its picture; the 32 hits now at the harmony's place). `tools/work/fluid-s111/Comptine-i8b/shots/`, `tools/work/rec/s111-i8b/`.
+  Tests: `test_fluid` harmonic (the sub shut 5 s → one snare splat at the centre for harmAngle 0, y .5 for centroid .5, the push at full
+  force with HARM_LIFT upward; a fifth up → right and high, a fifth down → left and low; the kick lane under the harmony's place; a chord
+  → one splat; the pair back the frame after the sub), noise (20 s flat / bassless / no sub → nothing; the same 6 s after the sub left →
+  a build's riser, the floor stays; a pad never), the FEATS; the music block's music seconds exclude noise, the noise seconds inject
+  nothing, Comptine and the pad in the branch with their hits spread (span ≥ .08); every pair test seeds the sub (`drumSt()`).
+  check 0 fail, npm test exit 0 (`test_fluid` 243 ok).

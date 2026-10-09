@@ -30,7 +30,7 @@ import { srgbToLin1 } from '../../math/oklab.js';
 export const FLUID_FEATS = ['subNote', 'subGate', 'subGlide', 'subHz', 'bassReg', 'kickEvt', 'kickAmp', 'kickAge', 'snareEvt', 'snareAmp',
   'hat2', 'denH', 'beatCount', 'seed', 'beatPhase', 'key', 'mode', 'keyConf', 'tonicConf', 'modeShade', 'valence', 'harmAngle',
   'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'mapDropEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm',
-  'mid', 'snare'];
+  'mid', 'snare', 'centroid', 'dirty', 'bass'];   // §111 item 8: the harmonic branch's place (centroid) and the noise guard (dirty, bass)
 
 // The grammar's constants, one table (DECISIONS §104 says where each came from). Velocities in uv/s, dye in linear units.
 export const K = {
@@ -77,6 +77,14 @@ export const K = {
   FLOOR_WIN: 30,   //   seconds of `mid` — a swell above the track's own p80 is the full floor, a steady level half of it, a dip under its
                    //   p20 half (before: mid > FLOOR_HI on 94–100 % of every track's frames — the floor was a constant .24–.32 dye/s, "the
                    //   lights are on"); the absolute knee FLOOR_LO / FLOOR_HI still zeroes silence and a residue
+  HARM_BARS: 2,    // §111 item 8 the HARMONIC BRANCH: with the sub shut this many bars (a piano, a pad, a vocal breakdown) the snare-lane, chord
+  HARM_LIFT: 0.3,  //   and kick-lane hits go to the HARMONY'S place — x = harmAngle's fifth on the tonic axis, y by the centroid — one directed
+                   //   splat each (its sideways push away from the centre, HARM_LIFT of it upward) instead of the fixed .3 / .7 pair and the
+                   //   stale sub x; the drum grammar is back the frame the sub returns. Before: Comptine's 379 hits were three fixed points
+  NOISE_DIRTY: 0.7, //  … and NOISE — spectral flatness above this with the bass under NOISE_BASS, both as 1 s emas, AND the sub gone for
+  NOISE_BASS: 0.2, //   VOID_BARS bars (Comptine's applause: dirty .84, bass .10, no sub ever; its piano .02 / .59, the pad .60 / .91; SeeYouDrop's
+                   //   build riser 52–57 s reads dirty 1.0 / bass .04 but the sub left 5 s before — a void, not noise) — injects nothing:
+                   //   no hit, no floor (the sub never opens on it anyway)
   CLEAR_PEND: 1.5, // §111 the clear is CONFIRMED: a trigger (dropLiveEvt || mapDropEvt) waits up to CLEAR_PEND beats for the sub emitter to
   CLEAR_REF: 4,    //   open — every true drop on the library brings it within 0.03 s, IBelongHere's four false live arms and Comptine's six
                    //   never — then CLEAR_REF beats of refractory (WhoLikesToParty's map line and live detector fired 1.0–1.1 s apart: two
@@ -92,7 +100,8 @@ export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 6.5 / 12
   lpSlow: 0,                                                  //   lpSweep's 1 s ema: the sweep's rise is lpSweep − lpSlow (§111 item 3)
   subAge: 1e9,                                                //   s since the sub emitter was last open (§111 item 4: the void's latch)
   pendLeft: 0, refLeft: 0,                                    //   the pending clear's window and the refractory, s (§111 item 5)
-  midRing: [], midAcc: 0, midN: 0 });                         //   `mid`'s one-second means over the last FLOOR_WIN s (§111 item 7), the second being summed
+  midRing: [], midAcc: 0, midN: 0,                            //   `mid`'s one-second means over the last FLOOR_WIN s (§111 item 7), the second being summed
+  dirtyS: 0, bassS: 1 });                                     //   the noise guard's 1 s emas of dirty and bass (§111 item 8; bass starts at 1: no noise verdict cold)
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -147,20 +156,32 @@ export function plan(S, dt, st) {
     const wide = 1 + 0.5 * (1 - clamp((S.subHz - 30) / 90, 0, 1)); // a lower sub is a wider mouth
     add(st.xSub, y, K.SUB_X * clamp(S.subGlide / 12, -1, 1) * g * f, K.SUB_V * g * f, K.SUB_DYE * g * f, wide, 'sub');
   }
+  // §111 item 8: the material — NOISE (applause, a crowd: flat spectrum, no bass) injects nothing below; the HARMONIC BRANCH (the sub shut
+  // for HARM_BARS bars: a piano, a pad, a vocal breakdown) puts every hit at the harmony's place on the tonic axis — the tune's "where"
+  const beat = 60 / Math.max(60, S.bpm);
+  st.dirtyS = ema(st.dirtyS, S.dirty || 0, dt, 1); st.bassS = ema(st.bassS, S.bass || 0, dt, 1);
+  const noise = st.dirtyS > K.NOISE_DIRTY && st.bassS < K.NOISE_BASS && st.subAge > K.VOID_BARS * 4 * beat;
+  const harmonic = st.subAge > K.HARM_BARS * 4 * beat;
+  const xH = relX((7 * ((((Math.round((S.harmAngle || 0) / (2 * Math.PI) * 12) % 12) + 12) % 12))) % 12), yH = 0.25 + 0.5 * clamp(S.centroid || 0, 0, 1);
+  const sideH = xH < 0.5 ? -1 : 1;   // the push away from the centre: a hit launches something that travels
   // the kick: an impulse up from the floor under the sub, sized by the hit's RANK in the lane's own range (§111: AMP0 + (1 − AMP0)·rank,
   // then the sqrt law — the smallest kick of a track launches √AMP0 of its biggest, not √.31 as the lane's floor gave every track);
-  // the two frames after keep 40 % of the same size
+  // the two frames after keep 40 % of the same size. In the harmonic branch (a piano's low notes) it lifts from under the harmony's place.
   const kAge = S.kickAge < 99 ? Math.max(0, S.kickAge) : 99;
   if (S.kickEvt) st.kickSz = K.AMP0 + (1 - K.AMP0) * rank(st.rkK, Math.max(0, S.kickAmp));
-  if (S.kickEvt || kAge < 2 / 60) {
+  if ((S.kickEvt || kAge < 2 / 60) && !noise) {
     const w = S.kickEvt ? 1 : 0.4;
-    add(st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(st.kickSz) * g * w, K.KICK_DYE * g * w, 2, 'kick');
+    add(harmonic ? xH : st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(st.kickSz) * g * w, K.KICK_DYE * g * w, 2, 'kick');
   }
-  // the snare: a lateral shear at mid height, its force by the hit's rank in the snare lane's own range (§111)
-  if (S.snareEvt) {
+  // the snare: a lateral shear at mid height, its force by the hit's rank in the snare lane's own range (§111); in the harmonic branch
+  // one directed splat at the harmony's place (the same force, HARM_LIFT of it upward) instead of the pair
+  if (S.snareEvt && !noise) {
     const sz = K.AMP0 + (1 - K.AMP0) * rank(st.rkS, Math.max(0, S.snareAmp));
-    add(0.3, 0.5, K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
-    add(0.7, 0.5, -K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
+    if (harmonic) add(xH, yH, sideH * K.SNARE_V * sz * g, K.HARM_LIFT * K.SNARE_V * sz * g, 2 * K.SNARE_DYE * g, 1, 'snare');
+    else {
+      add(0.3, 0.5, K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
+      add(0.7, 0.5, -K.SNARE_V * sz * g, 0, K.SNARE_DYE * g, 1, 'snare');
+    }
   }
   // §108 a chord attack: the v1 `snare` level (the extractor's mid-band flux peak, 0.13 s decay) rising by more than CHORD_RISE in
   // one frame with no snareEvt on it — the pad's 2.5–2.9 dB attacks the 3.75 dB lane rightly does not call a snare — gives the same
@@ -171,11 +192,14 @@ export function plan(S, dt, st) {
   st.chordLeft = Math.max(0, st.chordLeft - dt);
   let chord = 0;
   if (S.snareEvt) st.chordLeft = K.CHORD_REF;
-  else if (dS > K.CHORD_RISE && st.chordLeft <= 0 && g > 0) {
+  else if (dS > K.CHORD_RISE && st.chordLeft <= 0 && g > 0 && !noise) {
     st.chordLeft = K.CHORD_REF;
     chord = dS;
-    add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
-    add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
+    if (harmonic) add(xH, yH, sideH * K.CHORD_V * dS * g, K.HARM_LIFT * K.CHORD_V * dS * g, 2 * K.CHORD_DYE * dS * g, 1, 'chord');   // §111 item 8
+    else {
+      add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
+      add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1, 'chord');
+    }
   }
   // the hats: up to three droplets from the surface, seeded by the beat — out of a token bucket (§111: 3 tokens, HAT_RATE per second
   // back), so a hat hit's first frames give their droplets and the frames after wait for the refill: 29 droplets/s (CyborgNinja,
@@ -200,7 +224,7 @@ export function plan(S, dt, st) {
     const r = st.midRing.slice().sort((a, b) => a - b), lo = r[Math.floor(0.2 * r.length)], hi = Math.max(r[Math.floor(0.8 * r.length)], lo + 0.05);
     own = K.FLOOR_BASE + (1 - K.FLOOR_BASE) * sstep(lo, hi, S.mid || 0);
   }
-  const floorLvl = sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid * own;
+  const floorLvl = noise ? 0 : sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid * own;   // §111 item 8: nothing on noise
   let floor = 0;
   if (floorLvl > 0 && g > 0) {
     floor = K.FLOOR_DYE * floorLvl * g * f;
@@ -221,7 +245,6 @@ export function plan(S, dt, st) {
   // detector's false arms on IBelongHere's breakdown (bass .07–.36, no sub) and Comptine's piano (no sub ever) never do), then CLEAR_REF
   // beats of refractory so the map's line and the live detector a second apart are one clear, not two. A trigger inside the refractory
   // is dropped; a trigger inside a pending window re-arms it.
-  const beat = 60 / Math.max(60, S.bpm);
   st.refLeft = Math.max(0, st.refLeft - dt);
   st.pendLeft = Math.max(0, st.pendLeft - dt);
   if ((S.dropLiveEvt || S.mapDropEvt) && st.refLeft <= 0) st.pendLeft = K.CLEAR_PEND * beat;
@@ -254,6 +277,6 @@ export function plan(S, dt, st) {
     pressure: 0.8,
     radius: K.RADIUS,
   };
-  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate, drop }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate, drop = 1 on the frame a clear is confirmed — for the replay rulers
+  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate, drop, harmonic: harmonic ? 1 : 0, noise: noise ? 1 : 0 }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate, drop = 1 on the frame a clear is confirmed, harmonic / noise = the branch — for the replay rulers
 
 }

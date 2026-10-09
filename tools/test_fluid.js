@@ -27,6 +27,9 @@
 //   chord      §108: the v1 `snare` level rising > CHORD_RISE with no snareEvt → two shears at a third of the snare's force, sized by the
 //              rise, then the refractory (a further rise inside CHORD_REF → nothing; after it → again); a held level → nothing; a
 //              snareEvt frame → the lane's two shears only, and its own rise on the frame after → nothing; a sub-threshold rise → nothing
+//   harmonic   §111 item 8: the sub shut HARM_BARS bars → a snare / chord / kick-lane hit is ONE splat at the harmony's place (x harmAngle's fifth
+//              on the tonic axis, y .25 + .5·centroid, the push away from the centre, HARM_LIFT upward); the drum grammar back when the sub returns;
+//              noise (dirty > .7, bass < .2 as 1 s emas, the sub gone VOID_BARS bars) injects nothing; a build's riser and a pad are not noise
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep CLOSES (§111: its rise over a 1 s ema through LP_RISE0 / LP_RISE1 — a filter held
 //              closed is a dark mix, .2; opening is a release; hush adds nothing); dyeDiss 1 → .05 as buildLive rises — §111 only LATCHED (buildLive
 //              > .5 with the sub seen within VOID_BARS bars), else bounded at VOID_FLOOR .3; tongueAmbig only while tongueOn 1, bounded
@@ -90,6 +93,7 @@ const base = (o = {}) => Object.assign({}, MS, { presence: 1, loudRel: 1, hush: 
   modeShade: 0, tension: 0.3, lpSweep: 0.2, buildLive: 0, tongueAmbig: 0, tongueOn: 1, bpm: 120, beatPhase: 0.5, beatCount: 10, seed: { hue: 0.6, th: 0, a: 0.3, scene: -1 },
   subGate: 0, subNote: -1, subGlide: 0, subHz: 0, bassReg: 0, kickEvt: false, kickAmp: 0, kickAge: 99, snareEvt: false, snareAmp: 0, hat2: 0, denH: 0, dropLiveEvt: false }, o);
 const run = (S, st = mkState()) => plan(S, DT, st);
+const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 }), DT, st); return st; };   // §111 item 8: a state with the sub just seen — the DRUM grammar (a fresh state is in the harmonic branch)
 
 // feats
 {
@@ -170,8 +174,8 @@ const run = (S, st = mkState()) => plan(S, DT, st);
 
 // snare
 {
-  const r = run(base({ snareEvt: true, snareAmp: 0.5 }));
-  ok(r.splats.length === 2, 'snare: two shears (' + r.splats.length + ')');
+  const r = run(base({ snareEvt: true, snareAmp: 0.5 }), drumSt());
+  ok(r.splats.length === 2, 'snare: two shears (' + r.splats.length + ') — the drum grammar (the sub seen; a fresh state is the harmonic branch, item 8)');
   if (r.splats.length === 2) {
     const [l, rr] = r.splats;
     ok(l.x === 0.3 && rr.x === 0.7 && l.y === 0.5 && rr.y === 0.5, 'snare: at (.3, .5) and (.7, .5)');
@@ -179,7 +183,7 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     near(l.dx, K.SNARE_V * (K.AMP0 + (1 - K.AMP0) * (0.5 - 0.3) / 0.65), 1e-9, 'snare: dx = SNARE_V·(AMP0 + (1 − AMP0)·rank) — rank on the prior .3 / .95 until the lane has 8 hits (§111)');
     ok(l.k === 'snare' && rr.k === 'snare', 'snare: tagged k = snare');
   }
-  ok(run(base({ snareEvt: true, snareAmp: 1 })).splats[0].dx === K.SNARE_V && Math.abs(run(base({ snareEvt: true, snareAmp: 0.1 })).splats[0].dx - K.SNARE_V * K.AMP0) < 1e-9, 'snare: the biggest hit the full SNARE_V, one under the p10 the floor AMP0');
+  ok(run(base({ snareEvt: true, snareAmp: 1 }), drumSt()).splats[0].dx === K.SNARE_V && Math.abs(run(base({ snareEvt: true, snareAmp: 0.1 }), drumSt()).splats[0].dx - K.SNARE_V * K.AMP0) < 1e-9, 'snare: the biggest hit the full SNARE_V, one under the p10 the floor AMP0');
 }
 
 // hats (§111: a token bucket — 3 tokens, HAT_RATE per second back)
@@ -304,7 +308,7 @@ const run = (S, st = mkState()) => plan(S, DT, st);
 // chord (§108): a chord attack the lane does not call a snare — the v1 `snare` level's rise, with a refractory
 {
   near(K.CHORD_V, K.SNARE_V * 0.3, 1e-12, 'chord: CHORD_V is a third of SNARE_V (' + K.CHORD_V + ')');
-  const st = mkState();
+  const st = drumSt();
   run(base({ snare: 0 }), st);
   const c = run(base({ snare: 0.5 }), st);
   ok(c.splats.length === 2 && c.chord > 0, 'chord: a rise 0 → .5 with no snareEvt → two shears (' + c.splats.length + ', chord ' + c.chord + ')');
@@ -320,16 +324,16 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   let n = 0; while (n < 20 && run(base({ snare: 0.9 }), st).chord === 0 && n++ < 20) { if (n >= Math.ceil(K.CHORD_REF / DT)) break; }
   const late = run(base({ snare: 1.0 }), st); // a rise after the refractory → fires
   ok(late.splats.length === 2 && Math.abs(late.chord - 0.1) < 1e-9, 'chord: a rise after CHORD_REF → fires again (Δ ' + late.chord.toFixed(2) + ')');
-  const st2 = mkState();
+  const st2 = drumSt();
   let fired = 0; for (let i = 0; i < 60; i++) fired += run(base({ snare: 0.6 }), st2).chord > 0 ? 1 : 0;
   ok(fired === 1, 'chord: a level held at .6 for 60 frames → one shear, then nothing (' + fired + ')');
-  const st3 = mkState();
+  const st3 = drumSt();
   run(base({ snare: 0 }), st3);
   const ev = run(base({ snare: 0.7, snareEvt: true, snareAmp: 0.5 }), st3);
   ok(ev.splats.length === 2 && ev.chord === 0 && Math.abs(ev.splats[0].dx - K.SNARE_V * (K.AMP0 + (1 - K.AMP0) * (0.5 - 0.3) / 0.65)) < 1e-9, 'chord: a snareEvt frame → the lane\'s two shears only, at the ranked size (dx ' + ev.splats[0].dx.toFixed(3) + ')');
   const after = run(base({ snare: 0.9 }), st3);
   ok(after.splats.length === 0, 'chord: the level\'s own rise on the frame after a snareEvt → nothing (the event armed the refractory)');
-  const st4 = mkState();
+  const st4 = drumSt();
   run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4); run(base({ snare: 0.3 }), st4);
   for (let i = 0; i < 12; i++) run(base({ snare: 0.3 }), st4);
   const small = run(base({ snare: 0.34 }), st4);
@@ -339,6 +343,39 @@ const run = (S, st = mkState()) => plan(S, DT, st);
   const silent = run(base({ snare: 0.8, presence: 0 }), st5);
   ok(silent.splats.length === 0 && silent.chord === 0, 'chord: silence (presence 0) → nothing');
   ok(FLUID_FEATS.includes('mid') && FLUID_FEATS.includes('snare') && !FLUID_FEATS.includes('hit') && !FLUID_FEATS.includes('eS'), 'chord/floor: FLUID_FEATS gained mid and snare (' + FLUID_FEATS.length + ')');
+}
+
+// harmonic (§111 item 8): with the sub shut HARM_BARS bars every hit goes to the harmony's place on the tonic axis — one directed splat;
+// noise (dirty and bass as 1 s emas, the sub gone VOID_BARS bars) injects nothing
+{
+  const stH = mkState(); for (let i = 0; i < 60 * 5; i++) run(base({ bpm: 120 }), stH);   // 5 s > HARM_BARS 2 bars at 120 bpm (4 s), no sub ever
+  const h = run(base({ bpm: 120, snareEvt: true, snareAmp: 1, harmAngle: 0, centroid: 0.5 }), stH);
+  ok(h.harmonic === 1 && h.splats.filter((p) => p.k === 'snare').length === 1, 'harmonic: the sub shut 5 s → a snare is ONE splat (' + h.splats.filter((p) => p.k === 'snare').length + ') at the harmony\'s place');
+  const sp = h.splats.find((p) => p.k === 'snare');
+  near(sp.x, 6.5 / 12, 1e-9, 'harmonic: x = harmAngle\'s fifth on the tonic axis (0 → the tonic → the centre)');
+  near(sp.y, 0.5, 1e-9, 'harmonic: y = .25 + .5·centroid (.5 → mid height)');
+  ok(sp.dx > 0 && Math.abs(sp.dx - K.SNARE_V) < 1e-9 && Math.abs(sp.dy - K.HARM_LIFT * K.SNARE_V) < 1e-9, 'harmonic: the push away from the centre at the snare\'s full force (dx ' + sp.dx.toFixed(3) + '), HARM_LIFT of it upward (dy ' + sp.dy.toFixed(3) + ')');
+  const hi = run(base({ bpm: 120, snareEvt: true, snareAmp: 1, harmAngle: Math.PI / 6, centroid: 1 }), stH).splats.find((p) => p.k === 'snare');
+  ok(hi.x > 6.5 / 12 && Math.abs(hi.y - 0.75) < 1e-9 && hi.dx > 0, 'harmonic: a fifth up (π/6) → right of centre, a bright centroid → high (y .75), the push right');
+  const lo = run(base({ bpm: 120, snareEvt: true, snareAmp: 1, harmAngle: -Math.PI / 6, centroid: 0 }), stH).splats.find((p) => p.k === 'snare');
+  ok(lo.x < 6.5 / 12 && Math.abs(lo.y - 0.25) < 1e-9 && lo.dx < 0, 'harmonic: a fifth down → left of centre, a dark centroid → low, the push left');
+  const kk = run(base({ bpm: 120, kickEvt: true, kickAmp: 1, kickAge: 0, harmAngle: Math.PI / 6 }), stH).splats.find((p) => p.k === 'kick');
+  ok(kk.x > 6.5 / 12 && kk.y === 0.06, 'harmonic: a kick-lane hit (a low note) lifts from under the harmony\'s place, not the stale sub x');
+  for (let i = 0; i < 12; i++) run(base({ bpm: 120, snare: 0 }), stH);   // past the chord refractory the snare hits above armed
+  const ch = run(base({ bpm: 120, snare: 0.6, harmAngle: Math.PI / 6, centroid: 0.5 }), stH);
+  ok(ch.chord > 0 && ch.splats.filter((p) => p.k === 'chord').length === 1 && ch.splats.find((p) => p.k === 'chord').x > 6.5 / 12, 'harmonic: a chord attack → one splat at the harmony\'s place too');
+  run(base({ bpm: 120, subGate: 1, subNote: 7 }), stH);
+  const back = run(base({ bpm: 120, snareEvt: true, snareAmp: 1 }), stH);
+  ok(back.harmonic === 0 && back.splats.filter((p) => p.k === 'snare').length === 2, 'harmonic: the frame after the sub returns the drum grammar is back (the pair)');
+  const stN = mkState(); let nz;
+  for (let i = 0; i < 60 * 20; i++) nz = run(base({ bpm: 120, dirty: 0.9, bass: 0.1, mid: 0.9, snareEvt: i % 30 === 0, snareAmp: 1, kickEvt: i % 30 === 15, kickAmp: 1, kickAge: i % 30 === 15 ? 0 : 99 }), stN);
+  ok(nz.noise === 1 && nz.splats.length === 0 && nz.floor === 0, 'noise: 20 s of a flat spectrum with no bass and no sub ever → nothing injected (no hit, no floor)');
+  const stB = mkState(); run(base({ bpm: 120, subGate: 1, subNote: 0 }), stB); let bz;
+  for (let i = 0; i < 60 * 6; i++) bz = run(base({ bpm: 120, dirty: 1, bass: 0.05, mid: 0.9 }), stB);
+  ok(bz.noise === 0 && bz.floor > 0, 'noise: the same spectrum 6 s after the sub left is a BUILD\'s riser, not noise (SeeYouDrop 52–57 s) — the floor stays');
+  const stP = mkState(); let pz; for (let i = 0; i < 60 * 20; i++) pz = run(base({ bpm: 120, dirty: 0.6, bass: 0.9, mid: 0.9 }), stP);
+  ok(pz.noise === 0 && pz.floor > 0, 'noise: a pad (dirty .6, bass .9) is never noise');
+  ok(FLUID_FEATS.includes('centroid') && FLUID_FEATS.includes('dirty') && FLUID_FEATS.includes('bass'), 'harmonic: FLUID_FEATS gained centroid, dirty, bass (' + FLUID_FEATS.length + ')');
 }
 
 // params
@@ -437,7 +474,8 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     const rows = replay(J), by = new Map();
     for (const r of rows) { const s = Math.floor(r.t); if (!by.has(s)) by.set(s, []); by.get(s).push(r); }
     const secs = [...by.entries()].filter(([s, rs]) => rs.length >= 30);   // whole seconds only
-    const music = secs.filter(([s, rs]) => med(rs.map((r) => r.S.presence)) > 0.3);
+    const noiseSecs = secs.filter(([s, rs]) => med(rs.map((r) => r.P.noise || 0)) > 0.5);   // §111 item 8: read as noise (applause) — not music to the grammar
+    const music = secs.filter(([s, rs]) => med(rs.map((r) => r.S.presence)) > 0.3 && !(med(rs.map((r) => r.P.noise || 0)) > 0.5));
     const inj = music.filter(([s, rs]) => rs.some((r) => r.P.splats.length > 0));
     const pct = music.length ? 100 * inj.length / music.length : 0;
     const silentFrames = rows.filter((r) => r.S.presence === 0);
@@ -453,7 +491,16 @@ const run = (S, st = mkState()) => plan(S, DT, st);
     }
     const mapDrops = rows.filter((r) => r.S.mapDropEvt).map((r) => +r.t.toFixed(3)), liveDrops = rows.filter((r) => r.S.dropLiveEvt).map((r) => +r.t.toFixed(3)), clearT = clears.map((r) => +r.t.toFixed(2));
     console.log(`     ${name.padEnd(22)} ${rows.length} frames · music s ${music.length} / ${secs.length} · inject ${inj.length} (${pct.toFixed(1)} %) · silent frames ${silentFrames.length} moved ${moved} · triggers ${drops.length} (mapDropEvt ${JSON.stringify(mapDrops)} dropLiveEvt ${JSON.stringify(liveDrops)}) · clears ${JSON.stringify(clearT)} held ${held}`);
-    ok(pct >= 95, `music: ${name} injects on ≥ 95 % of the seconds with music (${inj.length} / ${music.length} = ${pct.toFixed(1)} %)`);
+    ok(pct >= 95, `music: ${name} injects on ≥ 95 % of the seconds with music (${inj.length} / ${music.length} = ${pct.toFixed(1)} %; ${noiseSecs.length} s read as noise)`);
+    // §111 item 8: the noise seconds inject nothing; the harmonic branch's hits spread along the harmony
+    const noiseInj = noiseSecs.filter(([s, rs]) => rs.some((r) => r.P.splats.length > 0)).length;
+    ok(noiseInj === 0, `music: ${name} — the ${noiseSecs.length} seconds read as noise inject nothing (${noiseInj} did)${noiseSecs.length ? ' @ ' + noiseSecs.map(([s]) => s).join(' ') : ''}`);
+    if (/^(Comptine|rec)-/.test(name)) {
+      const hx = []; for (const r of rows) for (const p of r.P.splats) if (p.k === 'snare' || p.k === 'chord' || p.k === 'kick') hx.push(p.x);
+      hx.sort((a, b) => a - b); const span = hx.length ? hx[Math.floor(0.9 * hx.length)] - hx[Math.floor(0.1 * hx.length)] : 0;
+      const harmFr = rows.filter((r) => r.P.harmonic === 1).length;
+      ok(harmFr > 0.8 * rows.length && span >= 0.08, `music: ${name} — no sub: the harmonic branch on ${(100 * harmFr / rows.length).toFixed(0)} % of frames, its ${hx.length} hits spread over the harmony (x p10–p90 span ${span.toFixed(2)}; before: the fixed .3 / .7 pair)`);
+    }
     ok(moved === 0, `music: ${name} — a frame with presence 0 moves nothing and inks nothing (${moved} of ${silentFrames.length} silent frames did)`);
     ok(held === clears.length && confirmedOk === clears.length, `music: ${name} — every clear sits within ${K.CLEAR_PEND} beats of a trigger with the sub open, and holds a beat (${confirmedOk} / ${held} of ${clears.length})`);
     // §111 item 6: the sub emitter's x on the tonic's axis — off the walls on CyborgNinja (its held C sat at .04 before)

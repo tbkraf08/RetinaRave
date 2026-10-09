@@ -25,7 +25,9 @@
 //                true = within 1.5 s of a truth drop (tools/truth/windows.json) or of a map bar line; brk = inside IBelongHere's
 //                144–178 s breakdown (the false-arm window the survey found)
 //   x sub        the sub emitter's x: p10 / p50 / p90 over the frames the gate is open, and the span p90 − p10 (0 = pinned)
-//   x hits       the kick / snare / chord splats' x: p10 / p90 (the survey's "three fixed points" read .3 / .7 everywhere)
+//   x hits       the kick / snare / chord splats' x: p10 / p90 (the survey's "three fixed points" read .3 / .7 everywhere); (harm s · noise s)
+//                the music seconds in the harmonic branch (§111 item 8: the sub shut two bars — the hits at the harmony's place) and
+//                the seconds read as noise (nothing injected: applause)
 //   kick dy      the kick impulse, p10 / p50 / p90 (uv/s) — the size law's room
 //   hue          % of frames the pool's hue is the KEY's (the anchor's conf 1) · the hue bins (of 12) visited at 1 Hz · the hue at
 //                the survey's window seconds (windows.txt) — one bin all track = one colour
@@ -89,7 +91,7 @@ function row(track, mode) {
     let ink = 0, dv = 0, nsp = 0;
     for (const r of rs) for (let j = 0; j < r.P.splats.length; j++) { const p = r.P.splats[j], k = r.kinds[j] || '?'; cnt[k] = (cnt[k] || 0) + 1; nsp++; if (k !== 'drop') ink += (p.r + p.g + p.b) * (p.rad / K.RADIUS) ** 2; dv += Math.hypot(p.dx, p.dy); }
     const kicks = rs.filter((r) => r.S.kickEvt).length, snares = rs.filter((r) => r.S.snareEvt).length, chords = rs.filter((r) => r.P.chord > 0).length;
-    return { s, music, cnt, ink, dv, nsp, kicks, snares, chords, hue: hsvHue(rs[rs.length - 1].P.colour) };
+    return { s, music, cnt, ink, dv, nsp, kicks, snares, chords, hue: hsvHue(rs[rs.length - 1].P.colour), harm: m(rs, (r) => r.P.harmonic || 0) > 0.5, noise: m(rs, (r) => r.P.noise || 0) > 0.5 };
   });
   const mus = secs.filter((x) => x.music), ms = Math.max(1, mus.length);
   const inj = mus.filter((x) => x.nsp > 0).length;
@@ -106,6 +108,7 @@ function row(track, mode) {
   const brk = BRK[track] ? clears.filter((c) => c >= BRK[track][0] && c <= BRK[track][1]).length : null;
   const subFr = rows.filter((r) => r.S.subGate > 0), xs = subFr.map((r) => r.xSub);
   const hitX = []; for (const r of rows) for (let j = 0; j < r.P.splats.length; j++) if (['kick', 'snare', 'chord'].includes(r.kinds[j])) hitX.push(r.P.splats[j].x);
+  const harmS = secs.filter((x) => x.music && x.harm).length, noiseS = secs.filter((x) => x.noise).length;   // §111 item 8
   const kickDy = []; for (const r of rows) if (r.S.kickEvt) for (let j = 0; j < r.P.splats.length; j++) if (r.kinds[j] === 'kick') kickDy.push(r.P.splats[j].dy);
   const huePct = 100 * musFr.filter((r) => r.conf >= 0.999).length / Math.max(1, musFr.length);
   const bins = new Set(mus.map((x) => Math.floor(x.hue * 12) % 12));
@@ -114,19 +117,19 @@ function row(track, mode) {
   return { track, mode, whole: tr.whole, frames: N, dur: +T[N - 1].toFixed(1), musicS: mus.length, injPct: 100 * inj / ms, chan, hits, perS: { kick: hits.kick / ms, snare: hits.snare / ms, hat: hits.hat / ms },
     ink: { p50: q(mus.map((x) => x.ink), 0.5), p90: q(mus.map((x) => x.ink), 0.9) }, gov, dv: q(mus.map((x) => x.dv), 0.5), voidPct, deepPct, syrupPct,
     clears, trueN, brk, xSub: xs.length ? { p10: q(xs, 0.1), p50: q(xs, 0.5), p90: q(xs, 0.9), span: q(xs, 0.9) - q(xs, 0.1), n: xs.length } : null,
-    hitX: hitX.length ? { p10: q(hitX, 0.1), p90: q(hitX, 0.9) } : null, kickDy: kickDy.length ? { p10: q(kickDy, 0.1), p50: q(kickDy, 0.5), p90: q(kickDy, 0.9) } : null,
+    hitX: hitX.length ? { p10: q(hitX, 0.1), p90: q(hitX, 0.9) } : null, harmS, noiseS, kickDy: kickDy.length ? { p10: q(kickDy, 0.1), p50: q(kickDy, 0.5), p90: q(kickDy, 0.9) } : null,
     huePct, hueBins: bins.size, hueAt, gate: !WIN[track] || WIN[track].gate !== false };
 }
 
 const out = [], rowsJ = [];
-out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | x sub p10/p50/p90 (span) | x hits p10/p90 | kick dy p10/p50/p90 | hue: key % · bins · at windows |');
+out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows |');
 out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const t of TRACKS) for (const mode of MODES) {
   if (t === 'rec' && mode !== '0') continue;
   const r = row(t, mode); rowsJ.push(r);
   if (r.missing) { out.push(`| ${t} | ${mode} | — no trace (tools/traces.sh ${t}-map${mode}) |`); continue; }
   const c = r.chan, h = r.hits;
-  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} |`);
+  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} (${r.harmS} · ${r.noiseS}) | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} |`);
 }
 console.log(out.join('\n'));
 if (process.env.JSON) fs.writeFileSync(process.env.JSON, JSON.stringify(rowsJ, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v)));
