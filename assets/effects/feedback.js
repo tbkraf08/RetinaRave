@@ -5,8 +5,11 @@
 // after GPU Gems ch. 38 (Harris 2004)
 // FEEDBACK: previous frame re-injected with decay, zoom and twist (the trails). Ping-pong pair f0/f1.
 // Scene slots: post.fb.decay (number or fn(MS) → 0..1) and, since DECISIONS §105, post.fb.advect (number or fn(MS) → a gain on
-// the fluid substrate's velocity, default 1): the trail is back-traced along engineTex.vel — Stam's semi-Lagrangian step, the
-// reference's advect pass — so it rides the music's current instead of only shrinking toward the centre. Lifted from cardioid3 FS.fb.
+// the fluid substrate's velocity): the trail is back-traced along engineTex.vel — Stam's semi-Lagrangian step, the reference's
+// advect pass — so it rides the music's current instead of only shrinking toward the centre. Lifted from cardioid3 FS.fb.
+// DEFAULT 0 since §109 (2026-10-09, the user: "I don't like the fluid dynamics effecting the other scenes (I think is the
+// advection?) -> ie. nav, particles, torus, etc."): every scene runs the scalar pass unless its `post.fb.advect` opts in — FLUID
+// (scenes/fluid, id 12) does with 1; `&post=<scene>.fb.advect=<gain>` is the one-run A/B (CONTRACTS §1.4).
 // Linear chain (io.linear, v0.3 §20): this is the chain's first pass, so it decodes the scene's sRGB output here
 // (uFb.w = 1) and its buffers hold linear radiance; the decay slot keeps its encoded meaning — a per-frame factor d
 // on encoded values is d^2.2 on linear ones, so the trail length a scene tuned stays what it was.
@@ -44,8 +47,9 @@ export default {
   run(io) {
     const { gl, tex, tri, use } = this.ctx, S = io.MS;
     const f0 = io.frameN & 1 ? this.f0 : this.f1, f1 = io.frameN & 1 ? this.f1 : this.f0;
-    // §105: the advect gain — number or fn(MS) like decay, default 1; the old program whenever the substrate is off or the gain is 0
-    const a = io.post.fb && io.post.fb.advect, ak = typeof a === 'function' ? a(S) : a !== undefined ? a : 1;
+    // §105: the advect gain — number or fn(MS) like decay; the old program whenever the substrate is off or the gain is 0.
+    // §109: the default is 0 — a scene opts IN (FLUID does); the roster's trails do not ride the current (the user's call).
+    const a = io.post.fb && io.post.fb.advect, ak = typeof a === 'function' ? a(S) : a !== undefined ? a : 0;
     const adv = !!(io.fluid && io.fluid.on && ak > 0);
     const pr = adv ? this.prA : this.pr;
     use(pr, f1, io.w, io.h);

@@ -6,5 +6,8 @@
 # → §108 (2026-10-09): aadb70d9 / 81039422 — the chord shears (scene-md5-v035.txt's header). Measured twice (PORT 8914), equal.
 # → §109 (2026-10-09): e8dd5f0a / b996f158 — the lattice's events reach the substrate (the kick impulses, the snare shears; the fake
 # smoke list's header). Measured twice (PORT 8911), equal.
-e8dd5f0a16c264e8a671b6d02879fe14  still-f360.jpg
-b996f158f55f63f84322614e592d797f  still-f840.jpg
+# → §109's advect-off default (the same day): BACK to §83's b7d52757 / ca912a8d — the still rests the scene's uniforms and the chain
+# under it is the scalar pass again, so neither the substrate nor the lattice's events reach this frame (GIELIS reads no event and no
+# velocity). The pair had moved at §105 / §108 / §109-events only through the advected trail. Measured twice (PORT 8911), equal.
+b7d527572d19a7a099e4b6ca8bc41d52  still-f360.jpg
+ca912a8dd655d2c029be9d5d3b6855f0  still-f840.jpg

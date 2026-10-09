@@ -8,4 +8,7 @@
 # → fb6010b0 at §109 (2026-10-09, the fake events reach the step and the scenes: the kick's impulses and the snare's shears now fire
 # on the lattice, and NAV2 / TORUS2 — both sides of this fade — fire their event voices). Measured twice (PORT 8911, m .499, errs []),
 # equal. The fake timeline is the SMOKE from §109 on; the real-track lists (real-md5-v035.txt) are the proof.
-fb6010b0b9166bd2f4b8f58dd3e8bc2d  trans-mixs-0-3-f178.jpg
+# → 9632647d at §109's advect-off default (the same day; the user: the advection is not wanted on nav / particles / torus; FLUID opts
+# in): both sides of this fade run the scalar pass again — not back to v0.34's 724bbd72 because NAV2 and TORUS2 fire their event voices
+# on the fixed fake. Measured twice (PORT 8911, m .499, errs []), equal.
+9632647d03e445513144bd6cdc82e5ea  trans-mixs-0-3-f178.jpg

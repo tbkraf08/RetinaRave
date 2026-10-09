@@ -197,16 +197,19 @@ needed, now generic:
   0.8 s eased 0→1 (the parent decides what that means: NAV's DRUM fades the interior membrane in).
 - **The substrate** (`ctx.fluid`, §1.1; DECISIONS §104): the fluid every scene can read (`engineTex.vel` / `.dye`) and stir
   (`splat`, `force`, `params`). It is on by default where float render targets exist, off with `&fluid=0` / key `W`. Its one
-  consumer in the core is the feedback pass, which back-traces every scene's trail along its velocity (`fb.advect`, §105);
+  consumer in the core is the feedback pass, which back-traces a scene's trail along its velocity when that scene opts in
+  (`fb.advect`, §105; **off by default since §109 — FLUID opts in; the user's 2026-10-09 call: "I don't like the fluid dynamics
+  effecting the other scenes … nav, particles, torus"**);
   FLUID (id 12, §106) shows the dye itself, lit as a liquid surface; its own two injections (a ring on the drop, a sparkle on the hats)
   go through `splat`, gated on `visibility` — the pool is one under every scene. **`params` is rewritten by the step BEFORE `update()`**,
   so a scene's `params.curl += 10` in `update()` is overwritten before any step reads it (§106 found the plan's override dead; a
   scene wants a `bias` slot the step adds after the grammar — not built).
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
-  the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **1 default**
-  = the trail moves at the current's own speed, 0.5 = half, 0 = the v0.2 scalar pass, the identical compiled program; it is also
-  the scalar pass whenever the substrate is off — `&fluid=0`, key W, no float render targets), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
+  the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **0 default
+  since §109** = the v0.2 scalar pass, the identical compiled program — a scene OPTS IN: 1 = the trail moves at the current's own
+  speed, 0.5 = half; FLUID (id 12) sets 1, no roster scene does (the user, 2026-10-09: the advection on nav / particles / torus is
+  not wanted); it is also the scalar pass whenever the substrate is off — `&fluid=0`, key W, no float render targets), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
   Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
   Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
@@ -584,6 +587,9 @@ Rules (`check.js`): `title` and `blurb` non-empty (fail); a `card` without its t
 
 ### 1.18 Sync rules — how a scene looks synced with the music (v0.15)
 
+**A scene or engine change is proven on real tracks (every library track, both map modes, the pad take — HARNESS "Real-music
+acceptance", DECISIONS §109); the `#test` fake timeline is a smoke test, never the proof.**
+
 The v0.15 ears (`engine/ears/`, stage `ears`) and track map (`engine/map/`, file mode) exist so a visual can land *on* the
 sound. The rulers they are measured by (`ENGINE-CHLADNI-SESSION-PROMPT.md`, `tools/truth/compare.py`, `docs/AUDIT-v0.15.md`)
 are the scene author's rules:
@@ -821,7 +827,7 @@ seconds; `frameN` monotonic (it keeps counting while you are skipped — a gap m
 the scene's encoded output and sets `decoded`; if feedback is skipped the core decodes before the first effect above
 order 10) and the composite encodes; `k` the tonemap knee — **`LOOK.k` this frame** (v0.5 item 4: `CHAIN.k` · (1 + `CHAIN.kMood` ·
 (2·arousal − 1)), exactly `CHAIN.k` while the mood gain is 0, its default; HARNESS "Effect chain"); `fluid` the substrate (`ctx.fluid`, §1.1 — `on`, `tex.vel / .dye`; absent in a node-driven
-chain such as chain-smoke, so read it as `io.fluid && io.fluid.on`: feedback runs its scalar program when it is absent or off, §105). An effect that reads a slot or constant tuned on encoded
+chain such as chain-smoke, so read it as `io.fluid && io.fluid.on`: feedback runs its scalar program when it is absent or off, §105 — and, since §109, whenever the scene has not opted in with `post.fb.advect` > 0: the default is off, FLUID opts in). An effect that reads a slot or constant tuned on encoded
 values converts it (`srgbToLin1` from `assets/math/oklab.js`, `pow(d, 2.2)` for a per-frame decay) so the slot keeps
 its meaning; `ctx.oklch` (§1.14) gives the GLSL side.
 - `src` is the current chain input (a target). The scene pass was rendered at `(sw, sh)` inside a `(w, h)` target:

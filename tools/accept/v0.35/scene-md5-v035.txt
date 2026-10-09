@@ -22,29 +22,35 @@
 # (tools/real-md5.sh → real-md5-v035.txt), the fake only says the page still runs. Measured `GPU=1 PORT=8911 tools/scene-md5.sh s109a`
 # and `s109b`: byte-equal (cmp), errs [] hop 840 row 72 on every id. The `&fluid=0` list is scene-md5-v035-fluid0.txt beside this
 # file (v0.34's 24 lines with s0 / s3 / s11 moved — the three scenes whose event voices fire on the fake now — plus s12's idle pair).
-b76fb74efa8412fc3592610d38f10b34  s0-f360.jpg
-a75534d11246233a54b84bea5c0482cf  s0-f840.jpg
-6e33c1fde6fa4498db80e52a478fecbe  s1-f360.jpg
-4a4663bf320401c502c5f5a0a1774a33  s1-f840.jpg
-4de238067c19547febf157e4cd846ec0  s2-f360.jpg
-6ae629d0b3d776940f1e50940efe940b  s2-f840.jpg
-bb79bda7e2d60a729e6d33265ed0d1d2  s3-f360.jpg
-0e40bfac9cb22fccf4ac3920dc91c6ac  s3-f840.jpg
-5254d9d1655103a14d1cad588f3e30d0  s4-f360.jpg
-1d24969349ca5e3526b327d3677216b3  s4-f840.jpg
-fa18b61ee99cdfbdfac0979eeccf79df  s5-f360.jpg
-66d9eaff9f29a2fb3c5f70231a0dd5ac  s5-f840.jpg
-b4b5ca05c5706ad25f8430408ede000e  s6-f360.jpg
-15cbef2d18b072c53220143f69d77ed1  s6-f840.jpg
-9ffb7d02ec6a64945dd0160de816ff1e  s7-f360.jpg
-2a730c0db510bffc5db848185b3bc690  s7-f840.jpg
-98f95f359fd01cb53263b4469b5c1cee  s8-f360.jpg
-89497847fabbddd893deb61a3bedd1c4  s8-f840.jpg
-c7192b7dac0909564f6c8dafaed5d0d7  s9-f360.jpg
-ecc84a13bbfd5b3687aea5079e4eb139  s9-f840.jpg
-6d70690a3fa44f39c9433ac054de71cd  s10-f360.jpg
-77e19182ff1b71c64ca50ff018249d8b  s10-f840.jpg
-1ddf41138b6c4477626a814ec775437a  s11-f360.jpg
-c2d305fb62939c9da0ad405e447ff131  s11-f840.jpg
+# §109, later the same day: the ADVECTION OFF by default (the user: "I don't like the fluid dynamics effecting the other scenes (I think is
+# the advection?) -> ie. nav, particles, torus, etc."): feedback.js's post.fb.advect default 1 → 0, FLUID (s12) alone opts in with 1. So
+# every roster line returned to the `&fluid=0` list's value (scene-md5-v035-fluid0.txt — the scalar pass whether the substrate is on or
+# off: no roster scene reads the velocity or the dye) and s12's pair stayed where the fake-events re-base above put it (bf9bcc3e /
+# 35e85096). Against v0.34: s0 / s3 / s11 differ (the lattice events) and s12 is new. Measured `GPU=1 PORT=8911 tools/scene-md5.sh
+# s109adv0a` and `s109adv0b`: byte-equal, errs [] hop 840 row 72 on every id. A solver / grammar change now moves the s12 pair ALONE.
+a6c725fa86d56e0b954a3bf34548f88c  s0-f360.jpg
+a12256fdbc334215c31f9851f9638647  s0-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
+62515d49261070922f23ce68f94fc877  s2-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s3-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s3-f840.jpg
+0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
+05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
+9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
+04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
+fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
+6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
+d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
+7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
+fb74fee47170b2d1f043db9f96319c7e  s8-f360.jpg
+8a0715dfb90ecf20d484578932a2f115  s8-f840.jpg
+fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
+02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
+6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
+1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
+3b12b8b362e53ef1c5d7c2222961682f  s11-f360.jpg
+a56a64cefaf8b43295cd63e830f15327  s11-f840.jpg
 bf9bcc3e83c0d19596ebabff1c2752af  s12-f360.jpg
 35e85096d882e6ad6e034729113bd751  s12-f840.jpg

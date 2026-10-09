@@ -4,6 +4,50 @@
 
 All commands run from the repo root. Zero dependencies beyond node ≥ 20, google-chrome, python3 + PIL (montage).
 
+## Real-music acceptance (2026-10-09, DECISIONS §109)
+
+**The rule: a scene or engine change is proven on REAL TRACKS; the fake timeline is a smoke test.** Until §109 every identity
+reference (the scene md5 lists, parity, the continuity recipes, the director's fake trace, the chain smoke) ran on `#test`'s fake
+timeline under `CLOCK=1` — and §108 found that `features-ears.js` zeroed the §83 lattice's `kickEvt / snareEvt / hatEvt` before its
+`fakeOn` return, so no percussion event had ever reached a scene there: the references proved pixel identity against a timeline that
+was not music. The user: *"test should be real and simulate what would normally happen when visualizing music"*. So:
+
+- **The traces** — `tools/traces.sh` (~2 min each, ~30 min for all 15): every recordable MS field per frame of a deterministic cold-start
+  file run (`filetrace.js`, `WARM=0`, the five rules below) for EVERY library track (`~/Music/RetinaRave`: Comptine, CyborgNinja,
+  IBelongHere, Malicious, SeeYouDrop, Vienna, WhoLikesToParty) 0 → 110 s in both modes — `<Track>-map1.json` the normal file mode,
+  `<Track>-map0.json` the live lanes on the same audio — plus `rec-map0.json`, the user's pad take (FLUID-DIAG-2026-10-09,
+  `tools/work/fluid-diag/music/rec.wav`) 0 → 24.4 s. 16 MB each, `tools/truth/traces/*.json`, gitignored; `npm test` FAILS with the
+  one-line fix when one is missing. Two recordings cmp-equal.
+- **The node tests on music** — `tools/test_music.js` (the engine: shape, clock, map, tongues, drums, build, queue, the director driven by
+  the real rows) and `tools/test_fluid.js`'s `music` block (the grammar: injects on ≥ 95 % of the seconds with music on every track,
+  silence moves nothing, the clear is armed ON every drop frame, SeeYouDrop's map drops within one frame of the truth, the pad take's
+  22 / 22) — both in `npm test`, per track, the numbers printed, never an average that hides one. The per-engine tests
+  (`test_drums / build / queue / clock / tongues / director`) stay the UNIT tests of each pure rule on synthetic input; a claim of the
+  form "this behaves right on music" lives in `test_music.js` / the `music` block.
+- **The windows** — `tools/truth/windows.py` → `tools/truth/windows.json` (committed): per track, from its own truth (`trackmap.py`'s
+  `tools/truth/<Track>.json` — all seven exist; §109 re-ran `trackmap.py WhoLikesToParty` at the user's grains and it came back byte-identical), the frame-addressed shots the way §104
+  chose SeeYouDrop's: intro (at 0, 10 s) · groove (the loudest 30 s + 10) · quiet (the sparsest 10 s) · build / drop 1 and 2 (5 s before
+  and ON each bar-pinned truth drop; the first two section boundaries where a track has none) — one run per `at`, `frame = 2 +
+  round((t − at)·60)`; and each track's 60 s `rulers` window (20 s before the loudest 30 s to 40 s into it).
+- **The identity references** — `GPU=1 PORT=88xx tools/real-md5.sh <tag>`: every window × BOTH map modes (`&map=1` the file map,
+  `&map=0` the live lanes; the take `&map=0` only) → `tools/work/real-<tag>-md5.txt`, one line per shot
+  (`<md5>  s<id>-<track>-<window>-f<N>-m<map>.jpg`), the reference `tools/accept/v0.35/real-md5-v035.txt`. The DEFAULT scope (what
+  `accept.sh` runs) is the roster + FLUID (`SCENES="0 1 3 12"`) on every track at intro / groove / build1 / drop1 (+ the take's intro
+  / chords); `FULL=1` is every registered id at every window (quiet, build2, drop2 too). `SCENES= TRACKS= WINDOWS= MODES=` scope a
+  re-proof to a scene folder's own lines. `PAR=2` runs two scene lanes (PORT, PORT+1): the md5s hold (rule 1 holds the clock through the
+  decode under load — `f0` is printed per run and must read 2) but a bench does not. The wall times are in DECISIONS §109.
+- **The behaviour rulers** — `GPU=1 PORT=88xx tools/real-rulers.sh <tag>`: one deterministic run per scene × track on the track's
+  `rulers` window through `lumtrace.js --jump=1 --mon=1` — the luminance ruler, the PICTURE's continuity (every frame: the monitor's
+  spike rule on the whole-frame mean |ΔY| outside event frames + 0.3 s; black frames) and the continuity monitor on the scene's OWN
+  state (`CARD.NAV = REG[id].scene.state` where it is monitor-shaped: nav2, nav, gielis, chladni, fluid; `-` otherwise) — one table,
+  `tools/accept/v0.35/real-rulers-v035.txt`. FAIL: `mon viol` non-empty · `jump viol` non-empty · black frames > 5 % · `clipFrac ≥ .25`
+  on > 2 % of the sampled frames · page errs / nonFinite. **A FAIL is a finding for DECISIONS, never a retune in the sweep.** Same
+  DEFAULT / `FULL=1` / `PAR=` scope as the md5 sweep.
+- **`accept.sh`** runs the traces check + both node tests, the fake smoke lists (`scene-md5-v035.txt` and the `&fluid=0` list
+  `scene-md5-v035-fluid0.txt`), then `== real music`: the default md5 sweep against the reference and the default rulers table.
+- **What to re-prove after a change** (the v0.7 rule, on music): a scene folder → its own real lines (`SCENES=<id>`), its rulers rows;
+  the core / engine / the substrate → the default sweep, `FULL=1` before a tag. The fake lists re-base with it (they are the smoke).
+
 ## Serve
 
 ```
@@ -225,8 +269,13 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   must equal it too. **Since §105 (Step 2)** the feedback pass rides the velocity, so the default list is `tools/accept/v0.35/scene-md5-v035.txt`
   (every line moved, `ACC` default v0.35; re-based in place at §108 — the chord channel is a velocity, and the fake timeline's
   `snare` level jumps with no `snareEvt` at the step, so every line moved again, `trans-mixs-md5.txt` and `gielis-still-md5.txt`
-  with it) and the `&fluid=0` list is what must still equal v0.34 line for line — the standing proof
-  that the scalar pass is byte-identical. A change to the solver, the grammar or the feedback pass moves the v0.35 list and holds the v0.34 one.
+  with it; **re-based again at §109**: the lattice's events reach the step now, the kick's impulses and the snare's shears fire on the
+  fake) and the `&fluid=0` list is `tools/accept/v0.35/scene-md5-v035-fluid0.txt` (since §109: v0.34's lines with s0 / s3 / s11 moved —
+  the three scenes whose event voices fire on the fixed fake — and s12's idle pair), what must still equal line for line — the standing
+  proof that the scalar pass is byte-identical. **Since §109's advect-off default the two lists are the SAME on every line but s12's**
+  (no roster scene reads the velocity or the dye; FLUID shows the dye): a solver / grammar change moves the s12 pair alone, the roster
+  moves only when a scene opts into `fb.advect` or reads the substrate. **Both are the SMOKE since §109; the proof is
+  `real-md5-v035.txt` ("Real-music acceptance" above).**
   A DYE-only change moves the s12 pair alone (no roster scene reads the dye — proven at §108 with the floor off / on through `CARD.fluid.K`).
 - **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
   tail, the snare's two shears, the seeded hats, the drop's one-beat clear (armed by `dropLiveEvt` OR `mapDropEvt`, never by a
@@ -253,7 +302,7 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   the floor (one of six in the DIAG). `frame0` must read 2 in the first eval (a shared GPU moves it — nothing else on the machine).
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
-  consumer exists; two runs of a shot are md5-equal (the four rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
+  consumer exists; two runs of a shot are md5-equal (the five rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
 - **FLUID, id 12 (§106, `assets/scenes/fluid/`)** — the substrate shown as itself: one fullscreen pass lights `engineTex.dye` as a liquid
   surface (the normal from the ink's luminance gradient over ±2 dye texels, a light at the top, a Blinn highlight, a porthole feather),
   exposure on the loudness ladder; forced-only (`&scene=12`, `n` cycles to it). Its own injections through `ctx.fluid.splat` (a ring of six
@@ -288,12 +337,14 @@ knee is `LOOK.k = k · (1 + kMood · (2·arousal − 1))`, ≥ 0.2 (v0.5 item 4;
 composite at k 0.75 / 1.5 / 3 → 135 / 150 / 177 (a harder knee lifts the mids) and checks `LOOK.k === CHAIN.k` at the default.
 **Advection (DECISIONS §105).** Feedback has two program objects: `pr` (the v0.2 shader, untouched) and `prA` (the same plus a
 back-trace of `uPrev` along `engineTex.vel`, `c −= advect·dt·v`, clamped to the picture). `run()` picks `prA` only when
-`io.fluid.on && post.fb.advect > 0` (default 1); otherwise the old program runs with the old uniforms — bit-exact by construction.
-The proof is two lists: `tools/scene-md5.sh <tag>off '&fluid=0'` must equal `tools/accept/v0.34/scene-md5-v034.txt` line for line
-(the old path intact under the substrate switch), and `IDS=1 tools/scene-md5.sh <tag> '&post=dust.fb.advect=0'` must equal v0.34's
-s1 pair (intact under the per-scene slot); `=0.5` moves s1 and `=1` equals the current reference's s1 pair (the §392 pattern).
-`&post=<scene>.fb.advect=<gain>` is the manual override (`fb.advect` is the fifth post param, `manual-smoke.js`). The cost is one
-bilinear fetch per frame pixel; the pass runs at frame res (§105 has the number).
+`io.fluid.on && post.fb.advect > 0`; otherwise the old program runs with the old uniforms — bit-exact by construction.
+**The default is 0 since §109** (the user, 2026-10-09: *"I don't like the fluid dynamics effecting the other scenes (I think is the
+advection?) -> ie. nav, particles, torus, etc."*): a scene OPTS IN with `post.fb.advect` — FLUID (id 12) sets 1, no roster scene does.
+The proof is therefore: every line of the fake smoke list `tools/accept/v0.35/scene-md5-v035.txt` EXCEPT the s12 pair equals the
+`&fluid=0` list `scene-md5-v035-fluid0.txt` (the scalar pass whether the substrate is on or off; the s12 pair differs because FLUID
+shows the dye), and `IDS=1 tools/scene-md5.sh <tag> '&post=dust.fb.advect=1'` moves the s1 pair (the opt-in path alive).
+`&post=<scene>.fb.advect=<gain>` is the manual override (`fb.advect` is the fifth post param, `manual-smoke.js`) and the one-run A/B
+of the §105 look on any scene. The cost is one bilinear fetch per frame pixel; the pass runs at frame res (§105 has the number).
 
 `&linear=0|1` under `#test` picks the chain's space (`CARD.CHAIN.linear`; the default is linear since §20, 0 is the
 v0.2 chain for A/B). The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
@@ -548,6 +599,8 @@ GPU=1 node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"}
 # => {"n":3519,"fast":97,"viol":[]}     <- viol must be []; fast = smooth fast frames (exterior springs after drops), fine
 # It watches NAV.cPath (the chart position before the beat-kick blend); a violation is a spike: d>0.06 and d>2.5x the
 # previous frame's motion, outside declared cuts (pathCut<=2, a kick rise, a mode change and the 0.3 s after it).
+# §109: under cdp's CLOCK=1 the monitor's time is window.__FRAME's (1000/60 ms per frame), so a deterministic run gives the same
+# viol twice; real-rulers.sh binds it to every scene's own state through lumtrace.js --mon=1 (a scene with no cPath reports '-').
 ```
 
 ## Parity with v3 (core/engine changes only)
@@ -577,7 +630,11 @@ file-det −`DET_LEAD`, real-time file / demo the output timestamp's lag (median
 deterministic under `CLOCK=1` (two runs `cmp`-identical), the harness every live-mode stage is developed on. SeeYouDrop 25–45 s
 with `&map=0`: kick F 0.786 (P 0.717 R 0.868), placed lag +5 ms, against the map's 1.000. With no map gate the file opens a
 frame earlier, so `filetrace.js` may print "frame0 is -1" (its header eval races the first frame) — the `fileStart` log still
-says frame0 2, and a window with t0 ≥ 8 s records the same frames; a t0 = 0 window starts one frame earlier (heard 0).
+says frame0 2, and a window with t0 ≥ 8 s records the same frames. **A t0 = at window (a cold start, `WARM=0`) is recorded from
+frame0 exactly since §109**: the recorder starts BEFORE the open gate (the source clears `__pauseAt` when the track is decoded and
+the driver's 40 ms poll sees `file.open` one to three frames later, so a recorder started after the gate caught frame 2, 3 or 4 — two
+recordings of the pad take differed by one frame), the rows before frame0 are trimmed and the header re-read from the engine after
+the run; two cold recordings cmp-equal (the pad take, twice: 1465 frames, heard 0 → 24.4, identical).
 
 Two modes, and only the second is reproducible:
 - **real time** (a real window, or headless without `CLOCK=1`): an `AudioBufferSourceNode` into `AU.bus` **and** into
@@ -599,9 +656,9 @@ PORT=8812 RT=1 node tools/filetrace.js SeeYouDrop 0 60 tools/work/rt.json    # t
 writes the frozen JSON (`{track, mode, sr, at, fps, detLead, fields, f, t, cols, log}` — booleans 0/1, non-finite null).
 It prints frames / fields / heard range / mode / `f0` / `sr` / log entries / `ENGINE.ms` / size. A 60 s `'*'` trace is
 3600 frames × 113 fields ≈ **5.07 MB**, returned in 400 000-character chunks from `window.__tj` (a single CDP return that
-size is not attempted; `MAX_CHUNKS` caps it at 16 MB and the driver says so rather than truncating).
+size is not attempted; `MAX_CHUNKS` caps it at 25.6 MB since §109 — a 110 s `'*'` trace is 16.2 MB — and the driver says so rather than truncating).
 
-### The four rules of a deterministic real-track run
+### The five rules of a deterministic real-track run
 
 1. **`frame0` is 2, always.** The source sets `window.__pauseAt = 1` before the decode and clears it when the track is
    open, so the page runs exactly one warm-up frame however long the decode takes. Without it `core/loop.js`'s `wall`
@@ -611,7 +668,10 @@ size is not attempted; `MAX_CHUNKS` caps it at 16 MB and the driver says so rath
    clears `window.__pauseAt` as well as `__PAUSE`, which undoes the hold.
 3. **Address the window by `__FRAME`, not by a `heardT` predicate.** A general `{until}` polls every 40 ms and the fake
    clock runs hundreds of frames in the gap, so it stops at a different frame in each run.
-4. **Two consecutive non-`__FRAME` `{until}`s deadlock** (the first sets `__PAUSE = 1` and only a `{wait}` or a `__FRAME`
+4. **Two Chromes, two debug ports (§109).** cdp's debug port is `PORT + 1000` (`DBG=` overrides; no `PORT` = the old random
+   draw), so two drivers on different `PORT`s can never attach to one Chrome — two random draws collided once and one page was
+   driven by both (`real-rulers.sh` lane 1 read lane 0's page: "got 73724 of undefined characters").
+5. **Two consecutive non-`__FRAME` `{until}`s deadlock** (the first sets `__PAUSE = 1` and only a `{wait}` or a `__FRAME`
    target clears it) — put `{eval:"window.__PAUSE=0"}` between them.
 
 The recipe, in full — the first real-music screenshots the project has (TORUS2 at heard 103.967 / 107.967 s, around drop 2):
@@ -1033,6 +1093,9 @@ on the v0.32 clip in `docs/plans/nav-retune-review-2026-10-08/lum.csv`, moved in
 ```
 node tools/lumtrace.js <Track> --scene=0 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831] [--out=path] [--x='n2lum=0.28,2.2&n2smo=.12,.5']
 # -> <out>.csv  <out>.txt  <out>-sheet.jpg  <out>.log     (default out: tools/work/lum/<Track>-s<scene>-<from>-<to>, gitignored)
+# §109: --jump=1 the picture's continuity on EVERY frame (160 px: mean |ΔY| against the previous frame, the monitor's spike rule outside
+#   event frames + 0.3 s, the black frames), --mon=1 tools/monitor.js on the scene's own state, --map=0 the live lanes; both land in the
+#   .txt's last lines and in <out>.json (what tools/real-rulers.sh tabulates; "Real-music acceptance" at the top)
 ```
 It is a `filetrace.js`-shaped run: `CLOCK=1 GPU=1` cdp on `#test&track=<Track>&at=<from − warm>&scene=<N>` (file mode, the
 deterministic clock, `heardT = at + (frame − 2)/60`, the file-mode display lead), and a rAF hook registered after
@@ -1211,8 +1274,12 @@ the same directory**: `scene-md5-v035.txt` (every scene id at CLOCK=1 f360 / f84
 md5" loop checks all twelve ids against it, and the torus2 / nav2 / polytope / gielis blocks read their lines from the same
 list), `gielis-still-md5.txt` and `trans-mixs-md5.txt` (the 0→3 mixs fade at f178). `ACC` is the ONE
 variable at the top of the script (`ACC=${ACC:-v0.35}`); a re-base is: a new directory, those three files, that one default.
-v0.35 (DECISIONS §105, 2026-10-09) is the advection re-base: the feedback pass rides the fluid substrate's velocity, so **every** line
-moved — the 24 scene lines, the mixs 0→3 value and the GIELIS still pair; `tools/scene-md5.sh <tag> '&fluid=0'` still equals v0.34's list.
+v0.35 (DECISIONS §105, 2026-10-09) was the advection re-base: the feedback pass rode the fluid substrate's velocity, so **every** line
+moved — the 24 scene lines, the mixs 0→3 value and the GIELIS still pair; `tools/scene-md5.sh <tag> '&fluid=0'` still equalled v0.34's list.
+**§109 (2026-10-09) turned the advection OFF by default** (the user: not on nav / particles / torus; FLUID opts in) and let the fake's
+lattice events through, so the list was re-based twice that day: with advect off the roster's lines equal the `&fluid=0` list
+(`scene-md5-v035-fluid0.txt`) on every line but s12's, and the fake lists are the SMOKE — the proof is `real-md5-v035.txt` and
+`real-rulers-v035.txt` ("Real-music acceptance" at the top).
 The earlier per-version lists (v0.7 / v0.8 / v0.9 / v0.14 / v0.29) stay on disk as history (v0.34 = §97's NAV2 re-base: the v0.29
 list with only the s8 pair changed, to NAV's s0 values — NAV2 is a clone of NAV; `nav2-still-md5.txt` went with the `&still=1` hook; **re-based in place by §102**, 2026-10-08, the swap: s0 = the retuned navigator `a8de2f03 / 7a65fd16`, s8 = the v0.33 navigator `fb74fee4 / 8a0715df` — the file's header says which). `parity.js` compares cardioid3's navigator against id 8 since §102 (`NAVID=8` default; the home is the retuned walk). `parity.js` and the trace / bench tools
 honour the same `ACC` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier files; the v0.2 "before"/"none"/"after" traces
