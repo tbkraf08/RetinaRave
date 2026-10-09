@@ -230,6 +230,19 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
   consumer exists; two runs of a shot are md5-equal (the four rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
+- **FLUID, id 12 (§106, `assets/scenes/fluid/`)** — the substrate shown as itself: one fullscreen pass lights `engineTex.dye` as a liquid
+  surface (the normal from the ink's luminance gradient over ±2 dye texels, a light at the top, a Blinn highlight, a porthole feather),
+  exposure on the loudness ladder; forced-only (`&scene=12`, `n` cycles to it). Its own injections through `ctx.fluid.splat` (a ring of six
+  on the drop — the slam rule `mapDropEvt || dropLiveEvt || (mapOn ≤ .5 && dropEvt)` — and a sparkle on `hat2`), gated on being on screen.
+  Proofs: `IDS=12 PORT=88xx GPU=1 tools/scene-md5.sh s12` twice (the pair in `scene-md5-v035.txt`; `&fluid=0` paints the idle, its pair in
+  that file's header); the windows above on `&scene=12` → `tools/accept/v0.35/fluid-s3-*.jpg`; `CARD.bench(12, 300)` interleaved with
+  `bench(0, 300)` (budget ≤ 0.5 ms, the pass alone — the step's 0.58 is the substrate's); the continuity monitor on the scene's own state:
+  `{"eval":"CARD.NAV=CARD.REG[12].scene.state;$MON;'ok'"}` on `test&track=SeeYouDrop&at=25&scene=12` (real time, 60 s) → `viol []`
+  (`cPath` = exposure and on-screen weight, `kick.x` = the drop ring's envelope, the one declared cut); `hooks.flinfo()` / `.fldbg()`
+  read-only. **The drop strip** (does the pool clear?): `at=48`, shots every 6 frames from f512 (56.5 s) to f656 (58.9 s) with a rAF
+  logger that records every frame where `dropLiveEvt | mapDropEvt | dropEvt` is set, plus `CARD.fluid.params.dyeDiss` →
+  `tools/work/fluid-s3-drop1-strip.jpg`; §106's finding: on SeeYouDrop's drop 1 in file mode `dropEvt` f578 / `mapDropEvt` f579 fire and
+  `dropLiveEvt` never does, so the grammar's clear (keyed on it alone) never runs — `dyeDiss` stays 1.0 through the drop.
 
 ## Effect chain (change to `core/post.js`, an effect, or the chain's colour space — v0.3 §20)
 
@@ -470,7 +483,7 @@ hash (the harness hides the card under `#test`, so `pick()` never previews there
 
     GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"      # the steps: tiles + thumbnail widths, FEIGEN tile → peek state, DIRECTOR → forced -1, TORUS tile then the demo link → the show
 
-Expected: `TILES 6 imgs 480,…` (a 0 or a missing image = the thumbnail did not load — `tools/serve.js` serves `site/` at the root since
+Expected: `TILES 10 imgs 480,…` (the scenes that declare `card`: NAV, DUST, MANDALA, TORUS2, POLYTOPE, FEIGEN, MAXWELL, GIELIS, CHLADNI, FLUID — 6 until v0.10, 10 since §106) (a 0 or a missing image = the thumbnail did not load — `tools/serve.js` serves `site/` at the root since
 v0.8.1; on `file://` the images are absent by design); `PEEK true 6 6 demo 0 peek` (mon 0 = silent); `DIRECTOR -1`; `START demo false 3
 hide true []` — the forced scene survives the start. `MOBILE=1` for the
 phone card (`.mobile`, four tiles a row) and `FAKEMIC=1` + `{clickSel:"#mic"}` for the microphone out of a preview. Thumbnails:

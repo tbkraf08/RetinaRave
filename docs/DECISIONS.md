@@ -9226,3 +9226,90 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   `buildLive`) is a slot nobody fills. The HiDPI / `G.FLOAT`-false paths from §104 are unchanged and still unseen on a device.
   Step 3's worker: `io.fluid` is in the chain's io now; the FLUID scene's `post: { fb: { decay: 0.35, advect: 1 } }` is the plan's;
   the full list is v0.35's 24 lines + the two s12 lines it appends; the `&fluid=0` list stays v0.34's.
+
+## §106 FLUID, id 12 — the substrate shown as itself (2026-10-09, one worker; FLUID-PLAN Step 3; the user: *"3) then build fluid sim with your recommendation … don't get caught up in local maxima, nothing is off limits"*)
+
+- **What changed.** `assets/scenes/fluid/{index.js, shaders.js, help.js}` — a scene whose picture IS `ctx.engineTex.dye`: one fullscreen
+  pass (`fluid-show`, `ctx.oklch` prepended) lights the linear ink as a liquid surface — the normal from the ink's luminance gradient over
+  ±2 dye texels (Dobryakov's SHADING idea, the dye read as a height field; ±2 rather than the plan's ±1 because §104's velocity grain reaches
+  the dye at 1035×512 and at ±1 the ×30 relief read it as crinkle — the first look, `tools/work/fl-look-f840.jpg`), a Lambert term from a
+  light at the top (`.35 + .65·n·l`), a Blinn highlight `pow(n·h, 48)` that rides the ink (`.08 + .92·ink`), over a dark pool
+  (`.0012 / .002 / .0045` linear — the chain's tonemap lifts the floor ×1.9, the first look's `.004 / .006 / .011` was grey), a porthole
+  feather on the frame's superellipse `|x|⁴ + |y|⁴` between r .88 and 1.04 (the solver's closed walls stay outside the picture, §1.10's
+  rule; the first look's .82 / 1.0 ate a quarter of the frame), `linToSrgb` at the end (the scene writes encoded, §1.10). Exposure
+  `.5 + .9·baseLight(loudRel, loudRange, loudAbs)` (`math/loudlight.js`, as NAV2), eased τ .12 s. `name: 'fluid', id: 12, cuts:
+  'continuous', always: false, score() → 0` (§93's roster rule — forced-only; no digit key, `n` cycles to it, `&scene=12`), `post: { fb:
+  { decay: .35, advect: 1 }, bloom: { thr: .5 }, kaleido: 0, morph: { flow: .4 } }`, `card` + `site/thumbs/fluid.jpg` (f840, `tools/thumbs.sh`
+  `12:840`), `params` `light` / `relief`, `hooks.flinfo()` / `.fldbg()` read-only, `hud()` one line (the step's ms, splats, `dyeDiss`,
+  `curl`, or why the pool is empty), `state` for the monitor. Two injections of its own through `ctx.fluid.splat`, gated on being on screen
+  (`vis > 0`, from `env.SC` — the pool is one under every scene): a ring of six droplets on the drop (radius .22 screen heights, thrown
+  outward at 1.6 uv/s · presence, splat radius ×3, ink .04 white) and a sparkle on the surface while `hat2 > .3` (one droplet per 50 ms at
+  y .93, x walking the golden ratio on the scene's own count — seeded, never random; ink .2·(hat2 − .3)/.7·presence, radius ×.4, falling
+  −.12 uv/s). `feats` = exactly its own reads: `loudRel, loudRange, loudAbs, dropLiveEvt, mapDropEvt, mapOn, dropEvt, hat2, presence`;
+  the substrate's reads stay `FLUID_FEATS` (part B of the help). `assets/main.js` the import + the list (twelve scenes); `tools/thumbs.sh`
+  `12:840`; CONTRACTS §1.8 (12 fluid) and §1.4 (the `params` note below); HARNESS "## Fluid" (the scene's proofs, the strip recipe),
+  "## Landing tiles" (`TILES 10` — the text said 6 since v0.10); `site/about.html` the scenes list. `releases.json` untouched (no tag here).
+- **Three deviations from the plan, and why.** (1) `feats` is nine, not four: `baseLight()` reads `loudRange` and `loudAbs` as well as
+  `loudRel` (NAV2 declares the same), and the drop is CHLADNI's slam rule `mapDropEvt || dropLiveEvt || (mapOn ≤ .5 && dropEvt)`, not
+  `dropLiveEvt` alone — because on SeeYouDrop's drop 1 in file mode **`dropLiveEvt` never fires** (the strip below: `dropEvt` f578 = 57.600 s,
+  `mapDropEvt` f579 = 57.617 s, the live detector silent from 56.5 to 58.9 s), so the plan's ring would never have landed where the user's
+  eye is. (2) The plan's `ctx.fluid.params.curl += 10` while on screen is NOT done: `stepFluid` runs BEFORE `update()` (loop.js) and
+  rewrites `params` from `plan()` at the top of every step, so a scene's write in `update()` is overwritten before any step reads it — the
+  §104 contract sentence "a scene may override them for the frame" is dead as written. Fix, for a later step: a `ctx.fluid.bias`
+  `{curl, velDiss, dyeDiss}` the step ADDS after the grammar and zeroes, as `force()` is handled; written on CONTRACTS §1.4. (3) The
+  gradient is ±2 dye texels (above).
+- **Numbers** (this machine, headless `GPU=1`, the 1280×633 canvas). Bench (q pinned, 8 s, three interleaved pairs `bench(12, 300)` /
+  `bench(0, 300)`, readPixels-synced, the scene's pass alone — the substrate's step is §104's 0.58 ms and is paid under every scene):
+  tier 3 (q .95) **0.420 / 0.369 / 0.409 ms** against NAV 1.383 / 1.317 / 1.373 → median **0.41 ms, ratio 0.30**; tier 0 (q .1)
+  **0.395 / 0.426 / 0.365** against 1.450 / 1.436 / 1.399 → median **0.40 ms** — against the plan's ≤ 0.5 ms (one fullscreen pass, five
+  taps of a 1035×512 RGBA16F texture; the tier does not move it because the pass is at frame res). `glerr 0`. CPU: `CARD.fluid.ms`
+  0.05–0.16 ms on the windows. `check.js` 0 fail / 8 warn (the pre-existing soft caps). `npm test` exit 0 (`test_fluid` 50 ok).
+  `license.js --check` 181 public files, 0 without the header; `grep -l Dobryakov` lists all three new files (`shaders.js` the GPU Gems
+  line too). Help: `rows(true)` on 12 = the nine feats, `rows().length` **209** (unchanged — no new FEATS entry), the credit sentence on
+  the page (`#help` contains "re-implementation of Pavel Dobryakov …", `tools/work/help-s12-why.jpg`), errs []. Landing: `TILES 10 imgs
+  480 ×10`, `PEEK true 6 6 demo 0 peek`, `DIRECTOR -1`, `START demo false 3 hide true []`; `MOBILE=1` the same ten. Lumtrace
+  (`tools/lumtrace.js SeeYouDrop --scene=12 --from=25 --to=60 --fps=5`): medY .12 / .15 / .19 / .18 / .23 / .18 / .21 per 5 s window,
+  p90Y ≤ .26, clip 0 on 176 frames, `meanY ≥ .6` on exactly one frame (the drop's flash) — the pool never blows out and never goes black.
+- **Proof.** `IDS=12 PORT=8874 GPU=1 tools/scene-md5.sh` twice → **`13e9acae` / `85cd3023`** (f360 / f840), equal, errs [] hop 840 row
+  72 — appended to `tools/accept/v0.35/scene-md5-v035.txt` (26 lines). One full list (PORT 8882, the "main.js registration" row): the 24
+  other lines **= v0.35 to the byte** (FLUID is forced-only and `always: false` — its `update` never runs under another forced scene, so
+  it cannot stir the pool under them). `tools/scene-md5.sh v35off '&fluid=0'` (PORT 8883): the 24 lines **= v0.34** line for line; s12
+  under `&fluid=0` = the empty-pool idle, **`70405a78` / `f048c5a2`** (twice, in the reference file's header — not in the v0.34 identity
+  list, which has no id 12). The mixs 0→3 line **`1ccfd0c1`** = v0.35 (id 12 is not in the fade). `&trans=morph` 0→12 and 12→0 at f178:
+  m .499, errs [] (`tools/work/fluid-s3-morph-m.jpg`). Monitor 60 s on `test&track=SeeYouDrop&at=25&scene=12` (real time, `CARD.NAV =
+  REG[12].scene.state`): **`n 3606 fast 0 max .0057 viol []`**, errs [], bad [], the substrate on at tier 2 the whole minute (3717
+  steps, q .54 at the end). Bundle: 177 modules, 1690 KB, `&scene=12` from `file://` errs [] bad [] `cur 12`, 351 steps in 6 s, 9
+  "Dobryakov" lines in the single file. The hidden-tab line (`accept.sh` "== hidden tab") not re-run: nothing in this step touches the
+  extractor, `ENGINE.resume` or the loop's resume line.
+- **The eye** (`tools/accept/v0.35/fluid-s3-*.jpg`, the montage `tools/work/fluid-s3-m.jpg`; each shot errs [], bad []). Intro 10 s —
+  the empty pool, a few lilac hat droplets at the surface (no sub, no drums: right). Groove 35 s — the picture the plan asked for: the
+  sub's blue-teal column rising in its sector, the ink lit as liquid, the highlight along its edges, the sparkle droplets at the top.
+  Drop 1 57.6 s — the composite's flash and glitch rows (as on every scene); +0.4 s — the ring's six blobs spreading outward through a
+  pool that is still FULL (below). Build 90 s — magenta, two bright kick blobs and the sub column; build 100 s — the grey-blue, the pool
+  packed with accumulated ink (`dyeDiss` .75 → the void's accumulation, tension's `curl 39`). Drop 2 105.6 s — the flash; +0.2 s — the
+  ring at 1.0 over a lilac pool. The 24-frame strip across drop 1 (`tools/work/fluid-s3-drop1-strip.jpg`, 56.5 → 58.9 s every 0.1 s, mean
+  grey level per frame): **34 34 33 34 34 33 33 34 34 34 33 | 153 95 60 45 42 40 39 38 40 40 39 38 40 40** — the flash at 57.6, then the
+  pool settles at 38–40, BRIGHTER than before the drop (34), not emptier. **Finding: the pool does not clear on drop 1.** The logger
+  shows why: the grammar's clear is `if (S.dropLiveEvt) … st.clearLeft = 60/bpm` (inject.js) and `dropLiveEvt` never fires there in
+  file mode, so `dyeDiss` stays 1.0 through the drop (the strip's column reads 1 on every frame; the §104 montage at 57.6 / 58.0 s was
+  the same event). Proposed inject.js change, for the user's decision (not done — the brief holds the grammar): fire the clear on the
+  slam rule, `dropLiveEvt || mapDropEvt || (mapOn ≤ .5 && dropEvt)` (`mapDropEvt`, `mapOn`, `dropEvt` into `FLUID_FEATS`, the test's
+  Proxy list, the help's part B line follows), and consider `DROP_DISS` 6 → 12: at 6 the pool keeps 10 % after 0.4 s (`(1/(1+.1))²⁴`),
+  at 12 it keeps 1 % — "the pool clears" in under half a beat instead of fading over one. The scene's own ring is on the slam rule
+  already, which is why it shows on the file at all. The hats' sparkles are the one part of the picture that lands on every hit.
+- **Lineage.** The solver is Pavel Dobryakov's WebGL-Fluid-Simulation (MIT, 2017) re-implemented on this repo's `gl.js` helpers —
+  nothing vendored, the notice in `THIRD-PARTY.md`. Three forks informed the design and no code was taken from them:
+  michaelbrusegard/WebGL-Fluid-Enhanced (the ESM API shape — a simulation object with config, splat and pause, which `ctx.fluid`
+  follows), oliver-kopcik/fluid-music-visualizer (spectral-flux onsets as splat force and size, pitch classes as hue — here the ears'
+  `kickEvt`/`kickAmp` and the key anchor), little-noob/Fero-Fluild-Lamp (the band split bass / mid / high into deformation,
+  turbulence and edge detail — here the register axis). The grammar's sources are the user's own validated mappings: TORUS2's waves at
+  beat speed and the measured drum channels (DECISIONS §57, §58, §70, §74, §79, §81). The scene's shading pass is the reference's
+  SHADING idea (a normal from the dye's gradient) — `assets/scenes/fluid/shaders.js` carries the two credit lines on its 4th and 5th
+  header lines, `index.js` and `help.js` the solver line; the help view's `why` ends with the public sentence, verbatim from the plan.
+- **Not done / open.** The user's eye: the look (the relief at ×24, the highlight, the pool's darkness, the porthole), whether the pool
+  reads as *music*, the ring's size and ink, and the drop clear above (the proposal needs a grammar change). `cuts: 'continuous'` is the
+  plan's word and the monitor's line holds for the scene's OWN state; the ink's arrival on a hit is the substrate's Gaussian blob, which
+  appears in one frame — if the user reads that as a jump, the honest word is `'onset'`. `params.curl` dead-override (above). The thumb
+  is f840 of the fake (the green key's column with the hat droplets); the user may prefer the groove frame. `accept.sh` in full not run;
+  `releases.json` and the version untouched (the orchestrator decides the tag). HiDPI phones and the `G.FLOAT`-false idle (drawn here
+  for the first time, under `&fluid=0`) still unseen on a device.

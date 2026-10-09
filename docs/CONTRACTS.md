@@ -193,7 +193,10 @@ needed, now generic:
 - **The substrate** (`ctx.fluid`, §1.1; DECISIONS §104): the fluid every scene can read (`engineTex.vel` / `.dye`) and stir
   (`splat`, `force`, `params`). It is on by default where float render targets exist, off with `&fluid=0` / key `W`. Its one
   consumer in the core is the feedback pass, which back-traces every scene's trail along its velocity (`fb.advect`, §105);
-  FLUID (id 12) shows the dye from Step 3.
+  FLUID (id 12, §106) shows the dye itself, lit as a liquid surface; its own two injections (a ring on the drop, a sparkle on the hats)
+  go through `splat`, gated on `visibility` — the pool is one under every scene. **`params` is rewritten by the step BEFORE `update()`**,
+  so a scene's `params.curl += 10` in `update()` is overwritten before any step reads it (§106 found the plan's override dead; a
+  scene wants a `bias` slot the step adds after the grammar — not built).
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
   the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **1 default**
@@ -295,7 +298,7 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
 Registered ids (keep this table current): **0 nav2** (home since §102, 2026-10-08 — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, key `1`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`) · **4 drum** (a variant of id 8 since the swap — forced-only since §93, base 8) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav** (the v0.33 navigator in `assets/scenes/nav/`, kept as the control since §102: forced-only `score()` 0, key `9`, `always: true` like the home so key 1 vs 9 compares one navigator state; no `card`; was id 0 and the home v0.1–v0.33) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`) · **11 chladni** (v0.15, forced-only: `score()` 0, no digit — `n` or `&scene=11`; `ENGINE-CHLADNI-SESSION-PROMPT.md`). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav** (the v0.33 navigator in `assets/scenes/nav/`, kept as the control since §102: forced-only `score()` 0, key `9`, `always: true` like the home so key 1 vs 9 compares one navigator state; no `card`; was id 0 and the home v0.1–v0.33) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`) · **11 chladni** (v0.15, forced-only: `score()` 0, no digit — `n` or `&scene=11`; `ENGINE-CHLADNI-SESSION-PROMPT.md`) · **12 fluid** (§106, 2026-10-09, forced-only: `score()` 0, no digit — `n` or `&scene=12`; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's; `FLUID-PLAN.md` Step 3). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities
