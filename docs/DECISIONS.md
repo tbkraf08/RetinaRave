@@ -9313,3 +9313,64 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   is f840 of the fake (the green key's column with the hat droplets); the user may prefer the groove frame. `accept.sh` in full not run;
   `releases.json` and the version untouched (the orchestrator decides the tag). HiDPI phones and the `G.FLOAT`-false idle (drawn here
   for the first time, under `&fluid=0`) still unseen on a device.
+
+## §107 the drop clears the pool — the grammar's clear on `dropLiveEvt || mapDropEvt`, `DROP_DISS` 12 (2026-10-09, one worker; the orchestrator's eye on §106's strip; the user's decision on §106's proposal, narrowed)
+
+- **The defect.** `core/fluid/inject.js` keyed the pool's clear (`st.clearLeft = 60/bpm`, `dyeDiss = DROP_DISS`) and the drop's impulse
+  on `dropLiveEvt` alone. In file mode with the map built, the live detector never fires on SeeYouDrop's drop 1 (§106's strip: `dropEvt`
+  57.600 s, `mapDropEvt` 57.617 s, `dropLiveEvt` silent 56.5–58.9 s) and never on drop 2 either (this step's log at 105.6 s: `dropLiveEvt`
+  0, `mapDropEvt` 1, `dropEvt` 1 on one frame). So the one place the grammar says WHERE IN THE PHRASE we are — the pool empties on the
+  drop — never happened on the file: §106's strip read 34 before the drop and **38–40** after it, brighter, not emptier.
+- **The rule.** The clear fires on `dropLiveEvt || mapDropEvt` — the live detector OR the map's own bar line (frame-exact, every run,
+  CONTRACTS §1.18: file mode uses the map's own future). `mapDropEvt` joins `FLUID_FEATS` (34 reads; `mapOn` is not read, so not
+  declared — check.js warns on an unread entry). **`dropEvt` stays out**, and the test now says so (a `dropEvt`-only frame does NOT arm
+  the clear): the extractor's drop fires inside Vienna's dream (§1.18, `tongueAmbig` 1.0 sixteen seconds before its drop 1), and in
+  live mode a missed drop is the detector's gap to close (`engine/build`), not the grammar's — a clear the detector did not call is
+  a wrong clear on a live night, and the live detector is the live truth. CHLADNI's slam rule keeps its third term for a RING,
+  which is cheap to be wrong about; an emptied pool is not. `DROP_DISS` 6 → **12**: the dye pass is `1/(1 + diss·dt)` per frame
+  (shaders.js), so over the clear's beat (SeeYouDrop ≈ 150 bpm → 0.4 s = 24 frames) 6 keeps `(1/1.1)²⁴` = 10 % of the ink and 12
+  keeps `(1/1.2)²⁴` = 1.3 % — "the pool clears", not "the pool fades". The scene's own ring (§106) is untouched; nothing in the hot
+  path changed (one boolean OR in a pure function, one constant), so the bench was NOT re-run.
+- **The numbers** (this machine, headless `GPU=1`, 1280×633, `CLOCK=1` file mode). `check.js` 0 fail / 8 warn (the pre-existing soft
+  caps); `npm test` exit 0 — `test_fluid` **56 ok** (the new `mapdrop` block: a `mapDropEvt` frame arms the clear with the same
+  one-beat countdown and the ×4 impulse, both events on one frame give one impulse, a `dropEvt`-only frame gives `dyeDiss 1` and no
+  splat, `FLUID_FEATS` has `mapDropEvt` and not `dropEvt`, `DROP_DISS` 12 keeps < 2 % after 24 frames). **The strip** (`&track=
+  SeeYouDrop&at=48&scene=12`, 24 shots keyed on HEARD time 56.5 → 58.9 s every ~0.104 s — the recipe on HARNESS "## Fluid": `frame0`
+  moved from 2 to 20 with the md5 runs sharing the GPU, so a strip keyed on `__FRAME` is a different second from run to run — the
+  montage `tools/work/fluid-s3-drop1-strip2.jpg`, kept as `tools/accept/v0.35/fluid-s107-drop1-strip.jpg`; mean grey of the whole
+  frame, PIL `convert('L')`, the same metric as §106's line):
+  before — **34 33 33 34 34 33 33 34 34 34 33 | 153 95 60 45 42 40 39 38 40 40 39 38 40 40** (§106, `tools/work/strip/`, re-measured);
+  after — **34 33 32 34 34 33 33 34 34 33 33 | 122 63 38 29 29 27 27 27 31 31 31 33 34**. The empty pool at 10 s (`fluid-s3-intro-10.jpg`)
+  reads **24**, the groove at 35 s 33. So: the pool is as full as before up to 57.55 s, the flash (122 here — sampled 3 frames after
+  §106's 153), then two near-empty frames and a floor of **27** (3 above empty — the ring's six droplets and a faint residue) for the
+  clear's beat, then **31 → 34** as the drop's kicks and the ring refill it; `dyeDiss` logged 12 on the 57.65 / 57.77 / 57.87 / 57.97 s
+  shots and 1 again at 58.07 (the countdown's 0.4 s). The eye on the strip: frames 0–10 the full pool, 11–12 the flash, 13–14 the
+  cleared pool with a faint lilac residue, 15–23 the new ink — the kick blobs in the key's new hue and the ring's droplets — spreading
+  through an EMPTY pool: "cleared, now refilling from the drop", not a cut to black (12 does not over-clear; a second of black would
+  read 24 on ten frames). The event log on the run: `dropEvt` 57.600 (f596), `mapDropEvt` 57.617 (f597), `dropLiveEvt` never — as
+  §106. **Drop 2** (`at=80`, heard 105.6 / 105.8: `tools/accept/v0.35/fluid-s107-drop2-{1056,1058}.jpg`, errs [] bad []): the flash
+  frame reads 157 both before and after (§106's 158 — the composite's flash washes everything); 0.2 s later §106's pool is still full
+  at **75** and §107's is draining at **58**, the ink visibly thinning (`dyeDiss` 12 on both shots). A pitfall seen on that run: with
+  `at=80` the map's first-frame crossing window `(−1e-9, 80]` contains drop 1, so `mapDropEvt` fires on the file's first frame (f20,
+  heard 80.0) — a one-beat clear on a pool that is still empty; harmless, and the map's behaviour since pass 1, not this step's.
+  **Monitor** 60 s on `test&track=SeeYouDrop&at=25&scene=12` (real time, `CARD.NAV = REG[12].scene.state`, the window 25 → 85 s
+  across drop 1): **`n 3602 fast 0 max .034 viol []`**, errs [], bad [], the substrate on at tier 2, 3624 steps.
+- **The md5 question.** The fake timeline never sets `mapDropEvt`: `earsStage` clears it and returns on `ENGINE.fakeOn` before the map
+  branch (features-ears.js), and `sources/fake.js` writes only `dropEvt`. Proven, not assumed: the full list `GPU=1 PORT=8891
+  tools/scene-md5.sh v107` = `tools/accept/v0.35/scene-md5-v035.txt` **line for line (26 of 26)**, errs [] hop 840 row 72 on every id;
+  `tools/scene-md5.sh v107off '&fluid=0'` (PORT 8892) = `tools/accept/v0.34/scene-md5-v034.txt` **line for line (24 of 24)** with the
+  s12 idle pair `70405a78` / `f048c5a2` as the v0.35 header records; `IDS=12` twice (PORTs 8896 / 8897) **`13e9acae` / `85cd3023`**,
+  equal to each other and to the reference. **No line moved, so nothing is re-based** — the trans-mixs and gielis-still references
+  are on the same fake path and cannot have moved when no scene line did. Parity fake (PORT 8899): max 7.852214593751443, 72 fields,
+  the mismatch list exactly §102's `nav.*` line. The grey numbers above are the whole proof that the grammar changed; the md5 lists
+  are the proof that nothing else did.
+- **Docs.** CONTRACTS §1.1 (`ctx.fluid`): the grammar sentence names the trigger (`dropLiveEvt || mapDropEvt`, never `dropEvt`); §1.4's
+  substrate paragraph does not name it and is unchanged. HARNESS "## Fluid": the node bullet (the clear's two arms), the strip recipe
+  rewritten on heard time with both grey lines. `docs/plans/FLUID-PLAN.md` still reads `dyeDiss = 6` on `dropLiveEvt` — the plan is
+  the plan; this section is the record.
+- **Not done / open.** The user's eye on the strip (the floor of 27 for ~0.3 s: does it read as the drop or as a stall?) and on the
+  ring through an empty pool. Whether `DROP_V`'s impulse should also ride `mapDropEvt`'s frame on the SCENE side (it does — the
+  grammar's impulse and the scene's ring now land on the same frame). The `at=80` first-frame `mapDropEvt` (above) if anyone starts a
+  take mid-track on a FLUID night. Live mode is unchanged by construction and unseen here: on a live night the clear is still the
+  detector's call alone.
+
