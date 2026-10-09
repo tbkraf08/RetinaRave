@@ -25,3 +25,6 @@ Called **Eigenwobble** until v0.5 (2026-09-24); the decision log, worker reports
 Non-negotiables: zero dependencies · native modules · every visual parameter traces to the music state (a constant is a
 manual setting, shown as one) · no `Math.random()`, no wall clock in the picture · the panel is a no-op until touched ·
 the reference screenshots' md5s change only when a commit says so.
+
+## Credits
+The fluid substrate is after Pavel Dobryakov's [WebGL-Fluid-Simulation](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation) (MIT, 2017; notice in THIRD-PARTY.md). The way music drives it owes ideas to [WebGL-Fluid-Enhanced](https://github.com/michaelbrusegard/WebGL-Fluid-Enhanced) (the ESM API shape), [fluid-music-visualizer](https://github.com/oliver-kopcik/fluid-music-visualizer) (onsets → splats, pitch class → hue) and [Fero-Fluild-Lamp](https://github.com/little-noob/Fero-Fluild-Lamp) (bass / mid / high split); the grammar itself is this repo's own measured mappings (DECISIONS §57, §58, §70, §74, §79, §81).
