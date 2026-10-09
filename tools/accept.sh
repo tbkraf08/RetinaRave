@@ -7,9 +7,14 @@ cd "$(dirname "$0")/.." || exit 1
 export FORCE_COLOR=0 NO_COLOR=1   # v0.27: node colours util.inspect output; the params block parsed "\e[33m0.4\e[39m" as a number
 ACC=${ACC:-v0.35}                                  # THE reference version (§83; v0.35 = §105's advection re-base, every line; v0.34 = §97's NAV2 re-base): shots go to tools/accept/$ACC/ and every md5 below is compared against the lists there
 export OUT=tools/accept/$ACC; mkdir -p $OUT
-SCN=$OUT/scene-md5-$(echo $ACC | tr -d .).txt      # the CLOCK=1 f360/f840 list of every scene id (tools/scene-md5.sh's format: "<md5>  s<id>-f<N>.jpg")
+SCN=$OUT/scene-md5-$(echo $ACC | tr -d .).txt      # the CLOCK=1 f360/f840 list of every scene id (tools/scene-md5.sh's format: "<md5>  s<id>-f<N>.jpg") — the FAKE timeline: the fast smoke since §109
+SCN0=$OUT/scene-md5-$(echo $ACC | tr -d .)-fluid0.txt   # §109: the same list with the substrate off (&fluid=0) — the scalar pass's identity proof (HARNESS "## Fluid")
+REAL=$OUT/real-md5-$(echo $ACC | tr -d .).txt      # §109: the REAL-TRACK list (tools/real-md5.sh: every library track's windows × both map modes × the roster + FLUID; FULL=1 = every id, every window)
 echo "== check.js";      node tools/check.js || echo "FAIL check.js"
 echo "== math tests";    node tools/test_baby.js | tail -1; node tools/test_misi.js | tail -1; node tools/test_hopf.js | tail -1; node tools/test_tempo.js | tail -1; node tools/test_director.js | tail -1; node tools/test_oklab.js | tail -1
+echo "== real traces"    # §109: the node tests ON MUSIC — tools/truth/traces/<Track>-map{1,0}.json + rec-map0.json (tools/traces.sh re-records a missing one, ~2 min each)
+for n in $(python3 -c "import json;W=json.load(open('tools/truth/windows.json'))['tracks'];print(' '.join(t+'-map0' if W[t].get('map0only') else t+'-map1 '+t+'-map0' for t in W))"); do [ -f tools/truth/traces/$n.json ] || { echo "trace $n missing — recording (tools/traces.sh)"; PORT=8919 tools/traces.sh $n | tail -1; }; done
+node tools/test_fluid.js | tail -1; node tools/test_music.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
 echo "== oklch smoke";    node tools/oklch-smoke.js | tail -1
 echo "== chain smoke";    node tools/chain-smoke.js | tail -1
@@ -27,6 +32,13 @@ for i in $IDS; do
   CLOCK=1 node tools/cdp.js "test&scene=$i" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"s'$i'-f360"},{"until":"window.__FRAME>=840"},{"shot":"s'$i'-f840"},{"eval":"'"'"'scene '$i' errs '"'"'+JSON.stringify(CARD.ERRS)+'"'"' hop '"'"'+CARD.ENGINE.tex.hop+'"'"' row '"'"'+CARD.ENGINE.tex.row"}]' | grep EVAL | sed 's/.*=> //'
   for f in 360 840; do M=$(md5sum $OUT/s$i-f$f.jpg | cut -c1-32); REF=$(grep "s$i-f$f.jpg" $SCN | cut -c1-32)
     [ -n "$REF" ] && [ "$M" = "$REF" ] && echo "s$i f$f md5 $M = reference" || echo "FAIL s$i f$f md5 $M != reference ${REF:-(no line in $SCN)}"
+  done
+done
+echo "== scene md5 &fluid=0 (the substrate off, against $SCN0)"   # §109: the scalar pass's identity — a solver / grammar / feedback change moves $SCN and holds this
+for i in $IDS; do
+  CLOCK=1 node tools/cdp.js "test&scene=$i&fluid=0" '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"f0-s'$i'-f360"},{"until":"window.__FRAME>=840"},{"shot":"f0-s'$i'-f840"}]' > /dev/null
+  for f in 360 840; do M=$(md5sum $OUT/f0-s$i-f$f.jpg | cut -c1-32); REF=$(grep "s$i-f$f.jpg" $SCN0 | cut -c1-32)
+    [ -n "$REF" ] && [ "$M" = "$REF" ] && echo "fluid=0 s$i f$f md5 $M = reference" || echo "FAIL fluid=0 s$i f$f md5 $M != reference ${REF:-(no line in $SCN0)}"
   done
 done
 # v0.2 §13/§15: a scene that samples the hist texture must shoot the same CLOCK=1 frame with the whole-texture upload (&histfull=1) and the row-delta upload
@@ -149,3 +161,11 @@ echo "== real start path"
 R=$(NOAUTO=1 node tools/cdp.js 'real' '[{"wait":1500},{"shot":"real-landing"},{"clickSel":"#demo"},{"wait":4000},{"eval":"'"'"'REAL '"'"'+JSON.stringify({mode:CARD.ENGINE.AU.mode,bad:CARD.nonFinite(),errs:CARD.ERRS,glerr:CARD.glerr})"},{"shot":"real-4s"},{"wait":20000},{"eval":"'"'"'REAL24 '"'"'+JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS,switched:CARD.SC.hist.length>1})"},{"shot":"real-24s"}]'); echo "$R" | grep EVAL | sed 's/.*=> //'; N=$(echo "$R" | grep -c '^\[EXC\]'); [ "$N" = 0 ] && echo "exceptions 0" || { echo "FAIL $N uncaught exceptions"; echo "$R" | grep '^\[EXC\]' | head -1 | cut -c1-300; }
 echo "== bundle";        node tools/bundle.js && R=$(FILE=$PWD/dist/retinarave.html NOAUTO=1 node tools/cdp.js 'real' '[{"wait":1500},{"clickSel":"#demo"},{"wait":3000},{"key":"h"},{"wait":1500},{"key":"Escape"},{"wait":25500},{"eval":"'"'"'BUNDLE 30s '"'"'+JSON.stringify({bad:CARD.nonFinite(),errs:CARD.ERRS,mode:CARD.ENGINE.AU.mode,hop:CARD.ENGINE.tex.hop,switched:CARD.SC.hist.length>1,help:[CARD.HELP.on,CARD.HELP.ticks]})"}]'); echo "$R" | grep EVAL | sed 's/.*=> //'; N=$(echo "$R" | grep -c '^\[EXC\]'); [ "$N" = 0 ] && echo "exceptions 0" || { echo "FAIL $N uncaught exceptions in the bundle"; echo "$R" | grep '^\[EXC\]' | head -1 | cut -c1-300; }
 python3 tools/montage.py $OUT/montage-scenes.jpg 2 $OUT/s*-t6.jpg $OUT/s*-t14.jpg 2>/dev/null && echo "montage $OUT/montage-scenes.jpg"
+echo "== real music (§109: the proof — every library track + the pad take; the fake lists above are the smoke)"   # HARNESS "Real-music acceptance"
+# the identity references on real tracks: tools/real-md5.sh's default scope (the roster + FLUID × every track × both modes × intro / groove / build1 / drop1) against $REAL; FULL=1 = every id, every window (hours — the number is in §109)
+R=$(GPU=1 PORT=8921 PAR=${PAR:-1} tools/real-md5.sh accept 2>&1); echo "$R" | grep -E "^real-md5|WARN|FAIL|exc [1-9]"
+N=0; B=0; while read -r M NAME; do [ -z "$NAME" ] && continue; N=$((N+1)); G=$(grep " $NAME\$" tools/work/real-accept-md5.txt | cut -c1-32)
+  [ "$G" = "$M" ] || { B=$((B+1)); echo "FAIL real $NAME md5 ${G:-(no shot)} != reference $M"; }; done < <(grep -v '^#' $REAL)
+[ "$B" = 0 ] && echo "real md5: $N / $N reference lines = measured" || echo "FAIL real md5: $B of $N reference lines moved (a scene or engine change on real music — re-base $REAL only with the reason in DECISIONS)"
+# the behaviour rulers on real tracks: the continuity monitor on each scene's own state, the picture's continuity, the luminance ruler — one row per scene × track (the FAIL rules are in tools/real-rulers.sh)
+GPU=1 PORT=8941 PAR=${PAR:-1} tools/real-rulers.sh accept 2>&1 | grep -vE "^$"

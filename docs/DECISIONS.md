@@ -9526,3 +9526,173 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   drums, the ears' start guard) are not built. (5) The take's colours differ from the headless replay's (the key anchor's timing
   in capture vs file-det, DIAG §3) — the ruler places events, it does not reproduce the hue. (6) `accept.sh` in full not run; its
   md5 references are the re-based ones above. Nothing pushed.
+
+## §109 real-music acceptance — the fake events reach the scenes, and every proof moves onto the library (2026-10-09, one worker; the user: *"defect -> test uses fake data and not actually validating things in the scene? -> test should be real and simulate what would normally happen when visualizing music"*; then *"tune and test with all the real songs"*; then *"can ignore malicious until I validate the ruler"*)
+
+- **The defect.** §108 found it and left it open: `features-ears.js`'s `earsStage` zeroed `EVT` (`kickEvt, snareEvt, hatEvt, subNoteEvt,
+  subIn, subOut`) on every frame BEFORE its `ENGINE.fakeOn` return, and `fake.update` (the §83 percussion lattice, which writes the three
+  percussion events) runs before the stages — so on the `#test` fake timeline no lattice event had ever reached a scene or the substrate's
+  step (the ages and `*Amp` got through; they are not in `EVT`). And the whole identity harness — the scene md5 lists, parity, the
+  continuity recipes, the director's fake trace, the chain smoke — ran on that timeline under `CLOCK=1`: the references proved pixel
+  identity against a timeline that is not music, and that could not fire a kick. The user's reading is the right one: the proof has to be
+  what the engine and the scenes do when music plays.
+- **The fix** (`a96f21e`): on `fakeOn` the stage clears only the three sub events (which the fake never sets) and returns; the lattice's
+  `kickEvt / snareEvt / hatEvt` stand. One branch, no other path touched (the real path clears `EVT` as before, after the fake return).
+  **What moved:** the kick's impulses and the snare's shears now fire on the fake at the substrate's step, and the feedback pass rides that
+  velocity, so EVERY line of the fake list moved (`tools/accept/v0.35/scene-md5-v035.txt`, re-based in place, `GPU=1 PORT=8911
+  tools/scene-md5.sh s109a` and `s109b` byte-equal, errs [] hop 840 row 72 on every id); the `&fluid=0` list is its own file now
+  (`scene-md5-v035-fluid0.txt`): v0.34's 24 lines with **s0, s3 and s11 moved** — NAV2 (`kickEvt / snareEvt`), TORUS2 (the snare wave on
+  `snareEvt`) and CHLADNI (the sand throw on `kickEvt`), the three scenes whose event voices fire on the lattice now — and s12's idle pair
+  `70405a78 / f048c5a2`; DUST and MANDALA read the events too and did NOT move (their voices, `math/voice.js`, fire on the union of the
+  event and the v2 level's edge with a refractory, and the level's edge had already fired). `trans-mixs` `1c487222 → fb6010b0`,
+  `gielis-still` `aadb70d9 / 81039422 → e8dd5f0a / b996f158` (each twice, equal). `parity.js fake`: MS 0 diff, the §83 `nav.*` MISMATCH
+  line to the digit (`max 7.852214593751443 · 72 fields`) — the control navigator (id 8) reads only `dropLiveEvt`. The old → new table:
+
+  | 0 | NAV2 (home) | 6930dffc / af295f18 | b76fb74e / a75534d1 |
+  | 1 | DUST | 2a2f5da8 / 46a6a8cd | 6e33c1fd / 4a4663bf |
+  | 2 | MANDALA | 39004d77 / feb58038 | 4de23806 / 6ae629d0 |
+  | 3 | TORUS2 | f3c8f96f / 00c14a4a | bb79bda7 / 0e40bfac |
+  | 4 | DRUM | 704bbe0b / 5cd068da | 5254d9d1 / 1d249693 |
+  | 5 | POLYTOPE | 5d6307e1 / 0397295f | fa18b61e / 66d9eaff |
+  | 6 | FEIGEN | b1a656e9 / 09743c0e | b4b5ca05 / 15cbef2d |
+  | 7 | TORUS v1 | d600f191 / c296ac6d | 9ffb7d02 / 2a730c0d |
+  | 8 | NAV (control) | 3ce7343e / fca2f0b4 | 98f95f35 / 89497847 |
+  | 9 | MAXWELL | 4aad2187 / 8fd11445 | c7192b7d / ecc84a13 |
+  | 10 | GIELIS | a580cb9c / 71e64c55 | 6d70690a / 77e19182 |
+  | 11 | CHLADNI | 967354f1 / 4029b81b | 1ddf4113 / c2d305fb |
+  | 12 | FLUID | 1d7f9f90 / 94040549 | bf9bcc3e / 35e85096 |
+
+- **The advection comes OFF the roster (the user, on the §105 look: *"I don't like the fluid dynamics effecting the other scenes (I think is
+  the advection?) -> ie. nav, particles, torus, etc."*).** `assets/effects/feedback.js`'s `post.fb.advect` default 1 → **0**: every scene
+  runs the v0.2 scalar program unless it opts in, and only FLUID does (`scenes/fluid/index.js` keeps `post.fb.advect 1` — it shows the dye,
+  so its trail riding the current is the point); `&post=<scene>.fb.advect=1` is the one-run A/B of the §105 look on any scene, the panel's
+  fifth post param unchanged (`manual-smoke.js` 46 / 0). CONTRACTS §1.4 and §3 say "off by default, FLUID opts in"; HARNESS "## Effect
+  chain" and "## Fluid" re-anchor the identity claim: with advect 0 the fake smoke list equals the `&fluid=0` list on every line but s12's
+  (`GPU=1 PORT=8911 tools/scene-md5.sh s109adv0a` / `b`: byte-equal twice; the 24 roster lines = the `&fluid=0` list to the byte, s12 `bf9bcc3e / 35e85096` unchanged — against v0.34 only s0 / s3 / s11 (the lattice events) and s12 differ), `trans-mixs` `fb6010b0 → 9632647d` (not v0.34's 724bbd72: NAV2 and TORUS2 fire their event voices on the fixed fake; twice, equal), `gielis-still` back to §83's `b7d52757 / ca912a8d` exactly (GIELIS reads no event and no velocity: the pair had only ever moved through the advected trail; twice, equal); the opt-in path alive: `IDS=1 tools/scene-md5.sh s109optin '&post=dust.fb.advect=1'` gives `6e33c1fd / 4a4663bf`, the fake-events list's s1 pair before the flip, to the byte. The
+  §105 / §108 roster |Δ| numbers and the `fb-advect*` / `fb-s108-*` strips are history: the roster never saw the current after §109.
+  Run B's roster lines (shot with advect 1) were discarded; the roster's real references below were shot after the flip.
+- **The rule (HARNESS "Real-music acceptance", CONTRACTS §1.18's first sentence):** a scene or engine change is proven on real tracks;
+  the fake lists are a smoke test. The library is the proof: all seven tracks (`~/Music/RetinaRave`: Comptine, CyborgNinja, IBelongHere,
+  Malicious, SeeYouDrop, Vienna, WhoLikesToParty) and the user's pad take, each in BOTH map modes (`&map=1` the file map, `&map=0` the
+  live lanes on the same audio — what capture / mic / a take run on; the take `&map=0` only). **Malicious is in every sweep and every
+  trace for the record but is NOT a gate** (windows.json `gate: false`; its FAILs print as notes, its claims as notes) — the user is yet to
+  validate the map's sub ruler on it.
+- **The windows** (`tools/truth/windows.py` → `windows.json`, committed): per track, from its own `trackmap.py` truth, the way §104 chose
+  SeeYouDrop's — intro (at 0, 10 s) · groove (the loudest 30 s + 10) · quiet (the sparsest 10 s by the 5 s slices' onset density) · build /
+  drop 1 and 2 (5 s before and ON each bar-pinned truth drop; CyborgNinja has none → its first two section boundaries) — one run per `at`
+  (windows sharing an `at` share the run), `frame = 2 + round((t − at)·60)`; and a 60 s `rulers` window from 20 s before the loudest 30 s.
+  33 runs, 49 shots per scene per mode in full. `trackmap.py WhoLikesToParty` re-run at the user's grains: byte-identical to the committed truth.
+- **The identity references** (`tools/real-md5.sh`, HARNESS): `tools/accept/v0.35/real-md5-v035.txt` — 232 lines, the DEFAULT scope
+  (the roster + FLUID, ids 0 1 3 12 × every track × both modes × intro / groove / build1 / drop1, + the take's intro / chords), measured
+  with the advection off the roster: the roster's 174 lines twice (`v035r1` PORT 8921 PAR 1, `v035r2` PORT 8931 PAR 2), **cmp-equal**,
+  FLUID's 58 from the full default run (`v035b`, PORT 8931; FLUID keeps `post.fb.advect 1`); `f0` 2, errs [] bad [] on every run. Every
+  roster line differs from the same shot with the §105 advection on (174 / 174 moved against `v035a` / `v035b`). Wall, the default scope:
+  **2884 s** for the 156 runs on one lane (`v035b`; `v035a` took 4336 s under three other lanes), the roster alone 2171 s on one lane, 1441 s with `PAR=2` —
+  18.5 s per run. `FULL=1` (every id, every window: 845 runs, 809 k frames) was NOT run (the user: *"don't do full sweep"*); from the
+  measured cost it is ≈ 4.3 h on one lane, ≈ 2.2 h with `PAR=2` — so the default is the roster + FLUID, the full matrix behind the flag (and `PAR=2` halves either: two lanes on PORT / PORT+1, the md5s unchanged — rule 1 holds the clock through the decode under
+  load; the debug port is `PORT + 1000` since §109 so two lanes can never attach to one Chrome, HARNESS rule 4).
+- **The behaviour rulers** (`tools/real-rulers.sh` → `tools/accept/v0.35/real-rulers-v035.txt`): one deterministic run per scene × track on
+  the `rulers` window through `lumtrace.js --jump=1 --mon=1` — the luminance ruler (10 fps), the PICTURE's continuity on every frame (the
+  monitor's spike rule, d > 0.06 and > 2.5× the previous frame + 0.01, on the whole-frame mean |ΔY| at 160 px, outside the scene's DECLARED
+  cuts — `scene.cuts`: 'continuous' → only a drop; 'onset' → + onset / beat / the three events; 'event' → + section / boundary / surprise /
+  identify / resolve / beat / onset / kickEvt — and the state's own declared cuts where it has a monitor-shaped state, with the monitor's
+  0.3 s grace; black frames), and the continuity monitor on the scene's OWN state (`CARD.NAV = REG[id].scene.state`: nav2, nav, gielis,
+  chladni, fluid have one; the monitor is frame-timed under `CLOCK=1` since §109, so two runs give the same `viol`). FAIL: mon viol · jump
+  viol · black > 5 % · clipFrac ≥ .25 on > 2 % · errs / nonFinite. The table (default scope; the roster's 24 rows re-run on advect 0 — 1652 s with `PAR=2` —, FLUID's 8 from the advect-1 run of
+  all 32 — 1894 s; the state monitor's numbers are identical across the flip, the pixel numbers moved by thousandths, the verdicts did not):
+
+  ```
+  id  scene     track           window    cuts       | frames clip25 medY   grad   | jumpN jumpMx jviol black | monN  monMx  mviol | verdict
+  0   nav2      Comptine        11-71     event      | 600   0     0.154  0.0141 | 3599  0.056  0     0     | 3599  0.0286 0     | ok
+  0   nav2      CyborgNinja     118-178   event      | 600   0     0.194  0.0133 | 3599  0.011  0     0     | 3599  0.0702 0     | ok
+  0   nav2      IBelongHere     159-219   event      | 600   0     0.158  0.0151 | 3599  0.036  0     0     | 3599  0.0474 0     | ok
+  0   nav2      Malicious       115-175   event      | 600   0     0.167  0.0160 | 3599  0.052  0     0     | 3599  0.0551 0     | ok
+  0   nav2      rec             0-24.4    event      | 245   0     0.114  0.0145 | 1464  0.012  0     2     | 1464  0.0345 0     | ok
+  0   nav2      SeeYouDrop      40-100    event      | 600   0     0.202  0.0149 | 3599  0.038  0     0     | 3599  0.0672 0     | ok
+  0   nav2      Vienna          125-185   event      | 600   0     0.201  0.0167 | 3599  0.055  0     0     | 3599  0.0364 0     | ok
+  0   nav2      WhoLikesToParty 8-68      event      | 600   0     0.156  0.0131 | 3599  0.035  0     0     | 3599  0.0746 0     | ok
+  1   dust      Comptine        11-71     onset      | 600   0     0.132  0.0138 | 3599  0.046  0     42    | -     -      -     | ok
+  1   dust      CyborgNinja     118-178   onset      | 600   0     0.195  0.0100 | 3599  0.000  0     11    | -     -      -     | ok
+  1   dust      IBelongHere     159-219   onset      | 600   0     0.177  0.0107 | 3599  0.035  0     391   | -     -      -     | FAIL black 391
+  1   dust      Malicious       115-175   onset      | 600   0     0.143  0.0113 | 3599  0.065  0     20    | -     -      -     | ok
+  1   dust      rec             0-24.4    onset      | 245   0     0.000  0.0001 | 1464  0.000  0     1409  | -     -      -     | FAIL black 1409
+  1   dust      SeeYouDrop      40-100    onset      | 600   0     0.253  0.0124 | 3599  0.109  0     8     | -     -      -     | ok
+  1   dust      Vienna          125-185   onset      | 600   0     0.220  0.0121 | 3599  0.140  1     9     | -     -      -     | FAIL jump viol [[184.35,0.14,0.046]]
+  1   dust      WhoLikesToParty 8-68      onset      | 600   0     0.151  0.0115 | 3599  0.025  0     13    | -     -      -     | ok
+  3   torus2    Comptine        11-71     continuous | 600   0     0.120  0.0132 | 3599  0.053  0     17    | -     -      -     | ok
+  3   torus2    CyborgNinja     118-178   continuous | 600   0     0.171  0.0168 | 3599  0.086  1     14    | -     -      -     | FAIL jump viol [[121.133,0.086,0.019]]
+  3   torus2    IBelongHere     159-219   continuous | 600   0     0.119  0.0156 | 3599  0.070  2     22    | -     -      -     | FAIL jump viol [[189.783,0.065,0.022],[196.9,0.07,0.02]]
+  3   torus2    Malicious       115-175   continuous | 600   0     0.144  0.0171 | 3599  0.088  0     20    | -     -      -     | ok
+  3   torus2    rec             0-24.4    continuous | 245   0     0.078  0.0137 | 1464  0.033  0     29    | -     -      -     | ok
+  3   torus2    SeeYouDrop      40-100    continuous | 600   0     0.103  0.0132 | 3599  0.089  4     27    | -     -      -     | FAIL jump viol [[42.417,0.089,0.014],[43.217,0.084,0.024],[44.217,0.075,0.02],[76.8,0.082,0.021]]
+  3   torus2    Vienna          125-185   continuous | 600   0     0.135  0.0159 | 3599  0.066  0     19    | -     -      -     | ok
+  3   torus2    WhoLikesToParty 8-68      continuous | 600   0     0.092  0.0126 | 3599  0.099  4     30    | -     -      -     | FAIL jump viol [[12.383,0.099,0.021],[13.15,0.097,0.019],[19.567,0.082,0.019],[53.417,0.065,0.022]]
+  12  fluid     Comptine        11-71     continuous | 600   0     0.114  0.0089 | 3599  0.028  0     0     | 3599  0.0176 0     | ok
+  12  fluid     CyborgNinja     118-178   continuous | 600   0     0.231  0.0244 | 3599  0.076  0     0     | 3599  0.0045 0     | ok
+  12  fluid     IBelongHere     159-219   continuous | 600   0     0.168  0.0124 | 3599  0.033  0     0     | 3599  0.0184 0     | ok
+  12  fluid     Malicious       115-175   continuous | 600   0     0.119  0.0069 | 3599  0.040  0     0     | 3599  0.0162 0     | ok
+  12  fluid     rec             0-24.4    continuous | 245   0     0.061  0.0014 | 1464  0.009  0     0     | 1464  0.007  0     | ok
+  12  fluid     SeeYouDrop      40-100    continuous | 600   0     0.205  0.0199 | 3599  0.030  0     0     | 3599  0.0042 0     | ok
+  12  fluid     Vienna          125-185   continuous | 600   0     0.135  0.0088 | 3599  0.018  0     0     | 3599  0.005  0     | ok
+  12  fluid     WhoLikesToParty 8-68      continuous | 600   0     0.219  0.0206 | 3599  0.065  0     0     | 3599  0.0145 0     | ok
+  real-rulers v035: the roster (0 1 3) on advect 0 — 24 rows, 1652 s wall with PAR 2 — + FLUID (12) — 8 rows, from the 32-row run (1894 s): 7 FAIL, all findings
+  ```
+
+  **7 FAIL, every one a finding, none retuned** (the open list below): NAV2 and FLUID are clean on every track and the take
+  (mon viol [] and jump viol [] on all 16 rows — FLUID's state monitor max 0.004–0.018, its picture max 0.009–0.076; NAV2's state max
+  0.029–0.075, its picture max 0.011–0.056); DUST FAILS three rows and TORUS2 four. Two runs of a row are byte-identical (s3 × SeeYouDrop
+  twice, csv and json cmp-equal — the monitor is frame-timed under `CLOCK=1` since §109).
+- **The traces and the node tests on music** (`tools/traces.sh`, `tools/test_music.js`, `tools/test_fluid.js`'s `music` block; `6b9518c`):
+  every recordable MS field per frame of a deterministic cold-start run, 0 → 110 s, 15 traces (7 tracks × 2 modes + the take), 16 MB each,
+  gitignored, ~2 min each; two recordings cmp-equal — after the cold-start fix in `filetrace.js` (the recorder started after the open gate
+  caught frame 2, 3 or 4: two recordings of the take differed by one frame; now it starts before the gate, the rows before frame0 are
+  trimmed, the header is re-read from the engine; HARNESS "File source"). `npm test` exit 0 (`test_fluid` 125 ok, `test_music` 129 ok,
+  11.6 s). Per track (both modes agree unless said):
+  - **the grammar injects on 100 % of the seconds with music on every trace** (110 / 110 on each track, 21 / 21 on the take; the ≥ 95 % gate);
+    a frame with presence 0 moves and inks nothing (the take's 150 silent frames, IBelongHere's 4, WhoLikesToParty's 2–3); the clear is armed ON
+    every `mapDropEvt / dropLiveEvt` frame and held a beat on every trace (Comptine 5 + 4, IBelongHere 3, SeeYouDrop 4 + 2, Vienna 1 + 1,
+    WhoLikesToParty 2 + 1); SeeYouDrop's map drops `57.606 → 57.617`, `105.596 → 105.600` (within one frame); the take 22 / 22 from 3 s.
+  - **the clock** (`bpm`, the PCM clock) against the truth tempo: Comptine 108.29 = 214.3 × ½ · CyborgNinja 160.04 (162.2) · IBelongHere 118.02
+    (117.6) · SeeYouDrop 150.01 = 75 × 2 · Vienna 89.99 (89.6) · WhoLikesToParty 117.05 (117.6) — all within 2 % of the truth or its octave;
+    `beat` fires bpm/6 ± 15 % per 10 s on every track. Malicious 140.04 = 69.8 × 2 (a note).
+  - **the map** against the truth drops: SeeYouDrop +0.011 / +0.004 s · IBelongHere +0.518 / +0.526 (`mapDropEvt` at 16.4, 32.667, 65.217 — the
+    first a bar after the truth's 15.882, and one at 32.667 the truth does not list) · WhoLikesToParty −1.007 (56.5 against 57.507; `dropLiveEvt`
+    +0.010) · Vienna: NO `mapDropEvt` on either truth drop (85.336, 106.669; `dropLiveEvt` −0.003 on the first) · Comptine: one `mapDropEvt` at
+    107.367 against truth drops at 21.5 / 31.5 / 41.5 (the piano piece: `dropEvt` −0.513 / +9.3 / −0.671, the live detector 4 false arms) —
+    printed, not gated (the map's drop rule is a bar-pinned sub rule, §83; these are the open findings below).
+  - **the tongues** on (`tongueOn` 1) on 100 / 99.0 / 100 / 100 % of the frames from 20 s on CyborgNinja / IBelongHere / SeeYouDrop /
+    WhoLikesToParty (the four with a beater, ≥ 1 click / s); Comptine 30.4 % (0.67 clicks / s), Vienna 98.6 %, the take 0 % — notes.
+  - **the drums** over the rulers window, against the truth's CLICK onsets (kicks with a beater; `low` is the level picker that reads a piano's
+    left hand): `kickEvt` ×1.00 / 1.00 / 1.00 / 1.00 / 1.00 / 1.00 of the truth with the map (Comptine 40, CyborgNinja 234, IBelongHere 106,
+    SeeYouDrop 126, Vienna 36, WhoLikesToParty 230) and ×0.78 / 0.81 / 0.97 / 0.94 / 1.14 / 0.79 on the live lanes; `kick2` rises ×0.85 /
+    0.51 / 0.63 / 0.90 / 1.03 / 0.47 — all inside the ×4 gate; `kick2`'s half on CyborgNinja and WhoLikesToParty (the 8th lattices) is a note.
+  - **the build** (`&map=0`): `dropLiveEvt` within 1 s of both SeeYouDrop drops (57.600, 105.617); false arms per 110 s: Comptine 4 (47.5, 52.2,
+    58.9, 107.9 — at the ≤ 4 gate), the others 0; CyborgNinja (no drops) 0 — the control holds.
+  - **the queue** `queueN ≥ 1` on 100 % of the frames from 20 s on every trace.
+  - **the director** driven by the real rows (`updateScenes` with test_director's stub scenes, a fresh `SC` per trace, dwell 30 s): every
+    `dropEvt` frame hard-cuts home on that frame (Comptine's 5, SeeYouDrop's 2), and no switch away from home lands inside the dwell —
+    SeeYouDrop: soft → 1 at 32.8, home at 54.9, soft → 2 at 90.4, home at 104.9; Comptine: 39.9 soft, 40.8 drop, 73.7 soft, 98.6 drop.
+- **Wall times**: a trace 2 min (15 in ~30 min); the default md5 sweep 2884 s on one lane; the default rulers 1894 s for 32 rows with
+  `PAR=2` (the roster's 24 on advect 0: 1652 s); `accept.sh` grew by ~80 min on one lane (`PAR=2` halves the two sweeps).
+- **Not done / open.** (1) **The map's drops off the truth on three tracks** (above): Vienna fires no `mapDropEvt` on either truth drop,
+  IBelongHere's are a bar late and one is extra, WhoLikesToParty's is a bar early; Comptine (a piano piece) has three truth drops the map
+  does not see — the sub rule, §83; printed by `test_music`, not gated. (2) **Malicious**, pending the user's validation of the map's sub
+  ruler: bpm 140.04 = 69.8 × 2, `kick2` rises 96 / `kickEvt` 28 (map) / 71 (live) over 50–110 s against 0.48 clicks / s (no beater),
+  `queueN` 100 %, the grammar 100 % of seconds, its rulers rows all ok (NAV2 mon max 0.055, DUST jump max 0.066 black 20, TORUS2 jump max 0.088 black 20, FLUID mon max 0.016). (3) **The rulers' findings, for the user's eye** (`tools/accept/v0.35/real-rulers-v035.txt`): (a) **DUST is black for
+  the whole pad take** — 1409 of 1464 frames, median Y 0.000, on music with presence 1.00 and no sub / no drums: DUST has no channel for a
+  pad-only piece, the same root cause §108 found for FLUID (DIAG §9's proposals were for the substrate, not the roster); (b) **DUST black on
+  IBelongHere** 175.8 → 178.2 s (the sub-less, kick-less bars before the 178.9 s drop — the truth reads sub 0.0, click 0.0, mids 64–70 %) and
+  again from 214 s, 377 frames of the window; (c) **DUST's picture cuts 0.139** (3× the frame before) at Vienna 184.35 s — the truth's
+  section line at 184.3 with the sub returning (0.3 → 72 → 82 %, no click), and DUST declares `cuts: 'onset'`, so a section seam is not one
+  of its legal cuts: either the declaration or the seam is wrong; (d) **TORUS2's per-hit flash reads as a jump** under its own
+  `cuts: 'continuous'` — CyborgNinja 121.13 s (0.084), IBelongHere 196.9 (0.070), SeeYouDrop 42.42 / 43.22 / 44.22 / 76.8 (0.074–0.090,
+  on the 150 bpm grid), WhoLikesToParty 12.38 / 13.15 / 19.57 (0.083–0.098) — and, on advect 0, two more at 0.065 (IBelongHere 189.78,
+  WhoLikesToParty 53.42): the snare wave / core flash, with `continuous` allowing only a
+  drop. Either TORUS2 should declare `'onset'` (then these are legal) or the flash is the cut the contract forbids — and the picture rule's
+  0.06 whole-frame threshold is §109's pick, to be calibrated against the user's eye on exactly these frames (`tools/work/rulers-v035/
+  s3-*.csv` has the 10 fps luma around each). Black frames under the 5 % gate on the other rows are the cold start's fade-in
+  (TORUS2 14–32, DUST 8–41 frames) — not a finding. (4) The `FULL=1` matrix (845 runs) has no reference and no measured wall — not run, by the user's word; the
+  estimate above.
+  (5) `kick2`'s rises read half the truth's clicks on the 8th-lattice tracks (CyborgNinja ×0.51, WhoLikesToParty ×0.47, the .3 threshold) —
+  a number, not a defect; the ×4 gate is wide on purpose until a tighter one is measured. (6) `accept.sh` in full not run end to end at §109
+  (its real-music block was run as the two sweeps above). Nothing pushed.
