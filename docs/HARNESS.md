@@ -221,8 +221,9 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   nothing else on the machine. Budget **≤ 1.0 ms at tier 3**, ≤ 0.4 ms at tier 0 (§104 has the numbers on this machine).
 - **The identity proof**: `GPU=1 PORT=88xx tools/scene-md5.sh <tag>` with the substrate on must equal the reference list while
   nothing consumes it (Step 1: `tools/accept/v0.34/scene-md5-v034.txt`, every line), and `tools/scene-md5.sh <tag>off '&fluid=0'`
-  must equal it too. From Step 2 on (the feedback pass rides the velocity) the default list re-bases to `tools/accept/v0.35/`
-  and the `&fluid=0` list is what must still equal v0.34 line for line.
+  must equal it too. **Since §105 (Step 2)** the feedback pass rides the velocity, so the default list is `tools/accept/v0.35/scene-md5-v035.txt`
+  (every line moved, `ACC` default v0.35) and the `&fluid=0` list is what must still equal v0.34 line for line — the standing proof
+  that the scalar pass is byte-identical. A change to the solver, the grammar or the feedback pass moves the v0.35 list and holds the v0.34 one.
 - **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
   tail, the snare's two shears, the seeded hats, the drop's one-beat clear, the parameter maps, the gain, the colour, determinism
   (two fresh states → identical JSON), and a Proxy of MS that throws on any read outside `FLUID_FEATS`.
@@ -241,6 +242,15 @@ GPU=1 node tools/chain-smoke.js     # the real effects on synthetic input, io.li
 knee is `LOOK.k = k · (1 + kMood · (2·arousal − 1))`, ≥ 0.2 (v0.5 item 4; `look.js` computes it, `loop.js` hands it to `runChain` as
 `io.k`). With `kMood` 0 the knee is exactly `k` — every reference md5 holds; `chain-smoke.js` reads 0.18 grey through the linear
 composite at k 0.75 / 1.5 / 3 → 135 / 150 / 177 (a harder knee lifts the mids) and checks `LOOK.k === CHAIN.k` at the default.
+**Advection (DECISIONS §105).** Feedback has two program objects: `pr` (the v0.2 shader, untouched) and `prA` (the same plus a
+back-trace of `uPrev` along `engineTex.vel`, `c −= advect·dt·v`, clamped to the picture). `run()` picks `prA` only when
+`io.fluid.on && post.fb.advect > 0` (default 1); otherwise the old program runs with the old uniforms — bit-exact by construction.
+The proof is two lists: `tools/scene-md5.sh <tag>off '&fluid=0'` must equal `tools/accept/v0.34/scene-md5-v034.txt` line for line
+(the old path intact under the substrate switch), and `IDS=1 tools/scene-md5.sh <tag> '&post=dust.fb.advect=0'` must equal v0.34's
+s1 pair (intact under the per-scene slot); `=0.5` moves s1 and `=1` equals the current reference's s1 pair (the §392 pattern).
+`&post=<scene>.fb.advect=<gain>` is the manual override (`fb.advect` is the fifth post param, `manual-smoke.js`). The cost is one
+bilinear fetch per frame pixel; the pass runs at frame res (§105 has the number).
+
 `&linear=0|1` under `#test` picks the chain's space (`CARD.CHAIN.linear`; the default is linear since §20, 0 is the
 v0.2 chain for A/B). The pre-tonemap clip mask: `CARD.EFFECTS.find(e=>e.name==='composite').clipMask=1` turns the
 composite into white-where-any-channel ≥ 1; the §20 number is DUST at the fake drop frame (`CLOCK=1`, shot at
@@ -388,7 +398,7 @@ Per-scene routing of `MS` fields (CONTRACTS §1.15) and the manual overrides, al
 ```
 &route=feigen.bass=centroid*1.5+0.1~0.2!,feigen.kick=snare      # scene.field=src[*k][+b|-b][~tau][!] — several with ','
 &route=feigen.bass=c:0.4                                        # a constant source (transfer still applies)
-&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the four post params: bloom.thr fb.decay kaleido exposure.on
+&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the five post params: bloom.thr fb.decay fb.advect kaleido exposure.on
 ```
 A `+` in a hash reaches the page as a space through `URLSearchParams` — the parser reads both. An unknown scene, field,
 source, kind mismatch (`flow` → `bass`), a transfer on an event, or an unknown post param **throws at init** (cdp prints
@@ -1153,18 +1163,20 @@ A worker's brief names the tier; the orchestrator runs the sweep once, at the ta
 ## Acceptance sweep
 
 `tools/accept.sh` writes its shots into `tools/accept/$ACC/` and — since v0.29, DECISIONS §83 — reads **every md5 reference from
-the same directory**: `scene-md5-v034.txt` (every scene id at CLOCK=1 f360 / f840, `tools/scene-md5.sh`'s format — the "== scene
+the same directory**: `scene-md5-v035.txt` (every scene id at CLOCK=1 f360 / f840, `tools/scene-md5.sh`'s format — the "== scene
 md5" loop checks all twelve ids against it, and the torus2 / nav2 / polytope / gielis blocks read their lines from the same
 list), `gielis-still-md5.txt` and `trans-mixs-md5.txt` (the 0→3 mixs fade at f178). `ACC` is the ONE
-variable at the top of the script (`ACC=${ACC:-v0.34}`); a re-base is: a new directory, those three files, that one default.
+variable at the top of the script (`ACC=${ACC:-v0.35}`); a re-base is: a new directory, those three files, that one default.
+v0.35 (DECISIONS §105, 2026-10-09) is the advection re-base: the feedback pass rides the fluid substrate's velocity, so **every** line
+moved — the 24 scene lines, the mixs 0→3 value and the GIELIS still pair; `tools/scene-md5.sh <tag> '&fluid=0'` still equals v0.34's list.
 The earlier per-version lists (v0.7 / v0.8 / v0.9 / v0.14 / v0.29) stay on disk as history (v0.34 = §97's NAV2 re-base: the v0.29
 list with only the s8 pair changed, to NAV's s0 values — NAV2 is a clone of NAV; `nav2-still-md5.txt` went with the `&still=1` hook; **re-based in place by §102**, 2026-10-08, the swap: s0 = the retuned navigator `a8de2f03 / 7a65fd16`, s8 = the v0.33 navigator `fb74fee4 / 8a0715df` — the file's header says which). `parity.js` compares cardioid3's navigator against id 8 since §102 (`NAVID=8` default; the home is the retuned walk). `parity.js` and the trace / bench tools
 honour the same `ACC` (`ACC=v0.3` or `ACC=v0.2` to write beside the earlier files; the v0.2 "before"/"none"/"after" traces
 referenced in DECISIONS §9–§17 stay in `tools/accept/v0.2/`).
 
 ```
-GPU=1 tools/accept.sh                        # everything above, shots → tools/accept/v0.34/, 0 FAIL lines is the pass
-GPU=1 PORT=8830 ACC=v0.34 tools/accept.sh    # a worker: own port (never the user's 8765), the reference directory named
+GPU=1 tools/accept.sh                        # everything above, shots → tools/accept/v0.35/, 0 FAIL lines is the pass
+GPU=1 PORT=8830 ACC=v0.35 tools/accept.sh    # a worker: own port (never the user's 8765), the reference directory named
 # re-base (after a commit that legitimately moves lines — see §83 for what the fake timeline's lattice reaches):
 #   mkdir tools/accept/v0.NN; PORT=88xx tools/scene-md5.sh vNN; cp tools/work/vNN-md5.txt tools/accept/v0.NN/scene-md5-v0NN.txt
 #   (then the stills and the mixs value from a sweep's own shots), ACC's default → v0.NN, DECISIONS says which lines moved and why

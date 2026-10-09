@@ -1,4 +1,4 @@
-// Manual-override smoke (v0.4, node, no DOM): the four post params, the merge over a scene's post (identity when nothing is
+// Manual-override smoke (v0.4, node, no DOM): the five post params (fb.advect since §105), the merge over a scene's post (identity when nothing is
 // set, nested fn slots resolved against a routed view), the &post= grammar, the preset block. usage: node tools/manual-smoke.js
 import { MS } from '../assets/engine/state.js';
 import { SC, REG, register, addTransition, postParams, MANUAL_POST } from '../assets/core/scenes.js';
@@ -21,7 +21,7 @@ MS.eM = 0.5; MS.bass = 0.2;
 // identity: nothing set → the scene's own post object, untouched
 ok(postParams(MS) === POST_A, 'postParams returns the scene\'s own post object when nothing is set');
 ok(postParams(MS).fb.decay(MS) === 0.6, 'nested fn kept for the effect');
-ok(POST_PARAMS.join() === 'bloom.thr,fb.decay,kaleido,exposure.on', 'the four params');
+ok(POST_PARAMS.join() === 'bloom.thr,fb.decay,fb.advect,kaleido,exposure.on', 'the five params (fb.advect since §105)');
 ok(MANUAL.post === MANUAL_POST, 'MANUAL.post is scenes.js MANUAL_POST');
 
 // the four params, set / clear, merge
@@ -32,6 +32,8 @@ setPost('alpha', 'fb.decay', 0.1); setPost('alpha', 'kaleido', 0); setPost('alph
 p = postParams(MS);
 ok(p.fb.decay === 0.1 && p.kaleido === 0 && p.exposure.on === true && p.bloom.thr === 2, 'all four merged (' + JSON.stringify(p) + ')');
 ok(postString() === 'alpha.bloom.thr=2,alpha.fb.decay=0.1,alpha.kaleido=0,alpha.exposure.on=1', 'postString ' + postString());
+setPost('alpha', 'fb.advect', 0); ok(postParams(MS).fb.advect === 0 && postParams(MS).fb.decay === 0.1, 'fb.advect merges beside fb.decay'); setPost('alpha', 'fb.advect', null);
+ok(postParams(MS).fb.advect === undefined && postParams(MS).fb.decay === 0.1, 'fb.advect cleared, fb.decay stays');
 setPost('alpha', 'bloom.thr', null);
 ok(postParams(MS).bloom.thr === 0.35 && !('bloom' in MANUAL_POST.alpha), 'clear one param → the scene\'s value, the key gone');
 setPost('alpha', 'exposure.on', '0'); ok(postParams(MS).exposure.on === false, "exposure.on '0' → false");
@@ -78,6 +80,7 @@ ok(postString() === 'alpha.bloom.thr=0.3,alpha.fb.decay=0.5,beta.kaleido=0,beta.
 throws(() => applyPosts('alpha.bloom.thr=0.4,gamma.kaleido=1'), /no scene named/, 'a bad one in a list');
 ok(MANUAL_POST.alpha.bloom.thr === 0.3, 'and nothing of the list applied');
 throws(() => applyPosts('alpha.bloom=0.4'), /cannot parse/, 'bad path');
+applyPosts('beta.fb.advect=0.5'); ok(MANUAL_POST.beta.fb.advect === 0.5, '&post= parses fb.advect'); setPost('beta', 'fb.advect', null);
 
 // the preset block through routesJSON / loadRoutes
 manual('scene', 7); manual('trans', 't1'); manual('colour', 'alpha', 'oklch');

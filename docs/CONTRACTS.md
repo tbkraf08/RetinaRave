@@ -191,10 +191,14 @@ needed, now generic:
   picking, history and forcing, but it renders through the parent's `draw` with `variant` = its name and `vmix` = a
   0.8 s eased 0→1 (the parent decides what that means: NAV's DRUM fades the interior membrane in).
 - **The substrate** (`ctx.fluid`, §1.1; DECISIONS §104): the fluid every scene can read (`engineTex.vel` / `.dye`) and stir
-  (`splat`, `force`, `params`). It is on by default where float render targets exist, off with `&fluid=0` / key `W`, and in
-  Step 1 nothing consumes it — the feedback pass rides its velocity from Step 2 (`fb.advect`), FLUID (id 12) shows the dye from Step 3.
+  (`splat`, `force`, `params`). It is on by default where float render targets exist, off with `&fluid=0` / key `W`. Its one
+  consumer in the core is the feedback pass, which back-traces every scene's trail along its velocity (`fb.advect`, §105);
+  FLUID (id 12) shows the dye from Step 3.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
-  multiplies by presence and drops to 0.2 on a drop), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
+  multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
+  the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **1 default**
+  = the trail moves at the current's own speed, 0.5 = half, 0 = the v0.2 scalar pass, the identical compiled program; it is also
+  the scalar pass whenever the substrate is off — `&fluid=0`, key W, no float render targets), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene).
   Any effect can be switched per scene with `post.<effectName>.on: true|false` (e.g. `exposure: { on: true }`).
   Number or `fn(MS)` for the numeric ones. During a crossfade the incoming scene's params apply past the midpoint.
@@ -802,13 +806,14 @@ export default {
 };
 ```
 
-`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q, linear, k, decoded}` — `src` a
+`io` per frame: `{src, w, h, sw, sh, uvS, aux, MS, FX, GROOVE, dt, frameN, post, Q, linear, k, decoded, fluid}` — `src` a
 target; `w,h` the full target size, `sw,sh` the scene-pass size inside it; `uvS` `[u,v]` scale to sample `src`; `dt`
 seconds; `frameN` monotonic (it keeps counting while you are skipped — a gap means you were just switched on);
 `linear` (§1.10) says the chain is in linear light — `src` holds linear radiance from order 10 on (feedback decodes
 the scene's encoded output and sets `decoded`; if feedback is skipped the core decodes before the first effect above
 order 10) and the composite encodes; `k` the tonemap knee — **`LOOK.k` this frame** (v0.5 item 4: `CHAIN.k` · (1 + `CHAIN.kMood` ·
-(2·arousal − 1)), exactly `CHAIN.k` while the mood gain is 0, its default; HARNESS "Effect chain"). An effect that reads a slot or constant tuned on encoded
+(2·arousal − 1)), exactly `CHAIN.k` while the mood gain is 0, its default; HARNESS "Effect chain"); `fluid` the substrate (`ctx.fluid`, §1.1 — `on`, `tex.vel / .dye`; absent in a node-driven
+chain such as chain-smoke, so read it as `io.fluid && io.fluid.on`: feedback runs its scalar program when it is absent or off, §105). An effect that reads a slot or constant tuned on encoded
 values converts it (`srgbToLin1` from `assets/math/oklab.js`, `pow(d, 2.2)` for a per-frame decay) so the slot keeps
 its meaning; `ctx.oklch` (§1.14) gives the GLSL side.
 - `src` is the current chain input (a target). The scene pass was rendered at `(sw, sh)` inside a `(w, h)` target:

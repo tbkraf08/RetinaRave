@@ -57,7 +57,7 @@ export function frame(tms) {
   const tio = { MS: S, GROOVE, LOOK, dt };
   const src = drawScenes(sw, sh, tio);
   const full = tio.uvS && tio.uvS[0] === 1 && tio.uvS[1] === 1; // the transition re-rendered the whole target (CONTRACTS §5)
-  runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q, k: LOOK.k }); // k: the frame's tonemap knee (v0.5 item 4)
+  runChain(src, full ? G.PW : sw, full ? G.PH : sh, { MS: S, GROOVE, dt, frameN, post: postParams(S), Q, k: LOOK.k, fluid: FLUID }); // k: the frame's tonemap knee (v0.5 item 4); fluid: the substrate, feedback rides its velocity (§105)
   if (FLUID.dbg) drawFluidDbg(); // harness only (&fluiddbg=): the dye / velocity over the composite, before the overlays
   for (const scn of SCENES) if (scn.overlay) scn.overlay(G.PW, G.PH, visibility(scn.id), dt);
   recFrame(); // after the last GL draw, before the DOM: the compositor copies the WebGL canvas on this same task (no preserveDrawingBuffer; rec.js)
