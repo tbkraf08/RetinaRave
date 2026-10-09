@@ -8815,3 +8815,127 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   continuity rule on real music (id 0 as much as id 8; the fake timeline never showed it) — a §101+ item for the exterior, not touched
   here. The `oklch` mapping (`shaders.js`) is still NAV's bytes. The pitch lean is relative to `key`; when `keyConf` is 0 it leans relative
   to C — a `tonic` fallback is a line if the eye wants it. Items 1–5 landed in one code commit (one module, one harness) rather than five.
+
+## §101 NAV2 navigation — the phrase walk along the Farey ladder, Green's ruler as the fitness, drops that land somewhere new (2026-10-08, one worker; NAV2-RETUNE-PLAN step 3, the user's answer "8. a/c"; review `nav-retune-review-2026-10-08/nav-review.md` §2 and §4)
+
+- **The complaint and the diagnosis.** *"After watching NAV a lot, seems like we are stuck in defined locations of the set."* Review §2: the
+  only discrete chooser of a place is `interval` → one of twelve bulb roots, and every drop lands in the same dust (θ springs from the
+  landing ray to `harmUnw/TAU + seed.th`, the same spot each time). **Measured on the traces, the picture is worse than the review said:
+  on real music `interval` FLICKERS** — Vienna 25–55: 40 runs in 30 s, 34 of them shorter than 4 beats; SeeYouDrop 0–120: 33 runs;
+  IBelongHere 40–75: 19 — and every flicker sent NAV's beat-gated retarget on a 3–5 s rim walk it never finished: c was in TRANSIT
+  (the near-circle with a dissolving pinch) more than in a place. The places ruler below counts a place only when c sat in it ≥ 1 bar:
+  NAV dwells in 0–3 places per 30-s window and 5 in the first two minutes of SeeYouDrop.
+- **What was built — `assets/scenes/nav2/walk2.js` (new, 201 lines) + four lines in `nav.js` (the import, the target line, the drop
+  launch, the exterior θ target) + index.js (three knobs as hooks, two feats, n2info). Every term behind a knob whose rest is NAV's
+  line: `tools/test_nav2.js` pass A (the eight §100/§101 knobs off) is NAV's trajectory to the bit (max |c, h, vtime difference| 0);
+  the replay's all-off row = NAV's row on all seven windows.**
+  1. **The phrase walk (a).** `interval` still names the SPECIES (its p/q bulb). On a phrase boundary (the 16-beat wrap of `phrase16Pos`),
+     a `barNovelEvt` / `sectionEvt` (a new section is a reason to move; at most one such step per bar), or the ruler's early call, the
+     target steps along the Farey ladder: phrase k → the species, k+1 → a place on its ladder, k+2 → the species, k+3 → another place.
+     The ladder of p/q (`ladder()`): its two Farey neighbours in F_DEPTH (the fractions bracketing it with q ≤ 7 — p/q itself may be
+     deeper, 1/15 is) and the two mediants (p+a)/(q+b), reduced, q ≥ 2, each above the size floor `sin(πp/q)/q² ≥ MINSIZE` (.008: 1/7 =
+     .0089 passes, 2/9 = .0079 and 1/8 = .0060 do not — the tiny-bulb trap). The twelve species' ladders: 0/1 → [1/7] · 1/15 → [1/7] ·
+     1/8 → [1/7] · 1/5 → [1/6 | 1/4] · 1/4 → [1/5 | 2/7] · 1/3 → [2/7 3/10 | 2/5 3/8] · 2/5 → [1/3 3/8 | 3/7] · 1/2 → [3/7 4/9 | 4/7 5/9] ·
+     3/5 → [4/7 | 2/3 5/8] · 2/3 → [3/5 5/8 | 5/7 7/10] · 4/5 → [3/4 | 5/6] · 7/8 → [6/7]. Each place is a real bulb object (`mkBulb`:
+     root, centre, rays, R, rhoMax by baby.js's float32 rule, cached by identity — nav.js compares `N.bulb !== b`), so **NAV's own rim
+     walk takes c there** (leave through the root, α along the cardioid, enter, climb to the I-depth): continuity by construction, no new
+     cut. The walk lives on M: in a baby, or while a baby is wanted, the target is the species (babySwap's `tb[i]` stays honest).
+     **The step waits**: a step asked at the phrase line is taken on the next BAR line once c has sat in its place DWELL (1) bars (`here`
+     = inside the target past its root, or on the cardioid for the 0/1 species); stuck in transit for 2 phrases it goes anyway. **The
+     species is debounced**: a new `interval` names the species after HOLD (1) bars — the flicker above was the thing to fix; `HOLD 0`
+     is NAV's instant retarget and the sweep below carries that row.
+  2. **Green's ruler as the fitness (c).** `probeQ(c)` — green.js's trace of the 1.06-equipotential and 4πA/L² with G and the previous
+     curve untouched (.017 ms) — gives each candidate's Q at the radius NAV would sit at (ρ = .12 + .8 I, c = centre + ρ·(root − centre):
+     the multiplier chart agrees to 3 decimals, table below). Loudness on the TRACK'S OWN ladder (`baseLight(loudRel, loudRange,
+     loudAbs)`, §63 — `loudRel` spans 18 LU and a track rarely 11, so .72–.94 was "always loud" on SeeYouDrop) decides over the whole
+     pool: `s = (ladder − .5)·2·W`, |s| > .1 → loud picks the LOWEST Q (the most deformed set), quiet the HIGHEST (the calmest), never
+     the same side place twice running; |s| ≤ .1 (or `&n2green=0`) → the sides alternate (low, high) and the neighbour / the mediant take
+     turns. **Feedback**: while loud, the frame's measured Q above QMAX (.8) for more than BARS (1) bars — a calm picture under a loud
+     passage — asks an early step (≥ 8 beats after the last). The honest note on the ruler: the 1.06-equipotential is a coarse Q — the
+     big bulbs (1/2 .63–.70, 1/3 .65–.69, 2/5 .67, 3/7 .68, 3/8 .68, 4/9 .69) read "deformed", the small-p ones near the cusp (1/6 .77,
+     1/7 .81, 1/8 .84, 1/9 .86) "calm"; within a ladder the spread is often .69 vs .78 (1/5's: 1/4 .70 against 1/6 .78), and 1/2's four
+     candidates are all .68–.69 — there the ruler is mute and the sides alternate.
+
+     | p/q | size | Q at ρ .5 (lin / chart) | ρ .85 | ρ .97 | | p/q | size | ρ .5 | ρ .85 | ρ .97 |
+     |---|---|---|---|---|---|---|---|---|---|---|
+     | 1/2 | .250 | .630 / .630 | .681 | .698 | | 1/7 | .0089 | .811 / .811 | .814 | .815 |
+     | 1/3 | .096 | .649 / .648 | .676 | .686 | | 2/7 | .016 | .686 / .686 | .692 | .694 |
+     | 1/4 | .044 | .683 / .682 | .699 | .705 | | 3/7 | .020 | .681 / .681 | .686 | .687 |
+     | 1/5 | .024 | .728 / .728 | .738 | .741 | | 1/8 | .006 | .839 / .839 | .840 | .841 |
+     | 2/5 | .038 | .668 / .668 | .678 | .682 | | 3/8 | .014 | .677 / .677 | .681 | .683 |
+     | 1/6 | .014 | .774 / .774 | .779 | .781 | | 4/9 | .012 | .688 / .688 | .691 | .692 |
+
+     (c = 0: 1.000 · c = .2: .959 · the Misiurewicz point i: .358 · an exterior c: .654.)
+  3. **Drops land somewhere new.** NAV's exterior rule stays (out 8 beats, 48 at a peak, `dropLiveEvt`, the same `reach`); the drop is a
+     section event — the walk steps, and never onto the species it just left — and `dropLaunch()` launches c along the NEW place's
+     landing ray, the two rays of the pair alternating per drop. Outside, the θ target is the harmony's drift FROM that ray
+     (`extTheta`: base + (harmUnw − harmUnw at launch)/TAU) instead of NAV's spring from the ray to `harmUnw/TAU + seed.th`; the loud
+     exit's launch takes its base the same way at the OUT → EXT frame. HOME returns to the walk's current target (NAV's own line).
+  4. **NAV's EXT launch violations (§100's open item) — gone with 3.** The 8–10 monitor violations inside 1.1 s after the 43 s drop on
+     SeeYouDrop WERE the θ spring: `navDrop` set θ to the landing ray with v = 0 and NAV then sprang it a fraction of a turn toward
+     `harmUnw/TAU + seed.th` while lg launched — .1–.27 per frame where the ray table is densest (the "exterior sweep" the eye saw after
+     every drop). With θ's target AT the ray only lg moves. The page monitor, SeeYouDrop 25–60 file mode, id 8: **viol [] (n 2100, fast 0,
+     max .0558)** against §100's 10 and **id 0's 8 on the same run (MONF0: n 2100, fast 45, max .3213, the first at page ms 26510 = the
+     drop)**; the replay says the same on all six windows (the table: `n2drop=0` alone puts 7 / 8 / 13 back on SeeYouDrop 28–58 /
+     CyborgNinja / the full track).
+  5. **A hazard met twice and closed — the root crossing.** NAV takes a new target on a beat; if that beat falls while c is climbing into a
+     root (h in −.1 … .02, the spring still carrying it up), the cardioid branch sets `N.bulb = BULBS[0]` at once and the one overshoot
+     frame (h = +.001) draws the 0/1 chart = the cusp (.25, 0): a .35 jump (Malicious 164.2 s, the debounced species switching to the
+     cardioid; then Vienna 43.4 s with HOLD 0, a 1.0 jump the same way). NAV's own latent hazard (its retarget is the same line); in the
+     clone `walkTarget()` returns `N.target` itself through that band, and defers the species switch and the timed-out step. The eight-
+     and nine-hundred-frame replays of all seven windows are clean of it.
+  6. feats: `barNovelEvt sectionEvt` (+ `phrase16Pos loudRel loudRange loudAbs intensity presence harmUnw barPos beatCount` already there),
+     each with a help line; an unpublished field leaves its term at rest (no phrase clock → no step; the fake timeline has the clock).
+- **The ruler — `tools/navkicks.js replay … --places=1` (extended; `--w=1` logs each step, `--trace=a,b` a frame-by-frame line, `--runs=1`
+  the run list).** A PLACE is a bulb past its root (`P<n>:` inside a baby), the cardioid when it is the target and c is off the rim, or the
+  exterior as ONE state; 'rim' and 'bridge' are transit. Counted: distinct places dwelt ≥ 1 bar (4 beats), per minute of the window, the
+  visits, the exterior landings (θ in 24ths at each excursion's first frame, distinct count), Green's Q median over INT frames on loud
+  rows (the track's ladder ≥ .6) against quiet rows (< .4) — measured on id 0 too (the replay calls `measure()` for it). The same jumps
+  per bar, viol and max step as §100. `tools/work/navkicks/SeeYouDrop-0-120.json` is the new full-track trace (7200 frames, 17 MB;
+  `MAX_CHUNKS` 40 → 80).
+- **Places per minute and the rest, seven windows (`tools/work/navkicks/places.txt`; cell = places dwelt ≥ 1 bar (per min), visits, L
+  distinct exterior landings, Q loud / quiet, viol):**
+
+  | setting | SeeYouDrop 28–58 | Vienna 25–55 | Vienna 85–100 | CyborgNinja 40–70 | Malicious 140–170 | IBelongHere 40–75 | **SeeYouDrop 0–120** |
+  |---|---|---|---|---|---|---|---|
+  | NAV (id 0) | 3 (6) v3 L2 Q.682/– viol 5 | 0 (0) v0 L0 Q.783/– 0 | 2 (8) v2 L0 Q.763/.578 0 | 2 (4) v2 L1 Q.771/– 3 | 2 (4) v5 L0 Q.885/.769 0 | 2 (3.4) v4 L0 Q.732/.627 0 | **5 (2.5) v9 L3 Q.671/.734 9** |
+  | §100 (walk, green, drop off) | 3 (6) v3 L2 Q.729/.666 4 | 0 (0) v0 Q.768/.806 0 | 1 (4) v1 Q.778/.578 0 | 2 (4) v2 L1 Q.765/– 2 | 2 (4) v5 Q.850/.768 0 | 2 (3.4) v4 Q.746/.614 0 | 5 (2.5) v9 L3 Q.669/.721 11 |
+  | walk + green + drop, HOLD 0 | 4 (8) v4 L2 Q.777/.666 0 | 0 (0) v0 Q.768/.806 0 | 1 (4) v1 Q.781/.579 0 | 3 (6) v3 L1 Q.762/– 0 | 3 (6) v5 Q.842/.768 0 | 2 (3.4) v3 Q.746/.614 0 | 5 (2.5) v9 L3 Q.676/.721 1 |
+  | `n2green=0` (walk + drop) | 4 (8) v4 L2 Q.777/.746 0 | 2 (4) v2 Q.679/.675 0 | 3 (12) v4 Q.632/.770 0 | 4 (8) v5 L1 Q.759/– 0 | 3 (6) v5 Q.845/.858 0 | 5 (8.6) v6 Q.678/.613 0 | 6 (3) v13 L3 Q.587/.719 1 |
+  | `n2drop=0` (walk + green) | 5 (10) v5 L2 Q.682/.745 **7** | 2 (4) v2 Q.679/.684 0 | 3 (12) v4 Q.632/.770 0 | 4 (8) v5 L1 Q.758/– **8** | 3 (6) v5 Q.845/.858 0 | 5 (8.6) v6 Q.678/.613 0 | 8 (4) v14 L4 Q.587/.719 **13** |
+  | **all on — §101** | **5 (10) v5 L2 Q.684/.745 0** | **2 (4) v2 Q.679/.684 0** | **3 (12) v4 Q.632/.770 0** | **4 (8) v5 L1 Q.758/– 0** | **3 (6) v5 Q.845/.858 0** | **5 (8.6) v6 Q.678/.613 0** | **7 (3.5) v13 L4 Q.584/.719 2** |
+
+  **Reading.** Places dwelt: 3 → 5, 0 → 2, 2 → 3, 2 → 4, 2 → 3, 2 → 5 on the six windows and 5 → 7 on the full track (9 → 13 visits,
+  3 → 4 distinct landings); the HOLD-0 row says the debounce is what lets the walk breathe (without it the interval's flicker resets the
+  walk before a place is dwelt: Vienna 0 → 0, IBelongHere 2 → 2). The full track's places: 1/2 · 3/7 · 4/7 · EXT · 1/5 · P3:1/5 · P3:1/4
+  (NAV: 1/2 · 1/5 · EXT · P3:1/5 · P3:1/4). Q loud vs quiet with everything on: loud LOWER (busier) on SeeYouDrop 28–58 (.684 / .745),
+  Vienna 25–55 (.679 / .684), Vienna 85–100 (.632 / .770), IBelongHere (.678 / .613 — the one the other way, both rows calm), the full
+  track (.584 / .719); Malicious .845 / .858 (the cardioid and 1/7 the whole window, the ladder of 0/1 has nothing busier); NAV's full
+  track .671 / .734 and the §100 row .669 / .721 — the loud median moved .67 → .58 while the quiet one stayed. The monitor: viol 0 on
+  the six windows (NAV 5 / 0 / 0 / 3 / 0 / 0, all exterior launches), 2 on the full track (36.78 s HOME .082, 63.23 s EXT .063 — the
+  exterior springs' own steps mid-excursion, NAV's family: its row has 9), max step .029–.158. Jumps per bar unchanged from §100 (the
+  lane is not touched).
+- **Luminance (the §99 ruler, `after-s101/` against `after-s100/`), ALL rows:** SeeYouDrop 25–60 medY .192 → .187, p90Y .277 → .278,
+  clip .001 = .001, grad .0145 = .0145, centre .380 → .405, rim .372 → .377; Vienna 60–95 medY .176 → .180, grad .0157 → **.0161**, centre
+  .323 → .346, rim .317 → .311 (the one meanY ≥ .6 frame is §100's too); CyborgNinja 40–70 medY .213 → .208, p90Y .298 → .287, grad .0138
+  → .0137, centre .426 → .457, rim .409 → .379. No clipped frame on any window (0 of 1003); grad equal / up / down a hair; the centre a
+  little brighter on all three (c dwells in its places more and transits less — fewer near-circle frames).
+- **Knobs** (`#test`, hooks, `knob4()`): `&n2walk=0` the species only (NAV's places) · `&n2walk=DEPTH[,MINSIZE[,PER[,DWELL[,HOLD]]]]`
+  (7, .008, 1, 1, 1; `PER 2` = a step every other phrase, `HOLD 0` = NAV's instant retarget) · `&n2green=0` no ruler (the sides alternate,
+  no early step) · `&n2green=W[,QMAX[,BARS]]` (1, .8, 1) · `&n2drop=0` NAV's launch ray and exterior θ target. `n2info()` carries
+  `wk wplace wcands wpick wq wsteps wdue wdwell wearly wover wdrops wbase Q`.
+- **Proof.** `IDS="0 8" tools/scene-md5.sh s101`: s0 `fb74fee4… / 8a0715df…` unchanged (s8 `a8de2f03… / 7a65fd16…`); `node tools/check.js`
+  0 fail (nav2: index.js 313, nav.js 298, walk2.js 201 lines; license headers clean); `node tools/test_nav2.js` all ok — pass A to the
+  bit, pass B viol [] (n 2879, fast 0, max .0366) with 6 walk steps, 439 frames inside a Farey neighbour, 5 bulbs dwelt, 2 drops on 2 θ
+  bases; the fake page (`accept.sh`'s MON8 injection, 30 s) viol [] (n 1003, fast 0, max .0502); SeeYouDrop 25–60 file mode id 8 viol []
+  (above). The fake timeline's species cadence in `test_nav2.js` is now 12 s (was 4: NAV's own rim walks left the phrase walk no room
+  to dwell) — pass A is unaffected (both navigators read the same MS).
+- **Pitfalls.** (1) `pkill -f <pattern>` with the pattern ALSO in the command line that launches the thing later in the same shell line
+  kills the shell (§100's (4), met again: exit 144, nothing after it ran). (2) Two Chrome chains must not overlap a code change: a
+  monitor that loaded the modules before the last edit proves the old bytes — the whole chain was re-run after the final edit. (3)
+  `loudRel ≥ .6` is not "loud" on most tracks (SeeYouDrop never leaves .72–.94); the ladder is. (4) The equipotential's Q is a gross-
+  shape ruler, not an arm counter (the 9-armed 4/9 reads .69 like 1/2).
+- **Not done / open.** The eye (plan step 4; `EYE-GUIDE.md` has the recipe and the knobs). The two mid-excursion exterior steps on the
+  full track (NAV's spring family, not the launch). The root-crossing hazard in NAV itself (id 0, its own retarget line) — left, it is
+  the control. A per-ladder quiet candidate for 1/2 (all four read .69) if the eye wants calm there — the cardioid IS the calm place and
+  the even phrases do not visit it; a `0/1` entry in every ladder for quiet rows is a line.

@@ -55,7 +55,7 @@ the hue wheel through green/yellow. Build:
 - **Line trap**: π per BAR; the per-beat re-thread becomes an accent of `beat` strength (`.12·beat` extra turn), not a half turn.
 - Measure: lumtrace unchanged or better; the monitor's §0 spike rule clean on the six (`tools/monitor.js`); jumps/bar table.
 
-### 3. Navigation — a + c (§101)
+### 3. Navigation — a + c (§101) — BUILT 2026-10-08 (walk2.js: the phrase walk along the Farey ladder (DEPTH 7, MINSIZE .008, a step per phrase once the place has been dwelt a bar), Green's Q as the fitness (loud → the lowest Q of the pool, quiet → the highest; the early step at Q > .8 for a bar while loud), drops launch along the NEW place's ray and θ drifts from it (which also clears NAV's EXT launch violations, SeeYouDrop 25–60: 10 → 0); the numbers in DECISIONS §101; the eye still owed — `nav-retune-review-2026-10-08/EYE-GUIDE.md`)
 - **a. The phrase walk:** on each `phrase16Pos` wrap (or `barNovelEvt`), the target internal angle steps along the Farey ladder from the
   interval's bulb toward its neighbours (p/q → the mediants), back on the next phrase of the same section; the species still comes from
   `interval`, the walk makes a section visit 3–4 bulbs instead of one.

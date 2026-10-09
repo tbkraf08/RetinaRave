@@ -1,0 +1,13 @@
+lumtrace Vienna scene 8 [60, 95] s · 10 fps · 640x317 from 1280x633 · 351 frames · heard 60.000 → 95.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+60-65     0.197  0.247  0.001  0.002  0.0196  0.459  0.318   50
+65-70     0.102  0.153  0.001  0.001  0.0159  0.347  0.170   50
+70-75     0.195  0.262  0.001  0.012  0.0149  0.274  0.323   50
+75-80     0.099  0.150  0.001  0.001  0.0144  0.215  0.165   50
+80-85     0.191  0.268  0.001  0.001  0.0176  0.372  0.339   50
+85-90     0.248  0.303  0.001  0.001  0.0160  0.325  0.464   50
+90-95     0.284  0.316  0.001  0.001  0.0143  0.499  0.510   51
+ALL       0.180  0.288  0.001  0.012  0.0161  0.346  0.311  351
+clipFrac >= 0.25 on 0 of 351 frames · meanY >= 0.6 on 1 · min grad 0.0092 at t 73.30
+tiles 8 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 3.171 · f0 2 · sr 48000 · end frame 2582 heard 95
+files: tools/work/lum/s101/Vienna-s8-60-95.csv · tools/work/lum/s101/Vienna-s8-60-95.txt · tools/work/lum/s101/Vienna-s8-60-95-sheet.jpg
