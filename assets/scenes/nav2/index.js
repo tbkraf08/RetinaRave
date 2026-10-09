@@ -1,14 +1,17 @@
 // Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
-// NAV2 — the navigator's workbench (DECISIONS §97, 2026-10-08, the user: "I like NAV better than NAV2 → reset NAV2 as NAV
-// → all work in NAV2"): a clone of NAV (id 0) at id 8, key `9`, forced-only, being retuned step by step
-// (docs/plans/NAV2-RETUNE-PLAN.md). nav.js and shaders.js (the OKLCH mapping) are still byte copies of ../nav/'s; this
-// file differs from ../nav/index.js in the registration (name, id, home, always, score, no card, no DRUM variant), the
-// program names, the `always: false` overlay guard, the hooks (`n2info()` + `green()` for the §46 trace tools; Green's
-// ruler green.js survives as a steering fitness) — and since §99 the legibility pass of look2.js (the exposure knee, the
-// loudness smoulder, the snare flash, colour on key — four knobs, every one at rest = NAV's bytes) on the v2 Julia shader.
-// Every retune lands here and is proven on `IDS="0 8" tools/scene-md5.sh`; id 0 stays the byte-identical control.
+// NAV2 — the retuned navigator, the director's HOME since §102 (2026-10-08, the user: "nav2 is better than nav now; swap them
+// so nav is key 9 and nav2 is key 1 (and used by the director)"): id 0, key `1`, NAV's bid and NAV's landing tile (the public
+// name stays NAV). Born as a clone of NAV at id 8 (§97: "reset NAV2 as NAV → all work in NAV2") and retuned step by step
+// (docs/plans/NAV2-RETUNE-PLAN.md): §99 look2.js (the exposure knee, the loudness smoulder, the snare flash, colour on key),
+// §100 move2.js (the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar), §101 walk2.js (the phrase
+// walk on the Farey ladder, Green's ruler as the fitness, drops that land somewhere new), §102 the kaleidoscope off — every
+// term behind a knob whose rest is NAV's line. The v0.33 navigator ../nav/ is id 8, key `9` now: the control, forced-only,
+// `always: true` like this one so key 1 vs 9 still compares one navigator state. shaders.js is a byte copy of ../nav/'s;
+// nav.js = ../nav/nav.js + the §100 / §101 hooks (tools/test_nav2.js counts the lines); this file differs from ../nav/index.js
+// in the registration, the program names, the forced-scene guards, the hooks (`n2info()` + `green()` for the trace tools,
+// the knobs) and the §99 uniforms. Proven on `IDS="0 8" tools/scene-md5.sh` (s0 = this scene, s8 = the control).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { startGridWorker, LG_MIN, LG_MAX } from '../../math/mandel.js';   // LG_*: the exterior potential's own bounds — the `reach` parameter's range
 import { NAV, updateNav } from './nav.js';
@@ -35,11 +38,11 @@ let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shippe
 
 export default {
   name: 'nav2',
-  id: 8,
-  tag: 'the navigator\'s workbench: a clone of NAV being retuned (bulbs by interval, exterior rays on the drop)',
-  // no `card`: no landing tile (CONTRACTS §1.17) while it is a workbench
-  home: false,      // NAV (id 0) is the director's home — core/scenes.js:50 keeps the LAST registered home, so a cloned `true` would steal it
-  always: true,     // updated every frame like NAV (not forced-only's usual false): loop.js updates the forced scene only from frame 1, and that one missed dt moved every spring — with `true` the s8 pair is NAV's to the byte (§97), and key 1 vs 9 compares the same navigator state
+  id: 0,
+  tag: 'music navigates the Mandelbrot set: bulbs by interval, the phrase walk along the Farey ladder, exterior rays on the drop',
+  card: { title: 'NAV', blurb: 'a walk over the Mandelbrot set: every stop is a Julia set, and the music picks the route' }, // landing tile (CONTRACTS §1.17): the home scene's public name stays NAV; the picture is site/thumbs/nav2.jpg (by `name`, tools/thumbs.sh "0:360")
+  home: true,       // the director's home scene since §102: drops cut here, builds park here — core/scenes.js:50 keeps the LAST registered home, and ../nav/ says false now
+  always: true,     // updated every frame (the director reads its rt, the PiP path must stay continuous; and key 1 vs 9 compares one navigator state — id 8 is `always: true` for the same reason)
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
@@ -49,7 +52,7 @@ export default {
     'barNovelEvt', 'sectionEvt'], // §101: walk2.js (+ phrase16Pos, loudRel, intensity, presence, harmUnw already above)
   state: NAV,       // ./nav.js's own object — a second module instance, not ../nav/nav.js's; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
   rt: { c: NAV.c, label: 'nav2', home: true, awayBeat: 0, settledAt: 0, time: 0, log: '' },
-  // no `variants`: NAV's DRUM is id 4 and an id is registered once (core/scenes.js throws on a second)
+  // no `variants`: DRUM (id 4, forced-only since §93) stays on ../nav/ — an id is registered once (core/scenes.js throws on a second), and the least churn keeps it with the code that draws it
   hooks: {
     baby: (i) => { NAV.forceBaby = +i; },      // this clone's forceBaby (its own NAV object, above)
     clipdbg: (v) => { clipDbg = +v || 0; },   // the gamut probe of both escape branches, read back through an RGBA8 target
@@ -147,7 +150,7 @@ export default {
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
-  score: () => 0,   // forced-only (key 9, &scene=8; §93's forced-only row): the director never picks the workbench
+  score: (S) => 0.5 + S.buildLive,   // NAV's bid (§93's home row), moved here with the home in §102: builds, drops and silence are the director's precedence, this is the standing bid
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 0 },   // §102: the kaleidoscope OFF (the user: "it distracts from the beauty of the set") — composite.js's uFx.z = FX.kal · 0, the mirror never mixes in, as TORUS2 / GIELIS / FEIGEN; NAV (id 8) keeps 1
 

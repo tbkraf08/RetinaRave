@@ -30,11 +30,11 @@ ok(fs.readFileSync('assets/scenes/nav/shaders.js').equals(fs.readFileSync('asset
   const sa = new Set(A), sb = new Set(B), gone = A.filter((l) => !sb.has(l)).length, added = B.filter((l) => !sa.has(l)).length;
   ok(gone <= 12 && added <= 22 && B.some((l) => l.includes("from './move2.js'")) && B.some((l) => l.includes("from './walk2.js'")), `nav2/nav.js = nav/nav.js + the §100 / §101 hooks: ${gone} lines gone, ${added} added (caps 12 / 22), imports move2.js + walk2.js`);
 }
-ok(scene.name === 'nav2' && scene.id === 8, `name ${scene.name} id ${scene.id}`);
-ok(scene.home === false, 'home false (core/scenes.js keeps the LAST registered home — a cloned true would steal the director)');
+ok(scene.name === 'nav2' && scene.id === 0 && nav.name === 'nav' && nav.id === 8, `name ${scene.name} id ${scene.id}; the control ${nav.name} id ${nav.id} (§102: the swap)`);
+ok(scene.home === true && nav.home === false && nav.always === true, 'home true, the control home false + always true (core/scenes.js keeps the LAST registered home; main.js registers nav before nav2)');
 ok(scene.always === true, 'always true (like NAV: the forced scene is updated from frame 0, so the s8 pair is NAV\'s to the byte)');
-ok(!scene.variants, 'no variants (NAV\'s DRUM is id 4, registered once)');
-ok(!scene.card, 'no card (no landing tile for the workbench)');
+ok(!scene.variants && nav.variants && nav.variants.length === 1 && nav.variants[0].id === 4 && nav.variants[0].score() === 0, 'no variants here; DRUM (id 4, score 0) stays on the control (registered once)');
+ok(scene.card && scene.card.title === 'NAV' && !nav.card, 'the card (title NAV) is here; the control has none');
 ok(typeof scene.hooks.baby === 'function' && typeof scene.hooks.n2info === 'function' && typeof scene.hooks.green === 'function', 'hooks baby / n2info / green');
 ok(nav.feats.every((k) => scene.feats.includes(k)) && scene.feats.length > nav.feats.length, `feats ⊇ NAV's ${nav.feats.length} (+${scene.feats.length - nav.feats.length} for §99's look2.js)`);
 ok(Object.keys(nav.help.feats).every((k) => k in scene.help.feats) && scene.feats.every((k) => k in scene.help.feats), 'help.feats ⊇ NAV\'s, and a line for every feats entry');
@@ -45,7 +45,7 @@ ok(['kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barP
 ok(same(Object.keys(scene.params), Object.keys(nav.params)) && same(Object.values(scene.params).map((p) => p.range), Object.values(nav.params).map((p) => p.range)), `params ${Object.keys(scene.params).join(' ')} with NAV's ranges`);
 ok(scene.post.bloom.thr === nav.post.bloom.thr && scene.post.kaleido === 0 && nav.post.kaleido === 1 && scene.post.fb.decay({ eM: 0.37 }) === nav.post.fb.decay({ eM: 0.37 }), 'post = NAV\'s fb decay + bloom thr; kaleido 0 (§102: the kaleidoscope is off on the retune, NAV keeps 1)');
 ok(scene.colour.default === 'v2' && same(Object.keys(scene.colour.variants), Object.keys(nav.colour.variants)), 'colour v2 default, the same two mappings');
-ok(nav.score({ buildLive: 0 }) === 0.5 && scene.score({ buildLive: 0 }) === 0 && scene.score({ buildLive: 1 }) === 0, 'score 0 whatever the music (forced-only, §93); NAV bids 0.5 + buildLive');
+ok(scene.score({ buildLive: 0 }) === 0.5 && scene.score({ buildLive: 1 }) === 1.5 && nav.score({ buildLive: 0 }) === 0 && nav.score({ buildLive: 1 }) === 0, 'the bid 0.5 + buildLive is here (§93\'s home row, moved with the home in §102); the control scores 0 whatever the music');
 
 console.log('2. its own state, the monitor\'s shape, the forced-scene guards');
 ok(scene.state !== nav.state && scene.state === N2 && nav.state === N0 && scene.state.c !== nav.state.c, 'state is nav2/nav.js\'s NAV object, not nav/nav.js\'s');
@@ -131,8 +131,8 @@ for (let f = 1; f <= FR; f++) {
   fake(MS, dt, now);
   for (const k in scene.params) { P[k] = scene.params[k].from(MS); P0[k] = nav.params[k].from(MS); }
   if (!same(P, P0)) modeDiff++;
-  scene.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P, now, Q: {} });   // the real update(): rt, measure(), updateNav
-  nav.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P0, now, Q: {} });
+  scene.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P, now, Q: {} });   // the real update(): rt, measure(), updateNav — §102: each navigator is the logical scene at its own id (isLogical gates the loud exit)
+  nav.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P0, now, Q: {} });
   const c = [N2.cPath[0], N2.cPath[1]];
   if (!isFinite(N2.c[0]) || !isFinite(N2.c[1]) || !isFinite(N2.h.x) || !isFinite(N2.lg.x) || !isFinite(N2.th.x)) nonFinite++;
   maxDiff = Math.max(maxDiff, Math.abs(N2.c[0] - N0.c[0]), Math.abs(N2.c[1] - N0.c[1]), Math.abs(N2.h.x - N0.h.x), Math.abs(N2.vtime - N0.vtime));
@@ -187,8 +187,8 @@ for (const k of ['n2kick', 'n2breath', 'n2sub', 'n2pitch', 'n2trap', 'n2walk', '
     const now = f * dt;
     fake(MS, dt, now);
     for (const k in scene.params) { P[k] = scene.params[k].from(MS); P0[k] = nav.params[k].from(MS); }
-    scene.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P, now, Q: {} });
-    nav.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P0, now, Q: {} });
+    scene.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P, now, Q: {} });
+    nav.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P0, now, Q: {} });
     const i = scene.hooks.n2info(), c = [N2.cPath[0], N2.cPath[1]];
     if (!isFinite(N2.c[0]) || !isFinite(N2.c[1]) || !isFinite(N2.h.x) || !isFinite(i.tight) || !isFinite(i.lean) || !isFinite(i.trapA)) nf++;
     diff = Math.max(diff, Math.abs(N2.c[0] - N0.c[0]), Math.abs(N2.c[1] - N0.c[1]));
@@ -231,7 +231,7 @@ console.log('4. cost');
     fake(MS, dt, now);
     for (const k in scene.params) P[k] = scene.params[k].from(MS);
     const t0 = process.hrtime.bigint();
-    scene.update(dt, MS, {}, {}, { SC: { logical: 8, vT: 0 }, params: P, now, Q: {} });
+    scene.update(dt, MS, {}, {}, { SC: { logical: 0, vT: 0 }, params: P, now, Q: {} });
     t.push(Number(process.hrtime.bigint() - t0) / 1e6);
   }
   t.sort((a, b) => a - b);

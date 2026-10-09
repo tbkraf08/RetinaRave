@@ -26,11 +26,11 @@ let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shippe
 
 export default {
   name: 'nav',
-  id: 0,
-  tag: 'music navigates the Mandelbrot set: bulbs by interval, exterior rays on the drop',
-  card: { title: 'NAV', blurb: 'a walk over the Mandelbrot set: every stop is a Julia set, and the music picks the route' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/nav.jpg from tools/thumbs.sh
-  home: true,       // the director's home scene: drops cut here, builds park here
-  always: true,     // updated every frame (the director reads its rt, the PiP path must stay continuous)
+  id: 8,            // §102 (2026-10-08, the user: "nav2 is better than nav now; swap them so nav is key 9 and nav2 is key 1"): the v0.33 navigator is the CONTROL now — id 8, key `9`, forced-only; the retuned ../nav2/ is id 0 and the home
+  tag: 'the v0.33 navigator, kept as the control: bulbs by interval, exterior rays on the drop',
+  // no `card` (CONTRACTS §1.17): no landing tile for the control — the home's tile is NAV2's, titled NAV
+  home: false,      // the director's home is ../nav2/ (id 0) since §102 — core/scenes.js:50 keeps the LAST registered home
+  always: true,     // updated every frame like the home (the PiP path stays continuous, and key 1 vs 9 compares one navigator state — a forced scene with `false` misses frame 0's update(), §97)
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
   feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
     'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
@@ -82,7 +82,7 @@ export default {
     math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
   },
 
-  score: (S) => 0.5 + S.buildLive,
+  score: () => 0,   // forced-only since §102 (key 9, &scene=8): the bid 0.5 + buildLive moved to ../nav2/ with the home
 
   post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 1 },
 

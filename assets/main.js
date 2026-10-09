@@ -33,14 +33,14 @@ import composite from './effects/composite.js';
 import mixs from './transitions/mixs.js';
 import morph from './transitions/morph.js';
 
-import nav from './scenes/nav/index.js';
+import nav from './scenes/nav/index.js'; // §102: id 8, key 9 — the v0.33 navigator, forced-only, kept as the control; DRUM (id 4) stays its variant
 import dust from './scenes/dust/index.js';
 import mandala from './scenes/mandala/index.js';
 import torus from './scenes/torus/index.js';
 import polytope from './scenes/polytope/index.js';
 import feigen from './scenes/feigen/index.js';
 import torus2 from './scenes/torus2/index.js'; // v0.7: id 3, TORUS's bid (DECISIONS §37); torus is torus-v1 at id 7, forced-only
-import nav2 from './scenes/nav2/index.js'; // v0.8: id 8, forced-only (score 0, key 9) until the user approves it — NAV2-SESSION-PROMPT.md
+import nav2 from './scenes/nav2/index.js'; // §102 (2026-10-08): id 0, key 1, the director's HOME — the retuned navigator (§97–§101); registered after nav so its `home: true` is the last one (core/scenes.js:50)
 import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (score 0; the `n` key cycles to it — the number keys ran out) — MAXWELL-SESSION-PROMPT.md
 import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
 import chladni from './scenes/chladni/index.js'; // v0.15: id 11 ("slot 12"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=11) — ENGINE-CHLADNI-SESSION-PROMPT.md
