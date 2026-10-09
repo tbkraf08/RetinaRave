@@ -3,7 +3,7 @@
 # use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 # Source: https://github.com/tbkraf08/RetinaRave
 # The REAL MS traces the node tests run on (DECISIONS §109; HARNESS "Real-music acceptance"): every recordable MS field, per frame,
-# of a deterministic cold-start file run (tools/filetrace.js, WARM=0, the four rules) — what the engine publishes on music, for
+# of a deterministic cold-start file run (tools/filetrace.js, WARM=0, the five rules) — what the engine publishes on music, for
 # EVERY track in the library (~/Music/RetinaRave: Comptine CyborgNinja IBelongHere Malicious SeeYouDrop Vienna WhoLikesToParty)
 # 0 → 110 s in BOTH modes — <Track>-map1.json the normal file mode (the track map: mapDropEvt on the bar line) and <Track>-map0.json
 # the same audio on the LIVE lanes (&map=0: the ears causal, the build detector, the queue) — plus rec-map0.json, the user's pad take
