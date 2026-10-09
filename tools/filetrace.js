@@ -13,6 +13,10 @@
 //   engine/sources/file.js holds the frame clock at frame 1 while the track decodes, so frame0 is 2 on every run. The
 //   driver releases the clock with {eval:"window.__PAUSE=0"} — NEVER {wait}, which clears window.__pauseAt along with it
 //   and lets the page run a decode's worth of frames, moving core/loop.js's `wall` and with it every screenshot.
+//   §109: a COLD START (t0 = at, WARM=0) starts the recorder before the track opens — the source clears __pauseAt the moment the
+//   track is decoded and the driver's 40 ms poll sees `file.open` one to three frames later, so a recorder started after the gate
+//   caught frame 2, 3 or 4 (two recordings of the same take differed by one frame). The rows before frame0 (the held frame 1)
+//   are trimmed here and the header is re-read from the engine after the run. Two recordings cmp-equal.
 //
 // The JSON comes back in chunks: one Runtime.evaluate returning ~8 MB is at the mercy of the CDP message limit, so the
 // page stringifies once into window.__tj and the driver slices CHUNK characters at a time (measured: a 60 s '*' trace of
@@ -46,6 +50,8 @@ const fOf = (T) => F0 + Math.round((T - at) * FPS);
 const fStart = fOf(t0), fEnd = fOf(t1);
 const head = 'JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,sr:CARD.ENGINE.AU.file.sr,dur:CARD.ENGINE.AU.file.dur,det:CARD.ENGINE.AU.file.det,at:CARD.ENGINE.AU.file.at,lat:CARD.ENGINE.AU.lat()})';
 const START = 'CARD.TRACE.start(' + JSON.stringify(fields) + '), CARD.ENGINE.frameN';
+const cold = !rt && fStart <= F0 + 1;   // §109: the recorder starts before the open gate (see the header)
+const META = 'JSON.stringify(Object.assign(CARD.ENGINE.traceMeta(), {frame0: CARD.ENGINE.AU.file.frame0}))';
 const STOP = '(()=>{const j=CARD.TRACE.stop();window.__tj=JSON.stringify(j);return JSON.stringify({len:window.__tj.length,frames:j.f.length,fields:j.fields.length,mode:j.mode,log:j.log.length,t0:j.t[0],t1:j.t[j.t.length-1],cpu:+CARD.ENGINE.ms.toFixed(3),an:CARD.ENGINE.AU.fast.analyses||null,blocks:CARD.ENGINE.AU.file.pushed})})()';
 // CLOCKK='{"LAT_MARG":1e9}' overrides the PCM clock's knobs (ENGINE.CLOCK.K = engine/clock/clock.js's CLOCK) before the
 // audio opens — the same env the node tools take (clock-study.js, test_clock.js), so an engine A/B of one knob is one run
@@ -54,13 +60,16 @@ const KNOBS = process.env.CLOCKK ? JSON.parse(process.env.CLOCKK) : null;
 const steps = [
   { until: 'window.CARD', timeout: 60000 },
   ...(KNOBS ? [{ eval: 'Object.assign(CARD.ENGINE.CLOCK.K, ' + JSON.stringify(KNOBS) + '), JSON.stringify(CARD.ENGINE.CLOCK.K)' }] : []),
+  ...(cold ? [{ eval: START }] : []),
   { until: 'window.CARD.ENGINE.AU.file && window.CARD.ENGINE.AU.file.open', timeout: 300000 },
   { eval: head },
   ...(rt
     ? [{ wait: 50 }, { until: 'CARD.MS.heardT >= ' + t0, timeout: 600000 }, { eval: START },
        { wait: 50 }, { until: 'CARD.MS.heardT >= ' + t1, timeout: 900000 }]
+    : cold ? [{ until: 'window.__FRAME>=' + fEnd, timeout: 900000 }]
     : [{ until: 'window.__FRAME>=' + (fStart - 1), timeout: 900000 }, { eval: START },
        { until: 'window.__FRAME>=' + fEnd, timeout: 900000 }]),
+  { eval: META },
   { eval: STOP },
   ...Array.from({ length: MAX_CHUNKS }, (_, i) => ({ eval: `window.__tj.slice(${i * CHUNK},${(i + 1) * CHUNK})` })),
 ];
@@ -78,8 +87,8 @@ ch.on('exit', (code) => {
   const errs = lines.filter((l) => l.startsWith('[EXC]') || l.startsWith('[console.error]') || l.startsWith('TIMEOUT') || l.startsWith('[EVAL-ERR]'));
   const un = (s) => { try { return JSON.parse(s); } catch (e) { return null; } };
   const dbl = (s) => un(un(s || 'null') || 'null');
-  const H = dbl(evals[KNOBS ? 1 : 0]);                         // the f0 / sr / dur / latency eval (CLOCKK adds one {eval} before it)
-  const meta = dbl(evals[evals.length - MAX_CHUNKS - 1]);
+  const H = dbl(evals[(KNOBS ? 1 : 0) + (cold ? 1 : 0)]);     // the f0 / sr / dur / latency eval (CLOCKK and a cold START add one {eval} each before it)
+  const meta = dbl(evals[evals.length - MAX_CHUNKS - 1]), M = dbl(evals[evals.length - MAX_CHUNKS - 2]);
   if (errs.length) console.log('page errors:', errs.slice(0, 4).join(' | '));
   if (!meta) { console.log('filetrace: no trace came back (exit ' + code + ')'); console.log(lines.slice(-12).join('\n')); process.exit(1); }
   if (!rt && H && H.f0 !== F0) console.log(`filetrace: WARNING frame0 is ${H.f0}, not ${F0} — the window is off by ${(H.f0 - F0) / FPS} s and two runs may differ`);
@@ -89,7 +98,16 @@ ch.on('exit', (code) => {
     process.exit(1);
   }
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
-  fs.writeFileSync(out, json);
+  let text = json;
+  if (cold && M) {   // the rows before frame0 (the held frame, heardT 0 with no track) out; the header from the engine after the run
+    const J = JSON.parse(json), keep = J.f.map((f) => f >= M.frame0);
+    const trim = (a) => a.filter((v, i) => keep[i]);
+    J.f = trim(J.f); J.t = trim(J.t); for (const k in J.cols) J.cols[k] = trim(J.cols[k]);
+    for (const k of ['track', 'mode', 'sr', 'at', 'fps', 'detLead']) J[k] = M[k];
+    meta.frames = J.f.length; meta.t0 = J.t[0]; meta.t1 = J.t[J.t.length - 1]; meta.mode = J.mode;
+    text = JSON.stringify(J); meta.len = text.length;
+  }
+  fs.writeFileSync(out, text);
   console.log(`${out}: ${meta.frames} frames · ${meta.fields} fields · heard ${meta.t0} → ${meta.t1} s · mode ${meta.mode} · f0 ${H ? H.f0 : '?'} · sr ${H ? H.sr : '?'} · log ${meta.log} · ENGINE.ms ${meta.cpu} · ${(meta.len / 1048576).toFixed(2)} MB · ${((meta.len / 1048576) / (meta.frames / FPS) * 60).toFixed(2)} MB/min`);
   if (H && H.lat) console.log(`  latency: outputLatency ${H.lat.out} · baseLatency ${H.lat.base} · currentTime ${H.lat.now} · contextTime ${H.lat.ctxT} · heard ${H.lat.heard}`);
   process.exit(errs.length ? 1 : 0);

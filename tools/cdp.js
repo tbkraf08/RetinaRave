@@ -8,7 +8,7 @@
 //      MOBILE=1 a phone: 390×844 viewport, DPR 3, touch, (pointer:coarse) true — the landing goes .mobile, the bar shows (v0.6) ·
 //      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
 //        exactly that frame for the shots/evals that follow; the next {wait} resumes it ·
-//      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765) · OUT=dir for shots ·
+//      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765; the debug port is PORT + 1000, §109) · OUT=dir for shots ·
 //      HEADED=1 a real window on $DISPLAY (v0.2 §17 audit): WIN=1920,1080 (size) · WINPOS=0,0 · DPR=1.5 forces
 //        devicePixelRatio · CAPTITLE=<substring> auto-picks that tab (with its audio) in the getDisplayMedia dialog;
 //        extra steps: {tab:'url'} opens a second tab in the background ({tab:'url', window:{left,top,width,height}} = its own
@@ -24,7 +24,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const hash = process.argv[2] || 'test', steps = JSON.parse(process.argv[3] || '[]');
 const PORT = +(process.env.PORT || 8765), OUT = process.env.OUT || HERE;
-const dbg = 9300 + Math.floor(Math.random() * 500);
+// §109: the Chrome debug port follows PORT (PORT + 1000, outside the random range) so two lanes on different PORTs can never attach
+// to one Chrome — two concurrent random draws did (one page navigated by both drivers); DBG=<port> overrides, no PORT = random.
+const dbg = process.env.DBG ? +process.env.DBG : process.env.PORT ? +process.env.PORT + 1000 : 9300 + Math.floor(Math.random() * 500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const gpu = process.env.GPU ? ['--use-angle=gl', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 

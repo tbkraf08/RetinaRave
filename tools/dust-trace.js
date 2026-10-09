@@ -16,7 +16,7 @@
 //   <ms>   the named MS fields (numbers and booleans)
 //   <k>    every numeric key of the scene's `hooks.dinfo()` (a read-only hook; absent = no scene columns)
 // Output is the same {track, mode, at, fps, fields, f, t, cols} shape tools/truth/*.py read, so dropcheck.py and
-// friends grade it unchanged. Two runs of the same window are bit-identical (the four rules of a deterministic
+// friends grade it unchanged. Two runs of the same window are bit-identical (the five rules of a deterministic
 // real-track run, HARNESS).
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
