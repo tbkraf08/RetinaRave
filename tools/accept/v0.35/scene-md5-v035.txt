@@ -8,29 +8,36 @@
 # §106 (2026-10-09): the two s12 lines appended — FLUID, id 12, the substrate shown as itself (`IDS=12 tools/scene-md5.sh`, PORT 8874,
 # twice, equal); the 24 lines above unchanged (one full list, PORT 8882, = these to the byte). FLUID is NOT in the `&fluid=0` identity
 # list (v0.34 has no id 12): under `&fluid=0` it paints its empty-pool idle, s12 70405a78 / f048c5a2 (twice).
-f82a9174d18d14dfe2e32c26799d2eeb  s0-f360.jpg
-6abfd71e71ef8cf53a7f514b460c8331  s0-f840.jpg
-9d7f4504e41da84d1619ba2e626b1644  s1-f360.jpg
-5b06a809528f208008725a42e63a8075  s1-f840.jpg
-e87cfa4bbb1497e228a734ec5ddcae87  s2-f360.jpg
-ee7956e3629b13c32d9fab4cf61326c3  s2-f840.jpg
-e6fffff82db3eb5faa44de09b41d17ca  s3-f360.jpg
-8d3635a84646dc7cdeb8e95051c6df47  s3-f840.jpg
-45b27bc90f7feb856a82179cfb3c0e82  s4-f360.jpg
-2bf0e217ba5a8c23afdd860535e842a0  s4-f840.jpg
-3c8d8ac7ca1eb4468b1a62f0cfea9461  s5-f360.jpg
-dc9e57835b47ad6168090e084b754ac5  s5-f840.jpg
-73b7b0ea1ca42f995ac8acaf98a96209  s6-f360.jpg
-3fc6a766126340b14af177488cde821f  s6-f840.jpg
-c1c0afa7b67657f581c2978731259b19  s7-f360.jpg
-3ce3f944e3df856f4664d68cddb49a50  s7-f840.jpg
-83c3018465156b3300744c9748bc7f37  s8-f360.jpg
-b6257fe588d8b8e78f6dc8268fc3d444  s8-f840.jpg
-839f321027f80a28821238e35a2801a3  s9-f360.jpg
-fd7851f6e1f6f402a173b6029b75179f  s9-f840.jpg
-6e51a957c7a11ea1b91083b3cb09358a  s10-f360.jpg
-cbc891d70cde16a6fe704937c96fd6d7  s10-f840.jpg
-d05204e5cccd6b99d291bca00af3d918  s11-f360.jpg
-347c628476f4a5910470b45f4dc3b4c2  s11-f840.jpg
-13e9acae1ed63a78e805cefa887e7070  s12-f360.jpg
-85cd30238e1fe016821c93e988f43370  s12-f840.jpg
+# §108 (2026-10-09): the HARMONIC CHANNELS re-base — the chord shears are a velocity (the v1 `snare` level rising with no `snareEvt`
+# → ±0.18·Δ uv/s at mid height), and on the fake timeline the lattice's `snareEvt` never reaches the step (features-ears.js zeroes
+# EVT before its fakeOn return — a §83 defect found here, open), so its seven 0.7 level jumps are seven chord shears and EVERY line
+# moved; the dye-only floor moves nothing (A/B on s0 through CARD.fluid.K: chord off → the §105 pair to the byte, floor off → still
+# moved). Measured `GPU=1 PORT=8903 tools/scene-md5.sh s108c` and again on PORT 8904 (`s108d`): the two 26-line lists byte-equal
+# (cmp), errs [] hop 840 row 72 on every id. The `&fluid=0` list (`s108off2`) = tools/accept/v0.34/scene-md5-v034.txt line for line,
+# s12's idle pair 70405a78 / f048c5a2 unchanged.
+6930dffcd52bde4770e8edb1eac3f894  s0-f360.jpg
+af295f183ca809e4172a2fcac6d13151  s0-f840.jpg
+2a2f5da8f05104b2b6fc80829c75a3dd  s1-f360.jpg
+46a6a8cd2e58eafaaee86b6a39c71a59  s1-f840.jpg
+39004d775c91ae9f29941a55d7558287  s2-f360.jpg
+feb58038cd57ff869966e6cdd5e2972d  s2-f840.jpg
+f3c8f96fd07a186a1cc75eb07fcfc682  s3-f360.jpg
+00c14a4a1e719e41f9300d689167864b  s3-f840.jpg
+704bbe0b26574981a6835244d0bd046d  s4-f360.jpg
+5cd068da884f47f7fa8d520d23b19c05  s4-f840.jpg
+5d6307e18cd8dd3566c9d1555ac3cc59  s5-f360.jpg
+0397295f753655baa90f99bc65d52d8a  s5-f840.jpg
+b1a656e9efa54f5a6f33ed3f52c8aa53  s6-f360.jpg
+09743c0ec9d703780f2e2c470c74ada8  s6-f840.jpg
+d600f191c27d346a6e7bd5d2f8e2b394  s7-f360.jpg
+c296ac6d7da94289699f185df413875b  s7-f840.jpg
+3ce7343e651cda3a7d280c9f59af4ee2  s8-f360.jpg
+fca2f0b411583345812b272626c887af  s8-f840.jpg
+4aad218749d1640f408face752387af2  s9-f360.jpg
+8fd11445fba3c82a614b25df2a7646d9  s9-f840.jpg
+a580cb9c581a7bd937a69d124c63af1c  s10-f360.jpg
+71e64c5500cae3a6f7ebcd5cb7eeb224  s10-f840.jpg
+967354f131a7b509781ab621110c45b8  s11-f360.jpg
+4029b81bbab634ded39a5ae8c4084837  s11-f840.jpg
+1d7f9f90488a2a66df6fda8d1485dfde  s12-f360.jpg
+94040549fb17d7a3416c118d9c3d4e1b  s12-f840.jpg
