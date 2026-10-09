@@ -21,7 +21,7 @@ MS.eM = 0.5; MS.bass = 0.2;
 // identity: nothing set → the scene's own post object, untouched
 ok(postParams(MS) === POST_A, 'postParams returns the scene\'s own post object when nothing is set');
 ok(postParams(MS).fb.decay(MS) === 0.6, 'nested fn kept for the effect');
-ok(POST_PARAMS.join() === 'bloom.thr,fb.decay,fb.advect,kaleido,exposure.on', 'the five params (fb.advect since §105)');
+ok(POST_PARAMS.join() === 'bloom.thr,fb.decay,fb.advect,kaleido,exposure.on,glitch', 'the six params (fb.advect since §105, glitch since §110)');
 ok(MANUAL.post === MANUAL_POST, 'MANUAL.post is scenes.js MANUAL_POST');
 
 // the four params, set / clear, merge
@@ -42,6 +42,12 @@ ok(postParams(MS) === POST_A && MANUAL_POST.alpha === undefined, 'clearPost → 
 throws(() => setPost('alpha', 'bloom.k', 1), /not one of/, 'unknown param');
 throws(() => setPost('gamma', 'kaleido', 1), /no scene named/, 'unknown scene');
 throws(() => setPost('alpha', 'kaleido', 'x'), /finite/, 'non-number');
+// §110 glitch: a scalar slot like kaleido — absent on the scene's own post (the composite reads 1), set / clear, the string form
+ok(postParams(MS).glitch === undefined, 'glitch is not on the scene\'s own post (the composite treats undefined as 1)');
+ok(setPost('alpha', 'glitch', 0) === 0 && postParams(MS).glitch === 0 && postParams(MS).kaleido === 1, 'glitch 0 merged, kaleido untouched');
+ok(postString() === 'alpha.glitch=0', 'postString ' + postString());
+setPost('alpha', 'glitch', null); ok(postParams(MS) === POST_A && MANUAL_POST.alpha === undefined, 'clear glitch → identity again');
+throws(() => setPost('alpha', 'glitch', 'x'), /finite/, 'glitch non-number');
 
 // a colour variant's post, then the manual over it
 A.colour.cur = 'oklch'; ok(postParams(MS).bloom.thr === 0.6, 'the variant\'s post');
@@ -81,6 +87,8 @@ throws(() => applyPosts('alpha.bloom.thr=0.4,gamma.kaleido=1'), /no scene named/
 ok(MANUAL_POST.alpha.bloom.thr === 0.3, 'and nothing of the list applied');
 throws(() => applyPosts('alpha.bloom=0.4'), /cannot parse/, 'bad path');
 applyPosts('beta.fb.advect=0.5'); ok(MANUAL_POST.beta.fb.advect === 0.5, '&post= parses fb.advect'); setPost('beta', 'fb.advect', null);
+applyPosts('beta.glitch=0.5'); ok(MANUAL_POST.beta.glitch === 0.5 && /beta\.glitch=0\.5$/.test(postString()), '&post=beta.glitch=0.5 parses (' + postString() + ')');
+setPost('beta', 'glitch', null); ok(postString() === 'alpha.bloom.thr=0.3,alpha.fb.decay=0.5,beta.kaleido=0,beta.exposure.on=0', 'glitch cleared, the rest in force');
 
 // the preset block through routesJSON / loadRoutes
 manual('scene', 7); manual('trans', 't1'); manual('colour', 'alpha', 'oklch');

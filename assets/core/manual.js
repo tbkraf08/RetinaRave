@@ -2,7 +2,7 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // MANUAL (v0.4): one place for the overrides the keys already do — the forced scene, the transition, a scene's colour
-// variant — plus the per-scene post params (bloom.thr, fb.decay, fb.advect, kaleido, exposure.on) merged over the resolved post by
+// variant — plus the per-scene post params (bloom.thr, fb.decay, fb.advect, kaleido, exposure.on, glitch — §110) merged over the resolved post by
 // scenes.js postOf(). `scene` / `trans` / `colour` are live views of the director's own state (SC.forced, the current
 // transition, colour.cur), never a second copy; `post` is MANUAL_POST from scenes.js (the same object). The manual block
 // travels in the preset JSON (route.js BLOCKS.manual) and as &post= under #test (harness.js). Nothing here runs per
@@ -10,8 +10,9 @@
 import { SC, REG, SCENES, TRANSITIONS, MANUAL_POST, currentTransition, setTransition } from './scenes.js';
 import { BLOCKS, sceneOf } from './route.js';
 
-// The five post params the panel offers (CONTRACTS §1.4 "Per-scene post params"; fb.advect since §105): path → how a value is read
-const PARAMS = { 'bloom.thr': 'number', 'fb.decay': 'number', 'fb.advect': 'number', kaleido: 'number', 'exposure.on': 'bool' };
+// The six post params the panel offers (CONTRACTS §1.4 "Per-scene post params"; fb.advect since §105, glitch since §110): path → how a value is read.
+// glitch: 0..1 gain on the composite's glitch rows for that scene (the page-wide gain is FX.glitchGain, &glitch= / key G).
+const PARAMS = { 'bloom.thr': 'number', 'fb.decay': 'number', 'fb.advect': 'number', kaleido: 'number', 'exposure.on': 'bool', glitch: 'number' };
 export const POST_PARAMS = Object.keys(PARAMS);
 
 const need = (name) => { const sc = sceneOf(name); if (!sc) throw new Error('manual: no scene named ' + name); return sc; };
@@ -77,12 +78,12 @@ export function manual(what, a, b, c) {
   throw new Error('manual: unknown target ' + what + ' (scene | trans | colour | post)');
 }
 
-// The &post= grammar: scene.bloom.thr=0.3,scene.kaleido=0,scene.exposure.on=1 — all-or-nothing, a bad one throws.
-const ONE = /^(\w+)\.((?:bloom\.thr|fb\.decay|fb\.advect|exposure\.on|kaleido))=(-?[\d.]+(?:e-?\d+)?|true|false)$/;
+// The &post= grammar: scene.bloom.thr=0.3,scene.kaleido=0,scene.exposure.on=1,scene.glitch=0 — all-or-nothing, a bad one throws.
+const ONE = /^(\w+)\.((?:bloom\.thr|fb\.decay|fb\.advect|exposure\.on|kaleido|glitch))=(-?[\d.]+(?:e-?\d+)?|true|false)$/;
 export function applyPosts(str) {
   const rs = String(str).split(',').filter((p) => p.trim()).map((p) => {
     const m = ONE.exec(p.trim());
-    if (!m) throw new Error('manual: cannot parse "' + p + '" (scene.bloom.thr=0.3 | scene.fb.decay=0.5 | scene.fb.advect=0 | scene.kaleido=0 | scene.exposure.on=1)');
+    if (!m) throw new Error('manual: cannot parse "' + p + '" (scene.bloom.thr=0.3 | scene.fb.decay=0.5 | scene.fb.advect=0 | scene.kaleido=0 | scene.exposure.on=1 | scene.glitch=0)');
     need(m[1]);
     return m;
   });

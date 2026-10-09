@@ -6,7 +6,13 @@
 import { ema } from '../math/util.js';
 import { G } from './gl.js';
 
-export const FX = { glitch: 0, flash: 0, kal: 0, ca: 0, seed: 0 };
+// glitchGain (§110, the user: "how can I disable the glitch effect (ie. where it tears the screen)?"): a 0..1 gain on the
+// composite's glitch rows. `glitch` stays the DRIVE the music fires (a drop → 1, a surprise → ≥ .8, a surprising onset →
+// surprisal·.7, a hard scene cut → 1; τ .22 s) so CARD.FX.glitch still says what fired; the composite applies
+// glitch · glitchGain · post.glitch (the scene's slot) and removes the un-applied share of the aberration FX.ca carries
+// (0.03 · glitch — gain 0 = no rows AND no extra fringe). At 1 / 1 the product is exactly `glitch` and the correction
+// exactly 0: every reference md5 holds. &glitch=<gain> (harness.js, any page), key G (hud.js), &post=<scene>.glitch=<g>.
+export const FX = { glitch: 0, flash: 0, kal: 0, ca: 0, seed: 0, glitchGain: 1 };
 // The chain's colour space (v0.3 §20). linear: the scene's encoded output is decoded once at the chain input (by
 // feedback, or by the fallback pass below when feedback is skipped), bloom / exposure / the composite's adds and
 // tonemap run on linear radiance, the composite encodes before vignette and dither. k: the tonemap knee,

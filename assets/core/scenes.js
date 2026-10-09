@@ -321,7 +321,8 @@ export function postParams(S) {
   return postOf(SC.next >= 0 && SC.m > 0.5 ? SC.next : SC.cur, S);
 }
 // Manual post overrides (v0.4, core/manual.js owns the setters): MANUAL_POST[sceneName] = { bloom: {thr}, fb: {decay}, kaleido,
-// exposure: {on} } merged over the resolved post below. Empty = the scene's own post object, untouched.
+// exposure: {on}, glitch (§110: the composite's glitch-row gain for that scene, 0..1, like kaleido a number or fn(MS)) } merged
+// over the resolved post below. Empty = the scene's own post object, untouched.
 export const MANUAL_POST = {};
 function postOf(id, S) {
   const sc = REG[id].scene, cv = sc.colour && sc.colour.variants[sc.colour.cur], V = view(sc);

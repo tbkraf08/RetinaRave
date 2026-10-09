@@ -2,7 +2,8 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // COMPOSITE: chromatic aberration + glitch rows + kaleidoscope + flash + bloom add + tonemap + vignette + dither,
-// straight to the screen. Always last. Scene slot: post.kaleido (0..1 damping of the kaleidoscope, default 1).
+// straight to the screen. Always last. Scene slots: post.kaleido (0..1 damping of the kaleidoscope, default 1), post.glitch
+// (0..1 gain on the glitch rows, default 1 — §110; the page-wide gain is FX.glitchGain, &glitch= / key G).
 // Lifted from cardioid3 FS.comp.
 // Linear chain (io.linear, v0.3 §20, uTm.x = 1): the input, the bloom and the flash are linear radiance; the tonemap
 // is (1 − exp(−k·c)) / (1 − exp(−k)) with k = uTm.y, normalised so linear 1.0 reaches display white (the old curve on
@@ -41,8 +42,12 @@ export default {
     tex(pr, 'uB1', 1, bl.b1);
     tex(pr, 'uB2', 2, bl.b2);
     const kd = io.post.kaleido !== undefined ? io.post.kaleido : 1;
+    // §110: the glitch rows' gain — FX.glitchGain (&glitch= / key G) × the scene's post.glitch slot (0..1, default 1). FX.glitch is the
+    // drive the music fired; the rows get the product, and the aberration gives back the share of its 0.03·glitch term that is not
+    // applied (gain 0 = no rows, no extra fringe). At the defaults g === FX.glitch and the correction is exactly 0 (md5 identity).
+    const gd = io.post.glitch !== undefined ? io.post.glitch : 1, g = FX.glitch * FX.glitchGain * gd, ca = FX.ca - 0.03 * (FX.glitch - g);
     const k = io.k, flash = io.linear ? -Math.log(Math.max(1e-6, 1 - (1 - Math.exp(-k)) * srgbToLin1(1 - Math.exp(-1.5 * FX.flash)))) / k : FX.flash;
-    gl.uniform4f(pr.u('uFx'), FX.ca, FX.glitch, FX.kal * kd, flash);
+    gl.uniform4f(pr.u('uFx'), ca, g, FX.kal * kd, flash);
     gl.uniform4f(pr.u('uFx2'), 0.4 + 0.4 * S.eS + 0.3 * S.dropEnv, FX.seed, [6, 8, 10, 12][S.sectionId % 4], 0);
     gl.uniform3f(pr.u('uTm'), io.linear ? 1 : 0, k, this.clipMask);
     tri();

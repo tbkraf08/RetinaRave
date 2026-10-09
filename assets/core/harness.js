@@ -1,7 +1,7 @@
 // Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / &fluid= / &fluiddbg= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / &fluid= / &fluiddbg= / &glitch= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -184,6 +184,9 @@ export function initHarness(hideLanding) {
   if (HASH.has('rough')) ROUGHK.win = HASH.get('rough') !== '0';
   // modeShade's pull on the key hue (math/keycolour.js SHADE, DECISIONS §82): &shade=0 turns it off (the v0.28 look), &shade=1 = SHADE.ON, &shade=<k> sets the pull; ON by default since v0.29
   if (HASH.has('shade')) { const v = HASH.get('shade'); SHADE.K = v === '1' ? SHADE.ON : v === '0' || v === '' ? 0 : +v; if (!isFinite(SHADE.K)) throw new Error('&shade= must be a number'); }
+  // the composite's glitch rows (post.js FX.glitchGain, DECISIONS §110; the user: "how can I disable the glitch effect (ie. where it tears the screen)?"):
+  // &glitch=0 turns the screen tear off on every page (no #test needed, like &lead=), &glitch=0.5 halves it, 1 = the default; key G toggles it live
+  if (HASH.has('glitch')) { FX.glitchGain = +HASH.get('glitch'); if (!(FX.glitchGain >= 0 && FX.glitchGain <= 1)) throw new Error('&glitch= must be a gain 0..1 (0 = no screen tear)'); }
   // keyConf's owner (engine/ears/tonic.js KEYOWN, DECISIONS §84): &kc=0 restores synapse's keyClar as the key-hue gate and the shade's "1 when the ears have a tonic" — the A/B of the v0.29 look
   if (HASH.has('kc')) KEYOWN.ears = HASH.get('kc') !== '0';
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);

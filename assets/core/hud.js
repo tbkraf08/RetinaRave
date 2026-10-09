@@ -2,7 +2,7 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // HUD + keys + landing card (the scene tiles are core/landing.js). Touches the DOM, with main.js, touch.js, help.js and landing.js.
-// Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · w the fluid substrate on / off (fluid.js) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
+// Keys: d HUD · f fullscreen · m monitor the demo synth · r record (rec.js) · w the fluid substrate on / off (fluid.js) · g glitch rows off / on (§110) · 1–N force scene (1 = id 0, N = REG.length) · n the next scene, cycling (v0.10: the number keys ran out at id 8) · 0 auto · ? or h help view · p the help at part E (routes) · Esc closes it.
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
@@ -10,6 +10,7 @@ import { toggleMonitor } from '../engine/sources/demo.js';
 import { SC, REG, stepScene } from './scenes.js';
 import { Q } from './quality.js';
 import { G } from './gl.js';
+import { FX } from './post.js'; // §110: key G = the glitch rows' gain 1 ↔ 0; the HUD line while the gain is not 1
 import { GROOVE } from '../engine/groove.js';
 import { toggleHelp, openHelpAt, keys } from './help.js';
 import { LANDING, initLanding, pick, leavePeek } from './landing.js'; // v0.8.1: the scene tiles + the live preview ("peek")
@@ -87,6 +88,9 @@ export function initHUD() {
     else if (k === 'l') { // live step 2: the lead on / off (engine/lead.js), for an A/B by eye in stream mode
       ENGINE.LEAD.on = !ENGINE.LEAD.on;
       setTimeout(() => toast(ENGINE.LEAD.on ? 'beat clocks on heard time (lead ' + Math.round(1000 * ENGINE.MS.leadT) + ' ms)' : 'beat clocks as analysed (lead off)'), 200); // leadT is set on the next frame
+    } else if (k === 'g') { // §110: the composite's glitch rows (the screen tear on drops / surprises) off / on; &glitch=<gain> is the start value
+      FX.glitchGain = FX.glitchGain > 0 ? 0 : 1;
+      toast(FX.glitchGain ? 'glitch rows on' : 'glitch rows off (no screen tear)');
     } else if (k === 'r') { if (!REC.hidden) toggleRec(); // the recorder: what you see and hear → a file on this device, nothing uploaded (&rec=0 hides it)
     } else if (k === 'w') { // the fluid substrate on / off (DECISIONS §104); stays off where there are no float render targets
       const on = setFluid(!FLUID.on);
@@ -148,6 +152,7 @@ export function hudText(S) {
     `groove rot ${f(GROOVE.rot)}  drift ${f(GROOVE.drift)} sway ${f(GROOVE.sway)} nod ${f(GROOVE.nod.x)}`,
     fluidLine(),
   ];
+  if (FX.glitchGain !== 1) lines.push(`glitch rows gain ${f(FX.glitchGain)}${FX.glitchGain ? '' : ' (off)'}  drive ${f(FX.glitch)}  (key G · &glitch=)`); // §110: only while not the default
   if (sc && sc.hud) lines.push(sc.hud());
   return lines.join('\n');
 }
