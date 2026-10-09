@@ -16,7 +16,7 @@ PAUSE = int(os.environ.get('PAUSE', '0'))
 DT = int(os.environ.get('DT', '1000')); SHOT = os.environ.get('SHOT', '1') != '0'   # DT ms between samples, SHOT=0 for D lines only (a 10 Hz beat trace)
 SCENE = int(os.environ.get('SCENE', '8'))
 if os.environ.get('MIN') == '1' and SCENE == 8:   # a SHORT D line (t, beat count, bump, rho, Q, kick, note) for a per-frame trace: 200 full INFOs overflow the argv
-    INFO = ("(()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS,g=h.green();const r=(x,k)=>+(+x).toFixed(k);"
+    INFO = ("(()=>{const h=CARD.REG[0].scene.hooks,i=h.n2info(),S=CARD.MS,g=h.green();const r=(x,k)=>+(+x).toFixed(k);"
             "return 'D '+JSON.stringify({t:r(performance.now()/1000,3),bc:S.beatCount,bp:r(S.beatPhase,2),bump:r(i.bump,2),rho:r(i.rho,3),mode:i.mode,q:i.q,note:i.note,kick:r(S.kick,2),green:{Q:r(g.Q,3)}})})()")
 elif SCENE == 10:   # GIELIS (v0.14): n1 / Q of the loudest family, the waves live, the beat — MIN=1 keeps only what perbeat14.py reads
     R = "const r=(x,k)=>(x===undefined||x===null||!isFinite(+x))?null:+(+x).toFixed(k);"

@@ -1,5 +1,5 @@
 // Luminance ruler: a legibility trace of one scene over a window of a real track, deterministically (docs/HARNESS.md "Luminance ruler").
-//   node tools/lumtrace.js <Track> --scene=8 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831]
+//   node tools/lumtrace.js <Track> --scene=0 --from=25 --to=55 [--fps=10] [--w=640] [--sheet=5] [--warm=8] [--port=8831]
 //                          [--out=tools/work/lum/<Track>-s<scene>-<from>-<to>] [--x='n2lum=0.28,2.2&n2smo=.12,.5']  (extra hash knobs)
 // Plays <Track> from ~/Music/RetinaRave in FILE mode on the forced scene, under cdp.js's CLOCK=1 deterministic clock (the
 // recipe filetrace.js follows: heardT = at + (frame − 2)/60 exactly, WARM seconds of engine warm-up before --from), and

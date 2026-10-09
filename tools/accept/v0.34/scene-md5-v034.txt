@@ -3,8 +3,13 @@
 # (2daaa2c0 / f2342b7f were the v0.13-era NAV2's values). Measured `IDS="0 8" PORT=8821 tools/scene-md5.sh` on the clone tree,
 # twice, errs [] hop 840 row 72 on both ids; every other line is v0.29's, untouched (a scene-folder change cannot move them —
 # HARNESS "What to re-prove"). nav2-still-md5.txt is gone with the &still=1 hook (the clone has none, like NAV).
-fb74fee47170b2d1f043db9f96319c7e  s0-f360.jpg
-8a0715dfb90ecf20d484578932a2f115  s0-f840.jpg
+# §102 (2026-10-08, the same unreleased directory, re-based in place — v0.34 is not tagged): the SWAP. s0 is the retuned navigator
+# (assets/scenes/nav2/, the home) — a8de2f03 / 7a65fd16 are §101's s8 values, moved with the scene to id 0 (the kaleidoscope's
+# 1 → 0 in §102 step 1 does not touch f360 / f840: FX.kal fires on the fake timeline only in the f~900–942 peak window); s8 is the
+# v0.33 navigator (assets/scenes/nav/, the control) at NAV's old pair fb74fee4 / 8a0715df; s4 (DRUM, now a variant of id 8)
+# unchanged. Measured `IDS="0 4 8" PORT=8871 tools/scene-md5.sh`, twice, errs [] hop 840 row 72 on every id.
+a8de2f034a7b2d3a1219f75f7d507a69  s0-f360.jpg
+7a65fd16f9d697cb97f6cfbd3db90c74  s0-f840.jpg
 1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
 25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
 62515d49261070922f23ce68f94fc877  s2-f360.jpg

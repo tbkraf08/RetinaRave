@@ -41,7 +41,7 @@ function record() {
   if (!track || fromS === undefined || toS === undefined) { console.error('record <Track> <from> <to>'); process.exit(2); }
   const from = +fromS, to = +toS, WARM = opt.warm === undefined ? 8 : +opt.warm, PORT = opt.port || '8851';
   const at = Math.max(0, from - WARM), fEnd = F0 + Math.round((to - at) * FPS);
-  const hash = `test&track=${track}&at=${at}&scene=8`;
+  const hash = `test&track=${track}&at=${at}&scene=0`;   // §102: the retuned navigator is id 0 (MS is scene-independent; the forced scene only decides what is on screen while recording)
   const START = `(()=>{CARD.TRACE.start('*');window.__X={t:[],arc:[],sa:[],sth:[]};const X=window.__X;function f(){const S=CARD.MS;X.t.push(S.heardT);X.arc.push(S.arc);X.sa.push(S.seed?S.seed.a:0);X.sth.push(S.seed?S.seed.th:0);requestAnimationFrame(f);}requestAnimationFrame(f);return 'rec'})()`;
   const STOP = `(()=>{const j=CARD.TRACE.stop();j.extra=window.__X;window.__tj=JSON.stringify(j);return JSON.stringify({len:window.__tj.length,frames:j.f.length,xt:j.extra.t.length,fields:j.fields.length,t0:j.t[0],t1:j.t[j.t.length-1],errs:CARD.ERRS})})()`;
   const steps = [
@@ -81,7 +81,7 @@ async function replay() {
   if (!file) { console.error('replay <json>'); process.exit(2); }
   const J = JSON.parse(fs.readFileSync(file, 'utf8'));
   const from = opt.from !== undefined ? +opt.from : J.window.from, to = opt.to !== undefined ? +opt.to : J.window.to, ROWS = +(opt.rows || 5);
-  const scene = (await import(opt.nav ? '../assets/scenes/nav/index.js' : '../assets/scenes/nav2/index.js')).default;   // --nav=1: NAV itself (id 0), the control
+  const scene = (await import(opt.nav ? '../assets/scenes/nav/index.js' : '../assets/scenes/nav2/index.js')).default;   // --nav=1: the v0.33 navigator (id 8 since §102), the control
   if (!scene.hooks.n2info) scene.hooks.n2info = () => ({ fires: 0, bulb: scene.state.bulb.p + '/' + scene.state.bulb.q });
   const { buildRayGrid, setGrid, GRIDP } = await import('../assets/math/mandel.js');
   const { measure, G } = await import('../assets/scenes/nav2/green.js');   // §101: the same ruler on id 0 (nav2's update() measures by itself)

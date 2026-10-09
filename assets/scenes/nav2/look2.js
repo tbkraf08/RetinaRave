@@ -2,8 +2,8 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // NAV2's legibility pass — exposure and colour (DECISIONS §99, 2026-10-08; docs/plans/NAV2-RETUNE-PLAN.md step 1). The three
-// brightness terms nav-review §3 named, each behind its own knob so the user can A/B one at a time on id 8 (id 0 is the
-// old look whole): the exposure KNEE (`K2.lum`, uLum / uExtG — the old NAV2 pass-6 knee, back), the SMOULDER on true
+// brightness terms nav-review §3 named, each behind its own knob so the user can A/B one at a time on this scene (id 0 since
+// §102's swap; id 8 is the v0.33 look whole): the exposure KNEE (`K2.lum`, uLum / uExtG — the old NAV2 pass-6 knee, back), the SMOULDER on true
 // loudness instead of the root (`K2.smo`, uSmo: baseLight() of §63 through loudlight.js, the par window widened to a
 // gradient and its gain capped), the boundary FLASH on the snare lane with less white (`K2.fl`, uFl), and COLOUR ON KEY
 // (`K2.key`: the key hue of keycolour.js — the recipe TORUS2 / GIELIS use — with a step per phrase instead of the drift).

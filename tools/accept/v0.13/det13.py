@@ -17,7 +17,7 @@ FILE = resolve(track) or resolve(os.path.splitext(track)[0])
 if not FILE: sys.exit(f'det13: no {track} in {MUSIC} (tried .flac .wav .mp3 .m4a .opus .ogg)')
 track = os.path.splitext(track)[0]
 KEY = os.environ.get('KEY', '9')
-INFO = ("(()=>{const h=CARD.REG[8].scene.hooks,i=h.n2info(),S=CARD.MS;const g=h.green?h.green():null;"
+INFO = ("(()=>{const h=CARD.REG[0].scene.hooks,i=h.n2info(),S=CARD.MS;const g=h.green?h.green():null;"
         "const r=(x,k)=>(x===undefined||x===null||!isFinite(+x))?null:+(+x).toFixed(k);"
         "return 'D '+JSON.stringify({t:r(performance.now()/1000,1),au:CARD.ENGINE.AU.mode,bpm:r(S.bpm,1),mode:i.mode,c:i.c.map(x=>r(x,3)),"
         "rho:r(i.rho,3),q:i.q,has:i.has,wind:r(i.wind,2),bump:r(i.bump,2),pulse:r(i.pulse,2),ival:r(i.ival,2),E:r(i.E,2),note:i.note,curl:r(i.curl,2),pitch:r(i.pitch,2),lift:r(i.lift,3),"

@@ -5,4 +5,7 @@
 # on TORUS2, so any commit that moves s3 moves this line too.
 # §83 Step B: 8a1a768d -> cb3d4048 on the lattice commit (TORUS2 reads snareEvt / snareAmp / tongueAmbig / modeShade; frames 120-178 sit in
 # the fake's sustain where the kick, the snare and the shade all play).
-cb3d4048ec8481a41afdb1980230475c  trans-mixs-0-3-f178.jpg
+# §102 (2026-10-08, the swap — re-based in place, v0.34 is not tagged): cb3d4048 -> 724bbd72. The fade's SOURCE moved: scene 0 is the
+# retuned navigator (assets/scenes/nav2/) now, the v0.33 one is id 8 — s3 (TORUS2) is unchanged, the 0→3 fade starts from another
+# picture. Measured twice (PORT=8871, m .499, errs []).
+724bbd7220e6ab657855793f46247045  trans-mixs-0-3-f178.jpg
