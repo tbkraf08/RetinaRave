@@ -39,12 +39,13 @@ id  scene     track           window    cuts       | frames clip25 medY   grad  
 3   torus2    SeeYouDrop      40-100    continuous | 600   0     0.103  0.0132 | 3599  0.089  4     27    | -     -      -     | FAIL jump viol [[42.417,0.089,0.014],[43.217,0.084,0.024],[44.217,0.075,0.02],[76.8,0.082,0.021]]
 3   torus2    Vienna          125-185   continuous | 600   0     0.135  0.0159 | 3599  0.066  0     19    | -     -      -     | ok
 3   torus2    WhoLikesToParty 8-68      continuous | 600   0     0.092  0.0126 | 3599  0.099  4     30    | -     -      -     | FAIL jump viol [[12.383,0.099,0.021],[13.15,0.097,0.019],[19.567,0.082,0.019],[53.417,0.065,0.022]]
-12  fluid     Comptine        11-71     continuous | 600   0     0.114  0.0089 | 3599  0.028  0     0     | 3599  0.0176 0     | ok
-12  fluid     CyborgNinja     118-178   continuous | 600   0     0.231  0.0244 | 3599  0.076  0     0     | 3599  0.0045 0     | ok
-12  fluid     IBelongHere     159-219   continuous | 600   0     0.168  0.0124 | 3599  0.033  0     0     | 3599  0.0184 0     | ok
-12  fluid     Malicious       115-175   continuous | 600   0     0.119  0.0069 | 3599  0.040  0     0     | 3599  0.0162 0     | ok
-12  fluid     rec             0-24.4    continuous | 245   0     0.061  0.0014 | 1464  0.009  0     0     | 1464  0.007  0     | ok
-12  fluid     SeeYouDrop      40-100    continuous | 600   0     0.205  0.0199 | 3599  0.030  0     0     | 3599  0.0042 0     | ok
-12  fluid     Vienna          125-185   continuous | 600   0     0.135  0.0088 | 3599  0.018  0     0     | 3599  0.005  0     | ok
-12  fluid     WhoLikesToParty 8-68      continuous | 600   0     0.219  0.0206 | 3599  0.065  0     0     | 3599  0.0145 0     | ok
+12  fluid     Comptine        11-71     continuous | 600   0     0.112  0.0074 | 3599  0.021  0     0     | 3599  0.0176 0     | ok
+12  fluid     CyborgNinja     118-178   continuous | 600   0     0.173  0.0162 | 3599  0.054  0     0     | 3599  0.0045 0     | ok
+12  fluid     IBelongHere     159-219   continuous | 600   0     0.184  0.0128 | 3599  0.034  0     0     | 3599  0.0184 0     | ok
+12  fluid     Malicious       115-175   continuous | 600   0     0.117  0.0060 | 3599  0.030  0     0     | 3599  0.0162 0     | ok
+12  fluid     rec             0-24.4    continuous | 244   0     0.102  0.0025 | 1463  0.012  0     0     | 1463  0.0289 0     | ok
+12  fluid     SeeYouDrop      40-100    continuous | 600   0     0.203  0.0197 | 3599  0.032  0     0     | 3599  0.0042 0     | ok
+12  fluid     Vienna          125-185   continuous | 600   0     0.129  0.0073 | 3599  0.017  0     0     | 3599  0.005  0     | ok
+12  fluid     WhoLikesToParty 8-68      continuous | 600   0     0.181  0.0165 | 3599  0.047  0     0     | 3599  0.0145 0     | ok
 real-rulers v035: the roster (0 1 3) on advect 0 — 24 rows, 1652 s wall with PAR 2 — + FLUID (12) — 8 rows, from the 32-row run (1894 s): 7 FAIL, all findings
+real-rulers s111 (§111): FLUID (12) re-run on the eight grammar items — 8 rows, 0 FAIL, 483 s wall (PORT 8979, PAR 1): jump viol [] and mon viol [] on every track and the take; the rec row reads 244 / 1463 frames (one fewer than §109's 245 / 1464 — recorded).

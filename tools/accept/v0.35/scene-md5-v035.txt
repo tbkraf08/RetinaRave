@@ -28,6 +28,7 @@
 # off: no roster scene reads the velocity or the dye) and s12's pair stayed where the fake-events re-base above put it (bf9bcc3e /
 # 35e85096). Against v0.34: s0 / s3 / s11 differ (the lattice events) and s12 is new. Measured `GPU=1 PORT=8911 tools/scene-md5.sh
 # s109adv0a` and `s109adv0b`: byte-equal, errs [] hop 840 row 72 on every id. A solver / grammar change now moves the s12 pair ALONE.
+# §111 (2026-10-09): s12's pair re-based (bf9bcc3e / 35e85096 → 3e483039 / 2274bb4e — the grammar's eight items; GPU=1 PORT=8981 tools/scene-md5.sh s111, errs [] on all 13); every other line unchanged (no roster scene reads the substrate on advect 0).
 a6c725fa86d56e0b954a3bf34548f88c  s0-f360.jpg
 a12256fdbc334215c31f9851f9638647  s0-f840.jpg
 1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
@@ -52,5 +53,5 @@ fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
 1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
 3b12b8b362e53ef1c5d7c2222961682f  s11-f360.jpg
 a56a64cefaf8b43295cd63e830f15327  s11-f840.jpg
-bf9bcc3e83c0d19596ebabff1c2752af  s12-f360.jpg
-35e85096d882e6ad6e034729113bd751  s12-f840.jpg
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg

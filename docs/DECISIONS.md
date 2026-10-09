@@ -9954,3 +9954,96 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   a build's riser, the floor stays; a pad never), the FEATS; the music block's music seconds exclude noise, the noise seconds inject
   nothing, Comptine and the pad in the branch with their hits spread (span ≥ .08); every pair test seeds the sub (`drumSt()`).
   check 0 fail, npm test exit 0 (`test_fluid` 243 ok).
+- **The per-track table, before → after** (`tools/fluid-tracks.js` on HEAD 9658d8f's grammar and on item 8's — `tools/work/fluid-s111/
+  {before,i8}.md`; whole tracks, file mode / the live lanes; the pad on the live lanes; Malicious for the record). inj = the music
+  seconds that inject; ink/s the area-weighted injection p50; hats/s droplets per music second; void·deep = frames with dyeDiss < .5 ·
+  < .3; clears (true · in IBelongHere's breakdown); x sub the emitter's p50 (p90 − p10); x hits the hit splats' p10 / p90; kick dy p10 /
+  p90; hue = the key-coloured frames % · the hue bins visited (the "before" bins are the replay's with a fixed mood hue — the real walk
+  before is the survey's shot hues, items 2–3 above):
+
+  | track | mode | inj % | ink/s p50 | hats/s | void·deep % | syrup % | clears (true·brk) | x sub p50 (span) | x hits p10/p90 | kick dy p10/p90 | hue key %·bins |
+  |---|---|---|---|---|---|---|---|---|---|---|---|
+  | SeeYouDrop | 1 | 100 | 12 | 5.5 → 2.4 | 48·12 → 31·2 | 18 → 4 | 2(2) | 0.54(0.35) → 0.46(0.33) | 0.30/0.70 | 0.49/0.79 → 0.39/0.82 | 75·9 → 99·5 |
+  | SeeYouDrop | 0 | 100 | 12 → 13 | 5.5 → 2.5 | 48·12 → 31·2 | 18 → 4 | 2(2) | 0.63(0.58) → 0.54(0.58) | 0.29/0.70 | 0.48/0.81 → 0.39/0.84 | 75·10 → 99·5 |
+  | Vienna | 1 | 100 | 6 → 5 | 11.1 → 3.5 | 39·12 → 39·5 | 5 → 4 | 1(1) | 0.74(0.33) → 0.54(0.33) | 0.30/0.76 → 0.30/0.70 | 0.63/0.84 → 0.39/0.85 | 77·2 → 100·3 |
+  | Vienna | 0 | 100 | 8 → 6 | 11.0 → 3.5 | 39·12 → 39·5 | 5 → 4 | 1(1) | 0.79(0.50) → 0.54(0.50) | 0.30/0.79 → 0.29/0.70 | 0.50/0.67 → 0.39/0.86 | 77·2 → 100·3 |
+  | IBelongHere | 1 | 100 | 14 → 11 | 8.7 → 3.1 | 30·14 → 31·7 | 46 → 20 | 9(5·4) → 5(5·0) | 0.29(0.79) → 0.54(0.50) | 0.11/0.70 → 0.30/0.70 | 0.52/0.82 → 0.39/0.84 | 2·8 → 81·4 |
+  | IBelongHere | 0 | 100 | 15 → 13 | 8.5 → 3.1 | 30·14 → 31·7 | 46 → 20 | 5(1·4) → 1(1·0) | 0.46(0.75) → 0.46(0.58) | 0.29/0.71 → 0.29/0.70 | 0.48/0.77 → 0.38/0.83 | 2·8 → 81·4 |
+  | CyborgNinja | 1 | 100 | 31 → 29 | 29.3 → 7.7 | 0·0 | 1 | 0(0) | 0.29(0.83) → 0.46(0.67) | 0.21/0.79 → 0.21/0.70 | 0.51/0.84 → 0.40/0.86 | 4·6 → 95·5 |
+  | CyborgNinja | 0 | 100 | 26 → 24 | 29.4 → 7.7 | 0·0 | 1 | 0(0) | 0.21(0.75) → 0.46(0.83) | 0.30/0.70 → 0.04/0.71 | 0.53/0.89 → 0.40/0.89 | 4·6 → 95·6 |
+  | WhoLikesToParty | 1 | 100 | 27 | 26.1 → 6.1 | 13·1 → 1·0 | 19 → 15 | 6(6) → 3(3) | 0.32(0.50) → 0.63(0.50) | 0.25/0.70 → 0.30/0.71 | 0.37/0.80 → 0.39/0.82 | 1·7 → 100·6 |
+  | WhoLikesToParty | 0 | 100 | 24 → 23 | 25.4 → 6.1 | 13·2 → 2·0 | 19 → 15 | 3(3) | 0.38(0.67) → 0.63(0.75) | 0.21/0.70 → 0.30/0.71 | 0.54/0.88 → 0.39/0.88 | 1·7 → 100·6 |
+  | Comptine | 1 | 99 → 94 | 4 → 5 | 1.0 → 0.5 | 44·40 → 45·0 | 62 → 7 | 5(1) → 0(0) | — | 0.30/0.70 → 0.46/0.63 | 0.48/0.73 → 0.34/0.73 | 0·2 → 0·5 |
+  | Comptine | 0 | 100 | 3 → 4 | 1.3 → 0.6 | 45·40 → 45·0 | 62 → 7 | 5(0) → 0(0) | 0.34(0.67) → 0.54(0.67) | 0.30/0.70 → 0.46/0.63 | 0.33/0.67 → 0.27/0.77 | 0·2 → 0·5 |
+  | Malicious (record only) | 1 | 100 | 2 | 2.8 → 1.7 | 72·0 | 1 | 0(0) | 0.59(0.67) → 0.46(0.67) | 0.30/0.94 → 0.46/0.63 | 0.54/0.77 → 0.40/0.78 | 33·11 → 95·8 |
+  | Malicious (record only) | 0 | 100 | 9 | 2.7 → 1.6 | 72·0 | 1 | 0(0) | 0.04(0.58) → 0.54(0.58) | 0.13/0.70 → 0.30/0.70 | 0.42/0.62 → 0.36/0.77 | 33·11 → 95·9 |
+  | rec | 0 | 100 | 1 | 0.1 → 0.0 | 42·42 → 42·0 | 0 | 0(0) | 0.90(0.07) → 0.46(0.08) | 0.30/0.70 → 0.30/0.79 | 0.01/0.01 | 53·4 → 100·2 |
+
+- **What the eye should look at, per track** (`tools/accept/v0.35/fluid-s111-<Track>-montage.jpg` = the survey's windows after §111, the
+  window shots beside it as `fluid-s111-<Track>-<window>.jpg`; the survey's "before" montages are `tools/work/fluid-tracks/<Track>/
+  montage.jpg`; the two 31 s strips after §111 in `tools/work/fluid-s111/<Track>-final/montage-{strip0,busy}.jpg`):
+  - **SeeYouDrop** (the reference): groove-35 and the two clears (drop1p-58.0, drop2p-106.0) as before; build-100 and the two drop flashes
+    dimmer by 7–12 grey (item 1 — the hat bucket at the drop second, the budget at a build's end: the final run groove-35 51.2 → 51.4,
+    drop1p 37.1 → 36.5, drop2p 36.9 → 36.5, intro / subin ± .3, build-100 60.9 → 54.2, drop1-57.5 71.3 → 60.6, drop2-105.5 78.2 → 66.0,
+    outro-150 32.7 → 36.2 (the harmonic branch's hits in the sub-less outro); its busiest 31 s mean of means 57 → 51, seconds > 60
+    12 → 1, 46–60 17 → 24); the sub column at the centre (C♯ the tonic) with F♯ left of it (item 6); the hats three per hit.
+  - **Vienna**: indigo as before (D♯m pinned at 0.8 s); the dream-75 keeps its ink (29.4 against 30.1) but its floor cloud at half (item 7,
+    p99 100 → 68) — whether the dream should keep the full floor is the user's call; the return at 85.3 clears once; the sub column at
+    the centre now (its G♯ / D♯ / A♯ were the right third); groove-30 49.9 → 44.0, the busiest strip 49 → 45 (item 1).
+  - **IBelongHere**: ONE hue over the vocal intro (the harmony's warm centre) and ONE from 30 s to the end (D minor, 122–151°) against
+    seven before (item 2); falsedropp-157.5 the breakdown's pool (35.5), never the empty one (item 5); the breakdowns' vocal hits at the
+    tune's place, one directed splat each (item 8); the syrup gone from the dark mix (46 → 20 %); the final run's dominant hue 349° 17°
+    18° 17° (the intro) · 151° 137° 127° 124° 124° 124° 128° 130° 127° (D minor to the end); the busiest strip 56 → 54, seconds > 60 6 → 4.
+  - **CyborgNinja**: the boil gone — the final run groove-40 70.3 → 46.8, busy-88 68.3 → 43.0, mid-100 77.4 → 45.7, loudest-138 74.8 →
+    47.1, quiet-157 71.1 → 44.2, end-178 70.1 → 42.0; the busiest 31 s mean of means 73 → 45 (42–49), seconds > 60 31 → 0, p99 max 205 →
+    199 (item 1); the held C at centre-left, off the wall (item 6); the key a guess (Gm 10–100 s, G after: the dominant hue 123° then
+    265–273° — two hues against eight) held, not walking with arousal.
+  - **WhoLikesToParty**: one clear per drop (item 5; the map's early line wins in file mode, §109's open map finding: drop-57.0 23.8 →
+    23.4, drop2-131.0 24.9 → 24.8, drop3-188.0 31.4 → 25.4); the grooves 48–57 against 61–75 (item 1: mid-112 75.3 → 55.3, groove2-160
+    74.4 → 48.1, end-252 71.0 → 57.4; the busiest strip 64 → 47, seconds > 60 22 → 0); D major one hue — the dominant hue 21–31° on every
+    window from 35 s against 35–329° on twelve (item 2).
+  - **Comptine**: the hits spread along the melody's fifths instead of the tri-blob (item 8: x .46–.63, y by the brightness); one warm hue
+    (D, 52–84°) against nine (item 2); the piano's ink drains (void-64 44, p99 187 → 153; item 4) and travels (item 3); the applause
+    injects nothing (applause-140 p99 124 → 84; item 8); no false clears (item 5); the busiest strip 31 → 31.
+  - **The pad take** (`tools/work/rec/s111-i8b/f-*.jpg`, 2 fps; §108's strip `tools/accept/v0.35/fluid-s108-rec-strip.jpg` is the before):
+    the floor still its picture (75 % of its ink) at half after its first 5 s (item 7: 12 s 27.6 → 26.6, 17 s 29.7 → 28.0), its 32 hits at
+    the harmony's place (item 8), its YIN-ghost sub at the centre-left instead of the right wall (item 6).
+  - **Malicious** (record only): the table's rows; nothing asserted.
+- **The gates** (every §111 commit: `node tools/check.js` 0 fail / 8 warn — the pre-existing soft caps —, `npm test` exit 0; the final
+  tree `test_fluid` **243 ok**). (1) **The real-track identity references**: `GPU=1 SCENES=12 tools/real-md5.sh` twice — `s111a` (PORT
+  8971) and `s111b` (PORT 8973), 39 runs each, **727 s** wall each, `f0` 2 / errs [] / bad [] on every run, the two 58-line lists
+  **cmp-equal**, and **every one of the 58 FLUID lines moved** against `real-md5-v035.txt` (a grammar change must); **the roster's 174
+  lines** (`SCENES="0 1 3" PAR=2 tools/real-md5.sh s111r`, 117 runs, 1450 s wall) **= the reference's 174, line for line** — the
+  grammar's velocity reaches no roster scene on advect 0 (§109's call), proven on music after eight velocity changes; the reference's 58
+  s12 lines re-based in place (the header says so). (2) **The behaviour rulers**: `SCENES=12 tools/real-rulers.sh s111` — FLUID's 8 rows
+  **0 FAIL**, jump viol [] and mon viol [] on every track and the take (picture max .012–.054, state max .0042–.0289), 483 s; the rows
+  replaced in `real-rulers-v035.txt`; the rec row reads 244 / 1463 frames against §109's 245 / 1464 — re-run alone (`s111rec`, 26 s):
+  244 / 1463 again, deterministic (open below). (3) **The fake smoke**: `tools/scene-md5.sh s111` — **only s12's pair moved**
+  (`bf9bcc3e / 35e85096 → 3e483039 / 2274bb4e`), the other 24 lines = `scene-md5-v035.txt`, errs [] hop 840 row 72 on all 13;
+  `IDS=12 … s111pair` the same pair again to the byte; the list re-based. The `&fluid=0` list cannot move (the substrate off) — not re-run.
+  (4) **Parity** `node tools/parity.js fake`: MS 0 diff, the §83 `nav.*` MISMATCH line to the digit (`max 7.852214593751443 · 72 fields`).
+  (5) **The final per-track shots** (`tools/work/fluid-s111/final.sh`: the survey's windows + both 31 s strips per track, one run each, `f0`
+  2 and errs [] on all seven, 17:21–17:32 on two ports) — the montages and window shots committed under `tools/accept/v0.35/
+  fluid-s111-*` (73 files, 4.4 MB; the strips stay in `tools/work/fluid-s111/<Track>-final/`), the pad's strip `fluid-s111-rec-strip.jpg`.
+- **Deviations from §10.1, said plainly.** (a) Item 1's SeeYouDrop windows are outside the survey's ±5 on the three transient windows
+  (build-100 −7, the two drop flashes −11 / −12) — the τ and AMP0 were measured at three settings each and the groove / clears held; the
+  flashes are dimmer because the hat bucket halves the drop second's 22 droplets and the budget's factor reads 1.3–1.4 at a 15 s build's
+  end. (b) Item 5 keeps BOTH triggers in file mode (the proposal said the map's line alone there): Vienna's return has no map line, and
+  the confirmation by the sub does what the mode split was for. (c) Item 2's pin is an evidence tally (τ 30 s, a margin, a first-pin
+  threshold), not the plain "key at keyConf ≥ .1" — a plain pin re-pinned IBelongHere's Dm / F / Am / C guesses every few seconds (the
+  bins 3 3 0 0 4 3 … 11 0 4 2), and the fallback is the harmony's eased CENTRE (15 s), not the frame's harmAngle — a diatonic progression
+  walked four hues otherwise. (d) Item 8 was built: items 1–7 left Comptine's and the pad's hits on the fixed pair by the table's own
+  column. (e) The noise guard needs the sub gone 8 bars, not `dirty` / `bass` alone: SeeYouDrop's build riser reads exactly like applause
+  on those two fields.
+- **Open, for the user's eye and the next pass.** (1) The eye on every montage above — in particular SeeYouDrop's dimmer flashes (item 1),
+  Vienna's dream at half the floor (item 7: whether the dream should keep the full floor), the harmonic branch's hits on Comptine (do
+  they read as the melody?), the pad's take at half the floor after 5 s. (2) The two trace sets disagree on the ears' key timeline
+  (IBelongHere Am 22.5 → Dm 65.8 on the §109 truth traces against Dm at 43 s on the survey's whole-track traces; CyborgNinja Dm / Cm against
+  Gm / G) — recorded at different HEADs; the ears' tonic, not the grammar; re-record the survey's traces at this HEAD before the next
+  pass. (3) CyborgNinja's key is a guess (keyConf p50 .01) and its chromatic C♯ sits at the wall as the tritone of G — the pin holds a
+  guess; nothing better exists on that track. (4) WhoLikesToParty's clear in file mode is the map's line a bar early (§109's open map
+  finding); the live detector's would be the right one. (5) The rec rulers row's frame count (244 / 1463 against §109's 245 / 1464) —
+  deterministic now, one frame off the §109 reference; which recording moved is not established. (6) The kick's and snare's INK is
+  still constant per hit (only the force is ranked); the hats' ink too. (7) Malicious: every number for the record in the tables,
+  nothing asserted (the user's ruler validation pending). (8) `accept.sh` end to end not run (its real-music block ran as the sweeps
+  above; its `== real traces` and fake blocks are the node tests and the smoke here). (9) Not pushed; no version bump.
