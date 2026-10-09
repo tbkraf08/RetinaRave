@@ -7,8 +7,9 @@
 // plan() returns. Every MS field read here is in FLUID_FEATS — main.js checks the list against ENGINE.FEATS like a scene's
 // feats and check.js fails on a read outside it (the substrate feeds every scene, so the rule is stricter than a scene's warn).
 // The mappings are CONTRACTS §1.18's kind: levels at heard time, events placed on their frame, *Amp for size, never *Vel,
-// never pred*. One musical element → one channel: the sub is WHERE the ink enters, the kick LIFTS it, the snare SHEARS it,
-// the hats are droplets from the surface, the key is its COLOUR, the beat kneads the pool, the filter makes it syrup.
+// never pred*, never dropEvt (the drop is dropLiveEvt || mapDropEvt — §107). One musical element → one channel: the sub is
+// WHERE the ink enters, the kick LIFTS it, the snare SHEARS it, the hats are droplets from the surface, the key is its COLOUR,
+// the beat kneads the pool, the filter makes it syrup.
 // Units: positions in uv (0..1, y up), velocities in uv/s — a splat ADDS its dx/dy to the field once (an impulse); the
 // persistent emitters (the sub, the hats while hat2 is up) add per frame scaled by 60·dt so a 30 fps machine injects the
 // same per second. Seeded, never random: the hats' x is hash(beatCount·7 + i, seed.a).
@@ -18,7 +19,7 @@ import { srgbToLin1 } from '../../math/oklab.js';
 
 export const FLUID_FEATS = ['subNote', 'subGate', 'subGlide', 'subHz', 'bassReg', 'kickEvt', 'kickAmp', 'kickAge', 'snareEvt', 'snareAmp',
   'hat2', 'denH', 'beatCount', 'seed', 'beatPhase', 'key', 'mode', 'keyConf', 'tonicConf', 'modeShade', 'valence', 'harmAngle',
-  'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm'];
+  'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'mapDropEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm'];
 
 // The grammar's constants, one table (DECISIONS §104 says where each came from). Velocities in uv/s, dye in linear units.
 export const K = {
@@ -33,9 +34,9 @@ export const K = {
   HAT_V: -0.15,    // the hats: droplets falling from y 0.9, radius ×0.5, up to 3 of them while hat2 > 0.3
   HAT_DYE: 0.3,
   BODY: 0.35,      // the beat's breath: fy = −BODY·cos⁴(π·beatPhase), shaped cos(π(2x−1)) in the shader (a uniform force is a gradient)
-  DROP_V: 2.5,     // the live drop: one impulse up from the sub's x, radius ×4, and the pool clears (dyeDiss DROP_DISS) for one beat
+  DROP_V: 2.5,     // the drop: one impulse up from the sub's x, radius ×4, and the pool clears (dyeDiss DROP_DISS) for one beat
   DROP_DYE: 1.0,
-  DROP_DISS: 6,
+  DROP_DISS: 12,   // §107: 12 keeps 1 % of the ink 0.4 s after the drop ((1/(1+.2))²⁴); 6 kept 10 % and the pool read as full
 };
 
 export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5 });
@@ -77,8 +78,11 @@ export function plan(S, dt, st, moodHue = 0.6) {
     const n = Math.min(3, Math.round(S.denH));
     for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5);
   }
-  // the live drop: the pool clears in one beat (the countdown runs on dt, not on a clock field)
-  if (S.dropLiveEvt) {
+  // the drop: the pool clears in one beat (the countdown runs on dt, not on a clock field). The trigger is the live detector
+  // OR the map's bar line (§107): in file mode with the map built the live detector never fires on SeeYouDrop's drop 1 and
+  // `mapDropEvt` does (frame-exact); live mode has no map, so the detector is the whole truth there. NEVER `dropEvt` — it
+  // fires inside Vienna's dream (CONTRACTS §1.18) and a missed live drop is the detector's gap to close, not the grammar's.
+  if (S.dropLiveEvt || S.mapDropEvt) {
     add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4);
     st.clearLeft = 60 / Math.max(60, S.bpm);
   } else st.clearLeft = Math.max(0, st.clearLeft - dt);

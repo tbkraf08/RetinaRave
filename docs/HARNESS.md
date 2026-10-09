@@ -225,7 +225,8 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   (every line moved, `ACC` default v0.35) and the `&fluid=0` list is what must still equal v0.34 line for line — the standing proof
   that the scalar pass is byte-identical. A change to the solver, the grammar or the feedback pass moves the v0.35 list and holds the v0.34 one.
 - **Node**: `node tools/test_fluid.js` (in `npm test`) — the grammar on a synthetic MS: the gate, the kick's sqrt law and its two-frame
-  tail, the snare's two shears, the seeded hats, the drop's one-beat clear, the parameter maps, the gain, the colour, determinism
+  tail, the snare's two shears, the seeded hats, the drop's one-beat clear (armed by `dropLiveEvt` OR `mapDropEvt`, never by a
+  `dropEvt`-only frame — §107), the parameter maps, the gain, the colour, determinism
   (two fresh states → identical JSON), and a Proxy of MS that throws on any read outside `FLUID_FEATS`.
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
@@ -239,10 +240,17 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   `bench(0, 300)` (budget ≤ 0.5 ms, the pass alone — the step's 0.58 is the substrate's); the continuity monitor on the scene's own state:
   `{"eval":"CARD.NAV=CARD.REG[12].scene.state;$MON;'ok'"}` on `test&track=SeeYouDrop&at=25&scene=12` (real time, 60 s) → `viol []`
   (`cPath` = exposure and on-screen weight, `kick.x` = the drop ring's envelope, the one declared cut); `hooks.flinfo()` / `.fldbg()`
-  read-only. **The drop strip** (does the pool clear?): `at=48`, shots every 6 frames from f512 (56.5 s) to f656 (58.9 s) with a rAF
-  logger that records every frame where `dropLiveEvt | mapDropEvt | dropEvt` is set, plus `CARD.fluid.params.dyeDiss` →
-  `tools/work/fluid-s3-drop1-strip.jpg`; §106's finding: on SeeYouDrop's drop 1 in file mode `dropEvt` f578 / `mapDropEvt` f579 fire and
-  `dropLiveEvt` never does, so the grammar's clear (keyed on it alone) never runs — `dyeDiss` stays 1.0 through the drop.
+  read-only. **The drop strip** (does the pool clear?): `&track=SeeYouDrop&at=48&scene=12` under `CLOCK=1`, 24 shots keyed on
+  HEARD time 56.5 → 58.9 s every ~0.1 s — a rAF logger that records every frame where `dropLiveEvt | mapDropEvt | dropEvt` is set
+  and, when `MS.heardT` crosses the next target, sets `window.__PAUSE=1` itself (the shim stops on that exact frame; the step
+  list is `{wait:1}, {until:'window.__PAUSE==1'}, {shot}` per target) with `CARD.fluid.params.dyeDiss` at each shot. Key on
+  heard time, not on `__FRAME`: `frame0` (the `fileStart` log) moves with the load (2 alone, 20 with md5 runs sharing the GPU),
+  so a frame number is a different second from run to run. Then `montage.py … 6` and PIL's whole-frame `convert('L')` mean per
+  frame — "the pool clears" is a number. §106's strip (`tools/work/fluid-s3-drop1-strip.jpg`, keyed on the clear on `dropLiveEvt`
+  alone): 34 before the drop, the flash 153, then 38–40 — brighter, not emptier: on SeeYouDrop's drop 1 in file mode `dropEvt`
+  / `mapDropEvt` fire on consecutive frames and `dropLiveEvt` never does. §107's (`tools/work/fluid-s3-drop1-strip2.jpg`, the clear
+  on `dropLiveEvt || mapDropEvt`, `DROP_DISS` 12): 34 before, the flash 122 (sampled 3 frames after the peak), **27 27 27** for the
+  clear's beat (the empty pool at 10 s reads 24), then 31 → 34 as the drop's kicks and the ring refill it.
 
 ## Effect chain (change to `core/post.js`, an effect, or the chain's colour space — v0.3 §20)
 

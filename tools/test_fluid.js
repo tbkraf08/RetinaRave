@@ -11,7 +11,8 @@
 //   kick       kickEvt → one impulse from the floor with dy ∝ sqrt(kickAmp) (radius ×2); the two frames after keep 40 %; none at age 99
 //   snare      snareEvt → the two shears, equal and opposite
 //   hats       hat2 > .3 → min(3, round(denH)) droplets, seeded by beatCount — the same beat gives the same x, the next beat another
-//   drop       dropLiveEvt → dyeDiss 6 for one beat (60/bpm s on dt), then back to the void mapping; the impulse radius ×4
+//   drop       dropLiveEvt → dyeDiss DROP_DISS (12) for one beat (60/bpm s on dt), then back to the void mapping; the impulse radius ×4
+//   mapdrop    §107: a mapDropEvt frame arms the same clear (file mode's bar line); a dropEvt-only frame does NOT (CONTRACTS §1.18: not a clear)
 //   params     curl 10 + 40·tension; velDiss 0.2 → 3.0 as lpSweep closes (+2·hush); dyeDiss 1 → .05 as buildLive rises; tongueAmbig only while tongueOn 1
 //   gain       presence 0 → no splat has any velocity or dye; hush / calm lower it
 //   colour     the key hue through keycolour's anchor, linear (every component in [0,1]); more saturated with tonicConf
@@ -123,6 +124,22 @@ const run = (S, st = mkState()) => plan(S, DT, st, 0.6);
   do { p = run(base({ buildLive: 0 }), st); n++; } while (p.params.dyeDiss === K.DROP_DISS && n < 100);
   near(n, 30, 1, 'drop: the clear lasts one beat at 120 bpm (' + n + ' frames)');
   ok(p.params.dyeDiss === 1, 'drop: then back to the void mapping (' + p.params.dyeDiss + ')');
+}
+
+// mapdrop (§107): the map's bar line arms the clear exactly as the live detector does; the extractor's dropEvt never does
+{
+  const st = mkState();
+  const m = run(base({ mapDropEvt: true, dropLiveEvt: false, bpm: 120 }), st);
+  ok(m.splats.length === 1 && m.splats[0].rad === K.RADIUS * 4 && m.params.dyeDiss === K.DROP_DISS, 'mapdrop: a mapDropEvt frame arms the clear (dyeDiss ' + m.params.dyeDiss + ', ' + m.splats.length + ' splat)');
+  let n = 0, p;
+  do { p = run(base(), st); n++; } while (p.params.dyeDiss === K.DROP_DISS && n < 100);
+  near(n, 30, 1, 'mapdrop: the same one-beat countdown (' + n + ' frames)');
+  const both = run(base({ mapDropEvt: true, dropLiveEvt: true }), mkState());
+  ok(both.splats.length === 1, 'mapdrop: both on one frame → still one impulse');
+  const e = run(base({ dropEvt: true, dropStrength: 1 }), mkState());
+  ok(e.splats.length === 0 && e.params.dyeDiss === 1, 'mapdrop: a dropEvt-only frame does NOT arm it (dyeDiss ' + e.params.dyeDiss + ', ' + e.splats.length + ' splats)');
+  ok(!FLUID_FEATS.includes('dropEvt') && FLUID_FEATS.includes('mapDropEvt'), 'mapdrop: FLUID_FEATS has mapDropEvt and not dropEvt');
+  ok(K.DROP_DISS === 12 && Math.pow(1 / (1 + K.DROP_DISS * DT), 24) < 0.02, 'mapdrop: DROP_DISS 12 keeps < 2 % of the ink after 24 frames (' + Math.pow(1 / (1 + K.DROP_DISS * DT), 24).toFixed(4) + ')');
 }
 
 // params
