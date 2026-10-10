@@ -10103,3 +10103,27 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   survey's traces at this HEAD before the next grammar pass) · §111's open 3–6 (CyborgNinja's key a guess at the wall; WhoLikesToParty's clear on
   the map's line a bar early; the rec rulers row one frame off §109's; the kick / snare / hat INK constant per hit) · the idle bench re-measure ·
   `accept.sh` end to end (its real-music block = §109 / §111's sweeps) · the §110 `G` key and `#glitch=0` unseen by the user.
+
+## §113 the drop as a shockwave — item 1 of FLUID-DROP (2026-10-09 night, one worker in a worktree off 4bfa5ca; the user's ask after v0.35; item 2, the reversal, is the next worker's)
+
+- **The ask (the user, 2026-10-09, verbatim from FLUID-DROP-SESSION-PROMPT.md):** two drop gestures from the brainstorm, built into the fluid so
+  that they work in **live mode** (tab capture / mic — no map, no future; file mode must still work, but live is the design target):
+  *"1. Shockwave on the drop — a radial velocity ring from the centre, out at beat speed, throwing the ink outward and leaving a clean centre
+  that refills from the drop's kicks. A hit that launches something that travels (the user's validated taste). 2. Time reversal before the
+  drop — in the last beat of the build the ink retraces its path inward and gathers (the tension); the drop frame releases it outward (the
+  shockwave)."* The user asked whether the two interfere. **The answer agreed:** at the same instant they fight (a reversed dye pass on the
+  shockwave's frame pulls ink back along an exploding field — a smear); phased, they are one gesture that matches the ear's arc:
+  implosion (the last beat of the build) → explosion (the drop frame) → refill (the beat after). **The phased design:** item 1 the shockwave
+  on the CONFIRMED drop trigger (§111 item 5's object: `dropLiveEvt || mapDropEvt` confirmed by the sub returning within `CLEAR_PEND`;
+  never `dropEvt`, never a `pred*` field); item 2 an exact reversal by a dye-frame ring armed on the live build detector's last beat
+  (`buildLive` latched + `dropLiveIn ≤ 1`), released into item 1's shockwave on the confirmed drop, cross-faded on a fake-out. This section
+  is item 1; item 2 has its own heading at the end, for the next worker.
+- **Step 0 — the owed bench pre-measure (§112's open list), BEFORE any change, on 4bfa5ca** (HARNESS "## Fluid": `GPU=1` headless 1280×633,
+  `CLOCK=0`, the fake, q pinned .95 → tier 3, sim 259×128, dye 1035×512, 8 s settle, one cold `benchFluid(300)` discarded, three interleaved
+  pairs `benchFluid(300)` / `bench(0, 300)`). **The machine was NOT idle** (`uptime` load 3.13 / 3.63 / 3.68 at 21:35; the user's desktop
+  Chrome renderers at 40.7 / 22.3 / 15.2 / 13.3 % CPU; a second set at 21:37 under load 3.23 / 3.57 / 3.65 with a renderer at 82 %) — recorded
+  as it was, not a stop. Set 1: substrate **0.772 (cold) / 0.699 / 0.802 / 0.772 ms** against NAV **1.770 / 3.742 / 2.139** → median
+  **0.772 ms, ratio 0.36**. Set 2: **1.007 (cold) / 0.675 / 0.692 / 0.709 ms** against NAV **1.833 / 2.804 / 2.044** → median **0.692 ms,
+  ratio 0.34**. §112's two sets under its load read 0.96 / 1.00 ms at ratio 0.44 / 0.41; §104's idle 0.58 at 0.43. So the pre-change number
+  for this item is **0.69–0.77 ms at ratio 0.34–0.36** under a load of ~3.5 — the budget (≤ 1.0 ms at tier 3) holds with room; a truly idle
+  reading is still unseen (every reading on this machine has the user's Chrome on it).
