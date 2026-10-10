@@ -512,6 +512,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
 // fields; the heave reads `sub`; the neutral path (sub 0) is the base's to the bit; the field is bounded; the flip / swirl / ink switches
 {
   const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS, K2 = INJ2.K;
+  const SHIP_SHAPE = K2.KICK_SHAPE; K2.KICK_SHAPE = 0;   // S2: the S1 relation is proven at the control's kick (shape 0); the shapes have their own block below, the shipped one restored after
   ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
   ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
   const undecl2 = FEATS2.filter((k) => !(k in FEATS));
@@ -524,7 +525,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
   // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
-  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; return Q; };
+  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; return Q; };
   const frac = (x) => x - Math.floor(x);
   // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
   const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
@@ -631,6 +632,71 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       } catch (e) { thrown = e.message; }
       ok(thrown === null && n === J.f.length, 'bands: proxy — SeeYouDrop ' + n + ' real frames through plan2, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : ''));
     }
+  }
+  K2.KICK_SHAPE = SHIP_SHAPE;
+  { // S2 (§116 S2, FLUID2-PLAN §4 S2): the kick as mass that travels — the shapes at ONE momentum (Σ dy·rad over a hit's frames = the control's,
+    // a splat's Gaussian integrating to π·rad) and the same ink; the jet's frames, the stroke's monotone y, the dipole's mirror, the puff's ring
+    // with its centre and the base's shockwave winning the step; the shipped kind's splats on every kick of the user's track; determinism
+    const defaults = { ...K2 };
+    const JR = trace('RaindropsOnRoses-map0');
+    const runShape = (shape, over = {}, J = JR) => { Object.assign(K2, defaults, { KICK_SHAPE: shape }, over); const out = replay(J, mkState2(), plan2).map((r) => r.P); Object.assign(K2, defaults); return out; };
+    const KINDS = ['kick', 'jet', 'stroke', 'dip', 'puff'];
+    ok([0, 1, 2, 3, 4].includes(defaults.KICK_SHAPE) && defaults.JET_N >= 1 && defaults.STROKE_T > 0 && defaults.KPUFF_T > 0, 'bands: S2 — K2 carries KICK_SHAPE ' + defaults.KICK_SHAPE + ' (the shipped kind), JET_N ' + defaults.JET_N + ', STROKE_L ' + defaults.STROKE_L + ' / STROKE_T ' + defaults.STROKE_T + ', DIP_D ' + defaults.DIP_D + ' / DIP_V ' + defaults.DIP_V + ', KPUFF_A ' + defaults.KPUFF_A + ' / KPUFF_R ' + defaults.KPUFF_R + ' / KPUFF_T ' + defaults.KPUFF_T);
+    if (JR) {
+      const C = JR.cols;
+      const ctrl = runShape(0), jet = runShape(1), stroke = runShape(2), dip = runShape(3), puff = runShape(4), ship = runShape(defaults.KICK_SHAPE);
+      const kickIdx = []; for (let i = 0; i < JR.f.length; i++) if (C.kickEvt[i]) kickIdx.push(i);
+      const perKick = (out) => kickIdx.map((i0, k) => { const i1 = k + 1 < kickIdx.length ? kickIdx[k + 1] : out.length; let m = 0, ink = 0, n = 0; for (let i = i0; i < i1; i++) { m += out[i].kick.mom; ink += out[i].kick.ink; n += out[i].kick.n; } return { m, ink, n }; });
+      const pc = perKick(ctrl);
+      const kindsOf = (out) => { const k = {}; for (const r of out) for (const s of r.splats) k[s.k] = (k[s.k] || 0) + 1; return k; };
+      const kc = kindsOf(ctrl);
+      ok(kickIdx.length > 100 && kc.kick > kickIdx.length && KINDS.slice(1).every((k) => !kc[k]) && ctrl.every((r) => r.kick && r.kick.shape === 0 && r.kick.n === r.splats.filter((s) => s.k === 'kick').length), 'bands: S2 — shape 0 (the control): the base\'s kick splats as they are on RaindropsOnRoses\'s ' + kickIdx.length + ' kicks (' + kc.kick + ' kick frames, no jet / stroke / dip / puff); `kick` in the return counts them');
+      const sameMom = (out, name) => { const p = perKick(out); const bad = p.filter((x, k) => Math.abs(x.m - pc[k].m) > 1e-9 * Math.max(1, pc[k].m) || Math.abs(x.ink - pc[k].ink) > 1e-9 * Math.max(1, pc[k].ink)); return { ok: bad.length === 0 && p.reduce((a, x) => a + x.m, 0) > 0.5, bad: bad.length, tot: p.reduce((a, x) => a + x.m, 0) }; };
+      for (const [out, name] of [[jet, 'the jet'], [stroke, 'the stroke'], [dip, 'the dipole']]) { const r = sameMom(out, name); ok(r.ok, 'bands: S2 — ' + name + ': Σ dy·rad over every kick\'s frames = the control\'s within 1e-9 (the same momentum, Σ ' + r.tot.toFixed(6) + ' over the track) and the same ink in the budget\'s units (' + r.bad + ' kicks off)'); }
+      // the jet: the base's kick frames gone, JET_N 'jet' splats per base frame at 1 / JET_N of its push, y = KICK_Y
+      const kj = kindsOf(jet);
+      ok(!kj.kick && kj.jet === kc.kick * defaults.JET_N && jet.every((r) => r.splats.filter((s) => s.k === 'jet').every((s) => s.y === defaults.KICK_Y)), 'bands: S2 — the jet: ' + kj.jet + ' jet splats = ' + kc.kick + ' base kick frames × JET_N ' + defaults.JET_N + ', every one at KICK_Y, no base kick splat left');
+      const i0 = kickIdx[50]; const jf = []; for (let i = i0; i < i0 + defaults.JET_N + 3; i++) jf.push(jet[i].splats.filter((s) => s.k === 'jet').map((s) => +s.dy.toFixed(6)));
+      const nb = []; for (let i = i0; i < i0 + defaults.JET_N + 3; i++) nb.push(ctrl[i].splats.some((s) => s.k === 'kick') ? 1 : 0);   // the base's kick frames (the hit + its tail: one or two frames by the trace's dt)
+      const expect = jf.map((_, j) => nb.reduce((a, b, k) => a + (b && k <= j && j < k + defaults.JET_N ? 1 : 0), 0));
+      ok(jf.every((a, j) => a.length === expect[j]) && nb[0] === 1 && jf[defaults.JET_N + nb.lastIndexOf(1)].length === 0 && Math.abs(jf[0][0] * defaults.JET_N - ctrl[i0].splats.find((s) => s.k === 'kick').dy) < 1e-5, 'bands: S2 — the jet on one kick (frame ' + i0 + ', the base on ' + nb.reduce((a, b) => a + b, 0) + ' frames): every base frame\'s push runs JET_N frames (' + jf.map((a) => a.length).join(' ') + ' = ' + expect.join(' ') + '), none after; each the base\'s dy / JET_N (' + jf.map((a) => a.join('+')).join(' | ') + ')');
+      // the stroke: the jet drawn upward — y monotone in the push's age, from KICK_Y, never above KICK_Y + STROKE_L
+      const sf = []; for (let i = i0; i < i0 + defaults.JET_N + 1; i++) sf.push(stroke[i].splats.filter((s) => s.k === 'stroke').map((s) => +s.y.toFixed(4)));
+      const ys = stroke.flatMap((r) => r.splats.filter((s) => s.k === 'stroke').map((s) => s.y));
+      ok(sf[0][0] === defaults.KICK_Y && sf.slice(1).every((a, j) => a[0] >= sf[j][0]) && sf.every((a) => a.every((y, k) => k === 0 || y <= a[k - 1])) && sf[2][0] > sf[1][0] && sf[1][0] > sf[0][0] && ys.every((y) => y >= defaults.KICK_Y && y <= defaults.KICK_Y + defaults.STROKE_L + 1e-12) && Math.max(...ys) > defaults.KICK_Y + 0.9 * defaults.STROKE_L, 'bands: S2 — the stroke: y from KICK_Y rising with the push\'s age (oldest first per frame: ' + sf.map((a) => a.join('/')).join(' ') + '), saturating at KICK_Y + STROKE_L; the momentum the jet\'s');
+      // the dipole: two splats per base frame, mirrored in x about the base's, opposite dx, the lift and the ink shared
+      const dd = dip.map((r, i) => ({ d: r.splats.filter((s) => s.k === 'dip'), b: ctrl[i].splats.find((s) => s.k === 'kick') })).filter((x) => x.b);
+      ok(dd.length === kc.kick && dd.every(({ d, b }) => d.length === 2 && Math.abs(d[0].x + d[1].x - 2 * b.x) < 1e-12 && Math.abs(d[1].x - d[0].x - 2 * defaults.DIP_D) < 1e-12 && d[0].dx === -d[1].dx && d[0].dx > 0 && Math.abs(d[0].dy - b.dy / 2) < 1e-12 && d[1].dy === d[0].dy && Math.abs(d[0].r - b.r / 2) < 1e-12 && d[0].rad === b.rad && d[0].y === defaults.KICK_Y), 'bands: S2 — the dipole: on every base kick frame two dip splats at x ∓ DIP_D, dx opposite (+' + defaults.DIP_V + ' × √rank · g inward on the left), dy and the ink halved, the radius the base\'s');
+      const dmag = dd.filter(({ d }, k) => C.kickEvt[kickIdx[Math.min(k, kickIdx.length - 1)]]).slice(0, 1);
+      ok(dip.every((r, i) => !r.splats.some((s) => s.k === 'kick')) && dd.every(({ d }) => Math.abs(d[0].dx) <= defaults.DIP_V + 1e-12), 'bands: S2 — the dipole\'s seed is bounded by DIP_V (' + Math.max(...dd.map(({ d }) => d[0].dx)).toFixed(3) + ' max), no base kick splat left');
+      // the puff: the splat's ink with no velocity, a ring at the kick's place rising 0 → KPUFF_R over KPUFF_T beats; the base's shockwave wins the drop's step
+      const pp = puff.map((r, i) => ({ p: r.splats.filter((s) => s.k === 'puff'), b: ctrl[i].splats.find((s) => s.k === 'kick'), ring: r.ring, cring: ctrl[i].ring, t: JR.t[i] }));
+      const withB = pp.filter((x) => x.b);
+      ok(withB.length === kc.kick && withB.every(({ p, b }) => p.length === 1 && p[0].dx === 0 && p[0].dy === 0 && p[0].r === b.r && p[0].rad === b.rad && p[0].x === b.x) && puff.every((r) => r.kick.mom === 0), 'bands: S2 — the puff: the kick\'s ink stays at its place with no velocity (momentum 0 in the splats\' units), on every base kick frame');
+      const rings = pp.filter((x) => x.ring && x.ring.cx !== undefined);
+      const beat = 60 / 140;
+      ok(rings.length > 5 * kickIdx.length && rings.every((x) => x.ring.cy === defaults.KICK_Y && x.ring.w === defaults.KPUFF_W && x.ring.r >= 0 && x.ring.r < defaults.KPUFF_R && x.ring.a > 0 && x.ring.a <= defaults.KPUFF_A + 1e-12) && rings.some((x) => x.ring.r > 0.8 * defaults.KPUFF_R), 'bands: S2 — the puff\'s ring: ' + rings.length + ' frames over ' + kickIdx.length + ' kicks (≈ ' + (defaults.KPUFF_T * beat * 60).toFixed(1) + ' per kick), centred at the kick\'s place (cy KICK_Y), r 0 → < KPUFF_R, a ≤ KPUFF_A, w KPUFF_W');
+      const pk = pp.slice(kickIdx[60], kickIdx[60] + 12).map((x) => (x.ring && x.ring.cx !== undefined ? +x.ring.r.toFixed(4) : null));
+      ok(pk[0] === 0 && pk.slice(1).every((r, j) => r === null || (pk[j] !== null && r > pk[j])) && pk.some((r) => r === null), 'bands: S2 — the puff on one kick: r 0 on the hit\'s frame, rising every frame (' + pk.map((r) => (r === null ? '-' : r)).join(' ') + '), gone after KPUFF_T beats');
+      const dropF = pp.filter((x) => x.cring);
+      ok(dropF.length > 0 && dropF.every((x) => x.ring === x.cring || (x.ring.cx === undefined)) && dropF.some((x) => x.ring && x.ring.cx === undefined), 'bands: S2 — the base\'s shockwave (the drop at ' + dropF[0].t.toFixed(3) + ' s, ' + dropF.length + ' frames, centred) wins every step it runs on: the puff never replaces it');
+      ok(runShape(9).every((r, i) => JSON.stringify(r.splats) === JSON.stringify(ctrl[i].splats)), 'bands: S2 — an unknown shape (9) is the control\'s list');
+      // the shipped kind on the user's track
+      const ks = kindsOf(ship), shipKind = ['kick', 'jet', 'stroke', 'dip', 'puff'][defaults.KICK_SHAPE];
+      ok(ks[shipKind] > 0 && KINDS.filter((k) => k !== shipKind).every((k) => !ks[k]) && kickIdx.every((i) => ship[i].splats.some((s) => s.k === shipKind)), 'bands: S2 — the shipped kind (' + shipKind + ', KICK_SHAPE ' + defaults.KICK_SHAPE + '): ' + ks[shipKind] + ' splats, one or more on every one of the ' + kickIdx.length + ' kick frames, no other kick kind');
+      ok(JSON.stringify(ship) === JSON.stringify(runShape(defaults.KICK_SHAPE)), 'bands: S2 — determ: two fresh band states on the real trace under the shipped kind → identical output');
+      const stripK = (P) => { const Q = { ...P, splats: P.splats.filter((s) => !KINDS.includes(s.k)) }; delete Q.kick; delete Q.params; delete Q.ink; return Q; };
+      ok(JSON.stringify(ship.map(stripK)) === JSON.stringify(ctrl.map(stripK)) && ship.every((r, i) => r.heave === ctrl[i].heave && r.body === ctrl[i].body), 'bands: S2 — the shipped kind moves nothing but the kick kinds (and the governor\'s rounding): the sub\'s field, the snare, the hats, the floor, the drop are the control\'s to the byte');
+      // the shared base state and the cold frame: a pending jet is dropped on the cold frame (a scene switch is never a late push)
+      Object.assign(K2, defaults, { KICK_SHAPE: 1 });
+      { const st = mkState2(); let prev = null; const outs = [];
+        for (let i = kickIdx[40] - 5; i < kickIdx[40] + 3; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; outs.push(plan2(S, dt, st)); if (i === kickIdx[40]) st.n = 0; }
+        const pend = outs[6].splats.filter((s) => s.k === 'jet').length, after = outs[7].splats.filter((s) => s.k === 'jet').length;
+        const tail = [1, 2].map((j) => (ctrl[kickIdx[40] + j].splats.some((s) => s.k === 'kick') ? 1 : 0));   // the base's tail frames after the hit (one or two)
+        ok(outs[5].splats.filter((s) => s.k === 'jet').length === 1 && pend === tail[0] && after === tail[0] + tail[1] && tail[0] === 1, 'bands: S2 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending jet: the hit\'s push on its frame, the re-entry frame carries the tail\'s alone (' + pend + '), the next the tail frames joined since (' + after + ' = ' + tail.join('+') + '), the hit\'s own push never late'); }
+      Object.assign(K2, defaults);
+    }
+    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S2 — the K2 table restored after the shapes');
   }
 }
 

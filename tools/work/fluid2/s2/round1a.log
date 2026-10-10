@@ -1,0 +1,11 @@
+== 18:21:54 RaindropsOnRoses s12 ctrl K2=
+Traceback (most recent call last):
+  File "<stdin>", line 35, in <module>
+KeyError: ('00', 'k0')
+== RaindropsOnRoses s12 ctrl: "{\"f0\":2,\"dur\":222.85714583333333,\"sc\":12,\"grammar\":\"pool\",\"fluid\":{\"on\":true,\"tier\" · "{\"f0\":2,\"frame\":4684,\"errs\":[],\"bad\":[],\"steps\":4684}" · 0 kicks · 91 s
+== 18:23:25 RaindropsOnRoses s13 shape0 K2=
+Traceback (most recent call last):
+  File "<stdin>", line 35, in <module>
+KeyError: ('00', 'k0')
+== RaindropsOnRoses s13 shape0: "{\"f0\":2,\"dur\":222.85714583333333,\"sc\":13,\"grammar\":\"bands\",\"fluid\":{\"on\":true,\"tier\ · "{\"f0\":2,\"frame\":4684,\"errs\":[],\"bad\":[],\"steps\":4684}" · 0 kicks · 91 s
+== done 18:24:56

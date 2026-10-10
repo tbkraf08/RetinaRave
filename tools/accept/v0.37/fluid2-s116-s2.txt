@@ -1,0 +1,77 @@
+# §116 S2 (2026-10-10) — FLUID2 (id 13): the kick as MASS that travels — the point-source exploration. Branch fluid2 (main merged at 6da0ca5 — the Raindrops gate flip in). One Chrome at a time, GPU=1, PORT 8975 (the gates) / 8978 (the strips).
+# The user's scope (2026-10-10): "only tune with Raindrops, don't do full sweep" — every strip and every gate below is RaindropsOnRoses-filtered; the other seven tracks are untuned and unswept on the user's word. THE FULL SWEEP IS OWED BEFORE ANY TAG.
+# The decision: KICK_SHAPE 3 (the dipole seeded inward), DIP_V 1.2, DIP_D .03 — DECISIONS §116 S2 (the finding: FLUID's kick rode the sub emitter's jet; without it the plain kick is a pinhead; the inward pair carries itself a third of the screen per beat).
+# 1. SCENES=13 TRACKS=RaindropsOnRoses tools/real-md5.sh s2-13a / s2-13b (69 / 69 s): 8 / 8 lines cmp-equal; all 8 moved against S1's v037 lines (the kick changed) → re-based into tools/accept/v0.37/real-md5-v037.txt (the other 322 hash lines untouched — v036's 240 + s13's 58 other-track lines from S1 + the roster's 24 Raindrops lines = 330 with these 8). f0 2, errs [] on every run.
+# 2. SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh s2-12 (69 s): 8 / 8 = real-md5-v036.txt (FLUID unmoved: uRingC (.5, .5) and the band state's reset are the byte-identical path).
+# 3. SCENES="0 1 3" TRACKS=RaindropsOnRoses tools/real-md5.sh s2-roster (208 s): 24 / 24 = v037's (S1's a / b lines) — the ring's centre uniform is neutral under the roster scenes (the drop1 window's shockwave runs with the centre at .5).
+# 4. SCENES=13 TRACKS=RaindropsOnRoses tools/real-rulers.sh s2-rain (66 s): 1 / 1 ok — 56–116 s, continuous, jump viol 0 (max .056), mon viol 0 (max .0161), black 0, clip25 0, medY .181 (S1's .173, FLUID's .193).
+# 5. tools/scene-md5.sh s2 (212 s): 26 = scene-md5-v035.txt + s12's pair unmoved (3e483039… / 2274bb4e…) + s13's pair re-recorded 1827743c74c9715af4d06cfb267d8bcd / 0af6dd5b2eccf4cea85f6b845b05068e (the fake's kicks on the beat now launch pairs); errs [] on 14 ids.
+# 6. node tools/parity.js fake (50 s): max |diff| 7.852214593751443, 72 fields compared, the §102 nav.* MISMATCH line to the digit (nav.lg 7.852214593751443, nav.c 2.0922965052426807 …) = ACC v0.36's.
+# 7. The bench, ONE page (test&scene=12, q .95 pinned, 8 s warm, a cold .866 discarded, load 1.29 / 1.52 / 1.59, tier 2 sim 259×128 dye 1035×512): benchFluid(300,null,'pool') / bands KICK_SHAPE 3 (the fake's static MS: no kick on the bench's steps — the branch) / bands KICK_SHAPE 0 / bands KICK_SHAPE 3 with kickEvt 1 held on EVERY step (2 dip splats + the sub per step, nSplat 3 — the dipole's cost as an upper bound) interleaved ×3 = .728 / .734 / .732 / .760 · .721 / .725 / .778 / .807 · .774 / .789 / .782 / .692 ms — medians pool .728, ship .734 (+.006), shape0 .778, a pair every step .760 (+.03 over the pool: two splats in the same draw); the pairs ship − pool +.006 / +.004 / +.015, within ±.05 (the absolute ms moves with the desktop's state between sessions: S0 .837 / S1 .483 / S2 .728 — the PAIR is the number); bench(0,300) 1.357 (ratio .54).
+#    MOBILE=1 test&scene=13: tier 0, sim 64×139, dye 256×554, grammar bands, errs [] bad [] frameN 242; benchFluid bands .416 / bands + swirl .404 / pool .431 ms at tier 0 (single unpinned calls — the ≤ .4 budget sits at the reading's edge; S7's pair decides).
+# 8. npm run build 182 modules → dist/index.html 1 816 420 bytes (S1's 1 806 244 + 10 176: inject2's shapes, the ring's centre, the help text); from file:// test&scene=13 → sc 13 grammar bands errs [] bad [] frameN 302; test&scene=12 → pool, errs []; VER 0.36.0 (no bump).
+# 9. The crossfade (CLOCK=1, SeeYouDrop at=25, &trans=mixs; tools/work/s0-fade.sh as S0 wrote it, SC.forced pinned): 12 → 13 at f300 — the grammar bands after the fade, the whole-frame grey per 6 frames 34.7 36.1 36.4 36.9 37.0 36.2 29.0 21.7 20.5 23.3 25.0 26.9 28.7 31.6 33.1 33.9 34.0 35.4 34.9 34.4 33.9 35.1 (max step 7.3 / 255, §1.9 viol [] — S0's cold-exposure dip, unchanged); the 13 → 0 row with the force still pinned is the forced branch's revert ({cur 13, next 0} → {cur 13, next −1}), as S1 found — greys flat 32.1–35.0, max step 1.72 / 255, viol []; errs [] bad [] at heard 37.07.
+# 10. node tools/check.js 183 modules 0 fail / 8 warn (help.feats gaps 0; uRingC live in both advect passes); npm test exit 0 (test_fluid 370 — the bands block's S2 cases, test_music 151, test_director untouched); node tools/license.js --check 0 without the header (tools/fluid-kick-strip.sh and fluid-kick-travel.py carry it); inject.js: git diff main — empty.
+# 11. The strips (tools/fluid-kick-strip.sh + fluid-kick-travel.py, 14 kicks, map 0, at=24; p50 over 13 — the drop's confirmation frame listed, not summed; U = the velocity's up-mass in the band x ± .3 above the kick's place, ΔU the hit's addition at +½ / +1 beat, hc the centroid height, w the plume's width):
+#     FLUID (s12) U pre/0/½/1 21.7/23.2/25.1/23.4 · ΔU½ 3.55 · ΔU1 1.31 · hc1 .41 · w1 .127 — the kick on the sub jet's column
+#     FLUID2 shape 0 (S1's kick) 5.1/6.7/5.4/5.6 · .93 · .93 · hc1 .45 · w1 .009 — a pinhead; the field OFF 6.0/7.7/7.1/6.7 · 1.16 · .57 (the heave costs 15 %, the jet's removal the rest); KICK_V × 2 7.5/10.1/7.9/7.7 · 1.48 · 1.43
+#     the jet .77 · .83 · the stroke 1.14 · .66 · the dipole .3 in .98 · .77 · the puff .4 .58 · .65 — at one momentum, all a quarter of FLUID's
+#     the dipole OUT −.6 1.28 · 1.01 · OUT −1.2 D .05 2.57 · .78 · the puff A .8 2.79 · 1.22 · the puff A 1.2 15.9 · 2.31 (a stamp: w½ .21, gone at +1)
+#     the dipole IN .8 2.66 · 1.95 · IN 1.2 (SHIPPED) 3.08 · 2.77 (hc½/1 .29/.32, d1 .32, w1 .019, trail .64, step0 .0075, grey0 49.5; the return 3.12 · 2.77, the groove 3.08 · 3.21) · IN 1.6 3.93 · 3.29 · IN 1.2 D .05 3.68 · 3.56 · IN 1.2 D .02 2.44 · 2.08 — the travel ties at hc1 .30–.32 / d1 .31–.32 on every seed
+#     The montages: tools/accept/v0.37/fluid2-s116-s2-RaindropsOnRoses.jpg (FLUID / S1's kick / the shipped pair — composite, dye, velocity on kick 08 the groove 84.433 and kick 03 the return 70.717), -variants.jpg (14 variants, the dye over the velocity); the strips in tools/work/fluid2/kick/, the rounds' logs and tables in tools/work/fluid2/s2/.
+
+## 1. s13 real-md5 on RaindropsOnRoses (s2-13a = s2-13b)
+1858e4663a0a4189f67da3f6a24c1472  s13-RaindropsOnRoses-build1-f730-m0.jpg
+cfdddcd826190acdf634c89bfdb243cd  s13-RaindropsOnRoses-build1-f730-m1.jpg
+54ea6143624513016f1d984d09f55ced  s13-RaindropsOnRoses-drop1-f1030-m0.jpg
+c1a90256823ad5f4c39498e175bfd5aa  s13-RaindropsOnRoses-drop1-f1030-m1.jpg
+bc2d8d09fe3a076c3017dc3c63f77042  s13-RaindropsOnRoses-groove-f602-m0.jpg
+3473a0ee8170779d26293a2c2328dd8e  s13-RaindropsOnRoses-groove-f602-m1.jpg
+e15e839063f3330d6786c12221c591c8  s13-RaindropsOnRoses-intro-f602-m0.jpg
+d2e6e33f0c2124bc985c3093920232b8  s13-RaindropsOnRoses-intro-f602-m1.jpg
+
+## 2. s12 on RaindropsOnRoses (= v036)
+13d802a9473281b985484e0ab441b200  s12-RaindropsOnRoses-build1-f730-m0.jpg
+3df13c699e65dfc78499b48b48283a95  s12-RaindropsOnRoses-build1-f730-m1.jpg
+5f946bd61ada6152184f21a4facfc8f8  s12-RaindropsOnRoses-drop1-f1030-m0.jpg
+21581b7ffecde2fa83e79c778161d2d0  s12-RaindropsOnRoses-drop1-f1030-m1.jpg
+9ec70f36c51704c7baa1ebc1755d4935  s12-RaindropsOnRoses-groove-f602-m0.jpg
+a54dc73f84924149acc070797cb4e9e2  s12-RaindropsOnRoses-groove-f602-m1.jpg
+9996eaef1dcf7c73981229262d54c88f  s12-RaindropsOnRoses-intro-f602-m0.jpg
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
+
+## 3. the roster 0 1 3 on RaindropsOnRoses (= v037)
+1694f9b6943801b0dcc1f23621be41a8  s0-RaindropsOnRoses-build1-f730-m0.jpg
+617f213ddaa4f7b46b074ee984bbc770  s0-RaindropsOnRoses-build1-f730-m1.jpg
+f74f0d29cc6f0d495d808c14c7876fd7  s0-RaindropsOnRoses-drop1-f1030-m0.jpg
+dfea05e2d07866b58eecfedcf1c50f00  s0-RaindropsOnRoses-drop1-f1030-m1.jpg
+f1a2527019d40486fe33c9c9c6d9ca5d  s0-RaindropsOnRoses-groove-f602-m0.jpg
+8004694cfb153030dee6f088f3077cc6  s0-RaindropsOnRoses-groove-f602-m1.jpg
+f5d37545dbeff6379683a39aa84f48d6  s0-RaindropsOnRoses-intro-f602-m0.jpg
+36d0c803c67ca457edc014e5d0e91b0e  s0-RaindropsOnRoses-intro-f602-m1.jpg
+4ac32c80eb90611a27cdc08abb5b6b07  s1-RaindropsOnRoses-build1-f730-m0.jpg
+c2ae7537d235b7289dc3d9d63b525679  s1-RaindropsOnRoses-build1-f730-m1.jpg
+bb43f7ee96dfda15da05643ee4953f66  s1-RaindropsOnRoses-drop1-f1030-m0.jpg
+1048817461f60897a9e1f46fa4b1e140  s1-RaindropsOnRoses-drop1-f1030-m1.jpg
+1b3b928eb134bfcb02588f2680df54da  s1-RaindropsOnRoses-groove-f602-m0.jpg
+946353742e0c4b4ee923b9251e5d0259  s1-RaindropsOnRoses-groove-f602-m1.jpg
+c9dbed372ed1114084b9d35a64298675  s1-RaindropsOnRoses-intro-f602-m0.jpg
+958f85c7bdf798de7f48d74d47517add  s1-RaindropsOnRoses-intro-f602-m1.jpg
+799de11265b41bec14a39b5769d9f340  s3-RaindropsOnRoses-build1-f730-m0.jpg
+7eb0f8b0696b27a1871daebd58243453  s3-RaindropsOnRoses-build1-f730-m1.jpg
+7cddbda9fc4ea2fe50b92d57c5bd6304  s3-RaindropsOnRoses-drop1-f1030-m0.jpg
+9a11b95d18e3495bf7c756217b1c4b9c  s3-RaindropsOnRoses-drop1-f1030-m1.jpg
+736acfd5be26dd2d8856b995635a17ec  s3-RaindropsOnRoses-groove-f602-m0.jpg
+74690af0589f913f7f830a9d7a435556  s3-RaindropsOnRoses-groove-f602-m1.jpg
+8329cfd0043ca0079b191c0e166b1e8b  s3-RaindropsOnRoses-intro-f602-m0.jpg
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+
+## 4. the rulers
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.181  0.0169 | 3599  0.056  0     0     | 3599  0.0161 0     | ok
+real-rulers s2-rain: 1 scenes × 1 tracks, 0 FAIL, 66 s wall (map 1, PAR 1)
+
+## 5. the fake pairs
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+1827743c74c9715af4d06cfb267d8bcd  s13-f360.jpg
+0af6dd5b2eccf4cea85f6b845b05068e  s13-f840.jpg
