@@ -10344,3 +10344,86 @@ and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, o
   how often FLUID is picked, on what, and the stays' lengths under the dwell), and the user's eye on it in track time (§93's territories
   were a first cut too, retuned from remarks); the md5 / ruler lists re-run as the receipt that nothing underneath moved. The synthetic
   profiles are the fit model's own arithmetic, not a track: whether a real drop window reads `bassS` .95 / `keyConf` .4 is for the trace.
+
+## §115 v0.36 tagged — the drop as a shockwave, FLUID in the rotation (2026-10-10 night, one worker on main; the user: *"add fluid to the bid; tag and deploy"*)
+
+- **What ships** (two merged branches on v0.35's live tree): **§113** — the shockwave on the confirmed drop (branch fluid-drop-1: the velocity
+  ring that carries, SET curl-free on the velocity pass with its analytic divergence on the dye pass, the amplitude from the bass rank, the
+  droplets gone, `DROP_DISS` kept 12, `FLUID.wave` / `ctx.fluid.ring`, no extra draw) and **§114** — FLUID (id 12) joins the director's bid
+  (branch fluid-bid: `0.35 + 0.4 bassS + 0.2 min(1, keyConf / 0.6) + 0.15 (1 − centroid)`, 0 in a build; `core/scenes.js` untouched). §114
+  owed one proof — Chrome's: *"a scene enters the director's rotation"* (HARNESS "What to re-prove") — paid here first.
+- **Step 1 — the director traces after the promotion** (`ACC=v0.36 GPU=1 PORT=8975 tools/director-trace.sh s114 house`, then `aba` on 8976 —
+  one style per call once `PORT=` is set, two lanes on one PORT would share the debug port; `tools/accept/v0.36/director-{house,aba}-s114.txt`,
+  `director-stats.js`; and, because a SCENE@ line says *that* FLUID was picked and not *why*, `tools/director-bids.js` (new: the four real
+  `score()` values at 1 Hz with the director free, the fields they read, the bids on every pick's second — `tools/accept/v0.36/director-bids-
+  <style>-s114.json`). The demo synths use `Math.random()`, so the counts are what to compare, as HARNESS says. Per trace:
+  - **house, 120 s:** scene sequence **0 3! 0 3** (= §95's dwell trace, 0 3! 0! 3). Stays: NAV 0.39–53.47 (53.1 s, through the 6.71 and 45.61
+    drops), TORUS2 53.47–76.16 (22.7 s, a surprise hard-cut in; **ended by the build parking home** at 76.16 — `bld` .55 on the nearest 1 Hz line,
+    the SECTION build declared at 83.19, home through the 90.61 drop: the ungated precedence, as §95 read it), NAV 76.16–109.34 (33.2 s), TORUS2
+    from 109.34 (an identify, on the bar line `bar0.01`, held 3.6 beats). **Away picks 2: TORUS2 2, FLUID 0, DUST 0**; time NAV 86.3 s (72 %) /
+    TORUS2 33.3 s (28 %); 4 returns → 4 RESTORE@, 0 stale; 1 SWITCH@ on the bar line, 0 off. The bids on the pick seconds: @53 TORUS2 **.999**
+    vs DUST .577 vs FLUID .579 (bassS .21, keyConf .14); @109 TORUS2 **1.072** vs .578 / .557 (bassS .27, keyConf .01). Raw lead over the 120 s
+    (no noise, no dock): TORUS2 80 s, NAV 40 (31 of them the build's zeroes), FLUID **0**; among the away three TORUS2 89 / DUST 31 / FLUID 0.
+    Medians: TORUS2 .98 (clarity .86, regularity .99), DUST .57, FLUID **.54** (bassS **.18**, keyConf **.02**, centroid .41). The house synth
+    has no sub to speak of and no key the ears can hold — it is TORUS2's territory by §93's own terms, and FLUID's 0 of 2 there is the fit model
+    doing what §114 says it does (a steady tonal groove → TORUS2 by .11 on the synthetic table; here by .42–.52).
+  - **aba, 190 s:** scene sequence **0 3 12! 3!**. Stays: NAV 0.33–31.48 (31.2 s, through the 7.80 drop), TORUS2 31.48–117.21 (85.7 s, a phrase
+    pick on the bar line `bar0.06`), **FLUID 117.21–163.17 (46.0 s**, a surprise hard-cut in, `bar1.24`), TORUS2 from 163.17 (26.5 s to the end, a
+    surprise). **Away picks 3: TORUS2 2, FLUID 1 (33 %), DUST 0**; time NAV 31.2 s (16 %) / TORUS2 112.3 s (59 %) / FLUID 46.0 s (24 %); 7
+    returns → 7 RESTORE@, 0 stale (two of them file FLUID as the owed scene: 142.29 alt1→12, 166.49 alt2→12 — the second is still owed at the
+    trace's end, inside TORUS2's dwell); 1 SWITCH@ on the bar line, 0 off; no build on aba (0 build seconds), so no park. The bids on the pick
+    seconds: @32 TORUS2 .974 vs FLUID .785 vs DUST .646 (bassS .36, keyConf .58); **@117 TORUS2 .951 raw, FLUID .687, DUST .513 — FLUID won
+    through the −0.6 history dock on TORUS2 (the scene on screen, .951 → .35), not on the raw bid**; @163 TORUS2 .967 vs FLUID .694 (now docked)
+    vs DUST .553. Raw lead over the 190 s: TORUS2 183, NAV 6, FLUID **1**. Medians: TORUS2 1.02, FLUID **.65** (bassS .23, keyConf .36,
+    centroid .33), DUST .59. So on the demos FLUID is picked the way DUST is on house: by the dock's rotation, not by leading — the demo
+    synths carry a quarter of the sub a real track does (next).
+  - **DUST: 0 of 5 away picks across both traces.** Not new — §95's dwell traces on house had DUST 0 of 2 too (the dwell cut the house
+    churn from 12 picks, 4 of them DUST, to 2); DUST's raw bid leads on 31 of house's 120 s (the sparse seconds) but never on a pick's
+    second. A number to watch, not a stop: the dock rotates it in on a neutral profile (§114's table, 4 / 4 / 4), and the user's eye on real
+    tracks decides the territories, as §93 said.
+  - **Supplementary — two real tracks with the director free** (`CLOCK=1 … test&track=<T>&at=0`, 110 s from 0, `f0` 2 and errs [] on both;
+    the bid sampler's recipe; a one-run measurement each, NOT the per-track sweep — that is the user's eye and the open list): **SeeYouDrop:**
+    NAV 0–39.2, **FLUID 39.2–54.88 (15.7 s** — a phrase pick with gridTrust .40 so immediate; the raw bid **.818 led TORUS2 .783** and DUST .312,
+    bassS .61 keyConf .55; **ended by the build parking home at 54.88** — NAV 1.301 on the build, the dwell does not gate precedence — through
+    the 57.63 drop), NAV 54.88–86.28, TORUS2 86.28–104.92 (18.6 s, a settle; the raw bid read FLUID .898 over TORUS2 .79 but FLUID sat at
+    hist[1], docked −0.25 → TORUS2), NAV from 104.92 (the park before the 105.63 drop). Raw lead over the 109 s: **FLUID 61**, NAV 25, TORUS2
+    23; medians FLUID **.79** (bassS **.64**, keyConf .45, centroid .70), TORUS2 .78, DUST .30. **IBelongHere:** NAV 0–36.2, TORUS2 36.2–52.32
+    (16.1 s, a phrase on the bar line held 10 beats; raw .771 vs FLUID .697; ended by the build parking home — the arc reads `build` from 53),
+    NAV 52.32–89.47 (through the 64.48 drop), **FLUID from 89.47** (a phrase, held 2.7 beats; raw TORUS2 .841 docked −0.25 → .59 under FLUID's
+    .648; bassS .48, keyConf .13 — the track whose key the ears never hold, §111). Raw lead: TORUS2 79, NAV 23, FLUID 7; medians FLUID .68
+    (bassS .53, keyConf .13), TORUS2 .83. So on real music FLUID's bid reads .65–.90 where the sub carries (the demos' .54–.65), it LEADS on
+    SeeYouDrop and lands on both; the stays under 30 s are the build's precedence, not the dwell's failure (§95: a build parks home, ungated).
+    The real-track director run is a single take per track here; the sweep over all seven is for a session with the user's eye on it.
+- **Step 2 — the receipt on the merged tree, after the bump** (so the sweep saw the release's own files): `SCENES=12 GPU=1 PORT=8981
+  tools/real-md5.sh s115` (39 runs, **719 s**): **58 / 58 FLUID lines cmp-equal with `tools/accept/v0.36/real-md5-v036.txt`**, `f0` 2 and errs [] on all 39 (the bid changes picks, not forced frames — as §114 predicted) · `SCENES=12 PORT=8983 tools/real-rulers.sh s115` (**482 s**): FLUID **8 / 8 ok** — jump viol [] (max 0.012–0.054), mon viol [] (max 0.0042–0.0289), black 0, clip25 0 on every row, the rec row 244 / 1463; **the eight rows identical to `real-rulers-v036.txt` to the digit** · the fake smoke `PORT=8985 tools/scene-md5.sh
+  s115` (198 s): **26 / 26 = `scene-md5-v035.txt`**, errs [] on all 13 ids · parity fake (ACC v0.36) (50 s): max **7.852214593751443**, 72 fields, the §102 `nav.*` MISMATCH line to the digit (`tools/accept/v0.36/parity-fake.jpg`). Nothing moved — the tag proceeds. The roster's 174 real lines stand on §113's proof (117 runs, 174 / 174, `f0` 2 — the bid
+  changes picks, not forced frames; nothing in this release touches a roster scene's pixels).
+- **The recipe (§91's ritual, as §112).** `package.json` + `assets/core/version.js` 0.35.0 → 0.36.0 · `releases.json` top entry (`v0.36`,
+  2026-10-10, class `scene`, title *"The drop as a shockwave — and FLUID joins the rotation"*, decisions §113 + §114, scenes `[12]`, no clip) ·
+  `npm run build` (34 entries → `site/whats-new.html` 43 KB, the card's `#newin` line *New in v0.36: The drop as a shockwave — and FLUID joins
+  the rotation*, `dist/index.html` 177 modules 1722 KB) · `node tools/bundle.js releases/retinarave-v0.36.html` (**177 modules, 1 770 383 bytes**
+  — the frozen page; v0.35's was 177 / 1 762 910).
+- **The gates, each green on the tree after the bump (wall times):** `node tools/check.js` 178 modules **0 fail** / 8 warn (the soft-cap line
+  counts), 2.5 s · `node tools/releases.js check` 34 entries, top v0.36 == package.json, 0 problems · `node tools/whatsnew.js --check` up to
+  date · `node tools/license.js --check` **181 public files, 0 without the header** · `npm test` **exit 0**, 11.6 s (`test_fluid` 299 ok,
+  `test_music` 129 ok, `test_director` with §114's step 10) · the frozen page from `file://` headless (GPU=1, 6 s): `test&scene=0` **errs [] bad [] frameN 343, fluid on**; `test&scene=12` **errs [] bad [] frameN 345**; `VER = '0.36.0'` in the file · `GPU=1 PORT=8987
+  node tools/test_rec.js` **all ok**, 11 s (`retinarave-v0.36-nav2-…webm`, 360 frames at 60 fps composited, a frame decoded, VER == package.json) · the no-third-party receipt on `/` and `/whats-new`: the one host `127.0.0.1:8988` on both (`NOAUTO=1 … real` for `/`) · step 1's traces: house 121 s, aba 191 s
+  wall, the bid samplers 120 / 190 s and the two real tracks ~130 s each.
+- **What is live when.** One release commit (this note, HARNESS "Director traces" + the new `tools/director-bids.js`, the six proofs under
+  `tools/accept/v0.36/`, `NEXT-SESSION-PROMPT.md`, `FLUID-DROP-SESSION-PROMPT.md` with item 1 marked DONE and the decisions that bind item 2,
+  the generated `site/whats-new.html` + `index.html`'s line, the two versions, the entry, the frozen page), `git tag -a v0.36`, `git push origin
+  main --tags` (one push; the deploy polled at retinarave.com for `VER = '0.36.0'`, never re-pushed). The deploy is polled AFTER the push (the live site's `VER` line until it reads 0.36.0, ~15 min cap); the LIVE time is in the release report and memory, not in this note — a second push to record it would be a second deploy.
+- **What the user validates at home (every remark in track time is a retune request):** (1) **the shockwave on the drop in FLUID on the
+  four dropping tracks** — SeeYouDrop 57.5 / 105.5, WhoLikesToParty 56.5 / 130.3 / 187.8 (file; a bar later live), Vienna 85.3, IBelongHere
+  16.4 / 32.7 / 65.2 / 130.3 / 179.1 (file) — `#scene=12`; the references `tools/accept/v0.36/fluid-s113-<Track>-drops.jpg` and the two
+  `-variants.jpg` (spike alone / ring alone / both); (2) **FLUID in the rotation** — the director lands on it on its own now; where it does
+  and does not is the retune remark (§114's terms are a first cut, as §93's were — the traces above say it leads on SeeYouDrop's groove and
+  rides the dock elsewhere); (3) the drop's flash with the ring and no droplets; (4) v0.35's list (§112), still unvalidated.
+- **Open findings carried into the tag (none retuned):** from §113 — `DROP_DISS` 6 with the ring untested (the knob after the reversal, every
+  track, WhoLikesToParty's drop 3 the ruler) · the idle bench still unseen on this machine · IBelongHere's live return 36 frames (0.6 s) late —
+  the detector's arm at 178.58, the sub's return at 179.13 (`engine/build`) · Vienna's bar 40 (106.67) arms nothing in either mode · the
+  first-frame `mapDropEvt` clear on a mid-track `at=` fires the ring too · the survey's whole-track traces still the §111 set (a `'*'` trace
+  overflows the chunk cap) · the user's eye on the six montages; from §114 — the real-track director picks as a per-track sweep (two single
+  takes above; the territories to be retuned from the user's remarks) · DUST 0 of 5 on the demo traces (above); from §112 — §109's seven
+  ruler FAILs on DUST / TORUS2, the Malicious sub ruler, the key-timeline disagreement, CyborgNinja's key, WhoLikesToParty's early file clear,
+  the constant INK per hit, `accept.sh` end to end, the §83 `nav.*` parity line.

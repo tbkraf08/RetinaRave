@@ -125,13 +125,15 @@ GPU=1 tools/director-trace.sh after [aba house mix fake]   # every @-event + the
 node tools/director-stats.js tools/accept/v0.2/director-aba-after.txt   # returns vs RESTORE@, SWITCH@ on/off the bar line, scene sequence
 node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel, the §95 dwell, the §114 roster bids (step 10: the four real score() on synthetic profiles)
 DWELL=0 GPU=1 tools/director-trace.sh before house          # §95: the dwell off (&dwell=0) for a before/after; &dwell=a[:b] seconds under #test
+GPU=1 PORT=8977 node tools/director-bids.js house        # §115: the four bids at 1 Hz with the director FREE (who leads raw, the medians, the bids on every pick's second); <house|aba|mix|Track> — a track runs CLOCK=1 from 0 for 110 s; --from <json> re-summarises (the proofs tools/accept/v0.36/director-bids-*.json)
 ```
 Under `#test` the log carries `SCENE@t -> id bar<pos> gt<trust>`, `RESTORE@t alt<id> scene<id>` (a section's looks came
 back) and `SWITCH@t -> id bar<pos> (held N beats, <trigger>)` (an event-branch soft switch landed); the 1 Hz line ends
 with `alt ret bar gt`. `QOFF=1` traces with the grid hold off (`CARD.SC.quantise = false`); `RENUMOFF=1` with the look
 memory's key renumbering off (`CARD.SC.renumberOn = false`, v0.3 §21 — the log also carries `FILE@t alt<id> scene<id>`
 and `RENUMBER@t <map> kept<n> dropped<n>`, and `director-stats.js` replays the maps to count stale restores). aba is 190 s, house 120 s,
-mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. `demo` synths use
+mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never more Chrome than that. With `PORT=` set, ONE style per call
+(two lanes on one PORT would share the debug port PORT + 1000, §109) — `ACC=v0.36 PORT=8975 tools/director-trace.sh s114 house`, then `aba` on 8976 (§115). `demo` synths use
 `Math.random()` — the section ids and pick order differ between runs, the counts are what to compare.
 
 ## Bench protocol (every cost number in DECISIONS comes from this — v0.2 §17 consolidated the three copies)

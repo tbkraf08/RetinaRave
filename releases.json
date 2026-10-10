@@ -1,5 +1,21 @@
 [
  {
+  "version": "0.36.0",
+  "tag": "v0.36",
+  "date": "2026-10-10",
+  "class": "scene",
+  "title": "The drop as a shockwave — and FLUID joins the rotation",
+  "body": "Two things for FLUID, the pool of ink. First, the drop is now a shockwave: on the beat the drop lands, a ring of velocity leaves the centre of the screen and travels outward at the song’s own beat speed, carrying the ink with it — the centre empties physically, the ink piles up at the front, and the drop’s kicks refill the middle over the next beat. How hard it throws is how hard the bass slams back, ranked against the track’s own kicks, so a soft drop is a softer throw. It fires only on a confirmed drop — the bass has to return — so a breakdown that teases never fires it. It works the same from a file and from a live tab capture; on a live night the only difference is the ear that finds the drop. Second, FLUID now takes part in the director’s rotation: it bids for sub-driven passages under a sure key in a dark mix, next to the navigator, the particles and the torus, and stays at least 30 to 90 seconds like every scene. Nothing else moved — every other scene renders exactly as before, frame for frame, and n still cycles to FLUID whenever you want it.",
+  "clip": null,
+  "decisions": [
+   "§113",
+   "§114"
+  ],
+  "scenes": [
+   12
+  ]
+ },
+ {
   "version": "0.35.0",
   "tag": "v0.35",
   "date": "2026-10-09",

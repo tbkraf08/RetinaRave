@@ -1,4 +1,41 @@
-# FLUID-DROP — the drop as implosion then shockwave, for LIVE mode (written 2026-10-09, not started)
+# FLUID-DROP — the drop as implosion then shockwave, for LIVE mode (written 2026-10-09; **item 1 DONE and LIVE in v0.36**, item 2 not started)
+
+## Status (2026-10-10, v0.36 tagged — DECISIONS §113 item 1, §114 the bid, §115 the tag)
+
+**Item 1, the shockwave, is DONE (§113) and ships in v0.36.** The decisions that BIND item 2 (measured, not to be reopened without a
+measured reason):
+
+- **The confirmation frame, not the trigger frame.** The shockwave fires on the frame the §111 item 5 clear fires (the sub emitter
+  returning within `CLEAR_PEND` after `dropLiveEvt || mapDropEvt`). The trigger frame carried ten false shockwaves on the gated six
+  (IBelongHere's four live arms in its breakdown, Comptine's five + its one map line); the confirmed frame carries none. The cost per
+  drop is 0–67 ms except IBelongHere's live return (36 frames, 0.6 s — the detector's arm is early; a finding for `engine/build`, open).
+  Item 2's release is `plan()`'s `drop` 1 / `ring` on that same frame.
+- **The amplitude is the bass rank, not a `dropStrength` knee.** `dropStrength` reads 0.00 on five of eleven clears (the extractor never
+  fires a drop on WhoLikesToParty). `A = SW_K · (SW_C / beat) · g · (SW_A0 + (1 − SW_A0) · rank)` with `rank` = the confirming frame's
+  `bass` among the track's own kicks' bass (`rkB`, p10 → 0, p90 → 1), `g` = loudRel · presence. Per clear A reads 0.67–1.60 uv/s.
+- **The ring carries.** `ring(a, r, w)` is SET on the velocity pass (`v → mix(v, A·r̂, m)`), never added — a radial field is curl-free
+  and the projection would strip an added one (§104's lesson). The dye pass applies the ring's analytic divergence (`ρ ← ρ·(1 − ∇·v·dt)`)
+  so the ink is carried outward, not copied in place — without it the first strips emptied nothing. `FLUID.wave` / `ctx.fluid.ring(a, r, w)`
+  are the API (CONTRACTS §1.1 / §1.4); no extra draw, the ring rides the ADVECT pass as uniforms.
+- **The droplets are gone.** FLUID's §106 six-droplet ring on the drop was invisible next to the velocity ring (measured, §113) — one ring,
+  the substrate's; the scene's one injection on the drop is the sparkle.
+- **`DROP_DISS` stays 12** (the spike + the ring): the ring alone clears to within 10 % of the spike's floor on 10 of 11 drops but +27 % on
+  WhoLikesToParty's soft drop 3, and the centre refills 5–10 grey faster without the spike. **`DROP_DISS` 6 is the one knob to test WITH the
+  reversal in place, on every track, WhoLikesToParty's drop 3 as the ruler** (the thrown ink at the edge survives a smaller spike).
+- What item 1 leaves for item 2: the strip recipe `tools/fluid-drop-strip.sh` (the centre grey, `tools/work/fluid-drop/<Track>-m<map>-<variant>/grey.txt`),
+  `tools/fluid-replay.js` (the ring per frame), `tools/fluid-tracks.js` (the `shockwaves` column), the `shock` block in `tools/test_fluid.js`,
+  the per-track clear times in §113's table, the references `tools/accept/v0.36/real-md5-v036.txt` / `real-rulers-v036.txt`.
+- The pitfalls item 1 paid for: a mid-track `at=` whose first frame carries a map line fires the clear AND the ring on frame 1 (§107's `at=80`
+  pitfall — two groove references moved for it); a live drop shot from mid-track needs the detector's 32 s warm-up (`at=0`, not `at=40`);
+  a whole-track `'*'` trace overflows `filetrace.js`'s chunk cap (a field subset fits).
+
+**Item 2, the reversal, is NOT started** — the design below stands. Start it only on the user's word. The bench: §113's post-change
+numbers (0.67–0.72 ms median, ratio 0.43–0.46 under desktop load; the ring ±0.03 ms; tier 0 on the phone 0.35 ms) are the pre-change
+numbers for item 2; the idle machine is still unseen.
+
+----
+
+# The original prompt (2026-10-09)
 
 Build with a Fable worker (model: fable) per the house rules: plan from this file, one commit per item, every claim measured on
 real tracks (DECISIONS §109: the fake timeline is a smoke test only), per-track numbers never an average, Malicious measured
