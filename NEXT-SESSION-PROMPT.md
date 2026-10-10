@@ -41,6 +41,11 @@
 - `accept.sh` end to end (its real-music block = §109 / §111's sweeps, ~1 h with PAR 1) · the §83 `nav.*` parity MISMATCH line (pre-existing).
 
 ## The saved next piece — do not start unasked
+**`FLUID-DROP-SESSION-PROMPT.md`** (saved 2026-10-09, the user's ask after v0.35): the drop as implosion then shockwave in FLUID, for live
+mode — item 1 a radial velocity ring on the confirmed drop trigger (replaces or joins the §107 clear by measurement), item 2 exact
+time reversal by a ring of dye frames armed on the live build detector's last beat (`buildLive` latched + `dropLiveIn ≤ 1`), with a
+cross-faded resume and a fake-out budget per track. Start it only on the user's word.
+
 **`GRAMMAR-SESSION-PROMPT.md`** (saved 2026-10-09): one fixed cross-scene visual grammar — one musical question → one pre-attentive channel
 (WHEN = motion onset, HOW HARD = size, WHAT = position then hue, WHERE in the phrase = fullness, HOW ROUGH = texture, HOW LOUD = the brightness
 floor); CONTRACTS §1.19, then the audit of NAV / DUST / TORUS2 against it (`docs/plans/GRAMMAR-AUDIT.md`). §111's grammar on FLUID is the first
