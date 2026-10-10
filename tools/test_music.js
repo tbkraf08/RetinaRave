@@ -12,11 +12,17 @@
 //   shape     no non-finite value in any column; kickEvt / snareEvt / hatEvt are one frame wide (CONTRACTS §1.18: an event is a frame)
 //   clock     `bpm` (the PCM clock, the default since §56) settles within 2 % of the truth tempo or its octave (×½ / ×2) from 20 s on,
 //             and `beat` fires bpm/6 ± 15 % times per 10 s
+//   "from 20 s" = 20 s after the run's COLD START, which is the track's `start` (windows.json; 0 for the seven, 24 for RaindropsOnRoses —
+//             §117): the clock's lock + the tongues' 16-beat window fill take 12–15 s from a cold start on every track (the trace's
+//             tongueOn is 0 over 0–12.0 / 13.4 / 14.4 s on Malicious / Vienna / SeeYouDrop and over 24–36.4 s on RaindropsOnRoses),
+//             so every "from 20 s" claim counts from `start` + 20 — the same warm-up on all eight, never a per-track exception
 //   map       mapDropEvt fires only with the map on (never on &map=0 / a take); on SeeYouDrop (the tuning track) within one frame of
 //             each truth drop; every track's truth drops → the nearest mapDropEvt / dropEvt / dropLiveEvt lag is PRINTED (a map that
 //             disagrees with the offline truth on a track is a finding for DECISIONS, not a tuning here)
 //   tongues   where the truth has a beater (click onsets ≥ 1 / s over the rulers window) the tongues are ON (tongueOn 1) on ≥ 90 % of
-//             the frames from 20 s; elsewhere the fraction is printed
+//             the frames from 20 s; elsewhere the fraction is printed. `tongueOn` is the clock's window-full flag (tongues.js: 0 after
+//             a cold start, a re-seat or a lattice move until WIN = 16 beats have passed), not a lead / vocal detector: the claim is
+//             "the clock holds its line on a beater" — a re-seat clears it
 //   drums     the reactive kick (`kick2` rising edges over .3) and the ears' kickEvt over the rulers window against the truth's CLICK
 //             onsets (kicks with a beater — `low` is the 40–150 Hz level picker, a piano's left hand on Comptine) in the same window:
 //             each within a factor of 4 of the truth where the truth has ≥ 0.5 clicks / s; the low count is printed beside them
@@ -37,7 +43,7 @@ import { SC, register, updateScenes } from '../assets/core/scenes.js';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
 let pass = 0, fail = 0;
-let gate = true;   // false on a track that is not a gate (windows.json `gate`: Malicious, pending the user's validation of the map's sub ruler): its claims print as notes, never FAIL
+let gate = true;   // false on a track that is not a gate (windows.json `gate`: Malicious, pending the user's validation of the map's sub ruler; RaindropsOnRoses was one until its ruler was validated, §117 addendum): its claims print as notes, never FAIL
 const ok = (c, m) => { if (!gate) { console.log((c ? 'note ' : 'NOTE ') + m + (c ? '' : '  [would FAIL; not a gate]')); return; } if (c) { pass++; console.log('ok   ' + m); } else { fail++; console.log('FAIL ' + m); } };
 const note = (m) => console.log('     ' + m);
 const med = (a) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[s.length >> 1] : NaN; };
@@ -98,6 +104,7 @@ for (const name of names) {
   const track = name.replace(/-map[01]$/, ''), map = name.endsWith('-map1') ? 1 : 0, W = WIN[track], TR = truth(track);
   gate = W.gate !== false;
   const C = J.cols, T = J.t, N = J.f.length, tEnd = T[N - 1];
+  const t20 = (W.start || 0) + 20;   // "from 20 s": 20 s after the cold start at the track's `start` (0 for the seven; see the header)
   const sel = (k, a, b) => C[k].filter((v, i) => T[i] >= a && T[i] < b);
   const cnt = (k, a, b) => sel(k, a, b).filter(Boolean).length;
   const at = (k) => T.filter((t, i) => C[k][i]).map((t) => +t.toFixed(3));
@@ -111,13 +118,13 @@ for (const name of names) {
   ok(dbl === 0, `shape: ${name} — kickEvt / snareEvt / hatEvt are one frame wide (${dbl} doubled)`);
 
   // clock
-  const bpm = med(sel('bpm', 20, tEnd)), beats10 = [];
-  for (let a = 20; a + 10 <= tEnd; a += 10) beats10.push(cnt('beat', a, a + 10));
+  const bpm = med(sel('bpm', t20, tEnd)), beats10 = [];
+  for (let a = t20; a + 10 <= tEnd; a += 10) beats10.push(cnt('beat', a, a + 10));
   if (W.bpm) {
     const ratio = bpm / W.bpm, oct = [0.5, 1, 2].find((o) => Math.abs(ratio / o - 1) <= 0.02);
     ok(!!oct, `clock: ${name} — bpm ${f2(bpm)} is the truth's ${W.bpm} × ${oct || '?'} (ratio ${ratio.toFixed(3)}, ≤ 2 %)`);
     const want = bpm / 6, off = beats10.filter((b) => Math.abs(b - want) > 0.15 * want).length;
-    ok(off === 0, `clock: ${name} — beat fires ${f2(want)} ± 15 % per 10 s from 20 s (${beats10.join(' ')}; ${off} windows off)`);
+    ok(off === 0, `clock: ${name} — beat fires ${f2(want)} ± 15 % per 10 s from ${t20} s (${beats10.join(' ')}; ${off} windows off)`);
   } else note(`clock: ${name} — bpm ${f2(bpm)} (no truth tempo for the take), beats per 10 s ${beats10.join(' ')}`);
 
   // map
@@ -134,21 +141,21 @@ for (const name of names) {
   }
 
   // tongues / drums / queue over the rulers window (clipped to the trace; the last 60 s where the window lies past it)
-  const R = W.rulers, a = R.from + 10 <= tEnd ? R.from : Math.max(20, tEnd - 60), b = Math.min(R.from + 10 <= tEnd ? R.to : tEnd, tEnd), on = TR ? truthOnsets(TR, a, b) : { low: 0, click: 0, n: 0 };
+  const R = W.rulers, a = R.from + 10 <= tEnd ? R.from : Math.max(t20, tEnd - 60), b = Math.min(R.from + 10 <= tEnd ? R.to : tEnd, tEnd), on = TR ? truthOnsets(TR, a, b) : { low: 0, click: 0, n: 0 };
   const secs = Math.max(1, b - a);
-  const tOn = sel('tongueOn', 20, tEnd), onFrac = tOn.length ? tOn.filter((v) => v === 1).length / tOn.length : 0;
+  const tOn = sel('tongueOn', t20, tEnd), onFrac = tOn.length ? tOn.filter((v) => v === 1).length / tOn.length : 0;
   const beater = on.click / secs >= 1;
-  if (beater) ok(onFrac >= 0.9, `tongues: ${name} — on (tongueOn 1) on ${(100 * onFrac).toFixed(1)} % of the frames from 20 s (the truth has ${f2(on.click / secs)} click onsets / s)`);
-  else note(`tongues: ${name} — on ${(100 * onFrac).toFixed(1)} % of the frames from 20 s (the truth has ${f2(on.click / secs)} click onsets / s over ${a}–${b}: no beater, not asserted)`);
+  if (beater) ok(onFrac >= 0.9, `tongues: ${name} — on (tongueOn 1) on ${(100 * onFrac).toFixed(1)} % of the frames from ${t20} s (the truth has ${f2(on.click / secs)} click onsets / s)`);
+  else note(`tongues: ${name} — on ${(100 * onFrac).toFixed(1)} % of the frames from ${t20} s (the truth has ${f2(on.click / secs)} click onsets / s over ${a}–${b}: no beater, not asserted)`);
   const k2 = edges('kick2', a, b, 0.3), kE = cnt('kickEvt', a, b), clickRate = on.click / secs;
   if (clickRate >= 0.5) {
     ok(k2 >= on.click / 4 && k2 <= on.click * 4, `drums: ${name} — kick2 rises ${k2} times over ${a}–${b} s against ${on.click.toFixed(0)} truth clicks (×${(k2 / on.click).toFixed(2)}, within ×4; low ${on.low.toFixed(0)})`);
     ok(kE >= on.click / 4 && kE <= on.click * 4, `drums: ${name} — kickEvt ${kE} over ${a}–${b} s against ${on.click.toFixed(0)} truth clicks (×${(kE / on.click).toFixed(2)}, within ×4; low ${on.low.toFixed(0)})`);
   } else note(`drums: ${name} — kick2 rises ${k2}, kickEvt ${kE} over ${a}–${b} s; the truth has ${f2(clickRate)} clicks / s, ${f2(on.low / secs)} low onsets / s (no beater, not asserted)`);
   note(`levels: ${name} — snare2 rises ${edges('snare2', a, b, 0.3)} snareEvt ${cnt('snareEvt', a, b)} · hat2 rises ${edges('hat2', a, b, 0.3)} hatEvt ${cnt('hatEvt', a, b)} · onset ${cnt('onset', a, b)} · presence ${f2(med(sel('presence', a, b)))} loudRel ${f2(med(sel('loudRel', a, b)))} subGate ${(100 * sel('subGate', a, b).filter((v) => v > 0).length / Math.max(1, sel('subGate', a, b).length)).toFixed(0)} % · key ${med(sel('key', a, b))} keyConf ${f2(med(sel('keyConf', a, b)))}`);
-  const q = sel('queueN', 20, tEnd), qFrac = q.length ? q.filter((v) => v >= 1).length / q.length : 0;
-  if (beater && onFrac >= 0.9) ok(qFrac >= 0.8, `queue: ${name} — queueN ≥ 1 on ${(100 * qFrac).toFixed(1)} % of the frames from 20 s (median ${med(q)})`);
-  else note(`queue: ${name} — queueN ≥ 1 on ${(100 * qFrac).toFixed(1)} % of the frames from 20 s (median ${med(q)}; not asserted without the tongues)`);
+  const q = sel('queueN', t20, tEnd), qFrac = q.length ? q.filter((v) => v >= 1).length / q.length : 0;
+  if (beater && onFrac >= 0.9) ok(qFrac >= 0.8, `queue: ${name} — queueN ≥ 1 on ${(100 * qFrac).toFixed(1)} % of the frames from ${t20} s (median ${med(q)})`);
+  else note(`queue: ${name} — queueN ≥ 1 on ${(100 * qFrac).toFixed(1)} % of the frames from ${t20} s (median ${med(q)}; not asserted without the tongues)`);
 
   // build (the live detector, &map=0)
   if (map === 0 && track !== 'rec') {
