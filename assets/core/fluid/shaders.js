@@ -69,10 +69,24 @@ o=vec4(v/uScale,0.,1.);}`;
 // profile (centre down, edges up): a UNIFORM force in a closed pool is a pure pressure gradient the projection removes, so
 // the breath is given curl on purpose (DECISIONS §104) — and uForce a scene's uniform body force (ctx.fluid.force; the
 // same caveat). Both 0 on the dye pass.
+// §113 uRing = (A, front, width): the SHOCKWAVE — a radial ring round the screen's centre (r in screen heights, p.x aspect-corrected).
+// On the VELOCITY pass (uDye 0) it is SET into the velocity at the front with the Gaussian m = exp(−((r − front)/w)²) as the mix:
+// v → A·r̂ (uv/s: x over the aspect). Set, not added — a radial field is curl-free, the projection would strip an added one to its
+// Jacobi residual; set each step it never accumulates, and the dye advect (which samples this pass's output) rides it the same frame.
+// On the DYE pass (uDye 1) the ring's own DIVERGENCE dilutes and compacts the ink: semi-Lagrangian advection COPIES values, so a
+// divergent field alone stretches the centre's ink over the disc and empties nothing (measured: WhoLikesToParty's centre 62 → 65–69 with
+// the ring and no dissipation spike) — a pressure wave is compressible for the ink, ρ ← ρ·(1 − ∇·v·dt), and ∇·(m·A·r̂) = A·m·(1/r −
+// 2(r − front)/w²) is analytic: positive inside the front (the ink thinned as the front sweeps through it), negative outside (piled up
+// at the front) — the ink is CARRIED outward, not copied. A = 0 is the identical program path (a uniform branch), so every step without
+// a wave is bit-for-bit the §104 pass.
 export const ADVECT = `
-uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody;uniform vec2 uForce;
+uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody,uAspect;uniform vec2 uForce;uniform vec3 uRing;uniform int uDye;
 void main(){vec2 c=vUv-uDt*texture(uVel,vUv).xy;vec4 r=texture(uSrc,c)/(1.+uDiss*uDt);
-r.y+=uBody*uDt*cos(3.14159265*(2.*vUv.x-1.));r.xy+=uForce*uDt;o=r;}`;
+r.y+=uBody*uDt*cos(3.14159265*(2.*vUv.x-1.));r.xy+=uForce*uDt;
+if(uRing.x>0.){vec2 p=vUv-.5;p.x*=uAspect;float d=max(length(p),1e-3);float m=exp(-pow((d-uRing.y)/uRing.z,2.));
+if(uDye==1){float dv=uRing.x*m*(1./d-2.*(d-uRing.y)/(uRing.z*uRing.z));r.xyz*=dv>0.?1./(1.+dv*uDt):1.-dv*uDt;}
+else{vec2 h=p/d;r.xy=mix(r.xy,uRing.x*vec2(h.x/uAspect,h.y),m);}}
+o=r;}`;
 
 // Harness only (&fluiddbg=): the dye on the screen (encoded for the eye), the velocity as an inset (0.5 + v·uGain).
 export const DBG = `

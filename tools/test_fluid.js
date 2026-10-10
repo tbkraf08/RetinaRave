@@ -38,6 +38,8 @@
 //              pinned at KEY_TRUST .1 (keyConf .15 = .8), held through no trust, the harmony's eased centre before any trust (two
 //              harmAngles → two hues; a fifth flipping every half second moves it < .02/frame), LOOK's mood ignored, the evidence
 //              tally (5 s of another key: no re-pin; 20–40 s: re-pin)
+//   shock      §113: the confirmed drop fires the shockwave ring on the clear's frame (never a trigger alone, never dropEvt): r 0 → SW_C·SW_T over SW_T
+//              beats, SW_W wide, A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·the slam's rank among the track's kicks' bass); presence 0 → A 0
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
@@ -47,7 +49,9 @@
 //              frame of each truth drop (57.606 / 105.596, tools/truth/SeeYouDrop.json); the pad take: nothing moves or inks while
 //              the room is silent (presence 0, the first 2.5 s), every second from 3 s on injects (§108's 22 / 22); the numbers per track print;
 //              §111 the key: IBelongHere D minor from < 70 s to the end (≤ 2 pins), one hue over the intro and one over the grooves; WhoLikesToParty
-//              D major from < 10 s, never re-pinned; SeeYouDrop C# minor from < 15 s (≤ 2 pins); Comptine never trusted (the harmony's centre)
+//              D major from < 10 s, never re-pinned; SeeYouDrop C# minor from < 15 s (≤ 2 pins); Comptine never trusted (the harmony's centre);
+//              §113: shockwaves == confirmed clears on every trace (SeeYouDrop 2, Vienna 1, WhoLikesToParty 1 in 110 s, IBelongHere's three map lines in
+//              file mode and 0 on the live lanes, Comptine / CyborgNinja / the pad 0), each half a beat with its front at SW_C·SW_T
 import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { MS } from '../assets/engine/state.js';
@@ -253,6 +257,39 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   const st3 = mkState();
   const same = run(base({ dropLiveEvt: true, subGate: 1, subNote: 0, bpm: 120 }), st3);
   ok(same.drop === 1 && same.params.dyeDiss === K.DROP_DISS, 'drop: the trigger and the sub on one frame → the clear on that frame (SeeYouDrop\'s drops: the sub within 0–2 frames)');
+}
+
+// shock (§113 item 1): the confirmed drop fires a SHOCKWAVE — a radial velocity ring from the screen's centre, returned as `ring` on the frame
+// the clear fires (never on a trigger alone, never on a dropEvt-only frame), the front at SW_C·(t / beat) screen heights, SW_W wide, for SW_T
+// beats; A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·the slam's rank among the track's own kicks' bass) — a soft slam on a loud track is not
+// a hard one's; a quiet frame (presence 0) fires a ring of A 0
+{
+  const st = mkState();
+  const arm = run(base({ dropLiveEvt: true, bpm: 120 }), st);
+  ok(arm.ring === null && arm.drop === 0, 'shock: a trigger with no sub → no ring (pending, as the clear)');
+  for (let i = 0; i < 5; i++) ok(run(base({ bpm: 120 }), st).ring === null, 'shock: … and none while pending (frame ' + (i + 2) + ')');
+  const c = run(base({ subGate: 1, subNote: 0, bpm: 120, bass: 1 }), st);
+  ok(c.drop === 1 && c.ring && c.ring.r === 0 && c.ring.w === K.SW_W && c.ring.a > 0, 'shock: the confirming frame fires it — the front at r 0, width SW_W ' + K.SW_W + ', A ' + (c.ring ? c.ring.a.toFixed(3) : '—'));
+  const beat = 60 / 120, expA = K.SW_K * (K.SW_C / beat) * c.gain * (K.SW_A0 + (1 - K.SW_A0) * 1);   // bass 1 against the pooled prior (.3 / .95) ranks 1
+  near(c.ring.a, expA, 1e-9, 'shock: A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·rank) at rank 1 (' + expA.toFixed(3) + ' uv/s)');
+  let n = 1, last = c.ring, p;
+  while ((p = run(base({ bpm: 120 }), st)).ring) { last = p.ring; n++; ok(p.ring.a === c.ring.a && p.ring.w === K.SW_W, 'shock: frame ' + n + ' keeps A and the width (r ' + p.ring.r.toFixed(3) + ')'); if (n > 200) break; }
+  near(n, Math.round(K.SW_T * beat * 60), 1, 'shock: the ring lasts SW_T ' + K.SW_T + ' beats at 120 bpm (' + n + ' frames)');
+  near(last.r, K.SW_C * (n - 1) / 60 / beat, 1e-9, 'shock: the front travels SW_C ' + K.SW_C + ' screen heights per beat (r ' + last.r.toFixed(3) + ' after ' + (n - 1) + ' frames) — one screen radius per beat');
+  ok(p.ring === null, 'shock: then null');
+  // the slam's rank: a track whose kicks carry bass .9 ranks a .6 slam low; one whose kicks carry .3 ranks it high
+  const hard = mkState(), soft = mkState();
+  for (let i = 0; i < 12; i++) { run(base({ subGate: 1, subNote: 0, kickEvt: true, kickAmp: 0.5, bass: 0.9, bpm: 120 }), hard); run(base({ subGate: 1, subNote: 0, kickEvt: true, kickAmp: 0.5, bass: 0.3, bpm: 120 }), soft); for (let j = 0; j < 30; j++) { run(base({ subGate: 1, subNote: 0, bpm: 120 }), hard); run(base({ subGate: 1, subNote: 0, bpm: 120 }), soft); } }
+  const fire = (s) => { run(base({ dropLiveEvt: true, bpm: 120 }), s); return run(base({ subGate: 1, subNote: 0, bpm: 120, bass: 0.6 }), s); };
+  const h = fire(hard), sft = fire(soft);
+  ok(h.ring && sft.ring && h.ring.a < sft.ring.a && h.ring.a >= K.SW_A0 * K.SW_K * (K.SW_C / beat) * h.gain - 1e-9, 'shock: the same .6 slam ranks low among .9 kicks (A ' + h.ring.a.toFixed(3) + ', never under SW_A0 of the top) and high among .3 kicks (A ' + sft.ring.a.toFixed(3) + ')');
+  const quiet = mkState(); run(base({ dropLiveEvt: true, presence: 0, bpm: 120 }), quiet);
+  const q = run(base({ subGate: 1, subNote: 0, presence: 0, bpm: 120, bass: 1 }), quiet);
+  ok(q.drop === 1 && q.ring && q.ring.a === 0, 'shock: presence 0 → the ring carries A 0 (the gain is on every injected velocity)');
+  const st4 = mkState(); const e = run(base({ dropEvt: true, subGate: 1, subNote: 0, bpm: 120, bass: 1 }), st4);
+  ok(e.ring === null && e.drop === 0, 'shock: a dropEvt-only frame with the sub open → no ring (CONTRACTS §1.18: the extractor\'s drop is not the grammar\'s)');
+  const st5 = mkState(); const mapd = run(base({ mapDropEvt: true, subGate: 1, subNote: 0, bpm: 120, bass: 1 }), st5);
+  ok(mapd.drop === 1 && mapd.ring && mapd.ring.r === 0, 'shock: the map\'s bar line with the sub → the ring on that frame (file mode)');
 }
 
 // mapdrop (§107 + §111): the map's bar line arms the clear exactly as the live detector does; the extractor's dropEvt never does
@@ -503,6 +540,12 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
     }
     ok(moved === 0, `music: ${name} — a frame with presence 0 moves nothing and inks nothing (${moved} of ${silentFrames.length} silent frames did)`);
     ok(held === clears.length && confirmedOk === clears.length, `music: ${name} — every clear sits within ${K.CLEAR_PEND} beats of a trigger with the sub open, and holds a beat (${confirmedOk} / ${held} of ${clears.length})`);
+    // §113 item 1: the shockwave fires on every confirmed clear and on nothing else — one ring per clear, half a beat long, the front at SW_C·SW_T
+    const waves = []; for (let i = 0; i < rows.length; i++) if (rows[i].P.ring && (i === 0 || !rows[i - 1].P.ring || rows[i].P.drop === 1)) { let n = 0, rEnd = 0; for (let j = i; j < rows.length && rows[j].P.ring && (j === i || rows[j].P.drop !== 1); j++) { n++; rEnd = rows[j].P.ring.r; } waves.push({ t: +rows[i].t.toFixed(2), n, a: +rows[i].P.ring.a.toFixed(3), rEnd: +rEnd.toFixed(3), onClear: rows[i].P.drop === 1 }); }
+    const strayRing = rows.filter((r, i) => r.P.ring && r.P.drop !== 1 && (i === 0 || !rows[i - 1].P.ring)).length;
+    console.log(`     ${name.padEnd(22)} shockwaves ${JSON.stringify(waves)}`);
+    ok(waves.length === clears.length && waves.every((w) => w.onClear) && strayRing === 0, `music: ${name} — ${waves.length} shockwave(s) == ${clears.length} confirmed clear(s), each on the clear's frame, none elsewhere`);
+    ok(waves.every((w) => Math.abs(w.n - Math.round(K.SW_T * 60 * 60 / Math.max(60, rows.find((r) => r.t >= w.t).S.bpm))) <= 2 && Math.abs(w.rEnd - K.SW_C * K.SW_T) <= 0.03 && w.a > 0), `music: ${name} — every shockwave lasts SW_T ${K.SW_T} beats (±2 frames) with its front at SW_C·SW_T ${(K.SW_C * K.SW_T).toFixed(2)} screen heights (±.03) and A > 0`);
     // §111 item 6: the sub emitter's x on the tonic's axis — off the walls on CyborgNinja (its held C sat at .04 before)
     const xs = rows.filter((r) => r.S.subGate > 0).map((r) => r.P.splats.find((p) => p.k === 'sub').x).sort((a, b) => a - b);
     if (xs.length) { const p10 = xs[Math.floor(0.1 * xs.length)], p50 = xs[xs.length >> 1], p90 = xs[Math.floor(0.9 * xs.length)]; console.log(`     ${name.padEnd(22)} sub x p10 / p50 / p90 ${p10.toFixed(2)} / ${p50.toFixed(2)} / ${p90.toFixed(2)} over ${xs.length} open frames`);

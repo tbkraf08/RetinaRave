@@ -108,7 +108,10 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               uv, dx dy in uv/s (added once to the field), rgb LINEAR 0..1 (the ink), r the Gaussian's radius
                               (`params.radius` = 0.0025 by default, ×2 for a kick, ×4 for a drop) · `force(fx, fy)` a uniform body
                               force this frame in uv/s² (a uniform force in a closed pool is a pure pressure gradient the projection
-                              absorbs — splat where you want motion) · `params` `{curl, velDiss, dyeDiss, pressure, iters, radius}`
+                              absorbs — splat where you want motion) · `ring(a, r, w)` (§113) a radial velocity ring round the screen's
+                              centre on the next step: `a` uv/s at the front, `r` its distance in screen heights, `w` its Gaussian width,
+                              SET into the velocity (the grammar's shockwave on the confirmed drop is one; §1.4 says how it is applied) ·
+                              `wave` that step's ring `{a, r, w}` or null · `params` `{curl, velDiss, dyeDiss, pressure, iters, radius}`
                               the live values the grammar set this frame; a scene may override them for the frame (`params.curl += 10`)
                               — the core rewrites them every step. The step runs BEFORE update(): a scene's splat lands on the
                               next step. A scene that is not on screen must not splat (gate on `visibility`, env.SC) — the
@@ -210,8 +213,16 @@ needed, now generic:
   consumer in the core is the feedback pass, which back-traces a scene's trail along its velocity when that scene opts in
   (`fb.advect`, §105; **off by default since §109 — FLUID opts in; the user's 2026-10-09 call: "I don't like the fluid dynamics
   effecting the other scenes … nav, particles, torus"**);
-  FLUID (id 12, §106) shows the dye itself, lit as a liquid surface; its own two injections (a ring on the drop, a sparkle on the hats)
-  go through `splat`, gated on `visibility` — the pool is one under every scene. **`params` is rewritten by the step BEFORE `update()`**,
+  FLUID (id 12, §106) shows the dye itself, lit as a liquid surface; its one injection of its own (a sparkle on the hats; §113 took its
+  six-droplet drop ring out — the substrate's shockwave is the one ring) goes through `splat`, gated on `visibility` — the pool is one
+  under every scene. **The force kinds** (DECISIONS §104, §113): `splat(x, y, dx, dy, rgb, r?)` a Gaussian impulse of velocity and dye;
+  `force(fx, fy)` a uniform body force (weak by construction — the projection removes its gradient part); **`ring(a, r, w)`** (§113) a
+  RADIAL VELOCITY RING round the screen's centre — `a` uv/s at the front, `r` the front's distance in screen heights, `w` its Gaussian
+  width — SET into the velocity (not added: a radial field is curl-free and an added one would be projected away) on the next step, the
+  same one-frame caveat as `splat`; the grammar's own shockwave on the confirmed drop (`dropLiveEvt || mapDropEvt` with the sub back
+  within `CLEAR_PEND`, §111 item 5) is applied on the frame it fires, the front at one screen radius per beat for half a beat, and where a
+  scene's ring and the grammar's land on one step the larger amplitude wins (`CARD.fluid.wave` is that step's ring). It costs no draw:
+  the ring rides the velocity advect pass as a uniform branch. **`params` is rewritten by the step BEFORE `update()`**,
   so a scene's `params.curl += 10` in `update()` is overwritten before any step reads it (§106 found the plan's override dead; a
   scene wants a `bias` slot the step adds after the grammar — not built).
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect

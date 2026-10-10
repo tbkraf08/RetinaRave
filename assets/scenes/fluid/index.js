@@ -9,21 +9,23 @@
 //
 // WHAT IS WHOSE. The music → pool grammar is the CORE's (core/fluid/inject.js, its reads in FLUID_FEATS, shown in the help
 // view's part B): the sub is where the ink enters, the kick lifts it, the snare shears it, the hats are droplets, the key is
-// its colour, the beat kneads it, the filter makes it syrup, the void lets it accumulate, the live drop clears it. This scene
-// READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js); it adds two injections of its own through
-// ctx.fluid.splat, gated on being on screen (the pool is one under every scene): a ring of six droplets outward on the
-// drop and a sparkle on the surface while the hats are up. Its own reads are exactly `feats`: the loudness ladder for the
-// exposure (math/loudlight.js, as NAV2), the hats and presence. THE RING FOLLOWS THE GRAMMAR'S CLEAR (§111 item 5): the frame
-// `ctx.fluid.params.dyeDiss` reaches the clear's value is the frame the substrate confirmed a drop (a trigger — the map's bar line
-// or the live detector — with the sub emitter opening within 1.5 beats; one per bar), so the ring is never thrown over a pool that
-// did not clear (IBelongHere's four false live arms, Comptine's six: the §106–§109 slam rule threw it on every one). A scene must not import core/fluid (check.js):
-// everything through ctx.fluid. The plan's `ctx.fluid.params.curl += 10` is NOT done: the step runs BEFORE update() and
-// rewrites params from the grammar, so a scene's write there is overwritten before any step reads it (reported, §106).
+// its colour, the beat kneads it, the filter makes it syrup, the void lets it accumulate, the live drop clears it — and, since
+// §113, THROWS it: the confirmed drop fires the grammar's SHOCKWAVE, a radial velocity ring from the screen's centre out at one
+// screen radius per beat (the ink thrown outward, the centre clean, refilled by the drop's kicks). This scene READS the dye
+// (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js); it adds one injection of its own through ctx.fluid.splat,
+// gated on being on screen (the pool is one under every scene): a sparkle on the surface while the hats are up. Its own reads
+// are exactly `feats`: the loudness ladder for the exposure (math/loudlight.js, as NAV2), the hats and presence. The §106 ring
+// of six droplets on the drop is GONE (§113): it was six point-pushes standing in for the velocity ring the substrate now has —
+// one ring, not two; `kick.x` (the monitor's one declared cut) is now the shockwave's envelope, raised on the frame the
+// grammar's clear fires (`ctx.fluid.params.dyeDiss` reaching the clear's value — §111 item 5's confirmed drop; one per bar).
+// A scene must not import core/fluid (check.js): everything through ctx.fluid. The plan's `ctx.fluid.params.curl += 10` is
+// NOT done: the step runs BEFORE update() and rewrites params from the grammar, so a scene's write there is overwritten before
+// any step reads it (reported, §106).
 //
 // Under &fluid=0 / key W / no float render targets the dye is the 1×1 black placeholder: draw() paints the empty pool's
 // idle (faint rings on musical time) and hud() says why. Nothing here reads a wall clock or Math.random: the sparkle's x
 // walks the golden ratio on the scene's own count.
-import { clamp, ema, frac, TAU } from '../../math/util.js';
+import { clamp, ema, frac } from '../../math/util.js';
 import { baseLight } from '../../math/loudlight.js';
 import { SHOW_FS } from './shaders.js';
 import { HELP } from './help.js';
@@ -35,12 +37,8 @@ const SPEC = 0.6;          // the highlight's gain
 const RELIEF = 24;         // the gradient's gain: ink differs by hundredths over two dye texels, the normal needs ×24 to tilt
 const PORT0 = 0.88;        // the porthole feather, inner radius on the frame's superellipse …
 const PORT1 = 1.04;        // … and outer: the corners and the walls are outside the picture
-const RING_N = 6;          // the live drop: six droplets on a ring round the centre, thrown outward
-const RING_R = 0.22;       // the ring's radius in screen heights
-const RING_V = 1.6;        // their speed, uv/s (the grammar's drop impulse is 2.5 from the floor; this is the sideways clear)
-const RING_DYE = 0.04;     // the ink they carry (a little white: the ring is a PUSH, the §106 strip showed 0.12 filling the pool with grey)
-const RING_RAD = 3;        // their radius, × the grammar's splat radius
-const RING_TC = 0.5;       // the ring's envelope for the hud / monitor (the monitor's declared cut)
+const RING_TC = 0.5;       // the drop's envelope for the hud / monitor (the monitor's declared cut): raised on the grammar's confirmed clear —
+                           //   §113: the shockwave's frame; the §106 six-droplet ring that fired here is gone (the substrate's ring replaces it)
 const HAT_ON = 0.3;        // the sparkle: while hat2 is above this (the grammar's own gate) …
 const HAT_GAP = 0.05;      // … one droplet every 50 ms, never two in a frame
 const HAT_Y = 0.93;        // at the surface
@@ -51,7 +49,6 @@ const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15
 
 const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
 const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0 };
-let ASP = 16 / 9;
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
 function flinfo() {
@@ -66,7 +63,7 @@ function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
 const SELF = {
   name: 'fluid',
   id: 12,
-  tag: 'the fluid substrate as itself — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the key colours it, the drop clears it',
+  tag: 'the fluid substrate as itself — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the key colours it, the drop clears it and throws it outward',
   card: { title: 'FLUID', blurb: 'ink in a pool: the bass note is where it enters, every kick lifts it, the snare shears it, the key is its colour' },
   feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'arc', 'bassS', 'keyConf', 'centroid'], // the last four are the bid's alone (§114; help.js says 'the bid:')
   cuts: 'continuous',
@@ -74,7 +71,7 @@ const SELF = {
   hooks: { flinfo, fldbg },
   // the continuity monitor's shape (tools/monitor.js reads CARD.NAV || CARD.home; a run points CARD.NAV here): cPath is the
   // scene's own continuous state — the exposure and the on-screen weight; pathCut 3 = measure every frame (CHLADNI's note);
-  // kick.x is the drop ring's envelope, the one declared cut (it rises on the drop frame)
+  // kick.x is the drop's envelope (§113: the shockwave's frame), the one declared cut (it rises on the drop frame)
   state: { mode: 'pool', cPath: [1, 0], pathCut: 3, kick: { x: 0 }, baby: null },
 
   // FLUID's territory (§114, the user: "add fluid to the bid"): sub-driven passages under a sure key — the ink enters where the bass
@@ -91,7 +88,6 @@ const SELF = {
 
   init(ctx) {
     this.ctx = ctx;
-    ctx.onResize((w, h) => { ASP = w / Math.max(1, h); });
     this.pr = ctx.mkProg(ctx.oklch + SHOW_FS, 'fluid-show');
   },
 
@@ -110,14 +106,7 @@ const SELF = {
       const g = MS.presence, rad = F.params.radius;
       const clearing = F.params.dyeDiss >= CLEAR_DD ? 1 : 0, drop = clearing && !U.clearing;   // §111: the grammar's confirmed clear, on its first frame
       U.clearing = clearing;
-      if (drop) {                                  // the ring: six droplets thrown outward — the picture empties from the middle
-        U.ring = 1;
-        for (let i = 0; i < RING_N; i++) {
-          const a = TAU * (i + 0.5) / RING_N, cx = Math.cos(a), sy = Math.sin(a);
-          F.splat(0.5 + RING_R * cx / ASP, 0.5 + RING_R * sy, RING_V * g * cx / ASP, RING_V * g * sy, [RING_DYE * g, RING_DYE * g, RING_DYE * g], rad * RING_RAD);
-          U.nSplat++;
-        }
-      }
+      if (drop) U.ring = 1;                        // §113: the grammar's shockwave fires on this frame (its own ring, in the substrate); the envelope for the monitor
       if (MS.hat2 > HAT_ON && U.hatT <= 0) {       // the sparkle: one droplet onto the surface, at most every HAT_GAP
         U.hatT = HAT_GAP;
         U.nHat++;

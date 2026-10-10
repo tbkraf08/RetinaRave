@@ -47,14 +47,14 @@ const f = (v, d = 2) => (v == null || !isFinite(+v) ? 'null' : (+v).toFixed(d));
 const dyeOf = (s) => (s ? s.r + s.g + s.b : 0);
 if (mode === 'frame' || mode === 'events') {
   for (const r of sel) {
-    if (mode === 'events' && !(r.P.splats.length || r.S.dropEvt || r.S.kickEvt || r.S.snareEvt)) continue;
+    if (mode === 'events' && !(r.P.splats.length || r.S.dropEvt || r.S.kickEvt || r.S.snareEvt || r.P.ring)) continue;
     const S = r.S, k = r.kinds, P = r.P;
-    console.log(`${f(r.t, 3)} g=${f(P.gain)} n=${P.splats.length} | sub${k.sub ? ' x=' + f(k.sub.x) + ' dy=' + f(k.sub.dy, 3) : ' -'} | kick${k.kick ? ' dy=' + f(k.kick.dy) + ' amp=' + f(S.kickAmp) : ' -'} | snare${k.snare ? ' dx=' + f(k.snare.dx) + ' amp=' + f(S.snareAmp) : ' -'} | chord${k.chord ? ' dx=' + f(k.chord.dx, 3) + ' Δ=' + f(P.chord) : ' -'} | hats=${r.want.hat} | floor${k.floor ? ' dye=' + f(dyeOf(k.floor), 4) + ' mid=' + f(S.mid) : ' -'} | body=${f(P.body, 3)} | dyeDiss=${f(P.params.dyeDiss)} curl=${f(P.params.curl, 0)} | tongueOn=${S.tongueOn} dropLive=${S.dropLiveEvt} mapDrop=${S.mapDropEvt} dropEvt=${S.dropEvt}${k.unclassified ? ' UNCLASSIFIED ' + k.unclassified : ''}`);
+    console.log(`${f(r.t, 3)} g=${f(P.gain)} n=${P.splats.length} | sub${k.sub ? ' x=' + f(k.sub.x) + ' dy=' + f(k.sub.dy, 3) : ' -'} | kick${k.kick ? ' dy=' + f(k.kick.dy) + ' amp=' + f(S.kickAmp) : ' -'} | snare${k.snare ? ' dx=' + f(k.snare.dx) + ' amp=' + f(S.snareAmp) : ' -'} | chord${k.chord ? ' dx=' + f(k.chord.dx, 3) + ' Δ=' + f(P.chord) : ' -'} | hats=${r.want.hat} | floor${k.floor ? ' dye=' + f(dyeOf(k.floor), 4) + ' mid=' + f(S.mid) : ' -'} | body=${f(P.body, 3)} | dyeDiss=${f(P.params.dyeDiss)} curl=${f(P.params.curl, 0)} | tongueOn=${S.tongueOn} dropLive=${S.dropLiveEvt} mapDrop=${S.mapDropEvt} dropEvt=${S.dropEvt}${P.ring ? ' | RING a=' + f(P.ring.a, 3) + ' r=' + f(P.ring.r, 3) + (P.drop ? ' FIRED' : '') : ''}${k.unclassified ? ' UNCLASSIFIED ' + k.unclassified : ''}`);
   }
 } else {
   const by = new Map();
   for (const r of sel) { const s = Math.floor(r.t); if (!by.has(s)) by.set(s, []); by.get(s).push(r); }
-  console.log('sec | n | g | pres | loudRel | mid | subGate% | kicks (amp) | snares (amp) | chords (Δsnare) | hats | floor frames · dye/s | drops L/M/E | splats | Σ|dv| uv/s | Σdye | dyeDiss | curl');
+  console.log('sec | n | g | pres | loudRel | mid | subGate% | kicks (amp) | snares (amp) | chords (Δsnare) | hats | floor frames · dye/s | drops L/M/E | splats | Σ|dv| uv/s | Σdye | dyeDiss | curl | shockwave (frames · A)');
   let tot = { sec: 0, inj: 0, floorSec: 0, chordSec: 0 };
   for (const [s, rs] of [...by.entries()].sort((a, b) => a[0] - b[0])) {
     const m = (fn) => rs.reduce((a, r) => a + fn(r), 0) / rs.length;
@@ -66,7 +66,8 @@ if (mode === 'frame' || mode === 'events') {
     const nsp = rs.reduce((a, r) => a + r.P.splats.length, 0), hats = rs.reduce((a, r) => a + r.want.hat, 0);
     const drops = [rs.filter((r) => r.S.dropLiveEvt).length, rs.filter((r) => r.S.mapDropEvt).length, rs.filter((r) => r.S.dropEvt).length];
     tot.sec++; if (nsp) tot.inj++; if (floorN) tot.floorSec++; if (chords.length) tot.chordSec++;
-    console.log(`${s} | ${rs.length} | ${f(m((r) => r.P.gain))} | ${f(m((r) => r.S.presence))} | ${f(m((r) => r.S.loudRel))} | ${f(m((r) => r.S.mid || 0))} | ${f(100 * m((r) => (r.S.subGate > 0 ? 1 : 0)), 0)}% | ${kicks.length} (${kicks.join(' ')}) | ${snares.length} (${snares.join(' ')}) | ${chords.length} (${chords.join(' ')}) | ${hats} | ${floorN} · ${f(floorDye, 3)} | ${drops.join('/')} | ${nsp} | ${f(dv)} | ${f(dye, 2)} | ${f(m((r) => r.P.params.dyeDiss))} | ${f(m((r) => r.P.params.curl), 0)}`);
+    const ringN = rs.filter((r) => r.P.ring).length, ringA = rs.find((r) => r.P.ring && r.P.drop);   // §113: the shockwave's frames this second, its A on the frame it fired
+    console.log(`${s} | ${rs.length} | ${f(m((r) => r.P.gain))} | ${f(m((r) => r.S.presence))} | ${f(m((r) => r.S.loudRel))} | ${f(m((r) => r.S.mid || 0))} | ${f(100 * m((r) => (r.S.subGate > 0 ? 1 : 0)), 0)}% | ${kicks.length} (${kicks.join(' ')}) | ${snares.length} (${snares.join(' ')}) | ${chords.length} (${chords.join(' ')}) | ${hats} | ${floorN} · ${f(floorDye, 3)} | ${drops.join('/')} | ${nsp} | ${f(dv)} | ${f(dye, 2)} | ${f(m((r) => r.P.params.dyeDiss))} | ${f(m((r) => r.P.params.curl), 0)} | ${ringN ? ringN + (ringA ? ' · A ' + f(ringA.P.ring.a, 2) : '') : '-'}`);
   }
   console.log(`# seconds with any injection ${tot.inj}/${tot.sec} · with the floor ${tot.floorSec} · with a chord shear ${tot.chordSec}`);
 }
