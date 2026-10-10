@@ -759,6 +759,11 @@ def analyse(path, brief=False, pcm=False, grains=(8, 5, 3, 2, 1, 0.569, 0.224), 
         if 'hand' in old.get('bpm_grid', {}) and 'hand' not in out['bpm_grid']:
             out['bpm_grid']['hand'] = old['bpm_grid']['hand']
             print('  (carried over bpm_grid.hand from the file on disk)')
+        if 'bpm_tool' in old.get('summary', {}):      # a hand-validated summary tempo (RaindropsOnRoses, §117 addendum): the ear's figure
+            out['summary']['bpm_tool'] = out['summary']['bpm']   # stays `bpm`, the tool's own goes under `bpm_tool` (windows.py and
+            out['summary']['bpm'] = old['summary']['bpm']        # test_music's clock rule read `bpm`)
+            if 'bpm_note' in old['summary']: out['summary']['bpm_note'] = old['summary']['bpm_note']
+            print('  (carried over summary.bpm from the file on disk; the tool\'s figure is summary.bpm_tool)')
     json.dump(out, open(jp, 'w')); print('\njson ->', os.path.relpath(jp))
     return summ
 

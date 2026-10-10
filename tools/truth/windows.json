@@ -286,7 +286,7 @@
   "RaindropsOnRoses": {
    "track": "RaindropsOnRoses",
    "seconds": 222.7,
-   "bpm": 93.8,
+   "bpm": 140.0,
    "loudest30_from": 76,
    "drops": [
     41.134,
@@ -364,7 +364,7 @@
     "from": 56.0,
     "to": 116.0
    },
-   "gate": false,
+   "gate": true,
    "start": 24.0
   },
   "SeeYouDrop": {

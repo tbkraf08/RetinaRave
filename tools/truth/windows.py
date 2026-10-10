@@ -20,7 +20,7 @@ Per track, one RUN per `at` (a cold deterministic start there, HARNESS "File sou
   rulers  from max(S, L − 20) to from + 60   the continuity / luminance window: the approach to the loudest 30 s and the 30 s itself
   <user>  the user's named moments (USER below: RaindropsOnRoses bass56 / event66), on a run that covers them; not in the DEFAULT scope
 The pad take (rec, FLUID-DIAG-2026-10-09, 24.4 s, &map=0 only): intro at 0 t 10 and chords t 20 (§108's 19–21 s attacks), rulers 0 → 24.4.
-`gate` false (Malicious, RaindropsOnRoses — NO_GATE) = recorded and swept for the record, never a FAIL and never asserted.
+`gate` false (Malicious — NO_GATE) = recorded and swept for the record, never a FAIL and never asserted.
 `start` (RaindropsOnRoses 24 s) = the track starts there for every harness purpose: no run, window or trace before it.
 """
 import json, math, os, sys
@@ -29,9 +29,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TRACKS = ['Comptine', 'CyborgNinja', 'IBelongHere', 'Malicious', 'RaindropsOnRoses', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty']
 # `gate: false` — in the sweeps and the traces for the record, but NOT a FAIL rule and NOT asserted by the node tests (§109: the user,
 # 2026-10-09: "can ignore malicious until I validate the ruler" — the map's sub ruler on Malicious is pending his validation)
-# RaindropsOnRoses (the eighth track, 2026-10-10, DECISIONS §117): its truth is the tool's (the DP grid's beat phase was never placed
-# on the audio, dp_residual 62.2 ms; the drops are bar-pinned to it) and the user has not validated a ruler on it — measured, not a gate.
-NO_GATE = {'Malicious', 'RaindropsOnRoses'}
+# RaindropsOnRoses (the eighth track, 2026-10-10, DECISIONS §117) was here from its import until the user validated its ruler the same
+# afternoon (§117 addendum "the ruler validated": the DP grid vs the flat 140.00 lattice, 24–84 s + 125–160 s, and 140 vs 70 — "can't tell
+# difference between B / A; the 140 click nods better then the 70") → `bpm_grid.hand`, summary.bpm 140.0, and a gate since.
+NO_GATE = {'Malicious'}
 # `start` — the track starts HERE for every harness purpose (the user, 2026-10-10, on RaindropsOnRoses: "note: start from 24 secs"):
 # the intro run is cold at `start`, no window and no run begins before it, the rulers window begins no earlier, and tools/traces.sh
 # records start → start + 110 s. Absent = 0 (the seven).
