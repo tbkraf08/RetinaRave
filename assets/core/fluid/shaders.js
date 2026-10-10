@@ -79,10 +79,15 @@ o=vec4(v/uScale,0.,1.);}`;
 // 2(r − front)/w²) is analytic: positive inside the front (the ink thinned as the front sweeps through it), negative outside (piled up
 // at the front) — the ink is CARRIED outward, not copied. A = 0 is the identical program path (a uniform branch), so every step without
 // a wave is bit-for-bit the §104 pass.
+// §116 S1 uSwirl: the band grammar's SWIRL — a solid-body rotation round the screen's centre on the VELOCITY pass, the angular
+// acceleration uSwirl (1/s², p aspect-corrected in screen heights: v += uSwirl·dt·(−p.y, p.x), the x back over the aspect). Its curl
+// is 2·uSwirl everywhere, so the projection keeps it in a closed box (only the walls' normal part goes). 0 is the identical program path
+// (a uniform branch, never a mix — the roster's and FLUID's identity rest on it as on the ring's); the dye pass always passes 0.
 export const ADVECT = `
-uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody,uAspect;uniform vec2 uForce;uniform vec3 uRing;uniform int uDye;
+uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody,uAspect,uSwirl;uniform vec2 uForce;uniform vec3 uRing;uniform int uDye;
 void main(){vec2 c=vUv-uDt*texture(uVel,vUv).xy;vec4 r=texture(uSrc,c)/(1.+uDiss*uDt);
 r.y+=uBody*uDt*cos(3.14159265*(2.*vUv.x-1.));r.xy+=uForce*uDt;
+if(uSwirl!=0.){vec2 s=vUv-.5;s.x*=uAspect;r.xy+=uSwirl*uDt*vec2(-s.y/uAspect,s.x);}
 if(uRing.x>0.){vec2 p=vUv-.5;p.x*=uAspect;float d=max(length(p),1e-3);float m=exp(-pow((d-uRing.y)/uRing.z,2.));
 if(uDye==1){float dv=uRing.x*m*(1./d-2.*(d-uRing.y)/(uRing.z*uRing.z));r.xyz*=dv>0.?1./(1.+dv*uDt):1.-dv*uDt;}
 else{vec2 h=p/d;r.xy=mix(r.xy,uRing.x*vec2(h.x/uAspect,h.y),m);}}

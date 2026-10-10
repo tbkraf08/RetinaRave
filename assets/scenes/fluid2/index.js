@@ -6,9 +6,10 @@
 // same show pass (shaders.js, a copy of FLUID's that diverges at S4), the same sparkle — and the scene card names its grammar:
 // `fluid: { grammar: 'bands' }` (CONTRACTS §1.4). While FLUID2 owns the pool (SC.next if a fade runs, else SC.cur — loop.js) the step
 // plans through core/fluid/inject2.js, whose plan() runs inject.js's plan() on the SHARED base state and edits the result by kind;
-// at S0 it is the identity, so this scene is pixel-identical to FLUID (the §116 proof: s13's 58 real lines = s12's, hash for hash).
-// S1–S6 make the bands different KINDS of coupling (the sub a field, the kick a travelling mass, the mids the material, the highs
-// the surface, the vocals a pen, time breathing) — all of it in inject2.js, nothing here. Forced-only (`&scene=13`, `n` cycles to it):
+// at S0 it was the identity (the §116 proof: s13's 58 real lines = s12's, hash for hash); since S1 the sub is a FIELD — the emitter's
+// jet is gone, the whole pool heaves with the sub's envelope on the breath's channel (and may swirl / flip by K2), its ink still entering
+// at the bass note's place. S2–S6 make the other bands different KINDS of coupling (the kick a travelling mass, the mids the material,
+// the highs the surface, the vocals a pen, time breathing) — all of it in inject2.js, nothing here. Forced-only (`&scene=13`, `n` cycles to it):
 // NOT on the director's bid, no fit model, no landing tile until the user asks. A scene must not import core/fluid (check.js):
 // everything through ctx.fluid; the dye is read through ctx.engineTex.dye. What FLUID's header says about the pool, the
 // sparkle (one frame late — the step precedes update()), the §106 dead params override and the idle under &fluid=0 holds here.
@@ -44,7 +45,7 @@ function flinfo() {
 function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
   const F = SELF.ctx && SELF.ctx.fluid;
   if (!F) return JSON.stringify({ on: false });
-  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params });
+  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4) });   // §116 S1: the field's values on the last step
 }
 
 const SELF = {
@@ -114,7 +115,7 @@ const SELF = {
 
   hud() {
     const F = this.ctx && this.ctx.fluid;
-    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0);
+    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0) + ' heave ' + F.heave.toFixed(2) + ' swirl ' + F.swirl.toFixed(2);   // §116 S1: the sub's field
     return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' · ' + sub;
   },
 
