@@ -75,7 +75,8 @@
 // The MASK (CURL_MASK 1): `uCurlMask` on the vort pass — the confinement at its full value in the band CURL_Y0..CURL_Y1 (the mids' ink
 // enters at mid height, §108), CURL_LO of it outside, feathered CURL_FE; (0, 1, 1, 0) is the identical program path (a uniform branch, never
 // a mix — the ring's and the swirl's rule). The SNARE (SNARE_JET 1): the base's two shears at (.3, .5) / (.7, .5) — equal, opposite, inward —
-// become ONE jet from a wall (x SNARE_X in from the left or the right wall, alternating by the snare count, y SNARE_Y) at the pair's
+// become ONE jet from a wall (x SNARE_X in from the left or the right wall — a hair in, never AT it: the projection cancels a push at a
+// closed wall — alternating by the snare count, y SNARE_Y) at the pair's
 // momentum (Σ|dx|·rad) and ink, spread over SNARE_N frames (S2's jet shape: a pending queue at 1 / SNARE_N per frame) — a shear burst
 // that crosses the pool, `k: 'sjet'`; the harmonic branch's one directed splat (`k: 'snare'`, kept) and the chord shears (`k: 'chord'`)
 // are untouched. `mids` { pos, curl, mask } and `snare` { kind, mom: Σ|dx|·rad, ink, n, side } in the return for the rulers.
@@ -127,7 +128,8 @@ export const K = {
   CURL_FE: 0.1,    //   the band's feather (screen heights) on each edge
   SNARE_JET: 1,    // S3 the snare: 0 the base's pair (two inward shears at (.3, .5) / (.7, .5)) · 1 ONE jet from a wall at the pair's momentum and ink,
                    //   alternating walls by the snare count (the harmonic branch's one directed splat is kept either way)
-  SNARE_X: 0.02,   //   the jet's place in from its wall (uv) …
+  SNARE_X: 0.12,   //   the jet's place in from its wall (uv) — NOT at the wall: a push AT a closed wall is projected away (the RaindropsOnRoses strips, §116 S3:
+                   //   at .02 the burst's front is 0 by +1 beat, at .12 it carries itself .14 — twice the pair's — and at .2 it runs .18 but starts a fifth of the way in) …
   SNARE_Y: 0.5,    //   … at this height (the pair's)
   SNARE_N: 4,      //   the jet spread over this many frames at 1 / SNARE_N of its push and ink (1 = one stamp)
 };
