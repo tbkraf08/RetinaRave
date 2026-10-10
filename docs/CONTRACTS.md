@@ -131,7 +131,11 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               sub shut two bars the HARMONIC BRANCH: every hit at the harmony's place, applause / noise injects
                               nothing (§111) — pads, chords and vocals had no channel before §108, a piano no "where" before
                               §111) is the core's (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's
-                              part B); a scene adds on top. A grammar change is tuned and proven on every library track —
+                              part B); a scene adds on top. Under FLUID2's band grammar (core/fluid/inject2.js, §116) the sub is a
+                              FIELD, never a dot: its ink still enters at the bass note's place on the tonic axis but its push is a
+                              body force on the whole pool — the sub band's envelope against its own slow mean, WITH the breath (the
+                              sub is the pool's weight: the attack deepens the beat's gravity, the void's entry lifts and stills the
+                              pool, the drop's return slams it), a swirl as a K2 switch; the rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
@@ -238,8 +242,13 @@ needed, now generic:
   own state starts cold on its first frame and must be a transient or ease from its neutral value. A card naming a grammar not in the
   table FAILS `check.js` (the loop would fall back to `'pool'`). `CARD.fluid.grammar` reports the name that planned the last step,
   `CARD.fluid.K2` the band grammar's constants, `CARD.benchFluid(n, ring, 'bands')` benches either; the HUD's fluid line and the help
-  view's part B say which grammar owns the pool and list ITS reads. At S0 (`'bands'` is the identity) FLUID2 is FLUID to the pixel:
-  s13's 58 real-md5 lines = s12's hash for hash (§116).
+  view's part B say which grammar owns the pool and list ITS reads. At S0 (`'bands'` is the identity) FLUID2 was FLUID to the pixel:
+  s13's 58 real-md5 lines = s12's hash for hash (§116). **A grammar's return fields beyond inject.js's** (S1): `heave` (uv/s², what it
+  added to `body` — the breath's shaped channel, so no new uniform), `swirl` (the `uSwirl` uniform on the velocity advect pass: a
+  solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical program path — a uniform branch, never a mix, as the ring's
+  A = 0), `subEnv` (the envelope, for the rulers). `fluid.js` reads them from the plan of the grammar that owns the step; the pool
+  grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
+  the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
   the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **0 default

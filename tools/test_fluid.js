@@ -43,9 +43,13 @@
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
 //   bands      §116 the grammar switch (FLUID2-PLAN §2): inject2.js exports inject.js's interface, its FLUID_FEATS ⊇ the base's and ⊂ FEATS;
 //              grammar.js's table picks inject2 for a card declaring fluid.grammar 'bands' (FLUID2) and inject for FLUID / no slot / an unknown
-//              name; S0's identity — plan2 on SeeYouDrop's real trace = plan() to the byte, and on 600 synthetic frames; the shared base state:
-//              st2.base IS st, 300 frames of one grammar then the other continue the same run (warm in both directions); determinism of plan2;
-//              the Proxy MS that throws on a read outside inject2's list
+//              name; S1 (the sub as a FIELD) — plan2 = plan() on every field but the sub splat's velocity (dx = dy = 0: the jet is gone, the ink
+//              kept) and the body (= the base's + the heave) on 600 synthetic frames and on SeeYouDrop's real trace; the heave reads `sub`: > .1 on
+//              the attack, < −.1 in the tail, ~0 mean on a steady pulse, 0 on the first (cold) frame, |heave| ≤ HEAVE; sub 0 → the body the
+//              base's to the bit; the switches FLIP 1 (bar parity) / FLIP 2 (the glide's sign) / SWIRL / HEAVE_DC / SUB_INK 0 and .5 (re-governed,
+//              never above the base's dyeDiss); the void before SeeYouDrop's drop 1 stills the field; the shared base state: st2.base IS st,
+//              300 frames of one grammar then the other = plan() alone's base STATE to the byte (warm in both directions), the first band frame
+//              no burst; determinism of plan2 with the field on; the Proxy MS that throws on a read outside inject2's list
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -503,48 +507,115 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   }
 }
 
-// bands (§116, FLUID2-PLAN §2): the grammar switch — the table, the card's slot, S0's identity, the shared base state, determinism, the Proxy
+// bands (§116, FLUID2-PLAN §2 + S1): the grammar switch — the table, the card's slot, the shared base state, determinism, the Proxy —
+// and S1's relation to the base: plan2 = plan() on every field but the sub splat's velocity (gone), the body (+ the heave) and the new
+// fields; the heave reads `sub`; the neutral path (sub 0) is the base's to the bit; the field is bounded; the flip / swirl / ink switches
 {
-  const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS;
+  const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS, K2 = INJ2.K;
   ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
   ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
   const undecl2 = FEATS2.filter((k) => !(k in FEATS));
   ok(undecl2.length === 0, 'bands: every inject2 FLUID_FEATS key in FEATS' + (undecl2.length ? ' — missing ' + undecl2.join(',') : ''));
+  ok(FEATS2.includes('sub') && !FLUID_FEATS.includes('sub'), 'bands: S1 — inject2 reads `sub` (the envelope\'s source), the base does not');
   ok(GRAMMARS.pool.plan === plan && GRAMMARS.bands.plan === plan2 && DEFAULT_GRAMMAR === 'pool', 'bands: the table — pool is inject.js, bands is inject2.js, the default is pool');
   ok(fluid2Scene.id === 13 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 13) declares fluid.grammar bands and the dispatch picks it');
   ok(fluidScene.id === 12 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 12) declares no slot → pool');
   ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf(undefined) === 'pool' && grammarOf({ fluid: {} }) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'toString' } }) === 'pool', 'bands: no slot, no card, an unknown name, an inherited name → pool (check.js fails the card; the loop never mixes)');
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
-  // the identity on 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid
-  const synth = (i) => base({ subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
+  // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
+  // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
+  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; return Q; };
+  const frac = (x) => x - Math.floor(x);
+  // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
+  const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
     kickEvt: i % 30 === 0, kickAmp: 0.5 + 0.4 * frac(i * 0.137), kickAge: (i % 30) / 60, snareEvt: i % 60 === 30, snareAmp: 0.6, snare: i % 60 === 30 ? 0.7 : 0.1,
     hat2: i % 15 < 8 ? 0.6 : 0, denH: 2, mid: 0.5, tension: 0.4, lpSweep: 0.2 + 0.001 * (i % 100), dropLiveEvt: i === 420, buildLive: i > 300 && i < 420 ? 0.8 : 0 });
-  const frac = (x) => x - Math.floor(x);
   {
     const sa = mkState(), sb = mkState2(), A = [], B = [];
     for (let i = 0; i < 600; i++) { const S = synth(i); A.push(plan(S, DT, sa)); B.push(plan2(S, DT, sb)); }
-    const ja = JSON.stringify(A), jb = JSON.stringify(B);
-    ok(ja === jb && A.some((r) => r.splats.length > 3) && A.some((r) => r.drop === 1), 'bands: S0 identity — plan2 = plan() to the byte on 600 synthetic frames (' + ja.length + ' chars; kicks, snares, hats, a floor and a clear in them)');
+    const ja = JSON.stringify(A.map(strip)), jb = JSON.stringify(B.map(strip));
+    ok(ja === jb && A.some((r) => r.splats.length > 3) && A.some((r) => r.drop === 1), 'bands: S1 — plan2 = plan() on every field but the sub splat\'s velocity on 600 synthetic frames (' + ja.length + ' chars; kicks, snares, hats, a floor and a clear in them)');
+    const subA = A.flatMap((r) => r.splats.filter((s) => s.k === 'sub')), subB = B.flatMap((r) => r.splats.filter((s) => s.k === 'sub'));
+    ok(subA.length === 600 && subB.length === 600 && subA.every((s) => s.dy > 0) && subB.every((s) => s.dx === 0 && s.dy === 0 && s.r + s.g + s.b > 0), 'bands: S1 — the emitter\'s jet is gone: the sub splat has dx = dy = 0 on every frame under the band grammar (dy > 0 under the pool\'s), its ink kept (SUB_INK 1)');
+    ok(B.every((r, i) => r.heave === 0 && r.swirl === 0 && r.body === A[i].body) && B.every((r) => r.subEnv === 0), 'bands: S1 — the neutral path: sub 0 → heave 0, swirl 0, the body the base\'s to the bit on all 600 frames');
+    ok(B.every((r, i) => Math.abs(r.params.dyeDiss - A[i].params.dyeDiss) < 1e-9 && Math.abs(r.ink - A[i].ink) < 1e-9), 'bands: S1 — the ink unchanged in the budget\'s units (SUB_INK 1, the cloud\'s dye ÷ SUB_RAD²) → the governor and dyeDiss are the base\'s within 1e-9');
     ok(sb.base !== null && sb.base !== sa && JSON.stringify(sb.base) === JSON.stringify(sa), 'bands: a standalone mkState2() makes its own base on the first plan2 (a replay tool needs no wiring), and it ends in the base\'s state');
+  }
+  { // the heave reads the sub: the band pulsing 10 frames on / 20 off each beat, 1200 frames (the slow mean settles in the first 600)
+    const sa = mkState(), sb = mkState2(), A = [], B = [];
+    for (let i = 0; i < 1200; i++) { const S = synth(i, i % 30 < 10 ? 1 : 0); A.push(plan(S, DT, sa)); B.push(plan2(S, DT, sb)); }
+    const exact = B.every((r, i) => Math.abs(r.body - A[i].body - r.heave) < 1e-12);
+    const up = B.filter((r, i) => i >= 600 && (i % 30 === 1 || i % 30 === 2)).map((r) => r.heave), down = B.filter((r, i) => i >= 600 && (i % 30 === 15 || i % 30 === 16)).map((r) => r.heave);
+    ok(exact && up.every((h) => h < -0.1) && down.every((h) => h > 0.1), 'bands: S1 — the heave: body = the base\'s + heave on every frame; < −.1 on the sub\'s attack (with the breath: the sub is weight; ' + Math.max(...up).toFixed(3) + '…), > .1 in its tail (' + Math.min(...down).toFixed(3) + '…) once the slow mean has settled');
+    ok(Math.abs(B[0].heave + K2.HEAVE_DC * B[0].subEnv * B[0].gain) < 1e-12 && B[0].swirl === 0 && B.every((r) => Math.abs(r.heave) <= K2.HEAVE + K2.HEAVE_DC + 1e-12 && r.subEnv >= 0 && r.subEnv <= 1), 'bands: S1 — cold: the first frame carries the level\'s gravity alone, no rise (the envelopes start at the frame\'s sub — a switch mid-track is no burst); bounded: |heave| ≤ HEAVE + HEAVE_DC, subEnv in [0, 1]');
+    const early = B.slice(30, 33).map((r) => r.heave);
+    ok(early[0] > 0.1 && early.every((h) => h > -0.1), 'bands: S1 — … and a start AT a peak (sub 1 on the first frame) reads the next attack\'s first frame as below its slow mean, a lift, never a slam (' + early.map((h) => h.toFixed(2)).join(' ') + '): the cold frame itself is the level alone');
+    const half = B.slice(600, 1200).map((r) => r.heave), m = half.reduce((a, b) => a + b, 0) / half.length;
+    const mDC = -K2.HEAVE_DC * half.length / half.length * B.slice(600, 1200).reduce((a, r) => a + r.subEnv * r.gain, 0) / half.length;
+    ok(Math.abs(m - mDC) < 0.02, 'bands: S1 — on a steady pulse the heave\'s mean is the DC term alone (' + m.toFixed(4) + ' vs −HEAVE_DC · mean subEnv ' + mDC.toFixed(4) + '): the rise lifts, the tail settles, no drift beyond the level\'s gravity');
+  }
+  { // the switches: FLIP (the bar parity / the glide's sign), SWIRL, SUB_INK — each against the default, the K2 table restored after
+    const defaults = { ...K2 };
+    const runK = (over, n = 120) => { Object.assign(K2, defaults, over); const st = mkState2(), out = []; for (let i = 0; i < n; i++) out.push(plan2(synth(i, i % 30 < 10 ? 1 : 0), DT, st)); Object.assign(K2, defaults); return out; };
+    const ref = runK({}), flipBar = runK({ FLIP: 1 });
+    const barOf = (i) => ((10 + Math.floor(i / 30)) >> 2) & 1;   // synth's beatCount = 10 + beat: bars 2 (beats 0–7 → frames 0–59 odd? no: (10+b)>>2 = 2 for b 0..1, 3 for b 2..5, 4 for b 6..)
+    ok(flipBar.every((r, i) => Math.abs(r.heave - (barOf(i) ? -ref[i].heave : ref[i].heave)) < 1e-12) && flipBar.some((r, i) => barOf(i) && Math.abs(r.heave) > 0.1), 'bands: S1 — FLIP 1: the heave\'s sign follows the bar parity (beatCount >> 2 & 1), the magnitude the default\'s');
+    const up = runK({ FLIP: 2 }).map((r) => r.heave);   // the synthetic subGlide is 0 → FLIP 2 heaves nothing
+    const stR = mkState2(); let hr = 0, hf = 0, h0 = 0;
+    Object.assign(K2, defaults, { FLIP: 2 });
+    for (let i = 0; i < 12; i++) hr = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: 6, beatCount: 10 }), DT, stR).heave;   // a rise with the glide up
+    const stF = mkState2(); for (let i = 0; i < 12; i++) hf = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: -6, beatCount: 10 }), DT, stF).heave;
+    const st0 = mkState2(); for (let i = 0; i < 12; i++) h0 = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: 0, beatCount: 10 }), DT, st0).heave;
+    Object.assign(K2, defaults);
+    ok(up.every((h) => h === 0) && hr > 0.1 && hf < -0.1 && Math.abs(hf + hr) < 1e-12 && h0 === 0, 'bands: S1 — FLIP 2: a rising bass (subGlide +6 st/s) lifts (' + hr.toFixed(3) + '), a falling one sinks (' + hf.toFixed(3) + '), a held note (glide 0) heaves nothing');
+    const sw = runK({ SWIRL: 0.8 });
+    ok(ref.every((r) => r.swirl === 0) && sw.every((r, i) => Math.abs(r.swirl - 0.8 * r.subEnv * r.gain * (barOf(i) ? -1 : 1)) < 1e-12) && sw.some((r) => Math.abs(r.swirl) > 0.5) && sw.every((r) => Math.abs(r.swirl) <= 0.8), 'bands: S1 — SWIRL .8: swirl = SWIRL · subEnv · g, its sign by the bar parity, bounded by SWIRL; 0 by default (the identical advect path)');
+    const dc = runK({ HEAVE: 0, HEAVE_DC: 0.5 });
+    ok(dc.every((r) => Math.abs(r.heave + 0.5 * r.subEnv * r.gain) < 1e-12) && dc.some((r) => r.heave < -0.4), 'bands: S1 — HEAVE_DC: the level as a steady extra gravity, heave = −HEAVE_DC · subEnv · g (with the breath)');
+    const none = runK({ SUB_INK: 0 }), halfInk = runK({ SUB_INK: 0.5 });
+    const stA = mkState(); const refA = []; for (let i = 0; i < 120; i++) refA.push(plan(synth(i, i % 30 < 10 ? 1 : 0), DT, stA));
+    ok(none.every((r) => !r.splats.some((s) => s.k === 'sub')) && none.slice(60).every((r, i) => r.ink < refA[i + 60].ink && r.params.dyeDiss <= refA[i + 60].params.dyeDiss), 'bands: S1 — SUB_INK 0: no sub splat at all; the ink rate below the base\'s and dyeDiss re-governed, never above the base\'s');
+    ok(halfInk.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.r - 0.5 / (K2.SUB_RAD * K2.SUB_RAD) * b.r) < 1e-12 && s.dx === 0 && s.dy === 0; }), 'bands: S1 — SUB_INK .5: the sub splat\'s dye halved (over the cloud\'s ÷ SUB_RAD²), still no velocity');
+    const cloud = runK({}), dot = runK({ SUB_RAD: 1 });
+    ok(K2.SUB_RAD === 3 && cloud.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.rad - 3 * b.rad) < 1e-12 && Math.abs(s.r - b.r / 9) < 1e-12 && s.dx === 0 && s.dy === 0; }) && cloud.slice(1).every((r, i) => Math.abs(r.ink - refA[i + 1].ink) < 1e-9 * Math.max(1, refA[i + 1].ink)) && dot.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && s.rad === b.rad && s.r === b.r; }), 'bands: S1 — SUB_RAD 3 (the default): the mouth\'s ink spread over 3× the radius at a ninth of the dye — the same ink in the budget\'s units (the rate within 1e-9 of the base\'s), a cloud where the dot was; SUB_RAD 1 is the base\'s dot');
+    const gated = runK({ SUB_GATE: 1 });   // synth: the sub open from frame 0 → the drum branch → the field as the default's
+    ok(gated.every((r, i) => r.heave === ref[i].heave) && ref.some((r) => r.heave !== 0), 'bands: S1 — SUB_GATE 1 with the sub open (the drum branch): the field is the default\'s');
+    const stH = mkState2(); let hH = 1; Object.assign(K2, defaults, { SUB_GATE: 1 });
+    for (let i = 0; i < 600; i++) hH = plan2(base({ sub: i % 30 < 10 ? 1 : 0, subGate: 0, bpm: 120, beatCount: 10 }), DT, stH);   // the gate never opens: 10 s > HARM_BARS bars → the harmonic branch
+    Object.assign(K2, defaults);
+    ok(hH.harmonic === 1 && hH.heave === 0 && hH.swirl === 0 && hH.subEnv > 0, 'bands: S1 — SUB_GATE 1 in the harmonic branch (no sub for HARM_BARS bars, the band still pulsing): the field is 0 (Comptine\'s piano sways nothing); 0 (the default) follows the band');
+    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: the K2 table restored after the switches');
   }
   const J = trace('SeeYouDrop-map1');
   if (J) {
-    const a = JSON.stringify(replay(J, mkState(), plan).map((r) => r.P)), b = JSON.stringify(replay(J, mkState2(), plan2).map((r) => r.P));
-    ok(a === b, 'bands: S0 identity — plan2 on SeeYouDrop\'s ' + J.f.length + ' real frames = plan() to the byte (' + a.length + ' chars)');
+    const A = replay(J, mkState(), plan).map((r) => r.P), B = replay(J, mkState2(), plan2).map((r) => r.P);
+    const a = JSON.stringify(A.map(strip)), b = JSON.stringify(B.map(strip));
+    ok(a === b, 'bands: S1 — plan2 on SeeYouDrop\'s ' + J.f.length + ' real frames = plan() on every field but the sub\'s velocity and the body (' + a.length + ' chars: the §111 machinery untouched by the field)');
+    ok(B.every((r, i) => Math.abs(r.body - A[i].body - r.heave) < 1e-12 && Math.abs(r.heave) <= K2.HEAVE + K2.HEAVE_DC && Math.abs(r.swirl) <= K2.SWIRL), 'bands: S1 — on the real trace body = the base\'s + heave on every frame, |heave| ≤ HEAVE, |swirl| ≤ SWIRL');
+    const on = B.filter((r) => Math.abs(r.heave) > 0.01).length, voidFr = B.filter((r, i) => J.t[i] >= 54 && J.t[i] <= 57).map((r) => r.heave), retFr = B.filter((r, i) => J.t[i] >= 57.6 && J.t[i] <= 61).map((r) => r.heave), grooveFr = B.filter((r, i) => J.t[i] >= 35 && J.t[i] <= 45).map((r) => Math.abs(r.heave));
+    ok(on > 0.5 * B.length && med(voidFr.map(Math.abs)) < 0.2 * -med(retFr) && voidFr.every((h) => h >= -0.02) && -med(retFr) > 0.15 && -med(retFr) > 2 * med(grooveFr), 'bands: S1 — the field is on (|heave| > .01) on ' + (100 * on / B.length).toFixed(0) + ' % of SeeYouDrop\'s frames; in the void before drop 1 (54–57 s) it eases off (median |heave| ' + med(voidFr.map(Math.abs)).toFixed(3) + ', a lift against the breath, never a slam — the level\'s .04 is under .02), on the drop\'s return (57.6–61 s) it slams at ' + med(retFr).toFixed(3) + ' — over twice the groove\'s per-beat pulse (' + med(grooveFr).toFixed(3) + '): the void\'s return is the field\'s biggest gesture');
     const c = JSON.stringify(replay(J, mkState2(), plan2).map((r) => r.P));
-    ok(b === c, 'bands: determ — two fresh band states on the real trace → identical output');
-    // the shared base state (fluid.js: st2.base = st): one grammar then the other continues the SAME run, in both directions
-    const N = 300, rows = replay(J, mkState(), plan);   // the reference: plan() alone over the trace
+    ok(JSON.stringify(B) === c, 'bands: determ — two fresh band states on the real trace → identical output (the field on)');
+    // the shared base state (fluid.js: st2.base = st): one grammar then the other continues the SAME run, in both directions —
+    // the base's STATE after the mixed run is the pool-only run's to the byte, and every output field but the sub's velocity / the body
+    const N = 300;
     const st = mkState(), st2 = mkState2(); st2.base = st;
+    const stRef = mkState(); const refOut = [];
     const C = J.cols, T = J.t; let prev = null; const outs = [];
     for (let i = 0; i < 4 * N; i++) {
       const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
       const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev)); prev = T[i];
       const useBands = (Math.floor(i / N) & 1) === 1;   // 300 frames pool, 300 bands, 300 pool, 300 bands: a FLUID → FLUID2 → FLUID → FLUID2 run
       outs.push(useBands ? plan2(S, dt, st2) : plan(S, dt, st));
+      if (!useBands) st2.n = 0;   // fluid.js's rule: the band grammar's own state goes cold while it does not own the pool
+      refOut.push(plan(S, dt, stRef));
     }
     ok(st2.base === st, 'bands: st2.base IS the pool grammar\'s state object after ' + (4 * N) + ' frames (never re-made)');
-    ok(JSON.stringify(outs) === JSON.stringify(rows.slice(0, 4 * N).map((r) => r.P)), 'bands: the switch is free — pool → bands → pool → bands every ' + N + ' frames on the real trace = plan() alone, frame for frame (the key pin, the ranks, the clear run on warm in both directions)');
+    ok(JSON.stringify(st) === JSON.stringify(stRef), 'bands: the switch is free — after pool → bands → pool → bands every ' + N + ' frames the BASE STATE = plan() alone\'s to the byte (the key pin, the ranks, the clear, the ink rate run on warm in both directions)');
+    ok(JSON.stringify(outs.map(strip)) === JSON.stringify(refOut.map(strip)) && outs.slice(0, N).every((r, i) => r.body === refOut[i].body && r.heave === undefined) && outs.slice(N, 2 * N).every((r) => r.heave !== undefined), 'bands: … and every output field but the sub\'s velocity and the body is plan() alone\'s, frame for frame; the pool frames carry no field, the band frames do');
+    const first = outs[N], again = outs[3 * N];   // the first band frame after 300 pool frames, and after the second switch: neither is a burst
+    const dcOnly = (r) => Math.abs(r.heave + K2.HEAVE_DC * r.subEnv * r.gain) < 1e-12;
+    ok(dcOnly(first) && first.ink === refOut[N].ink && dcOnly(again) && again.ink === refOut[3 * N].ink && !dcOnly(outs[N + 1]), 'bands: S1 — the first band frame after each switch carries the level\'s gravity alone (no rise: no burst) and its ink rate is the base\'s warm one (no un-governing); the frame after heaves');
   }
   { // the Proxy MS: plan2 reads nothing outside inject2's list, over the real trace
     const allowed = new Set(FEATS2);

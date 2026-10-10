@@ -33,6 +33,8 @@
 //   kick dy      the kick impulse, p10 / p50 / p90 (uv/s) — the size law's room
 //   hue          % of frames the pool's hue is the KEY's (the anchor's conf 1) · the hue bins (of 12) visited at 1 Hz · the hue at
 //                the survey's window seconds (windows.txt) — one bin all track = one colour
+//   field        §116 S1 (the band grammar only — INJECT=assets/core/fluid/inject2.js): |heave| p50 / p90 (uv/s² added to the body) and
+//                |swirl| p50 / p90 (1/s²) over the music frames, and the % of music frames the field is on (|heave| + |swirl| > .01)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +44,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE
 // INJECT=<path to another inject.js> replays THAT grammar (a `git show <rev>:assets/core/fluid/inject.js > /tmp/x.js` is the before)
 const { plan, mkState, FLUID_FEATS, K } = await import(process.env.INJECT ? pathToFileURL(path.resolve(process.env.INJECT)).href : '../assets/core/fluid/inject.js');
 if (process.env.FLUIDK) Object.assign(K, JSON.parse(process.env.FLUIDK));
+// the rulers' constants (RADIUS, INK_BUDGET, DROP_DISS) are the BASE grammar's: a composing grammar's K (inject2's K2, §116) has none of them
+const KR = K.RADIUS !== undefined ? K : (await import('../assets/core/fluid/inject.js')).K;
 const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
 const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious RaindropsOnRoses rec').split(/\s+/).filter(Boolean);
 const MODES = (process.env.MODES || '1 0').split(/\s+/).filter(Boolean);
@@ -66,6 +70,7 @@ function row(track, mode) {
   const tr = traceOf(track, mode);
   if (!tr) return { track, mode, missing: true };
   const J = JSON.parse(fs.readFileSync(tr.file, 'utf8')), C = J.cols, T = J.t, N = J.f.length;
+  const lacks = FLUID_FEATS.filter((k) => !(k in C) && k !== 'seed');   // a trace without a field the grammar reads: that field is 0 here (said in the row — §116 S1: the whole-track traces predate `sub`)
   const st = mkState(), rows = [];
   let prev = null, dropsPrev = 0;
   for (let i = 0; i < N; i++) {
@@ -82,8 +87,9 @@ function row(track, mode) {
       const want = { sub: S.subGate > 0 ? 1 : 0, kick: S.kickEvt || kAge < 2 / 60 ? 1 : 0, snare: S.snareEvt ? 2 : 0, chord: P.chord > 0 ? 2 : 0, hat: S.hat2 > 0.3 ? Math.min(3, Math.round(S.denH)) : 0, floor: P.floor > 0 ? 1 : 0, drop: S.dropLiveEvt || S.mapDropEvt ? 1 : 0 };
       kinds = []; for (const k of ORDER) for (let j = 0; j < want[k]; j++) kinds.push(k);
     }
-    const clear = P.params.dyeDiss >= K.DROP_DISS ? 1 : 0;
-    rows.push({ t: +T[i], S, P, kinds, xSub: st.xSub, clearEdge: clear && !dropsPrev ? 1 : 0, conf: st.anchor.OUT.conf, wave: P.ring && P.drop === 1 ? +P.ring.a.toFixed(2) : 0 });   // §113: the shockwave's A on the frame it fires
+    const clear = P.params.dyeDiss >= KR.DROP_DISS ? 1 : 0;
+    const b = st.base || st;   // §116: a band-grammar state (INJECT=inject2.js) carries the base's xSub / anchor in .base
+    rows.push({ t: +T[i], S, P, kinds, xSub: b.xSub, clearEdge: clear && !dropsPrev ? 1 : 0, conf: b.anchor.OUT.conf, wave: P.ring && P.drop === 1 ? +P.ring.a.toFixed(2) : 0 });   // §113: the shockwave's A on the frame it fires
     dropsPrev = clear;
   }
   const by = new Map(); for (const r of rows) { const s = Math.floor(r.t); if (!by.has(s)) by.set(s, []); by.get(s).push(r); }
@@ -92,7 +98,7 @@ function row(track, mode) {
     const music = m(rs, (r) => r.S.presence) > 0.5 && m(rs, (r) => r.S.rms || 0) > 0.003;
     const cnt = {}; for (const k of ORDER) cnt[k] = 0;
     let ink = 0, dv = 0, nsp = 0;
-    for (const r of rs) for (let j = 0; j < r.P.splats.length; j++) { const p = r.P.splats[j], k = r.kinds[j] || '?'; cnt[k] = (cnt[k] || 0) + 1; nsp++; if (k !== 'drop') ink += (p.r + p.g + p.b) * (p.rad / K.RADIUS) ** 2; dv += Math.hypot(p.dx, p.dy); }
+    for (const r of rs) for (let j = 0; j < r.P.splats.length; j++) { const p = r.P.splats[j], k = r.kinds[j] || '?'; cnt[k] = (cnt[k] || 0) + 1; nsp++; if (k !== 'drop') ink += (p.r + p.g + p.b) * (p.rad / KR.RADIUS) ** 2; dv += Math.hypot(p.dx, p.dy); }
     const kicks = rs.filter((r) => r.S.kickEvt).length, snares = rs.filter((r) => r.S.snareEvt).length, chords = rs.filter((r) => r.P.chord > 0).length;
     return { s, music, cnt, ink, dv, nsp, kicks, snares, chords, hue: hsvHue(rs[rs.length - 1].P.colour), harm: m(rs, (r) => r.P.harmonic || 0) > 0.5, noise: m(rs, (r) => r.P.noise || 0) > 0.5 };
   });
@@ -103,7 +109,7 @@ function row(track, mode) {
   const musFr = rows.filter((r) => r.S.presence > 0.5);
   const voidPct = 100 * musFr.filter((r) => r.P.params.dyeDiss < 0.5).length / Math.max(1, musFr.length);
   const deepPct = 100 * musFr.filter((r) => r.P.params.dyeDiss < 0.3).length / Math.max(1, musFr.length);
-  const govA = musFr.map((r) => Math.max(1, (r.P.ink || 0) / K.INK_BUDGET)), gov = { p50: q(govA, 0.5), p90: q(govA, 0.9) };   // §111 the budget's factor on dyeDiss
+  const govA = musFr.map((r) => Math.max(1, (r.P.ink || 0) / KR.INK_BUDGET)), gov = { p50: q(govA, 0.5), p90: q(govA, 0.9) };   // §111 the budget's factor on dyeDiss
   const syrupPct = 100 * musFr.filter((r) => r.P.params.velDiss > 1).length / Math.max(1, musFr.length);
   const clears = rows.filter((r) => r.clearEdge).map((r) => +r.t.toFixed(2));
   const waves = rows.filter((r) => r.wave > 0).map((r) => ({ t: +r.t.toFixed(2), a: r.wave }));   // §113: one shockwave per confirmed clear, its A (uv/s at the front)
@@ -115,6 +121,7 @@ function row(track, mode) {
   const harmS = secs.filter((x) => x.music && x.harm).length, noiseS = secs.filter((x) => x.noise).length;   // §111 item 8
   const kickDy = []; for (const r of rows) if (r.S.kickEvt) for (let j = 0; j < r.P.splats.length; j++) if (r.kinds[j] === 'kick') kickDy.push(r.P.splats[j].dy);
   const huePct = 100 * musFr.filter((r) => r.conf >= 0.999).length / Math.max(1, musFr.length);
+  const field = rows.length && rows[0].P.heave !== undefined ? { heave: { p50: q(musFr.map((r) => Math.abs(r.P.heave)), 0.5), p90: q(musFr.map((r) => Math.abs(r.P.heave)), 0.9) }, swirl: { p50: q(musFr.map((r) => Math.abs(r.P.swirl)), 0.5), p90: q(musFr.map((r) => Math.abs(r.P.swirl)), 0.9) }, onPct: 100 * musFr.filter((r) => Math.abs(r.P.heave) + Math.abs(r.P.swirl) > 0.01).length / Math.max(1, musFr.length) } : null;   // §116 S1 the band grammar's field
   const bins = new Set(mus.map((x) => Math.floor(x.hue * 12) % 12));
   const wins = SURVEY[track] || (WIN[track] ? WIN[track].runs.flatMap((r) => r.shots.map((s) => s.t)) : []);
   const hueAt = wins.filter((t) => t <= T[N - 1]).map((t) => { const x = secs.find((y) => y.s === Math.floor(t)); return x ? Math.floor(x.hue * 12) % 12 : '—'; });
@@ -122,18 +129,18 @@ function row(track, mode) {
     ink: { p50: q(mus.map((x) => x.ink), 0.5), p90: q(mus.map((x) => x.ink), 0.9) }, gov, dv: q(mus.map((x) => x.dv), 0.5), voidPct, deepPct, syrupPct,
     clears, trueN, brk, waves, xSub: xs.length ? { p10: q(xs, 0.1), p50: q(xs, 0.5), p90: q(xs, 0.9), span: q(xs, 0.9) - q(xs, 0.1), n: xs.length } : null,
     hitX: hitX.length ? { p10: q(hitX, 0.1), p90: q(hitX, 0.9) } : null, harmS, noiseS, kickDy: kickDy.length ? { p10: q(kickDy, 0.1), p50: q(kickDy, 0.5), p90: q(kickDy, 0.9) } : null,
-    huePct, hueBins: bins.size, hueAt, gate: !WIN[track] || WIN[track].gate !== false };
+    huePct, hueBins: bins.size, hueAt, field, lacks, gate: !WIN[track] || WIN[track].gate !== false };
 }
 
 const out = [], rowsJ = [];
-out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | shockwaves @ s · A | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows |');
-out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | shockwaves @ s · A | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows | field: |heave| p50/p90 · |swirl| p50/p90 · on % |');
+out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const t of TRACKS) for (const mode of MODES) {
   if (t === 'rec' && mode !== '0') continue;
   const r = row(t, mode); rowsJ.push(r);
   if (r.missing) { out.push(`| ${t} | ${mode} | — no trace (tools/traces.sh ${t}-map${mode}) |`); continue; }
   const c = r.chan, h = r.hits;
-  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.waves.length} @ ${r.waves.map((w) => w.t + '·' + w.a).join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} (${r.harmS} · ${r.noiseS}) | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} |`);
+  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'}${r.lacks.length ? ' (trace lacks ' + r.lacks.join(',') + ')' : ''} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.waves.length} @ ${r.waves.map((w) => w.t + '·' + w.a).join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} (${r.harmS} · ${r.noiseS}) | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} | ${r.field ? `${f(r.field.heave.p50, 3)}/${f(r.field.heave.p90, 3)} · ${f(r.field.swirl.p50, 3)}/${f(r.field.swirl.p90, 3)} · ${f(r.field.onPct, 0)}` : '—'} |`);
 }
 console.log(out.join('\n'));
 if (process.env.JSON) fs.writeFileSync(process.env.JSON, JSON.stringify(rowsJ, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v)));

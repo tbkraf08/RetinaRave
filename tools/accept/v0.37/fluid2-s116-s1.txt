@@ -1,0 +1,124 @@
+# §116 S1 (2026-10-10) — FLUID2 (id 13): the sub as a FIELD, never a dot. Branch fluid2 (main merged at 4372bc4 — the eighth track in). One Chrome at a time, GPU=1, PORT 8975 / 8978.
+# The user's scope mid-step: "only tune with Raindrops, don't do full sweep". Items 1–2 ran on all eight BEFORE the word (kept as data, not gates); 3–9 are the Raindrops-filtered receipts; the eight-track real-rulers sweep and the 174-line roster re-proof were stopped (the stopped run's 112 finished lines: 96 with a reference, 96 = v036). THE FULL SWEEP IS OWED BEFORE ANY TAG.
+# 1. SCENES=13 tools/real-md5.sh s1-13a / s1-13b (790 / 792 s): 66 / 66 lines cmp-equal (the eight tracks + the pad, both modes); 66 / 66 moved against S0's (= v036's s12 lines); f0 2 errs [] on every run. The 8 RaindropsOnRoses lines are below; all 66 are in tools/accept/v0.37/real-md5-v037.txt.
+# 2. SCENES=12 tools/real-md5.sh s1-12 (789 s): 66 / 66 = real-md5-v036.txt (FLUID unmoved by S1 — the uSwirl branch and the band state's reset are the byte-identical path), its 8 Raindrops lines among them.
+# 3. SCENES="0 1 3" TRACKS=RaindropsOnRoses tools/real-md5.sh s1-rain-rostera / b (207 / 207 s): 24 / 24 cmp-equal (no reference existed — these enter v037); the stopped full run's 16 of them equal too.
+# 4. SCENES=13 TRACKS=RaindropsOnRoses tools/real-rulers.sh s1-rain (66 s): 1 / 1 ok — 56–116 s, jump viol 0 (max .058), mon viol 0 (max .0161), black 0, clip25 0, medY .173 (FLUID's row: .193, jumpMx .055).
+# 5. tools/scene-md5.sh s1 (212 s): 26 = scene-md5-v035.txt + s12's pair unmoved (3e483039… / 2274bb4e…) + s13's pair re-recorded 8a929b45… / afb7c178… (the fake's sub band moves the field); errs [] on 14 ids.
+# 6. The bench, ONE page (test&scene=12, q .95 pinned, 8 s warm, a cold .704 discarded, load 1.97): benchFluid(300,null,'pool') / bands (SWIRL 0) / bands (SWIRL .8, MS.sub .8 — the branch taken, swirl .31) interleaved ×3 = .514 / .521 / .537 · .496 / .483 / .496 · .483 / .471 / .516 ms — medians .496 / .483 / .516: the band grammar −.013, the swirl branch +.020 (within ±.05; S0's pair read .837 / .826 under load 4.1); bench(0,300) 1.257 (ratio .39); tier 3, sim 259×128, dye 1035×512. MOBILE=1 test&scene=13: tier 0, sim 64×139, dye 256×554, grammar bands, errs [] bad [] frameN 242; benchFluid bands .451 / bands+swirl .381 / pool .333 ms at tier 0 (one call each, unpinned q — the phone canvas; ≤ .4 budget holds for the pool, the band grammar's .45 is one reading, measure in a pair at S7).
+# 7. npm run build 182 modules → dist/index.html 1 806 244 bytes; from file:// test&scene=13 → sc 13 grammar bands errs [] bad [] frameN 302; test&scene=12 → pool, errs []; VER 0.36.0 (no bump).
+# 8. The crossfade (CLOCK=1, SeeYouDrop at=25, &trans=mixs): 12 → 13 at f300 — the grammar bands from the fade's first frame, the whole-frame grey per 6 frames 34.7 36.0 36.3 36.8 36.9 35.9 28.2 20.8 20.0 22.7 24.3 26.1 27.9 30.9 32.3 33.1 33.2 34.5 33.9 33.3 32.8 34.1 (max step 7.63 / 255, §1.9 viol [] — S0's cold-exposure dip, unchanged); 13 → 0 with SC.forced released first: {cur 13, next 0} → {cur 0, pool}, errs [] bad [] at heard 37.07; its greys 30.8 … 53.5 … 42.8 step up to 16 / 255 — NAV2's kick flashes on the groove inside the fade (the §1.9 monitor exempts event frames; the crude step does not). With the force still pinned (S0's script as written) goScene(0) is reverted by the forced branch within the fade ({cur 13, next −1}) — S0's flat "13 → 0" row was that revert, not scene 0.
+# 9. node tools/check.js 183 modules 0 fail / 8 warn (help.feats gaps 0); npm test exit 0 (test_fluid 336, test_music 129); node tools/license.js --check 0 without the header; inject.js: git diff main — empty.
+# 10. The tune (RaindropsOnRoses 50–80 at=24, map 0, 1 fps, tools/fluid-field-strip.sh): FLUID .146 / .165 on sub-up / sub-down shots; the shipped K2 .220 / .138 (ratio 1.60, Δ +.075 / −.027, r(Δ, sub) .73); HEAVE 1 alone r .41; .6 alone .47; 1 + .3 r .79 at 1.9 × the groove's speed; the swirl alone .16; the bar flip .21 (slower than FLUID). The 56 s pin ship .29 vs FLUID .18; the cut 66–68 ship .17 / .14 / .10 vs .17 / .17 / .15; the return 69–71 ship .087 / .120 / .161 vs .058 / .067 / .094.
+
+## 1. s13 real-md5 on RaindropsOnRoses (s1-13a = s1-13b)
+f4b9aaf70409621ea56d128a2a2f16a6  s13-RaindropsOnRoses-build1-f730-m0.jpg
+7da40cd50631b9e9d17800d6c426a601  s13-RaindropsOnRoses-build1-f730-m1.jpg
+cd57a0018e91b29561e0504879495899  s13-RaindropsOnRoses-drop1-f1030-m0.jpg
+e3df9414a5f1303c764cb3a421df4a4f  s13-RaindropsOnRoses-drop1-f1030-m1.jpg
+dfd904b999522dd1de8701d866808bca  s13-RaindropsOnRoses-groove-f602-m0.jpg
+8b93066a3f30159b057f9ae76567cdac  s13-RaindropsOnRoses-groove-f602-m1.jpg
+5bfdf55b74855e5758c03dc42eda5378  s13-RaindropsOnRoses-intro-f602-m0.jpg
+e1a0da8ffe572f38e5a2a288e19840c1  s13-RaindropsOnRoses-intro-f602-m1.jpg
+
+## 3. the roster 0 1 3 on RaindropsOnRoses (a = b)
+1694f9b6943801b0dcc1f23621be41a8  s0-RaindropsOnRoses-build1-f730-m0.jpg
+617f213ddaa4f7b46b074ee984bbc770  s0-RaindropsOnRoses-build1-f730-m1.jpg
+f74f0d29cc6f0d495d808c14c7876fd7  s0-RaindropsOnRoses-drop1-f1030-m0.jpg
+dfea05e2d07866b58eecfedcf1c50f00  s0-RaindropsOnRoses-drop1-f1030-m1.jpg
+f1a2527019d40486fe33c9c9c6d9ca5d  s0-RaindropsOnRoses-groove-f602-m0.jpg
+8004694cfb153030dee6f088f3077cc6  s0-RaindropsOnRoses-groove-f602-m1.jpg
+f5d37545dbeff6379683a39aa84f48d6  s0-RaindropsOnRoses-intro-f602-m0.jpg
+36d0c803c67ca457edc014e5d0e91b0e  s0-RaindropsOnRoses-intro-f602-m1.jpg
+4ac32c80eb90611a27cdc08abb5b6b07  s1-RaindropsOnRoses-build1-f730-m0.jpg
+c2ae7537d235b7289dc3d9d63b525679  s1-RaindropsOnRoses-build1-f730-m1.jpg
+bb43f7ee96dfda15da05643ee4953f66  s1-RaindropsOnRoses-drop1-f1030-m0.jpg
+1048817461f60897a9e1f46fa4b1e140  s1-RaindropsOnRoses-drop1-f1030-m1.jpg
+1b3b928eb134bfcb02588f2680df54da  s1-RaindropsOnRoses-groove-f602-m0.jpg
+946353742e0c4b4ee923b9251e5d0259  s1-RaindropsOnRoses-groove-f602-m1.jpg
+c9dbed372ed1114084b9d35a64298675  s1-RaindropsOnRoses-intro-f602-m0.jpg
+958f85c7bdf798de7f48d74d47517add  s1-RaindropsOnRoses-intro-f602-m1.jpg
+799de11265b41bec14a39b5769d9f340  s3-RaindropsOnRoses-build1-f730-m0.jpg
+7eb0f8b0696b27a1871daebd58243453  s3-RaindropsOnRoses-build1-f730-m1.jpg
+7cddbda9fc4ea2fe50b92d57c5bd6304  s3-RaindropsOnRoses-drop1-f1030-m0.jpg
+9a11b95d18e3495bf7c756217b1c4b9c  s3-RaindropsOnRoses-drop1-f1030-m1.jpg
+736acfd5be26dd2d8856b995635a17ec  s3-RaindropsOnRoses-groove-f602-m0.jpg
+74690af0589f913f7f830a9d7a435556  s3-RaindropsOnRoses-groove-f602-m1.jpg
+8329cfd0043ca0079b191c0e166b1e8b  s3-RaindropsOnRoses-intro-f602-m0.jpg
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+
+## 5. the fake pairs
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+8a929b45059a64ad876e6fedb15b628c  s13-f360.jpg
+afb7c1783a962efa96e05b5107c4ac3e  s13-f840.jpg
+
+## 4. the rulers
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.173  0.0159 | 3599  0.058  0     0     | 3599  0.0161 0     | ok
+12  fluid     RaindropsOnRoses 56-116    continuous | 600   0     0.193  0.0179 | 3599  0.055  0     0     | 3599  0.0161 0     | ok
+
+## 10. the Raindrops strips, per shot (NN t heard sub gate heave swirl dyeDiss speed grey) — ctrl then ship
+00 50.00 50.000 0.665 1 0.0000 0.0000 0.77 0.2176 48.0
+01 51.00 51.000 0.892 1 0.0000 0.0000 0.77 0.2415 51.1
+02 52.00 52.000 0.697 1 0.0000 0.0000 0.74 0.2306 51.9
+03 53.00 53.000 0.719 1 0.0000 0.0000 0.74 0.1618 56.2
+04 54.00 54.000 0.651 1 0.0000 0.0000 0.70 0.1726 54.2
+05 55.00 55.000 0.916 1 0.0000 0.0000 0.74 0.1833 57.3
+06 56.00 56.000 0.674 1 0.0000 0.0000 0.77 0.1799 55.7
+07 57.00 57.000 0.607 1 0.0000 0.0000 0.78 0.1621 54.3
+08 58.00 58.000 0.715 1 0.0000 0.0000 0.78 0.1634 52.0
+09 59.00 59.000 0.989 1 0.0000 0.0000 0.77 0.1658 50.1
+10 60.00 60.000 0.600 1 0.0000 0.0000 0.72 0.1182 50.6
+11 61.00 61.000 0.612 1 0.0000 0.0000 0.72 0.0831 48.3
+12 62.00 62.000 0.792 1 0.0000 0.0000 0.68 0.1068 48.4
+13 63.00 63.000 0.610 1 0.0000 0.0000 0.60 0.1434 50.6
+14 64.00 64.000 0.876 1 0.0000 0.0000 0.60 0.1643 53.6
+15 65.00 65.000 0.721 1 0.0000 0.0000 0.57 0.1502 56.2
+16 66.00 66.000 0.067 1 0.0000 0.0000 0.56 0.1711 55.2
+17 67.00 67.000 0.071 1 0.0000 0.0000 0.56 0.1738 50.2
+18 68.00 68.000 0.078 0 0.0000 0.0000 0.48 0.1501 38.0
+19 69.00 69.000 0.723 1 0.0000 0.0000 0.40 0.0583 38.5
+20 70.00 70.000 0.796 1 0.0000 0.0000 0.31 0.0671 50.3
+21 71.00 71.000 0.714 1 0.0000 0.0000 0.23 0.0939 57.9
+22 72.00 72.000 0.631 1 0.0000 0.0000 0.15 0.1019 65.7
+23 73.00 73.000 0.626 1 0.0000 0.0000 0.61 0.1159 68.0
+24 74.00 74.000 0.664 1 0.0000 0.0000 0.70 0.1163 63.7
+25 75.00 75.000 0.693 1 0.0000 0.0000 0.69 0.1456 59.6
+26 76.00 76.000 0.666 1 0.0000 0.0000 0.68 0.1465 54.2
+27 77.00 77.000 0.637 1 0.0000 0.0000 0.69 0.1278 54.7
+28 78.00 78.000 0.592 1 0.0000 0.0000 0.70 0.1477 54.5
+29 79.00 79.000 0.882 1 0.0000 0.0000 0.71 0.1573 55.4
+30 80.00 80.000 0.973 1 0.0000 0.0000 0.72 0.1639 58.9
+# ctrl: n 31 · r(speed, sub) 0.016 · speed p10/p50/p90 0.0939/0.1502/0.1833 · sub mean 0.66 · coverage nan % of 28 sub-up shots above floor nan
+00 50.00 50.000 0.665 1 -0.0574 0.0000 0.77 0.3435 42.3
+01 51.00 51.000 0.892 1 -0.2325 0.0000 0.77 0.3624 45.0
+02 52.00 52.000 0.697 1 -0.0658 0.0000 0.74 0.3356 42.9
+03 53.00 53.000 0.719 1 -0.0815 0.0000 0.74 0.2565 47.7
+04 54.00 54.000 0.651 1 -0.0645 0.0000 0.70 0.2851 48.1
+05 55.00 55.000 0.916 1 -0.2149 0.0000 0.74 0.3063 51.8
+06 56.00 56.000 0.674 1 -0.0371 0.0000 0.77 0.2885 49.7
+07 57.00 57.000 0.607 1 -0.0290 0.0000 0.78 0.2275 47.4
+08 58.00 58.000 0.715 1 -0.1112 0.0000 0.78 0.2326 45.0
+09 59.00 59.000 0.989 1 -0.2076 0.0000 0.77 0.2335 44.0
+10 60.00 60.000 0.600 1 -0.0369 0.0000 0.72 0.1662 44.9
+11 61.00 61.000 0.612 1 -0.0161 0.0000 0.72 0.1184 44.0
+12 62.00 62.000 0.792 1 -0.1825 0.0000 0.68 0.1553 44.9
+13 63.00 63.000 0.610 1 -0.0498 0.0000 0.60 0.1963 47.3
+14 64.00 64.000 0.876 1 -0.2352 0.0000 0.60 0.2163 47.9
+15 65.00 65.000 0.721 1 -0.0891 0.0000 0.57 0.2103 49.5
+16 66.00 66.000 0.067 1 0.2781 0.0000 0.56 0.1722 48.4
+17 67.00 67.000 0.071 1 0.1309 0.0000 0.56 0.1365 45.2
+18 68.00 68.000 0.078 0 0.0616 0.0000 0.48 0.1048 34.0
+19 69.00 69.000 0.723 1 -0.2284 0.0000 0.40 0.0872 35.2
+20 70.00 70.000 0.796 1 -0.2951 0.0000 0.31 0.1200 46.0
+21 71.00 71.000 0.714 1 -0.1906 0.0000 0.23 0.1613 51.6
+22 72.00 72.000 0.631 1 -0.1080 0.0000 0.15 0.1757 58.0
+23 73.00 73.000 0.626 1 -0.0273 0.0000 0.61 0.1704 59.1
+24 74.00 74.000 0.664 1 -0.0810 0.0000 0.70 0.1741 53.7
+25 75.00 75.000 0.693 1 -0.1005 0.0000 0.69 0.2081 50.8
+26 76.00 76.000 0.666 1 -0.0675 0.0000 0.68 0.2259 47.4
+27 77.00 77.000 0.637 1 -0.0521 0.0000 0.69 0.1968 48.6
+28 78.00 78.000 0.592 1 -0.0496 0.0000 0.70 0.2236 48.9
+29 79.00 79.000 0.882 1 -0.2460 0.0000 0.71 0.2499 48.7
+30 80.00 80.000 0.973 1 -0.1907 0.0000 0.72 0.2447 51.8
+# ship: n 31 · r(speed, sub) 0.431 · speed p10/p50/p90 0.1200/0.2103/0.3063 · sub mean 0.66 · coverage nan % of 28 sub-up shots above floor nan

@@ -322,6 +322,19 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=12 tools/real-md5.sh` twice (cmp-equal; the
   roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=12 tools/real-rulers.sh`, the fake
   smoke (only s12 moves), parity.
+- **The field strip — the S1 ruler (§116 S1; FLUID2-PLAN §4 S1):** the pool's MEAN SPEED against the sub band, per track, on one deterministic
+  whole-track run: `[K2='{"SWIRL":.8}'] [MAP=0|1] PORT=89xx tools/fluid-field-strip.sh <track> <12|13> <tag> <t0> <t1> [fps=1] [at=0]` →
+  `tools/work/fluid2/field/<track>-s<scene>-<tag>/` — per shot the composite (the eye) at frame F and, after `CARD.fluid.dbg = 2` from an
+  eval, the velocity alone at F + 1 (0.5 + v: the dbg overlay is drawn after the chain, so it never feeds back and the sim is the same run),
+  then `speed.txt`: `NN t heard sub subGate heave swirl dyeDiss speed grey` — **speed = PIL's mean of |R − 127.5| + |G − 127.5| over the
+  velocity shot / 255 = Σ|vx| + |vy| per texel in uv/s** (a JPEG's floor ≈ .005–.01 on a still pool), and a summary line (Pearson
+  r(speed, sub), speed p10 / p50 / p90, the coverage of sub-up shots above `SPEEDFLOOR=`). The number that reads the field is the DELTA
+  against the control (scene 12) on the same frames — the pool's speed is the kicks', the breath's and the field's together (SeeYouDrop's
+  build-void reads .24–.38 under FLUID with no sub at all) — so a window is shot under scene 12 and scene 13 and compared per shot
+  (`tools/work/fluid2/s1/cmp.py`: r(Δ, sub), the speed on sub-up vs sub-down shots and their ratio, Δ on each). `at=` is the track's `start`
+  (RaindropsOnRoses 24). One Chrome at a time. The §116 S1 windows per track: SeeYouDrop 40–70, CyborgNinja 79–109, Vienna 62–92,
+  IBelongHere 160–190, WhoLikesToParty 40–70, Comptine 30–60, Malicious 45–75, RaindropsOnRoses 50–80 (a sustained sub passage and a
+  void's entry / return where the track has one); the pad through `rec-strip.sh … 13`.
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
@@ -342,10 +355,13 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   (CONTRACTS §1.4), `core/fluid/grammar.js` the table (`pool` = inject.js, `bands` = inject2.js), `loop.js` the owner (`SC.next` while a
   fade runs, else `SC.cur`), `fluid.js` the dispatch on the name (one `if`; `st2.base === st`, one base state). `CARD.fluid.grammar` is the
   name that planned the last step; `CARD.fluid.K2` the band grammar's constants (`K2=` on the strip tools, `FLUIDK2=` on the replays — `K=` /
-  `FLUIDK=` reach inject.js's, which plan2 inherits); `CARD.benchFluid(300, null, 'bands')` vs `(300, null, 'pool')` interleaved in ONE page is
+  `FLUIDK=` reach inject.js's, which plan2 inherits); since S1 `CARD.fluid.heave` / `.swirl` are the field's values on the last step (0 under the pool grammar), the
+  HUD's fluid line and FLUID2's `fldbg` hook carry them; `CARD.benchFluid(300, null, 'bands')` vs `(300, null, 'pool')` interleaved in ONE page is
   the pair that prices a grammar (§116: `CARD.benchFluid(300, null, 'pool')` / `(300, null, 'bands')` interleaved ×3 in ONE page (`test&scene=12`, q .95 pinned, 8 s warm, a cold call discarded, `uptime` load 4.1): **0.813 / 0.826 · 0.837 / 0.863 · 0.849 / 0.818 ms** — medians **0.837 / 0.826**, the pairs +0.013 / +0.026 / −0.031, within ±0.05 (a branch, not a pass; the absolute ms are the desktop's load, §113's 0.67–0.72 were under load 2.2–2.9); the show pass `bench(12, 300)` / `bench(13, 300)` ×3 **0.525 / 0.525 · 0.534 / 0.525 · 0.506 / 0.505** (the same program), `bench(0, 300)` 2.044 (ratio .41); tier 3, sim 259×128, dye 1035×512 (12 s)); the HUD's fluid line and the help view's part B say the grammar and list its reads.
   `INJECT=assets/core/fluid/inject2.js node tools/fluid-replay.js …` / `… fluid-tracks.js` replay the band grammar with no GL (the per-track
-  table gains a grammar column per step). **The proofs:** `SCENES=13 tools/real-md5.sh` (58 lines, ~720 s) — at S0 cmp-equal to s12's 58 in
+  table gains a grammar column per step; S1's `field` column). **The proofs:** since S1 the s13 lines are their own (`tools/accept/v0.37/real-md5-v037.txt`:
+  v036's + s13's 66 + the roster's 24 RaindropsOnRoses lines; `TRACKS=RaindropsOnRoses` filters a run to the user's tuning track — DECISIONS §116 S1).
+  At S0: `SCENES=13 tools/real-md5.sh` (58 lines, ~720 s) — cmp-equal to s12's 58 in
   `real-md5-v036.txt` with the names mapped (`sed 's/ s12-/ s13-/'`), hash for hash; from S1 on s13 has its own reference
   (`tools/accept/v0.37/real-md5-v037.txt` = v036's 232 + s13's 58) and `SCENES=12` must stay 58 / 58 = v036 (the switch is free — proven at S0
   and again at S7); `SCENES="0 1 3" PAR=2` 174 / 174 (every new uniform's neutral path); the fake `tools/scene-md5.sh` 28 lines = the 26 of
