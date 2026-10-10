@@ -135,7 +135,10 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               FIELD, never a dot: its ink still enters at the bass note's place on the tonic axis but its push is a
                               body force on the whole pool — the sub band's envelope against its own slow mean, WITH the breath (the
                               sub is the pool's weight: the attack deepens the beat's gravity, the void's entry lifts and stills the
-                              pool, the drop's return slams it), a swirl as a K2 switch; the rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
+                              pool, the drop's return slams it), a swirl as a K2 switch; the kick (S2) is a MASS that travels — a vortex
+                              PAIR seeded inward at the bass note's place, at the base's impulse and ink (FLUID's kick rode the sub's jet;
+                              the pair carries itself a third of the screen per beat), the jet / stroke / puff as K2 switches; the rest of
+                              the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets

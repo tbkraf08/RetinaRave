@@ -10623,7 +10623,133 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   FLUID2 (S0's open) · the roster's 24 new RaindropsOnRoses lines (0 1 3) have no reference yet (measured once here, below) · §115's own list.
 
 
-### S2 — bass = mass; the kick launches something that travels (not started)
+### S2 — bass = mass; the kick launches something that travels — the point-source exploration (2026-10-10, branch `fluid2`, four commits; `git merge main` at 6da0ca5 first — the Raindrops gate flip in)
+
+- **The ask, as the plan framed it and the user's scope holds:** the kick as a MASS that travels — the variants the plan names (the jet, the
+  stroke, the dipole, the local puff) at ONE momentum against the control, the ruler = where the hit's push is at +½ and +1 beat, the number
+  first and then the eye; the launch direction decided from the strips; **tuned, stripped and proven on RaindropsOnRoses only (the user,
+  2026-10-10: *"only tune with Raindrops, don't do full sweep"*; the other seven tracks untuned and unswept on the user's word — the full
+  sweep OWED before any tag)**; the taste ruler §113's: *"a hit that launches something that travels"*, and *"the double time should be
+  accenting rather than driving"*. S1's open trade measured first: *"the kicks' plumes rise less under the heave's slam"*.
+- **The shapes as built** (`core/fluid/inject2.js`, nothing in inject.js): `KICK_SHAPE` picks the kick's shape, every one at the SAME MOMENTUM as
+  the base's kick — Σ dy·rad over the hit's frames (a splat's Gaussian exp(−|p|²/rad) integrates to π·rad, so dy·rad is its impulse) — and
+  the same ink in the budget's units: **0** the control (the base's splat untouched — the identical list); **1 the jet** — each of the base's
+  kick frames (the hit, its tail) spread over `JET_N` 4 frames at 1 / JET_N of its push and ink, a pending queue in the band state (emptied
+  on the cold frame: a scene switch is never a late push); **2 the stroke** — the jet drawn upward, `y = KICK_Y + STROKE_L · min(1, age /
+  STROKE_T)` (.06 → .31 over .05 s, the user's "line stroke"); **3 the dipole** — two splats at `x ∓ DIP_D`, the lift and the ink halved, a
+  sideways seed `±DIP_V · √rank · g` OPPOSITE on the two (> 0 inward: the pair's own flow between its cores; < 0 outward) — the net
+  sideways momentum 0, Σ dy·rad the control's; **4 the puff** — the kick splat's velocity gone (its ink stays) and a radial ring round the
+  hit's place: the §113 ring given a CENTRE (`uRingC`, shaders.js — `vUv − uRingC`, one exact subtraction, (.5, .5) the shockwave's path to
+  the bit; `fluid.js` `ring(a, r, w, cx, cy)`, the larger A still wins the step with its own centre), A = `KPUFF_A · √rank · g`, the front 0 →
+  `KPUFF_R` in `KPUFF_T` beats, `KPUFF_W` wide — SET semantics, no momentum in the splats' units. `kick` in the return (`{ shape, mom, ink, n }`,
+  `CARD.fluid.kick`) and the HUD's fluid line say the shape; an unknown shape is the control. The momentum equality is a test: Σ dy·rad per
+  kick = the control's within 1e-9 on shapes 1–3 over RaindropsOnRoses's 129 kicks (Σ .558662 over the track), the ink identical.
+- **The ruler — TRAVEL, and the ruler that failed first** (`tools/fluid-kick-strip.sh` + `tools/fluid-kick-travel.py`, HARNESS "## Fluid"):
+  one deterministic whole-track run per variant (at=24, CLOCK=1 GPU=1, map 0, keyed on `__FRAME`), 14 kicks (the return 68.567 — the drop's
+  confirmation frame, listed and left out of the p50s — 69.217 69.867 70.717 71.367 72.650; the groove 77.583 78.867 84.433 87.867 89.150
+  98.150 99.433 101.583; each ≥ .6 s before the next so +1 beat is its own), four moments per kick (pre F − 2 / +0 F + 1 / +½ / +1 beat) ×
+  three shots on consecutive frames with the clock paused at each (the composite, the dye at `dbg 1`, the velocity at `dbg 2`). **The plan's
+  ruler — the ink front's height in the dye above the pre-kick row + 10 — read nothing:** a groove's pool is full of moving ink, and a Δ
+  of the dye over 13–26 frames is the pool's advection; the connected-component front read the whole screen under the field (h1 p90 .94),
+  and a column mass profile read the column's middle (hc ≈ .45) under every variant. **The number that reads the kick is on the VELOCITY
+  shot:** the breath and the heave push the centre DOWN, so what goes UP in the band x ± .3 above the kick's place is the hit's — **U = Σ
+  max(vy, 0)** (/ 1000), **ΔU = U − U(pre)** the hit's own addition, **hc** U's centroid height above the kick's place (the travel), h90 the
+  front, trail h90 − h10, **d** the centroid's distance from the launch, **w** the contiguous run of vy > .05 through the centroid's column;
+  the §1.9 step at the hit from the composites. The velocity shot clips at |v| .5 per component, so the control's saturated column is
+  UNDER-read (its U is a floor); `tools/work/fluid2/s2/cmp.py` tabulates, `montage.py` draws the same 8 frames per variant.
+- **S1's trade measured — and what it actually was.** Round 1, the four shapes at one momentum under the S1 field, p50 over 13 kicks
+  (all · the return · the groove; U pre / +0 / +½ / +1 · ΔU½ · ΔU1 · w1):
+
+  | variant (K2) | U pre/0/½/1 (all) | ΔU½ · ΔU1 all | ΔU½ · ΔU1 return | ΔU½ · ΔU1 groove | hc0/½/1 | w1 | grey0 |
+  |---|---|---|---|---|---|---|---|
+  | **FLUID (scene 12, the control)** | 21.7 / 23.2 / 25.1 / 23.4 | **3.55 · 1.31** | 2.00 · 1.68 | 3.86 · 1.31 | .36 / .41 / .41 | **.127** | 53.0 |
+  | FLUID2 S1's kick (shape 0) | 5.1 / 6.7 / 5.4 / 5.6 | .93 · .93 | .47 · −.00 | 1.22 · 1.29 | .39 / .43 / .45 | .009 | 46.4 |
+  | the jet (1) | 5.1 / 6.4 / 5.7 / 5.6 | .77 · .83 | .71 · .40 | .90 · 1.10 | .39 / .42 / .42 | .004 | 46.1 |
+  | the stroke (2) | 5.5 / 6.9 / 6.4 / 5.8 | 1.14 · .66 | 1.68 · .99 | 1.14 · .66 | .36 / .36 / .40 | .005 | 46.4 |
+  | the dipole, DIP_V .3 in (3) | 5.3 / 7.3 / 6.2 / 5.5 | .98 · .77 | .98 · .29 | 1.04 · .91 | .35 / .35 / .38 | .005 | 47.0 |
+  | the puff, A .4 (4) | 4.6 / 5.7 / 5.2 / 5.4 | .58 · .65 | .36 · −.03 | .60 · .80 | .41 / .44 / .44 | .008 | 46.0 |
+
+  Every FLUID2 shape reads a quarter of FLUID's up-mass and a quarter of its hit addition, with no plume body (w ≤ .01 against the
+  control's .13) — the eye (`tools/work/fluid2/s2/round1-variants.jpg`): FLUID's kick is a mushroom on a column at the centre, every FLUID2
+  shape a pinhead pair at the floor on the return and nothing on the groove. The first reading — the heave's centre-down weight sitting on
+  the kick's column — was WRONG: **the field OFF (`HEAVE 0, HEAVE_DC 0`, shape 0) reads U 6.0 / 7.7 / 7.1 / 6.7, ΔU½ 1.16, ΔU1 .57 — as low as
+  with it on.** The heave costs 15 %; what FLUID's kick was riding is the sub emitter's JET that S1 removed — `+SUB_V` .08 up at the bass
+  note's place on every gated frame, a standing updraft in the band (U 22 before any hit) that every kick's plume climbed. FLUID's kick never
+  carried itself; under FLUID2 it must. The base's `KICK_V` × 2 under shape 0 (`K='{"KICK_V":1.8}'`, the trade's price in impulse — a
+  measurement, not a candidate) reads 7.5 / 10.1 / 7.9 / 7.7, ΔU½ 1.48, ΔU1 1.43: double the impulse buys a third of FLUID's addition.
+- **Round 2–3 — the launch against the field (the kind that carries itself):**
+
+  | variant (K2) | U pre/0/½/1 (all) | ΔU½ · ΔU1 all | ΔU½ · ΔU1 return | ΔU½ · ΔU1 groove | hc½ / hc1 · d1 | w½ / w1 | grey0 |
+  |---|---|---|---|---|---|---|---|
+  | the dipole OUTWARD, DIP_V −.6 | 5.1 / 6.4 / 6.2 / 6.2 | 1.28 · 1.01 | 1.33 · .63 | 1.28 · 1.61 | .41 / .42 · .44 | .008 / .004 | 48.7 |
+  | the dipole OUTWARD, −1.2, DIP_D .05 | 6.9 / 9.0 / 9.0 / 7.7 | 2.57 · .78 | 3.31 · .78 | 2.57 · 1.45 | .34 / .42 · .43 | .001 / .000 | 52.3 |
+  | the dipole INWARD, +.8 | 8.2 / 9.7 / 9.4 / 8.2 | 2.66 · 1.95 | 2.66 · 1.95 | 3.14 · 3.17 | .28 / .31 · .33 | .004 / .000 | 48.9 |
+  | **the dipole INWARD, +1.2 — SHIPPED** | **8.9 / 10.7 / 11.2 / 10.3** | **3.08 · 2.77** | **3.12 · 2.77** | **3.08 · 3.21** | **.29 / .32 · .32** | .015 / .019 | 49.5 |
+  | the dipole INWARD, +1.6 (the switch) | 12.1 / 12.1 / 13.3 / 13.2 | 3.93 · 3.29 | 3.93 · 3.27 | 4.00 · 3.85 | .30 / .31 · .32 | .070 / .022 | 50.8 |
+  | the dipole INWARD, +1.2, DIP_D .05 (the switch) | 10.0 / 12.1 / 14.0 / 13.0 | 3.68 · 3.56 | 4.08 · 3.56 | 3.68 · 4.31 | .28 / .31 · .31 | .077 / .028 | 50.4 |
+  | the dipole INWARD, +1.2, DIP_D .02 | 8.3 / 10.0 / 10.2 / 9.8 | 2.44 · 2.08 | 2.44 · 2.08 | 3.06 · 3.17 | .28 / .30 · .32 | — | — |
+  | the puff, A .8, R .2, T .5 beats | 5.2 / 5.7 / 7.9 / 6.3 | 2.79 · 1.22 | 2.79 · .48 | 3.95 · 1.45 | .33 / .45 · .47 | .010 / .006 | 47.9 |
+  | the puff, A 1.2, R .25, T .5, W .05 | 5.4 / 7.4 / **20.9** / 8.2 | **15.9** · 2.31 | 15.9 · 1.61 | 20.9 · 3.35 | .26 / .44 · .46 | **.211** / .000 | 50.9 |
+
+  The pair seeded OUTWARD runs along the floor and is gone by +1 beat (its ΔU1 .8 at −1.2); the strong puff is a STAMP — a ring of ink
+  expanding to .25 over half a beat (ΔU½ 15.9 while the ring runs, w .21) and nothing a beat later (2.3) — the §113 set-semantics at a
+  point, striking in the dye and not a mass that travels; **the pair seeded INWARD carries itself:** the up-mass it adds grows with the seed
+  (.8 / 1.2 / 1.6 → ΔU½ 2.7 / 3.1 / 3.9, ΔU1 2.0 / 2.8 / 3.3) and with the spacing (DIP_D .02 / .03 / .05 at 1.2 → ΔU1 2.1 / 2.8 / 3.6 — Γ·d),
+  **while the travel ties on every seed: hc1 .30–.32, d1 .31–.32 screen heights per beat** — a third of the screen per beat, beat speed
+  (TORUS2's rule). The width rule (≤ 1.5 × the control's) holds trivially on every FLUID2 kind (≤ .08 against .13: the control's width is
+  the jet column's, not a plume's); the §1.9 step at the hit ≤ .011 on every variant (max over the four moments ≤ .023, the drop's clear
+  frame .46 aside); the ink the base's on every shape (the governor's rate within the ema's rounding; the dipole's two half-ink splats
+  are one ink in the budget's units).
+- **The decision — the dipole seeded inward, `KICK_SHAPE 3, DIP_V 1.2, DIP_D .03`** (`KICK_Y .06, JET_N 4, STROKE_L .25, STROKE_T .05,
+  KPUFF_A .4, KPUFF_R .12, KPUFF_T .25, KPUFF_W .03` as the switches' table). The plan's rule — the greatest p50 travel at +1 beat under the
+  width rule — is a tie across the inward seeds (d1 .31–.32), so the up-mass the pair carries to +1 beat and the eye decide: 1.2 at .03 sits
+  BESIDE FLUID's own number (ΔU½ 3.1 vs 3.6; on the return 3.1 / 2.8 vs FLUID's 2.0 / 1.7, the kick reads MORE than FLUID's there), carries
+  over twice FLUID's to +1 beat (2.8 vs 1.3 — FLUID's column is already saturated), keeps the groove's standing up-mass at half FLUID's (U
+  12–17 against 25: *the double time accents, the sub's field drives*) and draws ONE blob in the dye (DIP_D .05 draws a double dot at +0,
+  `round3-variants.jpg`; 1.6's pair reads over FLUID's addition, 3.9 vs 3.6). The eye on the montage (`tools/accept/v0.37/fluid2-s116-s2-
+  RaindropsOnRoses.jpg`: rows FLUID / FLUID2 S1's kick / the shipped dipole — the composite, the dye, the velocity on the same 8 frames):
+  two counter-rotating cores with the up-jet between them at the bass note's place on every hit, the ink lifted between them on the return,
+  the pair visible under the field on the groove where S1's kick was nothing. **The S1 trade, answered:** the heave was 15 % of it; the shipped
+  pair recovers the hit's addition to FLUID's level and above at +1 beat with the field ON — at the base's impulse and ink. The seven other
+  tracks are untuned and unswept on the user's word.
+- **What the eye should see at home (`#scene=13`):** every kick a small pair of eddies born at the bass note's place that lifts off on its own
+  and climbs a third of the screen in a beat, carrying a puff of the ink with it — not FLUID's column; on a groove the double-time kicks
+  accent (a pair each, half FLUID's standing updraft), the pool's heave with the bass still the driver; on drop 2's return (68.57 s) the
+  pairs read MORE than FLUID's kicks did there. `K2='{"DIP_V":1.6}'` is the stronger pair, `{"DIP_D":0.05}` the wider; `{"KICK_SHAPE":4,
+  "KPUFF_A":1.2,"KPUFF_R":0.25,"KPUFF_T":0.5,"KPUFF_W":0.05}` the ring stamp the user may want to see once; `{"KICK_SHAPE":0}` S1's kick.
+- **The gates (Raindrops-filtered, each with its wall time; the receipt `tools/accept/v0.37/fluid2-s116-s2.txt`):** `node tools/check.js` **183
+  modules 0 fail / 8 warn** (3 s; `uRingC` live in both advect passes, `help.feats gaps 0`) · `npm test` **exit 0** (13 s; `test_fluid` **370 ok** —
+  the bands block's S2 cases: the momentum equality per kick on the real trace, the jet's frames per base frame, the stroke's monotone y, the
+  dipole's mirror, the puff's ring centred and bounded with the base's shockwave winning the drop's 13 frames, the shipped kind on every one
+  of the 129 kick frames, determinism, the cold frame dropping a pending jet, nothing but the kick kinds moved; `test_music` 151) ·
+  `SCENES=13 TRACKS=RaindropsOnRoses tools/real-md5.sh` twice **8 / 8 cmp-equal** (69 / 69 s), all 8 moved against S1's — re-based into
+  **`tools/accept/v0.37/real-md5-v037.txt`** (the other 322 lines untouched; 330 hash lines) · `SCENES=12` **8 / 8 = v036** (69 s: FLUID unmoved —
+  `uRingC` (.5, .5) is the byte-identical path) · the roster `SCENES="0 1 3"` **24 / 24 = v037** (208 s: the centre uniform neutral under the
+  roster's drop1 shockwave) · `SCENES=13 tools/real-rulers.sh` **1 / 1 ok** (66 s: jump viol [] max .056, mon viol [] max .0161, black 0,
+  clip25 0, medY .181 vs S1's .173) · the fake `tools/scene-md5.sh` **26 = v035 + s12's pair unmoved + s13's pair re-recorded** (`1827743c…` /
+  `0af6dd5b…`; errs [] on 14 ids; 212 s) · `node tools/parity.js fake` **max 7.852214593751443, 72 fields, the §102 `nav.*` line to the digit**
+  (50 s) · **the bench** in ONE page (q .95, load 1.29, tier 2 sim 259×128): `benchFluid(300, null, 'pool')` / bands at the shipped shape (the
+  fake's static MS carries no kick on the bench's steps — the branch) / bands at shape 0 / bands with `kickEvt` held on EVERY step (two dip
+  splats + the sub, nSplat 3 — the dipole's cost as an upper bound) interleaved ×3 = **.728 / .734 / .732 / .760 · .721 / .725 / .778 / .807 ·
+  .774 / .789 / .782 / .692 ms** — medians **.728 / .734 / .778 / .760**: ship − pool +.006 / +.004 / +.015 (within ±.05), a pair on every step
+  +.03 over the pool (two splats in the same draw; a real kick is two frames in .43 s). The absolute ms moves with the desktop's state
+  between sessions (S0 .837, S1 .483, S2 .728 — the pair is the number, not the level); `bench(0, 300)` 1.357 · **MOBILE=1** `test&scene=13`
+  tier 0 (sim 64×139, dye 256×554) alive — bands, errs [] bad [], frameN 242; benchFluid bands .416 / + swirl .404 / pool .431 (single
+  unpinned calls — the ≤ .4 budget at the reading's edge, S7's pair decides) · `npm run build` 182 modules → **1 816 420 bytes** (+10 176 over
+  S1), the bundle from `file://` `&scene=13` sc 13 bands errs [] bad [] frameN 302, `&scene=12` pool errs [], VER 0.36.0 · the crossfade under
+  `&trans=mixs`: 12 → 13 greys 34.7 … 20.5 … 35.1, max step 7.3 / 255, §1.9 viol [] (S0's cold-exposure dip, unchanged); the 13 → 0 row with
+  `SC.forced` pinned is the forced branch's revert (S1's finding; flat, viol []) · `node tools/license.js --check` **0 without the header** ·
+  `git diff main -- assets/core/fluid/inject.js` empty.
+- **Open, carried:** **the full sweep before any tag** (the user's word: `real-rulers` s13 on every track, the roster 0 1 3 on the 174, both
+  `SCENES=12 / 13` lists re-run on the final code of the step that tags — the dipole's seed is Raindrops's; CyborgNinja's 29 kicks/s and
+  Malicious's stutter have not met the pair) · the sub jet's loss is now a measured fact (U 22 → 6 in the band): if the user misses FLUID's
+  column at the bass note's place, it is one K2 switch away in S1's terms (a `SUB_V`-sized `dy` on the sub splat — not built; the field was
+  the user's ask) · the kick's x under the harmonic branch (`xH`, the harmony's place) is the base's — the pair launches wherever the base's
+  kick did · the puff's SET semantics stamp the pool's velocity at the front on every hit (measured: a ring of ink, gone in a beat; the §113
+  interference with the pair was not measured — the puff is a switch) · the velocity ruler's clip at |v| .5 (the control's column is a
+  floor; a `uGain` .5 dbg variant is one line if S3's horizontal travel needs it) · the dipole's seed is 3 × the lift at 1.2 (|dx| ≈ .9 per
+  core against dy .37): the pair is mostly spin, and the §1.9 step holds (≤ .011) — the eye at home says whether it reads as a hit or a
+  curl · S1's open list unchanged (Comptine's sway, Malicious's field, the mixs mid-dip, the whole-track traces without `sub`).
 
 ### S3 — mids = material (not started)
 
