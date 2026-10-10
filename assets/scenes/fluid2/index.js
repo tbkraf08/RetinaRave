@@ -45,7 +45,7 @@ function flinfo() {
 function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
   const F = SELF.ctx && SELF.ctx.fluid;
   if (!F) return JSON.stringify({ on: false });
-  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4) });   // §116 S1: the field's values on the last step
+  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4), kick: F.kick, mids: F.mids, snare: F.snare });   // §116 S1: the field's values on the last step; S2 the kick, S3 the mids and the snare
 }
 
 const SELF = {
@@ -115,7 +115,7 @@ const SELF = {
 
   hud() {
     const F = this.ctx && this.ctx.fluid;
-    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0) + ' heave ' + F.heave.toFixed(2) + ' swirl ' + F.swirl.toFixed(2);   // §116 S1: the sub's field
+    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0) + ' heave ' + F.heave.toFixed(2) + ' swirl ' + F.swirl.toFixed(2) + (F.mids ? ' mid ' + F.mids.pos.toFixed(2) + (F.mids.mask ? ' mask' : '') : '') + (F.snare && F.snare.kind ? ' snare ' + F.snare.kind + (F.snare.side ? (F.snare.side > 0 ? '→' : '←') : '') : '') + (F.kick && F.kick.n ? ' kick ' + F.kick.shape : '');   // §116 S1: the sub's field; S3 the mids' place (and the mask), the snare's kind
     return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' · ' + sub;
   },
 

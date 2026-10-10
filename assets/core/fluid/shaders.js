@@ -31,10 +31,14 @@ void main(){float L=texture(uVel,vL()).y*uScale.y,R=texture(uVel,vR()).y*uScale.
 o=vec4(.5*(R-L-T+B),0.,0.,1.);}`;
 
 // Vorticity confinement: push toward the local curl's gradient, scaled by uCurl (the `curl` param) and dt.
+// §116 S3 uCurlMask (y0, y1, lo, feather): the band grammar's MASK on the confinement — its full value inside the band y0..y1 of the screen's
+// height, lo × it outside, the edges feathered over `feather` (smoothstep each side). lo = 1 is the identical program path (the branch not
+// taken; fluid.js passes (0, 1, 1, 0) when the grammar returns no `params.curlMask`) — a uniform branch, never a mix, as the ring's A = 0.
 export const VORT = NB + `
-uniform sampler2D uVel,uCurl;uniform vec2 uScale;uniform float uCurlK,uDt;
+uniform sampler2D uVel,uCurl;uniform vec2 uScale;uniform float uCurlK,uDt;uniform vec4 uCurlMask;
 void main(){float L=texture(uCurl,vL()).x,R=texture(uCurl,vR()).x,T=texture(uCurl,vT()).x,B=texture(uCurl,vB()).x,C=texture(uCurl,vUv).x;
 vec2 f=.5*vec2(abs(T)-abs(B),abs(R)-abs(L));f/=length(f)+1e-4;f*=uCurlK*C;f.y=-f.y;
+if(uCurlMask.z<1.){float m=smoothstep(uCurlMask.x-uCurlMask.w,uCurlMask.x,vUv.y)*(1.-smoothstep(uCurlMask.y,uCurlMask.y+uCurlMask.w,vUv.y));f*=mix(uCurlMask.z,1.,m);}
 vec2 v=texture(uVel,vUv).xy*uScale;v+=f*uDt;v=clamp(v,vec2(-1000.),vec2(1000.));
 o=vec4(v/uScale,0.,1.);}`;
 
