@@ -10184,3 +10184,97 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   151 (the flash) → 93 → 57 → 44.6 → 41.6 (+0.4 s) → 42 → 44** and without **81 → 151 → 91 → 57 → 44.6 → 41.5 → 42 → 44**; drop 2 42.8 vs 43.0 at
   +0.4; the whole-frame p99 106 vs 107 — six point-pushes next to a velocity ring moved nothing the ruler or the eye can see, so they go: the
   substrate's ring is the one ring, and the scene throws nothing on the drop (its one injection is the sparkle).
+- **The per-track table** (`tools/fluid-drop-strip.sh`: one deterministic whole-track run per track × mode × variant, `at=0`, CLOCK=1 GPU=1,
+  `f0` 2 and errs [] on every run; shockwaves and confirmed drops on the survey's whole-track traces; the live detector's hit / miss against
+  windows.json's truth drops under `&map=0`; the CENTRE grey — the disc of radius .25·H round the canvas centre — 0.4 s after the confirmed
+  clear, for the §107 dissipation spike alone (`SW_K` 0) / the shockwave alone (`DROP_DISS` 1) / both (what ships); the empty centre reads
+  27–36 on these tracks (SeeYouDrop's intro 32, Vienna's 36, WhoLikesToParty's cleared pool 27 — the porthole lights the centre above the
+  whole-frame 22–24), the pre-drop centre 44–86):
+
+  | track | shockwaves / confirmed drops (file · live) | live detector hit / miss (false arms, all unconfirmed) | centre +0.4 s: spike · ring · both |
+  |---|---|---|---|
+  | SeeYouDrop | 2 / 2 · 2 / 2 | 2 / 2 (0) | live 41.9 · 43.4 · **40.8** ; 43.9 · 44.8 · **42.2** (file both 40.0 / 42.7) |
+  | WhoLikesToParty | 3 / 3 · 3 / 3 | 3 / 3 (0) | live 36.0 · 34.6 · **33.6** ; 34.3 · 31.3 · **30.5** ; 34.1 · **43.2** · **32.3** (file both 25.5 / 25.2 / 25.3 — the map's line a bar early clears an emptier pool) |
+  | Vienna | 1 / 1 · 1 / 1 | 1 / 2 (0): bar 40 at 106.67 never arms | live 38.1 · 39.4 · **37.2** (the floors 37.4 · 37.7 · 36.5 at +0.3–0.6; file both 36.9) |
+  | IBelongHere | 5 / 5 · 1 / 1 | 1 / 4 (4, the 144–178 s breakdown) | file 35.1 · 36.7 · **33.4** ; 38.3 · 41.4 · **37.3** ; 41.5 · 41.4 · **37.8** ; 44.8 · 46.3 · **41.3** ; 33.5 · 34.7 · **30.8** (live both, the 179.18 return: 66 → **29.4** at +0.3) |
+  | CyborgNinja | 0 / 0 · 0 / 0 | 0 / 0 (0) — the control | — |
+  | Comptine | 0 / 0 · 0 / 0 | 0 / 3 (5) — a piano piece; the map's one line at 107.37 unconfirmed | — |
+  | Malicious (record only) | 0 / 0 · 0 / 0 | 0 / 1 (0) | — |
+  | the pad take | 0 / 0 (live) | 0 / 0 (0) | — (`tools/rec-strip.sh … s113`: 49 shots, errs [], the grey line 16 … 28 … 27 as §111's; its two md5 lines unmoved) |
+
+  Reading the strips (the committed montages, `tools/accept/v0.36/fluid-s113-<Track>-drops.jpg`, 0.1 s apart from 1.5 beats before to 1.5 beats
+  after each clear): the pool full to the frame before; on SeeYouDrop the composite's flash (the centre 151–172) on the clear's frame; then the
+  ring's front crossing the centre disc — the centre 92 → 52 → 42 at +0.1 / +0.2 / +0.3 s on SeeYouDrop, 48 → 38 → 34 on WhoLikesToParty, 47 →
+  41 → 37 on Vienna — the floor at +0.3–0.4 s, held for the clear's beat, then the refill from the drop's kicks (+0.5 → +1.5 beats: 41 → 46 →
+  49 on SeeYouDrop). The ring alone is AHEAD of the spike at +0.2 s on every track (SeeYouDrop 52 vs 59, IBelongHere 36–45 vs 46–53) — the
+  centre empties physically, outward, instead of fading in place — and the whole frame stays full behind the front (whole-frame +0.4 s: ring
+  alone 54–60, spike alone 27–35): the ink pushed to the edge survives, as the design wanted.
+- **`DROP_DISS` stays 12 — both, and why.** The rule was: drop the spike to a small value if the shockwave alone clears to within 10 % of the
+  spike's floor. It does on **10 of 11** drops (SeeYouDrop +3.6 / +2 %, WhoLikesToParty −4 / −9 %, Vienna +1 %, IBelongHere +5 / +8 / −3 / +3 /
+  +4 %) and fails on **WhoLikesToParty's drop 3: 43.2 against 34.1 (+27 %)** — the softest slam in the library (bass .66 against the track's
+  kicks, A .67, the lowest rank), where the ring at .67 uv/s does not outrun its own front and leaves a third more ink in the centre. And on
+  every track the centre refills 5–10 grey faster without the spike over the beat after (IBelongHere's 130 s line +0.4 / +0.5 / +0.6 s: 46 /
+  53 / 56 against 41 / 44 / 48; Vienna 39 / 42 / 42.5 against 37 / 38 / 37) — the spike is what holds "cleared, now refilling" for the beat
+  (§107's read). So the amplitude law does what it should (a soft drop is a softer throw) and the spike stays as the floor's guarantee: the
+  ring throws, the spike holds. The trade recorded for item 2 and the user's eye: with 12 the ink the ring pushes to the edge is dissolved
+  within the beat too (whole-frame 27–35 at +0.4 s against 54–60 with the ring alone) — a smaller spike (6: 10 % of the ink left after the
+  beat, §107's number) would keep more of the thrown ink and was NOT measured here; it is the one knob to try after the reversal lands, on
+  every track, with WhoLikesToParty's drop 3 as the ruler.
+- **The gates, each run on the tree as committed (wall times):** `node tools/check.js` **0 fail** / 8 warn (the pre-existing soft caps) ·
+  `npm test` **exit 0** — `test_fluid` **299 ok** (the `shock` block; the music block's shockwaves == confirmed clears on every trace: SeeYouDrop 2
+  / 2, Vienna 1 / 1, WhoLikesToParty 1 / 1 in 110 s, IBelongHere-map1 3 / 3 and -map0 0 / 0, Comptine / CyborgNinja / the pad 0 / 0, each ring
+  SW_T beats ± 2 frames with its front at SW_C·SW_T ± .03), `test_music` 129 ok, 11.4 s · `SCENES=12 tools/real-md5.sh s113a / s113b`
+  (PORT 8981, 39 runs each, **717 s** each): **58 / 58 cmp-equal twice**, `f0` 2 and errs [] on all 78 runs; **3 of 58 lines moved** against
+  `real-md5-v035.txt` — `s12-SeeYouDrop-groove-f602-m1`, `s12-IBelongHere-groove-f602-m1` (their `at` contains a map line, so `mapDropEvt`
+  fires on the file's first frame — §107's `at=80` pitfall — and the first-frame clear now throws the ring too) and `s12-WhoLikesToParty-
+  drop1-f1532-m1` (one second after its map line: the ring's wake); the 55 others, the drop shots ON the clear's frame among them, unmoved
+  — the ring is on the frame after the fire, the dye lands next step · the roster: `SCENES="0 1 3" PAR=2 tools/real-md5.sh s113r` (117 runs,
+  **1440 s**): **174 / 174 = `real-md5-v035.txt`**, `f0` 2 on every run — the ring reaches no roster scene (advect 0; the ADVECT program's
+  branch is A 0 there) · the fake smoke `tools/scene-md5.sh s113` **26 / 26 = `scene-md5-v035.txt`** (the fake has no drop: s12's pair does
+  not move either) and `s113off '&fluid=0'` = `scene-md5-v035-fluid0.txt` line for line, errs [] on all 13 ids · parity fake (ACC v0.36):
+  max **7.852214593751443**, 72 fields, the §102 `nav.*` MISMATCH line to the digit · `SCENES=12 tools/real-rulers.sh s113` (**481 s**): FLUID
+  **8 / 8 ok** — jump viol [] (every shockwave frame inside the picture rule; max 0.017–0.054), mon viol [] (the state monitor max 0.004–0.029),
+  black 0, clip25 0 on every row; the rec row 244 / 1463 as §111's. The new references: `tools/accept/v0.36/real-md5-v036.txt` (the roster's
+  174 as v035 + FLUID's 58), `real-rulers-v036.txt`; the fake lists stay v035's.
+- **The bench after the change** (the same recipe as step 0, the machine as loaded — the desktop Chrome's renderers at 22–40 % CPU): set 1
+  (load 2.19 / 2.87 / 2.90) substrate **0.861 (cold) / 0.914 / 0.670 / 0.672 ms** against NAV **1.555 / 1.451 / 1.382** → median **0.672,
+  ratio 0.46**; set 2 (load 2.24) **1.243 (cold) / 1.096 / 0.707 / 0.719** against **1.613 / 2.166 / 1.687** → median **0.719, ratio 0.43**.
+  Pre-change 0.69–0.77 at ratio 0.34–0.36 under load ~3.5 (NAV read 2.0–2.1 then, 1.4–1.7 now): the substrate's absolute cost did not move
+  (0.67–0.77 both sides, inside the ≤ 1.0 ms budget), the ratio rose with NAV's own speed, not ours. **The ring's cost** (`benchFluid(300,
+  {a 1.4, r .12, w .08})` held on every step, three triples ring / no ring / NAV): **1.093 / 1.050 (cold pair) · 0.681 / 0.727 · 0.712 / 0.684**
+  against NAV 1.554 / 1.412 / 1.378 — the ring costs nothing the bench can see (±0.03 ms, both ways): it rides the ADVECT pass as a uniform
+  branch over 259×128 + 1035×512 texels, no draw added. **The phone path** (`MOBILE=1`: 390×844 at DPR 3 → the 1170×2532 canvas, q pinned .1 →
+  tier 0, sim 64×139, dye 256×554): ring / no ring / NAV **0.518 / 0.508 / 2.203 (cold pair) · 0.290 / 0.344 / 1.842 · 0.347 / 0.387 / 1.970**
+  → **0.35 ms with the ring at tier 0** (budget ≤ 0.4), errs [], glerr 0; and the live drop on the phone (`test&track=SeeYouDrop&at=0&scene=12
+  &map=0`, CLOCK=1, cold from 0 so the detector has its 32 s): `f0` 2, errs [] bad [], the clear at 57.65 — the whole frame 111 → **42** and
+  the centre 130 → **66** at +0.4 s, refilled to 113 at +1.0 (`tools/work/fluid-drop/phone/`; a first run at `at=40` armed nothing — inside
+  the detector's 32 s warm-up, the pitfall for anyone shooting a live drop from mid-track).
+- **What the eye should look at.** `tools/accept/v0.36/fluid-s113-SeeYouDrop-drops.jpg` (live, 2 × 15 frames: the flash, the front through
+  the centre, the clean centre, the refill), `-WhoLikesToParty-drops.jpg` (live, 3 × 17: no flash — the extractor never fires there — so the
+  ring is the whole gesture), `-Vienna-drops.jpg` (live, 23 at 90 bpm: the slowest front), `-IBelongHere-drops.jpg` (file mode, 5 × 17: the
+  map's lines; the 179 s return the deepest), `-SeeYouDrop-variants.jpg` and `-WhoLikesToParty-drop3-variants.jpg` (rows: spike alone / ring
+  alone / both — the first shows why the ring, the second why the spike stays). The strips themselves: `tools/work/fluid-drop/<Track>-m<map>-
+  <both|sw|spike>/`, `grey.txt` with the centre column.
+- **Deviations from the design, said plainly.** (a) The amplitude is ranked `bass` on the confirming frame, not a knee on `dropStrength` (0.00
+  on five of eleven clears — measured above). (b) The shockwave fires on the CONFIRMED frame (the design allowed the trigger frame if the
+  false count stayed 0; it is 10 on the gated six). (c) The ring is no extra draw — the design budgeted one; it rides the ADVECT pass. (d) The
+  ring needed the compressible term on the dye pass that the design did not foresee (the first strips measured the copy-only ring emptying
+  nothing). (e) `DROP_DISS` kept at 12 by the rule's own failure on one drop. (f) The scene's droplets removed, not made to ride the front
+  (measured: invisible next to the ring).
+- **Open.** (1) The survey's whole-track traces are still the §111 set — the §112 re-record at this HEAD was started and stopped: a whole-track
+  `'*'` trace overflows `filetrace.js`'s chunk cap (25.6 of 40.5 MB on WhoLikesToParty); a field subset fits, and nothing here needed it (every
+  FLUID_FEATS field, `bass` included, is in the survey's). (2) IBelongHere's live return lands 0.6 s late (the detector's arm at 178.58, the
+  sub's return at 179.13) — the detector's placement, for `engine/build`. (3) Vienna's bar 40 (106.67) never arms the live detector; the map
+  has no line there either — one of its two drops has no shockwave in any mode. (4) The first-frame `mapDropEvt` clear on a mid-track `at=`
+  now throws the ring too (two groove references moved for it). (5) `DROP_DISS` 6 with the ring, untested (above). (6) The user's eye on all six
+  montages, and the live night: the ring on a tab capture is the same object as on the file (the grammar is canvas- and mode-independent;
+  the detector is the only difference, measured above). (7) The idle bench is still unseen on this machine (every reading has the desktop's
+  Chrome on it); the post-change numbers are the honest ones.
+
+### Item 2 — the reversal (next worker)
+
+Not started. FLUID-DROP-SESSION-PROMPT.md "Item 2" is the design: a ring of dye frames at reduced resolution, armed on `buildLive` latched +
+`dropLiveIn ≤ 1`, released into item 1's shockwave on the confirmed drop (`plan()`'s `drop` 1 / `ring` on that frame), a cross-faded resume
+on a fake-out, the §1.9 step measured at every resume, the fake-out budget per track. What item 1 leaves it: `FLUID.wave` / `ctx.fluid.ring`
+(the shockwave's frame is `P.drop === 1`), the strip recipe (`tools/fluid-drop-strip.sh`, the centre grey), the per-track clear times above,
+and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, on every track.
