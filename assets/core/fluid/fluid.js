@@ -224,6 +224,7 @@ export function stepFluid(dt, S, resumed) {
   gl.uniform2f(pr.u('uForce'), FLUID.body[0], FLUID.body[1]);
   gl.uniform1f(pr.u('uAspect'), aspect);
   gl.uniform3f(pr.u('uRing'), wave ? wave.a : 0, wave ? wave.r : 0, wave ? wave.w : 1);   // §113: no extra draw — the ring rides the velocity advect
+  gl.uniform1i(pr.u('uDye'), 0);
   tri();
   swap(vel);
   pr = pass(P.advect, dye[1]);
@@ -233,7 +234,8 @@ export function stepFluid(dt, S, resumed) {
   gl.uniform1f(pr.u('uBody'), 0);
   gl.uniform2f(pr.u('uForce'), 0, 0);
   gl.uniform1f(pr.u('uAspect'), aspect);
-  gl.uniform3f(pr.u('uRing'), 0, 0, 1);
+  gl.uniform3f(pr.u('uRing'), wave ? wave.a : 0, wave ? wave.r : 0, wave ? wave.w : 1);   // §113: the ring's divergence dilutes / compacts the ink (the shader's dye branch)
+  gl.uniform1i(pr.u('uDye'), 1);
   tri();
   swap(dye);
   FLUID.body[0] = FLUID.body[1] = 0;

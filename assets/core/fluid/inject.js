@@ -97,7 +97,8 @@ export const K = {
   SW_C: 0.5,       // §113 the SHOCKWAVE: on the confirmed drop (the frame the clear fires) a radial velocity ring from the screen's centre, its front
   SW_W: 0.08,      //   at r = SW_C · (t / beat) screen heights (one screen radius per beat), SW_W wide (exp(−((r − front)/w)²)), for SW_T beats;
   SW_T: 0.5,       //   the ring SETS the velocity at the front to A · r̂ (fluid.js, the velocity advect pass — a radial field is curl-free and the
-  SW_K: 1.5,       //   projection would remove an added one; set each frame it never accumulates, and the dye rides it the same step)
+  SW_K: 1.5,       //   projection would remove an added one; set each frame it never accumulates) and its divergence THINS the ink inside the
+                   //   front and piles it at the front (the dye pass — advection alone copies, it does not carry: measured, §113)
   SW_A0: 0.5,      //   A = SW_K · (front speed) · g · (SW_A0 + (1 − SW_A0) · the slam's RANK): the bass level on the confirming frame ranked in the
                    //   track's own kicks' bass (RANK_N; SeeYouDrop's 1.0 is its p90+, WhoLikesToParty's .66–.69 sits mid-range) — `dropStrength`
                    //   (the design's knee) is the extractor's, set on its own dropEvt, and reads 0.00 on all three WhoLikesToParty drops
