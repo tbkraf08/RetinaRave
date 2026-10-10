@@ -13,7 +13,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -82,7 +82,7 @@
    "drops": [],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -161,7 +161,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -232,7 +232,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -283,6 +283,90 @@
    },
    "gate": false
   },
+  "RaindropsOnRoses": {
+   "track": "RaindropsOnRoses",
+   "seconds": 222.7,
+   "bpm": 93.8,
+   "loudest30_from": 76,
+   "drops": [
+    41.134,
+    68.569,
+    137.137
+   ],
+   "runs": [
+    {
+     "at": 24.0,
+     "shots": [
+      {
+       "name": "intro",
+       "t": 34.0,
+       "f": 602
+      },
+      {
+       "name": "build1",
+       "t": 36.134,
+       "f": 730
+      },
+      {
+       "name": "drop1",
+       "t": 41.134,
+       "f": 1030
+      },
+      {
+       "name": "bass56",
+       "t": 56.0,
+       "f": 1922
+      },
+      {
+       "name": "event66",
+       "t": 66.0,
+       "f": 2522
+      }
+     ]
+    },
+    {
+     "at": 43.0,
+     "shots": [
+      {
+       "name": "build2",
+       "t": 63.569,
+       "f": 1236
+      },
+      {
+       "name": "drop2",
+       "t": 68.569,
+       "f": 1536
+      }
+     ]
+    },
+    {
+     "at": 76.0,
+     "shots": [
+      {
+       "name": "groove",
+       "t": 86.0,
+       "f": 602
+      }
+     ]
+    },
+    {
+     "at": 110.0,
+     "shots": [
+      {
+       "name": "quiet",
+       "t": 120.0,
+       "f": 602
+      }
+     ]
+    }
+   ],
+   "rulers": {
+    "from": 56.0,
+    "to": 116.0
+   },
+   "gate": false,
+   "start": 24.0
+  },
   "SeeYouDrop": {
    "track": "SeeYouDrop",
    "seconds": 157.4,
@@ -294,7 +378,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -371,7 +455,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",
@@ -449,7 +533,7 @@
    ],
    "runs": [
     {
-     "at": 0,
+     "at": 0.0,
      "shots": [
       {
        "name": "intro",

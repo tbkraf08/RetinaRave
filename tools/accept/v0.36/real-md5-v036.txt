@@ -213,6 +213,19 @@ a1e83a55a09066b4e8e30f51f552a146  s12-Malicious-drop1-f1521-m0.jpg
 bc00ec8a55fae4ad1b50ba98cac2e3c8  s12-Malicious-groove-f602-m1.jpg
 4be8bdecce4df45a608a913bd093630d  s12-Malicious-intro-f602-m0.jpg
 e4148e91a0c408166a6a1e8cee745c6d  s12-Malicious-intro-f602-m1.jpg
+# §117 (2026-10-10): the EIGHTH track — RaindropsOnRoses (An-ten-nae / Dimond Saints; from its 24 s `start`, windows.json): FLUID's 8 lines, the
+# DEFAULT scope (intro f602 / build1 f730 / drop1 f1030 on the run at 24, groove f602 at 76; both modes) — `SCENES=12 TRACKS=RaindropsOnRoses
+# tools/real-md5.sh s117a` / `s117b` (PORT 8986 / 8988, 4 runs each, 69 s wall), cmp-equal, f0 2 errs [] bad [] on every run. The roster's lines
+# (0 1 3) on this track are NOT in the list yet (owed with the next roster re-proof); the track is not a gate (`gate: false`) until the user
+# validates a ruler on it, so a moved line here is a finding, never a FAIL.
+13d802a9473281b985484e0ab441b200  s12-RaindropsOnRoses-build1-f730-m0.jpg
+3df13c699e65dfc78499b48b48283a95  s12-RaindropsOnRoses-build1-f730-m1.jpg
+5f946bd61ada6152184f21a4facfc8f8  s12-RaindropsOnRoses-drop1-f1030-m0.jpg
+21581b7ffecde2fa83e79c778161d2d0  s12-RaindropsOnRoses-drop1-f1030-m1.jpg
+9ec70f36c51704c7baa1ebc1755d4935  s12-RaindropsOnRoses-groove-f602-m0.jpg
+a54dc73f84924149acc070797cb4e9e2  s12-RaindropsOnRoses-groove-f602-m1.jpg
+9996eaef1dcf7c73981229262d54c88f  s12-RaindropsOnRoses-intro-f602-m0.jpg
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
 091bc01e9f91bdcbd4377c220a415e14  s12-SeeYouDrop-build1-f1238-m0.jpg
 65cf92b2b07bf39d8d937dcd25d8d4bc  s12-SeeYouDrop-build1-f1238-m1.jpg
 1fe1e46f58f5383574f4e5b18ffa63b7  s12-SeeYouDrop-drop1-f1538-m0.jpg

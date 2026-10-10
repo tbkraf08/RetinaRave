@@ -628,7 +628,8 @@ Rules (`check.js`): `title` and `blurb` non-empty (fail); a `card` without its t
 
 ### 1.18 Sync rules — how a scene looks synced with the music (v0.15)
 
-**A scene or engine change is proven on real tracks (every library track, both map modes, the pad take — HARNESS "Real-music
+**A scene or engine change is proven on real tracks (every library track — EIGHT since DECISIONS §117: the seven and RaindropsOnRoses from
+its 24 s `start` —, both map modes, the pad take — HARNESS "Real-music
 acceptance", DECISIONS §109); the `#test` fake timeline is a smoke test, never the proof.**
 
 The v0.15 ears (`engine/ears/`, stage `ears`) and track map (`engine/map/`, file mode) exist so a visual can land *on* the

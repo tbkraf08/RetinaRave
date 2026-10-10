@@ -320,6 +320,12 @@ export const KEY_TRACKS = {
   // locally. `syn` is key-ears.mjs's node read (synapse Am, keyConf 0.97 — its saturated scale), not a page read. The user's
   // ear decides the fifth; `expect: false` records the ears' Dm as the known read until then.
   IBelongHere:     { pc: 9, minor: 1, syn: [9, 1, 100], expect: false },
+  // RaindropsOnRoses (An-ten-nae, Dimond Saints remix; the eighth track, added 2026-10-10, DECISIONS §117): F♯ by every ruler —
+  // key-truth.py KS F#m / F#M a PARALLEL pair in every section from 41 s (margins 0.005–0.062, the bass tonic F# 72–100 %: confirmed-by-bass),
+  // trackmap's whole-track KK F# minor (conf 0.104, the sub a 46.3 Hz F#1 held 71 % of the loud half); the ears F#M 58 % / F#m 26 % of
+  // frames 20–100 s, tonicConf p50 0.589; synapse (key-ears.mjs's node read) F#M 51 %, keyConf 0.628. The pitch class is not in doubt;
+  // the MODE (the parallel pair) is the user's ear — `minor: 1` records the rulers' lean, the mode column is informational.
+  RaindropsOnRoses: { pc: 6, minor: 1, syn: [6, 0, 51], expect: true, conf: ['>=', 0.3] },
 };
 const PCN = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const nameOf = (pc, mi) => (pc < 0 ? '--' : PCN[pc]) + (mi ? 'm' : 'M');

@@ -10,3 +10,6 @@ loud half: sub 1%  bass 52%  lm 25%  mid 19%  high 3% | bass f0 95.5 Hz G2 held 
 
 === IBelongHere  232.9 s  tempo 117.6 bpm (percussive onsets, loudest 30 s from 179 s)
 loud half: sub 34%  bass 30%  lm 14%  mid 19%  high 4% | bass f0 54.8 Hz A1 held 49% | centroid30-600 144 Hz  h/f 0.38
+
+=== RaindropsOnRoses  222.7 s  tempo 93.8 bpm (percussive onsets, loudest 30 s from 76 s)
+loud half: sub 56%  bass 34%  lm 5%  mid 4%  high 1% | bass f0 46.3 Hz F#1 held 71% | centroid30-600 69 Hz  h/f 0.05

@@ -10,24 +10,36 @@ window tools/real-rulers.sh runs, derived from the track's OWN structure in tool
 
 Per track, one RUN per `at` (a cold deterministic start there, HARNESS "File source"; windows sharing an `at` share the run), its shots addressed by __FRAME
 (heardT = at + (frame − 2)/60, so frame = 2 + round((t − at)·60)):
-  intro   at 0, t 10                         the first ten seconds
+  intro   at S, t S+10                       the first ten seconds from the track's `start` S (START below; 0 for the seven)
   groove  at L, t L+10                       L = summary.loudest30_from (the loudest 30 s); when L < 15 s the groove IS the intro,
                                              so L = the first section boundary ≥ 20 s instead
   quiet   at Q, t Q+10                       Q = the start of the sparsest 10 s (the lowest onset density — low + click + mid_on +
                                              high_on per second over the 5 s slices — from 10 s on, not inside another window)
   dropN   at max(0, ⌊d⌋ − 25): build t d−5, drop t d     the first two `drops` (bar-pinned, DROP_MIN); a track with no drop
                                              (CyborgNinja) takes its first two section boundaries ≥ 20 s as boundaryN instead
-  rulers  from max(0, L − 20) to from + 60   the continuity / luminance window: the approach to the loudest 30 s and the 30 s itself
+  rulers  from max(S, L − 20) to from + 60   the continuity / luminance window: the approach to the loudest 30 s and the 30 s itself
+  <user>  the user's named moments (USER below: RaindropsOnRoses bass56 / event66), on a run that covers them; not in the DEFAULT scope
 The pad take (rec, FLUID-DIAG-2026-10-09, 24.4 s, &map=0 only): intro at 0 t 10 and chords t 20 (§108's 19–21 s attacks), rulers 0 → 24.4.
-`gate` false (Malicious, NO_GATE) = recorded and swept for the record, never a FAIL and never asserted.
+`gate` false (Malicious, RaindropsOnRoses — NO_GATE) = recorded and swept for the record, never a FAIL and never asserted.
+`start` (RaindropsOnRoses 24 s) = the track starts there for every harness purpose: no run, window or trace before it.
 """
 import json, math, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TRACKS = ['Comptine', 'CyborgNinja', 'IBelongHere', 'Malicious', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty']
+TRACKS = ['Comptine', 'CyborgNinja', 'IBelongHere', 'Malicious', 'RaindropsOnRoses', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty']
 # `gate: false` — in the sweeps and the traces for the record, but NOT a FAIL rule and NOT asserted by the node tests (§109: the user,
 # 2026-10-09: "can ignore malicious until I validate the ruler" — the map's sub ruler on Malicious is pending his validation)
-NO_GATE = {'Malicious'}
+# RaindropsOnRoses (the eighth track, 2026-10-10, DECISIONS §117): its truth is the tool's (the DP grid's beat phase was never placed
+# on the audio, dp_residual 62.2 ms; the drops are bar-pinned to it) and the user has not validated a ruler on it — measured, not a gate.
+NO_GATE = {'Malicious', 'RaindropsOnRoses'}
+# `start` — the track starts HERE for every harness purpose (the user, 2026-10-10, on RaindropsOnRoses: "note: start from 24 secs"):
+# the intro run is cold at `start`, no window and no run begins before it, the rulers window begins no earlier, and tools/traces.sh
+# records start → start + 110 s. Absent = 0 (the seven).
+START = {'RaindropsOnRoses': 24.0}
+# the user's NAMED moments (the same user note: "bass that starts at 56s -> something happens at 1:06 with the sound"): shot on a run
+# that already covers them (at ≤ t − 5 and t − at ≤ 60) else on their own run at max(start, ⌊t⌋ − 25); behind FULL=1 / WINDOWS= like
+# quiet / drop2 (the DEFAULT scope stays intro · groove · build1 · drop1)
+USER = {'RaindropsOnRoses': [('bass56', 56.0), ('event66', 66.0)]}
 FPS = 60
 
 def frame(at, t):
@@ -37,41 +49,49 @@ def windows(track):
     d = json.load(open(os.path.join(HERE, track + '.json')))
     s, secs, drops = d['summary'], d['sections'], d.get('drops') or []
     dur = s['seconds']
+    st = START.get(track, 0.0)
     runs = []   # [{at, shots: [{name, t, f}]}]
-    runs.append({'at': 0, 'shots': [{'name': 'intro', 't': 10.0}]})
+    runs.append({'at': st, 'shots': [{'name': 'intro', 't': st + 10.0}]})
     L = s['loudest30_from']
-    if L < 15:
-        L = next((x['t0'] for x in secs if x['t0'] >= 20), 20.0)
+    if L < st + 15:
+        L = next((x['t0'] for x in secs if x['t0'] >= st + 20), st + 20.0)
     L = float(int(L))
     runs.append({'at': L, 'shots': [{'name': 'groove', 't': L + 10}]})
     # the sparsest 10 s from the 5 s slices' onset densities (per second), outside the intro / groove windows
     sl = d['slices']['5']
-    taken = [(0, 10), (L, L + 10)]
+    taken = [(st, st + 10), (L, L + 10)]
     best, Q = None, None
     for i in range(len(sl) - 1):
         t0 = sl[i]['t']
-        if t0 < 10 or t0 + 10 > dur - 5: continue
+        if t0 < st + 10 or t0 + 10 > dur - 5: continue
         if any(t0 < b and t0 + 10 > a for a, b in taken): continue
         dens = sum(sl[j]['low'] + sl[j]['click'] + sl[j]['mid_on'] + sl[j]['high_on'] for j in (i, i + 1)) / 2
         if best is None or dens < best: best, Q = dens, t0
     if Q is not None:
         runs.append({'at': float(Q), 'shots': [{'name': 'quiet', 't': Q + 10}]})
-    hits = [(x, 'drop') for x in drops[:2]]
+    hits = [(x, 'drop') for x in drops if x >= st][:2]
     if not hits:
-        hits = [(x['t0'], 'boundary') for x in secs if x['t0'] >= 20][:2]
+        hits = [(x['t0'], 'boundary') for x in secs if x['t0'] >= st + 20][:2]
     for k, (t, kind) in enumerate(hits):
-        at = float(max(0, math.floor(t) - 25))
+        at = float(max(st, math.floor(t) - 25))
         runs.append({'at': at, 'shots': [{'name': 'build%d' % (k + 1), 't': round(t - 5, 3)}, {'name': '%s%d' % (kind, k + 1), 't': round(t, 3)}]})
-    merged = {}   # one run per `at`: Comptine's drop 1 (21.5 s) and IBelongHere's (15.9 s) share the intro's run at 0
+    for name, t in USER.get(track, []):   # the user's named moments: an existing run that covers them, else their own
+        r = next((r for r in runs if r['at'] <= t - 5 and t - r['at'] <= 60), None)
+        if r is None:
+            r = {'at': float(max(st, math.floor(t) - 25)), 'shots': []}; runs.append(r)
+        r['shots'].append({'name': name, 't': t})
+    merged = {}   # one run per `at`: Comptine's drop 1 (21.5 s) and IBelongHere's (15.9 s) share the intro's run at 0; RaindropsOnRoses' drop 1 (41.1 s) the intro's at 24
     for r in runs:
         merged.setdefault(r['at'], []).extend(r['shots'])
     runs = [{'at': at, 'shots': sorted(sh, key=lambda x: x['t'])} for at, sh in sorted(merged.items())]
     for r in runs:
         for sh in r['shots']:
             sh['f'] = frame(r['at'], sh['t'])
-    rf = float(max(0, int(L) - 20))
-    return {'track': track, 'seconds': dur, 'bpm': s['bpm'], 'loudest30_from': s['loudest30_from'], 'drops': drops,
-            'runs': runs, 'rulers': {'from': rf, 'to': rf + 60}, 'gate': track not in NO_GATE}
+    rf = float(max(st, int(L) - 20))
+    out = {'track': track, 'seconds': dur, 'bpm': s['bpm'], 'loudest30_from': s['loudest30_from'], 'drops': drops,
+           'runs': runs, 'rulers': {'from': rf, 'to': rf + 60}, 'gate': track not in NO_GATE}
+    if st: out['start'] = st
+    return out
 
 out = {'note': 'generated by tools/truth/windows.py (DECISIONS §109) from tools/truth/<Track>.json; frame = 2 + round((t - at)*60)', 'tracks': {}}
 for t in TRACKS:

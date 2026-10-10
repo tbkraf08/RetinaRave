@@ -10510,3 +10510,93 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
 ### S6 — time (not started)
 
 ### S7 — the seven-track tune, the gates, the montages, the docs (not started)
+
+## §117 the eighth track — RaindropsOnRoses, from 24 s, with the user's time note carried into FLUID2 S6 (2026-10-10, one worker in a worktree off c3ea530; the user: *"also added new test track (~/Downloads/An-ten-nae - Raindrops On Roses (Dimond Saints Remix).flac) -> note: start from 24 secs ; this is a good track that could play with time element (ideas modulate time -> example bass that starts at 56s -> something happens at 1:06 with the sound that seems like it would be good to modulate on)"*)
+
+- **The file.** Copied (not moved) to `~/Music/RetinaRave/RaindropsOnRoses.flac` — the library keeps short names without spaces, as the seven
+  — 44.1 kHz stereo FLAC (PCM_16), **222.857 s** (9 828 001 frames; 222.7 s at the truth's framing), md5 `b1ecf175ff240c140d75cc57161e1c23`.
+  Nothing under `~/Music` is committed. **The memory rule "tune on all tracks" now means EIGHT** (CONTRACTS §1.18, HARNESS "Real-music
+  acceptance", `windows.py` TRACKS, `traces.sh`, `fluid-tracks.js`).
+- **The truth, the IBelongHere recipe as run** (`docs/truth/IBELONGHERE-2026-10-02.md` §0 — the recipe the last two imports used):
+  `python3 tools/truth/trackmap.py RaindropsOnRoses --pcm --sr=48000` (allowed once: no truth dir existed; the default grains 8, 5, 3, 2, 1,
+  0.569, 0.224 s + beat / bar / 4bar → `tools/truth/RaindropsOnRoses.json` 1.0 MB, `tools/truth/RaindropsOnRoses/grain-*.txt`, the gitignored
+  dumps `tools/work/RaindropsOnRoses.{f32,48000.f32,48000.st.f32}`); `kicktruth.py` → `.kick.json` (**600 kicks, 2.69 /s**, p50 rise 10.1 dB,
+  beat-slots [226 105 224 45] — the kicks on the beat and the 8th); `snaretruth.py` → `.snare.json` (775, 3.48 /s, p50 10.5 dB); `trackmap.py
+  --loud` → `.loud.json` (integrated **−7.83 LKFS**, short-term p10 / p50 / p95 −15.21 / −7.34 / −6.26, range 8.96 LU); `key-truth.py`
+  (`tools/work/v84/truth-RaindropsOnRoses.json`); `key-ears.mjs` (`ears-RaindropsOnRoses.json`); `gridcheck.py`; `--brief` →
+  `others-brief.txt`. **`--pcm` is now banned on the EIGHT** (HARNESS "Loudness").
+- **What is hand-marked, what is measured.** Hand: only the json's `notes` block (the user's words verbatim; `start_s` 24, `bass_s` 56,
+  `event_s` 66) and the `START` / `USER` entries in `windows.py` that honour them — no beat, bar, section, drop or key was placed by hand.
+  Measured, with the caveat the Malicious precedent (§72) names: `gridcheck.py` says *"beat phase never placed on the audio"* (dp_residual
+  **62.2 ms** > 60, so the DP beat list was kept un-refit) — the sections and the three drops are bar-pinned to THAT grid. So, as Malicious:
+  **`gate: false` — measured and swept for the record, no claim on it is a FAIL, until the user validates a ruler on it** (the click render
+  is the recipe: HARNESS "Hearing a truth grid"). The ask to carry Malicious's flag to this track is honoured in `windows.py` `NO_GATE`.
+- **Tempo and key.** The grid's `bpm` 139.6748 (beat 0.429569 s, bar 1.718 s) is §72's hop-median artefact (the DP gaps' median 429.60 ms =
+  37 hops of 11.61 ms); the kick list folds at **140.00 BPM, phase 0.000 s, dead constant**: 78 % of the 600 kicks within 25 ms of an 8th
+  line (median |off| 5.3 ms in the first half, 5.2 in the second; 139.95 / 140.05 read 22 ms, 139.67 reads 0.16 within 30 ms of a beat).
+  The summary's 93.8 BPM is the onset ACF's 2 / 3 alias of 140.7 under the 135-centred prior — a half-time feel (70) is what the ear counts.
+  Key **F♯** by every ruler: `key-truth.py` reads F♯m / F♯M as a PARALLEL pair in every section from 41 s (margins 0.005–0.062; the bass
+  tonic F♯ 72–100 %: confirmed-by-bass; s9 96–111 s and s10 111–137 s CONFIRMED F♯m), trackmap's whole-track KK F♯ minor (conf 0.104), the
+  sub a **46.3 Hz F♯1 held 71 %** of the loud half (sub 56 % / bass 34 % of the energy, h/f 0.05 — a sine sub); the ears (`key-ears.mjs`)
+  F♯M 58 % / F♯m 26 % of frames 20–100 s, tonicConf p50 0.589 (over 56–116 s F♯M 91 %, 0.602); synapse F♯M 51 %, keyConf 0.628. The pitch
+  class is settled; the mode (the parallel pair) is the user's ear. `test_ears.js` KEY_TRACKS: the row (pc 6, minor 1, `expect: true`,
+  `conf ['>=', 0.3]`).
+- **The three times the user named, measured** (the 0.569 / 0.224 s grains and a 0.25 s band-dB pass on the 48 kHz dump):
+  - **24 s — the start.** 0–24 s is a mid-only intro: the 25–60 Hz band −56 to −97 dB, the mid 85 % of what little there is. At **24.5 s** the
+    mix opens (the 400–2 kHz band −42 → −19 dB, the 2–12 kHz −48 → −29); the sub and bass stay silent until the 808 line with its slides
+    enters at the 27.4 s bar (sub share 0 → 24 %; 166 `sub_slides` all track, 3–13 per 10 s); **drop 1 at 41.134 s** (+3.05 LU, ×2.02) after a
+    one-bar sub cut at 40.0–40.9 s (sub 1 %, mid 83 %). The 24 s start is honoured, not derived.
+  - **56 s — the bass.** Over 52.3–54.6 s the sub walks G1 → E1 → F♯1 (49.0 → 41.4 → 46.9 Hz, held 15–68 %); from **55.2 s the F♯1 sub PINS**
+    (held 82–100 % over 55.2–57.5 s; the 56.33 s slice is the loudest sub moment of the groove, 83 % of the energy, 100 % held / voiced; the
+    25–60 Hz band −7 to −10 dB). What the user hears starting at 56 s is the pedal settling on the tonic — `subEnv` at its fullest, the S6 (a)
+    variant's input.
+  - **1:06 — the event.** A **two-bar SUB CUT, 65.4 → 68.57 s**: the 25–60 Hz band falls **−6.8 → −39.7 dB** between the 65.25 and 65.50 s
+    frames (the 60–150 Hz bass −16 → −33 → −39), the YIN contour goes unvoiced, the sub's share 86 → 1 %, the high band's **2 → 40–63 %** with
+    its 2–12 kHz centroid flat at 3.2–4.4 kHz (no upward sweep — not a filter sweep), the drums still running (6 low / 4 click onsets in the 66 s
+    slice), `h/f` 1–4 (what remains is harmonic-rich, no sub). Not a tempo change (the kick fold holds 5.2 ms through it), not a sidechain pump
+    (no periodic dip — the band is gone for 3.2 s = 2 bars at 140). Then the bar-pinned **drop 2 at 68.569 s** (+3.39 LU, ×2.19; the sub back to
+    −7.8 dB in one frame). The same gesture before drop 3 (134–137 s: sub 24 → 4 → 1 % → **137.137 s**, +3.25 LU, ×2.12). The long
+    **breakdown 111.4–137.1 s** (sub 0–19 %, −12.87 LKFS against −7 in the grooves); 181.7–192 s is a variation (the sub stays 45–60 %).
+- **The windows** (`windows.py` → `windows.json`; the seven's entries byte-equal to before): `START` 24 — the intro run is COLD at 24 (the
+  thinnest start notion: `start` in the track's entry, absent = 0; no run, window, trace or rulers window before it; `traces.sh` records
+  `start → start + 110`); `USER` moments `bass56` (56.0) and `event66` (66.0) on the run that covers them (at 24: f1922, f2522), behind
+  `FULL=1` / `WINDOWS=` like quiet / drop2. The track: intro f602 @24 (34 s) · build1 f730 / drop1 f1030 @24 (36.1 / 41.1) · build2 f1236 /
+  drop2 f1536 @43 (63.6 / 68.6) · groove f602 @76 (86 s) · quiet f602 @110 (120 s) · rulers **56–116** (holding the bass at 56, the cut, drop 2
+  and the loudest 30 s).
+- **FLUID2 S6 (`FLUID2-PLAN` §4 S6):** the note added — RaindropsOnRoses from 24 s, the bass at 56 s, the 1:06 cut as the first ruler for
+  any `dtSim` modulation (the (b) void should read the cut as a latched void, the (c) double-step should fire on 68.569).
+- **The traces and the node tests on music** (`PORT=8985 TRACKS=RaindropsOnRoses tools/traces.sh`, once the other builder's Chrome lock
+  freed): `RaindropsOnRoses-map1.json` and `-map0.json`, 6601 frames each, **heard 24 → 134 s**, 213 fields, 16.7 / 17.2 MB, f0 2 (the map0
+  header's `f0 -1` is HARNESS "File source"'s known race under `&map=0`; the recorder trims to frame0). `node tools/test_music.js` **129 ok,
+  0 fail**, `node tools/test_fluid.js` **299 ok, 0 fail** — the eighth track's claims print as notes (`gate: false`). What they say: the
+  PCM clock reads **139.95 BPM** in both modes (23.3 beats per 10 s; the "bpm is the truth's 93.8 × ?" NOTE is the truth SUMMARY's alias,
+  not the clock — the clock agrees with the kick fold at 140.00); the map's drops land on the truth's to the frame (`mapDropEvt` +0.016 s on
+  41.134, −0.002 s on 68.569; `dropEvt` −0.001 / −0.002); the LIVE detector fires ONCE in 24–134 s, at **129.517 s** — a false alarm by the
+  4 s rule (7.6 s before drop 3, at the end of the 111–137 s breakdown) and it misses drops 1 and 2 (both `dropLiveEvt` lags are that 129.5 s
+  fire: the sub cuts before the drops leave the low end empty, so the build detector has no "bass came back" edge to arm on — the open
+  finding for the live night; `buildLive` max 1.00); the tongues ON 88.7 % of the frames from 20 s (the ≥ 90 % claim would FAIL by 1.3 points;
+  the truth has 1.12 click onsets / s); the kick lane 59 rises / 67 `kickEvt` over 56–116 s against 67 truth clicks (×0.88 / ×1.00; the live
+  lanes 73, ×1.09); `subGate` 87 % (map) / 94 % (live) of the frames; the key pins **F♯m at 42.9 s**, keyConf 0.60, 84 % of the frames
+  key-coloured; the director's real rows: 4 switches, none inside the 30 s dwell, the drop at 68.57 cuts home. FLUID's grammar (file mode):
+  injects on 110 / 110 music seconds, **3 clears = 3 shockwaves** at 41.18 / 68.62 / 129.98 s (A 1.269 / 0.979 / 0.648 — the two map drops
+  and the false live one), the sub emitter's x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 4435 open frames (F♯ at the centre, the walking 808
+  line to the left), syrup 7.0 %, deep void 10.7 % (the breakdown); the live lanes: 1 clear at 129.55 s, void 11.7 %.
+- **The FLUID per-track row** (`TRACKS=RaindropsOnRoses node tools/fluid-tracks.js`, FLUID-TRACKS §12): file mode — music 111 s, injects
+  100 %, sub 89 s · kick 74 · snare 105 · chord 85 · hat 92 · floor 111; 1.1 kicks · 3.0 snares · 5.5 hats per s; ink 9.6 / 18.5 (p50 / p90,
+  never governed); dv 7.4 /s; void 19 % (< .5) · 11 % (< .3); syrup 7 %; clears 3 (2 true) @ 41.18 68.62 129.98 = the shockwaves (A 1.27 /
+  0.98 / 0.65); x sub 0.13 / 0.54 / 0.63 (span 0.50); hits 0.30 / 0.70 (harm 17 s); kick dy 0.37 / 0.49 / 0.76; the key's hue 84 %, 6 bins.
+  The live lanes: sub 94 s, kicks 1.2 /s, ink 10.3 / 18.8, 1 clear @ 129.55 (0 true) — the one false live drop, and neither real one.
+- **The identity references and the behaviour ruler** (once the GPU lock freed — the other builder's `real-md5.sh s0-roster` held it from
+  13:50 to 14:24): `GPU=1 PORT=8986 SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh s117a` and `s117b` (PORT 8988) — **8 lines, 4 runs
+  each, 69 s wall, cmp-equal**, f0 2 errs [] bad [] on every run (intro f602 / build1 f730 / drop1 f1030 on the run at 24, groove f602 at 76,
+  both modes) — inserted into `tools/accept/v0.36/real-md5-v036.txt` after the s12 Malicious lines with a `#` note (232 → 240 shot lines; the file 246 → 259 with the five-line note); the
+  roster's lines (0 1 3) on this track are owed with the next roster re-proof. `GPU=1 PORT=8987 SCENES=12 TRACKS=RaindropsOnRoses
+  tools/real-rulers.sh s117` (66 s wall): **FLUID on 56–116 s — ok**: 600 frames, clip25 0, medY 0.193, grad 0.0179, jumpMx 0.055, jviol 0,
+  black 0, monMx 0.0161, mviol 0 — appended to `real-rulers-v036.txt` with its note. Both references say the track is not a gate.
+- **The gates:** `node tools/check.js` 0 fail (8 warn, the standing soft caps), `node tools/license.js --check` 181 / 0 (no new public code
+  file — the truth json / grain tables / windows.json are data), `npm test` exit 0 with the traces in place (test_fluid 299 ok, test_music
+  129 ok, the eighth track's claims as notes). `test_ears.js` (not in `npm test`) needs the seven's native-rate dumps in `tools/work/`, absent
+  from a fresh worktree — a pre-existing condition; its KEY_TRACKS row for the eighth track is in.
+- **Open, for the record (not gates):** the live build detector misses drops 1 / 2 (the sub cuts leave no "bass came back" edge) and fires
+  once at 129.5 s, 7.6 s early for drop 3; the tongues 88.7 % (the ≥ 90 % claim); the truth summary's 93.8 BPM alias (the grid's 140.00 is
+  right — a `tempo_note` as §72 gave Malicious would settle the json); the user's ear on a click render before any of it becomes a gate.
