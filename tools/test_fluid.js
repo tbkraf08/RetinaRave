@@ -578,6 +578,12 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
     ok(halfInk.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.r - 0.5 / (K2.SUB_RAD * K2.SUB_RAD) * b.r) < 1e-12 && s.dx === 0 && s.dy === 0; }), 'bands: S1 — SUB_INK .5: the sub splat\'s dye halved (over the cloud\'s ÷ SUB_RAD²), still no velocity');
     const cloud = runK({}), dot = runK({ SUB_RAD: 1 });
     ok(K2.SUB_RAD === 3 && cloud.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.rad - 3 * b.rad) < 1e-12 && Math.abs(s.r - b.r / 9) < 1e-12 && s.dx === 0 && s.dy === 0; }) && cloud.slice(1).every((r, i) => Math.abs(r.ink - refA[i + 1].ink) < 1e-9 * Math.max(1, refA[i + 1].ink)) && dot.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && s.rad === b.rad && s.r === b.r; }), 'bands: S1 — SUB_RAD 3 (the default): the mouth\'s ink spread over 3× the radius at a ninth of the dye — the same ink in the budget\'s units (the rate within 1e-9 of the base\'s), a cloud where the dot was; SUB_RAD 1 is the base\'s dot');
+    const gated = runK({ SUB_GATE: 1 });   // synth: the sub open from frame 0 → the drum branch → the field as the default's
+    ok(gated.every((r, i) => r.heave === ref[i].heave) && ref.some((r) => r.heave !== 0), 'bands: S1 — SUB_GATE 1 with the sub open (the drum branch): the field is the default\'s');
+    const stH = mkState2(); let hH = 1; Object.assign(K2, defaults, { SUB_GATE: 1 });
+    for (let i = 0; i < 600; i++) hH = plan2(base({ sub: i % 30 < 10 ? 1 : 0, subGate: 0, bpm: 120, beatCount: 10 }), DT, stH);   // the gate never opens: 10 s > HARM_BARS bars → the harmonic branch
+    Object.assign(K2, defaults);
+    ok(hH.harmonic === 1 && hH.heave === 0 && hH.swirl === 0 && hH.subEnv > 0, 'bands: S1 — SUB_GATE 1 in the harmonic branch (no sub for HARM_BARS bars, the band still pulsing): the field is 0 (Comptine\'s piano sways nothing); 0 (the default) follows the band');
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: the K2 table restored after the switches');
   }
   const J = trace('SeeYouDrop-map1');

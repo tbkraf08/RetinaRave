@@ -58,6 +58,8 @@ export const K = {
   FLIP: 0,         //   gravity flips: 0 none (a rise deepens the gravity) · 1 by the bar parity (beatCount >> 2 & 1) · 2 by the glide's sign (rising lifts)
   GLIDE_K: 3,      //   st/s at which FLIP 2's sign saturates (clamp(subGlide / GLIDE_K, −1, 1): a held note is no flip)
   SWIRL: 0,        //   the swirl: angular acceleration (1/s², at |p| = 1 in screen heights) × subEnv × g, the direction by the bar parity; 0 = the identical advect path
+  SUB_GATE: 0,     //   1: the field only while the base is in its DRUM branch (the sub seen within HARM_BARS bars — §111 item 8); 0: the band alone. The 25–60 Hz
+                   //   band reads .4 on Comptine's piano with the gate never open, so the pool sways with its low notes at 0 (+.08 uv/s, r(Δ, sub) .51 — the strips)
   SUB_INK: 1,      //   the emitter's dye kept × this (dx = dy = 0 always: never a jet); 0 drops the 'sub' splat and re-governs the ink
   SUB_RAD: 3,      //   the emitter's radius × this, its dye ÷ this² (the same ink in the budget's area-weighted units): the mouth's ink as a CLOUD, not a dot (1 reads as
                    //   a bright spot at the bass note's place on a drop's return — the strips, §116 S1; the grey moves 1–2 levels either way)
@@ -102,9 +104,10 @@ export function plan(S, dt, st) {
   // heaves nothing.
   const bar = (S.beatCount >> 2) & 1 ? -1 : 1;
   const dir = K.FLIP === 1 ? bar : K.FLIP === 2 ? -clamp((S.subGlide || 0) / K.GLIDE_K, -1, 1) : 1;
-  const heave = -(K.HEAVE * (st.subEnv - st.subSlow) + K.HEAVE_DC * st.subEnv) * g * dir;
+  const gate = K.SUB_GATE ? 1 - R.harmonic : 1;   // SUB_GATE 1: nothing while the base is in its harmonic branch (a piano, a pad — the sub unseen for HARM_BARS bars)
+  const heave = -(K.HEAVE * (st.subEnv - st.subSlow) + K.HEAVE_DC * st.subEnv) * g * dir * gate;
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
-  const swirl = K.SWIRL * st.subEnv * g * bar;
+  const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
   R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv;
   return R;

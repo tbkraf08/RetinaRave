@@ -10497,7 +10497,131 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   user's word) · the `&grammar=` harness switch (not needed) · the receipt `tools/accept/v0.37/fluid2-s116-s0.txt` (the s13 lines, the fake
   pair, the rulers' rows, the bench pairs, the fade's greys) · §115's own open list unchanged.
 
-### S1 — sub = a field (not started)
+### S1 — sub = a field, never a dot (2026-10-10, branch `fluid2`, four commits; `git merge main` at 4372bc4 first — the eighth track's windows in)
+
+- **The ask, as the orchestrator framed it and the user acted on:** *"sub = a field, never a dot — the whole pool heaves with the sub's
+  envelope, gravity flips; its presence deserves the same scale as its absence (the void): global."* **The scope, changed by the user
+  mid-step (2026-10-10, verbatim): *"only tune with Raindrops, don't do full sweep"*** — the tuning track for S1 and the later FLUID2 steps is
+  RaindropsOnRoses (start 24 s, the 56 s sub pin, the 65.4–68.57 s two-bar sub cut before drop 2 at 68.569; 140 bpm, F♯; its truth being
+  validated to a gate on main by another worker). What ran BEFORE the word is kept as data, not as a gate (below, marked); the eight-track
+  real-rulers sweep and the 174-line roster re-proof were stopped and did not run; **the other seven tracks are untuned and unswept on the
+  user's word, and the full sweep (`SCENES=12 / 13 real-md5`, the roster 0 1 3, `real-rulers` s13 on every track) is OWED before any tag.**
+- **The field as built** (`core/fluid/inject2.js`, nothing in inject.js): the §104 emitter's JET (`k: 'sub'`, +SUB_V per frame at the bass
+  note's place) is gone from FLUID2 — `dx = dy = 0` on the sub splat; its ink stays (below). The sub enters as a body force on the whole pool:
+  **the HEAVE** on the breath's shaped channel (`body`, the cos(π(2x − 1)) profile — a uniform vertical force in a closed pool is a pressure
+  gradient the projection removes, §104's lesson; no new uniform): `heave = −(HEAVE · (subEnv − subSlow) + HEAVE_DC · subEnv) · g · dir`,
+  `subEnv` = the `sub` band (25–60 Hz, fast; the one new read in `FLUID_FEATS`) eased `SUB_TAU` .04 s, `subSlow` its `SUB_SLOW` 2 s mean, `g`
+  the base's gain, `dir` +1 (FLIP 0). The minus is the finding of the day: **the sub is the pool's WEIGHT, with the breath** — the attack
+  deepens the gravity the beat already applies (centre down), the void's entry (the slow mean above a sub that left) LIFTS against the
+  breath and stills the pool, the drop's return slams it; the DC term is the level as a steady extra gravity while the bass plays.
+  **The SWIRL** — a solid-body rotation as its own uniform `uSwirl` on the velocity advect pass (shaders.js: `v += uSwirl · dt · (−p.y, p.x)`,
+  p aspect-corrected; `if (uSwirl != 0.)` — 0 is the byte-identical program path, as the ring's A = 0; the dye pass passes 0): the angular
+  acceleration `SWIRL · subEnv · g`, its direction by the bar parity so it never winds up. **The FLIP**: `dir` by the bar parity (FLIP 1) or
+  by the glide's sign (FLIP 2: a rising bass lifts, a falling one sinks, a held note heaves nothing; `GLIDE_K` 3 st/s saturates it). **The
+  ink**: SUB_INK × the emitter's dye, spread over SUB_RAD × its radius at 1 / SUB_RAD² the dye — the same ink in the budget's area-weighted
+  units; the §111 budget is re-derived over the grammar's own list whenever its ink differs (the own rate starts at the base's warm value:
+  with the ink unchanged it IS the base's rate, and dyeDiss stays the base's within 1e-9). **Cold:** the envelopes start AT the frame's sub and
+  the ink rate at the base's on the first frame the grammar plans — and `fluid.js` resets the band state's `n` on every step the pool
+  grammar plans, so a re-entry (FLUID → roster → FLUID2) re-syncs: a switch is never a burst (the test: the first band frame after each of two
+  switches carries the level's gravity alone, no rise). `FLUID.heave / .swirl` carry the last step's values (0 under the pool grammar); the
+  HUD's fluid line and FLUID2's `fldbg` say them; `SUB_GATE` 1 confines the field to the base's drum branch (below). **K2 as shipped:**
+  `HEAVE .6 · HEAVE_DC .15 · SUB_TAU .04 · SUB_SLOW 2 · FLIP 0 · GLIDE_K 3 · SWIRL 0 · SUB_GATE 0 · SUB_INK 1 · SUB_RAD 3`.
+- **The ruler** (`tools/fluid-field-strip.sh`, HARNESS "## Fluid" — the S1 ruler): one deterministic whole-track run per scene × track on the live
+  lanes (`&map=0`, `at=0`, CLOCK=1 GPU=1, keyed on `__FRAME`), a shot pair per second over a 31 s window — the composite at F and, after
+  `CARD.fluid.dbg = 2`, the velocity alone at F + 1 (the overlay never feeds back) — **speed = Σ|vx| + |vy| per texel in uv/s** from the velocity
+  shot (PIL's mean |c − 127.5| / 255), the `sub` band and the heave read at the shot. The number that reads the field is the **Δ against
+  FLUID (scene 12) on the same frames**: the pool's mean speed is the kicks', the breath's and the field's together — SeeYouDrop's build-void
+  (52–57 s, no sub at all) runs .24–.38 under FLUID from the build's kicks alone — so the per-shot delta, its correlation with `sub`, and the
+  speed on sub-up (sub > .3) vs sub-down (< .15) shots (`tools/work/fluid2/s1/cmp.py`) are the columns. Per-shot `heave` from the plan, the
+  envelope from the trace (`tools/fluid-tracks.js`'s `field` column through `INJECT=inject2.js`: |heave| p50 / p90 and the % of music frames
+  the field is on — **on the truth traces 0–110 s: the whole-track traces in `tools/work/fluid-tracks/` predate `sub` and lack it; the row says
+  so — carried to S7**).
+- **The exploration (before the scope change — kept as what it is: the sign and the defaults were found here), round 1 (24 runs, the sign as
+  the plan's letter: a rise LIFTS the centre), SeeYouDrop 40–70 / CyborgNinja 79–109 / Vienna 62–92:** every gesture read backwards against the breath. The control's speed on sub-up / sub-down shots: SeeYouDrop .235 / .246, Vienna
+  .114 / .095; the jet removed and nothing added (`HEAVE 0`): −.025 / +.015 and −.017 / +.001 (the jet was ~10 % of a groove's speed, nothing of
+  a void's); the heave at 1: SeeYouDrop **.187 / .337** (the attack cancels the beat's kneading — below even the no-field baseline; the
+  settling tail ADDS to the breath in the void: .44 vs .36 at 51 s; the return's lift fights the slam: .136 vs .174 at 59 s), Vienna .092 / .107,
+  r(Δ, sub) **−.91 / −.44 / −.71**; the bar flip (FLIP 1) ≈ the control (the sign averages out: .244 / .257); the DC term in that sign cancelled
+  the pool's gravity on CyborgNinja outright (.170 vs .229, coverage 29 %); the swirl alone +.002 / +.011 / +.032 (r .29 / .12 / .35, never
+  harmful). **Round 2 (15 runs, the sign flipped — with the breath):** HEAVE 1 alone r(Δ, sub) **.84 / .48 / .37**, SeeYouDrop .271 / .140 (the
+  void stills to .14 from the control's .25, the groove +.04, the presence ratio **1.94** vs the control's .95), CyborgNinja −.019 (a steady
+  groove settles back to the pool grammar's speed once the slow mean catches up), Vienna −.006 / −.010; HEAVE .6 alone .79 / .47 / .33;
+  **HEAVE 1 + DC .3** r **.93 / .46 / .74**, the presence ratio 2.46 — but every groove 50–60 % faster (SeeYouDrop .386, CyborgNinja .354 vs
+  .23: the DC alone, .3 × .7, is 1.6 × the breath's .13 mean — over it, not beside it); **HEAVE .6 + DC .15** r **.90 / .39 / .66**, the grooves
+  +.07–.11 (SeeYouDrop .340 / .195, ratio 1.74; CyborgNinja .303; Vienna .165 / .126, the dream .13 vs .095 — the band holds .2–.5 there with the
+  gate shut, so the pool keeps a slow turn on the soft sub pad), the swirl .4 on top of it = the same to ±.003. **Shipped: HEAVE .6 + DC .15**
+  (the plan's rule — the best correlation at the control's ink — would pick 1 + .3; the plan's other rule — "read beside the breath, not over
+  it" — picks the middle; 1 + .3 stays as the stronger switch, `K2='{"HEAVE":1,"HEAVE_DC":0.3}'`), SWIRL 0 (nothing measurable over the heave;
+  alone it is a gentle turn the user can ask for), FLIP 0 (the bar flip averaged the sign out in round 1; the glide flip's number is the test's,
+  not a strip's — the eye at home).
+- **The sub-splat decision — the mouth's ink stays as a CLOUD (SUB_INK 1, SUB_RAD 3).** The velocity shots are IDENTICAL under the dot, no ink and
+  the cloud (the dye never moves the field: r, speed, Δ to the digit); the grey moves 1–2 levels (SeeYouDrop 40–70 mean: the jet 50.8, the dot
+  47.9, none 46.7, the cloud 46.1 — the sub's dye is .015 / frame, 3 % of a kick's); the eye (`tools/work/fluid2/s1/SeeYouDrop-ink.jpg`): the dot
+  reads as a bright spot at the bass note's place on the drop's return (t 59, under the kick's plume) — the one thing S1 must not draw; the
+  cloud is a faint haze there, the colour still entering where the bass note is (a sub-only passage is not colourless); none loses that. The
+  ink/s and the governor are the base's on every track (the table: SeeYouDrop 13.7 / 27.6 × 1.1 / 1.4 … CyborgNinja 30.8 / 44.1 × 2.1 / 2.5,
+  identical under both grammars); Σ|dv| per second drops to the hits' alone (SeeYouDrop 7.2 → 3.2, CyborgNinja 9.5 → 8.6, Vienna 6.3 → 1.9).
+- **The tune on RaindropsOnRoses (the user's track; 50–80 s at `at=24`, map 0, 1 fps; the control FLUID .146 / .165 on sub-up / sub-down shots,
+  r(speed, sub) .02):** the shipped K2 (.6 + .15) **.220 / .138 (ratio 1.60), Δ +.075 / −.027, r(Δ, sub) .73**; HEAVE 1 alone .155 / .118 (r .41:
+  the void stills, the groove settles back); .6 alone r .47; **1 + .3 r .79, .283 / .152 (+.137 — the groove at 1.9 × the control's speed)**; the
+  swirl alone r .16 (+.025 everywhere); the bar flip r .21 and SLOWER than the control (−.033 / −.062: the alternating sign averages the
+  gravity out). The two moments the eye wants: **the 56 s pin** — the band sits .6–.9 from 50 s, the field a steady +.06–.13 over FLUID
+  (ship .29 vs .18 at 56 s), the whole pool in two cells; **the 65.4–68.57 cut** — at 66–68 the heave turns +.28 / +.13 / +.06 (the lift against
+  the breath) and the pool stills (.17 → .14 → .10 where FLUID holds .17 / .17 / .15), **the return at 68.57** — the heave −.23 / −.30 / −.19 at
+  69–71 and the pool slams (.087 / .120 / .161 vs FLUID's .058 / .067 / .094: +50–80 %), the user's "something happens at 1:06" is the field's own
+  gesture. **Shipped on Raindrops: HEAVE .6 + HEAVE_DC .15** — the plan's correlation rule alone would take 1 + .3 (.79 vs .73), its "beside the
+  breath, not over it" rule takes the middle (1 + .3 doubles the groove's speed); the stronger one is the switch (`K2='{"HEAVE":1,"HEAVE_DC":0.3}'`)
+  for the user's remark. The crops: `tools/accept/v0.37/fluid2-s116-s1-RaindropsOnRoses-{pin,cut}.jpg`, the strip montage
+  `fluid2-s116-s1-RaindropsOnRoses.jpg`.
+- **The other seven (measured BEFORE the scope change with the same K2 — untuned on the user's word; the rows are what the eye would see, not a
+  gate; map 0, the S1 window, 31 shots; speed in uv/s; `r(Δ, sub)` the correlation of the per-shot delta with the sub band; up / down = mean
+  speed on sub-up / sub-down shots):**
+
+  | track · window | ctrl up / down | ship up / down (ratio) | Δ up / Δ down | r(Δ, sub) | the eye |
+  |---|---|---|---|---|---|
+  | SeeYouDrop 40–70 (groove → void 52–57.6 → drop → groove) | .235 / .246 | .340 / .195 (1.74) | +.106 / −.051 | .90 | the void's velocity goes flat where FLUID's keeps the build's plumes; at 58–61 one slam spans the whole width (the centre down, the walls up) where FLUID has the kicks' local plumes — and the kicks' own plumes rise less under it (the trade); the ink spreads wider on the groove |
+  | CyborgNinja 79–109 (the busiest, the sub up throughout) | .229 / — | .303 / — | +.074 / — | .39 | the whole pool in two cells under the kicks' plumes; the grey 39–46 (the §111 packing ruler: 0 s above 60) |
+  | Vienna 62–92 (groove → the dream 66–85 → the return) | .114 / .095 | .165 / .126 (1.32) | +.051 / +.030 | .66 | the groove's cells; the dream a faint steady band (the soft sub pad); the return's cells from 86 s |
+  | IBelongHere 160–190 (the breakdown → the return 178.5) | .158 / .052 | .251 / .056 (4.48) | +.094 / +.004 | .92 | the break flat on both; from 180 s the ship's velocity is full-width cells, FLUID's local plumes |
+  | WhoLikesToParty 40–70 (groove → drop 57) | .154 / .205 | .174 / .248 (.70) | +.020 / +.043 | .28 | the choppy sub (gate 30–80 %) gives a weak field; the drop's kicks dominate both |
+  | Comptine 30–60 (a piano, the gate never open) | .102 / — | .178 / — | +.076 / — | .51 | the pool SWAYS with the piano's low notes (the band reads .44 there) — `SUB_GATE 1` turns it off (below) |
+  | Malicious 45–75 (quiet → the bass in at 56; record only) | .236 / — | .363 / — | +.127 / — | −.02 | the loudest field of the eight: the band sits .6–.9 on the stutter; the eye at home |
+  | RaindropsOnRoses 50–80 — THE TUNING TRACK, above | .146 / .165 | .220 / .138 (1.60) | +.075 / −.027 | .73 | the pin, the cut, the return — above |
+
+  The pad take (`rec-strip.sh … 13`, 2 fps, 0–24 s): the grey mean within ±.3 of FLUID's on every half second (16.4 … 28.0), the p99 lower
+  (82–97 → 71–78 while the chords hold: the jet's bright mouth gone); every second from 3 s still injects (the §108 ruler is the base's).
+  The montages: `tools/accept/v0.37/fluid2-s116-s1-<Track>.jpg` (rows FLUID / FLUID2 / its velocity, 16 + 16 columns — RaindropsOnRoses's is the
+  one the user is asked to look at; the seven others are the record of what ran before the scope change); the strips in `tools/work/fluid2/field/`. **What the eye should see at home (`#scene=13`):** on a groove the whole pool breathing with the bass rather than a
+  jet at one place; when the bass leaves, the pool going still while the ink stays (the void, now a stillness and not a flat image); on the
+  drop's return the whole surface slamming down the middle and up the walls; on Comptine a slow sway — a remark either way is `SUB_GATE`.
+- **The gates (the Raindrops-filtered receipts, each with its wall time; the receipt `tools/accept/v0.37/fluid2-s116-s1.txt`):** `node tools/check.js`
+  **183 modules 0 fail / 8 warn** · `npm test` **exit 0** (`test_fluid` **336 ok** — the bands block's 30 cases, `test_music` 129) · `SCENES=13
+  tools/real-md5.sh` twice — ran on all eight BEFORE the scope change: **66 / 66 cmp-equal** (790 / 792 s), 66 / 66 moved against S0, the 8
+  RaindropsOnRoses lines among them, all into **`tools/accept/v0.37/real-md5-v037.txt`** (v036's 240 + s13's 66 + the roster's 24 Raindrops
+  lines = 330) · `SCENES=12` — also before the word: **66 / 66 = v036** (789 s; FLUID unmoved: `uSwirl` 0 and the band state's reset are the
+  byte-identical path) · the roster `SCENES="0 1 3" TRACKS=RaindropsOnRoses` twice **24 / 24 cmp-equal** (207 s each; no reference existed
+  — they enter v037; the stopped full-roster run's 112 finished lines read 96 / 96 = v036 where a reference exists) · `SCENES=13
+  TRACKS=RaindropsOnRoses tools/real-rulers.sh` **1 / 1 ok** (66 s: jump viol [] max .058, mon viol [] max .0161, black 0, clip25 0, medY .173
+  vs FLUID's .193) · the fake `tools/scene-md5.sh` **26 = v035 + s12's pair unmoved + s13's pair re-recorded** (`8a929b45…` / `afb7c178…`;
+  errs [] on 14 ids; 212 s) · **the bench** in ONE page (q .95, load 1.97): `benchFluid(300, null, 'pool')` / `'bands'` (SWIRL 0) / `'bands'` with
+  `SWIRL .8` and `MS.sub .8` held (the branch taken) interleaved ×3 = **.514 / .521 / .537 · .496 / .483 / .496 · .483 / .471 / .516 ms** —
+  medians **.496 / .483 / .516**: the band grammar −.013, the swirl branch +.020, both within ±.05 (S0's .837 / .826 were under load 4.1);
+  `bench(0, 300)` 1.257 · **MOBILE=1** `test&scene=13` tier 0 (sim 64×139, dye 256×554) alive — grammar bands, errs [] bad [], frameN 242;
+  benchFluid bands .451 / bands + swirl .381 / pool .333 at tier 0 (single unpinned calls — a reading, not a pair) · `npm run build` 182
+  modules → 1 806 244 bytes, the bundle from `file://` `&scene=13` sc 13 bands errs [] bad [] frameN 302, `&scene=12` pool errs [] · the
+  crossfade under `&trans=mixs`: 12 → 13 the grammar bands from the fade's first frame, greys 34.7 … 20.0 … 34.1, max step 7.63 / 255, §1.9
+  viol [] (S0's cold-exposure dip, unchanged); 13 → 0 **with `SC.forced` released first** lands on 0 ({cur 0, pool}, errs [] bad []) — its
+  greys step up to 16 / 255 inside the fade: NAV2's kick flashes on SeeYouDrop's groove (the §1.9 monitor exempts event frames; the crude
+  6-frame step does not); with the force still pinned, as S0's script left it, `goScene(0)` is reverted by the forced branch within the
+  fade ({cur 13, next −1}) — **S0's flat "13 → 0" row was that revert, not scene 0** (a finding on S0's receipt, not on the fade) ·
+  `node tools/license.js --check` 0 without the header · `git diff main -- assets/core/fluid/inject.js` empty.
+- **Open, carried:** **the full sweep before any tag** (the user's word: `real-rulers` s13 on every track, the roster 0 1 3 on the 174, both
+  `SCENES=12 / 13` lists re-run on the final code of the step that tags) · the whole-track traces lack `sub` (re-record with `FLUID_FEATS2` at S7 — the table's field column is on the truth traces 0–110 s)
+  · Comptine's sway and the pad's heave (the band reads .4 on a piano's low register and the take's room: `SUB_GATE` is the switch, the eye
+  decides) · Malicious's field is the loudest (.36 mean speed) — not a gate · the velocity ruler clips at |v| .5 per component (the DBG encode) —
+  the p90s of .38–.43 sit near it; a `uGain` .5 variant of the dbg draw is one line if S2's travel needs headroom · the mixs fade's mid-dip into
+  FLUID2 (S0's open) · the roster's 24 new RaindropsOnRoses lines (0 1 3) have no reference yet (measured once here, below) · §115's own list.
+
 
 ### S2 — bass = mass; the kick launches something that travels (not started)
 
