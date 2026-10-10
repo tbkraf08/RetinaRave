@@ -10503,8 +10503,17 @@ and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, o
   never governed); dv 7.4 /s; void 19 % (< .5) · 11 % (< .3); syrup 7 %; clears 3 (2 true) @ 41.18 68.62 129.98 = the shockwaves (A 1.27 /
   0.98 / 0.65); x sub 0.13 / 0.54 / 0.63 (span 0.50); hits 0.30 / 0.70 (harm 17 s); kick dy 0.37 / 0.49 / 0.76; the key's hue 84 %, 6 bins.
   The live lanes: sub 94 s, kicks 1.2 /s, ink 10.3 / 18.8, 1 clear @ 129.55 (0 true) — the one false live drop, and neither real one.
-- **Owed — Chrome:** `SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh` (the lines for `real-md5-v036.txt`), `SCENES=12
-  TRACKS=RaindropsOnRoses tools/real-rulers.sh` (the row for `real-rulers-v036.txt`) —
-  the GPU lock (another builder's `real-md5.sh s0-roster`, FLUID2 S0) held through the session's end; see the handoff if these are still
-  listed here. `node tools/check.js` 0 fail (8 warn, the standing soft caps), `node tools/license.js --check` 181 / 0, `npm test` after the
-  traces: below.
+- **The identity references and the behaviour ruler** (once the GPU lock freed — the other builder's `real-md5.sh s0-roster` held it from
+  13:50 to 14:24): `GPU=1 PORT=8986 SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh s117a` and `s117b` (PORT 8988) — **8 lines, 4 runs
+  each, 69 s wall, cmp-equal**, f0 2 errs [] bad [] on every run (intro f602 / build1 f730 / drop1 f1030 on the run at 24, groove f602 at 76,
+  both modes) — inserted into `tools/accept/v0.36/real-md5-v036.txt` after the s12 Malicious lines with a `#` note (246 → 254 lines); the
+  roster's lines (0 1 3) on this track are owed with the next roster re-proof. `GPU=1 PORT=8987 SCENES=12 TRACKS=RaindropsOnRoses
+  tools/real-rulers.sh s117` (66 s wall): **FLUID on 56–116 s — ok**: 600 frames, clip25 0, medY 0.193, grad 0.0179, jumpMx 0.055, jviol 0,
+  black 0, monMx 0.0161, mviol 0 — appended to `real-rulers-v036.txt` with its note. Both references say the track is not a gate.
+- **The gates:** `node tools/check.js` 0 fail (8 warn, the standing soft caps), `node tools/license.js --check` 181 / 0 (no new public code
+  file — the truth json / grain tables / windows.json are data), `npm test` exit 0 with the traces in place (test_fluid 299 ok, test_music
+  129 ok, the eighth track's claims as notes). `test_ears.js` (not in `npm test`) needs the seven's native-rate dumps in `tools/work/`, absent
+  from a fresh worktree — a pre-existing condition; its KEY_TRACKS row for the eighth track is in.
+- **Open, for the record (not gates):** the live build detector misses drops 1 / 2 (the sub cuts leave no "bass came back" edge) and fires
+  once at 129.5 s, 7.6 s early for drop 3; the tongues 88.7 % (the ≥ 90 % claim); the truth summary's 93.8 BPM alias (the grid's 140.00 is
+  right — a `tempo_note` as §72 gave Malicious would settle the json); the user's ear on a click render before any of it becomes a gate.

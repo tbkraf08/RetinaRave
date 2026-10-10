@@ -48,3 +48,7 @@ id  scene     track           window    cuts       | frames clip25 medY   grad  
 12  fluid     Vienna          125-185   continuous | 600   0     0.129  0.0073 | 3599  0.017  0     0     | 3599  0.005  0     | ok
 12  fluid     WhoLikesToParty 8-68      continuous | 600   0     0.181  0.0164 | 3599  0.047  0     0     | 3599  0.0145 0     | ok
 real-rulers v036: the roster's 24 rows = v035's (advect 0, untouched by §113 — the roster reads neither the dye nor the velocity); FLUID's 8 rows from tools/work/rulers-s113 (§113: the shockwave on every confirmed drop; 481 s, map 1 + the take on the live lanes): 0 FAIL on FLUID; the roster's 7 FAIL (DUST 3, TORUS2 4) are §109's findings, carried
+# §117 (2026-10-10): the EIGHTH track's FLUID row — RaindropsOnRoses on its rulers window 56–116 s (from 20 s before the loudest 30 s at
+# 76; the window holds the user's bass at 56, the two-bar sub cut 65.4 → 68.57 and drop 2 at 68.569): `SCENES=12 TRACKS=RaindropsOnRoses
+# tools/real-rulers.sh s117` (PORT 8987, 66 s wall), 0 FAIL — clean (jviol 0, mviol 0, black 0, clip25 0). Not a gate (`gate: false`).
+12  fluid     RaindropsOnRoses 56-116    continuous | 600   0     0.193  0.0179 | 3599  0.055  0     0     | 3599  0.0161 0     | ok
