@@ -10127,3 +10127,60 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   ratio 0.34**. §112's two sets under its load read 0.96 / 1.00 ms at ratio 0.44 / 0.41; §104's idle 0.58 at 0.43. So the pre-change number
   for this item is **0.69–0.77 ms at ratio 0.34–0.36** under a load of ~3.5 — the budget (≤ 1.0 ms at tier 3) holds with room; a truly idle
   reading is still unseen (every reading on this machine has the user's Chrome on it).
+- **Item 1 — what changed.** `core/fluid/inject.js`: `K` gains `SW_C` .5 (the front travels one screen RADIUS — half the height — per beat),
+  `SW_W` .08 (the ring's Gaussian width, screen heights), `SW_T` .5 (beats the wave runs), `SW_K` 1.5 (A at the top of the law, in units of
+  the front speed), `SW_A0` .5 (the law's floor); `mkState` gains `rkB` (the track's own kicks' bass levels, RANK_N of them), `swLeft` / `swT` /
+  `swA`; `plan()` returns **`ring`** `{a, r, w}` (uv/s at the front, the front's distance in screen heights, the width) or null — on the frame
+  the clear is confirmed (`drop` 1) the wave fires with `A = SW_K · (SW_C / beat) · g · (SW_A0 + (1 − SW_A0) · rank)`, then every frame for
+  `SW_T` beats the front is at `SW_C · t / beat`. `core/fluid/fluid.js`: **the force kind** — `FLUID.wave` (that step's ring) and
+  `ctx.fluid.ring(a, r, w)` (a scene's, on the next step, the same one-frame caveat as `splat`; where both land the larger amplitude wins);
+  no extra draw — the ring rides the ADVECT pass as uniforms `uRing` / `uAspect` / `uDye` (a uniform branch; A 0 is the identical program path,
+  which the roster's identity proof below rests on); `benchFluid(n, S, ring)` holds a ring on every step (`CARD.benchFluid(n, ring)`).
+  `core/fluid/shaders.js` ADVECT: on the velocity pass the ring is SET at the front — `v → mix(v, A·r̂, m)`, `m = exp(−((r − front)/w)²)` — not
+  added, because a radial field is curl-free and the projection strips an added one to its Jacobi residual (§104's uniform-force lesson);
+  set each step it never accumulates, and the dye advect, which samples this pass's output, rides it the same frame. **And on the dye pass the
+  ring's own divergence** — the first strips (below) showed the ring emptying NOTHING: semi-Lagrangian advection copies the back-traced value,
+  so a divergent field stretches the centre's ink over the disc (a smooth full disc with concentric ripples in the shot; WhoLikesToParty's
+  centre 62 → 65–69 with the ring and no dissipation spike). A pressure wave is compressible for the ink: `ρ ← ρ · (1 − ∇·v · dt)`, and
+  `∇·(m · A · r̂) = A · m · (1/r − 2(r − front)/w²)` is analytic — positive inside the front (the ink thinned as the front sweeps through
+  it), negative outside (piled up at the front): the ink is CARRIED outward. The probe (the fake, `&fluiddbg=1`, `benchFluid(30, {a 1.5,
+  r .15, w .08})` held): the disc r < .08 **24.5 → 12.6**, the .08–.2 band **31.3 → 8.3**, .2–.3 23.8 → 7.7, .3–.45 33.9 → 12.9 — the same
+  probe before the term read 29.3 / 28.3 / 27.2 / 28.3. `scenes/fluid/index.js`: the §106 six-droplet ring on the drop is gone (below);
+  `kick.x` (the monitor's declared cut) is the drop's envelope on the clear's frame; the sparkle is its one injection. `tools/fluid-drop-strip.sh`
+  (the strip recipe, HARNESS "## Fluid"), `tools/fluid-replay.js` (the ring per frame / second), `tools/fluid-tracks.js` (a `shockwaves`
+  column; `TRACES=<dir>`), `tools/test_fluid.js` (the `shock` block; the music block's shockwaves == clears). CONTRACTS §1.1 (`ctx.fluid`:
+  `ring`, `wave`), §1.4 (the force kinds); HARNESS "## Fluid" (`CARD.fluid.wave`, `benchFluid(n, ring)`, the drop-strip recipe).
+- **Trigger frame vs confirmation frame — the confirmation, measured.** The shockwave fires on the frame the §111 item 5 clear fires (the sub
+  emitter opening within `CLEAR_PEND` after `dropLiveEvt || mapDropEvt`), never on the trigger alone. The prompt's rule: fire on the trigger if the
+  false-positive count stays 0 on the gated six. It does not: on the survey's whole-track traces the TRIGGER frames carry **IBelongHere's four
+  live arms in its 144–178 s breakdown (157.23 166.87 168.93 173.05) and Comptine's five (47.5 52.17 58.88 107.92 128.95) plus its one map line
+  (107.37)** — ten shockwaves over pools that never cleared; the CONFIRMED frames carry none (0 clears off a truth drop or a map line on any
+  trace, both modes). The cost of waiting, per clear (trigger → confirmation, frames): SeeYouDrop live **3 / 3**, file 0 / 1; Vienna live **4**,
+  file 0; WhoLikesToParty live **0 / 0 / 0**, file 0 / 1 / 1; IBelongHere file 2 / 1 / 1 / 1 / 2, live **36** (the 178.58 arm; the sub returned
+  at 179.13, the clear 179.18 — 0.6 s late on the one live drop its detector finds; the map's line, in file mode, is 2 frames). So the shockwave
+  lands 0–67 ms after the ear's drop on every drop but IBelongHere's live return, where it lands 0.6 s late — a finding on the detector's
+  placement (its arm is early: the slam the user hears is the sub's return at 179.13), not the grammar's.
+- **The amplitude — a measured deviation from the design's `dropStrength` knee.** At the confirming frame `dropStrength` (the extractor's level,
+  set on its own `dropEvt`, feats.js) reads **0.00 on all three WhoLikesToParty drops and on IBelongHere's 16.4 / 32.7 lines** (the extractor
+  never fires a drop on WhoLikesToParty — FLUID-TRACKS §6 — and §107's rule is that its drop is not the grammar's), 1.00 on SeeYouDrop's, Vienna's
+  and IBelongHere's 65.2; `loudAbs` is 1.0 on every one (no range); `loudRel` .69–1.00. The causal witness that is on every clear is the slam
+  itself — **`bass` on the confirming frame: SeeYouDrop 1.00 / .93 (live), .95 / .87 (file); Vienna 1.00; IBelongHere 1.00 / .79 / 1.00;
+  WhoLikesToParty .69 (live), .66 (file)** — §111 item 5's own witness (a drop IS the bass slamming back). So the law ranks that level among the
+  track's OWN kicks' bass (`rkB`, pushed on every `kickEvt` with the sub open, the §111 rank: 0 at the lane's p10, 1 at its p90, the pooled
+  prior .3 / .95 under 8 hits): `A = SW_K · (SW_C / beat) · g · (SW_A0 + (1 − SW_A0) · rank)` — SeeYouDrop's 1.00 against its kicks' p90 .96
+  ranks 1, WhoLikesToParty's .66–.69 against .87 sits mid-range. Per clear, A in uv/s (the survey's whole-track traces, `tools/fluid-tracks.js`):
+  **SeeYouDrop 1.36 / 1.55 (file), 1.37 / 1.60 (live) · Vienna 1.06 / 1.06 · IBelongHere file 1.31 / 1.22 / 1.32 / 1.30 / 0.94, live 0.97 ·
+  WhoLikesToParty file 0.76 / 0.68 / 0.80, live 0.89 / 1.18 / 0.67** — the ring 12–21 frames, its front ending at .23–.25 screen heights
+  (half a radius in half a beat). `g` carries `loudRel` (the track's own loudness ladder) and `presence` (a quiet frame fires A 0).
+- **The live detector per track under `&map=0` (the whole tracks; hits within 1.5 s of a truth drop, windows.json):** SeeYouDrop **2 / 2**, 0
+  false · Vienna **1 / 2** (85.33; the hand-listed bar 40 at 106.67 never arms), 0 false · IBelongHere **1 / 4** (178.58 only; 15.9 / 64.7 / 129.8
+  unseen) + **4 false arms** in the breakdown, every one rejected by the confirmation · WhoLikesToParty **3 / 3**, 0 false · CyborgNinja 0 / 0, 0
+  false (the control) · Comptine **0 / 3** (a piano piece) + **5 false arms**, none confirmed · Malicious 0 / 1 (record only). File mode adds the
+  map's lines: IBelongHere's five (16.4 32.67 65.22 130.28 179.1) and WhoLikesToParty's three a bar early (56.5 130.33 187.77); Vienna has no
+  map line on either drop. So on a live night the shockwave fires on SeeYouDrop ×2, Vienna ×1, WhoLikesToParty ×3, IBelongHere ×1 (late), nowhere
+  else — exactly where the pool clears.
+- **The droplets — gone (one ring).** FLUID's §106 ring of six droplets (`RING_N` 6 at `RING_R` .22, `RING_V` 1.6 uv/s, `RING_DYE` .04) fired on the
+  same frame. Measured on SeeYouDrop's two live drops before the scene edit and after it (the centre disc, 0.1 s apart): with the droplets **81 →
+  151 (the flash) → 93 → 57 → 44.6 → 41.6 (+0.4 s) → 42 → 44** and without **81 → 151 → 91 → 57 → 44.6 → 41.5 → 42 → 44**; drop 2 42.8 vs 43.0 at
+  +0.4; the whole-frame p99 106 vs 107 — six point-pushes next to a velocity ring moved nothing the ruler or the eye can see, so they go: the
+  substrate's ring is the one ring, and the scene throws nothing on the drop (its one injection is the sparkle).
