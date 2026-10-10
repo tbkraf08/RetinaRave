@@ -25,7 +25,7 @@ import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
 import { hsv } from './math/util.js';
 import { FLUID, initFluid } from './core/fluid/fluid.js'; // the fluid substrate (DECISIONS §104): ctx.fluid, engineTex.vel / .dye
-import { FLUID_FEATS } from './core/fluid/inject.js'; // its MS reads, checked like a scene's feats
+import { GRAMMARS } from './core/fluid/grammar.js'; // §116 the pool's grammars (inject.js 'pool', inject2.js 'bands'): each one's MS reads, checked like a scene's feats
 
 import feedback from './effects/feedback.js';
 import bloom from './effects/bloom.js';
@@ -47,6 +47,7 @@ import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (sc
 import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
 import chladni from './scenes/chladni/index.js'; // v0.15: id 11 ("slot 12"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=11) — ENGINE-CHLADNI-SESSION-PROMPT.md
 import fluid from './scenes/fluid/index.js'; // §106: id 12 ("slot 13"); on the roster since §114 (its own fit bid beside NAV, DUST, TORUS2; no digit key — `n` cycles to it, or &scene=12) — the fluid substrate shown as itself (FLUID-PLAN Step 3)
+import fluid2 from './scenes/fluid2/index.js'; // §116: id 13, forced-only (score 0; no digit key — `n` cycles to it, or &scene=13) — FLUID's pool under the band grammar (its card's `fluid.grammar`, core/fluid/inject2.js; FLUID2-PLAN)
 
 const $ = (id) => document.getElementById(id);
 
@@ -67,15 +68,15 @@ const ctx = {
 CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
 initLines();
-{ // the substrate's reads are declared in FLUID_FEATS (core/fluid/inject.js) and checked here exactly as a scene's feats are below
-  const missing = FLUID_FEATS.filter((f) => !(f in ENGINE.FEATS));
-  if (missing.length) ERRS.push('fluid substrate reads undeclared MS fields: ' + missing.join(','));
+for (const g in GRAMMARS) { // the substrate's reads are declared per grammar in its FLUID_FEATS (core/fluid/inject.js, inject2.js) and checked here exactly as a scene's feats are below
+  const missing = GRAMMARS[g].FLUID_FEATS.filter((f) => !(f in ENGINE.FEATS));
+  if (missing.length) ERRS.push('fluid substrate grammar ' + g + ' reads undeclared MS fields: ' + missing.join(','));
 }
 initFluid(ctx); // before resize(): its targets are allocated on the first resize hook, like an effect's
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
-for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis, chladni, fluid]) {
+for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis, chladni, fluid, fluid2]) {
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

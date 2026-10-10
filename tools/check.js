@@ -173,18 +173,35 @@ for (const d of sceneDirs) {
   }
 }
 
-{ // the fluid substrate's reads (DECISIONS §104): core/fluid/inject.js is pure and declares FLUID_FEATS. Every key in FEATS (fail);
-  // every `S.<field>` / `MS.<field>` read in its source in FLUID_FEATS (FAIL — stricter than a scene's warn: the substrate feeds every
-  // scene); a declared key the source never reads (warn). main.js checks the same list against ENGINE.FEATS at boot.
-  const { FLUID_FEATS } = await import(path.join(ROOT, 'assets/core/fluid/inject.js'));
-  const src = fs.readFileSync(path.join(ROOT, 'assets/core/fluid/inject.js'), 'utf8');
-  const undecl = FLUID_FEATS.filter((k) => !(k in FEATS));
-  if (undecl.length) fail('fluid substrate: FLUID_FEATS not in FEATS: ' + undecl.join(','));
-  const read = new Set([...src.matchAll(/\b(?:S|MS)\.(\w+)/g)].map((m) => m[1]));
-  const outside = [...read].filter((k) => !FLUID_FEATS.includes(k));
-  if (outside.length) fail('fluid substrate: inject.js reads MS fields outside FLUID_FEATS: ' + outside.join(','));
-  const unread = FLUID_FEATS.filter((k) => !read.has(k));
-  if (unread.length) warn('fluid substrate: FLUID_FEATS entries inject.js never reads: ' + unread.join(','));
+{ // the fluid substrate's reads (DECISIONS §104, §116): every grammar in core/fluid/grammar.js (inject.js 'pool', inject2.js 'bands') is pure
+  // and declares FLUID_FEATS. Per grammar: every key in FEATS (fail); every `S.<field>` / `MS.<field>` read in its source in its FLUID_FEATS
+  // (FAIL — stricter than a scene's warn: the substrate feeds every scene); a declared key the source never reads (warn) — for a grammar
+  // that composes the pool grammar (inject2.js's plan() runs inject.js's plan() first) the pool grammar's reads count as its own, so the
+  // warn is on ITS additions only. main.js checks the same lists against ENGINE.FEATS at boot. A scene card naming a grammar not in the
+  // table fails (grammarOf() would fall back to 'pool' silently).
+  const { GRAMMARS, DEFAULT_GRAMMAR } = await import(path.join(ROOT, 'assets/core/fluid/grammar.js'));
+  const FILES = { pool: 'assets/core/fluid/inject.js', bands: 'assets/core/fluid/inject2.js' };
+  const baseRead = new Set([...fs.readFileSync(path.join(ROOT, FILES[DEFAULT_GRAMMAR]), 'utf8').matchAll(/\b(?:S|MS)\.(\w+)/g)].map((m) => m[1]));
+  for (const g in GRAMMARS) {
+    const { FLUID_FEATS } = GRAMMARS[g], file = FILES[g];
+    if (!file) { fail('fluid substrate: grammar ' + g + ' has no source file in check.js\'s table'); continue; }
+    const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const undecl = FLUID_FEATS.filter((k) => !(k in FEATS));
+    if (undecl.length) fail('fluid substrate (' + g + '): FLUID_FEATS not in FEATS: ' + undecl.join(','));
+    const read = new Set([...src.matchAll(/\b(?:S|MS)\.(\w+)/g)].map((m) => m[1]));
+    const outside = [...read].filter((k) => !FLUID_FEATS.includes(k));
+    if (outside.length) fail('fluid substrate (' + g + '): ' + path.basename(file) + ' reads MS fields outside FLUID_FEATS: ' + outside.join(','));
+    const unread = FLUID_FEATS.filter((k) => !read.has(k) && !(g !== DEFAULT_GRAMMAR && baseRead.has(k)));
+    if (unread.length) warn('fluid substrate (' + g + '): FLUID_FEATS entries ' + path.basename(file) + ' never reads: ' + unread.join(','));
+    if (g !== DEFAULT_GRAMMAR) { const lost = GRAMMARS[DEFAULT_GRAMMAR].FLUID_FEATS.filter((k) => !FLUID_FEATS.includes(k)); if (lost.length) fail('fluid substrate (' + g + '): FLUID_FEATS lacks the pool grammar\'s reads it runs: ' + lost.join(',')); }
+  }
+  for (const d of sceneDirs) {
+    const sc = (await import(path.join(ROOT, 'assets/scenes', d, 'index.js'))).default;
+    if (sc.fluid !== undefined) {
+      if (!(sc.fluid && typeof sc.fluid === 'object' && typeof sc.fluid.grammar === 'string')) fail('scene ' + d + ': the fluid slot must be { grammar: <name> } (CONTRACTS §1.4)');
+      else if (!(sc.fluid.grammar in GRAMMARS)) fail('scene ' + d + ': fluid.grammar ' + sc.fluid.grammar + ' is not a grammar of core/fluid/grammar.js (' + Object.keys(GRAMMARS).join(',') + ')');
+    }
+  }
 }
 
 { // releases.json (tools/releases.js, SOCIAL-PLAN §3.1–§3.2): the schema, newest first, unique versions, and the tag ritual — the top entry's

@@ -41,6 +41,11 @@
 //   shock      §113: the confirmed drop fires the shockwave ring on the clear's frame (never a trigger alone, never dropEvt): r 0 → SW_C·SW_T over SW_T
 //              beats, SW_W wide, A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·the slam's rank among the track's kicks' bass); presence 0 → A 0
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
+//   bands      §116 the grammar switch (FLUID2-PLAN §2): inject2.js exports inject.js's interface, its FLUID_FEATS ⊇ the base's and ⊂ FEATS;
+//              grammar.js's table picks inject2 for a card declaring fluid.grammar 'bands' (FLUID2) and inject for FLUID / no slot / an unknown
+//              name; S0's identity — plan2 on SeeYouDrop's real trace = plan() to the byte, and on 600 synthetic frames; the shared base state:
+//              st2.base IS st, 300 frames of one grammar then the other continue the same run (warm in both directions); determinism of plan2;
+//              the Proxy MS that throws on a read outside inject2's list
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -53,6 +58,10 @@
 //              §113: shockwaves == confirmed clears on every trace (SeeYouDrop 2, Vienna 1, WhoLikesToParty 1 in 110 s, IBelongHere's three map lines in
 //              file mode and 0 on the live lanes, Comptine / CyborgNinja / the pad 0), each half a beat with its front at SW_C·SW_T
 import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
+import * as INJ2 from '../assets/core/fluid/inject2.js';          // §116 the band grammar (the same interface)
+import { GRAMMARS, grammarOf, DEFAULT_GRAMMAR } from '../assets/core/fluid/grammar.js';
+import fluidScene from '../assets/scenes/fluid/index.js';         // the two cards (score() / slots only: no init, no GL — as test_director imports them)
+import fluid2Scene from '../assets/scenes/fluid2/index.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { MS } from '../assets/engine/state.js';
 import { sectorPc } from '../assets/math/keycolour.js';
@@ -71,7 +80,7 @@ function trace(name) {
   return (traces[name] = JSON.parse(fs.readFileSync(f, 'utf8')));
 }
 // replay plan() over a trace: per-frame {t, S, P}; the hats' x is seeded here (seed is an object, not traced) as fluid-replay.js does
-function replay(J, st = mkState()) {
+function replay(J, st = mkState(), pl = plan) {   // pl: the grammar's plan (§116: inject2's for the bands block)
   const C = J.cols, T = J.t, out = [];
   let prev = null;
   for (let i = 0; i < J.f.length; i++) {
@@ -80,7 +89,8 @@ function replay(J, st = mkState()) {
     S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
     const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev));
     prev = T[i];
-    out.push({ t: T[i], S, P: plan(S, dt, st), pin: st.pin ? (st.pin.k % 12) * 2 + st.pin.m : -1, conf: st.anchor.OUT.conf });
+    const P = pl(S, dt, st), b = st.base || st;   // a band-grammar state carries the base's pin / anchor in .base (made on its first plan)
+    out.push({ t: T[i], S, P, pin: b.pin ? (b.pin.k % 12) * 2 + b.pin.m : -1, conf: b.anchor.OUT.conf });
   }
   return out;
 }
@@ -490,6 +500,66 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   if (J) {
     const a = JSON.stringify(replay(J, mkState()).map((r) => r.P)), b = JSON.stringify(replay(J, mkState()).map((r) => r.P));
     ok(a === b, 'determ: two fresh states on SeeYouDrop\'s ' + J.f.length + ' real frames → identical output (' + a.length + ' chars)');
+  }
+}
+
+// bands (§116, FLUID2-PLAN §2): the grammar switch — the table, the card's slot, S0's identity, the shared base state, determinism, the Proxy
+{
+  const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS;
+  ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
+  ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
+  const undecl2 = FEATS2.filter((k) => !(k in FEATS));
+  ok(undecl2.length === 0, 'bands: every inject2 FLUID_FEATS key in FEATS' + (undecl2.length ? ' — missing ' + undecl2.join(',') : ''));
+  ok(GRAMMARS.pool.plan === plan && GRAMMARS.bands.plan === plan2 && DEFAULT_GRAMMAR === 'pool', 'bands: the table — pool is inject.js, bands is inject2.js, the default is pool');
+  ok(fluid2Scene.id === 13 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 13) declares fluid.grammar bands and the dispatch picks it');
+  ok(fluidScene.id === 12 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 12) declares no slot → pool');
+  ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf(undefined) === 'pool' && grammarOf({ fluid: {} }) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'toString' } }) === 'pool', 'bands: no slot, no card, an unknown name, an inherited name → pool (check.js fails the card; the loop never mixes)');
+  ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
+  // the identity on 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid
+  const synth = (i) => base({ subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
+    kickEvt: i % 30 === 0, kickAmp: 0.5 + 0.4 * frac(i * 0.137), kickAge: (i % 30) / 60, snareEvt: i % 60 === 30, snareAmp: 0.6, snare: i % 60 === 30 ? 0.7 : 0.1,
+    hat2: i % 15 < 8 ? 0.6 : 0, denH: 2, mid: 0.5, tension: 0.4, lpSweep: 0.2 + 0.001 * (i % 100), dropLiveEvt: i === 420, buildLive: i > 300 && i < 420 ? 0.8 : 0 });
+  const frac = (x) => x - Math.floor(x);
+  {
+    const sa = mkState(), sb = mkState2(), A = [], B = [];
+    for (let i = 0; i < 600; i++) { const S = synth(i); A.push(plan(S, DT, sa)); B.push(plan2(S, DT, sb)); }
+    const ja = JSON.stringify(A), jb = JSON.stringify(B);
+    ok(ja === jb && A.some((r) => r.splats.length > 3) && A.some((r) => r.drop === 1), 'bands: S0 identity — plan2 = plan() to the byte on 600 synthetic frames (' + ja.length + ' chars; kicks, snares, hats, a floor and a clear in them)');
+    ok(sb.base !== null && sb.base !== sa && JSON.stringify(sb.base) === JSON.stringify(sa), 'bands: a standalone mkState2() makes its own base on the first plan2 (a replay tool needs no wiring), and it ends in the base\'s state');
+  }
+  const J = trace('SeeYouDrop-map1');
+  if (J) {
+    const a = JSON.stringify(replay(J, mkState(), plan).map((r) => r.P)), b = JSON.stringify(replay(J, mkState2(), plan2).map((r) => r.P));
+    ok(a === b, 'bands: S0 identity — plan2 on SeeYouDrop\'s ' + J.f.length + ' real frames = plan() to the byte (' + a.length + ' chars)');
+    const c = JSON.stringify(replay(J, mkState2(), plan2).map((r) => r.P));
+    ok(b === c, 'bands: determ — two fresh band states on the real trace → identical output');
+    // the shared base state (fluid.js: st2.base = st): one grammar then the other continues the SAME run, in both directions
+    const N = 300, rows = replay(J, mkState(), plan);   // the reference: plan() alone over the trace
+    const st = mkState(), st2 = mkState2(); st2.base = st;
+    const C = J.cols, T = J.t; let prev = null; const outs = [];
+    for (let i = 0; i < 4 * N; i++) {
+      const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+      const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, T[i] - prev)); prev = T[i];
+      const useBands = (Math.floor(i / N) & 1) === 1;   // 300 frames pool, 300 bands, 300 pool, 300 bands: a FLUID → FLUID2 → FLUID → FLUID2 run
+      outs.push(useBands ? plan2(S, dt, st2) : plan(S, dt, st));
+    }
+    ok(st2.base === st, 'bands: st2.base IS the pool grammar\'s state object after ' + (4 * N) + ' frames (never re-made)');
+    ok(JSON.stringify(outs) === JSON.stringify(rows.slice(0, 4 * N).map((r) => r.P)), 'bands: the switch is free — pool → bands → pool → bands every ' + N + ' frames on the real trace = plan() alone, frame for frame (the key pin, the ranks, the clear run on warm in both directions)');
+  }
+  { // the Proxy MS: plan2 reads nothing outside inject2's list, over the real trace
+    const allowed = new Set(FEATS2);
+    let thrown = null, n = 0;
+    const guard = (S) => new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allowed.has(k)) throw new Error('undeclared read ' + k); return t[k]; } });
+    if (J) {
+      const st2 = mkState2(), C = J.cols;
+      try {
+        for (let i = 0; i < J.f.length; i++) {
+          const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+          plan2(guard(S), DT, st2); n++;
+        }
+      } catch (e) { thrown = e.message; }
+      ok(thrown === null && n === J.f.length, 'bands: proxy — SeeYouDrop ' + n + ' real frames through plan2, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : ''));
+    }
   }
 }
 

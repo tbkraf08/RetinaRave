@@ -6,14 +6,15 @@
 // with no GL — the ruler FLUID-DIAG-2026-10-09 §4 reproduced the user's take with (DECISIONS §108, HARNESS "## Fluid").
 //   node tools/fluid-replay.js <trace.json> [t0=0] [t1=1e9] [sec|events|frame]
 //   FLUIDK='{"FLOOR_DYE":0,"CHORD_V":0}' node tools/fluid-replay.js …   — K overrides for an A/B of one knob (the grammar before §108)
+//   INJECT=assets/core/fluid/inject2.js node tools/fluid-replay.js …   — replay another grammar (§116: the band grammar; or a `git show <rev>:…` copy)
 // The trace must carry FLUID_FEATS (filetrace.js with the field list, or '*'); `seed` is an object in MS and is not traced, so
 // the hats' x is seeded here (0.37). 'sec' = one line per second (the channels' splat counts, the injected Σ|dv|, the dye);
 // 'events' = every frame that injects; 'frame' = every frame. Splats are classified by the kind tag `k` each carries (§111).
 // The per-track TABLE over every library track is tools/fluid-tracks.js (HARNESS "## Fluid", the per-track tuning recipe).
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+const { plan, mkState, FLUID_FEATS, K } = await import(process.env.INJECT ? pathToFileURL(path.resolve(process.env.INJECT)).href : '../assets/core/fluid/inject.js');   // INJECT= as fluid-tracks.js (§116)
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const [file, t0s = '0', t1s = '1e9', mode = 'sec'] = process.argv.slice(2);
