@@ -51,7 +51,7 @@ export const CARD = {
   frameN: 0,
   fluid: FLUID,                                                  // the substrate's state (on, avail, ms, tier, sim / dye sizes, params, nSplat, tex) — core/fluid/fluid.js
   setFluid,                                                      // CARD.setFluid(true | false): the W key's switch
-  benchFluid: (n = 300) => benchFluid(n, MS),                    // ms per fluid step at the current tier, readPixels-synced on the dye (HARNESS "Fluid")
+  benchFluid: (n = 300, ring) => benchFluid(n, MS, ring),        // ms per fluid step at the current tier, readPixels-synced on the dye (HARNESS "Fluid"); §113 ring {a, r, w} held on every step
   get fix() { return ENGINE.fix; },
   set fix(v) { ENGINE.fix = v; },
   get GRID() { return getGrid(); },

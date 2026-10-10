@@ -4,7 +4,7 @@
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
 // The fluid as the engine's SUBSTRATE (FLUID-PLAN Step 1, DECISIONS §104): a Stam solver stepped once per frame right after
 // uploadEngineTex (loop.js), publishing ctx.engineTex.vel (RG16F, uv/s) and .dye (RGBA16F, linear colour) on ETEX, and the
-// ctx.fluid API {splat, force, params, on, tex}. inject.js is the MS → force grammar (pure); this file owns the GL: the
+// ctx.fluid API {splat, force, ring, params, on, tex}. inject.js is the MS → force grammar (pure); this file owns the GL: the
 // ping-pong targets per tier (SIM / DYE short edges with the canvas aspect, re-allocated with a bilinear copy on a tier
 // change so the picture never resets), the passes, the &fluiddbg= overlay and the bench. Needs G.FLOAT (EXT_color_buffer_float):
 // without it the substrate is OFF — avail false, on false, the two 1×1 black placeholders stay bound so a sampler always binds.
@@ -27,10 +27,15 @@ export const FLUID = {
   tex: null,        // { vel, dye }: the same objects as ctx.engineTex.vel / .dye
   queue: [],        // this frame's splats: {x, y, dx, dy, r, g, b, rad} — inject.js fills it, scenes add through splat(), the step drains it
   body: [0, 0],     // a scene's uniform body force this frame (uv/s²), through force(); the beat's breath is inject.js's and shaped
+  wave: null,       // §113 the shockwave this step: {a, r, w} — the grammar's ring (inject.js) or a scene's through ring(); the step applies and clears it
   K,                // the grammar's constants (inject.js), live — harness only: `CARD.fluid.K.FLOOR_DYE = 0` from an eval is a one-knob A/B (§108)
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
+  // ring(a, r, w): §113 the force kind the Gaussian splat cannot express — a radial velocity ring round the screen's centre, A in uv/s at the
+  // front r (screen heights from the centre), w wide; SET into the velocity on the next step (the same one-frame caveat as splat). The
+  // grammar's own shockwave is applied on the frame it fires; where both are set the larger amplitude wins.
+  ring(a, r, w) { if (a > 0 && (!this.wave || a > this.wave.a)) this.wave = { a, r, w: Math.max(1e-3, w) }; },
 };
 
 let gl = null, P = {}, st = null, ph = null;
@@ -140,7 +145,9 @@ export function stepFluid(dt, S, resumed) {
     for (const s of R.splats) q.push(s);
     breath = R.body;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
+    if (R.ring) FLUID.ring(R.ring.a, R.ring.r, R.ring.w);   // §113 the shockwave, this step
   }
+  const wave = FLUID.wave;
   FLUID.nSplat = q.length;
   gl.disable(gl.BLEND);
   gl.disable(gl.DEPTH_TEST);
@@ -215,6 +222,8 @@ export function stepFluid(dt, S, resumed) {
   gl.uniform1f(pr.u('uDiss'), pm.velDiss);
   gl.uniform1f(pr.u('uBody'), breath);
   gl.uniform2f(pr.u('uForce'), FLUID.body[0], FLUID.body[1]);
+  gl.uniform1f(pr.u('uAspect'), aspect);
+  gl.uniform3f(pr.u('uRing'), wave ? wave.a : 0, wave ? wave.r : 0, wave ? wave.w : 1);   // §113: no extra draw — the ring rides the velocity advect
   tri();
   swap(vel);
   pr = pass(P.advect, dye[1]);
@@ -223,9 +232,12 @@ export function stepFluid(dt, S, resumed) {
   gl.uniform1f(pr.u('uDiss'), pm.dyeDiss);
   gl.uniform1f(pr.u('uBody'), 0);
   gl.uniform2f(pr.u('uForce'), 0, 0);
+  gl.uniform1f(pr.u('uAspect'), aspect);
+  gl.uniform3f(pr.u('uRing'), 0, 0, 1);
   tri();
   swap(dye);
   FLUID.body[0] = FLUID.body[1] = 0;
+  FLUID.wave = null;
   FLUID.steps++;
   publish();
   FLUID.ms = ema(FLUID.ms, performance.now() - t0, dt, 1);
@@ -250,14 +262,16 @@ export function drawFluidDbg() {
 
 // ms per step at the current tier, readPixels-synced on the dye target (HARNESS "Bench protocol": q pinned, n ≥ 300, medians,
 // interleaved with bench(0, 300)). S is the MS to plan from (static during the call — no events fire; the solver's cost is what is measured).
-export function benchFluid(n, S) {
+// §113: `ring` ({a, r, w}, optional) is held on every step — the shockwave's cost at the tier (the same program; a uniform branch).
+export function benchFluid(n, S, ring) {
   if (!FLUID.avail || !FLUID.on) return -1;
   const sync = () => { gl.bindFramebuffer(gl.FRAMEBUFFER, dye[0].f); gl.readPixels(dye[0].w >> 1, dye[0].h >> 1, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4)); };
-  stepFluid(1 / 60, S, false);
+  const hold = () => { if (ring) FLUID.ring(ring.a, ring.r, ring.w); };
+  hold(); stepFluid(1 / 60, S, false);
   sync();
   const t = performance.now();
   for (let i = 0; i < n; i++) {
-    stepFluid(1 / 60, S, false);
+    hold(); stepFluid(1 / 60, S, false);
     if (i % 8 === 7) sync();
   }
   sync();

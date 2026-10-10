@@ -23,6 +23,9 @@
 // second (area-weighted) above INK_BUDGET scales the dissipation up, so the pool's ink saturates at the budget on every track —
 // CyborgNinja (31 ink/s, 1 LU of dynamics) drains as fast as it fills, SeeYouDrop's groove (12) is untouched. Every splat carries
 // its kind (`k`) for the replay rulers (tools/fluid-tracks.js, tools/fluid-replay.js).
+// §113 (FLUID-DROP-SESSION-PROMPT item 1): the confirmed drop also fires a SHOCKWAVE — a radial velocity ring from the screen's centre
+// (the drop is the whole room, not the sub's x) travelling one screen radius per beat for half a beat, returned as `ring` and applied by
+// fluid.js in the same step; the ink is thrown outward and the centre refills from the drop's kicks.
 import { clamp, frac, sstep, hsv, mix, ema } from '../../math/util.js';
 import { mkAnchor, sectorPc, WARM, COOL, PULL, wrap } from '../../math/keycolour.js';
 import { srgbToLin1 } from '../../math/oklab.js';
@@ -91,6 +94,13 @@ export const K = {
                    //   clears per drop, the second emptying what the first's ring and the drop's kicks had just put back)
   HARM_TAU: 15,    //   s: the fallback hue (no trusted key yet) is the HARMONY'S CENTRE — harmAngle's unit vector and the mode, each an ema this
                    //   long, so a diatonic progression (IBelongHere's Dm F Am C: four fifths sectors, 38 s before any trust) is one hue, not four
+  SW_C: 0.5,       // §113 the SHOCKWAVE: on the confirmed drop (the frame the clear fires) a radial velocity ring from the screen's centre, its front
+  SW_W: 0.08,      //   at r = SW_C · (t / beat) screen heights (one screen radius per beat), SW_W wide (exp(−((r − front)/w)²)), for SW_T beats;
+  SW_T: 0.5,       //   the ring SETS the velocity at the front to A · r̂ (fluid.js, the velocity advect pass — a radial field is curl-free and the
+  SW_K: 1.5,       //   projection would remove an added one; set each frame it never accumulates, and the dye rides it the same step)
+  SW_A0: 0.5,      //   A = SW_K · (front speed) · g · (SW_A0 + (1 − SW_A0) · the slam's RANK): the bass level on the confirming frame ranked in the
+                   //   track's own kicks' bass (RANK_N; SeeYouDrop's 1.0 is its p90+, WhoLikesToParty's .66–.69 sits mid-range) — `dropStrength`
+                   //   (the design's knee) is the extractor's, set on its own dropEvt, and reads 0.00 on all three WhoLikesToParty drops
 };
 
 export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 6.5 / 12, snarePrev: 0, chordLeft: 0,   // xSub starts at the tonic's place (§111 item 6)
@@ -101,7 +111,8 @@ export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 6.5 / 12
   subAge: 1e9,                                                //   s since the sub emitter was last open (§111 item 4: the void's latch)
   pendLeft: 0, refLeft: 0,                                    //   the pending clear's window and the refractory, s (§111 item 5)
   midRing: [], midAcc: 0, midN: 0,                            //   `mid`'s one-second means over the last FLOOR_WIN s (§111 item 7), the second being summed
-  dirtyS: 0, bassS: 1 });                                     //   the noise guard's 1 s emas of dirty and bass (§111 item 8; bass starts at 1: no noise verdict cold)
+  dirtyS: 0, bassS: 1,                                        //   the noise guard's 1 s emas of dirty and bass (§111 item 8; bass starts at 1: no noise verdict cold)
+  rkB: [], swLeft: 0, swT: 0, swA: 0 });                      //   §113 the kicks' bass levels (the slam's rank), the shockwave's s left / s since it fired / its A
 
 const RANK_PRIOR = [0.3, 0.95];   // the lanes' pooled p10 / p90 over the library (FLUID-TRACKS §10.0), used until a lane has 8 hits
 // a hit's rank in its lane's own recent distribution: 0 at the lane's running p10, 1 at its p90 — deterministic, causal, per state
@@ -110,6 +121,13 @@ function rank(buf, amp) {
   let lo = RANK_PRIOR[0], hi = RANK_PRIOR[1];
   if (buf.length >= 8) { const s = buf.slice().sort((a, b) => a - b); lo = s[Math.floor(0.1 * s.length)]; hi = s[Math.floor(0.9 * s.length)]; }
   return clamp((amp - lo) / Math.max(0.05, hi - lo), 0, 1);
+}
+
+// the same rank without the push (§113: the slam's bass against the kicks' — the slam is not a kick)
+function rankOf(buf, v) {
+  let lo = RANK_PRIOR[0], hi = RANK_PRIOR[1];
+  if (buf.length >= 8) { const s = buf.slice().sort((a, b) => a - b); lo = s[Math.floor(0.1 * s.length)]; hi = s[Math.floor(0.9 * s.length)]; }
+  return clamp((v - lo) / Math.max(0.05, hi - lo), 0, 1);
 }
 
 const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
@@ -169,6 +187,7 @@ export function plan(S, dt, st) {
   // the two frames after keep 40 % of the same size. In the harmonic branch (a piano's low notes) it lifts from under the harmony's place.
   const kAge = S.kickAge < 99 ? Math.max(0, S.kickAge) : 99;
   if (S.kickEvt) st.kickSz = K.AMP0 + (1 - K.AMP0) * rank(st.rkK, Math.max(0, S.kickAmp));
+  if (S.kickEvt && S.subGate > 0) { st.rkB.push(Math.max(0, S.bass || 0)); if (st.rkB.length > K.RANK_N) st.rkB.shift(); }   // §113: the track's own slam distribution
   if ((S.kickEvt || kAge < 2 / 60) && !noise) {
     const w = S.kickEvt ? 1 : 0.4;
     add(harmonic ? xH : st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(st.kickSz) * g * w, K.KICK_DYE * g * w, 2, 'kick');
@@ -253,7 +272,17 @@ export function plan(S, dt, st) {
     drop = 1; st.pendLeft = 0; st.refLeft = K.CLEAR_REF * beat;
     add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4, 'drop');
     st.clearLeft = beat;
+    // §113 the shockwave fires on THIS frame (the confirmation, 0–4 frames after the trigger on the library's drops; the trigger frame has
+    // Comptine's four live arms and IBelongHere's breakdown arms on it, the confirmation none): its A from the slam's own level
+    st.swA = K.SW_K * (K.SW_C / beat) * g * (K.SW_A0 + (1 - K.SW_A0) * rankOf(st.rkB, Math.max(0, S.bass || 0)));
+    st.swT = 0; st.swLeft = K.SW_T * beat;
   } else st.clearLeft = Math.max(0, st.clearLeft - dt);
+  // the ring this frame: the front at SW_C · (t / beat) screen heights from the centre, A at the front, SW_W wide — null when no wave runs
+  let ring = null;
+  if (st.swLeft > 0) {
+    ring = { a: st.swA, r: K.SW_C * st.swT / beat, w: K.SW_W };
+    st.swT += dt; st.swLeft = Math.max(0, st.swLeft - dt);
+  }
   // the beat's breath on the whole pool
   const c = Math.cos(Math.PI * S.beatPhase), c2 = c * c;
   const body = -K.BODY * c2 * c2 * g;
@@ -277,6 +306,6 @@ export function plan(S, dt, st) {
     pressure: 0.8,
     radius: K.RADIUS,
   };
-  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate, drop, harmonic: harmonic ? 1 : 0, noise: noise ? 1 : 0 }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate, drop = 1 on the frame a clear is confirmed, harmonic / noise = the branch — for the replay rulers
+  return { splats, body, params, gain: g, colour: col, floor, chord, ink: st.inkRate, drop, harmonic: harmonic ? 1 : 0, noise: noise ? 1 : 0, ring }; // floor = this frame's floor ink, chord = the rise that sheared (0: none), ink = the budget's rate, drop = 1 on the frame a clear is confirmed (§113: the shockwave's first frame), harmonic / noise = the branch, ring = the shockwave this frame ({a, r, w} or null) — for the replay rulers
 
 }
