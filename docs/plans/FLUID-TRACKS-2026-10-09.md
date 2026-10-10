@@ -450,5 +450,14 @@ sub cut at 40 s (+3.05 LU, ×2.02); 55.2 s the F♯1 sub pins (the user's "bass 
 76 s; **breakdown 111.4–137.1 s** (sub 0–19 %, −12.87 LKFS against −7) → **drop 3 137.137 s** (+3.25 LU, ×2.12) after the same 3 s hole;
 181.7–192 s a variation (the sub stays), 192–221 the last groove. Where the false drops would be: the three sub cuts are armed builds
 (the low end leaves, the drums stay) — the live detector may fire on the cut's start rather than the bar line; the 40 s one-bar cut is the
-shortest. The `tools/fluid-tracks.js` row (its trace from 24 s, both modes): **owed — Chrome** (another builder held the GPU lock through
-this session; the row lands in §117 when the trace is recorded).
+shortest. **Measured** (`TRACKS=RaindropsOnRoses node tools/fluid-tracks.js` on the §117 traces, heard 24 → 134 s — the tool's "(0–110 s)"
+is the trace's length, not its start): the live detector fires once, at 129.5 s in the breakdown's last bars, 7.6 s BEFORE drop 3 (a false
+drop by the 4 s rule) and NOT on drops 1 / 2 — the sub cuts leave it no "bass came back" edge; in file mode the two map drops clear the
+pool to the frame (41.18 / 68.62) and the false live one is ORed in (§107), so 3 clears, 2 true. Ink 9.6 / 18.5 per s, never governed; the
+sub emitter spans 0.50 of the width (F♯ at the centre, the walking 808 line to the left — the span the §111 tonic axis was built for);
+the key's hue on 84 % of the frames, 6 bins; void 19 % (the breakdown), syrup 7 %.
+
+| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | shockwaves @ s · A | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| RaindropsOnRoses (record only) (0–110 s) | 1 | 111 | 100.0 | 89 · 74 · 105 · 85 · 92 · 111 | 1.1 · 3.0 · 5.5 | 9.6 / 18.5 (×1.0 / 1.0) | 7.4 | 19 · 11 | 7 | 3 (2) @ 41.18 68.62 129.98 | 3 @ 41.18·1.27 68.62·0.98 129.98·0.65 | 0.13/0.54/0.63 (0.50) | 0.30/0.70 (17 · 0) | 0.37/0.49/0.76 | 84 · 6 · 4 4 5 3 2 3 3 1 3 |
+| RaindropsOnRoses (record only) (0–110 s) | 0 | 111 | 100.0 | 94 · 85 · 109 · 82 · 92 · 111 | 1.2 · 3.3 · 5.4 | 10.3 / 18.8 (×1.0 / 1.0) | 7.7 | 19 · 12 | 7 | 1 (0) @ 129.55 | 1 @ 129.55·0.64 | 0.13/0.54/0.63 (0.50) | 0.30/0.70 (17 · 0) | 0.33/0.53/0.76 | 84 · 6 · 4 4 5 3 2 3 3 1 3 |

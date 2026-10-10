@@ -10482,9 +10482,29 @@ and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, o
   and the loudest 30 s).
 - **FLUID2 S6 (`FLUID2-PLAN` §4 S6):** the note added — RaindropsOnRoses from 24 s, the bass at 56 s, the 1:06 cut as the first ruler for
   any `dtSim` modulation (the (b) void should read the cut as a latched void, the (c) double-step should fire on 68.569).
-- **Owed — Chrome (another builder, FLUID2 S0, held the GPU lock for the whole session; the lock rule: no headless Chrome younger than 2 h):**
-  the traces `TRACKS=RaindropsOnRoses tools/traces.sh` (24 → 134 s, both modes), the `tools/fluid-tracks.js` row (FLUID-TRACKS §12),
-  `SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh` (the lines to append to `real-md5-v036.txt`) and `SCENES=12 TRACKS=RaindropsOnRoses
-  tools/real-rulers.sh` (the row for `real-rulers-v036.txt`), `npm test` (test_music / test_fluid FAIL "no trace" until the traces exist,
-  by design). `node tools/check.js` and `test_ears` were run (test_ears needs the seven's native-rate dumps in `tools/work/`, absent from the
-  worktree — a pre-existing condition, not this change).
+- **The traces and the node tests on music** (`PORT=8985 TRACKS=RaindropsOnRoses tools/traces.sh`, once the other builder's Chrome lock
+  freed): `RaindropsOnRoses-map1.json` and `-map0.json`, 6601 frames each, **heard 24 → 134 s**, 213 fields, 16.7 / 17.2 MB, f0 2 (the map0
+  header's `f0 -1` is HARNESS "File source"'s known race under `&map=0`; the recorder trims to frame0). `node tools/test_music.js` **129 ok,
+  0 fail**, `node tools/test_fluid.js` **299 ok, 0 fail** — the eighth track's claims print as notes (`gate: false`). What they say: the
+  PCM clock reads **139.95 BPM** in both modes (23.3 beats per 10 s; the "bpm is the truth's 93.8 × ?" NOTE is the truth SUMMARY's alias,
+  not the clock — the clock agrees with the kick fold at 140.00); the map's drops land on the truth's to the frame (`mapDropEvt` +0.016 s on
+  41.134, −0.002 s on 68.569; `dropEvt` −0.001 / −0.002); the LIVE detector fires ONCE in 24–134 s, at **129.517 s** — a false alarm by the
+  4 s rule (7.6 s before drop 3, at the end of the 111–137 s breakdown) and it misses drops 1 and 2 (both `dropLiveEvt` lags are that 129.5 s
+  fire: the sub cuts before the drops leave the low end empty, so the build detector has no "bass came back" edge to arm on — the open
+  finding for the live night; `buildLive` max 1.00); the tongues ON 88.7 % of the frames from 20 s (the ≥ 90 % claim would FAIL by 1.3 points;
+  the truth has 1.12 click onsets / s); the kick lane 59 rises / 67 `kickEvt` over 56–116 s against 67 truth clicks (×0.88 / ×1.00; the live
+  lanes 73, ×1.09); `subGate` 87 % (map) / 94 % (live) of the frames; the key pins **F♯m at 42.9 s**, keyConf 0.60, 84 % of the frames
+  key-coloured; the director's real rows: 4 switches, none inside the 30 s dwell, the drop at 68.57 cuts home. FLUID's grammar (file mode):
+  injects on 110 / 110 music seconds, **3 clears = 3 shockwaves** at 41.18 / 68.62 / 129.98 s (A 1.269 / 0.979 / 0.648 — the two map drops
+  and the false live one), the sub emitter's x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 4435 open frames (F♯ at the centre, the walking 808
+  line to the left), syrup 7.0 %, deep void 10.7 % (the breakdown); the live lanes: 1 clear at 129.55 s, void 11.7 %.
+- **The FLUID per-track row** (`TRACKS=RaindropsOnRoses node tools/fluid-tracks.js`, FLUID-TRACKS §12): file mode — music 111 s, injects
+  100 %, sub 89 s · kick 74 · snare 105 · chord 85 · hat 92 · floor 111; 1.1 kicks · 3.0 snares · 5.5 hats per s; ink 9.6 / 18.5 (p50 / p90,
+  never governed); dv 7.4 /s; void 19 % (< .5) · 11 % (< .3); syrup 7 %; clears 3 (2 true) @ 41.18 68.62 129.98 = the shockwaves (A 1.27 /
+  0.98 / 0.65); x sub 0.13 / 0.54 / 0.63 (span 0.50); hits 0.30 / 0.70 (harm 17 s); kick dy 0.37 / 0.49 / 0.76; the key's hue 84 %, 6 bins.
+  The live lanes: sub 94 s, kicks 1.2 /s, ink 10.3 / 18.8, 1 clear @ 129.55 (0 true) — the one false live drop, and neither real one.
+- **Owed — Chrome:** `SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh` (the lines for `real-md5-v036.txt`), `SCENES=12
+  TRACKS=RaindropsOnRoses tools/real-rulers.sh` (the row for `real-rulers-v036.txt`) —
+  the GPU lock (another builder's `real-md5.sh s0-roster`, FLUID2 S0) held through the session's end; see the handoff if these are still
+  listed here. `node tools/check.js` 0 fail (8 warn, the standing soft caps), `node tools/license.js --check` 181 / 0, `npm test` after the
+  traces: below.
