@@ -4,7 +4,7 @@
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
 // FLUID's help entry — data only (CONTRACTS §1.13): the three depths, and one clause per field of `feats` saying what that
 // field moves on THIS screen. The substrate's own reads (the sub, the drums, the key — core/fluid/inject.js, FLUID_FEATS)
-// are shown by the help view's part B, not here: this scene reads nine fields of its own. No code, no imports.
+// are shown by the help view's part B, not here: this scene reads five fields of its own and four more in its bid (§114). No code, no imports.
 
 export const HELP = {
   feats: {
@@ -13,6 +13,10 @@ export const HELP = {
     loudAbs: 'whether the loudness ruler is running at all; without it the light rides the raw relative loudness',
     hat2: 'while the hats are up, a small bright droplet sparkles onto the surface every 50 ms, walking the golden ratio across the top of the pool',
     presence: 'how hard the scene\'s own droplets hit: silence drops nothing',
+    arc: 'the bid: never auto-picked during a build (home parks there)',
+    bassS: 'the bid: a bass line carrying the mix is where the ink enters (§114)',
+    keyConf: 'the bid: a sure key colours the pool; without one it is grey',
+    centroid: 'the bid: a dark mix is where the pool reads as a pool',
   },
   eli5: 'A dark pool of ink, lit from above, and the music is what stirs it. Under every scene of this engine there is a '
     + 'fluid simulation that the sound drives: the bass note is where the ink enters the pool, every kick lifts it, the snare '

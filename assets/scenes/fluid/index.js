@@ -4,7 +4,8 @@
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
 // FLUID (id 12, "slot 13"; FLUID-PLAN Step 3, DECISIONS §106) — the fluid substrate shown as itself: the pool of ink every
 // other scene rides (core/fluid/, DECISIONS §104; the feedback pass back-traces every trail along its velocity, §105), lit
-// as a liquid surface. Forced-only (score() 0, §93's roster rule; no digit key — `n` cycles to it, or &scene=12).
+// as a liquid surface. On the director's roster since §114 (2026-10-10, the user: "add fluid to the bid"): it bids beside NAV,
+// DUST and TORUS2 with a fit model of its own, below; no digit key — `n` cycles to it, or &scene=12 forces it.
 //
 // WHAT IS WHOSE. The music → pool grammar is the CORE's (core/fluid/inject.js, its reads in FLUID_FEATS, shown in the help
 // view's part B): the sub is where the ink enters, the kick lifts it, the snare shears it, the hats are droplets, the key is
@@ -67,7 +68,7 @@ const SELF = {
   id: 12,
   tag: 'the fluid substrate as itself — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the key colours it, the drop clears it',
   card: { title: 'FLUID', blurb: 'ink in a pool: the bass note is where it enters, every kick lifts it, the snare shears it, the key is its colour' },
-  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence'],
+  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'arc', 'bassS', 'keyConf', 'centroid'], // the last four are the bid's alone (§114; help.js says 'the bid:')
   cuts: 'continuous',
   rt: {},
   hooks: { flinfo, fldbg },
@@ -76,9 +77,16 @@ const SELF = {
   // kick.x is the drop ring's envelope, the one declared cut (it rises on the drop frame)
   state: { mode: 'pool', cPath: [1, 0], pathCut: 3, kick: { x: 0 }, baby: null },
 
-  // forced-only (§93's roster rule): the user's eye decides whether it ever bids
-  score() {
-    return 0;
+  // FLUID's territory (§114, the user: "add fluid to the bid"): sub-driven passages under a sure key — the ink enters where the bass
+  // note is (inject.js's sub emitter), the key is its colour (keycolour's KEYC0 .1 .. KEYC1 .3 gate: no key = a grey pool —
+  // Comptine's 0 % key-coloured frames, §111), and a dark mix is where the pool reads as a pool (the §93 CHLADNI term). Every term
+  // is a smoothed level, since the bid is read at one instant: bassS (.5 s ema; `sub` is the fast band), keyConf (2 s), centroid
+  // (.35 s). The same shape as the §93 bids — 0.35 standing (TORUS2's, so FLUID bids at least as readily as the user's favourite
+  // mapping), the terms to a 1.1 cap, 0 during a build (home parks there by precedence). The synthetic profiles are in
+  // test_director step 10: the drop window and the sub breakdown are FLUID's by > 0.1 (the hash noise), the steady tonal groove
+  // stays TORUS2's by > 0.1, the slow sparse intro DUST's by > 0.2; a calm pad over a sure key and a dense peak are near ties.
+  score(MS) {
+    return MS.arc === 'build' ? 0 : 0.35 + 0.4 * MS.bassS + 0.2 * Math.min(1, MS.keyConf / 0.6) + 0.15 * (1 - MS.centroid);
   },
 
   init(ctx) {

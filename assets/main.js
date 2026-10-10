@@ -46,7 +46,7 @@ import nav2 from './scenes/nav2/index.js'; // §102 (2026-10-08): id 0, key 1, t
 import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (score 0; the `n` key cycles to it — the number keys ran out) — MAXWELL-SESSION-PROMPT.md
 import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
 import chladni from './scenes/chladni/index.js'; // v0.15: id 11 ("slot 12"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=11) — ENGINE-CHLADNI-SESSION-PROMPT.md
-import fluid from './scenes/fluid/index.js'; // §106: id 12 ("slot 13"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=12) — the fluid substrate shown as itself (FLUID-PLAN Step 3)
+import fluid from './scenes/fluid/index.js'; // §106: id 12 ("slot 13"); on the roster since §114 (its own fit bid beside NAV, DUST, TORUS2; no digit key — `n` cycles to it, or &scene=12) — the fluid substrate shown as itself (FLUID-PLAN Step 3)
 
 const $ = (id) => document.getElementById(id);
 
