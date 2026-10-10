@@ -297,6 +297,19 @@ stay on the grammar's dt — musical time). Determinism: `dtSim` is a function o
 - **Decision rule:** (a) and (b) ship if the §1.9 rule holds on all eight rulers and the eye reads "the pool breathes" rather than
   "the framerate wobbles" (the montage at 0.1 s cannot judge this — the user's eye in track time decides; say so); (c) by the 10 % rule.
 - **Commit:** `§116 S6 FLUID2 time — the solver's clock breathes with the sub, slows in the void, doubles on the drop; freeze left to item 2`.
+- **The user's track for this axis (2026-10-10, DECISIONS §117 — the eighth library track, RaindropsOnRoses, An-ten-nae / Dimond Saints,
+  140.00 BPM dead constant, F♯, the sub a 46.3 Hz F♯1 pedal held 71 % of the loud half):** the user: *"this is a good track that could play
+  with time element (ideas modulate time -> example bass that starts at 56s -> something happens at 1:06 with the sound that seems like it
+  would be good to modulate on)"*. Measured: the track runs from **24 s** (windows.json `start`; 0–24 s is a mid-only intro, the sub silent);
+  the **bass at 56 s** is the F♯1 sub PINNING from 55.2 s (held 82–100 % against the walking G1 / E1 808 line of 52–54.6 s; 56.33 s the
+  loudest sub slice, 83 % of the energy) — `subEnv` at its fullest, the (a) variant's input; the **1:06 event is a two-bar SUB CUT, 65.4 →
+  68.57 s**: the 25–60 Hz band falls −7 → −40 dB in one 0.25 s step (the 60–150 Hz bass −16 → −37), the YIN goes unvoiced, the high band's
+  share jumps 2 → 40–63 % with its centroid flat at 3.2–4.4 kHz (not a sweep, not a tempo change — the low end pulled out for 2 bars = 3.2 s
+  with the drums running), then the bar-pinned drop 2 at **68.569 s** (+3.39 LU, ×2.19, the sub back to −7.8 dB). That hole is the FIRST
+  RULER for any `dtSim` modulation: the (b) void slowdown should read the cut as a latched void (the sub shut, 3.2 s) and the (c) drop
+  double-step should fire on 68.569; the same gesture, shorter, sits before drop 1 (a one-bar cut at 40.0–40.9 s → 41.134) and before drop 3
+  (134–137 s sub 24 → 1 % → 137.137). The windows: `bass56` f1922 and `event66` f2522 on the run at 24, `build2` / `drop2` f1236 / f1536 on
+  the run at 43; the rulers window 56–116 s holds all three. Not a gate until the user validates a ruler on it (`gate: false`).
 
 ### S7 — the seven-track tune, the gates, the montages, the docs (no tag)
 

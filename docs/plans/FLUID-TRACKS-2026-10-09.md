@@ -439,3 +439,16 @@ What a tuning pass should prove, per step: the SeeYouDrop windows of this survey
 - `tools/work/fluid-tracks/cross-map1.md`, `cross-map0.md` (six tracks), `cross-all-map{1,0}.md` (with Malicious), `greystats.md`.
 - The tools: `analyze.mjs` (the replay + the constants' ranges), `windows.mjs` (the busiest / quietest windows), `windows.txt`, `shots.sh` + `run-shots.sh` (one deterministic run per track; `cdp.js` here is `tools/cdp.js` with a fixed `DBG` debug port per stream — two parallel streams of the stock driver collided on a stale Chrome's `/json` list and shot the wrong track), `montage.sh` + `montage.py`, `doc-track.mjs`, `cross.mjs`, `greystats.sh`, `doc.tpl.md` + `assemble.sh` (this document).
 - Nothing tracked was touched; `tools/truth/` was not written (every track already had its grain tables).
+
+## 12. RaindropsOnRoses — the eighth track (2026-10-10, DECISIONS §117): An-ten-nae, *Raindrops On Roses* (Dimond Saints remix), 140.00 bpm, F♯, the sub 56 % of the loud half. Measured, **not a gate** until the user validates a ruler.
+
+The user: *"start from 24 secs … bass that starts at 56s -> something happens at 1:06"*. The track runs from 24 s for every harness purpose
+(windows.json `start`). Structure (trackmap, bar-pinned to the tool's 139.67 grid = 140.00 nominal): 0–24 s a mid-only intro (sub silent);
+24.5 s the mix opens (+23 dB in the mid band); 27.4 s the 808 line with its slides (166 slides all track); **drop 1 41.134 s** after a one-bar
+sub cut at 40 s (+3.05 LU, ×2.02); 55.2 s the F♯1 sub pins (the user's "bass at 56 s"); **65.4 → 68.57 s the two-bar sub cut** (the sub
+−7 → −40 dB, the high band 2 → 40–63 %, centroid flat — the user's 1:06 event) → **drop 2 68.569 s** (+3.39 LU, ×2.19); the loudest 30 s from
+76 s; **breakdown 111.4–137.1 s** (sub 0–19 %, −12.87 LKFS against −7) → **drop 3 137.137 s** (+3.25 LU, ×2.12) after the same 3 s hole;
+181.7–192 s a variation (the sub stays), 192–221 the last groove. Where the false drops would be: the three sub cuts are armed builds
+(the low end leaves, the drums stay) — the live detector may fire on the cut's start rather than the bar line; the 40 s one-bar cut is the
+shortest. The `tools/fluid-tracks.js` row (its trace from 24 s, both modes): **owed — Chrome** (another builder held the GPU lock through
+this session; the row lands in §117 when the trace is recorded).

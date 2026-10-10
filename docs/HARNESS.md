@@ -12,9 +12,10 @@ timeline under `CLOCK=1` — and §108 found that `features-ears.js` zeroed the 
 `fakeOn` return, so no percussion event had ever reached a scene there: the references proved pixel identity against a timeline that
 was not music. The user: *"test should be real and simulate what would normally happen when visualizing music"*. So:
 
-- **The traces** — `tools/traces.sh` (~2 min each, ~30 min for all 15): every recordable MS field per frame of a deterministic cold-start
+- **The traces** — `tools/traces.sh` (~2 min each, ~34 min for all 17): every recordable MS field per frame of a deterministic cold-start
   file run (`filetrace.js`, `WARM=0`, the five rules below) for EVERY library track (`~/Music/RetinaRave`: Comptine, CyborgNinja,
-  IBelongHere, Malicious, SeeYouDrop, Vienna, WhoLikesToParty) 0 → 110 s in both modes — `<Track>-map1.json` the normal file mode,
+  IBelongHere, Malicious, RaindropsOnRoses, SeeYouDrop, Vienna, WhoLikesToParty — eight since §117) `start` → `start` + 110 s (windows.json's
+  `start`: 0 for the seven, **24 s for RaindropsOnRoses** — the user: *"start from 24 secs"*; the track exists for no harness purpose before it) in both modes — `<Track>-map1.json` the normal file mode,
   `<Track>-map0.json` the live lanes on the same audio — plus `rec-map0.json`, the user's pad take (FLUID-DIAG-2026-10-09,
   `tools/work/fluid-diag/music/rec.wav`) 0 → 24.4 s. 16 MB each, `tools/truth/traces/*.json`, gitignored; `npm test` FAILS with the
   one-line fix when one is missing. Two recordings cmp-equal.
@@ -25,10 +26,15 @@ was not music. The user: *"test should be real and simulate what would normally 
   (`test_drums / build / queue / clock / tongues / director`) stay the UNIT tests of each pure rule on synthetic input; a claim of the
   form "this behaves right on music" lives in `test_music.js` / the `music` block.
 - **The windows** — `tools/truth/windows.py` → `tools/truth/windows.json` (committed): per track, from its own truth (`trackmap.py`'s
-  `tools/truth/<Track>.json` — all seven exist; §109 re-ran `trackmap.py WhoLikesToParty` at the user's grains and it came back byte-identical), the frame-addressed shots the way §104
+  `tools/truth/<Track>.json` — all eight exist; §109 re-ran `trackmap.py WhoLikesToParty` at the user's grains and it came back byte-identical), the frame-addressed shots the way §104
   chose SeeYouDrop's: intro (at 0, 10 s) · groove (the loudest 30 s + 10) · quiet (the sparsest 10 s) · build / drop 1 and 2 (5 s before
   and ON each bar-pinned truth drop; the first two section boundaries where a track has none) — one run per `at`, `frame = 2 +
-  round((t − at)·60)`; and each track's 60 s `rulers` window (20 s before the loudest 30 s to 40 s into it).
+  round((t − at)·60)`; and each track's 60 s `rulers` window (20 s before the loudest 30 s to 40 s into it). A track's `start` (§117: RaindropsOnRoses 24 s) is
+  where every run, window and the rulers window begin at the earliest (the intro run is cold at `start`); the user's NAMED moments
+  (`windows.py` `USER`: RaindropsOnRoses `bass56` 56.0 s, `event66` 66.0 s — the two-bar sub cut before drop 2) ride the run that covers
+  them and sit behind `FULL=1` / `WINDOWS=` like quiet / drop2. `gate: false` = Malicious (the sub ruler) and RaindropsOnRoses (its grid's
+  beat phase was never placed on the audio, dp_residual 62.2 ms; no ruler validated by the user yet): swept and traced for the record,
+  their claims print as notes, never a FAIL.
 - **The identity references** — `GPU=1 PORT=88xx tools/real-md5.sh <tag>`: every window × BOTH map modes (`&map=1` the file map,
   `&map=0` the live lanes; the take `&map=0` only) → `tools/work/real-<tag>-md5.txt`, one line per shot
   (`<md5>  s<id>-<track>-<window>-f<N>-m<map>.jpg`), the reference `tools/accept/v0.35/real-md5-v035.txt`. The DEFAULT scope (what
