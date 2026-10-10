@@ -226,7 +226,9 @@ needed, now generic:
   same one-frame caveat as `splat`; the grammar's own shockwave on the confirmed drop (`dropLiveEvt || mapDropEvt` with the sub back
   within `CLEAR_PEND`, §111 item 5) is applied on the frame it fires, the front at one screen radius per beat for half a beat, and where a
   scene's ring and the grammar's land on one step the larger amplitude wins (`CARD.fluid.wave` is that step's ring). It costs no draw:
-  the ring rides the velocity advect pass as a uniform branch. **`params` is rewritten by the step BEFORE `update()`**,
+  the ring rides the velocity advect pass as a uniform branch. Since §116 S2 a ring may carry a CENTRE (`ring(a, r, w, cx, cy)`, uv; the
+  screen's centre when omitted — `uRingC`, one exact subtraction, the shockwave's path to the bit): the band grammar's kick puff is a small
+  ring round the hit's place; the larger amplitude still wins the step, with its own centre. **`params` is rewritten by the step BEFORE `update()`**,
   so a scene's `params.curl += 10` in `update()` is overwritten before any step reads it (§106 found the plan's override dead; a
   scene wants a `bias` slot the step adds after the grammar — not built).
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
@@ -246,7 +248,9 @@ needed, now generic:
   s13's 58 real-md5 lines = s12's hash for hash (§116). **A grammar's return fields beyond inject.js's** (S1): `heave` (uv/s², what it
   added to `body` — the breath's shaped channel, so no new uniform), `swirl` (the `uSwirl` uniform on the velocity advect pass: a
   solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical program path — a uniform branch, never a mix, as the ring's
-  A = 0), `subEnv` (the envelope, for the rulers). `fluid.js` reads them from the plan of the grammar that owns the step; the pool
+  A = 0), `subEnv` (the envelope, for the rulers); (S2) `kick` (`{ shape, mom, ink, n }` — this frame's kick kinds: `KICK_SHAPE`, the
+  impulse Σ dy·rad over them, their ink in the budget's units, their count — `CARD.fluid.kick` on the last step, null under the pool
+  grammar), and a `ring` with a centre (above). `fluid.js` reads them from the plan of the grammar that owns the step; the pool
   grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
   the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect

@@ -60,9 +60,12 @@
 //                    (`uRingC`, fluid.js's ring(a, r, w, cx, cy); (.5, .5) is the shockwave's identical path), A = KPUFF_A·√rank·g, the
 //                    front 0 → KPUFF_R screen heights in KPUFF_T beats, KPUFF_W wide; the §113 SET semantics — where the base's shockwave
 //                    runs on the same step the larger amplitude wins (the drop's return). No momentum in the splats' units (a set, not an add).
-// The ruler is TRAVEL (tools/fluid-kick-strip.sh, HARNESS "## Fluid"): the ink front's height above the kick's place at +½ and +1 beat, the
-// blob's width, the trail — the shape with the greatest p50 travel that keeps its width ≤ 1.5 × the control's at the control's ink ships
-// (DECISIONS §116 S2). `kick` in the return = this frame's kick kinds for the replay rulers: { shape, mom: Σ dy·rad, ink, n }.
+// The ruler is TRAVEL (tools/fluid-kick-strip.sh + fluid-kick-travel.py, HARNESS "## Fluid"): the up-mass the hit adds to the pool above its
+// place and where that mass is at +½ and +1 beat, read on the velocity. THE FINDING (DECISIONS §116 S2): FLUID's kick never carried itself —
+// it rode the sub emitter's JET, a standing updraft at the bass note's place (U 22 in the band; the plain kick alone adds 1 and is a pinhead,
+// with or without S1's field: the heave costs 15 %, the jet's removal the rest). So the shipped kick is the DIPOLE, seeded inward: the pair's
+// own flow between its cores carries it a third of the screen per beat on its own, at the base's impulse and ink. `kick` in the return =
+// this frame's kick kinds for the replay rulers: { shape, mom: Σ dy·rad, ink, n }.
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
 import { clamp, ema } from '../../math/util.js';
 
@@ -84,14 +87,16 @@ export const K = {
   SUB_INK: 1,      //   the emitter's dye kept × this (dx = dy = 0 always: never a jet); 0 drops the 'sub' splat and re-governs the ink
   SUB_RAD: 3,      //   the emitter's radius × this, its dye ÷ this² (the same ink in the budget's area-weighted units): the mouth's ink as a CLOUD, not a dot (1 reads as
                    //   a bright spot at the bass note's place on a drop's return — the strips, §116 S1; the grey moves 1–2 levels either way)
-  KICK_SHAPE: 0,   // S2 the kick's shape, at ONE momentum: 0 the control (the base's impulse) · 1 the jet (JET_N frames) · 2 the stroke (the jet drawn upward) ·
-                   //   3 the dipole (two seeded splats) · 4 the puff (a radial ring at the kick's place, the splat's velocity gone) — DECISIONS §116 S2
+  KICK_SHAPE: 3,   // S2 the kick's shape, at ONE momentum: 0 the control (the base's impulse) · 1 the jet (JET_N frames) · 2 the stroke (the jet drawn upward) ·
+                   //   3 the dipole (two seeded splats — SHIPPED: the pair carries itself, DECISIONS §116 S2) · 4 the puff (a radial ring at the kick's place, the splat's velocity gone)
   KICK_Y: 0.06,    //   the kick's place above the floor (the base's .06; the stroke and the dipole are drawn from it)
   JET_N: 4,        //   the jet / the stroke: each of the base's kick frames spread over this many frames at 1 / JET_N of its push and ink (the momentum the base's exactly)
   STROKE_L: 0.25,  //   the stroke's length in screen heights …
   STROKE_T: 0.05,  //   … drawn over this many seconds of the push's age (a tenth of a beat at 120 bpm; the jet's frames walk up it)
   DIP_D: 0.03,     //   the dipole's half-spacing (uv): the two splats at x ∓ DIP_D
-  DIP_V: 0.3,      //   the dipole's sideways seed, uv/s × √rank · g, opposite on the two splats: > 0 inward (the pair's own flow between its cores), < 0 outward
+  DIP_V: 1.2,      //   the dipole's sideways seed, uv/s × √rank · g, opposite on the two splats: > 0 inward (the pair's own flow between its cores), < 0 outward. The
+                   //   RaindropsOnRoses strips (§116 S2): .8 / 1.2 / 1.6 add ΔU½ 2.7 / 3.1 / 3.9 of up-mass beside FLUID's own 3.6 (its kick rode the sub's jet) and
+                   //   carry 2.0 / 2.8 / 3.3 to +1 beat (FLUID 1.3); the travel ties at .32 heights per beat — 1.2 sits beside FLUID's number; 1.6 and DIP_D .05 are the switches
   KPUFF_A: 0.4,    //   the puff: A (uv/s) × √rank · g — set at the front (§113's semantics, a ring with a centre)
   KPUFF_R: 0.12,   //   the front's reach, screen heights from the kick's place …
   KPUFF_T: 0.25,   //   … reached in this many beats (then the puff is gone; a new kick restarts it)

@@ -335,6 +335,24 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   (RaindropsOnRoses 24). One Chrome at a time. The §116 S1 windows per track: SeeYouDrop 40–70, CyborgNinja 79–109, Vienna 62–92,
   IBelongHere 160–190, WhoLikesToParty 40–70, Comptine 30–60, Malicious 45–75, RaindropsOnRoses 50–80 (a sustained sub passage and a
   void's entry / return where the track has one); the pad through `rec-strip.sh … 13`.
+- **The kick strip — the TRAVEL ruler (§116 S2; FLUID2-PLAN §4 S2):** per kick, does the hit launch something that travels? One deterministic
+  whole-track run per variant: `[K2='{"KICK_SHAPE":3,"DIP_V":0.8}'] [K=json] [MAP=0|1] [X=0.54] [BEAT=0.4286] PORT=89xx tools/fluid-kick-strip.sh
+  <track> <12|13> <tag> "<kick heard times …>" [at=0]` → `tools/work/fluid2/kick/<track>-s<scene>-<tag>/` — per kick (its kickEvt frame F)
+  four MOMENTS, pre (F − 2) / +0 (F + 1) / +½ beat / +1 beat, and per moment three shots on consecutive frames with the clock paused at each
+  and `CARD.fluid.dbg` set before the frame renders: the composite (dbg 0, the eye) at D − 1, the dye (dbg 1) at D, the velocity alone (dbg 2,
+  0.5 + v) at D + 1; then `tools/fluid-kick-travel.py <dir> <tag> [X KY RET_T BAND]` writes `travel.txt`. **The number is read on the VELOCITY
+  shot, not the dye:** a groove's pool is full of moving ink, and a Δ of the dye against the pre-kick shot over 13–26 frames is the pool's
+  advection (the first ruler read the column's middle under every field). The kick is an upward impulse where the breath and the heave push
+  the centre DOWN, so what goes up in the band x ± .3 above the kick's place is the hit's: **U = Σ max(vy, 0)** over the band (/ 1000),
+  **ΔU = U − U(pre)** (the hit's own addition at +½ and +1), **hc** = U's mass-centroid height above the kick's place (the travel), h90 the
+  front, trail = h90 − h10, **d** = the centroid's distance from the launch (a sideways launch leaves the column: d reads it), **w** = the
+  contiguous run of vy > .05 through the centroid's column (p50 over the rows between hc − .05 and h90: a pair that travels stays compact),
+  sp the S1 speed metric over the band; the composites give step0 (the §1.9 step at the hit) and grey0. The summary lines are p50 (p10–p90
+  on the travel columns) over the kicks whose step0 ≤ .1 (the drop's own clear frame is listed, not summed), then the RETURN (t < RET_T 73)
+  and the GROOVE kicks. `tools/work/fluid2/s2/cmp.py` tabulates tags side by side, `montage.py` the same 8 frames per variant (two kicks ×
+  four moments, the dye over the velocity). The §116 S2 kicks on RaindropsOnRoses (14, each ≥ .6 s before the next so +1 beat is its own):
+  68.567 (the drop's confirmation frame — listed, not summed) 69.217 69.867 70.717 71.367 72.650 (the return) · 77.583 78.867 84.433 87.867
+  89.150 98.150 99.433 101.583 (the groove); X .54 (the sub's place on F♯'s axis), BEAT 60/140. One Chrome at a time; `GREYONLY=1` re-reads.
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
