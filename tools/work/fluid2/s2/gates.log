@@ -1,0 +1,75 @@
+== s13a start 18:53:09
+d2e6e33f0c2124bc985c3093920232b8  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13a wall 69 s
+== s13b start 18:54:18
+d2e6e33f0c2124bc985c3093920232b8  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13b wall 69 s
+== s13 a/b cmp-equal 8 lines
+== s13 vs v037 (S1): 0 unmoved, 8 moved: s13-RaindropsOnRoses-build1-f730-m0.jpg s13-RaindropsOnRoses-build1-f730-m1.jpg s13-RaindropsOnRoses-drop1-f1030-m0.jpg s13-RaindropsOnRoses-drop1-f1030-m1.jpg s13-RaindropsOnRoses-groove-f602-m0.jpg s13-RaindropsOnRoses-groove-f602-m1.jpg s13-RaindropsOnRoses-intro-f602-m0.jpg s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 start 18:55:27
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 wall 69 s
+== s12 Raindrops vs v036: 8 / 8 equal, differ []
+== roster start 18:56:36
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+== roster wall 208 s
+== roster 0 1 3 Raindrops vs v037: 24 / 24 equal, differ [], new []
+== rulers start 19:00:04
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.181  0.0169 | 3599  0.056  0     0     | 3599  0.0161 0     | ok
+real-rulers s2-rain: 1 scenes × 1 tracks, 0 FAIL, 66 s wall (map 1, PAR 1)
+== rulers wall 66 s
+== fake start 19:01:10
+== fake wall 212 s
+errs [] on 14 ids
+== fake 26 = v035 (s13's pair aside)
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+1827743c74c9715af4d06cfb267d8bcd  s13-f360.jpg
+0af6dd5b2eccf4cea85f6b845b05068e  s13-f840.jpg
+== parity start 19:04:42
+info (fields on one side only — v3 creates some at runtime, level was deleted): level:missing in ew  highM:missing in v3  buildPk:missing in v3  liveT:missing in v3  arcT:missing in v3  surRaw:missi
+max |diff| over all numeric fields: 7.852214593751443 · fields compared 72
+MISMATCH: nav.c=2.0922965052426807  nav.mode=1  nav.h=0.731401391594356  nav.alpha=0.49002564187315134  nav.th=1.0322474015564918  nav.lg=7.852214593751443  nav.par=0.7771599445147408  nav.vtime=0.829
+== parity wall 50 s
+== bench 19:05:32
+setInterval(()=>CARD.Q.q=0.95,16);'pinned' => "pinned"
+CARD.benchFluid(300,null,'pool').toFixed(3)+' cold' => "0.866 cold"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.728"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.benchFluid(300,null,"bands" => "0.734 ship {\"shape\":3,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=0,CARD.benchFluid(300,null,"bands" => "0.732 shape0 {\"shape\":0,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.MS.kickEvt=1,CARD.MS.kickAm => "0.760 ship-kick-every-step {\"shape\":3,\"mom\":0.0009845796426691056,\"ink\":1.833539190519919,\"n\":2} n 3"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.721"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.benchFluid(300,null,"bands" => "0.725 ship {\"shape\":3,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=0,CARD.benchFluid(300,null,"bands" => "0.778 shape0 {\"shape\":0,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.MS.kickEvt=1,CARD.MS.kickAm => "0.807 ship-kick-every-step {\"shape\":3,\"mom\":0.0014531858719677852,\"ink\":2.703226782458783,\"n\":2} n 3"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.774"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.benchFluid(300,null,"bands" => "0.789 ship {\"shape\":3,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=0,CARD.benchFluid(300,null,"bands" => "0.782 shape0 {\"shape\":0,\"mom\":0,\"ink\":0,\"n\":0}"
+(CARD.fluid.K2.KICK_SHAPE=3,CARD.MS.kickEvt=1,CARD.MS.kickAm => "0.692 ship-kick-every-step {\"shape\":3,\"mom\":0.0014515956310130313,\"ink\":2.701445014478196,\"n\":2} n 3"
+(CARD.fluid.K2.KICK_SHAPE='3',CARD.bench(0,300).toFixed(3)+' => "1.357 nav"
+JSON.stringify({tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CA => "{\"tier\":2,\"sim\":[259,128],\"dye\":[1035,512],\"q\":0.95,\"g\":\"pool\",\"errs\":[]}"
+ 19:05:45 up 36 days,  6:20,  1 user,  load average: 1.29, 1.52, 1.59
+== MOBILE=1 tier 0: scene 13 alive + the bench at tier 0 (the swirl held)
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,tier:CAR => "{\"sc\":13,\"g\":\"bands\",\"tier\":0,\"sim\":[64,139],\"dye\":[256,554],\"errs\":[],\"bad\":[],\"frameN\":242,\"heave\":-0.0030141917106079035}"
+CARD.benchFluid(300,null,'bands').toFixed(3)+' bands default => "0.416 bands default"
+(CARD.fluid.K2.SWIRL=0.8,CARD.MS.sub=0.8,CARD.benchFluid(300 => "0.404 bands swirl 0.482"
+CARD.benchFluid(300,null,'pool').toFixed(3)+' pool' => "0.431 pool"
+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),tier:CAR => "{\"errs\":[],\"bad\":[],\"tier\":0}"
+== build 19:05:50
+bundled 182 modules → dist/index.html (1766 KB)
+1816420
+== file:// 19:05:51
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":13,\"g\":\"bands\",\"on\":true,\"frameN\":302,\"errs\":[],\"bad\":[],\"n\":13}"
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":12,\"g\":\"pool\",\"on\":true,\"frameN\":303,\"errs\":[],\"bad\":[],\"n\":13}"
+VER = '0.36.0'
+== fade 19:06:02
+CARD.SC.forced=-1;CARD.goScene(13,false);CARD.SC.forced=13;J => "{\"cur\":12,\"next\":13,\"dur\":1.6003089469811436,\"g\":\"pool\",\"f0\":2}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\"}"
+CARD.goScene(0,false);JSON.stringify({cur:CARD.SC.cur,next:C => "{\"cur\":13,\"next\":0,\"g\":\"bands\"}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\",\"errs\":[],\"bad\":[],\"heard\":37.07}"
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+a grey 34.7 36.1 36.4 36.9 37.0 36.2 29.0 21.7 20.5 23.3 25.0 26.9 28.7 31.6 33.1 33.9 34.0 35.4 34.9 34.4 33.9 35.1
+a max step 7.3 /255 · §1.9 viol []
+b grey 32.8 32.3 32.1 33.4 33.1 32.8 32.5 33.7 33.4 33.0 32.6 34.3 34.1 33.8 33.3 34.2 33.9 33.6 33.4 35.0 34.7 34.5
+b max step 1.72 /255 · §1.9 viol []
+== all done 19:06:22
