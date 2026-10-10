@@ -42,6 +42,27 @@
 // What the void does (§111 item 4: the latch, VOID_FLOOR) is the base's and untouched; `st.base.xSub` is still computed by plan()
 // (the kick lifts from under it). The defaults below are the strips' pick (DECISIONS §116 S1, the per-track table); the other
 // variants stay as K2 switches (`K2=` on the strip tools, `CARD.fluid.K2` live).
+//
+// S2 — THE KICK IS A MASS THAT TRAVELS (FLUID2-PLAN §4 S2; the user's taste, §113: "a hit launches something that travels"). The base's
+// kick is one Gaussian impulse up from the floor under the sub (`k: 'kick'`, dy = KICK_V·√rank·g on the hit's frame, 40 % on the tail
+// frame) — after the projection that IS a vortex pair that self-propels; what decides how far it travels is the impulse's SHAPE in time
+// and space. KICK_SHAPE picks the shape, every one at the SAME MOMENTUM as the base's (Σ dy · rad over the hit's frames — a splat's
+// Gaussian exp(−|p|²/rad) integrates to π·rad, so dy·rad is its impulse — and the same ink in the budget's units):
+//   0 the control  — the base's splat as it is;
+//   1 the jet      — each of the base's kick frames spread over JET_N frames at 1 / JET_N of its push and its ink (a longer push rolls up a
+//                    tighter pair; the base's tail frame joins the queue, so the momentum is the base's exactly, JET_N frames later);
+//   2 the stroke   — the jet drawn UPWARD: the splat's y rises with the push's age, y = KICK_Y + STROKE_L · min(1, age / STROKE_T) — a line
+//                    source over STROKE_T (a tenth of a beat), the user's "line stroke";
+//   3 the dipole   — two splats at (x ∓ DIP_D, KICK_Y), the lift shared (dy / 2 each, the ink halved, the radius the base's) and a sideways
+//                    seed ±DIP_V·√rank·g, OPPOSITE on the two (DIP_V > 0: inward, the pair's own flow between its cores; < 0: outward) —
+//                    the roll-up seeded, the net sideways momentum 0, Σ dy·rad the control's;
+//   4 the puff     — the kick splat's VELOCITY gone (its ink stays), a radial ring round the kick's place instead: `uRing` with a CENTRE
+//                    (`uRingC`, fluid.js's ring(a, r, w, cx, cy); (.5, .5) is the shockwave's identical path), A = KPUFF_A·√rank·g, the
+//                    front 0 → KPUFF_R screen heights in KPUFF_T beats, KPUFF_W wide; the §113 SET semantics — where the base's shockwave
+//                    runs on the same step the larger amplitude wins (the drop's return). No momentum in the splats' units (a set, not an add).
+// The ruler is TRAVEL (tools/fluid-kick-strip.sh, HARNESS "## Fluid"): the ink front's height above the kick's place at +½ and +1 beat, the
+// blob's width, the trail — the shape with the greatest p50 travel that keeps its width ≤ 1.5 × the control's at the control's ink ships
+// (DECISIONS §116 S2). `kick` in the return = this frame's kick kinds for the replay rulers: { shape, mom: Σ dy·rad, ink, n }.
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
 import { clamp, ema } from '../../math/util.js';
 
@@ -63,15 +84,30 @@ export const K = {
   SUB_INK: 1,      //   the emitter's dye kept × this (dx = dy = 0 always: never a jet); 0 drops the 'sub' splat and re-governs the ink
   SUB_RAD: 3,      //   the emitter's radius × this, its dye ÷ this² (the same ink in the budget's area-weighted units): the mouth's ink as a CLOUD, not a dot (1 reads as
                    //   a bright spot at the bass note's place on a drop's return — the strips, §116 S1; the grey moves 1–2 levels either way)
+  KICK_SHAPE: 0,   // S2 the kick's shape, at ONE momentum: 0 the control (the base's impulse) · 1 the jet (JET_N frames) · 2 the stroke (the jet drawn upward) ·
+                   //   3 the dipole (two seeded splats) · 4 the puff (a radial ring at the kick's place, the splat's velocity gone) — DECISIONS §116 S2
+  KICK_Y: 0.06,    //   the kick's place above the floor (the base's .06; the stroke and the dipole are drawn from it)
+  JET_N: 4,        //   the jet / the stroke: each of the base's kick frames spread over this many frames at 1 / JET_N of its push and ink (the momentum the base's exactly)
+  STROKE_L: 0.25,  //   the stroke's length in screen heights …
+  STROKE_T: 0.05,  //   … drawn over this many seconds of the push's age (a tenth of a beat at 120 bpm; the jet's frames walk up it)
+  DIP_D: 0.03,     //   the dipole's half-spacing (uv): the two splats at x ∓ DIP_D
+  DIP_V: 0.3,      //   the dipole's sideways seed, uv/s × √rank · g, opposite on the two splats: > 0 inward (the pair's own flow between its cores), < 0 outward
+  KPUFF_A: 0.4,    //   the puff: A (uv/s) × √rank · g — set at the front (§113's semantics, a ring with a centre)
+  KPUFF_R: 0.12,   //   the front's reach, screen heights from the kick's place …
+  KPUFF_T: 0.25,   //   … reached in this many beats (then the puff is gone; a new kick restarts it)
+  KPUFF_W: 0.03,   //   the front's width (screen heights)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
 //   n the frames planned (0 = cold: the envelopes start at the frame's sub, the ink rate at the base's), subEnv / subSlow the envelopes,
 //   inkRate this grammar's own §111 ink rate (ema INK_TAU) over ITS final list }
-export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0 });
+//   S2: `jet` the pending pushes of the jet / the stroke ([{ x, y, dx, dy, r, g, b, rad, left, age }] — the base's kick frames spread over
+//   JET_N frames; a transient: empty on the cold frame), `puffT` the puff's age in s (−1 = none), `puffA` its amplitude, `puffX` its centre
+export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5 });
 
 // plan(S, dt, st) → the same shape as inject.js's plan() (its fields, the 'sub' splat without its velocity) + `heave` (uv/s², what
-// was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope) — the replay rulers read them.
+// was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope), `kick` (S2: { shape, mom, ink, n } — this frame's
+// kick kinds) — the replay rulers read them. A ring may carry a centre (`cx, cy`; S2's puff) — fluid.js passes it to `uRingC`.
 export function plan(S, dt, st) {
   if (!st.base) st.base = mkStateBase();
   const R = planBase(S, dt, st.base);
@@ -89,6 +125,48 @@ export function plan(S, dt, st) {
       if (K.SUB_INK !== 1 || K.SUB_RAD !== 1) { const f = K.SUB_INK / (K.SUB_RAD * K.SUB_RAD); s.r *= f; s.g *= f; s.b *= f; s.rad *= K.SUB_RAD; inkChanged = true; }
     } else { R.splats.splice(i, 1); inkChanged = true; }
   }
+  // S2 the kick's shape (KICK_SHAPE; 0 = the base's splat untouched — the identical list). Every shape carries the base's momentum
+  // (Σ dy·rad over the hit's frames) and its ink; the puff carries the ink alone and a ring. `kick` in the return reads the frame's kick
+  // kinds for the rulers. The pending jet frames are a transient (cold: empty); a scene switch drops them (fluid.js resets `n`, mkState's
+  // `jet` is the band state's own — it empties with the first cold frame below).
+  const shape = K.KICK_SHAPE >= 1 && K.KICK_SHAPE <= 4 ? K.KICK_SHAPE | 0 : 0;   // a shape outside the table is the control
+  const beat = 60 / Math.max(60, S.bpm);
+  const kick = { shape, mom: 0, ink: 0, n: 0 };
+  if (cold) { st.jet.length = 0; st.puffT = -1; }
+  if (shape) {
+    const ki = R.splats.findIndex((s) => s.k === 'kick');
+    const kb = ki >= 0 ? R.splats[ki] : null;
+    if (kb) R.splats.splice(ki, 1);
+    if (shape === 1 || shape === 2) {
+      // the jet / the stroke: the base's frame joins the queue at 1 / JET_N per frame; every pending push emits one frame, the stroke's y by its age
+      const n = Math.max(1, K.JET_N | 0);
+      if (kb) st.jet.push({ x: kb.x, dx: kb.dx / n, dy: kb.dy / n, r: kb.r / n, g: kb.g / n, b: kb.b / n, rad: kb.rad, left: n, age: 0 });
+      const kind = shape === 2 ? 'stroke' : 'jet';
+      for (const j of st.jet) {
+        const y = shape === 2 ? K.KICK_Y + K.STROKE_L * Math.min(1, j.age / Math.max(1e-6, K.STROKE_T)) : K.KICK_Y;
+        R.splats.push({ x: j.x, y, dx: j.dx, dy: j.dy, r: j.r, g: j.g, b: j.b, rad: j.rad, k: kind });
+        j.left--; j.age += dt;
+      }
+      for (let i = st.jet.length - 1; i >= 0; i--) if (st.jet[i].left <= 0) st.jet.splice(i, 1);
+      inkChanged = true;   // the same ink, JET_N frames later: the per-frame list differs, the own rate decides the governor
+    } else if (shape === 3 && kb) {
+      // the dipole: the lift shared, the ink halved, the sideways seed opposite on the two (inward for DIP_V > 0)
+      const side = K.DIP_V * Math.sqrt(st.base.kickSz) * g * (S.kickEvt ? 1 : 0.4);
+      R.splats.push({ x: kb.x - K.DIP_D, y: K.KICK_Y, dx: side, dy: kb.dy / 2, r: kb.r / 2, g: kb.g / 2, b: kb.b / 2, rad: kb.rad, k: 'dip' });
+      R.splats.push({ x: kb.x + K.DIP_D, y: K.KICK_Y, dx: -side, dy: kb.dy / 2, r: kb.r / 2, g: kb.g / 2, b: kb.b / 2, rad: kb.rad, k: 'dip' });
+    } else if (shape === 4) {
+      // the puff: the splat's ink stays with no velocity; the ring from the kick's place, restarted by every hit
+      if (kb) R.splats.push({ x: kb.x, y: kb.y, dx: 0, dy: 0, r: kb.r, g: kb.g, b: kb.b, rad: kb.rad, k: 'puff' });
+      if (S.kickEvt && kb) { st.puffT = 0; st.puffA = K.KPUFF_A * Math.sqrt(st.base.kickSz) * g; st.puffX = kb.x; }
+      const T = K.KPUFF_T * beat;
+      if (st.puffT >= 0 && st.puffT < T && st.puffA > 0) {
+        const ring = { a: st.puffA, r: K.KPUFF_R * st.puffT / T, w: K.KPUFF_W, cx: st.puffX, cy: K.KICK_Y };
+        if (!R.ring || ring.a > R.ring.a) R.ring = ring;   // the base's shockwave (centred, the larger A) wins the step when both run
+        st.puffT += dt;
+      } else st.puffT = -1;
+    }
+  }
+  for (const s of R.splats) if (s.k === 'kick' || s.k === 'jet' || s.k === 'stroke' || s.k === 'dip' || s.k === 'puff') { kick.n++; kick.mom += s.dy * s.rad; kick.ink += (s.r + s.g + s.b) * (s.rad / KB.RADIUS) ** 2; }
   // the ink budget over THIS list (§111; the drop's impulse not counted, as the base counts): the own rate starts at the base's warm
   // value and runs the same ema, so with the ink unchanged it IS the base's rate and the base's dyeDiss stands untouched
   let ink = 0;
@@ -109,6 +187,6 @@ export function plan(S, dt, st) {
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
   const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
-  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv;
+  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick;
   return R;
 }
