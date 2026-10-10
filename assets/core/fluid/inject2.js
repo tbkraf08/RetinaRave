@@ -25,19 +25,20 @@
 // the bass note's place) is a point source; here its VELOCITY is gone and the sub enters the solver as two body forces on the velocity
 // advect pass, the whole pool at once:
 //   the HEAVE  — on the breath's shaped channel (`body`, the cos(π(2x−1)) profile: centre vs edges — a uniform vertical force in a
-//                closed pool is a pressure gradient the projection removes, §104's lesson): HEAVE · (subEnv − subSlow) · g, the sub's
-//                envelope (`sub` eased SUB_TAU, a tenth of a beat) against its own slow mean (SUB_SLOW) — the pool rises on the sub's
-//                attack and settles in its tail, and since ∫(subEnv − subSlow) dt = SUB_SLOW · subSlow the circulation it leaves
-//                behind is the SLOW sub level itself: the pool keeps moving as long as the bass is there, stills when it leaves
-//                (the void's twin); plus HEAVE_DC · subEnv — the level as a steady gravity (the exploration's fifth switch, off);
+//                closed pool is a pressure gradient the projection removes, §104's lesson): −HEAVE · (subEnv − subSlow) · g, the sub's
+//                envelope (`sub` eased SUB_TAU, a tenth of a beat) against its own slow mean (SUB_SLOW), WITH the breath (centre down:
+//                the sub is the pool's weight) — the attack deepens the beat's gravity, the tail eases it, the void's entry (the slow
+//                mean above a sub that left) lifts against the breath and STILLS the pool, the drop's return slams it; plus
+//                −HEAVE_DC · subEnv — the level as a steady extra gravity while the bass plays (the exploration's fifth switch);
 //   the SWIRL  — a solid-body rotation, `uSwirl` on the advect pass (fluid.js; 0 is the byte-identical program path, as the ring's
 //                A = 0 is): the angular acceleration SWIRL · subEnv · g, its direction by the bar parity so it never winds up — the
 //                whole pool turns with the sub;
-//   the FLIP   — gravity flips: the heave's sign by the bar parity (FLIP 1: the attack lifts on one bar, sinks on the next) or by
-//                the glide's sign (FLIP 2: a rising bass lifts, a falling one sinks; GLIDE_K st/s saturates it);
+//   the FLIP   — gravity flips: the heave's direction by the bar parity (FLIP 1: the attack sinks on one bar, lifts on the next) or by
+//                the glide's sign (FLIP 2: a rising bass lifts, a falling one sinks, a held note heaves nothing; GLIDE_K st/s saturates it);
 //   the INK    — the emitter's DYE stays (SUB_INK × it, dx = dy = 0: the ink still enters at the bass note's place on the tonic
-//                axis, so a sub-only passage is not colourless; the field carries it); 0 drops the splat. The ink budget (§111) is
-//                re-derived over THIS list when the ink differs (the own rate `st.inkRate`, started at the base's warm value).
+//                axis, so a sub-only passage is not colourless; the field carries it), spread over SUB_RAD × the radius at 1 / SUB_RAD²
+//                the dye (the same ink in the budget's units: a cloud where the jet's dot was); 0 drops the splat. The ink budget (§111)
+//                is re-derived over THIS list when the ink differs (the own rate `st.inkRate`, started at the base's warm value).
 // What the void does (§111 item 4: the latch, VOID_FLOOR) is the base's and untouched; `st.base.xSub` is still computed by plan()
 // (the kick lifts from under it). The defaults below are the strips' pick (DECISIONS §116 S1, the per-track table); the other
 // variants stay as K2 switches (`K2=` on the strip tools, `CARD.fluid.K2` live).
@@ -48,14 +49,18 @@ export const FLUID_FEATS = [...FEATS_BASE, 'sub'];   // S1: the sub band's level
 
 // The band grammar's constants (K2), one table. The base's K (inject.js) is inherited through planBase().
 export const K = {
-  HEAVE: 1.0,      // S1 the heave: uv/s² per unit of the envelope's rise above its slow mean, on the breath's shaped channel (BODY .35 is the ruler it reads beside)
-  HEAVE_DC: 0,     //   the level as a steady gravity, uv/s² per unit subEnv (the exploration's switch; 0 = the rise alone)
+  HEAVE: 0.6,      // S1 the heave: uv/s² per unit of the envelope's rise above its slow mean, WITH the breath (centre down; BODY .35 is the ruler it reads beside: the
+                   //   attack's pulse ±.15–.35 next to the breath's .35 peak — 1.0 + DC .3 read the sub best, r(Δ, sub) .93, but ran every groove 50–60 % faster)
+  HEAVE_DC: 0.15,  //   the level as a steady extra gravity, uv/s² per unit subEnv (× .7 on a groove = .1 beside the breath's .13 mean; 0 = the rise alone — the
+                   //   rise alone stills the void but lets a steady groove settle back to the pool grammar's speed, DECISIONS §116 S1)
   SUB_TAU: 0.04,   //   s: subEnv = `sub` eased this fast (a tenth of a beat at 150 bpm — the inertia the eye expects, §1.18)
   SUB_SLOW: 2,     //   s: subSlow = subEnv's slow mean; the heave is the rise above it, and SUB_SLOW · subSlow the circulation it leaves
-  FLIP: 0,         //   gravity flips: 0 none (a rise lifts the centre) · 1 by the bar parity (beatCount >> 2 & 1) · 2 by the glide's sign
+  FLIP: 0,         //   gravity flips: 0 none (a rise deepens the gravity) · 1 by the bar parity (beatCount >> 2 & 1) · 2 by the glide's sign (rising lifts)
   GLIDE_K: 3,      //   st/s at which FLIP 2's sign saturates (clamp(subGlide / GLIDE_K, −1, 1): a held note is no flip)
   SWIRL: 0,        //   the swirl: angular acceleration (1/s², at |p| = 1 in screen heights) × subEnv × g, the direction by the bar parity; 0 = the identical advect path
   SUB_INK: 1,      //   the emitter's dye kept × this (dx = dy = 0 always: never a jet); 0 drops the 'sub' splat and re-governs the ink
+  SUB_RAD: 3,      //   the emitter's radius × this, its dye ÷ this² (the same ink in the budget's area-weighted units): the mouth's ink as a CLOUD, not a dot (1 reads as
+                   //   a bright spot at the bass note's place on a drop's return — the strips, §116 S1; the grey moves 1–2 levels either way)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
@@ -77,8 +82,10 @@ export function plan(S, dt, st) {
   const i = R.splats.findIndex((s) => s.k === 'sub');
   let inkChanged = false;
   if (i >= 0) {
-    if (K.SUB_INK > 0) { const s = R.splats[i]; s.dx = 0; s.dy = 0; if (K.SUB_INK !== 1) { s.r *= K.SUB_INK; s.g *= K.SUB_INK; s.b *= K.SUB_INK; inkChanged = true; } }
-    else { R.splats.splice(i, 1); inkChanged = true; }
+    if (K.SUB_INK > 0) {
+      const s = R.splats[i]; s.dx = 0; s.dy = 0;
+      if (K.SUB_INK !== 1 || K.SUB_RAD !== 1) { const f = K.SUB_INK / (K.SUB_RAD * K.SUB_RAD); s.r *= f; s.g *= f; s.b *= f; s.rad *= K.SUB_RAD; inkChanged = true; }
+    } else { R.splats.splice(i, 1); inkChanged = true; }
   }
   // the ink budget over THIS list (§111; the drop's impulse not counted, as the base counts): the own rate starts at the base's warm
   // value and runs the same ema, so with the ink unchanged it IS the base's rate and the base's dyeDiss stands untouched
@@ -87,10 +94,15 @@ export function plan(S, dt, st) {
   st.inkRate = cold ? R.ink : ema(st.inkRate, ink / dt, dt, KB.INK_TAU);
   if (inkChanged && st.inkRate !== R.ink && !(st.base.clearLeft > 0)) R.params.dyeDiss = R.params.dyeDiss / Math.max(1, R.ink / KB.INK_BUDGET) * Math.max(1, st.inkRate / KB.INK_BUDGET);
   R.ink = st.inkRate;
-  // the field: the heave on the breath's channel, the swirl as its own uniform; the bar parity turns both so nothing winds up
+  // the field: the heave on the breath's channel, the swirl as its own uniform; the bar parity turns the swirl so nothing winds up.
+  // The heave's direction (dir +1) is WITH the breath — the sub is the pool's WEIGHT: the attack deepens the gravity the beat already
+  // applies (centre down), the void's entry (the slow mean above a sub that left) LIFTS against it and stills the pool, the drop's return
+  // slams. The strips settled it (DECISIONS §116 S1): the opposite sign cancelled the breath on every groove, sped every void up and
+  // weakened every return. FLIP 1 alternates it by the bar; FLIP 2 reads the glide — a rising bass LIFTS, a falling one sinks, a held note
+  // heaves nothing.
   const bar = (S.beatCount >> 2) & 1 ? -1 : 1;
-  const sgn = K.FLIP === 1 ? bar : K.FLIP === 2 ? clamp((S.subGlide || 0) / K.GLIDE_K, -1, 1) : 1;
-  const heave = (K.HEAVE * (st.subEnv - st.subSlow) + K.HEAVE_DC * st.subEnv) * g * sgn;
+  const dir = K.FLIP === 1 ? bar : K.FLIP === 2 ? -clamp((S.subGlide || 0) / K.GLIDE_K, -1, 1) : 1;
+  const heave = -(K.HEAVE * (st.subEnv - st.subSlow) + K.HEAVE_DC * st.subEnv) * g * dir;
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
   const swirl = K.SWIRL * st.subEnv * g * bar;
   st.n++;
