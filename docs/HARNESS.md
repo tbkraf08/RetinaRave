@@ -32,9 +32,12 @@ was not music. The user: *"test should be real and simulate what would normally 
   round((t − at)·60)`; and each track's 60 s `rulers` window (20 s before the loudest 30 s to 40 s into it). A track's `start` (§117: RaindropsOnRoses 24 s) is
   where every run, window and the rulers window begin at the earliest (the intro run is cold at `start`); the user's NAMED moments
   (`windows.py` `USER`: RaindropsOnRoses `bass56` 56.0 s, `event66` 66.0 s — the two-bar sub cut before drop 2) ride the run that covers
-  them and sit behind `FULL=1` / `WINDOWS=` like quiet / drop2. `gate: false` = Malicious (the sub ruler) and RaindropsOnRoses (its grid's
-  beat phase was never placed on the audio, dp_residual 62.2 ms; no ruler validated by the user yet): swept and traced for the record,
-  their claims print as notes, never a FAIL.
+  them and sit behind `FULL=1` / `WINDOWS=` like quiet / drop2. `gate: false` = Malicious (the sub ruler, pending the user's validation):
+  swept and traced for the record, its claims print as notes, never a FAIL. RaindropsOnRoses carried the flag from its import until the
+  user validated its ruler the same afternoon (§117 addendum "the ruler validated": grid A = the DP beats vs grid B = the flat 140.00
+  lattice, *"can't tell difference between B / A; the 140 click nods better then the 70"* → `bpm_grid.hand`, `summary.bpm` 140.0) — a gate
+  since. `test_music.js`'s *"from 20 s"* claims count from `start` + 20 on every track (the cold-start warm-up: the clock's lock + the
+  tongues' 16-beat window take 12–15 s from a cold start, 0–14 s on the seven, 24–36 s on RaindropsOnRoses).
 - **The identity references** — `GPU=1 PORT=88xx tools/real-md5.sh <tag>`: every window × BOTH map modes (`&map=1` the file map,
   `&map=0` the live lanes; the take `&map=0` only) → `tools/work/real-<tag>-md5.txt`, one line per shot
   (`<md5>  s<id>-<track>-<window>-f<N>-m<map>.jpg`), the reference `tools/accept/v0.35/real-md5-v035.txt`. The DEFAULT scope (what
@@ -1428,6 +1431,11 @@ IBelongHere (Set Mo feat. Woodes, deep house with a sung intro and sung breakdow
 (three rulers −2.2 / +1.6 / +0.3 ms, hand montage +0.1), bar line = the kick's 1 (21 dB vs 10–13 on 2/3/4, drops 96/128/96 beats
 apart), key Am by bass vs Dm by the ears — the user's ear decides; the sixth row of `test_ears.js` KEY_TRACKS (`expect: false`).
 `python3 tools/truth/clicktrack.py IBelongHere --drops --sections --from=0 --to=75` + `--every=4` are the two WAVs the user has.
+RaindropsOnRoses (An-ten-nae, Dimond Saints remix — added 2026-10-10, DECISIONS §117): **140.00 BPM** (`bpm_grid.bpm` 139.6748 is the DP
+hop-median; the summary's 93.8 was the onset ACF's 2/3 alias, now `summary.bpm_tool`), validated by the user's ear the same afternoon on
+grid A (the DP beats) vs grid B (the flat 140.00 / phase 0 lattice) over 24–84 s + 125–160 s and B at `--every=2` (70 heard): *"can't
+tell difference between B / A; the 140 click nods better then the 70"* — `bpm_grid.hand` (the lattice; the `beats` list stays the DP
+tracker's, `hand.beat_list` says why), `docs/truth/GRID-VALIDATION-2026-10-02.md` §11.
 The user listens from the session: copy every render to `~/Music/RetinaRave-clicks/` (not the tracks folder) and hand them the
 line `! paplay ~/Music/RetinaRave-clicks/<name>.wav` — one per file, in listening order.
 

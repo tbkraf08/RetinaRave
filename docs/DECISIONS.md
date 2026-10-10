@@ -10600,3 +10600,58 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
 - **Open, for the record (not gates):** the live build detector misses drops 1 / 2 (the sub cuts leave no "bass came back" edge) and fires
   once at 129.5 s, 7.6 s early for drop 3; the tongues 88.7 % (the ≥ 90 % claim); the truth summary's 93.8 BPM alias (the grid's 140.00 is
   right — a `tempo_note` as §72 gave Malicious would settle the json); the user's ear on a click render before any of it becomes a gate.
+- **Addendum, 2026-10-10 afternoon — the ruler validated (the orchestrator rendered, the user listened; one Fable worker on main wrote it
+  down: a3d8ae7 the truth + the gate, eaa7c1e the test rules, this commit the docs).** The renders, `clicktrack.py` into
+  `~/Music/RetinaRave-clicks/`: **grid A** = the truth json's DP-tracked beats (`bpm_grid` 139.6748, phase 0.0348 s) and **grid B** = a flat
+  140.00 BPM lattice at phase 0.0 (the kick fold above; the three drops 41.134 / 68.569 / 137.137 on its bar lines 24 / 40 / 80 within
+  9 ms; `tools/work/RaindropsOnRoses-B.json`, gitignored) — `Raindrops-{A-dp139.67,B-140.00}-{24to84,125to160}.wav`, A and B twice each,
+  plus `Raindrops-B-140.00-halftime-every2-40to80.wav` (B at `--every=2` = 70 BPM heard). The two grids differ by median 4.7 / p90 14.5 /
+  max 41.8 ms over the 519 beats (the DP's first beat 34.8 ms after the lattice's, its last 17.2 ms before; the least-squares line through
+  the DP beats is 140.0010 BPM). **The user, verbatim: *"can't tell difference between B / A; the 140 click nods better then the 70"*.**
+  - **What that validates.** (1) The **octave: 140**, not 70 (the half-time feel) and not the summary's 93.8 (the ACF alias). (2) The
+    **beat phase**: A and B are both on the kick within the ear's resolution (≤ 42 ms apart, inseparable by ear). (3) The **bar line**
+    (mod4 0) is not contradicted: the downbeat accent was on both renders and was not called wrong, and the drops sit on both grids' bar
+    lines. Not checked: the bar line on its own (no bar-only render), the phase at sample resolution (no waveform marks), 84–125 s and the
+    outro, the key's mode. The record in the same format as the 2026-10-02 pass: `docs/truth/GRID-VALIDATION-2026-10-02.md` §11.
+  - **The truth (`tools/truth/RaindropsOnRoses.json`), the way Vienna's and Malicious's carry theirs (§72's HANDK rule):** a `notes` entry
+    (the words verbatim, the files, what they validate); **`bpm_grid.hand`** = the validated lattice — `bpm` 140.0, `beat` 0.428571, `phase`
+    0.0, `bar` 1.714286, `downbeat_mod4` 0, `anchor: hand` dated 2026-10-10, `provisional: false`, `replaced` = the tool's 139.6748 /
+    0.03483 + the summary's 93.8 (`summary_bpm`) with why, `octave` / `beat_phase` / `bar_line` / `beat_list` / `tempo_note` / `checked` /
+    `not_checked` as Malicious's; **`summary.bpm` 93.8 → 140.0** with the tool's figure under **`summary.bpm_tool`** (and a `bpm_note`):
+    `windows.py` and `test_music`'s clock rule read `summary.bpm`, so the "139.95 is the truth's 93.8 × ? (ratio 1.492)" note was the alias,
+    not the clock. `trackmap.py`'s HANDK carry-over now also carries a hand-validated `summary.bpm` over a re-run (the fresh figure goes to
+    `bpm_tool`) — `--pcm` stays banned on the eight; nothing was re-run. `gridcheck.py` now reads the track *"hand … hand date 2026-10-10"*
+    (the *"beat phase never placed on the audio"* caveat is off); `clicktrack.py` prints *"grid provenance: hand"*.
+  - **The `beats` / `downbeats` lists stay the DP tracker's** (the lattice is in `hand`, not in the lists — §72's *"phase corrected, beat list
+    kept"*). The ear could not separate A from B, so the rule was: which list are the harness's consumers built on? Every one of them is on
+    the DP list — `clicktrack.py` (grid A, heard), `kicktruth.py` / `snaretruth.py` (`grid16` off the truth beats: the `.kick.json` beat-slots
+    [226 105 224 45] and the `.snare.json` stats), `dropcheck.py` / `predcheck.py` / `queuecheck.py` (the beat unit, the beat / bar events),
+    `gridcheck.py`, `tongues-cold.js`, and `windows.py`'s `drops` + `sections` (bar-pinned to the DP downbeats: −0.1 / +0.5 / −0.1 ms; the
+    lattice's bars are −8.9 / −2.4 / −5.9 ms away). `test_music` reads the 1 s slices, not the beats; the map (`assets/engine/map`) builds
+    its own grid from the audio and reads neither. Against the 600 kicks the two grade the same (75 % DP / 72 % lattice within 25 ms of an
+    8th line). Swapping would move the drops off their bar pin, re-bin the kick / snare slots and move no reference line for a difference
+    no ear hears. **No real-md5 / real-rulers line moves** (none reads the lists) — the `#` notes beside the s117 lines in
+    `tools/accept/v0.36/real-md5-v036.txt` / `real-rulers-v036.txt` saying the track is not a gate are superseded by this addendum, the
+    md5s and the rows untouched.
+  - **The gate.** `windows.py` `NO_GATE` {Malicious, RaindropsOnRoses} → **{Malicious}**, `windows.json` regenerated: the seven + rec
+    entries json-identical, the file byte-equal outside the track's entry, which moves `gate` false → true and `bpm` 93.8 → 140.0 only.
+  - **The three "would FAIL" notes, under the gate** (`tools/test_music.js`): the seven's *"from 20 s"* claims (the clock's bpm median, the
+    beat count per 10 s, the tongues' on-fraction, the queue's) always excluded the cold start's first 20 s — on a trace that starts at the
+    track's `start` (24 s here) *"from 20 s"* excluded nothing. Measured on the traces: `tongueOn` (tongues.js's window-full flag — 0 after
+    a cold start, a re-seat or a lattice move until WIN 16 beats pass; **not a lead / vocal detector**) is 0 over 0–12.0 / 13.4 / 14.4 /
+    20.9 s on Malicious / Vienna / SeeYouDrop / IBelongHere and over **24.00–36.38 s** on RaindropsOnRoses — the same 12–15 s warm-up,
+    shifted by `start`. So the rule: **every "from 20 s" claim counts from `start` + 20** (0 + 20 on the seven, 44 on this track) — the
+    generic warm-up, never a per-track exception. (a) **clock bpm**: 139.95 is the truth's **140 × 1 (ratio 1.000)** — step 1's
+    `summary.bpm`. (b) **beat fires** 23.32 ± 15 % per 10 s from 44 s: **24 23 23 24 23 23 24 23 23, 0 windows off** (the old first window
+    20–30 s held only 24–30 s = 13 beats, the one window off). (c) **tongues**: **100.0 % from 44 s** on both traces (88.7 % from 20 s was
+    the 12.4 s cold start over the 110 s trace: 1 − 12.38 / 110 = 88.7 %) — the detector was right, the premise was the warm-up; no finding,
+    nothing marked. The queue claim (100.0 %, median 27 / 26) and the bpm median (139.95) moved to the same origin and are unchanged on the
+    seven. **`test_music` 129 → 151 ok, 0 fail** — the 22 new lines are the eighth track's claims as gates (both modes: shape ×2, clock ×2,
+    map, tongues, drums ×2, queue, build, director ×2); the seven + rec's ok lines identical to before. `test_fluid`'s music block on the
+    track (injects 110 / 110, 3 / 3 clears = shockwaves, syrup 7.0 %) was already clean and is now gated too: **314 → 328 ok, 0 fail**.
+  - **The gates on the tree as committed:** `node tools/check.js` 183 modules **0 fail** / 8 warn (the standing soft caps), `node
+    tools/license.js --check` 186 / 0, **`npm test` exit 0** (test_music 151 ok, test_fluid 328 ok, the unit tests OK), `python3
+    tools/truth/clicktrack.py RaindropsOnRoses --from=60 --to=72` renders (29 clicks, provenance hand; not played). No Chrome, no sweep.
+  - **Still open on the track (findings, not gates):** the live build detector's miss of drops 1 / 2 and its one fire at 129.5 s (the sub
+    cuts before the drops; the ≤ 4 rule holds at 1); the roster's (0 1 3) real-md5 lines on the track, owed with the next roster re-proof
+    (none run here); the key's mode by ear.

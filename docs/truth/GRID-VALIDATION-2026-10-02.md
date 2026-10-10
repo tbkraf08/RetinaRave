@@ -279,3 +279,17 @@ pulse ACF / phase / per-beat chroma), `python3 tools/truth/v85-barphase.py` (cho
 **A "is right"**. The current grid stands, the bar line stays; what the user heard on the bar-only render was §9's anacrusis (the
 dream's chord swells start a beat before each bar line). `Vienna.json`: `provisional` → false, `hand.anchor: hand` 2026-10-02,
 `hand.anacrusis` noted, `checked`, a `notes` entry. All six truth grids are now validated by ear except WhoLikesToParty (tool anchor).
+
+## 11. RaindropsOnRoses — the user's ear, 2026-10-10 afternoon (the orchestrator; DECISIONS §117 addendum)
+`~/Music/RetinaRave-clicks/Raindrops-A-dp139.67-{24to84,125to160}.wav` (grid A = the truth json's DP-tracked beats, `bpm_grid` 139.6748
+BPM / phase 0.0348 s, every beat clicked, the downbeat accented) vs `Raindrops-B-140.00-{24to84,125to160}.wav` (grid B = a flat 140.00 BPM
+lattice at phase 0.0 — §117's kick fold; the drops 41.134 / 68.569 / 137.137 on its bars 24 / 40 / 80 within 9 ms), A and B twice each; then
+`Raindrops-B-140.00-halftime-every2-40to80.wav` (B at `--every=2` = 70 BPM heard) — the user: **"can't tell difference between B / A; the
+140 click nods better then the 70"**. The octave is 140 (not 70, not the summary's 93.8 alias); the beat phase is on the kick within the
+ear's resolution (A and B are median 4.7 / p90 14.5 / max 41.8 ms apart over the 519 beats and inseparable by ear); the bar line (mod4 0) is
+not contradicted (the accent on both renders, the drops on both grids' bar lines). Not checked: the bar line on its own (no bar-only
+render), the phase at sample resolution (no waveform marks), 84–125 s and the outro. Recorded in `RaindropsOnRoses.json` as
+`bpm_grid.hand` (the validated lattice 140.00 / 0.0, `anchor: hand` 2026-10-10, `checked`, `replaced` = the tool's 139.6748 / 0.03483 +
+the summary's 93.8), `summary.bpm` 140.0 (`bpm_tool` 93.8) and a `notes` entry; the `beats` / `downbeats` lists stay the DP tracker's
+(every consumer is built on them — `hand.beat_list`); `windows.py` `NO_GATE` → {Malicious}. Seven of the eight truth grids are validated by
+ear; WhoLikesToParty (tool anchor) is the one that is not.
