@@ -10103,3 +10103,69 @@ TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fai
   survey's traces at this HEAD before the next grammar pass) · §111's open 3–6 (CyborgNinja's key a guess at the wall; WhoLikesToParty's clear on
   the map's line a bar early; the rec rulers row one frame off §109's; the kick / snare / hat INK constant per hit) · the idle bench re-measure ·
   `accept.sh` end to end (its real-music block = §109 / §111's sweeps) · the §110 `G` key and `#glitch=0` unseen by the user.
+
+## §114 FLUID joins the bid (2026-10-10, one worker in a worktree off 4bfa5ca; the user: *"add fluid to the bid"*)
+
+- **The ask**, verbatim: *"add fluid to the bid"*. FLUID (id 12, §106) shipped forced-only in v0.35 under §93's roster rule (*"only rotate
+  through NAV, DUST, TORUS2"*). It bids now: the roster is NAV2 (0, home) + DUST (1) + TORUS2 (3) + FLUID (12); nothing else changed
+  — `core/scenes.js` is untouched (the precedence, the 0.1 noise, the −0.6 / −0.25 history dock, the §95 dwell all stand), no solver
+  or grammar file moved, no version bumped. `§113` is left for the drop session (FLUID-DROP-SESSION-PROMPT names it).
+- **The fit model**, in §93's own terms (a territory read from smoothed fields the engine has, the §93 shape — a standing term, the rest
+  to a 1.1 cap, 0 during a build since home parks there by precedence):
+
+  | scene | id | bid | max | territory |
+  |---|---|---|---|---|
+  | NAV (home) | 0 | `0.5 + buildLive` | — | builds, drops, silence, by precedence (§93, moved to nav2 at §102) |
+  | DUST | 1 | `0.3 + 0.4 punchy + 0.4 calm` | 1.1 | transients, slow / sparse sound (§93) |
+  | TORUS2 | 3 | `0.35 + 0.35 clarity + 0.4 regularity` | 1.1 | tonal, steady grooves; +0.1 standing as the user's favourite (§93) |
+  | **FLUID** | **12** | **`0.35 + 0.4 bassS + 0.2 min(1, keyConf / 0.6) + 0.15 (1 − centroid)`** | **1.1** | **sub-driven passages under a sure key, in a dark mix — was 0** |
+
+  Why these terms, from what FLUID is (§104–§111): the ink ENTERS where the bass note is (inject.js's sub emitter; every library track
+  injects on 94–100 % of its music seconds, §111's table, and the sub's x is the tonic axis), so the bass line carrying the mix is the
+  first term — `bassS` (synapse's .5 s ema, AGC-normalised) rather than the fast `sub` band, because a bid is read at one instant (a
+  trigger frame) and must not flicker between beats; the key is the ink's COLOUR through keycolour's KEYC0 .1 .. KEYC1 .3 gate, and a
+  track with no key is a grey pool (Comptine's 0 % key-coloured frames in §111's table against 81–100 % on the six others), so a sure
+  key is the second term with GIELIS's §93 normalisation (`keyConf / 0.6`: the ears' tonicConf reads .3–.7 on a right key); a dark
+  mix is where a pool reads as a pool (CHLADNI's §93 `1 − centroid` term, small). The standing 0.35 is TORUS2's, so FLUID bids at
+  least as readily as the user's favourite mapping (the ask's floor: the boring-ranking put MAXWELL and CHLADNI lowest, not FLUID);
+  the 0.4 / 0.2 / 0.15 split puts the bass first, as the grammar does. What it does NOT read: `regularity` (TORUS2's axis, so the
+  two territories split on it), `punchy` / `calm` (DUST's). The noise guard (§111 item 8: dirty > .7 and bass < .2 injects nothing)
+  needs no term — a noise passage has no bass and no key, and the bid reads 0.45 there on its own.
+- **The bid table on synthetic profiles** (`node tools/test_director.js` step 10 prints it from the four REAL `score()` functions,
+  imported from the scene modules — no init, no GL; the lead is over the runner-up, the hash noise is 0.1):
+
+  | profile (bassS keyConf centroid · clarity regularity · punchy calm) | NAV | DUST | TORUS2 | FLUID | picked, by |
+  |---|---|---|---|---|---|
+  | sub-driven drop window (.95 .4 .35 · .5 .8 · .6 .1) | .500 | .580 | .845 | **.961** | FLUID by .116 |
+  | sub breakdown (.85 .3 .25 · .3 .5 · .3 .3) | .500 | .540 | .655 | **.902** | FLUID by .247 |
+  | steady tonal groove (.8 .5 .5 · .9 .9 · .3 .3) | .500 | .540 | **1.025** | .912 | TORUS2 by .113 |
+  | slow sparse intro (.2 .2 .5 · .4 .3 · .8 .7) | .500 | **.900** | .610 | .572 | DUST by .290 |
+  | calm tonal pad (.3 .6 .4 · .8 .2 · .1 .8) | .500 | .660 | .710 | **.760** | FLUID by .05 — a near tie, the hash decides (the pad recording is FLUID's territory as much as TORUS2's) |
+  | dense peak (.9 .5 .6 · .7 .9 · .7 .05) | .500 | .600 | **.955** | .937 | TORUS2 by .018 — a near tie, both read a peak |
+  | noise, no bass (.1 .1 .8 · .2 .3 · .4 .3) | .500 | .580 | .540 | .453 | DUST, FLUID last |
+  | neutral (.5 .3 .5 · .5 .5 · .5 .5) | .500 | .700 | .725 | .725 | the dock rotates |
+
+- **What the Node proof shows** (`tools/test_director.js` step 10, 29 assertions, 67 in the file, OK): the four leads above (the three
+  that matter wider than the noise); a build zeroes every away bid (NAV 0.5 stands); `pickScene` picks FLUID on the drop window for 50
+  of 50 section hashes, TORUS2 on the groove for 50 of 50, home in a build for 50 of 50; 12 neutral picks through the history dock
+  rotate DUST / TORUS2 / FLUID 4 / 4 / 4 (nobody starves; NAV is home by precedence, not by bid); through `updateScenes`: the groove
+  lands TORUS2, the drop hard-cuts home, the identify in the window after it picks FLUID (hist 12,0,3 — the dock on TORUS2), a drop /
+  a build / silence each take FLUID home; the dwell: a landing on FLUID draws 30 s and two identifies at 10 s and 20 s on TORUS2's
+  profile move nothing, the first after 30 s switches to TORUS2; a forced scene (`SC.forced` — the panel's force and its preset's
+  `manual.scene`, §94) shows DUST on the drop window through a surprise, an identify and a drop, forced FLUID stays on the groove
+  TORUS2 would win, and the release picks by the bid (FLUID on the drop window, TORUS2 on the groove). Two things the test taught
+  about the director, not bugs: the history dock counts forced stays too (`goScene` files every landing), so the first pick after a
+  release docks the scene just released; and v3's phrase trigger fires every 16 beats from `awayBeat` once 32 beats have passed — the
+  test pins the home stub's `awayBeat` at 0.5 so each pick is the trigger it fires. `check.js` 0 fail (`help.feats gaps 0`; the four bid
+  fields carry `the bid:` lines and nothing else in the folder reads them), `npm test` exit 0 (the whole chain: test_fluid 243 ok,
+  test_music 129 ok), `license.js --check` 0 without the header.
+- **What moves and what does not.** No pixel: the bid changes PICKS, not frames — `parity.js fake` forces `&scene=0`, `scene-md5.sh`
+  forces each id, `real-md5.sh` / `real-rulers.sh` force theirs, so every md5 and ruler reference (`scene-md5-v035.txt`,
+  `real-md5-v035.txt`, `real-rulers-v035.txt`) is expected unchanged line for line. The director TRACES change — that is the point.
+  Where §109 / §111 / HARNESS say "no roster scene reads the dye / velocity", roster means the three pre-§114 scenes (0 1 3); the
+  identity claim (a grammar change moves s12's pair alone) is unchanged by this section because FLUID still is the only reader.
+- **NOT proven here (owed to the orchestrator's release gates, Chrome / GPU):** the real-music director picks — HARNESS's rule for *"a
+  scene enters the director's rotation"*: the Q trace on house + aba after the promotion (`tools/director-trace.sh`, `director-stats.js`:
+  how often FLUID is picked, on what, and the stays' lengths under the dwell), and the user's eye on it in track time (§93's territories
+  were a first cut too, retuned from remarks); the md5 / ruler lists re-run as the receipt that nothing underneath moved. The synthetic
+  profiles are the fit model's own arithmetic, not a track: whether a real drop window reads `bassS` .95 / `keyConf` .4 is for the trace.

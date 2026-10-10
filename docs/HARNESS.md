@@ -32,7 +32,7 @@ was not music. The user: *"test should be real and simulate what would normally 
 - **The identity references** — `GPU=1 PORT=88xx tools/real-md5.sh <tag>`: every window × BOTH map modes (`&map=1` the file map,
   `&map=0` the live lanes; the take `&map=0` only) → `tools/work/real-<tag>-md5.txt`, one line per shot
   (`<md5>  s<id>-<track>-<window>-f<N>-m<map>.jpg`), the reference `tools/accept/v0.35/real-md5-v035.txt`. The DEFAULT scope (what
-  `accept.sh` runs) is the roster + FLUID (`SCENES="0 1 3 12"`) on every track at intro / groove / build1 / drop1 (+ the take's intro
+  `accept.sh` runs) is the roster (`SCENES="0 1 3 12"` — FLUID bids since §114; before it the scope was "the roster + FLUID") on every track at intro / groove / build1 / drop1 (+ the take's intro
   / chords); `FULL=1` is every registered id at every window (quiet, build2, drop2 too). `SCENES= TRACKS= WINDOWS= MODES=` scope a
   re-proof to a scene folder's own lines. `PAR=2` runs two scene lanes (PORT, PORT+1): the md5s hold (rule 1 holds the clock through the
   decode under load — `f0` is printed per run and must read 2) but a bench does not. The wall times are in DECISIONS §109.
@@ -123,7 +123,7 @@ frames under-fill the 100 Hz envelope ring (dt is clamped at 1/24 s) and the tem
 ```
 GPU=1 tools/director-trace.sh after [aba house mix fake]   # every @-event + the 1 Hz line -> tools/accept/v0.2/director-<style>-after.txt
 node tools/director-stats.js tools/accept/v0.2/director-aba-after.txt   # returns vs RESTORE@, SWITCH@ on/off the bar line, scene sequence
-node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel, the §95 dwell
+node tools/test_director.js                                 # scripted MS, no Chrome: look memory, bar-line hold, cap, cancel, the §95 dwell, the §114 roster bids (step 10: the four real score() on synthetic profiles)
 DWELL=0 GPU=1 tools/director-trace.sh before house          # §95: the dwell off (&dwell=0) for a before/after; &dwell=a[:b] seconds under #test
 ```
 Under `#test` the log carries `SCENE@t -> id bar<pos> gt<trust>`, `RESTORE@t alt<id> scene<id>` (a section's looks came
