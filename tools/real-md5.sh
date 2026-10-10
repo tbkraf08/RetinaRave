@@ -10,7 +10,7 @@
 # user's pad take (rec, &map=0 only: a take has no map). The fake timeline's list (tools/scene-md5.sh) is the fast smoke; a scene
 # or engine change is PROVEN here.
 #   GPU=1 PORT=88xx tools/real-md5.sh <tag>         -> tools/work/real-<tag>/<name>.jpg + tools/work/real-<tag>-md5.txt (the list)
-#   the DEFAULT (tools/accept.sh): SCENES = the roster + FLUID (0 1 3 12), every track, both modes, WINDOWS = intro groove build1 drop1
+#   the DEFAULT (tools/accept.sh): SCENES = the roster (0 1 3 12; FLUID bids since §114), every track, both modes, WINDOWS = intro groove build1 drop1
 #   (boundary1 on a drop-less track) + the take's intro / chords; FULL=1 = every registered id and every window (quiet, build2, drop2).
 #   scope: SCENES="0 3" TRACKS="SeeYouDrop rec" MODES="1" WINDOWS="groove drop1"   — a scene-folder change is proven on its own lines
 #   PAR=2 runs two scene lanes at once on PORT and PORT+1 (the md5s do not move: rule 1 holds the clock through the decode — proven

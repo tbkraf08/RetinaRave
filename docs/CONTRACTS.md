@@ -320,7 +320,7 @@ Two lines in `assets/main.js`, the only edits outside your folder: an import nex
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
 Registered ids (keep this table current): **0 nav2** (home since §102, 2026-10-08 — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, key `1`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`) · **4 drum** (a variant of id 8 since the swap — forced-only since §93, base 8) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav** (the v0.33 navigator in `assets/scenes/nav/`, kept as the control since §102: forced-only `score()` 0, key `9`, `always: true` like the home so key 1 vs 9 compares one navigator state; no `card`; was id 0 and the home v0.1–v0.33) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`) · **11 chladni** (v0.15, forced-only: `score()` 0, no digit — `n` or `&scene=11`; `ENGINE-CHLADNI-SESSION-PROMPT.md`) · **12 fluid** (§106, 2026-10-09, forced-only: `score()` 0, no digit — `n` or `&scene=12`; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's; `FLUID-PLAN.md` Step 3). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav** (the v0.33 navigator in `assets/scenes/nav/`, kept as the control since §102: forced-only `score()` 0, key `9`, `always: true` like the home so key 1 vs 9 compares one navigator state; no `card`; was id 0 and the home v0.1–v0.33) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`) · **11 chladni** (v0.15, forced-only: `score()` 0, no digit — `n` or `&scene=11`; `ENGINE-CHLADNI-SESSION-PROMPT.md`) · **12 fluid** (§106, 2026-10-09; ON THE ROSTER since §114, 2026-10-10 — its own fit bid `0.35 + 0.4 bassS + 0.2 min(1, keyConf/0.6) + 0.15 (1 − centroid)`, 0 in a build; no digit — `n` or `&scene=12` forces it; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's; `FLUID-PLAN.md` Step 3). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities
@@ -870,7 +870,12 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
   or home parking cancels it. Hard cuts are immediate. `SC.quantise = false` (harness) restores immediate switches.
 - Crossfades render both scenes and hand them to the transition (§5; `mixs` by default) over `clamp(4·60/bpm, 1.2, 3)` s.
   Both `draw` calls happen each frame of the fade; both `update`s run.
-- Scores: `score()` + 0.25 per-section seed noise − 0.6 if you were the last scene − 0.25 if the one before.
+- Scores: `score()` + 0.1 per-section seed noise (0.25 before §93) − 0.6 if you were the last scene − 0.25 if the one before.
+- The roster — who bids at all (§93, its addendum, §114): **NAV2 (0, home, `0.5 + buildLive`), DUST (1), TORUS2 (3), FLUID (12)**;
+  every other registered scene returns 0 (forced-only: `&scene=`, the keys, the panel's force). Each bid is a fit model on
+  smoothed fields the engine already has — 0.3–0.35 standing, peaking near 1.1 in its territory, 0 during a build — so the music
+  decides and the noise only breaks ties (DECISIONS §93's table, FLUID's row in §114). A scene joining the roster: its bid in
+  `score()`, the fields it reads in `feats` with `the bid:` help lines (§1.13), its cases in `tools/test_director.js` step 10.
 
 ## 5. Transition contract
 
