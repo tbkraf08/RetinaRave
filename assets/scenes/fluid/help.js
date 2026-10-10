@@ -12,12 +12,12 @@ export const HELP = {
     loudRange: 'how many LU the track has shown so far: the ladder that loudness is stretched over',
     loudAbs: 'whether the loudness ruler is running at all; without it the light rides the raw relative loudness',
     hat2: 'while the hats are up, a small bright droplet sparkles onto the surface every 50 ms, walking the golden ratio across the top of the pool',
-    presence: 'how hard the scene\'s own droplets hit: silence drops nothing',
+    presence: 'how hard the scene\'s own sparkle hits the surface: silence drops nothing',
   },
   eli5: 'A dark pool of ink, lit from above, and the music is what stirs it. Under every scene of this engine there is a '
     + 'fluid simulation that the sound drives: the bass note is where the ink enters the pool, every kick lifts it, the snare '
     + 'shears it sideways, the hats drip onto the surface, the key you are hearing is the colour of the ink, the beat kneads '
-    + 'the whole pool and a drop clears it. This scene is that pool itself, seen as a liquid surface: light catches the '
+    + 'the whole pool and a drop clears it, throwing the ink outward in a ring. This scene is that pool itself, seen as a liquid surface: light catches the '
     + 'edges of the ink like oil on water, and the loudness of the track is how brightly it is lit.',
   why: 'The other scenes ride this fluid without showing it — their trails are carried along its current — so there had to be '
     + 'one picture where the medium is the subject. The mappings are the engine\'s measured ones: where the ink enters is the '

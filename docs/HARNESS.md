@@ -252,7 +252,8 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   bottom-right (0.5 + v, ±0.5 uv/s spans the range), `&fluiddbg=2` the velocity alone; harness only — `FLUID.dbg` is 0 on every
   normal path. Key `W` toggles the substrate live (`CARD.setFluid(on)`), a toast says so; where there are no float render
   targets (`CARD.fluid.avail` false) it stays off.
-- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue, K}` — `K` the grammar's constants
+- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue, wave, K}` — `wave` the step's shockwave
+  ring `{a, r, w}` or null (§113; `CARD.fluid.ring(a, r, w)` sets one for the next step) — `K` the grammar's constants
   (inject.js), live: `CARD.fluid.K.FLOOR_LO=9` from an eval after `__FRAME>=1` is a one-knob A/B of the same run (§108) — `ms` the step's CPU
   submission time (EMA, like `ENGINE.ms`; the GPU cost is the bench below), `nSplat` the last step's splat count, `params` the
   grammar's live values. The HUD (`D`) has the line `fluid <ms> ms sim WxH dye WxH tier N iters I splats n curl c vd … dd …`;
@@ -263,7 +264,9 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   resets). Under `CLOCK=1` the tier never drops (dtRaw is 1/60), so the md5 runs are one tier.
 - **Bench** (the "Bench protocol" above): `CARD.benchFluid(300)` = ms per step at the current tier, readPixels-synced on the dye
   target, interleaved with `bench(0, 300)` as pairs, q pinned (`setInterval(()=>CARD.Q.q=0.95,16)`, wait 8 s), `CLOCK=0`, GPU=1,
-  nothing else on the machine. Budget **≤ 1.0 ms at tier 3**, ≤ 0.4 ms at tier 0 (§104 has the numbers on this machine).
+  nothing else on the machine. Budget **≤ 1.0 ms at tier 3**, ≤ 0.4 ms at tier 0 (§104 has the numbers on this machine; §113's
+  are the honest ones under the desktop's load, with `uptime` beside them). `CARD.benchFluid(300, {a: 1.4, r: 0.12, w: 0.08})` holds a
+  shockwave ring on every step — the ring's cost at the tier (§113: it rides the velocity advect pass, no extra draw).
 - **The identity proof**: `GPU=1 PORT=88xx tools/scene-md5.sh <tag>` with the substrate on must equal the reference list while
   nothing consumes it (Step 1: `tools/accept/v0.34/scene-md5-v034.txt`, every line), and `tools/scene-md5.sh <tag>off '&fluid=0'`
   must equal it too. **Since §105 (Step 2)** the feedback pass rides the velocity, so the default list is `tools/accept/v0.35/scene-md5-v035.txt`
@@ -329,8 +332,8 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   consumer exists; two runs of a shot are md5-equal (the five rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
 - **FLUID, id 12 (§106, `assets/scenes/fluid/`)** — the substrate shown as itself: one fullscreen pass lights `engineTex.dye` as a liquid
   surface (the normal from the ink's luminance gradient over ±2 dye texels, a light at the top, a Blinn highlight, a porthole feather),
-  exposure on the loudness ladder; forced-only (`&scene=12`, `n` cycles to it). Its own injections through `ctx.fluid.splat` (a ring of six
-  on the drop — the slam rule `mapDropEvt || dropLiveEvt || (mapOn ≤ .5 && dropEvt)` — and a sparkle on `hat2`), gated on being on screen.
+  exposure on the loudness ladder; forced-only (`&scene=12`, `n` cycles to it). Its own injection through `ctx.fluid.splat` (a sparkle on
+  `hat2`; the §106 ring of six droplets on the drop is gone since §113 — the grammar's shockwave is the one ring), gated on being on screen.
   Proofs: `IDS=12 PORT=88xx GPU=1 tools/scene-md5.sh s12` twice (the pair in `scene-md5-v035.txt`; `&fluid=0` paints the idle, its pair in
   that file's header); the windows above on `&scene=12` → `tools/accept/v0.35/fluid-s3-*.jpg`; `CARD.bench(12, 300)` interleaved with
   `bench(0, 300)` (budget ≤ 0.5 ms, the pass alone — the step's 0.58 is the substrate's); the continuity monitor on the scene's own state:
@@ -347,6 +350,15 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   / `mapDropEvt` fire on consecutive frames and `dropLiveEvt` never does. §107's (`tools/work/fluid-s3-drop1-strip2.jpg`, the clear
   on `dropLiveEvt || mapDropEvt`, `DROP_DISS` 12): 34 before, the flash 122 (sampled 3 frames after the peak), **27 27 27** for the
   clear's beat (the empty pool at 10 s reads 24), then 31 → 34 as the drop's kicks and the ring refill it.
+  **The drop strip, every track (§113 — the shockwave):** `BEAT=<s> [K='{"SW_K":0}'] PORT=88xx tools/fluid-drop-strip.sh <track> <map 0|1>
+  <tag> "<confirmed drop s> …"` — one deterministic whole-track run (`at=0`, keyed on `__FRAME`, `frame0` 2: nothing else on the GPU),
+  a shot every 0.1 s from 1.5 beats before each confirmed drop to 1.5 beats after, the live lanes (`map 0`) first — the design target —
+  then the file map; `grey.txt` has per shot the whole-frame mean / p99 AND the **centre grey** (the mean inside a disc of radius 0.25·H
+  round the canvas centre — the region the shockwave empties); `K=` is the one-run A/B (`{"SW_K":0}` the §107 spike alone,
+  `{"DROP_DISS":1}` the shockwave alone, nothing = both). The drop seconds are the grammar's CONFIRMED clears on that mode's trace
+  (`tools/fluid-tracks.js`'s clears / shockwaves columns print them to the frame; the live and the file clears differ — WhoLikesToParty's
+  map line is a bar early). `BEAT` is the clock's beat on that track (60 / the trace's `bpm`: SeeYouDrop .4, Vienna .667, 117.6 bpm .51). The
+  montage per track (`tools/montage.py <out> <cols> <shots…>`) is the committed proof `tools/accept/v0.36/fluid-s113-<Track>-drops.jpg`.
 
 ## Effect chain (change to `core/post.js`, an effect, or the chain's colour space — v0.3 §20)
 

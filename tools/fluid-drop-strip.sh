@@ -29,7 +29,7 @@ print(' '.join('%s:%.3f' % o for o in out))
 PY
 )
 S='[{"until":"window.CARD"}'
-[ -n "$K" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.fluid.K,$K))\"}"
+[ -n "$K" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.fluid.K,$(echo "$K" | sed 's/"/\\"/g')))\"}"   # the override's quotes escaped into the step JSON
 S="$S,{\"until\":\"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open\",\"timeout\":300000},{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,dur:CARD.ENGINE.AU.file.dur,fluid:CARD.fluid&&{on:CARD.fluid.on,tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CARD.fluid.simH]},K:{SW_K:CARD.fluid.K.SW_K,DROP_DISS:CARD.fluid.K.DROP_DISS}})\"}"
 for item in $LIST; do N=${item%%:*}; TT=${item##*:}; F=$(python3 -c "print(2+round($TT*60))")
   S="$S,{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$N\"},{\"eval\":\"'$N f'+window.__FRAME+' heard '+CARD.MS.heardT.toFixed(3)+' dd '+CARD.fluid.params.dyeDiss.toFixed(2)+' wave '+JSON.stringify(CARD.fluid.wave)+' ring '+JSON.parse(CARD.REG[12].scene.hooks.flinfo()).ring\"}"
