@@ -25,7 +25,7 @@ import { initHarness, CARD, TEST } from './core/harness.js';
 import { startLoop } from './core/loop.js';
 import { hsv } from './math/util.js';
 import { FLUID, initFluid } from './core/fluid/fluid.js'; // the fluid substrate (DECISIONS §104): ctx.fluid, engineTex.vel / .dye
-import { FLUID_FEATS } from './core/fluid/inject.js'; // its MS reads, checked like a scene's feats
+import { GRAMMARS } from './core/fluid/grammar.js'; // §116 the pool's grammars (inject.js 'pool', inject2.js 'bands'): each one's MS reads, checked like a scene's feats
 
 import feedback from './effects/feedback.js';
 import bloom from './effects/bloom.js';
@@ -68,9 +68,9 @@ const ctx = {
 CARD.ctx = ctx; // harness only: tools/lines-smoke.js draws through it
 
 initLines();
-{ // the substrate's reads are declared in FLUID_FEATS (core/fluid/inject.js) and checked here exactly as a scene's feats are below
-  const missing = FLUID_FEATS.filter((f) => !(f in ENGINE.FEATS));
-  if (missing.length) ERRS.push('fluid substrate reads undeclared MS fields: ' + missing.join(','));
+for (const g in GRAMMARS) { // the substrate's reads are declared per grammar in its FLUID_FEATS (core/fluid/inject.js, inject2.js) and checked here exactly as a scene's feats are below
+  const missing = GRAMMARS[g].FLUID_FEATS.filter((f) => !(f in ENGINE.FEATS));
+  if (missing.length) ERRS.push('fluid substrate grammar ' + g + ' reads undeclared MS fields: ' + missing.join(','));
 }
 initFluid(ctx); // before resize(): its targets are allocated on the first resize hook, like an effect's
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);

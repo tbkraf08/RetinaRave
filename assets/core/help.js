@@ -15,7 +15,7 @@ import { EFFECTS } from './post.js';
 import { REC } from './rec.js'; // the recorder's key row is offered unless &rec=0 (DECISIONS §89)
 import { buildE, refreshE, markE, closeE } from './panel.js'; // part E, the routes panel (v0.4; panel.js never imports help.js)
 import { FLUID, fluidLine } from './fluid/fluid.js'; // part B's substrate line (DECISIONS §104)
-import { FLUID_FEATS } from './fluid/inject.js'; // the fields the substrate reads — shown as data, never as literals here (check.js)
+import { GRAMMARS } from './fluid/grammar.js'; // §116 the fields the substrate reads under the grammar that owns the pool now — shown as data, never as literals here (check.js)
 
 // on: shown · scene: the logical id part A (and E's mark) was built for · ticks: live refreshes so far (the harness counts them) ·
 // nTop: rows in the top table · rows(topOnly): the field names in part A's tables, read back from the DOM
@@ -180,7 +180,7 @@ function refreshB() {
   bRows.engine.textContent = 'source ' + AU.mode + ' · stages: ' + (ENGINE.fakeOn ? 'fake timeline' : 'v3 extractor')
     + ENGINE.stages.map((s) => ' + ' + s.name).join('') + ' · ' + ENGINE.ms.toFixed(2) + ' ms per frame';
   bRows.fx.textContent = EFFECTS.map((e) => e.name).join(' → ');
-  bRows.substrate.textContent = fluidLine() + (FLUID.avail ? ' · the substrate reads: ' + FLUID_FEATS.join(', ') : '');
+  bRows.substrate.textContent = fluidLine() + (FLUID.avail ? ' · the substrate reads (grammar ' + FLUID.grammar + '): ' + GRAMMARS[FLUID.grammar].FLUID_FEATS.join(', ') : '');
 }
 
 // (C) the cast: every registered scene and variant with its tag and three depths; the current one is marked

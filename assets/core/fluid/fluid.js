@@ -12,7 +12,9 @@
 import { G, ETEX, mkProg, use, tex, tri } from '../gl.js';
 import { tier } from '../quality.js';
 import { ema } from '../../math/util.js';
-import { plan, mkState, K } from './inject.js';
+import { K } from './inject.js';
+import { K as K2 } from './inject2.js';
+import { GRAMMARS, DEFAULT_GRAMMAR } from './grammar.js';   // §116: the grammar table — the step plans through the OWNER scene's grammar (loop.js names it)
 import * as SH from './shaders.js';
 
 export const SIM = [64, 96, 128, 128];     // the sim grid's short edge per tier (ctx.tier())
@@ -28,7 +30,9 @@ export const FLUID = {
   queue: [],        // this frame's splats: {x, y, dx, dy, r, g, b, rad} — inject.js fills it, scenes add through splat(), the step drains it
   body: [0, 0],     // a scene's uniform body force this frame (uv/s²), through force(); the beat's breath is inject.js's and shaped
   wave: null,       // §113 the shockwave this step: {a, r, w} — the grammar's ring (inject.js) or a scene's through ring(); the step applies and clears it
-  K,                // the grammar's constants (inject.js), live — harness only: `CARD.fluid.K.FLOOR_DYE = 0` from an eval is a one-knob A/B (§108)
+  K,                // the pool grammar's constants (inject.js), live — harness only: `CARD.fluid.K.FLOOR_DYE = 0` from an eval is a one-knob A/B (§108)
+  K2,               // §116 the band grammar's (inject2.js) — `CARD.fluid.K2.<X>` the same way; `K2=` on the strip tools
+  grammar: DEFAULT_GRAMMAR, // §116 the grammar that planned the LAST step ('pool' | 'bands'): the owner scene's card names it (core/fluid/grammar.js)
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
@@ -38,7 +42,7 @@ export const FLUID = {
   ring(a, r, w) { if (a > 0 && (!this.wave || a > this.wave.a)) this.wave = { a, r, w: Math.max(1e-3, w) }; },
 };
 
-let gl = null, P = {}, st = null, ph = null;
+let gl = null, P = {}, st = null, st2 = null, ph = null;   // st: the pool grammar's state; st2: the band grammar's, whose .base IS st (§116: one state, shared)
 let vel = [null, null], dye = [null, null], prs = [null, null], div = null, curl = null; // [read, write] pairs
 let lastW = 0, lastH = 0;
 
@@ -111,7 +115,9 @@ export function initFluid(ctx) {
   FLUID.avail = !!G.FLOAT;
   if (!FLUID.avail) { FLUID.on = false; return; }
   for (const [k, src] of [['splat', SH.SPLAT], ['curl', SH.CURL], ['vort', SH.VORT], ['div', SH.DIV], ['scale', SH.SCALE], ['jacobi', SH.JACOBI], ['grad', SH.GRAD], ['advect', SH.ADVECT], ['dbg', SH.DBG]]) P[k] = mkProg(src, 'fluid-' + k);
-  st = mkState();
+  st = GRAMMARS.pool.mkState();
+  st2 = GRAMMARS.bands.mkState();
+  st2.base = st;   // §116: the base state is one object — the key pin, the ranks, the clear, the shockwave run on under either grammar
   ctx.onResize(() => alloc(tier())); // the canvas changed: the grids follow its aspect (the old picture copied in)
 }
 
@@ -131,8 +137,9 @@ function pass(pr, tgt, texel) {
 }
 
 // One step. dt the loop's (1/60 under CLOCK=1), S the finished MS of this frame, resumed = ENGINE.resumed (the frame's events
-// are masked, as FX is cleared). Leaves BLEND / DEPTH_TEST / SCISSOR off (renderScene's entry state).
-export function stepFluid(dt, S, resumed) {
+// are masked, as FX is cleared), grammar the OWNER scene's (§116, loop.js: grammarOf(REG[SC.next >= 0 ? SC.next : SC.cur].scene) —
+// 'pool' unless the card names another; a strict branch on the name, never a mix). Leaves BLEND / DEPTH_TEST / SCISSOR off.
+export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   if (!FLUID.avail || !FLUID.on) return;
   const t0 = performance.now();
   const tr = tier();
@@ -140,8 +147,10 @@ export function stepFluid(dt, S, resumed) {
   const pm = FLUID.params, q = FLUID.queue;
   let pr;
   let breath = 0;
+  FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
   if (!resumed) {
-    const R = plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
+    // §116 the dispatch: the band grammar plans on st2 (its plan() runs the pool grammar's on st2.base === st first), the pool grammar on st
+    const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
     for (const s of R.splats) q.push(s);
     breath = R.body;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
@@ -265,15 +274,17 @@ export function drawFluidDbg() {
 // ms per step at the current tier, readPixels-synced on the dye target (HARNESS "Bench protocol": q pinned, n ≥ 300, medians,
 // interleaved with bench(0, 300)). S is the MS to plan from (static during the call — no events fire; the solver's cost is what is measured).
 // §113: `ring` ({a, r, w}, optional) is held on every step — the shockwave's cost at the tier (the same program; a uniform branch).
-export function benchFluid(n, S, ring) {
+// §116: `grammar` ('pool' | 'bands', optional) benches that grammar's step; absent = the one that planned the last step (FLUID.grammar).
+export function benchFluid(n, S, ring, grammar) {
   if (!FLUID.avail || !FLUID.on) return -1;
+  const g = grammar || FLUID.grammar;
   const sync = () => { gl.bindFramebuffer(gl.FRAMEBUFFER, dye[0].f); gl.readPixels(dye[0].w >> 1, dye[0].h >> 1, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4)); };
   const hold = () => { if (ring) FLUID.ring(ring.a, ring.r, ring.w); };
-  hold(); stepFluid(1 / 60, S, false);
+  hold(); stepFluid(1 / 60, S, false, g);
   sync();
   const t = performance.now();
   for (let i = 0; i < n; i++) {
-    hold(); stepFluid(1 / 60, S, false);
+    hold(); stepFluid(1 / 60, S, false, g);
     if (i % 8 === 7) sync();
   }
   sync();
@@ -281,5 +292,5 @@ export function benchFluid(n, S, ring) {
 }
 
 export const fluidLine = () => (FLUID.avail
-  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}` : 'fluid off (W)')
+  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}` : 'fluid off (W)')
   : 'fluid unavailable (no float render targets)');

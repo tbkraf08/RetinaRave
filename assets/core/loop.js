@@ -18,6 +18,7 @@ import { refreshRoutes, view } from './route.js';
 import { refreshParams } from './params.js';
 import { recFrame } from './rec.js'; // the recorder's post-frame hook (DECISIONS §89): a no-op unless REC.on
 import { FLUID, stepFluid, drawFluidDbg } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): one step per frame on the finished MS, before the scenes update
+import { grammarOf } from './fluid/grammar.js'; // §116: the pool's grammar is the OWNER scene's card slot (fluid.grammar) — the incoming scene while a fade runs, else the current
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -36,7 +37,8 @@ export function frame(tms) {
   if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap
   uploadEngineTex(ENGINE.tex);
   const S = MS;
-  stepFluid(dt, S, ENGINE.resumed); // §104: MS is final, no scene has updated yet — a scene's update/draw sees this frame's field; returns at once when off
+  const owner = REG[SC.next >= 0 ? SC.next : SC.cur]; // §116 the pool's owner: the incoming scene from the crossfade's first frame (its grammar is in place when it is fully visible), else the current — a forced scene is SC.cur the moment goScene lands it
+  stepFluid(dt, S, ENGINE.resumed, grammarOf(owner && owner.scene)); // §104: MS is final, no scene has updated yet — a scene's update/draw sees this frame's field; returns at once when off
   refreshRoutes(dt); // v0.4: routed views refreshed from the finished MS (returns at once while no route exists)
   // scene updates: scenes flagged always, plus the ones on screen — each reads its own view of MS (MS itself unless routed)
   const env = { SC, Q, now };
