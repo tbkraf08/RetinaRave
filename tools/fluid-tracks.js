@@ -12,7 +12,8 @@
 // The traces: tools/work/fluid-tracks/<Track>/trace-map{1,0}.json (the whole track, FLUID-TRACKS-2026-10-09 §1: filetrace.js with
 // FLUID_FEATS + the fields below) when present, else tools/truth/traces/<Track>-map{1,0}.json (0 → 110 s, every field; tools/traces.sh);
 // the pad take is tools/truth/traces/rec-map0.json. Missing → the row says so. Malicious is in the table for the record only
-// (windows.json gate: false — the user: "can ignore malicious until I validate the ruler").
+// (windows.json gate: false — the user: "can ignore malicious until I validate the ruler"); so is RaindropsOnRoses (the eighth track,
+// 2026-10-10, its trace from its `start` 24 s; gate: false until the user validates a ruler on it).
 // The columns (music seconds = presence > .5 and rms > .003 over the second, as the survey counted):
 //   inj %        seconds with music that inject anything (the ≥ 95 % gate of test_fluid's music block)
 //   sub/kick/snare/chord/hat/floor   seconds with that channel (and hits / droplets per music second)
@@ -42,7 +43,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE
 const { plan, mkState, FLUID_FEATS, K } = await import(process.env.INJECT ? pathToFileURL(path.resolve(process.env.INJECT)).href : '../assets/core/fluid/inject.js');
 if (process.env.FLUIDK) Object.assign(K, JSON.parse(process.env.FLUIDK));
 const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
-const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious rec').split(/\s+/).filter(Boolean);
+const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious RaindropsOnRoses rec').split(/\s+/).filter(Boolean);
 const MODES = (process.env.MODES || '1 0').split(/\s+/).filter(Boolean);
 const BRK = { IBelongHere: [144, 178] };   // the survey's false-arm window (FLUID-TRACKS §4)
 const SURVEY = {};   // the survey's window seconds per track (tools/work/fluid-tracks/windows.txt when present)

@@ -4,16 +4,16 @@
 # Source: https://github.com/tbkraf08/RetinaRave
 # The REAL MS traces the node tests run on (DECISIONS §109; HARNESS "Real-music acceptance"): every recordable MS field, per frame,
 # of a deterministic cold-start file run (tools/filetrace.js, WARM=0, the five rules) — what the engine publishes on music, for
-# EVERY track in the library (~/Music/RetinaRave: Comptine CyborgNinja IBelongHere Malicious SeeYouDrop Vienna WhoLikesToParty)
-# 0 → 110 s in BOTH modes — <Track>-map1.json the normal file mode (the track map: mapDropEvt on the bar line) and <Track>-map0.json
+# EVERY track in the library (~/Music/RetinaRave: Comptine CyborgNinja IBelongHere Malicious RaindropsOnRoses SeeYouDrop Vienna WhoLikesToParty)
+# start → start + 110 s (windows.json `start`: 0 for the seven, 24 for RaindropsOnRoses) in BOTH modes — <Track>-map1.json the normal file mode (the track map: mapDropEvt on the bar line) and <Track>-map0.json
 # the same audio on the LIVE lanes (&map=0: the ears causal, the build detector, the queue) — plus rec-map0.json, the user's pad take
 # (FLUID-DIAG-2026-10-09, tools/work/fluid-diag/music/rec.wav) 0 → 24.4 s on the live lanes. ~16 MB each (6600 frames × 213 fields),
 # ~2 min each — gitignored (tools/truth/traces/*.json); this script re-records them (~30 min for all 15) and tools/test_music.js /
 # tools/test_fluid.js say so when one is missing. Two recordings cmp-equal (HARNESS "File source").
-#   PORT=88xx tools/traces.sh [names…]        names: <Track>-map1 <Track>-map0 rec-map0 (default: all 15); TRACKS="A B" limits the default
+#   PORT=88xx tools/traces.sh [names…]        names: <Track>-map1 <Track>-map0 rec-map0 (default: all 17); TRACKS="A B" limits the default
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p tools/truth/traces
-TRACKS=${TRACKS:-Comptine CyborgNinja IBelongHere Malicious SeeYouDrop Vienna WhoLikesToParty}
+TRACKS=${TRACKS:-Comptine CyborgNinja IBelongHere Malicious RaindropsOnRoses SeeYouDrop Vienna WhoLikesToParty}
 W=${*:-$(for t in $TRACKS; do echo $t-map1 $t-map0; done) rec-map0}
 for n in $W; do
   if [ "$n" = rec-map0 ]; then
@@ -21,7 +21,9 @@ for n in $W; do
     MUSIC=$PWD/tools/work/fluid-diag/music WARM=0 node tools/filetrace.js rec 0 24.4 tools/truth/traces/rec-map0.json '*' '&map=0'
   else
     t=${n%-map*}; m=${n##*-map}; X=""; [ "$m" = 0 ] && X='&map=0'
-    WARM=0 node tools/filetrace.js $t 0 110 tools/truth/traces/$n.json '*' "$X"
+    # the track's `start` (tools/truth/windows.json; RaindropsOnRoses 24 — the user: "start from 24 secs"): start → start + 110 s
+    S=$(python3 -c "import json;print(json.load(open('tools/truth/windows.json'))['tracks'].get('$t',{}).get('start',0))")
+    WARM=0 node tools/filetrace.js $t $S $(python3 -c "print($S+110)") tools/truth/traces/$n.json '*' "$X"
   fi
 done
 ls -la tools/truth/traces/
