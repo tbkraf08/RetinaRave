@@ -329,6 +329,21 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   this one" is answered on the frame. The two things that differ from the user's session (DIAG §4): `heardT` through `DET_LEAD`
   rather than `SYNC_OFS`, the display lead 40 vs 0 ms — ≤ 45 ms placements; the lanes' 8-hop baselines can differ on a hit at
   the floor (one of six in the DIAG). `frame0` must read 2 in the first eval (a shared GPU moves it — nothing else on the machine).
+- **The grammar switch (§116, FLUID2-PLAN §2):** the step plans through the OWNER scene's grammar — the card's `fluid: { grammar }` slot
+  (CONTRACTS §1.4), `core/fluid/grammar.js` the table (`pool` = inject.js, `bands` = inject2.js), `loop.js` the owner (`SC.next` while a
+  fade runs, else `SC.cur`), `fluid.js` the dispatch on the name (one `if`; `st2.base === st`, one base state). `CARD.fluid.grammar` is the
+  name that planned the last step; `CARD.fluid.K2` the band grammar's constants (`K2=` on the strip tools, `FLUIDK2=` on the replays — `K=` /
+  `FLUIDK=` reach inject.js's, which plan2 inherits); `CARD.benchFluid(300, null, 'bands')` vs `(300, null, 'pool')` interleaved in ONE page is
+  the pair that prices a grammar (§116: `CARD.benchFluid(300, null, 'pool')` / `(300, null, 'bands')` interleaved ×3 in ONE page (`test&scene=12`, q .95 pinned, 8 s warm, a cold call discarded, `uptime` load 4.1): **0.813 / 0.826 · 0.837 / 0.863 · 0.849 / 0.818 ms** — medians **0.837 / 0.826**, the pairs +0.013 / +0.026 / −0.031, within ±0.05 (a branch, not a pass; the absolute ms are the desktop's load, §113's 0.67–0.72 were under load 2.2–2.9); the show pass `bench(12, 300)` / `bench(13, 300)` ×3 **0.525 / 0.525 · 0.534 / 0.525 · 0.506 / 0.505** (the same program), `bench(0, 300)` 2.044 (ratio .41); tier 3, sim 259×128, dye 1035×512 (12 s)); the HUD's fluid line and the help view's part B say the grammar and list its reads.
+  `INJECT=assets/core/fluid/inject2.js node tools/fluid-replay.js …` / `… fluid-tracks.js` replay the band grammar with no GL (the per-track
+  table gains a grammar column per step). **The proofs:** `SCENES=13 tools/real-md5.sh` (58 lines, ~720 s) — at S0 cmp-equal to s12's 58 in
+  `real-md5-v036.txt` with the names mapped (`sed 's/ s12-/ s13-/'`), hash for hash; from S1 on s13 has its own reference
+  (`tools/accept/v0.37/real-md5-v037.txt` = v036's 232 + s13's 58) and `SCENES=12` must stay 58 / 58 = v036 (the switch is free — proven at S0
+  and again at S7); `SCENES="0 1 3" PAR=2` 174 / 174 (every new uniform's neutral path); the fake `tools/scene-md5.sh` 28 lines = the 26 of
+  `scene-md5-v035.txt` + s13's pair (= s12's at S0); `SCENES=13 tools/real-rulers.sh` 8 / 8 ok (jump viol [], mon viol [], black 0 — s12's rows
+  to the digit at S0); `node tools/test_fluid.js`'s `bands` block (the table, the card, the identity on the real trace, the shared base state
+  across pool → bands → pool → bands, determinism, the Proxy); `node tools/check.js`'s fluid block per grammar. The crossfade's receipt:
+  `&trans=mixs` 12 → 13 → 0 errs [], the whole-frame grey continuous across the fade (§116).
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
   consumer exists; two runs of a shot are md5-equal (the five rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.

@@ -10427,3 +10427,86 @@ and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, o
   takes above; the territories to be retuned from the user's remarks) · DUST 0 of 5 on the demo traces (above); from §112 — §109's seven
   ruler FAILs on DUST / TORUS2, the Malicious sub ruler, the key-timeline disagreement, CyborgNinja's key, WhoLikesToParty's early file clear,
   the constant INK per hit, `accept.sh` end to end, the §83 `nav.*` parity line.
+
+## §116 FLUID2 — the bands (2026-10-10, one Fable worker per step in a worktree off c3ea530; the user: *"clone fluid -> do work in fluid2 -> do the different bands intuitively; explore: point sources and time"*)
+
+**The ask, verbatim:** *"clone fluid -> do work in fluid2 -> do the different bands intuitively; explore: point sources and time"* — after the
+user's question *"what are different grammars that can show sound in fluid? (besides the splat we are doing now?); can subbass/bass/mid/highs/vocals
+all be treated differently intuitively?"*. The plan is `docs/plans/FLUID2-PLAN.md` (S0–S7, one worker-session each): each band a different KIND
+of coupling — the sub a field, the kick a mass that travels, the mids the material, the highs the surface, the voice a pen, time breathing —
+on FLUID's one pool. This note opens with S0 and grows one heading per step.
+
+### S0 — the clone and the grammar switch, pixel-identical to FLUID (2026-10-10, branch `fluid2`, four commits)
+
+- **What ships.** Scene **13 FLUID2** (`assets/scenes/fluid2/{index,shaders,help}.js`, FLUID's three files copied: `name 'fluid2'`, `id 13`,
+  forced-only — `score()` 0, no `card`, the five own feats `loudRel loudRange loudAbs hat2 presence`, no bid fields; the help text says what it
+  is) and **the grammar switch** (FLUID2-PLAN §2 option A, as planned): the scene card declares its grammar — `fluid: { grammar: 'bands' }` on
+  FLUID2, nothing on FLUID — and the core serves it (CONTRACTS §1.4, "slots, not patches"). `inject.js` is UNTOUCHED (`git diff main --
+  assets/core/fluid/inject.js` is empty).
+- **The architecture as built.** `core/fluid/inject2.js` — the band grammar, pure, the same module interface as inject.js (`plan, mkState, K,
+  FLUID_FEATS`): `plan(S, dt, st)` runs inject.js's `plan(S, dt, st.base)` first and at S0 returns it untouched (the identity); `mkState() =
+  { base: null }` (fluid.js sets `base`; a standalone replay makes its own on the first call, so `INJECT=assets/core/fluid/inject2.js` works
+  on `fluid-tracks.js` and now `fluid-replay.js` unchanged); `K = {}` (K2: `CARD.fluid.K2`, `K2=` / `FLUIDK2=`); `FLUID_FEATS` = the base's 39.
+  `core/fluid/grammar.js` — **one deviation from the plan's letter, none from its mechanism:** the table `GRAMMARS = { pool: inject, bands:
+  inject2 }` and `grammarOf(scene)` (the card's name if it is in the table, `'pool'` otherwise) live in a third pure module instead of inside
+  fluid.js, so `loop.js`, `main.js`'s boot check, `help.js`'s part B, `check.js` and `test_fluid.js` read ONE table with no GL import —
+  fluid.js still dispatches (`FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st)`, a strict branch
+  on the name, never a mix). `fluid.js`: `st2 = inject2.mkState(); st2.base = st` — ONE base state, so the key pin, the rank buffers, the hat
+  bucket, the ink rate, the confirmed clear's refractory, the §113 shockwave's countdown and the `midRing` run on warm across a switch in
+  both directions, and the dye is carried, never reset; `stepFluid(dt, S, resumed, grammar)`; `FLUID.grammar` (the name that planned the
+  last step), `FLUID.K2`; `benchFluid(n, S, ring, grammar)`; the HUD's fluid line says the grammar. **The owner** (`loop.js`): `REG[SC.next >= 0
+  ? SC.next : SC.cur].scene` → `grammarOf()` — the incoming scene from the crossfade's first frame, else the current; a forced scene is
+  `SC.cur` the moment `goScene` lands it; a function of `SC` alone (the harness forces it; no clock). `main.js` checks every grammar's
+  `FLUID_FEATS` against `ENGINE.FEATS` at boot; `check.js`'s fluid block runs per grammar (undeclared → fail; a read outside the list →
+  fail; the warn on never-read entries counts the base's reads as inject2's own; a composing grammar must keep the base's list; a card
+  naming a grammar not in the table FAILS). No `&grammar=` switch (the plan's optional one): `&scene=13` is the recipe, and
+  `CARD.benchFluid(300, null, 'bands')` benches the grammar under any scene.
+- **The identity proof (the S0 gate), each with its wall time:** `SCENES=13 GPU=1 PORT=8975 tools/real-md5.sh s0-13` — **58 / 58 lines
+  cmp-equal to s12's 58 in `tools/accept/v0.36/real-md5-v036.txt`** with the names mapped (`sed 's/ s12-/ s13-/'`), hash for hash, the same
+  windows (**721 s**; a moved `frame0` would have moved the hashes, so the equality subsumes `f0` 2) · `SCENES=12 … s0-12` — **58 / 58 cmp-equal with `real-md5-v036.txt` (**721 s**; FLUID unmoved by the switch)** ·
+  `SCENES="0 1 3" PAR=2 … s0-roster` — ****174 / 174 cmp-equal** with `real-md5-v036.txt` (**1442 s**, 117 runs)** (the switch is free when the owner is not FLUID2) · the fake `tools/scene-md5.sh s0` —
+  ****28 lines = the 26 of `scene-md5-v035.txt` + s13's pair = s12's pair** (`3e483039…` f360 / `2274bb4e…` f840), errs [] on all 14 ids (**212 s**)** · `SCENES=13 tools/real-rulers.sh s0` — ****8 / 8 ok** — jump viol [], mon viol [], black 0, clip25 0 on every row, **every row identical to s12's in `real-rulers-v036.txt` to the digit** (medY .102–.203, jumpMx .012–.054, monMx .0042–.0289; **482 s**)** · the bench pair, one page, interleaved — **`CARD.benchFluid(300, null, 'pool')` / `(300, null, 'bands')` interleaved ×3 in ONE page (`test&scene=12`, q .95 pinned, 8 s warm, a cold call discarded, `uptime` load 4.1): **0.813 / 0.826 · 0.837 / 0.863 · 0.849 / 0.818 ms** — medians **0.837 / 0.826**, the pairs +0.013 / +0.026 / −0.031, within ±0.05 (a branch, not a pass; the absolute ms are the desktop's load, §113's 0.67–0.72 were under load 2.2–2.9); the show pass `bench(12, 300)` / `bench(13, 300)` ×3 **0.525 / 0.525 · 0.534 / 0.525 · 0.506 / 0.505** (the same program), `bench(0, 300)` 2.044 (ratio .41); tier 3, sim 259×128, dye 1035×512 (12 s)** · the crossfade
+  `&trans=mixs` 12 → 13 → 0 — **CLOCK=1, SeeYouDrop at=25, scene 12 forced, at f300 a soft `goScene(13)` with `SC.forced` re-pinned to 13 (the forced branch is a no-op once `SC.logical` is 13; the fade steps on its own — a freed director parked the first attempt home): `{cur 12, next 13, dur 1.60}`, the grammar **`bands` from the fade's first frame** (`CARD.fluid.grammar` reads it on the next step), after the fade `{cur 13, next −1, bands}`; at f600 `goScene(0)`: `{cur 13, next 0}` → `{cur 0}`, **errs [] bad []** at heard 37.07 (20 s). The whole-frame grey every 6 frames across 12 → 13: 34.7 36.1 36.6 37.3 37.5 36.7 **29.1 21.3 20.3 23.1 24.9 26.9 29.0** 32.0 33.6 34.5 34.6 36.0 35.6 35.2 34.7 36.1 — max step 7.8 / 255, **§1.9 viol []** (no step > 2.5 × the last + .01 over .06); across 13 → 0: 35.2 … 36.6 flat, max step 1.95 / 255, viol []. The dip to 20 in the middle of the 12 → 13 fade is NOT the pool (one dye under both; s13's hashes = s12's): the two pictures differ only in the incoming scene's cold exposure (`U.expo` starts at 1 and eases over `EXPOTC` .12 s while the fade is 1.6 s) under the mixs key — carried as an open finding below (a hard cut, the `n` key the user switches with, has no fade; the director never fades to 13 — forced-only)** · `node tools/check.js` **183 modules, 0 fail / 8 warn** (the soft-cap lines; `help.feats gaps 0`,
+  scenes 13) · `npm test` **exit 0** in 12 s (`test_fluid` **314 ok** = 299 + the `bands` block's 15; `test_music` 129; `test_director` untouched,
+  OK) · `node tools/license.js --check` **186 public files, 0 without the header** · `npm run build` **182 modules → dist/index.html 1 796 307
+  bytes** (177 + inject2, grammar, fluid2's three; `whatsnew` up to date; dist not committed) · the frozen bundle from `file://` `&scene=13` —
+  **`test&scene=13` → **sc 13, grammar bands, errs [] bad [], frameN 302**; `test&scene=12` → pool, errs [] (`VER = '0.36.0'`, no bump — the user tags)** · `tools/fluid-replay.js` SeeYouDrop 20–40 s through `INJECT=inject2.js` = the base's lines (diff empty) · `node tools/releases.js
+  check` untouched (no entry), landing `TILES 10`.
+- **The `bands` test block** (`tools/test_fluid.js`): the interface; `FLUID_FEATS2 ⊇` the base's 39 and `⊂ FEATS`; the table and the default;
+  `grammarOf(FLUID2) = 'bands'`, `grammarOf(FLUID) = 'pool'`, no slot / null / an unknown or inherited name → `'pool'`; FLUID2 forced-only (score
+  0 on FLUID's best profile, no card); the identity on 600 synthetic frames (348 004 chars of JSON: kicks, snares, hats, a floor, a clear) and
+  on SeeYouDrop's 6601 real frames (4 357 774 chars); a standalone `mkState2()` makes its own base; determinism (two fresh band states →
+  identical); **the shared base state** — pool → bands → pool → bands every 300 frames on the real trace = `plan()` alone frame for frame,
+  `st2.base === st` after 1200 frames (the switch warm in both directions); the Proxy MS through `plan2` over 6601 frames (no read outside
+  inject2's list).
+- **What S1's builder must know.** `plan2` edits the list `R.splats` by the tag `k` on every splat — the kinds the base emits, in its order:
+  `sub` (the emitter), `kick` (the impulse + its two tail frames), `snare` (two shears), `chord` (two shears), `hat` (the droplets), `floor`
+  (dye only), `drop` (the clear's impulse) — plus `R.body` (the breath), `R.params` (`curl velDiss dyeDiss pressure radius`), `R.ring`
+  (the shockwave or null), and the replay rulers' fields (`gain colour floor chord ink drop harmonic noise`). Remove by `k`, append its own
+  kinds (`heave` is a field, not a splat — it goes on `R.body` / a new uniform; `dip stroke jet pen` are splats), rewrite `params`, add the
+  new return fields (`swirl noise dtSim curlMask spec`) — fluid.js reads them from S1 on (a new uniform's neutral value must be the
+  byte-identical program path: branch on it as `uRing` does). Grammar-2 state goes BESIDE `base` in `st2` (`mkState() = { base: null, … }`),
+  cold on the first FLUID2 frame — transients or eased from neutral. The base's constants through `FLUIDK=` / `CARD.fluid.K`, its own through
+  `K2=` / `CARD.fluid.K2`. Every new MS read appends to inject2's `FLUID_FEATS` (check.js fails a read outside it; the base's 39 stay). The
+  §111 state's own warm-up (the `midRing`'s 5 s, the ranks' 8 hits, the key's `KEY_EV0`) is in `st.base` — a FLUID2 ruler in a track's first
+  10 s measures the priors. From S1 the s13 lines MOVE: the new reference is `tools/accept/v0.37/real-md5-v037.txt` (v036's 232 + s13's 58),
+  `SCENES=12` must stay 58 / 58 = v036 and the roster 174 / 174 every step.
+- **Open, carried:** the mixs fade's mid-dip into FLUID2 (above: the incoming scene's cold `U.expo`; cheap to fix by starting `U.expo` at
+  the frame's `P.light` on a scene's first on-screen frame — FLUID's own, so a retune of FLUID too; not touched at S0, the pixel-identity
+  commit) · `site/about.html`'s scenes list (a FLUID2 line when the scene differs from FLUID — S7) · the landing tile and the bid (the
+  user's word) · the `&grammar=` harness switch (not needed) · the receipt `tools/accept/v0.37/fluid2-s116-s0.txt` (the s13 lines, the fake
+  pair, the rulers' rows, the bench pairs, the fade's greys) · §115's own open list unchanged.
+
+### S1 — sub = a field (not started)
+
+### S2 — bass = mass; the kick launches something that travels (not started)
+
+### S3 — mids = material (not started)
+
+### S4 — highs = surface (not started)
+
+### S5 — vocals = the pen (conditional on a vocal-presence feature; not started)
+
+### S6 — time (not started)
+
+### S7 — the seven-track tune, the gates, the montages, the docs (not started)
