@@ -10506,7 +10506,7 @@ and the open knob `DROP_DISS` 6 — to be measured with the reversal in place, o
 - **The identity references and the behaviour ruler** (once the GPU lock freed — the other builder's `real-md5.sh s0-roster` held it from
   13:50 to 14:24): `GPU=1 PORT=8986 SCENES=12 TRACKS=RaindropsOnRoses tools/real-md5.sh s117a` and `s117b` (PORT 8988) — **8 lines, 4 runs
   each, 69 s wall, cmp-equal**, f0 2 errs [] bad [] on every run (intro f602 / build1 f730 / drop1 f1030 on the run at 24, groove f602 at 76,
-  both modes) — inserted into `tools/accept/v0.36/real-md5-v036.txt` after the s12 Malicious lines with a `#` note (246 → 254 lines); the
+  both modes) — inserted into `tools/accept/v0.36/real-md5-v036.txt` after the s12 Malicious lines with a `#` note (232 → 240 shot lines; the file 246 → 259 with the five-line note); the
   roster's lines (0 1 3) on this track are owed with the next roster re-proof. `GPU=1 PORT=8987 SCENES=12 TRACKS=RaindropsOnRoses
   tools/real-rulers.sh s117` (66 s wall): **FLUID on 56–116 s — ok**: 600 frames, clip25 0, medY 0.193, grad 0.0179, jumpMx 0.055, jviol 0,
   black 0, monMx 0.0161, mviol 0 — appended to `real-rulers-v036.txt` with its note. Both references say the track is not a gate.
