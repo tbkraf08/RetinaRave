@@ -143,6 +143,12 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               it to `tension`), a y-mask on the vort pass as a K2 switch (off: it buys no margin), and the snare is ONE
                               shear burst — a jet from a hair in from a wall (never AT it: a push at a closed wall is projected away),
                               alternating walls by count, at the pair's momentum and ink over SNARE_N frames; the chord shears stay; the
+                              highs (S4) are the SURFACE and never a force on the mass — the hats sparkle as before (the scene's
+                              droplets), the high band's level puts a hashed texel-scale GRAIN on the velocity advect pass (`uNoise`,
+                              seeded by the step count; bounded so the pool's mean speed stays within 10 % of the grain-off run), every
+                              hat droplet DIPS the governed dyeDiss a frame or two (never inside the clear), and the slow top band is the
+                              LIGHT: FLUID2's own show pass tightens and brightens the glint from `highS` (display only — "air above 8 kHz"
+                              has no band, `highS` 5–16 k is the nearest and says so); the
                               rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
@@ -262,7 +268,15 @@ needed, now generic:
   confinement constant it set, the mask parameter or null — `CARD.fluid.mids`), `snare` (`{ kind 'pair' | 'jet' | 'harm' | '', mom:
   Σ|dx|·rad, ink, n, side }` — this frame's snare kinds, `CARD.fluid.snare`), and `params.curlMask` (`{ y0, y1, lo, fe }`: the vort
   pass's `uCurlMask` uniform — the confinement × mix(lo, 1, the feathered band y0..y1); absent → (0, 1, 1, 0), the branch not taken: a
-  uniform branch, never a mix, as the ring's A = 0 and the swirl's 0). `fluid.js` reads them from the plan of the grammar that owns the
+  uniform branch, never a mix, as the ring's A = 0 and the swirl's 0); (S4) `grain` (uv/s²: the velocity advect pass's `uNoise` — a
+  Wang-hashed ±½·uNoise·dt push per CELL of `uCell` sim texels, white in space at the cell and in time at the hold, seeded by `uSeed` =
+  `floor(FLUID.steps / hold) & 255` (the step count: deterministic from `at=0`, never a clock); 0 is the byte-identical program path — a
+  uniform branch; the dye pass always passes 0 for `uNoise`, the velocity grain is velocity only) and `highs` (`{ env, grain, dip, cell,
+  hold, jit }` — the high band's envelope by `HI_SRC`, the grain, the factor the dip put on `params.dyeDiss` this frame (1 = none; never
+  inside the confirmed clear), the cell and hold for the uniforms, `jit` the DYE pass's `uJit` in dye texels (the back-trace sample point
+  jittered ±½·jit; (0, 0) is the identical dye pass; the velocity pass passes (0, 0)) — `CARD.fluid.highs`; the specular and the display
+  grain are the SCENE's, not the grammar's: FLUID2's show pass reads `highS` / `high` itself (`uSpecPow`, `uGrain`, its own `uSeed` =
+  `ctx.fluid.steps & 255`) and lights the ink — display only, no return field, the pool bit-identical under them (§116 S4). `fluid.js` reads them from the plan of the grammar that owns the
   step; the pool grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
   the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
