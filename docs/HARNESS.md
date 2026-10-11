@@ -330,6 +330,9 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=0 tools/real-md5.sh` twice (cmp-equal; the
   roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=0 tools/real-rulers.sh`, the fake
   smoke (only s12 moves), parity.
+- **The §116 strips below (field, kick, mids, snare, highs, pen, time) measured the BAND grammar, pulled at §120 (2026-10-11): FLUID2 is
+  FLUID to the pixel again, `inject2.js` the identity, `K2` empty.** The tools stay (`tools/fluid-kick-strip.sh`, `tools/work/fluid2/s2–s5/`) and
+  run against `git show v0.37:assets/core/fluid/inject2.js` or any new grammar that returns the same records; `K2=` reaches an empty table today.
 - **The field strip — the S1 ruler (§116 S1; FLUID2-PLAN §4 S1):** the pool's MEAN SPEED against the sub band, per track, on one deterministic
   whole-track run: `[K2='{"SWIRL":.8}'] [MAP=0|1] PORT=89xx tools/fluid-field-strip.sh <track> <12|13> <tag> <t0> <t1> [fps=1] [at=0]` →
   `tools/work/fluid2/field/<track>-s<scene>-<tag>/` — per shot the composite (the eye) at frame F and, after `CARD.fluid.dbg = 2` from an

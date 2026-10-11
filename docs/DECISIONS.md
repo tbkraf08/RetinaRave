@@ -2954,3 +2954,30 @@ check 0 fail, npm test exit 0.
   12→13 mid-dip** (the incoming scene's cold `U.expo`, measured at §116 S7 and left open with the number) · **DUST's bid share** (0 of 5
   away picks on §115's demo traces) · §109's seven ruler FAILs on DUST / TORUS2 · the idle bench, still unseen on this machine ·
   `accept.sh`'s routes / params blocks on NAV2 · no `fluid2.jpg` thumbnail, so the v0.37 entry shows five thumbs for six scenes.
+
+## §120 FLUID2 reset to FLUID — the band grammar pulled, the slot kept for the emitter array (2026-10-11, one Fable session on main; the user: *"I'm not a fan of fluid2 (it moves too quickly); Reset fluid2 to fluid and lets try something else in fluid2; for the input that enters the scene -> how is position selected? I'm thinking of having an array of different sizes that line the sides and top where input is added to the scene (and also inside of the scene -> should be symetric / tasteful); how would a professional light designer do it?"*)
+
+- **The verdict on §116.** The user watched v0.37's FLUID2 (the sub a field, the kick a vortex pair, the mids the confinement, the highs the
+  surface, the pen, the solver's clock — tuned on RaindropsOnRoses alone) and pulled it: too fast. No retune, no sweep: the direction is
+  wrong, not the numbers. The eight-track sweep §119 carried as owed is **no longer owed**.
+- **The reset, to S0's identity, not to a deletion.** `core/fluid/inject2.js` is the identity again (plan() = inject.js's plan() on the
+  shared base state, `K = {}`, `FLUID_FEATS` = the base's); `scenes/fluid2/{shaders,index,help}.js` re-cloned from FLUID's (name fluid2,
+  id 1, key 2, forced-only `score()` 0, no card, the five own feats, the `fluid: { grammar: 'bands' }` slot kept — the switchboard for the
+  next experiment, the identity until it lands). `fluid.js`'s plumbing for a grammar's optional return fields (heave / swirl / grain /
+  highs / pen / curlMask / dtSim / substeps) STAYS: each absent is the §104 pass to the bit, and a new grammar may want them; the HUD line
+  no longer prints `K2.KICK_SHAPE`. `tools/test_fluid.js`'s bands block is the identity's (331 ok): plan2 = plan() to the byte on 600
+  synthetic frames and on SeeYouDrop's real trace, the mixed 300-frame run's base state AND every output frame = plan() alone's, the
+  Proxy, FLUID2's five feats ⊂ FLUID's. The §116 S1–S6 grammar, its shaders and its tests are at v0.37 (`git show v0.37:…`); the strips'
+  tools stay (HARNESS "## Fluid" says so).
+- **The proof.** `node tools/check.js` 144 modules · 0 fail · 4 warn; `npm test` exit 0 (test_fluid 331 ok, test_music 151 ok); the fake
+  scene-md5 `IDS="0 1"`: s1's pair = s0's pair to the hash (3e483039 / 2274bb4e), and s0's = `tools/accept/v0.35/scene-md5-v035.txt`'s —
+  FLUID untouched, FLUID2 = FLUID to the pixel. The real-md5 reference `real-md5-v037.txt`'s s1 lines are STALE by construction (they
+  hashed the band grammar); the next real sweep re-bases them to s0's.
+- **The question — how is position selected, how would a lighting designer do it — answered in `docs/plans/FLUID2-EMITTERS.md`:** today
+  one point per channel (the sub sliding on the fifths axis, a fixed snare pair, hashed hats, the centre for the harmony); an LD hangs a
+  fixed symmetric PLOT in three sizes (washes low and central, spots on the sides, beams high and wide), groups it into SYSTEMS per
+  function, and runs CHASES across them (odds / evens, inside → out, ping-pong, all-on) that change on the phrase and hold the outer
+  fixtures back for the drop. The proposed rig: 23 mouths (5 floor washes, 3 + 3 side spots, 7 top beams, a 4 + 1 interior quad), the
+  sub snapped to the nearest floor mouth, the drop the blinder. Not built: the user picks the edges, the snap and whether the rig is drawn.
+- **No tag, no push.** v0.37 stays live with the band grammar; the reset ships with whatever lands in the slot next.
+

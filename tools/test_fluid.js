@@ -41,29 +41,11 @@
 //   shock      §113: the confirmed drop fires the shockwave ring on the clear's frame (never a trigger alone, never dropEvt): r 0 → SW_C·SW_T over SW_T
 //              beats, SW_W wide, A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·the slam's rank among the track's kicks' bass); presence 0 → A 0
 //   determ     two fresh states on the same REAL trace → byte-identical output (JSON)
-//   bands      §116 the grammar switch (FLUID2-PLAN §2): inject2.js exports inject.js's interface, its FLUID_FEATS ⊇ the base's and ⊂ FEATS;
-//              grammar.js's table picks inject2 for a card declaring fluid.grammar 'bands' (FLUID2) and inject for FLUID / no slot / an unknown
-//              name; S1 (the sub as a FIELD) — plan2 = plan() on every field but the sub splat's velocity (dx = dy = 0: the jet is gone, the ink
-//              kept) and the body (= the base's + the heave) on 600 synthetic frames and on SeeYouDrop's real trace; the heave reads `sub`: > .1 on
-//              the attack, < −.1 in the tail, ~0 mean on a steady pulse, 0 on the first (cold) frame, |heave| ≤ HEAVE; sub 0 → the body the
-//              base's to the bit; the switches FLIP 1 (bar parity) / FLIP 2 (the glide's sign) / SWIRL / HEAVE_DC / SUB_INK 0 and .5 (re-governed,
-//              never above the base's dyeDiss); the void before SeeYouDrop's drop 1 stills the field; the shared base state: st2.base IS st,
-//              300 frames of one grammar then the other = plan() alone's base STATE to the byte (warm in both directions), the first band frame
-//              no burst; determinism of plan2 with the field on; the Proxy MS that throws on a read outside inject2's list
-//              S4 (§116 S4): inject2 reads `high`; grain = NOISE_V · highs.env · gain on every frame (bounded, 0 at NOISE_V 0 — the identical
-//              advect path), highs.env the eased `high` (HI_SRC 0; cold at the frame's value) / hat2 (HI_SRC 2) / the own-range ring (HI_SRC 1:
-//              40 s steady → 0, a swell → 1, a dip → 0); the grain moves no splat, no body, no heave; the DIP: DIP_SRC 1 × (1 − HI_SHARP) on every
-//              frame the base paid a hat droplet and DIP_N − 1 after, never inside the confirmed clear, nowhere else; DIP_SRC 2 × (1 − HI_SHARP·env)
-//              on every frame outside the clear; DIP_SRC 0 the governed dyeDiss; the cold frame drops a pending dip; determinism; the Proxy
-//              S5 (§116 S5): the pen's MECHANICS (the vocal feature deferred): PEN_SRC 0 the identical path (the base's `floor` splat to the byte,
-//              no `pen` kind, pen.on 0); PEN_SRC 1 the floor REPLACED by one `pen` splat on exactly the frames the floor had, at the same ink in the
-//              budget's units (dye × (2 / PEN_RAD)² at PEN_RAD · RADIUS; the ink rate and dyeDiss the off run's within 1e-9 — the governor unmoved);
-//              the position eased on the fifths circle: the per-frame step ≤ PEN_VMAX · dt on every frame, x / y in [0, 1], the cold frame and a live
-//              switch-on start AT the target (step 0); the push = PEN_V · the drift · gain · f, bounded, 0 at PEN_V 0; AX 1 draws more than AX 0 on
-//              RaindropsOnRoses's breakdown; the tritone wrap (a synthetic walk round the circle): one lift, every other step bounded; determinism; the Proxy
-//              S6 (§116 S6): the SOLVER's clock dtSim — bounded [DT_MIN, DT_MAX], slewed per frame (DT_SLEW), the neutral knobs 1 exactly, composeDt (a base 0 wins), the
-//              pen on min(1, dtSim) · dt; the breath on the 1:06 cut, the void on the breakdown (gated on the sub out), the burst on the file map's drop 2 (substeps under
-//              DT_DROP 1 only), the pulse zero-mean, a cold frame at its target, a live knob change slewed; determinism; the Proxy
+//   bands      §116 the grammar switch (FLUID2-PLAN §2), §120 the reset: inject2.js exports inject.js's interface, its FLUID_FEATS = the base's
+//              and ⊂ FEATS; grammar.js's table picks inject2 for a card declaring fluid.grammar 'bands' (FLUID2) and inject for FLUID / no slot /
+//              an unknown name; the IDENTITY — plan2 = plan() to the byte on 600 synthetic frames and on SeeYouDrop's real trace; the shared base
+//              state: st2.base IS st, 300 frames of one grammar then the other = plan() alone's base STATE to the byte; determinism; the Proxy MS
+//              that throws on a read outside inject2's list; FLUID2 forced-only (score() 0, no card)
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -521,101 +503,43 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   }
 }
 
-// bands (§116, FLUID2-PLAN §2 + S1): the grammar switch — the table, the card's slot, the shared base state, determinism, the Proxy —
-// and S1's relation to the base: plan2 = plan() on every field but the sub splat's velocity (gone), the body (+ the heave) and the new
-// fields; the heave reads `sub`; the neutral path (sub 0) is the base's to the bit; the field is bounded; the flip / swirl / ink switches
+// bands (§116, FLUID2-PLAN §2; §120 the reset): the grammar switch — the table, the card's slot, the IDENTITY (plan2 = plan() to the
+// byte), the shared base state, determinism, the Proxy. The §116 S1–S6 blocks (the field, the shapes, the material, the surface, the pen,
+// the clock) went with the grammar they proved (v0.37 has them: `git show v0.37:tools/test_fluid.js`).
 {
   const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS, K2 = INJ2.K;
-  const SHIP_S3 = { SNARE_JET: K2.SNARE_JET, CURL_SRC: K2.CURL_SRC, CURL_MASK: K2.CURL_MASK }; Object.assign(K2, { SNARE_JET: 0, CURL_SRC: 0, CURL_MASK: 0 });   // S3: the S1 relation is proven with the mids' curl, the mask and the snare jet OFF (the identical list and params); S3's own block proves them
-  const SHIP_S4 = { NOISE_V: K2.NOISE_V, DIP_SRC: K2.DIP_SRC }; Object.assign(K2, { NOISE_V: 0, DIP_SRC: 0 });   // S4: … and with the grain and the dip OFF (the dip moves dyeDiss; the S1 / S3 relations are on the governed value); S4's own block proves them
-  const SHIP_S5 = { PEN_SRC: K2.PEN_SRC }; K2.PEN_SRC = 0;   // S5: … and with the pen OFF (the floor is the base's splat; S5's own block proves the pen)
-  const SHIP_SHAPE = K2.KICK_SHAPE; K2.KICK_SHAPE = 0;   // S2: the S1 relation is proven at the control's kick (shape 0); the shapes have their own block below, the shipped one restored after
   ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
-  ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
+  ok(FLUID_FEATS.every((k) => FEATS2.includes(k)) && FEATS2.length === FLUID_FEATS.length, 'bands: inject2\'s FLUID_FEATS = the base\'s (' + FEATS2.length + ' — the identity reads nothing of its own)');
+  ok(Object.keys(K2).length === 0, 'bands: K2 is empty at the identity');
   const undecl2 = FEATS2.filter((k) => !(k in FEATS));
   ok(undecl2.length === 0, 'bands: every inject2 FLUID_FEATS key in FEATS' + (undecl2.length ? ' — missing ' + undecl2.join(',') : ''));
-  ok(FEATS2.includes('sub') && !FLUID_FEATS.includes('sub'), 'bands: S1 — inject2 reads `sub` (the envelope\'s source), the base does not');
   ok(GRAMMARS.pool.plan === plan && GRAMMARS.bands.plan === plan2 && DEFAULT_GRAMMAR === 'pool', 'bands: the table — pool is inject.js, bands is inject2.js, the default is pool');
   ok(fluid2Scene.id === 1 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 1 since §118, was 13) declares fluid.grammar bands and the dispatch picks it');
   ok(fluidScene.id === 0 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 0 since §118, was 12) declares no slot → pool');
-  ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf(undefined) === 'pool' && grammarOf({ fluid: {} }) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'toString' } }) === 'pool', 'bands: no slot, no card, an unknown name, an inherited name → pool (check.js fails the card; the loop never mixes)');
+  ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf(undefined) === 'pool' && grammarOf({ fluid: {} }) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'bands' } }) === 'bands', 'bands: grammarOf — no card / no slot / an unknown name → pool; bands → bands');
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
-  // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
-  // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
-  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; delete Q.pen; delete Q.dtSim; delete Q.substeps; delete Q.time; return Q; };   // S6: the clock's three return fields
+  ok(fluid2Scene.feats.length === 5 && fluid2Scene.feats.every((k) => fluidScene.feats.includes(k)), 'bands: FLUID2\'s five own reads are FLUID\'s (no bid fields)');
   const frac = (x) => x - Math.floor(x);
-  // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
-  const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
+  // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid, a build and a live drop
+  const synth = (i) => base({ subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
     kickEvt: i % 30 === 0, kickAmp: 0.5 + 0.4 * frac(i * 0.137), kickAge: (i % 30) / 60, snareEvt: i % 60 === 30, snareAmp: 0.6, snare: i % 60 === 30 ? 0.7 : 0.1,
     hat2: i % 15 < 8 ? 0.6 : 0, denH: 2, mid: 0.5, tension: 0.4, lpSweep: 0.2 + 0.001 * (i % 100), dropLiveEvt: i === 420, buildLive: i > 300 && i < 420 ? 0.8 : 0 });
   {
     const sa = mkState(), sb = mkState2(), A = [], B = [];
     for (let i = 0; i < 600; i++) { const S = synth(i); A.push(plan(S, DT, sa)); B.push(plan2(S, DT, sb)); }
-    const ja = JSON.stringify(A.map(strip)), jb = JSON.stringify(B.map(strip));
-    ok(ja === jb && A.some((r) => r.splats.length > 3) && A.some((r) => r.drop === 1), 'bands: S1 — plan2 = plan() on every field but the sub splat\'s velocity on 600 synthetic frames (' + ja.length + ' chars; kicks, snares, hats, a floor and a clear in them)');
-    const subA = A.flatMap((r) => r.splats.filter((s) => s.k === 'sub')), subB = B.flatMap((r) => r.splats.filter((s) => s.k === 'sub'));
-    ok(subA.length === 600 && subB.length === 600 && subA.every((s) => s.dy > 0) && subB.every((s) => s.dx === 0 && s.dy === 0 && s.r + s.g + s.b > 0), 'bands: S1 — the emitter\'s jet is gone: the sub splat has dx = dy = 0 on every frame under the band grammar (dy > 0 under the pool\'s), its ink kept (SUB_INK 1)');
-    ok(B.every((r, i) => r.heave === 0 && r.swirl === 0 && r.body === A[i].body) && B.every((r) => r.subEnv === 0), 'bands: S1 — the neutral path: sub 0 → heave 0, swirl 0, the body the base\'s to the bit on all 600 frames');
-    ok(B.every((r, i) => Math.abs(r.params.dyeDiss - A[i].params.dyeDiss) < 1e-9 && Math.abs(r.ink - A[i].ink) < 1e-9), 'bands: S1 — the ink unchanged in the budget\'s units (SUB_INK 1, the cloud\'s dye ÷ SUB_RAD²) → the governor and dyeDiss are the base\'s within 1e-9');
-    ok(sb.base !== null && sb.base !== sa && JSON.stringify(sb.base) === JSON.stringify(sa), 'bands: a standalone mkState2() makes its own base on the first plan2 (a replay tool needs no wiring), and it ends in the base\'s state');
-  }
-  { // the heave reads the sub: the band pulsing 10 frames on / 20 off each beat, 1200 frames (the slow mean settles in the first 600)
-    const sa = mkState(), sb = mkState2(), A = [], B = [];
-    for (let i = 0; i < 1200; i++) { const S = synth(i, i % 30 < 10 ? 1 : 0); A.push(plan(S, DT, sa)); B.push(plan2(S, DT, sb)); }
-    const exact = B.every((r, i) => Math.abs(r.body - A[i].body - r.heave) < 1e-12);
-    const up = B.filter((r, i) => i >= 600 && (i % 30 === 1 || i % 30 === 2)).map((r) => r.heave), down = B.filter((r, i) => i >= 600 && (i % 30 === 15 || i % 30 === 16)).map((r) => r.heave);
-    ok(exact && up.every((h) => h < -0.1) && down.every((h) => h > 0.1), 'bands: S1 — the heave: body = the base\'s + heave on every frame; < −.1 on the sub\'s attack (with the breath: the sub is weight; ' + Math.max(...up).toFixed(3) + '…), > .1 in its tail (' + Math.min(...down).toFixed(3) + '…) once the slow mean has settled');
-    ok(Math.abs(B[0].heave + K2.HEAVE_DC * B[0].subEnv * B[0].gain) < 1e-12 && B[0].swirl === 0 && B.every((r) => Math.abs(r.heave) <= K2.HEAVE + K2.HEAVE_DC + 1e-12 && r.subEnv >= 0 && r.subEnv <= 1), 'bands: S1 — cold: the first frame carries the level\'s gravity alone, no rise (the envelopes start at the frame\'s sub — a switch mid-track is no burst); bounded: |heave| ≤ HEAVE + HEAVE_DC, subEnv in [0, 1]');
-    const early = B.slice(30, 33).map((r) => r.heave);
-    ok(early[0] > 0.1 && early.every((h) => h > -0.1), 'bands: S1 — … and a start AT a peak (sub 1 on the first frame) reads the next attack\'s first frame as below its slow mean, a lift, never a slam (' + early.map((h) => h.toFixed(2)).join(' ') + '): the cold frame itself is the level alone');
-    const half = B.slice(600, 1200).map((r) => r.heave), m = half.reduce((a, b) => a + b, 0) / half.length;
-    const mDC = -K2.HEAVE_DC * half.length / half.length * B.slice(600, 1200).reduce((a, r) => a + r.subEnv * r.gain, 0) / half.length;
-    ok(Math.abs(m - mDC) < 0.02, 'bands: S1 — on a steady pulse the heave\'s mean is the DC term alone (' + m.toFixed(4) + ' vs −HEAVE_DC · mean subEnv ' + mDC.toFixed(4) + '): the rise lifts, the tail settles, no drift beyond the level\'s gravity');
-  }
-  { // the switches: FLIP (the bar parity / the glide's sign), SWIRL, SUB_INK — each against the default, the K2 table restored after
-    const defaults = { ...K2 };
-    const runK = (over, n = 120) => { Object.assign(K2, defaults, over); const st = mkState2(), out = []; for (let i = 0; i < n; i++) out.push(plan2(synth(i, i % 30 < 10 ? 1 : 0), DT, st)); Object.assign(K2, defaults); return out; };
-    const ref = runK({}), flipBar = runK({ FLIP: 1 });
-    const barOf = (i) => ((10 + Math.floor(i / 30)) >> 2) & 1;   // synth's beatCount = 10 + beat: bars 2 (beats 0–7 → frames 0–59 odd? no: (10+b)>>2 = 2 for b 0..1, 3 for b 2..5, 4 for b 6..)
-    ok(flipBar.every((r, i) => Math.abs(r.heave - (barOf(i) ? -ref[i].heave : ref[i].heave)) < 1e-12) && flipBar.some((r, i) => barOf(i) && Math.abs(r.heave) > 0.1), 'bands: S1 — FLIP 1: the heave\'s sign follows the bar parity (beatCount >> 2 & 1), the magnitude the default\'s');
-    const up = runK({ FLIP: 2 }).map((r) => r.heave);   // the synthetic subGlide is 0 → FLIP 2 heaves nothing
-    const stR = mkState2(); let hr = 0, hf = 0, h0 = 0;
-    Object.assign(K2, defaults, { FLIP: 2 });
-    for (let i = 0; i < 12; i++) hr = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: 6, beatCount: 10 }), DT, stR).heave;   // a rise with the glide up
-    const stF = mkState2(); for (let i = 0; i < 12; i++) hf = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: -6, beatCount: 10 }), DT, stF).heave;
-    const st0 = mkState2(); for (let i = 0; i < 12; i++) h0 = plan2(base({ sub: i < 2 ? 0 : 1, subGate: 1, subNote: 0, subGlide: 0, beatCount: 10 }), DT, st0).heave;
-    Object.assign(K2, defaults);
-    ok(up.every((h) => h === 0) && hr > 0.1 && hf < -0.1 && Math.abs(hf + hr) < 1e-12 && h0 === 0, 'bands: S1 — FLIP 2: a rising bass (subGlide +6 st/s) lifts (' + hr.toFixed(3) + '), a falling one sinks (' + hf.toFixed(3) + '), a held note (glide 0) heaves nothing');
-    const sw = runK({ SWIRL: 0.8 });
-    ok(ref.every((r) => r.swirl === 0) && sw.every((r, i) => Math.abs(r.swirl - 0.8 * r.subEnv * r.gain * (barOf(i) ? -1 : 1)) < 1e-12) && sw.some((r) => Math.abs(r.swirl) > 0.5) && sw.every((r) => Math.abs(r.swirl) <= 0.8), 'bands: S1 — SWIRL .8: swirl = SWIRL · subEnv · g, its sign by the bar parity, bounded by SWIRL; 0 by default (the identical advect path)');
-    const dc = runK({ HEAVE: 0, HEAVE_DC: 0.5 });
-    ok(dc.every((r) => Math.abs(r.heave + 0.5 * r.subEnv * r.gain) < 1e-12) && dc.some((r) => r.heave < -0.4), 'bands: S1 — HEAVE_DC: the level as a steady extra gravity, heave = −HEAVE_DC · subEnv · g (with the breath)');
-    const none = runK({ SUB_INK: 0 }), halfInk = runK({ SUB_INK: 0.5 });
-    const stA = mkState(); const refA = []; for (let i = 0; i < 120; i++) refA.push(plan(synth(i, i % 30 < 10 ? 1 : 0), DT, stA));
-    ok(none.every((r) => !r.splats.some((s) => s.k === 'sub')) && none.slice(60).every((r, i) => r.ink < refA[i + 60].ink && r.params.dyeDiss <= refA[i + 60].params.dyeDiss), 'bands: S1 — SUB_INK 0: no sub splat at all; the ink rate below the base\'s and dyeDiss re-governed, never above the base\'s');
-    ok(halfInk.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.r - 0.5 / (K2.SUB_RAD * K2.SUB_RAD) * b.r) < 1e-12 && s.dx === 0 && s.dy === 0; }), 'bands: S1 — SUB_INK .5: the sub splat\'s dye halved (over the cloud\'s ÷ SUB_RAD²), still no velocity');
-    const cloud = runK({}), dot = runK({ SUB_RAD: 1 });
-    ok(K2.SUB_RAD === 3 && cloud.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && Math.abs(s.rad - 3 * b.rad) < 1e-12 && Math.abs(s.r - b.r / 9) < 1e-12 && s.dx === 0 && s.dy === 0; }) && cloud.slice(1).every((r, i) => Math.abs(r.ink - refA[i + 1].ink) < 1e-9 * Math.max(1, refA[i + 1].ink)) && dot.every((r, i) => { const s = r.splats.find((x) => x.k === 'sub'), b = refA[i].splats.find((x) => x.k === 'sub'); return s && s.rad === b.rad && s.r === b.r; }), 'bands: S1 — SUB_RAD 3 (the default): the mouth\'s ink spread over 3× the radius at a ninth of the dye — the same ink in the budget\'s units (the rate within 1e-9 of the base\'s), a cloud where the dot was; SUB_RAD 1 is the base\'s dot');
-    const gated = runK({ SUB_GATE: 1 });   // synth: the sub open from frame 0 → the drum branch → the field as the default's
-    ok(gated.every((r, i) => r.heave === ref[i].heave) && ref.some((r) => r.heave !== 0), 'bands: S1 — SUB_GATE 1 with the sub open (the drum branch): the field is the default\'s');
-    const stH = mkState2(); let hH = 1; Object.assign(K2, defaults, { SUB_GATE: 1 });
-    for (let i = 0; i < 600; i++) hH = plan2(base({ sub: i % 30 < 10 ? 1 : 0, subGate: 0, bpm: 120, beatCount: 10 }), DT, stH);   // the gate never opens: 10 s > HARM_BARS bars → the harmonic branch
-    Object.assign(K2, defaults);
-    ok(hH.harmonic === 1 && hH.heave === 0 && hH.swirl === 0 && hH.subEnv > 0, 'bands: S1 — SUB_GATE 1 in the harmonic branch (no sub for HARM_BARS bars, the band still pulsing): the field is 0 (Comptine\'s piano sways nothing); 0 (the default) follows the band');
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: the K2 table restored after the switches');
+    const ja = JSON.stringify(A), jb = JSON.stringify(B);
+    ok(ja === jb && A.some((r) => r.splats.length > 3) && A.some((r) => r.drop === 1), 'bands: the identity — plan2 = plan() to the byte on 600 synthetic frames (' + ja.length + ' chars; kicks, snares, hats, a drop)');
+    ok(sb.base !== null && sb.base !== sa && JSON.stringify(sb.base) === JSON.stringify(sa), 'bands: a standalone mkState2() makes its own base on the first plan2 (a replay tool needs no wiring), and it ends in the base\'s state to the byte');
   }
   const J = trace('SeeYouDrop-map1');
   if (J) {
     const A = replay(J, mkState(), plan).map((r) => r.P), B = replay(J, mkState2(), plan2).map((r) => r.P);
-    const a = JSON.stringify(A.map(strip)), b = JSON.stringify(B.map(strip));
-    ok(a === b, 'bands: S1 — plan2 on SeeYouDrop\'s ' + J.f.length + ' real frames = plan() on every field but the sub\'s velocity and the body (' + a.length + ' chars: the §111 machinery untouched by the field)');
-    ok(B.every((r, i) => Math.abs(r.body - A[i].body - r.heave) < 1e-12 && Math.abs(r.heave) <= K2.HEAVE + K2.HEAVE_DC && Math.abs(r.swirl) <= K2.SWIRL), 'bands: S1 — on the real trace body = the base\'s + heave on every frame, |heave| ≤ HEAVE, |swirl| ≤ SWIRL');
-    const on = B.filter((r) => Math.abs(r.heave) > 0.01).length, voidFr = B.filter((r, i) => J.t[i] >= 54 && J.t[i] <= 57).map((r) => r.heave), retFr = B.filter((r, i) => J.t[i] >= 57.6 && J.t[i] <= 61).map((r) => r.heave), grooveFr = B.filter((r, i) => J.t[i] >= 35 && J.t[i] <= 45).map((r) => Math.abs(r.heave));
-    ok(on > 0.5 * B.length && med(voidFr.map(Math.abs)) < 0.2 * -med(retFr) && voidFr.every((h) => h >= -0.02) && -med(retFr) > 0.15 && -med(retFr) > 2 * med(grooveFr), 'bands: S1 — the field is on (|heave| > .01) on ' + (100 * on / B.length).toFixed(0) + ' % of SeeYouDrop\'s frames; in the void before drop 1 (54–57 s) it eases off (median |heave| ' + med(voidFr.map(Math.abs)).toFixed(3) + ', a lift against the breath, never a slam — the level\'s .04 is under .02), on the drop\'s return (57.6–61 s) it slams at ' + med(retFr).toFixed(3) + ' — over twice the groove\'s per-beat pulse (' + med(grooveFr).toFixed(3) + '): the void\'s return is the field\'s biggest gesture');
+    const a = JSON.stringify(A), b = JSON.stringify(B);
+    ok(a === b, 'bands: the identity — plan2 on SeeYouDrop\'s ' + J.f.length + ' real frames = plan() to the byte (' + a.length + ' chars)');
     const c = JSON.stringify(replay(J, mkState2(), plan2).map((r) => r.P));
-    ok(JSON.stringify(B) === c, 'bands: determ — two fresh band states on the real trace → identical output (the field on)');
+    ok(b === c, 'bands: determ — two fresh band states on the real trace → identical output');
     // the shared base state (fluid.js: st2.base = st): one grammar then the other continues the SAME run, in both directions —
-    // the base's STATE after the mixed run is the pool-only run's to the byte, and every output field but the sub's velocity / the body
+    // the base's STATE after the mixed run is the pool-only run's to the byte, and so is every output frame
     const N = 300;
     const st = mkState(), st2 = mkState2(); st2.base = st;
     const stRef = mkState(); const refOut = [];
@@ -629,11 +553,8 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       refOut.push(plan(S, dt, stRef));
     }
     ok(st2.base === st, 'bands: st2.base IS the pool grammar\'s state object after ' + (4 * N) + ' frames (never re-made)');
-    ok(JSON.stringify(st) === JSON.stringify(stRef), 'bands: the switch is free — after pool → bands → pool → bands every ' + N + ' frames the BASE STATE = plan() alone\'s to the byte (the key pin, the ranks, the clear, the ink rate run on warm in both directions)');
-    ok(JSON.stringify(outs.map(strip)) === JSON.stringify(refOut.map(strip)) && outs.slice(0, N).every((r, i) => r.body === refOut[i].body && r.heave === undefined) && outs.slice(N, 2 * N).every((r) => r.heave !== undefined), 'bands: … and every output field but the sub\'s velocity and the body is plan() alone\'s, frame for frame; the pool frames carry no field, the band frames do');
-    const first = outs[N], again = outs[3 * N];   // the first band frame after 300 pool frames, and after the second switch: neither is a burst
-    const dcOnly = (r) => Math.abs(r.heave + K2.HEAVE_DC * r.subEnv * r.gain) < 1e-12;
-    ok(dcOnly(first) && first.ink === refOut[N].ink && dcOnly(again) && again.ink === refOut[3 * N].ink && !dcOnly(outs[N + 1]), 'bands: S1 — the first band frame after each switch carries the level\'s gravity alone (no rise: no burst) and its ink rate is the base\'s warm one (no un-governing); the frame after heaves');
+    ok(JSON.stringify(st) === JSON.stringify(stRef), 'bands: the switch is free — after pool → bands → pool → bands every ' + N + ' frames the BASE STATE = plan() alone\'s to the byte');
+    ok(JSON.stringify(outs) === JSON.stringify(refOut), 'bands: … and every output frame of the mixed run = plan() alone\'s to the byte');
   }
   { // the Proxy MS: plan2 reads nothing outside inject2's list, over the real trace
     const allowed = new Set(FEATS2);
@@ -649,305 +570,6 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       } catch (e) { thrown = e.message; }
       ok(thrown === null && n === J.f.length, 'bands: proxy — SeeYouDrop ' + n + ' real frames through plan2, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : ''));
     }
-  }
-  K2.KICK_SHAPE = SHIP_SHAPE; Object.assign(K2, SHIP_S3);
-  { // S2 (§116 S2, FLUID2-PLAN §4 S2): the kick as mass that travels — the shapes at ONE momentum (Σ dy·rad over a hit's frames = the control's,
-    // a splat's Gaussian integrating to π·rad) and the same ink; the jet's frames, the stroke's monotone y, the dipole's mirror, the puff's ring
-    // with its centre and the base's shockwave winning the step; the shipped kind's splats on every kick of the user's track; determinism
-    const defaults = { ...K2 };
-    const JR = trace('RaindropsOnRoses-map0');
-    const runShape = (shape, over = {}, J = JR) => { Object.assign(K2, defaults, { KICK_SHAPE: shape }, over); const out = replay(J, mkState2(), plan2).map((r) => r.P); Object.assign(K2, defaults); return out; };
-    const KINDS = ['kick', 'jet', 'stroke', 'dip', 'puff'];
-    ok([0, 1, 2, 3, 4].includes(defaults.KICK_SHAPE) && defaults.JET_N >= 1 && defaults.STROKE_T > 0 && defaults.KPUFF_T > 0, 'bands: S2 — K2 carries KICK_SHAPE ' + defaults.KICK_SHAPE + ' (the shipped kind), JET_N ' + defaults.JET_N + ', STROKE_L ' + defaults.STROKE_L + ' / STROKE_T ' + defaults.STROKE_T + ', DIP_D ' + defaults.DIP_D + ' / DIP_V ' + defaults.DIP_V + ', KPUFF_A ' + defaults.KPUFF_A + ' / KPUFF_R ' + defaults.KPUFF_R + ' / KPUFF_T ' + defaults.KPUFF_T);
-    if (JR) {
-      const C = JR.cols;
-      const ctrl = runShape(0), jet = runShape(1), stroke = runShape(2), dip = runShape(3), puff = runShape(4), ship = runShape(defaults.KICK_SHAPE);
-      const kickIdx = []; for (let i = 0; i < JR.f.length; i++) if (C.kickEvt[i]) kickIdx.push(i);
-      const perKick = (out) => kickIdx.map((i0, k) => { const i1 = k + 1 < kickIdx.length ? kickIdx[k + 1] : out.length; let m = 0, ink = 0, n = 0; for (let i = i0; i < i1; i++) { m += out[i].kick.mom; ink += out[i].kick.ink; n += out[i].kick.n; } return { m, ink, n }; });
-      const pc = perKick(ctrl);
-      const kindsOf = (out) => { const k = {}; for (const r of out) for (const s of r.splats) k[s.k] = (k[s.k] || 0) + 1; return k; };
-      const kc = kindsOf(ctrl);
-      ok(kickIdx.length > 100 && kc.kick > kickIdx.length && KINDS.slice(1).every((k) => !kc[k]) && ctrl.every((r) => r.kick && r.kick.shape === 0 && r.kick.n === r.splats.filter((s) => s.k === 'kick').length), 'bands: S2 — shape 0 (the control): the base\'s kick splats as they are on RaindropsOnRoses\'s ' + kickIdx.length + ' kicks (' + kc.kick + ' kick frames, no jet / stroke / dip / puff); `kick` in the return counts them');
-      const sameMom = (out, name) => { const p = perKick(out); const bad = p.filter((x, k) => Math.abs(x.m - pc[k].m) > 1e-9 * Math.max(1, pc[k].m) || Math.abs(x.ink - pc[k].ink) > 1e-9 * Math.max(1, pc[k].ink)); return { ok: bad.length === 0 && p.reduce((a, x) => a + x.m, 0) > 0.5, bad: bad.length, tot: p.reduce((a, x) => a + x.m, 0) }; };
-      for (const [out, name] of [[jet, 'the jet'], [stroke, 'the stroke'], [dip, 'the dipole']]) { const r = sameMom(out, name); ok(r.ok, 'bands: S2 — ' + name + ': Σ dy·rad over every kick\'s frames = the control\'s within 1e-9 (the same momentum, Σ ' + r.tot.toFixed(6) + ' over the track) and the same ink in the budget\'s units (' + r.bad + ' kicks off)'); }
-      // the jet: the base's kick frames gone, JET_N 'jet' splats per base frame at 1 / JET_N of its push, y = KICK_Y
-      const kj = kindsOf(jet);
-      ok(!kj.kick && kj.jet === kc.kick * defaults.JET_N && jet.every((r) => r.splats.filter((s) => s.k === 'jet').every((s) => s.y === defaults.KICK_Y)), 'bands: S2 — the jet: ' + kj.jet + ' jet splats = ' + kc.kick + ' base kick frames × JET_N ' + defaults.JET_N + ', every one at KICK_Y, no base kick splat left');
-      const i0 = kickIdx[50]; const jf = []; for (let i = i0; i < i0 + defaults.JET_N + 3; i++) jf.push(jet[i].splats.filter((s) => s.k === 'jet').map((s) => +s.dy.toFixed(6)));
-      const nb = []; for (let i = i0; i < i0 + defaults.JET_N + 3; i++) nb.push(ctrl[i].splats.some((s) => s.k === 'kick') ? 1 : 0);   // the base's kick frames (the hit + its tail: one or two frames by the trace's dt)
-      const expect = jf.map((_, j) => nb.reduce((a, b, k) => a + (b && k <= j && j < k + defaults.JET_N ? 1 : 0), 0));
-      ok(jf.every((a, j) => a.length === expect[j]) && nb[0] === 1 && jf[defaults.JET_N + nb.lastIndexOf(1)].length === 0 && Math.abs(jf[0][0] * defaults.JET_N - ctrl[i0].splats.find((s) => s.k === 'kick').dy) < 1e-5, 'bands: S2 — the jet on one kick (frame ' + i0 + ', the base on ' + nb.reduce((a, b) => a + b, 0) + ' frames): every base frame\'s push runs JET_N frames (' + jf.map((a) => a.length).join(' ') + ' = ' + expect.join(' ') + '), none after; each the base\'s dy / JET_N (' + jf.map((a) => a.join('+')).join(' | ') + ')');
-      // the stroke: the jet drawn upward — y monotone in the push's age, from KICK_Y, never above KICK_Y + STROKE_L
-      const sf = []; for (let i = i0; i < i0 + defaults.JET_N + 1; i++) sf.push(stroke[i].splats.filter((s) => s.k === 'stroke').map((s) => +s.y.toFixed(4)));
-      const ys = stroke.flatMap((r) => r.splats.filter((s) => s.k === 'stroke').map((s) => s.y));
-      ok(sf[0][0] === defaults.KICK_Y && sf.slice(1).every((a, j) => a[0] >= sf[j][0]) && sf.every((a) => a.every((y, k) => k === 0 || y <= a[k - 1])) && sf[2][0] > sf[1][0] && sf[1][0] > sf[0][0] && ys.every((y) => y >= defaults.KICK_Y && y <= defaults.KICK_Y + defaults.STROKE_L + 1e-12) && Math.max(...ys) > defaults.KICK_Y + 0.9 * defaults.STROKE_L, 'bands: S2 — the stroke: y from KICK_Y rising with the push\'s age (oldest first per frame: ' + sf.map((a) => a.join('/')).join(' ') + '), saturating at KICK_Y + STROKE_L; the momentum the jet\'s');
-      // the dipole: two splats per base frame, mirrored in x about the base's, opposite dx, the lift and the ink shared
-      const dd = dip.map((r, i) => ({ d: r.splats.filter((s) => s.k === 'dip'), b: ctrl[i].splats.find((s) => s.k === 'kick') })).filter((x) => x.b);
-      ok(dd.length === kc.kick && dd.every(({ d, b }) => d.length === 2 && Math.abs(d[0].x + d[1].x - 2 * b.x) < 1e-12 && Math.abs(d[1].x - d[0].x - 2 * defaults.DIP_D) < 1e-12 && d[0].dx === -d[1].dx && d[0].dx > 0 && Math.abs(d[0].dy - b.dy / 2) < 1e-12 && d[1].dy === d[0].dy && Math.abs(d[0].r - b.r / 2) < 1e-12 && d[0].rad === b.rad && d[0].y === defaults.KICK_Y), 'bands: S2 — the dipole: on every base kick frame two dip splats at x ∓ DIP_D, dx opposite (+' + defaults.DIP_V + ' × √rank · g inward on the left), dy and the ink halved, the radius the base\'s');
-      const dmag = dd.filter(({ d }, k) => C.kickEvt[kickIdx[Math.min(k, kickIdx.length - 1)]]).slice(0, 1);
-      ok(dip.every((r, i) => !r.splats.some((s) => s.k === 'kick')) && dd.every(({ d }) => Math.abs(d[0].dx) <= defaults.DIP_V + 1e-12), 'bands: S2 — the dipole\'s seed is bounded by DIP_V (' + Math.max(...dd.map(({ d }) => d[0].dx)).toFixed(3) + ' max), no base kick splat left');
-      // the puff: the splat's ink with no velocity, a ring at the kick's place rising 0 → KPUFF_R over KPUFF_T beats; the base's shockwave wins the drop's step
-      const pp = puff.map((r, i) => ({ p: r.splats.filter((s) => s.k === 'puff'), b: ctrl[i].splats.find((s) => s.k === 'kick'), ring: r.ring, cring: ctrl[i].ring, t: JR.t[i] }));
-      const withB = pp.filter((x) => x.b);
-      ok(withB.length === kc.kick && withB.every(({ p, b }) => p.length === 1 && p[0].dx === 0 && p[0].dy === 0 && p[0].r === b.r && p[0].rad === b.rad && p[0].x === b.x) && puff.every((r) => r.kick.mom === 0), 'bands: S2 — the puff: the kick\'s ink stays at its place with no velocity (momentum 0 in the splats\' units), on every base kick frame');
-      const rings = pp.filter((x) => x.ring && x.ring.cx !== undefined);
-      const beat = 60 / 140;
-      ok(rings.length > 5 * kickIdx.length && rings.every((x) => x.ring.cy === defaults.KICK_Y && x.ring.w === defaults.KPUFF_W && x.ring.r >= 0 && x.ring.r < defaults.KPUFF_R && x.ring.a > 0 && x.ring.a <= defaults.KPUFF_A + 1e-12) && rings.some((x) => x.ring.r > 0.8 * defaults.KPUFF_R), 'bands: S2 — the puff\'s ring: ' + rings.length + ' frames over ' + kickIdx.length + ' kicks (≈ ' + (defaults.KPUFF_T * beat * 60).toFixed(1) + ' per kick), centred at the kick\'s place (cy KICK_Y), r 0 → < KPUFF_R, a ≤ KPUFF_A, w KPUFF_W');
-      const pk = pp.slice(kickIdx[60], kickIdx[60] + 12).map((x) => (x.ring && x.ring.cx !== undefined ? +x.ring.r.toFixed(4) : null));
-      ok(pk[0] === 0 && pk.slice(1).every((r, j) => r === null || (pk[j] !== null && r > pk[j])) && pk.some((r) => r === null), 'bands: S2 — the puff on one kick: r 0 on the hit\'s frame, rising every frame (' + pk.map((r) => (r === null ? '-' : r)).join(' ') + '), gone after KPUFF_T beats');
-      const dropF = pp.filter((x) => x.cring);
-      ok(dropF.length > 0 && dropF.every((x) => x.ring === x.cring || (x.ring.cx === undefined)) && dropF.some((x) => x.ring && x.ring.cx === undefined), 'bands: S2 — the base\'s shockwave (the drop at ' + dropF[0].t.toFixed(3) + ' s, ' + dropF.length + ' frames, centred) wins every step it runs on: the puff never replaces it');
-      ok(runShape(9).every((r, i) => JSON.stringify(r.splats) === JSON.stringify(ctrl[i].splats)), 'bands: S2 — an unknown shape (9) is the control\'s list');
-      // the shipped kind on the user's track
-      const ks = kindsOf(ship), shipKind = ['kick', 'jet', 'stroke', 'dip', 'puff'][defaults.KICK_SHAPE];
-      ok(ks[shipKind] > 0 && KINDS.filter((k) => k !== shipKind).every((k) => !ks[k]) && kickIdx.every((i) => ship[i].splats.some((s) => s.k === shipKind)), 'bands: S2 — the shipped kind (' + shipKind + ', KICK_SHAPE ' + defaults.KICK_SHAPE + '): ' + ks[shipKind] + ' splats, one or more on every one of the ' + kickIdx.length + ' kick frames, no other kick kind');
-      ok(JSON.stringify(ship) === JSON.stringify(runShape(defaults.KICK_SHAPE)), 'bands: S2 — determ: two fresh band states on the real trace under the shipped kind → identical output');
-      const stripK = (P) => { const Q = { ...P, splats: P.splats.filter((s) => !KINDS.includes(s.k)) }; delete Q.kick; delete Q.params; delete Q.ink; return Q; };
-      ok(JSON.stringify(ship.map(stripK)) === JSON.stringify(ctrl.map(stripK)) && ship.every((r, i) => r.heave === ctrl[i].heave && r.body === ctrl[i].body), 'bands: S2 — the shipped kind moves nothing but the kick kinds (and the governor\'s rounding): the sub\'s field, the snare, the hats, the floor, the drop are the control\'s to the byte');
-      // the shared base state and the cold frame: a pending jet is dropped on the cold frame (a scene switch is never a late push)
-      Object.assign(K2, defaults, { KICK_SHAPE: 1 });
-      { const st = mkState2(); let prev = null; const outs = [];
-        for (let i = kickIdx[40] - 5; i < kickIdx[40] + 3; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; outs.push(plan2(S, dt, st)); if (i === kickIdx[40]) st.n = 0; }
-        const pend = outs[6].splats.filter((s) => s.k === 'jet').length, after = outs[7].splats.filter((s) => s.k === 'jet').length;
-        const tail = [1, 2].map((j) => (ctrl[kickIdx[40] + j].splats.some((s) => s.k === 'kick') ? 1 : 0));   // the base's tail frames after the hit (one or two)
-        ok(outs[5].splats.filter((s) => s.k === 'jet').length === 1 && pend === tail[0] && after === tail[0] + tail[1] && tail[0] === 1, 'bands: S2 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending jet: the hit\'s push on its frame, the re-entry frame carries the tail\'s alone (' + pend + '), the next the tail frames joined since (' + after + ' = ' + tail.join('+') + '), the hit\'s own push never late'); }
-      Object.assign(K2, defaults);
-    }
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S2 — the K2 table restored after the shapes');
-  }
-  { // S3 (§116 S3, FLUID2-PLAN §4 S3): the mids as MATERIAL — the confinement's constant from the mid band's own range (the §111 ring on the
-    // base's state), CURL_SRC 0 the base's to the bit; the mask a parameter (absent at 0, K2's at 1, nothing else moved); the snare as ONE jet
-    // from a wall at the pair's momentum (Σ|dx|·rad) and ink, alternating walls, the harmonic branch's splat and the chord shears untouched,
-    // nothing but the snare kinds moved; SNARE_N 1 one stamp; the cold frame drops a pending jet; determinism; no new MS read; the table restored
-    const defaults = { ...K2 };
-    const JR = trace('RaindropsOnRoses-map0');
-    const run3 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
-    const med = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[b.length >> 1] : NaN; };
-    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).filter((k) => k !== 'high').join(',') === 'sub', 'bands: S3 — no new MS read of its own: inject2\'s FLUID_FEATS is the base\'s + `sub` (+ S4\'s `high`; `mid` and the snare lane are the base\'s reads)');
-    if (JR) {
-      const C3 = JR.cols;
-      const ctrl = run3({ SNARE_JET: 0, CURL_SRC: 0, CURL_MASK: 0 }), ship = run3();
-      // the curl: CURL_SRC 0 is the base's constant; 1 is CURL0 + CURL_MID · the mids' own-range place, bounded, dense above thin on the user's track
-      ok(ctrl.every((r) => Math.abs(r.P.params.curl - (10 + 40 * r.S.tension)) < 1e-9 && r.P.mids.curl === r.P.params.curl && r.P.mids.mask === null), 'bands: S3 — CURL_SRC 0: params.curl = the base\'s 10 + 40·tension on every one of RaindropsOnRoses\'s ' + ctrl.length + ' real frames, mids.curl reads it, no mask');
-      ok(ship.every((r) => Math.abs(r.P.params.curl - (K2.CURL0 + K2.CURL_MID * r.P.mids.pos)) < 1e-9 && r.P.mids.pos >= 0 && r.P.mids.pos <= 1 && r.P.params.curl >= K2.CURL0 && r.P.params.curl <= K2.CURL0 + K2.CURL_MID), 'bands: S3 — CURL_SRC 1: params.curl = CURL0 + CURL_MID · mids.pos on every frame, pos in [0, 1], the constant in [CURL0, CURL0 + CURL_MID]');
-      const win = (rs, a, b, f) => med(rs.filter((r) => r.t >= a && r.t < b).map(f));
-      const dense = win(ship, 118, 126, (r) => r.P.params.curl), thin = win(ship, 111, 116, (r) => r.P.params.curl), groove = win(ship, 76, 80, (r) => r.P.params.curl);
-      const dC = win(ctrl, 118, 126, (r) => r.P.params.curl), tC = win(ctrl, 111, 116, (r) => r.P.params.curl);
-      ok(dense - thin >= 20 && groove - thin >= 10 && thin < K2.CURL0 + 0.3 * K2.CURL_MID, 'bands: S3 — the mids\' curl on RaindropsOnRoses: the breakdown\'s pads 118–126 s (mid .80–.88) p50 ' + dense.toFixed(1) + ', the groove 76–80 s ' + groove.toFixed(1) + ', the thin 111–116 s (mid .35–.48) ' + thin.toFixed(1) + ' — dense − thin ≥ 20 (the base\'s tension reads ' + dC.toFixed(1) + ' / ' + tC.toFixed(1) + ' there)');
-      const stepMax = Math.max(...ship.slice(1).map((r, i) => Math.abs(r.P.params.curl - ship[i].P.params.curl)));
-      ok(stepMax < K2.CURL_MID * (1 / 60) / K2.MID_TAU + 1e-6, 'bands: S3 — the constant eased MID_TAU: the largest per-frame step ' + stepMax.toFixed(3) + ' ≤ CURL_MID · dt / MID_TAU (' + (K2.CURL_MID / 60 / K2.MID_TAU).toFixed(3) + ')');
-      // the mask: a parameter, K2's at 1, absent at 0, nothing else moved
-      const masked = run3({ CURL_MASK: 1 });
-      const noMask = (P) => { const Q = { ...P, params: { ...P.params }, mids: { ...P.mids } }; delete Q.params.curlMask; delete Q.mids.mask; return Q; };
-      ok(ship.every((r) => r.P.params.curlMask === undefined && r.P.mids.mask === null) && masked.every((r) => r.P.params.curlMask && r.P.params.curlMask.y0 === K2.CURL_Y0 && r.P.params.curlMask.y1 === K2.CURL_Y1 && r.P.params.curlMask.lo === K2.CURL_LO && r.P.params.curlMask.fe === K2.CURL_FE && r.P.mids.mask === r.P.params.curlMask)
-        && JSON.stringify(masked.map((r) => noMask(r.P))) === JSON.stringify(ship.map((r) => noMask(r.P))), 'bands: S3 — CURL_MASK 0: no params.curlMask on any frame (the identical vort pass); 1: { y0, y1, lo, fe } = K2\'s on every frame, and nothing else in the plan moves');
-      // the snare: the jet at the pair's momentum and ink, from alternating walls; the harmonic splat and the chords untouched; nothing else moved
-      const momOf = (P, kinds) => P.splats.filter((s) => kinds.includes(s.k)).reduce((a, s) => a + Math.abs(s.dx) * s.rad, 0);
-      const inkOf = (P, kinds) => P.splats.filter((s) => kinds.includes(s.k)).reduce((a, s) => a + (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2, 0);
-      const pairFr = ctrl.map((r, i) => i).filter((i) => ctrl[i].P.splats.filter((s) => s.k === 'snare').length === 2);
-      const harmFr = ctrl.map((r, i) => i).filter((i) => ctrl[i].P.harmonic === 1 && ctrl[i].P.splats.some((s) => s.k === 'snare'));
-      const totC = pairFr.reduce((a, i) => a + momOf(ctrl[i].P, ['snare']), 0), totS = ship.reduce((a, r) => a + momOf(r.P, ['sjet']), 0);
-      const inkC = pairFr.reduce((a, i) => a + inkOf(ctrl[i].P, ['snare']), 0), inkS = ship.reduce((a, r) => a + inkOf(r.P, ['sjet']), 0);
-      ok(pairFr.length > 100 && ship.every((r) => !(r.P.harmonic === 0 && r.P.splats.some((s) => s.k === 'snare'))) && Math.abs(totS - totC) < 1e-9 * Math.max(1, totC) && Math.abs(inkS - inkC) < 1e-9 * Math.max(1, inkC),
-        'bands: S3 — the snare jet on RaindropsOnRoses: the drum branch\'s ' + pairFr.length + ' pair frames gone, Σ|dx|·rad over the jet\'s frames = the pairs\' (' + totS.toFixed(6) + ' vs ' + totC.toFixed(6) + ') and the ink equal (' + inkS.toFixed(4) + ')');
-      const lone = pairFr.filter((i, j) => (j + 1 >= pairFr.length || pairFr[j + 1] - i > K2.SNARE_N) && (j === 0 || i - pairFr[j - 1] > K2.SNARE_N));
-      const exact = lone.every((i) => { let m = 0, n = 0; for (let f = i; f < i + K2.SNARE_N; f++) { m += momOf(ship[f].P, ['sjet']); n += ship[f].P.splats.filter((s) => s.k === 'sjet').length; } return Math.abs(m - momOf(ctrl[i].P, ['snare'])) < 1e-12 && n === K2.SNARE_N; });
-      ok(lone.length > 50 && exact, 'bands: S3 — per lone snare (' + lone.length + ' with no other inside SNARE_N frames): one sjet splat on each of the SNARE_N frames, their Σ|dx|·rad the pair\'s to 1e-12');
-      const walls = ship.map((r) => r.P.splats.find((s) => s.k === 'sjet')).filter(Boolean).map((s) => s.x);
-      const starts = pairFr.map((i) => ship[i].P.splats.filter((s) => s.k === 'sjet').pop());   // the hit's own (newest) jet frame: pushed last
-      const alt = starts.every((s, j) => s && Math.abs(s.x - (j & 1 ? 1 - K2.SNARE_X : K2.SNARE_X)) < 1e-12 && Math.sign(s.dx) === (j & 1 ? -1 : 1) && s.y === K2.SNARE_Y && s.dy === 0);
-      ok(alt && walls.every((x) => Math.abs(x - K2.SNARE_X) < 1e-12 || Math.abs(x - (1 - K2.SNARE_X)) < 1e-12), 'bands: S3 — the jet alternates walls by the snare count: the ' + starts.length + ' hits launch from x SNARE_X then 1 − SNARE_X, dx into the pool, at y SNARE_Y, dy 0');
-      ok(harmFr.length > 0 && harmFr.every((i) => JSON.stringify(ship[i].P.splats.filter((s) => s.k === 'snare')) === JSON.stringify(ctrl[i].P.splats.filter((s) => s.k === 'snare'))) && ship.every((r, i) => JSON.stringify(r.P.splats.filter((s) => s.k === 'chord')) === JSON.stringify(ctrl[i].P.splats.filter((s) => s.k === 'chord'))),
-        'bands: S3 — the harmonic branch\'s one directed snare splat (' + harmFr.length + ' frames) and every chord shear are the base\'s to the byte');
-      const stripS = (P) => { const Q = { ...P, splats: P.splats.filter((s) => s.k !== 'snare' && s.k !== 'sjet'), params: { ...P.params } }; delete Q.snare; delete Q.mids; delete Q.params.curl; delete Q.params.dyeDiss; delete Q.ink; return Q; };
-      ok(JSON.stringify(ship.map((r) => stripS(r.P))) === JSON.stringify(ctrl.map((r) => stripS(r.P))) && ship.every((r, i) => r.P.heave === ctrl[i].P.heave && r.P.body === ctrl[i].P.body && r.P.kick.mom === ctrl[i].P.kick.mom), 'bands: S3 — nothing but the snare kinds, the curl and the governor moved: every other splat (the dipole, the floor, the hats, the chords), the heave, the body, the kick record are the control\'s');
-      ok(ship.every((r) => Math.abs(r.P.ink - ctrl[ship.indexOf(r)].P.ink) < 0.1 * Math.max(0.5, r.P.ink)) && Math.abs(med(ship.map((r) => r.P.params.dyeDiss)) - med(ctrl.map((r) => r.P.params.dyeDiss))) < 1e-6, 'bands: S3 — the ink budget: the own rate within 10 % of the base\'s on every frame (the same ink SNARE_N frames later), the p50 dyeDiss the base\'s');
-      const rec = ship.filter((r) => r.P.snare.kind === 'jet');
-      ok(rec.length > 0 && rec.every((r) => r.P.snare.n >= 1 && r.P.snare.mom > 0 && r.P.snare.ink > 0 && Math.abs(r.P.snare.side) === 1) && ctrl.filter((r) => r.P.splats.some((s) => s.k === 'snare')).every((r) => r.P.snare.kind === (r.P.harmonic ? 'harm' : 'pair') && r.P.snare.n >= 1) && ship.every((r) => r.P.snare.kind !== '' || r.P.snare.n === 0),
-        'bands: S3 — `snare` in the return: { kind jet | pair | harm, mom, ink, n, side } on the frames that carry a snare kind, \'\' with n 0 otherwise');
-      // SNARE_N 1: one stamp at the full momentum on the hit's frame
-      const stamp = run3({ SNARE_N: 1 });
-      ok(pairFr.every((i) => { const j = stamp[i].P.splats.filter((s) => s.k === 'sjet'); return j.length === 1 && Math.abs(Math.abs(j[0].dx) * j[0].rad - momOf(ctrl[i].P, ['snare'])) < 1e-12; }) && stamp.every((r, i) => pairFr.includes(i) || !r.P.splats.some((s) => s.k === 'sjet')), 'bands: S3 — SNARE_N 1: one sjet stamp on the hit\'s frame at the pair\'s full momentum, none on any other frame');
-      // the cold frame drops a pending jet (a scene switch is never a late push)
-      { const st = mkState2(); let prev = null; const i0 = pairFr.find((i) => i > 60 && pairFr.every((j) => j === i || Math.abs(j - i) > 8)); const outs = [];
-        for (let i = i0 - 3; i < i0 + 3; i++) { const S = {}; for (const k in C3) S[k] = C3[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; if (i === i0 + 2) st.n = 0; outs.push(plan2(S, dt, st)); }
-        const n = outs.map((P) => P.splats.filter((s) => s.k === 'sjet').length);
-        ok(n[3] === 1 && n[4] === 1 && n[5] === 0 && st.sjet.length === 0 && st.snareN === 0, 'bands: S3 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending jet frames and the count (' + n.join(' ') + ')'); }
-      // determinism; no read outside inject2's list with S3 on
-      ok(JSON.stringify(ship.map((r) => r.P)) === JSON.stringify(run3().map((r) => r.P)), 'bands: S3 — determ: two fresh band states on the real trace under the shipped K2 → identical output');
-      { const allowed = new Set(FEATS2); let thrown = null; const st = mkState2(); let prev = null;
-        try { for (let i = 0; i < JR.f.length; i++) { const S = {}; for (const k in C3) S[k] = C3[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; plan2(new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allowed.has(k)) throw new Error('undeclared read ' + k); return t[k]; } }), dt, st); } } catch (e) { thrown = e.message; }
-        ok(thrown === null, 'bands: S3 — proxy: RaindropsOnRoses through plan2 with the curl, the jet on, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
-    }
-    // the synthetic own range: 40 s of a steady level → the laminar floor; a swell above the ring's p80 → the full constant within a second; a dip → the floor
-    { const st = mkState2(); const fr = (mid) => ({ bpm: 120, presence: 0.8, mid, seed: { a: 0.37 }, subNote: -1, kickAge: 99, tension: 0.5, lpSweep: 0.5, beatCount: 0, harmAngle: 0 });
-      let P; for (let i = 0; i < 40 * 60; i++) P = plan2(fr(0.5), DT, st);
-      const steady = P.params.curl; for (let i = 0; i < 90; i++) P = plan2(fr(0.7), DT, st); const swell = P.params.curl; for (let i = 0; i < 90; i++) P = plan2(fr(0.3), DT, st); const dip = P.params.curl;
-      ok(Math.abs(steady - K2.CURL0) < 0.5 && Math.abs(swell - (K2.CURL0 + K2.CURL_MID)) < 0.5 && Math.abs(dip - K2.CURL0) < 0.5, 'bands: S3 — the own range: 40 s of mid .5 → the floor (' + steady.toFixed(2) + '), a swell to .7 → CURL0 + CURL_MID within 1.5 s (6 MID_TAU; ' + swell.toFixed(2) + '), a dip to .3 → the floor (' + dip.toFixed(2) + '); the base\'s tension .5 would read 30 throughout'); }
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S3 — the K2 table restored after the switches');
-  }
-  Object.assign(K2, SHIP_S4, SHIP_S5);   // S4's and S5's shipped switches back (their own blocks follow)
-  { // S4 (§116 S4, FLUID2-PLAN §4 S4): the highs as the SURFACE, never a force on the mass — the grain's amplitude (a uniform for the advect
-    // pass, never a splat), its three sources, the dip on the governed dyeDiss (per hat / continuous / none, never inside the clear), the cold
-    // frame, determinism, the Proxy, the table restored
-    const defaults = { ...K2 };
-    const JR = trace('RaindropsOnRoses-map0');
-    const run4 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
-    ok(FEATS2.includes('high') && !FLUID_FEATS.includes('high') && FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S4 — inject2 reads `high` (the grain\'s and the dip\'s source; `hat2` is the base\'s read): FLUID_FEATS = the base\'s + sub + high');
-    ok(defaults.NOISE_V >= 0 && defaults.JIT_V >= 0 && defaults.NOISE_CELL >= 1 && defaults.NOISE_HOLD >= 1 && defaults.HI_TAU > 0 && [0, 1, 2].includes(defaults.HI_SRC) && [0, 1, 2].includes(defaults.DIP_SRC) && defaults.HI_SHARP >= 0 && defaults.HI_SHARP < 1 && defaults.DIP_N >= 1, 'bands: S4 — K2 carries NOISE_V ' + defaults.NOISE_V + ' (cell ' + defaults.NOISE_CELL + ', hold ' + defaults.NOISE_HOLD + '), JIT_V ' + defaults.JIT_V + ', HI_SRC ' + defaults.HI_SRC + ', HI_TAU ' + defaults.HI_TAU + ', DIP_SRC ' + defaults.DIP_SRC + ', HI_SHARP ' + defaults.HI_SHARP + ', DIP_N ' + defaults.DIP_N);
-    if (JR) {
-      const C4 = JR.cols;
-      const on = run4({ NOISE_V: 0.3, JIT_V: 1, DIP_SRC: 1 }), off = run4({ NOISE_V: 0, JIT_V: 0, DIP_SRC: 0 }), cont = run4({ DIP_SRC: 2 }), hats = run4({ HI_SRC: 2, DIP_SRC: 0 });
-      // the grain: NOISE_V · env · gain, bounded; 0 at NOISE_V 0; env in [0, 1], the cold frame AT the level; never a splat, a body or a heave
-      ok(on.every((r) => Math.abs(r.P.grain - 0.3 * r.P.highs.env * r.P.gain) < 1e-12 && Math.abs(r.P.highs.jit - 1 * r.P.highs.env * r.P.gain) < 1e-12 && r.P.grain >= 0 && r.P.grain <= 0.3 + 1e-12 && r.P.highs.jit <= 1 + 1e-12 && r.P.highs.env >= 0 && r.P.highs.env <= 1 && r.P.highs.grain === r.P.grain && r.P.highs.cell === defaults.NOISE_CELL && r.P.highs.hold === defaults.NOISE_HOLD) && on.some((r) => r.P.grain > 0.15), 'bands: S4 — grain = NOISE_V · highs.env · gain and jit = JIT_V · highs.env · gain on every one of RaindropsOnRoses\'s ' + on.length + ' real frames, bounded, env in [0, 1] (p50 env ' + med(on.map((r) => r.P.highs.env)).toFixed(3) + '), cell / hold K2\'s');
-      ok(off.every((r) => r.P.grain === 0 && r.P.highs.grain === 0 && r.P.highs.jit === 0 && r.P.highs.dip === 1) && Math.abs(on[0].P.highs.env - Math.min(1, Math.max(0, C4.high[0]))) < 1e-12, 'bands: S4 — NOISE_V 0 / JIT_V 0 / DIP_SRC 0: grain 0, jit 0 and dip 1 on every frame (the identical passes, the governed dyeDiss); the cold frame\'s env is the frame\'s `high` itself');
-      const stripG = (P) => { const Q = { ...P, params: { ...P.params } }; delete Q.grain; delete Q.highs; delete Q.params.dyeDiss; return Q; };
-      ok(JSON.stringify(on.map((r) => stripG(r.P))) === JSON.stringify(off.map((r) => stripG(r.P))) && on.every((r, i) => r.P.body === off[i].P.body && r.P.heave === off[i].P.heave && r.P.ink === off[i].P.ink), 'bands: S4 — never a force on the mass: with the grain, the jitter and the dip on, every splat, the body, the heave, the curl, the ink rate are the off run\'s to the byte — only dyeDiss (the dip) and the grain / highs fields differ');
-      const lagOk = on.every((r, i) => i === 0 || Math.abs(r.P.highs.env - on[i - 1].P.highs.env) <= Math.abs(Math.min(1, Math.max(0, C4.high[i])) - on[i - 1].P.highs.env) + 1e-12);
-      ok(lagOk, 'bands: S4 — HI_SRC 0: env eases toward the frame\'s `high` (every step toward it, never past it)');
-      ok(Math.abs(hats[0].P.highs.env - Math.min(1, Math.max(0, C4.hat2[0]))) < 1e-12 && hats.every((r, i) => i === 0 || Math.abs(r.P.highs.env - hats[i - 1].P.highs.env) <= Math.abs(Math.min(1, Math.max(0, C4.hat2[i])) - hats[i - 1].P.highs.env) + 1e-12) && med(hats.filter((r) => r.t >= 82 && r.t < 91).map((r) => r.P.highs.env)) > 3 * med(hats.filter((r) => r.t >= 99 && r.t < 102).map((r) => r.P.highs.env)), 'bands: S4 — HI_SRC 2: env eases toward hat2 (bursts on the hits): the hat-rich 82–91 s p50 ' + med(hats.filter((r) => r.t >= 82 && r.t < 91).map((r) => r.P.highs.env)).toFixed(3) + ' > 3× the hat-poor 99–102 s ' + med(hats.filter((r) => r.t >= 99 && r.t < 102).map((r) => r.P.highs.env)).toFixed(3));
-      // the dip: per hat — on every frame with a base 'hat' splat and DIP_N − 1 after, × (1 − HI_SHARP), the off run's dyeDiss otherwise; never inside the clear
-      const hatFr = off.map((r, i) => i).filter((i) => off[i].P.splats.some((s) => s.k === 'hat'));
-      const want = new Set(); for (const i of hatFr) for (let j = 0; j < defaults.DIP_N; j++) want.add(i + j);
-      const clearFr = off.map((r, i) => i).filter((i) => off[i].P.params.dyeDiss === K.DROP_DISS);
-      const dipOk = on.every((r, i) => { const w = want.has(i) && !clearFr.includes(i); const f = 1 - defaults.HI_SHARP; return w ? Math.abs(r.P.highs.dip - f) < 1e-12 && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss * f) < 1e-12 : r.P.highs.dip === 1 && r.P.params.dyeDiss === off[i].P.params.dyeDiss; });
-      ok(hatFr.length > 100 && dipOk, 'bands: S4 — DIP_SRC 1 on RaindropsOnRoses: dyeDiss × (1 − HI_SHARP) on the ' + hatFr.length + ' frames the base paid a hat droplet and the ' + (defaults.DIP_N - 1) + ' after each (' + [...want].filter((i) => i < on.length).length + ' dip frames), the off run\'s dyeDiss to the byte everywhere else, the clear\'s ' + clearFr.length + ' frames at DROP_DISS untouched');
-      ok(cont.every((r, i) => { const w = !clearFr.includes(i); const f = 1 - defaults.HI_SHARP * r.P.highs.env; return w ? Math.abs(r.P.highs.dip - f) < 1e-12 && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss * f) < 1e-12 : r.P.highs.dip === 1; }), 'bands: S4 — DIP_SRC 2: dyeDiss × (1 − HI_SHARP · env) on every frame outside the clear (the plan\'s continuous form)');
-      // the cold frame drops a pending dip (a hat on the frame before a switch does not dip the first frame after)
-      { const i0 = hatFr.find((i) => i > 60 && !hatFr.includes(i + 1) && !hatFr.includes(i + 2)); const st = mkState2(); let prev = null; const dips = [];
-        for (let i = i0 - 2; i <= i0 + 2; i++) { const S = {}; for (const k in C4) S[k] = C4[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; if (i === i0 + 1) st.n = 0; dips.push(plan2(S, dt, st).highs.dip); }
-        ok(dips[2] < 1 && dips[3] === 1 && dips[4] === 1 && st.dipLeft === 0, 'bands: S4 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending dip (' + dips.map((d) => d.toFixed(2)).join(' ') + ')'); }
-      // determinism; the Proxy with S4 on
-      ok(JSON.stringify(on.map((r) => r.P)) === JSON.stringify(run4({ NOISE_V: 0.3, JIT_V: 1, DIP_SRC: 1 }).map((r) => r.P)) && JSON.stringify(hats.map((r) => r.P)) === JSON.stringify(run4({ HI_SRC: 2, DIP_SRC: 0 }).map((r) => r.P)), 'bands: S4 — determ: two fresh band states on the real trace → identical output, the grain and the dip on (and HI_SRC 2)');
-      { const allowed = new Set(FEATS2); let thrown = null; const st = mkState2(); let prev = null; Object.assign(K2, defaults, { HI_SRC: 1, DIP_SRC: 1 });
-        try { for (let i = 0; i < JR.f.length; i++) { const S = {}; for (const k in C4) S[k] = C4[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; plan2(new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allowed.has(k)) throw new Error('undeclared read ' + k); return t[k]; } }), dt, st); } } catch (e) { thrown = e.message; }
-        Object.assign(K2, defaults);
-        ok(thrown === null, 'bands: S4 — proxy: RaindropsOnRoses through plan2 with the grain (HI_SRC 1, the ring) and the dip on, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
-    }
-    // HI_SRC 1 — the own range (this grammar's ring): 40 s of a steady level → the floor; a swell above the ring's p80 → 1 within a second; a dip → 0
-    { Object.assign(K2, defaults, { HI_SRC: 1 }); const st = mkState2(); const fr = (high) => ({ bpm: 120, presence: 0.8, high, seed: { a: 0.37 }, subNote: -1, kickAge: 99, tension: 0.5, lpSweep: 0.5, beatCount: 0, harmAngle: 0 });
-      let P; for (let i = 0; i < 40 * 60; i++) P = plan2(fr(0.5), DT, st);
-      const steady = P.highs.env, early = st.highRing.length; for (let i = 0; i < 60; i++) P = plan2(fr(0.7), DT, st); const swell = P.highs.env; for (let i = 0; i < 60; i++) P = plan2(fr(0.3), DT, st); const dip = P.highs.env;
-      Object.assign(K2, defaults);
-      ok(early === K.FLOOR_WIN && steady < 0.02 && swell > 0.98 && dip < 0.02, 'bands: S4 — HI_SRC 1: the ring holds FLOOR_WIN one-second means (' + early + '); 40 s of high .5 → env ' + steady.toFixed(3) + ' (the floor), a swell to .7 → ' + swell.toFixed(3) + ' within 1 s (20 HI_TAU), a dip to .3 → ' + dip.toFixed(3) + '; HI_SRC 0 would read .5 / .7 / .3'); }
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S4 — the K2 table restored after the switches');
-  }
-  { // S5 (§116 S5, FLUID2-PLAN §4 S5): the pen's MECHANICS — the floor replaced by one `pen` splat at the same ink in the budget's units, its
-    // position eased on the fifths circle with the step clamped, a push along its drift; PEN_SRC 0 the identical path; the vocal feature deferred
-    const defaults = { ...K2 };
-    const JR = trace('RaindropsOnRoses-map0');
-    const run5 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
-    const inkOf = (s) => (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2;
-    ok([0, 1, 2].includes(defaults.PEN_SRC) && [0, 1].includes(defaults.PEN_AX) && defaults.PEN_TAU > 0 && defaults.PEN_VMAX > 0 && defaults.PEN_V >= 0 && defaults.PEN_RAD > 0, 'bands: S5 — K2 carries PEN_SRC ' + defaults.PEN_SRC + ', PEN_AX ' + defaults.PEN_AX + ', PEN_TAU ' + defaults.PEN_TAU + ', PEN_VMAX ' + defaults.PEN_VMAX + ', PEN_V ' + defaults.PEN_V + ', PEN_RAD ' + defaults.PEN_RAD);
-    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S5 — no new MS read: the pen reads the base\'s harmAngle / centroid and the base state\'s hx / hy / pin (the vocal feature\'s voxS / voxHz are NOT read — S5b)');
-    if (JR) {
-      const off = run5({ PEN_SRC: 0 }), on = run5({ PEN_SRC: 1, PEN_AX: 0 }), ax1 = run5({ PEN_SRC: 1, PEN_AX: 1 }), v0 = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_V: 0 }), vp = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_V: 0.25 }), r2 = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_RAD: 2 });
-      const baseRun = replay(JR, mkState(), plan);
-      const fl = (r) => r.P.splats.find((s) => s.k === 'floor'), pn = (r) => r.P.splats.find((s) => s.k === 'pen');
-      const nFloor = off.filter((r) => fl(r)).length;
-      ok(nFloor > 6000 && off.every((r, i) => !pn(r) && r.P.pen.on === 0 && r.P.pen.src === 0 && JSON.stringify(fl(r) || null) === JSON.stringify(fl(baseRun[i]) || null)), 'bands: S5 — PEN_SRC 0: no `pen` kind, pen.on 0, and the `floor` splat is the base\'s to the byte on every one of RaindropsOnRoses\'s ' + off.length + ' real frames (' + nFloor + ' floor frames)');
-      for (const [tag, R, rad] of [['AX 0', on, defaults.PEN_RAD], ['AX 1', ax1, defaults.PEN_RAD], ['PEN_RAD 2', r2, 2]]) {
-        const exact = R.every((r, i) => { const f = fl(off[i]), p = pn(r); if (!f) return !p && r.P.pen.on === 0 && r.P.pen.ink === 0; return p && !fl(r) && r.P.pen.on === 1 && r.P.splats.filter((s) => s.k === 'pen').length === 1 && Math.abs(p.rad - rad * K.RADIUS) < 1e-12 && Math.abs(inkOf(p) - inkOf(f)) <= 1e-12 * inkOf(f) + 1e-18 && Math.abs(p.r - f.r * (2 / rad) ** 2) <= 1e-12 * f.r && Math.abs(r.P.pen.ink - r.P.pen.floor) <= 1e-12 * r.P.pen.floor; });
-        ok(exact, 'bands: S5 — ' + tag + ': the floor replaced by exactly one `pen` on every frame the floor had and none otherwise, at radius PEN_RAD · RADIUS with the dye × (2 / PEN_RAD)² — the same ink in the budget\'s units within 1e-12 (pen.ink = pen.floor)');
-        ok(R.every((r, i) => Math.abs(r.P.ink - off[i].P.ink) <= 1e-9 * Math.max(1e-9, off[i].P.ink) && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss) <= 1e-9 * off[i].P.params.dyeDiss), 'bands: S5 — ' + tag + ': the ink rate and dyeDiss the off run\'s within 1e-9 on every frame — the governor unmoved (the pen is counted before S4\'s dip)');
-        const lim = (r) => defaults.PEN_VMAX * (r.t - (R[R.indexOf(r) - 1] || { t: r.t - 1 / 60 }).t);
-        ok(R[0].P.pen.step === 0 && R[0].P.pen.v === 0 && R.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * Math.max(1e-3, Math.min(0.1, i ? r.t - R[i - 1].t : 1 / 60)) + 1e-12 && r.P.pen.x >= 0 && r.P.pen.x < 1 && r.P.pen.y >= 0.25 - 1e-12 && r.P.pen.y <= 0.75 + 1e-12), 'bands: S5 — ' + tag + ': the cold frame starts AT the target (step 0, v 0); the per-frame step ≤ PEN_VMAX · dt on every frame (max ' + Math.max(...R.map((r) => r.P.pen.step)).toFixed(5) + ' vs ' + (defaults.PEN_VMAX / 60).toFixed(5) + '), x in [0, 1), y in [.25, .75]');
-      }
-      const strokeBeat = (R, t0, t1) => { const b = {}; for (const r of R) if (r.t >= t0 && r.t < t1) b[r.S.beatCount] = (b[r.S.beatCount] || 0) + r.P.pen.step; return med(Object.values(b)); };
-      const span = (R, t0, t1) => { const xs = R.filter((r) => r.t >= t0 && r.t < t1 && r.P.pen.on).map((r) => r.P.pen.x).sort((a, b) => a - b); return xs[Math.floor(0.9 * xs.length)] - xs[Math.floor(0.1 * xs.length)]; };
-      const s0 = strokeBeat(on, 111.4, 137.1), s1 = strokeBeat(ax1, 111.4, 137.1), sp0 = span(on, 111.4, 137.1), sp1 = span(ax1, 111.4, 137.1);
-      ok(s1 > 2 * s0 && sp1 > 0.15 && sp0 < 0.1 && on.every((r) => r.P.pen.wrap === 0) && ax1.every((r) => r.P.pen.wrap === 0), 'bands: S5 — the stroke on RaindropsOnRoses\'s breakdown (111.4–137.1): AX 1 (the frame\'s harmAngle, the pen\'s own ease) draws ' + s1.toFixed(4) + ' screen heights per beat (p50) over a span of ' + sp1.toFixed(3) + '; AX 0 (the 15 s centre — the plan\'s letter) ' + s0.toFixed(4) + ' over ' + sp0.toFixed(3) + ' — a drifting dot; no tritone lift on either');
-      const f = 60 * (1 / 60);
-      ok(vp.every((r) => { const p = pn(r); if (!p) return true; const m = Math.hypot(p.dx, p.dy), want = 0.25 * r.P.pen.v * r.P.gain * 60 * Math.max(1e-3, Math.min(0.1, vp.indexOf(r) ? r.t - vp[vp.indexOf(r) - 1].t : 1 / 60)); return Math.abs(m - want) <= 1e-9 * Math.max(1, want) && m <= 0.25 * defaults.PEN_VMAX * r.P.gain * 1.2 * f + 1e-9; }) && vp.some((r) => { const p = pn(r); return p && Math.hypot(p.dx, p.dy) > 0; }), 'bands: S5 — the push at PEN_V .25: |(dx, dy)| = PEN_V · the pen\'s drift (uv/s) · gain · f on every pen splat, bounded by PEN_V · PEN_VMAX · gain · f (max ' + Math.max(...vp.map((r) => { const p = pn(r); return p ? Math.hypot(p.dx, p.dy) : 0; })).toFixed(4) + '); the shipped PEN_V is ' + defaults.PEN_V);
-      const stripV = (P) => ({ ...P, splats: P.splats.map((s) => (s.k === 'pen' ? { ...s, dx: 0, dy: 0 } : s)) });
-      ok(v0.every((r) => { const p = pn(r); return !p || (p.dx === 0 && p.dy === 0); }) && JSON.stringify(v0.map((r) => r.P)) === JSON.stringify(vp.map((r) => stripV(r.P))) && (defaults.PEN_V !== 0 || JSON.stringify(v0.map((r) => r.P)) === JSON.stringify(ax1.map((r) => r.P))), 'bands: S5 — PEN_V 0 (the shipped value): ink only (dx = dy = 0 on every pen splat), everything else the .25 run\'s to the byte');
-      { // a live switch-on mid-track and the grammar's cold frame: the pen starts at its target, no sweep
-        Object.assign(K2, defaults, { PEN_SRC: 0, PEN_AX: 1 }); const st = mkState2(); const C = JR.cols; let prev = null; const steps = [];
-        for (let i = 0; i < 4000; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i];
-          if (i === 3000) K2.PEN_SRC = 1; if (i === 3500) st.n = 0;
-          const P = plan2(S, dt, st); if (i >= 2999 && i <= 3002 || i >= 3499 && i <= 3502) steps.push([P.pen.on, +P.pen.step.toFixed(5)]); }
-        Object.assign(K2, defaults);
-        ok(steps[0][0] === 0 && steps[1][1] === 0 && steps[2][1] > 0 && steps[5][1] === 0 && steps[6][1] > 0, 'bands: S5 — PEN_SRC turned on live (frame 3000) and the grammar\'s cold frame (3500): the first pen frame is AT its target (step 0), the next moves (' + steps.map((s) => s.join(':')).join(' ') + ')'); }
-      ok(JSON.stringify(on.map((r) => r.P)) === JSON.stringify(run5({ PEN_SRC: 1, PEN_AX: 0 }).map((r) => r.P)) && JSON.stringify(ax1.map((r) => r.P)) === JSON.stringify(run5({ PEN_SRC: 1, PEN_AX: 1 }).map((r) => r.P)), 'bands: S5 — determ: two fresh band states on the real trace → identical output, the pen on (AX 0 and AX 1)');
-      { Object.assign(K2, defaults, { PEN_SRC: 1, PEN_AX: 1 }); const st = mkState2(); let thrown = null; const C = JR.cols, allow = new Set([...FEATS2, 'seed']);
-        for (let i = 0; i < JR.f.length && !thrown; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
-          const PX = new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allow.has(k)) thrown = 'read of ' + k + ' at frame ' + i; return t[k]; } });
-          try { plan2(PX, 1 / 60, st); } catch (e) { thrown = String(e); } }
-        Object.assign(K2, defaults);
-        ok(thrown === null, 'bands: S5 — proxy: RaindropsOnRoses through plan2 with the pen on (AX 1), no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
-    }
-    { // the tritone wall: a synthetic harmAngle walking the full circle in 20 s at AX 1 — ONE lift (|Δx| > .5, wrap 1, its step on the circle still bounded), every other frame bounded, and the pen tracks within a fifth
-      Object.assign(K2, defaults, { PEN_SRC: 1, PEN_AX: 1 }); const st = mkState2(); const rows = [];
-      for (let i = 0; i < 1500; i++) { const a = 2 * Math.PI * Math.min(1, i / 1200); const P = plan2(base({ harmAngle: a, mid: 0.6, centroid: 0.5, beatCount: 10 + (i >> 5) }), DT, st); rows.push({ a, p: P.pen, x: P.pen.x }); }
-      Object.assign(K2, defaults);
-      const lifts = rows.filter((r, i) => i && Math.abs(r.x - rows[i - 1].x) > 0.5), wraps = rows.filter((r) => r.p.wrap).length;
-      const tracks = rows.slice(200, 1200).every((r) => { const st = r.a / (2 * Math.PI) * 12, d = ((st + 6) % 12 + 12) % 12 - 6, want = ((d + 6.5) % 12) / 12; let e = Math.abs(r.x - want); e = Math.min(e, 1 - e); return e < 1 / 12; });
-      ok(lifts.length === 1 && wraps === 1 && lifts[0].p.wrap === 1 && rows.every((r) => r.p.step <= defaults.PEN_VMAX * DT + 1e-12) && tracks, 'bands: S5 — the tritone wall: a harmAngle walking the circle once → one lift (x ' + (lifts[0] ? (rows[rows.indexOf(lifts[0]) - 1].x.toFixed(3) + ' → ' + lifts[0].x.toFixed(3)) : '-') + ', wrap 1), every frame\'s step on the circle ≤ PEN_VMAX · dt, the pen within a fifth of its target while walking');
-    }
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S5 — the K2 table restored after the switches');
-  }
-  { // S6 (§116 S6, FLUID2-PLAN §4 S6): the SOLVER's clock — dtSim bounded [DT_MIN, DT_MAX], slewed per frame (DT_SLEW), the neutral knobs 1 exactly,
-    // the base's 0 wins (composeDt), the pen rides min(1, dtSim) · dt; the breath on the cut, the void on the breakdown (gated on the sub out), the
-    // drop's burst on the file map's confirmed drop 2 (the substep count under DT_DROP 1, the clock alone under 2), the pulse zero-mean; determ, the Proxy
-    const defaults = { ...K2 };
-    const JR = trace('RaindropsOnRoses-map0'), JM = trace('RaindropsOnRoses-map1');
-    const run6 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
-    const win = (R, a, b) => R.filter((r) => r.t >= a && r.t < b), mean = (a) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
-    const NEUTRAL = { DT_SUB: 0, DT_LVL: 0, DT_VOID: 1, DT_DROP: 0, DT_BEAT: 0 };
-    ok(['DT_SUB', 'DT_LVL', 'DT_VOID', 'DT_TAU', 'DT_DROP', 'DT_DROPX', 'DT_STEPS', 'DT_BEAT', 'DT_SLEW', 'DT_MIN', 'DT_MAX'].every((k) => typeof defaults[k] === 'number') && defaults.DT_MIN > 0 && defaults.DT_MIN <= 1 && defaults.DT_MAX >= 1 && defaults.DT_VOID >= 0 && defaults.DT_VOID <= 1 && [0, 1, 2].includes(defaults.DT_DROP) && defaults.DT_STEPS >= 2 && defaults.DT_SLEW > 0, 'bands: S6 — K2 carries DT_SUB ' + defaults.DT_SUB + ', DT_LVL ' + defaults.DT_LVL + ', DT_VOID ' + defaults.DT_VOID + ' / DT_TAU ' + defaults.DT_TAU + ', DT_DROP ' + defaults.DT_DROP + ' (DROPX ' + defaults.DT_DROPX + ', STEPS ' + defaults.DT_STEPS + '), DT_BEAT ' + defaults.DT_BEAT + ', DT_SLEW ' + defaults.DT_SLEW + ', the bounds [' + defaults.DT_MIN + ', ' + defaults.DT_MAX + ']');
-    const cd = INJ2.composeDt;
-    ok(typeof cd === 'function' && cd(undefined, 0.7) === 0.7 && cd(null, 1.3) === 1.3 && cd(0, 1.5) === 0 && cd(0, 0.5) === 0 && cd(0.5, 2) === 1 && cd(2, 0.25) === 0.5 && cd(1, 1) === 1, 'bands: S6 — composeDt: the base\'s clock (none → 1) × this grammar\'s; a base 0 (item 2\'s freeze) wins over any value here');
-    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S6 — no new MS read: the clock reads the base\'s buildLive / tongueOn / tongueAmbig / subGate / beatPhase (its latch recomputed, never duplicated); `pred*` and `dropLiveIn` are not read');
-    if (JR && JM) {
-      const neutral = run6(NEUTRAL);
-      ok(neutral.every((r) => r.P.dtSim === 1 && r.P.substeps === 1 && r.P.time.raw === 1 && r.P.time.breath === 1 && r.P.time.level === 1 && r.P.time.void === 1 && r.P.time.drop === 1 && r.P.time.pulse === 1), 'bands: S6 — the neutral knobs (DT_SUB 0, DT_LVL 0, DT_VOID 1, DT_DROP 0, DT_BEAT 0): dtSim 1 EXACTLY and substeps 1 on every one of RaindropsOnRoses\'s ' + neutral.length + ' real frames — the byte-identical pass (x · 1 = x in fluid.js; the md5 gate proves the pixels)');
-      const ship = run6();
-      const dtOf = (R, i) => Math.max(1e-3, Math.min(0.1, i ? R[i].t - R[i - 1].t : 1 / 60));
-      ok(ship.every((r) => r.P.dtSim >= defaults.DT_MIN - 1e-12 && r.P.dtSim <= defaults.DT_MAX + 1e-12 && r.P.time.raw >= defaults.DT_MIN - 1e-12 && r.P.time.raw <= defaults.DT_MAX + 1e-12), 'bands: S6 — the shipped clock is bounded [DT_MIN, DT_MAX] on every real frame (min ' + Math.min(...ship.map((r) => r.P.dtSim)).toFixed(3) + ', max ' + Math.max(...ship.map((r) => r.P.dtSim)).toFixed(3) + ')');
-      const wild = run6({ DT_SUB: 5, DT_LVL: 5, DT_VOID: 0, DT_BEAT: 3, DT_DROP: 2, DT_DROPX: 9 });
-      ok(wild.every((r) => r.P.dtSim >= defaults.DT_MIN - 1e-12 && r.P.dtSim <= defaults.DT_MAX + 1e-12) && wild.some((r) => r.P.dtSim === defaults.DT_MIN) && wild.some((r) => r.P.dtSim === defaults.DT_MAX), 'bands: S6 — … and under wild knobs (DT_SUB 5, DT_LVL 5, DT_VOID 0, DT_BEAT 3, DROPX 9) it sits on the bounds and never outside them');
-      const eased = (R) => R.every((r, i) => i === 0 || Math.abs(r.P.dtSim - R[i - 1].P.dtSim) <= defaults.DT_SLEW * dtOf(R, i) + 1e-12);
-      const slewed = (R) => R.filter((r) => r.P.time.slewed).length;
-      ok(eased(ship) && eased(wild) && slewed(wild) > 50 && ship[0].P.time.slewed === 0 && wild[0].P.time.slewed === 0, 'bands: S6 — eased: |Δ dtSim| ≤ DT_SLEW · dt on every frame of the ship run (max ' + Math.max(...ship.map((r, i) => (i ? Math.abs(r.P.dtSim - ship[i - 1].P.dtSim) : 0))).toFixed(4) + ' vs ' + (defaults.DT_SLEW / 60).toFixed(4) + ') and of the wild one (' + slewed(wild) + ' frames held by the slew, ' + slewed(ship) + ' on the ship run); the cold frame starts AT its target (slewed 0)');
-      const free = run6({ DT_SUB: 5, DT_LVL: 5, DT_VOID: 0, DT_BEAT: 3, DT_SLEW: 1e9 });
-      ok(slewed(free) === 0 && free.every((r) => r.P.dtSim === r.P.time.raw), 'bands: S6 — DT_SLEW 1e9: no frame slewed, dtSim = the clamped product on every frame');
-      // the breath alone on the cut (65.4–68.57) and the return; zero-mean on the groove
-      const br = run6({ DT_VOID: 1 }), bCut = mean(win(br, 65.4, 68.57).map((r) => r.P.dtSim)), bRet = mean(win(br, 68.57, 70.5).map((r) => r.P.dtSim)), bGr = mean(win(br, 76, 110).map((r) => r.P.dtSim));
-      ok(bCut < 0.9 && bRet > 1.04 && Math.abs(bGr - 1) < 0.01 && br.every((r) => r.P.time.void === 1 && r.P.time.level === 1), 'bands: S6 — the breath (DT_SUB ' + defaults.DT_SUB + ', the void off) on the live lanes: the 1:06 cut runs at ' + bCut.toFixed(3) + ' (the pool holds its breath), the return 68.57–70.5 at ' + bRet.toFixed(3) + ' (it runs again), the groove 76–110 at ' + bGr.toFixed(4) + ' — zero-mean: the sub\'s gesture, not a tempo');
-      // the void alone on the breakdown, gated on the sub out
-      const vd = run6({ DT_SUB: 0 }), vBrk = win(vd, 111.4, 134), vLat = vBrk.filter((r) => r.P.time.latched).length;
-      ok(vLat > 500 && Math.min(...vBrk.map((r) => r.P.dtSim)) <= defaults.DT_VOID + 0.02 && vd.every((r) => r.P.time.void >= defaults.DT_VOID - 1e-12 && r.P.time.void <= 1 && !(r.P.time.latched && r.S.subGate > 0) && !(r.P.time.latched && r.P.params.dyeDiss === K.DROP_DISS)) && win(vd, 76, 110).every((r) => r.P.dtSim >= 0.98), 'bands: S6 — the void (DT_VOID ' + defaults.DT_VOID + ', the breath off): latched on ' + vLat + ' of the breakdown\'s ' + vBrk.length + ' frames (111.4–134 s), the clock down to ' + Math.min(...vBrk.map((r) => r.P.dtSim)).toFixed(3) + ' there; never latched with the sub open or inside the clear; the groove untouched (≥ .98)');
-      const vRet = win(vd, 68.57, 70.5).map((r) => r.P.dtSim), vDip = vRet.reduce((a, d, i) => a + (i && d < vRet[i - 1] ? vRet[i - 1] - d : 0), 0);
-      ok(vRet[vRet.length - 1] > 0.95 && vRet[vRet.length - 1] > vRet[0] + 0.08 && vDip < 0.01, 'bands: S6 — the void lets go on the sub\'s return (68.57 — the live lanes never confirm that drop, §117, and the detector stays armed): the clock rises through 68.57–70.5 from ' + vRet[0].toFixed(3) + ' to ' + vRet[vRet.length - 1].toFixed(3) + ' (eased DT_TAU, the dips summed ' + vDip.toFixed(4) + ' — the latch\'s flicker), no snap');
-      // the drop's burst on the FILE map (drop 2 confirmed at 68.62 there): the clock the same under DT_DROP 1 and 2; the substeps only under 1; decays within the beat
-      const d2 = run6({ DT_DROP: 2 }, JM), d1 = run6({ DT_DROP: 1 }, JM), d0 = run6({ DT_DROP: 0 }, JM);
-      const di = d2.findIndex((r) => r.P.drop === 1 && r.t > 60 && r.t < 75), beatF = Math.round(60 * 60 / Math.max(60, d2[di].S.bpm));
-      const burst = d2.slice(di, di + beatF + 12).map((r) => r.P.dtSim), peak = Math.max(...burst), after = d2[di + beatF + 12].P.dtSim, before = d2[di - 1].P.dtSim;
-      ok(di > 0 && peak > before + 0.5 && peak <= defaults.DT_DROPX * 1.2 + 1e-9 && d2[di].P.time.drop === defaults.DT_DROPX && d2[di + beatF].P.time.drop <= 1.05 && after < 1.15 && d2[di].P.ring !== null, 'bands: S6 — DT_DROP 2 on the file map: the burst hangs on the confirmed drop at ' + d2[di].t.toFixed(2) + ' s (the shockwave\'s frame — ring set): the clock ' + before.toFixed(3) + ' → peak ' + peak.toFixed(3) + ' (the term DT_DROPX ' + defaults.DT_DROPX + ' on the frame, slewed in), back to ' + d2[di + beatF].P.time.drop.toFixed(3) + ' a beat later — accenting, never driving');
-      ok(d1.every((r, i) => r.P.dtSim === d2[i].P.dtSim) && d1.every((r) => (r.P.substeps > 1) === (r.P.time.drop > 1)) && d1.filter((r) => r.P.substeps === defaults.DT_STEPS).length > 0 && d1.filter((r) => r.P.substeps === defaults.DT_STEPS).length <= 3 * (beatF + 1) && d2.every((r) => r.P.substeps === 1) && d0.every((r) => r.P.substeps === 1 && r.P.time.drop === 1), 'bands: S6 — DT_DROP 1: the same clock as 2 on every frame, DT_STEPS substeps on exactly the burst\'s frames (' + d1.filter((r) => r.P.substeps > 1).length + ' over the file map\'s ' + d1.filter((r) => r.P.drop === 1).length + ' clears), 1 elsewhere; 2 never substeps; 0 neither bursts nor substeps');
-      // the pen rides min(1, dtSim) · dt: a clock toward 0 (DT_VOID 0, DT_MIN 0) holds the pen in the latched breakdown
-      const frz = run6({ DT_SUB: 0, DT_VOID: 0, DT_MIN: 0 }), held = frz.filter((r) => r.t > 111.4 && r.t < 134 && r.P.dtSim < 0.05);
-      ok(held.length > 100 && held.every((r) => r.P.pen.step <= defaults.PEN_VMAX * 0.1 * 0.05 + 1e-12) && frz.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * dtOf(frz, i) * Math.min(1, r.P.dtSim) + 1e-12) && ship.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * dtOf(ship, i) + 1e-12), 'bands: S6 — the pen receives the clock: with the void\'s clock at 0 (DT_VOID 0, DT_MIN 0) the pen\'s step is ≤ PEN_VMAX · dt · dtSim on every frame (' + held.length + ' near-frozen frames in the breakdown, step max ' + Math.max(...held.map((r) => r.P.pen.step)).toExponential(2) + '); on the ship run it never exceeds the S5 bound (the hand never runs faster than the grammar)');
-      // the pulse: zero-mean on the groove, a tick of ± DT_BEAT · 3/8
-      const pl = run6({ DT_SUB: 0, DT_VOID: 1, DT_BEAT: 0.3 }), pG = win(pl, 76, 110).map((r) => r.P.dtSim);
-      ok(Math.abs(mean(pG) - 1) < 0.01 && Math.max(...pG) - Math.min(...pG) > 0.2 && pl.every((r) => r.P.time.pulse >= 1 - 0.3 * 3 / 8 - 1e-12 && r.P.time.pulse <= 1 + 0.3 * 5 / 8 + 1e-12), 'bands: S6 — DT_BEAT .3: a zero-mean pulse on the groove (mean ' + mean(pG).toFixed(4) + ', span ' + (Math.max(...pG) - Math.min(...pG)).toFixed(3) + '), the term in [1 − 3/8·DT_BEAT, 1 + 5/8·DT_BEAT]');
-      { // a cold frame mid-track starts AT its target (a switch into this grammar is no jolt); the live knob change slews from where it was
-        Object.assign(K2, defaults); const st = mkState2(); const C = JR.cols; let prev = null; const rows = [];
-        for (let i = 2400; i < 2800; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i];
-          if (i === 2600) st.n = 0; if (i === 2700) K2.DT_LVL = 3;
-          const P = plan2(S, dt, st); rows.push({ i, d: P.dtSim, sl: P.time.slewed, raw: P.time.raw }); }
-        Object.assign(K2, defaults);
-        const c = rows.find((r) => r.i === 2600), k = rows.find((r) => r.i === 2700), k1 = rows.find((r) => r.i === 2701);
-        ok(c.sl === 0 && c.d === c.raw && k.sl === 1 && Math.abs(k.d - rows.find((r) => r.i === 2699).d) <= defaults.DT_SLEW / 60 + 1e-12 && k1.d !== k.d, 'bands: S6 — the grammar\'s cold frame (2600) starts AT its target (slewed 0); a live knob change (DT_LVL 3 at 2700) slews in from the last frame\'s clock (' + rows.find((r) => r.i === 2699).d.toFixed(3) + ' → ' + k.d.toFixed(3) + ' → ' + k1.d.toFixed(3) + ', raw ' + k.raw.toFixed(3) + ')'); }
-      ok(JSON.stringify(ship.map((r) => r.P)) === JSON.stringify(run6().map((r) => r.P)) && JSON.stringify(d1.map((r) => r.P)) === JSON.stringify(run6({ DT_DROP: 1 }, JM).map((r) => r.P)), 'bands: S6 — determ: two fresh band states on the real traces → identical output (the ship run; DT_DROP 1 on the file map)');
-      { Object.assign(K2, defaults, { DT_DROP: 1, DT_LVL: 0.4, DT_BEAT: 0.2 }); const st = mkState2(); let thrown = null; const C = JM.cols, allow = new Set([...FEATS2, 'seed']);
-        for (let i = 0; i < JM.f.length && !thrown; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
-          const PX = new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allow.has(k)) thrown = 'read of ' + k + ' at frame ' + i; return t[k]; } });
-          try { plan2(PX, 1 / 60, st); } catch (e) { thrown = String(e); } }
-        Object.assign(K2, defaults);
-        ok(thrown === null, 'bands: S6 — proxy: RaindropsOnRoses (the file map) through plan2 with every time term on, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
-    } else ok(true, 'bands: S6 — (no RaindropsOnRoses traces: the real-frame cases skipped)');
-    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S6 — the K2 table restored after the switches');
   }
 }
 

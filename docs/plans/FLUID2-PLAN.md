@@ -4,6 +4,11 @@ Planned against main at e1830f9 (v0.36, live). A Fable worker builds it step by 
 step, every claim measured on the seven library tracks (DECISIONS §109: the fake timeline is a smoke test), per-track numbers never an
 average, Malicious for the record only. No tag, no push — the user tags.
 
+## PULLED (2026-10-11, DECISIONS §120) — the user: *"I'm not a fan of fluid2 (it moves too quickly); reset fluid2 to fluid and let's try
+something else in fluid2"*. S1–S7 below shipped in v0.37 and were reverted on main to S0's identity (`inject2.js` the identity, FLUID2's
+shaders / index / help re-cloned from FLUID's). The grammar is at `git show v0.37:assets/core/fluid/inject2.js`; the strips' tools stay. The
+next FLUID2 experiment is `docs/plans/FLUID2-EMITTERS.md` (where the music enters the pool). The eight-track sweep below is no longer owed.
+
 ## Status (2026-10-10, end of day — S0–S7 DONE on branch `fluid2`; NOT tagged, NOT pushed; DECISIONS §116)
 
 **The scope changed mid-build on the user's word — *"only tune with Raindrops, don't do full sweep"* — so S1–S7 were tuned, stripped and

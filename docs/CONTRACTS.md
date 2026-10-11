@@ -148,37 +148,10 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               sub shut two bars the HARMONIC BRANCH: every hit at the harmony's place, applause / noise injects
                               nothing (§111) — pads, chords and vocals had no channel before §108, a piano no "where" before
                               §111) is the core's (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's
-                              part B); a scene adds on top. Under FLUID2's band grammar (core/fluid/inject2.js, §116) the sub is a
-                              FIELD, never a dot: its ink still enters at the bass note's place on the tonic axis but its push is a
-                              body force on the whole pool — the sub band's envelope against its own slow mean, WITH the breath (the
-                              sub is the pool's weight: the attack deepens the beat's gravity, the void's entry lifts and stills the
-                              pool, the drop's return slams it), a swirl as a K2 switch; the kick (S2) is a MASS that travels — a vortex
-                              PAIR seeded inward at the bass note's place, at the base's impulse and ink (FLUID's kick rode the sub's jet;
-                              the pair carries itself a third of the screen per beat), the jet / stroke / puff as K2 switches; the mids
-                              (S3) are the MATERIAL — the vorticity confinement's constant is the mid band's place in the track's own last
-                              30 s (§111's ring, read off the base's state: dense mids tighten the curls, thin mids go laminar; FLUID ties
-                              it to `tension`), a y-mask on the vort pass as a K2 switch (off: it buys no margin), and the snare is ONE
-                              shear burst — a jet from a hair in from a wall (never AT it: a push at a closed wall is projected away),
-                              alternating walls by count, at the pair's momentum and ink over SNARE_N frames; the chord shears stay; the
-                              highs (S4) are the SURFACE and never a force on the mass — the hats sparkle as before (the scene's
-                              droplets), the high band's level puts a hashed texel-scale GRAIN on the velocity advect pass (`uNoise`,
-                              seeded by the step count; bounded so the pool's mean speed stays within 10 % of the grain-off run), every
-                              hat droplet DIPS the governed dyeDiss a frame or two (never inside the clear), and the slow top band is the
-                              LIGHT: FLUID2's own show pass tightens and brightens the glint from `highS` (display only — "air above 8 kHz"
-                              has no band, `highS` 5–16 k is the nearest and says so); the voice (S5) is a PEN —
-                              the MECHANICS only, the vocal feature deferred (S5b): one sustained `pen` splat REPLACES the §108
-                              floor cloud at the same ink in the budget's units, drifting along the tonic axis with the
-                              harmony's centre (the stand-in for a pitch), eased on the fifths circle with its per-frame step
-                              clamped (the §1.9 step; the one lift is the tritone wall), a small push along its own drift — it
-                              draws, it never injects mass; what it draws today is the HARMONY, not the voice; TIME (S6) is
-                              the SOLVER's clock, not the grammar's: `dtSim` multiplies the vort / advect passes' dt (fluid.js) —
-                              the pool's time breathes with the sub (its rise quickens the ink's travel, its tail and a sub CUT
-                              slacken it, zero-mean on a groove), runs at half time in a latched void (eased 1 s, gated on the
-                              sub being out) and bursts on the confirmed drop's frame (× DT_DROPX decaying over the clear's beat —
-                              the clock alone by default, DT_DROP 1 the honest substeps); the splats, the emitters' ×60·dt, the
-                              key's evidence, the refractories, the clear's countdown and the shockwave's front stay on the
-                              grammar's dt (musical time); every change of the clock is slewed (DT_SLEW: the §1.9 rule); the
-                              rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
+                              part B); a scene adds on top. FLUID2's slot (core/fluid/inject2.js, §116) is the IDENTITY since §120
+                              (2026-10-11, the user: "it moves too quickly; reset fluid2 to fluid"): the §116 S1–S6 band grammar
+                              (the sub a field, the kick a vortex pair, the mids the confinement, the highs the surface, the pen,
+                              the solver's clock) is at v0.37 and is not the direction. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111) — FLUID2's K2 the one standing exception:
                               tuned on RaindropsOnRoses alone on the user's word (§116 S1–S7), the eight-track sweep owed before any tag.
@@ -278,7 +251,7 @@ needed, now generic:
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
   the substrate's step is a slot the OWNER scene declares, never a special case in `core/`. The table is `core/fluid/grammar.js`:
   `'pool'` (`core/fluid/inject.js` — the default: FLUID and every scene without the slot) and `'bands'` (`core/fluid/inject2.js` —
-  FLUID2, id 1 since §118: the bands as different kinds of coupling). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
+  FLUID2, id 1 since §118: the experimental slot — the identity since §120). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
   (`SC.next`), else the current (`SC.cur`) — the pool is in its grammar from the fade's first frame, so it is already there when the scene
   is fully visible; a forced scene (`&scene=13`, the `n` key) is `SC.cur` the moment `goScene` lands it. Deterministic: a function of
   `SC` alone. **One pool, one base state:** every grammar exports inject.js's interface (`plan, mkState, K, FLUID_FEATS`); a composing
@@ -287,40 +260,18 @@ needed, now generic:
   shockwave) runs on warm across a switch in both directions and the dye is carried, never reset — the switch is not a cut. A grammar's
   own state starts cold on its first frame and must be a transient or ease from its neutral value. A card naming a grammar not in the
   table FAILS `check.js` (the loop would fall back to `'pool'`). `CARD.fluid.grammar` reports the name that planned the last step,
-  `CARD.fluid.K2` the band grammar's constants, `CARD.benchFluid(n, ring, 'bands')` benches either; the HUD's fluid line and the help
-  view's part B say which grammar owns the pool and list ITS reads. At S0 (`'bands'` is the identity) FLUID2 was FLUID to the pixel:
-  s13's 58 real-md5 lines = s12's hash for hash (§116). **A grammar's return fields beyond inject.js's** (S1): `heave` (uv/s², what it
-  added to `body` — the breath's shaped channel, so no new uniform), `swirl` (the `uSwirl` uniform on the velocity advect pass: a
-  solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical program path — a uniform branch, never a mix, as the ring's
-  A = 0), `subEnv` (the envelope, for the rulers); (S2) `kick` (`{ shape, mom, ink, n }` — this frame's kick kinds: `KICK_SHAPE`, the
-  impulse Σ dy·rad over them, their ink in the budget's units, their count — `CARD.fluid.kick` on the last step, null under the pool
-  grammar), and a `ring` with a centre (above); (S3) `mids` (`{ pos, curl, mask }` — the mid band's own-range place eased MID_TAU, the
-  confinement constant it set, the mask parameter or null — `CARD.fluid.mids`), `snare` (`{ kind 'pair' | 'jet' | 'harm' | '', mom:
-  Σ|dx|·rad, ink, n, side }` — this frame's snare kinds, `CARD.fluid.snare`), and `params.curlMask` (`{ y0, y1, lo, fe }`: the vort
-  pass's `uCurlMask` uniform — the confinement × mix(lo, 1, the feathered band y0..y1); absent → (0, 1, 1, 0), the branch not taken: a
-  uniform branch, never a mix, as the ring's A = 0 and the swirl's 0); (S4) `grain` (uv/s²: the velocity advect pass's `uNoise` — a
-  Wang-hashed ±½·uNoise·dt push per CELL of `uCell` sim texels, white in space at the cell and in time at the hold, seeded by `uSeed` =
-  `floor(FLUID.steps / hold) & 255` (the step count: deterministic from `at=0`, never a clock); 0 is the byte-identical program path — a
-  uniform branch; the dye pass always passes 0 for `uNoise`, the velocity grain is velocity only) and `highs` (`{ env, grain, dip, cell,
-  hold, jit }` — the high band's envelope by `HI_SRC`, the grain, the factor the dip put on `params.dyeDiss` this frame (1 = none; never
-  inside the confirmed clear), the cell and hold for the uniforms, `jit` the DYE pass's `uJit` in dye texels (the back-trace sample point
-  jittered ±½·jit; (0, 0) is the identical dye pass; the velocity pass passes (0, 0)) — `CARD.fluid.highs`; the specular and the display
-  grain are the SCENE's, not the grammar's: FLUID2's show pass reads `highS` / `high` itself (`uSpecPow`, `uGrain`, its own `uSeed` =
-  `ctx.fluid.steps & 255`) and lights the ink — display only, no return field, the pool bit-identical under them (§116 S4); (S5) `pen` (`{ on, src, x, y,
-  step, v, ink, floor, wrap }` — the pen's place this frame (uv), its move (`step`, on the fifths circle: ≤ `PEN_VMAX · dt` on every frame), its drift
-  speed (uv/s), its area-weighted ink and the floor's it replaced (equal by construction), `wrap` 1 on a tritone lift; `on` 0 under `PEN_SRC` 0 where the
-  list carries the base's `floor` to the byte; `src` the switch, 2 reserved for the vocal feature's reads that do not exist yet) — `CARD.fluid.pen`; the
-  pen is a SPLAT (`k: 'pen'`), nothing on the passes; (S6) `dtSim` (the SOLVER's clock: `fluid.js` multiplies the vort and velocity-advect
-  `uDt` by it — the dye advect shares the program and inherits it, so the dye's dissipation is the pool's time too; absent → 1, the identical pass;
-  bounded [`DT_MIN`, `DT_MAX`] and slewed per frame by the grammar), `substeps` (> 1: the curl → dye-advect chain runs that many times at
-  dt · dtSim / substeps, the splats once — the drop's burst under `DT_DROP` 1; the step counter counts frames) and `time` (`{ dtSim, substeps,
-  breath, level, void, drop, pulse, latched, raw, slewed }` — the terms, for the rulers) — `CARD.fluid.dtSim / substeps / time`. **The precedence
-  rule for `dtSim`** (FLUID2-PLAN §2; FLUID-DROP item 2's freeze): a composing grammar multiplies the base's clock by its own through
-  `composeDt(base, mine)` (inject2.js) and a base `dtSim` of **0 wins outright** — a freeze is a freeze, the grammar's bounds do not lift it;
-  the base returns no `dtSim` today (→ 1). A grammar whose clock can reach 0 must run its own eased positions (the pen) on the solver's
-  clock, or they walk over frozen ink (inject2's pen eases on min(1, dtSim) · dt). `fluid.js` reads them from the plan of the grammar that owns the
-  step; the pool grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
-  the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
+  FLUID2 is FLUID to the pixel while
+  `'bands'` is the identity (§116 S0's proof: s13's 58 real-md5 lines = s12's hash for hash; §120 reset it to that). **A grammar's optional
+  return fields beyond inject.js's** — `fluid.js` reads each when present, each absent = the §104 pass to the bit: `heave` (uv/s², what it added
+  to `body`), `swirl` (the `uSwirl` uniform on the velocity advect: a solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical
+  path — a uniform branch, never a mix), `grain` (uv/s²: the velocity advect's `uNoise`, a Wang-hashed per-cell push, seeded by the step count),
+  `highs` (`{ env, grain, dip, cell, hold, jit }` — the cell / hold for the uniforms, `jit` the dye pass's `uJit`), `pen` (a record for the rulers),
+  `params.curlMask` (`{ y0, y1, lo, fe }`: the vort pass's `uCurlMask`), `dtSim` (the SOLVER's clock — multiplies the vort / advect passes' dt;
+  absent → 1; a base `dtSim` of 0 wins outright) and `substeps` (> 1: the curl → dye-advect chain runs that many times, the splats once).
+  `CARD.fluid.K2` is the band grammar's constants (empty at the identity), `CARD.benchFluid(n, ring, 'bands')` benches either grammar; the HUD's
+  fluid line and the help view's part B say which grammar owns the pool and list ITS reads. The §116 S1–S6 grammar that used every one of
+  these fields is at v0.37 (`git show v0.37:assets/core/fluid/inject2.js`), pulled at §120. The band grammar's own state goes COLD while it does
+  not own the pool (`fluid.js` resets inject2's `n`): its envelopes re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
   the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **0 default
@@ -434,11 +385,10 @@ scenes down to fill the gaps? order: fluid, fluid2, nav2, dust, torus2, mandala"
 the six kept ones were shifted down, so `REG` is DENSE 0..5 and every id is a digit key again):
 **0 fluid** (key `1`; §106, ON THE ROSTER since §114 — its own fit bid `0.35 + 0.4 bassS + 0.2 min(1, keyConf/0.6) + 0.15 (1 − centroid)`,
 0 in a build; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's;
-`FLUID-PLAN.md` Step 3) · **1 fluid2** (key `2`; §116, forced-only: `score()` 0; no `card`; FLUID's pool under the BAND grammar —
-its card's `fluid: { grammar: 'bands' }` slot (§1.4) makes the step plan through `core/fluid/inject2.js` while it owns the pool; at
-S0 pixel-identical to FLUID; S1–S6 of `FLUID2-PLAN.md` BUILT (the sub a field, the kick a vortex pair, the mids the confinement,
-the highs a grain + a dip + the light, the harmony's pen, the solver's clock), closed at S7 — tuned on RaindropsOnRoses alone on
-the user's word, the seven-track sweep owed before any tag; `&k2={…}` on any page is its switchboard) · **2 nav2** (key `3`; the
+`FLUID-PLAN.md` Step 3) · **1 fluid2** (key `2`; §116, forced-only: `score()` 0; no `card`; the EXPERIMENTAL slot — FLUID's pool, show pass
+and sparkle re-cloned at §120 (2026-10-11), its card's `fluid: { grammar: 'bands' }` slot (§1.4) planning through `core/fluid/inject2.js`, the
+identity today, so FLUID to the pixel; the §116 S1–S6 band grammar it carried in v0.37 was pulled (the user: "it moves too quickly"); the next
+experiment here is WHERE the music enters the pool — `docs/plans/FLUID2-EMITTERS.md`) · **2 nav2** (key `3`; the
 HOME — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with
 `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`. `register()` seats
 `SC.cur` / `SC.logical` / `SC.hist` on whichever scene declares `home`, so the first frame of a page load is this one and not the

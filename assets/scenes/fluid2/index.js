@@ -2,20 +2,22 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
-// FLUID2 (id 13; FLUID2-PLAN S0, DECISIONS §116) — FLUID's pool under the BAND grammar: the same substrate (core/fluid/, §104), the
-// same show pass (shaders.js, a copy of FLUID's that diverges at S4), the same sparkle — and the scene card names its grammar:
-// `fluid: { grammar: 'bands' }` (CONTRACTS §1.4). While FLUID2 owns the pool (SC.next if a fade runs, else SC.cur — loop.js) the step
-// plans through core/fluid/inject2.js, whose plan() runs inject.js's plan() on the SHARED base state and edits the result by kind;
-// at S0 it was the identity (the §116 proof: s13's 58 real lines = s12's, hash for hash); since S1 the sub is a FIELD — the emitter's
-// jet is gone, the whole pool heaves with the sub's envelope on the breath's channel (and may swirl / flip by K2), its ink still entering
-// at the bass note's place. S2–S6 make the other bands different KINDS of coupling (the kick a travelling mass, the mids the material,
-// the highs the surface, the vocals a pen, time breathing) — all of it in inject2.js, nothing here but S4's LIGHT: the specular on the ink's
-// normal is this scene's show pass (shaders.js, diverged from FLUID's at S4), its gain and its exponent from `highS` (5–16 kHz, slow —
-// the nearest band to "air above 8 kHz", which the engine does not have: §116 S4 says so) — display only, the pool untouched; `SPEC` below
-// is the live table (CARD.REG[13].scene.SPEC — the strips' SPEC= one-run A/B), TIER0 0 holds the S0 highlight at tier 0 if the bench says so. Forced-only (`&scene=13`, `n` cycles to it):
-// NOT on the director's bid, no fit model, no landing tile until the user asks. A scene must not import core/fluid (check.js):
-// everything through ctx.fluid; the dye is read through ctx.engineTex.dye. What FLUID's header says about the pool, the
-// sparkle (one frame late — the step precedes update()), the §106 dead params override and the idle under &fluid=0 holds here.
+// FLUID2 (id 1, key 2; DECISIONS §116, RESET at §120 2026-10-11) — FLUID's pool, FLUID's show pass, FLUID's sparkle: a clone of
+// assets/scenes/fluid/ (the user: "reset fluid2 to fluid and let's try something else in fluid2") with two differences. (1) Forced-only:
+// `&scene=1`, key 2, the arrows, the panel's force — NOT on the director's bid (score() 0), no landing tile. (2) The card names its
+// grammar, `fluid: { grammar: 'bands' }` (CONTRACTS §1.4): while FLUID2 owns the pool (SC.next if a fade runs, else SC.cur — loop.js)
+// the step plans through core/fluid/inject2.js, which is the IDENTITY today — plan() returns inject.js's plan on the SHARED base
+// state untouched, so this scene is FLUID to the pixel. The §116 S1–S6 band grammar and S4's diverged show pass live at v0.37 and
+// are not the direction. The next experiment in this slot is the user's (§120: WHERE the music enters the pool — an emitter array).
+//
+// What FLUID's header says holds here: the music → pool grammar is the core's (inject.js, its reads in FLUID_FEATS, shown in the help
+// view's part B); this scene READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js, a copy of FLUID's); it
+// adds one injection of its own through ctx.fluid.splat, gated on being on screen: a sparkle on the surface while the hats are up.
+// Its own reads are exactly `feats` (five: the loudness ladder for the exposure, the hats and presence — no bid fields). `kick.x`
+// (the monitor's one declared cut) is the shockwave's envelope, raised on the frame the grammar's clear fires. A scene must not import
+// core/fluid (check.js): everything through ctx.fluid. The §106 dead-params caveat (a scene's write to ctx.fluid.params is overwritten
+// by the step) holds. Under &fluid=0 / key W / no float render targets the dye is the 1×1 black placeholder: draw() paints the empty
+// pool's idle and hud() says why. Nothing here reads a wall clock or Math.random.
 import { clamp, ema, frac } from '../../math/util.js';
 import { baseLight } from '../../math/loudlight.js';
 import { SHOW_FS } from './shaders.js';
@@ -24,16 +26,7 @@ import { HELP } from './help.js';
 const EXPO0 = 0.5;         // the exposure at the bottom of the track's loudness ladder …
 const EXPO1 = 0.9;         // … and what the top adds (a drop at the track's loudest lights the pool at 1.4)
 const EXPOTC = 0.12;       // the exposure's ease: baseLight() is continuous, the ease is inertia the eye expects of light
-const SPEC = {             // §116 S4 the specular from the highs (display only; the show pass's uLook.y and uSpecPow):
-  S0: 0.6,                 //   the highlight's gain at highS 0 (FLUID's constant) …
-  HI: 1.0,                 //   … + this at highS 1 (the strips, §116 S4: with POW 40 the composite's gradient +10–15 % at a whole-frame grey within ±1 % — tighter AND
-                           //   brighter; .5 / 80 darkened the frame 7–11 %, .5 / 0 brightened the wash)
-  PW0: 48,                 //   the Blinn exponent at highS 0 (FLUID's) …
-  POW: 40,                 //   … + this at highS 1: a tighter glint on bright highs (88 at the outro's air; 128 darkened)
-  TIER0: 1,                //   1: the highs light tier 0 too · 0: tier 0 keeps the S0 highlight (the bench's call, §116 S4)
-  GRAIN: 0,                //   the DISPLAY grain: dye texels (±½·GRAIN·high) the show pass reads the dye off per pixel per frame — film grain on the ink's edges,
-                           //   nothing written to the pool (the dye-advect jitter was a blur: §116 S4); 0 = the identical read. Measured on the strips; the eye decides
-};
+const SPEC = 0.6;          // the highlight's gain
 const RELIEF = 24;         // the gradient's gain: ink differs by hundredths over two dye texels, the normal needs ×24 to tilt
 const PORT0 = 0.88;        // the porthole feather, inner radius on the frame's superellipse …
 const PORT1 = 1.04;        // … and outer: the corners and the walls are outside the picture
@@ -48,25 +41,24 @@ const HAT_RAD = 0.4;       // its radius × the grammar's
 const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15..0.85 on the scene's own count
 
 const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
-const U = { expo: 1, lastNow: -1e9, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0, spec: 0.6, specPow: 48, highS: 0, grain: 0, seed: 0 };   // spec / specPow: this frame's highlight gain and exponent; grain / seed the display grain (S4)
+const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0 };
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
 function flinfo() {
-  return JSON.stringify({ expo: +U.expo.toFixed(4), vis: +U.vis.toFixed(3), ring: +U.ring.toFixed(3), nHat: U.nHat, on: U.on, relief: U.relief, nSplat: U.nSplat, spec: +U.spec.toFixed(4), specPow: +U.specPow.toFixed(2), highS: +U.highS.toFixed(4), grain: +U.grain.toFixed(4), seed: U.seed });
+  return JSON.stringify({ expo: +U.expo.toFixed(4), vis: +U.vis.toFixed(3), ring: +U.ring.toFixed(3), nHat: U.nHat, on: U.on, relief: U.relief, nSplat: U.nSplat });
 }
 function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
   const F = SELF.ctx && SELF.ctx.fluid;
   if (!F) return JSON.stringify({ on: false });
-  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4), kick: F.kick, mids: F.mids, snare: F.snare, grain: +F.grain.toFixed(5), highs: F.highs, pen: F.pen });   // §116 S1: the field's values on the last step; S2 the kick, S3 the mids and the snare; S4 the grain and the highs record; S5 the pen
+  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params });
 }
 
 const SELF = {
   name: 'fluid2',
   id: 1,   // §118 the lean-down (2026-10-11): was 13 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 2)
-  tag: 'FLUID\'s pool under the band grammar — each band a different kind of coupling: the sub a field, the kick a mass that travels, the mids the material, the highs the surface (FLUID2-PLAN; S0 = FLUID to the pixel)',
-  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js plans the pool while this scene owns it
-  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'highS', 'high'], // FLUID's five own reads + S4's highS (the light) and high (the display grain); no bid fields (forced-only)
-  SPEC,                          // §116 S4 the specular's live table (harness: CARD.REG[13].scene.SPEC)
+  tag: 'FLUID\'s pool, FLUID\'s light — the experimental slot (§120 reset: FLUID to the pixel today; the next idea goes here)',
+  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js plans the pool while this scene owns it (the identity today)
+  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence'], // FLUID's five own reads; no bid fields (forced-only)
   cuts: 'continuous',
   rt: {},
   hooks: { flinfo, fldbg },
@@ -75,7 +67,7 @@ const SELF = {
   // kick.x is the drop's envelope (§113: the shockwave's frame), the one declared cut (it rises on the drop frame)
   state: { mode: 'pool', cPath: [1, 0], pathCut: 3, kick: { x: 0 }, baby: null },
 
-  // forced-only (FLUID2-PLAN §2): not on the roster — `&scene=13`, the `n` key, the panel's force. A bid is the user's word.
+  // forced-only (§116, §120): not on the roster — `&scene=1`, key 2, the arrows, the panel's force. A bid is the user's word.
   score() { return 0; },
 
   init(ctx) {
@@ -87,20 +79,9 @@ const SELF = {
     const P = env.params;
     const SC = env.SC, id = this.id, trans = SC.next >= 0;
     U.vis = (SC.cur === id ? 1 - (trans ? SC.m : 0) : 0) + (SC.next === id ? SC.m : 0);
-    // §116 S7 (S0's open finding): the exposure starts AT the frame's light on the scene's first on-screen frame (and after a gap — a hidden
-    // tab's resume): the mixs fade 12 → 13 dipped the whole-frame grey 37 → 20 → 35 while a cold U.expo (1) eased to the groove's 1.3 under
-    // the fade; the cold frame at its target is the §1.9 rule's own exception, nothing after it steps. FLUID (12) keeps its own ease.
-    const cold = !(env.now - U.lastNow < 0.5); U.lastNow = env.now;
-    U.expo = cold ? P.light : ema(U.expo, P.light, dt, EXPOTC);
+    U.expo = ema(U.expo, P.light, dt, EXPOTC);
     U.relief = P.relief;
     const F = this.ctx.fluid;
-    // §116 S4 the light from the highs: highS is the synapse's slow band (no ease needed — it is one already); tier 0 may hold FLUID's constants
-    U.highS = clamp(MS.highS || 0, 0, 1);
-    const lit = SPEC.TIER0 || !F || F.tier !== 0 ? U.highS : 0;
-    U.spec = SPEC.S0 + SPEC.HI * lit;
-    U.specPow = SPEC.PW0 + SPEC.POW * lit;
-    U.grain = SPEC.GRAIN * clamp(MS.high || 0, 0, 1) * (SPEC.TIER0 || !F || F.tier !== 0 ? 1 : 0);   // the display grain rides the high band's level (the grammar's driver)
-    U.seed = F ? F.steps & 255 : 0;
     U.on = F && F.on ? 1 : 0;
     U.hatT = Math.max(0, U.hatT - dt);
     U.ring = Math.max(0, U.ring - dt / RING_TC);
@@ -132,18 +113,15 @@ const SELF = {
     ctx.use(pr, target, w, h);
     ctx.tex(pr, 'uDye', 0, D);
     g.uniform2f(pr.u('uDyeTexel'), 1 / Math.max(1, D.w), 1 / Math.max(1, D.h));
-    g.uniform4f(pr.u('uLook'), U.expo, U.spec, U.relief, U.on ? 0 : 1);
-    g.uniform1f(pr.u('uSpecPow'), U.specPow);   // §116 S4: the glint's exponent from the highs
-    g.uniform1f(pr.u('uGrain'), U.on ? U.grain : 0);   // §116 S4: the display grain (0 = the identical read; none on the idle pool)
-    g.uniform1i(pr.u('uSeed'), U.seed);
+    g.uniform4f(pr.u('uLook'), U.expo, SPEC, U.relief, U.on ? 0 : 1);
     g.uniform2f(pr.u('uPort'), PORT0, PORT1);
     ctx.tri();
   },
 
   hud() {
     const F = this.ctx && this.ctx.fluid;
-    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0) + ' heave ' + F.heave.toFixed(2) + ' swirl ' + F.swirl.toFixed(2) + (F.mids ? ' mid ' + F.mids.pos.toFixed(2) + (F.mids.mask ? ' mask' : '') : '') + (F.snare && F.snare.kind ? ' snare ' + F.snare.kind + (F.snare.side ? (F.snare.side > 0 ? '→' : '←') : '') : '') + (F.kick && F.kick.n ? ' kick ' + F.kick.shape : '') + ' grain ' + F.grain.toFixed(3) + (F.highs ? ' dip ' + F.highs.dip.toFixed(2) : '');   // §116 S1: the sub's field; S3 the mids' place (and the mask), the snare's kind; S4 the grain and the dip
-    return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' spec' + U.spec.toFixed(2) + '/' + U.specPow.toFixed(0) + ' dgrain' + U.grain.toFixed(2) + ' · ' + sub;
+    const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0);
+    return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' · ' + sub;
   },
 
   // the visual parameters (CONTRACTS §1.16): the light on the track's own loudness ladder, and the relief (a manual constant)
