@@ -1,5 +1,27 @@
 [
  {
+  "version": "0.37.0",
+  "tag": "v0.37",
+  "date": "2026-10-11",
+  "class": "scene",
+  "title": "Six scenes, six keys, and the arrows",
+  "body": "The scene list is down to the six I actually watch, and they sit on the first six number keys: 1 the pool of ink, 2 a second pool that reads the bands of the music, 3 the navigator the page opens on, 4 the dust, 5 the torus, 6 the mandala. The arrow keys now step through them in both directions — right is forward, the same as n, and left goes back — which is what the two buttons in the bottom bar have always done. Eight scenes I never looked at have left the page: the polytopes, the ladder, the first torus, the two older navigators, the waves, the superformula and the sand plate. Nothing was thrown away — they are all still in the repository, frozen at the version they last ran in — and the page that loads is a quarter smaller without them. The second pool, on key 2, is new and experimental: where the first one takes every sound as a splash of ink, this one gives each band of the music its own kind of coupling. The sub-bass is a field that heaves the whole pool instead of a dot, every kick launches a pair of spinning vortices that travel across the screen, the mids decide how stiff the ink is, the highs are the surface — a grain, a dip, a shine — the harmony draws with a pen, and the simulation’s own clock breathes with the sub, drops to half speed in the hollow before a drop and double-steps when it lands. It was tuned on one track, the newest in my library, rather than on all eight, so treat it as a sketch rather than a finished scene: the director never picks it, you have to. And sharing a tab now opens on the pool of ink rather than the navigator, and stays there while it settles.",
+  "clip": null,
+  "decisions": [
+   "§116",
+   "§117",
+   "§118"
+  ],
+  "scenes": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ]
+ },
+ {
   "version": "0.36.0",
   "tag": "v0.36",
   "date": "2026-10-10",

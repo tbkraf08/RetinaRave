@@ -1469,15 +1469,18 @@ node tools/whatsnew.js [--check]             # releases.json → site/whats-new.
 node tools/releases.js set v0.29 clip.youtube <id>   # SocialMediaManager's post log writes the id back; the poster is site/thumbs/whats-new/<tag>.jpg (self-hosted)
 npm run build                                # = whatsnew.js → bundle.js (inlines the line) → cp site/. dist/ → dist/whats-new.html, dist/index.html
 ```
-- **§118 (2026-10-11):** the frozen `releases/retinarave-v*.html` pages were pruned to the last three (v0.34, v0.35, v0.36) — 40 MB → 5 MB.
-  The ritual is unchanged (a new page per tag, `npm run build` then a copy); every older page is in git history at its own tag
+- **§118 (2026-10-11), made a STANDING RULE at §119:** the frozen `releases/retinarave-v*.html` pages are the last THREE and no more
+  (§118 pruned 40 MB → 5 MB; v0.37 keeps v0.35 / v0.36 / v0.37 and `git rm`'d v0.34's). So the tag step is a new page per tag AND a
+  `git rm` of the fourth-newest, in the release commit. Every older page is in git history at its own tag
   (`git show v0.29:releases/retinarave-v0.29.html > /tmp/x.html` brings one back for an A/B). `releases.json` is untouched.
 - `releases.json` (repo root) is the one visitor-facing source: one entry per tag, newest first, `body` in a visitor's words (no
   section numbers — `decisions` carries the § list; check.js refuses a § in the prose). `tools/releases.js` is the one reader.
 - **The tag ritual, in this order or check.js fails:** bump `package.json` + `assets/core/version.js` together (§89) → add the
   top entry to `releases.json` → `npm run build` (regenerates `site/whats-new.html` and the card line; both are committed sources)
   → `node tools/check.js` (0 fail: the top entry == package.json, index.html's line == the top entry's title) → the usual
-  (license --check, npm test, test_rec, the release from `file://`) → commit, `git tag -a`, push.
+  (license --check, npm test, test_rec, the gates "What to re-prove" sizes) → the frozen page (`node tools/bundle.js
+  releases/retinarave-vN.html`, proven from `file://`) and the `git rm` of the fourth-newest page (the three-page rule above)
+  → commit, `git tag -a`, push ONCE, then poll the live site's `VER` line (never a second push).
 - The page is static: no script unless an entry has a clip, and then only a click builds the YouTube iframe (youtube-nocookie)
   behind the self-hosted poster. **The no-third-party receipt** (SOCIAL-PLAN §4) on `/` and `/whats-new`:
   `node tools/cdp.js '' '[{"wait":1200},{"eval":"JSON.stringify([...new Set(performance.getEntriesByType(\"resource\").map(e=>new URL(e.name).host))])"}]' http://127.0.0.1:<port>/whats-new`

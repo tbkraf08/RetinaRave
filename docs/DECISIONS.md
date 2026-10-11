@@ -2867,3 +2867,90 @@ formula, `SC.lands` advanced — never on a harness run, which forces by hash) a
 home rules (drop, silence, build) while the hold stands, clears it at `since ≥ dwellMin` or on any real landing (`goScene`). After the
 hold the director is §93–§95 unchanged. Proof (headless, demo, PORT 8975): `dwellMin 84.2`, cur 0 at 10 / 25 / 60 s, hist [0], errs [].
 check 0 fail, npm test exit 0.
+
+## §119 v0.37 tagged — the lean-down goes public, FLUID2 rides along (2026-10-11, one Opus worker on main; the user: *"tag and deploy"*)
+
+- **What ships** (everything on `main` since v0.36 — 58 commits, three sections and one addendum; this note adds no code):
+  **§116 FLUID2** — scene **1**, "the bands": a second grammar on FLUID's one pool, where each band is a different KIND of coupling
+  (the sub a field that heaves the whole pool, the kick a travelling vortex pair, the mids the material through the curl, the highs the
+  surface — grain / dip / specular, the harmony a pen, and the solver's own clock `dtSim`: the breath on the sub, half time in the latched
+  void, a double step on the drop; every knob A/B-able live through `&k2={…}`) · **§117** the eighth library track **RaindropsOnRoses**
+  (the truth grid validated by the user's ear, 140 BPM, played from 24 s — internal, the harness and the windows) · **§118 the lean-down**:
+  eight scenes archived to `archive/`, the kept six renumbered DENSE 0..5 so every one has a digit key again (`1` FLUID, `2` FLUID2,
+  `3` NAV2 the home, `4` DUST, `5` TORUS2, `6` MANDALA), **← / → step scenes** both ways (`n` kept), `parity.js` cut to the music state,
+  DECISIONS split at §104, `releases/` pruned to the last three frozen pages · **the §118 addendum**: **Share a tab opens on FLUID** and
+  HOLDS it (`seatScene(0)` before `ENGINE.start('capture')` — a seat, not a force — drawing its own §95 dwell plus `SC.seatHold` so the
+  director's silence / drop / build home rules cannot undo it, after the user's *"still goes to nav"*).
+- **FLUID2 is tuned on ONE track and ships that way, on the user's word — say it plainly.** Every K2 in `core/fluid/inject2.js` was tuned
+  and proven on **RaindropsOnRoses alone** (from 24 s, the live lanes first; the user: *"only tune with Raindrops, don't do full sweep"*),
+  and **the eight-track sweep §116 S7 deferred was NOT run for this tag either** — the user said *"tag and deploy"* knowing it. The other
+  seven tracks are MEASURED by the no-GL table (§116 S7's rows) and UNTUNED; the sweep stays at the top of NEXT-SESSION-PROMPT, owed, not
+  skipped. FLUID2 is **forced-only**: `score()` 0 and no landing `card`, so the director never picks it and a visitor reaches it on key `2`
+  or `#scene=1`. The release entry calls it *"new and experimental … tuned on one track … treat it as a sketch rather than a finished
+  scene: the director never picks it, you have to"* — the honest word, in the house voice. **Every proof below shows the roster scenes and
+  FLUID unmoved**: an id is a registration slot, never a pixel, and nothing in this release touches a roster scene's pixels.
+- **The recipe (§91's ritual as §112 / §115, with §118's three-page rule standing from here).** `package.json` + `assets/core/version.js`
+  0.36.0 → 0.37.0 (together, §89) · `releases.json` top entry (`v0.37`, 2026-10-11, class `scene`, title *"Six scenes, six keys, and the
+  arrows"*, decisions §116 + §117 + §118, scenes `[0,1,2,3,4,5]` = the kept roster in key order, no clip; the headline is the keys and the
+  arrows because that is what a visitor's hands feel, FLUID2 is the paragraph after it, and the eighth track is one clause — *"tuned on one
+  track, the newest in my library"*) · `npm run build` (35 entries → `site/whats-new.html` 43 KB, the card's `#newin` line *New in v0.37:
+  Six scenes, six keys, and the arrows*, `dist/index.html` **143 modules, 1 380 695 bytes**) · `node tools/bundle.js
+  releases/retinarave-v0.37.html` (**143 modules, 1 380 695 bytes**, `VER = '0.37.0'`; v0.36's frozen page was 177 / 1 770 383 — the
+  lean-down took 22 % off the page) · `git rm releases/retinarave-v0.34.html` (the three-page rule, now in HARNESS "## Release notes").
+  `site/thumbs/` has no `fluid2.jpg`, so the entry renders five thumbs for its six ids — carried open, the user's word on a tile.
+- **The gates, each green on the tree AFTER the bump (so every sweep saw the release's own files), with wall times.** The receipt with every
+  number is `tools/accept/v0.37/tag-v0.37-2026-10-11.txt`:
+  1. `node tools/check.js` — 2.5 s — **144 modules · scenes 6 · 0 fail · 5 warn** (the line-cap warns only; §118 read 4 — `core/scenes.js`
+     crossed 350 in the addendum) · `releases.js check` 35 entries, top v0.37 == package.json, **0 problems** · `whatsnew --check` up to date
+     · `license.js --check` **147 public files, 0 without the header** (0.02 s).
+  2. `npm test` — 24 s, **exit 0** — `test_fluid` **442 ok**, `test_music` **151 ok**, §118's counts to the test.
+  3. the fake smoke `PORT=8979 tools/scene-md5.sh s119` — **93 s** — errs [] hop 840 row 72 on all six ids, **12 / 12 lines cmp-equal to the
+     byte** with the §118-renamed `tools/accept/v0.35/scene-md5-v035.txt`.
+  4. `SCENES=0 TRACKS=RaindropsOnRoses PORT=8981 tools/real-md5.sh` — **70 s** — **8 / 8 cmp-equal** to `real-md5-v037.txt`'s s0 lines;
+     `SCENES="2 3 4" … PORT=8983` — **209 s** — **24 / 24 cmp-equal** to its s2 / s3 / s4 lines (§118's wall 205 s, §116 S7's 207 s).
+     `f0` 2 · errs [] · bad [] · exc 0 · the forced `sc` on all 16 runs.
+  5. `PORT=8977 node tools/parity.js fake` — **51 s, exit 0** — **max |diff| 0 · 62 fields · "MS parity: every field identical to 1e-9"**,
+     §118's numbers exactly. The run rewrites `tools/accept/v0.5/{ew,v3}-t{6,14,20}.jpg` + `parity-fake.jpg`; those shots are not
+     deterministic in pixels (`features-slow.js` seeds a section's look with `Math.random`), so they were checked back out — the numbers are
+     the proof, not the jpgs.
+  6. `SCENES=1 TRACKS=RaindropsOnRoses PORT=8985 tools/real-rulers.sh s119` — **66 s, 0 FAIL** — FLUID2's row
+     `1 fluid2 RaindropsOnRoses 56-116 continuous | 600 0 0.193 0.0222 | 3599 0.060 0 0 | 3599 0.0161 0 | ok` — **identical to §116 S7's row
+     to the digit**, only the id column moved (13 → 1). S7's wall was 65 s.
+  7. the frozen page from `file://`, headless, **CLOCK=1** GPU=1 — `test&scene=0` → `{sc 0, grammar pool, fluidOn true, errs [], bad [],
+     frameN 300}` · `test&scene=1` → `{sc 1, grammar bands, fluidOn true, errs [], bad [], frameN 300}`. **A pitfall paid here:** a first
+     pass without `CLOCK=1` proved the same errs / bad / sc / grammar but burned two 120 s `until` timeouts — `window.__FRAME` exists only
+     under cdp.js's CLOCK shim, so a frame target without it always times out (242 s for what CLOCK does in 15 s).
+  **What was NOT run, and why:** the eight-track FLUID2 sweep (above — the user's word) · `accept.sh`'s "== routes" / "== params" blocks on
+  their new NAV2 vehicle (owed since §118) · a director trace, because **no scene entered the rotation** in this release (FLUID2 bids 0),
+  so HARNESS's "a scene enters the director's rotation" tier does not apply.
+- **The deploy shape, confirmed.** `dist/` is what `npm run build` writes and what `wrangler.jsonc` serves (`assets.directory ./dist`);
+  `dist/` is **git-ignored and not committed**, and there is no `.github/` workflow — the deploy is **Cloudflare Workers, git-connected to
+  `github.com/tbkraf08/RetinaRave`, building on a push to `main`** (README's deploy line; the build config lives in the Cloudflare dashboard,
+  not in the repo). So the push IS the deploy: one push, then poll `https://retinarave.com/` for the `VER` line, **never a second push**
+  (§115's rule — a second push is a second deploy). `archive/` reaches `dist/` through no import (the bundler walks imports; the only
+  "archive" strings in the bundle are §118's own comments) and the bundled registry is exactly the six scenes.
+- **What is live when.** ONE release commit (this note, HARNESS "## Release notes" with the three-page rule and the frozen-page step,
+  the receipt `tools/accept/v0.37/tag-v0.37-2026-10-11.txt`, `NEXT-SESSION-PROMPT.md` rewritten for the post-release truth, the two versions,
+  the entry, the generated `site/whats-new.html` + `index.html`'s line, `releases/retinarave-v0.37.html` in and v0.34's out), `git tag -a
+  v0.37`, `git push origin main --tags` — **one push**. The LIVE time is in the release report and memory, not in this note.
+- **What the user validates at home (every remark in track time is a retune request).** (1) **§118 on the live site**: the six scenes on
+  keys `1`–`6` in the order asked for, the **arrow keys** forward and back and wrapping, `n` unchanged, a page load still opening on NAV2.
+  (2) **Share a tab opens on FLUID and STAYS** through its dwell (headless demo: `dwellMin` 84.2, cur 0 at 10 / 25 / 60 s) — the first
+  seconds of a real tab share are the test. (3) **FLUID2 on RaindropsOnRoses from 24 s** (`#scene=1`; `#scene=13` in every note written
+  before §118) at **27.4** (the 808: the pool heaves, the pair launches), **41.1** (drop 1), **55–57** (the sub pins — the breath per
+  attack), **65.4–68.6** (the two-bar cut: the pool stills, its clock slackens to ~.84, the return at 1.1–1.2× — the music, or a framerate
+  wobble?), **84** (the groove), **111–137** (the breakdown: the pen draws the chords, the pads at half time), **137.1** (drop 3), **180+**;
+  references `tools/accept/v0.37/fluid2-s116-s7-RaindropsOnRoses-arc.jpg` (the live lanes) and `-arc-map1.jpg` (the file map). **On a live
+  tab this track carries no clear, no shockwave and no clock burst** — the live detector never confirms its drops (§117), so the burst is
+  file-mode only here. (4) **the time switches** (`&k2=`): the clock off `{"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}`, the breath alone, with the
+  level `{"DT_LVL":0.4}`, the honest drop `{"DT_DROP":1}`, the pulse `{"DT_BEAT":0.3}` (§116 S6's list). (5) the hard cut `n` / `→` FLUID →
+  FLUID2 mid-groove (the pool must not blink). (6) carried, still unvalidated: v0.36's shockwave on the four dropping tracks, FLUID in the
+  rotation, the drop's flash with the ring and no droplets; v0.35's whole list.
+- **Open findings carried into the tag (none retuned).** The eight-track FLUID2 sweep (the standing exception to CONTRACTS §1.1) ·
+  **FLUID-DROP item 2, the reversal** (and `DROP_DISS` 6, the knob to re-read after it, on every track) · **S5b the vocal-presence
+  feature** (`voxS / voxHz / voxConf`; `PEN_SRC 2` reserved) · a **tier-0 phone measure** of the whole band grammar · **IBelongHere's live
+  return 36 frames late** and Vienna's bar 40 arming nothing in either mode · **the live detector's miss on Raindrops' drops 1 / 2** (the
+  sub cuts leave no "bass came back" edge — `engine/build`, not the grammar) and the void term arming 2.1 s into the cut · **the mixs
+  12→13 mid-dip** (the incoming scene's cold `U.expo`, measured at §116 S7 and left open with the number) · **DUST's bid share** (0 of 5
+  away picks on §115's demo traces) · §109's seven ruler FAILs on DUST / TORUS2 · the idle bench, still unseen on this machine ·
+  `accept.sh`'s routes / params blocks on NAV2 · no `fluid2.jpg` thumbnail, so the v0.37 entry shows five thumbs for six scenes.

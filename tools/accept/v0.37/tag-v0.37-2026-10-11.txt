@@ -1,0 +1,77 @@
+== v0.37 the tag — the gates, 2026-10-11, one Opus worker on main (the release commit; base bc98ccf)
+   What ships since v0.36 (e1830f9): §116 FLUID2 "the bands" (scene 1, forced-only, TUNED ON RaindropsOnRoses ONLY —
+   the user: "only tune with Raindrops, don't do full sweep"; the eight-track sweep was NOT run for this tag either,
+   the user: "tag and deploy"), §117 the eighth library track RaindropsOnRoses, §118 the lean-down (eight scenes
+   archived, the kept six renumbered dense 0..5, the arrow keys, parity cut to the music state) + its addendum
+   (Share a tab seats FLUID and holds it through its dwell).
+   The id map: 12 FLUID -> 0 (key 1) · 13 FLUID2 -> 1 (2) · 0 NAV2 -> 2 (3, the home) · 1 DUST -> 3 (4) · 3 TORUS2 -> 4 (5) · 2 MANDALA -> 5 (6)
+   All gates run AFTER the version bump + the releases.json entry, so every sweep saw the release's own files.
+
+== GATE 1  node tools/check.js  —  2.5 s
+check: 144 modules · uniforms 161 · MS keys 220 · scenes 6 (help.feats gaps 0) · 0 fail · 5 warn
+   The 5 warns are the line-cap ones only (soft cap 350): core/fluid/inject2.js 462, core/scenes.js 370,
+   engine/ears/perc.js 407, scenes/dust/index.js 354, scenes/torus2/index.js 353. §118's receipt read 4 —
+   core/scenes.js crossed the cap in the §118 addendum (seatScene + the seat's dwell hold). Non-blocking.
+   node tools/releases.js check  ->  35 entries · top v0.37 · package.json 0.37.0 · 0 problem(s)
+   node tools/whatsnew.js --check ->  35 entries · up to date
+   node tools/license.js --check  ->  147 public files · 0 without the header   (0.02 s)
+
+== GATE 2  npm test  —  24 s, exit 0
+   test_fluid 442 ok 0 fail · test_music 151 ok 0 fail — §118's counts to the test. Every other suite OK.
+
+== GATE 3  the fake smoke, tools/scene-md5.sh s119 (GPU=1 PORT=8979)  —  93 s
+errs [] hop 840 row 72 on every one of the 6 ids. 12 lines, 12 / 12 cmp-equal TO THE BYTE with the renamed
+reference tools/accept/v0.35/scene-md5-v035.txt (§118 renamed the s<id> keys; not one hash moved):
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg      0e92a1c49f8d69135bd71b6ad52c62d3  s1-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg      ed3283fcfa8bc934d80c12ea15bb785e  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg      1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg      25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg      62515d49261070922f23ce68f94fc877  s5-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg      f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+
+== GATE 4  tools/real-md5.sh on RaindropsOnRoses (GPU=1; the eight-track sweep NOT run — the user's word)
+(a) SCENES=0 TRACKS=RaindropsOnRoses PORT=8981  —  70 s, 4 runs, 8 lines
+    f0 2 · errs [] · bad [] · exc 0 · sc 0 on every run (heard 41.133 / 86 at the two windows, map 1 and map 0)
+    8 / 8 cmp-equal to tools/accept/v0.37/real-md5-v037.txt's s0 lines  (FLUID unmoved)
+(b) SCENES="2 3 4" TRACKS=RaindropsOnRoses PORT=8983  —  209 s, 12 runs, 24 lines
+    f0 2 · errs [] · bad [] · exc 0 on every run; sc reads 2 / 3 / 4, the forced id
+    24 / 24 cmp-equal to real-md5-v037.txt's s2 / s3 / s4 lines  (NAV2, DUST, TORUS2 unmoved)
+    §118's wall for the same run was 205 s, §116 S7's 207 s.
+
+== GATE 5  node tools/parity.js fake (PORT 8977)  —  51 s, exit 0
+samples v3 24 ew 24 · ERRS v3 [] ew []
+max |diff| over all numeric fields: 0 · fields compared 62
+MS parity: every field identical to 1e-9
+   Identical to §118's gate 5 (0 / 62). The run rewrites tools/accept/v0.5/{ew,v3}-t{6,14,20}.jpg and
+   parity-fake.jpg; those shots are NOT deterministic in pixels (features-slow.js seeds a section's look with
+   Math.random), so they were checked back out — the numbers above are the proof, not the jpgs.
+
+== GATE 6  tools/real-rulers.sh, FLUID2 on RaindropsOnRoses (SCENES=1, GPU=1 PORT=8985)  —  66 s, 0 FAIL
+id  scene     track           window    cuts       | frames clip25 medY   grad   | jumpN jumpMx jviol black | monN  monMx  mviol | verdict
+1   fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.193  0.0222 | 3599  0.060  0     0     | 3599  0.0161 0     | ok
+   Identical to §116 S7's own row to the digit — only the id column moved (13 -> 1). S7's wall was 65 s.
+
+== GATE 7  npm run build + the frozen page
+npm run build  —  0.14 s  —  whatsnew: 35 entries -> site/whats-new.html (43 KB, top v0.37, #newin refreshed)
+                             bundled 143 modules -> dist/index.html (1342 KB = 1 380 695 bytes)
+   §118's build was 143 / 1 378 966; the +1 729 bytes are the v0.37 release entry inlined in the card's page.
+   dist/ holds no archive/ code (the only "archive" strings in the bundle are §118's own comments) and the
+   registry in the bundle is exactly six scenes: fluid, fluid2, nav2, dust, torus2, mandala.
+node tools/bundle.js releases/retinarave-v0.37.html  —  143 modules, 1 380 695 bytes, VER = '0.37.0'
+   (v0.36's frozen page was 177 modules / 1 770 383 bytes — the lean-down took 22 % off the page.)
+the frozen page from file://, headless, CLOCK=1 GPU=1 (PORT 8989):
+   test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   (A first pass without CLOCK=1 proved the same errs [] / bad [] / sc / grammar but burned two 120 s `until`
+    timeouts: window.__FRAME only exists under cdp.js's CLOCK shim. Noted for the next tag's recipe.)
+
+== The three-page rule (§118, standing from §119)
+releases/ keeps the last THREE frozen pages: retinarave-v0.35.html, -v0.36.html, -v0.37.html.
+v0.34's page was `git rm`'d in the release commit; it is in git history at its tag
+(`git show v0.34:releases/retinarave-v0.34.html > /tmp/x.html`).
+
+== NOT run, and why
+The eight-track FLUID2 sweep (§116 S7's deferral, the user's "only tune with Raindrops, don't do full sweep").
+accept.sh's "== routes" / "== params" blocks on their new NAV2 vehicle (owed since §118; never run).
+A director trace: no scene entered the rotation in this release (FLUID2 bids 0, forced-only), so the
+"a scene enters the director's rotation" tier does not apply.
