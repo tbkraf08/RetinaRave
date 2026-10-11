@@ -80,10 +80,30 @@
 // momentum (Σ|dx|·rad) and ink, spread over SNARE_N frames (S2's jet shape: a pending queue at 1 / SNARE_N per frame) — a shear burst
 // that crosses the pool, `k: 'sjet'`; the harmonic branch's one directed splat (`k: 'snare'`, kept) and the chord shears (`k: 'chord'`)
 // are untouched. `mids` { pos, curl, mask } and `snare` { kind, mom: Σ|dx|·rad, ink, n, side } in the return for the rulers.
+//
+// S4 — THE HIGHS ARE THE SURFACE, NEVER A FORCE ON THE MASS (FLUID2-PLAN §4 S4; the frame: the highs are small-scale and on the surface —
+// sparkle, grain, a glint; "air above 8 kHz is light only"). Three pieces, one driver each: (a) the SPARKLE is the scene's (fluid2/index.js,
+// hat2's droplets, as FLUID's — untouched); (b) the GRAIN — `uNoise` on the VELOCITY advect pass (fluid.js; 0 is the byte-identical program
+// path, the dye pass always 0): per texel a hashed ±½ push, white in space and in time, the hash on the texel and the step count
+// (`FLUID.steps`, deterministic from at=0 — never Math.random), the amplitude NOISE_V · highEnv · g in uv/s² — the projection strips its
+// divergent half, the grid's diffusion eats the rest within a few steps, so what stays is a texel-scale wrinkle on the velocity that the
+// dye picks up as grain: the guard is the S1 ruler — the pool's mean speed within 10 % of the grain-off run (the strips, §116 S4). THE
+// FINDING (the strips): a per-texel, per-step white push is exactly what the solver removes — at NOISE_V 1 the velocity's Laplacian moves
+// 3 % and the dye's high-pass 5 %, invisible — so the grain has a CELL (NOISE_CELL sim texels per hash cell) and a HOLD (NOISE_HOLD steps per
+// seed): a push a few texels wide held a few steps keeps a solenoidal part through the projection; and the DYE JITTER (JIT_V): on the DYE
+// advect pass the back-trace sample point is jittered ±½·JIT_V·highEnv·g dye texels per step (the same hash, re-drawn every HOLD steps) —
+// film grain on the ink's edges, ZERO force by construction (the velocity pass never sees it), its per-dye-texel hash the one real cost; `highEnv`
+// is the HIGH band by HI_SRC: 0 the level (`high`, 2–12 kHz, AGC'd), 1 its own-range place (a ring of one-second means over FLOOR_WIN s,
+// p20 / p80, the §111 item-7 shape — this grammar's own ring, cold on the switch), 2 the hats (`hat2`, the decaying hit level: grain in
+// BURSTS on the hats, nothing between them), eased HI_TAU; (c) the DIP — `params.dyeDiss` dips so the ink on a hat lingers: DIP_SRC 1 on
+// every frame the base's hat bucket paid a droplet (`k: 'hat'` in the list) and DIP_N − 1 after, × (1 − HI_SHARP); DIP_SRC 2 the plan's
+// continuous form × (1 − HI_SHARP · highEnv); never inside the confirmed clear (clearLeft > 0: DROP_DISS stands) and never below 0. The
+// specular is DISPLAY (fluid2/{index,shaders}.js: the highlight's gain and exponent from `highS`) — no pool change, nothing here.
+// `highs` { env, grain, dip } in the return (`CARD.fluid.highs`).
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
 import { clamp, ema, sstep } from '../../math/util.js';
 
-export const FLUID_FEATS = [...FEATS_BASE, 'sub'];   // S1: the sub band's level (25–60 Hz, fast) — the envelope's source; ∪ this grammar's own reads, appended, never removed
+export const FLUID_FEATS = [...FEATS_BASE, 'sub', 'high'];   // S1: the sub band's level (25–60 Hz, fast) — the envelope's source; S4: the high band's (2–12 kHz, AGC'd) — the grain's and the dip's; ∪ this grammar's own reads, appended, never removed (`hat2` is the base's read)
 
 // The band grammar's constants (K2), one table. The base's K (inject.js) is inherited through planBase().
 export const K = {
@@ -132,6 +152,22 @@ export const K = {
                    //   at .02 the burst's front is 0 by +1 beat, at .12 it carries itself .14 — twice the pair's — and at .2 it runs .18 but starts a fifth of the way in) …
   SNARE_Y: 0.5,    //   … at this height (the pair's)
   SNARE_N: 4,      //   the jet spread over this many frames at 1 / SNARE_N of its push and ink (1 = one stamp)
+  NOISE_V: 1,      // S4 the grain: uv/s² per cell per unit of highEnv · g — a hashed ±½ push on the velocity advect pass (uNoise; 0 = the identical path);
+                   //   the guard: the pool's mean speed within 10 % of the grain-off run (the S1 ruler on the strips, §116 S4). The RaindropsOnRoses strips:
+                   //   at cell 1 / hold 1 nothing registers up to 1 (the solver eats a texel-white push); at cell 4 / hold 4, 1 lifts the velocity's
+                   //   small-scale energy 8–29 % at a speed within +6.5 % (ships), 3 is a FORCE (the groove 38 % faster): the guard's edge is between
+  HI_SRC: 0,       //   highEnv's source: 0 the level (`high`) · 1 its own-range place (this grammar's ring of one-second means, FLOOR_WIN s, p20 / p80) ·
+                   //   2 the hats (`hat2`: bursts on the hits, nothing between)
+  HI_TAU: 0.05,    //   s: highEnv eased this fast (a tenth of a beat at 120 bpm)
+  HI_SHARP: 0.3,   // S4 the dip: dyeDiss × (1 − HI_SHARP) on a hat (DIP_SRC 1) / × (1 − HI_SHARP · highEnv) continuously (DIP_SRC 2) — bounded: never below 0
+  DIP_SRC: 1,      //   0 none (the governor's dyeDiss stands) · 1 per hat: DIP_N frames from every frame the base's hat bucket paid a droplet · 2 continuous (the plan's form)
+  DIP_N: 2,        //   the per-hat dip's length in frames
+  NOISE_CELL: 4,   //   the grain's cell: sim texels per hash cell (1 = white at the texel — the solver eats it; 4 = a 4-texel dapple that survives the projection)
+  NOISE_HOLD: 4,   //   the grain's hold: steps per seed (1 = white in time; 4 = held 4 steps — a push that accumulates before the projection sees it)
+  JIT_V: 0,        //   the dye jitter: dye texels (±½·JIT_V·highEnv·g) the dye's back-trace sample point is pushed per step on the DYE advect pass — never a
+                   //   force (the velocity pass passes 0) and, the strips found, a BLUR: a random walk of an accumulating field's read point is diffusion
+                   //   (the dye's gradient −2 % at 1, −7 % at 2). A softening on the highs if anyone wants one; 0 = the identical dye pass. The grain that
+                   //   is surface and nothing else is FLUID2's DISPLAY grain (fluid2/index.js SPEC.GRAIN: the show pass's read point, nothing accumulated)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
@@ -141,13 +177,18 @@ export const K = {
 //   JET_N frames; a transient: empty on the cold frame), `puffT` the puff's age in s (−1 = none), `puffA` its amplitude, `puffX` its centre
 //   S3: `midEnv` the mids' own-range place eased MID_TAU, `snareN` the snare count (the jet's wall alternates on it), `sjet` the pending
 //   snare-jet frames ([{ x, dx, r, g, b, rad, left, side }] — a transient: empty on the cold frame)
-export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [] });
+//   S4: `highEnv` the high band's envelope (by HI_SRC) eased HI_TAU (cold: at the frame's value), `highRing` / `highAcc` / `highN` / `highT` the
+//   own range (HI_SRC 1: one-second means over FLOOR_WIN s, the second being summed — this grammar's own, emptied on the cold frame),
+//   `dipLeft` the per-hat dip's frames left (a transient: 0 on the cold frame)
+export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [], highEnv: 0, highRing: [], highAcc: 0, highN: 0, highT: 0, dipLeft: 0 });
 
 // plan(S, dt, st) → the same shape as inject.js's plan() (its fields, the 'sub' splat without its velocity) + `heave` (uv/s², what
 // was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope), `kick` (S2: { shape, mom, ink, n } — this frame's
 // kick kinds), `mids` (S3: { pos, curl, mask }) and `snare` (S3: { kind 'pair' | 'jet' | 'harm' | '', mom, ink, n, side }) — the replay rulers
 // read them. A ring may carry a centre (`cx, cy`; S2's puff) — fluid.js passes it to `uRingC`; `params.curlMask` ({ y0, y1, lo, fe }, S3's
-// mask; absent = the identical vort pass) goes to `uCurlMask`.
+// mask; absent = the identical vort pass) goes to `uCurlMask`. S4: `grain` (uv/s², the velocity advect's `uNoise`; 0 = the identical pass)
+// and `highs` ({ env, grain, dip, cell, hold, jit } — dip = the factor on dyeDiss this frame, 1 = none; cell / hold the grain's cell and
+// hold for the uniforms; jit the dye jitter in dye texels, 0 = the identical dye pass) for the rulers and fluid.js.
 export function plan(S, dt, st) {
   if (!st.base) st.base = mkStateBase();
   const R = planBase(S, dt, st.base);
@@ -241,6 +282,24 @@ export function plan(S, dt, st) {
   st.inkRate = cold ? R.ink : ema(st.inkRate, ink / dt, dt, KB.INK_TAU);
   if (inkChanged && st.inkRate !== R.ink && !(st.base.clearLeft > 0)) R.params.dyeDiss = R.params.dyeDiss / Math.max(1, R.ink / KB.INK_BUDGET) * Math.max(1, st.inkRate / KB.INK_BUDGET);
   R.ink = st.inkRate;
+  // S4 the highs as the surface: the envelope (by HI_SRC), the dip on the governed dyeDiss (never inside the clear), the grain's amplitude for
+  // the velocity advect pass. Nothing here is a splat; the mass is untouched by design (the guard is the strips' speed ruler).
+  const high = clamp(S.high || 0, 0, 1);
+  if (cold) { st.highRing.length = 0; st.highAcc = 0; st.highN = 0; st.highT = 0; st.dipLeft = 0; }
+  let hiLevel = high;
+  if (K.HI_SRC === 1) {
+    st.highAcc += high; st.highN++; st.highT += dt;
+    if (st.highT >= 1) { st.highRing.push(st.highAcc / st.highN); if (st.highRing.length > KB.FLOOR_WIN) st.highRing.shift(); st.highAcc = 0; st.highN = 0; st.highT -= 1; }
+    if (st.highRing.length >= 5) { const r = st.highRing.slice().sort((x, y) => x - y), lo = r[Math.floor(0.2 * r.length)], hi = Math.max(r[Math.floor(0.8 * r.length)], lo + 0.05); hiLevel = sstep(lo, hi, high); }
+  } else if (K.HI_SRC === 2) hiLevel = clamp(S.hat2 || 0, 0, 1);
+  st.highEnv = cold ? hiLevel : ema(st.highEnv, hiLevel, dt, K.HI_TAU);
+  let dip = 1;
+  if (K.DIP_SRC === 1) {
+    if (R.splats.some((s) => s.k === 'hat')) st.dipLeft = Math.max(1, K.DIP_N | 0);
+    if (st.dipLeft > 0) { st.dipLeft--; dip = clamp(1 - K.HI_SHARP, 0, 1); }
+  } else if (K.DIP_SRC === 2) dip = clamp(1 - K.HI_SHARP * st.highEnv, 0, 1);
+  if (dip !== 1 && !(st.base.clearLeft > 0)) R.params.dyeDiss *= dip; else dip = 1;
+  const grain = K.NOISE_V * st.highEnv * g, jit = K.JIT_V * st.highEnv * g;
   // the field: the heave on the breath's channel, the swirl as its own uniform; the bar parity turns the swirl so nothing winds up.
   // The heave's direction (dir +1) is WITH the breath — the sub is the pool's WEIGHT: the attack deepens the gravity the beat already
   // applies (centre down), the void's entry (the slow mean above a sub that left) LIFTS against it and stills the pool, the drop's return
@@ -254,6 +313,6 @@ export function plan(S, dt, st) {
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
   const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
-  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare;
+  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare; R.grain = grain; R.highs = { env: st.highEnv, grain, dip, cell: Math.max(1, K.NOISE_CELL | 0), hold: Math.max(1, K.NOISE_HOLD | 0), jit };
   return R;
 }

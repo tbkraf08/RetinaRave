@@ -10868,7 +10868,182 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   (the Laplacian rises with the grain) beside S1's speed (the mass must not).
 
 
-### S4 — highs = surface (not started)
+### S4 — highs = surface, never a force on the mass (2026-10-10, branch `fluid2`, commits 1acba17 → the docs; `git merge main` at 8ada5fc first — S3 merged, a fast-forward)
+
+- **The ask, as the plan framed it and the user's scope holds:** the highs as the SURFACE — small scale, never a push on the mass (the
+  frame: sparkle, grain, a glint; "air above 8 kHz is light only"). The plan's four parts: (a) the sparkle as it is, (b) small-scale velocity
+  noise seeded on the step count, (c) a dip in the dye's dissipation on the highs, (d) the specular from `highS`. The user's scope words:
+  *"only tune with Raindrops, don't do full sweep"* — tuned, stripped and proven on RaindropsOnRoses alone (the run at 24 s, the live lanes);
+  **the other seven tracks are untuned and unswept on the user's word; the full sweep is owed before any tag.**
+- **As built** — one driver per piece, three places: **the sparkle** (`fluid2/index.js`, hat2's droplets — FLUID's, untouched). **The
+  grain** (`inject2.js` + `shaders.js` ADVECT + `fluid.js`): inject2 reads `high` (`FLUID_FEATS` + 'high'), `highEnv` by `HI_SRC` — 0 the
+  level (`high`, 2–12 kHz, AGC'd — SHIPS), 1 its own-range place (this grammar's ring of one-second means over FLOOR_WIN s, p20 / p80 — cold
+  on the switch), 2 the hats (`hat2`, the decaying hit level: bursts on the hits) — eased `HI_TAU` .05 s; `grain = NOISE_V · highEnv · g`
+  (uv/s²) is returned and `fluid.js` hands it to the VELOCITY advect pass as `uNoise`, with `uCell` = `NOISE_CELL` sim texels per hash cell
+  and `uSeed` = `floor(FLUID.steps / NOISE_HOLD) & 255` (the step count: deterministic from `at=0`, never a clock); the shader takes a
+  uniform branch (0 = the byte-identical §104 pass; the dye pass always passes 0 — the velocity grain is velocity only) and adds per cell a
+  Wang-hashed ±½·uNoise·dt push (uint arithmetic on cell + seed·2²⁴: bit-exact on every driver, no `sin`), x over the aspect. `JIT_V` (the
+  dye-advect jitter: the DYE pass's back-trace sample point pushed ±½·JIT_V·highEnv·g dye texels by the same hash, `uJit`; (0, 0) the
+  identical dye pass) was built as the zero-force grain and found to be a blur (below) — a switch at 0. **The dip** (`inject2.js`): `DIP_SRC 1`
+  × (1 − HI_SHARP) on the governed dyeDiss for `DIP_N` frames from every frame the base's hat bucket paid a droplet (`k 'hat'`); `DIP_SRC 2`
+  the plan's continuous × (1 − HI_SHARP · highEnv); 0 none; never inside the confirmed clear (DROP_DISS stands), bounded at 0 — after the ink
+  governor, so the ink rate and the governor's factor are untouched (`fluid-tracks.js` on Raindrops: ink/s 9.6 / 18.7 ×1.0 / 1.0 under every
+  dip, the base's 9.6 / 18.5; with `INJECT=inject2.js` plain `FLUIDK=` IS the band table — there is no `FLUIDK2` on the replays). **The
+  specular** (`fluid2/{index,shaders}.js` — DISPLAY, where FLUID2's show pass diverges from FLUID's): the scene reads `highS` (feats +
+  'highS'); uLook.y = SPEC.S0 .6 + SPEC.HI·highS, the Blinn exponent a uniform uSpecPow = SPEC.PW0 48 + SPEC.POW·highS (48 / .6 = FLUID's
+  at highS 0); `SPEC` is the scene's live table (CARD.REG[13].scene.SPEC — `SPEC=` on the field strip; `K2=` cannot reach it), `SPEC.TIER0`
+  0 holds FLUID's highlight at tier 0; `SPEC.GRAIN` the DISPLAY grain (the show pass reads the dye from a hashed point ±½·GRAIN·high texels
+  off per pixel per frame, `uGrain` / its own `uSeed` = `ctx.fluid.steps & 255`; feats + 'high') — built as the grain that is surface and
+  nothing else, found to be nothing (below), a switch at 0. "Air above 8 kHz" has no band (the plan's §3): `highS` (5–16 kHz, the synapse's
+  slow band) is the nearest and the help line says so. `grain` and `highs { env, grain, dip, cell, hold, jit }` in the return
+  (`CARD.fluid.grain` / `.highs`; the HUD's fluid line grain / dip, FLUID2's line spec gain / exponent / dgrain; `fldbg()` and `flinfo()`
+  carry them). **Ships: `NOISE_V 1, NOISE_CELL 4, NOISE_HOLD 4, HI_SRC 0, HI_TAU .05, DIP_SRC 1, HI_SHARP .3, DIP_N 2, JIT_V 0`; `SPEC.S0 .6,
+  HI 1.0, PW0 48, POW 40, TIER0 1, GRAIN 0`.**
+- **The rulers** (HARNESS "## Fluid"): the field strip with `DYE=1` — a third shot per second, the dye itself (dbg 1) — and
+  `tools/fluid-highs-grain.py`: per shot **speed** (S1's: THE GUARD, the grain on vs off within 10 %), **lap** (S3's small-scale energy of the
+  velocity: the grain IS this), **dgrad** (the dye's mean gradient magnitude: the ink's edge sharpness — the plan's number for the dip),
+  **dlap** (the dye's high-pass energy), **dink** (the ink on screen), **cgrad** (the composite's gradient: what the eye sees — the light
+  moves it), the grey; per window the p50 (`tools/work/fluid2/s4/{run.sh, cmp.py, montage.py}`). The windows from the trace's per-second
+  hat2 / high / highS: hat_rich 82–91 (hat2 .30–.38, 7–10 hatEvt/s), hat_poor 99–102 + 108–110 (hat2 ≤ .07 inside the groove — the same
+  motion, no hats), groove 76–80 + 96–100 (the guard's), thin_break 111–116 (high .15–.22), dense_pads 118–126, outro 127–133 (highS
+  .45–.52 with hat2 0: the air). A finding before any number: `high` (the 2–12 kHz level) does NOT separate hat-rich from hat-poor on this
+  track (.32–.55 vs .39–.49 — the hats are a 5–12 k FLUX, the band is the mix's brightness); `hat2` does (the test: p50 .324 vs .024).
+- **The dip, measured** (the strips against `spec` — the same light, no grain; the velocity bit-identical under every dip: speed and lap 1.000 on
+  every window, the dip touches the dye's dissipation alone):
+
+  | variant | window | dgrad (sharpness) | dlap | dink (the ink on screen) | cgrad | grey |
+  |---|---|---|---|---|---|---|
+  | DIP_SRC 1, HI_SHARP .3, DIP_N 2 (per hat) | hat_rich / hat_poor / groove / pads | 1.027 / 1.006 / 1.022 / 1.004 | 1.015 / 1.008 / 1.017 / 1.006 | **1.054 / 1.015** / 1.048 / 1.006 | 1.047 / 1.026 / 1.036 / 1.009 | 1.041 / 1.018 / 1.035 / 1.009 |
+  | DIP_SRC 2, .3 (continuous × highEnv) | hat_rich / hat_poor / groove / pads | 1.042 / 1.065 / 1.059 / 1.009 | 1.034 / 1.045 / 1.043 / 1.020 | 1.096 / 1.108 / 1.122 / 1.035 | 1.088 / 1.078 / 1.077 / 1.044 | 1.079 / 1.079 / 1.092 / 1.053 |
+  | DIP_SRC 1, HI_SHARP .9 (the big dip) | hat_rich / hat_poor / groove / pads | 1.084 / 1.015 / 1.066 / 1.010 | 1.056 / 1.030 / 1.047 / 1.012 | **1.186** / 1.046 / 1.156 / 1.019 | 1.156 / 1.079 / 1.116 / 1.028 | 1.146 / 1.043 / 1.121 / 1.028 |
+
+  The reading: the dip buys INK, not edges — on every variant and window the sharpness rises LESS than the ink on screen (dgrad ÷ dink .97–.99):
+  a dissipation is uniform over the picture, so a dip can only keep more of what is there, and a brighter ink has a brighter gradient. The
+  per-hat dip is hat-SELECTIVE (+5.4 % ink in the hat-rich window against +1.5 % in the hat-poor one, the same groove) and the continuous
+  form is not (+10 % everywhere the highs are up); the big dip fills the pool on the hats (+19 %, grey +15 % — the §111 packing the hat bucket
+  was built against). The ink RATE (what the governor reads) is untouched by every dip (`fluid-tracks.js`: ink/s 9.6 / 18.7 ×1.0 / 1.0, the
+  void % 24·11 per hat, 23·14 continuous, 19·11 off — the base's 19·11). The plan's rule — the dip on if the sharpness rises at equal ink/s —
+  passes by the letter for the per-hat dip (+2.7 % at an unchanged rate) and is said plainly here to be the ink's brightness, not an edge.
+  **Ships: `DIP_SRC 1, HI_SHARP .3, DIP_N 2`** (hat-selective, free, no packing: grey +4 % in the hat-rich window); `DIP_SRC 2` and `HI_SHARP
+  .9` are the switches; the eye at home decides whether "the ink lingers on the hats" reads at all — the montage at 1 fps cannot.
+- **The grain, measured** (ratios variant ÷ `spec` per window, the p50 over the window's shots; the guard is speed; the texture is lap (the
+  velocity's Laplacian) and dlap (the dye's high-pass); `grain` is the amplitude the grammar sent, uv/s²):
+
+  | variant | grain hat_rich / hat_poor / groove | speed hat_rich / hat_poor / groove / outro | lap | dlap | dgrad | note |
+  |---|---|---|---|---|---|---|
+  | NOISE_V .02 (the plan's K2) | .008 / .009 / .009 | 1.001 / .979 / 1.018 / .939 | .982 / .995 / .999 | .981 / .994 / .994 | .986 / .972 / 1.001 | nothing moves |
+  | NOISE_V .1 | .04 / .04 / .04 | .986 / .977 / 1.003 / .938 | .992 / .993 / .995 | 1.007 / .983 / .983 | .998 / .974 / .985 | nothing |
+  | NOISE_V .3 | .115 / .131 / .134 | .979 / .974 / 1.039 / .861 | 1.004 / .999 / .995 | 1.021 / .978 / .999 | 1.011 / .966 / 1.010 | nothing |
+  | NOISE_V 1 | .38 / .44 / .45 | .987 / .963 / .986 / .915 | 1.000 / **1.035** / 1.028 | 1.010 / .983 / 1.015 | 1.000 / .946 / 1.016 | +3 % on the Laplacian at most |
+  | NOISE_V .3, HI_SRC 2 (the hats) | .091 / .011 / .076 | .987 / .979 / 1.068 / .937 | .996 / .987 / 1.002 | 1.010 / .977 / 1.006 | 1.000 / .947 / 1.006 | the amplitude follows the hats 8 : 1, the pool does not |
+  | NOISE_V .3, HI_SRC 1 (own range) | .031 / .096 / .144 | .987 / .987 / .995 / .922 | .995 / .998 / 1.012 | .981 / 1.002 / 1.011 | .962 / .980 / 1.013 | the ring reads the groove as the top of the range |
+
+  The reading: **a per-texel, per-step white push is exactly what the solver removes.** At NOISE_V 1 (±.0037 uv/s per texel per step, the
+  hash on every texel of the velocity pass) the velocity's Laplacian moves +3.5 % at most and the dye's high-pass +1.5 % — the projection
+  strips the divergent half the same step and the semi-Lagrangian back-trace's bilinear sample diffuses the rest within a few steps; the
+  per-window ratios sit inside the flow's own run-to-run divergence (±2–6 %: any change seeds a different turbulent history, which is why the
+  outro — six shots with the 129.98 s clear in them — reads .86–.94 on speed for every variant, the grain-off control's history as much as
+  the variant's). The guard holds everywhere, trivially: nothing happened. So the grain's cell and hold (NOISE_CELL, NOISE_HOLD) and the dye
+  jitter (JIT_V) were built and stripped in a second batch:
+
+  | variant | speed hat_rich / hat_poor / groove / thin / pads | lap (the velocity's texture) | dlap (the dye's high-pass) | dgrad | note |
+  |---|---|---|---|---|---|
+  | **NOISE_V 1, CELL 4, HOLD 4 — ships** | 1.023 / 1.065 / 1.054 / .974 / 1.010 | 1.009 / **1.080 / 1.112 / 1.292** / 1.008 | 1.021 / 1.023 / 1.111 / 1.050 / .994 | .999 / .998 / 1.086 / 1.033 / .999 | the first grain that registers; the guard holds (≤ +6.5 %) |
+  | NOISE_V 1, CELL 2, HOLD 2 | .992 / .977 / 1.026 / .975 / .989 | 1.008 / 1.067 / 1.091 / 1.194 / 1.006 | 1.022 / 1.014 / 1.098 / 1.045 / 1.022 | 1.008 / .998 / 1.087 / 1.031 / 1.036 | half the cell, two thirds of the texture |
+  | NOISE_V 3, CELL 4, HOLD 4 | **1.081 / 1.147 / 1.378** / 1.002 / 1.148 | 1.064 / 1.217 / 1.229 / 1.744 / 1.059 | 1.131 / 1.089 / 1.152 / 1.134 / 1.063 | 1.105 / 1.070 / 1.061 / 1.147 / 1.078 | A FORCE: the groove 38 % faster — the guard breaks |
+  | JIT_V .5 (the dye-advect jitter) | 1.000 everywhere | 1.000 | .996 / .992 / .994 / .997 / .991 | .995 / .991 / .992 / .998 / .995 | zero force (bit-identical velocity) — and a BLUR |
+  | JIT_V 1 | 1.000 | 1.000 | .993 / .978 / .985 / .995 / .974 | .981 / .973 / .974 / .993 / .978 | a blur |
+  | JIT_V 2 | 1.000 | 1.000 | 1.013 / .952 / .968 / .984 / .938 | .940 / .919 / .923 / .976 / .935 | a blur, 6–8 % |
+  | JIT_V 1, HI_SRC 2 (the hats) | 1.000 | 1.000 | .991 / .997 / .993 / .997 / .997 | .988 / .996 / .988 / 1.000 / .995 | the same, gated to the hats |
+
+  Two findings. (1) **The grain needs a cell and a hold to exist at all**: a 4-texel push held 4 steps (NOISE_V 1: ±.0037 uv/s per step per cell,
+  accumulating to ~.015 before the projection sees it) lifts the velocity's small-scale energy 8 % in the hat-poor groove, 11 % in the dense
+  groove and 29 % in the still thin break (the grain shows most where the pool is still: on a moving pool the motion's own texture hides it),
+  the dye's high-pass 2–11 %, at a mean speed within +6.5 % of the grain-off run (the guard) — and three times that amplitude is a FORCE (the
+  groove 38 % faster, the pads 15 %): the guard's edge lies between 1 and 3 (the third batch brackets it at 2). The plan's "largest NOISE_V
+  under the 10 % guard" is 1 at cell 4 / hold 4. (2) **A jitter on the dye advect pass is a blur, not a grain**: each step's white offset
+  of the back-trace sample is baked into the ink and re-sampled the next step — a random walk of the read point IS diffusion (dgrad −2 % at
+  JIT_V 1, −7 % at 2, the velocity bit-identical: zero force, as designed, and the wrong sign). The grain that is exactly "surface, never the
+  mass, nothing accumulated" is the DISPLAY grain — FLUID2's show pass reads the dye from a hashed point ±½·GRAIN texels off per pixel per
+  frame (`SPEC.GRAIN`, seeded on `ctx.fluid.steps`; a flat ink reads the same from a texel off, so it is grain on the ink's EDGES): the third
+  batch below. `JIT_V` stays at 0 as a switch (a softening on the highs, said so).
+- **The light, measured** (against `ctrl` = FLUID's constants, .6 / 48 — the pool bit-identical under every light: speed, lap, dgrad, dlap,
+  dink 1.000 on every window, the proof that the specular is display only; cgrad = the composite's gradient, what the eye reads as sharpness):
+
+  | SPEC.HI / SPEC.POW (gain .6 + HI·highS, exponent 48 + POW·highS) | cgrad hat_rich / groove / pads / outro | grey hat_rich / groove / pads / outro | reading |
+  |---|---|---|---|
+  | .5 / 80 (the plan's K2) | .975 / .978 / .967 / .938 | .928 / .920 / .919 / .889 | the tighter exponent shrinks the highlight's light faster than the gain grows: DARKER, 7–11 % |
+  | 1.2 / 80 | 1.063 / 1.075 / 1.087 / 1.076 | .956 / .951 / .954 / .921 | sharper, still 4–8 % darker |
+  | .5 / 0 (the gain alone) | 1.081 / 1.091 / 1.099 / 1.154 | 1.035 / 1.039 / 1.028 / 1.060 | brighter — the broad wash FLUID's pow 48 puts on the flat pool, more of it |
+  | **1.0 / 40 — ships** | **1.096 / 1.109 / 1.120 / 1.151** | **.999 / .999 / 1.001 / .987** | tighter AND brighter: the eye's sharpness +10–15 %, the frame's light unchanged |
+
+  FLUID's pow-48 highlight lights the whole flat surface (dot(n, h) ≈ 1 on a still pool: a grey wash); a tighter exponent takes the wash off
+  and leaves the glint on the ink's edges — the gain must grow with the exponent to keep the frame's light (the Blinn lobe's integral falls
+  as 1 / pow). At the outro's air (highS .5: gain 1.1, exponent 68) the composite's gradient is +15 % at grey −1 %.
+- **The third batch** (the shipping light under every row; ratios against `specC`, the same light and no grain): NOISE_V 2 at cell 4 / hold 4 —
+  speed hat_rich / hat_poor / groove / pads 1.032 / 1.082 / **1.249** / 1.040, lap 1.027 / 1.159 / 1.186 / 1.029 (the thin break 1.585): the
+  guard breaks at 2 already — 1 is the largest tried value under it. **The display grain** (`SPEC.GRAIN` .5 / 1 / 2 dye texels): the pool
+  bit-identical (every pool column 1.000) and the composite's gradient .999 / .997 / .995 at hat_rich, .998 / .994 / .985 at the outro —
+  NOTHING, and nothing by eye at .7 on the fake page: a sub-texel shift of the read point on a smooth 16F ink field (bilinear, no detail at
+  the texel) reads the same ink; what the eye calls film grain is a multiplicative noise on the lit colour, a post effect and not this
+  scene's. `SPEC.GRAIN` stays 0 as a switch, said so.
+- **The ship strip** (K2 + SPEC as shipped, against `specC` — the light alone): speed hat_rich / hat_poor / groove / thin / pads 1.023 /
+  1.065 / 1.054 / .974 / 1.010 and lap 1.009 / 1.080 / 1.112 / 1.292 / 1.008 — the v1c4h4 strip's velocity numbers to the third digit (the
+  dip never touches the velocity: a determinism proof across two runs for free), dlap 1.034 / 1.030 / 1.130 / 1.050 / 1.001, dink 1.000 /
+  1.059 / 1.076 / .995 / 1.002 (the dip's ink), the composite's gradient 1.060 / 1.112 / 1.089 / 1.101 / 1.010. The hats as the grain's
+  driver (`HI_SRC 2`, the same amplitude): grain .30 in the hat-rich window against .04 in the hat-poor (8 : 1) and NO texture from it (lap
+  .999 / .999 / 1.061 / 1.014) — a hat's burst (hat2 decays in .06 s, eased .05) is shorter than the hold, and the hat-rich window is the
+  pool's fastest (speed .32 against the groove's .21: the motion's own texture hides a grain). **So the hat-rich / hat-poor table reads
+  AGAINST the hats** (the ship: lap +0.9 % hat-rich, +8 % hat-poor, +11 % groove, +29 % thin break): the grain follows the high BAND's level
+  and shows where the pool is still; the hats are the sparkle and the dip, not the grain. `HI_SRC 2` stays a switch.
+- **What the eye should see at home (`#scene=13`, the montage `tools/accept/v0.37/fluid2-s116-s4-RaindropsOnRoses.jpg` — rows FLUID's light
+  on S3's grammar / the light alone / the SHIP, each as composite, velocity, dye, at 78 / 85 / 100 / 113 / 122 / 130 s; `-variants.jpg` the
+  force, the half cell, the texel-white, the hats as driver, the blur, the big dip, the two other lights, the display grain):** the glint on
+  the ink's edges tighter and brighter than FLUID's grey wash wherever the air is up (the outro from 127 s most), the frame no darker; in the
+  breakdown's thin five seconds (111–116) a fine dapple on the still pool where FLUID2 S3 lay laminar; in the groove a texture the eye may
+  or may not separate from the mids' curls (the ruler says +11 %); on the hats nothing new beyond the droplets — the ink lingers 5 % longer
+  there, below what a montage shows. The user's eye in track time decides the grain's amplitude (1 is the guard's edge, not a taste) and
+  whether the light's tighter glint reads as "the highs".
+- **The gates (Raindrops-filtered, each with its wall time; the receipt `tools/accept/v0.37/fluid2-s116-s4.txt`):** `node tools/check.js` **183 / 0 fail**;
+  `npm test` **exit 0** (test_fluid 403 — S4's 14 cases, test_music 151); `license` 0 without the header; s13 real-md5 on Raindrops twice **8 / 8
+  cmp-equal** (69 / 69 s), all 8 moved against S3's (the grain is on the velocity every frame) → **re-based** into `real-md5-v037.txt` (the other
+  322 lines untouched); s12 **8 / 8 = v036** (69 s: the pool grammar's advect pass byte-identical under uNoise 0 / uCell 1 / uJit (0, 0)); the
+  roster 0 1 3 **24 / 24 = v037** (208 s); real-rulers s13 **1 / 1 ok** (66 s: jump viol 0 max .058, mon viol 0 max .0161, black 0, clip25 0);
+  the fake **26 = v035** + s12's pair unmoved + s13's pair re-recorded 9a5a843b / 9ec3cf10 (213 s, errs [] on 14 ids); parity fake **max
+  7.852214593751443 / 72 fields** / the §102 nav.* line to the digit (50 s); the substrate bench (one page, q .95, load 1.96 and the GPU clock
+  ramping down over the run) pool / bands ship / grain-off / grain-1-at-cell-1 ×3 = 1.269 / 1.274 / 1.229 / 1.007 · .867 / .848 / .878 / .567 ·
+  .629 / .524 / .496 / .494 — **medians .867 / .848 / .878 / .567: ship − pool −.019, within ±.05**; the grain's own cost is inside the ramp's
+  noise (the full-amplitude texel hash reads below the grain-off quad every time — a branch and a hash on 33 k texels); **the show pass on
+  FLUID2's own page** (q .95, tier 3; the knob set, a frame waited, then bench — `CARD.bench(13)` on another scene's page never runs this
+  scene's `update()`, its spec and grain are the last frame's): bench(12) / bench(13) with the specular / with the display grain 1 ×3 = .491 /
+  .479 / .577 · .452 / .435 / .522 · .426 — **the specular +.03 ms over FLUID's (.479 ≤ .5), the display grain +.09** (a hash per screen pixel —
+  over FLUID's budget: one more reason `SPEC.GRAIN` is 0); **MOBILE=1 scene 13 tier 0 alive** (errs [] bad [] frameN 242; benchFluid bands ship
+  .536 / grain-off .483 / grain-1 .499 / pool .483 — the pool itself .483 on this desktop's phone canvas under load 1.96 where S3 read .440 at
+  1.61: the tier-0 substrate is over the .4 budget on this machine today with or without S4, the grain inside the quad's noise; the show pass
+  at tier 0 bench(13) .601 / .591 at highS 1, .606 at 0, bench(12) .577 / .602 — **the specular costs nothing measurable at tier 0: `SPEC.TIER0`
+  stays 1**); `npm run build` 182 modules 1 841 924 bytes, file:// scene 13 bands errs [] frameN 302, scene 12 pool errs []; the crossfade
+  12 → 13 greys 34.7 … 19.7 … 33.4 max step 7.58 / 255 §1.9 viol [], 13 → 0 the forced branch's revert, errs []. inject.js untouched.
+- **Open, carried:** **the full sweep before any tag** (the user's word; S1–S3's open lists stand); the tier-0 substrate reads .48–.54 ms on this
+  desktop's phone canvas today (the pool itself .483 under load 1.96; S3 read .440, S2 .416) — the .4 budget wants a phone, not a loaded
+  desktop, before any tier-0 cut is decided; the grain's amplitude is the GUARD's edge (1 at cell 4 / hold 4: +6.5 % speed; 2 is +25 %), not a
+  taste — the user's eye may want less; the hat-rich window shows the LEAST grain (the pool's fastest window hides texture) — on a track whose
+  hats sit on a still pool (a breakdown with hats) the reading inverts, the sweep's question; the dip is ink retention (+5 % on the hats), kept
+  on the plan's rule by the letter and said plainly to be no edge; three switches that buy nothing are kept at 0 with their findings (`JIT_V`
+  the blur, `SPEC.GRAIN` the nothing, `HI_SRC 1` the own range that reads the groove as the top) — remove them if the sweep agrees; the dye
+  pass pays no new cost (uJit (0, 0) is a branch not taken), the velocity pass one branch and an integer hash; the 8 k "air" band still does
+  not exist (`highS` 5–16 k lights the pool and the help line says so); `fluid-tracks.js` gained no S4 column (the grain and the dip read off
+  the strips, not the replay — `highs.env` p50 / the dip frames per music second are one line if S7 wants them).
+- **For S5's builder:** the band grammar's record set on `FLUID` is now `heave, swirl, kick, mids, snare, grain, highs` (null / 0 under the pool
+  grammar; `fldbg()` carries them); the kinds in the list are the base's + `dip` + `sjet` — S4 added NO kind (the grain is a uniform, the dip a
+  parameter); `R.params.dyeDiss` is touched AFTER the governor by the dip — a pen's ink must be counted in the governor's sum (before the S4
+  block) and never read dyeDiss as the base's; the ADVECT shader has `uNoise, uSeed, uCell` (the velocity pass) and `uJit` (the dye pass) beside
+  S1's `uSwirl` and S2's `uRingC` — a pen is a SPLAT (k 'pen'), nothing on the passes; FLUID2's show pass has `uSpecPow, uGrain, uSeed` and the
+  scene's `SPEC` table (CARD.REG[13].scene.SPEC — `SPEC=` on the field strip); `DYE=1` on the field strip gives the dye shot per second and
+  `tools/fluid-highs-grain.py` the dye's columns (dgrad / dlap / dink) — a pen's ink/s and x span can read off the same strip; the strip's
+  per-window ratios carry the flow's own ±2–6 % run-to-run divergence (a different turbulent history from any change): read a window, never a
+  shot, and expect the outro (the 129.98 s clear inside it) to wander; `CARD.bench(13)` on the scene-12 page never runs FLUID2's `update()`;
+  the copied gates script's `scene-md5.sh` tag is a hand edit (s3 → s4 → s5); with `INJECT=inject2.js` the replays' `FLUIDK=` IS the band
+  table (no `FLUIDK2`).
 
 ### S5 — vocals = the pen (conditional on a vocal-presence feature; not started)
 

@@ -1,0 +1,91 @@
+== 20:39:37 RaindropsOnRoses s13 v1c4h4 K2={"NOISE_V":1,"NOISE_CELL":4,"NOISE_HOLD":4,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 v1c4h4 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# v1c4h4: n 74 · r(speed, sub) 0.701 · speed p10/p50/p90 0.0491/0.2176/0.3599 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# v1c4h4 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.38450 · dip 1.00000 · speed 0.33065 · lap 0.01666 · dgrad 0.00925 · dlap 0.00692 · dink 0.15012 · cgrad 0.01813 · grey 46.89635
+# v1c4h4 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.43716 · dip 1.00000 · speed 0.28490 · lap 0.01764 · dgrad 0.00855 · dlap 0.00655 · dink 0.13451 · cgrad 0.01929 · grey 43.61908
+# v1c4h4 groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.44515 · dip 1.00000 · speed 0.21450 · lap 0.02070 · dgrad 0.01053 · dlap 0.00802 · dink 0.15251 · cgrad 0.01940 · grey 47.89784
+# v1c4h4 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.12034 · dip 1.00000 · speed 0.05561 · lap 0.00938 · dgrad 0.00464 · dlap 0.00401 · dink 0.10902 · cgrad 0.00786 · grey 30.89636
+# v1c4h4 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.23320 · dip 1.00000 · speed 0.04967 · lap 0.01866 · dgrad 0.00920 · dlap 0.00689 · dink 0.17055 · cgrad 0.01546 · grey 34.37844
+# v1c4h4 outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.45577 · dip 1.00000 · speed 0.11643 · lap 0.02096 · dgrad 0.00941 · dlap 0.00728 · dink 0.19138 · cgrad 0.01596 · grey 37.00792
+== 20:41:46 RaindropsOnRoses s13 v3c4h4 K2={"NOISE_V":3,"NOISE_CELL":4,"NOISE_HOLD":4,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 v3c4h4 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# v3c4h4: n 74 · r(speed, sub) 0.730 · speed p10/p50/p90 0.0560/0.2806/0.3950 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# v3c4h4 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 1.15349 · dip 1.00000 · speed 0.34960 · lap 0.01757 · dgrad 0.01023 · dlap 0.00767 · dink 0.15831 · cgrad 0.02035 · grey 48.49386
+# v3c4h4 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 1.31147 · dip 1.00000 · speed 0.30684 · lap 0.01989 · dgrad 0.00917 · dlap 0.00697 · dink 0.12984 · cgrad 0.02109 · grey 43.84941
+# v3c4h4 groove: n 8 · high 0.55400 · highS 0.26900 · grain 1.33544 · dip 1.00000 · speed 0.28063 · lap 0.02289 · dgrad 0.01029 · dlap 0.00832 · dink 0.14805 · cgrad 0.02078 · grey 47.76079
+# v3c4h4 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.36101 · dip 1.00000 · speed 0.05722 · lap 0.01266 · dgrad 0.00515 · dlap 0.00433 · dink 0.10847 · cgrad 0.00897 · grey 30.76959
+# v3c4h4 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.69959 · dip 1.00000 · speed 0.05647 · lap 0.01960 · dgrad 0.00993 · dlap 0.00737 · dink 0.17375 · cgrad 0.01592 · grey 34.99646
+# v3c4h4 outro: n 6 · high 0.58500 · highS 0.49900 · grain 1.36732 · dip 1.00000 · speed 0.17431 · lap 0.02421 · dgrad 0.01115 · dlap 0.00851 · dink 0.19839 · cgrad 0.01804 · grey 37.71769
+== 20:43:55 RaindropsOnRoses s13 v1c2h2 K2={"NOISE_V":1,"NOISE_CELL":2,"NOISE_HOLD":2,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 v1c2h2 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# v1c2h2: n 74 · r(speed, sub) 0.708 · speed p10/p50/p90 0.0476/0.2147/0.3473 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# v1c2h2 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.38450 · dip 1.00000 · speed 0.32076 · lap 0.01665 · dgrad 0.00933 · dlap 0.00693 · dink 0.15713 · cgrad 0.01849 · grey 48.04090
+# v1c2h2 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.43716 · dip 1.00000 · speed 0.26137 · lap 0.01743 · dgrad 0.00855 · dlap 0.00649 · dink 0.12851 · cgrad 0.01928 · grey 43.80730
+# v1c2h2 groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.44515 · dip 1.00000 · speed 0.20888 · lap 0.02032 · dgrad 0.01054 · dlap 0.00793 · dink 0.15020 · cgrad 0.01957 · grey 48.00389
+# v1c2h2 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.12034 · dip 1.00000 · speed 0.05567 · lap 0.00867 · dgrad 0.00463 · dlap 0.00399 · dink 0.11026 · cgrad 0.00767 · grey 30.93504
+# v1c2h2 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.23320 · dip 1.00000 · speed 0.04861 · lap 0.01863 · dgrad 0.00954 · dlap 0.00708 · dink 0.17241 · cgrad 0.01548 · grey 34.52306
+# v1c2h2 outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.45577 · dip 1.00000 · speed 0.11707 · lap 0.02093 · dgrad 0.01020 · dlap 0.00774 · dink 0.19391 · cgrad 0.01647 · grey 37.09880
+== 20:46:04 RaindropsOnRoses s13 j05 K2={"NOISE_V":0,"JIT_V":0.5,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 j05 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 126 s
+# j05: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# j05 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00921 · dlap 0.00675 · dink 0.15888 · cgrad 0.01785 · grey 47.69061
+# j05 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00849 · dlap 0.00635 · dink 0.12915 · cgrad 0.01822 · grey 43.69015
+# j05 groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00962 · dlap 0.00718 · dink 0.14648 · cgrad 0.01864 · grey 47.89258
+# j05 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00448 · dlap 0.00381 · dink 0.10996 · cgrad 0.00715 · grey 30.80055
+# j05 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00916 · dlap 0.00687 · dink 0.17142 · cgrad 0.01508 · grey 34.20044
+# j05 outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00958 · dlap 0.00737 · dink 0.19478 · cgrad 0.01572 · grey 37.00346
+== 20:48:13 RaindropsOnRoses s13 j1 K2={"NOISE_V":0,"JIT_V":1,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 j1 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 126 s
+# j1: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# j1 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00908 · dlap 0.00673 · dink 0.15898 · cgrad 0.01768 · grey 47.74163
+# j1 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00834 · dlap 0.00626 · dink 0.12931 · cgrad 0.01799 · grey 43.76398
+# j1 groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00945 · dlap 0.00711 · dink 0.14668 · cgrad 0.01843 · grey 47.96085
+# j1 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00446 · dlap 0.00380 · dink 0.10997 · cgrad 0.00712 · grey 30.80386
+# j1 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00901 · dlap 0.00675 · dink 0.17163 · cgrad 0.01485 · grey 34.25819
+# j1 outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00941 · dlap 0.00726 · dink 0.19509 · cgrad 0.01546 · grey 37.06609
+== 20:50:22 RaindropsOnRoses s13 j2 K2={"NOISE_V":0,"JIT_V":2,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 j2 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 126 s
+# j2: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# j2 hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00870 · dlap 0.00687 · dink 0.15938 · cgrad 0.01722 · grey 47.93269
+# j2 hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00788 · dlap 0.00609 · dink 0.12987 · cgrad 0.01734 · grey 43.99732
+# j2 groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00895 · dlap 0.00699 · dink 0.14729 · cgrad 0.01787 · grey 48.18550
+# j2 thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00438 · dlap 0.00376 · dink 0.11000 · cgrad 0.00703 · grey 30.81341
+# j2 dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00861 · dlap 0.00650 · dink 0.17227 · cgrad 0.01429 · grey 34.45273
+# j2 outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00893 · dlap 0.00706 · dink 0.19604 · cgrad 0.01486 · grey 37.28265
+== 20:52:30 RaindropsOnRoses s13 j1h K2={"NOISE_V":0,"JIT_V":1,"HI_SRC":2,"DIP_SRC":0} SPEC=
+== RaindropsOnRoses s13 j1h 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# j1h: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# j1h hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00915 · dlap 0.00672 · dink 0.15891 · cgrad 0.01775 · grey 47.70647
+# j1h hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00854 · dlap 0.00638 · dink 0.12911 · cgrad 0.01822 · grey 43.66843
+# j1h groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00958 · dlap 0.00717 · dink 0.14649 · cgrad 0.01864 · grey 47.90154
+# j1h thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00449 · dlap 0.00381 · dink 0.10995 · cgrad 0.00716 · grey 30.80036
+# j1h dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00916 · dlap 0.00691 · dink 0.17141 · cgrad 0.01515 · grey 34.17843
+# j1h outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00965 · dlap 0.00743 · dink 0.19469 · cgrad 0.01583 · grey 36.98201
+== 20:54:39 RaindropsOnRoses s13 specA K2={"NOISE_V":0,"DIP_SRC":0} SPEC={"HI":1.2,"POW":80}
+== RaindropsOnRoses s13 specA 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# specA: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# specA hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00926 · dlap 0.00678 · dink 0.15887 · cgrad 0.01954 · grey 49.09029
+# specA hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00857 · dlap 0.00640 · dink 0.12908 · cgrad 0.02004 · grey 45.33131
+# specA groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00970 · dlap 0.00722 · dink 0.14639 · cgrad 0.02058 · grey 49.45742
+# specA thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00449 · dlap 0.00382 · dink 0.10995 · cgrad 0.00734 · grey 31.01398
+# specA dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00921 · dlap 0.00693 · dink 0.17132 · cgrad 0.01706 · grey 35.46270
+# specA outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00967 · dlap 0.00744 · dink 0.19465 · cgrad 0.01819 · grey 38.28797
+== 20:56:48 RaindropsOnRoses s13 specB K2={"NOISE_V":0,"DIP_SRC":0} SPEC={"HI":0.5,"POW":0}
+== RaindropsOnRoses s13 specB 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# specB: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# specB hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00926 · dlap 0.00678 · dink 0.15887 · cgrad 0.01987 · grey 53.13629
+# specB hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00857 · dlap 0.00640 · dink 0.12908 · cgrad 0.02042 · grey 50.64656
+# specB groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00970 · dlap 0.00722 · dink 0.14639 · cgrad 0.02088 · grey 54.03865
+# specB thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00449 · dlap 0.00382 · dink 0.10995 · cgrad 0.00731 · grey 31.41981
+# specB dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00921 · dlap 0.00693 · dink 0.17132 · cgrad 0.01725 · grey 38.22500
+# specB outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00967 · dlap 0.00744 · dink 0.19465 · cgrad 0.01951 · grey 44.09208
+== 20:58:57 RaindropsOnRoses s13 specC K2={"NOISE_V":0,"DIP_SRC":0} SPEC={"HI":1.0,"POW":40}
+== RaindropsOnRoses s13 specC 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 126 s
+# specC: n 74 · r(speed, sub) 0.711 · speed p10/p50/p90 0.0487/0.2142/0.3550 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# specC hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.00000 · dip 1.00000 · speed 0.32336 · lap 0.01651 · dgrad 0.00926 · dlap 0.00678 · dink 0.15887 · cgrad 0.02015 · grey 51.29445
+# specC hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.00000 · dip 1.00000 · speed 0.26741 · lap 0.01634 · dgrad 0.00857 · dlap 0.00640 · dink 0.12908 · cgrad 0.02070 · grey 48.13195
+# specC groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.00000 · dip 1.00000 · speed 0.20360 · lap 0.01862 · dgrad 0.00970 · dlap 0.00722 · dink 0.14639 · cgrad 0.02122 · grey 51.93744
+# specC thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05711 · lap 0.00726 · dgrad 0.00449 · dlap 0.00382 · dink 0.10995 · cgrad 0.00736 · grey 31.26545
+# specC dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.00000 · dip 1.00000 · speed 0.04917 · lap 0.01851 · dgrad 0.00921 · dlap 0.00693 · dink 0.17132 · cgrad 0.01757 · grey 37.22149
+# specC outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.00000 · dip 1.00000 · speed 0.13486 · lap 0.02108 · dgrad 0.00967 · dlap 0.00744 · dink 0.19465 · cgrad 0.01947 · grey 41.03068
+== done 21:01:06

@@ -14,6 +14,8 @@ export const HELP = {
     loudAbs: 'whether the loudness ruler is running at all; without it the light rides the raw relative loudness',
     hat2: 'while the hats are up, a small bright droplet sparkles onto the surface every 50 ms, walking the golden ratio across the top of the pool',
     presence: 'how hard the scene\'s own sparkle hits the surface: silence drops nothing',
+    highS: 'how tight and bright the glint on the ink is: the slow 5–16 kHz band (the nearest thing to air above 8 kHz — no such band exists) raises the highlight\'s gain and sharpens its exponent; light only, the pool is untouched',
+    high: 'how much film grain sits on the ink\'s edges: the high band\'s level jitters where each pixel reads the ink from, a fraction of a texel, fresh every frame — on the picture only, never in the pool',
   },
   eli5: 'The same pool of ink as FLUID, under a different grammar: each band of the music is a different KIND of touch on the water. '
     + 'The sub is a field that heaves the whole pool, every kick launches something that travels on its own, the mids are the '
@@ -28,7 +30,10 @@ export const HELP = {
     + 'not a splat: how tightly the pool curls is the mid band\'s place in the track\'s own last half minute — dense mids (pads, chords, a '
     + 'full mix) tighten the eddies, thin mids let the pool go laminar; FLUID ties that to the build\'s tension instead. The snare is one '
     + 'shear burst from a wall — a jet that crosses the pool at mid height, from the left on one hit and the right on the next, at the same '
-    + 'push and ink as FLUID\'s two inward shears; chords still enter as their shears. The other bands still enter as FLUID\'s splats until their steps land. Under FLUID the music enters as one grammar: under every scene of this engine there is a '
+    + 'push and ink as FLUID\'s two inward shears; chords still enter as their shears. The highs (S4) are the SURFACE and never a force: the hats '
+    + 'still sparkle as droplets, the high band\'s level puts a fine hashed grain on the velocity (a wrinkle the ink picks up at the grid\'s own scale, '
+    + 'bounded so the pool\'s speed does not move), every hat lets the ink linger a frame or two, and the slow top band is the LIGHT — a brighter, '
+    + 'tighter glint on the ink\'s edges when the air is bright, FLUID\'s soft highlight when it is dark. The other bands still enter as FLUID\'s splats until their steps land. Under FLUID the music enters as one grammar: under every scene of this engine there is a '
     + 'fluid simulation that the sound drives: the bass note is where the ink enters the pool, every kick lifts it, the snare '
     + 'shears it sideways, the hats drip onto the surface, the key you are hearing is the colour of the ink, the beat kneads '
     + 'the whole pool and a drop clears it, throwing the ink outward in a ring. This scene is that pool itself, seen as a liquid surface: light catches the '

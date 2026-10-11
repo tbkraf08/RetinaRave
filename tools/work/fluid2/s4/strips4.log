@@ -1,0 +1,19 @@
+== 21:11:11 RaindropsOnRoses s13 ship K2= SPEC=
+== RaindropsOnRoses s13 ship 60-133: "{\"f0\":2,\"dur\":222.85714583333333,\"sc\":13,\"grammar\":\"bands\",\"fluid\":{\"on\":true,\"tier\":2,\"sim\ · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# ship: n 74 · r(speed, sub) 0.701 · speed p10/p50/p90 0.0491/0.2176/0.3599 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# ship hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.38450 · dip 1.00000 · speed 0.33065 · lap 0.01666 · dgrad 0.00941 · dlap 0.00701 · dink 0.15890 · cgrad 0.02136 · grey 52.53460
+# ship hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.43716 · dip 1.00000 · speed 0.28490 · lap 0.01764 · dgrad 0.00865 · dlap 0.00659 · dink 0.13673 · cgrad 0.02301 · grey 48.83171
+# ship groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.44515 · dip 1.00000 · speed 0.21450 · lap 0.02070 · dgrad 0.01073 · dlap 0.00816 · dink 0.15751 · cgrad 0.02311 · grey 53.67273
+# ship thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.12034 · dip 1.00000 · speed 0.05561 · lap 0.00938 · dgrad 0.00462 · dlap 0.00401 · dink 0.10939 · cgrad 0.00810 · grey 31.39950
+# ship dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.23320 · dip 1.00000 · speed 0.04967 · lap 0.01866 · dgrad 0.00924 · dlap 0.00694 · dink 0.17163 · cgrad 0.01775 · grey 37.45501
+# ship outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.45577 · dip 1.00000 · speed 0.11643 · lap 0.02096 · dgrad 0.00950 · dlap 0.00733 · dink 0.19418 · cgrad 0.01991 · grey 41.58813
+== 21:13:21 RaindropsOnRoses s13 shiph K2={"HI_SRC":2} SPEC=
+== RaindropsOnRoses s13 shiph 60-133: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6544,\"errs\":[],\"bad\":[],\"steps\":6544}" · 74 shots · 127 s
+# shiph: n 74 · r(speed, sub) 0.716 · speed p10/p50/p90 0.0488/0.2166/0.3520 · sub mean 0.56 · coverage nan % of 53 sub-up shots above floor nan
+# shiph hat_rich: n 9 · high 0.39600 · highS 0.23900 · grain 0.30201 · dip 1.00000 · speed 0.32203 · lap 0.01649 · dgrad 0.00919 · dlap 0.00677 · dink 0.15042 · cgrad 0.02177 · grey 52.22411
+# shiph hat_poor: n 5 · high 0.45800 · highS 0.30800 · grain 0.03768 · dip 1.00000 · speed 0.26039 · lap 0.01632 · dgrad 0.00835 · dlap 0.00641 · dink 0.12956 · cgrad 0.02178 · grey 48.99058
+# shiph groove: n 8 · high 0.55400 · highS 0.26900 · grain 0.25494 · dip 1.00000 · speed 0.21610 · lap 0.01976 · dgrad 0.01004 · dlap 0.00749 · dink 0.15601 · cgrad 0.02178 · grey 53.72826
+# shiph thin_break: n 5 · high 0.16700 · highS 0.05400 · grain 0.00000 · dip 1.00000 · speed 0.05697 · lap 0.00736 · dgrad 0.00449 · dlap 0.00394 · dink 0.11035 · cgrad 0.00750 · grey 31.37203
+# shiph dense_pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.07105 · dip 1.00000 · speed 0.04903 · lap 0.01851 · dgrad 0.00921 · dlap 0.00709 · dink 0.17352 · cgrad 0.01755 · grey 37.60542
+# shiph outro: n 6 · high 0.58500 · highS 0.49900 · grain 0.03992 · dip 1.00000 · speed 0.12217 · lap 0.02058 · dgrad 0.00934 · dlap 0.00732 · dink 0.19581 · cgrad 0.02001 · grey 42.03623
+== done 21:15:31

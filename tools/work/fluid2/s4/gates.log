@@ -1,0 +1,103 @@
+== s13a start 21:15:57
+6bf0da4e2a5e7b4976858b011c824508  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13a wall 69 s
+== s13b start 21:17:06
+6bf0da4e2a5e7b4976858b011c824508  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13b wall 69 s
+== s13 a/b cmp-equal 8 lines
+== s13 vs v037 (S3): 0 unmoved, 8 moved: s13-RaindropsOnRoses-build1-f730-m0.jpg s13-RaindropsOnRoses-build1-f730-m1.jpg s13-RaindropsOnRoses-drop1-f1030-m0.jpg s13-RaindropsOnRoses-drop1-f1030-m1.jpg s13-RaindropsOnRoses-groove-f602-m0.jpg s13-RaindropsOnRoses-groove-f602-m1.jpg s13-RaindropsOnRoses-intro-f602-m0.jpg s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 start 21:18:15
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 wall 69 s
+== s12 Raindrops vs v036: 8 / 8 equal, differ []
+== roster start 21:19:24
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+== roster wall 208 s
+== roster 0 1 3 Raindrops vs v037: 24 / 24 equal, differ [], new []
+== rulers start 21:22:52
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.189  0.0215 | 3599  0.058  0     0     | 3599  0.0161 0     | ok
+real-rulers s4-rain: 1 scenes × 1 tracks, 0 FAIL, 66 s wall (map 1, PAR 1)
+== rulers wall 66 s
+== fake start 21:23:58
+== fake wall 213 s
+errs [] on 14 ids
+sort: cannot read: tools/work/s4-md5.txt: No such file or directory
+cmp: EOF on tools/work/s4-fake-sorted.txt which is empty
+== fake DIFFERS from v035
+0a1,26
+> a6c725fa86d56e0b954a3bf34548f88c  s0-f360.jpg
+> a12256fdbc334215c31f9851f9638647  s0-f840.jpg
+> 6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
+> 1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
+> 3b12b8b362e53ef1c5d7c2222961682f  s11-f360.jpg
+> a56a64cefaf8b43295cd63e830f15327  s11-f840.jpg
+> 3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+> 2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+> 1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
+grep: tools/work/s4-md5.txt: No such file or directory
+== parity start 21:27:31
+info (fields on one side only — v3 creates some at runtime, level was deleted): level:missing in ew  highM:missing in v3  buildPk:missing in v3  liveT:missing in v3  arcT:missing in v3  surRaw:missi
+max |diff| over all numeric fields: 7.852214593751443 · fields compared 72
+MISMATCH: nav.c=2.0922965052426807  nav.mode=1  nav.h=0.731401391594356  nav.alpha=0.49002564187315134  nav.th=1.0322474015564918  nav.lg=7.852214593751443  nav.par=0.7771599445147408  nav.vtime=0.829
+== parity wall 50 s
+== bench 21:28:21
+setInterval(()=>CARD.Q.q=0.95,16);'pinned' => "pinned"
+CARD.benchFluid(300,null,'pool').toFixed(3)+' cold' => "1.205 cold"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "1.269 pool"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=0.35,CARD.benchFluid(3 => "1.274 ship {\"env\":0.35,\"grain\":0.1726615655406694,\"dip\":1,\"cell\":4,\"hold\":4,\"jit\":0}"
+(CARD.fluid.K2.NOISE_V=0,CARD.benchFluid(300,null,"bands").t => "1.229 grain-off"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=1,CARD.fluid.K2.NOISE_ => "1.007 grain-1-cell1 {\"env\":1,\"grain\":0.4886092203364349,\"dip\":1,\"cell\":1,\"hold\":1,\"jit\":0}"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "0.867 pool"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=0.35,CARD.benchFluid(3 => "0.848 ship {\"env\":0.35,\"grain\":0.25571378044707993,\"dip\":1,\"cell\":1,\"hold\":1,\"jit\":0}"
+(CARD.fluid.K2.NOISE_V=0,CARD.benchFluid(300,null,"bands").t => "0.878 grain-off"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=1,CARD.fluid.K2.NOISE_ => "0.567 grain-1-cell1 {\"env\":1,\"grain\":0.7298749359572593,\"dip\":1,\"cell\":1,\"hold\":1,\"jit\":0}"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "0.629 pool"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=0.35,CARD.benchFluid(3 => "0.524 ship {\"env\":0.35,\"grain\":0.255418133662583,\"dip\":1,\"cell\":1,\"hold\":1,\"jit\":0}"
+(CARD.fluid.K2.NOISE_V=0,CARD.benchFluid(300,null,"bands").t => "0.496 grain-off"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=1,CARD.fluid.K2.NOISE_ => "0.494 grain-1-cell1 {\"env\":1,\"grain\":0.7302979470805108,\"dip\":1,\"cell\":1,\"hold\":1,\"jit\":0}"
+(CARD.fluid.K2.NOISE_V=0.02,CARD.MS.high=0.35,'reset') => "reset"
+(CARD.MS.highS=0,CARD.bench(12,300).toFixed(3)+" show12") => "0.321 show12"
+(CARD.MS.highS=1,CARD.MS.high=1,CARD.bench(13,300).toFixed(3 => "0.350 show13-highS1-grain {\"expo\":1,\"vis\":0,\"ring\":0,\"nHat\":0,\"on\":0,\"relief\":24,\"nSplat\":0,\"spec\":0.6,\"specPow\":48,\"highS\":0,\"grain\":0,\"seed\":0}"
+(CARD.REG[13].scene.SPEC.GRAIN=0,CARD.bench(13,300).toFixed( => "0.353 show13-grain0"
+(CARD.REG[13].scene.SPEC.GRAIN=1,CARD.bench(13,300).toFixed( => "0.352 show13-grain1"
+(CARD.MS.highS=0,CARD.bench(12,300).toFixed(3)+" show12") => "0.342 show12"
+(CARD.MS.highS=1,CARD.MS.high=1,CARD.bench(13,300).toFixed(3 => "0.357 show13-highS1-grain {\"expo\":1,\"vis\":0,\"ring\":0,\"nHat\":0,\"on\":0,\"relief\":24,\"nSplat\":0,\"spec\":0.6,\"specPow\":48,\"highS\":0,\"grain\":0,\"seed\":0}"
+(CARD.REG[13].scene.SPEC.GRAIN=0,CARD.bench(13,300).toFixed( => "0.346 show13-grain0"
+(CARD.REG[13].scene.SPEC.GRAIN=1,CARD.bench(13,300).toFixed( => "0.338 show13-grain1"
+(CARD.MS.highS=0,CARD.bench(12,300).toFixed(3)+" show12") => "0.330 show12"
+(CARD.MS.highS=1,CARD.MS.high=1,CARD.bench(13,300).toFixed(3 => "0.349 show13-highS1-grain {\"expo\":1,\"vis\":0,\"ring\":0,\"nHat\":0,\"on\":0,\"relief\":24,\"nSplat\":0,\"spec\":0.6,\"specPow\":48,\"highS\":0,\"grain\":0,\"seed\":0}"
+(CARD.REG[13].scene.SPEC.GRAIN=0,CARD.bench(13,300).toFixed( => "0.329 show13-grain0"
+(CARD.REG[13].scene.SPEC.GRAIN=1,CARD.bench(13,300).toFixed( => "0.355 show13-grain1"
+CARD.bench(0,300).toFixed(3)+' nav' => "1.219 nav"
+JSON.stringify({tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CA => "{\"tier\":2,\"sim\":[259,128],\"dye\":[1035,512],\"q\":0.95,\"g\":\"pool\",\"errs\":[]}"
+ 21:28:36 up 36 days,  8:43,  1 user,  load average: 1.96, 1.84, 1.75
+== MOBILE=1 tier 0: scene 13 alive + the substrate bench at tier 0 (ship / grain off / grain 1) + the show pass (13 at highS 1 and 0, 12)
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,tier:CAR => "{\"sc\":13,\"g\":\"bands\",\"tier\":0,\"sim\":[64,139],\"dye\":[256,554],\"errs\":[],\"bad\":[],\"frameN\":242,\"highs\":{\"env\":0.35,\"grain\":0.26344898760157454,\"dip\":1,\"cell\":4,\"hold\":4,\"jit\":0},\"flinfo\":\"{\\\"expo\\\":1.0372,\\\"vis\\\":1,\\\"ring\\\":0,\\\"nHat\\\":16,\\\"on\\\":1,\\\"relief\\\":24,\\\"nSplat\\\":0,\\\"spec\\\":0.9499,\\\"specPow\\\":62,\\\"highS\\\":0.3499,\\\"grain\\\":0,\\\"seed\\\":242}\"}"
+CARD.benchFluid(300,null,'bands').toFixed(3)+' bands ship' => "0.536 bands ship"
+(CARD.fluid.K2.NOISE_V=0,CARD.benchFluid(300,null,'bands').t => "0.483 bands grain-off"
+(CARD.fluid.K2.NOISE_V=1,CARD.MS.high=1,CARD.benchFluid(300, => "0.499 bands grain-1"
+(CARD.fluid.K2.NOISE_V=0.02,CARD.benchFluid(300,null,'pool') => "0.483 pool"
+(CARD.MS.highS=1,CARD.bench(13,300).toFixed(3)+' show13-high => "0.601 show13-highS1"
+(CARD.MS.highS=0,CARD.bench(13,300).toFixed(3)+' show13-high => "0.606 show13-highS0"
+CARD.bench(12,300).toFixed(3)+' show12' => "0.577 show12"
+(CARD.MS.highS=1,CARD.bench(13,300).toFixed(3)+' show13-high => "0.591 show13-highS1 b"
+CARD.bench(12,300).toFixed(3)+' show12 b' => "0.602 show12 b"
+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),tier:CAR => "{\"errs\":[],\"bad\":[],\"tier\":0}"
+== build 21:28:42
+bundled 182 modules → dist/index.html (1791 KB)
+1841924
+== file:// 21:28:43
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":13,\"g\":\"bands\",\"on\":true,\"frameN\":302,\"errs\":[],\"bad\":[],\"n\":13}"
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":12,\"g\":\"pool\",\"on\":true,\"frameN\":302,\"errs\":[],\"bad\":[],\"n\":13}"
+VER = '0.36.0'
+== fade 21:28:54
+CARD.SC.forced=-1;CARD.goScene(13,false);CARD.SC.forced=13;J => "{\"cur\":12,\"next\":13,\"dur\":1.6003089469811436,\"g\":\"pool\",\"f0\":2}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\"}"
+CARD.goScene(0,false);JSON.stringify({cur:CARD.SC.cur,next:C => "{\"cur\":13,\"next\":0,\"g\":\"bands\"}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\",\"errs\":[],\"bad\":[],\"heard\":37.07}"
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+a grey 34.7 36.2 36.5 37.0 37.1 36.3 28.7 21.2 19.7 22.3 24.0 25.7 27.6 30.3 31.6 32.3 32.2 33.7 33.2 32.8 32.3 33.4
+a max step 7.58 /255 · §1.9 viol []
+b grey 31.3 31.0 30.7 31.6 31.5 31.3 31.1 32.7 32.4 32.0 31.7 33.7 33.4 33.0 32.8 33.7 33.4 32.9 32.4 33.8 33.2 32.6
+b max step 1.97 /255 · §1.9 viol []
+== all done 21:29:14

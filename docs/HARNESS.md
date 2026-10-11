@@ -377,6 +377,35 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   .9, the next snare ≥ .45 s later): 78.217 83.567 85.067 85.717 88.283 92.567 96.000 98.783 100.717 102.850. `tools/work/fluid2/s3/
   {run-snare.sh, montage.py snare}`. One Chrome at a time — two strips overlapping on one PORT leave the second all zeros (S3's jetin20
   was re-run alone).
+- **The highs strip — the SURFACE ruler (§116 S4; FLUID2-PLAN §4 S4):** the highs must change the surface and not the mass. The field strip
+  with a THIRD shot per second — `DYE=1 [K2=json] [SPEC=json] PORT=89xx tools/fluid-field-strip.sh RaindropsOnRoses 13 <tag> 60 133 1 24`
+  takes the composite, the velocity (dbg 2) and the DYE itself (dbg 1, `<tag>-NNd.jpg` at F + 2: the ink before the light, the velocity
+  inset bottom-right); the evals line carries `high highS grain dip` after S3's `mid curl midsPos`; `SPEC='{"HI":0,"POW":0}'` holds FLUID2's
+  specular table (`CARD.REG[13].scene.SPEC`) for the light's A/B — `K2=` cannot reach it (the specular is the scene's, not the grammar's).
+  Then `tools/fluid-highs-grain.py <dir> <tag> hat_rich=82-91 hat_poor=99-102,108-110 …` writes `highs.txt`: per shot **speed** (S1's
+  metric — THE GUARD: the grain on vs off within 10 %), **lap** (S3's small-scale energy of the velocity — the grain IS this, at the texel),
+  **dgrad** (the dye's mean gradient magnitude on its luminance, the inset cropped out: the ink's edge sharpness — the plan's number for the
+  dip), **dlap** (the dye's Laplacian: its high-pass energy — the grain as the ink carries it), **dink** (the dye's mean luminance: the ink on
+  screen — the dip must not buy sharpness with ink), **cgrad** (the COMPOSITE's gradient — what the eye sees: the specular moves this, the
+  pool does not), the grey; one p50 line per named window. `tools/work/fluid2/s4/cmp.py <ref> <tags…>` is the table with the ratios
+  variant ÷ ref per window. The §116 S4 windows on RaindropsOnRoses (the run at 24, the strip 60–133; from the trace's per-second hat2 /
+  high / highS): hat_rich 82–91 (hat2 .30–.38, 7–10 hatEvt/s, denH 6–9), hat_poor 99–102 + 108–110 (hat2 ≤ .07 inside the groove — the
+  same motion, no hats), groove 76–80 + 96–100 (S3's dense groove: the guard's window), thin_break 111–116 (high .15–.22, highS .03–.06),
+  dense_pads 118–126 (highS .21–.42), outro 127–133 (highS .45–.52 with hat2 0: the air the specular lights). `tools/work/fluid2/s4/
+  {run.sh, cmp.py, montage.py}`. The substrate's bench holds the grain (`CARD.fluid.K2.NOISE_V = 1; CARD.MS.high = 1` — the hash on every
+  texel of the velocity pass) and prices the show pass apart (`CARD.bench(13, 300)` at `MS.highS` 1 beside `bench(12, 300)`). **What the
+  ruler found (§116 S4):** a per-texel, per-step white push on the velocity is what the solver removes (nothing registers up to NOISE_V 1 at
+  cell 1) — the grain needs a CELL and a HOLD (`NOISE_CELL 4, NOISE_HOLD 4`: the velocity's Laplacian +8 / +11 / +29 % on the hat-poor
+  groove / the dense groove / the thin break at a speed within +6.5 %; 2 is a force, the groove +25 %); a jitter on the dye ADVECT pass
+  (`JIT_V`) is a BLUR (the dye's gradient −2 % at 1, −7 % at 2 — a random walk of an accumulating field's read point is diffusion); a
+  read-point jitter on the SHOW pass (`SPEC.GRAIN`) is nothing (a smooth 16F ink reads the same a sub-texel off); the dip buys ink on
+  screen, not edges (dgrad ÷ dink < 1 on every variant); the light's gain must grow with its exponent to keep the frame's grey (`SPEC.HI 1.0,
+  POW 40`: the composite's gradient +10–15 % at grey ±1 %). A strip's ratios sit in the flow's own run-to-run divergence (±2–6 % per window —
+  any change seeds a different turbulent history; the outro, six shots with the 129.98 s clear in them, reads .86–.94 on speed for every
+  variant): read a window's ratio against that floor, never a single shot. **Two bench pitfalls (S4):** `CARD.bench(13, 300)` on the
+  scene-12 page never runs FLUID2's `update()` — its spec / grain uniforms are the last frame's (FLUID's constants, grain 0): bench the show
+  pass on `test&scene=13`, set the knob, wait a frame, then bench (the specular read +.03 ms there, the display grain +.09); and a gates script
+  copied from the step before carries `tools/scene-md5.sh <tag>` by hand — S4's fake list landed in `s3-md5.txt` and was compared by hand.
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
