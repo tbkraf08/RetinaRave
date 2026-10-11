@@ -2981,3 +2981,65 @@ check 0 fail, npm test exit 0.
   sub snapped to the nearest floor mouth, the drop the blinder. Not built: the user picks the edges, the snap and whether the rig is drawn.
 - **No tag, no push.** v0.37 stays live with the band grammar; the reset ships with whatever lands in the slot next.
 
+## §121 FLUID2 the RIG — the emitter array built in one step on the user's five decisions (2026-10-11, the same Fable session as §120; the user: *"remove the shockwave; add channel for vocals; pitch seems more like a virticle move rather than horizontal slide (more for vocals or melodies); rig should be invisible; color should be based on the coloring key (ie musical note) of circle of fifths"*)
+
+- **The grammar** (`core/fluid/inject2.js`, FLUID2's slot; `docs/plans/FLUID2-EMITTERS.md` §0 the decisions against the proposal): inject.js's
+  plan() runs on the shared base state (never written here) and its splats are RE-PLACED by kind onto a fixed, mirror-symmetric, invisible rig
+  of 23 mouths in three sizes — the WHERE is the rig's, the force and the area-weighted ink (the §111 budget's units) are the base's to 1e-9.
+  FLOOR: five washes (x .5 ± {0, .2, .4}, sizes 2 / 1.5 / 1) — the sub's ink and lift from the centre, the inner pair joining above
+  `SPREAD_B` (.5 buildLive); the kick's impulse from the mouth the CHASE picks: even phrases ping-pong L R C R L C over the inner pair, odd
+  phrases inside → out (centre, the inner pair at √½ each, the outer pair only above `OUTER_T` .6 tension / build — held back for the drop).
+  SIDES: three spots per wall (x .08 / .92, y .5 / .7 / .3) — the snare's mirror pair inward at the height the 16-beat phrase's quarter picks
+  (middle, upper, lower, middle), the chord's at the centroid's third. TOP: seven beams (x .5 ± .14·k, y .92, size ½) — the hats on the odd
+  beams on even bars, the even on odd, each run outside → in; no hashed x. INSIDE: the floor cloud at the centre and a quad (± .2, ± .18)
+  whose lower / upper pairs join above tension .35 / .65, the ink shared. LEAD (the vocal / melody channel): the strongest note above the
+  bass — `interval` over the bass note, the chroma's lead (a true vocal detector is S5b's `voxS / voxHz`, two reads to swap in) — takes
+  `LEAD_SHARE` .5 of the floor's ink at centre stage, its HEIGHT its pitch (the scale degree above the tonic, y .3 → .85), eased `LEAD_TAU`
+  .35 s (the table below: 12 degree bins on every track, the feature is restless — a glide, not a hop) with a small push along its move;
+  a re-entry after a rest starts at its note. DROP: the §113 shockwave is GONE under FLUID2 (`ring` null, no 'drop' impulse); the §107 /
+  §111 clear stays, and on its frame every mouth pulses once — the BLINDER (floor up, sides in, top down, the inside's ink). COLOUR: every
+  splat in the hue of ITS NOTE on the circle of fifths (keycolour's wheel with the mode's pull, as the key's own hue), normalised to the
+  base colour's luminance sum (unnormalised the pool read .81–.88 of the base's ink); the sub and the kick in the bass note's, the lead in
+  its own, the floor / sides / hats / blinder in the key's; `NOTE_COL 0` the key's on everything. New reads: `interval`, `phrase16Pos`,
+  `bar`. fluid.js unchanged (the plumbing for a grammar's optional fields stays; the rig returns none but `rig` for the rulers).
+- **The sub does not snap to a fifths mouth** (the proposal's (b)): the user's "pitch is vertical" ends the horizontal pitch axis in
+  this slot — the bass enters at the centre wash, and the only pitch → position is the lead's height. The sub's y stays the base's register.
+- **The eight-track table** (no GL, `tools/truth/traces/*-map1.json` + the pad take; the scratch ruler's columns):
+
+| track | frames | music s | Σ ink rig / base (NOTE_COL 1: the note hues luminance) | clears | kicks C · iL · iR · oL · oR (pairs) | outer before 1st clear | snare q0·q1·q2·q3 | beams 0..6 | lead on % · deg bins · y p10/p50/p90 | lead max step | clears = blinders | quad % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comptine-map1 | 6601 | 110 | 1.000 | 0 | 64 · 79 · 78 · 7 · 7 (57) | 7 | 66·75·56·45 | 12 6 11 6 12 5 12 | 88 · 12 · 0.49/0.59/0.68 | 0.0192 | 0 = 0 | 45 |
+| CyborgNinja-map1 | 6601 | 110 | 1.000 | 0 | 462 · 444 · 463 · 0 · 0 (283) | 0 | 156·203·153·161 | 110 142 110 133 112 137 108 | 51 · 12 · 0.41/0.54/0.70 | 0.0256 | 0 = 0 | 30 |
+| IBelongHere-map1 | 6601 | 110 | 1.000 | 3 | 191 · 208 · 202 · 5 · 5 (137) | 0 | 72·73·84·68 | 51 57 49 53 53 52 49 | 86 · 12 · 0.48/0.63/0.74 | 0.0237 | 3 = 3 | 46 |
+| Malicious-map1 | 6601 | 110 | 1.000 | 0 | 45 · 52 · 36 · 0 · 0 (23) | 0 | 39·32·20·21 | 21 19 22 21 18 20 22 | 70 · 12 · 0.50/0.65/0.75 | 0.0228 | 0 = 0 | 44 |
+| RaindropsOnRoses-map1 | 6601 | 110 | 1.000 | 3 | 120 · 135 · 133 · 5 · 5 (93) | 0 | 85·93·83·67 | 77 101 82 95 82 98 81 | 83 · 12 · 0.52/0.65/0.71 | 0.0210 | 3 = 3 | 45 |
+| SeeYouDrop-map1 | 6601 | 110 | 1.000 | 2 | 170 · 176 · 186 · 7 · 7 (108) | 7 | 84·85·89·46 | 38 37 40 38 35 37 34 | 83 · 12 · 0.42/0.49/0.65 | 0.0255 | 2 = 2 | 48 |
+| Vienna-map1 | 6601 | 110 | 1.000 | 1 | 80 · 96 · 98 · 3 · 3 (47) | 3 | 32·61·36·18 | 45 65 49 63 41 63 45 | 67 · 12 · 0.49/0.62/0.77 | 0.0237 | 1 = 1 | 40 |
+| WhoLikesToParty-map1 | 6601 | 110 | 1.000 | 1 | 440 · 454 · 460 · 0 · 0 (267) | 0 | 140·145·125·135 | 83 113 88 120 82 116 83 | 61 · 12 · 0.40/0.62/0.75 | 0.0256 | 1 = 1 | 24 |
+| rec-map0 | 1465 | 22 | 1.000 | 0 | 0 · 3 · 0 · 0 · 0 (0) | 0 | 1·5·1·2 | 0 3 0 2 0 2 0 | 83 · 7 · 0.46/0.64/0.76 | 0.0161 | 0 = 0 | 52 |
+
+  Read: Σ area-weighted ink = the base's on every trace; the inner floor pair within 7 % L / R; the outer pair opens only on tension /
+  build (Comptine 7, SeeYouDrop 7, Vienna 3 frames above OUTER_T before any clear — builds); the snare walks all four quarters; all seven
+  beams, odd / even by the bar; the lead on 51–88 % of the music frames, 12 degree bins per track, its largest per-frame step .026 (the
+  glide's cap on a whole-octave leap .55 · (1 − e^(−1/21)) = .026); the blinder = the clears (3 / 3 / 2 / 1 / 1 / 3).
+- **The tests** (`tools/test_fluid.js`, the bands block — 342 ok): every splat on a rig mouth (or the lead's centre column) on 600 synthetic
+  frames and SeeYouDrop's 6601 real ones; ring null everywhere and no 'drop' kind; 23 blinder pulses exactly on the clear's frames; the
+  body / params / drop / ink rate the base's; Σ area-weighted ink = the base's to 1e-9 and Σ|dv| within the pair split; the inner pair's
+  symmetry (synthetic to a cut cycle, real within 15 %); the top chase's seven beams disjoint by bar parity; the lead's height the degree's
+  (settled within the ease's residual after 50 frames), its largest adjacent-frame step ≤ the ease's; no lead on interval 0; NOTE_COL 0 → the
+  base's colour on every splat; the outer pair never below OUTER_T before the first clear; determinism; the shared base state (the mixed
+  300-frame run's base state = plan() alone's to the byte, the body and params too); the Proxy.
+- **The gates:** `node tools/check.js` 144 modules · 0 fail · 4 warn; `npm test` exit 0; `node tools/license.js --check` 147 / 0.
+  FLUID's pixels cannot move (the grammar runs only while FLUID2 owns the pool; the base state is read, never written): the fake s0 pair
+  and the real-md5 s0 lines stand; the s1 lines move by construction (re-based by the next real sweep).
+- **The eye** (`tools/accept/v0.38/fluid2-s121-{RaindropsOnRoses,SeeYouDrop}-montage.jpg` — FLUID left, FLUID2 right, the same
+  deterministic frames: Raindrops at 84 / 90 / 118 / 124 s from `at=80`, SeeYouDrop at 57 / 57.7 / 58.5 / 62 s from `at=50`; errs [] on
+  all four runs): where FLUID is one central mass with the bass sliding it, FLUID2 is a symmetric picture — the side spots' ink at the
+  walls, the quad's clouds at the four corners, the floor's washes along the bottom, the beams a row along the top; the LEAD is a tall
+  thin column at centre in ITS note's hue (purple against Raindrops' cyan key in the breakdown at 118 / 124 s, pale against SeeYouDrop's
+  green at 62 s); on SeeYouDrop's drop frame (57.7) FLUID shows the §113 ring at the centre and FLUID2 shows every mouth lit with no ring
+  (the blinder), and at 58.5 s FLUID2's centre mushroom is the kick from the centre wash. The table's script is beside the montages
+  (`fluid2-s121-rig-tracks.{mjs,md}`).
+- **Not tagged, not pushed.** The user's eye first (`#scene=1` on the dev server); every remark in track time is a K2 retune on all eight
+  tracks (CONTRACTS §1.1).
+

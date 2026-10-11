@@ -4,6 +4,39 @@ The user, after pulling the §116 band grammar (*"it moves too quickly"*): *"for
 selected? I'm thinking of having an array of different sizes that line the sides and top where input is added to the scene (and
 also inside of the scene — should be symmetric / tasteful); how would a professional light designer do it?"*
 
+## 0. Status (2026-10-11, DECISIONS §121) — BUILT in one step, the user's five decisions folded in
+
+The user, on §3's open questions and the proposal: *"remove the shockwave; add channel for vocals; pitch seems more like a vertical move
+rather than horizontal slide (more for vocals or melodies); rig should be invisible; color should be based on the coloring key (ie musical
+note) of circle of fifths"*. So, against the proposal below: **no shockwave** (the §113 ring is gone under FLUID2 — the clear stays, and
+the blinder is the drop's cue); **a LEAD channel** (the vocal / melody line: the strongest note above the bass, `interval` over the bass
+note — a chroma proxy; the S5b vocal detector `voxS / voxHz` is two reads to swap in), centre stage, **its HEIGHT its pitch** (the scale
+degree above the tonic, LEAD_Y0 .3 → LEAD_Y1 .85, eased LEAD_TAU .35 s); **the sub does NOT snap to a fifths mouth** — pitch is vertical,
+so the sub's ink enters at the centre wash (the inner pair joining in a build) and the KICK's mouth is the chase's; **the rig is not drawn**;
+**every splat in the hue of its note** on the circle of fifths (keycolour's wheel, the mode's pull; the base colour's luminance sum kept,
+so the ink budget is the base's) — the sub and the kick in the bass note's, the lead in its own, the rest in the key's. E1–E4 landed as
+one grammar (`core/fluid/inject2.js`): the rig table, the floor / side / top chases, the density by tension and build, the blinder.
+
+The eight-track table (no GL; `tools/truth/traces/*-map1.json` + the pad take; the numbers §121 stands on):
+
+| track | frames | music s | Σ ink rig / base (NOTE_COL 1: the note hues luminance) | clears | kicks C · iL · iR · oL · oR (pairs) | outer before 1st clear | snare q0·q1·q2·q3 | beams 0..6 | lead on % · deg bins · y p10/p50/p90 | lead max step | clears = blinders | quad % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comptine-map1 | 6601 | 110 | 1.000 | 0 | 64 · 79 · 78 · 7 · 7 (57) | 7 | 66·75·56·45 | 12 6 11 6 12 5 12 | 88 · 12 · 0.49/0.59/0.68 | 0.0192 | 0 = 0 | 45 |
+| CyborgNinja-map1 | 6601 | 110 | 1.000 | 0 | 462 · 444 · 463 · 0 · 0 (283) | 0 | 156·203·153·161 | 110 142 110 133 112 137 108 | 51 · 12 · 0.41/0.54/0.70 | 0.0256 | 0 = 0 | 30 |
+| IBelongHere-map1 | 6601 | 110 | 1.000 | 3 | 191 · 208 · 202 · 5 · 5 (137) | 0 | 72·73·84·68 | 51 57 49 53 53 52 49 | 86 · 12 · 0.48/0.63/0.74 | 0.0237 | 3 = 3 | 46 |
+| Malicious-map1 | 6601 | 110 | 1.000 | 0 | 45 · 52 · 36 · 0 · 0 (23) | 0 | 39·32·20·21 | 21 19 22 21 18 20 22 | 70 · 12 · 0.50/0.65/0.75 | 0.0228 | 0 = 0 | 44 |
+| RaindropsOnRoses-map1 | 6601 | 110 | 1.000 | 3 | 120 · 135 · 133 · 5 · 5 (93) | 0 | 85·93·83·67 | 77 101 82 95 82 98 81 | 83 · 12 · 0.52/0.65/0.71 | 0.0210 | 3 = 3 | 45 |
+| SeeYouDrop-map1 | 6601 | 110 | 1.000 | 2 | 170 · 176 · 186 · 7 · 7 (108) | 7 | 84·85·89·46 | 38 37 40 38 35 37 34 | 83 · 12 · 0.42/0.49/0.65 | 0.0255 | 2 = 2 | 48 |
+| Vienna-map1 | 6601 | 110 | 1.000 | 1 | 80 · 96 · 98 · 3 · 3 (47) | 3 | 32·61·36·18 | 45 65 49 63 41 63 45 | 67 · 12 · 0.49/0.62/0.77 | 0.0237 | 1 = 1 | 40 |
+| WhoLikesToParty-map1 | 6601 | 110 | 1.000 | 1 | 440 · 454 · 460 · 0 · 0 (267) | 0 | 140·145·125·135 | 83 113 88 120 82 116 83 | 61 · 12 · 0.40/0.62/0.75 | 0.0256 | 1 = 1 | 24 |
+| rec-map0 | 1465 | 22 | 1.000 | 0 | 0 · 3 · 0 · 0 · 0 (0) | 0 | 1·5·1·2 | 0 3 0 2 0 2 0 | 83 · 7 · 0.46/0.64/0.76 | 0.0161 | 0 = 0 | 52 |
+
+Read: Σ area-weighted ink = the base's on every trace (1.000: the WHERE moved, the HOW MUCH did not); the inner floor pair fires equally
+(L / R within 7 %); the outer pair opens only on tension / build (Comptine's 7 and SeeYouDrop's 7 are build frames above OUTER_T);
+the snare's height walks all four quarters; all seven beams used, odd / even by the bar; the lead is on 51–88 % of the music frames with
+12 degree bins on every track (the chroma's strongest-other-note is restless — hence the .35 s glide; the vocal detector is the real
+fix); the blinder fires exactly on the clears. The eye: `tools/accept/v0.38/fluid2-s121-*-montage.jpg` (FLUID left, FLUID2 right at the same frames) — DECISIONS §121 reads them.
+
 ## 1. How position is selected today (core/fluid/inject.js — the pool grammar, FLUID and FLUID2 alike)
 
 One point per channel; only the sub's x moves, on a pitch axis. Positions in uv (0..1, y up).

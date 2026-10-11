@@ -2,22 +2,22 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
-// FLUID2 (id 1, key 2; DECISIONS §116, RESET at §120 2026-10-11) — FLUID's pool, FLUID's show pass, FLUID's sparkle: a clone of
-// assets/scenes/fluid/ (the user: "reset fluid2 to fluid and let's try something else in fluid2") with two differences. (1) Forced-only:
-// `&scene=1`, key 2, the arrows, the panel's force — NOT on the director's bid (score() 0), no landing tile. (2) The card names its
-// grammar, `fluid: { grammar: 'bands' }` (CONTRACTS §1.4): while FLUID2 owns the pool (SC.next if a fade runs, else SC.cur — loop.js)
-// the step plans through core/fluid/inject2.js, which is the IDENTITY today — plan() returns inject.js's plan on the SHARED base
-// state untouched, so this scene is FLUID to the pixel. The §116 S1–S6 band grammar and S4's diverged show pass live at v0.37 and
-// are not the direction. The next experiment in this slot is the user's (§120: WHERE the music enters the pool — an emitter array).
+// FLUID2 (id 1, key 2; DECISIONS §120 the reset, §121 the RIG) — FLUID's pool and FLUID's show pass under the RIG grammar: the card's
+// `fluid: { grammar: 'bands' }` slot (CONTRACTS §1.4) makes the step plan through core/fluid/inject2.js while this scene owns the pool
+// (SC.next if a fade runs, else SC.cur — loop.js). The grammar is the user's emitter array (docs/plans/FLUID2-EMITTERS.md): a fixed,
+// symmetric, INVISIBLE rig of 23 mouths in three sizes — five washes along the floor, three spots per wall, seven beams across the top,
+// a centre and a quad inside — the music's hits re-placed onto it by CHASES (ping-pong, inside → out, odds / evens by the bar, the
+// outer mouths held back until the tension or the build opens them), every splat in the hue of ITS NOTE on the circle of fifths, a LEAD
+// channel (the strongest note above the bass, centre stage, its HEIGHT its pitch), no shockwave (the clear stays; every mouth pulses
+// once on it — the blinder). Nothing here is drawn for the rig: this file is FLUID's scene file with two differences — forced-only
+// (`&scene=1`, key 2, the arrows, the panel's force; score() 0, no landing tile) and the grammar slot.
 //
-// What FLUID's header says holds here: the music → pool grammar is the core's (inject.js, its reads in FLUID_FEATS, shown in the help
-// view's part B); this scene READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js, a copy of FLUID's); it
-// adds one injection of its own through ctx.fluid.splat, gated on being on screen: a sparkle on the surface while the hats are up.
-// Its own reads are exactly `feats` (five: the loudness ladder for the exposure, the hats and presence — no bid fields). `kick.x`
-// (the monitor's one declared cut) is the shockwave's envelope, raised on the frame the grammar's clear fires. A scene must not import
-// core/fluid (check.js): everything through ctx.fluid. The §106 dead-params caveat (a scene's write to ctx.fluid.params is overwritten
-// by the step) holds. Under &fluid=0 / key W / no float render targets the dye is the 1×1 black placeholder: draw() paints the empty
-// pool's idle and hud() says why. Nothing here reads a wall clock or Math.random.
+// What FLUID's header says holds here: this scene READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js, a copy
+// of FLUID's); it adds one injection of its own through ctx.fluid.splat, gated on being on screen: a sparkle on the surface while the
+// hats are up. Its own reads are exactly `feats` (five: the loudness ladder for the exposure, the hats and presence — no bid fields).
+// `kick.x` (the monitor's one declared cut) is the clear's envelope, raised on the frame the grammar's clear fires. A scene must not
+// import core/fluid (check.js): everything through ctx.fluid. Under &fluid=0 / key W / no float render targets the dye is the 1×1 black
+// placeholder: draw() paints the empty pool's idle and hud() says why. Nothing here reads a wall clock or Math.random.
 import { clamp, ema, frac } from '../../math/util.js';
 import { baseLight } from '../../math/loudlight.js';
 import { SHOW_FS } from './shaders.js';
@@ -56,8 +56,8 @@ function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
 const SELF = {
   name: 'fluid2',
   id: 1,   // §118 the lean-down (2026-10-11): was 13 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 2)
-  tag: 'FLUID\'s pool, FLUID\'s light — the experimental slot (§120 reset: FLUID to the pixel today; the next idea goes here)',
-  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js plans the pool while this scene owns it (the identity today)
+  tag: 'FLUID\'s pool under the RIG — an invisible, symmetric array of 23 mouths the music\'s hits are chased across, every splat in its note\'s hue, the lead\'s height its pitch, no shockwave (§121)',
+  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js (the rig) plans the pool while this scene owns it
   feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence'], // FLUID's five own reads; no bid fields (forced-only)
   cuts: 'continuous',
   rt: {},

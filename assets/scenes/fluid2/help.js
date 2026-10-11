@@ -3,8 +3,8 @@
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
 // FLUID2's help entry — data only (CONTRACTS §1.13): the three depths, and one clause per field of `feats` saying what that
-// field moves on THIS screen. The pool's own reads under the grammar that owns it (core/fluid/inject2.js — the identity over
-// inject.js today, §120) are shown by the help view's part B, not here: this scene reads five fields of its own and bids nothing
+// field moves on THIS screen. The pool's own reads under the grammar that owns it (core/fluid/inject2.js — the RIG grammar over
+// inject.js, §121) are shown by the help view's part B, not here: this scene reads five fields of its own and bids nothing
 // (forced-only). No code, no imports.
 
 export const HELP = {
@@ -15,17 +15,24 @@ export const HELP = {
     hat2: 'while the hats are up, a small bright droplet sparkles onto the surface every 50 ms, walking the golden ratio across the top of the pool',
     presence: 'how hard the scene\'s own sparkle hits the surface: silence drops nothing',
   },
-  eli5: 'FLUID again, in the experimental slot: today it is the same pool, the same light, the same grammar to the pixel — the place the next idea about the pool is tried before it touches FLUID. A dark pool of ink, lit from above, and the music is what stirs it. Under every scene of this engine there is a '
-    + 'fluid simulation that the sound drives: the bass note is where the ink enters the pool, every kick lifts it, the snare '
-    + 'shears it sideways, the hats drip onto the surface, the key you are hearing is the colour of the ink, the beat kneads '
-    + 'the whole pool and a drop clears it, throwing the ink outward in a ring. This scene is that pool itself, seen as a liquid surface: light catches the '
-    + 'edges of the ink like oil on water, and the loudness of the track is how brightly it is lit.',
-  why: 'The user pulled the first experiment here (the §116 band grammar: "it moves too quickly", 2026-10-11) and asked for FLUID back as the canvas; the next question in this slot is WHERE the music enters the pool. What follows is FLUID\'s own account. The other scenes ride this fluid without showing it — their trails are carried along its current — so there had to be '
-    + 'one picture where the medium is the subject. The mappings are the engine\'s measured ones: where the ink enters is the '
-    + 'bass note\'s place on the circle of fifths, how high a kick lifts it is the kick\'s own size, the snare\'s shear is the '
-    + 'snare\'s size, the filter closing turns the pool to syrup, the void lets the ink accumulate, and the live drop empties '
-    + 'it. The solver is a re-implementation of Pavel Dobryakov\'s WebGL-Fluid-Simulation (MIT, 2017); the mappings from music '
-    + 'are this engine\'s own, with ideas from the music-visualiser forks credited in THIRD-PARTY.md.',
+  eli5: 'FLUID\'s pool of ink under a lighting designer\'s rig. Where FLUID lets the bass note slide the ink\'s entry along the bottom and '
+    + 'scatters the hats at random, this scene hangs a fixed, invisible, mirror-symmetric rig of 23 mouths in three sizes — five big washes '
+    + 'along the floor, three spots on each wall, seven small beams across the top, a centre and a quad inside — and the music\'s hits are '
+    + 'chased across it the way a lighting desk runs a rig: the kicks ping-pong over the inner floor pair or step inside → out, the snares '
+    + 'fire a mirror pair from the walls at a height the phrase picks, the hats run the odd beams on one bar and the even on the next, the '
+    + 'outer mouths stay dark until the tension or a build opens them, and on the drop every mouth pulses once (the blinder) while the pool '
+    + 'clears — no shockwave. Every splat is coloured by its own note on the circle of fifths: the bass in the bass note\'s hue, the lead in '
+    + 'its own. The LEAD is the vocal or melody line — the strongest note above the bass — a mark at centre stage whose HEIGHT is its pitch '
+    + '(the tonic low, the leading tone high), gliding between notes. How hard every hit pushes and how much ink it brings is FLUID\'s; only '
+    + 'the WHERE is the rig\'s.',
+  why: 'The user pulled the first experiment here (the §116 band grammar: "it moves too quickly", 2026-10-11), asked for FLUID back as the '
+    + 'canvas, then for an array of different-sized entry points lining the sides and top and inside, symmetric and tasteful, "how would a '
+    + 'professional light designer do it" — and decided: no shockwave, a channel for vocals, pitch as a vertical move (not a horizontal '
+    + 'slide), the rig invisible, colour by the note on the circle of fifths. A lighting designer hangs a fixed symmetric plot once and the '
+    + 'show is which fixtures fire, in what pattern, at what intensity — so the rig is a table, the hits advance chases, and the outer '
+    + 'fixtures are held back for the drop. The lead reads the chroma\'s strongest note over the bass today; a true vocal detector (the '
+    + 'S5b extractor feature) is two reads to swap in. The solver is Pavel Dobryakov\'s WebGL-Fluid-Simulation (MIT, 2017) re-implemented; '
+    + 'the mappings are this engine\'s own.',
   math: 'Stam\'s stable fluids (1999) as Harris laid them out for the GPU (GPU Gems ch. 38, 2004): an incompressible '
     + 'velocity field on a grid, stepped by splatting forces (Gaussians exp(−|p|²/r)), vorticity confinement (a push along '
     + 'the gradient of |curl|, which puts the small eddies back that the grid\'s diffusion ate), the divergence, a Jacobi '

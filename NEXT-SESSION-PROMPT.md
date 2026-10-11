@@ -36,19 +36,16 @@ with a **"Standing rules (from §0–§103)"** block at the top (§0–§103 are
 `tools/parity.js` is a MUSIC-STATE parity now (62 fields; the ten `nav.*` rows went with the archived control).
 `releases/` keeps **the last three** frozen pages and the tag step `git rm`s the fourth (HARNESS "## Release notes").
 
-## FLUID2 now: the slot is empty (§120) — the next experiment is the EMITTER ARRAY, the user's idea, not started
+## FLUID2 now: the RIG grammar (§121, on main, unreleased) — the user's five decisions built in one step; the eye is owed
 
-The §116 band grammar is gone from `main` (at v0.37 for the record: `git show v0.37:assets/core/fluid/inject2.js`); the
-eight-track sweep §119 carried as owed is **no longer owed**. `inject2.js` is the identity, `K2` empty, the card's
-`fluid: { grammar: 'bands' }` slot kept as the switchboard. **`docs/plans/FLUID2-EMITTERS.md`** is the design — how position
-is selected today (one point per channel: the sub sliding on the fifths axis, a fixed snare pair, hashed hats, the centre
-for the harmony) and how a lighting designer would do it (a fixed symmetric PLOT in three sizes, SYSTEMS per function,
-CHASES across them that change on the phrase and hold the outer fixtures for the drop), with a proposed 23-mouth rig and
-four steps E1–E4. **The user decides first:** (a) which edges carry mouths, (b) whether the sub snaps to the floor mouths
-or keeps sliding, (c) whether the rig is drawn. Then E1 as a Fable worker in a worktree, **proven on all eight tracks**
-(CONTRACTS §1.1 — the Raindrops-only exception ended with the grammar it covered). The real-md5 reference
-`tools/accept/v0.37/real-md5-v037.txt` has STALE s1 lines (they hashed the band grammar): the next real sweep re-bases
-them to s0's.
+`inject2.js` is the rig (`docs/plans/FLUID2-EMITTERS.md` §0 has the decisions and the eight-track table): 23 invisible mouths,
+the chases, every splat in its note's hue (luminance-normalised, the budget the base's), the LEAD channel (`interval` over the
+bass note — a chroma proxy, 12 degree bins on every track, glide .35 s), no shockwave, the blinder on the clear. `K2=` on any
+page reaches every knob (`FLOOR_DX`, `SIDE_Y`, `TOP_DX`, `QUAD_T`, `OUTER_T`, `SPREAD_B`, `LEAD_SHARE / Y0 / Y1 / TAU / V`,
+`BLIND_V / DYE`, `NOTE_COL 0` = the key's colour on everything). **Owed:** the user's eye on `#scene=1` (the groove, a build, a
+drop, a breakdown — RaindropsOnRoses 84 / 118 / 137 s, SeeYouDrop 57.6 s); the S5b vocal detector (`voxS / voxHz`) to replace
+the lead's two reads; the real-md5 s1 lines (stale since §120, re-based by the next real sweep). The §116 band grammar is at
+v0.37. Every remark in track time = a retune of K2 (CONTRACTS §1.1: on all eight tracks, Malicious for the record).
 
 ## What the user validates at home on v0.37 (every remark in track time = a retune request)
 
@@ -57,9 +54,8 @@ them to s0's.
 2. **Share a tab opens on FLUID and STAYS** (the §118 addendum, after the user's *"still goes to nav"*): the pool on the
    first frames of a real tab share, held through its dwell (`dwellMin` ~84 s on the headless demo), then the director
    §93–§95 as before.
-3. **FLUID2 (§120 on main, not live):** `#scene=1` must be FLUID to the eye on any track; the headless pair already
-   hashes equal (DECISIONS §120). The v0.37 page's FLUID2 is the pulled grammar — nothing there to validate.
-4. (gone with §120 — the `&k2=` time switches reach an empty table.)
+3. **FLUID2 (§121 on main, not live):** `#scene=1` on the dev server — the rig section above says where to look.
+4. (the v0.37 page's FLUID2 is the pulled band grammar — nothing there to validate.)
 5. **The switch itself:** `n` or `→` from FLUID (key 1) to FLUID2 (key 2) mid-groove — the pool must not blink.
 7. Carried, still unvalidated: from v0.36 the shockwave on the drop in FLUID (the four dropping tracks), FLUID in the
    rotation, the drop's flash with the ring and no droplets; from v0.35 FLUID on every track, Vienna's dream,

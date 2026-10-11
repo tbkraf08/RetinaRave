@@ -148,10 +148,11 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               sub shut two bars the HARMONIC BRANCH: every hit at the harmony's place, applause / noise injects
                               nothing (§111) — pads, chords and vocals had no channel before §108, a piano no "where" before
                               §111) is the core's (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's
-                              part B); a scene adds on top. FLUID2's slot (core/fluid/inject2.js, §116) is the IDENTITY since §120
-                              (2026-10-11, the user: "it moves too quickly; reset fluid2 to fluid"): the §116 S1–S6 band grammar
-                              (the sub a field, the kick a vortex pair, the mids the confinement, the highs the surface, the pen,
-                              the solver's clock) is at v0.37 and is not the direction. A grammar change is tuned and proven on every library track —
+                              part B); a scene adds on top. FLUID2's slot (core/fluid/inject2.js) is the RIG grammar since §121 (2026-10-11): the
+                              base's plan re-placed by kind onto an invisible symmetric rig of 23 mouths (five floor washes, three
+                              spots per wall, seven top beams, a centre and a quad) by chases, every splat in its note's hue, a LEAD
+                              channel whose height is its pitch, no shockwave, the blinder on the clear (docs/plans/FLUID2-EMITTERS.md);
+                              the §116 band grammar it replaced is at v0.37 (pulled at §120: "it moves too quickly"). A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111) — FLUID2's K2 the one standing exception:
                               tuned on RaindropsOnRoses alone on the user's word (§116 S1–S7), the eight-track sweep owed before any tag.
@@ -251,7 +252,7 @@ needed, now generic:
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
   the substrate's step is a slot the OWNER scene declares, never a special case in `core/`. The table is `core/fluid/grammar.js`:
   `'pool'` (`core/fluid/inject.js` — the default: FLUID and every scene without the slot) and `'bands'` (`core/fluid/inject2.js` —
-  FLUID2, id 1 since §118: the experimental slot — the identity since §120). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
+  FLUID2, id 1 since §118: the RIG grammar since §121). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
   (`SC.next`), else the current (`SC.cur`) — the pool is in its grammar from the fade's first frame, so it is already there when the scene
   is fully visible; a forced scene (`&scene=13`, the `n` key) is `SC.cur` the moment `goScene` lands it. Deterministic: a function of
   `SC` alone. **One pool, one base state:** every grammar exports inject.js's interface (`plan, mkState, K, FLUID_FEATS`); a composing
@@ -268,7 +269,7 @@ needed, now generic:
   `highs` (`{ env, grain, dip, cell, hold, jit }` — the cell / hold for the uniforms, `jit` the dye pass's `uJit`), `pen` (a record for the rulers),
   `params.curlMask` (`{ y0, y1, lo, fe }`: the vort pass's `uCurlMask`), `dtSim` (the SOLVER's clock — multiplies the vort / advect passes' dt;
   absent → 1; a base `dtSim` of 0 wins outright) and `substeps` (> 1: the curl → dye-advect chain runs that many times, the splats once).
-  `CARD.fluid.K2` is the band grammar's constants (empty at the identity), `CARD.benchFluid(n, ring, 'bands')` benches either grammar; the HUD's
+  `CARD.fluid.K2` is the rig grammar's constants (`K2=` on the strip tools), `CARD.benchFluid(n, ring, 'bands')` benches either grammar; the HUD's
   fluid line and the help view's part B say which grammar owns the pool and list ITS reads. The §116 S1–S6 grammar that used every one of
   these fields is at v0.37 (`git show v0.37:assets/core/fluid/inject2.js`), pulled at §120. The band grammar's own state goes COLD while it does
   not own the pool (`fluid.js` resets inject2's `n`): its envelopes re-sync on the frame it takes the pool back, never a burst.
@@ -385,10 +386,10 @@ scenes down to fill the gaps? order: fluid, fluid2, nav2, dust, torus2, mandala"
 the six kept ones were shifted down, so `REG` is DENSE 0..5 and every id is a digit key again):
 **0 fluid** (key `1`; §106, ON THE ROSTER since §114 — its own fit bid `0.35 + 0.4 bassS + 0.2 min(1, keyConf/0.6) + 0.15 (1 − centroid)`,
 0 in a build; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's;
-`FLUID-PLAN.md` Step 3) · **1 fluid2** (key `2`; §116, forced-only: `score()` 0; no `card`; the EXPERIMENTAL slot — FLUID's pool, show pass
-and sparkle re-cloned at §120 (2026-10-11), its card's `fluid: { grammar: 'bands' }` slot (§1.4) planning through `core/fluid/inject2.js`, the
-identity today, so FLUID to the pixel; the §116 S1–S6 band grammar it carried in v0.37 was pulled (the user: "it moves too quickly"); the next
-experiment here is WHERE the music enters the pool — `docs/plans/FLUID2-EMITTERS.md`) · **2 nav2** (key `3`; the
+`FLUID-PLAN.md` Step 3) · **1 fluid2** (key `2`; forced-only: `score()` 0; no `card`; FLUID's pool and show pass under the RIG grammar — its
+card's `fluid: { grammar: 'bands' }` slot (§1.4) plans through `core/fluid/inject2.js` (§121, `docs/plans/FLUID2-EMITTERS.md`): an invisible
+symmetric rig of 23 mouths the hits are chased across, every splat in its note's hue, a lead channel whose height is its pitch, no shockwave,
+the blinder on the clear; the §116 band grammar it carried in v0.37 was pulled at §120) · **2 nav2** (key `3`; the
 HOME — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with
 `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`. `register()` seats
 `SC.cur` / `SC.logical` / `SC.hist` on whichever scene declares `home`, so the first frame of a page load is this one and not the
