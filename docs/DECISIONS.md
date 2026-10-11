@@ -11206,7 +11206,155 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   1 fps strip cannot show a stroke of a twentieth of the screen per beat.
 
 
-### S6 — time (not started)
+### S6 — time: the solver's clock breathes with the sub, slows in the latched void, bursts on the drop (2026-10-10, branch `fluid2`, commits b5db91f → the docs; `git merge main` at d7adda5 first — S5 merged, a fast-forward)
+
+- **The ask, as the plan framed it and the user's scope holds:** *"explore: point sources and time"* — S6 IS the time exploration; and on the
+  eighth track, *"this is a good track that could play with time element (ideas modulate time -> example bass that starts at 56s -> something
+  happens at 1:06 with the sound that seems like it would be good to modulate on)"*. §117 measured the two moments: the F♯1 sub PINS from 55.2 s
+  (held 82–100 %), and 1:06 is a TWO-BAR SUB CUT 65.4 → 68.57 s (the 25–60 Hz band −6.8 → −39.7 dB in one 0.25 s step, the drums running,
+  not a sweep, not a tempo change), then drop 2 at 68.569. The plan's letter (§4 S6): `dtSim` is the SOLVER's clock, not the grammar's — a
+  multiplier on the vort and advect passes' dt; the splats, the emitters' ×60·dt, the key's evidence, the refractories, the clear's countdown
+  and the shockwave's front stay on the grammar's dt (musical time). Item 2 of FLUID-DROP (the freeze + the reversal) is NOT built here —
+  no freeze, no replay; the precedence for its future `dtSim 0` is written and tested. *"only tune with Raindrops, don't do full sweep"* —
+  tuned, stripped and proven on RaindropsOnRoses alone (the run at 24 s, the live lanes; the file map only where a confirmed drop needs it);
+  **the other seven tracks are untuned and unswept on the user's word; the full sweep is owed before any tag.**
+- **As built** (`inject2.js`, the S6 block right after S1's envelopes — the pen below reads its clock): **five terms, each EXACTLY 1 at its
+  neutral knob** (the byte-identical pass: x · 1 = x in fluid.js, proven below with every knob off = S5's hashes): the **BREATH** `DT_SUB` —
+  1 + DT_SUB · (subEnv − subSlow): the sub's rise above its 2 s slow mean quickens the pool's time, its tail and a CUT slacken it; the
+  **LEVEL** `DT_LVL` — 1 + DT_LVL · (subEnv − .5): time runs with the sub's level itself (slow while the sub is out, fast while it pins); the
+  **VOID** `DT_VOID` — toward mix(1, DT_VOID, voidT) eased `DT_TAU` 1 s while the base's §111 latch holds (recomputed from the same fields —
+  `buildLive` > .5 with the sub seen within VOID_BARS bars — never duplicated state) AND the sub is out (`subGate` 0) AND no clear runs: the
+  gate on the sub is this step's finding — on the live lanes the detector stays armed two seconds past a return it never fired on
+  (RaindropsOnRoses's drop 2: `buildLive` .68 through 68.57–70.5 with the sub back, §117's live-detector gap), and the clock must run when
+  the bass does; the **DROP** `DT_DROP` — a burst on the confirmed clear's beat (`clearLeft` > 0: the §113 frame, the shockwave's): the clock
+  × `DT_DROPX` 2 on the drop's frame decaying LINEARLY to 1 over the beat (accenting, never driving — the user's rule); `DT_DROP` 1 takes
+  `DT_STEPS` 2 SUBSTEPS per frame at that clock (`substeps` in the return — the real thing, a second curl → dye-advect chain for one beat),
+  2 the clock alone (the cheap stand-in; semi-Lagrangian is stable at any step, the ring's compressible term bounded in the shader); the
+  **PULSE** `DT_BEAT` — 1 + DT_BEAT · (cos⁴(π·beatPhase) − 3/8), a zero-mean beat-synchronous tick (the judder test). The product is clamped
+  [`DT_MIN` .5, `DT_MAX` 2] and SLEWED against the last frame's value (|Δ| ≤ `DT_SLEW` 8 · dt per frame: the §1.9 rule — every change eased,
+  never a step; the cold frame starts AT its target, so a switch into this grammar is no jolt and a live knob change slews in). **The
+  precedence** (FLUID2-PLAN §2): `composeDt(base, mine)` exported — the base's clock (none today → 1) × this grammar's, and a base **0 wins
+  outright** (item 2's freeze; the grammar's bounds do not lift it). **The pen** eases on min(1, dtSim) · dt — it slows and freezes with the
+  pool (S5's note: a frozen pool must not be drawn over) and never runs faster than the hand (the S5 step bound PEN_VMAX · dt holds on the
+  ship run). `fluid.js`: the vort and velocity-advect `uDt` = dt · dtSim / substeps — the dye advect shares the program and INHERITS the
+  uniform (it never set `uDt` itself; the dye's dissipation is the pool's time too, which is right: ink lingers in slow water, the clear's
+  DROP_DISS runs faster in the burst); the curl → dye-advect chain looped `substeps` times, the splats landing once, the body / the wave
+  riding every substep, the step counter counting frames (the grain's seed rides it); `benchFluid(n, S, ring, grammar, steps)` holds the
+  substep count (the burst's cost at a tier); `FLUID.dtSim / substeps / time`, the HUD line `dt 0.84×2`. `harness.js`: **`&k2={…}`** on every
+  page (no #test, as `&glitch=`) — the user's A/B at home; an unknown knob or bad JSON throws. `real-md5.sh HASHX=` (extra hash params: the
+  neutral-knobs identity proof). The field strip's evals line carries `dtSim substeps latched breath void drop` after the pen's five. No new
+  MS read (`FLUID_FEATS` unchanged; `pred*` and `dropLiveIn` not read — reactive over predicted). inject.js untouched.
+- **The K2 ship table:** `DT_SUB` **.4**, `DT_LVL` **0** (a switch), `DT_VOID` **.5**, `DT_TAU` 1, `DT_DROP` **2** (`DT_DROPX` 2, `DT_STEPS` 2 for
+  the switch), `DT_BEAT` **0** (a switch), `DT_SLEW` 8, `DT_MIN` .5, `DT_MAX` 2.
+- **The rulers and the windows.** (1) The PURE ruler (`tools/work/fluid2/s6/ruler.js`, no GL, 60 fps on the map0 trace — 6601 frames, heard 24
+  → 134 s): per window the clock's p10 / p50 / p90, min / max, its MEAN (the pool's seconds per wall-second), the largest per-frame |Δ| against
+  the slew limit, the slewed / latched / substep frames, each term's span, the pen's largest step; the windows pin 52–58, cut 65.4–68.57, ret2
+  68.57–70.5, groove 76–110, break 111.4–134. (2) The STRIPS (`tools/work/fluid2/s6/run.sh`; the field strip tool): **cut** at 10 fps 64–70.5 on
+  the live lanes (the cut and the return — the eye's cadence for a clock that breathes), **arc** at 1 fps 50–140 on the live lanes (the pin,
+  the cut, the groove, the breakdown, the return at 137.137), **drop** at 10 fps 67.5–70 on the FILE map (drop 2 is confirmed only there,
+  at 68.62 — the live lanes never fire on it, §117). `tools/work/fluid2/s6/cmp.py` per shot: the velocity shot's mean speed (the S1 ruler),
+  × dtSim = the DISPLACEMENT per wall-second (what the eye sees — a slowed clock dissipates less per wall-second, so the velocity itself
+  READS HIGHER while the ink travels less), the composite's grey and centre grey, the §1.9 step between consecutive shots (mean |ΔY|, 0–255);
+  per window the p50s and the ratio to the off run. (3) The montages `tools/accept/v0.37/fluid2-s116-s6-RaindropsOnRoses-{cut,break,drop}.jpg`
+  with the clock on every frame's label (dt, ×substeps, L latched, speed, disp, grey, step).
+- **The pure ruler (the live lanes):** the breath alone (DT_SUB .4): the cut **.873** mean (min .775 — the deficit is .4 × the 2 s slow mean's
+  decay, deepest at the cut's start), the return **1.129** (max 1.27 — the slam), the groove **1.0007** (zero-mean: the sub's gesture, not a
+  tempo), the pin .998 (it pulses per attack, p10 .947 / p90 1.068, and leans in on nothing); .8 doubles every number (the cut .746, the
+  return 1.257, 66 slewed frames). The void alone (DT_VOID .5): latched on **750 of the breakdown's 1356 frames**, min .501, the break's mean
+  .754; the cut's latch arms only at **67.5 s — 2.1 s into the 3.2 s cut** (the live detector's `buildLive` needs the time; the base's own deep
+  void has the same lag) — so **the void cannot read the cut, the breath does**; through the return the clock rises .85 → .98 over 2 s
+  (eased, no snap — the gate on the sub). The level (DT_LVL .4): the pin **1.10**, the groove **1.09**, the cut .84 flat, the break .91, all
+  1.026 — a tempo change on every groove. The pulse (DT_BEAT .3): ±15 % per beat (p10 .888 / p90 1.173), zero-mean. The ship (breath + void):
+  all .946 mean, 0 slewed frames, maxΔ .115 / frame (the slew limit .133 — the attack's ema at SUB_TAU .04 s is the fastest thing in the clock).
+- **The strips (the live lanes, the ratio tag ÷ off per window; the off run's own speed falls .36 → .05 across the cut — the S1 field's void
+  entry stills the pool, so the clock multiplies a pool that is already stilling):**
+
+  | window | off speed / disp | ship (b.4 + v.5) | + level .4 | level .4 alone | void .5 alone | breath .8 alone |
+  |---|---|---|---|---|---|---|
+  | cut 65.4–68.57 (10 fps) | .228 / .228 | sp 1.086 **dp .934** dt .840 | 1.172 / **.835** / .710 | 1.085 / .900 / .844 | 1.000 / 1.000 / .965 | 1.139 / **.811** / .747 |
+  | return 68.57–70.6 (10 fps) | .122 / .122 | 1.129 / **1.161** / 1.046 | 1.303 / **1.461** / 1.144 | 1.133 / 1.211 / 1.093 | .998 / .970 / .931 | 1.298 / **1.609** / 1.248 |
+  | pre 64–65.4 (10 fps) | .360 / .360 | 1.010 / 1.019 / 1.018 | 1.064 / 1.218 / 1.126 | 1.077 / 1.190 / 1.104 | 1 / 1 / 1 | .983 / 1.003 / 1.036 |
+  | pin 52–58 (1 fps) | .348 / .348 | 1.007 / .984 / .986 | 1.004 / 1.057 / 1.074 | — | 1 / 1 / 1 | — |
+  | groove 76–110 (1 fps) | .318 / .318 | 1.007 / 1.015 / 1.004 | 1.064 / 1.142 / 1.098 | — | .984 / .984 / 1.000 | — |
+  | break 111.4–137.1 (1 fps) | .059 / .059 | .967 / **.732** / .778 | 1.019 / .643 / .754 | — | .996 / .774 / .787 | — |
+  | pads 118–126 (1 fps) | .049 / .049 | .948 / **.488** / .565 | .974 / .487 / .521 | — | .976 / .502 / .563 | — |
+  | outro 127–137 (1 fps) | .230 / .230 | 1.174 / 1.261 / .936 | 1.338 / 1.280 / .994 | — | .912 / .906 / .902 | — |
+  | return 3 137.1–140.5 (1 fps) | .207 / .207 | 1.143 / **1.205** / 1.050 | 1.258 / 1.457 / 1.168 | — | 1 / 1 / 1 | — |
+
+  (each cell: speed ratio / displacement ratio / the clock's mean on the window.) The §1.9 step: the composite's mean |ΔY| per 0.1 s runs 16 →
+  6 across the cut under every variant (the pool going still) with no spike from the clock; the one spike is the drop's own FX flash at 68.6
+  (95–97 / 255 on the off run and on every variant alike — the picture's, not the pool's); at 1 fps the steps per window sit within ±1 of the
+  off run's on every variant. **The drop (the file map, drop 2 confirmed 68.62):** the burst's clock .87 → **1.67** on the frame after (slewed;
+  1.89 with DT_SLEW 1e9) → 1.37 → 1.12 → 1.01 by +0.5 s — within the beat; the displacement **1.39× (DT_DROP 1) / 1.74× (DT_DROP 2)** over the
+  burst's five shots (the substep variant's velocity reads 1.016× the off run's, the clock-alone's 1.10× — two half-steps and one double step are
+  not the same advection, as the plan said); **the centre grey at +0.4 s: off 25.3, DT_DROP 1 25.0, DT_DROP 2 25.0, the hard onsets 25.0** —
+  within the plan's 10 % rule (−1 %), **the cheaper ships (2)**; the §1.9 step at the drop's frame 95.3 / 255 under every variant (the clear +
+  the FX flash; the burst's own share +1 at 68.7); at 10 fps the four rows are ONE picture — the burst is a number on an emptied pool, not a
+  look (the clear empties it, the ring's front is grammar time). The bench prices the honest variant: the burst ×2 **+.51 ms** at tier 3 (the
+  plan's +0.6–0.7 budget — a second chain), so DT_DROP 1 stays the switch for the eye that wants the real thing.
+- **The eye (the montages at 0.5 s / 0.1 s / 2 s):** across the cut the seven rows are the same picture frame for frame at this cadence — the
+  difference is in the displacement numbers (−7 % on the cut, +16 % on the return for the ship; −17 / +46 % with the level) and shows in the
+  return's spread by 69.5–70.5 (the ship's ink spreads wider than the off run's); through the pads the ship's ink sits more compact (half the
+  displacement) and the breakdown's picture reads calmer; the drop rows are one picture. **The planner's risk stands: a dt that breathes can
+  read as framerate wobble rather than music, and the montage cannot judge it — only the user's eye in track time can.** What the eye should
+  see on `#scene=13` with RaindropsOnRoses: **at 56 s** the pool's time pulsing with each sub attack (±5–7 % per beat — the breath; with
+  `DT_LVL` .4 the whole pinned passage runs a tenth faster); **at 65.4–68.57** the ink's travel slackening to ~.84 of its pace while the low
+  end is out — the pool holding its breath on top of its own stilling — and **at 68.57** running again at 1.1–1.2× for two seconds (the slam);
+  **at 111–137** the pads at half time (the latched void); **at 137.1** the return's clock 1.2× (the live lanes; on the file map the drop's burst
+  rides the clear). Whether that reads as the music or as a wobble is the remark to make in track time.
+- **The ship decision per knob:** the breath **ships** (zero-mean, the plan's K2, the cut and the return read on both rulers, the §1.9 rule
+  holds: 0 slewed frames, the strips' steps the off run's); the void **ships** (the breakdown at .75–.78, the pads at half time, the return
+  eased — gated on the sub out, this step's fix); the drop **ships as the clock alone (2)** by the 10 % rule; the level **stays a switch at 0**
+  (it is a tempo change on every groove — +9–14 % — and the user's reading of "faster when it pins" may want it: the A/B is one URL); the pulse
+  **stays a switch at 0** (a ±15 % tick per beat is the judder test, not a ship). **The A/B URLs for the user** (scene 13, RaindropsOnRoses, the
+  live page; `&k2=` takes the JSON as is — Chrome accepts the braces and quotes in a hash; `%7B%22DT_SUB%22%3A0%7D` is the same encoded):
+  the ship `https://retinarave.com/#scene=13` · the clock OFF `#scene=13&k2={"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}` · the breath alone
+  `#scene=13&k2={"DT_VOID":1,"DT_DROP":0}` · the breath doubled `#scene=13&k2={"DT_SUB":0.8}` · with the level `#scene=13&k2={"DT_LVL":0.4}` ·
+  the level alone `#scene=13&k2={"DT_SUB":0,"DT_VOID":1,"DT_LVL":0.4}` · the void alone `#scene=13&k2={"DT_SUB":0}` · the honest drop
+  `#scene=13&k2={"DT_DROP":1}` · the pulse `#scene=13&k2={"DT_BEAT":0.3}` · a hard clock (no slew) `#scene=13&k2={"DT_SLEW":1e9}` · the
+  pads frozen (the plan's extreme, not a ship) `#scene=13&k2={"DT_VOID":0,"DT_MIN":0}`. Under `#test` the same `&k2=` works on the harness's
+  file page (`test&track=RaindropsOnRoses&at=24&scene=13&k2=…`); live, `CARD.fluid.K2.DT_SUB = 0` from the console slews in on the next frame.
+- **The gates (RaindropsOnRoses-filtered; `tools/work/fluid2/s6/gates.sh`, the log `gates.log`; each with its wall time):** `node tools/check.js` 183 modules · 0 fail · 9 warn (the standing soft caps);
+  `npm test` exit 0 — test_fluid **442 ok 0 fail** (S6's 19 cases in the bands block), test_music 151 ok (24 s); `node tools/license.js --check` 186 public
+  files, 0 without the header (the rulers live in tools/work); **SCENES=13 real-md5 Raindrops ×2: 8 / 8 cmp-equal (69 s + 69 s)**, all 8 moved against
+  S5's (the clock on every frame) → re-based into `real-md5-v037.txt` (8 lines, the other 322 untouched); **the NEUTRAL knobs (`HASHX='&k2={"DT_SUB":0,
+  "DT_VOID":1,"DT_DROP":0}'`, 69 s): 8 / 8 = S5's hashes to the byte** — the byte-identical pass (a first neutral run with DT_DROP left at 2 moved
+  exactly one line, the file map's groove window after drop 2's burst, 7 / 8 — the burst is real and the proof names it); **SCENES=12 real-md5
+  Raindrops: 8 / 8 = v036 (70 s)** — the pool grammar returns no clock, the step the §104 pass (`dts = dt · 1 / 1`); **the roster 0 1 3 Raindrops:
+  24 / 24 = v037 (207 s)**, differ [], new []; **real-rulers s13 Raindrops 56–116: 1 / 1 ok (66 s)** — 600 frames, jump viol 0 max .060 (S5's .058),
+  mon viol 0 max .0161, black 0, clip25 0, medY .193 — the clock's every change under the §1.9 rule on the 56–116 window (the pin, the cut, the
+  return, the groove); **scene-md5 fake: 26 = v035 (s13's pair aside), errs [] on 14 ids (212 s)**; s12's pair unmoved (3e483039 / 2274bb4e = v035),
+  s13's pair re-recorded 0e92a1c4 / ed3283fc (S5's 9a67af34 / fb6a5d6f — the breath on the fake's `sub`); **parity fake: max |diff| 7.852214593751443
+  over 72 fields, the §102 nav.* line to the digit (51 s)**; **the substrate bench** (one page test&scene=12, q .95 pinned, twice — before the gates at
+  load 2.5 and after at load 4.4): pool / bands ship (the clock on) / bands NEUTRAL (DT_SUB 0, DT_VOID 1) / bands BURST (the substep count held at 2)
+  ×3 = .547 / .684 / .632 / 1.059 · .552 / .521 / .512 / .917 · .542 / .524 / .582 / 1.100, then .647 / .683 / .711 / 1.151 · .659 / .711 / .721 / 1.141 ·
+  .680 / .725 / .704 / 1.132 — **medians (the two runs) ship .524 / .711 vs neutral .582 / .711 vs pool .547 / .659: the clock is a uniform value (ship −
+  neutral −.058 / 0, inside the quads' own spread; the first quad of each run is the GPU clock's ramp, S4's note); the burst +.51 / +.43 ms over the
+  ship — the plan's +0.6–0.7 budget for a second chain, paid only while DT_DROP 1 runs a clear**; the show pass bench(13) .390 / .418, bench(12) .385
+  / .405, bench(0) 1.378 / 1.526; tier 3, sim 259×128, dye 1035×512; **MOBILE=1 scene 13 tier 0 alive** (errs [] bad [] frameN 242, dt .987 on the
+  fake — the breath live; benchFluid bands ship .480 / .518, neutral .482 / .502, burst ×2 .768 / .707, pool .464 / .420 — the burst +.29 / +.19 at tier 0,
+  over the .4 budget while it runs: the honest variant is a desktop switch, the shipped clock-alone costs tier 0 nothing; show13 .469 / .455, show12
+  .396 / .369); `npm run build` 182 modules **1 862 682 bytes** (S5's 1 851 843 + 10.8 KB, the comments mostly), file:// scene 13 bands errs [] frameN
+  302, scene 12 pool errs [] frameN 302; the crossfade 12 → 13 max step 7.51 / 255 §1.9 viol [], 13 → 0 max step 2.0 viol []. inject.js untouched.
+- **Open, carried:** **the full sweep before any tag** (the user's word; S1–S5's open lists stand) — the clock on the other seven: the breath's
+  numbers depend on SUB_TAU / SUB_SLOW's reading of each track's sub (a sub that never cuts breathes only per beat; Comptine's piano reads .4
+  on the 25–60 Hz band with no sub — its clock will pulse on low piano notes, as its heave does at SUB_GATE 0), the void's latch per track
+  (SeeYouDrop's build 47–57, Vienna's dream 64–86 — the plan's own windows), the drop's burst on the ELEVEN confirmed drops (§113's table —
+  the 10 % rule re-read on each; the fake timeline has no drop); the pure ruler runs on any trace in a minute (`JR` is the one line). The eye
+  in track time (the planner's risk) — not measurable here. The void cannot read a sub cut on the live lanes (the detector's lag; the file
+  map's `mapDropEvt` confirms the drop but no map field says "the sub is cut" — a `subAge`-based void term (the sub gone ≥ N beats, no detector)
+  is one line if the eye wants the cut read as a void rather than as the breath). `DT_LVL` as a tempo: if the user likes it, its mean must be
+  re-centred (subEnv's track mean, the §111 item-7 shape) so a groove runs at 1. The substep variant's velocity reads 8 % under the clock-alone's
+  at the burst — if item 2's reversal wants the honest integrator, DT_DROP 1 is there at +.5 ms for one beat. `fluid-tracks.js` gained no S6
+  column (the clock's per-window mean reads off the pure ruler). The dye advect inheriting `uDt` from the velocity pass is a fact of the
+  program's uniform state, not a line of code — a future pass order change must set it.
+- **For S7's builder (the seven-track tune):** the return's record is `heave, swirl, kick, mids, snare, grain, highs, pen, dtSim, substeps, time`;
+  the knobs that change the pixels on every frame are DT_SUB and DT_VOID (the s13 md5s moved on all 8 Raindrops lines; the neutral set
+  `{"DT_SUB":0,"DT_VOID":1}` is S5's hashes to the byte — `HASHX=` on real-md5.sh proves a knob set's identity without editing K2); the strips'
+  displacement column is speed × dtSim (the velocity alone misreads a slowed clock as a faster pool); the drop strips must run `MAP=1` on
+  RaindropsOnRoses (the live lanes never confirm drops 1 / 2); the gates script's `scene-md5.sh` tag is a hand edit (s5 → s6 → s7); the
+  bench's burst reads through `CARD.benchFluid(300, null, 'bands', 2)` (the wrapper forwards the hold since this step); `&k2=` is the user's
+  switchboard — every K2 knob, not only S6's.
 
 ### S7 — the seven-track tune, the gates, the montages, the docs (not started)
 

@@ -128,9 +128,38 @@
 //                on a read outside it): 2 plans as 1 today and `pen.src` says 2. The stroke the fluid carries off is the §105 advection.
 // `pen` { on, src, x, y, step, v, ink, floor, wrap } in the return (`CARD.fluid.pen`): step = the position's move this frame (uv, on the
 // circle), v = its drift speed (uv/s), ink = the pen's area-weighted ink, floor = the floor's it replaced (equal by construction), wrap.
+//
+// S6 — TIME (FLUID2-PLAN §4 S6; the user: "explore: point sources and time", and on RaindropsOnRoses: "ideas modulate time → example bass that
+// starts at 56s → something happens at 1:06 with the sound that seems like it would be good to modulate on"). The SOLVER's clock, not the
+// grammar's: `dtSim` multiplies the dt of the vort and advect passes in fluid.js (the splats, the emitters' ×60·dt, the key's evidence, the
+// refractories, the clear's countdown and the shockwave's front stay on the grammar's dt — musical time; the dye's dissipation rides the
+// advect pass, so it is the pool's time too). A function of MS and the state alone (deterministic). Five terms, each exactly 1 at its
+// neutral knob — the byte-identical path (x · 1 = x in fluid.js):
+//   the BREATH (DT_SUB)  — 1 + DT_SUB · (subEnv − subSlow): the sub's rise above its slow mean quickens the pool's time, its tail and a CUT
+//                          slacken it (the 1:06 cut: the low end pulled out for two bars with the drums running — the pool holds its breath,
+//                          and runs again on the return at 68.57; the 56 s pin: time leans in);
+//   the LEVEL  (DT_LVL)  — 1 + DT_LVL · (subEnv − .5): time runs with the sub's level itself (slow while the sub is out, fast while it pins);
+//   the VOID   (DT_VOID) — toward mix(1, DT_VOID, voidT) while the base's void is LATCHED (§111 item 4, recomputed from the same fields:
+//                          buildLive > .5 with the sub seen within VOID_BARS bars; the confirmed clear ends it), eased DT_TAU — the breakdown
+//                          runs slow, the return brings the clock back over DT_TAU (never a jump into the ring's beat);
+//   the DROP   (DT_DROP) — a BURST on the confirmed clear's beat (`clearLeft` > 0 — the §113 frame, the shockwave's): the clock × DT_DROPX on
+//                          the drop's frame decaying linearly to 1 over the beat (accenting, never driving); DT_DROP 1 takes DT_STEPS SUBSTEPS
+//                          per frame at that clock (`substeps` in the return — the real thing, ×cost for one beat), 2 the clock alone (the cheap
+//                          stand-in: semi-Lagrangian is stable at any step; the ring's compressible term is bounded in the shader);
+//   the PULSE  (DT_BEAT) — 1 + DT_BEAT · (cos⁴(π·beatPhase) − 3/8): a zero-mean beat-synchronous pulse on the breath's own shape (the
+//                          exploration's judder test — does a clock that ticks read as music or as a dropped frame).
+// The product is clamped to [DT_MIN, DT_MAX] and SLEWED against the last frame's value (|Δ| ≤ DT_SLEW · dt per frame: the §1.9 rule — every
+// change eased, never a step; the cold frame starts AT its target, so a switch into this grammar is no jolt). The BASE's `dtSim` (none today;
+// FLUID-DROP item 2's freeze is a base `dtSim` 0) composes by composeDt(): a 0 from the base WINS over anything here. The pen's ease runs on
+// min(1, dtSim) · dt — it slows and freezes with the pool (S5's note: a frozen pool must not be drawn over) and never runs faster than the
+// hand. `time` { dtSim, substeps, breath, level, void, drop, pulse, latched, raw, slewed } in the return (`CARD.fluid.time`), `dtSim` and
+// `substeps` beside it for fluid.js.
 import { sectorPc } from '../../math/keycolour.js';
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
-import { clamp, ema, sstep } from '../../math/util.js';
+import { clamp, ema, mix, sstep } from '../../math/util.js';
+
+// §116 S6 the precedence (FLUID2-PLAN §2): the base's clock and this grammar's compose by product, and a base 0 (item 2's freeze) wins outright.
+export const composeDt = (base, mine) => (base === 0 ? 0 : (base === undefined || base === null ? 1 : base) * mine);
 
 export const FLUID_FEATS = [...FEATS_BASE, 'sub', 'high'];   // S1: the sub band's level (25–60 Hz, fast) — the envelope's source; S4: the high band's (2–12 kHz, AGC'd) — the grain's and the dip's; ∪ this grammar's own reads, appended, never removed (`hat2` is the base's read)
 
@@ -208,6 +237,18 @@ export const K = {
                    //   not inject mass") and the strips (§116 S5): the breakdown's pool is near still (.05 uv/s), so .25 lifts its speed +24 % (the outro +37 %),
                    //   1 is a plume (×2.4–2.7), .05 sits inside the 10 % guard (+3 %, the outro +10 %) and the eye gains nothing by it; 0 is zero force to the digit
   PEN_RAD: 1,      //   the pen's radius × RADIUS (the floor's is 2): the floor's dye × (2 / PEN_RAD)² — the same ink in the budget's units, a thinner mark
+  DT_SUB: 0.4,     // S6 the breath: the clock × (1 + DT_SUB · (subEnv − subSlow)) — the sub's rise quickens the pool's time, its tail / a cut slackens it; 0 = off
+  DT_LVL: 0,       //   the level: × (1 + DT_LVL · (subEnv − .5)) — slow while the sub is out, fast while it pins; 0 = off (a switch: the strips decide)
+  DT_VOID: 0.5,    //   the latched void's clock (the void's depth eases the clock toward it; the clear ends it); 1 = off
+  DT_TAU: 1,       //   s: the void term's ease (in and out — the return's snap is measured as a §1.9 step)
+  DT_DROP: 2,      //   the drop's burst: 0 none · 1 DT_STEPS substeps per frame at the burst's clock (the real thing, +cost) · 2 the clock alone (the stand-in —
+                   //   SHIPS by the plan's 10 % rule: the centre grey at +0.4 s 25.0 under both against the off run's 25.3 on RaindropsOnRoses's drop 2, §116 S6)
+  DT_DROPX: 2,     //   the burst's clock on the drop's frame, decaying linearly to 1 over the clear's beat (accenting, never driving)
+  DT_STEPS: 2,     //   the substeps per frame while the burst runs (DT_DROP 1) — a second curl → advect chain, the plan's +0.6–0.7 ms
+  DT_BEAT: 0,      //   the pulse: × (1 + DT_BEAT · (cos⁴(π·beatPhase) − 3/8)), zero-mean on the beat; 0 = off (the judder test)
+  DT_SLEW: 8,      //   /s: the largest change of the clock per second — every term eased, never a step (the §1.9 rule); 1e9 = none
+  DT_MIN: 0.5,     //   the clock's bounds …
+  DT_MAX: 2,       //   … (the base's 0 bypasses them: a freeze is a freeze)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
@@ -223,7 +264,8 @@ export const K = {
 //   S5: `penN` the frames the pen has been on (0 = the pen starts AT its target: no sweep on the switch, the grammar's cold frame or PEN_SRC
 //   turned on live), `penP` its eased place on the fifths circle relative to the tonic ([−6, 6)), `penY` its eased height, `penLx` / `penLy`
 //   the last frame's position (the step and the drift read against them)
-export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [], highEnv: 0, highRing: [], highAcc: 0, highN: 0, highT: 0, dipLeft: 0, penN: 0, penP: 0, penY: 0.5, penLx: 6.5 / 12, penLy: 0.5 });
+//   S6: `dtVoid` the void term eased DT_TAU (cold: at its target), `dtSim` the last frame's clock (the slew reads against it; cold: at the target)
+export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [], highEnv: 0, highRing: [], highAcc: 0, highN: 0, highT: 0, dipLeft: 0, penN: 0, penP: 0, penY: 0.5, penLx: 6.5 / 12, penLy: 0.5, dtVoid: 1, dtSim: 1 });
 
 // plan(S, dt, st) → the same shape as inject.js's plan() (its fields, the 'sub' splat without its velocity) + `heave` (uv/s², what
 // was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope), `kick` (S2: { shape, mom, ink, n } — this frame's
@@ -241,6 +283,28 @@ export function plan(S, dt, st) {
   const sub = clamp(S.sub || 0, 0, 1);
   st.subEnv = cold ? sub : ema(st.subEnv, sub, dt, K.SUB_TAU);
   st.subSlow = cold ? st.subEnv : ema(st.subSlow, st.subEnv, dt, K.SUB_SLOW);
+  const beat = 60 / Math.max(60, S.bpm);
+  // S6 the solver's clock (the header's five terms; each 1 at its neutral knob; the base's latch recomputed from the fields it reads — never
+  // duplicated state: `st.base.subAge` and `clearLeft` are the base's own). The void term eases DT_TAU toward its target (the clear ends it),
+  // the product is clamped and slewed; the cold frame starts AT the target. The pen below runs on min(1, dtSim) · dt.
+  const breath = 1 + K.DT_SUB * (st.subEnv - st.subSlow);
+  const level = 1 + K.DT_LVL * (st.subEnv - 0.5);
+  // the latch as the base reads it, AND the sub out (subGate 0): on the live lanes the detector stays armed past a return it never fired on
+  // (RaindropsOnRoses's drop 2, §117 — buildLive .68 for two seconds after 68.57 with the sub back), and the clock must run when the bass does
+  const latched = S.buildLive > 0.5 && st.base.subAge < KB.VOID_BARS * 4 * beat && !(st.base.clearLeft > 0) && !(S.subGate > 0) ? 1 : 0;
+  const voidT = clamp(Math.max(S.buildLive || 0, S.tongueOn === 1 ? S.tongueAmbig || 0 : 0), 0, 1);
+  const voidTarget = latched ? mix(1, K.DT_VOID, voidT) : 1;
+  st.dtVoid = cold ? voidTarget : ema(st.dtVoid, voidTarget, dt, K.DT_TAU);
+  const burst = K.DT_DROP > 0 && st.base.clearLeft > 0 ? 1 + (K.DT_DROPX - 1) * clamp(st.base.clearLeft / beat, 0, 1) : 1;
+  const cb = Math.cos(Math.PI * (S.beatPhase || 0)), pulse = 1 + K.DT_BEAT * (cb * cb * cb * cb - 3 / 8);
+  const raw = clamp(breath * level * st.dtVoid * burst * pulse, K.DT_MIN, K.DT_MAX);
+  const slewLim = Math.max(0, K.DT_SLEW) * dt;
+  const mine = cold ? raw : clamp(raw, st.dtSim - slewLim, st.dtSim + slewLim);
+  st.dtSim = mine;
+  const dtSim = composeDt(R.dtSim, mine);
+  const substeps = K.DT_DROP === 1 && burst > 1 && dtSim > 0 ? Math.max(1, K.DT_STEPS | 0) : 1;
+  const time = { dtSim, substeps, breath, level, void: st.dtVoid, drop: burst, pulse, latched, raw, slewed: raw !== mine ? 1 : 0 };
+  const dtP = dt * Math.min(1, dtSim);   // the pen's clock: with the pool when it slows or freezes, the hand's when it runs
   // the emitter's dot: its velocity is gone; its ink stays × SUB_INK (0 = the splat is gone)
   const i = R.splats.findIndex((s) => s.k === 'sub');
   let inkChanged = false;
@@ -255,7 +319,6 @@ export function plan(S, dt, st) {
   // kinds for the rulers. The pending jet frames are a transient (cold: empty); a scene switch drops them (fluid.js resets `n`, mkState's
   // `jet` is the band state's own — it empties with the first cold frame below).
   const shape = K.KICK_SHAPE >= 1 && K.KICK_SHAPE <= 4 ? K.KICK_SHAPE | 0 : 0;   // a shape outside the table is the control
-  const beat = 60 / Math.max(60, S.bpm);
   const kick = { shape, mom: 0, ink: 0, n: 0 };
   if (cold) { st.jet.length = 0; st.puffT = -1; }
   if (shape) {
@@ -335,7 +398,7 @@ export function plan(S, dt, st) {
     if (st.penN === 0) { st.penP = dT; st.penY = yT; }
     else {
       const arc = ((dT - st.penP + 6) % 12 + 12) % 12 - 6;   // the shortest arc on the circle
-      const e = 1 - Math.exp(-dt / Math.max(1e-6, K.PEN_TAU)), lim = Math.max(0, K.PEN_VMAX) * dt;
+      const e = 1 - Math.exp(-dtP / Math.max(1e-6, K.PEN_TAU)), lim = Math.max(0, K.PEN_VMAX) * dtP;   // S6: the pen's clock (dtP = dt while the pool runs at 1 or faster)
       let mx = arc * e / 12, my = (yT - st.penY) * e;   // the eased move in screen units (a fifth is 1 / 12 of the width) …
       const m = Math.hypot(mx, my); if (m > lim) { mx *= lim / m; my *= lim / m; }   // … its LENGTH clamped (the §1.9 step: ≤ PEN_VMAX · dt on the diagonal too)
       st.penP = ((st.penP + mx * 12 + 6) % 12 + 12) % 12 - 6;
@@ -393,5 +456,6 @@ export function plan(S, dt, st) {
   const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
   R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare; R.grain = grain; R.highs = { env: st.highEnv, grain, dip, cell: Math.max(1, K.NOISE_CELL | 0), hold: Math.max(1, K.NOISE_HOLD | 0), jit }; R.pen = pen;
+  R.dtSim = dtSim; R.substeps = substeps; R.time = time;   // S6: the solver's clock (fluid.js multiplies the vort / advect dt by it; substeps the burst's passes)
   return R;
 }

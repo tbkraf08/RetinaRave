@@ -10,6 +10,7 @@
 # user's pad take (rec, &map=0 only: a take has no map). The fake timeline's list (tools/scene-md5.sh) is the fast smoke; a scene
 # or engine change is PROVEN here.
 #   GPU=1 PORT=88xx tools/real-md5.sh <tag>         -> tools/work/real-<tag>/<name>.jpg + tools/work/real-<tag>-md5.txt (the list)
+#   HASHX='&k2=%7B%22DT_SUB%22%3A0%7D' appends extra hash params to every page (§116 S6: the band grammar's knobs url-encoded — proves a knob set's identity)
 #   the DEFAULT (tools/accept.sh): SCENES = the roster (0 1 3 12; FLUID bids since §114), every track, both modes, WINDOWS = intro groove build1 drop1
 #   (boundary1 on a drop-less track) + the take's intro / chords; FULL=1 = every registered id and every window (quiet, build2, drop2).
 #   scope: SCENES="0 3" TRACKS="SeeYouDrop rec" MODES="1" WINDOWS="groove drop1"   — a scene-folder change is proven on its own lines
@@ -54,7 +55,7 @@ run() {
   steps="$steps,{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,heard:+CARD.MS.heardT.toFixed(3),frame:window.__FRAME,errs:CARD.ERRS,bad:CARD.nonFinite(),map:CARD.MS.mapOn,sc:CARD.SC.cur})\"}]"
   local mh=""; [ "$map" = 0 ] && mh="&map=0"
   local music=""; [ "$track" = rec ] && music=$PWD/$RECWAV
-  local r; r=$(MUSIC=$music CLOCK=1 GPU=1 OUT=$D PORT=$port node tools/cdp.js "test&track=$track&at=$at&scene=$i$mh" "$steps" 2>&1)
+  local r; r=$(MUSIC=$music CLOCK=1 GPU=1 OUT=$D PORT=$port node tools/cdp.js "test&track=$track&at=$at&scene=$i$mh$HASHX" "$steps" 2>&1)   # HASHX: extra hash params (§116 S6: `&k2=…` url-encoded — a knob set's identity proof)
   local ev; ev=$(echo "$r" | grep "^EVAL" | tail -1 | sed 's/.*=> //' | tr -d '\\' | sed 's/^"//; s/"$//')
   local exc; exc=$(echo "$r" | grep -c "^\[EXC\]\|^TIMEOUT\|^\[EVAL-ERR\]")
   echo "s$i $track at=$at map=$map: $ev exc $exc"

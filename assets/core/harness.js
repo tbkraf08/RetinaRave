@@ -51,7 +51,7 @@ export const CARD = {
   frameN: 0,
   fluid: FLUID,                                                  // the substrate's state (on, avail, ms, tier, sim / dye sizes, params, nSplat, tex) — core/fluid/fluid.js
   setFluid,                                                      // CARD.setFluid(true | false): the W key's switch
-  benchFluid: (n = 300, ring, grammar) => benchFluid(n, MS, ring, grammar), // ms per fluid step at the current tier, readPixels-synced on the dye (HARNESS "Fluid"); §113 ring {a, r, w} held on every step; §116 grammar 'pool' | 'bands' (absent = the last step's)
+  benchFluid: (n = 300, ring, grammar, steps) => benchFluid(n, MS, ring, grammar, steps), // ms per fluid step at the current tier, readPixels-synced on the dye (HARNESS "Fluid"); §113 ring {a, r, w} held on every step; §116 grammar 'pool' | 'bands' (absent = the last step's)
   get fix() { return ENGINE.fix; },
   set fix(v) { ENGINE.fix = v; },
   get GRID() { return getGrid(); },
@@ -187,6 +187,9 @@ export function initHarness(hideLanding) {
   // the composite's glitch rows (post.js FX.glitchGain, DECISIONS §110; the user: "how can I disable the glitch effect (ie. where it tears the screen)?"):
   // &glitch=0 turns the screen tear off on every page (no #test needed, like &lead=), &glitch=0.5 halves it, 1 = the default; key G toggles it live
   if (HASH.has('glitch')) { FX.glitchGain = +HASH.get('glitch'); if (!(FX.glitchGain >= 0 && FX.glitchGain <= 1)) throw new Error('&glitch= must be a gain 0..1 (0 = no screen tear)'); }
+  // the band grammar's knobs (core/fluid/inject2.js K, DECISIONS §116): &k2={"DT_SUB":0,"DT_VOID":1} overrides any of FLUID2's constants on every
+  // page (no #test needed — the user's A/B at home on scene 13; the strip tools' K2= is the same table); an unknown knob or bad JSON throws
+  if (HASH.has('k2')) { let o; try { o = JSON.parse(HASH.get('k2')); } catch (e) { throw new Error('&k2= must be JSON, e.g. {"DT_SUB":0}'); } for (const k in o) { if (!(k in FLUID.K2) || typeof o[k] !== 'number') throw new Error('&k2= unknown or non-numeric knob ' + k + ' (the table: ' + Object.keys(FLUID.K2).join(' ') + ')'); } Object.assign(FLUID.K2, o); }
   // keyConf's owner (engine/ears/tonic.js KEYOWN, DECISIONS §84): &kc=0 restores synapse's keyClar as the key-hue gate and the shade's "1 when the ears have a tonic" — the A/B of the v0.29 look
   if (HASH.has('kc')) KEYOWN.ears = HASH.get('kc') !== '0';
   // live step 6: &clock=pcm makes bpm / beatPhase / beat / beatCount publish the PCM beat clock (engine/clock; features-clock.js);

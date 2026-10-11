@@ -1,0 +1,55 @@
+# §116 S6 — time: the solver's clock breathes with the sub, slows in the latched void, bursts on the drop: the receipts (RaindropsOnRoses-filtered on
+# the user's word — "only tune with Raindrops, don't do full sweep"; the other seven tracks untuned and unswept, the full sweep owed before any tag).
+# Branch fluid2: the clock + tests b5db91f, the ship knobs f8e5fae, the proofs + docs after. 2026-10-10, one Chrome at a time (no stale Chromes found),
+# the gates on PORT 8975 (tools/work/fluid2/s6/gates.sh → gates.log), the strips on 8978 (run.sh → strips.log: seven 10 fps cut strips 64–70.5, five
+# 10 fps drop strips 67.5–70 on the file map, four 1 fps arc strips 50–140).
+#
+# THE SHIP: DT_SUB .4 (the breath), DT_LVL 0 (switch), DT_VOID .5 / DT_TAU 1 (the latched void, gated on the sub out), DT_DROP 2 (the clock alone; 1 =
+# the substeps, +.5 ms for one beat), DT_DROPX 2, DT_STEPS 2, DT_BEAT 0 (switch), DT_SLEW 8, DT_MIN .5, DT_MAX 2. The user's A/B: &k2={"DT_SUB":0,…}.
+#
+# THE GATES (each with its wall time) — the numbers as DECISIONS §116 S6 'The gates' carries them:
+#   == s13a start 22:54:54
+#   == s13a wall 69 s
+#   == s13b start 22:56:03
+#   == s13b wall 69 s
+#   == s13 a/b cmp-equal 8 lines
+#   == s13 vs v037 (S5): 0 unmoved, 8 moved: s13-RaindropsOnRoses-build1-f730-m0.jpg s13-RaindropsOnRoses-build1-f730-m1.jpg s13-RaindropsOnRoses-drop1-f1030-m0.jpg s13-RaindropsOnRoses-drop1-f1030-m1.jpg s13-RaindropsOnRoses-groove-f602-m0.jpg s13-R
+#   == s13-neutral start 22:57:12
+#   == s13n wall 69 s
+#   == s13 NEUTRAL (DT_SUB 0, DT_VOID 1) vs v037 (S5, before the re-base): 7 / 8 equal — the byte-identical pass, 1 moved: s13-RaindropsOnRoses-groove-f602-m1.jpg
+#   == s12 start 22:58:21
+#   == s12 wall 70 s
+#   == s12 Raindrops vs v036: 8 / 8 equal, differ []
+#   == roster start 22:59:31
+#   == roster wall 207 s
+#   == roster 0 1 3 Raindrops vs v037: 24 / 24 equal, differ [], new []
+#   == rulers start 23:02:58
+#   == rulers wall 66 s
+#   == fake start 23:04:04
+#   == fake wall 212 s
+#   == fake 26 = v035 (s13's pair aside)
+#   == parity start 23:07:36
+#   == parity wall 51 s
+#   == build 23:08:46
+#   == file:// 23:08:46
+#   == fade 23:08:58
+#   == all done 23:09:18
+#   == s13 NEUTRAL (DT_SUB 0, DT_VOID 1, DT_DROP 0) vs v037 (S5): 8 / 8 equal, 0 moved  (69 s; the first neutral run with DT_DROP 2 left on: 7 / 8, the file map's groove after drop 2's burst)
+#   13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.193  0.0222 | 3599  0.060  0     0     | 3599  0.0161 0     | ok
+#   npm test exit 0: test_fluid 442 ok 0 fail · test_music 151 ok (24 s); check 183 / 0 fail / 9 warn; license 186 / 0
+#   parity fake: max |diff| 7.852214593751443 over 72 fields, the §102 nav.* MISMATCH line to the digit (51 s)
+#   the bench (pool / ship / neutral / burst×2, three quads, twice): .547/.684/.632/1.059 .552/.521/.512/.917 .542/.524/.582/1.100 (load 2.5) ·
+#     .647/.683/.711/1.151 .659/.711/.721/1.141 .680/.725/.704/1.132 (load 4.4); show13 .390/.418 show12 .385/.405 nav 1.378/1.526
+#   MOBILE=1 tier 0 (64×139 / 256×554): alive, errs [] bad [], dt .987; bands ship .480/.518 neutral .482/.502 burst×2 .768/.707 pool .464/.420; show13 .469/.455 show12 .396/.369
+#   build 1 862 682 bytes; file:// s13 bands errs [] frameN 302, s12 pool errs [] frameN 302; the fade 12 → 13 max step 7.51 / 255 viol [], 13 → 0 2.0 viol []
+#
+# THE RULERS (tools/work/fluid2/s6/{ruler.js, cmp.py}; the full tables in DECISIONS §116 S6):
+#   the pure ruler, the live lanes (6601 frames): breath .4 alone — cut 65.4–68.57 .873 (min .775), return 68.57–70.5 1.129 (max 1.27), groove 1.0007;
+#     void .5 alone — latched 750 / 1356 breakdown frames, min .501, the cut's latch at 67.5 (2.1 s in), the return .85 → .98 eased; level .4 — pin 1.10,
+#     groove 1.09, cut .84; DT_BEAT .3 ±15 %; the ship — 0 slewed frames, maxΔ .115 / frame (lim .133)
+#   the strips (displacement = speed × dtSim, ratio ÷ off): ship — cut .934, return 1.161, pin .984, groove 1.015, break .732, pads .488, return 3 1.205;
+#     + level .4 — cut .835, return 1.461, groove 1.142; breath .8 — cut .811, return 1.609; void alone — cut 1.000, pads .502
+#   the drop (file map, drop 2 confirmed 68.62): the clock .87 → 1.67 → 1.01 by +0.5 s; displacement ×1.39 (substeps) / ×1.74 (clock alone) over the burst;
+#     centre grey at +0.4 s: off 25.3, DT_DROP 1 25.0, DT_DROP 2 25.0 (the 10 % rule → 2 ships); the §1.9 step at the drop's frame 95.3 / 255 on every variant
+#
+# THE MONTAGES: tools/accept/v0.37/fluid2-s116-s6-RaindropsOnRoses-{cut,break,drop}.jpg (the clock on every label).
