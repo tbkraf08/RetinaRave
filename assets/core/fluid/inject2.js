@@ -66,8 +66,22 @@
 // with or without S1's field: the heave costs 15 %, the jet's removal the rest). So the shipped kick is the DIPOLE, seeded inward: the pair's
 // own flow between its cores carries it a third of the screen per beat on its own, at the base's impulse and ink. `kick` in the return =
 // this frame's kick kinds for the replay rulers: { shape, mom: Σ dy·rad, ink, n }.
+//
+// S3 — THE MIDS ARE MATERIAL (FLUID2-PLAN §4 S3; the frame: the mids are the WEATHER, not the mass — the user: "the double time should be
+// accenting rather than driving"). The base's vorticity confinement reads `tension` (curl = 10 + 40·tension: a build's riser tightens the
+// curls). Here the confinement's constant is the MID band's place in the track's own last FLOOR_WIN s — §111 item 7's ring, `st.base.midRing`,
+// READ, not duplicated: the p20 / p80 of its one-second means, sstep between them (the level itself before the ring holds 5 s) — eased
+// MID_TAU: dense mids tighten the curls (CURL0 + CURL_MID), thin mids go laminar (CURL0); CURL_SRC 0 is the base's constant to the bit.
+// The MASK (CURL_MASK 1): `uCurlMask` on the vort pass — the confinement at its full value in the band CURL_Y0..CURL_Y1 (the mids' ink
+// enters at mid height, §108), CURL_LO of it outside, feathered CURL_FE; (0, 1, 1, 0) is the identical program path (a uniform branch, never
+// a mix — the ring's and the swirl's rule). The SNARE (SNARE_JET 1): the base's two shears at (.3, .5) / (.7, .5) — equal, opposite, inward —
+// become ONE jet from a wall (x SNARE_X in from the left or the right wall — a hair in, never AT it: the projection cancels a push at a
+// closed wall — alternating by the snare count, y SNARE_Y) at the pair's
+// momentum (Σ|dx|·rad) and ink, spread over SNARE_N frames (S2's jet shape: a pending queue at 1 / SNARE_N per frame) — a shear burst
+// that crosses the pool, `k: 'sjet'`; the harmonic branch's one directed splat (`k: 'snare'`, kept) and the chord shears (`k: 'chord'`)
+// are untouched. `mids` { pos, curl, mask } and `snare` { kind, mom: Σ|dx|·rad, ink, n, side } in the return for the rulers.
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
-import { clamp, ema } from '../../math/util.js';
+import { clamp, ema, sstep } from '../../math/util.js';
 
 export const FLUID_FEATS = [...FEATS_BASE, 'sub'];   // S1: the sub band's level (25–60 Hz, fast) — the envelope's source; ∪ this grammar's own reads, appended, never removed
 
@@ -101,6 +115,23 @@ export const K = {
   KPUFF_R: 0.12,   //   the front's reach, screen heights from the kick's place …
   KPUFF_T: 0.25,   //   … reached in this many beats (then the puff is gone; a new kick restarts it)
   KPUFF_W: 0.03,   //   the front's width (screen heights)
+  CURL_SRC: 1,     // S3 the vorticity confinement's source: 0 the base's 10 + 40·tension (the control, to the bit) · 1 the MID band's own-range place:
+                   //   curl = CURL0 + CURL_MID · midEnv — dense mids tighten the curls, thin mids go laminar (the mids are the material)
+  CURL0: 10,       //   the laminar floor (the bottom of the mids' own range) …
+  CURL_MID: 40,    //   … + this at the top of it (the base's own span: 10 + 40·tension)
+  MID_TAU: 0.25,   //   s: midEnv = the own-range place (sstep(p20, p80) of st.base.midRing's one-second means) eased this fast — the constant never steps per frame
+  CURL_MASK: 0,    //   1: the confinement at its full value in the band CURL_Y0..CURL_Y1, CURL_LO of it outside (feathered CURL_FE) — `uCurlMask` on the vort
+                   //   pass; 0 = the identical program path
+  CURL_Y0: 0.3,    //   the band's floor (screen heights) …
+  CURL_Y1: 0.7,    //   … and its ceiling
+  CURL_LO: 0.25,   //   the confinement outside the band, × the full value
+  CURL_FE: 0.1,    //   the band's feather (screen heights) on each edge
+  SNARE_JET: 1,    // S3 the snare: 0 the base's pair (two inward shears at (.3, .5) / (.7, .5)) · 1 ONE jet from a wall at the pair's momentum and ink,
+                   //   alternating walls by the snare count (the harmonic branch's one directed splat is kept either way)
+  SNARE_X: 0.12,   //   the jet's place in from its wall (uv) — NOT at the wall: a push AT a closed wall is projected away (the RaindropsOnRoses strips, §116 S3:
+                   //   at .02 the burst's front is 0 by +1 beat, at .12 it carries itself .14 — twice the pair's — and at .2 it runs .18 but starts a fifth of the way in) …
+  SNARE_Y: 0.5,    //   … at this height (the pair's)
+  SNARE_N: 4,      //   the jet spread over this many frames at 1 / SNARE_N of its push and ink (1 = one stamp)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
@@ -108,11 +139,15 @@ export const K = {
 //   inkRate this grammar's own §111 ink rate (ema INK_TAU) over ITS final list }
 //   S2: `jet` the pending pushes of the jet / the stroke ([{ x, y, dx, dy, r, g, b, rad, left, age }] — the base's kick frames spread over
 //   JET_N frames; a transient: empty on the cold frame), `puffT` the puff's age in s (−1 = none), `puffA` its amplitude, `puffX` its centre
-export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5 });
+//   S3: `midEnv` the mids' own-range place eased MID_TAU, `snareN` the snare count (the jet's wall alternates on it), `sjet` the pending
+//   snare-jet frames ([{ x, dx, r, g, b, rad, left, side }] — a transient: empty on the cold frame)
+export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [] });
 
 // plan(S, dt, st) → the same shape as inject.js's plan() (its fields, the 'sub' splat without its velocity) + `heave` (uv/s², what
 // was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope), `kick` (S2: { shape, mom, ink, n } — this frame's
-// kick kinds) — the replay rulers read them. A ring may carry a centre (`cx, cy`; S2's puff) — fluid.js passes it to `uRingC`.
+// kick kinds), `mids` (S3: { pos, curl, mask }) and `snare` (S3: { kind 'pair' | 'jet' | 'harm' | '', mom, ink, n, side }) — the replay rulers
+// read them. A ring may carry a centre (`cx, cy`; S2's puff) — fluid.js passes it to `uRingC`; `params.curlMask` ({ y0, y1, lo, fe }, S3's
+// mask; absent = the identical vort pass) goes to `uCurlMask`.
 export function plan(S, dt, st) {
   if (!st.base) st.base = mkStateBase();
   const R = planBase(S, dt, st.base);
@@ -172,6 +207,33 @@ export function plan(S, dt, st) {
     }
   }
   for (const s of R.splats) if (s.k === 'kick' || s.k === 'jet' || s.k === 'stroke' || s.k === 'dip' || s.k === 'puff') { kick.n++; kick.mom += s.dy * s.rad; kick.ink += (s.r + s.g + s.b) * (s.rad / KB.RADIUS) ** 2; }
+  // S3 the snare as a jet (SNARE_JET; 0 = the base's pair untouched — the identical list). The base's two shears (the drum branch only: in
+  // the harmonic branch the base already draws one directed splat, kept) carry Σ|dx|·rad = 2·SNARE_V·sz·g·rad and 2·SNARE_DYE·g of ink; the
+  // jet carries the same from one wall over SNARE_N frames — the pending frames are a transient (cold: empty), the wall alternates by count.
+  const snare = { kind: '', mom: 0, ink: 0, n: 0, side: 0 };
+  if (cold) { st.sjet.length = 0; st.snareN = 0; }
+  if (K.SNARE_JET) {
+    const pair = R.splats.filter((s) => s.k === 'snare');
+    if (pair.length === 2 && !R.harmonic) {
+      for (let i = R.splats.length - 1; i >= 0; i--) if (R.splats[i].k === 'snare') R.splats.splice(i, 1);
+      const n = Math.max(1, K.SNARE_N | 0), side = st.snareN & 1 ? -1 : 1, a = pair[0], b = pair[1];
+      st.snareN++;
+      st.sjet.push({ x: side > 0 ? K.SNARE_X : 1 - K.SNARE_X, dx: side * (Math.abs(a.dx) + Math.abs(b.dx)) / n, r: (a.r + b.r) / n, g: (a.g + b.g) / n, b: (a.b + b.b) / n, rad: a.rad, left: n, side });
+    }
+    for (const j of st.sjet) { R.splats.push({ x: j.x, y: K.SNARE_Y, dx: j.dx, dy: 0, r: j.r, g: j.g, b: j.b, rad: j.rad, k: 'sjet' }); j.left--; snare.side = j.side; }
+    for (let i = st.sjet.length - 1; i >= 0; i--) if (st.sjet[i].left <= 0) st.sjet.splice(i, 1);
+    inkChanged = true;   // the same ink, SNARE_N frames later: the per-frame list differs, the own rate decides the governor (a no-op while it equals the base's)
+  }
+  for (const s of R.splats) if (s.k === 'snare' || s.k === 'sjet') { snare.n++; snare.mom += Math.abs(s.dx) * s.rad; snare.ink += (s.r + s.g + s.b) * (s.rad / KB.RADIUS) ** 2; if (!snare.kind) snare.kind = s.k === 'sjet' ? 'jet' : R.harmonic ? 'harm' : 'pair'; }
+  // S3 the mids as material: the confinement's constant from the mid band's place in its own range (§111 item 7's ring on the base's state —
+  // read, never duplicated), eased MID_TAU; CURL_SRC 0 leaves the base's constant. The mask is a parameter fluid.js hands the vort pass.
+  const ring = st.base.midRing;
+  let pos = clamp(S.mid || 0, 0, 1);
+  if (ring.length >= 5) { const r = ring.slice().sort((x, y) => x - y), lo = r[Math.floor(0.2 * r.length)], hi = Math.max(r[Math.floor(0.8 * r.length)], lo + 0.05); pos = sstep(lo, hi, S.mid || 0); }
+  st.midEnv = cold ? pos : ema(st.midEnv, pos, dt, K.MID_TAU);
+  const mids = { pos: st.midEnv, curl: R.params.curl, mask: null };
+  if (K.CURL_SRC) { R.params.curl = K.CURL0 + K.CURL_MID * st.midEnv; mids.curl = R.params.curl; }
+  if (K.CURL_MASK) { R.params.curlMask = { y0: K.CURL_Y0, y1: K.CURL_Y1, lo: K.CURL_LO, fe: K.CURL_FE }; mids.mask = R.params.curlMask; }
   // the ink budget over THIS list (§111; the drop's impulse not counted, as the base counts): the own rate starts at the base's warm
   // value and runs the same ema, so with the ink unchanged it IS the base's rate and the base's dyeDiss stands untouched
   let ink = 0;
@@ -192,6 +254,6 @@ export function plan(S, dt, st) {
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
   const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
-  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick;
+  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare;
   return R;
 }

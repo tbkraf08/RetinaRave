@@ -137,8 +137,13 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               sub is the pool's weight: the attack deepens the beat's gravity, the void's entry lifts and stills the
                               pool, the drop's return slams it), a swirl as a K2 switch; the kick (S2) is a MASS that travels — a vortex
                               PAIR seeded inward at the bass note's place, at the base's impulse and ink (FLUID's kick rode the sub's jet;
-                              the pair carries itself a third of the screen per beat), the jet / stroke / puff as K2 switches; the rest of
-                              the grammar is the base's. A grammar change is tuned and proven on every library track —
+                              the pair carries itself a third of the screen per beat), the jet / stroke / puff as K2 switches; the mids
+                              (S3) are the MATERIAL — the vorticity confinement's constant is the mid band's place in the track's own last
+                              30 s (§111's ring, read off the base's state: dense mids tighten the curls, thin mids go laminar; FLUID ties
+                              it to `tension`), a y-mask on the vort pass as a K2 switch (off: it buys no margin), and the snare is ONE
+                              shear burst — a jet from a hair in from a wall (never AT it: a push at a closed wall is projected away),
+                              alternating walls by count, at the pair's momentum and ink over SNARE_N frames; the chord shears stay; the
+                              rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
@@ -253,8 +258,12 @@ needed, now generic:
   solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical program path — a uniform branch, never a mix, as the ring's
   A = 0), `subEnv` (the envelope, for the rulers); (S2) `kick` (`{ shape, mom, ink, n }` — this frame's kick kinds: `KICK_SHAPE`, the
   impulse Σ dy·rad over them, their ink in the budget's units, their count — `CARD.fluid.kick` on the last step, null under the pool
-  grammar), and a `ring` with a centre (above). `fluid.js` reads them from the plan of the grammar that owns the step; the pool
-  grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
+  grammar), and a `ring` with a centre (above); (S3) `mids` (`{ pos, curl, mask }` — the mid band's own-range place eased MID_TAU, the
+  confinement constant it set, the mask parameter or null — `CARD.fluid.mids`), `snare` (`{ kind 'pair' | 'jet' | 'harm' | '', mom:
+  Σ|dx|·rad, ink, n, side }` — this frame's snare kinds, `CARD.fluid.snare`), and `params.curlMask` (`{ y0, y1, lo, fe }`: the vort
+  pass's `uCurlMask` uniform — the confinement × mix(lo, 1, the feathered band y0..y1); absent → (0, 1, 1, 0), the branch not taken: a
+  uniform branch, never a mix, as the ring's A = 0 and the swirl's 0). `fluid.js` reads them from the plan of the grammar that owns the
+  step; the pool grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
   the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —

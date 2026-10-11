@@ -25,7 +25,7 @@ const MAXS = 16;                           // splats per draw (the uniform array
 // CARD.fluid (harness) and ctx.fluid (scenes). `on` is the switch (&fluid=0, key W); `avail` says the device can run it at all.
 export const FLUID = {
   on: true, avail: false, ms: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, nSplat: 0, steps: 0, dbg: 0,
-  params: { curl: 30, velDiss: 0.2, dyeDiss: 1, pressure: 0.8, iters: 20, radius: 0.0025 }, // the live values after inject.js; a scene may override for the frame
+  params: { curl: 30, velDiss: 0.2, dyeDiss: 1, pressure: 0.8, iters: 20, radius: 0.0025, curlMask: null }, // the live values after inject.js; a scene may override for the frame
   tex: null,        // { vel, dye }: the same objects as ctx.engineTex.vel / .dye
   queue: [],        // this frame's splats: {x, y, dx, dy, r, g, b, rad} — inject.js fills it, scenes add through splat(), the step drains it
   body: [0, 0],     // a scene's uniform body force this frame (uv/s²), through force(); the beat's breath is inject.js's and shaped
@@ -35,6 +35,7 @@ export const FLUID = {
   grammar: DEFAULT_GRAMMAR, // §116 the grammar that planned the LAST step ('pool' | 'bands'): the owner scene's card names it (core/fluid/grammar.js)
   heave: 0, swirl: 0,       // §116 S1 the band grammar's field on the last step: the heave added to the body (uv/s²), the swirl uniform (1/s²); 0 under the pool grammar
   kick: null,               // §116 S2 the band grammar's kick on the last step ({ shape, mom, ink, n } — inject2's return); null under the pool grammar
+  mids: null, snare: null,  // §116 S3 the band grammar's mids ({ pos, curl, mask }) and snare ({ kind, mom, ink, n, side }) on the last step; null under the pool grammar
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
@@ -151,7 +152,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   let pr;
   let breath = 0, swirl = 0;
   FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
-  FLUID.heave = FLUID.swirl = 0; FLUID.kick = null;
+  FLUID.heave = FLUID.swirl = 0; FLUID.kick = FLUID.mids = FLUID.snare = null;
   if (!resumed) {
     // §116 the dispatch: the band grammar plans on st2 (its plan() runs the pool grammar's on st2.base === st first), the pool grammar on st
     const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
@@ -159,8 +160,9 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
     for (const s of R.splats) q.push(s);
     breath = R.body;
     swirl = R.swirl || 0;   // §116 S1 the band grammar's swirl (the pool grammar returns none → 0, the identical advect path)
-    FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.kick = R.kick || null;
+    FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.kick = R.kick || null; FLUID.mids = R.mids || null; FLUID.snare = R.snare || null;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
+    pm.curlMask = R.params.curlMask || null;   // §116 S3 the band grammar's mask on the confinement (the pool grammar returns none → the identical vort pass)
     if (R.ring) FLUID.ring(R.ring.a, R.ring.r, R.ring.w, R.ring.cx, R.ring.cy);   // §113 the shockwave, this step (§116 S2: the puff carries its centre; the shockwave none → .5, .5)
   }
   const wave = FLUID.wave;
@@ -204,6 +206,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   tex(pr, 'uCurl', 1, curl);
   gl.uniform2f(pr.u('uScale'), sx, sy);
   gl.uniform1f(pr.u('uCurlK'), pm.curl);
+  { const m = pm.curlMask; gl.uniform4f(pr.u('uCurlMask'), m ? m.y0 : 0, m ? m.y1 : 1, m ? m.lo : 1, m ? Math.max(1e-3, m.fe) : 0); }   // §116 S3: (0, 1, 1, 0) = the branch not taken
   gl.uniform1f(pr.u('uDt'), dt);
   tri();
   swap(vel);

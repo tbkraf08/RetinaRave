@@ -1,0 +1,1271 @@
+
+> retina-rave@0.36.0 test
+> node tools/test_dsp.js && node tools/test_rough.js && node tools/test_baby.js && node tools/test_misi.js && node tools/test_hopf.js && node tools/test_tempo.js && node tools/test_director.js && node tools/test_bars.js && node tools/test_drums.js && node tools/test_build.js && node tools/test_queue.js && node tools/test_clock.js && node tools/test_loud.js && node tools/test_tongues.js && node tools/test_fluid.js && node tools/test_music.js
+
+Quantile characterisation (abs mode, step 0.02; `settled` = mean of v over the last 40k pushes)
+  distribution  q      true    settled   err
+  U(0,10)       0.10    0.998    0.999  +0.001
+  U(0,10)       0.50    5.001    5.008  +0.007
+  U(0,10)       0.90    8.994    8.986  -0.008
+  U(0,10)       0.95    9.495    9.487  -0.008
+  two-level     0.10    0.925    0.925  +0.000
+  two-level     0.50    1.025    1.026  +0.001
+  two-level     0.90    8.999    9.000  +0.001
+  two-level     0.95    9.049    9.051  +0.001
+  ramp 0-10     0.10    1.000    8.992  +7.992
+  ramp 0-10     0.50    5.000    9.000  +4.000
+  ramp 0-10     0.90    9.000    9.008  +0.008
+  ramp 0-10     0.95    9.500    9.009  -0.491
+the sign: v must RISE with q on one stream (the §73 bug had it fall)
+  pass  Quantile(0.1) < (0.5) < (0.9) < (0.95) on U(0,10)             1.00 < 5.01 < 8.99 < 9.49
+  pass  Quantile(0.95) is near 10, not near 0 (the §73 inversion)     9.487
+convergence: within 2 % of the true quantile on U(0,10)
+  pass  q=0.1: |settled - p10| <= 0.2 (2 % of the range)              0.999 vs 0.998 (+0.001)
+  pass  q=0.5: |settled - p50| <= 0.2 (2 % of the range)              5.008 vs 5.001 (+0.007)
+  pass  q=0.9: |settled - p90| <= 0.2 (2 % of the range)              8.986 vs 8.994 (-0.008)
+  pass  q=0.95: |settled - p95| <= 0.2 (2 % of the range)             9.487 vs 9.495 (-0.008)
+  pass  two-level: p90 lands on the LOUD level (9), not the quiet one 9.000 vs 8.999
+  pass  two-level: p50 lands on the QUIET level (1)                   1.026 vs 1.025
+a step change: the tracker must follow it, and how fast is the step's own business
+  pass  q=0.9 sat at ~9 before the step                               9.109
+  pass  q=0.9 reached ~29 after the step                              28.889
+  pass  ... and got there inside 5000 pushes                          1960 pushes
+rel mode: the step scales with |v|, so the same step is the same FRACTION per push
+  pass  p90 of U(0,10) and of U(0,1000) agree to 2 % after scaling    9.006 vs 9.006
+determinism and the warm-up
+  pass  the same stream gives the same v, bit for bit                 9.054705
+  pass  the first 16 pushes are a running mean (no q weighting yet)   5.000000
+RunMedian (unchanged, here as the file's other primitive)
+  pass  a 5-window median rejects a single spike                      4
+  pass  clamp01 / logmap still bound to 0-1                           ok
+
+all pass
+ok   rough 10 s / smooth 10 s / rough again: the smooth reads low, the return reads high — p50 0.784 (stationary) → 0.015 → 0.879
+ok   the same shape at 0.3x the level reads the same way — p50 0.210 → 0.013 → 0.865
+ok   the floor follows the smooth stretch down — lo 0.0138 hi 0.0668 at 20.0 s
+ok   first sample: the references are the prior pair — lo 0.01 hi 0.05
+ok   a 0.07 plateau through the 5 s seed: hi climbs from the prior toward the plateau and never past it — hi max 0.0769 at 5 s 0.0769
+ok   30 s after a half-second spike the ceiling is the plateau's own p98 — hi 0.0292 (the spike was 0.12)
+ok   the v0.28 follower pair (the &rough=0 path) is the formula features-slow.js keeps — rLo 0.02146 rHi 0.11534
+ok   two runs are bit-identical
+all ok
+babies 3 build ms 0
+P=3 c0=-1.754877666247,0.000000000000 cusp=-1.7500000000,0.0000000000 |A|=9.2989 argA=3.1416 |sigma|=1.951e-2
+  1/15 per45 ok=true R=1.92e-5 seedErr=0.001 rootErr=0.0147 rhoMax=0.956 worstRes=2.4e-12 fails=0
+  1/8 per24 ok=true R=1.22e-4 seedErr=0.001 rootErr=0.0148 rhoMax=0.985 worstRes=3.4e-13 fails=0
+  1/5 per15 ok=true R=4.63e-4 seedErr=0.001 rootErr=0.0149 rhoMax=0.985 worstRes=9.8e-14 fails=0
+  1/4 per12 ok=true R=8.44e-4 seedErr=0.000 rootErr=0.0150 rhoMax=0.985 worstRes=9.6e-14 fails=0
+  1/3 per9 ok=true R=1.75e-3 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=9.0e-14 fails=0
+  2/5 per15 ok=true R=6.86e-4 seedErr=0.000 rootErr=0.0149 rhoMax=0.985 worstRes=9.0e-14 fails=0
+  1/2 per6 ok=true R=4.36e-3 seedErr=0.004 rootErr=0.0151 rhoMax=0.985 worstRes=9.7e-14 fails=0
+  3/5 per15 ok=true R=6.86e-4 seedErr=0.000 rootErr=0.0149 rhoMax=0.985 worstRes=9.9e-14 fails=0
+  2/3 per9 ok=true R=1.75e-3 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=9.0e-14 fails=0
+  4/5 per15 ok=true R=4.63e-4 seedErr=0.001 rootErr=0.0149 rhoMax=0.985 worstRes=9.2e-14 fails=0
+  7/8 per24 ok=true R=1.22e-4 seedErr=0.001 rootErr=0.0148 rhoMax=0.985 worstRes=4.3e-13 fails=0
+P=4 c0=-0.156520166834,1.032247108923 cusp=-0.1547246055,1.0310472277 |A|=11.8777 argA=-2.6651 |sigma|=8.638e-3
+  1/15 per60 ok=true R=8.12e-6 seedErr=0.001 rootErr=0.0147 rhoMax=0.938 worstRes=5.2e-12 fails=0
+  1/8 per32 ok=true R=5.06e-5 seedErr=0.002 rootErr=0.0148 rhoMax=0.985 worstRes=1.4e-12 fails=0
+  1/5 per20 ok=true R=1.89e-4 seedErr=0.002 rootErr=0.0149 rhoMax=0.985 worstRes=2.2e-13 fails=0
+  1/4 per16 ok=true R=3.46e-4 seedErr=0.001 rootErr=0.0150 rhoMax=0.985 worstRes=9.5e-14 fails=0
+  1/3 per12 ok=true R=7.32e-4 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=9.9e-14 fails=0
+  2/5 per20 ok=true R=2.95e-4 seedErr=0.000 rootErr=0.0148 rhoMax=0.985 worstRes=9.9e-14 fails=0
+  1/2 per8 ok=true R=1.98e-3 seedErr=0.003 rootErr=0.0150 rhoMax=0.985 worstRes=1.0e-13 fails=0
+  3/5 per20 ok=true R=3.26e-4 seedErr=0.000 rootErr=0.0149 rhoMax=0.985 worstRes=1.5e-13 fails=0
+  2/3 per12 ok=true R=8.49e-4 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=8.8e-14 fails=0
+  4/5 per20 ok=true R=2.22e-4 seedErr=0.001 rootErr=0.0149 rhoMax=0.985 worstRes=2.9e-13 fails=0
+  7/8 per32 ok=true R=5.69e-5 seedErr=0.001 rootErr=0.0148 rhoMax=0.985 worstRes=1.2e-12 fails=0
+P=5 c0=-1.625413725123,0.000000000000 cusp=-1.6243969892,0.0000000000 |A|=19.9544 argA=3.1416 |sigma|=4.067e-3
+  1/15 per75 ok=true R=3.84e-6 seedErr=0.001 rootErr=0.0147 rhoMax=0.797 worstRes=1.4e-11 fails=0
+  1/8 per40 ok=true R=2.48e-5 seedErr=0.001 rootErr=0.0148 rhoMax=0.969 worstRes=2.5e-12 fails=0
+  1/5 per25 ok=true R=9.66e-5 seedErr=0.001 rootErr=0.0149 rhoMax=0.985 worstRes=9.6e-13 fails=0
+  1/4 per20 ok=true R=1.80e-4 seedErr=0.001 rootErr=0.0150 rhoMax=0.985 worstRes=3.1e-13 fails=0
+  1/3 per15 ok=true R=3.87e-4 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=1.0e-13 fails=0
+  2/5 per25 ok=true R=1.55e-4 seedErr=0.000 rootErr=0.0149 rhoMax=0.985 worstRes=4.3e-13 fails=0
+  1/2 per10 ok=true R=9.97e-4 seedErr=0.003 rootErr=0.0150 rhoMax=0.985 worstRes=9.7e-14 fails=0
+  3/5 per25 ok=true R=1.55e-4 seedErr=0.000 rootErr=0.0149 rhoMax=0.985 worstRes=4.1e-13 fails=0
+  2/3 per15 ok=true R=3.87e-4 seedErr=0.001 rootErr=0.0151 rhoMax=0.985 worstRes=9.2e-14 fails=0
+  4/5 per25 ok=true R=9.66e-5 seedErr=0.001 rootErr=0.0149 rhoMax=0.985 worstRes=6.4e-13 fails=0
+  7/8 per40 ok=true R=2.48e-5 seedErr=0.001 rootErr=0.0148 rhoMax=0.969 worstRes=2.5e-12 fails=0
+OK · MISI 14
+P 3 misi found 14 / 14
+   -1.7576944921 0.0176803441 offset/size 0.0194 (preper,per) of 0: [ 10, 3 ] min|f^n(0)| 7.04e-2
+   -1.7822332510 0.0000000000 offset/size 0.0474 (preper,per) of 0: [ 7, 3 ] min|f^n(0)| 8.70e-2
+   -1.7559191955 0.0185993932 offset/size 0.0244 (preper,per) of 0: [ 4, 6 ] min|f^n(0)| 1.05e-1
+   -1.7903274920 0.0000000000 offset/size 0.1090 (preper,per) of 0: [ 4, 3 ] min|f^n(0)| 2.12e-1
+   -1.7484021321 0.0116986012 offset/size 0.0118 (preper,per) of 0: [ 13, 3 ] min|f^n(0)| 6.46e-2
+   -1.7466071465 0.0069892221 offset/size 0.0082 (preper,per) of 0: [ 16, 3 ] min|f^n(0)| 6.04e-2
+   -1.7781139701 0.0076830849 offset/size 0.0418 (preper,per) of 0: [ 10, 3 ] min|f^n(0)| 7.72e-2
+   -1.7602532382 0.0205067183 offset/size 0.0297 (preper,per) of 0: [ 7, 3 ] min|f^n(0)| 1.21e-1
+   -1.7576944921 -0.0176803441 offset/size 0.0194 (preper,per) of 0: [ 10, 3 ] min|f^n(0)| 7.04e-2
+   -1.7559191955 -0.0185993932 offset/size 0.0244 (preper,per) of 0: [ 4, 6 ] min|f^n(0)| 1.05e-1
+   -1.7484021321 -0.0116986012 offset/size 0.0118 (preper,per) of 0: [ 13, 3 ] min|f^n(0)| 6.46e-2
+   -1.7466071465 -0.0069892221 offset/size 0.0082 (preper,per) of 0: [ 16, 3 ] min|f^n(0)| 6.04e-2
+   -1.7781139701 -0.0076830849 offset/size 0.0418 (preper,per) of 0: [ 10, 3 ] min|f^n(0)| 7.72e-2
+   -1.7602532382 -0.0205067183 offset/size 0.0297 (preper,per) of 0: [ 7, 3 ] min|f^n(0)| 1.21e-1
+P 4 misi found 14 / 14
+   -0.1528885787 1.0389353303 offset/size 0.0247 (preper,per) of 0: [ 13, 4 ] min|f^n(0)| 5.38e-2
+   -0.1660846134 1.0401032410 offset/size 0.0750 (preper,per) of 0: [ 9, 4 ] min|f^n(0)| 6.85e-2
+   -0.1520610714 1.0387547228 offset/size 0.0309 (preper,per) of 0: [ 5, 8 ] min|f^n(0)| 8.06e-2
+   -0.1689871149 1.0423702533 offset/size 0.1716 (preper,per) of 0: [ 5, 4 ] min|f^n(0)| 1.66e-1
+   -0.1514239143 1.0346624133 offset/size 0.0149 (preper,per) of 0: [ 17, 4 ] min|f^n(0)| 4.90e-2
+   -0.1519508726 1.0326952642 offset/size 0.0107 (preper,per) of 0: [ 21, 4 ] min|f^n(0)| 4.57e-2
+   -0.1624377246 1.0415028823 offset/size 0.0636 (preper,per) of 0: [ 13, 4 ] min|f^n(0)| 6.07e-2
+   -0.1530300489 1.0405553265 offset/size 0.0365 (preper,per) of 0: [ 9, 4 ] min|f^n(0)| 9.28e-2
+   -0.1625454704 1.0262854813 offset/size 0.0375 (preper,per) of 0: [ 13, 4 ] min|f^n(0)| 5.70e-2
+   -0.1621409889 1.0254145674 offset/size 0.0475 (preper,per) of 0: [ 5, 8 ] min|f^n(0)| 8.52e-2
+   -0.1571005062 1.0259878844 offset/size 0.0214 (preper,per) of 0: [ 17, 4 ] min|f^n(0)| 5.22e-2
+   -0.1551016177 1.0274297051 offset/size 0.0141 (preper,per) of 0: [ 21, 4 ] min|f^n(0)| 4.88e-2
+   -0.1669364006 1.0361476076 offset/size 0.0683 (preper,per) of 0: [ 13, 4 ] min|f^n(0)| 6.05e-2
+   -0.1643030059 1.0258939941 offset/size 0.0594 (preper,per) of 0: [ 9, 4 ] min|f^n(0)| 9.69e-2
+P 5 misi found 14 / 14
+   -1.6258611228 0.0038761554 offset/size 0.0019 (preper,per) of 0: [ 16, 5 ] min|f^n(0)| 3.33e-2
+   -1.6315805538 0.0000000000 offset/size 0.0068 (preper,per) of 0: [ 11, 5 ] min|f^n(0)| 4.17e-2
+   -1.6254543929 0.0040625610 offset/size 0.0022 (preper,per) of 0: [ 6, 10 ] min|f^n(0)| 5.02e-2
+   -1.6333587037 0.0000000000 offset/size 0.0150 (preper,per) of 0: [ 6, 5 ] min|f^n(0)| 9.90e-2
+   -1.6239329892 0.0024187160 offset/size 0.0009 (preper,per) of 0: [ 21, 5 ] min|f^n(0)| 3.01e-2
+   -1.6236318379 0.0013982844 offset/size 0.0005 (preper,per) of 0: [ 26, 5 ] min|f^n(0)| 2.79e-2
+   -1.6306150306 0.0017435387 offset/size 0.0052 (preper,per) of 0: [ 16, 5 ] min|f^n(0)| 3.63e-2
+   -1.6263897644 0.0045062997 offset/size 0.0027 (preper,per) of 0: [ 11, 5 ] min|f^n(0)| 5.70e-2
+   -1.6258611228 -0.0038761554 offset/size 0.0019 (preper,per) of 0: [ 16, 5 ] min|f^n(0)| 3.33e-2
+   -1.6254543929 -0.0040625610 offset/size 0.0022 (preper,per) of 0: [ 6, 10 ] min|f^n(0)| 5.02e-2
+   -1.6239329892 -0.0024187160 offset/size 0.0009 (preper,per) of 0: [ 21, 5 ] min|f^n(0)| 3.01e-2
+   -1.6236318379 -0.0013982844 offset/size 0.0005 (preper,per) of 0: [ 26, 5 ] min|f^n(0)| 2.79e-2
+   -1.6306150306 -0.0017435387 offset/size 0.0052 (preper,per) of 0: [ 16, 5 ] min|f^n(0)| 3.63e-2
+   -1.6263897644 -0.0045062997 offset/size 0.0027 (preper,per) of 0: [ 11, 5 ] min|f^n(0)| 5.70e-2
+OK
+circle error 2.22e-12 · torus distance 1.67e-13 · min fibre separation 0.0125 · hopf map error 1.05e-15 · knot on torus 7.77e-16 · (1,1) knot circle error 6.66e-16
+OK
+four      120  t=1..40: 122.61 122.01 121.28 120.85 120.56 120.36 120.23 120.14 120.07 119.99 119.93 119.92 119.93 119.96 120.02 120.04 120.05 120.06 120.06 120.05 120.02 119.98 119.98 119.96 119.95 119.88 119.76 120.14 120.1 120.09 120.14 120.14 120.11 120.08 120.05 120.02 120.02 120 119.99 120
+ok   four lock: 10–20 s within ±0.5 of 120: max err 0.08
+ok   four gap: held through the 6 s gap (20–26 s): max err 0.24
+ok   four after: 30–40 s within ±0.5: max err 0.14
+house     128  t=1..40: 125.57 126.59 127.62 128.03 128.16 128.17 128.12 128.08 128.03 127.99 127.99 127.98 127.99 128.02 128 128.04 128.04 128.04 128.06 128.08 128.08 128.09 128.09 128.12 128.15 128.15 128.15 128.2 128.06 128 128.06 128.08 128.06 128.04 128.02 128.02 127.98 127.94 127.95 127.95
+ok   house lock: 10–20 s within ±0.5 of 128: max err 0.08
+ok   house gap: held through the 6 s gap (20–26 s): max err 0.15
+ok   house after: 30–40 s within ±0.5: max err 0.08
+halftime  140  t=1..40: 124 124 140.57 140.44 140.32 140.24 140.22 140.1 140.05 140.04 140.02 139.97 139.87 139.93 139.97 139.97 140 140 139.96 140.03 140.05 140.06 140.07 140.07 140.16 140.31 140.14 139.73 139.85 139.88 139.99 140.05 140.06 140.05 140.04 140.02 140.01 139.99 140.02 140.01
+ok   halftime lock: 10–20 s within ±0.5 of 140: max err 0.13
+ok   halftime gap: held through the 6 s gap (20–26 s): max err 0.31
+ok   halftime after: 30–40 s within ±0.5: max err 0.06
+ambient   pads  t=1..40: 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124 124  regMax 0.26
+ok   ambient hold: bpm never moves off 124 on pads
+ok   ambient regularity: max regularity 0.26 (< 0.3)
+dnb       174  t=1..40: 124 124 174.29 174.32 174.22 174.12 174.01 173.95 173.89 173.86 173.9 173.95 173.94 173.94 173.93 173.98 173.94 173.93 173.9 173.89 173.89 173.89 173.86 173.9 173.86 173.86 174.22 173.75 173.74 173.73 173.75 173.76 173.8 173.84 173.84 173.85 173.84 173.83 173.8 173.84
+ok   dnb lock: 10–20 s within ±0.5 of 174: max err 0.11
+ok   dnb gap: held through the 6 s gap (20–26 s): max err 0.22
+ok   dnb after: 30–40 s within ±0.5: max err 0.25
+build 32nds+ramp -> hush -> groove: 128.01 128.03 128.07 128 127.97 128 128.01 128.02 128.02 128.02 128.02 128.02 128.02 128.02 128.37 128.53 128.53 128.44 128.34 128.23 128.11 128.05
+ok   build hold: 128 held through the build, hush and return: max err 0.53
+change 128 -> ambient -> 174: 177.66 176.89 175.73 174.96 174.55 174.25 174.09 174.02 173.96 173.95 173.95 173.89
+ok   tempo change (via ambient): 174 picked up 4 s after the silence (≤ 4)
+change 128 -> 174 direct: 127.91 127.91 127.9 127.9 173.76 173.83 173.88 173.95 173.93 173.91 173.88 173.88
+ok   tempo change (direct): 174 picked up 5 s after the cut (≤ 6)
+change 128 -> 192 (3:2): 127.97 127.96 127.92 192.11 192.11 192.11 192.11 192.11 192.11 192.11 192.11 192.11
+ok   tempo change 3:2 up: 192 picked up 4 s after the cut (≤ 4)
+change 192 -> 128 (2:3): 192.11 192.11 192.11 128.01 128.03 128.02 128.02 128.05 128.07 128.07 128.07 128.06
+ok   tempo change 2:3 down: 128 picked up 4 s after the cut (≤ 4)
+test_tempo: OK
+1. look memory keyed on sectionAlt
+  ok new section 2: pickScene chose scene 1 (logical 1)
+  ok boundary filed section 2 under alt 2: {"scene":1,"looks":{"one":"A1","two":"X1"}}
+  ok new section 3: pickScene chose scene 2 (logical 2)
+  ok return of 2: RESTORE recorded {"alt":2,"scene":1}
+  ok looks restored to section 2's (A1,X1)
+  ok the remembered scene 1 came back at once (gridTrust 0)
+  ok S.seed.scene still written (1)
+  ok section 3 was filed with its own scene and looks
+2. soft switch held to the bar line
+  ok switch to 2 pending (barPos 1.17)
+  ok landed 2.90 beats later at barPos 0.033 (held 2.87)
+  ok held count matches the wait
+3. cap, grid loss, drop
+  ok pending on a stalled grid
+  ok cap fired after 4.00 beats
+  ok pending again
+  ok grid trust < .5 fired it at once
+  ok pending before a drop
+  ok drop hard-cut home and cancelled the pending switch
+  ok no stray switch after the cancel
+4. on the line / quantise off
+  ok a decision on the bar line fires at once (barPos 0.067)
+  ok quantise off: immediate switch mid-bar to the filed scene (barPos 1.57)
+5. a return recognised right after a hard cut is still owed
+  ok return of 3 recognised, switch gated by the 8-beat spacing, owed
+  ok owed switch landed 7.40 beats after the cut at barPos 0.033 (return) → scene 2
+6. a switch held across a boundary is filed as the section's scene
+  ok pending 0 while 2 is on screen
+  ok boundary filed the decided scene 0, not the one on screen
+7. a phrase hold replaced by an identify decision lands on the next bar line
+  ok phrase-triggered hold pending (why phrase, barPos 1.03, phrase16Pos 1.03)
+  ok still held after 5.5 beats
+  ok replaced by a bar hold, not fired at once (held so far 5.5 beats)
+  ok landed on the bar line at barPos 0.033, 1.47 beats after the replacement
+  renumber on: keys 4,5 looks filed-under-5 · off: keys 5 looks changed
+  ok renumber on: the keys 5,6 became 4,5 (4,5)
+  ok renumber on: restored looks are the filed ones
+  ok renumber off (§10): the return under 4 finds nothing (the stale restore the brief measured)
+9. dwell (§95): the event branch waits dwellMin seconds
+  ok landed on 1 with dwellMin 30 (since 0.00)
+  ok no switch in the first 20 s (logical 1, since 20.0)
+  ok an identify inside the dwell does nothing
+  ok still 1 at 29.0 s
+  ok switched after the dwell (logical 2)
+  ok the dwell clock restarted at that landing (since 3.7 s)
+  ok a drop still cuts home inside the dwell
+10. FLUID joins the bid (§114): the real fit model of NAV / DUST / TORUS2 / FLUID
+  ok the four real scenes carry the roster ids 0 / 1 / 3 / 12
+    sub-driven drop window  NAV 0.500 · DUST 0.580 · TORUS2 0.845 · FLUID 0.961
+    sub breakdown           NAV 0.500 · DUST 0.540 · TORUS2 0.655 · FLUID 0.902
+    steady tonal groove     NAV 0.500 · DUST 0.540 · TORUS2 1.025 · FLUID 0.912
+    slow sparse intro       NAV 0.500 · DUST 0.900 · TORUS2 0.610 · FLUID 0.572
+    calm tonal pad          NAV 0.500 · DUST 0.660 · TORUS2 0.710 · FLUID 0.760
+    dense peak              NAV 0.500 · DUST 0.600 · TORUS2 0.955 · FLUID 0.937
+    noise, no bass          NAV 0.500 · DUST 0.580 · TORUS2 0.540 · FLUID 0.453
+    neutral                 NAV 0.500 · DUST 0.700 · TORUS2 0.725 · FLUID 0.725
+  ok drop window: FLUID leads by 0.116 (> 0.1, the hash noise)
+  ok sub breakdown: FLUID leads by 0.247
+  ok steady tonal groove: TORUS2 keeps it by 0.113
+  ok slow sparse intro: DUST keeps it by 0.290
+  ok noise with no bass: FLUID bids low (0.453 — the grammar injects nothing there, §111 item 8)
+  ok a build zeroes every away bid (NAV 0.5), home parks by precedence
+  ok pickScene picks FLUID on the drop window for 50 of 50 section hashes (50)
+  ok pickScene picks TORUS2 on the steady groove for 50 of 50 (50)
+  ok in a build pickScene returns home for 50 of 50 (every away bid 0)
+  ok 12 neutral picks rotate DUST / TORUS2 / FLUID (NAV 0 · DUST 4 · TORUS2 4 · FLUID 4)
+  ok no away scene takes more than 5 of the 12
+  ok the groove: a surprise cut lands TORUS2 (logical 3)
+  ok the drop hard-cuts home
+  ok the identify in the window after the drop picks FLUID (hist 12,0,3)
+  ok a drop hard-cuts home from FLUID
+  ok on FLUID, the fade done
+  ok a build parks home from FLUID (logical 0)
+  ok on FLUID again
+  ok silence drifts home from FLUID (logical 0)
+  ok landed FLUID with dwellMin 30 (logical 12)
+  ok two identifies inside the dwell leave FLUID on (since 20.0 s)
+  ok the first identify after the dwell switches to TORUS2 (logical 3)
+  ok forced DUST shows DUST on the drop window (logical 1)
+  ok a surprise, an identify and a drop move nothing while DUST is forced
+  ok forced FLUID stays on the steady groove TORUS2 would win
+  ok forced back to DUST, the identify moves nothing
+  ok released: the next identify picks by the bid — FLUID on the drop window (logical 12)
+  ok and TORUS2 on the groove (logical 3)
+test_director: OK
+onsets on time (file-det)
+  pass  loop bars 6-23: every step predicted, nothing else        307 released · miss 0 extra 0
+  pass  the age on the release frame is within half a frame of 0  age -8.33..7.81 ms · level >= 0.952
+  pass  released on the frame nearest the line                    max |off| 8.33 ms
+  pass  no section event inside the loop                          0 ()
+  pass  change: barNovelEvt on its first bar                      +1.24 beats
+  pass  no section event inside the new loop                      0 ( bars)
+  pass  change: predConf drops                                    0.99 -> 0.39
+  pass  change: confident again within 4 bars                     0.89 over bars 28-31
+  pass  return: barNovelEvt + barReturnEvt on its first bar       +1.24 beats
+  pass  no other return                                           0 ( bars)
+  pass  return: bars 2-4 of it predicted exactly                  miss 0 extra 0
+onsets 52 ms late (capture)
+  pass  loop bars 6-23: every step predicted, nothing else        307 released · miss 0 extra 0
+  pass  the age on the release frame is within half a frame of 0  age -8.33..7.81 ms · level >= 0.952
+  pass  released on the frame nearest the line                    max |off| 8.33 ms
+  pass  no section event inside the loop                          0 ()
+  pass  change: barNovelEvt on its first bar                      +1.24 beats
+  pass  no section event inside the new loop                      0 ( bars)
+  pass  change: predConf drops                                    0.99 -> 0.39
+  pass  change: confident again within 4 bars                     0.89 over bars 28-31
+  pass  return: barNovelEvt + barReturnEvt on its first bar       +1.24 beats
+  pass  no other return                                           0 ( bars)
+  pass  return: bars 2-4 of it predicted exactly                  miss 0 extra 0
+cold start (mid-loop, a tempo cut at 2 s, phase pulled in from -0.3 beat, kicks +25 ms)
+  pass  nothing released while the clock is off by > 0.03 beat    0 of 391 · first release at 7.7 s
+  pass  the first 12 predicted groove kicks on time (|median| <= 6 ms)median 0.0 ms
+  pass  the last 8 bars exact                                     133/133 · extra 0
+  pass  at most two first-sight guesses wrong (> 30 ms off)       2 (bar 5.70 bar 6.70)
+cold start after a 6-bar intro (its pads read as kicks 20 ms early)
+  pass  nothing released while the clock is off by > 0.03 beat    0 of 417 · first release at 7.7 s
+  pass  the first 12 predicted groove kicks on time (|median| <= 6 ms)median -2.1 ms
+  pass  the last 8 bars exact                                     133/133 · extra 0
+  pass  at most two first-sight guesses wrong (> 30 ms off)       2 (bar 6.12 bar 9.07)
+degrade
+  pass  grid not ok: no predicted events, predConf 0              0 events, max conf 0
+test_bars: OK
+hold
+  pass  file det (42.7 ms ahead): snare2 released 1 frame(s) after synapse'sframe 4
+  pass  capture (27 ms behind): snare2 released 0 frame(s) after synapse'sframe 3
+  pass  no hold: snare2 = synapse's snare, frame by frame             peak 0.800
+kick strength
+  pass  a cold start: the first hit reads the middle, not the top     0.34 0.40 0.47 0.54
+  pass  once warm the loudest reads 1 x the bass factor, the quietest S01.000 0.200
+  pass  a middling hit reads between S0 and 1, on the curve           0.34 0.40 0.47 0.54 0.26 0.40 0.64 1.00 0.27 0.25 0.24 0.23 1.00 0.20
+  pass  the same hit is stronger in a louder bass section             0.15 -> 0.23
+the low lane under a sub drone (§68)
+  pass  the low lane finds every masked kick (P >= 0.95)              n 39/39  P 1.000  R 1.000
+  pass  ... on time (median lag <= 10 ms, no fire before the thud)    p50 1.3 ms, p90 12.0 ms
+  pass  ... and never twice for one thud (the 85 ms refractory)       39 fires for 39 kicks
+  pass  kickEvt follows the same lane (the beater confirms every one) n 39/39  P 1.000  R 1.000  p50 1.3 ms
+  pass  kickVel is a share of the lane's own p95, not a constant      min 0.694 max 1.000
+  pass  denK counts the lane's hits in the last second (2 kicks/s here)last 1 /s
+  pass  kickAmp is the rise over the 16 dB span, and never the ceiling (§70)amp 0.313-0.562, 0 at 1.000; kickVel 0.694-1.000, 9 of 39 at 1.000
+the snare lane: a rim on 2 and 4 under 16th hats (§69)
+  pass  the snare lane finds every rim (P >= 0.95, R >= 0.95)         n 40/40  P 1.000  R 1.000
+  pass  ... on time (|median lag| <= 10 ms)                           p50 -8.7 ms, p90 -3.3 ms
+  pass  ... and never twice for one rim (the 75 ms refractory)        40 fires for 40 rims
+  pass  ... and the 320 16th hats under it fire the HAT lane, not this one0 of the snare lane's 40 fires are not a rim; the hat lane has 310
+  pass  snareVel is a share of the lane's own p95, not a constant     min 0.284 max 1.000
+  pass  denS counts the lane's hits in the last second (1 rim/s here) last 1 /s
+the snare lane: a snare under a mid pad swell (§69)
+  pass  the snare fires on the stick                                  1 fire(s) within 30 ms of 3 s
+  pass  ... and the SWELL itself fires nothing (0.9-2.8 s; the old lane fired twice)0 fires during the swell
+  pass  ... and the held pad after it fires nothing either            0 after the stick, 1 in the whole 8 s
+the hit's size: a soft and a hard snare (§70)
+  pass  a hit under the lane's 3.75 dB floor does not fire at all     0 fires at a=0.10, 1 at a=0.11
+  pass  a SOFT snare (just over the floor) reads snareAmp 0.3 +- 0.1  0.322 (the floor itself maps to 3.75/12 = 0.3125)
+  pass  a HARD snare reads snareAmp 1.0 +- 0.1                        1.000 at a=0.35, 0.901 at a=0.30
+  pass  ... and the SPAN does the work, not the clamp: 3.2x the amplitude is +10 dB of risea 0.11 -> 0.30 moves the amp 0.322 -> 0.901 (20log10(0.30/0.11)/12 = 0.726)
+  pass  snareVel on that same frame carries nothing (the ring is one hit stale)vel 0 soft / 0 hard, amp 0.322 / 1.000
+test_drums: OK
+steady music
+  pass  60 s of steady music with a kick on every beat: never armed, no eventbuildLive 0 dropLiveIn -1
+  pass  a void inside the first 32 s of music does not arm                buildLive 0
+a void, then the slam
+  pass  armed within the void                                             at B 84.03
+  pass  armed on a bar line (B - phase a multiple of 4, within a frame)   B 84.033
+  pass  the level starts at L0 and ramps with the void                    0.51 -> 0.81
+  pass  dropLiveIn counts down to the bar line (0 < x <= 4)               0.00
+  pass  the void's bass-less kicks never fired                            0 events
+  pass  the slam (an on-beat onset with the bass back) fires exactly once 1 events
+  pass  it fires on the onset's frame (the confirmation was already there)B 92.033
+  pass  the slam disarms: level 0, dropLiveIn -1 on the event frame       0 -1
+  pass  no re-arm while the void evidence is only lingering (hp mean still up, bass back)0
+what does not fire
+  pass  armed (no onsets at all)                                          
+  pass  an off-beat onset with the bass back does not fire                0
+  pass  an on-beat onset with the bass still out does not fire            0
+  pass  a bass slam when not armed does not fire                          0
+disarm
+  pass  silence: dropLiveIn -1 and the level decays                       0.81 -> 0.015
+  pass  a seek resets: nothing armed                                      0 -1
+  pass  after the seek a void does not arm before 32 s of music again     
+  pass  a void with no slam times out after 8 bars armed                  armed B 84.0, disarmed B 116.0
+  pass  a tempo jump disarms                                              -1
+the sub void (§64 task 2)
+  pass  a sub void shorter than 4 bars does not arm                       buildLive 0
+  pass  the sub void arms with the bass still in                          at B 100.03
+  pass  on a bar line, no earlier than the hold                           B 100.033
+  pass  the void's bass-less on-beat kicks never fired                    0 events
+  pass  the sub coming back on a beat line fires once (bassS flat, under SUB_RET)1 events
+  pass  on the onset's own frame, and it disarms                          B 108.033 level 0
+  pass  SUBV_OFF 0: the same stream never arms and never fires            buildLive 0
+  pass  no subGate in the input: the sub void never arms                  buildLive 0
+  pass  SLAM_AFTER 4 bars does not gate the sub-void slam                 8.00 beats after the arm
+the ambiguity (§77)
+  pass  an ambiguous run shorter than 8 beats does not arm                buildLive 0
+  pass  7 bars of tongueAmbig 1.0 arm with the bass and the sub still in  at B 88.03
+  pass  on a bar line, no earlier than the hold                           B 88.033
+  pass  the arm HOLDS while the ambiguity lasts (the bass void's own gap rule must not release it)dropLiveIn 0.00 level 1.000
+  pass  the on-beat kicks under the ambiguity never fired                 0 events
+  pass  the sub coming back at SUBV_RET x fires once on the onset's frame and disarms1 events
+  pass  120 s of a dense unambiguous train (tension 0.32) never arms      buildLive 0
+  pass  the ambiguity gone for a beat releases the arm (no slam, the level decays)dropLiveIn -1 level 0.050
+  pass  tongueOn -1 / AMB_ARM 0 / no field: the same stream never arms    0 0 0
+test_build: OK
+order, count-down, roll-over
+  pass  list ordered by t                                                     beat kick hat beat kick snare beat kick beat bar beat beat beat beat bar
+  pass  the first hit is the kick at beat 1                                   
+  pass  at least 4 beat lines                                                 8
+  pass  bar lines at 4k (a = 0): the first at beat 4                          
+  pass  nextKickIn decreases by dt frame to frame                             34/34
+  pass  … and rolls over to the next kick (beat 2) after beat 1               0.2000
+  pass  nextBeatIn within a beat, >= 0 (0 = on the line)                      0.483 0.467 0.450 0.217 0.200
+  pass  queueN counts every entry                                             
+  pass  nextKickConf is the step's conf                                       
+withdrawal and HOLD
+  pass  a snare at beat 1 listed                                              
+  pass  withdrawn by the store -> gone the next frame (HOLD 0)                -1
+  pass  HOLD 0.25: an entry inside HOLD stays when withdrawn                  0.18333333333333712
+  pass  … and passes at its time (nothing after)                              
+  pass  HOLD 0.25: an entry beyond HOLD is withdrawn                          
+flushes
+  pass  listed before the seek                                                
+  pass  a seek flushes (the hit given is beyond the horizon: nothing but lines)
+  pass  silence: every field none, queueN 0                                   -1
+  pass  music back: listed again                                              
+  pass  a tempo jump (> 4 %) flushes that frame                               rebuilt from the sources on the same frame
+the drop entry
+  pass  not armed: no drop entry                                              
+  pass  armed: the drop sits on the next bar line (beat 1)                    0.18333333333333712
+  pass  its conf is buildLive                                                 
+  pass  past the line: the entry moves to the next bar line                   1.6833333333333371
+  pass  disarmed: the entry is gone                                           
+the wind-up levels
+  pass  0.5 s ahead: nextKickUp 0                                             0
+  pass  0.125 s ahead: nextKickUp 0.5                                         0.533
+  pass  on the hit (within 1.5 frames): nextKickUp ~0.9                       0.933
+  pass  after it: none -> 0                                                   
+Bars.upcoming = what release() fires
+  pass  the store predicts on the loop (predConf >= CONF_MIN)                 1.000
+  pass  every released prediction was listed ahead of its release             112 fired, 0 never listed
+  pass  … at least a step ahead (median beats)                                5.433
+  pass  below CONF_MIN: nothing predicted is listed                           
+feed: rel = the raw clock moved by the lead and the display lead; armed from the build fields
+  pass  rel = beatCount + beatPhase + (L + disp) · bps                        10.5
+  pass  a = the build detector's bar phase                                    
+  pass  armed with dropConf = buildLive                                       
+  pass  not armed when dropLiveIn is -1                                       
+  pass  presence below the gate: not ok                                       
+test_queue: OK
+lock 128: locked at 5.5 s · after 6 s: err med -1.9 p90 3.8 ms · bpm 127.91 conf 0.93 · onsets 64 hits 59 jumps 0
+ok   lock: locked within 6 s
+ok   phase: |median| <= 12 ms, p90 <= 24 ms
+ok   tempo: within ±0.5 of 128
+ok   determinism: two runs identical (b, f, P00)
+ramp 128 -> 132: at 21 s |err| max 1.27 · after 34 s |err| max 0.48 BPM
+ok   ramp: within ±1 at the end, ±2 mid-ramp
+gap 15-21 s: line error inside the gap med 8.4 p90 21.6 · at the return 17 6 2 ms · conf in gap 0.85 jumps 0
+ok   gap: coasts within 30 ms through 6 s of silence
+outlier at 20.59 s (half a beat off, vel 1.5): line error before -2.0 · the next beats -1.5 -1.4 -1.2 ms
+ok   outlier: the first beat after it moved < 6 ms
+lattice (8ths, on-beat louder): err vs the loud lattice med -0.6 p90 2.5 ms (half a beat = 234) · bpm 127.99 jumps 0
+ok   lattice: on the loud lattice within 24 ms (the other lattice reads ±234)
+ok   lattice tempo: the beat, not the 8th (127.99)
+band (8ths, off-beat 2.2x louder but no low band): err vs the KICK lattice after 40 s med -2.6 p90 3.8 ms (half a beat = 234) · on the kicks from 8.2 s · bpm 127.93 lat 0.902 latJumps 0
+ok   band: on the kick lattice within 24 ms (the snares' lattice reads ±234)
+ok   band tempo: the beat, not the 8th (127.93)
+band flip (snares only for 8 s, then the kicks): err vs the KICK lattice before -226 ms -> after 50 s med -2.6 p90 3.5 ms · moved at 21.8 s · lat 0.786 latJumps 1 jumps 1
+ok   band flip: off the kicks cold, on them after the check moves the line
+backbeat (kicks on the beat, snares +40 ms on 2 and 4): err vs the KICKS after 20 s med 3.20 p90 4.17 ms · bpm 127.90 onsets 223 hits 218 jumps 0
+ok   backbeat: the line is on the kicks within 5 ms, not pulled toward the snares (+40 ms)
+ok   backbeat tempo: the beat, not the 8th (127.90)
+test_clock: OK
+ok   coef48: the bilinear recipe reproduces the BS.1770-4 48 kHz table (max |diff| 8.88e-16)
+ok   response: the high shelf lifts HF by +3.999 dB over LF: 3.9986 vs 3.9990 (tol 0.02)
+ok   response: the RLB high-pass is |H| = Q at its 38.135 Hz corner: -5.9716 vs -6.0149 (tol 0.06)
+ok   response: ... and unity well above it: 0.0433 vs 0.0000 (tol 0.05)
+ok   response: 997 Hz sits at +0.70 dB on the combined K curve: 0.6910 vs 0.7000 (tol 0.05)
+ok   response: 10 kHz is 3.33 dB above 997 Hz: 3.3509 vs 3.3300 (tol 0.05)
+ok   response: 20 Hz is -13.28 dB — the RLB high-pass really is a high-pass
+ok   step: the -23 LKFS half reads -23 (short-term): -23.0000 vs -23.0000 (tol 0.02)
+ok   step: ... and momentary: -23.0004 vs -23.0000 (tol 0.02)
+ok   step: the -13 LKFS half reads -13 (short-term): -13.0000 vs -13.0000 (tol 0.02)
+ok   step: the step is +10.00 LU on loudS: 10.0000 vs 10.0000 (tol 0.02)
+ok   step: ... and on loudM: 10.0000 vs 10.0000 (tol 0.02)
+ok   windows: loudM is within 0.01 LU of the new level 400 ms after the step: 0.4000 vs 0.4000 (tol 0.02)
+ok   windows: loudS 3.0 s after it: 3.0000 vs 3.0000 (tol 0.03)
+ok   windows: loudM is half way up at 100 ms (a mean square, not an EMA)
+ok   heard: read(10 s) after the whole 20 s is in = the window ENDING at 10 s, not the newest: -20.0000 vs -20.0000 (tol 0.02)
+ok   heard: read(19.9 s) = the newest window: -8.0000 vs -8.0000 (tol 0.02)
+ok   heard: loudPk read in the past is not the present peak
+ok   heard: a window the ring cannot cover reads the floor (-100) instead of lying
+ok   heard: a window needing 5.47 s of the ring is still inside the default one: -8.0000 vs -8.0000 (tol 0.02)
+ok   peak: the hold is at the loud level while it plays (instant attack): -6.0000 vs -6.0000 (tol 0.05)
+ok   peak: the release is PK_REL LU/s — a straight line in dB: -0.0200 vs -0.0200 (tol 0.0001)
+ok   peak: ... and it holds that rate over 30 s: -0.6001 vs -0.6000 (tol 0.001)
+ok   peak: the hold never falls below the present loudness
+ok   rel: loudRel is at its top at the track's own loudest (1, less whatever the warm-up guard still holds): 0.9146 vs 0.9146 (tol 0.01)
+ok   rel: ... and the guard has mostly let go half a minute in (1.54 LU, loudRel 0.915)
+ok   rel: loudRel is clamp01((loudS - loudPk + RANGE) / RANGE): 0.3378 vs 0.3378 (tol 0.000001)
+ok   rel: 12 LU down reads 0.338 against 1.000
+ok   rel: the warm-up guard holds the first seconds at loudRel 0.763 (< 0.92), not 1.0
+ok   rel: the guard is WARM_LU decayed by the stream's age: 4.2607 vs 4.2607 (tol 0.01)
+ok   rel: ... and it lets go as the stream ages
+ok   transient: a file that starts on a -13 LKFS burst — loudPk never exceeds the loudest FULL 3 s window heard so far (plus the warm-up guard) by more than 0.1 LU (worst 0.000 LU at 0.05 s)
+ok   transient: ... and the HOLD alone, with the guard's own term taken back off, is never above that honest running max at all (worst 0.000 LU at 21.95 s; before §67 the same signal read +7.9 LU here and +8.3 LU of guarded overshoot at 3.2 s — the burst's own loudness, which the 0.02 LU/s release would have needed 390 s to give back)
+ok   transient: inside the first 3 s the peak IS the warm-up guard and nothing else — no seed from a partial window: 4.8039 vs 4.8039 (tol 0.02)
+ok   transient: the signal's own true short-term max: -20.0000 vs -20.0000 (tol 0.3)
+ok   range: loudRange = p95 - p10 of loudS on a signal whose true span is 8 LU: 7.5000 vs 8.0000 (tol 0.6)
+ok   gain: x0.1 moves loudS by exactly -20.00 LU (max |err| 8.4e-10)
+ok   gain: loudRel and loudRange are IDENTICAL under a gain change (1.2e-12 / 0.0e+0) — the capture path
+ok   sr44: 48 kHz reads the target: -17.0000 vs -17.0000 (tol 0.02)
+ok   sr44: 44.1 kHz reads the same target through the DERIVED coefficients: -16.9999 vs -17.0000 (tol 0.02)
+ok   sr44: one amplitude, two rates, the same LKFS: -13.9765 vs -13.9794 (tol 0.02)
+ok   determ: two runs are identical to the last bit
+cost: 3.75 µs/block over 20625 blocks -> 5.86 µs/frame at 48 kHz / 60 fps (0.035 % of a 60 fps frame)
+ok   cost: 5.86 µs/frame, under the 40 µs budget
+
+test_loud: OK 43 pass
+1:1 — a click on every beat (K 1)
+  pass  the windows fill and run                                                      53 full windows
+  pass  d 1:1 > 0.9 (the probe: a click train at Ω = 1 gives d → 1)                   d11 0.974 d21 0.052 d41 0.000
+  pass  the 1:1 tongue is K/π wide (Ω 1 ± K/2π) within one bank step                  w11 0.438 oct (theory 0.463)
+  pass  tongueK reads 1 within a bank step (a clean click train), tongueAmbig under 0.1K 0.956 ambig 0.026
+  pass  tongueLat within 0.05 cycle of the line at confidence > 0.9                   lat 0.021 conf 0.974
+  pass  swing 1.00 on a straight train                                                swing 1.000
+2:1 — a click on every 8th (K 1)
+  pass  the 2:1 tongue is the deepest of the ladder (> 0.9) and 1:1 is shallow (< 0.4)d11 0.242 d21 0.979 d41 0.277
+  pass  swing 1.00 on straight 8ths                                                   swing 1.000
+accent — 8ths 2.46 dB below the quarters, K 0.5 / 1 / 2
+  pass  d 1:1 − d 2:1 rises with K                                                    K 0.5: d11 0.261 d21 0.993 · K 1: d11 0.380 d21 0.859 · K 2: d11 0.384 d21 0.102
+  pass  at the engine's K 1 the denser train is still the deeper (the five-track finding; the octave is §61's)
+  pass  at K 2 the accented beat wins by depth                                        
+swing — the off-8th at 0.6 of the beat (ratio 1.5)
+  pass  swing 1.5 ± 0.1                                                               swing 1.510
+silence
+  pass  every depth 0, tongueAmbig 1, swing 1                                         d11 0.000 ambig 1.000 swing 1.000
+re-seat
+  pass  running before the jump, the windows cleared at it, running again WIN beats latercleared at beat +0, back at +16 (WIN 16)
+determinism
+  pass  two runs are identical to the last bit                                        61 beats
+  pass  every field published                                                         12 fields
+OK
+ok   feats: every FLUID_FEATS key in FEATS (39)
+ok   feats: no pred* / *Vel / dropEvt read
+ok   proxy: SeeYouDrop 6601 real frames, no read outside FLUID_FEATS (359886 reads)
+ok   gate: subGate 0 → no splat (0)
+ok   gate: subGate 1 → one sub splat (1)
+ok   gate: §111 x at the fifths sector of the bass note RELATIVE to the tonic (C here): E♭ three fifths flat of C → left of centre: 0.2916666666666667 vs 0.2916666666666667 (tol 1e-9)
+ok   gate: the tonic itself at the centre (6.5 / 12): 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   gate: the fifth one sector to the right: 0.625 vs 0.625 (tol 1e-9)
+ok   gate: the fourth one sector to the left: 0.4583333333333333 vs 0.4583333333333333 (tol 1e-9)
+ok   gate: the tritone at the wall: 0.041666666666666664 vs 0.041666666666666664 (tol 1e-9)
+ok   gate: with G pinned, a G sub is the centre — the axis follows the key: 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   gate: a kick before any sub lifts at the tonic's place (xSub starts at the centre): 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   gate: y by the register: 0.22 vs 0.22 (tol 1e-9)
+ok   gate: it rises (dy 0.0800), no lean without a glide
+ok   gate: a +24 st/s glide leans it by the full SUB_X: 0.02 vs 0.02 (tol 1e-9)
+ok   gate: subNote -1 with the gate open and no key pinned → x from harmAngle's nearest fifth, which IS the tonic before any pin → the centre: 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   gate: with C pinned, subNote -1 and harmAngle π (F♯, the tritone) → the wall: 0.041666666666666664 vs 0.041666666666666664 (tol 1e-9)
+ok   kick: kickEvt → one impulse
+ok   kick: a hit under the lane's prior p10 (.25 < .3) → dy = KICK_V·√AMP0 (the floor of the law): 0.40249223594996214 vs 0.40249223594996214 (tol 1e-9)
+ok   kick: a hit at the prior's p90 or above → dy = KICK_V: 0.9 vs 0.9 (tol 1e-9)
+ok   kick: the law's room is 1/√AMP0 (2.24×, was √(1/.31) = 1.8× under the lane's floor): 2.23606797749979 vs 2.23606797749979 (tol 1e-9)
+ok   kick: from the floor: 0.06 vs 0.06 (tol 1e-9)
+ok   kick: radius ×2: 0.005 vs 0.005 (tol 1e-12)
+ok   kick: tagged k = kick (§111: every splat carries its kind)
+ok   kick: the frame after keeps 40 % of the same ranked size (0.360)
+ok   kick: nothing 3 frames after
+ok   kick: nothing before any kick (age 99)
+ok   kick: after 20 hits in .5–.6, a .5 hit is the lane's p10 → the floor of the law (0.402): 0.40249223594996214 vs 0.40249223594996214 (tol 1e-9)
+ok   kick: and a .6 hit its p90 → the full law (0.900) — the track's own range, not the lane's: 0.9 vs 0.9 (tol 1e-9)
+ok   kick: the rank buffer holds the last 64 hits (22 so far)
+ok   snare: two shears (2) — the drum grammar (the sub seen; a fresh state is the harmonic branch, item 8)
+ok   snare: at (.3, .5) and (.7, .5)
+ok   snare: equal and opposite: 0.26769230769230773 vs 0.26769230769230773 (tol 1e-12)
+ok   snare: dx = SNARE_V·(AMP0 + (1 − AMP0)·rank) — rank on the prior .3 / .95 until the lane has 8 hits (§111): 0.26769230769230773 vs 0.26769230769230773 (tol 1e-9)
+ok   snare: tagged k = snare
+ok   snare: the biggest hit the full SNARE_V, one under the p10 the floor AMP0
+ok   hats: min(3, round(denH)) while hat2 > .3 on a full bucket (3 1 0 3)
+ok   hats: from the surface, falling, x in [0, 1), tagged k = hat
+ok   hats: the same beat → the same x (seeded)
+ok   hats: the next beat → another x
+ok   hats: radius ×.5: 0.00125 vs 0.00125 (tol 1e-12)
+ok   hats: a 12-frame burst at denH 3 → 3 on the first frame, nothing until the bucket refills one (frame 9), 4 in all [3 0 0 0 0 0 0 0 1 0 0 0]
+ok   hats: 10 s of hats at denH 3 → 82 droplets (≤ HAT_RATE·10 + 3 = 83; was 1800)
+ok   hats: half a second of quiet refills the bucket — the next hit's first three again
+ok   budget: nothing injected → the grammar's dyeDiss, ink rate 0
+ok   budget: a kick + a snare every frame for 60 s → ink 151/s (frame 2.54 × 60), dyeDiss = ink / INK_BUDGET = 10.81
+ok   budget: in the (latched) void it scales the void's .05 (0.540) — the ink still accumulates, slower
+ok   budget: 60 s of nothing → the rate decays (ema INK_TAU 12 s) and dyeDiss is the grammar's again (ink 1.02)
+ok   budget: a 5 s burst reaches only 34 % of its rate (INK_TAU 12 s: a build's roll passes, a steady boil is governed)
+ok   budget: the drop's impulse is not counted in the rate (0)
+ok   budget: INK_BUDGET 14 (SeeYouDrop's groove p50 12 area-weighted ink/s; CyborgNinja 31 → ×2.2 — tools/fluid-tracks.js): 14 vs 14 (tol 1e-9)
+ok   drop: a dropLiveEvt frame with no sub → nothing yet (pending; dyeDiss 1, 0 splats)
+ok   drop: the sub opening 11 frames later confirms it — dyeDiss 12, the impulse (radius ×4, dy DROP_V) on that frame
+ok   drop: the clear lasts the confirmation frame + one beat at 120 bpm (32 frames): 32 vs 31 (tol 1)
+ok   drop: then back to the void mapping (1)
+ok   drop: a second trigger 0.5 s after a confirmed clear is inside the refractory (CLEAR_REF 4 beats) → nothing
+ok   drop: after the bar a trigger with the sub on the same frame clears at once
+ok   drop: a trigger with no sub for 1 s (> CLEAR_PEND 1.5 beats) never clears, and a sub after the window does not either (IBelongHere's breakdown arms, Comptine's piano)
+ok   drop: the trigger and the sub on one frame → the clear on that frame (SeeYouDrop's drops: the sub within 0–2 frames)
+ok   shock: a trigger with no sub → no ring (pending, as the clear)
+ok   shock: … and none while pending (frame 2)
+ok   shock: … and none while pending (frame 3)
+ok   shock: … and none while pending (frame 4)
+ok   shock: … and none while pending (frame 5)
+ok   shock: … and none while pending (frame 6)
+ok   shock: the confirming frame fires it — the front at r 0, width SW_W 0.08, A 1.500
+ok   shock: A = SW_K·(SW_C / beat)·g·(SW_A0 + (1 − SW_A0)·rank) at rank 1 (1.500 uv/s): 1.5 vs 1.5 (tol 1e-9)
+ok   shock: frame 2 keeps A and the width (r 0.017)
+ok   shock: frame 3 keeps A and the width (r 0.033)
+ok   shock: frame 4 keeps A and the width (r 0.050)
+ok   shock: frame 5 keeps A and the width (r 0.067)
+ok   shock: frame 6 keeps A and the width (r 0.083)
+ok   shock: frame 7 keeps A and the width (r 0.100)
+ok   shock: frame 8 keeps A and the width (r 0.117)
+ok   shock: frame 9 keeps A and the width (r 0.133)
+ok   shock: frame 10 keeps A and the width (r 0.150)
+ok   shock: frame 11 keeps A and the width (r 0.167)
+ok   shock: frame 12 keeps A and the width (r 0.183)
+ok   shock: frame 13 keeps A and the width (r 0.200)
+ok   shock: frame 14 keeps A and the width (r 0.217)
+ok   shock: frame 15 keeps A and the width (r 0.233)
+ok   shock: frame 16 keeps A and the width (r 0.250)
+ok   shock: the ring lasts SW_T 0.5 beats at 120 bpm (16 frames): 16 vs 15 (tol 1)
+ok   shock: the front travels SW_C 0.5 screen heights per beat (r 0.250 after 15 frames) — one screen radius per beat: 0.24999999999999997 vs 0.25 (tol 1e-9)
+ok   shock: then null
+ok   shock: the same .6 slam ranks low among .9 kicks (A 0.750, never under SW_A0 of the top) and high among .3 kicks (A 1.500)
+ok   shock: presence 0 → the ring carries A 0 (the gain is on every injected velocity)
+ok   shock: a dropEvt-only frame with the sub open → no ring (CONTRACTS §1.18: the extractor's drop is not the grammar's)
+ok   shock: the map's bar line with the sub → the ring on that frame (file mode)
+ok   mapdrop: a mapDropEvt frame (the sub there) clears (dyeDiss 12)
+ok   mapdrop: the same countdown (32 frames): 32 vs 31 (tol 1)
+ok   mapdrop: both on one frame → still one impulse
+ok   mapdrop: a dropEvt-only frame does NOT arm it (dyeDiss 1)
+ok   mapdrop: FLUID_FEATS has mapDropEvt and not dropEvt
+ok   mapdrop: DROP_DISS 12 keeps < 2 % of the ink after 24 frames (0.0126)
+ok   floor: a pad-only frame → one splat (1)
+ok   floor: dye only — dx 0 dy 0
+ok   floor: it inks (0.0038)
+ok   floor: x at the KEY's place on the tonic-relative axis — the centre (§111): 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   floor: y at mid height: 0.5 vs 0.5 (tol 1e-9)
+ok   floor: radius ×2: 0.005 vs 0.005 (tol 1e-12)
+ok   floor: FLOOR_DYE·mid·g·f above the knee (0.00360): 0.0036000000000000003 vs 0.0036000000000000003 (tol 1e-9)
+ok   floor: mid .1 is under the knee → nothing
+ok   floor: mid 0 → nothing
+ok   floor: silence (presence 0) → nothing (0 splats)
+ok   floor: rides the gain (hush lowers it)
+ok   floor: 120 pad frames → 120 splats, Σ|v| 0 (never a velocity: no roster trail moves)
+ok   floor: under the §107 clear the pool holds 0.0240 of the floor's ink (< .05)
+ok   floor: §111 40 s of a steady mid .8 → FLOOR_BASE 0.5 of the plain floor (a level that does not move is half the ink; before: the full floor on 94–100 % of every track's frames): 0.0016 vs 0.0016 (tol 1e-9)
+ok   floor: §111 a swell to .95 — above the track's own p80 — the full floor: 0.0038 vs 0.0038 (tol 1e-9)
+ok   floor: §111 a dip to .6 — under its p20 — half: 0.0012 vs 0.0012 (tol 1e-9)
+ok   floor: §111 the first 5 s (no range known yet) → the plain floor: 0.0036000000000000003 vs 0.0036000000000000003 (tol 1e-9)
+ok   floor: §111 the absolute knee still zeroes a residue under FLOOR_LO
+ok   chord: CHORD_V is a third of SNARE_V (0.18): 0.18 vs 0.18 (tol 1e-12)
+ok   chord: a rise 0 → .5 with no snareEvt → two shears (2, chord 0.5)
+ok   chord: at (.3, .5) and (.7, .5), as the snare
+ok   chord: equal and opposite: 0.09 vs 0.09 (tol 1e-12)
+ok   chord: dx = CHORD_V·Δsnare: 0.09 vs 0.09 (tol 1e-9)
+ok   chord: ink CHORD_DYE·Δsnare in the key colour: 0.04202603996298411 vs 0.04202603996298411 (tol 1e-9)
+ok   chord: a further rise .5 → .9 one frame later → nothing (the refractory)
+ok   chord: a rise after CHORD_REF → fires again (Δ 0.10)
+ok   chord: a level held at .6 for 60 frames → one shear, then nothing (1)
+ok   chord: a snareEvt frame → the lane's two shears only, at the ranked size (dx 0.268)
+ok   chord: the level's own rise on the frame after a snareEvt → nothing (the event armed the refractory)
+ok   chord: a rise of .04 (< CHORD_RISE .05) → nothing
+ok   chord: silence (presence 0) → nothing
+ok   chord/floor: FLUID_FEATS gained mid and snare (39)
+ok   harmonic: the sub shut 5 s → a snare is ONE splat (1) at the harmony's place
+ok   harmonic: x = harmAngle's fifth on the tonic axis (0 → the tonic → the centre): 0.5416666666666666 vs 0.5416666666666666 (tol 1e-9)
+ok   harmonic: y = .25 + .5·centroid (.5 → mid height): 0.5 vs 0.5 (tol 1e-9)
+ok   harmonic: the push away from the centre at the snare's full force (dx 0.600), HARM_LIFT of it upward (dy 0.180)
+ok   harmonic: a fifth up (π/6) → right of centre, a bright centroid → high (y .75), the push right
+ok   harmonic: a fifth down → left of centre, a dark centroid → low, the push left
+ok   harmonic: a kick-lane hit (a low note) lifts from under the harmony's place, not the stale sub x
+ok   harmonic: a chord attack → one splat at the harmony's place too
+ok   harmonic: the frame after the sub returns the drum grammar is back (the pair)
+ok   noise: 20 s of a flat spectrum with no bass and no sub ever → nothing injected (no hit, no floor)
+ok   noise: the same spectrum 6 s after the sub left is a BUILD's riser, not noise (SeeYouDrop 52–57 s) — the floor stays
+ok   noise: a pad (dirty .6, bass .9) is never noise
+ok   harmonic: FLUID_FEATS gained centroid, dirty, bass (39)
+ok   params: curl 10 at tension 0: 10 vs 10 (tol 1e-9)
+ok   params: curl 50 at tension 1: 50 vs 50 (tol 1e-9)
+ok   params: velDiss .2 with the filter open: 0.2 vs 0.2 (tol 1e-9)
+ok   params: velDiss 3 on the frame the filter closes (lpSweep 1 against a 1 s ema of 0: the full rise): 3 vs 3 (tol 1e-9)
+ok   params: hush adds nothing (§111: the 2·hush term read 0.00 on all seven tracks — dropped): 0.2 vs 0.2 (tol 1e-9)
+ok   params: §111 a filter held closed for 6 s is a dark mix, not syrup — velDiss back to .2 (0.200): 0.2 vs 0.2 (tol 0.001)
+ok   params: §111 a sweep closing .5 → 1 over 2 s reaches velDiss 3.00 (> 2.5: the syrup is for the sweep that moves)
+ok   params: §111 the filter opening is a release, not syrup (0.200): 0.2 vs 0.2 (tol 0.000001)
+ok   params: dyeDiss 1 outside the void: 1 vs 1 (tol 1e-9)
+ok   params: §111 buildLive 1 with no sub ever seen → the void is BOUNDED at VOID_FLOOR 0.3 (a piano crescendo arms the detector too): 0.3 vs 0.3 (tol 1e-9)
+ok   params: §111 buildLive 1 with the sub seen → the deep void .05 (the latch: the void before a drop is the bass leaving): 0.050000000000000044 vs 0.05 (tol 1e-9)
+ok   params: §111 buildLive .4 (armed, under .5) → the mapping's .62, above the bound anyway: 0.62 vs 0.62 (tol 1e-9)
+ok   params: §111 buildLive .9 with no sub seen → bounded at 0.3 (the mapping would say .145): 0.3 vs 0.3 (tol 1e-9)
+ok   params: §111 8 bars after the sub was last seen the latch expires → bounded: 0.3 vs 0.3 (tol 1e-9)
+ok   params: tongueAmbig counts while tongueOn 1 — bounded (§111: a clock-lock measure, never the deep void on its own): 0.3 vs 0.3 (tol 1e-9)
+ok   params: tongueAmbig .5 → .525 (the mapping under the bound): 0.525 vs 0.525 (tol 1e-9)
+ok   params: not while warming: 1 vs 1 (tol 1e-9)
+ok   params: pressure .8, radius K.RADIUS
+ok   gain: presence 0 → nothing moves, nothing is inked
+ok   gain: 1 / hush .2 / calm .5 / quiet .3 (1 0.20 0.5 0.30)
+ok   colour: linear rgb in [0, 1] (1.000 0.027 0.026)
+ok   colour: more saturated with tonicConf (0.683 → 1.000)
+ok   colour: another key, another hue
+ok   colour: keyConf .15 (under keycolour's KEYC1 .3) takes the key within 10 s — the pool pins at KEY_TRUST 0.1 once the evidence is in
+ok   colour: the key holds through 5 s of no trust while the harmony and the mood move (before: it slid to LOOK.mood.hue)
+ok   colour: no trusted key yet → the harmony's centre colours the pool: harmAngle 0 and π give two hues
+ok   colour: the old fourth argument (LOOK.mood.hue) is ignored
+ok   colour: a harmony flipping a fifth every half second moves the fallback hue by < .02 per frame (the centre is an ema of HARM_TAU 15 s; max |Δrgb| 0.0013)
+ok   colour: 5 s of another key at the same trust does not re-pin (its evidence must reach KEY_MARGIN 1.5 × the pinned key's, ema KEY_TAU 30 s)
+ok   colour: it re-pins after 10.6 s of the new key at equal trust (a modulation shows in 10–40 s, sooner when the old key's evidence is young)
+ok   colour: the first pin needs KEY_EV0 0.5 of evidence — 5.5 s at trust .1 (5.5 expected; a cold start's first trusted guess is often wrong)
+ok   determ: two fresh states on SeeYouDrop's 6601 real frames → identical output (4489619 chars)
+ok   bands: inject2.js exports inject.js's interface (plan, mkState, K, FLUID_FEATS)
+ok   bands: inject2's FLUID_FEATS ⊇ the base's (39 of 40 — plan2 runs plan(), so it reads them)
+ok   bands: every inject2 FLUID_FEATS key in FEATS
+ok   bands: S1 — inject2 reads `sub` (the envelope's source), the base does not
+ok   bands: the table — pool is inject.js, bands is inject2.js, the default is pool
+ok   bands: FLUID2 (id 13) declares fluid.grammar bands and the dispatch picks it
+ok   bands: FLUID (id 12) declares no slot → pool
+ok   bands: no slot, no card, an unknown name, an inherited name → pool (check.js fails the card; the loop never mixes)
+ok   bands: FLUID2 is forced-only — score() 0 on FLUID's best profile, no landing tile
+ok   bands: S1 — plan2 = plan() on every field but the sub splat's velocity on 600 synthetic frames (259791 chars; kicks, snares, hats, a floor and a clear in them)
+ok   bands: S1 — the emitter's jet is gone: the sub splat has dx = dy = 0 on every frame under the band grammar (dy > 0 under the pool's), its ink kept (SUB_INK 1)
+ok   bands: S1 — the neutral path: sub 0 → heave 0, swirl 0, the body the base's to the bit on all 600 frames
+ok   bands: S1 — the ink unchanged in the budget's units (SUB_INK 1, the cloud's dye ÷ SUB_RAD²) → the governor and dyeDiss are the base's within 1e-9
+ok   bands: a standalone mkState2() makes its own base on the first plan2 (a replay tool needs no wiring), and it ends in the base's state
+ok   bands: S1 — the heave: body = the base's + heave on every frame; < −.1 on the sub's attack (with the breath: the sub is weight; -0.233…), > .1 in its tail (0.148…) once the slow mean has settled
+ok   bands: S1 — cold: the first frame carries the level's gravity alone, no rise (the envelopes start at the frame's sub — a switch mid-track is no burst); bounded: |heave| ≤ HEAVE + HEAVE_DC, subEnv in [0, 1]
+ok   bands: S1 — … and a start AT a peak (sub 1 on the first frame) reads the next attack's first frame as below its slow mean, a lift, never a slam (0.26 0.09 -0.02): the cold frame itself is the level alone
+ok   bands: S1 — on a steady pulse the heave's mean is the DC term alone (-0.0494 vs −HEAVE_DC · mean subEnv -0.0500): the rise lifts, the tail settles, no drift beyond the level's gravity
+ok   bands: S1 — FLIP 1: the heave's sign follows the bar parity (beatCount >> 2 & 1), the magnitude the default's
+ok   bands: S1 — FLIP 2: a rising bass (subGlide +6 st/s) lifts (0.699), a falling one sinks (-0.699), a held note (glide 0) heaves nothing
+ok   bands: S1 — SWIRL .8: swirl = SWIRL · subEnv · g, its sign by the bar parity, bounded by SWIRL; 0 by default (the identical advect path)
+ok   bands: S1 — HEAVE_DC: the level as a steady extra gravity, heave = −HEAVE_DC · subEnv · g (with the breath)
+ok   bands: S1 — SUB_INK 0: no sub splat at all; the ink rate below the base's and dyeDiss re-governed, never above the base's
+ok   bands: S1 — SUB_INK .5: the sub splat's dye halved (over the cloud's ÷ SUB_RAD²), still no velocity
+ok   bands: S1 — SUB_RAD 3 (the default): the mouth's ink spread over 3× the radius at a ninth of the dye — the same ink in the budget's units (the rate within 1e-9 of the base's), a cloud where the dot was; SUB_RAD 1 is the base's dot
+ok   bands: S1 — SUB_GATE 1 with the sub open (the drum branch): the field is the default's
+ok   bands: S1 — SUB_GATE 1 in the harmonic branch (no sub for HARM_BARS bars, the band still pulsing): the field is 0 (Comptine's piano sways nothing); 0 (the default) follows the band
+ok   bands: the K2 table restored after the switches
+ok   bands: S1 — plan2 on SeeYouDrop's 6601 real frames = plan() on every field but the sub's velocity and the body (3296977 chars: the §111 machinery untouched by the field)
+ok   bands: S1 — on the real trace body = the base's + heave on every frame, |heave| ≤ HEAVE, |swirl| ≤ SWIRL
+ok   bands: S1 — the field is on (|heave| > .01) on 97 % of SeeYouDrop's frames; in the void before drop 1 (54–57 s) it eases off (median |heave| 0.017, a lift against the breath, never a slam — the level's .04 is under .02), on the drop's return (57.6–61 s) it slams at -0.333 — over twice the groove's per-beat pulse (0.131): the void's return is the field's biggest gesture
+ok   bands: determ — two fresh band states on the real trace → identical output (the field on)
+ok   bands: st2.base IS the pool grammar's state object after 1200 frames (never re-made)
+ok   bands: the switch is free — after pool → bands → pool → bands every 300 frames the BASE STATE = plan() alone's to the byte (the key pin, the ranks, the clear, the ink rate run on warm in both directions)
+ok   bands: … and every output field but the sub's velocity and the body is plan() alone's, frame for frame; the pool frames carry no field, the band frames do
+ok   bands: S1 — the first band frame after each switch carries the level's gravity alone (no rise: no burst) and its ink rate is the base's warm one (no un-governing); the frame after heaves
+ok   bands: proxy — SeeYouDrop 6601 real frames through plan2, no read outside inject2's FLUID_FEATS
+ok   bands: S2 — K2 carries KICK_SHAPE 3 (the shipped kind), JET_N 4, STROKE_L 0.25 / STROKE_T 0.05, DIP_D 0.03 / DIP_V 1.2, KPUFF_A 0.4 / KPUFF_R 0.12 / KPUFF_T 0.25
+ok   bands: S2 — shape 0 (the control): the base's kick splats as they are on RaindropsOnRoses's 129 kicks (320 kick frames, no jet / stroke / dip / puff); `kick` in the return counts them
+ok   bands: S2 — the jet: Σ dy·rad over every kick's frames = the control's within 1e-9 (the same momentum, Σ 0.558662 over the track) and the same ink in the budget's units (0 kicks off)
+ok   bands: S2 — the stroke: Σ dy·rad over every kick's frames = the control's within 1e-9 (the same momentum, Σ 0.558662 over the track) and the same ink in the budget's units (0 kicks off)
+ok   bands: S2 — the dipole: Σ dy·rad over every kick's frames = the control's within 1e-9 (the same momentum, Σ 0.558662 over the track) and the same ink in the budget's units (0 kicks off)
+ok   bands: S2 — the jet: 1280 jet splats = 320 base kick frames × JET_N 4, every one at KICK_Y, no base kick splat left
+ok   bands: S2 — the jet on one kick (frame 1890, the base on 3 frames): every base frame's push runs JET_N frames (1 2 3 3 2 1 0 = 1 2 3 3 2 1 0), none after; each the base's dy / JET_N (0.115233 | 0.115233+0.046095 | 0.115233+0.046095+0.046097 | 0.115233+0.046095+0.046097 | 0.046095+0.046097 | 0.046097 | )
+ok   bands: S2 — the stroke: y from KICK_Y rising with the push's age (oldest first per frame: 0.06 0.1433/0.06 0.2267/0.1433/0.06 0.31/0.2267/0.1433 0.31/0.2267), saturating at KICK_Y + STROKE_L; the momentum the jet's
+ok   bands: S2 — the dipole: on every base kick frame two dip splats at x ∓ DIP_D, dx opposite (+1.2 × √rank · g inward on the left), dy and the ink halved, the radius the base's
+ok   bands: S2 — the dipole's seed is bounded by DIP_V (1.158 max), no base kick splat left
+ok   bands: S2 — the puff: the kick's ink stays at its place with no velocity (momentum 0 in the splats' units), on every base kick frame
+ok   bands: S2 — the puff's ring: 902 frames over 129 kicks (≈ 6.4 per kick), centred at the kick's place (cy KICK_Y), r 0 → < KPUFF_R, a ≤ KPUFF_A, w KPUFF_W
+ok   bands: S2 — the puff on one kick: r 0 on the hit's frame, rising every frame (0 0.0187 0.0373 0.056 0.0747 0.0933 0.112 - - - - -), gone after KPUFF_T beats
+ok   bands: S2 — the base's shockwave (the drop at 129.550 s, 13 frames, centred) wins every step it runs on: the puff never replaces it
+ok   bands: S2 — an unknown shape (9) is the control's list
+ok   bands: S2 — the shipped kind (dip, KICK_SHAPE 3): 640 splats, one or more on every one of the 129 kick frames, no other kick kind
+ok   bands: S2 — determ: two fresh band states on the real trace under the shipped kind → identical output
+ok   bands: S2 — the shipped kind moves nothing but the kick kinds (and the governor's rounding): the sub's field, the snare, the hats, the floor, the drop are the control's to the byte
+ok   bands: S2 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending jet: the hit's push on its frame, the re-entry frame carries the tail's alone (1), the next the tail frames joined since (1 = 1+0), the hit's own push never late
+ok   bands: S2 — the K2 table restored after the shapes
+ok   bands: S3 — no new MS read: inject2's FLUID_FEATS is still the base's + `sub` (`mid` and the snare lane are the base's reads)
+ok   bands: S3 — CURL_SRC 0: params.curl = the base's 10 + 40·tension on every one of RaindropsOnRoses's 6601 real frames, mids.curl reads it, no mask
+ok   bands: S3 — CURL_SRC 1: params.curl = CURL0 + CURL_MID · mids.pos on every frame, pos in [0, 1], the constant in [CURL0, CURL0 + CURL_MID]
+ok   bands: S3 — the mids' curl on RaindropsOnRoses: the breakdown's pads 118–126 s (mid .80–.88) p50 49.8, the groove 76–80 s 42.1, the thin 111–116 s (mid .35–.48) 10.4 — dense − thin ≥ 20 (the base's tension reads 23.3 / 16.4 there)
+ok   bands: S3 — the constant eased MID_TAU: the largest per-frame step 2.578 ≤ CURL_MID · dt / MID_TAU (2.667)
+ok   bands: S3 — CURL_MASK 0: no params.curlMask on any frame (the identical vort pass); 1: { y0, y1, lo, fe } = K2's on every frame, and nothing else in the plan moves
+ok   bands: S3 — the snare jet on RaindropsOnRoses: the drum branch's 292 pair frames gone, Σ|dx|·rad over the jet's frames = the pairs' (0.444261 vs 0.444261) and the ink equal (195.3321)
+ok   bands: S3 — per lone snare (292 with no other inside SNARE_N frames): one sjet splat on each of the SNARE_N frames, their Σ|dx|·rad the pair's to 1e-12
+ok   bands: S3 — the jet alternates walls by the snare count: the 292 hits launch from x SNARE_X then 1 − SNARE_X, dx into the pool, at y SNARE_Y, dy 0
+ok   bands: S3 — the harmonic branch's one directed snare splat (70 frames) and every chord shear are the base's to the byte
+ok   bands: S3 — nothing but the snare kinds, the curl and the governor moved: every other splat (the dipole, the floor, the hats, the chords), the heave, the body, the kick record are the control's
+ok   bands: S3 — the ink budget: the own rate within 10 % of the base's on every frame (the same ink SNARE_N frames later), the p50 dyeDiss the base's
+ok   bands: S3 — `snare` in the return: { kind jet | pair | harm, mom, ink, n, side } on the frames that carry a snare kind, '' with n 0 otherwise
+ok   bands: S3 — SNARE_N 1: one sjet stamp on the hit's frame at the pair's full momentum, none on any other frame
+ok   bands: S3 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending jet frames and the count (0 0 0 1 1 0)
+ok   bands: S3 — determ: two fresh band states on the real trace under the shipped K2 → identical output
+ok   bands: S3 — proxy: RaindropsOnRoses through plan2 with the curl, the jet on, no read outside inject2's FLUID_FEATS
+ok   bands: S3 — the own range: 40 s of mid .5 → the floor (10.00), a swell to .7 → CURL0 + CURL_MID within 1.5 s (6 MID_TAU; 49.90), a dip to .3 → the floor (10.10); the base's tension .5 would read 30 throughout
+ok   bands: S3 — the K2 table restored after the switches
+ok   breath: −BODY at the beat: -0.35 vs -0.35 (tol 1e-9)
+ok   breath: 0 at phase .5: -4.920298699946749e-66 vs 0 (tol 1e-9)
+ok   breath: rides the gain: -0.06999999999999998 vs -0.06999999999999999 (tol 1e-9)
+     Comptine-map1          6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 5 (mapDropEvt [107.367] dropLiveEvt [47.5,52.167,58.883,107.917]) · clears [] held 0
+ok   music: Comptine-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: Comptine-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: Comptine-map1 — no sub: the harmonic branch on 100 % of frames, its 555 hits spread over the harmony (x p10–p90 span 0.17; before: the fixed .3 / .7 pair)
+ok   music: Comptine-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: Comptine-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     Comptine-map1          shockwaves []
+ok   music: Comptine-map1 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: Comptine-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+ok   music: Comptine-map1 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     Comptine-map1          key: first pin never · pins  · key-coloured frames 0 %
+     Comptine-map1          syrup (velDiss > 1) on 8.4 % of the music frames
+ok   music: Comptine-map1 — syrup on ≤ 30 % of the music frames (8.4 %; a dark mix that is not closing is not syrup)
+     Comptine-map1          deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: Comptine-map1 — no sub ever: the void never under VOID_FLOOR (min dyeDiss 0.300; before: .05 on 44 % of Comptine's frames)
+ok   music: Comptine-map1 — the piano never reaches the trust (keyConf 0 throughout): the harmony's centre colours it, never a mood
+     Comptine-map0          6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 4 (mapDropEvt [] dropLiveEvt [47.5,52.167,58.883,107.917]) · clears [] held 0
+ok   music: Comptine-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: Comptine-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: Comptine-map0 — no sub: the harmonic branch on 100 % of frames, its 480 hits spread over the harmony (x p10–p90 span 0.17; before: the fixed .3 / .7 pair)
+ok   music: Comptine-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: Comptine-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     Comptine-map0          shockwaves []
+ok   music: Comptine-map0 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: Comptine-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+ok   music: Comptine-map0 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     Comptine-map0          key: first pin never · pins  · key-coloured frames 0 %
+     Comptine-map0          syrup (velDiss > 1) on 8.4 % of the music frames
+ok   music: Comptine-map0 — syrup on ≤ 30 % of the music frames (8.4 %; a dark mix that is not closing is not syrup)
+     Comptine-map0          deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: Comptine-map0 — no sub ever: the void never under VOID_FLOOR (min dyeDiss 0.300; before: .05 on 44 % of Comptine's frames)
+     CyborgNinja-map1       6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+ok   music: CyborgNinja-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: CyborgNinja-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: CyborgNinja-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: CyborgNinja-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     CyborgNinja-map1       shockwaves []
+ok   music: CyborgNinja-map1 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: CyborgNinja-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     CyborgNinja-map1       sub x p10 / p50 / p90 0.13 / 0.54 / 0.96 over 2151 open frames
+ok   music: CyborgNinja-map1 — the held bass sits near the centre (p50 0.54 in .3–.7; before .29 / .21 with the C at .04, the left wall) with a span ≥ .3 (0.83; its chromatic C♯ is the key's tritone, at the wall by design)
+ok   music: CyborgNinja-map1 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     CyborgNinja-map1       key: first pin 4.8 s Dm · pins Dm Cm · key-coloured frames 96 %
+     CyborgNinja-map1       syrup (velDiss > 1) on 0.9 % of the music frames
+ok   music: CyborgNinja-map1 — syrup on ≤ 30 % of the music frames (0.9 %; a dark mix that is not closing is not syrup)
+     CyborgNinja-map1       deep void (dyeDiss < .3) on 0.0 % of the music frames
+     CyborgNinja-map0       6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+ok   music: CyborgNinja-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: CyborgNinja-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: CyborgNinja-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: CyborgNinja-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     CyborgNinja-map0       shockwaves []
+ok   music: CyborgNinja-map0 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: CyborgNinja-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     CyborgNinja-map0       sub x p10 / p50 / p90 0.13 / 0.54 / 0.96 over 6568 open frames
+ok   music: CyborgNinja-map0 — the held bass sits near the centre (p50 0.54 in .3–.7; before .29 / .21 with the C at .04, the left wall) with a span ≥ .3 (0.83; its chromatic C♯ is the key's tritone, at the wall by design)
+ok   music: CyborgNinja-map0 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     CyborgNinja-map0       key: first pin 4.8 s Dm · pins Dm Cm · key-coloured frames 96 %
+     CyborgNinja-map0       syrup (velDiss > 1) on 0.9 % of the music frames
+ok   music: CyborgNinja-map0 — syrup on ≤ 30 % of the music frames (0.9 %; a dark mix that is not closing is not syrup)
+     CyborgNinja-map0       deep void (dyeDiss < .3) on 0.0 % of the music frames
+     IBelongHere-map1       6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 5 moved 0 · triggers 3 (mapDropEvt [16.4,32.667,65.217] dropLiveEvt []) · clears [16.43,32.68,65.23] held 3
+ok   music: IBelongHere-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: IBelongHere-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: IBelongHere-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 5 silent frames did)
+ok   music: IBelongHere-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (3 / 3 of 3)
+     IBelongHere-map1       shockwaves [{"t":16.43,"n":16,"a":1.306,"rEnd":0.246,"onClear":true},{"t":32.68,"n":16,"a":1.223,"rEnd":0.246,"onClear":true},{"t":65.23,"n":16,"a":1.323,"rEnd":0.246,"onClear":true}]
+ok   music: IBelongHere-map1 — 3 shockwave(s) == 3 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: IBelongHere-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     IBelongHere-map1       sub x p10 / p50 / p90 0.13 / 0.46 / 0.71 over 4105 open frames
+ok   music: IBelongHere-map1 — the clears are [16.4,32.67,65.22] ± .15 s → [16.43,32.68,65.23] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     IBelongHere-map1       key: first pin 22.5 s Am · pins Am Dm · key-coloured frames 80 %
+     IBelongHere-map1       syrup (velDiss > 1) on 24.3 % of the music frames
+ok   music: IBelongHere-map1 — syrup on ≤ 30 % of the music frames (24.3 %; a dark mix that is not closing is not syrup)
+     IBelongHere-map1       deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: IBelongHere-map1 — the pool's key is D minor from 65.8 s to the end of the trace (pins Am → Dm; before: keyConf ≥ .3 on 2 % of frames, the mood hue walked seven hues)
+ok   music: IBelongHere-map1 — one hue over the vocal intro (2 / 10 / 16 s: 0.02 0.04 0.04 turns, the harmony's centre) and one over the grooves (60 / 100 s: 0.35 0.32, the key's)
+     IBelongHere-map0       6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 5 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+ok   music: IBelongHere-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: IBelongHere-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: IBelongHere-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 5 silent frames did)
+ok   music: IBelongHere-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     IBelongHere-map0       shockwaves []
+ok   music: IBelongHere-map0 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: IBelongHere-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     IBelongHere-map0       sub x p10 / p50 / p90 0.13 / 0.46 / 0.71 over 4772 open frames
+ok   music: IBelongHere-map0 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     IBelongHere-map0       key: first pin 22.5 s Am · pins Am Dm · key-coloured frames 80 %
+     IBelongHere-map0       syrup (velDiss > 1) on 24.3 % of the music frames
+ok   music: IBelongHere-map0 — syrup on ≤ 30 % of the music frames (24.3 %; a dark mix that is not closing is not syrup)
+     IBelongHere-map0       deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: IBelongHere-map0 — the pool's key is D minor from 65.8 s to the end of the trace (pins Am → Dm; before: keyConf ≥ .3 on 2 % of frames, the mood hue walked seven hues)
+ok   music: IBelongHere-map0 — one hue over the vocal intro (2 / 10 / 16 s: 0.02 0.04 0.04 turns, the harmony's centre) and one over the grooves (60 / 100 s: 0.34 0.32, the key's)
+     Malicious-map1         6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+note music: Malicious-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+note music: Malicious-map1 — the 0 seconds read as noise inject nothing (0 did)
+note music: Malicious-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+note music: Malicious-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     Malicious-map1         shockwaves []
+note music: Malicious-map1 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+note music: Malicious-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     Malicious-map1         sub x p10 / p50 / p90 0.29 / 0.54 / 0.96 over 83 open frames
+     Malicious-map1         key: first pin 6.0 s D · pins D Cm · key-coloured frames 95 %
+     Malicious-map1         syrup (velDiss > 1) on 0.2 % of the music frames
+note music: Malicious-map1 — syrup on ≤ 30 % of the music frames (0.2 %; a dark mix that is not closing is not syrup)
+     Malicious-map1         deep void (dyeDiss < .3) on 0.0 % of the music frames
+     Malicious-map0         6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+note music: Malicious-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+note music: Malicious-map0 — the 0 seconds read as noise inject nothing (0 did)
+note music: Malicious-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+note music: Malicious-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     Malicious-map0         shockwaves []
+note music: Malicious-map0 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+note music: Malicious-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     Malicious-map0         sub x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 2958 open frames
+     Malicious-map0         key: first pin 6.0 s D · pins D Cm · key-coloured frames 95 %
+     Malicious-map0         syrup (velDiss > 1) on 0.2 % of the music frames
+note music: Malicious-map0 — syrup on ≤ 30 % of the music frames (0.2 %; a dark mix that is not closing is not syrup)
+     Malicious-map0         deep void (dyeDiss < .3) on 0.0 % of the music frames
+     RaindropsOnRoses-map1  6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 3 (mapDropEvt [41.15,68.567] dropLiveEvt [129.517]) · clears [41.18,68.62,129.98] held 3
+ok   music: RaindropsOnRoses-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: RaindropsOnRoses-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: RaindropsOnRoses-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: RaindropsOnRoses-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (3 / 3 of 3)
+     RaindropsOnRoses-map1  shockwaves [{"t":41.18,"n":13,"a":1.269,"rEnd":0.233,"onClear":true},{"t":68.62,"n":13,"a":0.979,"rEnd":0.233,"onClear":true},{"t":129.98,"n":13,"a":0.648,"rEnd":0.233,"onClear":true}]
+ok   music: RaindropsOnRoses-map1 — 3 shockwave(s) == 3 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: RaindropsOnRoses-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     RaindropsOnRoses-map1  sub x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 4435 open frames
+     RaindropsOnRoses-map1  key: first pin 42.9 s F#m · pins F#m F# · key-coloured frames 84 %
+     RaindropsOnRoses-map1  syrup (velDiss > 1) on 7.0 % of the music frames
+ok   music: RaindropsOnRoses-map1 — syrup on ≤ 30 % of the music frames (7.0 %; a dark mix that is not closing is not syrup)
+     RaindropsOnRoses-map1  deep void (dyeDiss < .3) on 10.7 % of the music frames
+     RaindropsOnRoses-map0  6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 1 (mapDropEvt [] dropLiveEvt [129.517]) · clears [129.55] held 1
+ok   music: RaindropsOnRoses-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: RaindropsOnRoses-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: RaindropsOnRoses-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: RaindropsOnRoses-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (1 / 1 of 1)
+     RaindropsOnRoses-map0  shockwaves [{"t":129.55,"n":13,"a":0.645,"rEnd":0.233,"onClear":true}]
+ok   music: RaindropsOnRoses-map0 — 1 shockwave(s) == 1 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: RaindropsOnRoses-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     RaindropsOnRoses-map0  sub x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 5283 open frames
+     RaindropsOnRoses-map0  key: first pin 42.9 s F#m · pins F#m F# · key-coloured frames 84 %
+     RaindropsOnRoses-map0  syrup (velDiss > 1) on 7.0 % of the music frames
+ok   music: RaindropsOnRoses-map0 — syrup on ≤ 30 % of the music frames (7.0 %; a dark mix that is not closing is not syrup)
+     RaindropsOnRoses-map0  deep void (dyeDiss < .3) on 11.7 % of the music frames
+     SeeYouDrop-map1        6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 4 (mapDropEvt [57.617,105.6] dropLiveEvt [57.6,105.617]) · clears [57.62,105.63] held 2
+ok   music: SeeYouDrop-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: SeeYouDrop-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: SeeYouDrop-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: SeeYouDrop-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (2 / 2 of 2)
+     SeeYouDrop-map1        shockwaves [{"t":57.62,"n":12,"a":1.357,"rEnd":0.229,"onClear":true},{"t":105.63,"n":12,"a":1.55,"rEnd":0.229,"onClear":true}]
+ok   music: SeeYouDrop-map1 — 2 shockwave(s) == 2 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: SeeYouDrop-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     SeeYouDrop-map1        sub x p10 / p50 / p90 0.21 / 0.54 / 0.63 over 4809 open frames
+ok   music: SeeYouDrop-map1 — the clears are [57.6,105.6] ± .15 s → [57.62,105.63] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+ok   music: SeeYouDrop's mapDropEvt lands within one frame of each truth drop [57.606,105.596] → [57.617,105.6]
+     SeeYouDrop-map1        key: first pin 1.7 s C# · pins C# C#m · key-coloured frames 99 %
+     SeeYouDrop-map1        syrup (velDiss > 1) on 2.3 % of the music frames
+ok   music: SeeYouDrop-map1 — syrup on ≤ 30 % of the music frames (2.3 %; a dark mix that is not closing is not syrup)
+     SeeYouDrop-map1        deep void (dyeDiss < .3) on 2.6 % of the music frames
+ok   music: SeeYouDrop-map1 — the build before drop 1 keeps its deep void (min dyeDiss 0.055)
+ok   music: SeeYouDrop-map1 — C# minor from 13.9 s to the end (pins C# → C#m: the tonic's mode settles in the first bars; the reference's colour as before)
+     SeeYouDrop-map0        6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 2 (mapDropEvt [] dropLiveEvt [57.6,105.617]) · clears [57.65,105.67] held 2
+ok   music: SeeYouDrop-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: SeeYouDrop-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: SeeYouDrop-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: SeeYouDrop-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (2 / 2 of 2)
+     SeeYouDrop-map0        shockwaves [{"t":57.65,"n":13,"a":1.371,"rEnd":0.25,"onClear":true},{"t":105.67,"n":12,"a":1.604,"rEnd":0.229,"onClear":true}]
+ok   music: SeeYouDrop-map0 — 2 shockwave(s) == 2 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: SeeYouDrop-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     SeeYouDrop-map0        sub x p10 / p50 / p90 0.13 / 0.54 / 0.71 over 5041 open frames
+ok   music: SeeYouDrop-map0 — the clears are [57.6,105.6] ± .15 s → [57.65,105.67] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     SeeYouDrop-map0        key: first pin 1.7 s C# · pins C# C#m · key-coloured frames 99 %
+     SeeYouDrop-map0        syrup (velDiss > 1) on 2.3 % of the music frames
+ok   music: SeeYouDrop-map0 — syrup on ≤ 30 % of the music frames (2.3 %; a dark mix that is not closing is not syrup)
+     SeeYouDrop-map0        deep void (dyeDiss < .3) on 2.9 % of the music frames
+     Vienna-map1            6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 1 (mapDropEvt [] dropLiveEvt [85.333]) · clears [85.33] held 1
+ok   music: Vienna-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: Vienna-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: Vienna-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: Vienna-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (1 / 1 of 1)
+     Vienna-map1            shockwaves [{"t":85.33,"n":21,"a":1.059,"rEnd":0.248,"onClear":true}]
+ok   music: Vienna-map1 — 1 shockwave(s) == 1 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: Vienna-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     Vienna-map1            sub x p10 / p50 / p90 0.29 / 0.54 / 0.63 over 5304 open frames
+ok   music: Vienna-map1 — the clears are [85.34] ± .15 s → [85.33] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     Vienna-map1            key: first pin 0.8 s D#m · pins D#m · key-coloured frames 100 %
+     Vienna-map1            syrup (velDiss > 1) on 4.6 % of the music frames
+ok   music: Vienna-map1 — syrup on ≤ 30 % of the music frames (4.6 %; a dark mix that is not closing is not syrup)
+     Vienna-map1            deep void (dyeDiss < .3) on 8.1 % of the music frames
+ok   music: Vienna-map1 — the dream (64–86 s) keeps its deep void, latched on the bass that left (min dyeDiss 0.050)
+     Vienna-map0            6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 0 moved 0 · triggers 1 (mapDropEvt [] dropLiveEvt [85.333]) · clears [85.4] held 1
+ok   music: Vienna-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: Vienna-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: Vienna-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 0 silent frames did)
+ok   music: Vienna-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (1 / 1 of 1)
+     Vienna-map0            shockwaves [{"t":85.4,"n":21,"a":1.062,"rEnd":0.248,"onClear":true}]
+ok   music: Vienna-map0 — 1 shockwave(s) == 1 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: Vienna-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     Vienna-map0            sub x p10 / p50 / p90 0.13 / 0.54 / 0.63 over 5468 open frames
+ok   music: Vienna-map0 — the clears are [85.34] ± .15 s → [85.4] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     Vienna-map0            key: first pin 0.8 s D#m · pins D#m · key-coloured frames 100 %
+     Vienna-map0            syrup (velDiss > 1) on 4.6 % of the music frames
+ok   music: Vienna-map0 — syrup on ≤ 30 % of the music frames (4.6 %; a dark mix that is not closing is not syrup)
+     Vienna-map0            deep void (dyeDiss < .3) on 8.1 % of the music frames
+     WhoLikesToParty-map1   6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 3 moved 0 · triggers 2 (mapDropEvt [56.5] dropLiveEvt [57.517]) · clears [56.5] held 1
+ok   music: WhoLikesToParty-map1 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: WhoLikesToParty-map1 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: WhoLikesToParty-map1 — a frame with presence 0 moves nothing and inks nothing (0 of 3 silent frames did)
+ok   music: WhoLikesToParty-map1 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (1 / 1 of 1)
+     WhoLikesToParty-map1   shockwaves [{"t":56.5,"n":16,"a":0.757,"rEnd":0.244,"onClear":true}]
+ok   music: WhoLikesToParty-map1 — 1 shockwave(s) == 1 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: WhoLikesToParty-map1 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     WhoLikesToParty-map1   sub x p10 / p50 / p90 0.38 / 0.63 / 0.79 over 4031 open frames
+ok   music: WhoLikesToParty-map1 — the clears are [56.5] ± .15 s → [56.5] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     WhoLikesToParty-map1   key: first pin 8.9 s D · pins D · key-coloured frames 93 %
+     WhoLikesToParty-map1   syrup (velDiss > 1) on 11.8 % of the music frames
+ok   music: WhoLikesToParty-map1 — syrup on ≤ 30 % of the music frames (11.8 %; a dark mix that is not closing is not syrup)
+     WhoLikesToParty-map1   deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: WhoLikesToParty-map1 — D major is the pool's key from 8.9 s to 110 s, never re-pinned (the KK's D ↔ Bm flicker, 10–23 s stretches, does not reach the pin here; pins D)
+     WhoLikesToParty-map0   6601 frames · music s 110 / 110 · inject 110 (100.0 %) · silent frames 3 moved 0 · triggers 1 (mapDropEvt [] dropLiveEvt [57.517]) · clears [57.52] held 1
+ok   music: WhoLikesToParty-map0 injects on ≥ 95 % of the seconds with music (110 / 110 = 100.0 %; 0 s read as noise)
+ok   music: WhoLikesToParty-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: WhoLikesToParty-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 3 silent frames did)
+ok   music: WhoLikesToParty-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (1 / 1 of 1)
+     WhoLikesToParty-map0   shockwaves [{"t":57.52,"n":16,"a":0.887,"rEnd":0.244,"onClear":true}]
+ok   music: WhoLikesToParty-map0 — 1 shockwave(s) == 1 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: WhoLikesToParty-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     WhoLikesToParty-map0   sub x p10 / p50 / p90 0.21 / 0.63 / 0.88 over 5161 open frames
+ok   music: WhoLikesToParty-map0 — the clears are [57.52] ± .15 s → [57.52] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     WhoLikesToParty-map0   key: first pin 8.9 s D · pins D · key-coloured frames 93 %
+     WhoLikesToParty-map0   syrup (velDiss > 1) on 11.8 % of the music frames
+ok   music: WhoLikesToParty-map0 — syrup on ≤ 30 % of the music frames (11.8 %; a dark mix that is not closing is not syrup)
+     WhoLikesToParty-map0   deep void (dyeDiss < .3) on 0.0 % of the music frames
+     rec-map0               1465 frames · music s 21 / 24 · inject 21 (100.0 %) · silent frames 151 moved 0 · triggers 0 (mapDropEvt [] dropLiveEvt []) · clears [] held 0
+ok   music: rec-map0 injects on ≥ 95 % of the seconds with music (21 / 21 = 100.0 %; 0 s read as noise)
+ok   music: rec-map0 — the 0 seconds read as noise inject nothing (0 did)
+ok   music: rec-map0 — no sub: the harmonic branch on 80 % of frames, its 32 hits spread over the harmony (x p10–p90 span 0.49; before: the fixed .3 / .7 pair)
+ok   music: rec-map0 — a frame with presence 0 moves nothing and inks nothing (0 of 151 silent frames did)
+ok   music: rec-map0 — every clear sits within 1.5 beats of a trigger with the sub open, and holds a beat (0 / 0 of 0)
+     rec-map0               shockwaves []
+ok   music: rec-map0 — 0 shockwave(s) == 0 confirmed clear(s), each on the clear's frame, none elsewhere
+ok   music: rec-map0 — every shockwave lasts SW_T 0.5 beats (±2 frames) with its front at SW_C·SW_T 0.25 screen heights (±.03) and A > 0
+     rec-map0               sub x p10 / p50 / p90 0.38 / 0.46 / 0.46 over 60 open frames
+ok   music: rec-map0 — the clears are [] ± .15 s → [] (one per drop; none on Comptine's six arms, IBelongHere's live arms; WhoLikesToParty's map line a bar before the truth is the one that clears in file mode — §109's open map finding)
+     rec-map0               key: first pin 3.6 s A# · pins A# · key-coloured frames 89 %
+     rec-map0               syrup (velDiss > 1) on 0.0 % of the music frames
+ok   music: rec-map0 — syrup on ≤ 30 % of the music frames (0.0 %; a dark mix that is not closing is not syrup)
+     rec-map0               deep void (dyeDiss < .3) on 0.0 % of the music frames
+ok   music: rec-map0 — no sub ever: the void never under VOID_FLOOR (min dyeDiss 0.300; before: .05 on 44 % of Comptine's frames)
+ok   music: the pad take injects on every second from 3 s (22 / 22; §108's 22 / 22)
+ok   music: the pad take's silent room (presence 0 to 2.50 s, 151 frames) moves and inks nothing (0 frames did)
+test_fluid: 389 ok, 0 fail
+== Comptine-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 214.3 drops [21.513,31.544,41.471]
+ok   shape: Comptine-map1 — no non-finite value in 213 columns
+ok   shape: Comptine-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: Comptine-map1 — bpm 108.29 is the truth's 214.3 × 0.5 (ratio 0.505, ≤ 2 %)
+ok   clock: Comptine-map1 — beat fires 18.05 ± 15 % per 10 s from 20 s (17 19 18 19 18 19 17 18 18; 0 windows off)
+     map: Comptine-map1 — truth drop 21.513 s: mapDropEvt +85.854 · dropEvt -0.513 · dropLiveEvt +25.987
+     map: Comptine-map1 — truth drop 31.544 s: mapDropEvt +75.823 · dropEvt +9.256 · dropLiveEvt +15.956
+     map: Comptine-map1 — truth drop 41.471 s: mapDropEvt +65.896 · dropEvt -0.671 · dropLiveEvt +6.029
+     map: Comptine-map1 — mapDropEvt at [107.367]
+     tongues: Comptine-map1 — on 30.4 % of the frames from 20 s (the truth has 0.67 click onsets / s over 11–71: no beater, not asserted)
+ok   drums: Comptine-map1 — kick2 rises 34 times over 11–71 s against 40 truth clicks (×0.85, within ×4; low 178)
+ok   drums: Comptine-map1 — kickEvt 40 over 11–71 s against 40 truth clicks (×1.00, within ×4; low 178)
+     levels: Comptine-map1 — snare2 rises 97 snareEvt 118 · hat2 rises 11 hatEvt 106 · onset 164 · presence 1.00 loudRel 0.83 subGate 0 % · key 2 keyConf 0.00
+     queue: Comptine-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 10; not asserted without the tongues)
+ok   director: Comptine-map1 — every dropEvt frame (5: [21,40.8,58.9,67.4,98.6]) hard-cuts to the home scene on that frame
+     director: Comptine-map1 — switches [{"t":39.9,"from":0,"to":1,"after":39.9,"why":"soft"},{"t":40.8,"from":1,"to":0,"after":0.9,"why":"drop"},{"t":73.73,"from":0,"to":2,"after":32.9,"why":"soft"},{"t":98.57,"from":2,"to":0,"after":24.8,"why":"drop"}]
+ok   director: Comptine-map1 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== Comptine-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 214.3 drops [21.513,31.544,41.471]
+ok   shape: Comptine-map0 — no non-finite value in 213 columns
+ok   shape: Comptine-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: Comptine-map0 — bpm 108.29 is the truth's 214.3 × 0.5 (ratio 0.505, ≤ 2 %)
+ok   clock: Comptine-map0 — beat fires 18.05 ± 15 % per 10 s from 20 s (17 19 18 19 18 19 17 18 18; 0 windows off)
+ok   map: Comptine-map0 — no mapDropEvt without the map (0)
+     tongues: Comptine-map0 — on 30.4 % of the frames from 20 s (the truth has 0.67 click onsets / s over 11–71: no beater, not asserted)
+ok   drums: Comptine-map0 — kick2 rises 34 times over 11–71 s against 40 truth clicks (×0.85, within ×4; low 178)
+ok   drums: Comptine-map0 — kickEvt 31 over 11–71 s against 40 truth clicks (×0.78, within ×4; low 178)
+     levels: Comptine-map0 — snare2 rises 97 snareEvt 79 · hat2 rises 11 hatEvt 176 · onset 164 · presence 1.00 loudRel 0.83 subGate 0 % · key 2 keyConf 0.00
+     queue: Comptine-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 10; not asserted without the tongues)
+     build: Comptine-map0 — dropLiveEvt at [47.5,52.167,58.883,107.917] · false alarms (no truth drop within 4 s) 4 · buildLive max 1.00
+ok   build: Comptine-map0 — ≤ 4 false live drops per 110 s (4)
+ok   director: Comptine-map0 — every dropEvt frame (5: [21,40.8,58.9,67.4,98.6]) hard-cuts to the home scene on that frame
+     director: Comptine-map0 — switches [{"t":39.9,"from":0,"to":1,"after":39.9,"why":"soft"},{"t":40.8,"from":1,"to":0,"after":0.9,"why":"drop"},{"t":73.73,"from":0,"to":2,"after":32.9,"why":"soft"},{"t":98.57,"from":2,"to":0,"after":24.8,"why":"drop"}]
+ok   director: Comptine-map0 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== CyborgNinja-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 162.2 drops []
+ok   shape: CyborgNinja-map1 — no non-finite value in 213 columns
+ok   shape: CyborgNinja-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: CyborgNinja-map1 — bpm 160.04 is the truth's 162.2 × 1 (ratio 0.987, ≤ 2 %)
+ok   clock: CyborgNinja-map1 — beat fires 26.67 ± 15 % per 10 s from 20 s (27 26 27 27 26 27 27 26 27; 0 windows off)
+ok   tongues: CyborgNinja-map1 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 3.88 click onsets / s)
+ok   drums: CyborgNinja-map1 — kick2 rises 118 times over 50–110 s against 233 truth clicks (×0.51, within ×4; low 239)
+ok   drums: CyborgNinja-map1 — kickEvt 234 over 50–110 s against 233 truth clicks (×1.00, within ×4; low 239)
+     levels: CyborgNinja-map1 — snare2 rises 288 snareEvt 367 · hat2 rises 335 hatEvt 460 · onset 317 · presence 1.00 loudRel 0.98 subGate 42 % · key 8 keyConf 0.01
+ok   queue: CyborgNinja-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 48)
+ok   director: CyborgNinja-map1 — every dropEvt frame (0: []) hard-cuts to the home scene on that frame
+     director: CyborgNinja-map1 — switches [{"t":31.17,"from":0,"to":1,"after":31.2,"why":"soft"},{"t":67.15,"from":1,"to":2,"after":36,"why":"soft"},{"t":103.15,"from":2,"to":0,"after":36,"why":"home"}]
+ok   director: CyborgNinja-map1 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== CyborgNinja-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 162.2 drops []
+ok   shape: CyborgNinja-map0 — no non-finite value in 213 columns
+ok   shape: CyborgNinja-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: CyborgNinja-map0 — bpm 160.04 is the truth's 162.2 × 1 (ratio 0.987, ≤ 2 %)
+ok   clock: CyborgNinja-map0 — beat fires 26.67 ± 15 % per 10 s from 20 s (27 26 27 27 26 27 27 26 27; 0 windows off)
+ok   map: CyborgNinja-map0 — no mapDropEvt without the map (0)
+ok   tongues: CyborgNinja-map0 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 3.88 click onsets / s)
+ok   drums: CyborgNinja-map0 — kick2 rises 118 times over 50–110 s against 233 truth clicks (×0.51, within ×4; low 239)
+ok   drums: CyborgNinja-map0 — kickEvt 189 over 50–110 s against 233 truth clicks (×0.81, within ×4; low 239)
+     levels: CyborgNinja-map0 — snare2 rises 288 snareEvt 214 · hat2 rises 335 hatEvt 383 · onset 317 · presence 1.00 loudRel 0.98 subGate 100 % · key 8 keyConf 0.01
+ok   queue: CyborgNinja-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 38)
+     build: CyborgNinja-map0 — dropLiveEvt at [] · false alarms (no truth drop within 4 s) 0 · buildLive max 0.00
+ok   build: CyborgNinja-map0 — ≤ 4 false live drops per 110 s (0)
+ok   director: CyborgNinja-map0 — every dropEvt frame (0: []) hard-cuts to the home scene on that frame
+     director: CyborgNinja-map0 — switches [{"t":31.17,"from":0,"to":1,"after":31.2,"why":"soft"},{"t":67.15,"from":1,"to":2,"after":36,"why":"soft"},{"t":103.15,"from":2,"to":0,"after":36,"why":"home"}]
+ok   director: CyborgNinja-map0 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== IBelongHere-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 117.6 drops [15.882,64.691,129.776,178.852]
+ok   shape: IBelongHere-map1 — no non-finite value in 213 columns
+ok   shape: IBelongHere-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: IBelongHere-map1 — bpm 118.02 is the truth's 117.6 × 1 (ratio 1.004, ≤ 2 %)
+ok   clock: IBelongHere-map1 — beat fires 19.67 ± 15 % per 10 s from 20 s (19 20 20 19 20 20 19 20 20; 0 windows off)
+     map: IBelongHere-map1 — truth drop 15.882 s: mapDropEvt +0.518 · dropEvt +48.568 · dropLiveEvt none
+     map: IBelongHere-map1 — truth drop 64.691 s: mapDropEvt +0.526 · dropEvt -0.241 · dropLiveEvt none
+     map: IBelongHere-map1 — mapDropEvt at [16.4,32.667,65.217]
+ok   tongues: IBelongHere-map1 — on (tongueOn 1) on 99.0 % of the frames from 20 s (the truth has 1.77 click onsets / s)
+ok   drums: IBelongHere-map1 — kick2 rises 67 times over 50–110 s against 106 truth clicks (×0.63, within ×4; low 141)
+ok   drums: IBelongHere-map1 — kickEvt 106 over 50–110 s against 106 truth clicks (×1.00, within ×4; low 141)
+     levels: IBelongHere-map1 — snare2 rises 83 snareEvt 171 · hat2 rises 78 hatEvt 183 · onset 176 · presence 1.00 loudRel 0.91 subGate 63 % · key 2 keyConf 0.14
+ok   queue: IBelongHere-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 33)
+ok   director: IBelongHere-map1 — every dropEvt frame (1: [64.5]) hard-cuts to the home scene on that frame
+     director: IBelongHere-map1 — switches [{"t":44.03,"from":0,"to":2,"after":44,"why":"surprise"},{"t":52.28,"from":2,"to":0,"after":8.3,"why":"home"},{"t":82.95,"from":0,"to":1,"after":30.7,"why":"soft"}]
+ok   director: IBelongHere-map1 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== IBelongHere-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 117.6 drops [15.882,64.691,129.776,178.852]
+ok   shape: IBelongHere-map0 — no non-finite value in 213 columns
+ok   shape: IBelongHere-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: IBelongHere-map0 — bpm 118.02 is the truth's 117.6 × 1 (ratio 1.004, ≤ 2 %)
+ok   clock: IBelongHere-map0 — beat fires 19.67 ± 15 % per 10 s from 20 s (19 20 20 19 20 20 19 20 20; 0 windows off)
+ok   map: IBelongHere-map0 — no mapDropEvt without the map (0)
+ok   tongues: IBelongHere-map0 — on (tongueOn 1) on 99.0 % of the frames from 20 s (the truth has 1.77 click onsets / s)
+ok   drums: IBelongHere-map0 — kick2 rises 67 times over 50–110 s against 106 truth clicks (×0.63, within ×4; low 141)
+ok   drums: IBelongHere-map0 — kickEvt 103 over 50–110 s against 106 truth clicks (×0.97, within ×4; low 141)
+     levels: IBelongHere-map0 — snare2 rises 83 snareEvt 187 · hat2 rises 78 hatEvt 197 · onset 176 · presence 1.00 loudRel 0.91 subGate 77 % · key 2 keyConf 0.14
+ok   queue: IBelongHere-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 30)
+     build: IBelongHere-map0 — dropLiveEvt at [] · false alarms (no truth drop within 4 s) 0 · buildLive max 0.00
+ok   build: IBelongHere-map0 — ≤ 4 false live drops per 110 s (0)
+ok   director: IBelongHere-map0 — every dropEvt frame (1: [64.5]) hard-cuts to the home scene on that frame
+     director: IBelongHere-map0 — switches [{"t":44.03,"from":0,"to":2,"after":44,"why":"surprise"},{"t":52.28,"from":2,"to":0,"after":8.3,"why":"home"},{"t":82.95,"from":0,"to":1,"after":30.7,"why":"soft"}]
+ok   director: IBelongHere-map0 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== Malicious-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 69.8 drops [148.317]
+note shape: Malicious-map1 — no non-finite value in 213 columns
+note shape: Malicious-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+note clock: Malicious-map1 — bpm 140.04 is the truth's 69.8 × 2 (ratio 2.006, ≤ 2 %)
+note clock: Malicious-map1 — beat fires 23.34 ± 15 % per 10 s from 20 s (23 24 23 23 24 23 23 24 23; 0 windows off)
+     tongues: Malicious-map1 — on 100.0 % of the frames from 20 s (the truth has 0.48 click onsets / s over 50–110: no beater, not asserted)
+     drums: Malicious-map1 — kick2 rises 96, kickEvt 28 over 50–110 s; the truth has 0.48 clicks / s, 2.75 low onsets / s (no beater, not asserted)
+     levels: Malicious-map1 — snare2 rises 20 snareEvt 82 · hat2 rises 58 hatEvt 129 · onset 123 · presence 1.00 loudRel 0.96 subGate 0 % · key 0 keyConf 0.16
+     queue: Malicious-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 10; not asserted without the tongues)
+note director: Malicious-map1 — every dropEvt frame (3: [12,18.8,25.7]) hard-cuts to the home scene on that frame
+     director: Malicious-map1 — switches [{"t":33.88,"from":0,"to":1,"after":33.9,"why":"soft"},{"t":70.48,"from":1,"to":0,"after":36.6,"why":"identify"},{"t":102.42,"from":0,"to":1,"after":31.9,"why":"soft"}]
+note director: Malicious-map1 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== Malicious-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 69.8 drops [148.317]
+note shape: Malicious-map0 — no non-finite value in 213 columns
+note shape: Malicious-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+note clock: Malicious-map0 — bpm 140.04 is the truth's 69.8 × 2 (ratio 2.006, ≤ 2 %)
+note clock: Malicious-map0 — beat fires 23.34 ± 15 % per 10 s from 20 s (23 24 23 23 24 23 23 24 23; 0 windows off)
+note map: Malicious-map0 — no mapDropEvt without the map (0)
+     tongues: Malicious-map0 — on 100.0 % of the frames from 20 s (the truth has 0.48 click onsets / s over 50–110: no beater, not asserted)
+     drums: Malicious-map0 — kick2 rises 96, kickEvt 71 over 50–110 s; the truth has 0.48 clicks / s, 2.75 low onsets / s (no beater, not asserted)
+     levels: Malicious-map0 — snare2 rises 20 snareEvt 171 · hat2 rises 58 hatEvt 161 · onset 123 · presence 1.00 loudRel 0.96 subGate 57 % · key 0 keyConf 0.16
+     queue: Malicious-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 10; not asserted without the tongues)
+     build: Malicious-map0 — dropLiveEvt at [] · false alarms (no truth drop within 4 s) 0 · buildLive max 0.00
+note build: Malicious-map0 — ≤ 4 false live drops per 110 s (0)
+note director: Malicious-map0 — every dropEvt frame (3: [12,18.8,25.7]) hard-cuts to the home scene on that frame
+     director: Malicious-map0 — switches [{"t":33.88,"from":0,"to":1,"after":33.9,"why":"soft"},{"t":70.48,"from":1,"to":0,"after":36.6,"why":"identify"},{"t":102.42,"from":0,"to":1,"after":31.9,"why":"soft"}]
+note director: Malicious-map0 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== RaindropsOnRoses-map1: 6601 frames · 24.00 → 134.00 s · mapOn 1 · truth bpm 140 drops [41.134,68.569,137.137]
+ok   shape: RaindropsOnRoses-map1 — no non-finite value in 213 columns
+ok   shape: RaindropsOnRoses-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: RaindropsOnRoses-map1 — bpm 139.95 is the truth's 140 × 1 (ratio 1.000, ≤ 2 %)
+ok   clock: RaindropsOnRoses-map1 — beat fires 23.32 ± 15 % per 10 s from 44 s (24 23 23 24 23 23 24 23 23; 0 windows off)
+     map: RaindropsOnRoses-map1 — truth drop 41.134 s: mapDropEvt +0.016 · dropEvt -0.001 · dropLiveEvt +88.383
+     map: RaindropsOnRoses-map1 — truth drop 68.569 s: mapDropEvt -0.002 · dropEvt -0.002 · dropLiveEvt +60.948
+     map: RaindropsOnRoses-map1 — mapDropEvt at [41.15,68.567]
+ok   tongues: RaindropsOnRoses-map1 — on (tongueOn 1) on 100.0 % of the frames from 44 s (the truth has 1.12 click onsets / s)
+ok   drums: RaindropsOnRoses-map1 — kick2 rises 59 times over 56–116 s against 67 truth clicks (×0.88, within ×4; low 104)
+ok   drums: RaindropsOnRoses-map1 — kickEvt 67 over 56–116 s against 67 truth clicks (×1.00, within ×4; low 104)
+     levels: RaindropsOnRoses-map1 — snare2 rises 137 snareEvt 176 · hat2 rises 281 hatEvt 360 · onset 213 · presence 1.00 loudRel 0.92 subGate 87 % · key 6 keyConf 0.60
+ok   queue: RaindropsOnRoses-map1 — queueN ≥ 1 on 100.0 % of the frames from 44 s (median 27)
+ok   director: RaindropsOnRoses-map1 — every dropEvt frame (2: [41.1,68.6]) hard-cuts to the home scene on that frame
+     director: RaindropsOnRoses-map1 — switches [{"t":55.67,"from":0,"to":1,"after":31.7,"why":"soft"},{"t":68.57,"from":1,"to":0,"after":12.9,"why":"drop"},{"t":101.43,"from":0,"to":2,"after":32.9,"why":"surprise"},{"t":116.2,"from":2,"to":0,"after":14.8,"why":"home"}]
+ok   director: RaindropsOnRoses-map1 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== RaindropsOnRoses-map0: 6601 frames · 24.00 → 134.00 s · mapOn 0 · truth bpm 140 drops [41.134,68.569,137.137]
+ok   shape: RaindropsOnRoses-map0 — no non-finite value in 213 columns
+ok   shape: RaindropsOnRoses-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: RaindropsOnRoses-map0 — bpm 139.95 is the truth's 140 × 1 (ratio 1.000, ≤ 2 %)
+ok   clock: RaindropsOnRoses-map0 — beat fires 23.32 ± 15 % per 10 s from 44 s (24 23 23 24 23 23 24 23 23; 0 windows off)
+ok   map: RaindropsOnRoses-map0 — no mapDropEvt without the map (0)
+ok   tongues: RaindropsOnRoses-map0 — on (tongueOn 1) on 100.0 % of the frames from 44 s (the truth has 1.12 click onsets / s)
+ok   drums: RaindropsOnRoses-map0 — kick2 rises 59 times over 56–116 s against 67 truth clicks (×0.88, within ×4; low 104)
+ok   drums: RaindropsOnRoses-map0 — kickEvt 73 over 56–116 s against 67 truth clicks (×1.09, within ×4; low 104)
+     levels: RaindropsOnRoses-map0 — snare2 rises 137 snareEvt 168 · hat2 rises 281 hatEvt 232 · onset 213 · presence 1.00 loudRel 0.92 subGate 94 % · key 6 keyConf 0.60
+ok   queue: RaindropsOnRoses-map0 — queueN ≥ 1 on 100.0 % of the frames from 44 s (median 26)
+     build: RaindropsOnRoses-map0 — dropLiveEvt at [129.517] · false alarms (no truth drop within 4 s) 1 · buildLive max 1.00
+ok   build: RaindropsOnRoses-map0 — ≤ 4 false live drops per 110 s (1)
+ok   director: RaindropsOnRoses-map0 — every dropEvt frame (2: [41.1,68.6]) hard-cuts to the home scene on that frame
+     director: RaindropsOnRoses-map0 — switches [{"t":55.67,"from":0,"to":1,"after":31.7,"why":"soft"},{"t":68.57,"from":1,"to":0,"after":12.9,"why":"drop"},{"t":101.43,"from":0,"to":2,"after":32.9,"why":"surprise"},{"t":116.2,"from":2,"to":0,"after":14.8,"why":"home"}]
+ok   director: RaindropsOnRoses-map0 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== SeeYouDrop-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 75 drops [57.606,105.596]
+ok   shape: SeeYouDrop-map1 — no non-finite value in 213 columns
+ok   shape: SeeYouDrop-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: SeeYouDrop-map1 — bpm 150.01 is the truth's 75 × 2 (ratio 2.000, ≤ 2 %)
+ok   clock: SeeYouDrop-map1 — beat fires 25.00 ± 15 % per 10 s from 20 s (26 25 25 25 25 25 25 25 25; 0 windows off)
+     map: SeeYouDrop-map1 — truth drop 57.606 s: mapDropEvt +0.011 · dropEvt -0.006 · dropLiveEvt -0.006
+     map: SeeYouDrop-map1 — truth drop 105.596 s: mapDropEvt +0.004 · dropEvt +0.004 · dropLiveEvt +0.021
+     map: SeeYouDrop-map1 — mapDropEvt at [57.617,105.6]
+ok   map: SeeYouDrop — mapDropEvt within one frame of each truth drop [57.606,105.596] → [57.617,105.6]
+ok   tongues: SeeYouDrop-map1 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 2.10 click onsets / s)
+ok   drums: SeeYouDrop-map1 — kick2 rises 114 times over 40–100 s against 126 truth clicks (×0.90, within ×4; low 265)
+ok   drums: SeeYouDrop-map1 — kickEvt 126 over 40–100 s against 126 truth clicks (×1.00, within ×4; low 265)
+     levels: SeeYouDrop-map1 — snare2 rises 50 snareEvt 215 · hat2 rises 66 hatEvt 199 · onset 216 · presence 1.00 loudRel 0.96 subGate 82 % · key 1 keyConf 0.48
+ok   queue: SeeYouDrop-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 21)
+ok   director: SeeYouDrop-map1 — every dropEvt frame (2: [57.6,105.6]) hard-cuts to the home scene on that frame
+     director: SeeYouDrop-map1 — switches [{"t":32.77,"from":0,"to":1,"after":32.8,"why":"soft"},{"t":54.85,"from":1,"to":0,"after":22.1,"why":"home"},{"t":90.37,"from":0,"to":2,"after":35.5,"why":"soft"},{"t":104.88,"from":2,"to":0,"after":14.5,"why":"home"}]
+ok   director: SeeYouDrop-map1 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== SeeYouDrop-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 75 drops [57.606,105.596]
+ok   shape: SeeYouDrop-map0 — no non-finite value in 213 columns
+ok   shape: SeeYouDrop-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: SeeYouDrop-map0 — bpm 150.01 is the truth's 75 × 2 (ratio 2.000, ≤ 2 %)
+ok   clock: SeeYouDrop-map0 — beat fires 25.00 ± 15 % per 10 s from 20 s (26 25 25 25 25 25 25 25 25; 0 windows off)
+ok   map: SeeYouDrop-map0 — no mapDropEvt without the map (0)
+ok   tongues: SeeYouDrop-map0 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 2.10 click onsets / s)
+ok   drums: SeeYouDrop-map0 — kick2 rises 114 times over 40–100 s against 126 truth clicks (×0.90, within ×4; low 265)
+ok   drums: SeeYouDrop-map0 — kickEvt 118 over 40–100 s against 126 truth clicks (×0.94, within ×4; low 265)
+     levels: SeeYouDrop-map0 — snare2 rises 50 snareEvt 241 · hat2 rises 66 hatEvt 238 · onset 216 · presence 1.00 loudRel 0.96 subGate 85 % · key 1 keyConf 0.48
+ok   queue: SeeYouDrop-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 25)
+     build: SeeYouDrop-map0 — dropLiveEvt at [57.6,105.617] · false alarms (no truth drop within 4 s) 0 · buildLive max 1.00
+ok   build: SeeYouDrop-map0 — ≤ 4 false live drops per 110 s (0)
+ok   build: SeeYouDrop — dropLiveEvt within 1 s of each truth drop → [57.6,105.617]
+ok   director: SeeYouDrop-map0 — every dropEvt frame (2: [57.6,105.6]) hard-cuts to the home scene on that frame
+     director: SeeYouDrop-map0 — switches [{"t":32.77,"from":0,"to":1,"after":32.8,"why":"soft"},{"t":54.85,"from":1,"to":0,"after":22.1,"why":"home"},{"t":90.37,"from":0,"to":2,"after":35.5,"why":"soft"},{"t":104.88,"from":2,"to":0,"after":14.5,"why":"home"}]
+ok   director: SeeYouDrop-map0 — 4 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== Vienna-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 89.6 drops [85.3359,106.6693]
+ok   shape: Vienna-map1 — no non-finite value in 213 columns
+ok   shape: Vienna-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: Vienna-map1 — bpm 89.99 is the truth's 89.6 × 1 (ratio 1.004, ≤ 2 %)
+ok   clock: Vienna-map1 — beat fires 15.00 ± 15 % per 10 s from 20 s (16 15 15 15 14 15 16 15 16; 0 windows off)
+     map: Vienna-map1 — truth drop 85.336 s: mapDropEvt none · dropEvt -12.053 · dropLiveEvt -0.003
+     map: Vienna-map1 — truth drop 106.669 s: mapDropEvt none · dropEvt -33.386 · dropLiveEvt -21.336
+     tongues: Vienna-map1 — on 98.6 % of the frames from 20 s (the truth has 0.60 click onsets / s over 50–110: no beater, not asserted)
+ok   drums: Vienna-map1 — kick2 rises 37 times over 50–110 s against 36 truth clicks (×1.03, within ×4; low 166)
+ok   drums: Vienna-map1 — kickEvt 36 over 50–110 s against 36 truth clicks (×1.00, within ×4; low 166)
+     levels: Vienna-map1 — snare2 rises 30 snareEvt 58 · hat2 rises 62 hatEvt 118 · onset 167 · presence 1.00 loudRel 0.96 subGate 64 % · key 3 keyConf 0.37
+     queue: Vienna-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 20; not asserted without the tongues)
+ok   director: Vienna-map1 — every dropEvt frame (1: [73.3]) hard-cuts to the home scene on that frame
+     director: Vienna-map1 — switches [{"t":50.63,"from":0,"to":1,"after":50.6,"why":"soft"},{"t":70.82,"from":1,"to":0,"after":20.2,"why":"home"},{"t":107.82,"from":0,"to":1,"after":37,"why":"surprise"}]
+ok   director: Vienna-map1 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== Vienna-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 89.6 drops [85.3359,106.6693]
+ok   shape: Vienna-map0 — no non-finite value in 213 columns
+ok   shape: Vienna-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: Vienna-map0 — bpm 89.99 is the truth's 89.6 × 1 (ratio 1.004, ≤ 2 %)
+ok   clock: Vienna-map0 — beat fires 15.00 ± 15 % per 10 s from 20 s (16 15 15 15 14 15 16 15 16; 0 windows off)
+ok   map: Vienna-map0 — no mapDropEvt without the map (0)
+     tongues: Vienna-map0 — on 98.6 % of the frames from 20 s (the truth has 0.60 click onsets / s over 50–110: no beater, not asserted)
+ok   drums: Vienna-map0 — kick2 rises 37 times over 50–110 s against 36 truth clicks (×1.03, within ×4; low 166)
+ok   drums: Vienna-map0 — kickEvt 41 over 50–110 s against 36 truth clicks (×1.14, within ×4; low 166)
+     levels: Vienna-map0 — snare2 rises 30 snareEvt 61 · hat2 rises 62 hatEvt 190 · onset 167 · presence 1.00 loudRel 0.96 subGate 69 % · key 3 keyConf 0.37
+     queue: Vienna-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 26; not asserted without the tongues)
+     build: Vienna-map0 — dropLiveEvt at [85.333] · false alarms (no truth drop within 4 s) 0 · buildLive max 1.00
+ok   build: Vienna-map0 — ≤ 4 false live drops per 110 s (0)
+ok   director: Vienna-map0 — every dropEvt frame (1: [73.3]) hard-cuts to the home scene on that frame
+     director: Vienna-map0 — switches [{"t":50.63,"from":0,"to":1,"after":50.6,"why":"soft"},{"t":70.82,"from":1,"to":0,"after":20.2,"why":"home"},{"t":107.82,"from":0,"to":1,"after":37,"why":"surprise"}]
+ok   director: Vienna-map0 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== WhoLikesToParty-map1: 6601 frames · 0.00 → 110.00 s · mapOn 1 · truth bpm 117.6 drops [57.507,131.352,188.788]
+ok   shape: WhoLikesToParty-map1 — no non-finite value in 213 columns
+ok   shape: WhoLikesToParty-map1 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: WhoLikesToParty-map1 — bpm 117.05 is the truth's 117.6 × 1 (ratio 0.995, ≤ 2 %)
+ok   clock: WhoLikesToParty-map1 — beat fires 19.51 ± 15 % per 10 s from 20 s (20 19 20 19 20 19 20 19 20; 0 windows off)
+     map: WhoLikesToParty-map1 — truth drop 57.507 s: mapDropEvt -1.007 · dropEvt none · dropLiveEvt +0.010
+     map: WhoLikesToParty-map1 — mapDropEvt at [56.5]
+ok   tongues: WhoLikesToParty-map1 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 3.83 click onsets / s)
+ok   drums: WhoLikesToParty-map1 — kick2 rises 107 times over 8–68 s against 230 truth clicks (×0.47, within ×4; low 268)
+ok   drums: WhoLikesToParty-map1 — kickEvt 230 over 8–68 s against 230 truth clicks (×1.00, within ×4; low 268)
+     levels: WhoLikesToParty-map1 — snare2 rises 183 snareEvt 293 · hat2 rises 187 hatEvt 278 · onset 201 · presence 1.00 loudRel 0.89 subGate 58 % · key 7 keyConf 0.09
+ok   queue: WhoLikesToParty-map1 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 50)
+ok   director: WhoLikesToParty-map1 — every dropEvt frame (0: []) hard-cuts to the home scene on that frame
+     director: WhoLikesToParty-map1 — switches [{"t":32.97,"from":0,"to":1,"after":33,"why":"surprise"},{"t":65.87,"from":1,"to":0,"after":32.9,"why":"home"},{"t":106.68,"from":0,"to":2,"after":40.8,"why":"surprise"}]
+ok   director: WhoLikesToParty-map1 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== WhoLikesToParty-map0: 6601 frames · 0.00 → 110.00 s · mapOn 0 · truth bpm 117.6 drops [57.507,131.352,188.788]
+ok   shape: WhoLikesToParty-map0 — no non-finite value in 213 columns
+ok   shape: WhoLikesToParty-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+ok   clock: WhoLikesToParty-map0 — bpm 117.05 is the truth's 117.6 × 1 (ratio 0.995, ≤ 2 %)
+ok   clock: WhoLikesToParty-map0 — beat fires 19.51 ± 15 % per 10 s from 20 s (20 19 20 19 20 19 20 19 20; 0 windows off)
+ok   map: WhoLikesToParty-map0 — no mapDropEvt without the map (0)
+ok   tongues: WhoLikesToParty-map0 — on (tongueOn 1) on 100.0 % of the frames from 20 s (the truth has 3.83 click onsets / s)
+ok   drums: WhoLikesToParty-map0 — kick2 rises 107 times over 8–68 s against 230 truth clicks (×0.47, within ×4; low 268)
+ok   drums: WhoLikesToParty-map0 — kickEvt 181 over 8–68 s against 230 truth clicks (×0.79, within ×4; low 268)
+     levels: WhoLikesToParty-map0 — snare2 rises 183 snareEvt 311 · hat2 rises 187 hatEvt 242 · onset 201 · presence 1.00 loudRel 0.89 subGate 78 % · key 7 keyConf 0.09
+ok   queue: WhoLikesToParty-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 45)
+     build: WhoLikesToParty-map0 — dropLiveEvt at [57.517] · false alarms (no truth drop within 4 s) 0 · buildLive max 0.83
+ok   build: WhoLikesToParty-map0 — ≤ 4 false live drops per 110 s (0)
+ok   director: WhoLikesToParty-map0 — every dropEvt frame (0: []) hard-cuts to the home scene on that frame
+     director: WhoLikesToParty-map0 — switches [{"t":32.97,"from":0,"to":1,"after":33,"why":"surprise"},{"t":65.87,"from":1,"to":0,"after":32.9,"why":"home"},{"t":106.68,"from":0,"to":2,"after":40.8,"why":"surprise"}]
+ok   director: WhoLikesToParty-map0 — 3 switches, none away from home inside the 30 s dwell of the previous landing (0 were)
+== rec-map0: 1465 frames · 0.00 → 24.40 s · mapOn 0 · truth bpm null drops []
+ok   shape: rec-map0 — no non-finite value in 213 columns
+ok   shape: rec-map0 — kickEvt / snareEvt / hatEvt are one frame wide (0 doubled)
+     clock: rec-map0 — bpm 158.55 (no truth tempo for the take), beats per 10 s 
+ok   map: rec-map0 — no mapDropEvt without the map (0)
+     tongues: rec-map0 — on 0.0 % of the frames from 20 s (the truth has 0.00 click onsets / s over 0–24.4: no beater, not asserted)
+     drums: rec-map0 — kick2 rises 3, kickEvt 1 over 0–24.4 s; the truth has 0.00 clicks / s, 0.00 low onsets / s (no beater, not asserted)
+     levels: rec-map0 — snare2 rises 13 snareEvt 9 · hat2 rises 6 hatEvt 51 · onset 49 · presence 1.00 loudRel 0.83 subGate 4 % · key 10 keyConf 0.16
+     queue: rec-map0 — queueN ≥ 1 on 100.0 % of the frames from 20 s (median 10; not asserted without the tongues)
+test_music: 151 ok, 0 fail

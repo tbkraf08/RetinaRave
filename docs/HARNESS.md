@@ -353,6 +353,30 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   four moments, the dye over the velocity). The §116 S2 kicks on RaindropsOnRoses (14, each ≥ .6 s before the next so +1 beat is its own):
   68.567 (the drop's confirmation frame — listed, not summed) 69.217 69.867 70.717 71.367 72.650 (the return) · 77.583 78.867 84.433 87.867
   89.150 98.150 99.433 101.583 (the groove); X .54 (the sub's place on F♯'s axis), BEAT 60/140. One Chrome at a time; `GREYONLY=1` re-reads.
+- **The mids strip — the TEXTURE ruler (§116 S3; FLUID2-PLAN §4 S3):** does the pool's texture follow the mid band? The field strip
+  (above) over a window at 1 fps — `PORT=89xx tools/fluid-field-strip.sh RaindropsOnRoses 13 <tag> 60 130 1 24` (its evals line carries
+  `mid curl midsPos` after dyeDiss since S3) — then `tools/fluid-mids-lap.py <dir> <tag> dense_x=76-80,96-100 thin_y=111-116 …` writes
+  `mids.txt`: per velocity shot **lap** = the mean |3×3 Laplacian| of vx + vy (the velocity's small-scale energy — tight curls read high,
+  a laminar field low), **speed** (S1's metric), **ratio** = lap / speed (the texture per unit of motion: a still pool reads a low Laplacian
+  whatever its confinement — the void's windows need this one), **curlM** = the mean |curl|, the grey; one p50 line per named window and a
+  **margin** line per dense / thin pair (dense over thin on each column; ≥ 1 = the dense window has the finer texture; `CURL_MID 0` is the
+  ruler's floor: the margin the pool's motion alone makes). The §116 S3 windows on RaindropsOnRoses (the run at 24, the strip 60–130):
+  dense_groove 76–80 + 96–100 (mid .68), dense_pads 118–126 (the breakdown's pads, mid .83, the sub gone — the pool still), thin_break
+  111–116 (mid .48 — the track's one thin stretch; thin_cut 65.5–68 is two shots and reads mid .76 at those frames: context only).
+  `tools/work/fluid2/s3/{run-mids.sh, cmp-mids.py, montage.py mids}`.
+- **The snare strip — the SIDEWAYS ruler (§116 S3):** the kick strip keyed on SNARE times — `LANE=snare [K2=json] PORT=89xx
+  tools/fluid-kick-strip.sh RaindropsOnRoses 13 <tag> "<snare heard times …>" 24` → `tools/work/fluid2/snare/<track>-s<scene>-<tag>/`
+  (the evals line carries snareAmp / snareAge and `CARD.fluid.snare` — its `side` says the jet's wall), then `tools/fluid-snare-travel.py
+  <dir> <tag> [Y .5] [BAND .12] [SX .12] [THR .04]` writes `travel.txt`. **A snare's push is horizontal, so the number is the velocity
+  ALONG THE PUSH**: per column the fastest fibre p(x) = the p90 over the band's rows of dir·vx, minus the pre shot's (the standing flow),
+  clipped ≥ 0; **P** = Σ q over the launch's half (the directed mass the hit added, at +0 / +½ / +1 beat), **peak** = max q, **xpk** the
+  peak's distance from the launch, **front** = how far from the launch q > THR holds continuously (the burst's reach — the pair's is the
+  larger of its two shears' from .3 / .7 inward); M (the undirected added mass over the whole band), th, sp, step0, grey0 beside. **The
+  first ruler failed:** the undirected added-mass centroid over the band read the busy pool's own change (span .8 of the width on every
+  kind) — the directed fibre separates the hit's push from the traffic. The §116 S3 snares on RaindropsOnRoses's groove (10, snareAmp ≥
+  .9, the next snare ≥ .45 s later): 78.217 83.567 85.067 85.717 88.283 92.567 96.000 98.783 100.717 102.850. `tools/work/fluid2/s3/
+  {run-snare.sh, montage.py snare}`. One Chrome at a time — two strips overlapping on one PORT leave the second all zeros (S3's jetin20
+  was re-run alone).
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into

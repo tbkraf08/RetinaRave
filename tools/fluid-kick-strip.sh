@@ -26,10 +26,12 @@
 #       73 — the drop's return) and the GROOVE kicks (t ≥ RET_T) separately.
 #   X = the kick's x (the sub's place on the tonic axis: `fluid-replay.js … events` prints `sub x=`; RaindropsOnRoses .54). BEAT = the beat (s).
 #   RaindropsOnRoses starts at 24 s (windows.json `start`): pass at=24. One Chrome at a time. GREYONLY=1 recomputes travel.txt on shots taken.
+#   LANE=snare (§116 S3): the same strip keyed on SNARE times — the evals line carries snareAmp / snareAge and CARD.fluid.snare, the shots go
+#   under tools/work/fluid2/snare/, and the SIDEWAYS ruler tools/fluid-snare-travel.py reads them (the dye ruler below still runs, unread).
 cd "$(dirname "$0")/.." || exit 1
-T=$1; SC=$2; TAG=$3; KICKS=$4; AT=${5:-0}; PORT=${PORT:-8978}; MAP=${MAP:-0}; X=${X:-0.54}; BEAT=${BEAT:-0.428571}; KY=${KY:-0.06}; RET_T=${RET_T:-73}
+T=$1; SC=$2; TAG=$3; KICKS=$4; AT=${5:-0}; PORT=${PORT:-8978}; MAP=${MAP:-0}; X=${X:-0.54}; BEAT=${BEAT:-0.428571}; KY=${KY:-0.06}; RET_T=${RET_T:-73}; LANE=${LANE:-kick}
 [ -z "$T" ] || [ -z "$SC" ] || [ -z "$TAG" ] || [ -z "$KICKS" ] && { echo "usage: [K2=json] [K=json] [MAP=0|1] [X=] [BEAT=] PORT=89xx tools/fluid-kick-strip.sh <track> <scene> <tag> \"<kick t …>\" [at]"; exit 2; }
-D=tools/work/fluid2/kick/$T-s$SC-$TAG; mkdir -p $D
+D=tools/work/fluid2/$LANE/$T-s$SC-$TAG; mkdir -p $D
 MH=""; [ "$MAP" = 0 ] && MH="&map=0"
 # the shot list: KK:moment:kind:frame, monotone in frame (the clock pauses at each; dbg is set before the frame renders)
 LIST=$(python3 -c "
@@ -46,7 +48,7 @@ S='[{"until":"window.CARD"}'
 S="$S,{\"until\":\"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open\",\"timeout\":300000},{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,dur:CARD.ENGINE.AU.file.dur,sc:CARD.SC.cur,grammar:CARD.fluid.grammar,fluid:CARD.fluid&&{on:CARD.fluid.on,tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CARD.fluid.simH]},K2:CARD.fluid.K2})\"}"
 for item in $LIST; do IFS=: read KK M KIND F DBG TT <<< "$item"
   S="$S,{\"eval\":\"CARD.fluid.dbg=$DBG\"},{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$TAG-$KK-$M$KIND\"}"
-  [ "$KIND" = "" ] && S="$S,{\"eval\":\"'$KK $M $TT '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.kickAmp.toFixed(3)+' '+CARD.MS.kickAge.toFixed(3)+' '+CARD.fluid.heave.toFixed(3)+' '+CARD.fluid.params.dyeDiss.toFixed(2)+' '+JSON.stringify(CARD.fluid.kick)\"}"
+  [ "$KIND" = "" ] && S="$S,{\"eval\":\"'$KK $M $TT '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.${LANE}Amp.toFixed(3)+' '+CARD.MS.${LANE}Age.toFixed(3)+' '+CARD.fluid.heave.toFixed(3)+' '+CARD.fluid.params.dyeDiss.toFixed(2)+' '+JSON.stringify(CARD.fluid.$LANE)\"}"
 done
 S="$S,{\"eval\":\"CARD.fluid.dbg=0\"},{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,frame:window.__FRAME,errs:CARD.ERRS,bad:CARD.nonFinite(),steps:CARD.fluid&&CARD.fluid.steps})\"}]"
 TS=$(date +%s)
