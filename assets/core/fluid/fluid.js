@@ -151,7 +151,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   if (tr !== FLUID.tier || G.PW !== lastW || G.PH !== lastH) alloc(tr);
   const pm = FLUID.params, q = FLUID.queue;
   let pr;
-  let breath = 0, swirl = 0, grain = 0;
+  let breath = 0, swirl = 0, grain = 0, cell = 1, hold = 1, jit = 0;
   FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
   FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = null;
   if (!resumed) {
@@ -162,6 +162,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
     breath = R.body;
     swirl = R.swirl || 0;   // §116 S1 the band grammar's swirl (the pool grammar returns none → 0, the identical advect path)
     grain = R.grain > 0 ? R.grain : 0;   // §116 S4 the band grammar's grain (the pool grammar returns none → 0, the identical advect path)
+    if (R.highs) { cell = R.highs.cell || 1; hold = R.highs.hold || 1; jit = R.highs.jit > 0 ? R.highs.jit : 0; }   // … its cell / hold, and the dye jitter (dye texels; 0 = the identical dye pass)
     FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.grain = grain; FLUID.kick = R.kick || null; FLUID.mids = R.mids || null; FLUID.snare = R.snare || null; FLUID.highs = R.highs || null;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
     pm.curlMask = R.params.curlMask || null;   // §116 S3 the band grammar's mask on the confinement (the pool grammar returns none → the identical vort pass)
@@ -246,7 +247,9 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   gl.uniform1f(pr.u('uAspect'), aspect);
   gl.uniform1f(pr.u('uSwirl'), swirl);   // §116 S1: the band grammar's swirl rides the velocity advect too (a uniform branch; 0 = the §104 pass)
   gl.uniform1f(pr.u('uNoise'), grain);   // §116 S4: the band grammar's grain — a hashed per-texel push on the velocity (a uniform branch; 0 = the §104 pass) …
-  gl.uniform1i(pr.u('uSeed'), FLUID.steps & 255);   // … seeded by the step count (deterministic from at=0; the hash folds it in at 2^24)
+  gl.uniform1i(pr.u('uSeed'), Math.floor(FLUID.steps / hold) & 255);   // … seeded by the step count over the hold (deterministic from at=0; the hash folds it in at 2^24)
+  gl.uniform1i(pr.u('uCell'), cell);
+  gl.uniform2f(pr.u('uJit'), 0, 0);   // the jitter is the dye's
   gl.uniform3f(pr.u('uRing'), wave ? wave.a : 0, wave ? wave.r : 0, wave ? wave.w : 1);   // §113: no extra draw — the ring rides the velocity advect
   gl.uniform2f(pr.u('uRingC'), wave ? wave.cx : 0.5, wave ? wave.cy : 0.5);   // §116 S2: the ring's centre (.5, .5 = the shockwave's path)
   gl.uniform1i(pr.u('uDye'), 0);
@@ -260,8 +263,10 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   gl.uniform2f(pr.u('uForce'), 0, 0);
   gl.uniform1f(pr.u('uAspect'), aspect);
   gl.uniform1f(pr.u('uSwirl'), 0);
-  gl.uniform1f(pr.u('uNoise'), 0);   // §116 S4: the grain is velocity only — the dye pass never takes the branch
-  gl.uniform1i(pr.u('uSeed'), 0);
+  gl.uniform1f(pr.u('uNoise'), 0);   // §116 S4: the velocity grain is velocity only — the dye pass never takes that branch …
+  gl.uniform1i(pr.u('uSeed'), Math.floor(FLUID.steps / hold) & 255);
+  gl.uniform1i(pr.u('uCell'), 1);
+  gl.uniform2f(pr.u('uJit'), jit / dye[1].w, jit / dye[1].h);   // … the DYE JITTER is: ±½·jit dye texels on the back-trace sample (0 = the identical dye pass)
   gl.uniform3f(pr.u('uRing'), wave ? wave.a : 0, wave ? wave.r : 0, wave ? wave.w : 1);   // §113: the ring's divergence dilutes / compacts the ink (the shader's dye branch)
   gl.uniform2f(pr.u('uRingC'), wave ? wave.cx : 0.5, wave ? wave.cy : 0.5);
   gl.uniform1i(pr.u('uDye'), 1);
