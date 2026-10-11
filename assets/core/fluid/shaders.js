@@ -89,11 +89,20 @@ o=vec4(v/uScale,0.,1.);}`;
 // (a uniform branch, never a mix — the roster's and FLUID's identity rest on it as on the ring's); the dye pass always passes 0.
 // §116 S2 uRingC: the ring's CENTRE (uv) — (.5, .5) for the shockwave (vUv − uRingC is vUv − .5 to the bit: one subtraction of an exact
 // half either way), the kick's place for the band grammar's puff (KICK_SHAPE 4: a small radial puff round the hit, the same set semantics).
+// §116 S4 uNoise / uSeed: the band grammar's GRAIN — on the VELOCITY pass a hashed push per texel, ±½·uNoise·uDt in screen heights (x over the
+// aspect), white in space (the texel) and in time (uSeed = the step count & 255, fluid.js — deterministic from at=0, never a clock): a Wang
+// integer hash on (texel, seed) — uint arithmetic, bit-exact on every driver, no sin. The projection strips its divergent half and the grid's
+// diffusion eats the rest within a few steps: what stays is a texel-scale wrinkle the dye reads as grain, never a push on the mass (the
+// amplitude is the grammar's NOISE_V · highEnv · g, guarded by the strips' speed ruler). 0 is the identical program path (a uniform branch);
+// the dye pass always passes 0 (the noise is velocity only — the dye's cost stays §104's).
 export const ADVECT = `
-uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody,uAspect,uSwirl;uniform vec2 uForce,uRingC;uniform vec3 uRing;uniform int uDye;
+uniform sampler2D uVel,uSrc;uniform float uDt,uDiss,uBody,uAspect,uSwirl,uNoise;uniform vec2 uForce,uRingC;uniform vec3 uRing;uniform int uDye,uSeed;
+uint wang(uint n){n=(n^61u)^(n>>16u);n*=9u;n^=n>>4u;n*=0x27d4eb2du;n^=n>>15u;return n;}
 void main(){vec2 c=vUv-uDt*texture(uVel,vUv).xy;vec4 r=texture(uSrc,c)/(1.+uDiss*uDt);
 r.y+=uBody*uDt*cos(3.14159265*(2.*vUv.x-1.));r.xy+=uForce*uDt;
 if(uSwirl!=0.){vec2 s=vUv-.5;s.x*=uAspect;r.xy+=uSwirl*uDt*vec2(-s.y/uAspect,s.x);}
+if(uNoise>0.){uvec2 q=uvec2(gl_FragCoord.xy);uint a=wang(q.x+q.y*4096u+uint(uSeed)*16777216u),b=wang(a^0x9e3779b9u);
+vec2 g=vec2(float(a&65535u),float(b&65535u))/65535.-.5;r.xy+=uNoise*uDt*vec2(g.x/uAspect,g.y);}
 if(uRing.x>0.){vec2 p=vUv-uRingC;p.x*=uAspect;float d=max(length(p),1e-3);float m=exp(-pow((d-uRing.y)/uRing.z,2.));
 if(uDye==1){float dv=uRing.x*m*(1./d-2.*(d-uRing.y)/(uRing.z*uRing.z));r.xyz*=dv>0.?1./(1.+dv*uDt):1.-dv*uDt;}
 else{vec2 h=p/d;r.xy=mix(r.xy,uRing.x*vec2(h.x/uAspect,h.y),m);}}

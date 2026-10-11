@@ -513,6 +513,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
 {
   const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS, K2 = INJ2.K;
   const SHIP_S3 = { SNARE_JET: K2.SNARE_JET, CURL_SRC: K2.CURL_SRC, CURL_MASK: K2.CURL_MASK }; Object.assign(K2, { SNARE_JET: 0, CURL_SRC: 0, CURL_MASK: 0 });   // S3: the S1 relation is proven with the mids' curl, the mask and the snare jet OFF (the identical list and params); S3's own block proves them
+  const SHIP_S4 = { NOISE_V: K2.NOISE_V, DIP_SRC: K2.DIP_SRC }; Object.assign(K2, { NOISE_V: 0, DIP_SRC: 0 });   // S4: … and with the grain and the dip OFF (the dip moves dyeDiss; the S1 / S3 relations are on the governed value); S4's own block proves them
   const SHIP_SHAPE = K2.KICK_SHAPE; K2.KICK_SHAPE = 0;   // S2: the S1 relation is proven at the control's kick (shape 0); the shapes have their own block below, the shipped one restored after
   ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
   ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
@@ -526,7 +527,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
   // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
-  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; return Q; };
+  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; return Q; };
   const frac = (x) => x - Math.floor(x);
   // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
   const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
@@ -707,7 +708,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
     const JR = trace('RaindropsOnRoses-map0');
     const run3 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
     const med = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[b.length >> 1] : NaN; };
-    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub', 'bands: S3 — no new MS read: inject2\'s FLUID_FEATS is still the base\'s + `sub` (`mid` and the snare lane are the base\'s reads)');
+    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).filter((k) => k !== 'high').join(',') === 'sub', 'bands: S3 — no new MS read of its own: inject2\'s FLUID_FEATS is the base\'s + `sub` (+ S4\'s `high`; `mid` and the snare lane are the base\'s reads)');
     if (JR) {
       const C3 = JR.cols;
       const ctrl = run3({ SNARE_JET: 0, CURL_SRC: 0, CURL_MASK: 0 }), ship = run3();
@@ -770,6 +771,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       ok(Math.abs(steady - K2.CURL0) < 0.5 && Math.abs(swell - (K2.CURL0 + K2.CURL_MID)) < 0.5 && Math.abs(dip - K2.CURL0) < 0.5, 'bands: S3 — the own range: 40 s of mid .5 → the floor (' + steady.toFixed(2) + '), a swell to .7 → CURL0 + CURL_MID within 1.5 s (6 MID_TAU; ' + swell.toFixed(2) + '), a dip to .3 → the floor (' + dip.toFixed(2) + '); the base\'s tension .5 would read 30 throughout'); }
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S3 — the K2 table restored after the switches');
   }
+  Object.assign(K2, SHIP_S4);   // S4's shipped switches back (its own block follows)
 }
 
 // breath
