@@ -152,18 +152,22 @@ export const K = {
                    //   at .02 the burst's front is 0 by +1 beat, at .12 it carries itself .14 — twice the pair's — and at .2 it runs .18 but starts a fifth of the way in) …
   SNARE_Y: 0.5,    //   … at this height (the pair's)
   SNARE_N: 4,      //   the jet spread over this many frames at 1 / SNARE_N of its push and ink (1 = one stamp)
-  NOISE_V: 0.02,   // S4 the grain: uv/s² per texel per unit of highEnv · g — a hashed ±½ push on the velocity advect pass (uNoise; 0 = the identical path);
-                   //   the guard: the pool's mean speed within 10 % of the grain-off run (the S1 ruler on the strips, §116 S4)
+  NOISE_V: 1,      // S4 the grain: uv/s² per cell per unit of highEnv · g — a hashed ±½ push on the velocity advect pass (uNoise; 0 = the identical path);
+                   //   the guard: the pool's mean speed within 10 % of the grain-off run (the S1 ruler on the strips, §116 S4). The RaindropsOnRoses strips:
+                   //   at cell 1 / hold 1 nothing registers up to 1 (the solver eats a texel-white push); at cell 4 / hold 4, 1 lifts the velocity's
+                   //   small-scale energy 8–29 % at a speed within +6.5 % (ships), 3 is a FORCE (the groove 38 % faster): the guard's edge is between
   HI_SRC: 0,       //   highEnv's source: 0 the level (`high`) · 1 its own-range place (this grammar's ring of one-second means, FLOOR_WIN s, p20 / p80) ·
                    //   2 the hats (`hat2`: bursts on the hits, nothing between)
   HI_TAU: 0.05,    //   s: highEnv eased this fast (a tenth of a beat at 120 bpm)
   HI_SHARP: 0.3,   // S4 the dip: dyeDiss × (1 − HI_SHARP) on a hat (DIP_SRC 1) / × (1 − HI_SHARP · highEnv) continuously (DIP_SRC 2) — bounded: never below 0
   DIP_SRC: 1,      //   0 none (the governor's dyeDiss stands) · 1 per hat: DIP_N frames from every frame the base's hat bucket paid a droplet · 2 continuous (the plan's form)
   DIP_N: 2,        //   the per-hat dip's length in frames
-  NOISE_CELL: 1,   //   the grain's cell: sim texels per hash cell (1 = white at the texel — the solver eats it; 4 = a 4-texel dapple that survives the projection)
-  NOISE_HOLD: 1,   //   the grain's hold: steps per seed (1 = white in time; 4 = held 4 steps — a push that accumulates before the projection sees it)
-  JIT_V: 0,        //   the dye jitter: dye texels (±½·JIT_V·highEnv·g) the dye's back-trace sample point is pushed per step on the DYE advect pass — film grain on
-                   //   the ink's edges, never a force (the velocity pass passes 0); 0 = the identical dye pass
+  NOISE_CELL: 4,   //   the grain's cell: sim texels per hash cell (1 = white at the texel — the solver eats it; 4 = a 4-texel dapple that survives the projection)
+  NOISE_HOLD: 4,   //   the grain's hold: steps per seed (1 = white in time; 4 = held 4 steps — a push that accumulates before the projection sees it)
+  JIT_V: 0,        //   the dye jitter: dye texels (±½·JIT_V·highEnv·g) the dye's back-trace sample point is pushed per step on the DYE advect pass — never a
+                   //   force (the velocity pass passes 0) and, the strips found, a BLUR: a random walk of an accumulating field's read point is diffusion
+                   //   (the dye's gradient −2 % at 1, −7 % at 2). A softening on the highs if anyone wants one; 0 = the identical dye pass. The grain that
+                   //   is surface and nothing else is FLUID2's DISPLAY grain (fluid2/index.js SPEC.GRAIN: the show pass's read point, nothing accumulated)
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:

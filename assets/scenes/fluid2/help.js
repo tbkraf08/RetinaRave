@@ -15,6 +15,7 @@ export const HELP = {
     hat2: 'while the hats are up, a small bright droplet sparkles onto the surface every 50 ms, walking the golden ratio across the top of the pool',
     presence: 'how hard the scene\'s own sparkle hits the surface: silence drops nothing',
     highS: 'how tight and bright the glint on the ink is: the slow 5–16 kHz band (the nearest thing to air above 8 kHz — no such band exists) raises the highlight\'s gain and sharpens its exponent; light only, the pool is untouched',
+    high: 'how much film grain sits on the ink\'s edges: the high band\'s level jitters where each pixel reads the ink from, a fraction of a texel, fresh every frame — on the picture only, never in the pool',
   },
   eli5: 'The same pool of ink as FLUID, under a different grammar: each band of the music is a different KIND of touch on the water. '
     + 'The sub is a field that heaves the whole pool, every kick launches something that travels on its own, the mids are the '

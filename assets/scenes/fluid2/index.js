@@ -26,10 +26,13 @@ const EXPO1 = 0.9;         // … and what the top adds (a drop at the track's l
 const EXPOTC = 0.12;       // the exposure's ease: baseLight() is continuous, the ease is inertia the eye expects of light
 const SPEC = {             // §116 S4 the specular from the highs (display only; the show pass's uLook.y and uSpecPow):
   S0: 0.6,                 //   the highlight's gain at highS 0 (FLUID's constant) …
-  HI: 0.5,                 //   … + this at highS 1
+  HI: 1.0,                 //   … + this at highS 1 (the strips, §116 S4: with POW 40 the composite's gradient +10–15 % at a whole-frame grey within ±1 % — tighter AND
+                           //   brighter; .5 / 80 darkened the frame 7–11 %, .5 / 0 brightened the wash)
   PW0: 48,                 //   the Blinn exponent at highS 0 (FLUID's) …
-  POW: 80,                 //   … + this at highS 1: a tighter, brighter glint on bright highs
+  POW: 40,                 //   … + this at highS 1: a tighter glint on bright highs (88 at the outro's air; 128 darkened)
   TIER0: 1,                //   1: the highs light tier 0 too · 0: tier 0 keeps the S0 highlight (the bench's call, §116 S4)
+  GRAIN: 0,                //   the DISPLAY grain: dye texels (±½·GRAIN·high) the show pass reads the dye off per pixel per frame — film grain on the ink's edges,
+                           //   nothing written to the pool (the dye-advect jitter was a blur: §116 S4); 0 = the identical read. Measured on the strips; the eye decides
 };
 const RELIEF = 24;         // the gradient's gain: ink differs by hundredths over two dye texels, the normal needs ×24 to tilt
 const PORT0 = 0.88;        // the porthole feather, inner radius on the frame's superellipse …
@@ -45,11 +48,11 @@ const HAT_RAD = 0.4;       // its radius × the grammar's
 const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15..0.85 on the scene's own count
 
 const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
-const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0, spec: 0.6, specPow: 48, highS: 0 };   // spec / specPow: this frame's highlight gain and exponent (S4)
+const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0, spec: 0.6, specPow: 48, highS: 0, grain: 0, seed: 0 };   // spec / specPow: this frame's highlight gain and exponent; grain / seed the display grain (S4)
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
 function flinfo() {
-  return JSON.stringify({ expo: +U.expo.toFixed(4), vis: +U.vis.toFixed(3), ring: +U.ring.toFixed(3), nHat: U.nHat, on: U.on, relief: U.relief, nSplat: U.nSplat, spec: +U.spec.toFixed(4), specPow: +U.specPow.toFixed(2), highS: +U.highS.toFixed(4) });
+  return JSON.stringify({ expo: +U.expo.toFixed(4), vis: +U.vis.toFixed(3), ring: +U.ring.toFixed(3), nHat: U.nHat, on: U.on, relief: U.relief, nSplat: U.nSplat, spec: +U.spec.toFixed(4), specPow: +U.specPow.toFixed(2), highS: +U.highS.toFixed(4), grain: +U.grain.toFixed(4), seed: U.seed });
 }
 function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
   const F = SELF.ctx && SELF.ctx.fluid;
@@ -62,7 +65,7 @@ const SELF = {
   id: 13,
   tag: 'FLUID\'s pool under the band grammar — each band a different kind of coupling: the sub a field, the kick a mass that travels, the mids the material, the highs the surface (FLUID2-PLAN; S0 = FLUID to the pixel)',
   fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js plans the pool while this scene owns it
-  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'highS'], // FLUID's five own reads + S4's highS (the light); no bid fields (forced-only)
+  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'highS', 'high'], // FLUID's five own reads + S4's highS (the light) and high (the display grain); no bid fields (forced-only)
   SPEC,                          // §116 S4 the specular's live table (harness: CARD.REG[13].scene.SPEC)
   cuts: 'continuous',
   rt: {},
@@ -92,6 +95,8 @@ const SELF = {
     const lit = SPEC.TIER0 || !F || F.tier !== 0 ? U.highS : 0;
     U.spec = SPEC.S0 + SPEC.HI * lit;
     U.specPow = SPEC.PW0 + SPEC.POW * lit;
+    U.grain = SPEC.GRAIN * clamp(MS.high || 0, 0, 1) * (SPEC.TIER0 || !F || F.tier !== 0 ? 1 : 0);   // the display grain rides the high band's level (the grammar's driver)
+    U.seed = F ? F.steps & 255 : 0;
     U.on = F && F.on ? 1 : 0;
     U.hatT = Math.max(0, U.hatT - dt);
     U.ring = Math.max(0, U.ring - dt / RING_TC);
@@ -125,6 +130,8 @@ const SELF = {
     g.uniform2f(pr.u('uDyeTexel'), 1 / Math.max(1, D.w), 1 / Math.max(1, D.h));
     g.uniform4f(pr.u('uLook'), U.expo, U.spec, U.relief, U.on ? 0 : 1);
     g.uniform1f(pr.u('uSpecPow'), U.specPow);   // §116 S4: the glint's exponent from the highs
+    g.uniform1f(pr.u('uGrain'), U.on ? U.grain : 0);   // §116 S4: the display grain (0 = the identical read; none on the idle pool)
+    g.uniform1i(pr.u('uSeed'), U.seed);
     g.uniform2f(pr.u('uPort'), PORT0, PORT1);
     ctx.tri();
   },
@@ -132,7 +139,7 @@ const SELF = {
   hud() {
     const F = this.ctx && this.ctx.fluid;
     const sub = !F || !F.avail ? 'needs float render targets — the pool is empty' : !F.on ? 'substrate off (W) — the pool is empty' : 'step ' + F.ms.toFixed(2) + ' ms splats ' + F.nSplat + ' dd ' + F.params.dyeDiss.toFixed(2) + ' curl ' + F.params.curl.toFixed(0) + ' heave ' + F.heave.toFixed(2) + ' swirl ' + F.swirl.toFixed(2) + (F.mids ? ' mid ' + F.mids.pos.toFixed(2) + (F.mids.mask ? ' mask' : '') : '') + (F.snare && F.snare.kind ? ' snare ' + F.snare.kind + (F.snare.side ? (F.snare.side > 0 ? '→' : '←') : '') : '') + (F.kick && F.kick.n ? ' kick ' + F.kick.shape : '') + ' grain ' + F.grain.toFixed(3) + (F.highs ? ' dip ' + F.highs.dip.toFixed(2) : '');   // §116 S1: the sub's field; S3 the mids' place (and the mask), the snare's kind; S4 the grain and the dip
-    return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' spec' + U.spec.toFixed(2) + '/' + U.specPow.toFixed(0) + ' · ' + sub;
+    return 'fluid2 expo' + U.expo.toFixed(2) + ' vis' + U.vis.toFixed(2) + ' ring' + U.ring.toFixed(2) + ' hats' + U.nHat + ' spec' + U.spec.toFixed(2) + '/' + U.specPow.toFixed(0) + ' dgrain' + U.grain.toFixed(2) + ' · ' + sub;
   },
 
   // the visual parameters (CONTRACTS §1.16): the light on the track's own loudness ladder, and the relief (a manual constant)
