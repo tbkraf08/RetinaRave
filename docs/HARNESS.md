@@ -447,6 +447,26 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   clear's and the FX flash's (95 / 255 under every variant; the burst adds 1); the bench's burst is `CARD.benchFluid(300, null, 'bands', 2)`
   (+.51 ms at tier 3 — a second chain). A knob set's IDENTITY on the GPU: `HASHX='&k2=%7B%22DT_SUB%22%3A0%2C%22DT_VOID%22%3A1%7D' SCENES=13
   tools/real-md5.sh <tag>` (the neutral knobs = S5's hashes to the byte).
+- **FLUID2 — the recipe in one place (§116 S0–S7; FLUID2-PLAN).** The scene is id 13 (`&scene=13`, the `n` key; forced-only); its card's
+  `fluid: { grammar: 'bands' }` makes the step plan through `core/fluid/inject2.js` (the band grammar composing on inject.js's base state).
+  **Switches:** `&k2={"DT_SUB":0}` on ANY page (no `#test`) overrides any K2 knob for the run — the user's A/B at home (DECISIONS §116 S6 lists the
+  URLs); `K2=json` on the strip tools, `FLUIDK2=json` on the replays; the neutral set that makes FLUID2 the pool grammar to the byte is
+  `{"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}` plus the per-band switches (`SWIRL 0 · KICK_SHAPE 0 · CURL_SRC 0 · SNARE_JET 0 · NOISE_V 0 · DIP_SRC 0 ·
+  PEN_SRC 0`: every one 0 = inject.js's list / pass to the bit); `HASHX='&k2=<url-encoded json>' SCENES=13 tools/real-md5.sh <tag>` proves a knob
+  set's identity on the GPU. **The rulers, all on one deterministic run (`CLOCK=1 GPU=1`, `at=` the track's `start`, keyed on `__FRAME`, `frame0` 2):**
+  the field strip (S1, speed vs sub), the kick strip + `fluid-kick-travel.py` (S2, the travel), the mids strip + `fluid-mids-lap.py` (S3, the texture),
+  the snare strip + `fluid-snare-travel.py` (S3), the highs strip + `fluid-highs-grain.py` (S4, the surface), the pen ruler (S5, `tools/work/fluid2/s5/ruler.js`),
+  the time ruler (S6, `tools/work/fluid2/s6/ruler.js`) — each described above; **the ARC strip (S7):** `WINS="t0-t1 t0-t1 …" MAP=0|1 tools/fluid-field-strip.sh
+  <track> <12|13> <tag> <t0> <t1> 10 <at>` shoots every moment of a track at 10 fps in ONE run per scene × map mode (the state warm through every
+  window; three-digit NN past 99 shots; the per-shot evals line is one page-side helper — the inline line × 135 shots passed Linux's 128 KB
+  single-argument limit and the run died silent), `tools/work/fluid2/s7/run.sh` the Raindrops recipe, `montage.py` the four rows (FLUID / FLUID2
+  composite, FLUID / FLUID2 velocity) with the clock and the band records on every label. **The no-GL table:** `INJECT=assets/core/fluid/inject2.js
+  node tools/fluid-tracks.js` — since S7 the `bands` column (the kick's shape / frames / impulse, the snare's kind, the curl's p10 / p50 / p90, the
+  grain, the dip's share, the pen's share / span / step, the clock's p10 / p50 / p90 / min / max, the latched share, the burst and slewed frames) per
+  track in both map modes and the pad — the seven untuned tracks' rows exist here (measured, untuned). **The state (2026-10-10):** every K2 was tuned
+  on RaindropsOnRoses alone (the user's word); the references are Raindrops-filtered (`TRACKS=RaindropsOnRoses`: 8 s13 lines in `real-md5-v037.txt`,
+  1 rulers row); **the seven-track sweep is owed before any tag** — the table above first, then the strips per track (the §111 rule: a change on
+  ≥ 3 of the six, Malicious never a gate), then the full `SCENES=13` references (58 lines, 8 rulers rows).
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into

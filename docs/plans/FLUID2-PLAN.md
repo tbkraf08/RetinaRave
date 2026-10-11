@@ -4,6 +4,25 @@ Planned against main at e1830f9 (v0.36, live). A Fable worker builds it step by 
 step, every claim measured on the seven library tracks (DECISIONS §109: the fake timeline is a smoke test), per-track numbers never an
 average, Malicious for the record only. No tag, no push — the user tags.
 
+## Status (2026-10-10, end of day — S0–S7 DONE on branch `fluid2`; NOT tagged, NOT pushed; DECISIONS §116)
+
+**The scope changed mid-build on the user's word — *"only tune with Raindrops, don't do full sweep"* — so S1–S7 were tuned, stripped and
+proven on RaindropsOnRoses alone** (the live lanes first, the file map where a confirmed drop needs it); the other seven tracks are
+measured by the no-GL table (`tools/fluid-tracks.js`, S7) and untuned. **The seven-track sweep is owed before any tag.** Per step, the one-line
+decision and where it deviated from this plan's letter, with the measured reason:
+
+| step | done | the decision | the deviation from the letter |
+|---|---|---|---|
+| S0 | ✓ | the grammar slot on the card, `inject2.js` composing on the shared base state; s13 = s12 to the pixel (58 / 58) | none; the mixs fade's mid-dip found (the incoming scene's cold `U.expo`) — fixed at S7 |
+| S1 | ✓ | `HEAVE .6 · HEAVE_DC .15`, the field WITH the breath (the sub as the pool's weight); `SWIRL 0`, `FLIP 0` as switches | **the sign**: the plan's "a rise lifts" cancelled the breath on every groove (r(Δ, sub) −.9) — flipped; the swirl bought nothing |
+| S2 | ✓ | `KICK_SHAPE 3` the dipole, `DIP_V 1.2` seeded INWARD, `DIP_D .03` — the pair travels a third of the screen per beat | **the plan's travel rule tied** across the inward seeds (p50 .31–.32 at +1 beat) — the up-mass the pair carries to +1 beat (2.8 vs FLUID's 1.3) and ONE blob in the dye (DIP_D .05 draws a double dot) decided; the jet / stroke / puff stay switches |
+| S3 | ✓ | `CURL_SRC 1` (10 + 40 · the mid band's own-range place), `SNARE_JET 1` from `SNARE_X .12` in from the wall | **the mask off** (`CURL_MASK 0`: no dense / thin margin bought); the jet NOT at the wall (a push at a closed wall is projected away) |
+| S4 | ✓ | `NOISE_V 1` at `NOISE_CELL 4 / NOISE_HOLD 4`, `DIP_SRC 1` per hat (`HI_SHARP .3`), the specular from `highS` (display) | **a 4-texel cell held 4 steps**, not white noise at the texel (the solver eats texel-white in one projection); the dye jitter rejected (a blur) |
+| S5 | ✓ | `PEN_SRC 1`, `PEN_AX 1` (the harmony's angle on the tonic axis), `PEN_V 0` (ink only), the vocal feature deferred (S5b) | **AX 1**: the base's eased centre (`HARM_TAU` 15 s) moved .008 per beat — a blob; the raw angle draws a line; **zero force** on the user's frame ("it draws") |
+| S6 | ✓ | `DT_SUB .4` the breath, `DT_VOID .5` the latched void (gated on the sub out), `DT_DROP 2` the clock alone; level / pulse switches at 0 | **the clock alone on the drop** (the 10 % rule: the substeps' centre grey 25.0 = the clock's 25.0 vs 25.3 off); the void gated on `subGate` (the detector stays armed past Raindrops' return) |
+| S7 | ✓ | the close on Raindrops: the arc strip (both scenes, both map modes, the pad), the per-track table's band columns, the S0 fade fix, the gates, the docs | **not the seven-track tune** (the user's word) — the sweep is the first thing before any tag; see §116 "The close (S7)" for the owed list |
+
+
 ## 1. The ask
 
 The user, 2026-10-10, verbatim: **"clone fluid -> do work in fluid2 -> do the different bands intuitively; explore: point sources and time"**.

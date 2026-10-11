@@ -11356,7 +11356,166 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   bench's burst reads through `CARD.benchFluid(300, null, 'bands', 2)` (the wrapper forwards the hold since this step); `&k2=` is the user's
   switchboard — every K2 knob, not only S6's.
 
-### S7 — the seven-track tune, the gates, the montages, the docs (not started)
+### S7 — the close on RaindropsOnRoses: the arc, the table, the fade finding, the gates, the docs (2026-10-10, branch `fluid2`, commits after ce5ab6f; `git merge main` at ce5ab6f first — S6 merged, a fast-forward)
+
+- **The scope, as the user's words set it.** The plan's S7 was the seven-track tune; the user's *"only tune with Raindrops, don't do full sweep"*
+  makes S7 the CLOSE on RaindropsOnRoses — the arc proof for the eye, the per-track table's band columns (so the sweep has its ruler), the S0
+  finding measured again, the gates one last time on the merged branch, the docs. **No tag (the user tags), no push, inject.js untouched.
+  The eight-track sweep is owed before any tag** — the first thing in NEXT-SESSION-PROMPT.
+- **What FLUID2 is now (the one paragraph).** Scene 13 is FLUID's pool (the same dye, the same base state, the §111 machinery warm across the
+  switch) under a second grammar in which each band is a different KIND of coupling, each with the K2 that ships: the **sub a FIELD** — the pool's
+  weight: a body force on every texel from the sub envelope's rise above its slow mean, WITH the breath (`HEAVE .6 · HEAVE_DC .15`; the dot's
+  push gone, its ink a cloud `SUB_RAD 3`); the **kick a MASS that travels** — a vortex pair seeded inward at the bass note's place at the base's
+  impulse and ink (`KICK_SHAPE 3 · DIP_V 1.2 · DIP_D .03`), a third of the screen per beat; the **mids the MATERIAL** — the vorticity confinement
+  from the mid band's place in the track's own last 30 s (`CURL_SRC 1`: 10 + 40 · pos) and the snare ONE jet from a hair in from a wall
+  (`SNARE_JET 1 · SNARE_X .12`); the **highs the SURFACE** — a hashed grain on the velocity advect pass (`NOISE_V 1` at a 4-texel cell held 4
+  steps), a dye dip per hat (`DIP_SRC 1 · HI_SHARP .3`), the light from `highS` (display); the **voice a PEN** — the harmony's angle drawn on the
+  tonic axis in place of the floor cloud (`PEN_SRC 1 · PEN_AX 1 · PEN_V 0`: it draws, it injects no mass; the vocal feature S5b owed); **TIME the
+  solver's own clock** — `dtSim` on the vort / advect passes: the breath (`DT_SUB .4`), the latched void at half time (`DT_VOID .5`, gated on the
+  sub out), the drop's burst as the clock alone (`DT_DROP 2`); `DT_LVL`, `DT_BEAT`, `SWIRL`, `FLIP`, `CURL_MASK`, `JIT_V`, `DT_DROP 1` the
+  switches left at 0 with their numbers in S1–S6. The per-step deviations from the plan's letter are the status table at the top of FLUID2-PLAN.
+- **The arc strip (the proof for the eye; `tools/work/fluid2/s7/run.sh`, PORT 8978, ONE deterministic run per scene × map mode, 135 shots each
+  at 10 fps in twelve windows — `WINS=` on `fluid-field-strip.sh`, this step's tool change; the first attempt died silent: 135 × the inline evals
+  line passed Linux's 128 KB single-argument limit, so the line is one page-side helper now).** The montages: **`tools/accept/v0.37/fluid2-s116-s7-
+  RaindropsOnRoses-arc.jpg`** (the LIVE lanes, `&map=0` — the design target) and **`-arc-map1.jpg`** (the file map), each four rows on the same 34
+  shots — FLUID composite, FLUID2 composite, FLUID velocity, FLUID2 velocity — with t, sub, the clock (L = the void latched), heave, curl, grain,
+  the pen's x and the grey on every FLUID2 label. `cmp.py` the numbers per window (the S1 speed off the velocity shot; the DISPLACEMENT = speed ×
+  dtSim — S6's rule; the composite's grey and centre grey; the §1.9 step max between consecutive 0.1 s shots). **The live lanes (FLUID → FLUID2):**
+
+  | window | FLUID speed · grey · centre · step | FLUID2 speed · DISP · grey · centre · step | disp ÷ FLUID | FLUID2 clock p50 (min–max) · latched % | heave · curl · grain · pen span · sub |
+  |---|---|---|---|---|---|
+  | 24 the mix opens | .018 · 21.5 · 40.6 · 3.2 | .027 · .026 · 18.0 · 40.2 · 5.1 | 1.48 | .979 (.89–1.02) · 0 | −.026 · 23 · .29 · .07 · .85 |
+  | 27.4 the 808 | .074 · 25.4 · 47.2 · 3.8 | .048 · .047 · 25.6 · 62.3 · 4.3 | .64 | .909 (.83–1.16) · 0 | .000 · 31 · .21 · .03 · .41 |
+  | 41.1 drop 1 | .180 · 60.1 · 81.8 · 70.3 | .252 · .275 · 58.8 · 80.0 · 70.6 | 1.53 | 1.155 (.93–1.27) · 0 | −.147 · 20 · .57 · .12 · .50 |
+  | 55–57 the pin | .168 · 56.0 · 108.1 · 13.3 | .359 · .354 · 55.9 · 71.7 · 17.7 | 2.11 | .960 (.95–1.07) · 0 | −.079 · 34 · .47 · .21 · .72 |
+  | 65.4–68.57 the cut | .155 · 48.7 · 80.2 · 11.8 | .246 · .212 · 50.0 · 60.8 · 17.3 | 1.36 | .840 (.77–1.07) · 29 | +.120 · 16 · .31 · .11 · .15 |
+  | 68.57–69 the return | .056 · 68.9 · 93.8 · 97.1 | .113 · .118 · 69.7 · 92.5 · 96.1 | 2.09 | 1.058 (.92–1.09) · 20 | −.244 · 23 · .23 · .04 · .84 |
+  | 84 the groove | .179 · 57.0 · 122.3 · 12.0 | .336 · .328 · 57.7 · 74.7 · 17.3 | 1.84 | .961 (.96–1.06) · 0 | −.063 · 14 · .40 · .00 · .69 |
+  | 111 the breakdown | .032 · 39.3 · 65.1 · 2.4 | .058 · .059 · 37.3 · 37.4 · 3.5 | 1.86 | 1.031 (.97–1.04) · 0 | −.138 · 10 · .14 · .01 · .85 |
+  | 118 the pads | .035 · 28.1 · 69.7 · 2.6 | .043 · .026 · 30.2 · 73.4 · 3.1 | .74 | .600 (.59–.61) · 100 | +.009 · 45 · .19 · .02 · .02 |
+  | 126 the pads | .071 · 37.6 · 70.2 · 5.8 | .063 · .045 · 38.6 · 61.9 · 5.0 | .63 | .728 (.68–.75) · 100 | −.082 · 48 · .39 · .04 · .30 |
+  | 134 late | .157 · 39.4 · 96.8 · 8.1 | .465 · .494 · 41.7 · 52.9 · 14.7 | 3.15 | 1.067 (1.04–1.07) · 0 | −.198 · 50 · .55 · .06 · .98 |
+  | 136.8–137.1 before drop 3 | .049 · 36.8 · 107.2 · 3.0 | .167 · .154 · 38.3 · 41.4 · 6.4 | 3.18 | .943 (.88–.99) · 0 | +.041 · 47 · .63 · .01 · .41 |
+  | 137.1–138.4 drop 3 | .077 · 50.6 · 103.8 · 76.9 | .200 · .208 · 50.9 · 52.1 · 75.5 | 2.70 | 1.031 (.98–1.15) · 0 | −.158 · 29 · .56 · .13 · .72 |
+  | 180 the outro | .135 · 51.6 · 129.6 · 9.9 | .172 · .170 · 49.4 · 75.2 · 12.7 | 1.26 | .970 (.97–1.07) · 0 | −.075 · 29 · .53 · .04 · .69 |
+
+  **The file map, where it differs** (the same windows, FLUID2's clock column): drop 1 **1.187 (.93–2.00)**, the return 68.57–69 **1.371
+  (.87–1.67)**, drop 3 **1.060 (.98–1.98)** — the three bursts on the confirmed clears; the displacement ratios drop 1 2.12, the cut 1.92, the
+  return 1.96, the pin 2.30, the groove 1.77, 134 5.02, before drop 3 4.03, drop 3 2.28; the step max at the drops 76–81 (the clear + the FX
+  flash, both scenes alike, as S6 found); the pads' displacement .53 / .74 of FLUID's. **The one number that reads the whole table: FLUID2's pool
+  moves 1.4–3.2× FLUID's displacement on every passage with a sub (the field, the pair, the mids' confinement), at the SAME whole-frame grey
+  (±2 of FLUID's on every window — the ink budget holds: the governor's factor 1.0 / 1.0 on both) and a LOWER centre grey (72–75 against 108–130
+  on the pin / the groove / the outro: FLUID's ink gathers at its emitter, FLUID2's travels) — and .63–.74× through the pads under the latched
+  clock.** The §1.9 steps: FLUID2's 14–18 on the grooves against FLUID's 12–13 (a faster pool changes more per 0.1 s), the drops' 70–97 the
+  flash's on both. The 808's entry at 27.4 is the one window FLUID2 reads SLOWER (.64): the base's kick impulse is split across the pair and the
+  first hits land on a still pool — the pair needs a beat to roll up.
+- **Live vs file on this track (what the eye must know before judging):** the live detector never confirms Raindrops' drops 1 and 2 (§117: the
+  sub cuts leave no "bass came back" edge) and not drop 3 either on this run — the live lanes carry NO clear and NO shockwave and NO clock burst at
+  41.1 / 68.57 / 137.1 (the montage: at 68.8 and 137.3 the live rows keep their ink where the file rows show the ring on an emptied pool); only the
+  composite's flash fires on both (the engine's drop FX, the step 70–97 on both scenes). The live clock reads the cut as the BREATH (.84, the
+  void latching only 29 % of the cut's shots — 2.1 s in, S6's finding) and the return as 1.06–1.09; the file clock bursts to 1.67–2.00. The one
+  live clear in the table is 129.55 (the breakdown's late sub, a false one). So at home on the live page the user sees the field, the pair,
+  the mids, the grain, the pen and the breath / the void — not the burst; the burst is a file-mode thing on this track until `engine/build`
+  reads a sub cut.
+- **The eye (the orchestrator's, on the montages — the user's in track time decides):** (1) **the ink ROLLS**: on every groove FLUID2's ink gathers
+  into whorls with cores (the pair's vortices — 67.4, 84.0, 134, 180) where FLUID's is a shredded texture of flakes; (2) **the velocity lives on
+  the whole frame**: FLUID2's velocity row is a frame-wide field with the grain's dapple and the pin's / the late breakdown's swirl (55–57, 134),
+  FLUID's a few islands at the emitters; (3) **the breakdown is calmer and drawn**: under the latched clock the pads' ink sits compact, and the
+  pen's row of marks runs across the width at 126 (the harmony's line) where FLUID's floor is a cloud; (4) the drops are the same gesture on the
+  file map (the flash, the ring, the emptied centre) and the pool keeps its ink on the live lanes; (5) 24–27.8 the two are nearly one picture
+  (the 808's first hits — the pair takes a beat).
+- **The pad take** (`tools/rec-strip.sh tools/work/fluid-diag/music/rec.wav s7-pad-s13 0 24 2 13`, 49 shots, errs [], the grey line
+  `tools/work/rec/s7-pad-s13/grey.txt`): against FLUID's (S1's `s1-pad-s12`, the pool grammar unmoved since) the mean reads **3.0 grey under
+  on average, −5.7 at most (3–9 s)** — the pen in place of the floor cloud is a thinner mark — the same shape (16 → 18 → 21 → 23 → 25 → 23 against
+  16 → 22 → 23 → 25 → 27 → 27), the p99s alike (51–101 against 50–97); 0 silent-with-sound seconds (the §108 ruler green).
+- **The per-track table's band columns** (`tools/fluid-tracks.js`, no GL: `INJECT=assets/core/fluid/inject2.js node tools/fluid-tracks.js`, 3.5 s
+  for all eight tracks × both modes + the pad): since S7 the `bands` column — the kick's shape / frames / impulse p50 / p90, the snare's kind /
+  frames, the curl's p10 / p50 / p90 and the mask, the grain's p50 / p90 and the dip's share, the pen's share / x p10–p90 (span) / step p50 / max,
+  the clock's p10 / p50 / p90 / min / max, the latched share, the burst and slewed frames. **RaindropsOnRoses (the tuned track), live / file:** kick
+  shape 3 · 318 / 304 frames · impulse .0015 / .0014; snare harm · 1237 / 1152; curl 14 / 31 / 49 · mask off; grain .413 / .592 · dip 12 %; pen
+  100 % · x .34–.60 (span .27) · step .0014 / .0083 (= PEN_VMAX · dt exactly, the clamp active); the clock .703 / .981 / 1.085 (min .50, max 1.90)
+  live, .749 / .982 / 1.087 (min .50, max 2.00) file; latched 12 / 11 %; burst 26 / 78 frames; slewed 6 / 20. **The seven untuned (measured only,
+  live mode; the file mode alike but for the bursts):** the clock sits at **1 to the digit on CyborgNinja, Comptine, Malicious** (no sub cut, no
+  latched void on their traces — the breath needs a sub that moves); SeeYouDrop p10 .992 / min .53 / max 1.33 / latched 5 % / burst 49; Vienna .998 /
+  .50 / 1.09 / 5 % / 41; IBelongHere .844 / .50 / 1.80 / 10 % / 31 (155 on the file map — its five clears); WhoLikesToParty .999 / .79 / 1.67 / 2 % /
+  93; the grain's p50 **.75 SeeYouDrop / .79 CyborgNinja / .62 Malicious / .59 WhoLikesToParty / .56 Vienna / .48 IBelongHere / .26 Comptine**
+  against Raindrops' .41 — the first knob the sweep must re-read (`HI_SRC` 1, the own range, is the switch); the curl p50 27–35 everywhere (Raindrops
+  31); the pen's span .12 Vienna / Comptine to .37 CyborgNinja (Raindrops .27); the pad: curl 46, the pen's span .36, the clock .92–1.29. The
+  table is the receipt's; the sweep reads it first.
+- **The S0 finding, measured again — and re-rooted.** The mixs fade 12 → 13 on SeeYouDrop's groove (`tools/work/s0-fade.sh`): the grey row
+  **34.7 36.3 36.5 36.9 37.0 36.1 28.6 21.2 19.5 22.2 23.8 25.6 27.4 30.0 31.4 32.3 32.4 33.9** — max step 7.51 / 255, §1.9 viol [], the dip to
+  19.5 at the fade's middle exactly as at S0. The one-line fix the S0 note proposed — FLUID2's exposure at the frame's light on its first on-screen
+  frame (`U.expo = cold ? P.light : ema(…)`, `cold` = no update for 0.5 s) — **lands and does NOT touch the dip**: the row after it 34.7 36.2 36.4
+  36.9 37.0 36.1 **28.6 21.2 19.5** … identical to the digit from the seventh shot, because (the probe `CARD.REG[13].scene.hooks.flinfo()` per frame
+  through the fade) **both scenes' exposure is already equal through the fade** — f301 13: .7857 / 12: .7830, f348 .802 / .802 — and FLUID's show
+  pass carries no on-screen weight (`uLook` is expo / spec / relief / idle; `U.vis` gates only the sparkle). S0's reading was wrong: a cold `U.expo`
+  of 1 above the groove's .78 would have made the incoming BRIGHTER, not darker. The dip is in the crossfade path of two pictures of ONE pool
+  (`transitions/mixs.js`'s luminance-keyed wipe, or the chain's compositing of two fluid scenes — not read here); it is NOT in the scene (13 → 0
+  reads flat 32–34, the `n` key is a hard cut with no fade, the director never fades to 13). **Left open with the number: 37 → 19.5 → 34 over 1.6 s
+  on `&trans=mixs` 12 → 13 — for whoever puts FLUID2 on a fade.** The fix STAYS for what it does measure: the HARD cut 12 → 13 (`goScene(13, true)`,
+  the `n` key's path; `tools/work/fluid2/s7/hardcut.sh`, a shot every frame f298–f312): before it FLUID2's first frame ran at expo .972 easing to
+  .823 by f312 (`EXPOTC` .12 s) — the grey 34.7 → **36.8** (+2.1) then 37.2 → 34.6 drifting down over 13 frames (a blink); after it the first frame
+  is AT FLUID's light (.7853 against .7822) — the grey 34.7 → 32.8 (−2.0: FLUID2's own picture under its tighter highlight) and flat within .3 after.
+  The cold frame at its target is the §1.9 rule's own exception; the s13 md5s (f602+) and the fake pair (f360 / f840) cannot move for it.
+- **The gates, one last time on the merged branch (RaindropsOnRoses-filtered; `tools/work/fluid2/s7/gates.sh` → `gates.log`, PORT 8975, one Chrome;
+  the receipt `tools/accept/v0.37/fluid2-s116-s7.txt`; each with its wall time):** `node tools/check.js` **183 modules · 0 fail · 9 warn** (3 s; the standing
+  soft caps); `npm test` **exit 0** — test_fluid **442 ok 0 fail**, test_music 151 ok (24 s); `node tools/license.js --check` **186 public files, 0
+  without the header** (no new public file: the montages are images, the S7 scripts live in tools/work); **SCENES=13 real-md5 Raindrops ×2: 8 / 8
+  cmp-equal (69 + 69 s) = `real-md5-v037.txt` 8 / 8 unmoved** — S6's re-base stands, no re-base at S7 (the exposure fix lands before f602; the code
+  on the pool is S6's); **the NEUTRAL knobs (`HASHX='&k2={"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}'`, 69 s): 8 / 8 = S5's hashes to the byte** (v037 as
+  committed at f8e5fae, before S6's re-base — the clock's identity pass holds on the merged tree); **SCENES=12 Raindrops: 8 / 8 = v036 (69 s)** — the
+  switch is free, proven at the end as at S0; **the roster 0 1 3 Raindrops: 24 / 24 = v037 (207 s)**, differ [], new []; **real-rulers s13 Raindrops
+  56–116: 1 / 1 ok (66 s)** — 600 frames, jump viol 0 max .060, mon viol 0 max .0161, black 0, clip25 0, medY .193 — S6's row to the digit; **the
+  fake `scene-md5.sh`: 26 = v035, errs [] on 14 ids (213 s)**, s12's pair unmoved (3e483039 / 2274bb4e), **s13's pair 0e92a1c4 / ed3283fc = S6's to
+  the byte** (the fix cannot reach f360); **parity fake: max |diff| 7.852214593751443 over 72 fields, the §102 nav.* line to the digit (50 s)**; **the
+  substrate bench** (one page test&scene=12, q .95 pinned, 8 s warm, a cold call discarded, load 2.65): pool / bands ship / bands NEUTRAL / bands
+  BURST ×3 = .884 / .857 / .834 / 1.302 · .774 / .776 / .729 / 1.287 · .736 / .732 / .787 / 1.210 — **medians pool .774, ship .776, neutral .787, the burst
+  1.287 (+.51 over the ship: S6's +.51 / +.43)**; the clock a uniform value (ship − neutral −.011); show13 .412, show12 .399, nav 1.392; tier 3, sim
+  259×128, dye 1035×512; **MOBILE=1 scene 13 tier 0 alive** (errs [] bad [] frameN 242, dt .994 on the fake; bands ship .412, neutral .436, burst
+  ×2 .672, pool .397, show13 .440, show12 .384 — the ship inside the .4 budget to the hundredth, the burst over it while it runs, as S6 said);
+  `npm run build` 182 modules **1 863 210 bytes** (S6's 1 862 682 + 528: the fix and its comment), file:// scene 13 bands errs [] frameN 303, scene 12
+  pool errs [] frameN 302, VER 0.36.0 (no bump: the user tags); the crossfade 12 → 13 max step 7.51 / 255 §1.9 viol [] (the dip above, open), 13 → 0
+  max step 2.0 viol []. inject.js untouched. The parity run's rewrite of `tools/accept/v0.5/ew-t*.jpg` checked out before the commit.
+- **The A/B URLs in one list (scene 13, RaindropsOnRoses from 24 s; `&k2=` takes the JSON as is on any page; under `#test` the same on the
+  harness's file page `test&track=RaindropsOnRoses&at=24&scene=13&k2=…`):** the ship `#scene=13` · **the bands one at a time back to FLUID's:** the
+  sub's field off `#scene=13&k2={"HEAVE":0,"HEAVE_DC":0,"SUB_INK":1,"SUB_RAD":1}` (the dot's push stays gone: `SUB_INK` / `SUB_RAD` are the cloud) ·
+  the kick as FLUID's splat `#scene=13&k2={"KICK_SHAPE":0}` · the jet `{"KICK_SHAPE":1}` · the stroke `{"KICK_SHAPE":2}` · the puff `{"KICK_SHAPE":4}` ·
+  the mids on tension `{"CURL_SRC":0}` · the mask `{"CURL_MASK":1}` · the snare as the pair `{"SNARE_JET":0}` · the grain off `{"NOISE_V":0}` · the dip
+  off `{"DIP_SRC":0}` · the dye jitter `{"JIT_V":1}` · the pen off (the floor cloud) `{"PEN_SRC":0}` · the pen pushing `{"PEN_V":0.25}` · **the time:**
+  the clock OFF `{"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}` · the breath alone `{"DT_VOID":1,"DT_DROP":0}` · the breath doubled `{"DT_SUB":0.8}` · with the
+  level `{"DT_LVL":0.4}` · the void alone `{"DT_SUB":0}` · the honest drop `{"DT_DROP":1}` · the pulse `{"DT_BEAT":0.3}` · a hard clock `{"DT_SLEW":1e9}`
+  · the pads frozen `{"DT_VOID":0,"DT_MIN":0}` · the swirl `{"SWIRL":0.8}` · the bar flip `{"FLIP":1}`. Live, `CARD.fluid.K2.<KNOB> = x` from the
+  console takes effect on the next step (the clock slews in).
+- **What the user validates at home (every remark in track time is a retune request):** `#scene=13` on **RaindropsOnRoses from 24 s** — the
+  references `tools/accept/v0.37/fluid2-s116-s7-RaindropsOnRoses-arc.jpg` (the live lanes — the page at home) and `-arc-map1.jpg` (the file map):
+  **27.4** the 808 enters — the pool heaves under it and the first kicks launch pairs (a beat late to roll up: the one slower window); **41.1** drop 1
+  — the flash; on the file map the clear, the ring and the clock's burst; on the live page none of the three (the detector's miss — not a retune of
+  the grammar); **55–57** the sub pins — the breath per attack (±5–7 %), the whole pool in motion (2.1× FLUID's displacement), the centre no brighter
+  than the rest; **65.4–68.57** the two-bar cut — the ink's travel slackens to ~.84 while the low end is out, the whorls hold their shape, and at
+  **68.57** the return slams (the heave −.24) and the clock runs 1.06–1.09 (live) — *does the slackening read as the music or as a framerate
+  wobble?* (the planner's risk; the montage cannot judge it); **84** the groove — every kick a pair that rolls across, every snare a burst from a
+  wall, the ink in whorls not flakes (1.84×); **111–137** the breakdown — the pen's marks in a row across the width (the chords), the pads at half
+  time (.60 / .73: the ink compact), then at **134** the late sub swings the whole pool (3.15×); **137.1** drop 3 — the flash; the burst on the file
+  map only; **180+** the outro (1.26×). The time switches: the clock OFF against the ship, then the breath doubled, then the level. The switch itself:
+  `n` from FLUID to FLUID2 mid-groove — the pool must not blink (the hard cut measured: 34.7 → 32.8 then flat). NOT asked yet: FLUID2 on the bid
+  (forced-only), a landing tile, the vocal pen as a voice (it is the harmony until S5b), the other seven tracks (unswept).
+- **Owed (carried, not hidden):** **the eight-track sweep before any tag** (the per-track table above is its ruler — the grain's p50 per track first,
+  the breath on tracks whose sub never cuts, the void on SeeYouDrop's build 47–57 and Vienna's dream 64–86, the burst on the eleven confirmed drops
+  of §113, the pen on Comptine and IBelongHere; then the full `SCENES=13` references, 58 lines + 8 rulers rows, and the per-track montages) ·
+  **S5b the vocal feature** (`voxS / voxHz / voxConf`, one extractor session; `PEN_SRC 2` reserved) · **FLUID-DROP item 2** (the reversal — `composeDt`'s
+  base-0 precedence and the pen's gate written for it in FLUID-DROP-SESSION-PROMPT) · **the tier-0 phone measure** of the whole band grammar on a
+  real phone (the MOBILE=1 canvas is the proxy) · **the switches at 0 with their numbers** (`SWIRL`, `FLIP`, `CURL_MASK`, `JIT_V`, `PEN_V`, `DT_LVL` .4 =
+  +9–14 % on every groove, `DT_BEAT` .3 = a ±15 % tick, `DT_DROP` 1 = the substeps at +.5 ms for one beat) · **the live detector's miss on Raindrops'
+  drops 1 / 2 / 3** (`engine/build`: a sub cut leaves no "bass came back" edge — a `subAge`-based void term is one line if the eye wants the cut read as
+  a void) · **the mixs fade's mid-dip into FLUID2** (37 → 19.5 → 34, re-rooted above: the crossfade path, not the scene) · `fluid-tracks.js`'s base
+  channel column reads the kick as 0 s under the band grammar (the pair's splats are `dip`, not `kick` — the bands column carries them) · §115's own
+  list (`DROP_DISS` 6 after item 2, the idle bench, IBelongHere's late live return, Vienna's bar 40, the director's per-track sweep).
+- **The docs:** DECISIONS §116 this section; CONTRACTS §1.1 (the Raindrops-only exception named beside the every-track rule), §4 (id 13's line: S1–S6
+  built, S7 closed, the sweep owed, `&k2=` the switchboard); HARNESS "## Fluid" (the FLUID2 recipe in one place: the switches, the neutral set,
+  `HASHX=`, the rulers per step, the arc strip's `WINS=`, the no-GL table's bands column, the Raindrops-only state); site/about.html (FLUID2's line);
+  FLUID2-PLAN.md (the status block at the top: S0–S7 with the decision and the deviation per step); NEXT-SESSION-PROMPT.md (the post-build truth:
+  built, not tagged, not pushed; the sweep first; the validation list; the saved pieces); FLUID-DROP-SESSION-PROMPT.md (where item 2 meets
+  `composeDt` and the pen). No `releases.json` entry, no version bump — the user tags.
 
 ## §117 the eighth track — RaindropsOnRoses, from 24 s, with the user's time note carried into FLUID2 S6 (2026-10-10, one worker in a worktree off c3ea530; the user: *"also added new test track (~/Downloads/An-ten-nae - Raindrops On Roses (Dimond Saints Remix).flac) -> note: start from 24 secs ; this is a good track that could play with time element (ideas modulate time -> example bass that starts at 56s -> something happens at 1:06 with the sound that seems like it would be good to modulate on)"*)
 
