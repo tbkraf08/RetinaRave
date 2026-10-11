@@ -50,6 +50,11 @@
 //              never above the base's dyeDiss); the void before SeeYouDrop's drop 1 stills the field; the shared base state: st2.base IS st,
 //              300 frames of one grammar then the other = plan() alone's base STATE to the byte (warm in both directions), the first band frame
 //              no burst; determinism of plan2 with the field on; the Proxy MS that throws on a read outside inject2's list
+//              S4 (§116 S4): inject2 reads `high`; grain = NOISE_V · highs.env · gain on every frame (bounded, 0 at NOISE_V 0 — the identical
+//              advect path), highs.env the eased `high` (HI_SRC 0; cold at the frame's value) / hat2 (HI_SRC 2) / the own-range ring (HI_SRC 1:
+//              40 s steady → 0, a swell → 1, a dip → 0); the grain moves no splat, no body, no heave; the DIP: DIP_SRC 1 × (1 − HI_SHARP) on every
+//              frame the base paid a hat droplet and DIP_N − 1 after, never inside the confirmed clear, nowhere else; DIP_SRC 2 × (1 − HI_SHARP·env)
+//              on every frame outside the clear; DIP_SRC 0 the governed dyeDiss; the cold frame drops a pending dip; determinism; the Proxy
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -772,6 +777,51 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S3 — the K2 table restored after the switches');
   }
   Object.assign(K2, SHIP_S4);   // S4's shipped switches back (its own block follows)
+  { // S4 (§116 S4, FLUID2-PLAN §4 S4): the highs as the SURFACE, never a force on the mass — the grain's amplitude (a uniform for the advect
+    // pass, never a splat), its three sources, the dip on the governed dyeDiss (per hat / continuous / none, never inside the clear), the cold
+    // frame, determinism, the Proxy, the table restored
+    const defaults = { ...K2 };
+    const JR = trace('RaindropsOnRoses-map0');
+    const run4 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
+    ok(FEATS2.includes('high') && !FLUID_FEATS.includes('high') && FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S4 — inject2 reads `high` (the grain\'s and the dip\'s source; `hat2` is the base\'s read): FLUID_FEATS = the base\'s + sub + high');
+    ok(defaults.NOISE_V > 0 && defaults.HI_TAU > 0 && [0, 1, 2].includes(defaults.HI_SRC) && [0, 1, 2].includes(defaults.DIP_SRC) && defaults.HI_SHARP >= 0 && defaults.HI_SHARP < 1 && defaults.DIP_N >= 1, 'bands: S4 — K2 carries NOISE_V ' + defaults.NOISE_V + ', HI_SRC ' + defaults.HI_SRC + ', HI_TAU ' + defaults.HI_TAU + ', DIP_SRC ' + defaults.DIP_SRC + ', HI_SHARP ' + defaults.HI_SHARP + ', DIP_N ' + defaults.DIP_N);
+    if (JR) {
+      const C4 = JR.cols;
+      const on = run4({ DIP_SRC: 1 }), off = run4({ NOISE_V: 0, DIP_SRC: 0 }), cont = run4({ DIP_SRC: 2 }), hats = run4({ HI_SRC: 2, DIP_SRC: 0 });
+      // the grain: NOISE_V · env · gain, bounded; 0 at NOISE_V 0; env in [0, 1], the cold frame AT the level; never a splat, a body or a heave
+      ok(on.every((r) => Math.abs(r.P.grain - defaults.NOISE_V * r.P.highs.env * r.P.gain) < 1e-12 && r.P.grain >= 0 && r.P.grain <= defaults.NOISE_V + 1e-12 && r.P.highs.env >= 0 && r.P.highs.env <= 1 && r.P.highs.grain === r.P.grain) && on.some((r) => r.P.grain > 0.5 * defaults.NOISE_V), 'bands: S4 — grain = NOISE_V · highs.env · gain on every one of RaindropsOnRoses\'s ' + on.length + ' real frames, in [0, NOISE_V], env in [0, 1] (p50 env ' + med(on.map((r) => r.P.highs.env)).toFixed(3) + ')');
+      ok(off.every((r) => r.P.grain === 0 && r.P.highs.grain === 0 && r.P.highs.dip === 1) && Math.abs(on[0].P.highs.env - Math.min(1, Math.max(0, C4.high[0]))) < 1e-12, 'bands: S4 — NOISE_V 0 / DIP_SRC 0: grain 0 and dip 1 on every frame (the identical advect pass, the governed dyeDiss); the cold frame\'s env is the frame\'s `high` itself');
+      const stripG = (P) => { const Q = { ...P, params: { ...P.params } }; delete Q.grain; delete Q.highs; delete Q.params.dyeDiss; return Q; };
+      ok(JSON.stringify(on.map((r) => stripG(r.P))) === JSON.stringify(off.map((r) => stripG(r.P))) && on.every((r, i) => r.P.body === off[i].P.body && r.P.heave === off[i].P.heave && r.P.ink === off[i].P.ink), 'bands: S4 — never a force on the mass: with the grain and the dip on, every splat, the body, the heave, the curl, the ink rate are the off run\'s to the byte — only dyeDiss (the dip) and the grain / highs fields differ');
+      const lagOk = on.every((r, i) => i === 0 || Math.abs(r.P.highs.env - on[i - 1].P.highs.env) <= Math.abs(Math.min(1, Math.max(0, C4.high[i])) - on[i - 1].P.highs.env) + 1e-12);
+      ok(lagOk, 'bands: S4 — HI_SRC 0: env eases toward the frame\'s `high` (every step toward it, never past it)');
+      ok(Math.abs(hats[0].P.highs.env - Math.min(1, Math.max(0, C4.hat2[0]))) < 1e-12 && hats.every((r, i) => i === 0 || Math.abs(r.P.highs.env - hats[i - 1].P.highs.env) <= Math.abs(Math.min(1, Math.max(0, C4.hat2[i])) - hats[i - 1].P.highs.env) + 1e-12) && med(hats.filter((r) => r.t >= 82 && r.t < 91).map((r) => r.P.highs.env)) > 3 * med(hats.filter((r) => r.t >= 99 && r.t < 102).map((r) => r.P.highs.env)), 'bands: S4 — HI_SRC 2: env eases toward hat2 (bursts on the hits): the hat-rich 82–91 s p50 ' + med(hats.filter((r) => r.t >= 82 && r.t < 91).map((r) => r.P.highs.env)).toFixed(3) + ' > 3× the hat-poor 99–102 s ' + med(hats.filter((r) => r.t >= 99 && r.t < 102).map((r) => r.P.highs.env)).toFixed(3));
+      // the dip: per hat — on every frame with a base 'hat' splat and DIP_N − 1 after, × (1 − HI_SHARP), the off run's dyeDiss otherwise; never inside the clear
+      const hatFr = off.map((r, i) => i).filter((i) => off[i].P.splats.some((s) => s.k === 'hat'));
+      const want = new Set(); for (const i of hatFr) for (let j = 0; j < defaults.DIP_N; j++) want.add(i + j);
+      const clearFr = off.map((r, i) => i).filter((i) => off[i].P.params.dyeDiss === K.DROP_DISS);
+      const dipOk = on.every((r, i) => { const w = want.has(i) && !clearFr.includes(i); const f = 1 - defaults.HI_SHARP; return w ? Math.abs(r.P.highs.dip - f) < 1e-12 && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss * f) < 1e-12 : r.P.highs.dip === 1 && r.P.params.dyeDiss === off[i].P.params.dyeDiss; });
+      ok(hatFr.length > 100 && dipOk, 'bands: S4 — DIP_SRC 1 on RaindropsOnRoses: dyeDiss × (1 − HI_SHARP) on the ' + hatFr.length + ' frames the base paid a hat droplet and the ' + (defaults.DIP_N - 1) + ' after each (' + [...want].filter((i) => i < on.length).length + ' dip frames), the off run\'s dyeDiss to the byte everywhere else, the clear\'s ' + clearFr.length + ' frames at DROP_DISS untouched');
+      ok(cont.every((r, i) => { const w = !clearFr.includes(i); const f = 1 - defaults.HI_SHARP * r.P.highs.env; return w ? Math.abs(r.P.highs.dip - f) < 1e-12 && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss * f) < 1e-12 : r.P.highs.dip === 1; }), 'bands: S4 — DIP_SRC 2: dyeDiss × (1 − HI_SHARP · env) on every frame outside the clear (the plan\'s continuous form)');
+      // the cold frame drops a pending dip (a hat on the frame before a switch does not dip the first frame after)
+      { const i0 = hatFr.find((i) => i > 60 && !hatFr.includes(i + 1) && !hatFr.includes(i + 2)); const st = mkState2(); let prev = null; const dips = [];
+        for (let i = i0 - 2; i <= i0 + 2; i++) { const S = {}; for (const k in C4) S[k] = C4[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; if (i === i0 + 1) st.n = 0; dips.push(plan2(S, dt, st).highs.dip); }
+        ok(dips[2] < 1 && dips[3] === 1 && dips[4] === 1 && st.dipLeft === 0, 'bands: S4 — the cold frame (fluid.js resets `n` while another grammar owns the pool) drops the pending dip (' + dips.map((d) => d.toFixed(2)).join(' ') + ')'); }
+      // determinism; the Proxy with S4 on
+      ok(JSON.stringify(on.map((r) => r.P)) === JSON.stringify(run4({ DIP_SRC: 1 }).map((r) => r.P)) && JSON.stringify(hats.map((r) => r.P)) === JSON.stringify(run4({ HI_SRC: 2, DIP_SRC: 0 }).map((r) => r.P)), 'bands: S4 — determ: two fresh band states on the real trace → identical output, the grain and the dip on (and HI_SRC 2)');
+      { const allowed = new Set(FEATS2); let thrown = null; const st = mkState2(); let prev = null; Object.assign(K2, defaults, { HI_SRC: 1, DIP_SRC: 1 });
+        try { for (let i = 0; i < JR.f.length; i++) { const S = {}; for (const k in C4) S[k] = C4[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i]; plan2(new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allowed.has(k)) throw new Error('undeclared read ' + k); return t[k]; } }), dt, st); } } catch (e) { thrown = e.message; }
+        Object.assign(K2, defaults);
+        ok(thrown === null, 'bands: S4 — proxy: RaindropsOnRoses through plan2 with the grain (HI_SRC 1, the ring) and the dip on, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
+    }
+    // HI_SRC 1 — the own range (this grammar's ring): 40 s of a steady level → the floor; a swell above the ring's p80 → 1 within a second; a dip → 0
+    { Object.assign(K2, defaults, { HI_SRC: 1 }); const st = mkState2(); const fr = (high) => ({ bpm: 120, presence: 0.8, high, seed: { a: 0.37 }, subNote: -1, kickAge: 99, tension: 0.5, lpSweep: 0.5, beatCount: 0, harmAngle: 0 });
+      let P; for (let i = 0; i < 40 * 60; i++) P = plan2(fr(0.5), DT, st);
+      const steady = P.highs.env, early = st.highRing.length; for (let i = 0; i < 60; i++) P = plan2(fr(0.7), DT, st); const swell = P.highs.env; for (let i = 0; i < 60; i++) P = plan2(fr(0.3), DT, st); const dip = P.highs.env;
+      Object.assign(K2, defaults);
+      ok(early === K.FLOOR_WIN && steady < 0.02 && swell > 0.98 && dip < 0.02, 'bands: S4 — HI_SRC 1: the ring holds FLOOR_WIN one-second means (' + early + '); 40 s of high .5 → env ' + steady.toFixed(3) + ' (the floor), a swell to .7 → ' + swell.toFixed(3) + ' within 1 s (20 HI_TAU), a dip to .3 → ' + dip.toFixed(3) + '; HI_SRC 0 would read .5 / .7 / .3'); }
+    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S4 — the K2 table restored after the switches');
+  }
 }
 
 // breath
