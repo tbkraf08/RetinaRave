@@ -48,7 +48,7 @@ const HAT_RAD = 0.4;       // its radius × the grammar's
 const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15..0.85 on the scene's own count
 
 const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
-const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0, spec: 0.6, specPow: 48, highS: 0, grain: 0, seed: 0 };   // spec / specPow: this frame's highlight gain and exponent; grain / seed the display grain (S4)
+const U = { expo: 1, lastNow: -1e9, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0, spec: 0.6, specPow: 48, highS: 0, grain: 0, seed: 0 };   // spec / specPow: this frame's highlight gain and exponent; grain / seed the display grain (S4)
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
 function flinfo() {
@@ -87,7 +87,11 @@ const SELF = {
     const P = env.params;
     const SC = env.SC, id = this.id, trans = SC.next >= 0;
     U.vis = (SC.cur === id ? 1 - (trans ? SC.m : 0) : 0) + (SC.next === id ? SC.m : 0);
-    U.expo = ema(U.expo, P.light, dt, EXPOTC);
+    // §116 S7 (S0's open finding): the exposure starts AT the frame's light on the scene's first on-screen frame (and after a gap — a hidden
+    // tab's resume): the mixs fade 12 → 13 dipped the whole-frame grey 37 → 20 → 35 while a cold U.expo (1) eased to the groove's 1.3 under
+    // the fade; the cold frame at its target is the §1.9 rule's own exception, nothing after it steps. FLUID (12) keeps its own ease.
+    const cold = !(env.now - U.lastNow < 0.5); U.lastNow = env.now;
+    U.expo = cold ? P.light : ema(U.expo, P.light, dt, EXPOTC);
     U.relief = P.relief;
     const F = this.ctx.fluid;
     // §116 S4 the light from the highs: highS is the synapse's slow band (no ease needed — it is one already); tier 0 may hold FLUID's constants
