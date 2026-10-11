@@ -35,6 +35,13 @@
 //                the survey's window seconds (windows.txt) — one bin all track = one colour
 //   field        §116 S1 (the band grammar only — INJECT=assets/core/fluid/inject2.js): |heave| p50 / p90 (uv/s² added to the body) and
 //                |swirl| p50 / p90 (1/s²) over the music frames, and the % of music frames the field is on (|heave| + |swirl| > .01)
+//   bands        §116 S2–S6 (the band grammar only): the kick's SHAPE (0 control · 1 jet · 2 stroke · 3 dipole · 4 puff), its frames (music
+//                frames with a kick kind in the list), its impulse Σ dy·rad p50 / p90 over them; the snare's kind (pair · jet · harm) and
+//                its frames; the mids' confinement `curl` p10 / p50 / p90 over music frames (FLUID's is 10 + 40·tension; S3's the mid band's
+//                own-range place) and the mask (on / off); the highs' grain p50 / p90 (uv/s² on the velocity advect pass) and the dip's share
+//                of music frames (dyeDiss × (1 − HI_SHARP) on a hat); the pen's share of music frames, its x p10 / p90 (span), its per-frame
+//                step p50 / max (the §1.9 ruler: ≤ PEN_VMAX · dt); the solver's clock dtSim p10 / p50 / p90, min / max, the latched (void)
+//                share, the burst frames (drop > 1), the slewed frames — every one from plan()'s return, no GL (the pixels are the strips')
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -122,6 +129,17 @@ function row(track, mode) {
   const kickDy = []; for (const r of rows) if (r.S.kickEvt) for (let j = 0; j < r.P.splats.length; j++) if (r.kinds[j] === 'kick') kickDy.push(r.P.splats[j].dy);
   const huePct = 100 * musFr.filter((r) => r.conf >= 0.999).length / Math.max(1, musFr.length);
   const field = rows.length && rows[0].P.heave !== undefined ? { heave: { p50: q(musFr.map((r) => Math.abs(r.P.heave)), 0.5), p90: q(musFr.map((r) => Math.abs(r.P.heave)), 0.9) }, swirl: { p50: q(musFr.map((r) => Math.abs(r.P.swirl)), 0.5), p90: q(musFr.map((r) => Math.abs(r.P.swirl)), 0.9) }, onPct: 100 * musFr.filter((r) => Math.abs(r.P.heave) + Math.abs(r.P.swirl) > 0.01).length / Math.max(1, musFr.length) } : null;   // §116 S1 the band grammar's field
+  let bands = null;   // §116 S2–S6: the band grammar's per-frame records (kick / snare / mids / highs / pen / time), summarised per track
+  if (rows.length && rows[0].P.kick !== undefined) {
+    const kf = musFr.filter((r) => r.P.kick && r.P.kick.n > 0), sf = musFr.filter((r) => r.P.snare && r.P.snare.n > 0), pf = musFr.filter((r) => r.P.pen && r.P.pen.on);
+    const tm = musFr.map((r) => r.P.time || { dtSim: 1, latched: 0, drop: 1, slewed: 0 }), dts = tm.map((t) => t.dtSim);
+    bands = { kick: { shape: rows[0].P.kick.shape, frames: kf.length, mom: { p50: q(kf.map((r) => r.P.kick.mom), 0.5), p90: q(kf.map((r) => r.P.kick.mom), 0.9) } },
+      snare: { kind: (sf.find((r) => r.P.snare.kind) || { P: { snare: { kind: '—' } } }).P.snare.kind, frames: sf.length },
+      curl: { p10: q(musFr.map((r) => r.P.params.curl), 0.1), p50: q(musFr.map((r) => r.P.params.curl), 0.5), p90: q(musFr.map((r) => r.P.params.curl), 0.9), mask: musFr.some((r) => r.P.mids && r.P.mids.mask) ? 'on' : 'off' },
+      grain: { p50: q(musFr.map((r) => r.P.grain || 0), 0.5), p90: q(musFr.map((r) => r.P.grain || 0), 0.9), dipPct: 100 * musFr.filter((r) => r.P.highs && r.P.highs.dip < 1).length / Math.max(1, musFr.length) },
+      pen: { onPct: 100 * pf.length / Math.max(1, musFr.length), x: pf.length ? { p10: q(pf.map((r) => r.P.pen.x), 0.1), p90: q(pf.map((r) => r.P.pen.x), 0.9) } : null, step: pf.length ? { p50: q(pf.map((r) => r.P.pen.step), 0.5), max: Math.max(...pf.map((r) => r.P.pen.step)) } : null },
+      dt: { p10: q(dts, 0.1), p50: q(dts, 0.5), p90: q(dts, 0.9), min: Math.min(...dts), max: Math.max(...dts), latchedPct: 100 * tm.filter((t) => t.latched).length / Math.max(1, tm.length), burst: tm.filter((t) => t.drop > 1).length, slewed: tm.filter((t) => t.slewed).length } };
+  }
   const bins = new Set(mus.map((x) => Math.floor(x.hue * 12) % 12));
   const wins = SURVEY[track] || (WIN[track] ? WIN[track].runs.flatMap((r) => r.shots.map((s) => s.t)) : []);
   const hueAt = wins.filter((t) => t <= T[N - 1]).map((t) => { const x = secs.find((y) => y.s === Math.floor(t)); return x ? Math.floor(x.hue * 12) % 12 : '—'; });
@@ -129,18 +147,18 @@ function row(track, mode) {
     ink: { p50: q(mus.map((x) => x.ink), 0.5), p90: q(mus.map((x) => x.ink), 0.9) }, gov, dv: q(mus.map((x) => x.dv), 0.5), voidPct, deepPct, syrupPct,
     clears, trueN, brk, waves, xSub: xs.length ? { p10: q(xs, 0.1), p50: q(xs, 0.5), p90: q(xs, 0.9), span: q(xs, 0.9) - q(xs, 0.1), n: xs.length } : null,
     hitX: hitX.length ? { p10: q(hitX, 0.1), p90: q(hitX, 0.9) } : null, harmS, noiseS, kickDy: kickDy.length ? { p10: q(kickDy, 0.1), p50: q(kickDy, 0.5), p90: q(kickDy, 0.9) } : null,
-    huePct, hueBins: bins.size, hueAt, field, lacks, gate: !WIN[track] || WIN[track].gate !== false };
+    huePct, hueBins: bins.size, hueAt, field, bands, lacks, gate: !WIN[track] || WIN[track].gate !== false };
 }
 
 const out = [], rowsJ = [];
-out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | shockwaves @ s · A | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows | field: |heave| p50/p90 · |swirl| p50/p90 · on % |');
-out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+out.push('| track | mode | music s | inj % | sub · kick · snare · chord · hat · floor (s) | kicks · snares · hats /s | ink/s p50 / p90 (gov p50 / p90) | dv/s | void % (< .5 · < .3) | syrup % | clears (true · brk) | shockwaves @ s · A | x sub p10/p50/p90 (span) | x hits p10/p90 (harm s · noise s) | kick dy p10/p50/p90 | hue: key % · bins · at windows | field: |heave| p50/p90 · |swirl| p50/p90 · on % | bands: kick shape · frames · mom p50/p90 · snare kind · frames · curl p10/p50/p90 · mask · grain p50/p90 · dip % · pen % · x p10/p90 (span) · step p50/max · dtSim p10/p50/p90 · min/max · latched % · burst · slewed |');
+out.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const t of TRACKS) for (const mode of MODES) {
   if (t === 'rec' && mode !== '0') continue;
   const r = row(t, mode); rowsJ.push(r);
   if (r.missing) { out.push(`| ${t} | ${mode} | — no trace (tools/traces.sh ${t}-map${mode}) |`); continue; }
   const c = r.chan, h = r.hits;
-  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'}${r.lacks.length ? ' (trace lacks ' + r.lacks.join(',') + ')' : ''} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.waves.length} @ ${r.waves.map((w) => w.t + '·' + w.a).join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} (${r.harmS} · ${r.noiseS}) | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} | ${r.field ? `${f(r.field.heave.p50, 3)}/${f(r.field.heave.p90, 3)} · ${f(r.field.swirl.p50, 3)}/${f(r.field.swirl.p90, 3)} · ${f(r.field.onPct, 0)}` : '—'} |`);
+  out.push(`| ${t}${r.gate ? '' : ' (record only)'}${r.whole ? '' : ' (0–110 s)'}${r.lacks.length ? ' (trace lacks ' + r.lacks.join(',') + ')' : ''} | ${mode} | ${r.musicS} | ${f(r.injPct, 1)} | ${c.sub} · ${c.kick} · ${c.snare} · ${c.chord} · ${c.hat} · ${c.floor} | ${f(r.perS.kick, 1)} · ${f(r.perS.snare, 1)} · ${f(r.perS.hat, 1)} | ${f(r.ink.p50, 1)} / ${f(r.ink.p90, 1)} (×${f(r.gov.p50, 1)} / ${f(r.gov.p90, 1)}) | ${f(r.dv, 1)} | ${f(r.voidPct, 0)} · ${f(r.deepPct, 0)} | ${f(r.syrupPct, 0)} | ${r.clears.length} (${r.trueN}${r.brk === null ? '' : ' · ' + r.brk}) @ ${r.clears.join(' ') || '—'} | ${r.waves.length} @ ${r.waves.map((w) => w.t + '·' + w.a).join(' ') || '—'} | ${r.xSub ? `${f(r.xSub.p10)}/${f(r.xSub.p50)}/${f(r.xSub.p90)} (${f(r.xSub.span)})` : '—'} | ${r.hitX ? `${f(r.hitX.p10)}/${f(r.hitX.p90)}` : '—'} (${r.harmS} · ${r.noiseS}) | ${r.kickDy ? `${f(r.kickDy.p10)}/${f(r.kickDy.p50)}/${f(r.kickDy.p90)}` : '—'} | ${f(r.huePct, 0)} · ${r.hueBins} · ${r.hueAt.join(' ')} | ${r.field ? `${f(r.field.heave.p50, 3)}/${f(r.field.heave.p90, 3)} · ${f(r.field.swirl.p50, 3)}/${f(r.field.swirl.p90, 3)} · ${f(r.field.onPct, 0)}` : '—'} | ${r.bands ? `${r.bands.kick.shape} · ${r.bands.kick.frames} · ${f(r.bands.kick.mom.p50, 3)}/${f(r.bands.kick.mom.p90, 3)} · ${r.bands.snare.kind} · ${r.bands.snare.frames} · ${f(r.bands.curl.p10, 0)}/${f(r.bands.curl.p50, 0)}/${f(r.bands.curl.p90, 0)} · ${r.bands.curl.mask} · ${f(r.bands.grain.p50, 3)}/${f(r.bands.grain.p90, 3)} · ${f(r.bands.grain.dipPct, 0)} · ${f(r.bands.pen.onPct, 0)} · ${r.bands.pen.x ? `${f(r.bands.pen.x.p10)}/${f(r.bands.pen.x.p90)} (${f(r.bands.pen.x.p90 - r.bands.pen.x.p10)})` : '—'} · ${r.bands.pen.step ? `${f(r.bands.pen.step.p50, 4)}/${f(r.bands.pen.step.max, 4)}` : '—'} · ${f(r.bands.dt.p10, 3)}/${f(r.bands.dt.p50, 3)}/${f(r.bands.dt.p90, 3)} · ${f(r.bands.dt.min, 3)}/${f(r.bands.dt.max, 3)} · ${f(r.bands.dt.latchedPct, 0)} · ${r.bands.dt.burst} · ${r.bands.dt.slewed}` : '—'} |`);
 }
 console.log(out.join('\n'));
 if (process.env.JSON) fs.writeFileSync(process.env.JSON, JSON.stringify(rowsJ, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v)));
