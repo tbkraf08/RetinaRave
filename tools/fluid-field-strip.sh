@@ -15,7 +15,8 @@
 #       speed p10 / p50 / p90, the coverage (shots with sub > .3 whose speed is above SPEEDFLOOR= — pass the control's p10 — in %).
 #   K2 = a one-run override of the band grammar's constants (CARD.fluid.K2, live) applied before the track opens; K = the base's (CARD.fluid.K).
 #   RaindropsOnRoses starts at 24 s (windows.json `start`): pass at=24. One Chrome at a time (a shared GPU moves frame0 — §107's pitfall).
-#   GREYONLY=1 recomputes speed.txt on shots already taken.
+#   GREYONLY=1 recomputes speed.txt on shots already taken. Since §116 S3 the evals line carries `mid curl midsPos` after dyeDiss — the
+#   MIDS ruler (tools/fluid-mids-lap.py: the velocity's small-scale energy, dense vs thin windows) reads the same strip.
 cd "$(dirname "$0")/.." || exit 1
 T=$1; SC=$2; TAG=$3; T0=$4; T1=$5; FPS=${6:-1}; AT=${7:-0}; PORT=${PORT:-8978}; MAP=${MAP:-0}
 [ -z "$T" ] || [ -z "$SC" ] || [ -z "$TAG" ] || [ -z "$T0" ] || [ -z "$T1" ] && { echo "usage: [K2=json] [K=json] [MAP=0|1] PORT=88xx tools/fluid-field-strip.sh <track> <scene> <tag> <t0> <t1> [fps] [at]"; exit 2; }
@@ -30,7 +31,7 @@ S='[{"until":"window.CARD"}'
 [ -n "$K" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.fluid.K,$(echo "$K" | sed 's/"/\\"/g')))\"}"
 S="$S,{\"until\":\"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open\",\"timeout\":300000},{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,dur:CARD.ENGINE.AU.file.dur,sc:CARD.SC.cur,grammar:CARD.fluid.grammar,fluid:CARD.fluid&&{on:CARD.fluid.on,tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CARD.fluid.simH]},K2:CARD.fluid.K2})\"}"
 for item in $LIST; do NN=${item%%:*}; R=${item#*:}; TT=${R%%:*}; F=${R##*:}
-  S="$S,{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$TAG-$NN\"},{\"eval\":\"'$NN $TT '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.sub.toFixed(3)+' '+CARD.MS.subGate+' '+CARD.fluid.heave.toFixed(4)+' '+CARD.fluid.swirl.toFixed(4)+' '+CARD.fluid.params.dyeDiss.toFixed(2)\"},{\"eval\":\"CARD.fluid.dbg=2\"},{\"until\":\"window.__FRAME>=$((F + 1))\",\"timeout\":900000},{\"shot\":\"$TAG-${NN}v\"},{\"eval\":\"CARD.fluid.dbg=0\"}"
+  S="$S,{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$TAG-$NN\"},{\"eval\":\"'$NN $TT '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.sub.toFixed(3)+' '+CARD.MS.subGate+' '+CARD.fluid.heave.toFixed(4)+' '+CARD.fluid.swirl.toFixed(4)+' '+CARD.fluid.params.dyeDiss.toFixed(2)+' '+(CARD.MS.mid||0).toFixed(3)+' '+CARD.fluid.params.curl.toFixed(1)+' '+(CARD.fluid.mids?CARD.fluid.mids.pos.toFixed(3):'-')\"},{\"eval\":\"CARD.fluid.dbg=2\"},{\"until\":\"window.__FRAME>=$((F + 1))\",\"timeout\":900000},{\"shot\":\"$TAG-${NN}v\"},{\"eval\":\"CARD.fluid.dbg=0\"}"
 done
 S="$S,{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,frame:window.__FRAME,errs:CARD.ERRS,bad:CARD.nonFinite(),steps:CARD.fluid&&CARD.fluid.steps})\"}]"
 TS=$(date +%s)
@@ -41,7 +42,7 @@ d, tag, floor = sys.argv[1], sys.argv[2], float(sys.argv[3])
 ev = {}
 for l in open(f'{d}/evals.txt'):
     l = l.strip().strip('"')
-    m = re.match(r'^(\d\d) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+)$', l)
+    m = re.match(r'^(\d\d) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+)(?: .*)?$', l)   # §116 S3: mid, curl, mids.pos follow (fluid-mids-lap.py reads them)
     if m: ev[m.group(1)] = m.groups()[1:]
 rows = []
 for nn in sorted(ev):

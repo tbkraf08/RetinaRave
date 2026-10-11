@@ -1,0 +1,95 @@
+# §116 S3 — mids = material: the receipts (RaindropsOnRoses-filtered on the user's word — "only tune with Raindrops, don't do full sweep";
+# the other seven tracks untuned and unswept, the full sweep owed before any tag). Branch fluid2, the S3 code 4d3e3bd (1/4), the tests 45510ed
+# (2/4), the snare's place 02adcbf, the proofs + docs after. 2026-10-10, one Chrome at a time, the gates on PORT 8975, the strips on 8978.
+#
+# THE GATES (tools/work/fluid2/s3/gates.sh; each with its wall time)
+#   node tools/check.js: 183 modules · uniforms 227 · MS keys 220 · scenes 13 (help.feats gaps 0) · 0 fail · 8 warn
+#   npm test: exit 0, 15 s — test_fluid 389 ok 0 fail (S3's 19 cases in the bands block), test_music 151 ok 0 fail
+#   node tools/license.js: 186 public files, 0 without the header (fluid-mids-lap.py, fluid-snare-travel.py carry it)
+#   SCENES=13 real-md5 Raindrops ×2: 8 / 8 cmp-equal (69 s + 69 s), all 8 moved against S2's → re-based into real-md5-v037.txt (8 lines, the other 322 untouched)
+#   SCENES=12 real-md5 Raindrops: 8 / 8 = v036 (69 s) — the pool grammar's vort pass byte-identical under uCurlMask (0, 1, 1, 0)
+#   the roster 0 1 3 Raindrops: 24 / 24 = v037 (207 s), differ [], new []
+#   real-rulers s13 Raindrops 56–116: 1 / 1 ok (65 s) — jump viol 0 max .054, mon viol 0 max .0161, black 0, clip25 0, medY .187
+#   scene-md5 fake: 26 = v035 (s13's pair aside), errs [] on 14 ids (213 s); s12's pair unmoved (3e483039 / 2274bb4e = v035), s13's pair re-recorded 5dd1f1a7 / 9fd248b3
+#   parity fake: max |diff| 7.852214593751443 over 72 fields, the §102 nav.* line to the digit (50 s)
+#   the bench (one page, q .95 pinned, load 1.61): pool / bands ship (mask off, no snare) / bands mask on / bands snare-every-step ×3 =
+#     .632 / .594 / .569 / .540 · .511 / .511 / .485 / .499 · .482 / .479 / .518 / .502 — medians .511 / .511 / .518 / .502: ship − pool .000, the mask +.007,
+#     the snare −.009, all within ±.05 (the mask is one vec4 uniform on the vort pass — no new pass; the fake page's snare lane has no rank, so
+#     snare-every-step exercises the harmonic branch's splat, kind "harm", n 2 — the jet's cost is S2's jet's: 1 + SNARE_N splats, one draw); bench(0) 1.259
+#   MOBILE=1 scene 13 tier 0 alive: errs [] bad [] frameN 242, mids { pos .55, curl 32 } — benchFluid bands .417 / mask .445 / snare .445 / pool .440
+#     (tier 0 at the .4 budget's edge as S2 saw: pool .440 on this desktop's phone canvas; S2 read .416 / .404 / .431)
+#   npm run build: 182 modules, 1 825 515 bytes; file:// scene 13 bands errs [] frameN 302, scene 12 pool errs [] (VER 0.36.0)
+#   the crossfade 12 → 13: greys 34.7 … 20.6 … 35.1, max step 7.49 / 255, §1.9 viol []; 13 → 0 the forced branch's revert (S1's finding), errs [], max step 1.97
+#
+# THE MIDS RULER (tools/fluid-mids-lap.py on the field strip 60–130 s at 1 fps, tools/work/fluid2/s3/run-mids.sh; 117 s per run, 7 runs, errs [] bad [] on all)
+| tag | window | mid | curl | lap ×1000 | speed | ratio | curlM ×1000 | grey |
+|---|---|---|---|---|---|---|---|---|
+| ctrl | dense_groove (8) | 0.679 | 22.8 | 14.87 | 0.1466 | 0.112 | 5.99 | 54.2 |
+| ctrl | dense_pads (8) | 0.834 | 23.3 | 12.79 | 0.0407 | 0.331 | 3.93 | 34.3 |
+| ctrl | thin_break (5) | 0.478 | 15.4 | 9.66 | 0.0671 | 0.135 | 2.87 | 32.7 |
+| ctrl | thin_cut (2) | 0.760 | 18.2 | 14.72 | 0.1739 | 0.085 | 6.11 | 55.2 |
+| basecurl | dense_groove (8) | 0.679 | 22.8 | 15.75 | 0.2278 | 0.080 | 6.73 | 47.1 |
+| basecurl | dense_pads (8) | 0.834 | 23.3 | 12.60 | 0.0452 | 0.285 | 3.89 | 34.5 |
+| basecurl | thin_break (5) | 0.478 | 15.4 | 8.88 | 0.0538 | 0.176 | 2.42 | 27.9 |
+| basecurl | thin_cut (2) | 0.760 | 18.2 | 15.41 | 0.1841 | 0.096 | 6.54 | 49.1 |
+| mid40 | dense_groove (8) | 0.679 | 34.8 | 18.56 | 0.2264 | 0.082 | 9.39 | 48.2 |
+| mid40 | dense_pads (8) | 0.834 | 49.9 | 18.56 | 0.0472 | 0.411 | 7.46 | 34.2 |
+| mid40 | thin_break (5) | 0.478 | 10.4 | 7.23 | 0.0535 | 0.138 | 1.80 | 27.6 |
+| mid40 | thin_cut (2) | 0.760 | 13.8 | 15.06 | 0.2724 | 0.071 | 6.58 | 44.3 |
+| mid40m | dense_groove (8) | 0.679 | 34.8 | 14.37 | 0.2154 | 0.072 | 5.54 | 47.5 |
+| mid40m | dense_pads (8) | 0.834 | 49.9 | 13.26 | 0.0459 | 0.304 | 4.74 | 34.3 |
+| mid40m | thin_break (5) | 0.478 | 10.4 | 5.16 | 0.0532 | 0.109 | 1.38 | 27.7 |
+| mid40m | thin_cut (2) | 0.760 | 13.8 | 12.66 | 0.1723 | 0.078 | 4.07 | 48.7 |
+| mid80 | dense_groove (8) | 0.679 | 59.7 | 25.46 | 0.1892 | 0.117 | 15.54 | 48.3 |
+| mid80 | dense_pads (8) | 0.834 | 89.9 | 26.69 | 0.0906 | 0.317 | 14.45 | 34.1 |
+| mid80 | thin_break (5) | 0.478 | 10.7 | 8.11 | 0.0520 | 0.144 | 2.07 | 27.6 |
+| mid80 | thin_cut (2) | 0.760 | 17.7 | 16.27 | 0.3335 | 0.059 | 8.30 | 44.5 |
+| mid80m | dense_groove (8) | 0.679 | 59.7 | 18.48 | 0.2209 | 0.084 | 8.98 | 48.0 |
+| mid80m | dense_pads (8) | 0.834 | 89.9 | 19.26 | 0.0595 | 0.331 | 8.87 | 34.2 |
+| mid80m | thin_break (5) | 0.478 | 10.7 | 5.83 | 0.0526 | 0.110 | 1.42 | 27.4 |
+| mid80m | thin_cut (2) | 0.760 | 17.7 | 14.40 | 0.1988 | 0.077 | 5.62 | 48.2 |
+| mid0 | dense_groove (8) | 0.679 | 10.0 | 11.60 | 0.2323 | 0.056 | 3.54 | 47.2 |
+| mid0 | dense_pads (8) | 0.834 | 10.0 | 6.88 | 0.0555 | 0.119 | 1.75 | 35.4 |
+| mid0 | thin_break (5) | 0.478 | 10.0 | 6.31 | 0.0536 | 0.129 | 1.68 | 27.8 |
+| mid0 | thin_cut (2) | 0.760 | 10.0 | 11.81 | 0.1784 | 0.080 | 3.81 | 48.2 |
+
+| tag | dense / thin | lap | ratio | curlM | speed |
+|---|---|---|---|---|---|
+| ctrl | dense_groove/thin_break | 1.54 | 0.83 | 2.09 | 2.18 |
+| ctrl | dense_pads/thin_break | 1.32 | 2.46 | 1.37 | 0.61 |
+| basecurl | dense_groove/thin_break | 1.77 | 0.46 | 2.79 | 4.23 |
+| basecurl | dense_pads/thin_break | 1.42 | 1.62 | 1.61 | 0.84 |
+| mid40 | dense_groove/thin_break | 2.57 | 0.59 | 5.22 | 4.24 |
+| mid40 | dense_pads/thin_break | 2.57 | 2.97 | 4.15 | 0.88 |
+| mid40m | dense_groove/thin_break | 2.79 | 0.66 | 4.00 | 4.05 |
+| mid40m | dense_pads/thin_break | 2.57 | 2.80 | 3.42 | 0.86 |
+| mid80 | dense_groove/thin_break | 3.14 | 0.81 | 7.52 | 3.64 |
+| mid80 | dense_pads/thin_break | 3.29 | 2.21 | 6.99 | 1.74 |
+| mid80m | dense_groove/thin_break | 3.17 | 0.76 | 6.34 | 4.20 |
+| mid80m | dense_pads/thin_break | 3.30 | 3.01 | 6.26 | 1.13 |
+| mid0 | dense_groove/thin_break | 1.84 | 0.43 | 2.10 | 4.33 |
+| mid0 | dense_pads/thin_break | 1.09 | 0.92 | 1.04 | 1.04 |
+
+# THE SNARE RULER (LANE=snare tools/fluid-kick-strip.sh + tools/fluid-snare-travel.py, band y .5 ± .12, THR .04; the 10 groove snares; ~90 s per run)
+# pair all: n 10 · M pre/0/½/1 0.000/5.682/8.033/7.307 · d½/1 0.019/0.027 (0.013–0.059) · reach 0/½/1 0.223/0.230/0.232 (0.209–0.246) · span 0/½/1 0.713/0.772/0.764 · th1 0.397 · sp pre/1 0.286/0.294 · step0 0.0035 max 0.0084 · grey0 48.9
+# jet all: n 10 · M pre/0/½/1 0.000/4.152/7.356/7.067 · d½/1 0.051/0.066 (0.016–0.116) · reach 0/½/1 0.271/0.260/0.250 (0.242–0.258) · span 0/½/1 0.877/0.853/0.811 · th1 0.422 · sp pre/1 0.278/0.281 · step0 0.0017 max 0.0112 · grey0 45.5
+# jetin all: n 10 · M pre/0/½/1 0.000/5.244/10.016/10.684 · d½/1 0.051/0.083 (0.039–0.111) · reach 0/½/1 0.232/0.220/0.219 (0.199–0.236) · span 0/½/1 0.780/0.748/0.730 · th1 0.401 · sp pre/1 0.315/0.322 · step0 0.0018 max 0.0101 · grey0 49.9
+# stamp all: n 10 · P 0/½/1 0.163/0.170/0.161 · peak 0/½/1 0.231/0.188/0.125 · xpk 0/½/1 0.034/0.028/0.055 (0.024–0.407) · front 0/½/1 0.074/0.091 (0.044–0.141)/0.084 (0.027–0.112) · M pre/0/½/1 0.000/4.666/7.264/6.601 · th1 0.431 · sp pre/1 0.283/0.287 · step0 0.0026 max 0.0111 · grey0 45.0
+# ctrl all: n 10 · P 0/½/1 0.133/0.171/0.167 · peak 0/½/1 0.210/0.175/0.125 · xpk 0/½/1 0.014/0.035/0.115 (0.043–0.451) · front 0/½/1 0.088/0.086 (0.034–0.700)/0.086 (0.025–0.700) · M pre/0/½/1 0.000/5.608/7.868/7.492 · th1 0.384 · sp pre/1 0.225/0.209 · step0 0.0032 max 0.0085 · grey0 53.1
+# jetin1 all: n 10 · P 0/½/1 0.292/0.307/0.308 · peak 0/½/1 0.447/0.368/0.282 · xpk 0/½/1 0.018/0.030/0.061 (0.037–0.126) · front 0/½/1 0.083/0.118 (0.089–0.160)/0.116 (0.095–0.156) · M pre/0/½/1 0.000/4.439/5.384/4.309 · th1 0.193 · sp pre/1 0.315/0.319 · step0 0.0033 max 0.0093 · grey0 50.3
+# jetin8 all: n 10 · P 0/½/1 0.098/0.304/0.261 · peak 0/½/1 0.184/0.352/0.219 · xpk 0/½/1 0.005/0.023/0.059 (0.021–0.298) · front 0/½/1 0.054/0.147 (0.051–0.213)/0.111 (0.051–0.244) · M pre/0/½/1 0.000/2.434/5.112/4.364 · th1 0.197 · sp pre/1 0.307/0.320 · step0 0.0014 max 0.0107 · grey0 49.5
+# jetin20 all: n 10 · P 0/½/1 0.248/0.374/0.340 · peak 0/½/1 0.396/0.322/0.227 · xpk 0/½/1 0.007/0.037/0.085 (0.052–0.130) · front 0/½/1 0.075/0.208 (0.165–0.306)/0.176 (0.000–0.339) · M pre/0/½/1 0.000/3.663/5.509/4.372 · th1 0.183 · sp pre/1 0.301/0.313 · step0 0.0018 max 0.0099 · grey0 49.9
+#
+# THE REAL-MD5 LINES (s13 Raindrops after S3, cmp-equal twice)
+1c31ce1ce59743aa8f855bba1a756034  s13-RaindropsOnRoses-build1-f730-m0.jpg
+66c0620dc3655f9778631f96d2290827  s13-RaindropsOnRoses-build1-f730-m1.jpg
+2adfd53bf415780089362c73a2139950  s13-RaindropsOnRoses-drop1-f1030-m0.jpg
+d0d27f2755f1d66e6657945a48b204b8  s13-RaindropsOnRoses-drop1-f1030-m1.jpg
+16827058ecf8328778f504e4db2b173a  s13-RaindropsOnRoses-groove-f602-m0.jpg
+d233e978a01daeb27fe97eaec65a1287  s13-RaindropsOnRoses-groove-f602-m1.jpg
+daea2f0c6aad0bb601dc6b4889655ed5  s13-RaindropsOnRoses-intro-f602-m0.jpg
+7ffb946d5dddf8d37b29aa0492f9841a  s13-RaindropsOnRoses-intro-f602-m1.jpg
+#
+# THE MONTAGES: tools/accept/v0.37/fluid2-s116-s3-RaindropsOnRoses.jpg (the mids rows FLUID / FLUID2 tension / FLUID2 mids 40 at 78 / 98 / 113 / 122 s,
+# composite over velocity; the snare rows pair / jet .12 on snares 78.217 and 83.567, dye over velocity) and -variants.jpg (mask / 80 / 80 + mask / 0;
+# jet .02 / stamp .02 / .12 N 1 / .12 N 8 / .2 / FLUID's pair). The logs: tools/work/fluid2/s3/{mids,snare,snare2,snare3,gates}.log.

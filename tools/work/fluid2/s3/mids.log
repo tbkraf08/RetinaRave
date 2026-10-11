@@ -1,0 +1,78 @@
+== 19:21:57 RaindropsOnRoses s12 ctrl K2=
+== RaindropsOnRoses s12 ctrl 60-130: "{\"f0\":2,\"dur\":222.85714583333333,\"sc\":12,\"grammar\":\"pool\",\"fluid\":{\"on\":true,\"tier\":2,\"sim\" · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# ctrl: n 71 · r(speed, sub) 0.607 · speed p10/p50/p90 0.0456/0.1434/0.1791 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# ctrl dense_groove: n 8 · mid 0.679 · curl 22.8 · lap 0.01487 · speed 0.1466 · ratio 0.112 · curlM 0.00599 · grey 54.2
+# ctrl dense_pads: n 8 · mid 0.834 · curl 23.3 · lap 0.01279 · speed 0.0407 · ratio 0.331 · curlM 0.00393 · grey 34.3
+# ctrl thin_break: n 5 · mid 0.478 · curl 15.4 · lap 0.00966 · speed 0.0671 · ratio 0.135 · curlM 0.00287 · grey 32.7
+# ctrl thin_cut: n 2 · mid 0.760 · curl 18.2 · lap 0.01472 · speed 0.1739 · ratio 0.085 · curlM 0.00611 · grey 55.2
+# ctrl margin dense_groove/thin_break: lap 1.54 · ratio 0.83 · curlM 2.09 · speed 2.18
+# ctrl margin dense_groove/thin_cut: lap 1.01 · ratio 1.31 · curlM 0.98 · speed 0.84
+# ctrl margin dense_pads/thin_break: lap 1.32 · ratio 2.46 · curlM 1.37 · speed 0.61
+# ctrl margin dense_pads/thin_cut: lap 0.87 · ratio 3.88 · curlM 0.64 · speed 0.23
+== 19:23:55 RaindropsOnRoses s13 basecurl K2={"CURL_SRC":0}
+== RaindropsOnRoses s13 basecurl 60-130: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# basecurl: n 71 · r(speed, sub) 0.719 · speed p10/p50/p90 0.0448/0.1811/0.3058 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# basecurl dense_groove: n 8 · mid 0.679 · curl 22.8 · lap 0.01575 · speed 0.2278 · ratio 0.080 · curlM 0.00673 · grey 47.1
+# basecurl dense_pads: n 8 · mid 0.834 · curl 23.3 · lap 0.01260 · speed 0.0452 · ratio 0.285 · curlM 0.00389 · grey 34.5
+# basecurl thin_break: n 5 · mid 0.478 · curl 15.4 · lap 0.00888 · speed 0.0538 · ratio 0.176 · curlM 0.00242 · grey 27.9
+# basecurl thin_cut: n 2 · mid 0.760 · curl 18.2 · lap 0.01541 · speed 0.1841 · ratio 0.096 · curlM 0.00654 · grey 49.1
+# basecurl margin dense_groove/thin_break: lap 1.77 · ratio 0.46 · curlM 2.79 · speed 4.23
+# basecurl margin dense_groove/thin_cut: lap 1.02 · ratio 0.84 · curlM 1.03 · speed 1.24
+# basecurl margin dense_pads/thin_break: lap 1.42 · ratio 1.62 · curlM 1.61 · speed 0.84
+# basecurl margin dense_pads/thin_cut: lap 0.82 · ratio 2.97 · curlM 0.60 · speed 0.25
+== 19:25:53 RaindropsOnRoses s13 mid40 K2=
+== RaindropsOnRoses s13 mid40 60-130: "{\"f0\":2,\"dur\":222.85714583333333,\"sc\":13,\"grammar\":\"bands\",\"fluid\":{\"on\":true,\"tier\":2,\"sim\ · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# mid40: n 71 · r(speed, sub) 0.722 · speed p10/p50/p90 0.0453/0.2058/0.3410 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# mid40 dense_groove: n 8 · mid 0.679 · curl 34.8 · lap 0.01856 · speed 0.2264 · ratio 0.082 · curlM 0.00939 · grey 48.2
+# mid40 dense_pads: n 8 · mid 0.834 · curl 49.9 · lap 0.01856 · speed 0.0472 · ratio 0.411 · curlM 0.00746 · grey 34.2
+# mid40 thin_break: n 5 · mid 0.478 · curl 10.4 · lap 0.00723 · speed 0.0535 · ratio 0.138 · curlM 0.00180 · grey 27.6
+# mid40 thin_cut: n 2 · mid 0.760 · curl 13.8 · lap 0.01506 · speed 0.2724 · ratio 0.071 · curlM 0.00658 · grey 44.3
+# mid40 margin dense_groove/thin_break: lap 2.57 · ratio 0.59 · curlM 5.22 · speed 4.24
+# mid40 margin dense_groove/thin_cut: lap 1.23 · ratio 1.15 · curlM 1.43 · speed 0.83
+# mid40 margin dense_pads/thin_break: lap 2.57 · ratio 2.97 · curlM 4.15 · speed 0.88
+# mid40 margin dense_pads/thin_cut: lap 1.23 · ratio 5.78 · curlM 1.13 · speed 0.17
+== 19:27:51 RaindropsOnRoses s13 mid40m K2={"CURL_MASK":1}
+== RaindropsOnRoses s13 mid40m 60-130: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# mid40m: n 71 · r(speed, sub) 0.771 · speed p10/p50/p90 0.0447/0.1858/0.2663 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# mid40m dense_groove: n 8 · mid 0.679 · curl 34.8 · lap 0.01437 · speed 0.2154 · ratio 0.072 · curlM 0.00554 · grey 47.5
+# mid40m dense_pads: n 8 · mid 0.834 · curl 49.9 · lap 0.01326 · speed 0.0459 · ratio 0.304 · curlM 0.00474 · grey 34.3
+# mid40m thin_break: n 5 · mid 0.478 · curl 10.4 · lap 0.00516 · speed 0.0532 · ratio 0.109 · curlM 0.00138 · grey 27.7
+# mid40m thin_cut: n 2 · mid 0.760 · curl 13.8 · lap 0.01266 · speed 0.1723 · ratio 0.078 · curlM 0.00407 · grey 48.7
+# mid40m margin dense_groove/thin_break: lap 2.79 · ratio 0.66 · curlM 4.00 · speed 4.05
+# mid40m margin dense_groove/thin_cut: lap 1.14 · ratio 0.92 · curlM 1.36 · speed 1.25
+# mid40m margin dense_pads/thin_break: lap 2.57 · ratio 2.80 · curlM 3.42 · speed 0.86
+# mid40m margin dense_pads/thin_cut: lap 1.05 · ratio 3.89 · curlM 1.16 · speed 0.27
+== 19:29:48 RaindropsOnRoses s13 mid80 K2={"CURL_MID":80}
+== RaindropsOnRoses s13 mid80 60-130: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 118 s
+# mid80: n 71 · r(speed, sub) 0.613 · speed p10/p50/p90 0.0755/0.2308/0.4014 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# mid80 dense_groove: n 8 · mid 0.679 · curl 59.7 · lap 0.02546 · speed 0.1892 · ratio 0.117 · curlM 0.01554 · grey 48.3
+# mid80 dense_pads: n 8 · mid 0.834 · curl 89.9 · lap 0.02669 · speed 0.0906 · ratio 0.317 · curlM 0.01445 · grey 34.1
+# mid80 thin_break: n 5 · mid 0.478 · curl 10.7 · lap 0.00811 · speed 0.0520 · ratio 0.144 · curlM 0.00207 · grey 27.6
+# mid80 thin_cut: n 2 · mid 0.760 · curl 17.7 · lap 0.01627 · speed 0.3335 · ratio 0.059 · curlM 0.00830 · grey 44.5
+# mid80 margin dense_groove/thin_break: lap 3.14 · ratio 0.81 · curlM 7.52 · speed 3.64
+# mid80 margin dense_groove/thin_cut: lap 1.56 · ratio 1.98 · curlM 1.87 · speed 0.57
+# mid80 margin dense_pads/thin_break: lap 3.29 · ratio 2.21 · curlM 6.99 · speed 1.74
+# mid80 margin dense_pads/thin_cut: lap 1.64 · ratio 5.37 · curlM 1.74 · speed 0.27
+== 19:31:46 RaindropsOnRoses s13 mid80m K2={"CURL_MID":80,"CURL_MASK":1}
+== RaindropsOnRoses s13 mid80m 60-130: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# mid80m: n 71 · r(speed, sub) 0.724 · speed p10/p50/p90 0.0538/0.1933/0.3002 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# mid80m dense_groove: n 8 · mid 0.679 · curl 59.7 · lap 0.01848 · speed 0.2209 · ratio 0.084 · curlM 0.00898 · grey 48.0
+# mid80m dense_pads: n 8 · mid 0.834 · curl 89.9 · lap 0.01926 · speed 0.0595 · ratio 0.331 · curlM 0.00887 · grey 34.2
+# mid80m thin_break: n 5 · mid 0.478 · curl 10.7 · lap 0.00583 · speed 0.0526 · ratio 0.110 · curlM 0.00142 · grey 27.4
+# mid80m thin_cut: n 2 · mid 0.760 · curl 17.7 · lap 0.01440 · speed 0.1988 · ratio 0.077 · curlM 0.00562 · grey 48.2
+# mid80m margin dense_groove/thin_break: lap 3.17 · ratio 0.76 · curlM 6.34 · speed 4.20
+# mid80m margin dense_groove/thin_cut: lap 1.28 · ratio 1.08 · curlM 1.60 · speed 1.11
+# mid80m margin dense_pads/thin_break: lap 3.30 · ratio 3.01 · curlM 6.26 · speed 1.13
+# mid80m margin dense_pads/thin_cut: lap 1.34 · ratio 4.28 · curlM 1.58 · speed 0.30
+== 19:33:44 RaindropsOnRoses s13 mid0 K2={"CURL_MID":0}
+== RaindropsOnRoses s13 mid0 60-130: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6363,\"errs\":[],\"bad\":[],\"steps\":6363}" · 71 shots · 117 s
+# mid0: n 71 · r(speed, sub) 0.760 · speed p10/p50/p90 0.0517/0.1912/0.2664 · sub mean 0.55 · coverage nan % of 50 sub-up shots above floor nan
+# mid0 dense_groove: n 8 · mid 0.679 · curl 10.0 · lap 0.01160 · speed 0.2323 · ratio 0.056 · curlM 0.00354 · grey 47.2
+# mid0 dense_pads: n 8 · mid 0.834 · curl 10.0 · lap 0.00688 · speed 0.0555 · ratio 0.119 · curlM 0.00175 · grey 35.4
+# mid0 thin_break: n 5 · mid 0.478 · curl 10.0 · lap 0.00631 · speed 0.0536 · ratio 0.129 · curlM 0.00168 · grey 27.8
+# mid0 thin_cut: n 2 · mid 0.760 · curl 10.0 · lap 0.01181 · speed 0.1784 · ratio 0.080 · curlM 0.00381 · grey 48.2
+# mid0 margin dense_groove/thin_break: lap 1.84 · ratio 0.43 · curlM 2.10 · speed 4.33
+# mid0 margin dense_groove/thin_cut: lap 0.98 · ratio 0.70 · curlM 0.93 · speed 1.30
+# mid0 margin dense_pads/thin_break: lap 1.09 · ratio 0.92 · curlM 1.04 · speed 1.04
+# mid0 margin dense_pads/thin_cut: lap 0.58 · ratio 1.49 · curlM 0.46 · speed 0.31
+== done 19:35:42

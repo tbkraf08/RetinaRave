@@ -1,0 +1,76 @@
+== s13a start 19:48:38
+7ffb946d5dddf8d37b29aa0492f9841a  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13a wall 69 s
+== s13b start 19:49:47
+7ffb946d5dddf8d37b29aa0492f9841a  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13b wall 69 s
+== s13 a/b cmp-equal 8 lines
+== s13 vs v037 (S2): 0 unmoved, 8 moved: s13-RaindropsOnRoses-build1-f730-m0.jpg s13-RaindropsOnRoses-build1-f730-m1.jpg s13-RaindropsOnRoses-drop1-f1030-m0.jpg s13-RaindropsOnRoses-drop1-f1030-m1.jpg s13-RaindropsOnRoses-groove-f602-m0.jpg s13-RaindropsOnRoses-groove-f602-m1.jpg s13-RaindropsOnRoses-intro-f602-m0.jpg s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 start 19:50:56
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 wall 69 s
+== s12 Raindrops vs v036: 8 / 8 equal, differ []
+== roster start 19:52:05
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+== roster wall 207 s
+== roster 0 1 3 Raindrops vs v037: 24 / 24 equal, differ [], new []
+== rulers start 19:55:32
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.187  0.0188 | 3599  0.054  0     0     | 3599  0.0161 0     | ok
+real-rulers s3-rain: 1 scenes × 1 tracks, 0 FAIL, 65 s wall (map 1, PAR 1)
+== rulers wall 65 s
+== fake start 19:56:37
+== fake wall 213 s
+errs [] on 14 ids
+== fake 26 = v035 (s13's pair aside)
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+5dd1f1a7ce802d45fe6d04d1dc64e78b  s13-f360.jpg
+9fd248b3e030754c5065f8937119c44c  s13-f840.jpg
+== parity start 20:00:10
+info (fields on one side only — v3 creates some at runtime, level was deleted): level:missing in ew  highM:missing in v3  buildPk:missing in v3  liveT:missing in v3  arcT:missing in v3  surRaw:missi
+max |diff| over all numeric fields: 7.852214593751443 · fields compared 72
+MISMATCH: nav.c=2.0922965052426807  nav.mode=1  nav.h=0.731401391594356  nav.alpha=0.49002564187315134  nav.th=1.0322474015564918  nav.lg=7.852214593751443  nav.par=0.7771599445147408  nav.vtime=0.829
+== parity wall 50 s
+== bench 20:01:00
+setInterval(()=>CARD.Q.q=0.95,16);'pinned' => "pinned"
+CARD.benchFluid(300,null,'pool').toFixed(3)+' cold' => "0.807 cold"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.632"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=0,CARD.benchFlui => "0.594 ship {\"pos\":0,\"curl\":10,\"mask\":null}{\"kind\":\"\",\"mom\":0,\"ink\":0,\"n\":0,\"side\":0}"
+(CARD.fluid.K2.CURL_MASK=1,CARD.benchFluid(300,null,"bands") => "0.569 mask {\"y0\":0.3,\"y1\":0.7,\"lo\":0.25,\"fe\":0.1}"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=1,CARD.MS.snareA => "0.540 snare-every-step {\"kind\":\"harm\",\"mom\":0.0001467703562711583,\"ink\":0.45837849050209445,\"n\":1,\"side\":0} n 2"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.511"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=0,CARD.benchFlui => "0.511 ship {\"pos\":0,\"curl\":10,\"mask\":null}{\"kind\":\"\",\"mom\":0,\"ink\":0,\"n\":0,\"side\":0}"
+(CARD.fluid.K2.CURL_MASK=1,CARD.benchFluid(300,null,"bands") => "0.485 mask {\"y0\":0.3,\"y1\":0.7,\"lo\":0.25,\"fe\":0.1}"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=1,CARD.MS.snareA => "0.499 snare-every-step {\"kind\":\"harm\",\"mom\":0.00014403226348491717,\"ink\":0.4492016258953227,\"n\":1,\"side\":0} n 2"
+CARD.benchFluid(300,null,"pool").toFixed(3) => "0.482"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=0,CARD.benchFlui => "0.479 ship {\"pos\":1,\"curl\":50,\"mask\":null}{\"kind\":\"\",\"mom\":0,\"ink\":0,\"n\":0,\"side\":0}"
+(CARD.fluid.K2.CURL_MASK=1,CARD.benchFluid(300,null,"bands") => "0.518 mask {\"y0\":0.3,\"y1\":0.7,\"lo\":0.25,\"fe\":0.1}"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=1,CARD.MS.snareA => "0.502 snare-every-step {\"kind\":\"harm\",\"mom\":0.0002143607726326228,\"ink\":0.6685133567130366,\"n\":1,\"side\":0} n 2"
+(CARD.MS.snareEvt=0,CARD.bench(0,300).toFixed(3)+' nav') => "1.259 nav"
+JSON.stringify({tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CA => "{\"tier\":3,\"sim\":[259,128],\"dye\":[1035,512],\"q\":0.95,\"g\":\"pool\",\"errs\":[]}"
+ 20:01:12 up 36 days,  7:15,  1 user,  load average: 1.61, 1.59, 1.70
+== MOBILE=1 tier 0: scene 13 alive + the bench at tier 0 (the mask held, the jet held)
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,tier:CAR => "{\"sc\":13,\"g\":\"bands\",\"tier\":0,\"sim\":[64,139],\"dye\":[256,554],\"errs\":[],\"bad\":[],\"frameN\":242,\"mids\":{\"pos\":0.55,\"curl\":32,\"mask\":null},\"snare\":{\"kind\":\"\",\"mom\":0,\"ink\":0,\"n\":0,\"side\":0}}"
+CARD.benchFluid(300,null,'bands').toFixed(3)+' bands default => "0.417 bands default"
+(CARD.fluid.K2.CURL_MASK=1,CARD.benchFluid(300,null,'bands') => "0.445 bands mask"
+(CARD.fluid.K2.CURL_MASK=0,CARD.MS.snareEvt=1,CARD.MS.snareA => "0.445 bands snare-every-step"
+(CARD.MS.snareEvt=0,CARD.benchFluid(300,null,'pool').toFixed => "0.440 pool"
+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),tier:CAR => "{\"errs\":[],\"bad\":[],\"tier\":0}"
+== build 20:01:17
+bundled 182 modules → dist/index.html (1775 KB)
+1825515
+== file:// 20:01:17
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":13,\"g\":\"bands\",\"on\":true,\"frameN\":302,\"errs\":[],\"bad\":[],\"n\":13}"
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":12,\"g\":\"pool\",\"on\":true,\"frameN\":303,\"errs\":[],\"bad\":[],\"n\":13}"
+VER = '0.36.0'
+== fade 20:01:29
+CARD.SC.forced=-1;CARD.goScene(13,false);CARD.SC.forced=13;J => "{\"cur\":12,\"next\":13,\"dur\":1.6003089469811436,\"g\":\"pool\",\"f0\":2}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\"}"
+CARD.goScene(0,false);JSON.stringify({cur:CARD.SC.cur,next:C => "{\"cur\":13,\"next\":0,\"g\":\"bands\"}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\",\"errs\":[],\"bad\":[],\"heard\":37.07}"
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+a grey 34.7 36.2 36.5 36.9 37.1 36.5 29.6 22.1 20.6 23.4 25.2 26.9 28.7 31.4 32.8 33.5 33.5 34.9 34.6 34.2 33.8 35.1
+a max step 7.49 /255 · §1.9 viol []
+b grey 34.1 33.8 33.6 34.7 34.6 34.4 34.1 35.7 35.3 35.0 34.7 36.7 36.4 36.0 35.7 36.8 36.4 36.1 35.7 37.1 36.6 36.2
+b max step 1.97 /255 · §1.9 viol []
+== all done 20:01:49
