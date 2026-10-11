@@ -1,0 +1,9077 @@
+# Decisions, the archive — §0 … §103 (2026-09-22 … 2026-10-08)
+
+**What this is.** The first 9 034 lines of `docs/DECISIONS.md`, split out on 2026-10-11 (§118, the lean-down) so the
+live log stays readable. Everything here happened: §0 is the extraction from cardioid3 / synapse2, §103 is the v0.34 tag
+("the navigator moves with the music"). The live log — `docs/DECISIONS.md` — starts at §104 (the fluid substrate) and
+carries a **"Standing rules (from §0–§103)"** block at the top: every rule in here that still binds, one line each,
+with its § pointer. Read that first; come here for the measurement behind it.
+
+Sources were read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, trusted), `cardioid4.html` (shape only),
+`~/Documents/TomaCoS/claude_scratch_sept_20_2026/synapse2.html`.
+
+**The section numbers are unchanged.** No tool parses this file (every `§N` in the code and in the harness is a comment
+pointing a reader here), so nothing was renumbered and nothing was rewritten. A `§N` cited anywhere in the repo for
+N ≤ 103 means a section of THIS file.
+
+**Scene ids in here are the OLD ones.** §118 archived the eight scenes the user never looked at and shifted the six kept
+ones down to fill the holes, so every id written before 2026-10-11 is pre-renumber:
+
+| old | scene | now |
+| --- | --- | --- |
+| 0 | NAV (v0.1–v0.33) then NAV2 from §102 | NAV2 is **2**; the v0.33 NAV is in `archive/scenes/nav/` |
+| 1 | DUST | **3** |
+| 2 | MANDALA | **5** |
+| 3 | TORUS2 (TORUS v1 until §37) | **4** |
+| 4 | DRUM (NAV's variant) | archived with NAV |
+| 5 | POLYTOPE | archived |
+| 6 | FEIGEN | archived |
+| 7 | TORUS v1 | archived |
+| 8 | NAV2 the clone (v0.13–§101) then the v0.33 control from §102 | archived |
+| 9 | MAXWELL | archived |
+| 10 | GIELIS | archived |
+| 11 | CHLADNI | archived |
+| 12 | FLUID (§106) | **0** |
+| 13 | FLUID2 (§116) | **1** |
+
+`archive/README.md` holds the same map from the other direction. When you quote an old id in new prose, write it the way
+the live docs do: "id 0 since §118 (12 at §106)".
+
+**How to cite this file.** `DECISIONS-ARCHIVE.md §52` (not `DECISIONS.md §52`) in anything written from 2026-10-11 on.
+Older references to `DECISIONS.md §N` with N ≤ 103 mean this file and were deliberately left alone — rewriting 11 000
+lines of cross-references to prove a filename would have been the opposite of a lean-down.
+
+---
+
+# Decisions — every deviation from cardioid3 / synapse2, and why
+
+Sources are read-only: `~/Documents/Kraftek/Cardioid/cardioid3.html` (v3, trusted), `cardioid4.html` (shape only),
+`~/Documents/TomaCoS/claude_scratch_sept_20_2026/synapse2.html`.
+
+## §0 Extraction (2026-09-22)
+
+- **Layout additions beyond the spec's target tree.** `assets/math/util.js` (TAU, clamp, mix, frac, wrap1, sstep, ema,
+  Spring, hsv — used by math, engine and scenes alike; scenes may import `math/*`), `assets/engine/state.js` (MS + XS,
+  so stages can import them without a cycle through features.js), `assets/engine/features-slow.js` (tempo, harmony,
+  section — features.js would have passed the 350-line cap), `assets/engine/engine.js` (the facade the spec calls
+  `engine`), `assets/core/loop.js` (the frame loop; `main.js` stays a 50-line boot).
+- **Effect contract is imperative, not declarative.** The spec sketched `{uniforms, glsl, params}`; the v3 chain needs
+  ping-pong (feedback), a side-chain with four targets and six passes (bloom) and a screen pass (composite). Effects
+  are `{name, order, init(ctx), run(io) → target|null}`; `io.aux` carries side-chains. Documented in CONTRACTS §3.
+- **Scene "variants"** replace v3's `base(id)` / `SC.drum` / `SC.drumT` special case. DRUM is `nav.variants[0]` with
+  id 4; the core keeps a generic `SC.vT`/`SC.vmix` (0.8 s ema, exactly v3's `SC.drum`) and passes `vmix` to `draw`.
+  `pickScene` skips entries whose score ≤ 0 (v3 skipped id 4 explicitly when `NAV.mode!=='INT'||!cycBase`; the drum
+  variant's `score` now returns 0 in that case).
+- **Home-scene slots** replace the director's reads of `NAV.mode/extBeat/landed`: `rt.home`, `rt.awayBeat`,
+  `rt.settledAt` (consumed by the director by zeroing it; NAV mirrors the zero into `N.landed` on its next update —
+  one frame later than v3's in-place reset, nothing reads it in between). `updateNav` receives
+  `{isLogical, drum}` instead of reading `SC` directly.
+- **Update order.** v3: updateNav → updateScenes → updateGroove. Eigenwobble: engine (music → stages → fix → groove) →
+  scene updates → director. GROOVE reads only MS; NAV and the director never read GROOVE in their updates, so the
+  values are identical (parity: max |diff| 0 over 24 s on every field including `groove.rot`).
+- **`MS.level` deleted** (declared and never read in v3). Synapse's `level` arrives in §2 as `lvl`.
+- **Runtime-created MS fields declared** with defaults in `state.js` (`highM buildPk liveT arcT surRaw repeat _susHi`)
+  so the schema is closed; parity reports them as "missing in v3" on the fake path because v3 never creates them there.
+- **Keys**: `1–9` force scene id 0–8 and `0` returns to auto, without the HUD being open (v3: only with HUD, `6` = auto).
+- **The one wall-clock term kept**: `LOOK.pal[3]` has a `sin(now·0.7)·(1−presence)` wobble — it only acts while there
+  is no music (that is the "muted audio visibly idles" behaviour), so it stays.
+- **The director writes `MS.seed.scene`** (look memory, v3 behaviour). It is the one core write into MS; declared in
+  `feats.js` under `seed`.
+- **Continuity monitor flags spikes, not speed.** Ported as-is, `monitor.js` flagged v3 itself: 50+ frames per minute
+  of 0.06–0.11 per-frame motion in EXT right after drops (the θ/log G springs are fast there). Those are smooth ramps.
+  The monitor now counts them in `MON.fast` and flags only spikes (`d > 0.06` and `d > 2.5·dPrev + 0.01`), which is
+  the invariant that matters (chart cuts). It watches `cPath` (the chart position before the beat-kick blend: the kick
+  is a declared jump-cut whose w=9 spring-back is fastest on its second frame) and carries the previous motion across
+  legal frames (a kick-rise frame must not reset the reference). Eigenwobble: 0 violations / 60 s over 4 drops.
+- **Parity clock.** `tools/parity.js` injects a deterministic 60 Hz rAF clock (`CLOCK=1` in cdp.js) into both pages.
+  It starts ticking at the page's first `requestAnimationFrame` call, because a module page registers its loop a few
+  real frames later than v3's sync script and the first `dt` would otherwise differ (found: 3-frame phase offset).
+- **Bench.** `CARD.bench(0,300)`, 1280×633, GPU=1: Eigenwobble 0.032–0.048 ms, v3 0.042–0.056 ms (one 0.7 outlier).
+  Same shader, same uniforms; the "within 5 %" criterion is below this bench's noise floor.
+- **Grid worker** lives in `math/mandel.js` as `startGridWorker()` (browser-only, called by NAV's `init`); the module
+  is still node-importable because nothing runs at import.
+- **Dropped from v3**: TUNNEL, TONGUES, LOEWNER, KLEIN scenes and their math (Maskit, Loewner), `VS_LN/FS_LN`, the
+  Maskit PiP, `test_maskit.js`, `test_klein_de.js`. The rotator (`ROT`) went with TONGUES.
+
+## §2 Merged music engine (2026-09-22)
+
+- **One stage, not many.** Synapse's Analyzer is ported whole (`engine/synapse/{dsp,analyzer,anatomy,structure,tap}.js`,
+  reformatted only) and grafted as a single additive stage `features-synapse.js` that copies its `A` object into `MS`
+  under non-colliding names. Splitting it into per-concept stages would have meant re-plumbing its shared state (ring,
+  hop clock, beat memory) for no gain; the *declared-fields* rule is what keeps it additive.
+- **Canonical = v3** for `bpm beat beatPhase beatCount regularity dropEvt dropEnv dropStrength sectionId identifyEvt
+  chroma interval tension`. Synapse's rivals get their own names: `bpmSyn beatSyn` (tempo/clock), `sectionAlt
+  sectionReturn boundaryEvt` (23-dim beat-feature clustering vs v3's 17-dim `identifySection`), `dropConf
+  dropExpectedIn fakeoutEvt` (anticipation; the detonation itself stays v3's `dropEvt`). Synapse's own `drop` impulse
+  and `tension` are not exposed (scenes use `dropEnv`/`tension`). `level` → `lvl`. Its `bass/mid/high` fast bands are
+  not exposed either (v3's cover the same range with a slower attack); `bassS/midS/highS/sub` are.
+- **Which section detector scenes should prefer:** `sectionId` (v3) for *identity* in v0.1 — it was what the director's
+  look memory was keyed on and what the fake timeline drives; `boundaryEvt`/`sectionReturn` (synapse) for *timing* — its
+  boundaries are grid-snapped and confirmed against the whole section, so they land on bar lines. **v0.2 §10:** the
+  director's memory is keyed on `sectionAlt`; `sectionId` remains the seed key (palette offsets, score noise). `novelty` is the
+  early warning, `foote` the careful one.
+- **dnb tempo.** `#test&fake=0&demo=dnb`: `bpmSyn` 173.9–175.1 (inside 174±1), `key` 5 (F minor) with `keyConf` >0.93
+  from 9 s on. v3's canonical `bpm` reads 172.4 (its autocorrelation runs on a 100 Hz envelope: lag 34.8 vs the true
+  34.48; 1.6 BPM off) and halves to 87.7 in the breakdown at 22 s (no kick → the 124-centred prior wins). Parity
+  forbade touching it in v0.1; scenes read `bpmSyn` when `beatConf > 0.5`. **Superseded by §9 (v0.2):** `bpm` is now
+  within ±1 on every style and octave-stable; `bpmSyn` stays as the rival only.
+- **house grid.** `gridTrust` > 0.9 within 1.5 s; `barPos`/`phrasePos` are continuous from the first beat; `phraseConf`
+  > 0.9 two bars after the first section change (bar 12 → 14) and `barConf` > 0.8 by bar 13. Synapse votes phrase
+  lines with *changes*, so confidence needs one; positions do not.
+- **Engine cost.** `ENGINE.ms` now includes the worklet port handler's hop work (`extraMs`, drained each frame):
+  0.77–1.0 ms on `GPU=1` (2×FFT per 10 ms hop + an 8192 FFT every 8 hops), fake path 0.17 ms. Budget 1.5 ms holds.
+- **Textures.** The engine exposes arrays (`state.js` `TEX`); `core/gl.js` owns three R8 textures and re-uploads when
+  `hop` changes (whole 32 KB `hist` ring per hop; a row-only upload is a v0.2 micro-optimisation). The fake timeline
+  synthesises a three-hump spectrum and its own waveform so DUST/MANDALA react headlessly.
+- **Mood palette** (`LOOK.mood`) is synapse's director palette (lines 1510–1521) with `A.drop → dropEnv`,
+  `A.intensity → intensity` (v3's), `A.kick → kick`; the hue kick on a drop uses a seed-derived offset instead of
+  `Math.random()` so `#test` stays deterministic.
+- **`&demo=<style>`** selects `sources/demo-synapse.js` (house · halftime · dnb · ambient · fakeout · aba · mix); no
+  `&demo` keeps v3's synth so `fake=0` parity holds (re-verified: bpm 126.1 vs 126.2, arcs identical, drops 4.09/19.34
+  vs 4.08/19.33).
+
+## §3 DUST and MANDALA (2026-09-22, by workers from the contract only)
+
+- **Both scenes were written by workers given only CONTRACTS/HARNESS/ENGINE + the named synapse line ranges**, in
+  isolated worktrees on their own server ports, and accepted on screenshots (`docs/workers/{dust,mandala}.md`). Neither
+  opened the core. Friction from both went back into the docs the same day (GL state on entry, target not pre-cleared,
+  `feats` includes `score()` reads, no `Math.random()`, HEAD redeclaration, reversed `smoothstep` in the lifted source,
+  `check.js` as the legal idiom reference, texture units, bench resolution).
+- **DUST deviations from synapse's swarm:** no director camera — a gentle orbit (yaw `0.35·GROOVE.rot + 0.05·flow`,
+  pitch `0.3·sin(0.03·flow)`) at distance 4.4 (synapse's framing at 55° fov; the brief's 3.2 overflowed the frame);
+  the source's second `yz` cloud rotation dropped (it fought the camera pitch); the Hopf-fibre line overlay dropped
+  (broken depth, §4 does Hopf properly); drop/kick detected as rising edges of `dropEnv`/`kick`; reform order from a
+  hash of a counter instead of `Math.random()`; trails declared as `post.fb.decay 0.95`, never faked in-shader.
+  Exposure on (`post.exposure.on`). Look memory: the formation pair `[formA, formB, formT]`.
+- **MANDALA deviations:** `gl_FragDepth` line dropped (colour-only target); `camPix()` ignored (as in synapse);
+  `smoothstep(1.25,.2,r0)` rewritten as `1.-smoothstep(.2,1.25,r0)`; iterations `7 + int(q·3+.5)` from `Q.q`;
+  fold epoch every **64** kicks (spec) where synapse used 32; kaleido damped to 0.6 (`post.kaleido`), trails 0.6.
+  Look memory: the 64-kick epoch (the seed part of N returns with the section by itself).
+- **Crossfade between a POINTS scene and a fragment scene works as-is** (`accept/v0.1/xfade-nav-dust-*.jpg`): DUST
+  clears colour only (no depth attachment on the core's targets, depth test off), so `mixs` sees two clean colour
+  targets. v3's crossfade path had never fired (it collapsed 0/4 to one base); it fires now on every soft switch.
+- **Exposure** (`effects/exposure.js`, worker): synapse's `FS_LUM`/`FS_EXPO` as a 16×16 → 1×1 ping-pong, target
+  0.22 (the constant was outside the readable lines; chosen to sit at the tonemap's knee), τ 0.6 s up / 1.5 s down,
+  gain clamped [0.14, 2.2]. Off by default; DUST turns it on. DUST at frame 840: mean luminance 16.5 → 32.9.
+- **Director results:** 60 s `#test&fake=0` auto-picked NAV → MANDALA → DUST → NAV → MANDALA → NAV → MANDALA → DUST
+  (3 distinct scenes, 8 switches, all event-gated, ≥8 beats apart).
+
+## §4 TORUS (2026-09-22, worker from the contract + hopf.js)
+
+- **Design kept:** the Hopf fibration under stereographic projection, 12 pitch-class families = 12 base-point
+  latitudes, each family the complete torus over its latitude (every ring a genuine fibre, a Villarceau circle), the
+  (p,q) torus knot from `interval` through NAV's bulb table, Hopf flow from the beat, SU(2) tumble from GROOVE, pole
+  offset from tension, collapse-and-bloom on the drop. `math/hopf.js` is the reference (`test_hopf.js`: circles to
+  2e-12, on-torus to 2e-13, fibres never meet, (1,1) knot = fibre); the GLSL port matches it to 6e-16.
+- **Spec numbers corrected by the geometry:** the tumble amplitude is bounded (`0.18·sin(GROOVE.rot)`) and the pole
+  offset capped (`0.6·tension`) because both rotations sweep the projection pole (the point sent to infinity) through
+  the family latitudes; a longitude *band* per family was replaced by the full latitude circle; the bass pulse acts on
+  θ, not on a radial scale about a centre circle that does not exist once the family is tumbled; camera tracks the
+  nest's centroid.
+- **`#test` chroma gap:** v3's fake timeline never fills `chroma`; parity forbids changing that. TORUS blends in the
+  chroma implied by `harmAngle` (cos² on the circle of fifths) while `Σchroma < 0.5`, continuously, so it has
+  something to show headlessly and uses the real vector verbatim with audio. v0.2: give `fake.js` a chroma of its own
+  as a *new* field? No — `chroma` is v3's; the honest fix is a parity-tolerance entry for the fake path.
+- **Not distinct enough yet as points:** at tier 1–2 the rings read as dotted threads and the scene is the dimmest of
+  the four. The line renderer (NEXT-SESSION-PROMPT #1) is the upgrade: strokes along fibres with depth.
+
+## §5 Director (2026-09-22)
+
+- **Look memory (synapse idea a) implemented** as a generic slot: `scene.look = {get, set}`; the director snapshots on
+  `sectionEvt` into the outgoing section's `seed.looks` (v3 already keeps one seed object per remembered section, so
+  the looks ride along with it) and restores on `identifyEvt && repeat`. Second director write into `MS.seed`
+  (documented with `seed.scene`). The fake timeline's sections repeat every 24 s, so `#test` exercises it.
+- **Beat-quantised actions (synapse idea b) — done in v0.2, see §10.** Soft scene switches wait for the bar line while
+  `gridTrust > 0.5` (formation flips inside scenes are still the scenes' own business).
+- **aba look-memory run (190 s, `&demo=aba`):** the mechanism works — the one recognised return (`identifyEvt` with
+  `repeat` at 188 s) restored the remembered scene (DRUM, id 4) and the DUST/MANDALA looks `{dust:[0,1,1], mandala:10}`
+  stored with that section's seed. But v3's 17-dim `identifySection` merged the synth's A and B sections into one id
+  for most of the run (10 identify events, 9 of them "section 2"): the fingerprint (chroma·2 + 3 bands + onsetRate +
+  regularity, ema 3 s, cosine > 0.965) does not separate them. Synapse's 23-dim `sectionAlt` **does** separate them: on the same synth it reads 2/3/2/3/2/3 with
+  `sectionReturn = 1` on every return from 50 s on (one id per ~24 s section), while v3 stayed on id 2 for 110 s.
+  Verdict for scenes: `sectionAlt`/`sectionReturn`/`boundaryEvt` for structure, `sectionId` only because the director's
+  look memory and the fake timeline are keyed on it. v0.2: look memory is keyed on `sectionAlt` (§10).
+- **Scores live in the scenes** (contract), not in `pickScene`; the director keeps v3's precedence. Per-scene bids:
+  NAV `0.5 + build` (home) · DRUM `0.85 clarity + 0.3 (1−eM) + 0.1` when interior with a cycle · DUST
+  `0.3 + 0.5 punchy + 0.2 regularity` · MANDALA `0.25 + 0.55 regularity + 0.2 min(1, onsetRate/6)` · TORUS
+  `0.25 + 0.45 clarity + 0.3 regularity`; DUST/MANDALA/TORUS bid 0 during builds (home parks there anyway).
+- **Bundle** (`tools/bundle.js`): a classic-script IIFE with a module table, not an import map of `data:` URLs —
+  relative specifiers cannot resolve against `data:` bases, so the map would have needed every import rewritten anyway,
+  and the IIFE is what works from `file://` with zero fuss. 35 modules → 194 KB.
+
+## §7 Line renderer (v0.2, 2026-09-22)
+
+- **Instanced quads + capsule SDF, not `gl.LINES`.** `LINES` is 1 px, aliased, and ANGLE-GL ignores `lineWidth`. One
+  quad per segment (TRIANGLE_STRIP × 4, instanced) extended by a half width + 1 px at both ends, with the fragment shader
+  keeping only the capsule around the segment (screen-space distance from `gl_FragCoord` to the segment, `flat`
+  varyings carry the endpoints). Round caps come free and consecutive segments of a polyline overlap only inside the
+  cap, so joins are seamless; with additive blending the overlap is a sub-pixel brightening at each join, accepted.
+- **Two entry points, one GLSL.** Path A (buffer of 12-float segments, built-in program, `uMVP`) for CPU-generated
+  edges (the polytope scene); path B (`ctx.lines.VS`/`.FS` chunks included by a scene's own raw program, segments from
+  `gl_InstanceID`, no buffer) for analytic curves (TORUS's fibres). The chunk reuses HEAD's `uRes` name so `ctx.use`
+  fills it — a raw program that declares `uRes` already gets it (TORUS's `uRes2` was unnecessary).
+- **Depth.** The scene targets `RT.a`/`RT.b` now carry a `DEPTH_COMPONENT24` renderbuffer (`mkTarget(w, h, rgba8,
+  depth)`), and `renderScene` clears depth to 1 before every `draw()` (colour still not cleared, as the contract says).
+  `RT.m` (crossfade) and effect targets have none. NAV/DUST/MANDALA/TORUS unchanged: depth test stays off unless a
+  scene enables it. Parity fake: 0 diff after the change. Sub-pixel widths dim instead of thinning so a distant
+  hairline keeps its energy (a 0.3 px stroke at 30 % instead of a 1 px stroke flickering in and out).
+- **Harness.** `CARD.ctx` exposes the scene ctx for `tools/lines-smoke.js` (11 read-pixel checks on a 64×64 RGBA8
+  depth target: near-over-far in both draw orders, no-depth = last wins, capsule edge at hw and hw + feather, path B
+  compiles and draws). Green on ANGLE-GL and SwiftShader.
+- **TORUS as strokes (worker, `docs/workers/torus-lines.md`, commit 62aa785):** path B, 144 rings × [48, 72, 108, 160]
+  segments by tier (ring count fixed: `cuts: 'continuous'`), knot `min(1600, seg·max(2, p+q))`. **`depth: true` +
+  `blend: 'over'` won the A/B** (`accept/v0.2/torusl-ab-*.jpg`): additive strokes of opaque width saturate to a white
+  blob at the drop and merge the nest into one glow; 'over' keeps every stroke separate and an edge-on torus hides the
+  rings behind it, which is true in R³ (the fibres are disjoint). It also makes draw order irrelevant. Bench unchanged
+  from POINTS (0.02–0.04 ms, timer floor). Two rules came out of it and are now in §1.12: alpha is coverage (a
+  semi-transparent polyline beads at every joint under 'over'), and invisible fragments must `discard` or they write
+  depth. The built-in path-A program got the same `discard`. Width: `2.6·(h/720)·(1+0.6·bass)·camDist / viewZ` px.
+
+## §8 POLYTOPE (v0.2, 2026-09-22, worker from the contract + brief, `docs/workers/polytope.md`)
+
+- **Scene id 5**, `ctx.lines` path A: the regular 4-polytopes (tesseract 16/32, 24-cell 24/96, 600-cell 120/720,
+  120-cell 600/1200 vertices/edges) built from their coordinates with nearest-neighbour edges, unit-normalised onto S³,
+  double-rotated (xy, zw, + xw) by `flowBass/flowMid/flowHigh`, edges subdivided **and renormalised onto S³** — the
+  stereographic map is a central projection, so a straight 4-D chord projects to a straight line; only samples on the
+  sphere bend into the great-circle arcs the picture is about (synapse's `poly4` did the same on its line 1149+, which
+  the brief's range omitted; the worker derived it). Segments fade through alpha as they approach the pole
+  (v0.2's `den > 0.16` gate, `(den − 0.16)·3.5` ramp — **superseded** by the pole worker: `GATE` 0.24 with the ramp reaching 1 at 0.4457, `poly4.js`; two workers copied the old numbers from here before v0.9 corrected this line) and over view depth 0.35→1.25 near the camera (no pop at the near
+  plane, where `ctx.lines` drops `w ≤ 0` segments whole).
+- **Cast by section seed** (`floor(seed.a·3)`: tesseract ⊂ 24-cell · 600-cell · 24-cell ⊂ 600/120-cell), re-cast only
+  on `sectionEvt` with a one-second cross-fade of both casts; look memory = the cast index. Subdivisions per tier
+  `[3, 4, 6, 8]` (600/120-cell `[2, 3, 4, 5]`), peak 6.5 k segments, cap 16 k; bench 0.07–0.52 ms.
+- **Deviations from the brief:** gain ×1.8 (the brief's `0.75·(0.35+lvl)` peaked at 0.37; synapse carried a 0.45
+  floor and a 1.5 "star" factor); `presence` enters as `0.15 + 0.85·presence` so muted audio idles visibly (§0) instead
+  of going black; width is 2.2 px at the orbit centre (× eye distance ÷ view depth). Deterministic: frame-360 shots
+  byte-identical (`md5 dfdeba3b…`), no `Math.random()` (jitter from a hash of `seed.a` and a counter).
+- **Polish for later:** edges crossing near the pole leave long straight streaks off-frame at t6 (`accept/v0.2/
+  poly-t6.jpg`); a tighter pole gate at low `den`, or fading by projected segment length, would calm them.
+
+## §9 Tempo refinement (v0.2, 2026-09-23) — `engine/tempo.js` replaces cardioid3's `tempoEstimate`
+
+- **What changed and why.** v3's estimator autocorrelated the 100 Hz onset envelope over lags 30–102, picked the
+  integer peak under a 124-centred prior with a 3-point parabola, and switched after three agreeing votes. Measured
+  on the demo styles (traces in `accept/v0.2/tempo-*-before.txt`) it was 1.7 BPM low on dnb (lag grid), halved to
+  87.6 inside the dnb *groove* (the 2-beat lag wins once the ¾ hats enter), locked 116 (the 1.5-beat lag) in builds,
+  never read halftime (75 → 95 → 70 → 147), drifted to 133 on fakeout and 129 on aba, and wandered 114–151 on
+  beatless ambient with `regularity` 0.8. Same envelope, same window, same PLL; the estimator is new:
+  1. **ACF over lags 8–410** (32nd notes at 200 BPM up to two bars) — the extra lags are what the comb, the
+     refinement and the gates read. 396 lags × ≤ 792 products every 0.5 s.
+  2. **Harmonic comb on a 0.25-sample grid**: `comb(l) = acf(l) + 0.6·acf(2l) + 0.3·acf(4l)` (linear-interpolated),
+     times v3's prior *re-centred on 130 BPM* (σ 0.55 octaves, strong form). Not synapse's gentle `0.55 + 0.45·pr`
+     and no sub-harmonic term: on v3's bass-weighted envelope every beat multiple of dnb reads ≈ 0.45 and halftime's
+     1-beat lag is a quarter of its 2-beat lag (measured ACF at 14 s: dnb 34: .47 68: .50 102: .51 137: .41; halftime
+     42: .11 84: .46 169: .40), so only the prior separates 174 from 87 and 140 from 70 — and 124 is the geometric
+     mean of 87 and 176, which is why v3's centre could never decide dnb. A sub-harmonic term rewards the slower level
+     whenever the beat is strong, so it is out.
+  3. **Sub-lag precision from the harmonics.** The parabolic vertex of the ACF peak near k·P (k = 1, 2, 4) estimates
+     the period with k× the precision of the fundamental; the estimates are averaged with weight k·height (a harmonic
+     below 0.3 of the fundamental's height, or more than 0.75 samples off, is skipped). At 174 BPM the k=1 parabola
+     lands ±0.3 samples (±1.5 BPM); the k=4 vertex at lag 137.9 lands ±0.08 (±0.4 BPM). Linear interpolation of the
+     envelope at fractional lags (the prompt's option a) is pointless: it is the same as interpolating the ACF, whose
+     piecewise-linear maximum is always at an integer.
+  4. **Evidence gates.** `regularity` and every tempo update read the *family* evidence `y1 = max(acf(P), acf(2P),
+     acf(4P))` (halftime's beat lives at 2P; with `acf(P)` alone halftime read `regularity` 0.15) scaled by the grid
+     contrast `best comb / mean comb` (7–22 on a beat, 2–3 on pads → `sstep(2, 5)` → `regularity` ≈ 0 on ambient,
+     which is the semantic v3 meant and never delivered: it read 0.8 there). Tracking and switching need
+     `contrast > 4` and `y1 > 0.15` (white noise over 800 samples peaks near 0.1). An unrelated switch also has to
+     beat the current tempo's own comb score by **25 %** (synapse's rule): a 16th/32nd-note build lights every lag
+     equally and its comb winner — three or six grid steps, 171 at 128 or 116 at 174 — beats the beat by 2–10 %, so
+     the old tempo holds through it. A sub-multiple gate ("the family must beat acf(P/2), acf(P/4) by 30 %") was
+     tried first and rejected: house's off-beat bassline makes its 8th-note lag as strong as the beat, so the gate
+     blocked house's own tracking (lock took 10 s) while the build's 3-step winner sailed through (its P/2 falls
+     between the grid's peaks).
+  5. **Relation-aware switching.** Within 6 %: track (ema 0.3). Otherwise the candidate votes (5 % agreement) and
+     needs: unrelated → 3 votes (2 once the current lag has collapsed below half the candidate's height); a metrical
+     relative (½, 2, ¼, 4, ⅓, 3, ⅔, 3/2 — **not 4/3**: 128 → 174 is one and must switch fast) → refused while the
+     current lag is alive (the current tempo explains it), 16 votes (8 s, the whole window) for a slower one once it
+     has collapsed, 4 for a faster one; and a tempo that has seen 16 estimates of solid evidence (`y1 > 0.3`)
+     without being confirmed — and whose own lag is dead; a tempo whose lag is alive explains its relatives and does
+     not age — lets anything through with 3 (a real change to a related tempo takes ≤ 8 s).
+  6. **High-pass and loudness normalisation** of the window (1 s running mean removed, 2 s running RMS divided out,
+     warm-started at the window's mean power so a silent start is not amplified): a build's rising ramp or a pad swell
+     is otherwise a trend whose ACF decays with lag, which is what tipped the build's 3-step winner over the beat. The
+     silence gate stays on the raw energy. **Recency taper** (oldest samples at half weight) so a cut drains from the window a little faster; **the ring is
+     filled from the raw rAF clock** (`features.js`: `min(now − envNow, 0.5)` instead of the clamped `dt`): a stalled
+     headless frame used to shrink the ring's seconds and read the tempo *high* (fakeout 130, halftime 141–147 in
+     parallel runs). Both only feed the tempo ring and the comb-phase target.
+- **Before / after per style** (`GPU=1 tools/tempo-trace.sh`, 50 s, `bpm` at 1 Hz; steady range, then events):
+
+  | style (true) | before (v3) | after |
+  |---|---|---|
+  | house 128 | 128.0–128.4 | 128.0–128.3 from 9 s; lock 1 s; hush 128.0 |
+  | halftime 140 | 75.3 → 95.0 → 70.5 → 95 → 145–147.8 (never within 1) | 139.7–140.4; lock 3 s; `regularity` 0.5–1.0 |
+  | dnb 174 | 172.3; **87.6** 15–27 s; 173; **88** 32–34 s; **116** 42–50 s | 173.0–174.0 (one 172.8 at the breakdown's floor); lock 2 s; build 173.6–173.9; `bpmSyn` is the one that wanders (168–180) in the breakdown now |
+  | fakeout 128 | 128.2–129.9, **131–133.5** from 39 s | 127.9–128.2 through the build, the fake-out hush and the return |
+  | aba 124 | 124.3–129.6 (B section 128.5) | 124.0–124.2 (B section 124.1) |
+  | ambient — | 114–151 wandering, `regularity` 0.6–0.96 | **124.0 constant**, `regularity` ≤ 0.21 |
+  | mix (360 s) | 128 → 171.5 (2 s after dnb) → **87.5** at 144 s; → **116** → 139 (5 s); halftime 143 → 133 → 75 → 70 → 92; aba in 3 s | 128.1 → 172.1 (1.5 s after dnb; 173.8 through both dnb breakdowns and builds) → 138.3 (1.5 s after halftime, 140.0 by 7 s) → 124.1 (2.5 s after the direct cut); no wrong vote in 360 s |
+
+  Earlier iterations of this phase (recorded because each was measured): a plain comb + gentle prior locked dnb at
+  87/116; the strong 130-centred prior fixed that and halftime; the family evidence fixed halftime's `regularity`;
+  the raw-clock ring fill removed a +1–7 BPM headless bias; the high-pass alone did not stop the build-end 4/3 vote
+  (fakeout 171 for 12 s, dnb 116 after its build); the sub-multiple gate blocked house instead; the 25 % margin over
+  the current tempo's score plus loudness normalisation is what holds. The synth uses `Math.random()`: judge on two
+  runs, and never with more than two Chrome instances at once (HARNESS "Tempo traces").
+- **Unit test** `tools/test_tempo.js`: a 60 Hz frame clock with ±1 ms jitter, one flux value per frame (each hit a
+  2-frame triangle, amplitudes ±30 %, noise floor 0.05), the ring filled exactly as `features.js` does. Patterns are the
+  synth's; dnb is calibrated to the measured ACF (beat multiples ≈ 0.45, 1.5/2.5-beat lags ≈ 0.17 — the first model,
+  with the synth's nominal kick/hat amplitudes, read 116 like v3 did; the bass-weighted flux is what makes dnb's
+  beat level ambiguous). Reads 120/128/140/174 within ±0.5 from 10 s, holds through a 6 s gap, holds 124 on pads
+  with `regularity` < 0.3, picks 174 up 1 s after a silence and 5 s after a direct cut from 128. In `npm test` and
+  `accept.sh`.
+- **Parity.** `parity.js fake` is unchanged at **0 diff**: the fake path writes `bpm = 124` itself and never runs the
+  estimator (`ENGINE.frame` skips `updateMusic` under `fakeOn`), so no tolerance was added. `parity.js real` compared
+  `bpm` to v3's within 1; on v3's 126 BPM synth v3 reads 126.0–126.2 and the new estimator 126.2, so the criterion
+  is now "both within 1 of 126" with the numbers printed (sweeps: ew 126.20–126.21, v3 125.80–126.00). Arcs and drop times still match (the drop detector reads `bassFast`/energy; `bpm`
+  enters only `dropEnv`'s decay and the crossfade duration).
+- **Cost.** `ENGINE.ms` (`GPU=1`, dnb, 25 s): back to back on the same machine state, single Chrome, three runs each —
+  new 1.65 / 1.73 / 1.77, old 1.83 / 1.85 / 1.90 (the machine was loaded by then; earlier the same day, idle, the same
+  pages read old 0.74–0.91 and new 0.67–0.85 in the trace runs). The new estimator is not the more expensive one: the
+  ACF is 5.4× v3's products but runs once per 0.5 s (≈0.25 ms per call), which the per-frame EMA barely sees. Budget
+  1.5 ms holds on an idle machine; the absolute number is machine load, not the estimator.
+- **Semantics kept:** `beat`, `beatCount`, `beatPhase` (comb PLL, its gain now from the family evidence), `regularity`
+  (steadier meaning: 0 on pads, unchanged on beats). `bpmSyn` stays the rival; ENGINE.md no longer recommends it.
+- **Not done / open:** a 3:2 tempo change with the old lag still alive takes up to 8 s; the two-vote fast path only
+  fires once the old lag has collapsed. A tempo below 59 or above 200 BPM is read at an octave (LMIN/LMAX unchanged).
+
+## §10 Director on synapse's structure (v0.2, 2026-09-23) — look memory on `sectionAlt`, soft switches on the bar line
+
+- **A. Look memory is keyed on synapse's `sectionAlt`.** `SC.mem[alt] = {scene, looks}` is filed when synapse declares
+  a boundary (`boundaryEvt`) under the *outgoing* id (`SC.prevAlt`, last frame's `sectionAlt`) with the scene on
+  screen — or the one already decided and held for the bar line (B) — and every scene's `look.get()`. It is read when
+  synapse identifies a return: `sectionAlt` changes with `sectionReturn = 1`. Synapse identifies 4–8 beats *after* the
+  boundary (`structure.js identify()`: ≥ 4 beat-frames for a return, ≥ 8 for a new section), exactly the shape of the
+  fake timeline's 2.2 s `identifyAt`, so `SC.altOpen` closes at the boundary and reopens when the id lands: nothing
+  is filed or looked up in the gap (the stale id belongs to the section that just ended). Before synapse has identified
+  anything (`sectionAlt < 0`) v3's seed still carries the memory (`sectionEvt` saves, `identifyEvt && repeat`
+  restores, `seed.scene` lookup) — so the real start path and a page without the worklet behave as in v0.1.
+  `S.seed.scene` is still written on every event-branch switch (declared; the fake path keys coincide).
+  - *The filed scene is the one the section ended on*, not the one last chosen in it (the prompt left this open). A
+    section that never switched (v3's `seed.scene` stays −1 → `pickScene`) or whose last visit ended in a park still
+    gets a definite scene; on the fake timeline the two readings coincide in every section (measured: identical scene
+    sequence, below).
+  - *The return trigger is sticky* (`SC.due`): v3's `surpriseEvt` fires a hard cut at nearly every synth section change
+    (aba: 13 in 190 s), ~2 s before synapse identifies the return, and the 8-beat spacing then swallowed the restore
+    (first after-run, kept as `director-aba-aonly.txt` — A alone, hold off: 7 restores of the looks, 0 switches to the
+    remembered scene, the section's scene only came back with the next phrase/settled trigger). The owed switch stays a trigger
+    until the precedence gates open (precedence itself unchanged), and is cleared at the next boundary.
+  - **Measured, `&demo=aba` 190 s** (`accept/v0.2/director-aba-{before,after}.txt`, `tools/director-stats.js`): synapse
+    recognises 7 returns from 50 s on (ids alternate A/B every ~24 s; v3's `sectionId` sits on 2–3 for the whole run).
+    Before: 0 restores. After: **7 restores of 7**, 7 `return`-triggered switches, scene sequence A/B-periodic
+    (`… 2 1! 4 2! 1 4! 2 1! 4 2! 1 …`: the hard cut at the boundary, then the section's own scene back on the bar line).
+    house 120 s: 4 returns → 4 restores. mix 360 s: 11 returns → 11 restores (8–11 per run; the synth is random).
+    The `#test` fake timeline: 11 returns in 72 s → 11 restores (0 before — see the engine fix below), scene sequence
+    identical to v3's.
+- **B. Soft switches land on the bar line.** An event-branch decision (`identifyEvt`, return, phrase, settled) with
+  `gridTrust > 0.5` is held (`SC.pend`, one slot: a later decision replaces the target, the deadline stands) until
+  `barPos` wraps — for the phrase trigger until the bar line that opens a 16-beat phrase (`phrase16Pos < 4`; synapse
+  picks `o16` on the `o4` grid, so that is a bar line too — the first version waited for a `phrase16Pos` wrap alone
+  and landed at barPos 1.17 once when the anchor re-voted). Cap 4 beats (16 for phrase); a decision taken within 0.1
+  beat after a line fires at once; `gridTrust` falling to ≤ 0.5 while waiting fires at once; a drop, a surprise, a
+  forced scene, low presence or a build (home parking) cancel it. `SC.quantise = false` (harness `QOFF=1`) restores
+  the immediate switch. Hard cuts, parking and the crossfade are untouched; `pickScene` and `goScene` untouched.
+  - **Engine fix (a deviation from "nothing in the engine"):** the first after-run landed at barPos 0.21–0.27, not
+    < 0.1. `structure.js grid()` refreshes `A.barPos/phrasePos/phrase16Pos` every 16 hops = 160 ms (0.33 beat at 124),
+    while `A.beat` is per frame. `features-synapse.js` now derives the three positions per frame from `A.beat` and the
+    anchors `o4/o16/o32` (the way it already computed `S.bar`); the fields mean what `feats.js` says. MANDALA's fold
+    rotation (the other `barPos` reader) gets a smooth position instead of a 6 Hz staircase.
+  - **Measured landings** (`SWITCH@t -> id bar<pos> gt<trust> (held N beats, <trigger>)`, on the line = barPos < 0.1
+    or > 3.9): aba 8 of 8 on the line (held max 4.0, mean 1.7 beats); house 5 of 5 (max 3.3); mix 9 of 9 with
+    `gridTrust > 0.5` plus 2 immediate at `gridTrust` 0.10 (the ambient hand-over, by rule); fake 9 of 9 (max 3.8,
+    mean 1.6). Before: 1 of 8 (aba), 1 of 6 (house), 1 of 16 (mix), 1 of 12 (fake) — v3's triggers are on its own
+    beat count, ~2.8 beats off synapse's bar on aba. One more rule came out of the mix trace: a phrase hold (16-beat
+    cap) replaced by an identify decision used to inherit the 4-beat cap retroactively and fire mid-bar (141 s, barPos
+    1.03); the tightened cap now counts from the new decision, and a wrap must land at barPos < 0.5 (a grid re-vote in
+    the dnb hand-over can jump the position anywhere).
+- **Second engine fix, found by the fake trace:** `synapseStage` reset `boundaryEvt/fakeoutEvt/moodEvt` *before* its
+  "no analyzer" return, and the stage runs after `fake.update`, so on `#test` the fake mirror's `boundaryEvt` was
+  wiped every frame (nothing had consumed it before). The reset now follows the return. Parity unaffected (v3 has no
+  such fields).
+- **Parity decision.** `parity.js fake` forces `&scene=0`, so the director's soft-switch branch never runs there: A
+  and B cannot move it, and measured they do not — **0 diff over 72 fields with B on and with B off** (`QOFF=1`, added
+  to `parity.js` for exactly this check). No per-field allowance was needed or added. What the `#test` fake timeline
+  *does* change without `&scene=` is recorded instead: `director-fake-{before,after}.txt` — same 13-scene sequence,
+  the 9 event-branch switches moved onto bar lines by 0.01–1.85 s (≤ 3.8 beats), the 3 home parkings and the drop
+  cuts at the same frames. The `monitor 60 s` and the per-scene checks in `accept.sh` run with B on. `parity.js real`
+  (v3 synth): bpm / arcs / drops unchanged (the director does not feed back into `MS` except `seed.scene`).
+- **Harness.** `tools/test_director.js` (node, stub scenes, scripted MS at 120 BPM / 60 Hz: filing, restore + switch on
+  a synapse-only return, bar-line landing, the 4-beat cap on a stalled grid, grid loss, drop cancel, on-the-line
+  immediacy, `quantise` off, the owed switch after a hard cut, filing across a held switch) in `npm test` and
+  `accept.sh`. `tools/director-trace.sh` + `director-stats.js` (HARNESS "Director traces"). `scenes.js` 250 lines.
+- **Left open.** Synapse renumbers section ids when it merges a fresh section into a return or drops the oldest of 24;
+  `SC.mem` is not renumbered with it (a stale entry restores the wrong section's look once; the ids then settle). The
+  section-return trigger respects v3's 8-beat spacing, so after a surprise hard cut the restore lands 8–12 beats after
+  the cut, not at the identification.
+
+## §11 Transition slot + synapse's morph (v0.2, 2026-09-23) — `assets/transitions/`, worker `docs/workers/morph.md`
+
+- **The slot.** The crossfade pass left `core/scenes.js`: `addTransition(tr, ctx)` registers by name, `setTransition(name)`
+  picks the current one, and `drawScenes(sw, sh, io)` renders `a`, renders `b`, then hands the transition
+  `io = {a, b, m, out, w, h, sw, sh, uvS, MS, FX, GROOVE, LOOK, dt}` (CONTRACTS §5) with BLEND/DEPTH/SCISSOR off and
+  `out` (= `RT.m`, no depth) bound at `(sw, sh)`. The transition returns the target the chain starts from; `loop.js`
+  builds the `io` and honours `io.uvS = [1, 1]` (a transition that re-rendered the whole target) by starting the chain
+  at `(w, h)` — the §3 rule, unchanged in spirit. `SC.m`/`SC.dur`/`goScene`, the director, `visibility`, `postParams`
+  and `Q.scale · 0.8` are untouched: `m` is the director's clock and a transition only draws between its ends.
+  `scenes.js` 263 lines; no `core/transition.js` was needed.
+- **`mixs` as a transition is byte-identical.** The `MIXS` string and its four uploads moved verbatim to
+  `transitions/mixs.js`. Proof: the fake timeline's first fade (NAV → TORUS, `SWITCH@3.88`, 116 frames) at frame 290,
+  `m = 0.4994`, under `CLOCK=1 GPU=1`: **md5 `4ac523e9770e7d0625d46ed1f3e44769`** before the refactor
+  (`trans-before-f290.jpg`, taken twice — identical), after it (`trans-mixs-f290.jpg`) and from `dist/eigenwobble.html`.
+  Same `[cur, next, m]` triple. `accept.sh` re-takes the shot on every sweep and compares against the recorded md5.
+  Regression net around the moved pass: `parity.js fake` 0 diff / 72 fields, `test_director` and `lines-smoke` OK,
+  `director-fake-after.txt` identical to §10's to the line (the clock did not move), `parity.js real` unchanged
+  (bpm 126.2 vs v3 125.9, arcs identical, drops within 0.05 s), aba 190 s: 7 restores of 7, 7 of 7 soft switches on the
+  bar line, A/B-periodic scene sequence (§10 had 8 switches on one more `return`; the synth is random).
+- **`morph` (worker, opus, worktree, 12 min, from CONTRACTS §5 + brief + `mixs.js` + five synapse line ranges).**
+  Synapse's `FS_MORPH` with `POST_HEAD` replaced by HEAD, `gl_FragCoord.xy/uR → vUv`, every sample clamped into `[0,1]`
+  then scaled by `uUvS` (unclamped, the advected edge reads the stale border of a larger frame), `hash21`/`vnoise`
+  brought along in the file. Uniforms `uA uB uUvS uT = (t, MS.flow, MS.kick)`; `MS` reads `lvl kick flow`. One pass,
+  four texture reads, six `vnoise`. Deterministic: frame 290 md5 `4775571949db4941443c039930cba15c` across two runs in
+  the worktree and again on main.
+  - *The musical ease.* `t = max(m, ease)`, `ease = min(1, ease + dm·(1 + 0.18·lvl) + kick·dt·0.12)` with
+    `dm = max(0, m − mPrev)`, reset to `m` whenever `m` is not ≥ last frame's (a new fade, or a reversal — the core
+    swaps `a`/`b` and sets `1 − m`). At frame 290 `t = 0.589` for `m = 0.499`, `lvl = 0.5`; the fade's last frame
+    (`m = 0.9989`) already has `t = 1`. Synapse's push was the whole clock (`trans += dt·rate·(0.35 + 1.3·level) +
+    kick·dt·0.9`); here it is a shape on the director's clock, so the visible transition is complete when the core
+    drops `b` — the §5 invariant, verified in the trace (`t = 0.0106 → a` everywhere, `t = 1 → b` everywhere).
+  - *Deviation from "lifted verbatim": three front constants.* The brief asked for the front to be mid-screen at
+    `m ≈ 0.5` so the A/B on one frame means something. The worker showed that cannot be tuned through the ease:
+    synapse's front threshold is `n* = (1.05 − 1.5t)/0.9` against a noise field whose mean runs 0.75 (centre) → 0.43
+    (corner) at 16:9, so the front crosses the whole frame in `Δt ≈ 0.19` centred on `t ≈ 0.40` — at `t = 0.5`
+    (the minimum, since `t ≥ m`) the picture is ~95 % `b`, and the ease only pushes `t` up. Retuned, every term kept:
+    `c` aspect-corrected (a round front), the radial weight `.35 → .75`, the sweep `t·1.5 − 1.05 → t·2.1 − 1.65`, and
+    `min(length(c), .9)` bounding the radial term so `n ∈ [−0.1275, 1.55]` and `X(t=0) ≤ −0.255 < −0.15`,
+    `X(t=1) ≥ 0.335 > 0.15`: exactly `a` at `m → 0` and `b` at `m = 1` at any aspect ratio, no `step()` gate. The
+    front now leaves the centre at `t ≈ 0.3`, is mid-screen at `0.5`, clears the corners at `0.73`. The additive edge
+    stays at synapse's `.9`: measured 0.000 % pure-white pixels and ≤ 0.008 % single-channel clipping on the four shots.
+- **A/B verdict — `morph` is the default** (`main.js`; `mixs` is `&trans=mixs` away and stays the byte-exact
+  reference). `tools/accept/v0.2/montage-trans.jpg`: the f290 fade and three `goScene` pairs at `m = 0.499`
+  (NAV → MANDALA, DUST → TORUS, POLYTOPE → NAV; recipe in HARNESS "Transition"), `mixs` left, `morph` right. `mixs`
+  is a rotating, counter-zooming double exposure: both whole scenes over the whole frame, the incoming one ghosted
+  across the outgoing one (on NAV → MANDALA its zoomed chart texture stripes the borders). `morph` hands the frame to
+  the incoming scene as a region — TORUS owns the centre with NAV melting into teal bands outside the front, MANDALA
+  eats a hole with the bright serrated edge ring, NAV's filigree takes the middle band against POLYTOPE's arcs — both
+  scenes recognisable, no border, no white-out; the flow field drags the outgoing scene into filaments, which is the
+  synapse look. Cost against taste: the double exposure never lets either scene be read; the front does.
+- **Cost, measured** (`CARD.benchTransition(300)`, 1280×720 full resolution, GPU=1 headless, three runs):
+  `mixs` 0.55–0.78 ms · `morph` 1.34–1.54 ms per pass (≈ 2×), against NAV 2.7–2.9 ms and TORUS 2.2 ms for a scene
+  pass (`CARD.bench`). During a fade the pass runs at `0.8 · Q.scale` (≈ 0.36 of the area at `scale = .75`), so the
+  transition adds well under a millisecond to two scene passes — the budget holds.
+  - *Harness finding on the way:* the worker's first numbers were 0.016 ms for both and it flagged them as not
+    physical. `CARD.bench` and `benchTransition` synced with `readPixels(…, UNSIGNED_BYTE)` on RGBA16F targets, which
+    is INVALID_OPERATION (`getError` 1282; `IMPLEMENTATION_COLOR_READ_TYPE` is HALF_FLOAT) — rejected before it reached
+    the GPU, so **no bench before §11 was synced** (they measured submission time; the "quantises at ~1/24 ms" note
+    in the memory was this). Both now read FLOAT when `G.FLOAT`; `getError` is 0 after a bench. Earlier `bench` figures
+    in this file (§3/§4/§7/§8) are not render times.
+- **Harness.** `&trans=<name>` under `#test` (selection only; no branch in the pass), `CARD.TRANSITIONS`,
+  `CARD.benchTransition(n)`, `accept.sh` "== transition" (md5 check + the morph shot + `montage-trans.jpg`), `check.js`:
+  `assets/transitions/` gets the effects' import rule and the `'nav'` rule. `bundle.js` needed nothing (the folder is
+  reached from `main.js`): 49 modules, 286 KB.
+- **Worker friction (7, `docs/workers/morph.md`)** → CONTRACTS §5: no `feats`/`frameN` for a transition, who swaps on a
+  reversal, the aspect convention, the `'nav'` rule, `CARD.TRANSITIONS.<name>` as the handle; §1 sub-heads reordered.
+  The brief's real-path check waited 20 s for a fade that lands at ~23 s on house (fixed to 45 s). Temptations, neither
+  opened: `core/scenes.js` (to reach the transition object — solved with `ctx.log`, now `this.t`) and
+  `effects/composite.js` (to know the tone curve — solved by measuring the JPEGs). Its per-frame `ctx.log` line was
+  dropped on merge (116 lines per fade in `CARD.log`).
+- **Left open.** The morph's advection warps stroke scenes (TORUS's ribbons comb mid-fade) — synapse's look, but a
+  per-scene `post.morph.flow` multiplier would be the slot for a scene that wants a stiffer front. A reversed fade
+  resets the ease to `m` (a small jump of the front on an already jumping frame).
+- **Bundle finding (the "starts and fades from `dist/`" check).** `dist/eigenwobble.html` threw `RangeError` in the
+  synapse analyzer's `hopStep` on every frame after the first hop — on the real start path too, and on the pre-§11
+  bundle as well (179 uncaught exceptions in 3 s). `tools/bundle.js` rewrote `export const SPEC_W = 256, WAVE_W = 512,
+  HIST_H = 128;` (`engine/synapse/dsp.js`) with a regex that kept only the first declarator, so `HIST_H`/`WAVE_W` were
+  `undefined` in the bundle and the spectrogram ring was a zero-length array. The sweep's bundle line never saw it:
+  `CARD.ERRS` holds shader errors only, and the page still answers evals while its frame loop dies inside
+  `ENGINE.frame`. Fixed in `bundle.js` (every top-level declarator of a `const/let/var` export goes into the module
+  table); `accept.sh`'s real-path and bundle lines now count cdp's `[EXC]` lines (`FAIL N uncaught exceptions`) and
+  the bundle line waits 30 s and reports `hop` and whether a switch happened. Verified after the fix: bundle real path
+  45 s — 0 exceptions, hops advancing, switches; `test&fake=0` on http and on the bundle: the same phrase soft switch
+  at 26.8 s ran the morph to `t = 1`, the rest drop/surprise hard cuts, `ERRS []`; the bundle's f290 `mixs` md5 is
+  still `4ac523e9…`. The http page was never affected (native modules).
+
+## §12 The help view (v0.2, 2026-09-23) — `core/help.js`, the `help.feats` slot, orchestrator-written
+
+- **What is shown, and why these four parts.** `?` / `h` opens a DOM overlay (`Esc` closes; `d f m 0–9` keep working):
+  (A) the scene on screen — `tag`, the three depths of `help` (`math` collapsed), `cuts` in words, the scene's `hud()`
+  line as "developer readout", then one row per field in its `feats` with *name · ELI5 · what it drives here ·
+  formula · live value*, and, collapsed, the other fields the engine produces; (B) the director — logical / rendered
+  scenes and history, the crossfade (`SC.m`, `SC.dur`, the transition's name), a held switch (`SC.pend` with its
+  trigger and the line it waits for), the look memory (`SC.mem` keys → scenes, the current `sectionAlt`), the engine's
+  stages and `ENGINE.ms`, the effect chain; (C) the cast — every registered scene and variant with `tag` + three
+  depths, the current one marked; (D) the keys. A is the v4 idea ("what is driving what", live) with the row set
+  taken from the scene's `feats` instead of v4's mapping table; B is what a listener wonders when the picture changes
+  ("why did it switch?"); C is the contract's §0 promise made visible ("correct to someone who knows it, legible to
+  someone who doesn't"); D replaces the landing card's hint once the card is gone. v4's Mandelbrot map and SVG
+  diagrams were not lifted: they were one scene's story, and here every scene is a peer. The `d` HUD is untouched.
+- **`help.feats` is a scene slot, not a table in core.** `FEATS[k].drives` says what a field moves in general; the
+  per-scene half ("in DUST, `bassS` fattens the torus tube and dollies the camera in") is knowledge only the scene
+  has, so it lives next to its `feats` list (CONTRACTS §1.13) and a worker writing a scene writes both. A table in
+  `core/` keyed by scene name would be the special case §1.4 forbids and would rot silently; `check.js` now fails on a
+  `help.feats` key that is not in `feats` and warns on a `feats` entry without a line (the help shows the general
+  `drives` dimmed in that case, so the gap is visible on screen too), and fails on an empty `help` depth. The rule
+  imports the scene modules in node — they reach only `math/*` and their folder, and all five load without a DOM.
+  Lines written by reading each scene's `update`/`draw`/shaders (the orchestrator may open scenes): 27 + 13 + 17 + 16 +
+  16 = 89 clauses, one visual consequence each, 0 gaps.
+- **`feats` reality check, both sides.** NAV declared 38 fields; 11 of them (`harmAngle harmVel eMax regularity
+  surprisal surpriseEvt sectionId sectionEvt identifyEvt bpm bassFast`) are read nowhere in `nav/` — v3-era leftovers
+  from when NAV was the whole page and the director read through it. Trimmed to the 27 it reads (`high` stays: it is
+  `uBands.z` in the circular-trap highlight). Nothing rendered changes (the list is documentation the core validates,
+  never a switch); the top table *is* the list, so a stale entry would have been a lie on screen. On the engine side
+  `flowHigh` had `drives: '-'` while POLYTOPE reads it (now "the xw turn"), and `wave` said "nothing in NAV" (now: the
+  engine's wave texture, DUST's ribbon; no scene reads it from `MS`). Fields nothing reads keep `'-'` and the view says
+  "not used by any scene yet". Appendix A regenerated (107 fields).
+- **Cost: zero when hidden, by construction and by count.** `drawHelp` is called from `loop.js` right after `drawHUD`
+  (so it inherits the `document.hidden` early return) and its first line is `if (!HELP.on) return;`. Nothing is built
+  until the first open (the landing card does not pay for it). Open: the event fields are latched per frame (14
+  reads, no DOM) so a one-frame event is shown as "● just now" for half a second; the live cells and part B refresh
+  every 6th frame like the HUD; part A rebuilds only when `SC.logical` changes. `CARD.HELP.ticks`: **0** after 600
+  frames hidden, **100** after 600 frames open. `CARD.bench` back to back (HEAD then the phase, two runs each,
+  `test&trans=mixs` at frame 290, 1280×720): NAV 4.66 / 4.60 → 4.57 / 5.40 ms, TORUS 0.66 / 0.56 → 0.64 / 0.62,
+  DUST 0.47 / 0.35 → 0.42 / 0.42 — within the run-to-run noise (the bench never touches `help.js`; it measures
+  `renderScene`). The overlay itself is the compositor's business: `rgba(4,4,10,.82)` with a 2 px backdrop blur.
+- **Nothing the engine or the director decides changed — the checks chosen to prove exactly that.** The §11 frame:
+  `trans-mixs-f290` md5 **`4ac523e9770e7d0625d46ed1f3e44769`**, unchanged (help closed). The same frame with the help
+  open (`{key:'h'}` before the `until`): `[cur, next, m] = [0, 3, 0.4994]`, the same triple, and `__FRAME` advances
+  after the next `{wait}` (290 → 308) — the overlay dims, it does not stop. `parity.js fake` 0 diff (the sweep).
+  Coverage by eval, not by eye: `CARD.HELP.rows()` (read back from the DOM) has **107/107** non-internal keys, each
+  once, and `rows(true)` equals the scene's `feats` as a set on **all 6 registered ids** (`goScene(id, true)` then
+  `rows`). Real start path on `index.html` and `dist/eigenwobble.html` with the help opened and closed: `ERRS []`,
+  `nonFinite []`, `[EXC]` 0.
+- **One line in `core/scenes.js`** — `export const currentTransition = () => trans;` — a read-only getter for the
+  module-local current transition so part B can name it. The alternative (main.js and harness.js each remembering
+  the name they passed to `setTransition`) duplicates a fact the registry already owns. No behaviour touched.
+- **Harness.** `CARD.HELP` (`on`, `ticks`, `nTop`, `rows(topOnly)`), `accept.sh` "== help" (the two shots
+  `help-s0-f120` / `help-s3-f360`, the cast scrolled, `help fields N/N · top table = feats on 6/6 ids`, ticks
+  hidden/open, the real path with the help opened and closed and its `[EXC]` count; the bundle line now opens and
+  closes it too). `check.js` prints `scenes 5 (help.feats gaps 0)`. Shots in `tools/accept/v0.2/help-*.jpg`.
+- **Left open.** The formula column truncates with an ellipsis (the full text is the cell's tooltip); a click-to-expand
+  would suit touch. `wave`'s ELI5 still says "the last 2048 audio samples" while DUST samples the engine's 512-wide
+  texture — the texture, not `MS.wave`, is what a scene sees (ENGINE.md). A `help.feats` line for a *variant* (DRUM)
+  shares the parent's slot; a variant with its own reads would want its own.
+
+## §13 Row-only `hist` upload + `ctx.budget` (v0.2, 2026-09-23, orchestrator-written)
+
+- **The upload.** `uploadEngineTex` (core/gl.js) re-sent the whole 256×128 R8 spectrogram ring (32 KB) on every frame
+  in which the engine reported a new hop, although the analyzer writes exactly one row per hop
+  (`histTex.set(A.spec, histRow·256)`, `histRow = (histRow+1) % 128`; the fake timeline does the same per frame). Now
+  the number of hops since the last upload, `delta = T.hop − ETEX.hop`, is the number of rows to send: the last
+  `delta` rows ending at `T.row − 1`, as one `texSubImage2D` of `256×delta`, or two when they wrap the ring's top
+  (`rows(128 + start, −start)` + `rows(0, T.row)`), and the whole texture only on the first upload, when `delta ≥ 128`
+  (a hidden tab: rAF stops, the worklet does not) or when `ETEX.full` is set. No engine change: `TEX.row`/`TEX.hop`
+  were already the ring contract (ENGINE.md now says a stage must advance them together).
+- **Bytes over the bus, measured** (`ETEX.bytes`, real synth `test&fake=0`, ~95 hops/s, 60 fps): whole-texture path
+  24.08 MB in 1130 hops ≈ **2.0 MB/s**; row path 878 KB in 1134 hops ≈ **73 KB/s** — of which spec + wave (768 B per
+  frame, unchanged) are 46 KB/s and `hist` 24 KB/s (256 B per hop). `hist` alone: 32 KB/frame → 256 B/hop, 80× less.
+- **Proof.** (1) `tools/hist-check.js` reads the GPU texture back through a framebuffer (R8 is colour-renderable in
+  WebGL2; `readPixels` RGBA/UNSIGNED_BYTE, R channel) and compares all 32768 bytes with `ENGINE.tex.hist`: under
+  `CLOCK=1` **0 mismatch** at frames 100 and 400 (three wraps of the ring); on the real synth 0 mismatch at four
+  checks 3 s apart (hops 282 → 1134). The first real-synth run showed 251–256 mismatching bytes, always in row
+  `T.row` — the row the analyzer wrote *between* the frame's upload and the eval (the same count appeared with
+  `&histfull=1`, which uploads everything); inside a `requestAnimationFrame` callback, which runs in the frame's own
+  task batch, it is 0. HARNESS.md records the recipe. (2) `tools/scene-md5.sh`: every registered scene at frames 360
+  and 840 (`CLOCK=1 GPU=1`), ten shots, **md5-identical before and after** — nothing samples `hist` yet, so identical
+  is the only acceptable answer; FEIGEN (§15) is the first sampler and its `&histfull=1` equality is the proof that
+  the row path renders the same picture. (3) `parity.js fake` 0 diff / 72 fields; the §11 md5
+  `4ac523e9770e7d0625d46ed1f3e44769` unchanged at frame 290, `[0, 3, 0.4994]`.
+- **`&histfull=1`** (`#test`, `core/harness.js` → `ETEX.full`) keeps the v0.1 whole-texture path one hash param away so
+  the FEIGEN proof is an md5 equality between two runs, not an argument about the code.
+- **Budgets.** DUST's `TIERS = [20000, 45000, 90000, 150000]` was the only particle table but CONTRACTS §1.4 quoted it
+  as "the" budget for any POINTS scene to copy. It is core data now: `BUDGET = {points, segs}` in `core/quality.js`,
+  `budget(kind) = BUDGET[kind][tier()]`, on `ctx` as `ctx.budget`. `segs = [2500, 5000, 9000, 16384]` is the stroke
+  budget for CPU segment buffers (path A): 16384 is POLYTOPE's `CAP`, the lower tiers sized so a 2 k-segment overlay
+  (§14) fits at tier 0. DUST reads `ctx.budget('points')` — same numbers, same `tier()` thresholds, so its ten shots
+  are byte-identical (above) and `CARD.bench(1, 300)` before/after is inside the noise (three alternated runs,
+  medians 0.92 / 0.73 / 0.33 ms after vs 0.92 / 0.73 ms before; the count is the same number by construction).
+  **TORUS and POLYTOPE keep their tables** (`SEGT` segments per ring, `SUB/SUBB` subdivisions per edge): those are
+  geometry resolution, not counts — TORUS's ring count is fixed because its `cuts` is `'continuous'`, and POLYTOPE's
+  segment count is a product of cast × subdivision that no shared table expresses. §1.4/§1.6 say so.
+- **Harness additions:** `tools/scene-md5.sh <tag> [&extra]` (the before/after shot loop as a `diff`, reusable for any
+  core change and for §15's determinism check), `tools/hist-check.js`, `CARD.ctx.engineTex.bytes`. `check.js` 0 fail
+  / 0 warn after every edit.
+
+## §14 DUST's Hopf-fibre overlay (v0.2, 2026-09-23, worker from the brief, `docs/workers/dust-fibre.md`)
+
+- **What came back.** Synapse's swarm overlay (scene 4: `nl` latitude tori of `nF` Hopf fibres, `N` segments each,
+  through its `seg()` with additive glow and a depth test that never worked — dropped in v0.1, §3) as `ctx.lines`
+  path A inside `scenes/dust/` (`fibre.js` 92 lines: counts, `emit`, `fit`; `index.js` 181 → 225). The fibres come from
+  `math/hopf.js` (`fibre4` → `rotSU2` → `stereo`, the pole gate on `den = 1 − z₄` before projecting: emit when
+  `min(den) > 0.14`, brightness × `min(1, (min(den) − 0.14)·4)`, alpha 1 — coverage, §1.12), scaled by `S0·g` with
+  `g = (1 − 0.3·tension)(1 + 0.6·dropEnv + 0.08·kick)` and `S0 = 0.7` (0.9 swept out of frame at `dist` 4.4, 0.55 stopped
+  reading as rings), drawn after the points into the same target with `{ mvp: this.vp, blend: 'add' }` and no depth
+  (the points write none). Counts per tier from synapse's `q = [0.4, 0.7, 1, 1.4]`: 2×7×40 = 560 · 3×8×48 = 1152 ·
+  4×10×56 = 2240 · **4×12×66 = 3168** (the brief's "tier 3 = 2240" was tier 2; the worker sized `CAP` from the formulas
+  instead of the brief's `mk(2560)`, which would have silently lost 3 of 12 fibres per torus). Brightness per fibre
+  `0.3·(0.35 + lvl)·(0.35 + 1.3·b)·alive` with `b = [bassS, midS, highS][l % 3]` per torus (scenes have no spectrum
+  array; `chroma` skipped — zero on the fake timeline), palette coordinate `0.15 + 0.22·l + 0.6·f/nF` through DUST's
+  mood palette, width `1.5·(h/720)·dist/viewZ` px. `feats` + 3 (`flowBass`, `highS`, `alive` was there), `help.feats`
+  updated for every field the rings also move; `look`, `cuts: 'onset'`, `score`, `post`, id untouched.
+- **A/B.** `hooks.fibres(0|1)` (`&fibres=0`): the `CLOCK=1` f360/f840 shots with the overlay off are **byte-identical to
+  §13's DUST** (`e49cf54e…`, `7119a542…`) — the points path is untouched; with it on, identical across two runs
+  (`669aac71…`, `f26d50de…`). `tools/work/dustf-ab.jpg` / `accept/v0.2/s1-t6.jpg`, `s1-t14.jpg`: faint nested arcs
+  inside the sphere at t6, linked rings threading the pour at t14, the swarm still the subject, nothing like TORUS's
+  144-ring nest; 0.0000 % pure-white pixels on all four shots.
+- **Cost — the finding.** `CARD.bench(1, 400)`, interleaved on/off (an all-on-then-all-off sequence was destroyed by
+  load drift): tier 0 **0.87 / 0.70 ms**, tier 3 **2.72 / 1.35 ms**, i.e. **+1.37 ms for 3168 segments**; house at
+  tier 3 +1.12 ms. A node micro-bench puts `emit` at 0.02–0.11 ms, so ~0.4 µs per segment is `ctx.lines.set` + the
+  instanced draw. That is 10× the brief's "~0.1 ms" expectation, which came from POLYTOPE's §8 bench — a number the
+  §11 harness finding later showed was submission time, not render time (no bench before §11 synced). §1.12 now says
+  0.4 µs/segment and that 50 k is *not* fine. Accepted as is: DUST at tier 3 is 2.7 ms against NAV's 2.7–2.9. Polish
+  candidates: a smaller tier-3 count (`4×10×56` is visually the same picture), or a `stride` in `set` for static rings.
+- **Friction (9) → docs:** hooks' receiver and timing (§1.4: plain call, before `init`, state on the literal); the
+  per-segment cost (§1.12); `SC.hist` and `bench`'s default `n` (HARNESS); the brief's `rotSU2` parenthetical was
+  wrong (synapse's `(y, q)` rotation is `poleOffset`, a rotation of S³ that is not in SU(2); the worker kept `rotSU2`,
+  which carries fibres to fibres — the better choice, and invisible on screen); DUST has no `presence` read, so the
+  rings scale with `alive` like the grains. Temptation not taken: `core/lines.js` (bisected the cost from outside).
+
+## §15 FEIGEN (id 6) and the JULIA decision (v0.2, 2026-09-23, worker from the brief, `docs/workers/feigen.md`)
+
+- **The JULIA question — outcome (c), dropped, on the side-by-side** (`tools/accept/v0.2/julia-vs-nav.jpg`: NAV at t6
+  on the fake timeline, then synapse's scene 5 driven headless from `synapse2.html#scene=5&demo=house` at 10 s and
+  30 s). Synapse's JULIA is `c = λ/2 − λ²/4` with `λ = ρe^{iθ}` inside the main cardioid: tension drives `ρ → 1` toward
+  the parabolic point `θ = 2πp/q` (`PARAB`), the hush holds `ρ = 1`, the drop pushes `ρ > 1` and the set shatters.
+  The pictures are the same family to a viewer: a filled Julia set with Green's-function bands (log₂G level sets as
+  rays/annuli) outside and DE filaments on the boundary — NAV's exterior at t6 *is* that picture, and its interior
+  chart is the multiplier `λ = ρe^{iφ}` of *every* bulb (main cardioid included) with `rho → min(1 − h, 0.985)`,
+  `N.par = sstep(0.8, 0.98, ρ)` (nav.js 157–176) and drops that exit through parabolic roots onto landing rays —
+  synapse's whole story, generalised. What synapse's colouring adds is the "critical slowing" interior smoulder
+  (`slow = clamp(lastStep·40, 0, 1)` brightening the filled set as ρ → 1) — a colouring, not a scene. The director
+  argument closes it: synapse used JULIA as *the* build scene ("a build deserves the scene that can implode", line
+  1498), and here the home scene owns builds (§4: a build parks home), so a peer JULIA's one narrative could never
+  play, and as a NAV variant it would need the chart walk restricted to the cardioid and the parabolic targets — NAV's
+  chart code, which this session does not touch. Left as a polish note: NAV could take the smoulder term on `N.par`.
+  Ids 7–8 stay free.
+- **FEIGEN, what came back** (`scenes/feigen/index.js` 203 + `shaders.js` 96 lines; registration two lines in `main.js`,
+  ids table `6 feigen · 7–8 free`). Synapse's scene 6 as written in its header: the real-axis dive toward
+  `c∞ = −1.401155189…`, one Feigenbaum factor `δ = 4.6692…` per 32-beat phrase (`feigL += dt/(32·period)·(0.25 +
+  1.5·lvl)·(1 − 0.8·tension)·alive`, `period = 60/bpm`, wrapped at `feigMax() + 1` with `feigMax = [3.4, 4, 4.6, 5][tier]`,
+  the kick-hidden wrap, `+1` on a drop — a jump by exactly one δ is the self-similarity, so it is nearly invisible),
+  perturbation iteration `e' = 2·Z·e + e² + dc` against the reference orbit of `c∞` computed in JS doubles and uploaded
+  once as an R32F 512×1 texture with raw `gl` in `init` (`ctx.tex` binds any `{t}`), the tricorn flip `e' = conj(…) +
+  dc` **on the section seed** (`floor(seed.a·1000) % 2` at `sectionEvt`; synapse flipped on drops, which here hard-cut
+  to home and would never be seen), DE filaments, Green bands, and `hist()` on `ctx.engineTex.hist` with `uHistRow =
+  (row − 0.5)/128` — the first scene that samples the spectrogram ring. `cuts: 'event'` (the flip is the one declared
+  jump); `score = build ? 0 : 0.2 + 0.4·regularity + 0.25·clarity + 0.15·calm`; `look = [feigL, tricorn]`; hooks
+  `&feig=<L>` (also marks the scene as arrived, or the arrival clamp `min(feigL, 1.2)` ate it — the worker's one
+  deviation) and `&tricorn=1`; `post {fb .55, bloom .3, kaleido 0}`; `feats` 18 exactly, `help.feats` 18/18.
+  `accept/v0.2/s6-t6.jpg` / `s6-t14.jpg`: the whole set at L 0.37, one δ deeper and magenta with the Green bands
+  after the drop (L 1.56).
+- **The #7 proof.** `CLOCK=1` frames 360 and 840: `7c976ae1…` / `9d859b1f…` across two runs (determinism) **and with
+  `&histfull=1`** (the v0.1 whole-texture upload) — equal. The row-delta upload feeds `histM` the same texture; `accept.sh`
+  now takes that pair for every scene whose folder mentions `engineTex.hist`.
+- **The md5 story (registration).** With id 6 registered the director's first pick on the fake timeline became NAV →
+  FEIGEN instead of NAV → TORUS, so the §11 frame-290 shot changed md5 (`585e73b5…` for `[0, 6, 0.499]`) with no
+  transition pixel changed. Re-based, as the session prompt required, on the director-blind recipe (HARNESS
+  "Transition": `&scene=0`, at frame 120 `SC.forced = −1; goScene(3, false)`, shoot at 178, `m = 0.4994`):
+  **`a6e2b8cdcc47316cebb04f5529a26b06`**, identical on two runs on HEAD and on a third run with `main.js` from the
+  commit before FEIGEN's registration (the same pixels from the same code), `git diff 8646186 HEAD` empty on
+  `transitions/mixs.js` and `core/scenes.js`. `accept.sh` "== transition" and the morph line use the forced pair now;
+  the rule in HARNESS: a reference md5 must never depend on a director pick. `parity.js fake` 0 diff / 72 (director-blind
+  by design).
+- **Director on the fake timeline with six scenes** (`director-fake-after15.txt` vs `-after`, `director-stats.js`): the
+  same 9 soft switches, all 9 on the bar line (held max 3.80, mean 1.64 beats, identify 7 / return 2), the same 11
+  restores at the same seconds; the sequence `0 3 4 0 4 3 4 …` became `0 6 4 0 4 6 4 …` — FEIGEN's score wins TORUS's
+  slot in the alt-1 section (0.2 + 0.4·regularity + 0.25·clarity + 0.15·calm against 0.25 + 0.45·clarity +
+  0.3·regularity, plus the seed noise) and comes back on every return of that section, as look memory should.
+- **Cost — the open item.** `CARD.bench(6, 300)` at full resolution, tier 3: L 1.21 / `uIter` 142 → **6.85 ms**, L 2.02
+  / 240 → 10.9, L 3.02 / 428 → 17.7, L 3.59 / 500 → 21.1 (NAV 2.3–2.7 in the same session); ≈ 1.7 ms + 0.036 ms per
+  iteration. The brief's "in NAV's range" is met only while shallow; the worker refused to retune synapse's `uIter =
+  min(500, (70 + 30·L²)·[0.6, 0.8, 1, 1.25][tier])` behind the orchestrator's back — rightly: the DE and the bands come
+  out of the escape count, and `Q` already trades both the multiplier and `feigMax` down (house settled at q 0.5,
+  tier 1, 6.2 ms with no artefact). Left open for a polish phase: scale `uIter` by `ctx.Q.iter/264` instead of the
+  tier row, or render the dive at `0.8·scale` — a §1.6 question, not a scene one.
+- **Friction (9) → docs:** hooks fire before `init` and clamp-on-arrival (§1.4, with §14's); `SC.hist` and `bench`'s
+  default `n` (HARNESS; brief-common's `bench(id, 60)` → 300); the brief's `928–962` range stopped one line short of
+  `FS_FEIGEN`'s end (the same off-by-one as POLYTOPE's brief — the worker took `o = vec4(col·uAlive, 1)` from MANDALA);
+  "`tricorn` also at `init`" is not computable without `MS` (0 until the first `sectionEvt`); `Math.floor` for `uIter`;
+  `look.set` guarded with `Array.isArray`. Temptations not taken: `core/` for hook timing and for whether `bench` is
+  full-res (both answered by experiment and HARNESS's own wording).
+
+## §16 FEIGEN's cost at depth — the field/colour split and the zoom ladder (v0.2, 2026-09-23, worker from `docs/workers/brief-feigen-field.md`, report `feigen-field.md`)
+
+- **The disease, measured before anything was changed** (`tools/q-trace.sh`, `q-stats.js`; the recipe forces scene 6
+  at 40 s with the dive set to L 2.5 — a visit from the arrival depth stayed under L 1.3 for 30 s and cost nothing —
+  and releases it home at 70 s; one Chrome, three runs per style, `none` = FEIGEN's `score` made 0 after load).
+  House, mean of three: q during the visit **min 0.47–0.50 against 0.68–0.69 with FEIGEN out**, the 70–100 s window
+  **0.62 against 0.86**, 100 s to the end **0.73 against 0.96**: one deep 30 s visit costs every other scene ~0.2 of
+  `q` for the rest of the track, because the controller climbs back at +0.04 per 2.5 s and its ceiling at +0.002 per
+  half second. aba: look memory restores the section's filed shallow depth mid-visit (`L 1.03` at release in all three
+  runs), so only run 1 dipped (0.48); the house number is the one that justifies the session.
+  `feigen-bench.sh before`, tier 3, NAV interleaved: **8.0 / 13.1 / 20.5 / 22.2 ms** at L 1.6 / 2.4 / 3.4 / 4.0 against
+  NAV 1.5–1.8; a tricorn flip's first two renders 37 ms.
+- **What was built** (`scenes/feigen/`: `index.js` 348 + `ladder.js` 140 + `colour.js` 130 + `field.js` 56;
+  `shaders.js` gone; `tools/test_feigen_ladder.js`). The per-pixel loop now writes a **field** — `R = esc ? n :
+  −(√tr + 1)` (the sign is the interior test), `G = log r`, `B = log|z′|`, `A = ea` — into a rung target, and a
+  per-frame **colour** pass samples it through the frame's affine camera and applies exactly §15's colouring
+  (`specM`/`histM`/palette/gains unchanged; the `&histfull=1` equality holds). Rungs every factor 2 in the base width
+  (`LR = ln2/lnδ = 0.449807` levels; `W_r = 3.2·2^−r`), the rectangle of every admissible view of the rung derived from
+  the aspect and the modulation bounds (`x ∈ [−0.79, 1.54]·W_r`, `y ∈ [0, 0.71]·W_r` at 16:9 — the brief's printed
+  rectangle was 1.6× too small because it had the view's aspect swapped; the node test proves containment over 1080
+  rolled corners), **upper half-plane only** (M and the tricorn are conjugation-symmetric because the reference orbit
+  is real, and both `ea` reads are `abs(fract(·)·2−1)` terms), density 2 texels per view pixel at the base width
+  (3337 × 905 = 3.0 Mpx, 23 MB RGBA16F per rung at the headless 1280 × 633; a 6 Mpx cap binds only at 1080p), three
+  slots + an 835 × 227 quarter target = 70 MB. `iter = min(500, (70 + 30·L_r²)·1.25)` at every tier — the tier no
+  longer trades iterations away; it scales the **work per frame**: `BUDGET = [6, 9, 12, 18]·10⁶` texel-iterations per
+  `draw()`, one scissored band of rows into the rung under construction (the current rung if unfinished, else `r + 1`,
+  double in the last 15 %), keyed on `feigL`, `tier()` and the scene's own draw counter — a 500-iteration rung builds
+  in 91 frames at tier 3, 302 at tier 0, against ≥ 6 s per rung at full dive speed. Sampling: four `texelFetch`, each
+  texel **decoded first** to `(log d, log₂G, ea, trap)` and the decoded values blended bilinearly (`n` and `log|z′|`
+  each jump by a doubling across every escape-count contour; only their combination is continuous), `ea` as a unit
+  vector, the nearest texel alone where the four signs disagree. RGBA16F kept over the pre-authorised 32F on a
+  precision audit: `log|z′|`'s ulp at the deepest allowed level puts 1.6 % on `d` under `exp(−160·d)`; nothing
+  roughened.
+- **The blend rule: field-space cross-fade over 30 draws, kept.** The seam test decided it (`feigen-bench.sh` (c):
+  `CLOCK=1`, `&feig=1.478`, a shot per frame 300–340, mean |Δ| between consecutive frames): the rung change at frame
+  313 measured **0.85 = 0.51 × the median** — quieter than an ordinary frame — where the timeline's own kick beats are
+  4.1–4.5 and the kick flare at f320 is 43 (the same series before §16: median 1.59, f320 42.5). The pre-authorised
+  hard switch was not needed; `accept/v0.2/feigen-field-seam.jpg`.
+- **The three event rules as shipped.** Drop and kick-wrap: a virtual level `Lv = L ∓ k` (k ≤ 3) whose rung is built,
+  sampled with the camera of `Lv` and `wdV` in `d` — the frame after the drop is the frame before it under the
+  composite's flash and glitch rows (`feigen-field-drop.jpg`: 779 / 781 same geometry, 900 one δ deeper); the true
+  rung cross-fades in when it lands (780 → 817 in the determinism run). The stand-in's error, measured with
+  `&standin=0`: **14.4 mean grey on a frame of mean 167 (8.6 %)**, and against the true mathematics at 2× magnification
+  (the coarser built rung), not a burst — the worker's fallback chain is `built → standin(k) → coarser(k) → quarter →
+  one burst draw`, because every view of rung `r` fits rung `r − 1`. Tricorn flip: every slot invalid, one quarter-
+  resolution draw of the current rung on that frame (≈ 5 ms at 500 iterations, first two renders 10–20 ms wall
+  against 37 before), refined at the budget (`feigen-field-flip.jpg`: 301 already the tricorn, 340 sharp). Never a
+  black frame, never a frame without a field, on every event shot.
+- **Cost after** (`feigen-bench-after.txt`, tier 3, NAV interleaved): **1.22 / 1.19 / 1.27 ms** at L 2.4 / 3.4 / 4.0
+  against NAV 2.0 (the L 1.6 page read 2.84 with NAV at 4.0 in the same page — a loaded page; 1.1–1.4 in four other
+  runs); flat in depth. The 60 frames after a flip average 2.7 ms (median of ten; 4.2 in the file's loaded page).
+  House forced, 60 s: `q` **0.72** (§15: 0.50), `bench(6,300)` **1.20 ms** (§15: 6.15). Tier sweep: the same picture
+  and `it500` at q 0.1 and 0.95 — only rows per frame differ (3 vs 11).
+- **The Q trace after — the acceptance** (`q-{house,aba}-after.txt`, mean of three runs, the same recipe; the dive
+  reached L 2.8–3.8 at tier 3 during every house visit):
+
+  | house, q | 0–40 s | 40–70 s (visit) | min in visit | 70–100 s | 100 s– | run mean |
+  |---|---|---|---|---|---|---|
+  | before | 0.60 | 0.59 | **0.49** | **0.62** | 0.73 | 0.63 |
+  | none | 0.60 | 0.74 | 0.69 | 0.86 | 0.96 | 0.76 |
+  | **after** | 0.60 | **0.74** | **0.68** | **0.86** | **0.96** | **0.76** |
+
+  aba: after 0.84 / none 0.85 run mean, 0.74 / 0.73 in the visit, 0.83 / 0.85 after it (look memory shortens its
+  visits to L ≈ 1). `after` is indistinguishable from `none` to the second decimal on every window; `before` is 0.2
+  lower for the rest of the track. The first `after` run of the day sat at q 0.00–0.05 from its first second, before
+  FEIGEN was on screen: a sibling worker's wait loop spinning at 100 % CPU plus the desktop Chrome's renderers — kept
+  as `scratchpad`-only evidence, not in `accept/`; a q trace with anything else on the machine measures the machine.
+- **Parity plan.** `parity.js fake` 0 diff (no core change); `tools/scene-md5.sh` on the commit before the merge and
+  after: scenes 0/1/2/3/5 **byte-identical**, FEIGEN's two frames `dee30d91…` / `eb8aa082…` equal to the worker's md5s
+  from its worktree (five runs, two hashes, the progressive schedule running, and with `&histfull=1`); the director-
+  blind mixs md5 `a6e2b8cd…` unchanged (`accept.sh`); `[EXC]` 0 on the real path (75 s) and the bundle (55 modules).
+- **Principle** (CONTRACTS §1.6): *separate what the mathematics computes from what the music changes per frame, and
+  amortise the first over musical time.* NAV's Böttcher table and FEIGEN's reference orbit were already this; the
+  field/colour split is the same idea for a per-pixel scene whose camera is an affine map. TORUS and POLYTOPE rebuild
+  seed-fixed geometry every frame and could not take it — their cost is the stroke count (§1.12), not the mathematics.
+  Interior acceleration (period checking, `|z′| → 0`) was ruled out before the session: near `c∞` the visible components
+  have period ~2^L with multiplier −1 at every doubling, convergence is algebraic, critical slowing *is* the scene.
+  The render-scale slot in core (the prompt's traced fallback) was **not needed** and was not built.
+- **Harness added:** `tools/q-trace.sh` / `q-stats.js` (HARNESS "Q trace"), `tools/feigen-bench.sh` (per-level bench
+  with NAV interleaved, flip cost, seam ratio at the scene's `RUNG@` frames), `accept.sh` "== feigen cost" (fails above
+  `max(2.9 ms, 1.5 × NAV)` at L 3.6). `check.js` 0 fail / 0 warn.
+- **Friction (11) → docs:** the brief's rung rectangle and view aspect (recorded above; the worker derived both);
+  `LR` 0.449946 → 0.449807; a modular slot map collides with the drop's 2–3-rung jump (slots picked by age);
+  decode-then-blend; the `tricorn` hook eaten by the next `sectionEvt` (pinned; CONTRACTS §1.4 now covers hooks whose
+  state the scene *recomputes*); `ctx.onResize` receives the canvas size and `ctx.use` never clears (§1.1);
+  `feigen-bench.sh`'s spurious `undefined` line (fixed). Temptations not taken: `core/gl.js` (answered through `CARD`),
+  `core/quality.js` (answered by the data: the flip's build mean tracked the page's own steady, i.e. machine load).
+- **Ride-alongs (own workers, own briefs, none in `core/`).** *POLYTOPE's pole streaks* (`brief-polytope-pole.md`,
+  `polytope-pole.md`): the tighter gate shipped — `den > 0.24` (was 0.16) with the ramp re-based to reach 1 at the same
+  `den` as before, so everything inside `den = 0.4457` is bit-identical; the projected-length fade (option a) was
+  rejected on an offline sweep of 60 phases × every cast × 4 tiers — a fade per *piece* shortens with `sub`, so it
+  would have fixed the streaks only at tier 0 and dimmed the body 8 %; the gate is tier-independent (max reach
+  3.38 → 2.70·g at every tier). Streaks at t6/t14 no longer reach the frame edge (`accept/v0.2/polytope-pole-ab.jpg`),
+  consecutive-frame |Δ| 4.59/4.48 → 3.92/3.82 (no spike, `cuts: 'continuous'` kept), f360/f840 md5s identical across
+  two runs, bench 0.71× → 0.66× NAV interleaved. §8's polish note is closed; its `0.16` is history. Friction: a bench
+  "×3 medians" without the NAV interleave read a fake 1.8× regression (40 % drift between sessions) — HARNESS's
+  interleave rule is the only protocol on this machine; §1.12's alpha rule now says the pole fade is the one place
+  alpha may fall (a colour-only fade would leave an opaque black streak writing depth).
+  *DUST's tier-3 fibre count* (`brief-dust-fibre-count.md`, `dust-fibre-count.md`): `QT[3]` 1.4 → 1, so tier 3 draws
+  tier 2's `4 × 10 × 56 = 2240` segments (was 3168); the points path byte-identical to §14 (`e49cf54e…`/`7119a542…`
+  with `&fibres=0`), f360 unchanged even with the fibres on (that frame is at tier 2), f840 deterministic across runs.
+  Cost, measured drift-immune (one Chrome, three geometries rotated through 11 cycles, each `on` paired with the `off`
+  right after it, median of the pair differences): **0.948 ms** (was 1.184 in the same harness; §14's +1.37 reproduced
+  at +1.40 in the brief's shape). **The saving is sub-linear**: 29 % fewer segments bought 20 % of the cost — the
+  marginal rate is ~0.25 µs/segment under a fixed per-`draw()` cost, against §1.12's 0.4 µs average (§1.12 says so
+  now). The worker's proposal `4 × 12 × 48` (all twelve fibres, 0.913 ms — the same price, and the picture closer to
+  the old one, `accept/v0.2/dust-fibre-count-3way.jpg`) is taken: shipped as the follow-up commit (`N3 = 48` at tier 3, 2304 segments, `CAP` 2304; f840 `ed87b7f7…`,
+  interleaved on−off 0.53 ms in the quietest triple of the day; `dust-fibre-count.md` (k)). Friction: a bench
+  threshold is not decidable from three medians on a shared machine (four repeats of the brief's command spread 0.09–
+  1.13 ms around a 0.95 threshold while sibling workers' Chromes ran); the brief's t6/t14 shots run at tier 2 and could
+  not see the change (the `CLOCK=1` pinned-`q` pair could).
+  *NAV's interior smoulder* (`brief-nav-smoulder.md`, `nav-smoulder.md`): §15's one thing JULIA had. `uPar` = `N.par`
+  (the multiplier chart's approach to a parabolic root, `sstep(0.8, 0.98, ρ)`) uploaded from `draw`; in `FS_JULIA`'s
+  known-cycle branch `col += pal(.5 + .1·bands)·par²·(.35 + .3·bass)·(.3 + .7·bands)` and in the plain interior
+  `pal(.45)·par²·(.16 + .2·bass)` — retuned from the brief's bass-dominant suggestion because `MS.bass` is 0 through
+  the fake timeline's build, exactly where `par` rises (a bass coefficient collapsed to 0.15 against an interior base
+  of 0.03–0.13). `nav.js` untouched: `parity.js fake` 0 diff / 72; monitor 60 s `viol []`; frames with `par` 0
+  (f360 `92438f2d…`, f840 `d697789c…`) **byte-identical** before and after, f660/f720/f760 (`par` 0.46/0.78/0.19)
+  differ; `accept/v0.2/nav-smoulder.jpg` (f760 with `par` forced to 1 through a wrapped `update` — provably inert, the
+  same forcing on the old build is byte-identical to its own baseline): the dark silhouette lights from within, Koenigs
+  bands as smouldering rings, centre-crop mean 17/38/32 → 33/77/61, nothing clips, filaments / rays / PiP pixel-
+  identical. `par` never exceeds 0.79 on the fake timeline. Friction: `CARD.bench` on NAV is confounded by `Q.iter`
+  adapting between calls unless `q` is pinned first (HARNESS says so now).
+
+## §17 Ship v0.2 — the real-window audit, the tag, the v0.3 triage (2026-09-23, orchestrator in a real window)
+
+- **Why a real window.** Every number before this section came from headless Chrome at 1280 × 633/720 on the fake
+  timeline or the demo synth. Five things headless cannot do — real sizes and DPR (three 46 MB rung slots at 1080p),
+  tab-capture audio, a hidden tab on the worklet path, the keys on a real screen, the bundle from `file://` — were done
+  once, by the orchestrator, in `/usr/bin/google-chrome` on the desktop display, driven over the same CDP steps as the
+  headless harness (`HEADED=1`, HARNESS "Real window"). `docs/AUDIT-v0.2.md` is the ledger: one line per check, a
+  number or a shot, a verdict; `tools/accept/v0.2/audit-*.jpg` and `audit-q-song.txt` are the evidence.
+- **Findings, in one paragraph each.** *Size/DPR:* at 1920 × 1080 and DPR 1.5 the 2560 cap binds (2560 × 1309, 4.1×
+  headless pixels), FEIGEN's rung is 4632 × 1295 (the 6 Mpx cap, ~150 MB for three slots + quarter) and it benches
+  0.93–1.10× NAV interleaved (5.6 vs 5.3 ms — both scale with the pixels); the desktop's native DPR is 0.75, so a
+  1920 × 1080 window is 1407 × 712 and FEIGEN is 0.74× NAV there; at fullscreen 2560 × 1439 FEIGEN 0.5–1.2× NAV, DUST
+  0.13–0.28× NAV. A drag-resize and a fullscreen with FEIGEN on screen re-allocate the ladder (`coarse` → `built`
+  within 4 s) with no black frame and one 33 / 83 ms frame; every other scene's resize is luminance-continuous; the
+  lazy-allocation fallback the prompt reserved was not needed. *Real audio:* a 4:16 track captured from its own
+  window is heard within 6 s, both tempo estimators sit at 116.9, `q` climbs from the page-load 0.56 to 0.8 at 58 s
+  and holds 1.0 for the last 150 s with FEIGEN visits, 14 331 frames with 0 black and 0 over 100 ms, 18 switches all
+  on sustain/section-return. *Hidden tab:* on `#test` the fake source does not hop while hidden (rAF-driven, by
+  design) and the ladder answers the 30 s jump with `standin(-1)`; on the worklet path the engine kept hopping (2822
+  hops in 30 s), the whole-ring upload was taken silently, and FEIGEN/DUST/NAV's first frames back were 55 / 22 / 62
+  mean luminance — never black. *Keys/help:* every key does what `hud.js` says; keys 8–9 on free ids are no-ops; the
+  help's formula column was truncated at **every** real width (47/107 rows; `.hinner` was capped at 1180 px) — fixed
+  by wrapping (`pre-wrap`, `overflow-wrap: anywhere`, the column follows the window to 1500 px): 0/107 after, tallest
+  cell three lines. *Bundle:* `dist/eigenwobble.html` from `file://` with capture: heard, 160 BPM read, help 107 rows,
+  `ERRS []`, `nonFinite []`, `[EXC]` 0.
+- **Fixed in the session (no worker needed — index.html CSS and a `feats.js` string):** the help wrap above; `wave`'s
+  ELI5 now names the 512-wide engine texture a scene samples (CONTRACTS appendix regenerated). Both are §12's
+  "Left open" lines. Parity untouched (`parity.js fake` 0 diff, the two reference md5s unchanged — `accept-17.txt`).
+- **Harness added:** `tools/cdp.js` `HEADED=1` (`WIN`, `WINPOS`, `DPR`, `CAPTITLE`; steps `tab`/`window`, `evalTab`,
+  `activate`, `bounds`, `clickSel`, `dblclick`, `sh`; `[EVAL-ERR]` lines), `tools/probe.js` (per-frame luminance/dt,
+  scene/visibility/resize/black/long events, the first frame back), HARNESS "Real window" and the consolidated "Bench
+  protocol". **Harness friction paid for:** a media document in a same-window tab that was never shown does not play,
+  a non-playing captured tab delivers no frames, the worklet then sees zero-channel input and never hops, and the tab
+  picker focuses the shared tab so the page is hidden and nothing runs (not the loop, not the watchdog) — every
+  "stall" in the first capture runs was this; the music goes in **its own window**. Sharing a tab adds Chrome's
+  infobar and shrinks the viewport 56 CSS px (a real `resize()` at t ≈ 0). Headed Chrome ignores `background:true`
+  for a same-window tab (that *is* the hidden-tab check); with a second window open the new tab lands there instead —
+  minimize the window (`{bounds:{windowState:'minimized'}}`) for a hidden check on the worklet path. `Page.captureScreenshot`
+  activates a hidden tab. `pgrep -f` from inside a `{sh}` step must bracket a letter (`gpu-proces[s]`).
+- **Not fixed, on purpose (v0.3 triage below):** the spurious drop rows on the first frames back from a hidden tab;
+  DUST's near-black stretches in the fake valley at real size (its look); the probe's hard-vs-soft blindness.
+- **The tag.** `v0.2` at the accept commit, `releases/eigenwobble-v0.2.html` = `dist/eigenwobble.html` (the artefact
+  that runs from `file://` anywhere), `accept-17.txt` the sweep behind it. v0.1 was a commit, never a tag; this is the
+  first.
+- **The v0.3 triage** — every "Left open" line decided (a brief title + its acceptance number, or closed with the reason):
+
+  | source | line | decision |
+  |---|---|---|
+  | §9 tempo | a 3:2 tempo change with the old lag alive takes up to 8 s | **brief `tempo-3to2`**: the 25 % margin over the current tempo's score is what holds the old lag; acceptance: `tools/test_tempo.js`'s 3:2 case (128 → 192 and back) locks within **4 s** (was ≤ 8), every other case unchanged to ±1 BPM, `parity.js fake` 0 diff (the fake path never runs the estimator), `parity real` both within 1 of 126. Audible? The director quantises soft switches to the bar line while `gridTrust > .5` — 8 s of a wrong bar is two switches held to the wrong line; the trace (`tempo-trace.sh`) says when the lag moved vs when the music did |
+  | §9 tempo | below 59 / above 200 BPM reads at an octave | **closed**: outside every style the engine is built for (house 120–130, dnb 170–176, ambient holds the prior); an octave read there is the correct musical answer for the visuals (the beat clock still lands on beats) |
+  | §10 director | `SC.mem` is not renumbered when synapse merges/drops a section (one stale restore) | **brief `director-renumber`**: the slot is a `sectionRenumber` event from `features-synapse.js` (old id → new id, or −1 for dropped) that `scenes.js` applies to `SC.mem` keys; acceptance: `director-trace.sh mix` × 3 shows **0** `RESTORE@` lines whose filed `sectionAlt` no longer exists, and the count of renumber events per `mix` run is in the report (if it is 0–1 per run the brief closes itself as "measured, harmless") |
+  | §10 director | the section-return restore lands 8–12 beats after a surprise hard cut | **closed**: v3's 8-beat spacing after a hard cut is the contract's "no two cuts inside 8 beats" (§1.9); the restore is a soft switch and waits for the bar line on top — landing 8–12 beats later is the promised behaviour, not a lag |
+  | §11 morph | the advection combs TORUS's ribbons mid-fade; `post.morph.flow` per scene is the slot | **brief `morph-flow-slot`** (low priority): one `&trans=morph` A/B pair per stroke scene (TORUS 3, POLYTOPE 5, DUST 1 with fibres) at CLOCK f178 against `mixs`; the slot is `scene.post.morph.flow` (default 1) read by `transitions/morph.js`; acceptance: the three pairs in one montage, the stroke scenes' pair |Δ| against the mixs pair at most 1.5× mixs's — if the comb is not visible in the montage the brief closes without the slot |
+  | §11 morph | a reversed fade jumps the front | **closed**: the reversal is itself a director hard cut (`goScene` mid-fade), an already-jumping frame |
+  | §12 help | the formula column truncates (touch wants click-to-expand) | **fixed this session** (audit 4): wrapping instead of an ellipsis, the inner column follows the window; 47/107 → 0/107 at 1080p; click-to-expand is moot |
+  | §12 help | `wave`'s ELI5 describes `MS.wave`, not the 512-wide texture | **fixed this session**: `feats.js` `wave` now says what a scene samples (the 512 × 1 engine texture) and that `MS.wave` is the raw read behind it; CONTRACTS appendix regenerated |
+  | §12 help | a variant (DRUM) has no `help.feats` of its own | **closed**: a variant reads exactly its parent's fields by construction (`REG[id].variant` over the same scene object); a variant with its own reads would be a scene, not a variant (CONTRACTS §1.13 says so now) |
+  | §16 FEIGEN | 70 MB at 1280 × 633; the density fallback at 1080p | **closed by audit 1**: at 2560 × 1309 the cap binds at 4632 × 1295 (6.0 Mpx, ~150 MB for three slots + quarter), FEIGEN benches 0.93–1.10× NAV, fullscreen re-allocation costs one 83 ms frame, no black frame, no stall — lazy allocation is not needed; the density fallback (1.76 → 1.4 texel/px at 2560 wide) is invisible against the colour pass's bilinear decode |
+  | §16 FEIGEN | the brief's aspect/rectangle error — patch `brief-feigen-field.md` or leave | **leave as history**: the report (`feigen-field.md`) and DECISIONS §16 both record the correction; a brief is a dated instruction, not a living doc — patching it would hide what the worker had to derive |
+  | §16 FEIGEN | `&standin=0` falls to a coarser rung, not a burst, so the burst is only seen after a flip | **closed, fine**: every view of rung r fits rung r − 1, so a coarser rung is always the better fallback; the burst exists for the one case with no built rung at all (a flip, or the first frame after a resize — audit 1 saw exactly that: `r6 coarse` after every size change) |
+  | §14/§16 DUST | fibre cost = fixed per-`draw()` + 0.25 µs/segment; `stride` for static rings | **closed unless run D says otherwise**: DUST vs NAV interleaved at the native 1407 × 712 and at fullscreen 2560 × 1439 (audit 1, run D) — see the numbers there; `stride` stays closed while DUST ≤ NAV |
+  | §15 JULIA | dropped; NAV took the smoulder | **closed**: `audit-1-nav-native-1080p.jpg` (real window, demo) — the interior lights from within at `par` > 0; at `par` 0 the silhouette is v3's, which is the parity promise |
+  | ids 7–8 | a scene candidate list for v0.3 (contract-only, no source) | **list, no build**: (a) **NEWTON** — Newton's-method basins of `z³ − 1` and the music-chosen polynomial, per-pixel with an affine camera → the field/colour split lifted verbatim (`ladder.js` is scene-agnostic in its geometry; the field is `(root id, log rate, arg)`), the first reuse of §16's principle; (b) **MODULAR** — the `j`-invariant / a modular form on the upper half-plane rendered through `SL(2,ℤ)` tiles, the camera walking the fundamental domain by section, drops jumping to a cusp (per-pixel, one reference orbit per tile, `hist` sampler like FEIGEN); (c) **KLEIN** — path-A strokes: a Boy's surface / Klein bottle immersion in `R³` as 144 rings × 96 segments through `ctx.lines`, the immersion parameter on `MS.tension`, the seed-fixed geometry per section like POLYTOPE (the stroke budget is the cost, §1.12); (d) **LORENZ** — path-B strokes: a strange attractor's trajectory bundle (Lorenz / Rössler / Thomas by section seed) integrated in-shader from `gl_VertexID`, `kick` kicking the parameter across the bifurcation. The contract test for v0.3 is (a): it needs nothing but CONTRACTS §1, §1.6 and `scenes/feigen/ladder.js` as a library |
+  | harness | the bench protocol lived in three places | **done this session**: HARNESS "Bench protocol" (five rules), the Q-trace paragraph and the `CARD.bench` bullet point at it |
+  | harness | `q-trace.sh`'s `VISIT` is FEIGEN-specific (`hooks.feig`) | **closed, say so**: `VISIT=40:70:<L>` is FEIGEN's dive depth; a scene that will ever need a forced deep visit brings its own hook and a `VISIT` of its own shape in its brief — no other scene has a "depth" (HARNESS says so now) |
+  | audit 3 (new) | the first frames back from a hidden tab read as a drop (the v3 followers were frozen for the gap; on `#test` the fake timeline's `now` jumped over DROP@13) | **brief `resume-hold`** (small, engine-side, parity-neutral): on `visibilitychange` → visible, hold `drop`/`hit` detection for 1 s and let the followers re-seat (`ENGINE.resumeAt`), fake path untouched (`parity.js fake` 0 diff); acceptance: the probe's first 5 frames back show no glitch rows (lum step ≤ 10 %), `audit-3-*-back.jpg` re-shot |
+- **Added after the tag (2026-09-23, from a note on OKLCH and escape-data channels; the full briefs are in
+  NEXT-SESSION-PROMPT items 2–6):** FEIGEN's colour pass on OKLCH channels — L ← log₂G, H ← external angle, C ← the
+  distance estimate — is a colour-pass-only change because §16's field already decodes exactly those three quantities;
+  an opt-in OKLCH palette chunk in core; hue from arg λ on NAV's interior and the PiP sharing the external-angle hue;
+  and the effect chain in linear light. The last one is a correctness item, not taste: bloom (blur + add) and the
+  `ONE, ONE` scene layers are light transport done on gamma-encoded values, and the composite's tonemap
+  `1 − exp(−1.5c)` is a linear-radiance operator applied to encoded values with no encode step after it (display
+  white is unreachable: 1 → 0.78). Feedback is a `max` (space-invariant); crossfades stay encoded or go to OKLab —
+  a linear dissolve has the mid-fade brightness bump. Decided: `&linear=1` first, an A/B montage per scene, then every
+  final-frame md5 (scene-md5, mixs `a6e2b8cd…`, FEIGEN `dee30d91…`/`eb8aa082…`) re-based in one commit that says
+  so; `parity.js fake` is unaffected (state, not pixels). Not taken from the note: Julia sets as a scene (§15) and
+  derivative iteration (the field already carries `log|z′|`).
+
+## §18 resume-hold — the first frames back from a hidden tab (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 1 + the probe polish, item 10)
+
+- **The bug, measured.** AUDIT-v0.2 §3 saw the composite's drop rows on the first frames back from a hidden tab (FEIGEN
+  155 → 125 over 5 frames on the worklet path). Mechanism: rAF stops while hidden, so `updateMusic`'s followers freeze
+  for the gap while the audio and the worklet stage keep going; on return the spectral-flux baseline (`lmPrev`) is the
+  spectrum from before the gap (a huge onset), `eM`/`eL` are stale (drop path 2's `e > 2·eM + 0.1` reads the loud
+  passage as a drop), the surprisal model's mean is stale (a surprise), and the loop's 1/24 s dt clamp carries `hit`,
+  `dropEnv`, `FX.glitch/flash` across the gap undecayed. Headless reproduction (a second tab activated hides the page —
+  HARNESS "Hidden tab"; `Page.setWebLifecycleState` `frozen`/`active` never restores visibility headless, tried and
+  dropped), v3 demo, 15–19 s hidden, 8 trials: a drop within 0.5 s of return in **3 of 8** (at 0.13 / 0.32 / 0.47 s;
+  glitch 0.93, the flash frame at luminance 172 on FEIGEN), `hit` 0.1–0.5 carried into the first frames on **8 of 8**.
+  In the real window the glitch is intermittent (it depends on what the music did across the gap: the same minimize
+  recipe with the hold disabled came back clean once, 47 → 51 → 54), which is why the trial count is the evidence.
+- **The fix (engine, ENGINE.md "Resume").** `main.js` → `ENGINE.resume()` on `visibilitychange` → visible; the next
+  `frame()` stamps `resumeAt` (`resumed` true for that frame) and, real path only: a 1 s hold on `onset`/`dropEvt`/
+  `surpriseEvt`; the flux baseline re-seated (flux 0 on that frame); the slow followers advanced by the gap they missed
+  (`dtF = dt + now − X.envNow` on the resume frame for `presence`, `eS/eM/eL/eMax`, `highM`, `build/buildPk`, the
+  surprisal model's mean/variance and band inputs, the section fingerprint — as if the current value had held
+  throughout); `hit`/`dropEnv` zeroed; the loop zeroes `FX.glitch/flash` on the `resumed` frame. The first cut (hold +
+  a snap of the surprisal mean only) still fired a drop 2.4 s after resume in 1 of 8 — `eM` was 62 % re-seated when
+  the hold ended and path 2 fired on the next onset; advancing the followers by the gap is what closes it. Fake path
+  untouched (a function of `now`, nothing frozen): `parity.js fake` 0 diff; `parity real` bpm 126.18 vs v3 125.96, arcs
+  identical, drops within 0.5 s; `dtF = dt` off the resume frame, so the real path is byte-identical to v3 otherwise.
+- **After, headless (same 8 trials):** 0 of 8 drops, 0 onsets / surprises in the first 60 frames, glitch 0, `hit` 0.
+  **After, real window** (worklet path, "Who Likes to Party" captured from its own window, minimized 20 s, `tools/accept/
+  v0.3/audit-3-{feigen,dust,nav}-back-worklet.jpg`): FEIGEN's first 5 frames back 46.7 / 45.4 / 42.6 / 42.1 / 40.7
+  (max step **6.2 %** — the brief's ≤ 10 %), NAV 48.7 / 50.8 / 48.3 / 51.1 / 51.2 (5.8 %), 0 onsets / drops / glitch in
+  the first 60 frames on all three, `ERRS []`, `nonFinite []`, `getError` 0. DUST's first frames swing (14.6 / 17.2 /
+  8.8 / 11.6 / 13.1): its own per-frame flicker at low luminance — headless the same scene reads 15 → 9 → 18 across 8
+  frames with no event fired — not the hold's concern. The scene md5 list (`scene-md5.sh`) is identical to the v0.2 tag's
+  (shot in a worktree at the tag on `PORT=8766`); the core change is one line that only runs on the resumed frame.
+- **Harness.** `tools/probe.js` (item 10): `next` events (a hard cut moves `cur` with `next` still −1; a soft switch sets
+  `next` first), `drop` events, per-frame `g` (`FX.glitch`), `hit`, `o`/`s` flags; frame-tick events carry the frame's
+  rAF time (before, `frames.filter(f => f.t >= back.t)` skipped the first frame back — the audit's "first 5 frames"
+  were frames 2–6). `accept.sh` "== hidden tab" (deterministic by construction: the hold masks events whatever the
+  music) and its output now goes to `tools/accept/v0.3/`.
+- **Left open:** none. The synapse stage's own followers run on the hop clock and were never frozen; DUST's exposure
+  re-adapts over its own constants after a gap (audit 3's 22 → 51 climb) — its look, by design.
+
+## §19 oklch-palette — an OKLCH chunk as an opt-in core slot (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 4)
+
+- **What.** `assets/core/oklch.js` exports `OKLCH_GLSL`, handed to scenes and effects as `ctx.oklch` (CONTRACTS §1.14):
+  `linToOkLab` / `okLabToLin` (Ottosson's matrices), `srgbToLin` / `linToSrgb` (the piecewise curve), `okClip(h, L, C)`
+  (the chroma scale the gamut clip keeps), `palOK(h, L, C)` → linear sRGB in gamut, `palOKs` encoded. `assets/math/
+  oklab.js` is the JS twin with the same constants plus `maxChroma(L, h)`. HEAD's `pal()` is untouched — the chunk is
+  prepended by whoever wants it (`ctx.mkProg(ctx.oklch + FS, name)`), so no program that exists today changes: the
+  scene md5 list is identical to the v0.2 tag's, `parity.js fake` 0 diff, the mixs md5 unchanged (main.js only gained
+  the `ctx.oklch` line).
+- **The clip rule, decided.** Chroma is shrunk toward the grey axis at the same L until the colour is inside sRGB
+  (bisection, 14 halvings, only on pixels that are outside): hue and lightness are kept, a clipped colour goes greyer.
+  A channel clamp — what every cosine palette in the repo does implicitly — darkens and hue-shifts instead. 10 halvings
+  were tried first and left 11/255 between the GPU and the twin at C 0.3 (a channel moves several units per unit of
+  chroma at the gamut edge); the residual after 14 is 1/255. The half-pixel hue offset in the first smoke test (pixel
+  `i` is hue `i/360`, `gl_FragCoord.x − .5`) read as a 10/255 "clip disagreement" at blue for twenty minutes: near
+  blue the max chroma moves that much in half a degree.
+- **Numbers (`tools/test_oklab.js`, `tools/oklch-smoke.js`, both in `accept.sh`).** Reference triples to 2e-4 (red
+  0.6280/0.2249/0.1258 …), round trip 2.6e-7 on a 5³ grid; **C 0.11 at L 0.7 is inside sRGB at every hue** — the
+  tightest is 200° at 0.119 — which is the constant the FEIGEN brief (item 2) and NAV's hue (item 5) build on; GPU =
+  twin to 1/255 over 360 hues at L .7 C .11 and at L .5 C .3 (all clipped); the OKLab midpoint of two complementary
+  hues at L .7 has L 0.699, the gamma midpoint 0.670 — the reason §1.14 says interpolate in OKLab; 360 distinct 8-bit
+  colours over 360 hues; `ERRS []`, `getError` 0.
+- **Not done here, by design:** no scene uses the chunk yet (items 2, 5, 6 do); the chain is still encoded, so a
+  scene writes `palOKs`/`linToSrgb(palOK(…))` until item 3 moves the chain to linear light.
+
+## §20 linear-chain — the effect chain in linear light (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 3)
+
+- **What was wrong.** Bloom (a blur and an add), the composite's bloom and flash adds and the exposure's metering ran on
+  sRGB-encoded values, and the composite's tonemap `1 − exp(−1.5c)` — a linear-radiance operator — was applied to
+  encoded values and written to the screen with no encode after it: display white was unreachable (white in → 198/255),
+  a blurred edge between complementary hues dipped in luminance (the encoded midpoint of equal-luminance magenta and
+  green has 0.75 of their luminance in `chain-smoke.js`'s measurement), and additive light clipped channel-wise long
+  before white (10.6 % of DUST's pixels at the fake drop frame had a channel ≥ 1 before the tonemap).
+- **The shape (CONTRACTS §1.10, §3).** The scene's output stays encoded (every palette in the repo is, and `ctx.oklch`
+  users write `palOKs`). Feedback — the chain's first pass — decodes it (`srgbToLin` from the §19 chunk, `uFb.w`) and
+  sets `io.decoded`; `post.js` decodes itself before the first effect above order 10 if feedback was skipped (no scene
+  does that today, the fallback is 10 lines). Bloom thresholds linear values; exposure meters linear luminance; the
+  composite adds bloom and flash in linear, tonemaps with `(1 − exp(−k·c)) / (1 − exp(−k))`, k 1.5, so linear 1.0
+  reaches white, encodes (`linToSrgb`), then vignette and dither on the encoded value (a display-space darkening and a
+  quantisation step). `CHAIN = { linear, k }` in `post.js`, `io.linear / io.k / io.decoded` per frame; `&linear=0`
+  under `#test` is the v0.2 chain (one uniform per program, no recompile) — the A/B and the history.
+- **Slots keep their encoded meaning — the re-tune list came out empty.** `post.bloom.thr` is decoded through the sRGB
+  curve (0.35 encoded → 0.10 linear, the knee `thr + .5` likewise), `post.fb.decay` becomes `d^2.2` per frame (a factor
+  on encoded values is that on linear ones: the trail a scene tuned stays), exposure's `TARGET` is decoded (0.22 →
+  0.040), and the flash — "+0.9 on encoded values" — becomes the linear add that puts the same wash on a black pixel:
+  `f' = −ln(1 − (1 − e^−k)·lin(1 − e^−1.5f)) / k` (0.9 → 0.34). Without the last one a drop whited the whole frame out
+  (0.9 of linear radiance is nearly white); with it the fake drop frame on DUST has mean luminance 150.5 vs 152.7
+  encoded. The brief's "unblended pixels byte-identical" could not hold: the tonemap moved with the chain, so every
+  pixel's tone curve changed (mid-tones a little brighter, highlights much brighter) — the per-scene A/B montage
+  (`tools/accept/v0.3/chain-linear-ab.jpg`, f360/f840 × 6 scenes) decided it: the same pictures with cleaner highlights,
+  FEIGEN's f840 filament and MANDALA's rim the most visible gains; nothing lost, nothing to re-tune.
+- **Numbers (`tools/chain-smoke.js`, in `accept.sh`; the DUST clip recipe in HARNESS "Effect chain").** Fringe: 0.745
+  encoded → 0.998 linear (the brief asked ≈ 0.6 → ≥ 0.95). White: 198 → 255. DUST clip fraction at the fake drop frame:
+  **10.6 % → 0.12 %** (`chain-linear-drop-clip.jpg`). `linear=0` is byte-identical to the v0.2 tag (scene md5 list
+  identical, mixs md5 unchanged) — the proof that only the space changed. Cost: one `pow` per pixel in feedback's decode
+  and one in the composite's encode; nothing else.
+- **The re-base (this commit: the default flips to linear after the FEIGEN OKLCH and NAV hue merges, so every
+  reference moves once).** mixs 0 → 3 f178: `a6e2b8cd…` → **`425a66e5b50c14786e6e25bc215a3169`** (three shots identical;
+  `accept.sh`). The scene list: `tools/accept/v0.3/scene-md5-v03.txt` (s0 87d5f8bd/6c1aadab, s1 c6166af9/7ca6598c,
+  s2 9a57626c/5e59be93, s3 d3e73b38/7e77c7b3, s5 24493420/2b1e1333, s6 923b314f/b438daf2). FEIGEN's `&histfull=1`
+  equality is computed by the sweep, not recorded. `parity.js fake` 0 diff throughout (state, not pixels).
+
+## §22 director-renumber — `SC.mem` follows synapse's section ids (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 8)
+
+- **The slot.** Synapse's section ids are indices into its ring (`engine/synapse/structure.js`): a fresh section merged
+  into a recognised return is spliced out and every id above it moves down; past 24 sections the ring shifts and every
+  id moves down by one. Both now push `{type: 'renumber', map}` (`map[old] = new`, −1 dropped); the stage publishes it
+  for that frame as `MS.sectionRenumber` (`null` otherwise; two in one frame compose) and the director's `memory()`
+  moves `SC.mem`'s keys, `prevAlt` and `due` through it before reading the frame's `sectionAlt` (which synapse already
+  reports in the new numbering). `SC.renumberOn = false` is the §10 behaviour (`RENUMOFF=1 director-trace.sh`);
+  `#test` logs `FILE@` (a filing) and `RENUMBER@ <map> kept<n> dropped<n>`; `director-stats.js` replays the maps over the
+  `FILE@` records and counts a `RESTORE@` whose key holds no live record as stale. `tools/test_director.js` case 8: a
+  filing under 5, a map dropping 3, a return identified as 4 restores the filed looks with the renumbering on and finds
+  nothing with it off.
+- **Measured: harmless today, by construction.** `director-trace.sh mix` × 3 with the fix and × 1 without
+  (`director-mix-renum{1,2,3,off}.txt`): renumber events **2 / 0 / 1 / 0** per 6-minute run, every one the merge of the
+  *newest* section (a fresh section is always the last index — nothing can be pushed while it is unsettled), so every
+  map was the identity on every filed key (`kept 7–8, dropped 0`); stale restores **0 of 11** in all four runs — also
+  in the run without the fix, which is the §10 "one stale restore" measured: the demo never produces it. Where the map
+  is not the identity is the 24-section ring shift (a long set: 24 boundaries) — every filed key moves down by one and
+  the oldest is dropped; that is the case the fix exists for, and case 8 of the node test is its proof. Closed as the
+  brief allowed: measured, harmless, the slot in place.
+
+## §21 tempo-3to2 — a 3:2 change decided by the last 2.5 s (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 7)
+
+- **The case, measured first.** `tools/test_tempo.js` gained the 3:2 case (the house pattern at 128 → the same pattern
+  at 192 → back). The §9 estimator never picked 192 up at all (12 s, not the 8 s §9 recorded on the synth): the old
+  tempo's comb `l + .6·2l + .3·4l` at lag 47 is propped by its harmonics at 94 and 188, which are exactly 3 and 6
+  beats of the new grid (2·L128 = 3·L192), so 128's comb keeps winning the whole-window argmax while its own lag dies;
+  and once the old material has drained the prior prefers 96 (192's halftime, 0.73 vs 0.60), which is a ½ relative and
+  refused while the 192 lag is alive. The 2:3 way (192 → 128) locked in 1 s already.
+- **The rule (tempo.js, rule 6).** The last 2.5 s of the normalised envelope get their own comb at the current lag and
+  at its 3:2 and 2:3 relatives (only those: ½/2/¼/4 are drum patterns a tempo explains and keep §9's rules); when the
+  relative's short comb is > 0.6, > 1.25× the current tempo's, **and the current beat lag itself has died relative to
+  the relative's** (`short(Lcur) < 0.5·short(Lrel)`) for three consecutive estimates (1.5 s), the tempo is the relative
+  (refined on the whole-window vertex). `test_tempo.js`: **192 in 4 s, 128 back in 4 s**, every other case unchanged
+  (dnb/four/house/halftime lock, gap and after to the same max err; build hold 0.53; the 174 changes 4 s and 5 s).
+- **What was tried and dropped, in one line each.** The beat lag alone as the reference (> 1.5× the current beat lag):
+  locked the synthetic case but flipped the mix demo's 140 halftime section to 93 eight times (halftime's 1-beat lag is
+  a quarter of its 2-beat lag — no reference at all). Per-product normalisation of the short ACF (a long lag has fewer
+  products): sent dnb to its 2:3 relative in the node test — the attenuation of long lags is a taper the rule needs.
+  Comb-only (no dead-beat-lag condition): steady house read the relative's comb at 1.06× its own, a margin too thin.
+- **Traces (`tempo-{mix,house,dnb,fakeout}-after32c.txt`, with `r32 sc/v/n/s1/sq` on every 1 Hz line).** mix: the same
+  three jumps as v0.2's trace (128 → 172 at 134 s, 174 → 139 at 258 s, 140 → 124 at 343 s — the demo's real changes)
+  and no other; house 0 jumps, fakeout 0, dnb 1 (the initial lock). The closest approach to a false vote: one second
+  of the mix's 140 section (279 s) met all three conditions (beat lag 0.29 vs the 2:3 relative's 0.95 — that passage
+  really has a 1.5-beat period) and no second before or after it did; three consecutive are needed. `parity real`:
+  ew 126.23 vs v3 125.99, arcs identical, drops within 0.5 s.
+
+## §23 morph-flow-slot — `post.morph.flow` (v0.3, 2026-09-23, orchestrator; NEXT-SESSION-PROMPT item 9)
+
+- **The montage decided it.** The three stroke-scene pairs at CLOCK f178 (`morph-flow-ab.jpg`: TORUS → NAV, POLYTOPE →
+  NAV, DUST → TORUS, mixs beside morph) show the comb once: in DUST → TORUS the incoming ribbons are smeared along the
+  flow field into a comb; TORUS → NAV and POLYTOPE → NAV land on NAV's drop frame and either transition reads the
+  same. So the slot exists and one scene sets it.
+- **The slot.** `drawScenes` hands the transition `io.postA` / `io.postB` (the outgoing and incoming scene's resolved
+  `post`, CONTRACTS §5); `morph` reads `post.morph.flow` (0..1, default 1) per side and scales that side's advection
+  (`uFlow`). At 1 the pass is byte-identical to before (the f178 md5 of the 1 → 3 morph unchanged). `morph-flow-
+  slot.jpg`: flow 1 / 0.4 / 0 — at 0.4 the ribbons are intact with a slight drift and the front still reads as a
+  morph; at 0 only the front moves. **TORUS ships 0.4**; POLYTOPE stays at 1 (its pair showed no comb — the brief's
+  closing rule), DUST at 1 (its fibres were the outgoing side and were not combed). `mixs` untouched.
+
+## §24 feigen-oklch — FEIGEN's colour pass on the field's three coordinates (v0.3, 2026-09-23, worker from `docs/workers/brief-feigen-oklch.md`, report `feigen-oklch.md`; NEXT-SESSION-PROMPT item 2)
+
+- **What shipped (`scenes/feigen/colour.js` only; `field.js`/`ladder.js` byte-identical):** H ← the external angle
+  (+ the mood hue, a half-turn flip on a drop), **L ← the scale-free distance estimate** `0.72·(1 − exp(−200·d))` — the
+  far field at 0.7 (where the chroma budget is full), darkening to the DE black band under half a pixel — rippled
+  ±0.08 by the Green's potential on musical time; C ← `cMax(L)·smoothstep(0.35, 2.5, d_px)·uSat`; kick/drop lift L by
+  ≤ 0.15 / 0.25 of the remaining headroom. The brief's first mapping (L ← log₂G compressed) was built and measured
+  first: a deep view spans hundreds of doublings, so the whole `&feig=3.6` frame went dark; the distance is the
+  quantity that is scale-free at every depth (the same picture — bright field, dark rim, black boundary — over a 250×
+  range of view width). The worker's `cMax(L)` envelope (now `okCmax` in the chunk) is what makes "0 clipped" true:
+  a flat C 0.11 would clip 621 k of 810 k pixels at L 0.3.
+- **Numbers.** Gamut 0 clipped of 921 600 on `&feig=1.2` and `3.6` at f360/f840. Banding along a Green's equipotential
+  (distinct 8-bit triplets per row): 357/305/354 → **395/781/768**. Cost +0.5 % vs a same-session interleaved master
+  control (the v0.2 accept file's ratio would read +8 %: machine drift, HARNESS "Bench protocol"). Seam at the rung
+  change (`SEAM_L` 1.478 — the tool's old default 1.3 measured no rung change; 1.478 is the default now) 0.42× the
+  window median (§16: 0.51×); the f320 kick flare 32.5 (was 42.5). `&histfull=1` equality holds (same md5s). Real path
+  45 s clean. Ride-along: `post.bloom.thr` 0.3 → 0.6 (the bright pixels are plateaux now, bloom softened the frame),
+  the `help.why` sentence corrected to what the code does.
+- **Under the linear chain (§20) the field's 0.72 came out near white** (the tonemap lifts mid-tones: encoded 0.72 →
+  0.83 on screen) — the shipped constant is **0.5** (`feig-l50.jpg`): a pale pastel field with a dark rim and the
+  black boundary, the same picture at `&feig=3.6`. Left open as taste: the field's lightness (0.4–0.5 is the band
+  where the hue cells still read as colour; the v0.2 look — dark field, glowing filament — is the inverse of this
+  design, not a setting of it).
+- **The Q trace after the merges and the chain flip (`q-{house,aba}-after.txt`, 3 runs each, one Chrome, nothing
+  else):** house mean 0.75 / windows 0.59 · 0.73 · 0.85 · 0.95, aba 0.84 / 0.59 · 0.73 · 0.85 · 0.99 — against v0.2's
+  `none` 0.76 / 0.60 · 0.74 · 0.86 · 0.96 and 0.85 / 0.59 · 0.73 · 0.85 · 0.99: **the same to the second decimal** with
+  six forced deep visits per style (entry 0.74–0.79, min during the visit the same, 0.95 at exit + 30 s). Cost
+  neutral, as the brief asked; `accept.sh` FEIGEN L3.6 1.21 ms vs NAV 1.77.
+- **The FEIGEN reference md5s are re-based in §20's commit** (the chain flip moves them again).
+
+## §25 nav-hue — NAV's interior by the multiplier, its exterior by the external angle (v0.3, 2026-09-23, worker from `docs/workers/brief-nav-hue.md`, report `nav-hue.md`; NEXT-SESSION-PROMPT items 5 + 6)
+
+- **What shipped (`scenes/nav/shaders.js` + `index.js`; `nav.js` untouched, `parity.js fake` 0 diff, monitor `viol []`).**
+  Interior (a known cycle): hue = arg λ + the mood hue, L = 0.10 + 0.32·|λ| modulated by the Koenigs bands (a centre
+  dark, a root a lit mid-tone — the multiplier is one value per frame, so the brightening is temporal, not a spatial
+  rim), C = `cMax(L)·(0.6 + 0.4·bands)` with the spokes as a ±12 % chroma ripple; the critical-slowing smoulder stays
+  the additive term outside the DRUM mix (§16's worker's). Exterior (main view and the PiP): hue = the external angle
+  + the mood hue — the doubling expansion accumulated per iteration as the itinerary bits `b_n = sign(Im z_n)`, closed
+  with `arg z_N·2^−N` — L capped at 0.55 (saturated hue lives there), the white DE rim unchanged. `LOOK.pal[0]`
+  still rotates the whole wheel.
+- **Two passes.** The first put the interior at L 0.30–0.65 (+ smoulder → 0.92) and the exterior uncapped: the montage
+  showed a pale interior and a washed drop frame — OKLCH puts bright colours at low chroma, so the identity of v3's
+  picture (dark interior, saturated exterior) lives below L 0.55. The second pass is the shipped one: dark interior
+  with a lit root at f660, the f840 drop an X of teal / amber / rose sectors on black (`nav-hue-ab.jpg`); v3's vivid
+  cyan is outside sRGB at C ≤ 0.119 — §19's price. Named ray: θ = 7/8 reads hue 0.399 in the main view and 0.393 in
+  the PiP (predicted 0.386). Gamut 0 clipped of 810 240 (main) and 23 104 (PiP) at f360/f840; a flat C 0.11 would clip
+  646 k / 696 k. Bench: NAV/id-3 ratio 5.81 → 5.33 in one session (id 3 rose 13 % with the machine; the ratio is the
+  figure). Real path 45 s clean.
+- **Friction into the docs:** `feigen/field.js` does not accumulate the external angle by itinerary (the brief said so —
+  it stores the escape argument); the itinerary derivation is in the report. Benching NAV against NAV is impossible:
+  the protocol's control is "the other scene in the same session" (id 3 here); pinning `Q.q` does not pin `Q.iter`.
+
+
+## §26 Ship v0.3 — the colour default, the hue diagnosis, the real-window audit, the tag (2026-09-23, orchestrator + two workers)
+
+**The feedback.** After the §24/§25 montages the user said: "I don't like the colour pastel change — the colours don't seem
+to match up with the set. Not opposed to pastel, but it shouldn't be the default." Two decisions follow, both permanent:
+**the default look is v0.2's** (FEIGEN's cosine palette over the distance/potential grade, NAV's v3 blue exterior with the
+Koenigs bands), and **a colour-identity change is a variant until the user picks it** — never the default on a worker's
+montage alone (memory: `feedback_colour_default.md`).
+
+- **`colour` slot (core, `4d00d89`; CONTRACTS §1.4 "Colour variants").** `scene.colour = {default, variants: {name: {…}}}`;
+  the core sets `colour.cur` at registration, `setColour(name)` switches every scene that declares the name (an unknown
+  name throws), `&colour=<name>` under `#test`, `CARD.setColour` / `CARD.colour`, `draw(target, {…, colour})`, a variant's
+  `post` replaces the scene's (FEIGEN's OKLCH pass needs bloom thr 0.6, the v0.2 pass 0.3), the cast line names the
+  current and the declared variants, `check.js` fails on a default that is not a variant. Proof the slot alone changed
+  nothing: scene-md5 identical, parity fake 0 diff.
+- **`colour-default` (worker, `docs/workers/colour-default.md`).** The v0.2 shaders lifted verbatim into `colour-v2.js` /
+  `shaders-v2.js`, each mapping with its own `upload()` (the v0.2 → HEAD uniform diff was a clean subset/superset pair:
+  FEIGEN dropped `uSpread`, added `uClipDbg`; NAV added `uClipDbg`). **Byte identity on all twelve md5 lines** with a
+  v0.2 tree + the §20 chain files (`post.js`, `effects/*`, `oklch.js`, `oklab.js`, `main.js`), first shoot, zero fixes;
+  `&colour=oklch` identical to the §24/§25 list on all twelve. Re-based: `scene-md5-v03.txt` = the v2 default,
+  `scene-md5-v03-oklch.txt` = the variant, mixs `425a66e5…` → **`5892ddc5c1f553cbca140bbc1ef6b54d`** (NAV is scene 0 of
+  the pair; the same md5 from the v2chain tree). FEIGEN's `help.feats` lines back to v0.2's brightness wording.
+- **`hue-follows-the-set` (worker, `docs/workers/hue-follows-set.md`, the diagnosis before any mapping).** One montage per
+  scene at L ≤ 0.5 and full chroma `okCmax(L)` (the pale look was L 0.7 + the linear tonemap, not the hue): FEIGEN hue by
+  the external angle (shipped) / the Green's potential / the distance, at f360, f840 and `&feig=3.6`; NAV by arg λ + ea
+  (shipped) / Koenigs inside + smooth escape count outside; a v0.2 row under each. **Read by the orchestrator:** the
+  external angle draws a comb of radial stripes perpendicular to the boundary that goes finer than a pixel at depth
+  (the frame averages to grey — the mapping deletes itself); potential and distance both wrap the set in concentric
+  hue shells, **distance wins** (scale-free: the band width at f840 equals f360's; `−lG`'s p10–p90 spans 0.8 → 16 turns
+  from L 0.4 to L 4.2, no `K_G` works at both depths — §24's lightness failure again); on NAV the shipped mapping split
+  each lobe down a sector seam into a teal and an amber half, the **escape count** wraps every lobe in rings. The
+  user's sentence was exact: v0.2 is one hue per frame with brightness following the boundary — itself a
+  potential/distance colouring. Applied to the `oklch` variant only (second pass): FEIGEN `H = 0.25·log2 d + uHue`,
+  L capped 0.5, C = `okCmax(L)`; NAV exterior `H = 0.2·sn·uSc.y + uPal.x`, the PiP the same rule, the interior's arg λ
+  kept (one hue per component follows the set; its chroma is 0.02–0.07 at the shipped L — open); the itinerary
+  accumulation left NAV's loops (nothing read `ea` any more). `s6-f360` of the variant is byte-identical to the
+  montage's winning column. `clipdbg` 0 clipped on both scenes and the PiP; parity 0; the v2 default did not move by a
+  byte (the gate). Montages: `tools/accept/v0.3/colour-default.jpg`, `oklch-variant.jpg`.
+- **Two contract errors the workers found.** CONTRACTS §1.4 said a hash hook fires *before* `init`; main.js inits and
+  registers every scene, then `initHarness` reads the hash — a hook fires **after `init`, before the first frame** (a
+  program a hook selects is built lazily in `draw`); `CARD.hooks` is one flat map, so FEIGEN's and NAV's `clipdbg`
+  shadow each other — `REG[id].scene.hooks`. Fixed in §1.4 (`0477310`). `git worktree add` is refused inside an agent
+  worktree (`git archive | tar -x`); `FILE=` must be absolute.
+- **The real-window audit (`docs/AUDIT-v0.3.md`)** — five checks in a headed Chrome, the shape of §17. Numbers: the 2560
+  cap and the rung sizes as §17; FEIGEN **0.60×** NAV at 1920 × 1080 DPR 1.5 (3.6 vs 6.0 ms), 0.58× native, 0.69×
+  native fullscreen; 0 black frames on resize and fullscreen, no long frame from the transition itself; a real track
+  heard within 8 s, `bpm` 116.8–117.0 on both estimators, `q` 0.80 at 72 s and 1.00 from 154 s with the linear chain,
+  0 black / 0 long frames; the keys; the cast line's colour key on a real page; the bundle from `file://` with capture
+  at 160 BPM. **One engine bug:** after a 20 s minimize on the worklet path the §18 hold kept the first second clean,
+  but **a surprise cut followed the hold in 3 of 4 restores** (+3.1, +2.1, +1.5 s; run B's baseline: one hard cut per
+  23 s). The probe grew `sr/su/pr` (raw surprisal, surprisal, presence per frame) and showed the raw surprisal
+  **ramping 0.10 → 1.51 over 1.1 s** after `back`: the band followers (`aB/aM/aH/fB`, τ 0.03–0.2 on `dt`) and the chroma
+  emas (τ 0.25 on `dt`) were left to catch up after the gap, so the model's input moved for ~1 s while its mean lagged
+  at 1.5 s; and `va` advanced by `dtF` on the reseed frame had collapsed to one stale d² (k2 0.86). Fix
+  (`features.js`, ENGINE.md "Resume"): `va` never advanced by the gap and the reseed frame's error not scored; the band
+  and chroma followers snap with `dtF` (`slowAnalysis` runs on the reseed frame with the gap); a **2.5 s `settle`**
+  window (longer than the 1 s event hold) in which the model re-learns its mean at 0.25 s and learns no variance. dnb
+  raw peak in the first 2.5 s 1.51 → 1.18 → 0.86 by step, surprisal 0.76 → 0.35 → 0; the demos' own events still fire
+  at their no-hide control times. Headed, final surprisal code: restores 1 and 3 clean for 8 s, restore 2 a surprise at
+  +3.05 s — 1 of 3 at the song's rate. **Then the sweep's own hidden check (v3's demo, `&fake=0`) flaked on a drop at
+  +1.3 s** (accept-28; 2 of 3 standalone): a no-hide control has no drop there; the probe (now `bf ab es em bp hs arc
+  ds` too) showed `eS = eM = 0.24` on the resume frame — the followers snap to one instantaneous energy, not a mean —
+  and `eS` 0.65 a second later, so the second drop rule's `e > eM + 0.25` gate was open for every kick until `eM` had
+  ~one time constant of data; whichever run had an onset coincide fired. **Both drop rules now wait for `settle`**
+  (2.5 s) as the surprisal model does; `absentT` zeroed on the reseed frame. 3 of 3 demo restores clean for 8 s, dnb
+  and house keep their own events at control times (+3.2 / +4.0 s). **Method:** a hidden-tab finding needs a no-hide control of the same demo at the same
+  clock time before it is an artefact (house's "+3.9 s surprise" was its own drop), a baseline of hard cuts per second
+  from the run itself, and a per-frame trace of the model's inputs — the ramp is visible in one line. Guard:
+  `accept.sh` "== hidden worklet" (dnb hidden 20 s at 15 s: 150 frames back, 0 surprise, `srMax` < 1.4). Parity fake
+  0 diff (the fake path never resumes; `dtF = dt` elsewhere).
+- **NAV's cost depends on the parameter** (audit check 1): `bench(0, 200)` 1.79 ms at f480, **7.68 at f1500** (`par`
+  0.76, the walk near a parabolic root, iter 264), 4.07 at f2100; 22.6 ms at 2560 × 1439 in the DPR-1.5 run. Not a v0.3
+  change (v3's loop, parity-bound), but the thing `Q` pays for most → v0.4 item 2.
+- **The v0.3 triage** — every "Left open" line decided:
+
+  | source | line | decision |
+  |---|---|---|
+  | §20 chain | FEIGEN's field lightness under the linear chain (0.5, taste) | **variant only now** (the default is v0.2's pass); tuned with the variant if the user ever picks it (v0.4 stub item 5) |
+  | §21 tempo | the halftime 2:3 margin (comb-only read the relative at 1.06×) | **closed**: the dead-beat-lag condition holds it; no trace flips; instrument before touching |
+  | §22 director | the 24-section ring shift never observed | **carried, low**: a 4-minute track files ~20; `RENUMBER@` on a long set first (v0.4 stub item 6) |
+  | §24 FEIGEN | the OKLCH mapping | **a variant, re-mapped by distance** (this section); the §24 lightness derivation stays as the variant's L |
+  | §25 NAV | the OKLCH mapping; the PiP ray-matching | **a variant, re-mapped by escape count**; the ray-matching rationale is gone with the external angle — §25 / `nav-hue.md` keep the derivation |
+  | §24 / §25 | `min(L, 0.5)` clips the band ripple; NAV's interior chroma | **open in the variant** (v0.4 stub item 5) |
+  | §18 hold | the first frames back | **extended** (this section): followers snap, `settle` 2.5 s, the worklet-path guard |
+  | audit 1 | NAV 4.6× with `c` | **v0.4 item 2** |
+
+- **Ship.** `GPU=1 tools/accept.sh` → `accept-29.txt` 0 FAIL (accept-27: the new check's verdict grep; accept-28: the drop-rule flake, fixed above) → `git tag v0.3` → `releases/eigenwobble-v0.3.html` =
+  `dist/eigenwobble.html` at the tag (59 modules, 410 KB) → `NEXT-SESSION-PROMPT.md` = the v0.4 stub.
+- **How v0.3 was run** (for the next orchestrator): core slot first, proven no-op by md5 + parity, then two workers in
+  parallel from committed briefs (one Chrome each), the orchestrator's own eyes on every montage before a merge, the
+  audit only after the sweep on the merged code, and a finding on the real path chased to a per-frame mechanism with a
+  control run before any fix — then the fix proven headless on two demos and headed on the track.
+
+## §27 routes — a control panel that maps music features to visuals by hand (v0.4, 2026-09-24, orchestrator + one worker; `NEXT-SESSION-PROMPT.md` of the v0.3 tag)
+
+**The decision (with the user, 2026-09-24).** v0.4 is one feature: the listener re-wires, by hand and per scene, which
+music feature drives which field a scene reads — "in FEIGEN, `bass` is fed by `centroid`" — with gain, offset, invert
+and an ema, or a constant; the manual overrides the keys already do (forced scene, transition, colour variant, the
+four post params) gathered into the same panel; part E of the `?` help view, key `p`; `localStorage` + JSON presets +
+a hash form for the harness; **a no-op until touched** (every reference md5 unchanged); the director off limits; the
+per-*visual-parameter* level (a scene declaring its knobs as a slot) is the follow-on, not this. The earlier v0.4 stub
+(NEWTON, NAV's iteration budget, a colour slot everywhere, the chain's k) moved to the v0.5 candidates.
+
+- **`route-core` (`9a0c2c9`, `core/route.js`, CONTRACTS §1.15, HARNESS "Routes").** `ROUTES[scene][field] = {src | 'const',
+  c, k, b, inv, tau}`; the core hands each scene a *view* of `MS`: **the same `MS` object while the scene has no routes**
+  (identity by construction — not a copy, not a proxy: zero cost and no way to drift), else an object made once with
+  `Object.create(MS)` whose routed fields are own properties refreshed by `refreshRoutes(dt)` in the loop after the
+  engine wrote `MS` and before any `update()`; unrouted fields fall through the prototype live. The view goes wherever
+  the core hands a scene `MS` — `update`, `score` (a variant reads its parent's view), a `post` fn, a nested post fn
+  slot (`fb.decay(S)`, resolved by `postOf` against the view while routed) — never to the director, the transitions or
+  the effects (`io.MS` is the real `MS`). **Kinds are the contract:** `level`/`raw`/`angle` route from the same kind or
+  a constant (`inv` = 1 − x on a level, −x otherwise; a level clamped 0..1 after the transfer so the kind's promise
+  survives a gain), an `event` only from an event with no transfer, `count`/`enum`/`vector`/`internal` never (`chroma`,
+  `wave`, `seed`, `arc`, `sectionId` are always the engine's). A route names a field the scene lists in `feats` — the
+  panel's rows are that list, so `feats` is finally load-bearing (§1.13's "a stale entry is a visible lie" now has a
+  control attached). Unknown scene / field / source / kind mismatch **throws** (a typo in `&route=` kills init, as
+  `&colour=` does); lists and presets are all-or-nothing (checked, then applied). The ema is on `dt` (no wall clock).
+  **The one thing the design missed:** `bass`/`mid`/`high`, `beatPhase`/`hit`/`beatCount`/`dropEnv`, `eS`/`build`/
+  `tension`/`surprisal`, `harmAngle`/`harmVel`/`clarity`/`regularity` reach every shader through the HEAD uniforms
+  `use()` uploads from `LOOK` — a routed `bass` would have moved nothing on FEIGEN, whose only `bass` read is
+  `uBands.x`. `look.js headVecs(S, C)` is the split-out derivation; `renderScene` swaps the four vectors from the view
+  into `LOOK` around a routed scene's `draw()` and restores them (`pal`/`tint`/`time`/`GROOVE` stay the director's — a
+  scene's palette is not its own field). Proof the view path is exact: `&route=feigen.bass=bass` (an identity route
+  *through* the view, own property and HEAD swap included) leaves s6 f360/f840 byte-identical, also with ten identity
+  routes; `feigen.bass=high` moves both frames (`3fa9434e…`/`12d4c045…`). Cost: ten routes on FEIGEN, `q` pinned,
+  interleaved `bench(6,300)/bench(0,300)` none → ten → none: ratios .68 / .64 / .77 (the noise band); `ROUTE.ms`
+  0.007–0.023 ms (its own 1 s ema, 0 with no route; the refresh runs outside `ENGINE.frame`). Grammar:
+  `scene.field=src[*k][+b|-b][~tau][!]`, `scene.field=c:0.4`; a `+` arrives as a space through `URLSearchParams` — the
+  parser reads both. `tools/route-smoke.js` (node, no DOM: 60 checks).
+- **`manual-core` (`a4e4545`, `core/manual.js`).** `MANUAL.scene` **is** `SC.forced`, `.trans` the current transition,
+  `.colour` each scene's `colour.cur` — live getters/setters over the director's own state, never a second copy (the
+  keys `1–9`/`0` and the panel move the same thing); `.post` is `MANUAL_POST` (kept in `scenes.js` so `postOf` merges it
+  without an import cycle — **the bundler cannot order a cycle**, so core stays a DAG: `route ← scenes ← manual ←
+  harness`, `hash.js` a leaf for `TEST`). The four params `bloom.thr fb.decay kaleido exposure.on` per scene, merged
+  over the resolved post *after* the colour variant's; with nothing set `postOf` returns the scene's own post object.
+  `&post=feigen.bloom.thr=0.3,…`; the block rides in `routesJSON()`/`loadRoutes()` through `route.js BLOCKS`;
+  `resetManual()` returns to main.js's transition (snapshotted at `initHarness`) and each scene's colour default. Proofs:
+  md5 identity (v2 + oklch lists, mixs) with the module loaded, parity 0; `feigen.bloom.thr=0.3` (the v2 default's own
+  value) leaves s6 identical, `=2` moves it (`da43c0e1…`), `kaleido=0,fb.decay=0.2` too; `tools/manual-smoke.js` 43.
+- **`panel-ui` (worker, `docs/workers/brief-panel.md` → `panel.md`, `cbbd0fe` merged `23120c7`; `core/panel.js` 339
+  lines, DOM only).** One block per scene (the current one first and marked), a row per routable field of `feats` with
+  the `help.feats` clause (part A's rule, from the same data), a source `<select>` from `sources(k)`, gain / offset / τ
+  / invert / a `c` input for `const`, a per-row reset, a two-segment live meter (source → routed; two bars for a level,
+  numbers for raw, dots for events); per block "copy to all scenes" and "reset scene", a global "reset everything"
+  (`clearRoutes()` + `resetManual()`); the manual section (forced scene incl. variants, transition, colour per scene,
+  the four post params with the scene's own value as placeholder — a checkbox is `indeterminate` while unset, with a
+  `×`); presets (textarea of `routesJSON()`, load, copy) and `localStorage['ew.routes.v1']` saved on every change and
+  read at boot by `restore()` — **never under `#test`**. The core's side (`eba7582`): `help.js` gives a `<section
+  id="helpE">` and calls `buildE / markE / refreshE(frameN, hot)` on its existing 6-frame tick — no second rAF, no
+  timer; `hud.js` maps `p` → `openHelpAt('helpE')`; `harness.js` calls `restore()` after the hash when not under
+  `#test`; `check.js` fails on a quoted `FEATS` key or scene name in `help.js`/`panel.js` (the views show data). First
+  shoot, every acceptance line passed; the worker found **the bundler broken at HEAD**: `IMPORT_RE` rejected an import
+  line with a trailing `//` comment, which four v0.4 core modules carry — fixed with a shared `TAIL` (the `[EXC]` count
+  in `accept.sh` would have caught it at the sweep, the worker caught it at item 7). Two things it could not do from
+  its side and said so: an event lasts one frame and the panel runs every 6th — its own latch saw one dot in six; the
+  orchestrator passes `help.js`'s per-frame `hot` map into `refreshE` (`e01c157`), and a routed event's dot is its
+  source's. The brief's coverage line said `6/6` where the registry has 7 entries (DRUM) — fixed in the brief.
+- **Two design corrections while building.** (1) Lists are all-or-nothing: the first draft applied routes in order and
+  threw at the first bad one, leaving a half-applied list — `checkRoute` (pure) then `setRoute`. (2) A fresh route is
+  in force at once (`rebuild` evaluates it with `dt 0`: a fresh ema snaps, a kept one holds) so a route set by an eval
+  between the refresh and `update` is not one frame late.
+- **What is not routed, and why:** `LOOK.pal/tint/mood` (stateful palettes — the director's, and §1.5 says so),
+  `GROOVE`, `uTime`; the director's inputs (`pickScene` reads the scene's *routed* `score`, which is the scene's to
+  compute — but `updateScenes` reads the real `MS`); a scene's `look` memory (no `MS` argument). A scene must not keep
+  the `MS` object across frames (§1.15; audited: none does — every scene copies what it reads in `update`).
+- **The real-window check** (`docs/AUDIT-v0.4.md`, runs E1/E2 + a control): two routes set through the panel's own
+  controls while a real track plays, in force on the next frame; the meter's routed value is the source's transfer
+  (`centroid` 0.608 × 1.5 = `view('feigen').bass` 0.911 while `MS.bass` was 0.79) and the FEIGEN shot shows it (the
+  HEAD swap); the routes survive a scene switch and a 10 s minimize (the §26 hold intact, ticks and meters on); 0 black,
+  the only long frame the minimize; `ROUTE.ms` 0.01; "reset everything" stores the identity state. **Run E1's `q` sat
+  at 0** for 52 s at 58 fps — not reproduced in E2 (0.52 → 0.63, the v0.3 climb), and the control (v0.3 release vs the
+  v0.4 bundle, `file://`, same track, 30 s each, minutes apart) climbed **identically to the second decimal** — a
+  machine moment, recorded so a single low run is never read as the routes' cost.
+- **Ship.** `GPU=1 tools/accept.sh` → `accept-30.txt` **0 FAIL, 17 sections, 0 exceptions** (first run on the merged code; the new "== routes" section all green, help 107/107 on 7/7 ids, ticks 0/100, parity 0, mixs `5892ddc5…`, FEIGEN L3.6 1.34 ms vs NAV 2.16, hidden tab / worklet clean) → `git tag v0.4` → `releases/eigenwobble-v0.4.html` =
+  `dist/eigenwobble.html` at the tag → `NEXT-SESSION-PROMPT.md` = the v0.5 candidates with **per-visual-parameter
+  routes** as the first line (a scene declares its visual parameters as a slot — "the tube radius", "how many
+  mirrors" — and the panel routes `MS` fields into *those*, the natural second level of the same panel; the per-field
+  level shipped here is what it composes over).
+- **How v0.4 was run:** core first as two leaf-ish modules proven no-op by md5 + parity before any UI existed, the
+  contract section written before the worker's brief, the brief naming the four calls the core would make and the
+  elements the orchestrator would later drive, one worker from the brief alone (first shoot), the merge judged on its
+  screenshots, the audit only on the merged code, and a cost finding on the real path chased with a second run and a
+  same-conditions control of the previous release before being written down as "the machine, not the code".
+
+## §28 panel-legibility — the panel you can read (v0.4.1, 2026-09-24, orchestrator + one worker from `docs/workers/brief-panel-2.md`, report `panel-2.md`)
+
+The user's first hands-on with the v0.4 panel on real music produced three sentences; each became one change, nothing
+else was touched (the routes core, the director, every reference md5 and the v0.2 look are as at v0.4).
+
+- **"It looks like I'm mapping musical features to other musical features"** → the row's first column is now the visual
+  ("what it drives here", bright and wide), the jack (`bass · level`) second, and each block says under its heading
+  *each row is one input of this scene: the left column is what it moves on screen, the source is the music feature
+  you plug into it*. Same data as v0.4 (`help.feats` / `FEATS.drives`); the panel merely names the visual first.
+- **"It doesn't seem like changing the parameters changes the viz"** → four causes, four answers. (b) *bid-only
+  fields*: a field a scene reads only in `score()` is now a contract convention — its `help.feats` line begins `the
+  bid:` (CONTRACTS §1.13); the audit found 17 such fields across the six scenes and 6 lines without the prefix (`arc`
+  in TORUS/DUST/MANDALA/FEIGEN/POLYTOPE, NAV's `clarity`), fixed; the panel dims the row and says *bid only — moves
+  nothing while the scene is forced; changes when the director picks it*; `check.js` warns both ways (a `the bid:`
+  field read outside `score()`, a `score()`-only field without the prefix — static per scene folder, score bodies cut
+  out, HEAD uniform components in GLSL counted as `draw()` reads since `mandala.bass/high`, `feigen.bass` and `nav.high`
+  are read only through `uBands`). (a/c) *preview the extremes*: per row `0` / `1` route the jack to `FEATS.range`'s
+  ends (a raw field: 0 and twice the live value) for 2 s of help ticks, then the previous route — or none — comes back;
+  `fire` on an event row is a new core call `pulse(scene, field)` (route.js): the event is `true` on the scene's view for
+  exactly the next frame, a view created for that frame if the scene has none, never a route, never stored; `closeE()`
+  (help.js → panel) ends a preview when the view closes. Storage is never written by a preview and the preset textarea
+  is not refreshed while one runs. (d) *which scene am I dialling*: a line under the E heading — *the director is
+  choosing scenes — force this one while you dial* with **force** / **release** (`MANUAL.scene`), and every block heading
+  says `on screen` / `not on screen` live.
+- **"The drop down is white background with white text"** → `#help{color-scheme:dark}` plus `#help option{…}`: the
+  native popup is the browser's window, not the page's, and only `color-scheme` reaches it. Judged headed with the
+  list open (`tools/work/p2-dropdown.jpg` in the worker's tree): dark list, light rows, the first row highlighted.
+- **What the worker found** (`panel-2.md`): a `<select>` popup is an override-redirect X window that
+  `Page.captureScreenshot` never contains and `xwd -root` refuses (`BadColor`) while it is up — python-Xlib grabs it;
+  `xdotool … windowactivate` by class raised other Chrome-class windows on the desktop (never do it in a headed run);
+  the trusted `{clickSel}` click opens the list, `{key:'Alt+ArrowDown'}` does not (cdp.js sends no modifiers);
+  `CARD.view` takes a name; a DOM-built table has no `tbody`. `panel.js` reached 403 lines with the list moved in, so
+  the DOM helpers and the four cell builders became the leaf `core/panel-ui.js` (89 lines, imports nothing); `check.js`
+  now covers it in the literal-name check.
+- **Proofs.** `check.js` 0 fail 0 warn (the bid check proven to fire both ways on a deliberately broken FEIGEN); route
+  smoke 68/68 with 10 pulse checks; `parity.js fake` 0 diff over 72 fields after the route.js change; both scene-md5
+  lists (v2 default, `&colour=oklch`) identical to the v0.4 references before the merge; the worker's ten acceptance
+  items (identity md5s `8d6ac4a6…` / `fb74fee4…` with the panel opened and closed, ticks 0/100, the preview by eval at
+  f150/f300, `fire` at f121/f122, closeE, force/release, the bid rows, the bundle from `file://`); `accept.sh` "== routes"
+  gained the preview / closeE / force-release sequence; the sweep is `accept-31.txt`.
+- **Not done here, carried to v0.5:** the real answer to sentence 1 is a row that says *filament sharpness ← centroid* —
+  per-visual-parameter routes (`NEXT-SESSION-PROMPT.md` item 1). v0.4.1 is the panel naming what it already has
+  correctly; v0.5 gives it the thing the user asked for.
+
+## §29 params — the visual parameters of a scene as a slot the panel routes into (v0.5 item 1, 2026-09-24, orchestrator + three workers from `docs/workers/brief-{feigen-params,nav-params,panel-3}.md`)
+
+**The decision (the user, 2026-09-24: "proceed" on `NEXT-SESSION-PROMPT.md` without looking at v0.4.1 first).** The real
+answer to sentence 1 of the v0.4.1 brief ("how do I map the musical features to the visual ones?"): a route whose *target*
+is a visual parameter — *"in FEIGEN, the filament sharpness is fed by the centroid"*. A scene declares `params: {name:
+{eli5, range: [lo, hi], from: (MS) => …}}` (CONTRACTS §1.16); the core hands `update()` the values as `env.params`,
+**exactly `from(view)` while nothing is routed** (identity by construction, as v0.4's view is), else the route
+`PROUTES[scene][param] = {src | 'const', c, k, b, inv, tau}` with the transfer in the parameter's unit interval and the
+range scaling it. Everything else composes over v0.4: a field route still feeds `from()`, the preset JSON gains a
+`params` block through `route.js BLOCKS`, `&param=` uses `route.js`'s grammar.
+
+- **`params-core` (`8d5bbd0`, `core/params.js` ~150 lines, a leaf-ish module: `route ← params ← scenes ← manual ←
+  harness`, `loop.js` sets `env.params = refreshParams(sc, dt)` before each `update()`).** Design choices: (1) the values
+  live in one object per scene refreshed in place (no allocation per frame), handed as `env.params` rather than
+  `this.params` so the declaration object is never shadowed; (2) `from()`'s reads are recorded once at registration
+  with a **Proxy of `MS`** — a read of a field not in `feats` (or not an `MS` field) throws at boot and fails `check.js`
+  the same way in node; the recorded list is the panel's "derived: bass, tension" source label; (3) the transfer works
+  in the unit interval (`u = clamp01(k·x̃ + b)`, `value = lo + (hi − lo)·u`) so `k 1 b 0` maps any level onto the whole
+  range and a constant is typed in the parameter's own units; an `event` source is 1 on its frame (with τ a decaying
+  pulse — "brightness ← kick"); any level / raw / angle / event field may feed a parameter whether or not it is in the
+  scene's `feats` (the parameter is the scene's, the source the engine's); (4) a constant `from: () => 0.04` is allowed
+  and shown as a manual setting — "every visual parameter traces to `MS`; a constant is a manual setting, shown as one".
+  Proofs before any scene declared a parameter: both md5 lists identical, parity 0, mixs `5892ddc5`, `tools/param-smoke.js`
+  49 (two smoke findings fixed: a scene without params gets `null`, and `centroid` is a *level*, not raw — the test's
+  assumption, not the code's).
+- **FEIGEN (worker, `feigen-params.md`, 5 commits, one per move, each md5-identical on v2 + oklch f360/f840):** `width`
+  (1 + 0.25 tension − 0.18 dropEnv − 0.03 kick, [0.4, 1.8]), `dive` (0.25 + 1.5 lvl, [0, 2]), `roll` (the constant 0.04,
+  [0, 0.4]), `glow` (lvl → `uLevel`, [0, 1]), `thick` (bass → a new `uThick` replacing the `uBands.x` read in both colour
+  passes, [0, 1]). Three finds now in §1.16: `from`'s argument must be named `MS` in a module whose state is a `const S`
+  (`check.js`'s decoy rule); an expression moves whole or not at all (the dive's `dt/(32·period)·A·B·C` is
+  left-associative — lifting `B·C` re-associates: 46 % of random draws differ in the last ulp, and `feigL` integrates —
+  only `A` moved); a shader-side value becomes a parameter only through an existing uniform (fp32 → fp64 folding is a
+  pixel change). `feigen.thick=centroid*1.5` is the user's sentence, literally, at f360 = 0.6825.
+- **NAV (worker, `nav-params.md`, 5 commits, each md5-identical + parity 0):** `trap` (0.35 + 0.9 mid, [0.35, 1.25]),
+  `zoom` ((1 − 0.05 bass − 0.07 hit)(1 + 0.25 dropEnv), [0.5, 2]), `dots` (1 + bass, [0, 3]), `pip` (sstep(0.05, 0.3,
+  presence), [0, 1]), `reach` (the exterior depth target, [LG_MIN, LG_MAX] = [−11.9, 0.9]; reads eS, tension, dropEnv;
+  passed into `updateNav` through `opts.P`). `spin` (the trap rotation) was built, proved identical and **reverted**: an
+  unwrapped angle cannot honour a finite range (§1.16 open end). Continuity monitor `viol []` unrouted and with
+  `trap ← kick`; **`reach ← kick` trips it 7 times** (the exterior spring's response is exponential in `reach`; an
+  impulse snaps c across 12.8 units) — the honest answer for that parameter, recorded in §1.16 rather than clamped
+  (a clamp would break the identity). DRUM (id 4) has no reference line (`scene-md5.sh` lists scene ids only) — the
+  worker baselined it at `2b9fd7e` and it is identical at HEAD.
+- **Panel (worker, `brief-panel-3.md` → `panel-3.md`, 3 commits, merged `1e051fd`^):** a **parameters table per scene
+  block above the jacks** — what it moves (the `eli5`, first and wide) · parameter (name, `[lo, hi]`) · source (a select
+  whose first option reads *"derived: tension, dropEnv, kick"* from the Proxy-recorded reads, or *"derived: constant"*;
+  then every routable field with its kind, `const` last) · transfer (`k b τ invert`, a `c` input with the range as
+  `min`/`max`) · reset + **`lo` / `hi`** previews (a constant route at the range ends for 2 s of help ticks, the v0.4.1
+  mechanism generalised into `panel-ui.js` over a row protocol `{tr, msg, err, ctl, get, set, done}` so both tables share
+  one preview engine) · meter *derived → in force* (both live; equal while unrouted — the panel proves the identity every
+  tick). The jacks table folds under `<details>` *"the inputs behind these — 16 jacks"* for a scene with params; a scene
+  without keeps the v0.4.1 layout and ids. New leaf `core/panel-params.js` (125 lines; imports `params.js`, `feats.js`,
+  `panel-ui.js` only), `panel.js` 347 → 328, `panel-ui.js` 89 → 122. Ids `pe-psrc/pc/pk/pb/ptau/pinv/prst/plo/phi-<scene>-
+  <param>`, `pe-pdet-<scene>`. All ten acceptance items first shoot; storage through the existing `params` block of the
+  preset, `reset everything` clears it. Two finds now in §1.16: `env.params` is refreshed only on frames the scene
+  updates (an off-screen scene's "in force" meter is its last value), and an event *source* takes the full transfer
+  (unlike a v0.4 event jack) — the panel hides `k b inv` for `const` only. **The user's sentence in a real window**
+  (`p3-real-2.jpg`, DPR 1.5): the FEIGEN block's row *"how thick the glowing filaments are · thick [0, 1] · centroid ·
+  level"*, derived 0.237 → in force 0.455, set through the panel's own select — judged by the orchestrator's eyes.
+- **Merged-tree proofs (before the panel merge; the panel is closed-by-default DOM):** both md5 lists identical, parity 0
+  diff, mixs `5892ddc5`, `&param=feigen.thick=centroid*1.5,nav.zoom=c:2` → `PROUTE.n` 2, FEIGEN's values `{width 1.040,
+  dive 0.460, roll 0.04, glow 0.140, thick 0.6825}`, errs `[]`.
+- **Ship (not tagged).** `GPU=1 tools/accept.sh` → `tools/accept/v0.5/accept-32.txt`: 18 sections, the new "== params"
+  all green (smoke 49, identity `paramsOf == derived` on 5 parameters, a centroid route and both range ends move the s6
+  md5 and lo ≠ hi, the panel sets a route by select and previews `hi` for 2 s of ticks with storage null), help 107/107 on
+  7/7 ids, parity 0, mixs `5892ddc5`, bundle clean, **one FAIL: "hidden tab back … onsets:1"** — the v0.3 resume-hold check,
+  which item 1 cannot touch; re-run twice in isolation → `onsets:0` both times (as accept-30/31), recorded as an addendum in
+  the log: a machine moment (the check counts 60 frames, the hold is 1 s — slow frames let the demo's next onset into the
+  window). **v0.5 is not tagged on item 1 alone**: the user has not looked at v0.4.1 or at this panel; `NEXT-SESSION-PROMPT`
+  asks them to, and to decide whether the tag comes now or after the list. `dist/eigenwobble.html` is the build to open.
+- **How it was run:** the core as one leaf-ish module proven a no-op (both md5 lists, parity, mixs) before any scene declared
+  a parameter; the contract section written before the three briefs; two scene workers in parallel (the two Chrome slots),
+  each move its own commit proven byte-identical; the panel worker after the first scene merge, from the brief alone,
+  first shoot; every worker's friction folded into §1.16 the same day; the merge judged on the workers' montages.
+
+## §30 nav-iter — the iteration budget without a chart (v0.5 item 2, 2026-09-24, orchestrator + a NAV worker from `docs/workers/brief-nav-iter.md`, report `nav-iter.md`)
+
+**The diagnosis was wrong, and the worker showed it before touching a line.** §26 / `AUDIT-v0.3.md` check 1 said NAV's
+f1500 cost (7.7 ms vs 1.8 at f480) was "convergence detection taking the full `uIter` near a parabolic root". At f1500
+`cyc.has` is **0** — `nav.js` hides the chart while the beat kick is up (`k > 0.02`, kick 0.147 there) — so the shader has
+**no convergence exit at all**, and the budget is **420**, not 264: c sits inside a period-4 baby, where `draw()`
+multiplies `Q.iter` by 1.6. The control is f2100 — the same baby, 420, |λ| as close to 1, but *with* a chart — at 2.7 ms.
+The brief's first candidate (widen `uEps2` as |λ| → 1) had nothing to widen. Corrected in `AUDIT-v0.3.md` (a dated note).
+
+- **The exit rule (`ITER_LO = 0.5`, `uIterLo` uploaded beside `uIter`, the same three lines in both shader files):** the
+  loop already computes `|(f^n)'|²` for the `big` test; now named `dd`, loop-local. Without a chart (`uLam.w < .5`) an
+  orbit whose `dd < 1` after half the budget is inside a basin — it can no longer escape, and the only thing its remaining
+  iterations could move is the line trap `tL`, which settled long before — so it breaks. The exterior path, `tL`, `tC`
+  and the escape branch are untouched by construction (nothing they read depends on where the loop stops). `nav.js` (the
+  state, parity's dump) is untouched.
+- **Measured (bench protocol, `Q.iter` pinned 264, medians of 3 × `bench(0, 300)`, interleaved A/B, two runs; the machine
+  drifted 2.5× across the session — ratios are the signal):** f1500 6.69 → 4.67 / 6.17 → 4.87 (**0.70 / 0.79**), f480
+  0.86 / 0.98, f900 0.97 / 1.05, f2100 0.89 / 1.05; f1500 / f480 **4.5 → 3.7**. Headed 1920 × 1080 agrees (0.74 / 0.76).
+  **The brief's target (f1500 ≤ 2 × f480, ≤ 0.5 × before) is not met and cannot be by the interior alone:** the exterior at
+  that baby-copy view costs ~2.55 ms extrapolated to zero iterations — more than all of f480 (1.62 ms) — so the ratio's
+  floor is ~1.6 with a free interior. The levers left are the 1.6× baby boost and the view scale, both design, not budget.
+- **Pixels:** every scene-md5 line byte-identical (v2 and oklch, s0 *and* s4 — DRUM had no reference line: `scene-md5.sh`
+  grepped `^  id:` and never saw a variant's four-space `id: 4`; fixed, both lists carry s4 now from the worker's HEAD
+  baseline); `par` 0.00 at f360 and f840 (the `conv` branch is dead at both checkpoints, so they could not see the change);
+  parity 0; monitor `viol []` (n 3606). **f1800: 0 pixels differ at a third the cost.** f1500: 1.20 % of pixels > 2, 0.037 %
+  > 32, max 85 — two small dendrite spirals deep inside the dark lobe, late-escaping filigree the 420 cap was already
+  deciding (`ni-1500-montage.jpg`, cap probes `ni-cap{420,264,211,158,106}-f1500.jpg`); exterior dust, equipotential
+  ripple, trap ring, outline, interior wash, PiP untouched. `ITER_LO 0.4` buys another ~8 % at f1500 and moves the OKLCH
+  s0-f360 jpg by 2/255 at one pixel — shipped 0.5 because the acceptance said byte-identical (the user's call to lower it).
+- **Rejected with numbers:** a Brent save + contraction certificate never fired at f1500 and cost +18–22 % everywhere; the
+  guard `dd·uPx² < 1` doubled the f1500 damage; `dd·uPx < 1` broke f360; a plain lower cap moved 2.43 % of f1500 *and* f360.
+- **Q trace (orchestrator, merged code, `q-house-{before,after}-nav-iter.txt`, `VISIT=` empty — the director's own picks, 3 runs
+  each, one Chrome, nothing else on the machine):** identical to the second decimal — q mean 0.75 / min 0.44, windows 0.59 / 0.73 /
+  0.85 / 0.95, the same scene sequence `0 5 0 2 1 5 0 5 2 1` — the house demo never walks NAV into the baby-copy region the fake
+  timeline reaches at f1500, so the trace proves a non-regression, not a gain; the gain is the bench table above.
+- **Lesson:** a cost finding's cause is measured before it is briefed — the audit wrote the plausible mechanism, not the
+  observed one, and the item's acceptance was derived from it. The worker's first move (a cap probe at f1500 and the f2100
+  control) is what the brief should have asked for first.
+
+## §31 chain-k — the tonemap knee as a LOOK parameter (v0.5 item 4, 2026-09-24, orchestrator)
+
+`CHAIN.k` (1.5, §20) was the composite's fixed knee. Now `LOOK.k = CHAIN.k · (1 + CHAIN.kMood · (2·arousal − 1))`, ≥ 0.2,
+computed in `look.js` every frame and handed to `runChain` as `io.k` by the loop (`runChain` falls back to `CHAIN.k` for a
+caller without one — `chain-smoke`). **`kMood` defaults to 0**, so the knee is *exactly* `CHAIN.k` and every reference md5
+holds — the default look is v0.2's, the mood drive is a knob (arousal → a harder knee: with kMood 1, calm music k 0.75,
+fierce 3 — a harder knee lifts the mids: 0.18 grey through the linear composite reads 135 / 150 / 177 at k 0.75 / 1.5 / 3).
+`&k=` and `&kmood=` under `#test`; `chain-smoke.js` checks the three-k ladder, `io.k` = the default's pixel at 1.5, and
+`LOOK.k === CHAIN.k` at kMood 0. Not in the panel yet (a "chain" row in the manual section is a panel item — carried).
+**Proofs (merged tree, item 2 in):** both scene-md5 lists identical (14 lines each, DRUM included), parity 0 diff, mixs
+`5892ddc5`, `chain-smoke` OK (the ladder 135 / 150 / 177, `io.k` 1.5 = the default's pixel, `LOOK.k === CHAIN.k`); the DUST
+drop-frame clip (`CLOCK=1`, mask at 780, shot 781, pixels > 128): **0.117 %** at the default (§20 read 0.12) and **0.143 %** with
+`kmood=1` (LOOK.k 0.825 at that frame's arousal 0.275 — calm music softens the knee), both under the 0.2 % gate; `&k=3` moves
+DUST's s1-f360 (`bd378864…` vs `c6166af9…`). Not benched: the composite's cost does not depend on k.
+
+**The cycle (found by the colour-slot worker's file:// check, fixed `7406869`).** The first cut computed `LOOK.k` in `look.js`,
+which imported `CHAIN` from `post.js` — and `gl.js` imports `look.js`, `post.js` imports `gl.js`: `gl → look → post → gl`. The
+http page never noticed (native modules resolve a cycle), `bundle.js` wrote a file (it does not detect one), and the bundle died
+from `file://` with "Cannot destructure property 'G' of gl.js as it is undefined" — the second time a worker's `file://` item has
+caught a dead bundle (v0.4's `TAIL` regex was the first). Now `LOOK.k` is set in `loop.js` (which imports both) and **`check.js`
+fails on any import cycle in `assets/`** (a DFS over the relative-import graph; proven on the broken commit). Two bundle gates
+exist now: the sweep's `[EXC]` count and the static cycle check after every edit.
+
+## §32 colour-slot — a colour slot on every scene (v0.5 item 3, 2026-09-24, one worker from `docs/workers/brief-colour-slot.md`, report `colour-slot.md`)
+
+DUST, MANDALA, TORUS and POLYTOPE declare `colour: { default: 'v2', variants: { v2: {} } }` (16 inserted lines, one commit per
+scene) so `CARD.colour` lists six scenes, the cast line names `v2` on each, the panel's colour select (`pe-col-<scene>`) exists
+for all six, and `setColour('oklch')` still moves exactly NAV and FEIGEN. Every md5 line byte-identical under both mappings (the
+empty variant object carries no `post`, so the scene's own stays). The worker's finds: the v0.5 reference lists had DRUM's s4
+lines appended after s6 while `scene-md5.sh` emits ids in order (a `sort` compare hid it) — re-sorted; a fresh worktree has no
+`tools/work/` (the script mkdirs it now); HARNESS's help example labelled "the cast" scrolls to part E since the panel exists —
+relabelled; and **the dead bundle above**, which its item 6 caught on a clean extraction of the base commit.
+
+## §33 Ship items 2–4 (2026-09-24, orchestrator; not tagged)
+
+`GPU=1 tools/accept.sh` → `tools/accept/v0.5/accept-33.txt`: **18 sections, 0 FAIL, 0 exceptions** on the merged code (items 1–4 +
+the cycle fix) — parity 0, mixs `5892ddc5`, "== params" green, help 107/107 on 7/7 ids, hidden tab / worklet clean, the bundle 30 s
+clean from `file://` (`hop 2831`, `switched true`). `dist/eigenwobble.html` at `6d6fe68`^ is the build for the user's eyes. **v0.5 stays
+untagged**: items 5 (the OKLCH variant's open ends — opt-in, only if the user wants the variant tuned) and 6 (§21's halftime margin and
+§22's ring shift — no failing trace, carried) are the user's call, as is the tag, and they have not yet looked at v0.4.1's panel or
+this one. What the day changed for a listener: the panel's second level — *"in FEIGEN, the filament thickness is fed by the centroid"*
+— on FEIGEN and NAV; a cheaper NAV where it was dearest; six scenes that answer `colour` the same way; a tonemap knee that can follow
+the mood. What it changed for a worker: §1.16 with its finds, a cycle check, a variant-aware md5 script, and a corrected audit.
+
+**Tag (later the same day).** The user opened the build on real music and routed a parameter from the panel: *"looks good and is ready to tag"* → `git tag v0.5` at this state, `releases/eigenwobble-v0.5.html` = `dist/eigenwobble.html` at the tag (the bundle accept-33 proved from `file://`). Items 5 and 6 stay carried into the next prompt. The project is renamed **Retina Rave** in the commits after the tag (§34) and pushed with its history to `github.com/tbkraf08/RetinaRave`.
+
+## §34 Retina Rave — the rename and the push (2026-09-24, after the v0.5 tag; the user: "rename project to Retina Rave and push code (all the git history if possible)")
+
+The engine is **Retina Rave** from the commit after v0.5. What changed: `index.html`'s title and landing word, the bundle's name
+(`dist/retinarave.html`; `tools/bundle.js`, `accept.sh`, HARNESS), `cdp.js`'s tab-capture title match, `package.json` (`retina-rave`
+0.5.0), the first line of CONTRACTS / HARNESS / brief-common, a `README.md`, and `NEXT-SESSION-PROMPT.md`. What did not: every
+historical document — DECISIONS §1–§33, the worker briefs and reports, the audit files, the accept logs, the earlier session
+prompts, `releases/eigenwobble-v0.*.html` — keeps the old name, because they are records of what was said when. The directory is
+`~/Documents/Kraftek/RetinaRave/` (a symlink at the old path keeps old commands and the old memory key working); the twenty agent
+worktrees of merged branches were removed (branches kept); the branch is `main`; the remote is `git@github.com:tbkraf08/RetinaRave.git`
+with the whole history (every commit since v0.1) and the tags v0.2–v0.5.
+
+
+## §35 v0.6 "public" — mobile, landing polish, about page, SEO (2026-09-24, orchestrator, plan `~/.claude/plans/i-have-a-clodeflare-delegated-squirrel.md`)
+
+The site went public at retinarave.com the same day (§34) and the first look listed five things: mobile was a poor experience, the
+landing card named two of the keys, the help headline still read EIGENWOBBLE, there was no about/support page, no SEO metadata.
+Five commits, one per step of the plan, `npm run check` + `npm test` green between each.
+
+**Step 1 — leftovers.** `help.js` h1 → RETINA RAVE. The key table became `keys()` (a function: the scene digit range reads
+`REG.length`, and scenes register after the module loads) with a third, short label per key; `hud.js renderHint()` renders the
+landing card's key row from it, so part D and the card cannot drift. `1–7`: only ids 0–6 are registered; `8`/`9` were silent no-ops.
+The `keydown` listener now returns on `input,select,textarea` targets (typing `0.5` in a panel number field released the director;
+`p`/`d`/`h`/`m` in the preset textarea fired shortcuts); Esc still passes. The panel's store line no longer prints the localStorage key
+(`ew.routes.v1` stays: renaming orphans saved presets). README dropped "a file" — no file source exists.
+
+**Step 2 — SEO + `site/`.** `index.html` head: title, description, canonical, theme-color, manifest, SVG favicon + apple-touch-icon,
+Open Graph + twitter card with `og.jpg` (1200×630: the FEIGEN f420 frame under `CLOCK=1 GPU=1 'test&scene=6'`, composed with the
+card's gradient h1 in an HTML page shot through cdp with a clip), JSON-LD `WebApplication`. A quiet `<p class="seo">` under the card
+names the scenes (Google renders JS, but the help text exists only after a keypress). `site/` (tracked; `npm run build` = bundle +
+`cp -r site/. dist/`): `robots.txt`, `sitemap.xml` (`/`, `/about`), `site.webmanifest` (standalone, any orientation), `favicon.svg`
+(the main cardioid c = e^{iθ}/2 − e^{2iθ}/4 and the period-2 bulb, stroked in the h1 gradient; PNG icons 192/512/180 are Chrome
+shots of it), `_headers` (page 300 s, images a week). `.gitignore` gained `!site/*.jpg`. The landing scrolls when the card is taller
+than the viewport (`overflow-y:auto`, `.card{margin:auto}`) — the card was exactly 633 px at 1280×720 headless. **Harness fix:** the
+"real start path" and bundle sections clicked `[695,440]`, which was the *demo link's* position on the old layout, not the button —
+`{clickSel:'#demo'}` now (`#go` starts tab capture, which hangs headless without a picker; the first attempt used `#go` and saw
+`mode none` — the button took focus, the promise never settled).
+
+**Step 3 — `site/about.html`.** Toma's voice ("I like music and math and built this for fun"), the six scenes in one line each,
+Venmo `@toma-kraft` / Cash App `$toma5`, Instagram and YouTube `@retinarave`, how to use it (desktop and phone), "▶ open the show".
+Linked from the card's alt row and the help view's foot as a relative `about.html` (Workers static assets serve it at `/about`
+and redirect `/about.html` there; the `file://` bundle beside `dist/about.html` resolves it too).
+
+**Step 4 — microphone.** `engine/sources/mic.js`: `getUserMedia` audio with EC/NS/AGC off, the same bus, analyser tap and silence
+watchdog as capture (`watchCapture` now watches both live modes), `stopAll` says "Microphone stopped." `ENGINE.start('mic')`. The
+card is capability-aware in `hud.js`: no `getDisplayMedia` (every mobile browser) or `(pointer:coarse)` → `#landing.mobile`
+(speaker copy + the mic button alone); desktop: Share a tab, then the mic under it. Proof: cdp `FAKEMIC=1` (Chrome's fake device +
+fake permission UI) → `mode 'mic'`, `heard true`, landing hidden; a stopped track returns to the card; without the flag the
+declined path runs the demo with its message. `parity.js fake` 0 diff over 72 fields.
+
+**Step 5 — touch.** `core/touch.js` (new leaf over scenes/help/hud): `#tbar` (CSS-only: `(pointer:coarse)` and `body.running`) with
+help · ‹ · › · ⛶, a horizontal swipe on `#gl` (> 60 px, < 700 ms, dx > 2|dy|) steps `SC.forced` through `REG` from the logical scene, a
+press held 600 ms toggles the help; a swipe while the help is open does nothing (it scrolls). ⛶ → `fullscreen()` (now with the
+WebKit-prefixed path) or, where no fullscreen API exists (iOS Safari), a toast pointing at Add to Home Screen. `hud.js` keeps a
+screen wake lock while running (re-requested on visibilitychange; released on stop). `quality.js` seeds `Q.q` 0.35 under a coarse
+pointer; `gl.js` caps the long edge at 1600 there (2560 elsewhere). `touch-action:none` is scoped to the canvas, `overscroll-behavior:none`
+on the page; `#help` and `#landing` keep touch scrolling. Proof: cdp `MOBILE=1` (390×844, DPR 3, touch, `pointer:coarse` emulated) —
+`.mobile` card, key row hidden, bar `flex` while running, synthetic `TouchEvent`s: swipe left 0→1, right →0, hold → `HELP.on`, bar
+next×2 → forced 2; `Q.q` read 0.15 half a second in (the 0.35 seed after one SwiftShader step). `scene-md5.sh v06` = the v0.5
+reference list on all 14 lines; test suite and parity as before. NAV in portrait: nothing cropped (the PiP sits under the bar's ⛶).
+
+**Left to the user (plan E6, C7):** Cloudflare dashboard — add `www.retinarave.com`, a 301 www → apex rule, disable the
+`*.workers.dev` route, verify in Search Console (DNS TXT) and submit `/sitemap.xml`, turn on Web Analytics; then the portrait
+review of scenes 1–6 on a real phone (the scenes were tuned landscape; nothing in code yet). Not done on purpose: a file/drop
+source (README's claim was dropped instead), shareable `&route=`/`&param=` URLs outside `#test`, the panel on a phone (its 10–12 px
+mono columns overflow at 390 px; it stays a desktop tool).
+
+**Tag v0.6 (2026-09-24):** the user looked at the live site ("looks good; tag v0.6"). `releases/retinarave-v0.6.html` = `dist/retinarave.html` at the tag (the first release under the new name; `about.html` and the icons are not inside it — they live in `site/`). package.json 0.6.0.
+
+## §36 TORUS2 — the Hopf torus that is alive with the music (v0.7, 2026-09-24, orchestrator + one worker from `docs/workers/brief-torus2.md`, report `torus2.md`; `TORUS2-SESSION-PROMPT.md`)
+
+**The decision (the user, 2026-09-24, after TORUS on real music):** *"1. the inside fibres are dark color and never seem to
+light up; 2. should be able to detect rhythms in the bass / mids / lows; 3. color should be based on musical key; 4. rotation
+of the object should be based on the speed of the music (16 beats == full turn), should subtly bounce with the beat; object
+should grow is music builds / intensity; mix in different attractors like the thomas / 3 cells cnn attractor; What else can
+be controlled by music to make object feel interesting and alive with music?"* — and *"create as a net new scene for now
+that will replace the existing torus scene once approved"*. So: **TORUS2, id 7, forced-only** (key `8`, `&scene=7`;
+`score()` 0 — the director never picks it, DECISIONS §15's lesson: a registered scene must not move a reference pick),
+TORUS (id 3) byte-identical and still in the rotation. The interview settled five things as the user's: waves on the
+threads for rhythm, major warm / minor cool, the key as a hue *anchor* (twelve hues keep their spacing, the wheel turns),
+the 16-beat turn as a **nudge per beat**, the bounce 5 % and visible. Everything else is a lean, marked in the brief.
+
+- **Skeleton first (`ce34cc8`):** the registration alone, proven a no-op — scene-md5 ids 0–6 = `tools/accept/v0.5/scene-md5-v03.txt`,
+  mixs `5892ddc5`, parity fake 0 — before a pixel. The session prompt was wrong about one thing: `sources/fake.js` **does**
+  fill `key` 9 / `mode` 1 / `keyConf` 0.8 and `kick`/`snare`/`hat` on `#test`; only `chroma` is zero (§4).
+- **The scene (worker, eight commits `8a13ec3`…`9e5be87`, `assets/scenes/torus2/{index,shaders,waves,colour,motion,attractors,help}.js`,
+  1022 lines, `tools/test_torus2.js`):** (1) the inside lights — a brightness floor (`GLOW`), the fog capped, the quiet inner
+  families flash on `kick`, `hat` shimmers along every fibre: centre luminance at f360 **0.56 vs TORUS's 0.29** (`tools/lum.py`,
+  centre 20 % / rim annulus; ratio 2.6); (2) **waves on the threads** — a rising edge of `kick`/`snare`/`hat` launches a bump
+  (displacement normal to the stroke *and* a brightness pulse) that travels **one ring per bar** on the beat clock
+  (`beatCount + beatPhase`, no wall clock), a ring buffer of 8 launch beats per band as uniforms, summed in the vertex shader;
+  the rhythm is the spacing: the pinned 4x4 train reads positions `.10 .35 .60 .85` (gaps .25), the syncopated one `.10 .225
+  .60 .725` (gaps .125/.375) — `hooks.train`, `hooks.info`; (3) **colour from the key** — anchor `((7·key) mod 12)/12` on the
+  circle of fifths, eased ~2 s on the unwrapped hue, `mode` pulls the anchor 45 % toward warm 0.02 / cool 0.55, `keyConf` < 0.3
+  holds the last key and slides toward `LOOK.mood`, `valence` on top; the spread narrowed to 0.30–0.75 **centred on the anchor**
+  (a full-rainbow spread let no bias read — the cost is the v0.2 twelve-hue look, the user has not seen it yet); (4) a
+  **nudge per beat** (`turnT = beatCount/16 · 2π`, a 0.3 s spring, `hush`/`calm` ×2 slower), the **5 % bounce** through the
+  camera distance (`max(0, cos 2π·beatPhase)^4`), growth in two stages (fibre slots per family 6→12 on `build` 0–0.5, camera in
+  on 0.5–1, resting size from `intensity`/`arousal`, the drop collapse kept); (5) **attractors by advection** — Thomas, the
+  3-cell CNN (the brief's weights were *not* chaotic — λ ≈ 0; the standard three-cell template with s = 3.21 gives λ ≈ 0.118,
+  measured in `test_torus2.js`), Aizawa, Halvorsen; 8 RK2 steps in the vertex shader after projection, normalised into the
+  nest's ball, clamped at 1.6× its radius (the §4 pole), lerped by `morph = 0.9·tension` (0 in `arc` idle), picked by
+  `sectionAlt mod 4` with a 1 s cross-fade; (6) the alive list — all eleven, one `help.feats` line each (the unwind lives on the
+  longitude φ, not on ψ: adding phase to a fibre's own parameter runs round the same circle). Six params (§1.16): `turn bounce
+  size glow morph wave`, identity proven, a `morph=c:1` route moves the md5.
+- **Cost (bench protocol, two page loads each with its own scene forced — a bench of an off-screen scene measures its last
+  update's state, friction 12):** TORUS2 1.556 ms vs TORUS 1.267 ms at tier 3 with morph 1 and every wave live — **1.23× raw,
+  1.31× NAV-normalised, 1.45× by per-pair ratios**, all under the 1.5× cap; the extra is the advection (halved by `STEPS` 8 → 4).
+- **Merged-tree proofs (`9e5be87` + the accept section):** ids 0–6 identical, s7 md5s `7189a6ba` / `48113eda` stable across three
+  runs (`tools/accept/v0.7/scene-md5-v07.txt` = the v0.7 list), mixs `5892ddc5`, parity 0, `accept.sh` "== torus2" (md5s, the
+  luminance gate centre ≥ .4 ratio ≥ .35, the two trains even/uneven from `hooks.info` de-duplicated — a wave a bar old sits
+  where a new one launches —, the param route).
+- **Friction now owed to the docs:** `arc` has no `'intro'` (the enum is `idle|valley|sustain|build|peak`); `#test` sets `hat`
+  to exactly 0.5 (an edge detector's threshold must be below it); `ctx.budget('segs')` is the CPU-buffer budget, a path-B scene's
+  segments per ring stay geometry (§1.4 says so; the brief contradicted it); a two-argument hook is reached through
+  `CARD.REG[id].scene.hooks.f(a, b)` in an eval, not `&name=`; `goScene` does not beat a sticky `&scene=`; `paramDeps` misses a
+  field behind a short-circuit on the defaults (write `a · (cond ? 0 : 1)`); `tools/probe.js` needs a real window (headless
+  luminance is `tools/lum.py` on the shot, post-composite).
+- **What the user should look at first (the worker's own doubts):** the wave amplitude `WAVE0` 0.26 of the fibre radius (4× the
+  lean; 6 % was invisible; the rings are lobed between kicks), the narrowed spread, `MORPHK` 0.9 (aba at 50 s is a magenta comet).
+  Not built: the `oklch` variant (v2 alone is declared; `colour.js anchor()` returns a turn, so a `palOK` pass is small).
+- **Replacement (not done — waits for the user):** TORUS2 takes id 3's bid (`0.25 + 0.45 clarity + 0.3 regularity`, 0 in builds),
+  TORUS moves to id 7 as `torus-v1` forced-only for one release, both md5 lists re-based in the same commit, §37 records it, then tag v0.7.
+
+## §37 TORUS2 promoted — the swap, the re-base, the v0.7 tag (2026-09-24, orchestrator; the user: "torus2 looks good, promote it. tag then deploy")
+
+**The decision:** the user looked at `tools/accept/v0.7/montage-torus2-{real,demo}.jpg` and the build and approved TORUS2 as built —
+none of §36's leans was questioned (the wave amplitude .26, the narrowed spread, `MORPHK` .9, minor not always cool), so they stand
+as the v0.7 look and stay the first knobs if the user ever objects. The Replacement path of `TORUS2-SESSION-PROMPT.md` step 4, exactly:
+
+- **The swap:** `torus2` is **id 3** and carries TORUS's bid verbatim (`arc === 'build' ? 0 : 0.25 + 0.45 clarity + 0.3 regularity`;
+  `clarity`/`regularity` added to its `feats` with "the bid:" lines). The old TORUS is **`torus-v1`, id 7**, `score()` 0 —
+  forced-only (key `8`) for one release; `arc` and `regularity` left its `feats` (only the bid read them). `main.js` registers
+  `[nav, dust, mandala, torus2, polytope, feigen, torus]` so the cast order is by id. CONTRACTS §1.8's table says so. Deleting v1 is a
+  later, separate decision of the user's. The about page's TORUS line ("the Hopf fibration itself: circles on the three-dimensional
+  sphere, projected down to where we can see them") is still true of TORUS2 and stays.
+- **The re-base, in this same commit:** `tools/scene-md5.sh` after the swap is the v0.5 v2 list with **s3 ↔ s7 exchanged and nothing
+  else moved** (s3 = `7189a6ba` / `48113eda`, s7 = `d3e73b38` / `7e77c7b3`) → `tools/accept/v0.7/scene-md5-v07.txt`; the OKLCH list
+  likewise → `scene-md5-v07-oklch.txt`; `accept.sh` and HARNESS point at them. The **mixs reference md5 is `641f6633`** (stable across
+  two runs): the director-blind 0→3 fade at f178 now lands on TORUS2 (was `5892ddc5` with TORUS at 3 — the recipe is unchanged, the
+  pixels are the new scene's). Parity fake 0 diff (the swap touches no core file). `test_director.js`, the manual / route / param
+  smokes unchanged.
+- **Q trace with TORUS2 in the rotation (`q-{house,aba}-promoted.txt`):** house 0.56 / 0.71 / 0.83 / 0.93 (minima .66 / .77), aba 0.56 / 0.71 / 0.83 / 0.98 (.65 / .77) over three runs
+  each — the same digits as `q-*-after.txt` with TORUS2 unregistered-as-good-as (§36) and as the v0.5 trace; the director now picks
+  id 3 on aba in every run (`seq … 3 …`) and the knob never notices: a 1.23× TORUS scene under the 0.4 µs/segment line cost is invisible
+  to a controller that moves on 18.8 / 26.5 ms frames.
+- **Tag v0.7 "alive":** `GPU=1 ACC=v0.7 tools/accept.sh` → `tools/accept/v0.7/accept-34.txt`, 19 sections, **0 FAIL** (parity 0, mixs `641f6633` = recorded, hidden tab / worklet
+  clean, params identity, "== torus2" all green at id 3, bundle 30 s clean). `releases/retinarave-v0.7.html` = `dist/retinarave.html` at the tag; package.json 0.7.0; pushed to
+  `main` (deploys retinarave.com: key `4` is TORUS2, key `8` the old torus).
+
+## §38 Proof sized to the diff (2026-09-24, the user: "when building/updating a scene only need to test that one scene")
+
+**The decision.** After TORUS2 the user asked why a new scene took so long to test; the answer was four eight-scene md5 lists, two
+Q traces and a full sweep for a change confined to one folder. The §15 incident that started the habit was a *registration* effect
+(the director's pick moved a reference), fixed by making the mixs reference director-blind — not evidence that one scene's folder
+can reach another's pixels (it cannot: CONTRACTS §0, a forced shot runs one scene). HARNESS "What to re-prove after a change" is
+now the rule: a scene-folder diff proves its own lines (`IDS=<id> tools/scene-md5.sh`, ~1 min), a registration change one full list
+once, core/engine changes the sweep, and the Q trace only when a scene *enters the rotation* (a bid of 0 cannot be picked — the
+forced-only trace in §36 measured nothing). `scene-md5.sh` honours `IDS=`; `brief-common.md` tells workers so.
+
+## §39 NAV2 — "the melody draws the path" (v0.8, 2026-09-25, orchestrator + one worker from `docs/workers/brief-nav2.md`, report `nav2.md`; `NAV2-SESSION-PROMPT.md`)
+
+**The decision (the user, 2026-09-24, after TORUS2):** *"update the NAV scene (don't touch existing, create new scene) … right now we
+are bounded by known locations, how can we make the music actually navigate? … when a sound moves up and down that the set isn't
+moving with it … I like the way the set curls, but doesn't always line up … when you hear a swirl that it starts curling (and when
+building before a drop)."* The interview settled four things as the user's: pitch height is Im c ("the melody draws the path", no
+charts, no target tables); the blob's spokes/bands *and* the whole blob move with pitch; a swirl = filter sweep / drum roll / dj
+scratch; the curl to cause = the spiral arms and the whole frame turning. So: **NAV2, id 8, forced-only** (key `9`, `score()` 0), NAV
+(id 0) byte-identical and home until the user approves.
+
+- **Skeleton first (`eab125a`):** NAV lifted verbatim under the new name, proven a no-op with one full list (ids 0–7 = the v0.7 list,
+  **s8 = s0** `fb74fee4`/`7225ea02`), mixs `641f6633`, parity 0. Two engine facts paid for on the way: `loop.js` calls **every**
+  registered scene's `overlay()` every frame, and a forced scene is **drawn on its first frame before its first `update()`** — an
+  uncaught read in NAV2 aborted the frame for every scene, froze the CLOCK=1 clock and moved NAV's own md5 (CONTRACTS §1 overlay line;
+  the skeleton guards both and was `always: true` for that one commit so its update history equalled NAV's). `math/mandel.js` starts
+  the ray-grid worker once per page.
+- **The scene (worker, seven commits `167bbd9`…`4f38399`, `assets/scenes/nav2/{index,nav2,exit,detect,shaders}.js` + `assets/math/field.js`,
+  `tools/test_field.js`, `tools/test_nav2.js`):** c is a ball rolling inside M under three forces — the melody's pull (Im c ← centroid
+  through a `W_Y` 14 spring, Re c ← bass − high in musical time), **the wall = |λ| of the attracting cycle found chart-free every frame**
+  (critical orbit → nearest return → divisor test on the polished point → Newton on f^q(z) − z; ∇ρ by central differences; an outward
+  step is projected tangential and bisected — c slides along the rim; ρ alone is not a wall: a step across a root lands in the next
+  component with a *small* ρ, the period test is), the wind-up pressing c to `RHO_CAP` .985 so the arms tighten by construction
+  (`arg λ / ln|λ|`); **gates through parabolic roots by Farey** (q ≤ 7, a step the wall refused held `GATE_HOLD`, child size proxy);
+  **the drop** the one cut (a clean-checked ray along the ρ-normal to NAV's depth, `pathCut` 0, EXT/HOME/IN legs = NAV's settle rule in
+  chart-free form); no Misiurewicz kick (`state.kick.x` 0 for ever); every non-cut frame ≤ `V_MAX·dt` = 0.02 < the monitor's 0.06 by
+  construction. Five uniforms with IEEE-identity rests (`uKoen`, `uCurl`, `uView.xy`, `uView.w`, `uGlow`) so `&still=1` is byte-identical
+  to the scene without them — the no-op gate of every visual step. Detectors in `detect.js` (pitch = high-passed centroid, sweep, roll,
+  scratch = flicks of a bend, swirl = soft-OR, wind on synapse's `dropExpectedIn` countdown + `build` + `hush`, spin rate integrated).
+  Six params `height side wind lift spin zoom`. Bugs found by the node tests, not by pixels: `pot()` off by exactly 1 against
+  `buildRayGrid`; the nearest return naming a non-primitive period where λ ≈ −1.
+- **Cost:** 0.95–0.99× NAV (bench protocol, q .95 + `Q.iter` pinned, each scene forced in its own page); `update()` median 0.004 ms in
+  node; the monitor `viol []` with max exactly `V_MAX·dt`.
+- **Two retune passes from real-music traces (the orchestrator's headed runs + an 80 s `n2info` trace at 2 s on each mp3,
+  `AUDIT-v0.8.md`):** the headless build passed every gate and was wrong twice on real music. (a) `sweep` saturated (median .67/.86)
+  because its centroid-trend term fired on ordinary jitter → the frame stirred on a plain groove; now a *sustained monotone climb* (≥ 1.2 s,
+  rate-scaled, capped .85 — only `riser`/`hp` reach 1): median .01/.03. (b) c rested at the 1/2 root (Re −0.8, the cardioid's neck), so
+  the melody's Im wish was capped at ±0.17 and every drop rode out toward the antenna; then, in the belly, ρ rested at .4–.9 and the
+  interior was dark (`lum.py` centre .13–.17 vs NAV .5–.8). Pass 3: **the wall owns the radial direction** (a two-sided spring to
+  `RHO_FREE` .91, the melody's pull projected onto the ρ-contour's tangent *unconditionally* — a conditional projection made its
+  threshold an unstable equilibrium; the normal is degenerate at c = 0 and pushed c to the cusp) and the running centroid normaliser
+  centred on its window (anchored at the floor it read −1 on a flat centroid). After: c covers the whole cardioid on WLTP, three gates on
+  CN under the melody alone, `RHO_FREE` chosen on a luminance table (`&rho=` pin: .91 is where the melody riding the rim first reaches the
+  1/2 root). **Lesson (HARNESS "Real window" gains a line):** a detector's false-positive rate and a navigator's resting place are
+  invisible headlessly — the acceptance for any music-follower is a real-track trace of its own state at 2 s, with the tab URL and
+  `AU.mode` printed (the first driver's tab URL was broken and traced other audio: two "tracks" with identical numbers).
+- **Definition, not weakening (the worker's record):** at a parabolic root there is no attracting cycle, so `has` is 0 and ρ is 1 by
+  definition while a gate transits; those frames are counted and reported separately in `test_nav2.js`, not failed.
+- **What the user should look at first (ranked in `nav2.md`):** `RHO_FREE` .91 (resting brightness — NAV2 is darker than NAV in most
+  real-music frames, ratio median ≈ .3), `GATE_HOLD` 1 beat (9.9 % of `#test` interior frames are gate transits with no chart), `Y_AMP` /
+  `PITCH_K`, `LIFT`/`SLIDE`, `CURL`/`SPIN_SW`, the scratch thresholds (never fired on either track). Not built: the `oklch` variant,
+  re-hosting DRUM (`uDrum` uploaded 0, no variants).
+- **Replacement (not done — waits for the user):** NAV2 → id 0 with NAV's bid, NAV → `nav-v1` id 8 forced-only, DRUM stays nav-v1's,
+  `parity.js` `&scene=0` → 8 + `CARD.REG[8].scene.state`, mixs re-based, lists → `tools/accept/v0.8/`, the about page's NAV line, the Q
+  trace on house + aba, §40, tag v0.8.
+- **Tagged v0.8 as is (2026-09-25, the user: "tag and push as is for now" — "i validated the build, should just be tagging and pushing? full sweep is expensive"):** NAV2 stays id 8 / key `9` / forced-only, NAV stays home; no swap, no Q trace. The acceptance sweep was **not** run for this tag — the user's own look at the build is the gate, and the sweep costs ~10 % of a weekly token budget; it is for core/engine changes when asked. `tools/accept.sh` gained the "== nav2" section (s8 md5s vs `tools/accept/v0.8/scene-md5-v08.txt` = the v0.7 list + s8, the still four vs `nav2-still-md5.txt`, the node tests, the monitor) for whenever it next runs; `releases/retinarave-v0.8.html` = dist at the tag; package.json 0.8.0; pushed (deploys retinarave.com: key `9` is NAV2).
+
+## §40 v0.8.1 "this is what it sees" — the tagline and the scene tiles (2026-09-25, orchestrator; the user: "more cosmetic changes → on landing page")
+
+**The ask:** *"'music navigating real mathematics' → how can we change this? inspo: visualizing music / 'I taught the computer how to
+listen to music'; also, how can we preview the different scenes before anything happens? (maybe give an option for people click
+specific one?)"*
+
+**Tagline.** The sub-line under the title was a product statement in small caps ("music navigating real mathematical objects"); it is
+now two sentences in the first person, sentence case, the about page's voice ("Hi, I'm Toma"): **"I taught a computer to listen to
+music. / This is what it sees."** The first sentence is the user's inspiration with "the computer" → "a computer" (a claim about one
+machine, not the machine); the second is what "visualizing music" means here and hands the eye to the tiles right under it. The
+`<title>`, the meta/OG descriptions and the JSON-LD keep the search-engine wording (they are what a search result shows, not what a
+visitor reads); `site/about.html` carries the same two lines. `.sub` lost the uppercase and the letter-spacing — a sentence is read,
+a label is glanced at.
+
+**Scene tiles (the preview).** Three ways were on the table: (1) still thumbnails only; (2) a live preview by forcing a scene with no
+music (the canvas renders under the card from the first frame — a dim, slowly turning NAV at presence 0, `prestart-canvas.jpg`);
+(3) a live preview on the built-in demo synth. (3) won because the synth is already **silent unless monitored** (`mon.gain` 0, key
+`m`) — a click can start it as a user gesture and the listener hears nothing — and because a still cannot show that the thing moves
+*to music*. (1) rides along as the row's face: a tile is a real frame from the fake timeline, so the row is honest before any click.
+Built: `core/landing.js` (78 lines) renders one tile per scene with a **`card` slot** (CONTRACTS §1.17: `title`, `blurb`; core stays
+scene-blind — `check.js`'s no-'nav' rule holds) plus a first **DIRECTOR** tile (no picture, "on" by default); a click = `pick(id)`:
+`SC.forced = id` and, while the card is up and no source runs, `ENGINE.start('demo')` with `LANDING.peek` set, which `hud.js`'s
+`AU.onRun` reads to keep the card and add `#landing.peek` (the card slims to a bottom strip over a bottom-up gradient: small title,
+the row, "previewing FEIGEN on the built-in demo signal — blurb", the start buttons). Keys `1–9`/`0` go through `pick()` too, so a
+key on the landing previews like a click; during the show `pick()` is exactly the old key handler (SC.forced + the tile marks). A start
+button calls `leavePeek()` first, so the run that follows hides the card whatever mode it lands in (a declined capture still falls to
+the demo with its message); `stopAll` → `onStop` also leaves peek (the demo is muted then). `CARD.LANDING = {peek, picked, tiles}`.
+Thumbnails: `tools/thumbs.sh` shoots `test&scene=<id>` at `CLOCK=1 GPU=1` and writes 480×270 q82 JPEGs to `site/thumbs/<name>.jpg`
+(13–32 KB each, 115 KB for six); frames by eye from a f360/f840 montage — NAV f360 (the Julia stop), MANDALA f840 (blue), TORUS f360,
+POLYTOPE f840, FEIGEN f360 (the cardioid); DUST is dim at both (green haze, `c-s1-f{360,840}.jpg`) → f1200 (the swarm in flight).
+`tools/serve.js` falls back to `site/<path>` for a miss at the root so `thumbs/x.jpg` resolves in dev as it does after `npm run
+build` (`cp -r site/. dist/`); the release file opened alone from `file://` has no thumbs — `img.onerror` removes the image and the
+tile keeps its gradient and title (the bundle test below). Cards on the six director-pickable scenes; `torus-v1` (id 7) and `nav2`
+(id 8) have none — a forced-only scene is not offered to a visitor. Phone: four tiles per row (`flex:0 0 calc(25% - 6px)`; the
+first cut let a lone seventh tile stretch the full width, `landing-mobile.jpg` before the fix), the same peek.
+
+**Proof (sized to the diff: core/hud.js + harness.js changed, no render code):** `check.js` 0 fail; headless real path (`GPU=1`):
+6 tiles, six images at natural width 480, DIRECTOR on; click FEIGEN → `peek true, forced 6, cur 6, mode demo, mon 0, running false`,
+`#landing.peek`; click DIRECTOR → `forced -1`; key `4` in peek → `forced 3`, tile 3 on; click the demo link → `mode demo, peek false,
+forced 3, landing hidden, running true, errs []`; key `6` in the show → `forced 5`, `0` → `-1`. `FAKEMIC=1`: tile MANDALA → `#mic` →
+`mode mic, forced 2, cur 2, hidden, demo gain 0`. `MOBILE=1`: `.mobile` card with the 4+3 row, tile TORUS → `.mobile.peek`, forced 3.
+Full scene-md5 list vs `tools/accept/v0.8/scene-md5-v08.txt` (below), bundle from `file://` (below). Shots in `tools/accept/v0.8.1/`.
+The full `accept.sh` sweep was not run (the user's rule since v0.8: the tag gate is their look at the build; no render code moved).
+
+**Tagged v0.8.1 (2026-09-25, the user: "build, commit, tag, and deploy" after looking at the local build):** `releases/retinarave-v0.8.1.html` = the
+bundle at the tag; `npm run build` → `dist/` (index + `thumbs/`) deployed by the push to `main`. No sweep, per §39's rule.
+
+
+## §41 POLYTOPE dances — v0.9 "the cage dances" (2026-09-25, orchestrator + one opus worker from `docs/workers/brief-polytope-dance.md`, report `polytope-dance.md`; `POLYTOPE-DANCE-SESSION-PROMPT.md`, `docs/AUDIT-v0.9.md`)
+
+**The decision (the user, 2026-09-25, after the v0.8.1 tag):** *"write a prompt to improve the polytope scene (can modify existing
+polytope scene; only work on scene -> don't need full testing sweep; can tag and deploy when done); what musical/visual language can we
+leverage from torus2 update? how can this shape dance to the music? I liked color tied to circle of fifths; should extract grooves from
+bass, mid, highs."* One interview answer: **id 5 modified in place** (same id, same bid, no forced-only twin), tag v0.9, deploy, no user
+gate — git is the fallback. Thirteen leans (in the brief, each marked) stood unanswered; the user has not looked at the result.
+
+- **What changed (`assets/scenes/polytope/{index,poly4,grooves,dance,colour,help}.js`, 349/336/247/162/132/47 lines; `tools/test_polytope.js`
+  220; ten worker commits `57f1e34`…`afebe63`):** the geometry of §8 untouched (the four polytopes on S³, the double rotation, the
+  stereographic arcs, the cast by section seed, path A, the pole gate `GATE` 0.24). What moves it: (1) **three onset trains** — the scene
+  detects onsets on `bass`/`mid`/`high` itself (a rise over a ~0.4 s EMA above `THR_BASS/MID/HIGH` 0.18/0.15/0.17, a hysteresis latch
+  `ARMF` 0.5 so a ramp-and-hold files one entry not six, refractory one 16th at `bpm`, amplitude normalised by `AMPN` 0.45, ×1 when
+  `kick`/`snare`/`hat` voted within a frame else ×0.6), a ring of the last 8 launches per band as ages in beats, snapped to the 16th grid
+  above `gridTrust` .5, a faint bass entry from `beat` when a bar passes without a hit; (2) **the dance** — the xy plane's target is
+  `beatCount/16 · 2π` and zw's `beatCount/32 · 2π` (read off the count, never integrated), a 0.3 s spring to each (×2 slower on
+  `hush`/`calm`) plus a critically-damped impulse per train hit (`KICK_XY/ZW/XW` 10/7/1.8; a full bass onset lurches 18°), xw keeps
+  `0.04·flowHigh` plus the high train's small kicks and the bass **pole wobble** (`WOBBLE` 0.12 rad), the sum capped at `XWMAX` 0.18;
+  the **5 % thump** `max(0, cos 2π·beatPhase)⁴` on the scale, a ±2 % breath on `barPos`; (3) **the inside-out sweep on cue** — on a
+  `phrase16Pos` wrap, `sectionEvt` or `dropEvt` (never in `arc` idle, at most one per `SWEEP_MIN` 4 beats) a deterministic one-beat xw
+  move carries the vertex nearest the pole through it, the cell blows up and fades through the gate, then the plane settles back to
+  its lock; (4) **beads along the edges** — each train paints a Gaussian bump (`SIG` .055/.042/.032 of an edge) wherever a hit's age
+  lands, travelling one edge per bar, fading over `LIFE` 8 beats, bass on every edge, mid on the outer figure, high everywhere and small;
+  the profile is **zero-mean** so the groove redistributes light along an edge instead of adding it (the first build added a DC lift and
+  bloomed white, §7's failure — the fix raised the peak/trough contrast to 2.26× on 4x4, 8.4× on sync; f360 mean luminance +4.6 %,
+  saturation unchanged, 0 % pixels blown); (5) **the colour wheel** — the anchor math of `torus2/colour.js` moved whole to
+  `assets/math/keycolour.js` (`mkAnchor()`: per-scene state, so two scenes never ease one hue; `torus2/colour.js` is a 17-line
+  re-export, its s3 md5s `7189a6ba`/`48113eda` unmoved in four runs), each vertex's sector = its xy angle after the rotation quantised
+  to twelve, sector k = pitch class (7k mod 12), hue = anchor + k·spread/12 (spread 0.30–0.45 centred, TORUS2's), inner figure the
+  anchor wheel, outer the same wheel a fifth on, chroma lights a sector `GLOW0 .35 + .65·chroma[pc]` (eased 0.15 s; on `#test`
+  derived from `harmAngle` as TORUS2 does), major warm / minor cool through the shared PULL; (6) **growth** staged on `build` (the
+  subdivision from the tier's own toward the maximum on 0–.5, the size on .5–1, resting size from `intensity`/`arousal`, the drop's
+  60 % kept); (7) six params `turn bounce size groove glow sweep`, identity a byte-exact no-op, `groove=c:0` moves the md5; (8) `feats`
+  36 fields, every one read and lined.
+- **Proofs:** s5 `06b46063…`/`cccb0094…` stable on `GLOW0` .55 (the worker's `177c300f…`/`84a6bb55…` at .35; the v0.9 reference `tools/accept/v0.9/scene-md5-v09.txt` = the v0.8 list with s5
+  re-based); ids 0–4, 6–8 byte-identical on the merged tree; parity fake 0 / 72 fields; `git diff 033f800 -- assets/core assets/engine
+  assets/main.js` empty; the bundle runs from `file://` with key `6` → scene 5, errs `[]`. Pinned trains: 4x4 `.10 .35 .60 .85` (gaps
+  .25 ×4), sync `.10 .225 .60 .725` (.125/.375). Bar series on house: the target advanced exactly four sixteenths over four beats, the
+  angle lurches at each bass entry (peak nudge 0.187 rad against the 0.393 the lock advances per beat), the bounce peaks at beatPhase
+  0. Pole margin over 600 frames on `#test` and house: **0 vertices newly gated by the dance** (max excursion 0.139 < `XWMAX`); the
+  brief's "clamp so no vertex passes the gate" is unachievable as written (the 24-, 600- and 120-cell each reach `1 − w = 0` under the
+  xy/zw rotation alone) — the bound proven instead is `|den(a) − den(0)| ≤ |a|`, so a capped excursion cannot gate a vertex outside
+  `GATE + XWMAX`. **Bench** (protocol, cast pinned by `hooks.cast` — `CARD.bench` blocks the thread, a `setInterval` cannot pin state
+  re-picked on an event): cast 0 tier 3 960 segs **0.528 ms vs 0.429 before, 1.23× raw / 1.25× NAV-normalised** (cap 2×); cast 2
+  (24-cell ⊂ 120-cell, 6279 segs, all 24 slots live) 1.118 ms, ratio to NAV .58 (v0.2's pole worker measured .66 for this cast).
+  **Q trace** house + aba, `before` (`753f985`) vs `after` (the merge), three runs each: every window mean identical to the second
+  decimal (house 0.73 · .56/.71/.83/.93, aba 0.83 · .56/.71/.83/.98), 0 EXC, id 5 in every sequence.
+- **The mixs reference md5 moved before this session:** `641f6633…` → `f0c9d637…` at v0.8.1 (`d7bb5b7` touched `core/hud.js` and
+  `harness.js`; the user tagged on a look, no sweep ran). Proven not this merge's: the same `f0c9d637…` on `753f985` and on `de6a5fe`.
+  `accept.sh` re-based with the note.
+- **Docs paid:** §8's pole-gate line quoted v0.2's 0.16/3.5 two workers after the pole worker replaced it (corrected); HARNESS —
+  `CARD.ctx`, `REG[id].scene` as the live object, the bench-blocks-the-thread pin, the routed-param look rule, the v0.9 re-prove row,
+  `det9.py`; `check.js` now refuses `export { … } from` (the http page and `check.js` were green while `bundle.js` threw `unhandled
+  export form` and the shipped single-file build died — the worker found it at step 1).
+- **The headed real-music run (`tools/accept/v0.9/audit9.sh`, id 5 forced by key `6`, tab capture, 80 s each):** CyborgNinja (160 bpm)
+  and WhoLikesToParty (117 bpm): 0 black frames, 0 long frames, `errs []`, `nonFinite []`, capture mode, ~4850 frames each, q climbing
+  .39 → .83 as the controller warms (the same ramp NAV2's v0.8 run showed). **The three trains traced at 2 s over 80 s (`det9.py`,
+  `tools/accept/v0.9/det9-{cn,wltp}-pass1.txt`), one pass, no retune:** bass 0.88 / 0.94 launches per beat (never a 2 s window without
+  one, median 4–5 per window, amplitude median .28/.36 — one per beat, not one per 16th: neither dead nor saturated); mid 0.24 / 0.36
+  per beat (7 and 6 of 39 windows empty, snare vote 28 % / 15 % — the snare-and-vocal lane, about every third beat); high 0.24 per beat
+  on CyborgNinja (9 empty windows; its high band is a sustained wash — level median .81 against an EMA of .78 leaves no headroom for a
+  rise) and 0.69 per beat on WhoLikesToParty (never empty, **62 % hat-confirmed** — the hats). `gridTrust` .8–1.0 throughout, so the
+  launches sat on the 16th grid. The kick vote on the bass train is low (10 % / 25 %): the ±1-frame coincidence window is tight against
+  a decaying `kick` impulse — the amplitude ×0.6 without the vote is the lean to widen first if the bass beads look faint.
+- **One orchestrator pass on the look, from the real-track montage:** the after frames were plainly dimmer than v0.8's on both tracks
+  though the worker had measured no loss on `#test` (f360 mean luminance +4.6 %). The cause is the wheel itself: a sector's brightness
+  is `glow + (1 − glow)·chroma[pc]`, the fake timeline's `harmAngle`-derived chroma lights the wheel broadly, real chroma lights two or
+  three pitch classes and leaves nine sectors at the floor — v0.8 lit every stroke fully. **`GLOW0` .35 → .55** (one constant, the
+  `glow` param's resting value; the sounding sectors keep their 1.0 so the chord still reads), s5 re-based, the accept section, thumb,
+  demo and real-track shots re-taken on the new value. `GAIN` and `PBRI/PWID` untouched.
+- **The leans, ranked by how likely the user is to want them retuned (the worker's order, with the orchestrator's two on top):** the
+  glow floor `GLOW0` .55 and the overall brightness against v0.8 (`GAIN` 1.8, `PBRI` 1.7 / `PWID` 1.2) — the pass above is one look,
+  the user's is the one that counts; the high-band threshold `THR_HIGH` .17 and the EMA's ~0.4 s on dense
+  highs (sparse on CyborgNinja); the bump widths `SIG` .055/.042/.032 (the brief's lean .18/.08/.04 merged a bar's four bumps into one
+  on a 9-sample edge); the nudge gains `KICK_XY/ZW/XW` 10/7/1.8 with `AMPN` .45 (18° per full bass onset); `XWMAX` .18 and the
+  reinterpreted clamp; the spread `SPREAD0/1` .30/.45 (TORUS2's, but its families are spatially apart and these sectors interleave);
+  `GLOW0` .35; `WOBBLE` .12; `LIFE` 8; the three thresholds; `SWEEP_MIN` 4; `SIZE0/I/A/B`; `SECB` .3. Every one is a named constant at
+  the top of its module.
+- **Not built, for the next POLYTOPE session:** cells-as-pitch-classes (lean 9's other branch — the sixteen cells of the tesseract or
+  the twenty-four of the 24-cell as the twelve pitch classes doubled, a geometry job); the OKLCH variant; portrait cropping (pre-existing,
+  `polytope-dance.md` friction 15 — the outer cage runs off a 390×844 frame at every size; TORUS2's `min(1, aspect)` rule would fix it
+  and shrink the phone view to 46 %, a look change the user has not asked for).
+
+## §42 MAXWELL — the four equations that dance, v0.10 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell.md`, report `maxwell.md`; `MAXWELL-SESSION-PROMPT.md`, `docs/AUDIT-v0.10.md`)
+
+**What the user asked (2026-09-26):** "just plan for now; new scene -> maxwells equations (right now torus2 is my favorite scene)",
+one planning answer ("add 'N' for cycling next scene"), then the same day: run the plan, no full sweep (only the new scene), commit and
+tag v0.10 so it deploys. So the scene is **forced-only** (bid 0, id 9, reached by `n`) and the tag has **no montage gate** — the user
+looks after, as NAV2 (v0.8) and POLYTOPE (v0.9) were shipped. Everything else below is a lean the user has not seen.
+
+**The scene (id 9, `assets/scenes/maxwell/{index,fdtd,medium,sources,render,probe,help}.js`, `math/nudge.js`, `tools/test_fdtd.js`):**
+a Yee-grid FDTD in the TE mode — `Ez, Hx, Hy` on ping-pong float targets, two fragment passes a substep, Courant 0.5, grid and substeps
+by tier (256×144×2 … 768×432×4), **fixed substeps per frame** (by frame count, so CLOCK=1 md5s hold: s9 4e26a427/57bac88e), a 16-cell
+graded absorber, soft sources. Twelve charges on a ring by pitch class (`sectorPc`: the ring *is* the circle of fifths), lit by chroma
+(from `harmAngle` when chroma is silent — the `#test` case, TORUS2's fallback), a dipole at the centre that nudges `beatCount/16 · 2π`
+through `math/nudge.js` (TORUS2's `turn` ease, lifted; TORUS2 keeps its own copy this release), every hit a real wavefront (TORUS2's ring
+buffer of launch times; `hooks.train('4')` → four rings 35.05 / 35.07 / 34.90 / 34.88 cells apart, predicted 35.22, worst 0.34 cells;
+`'synco'` → 52.4 / 17.8 / 52.3 / 17.8 — **the rhythm is the spacing, measured off the field, not drawn**), the carrier at `bpm`.
+The section is the medium (`sectionAlt` mod 4: lens · mirror cavity · photonic lattice · waveguide, 1.2 s cross-fade); `build` lowers
+sigma and raises contrast; the drop turns the absorber into a mirror. Signed `Ez` → the key's anchor hue vs its warm/cool opposite
+(`keycolour.js`), |E| → luminance, the H field lines as closed strokes in the anchor hue, a 5 % thump, the yaw with the nudge.
+`post { fb .72, bloom .28, kaleido 0, morph .55 }`, six params (`light ring lens charge turn bounce`), 38 feats (the plan's 37 +
+`harmAngle`), card + thumb at f360.
+
+**Decided by measurement (the worker; each a named constant at the top of its module):**
+1. **A source in Faraday's pass is a magnetic monopole density.** The plan's "magnetic dipole whose changing B induces the E rings",
+   built literally as a magnetic current `M` in the H update, gave H a charge −∇·M: the field lines opened (`hooks.probe()` loops 0 /
+   open 18). Faraday now carries **no source**; the dipole is what one is — a pair of antiparallel z-currents in the Ampère pass, its
+   axis the nudge (loops 44 / open 0 on the same frame). `test_fdtd` asserts it structurally. The plan's sentence was wrong; the plan's
+   "∇·B = 0 … they must never open" was the rule that caught it.
+2. **The field lines are contours of the stream function** (marching squares on A, H = curl A, from a whole readback of the small
+   target every `LINEF` frames), not seeded streamlines (RK4 drifted across level sets; Newton-projected RK4 was polygonal). Equal levels =
+   equal flux, so line density *is* |H|. `gap` 0 at every tier; 516–3508 segments = 6–21 % of `ctx.budget('segs')`. Path A.
+3. **The energy gate as the brief worded it is not a leapfrog invariant** (Σ(εEz²+Hx²+Hy²) ripples 10.4 % because E and H sit half a
+   step apart); the Yee invariant (H as the product of its two half steps) holds to 1.2e-14 and the naive sum's drift is 0.41 %. The
+   test gates on the invariant. ∇·B to 1e-6 after 500 steps; a pulse front at d/c ± 1 cell (measured speed 0.4966 vs 0.5).
+4. **The drop's mirror takes the bulk loss away too, is a ~1.5-cell shell, holds 2.2 s then relaxes over 3.2 s.** With the music's own
+   sigma a wave dies before the absorber, so a mirror at the edge alone changed the energy 0.2–2.8 %; a thick conductor ate a third of
+   it; a pure exponential from the first frame never let the standing wave form. With the drive cut at f300: mirrored 752 → 745 → 705
+   (−6.3 % over two seconds, −0.9 % over the first half) against a control that loses 97.4 %.
+5. **A round porthole, not the grid's rectangle.** A yawing rectangle sweeps four black corners across the frame and cut the drop's
+   standing wave with a straight edge; the plane fades to black on a disc of half the grid height, `FITK` frames it, `RINGM` keeps the
+   ring inside a portrait frame.
+6. **Cost:** 3.2× TORUS2 before, 1.25× after (medians of NAV-normalised pairs, seven pairs a page, cold pair dropped; the early pairs say
+   1.6×, the late 1.28× — both pages drift together). The two levers pulled without touching the picture: the lines rebuilt every 2–3
+   frames instead of every frame (the readback + marching squares was 1.0 of 2.6 ms at tier 3), the twelve-charge loop bounded by the ring
+   (skips ~85 % of texels). The lever not pulled: tier 3's four substeps (three would be ~0.8× at the cost of slower light at the top
+   tier) — the plan marked the table decided, so it stands; the user's eye decides.
+7. Float readback: `IMPLEMENTATION_COLOR_READ_TYPE` is `FLOAT` here, so the field targets are RGBA32F and read with `gl.FLOAT` (7e-8
+   against the float64 twin); the half-float path is written and unexercised. CONTRACTS §1.2's "readPixels from RGBA16F returns black"
+   is true of `UNSIGNED_BYTE` reads only.
+
+**The `n` key (core, the user's one answered item):** `stepScene` moved from `core/touch.js` to `core/scenes.js` (touch.js and hud.js
+both import it; hud.js must not import touch.js — a cycle), returns the id, and both the key and the swipe go through the landing picker
+`pick(id)` so a press on the card previews like a tile. `keys()` row `N`, the hint row has 8 kbd. **A v0.8.1 bug found by the cycling
+proof:** `landing.js mark()` read `card.title` on a scene without a tile, so keys `8` and `9` (torus-v1, nav2) had thrown a TypeError since
+v0.8.1; it now falls back to the scene's name + tag. Proof: the full scene-md5 list on the skeleton commit = v0.9's s0–s8 line for line
+(registering id 9 at bid 0 moves nothing), mixs f0c9d637 unchanged, `n` ×9 from the director → forced 1…9 → 0, `9` → 8, `0` → −1.
+
+**The real tracks (AUDIT-v0.10):** 80 s on CyborgNinja (160 bpm, 7m → 8m) and WhoLikesToParty (117 bpm, 11m), tab capture, key `9`
+then `n`: 0 black, ERRS [], one long frame (2018 ms) at the capture start on WLTP before the key; the hue turns with the key; `probe().gap`
+0 on all 80 samples, energy 115–867 and finite, the trains' spacings follow the kicks. q sat at 0–.34 (tier 0) for both runs where
+v0.8/v0.9's runs sat at .4–.8 — an A/B the same night (`tools/accept/v0.10/ab-q-v09-vs-v010.txt`) shows the v0.9 tree collapsing the same
+way at the capture start (q .28 → .01, a 984 ms frame) and climbing at the same .004/s, so the machine, not the scene; HEAD's start frame
+is twice as long (2014 ms) — one sample, on the watch list. Tag v0.10 on these proofs, no sweep, no bid — the user's word.
+
+**Leans for the user's eye, ranked:** (1) the overall brightness and the porthole's size against TORUS2 side by side (`montage-maxwell*.jpg`);
+(2) tier 3's substep count (cost vs the speed of light on a big screen); (3) the mirror's hold (2.2 s) and the standing wave's length;
+(4) the line density (levels per tier 9–15) and their alpha; (5) the carrier's lock to the beat grid under `regularity` (a guess — the plan
+gave `regularity` no job); (6) the Ricker envelope of a hit (the plan said "a hit"); (7) the medium cross-fade (1.2 s); (8) whether MAXWELL
+should bid (a score, then the Q trace on house + aba, the `accept.sh` section — not this release).
+
+**Docs owed and paid here:** CONTRACTS §1 id line + §1.8 (id 9, the `n` key), HARNESS keys, README keys, `site/about.html` line,
+`tools/thumbs.sh` PICK `9:360`. **Owed to CONTRACTS, from the worker's friction (not yet written):** §1.2 readback sentence (item 7);
+§1.4 — a hook a proof calls by name is `CARD.REG[id].scene.hooks.<name>` (`CARD.hooks.key` reaches the last scene registered and `&key=`
+calls every scene's), and a read-only hook must not mutate; §1.10 — a scene under a rotating camera needs a porthole; "one band of rows
+per frame" is wrong for a downsampled target (a time-patchwork field is not divergence-free — read it whole, less often).
+
+## §43 MAXWELL — "the wave remembers its note", v0.11 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell-wobble.md`, report `maxwell-wobble.md`; `MAXWELL-WOBBLE-SESSION-PROMPT.md`, `docs/AUDIT-v0.11.md`)
+
+**What the user asked (2026-09-26, after looking at v0.10, verbatim):** "1) it feels too noisy when there is no sound ; 2) the color of
+the wave should match the color associated with the coord/note (it seems to just be two colors that switches sometimes?) ; 3) the waves
+don't wobble like I was expecting listening to dubstep (different music kinda looked similar)". Those three sentences are the spec.
+MAXWELL is **modified in place** — same id 9, still forced-only (bid 0, key `9` then `n`) — and the gate is v0.10's: no sweep, proof on
+id 9 only. Everything else below is a lean the user has not seen; **the user has not looked at v0.11.**
+
+**The scene (id 9, `assets/scenes/maxwell/{index,fdtd,medium,sources,render,probe,help}.js` + new `colour.js`; `tools/test_fdtd.js`
+group 5):** unchanged Yee FDTD, plus (1) `presence` / `alive` / `absentT` gating every source and the contours, and the plane's porthole
+now shared with `strokes()`; (2) a **second, half-resolution wave equation** carrying `rgb` and a non-negative weight `w` with the same
+sources, the hue being `rgb/w` — so a wavefront carries the colour of the note that launched it, and the sign of Ez became brightness;
+(3) the carrier driven by **timbre** rather than tempo, a cosine second harmonic on `dirty`, the bass pumping the centre, and a wobble
+that breathes the medium and pumps the carrier's amplitude. `feats` 38 → **43** (minus `regularity`, plus `presence absentT bassFast
+centroid dirty punchy`); hooks 11 → **16** (plus `quiet wob timbre mxchroma mxcol`, mx-prefixed where `CARD.hooks` already owns the
+name). s9 md5 `d268a071` / `473e474c` (v0.10: `4e26a427` / `57bac88e`) — the whole picture changed, so both moved; the merged tree
+reproduces the worker's pair exactly.
+
+**Decided by measurement (the worker; each a named constant at the top of its module). The plan's diagnosis was right on every claim
+about v0.10's code, verified line by line before anything changed. Three things in the plan did not survive a measurement:**
+
+1. **A uniform breath of ε cannot bunch a wave that is already in flight.** The plan wanted the rings to bunch and stretch at the wobble
+   rate. A spatially uniform ε(t) leaves a plane wave an eigenmode with its **k unchanged** — only the frequency moves — so the
+   wavelength of a wave in flight is frozen. Measured at 2 Hz with ε swinging 0.74 → 1.26: crest spacing moved **4 %** against the 12 %
+   gate. And at an LFO rate it cannot be resolved anyway — light crosses the porthole in ~1.5 s and one 2 Hz cycle is 36 cells of travel,
+   so a wavelength chirp has one crest per period. What a wobbling bass does to a spectrum is pump the LEVEL, so `WOBA` 0.85 rides the
+   carrier's **amplitude**: shells of bright and dark 36 cells apart marching outward at c, **39 % peak-to-trough** on a clean 30-frame
+   period (`hooks.wob(2)`, energy 356.8 → 495.9, peaks one cycle apart to 2 %). The graded breath stayed — it is real physics, it moves
+   the local speed and the loss — but the gate did not.
+2. **`hooks.quiet(1)` pinning `presence`, `alive` and `absentT` is not a picture of silence.** CONTRACTS §1.16: a param's `from()` is
+   evaluated by the ENGINE from `MS`, so a hook that pins a field inside `update()` never reaches the params — `charge` stayed at exactly
+   the value silence was supposed to take away, and the first pinned frame came back only 13 % down. The hook now pins the three band
+   impulses and `sub` as well and takes `charge` and `ring` to what their own `from()`s give on the pinned fields. Then the energy is 0.
+3. **"the hue boundary within one ring width of the Ez ring" has no referent.** Once the sign of Ez is brightness and the hue comes from
+   the colour field, a smooth hue field has no boundary at a crest. What was measured instead: the colour field's wave keeps step with
+   Ez's (colour rings 36 cells apart vs Ez's 35.2; the colour front at r = 175 against the outermost visible Ez crest at 179.8, about an
+   eighth of a spacing) and the hue is the right one (0.0018 turns).
+
+   And two smaller ones. **`ASCALE` as the plan defined it** — the A range of a `hooks.train('4')` frame at charge 1 — measures 1.118,
+   which is ABOVE every musical frame (0.77…0.95), so it would thin every musical frame and (measured) would not even reduce the segment
+   count. `ASCALE` is **0.55**, half that, a floor under the level spacing: above it the picture is v0.10's exactly, below it a weak
+   field reaches a fraction of the levels. **The two-class chroma proof "a fifth apart"** is one sector on this ring, i.e. `spread/12` =
+   0.045 turns, which no picture can separate; it is run on sectors 3 and 9, a tritone, the furthest-apart pair.
+
+4. **The strokes needed the plane's own porthole, and that is the single biggest part of "too noisy."** In v0.10 the plane faded to black
+   on a disc and the H contours did not, so the near-empty corners were stroked over the black — the loose loops outside the porthole in
+   every v0.10 shot. `PORTW`/`PORTE`/`portFade` are now shared between the shader and `strokes()`; a segment whose midpoint is outside
+   the disc is not emitted. **64 of 994 segments at f360, 1315 of 3480 at f840.** `hooks.probe()` now reports `drawn` beside `segs`.
+5. **A linear wave operator does not preserve `0 ≤ rgb ≤ w` even though every source does.** Where the Green's function is negative, `w`
+   clamps to zero under a positive `rgb` and the "chromaticity" reaches 2950. The projection `min(rgb, w)` after `max(0)` costs one
+   instruction and is what makes `rgb/w` a colour — the one line of `colour.js` not in the plan, and without it item 2 does not work.
+   (Related: a second-order leapfrog cannot ping-pong between two targets. The Yee pair gets away with two because each pass reads one
+   field and writes the other; `u_{n+1} = f(u_n, u_{n−1})` needs three. That is the difference between 2 and 3 extra targets in the cost
+   estimate.)
+6. **The anchor shifts the whole wheel, and that is what made a note change colour with the key.** `sectorHue(hue, k, spread)` =
+   `hue + spread(k/12 − 1/2)`. The spread stays, the anchor's offset goes (`CHUE0` 0.0) and the spread widens to `CSPREAD` **1.6** (capped
+   at `CSPMAX` 0.92 of a turn), because a third of the wheel is right for twelve small glows on a ring and wrong once those hues are the
+   colour of every wave in the picture. `CSPREAD = 1` is v0.10's spacing exactly, for the user to put back.
+7. **`FGAIN` 3.4 → 6.0 pays for the trough.** With the sign of Ez as brightness, half the picture is dimmed to `TROUGH` 0.35 and the
+   reference frame's mean luminance fell 31 %; 6.0 puts f360 back to 0.3259 against v0.10's 0.3830 — **−15 %, with centre/rim 1.69 → 1.37,
+   so the picture is flatter as well as slightly dimmer**. `TROUGH` is the one constant to raise if the user wants v0.10's contrast back.
+8. **"Different music must look different" is answered by `dirty`, `sub` and `punchy`, not by the carrier.** The ≥ 20 % gate on the mean
+   crest spacing per demo style is **not met and cannot be**: house / aba / dnb have mean spectral centroid 0.485 / 0.459 / 0.459, i.e.
+   the same mean carrier to 4 %. What separates them is `dirty` (3.0× aba↔dnb), `sub` (10× — aba's wobble swings ε 0.89…1.49 against
+   dnb's 0.83…1.06) and `punchy` (1.6×), which are exactly the three new mappings; and within a style the carrier does move (house's
+   centroid ran 0.37 → 0.77 in one 20 s window, `lam` 42.3 → 19.2 cells, a factor of 2.2). The honest summary is that the styles look
+   different and the thing that makes them look different is not the one the plan named. Lever with the most room: `CENTK` (2.5);
+   next, `bpm` back as a second carrier term.
+9. **Cost: 1.24× TORUS2 on the worker's tree, 1.01× on the merged tree, gate ≤ 1.5×.** Two-page protocol, seven NAV-interleaved pairs a
+   page, cold pair dropped, median of the ratios. The worker's levers: the porthole cull took 38 % of the strokes out of the drop frame
+   (MAXWELL measured **0.96×** after items 1 and 3), then the colour field plus tier-3 substeps **4 → 3** (`GRIDT[3][2]`, the session's
+   one numerics change) landed at 1.24×. The orchestrator's re-run on the merged tree medians 1.230 / 1.216 = **1.01×** (early pair 1.35×,
+   late 1.17×) — the NAV drift both reports warn about. Undoing the substep change costs about 0.25× of TORUS2.
+
+**The proofs (AUDIT-v0.11, `tools/accept/v0.11/`):** worker, tier 1 CLOCK=1 — silence gives lum centre 1.2 %, segs 0, energy 0 against
+the unpinned frame; one pinned sector gives worst hue error **0.0018 turns** at saturation ≥ 0.983, two sectors a tritone apart give
+their exact circular midpoint between them, a key change moves the anchor 0.0090 → 0.2933 with the twelve note hues **identical to four
+decimals**. Orchestrator, headed, three 90 s real tracks with a **paused start** (`audit11.sh`, `det11.py` — new): with the tab paused,
+energy **0.002 / 0.021 / 0.000034** against 2885 / 1808 / 2729 playing, `segs` and `drawn` **0**, probe centre ≤ 0.003, and every black
+frame PROBE counted (291 / 202 / 392) falls inside the paused window — **0 black frames in 72 s of play**, `long` 0, ERRS [], nonFinite
+[], `probe().gap` 0 on all 120 samples, q .39 → .87. `check.js` 0 fail / 3 warn (maxwell `index.js` **498** lines, two under the hard
+cap), `param-smoke` 49/0, `test_fdtd` OK including group 5.
+
+**What this release does NOT prove, and says so:** (a) item 2 is proven **per note only under a pin**. On real music the chroma vector is
+flat (no bin clears 0.3 in 37 of 39 samples) and the twelve hues are symmetric about the anchor, so a chroma-weighted "expected hue"
+collapses onto the anchor and the agreement number is at chance at every lag; what the headed run does show is that the wave is no longer
+anchor-coloured (mean |dominant hue − anchor| 0.254 / 0.252 / 0.153 turns, i.e. a whole half-span) and that a third to two-thirds of the
+dominant hues land outside the arc the twelve sectors occupy. (b) The wobble is proven only at CLOCK=1: a 2 s trace cadence cannot
+resolve a 1–4 Hz LFO (Nyquist 0.25 Hz). (c) **No dubstep track exists in the scratchpad** — `Malicious` (Kevin MacLeod, 140 BPM, CC-BY)
+stood in, and it has no wobble bass, so the user's 3 has still never been tested on the music it was about.
+
+**Leans for the user's eye, ranked:** (1) `TROUGH` 0.35 and the 15 % dimmer, flatter picture — the price of "the sign of Ez is
+brightness", one constant to raise; (2) `CSPREAD` 1.6 against v0.10's 1 (and note 1.6 spans more than half the wheel, which is why some
+mixtures land on a hue no note owns); (3) the wobble being amplitude and not wavelength — physics, not effort; a bunching ring needs a
+different mechanism and a new plan; (4) the demo styles separating on `dirty`/`sub`/`punchy` rather than the carrier, with `CENTK` 2.5 the
+lever; (5) `FGAIN` 6.0; (6) the dubstep stand-in — one mp3 is the cheapest improvement to the next round; (7) tier-3 substeps 4 → 3
+(~0.25× of TORUS2 to undo); (8) `VACT`/`VACW` 1.0/1.0 s, how fast silence lets the rings go.
+
+**Docs owed and paid here:** `docs/AUDIT-v0.11.md`, this section, `tools/accept/v0.11/README.md`, the thumb re-shot
+(`tools/thumbs.sh "9:360"` — the f360 frame changed), `package.json` 0.11.0, `releases/retinarave-v0.11.html`; **and the six CONTRACTS
+sentences** — the four owed from §42 (§1.2 readback by `IMPLEMENTATION_COLOR_READ_TYPE` + a small target read whole, §1.4 hook naming
+via `CARD.REG[id].scene.hooks` + read-only hooks must not mutate, §1.10 a plane under a rotating camera needs a porthole; commit
+`06de82a`) plus the two this session adds (§1.4: a test hook that pins a field must also pin the **params derived from it**, because a
+param's `from()` is evaluated by the engine from `MS` — `hooks.quiet(1)` left `charge` at its musical value until it did; and a `hud`/
+`info` hook's object literal is not namespaced, so a second key of the same name silently wins — `mxinfo`'s `sub:` was overwritten by
+the sub's ema and a bench script read the wrong number, renamed `subS`; commit `6587f06`). **Still owed to HARNESS:** `tools/lum.py` has
+no hue field (v0.10's report quotes a "saturation-weighted mean hue" from an instrument that was never committed), the scene palette
+is `0.5 + 0.5 cos(TAU(h + [0, .33, .67]))`, not HSV — every hue number in these reports is in palette turns recovered by `probe.js
+hueFit`, and a proof that quotes HLS degrees against a constant in palette turns is comparing nothing; and the **500-line hard cap** is
+the real constraint on a scene that grows (`check.js` only says so after the edit) — a brief that adds a subsystem to a 400-line scene
+should say where the line budget is going first.
+
+**The release bundle (found at the tag, fixed here):** `tools/bundle.js`'s `declarators()` split an `export const` line on the
+commas of its trailing `//` comment, so `colour.js`'s `export const CDIP = 0.05; // … with them on, every` exported a phantom `every`
+and `releases/retinarave-v0.11.html` threw `ReferenceError` at load (the v0.10 release, run as the control, was fine). The parser now
+stops at `//` outside a string. Proof: `FILE=$PWD/releases/retinarave-v0.11.html … 'test'` keys `9` then `n` → scene 9, forced 9,
+errs `[]`, nonFinite `[]`, 43 feats (`tools/accept/v0.11/release-file-9n.jpg`). Every release from now on is proven from `file://`
+before the tag, as v0.10 was — the bundler is not the served page.
+
+## §44 MAXWELL — "every sound a wave", v0.12 (2026-09-26, orchestrator + one opus worker from `docs/workers/brief-maxwell-onset.md`, report `maxwell-onset.md`; `MAXWELL-ONSET-SESSION-PROMPT.md`, `docs/AUDIT-v0.12.md`)
+
+**What the user asked (2026-09-26, after looking at v0.11, verbatim):** "it still seems like the waves coming out of the center are at a
+constant rate -> I'm expecting every sound to generate a wave (and the wave color is based on musical note being played) sometimes the
+music goes double time, doesn't seem like what is being immited from middle matches ; also why are there a pattern of small circles in
+the background?" Then "1. no sound -> quiet (ie. wave not generated) 2. what are the media?" and, told what the four media were, "follow
+your rec" (drop the photonic lattice, keep the lens and the mirror cavity, decide the waveguide after seeing sound-only ripples in the
+cavity). Those sentences are the spec. MAXWELL is **modified in place** — id 9, still forced-only (bid 0, key `9` then `n`); the gate is
+v0.10's and v0.11's: no sweep, proof on id 9 only. **The user has not looked at v0.12.**
+
+**The diagnosis held.** The constant rate was the continuous carrier (twelve charges, the dipole and the sub's standing current
+oscillating at the timbre's wavelength the whole time the music played) plus the beat-locked `FAINT` ring; the only discrete launches
+were three drum bands behind a hysteresis edge that could not re-fire while hits overlapped; the pale cream was the carrier mixing all
+twelve hues; the small circles were the photonic lattice's ε dots. The worker verified each claim in the code before changing it.
+
+**The scene now (`assets/scenes/maxwell/{index,fdtd,colour,medium,sources,onsets,render,probe,help}.js`, `index.js` 497 → 465, `onsets.js`
+new, 151):** nothing radiates continuously. Every launch is a Ricker shell from a place with an amplitude and **one hue** injected into
+v0.11's colour field: (1) **kicks** by the `kickCount` delta per frame (a counter — any rate; N kicks in a frame = N launches), from the
+centre and through the dipole, hue = `argmax(bchroma)` — the bass note — or the key's anchor below `BCHMIN`; (2) **snares and hats** by a
+**re-armed edge** (fire above `HI` after falling to `REARM` 0.5 × the last peak, refractory `REFR` 70 ms), the snare from the pitch class
+that rose most in `NOTEW` 150 ms, the hat on all twelve at `HATA`; (3) the engine's **`onset`** event when no band launched within
+`ONSETW` 50 ms, at `ONSETA` from the loudest-rising sector; (4) a **note** onset — a chroma bin rising by `NOTEK` **0.05** (the plan's 0.08
+fired 4 times in 14 s of house; the worker measured the chroma-rise distribution over 481 frames per synth) from its own sector at
+`NOTEA` 0.045, per-bin refractory 200 ms. One shared 32-slot launch ring (`NSLOT`) replaces 8 per band. Timbre survives on the shell:
+`TSIGK` (thickness by centroid), `DIRTK` (a second lobe for `dirty`); the sub still breathes the medium's ε (`WOBK`) — it moves the light,
+it is not a source. Media: **lens · mirror cavity** in rotation (`sectionAlt mod 2`), the waveguide by `hooks.medium(3)` only, `medium(2)`
+empty space, the lattice's code gone. `feats` 41: `bchroma onset kickCount` in, `beat roll riser novelty flowHigh dropEnv` out.
+Hooks: `launches()` (read-only: `{n, perBand, last[≤16], medium}`; `reset()` zeroes the ring but not the counters, so a trace can
+difference them); `wob`/`timbre` kept (they are the only way to prove `WOBK`/`TSIGK`/`DIRTK` — `#test` pins `centroid`, `dirty`, `sub`
+flat); `mxchroma` no longer silences the centre in the colour field (the centre is no longer pitchless — under the plan's own gate the
+silencing zeroed the only source).
+
+**The proofs (AUDIT-v0.12, `tools/accept/v0.12/`):** worker, CLOCK=1 — `train('off')` with music on: energy **0** exactly, segs 0 (v0.11
+396.41 / 468); one `#test` bar launches kick 4 / snare 2 / hat 8 = the fake timeline's; `train('8')`/`('4')` crest gaps **0.4999**;
+`mxchroma("3")` plane hue **0.0018 turns** off the target; all five bands fire on house / aba / dnb (32–40 launches per 2 s). Orchestrator,
+merged tree — s9 md5 `4ad6d2ea` / `4c2ab3c8` = the worker's; the paused start on three real tracks: **0 launches in every band 8 s into
+the pause**, energy 1e-5…2e-2 vs playing medians 73…505, every black frame inside the paused window, 0 long, ERRS `[]`, q .57 → .87;
+launches per 2 s 16 / 23 / 29 (Malicious / WLTP / CN) moving with the track; the plane's dominant hue within 0.08 turns of the last
+kick's bass note on **79 % of Malicious samples, 45 % WLTP, 17 % CN**; `medium` never 2. Cost **0.80× TORUS2** (worker 0.92×), from
+1.01× / 1.24×. `releases/retinarave-v0.12.html` proven from `file://` (keys `9` `n` → scene 9, errs `[]`, 30 launches by 9 s).
+
+**What this release does NOT prove, and says so:** (a) the plan's ≥ 70 % per-note gate is met on Malicious only — on CyborgNinja the
+bass alternates between two notes and the plane remembers a second of shells, so "distance to the newest kick's hue" is the wrong
+instrument for a mixture; a launch-weighted expected hue is owed to `det12.py`. (b) "Launches within 30 % of `onsetRate`" cannot hold by
+construction: the scene launches per band, the engine counts one onset per frame for the whole stack (measured 2.9–3.6×); read
+`dpb`. (c) The note source, `TSIGK` and `DIRTK` are proven on the demo synths and by pin only. (d) No double-time passage was found in
+the three tracks' 80 s windows; the double-time proof is `train('8')`. (e) Still no dubstep.
+
+**Leans for the user's eye, ranked:** (1) the rate — 13–20 launches a second on house; `REARM` 0.5 → 0.35 first, then `HATA`; (2)
+brightness between hits — dimmer than v0.11 by construction, `FGAIN` 6.0 is the knob, a floor is not; (3) the hat as the last
+all-twelve source — weight it by chroma, one line; (4) the waveguide back into rotation (the worker's vote; the rails are the only
+non-concentric composition); (5) one stray contour stroke outside the porthole at WLTP 20 s; (6) tier-3 substeps 3 → 4 with the
+headroom; (7) `TSIGK`/`DIRTK` on a real dubstep track.
+
+**Docs owed and paid here:** HARNESS's three §43 notes (the 500-line cap as a budget, `lum.py` has no hue field, cosine palettes →
+hue numbers are palette turns); CONTRACTS §1.4 the release-on-`undefined` convention (every pin hook is a mutator when read — the
+worker lost a run to `hooks.medium()` un-pinning its own shot; a trace reads `hud()` or a read-only hook). **Owed:** the
+launch-weighted expected hue in `det12.py`; the `CDIP` comment in `colour.js` now describes v0.11's workaround.
+
+## §45 MAXWELL — thin waves and fat waves, the breakdown rule, v0.12.1 (2026-09-26, orchestrator alone, from the user's look at SeeYouDrop)
+
+**The user's word.** Watching the first dubstep (Ray Volpe — SEE YOU DROP, `~/Music/RetinaRave/SeeYouDrop.flac`) through MAXWELL:
+"the part that was missing ripples was 50s-57s", then "the sounds didn't feel quiet tho. feel like there should be more skinnier
+waves, (vs bass fatter waves)?". A per-second replay of 46–62 s (`tools/accept/v0.12/breakdown-window.py`, `montage-syd-breakdown.jpg`)
+agreed: 50.5–58 s is the breakdown, `kick` 0 and the engine's `kickCount` frozen at 65 for six seconds, `bass` .04, while `snare`
+peaked .35 and `hat` .57 (the drum bar HI is .45) and the mids and highs stayed loud. v0.12's rule put every non-kick launch on the
+ring of charges at SNAREA .11 / HATA .025 / ONSETA .07, and only the kick launched from the centre — so the breakdown's launches
+(2–6 a second, real) were dim sector pulses nobody could read, and the plane was a dim disc until the drop at 58 s.
+
+**Two changes, both retunes on the v0.12 machinery, no new scene:**
+
+1. **A launch carries its own width** (`sources.js` `AS[]`, `WSIG = [1, .55, .45, .5, .5]` per band, `KWB = .35`): the shell's
+   Ricker sigma is the frame's `OUT.sig` times the launch's multiplier, floored at SIGLO. The kick is the fat one and gets fatter with
+   the bass under it (x (1 + .35 x bass), so a drop kick at bass .95 is 1.33x v0.12's width); a snare is half a kick, a hat under
+   half, an onset and a note half. `hooks.launches().last[].w` reports it; `rings()` uses it for the bookkeeping radius. `centroid`
+   still scales the whole frame's sigma (TSIGK) on top.
+2. **The breakdown rule** (`onsets.js` `KSIL = 1.0`, `ONSC0 = .4`; `sources.js` `ONSETC = .85`): once no kick has launched for a
+   second, EVERY launch — snare, hat, the engine's onset — comes from the centre instead of its sector, thin, and drives the centre
+   current at .85 of a kick's; the engine's onset takes max(.4, mid, high) as its amplitude there (the scene now reads `mid` and
+   `high`). The dipole is still driven by kicks alone. The first cut moved the onset alone at .5 of a kick: two shells in six
+   seconds and a dot at the centre, not a ring (`montage-syd-breakdown-v0121.jpg` is the second cut). The centre's colour
+   (`OUT.khue`, colour.js uAC) now follows the last CENTRE launch — a kick's bass note, or the loud sector during a breakdown.
+
+**Proof.** The replay after: from 53 s every launch in `last` is sector −1 (hats at w .45, amp .3–.45, three to five a second), and
+the frames 52–58 s show thin concentric shells from the centre where v0.12 showed a disc; 58–61 s the drop's kick rings, wider.
+`det12.py` on SeeYouDrop: launches 0–25 median 18, per band 406/15/47/139/8, engine kickCount Δ406, dkick ≤ .08 on 80 % (med .02),
+dbass 78 % — the per-note gate unchanged; Malicious 73 % (med .03) / 68 %, still over the 70 % bar but down from 79 % / 82 %: with
+the centre's hue following the breakdown's loud sector, dkick (measured against the last KICK's note) drifts in Malicious's quiet
+bars — the number moved for a reason the rule states. `audit12.sh` paused start on SeeYouDrop: every black frame inside the pause
+but six on resume, none after 20 s, `long` 0, `errs []`. `IDS=9 tools/scene-md5.sh` twice: 95fd7d73 / 4e2108a7 (re-based in
+`scene-md5-v012.txt`; v0.12 was 4ad6d2ea / 4c2ab3c8). `tools/check.js` 0 fail (help lines for `mid`, `high` added), `test_fdtd`
+OK. Thumb 9:360 re-shot. `releases/retinarave-v0.12.1.html` proven from file:// (9+n → scene 9, errs [], 32 launches by 9 s,
+widths per band on the launches).
+
+**Not done / open.** The drum bar HI .45 is unchanged, so a breakdown whose snares sit under it (the first replay read snare
+.15–.35; the third .5–.67 — run-to-run variance in the extractor) still rings only on the engine's onsets. Whether the double-time
+fill at 59–61 s (§44's open question) should double the launches is untouched: `dn` 21 then 15 against onsets 11.9. No sweep of
+WSIG / KWB / ONSETC — three numbers chosen by eye on one track; the other three tracks were not re-watched, only re-measured.
+
+## §46 NAV2 — "bump with the beat", Green's ruler, v0.13 (2026-09-26, orchestrator alone, from the user's ask on SeeYouDrop; `docs/AUDIT-v0.13.md`)
+
+**The user's word:** *"audit the NAV2 scene with SeeYouDrop.flac; can make modifications; I want the mandelbrot set to bump with the
+beat. no beat == more of a circle (some variation), as the beat happens it spirals in showing the complexity of the mandelbrot set.
+The edge of the set should always be moving with the music. How can Green's theorem help?"*
+
+**What was there:** v0.8 rested c ON the rim (`RHO_FREE` 0.91, chosen for brightness, §39) — ρ 0.88–1.00 on every interior sample
+of the 80 s SeeYouDrop trace, the set always a spiky blob, a hit worth `K_HIT` 0.35 of press. Nothing measured the shape.
+
+**Decisions:**
+1. **The beat is the press, the circle is the rest.** `detect.js` `bump` (peak-hold of kick/hit, `BUMP_TAU` 0.35 s) and `pulse`
+   (its 2 s ema, the beat's density); `nav2.js` `RHO_REST` 0.30 replaces `RHO_FREE`, press = wind + `BUMP_K` 1.0·bump + `PULSE_K`
+   0.8·pulse, `K_R` 4 → 10, `K_HIT` gone; `CURL_B` 0.5 curls the arms on the beat. The brightness that `RHO_FREE` bought is paid by
+   `uRound` (5.) instead of by resting on the rim.
+2. **Gates leak, not reset** (`GATE_LEAK` 0.3, `GATE_RHO_MIN` 0.80): pulses touch the rim briefly; the held pressure now leaks between
+   them. Set by a 16-point node sweep — the mildest point where a kick-per-beat timeline opens and closes a gate (1 → 3 → 1) with 0
+   violations; at `GATE_RHO_MIN` 0.86 or `BUMP_TAU` 0.28 no gate opened at all. `test_nav2.js`'s melody run gained the kick.
+3. **The beat reaches outside** (`exit.js` `BUMP_LG` 1.5 on the exterior target potential).
+4. **Green's theorem is the ruler, not the engine** (`green.js`, `hooks.green()`, `test_green.js`): A = ½∮(x dy − y dx) on c's
+   equipotential |φ_c| = 1.06 (256 points, 7 pull-backs through ±√(z − c), branch continuous in the external angle), Q = 4πA/L²,
+   dA/dt = ∮ v·n ds and the mean edge speed. Q is 1 at c = 0 exactly (the 256-gon's), 0.99 → 0.70 as ρ 0.2 → 0.99 along the 1/3
+   root; Gronwall's area theorem says the area deficit IS the Böttcher tail. 0.032 ms. The AUDIT's "How Green's theorem helps"
+   is the user's answer. Not built: the phase-winding colour (the argument principle, same family).
+5. **`uRound`** (rest 0, exact): the interior base and the exterior glow × (1 + `ROUND_G` 1.5 (1 − ρ)). Measured need: centre
+   luminance fell to a median 0.06 on the window frames (v0.12 0.20); with it 0.19.
+
+**Proof:** `det13.py` + `nav2-window.py` (`tools/accept/v0.13/`, tracks from `$MUSIC`): ρ 0.671 / 0.827 / 0.985, Q 0.700 / 0.805 /
+0.947, v 0.189 median / 0.578 max and > 0 on 29/29 interior samples, one gate, ms 2.04 (2.02), errs []. The paused start (8 s): ρ
+0.97 → 0.39, Q 0.71 → 0.96, v → 0.006; first kick after play ρ 0.74, v 0.31. `test_nav2` no-beat: ρ 0.300, Q ≥ 0.977, v > 0 on
+100 %. s8 md5 17f888e8 / 83d37910 twice (v0.12 9021eac8 / f6299795); `check.js` 0 fail; `npm test`, `test_fdtd`, `test_field`,
+`test_green`, `test_nav2` OK; `releases/retinarave-v0.13.html` proven from file:// (key 9 → scene 8, errs []).
+
+**Open:** the six look constants by eye on one track (the four gate/press ones swept); no beatless passage on a real track (paused
+start + node stand in); the drop's 20 s outside untouched; the v0.8 `&still=1` = NAV identity no longer holds (c's path differs);
+NAV2 still forced-only, the swap question unchanged; the other three tracks not re-watched.
+
+**§46 addendum — after the user's look (2026-09-26):** *"25s-1m03s set should be bumping in some way with each beat (as beat evolves
+the set should come back to a slightly different shape); 1m04 it starts to get swirly/wobbly; also is a little too bright."*
+`RHO_BEAT` 0.93 (the beat's ceiling; the smoulder at `RHO_CAP` was the wash-out), `PULSE_K` 0.4 (ρ ~0.6 between kicks: the outline
+moves), the kick pumps `zoom` 6 %, `GATE_RHO_MIN` 0.72 (a gate is the shape coming back different — 8 per minute on a plain beat in
+node), `EXT_BEATS` 8 (the drop is a two-bar excursion; 1:04 was 20 s of dust under NAV's peak rule — NAV's own rule is untouched in
+NAV), the spin gains halved, `BUMP_LG` 0.5, `ROUND_G` 0.8 with the exterior at half, `arc` out of `feats`. Trace: ρ 0.49/0.66/0.93,
+Q 0.64/0.88/0.95, v > 0 on 37/37, EXT 4 s, spin max 0.43 (0.79), ms 2.00. AUDIT-v0.13's second table.
+
+**§46 addendum 2 — the extremes (2026-09-26):** *"0-13s the high rise up to their max (edge should be bumping on every beat / light
+oscillating off the edge); at 25s it really starts moving the edge on every beat."* The engine's `kick` reads 0.1–0.3 in this intro,
+so the bump is now read against the track's own running kick/hit peak (`BUMP_PK_TAU` 3 s, floor 0.25) times energy (`BUMP_E0` 0.5 →
+1 at `eS` 1); `uBump` (rest 0) widens the exterior halo's reach 1 + 1.5·bump — the light off the edge. Intro bump median 0.47 (0.31),
+ρ 0.64–0.84 on every sample; the gate at 25 s into period 2 is the shape coming back different. AUDIT-v0.13's third section.
+
+**§46 addendum 3 (2026-09-27):** *"each beat should make the set close up (different pitches are different shapes); at 1:38 it goes
+double time -> should be moving faster / reacting more; 1:45 -> highest energy, should be reacting more."* The beat's NOTE: the bass
+note's pitch class latched on each hit names an internal angle (k + ½)/12 and c is pulled around the rim to it (`NOTE_V` 8 × bump;
+`bchroma` in `feats`) — twelve pitches, twelve species; the bump's decay follows the running hit interval (`BUMP_IV` 0.7, so double
+time breathes at τ 0.14 s instead of pinning ρ high — the before trace read ρ 0.87–0.93 flat there); the energy gain E lifts the
+ceiling (`RHO_E`), the halo, the curl and the kick zoom. Edge speed median 2.4× on the double-time stretch (0.333 vs 0.138), seven
+notes latched in 30 s, the Q median 0.93 → 0.90. `BUMP_IV` 0.55 → 0.7 by the node sweep (the 124 bpm test beat opened no gate at
+0.55). AUDIT-v0.13's fourth section.
+
+
+**§46 addendum 4 (2026-09-27, no new word from the user — the open list's item 4):** the other three tracks re-measured and re-watched
+under v0.13 (`det13-{cn,wltp,mal}-v013.txt`, the 0–60 s montages). CyborgNinja and WhoLikesToParty bump as asked (the first on a
+one-note bassline, so notes 0 / 1 only and a fat near-cusp set; the second latches ten pitch classes at 117 bpm). **Malicious found the
+fault:** its stuttering bass intro fires the engine's bass-returns `dropEvt` three times in 14 s (`dropStrength` 1.0 each) and NAV2 cut
+every time — 18 of its first 25 s were the exterior dust, the 1:04 complaint on another track (`EXT_BEATS` made the drop a two-bar
+excursion; a re-drop undid it). **Decision: `DROP_GAP` 32 beats (`exit.js`)** — a `dropEvt` inside eight bars of NAV2's last cut is a
+hit, not a cut (`doDrop` returns; the beat's press answers the kick; `N.dropBeat` is the only new state). No drop recurs inside eight
+bars; SeeYouDrop's two (58 s, 1:45; 47 s apart) both stand, so pass 4's look is untouched: s8 md5 253b19c4 / 778fb7e2 twice, every node
+test OK, the release re-proven from file://. Malicious after: two excursions in 40 s instead of three in 14 s. Also measured, not
+changed: **1:45 on SeeYouDrop is a full-strength drop** (`ds` 1.0, arc build → peak; det13's D line now carries `ds` and `arc`) — NAV2
+answers the user's "highest energy" with the cut and ~6 s outside, and the interior after it reads eS 0.78 against 0.87–0.94 at 1:33–1:39;
+the two ways to make 1:45 "react more" inside (no cut above some `away`, or E read against the track's own energy peak) wait for the
+user's look. `tab13.py` tabulates a trace. AUDIT-v0.13's fifth section.
+
+**§46 addendum 5 (2026-09-27, the user's look at pass 4):** *"the movement is still too subtle -> all the shapes ... the beat causes
+the set (ie. black circle in the middle) [to collapse] into interesting shapes, then the silence rebounds to the circle (original NAV does
+this ~38s-42s) ... [two frames] too bright and can't see the complexity ... do 'energy gain read against the track's own peak' ... why do
+different sounds look so similar?"* NAV at 38–42 s is the basilica's pinch: c at the 1/2 root with |λ| → 1. **Decisions:** the twelve
+notes are the twelve simplest roots (`NOTE_ANG`; pass 4's (k + ½)/12 sat *between* the roots by construction, so every note was a
+dimpled circle — that is why the sounds looked alike); the beat presses to the cap (`RHO_BEAT` 0.985) with the smoulder handed to the
+wind alone (`PAR_WIND`), so the interior no longer lights on the press; the press holds its peak (`BUMP_HOLD` 0.3 of the interval —
+the node sweep showed `K_R` was not the lever, `V_MAX` and the decay were: 0.89 without the hold, 0.98 with it); gates lock while a
+note drives (`NOTE_LOCK`), because a bulb never rounds again and the rebound is to the circle; E is read against the track's own
+energy peak (`E_PK_TAU` 20 s); and the brightness, measured, is the palette's green phase plus the saturated exterior halo — two
+NAV2-only uniforms, exact at rest: `uLum` (a luminance knee, (0.12, 6) interior / (0.35, 2) exterior) and `uExtG` (`EXT_DIM` 0.5 on the
+exterior while c is outside, eased 0.5 s, applied after the knee), with `EXT_ENV` 1.2 landing the drop nearer the set. Q median 0.90 →
+0.84 over 80 s, the green frames' centre 0.36 → 0.10–0.22, the dust after the 58 s drop 0.75 → 0.30. s8 md5 f5d4f051 / 0671f15a twice.
+`test_nav2` §8 (the collapse and the rebound) added. AUDIT-v0.13's sixth section. The user has not seen it.
+
+**§46 addendum 6 (2026-09-27, the user's look at pass 6):** *"still not deforming enough"; "a bit too muted now (looks almost pastel
+sometimes). I like the bright / glowy look, but I don't want it to be so bright that can't see the mandelbrot shapes."* **Decisions:**
+the interior gets its own speed cap `V_INT` 2.4 with an acceleration slew `A_MAX` 30 (the continuity monitor's rule is a spike rule, so
+speed is free and acceleration is what is bounded; the first step from rest is 0.052 at the 1/24 s cap), `BUMP_IV` 0.5 and `K_R` 20 —
+the node sweep showed the trough between kicks (0.84) was the *target's* slow fall, not the speed: peak 0.985 / trough 0.667 at 150 bpm,
+the Q swing through a beat doubled. The pastel, measured with `sat13.py`, was not saturation (unchanged) but the halo's peaks (p95
+luminance 0.72 → 0.53): the exterior knee is off, the interior knee milder (0.2, 3), and the dust's dim alone carries the post-drop
+frames (`EXT_DIM` 0.35). p95 0.81, the green frames' centre 0.26–0.42 against a rim of 0.53–0.71, the dust 0.30. s8 md5 c0373ec5 /
+d61162a7 twice. AUDIT-v0.13's seventh section. The user has not seen it; `nav2.js` 470 lines — the next machinery change extracts `beat.js`.
+
+**§46 addendum 7 (2026-09-27, the user's look at pass 7):** *"getting closer but still not deforming enough with the music (this is an
+extreme example and pretty much should be deforming on every beat)."* **Decisions:** `beat.js` (the press, the note, the cap, the slew;
+a pure move out of nav2.js, md5 identical); a per-frame beat trace (`nav2-window.py DT= SHOT=0 MIN=1`, `perbeat13.py`) because a montage
+cannot see a 0.12 s pinch; **every tick of the engine's beat grid is a full press while kicks are recent** (`GRID_K` 1.0, `GRID_T` 2 s,
+`GRID_ARM` 0.5 — the kick's own press was 0.34–0.76 on a third of the beats); the trough is the target's fall, not the speed (`BUMP_IV`
+0.3, `PULSE_K` 0.3, the slew as the monitor's own growth rule `STEP_G` 2.4 / `STEP_0` 0.008 on the realised step, `V_INT` 3.5); **the
+wind's weight squared** (`WIND_P` 2) because the engine's 0.3 wind-up through the groove floored the trough at 0.6 on the track where the
+windless sweep said 0.52; the hold 0.4 so the climb from the low trough finishes on every beat. Per frame on 27–33 s: press 0.90–0.92 on
+every beat, trough 0.68 → 0.55, a fifth of each beat near the circle, the Q swing ≥ 0.12 on two beats in three. s8 md5 2daaa2c0 /
+f2342b7f twice. AUDIT-v0.13's eighth section. The user has not seen it; the swing is now bounded by the beat's own length.
+
+**§46 closed (2026-09-27):** the user on pass 8: *"nav2 looks good, can tag and deploy it. (leave it at slot9)"*. v0.13 tagged and pushed
+to `main` (retinarave.com). NAV2 stays id 8 / key `9`, forced-only, `score()` 0 — the §39 swap question (NAV2 → id 0 / home) is answered:
+no swap; NAV (id 0) stays home and byte-identical.
+
+**§46 addendum 8 (2026-09-27, the same day, after the tag):** the user: *"I wouldn't say nav2 validated. (I'm just taking a break tuning
+it)"*. The word "validated" in the §46 closing line, in the v0.13 commit message and in the first NEXT-SESSION-PROMPT after the tag is
+**wrong**: v0.13 is tagged and deployed, NAV2 is **paused mid-tune, not validated**. NAV2's mechanics (the `beat.js` press, the roots,
+`K_R`, `V_INT`, the running-peak bump) are therefore not a proven model and are not copied into GIELIS (§47); only the user's music
+descriptions from the NAV2 sessions carry over. Do not touch NAV2 (id 8, key `9`) until the user resumes it.
+
+## §47 GIELIS — the superformula nest, v0.14 (2026-09-27, orchestrator + one opus worker from `docs/workers/brief-gielis.md`, report `gielis.md`; `GIELIS-SESSION-PROMPT.md`, `docs/AUDIT-v0.14.md`)
+
+**The user's ask (verbatim, the same day as the v0.13 tag):** *"goal new scene (slot 11); use 'see you drop' as the inspiration for
+the scene … how can we use the superformula to visualize music?"* — which lifts the standing "no new scenes until asked" rule
+(memory `feedback_no_new_scenes.md`) **for GIELIS only**. And, on the model: *"torus2 is my favorite visually for how music lines up
+to the viz"*. And, on NAV2: *"I wouldn't say nav2 validated. (I'm just taking a break tuning it)"* (§46 addendum 8).
+
+**The interview — the five answers, verbatim from `GIELIS-SESSION-PROMPT.md`, everything else a lean:** *(1) renderer = **3D
+supershape nest as strokes**, TORUS2's lineage · (2) species = **interval-to-key ratios** · (3) **section morph on the lobe lean is
+in** · (4) **id 10, reached by `n` / `&scene=10`, no digit key, forced-only until approved; the folder and card are `GIELIS`** ·
+(5) acceptance windows on SeeYouDrop = intro 0–13 s, groove 25–63 s, breakdown 49–58 s, double time 1:38, drop 1:45, per-beat
+rulers on the n1 swing and the wave spacing.*
+
+**Why TORUS2's model and not NAV2's.** The user named TORUS2 as the mapping that works, so GIELIS speaks its language: twelve
+pitch classes as twelve visible things, hits launching events that travel at a musical speed, a thump on the beat, a nudge per
+beat, key on the circle of fifths with major warm / minor cool, section picks the morph target, drop = collapse and rebound,
+everything on the musical clock, `cuts: 'continuous'`, **no running-peak normalisation**. NAV2's mechanics are explicitly **not** a
+model: v0.13 is tagged and deployed but **paused mid-tune, not validated** (§46 addendum 8), so `beat.js`'s press, the roots,
+`K_R`, `V_INT` and the running-peak bump are not copied — only the user's *music sentences* from the NAV2 sessions carry over
+(the collapse-and-rebound, "different pitches are different shapes", "deforming on every beat", bright but legible). NAV2 (id 8,
+key `9`) was not touched. What GIELIS does borrow from §46 is the **measuring lesson**: Green's Q is the ruler, and a montage
+cannot judge a per-beat pinch — measure per frame.
+
+**The design, one paragraph per spec item (every constant a named lean at the top of its module).**
+
+1. **The nest.** Family k (pitch class) is one nested supershape drawn as `RINGS` 7 latitude rings of strokes over ±`PHI_MAX` 0.85
+   of latitude, path B through `ctx.lines`, the vertex shader building every point from `gl_VertexID`. Size and brightness follow
+   `chroma[k]` (`SIZE0` 0.25 + `SIZEK` 0.75·chroma, the loudest outermost and brightest) with the circle-of-fifths `harmAngle`
+   fallback blended continuously so `#test` and silence still have a nest; a brightness floor `FLOOR` 0.18 of the loudest and a
+   capped fog. `kick` flashes the families below the median brightness (`FLASHT` 0.25 s max-hold decay); `hat` shimmers along every
+   ring (`SHIM` 0.55); `sub` fattens `a, b` (`SUBK` 0.15) and the bar breathes them ±`BREATH_B` 3 % even in silence; below
+   `PRES0` 0.05 presence nothing is drawn.
+2. **The species.** Family k's lobe count is the just-intonation ratio of its interval above the key: `m = M0 · p/q` with `M0` 4,
+   so the root is a rounded square (m 4), the major third five lobes, the fifth six, the tritone 28 over five turns, the minor
+   seventh 36 over five. `QCAP` 5 caps the turns a ring may need, which snapped exactly one entry — the minor second, 16/15 →
+   17/4 (0.4 %), because 16/15 needs fifteen turns to close. Twelve distinct lobe counts, so twelve distinct shapes;
+   `keyConf` gates the key exactly as `keycolour.js` gates the hue, the fallback key is the nearest fifth of `harmAngle`, and a key
+   change **cross-fades the two radii** over `MTC` 0.7 s ×3 — a rational m never interpolates. The table lives in
+   `math/gielis.js`, so the fallback `m = k + 3` is one line.
+3. **The breath.** `n1` rests at `N1_REST` 12 (a circle, Q ≥ 0.987 on every family) and every beat presses toward `N1_BEAT` 1.2
+   with TORUS2's thump `press = max(0, cos 2π·beatPhase)^4`, read off the engine's beat **grid** — never the kick detector, which
+   reads 0.09–0.44 in this track's intro. The depth is the `breath` parameter (0.5 + 0.5·eS), so 25 s presses harder than 0–13 s
+   and the double-time stretch hardest; a `kick` inside the beat adds `HIT_K` 0.3 on top. `build`/`tension` go to the lean, never
+   to n1 — the wind must not floor the breath (the NAV2 pass-8 trap). Green's Q of the loudest family's equatorial profile
+   (512 samples, `N_Q`) is the ruler and `hooks.green()` exposes it.
+4. **The waves.** `torus2/waves.js`'s launch ring buffer was lifted to `assets/math/waves.js` as **`mkWaves()`**, per caller (a
+   module-level buffer would have made TORUS2's eight slots and GIELIS's the same slots); TORUS2's pixels did not move (s3
+   `7189a6ba` / `48113eda` before and after, twice). Rising edges in kick / snare / hat launch a bump running round every ring at
+   one ring per bar, `WAVEW` [0.05, 0.017, 0.008] wide, `WAVED` [`WAVE0` 0.26, 0.008, 0.01] deep with `WAVEP` brightening, both
+   displacement and pulse, 2-beat decay and 8-beat life; the wave rides the ring parameter, so on a q-turn family one wave runs the
+   whole closed curve in a bar. Each slot carries its launching family's hue in GIELIS's own `WHUE` column — the note's colour, as
+   MAXWELL was validated to do. Silence is quiet: `presence`/`hush` gate the floor, no carrier.
+5. **Motion.** `mkNudge()` yaws the nest 1/16 turn per beat (`hush`/`calm` slow the spring); `BOUNCE` 0.05 is the beat's second
+   thump on the camera distance; `build` 0→0.5 raises the drawn family count `FIBMIN` 6 → `FIBMAX` 12 with `FIBTC` 0.25 easing so a
+   family fades in instead of popping, 0.5→1 brings the camera in; `intensity`/`arousal` set the resting size, `FILL0` 0.6 and
+   `FILLMAX` 0.85 so nothing crops in portrait; `flowBass/Mid/High` advance the low / mid / high families' ring phase (`PSIK` 0.25);
+   camera elevation `CAM_EL` 0.55 rad, distance 3.2·size.
+6. **Section and drop.** `sectionAlt mod 4` picks a lean template — `round` (1,1,1,1) · `petal` (1,4,1,1) · `blade` (4,1,1,1.3) ·
+   `shard` (0.6,0.6,1,1) — cross-faded over `MORPHTC` 1 s by `morph = MORPHK 0.9 · tension · (arc idle ? 0 : 1)`; `dropEvt`
+   collapses every n1 to the pinch and the nest to `DROP_SZ` 0.4 for about a beat and rebounds with `DROP_G` 1.6 on `dropEnv`;
+   `surpriseEvt` twists the camera by at most `TWIST` 0.4 rad (`TWISTTC` 0.35); `riser`/`roll` drift the rings in latitude so the
+   closed rings open into helices (`UNWIND` 0.35) and snap back on the drop. There is no cut, so there is no refractory to tune.
+7. **Colour.** `mkAnchor()` from `math/keycolour.js` — key on the fifths, major warm / minor cool by pull, `keyConf` gate, `HUETC`
+   ease — with the twelve families spread around the anchor and `valence` warmth on top. A soft luminance knee in the fragment
+   shader (`KNEE` 0.8, `KNEE_S` 3) keeps the glow peaks and stops the stroke's core washing the lobes out ("I like the bright /
+   glowy look, but I don't want it to be so bright that can't see the … shapes"). `colour: { default: 'v2', variants: { v2: {} } }`
+   — **the `oklch` variant is not built**, per `feedback_colour_default.md`; it stays a later opt-in.
+
+**Six parameters (§1.16):** `breath` · `wave` · `turn` · `size` · `lean` · `glow`. `paramsOf === derived` with a difference of
+exactly 0; five `from()`s are the inline expressions moved byte-identically (proven with `&param=gielis.wave=c:0.26` reproducing
+the pre-move pair `d7806c9b` / `a0097ad3`), and `wave` = `WAVE0 + 0.1·kick` is declared as the one behavioural change of the move.
+`feats` is 38 fields, all read, `help.feats` 38 with 0 gaps; `clarity` and `regularity` were dropped because `score(MS) { return 0; }`
+reads nothing.
+
+**The four leans the worker changed, every one for a measured reason** (`docs/workers/gielis.md` (a) items 1–4):
+(i) the brief's resting lean (2, 2, 1, 1) is **exactly a circle for every m and every n1** — `|cos|² + |sin|² = 1`, Pythagoras — so
+the breath would have been a no-op at rest; `BASE` is (1, 1, 1, 1), still a circle as n1 → ∞ and the pinch acts. (ii) `N1_BEAT`
+1.5 → **1.2**: at 1.5 the root family swings only 0.106 of Q through a beat, under the brief's own 0.15 gate, while the starry
+families swing 0.15–0.32; 1.2 puts all twelve over it (0.158–0.414). (iii) **the press travels along `1/n1`, not `n1`** — the
+single most important change: `1/n1` is the superformula's exponent and the shape is a circle for every n1 above ~4, so the
+brief's linear ramp dipped n1 to 7.8–8.4 on every beat for a Q move of 0.9916 → 0.9791, invisible;
+`pinchOf(d) = 1/(1/N1_REST + (1/N1_BEAT − 1/N1_REST)·d)` makes a half press n1 2.56 and Q 0.92. (iv) `depth = breath`, not
+`(0.5 + 0.5·eS)·breath` — the `breath` parameter's own `from()` IS `0.5 + 0.5·eS`, so the brief's product squared `eS`.
+Two arithmetic corrections stand with them: the fifth's six lobes close in **one** turn, not two (the q-turn rule uses the
+denominator of the reduced m), and the rule holds only under a symmetric lean (a lopsided one needs 2q turns when the numerator is
+odd), so the scene draws the symmetric count and skips the wrapping segment (`uOpen`) when the lean or the unwind has opened the ring.
+
+**The continuity monitor, and what it took to make it mean anything.** `viol []` on `#test` 40 s (n 2407, max 0.0583) and on 60 s
+of the house synth (n 3606, max 0.0533) — but only after three findings. **`state.pathCut` is a constant 9, not the brief's 0**:
+`tools/monitor.js` reads `legal = N.pathCut <= 2`, so a constant 0 declares every frame a legal cut and `viol []` is true by
+construction. **The witness cannot be the loudest family's rim** — the loudest family changes by a *swap*, a discontinuity in the
+witness and not on screen; the first 60 s run read 16 violations, every one a reorder, so the witness (`nest.js witnessR()`) is now
+the chroma-weighted mean family radius times the mean radius of the shared latitude profile at the pinch and lean in force: it sees
+the breath, the lean, the growth, the drop and the sub, and never the species. (The brief's other idea, the nest's centroid on
+screen, is exactly 0 for a centred nest.) **Three event-driven quantities stepped** — the drop stepped the witness by 0.063–0.072
+per frame, over the 0.06 spike rule and a genuine jump — so the drop's collapse, the surprise's twist and the section's ring phase
+all attack/ease (`ATK` 0.12 s, `PHITC` 0.35 s, the short way round the turn); at 150 bpm a 0.12 s attack is under a third of a
+beat and still reads as a slam.
+
+**Proof.** ids 0–9: **all twenty md5 lines identical** to the v0.12/v0.13 references, measured on the v0.13 tag, after the
+`waves.js` lift and after the registration (`tools/accept/v0.14/scene-md5-v014.txt`); the skeleton's own s10 pair was `496ce9a8`
+twice (a black frame). **s10 = `2c1b21c8` / `2e978a09`** twice; **`&still=1` = `89664dad` / `fe2809bc`** (`gielis-still-md5.txt`),
+set at step 2 and byte-identical through steps 3–8 — the no-op gate for every future GIELIS change. mixs 0→3 f178 `641f6633`
+before and after; parity fake every field identical to 1e-9. `check.js` 0 fail / 4 warn (three pre-existing line caps + the missing
+thumb), `test_gielis` OK, `test_torus2` OK, `param-smoke` 49/0, the monitor `viol []`. **Cost 0.50× TORUS2** at tier 3 with all
+twelve families drawn (0.658 ms against 1.327 ms, cap 1.5×; 7 140 segments at tier 3, `SEGT` [16, 26, 38, 52] per turn capped at
+`SEGMAX` 96 per ring) and the CPU path 0.052 ms against the 0.5 ms gate — the 512-sample Green trace is essentially all of it.
+**Q trace** (`none`, house + aba, `ACC=v0.14`, three runs each, GIELIS not forced): GIELIS never appears in any run's scene sequence (bid 0), no FEIGEN visit; house q mean 0.73 / min 0.35, windows 0–40 · 40–70 · 70–100 · 100– = 0.56 · 0.71 · 0.83 · 0.93; aba 0.83 / 0.35, 0.56 · 0.71 · 0.83 · 0.98 — within 0.04 of the only earlier `none` trace (v0.2's: house 0.76, 0.60 · 0.74 · 0.86 · 0.96; aba 0.85, 0.59 · 0.73 · 0.85 · 0.99); the min 0.35 vs 0.48 is the load-time dip (`tools/accept/v0.14/q-{house,aba}-none.txt`, `node tools/q-stats.js`).
+
+**What SeeYouDrop measured, blunt** (`docs/AUDIT-v0.14.md` §3; eleven runs, `KEY=9,n,n SCENE=10`, `au capture`, `errs []`,
+`scene 10` on every one):
+- **The brief's swing ruler is NOT met.** Per frame, the Q swing clears 0.15 on 8 % (27–32 s), 62 % (33–38 s), 0 % (the breakdown)
+  and 58 % (97–102 s) of the beats against a gate of 90 %; the swing medians are 0.130 / 0.155 / 0.095 / 0.157. Two five-second
+  traces on the same groove disagree by a factor of eight, so the number is not settled: 250 samples is the argv's ceiling.
+- **The rest between beats IS met on every beat** (49 of 49 beats back to Q ≥ 0.9; median rest Q 0.994–0.997). The rebound to the
+  circle is exactly right.
+- **The depth is bounded by the shape, not the press:** n1 reaches 1.24–1.33 against `N1_BEAT` 1.2 on the groove, so the pinch is
+  full on every beat and the Q swing is still 0.13–0.16. More press buys nothing.
+- **The breakdown is shallower with `kick` 0, as designed** (n1 trough 1.56), and the hats carry the ripples the user missed there
+  (waves median 11, `hat` to 0.68) — §45's thin-waves rule, on the grid press alone.
+- **The brief's brightness band is NOT met, in the other direction.** p95 luminance 0.20–0.45 on the groove, 0.14–0.38 in the
+  breakdown, 0.19–0.35 in the 1:45 window, against 0.6–0.8; `lum.py` centre 0.15–0.31 with a rim of 0.009–0.07. The nest is **dark
+  and small** — it fills about 40 % of the frame height on black — not washed out. Saturation is fine (0.51–0.74 on bright pixels).
+  The only frames in the band are the 58 s drop (0.49–0.72).
+- **The 58 s drop reads** (`ds` 1, `dropEnv` 0.55 → n1 1.32 / Q 0.890, waves 15 → 17; a yellow burst on `break-07…09`). **The 1:45
+  drop did not fire in this run at all** — `dropStrength` and `dropEnv` are 0 on all eight samples of 105.4–113.1 s. That is the
+  engine's bass-returns rule, run to run (AUDIT-v0.13 saw the same twice), so GIELIS's answer to the user's biggest moment is
+  **untested**. Separately, the engine fired a full-strength `dropEvt` at 9–10 s in the intro, where the track was documented as
+  having only two drops 47 s apart.
+- **The species walk is real:** the loudest pitch class walks eight values across the groove and m walks 4 → 4.8 → 6 → 5.33 → 7.5
+  → 6.4 → 5.6 → 5 with it. "Different pitches are different shapes" is built in, by construction.
+- **The hue sweeps more than a full turn across the groove** (0.278 → 1.631) while the engine's key is stable at 8 minor for 37 of
+  40 samples — so it is the anchor's ease and the mood terms, not a wandering key. The engine's key *is* wrong at the start of
+  three of five windows (6 major, 1, 4 on a G♯ minor track); that is the extractor.
+- **Also shown, not tuned:** CyborgNinja and WhoLikesToParty 0–30 s. CyborgNinja's one-note bassline gives four of twelve species
+  in 30 s (NAV2 found the same bassline); WhoLikesToParty is the best-behaved — one stable key, eight loudest pitch classes, all
+  four templates, the deepest pinch of the session (Q 0.658).
+
+**The open retune list, ranked, for the user's look** (AUDIT-v0.14 §5): (1) **size** — the nest fills ~40 % of the frame
+(`FILL0` / `FILLMAX` / `CAM_D`); (2) **brightness** — p95 0.2–0.45 against 0.6–0.8 (`FLOOR` 0.18, `GLOWQ` 0.4, `KNEE` 0.8 /
+`KNEE_S` 3); (3) **the breath's visible depth** — the lean at the pinch (`n2`/`n3`, and the templates: `round` is now
+`(1,1,1,1)` = `BASE`, so a `round` section shows **no** lean and only three of four templates do anything) and `N1_BEAT` (1.5 with
+the reciprocal law is the worker's own next try); (4) **the hoops → a shell** — `RINGS` 7 / `PHI_MAX` 0.85 read as a lantern, and
+`SEGT`/`SEGMAX` have roughly **3×** headroom because §14's 0.4 µs/segment is path A while path B measures 0.067–0.092 µs/segment
+here (a five-turn family gets 19 segments per turn today and its lobes read as a polygon); (5) **the hue's ease** (`HUETC`, the
+same anchor TORUS2 uses — a scene-side slower ease is the lever, not a change in `math/keycolour.js`); (6) **`M0` 4 and the ratio
+table** against the fallback `m = k + 3`, if the starry families read as noise rather than as species. Lower: `WAVE0` 0.26 /
+`WAVEW` on twelve shells instead of TORUS2's 144 rings, and `ATK` 0.12 s — for which the honest answer to "the drop should hit
+harder" is a declared cut (`cuts: 'event'`, `pathCut` → 0 on `dropEvt`), a contract change, not a lean.
+
+**Standing items.** The **digit-key question is the user's**, raised once when they approve: a tenth digit key, or GIELIS taking a
+slot; until then id 10 is forced-only, `score()` 0, reached by `n` or `&scene=10`. **`site/thumbs/gielis.jpg`** is missing (one
+`tools/thumbs.sh "10:<frame>"` run when the look is approved) — `check.js`'s fourth warn. The **mixs 0→3 f178 mismatch** is
+pre-existing on this machine (`641f6633` measured, `f0c9d637` recorded in `tools/accept.sh`, also on a leftover shot of
+2026-09-25): not moved by v0.14, to be re-based or explained before the next release. The **`oklch` variant** stays a later opt-in.
+The **Cloudflare dashboard steps** are still open from v0.6. **The user has not looked at GIELIS yet**; nothing is tagged or pushed.
+
+**§47 addendum 1 (2026-09-27, the user's first look: *"shouldn't the superformula be making more shapes?"* → *"yes retune"*):** the
+diagnosis in the constants, not the formula — `N1_REST` 12 is a circle for every m, so the twelve species existed only in the thump's fifth
+of a beat; the base lean (1,1,1,1) is round and the `round` template equalled it; the latitude curve had one fixed lobe count, so the body
+was a ball of hoops. **Pass 1 (the worker, three commits 58353ac / 2c27578 / 8b1b03f, merged):** lobes at rest — `N1_REST` 2.0 (the
+brief's lean 3 overridden by its own gate: the root reads Q 0.936, the tritone 0.776; twelve species 0.94 → 0.78 where the build had twelve
+circles 0.998 → 0.991), `N1_BEAT` 0.6, a radius normalisation `normOf()` (`NRM` 64) because the deep pinch grew a family 9.8× its radius;
+the per-family lean — `n2 = 1 − 0.7·chroma` (**the brief's `1 + 1.5·chroma` had the wrong sign**: (2, 2) is exactly a circle, so the loudest
+family became the roundest thing on screen and item 1's gain was spent — measured, rest Q 0.936 → 0.976), `n3 = 1 + (0.5 − valence)·2`,
+the template an offset on it, `round` → `bloom` (2, 0.5, 1, 1), `uLean[12]`; the latitude curve takes the family's own m at `N1_PHI` 4 and
+six meridians per family (`MERID` 6, `SEGMAX` 112; segments per tier 5 296 / 8 102 / 10 086 / 11 780, bench 0.44× TORUS2, `timeUpdate`
+0.15 ms); the sub fattens the radius, not `a, b`. Monitor `viol []` max 0.0557; s10 4f6c8cb0 / 1dc4cb4c, still fd8e256b / 88f6d5cb (re-based
+twice by design, item 2 byte-identical). **On the track** (`gielis-window-gi-syd-{groove,intro,break}-p1.txt`, `groove-trace-p1` at 33 s):
+per-beat Q swing median 0.130/0.155 → **0.375, 13/13 beats ≥ 0.15** (the build: 1/13 and 8/13), rest Q 0.994 → 0.836 (no longer a circle,
+by design), n1 trough 0.62. The orchestrator's look at `montage-gi-syd-{groove,intro}-p1.jpg`: the meridians turn the lantern into a
+wireframe globe whose silhouette is now squared, pentagonal or starred frame to frame, and the pinched frames read as shapes rather than
+flinches; the globe look now dominates the way the hoops did; still ~40 % of the frame and p95 luminance 0.20–0.44 — size and brightness
+were not in this pass and are next. The user has not seen pass 1.
+
+**§47 addendum 2 (2026-09-27, tagged and pushed on the user's word):** *"is the gielis scene tagged and pushed? if not can do that now"*
+(and the user's note on `NEXT-SESSION-PROMPT.md`: "ok to tag and push before starting new work"). **v0.14 = pass 1 as merged**:
+`releases/retinarave-v0.14.html`, package.json 0.14.0, `site/thumbs/gielis.jpg` from the build (`thumbs.sh 10:360`), tag `v0.14`, push →
+retinarave.com. No sweep (memory `feedback_sweep_cost`; the full sweep also waits for the user's word under the v0.15 prompt): `check.js`
+0 fail, `npm test` + `test_gielis` OK, `npm run build` bundles. GIELIS stays id 10, forced-only (`score` 0, `n` / `&scene=10`, no digit
+key). **Tagged is not validated** (the NAV2 lesson, §46 addendum 8): the user has not said the look is right; size and brightness remain
+the first retune items when they look.
+
+
+## §48 v0.15 — the engine's ears, the file source, the track map, CHLADNI (2026-09-27, orchestrator + opus workers FILE, EARS (two passes), CHLADNI; briefs `docs/workers/brief-{file,ears,ears2,chladni}.md`, reports `file.md`, `ears.md`, `chladni.md`; `ENGINE-CHLADNI-SESSION-PROMPT.md`, `docs/AUDIT-v0.15.md`)
+
+**The ask** (the user, verbatim): "what needs to be added to the engine to extract the highest quality possible elements from
+music to make the most intuitive and legible visualization that make it looked synced with the music? … additionally create a
+net new scene (slot 12) to highlight engine updates ; tune for SEE YOU DROP specifically; wait for my say before running full
+sweep; think". **No `tools/accept.sh` this session** — the cheap proofs after every engine step (check, node tests, parity fake,
+one full md5 list, mixs).
+
+**What was built (additive: no existing MS value, no existing pixel moved — parity fake 0, ids 0–10 md5 = v0.14, mixs 641f6633):**
+1. **File source + deterministic real-track runs (FILE):** `&track=<name>&at=<s>` (served by `tools/serve.js` `/music/` from
+   `$MUSIC`, local only; a pick / drop control on the landing card, local decode). Under `CLOCK=1` nothing plays; the playhead is
+   frame-exact, `AU.fast` / `AU.slow` are PCM-backed AnalyserNode shims (`engine/shim.js`), the synapse tap gets exact 512 blocks
+   on the main thread — two runs are byte-identical. `DET_LEAD` 0.0427 s (the measured `outputLatency` + a quantum) models the
+   analysers running ahead of the listener. A seeded `Math.random` in det mode only (`features-slow.js:125` is reachable on real
+   music). `tools/filetrace.js` → the trace JSON `compare.py` reads.
+2. **Heard time (FILE):** `MS.heardT` / `fileOn` (stage `clock`), the PCM bus (`engine/pcm.js`, a stereo worklet stamped with
+   `currentFrame`, lazy), `ENGINE.log`. Deviation: real-time `heardT` does not subtract `outputLatency` again (`contextTime`
+   already lags by it, measured). Capture-mode lag not measured this session (`&sync=` exists).
+3. **The ears (EARS):** `engine/ears/` pure DSP, the stage `ears` (`features-ears.js`, orchestrator) — sub pitch / slides /
+   purity / gate, tonic with the sub (C# minor on SeeYouDrop; the old `key` said G#), register, clean kicks (a beater click
+   within 25 ms), snare / hat, densities, felt pulse, low-pass, width; events released at heard time with ages.
+   `subCents` = from the nearest note (the field list), not from the tonic (the spec's prose) — the interval is computable.
+4. **The track map (EARS + orchestrator):** `engine/map/` — beats (Ellis DP), bars, sections (Foote, labels, returns), drops by
+   the whole track (the low end entering after ≥ 1 bar of absence + a kick-density gate over 8 bars — a limited master defeats
+   every energy-only gate), `eG`. Built **on the main thread inside the file source's gates** (1.6 s for SeeYouDrop), not in a
+   Worker as the spec leaned: a Blob worker cannot resolve the module imports and the bundle has no module URLs; the playhead
+   waits for it anyway, so the only cost is a one-time pause before playback.
+5. **CHLADNI** (id 11, forced-only): see the addenda.
+
+**Measured (AUDIT-v0.15 §1):** kick F 0.25 → 0.79 on the groove, drops exact on every run, tonic right, slides 32/41 — and the
+misses stated: kick F < 0.9 and 13 % on bare 808s (the causal front end), sub ±30 cents 73 %, boundaries 7/11 (4 annotated
+times are off the bar grid), returns 4/5. Pass 2 (EARS) takes the file-mode onsets and sub from the non-causal map.
+
+**Addendum 1 — EARS pass 2 (merged `f42bf93`).** File mode takes kicks / snares / hats and the sub from the non-causal map
+(STFT + HPSS, a centred YIN, the map analysed at 44.1 kHz whatever the context rate); events are released on the frame
+*nearest* the onset (ages ≥ −1/120 s on that frame, stated in `EARS_FEATS`). `SeeYouDrop.sections.json` v2 is bar-pinned
+(drop 2 = 105.596, the walk arrivals, `not_drops`; old numbers kept as `was`). Result (AUDIT §2): kick F 1.000, 0 % on bare
+808s, first-frame lag +2 ms, sub 100 %, returns 5/5, boundaries 9/10 — with the caveat that file mode now reproduces the truth
+tool's own analysis, so the causal live path's §1 numbers remain the independent engine measurement. `buildMap` 2.9 s.
+
+**Addendum 2 — CHLADNI (merged `1d155a5`, id 11, forced-only).** `math/chladni.js` (the square-plate figure, a 12-entry table
+by Tenney height of the interval to `tonic`: the walk C#–A–F#–E = (1,2) (2,5) (2,3) (1,5); an asymptotic-Bessel circular
+plate while the bass is away from the tonic), GPU sand ping-pong, leaps analytic in `kickAge`, gate / register / void /
+anticipation / low-pass / colour on one channel each. Deviations from the brief: `subGlide` unread (measured useless on this
+track), the plate boundary keyed to "bass away from the tonic" not `mapSection`, `state.pathCut` 3, a preset `&ears=1&figure=i`
+instead of `&fix=`. 8 of 9 windows met or on timing (AUDIT §3); open: the drop's figure under the global flash, the slides.
+
+**Addendum 3 — v0.15 tagged and deployed (2026-09-27, the user: "I watched in stream mode and looks good; add thumbnail,
+commit, tag, and deploy").** The user validated CHLADNI in **stream mode** (tab capture: the causal ears, no track map — the
+live fallbacks `dropConf` / `dropEvt`). The tile `site/thumbs/chladni.jpg` is a **file-mode** frame (SeeYouDrop `&at=10`,
+CLOCK=1 f482 = heard 17.6 s, the walk's A1 figure on the circular plate) — not `tools/thumbs.sh`'s fake-timeline frame, where
+CHLADNI's ears fields are idle and the plate is dark; `thumbs.sh` cannot drive file mode, so the tile is regenerated by hand.
+`releases/retinarave-v0.15.html`, package.json 0.15.0, `git tag v0.15`, pushed. **`tools/accept.sh` still not run** — the
+user asked for the tag and deploy, not the sweep; the cheap proofs stand (AUDIT-v0.15). CHLADNI stays forced-only (score 0).
+
+## §49 v0.16 — live mode: the clocks measured, the capture lag, the lead (2026-09-28, orchestrator alone; `docs/AUDIT-live-grid.md`)
+
+**The ask** (the user, verbatim): "focus on live mode (while file mode is useful, I don't expect to have the file normally)",
+then "yes" to the six-step live plan (1 measure · 2 run the clocks ahead · 3 bar fingerprints · 4 build detector v2 ·
+5 predicted-event queue · 6 tempo on the PCM bus / Kalman only if jitter demands it), then "yes" to step 2.
+
+**Step 1 (`cd27c77`):** `tools/truth/gridcheck.py` (the v3 + synapse clocks against the truth grid; self-tested on synthetic
+traces), `tools/caplag.js` + `tools/capsrc.html` (tab-capture lag from a click train, capture traces in listener time).
+Capture lag **27 ms** here. The clocks jitter ~8 ms (p50) but sit at a constant −47 ms (real-time file / demo) / +14 ms
+(capture): where the audio is analysed against when it is heard. `&sync` moved the ears' ages onto the beat (kick +32 → +7 ms)
+and not the clocks, which do not read `heardT`. Fixed on the way: `&sync=` reached only the file source, never capture.
+
+**Step 2 (`1fad9a4`) — `engine/lead.js`.** After every stage the engine publishes `beatPhase / beat / beatCount` (at `bpm`)
+and `beatSyn / barPos / barPhase / phrasePos / phrase16Pos / bar` (at `bpmSyn`) moved by `leadT` = heardT − the analysers'
+newest audio time (+ `&disp`); the raw values go back before the next frame, so the PLL, the tempo comb and fake.js never see
+a lead. Lag off → on (SeeYouDrop 22–90 s): det −50 → −7, real-time file −54 → −7 / −20, capture +14 → −11 ms; beat F
+0.60–0.88 → 0.94–1.00. **Lean:** a lead stage over the published names, not a second set of `…L` fields — every scene is fixed
+at once and none reads a new name; the cost is that `MS.beatPhase` is no longer the PLL's own variable between frames (it is
+the moved one; the stage owns the swap). **Lean:** the lead estimate is a median of 64 samples with stale output timestamps
+dropped, not an EMA: one stale first-frame timestamp (+0.24 s) held an EMA at +40 ms for seconds (4 runs in 6). `&disp`
+(the frame's path to the glass) stays 0 — unmeasured, and every clock already sits a few ms early.
+
+**v0.16 (this commit):** the user reviewed in stream mode — "looks good; commit and tag work completed so far" — so the lead is
+**on by default** (`&lead=0` / the `L` key turn it off). The fake timeline never gets a lead: parity fake 0, s11
+`&ears=1&figure=0` md5 606f721a / f7b1c6ee unchanged; `&lead=0` reproduces v0.15's det trace byte for byte; a default det
+trace carries `leadT` −42.7 ms. `package.json` 0.16.0, `releases/retinarave-v0.16.html`. Not run: `tools/accept.sh`; not
+pushed or deployed (not asked). Next: step 3, `LIVE-STEP3-SESSION-PROMPT.md`.
+
+## §50 v0.17 (in progress) — live step 3: bar fingerprints (2026-09-28, orchestrator + one worker for 3.1; `LIVE-STEP3-SESSION-PROMPT.md`, `docs/AUDIT-live-grid.md` "Step 3")
+
+**The ask:** step 3 of the agreed six-step live plan ("focus on live mode … I don't expect to have the file normally"; "yes" to the
+plan): predict the next bar's hits so they land on time, and know a section change / a return when it starts.
+
+**3.0 `&map=0` (`3428c9e`).** `ENGINE.useMap` gates the file's track map, so a file runs the causal ears — the live path,
+deterministic under `CLOCK=1`. Default traces unchanged (`cmp`); SeeYouDrop 25–45 s kick F 0.786 (the brief's 0.77–0.79).
+**3.1 truth grids (worker, `f0e69e8`, `docs/workers/truth-grid-s3.md`).** CyborgNinja's grid re-anchored onto its kicks (a
+general rule in `trackmap.py`: an eighth-note kick grid > 25 ms off the beat grid moves it; the beat half is the one with more
+40–150 Hz energy) — median |kick error| 72 → 3 ms at every grain; WhoLikesToParty's tempo re-fitted (drift +20 → −22 ms gone),
+its bar line not verified; SeeYouDrop / Malicious byte-identical. **3.2 `predcheck.py` (`06d089b`)**, self-tested.
+
+**3.3 the store (`d4a62c5`, `engine/bars/`: `bars.js` + mixins `vote.js`, `sections.js`, `feed.js`, `common.js`; `features-bars.js`).**
+The leans, each measured before it was taken:
+- **The grid is v3's, not synapse's.** The brief said "quantised on the synapse grid"; measured on the causal path (whole-track
+  det) synapse's tempo is right 61.6 % of frames (half-time through the groove-return and the climb-double, the bar line right
+  57 %) against v3's 95.5 % (beat F 0.91). Bars are 4 v3 beats; synapse proposes the bar PHASE only when `barConf` ≥ 0.9 in the same
+  octave (held 8 beats before the store moves). The v3 bar lines landed on all 10 annotated SeeYouDrop downbeats.
+- **THE TIME BASE: release inside the stage on the heard grid, with the lead's own estimate** — not a hook after `leadApply`.
+  `B = beatCount + beatPhase + LEAD.L·bpm/60` (raw v3 + heardT − the analysers' newest audio time), onsets at `B − age·bpm/60`,
+  a step released when `B` (+ `&disp` with the lead on) crosses it. Why: an onset can only be placed by its age on a heard grid,
+  and that needs the true audio lead whether or not the lead PUBLISHES the clocks, so `lead.js` now estimates `LEAD.L` with the
+  lead off too (it still publishes nothing: the `&lead=0` whole-track trace is `cmp`-identical to v0.16). A post-lead hook would
+  have put `&lead=0` predictions on the analysis grid (43 ms early in det, 27 ms late in capture). Proof: the stage's output is
+  identical with the lead on and off (0 of 8965 frames differ); predicted lags in capture +1…+5 ms, in det −5…+3 ms (groove) — no
+  constant ±27–43 ms anywhere.
+- **Per-class micro-timing.** Each class is released at its line + a learned offset (EMA of where its onsets land, ±0.4 step):
+  the causal kicks sit +25 ms after the heard v3 line, the snares +6, the hats 0 — without it the predicted kicks read −16 ms.
+- **Reliability is precision.** `predConf` = match quality × the recent bars' prediction precision × the vote's agreement.
+  Graded as Jaccard against what the ears heard, a right prediction was punished for every onset the ears added or missed
+  (reliability sat at 0.25–0.5 on the groove); the harm of a released event is a hit that does not come.
+- **The per-beat energy vector is 12 MS fields** (synapse `bassS midS highS sub lvl centroid`, the ears' `bassReg subGate subPure
+  denK denS denH`), not synapse's per-beat `F` (23-dim). Self-contained and node-testable, the brief's own suggestion; `F` is
+  the next lever for the section test (AUDIT "Open").
+- **No pattern → bars map.** A linear scan of the 256-bar ring per decided 16th costs 5.1 µs/frame mean (worst 0.66 ms);
+  the exact-pattern index the design notes proposed buys nothing at that size, and exact bits never repeat through the ears' noise.
+- **The first steps of a bar come from the previous vote's successors** (the bar before is still open for CLOSE_M = 0.35
+  beat — the capture path's +52 ms detection lag); a candidate with no bar before it scores a neutral 0.5 on context.
+- **Section tests against the recent bars, not against the prediction.** A section start = the heard part (5 / 8 steps) is
+  unlike every one of the last 4–8 bars while those were alike, on the mean of the THREE largest per-dim distances (the plain
+  mean over 12 dims read the drop — sub 0.04 → 0.94 — as 0.62 similar). A first version gated it on a confident prediction and
+  found 0 of 10 (the confidence is low exactly where sections change). A return = an older bar (≥ 8 back) matches 0.15 better
+  than the recent bars and is itself unlike them; a return whose source moves forward no faster than time within 8 bars of the
+  last return is that return going on (a fill bar in a returned loop), which also swallows the climb-double (its material
+  follows the groove's in the original order) — accepted: a false return on every fill after every return is worse.
+- **Additive fields** (FEATS, `feats-doc.js`, Appendix A checked): `predKickEvt / predSnareEvt / predHatEvt`, `predKickAge /
+  predSnareAge / predHatAge` (raw, like `kickAge`), `predKick / predSnare / predHat` (levels decaying 0.16 s, synapse's `kick`
+  shape — so TORUS2's kick channel can be routed from them with no scene edit), `predKickIn`, `predConf`, `barMatch`,
+  `barNovelEvt`, `barReturnEvt`. Nothing existing changes value: default and `&lead=0` whole-track det traces `cmp`-identical to
+  v0.16, parity fake 0 diff, s11 `606f721a` / `f7b1c6ee`.
+
+**3.4 numbers** (AUDIT "Step 3", rows `tools/accept/live-grid/*-bars-*.md`): capture 22–90 s kick / snare / hat F 0.46 / 0.47 /
+0.53 at +5 / +1 / +3 ms, 100 % released before the audio arrived (reactive first frame F 0.02–0.11, +38–52 ms); section starts
+3 / 10 at +1.2–2 beats (synapse 3 / 10 at +3–5), returns 1 / 3 (synapse 0 / 3). **3.5:** no new scene; the A/B is a route
+(the report and NEXT-SESSION-PROMPT.md). Not run: `tools/accept.sh` (not asked). Not tagged, not pushed.
+
+
+**§50 addendum — the warm-up (2026-09-28, `LIVE-STEP3-WARMUP-SESSION-PROMPT.md`, AUDIT "Step 3 — warm-up").** The user's look at
+the TORUS2 A/B: *"the predicted seems to bring more energy / brighter strands which I like, but seems like beat is off
+slightly in the beginning and gets better over time"*. The leans, each measured first:
+- **A cold-start ruler that grades against the same audio, warm.** Binning by time since the start (the prompt's capture
+  table) mixes the warm-up with whatever section the start lands in; the first releases were set beside the whole-track
+  (warm) store's releases in exactly those seconds (`warmcheck.py` "warm, same s"). On 24 det cold starts the baseline's
+  early PRECISION already equals the warm store's (0.73 / 0.72, 0.66 / 0.71); its early TIMING does not (−13 / −9 / −5 ms in
+  the first 4 s, then 0). The fix went after the timing.
+- **Cause: the clock's pull-in, not the store's thin history.** From a cold start v3 cuts its tempo once (1.5–5.6 s in) and
+  pulls its phase in for 2–4 s (cold − warm +69 +30 +15 +8 +3 ms per s); the kicks' residual reads −28 ms on bars 1–4, +28
+  after. The store learned its offsets from those residuals and released on the moving grid.
+- **Settle on the clock's slip, per bar, with a cap.** The slip is causal, needs nothing new from upstream (v3 has no lock
+  field) and is the pull-in itself. Measured against the alternatives: a signed 2-bar sum (hunting cancels) settles in the
+  middle of CyborgNinja's hunting; a per-bar gate at 0.05 forever untrusts 41 % of CyborgNinja's bars (its warm p75 slip is
+  0.084 beat) — so 0.05 decides only the settling, 0.12 the per-bar trust after it, and 6 bars settle a clock that never
+  gets quieter. Sweep (SLIP_SET 0.05 / 0.08 / 0.1, SET_BARS 1 / 2, SET_MAX 4 / 6 / 8 / none, REL_N0 0 / 2 / 3): within noise
+  of each other on P; the chosen row is the least quiet with the first-4-s lags on time.
+- **Two trusts.** A bar's 16th pattern votes only from a settled grid (`okS`); its per-beat energies feed the section tests
+  whenever the grid was ok (`okE`) — the first version shared one trust and lost the void boundary.
+- **Not built: re-cutting the history on a bar-phase move** (hypothesis 3). 4 of 8 cold starts move the phase 10–24 s in;
+  after W.1 no row blames it.
+- **The level shape is untouched** (the look the user liked: pred* peak 1.0, no velocity). The price is quiet: the median
+  first release after a cold start 12.6 → 15.2 s on SeeYouDrop, 23.2 → 24.2 s on CyborgNinja (one of 12 starts silent 40 s).
+- The CyborgNinja v3 clock sits 80–180 ms off its kick-anchored truth warm and cold (near half a beat at 160 BPM) — a clock
+  item for later (step 4+), recorded in AUDIT.
+- **Follow-up the same day (W.1b): the offset is a median, the gate is off.** The start-at-0 real-time run (the user's
+  scenario: an intro, then the drums) was still early after W.1 (−7 ms ×3): the grid settles during a quiet intro, so the
+  gate never sees the groove arrive, and the EMA took 13 s to move the kick offset from the intro's to the groove's. A
+  median of the last 16 residuals follows it within half a window; with it the gate measured no better on timing or
+  precision and cost 2–3 s of quiet, so `WARM.GATE = 0` (a switch, not deleted: the "quiet until right" variant if the user
+  prefers it). What stays: the settle state times the offsets' learning, the reliability is earned, both reset at a
+  discontinuity, the section tests keep their own trust. The first-4-s lags: SeeYouDrop 0 / 0 / −6 ms (baseline −13 / −9 / −5).
+
+## §51 the reactive drums v2 — `kick2` / `snare2` / `hat2` (2026-09-28, orchestrator; `docs/AUDIT-drums.md`)
+
+**The ask.** The user, after the warm-up A/B: "I think the reactive still looks better (ie. seems like it moves in sync with
+the music better)"; to the three options offered (improve the reactive path · prediction only as a supplement · stop), "do #1".
+(The offer mislabelled it "live step 4"; the plan's step 4 is the build-up detector — told the user, left for later.)
+
+- **Additive, by route.** The reactive look lives in `kick` / `snare` / `hat`, read by five scenes; changing them moves every
+  md5. v2 is three new levels of the same shape (`engine/drums/drums.js`, stage `features-drums.js` after the ears), A/B'd by
+  `torus2.kick=kick2,torus2.snare=snare2,torus2.hat=hat2`; the default moves only on the user's word.
+- **The kick = the ears' low onsets**, measured against synapse's flux peaks and the ears' beater-gated kicks on four tracks
+  (AUDIT table): the truth's own `low` definition computed causally, already inside `perc.js` and dropped — now a separate
+  lane in `Ears` (`pendLow` / `lowReleased`), so the event log and every existing field stay byte-identical. A second, retuned
+  low picker was measured and not built (plateau: ±0.01 F).
+- **Strength by rank, times synapse's bass loudness.** The ears' velocity saturates (p50 1.0 — the uniform brightness of the
+  predicted route); the rank keeps synapse's distribution and synapse's own bass factor keeps the section dynamics.
+- **Snare / hat stay synapse's, held to heard time.** Synapse's are better than the ears' on 3 of 4 tracks; they lit up 6–12
+  ms early in file modes (analysis ahead of the ear) — the hold makes them +5…+10 (the 60 Hz frame), nothing held in capture.
+- **Graded by what shows** (`drumcheck.py`, level rising edges ≥ 0.18) and, in capture, with each source's constant lag removed
+  and a chance level beside it: synapse's capture kick is 0.39 against a 0.29 chance, v2's 0.54 against 0.15.
+
+**v0.17 tagged locally (2026-09-29) on the user's word** ("v2 looks good" → "tag v0.17 locally then switch back to v0.16"): live
+step 3 (the bar store, pred* fields, used by no scene by default), its warm-up (W.0–W.1c), the reactive drums v2 (kick2 /
+snare2 / hat2, opt-in by route — the TORUS2 default the user chose is NOT in the tag). `releases/retinarave-v0.17.html`,
+package.json 0.17.0. Not pushed (retinarave.com serves v0.15). The user then asked to compare v0.16 with v0.15 on NAV.
+
+## §52 the display lead: 40 ms by default (2026-09-29, the user's eye)
+
+**The look.** On NAV in file mode the user found v0.15 better than the current tree ("in theory v0.16 should be on par with
+v0.15"). On NAV the only v0.15 → v0.16 difference is the lead (v0.16's default: the clocks published on heard time); in file
+mode it moved them ~43 ms LATER (v0.15's clocks ran ~43–47 ms ahead of the ear, AUDIT-live-grid step 1). Three links on v0.16:
+as shipped · `&lead=0` · `&disp=40` → "second and third look good".
+**Reading:** the lead is right about the ear, and the frame's own path to the glass (compositor + display — unmeasured, noted
+in HARNESS "Not in any number") is ~40 ms on this desktop; v0.15's early clocks happened to cover it. So `LEAD.disp` = 0.040 by
+default (`&disp=0` = v0.16). The display lead reaches everything timed on the lead: the clocks (leadT −43 → −2.7 ms in file
+det), the bar store's releases (bars feed uses `disp` when the lead is on), and the drums v2 hold, now net of it
+(`features-drums.js`: with 40 ms nothing is held in file modes — the eye wants a hit ~40 ms before the ear). Not moved: the
+ears' events (kickEvt … are released on heard time; releasing them early is possible in file modes only — left open).
+In capture the clocks now run 40 ms further ahead too: the user approved v0.16 there at 0 — to be re-looked.
+Proofs: check 0 fail, npm test OK, the `&lead=0` whole-track trace `cmp`-identical (the display lead needs the lead).
+
+**§51 addendum — TORUS2 reads v2 by default (2026-09-29).** The user: "v2 looks good", then "Default on TORUS2 only". TORUS2's
+feats `kick / snare / hat` → `kick2 / snare2 / hat2` (the wave step, the core flash, the hat shimmer, the `wave` param, help);
+every other scene unchanged. Proof (one scene folder): s3 f360 / f840 md5 7189a6ba / 48113eda before and after (v2 mirrors
+synapse on the fake timeline), check 0 fail, the real-track page live. A route that named `torus2.kick` must now name `torus2.kick2`.
+
+**v0.17.1 tagged locally (2026-09-29) on the user's word** ("tag as v0.17.1, don't deploy yet"): v0.17 + the 40 ms display lead
+by default (§52) + TORUS2 on the reactive drums v2 (§51 addendum). `releases/retinarave-v0.17.1.html`, package.json 0.17.1. Not
+pushed (retinarave.com serves v0.15); the display lead in stream mode not yet re-looked.
+
+## §53 the display lead is file-mode only (2026-09-29, the user's stream-mode A/B)
+
+**The look.** Two links in stream mode (tab capture) on v0.17.1: A = the default (40 ms display lead, §52) · B = `#disp=0`
+(v0.16's stream timing) → "B looks better". So in capture the clocks read right on the heard time (capture −11 ms, AUDIT-live-grid
+step 2), and the 40 ms that the eye wanted in file mode is not wanted live.
+**The change.** `LEAD.dispLive` = 0 beside `LEAD.disp` = 0.040; `dispNow()` in `engine/lead.js` = 0 with the lead off,
+`dispLive` on a capture / mic source, `disp` in the file modes and the demo — read by the lead, the bars feed and the drums v2
+hold (the three §52 consumers). An explicit `&disp=<ms>` sets both (so `#disp=40` is A in capture again). **Not explained:** the
+glass path is the same screen in both modes; why the eye wants it in file mode and not in capture is open (the capture lag
+27 ms may be under-measured, or file mode's own lead estimate off by about that much) — recorded, not chased.
+Proofs: SeeYouDrop 20–50 s file-det trace identical before / after (1801 frames × 170 fields, log too); `dispNow()` per mode
+default `file .04 demo .04 capture 0 mic 0`, `&disp=40` → .04 everywhere, `&lead=0` → 0 everywhere; check 0 fail, npm test OK.
+
+## §54 live step 4 — the live build / drop detector: `buildLive` / `dropLiveIn` / `dropLiveEvt` (2026-09-29, orchestrator + one worker for B.2–B.3; `LIVE-STEP4-BUILD-SESSION-PROMPT.md`, `docs/AUDIT-live-grid.md` "Step 4")
+
+**The ask.** Live (tab capture — the user's real use) nothing anticipated a drop: the v0.15 track map's `buildProg` / `toDrop` /
+`mapDropEvt` need the whole file; v3's `build` is "the energy went up" (2 of 6 drops, as often armed on CyborgNinja as on the
+drop tracks) and synapse's anticipation chain is dead on the live path (B.0). Measure first (B.0 the ruler, B.1 the node loop
+and the study), then build (B.2), then prove (B.3). The leans, each with the number that decided it:
+
+- **A drop is announced by the void, 2–5 bars out — not by a 16-bar build.** Over 16 bars no causal candidate separates a
+  build from elsewhere (AUC ≤ 0.76, CyborgNinja-safe ones ≤ 0.73); the last 2–5 bars do: the bass and sub pulled, the highs
+  left, synapse's high-pass evidence `hp` on — one signature on all five SeeYouDrop / WhoLikesToParty drops (`subConf` 5 s
+  deviation AUC 0.94, `hp` 8 s rise 0.91). So the detector reads the void, and its arm can only be 2–4 bars ahead.
+- **The arm is synapse's `hp` (5 s mean > 0.1) or `bassS` (2 s mean < 0.6 × its 32 s mean), after 32 s of music.** `hp` alone
+  arms 5 of 6 drops with 0 false arms on every track (0.05 and 0.2 change nothing but false arms at 0.05); the bass term
+  buys WhoLikesToParty 3 a bar (7 → 11 beats) for two 0.9 s false arms (0.19 / min: a bass-less bar 14 s after SeeYouDrop's
+  drop 2, Malicious' end fade). 32 s of history before anything arms: the 32 s mean IS the reference (16 s lets Malicious'
+  intro bass cuts arm and fire, 48 s changes nothing). `subConf` / `subGate` (the study's best AUC) were not added: the ears'
+  sub fields are the map's in file mode — a detector on them would run two different inputs in file and stream mode — and
+  `hp` + `bassS` already reach the 5 of 6 the study predicted.
+- **No hold before the arm; armed on the next bar line.** B.1 proposed "held ≥ 1 bar"; measured, a bar of hold costs a bar
+  of anticipation on every drop (15.9 7.9 · 11 7 11 → 12 4 · 7 7 7 beats) and buys nothing (0 false arms either way) — the
+  5 s mean is the hold. The arm waits for a bar line of the heard grid (v3's count, or synapse's sure bar phase after 8 beats,
+  the bars store's rule); WhoLikesToParty's drops sit at v3's bar phase 3, so its arms are 4k + 3 beats and `dropLiveIn`
+  points +1.0 beat late there (0.0 on SeeYouDrop) — the WhoLikesToParty downbeat is the unverified one (the map's own drop
+  sits 2 beats before the truth, synapse's anchor 1 beat after).
+- **The slam needs the bass back, not a bar line.** Every void carries kicks on bar lines (SeeYouDrop 1: one on every beat,
+  bass-less) and a bar gate on the detector's phase fires 2 of 6 — so the slam is an ears low onset (the drums v2's causal
+  lane: SeeYouDrop 2's drop is an 808, no kick) within ⅛ beat of a BEAT line, confirmed within ¼ beat by `bassS` ≥ 1.75 ×
+  its 2 s mean (the gap: pickup kicks' bumps reach 1.56, the softest drop 1.87; 1.5 fires a beat early on WhoLikesToParty
+  1 and 3, 2 loses two drops) or `sub` ≥ 5 × its own (SeeYouDrop 2's 808 return, +87 → +21 ms; void kicks reach 3.0, the
+  drop 17). **No slam in the void's first bar** (`SLAM_AFTER` 1): a pickup 2 beats into WhoLikesToParty 3's arm read 1.72 —
+  a void is 2–5 bars, a bass return inside its first bar is a pickup. Six drops tune a slam, they do not prove one; on
+  WhoLikesToParty the truth itself is ±2 beats. Result det: −6 +21 · +10 +48 +12 ms, 5 of 6, 0 false on every track.
+- **Additive, causal in every mode, no default moves.** A new stage after the drums, on the bars stage's heard time base,
+  reading synapse's levels, v3's clock and the ears' causal lane (never the map's onsets), writing three new fields; disarm
+  on the slam, after 8 bars armed (a breakdown), on silence, a seek, a tempo jump. The 32-field whole-track det trace, its
+  `&lead=0` twin and a 72-field one `cmp`-identical to the pre-change tree; check 0 fail, npm test + `test_build.js` OK,
+  parity fake 0 diff; page = node (`dropLiveEvt` identical on all four tracks, the arms within a bar at the thresholds).
+  No scene reads the fields by default; NAV takes them by route (`nav.build=buildLive,nav.dropEvt=dropLiveEvt`, set live on
+  the capture page with `CARD.routes(...)` — `&route=` needs `#test`, which hides the capture button) for the user's
+  stream-mode A/B. **Page `&map=0`: armed 15.9 8.0 · 8.0 7.0 11.0 · 0 beats, 0.28 false / min, 0 on CyborgNinja;
+  `dropLiveEvt` −6 +21 · +10 +48 +12 ms, 0 false.** Not done: the audible capture run (the orchestrator's), a second no-drop
+  control, a hand check of WhoLikesToParty's / Malicious' drops.
+
+**§54 addendum — the audible capture run (2026-09-29).** SeeYouDrop from 0 in tab capture (`&sync=27`): `buildLive` arms 14 / 6 beats
+before the two drops, 0 false arms in 111 s, armed 7.3 % of the time; `dropLiveEvt` +61 / +89 ms (reactive, as expected in
+capture). The A/B for the user is a live route on the capture page (`CARD.routes('nav.build=buildLive,nav.dropEvt=dropLiveEvt')`);
+no default moves until their word. Not tagged, not pushed.
+
+**§54 addendum 2 — NAV reads the live detector by default (2026-09-29).** The user's stream-mode A/B on NAV (A = v3's `build` /
+`dropEvt`, B = the live route): "B looks good"; to "where should it be the default" (NAV only · every scene reading build / dropEvt ·
+opt-in): "#1". NAV's `feats` `build` → `buildLive` (the park at the cusp, the director's bid `score`) and `dropEvt` → `dropLiveEvt`
+(the exit along a ray); `dropStrength` / `dropEnv` stay v3's (what the A/B showed). MAXWELL, POLYTOPE, GIELIS unchanged. The old
+look by route: `nav.buildLive=build,nav.dropLiveEvt=dropEvt`. Fake-timeline md5 s0: f360 `fb74fee4` unchanged, f840 `7225ea02` →
+`8a0715df` (the fake timeline has v3 builds and drops, none of the live detector's — NAV no longer parks or exits there; the
+landing's demo synth runs the real stages, so it does). check 0 fail, npm test OK. The trade: in file mode v3's `build` armed
+before 2 of 6 truth drops on its own, the live detector 5 of 6 (§54); a scene on `buildLive` gives up the first for the second.
+
+**v0.18 tagged locally (2026-09-29) on the user's word ("B looks good" → "#1"; "don't deploy" stands from earlier the same day):**
+v0.17.1 + the display lead file-mode only (§53) + the live build / drop detector (§54) + NAV on it by default (§54 addendum 2).
+`releases/retinarave-v0.18.html` (1252 KB, 142 modules; from `file://` 348 frames in 6 s, errs [], nonFinite []), package.json
+0.18.0. Not pushed (retinarave.com serves v0.15).
+
+## §55 live step 5 — the predicted-event queue: `next*In` / `next*Conf` / `next*Up` / `queueN` (2026-09-29, one worker; `docs/AUDIT-live-grid.md` "Step 5")
+
+**The ask** (the six-step live plan, §49; NEXT-SESSION-PROMPT item 2): one queue of the events the engine expects — the bar
+store's `pred*` hits, `dropLiveIn`'s bar line, the beat lines — released on heard time minus the display lead, so a scene reads
+"what comes next" from one place instead of three. Measure first, additive, A/B by route in stream mode, a default only on the
+user's word. The lesson behind it (2026-09-28's A/B): reactive levels look more in sync than predicted ones, so a queue is for
+ANTICIPATION — a motion that winds up and PEAKS at the hit — not a replacement for the hit itself. The leans, each with the number:
+
+- **The queue predicts nothing.** `engine/queue/queue.js` rebuilds ONE list `{ cls, t, conf }` every frame from what the other
+  stages already decided: the lead-moved v3 clock's next beat lines (at least 4), the bar lines of the build detector's phase
+  (v3's count, or synapse's sure anchor — the same rule the bars store keeps; no third bar line), the store's own steps still to
+  come (`Bars.upcoming`: the decided ones waiting for their class offset + the bits `release()` reads for this bar and the next,
+  at `predConf`), and, while armed, the drop on `dropLiveIn`'s line at `buildLive`. A step the next re-vote clears is gone from
+  the next call; below `CONF_MIN` nothing is listed, as nothing is released. Proof: on a taught loop every one of 112 released
+  predictions was listed ahead of its release (median 5.4 beats), `nextBeatIn` is the page's own moved clock to 1e-14, `nextDropIn`
+  = `dropLiveIn`/bps outside the detector's ⅛-beat hold after a line.
+- **The time base is the bars store's release position** (`rel` = the heard v3 beat + `dispNow()`), so an entry's `t` is when the
+  eye should see it and `nextKickIn` reaches 0 on the frame `predKickEvt` fires: graded by its roll-overs, the kick's lag reads
+  +1 ms on SeeYouDrop (det, `&map=0`) where `predKickIn` — the same step without the class offset — reads −18 ms. The
+  half-frame release lead is not in the count-down (a scene wants 0 on the hit, not −8 ms).
+- **HOLD 0.25 s — the one deviation from "withdrawn is withdrawn", measured.** With the list rebuilt from the store alone,
+  `nextKickIn` jumped 96 times a live minute on SeeYouDrop (97 withdrawals against 148 roll-overs; 87 of them emptied the list:
+  the store's confidence gate flickering under 0.35 between 16ths, not a bit flipping), and 56–76 % of the withdrawn entries
+  pointed at a real onset. A hit entry already inside HOLD s stays for its time when the store withdraws it. The sweep
+  (node, four tracks): HOLD 0 / 0.1 / 0.25 / 0.5 → SeeYouDrop kick jumps 96 / 92 / 39 / 20 per minute, F 0.46 / 0.47 / 0.48 /
+  0.50 (P 0.59 / 0.59 / 0.58 / 0.58); CyborgNinja kick P 0.66 / 0.63 / 0.59 / 0.52 — 0.25 = the wind-up's own length is the
+  knee where precision holds (−0.01…−0.07) and the wind-up can complete; 0.5 buys smoothness with precision. A held entry
+  the store then decides against still rolls over (a `nextKickIn` arrival `predKickEvt` does not fire) — the cost, inside 250 ms.
+- **`-1` is "none", and three levels beside the count-downs.** `next*In` keep the −1 of `predKickIn` / `dropLiveIn` / `toDrop`
+  (a scene author learns one convention). But a param route is `u = clamp01(k·x + b)`: a wind-up needs k < 0, and then −1 lands
+  at the TOP (`clamp01(−4·−1 + 1) = 1` — the wave at its deepest exactly when nothing is predicted). So `nextKickUp` /
+  `nextSnareUp` / `nextHatUp` = `clamp01(1 − in / WIND)` (WIND 0.25 s), 0 with no entry: the route-friendly form, and the A/B's
+  source. `next*Conf` beside them for a scene that weights instead of gates.
+- **Horizon 8 beats bounds the list, not the reach.** `queueN` counts inside 2 bars; the hit fields' reach is the store's (this bar
+  + the next), the drop's `dropLiveIn`'s (≤ 4 beats): HORIZON 4 changes no `next*In` on any track. The horizon actually
+  DELIVERED by a "next" field is the class's inter-onset interval — SeeYouDrop's kicks are on every beat, so `nextKickIn` first
+  points at a kick 0.39 s before it (its median) and can never see further: a wind-up longer than a beat needs the list, not the
+  field (`CARD.QUEUE`).
+- **Additive, every mode, no default moves.** A new stage after 'build' (before the lead, on the raw clocks like bars / build);
+  13 new MS fields (`feats.js`, `state.js` defaults, Appendix A regenerated), `ENGINE.QUEUE.list` / `CARD.QUEUE`. No scene reads
+  them. The three §54 whole-track SeeYouDrop det traces from a `git archive e23db09` tree against this tree `cmp`-identical
+  (32-field default, its `&lead=0` twin, the 72-field set); check 0 fail; `npm test` + `test_queue.js` (38 checks); parity fake: the 72 MS
+  fields 0 diff, the `nav.*` rows red identically on the e23db09 tree (pre-existing since 22eb969 — NAV on the live detector,
+  no live drops on the fake timeline; OPEN-ITEMS); the bundle from `file://` clean.
+- **What it says (page `&map=0` det, four tracks; AUDIT Step 5 table):** the count-downs to the hits land where the store's
+  events land (kick lag +1 / +5 / +6 ms, F 0.50 / 0.39 / 0.54 against a chance 0.05 / 0.16 / 0.18 on SeeYouDrop / CyborgNinja /
+  WhoLikesToParty, the groove window = predcheck's step-3 row; Malicious releases nothing, as before), the beat and bar count-downs are the moved clock (F 0.88 / 0.93 / 0.69 on SeeYouDrop /
+  WhoLikesToParty / Malicious, 0.2–0.4 jumps per minute) — CyborgNinja's beat F 0 is the v3 clock 80–180 ms off its
+  kick-anchored truth (§50 addendum, still open), WhoLikesToParty's bar F 0 is its unverified downbeat (§54) — and `nextDropIn`
+  reproduces §54's arms (15.9 / 8.0 · 8.0 7.0 11.0 · 0 beats). The A/B for the user is a PARAM route on TORUS2 in stream mode
+  (`CARD.params('torus2.wave=nextKickUp*0.35+0.65')`: the wave depth winds up 0.26 → 0.40 over the 250 ms before each predicted
+  kick, the default 0.26 in between; `CARD.clearParams('torus2')` back) — proved headless on the real page with `CARD.fix`;
+  the audible capture run is the orchestrator's. Not tagged, not pushed.
+
+**§55 addendum — the audible capture run (2026-09-29).** SeeYouDrop from 0 in tab capture: `nextKickIn` zero crossings +3 ms
+(P 0.60, chance 0.05; the base `predKickIn` −20 ms), `nextSnareIn` +0, `nextBeatIn` −8 (P 0.83), both drops queued 14 / 8 beats
+ahead, 0 false. The A/B for the user is a live PARAM route on the capture page (TORUS2's `wave` winding up over the 250 ms before
+each predicted kick); no default moves until their word. Not tagged, not pushed.
+
+**v0.19 tagged locally (2026-09-30) on the user's word ("tag what we currently have as v0.19 (don't deploy)"):** v0.18 + live step 5,
+the predicted-event queue (§55; no scene reads it by default). `releases/retinarave-v0.19.html` (1267 KB, 145 modules; from
+`file://` 347 frames in 6 s, errs [], nonFinite [], the fake timeline has no queue: queueN 0), package.json 0.19.0. Not pushed
+(retinarave.com serves v0.15). The user's direction for what follows: "still need to work on the predictions"; step 6 (tempo on
+the PCM bus) next — "on the PCM bus seems more accurate and would be wanted regardless".
+
+## §56 live step 6 — the beat clock on the PCM bus: `bpmPcm` / `beatPhasePcm` / `beatPcm` / `beatCountPcm` / `clockConfPcm`, the `&clock=pcm` switch (2026-09-30, one worker; `docs/AUDIT-live-grid.md` "Step 6")
+
+**The ask** (the user, 2026-09-30: "on the PCM bus seems more accurate and would be wanted regardless … still need to work on the
+predictions → continue onto step 6"; the six-step plan's last step, §49): tempo + phase estimated from the raw samples on the
+audio's own clock instead of once per video frame, and a proper filter so one odd onset cannot yank the beat line — a steadier
+line for the bar store's offsets and the queue's count-downs to ride. Measure first, additive, A/B by a switch, a default only on
+the user's word: every scene reads `bpm` / `beatPhase` / `beat` / `beatCount` and none of them moves by default. The leans:
+
+- **What v3's clock actually is (T.0).** One spectral-flux value per rAF frame from an AnalyserNode read at frame time, into the
+  100 Hz ring by zero-order hold from the raw frame clock — an onset lands in the ring at the FRAME's time, ± half a frame — then
+  a PLL whose target is the comb line with a hand-tuned `+0.03` beat and whose onset corrections (`bassFast` hits) bleed over
+  0.18 s. Its onset events read +17 / +32 / +32 / +23 ms after the truth kicks on the four tracks (p90 33–42). Graded on heard
+  time (`gridcheck.py --heard`, new): lag −4 / −87 / +3 / +22 ms with jitter p50/p90 8/32 · 43/244 · 4/11 · 10/67 on SeeYouDrop /
+  CyborgNinja / WhoLikesToParty / Malicious. CyborgNinja's "half-beat offset" (§50 addendum) turned out to be a TEARING: its
+  kicks sit on every 8th (two lattices half a beat apart, 162 vs 158 of the ears' kicks), the comb target pulls one way and the
+  last kick the other, and the PLL sits between them at p90 247 ms.
+- **The comb's input is v3's own onset function, per hop — not the ears' band flux (T.1).** The ears' 7-band dB flux was the
+  obvious reuse and was measured first: its beat-lag autocorrelation reads 0.11 in SeeYouDrop's intro and 0.44 in its groove
+  where v3's full-spectrum log flux reads 0.59 / 0.79 (the HPSS residual gated at −34 dB is nearly binary per hop: a detector's
+  signal, not a periodicity function), and tempo.js's comb on it held SeeYouDrop's intro at 121 BPM for 20 s. So `engine/clock`
+  computes v3's `(flux + 3·bassFlux)/100` from a 2048-point FFT on the PCM bus's newest 2048 samples every 512, timed by the
+  sample count. Synapse's Analyzer has that FFT but on its own tap without sample stamps: the clock runs its own (the ears' FFT
+  class), 0.045 ms per hop.
+- **The ticks are the ears' onsets (T.1).** Onsets picked from that flux (first hop over mean + 1.5 sd, timed by the rise's split
+  between hops) sit +3 / +18 / +19 / +9 ms after the truth kicks — a kick's full-spectrum flux peaks a hop after its click on two
+  tracks — where the ears' kicks (perc.js, the beater-click rule, ONSET_LAG 6 ms) sit +3 / +8 / +6 / +2.5 (sd 6–8) and their
+  snares / hats within ±3. Sample-timed, already computed, already validated (v0.15): `features-clock.js` reads `EARS.ears.pending`
+  right after the ears' own PCM listener ran and hands each new kick / snare / hat to the clock with its class and velocity.
+  KICK_LAG 4 ms = the median of the four kick placements.
+- **The filter is a 2-state Kalman with PDA gating, not a PLL (T.2).** x = [beat position, rate]; each onset says "a line is
+  here" with R = R_ON·R_CLS[class] / vel (0.03² beats²; kick 1 / snare 1.5 / hat 3) and its gain is scaled by
+  beta = N(y; 0, S) / (N + CLUTTER) — the posterior weight of "on the grid" against one off-grid hit per beat: 0.9 on the line,
+  0.6 three sigma out, 0.06 four sigma out. Cold, the first onset sets the phase; locked, a vel-1.5 hit half a beat off moves the
+  next beat 0.4 ms (test_clock). The comb's tempo (period.js = tempo.js's steps 1–6 copied to the letter with its state in the
+  object; v3's estimator untouched) is a rate measurement every 0.5 s of audio, a re-seat on a vote switch; no presence gate —
+  the line coasts through silence on its rate (6 s of silence: 21 ms p90, no jump).
+- **The comb line VOTES the lattice; it never pulls.** The onsets alone cannot pick between two half-beat lattices (WhoLikesToParty
+  first locked exactly half a beat off: −249 ms), and a continuous pull toward the 8-beat comb line is what tears v3 on
+  CyborgNinja (the line itself flips lattice on ~30 % of its 8 s windows there). So the line is one more gated phase measurement
+  (R_LINE 0.08²) and, first, a vote: 7 of the last 8 clear lines more than 0.3 beat from the clock's line move it onto the comb's,
+  always forward (the count never steps back). 3 consecutive flipped CyborgNinja 4 times in 40 s (p90 72 ms); 7 of 8 never
+  flips it and still puts WhoLikesToParty on the comb's lattice within its first bars. The sweep (11 knob variants × 4 tracks):
+  R_LINE off loses 20–65 ms on two tracks; LINE_N 5 flips CyborgNinja; CLUTTER 3 triples SeeYouDrop's lock time; the rest ±3 ms.
+- **What it measures to (T.3, page `&map=0&lead=0` det, heard time):** lag +2 / +179 / +7 / +11 ms with jitter p50/p90 6/19 ·
+  1/3 · 2/6 · 7/25, `beatPcm` F 0.97 / — / 0.96 / 0.94, lock 7.6 / never / 10.9 / 6.1 s (v3: −4 / −66 / +3 / +9, 8/32 · 93/247 ·
+  4/11 · 10/92, F 0.91 / 0.14 / 0.945 / 0.77, 10.5 / never / 8.0 / 6.1). Through SeeYouDrop's drop 1 p90 1–6 ms against v3's
+  46–62. CyborgNinja's +179 is the OTHER lattice, exactly half a beat, stable to 3 ms: the truth's downbeat rests on a 9 %
+  low-band margin, the comb's on 70 % of its windows — undecidable from the audio; the stable line is the useful one.
+- **The switch, and what it keeps.** `&clock=pcm` under #test, `CARD.setClock('pcm' | 'v3')` live, `ENGINE.CLOCK.src`: the stage
+  (after 'ears', before bars / drums / build / queue and the lead) writes the PCM clock's RAW values (at the analysers' time,
+  heardT − LEAD.L) into `bpm` / `beatPhase` / `beat` / `beatCount`, so everything downstream rides it through the lead exactly as
+  it rides v3's; v3's own values come back at the top of the next frame (`ENGINE.restores`, beside the lead's), so the PLL and
+  the comb never see the swap. A whole-beat offset k is set AT THE FLIP so the swapped-in count matches v3's to within half a
+  beat: the line moves, `beatCount` and the bar phase (which the stages hold in count units) do not. k set at lock time instead
+  was measured and rejected: the count jump under the anchored stages put the bar line 2 beats off for 50 s.
+- **Do the predictions improve? Yes, where the clock was the limit.** With the switch on, CyborgNinja's predicted hits go from F
+  0.33 / 0.33 / 0.43 to 0.70 / 0.68 / 0.86 (P 0.95–1.00), `nextKickIn` 0.36 → 0.72 with a quarter of the jumps; WhoLikesToParty
+  +0.05 / +0.02 / +0.05; every release-lag p90 tightens. SeeYouDrop reads −0.02…−0.06 — the bar phase, not the clock: the
+  stages' bar line is the count's mod 4 wherever synapse is not sure (0–30 % of frames outside 60–90 s), v3's count from t = 0
+  lands on the truth downbeat by the accident of a track that starts on one, the PCM clock's own cold-start count lands 2 beats
+  off (`nextBarIn` 0.87 → 0.63). With the same bar phase under both (node, `CLOCKKOFF=14`) the PCM clock wins on SeeYouDrop
+  too (0.470 / 0.585 / 0.532 vs 0.465 / 0.586 / 0.524, `nextBarIn` 0.94 vs 0.87) and by more on WhoLikesToParty (0.611 / 0.557 /
+  0.723). No live start is at t = 0, so v3's luck is not a property the A/B has. Malicious predicts nothing either way; its
+  `nextBeatIn` goes 0.72 → 0.91.
+- **Cost, on the main thread:** 0.17 ms per frame in the headless page (`CARD.ENGINE.CLOCK.cpuTotal / frameN`: the mono mix, the
+  FFT per hop, the flux, the ring, the filter, the pending scan; node 0.09 against the ears' 0.12) — under the 0.2 target,
+  where the PCM bus and the ears' onsets already are. A worklet would have to re-derive the ears' onsets or ship them back.
+- **Proofs (T.4):** check 0 fail, `npm test` + `test_clock.js` (13 checks: lock 4.5 s, phase 2.0 / 3.5 ms, a 128 → 132 ramp
+  within 0.48 BPM, 6 s of silence coasted within 21 ms, the outlier, the lattice, bit-identical runs); parity fake 72 fields 0
+  diff (the `nav.*` rows red as since 22eb969); the bundle 1299 KB / 148 modules clean from `file://`; additive: SeeYouDrop
+  whole-track det traces from a `git archive 4a1e24c` tree against this tree `cmp`-identical on the 32-field default set
+  (`22bfb9e9`), its `&lead=0` twin (`01d9c307`) and an 80-field set (`25107502`); page = node on the PCM fields (2.4e-4) and,
+  under the switch, on `predKickIn` / `nextKickIn` (5e-5); the switch flips the published clock headless on the real page
+  (`bpm === bpmPcm`, `beatPhase === beatPhasePcm` to 1e-14, the count continuous) and back. Found on the way: v3 is not
+  deterministic run to run at the 1e-8 level HOURS apart (its `regularity` at the first comb estimate moves by 4e-7; on
+  CyborgNinja's torn cold start that becomes a different lock, −87 vs −66 ms) — three runs within one hour on two trees are
+  bit-identical, so the code is deterministic and something in the decode or Chrome's state is not. The A/B for the user is
+  the switch itself on the capture page (`CARD.setClock('pcm')` on TORUS2 / NAV, back with 'v3'; AUDIT T.4 has the caplag
+  command); the audible run is the orchestrator's. Not tagged, not pushed. Default 'v3' until the user's word.
+- **Open:** the bar phase is the count's mod 4 wherever synapse is not sure — a bar-line source of its own (the store's fingerprints,
+  the low-band-on-beat test the truth tool uses) would end the from-0 luck for both clocks; the stages hold `a` in count units
+  and would not survive a count jump (why k is set at the flip); CyborgNinja's lattice needs a musical rule (the truth's own
+  is a 9 % margin); a published-line bleed (v3's 0.18 s) is a knob to add if the user's eye reads the cold start's steps (0.7 %
+  of frames > 5 ms, 58 of 66 in the first 10 s) as a twitch; mic / capture not re-measured with the switch (the caplag command).
+
+**§56 addendum — the publish time is heard time smoothed onto the frame clock (2026-09-30, after the audible capture run).** The
+orchestrator's two capture runs (SeeYouDrop 0–110, sync 27) had the PCM clock winning live (lag +1 vs +11 ms, jitter p50/p90 4/11 vs
+9/53, beat F 0.949 vs 0.876, pred kick F 0.30 vs 0.19, `nextBeatIn` P 0.95 vs 0.79) — but `queuecheck` read the count-downs jumping
+1479 / min under it (v3 3.2). The cause was not a held state: the clock WAS extrapolated to heardT (its phase advance minus heardT's
+advance reads 0.00 ms p50 on the trace) — heardT itself steps in whole render blocks in capture (10.7 / 21.3 ms per 16.7 ms frame,
+p10 / p50), and v3, integrated on the frame's dt, does not follow it (its advance 16.1 / 16.7 / 17.0 ms; the ruler's "one frame's
+worth" is the median 21.3). So `features-clock.js` now evaluates the clock at `now` + the median of (heardT − now) over the last
+64 frames (lead.js's device; a jump > 0.1 s re-seats it): the same beat position on average, advancing evenly per frame on the
+glass. Replayed on the capture trace's heardT this advances 16.7 / 16.7 / 16.7 ms per frame with 0 % of frames off by > 10 ms
+(42.9 % before). In det mode heardT − now is a constant, so nothing moves: the 25 s det page traces are bit-identical to the ones
+before on v3 (`bpm` / `beatPhase` / `regularity` / `kickEvt` 0.00) and page = node on the PCM fields (`beatPhasePcm` 2.4e-4,
+`predKickIn` / `nextKickIn` exact under the switch). A real-time file trace (`RT=1`, 0–60 s, heardT smooth there: dt 15.9 / 16.6 /
+17.5) reads the PCM clock's advance 16.6 / 16.7 / 16.8 ms per frame (v3 16.3 / 16.7 / 17.1) and 5 count-down jumps after 10 s
+(28–37 ms Kalman corrections while the intro settles; 42 / min over the whole minute is the cold start). The capture re-run is the
+orchestrator's.
+
+**§56 addendum 2 — the audible capture runs (2026-09-30).** SeeYouDrop in tab capture, PCM clock vs v3 (AUDIT Step 6 addendum 2):
+beat line +0 / 6 / 14 ms (med / p50 / p90) vs +11 / 15 / 45, jitter 6 / 14 vs 9 / 53, beat F 0.938 vs 0.876; the predicted kicks on it
+F 0.38 (P 0.66) at +4 ms vs 0.19 (P 0.34) at +25; `nextBeatIn` P 0.92 vs 0.79, drops 14 / 8 beats ahead both. The A/B for the user is
+the live switch (`CARD.setClock('pcm')` / `'v3'`); the default stays v3 until their word. Not tagged, not pushed.
+
+**§56 addendum 3 — the PCM clock is the default (2026-09-30, the user's stream-mode A/B).** "B really seems to handle the double
+time as it builds before drop better; default and tag what has been done so far." `CLOCK.src = 'pcm'`: `bpm / beatPhase / beat /
+beatCount` publish the PCM clock for every stage and scene; `&clock=v3` / `CARD.setClock('v3')` is v0.19's clock. Proofs: check 0
+fail, npm test OK, feats appendix regenerated (188 fields); the fake timeline never runs the clock stage, so s0 f360 / f840 md5
+`fb74fee4` / `8a0715df` unchanged; a SeeYouDrop det trace (`&map=0`, 20–40 s): `clockPcm` 1 on 1201 / 1201 frames, `bpm ==
+bpmPcm` on all, `beatPhase` vs `beatPhasePcm` within 1.4e-14, conf median 0.93, ENGINE.ms 0.09–0.14.
+
+**v0.20 tagged locally (2026-09-30) on the user's word ("default and tag what has been done so far"; deploy still held):** v0.19 +
+live step 6, the beat clock on the PCM bus (§56) as the default clock. All six steps of the live plan (§49) are in. `releases/
+retinarave-v0.20.html` (1301 KB, 148 modules; from `file://` 348 frames in 6 s, errs [], nonFinite [], clock pcm), package.json
+0.20.0. Not pushed (retinarave.com serves v0.15).
+
+## §57 DUST, pass 1 — the legibility overhaul: on the grid, three transient voices, real tension, formations as sections (2026-09-30, one worker; `DUST-OVERHAUL-SESSION-PROMPT.md`, report `docs/workers/DUST-OVERHAUL-PASS1.md`)
+
+**The ask** (the user, 2026-09-30): *"lets go one scene at a time; start with DUST (can do a full overhaul in place, not
+limited to whats new)"*, against a brief that is now **the acceptance standard for every scene**: a viewer with the sound off
+should be able to roughly reconstruct the song's structure · transients sharp, fast-attack / slow-decay, from band-limited
+onset detection · bands mapped to distinct visual behaviours so instruments are separable · motion phase-locked to the beat
+grid, emphasis on downbeats and phrase boundaries · a tension accumulator that visibly tightens through builds and releases
+all at once on the drop · timbral novelty gets a new voice, sustained sounds habituate · preserve dynamic range · zero
+perceptible latency, nothing moves without an audible reason. Pass 1 is four steps, each measured and committed with its
+numbers; pass 2 (dynamic range against the track's peak, per-bin habituation, harmony) is next session.
+
+**What DUST was.** 20k–150k `gl_VertexID` grains, each owning one bin of the 256-bin log spectrum and pushed out by it
+(the core idea — kept). Four formations cross-faded per grain, Hopf-fibre rings threaded through. Fifteen fields, and **no
+beat grid at all**: `flow`/`flowMid`/`flowBass` drove every rotation, the 64th kick re-poured to a random shape, `tension`
+(which is v3's ROUGHNESS) shrank the cloud, and there was one drum channel and no snare.
+
+**The ruler, because there was none.** `filetrace.js` records MS and MS says nothing about what a scene did with it;
+`probe.js` reads the canvas but needs a real window. New **`tools/dust-trace.js`** (HARNESS "Scene ruler on a real track"):
+forces the scene on the deterministic live-on-a-file path (`#test&track=<T>&at=<t0−WARM>&map=0&scene=1`, `CLOCK=1 GPU=1`),
+registers its own rAF after the loop's, and records per frame the COMPOSITED framebuffer's luminance (whole / centre 20 % /
+60–90 % rim) beside the MS fields and every number of the scene's new read-only `hooks.dinfo()`. Reference window
+SeeYouDrop 20 → 110 s at `at` 0 (5401 frames, both drops and the 16 bars before each; the detector needs 32 s of history
+before it can arm, §54); control CyborgNinja 20 → 80 s. Two runs are bit-identical.
+
+- **Step 1, on the grid (`3425e5a`).** One angle: `spin ← ease((2π/32)·(beatCount + ½·barIndex), τ 0.22 s)`, the target read
+  off the COUNTS so it cannot drift (TORUS2's rule, §36), `barIndex = round((beatCount + beatPhase − barPos)/4)` so the
+  downbeat is synapse's bar line and not the count's mod 4. Torus turn ×0.7, galaxy winding ×0.9/(r+.35). Measured:
+  **0.2207 rad/beat over 225 beats against a design 0.2209** — no drift in 90 s; spin velocity p05 0.192 / p50 0.487 / p95
+  1.088 rad/s, **peak/mean 2.28** (a steady spin would be flat); the downbeat advances **0.1791 rad** in its first 200 ms
+  against **0.1320** for the other three. The 64-kick re-pour is gone: a change lands on a phrase wrap or `barNovelEvt`,
+  never on a kick count — **16 changes in 90 s, every one on a seam**. corr(lum, lvl) 0.469 → 0.592, eS 0.407 → 0.601,
+  bassS 0.356 → 0.558, highS 0.093 → 0.431.
+- **Step 2, three transient voices (`5a5f857`), and the measurement that shaped them.** The spec pairs `kick2`/`kickAge`,
+  `snare2`/`snareAge`, `hat2`/`hatAge` — **they are not always the same onsets.** At every rising edge of the level the
+  matching age reads p50 **+7 ms** (kick, p90 1720, 4 of 224 edges with no fresh age), **+101 ms** (snare), **+92 ms** (hat):
+  the v2 kick IS the ears' low lane (§51), the v2 snare and hat are synapse's and the ears' are a different picker. So each
+  voice keeps its OWN age, reset by the level's edge and seeded from the engine's age only within 40 ms of it — the
+  sub-frame placement where it is real, never a motion started 100 ms late (now a rule in CONTRACTS §1.18). The three are
+  separated by the BAND a grain owns: `wLow` the kick's outward shove and the sub's swell, `wMid` a NEW voice (a flash ring
+  launched at the centre on every snare, travelling out at 3.4 units/s), `wHigh` the hat sparkle. Peak luminance lift at the
+  hit: kick **+6.1 → +9.5** (p90 +15.4 → +26.3, 223 hits), snare **+8.1 → +11.0**, hat **+4.3 → +8.3**; the picture's own
+  motion |Δlum| per frame p50 **0.79 → 1.34**, p99 **6.08 → 11.22**; corr(lum, kick2) **−0.12 → +0.07**. A first, timider cut
+  was measured and rejected (kick +7.1, hat +7.1).
+- **Step 3, real tension (`9bc2b3c`).** `tension` is v3's roughness and sits at 0.42 through SeeYouDrop's groove, so the
+  cloud was permanently ~8 % small for nothing audible and did not move into a drop. The build is the VOID, `buildLive`
+  (§54): it arms 5.6 s before drop 1 (reaching 1.00) and 3.2 s before drop 2 (0.75), **never on CyborgNinja**. It pulls the
+  cloud in −30 %, thins the torus's tube from `.38+.2·bassS` to a .06 wire, draws the fibre rings in 32 % and drains the
+  palette (sat ×(1−.55b), spread ×(1−.35b) — the rings share the mood object, so they drain too); `dropLiveEvt` releases it
+  all at once over 0.55 s with a +17 % overshoot and leaves `dropEnv`'s fling alone; `tension` is jitter and nothing else.
+  **`nextDropIn` was measured before it was used and is NOT a runway**: while armed it never points further than one bar
+  ahead (1.56 s at the arm, 529 armed frames), because it is the count-down to the bar LINE — so it winds the last bar up
+  (+0.3 of the contraction over 1.7 s) and claims nothing more. Drop 1: contraction 0 → **0.85** (peak 1.25) → 0.09,
+  saturation 0.66 → **0.34** → 0.71, the slam **+171.7 % → +181.9 %**, lum through the void **+23.3 % → +8.1 %**. Drop 2:
+  the slam **+168.9 % → +194.2 %**, lum through the void **−15.2 % → −36.6 %**.
+- **Step 4, formations as sections (`fff7569`).** `buildLive > .35` → torus · no sub and `denK < 1.6` → ribbon (a lone
+  voice) · `eM < .74` → sphere (quiet for this track) · else galaxy; asked only on a seam, so it cannot chatter, and the
+  drop bursts the torus into the galaxy. **`eM / eMax` was tried first and is useless**: `eMax` is the loudest `eM` seen
+  lately and follows it (ratio p05 0.700, p25 0.972, p50 1.000), and `lvl` is worse — the AGC flattens it. The absolute `eM`
+  (0.30 → 0.88 through SeeYouDrop's intro), `subGate` (0 for the first 12 s) and `denK` (0.5–1.5 intro vs 2.0–2.3 groove)
+  are what separate. **The returns say THAT, not WHICH**: `sectionAlt` never repeats on either track (2→3→4→5, 1→2→3) and
+  `sectionReturn` is 0 for all of SeeYouDrop while `barReturnEvt` fires twice — so the memory is keyed on `sectionAlt` as
+  the contract says and falls back to the last shape filed under a different section (CONTRACTS §1.11 now carries the
+  caveat). The sequence on SeeYouDrop is the song: galaxy → **ribbon 50.1** (the sub leaves) → **torus 55.9** (the void) →
+  **galaxy 57.6 (THE DROP bursts it)** → ribbon 101.3 → torus 104.5 → **galaxy 105.6 (THE DROP)** → sphere 107.7; **7
+  changes against 16 at random**, dwell galaxy 75.9 s / ribbon 8.9 / torus 2.8 / sphere 2.3 (before, at random: 25.5 / 25.7 /
+  20.2 / 18.5). With the picture no longer churning a shape a phrase, the slam reads **+347.1 %** (drop 1) and **+234.1 %**
+  (drop 2), lumC/lumR through drop 1's void goes 0.834 → **1.713**, and the centre's peak lift is kick **+10.9** (p90 +50.3),
+  snare **+14.0** (p90 +50.5), hat **+9.4** (p90 +44.4). **The trade, stated:** whole-frame |Δlum| p50 1.32 → 0.93 and the
+  window's p95/p05 2.95 → 2.54, because sixteen pours a minute were themselves much of the old motion and range. What is
+  left is the music's.
+
+**The control.** CyborgNinja 20 → 80 s, no drop: **0 formation changes** (dwell galaxy 60.0 s; the old 64-kick counter would
+have given ~2), `buildLive` never armed, so no contraction, no drain, no release — the scene invents no structure. And the
+drums read better there than anywhere: the kick's peak lift in the centre **+13.4 → +18.7** (p90 +39.4 → +51.6, +7.5 % →
+**+19.6 %** of the pre-level), corr(lum, kick2) **0.035 → 0.241**, whole-frame |Δlum| p50 1.72 → 1.19 while the CENTRE's goes
+2.15 → 2.38: on a track that is one long groove, what moves is now the drums.
+
+**Cost — it got 13 % CHEAPER** (`CARD.bench(1,300)` interleaved with NAV, `q` pinned 0.95, tier 3, first call discarded,
+three pairs, machine otherwise idle): DUST **1.181 → 1.023 ms**, NAV 1.795 → 1.821 in the same pages (ratio 0.658 → 0.562).
+The reason is fill, not luck: `hat` and `kick` used to enlarge EVERY grain (`+uHat·h.y·1.2 + uKick·.5`), so a hit was a
+whole-cloud overdraw event; the new voices enlarge only their own band (`wHigh` ~28 % of grains, `wLow` ~43 %). No Q trace:
+the cost did not rise.
+
+**Proofs.** `check` 0 fail · `npm test` OK · the full eleven-scene `scene-md5.sh` list against
+`tools/accept/v0.14/scene-md5-v014.txt` differs on **exactly three lines**: s1 f360 `c6166af9` → `6696c6eb` and f840
+`7ca6598c` → `01143b8d` (this session), and the two pre-existing ones from `22eb969` / §54 addendum 2 — s0 f840 `7225ea02` →
+`8a0715df` (recorded there) and **s4 f840 `be2e3c8d` → `05bf21c0`, which §54 addendum 2 did NOT record**: s4 is NAV's DRUM
+variant and renders through NAV's `draw`, so NAV going onto the live detector moved it exactly as it moved s0. Everything
+else is byte-identical. Per step, s1: f360 `c6166af9` → `7c824cd1` → `910e95f7` → `6696c6eb` → `6696c6eb` (step 4 moves
+nothing at frame 360: no seam that early on the fake timeline) · f840 `7ca6598c` → `479410ba` → `bb1540c6` → `30d06982` →
+`01143b8d`. The per-beat montage `tools/work/d/syd-d1.jpg` (50 → 62 s across drop 1) reads breakdown → void → slam → groove.
+
+**Open, in the report:** a grain's BAND is not its POSITION in the sphere and ribbon formations (it is in the galaxy, where
+`r = sqrt(h.x)`), so the three voices are separated by colour family there rather than by place — a band→radius bias would
+fix it and would change all four shapes, so it is the user's call, not pass 1's; `post.fb.decay` 0.95 (the highest in the
+set, half-life 0.22 s = most of a beat) is the knob to reach for first if the user reads the transients as soft; the window's
+p95/p05 fell 2.95 → 2.54 because sixteen pours a minute were themselves range, and pass 2's `eM`-against-the-track's-peak is
+where it returns; three thresholds are fitted on two tracks; the return path could not be exercised; no audible run was done
+(the worker's brief forbids it — the one capture run is the orchestrator's).
+
+**Not tagged, not pushed, not deployed**; the A/B for the user is `releases/retinarave-v0.20.html` from `file://` against the
+dev server, key 2, the same track, in stream mode.
+
+### §57 addendum — the audible capture run, and `FRESH` 0.04 → 0.06 (orchestrator, 2026-09-30)
+
+The one audible run: `PORT=8830 HASHX='&scene=1' FIELDSX='kick2,kickAge,…,eM,denK' node tools/caplag.js track SeeYouDrop 40 72 27`
+→ `tools/work/caplag/SeeYouDrop-cap-sync27-scene-1-fx.json`, 4443 frames, listener time 38.96 → 113.05 s, fits 4.2 / 2.9 ms rms.
+(Grader's trap, recorded so nobody chases it again: `barPos / phrase16Pos / kickAge / snareAge / hatAge` are already in caplag's
+FIELDS, so naming them in FIELDSX INTERLEAVES a second copy — 8886 values for 4443 frames; take every other one. Read raw it looked
+like `kickAge` never reset; de-duplicated it resets 121 times for 120 logged kicks.)
+
+- **Drop 2 in listener time:** `dropLiveEvt` at 105.685 s = **+85 ms** after the truth (det path +17); `buildLive` armed **2.78 s**
+  before (det 3.2); `barNovelEvt` 98.5 / 101.71 / 106.5, `barReturnEvt` 98.5 / 106.5. **Drop 1 was not seen** — the run started at
+  40 s and the detector had 17.6 s (~11 bars) of warm-up; the earlier captures from 0 s armed 5.6 s before it (§56). Warm-up, not DUST.
+  `buildLive` never rose between the drops (0). 181 beats over 74 s = 146.6 BPM read (truth 150: the clock's start-up).
+- **The voices' seed on the capture path.** At each level's rising edge (≥ 0.18, +0.02) the engine's age of the same class reads:
+  kick2 / kickAge **<40 ms 51, 40–60 32, >120 101** (of 184 edges; 120 logged kicks — the level chatters), snare2 / snareAge **<40 0,
+  40–60 87, 60–80 21, 80–120 5, >120 32** (145), hat2 / hatAge **<40 0, 40–60 150, 60–80 29, 80–120 25, >120 57** (261). The det path
+  had put kick p50 at +7 ms; capture puts every class one heard-time step later, in the 40–60 band — exactly past `FRESH = 0.04`, so a
+  live hit's voice started from age 0 on its frame, ~45 ms late to the ear, for ALL snares and hats and a third of the kicks.
+  **Lean: `FRESH` 0.06.** No two logged kicks were within 80 ms (0 of 120), so 0.06 cannot seed from the previous hit; 60–80 stays
+  unseeded (the different-picker cases the worker measured at p50 +101 / +92 on det). The fake-timeline s1 md5 is **unchanged**
+  (`6696c6eb` / `01143b8d`: no det age falls in the band), `check` 0 fail. Live-only change, by design.
+- Nothing else in the capture contradicts the det numbers; the scene ran the whole window with `errs []`.
+
+**v0.21 tagged locally (2026-09-30) on the user's word ("tag what we have so far"; deploy still held — "don't deploy yet"):** v0.20 +
+the DUST overhaul pass 1 (§57 + addendum, `FRESH` 0.06). `releases/retinarave-v0.21.html` (1326 KB, 151 modules; from `file://`
+on scene 1: errs [], nonFinite [], clock pcm), package.json 0.21.0. Not pushed (retinarave.com serves v0.15). The user's first look:
+"Overall it is looking good, but something still feels out of sync. Visuals almost seem slow to register on the beat" — the
+accuracy review is next (§58).
+
+## §58 DUST, pass 1.5 — a grain's band is its place, and the accuracy review (2026-09-30, one worker; report `docs/workers/DUST-OVERHAUL-PASS1.md` "Pass 1.5")
+
+**The ask** (the user, after the pass-1 A/B in stream mode): *"Overall it is looking good, but something still feels out of
+sync. Visuals almost seem slow to register on the beat"* — plus §57's own open item 1 (a grain's band was not its position
+in two of the four formations). Two tasks, each measured on the deterministic path (`#test&track=SeeYouDrop&map=0`,
+`CLOCK=1`, 20 → 110 s = 5401 frames, control CyborgNinja 20 → 80 s) and committed with its numbers. **Not tagged, not
+pushed, not deployed.**
+
+New in the ruler: `tools/dust-trace.js` records a fourth zone, `lumM` (the 25–55 % BODY annulus, where the snare's ring
+travels), and DUST has a test hook `&form=<k>` that pins the formation so one shape can be measured at a time.
+
+### Task A — a grain's band is its place (`fc590c0`)
+
+The rank of the bin a grain owns (`h.x`, uniform on 0..1 and monotone with `fx`) is now its distance from the centre, and
+each shape maps that rank the way its own DIMENSION keeps its density even: **the galaxy's `sqrt(rank)` is uniform per unit
+AREA and is untouched** (the shape the brief said to match), a ball is uniform per unit VOLUME at `cbrt(rank)`, a line is
+uniform per unit LENGTH at the rank itself, and the torus's tube is flat in its own angle so the rank goes straight onto it
+— the low bins ride the tube's INNER wall (R − r), the highs its outer wall (R + r). Every shape's density is therefore
+unchanged; only which grain sits where is. The ribbon samples the waveform where the grain actually is, so it is still
+literally the waveform.
+
+Two things that only broke once a band meant a place, both found by geometry and fixed in the same commit:
+
+- **the snare's ring was launched at the ORIGIN.** With the mid band a shell at radius r0, a front expanding from nothing
+  does not reach it until r0 / 3.4 — from the shader's own condition (`|R − ringR| < 0.83·ringW`), **0.24 s in the sphere
+  and 0.21 s in the torus after the hit**, and that was true of the OLD sphere too (a hollow shell at 1.05). It is now
+  launched ON the band (`formations.js MIDR = 0.89 / 1.21 / 1.36 / 1.14`, mixed through a pour) and travels out from
+  there: **0 ms in all four shapes**; the body's luminance clears +2sd at p90 161.7 → **119.7 ms** after the truth onset.
+- **the kick's shove was a fixed half a unit**, which is most of the core's own radius — a kick EMPTIED the core out of the
+  middle of the frame. It is now in proportion to where the grain is (`.5·(.3 + .7R)`), so the core swells instead.
+
+Measured with the formation pinned (SeeYouDrop 30–60 s, clean hits only — no other voice within 100 ms — peak lift as % of
+that zone's own pre-hit level): **sphere** kick centre/rim 5.3/3.9 % → **4.9/2.6 %** (C/R 1.36 → **1.91**) · **torus** hat
+centre share 27.3 → **15.6 %** and body share 29.0 → **46.9 %** · **ribbon** hat rim share 51.8 → **61.7 %**, the kick's
+centre lift 7.6 → 8.4 % · **galaxy** unchanged by design (kick C/R 1.44 → 1.39, hat rim share 89.6 → 88.6 %).
+
+**Stated, not hidden:** the torus's KICK moves from the centre to the body and rim (C share 35.6 → 23.1 %), because a
+doughnut's "inward" is the inner wall of its tube at 31 % of the frame — its centre is a hole and nothing can be there; and
+a ball's shell projects onto the whole disc, so the sphere's separation is real in three dimensions and diluted in two.
+Cost flat (`CARD.bench(1,300)`, tier 3, q 0.95, three pairs interleaved with NAV: DUST 1.131 → 1.112 ms).
+
+### Task B — the accuracy review, in ms (`b93ef4f`)
+
+| what | was | now |
+|---|---|---|
+| the beat nudge, 50 % of the step | 167 ms | **50 ms** |
+| the beat nudge, 90 % of the step | 417 ms | **183 ms** |
+| of the step done when the next beat arrives (400 ms at 150 BPM) | 84 % | **98 %** |
+| the snare's voice, coverage of the truth's mid onsets | 54 % | **85 %** |
+| the snare's envelope, p90 after the truth onset | +196 ms | **+128 ms** |
+| the hat's voice, coverage | 85 % | **96 %** |
+| the hat's envelope, p90 | +87 ms | **+79 ms** |
+| the kick (`kick2` IS the ears' low lane — nothing to win on det) | 85 %, +16 ms | 85 %, +16 ms |
+| the snare's ring reaching the body (sphere) | 0.24 s | **0 s** (task A) |
+
+1. **The nudge is a shaped impulse.** One exponential with τ 0.22 s had its peak VELOCITY on the beat but put only half the
+   step on the screen 167 ms later, so the cloud was still travelling when the next beat came and the eye read a glide.
+   Now τ 0.055 s until less than 18 % of the step is left, then 0.14 s to settle. The picture is STILL between the nudges
+   (spin velocity p50 0.486 → **0.121 rad/s**) while the peak more than doubles (p95 1.059 → **2.854**). The target is
+   still read off the beat COUNT, so it cannot drift.
+2. **The attack fires on whichever detector hears the hit first** — the ears' event (`kickEvt` / `snareEvt` / `hatEvt`) or
+   the v2 level's rising edge — with a 60 ms refractory per voice. **This corrects §57: neither detector is late.** Graded
+   against the truth by `tools/truth/drumcheck.py` on the same window, the matched hits read ears **+3** / v2 **+4** ms
+   (kick), ears **+0** / v2 **−13** (snare), ears **+2** / v2 **−11** (hat). §57's "+101 ms" was the last ears' snare being
+   a DIFFERENT onset from the one the level was confirming, not a lag. What the two do is MISS different hits — recall ears
+   0.35 / v2 0.50 (kick), **0.71 / 0.50** (snare), 0.82 / 0.70 (hat) — so the union buys COVERAGE, which is what the user's
+   own A/B said the eye reads as in sync (memory `feedback_reactive_over_predicted`). **The event only PLACES the hit; the
+   level still SIZES it** — the ears' velocity saturates (§51: `kickVel` p50 1.0, "the uniform brightness of the predicted
+   route"), so `kickVel` / `snareVel` / `hatVel` are NOT read: a fire starts at the floor and the level raises it without
+   moving the age, so a hit the level never confirms costs a flicker, not a flash. Attacks per 90 s: kick 261 → 261, snare
+   152 → **319** (297 truth mid onsets), hat 250 → **379** (295 truth high) — the snare now matches the truth's own
+   density, the hat fires 1.28× it.
+3. **The trail: `post.fb.decay` 0.95 → 0.88.** 0.95 is a 0.22 s half-life on the encoded picture — most of a beat at
+   150 BPM, so the last hit's ghost was still a third of its size when the next one landed (§57's open item 2, "the first
+   knob to reach for"). Measured over SeeYouDrop 30–60 s at 0.95 / 0.88 / 0.85: per-beat peak/trough **1.261 / 1.431 /
+   1.470**, the rim 1.323 / 1.545 / 1.575, |Δlum| per frame 1.40 / 1.72 / 1.74, mean luminance 117 / 96 / 92. 0.88 takes
+   nearly all of the contrast for the least light; 0.85 is TORUS2's own.
+
+**Everything else DUST could smooth was measured and is zero or deliberate:** all twenty `m.*` copies in `index.js` are
+direct assignments (no EMA between MS and the uniform); `this.rt.time = MS.flow` is musical time; the voices' attack is
+instant and only the DECAY has a τ (0.24 / 0.30 / 0.09 s); the slow envelopes are slow on purpose (`buildLive` 0.35 s, the
+last bar's wind-up 0.12, the sub's gate 0.28, the drop's release 0.55 — all with instant attacks on their events); the
+fibre rings read `build` / `drop` / `rel` / `vk` with no filter of their own; the camera's dolly rides `bassS`, an engine
+band follower. The spectrum texture the grains are pushed by is peak-hold with a 0.11 s RELEASE and an instant attack
+(`synapse/analyzer.js`), so nothing is smoothed on the way in either.
+
+**Whole window, before → after (SeeYouDrop 20–110 s):** per-beat peak/trough lum 1.189 → **1.319**, centre 1.284 → 1.386,
+rim 1.231 → **1.400**; |Δlum| p50 1.11 → **1.54**, p99 10.15 → 17.38; the window's own range p95/p05 lum 2.80 → **3.24**,
+centre 3.70 → 4.30, rim 2.82 → **3.71** (§57's open item 3 — the dynamic range is back and past where it was); the mean is
+14 % darker (121.0 → 103.9); the shape sequence is untouched (10 changes, the same ones). **The one number that got
+worse:** the drop's slam, drop 1 +392.3 → +383.1 % but drop 2 **+117.2 → +88.5 %** — a shorter trail accumulates less over
+the burst. Kept, because the range over the whole window went UP and the brief's own measure is that a viewer can read the
+song, not that one frame is bright. Control CyborgNinja: still **0 formation changes**, no build, per-beat peak/trough
+1.229 → 1.350, hat coverage 94 % both ways.
+
+### Engine-side, for the orchestrator — measured here, NOT changed (no engine file touched)
+
+- **The beat clock's own offset against the truth beat grid.** SeeYouDrop, file-det: **−35.7 ms** (p10 −43.3, p90 −28.5) —
+  the det lead net of the 40 ms display lead, i.e. the count increments 36 ms BEFORE the audible beat. Harmless while the
+  nudge took 417 ms to land; now that it lands in 183 ms the eye sees the clock's offset directly, so it is worth knowing
+  that in stream mode (`dispNow()` 0, §53) that −36 ms becomes roughly 0 and the capture path's own +27 ms (CONTRACTS
+  §1.18) is then the whole of it.
+- **CyborgNinja: the PCM beat clock sits +146.8 ms off the truth grid** (p10 −45.0, p90 +155.1 — locked to the OFF-BEAT for
+  most of the window, 159 of 160 beats matched). Every beat-locked motion in every scene is a third of a beat out on that
+  track. A clock item (§56), not a scene one.
+- **The ears' and synapse's mid/high pickers disagree about WHICH onsets** (recall 0.71 vs 0.50 on the snare, precision
+  0.68 vs 0.93). A scene can only take the union, as DUST now does; a better mid picker is an engine job.
+- **`snare2` / `hat2` are synapse's hits held by `max(0, ahead − SYN_DELAY)`** (`drums/drums.js`): in capture `ahead` ≤ 0,
+  so nothing is held and they arrive with synapse's own 31 ms confirm delay after the analyser sees them.
+- The 40 ms display lead is file-mode only (§53) — recorded again because it is the largest single number in the chain and
+  the user watches in the mode that has none.
+
+### Proofs
+
+`check` 0 fail · `npm test` OK · `CARD.bench(1,300)` tier 3 (150k points), q pinned 0.95, first call discarded, three pairs
+interleaved with NAV in the same page: DUST/NAV ratio 0.794 (HEAD) → 0.758 (task A) → 0.813 (task B) — flat inside the
+run-to-run spread. s1 fake-timeline md5 **f360 `6696c6eb` → `0526245e` → `a73fbe67`, f840 `01143b8d` → `123033ed` →
+`35fe02c6`** (per task). Against `tools/accept/v0.14/scene-md5-v014.txt` the only other lines that differ are the two
+pre-existing ones (s0-f840 `7225ea02` → `8a0715df`, s4-f840 `be2e3c8d` → `05bf21c0`, both from `22eb969` / §54 addendum 2)
+and s11, which post-dates that list; s2, s3, s5, s6, s7, s8, s9, s10 and s0-f360, s4-f360 are byte-identical. `help` moved
+to `assets/scenes/dust/help.js` (index.js was one line over the 350 soft cap) — data only, not a word changed by the move.
+No audible run (the worker's brief forbids it): every number above is the deterministic file path.
+
+**Look changes the user may notice beyond the two tasks:** the picture is ~14 % darker and its trails are much shorter
+(the decay); the sphere is a filled ball instead of a hollow shell and every shape is now colour-graded from the core out,
+because a grain's band is both its hue and its radius; the doughnut's tube no longer rolls on mid time (a slow breath
+instead), since the roll would have scrambled the band ordering around the tube.
+
+## §59 the beat clock's half-beat lattice — the low band decides it, and CyborgNinja comes onto the beat (2026-09-30, one worker; the miss found by §58's accuracy review, `docs/AUDIT-live-grid.md` "Step 6 addendum 3")
+
+**The miss** (§58, `docs/workers/DUST-OVERHAUL-PASS1.md` "Pass 1.5", its engine-side list): on CyborgNinja the DEFAULT beat clock —
+the PCM clock, §56 addendum 3 — sits **+146.8 ms** off the truth beat grid with 159 of 160 beats matched, so every beat-locked
+motion in every scene is out on that track. Re-measured here on the page's det path (`#test&track=CyborgNinja&map=0&lead=0`,
+`CLOCK=1`, the whole track, `gridcheck.py --heard`): **+179 ms, |lag| p50 179 p90 181, jitter p50 1 p90 3, `beatPcm` F 0.004, never
+locked** — §56's own recorded number. CyborgNinja is 160.0003 BPM, so half a beat is **187.5 ms**, and the ears' kicks sit +4 ms
+after the truth beat: +179 is the OTHER LATTICE, held to 2 ms for 180 s. Not a drift, and not the "third of a beat" the review read
+— §58 measured the same line through the 40 ms file-mode display lead (146.8 + 40 = 186.8). SeeYouDrop's −35.7 ms in the same
+review IS that display lead (§52–§53) and was left alone.
+
+**The truth grid is right, so this is a clock miss.** §56 called the choice "undecidable from the audio … the stable line is the
+useful one", on the 9 % low-band margin the truth tool recorded. Three pieces of evidence outside the low band say otherwise: the
+five novelty peaks the truth tool's downbeat vote runs on (34.895, 48.02, 84.02, 96.02, 168.02 s) are **integer beats from the
+grid's phase to within 1 ms** — 93, 128, 224, 256 and 448 beats after 0.02005 s — so the section boundaries land on the chosen
+beat, not on the offbeat eighth; the file's first attack is at 25 ms, on the chosen grid; and the hats are stronger on the offbeat,
+90 against 64, which is the classic offbeat hat (`docs/workers/truth-grid-s3.md`). Sections do not start on an offbeat eighth.
+
+**Why the clock picks the offbeat — three measurements, no guesses.**
+
+- **The ears' onsets cannot tell the two lattices apart on this track.** Its kicks land on every 8th. Counted within ±0.15 beat of
+  each lattice: kick **236** on the truth beat against **213** on the offbeat, snare 307 / 303, hat 405 / 449; the Kalman's own
+  weight (velocity / `R_CLS`) **485.3 against 477.1**. A coin flip. And the onsets are not what holds the line there: with the comb
+  line's measurement off (`R_LINE` 1e9) the clock still read −185 ms. The cold start picks the lattice, the PDA gate keeps it, and
+  nothing ever asks again.
+- **The comb line agrees with the wrong lattice, so §56's lattice vote never fires.** `period.js line()` maximises the 8-beat comb
+  on the FULL-spectrum flux (`flux + 3·bassFlux`), and this track's flux is on the offbeat hats: over its 344 clear windows the
+  comb's line is half a beat off the truth's on **264 of them** (SeeYouDrop 3 of 279, WhoLikesToParty 4 of 496, Malicious 110 of
+  423). Clock and comb sit on the same wrong lattice, so `LINE_N` of `LINE_W` never counts — `jumps 0` for the whole track.
+- **The LOW BAND does tell them apart, on all four tracks.** The positive 40–150 Hz flux summed over the hops within 0.15 beat of
+  each lattice, truth lattice against its half-beat: **CyborgNinja 1.199** · SeeYouDrop 1.299 · WhoLikesToParty 1.684 · Malicious
+  1.009. Every wider band loses it — 20–150 Hz 1.178 / 1.303 / 1.614 / 1.010, 150–800 Hz 1.043 / 1.208 / 1.217 / 1.034, above
+  800 Hz 1.064 / 1.101 / 1.260 / 1.039, the whole flux 1.074 / 1.124 / 1.289 / 1.035. 40–150 Hz is the truth tool's own band and
+  the truth tool's own rule (`trackmap.py anchor_grid`: "the beat is the one with more 40–150 Hz onset strength on it").
+
+**The rule — THE LATTICE CHECK** (`engine/clock/clock.js` `lattice()`, the `LAT_*` knobs). Two leaky energies of the 40–150 Hz
+flux: one over the hops within `LAT_W` 0.15 beat of the clock's own beat line, one over the hops within `LAT_W` of its half-beat,
+both leaking with `LAT_TAU` 90 s; `lat` is their log ratio. The two windows are the same width and they SWAP under a half-beat
+shift, so `lat` is exactly antisymmetric — the clock reading its own line against the only other candidate, with no grid in it.
+Read in the loop over the four tracks (t > 15 s, the move disabled; min / p50): the three lattices the clock already had right read
+**+0.213 / +0.363** SeeYouDrop · **+0.054 / +0.399** WhoLikesToParty · **+0.110 / +0.151** Malicious — and that last track has NO
+lattice (its kicks are uniform over the beat, DP residual 90 ms) yet still never crosses zero — while CyborgNinja, half a beat off,
+reads **−0.193 / −0.167** with a maximum of −0.044. `LAT_MARG` **0.06** sits in that gap: 0.11 clear of the nearest "right"
+reading, 0.11 past CyborgNinja's median. When `lat` has been past the margin for `LAT_SUS` 4 s of NET time (time inside the margin
+counts back down, floor 0) and the clock is locked, the line moves FORWARD half a beat — the comb vote's own rule, so the count
+never steps back — and the two energies swap with it. Three things keep the cold start out of the decision:
+
+- **the evidence only counts while the comb is clear** (`per.clear`). Cold, the Kalman rate is dragged down by the first onsets
+  before the first comb estimate lands — the page read **116 → 57 → 34 → 9.7 → 5.0 BPM over the first 2 s** — and at 5 BPM every
+  hop falls inside the on-window: 2 s of one-sided energy that a 90 s leak then carries for 90 s. Without this gate the page moved
+  the line at 63 s where node moved it at 14.
+- **a period re-seat throws the evidence away** (`reseat()` → `latClear()`): every window measured before a tempo switch was the
+  wrong width.
+- **the hold is net time, not an unbroken run.** The margin is 0.06 wide, so an unbroken-run rule turned a 1e-4 page/node
+  difference into tens of seconds of delay (19 s against 63 s).
+
+One gate the other way: **the comb line's vote may not move the line onto a lattice the low band has ruled against** — `lat >
+LAT_MARG` vetoes the jump. Without it CyborgNinja's full-spectrum comb line, which prefers the offbeat on 77 % of its windows,
+drags the line straight back (7 of 8 windows "far" fires with probability 0.42 per window). Cold, both energies are ~0, `lat` is 0
+and §56's vote is untouched.
+
+**Before → after: the four tracks, both clocks, the page's det path** (`&map=0&lead=0`, `CLOCK=1`, `gridcheck.py --heard`, so every
+lag is that clock's own error on heard time; CyborgNinja the whole track, the other three 0–120 s). "Before" is this same tree with
+`CLOCKK='{"LAT_MARG":1e9}'`, which turns both halves of the rule off and gives §56's published clock exactly — a new `filetrace.js`
+env (the one `clock-study.js` and `test_clock.js` already take), so a one-knob engine A/B is one run each instead of two trees.
+
+| track | clock | beat lag med / p50 / p90 | `beat` F ±50 ms | locked | synapse bar line |
+|---|---|---|---|---|---|
+| **CyborgNinja** | **pcm before** | **+179 / 179 / 181 ms** | **0.004** | never | 10.7 % |
+| | **pcm after** | **−9 / 9 / 13 ms** | **0.896** | **19.3 s** | 10.7 % — identical |
+| | v3 (`&clock=v3`) | −65 / 144 / 183 | 0.138 | never | — |
+| SeeYouDrop | pcm before | −0 / 5 / 13 | 0.959 | 7.6 s | 74.6 % |
+| | pcm after | −0 / 5 / 13 — every row identical | 0.959 | 7.6 s | 74.6 % — identical |
+| **WhoLikesToParty** | pcm before | +7 / 7 / 10 (jitter p90 7) | 0.906 | 10.9 s | not verified (truth) |
+| | pcm after | +7 / 7 / 10 (jitter p90 **5**) | **0.949** | **5.6 s** | not verified (truth) |
+| Malicious | pcm before | +10 / 11 / 27 | 0.960 | 6.1 s | tempo only (truth) |
+| | pcm after | +10 / 11 / 27 — every row identical | 0.960 | 6.1 s | tempo only (truth) |
+
+The same A/B in node over the WHOLE of each track (`tools/clock-study.js`, no browser): CyborgNinja **−184 / 184 / 186 ms, never
+locked → +3 / 3 / 5 ms, locked 17.9 s**; SeeYouDrop and WhoLikesToParty traces **byte-identical** to the ones before the change on
+every field except WhoLikesToParty's own improvement (lock 10.9 → 5.6 s, 97 → 99 % of frames within ±30 ms); Malicious' graded lag
+identical (+22 / 23 / 34, locked 6.1 s) with its jitter p90 23 → 22 ms. v3's rows are identical before and after on all four tracks
+— none of v3's code is touched and the switch still restores its values every frame.
+
+**What moved, track by track.** CyborgNinja's line comes onto the beat 19 s in and stays there: its phase against the truth beats
+then reads p10 −0.011 / p50 −0.007 / p90 −0.001 beat (−2.6 ms median), and `beatPcm` goes from matching 2 of 479 beats to 429. The
+cold start costs three line moves in the first 18 s — a lattice move at 9.2 s, a comb-line jump at 12.0 s in the window where a
+re-seat had just voided the evidence, the final lattice move at 18.3 s — and then nothing for 162 s. Each forward move advances
+`beatCount` by up to a beat and so shifts the bar phase the bars / build / queue stages hold in count units; that is the same cost
+§56 already pays on WhoLikesToParty and Malicious, and the count still never steps back. SeeYouDrop triggers neither half of the
+rule. WhoLikesToParty's cold-start half-beat error — the one §56 built the comb-line vote for — is now corrected by the lattice
+check at 6.0 s instead of by the vote's 8 windows, and that is where its lock time and its F come from. Malicious' two comb-line
+jumps are now vetoed (`lat` sits at +0.115…+0.185 for the whole track: the low band backs the clock's own line) with no change to
+its grade.
+
+**The bar / downbeat line does not move, because it is not the clock's.** `barPos` / `beatSyn` / `barConf` / `phrase16Pos` come from
+synapse's own grid (`features-synapse.js` reads `A.beat`, not the published clock), and a trace carrying them reads **every one of
+those rows identical before and after** on both gradeable tracks: CyborgNinja's bar line 10.7 % of in-octave frames on the truth
+downbeat (bar 1 on truth beat +1 in 70 %), its `beatSyn` +58 / 61 / 113 ms and its 16-beat line 1 of 5 section starts within a beat;
+SeeYouDrop's bar line 74.6 %, `beatSyn` −39 / 40 / 60, 1 of 8 section starts, 0 of 2 drops. CyborgNinja's synapse bar line being
+wrong is a separate, pre-existing miss (`docs/workers/truth-grid-s3.md` recorded 0 % in live step 3.1) and is NOT this item.
+
+**Cost: flat.** One more accumulator inside the FFT loop that already runs, over the six bins below 150 Hz, plus ~10 operations per
+512-sample hop (94 hops/s). Node microbenchmark of `Clock.push` over 60 s of CyborgNinja, best of 5, three pairs interleaved
+against a `git archive HEAD` tree: **56.50 / 56.99 / 56.93 µs per hop before against 56.44 / 56.77 / 56.98 after** — 0.089 ms per
+60 Hz frame either way, §56's own node figure. On the page `CLOCK.cpuTotal / frameN` over 3600 frames reads 0.205 (HEAD) against
+0.217 ms (this tree), inside the run-to-run spread of a machine with a second worker's Chrome on it.
+
+**Proofs.** `node tools/check.js` 0 fail (153 modules, the 5 pre-existing line-cap warns) · `npm test` OK · `test_clock.js` now 17
+checks: the two new ones are **`band`** (hits on every 8th, the off-beat one 2.2× louder but with NO low band, and the line has to
+land on the KICKS — it reads −231 ms with the check disabled and −2.6 ms with it on) and **`band flip`** (the same audio with only
+the loud snares for the first 8 s so the cold start locks to them: −227 → −2.6 ms, the line moved at 21.8 s, `latJumps 1`) · **the
+full fake-timeline md5 sweep** (`PORT=8884 tools/scene-md5.sh s59`, all 12 scene ids × f360 / f840) is unchanged where §56 said it
+must be: s0-f360, s2, s3, s4-f360, s5, s6, s7, s8, s9, s10 byte-identical to `tools/accept/v0.14/scene-md5-v014.txt`, s0-f840
+`8a0715df` and s4-f840 `05bf21c0` the two pre-existing moves from `22eb969`, s11 post-dating that list. The clock stage returns at
+its first line under `ENGINE.fakeOn`, so the fake timeline never runs it. **s1 read `5a9b6bc7` / `b70a98e1`, not §58's `a73fbe67` /
+`35fe02c6`** — those are §60 step 4's own recorded pair: the DUST pass-2 worker was in `assets/scenes/dust/` in the same tree while
+this sweep ran. Not this change, and not chased; this session touched no file under `assets/scenes/`.
+
+**Not tagged, not pushed, not deployed.**
+
+## §60 DUST, pass 2 — dynamic range, per-bin habituation, harmony (2026-09-30, one worker; report `docs/workers/DUST-OVERHAUL-PASS2.md`)
+
+**The ask**: the three items `DUST-OVERHAUL-SESSION-PROMPT.md` deferred out of pass 1, against the same acceptance
+standard — a viewer with the sound off can reconstruct the song. The user's word on pass 1 + 1.5 was *"is looking
+good"*, so nothing already signed off was allowed to get worse: the groove keeps the brightness it has, and every
+step is calibrated on it. Four commits, each measured and committed with its numbers. **Not tagged, not pushed, not
+deployed.** `§59` is unused at the time of writing (the engine worker's).
+
+**New rulers** (all in `tools/work/d2/`, scratch): `spec-trace.js` records the 256 bytes of `ENGINE.tex.spec` — the
+grains' own input — every frame, so a per-bin detector can be swept OFFLINE in python (`nov.py`, `nov2.py`) instead
+of costing a page run per candidate; `sim.py` does the same for the dynamic-range drive, which is a pure function of
+`eM` / `eS` / `dropEnv` and so can be simulated on a trace that already exists. Three of the four steps were decided
+on recorded music before anything was rendered. New DUST test hooks: `&dyn=<v>` pins the drive (a bench must not run
+at the fake timeline's own `eM` of 0.374), `&hab=0` restores pass 1's drive exactly (verified bit-identical over
+5401 frames), `&key=<k>` pins the key.
+
+### Step 1 — quiet is quiet, loud is loud (`10bde08`)
+
+`lvl` was the whole of the cloud's brightness and it is AGC-normalised (p05 0.513 / p50 0.882 / p95 0.992 over
+SeeYouDrop 20–110 s); §57 had already measured `eM / eMax` useless (p25 0.972). `dyn.js` holds the TRACK's own peak
+— instant attack, 25 s release, floored (step 4) — and `eM / peak` drives the BASE brightness, the grain size and
+the swarm's radius, with the three voices and the sub on a gain that barely moves: between the groove and the
+breakdown the base loses 76 % and the hits 24 %, because a quiet section's kick is still a kick. The rings dim with
+the cloud. The energy is `eM + ½·max(0, eS − eM)` — the slow window plus half of what the fast one hears above it —
+picked from four candidates simulated first: on `eM` alone the drops read 0.75 / 0.70 against the groove's 0.91
+(a 2.5 s mean on the frame of a slam is still half-full of the void), on `max(eM, eS)` the drops are right but the
+intro opens at 0.74. `dropEnv` / the drop's release floor the drive for the same reason at a shorter timescale.
+
+### Step 2 — novelty and per-bin habituation (`54e3033`)
+
+Each grain's drive is its bin's level minus that bin's own 1.2 s average — what is NEW in the band — floored at
+0.35, so a sustained pad settles to 35 % of a fully novel band and never to nothing. The state is a 256×1 ping-pong
+of the scene's own targets (one 256-pixel pass, one extra fetch per grain): a CPU-side EMA is impossible (the array
+behind `ctx.engineTex.spec` is core state), and building the average out of `hist` taps would be 600 k fetches a
+frame at tier 3 and capped at 1.3 s.
+
+**The brief's own form of the detector measures as nothing.** `uSpec` is floor-subtracted and peak-normalised, so a
+bin's level is a spectral SHAPE and barely moves: `(level − slow) / level` has a per-bin median of 0.010 and a p90
+of 0.090, i.e. a flat 0.35 on every grain — a 65 % dimming, not a detector. A z-score on the bin's own deviation has
+range but goes hypersensitive as a bin settles (a new bar reads ×1.02 against the bars after it). An **absolute**
+step of 0.10 of full scale is right, because the spectrum is already normalised, and τ 1.2 s habituates hardest
+(a sustained bin-onset's drive 0.776 → 0.502 in 2.5 s) while keeping the new-bar signal (×1.20).
+
+**The gain is normalised every frame**, by its own RMS over the bins weighted by the grain density AND by `raw²`.
+Three weaker divisors were measured on the picture first (mean lum, step 1 = 100.3): raw gain → four times darker;
+its mean over the window → 125.1; its RMS over the window → 117.5 and the void 24.2 → 54.2; its unweighted
+per-frame RMS → 107.9 and the void 39.9. The bins that read novel are preferentially the LOUD ones, most so where
+the mix is sparse, so a fixed divisor raises the quiet end far more than the loud one and half undoes step 1.
+
+### Step 3 — harmony (`5bd7d7d`)
+
+The palette's centre is the key anchor from `assets/math/keycolour.js`, the module TORUS2 (id 3) and POLYTOPE (id 5)
+already share, with DUST's own `mkAnchor()` state. **The two scenes are bit-for-bit the same colour**: forced on
+SeeYouDrop `&at=12&map=0` and sampled at frames 2400 / 3600 / 4800, DUST and TORUS2 both read key 8 mode 1 and
+unwrapped hue −0.33410 / 0.92363 / 1.85418. Against the truth grids the engine reads **the fifth above the tonic**
+(G# for C# minor on both test tracks) — the known v0.14 `key` behaviour on sub-heavy tracks that CONTRACTS §1.18
+already records, an engine reading and not a scene one; the MODE, which is what warm-or-cool turns on, is right on
+both. On SeeYouDrop `keyConf` p50 is 0.154, so the gate sits at 0.27 and the palette is mostly `LOOK.mood` slid a
+quarter of the way toward G# minor — the designed behaviour for an untrusted read. The hue moves as an ease
+(p50 0.029 turns/s, p99 0.361), never a jump.
+
+### Step 4 — the intro guard, and two rejected fixes for the same problem (`55f7021`)
+
+The intro came out BRIGHTER than the groove (SeeYouDrop 8–14 s at 1.56× the groove against 0.92× before the
+overhaul). Two causes. **The peak hold's floor was too low** (0.70, against the track's own `eM` of 0.697 there):
+0.84 — at or a little above the resting `eM` of a normal groove on both test tracks — puts the drive at 0.681 there
+and 0.268 through 2–8 s, and above the floor the peak is the track's own, so the floor only binds while the hold
+warms up. **And the habituation leaks light into a sparse mix**, because holding the mean of `amp²` is not holding
+the light: the brightness carries `min(1, sz)` and a grain's area buys overdraw, so the novel grains grow past a
+pixel and stop being attenuated. Both fixes for that — the gain to the power 0.6, and leaving the grain's SIZE on
+the raw level — were measured and **rejected**: each fixes the intro and each gives back almost all of what step 2
+bought, because the per-frame motion and the per-beat contrast ARE the novelty and they travel through the size
+(|Δlum| p50 2.10 → 1.72 / 1.63, per-beat 1.436 → 1.366 / 1.366).
+
+### Pass 2 end to end — `765b61c` (pre-§60) against HEAD, traced BACK TO BACK on one clock
+
+| SeeYouDrop 20–110 s | before | after | | CyborgNinja 20–80 s (no drop) | before | after |
+|---|---|---|---|---|---|---|
+| the window's range p95/p05 lum | 2.921 | **4.179** (+43 %) | | p95/p05 | 1.982 | **2.380** (+20 %) |
+| mean luminance | 101.8 | 101.0 | | mean luminance | 106.2 | 106.2 |
+| \|Δlum\| per frame p50 | 1.52 | **2.08** (+37 %) | | \|Δlum\| p50 | 1.64 | **2.17** (+32 %) |
+| per-beat peak/trough | 1.349 | **1.440** | | per-beat peak/trough | 1.364 | **1.446** |
+| the hat's rim lift p50 / mean | 0.1 / 6.4 % | **8.6 / 14.8 %** | | the hat's rim lift | −0.8 / 2.8 % | **0.2 / 9.0 %** |
+| the snare's body lift p50 / mean | 3.2 / 9.5 % | 5.5 / 11.3 % | | the snare's body p50 | 41.3 % | 46.8 % |
+| the void before drop 1 (55–57.6 s) | 49.9 | **29.6** (−41 %) | | formation changes | 0 | 0 |
+| breakdown 1 (49–55 s) · drop 1 | 59.8 · 103.3 | 57.9 · 106.0 | | | | |
+| the void / drop 1 | 0.483 | **0.279** | | | | |
+| breakdown 2 (100.5–104) · drop 2 | 103.8 · 127.8 | 106.9 · 121.3 | | | | |
+
+The intro (SeeYouDrop 2–40 s): the first eight seconds against the groove at 28–40 s, **0.671 → 0.633**; 8–14 s,
+where the track assembles itself and almost every band is new, 0.922 → 1.283 — there the novelty channel beats the
+dynamic-range one, which is the brief's own "a new sound gets a fresh voice" beating its own "quiet is quiet".
+**Breakdown 2 is the one section pass 2 does not improve**: the engine's energy does not say drop 2 is louder than
+the breakdown before it (`eM` 0.729 against 0.771, `eS` 0.78 against 0.62) and its bands are all new, so both
+channels read it as loud. An engine question — a loudness that is not AGC-flattened — not a scene one.
+
+### A MEASUREMENT HAZARD, for the harness
+
+An engine worker was editing `assets/engine/clock/clock.js` in the same worktree and its md5 moved from `45eb547f`
+to `3ddf490b` mid-session. Only `beatCount` changed — the md5s of the `dropEnv` and `eM` columns are identical
+across every trace either side of it — but that was enough: on the second clock SeeYouDrop 20–110 s reads **227
+beats instead of 225**, the build and the formation sequence land differently, and drop 1's mean luminance moved
+160 → 106 for reasons that are not the scene's. Two candidate tables had to be thrown away. **The rule this buys:
+when two workers share a worktree, a scene's before/after is only valid if the two traces were taken back to back,
+and the proof is the md5 of the MS columns of both traces** — `beatCount`, `dropEnv`, `eM` are enough to catch a
+clock change, an analyser change and a source change. Every headline number above was re-taken that way.
+
+### Proofs
+
+`check` 0 fail (help.feats gaps 0) · `npm test` 0 FAIL · s1 fake-timeline md5 per step: f360 `a73fbe67` →
+`8934dc86` → `5f1b796b` → `4781f104` → `5a9b6bc7`, f840 `35fe02c6` → `d3545bc8` → `984ed577` → `b70a98e1` →
+`b70a98e1` (step 4 does not move frame 840: the peak has already grown past 0.84 there, so the floor does not
+bind). No other scene's folder was touched, and DUST's files are imported by nothing else, so the other ten scenes'
+lines cannot move for anything in this pass. Cost, HEAD and FINAL benched back to back on the same machine (5 pairs
+interleaved with NAV, `q` pinned 0.95, tier 3, `&dyn=1`): **DUST/NAV 0.527 → 0.580, DUST 1.169 → 1.238 ms** — the
+whole of pass 2 is **+0.07 ms** at 150 k points. Within it: the two new passes and the two extra per-vertex fetches
+about +0.07 ms and the novel grains' extra fill about +0.03 ms (isolated with `&hab=0`, which leaves the passes
+running); sampling the normaliser on every fourth bin would save 5 % of the step and was rejected because it would
+put sampling noise on the brightness of the whole cloud. No audible run (the worker's brief forbids it): every
+number is the deterministic file path. Files: `dust/dyn.js` (new, 70), `dust/habit.js` (new, 162), and index /
+shaders / fibre / help — all under the 350-line soft cap.
+
+**v0.22 tagged locally (2026-09-30) on the user's word ("dust looks good -> tag what we have so far"; deploy still held):** v0.21 +
+§58 (band = radius, the accuracy review), §59 (the beat clock's half-beat lattice is the low band's call), §60 (DUST pass 2).
+`releases/retinarave-v0.22.html` (1368 KB, 154 modules; from `file://` on scene 1: errs [], nonFinite [], clock pcm), package.json
+0.22.0. Not pushed (retinarave.com serves v0.15). The user's next observations: "still finding some observations on the
+visualization that make it feel jerky" — a new test track, Vienna (Thom Sonny Green, `~/Music/RetinaRave/Vienna.flac`; "fast
+elements … but actually a slow rolling flowy groove"; "the nudge on this looked weird and jerky around 1:40–1:50 (probably more)").
+
+## §61 the nudge is a velocity profile, and the clock does not leave a live tempo — the jerk hunt on Vienna and on SeeYouDrop (2026-09-30, one worker; report `docs/workers/VIENNA-TUNING.md`)
+
+**The asks**, in the order the user gave them, verbatim:
+
+> "still finding some observations on the visualization that make it feel jerky -> just downloaded a new flac file to pull into
+> the test folder … this track has fast elements to it but actually has a slow rolling flowy groove to it. The nudge on this
+> looked weird and jerky around 1:40-1:50 (probably more) -> run test tuning on new song"
+
+> "lots of modularization and some panning; 1:05 - 1:25 sound gets interesting and feels like in a dream before first drop at
+> 1:25 where it adds a double time; the double time should be accenting rather than driving."
+
+> "rewatching see you drop, think nudge is jerky there also."
+
+The third note re-ranked the hunt: the jerk is not Vienna's, it is **§58 task B's own nudge shape**, and Vienna is where it was
+loudest because Vienna's clock was also running at twice the felt beat there. Three commits, each measured. Not tagged, not
+pushed, not deployed.
+
+### The track — Vienna is 90.00 BPM and `trackmap.py` got the octave wrong
+
+`~/Music/RetinaRave/Vienna.flac`, Thom Sonny Green — *Vienna (Original Mix)*, 192.4 s. trackmap read **178.21 BPM with a
+68.0 ms DP residual**, so it kept the WOBBLING DP beats (the first five gaps 0.3367 / 0.3251 / 0.3250 / 0.3251 / 0.3367 s); its
+log-normal tempo prior scores 180 at 0.84 against 90 at 0.70. The onset-envelope ACF settles it: the LOW lane (kicks) reads
+**−0.005 at lag 0.3333 s and +0.052 at 0.6667 s** — no 180 BPM periodicity at all — the MID lane (snare / clap) **0.038 at
+0.3333 and 0.299 at 0.6667** (0.414 at the half-bar, 0.310 at the bar, 0.379 at the 4-bar phrase), and only the HIGH lane has
+0.3333 (0.329) and 0.1667 (0.229): **the hats ARE the "fast elements"** and the beat a listener nods to is 0.6667 s. The mid
+lane fits P 0.666779 s = 89.985 BPM at resultant 0.642 over the whole track, and with P pinned to 0.666667 its phase per 20 s
+slice moves 37 ms in 180 s — dead constant.
+
+`tools/truth/Vienna.json` now carries that hand grid — phase **0.00260 s**, bar 2.666667 s, `downbeat_mod4` **0** — the user's
+notes verbatim, and a `provisional` flag (measured, never listened to). The bar line has two independent votes: the kick onsets
+per beat of bar read **169 / 117 / 117 / 72** (40–150 Hz flux mean 0.819 / 0.808 / 0.636 / 0.722), and a grid-free Foote
+novelty (12 log band shares, 46 ms hop, 4-bar checkerboard kernel) puts the track's five boundaries at 21.223 / 43.514 /
+66.502 / 85.310 / 106.626 s with a **median 113 ms** from these bar lines against 667 for a random set (220 ms with the grid
+shifted half a beat, 244 with trackmap's own +0.31 s bias). Those boundaries are the user's own structure: the dream is bar 25
+(66.669 s) → bar 32, **the first drop is bar 32 = 85.336 s** — which trackmap's `drops` list missed entirely, having only
+105.639 → bar 40 — and the jerk window 1:40–1:50 = 100–110 s sits inside the double-time section. `tools/truth/Vienna.180.json`
+is the same grid subdivided, so a clock that locks to the double can still be graded on phase.
+
+### The jerk sources, ranked by what they measure
+
+| # | source | before | after |
+|---|---|---|---|
+| **1** | **the nudge's own velocity shape** | max \|a\| **187 / 187 / 187 rad/s²** · **75 / 73 / 75 %** of every beat under a tenth of the peak velocity · the floor **0.9 / 1.2 / 0 %** of the peak · SeeYouDrop turned BACKWARD on **103 of 5400 frames** | **19 / 16 / 26** · **0 / 0 / 0 %** · **17 / 18 / 11 %** · **0 of 5400** |
+| **2** | **the clock at twice the felt beat** (Vienna's double-time section, 85–107 s) | 100–110 s: **2.90** nudges/s against the music's 1.50 (**1.93×**), the spin at **0.647 rad/s** against 0.327 where the clock is locked; whole track 1.890 ticks/s and **62.3 %** of frames in the right octave | **1.60** /s (**1.07×**), spin **0.362** · 1.548 ticks/s, **95.6 %** |
+| **3** | **a clock re-seat delivered on one frame** | the frame's own \|a\| up to **605 rad/s²** (SeeYouDrop's cold start walks the lattice at 22.00 / 29.02 / 30.40 s; Vienna six times) | **36** |
+| **4** | **a pour re-started on top of one 1 % done** | Vienna 73.27 s phrase galaxy→torus, 73.28 s the drop's burst at `formT` 0.009: one frame OF torus | 0 |
+| 5 | the snare ring re-launches before it has left its band | it travels **0.85 / 0.62 / 0.51** units p50 between launches; the mid band is at 0.89–1.36 | not changed (open) |
+| 6 | `buildLive` / `dropLiveEvt` never fire at the user's own drop | `buildLive` arms once, 70.1–74.5 s, max 0.67; **`dropLiveEvt` 0 times in 190 s** | not changed (an engine item) |
+
+(SeeYouDrop 20–110 s / CyborgNinja 20–80 s / Vienna 0–190 s throughout.)
+
+### Step 1 — the clock does not leave a tempo whose own ACF lag is still alive (`c4dbedf`)
+
+`period.js`: `alive` is the FIRST test in the switch-vote cost. tempo.js already had exactly this rule but only on the
+DOWN-octave branch (`alive ? 1e9 : 16`), so a half-time track could be **doubled on 4 votes (2 s) and then could not come
+back**, and an unrelated lag could take it on 3. The default PCM clock read **179.5 BPM over 85–107 s and 120.0 over 132–161**
+on a 90.00 BPM track, ticking 1.890 beats/s against 1.500, with 55 % of its ticks in 100–110 s landing 186 ms off the music —
+that is the double time DRIVING. Whole-track node A/B (`tools/clock-study.js`, every column compared):
+
+| track | in-octave | lag med | \|lag\| p50 / p90 | line moves | jumps |
+|---|---|---|---|---|---|
+| Vienna before | 62.3 % | +11.9 ms | 29.7 / 314.9 ms | 6 | 5 |
+| **Vienna after** | **95.6 %** | **+6.3 ms** | **8.6 / 86.1 ms** | **4** | **3** |
+| SeeYouDrop · CyborgNinja · WhoLikesToParty · Malicious | 94.9 / 98.1 / 98.8 / 97.8 % | +1.5 / +2.8 / +7.1 / +22.2 | 6.3/19.2 · 3.0/5.0 · 7.2/10.1 · 22.3/33.9 | 0 / 4 / 2 / 0 | 0 / 3 / 1 / 0 |
+
+— and all four control traces are **byte-identical** before and after. Per 10 s on Vienna, \|lag\| p50/p90 and the clock's own
+tick rate against 1.50 Hz: 20–30 s 167/300 → **4.9/30** (2.90 → 1.50 Hz) · 90–100 165/299 → **3.8/11** (3.10 → 1.50) ·
+**100–110 164.6/299.3 → 11.2/53.1** (3.00 → 1.70) · 130–160 166/301 → **5.6/10** (2.00 → 1.50). The escape hatch is the one
+that was already there (the held lag DIES → `tempoAge > 16` → 3 votes), which is how a real tempo change is followed; the cost,
+stated, is that a track moving to a genuinely unrelated tempo while the old lag stays a live peak is not followed.
+
+**Measured and rejected inside the clock** (so nobody re-runs them): a **mid-band lattice voter** — Vienna's mid band separates
+its beat from its 8th by +0.325 ln, but CyborgNinja's reads **−0.282**, preferring the OFF-beat, so the voter would drag
+CyborgNinja onto the wrong lattice (§59's own finding that every band wider than 40–150 Hz loses it); an **even/odd
+"the clock is at the double" test** — Vienna reads +0.325 ln in the mid band but a correctly locked clock reads up to +0.206 on
+CyborgNinja's low band and +0.302 on Malicious' high band, and any track whose snare is only on 2 and 4 is a false positive by
+construction.
+
+### Step 2 — the nudge is a velocity profile: a glide plus a raised-cosine accent on the beat
+
+The two shapes before it each fixed the other's complaint: §57's single exponential (τ 0.22) was "slow to register on the beat";
+§58's shaped impulse (0.055 / 0.14, 50 % of the step in 50 ms) is "jerky". §58 bought its 50 ms by making the angle's VELOCITY
+jump from nothing to 3.14 rad/s in one frame and fall back to nothing — a floor 1 % of the peak, 75 % of every beat under a
+tenth of it, 187 rad/s² of acceleration, and **1.91 % of frames turning backward**. For comparison TORUS2, the user's own
+favourite mapping (`scenes/torus2/motion.js`: a 2π/16 step eased with ONE τ of 0.3 s), never stops at all: floor 28 % of peak,
+75 rad/s².
+
+So the angle is a CLOSED FORM of `beatCount` / `beatPhase` whose derivative is `GLIDE + (1 − GLIDE)·bump(u)` with
+`bump = (1/W)(1 + cos(2π(u − W/2)/W))` on `u ∈ [0, W]`, integrated exactly: `ang = A(m) + step(m)·PHI(u)` with `PHI(0) = 0`,
+`PHI(1) = 1`. Nothing is integrated per frame, so §57's no-drift rule survives (measured: **0.220916 rad/beat over 2500 beats
+against a design 0.220893**). `u` is the phase of `beatCount + beatPhase + W/2`, so the accent STARTS a quarter-beat before the
+beat line and PEAKS ON it — the eye sees the crest on the beat instead of the motion starting there, which is how a dancer
+anticipates, and the acceleration is finite everywhere by construction. The downbeat is still worth half a step more, and it is
+the accent's AMPLITUDE that grows, not its sharpness. `GLIDE 0.45`, `W 0.55`, chosen from a sweep at 150 / 90 / 160 BPM and then
+on the three real traces (.20/.40 still 67 % dead; .30/.50 still 50 % dead; .40/.50 already clean at max \|a\| 23/21/32 and a
+13/14/9 % floor; .45/.55 keeps §58's own 90 % completion time to the frame and lands nearest TORUS2's 28 % floor).
+`&nudge=<g>,<w>` / `hooks.nudge(g, w)` moves both live, so the next A/B is one page and not one build.
+
+**The A/B is exact and cost no page run**: the nudge is a pure function of `beatCount` / `beatPhase` / `barPos`, all three in
+`dust-trace.js`'s field set, so `tools/work/v/replay.py` replays BOTH designs on the SAME recorded clock — and its "§58" row
+reproduces the traced `d_spin` to the digit. Per-beat medians, from the real traces:
+
+| | SeeYouDrop 20–110 | CyborgNinja 20–80 | Vienna 0–190 |
+|---|---|---|---|
+| max \|a\| per beat (the jerk) | **186.6 → 19.1** | **187.1 → 15.6** | **186.6 → 16.8** |
+| \|a\| p99 over the window | 187.1 → **28.2** | 187.3 → **23.2** | 187.8 → **26.0** |
+| \|a\| max over the window | 291.8 → **101.0** | 279.5 → **31.9** | 277.5 → **101.0** |
+| dead time (v < 10 % of peak) | **75 % → 0 %** | **73 % → 0 %** | **75 % → 0 %** |
+| velocity floor / peak | 0.9 % → **16.7 %** | 1.2 % → **18.3 %** | 0.4 % → **14.2 %** |
+| velocity peaks at | −8.3 ms → −8.3 ms | −8.3 → −8.3 | −8.3 → −8.3 |
+| 25 % of the step | +16.7 ms → **+0.0** | +16.7 → **+0.0** | +33 → **+0** |
+| 50 % / 90 % of the step | +200 / +467 → +200 / +467 | +183 / +433 → +183 / +433 | +333 / +733 → +333 / +767 |
+| spin rad/s (the design rate) | 0.559 → **0.558** | 0.591 → **0.589** | 0.419 → 0.344 (step 1: 27 % fewer ticks) |
+| frames turning BACKWARD | **1.91 % → 0.00 %** | 0 → 0 | **3.64 % → 0.00 %** (415 of 11400 frames) |
+
+Three things the closed form needed that the ease hid, each measured:
+
+- **a re-seat is not motion.** §56 sets a whole-beat offset at the flip, §59's lattice check advances the line half a beat, and
+  `Clock.read()` publishes a forward jump as it comes: measured per frame as |advance − rate·dt|, SeeYouDrop 20–110 s has
+  **three +0.5 beat moves** (22.00 / 29.02 / 30.40 s — a cold start 12 s into the track lands on the wrong lattice and the check
+  walks it back) and Vienna six. The ease absorbed them because it only ever travelled part of the way; the closed form
+  delivered half a step on ONE frame and measured **605 rad/s²**, three times the jerk this step exists to remove. So a frame
+  may never carry more beat phase than its own tempo says (`JUMP` 1.05 × `dt·bpm/60`) and the excess is given back at `BLEED`
+  0.75 beat/s. **Two looser gates were measured and rejected**: a fixed 0.25 beat (391 rad/s² on a half-beat re-seat, whatever
+  the bleed did) and 3× the frame's own advance (238) — both let the excess through ON the accent's peak, where the profile's
+  own gain is 2/W, and that IS the spike. A time constant instead of a rate limit was also rejected (393): what matters is not
+  how long the catch-up takes but how fast the beat phase may run while it happens.
+- **the step must not change mid-beat.** The step is the SCALE on the whole profile, so a bar line that wobbles under a re-seat
+  and credits a downbeat mid-beat moves the angle by `dstep·PHI(u)` — half a step is 8° of instant turn. The accumulator absorbs
+  the difference; what it costs is that the window's total is the design total only to that amount.
+- **the cloud must never turn backward.** §58's ease could and did (103 of 5400 frames on SeeYouDrop, worst 0.024 rad), because
+  it takes its delta the short way round and a clock that re-publishes a lower phase pulls the target back. The closed form is
+  monotone by construction and guarded anyway: 0 of 5400.
+
+**The picture, SeeYouDrop 20–110 s, before → after**: the window's own range p95/p05 lum **4.195 → 4.482 (+6.9 %)**, the rim
+3.986 → **4.196 (+5.3 %)**, mean luminance 100.4 → 99.8, |Δlum| per frame p50 **2.085 → 1.967 (−5.6 %)** and p99 18.34 → 17.51,
+the body's p99 29.5 → **26.7 (−9.7 %)**, per-beat peak/trough 1.408 → 1.381 (−2.0 %), formation changes 8 → 8 (the same ones).
+**CyborgNinja**: mean luminance 109.05 → 109.02, |Δlum| p50 2.243 → 2.170, per-beat peak/trough 1.446 → 1.418, 0 pours both
+ways — and **the one number that got worse anywhere**: CyborgNinja's window range p95/p05 2.314 → **2.152 (−7.0 %)**, because
+on a track that is one long groove the old spike's own overdraw WAS some of the range. SeeYouDrop's range went up by as much as
+CyborgNinja's came down, the per-frame flicker is down on both, and the brief's measure is that a viewer can read the song.
+
+### Step 3 — a pour that lands on one barely started is re-aimed, not re-started
+
+`formA` / `formB` / `formT` are a single interpolation, so `formA = formB` while the cloud is 1 % of the way across declares it
+to be AT a shape it has not reached: the picture snaps there for a frame and then pours back. Measured **once** in the three
+traces and it is a real snap — Vienna 73.27 s a phrase pour galaxy → torus, 73.28 s the drop's burst on top of it with `formT`
+at 0.009. Under `RETARGET` 0.2 a pour that far in or less keeps `formA` and `formT` and only re-aims `formB`. SeeYouDrop's own
+two drop bursts land at `formT` **0.933** and **0.721** and CyborgNinja never pours, so nothing already signed off moves.
+
+### Measured and REJECTED, scene-side
+
+- **A per-beat weight from the beat's own strength** — the brief's own first candidate ("a beat with no kick is a smaller
+  nudge"), and the measurement is unambiguous that it cannot work on this track. At every clock tick in 100–110 s, on-beat
+  against off-beat: the voices' energy `max(vk, vs)` **0.248 / 0.232** (ratio 1.07), the raw levels `max(kick2, snare2)`
+  **0.121 / 0.148** (0.82 — the off-beat ticks are LOUDER), `bassS` 0.630 / 0.646, `lvl` 0.812 / 0.803, and "an attack within
+  80 ms of the tick" 54 % against 38 %. Vienna's double-time layer puts REAL transients on the off-eighths — which is exactly
+  the user's point — so PRESENCE cannot separate them and only periodicity can, which is the clock's job.
+- **A tempo-feel SCALE on the step** (step ∝ the beat's period, so the angular rate is immune to the octave). It works
+  arithmetically — at 179.5 BPM it gives 0.476 rad/s against 0.481 at 90 instead of 0.647 against 0.327 — but it speeds every
+  track that is not 150 BPM up or down (Vienna's correctly locked groove 0.29 → 0.48 rad/s, +67 %), and step 1 removes the need.
+- **A rate limit on each voice** (the brief's candidate b, "hits faster than ~6–8 Hz merge into a level"). The voices' own fire
+  rates: kick 3.01 / 3.23 / 2.04 Hz, snare 3.70 / **6.37** / 4.17, hat 4.32 / **7.62** / 3.94, worst single second 10 / 10 / 11
+  and 12 / 9 / 9 — **CyborgNinja is the densest of the three and it is the control the user has already signed off**. A 6–8 Hz
+  limiter would fire hardest there and barely on Vienna.
+- **A longer formation cross-fade / a no-pour rule in a steady groove** (candidate d): Vienna has 11 pours in 189 s (3.47/min,
+  against §57's 7 in 90 s on SeeYouDrop) and **none at all in 100–110 s** (0.0 % of frames mid-pour there), so pours are not the
+  user's jerk. `barNovelEvt` fires **once** in 190 s and there is no storm to guard against.
+
+### Open, and all of it is for the orchestrator
+
+- **`dropLiveEvt` never fires on Vienna** in 190 s, and `buildLive` arms only in the dream section (70.1–74.5 s, max 0.67). The
+  user names a drop at 1:25 and the independent novelty agrees (85.310 s). DUST's whole tension machinery — the contraction, the
+  palette drain, the slam — therefore does nothing on this track. §54's detector, not the scene.
+- **Vienna sits on the wrong half-beat lattice for 110–130 s** (\|lag\| 314 ms). Its 40–150 Hz on-beat / half-beat margin is
+  **+0.082 ln**, the thinnest of the five tracks and barely past §59's `LAT_MARG` 0.06, so the check needs ~18 s after a re-seat
+  to move the line. Step 1's four fewer re-seats already help; the rest is §59's own cost structure.
+- **the snare ring never leaves its band** on any of the three tracks (0.85 / 0.62 / 0.51 units of travel p50 against a band at
+  0.89–1.36): §58 task A launched it ON the band so it lands at 0 ms, and it then re-launches before it has gone anywhere, so
+  the eye gets a flicker on the band instead of a shell leaving. Changing it moves all three tracks equally, so it is the user's
+  call, not this session's.
+- **synapse's bar line is 2 beats off on Vienna** (`barPos`: engine bar 1 is truth beat +2 in 82 % of frames, `barConf` 0.00
+  when right and 0.67 when wrong), and its 16-beat line hits 2 of 22 section starts and 0 of 1 drop. The downbeat's bigger
+  nudge is therefore on the wrong beat of the bar there — a consistent 4-cycle, so it reads as a pattern, not a jerk.
+  `bpmSyn` reads **164.93** on Vienna (median), so synapse's tempo is a third voice and wrong on this track too.
+- "Lots of panning": DUST reads no stereo field at all (its 42 `feats` are mono), so panning cannot drive a flicker here.
+- `tools/truth/Vienna.json` is **provisional** — nobody has listened to the grid against the track.
+
+### Proofs
+
+`node tools/check.js` **0 fail** (154 modules, the 5 pre-existing line-cap warns) · `npm test` **7/7 OK** · `test_clock.js` all
+17 checks OK including the 128 → 132 ramp (±0.48 BPM), 6 s of silence coasted within 21 ms, the outlier and both lattice cases ·
+the four control tracks' whole-track clock traces `cmp`-identical · `node -e` on `grid.js` alone: `PHI(0) = 0`, `PHI(1) = 1`,
+0.220916 rad/beat over 2500 beats against a design 0.220893, and re-seats of +0.5 / +1 / −0.3 / −1 beat give max \|a\| 35.5 /
+35.5 / 106.6 / 106.6 with the velocity never negative. **The §60 harness rule was honoured on every pair**: the MS columns'
+md5s (`beatCount`, `bpm`, `beatPhase`, `dropEnv`, `eM`, `eS`, `kick2`, `snare2`, `hat2`, `subNoteEvt`, `buildLive`) are
+IDENTICAL between the head and final traces on SeeYouDrop and CyborgNinja, and on Vienna only the three clock columns moved
+(step 1) with every analyser and source column identical — so each before/after is valid. s1 fake-timeline md5 f360
+**`5a9b6bc7` → `42e4871c`**, f840 **`b70a98e1` → `6eae9916`** — and the "before" pair is exactly §60's own recorded one, taken
+in THIS tree with only `dust/{grid,index}.js` reverted to HEAD, which isolates this section's change from §62's (the fake
+timeline gives the ears no tonic, so `key` never moved there). No other scene's folder was touched and DUST's files are imported
+by nothing else, so no other line can move. Cost: **flat**. `CARD.bench(1, 300)` at tier 3 (150 k points), `q` pinned 0.95 and
+settled over 600 frames, the first call discarded, four pairs interleaved with NAV, THREE runs of each tree alternating:
+DUST/NAV medians **0.723 / 0.816 / 0.768 (before)** against **0.837 / 0.776 / 0.797 (after)** — 0.768 against 0.797, inside a
+within-run spread of 0.50 to 1.37 on a machine carrying a second worker's Chrome; DUST's own ms 1.078 against 1.134. The change
+adds one `cos` per FRAME on the CPU in place of one `exp` and touches no shader and no per-grain work, so no cost number could
+honestly move. No Q trace (the cost did not rise). A second worker was committing `assets/engine/{feats,features-ears}.js` (§62) in the same
+worktree throughout; its change is `key` / `mode`, which DUST reads only for the hue, and the md5s above prove it did not reach
+any number in this section. No audible run (the worker's brief forbids it): every number is the deterministic file path.
+
+**Not tagged, not pushed, not deployed.** The A/B for the user, in track time, is `docs/workers/VIENNA-TUNING.md`.
+
+## §62 `key` is the TONIC — the engine read the fifth above it, and the fix is which detector answers (2026-09-30, one worker; the miss found by §60 step 3, the user: "fix it")
+
+§60 step 3 measured DUST and TORUS2 taking a bit-identical hue out of `assets/math/keycolour.js` and the engine
+handing both of them **G# for C# minor on SeeYouDrop** — "the known v0.14 `key` behaviour". Three candidates for where
+the fifth came from, and the measurement that settles it: the engine's `MS.key` against the truth grids' tonic over
+20–100 s of all five tracks (`filetrace.js … 'key,mode,keyConf,tonic,tonicMinor,tonicConf,eM'`, PORT 8890), the modal
+read per track.
+
+| track | truth tonic | `MS.key` **before** | d | the ears' `tonic` | d | the map's whole-track KK | d |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop | C#m (conf .277, **human**) | **G#m 93 %** | +7 | **C#m 76 %** | 0 | C#m (.222) | 0 |
+| CyborgNinja | C#m (.174) | G#m 53 % | +7 | G#M 40 % | +7 | Dm (.019) | +1 |
+| Malicious | GM (.159) | Cm 50 % | +5 | Cm 53 % | +5 | CM (.036) | +5 |
+| WhoLikesToParty | DM (.191) | **Bm 100 %** | +9 | **DM 47 %** | 0 | Em (.277) | +2 |
+| Vienna | D#m (.451) | D#m 100 % | 0 | D#m 100 % | 0 | D#m (.362) | 0 |
+
+**The diagnosis is (a), the detector — and NOT (b), the mapping.** (b) was §60's lean and a one-line fix, and it is
+refuted by the second column: the error is +7, +7, +5, +9, 0, not a constant. A circle-of-fifths offset in
+`keycolour.js` cannot produce that, and `hueKey = ((7k) mod 12)/12` is a correct circle of fifths besides (C G D A E B
+F# C# G# D# A# F at positions 0…11) — rotating it would have hidden a detector fault inside the colour layer while
+leaving GIELIS's shapes and CHLADNI's interval table reading the wrong root. The three errors are instead the three
+classic Krumhansl–Kessler confusions: the **dominant** (SeeYouDrop, CyborgNinja), the **subdominant** (Malicious) and
+the **relative minor** (WhoLikesToParty, B minor for D major — the same twelve notes, a different profile weighting).
+(c) is **partly true and recorded as an open item**: only SeeYouDrop's C# minor has a human annotation behind it
+(`SeeYouDrop.sections.json`, the sub loop C#1–A1–F#1–E1 = i–VI–iv–III); on CyborgNinja and Malicious the "truth" is
+itself a low-margin KK read of the same signal.
+
+**Where the fifth comes from, exactly.** `MS.key` was synapse's own KK (`synapse/anatomy.js` `longFrame`): a chroma
+peak-picked from a 8192 FFT over **65–2100 Hz**, `sqrt(magnitude)` weights, a 12 s EMA, 2.5 s hysteresis. On a track
+whose root is a 34.6 Hz C#1 that floor is below the first harmonic and the bins near it are a whole tone wide
+(5.4 Hz bins: bin 6 is C1, bin 7 is D1), so the root's own pitch class is not reliably in the chroma at all. The
+engine already solved that once: `ears/tonic.js` bins 130–2100 Hz by **power** and adds the sub's own **YIN** pitch
+class weighted by its energy share, which is why its header has carried the sentence "the engine reports the fifth
+(G# instead of C#)" since v0.15 — the diagnosis was in the tree, unacted on, while five scenes read the wrong field.
+Both solvers' rotation conventions were checked and are identical (`c[k]` aligns with `P[0]`), so the fault is the
+chroma, not the correlation.
+
+**The fix — `engine/features-ears.js`, two lines in the stage.** The `ears` stage runs after `synapse` and takes
+`key` / `mode` over from it when `tonic >= 0`: `if (o.tonic >= 0) { S.key = o.tonic | 0; S.mode = o.tonicMinor | 0; }`.
+This is the move the track map already makes on the drums and the sub (§48 addendum 1) — a better detector of the same
+quantity wins — so CONTRACTS §2's "never overwrite another stage's" gained its one declared exception, and the two
+fields are declared on the stage. **Rejected: fixing `anatomy.js`.** Its chroma also feeds `MS.chroma`, which TORUS2,
+POLYTOPE, MAXWELL, GIELIS and DUST all read, and resolving a 35 Hz root out of a 5.4 Hz-bin FFT needs the YIN the ears
+already run — the fix would have been a duplicate of `ears/tonic.js` paid for by moving every chroma scene.
+**Rejected: the map's whole-track tonic** (2/5, the table's last column) — it is non-causal and so file-mode only, and
+it is *worse* than the causal ears on three tracks, because one average over the loud half throws away the fact that
+the key is a thing that holds for a while.
+
+**`keyConf` deliberately does NOT move.** The ears' own clarity on synapse's documented `(best r − .35)/.45` scale was
+built and measured — p50 0.548 / 0.648 / 0.767 / 0.976 / 1.000 — and **reverted**: `keycolour.js` gates on `keyConf`
+at `KEYC1` 0.3, so each of those opens the gate to 1.0 and the hue stops being `LOOK.mood` slid part of the way toward
+the key and becomes the key's own hue outright, on all five scenes that call `mkAnchor()`. SeeYouDrop's gate would go
+§60's measured **0.27 → 1.00**. Which key the hue anchors on was the user's ask; how far the hue travels toward it is a
+look change that wants its own A/B (`docs/OPEN-ITEMS.md`).
+
+**Proof, on the music.** The same five traces re-taken after the fix: `MS.key`/`MS.mode` equal the ears' tonic on
+**4801 / 4801** frames of every track, `keyConf` p50 **identical** on all five (0.154 / 0.706 / 0.778 / 0.755 / 1.000
+before and after), SeeYouDrop **G# → C#** and WhoLikesToParty **B → D**, Vienna unchanged, CyborgNinja and Malicious
+unchanged and never worse. §60's own recipe re-run on TORUS2 (`#test&track=SeeYouDrop&at=12&map=0&scene=3`, `info()` at
+frames 2400 / 3600 / 4800, errs []), **back to back on this tree**:
+
+| | key / mode | unwrapped hue | `keyConf` |
+|---|---|---|---|
+| before (`12f63a1`) | 8 / 1 | −0.3341 · 0.9236 · 1.8542 (= §60's −0.33410 / 0.92363 / 1.85418) | 0.1661 · 0.1095 · 0.1720 |
+| after | **1 / 1** | −0.3538 · 0.9191 · 1.8389 | 0.1661 · 0.1095 · 0.1720 (unchanged) |
+
+The hue moved **−0.0197 / −0.0045 / −0.0153 turns** — small, because the held gate is 0.04–0.36 there, which is the
+open item above stated as a number: the right key is at present barely more visible than the wrong one was.
+
+**Proof, on the fake timeline: NOTHING moved.** The ears never run under `#test` (`earsStage` returns on
+`ENGINE.fakeOn`), so `tonic` is −1, the override cannot fire and `state.js`' defaults stand. The full sweep
+(`PORT=8890 tools/scene-md5.sh s62`, all 12 ids, errs [] on every one) is **equal to `tools/accept/v0.14/scene-md5-v014.txt`
+line for line** apart from the four already accounted for: s0-f840 `8a0715df` and s4-f840 `05bf21c0`, the two
+pre-existing moves from `22eb969` / §54 addendum 2; s1 `5a9b6bc7` / `b70a98e1`, exactly §60's recorded DUST values (the
+parallel DUST worker had not moved them); s11, which post-dates that list. So §62 moved **0 of 25 lines** — the
+stronger result than the "three key-colour scenes move" the brief expected, and the right one: a change gated behind
+the ears cannot touch a timeline the ears do not run on. (Five scenes read `mkAnchor()`, not three: DUST, TORUS2,
+POLYTOPE, MAXWELL, GIELIS, and CHLADNI reads `tonic` with `key` as its fallback.)
+
+**Proofs.** `node tools/check.js` **0 fail** (154 modules, MS keys 199, help.feats gaps 0, 5 pre-existing line-cap
+warns) · `npm test` **0 FAIL** (all 10 groups OK) · a new **`node tools/test_ears.js --keys`** ruler: the modal
+`(tonic, tonicMinor)` over 20–100 s of every track with a PCM dump against that track's truth tonic, with the page's
+synapse read recorded beside it, asserting the three tracks that must match, the two recorded misses, `ears > synapse`
+on the pitch class and `0 tracks where synapse wins and the ears lose` — **8 pass**, 4.0 s (a `stopAt` option on
+`stream()` keeps it to the graded window). `tools/test_ears.js` itself still reports its four known causal-path misses
+(subNote 88.4 %, the walk arrivals, kick F 0.786, 13.9 % on bare 808s — AUDIT-v0.15 §1's published numbers, which is
+why it is not in `npm test`); the diff touches neither `ears/sub.js` nor `ears/perc.js` and `test_ears` never imports
+`features-ears.js`, so it cannot have moved them. No audible run. Files: `engine/features-ears.js`, `engine/feats.js`
+(the three FEATS entries), `tools/test_ears.js`, `docs/CONTRACTS.md` (§1.18, §2, Appendix A), `docs/OPEN-ITEMS.md`.
+
+## §63 an AGC-free loudness for the engine — ITU-R BS.1770-4 on the PCM bus (2026-09-30, one worker; the user: "loudness plan approved", `docs/plans/LOUDNESS-PLAN.md`)
+
+§60's one failure: DUST's pass 2 did not improve SeeYouDrop's breakdown 2, because **the engine's energy does not know
+the drop after it is louder**. Every energy in `MS` is AGC-normalised — the band followers divide by a running peak with
+a 14 s release (`synapse/dsp.js`), and 14 s is shorter than a dubstep breakdown, so by the end of one the peak has
+decayed onto the breakdown's own level and `eM` reads near full. The plan's answer: the one measure of "how loud does
+this sound" with a standard behind it, added as a stage, with **the AGC left on every detector** and only a scene's
+BASE light, base size and base radius moved onto it. Phases 1, 2, 3, 5, 7 of the plan are below; **4 (DUST) and 6
+(NAV2) were out of this worker's scope** — DUST was being edited in the same worktree and NAV2 is paused.
+Not tagged, not pushed, not deployed.
+
+### Phase 1 — `trackmap.py --loud`: the offline reference (`a3a3a0e`)
+
+`--loud` runs ONLY the loudness analysis and writes ONLY `tools/truth/<name>.loud.json` (`--loud-out=<dir>`,
+`--loud-win=<s>`): it reads `<name>.json` for the sections and the bar-pinned drops — preferring the hand-corrected
+`sections_hand` / `drops_user` / `drops_hand` when a worker has put them there — and never rewrites it. The measure is
+K-weighting (a +4 dB high shelf, then the RLB high-pass, per channel, **causal** IIR) and
+`L = −0.691 + 10·log10(Σ_ch mean(y_ch²))`, G_L = G_R = 1. The spec tabulates the biquads at 48 kHz only; `kcoef(sr)`
+derives them from the analog prototypes by the spec's bilinear recipe and reproduces that table to **8.9e-16**.
+Windows: momentary 400 ms, short-term 3 s, both as two subtractions on a cumulative sum of the K-weighted squares, so
+the value at `t` is EXACTLY the mean square over (t − W, t] — the same quantity the engine's ring holds.
+
+The plan's table reproduces (window-integrated, SeeYouDrop): intro 2–8 s **−8.32**, groove 28–40 **−3.99**, breakdown 1
+49–55 **−6.09**, void 55–57.6 **−4.68** (plan −4.67), breakdown 2 100.5–105.596 **−4.02**, whole track gated **−3.88**
+(plan −3.89). **The headline pair**, equal 5.1 s windows: breakdown 2 short-term p50 **−4.845** (plan −4.84) → drop 2's
+head −1.967 (plan −2.19) = **+2.88 LU, ×1.94 in power**, against `eM`'s **×0.994**. The 0.22 LU on the drop side is the
+one number that did not reproduce; the breakdown side, the one `eM` gets wrong, is exact to 0.005 LU.
+The other four: CyborgNinja −9.05 LKFS and **0 drops** (the control), WhoLikesToParty −10.03 (+2.27 / +1.34 / +1.54 LU
+over its three drops), Malicious −12.46 (+1.17 over its one), Vienna −6.89 (+0.92 / +0.26 over the two the Vienna
+worker's `drops_user` names). Short-term p95−p10: 4.96 / 1.37 / 2.86 / 7.82 / 3.25 LU.
+
+**A hazard paid for here, for the harness.** `trackmap.py <Track>` — including `--pcm` — runs the FULL analysis and
+**rewrites `tools/truth/<Track>.json`**. Regenerating Vienna's 48 kHz dump (which already existed) destroyed the Vienna
+worker's provisional truth in the same worktree: `bpm_grid`, `beats`, `downbeats`, `sections_hand`, `drops_hand`,
+`drops_user`, `provisional`, `notes`. It was restored from `HEAD` (commit `c4dbedf`) and verified key by key, so
+nothing committed was lost — but **anything that worker had not yet committed was**. The rule: never run the truth tool
+on a track another worker is annotating; `--loud` is safe because it writes its own file, and the dumps are already in
+`tools/work/`.
+
+### Phase 2 — the stage: `engine/loud.js` + `features-loud.js`, six fields (`70c6624`)
+
+`assets/engine/loud.js` is pure DSP (no DOM, no clock, no imports) so `tools/test_loud.js` runs it in node;
+`features-loud.js` subscribes it to the PCM bus with `PCM.on`, registers `ENGINE.addStage('loud', …)` **after `ears`
+and before the PCM beat clock**, and reads it at `MS.heardT` exactly as the ears are read. The cost is paid in the PCM
+listener, outside `frame()`, and drained through `ENGINE.extraMs`.
+
+| field | kind | what |
+|---|---|---|
+| `loudM` | raw | momentary loudness, LKFS (the 400 ms window) |
+| `loudS` | raw | short-term loudness, LKFS (3 s) |
+| `loudPk` | raw | the loudest `loudS` this track has reached, LKFS |
+| `loudRel` | level | **the one a scene reads**: `clamp01((loudS − loudPk + 18) / 18)`, gain-invariant |
+| `loudRange` | raw | p95 − p10 of `loudS` so far, LU |
+| `loudAbs` | count | 1 absolute (file, demo) · 0 the tab's / the mic's gain (capture, mic) · **−1 the stage is off** |
+
+The plan's `kind: level` for the first three became **`raw`**: `FEATS`' own legend says `level` is 0..1 and LKFS is not.
+
+**Three decisions the plan did not settle, each measured:**
+
+1. **The peak's release is 0.02 LU/s, not a 25 s exponential.** DUST's `dyn.js` holds its peak with a 25 s release,
+   which on a mean square is 0.174 dB/s — and that forgets **6.6 LU in the 38 s** between SeeYouDrop's drop 1 and its
+   breakdown 2, more than the whole track's 4.96 LU of range. The hold would have decayed *under* the present loudness
+   and `loudRel` would read 1.000 at both ends of the very pair this field exists to separate. `dyn.js` got away with
+   25 s because it holds an AGC-normalised 0..1 energy, whose peak barely moves. 0.02 LU/s = 3 LU over a 150 s track.
+2. **No absolute floor on the peak; a relative warm-up guard instead.** §60 step 4 floored DUST's peak at 0.84 of its
+   normalised scale. The same move here (a floor at, say, −6 LKFS) is NOT gain-invariant: CyborgNinja, Malicious and
+   WhoLikesToParty all master 8–9 LU quieter than SeeYouDrop, so the floor would bind for their whole length and a
+   quietly mastered track would be permanently darker — the AGC's own sin inverted. The guard is
+   `loudPk ≥ loudS + 4·exp(−age/6 s)`: until the stream has heard something louder it assumes 4 LU of headroom,
+   decaying to 0.03 LU by 30 s. Without it a track's first frames read `loudS == loudPk`, i.e. `loudRel` 1.0 — the
+   intro would be the brightest thing in the song, which is exactly what §60 step 4 paid to fix.
+3. **The ring holds one entry per 32 samples, not per 512-sample block.** The window edge cutting a ring entry is the
+   WHOLE of this stage's error against a sample-exact reference, and it is not small on a transient in a quiet passage.
+   Measured over the five tracks (`test_loud.js --truth`, max |error| per frame, loudM / loudS): sub **512 → 4.45 /
+   0.19 LU** · 128 → 0.30 / 0.13 · 64 → 0.16 / 0.02 · **32 → 0.006 / 0.000 LU**, for 3.53 → 3.80 µs/block. 32 is also
+   not a taste: at 48 kHz a 60 fps frame is exactly 800 samples and the two windows exactly 19 200 and 144 000, all
+   multiples of 32, so every page read lands ON an entry and the interpolation never runs. 0.27 µs bought all of it.
+
+The switch lives on **`LOUDK.on`** (`&loud=0`), not on `ENGINE` — `sources/fake.js` has to read it and `engine.js`
+imports `fake.js`, so an `ENGINE.useLoud` would close an import cycle `check.js` fails. `fake.js` mirrors the six
+fields from its own synthetic energy (`−0.691 + 20·log10(e)`, so the 24 s loop spans about −13 … −1 LKFS): without it
+the fake timeline — where every md5 proof in this project is taken — would be a hole where `loudRel` is 0 and a
+migrated scene goes dark. Under `&loud=0` it leaves `loudAbs` at −1 instead, which is what makes `&loud=0` reproduce
+the pre-migration md5 list line for line.
+
+**Proofs.** `node tools/check.js` **0 fail** (156 modules, MS keys 205, help.feats gaps 0, 5 pre-existing line-cap
+warns) · `npm test` **0 FAIL**, now with `tools/test_loud.js` in it (**38 pass**, 1.4 s): the 48 kHz coefficients
+against the spec table, the K curve's two sections, a **−23 → −13 LKFS step of a 997 Hz stereo sine reading each level
+to 0.0001 LU and the step to +9.9999 LU**, the 400 ms and 3.0 s windows measured from the step's own rise time
+(0.4000 / 3.0000 s), the heard-time read and the ring's lookback limit, the peak's attack / release / warm-up guard,
+`loudRange` on a signal whose true span is 8 LU (reads 8.50), **gain invariance** (×0.1 moves `loudS` by −20.00 LU and
+leaves `loudRel` and `loudRange` identical to 8e-13 — the capture path), 44.1 kHz through the derived coefficients
+(the same waveform reads the same LKFS at both rates to 0.0025 LU), determinism, and the cost.
+**Cost: 3.73 µs/block → 5.83 µs/frame at 48 kHz / 60 fps = 0.035 % of a frame**, against the plan's estimate of
+4.08 µs/frame.
+**The fake timeline: NOTHING moved.** `PORT=8892 tools/scene-md5.sh p2loud`, all 12 ids, `errs []` and `hop 840
+row 72` on every one, is **equal to `tools/accept/v0.14/scene-md5-v014.txt` line for line** apart from the four already
+accounted for: s0-f840 `8a0715df` and s4-f840 `05bf21c0` (the §54 addendum 2 moves), s1 `42e4871c` / `6eae9916` (DUST —
+the parallel worker's, moved past §60's `5a9b6bc7` / `b70a98e1`; noted, not chased) and s11 `8a930b26` / `5a5c795a`,
+which post-dates that list. **0 of 25 lines** — the six fields move no scene until a scene reads them.
+`node tools/parity.js fake`: **every MS field identical to 1e-9** (62 numeric fields compared), the six new ones listed
+as "missing in v3" info as every post-v3 field is. The `nav.*` snapshot differs (`nav.lg` 7.85, `nav.mode`,
+`nav.cyc.has`) — **pre-existing drift of this engine's NAV from cardioid3's**, not reachable from here: MS is identical
+frame for frame, so a scene difference can only be the two programs' own NAV code (this NAV has read `dropLiveEvt`
+since §54, and the event log shows `ew`'s extra `FILE@` / `RESTORE@` look-memory lines, "absent in v3"). No audible run.
+
+### Phase 3 — the truth grading: `test_loud.js --truth` (`fec7131`)
+
+`--truth` runs the stage over the 48 kHz stereo dumps of all five tracks, one `read()` per 60 fps frame as the page
+does, against **two** references, because they answer different questions:
+
+- **(a) an exact in-test reference on the same samples** — the same K-weighting coefficients (pinned to the spec table
+  by the `coef48` case and independently re-derived in python to 9e-16), but written the obvious way: a second spelling
+  of the biquads in direct form I, a whole-file Float64 cumulative sum, no ring, no sub-block edge, no interpolation.
+  This is what grades the engine's MACHINERY. Result, max |error| per frame after 8 s of warm-up:
+  **loudM 0.0009 / 0.0000 / 0.0063 / 0.0000 / 0.0000 LU and loudS 0.0000 LU on all five**
+  (SeeYouDrop 8977 frames · CyborgNinja 10324 · Malicious 12896 · WhoLikesToParty 14901 · Vienna 11080 — 58 179 graded
+  frames). The plan asked for 0.1 LU; the gate is set at 0.02.
+- **(b) `tools/truth/<name>.loud.json`, python's own implementation**, which ran at the FILE's rate (44.1 kHz) while
+  the stage runs on the 48 kHz resample — so a per-frame gate on it would be grading `resample_poly`. Reported, and
+  gated only on the 3 s window, which is insensitive to it: **0.018 / 0.028 / 0.260 / 0.051 / 0.028 LU**. (Momentary:
+  0.3–1.9 LU, all of it in fades and near-silent bars, where a 400 ms window's dB is wild and two different sample
+  sets diverge.)
+
+**Proof 2, the assertion §60 could not make** — for every annotated drop on the five tracks, is the drop head louder
+than the breakdown before it? Equal 5.1 s windows, `loudS` p50 as the page reads it:
+
+| track | drop | `loudS` p50 before → after | ΔLU | in power | truth | `loudRel` p50 before → after |
+|---|---|---|---|---|---|---|
+| SeeYouDrop | 57.61 | −6.46 → −3.98 | **+2.48** | ×1.77 | +2.50 | 0.648 → 0.792 (×1.222) |
+| SeeYouDrop | **105.60** | **−4.84 → −1.97** | **+2.88** | **×1.94** | +2.88 | 0.790 → 0.957 (×1.212) |
+| CyborgNinja | — | the control: 0 drops in the truth, and nothing claims one | | | | |
+| Malicious | 148.29 | −10.88 → −11.07 | −0.19 | ×0.96 | −0.20 | 0.972 → 0.966 (×0.995) |
+| WhoLikesToParty | 57.51 | −13.24 → −9.70 | +3.54 | ×2.26 | +3.54 | 0.737 → 0.939 (×1.274) |
+| WhoLikesToParty | 131.35 | −12.60 → −10.82 | +1.78 | ×1.51 | +1.79 | 0.786 → 0.891 (×1.134) |
+| WhoLikesToParty | 188.79 | −12.26 → −10.22 | +2.05 | ×1.60 | +2.05 | 0.786 → 0.903 (×1.149) |
+| Vienna | 85.34 | −9.07 → −8.03 | +1.04 | ×1.27 | +1.06 | 0.881 → 0.945 (×1.072) |
+| Vienna | 106.67 | −6.38 → −6.05 | +0.33 | ×1.08 | +0.32 | 0.999 → 0.987 (×0.988) |
+
+**7 of 8**, and every one of the eight agrees with the offline truth's own ΔLU to **0.05 LU** — the stage and the
+reference are measuring the same thing. The one miss is **Malicious's drop at 148.29 s**, and it is a miss in the
+TRUTH, not in the engine: its 5.1 s short-term p50 reads −0.20 LU while the same window's integrated loudness reads
++1.17 (phase 1), i.e. its "breakdown" is already loud and the drop's own head is ducked. Recorded as the one
+exception, asserted as such. **`eM` on the headline pair is ×0.994.**
+
+**The number to carry into the scenes.** `loudRel`'s own ratio on the headline pair is **×1.212**, not ×1.94: its span
+is a fixed 18 LU (`LOUDK.RANGE`) while the section ladders of real tracks span 1.4–7.8 LU, so the whole ladder lives in
+`loudRel`'s top third. That is the plan's design, not a fault — `loudRange` is published beside it so a scene can
+expand onto the track's own contrast, and `(loudRel − 1)·18 = loudS − loudPk` exactly. A scene that divides by
+`max(loudRange, R_MIN)` instead of 18 recovers the power ratio; phase 5 does that and measures it.
+
+### Phase 5 — the base light onto true loudness: FEIGEN, MANDALA, POLYTOPE
+
+One scene-side mapping, in `assets/math/loudlight.js` (pure, `assets/math/` the way `keycolour.js` is shared, so there
+is one definition to tune and one place the numbers live). `baseLight(loudRel, loudRange, loudAbs, fallback)`:
+
+    loudAbs < 0  ->  fallback                     the stage is off (&loud=0): the pre-loudness value, bit for bit
+    else         ->  clamp01((loudRel - 1) / (max(loudRange, 7) / 18) + 1)
+
+**Why not just `loudRel`.** `loudRel`'s span is a fixed 18 LU, and real section ladders span 1.4–7.8 LU, so a whole
+song lives in the top fifth of it and the headline pair reads ×1.21 where the music is ×1.94 in power. Dividing by the
+range the track has ACTUALLY shown (`loudRange`, itself gain-invariant, so this stays gain-invariant) puts that ladder
+across the full 0..1. The identity `(loudRel − 1)·18 = loudS − loudPk` makes it exact: "how many LU under the track's
+own peak, over how many LU the track uses". **The top is anchored** — at the track's own loudest it returns 1.0,
+exactly where `lvl` sat (p95 0.99) — which is what keeps a migrated scene recognisable; what changes is the bottom.
+
+**`L_RNG_MIN` = 7 LU, swept over 4 … 18 on all five tracks.** The headline breakdown 2 → drop 2 ratio of the mapping:
+
+| `R` | 4 | 5 | 6 | **7** | 8 | 10 | 12 | 18 |
+|---|---|---|---|---|---|---|---|---|
+| ratio | ×14.5 | ×3.46 | ×2.36 | **×1.93** | ×1.71 | ×1.48 | ×1.37 | ×1.21 |
+
+7 is where the picture moves **by as much as the sound does and no more** (the music's own power ratio is ×1.936), and
+where the other four tracks keep the median `lvl` already had — base light p50 **0.857 / 0.861 / 0.866 / 0.900**
+(CyborgNinja / Malicious / WhoLikesToParty / Vienna) against `lvl`'s measured p50 0.882 (§60 step 1) — so they look as
+they did, while SeeYouDrop, the one track with real breakdowns, gets the dynamic: p05 0.150 / p50 0.474 / p95 0.907,
+and **52 % of the base light lost between the groove (28–40 s) and breakdown 1 (49–55 s)**, against the 76 % §60 step 1
+measured for DUST and the user signed off as "dust looks good". Below 6 LU the void before drop 1 clamps to 0 and the
+ratio stops meaning anything (×738 at R = 4); above 10 LU the ladder is back inside the top third it came from.
+
+**The field, measured on all five tracks** (`node tools/test_loud.js --truth`; `loudS` p50 over equal 5.1 s windows,
+and the mapping's own p50):
+
+| track | drop | `loudS` ΔLU (power) | `loudRel` | **`baseLight`** |
+|---|---|---|---|---|
+| SeeYouDrop | 57.61 | +2.48 (×1.77) | 0.648 → 0.792 ×1.22 | 0.096 → 0.466 **×4.87** (the void is near-silent) |
+| SeeYouDrop | **105.60** | **+2.87 (×1.94)** | 0.790 → 0.958 ×1.21 | 0.460 → 0.891 **×1.935** |
+| CyborgNinja | — | the control: 0 drops, and nothing claims one | | |
+| Malicious | 148.29 | −0.19 (×0.96) | ×0.995 | ×0.990 — the recorded exception (its breakdown is already loud) |
+| WhoLikesToParty | 57.51 / 131.35 / 188.79 | +3.54 / +1.79 / +2.04 | ×1.27 / ×1.13 / ×1.15 | **×2.61 / ×1.61 / ×1.67** |
+| Vienna | 85.34 / 106.67 | +1.04 / +0.34 | ×1.07 / ×0.99 | ×1.24 / ×0.97 |
+
+**In each scene's own units** (what the shader actually multiplies by, on the headline pair), against what `lvl` gave:
+
+| scene | the term | on `lvl` (0.606 → 0.866) | on the base light (0.460 → 0.891) |
+|---|---|---|---|
+| FEIGEN | `0.45 + 1.3·uLevel` (filaments) | ×1.273 | **×1.535** |
+| FEIGEN | `0.4 + uLevel` (Green bands, interior) | ×1.258 | **×1.501** |
+| MANDALA | `0.35 + 1.3·uLevel` (the fractal body) | ×1.297 | **×1.591** |
+| POLYTOPE | `0.35 + lvl` (the stroke) | ×1.272 | **×1.532** |
+
+The shaders' constant terms are what keep the ratio under the field's own ×1.93 — and what keep a base light of 0 from
+being black: FEIGEN's filaments idle at 0.45/1.75 = 26 % of full, MANDALA's body at 0.35/1.65 = 21 %, POLYTOPE's stroke
+at 0.35/1.35 = 26 %. On the void → drop 1 pair the same terms read ×1.84 / ×1.75 / ×2.01 / ×1.83.
+
+#### FEIGEN (id 6) — `99c9cb7`
+
+One line: the `glow` param's `from()`. `uLevel` in both colour passes IS "the brightness of the filaments, the bands
+and the interior" (the scene's own comment since v0.5), so it is the one thing here that must not ride an AGC. `dive`
+keeps `lvl`: how FAST the fall goes is motion, not light, and the AGC's "there is a lot going on" is the right input
+for it. The param stays routable (CONTRACTS §1.15), so the listener can put anything back on it.
+`feats` + `loudRel` / `loudRange` / `loudAbs` with a `help.feats` line each; `lvl`'s line now says "how fast the dive
+falls (the brightness moved to loudRel)".
+**md5** (`IDS=6 PORT=8892 tools/scene-md5.sh`, errs []): s6-f360 `8d6ac4a6` → **`39d51392`**, s6-f840 `9adb1f5b` →
+**`f4032da8`**. **And `&loud=0` reads `8d6ac4a6` / `9adb1f5b` — v0.14's own two lines, bit for bit**: the A/B is exact
+and the migration is the only thing that moved.
+
+**A bug this found, in phase 2's own stage.** FEIGEN's md5 did not move on the first attempt: `loudStage` wrote
+`S.loudAbs = -1` under `ENGINE.fakeOn` and so CLOBBERED the mirror `sources/fake.js` had just written, leaving every
+migrated scene on its fallback on the one timeline every md5 proof in this project is taken on. The stage now returns
+without touching the six fields under `fakeOn`. Two more fake-mirror fixes came with it: the amplitude floor is 0.12
+rather than 1e-3 (at `eM` 0 the first frames read −60 LKFS and seeded `loudRange` with a 54 LU swing the EMAs then
+spent 40 s forgetting — it read 34.1 LU), and the mirror now applies the real stage's own warm-up guard, so it has the
+field's SHAPE and not just its units. The fake loop now spans about −11.1 … −2.1 LKFS with ~9–11 LU of range.
+
+#### MANDALA (id 2) — `f94b1c0`
+
+One line: `S.lvl = baseLight(…)`. `uLevel` here is the BODY's brightness and nothing else —
+`palM(…) · pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` — and the per-hit lift needed no new term, because in this scene
+the hits are already their own uniforms on their own terms: the trap ring `0.12 + 1.4·uBands.z + 0.8·uHat` and the
+centre flare `uKick·0.8 + uDrop·1.2`, both untouched and both still on the AGC, which is right (§60 step 1: a quiet
+section's kick is still a kick). `feats` + the three fields with a `help.feats` line each.
+**md5** (`IDS=2`, errs []): s2-f360 `9a57626c` → **`1124721c`**, s2-f840 `5e59be93` → **`cb3442e9`**; **`&loud=0`
+reads `9a57626c` / `5e59be93`, v0.14's own two lines.** The body's own ratio on the headline pair: **×1.297 → ×1.591**.
+
+#### POLYTOPE (id 5) — `630fdf1`
+
+One line: the stroke's base brightness, `GAIN · 0.75 · (0.35 + base) · presence`, where `base` was `MS.lvl`. The
+per-hit lift is `p.pulse = 1 + 0.4·MS.hit` and the beads are `grooves.js`'s own trains — both untouched, both still on
+the AGC. `feats` + the three fields, `help.js` + a line each. `index.js` stays at **349 lines** (the comment went onto
+the end of the statement line rather than above it, because the file was at 349 and the import spends the last one).
+**md5** (`IDS=5`, errs []): s5-f360 `06b46063` → **`4bcf26a3`**, s5-f840 `cccb0094` → **`c7469414`**; **`&loud=0`
+reads `06b46063` / `cccb0094`, v0.14's own two lines.** The stroke's own ratio on the headline pair:
+**×1.272 → ×1.532**.
+
+#### Phase 5 end to end — the fake-timeline sweep, and the cost in the page
+
+`PORT=8892 tools/scene-md5.sh p5all`, all 12 ids, `errs []` and `hop 840 row 72` on every one. **Exactly the three
+migrated scenes' six lines moved and nothing else**, against `tools/accept/v0.14/scene-md5-v014.txt`:
+
+| | f360 | f840 |
+|---|---|---|
+| s2 MANDALA | `9a57626c` → **`1124721c`** | `5e59be93` → **`cb3442e9`** |
+| s5 POLYTOPE | `06b46063` → **`4bcf26a3`** | `cccb0094` → **`c7469414`** |
+| s6 FEIGEN | `8d6ac4a6` → **`39d51392`** | `9adb1f5b` → **`f4032da8`** |
+
+s0 `fb74fee4` / `8a0715df`, s3, s4 `0bff278a` / `05bf21c0`, s7, s8, s9, s10 are **line for line equal** to the v0.14
+list (s0-f840 and s4-f840 being §54 addendum 2's recorded moves); s1 is `42e4871c` / `6eae9916`, the parallel DUST
+worker's, unmoved between the phase-2 and the phase-5 sweeps of this session; s11 `8a930b26` / `5a5c795a` post-dates
+that list and is also unmoved between the two sweeps. **And under `&loud=0` all three scenes read their v0.14 lines
+bit for bit** — so the six md5 lines that moved are the migration and nothing else in the engine is reachable from here.
+
+**The cost in the page.** `#test&track=SeeYouDrop&at=20&scene=6`, CLOCK=1 GPU=1, 1800 frames (heard 20 → 49.97 s),
+`errs []`, `nonFinite []`, three pairs interleaved with `&loud=0`:
+`ENGINE.LOUD.cpuTotal / blocks` = **10.99 / 11.84 / 12.02 µs per 512-sample block → 17.2 / 18.5 / 18.8 µs/frame** at
+48 kHz / 60 fps, i.e. **0.11 % of a 16.7 ms frame**. That is 3× the 3.73 µs/block node measures, which is the per-sample
+loop under headless Chrome's JIT (the accounting's own two `performance.now()` calls are nanoseconds); in **deterministic
+file mode the source pushes on the main thread inside `file.tick`**, so this is synchronous frame work and the honest
+number. It is invisible in the frame: `ENGINE.ms` ON 3.607 / 2.817 / 2.691 ms against OFF 3.137 / 2.438 / 3.894 — the
+stage is **inside the ±1.2 ms run-to-run spread of a headless det run** — and `CARD.bench(6, 300)` ON 1.406 / 1.187 /
+1.629 against OFF 1.337 / 1.303 / 1.555 ms, which is the same number twice, as it must be: the stage is CPU and
+`bench` measures the draw. (DUST, which the plan's proof 4 names, was being edited by another worker in this worktree,
+so benching it would have measured their work in progress; FEIGEN, a scene this phase moved, is benched instead.)
+
+#### Det / capture parity — what `loudRel` does when the gain is the tab's (the plan §6)
+
+- **The capture path's gain is the TAB's**, set by the user's OS / browser mixer, so `loudM` / `loudS` / `loudPk` are
+  not absolute there. `loudAbs` says so (0), and `baseLight` never reads an absolute value — only the DIFFERENCE
+  `loudS − loudPk` (through `loudRel`) and `loudRange`.
+- **`loudRel` and `loudRange` are gain-invariant, and that is measured, not argued**: `tools/test_loud.js` `gain`
+  multiplies a whole 60 s signal by 0.1 and reads `loudS` exactly **−20.00 LU** lower (max |error| 8.3e-10 LU) while
+  `loudRel` and `loudRange` are **identical to 8.0e-13 and 0.0e+0**. A constant gain `g` adds `20·log10(g)` to `loudS`
+  *and* to `loudPk`, which cancels in the difference, and shifts both of `loudRange`'s percentiles equally. **A scene
+  that reads only `loudRel` / `loudRange` behaves identically in file and capture mode.** That is why the three
+  migrated scenes read exactly those two and `loudAbs`, and nothing absolute.
+- **No new lag term.** The ring is read at `MS.heardT` like every ears field, so `SYNC_OFS` (`&sync=27`) aligns it the
+  way it aligns the ears' `…Age` fields and nothing else has to be declared. In deterministic file mode the bus is
+  `PCM.local` and the source pushes exact 512-sample blocks, so two runs are byte-identical — `test_loud.js`'s `determ`
+  case asserts it in node and the md5 sweep asserts it in the page.
+- **The ring's lookback is the one hard limit**: `read(t)` needs `t − 3 s` to still be in the ring, which the default
+  12 288 entries put at **5.2 s** behind the newest block (48 kHz). heardT is at most `DET_LEAD` 43 ms + the display
+  lead behind it, so that is ~50× the worst lag; past the limit a read returns the floor rather than a wrong number
+  (asserted).
+- `node tools/parity.js fake` was run after phase 2 (every MS field identical to 1e-9); phases 3, 5 and 7 add no
+  engine field and no scene edit can move MS, `NAV`, `GROOVE`, `SC` or `Q`, which is all that run compares.
+
+### Phase 7 — NAV and GIELIS reviewed, nothing changed, and the `eG` decision (`05b06cf`)
+
+The plan budgeted "≤ 2 lines" here and the answer is **0**. Both reviews, with the reason.
+
+**NAV (ids 0 / 4).** Four `eM` / `eS` reads, and the plan's guess ("one a bloom param") is not what is there:
+1. `post.fb.decay = 0.7 + 0.16·eM` — the FEEDBACK decay, not the bloom (whose `thr` is the constant 0.35). It is the
+   only `eM` in NAV's look path, and **the term is dead**: §57 measured `eM`'s p25 at 0.972 on this material, so the
+   decay sits at ~0.855 whatever the music does. Moving it to the base light is **not** a one-line drop-in: a feedback
+   decay's steady-state gain is `1/(1 − d)`, so 0.72 → 0.84 is **3.6× → 6.3× of accumulated brightness** — four times
+   the lever the three migrated scenes got, on the HOME scene, where a long trail is also a motion decision and not
+   only a brightness one. **Recommended, not done**: it wants its own A/B in front of the user, like §57–§60 ran DUST.
+2. `score` on the DRUM variant, `0.3·(1 − eM)` — a **bid**. The AGC is what makes a bid comparable across tracks
+   (CONTRACTS §1.13 marks it "the bid:"). No change, by the plan's own rule that every detector keeps the AGC.
+3. `reach`, `clamp(mix(−2.6, −9, 0.55·eS + 0.5·tension) + 3.2·dropEnv, …)` — how far outside the set a drop throws the
+   picture. Geometry on a transient, not base light. No change.
+4. `modes[j·4+2] = … · (0.3 + 0.7·eS) · presence` (the DRUM variant's membrane amplitudes) — `eS` is the 0.3 s window,
+   a transient channel, and the plan's own rule is "scale the base, not the hits". No change.
+   (`nav.js:238`'s `eS > 0.3` is a gate. No change.)
+
+**GIELIS (id 10).** One read: `breath`, `0.5 + 0.5·eS` — "how deep every shape pinches on the beat". That is a SHAPE
+on a transient, not light; GIELIS's own light is `glow`, which is `FLOOR·(1 − GLOWQ·max(hush, calm))` and touches no
+AGC energy at all. **Nothing to move**, and the plan's "expect one `feats` param" overestimated it.
+
+#### The `eG` decision (the plan's proof 5): KEEP it, and never read it as a loudness
+
+`eG` is the track map's own energy arc — the per-100 ms sum of the analysis bands, mapped **p5 → 0, p98 → 1 over the
+whole track** (`engine/map/map.js`, `EG_FPS` 10) — non-causal and file-mode only (`mapOn` 0 in every live mode). The
+plan called it "the proof that the quantity is useful". Measured against the causal field, by building the real map in
+node on each 48 kHz dump (2.98–4.33 s per track) and reading `eG` at every 60 fps frame:
+
+| track | r(eG, loudRel) | r(eG smoothed to 3 s, loudRel) | ρ | eG's own drop ratios | the music's (power) |
+|---|---|---|---|---|---|
+| SeeYouDrop | 0.480 | 0.656 | 0.638 | ×5.92 (×2.84 smoothed) on the headline pair | **×1.94** |
+| CyborgNinja | 0.065 | 0.553 | 0.566 | — (no drops) | — |
+| Malicious | 0.234 | 0.423 | 0.431 | **×1.84** at 148.29 s | **×0.96** |
+| WhoLikesToParty | 0.109 | 0.583 | 0.251 | ×3.21 / ×2.35 / ×2.08 | ×2.26 / ×1.51 / ×1.60 |
+| Vienna | 0.479 | 0.679 | 0.597 | **×8.90** at 85.34 s · **×2.45** at 106.67 s | ×1.27 · **×1.08** |
+
+**They are not the same quantity.** Even smoothed onto the same 3 s timescale the two agree at r 0.42–0.68, and `eG`
+**over-states** every transition by 2–7×, because a percentile map over a whole track is a **RANK, not a loudness**: a
+quiet bar sits near 0 however few LU down it actually is. On two of the eight drops it claims a rise the music does
+not have — Vienna's 106.67 s reads ×2.45 against +0.34 LU (×1.08) and Malicious's 148.29 s reads ×1.84 against
+−0.19 LU (×0.96). A scene that put its base light on `eG` would be lying about the music in file mode and reading 0 in
+every live one.
+
+**So: `eG` is kept, unchanged, and documented as a rank.** Retiring it is not free — one scene already reads it.
+`scenes/chladni/index.js:299`: `U.drive = AMPK · lvl · (mapOn > 0.5 ? 0.35 + 0.65·eG : 1)`, i.e. **CHLADNI's plate is
+driven differently in file mode and in every live mode**, which is exactly the split `loudRel` exists to close (the
+plan's phase-5 table says CHLADNI "reads `hush` only — nothing changes"; it reads `eG` too). **The recommendation out
+of phase 7** is that CHLADNI's one `eG` term becomes `baseLight(…)`, which works in every mode and does not over-state
+— but CHLADNI's look is the user's, signed off at v0.15, so it is a phase of its own and not a review's two lines.
+`eG` keeps its place as the only non-causal whole-track arc, which is the right input for a *file-mode* section-level
+decision (where its rank normalisation is a feature, not a fault).
+
+## §64 the hat's trigger quality, and the sub void — Vienna's sparkle and Vienna's drop (2026-09-30, one worker; the user on DUST: "the high hat that starts at 0:25-1:00 still seems jerky also (wonder if the sparkly / dreamy sounds are interfering in the high section?)" and, on §61's open item, "fix it"; report `docs/workers/VIENNA-TUNING.md`, `docs/AUDIT-live-grid.md` "B.4")
+
+### Task 1 — the hat voice is jerky on Vienna 0:25–1:00
+
+**What "jerky" measured as.** Not the rate, not the decay, not an amplitude chatter the rim can see: it is **fires in
+the wrong place**. Over Vienna 20–110 s (`tools/dust-trace.js`, DUST, `&map=0`, graded against `tools/truth/Vienna.json`
+`onsets.high` within ±50 ms, with a new `dinfo()` fire counter `fH` / `aH` / `srcH`) the hat voice fires **310 times for
+224 truth hats** — the right density — and only **59 %** of those fires are hats. The 125 that are not land a median
+**86 ms off the 8th-note line** (the real ones land 3 ms off), they flash at the voice's **floor 0.200** against a
+confirmed hat's **0.757**, and only **76.8 %** of all fires sit on the truth's 16th grid against the truth's own 91.1 %.
+The user's control, CyborgNinja, reads **P 0.99** with 8 % of its fires at the floor. So the eye is handed an uneven
+rhythm, big and tiny alternating, where the ear hears even 8ths.
+
+**The cause is the SCENE's trigger reading an ENGINE picker that is wrong there.** The user's hypothesis is confirmed
+and the mechanism is specific: the false fires happen where `highS` reads **0.643 against the real hats' 0.283** and is
+RISING (`highS` − its own 2 s EMA: **+0.058** at a false event, **0.000** at a real one), and `ears/perc.js` is an
+HPSS-lite whose harmonic part is a RUNNING MEDIAN of each band's dB envelope — a median lags a swell, so a pad's, an
+arp's or a reverb tail's leading edge rises above it and is released as a percussive onset. Per track, the share of the
+ears' hat events that synapse's `hat2` confirms (≥ 0.10 within ±2 frames) is **90 % of the real ones and 2 % of the
+false ones** on Vienna, 75 / 30 % on SeeYouDrop, 98 % / — on CyborgNinja. `hat2` is the precise picker here (P
+0.96–0.99 everywhere); `hatEvt` is the loose one (P **0.56** Vienna, 0.71 SeeYouDrop, 1.00 CyborgNinja). §58's union
+was chosen for coverage, before anyone measured precision.
+
+**The fix (`assets/scenes/dust/voices.js`, `index.js`).** The ears' hat EVENT does not fire the voice while the high
+band is more than **R = 1.05** times its own **TC = 2 s** average — a band getting louder on its own is a swell, and a
+swell's edge is not a stick. `hat2`'s rising edge still fires the voice, and the ears' age still places a hit the level
+confirms, so no timing moves. The picker itself is untouched (the engine item: `docs/OPEN-ITEMS.md` §64 items 1–2).
+Knob for the user's own A/B: `&bed=<ratio>,<seconds>` under `#test`, `hooks.bed(r, tc)` from the console, `99` = off.
+
+| page window (truth hats/s) | fires/s | P | §58 coverage | at the floor | on the 16th grid |
+|---|---|---|---|---|---|
+| **Vienna 20–110** (2.49) | 3.44 → **2.38** | 0.59 → **0.80** | 96.8 → 91.9 % | 49 → **26 %** | 76.8 → **88.8 %** |
+| **Vienna 85–107**, the double time (3.00) | 4.32 → **3.23** | 0.60 → **0.77** | 95.4 → 93.8 % | 45 → **27 %** | 76.8 → **88.7 %** |
+| SeeYouDrop 20–110, §58's window (3.29) | 4.33 → 3.91 | 0.71 → **0.74** | 95.9 → **94.9 %** | 51 → 44 % | 80.0 → 80.7 % |
+| CyborgNinja 20–50 (7.67) | 7.63 → 7.57 | 0.99 → 0.99 | 94.7 → **94.7 %** | 8 → 7 % | 79.5 → 79.3 % |
+
+The brief's floor was SeeYouDrop coverage ≥ 93 %; it reads **94.9 %**, and its precision went UP. The median gap between
+flashes on Vienna becomes the 8th note itself — 250 → **333 ms** against the truth's 325. The rim's own picture is
+untouched where it was right: `lumR` p95/p05 range 4.572 → 4.632 (Vienna), 4.196 → 4.199 (SeeYouDrop), 2.794 → 2.794
+(CyborgNinja); `|ΔlumR|` p50 1.420 → 1.419 / 2.431 → 2.438 / 2.546 → 2.547. The fires that survive are bigger (amp p50
+0.229 → 0.374; the matched ones 0.522 → 0.659) because the ones that went were the floor-sized ones.
+
+**Measured and REJECTED**, each with the number:
+- **The DIFFERENCE form the brief proposed** (`highS` minus a slow EMA of itself, "a real step above the high-band
+  bed"): it discriminates (real +0.000 / false +0.058) but its operating point does not travel — the bed is 0.28 on
+  Vienna and 0.62 on SeeYouDrop, so one absolute step is 7 % of the band on one and 3 % on the other, and the threshold
+  that cleans Vienna (0.02) takes SeeYouDrop's coverage to **92.2 %**, under the floor. The RATIO is the same idea,
+  normalised; swept over TC 1 / 2 / 3 / 5 / 8 / 12 s × R 1.03 / 1.05 / 1.08 / 1.12 / 1.18, 1.05 at 2 s is the knee with
+  the most SeeYouDrop margin (1.03 → SeeYouDrop 92.2 %, 1.08 → SeeYouDrop 94.6 % for 3 points of Vienna's precision).
+- **Dropping `hat2`'s edge and keeping the ears alone** (the brief's first candidate, "band-limited onset detection"):
+  the ears are the unreliable half — Vienna 3.44 → 3.08 fires/s at P 0.59 → **0.56** with 55 % at the floor.
+- **Gating the ears' event on `hat2` confirming it** — the cleanest discriminator by AUC (0.93 Vienna 20–65, 0.99
+  Vienna 85–107, 0.77 SeeYouDrop): Vienna P 0.59 → **0.95**, but SeeYouDrop's coverage falls to **85.4 %**, because half
+  of its real hats are invisible to synapse's picker. Same for the edge alone (85.4 %). This is §58's reason for the
+  union, and it still holds.
+- **A self-calibrating version of that gate** (require confirmation only while the level's own recent confirmed hits are
+  loud — a 20 s peak-hold, 0.74 on Vienna against 0.34 on SeeYouDrop over 20–50 s): over the full 20–110 s window
+  SeeYouDrop's hold reads 0.52 (p50), the gate switches on there too, coverage **92.2 %**. A 20–50 s window was not
+  representative; the knee moved with the window, which is the sign of a fit rather than a rule.
+- **A smaller floor for an unconfirmed fire** (0.08 instead of 0.20): it keeps every coverage number — the envelope
+  still rises — and dims SeeYouDrop's real-but-unconfirmed hats (amp p50 0.22 there) by the same factor as Vienna's
+  false ones. It makes the metric pass without making the picture better.
+- **A rate limit** (§61 rejected it already, re-measured here): at 8 Hz, Vienna P 0.59 → 0.63 and CyborgNinja loses
+  69 of 229 fires.
+
+### Task 2 — `dropLiveEvt` never fired on Vienna
+
+**Why.** Not a bug: **Vienna has no void of the kind §54 reads.** Whole-track node run (`tools/build-node.js Vienna`):
+`bassS` sits at 0.51–0.83 all through, its 2 s / 32 s ratio bottoms at **0.514** for 4.6 s (the dream, 68.9–73.5 s) and
+is back over 0.85 **eleven seconds** before the drop; `hp`'s 5 s mean peaks at **0.166** over the same 4.6 s and is 0
+from 74 s. **One** void run in 192.6 s, armed 69.3–76.3 s, and the drop is at 85.336. The slam could not have fired
+either: at 85.343 `bassS` reads **0.97 ×** its own 2 s mean (`RET` 1.75) and `sub` **2.14 ×** (`SUB_RET` 5), against
+SeeYouDrop drop 1's 2.80 × and 15.7 × — SeeYouDrop's bass had been at 0.04, Vienna's never left. (The clock is also in
+the wrong octave from 88 to 108 s, `bpm` 119.9 against 90 — §61's open item — and `barConf` 0.02–0.75, so synapse's bar
+anchor is never taken; neither of those is why it did not fire.)
+
+**What IS out: the SUB.** The ears' causal sub gate is shut from **69.7 to 85.8 s — 16.05 s, 6.02 bars** — and the drop
+IS the sub note coming back (`sub` 0.356 → 0.991 on one frame, two low onsets at 85.343 / 85.354, **+7 ms** from the
+truth). Over all five tracks the longest sub-gate-shut run (2 s box mean < 0.2, after `MIN_HIST`) is Vienna's 6.02 bars,
+then **SeeYouDrop 3.85** (before its own drop 1, which the void path already arms 15.9 beats ahead), **Malicious 3.37**
+(twelve runs, 0.70–3.37), and WhoLikesToParty and CyborgNinja **never reach a bar**.
+
+**The change (`assets/engine/build/build.js`, `feed.js`, `features-build.js`): a SECOND arming path, the sub void.**
+`SUBV_OFF` 0.2 (the gate's 2 s mean below which the sub is out; 0 = the path off), **`SUBV_HOLD` 4 bars** — the hold
+that clears Vienna's 6.02 and every other track's longest by 57 % — armed on the next bar line as before; the slam is
+the same on-beat low onset confirmed by `sub` ≥ **`SUBV_RET` 2** × its 2 s mean, with no `SLAM_AFTER` wait (the void has
+already run four bars before this path arms, so the first bass return is not a pickup); and the bass/hp void lifting now
+disarms a bass/hp arm only. **The gate is the CAUSAL one**: `MS.subGate` is the file map's when a map is ready
+(`features-ears.js mapOverride`), and this stage must read the same inputs in every mode — the same reason §54 took the
+ears' low lane over the map's onsets — so `features-build.js` passes `EARS.ears.out.subGate` to `feed()`, and node and
+`build-replay.js` read it from the trace where it is already causal. §54's objection to `subGate` is answered, not
+overruled.
+
+**Node, `&map=0`, det, five tracks** (`build-replay.js`; SeeYouDrop 1 2 · WhoLikesToParty 1 2 3 · Malicious · Vienna 1 2):
+
+| rule | before | after |
+|---|---|---|
+| `buildLive>=0.4` anticipation, beats | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **0 0** | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **4.4 0** |
+| `dropLiveEvt` lag | −6 +21 · +10 +48 +12 · — · **— —** | −6 +21 · +10 +48 +12 · — · **−3 —** |
+| armed at drop · events | 5/8 · 5 | **6/8 · 6** |
+| false arms / min drop tracks · CyborgNinja | 0.14 · **0** | 0.14 · **0** |
+| false events anywhere | 0 | **0** |
+
+The replayed traces for SeeYouDrop, WhoLikesToParty, Malicious and CyborgNinja are **md5-identical with the path on and
+off** (`d61565e3` / `498acde0` / `cb8e2724` / `54759f6d`): only Vienna moves. Sweep: `SUBV_OFF` 0.5 arms Malicious 3.9
+beats before its drop and takes false arms 0.14 → **0.36**; `SUBV_HOLD` 3 gives Vienna 8.3 beats for false arms →
+**0.22**; 5 loses the anticipation (the arm lands inside the last beat, the event still fires); `SUBV_RET` 1.5 changes
+nothing and **3 loses the event**. So 4 bars is the only hold that buys the drop and changes nothing else, and
+`SUBV_RET` 2 is tuned on one drop — noted as open.
+
+**Vienna's SECOND drop (106.6693) is not detectable causally, and nothing was shipped for it.** `buildstudy.py` over all
+five tracks: of 60 candidates × 7 grains × 4 causal transforms, at PRE 4 bars and PRE 8 bars, **every one gives it a
+lead of 0 beats**. In the 20 s before it `hp`'s 5 s mean is 0.000, `bassS` 2 s / 32 s bottoms at 0.887, the sub gate is
+open throughout, and at the drop `bassS` reaches 1.25 × its 2 s mean and `sub` 1.32 ×. The brief's second lean (a
+tension accumulator: energy slope, centroid rise, onset density) was measured in that study — the candidates that would
+arm it at all (`presence` dev 5 s, `novelty`, `flux` dev, `eFast`, `eShort`) carry **0.35–6.71 CyborgNinja false arms /
+min**. Vienna's bar 40 is a density / texture jump (the double-time layer thickening) with no causal precursor.
+
+**`tools/truth/Vienna.json`:** `drops` is now the HAND list **85.3359 / 106.6693** (bar 32, the user's own "first drop at
+1:25", and bar 40 — trackmap's 105.639 snapped to the bar, an independent Foote novelty peak at 106.626 and the one full
+low+click+mid+high hit there); `drops_tool` keeps trackmap.py's own list, `drops_note` says why. Every ruler that reads
+`drops` (`dropcheck.py`, `buildstudy.py`) now grades the drops the user named; `trackmap.py` already preferred
+`drops_user`.
+
+**Page `&map=0&lead=0`, Vienna whole track** (`tools/filetrace.js`, graded by `dropcheck.py`): **armed 4.9 beats
+before the drop, `dropLiveEvt` +14 ms, 0 false arms / min over 3.2 min, 1 event, 0 on the second drop.** `buildLive`
+runs 71.42–76.23 (the dream, max 0.66) and **82.10–85.35 (max 1.00)** — so DUST's contraction and palette drain get
+the last 1.2 bars and the slam releases on the drop. `dropLiveIn` points **+3.0 beats late**, because synapse's
+`barConf` never reaches the 0.9 anchor gate on this track (and §61 measured its bar line 2 beats off), so the detector
+is on v3's own arbitrary count mod 4; the EVENT is right anyway because the slam keys on BEAT lines, not bar lines.
+A scene's last-bar wind-up (`nextDropIn`) is therefore on the wrong beat of the bar on Vienna — the same open item
+§61 raised, not a new one.
+
+**Page = node** (`build-node.js --cmp`, the `&map=0&lead=0` page trace against the `--disp 0` node run, 11520 frames):
+**`subGate` identical on 11520/11520 frames (max |diff| 0.00)** — the causal gate is the same quantity in both, which
+is the claim the implementation rests on; `bassS` / `sub` to ≤ 5.8e-5; `dropLiveEvt` 11519/11520 (the one frame is the
+event itself, node −3 ms / page +14 ms — one frame apart); `buildLive` 94.7 % and `dropLiveIn` 95.8 % of frames, the
+difference being the arm's bar line (node 82.38, page 82.10).
+**The causal gate, proved:** the same Vienna page run with `&map=1` (the file map on, so `MS.subGate` IS the map's)
+against `&map=0`. `MS.subGate` differs on **1748 of 11520 frames** (a boolean flip, max |diff| 1) — and `buildLive`,
+`dropLiveIn` and `dropLiveEvt` are **identical on all 11520 frames**, with `dropLiveEvt` at 85.35 s and the arm at
+82.10 s in both. The stage reads `EARS.ears.out.subGate`, so the map cannot reach it.
+**A finding worth recording:** on Vienna the NODE harness's v3 clock is in the wrong octave for part of the track
+(`bpm` p50 143.1 / 119.9 / 120.0 over 0–20, 80–100 and 140–160 s) while **the page reads 90.1 for the whole track**.
+Vienna's octave margin is the thinnest in the set (§61: its 40–150 Hz on-beat / half-beat ratio is 1.031), so the
+small input differences between `tools/node-stream.js`'s det stream and the page's file source flip it. The page is
+the one that is right, and it is the page the user watches; but **a node-only grading of anything clock-dependent on
+Vienna is not the page's answer** — the numbers above are the page's.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (157 modules, 205 MS keys, help.feats gaps 0, 5 pre-existing soft-cap warns) ·
+  `npm test` **OK**, `tools/test_build.js` now 26 cases (six new for the sub void: too short does not arm; longer arms
+  on a bar line with the BASS STILL IN; the void's own bass-less on-beat kicks never fire; the sub back at 2.5 × its 2 s
+  mean fires once on the onset's frame with `bassS` flat and under `SUB_RET`; `SUBV_OFF` 0 makes the same stream inert;
+  an input with no `subGate` reads as "the sub is there", so every caller written before §64 behaves as it did; and
+  `SLAM_AFTER` 4 bars does not gate the sub-void slam).
+- **s1 fake-timeline md5 UNCHANGED: f360 `42e4871c`, f840 `6eae9916`** — §61's own two lines. The hat veto cannot move
+  it (the ears stage never runs under `#test`, so `highS` and `hatEvt` are state.js's defaults there) and the build
+  stage returns early on `ENGINE.fakeOn`. The other accounted-for lines are untouched for the same reason (s0-f840
+  `8a0715df`, s4-f840 `05bf21c0`); the loudness worker's own lines moved in parallel and are not this worker's.
+- `CARD.bench` not re-run: the cost added is one scalar EMA per frame in the scene and one `BoxMean.push` per frame in
+  the build stage.
+
+## §65 DUST migrates onto true loudness — LOUDNESS phase 4, and §60's one failure is fixed (2026-09-30, one worker; `docs/plans/LOUDNESS-PLAN.md` §8, report `docs/workers/DUST-OVERHAUL-PASS2.md` "Pass 2 addendum")
+
+§60's one failure was SeeYouDrop's **breakdown 2**: the picture did not get dimmer there, because the engine's energy
+does not know the drop after it is louder (`eM` ×0.994 where the music is +2.88 LU / ×1.94 in power). §63 built the
+causal, AGC-free loudness that answers it and migrated FEIGEN, MANDALA and POLYTOPE onto the shared mapping
+`assets/math/loudlight.js` `baseLight(loudRel, loudRange, loudAbs, fallback)`. This is phase 4: **DUST, the scene that
+paid for the problem privately, gives up its private peak and reads the same mapping**, so there is ONE definition and
+ONE calibration across four scenes. Commit `94e4d8b`. **Not tagged, not pushed, not deployed.**
+
+### The lean — one line of drive, and what deliberately did NOT come across
+
+`dust/dyn.js` held a track-level running peak on `eM + ½·max(0, eS − eM)` (instant attack, 25 s release, floored 0.84)
+and drove the cloud's base brightness, grain size and swarm radius with `eM / peak`. Now:
+
+    D.fb   = clamp01((D.r - LO) / (1 - LO))                        §60's drive, kept LIVE as the fallback
+    D.base = baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, D.fb) the drive (loudlight.js, the shared mapping)
+    D.dyn  = min(1, max(D.base, MS.dropEnv, rel))                  the slam's floor, unchanged
+
+The private peak **keeps running** rather than being deleted: it is what `baseLight`'s `loudAbs < 0` branch returns, so
+`&loud=0` is bit-exact against §60, and so flipping the switch mid-stream does not hand the scene a peak frozen since
+the track began. `PK_REL` / `PK_FLOOR` / `LO` survive as the fallback's constants and are documented as such.
+
+**The 25 s release did not come across** (§63 phase 2 decision 1): on a mean square that is 0.174 dB/s, which forgets
+6.6 LU in the 38 s between SeeYouDrop's drop 1 and its breakdown 2 — more than the whole track's 4.96 LU of range, so
+the hold would decay *under* the present loudness and both ends of the very pair this migration exists to separate
+would read 1.000. `loudPk` releases at 0.02 LU/s. **The 0.84 floor was not re-invented as an absolute one** (§63
+decision 2): the other four test tracks master 8–9 LU quieter, so an absolute floor binds for their whole length and a
+quietly mastered track is permanently darker — the AGC's own sin inverted. `loudPk`'s relative warm-up guard
+(`loudS + 4·exp(−age/6 s)`) already solves §60 step 4's bright intro, and the table below shows it does.
+
+### §60's pass-2 table, re-taken BACK TO BACK on one tree
+
+**The measurement condition changed on purpose**: §60 traced with `WARM=8`, i.e. the file opened 8 s before the window.
+`loudPk` and `loudRange` are *causal* — they are what the stage has heard so far — so a mid-track start measures a
+field the listener never sees. Every number below opens the file at **t = 0** (`WARM=20`), the real listening
+condition and the one §63's `L_RNG_MIN` sweep was done in. Both sides of every pair were traced back to back, and
+**the MS columns are md5-identical across all six pairs** (`beatCount` / `dropEnv` / `eM` / `loudRel` / `loudPk` /
+`loudRange`, §60's own validity rule) — the engine did not move, only the scene did.
+
+| SeeYouDrop 20–110 s (`&map=0`, CLOCK=1) | before | after |
+|---|---|---|
+| **breakdown 2 → drop 2, equal 5.1 s windows** | 120.5 → 125.2 = **×1.039** | 114.5 → 147.7 = **×1.290** |
+| **breakdown 2 (§60's own 100.5–104 window) → drop 2** | 143.2 → 125.2 = **×0.875** (the breakdown was BRIGHTER) | 128.0 → 147.7 = **×1.154** |
+| the void before drop 1 (55–57.6 s) · drop 1 | 27.9 · 104.0 — void/drop **0.268** | 36.2 · 86.8 — void/drop **0.416** |
+| groove (28–40) · breakdown 1 (49–55) | 92.8 · 60.9 (−34 %) | 69.9 · 45.1 (−35 %) |
+| the window's range p95/p05 lum | **4.593** | 4.251 |
+| mean luminance | 96.5 | 81.4 (−16 %) |
+| base light p05 / p50 / p95 | — (`dyn` 0.261 / 0.873 / 1.000) | **0.248 / 0.532 / 0.764** |
+
+**The gate is met: breakdown 2 improves, and it is the headline.** Where §60 left the second breakdown *brighter* than
+the drop that follows it (×0.875), the drop is now half again as bright as the breakdown on §60's own windows and
+×1.29 on equal 5.1 s ones. The music's own figure is ×1.94 in power; the picture now moves ×1.29 of it, the rest being
+the shader's constant terms (`gBase = .22 + 1.42·uDyn` idles at 13 % of full rather than black) — the same compression
+§63 measured for the other three scenes.
+
+**The intro, SeeYouDrop 2–40 s** (`WARM` leaves the file at t = 0 either way, so this pair is directly §60's):
+
+| / groove 28–40 | before (§60) | after |
+|---|---|---|
+| intro 2–8 s | 0.634 | **0.357** |
+| intro 8–14 s | **1.268** | **1.021** |
+
+The 0.84 floor is gone and the intro is *more* clearly the quietest part of the song, not less — `loudPk`'s relative
+guard does the floor's job without the floor's cost. §60's **open item 2 is closed as a side effect**: 8–14 s, where
+the track assembles itself and the novelty channel used to beat the loudness one (1.268× the groove), now reads
+1.021×. The truth agrees with the new reading: the intro integrates to −8.32 LKFS against the groove's −3.99, i.e.
+4.3 LU down, and 6.6 LU under the track's peak — which is `L_RNG_MIN`'s whole 7 LU span, so the intro clamps near 0
+and is drawn at the shader's idle. That is the measure being honest, not the scene being broken.
+
+**Vienna 20–110 s** (`~/Music/RetinaRave/Vienna.flac`, truth `tools/truth/Vienna.json`, drops 85.336 / 106.669):
+mean lum 91.1 → 93.9, range 3.656 → 3.702, pre-drop/drop 0.601 → 0.627 (drop 1) and 0.743 → 0.767 (drop 2). Almost
+unmoved, and it should be: §63 phase 3 measured Vienna's two drops at only **+1.04 and +0.33 LU**, so there is nothing
+there for a loudness to find. Vienna is the control that the migration does not invent dynamics.
+
+**The quiet tracks are NOT dim for their whole length** — the §8 hazard the absolute floor would have caused:
+
+| track | master (gated LKFS) | mean lum before → after |
+|---|---|---|
+| SeeYouDrop | −3.88 | 96.5 → 81.4 (**−16 %**) |
+| CyborgNinja | −9.05 | 105.8 → 97.1 (−8 %) |
+| WhoLikesToParty | −10.03 | 111.1 → **120.9 (+9 %)** |
+| Malicious | −12.46 | 90.0 → **109.6 (+22 %)** |
+| Vienna | −6.89 | 91.1 → 93.9 (+3 %) |
+
+The two quietest masters got **brighter**, and the only track that dims materially is the **loudest** one — the one
+with real breakdowns, which is the whole point. Base light p50 per track: SeeYouDrop **0.532**, CyborgNinja 0.690,
+Vienna 0.833, WhoLikesToParty 0.836, Malicious 0.855 — §63's sweep predicted 0.857 / 0.861 / 0.866 / 0.900 for the
+four and 0.474 for SeeYouDrop, so DUST lands where the shared calibration said it would.
+
+**The hits are untouched**, within the noise of §58 / §64 (per-hit lum lift, clean hits only, p50 / mean %):
+
+| | snare (body) | hat (rim) | kick (centre) | per-beat peak/trough |
+|---|---|---|---|---|
+| SeeYouDrop | 5.7/10.4 → 6.5/10.7 | 1.7/8.1 → 3.6/11.3 | — (no clean hits) | 1.409 → 1.458 |
+| CyborgNinja | 17.7/28.7 → 16.0/23.7 | 0.6/8.5 → 2.1/8.9 | — | 1.446 → 1.423 |
+| Vienna | 3.8/11.9 → 2.7/11.4 | 4.1/11.1 → 3.6/10.6 | 7.4/7.5 → 7.9/7.8 | 1.417 → 1.394 |
+
+`gHit = 1.05 + .45·uDyn` moves one third as far as `gBase` by construction (§60 step 1: a quiet section's kick is
+still a kick), and that is what these say.
+
+**The two regressions, stated plainly.** (a) **The void before drop 1 brightens**, 27.9 → 36.2, and void/drop goes
+0.268 → 0.416 — §60's best-measured win. The reason is not a bug: the truth says that void integrates to
+**−4.68 LKFS against the groove's −3.99**, i.e. it is 0.7 LU quieter than the groove, because it is a riser and a
+reverb tail and those are broadband and loud. `eM`'s AGC crashed there and the eye liked it; BS.1770 says it should
+not. **This is the one thing in this phase the user may want back**, and it is one term, not a redesign — see the
+watch-list. (b) **SeeYouDrop's p95/p05 falls 4.593 → 4.251 and its mean −16 %**, because the whole track moves down
+into a band whose bottom the shader's 0.22 idle holds up.
+
+### `&loud=0` — the A/B is bit-exact
+
+| s1, `IDS=1 PORT=8896 tools/scene-md5.sh`, errs [] | f360 | f840 |
+|---|---|---|
+| before (HEAD `7096ffd`) | `42e4871c` | `6eae9916` |
+| **after, default** | **`11ca47d0`** | **`d21222ba`** |
+| **after, `&loud=0`** | **`42e4871c`** | **`6eae9916`** — the pre-migration lines, bit for bit |
+
+So the two lines that moved are the migration and nothing else is reachable from here. Only `assets/scenes/dust/`
+was touched (`dyn.js`, `index.js`, `help.js`, `shaders.js` — a comment), `loudlight.js` is unchanged, and DUST's files
+are imported by nothing else, so no other scene's line can move (`IDS=1` is the whole proof, HARNESS "What to re-prove").
+
+### Proofs
+
+`node tools/check.js` **0 fail** (157 modules, MS keys 205, help.feats gaps 0, **the same 5 pre-existing line-cap
+warns** — `dyn.js` 99 lines, `index.js` 336, both under the 350 soft cap) · `npm test` **0 FAIL** (test_loud 38 pass) ·
+`feats` + `loudRel` / `loudRange` / `loudAbs` with a `help.feats` line each; `eM` / `eS` keep theirs, reworded as the
+fallback they now are · **no audible run** — every number is the deterministic file path.
+**Cost**, `q` pinned 0.95, tier 3, `&dyn=1`, five pairs interleaved with NAV, the two legs taken back to back 20 s
+apart (medians): **DUST 1.346 → 1.383 ms, NAV 2.086 → 2.155 ms, DUST/NAV 0.645 → 0.641**. **The machine was NOT
+idle** — another worker (`tools/work/v66/`) was running its own `dust-trace.js` pages throughout, which is why both
+legs sit ~0.9 ms above §60's 1.238 ms and why NAV, which this phase does not touch, "moved" by more (+0.07 ms) than
+DUST did (+0.04 ms). **That is exactly the case the interleaved-pair ratio exists for** (HARNESS "Bench protocol"),
+and the ratio is the same number twice, as it must be: the drive is one divide and one clamp a frame, and the stage's
+own 5.85 µs/frame was already being paid before DUST read it. The absolute ms here are not comparable to §60's.
+The TRACES are unaffected by that load — the deterministic file path is frame-locked, so load changes wall time and
+not one number — and the six before/after pairs' MS columns are md5-identical, which is the proof.
+
+### Open items
+
+1. **`loudPk` is seeded by a partially-filled window on the first block, and SeeYouDrop pays 1.46 LU for it.**
+   `Loud.push` feeds `zAt(tEnd, SHORT_W)` into the instant-attack peak from the very first block, and `zAt` returns a
+   mean over as few as 32 samples (`dn >= 32`). SeeYouDrop's file **starts on a loud transient**: its first block
+   reads **+0.97 LKFS** (`loudPk` +4.96 with the warm-up guard) against a true track maximum `loudS` of **−1.69**, and
+   the 0.02 LU/s release needs **147 s** to walk that off — longer than the track. Measured at 100 s: `loudPk` −1.03,
+   **1.46 LU above the honest peak**, so every base light on this track is 1.46/7 = **0.21 too low** and SeeYouDrop's
+   intro clamps to 0 where it should sit near 0.06. The other four tracks begin in silence (first block −51 to
+   −105 LKFS) and are unaffected, which is why §63's synthetic `peak` case did not catch it. The fix is one condition
+   — let the peak attack only on a FULL short-term window, the guard already covering the first 3 s — but it is an
+   ENGINE change that silently re-calibrates FEIGEN, MANDALA, POLYTOPE and now DUST, and `L_RNG_MIN` was swept against
+   the current behaviour. **A phase of its own, with `L_RNG_MIN` re-swept after it.** Not touched here.
+2. **The void before drop 1 (above).** If the user's eye wants §60's dark void back, the honest way is a short-window
+   term, not a louder floor: `loudM` (400 ms) resolves a 2.6 s void where `loudS` (3 s) cannot. One term in
+   `baseLight`, measured across four scenes, and again not a DUST worker's unilateral call.
+3. **`shapeFor()` still uses the absolute `eM < 0.74`** (§60 open item 5), untouched here on purpose so the shape
+   sequence §58 verified does not move. It is now the last AGC absolute left in DUST's look path.
+4. **The look is the user's**, one scene at a time, the way §57–§60 ran DUST. The watch-list is in
+   `docs/workers/DUST-OVERHAUL-PASS2.md`. `tools/accept.sh` still has not been run since v0.14.
+
+## §66 the bounce is a wall-clock crest, and drop 2 is the bass moving up an OCTAVE — Vienna 0:25–1:00 and 1:46.7 (2026-09-30, one worker; the user on DUST: "something still feels off about 0:25-1m the bounce feel slow and jerky on the kick and high hat (?is what I think is there); drop 2 -> at 1:46 what plays? it feels like there is bass starting"; report `docs/workers/VIENNA-TUNING.md`)
+
+Two questions, analysis first. One commit (`c027e8c`, `assets/scenes/dust/grid.js`); nothing shipped for the second
+question, because the number says there is nothing to ship.
+
+### Q1 — what plays at 0:25–1:00, in numbers
+
+Offline from the PCM (`tools/work/v66/{q1,q1b,q1c,q1d,kick3}.py` on `tools/work/Vienna.48000.st.f32`, Butterworth band
+envelopes, the peak in [line − 10 ms, line + 120 ms] at each 16th line of the 90.00 BPM hand grid, averaged over bars
+9–21 with the ODD and EVEN bars kept apart because the groove's own cycle is two bars). dB over the window mean:
+
+| band | slot 0 | 4 | 8 | 12 | the off-8ths (2 / 6 / 10 / 14) | the odd 16ths | what it is |
+|---|---|---|---|---|---|---|---|
+| **sub 20–60** | 6.7 / 8.9 | 5.1 / 5.5 | 8.3 / 9.6 | 7.3 / 4.0 | 6.5 / 8.8 · 6.0 / 5.6 · 8.2 / 4.9 · 3.7 / 2.6 | 4.8–8.1 | **a continuous D♯1 / F♯1 drone, no pulse at all** (a 7 dB span over all 16 slots) |
+| **kick 60–150** | **11.4 / 10.1** | 4.2 / 6.5 | **10.8 / 12.4** | 4.2 / 3.5 | 3.2 / 4.8 · 1.8 / 6.3 · 3.7 / 1.7 · 5.5 / 1.6 | 1.5–6.0, and **slot 15 = 5.7 / 11.1** | **the kick is BEATS 1 AND 3 plus a 16th pickup into the next bar (loud on the even bars) — 2–3 a bar, 0.75–1.125 Hz** |
+| **click 150–800** | 2.8 / 6.1 | **13.3 / 12.0** | 4.4 / 6.3 | **13.0 / 11.9** | 4.0 / 4.3 · 3.9 / 1.8 · 1.6 / −3.4 · 5.2 / −2.4 | odd bars add slots 3 and 7 at 6.4 | **a dry rim / clap on BEATS 2 AND 4 — the backbeat, which is what the ear takes for a second kick** |
+| **mid 800–5 k** | 4.4 / 3.6 | 3.3 / 2.0 | 3.6 / **11.5** | 5.2 / 8.2 | 2.8 / −5.7 · 1.2 / −5.0 · −0.9 / 8.6 · −2.6 / 10.8 | — | **a gated synth layer on a TWO-BAR cycle: −6 dB over the even bars' first half, +8 to +11.5 over their second** |
+| **hat > 5 k** | 10.0 / 10.9 | **13.0 / 12.4** | 6.4 / 10.8 | **12.6 / 12.6** | **11.5 / 12.4 · 11.7 / 12.4 · 10.1 / 11.9 · 9.3 / 11.4** | **−8.8 to +4.3** | **DEAD-STRAIGHT 8ths**, filling to 16ths on bars 17 and 21 only |
+
+**The swing is zero.** The high band's onsets inside the beat: the median off-8th phase is **0.5001** of the beat
+against a straight 0.5000 — a **1.000:1** ratio, 0.1 ms late — and the on-8th ones land 7.9 ms off the line. The gap
+between high onsets reads p10/p50/p90 **112 / 197 / 341 ms** against the 8th's own 333.
+
+So what the user hears as "the kick" is two instruments: a soft masked thud on 1 and 3 and a dry rim on 2 and 4. The
+only continuous lattice in the track is the hats, at **3.00 Hz**. Nothing is on 16ths except bars 17 and 21.
+
+### Q1 — what the engine hears, and what DUST does
+
+The clock is right and §61's fix holds: over 24–60 s the page reads **89.98 bpm**, **54 ticks in 36 s = 1.500 /s**
+against the music's 1.500, **100 %** of them inside a quarter-beat of the truth beat line at a **constant −35.9 ms**
+(|lag| p50 = p90 = 35.9), and **zero** line moves. `barPos` is still 2 beats off (the engine's bar wrap lags the truth
+downbeats by +1297 ms, §61's open item). So the jerk is not the clock.
+
+The four sources, ranked by what they measure (`tools/dust-trace.js` Vienna 24–60 s, `&map=0`):
+
+| # | source | the number |
+|---|---|---|
+| **1** | **the KICK voice fires in the wrong place, and it cannot be fixed in the scene** | **73 fires** for 56 kick hits (2.03 /s). Its biggest slot bins are **slot 1 (14 fires)** and **slot 3 (10)**, where the music has no kick, against **6 on slot 0** and **2 on slot 8**, which ARE the kick. **P 0.21 / R 0.27**, |dev| from the 16th grid p50 30.7 ms, 67 % on the grid. The matched fires sit at the voice's **FLOOR (amp p50 0.250)** and the unmatched ones are **BIGGER (0.371)** — the real kicks flash small and the false ones flash big. 81 % of the fires are the level's edge, 3 % the ears' event. |
+| **2** | **the SNARE voice fires 2.7× too often** | **4.81 /s** against a truth `mid` of 1.81 /s, **P 0.35**, 39 % at the floor, spread over all 16 slots, and tc 0.30 s leaves **57 %** of a hit on the body annulus when the next lands (gap p50 167 ms = the 16th). It is the loudest of the three voices. |
+| **3** | **the nudge's crest is 67 % longer at 90 BPM than at 150** | the accent lasts **367 ms** and peaks at **1.08 rad/s** on Vienna against **220 ms / 1.78** on SeeYouDrop, and starts **183 ms** before the line instead of 110. Only **53 of the window's 108 8th lines** carry a nudge. |
+| 4 | the HAT voice is **fine** | §64's veto leaves it **96 % on the truth's 16th grid**, |dev| p50 **2.6 ms**, amp p50 **0.757**, **8 %** at the floor, and its slot histogram (14 / 11 / 11 / 11 / 8 / 12 / 11 / 12 on the even slots, 0–2 on the odd ones) IS the straight 8ths. Not touched. |
+
+**Source 1 is an engine item, proved.** `kick2`'s AUC against the kick lines (its peak in [line, +60 ms], kick slots
+against the other 184 16th lines of the window) is **0.316** — *below* chance: it reads **0.031** at a kick and
+**0.130** at a non-kick 16th. Its mean shape from the beat-1 line over 13 bars is 0.07 at the line rising to
+**0.35 at +200 ms** — the lane peaks a quarter-beat after the kick, which is exactly the slot-1 / slot-3 bins. The
+**60–150 Hz band's own RISE** (the peak in [−5, +60] ms over the mean of [−85, −5] ms) separates the same lines at
+**AUC 0.999** (+11.21 dB at a kick against +4.56 elsewhere), so the information is in the audio and the lane throws it
+away: Vienna's low end is a loud continuous 38–46 Hz drone and the kick is a soft masked thud above it. Nothing else
+low carries it either — `bassS` 0.546, `eS` 0.543, `eM` 0.515, `subGate` 0.500 — and the only engine signal that does
+is `lvl` (0.925), which is the beat grid in disguise. **No scene-side gate can rescue a signal with AUC 0.316.**
+
+**§64's swell veto does not transfer to the snare**, measured: `midS` / its own 2 s EMA separates the snare voice's
+matched from its unmatched fires at **AUC 0.615** (the hat's was 0.93 on this track), and every ratio from 1.03 to 1.18
+holds precision at **0.34–0.36** while taking recall **0.92 → 0.83**. Rejected.
+
+### Q1 — the change: `WREF`, the accent's wall-clock width (`assets/scenes/dust/grid.js`, `c027e8c`)
+
+`W` is a width in BEATS, so §61's own .45 / .55 pair gives a different crest at every tempo
+(`tools/work/v66/nudge66b.py`, grid.js's `spin()` reproduced at 60 fps on an exact clock):
+
+| track | bpm | accent | lead | v peak | v floor | floor/peak | dead | \|a\| p99 |
+|---|---|---|---|---|---|---|---|---|
+| CyborgNinja | 160.0 | 206 ms | 103 ms | 1.916 | 0.236 | 12.3 % | 0 % | 23.4 |
+| SeeYouDrop | 150.0 | 220 ms | 110 ms | 1.776 | 0.221 | 12.4 % | 0 % | 20.4 |
+| Malicious | 139.7 | 236 ms | 118 ms | 1.674 | 0.206 | 12.3 % | 0 % | 17.8 |
+| WhoLikesToParty | 117.0 | 282 ms | 141 ms | 1.404 | 0.172 | 12.3 % | 0 % | 12.6 |
+| **Vienna** | **90.0** | **367 ms** | **183 ms** | **1.076** | 0.133 | 12.3 % | 0 % | 7.4 |
+
+That IS "slow", and it is the crest, not the rate. So below `WREF` the accent keeps its width in MILLISECONDS:
+`wFor()` returns `W` at and above WREF and `W · bpm / WREF` under it. Narrowing it ALONE brings §61's dead time
+straight back — the accent's area is fixed at (1 − GLIDE), so a narrower bump is a taller one, and at .45 / .330 the
+floor falls to 8.1 % of the peak and **52.6 %** of the beat is under a tenth of it — so `gFor()` raises the glide by
+exactly as much as holds the velocity **floor/peak RATIO** where the reference pair puts it. Both are **exact
+identities at `w = K.W`**, which is what makes the controls immovable.
+
+**`WREF` is 145, not 150**, for one measured reason: it must sit below the clock floor of every track the user has
+signed off. The published `bpm` reads **149.798 – 150.820** on SeeYouDrop (33 % of its frames are under 150.000) and
+159.966 – 160.112 on CyborgNinja, and at WREF 150 the cap bit on **18 of SeeYouDrop's 5401 frames**. 0.55 beat at
+145 BPM is **227.6 ms**, and that is the crest DUST now holds at every tempo under it.
+
+**Page A/B, Vienna 24–60 s, the only difference being this file, and all 50 MS columns md5-IDENTICAL** (§60's harness
+rule, so the pair is valid):
+
+| | before | after |
+|---|---|---|
+| the accent · the lead · GLIDE · W | 366.8 ms · 183.3 ms · .450 · .550 | **227.3 ms · 113.7 ms · .569 · .341** |
+| the spin's own rate | 0.3300 rad/s | **0.3300** (+0.01 %) |
+| velocity p05 / p50 / p95 / p99 | 0.132 / 0.199 / 0.863 / 1.074 | **0.167** (+26.4 %) / 0.170 / 0.913 / **1.339** (+24.7 %) |
+| floor / peak · dead time · backward frames | 11.27 % · 0.0 % · 0 | **11.43 %** · **0.0 %** · **0** |
+| \|a\| p50 / p99 / max | 1.3154 / 16.62 / 26.46 | **0.0042** (−99.7 %) / 20.68 / 37.59 |
+| lum range p95/p05 · mean · \|Δ\| p50 | 2.745 · 95.59 · 1.356 | 2.773 (+1.0 %) · 95.30 · 1.367 |
+| lumC / lumM / lumR \|Δ\| p99 | 17.14 / 18.27 / 19.50 | 17.86 / **17.66** / **19.24** |
+| the three voices' fires/s · pours · re-seats | 2.028 / 4.806 / 2.639 · 1 · 37 | **identical** · 1 · 37 |
+
+SeeYouDrop's own |a| p99 is **25.44** and its max **93.67**, so Vienna's jerk stays BELOW the control's even after.
+
+**The controls do not move.** Page, SeeYouDrop 20–110 s and CyborgNinja 20–80 s: `d_nv`, `d_nu`, `d_nstep` and
+`d_noff` are **md5-identical on all 5401 / 3601 frames** (max |diff| 0.000000), and the only difference anywhere is a
+**constant** offset on the absolute angle of **−9.23e-4 rad** (SeeYouDrop, 0.053°) / **−1.79e-3 rad** (CyborgNinja,
+0.103°), picked up in the un-recorded warm-up where the cold clock passes through WREF. The exact replay of both
+designs on the recorded clock columns (`tools/work/v66/replay66.py`, §61's method; it reproduces the traced `d_spin`
+to **1e-6 rad** on Vienna) gives max |Δangle| **0.0001 / 0.0000 rad** over the two control windows. A bonus the replay
+also shows: over Vienna 100–116 s, the one window where §61 left the clock in the wrong octave (`bpm` 120.18), the
+dead time falls **19.6 → 8.4 %**.
+
+### Q1 — measured and REJECTED
+
+- **A nudge on the 8TH** (the brief's first lean, and the right instinct: the hats are straight 8ths at 3.00 /s and
+  only 53 of the window's 108 8th lines carry a nudge). A half step twice per beat keeps the rate — 0.313 against
+  0.332 rad/s — but doubles the crests to **3.00 /s**, which is exactly the **2.90 nudges/s §61 measured as Vienna's
+  jerk source #2 and removed**, on the user's own instruction that "the double time should be accenting rather than
+  driving". It is also not gateable: the test would have to be "the fine lattice is dense", and **CyborgNinja's hats
+  are 16ths at 160 BPM**, so the same test fires on the signed-off control and gives **5.33 crests/s at |a| p99 39.3**
+  (SeeYouDrop 5.00 /s at 36.8) — double the control's jerk.
+- **A decay in BEATS for the voices** (lean b). tc / median inter-fire gap, SeeYouDrop / CyborgNinja / Vienna:
+  **kick 0.80 / 0.65 / 0.76** and **snare 1.20 / 1.64 / 1.80** — Vienna sits BETWEEN the two signed-off controls on the
+  kick and 10 % past CyborgNinja on the snare, so the kick's and the snare's decays are already fair against their own
+  hit rate. The **hat's reads 0.45 / 0.90 / 0.27** and is the one that travels — but replayed exactly off the recorded
+  `d_ageH` / `d_aH` / `hat2` columns (`tools/work/v66/hattc.py`, which reproduces `d_vh` to 2.5e-6), the envelope just
+  BEFORE the next flash is **0.0265 on SeeYouDrop and 0.0224 on Vienna already**, and a tempo-scaled tc takes Vienna to
+  **0.0851** — past the control it matches and toward CyborgNinja's 0.1043. It is also a `tc` in `index.js`, which a
+  second worker holds. Not shipped; the one-line diff and its numbers are in `docs/workers/VIENNA-TUNING.md`.
+- **A `WMS` sweep** (0.26 / 0.24 / 0.22 / 0.20 / 0.18 s of wall-clock accent) and a **GLIDE sweep** at the narrowed
+  width (.40 / .45 / .50 / .55 / .577 / .62): the glide the floor/peak rule derives (.577 at W .330, .569 at W .341) is
+  the one that puts the dead time back at **0.0 %** — .45 reads 52.6 %, .50 reads 52.6 %, .55 is the first to reach 0.
+
+### Q2 — what plays at 1:46.7 (106.6693, bar 40), and is bass starting?
+
+**Yes, and precisely: the bass line steps up an OCTAVE.** Offline, band RMS per beat in dB over the 8 bars before the
+drop (`tools/work/v66/{q2,q2b}.py`):
+
+| beat of the drop bar | sub 20–60 | bass 60–150 | lowmid 150–800 | mid 800–5 k | high > 5 k |
+|---|---|---|---|---|---|
+| +0 (106.669) | **−2.1** | +1.7 | +0.6 | −5.6 | **+7.6** |
+| +1 | **−5.7** | +3.2 | +4.0 | −4.8 | +5.3 |
+| +2 | **−9.8** | +5.1 | +4.9 | −4.0 | +7.0 |
+| +3 | **−15.7** | **+6.5** | **+5.1** | −1.3 | +7.0 |
+| mean over the 4 bars after | **−3.6** | **+2.6** | **+3.8** | −0.4 | **+5 to +10** |
+
+So the **20–60 Hz sub drone that has held the whole track is pulled out** (−15.7 dB by the fourth beat; the engine's
+own `subGate` closes at 108.30 s) and **a 60–150 Hz bass line enters in its place** (+6.5 dB over four beats) with the
+150–800 layer (+5.1) and a hat / noise layer above 5 kHz (**+7.6 dB on the drop's first beat**, the biggest single
+jump). The 800–5 kHz band does not move. The bass/sub band ratio goes from **p50 −0.31 dB over the 30 beats before**
+to **+3.64 / +8.80 / +14.75 / +22.08 dB** across the drop bar, and the sub note goes from **D♯1 / F♯1 (38–46 Hz)**
+before to **A1 / F♯2 / D♯2 (46–92 Hz)** after (the truth's f0 contour: p50 46.4 Hz over the 4 bars before, **77.0 Hz**
+over the 4 after). A 40 Hz drone is felt; an 80–92 Hz line is **heard**. That is the whole of "it feels like there is
+bass starting".
+
+**BS.1770** (`tools/work/Vienna.loud.json`, the existing file — `trackmap.py --loud` was NOT re-run, so the truth dir
+was not touched): short-term **−7.16 → −6.08 LUFS, a +1.1 LU step**, against **drop 1's +3.2 LU** (−10.63 → −7.48).
+And the drop's own beat is the **quietest momentary in the window** — **−7.92 LUFS**, 1.9 LU under beat −3's −5.88 —
+because the sub leaves before the bass arrives. Drop 2 is a texture jump with a third of drop 1's energy step, exactly
+as §64 concluded. Per-band spectral flux across bars −4 to +4 is flat to ±0.05 in every band.
+
+### Q2 — the pitch channel gives it NO lead either, so nothing was shipped
+
+§64 searched 60 candidates × 7 grains × 4 causal transforms on ENERGY and got 0 beats of lead. The brief's new
+hypothesis was that a **sub-register / pitch** event might be the precursor the search missed. It is not, and the
+number is unambiguous: the **bass/sub ratio at beat −1 (106.003) reads −0.01 dB**, inside the 30-beat pre-window
+(p50 −0.31, **max +2.78**), and the crossover starts **on the drop beat** (+3.64) — **0 beats of lead**. The truth's
+`sub_runs` does show an F♯2 at 106.0, one beat early, but F♯2 also appears at 100.20, 101.10 and 103.00 in the same
+four bars (the bass slides constantly — `sub_slides` has ten 1.6-semitone glides), and the band ratio cannot see it.
+A ratio threshold is not gateable either: **+8 dB fires on 14 consecutive beats in the dream section (70.3–81.0 s)**.
+So the pitch channel adds nothing to §64's conclusion and **nothing was shipped for drop 2**.
+
+**What the eye already gets there, without a detector** (`tools/dust-trace.js` Vienna 98–118 s, the final tree):
+on the drop's own beat the KICK voice's envelope p50 goes **0.085 → 0.208 (+144 %)**, the HAT's **0.107 → 0.161
+(+51 %)**, the centre **lumC 149.1 → 161.6 (+8.4 %)** and the whole frame **lum 98.8 → 110.2 (+11.6 %)**; over the next
+two bars the CORE's sub swell drains **0.882 → 0.589 (−33 %)**, the rim darkens **lumR 113.9 → 91.5 (−20 %)** and the
+hat voice's fire rate **doubles, 1.69 → 3.37 /s** (the new layer above 5 kHz). `buildLive`, `dropLiveIn`, `dropLiveEvt`
+and `dropEnv` are all 0 on both sides of it. So the picture does read the hand-over — the core drains and the rim's
+sparkle doubles — it just does not ANNOUNCE it, and §64's measurement says it cannot be made to.
+
+### Proofs
+
+`node tools/check.js` **0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing
+soft-cap warns) · `npm test` **OK** (test_tempo / director / bars / drums / build / queue / clock, test_loud 38 pass) ·
+`node` on `grid.js` alone: `wFor` and `gFor` return `K.W` and `K.GLIDE` **identically (`===`)** at 150, 150.0303, 160,
+160.0003, 200 and 1e6; the floor/peak ratio is **18.367 %** at 90, 117, 139.7, 150 and 160 to six figures; PHI(0) = 0
+and PHI(1) = 1 at every derived pair; 2500 beats at 90 BPM give **0.220868 rad/beat** against a design 0.220893 with
+`off` back at 0 and 0 jumps; re-seats of +0.5 / +1 / −0.3 / −1 beat give max |a| **35.8** with the velocity never
+negative. s1 fake-timeline md5, the pair taken in THIS tree with only `grid.js` reverted: f360
+**`d3b80fc8` → `becb1a45`**, f840 **`d21222ba` → `80956d08`** — the absolute values are NOT §64's `42e4871c` /
+`6eae9916` because a second worker's **uncommitted** `assets/scenes/dust/dyn.js`, `assets/math/loudlight.js`,
+`assets/engine/feats.js` and `assets/engine/loud.js` (LOUDNESS phase 4) were in the tree throughout; the isolated pair
+is the claim, and the same worker's `d_dyn` / `d_base` / `d_lpk` columns moving under one of my trace pairs is exactly
+what §60's harness rule exists to catch (that pair was discarded and re-taken). No `CARD.bench`: the change adds one
+`min`, one `round` and one divide per BEAT on the CPU and touches no shader and no per-grain work. No audible run.
+**Not tagged, not pushed, not deployed.** The A/B for the user, in track time, is `docs/workers/VIENNA-TUNING.md`.
+
+### Open, for the orchestrator
+
+- **The ears' LOW lane is blind to a masked kick.** `kick2`'s AUC against Vienna's kick lines is **0.316** (below
+  chance) and its mean shape peaks **200 ms** after the beat-1 line, while the 60–150 Hz band's own RISE separates the
+  same lines at **0.999**. Vienna's low end is a continuous 38–46 Hz 808 drone with a soft thud above it, so a lane
+  that reads a LEVEL over a band that includes the drone cannot see the thud. DUST's kick voice — the shove on the low
+  grains, the centre of the picture — therefore fires at 2.03 /s in the wrong places on this track. The remedy is in
+  the picker, not any scene: a 60–150 Hz lane kept separate from the sub, graded on its RISE. This is the third item of
+  the same shape (§64 items 1 and 2 are the HIGH and MID classes).
+- **The snare voice is still the loudest wrong voice** (4.81 /s at P 0.35 against a truth of 1.81 /s on Vienna) and
+  §64's swell veto does not transfer to it (AUC 0.615). §64 open item 2 stands, now with the scene-side measurement.
+- **The hat's `tc` is an index.js line**, held by another worker this session. The diff and its numbers are in
+  `docs/workers/VIENNA-TUNING.md`; it is a taste call between SeeYouDrop's rim and CyborgNinja's, and the measurement
+  says Vienna already matches SeeYouDrop's.
+- **`barPos` is still 2 beats off on Vienna** (§61, §64): the engine's bar wrap lags the truth downbeats by +1297 ms
+  over 24–60 s, so the downbeat's bigger nudge is on the wrong beat of the bar on this track.
+- **Vienna's hats fill to 16ths on bars 17 and 21 only** (45.3–48.0 and 56.0–58.7 s). Nothing in the engine reads that,
+  and §58's `denH` is a count, not a lattice. Noted, not acted on.
+
+## §67 the peak hold was seeded by a window that did not exist — the `loudPk` defect, and the re-calibration it forces (2026-09-30, one worker; §65 open item 1, `docs/plans/LOUDNESS-PLAN.md` phase 8)
+
+§65 left one open item and called it "a phase of its own": **`Loud.push` fed a partially-filled short-term window into
+the peak hold's instant attack**. `loudM` and `loudS` are read-only functions of the ring and `zAt` will answer a
+"3 s" window from as few as 32 samples — which is the honest causal answer for them, and the warm-up guard covers it.
+The **peak hold** and the **range histogram** are not read-only: they are recursive state, and what they take in on the
+first block they keep. At `PK_REL` 0.02 LU/s a wrong seed is kept for minutes. **SeeYouDrop's file starts on a
+transient**: its first block read **+0.97 LKFS** against a true track maximum `loudS` of **−1.69**, and the hold needed
+**147 s** — longer than the track — to walk that off. The other four tracks begin in silence, which is why §63's
+synthetic `peak` case (one level for 30 s, silence first) did not catch it. Fixed here, with `L_RNG_MIN` and the
+warm-up guard re-swept on the five tracks as §65 said they would have to be. Commit `ff747da`.
+**Not tagged, not pushed, not deployed.**
+
+### The fix — BS.1770's own gating, one condition
+
+BS.1770-4 measures **complete gating blocks only**, and that is all this is: `zAt` now also reports the sample count
+its mean was taken over, and the hold and the histogram attack only when that count is `SHORT_W * sr` (exact at the
+boundary — `cn` is linear in `t` inside a sub-block, so `dn` crosses 144 000 samples one block after 3.0 s). `loudM` /
+`loudS` are untouched: a partial window is still measured over what there is, because a track's first frames reading
+as silence would be worse than reading as a short mean, and `loudRel` does not care — during warm-up the guard sets
+`loudPk = loudS + WARM_LU·exp(−age/WARM_T)`, so `loudRel` is `1 − guard/18` **whatever `loudS` says**. That is the
+whole reason the guard is relative, and it is why the partial window was invisible in every field except the one that
+remembers.
+
+**Two alternatives measured and rejected.** *Weighting the partial window by its fill* (zero-padding the mean, so the
+hold ramps over the first 3 s) is **identical from the moment the window fills** — the ramp is monotone and reaches
+exactly `loudS(3 s)` there — and before it fills, its deficit (4.77 LU at 1 s, 1.76 at 2 s, 0.15 at 2.9 s) is smaller
+than the guard at the same instants (4.80 / 4.62 / 4.45 LU at the chosen 5 LU / 25 s), so the guard wins every frame
+and the extra term buys nothing. *Seeding from the gated momentary* re-introduces the overshoot by construction: a
+transient's 400 ms loudness is the quantity that was too loud in the first place.
+
+**The same hazard, checked in the other fields.** `loudRel` — covered by the guard, shown above, and gain-invariant
+either way. `loudRange` — it **had** the hazard, through the same histogram, and the same condition fixes it: the first
+~3 s of partial windows used to enter the percentiles (first non-zero range at **0.18 s**, now at **3.3–4.3 s**), and
+dropping them moves Malicious 8.50 → **8.00** LU against the reference's whole-track 7.82 and Vienna 3.00 → **3.50**
+against 3.25. `loudAbs` is a mode flag with no window in it. The **warm-up guard** has no partial-window hazard — it is
+a difference, not a level — but it needed re-tuning for a different reason (below). `sources/fake.js`'s mirror has no
+window at all (`loudS = lkfs(eM)`, `eM` floored at 0.12), so the fake timeline never had this defect.
+One more wart, found while checking the guard: `LKFS_MIN` was only the value digital silence mapped to, not a floor, so
+the first ~70 ms of WhoLikesToParty read `loudS` **−158 LKFS** — outside the range FEATS publishes, and the one way
+`loudPk` (which *is* floored) could sit above `loudS` with no guard involved. `lk` now clamps. No graded frame of the
+five tracks is near it (min `loudS` −38.6, min `loudM` −86.8 LKFS), so it moves no measured number.
+
+### The defect, in numbers
+
+| `loudPk`, LKFS | t=5 s | 10 s | 20 s | 50 s | **100 s** | end | max overshoot of the HOLD over the honest running max, t ≥ 30 s |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop, before | +0.87 | +0.77 | +0.57 | −0.03 | **−1.03** | −2.18 | **+3.01 LU** |
+| SeeYouDrop, after | −6.22 | −3.38 | −2.18 | −3.38 | **−2.72** | −2.49 | **0.00 LU** |
+
+The track's true full-window `loudS` maximum is **−1.69 LKFS**. At 100 s the hold was **1.46 LU above** it and is now
+**1.03 LU below** it — the 0.02 LU/s release doing its job over the 38 s between drop 1 and breakdown 2, which is the
+honest answer. (In the page `loudPk` reads −1.13 → −2.73 at the same instant: the extra 0.1 LU is the display lead.)
+
+**It was not only SeeYouDrop.** The defect needs a loud first 3 s, not a loud first block: a partial window over a
+sparse-but-loud lead-in beats the eventual 3 s mean. Max overshoot of the hold, t ≥ 30 s: **SeeYouDrop +3.01 ·
+CyborgNinja +1.46 · Vienna +1.37 · WhoLikesToParty +0.02 · Malicious +0.01 LU** → **0.00 LU** on all five after.
+Vienna's first block reads −7.24 LKFS against its own track maximum of −4.96, so it carried 1.4 LU of it for the whole
+song; §65's "Vienna is the control that the migration does not invent dynamics" was measured through that.
+
+`tools/test_loud.js` grows a **`transient`** case: a −13 LKFS burst at t = 0 with **no silence first**, then −26 LKFS
+to 20 s and −20 LKFS after (true short-term max −20.00, graded against the file's exact in-test reference, which moved
+above the synthetic cases so they can use it). It asserts that `loudPk` never exceeds the loudest FULL 3 s window heard
+so far plus the guard by more than **0.1 LU**, that the hold alone (guard subtracted) never exceeds it at all, and that
+inside the first 3 s `loudPk − loudS` **is** the guard and nothing else. Against HEAD's `loud.js` the same case reads
+**+8.3 LU** of guarded overshoot at 3.2 s and **+7.9 LU** of hold at 21 s, and **3 of its 4 assertions fail** — which
+is the receipt that the case tests the defect and not the fix.
+
+### The re-calibration — `L_RNG_MIN` 7 → 6, and the guard 4 LU / 6 s → 5 LU / 25 s
+
+§63 fitted `L_RNG_MIN` against the broken hold and §65 said so. With the hold honest the whole sweep moves, and it
+moves for a structural reason worth writing down: **a causal hold pins the track's own loudest moment to `loudRel` 1.0
+and `baseLight` 1.0**, so a breakdown can only sit at `1 − dLU/max(loudRange, R)` and the ratio the mapping can show on
+a breakdown → drop pair is bounded by `1/(1 − dLU/R)`. The inflated hold used to push the whole track down into the
+bottom of 0..1, where the *same* dLU is a bigger *ratio* — that is where §63's ×1.93 came from, and it was a loan
+against a wrong number.
+
+Re-swept 3 … 18 LU on all five tracks (`tools/work/v67/{sweep,warm,clamp}.mjs`, one `read()` per 60 fps frame as the
+page does, 58 179 graded frames):
+
+| `R` | 4 | 4.5 | 5 | **6** | 7 | 8 |
+|---|---|---|---|---|---|---|
+| headline breakdown 2 → drop 2, base light (equal 5.1 s windows) | ×2.04 | ×1.82 | ×1.68 | **×1.51** | ×1.40 | ×1.34 |
+| SeeYouDrop base light p05 | 0.000 | 0.000 | 0.015 | **0.179** | 0.296 | 0.384 |
+| frames clamped to 0 — SeeYouDrop | 6.1 % | 6.0 % | 4.5 % | **0.0 %** | 0.0 % | 0.0 % |
+| ... WhoLikesToParty (from 52 s, **mid-track**) | 4.2 % | 3.3 % | 1.2 % | **0.0 %** | 0.0 % | 0.0 % |
+| ... Vienna (from 69 s, **mid-track**) | 3.6 % | 1.4 % | 0.7 % | **0.0 %** | 0.0 % | 0.0 % |
+
+**§63's two criteria no longer meet.** The music's own power ratio on that pair is ×1.936, which now needs R ≈ 4.3 —
+and there the mapping clamps 4.2 % of WhoLikesToParty and 3.6 % of Vienna to the shader's idle **mid-track**, which is
+exactly what §63 rejected R < 6 for ("the ratio stops meaning anything"). A clamped frame carries no information at
+all, so that is the hard constraint and it wins: **6 is the smallest floor that clamps no frame of any of the five
+tracks** (Malicious's 43 clamped frames are the last 0.7 s of the file), and it takes the largest ratio available under
+it. §63's rule was "the picture moves by as much as the sound does **and no more**"; ×1.51 is under the music's ×1.94,
+which is the safe side of it. 6 also puts §63's other anchor back: the four tracks that are not SeeYouDrop read base
+light p50 **0.914 / 0.803 / 0.814 / 0.880** (CyborgNinja / Malicious / WhoLikesToParty / Vienna), mean **0.853**
+against §63's measured 0.871 and `lvl`'s own p50 0.882 (§60 step 1).
+
+**The warm-up guard had to grow, and this is the one thing here that is not just "the measure being honest".** A
+causal hold means every moment that is a NEW loudest reads 1.0 — and SeeYouDrop's **8–14 s**, where the track
+assembles itself, is a new loudest almost every frame. At the old 4 LU / 6 s (gone to 0.03 LU by 30 s, long before a
+14 s intro ends) that stretch came out **brighter than the groove**, which is the exact failure §60 step 4 paid the
+0.84 floor to fix and §65 reported closed at 1.021×. Swept on **DUST's own luminance** — because the gate is a
+luminance ratio and the scene's own channels multiply the base light by ~1.2–1.5× there, so the base light's ratio is
+not the gate (one 2–40 s trace per candidate, `tools/work/v67/intro.mjs`):
+
+| `WARM_LU` / `WARM_T` | intro 2–8 s / groove | intro 8–14 s / groove | four-track base p50 mean |
+|---|---|---|---|
+| 4 / 6 s (§65, on the broken hold) | 0.357 | 1.021 | 0.894 |
+| 4 / 20 s | 0.787 | **1.177** ✗ | 0.868 |
+| 4 / 30 s | 0.757 | **1.094** ✗ | 0.850 |
+| 5 / 20 s | 0.673 | **1.047** ✗ | 0.866 |
+| **5 / 25 s** | **0.650** | **0.984** ✓ | **0.853** |
+| 6 / 20 s | 0.556 | 0.918 ✓ | 0.860 |
+
+**5 LU / 25 s** is the only candidate that clears the gate *and* lands 2–8 s on **§60's own signed-off 0.633**; 6 LU
+clears it by more but takes the first bars under that figure. `FEATS` has described a 6 LU / 20 s guard since the plan
+while the code did 4 / 6; both are now one number, and it is the measured one.
+
+### §65's pass-2 table, re-taken BACK TO BACK — and the compression, stated plainly
+
+Every trace below was taken in a **separate git worktree at `66e9977`** on its own server (see "the machine was
+shared"), before leg = that commit, after leg = that commit plus this section's files and nothing else, `WARM=20` so
+the file opens at t = 0 as §65's did. **The before leg reproduces §65's table to the digit** (mean lum 81.4, p95/p05
+4.251, base light 0.248 / 0.532 / 0.764, breakdown 2 114.5 / 128.0, drop 2 147.7, groove 69.9, breakdown 1 45.1,
+intro 0.357 / 1.021), which is the receipt that the isolation works. The **MS columns the loudness stage does not own
+are md5-identical across all nine pairs** (`lvl` / `eM` / `eS` / `alive` / `beatCount` / `dropEnv`) — §60's validity
+rule, and the engine did not move anywhere else.
+
+| DUST, SeeYouDrop 20–110 s (`&map=0`, CLOCK=1) | §65 | §67 |
+|---|---|---|
+| mean luminance | 81.4 | **97.1 (+19 %)** |
+| the window's range p95/p05 lum | 4.251 | 3.189 |
+| base light p05 / p50 / p95 | 0.248 / 0.532 / 0.764 | **0.581 / 0.849 / 0.966** |
+| `loudPk` at 100 s | −1.13 | **−2.73** (true max −1.69) |
+| **breakdown 2 → drop 2, equal 5.1 s windows** | 114.5 → 147.7 = ×1.290 | 126.9 → 155.1 = **×1.222** |
+| **breakdown 2 (§60's own 100.5–104 window) → drop 2** | 128.0 → 147.7 = ×1.154 | 141.5 → 155.1 = **×1.096** |
+| the void before drop 1 (55–57.6) · drop 1 | 37.3 · 91.6 — void/drop **0.407** | 53.2 · 116.8 — void/drop **0.456** |
+| groove (28–40) · breakdown 1 (49–55) | 69.9 · 45.1 — break1/groove 0.645 | 89.4 · 65.6 — **0.733** |
+| **intro 2–8 s / groove** | 0.357 | **0.650** (§60's signed-off figure: 0.633) |
+| **intro 8–14 s / groove** | 1.021 | **0.984** — §60's open item 2 stays closed |
+
+**The one thing that got worse, and why `L_RNG_MIN` cannot fix it.** The breakdown → drop separation in the PICTURE
+falls (×1.290 → ×1.222 on equal windows, ×1.154 → ×1.096 on §60's), even though the base light's own ratio rose from
+×1.21 (`loudRel`) to ×1.51. Every migrated scene's shader is affine with a large constant term — DUST's
+`gBase = .22 + 1.42·uDyn`, and in this window the measured map is `lum ≈ 79.1 + 77.0·base` — so a base light nearer 1
+compresses the ratio. §65's ×1.290 was **bought by the defect**: a hold 1.46 LU too high pushed the breakdown's base
+light down to 0.460, where the same 2.9 LU is a bigger fraction. Lowering R does not buy it back (R = 4 gives only
+×1.33 in luminance, and it clamps mid-track), so the lever for absolute contrast is the scene's own gain, which §65's
+watch-list item 4 already named. **The gate is still met in the sense §60 set it** — the drop is brighter than the
+breakdown before it, where §60 had it *darker* at ×0.875.
+
+**The quiet masters are still not dim** (DUST, 20–110 s, mean luminance and base light p50):
+
+| track | master (gated LKFS) | mean lum §65 → §67 | base light p50 §65 → §67 |
+|---|---|---|---|
+| SeeYouDrop | −3.88 | 81.4 → **97.1 (+19 %)** | 0.532 → 0.849 |
+| CyborgNinja | −9.05 | 99.5 → 106.0 (+7 %) | 0.719 → 0.897 |
+| Vienna | −6.89 | 93.9 → 92.4 (−2 %) | 0.833 → 0.847 |
+| WhoLikesToParty | −10.03 | 120.0 → 115.2 (−4 %) | 0.848 → 0.795 |
+| Malicious | −12.46 | 114.4 → 112.7 (−1 %) | 0.906 → 0.855 |
+
+The track that moves is the one that had the defect; the two quietest masters move by 1–4 % and stay at the top of the
+range, which is what the relative guard and the relative floor are for. **WhoLikesToParty's three drops get a bigger
+base-light step** (×2.61 / ×1.61 / ×1.67 → ×3.88 / ×1.89 / ×1.98): its hold was already honest, so all it got was the
+new floor.
+
+**The other three migrated scenes** (SeeYouDrop 20–110 s, one trace each, same pair rule):
+
+| scene | mean lum | drop 2 / breakdown 2 (§60 win) | breakdown 1 / groove |
+|---|---|---|---|
+| FEIGEN (6) | 155.5 → 163.4 (+5 %) | 1.159 → 1.124 | 0.753 → 0.804 |
+| MANDALA (2) | 165.7 → 170.5 (+3 %) | 1.293 → 1.286 | 0.795 → 0.846 |
+| POLYTOPE (5) | 37.3 → 52.9 (**+42 %**) | 2.438 → 1.966 | 0.613 → 0.690 |
+
+Same shape on all four: brighter, and a little less contrast, because all four read one mapping. POLYTOPE moves most
+because its own gain is the smallest (`0.75·(0.35 + base)·presence`), so it sat lowest on the compressed part of the
+curve.
+
+### The fake timeline — exactly the four migrated scenes, and `&loud=0` is bit-exact
+
+`PORT=8900 tools/scene-md5.sh`, all twelve ids, both legs on the current HEAD (`937c510`) in the isolated worktree,
+`errs []` and `hop 840 row 72` on every one:
+
+| id | scene | HEAD | HEAD + §67 | HEAD + §67, `&loud=0` |
+|---|---|---|---|---|
+| **1** | **DUST** | `eef2dd9a` / `80956d08` | **`6afe61f2` / `d3bed410`** | `e970e8dc` / `466b5d3b` |
+| **2** | **MANDALA** | `1124721c` / `cb3442e9` | **`f2df3a81` / `c93dcf77`** | `9a57626c` / `5e59be93` |
+| **5** | **POLYTOPE** | `4bcf26a3` / `c7469414` | **`e6aed873` / `e6ec96a0`** | `06b46063` / `cccb0094` |
+| **6** | **FEIGEN** | `39d51392` / `f4032da8` | **`fac80f37` / `6251d7e9`** | `8d6ac4a6` / `9adb1f5b` |
+| 0, 3, 4, 7, 8, 9, 10, 11 | the rest | — | **identical, line for line** | — |
+
+**Exactly 8 of the 24 lines moved, and they are the four scenes that read `baseLight`.** Nothing else is reachable:
+the only files touched are `engine/loud.js`, `engine/feats.js` (text) and `math/loudlight.js`, and the only scene-side
+consumer of either is `baseLight`. The move comes through `sources/fake.js`'s mirror, which reads `LOUDK.WARM_LU` /
+`WARM_T` — the fake timeline has no real `Loud`, so the full-window condition itself cannot move it; the guard and
+`L_RNG_MIN` can, and did.
+
+**`&loud=0` is BIT-EXACT.** The right-hand column is **identical to the same four lines taken at HEAD under
+`&loud=0`** (`IDS="1 2 5 6" tools/scene-md5.sh b67x '&loud=0'`), and s2 / s5 / s6 are **v0.14's own lines**
+(`9a57626c` / `5e59be93`, `06b46063` / `cccb0094`, `8d6ac4a6` / `9adb1f5b`) bit for bit, exactly as §63 phase 5 left
+them. **s1's is `e970e8dc` / `466b5d3b` and NOT §65's recorded `42e4871c` / `6eae9916`** — because §66 committed
+`dust/grid.js` between the two phases and moved DUST's pre-loudness rendering; the receipt that this phase did not
+touch it is that the `&loud=0` line is the same number on both legs of this phase's own pair.
+
+### §65's open item 2, measured and left alone
+
+§65 suggested that if the user's eye wants §60's dark void back, the honest way is a short-window term — `loudM`
+(400 ms) resolving a 2.6 s void where `loudS` (3 s) cannot. Measured as the one-line variant (the base light's
+numerator becomes `min(loudS, loudM)`, so a brief void darkens at once and a transient cannot brighten anything), at
+R = 6: **void 1 / drop 1 does not move at all** (0.712 → 0.712) and breakdown 2 / drop 2 moves only 0.606 → 0.591. It
+is not a win, and the reason is in the truth: that void is a riser and a reverb tail, it integrates to −4.68 LKFS
+against the groove's −3.99, and a 400 ms window agrees with the 3 s one that it is loud. **Not implemented.** The eye's
+complaint about the void is not a window-length problem — `eM`'s AGC crashing there was the thing the eye liked, and
+recovering it would mean deliberately un-measuring the loudness, which is not a worker's unilateral call.
+
+### Proofs
+
+`node tools/check.js` **0 fail** (157 modules, uniforms 202, MS keys 205, help.feats gaps 0, **the same 5 pre-existing
+line-cap warns**) · `npm test` **0 FAIL** — taken in the isolated worktree at HEAD + §67, because the main tree's
+`test_drums` has **3 failures from the parallel worker's uncommitted `ears/perc.js`** and its own new "§68" block;
+`test_drums` is **OK** both at clean HEAD and at HEAD + §67's five files, which is the attribution · `node
+tools/test_loud.js` **43 pass** (38 before: the `transient` case's 4
+and one re-spelt `rel` assertion) · `node tools/test_loud.js --truth` **63 pass**: the engine is still within
+**0.0000–0.0063 LU** of the exact reference on all 58 179 graded frames and within 0.018–0.260 LU of python's 3 s
+window across the resample, and **7 of 8** truth drops still read louder than the breakdown before them with every
+dLU agreeing with the truth's to 0.05 LU (Malicious 148.29 s remains the one recorded exception). **No audible run** —
+every number is the deterministic file path or pure node.
+
+**Cost**: `test_loud`'s own line, **3.76–3.83 µs/block → 5.88–5.99 µs/frame** at 48 kHz / 60 fps (0.036 % of a frame)
+against §63's 3.73 / 5.83. The fix adds one array write per block to a loop that already runs 1024 biquad sections per
+block, which is inside this measurement's run-to-run noise, so `CARD.bench` was not re-taken.
+
+**THE MACHINE WAS SHARED.** Another worker was running its own pages on port 8898 (`assets/scenes/dust/grid.js`,
+`ears/perc.js`, `tools/work/v66/`) throughout, and it **committed `grid.js`** (§66) while this section was being
+measured. Two consequences, both handled. (1) Its uncommitted `grid.js` would have contaminated a DUST trace taken in
+the main tree, so every trace above was taken in a **separate worktree** (`/tmp/rr67`, its own server on port 8900) at
+`66e9977` — before §66 — with both legs on that one tree; the before leg reproducing §65's table to the digit is the
+receipt. (2) The md5 list below is instead taken at the **current HEAD (`937c510`, i.e. with §66's `grid.js`)**, both
+legs, because that is what "nothing else may move" has to be proved against; §65's recorded s1 lines
+(`11ca47d0` / `d21222ba`) therefore do **not** appear — §66 moved them before this phase ran, which is why the before
+column is measured here rather than quoted. Wall-clock load does not reach any of these numbers: the deterministic
+file path is frame-locked (HARNESS), which is why a bench would have needed the interleaved-pair protocol and a trace
+does not.
+
+### Open items
+
+1. **The look is the user's, and this moves it on all four migrated scenes.** §65 was never signed off; §67 moves it
+   again, and towards §60's approved brightness (SeeYouDrop's base light p50 0.532 → 0.849 against the `dyn` drive's
+   own signed-off 0.873, and `lvl`'s 0.882). The intro is back under the groove and 2–8 s lands on §60's own 0.633,
+   but the **void before drop 1 keeps getting brighter** (void/drop 0.268 at §60 → 0.407 at §65 → 0.456 here) and the
+   **breakdown → drop step in the picture is smaller than §65's**, for the measured reason above.
+2. **A seek now warms up over ~25 s, not ~6.** `features-loud.js` starts a fresh `Loud` on a stamp jump, so a scrub
+   re-arms the full 5 LU guard. Nobody has looked at a scrub with the loudness on; if it reads as a long fade-in, the
+   fix is to carry the previous hold across a seek within the same source, not to shorten the guard.
+3. **`L_RNG_MIN` 6 is a compromise, stated plainly**: §63's ratio criterion wants 4.3 and the no-clamping constraint
+   wants ≥ 6. If the user's eye says the breakdown → drop step is too small, the knob is the SCENE's gain first
+   (§65 watch-list item 4) and this floor second, and the floor's price is the shader's idle mid-track on
+   WhoLikesToParty and Vienna.
+4. **`shapeFor()` still reads the absolute `eM < 0.74`** (§60 open item 5, §65 open item 3) — untouched, still the last
+   AGC absolute in DUST's look path.
+5. `tools/accept.sh` still has not been run since v0.14.
+
+## §68 the ears' LOW lane is a 60–150 Hz RISE — the masked kick, and the picker that could not see it (2026-10-01, one worker; §66 open item 1, the user on DUST: "the bounce feel slow and jerky on the kick"; `docs/AUDIT-drums.md` "§68")
+
+One engine commit (`fbc57ae`, `assets/engine/ears/perc.js` and its ruler), one docs commit. **Not tagged, not pushed,
+not deployed.**
+
+### What §66 handed over, reproduced
+
+§66 Q1 measured Vienna (90.00 BPM, D♯ minor) and found the kick on beats 1 and 3 plus a 16th pickup, the sub a
+**continuous D♯1 / F♯1 drone with no pulse at all** (a 7 dB span over all 16 slots of the bar), and `kick2`'s AUC
+against those kick lines **0.316 — below chance**, reading 0.031 at a kick and 0.130 at a non-kick 16th and peaking
+**+200 ms** late, while the 60–150 Hz band's own RISE separated the same lines at **0.999**. DUST's kick voice fired
+**2.03 /s at P 0.21 / R 0.27**, biggest bins on the 16ths AFTER the beat.
+
+Reproduced on the node harness over the whole of all five tracks (`tools/drums-node.js`, `drumcheck.py`), `kick2`
+against the truth's `low` — the baseline table: SeeYouDrop P 0.55 R 0.43 F **0.49** · CyborgNinja 0.99 / 0.64 /
+**0.78** · WhoLikesToParty 0.97 / 0.51 / **0.67** · Malicious 0.31 / 0.22 / **0.26** · Vienna 0.30 / 0.23 / **0.26**.
+
+### Why it failed — the band AND the onset function, measured separately
+
+`tools/work/v68/{lab,diag,fine,sweep*}.js` run the ENGINE's own filter bank at PHOP over each track and score
+candidate lanes, so band and onset function move independently.
+
+- **The band.** `BANDS[2]` was **40–150 Hz** and a 4th-order Butterworth high-pass at 40 Hz is ~3 dB down at 40: it
+  passes D♯1 (38.89 Hz) and F♯1 (46.25 Hz) at essentially full level. The lane's band WAS the drone. Band dB at a
+  kick against elsewhere, Vienna: 22–70 Hz **−17.2 / −17.8**, 40–150 Hz **−13.7 / −14.5** — the kick is worth under a
+  dB of the band it was supposed to own.
+- **The onset function.** `flux = res[i] − res[i−1]` with `res = dB − median9(dB)` is a ONE-HOP difference of a
+  median residual. Both halves fail here: a running median of the whole mix tracks the drone's own slow wobble (the
+  same mechanism §64 found on the HIGH band — "a median lags a swell"), and a thud whose attack spans two or three
+  10.7 ms hops shows only a fraction of its rise in any single one of them.
+
+AUC against the kick truth (the peak in [line − 10, +70] ms at a kick line against the other 16th lines of the truth
+beat grid), old lane → `rise8` on 60–150 Hz:
+
+| | SeeYouDrop | CyborgNinja | WhoLikesToParty | Malicious | **Vienna** |
+|---|---|---|---|---|---|
+| `flux(res9)` 40–150 Hz (the old lane) | 0.653 | 0.954 | 0.790 | 0.522 | **0.511** |
+| `rise8` 40–150 Hz (the band alone) | 0.787 | 0.996 | 0.880 | 0.803 | 0.666 |
+| `flux(res9)` 70–150 Hz (the function alone) | 0.639 | 0.989 | 0.794 | 0.526 | 0.600 |
+| **`rise8` 60–150 Hz (both)** | **0.816** | **0.997** | **0.892** | **0.811** | **0.713** |
+
+Neither change alone is the fix: the band alone buys Vienna 0.511 → 0.666, the function alone 0.511 → 0.600, the two
+together 0.713. **§66's 0.999 is not reachable causally and should not be read as a target** — it was measured with a
+zero-phase `sosfiltfilt` envelope on the SAME statistic that defines the kick truth. A finer hop for the lane (256 /
+128 / 64 samples, swept × pre-window × peak-window) buys at most **0.735** against 0.714 at PHOP, so PHOP stays and
+§48's "a 128-sample hop costs 2–5× the false onsets" is not reopened.
+
+### The lane
+
+`BANDS[2]` **40–150 → 60–150 Hz** — no new filter, because band 2 is the lane's own (`map.js` already excludes it
+from every energy sum as a duplicate of 22–70 + 70–150) — and the onset function is the band's **RISE over a short
+LOCAL baseline**: `rise = dB[i] − mean(dB[i−1 … i−KICK_BASE])`, half-wave rectified, against an **absolute** floor.
+
+- **`KICK_BASE` 8 hops (~85 ms)**. A mean of the recent past, not a median of the whole mix: a steady drone
+  contributes the same level to the hop and to its own baseline, so it cancels, while a thud's whole rise shows at
+  once. Plateau 7 / 8 / 9 hops = mean F .589 / **.605** / .600; 10 breaks CyborgNinja (P .80 — the baseline reaches
+  back past its own 160 BPM kicks).
+- **`KICK_RISE` 5.0 dB, with NO adaptive `fm + k·fd` term.** A rise is a RATIO, so one dB number travels across
+  tracks and loudnesses — which is exactly what §64 found the HIGH band's absolute step did NOT do. The adaptive term
+  is what used to cost the recall: at the same floor, `k` 3.0 takes CyborgNinja R **0.96 → 0.53** (its own loud kicks
+  inflate `fd` and suppress the quieter ones) and the mean F 0.605 → 0.46. Floor plateau 4.5 / 5.0 / 5.5 / 6.0 dB =
+  .594 / **.605** / .604 / .596; 5.0 is the centre.
+- **`REFRACT[0]` 0.085 s, unchanged — but applied to the LANE.** `last[0]` is set only in `emit()`, so a bare 808
+  note start never reached it and the low stream had no refractory of its own; under the old adaptive threshold that
+  was hidden, and a rise against a mean baseline needs it explicitly (the hop after a hit still reads ~7/8 of its
+  rise, because the hit is 1 of the 8 hops in that hop's baseline). A new `lastLow` fixes it: **1042 / 1035 / 2458 /
+  1796 / 412 fires → 488 / 616 / 1155 / 821 / 290**. Shorter refractories were swept and are worse (mean F 0.529 at
+  45 ms, 0.557 at 60 ms, **0.605** at 85 ms).
+- **`KICK_LAG` 0.012 s**, the lane's own, replacing `ONSET_LAG`'s 0.006. A 5 dB floor needs the hop to be most of the
+  way up where a 1.2 dB flux floor cleared on the hop that merely CONTAINED the attack; without the correction the
+  raw median lag went +11/+7/+10/−4/−1 ms → +14/+9/+12/+3/+13.
+- The existing level gate (`dB < p90 + GATE_DB`) is kept. Swept with and without and on three bands: **identical to
+  every digit**, so it costs nothing and still protects a silent band's noise floor.
+- **60–150 Hz beats the alternatives**, mean F: **.605** against 40–150 .570, 70–150 .595 (free — it is already
+  `B_LOWBASS` — and 0.010 worse) and 60–120 .571.
+
+**Two designs measured and REJECTED**, both the obvious ones:
+
+- **(b) a UNION of the two lanes** (an onset if either fires, 60 ms refractory — the DUST pattern): mean F **0.537**
+  against 0.605. It keeps the old lane's false fires, which is the whole problem: Vienna P 0.19–0.21 against 0.44.
+- **(c) the old lane VETOED by the rise** (§64's own pattern — the flux fires, the rise has to confirm it): mean F
+  **0.479–0.495**. The veto cleans Vienna's precision (0.12 → 0.17–0.37) and destroys its recall (0.20 → **0.09–0.17**),
+  because the old lane does not FIND Vienna's kicks in the first place — a veto can only remove.
+
+Replacing the lane is the only design that wins, and it wins on precision AND recall on every track.
+
+### The ruler, and why the kick needed a fourth reference
+
+`tools/truth/kicktruth.py` (new, beside `trackmap.py` and `drumcheck.py`) writes `tools/truth/<T>.kick.json`: the
+**offline 60–150 Hz rise at the truth beat grid's 16th lines** — `tools/work/v66/kick3.py`'s own method, generalised
+off each track's `beats` instead of Vienna's hand grid so it grades a whole track and the four controls. A kick =
+rise ≥ 4.0 dB and a local max over ±1 line. `drumcheck.py` grades the kick against it as a fourth reference.
+
+It exists because **`low` is itself a 40–150 Hz level picker**, so on this one track the reference shares the
+detector's blindness: Vienna's `low` lists **475 onsets = 2.46 /s where the groove has 1.74 kicks/s**. The new
+reference is validated where `click` is trustworthy — it reproduces **CyborgNinja's `click` at P 0.99 / R 0.89**,
+WhoLikesToParty's at 0.82 / 0.66, and **§66's own Vienna hand-grid list at P 0.96 / R 0.92** (57 against 60 over
+24–60 s, lag p50 −1 ms). Grid-free peak picking at the same floor was tried first and rejected: Vienna's 60–150 Hz
+envelope has 5.5 local maxima/s clearing 4 dB, so the GRID is what makes it a kick list.
+
+### The five-track table
+
+**`kick2`, node, whole track, F** (before → after), against the three references:
+
+| | vs `low` | vs `click` | vs `kick` (§68) |
+|---|---|---|---|
+| SeeYouDrop | 0.49 → **0.54** (P 0.55→0.63, R 0.43→0.48) | 0.46 → **0.48** | 0.40 → **0.53** (P 0.48→0.65, R 0.34→0.44) |
+| CyborgNinja | 0.78 → **0.83** (P 0.99→0.99, R 0.64→0.71) | 0.79 → **0.84** | 0.84 → **0.90** (P 0.99→0.99, R 0.74→0.81) |
+| WhoLikesToParty | 0.67 → **0.72** (P 0.97→0.92, R 0.51→0.59) | 0.74 → **0.78** | 0.71 → **0.78** (P 0.80→0.79, R 0.64→0.77) |
+| Malicious | 0.26 → **0.32** (P 0.31→0.35, R 0.22→0.30) | 0.10 → **0.13** | 0.23 → **0.39** (P 0.27→0.41, R 0.20→0.37) |
+| **Vienna** | 0.26 → 0.23 (P 0.30→**0.39**, R 0.23→0.16) | **0.08 → 0.30** (P 0.05→0.23, R 0.17→0.42) | **0.19 → 0.42** (P 0.18→**0.56**, R 0.19→0.34) |
+
+**14 of the 15 rows go up.** The one that falls is Vienna against `low`, the reference §66 proved is the drone — and
+its precision rises there too. **Lag p50 against `low`: +4 / +5 / +3 / +6 / +4 ms against the old +4 / +7 / +7 / +2 /
++2** — the same mean (+4.4 vs +4.4), §58's "+3/+4 ms" preserved, nothing later on 3 of 5 and +4 ms on Malicious,
+whose kicks neither detector finds (§51). `kickEvt` (the beater-gated class on top of the lane) on Vienna goes
+P 0.09 → **0.26** / R 0.10 → 0.25 against `click`.
+
+**Page, det, `&map=0`, `CLOCK=1`, 20–110 s, one `tools/filetrace.js` trace per track, `drumcheck.py`** — `kick2` F:
+
+| | vs `low` | vs `click` | vs `kick` | lag p50 vs `low` |
+|---|---|---|---|---|
+| SeeYouDrop | 0.59 → **0.63** | 0.59 → 0.55 | 0.50 → **0.62** | +4 → +4 ms |
+| CyborgNinja | 0.81 → **0.84** | 0.82 → **0.85** | 0.87 → **0.91** | −5 → −7 |
+| WhoLikesToParty | 0.64 → **0.71** | 0.70 → **0.76** | 0.70 → **0.77** | +7 → +4 |
+| Malicious | 0.33 → **0.39** | 0.17 → 0.14 | 0.21 → **0.38** | −9 → −4 |
+| **Vienna** | 0.30 → **0.32** | **0.11 → 0.41** | **0.16 → 0.51** (P 0.15→0.56) | +2 → +3 |
+
+**Stated, not hidden:** on SeeYouDrop the BEATER-gated class loses a little (`ears` vs `click` P 0.71 → 0.66 / R 0.57
+→ 0.51 on the page; `test_ears.js`'s own 25–45 s window reads kick F 0.786 → 0.729) because its kicks are 808-ish
+with fundamentals under 60 Hz — §51 already recorded "a sub below the 40 Hz band edge" as that track's miss. The LOW
+lane, which is what `kick2` and every scene read, gains there on both the `low` and the `kick` references.
+
+### What DUST does with it — the user's own complaint
+
+`tools/dust-trace.js` on the final tree, scene 1, `&map=0`, graded by `tools/work/v68/dustkick.py` against
+`<T>.kick.json` at ±50 ms (§64's tolerance). The two traces of each pair differ only in `perc.js`.
+
+| | before | after |
+|---|---|---|
+| **Vienna 24–60 s** (truth 57 kicks = 1.58 /s) | **74 fires (2.06 /s), P 0.11 / R 0.14 / F 0.12** | **54 fires (1.50 /s), P 0.72 / R 0.68 / F 0.70** |
+| … amp at a MATCHED fire / at an unmatched one | 0.323 / **0.374** — the real kicks flashed SMALLER | **0.458** / 0.292 — the right way round |
+| … `kick2`'s AUC at a kick line vs the other 16ths | 0.482 (mean 0.118 at a kick / 0.151 elsewhere) | **0.697** (0.323 / 0.154) |
+| **SeeYouDrop 20–110 s** (truth 344 = 3.82 /s) | 271 fires (3.01 /s), P 0.68 / R 0.54 / F 0.60 | **305 (3.39 /s), P 0.79 / R 0.70 / F 0.75** |
+| … `kick2`'s AUC | 0.627 | **0.698** |
+
+The voice now fires at the music's own kick rate on Vienna (1.50 against 1.58 /s) instead of a third too often, and
+§66's own signature — "the matched fires sit at the voice's FLOOR and the unmatched ones are BIGGER" — is inverted.
+The control is not merely unharmed: SeeYouDrop's kick voice is better too. (§66's 0.21 / 0.27 was graded against its
+own 24–60 s hand-grid list; the same trace reads 0.11 / 0.14 against this one. The FIRE COUNT matches exactly — 74
+here, 73 there — so it is the same picture, measured against a slightly different list.)
+
+### Everything else that reads these onsets, proved
+
+- **The whole-track MAP is byte-identical on all five tracks** — `bpm`, `beat`, `phase`, `bar`, `drops`, `dropWhy`,
+  `sections`, `tonic`, every `onsets` count, `beats`, `downbeats`, `novelty` (`md5 d809f6e7` before and after). Its
+  non-causal front end never touched band 2, but `map.js` DOES feed the causal `kick` events into `densE`, the drop
+  rule's "does this bar carry the beat" measure — that input moved (SeeYouDrop 209 → 192 causal kicks, Vienna 112 →
+  104) and no drop or section line moved with it.
+- **§59's clock tables hold.** The PCM clock takes these onsets as phase measurements (`features-clock.js`), so it
+  was re-measured on all five tracks (`tools/clock-study.js` + `gridcheck.py --heard`, the whole track). **Lattice
+  jumps 0 / 3 / 1 / 0 / 3 — identical** — and no track changes lattice: CyborgNinja still locks at **17.9 s** and
+  reads **+3 → +1 ms** (|lag| p50 3 → 2, p90 5 → 4), WhoLikesToParty +7 → +6 and locks at 5.6 s both ways, Vienna
+  |lag| p50 9 → 7 / p90 86 → 82 (71 → 73 % of in-octave frames within 30 ms), Malicious +22 → +23 (83 → 80 %), and
+  SeeYouDrop's lag med +2 → +1 with its lock 7.6 → **9.2 s**, the one row that gets worse. `clockConfPcm` on / off
+  the beat on SeeYouDrop goes 0.93 / 0.86 → **0.93 / 0.47**, which is the row's own target (a useful confidence
+  separates them) moving the right way.
+- **The fake-timeline md5 sweep: 0 of the 24 lines move.** The ears never run under `#test`. Taken as an ISOLATED
+  pair in a `git worktree` of HEAD with only `perc.js` different, because the first pair taken in the working tree
+  was INVALID — a second worker's §67 (`loudlight.js`) landed between the two sweeps and moved s1, s2, s5, s6, which
+  is exactly what §60's harness rule exists to catch. That pair was discarded and re-taken clean.
+- **Cost flat.** `Ears.push` over the whole of Vienna, best of 3, three interleaved pairs: **70.39 / 70.36 / 70.33 →
+  70.61 / 71.36 / 70.79 µs per 512-sample block** = 0.1099 → 0.1106 ms per 60 Hz frame at 48 kHz (**+0.6 %**). The
+  band COUNT is unchanged (band 2 moved, nothing was added) and the lane adds 8 adds and one divide per hop, 94
+  hops/s. `test_ears.js`'s own gate reads 0.0585 → 0.0596 ms median per block against a 0.19 ms budget.
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing
+  soft-cap warns) · **`npm test` OK**. `tools/test_drums.js` has **6 new cases**: a synthetic masked kick (20 bars at
+  120 BPM, 48 kHz — a continuous D♯1 at 0.40 with NO pulse and a 95 Hz thud decaying over 30 ms at 0.18 on beats 1
+  and 3, plus its 4 kHz beater, which is the Vienna geometry in its purest form: **+0.9 dB in a 40–150 Hz band, under
+  the old lane's own 1.2 dB floor, and +9 dB in 60–150**) reads **P 1.000 / R 1.000 at lag p50 +1.3 ms** against the
+  old lane's **P 0.87 / R 0.87 at +12.7**, never fires twice for one thud, and `kickEvt` / `kickVel` / `denK` all
+  follow. `tools/test_ears.js` now reports the LOW lane's own P/R/lag row (SeeYouDrop: `low` P 0.60 R 0.58 F 0.59,
+  `kick` P 0.65 R 0.57 F 0.61); its 4 failures at 48 kHz are pre-existing and unmoved.
+- **No audible run.** Every number above is the deterministic file path or node.
+
+### Open, for the orchestrator
+
+- **§66 open item 1 is CLOSED.** The lane is in the picker, so every reader benefits: `kick2`, `kickEvt`, `kickAge`,
+  `kickVel`, `denK`, DUST's kick voice, the PCM clock's phase measurements and the map's own drop density.
+- **The SNARE / rim lane is obvious and cheap, and it was NOT built** (the brief forbids it; §66 open item 2 and §64
+  open item 2 stand). The same design — `rise = dB[i] − mean(dB[i−1 … i−8])` against an absolute dB floor — on the
+  **existing 150–2500 Hz band** (`B_SNARE`, no new filter at all) against the truth's `mid` onsets, mean F over the
+  five tracks **0.528 → 0.633** at a 3.5–4.5 dB floor: SeeYouDrop F 0.58 → **0.70**, WhoLikesToParty 0.70 → **0.78**,
+  Malicious 0.29 → 0.37, **Vienna P 0.22 → 0.76 / F 0.34 → 0.66** — and CyborgNinja F 0.73 → 0.72 flat but its
+  RECALL 0.61 → 0.51, which is the one number that needs a decision before anyone ships it. On Vienna's own rim/clap
+  reference (§66's `clap-ref-rise.json`, 72 hits on beats 2 and 4 over 24–60 s) the rise on the existing **150–600 Hz**
+  band reads **P 0.83 / R 0.56 / F 0.67 at lag +2 ms** against the current lane's **P 0.37 / R 0.67 / F 0.48** — so
+  §66's "the snare voice fires 2.7× too often at P 0.35" has an engine answer of the same shape as this one. A floor
+  of 4.5 dB on 150–2500 Hz is one line; the CyborgNinja recall and whether `snare2` (synapse's, better on 3 of 4
+  tracks per §51) should change at all are the decisions, not the measurement.
+- **`tools/truth/<T>.kick.json` is built from the truth BEAT grid**, so it inherits each track's grid. Vienna's
+  `Vienna.json` is still marked `provisional` (a hand grid) and Malicious has "tempo only" — the reference is only as
+  good as those, which is why `low` and `click` are still graded beside it rather than replaced.
+- The lab and sweep scripts are `tools/work/v68/{lab,diag,fine,sweep,sweep2..5,snare,dustkick,mapsum}.js`,
+  gitignored like §66's; the reference BUILDER was promoted to `tools/truth/kicktruth.py` because `drumcheck.py` now
+  depends on its output.
+- **`tools/accept.sh` still has not been run since v0.14** (§65 item 5, unchanged by this session).
+
+**v0.23 tagged locally (2026-10-01) on the user's word ("tag what has been done so far"; deploy still held):** v0.22 + §61 (the
+nudge as a velocity profile, Vienna's clock octave), §62 (`key` is the tonic), §63/§65/§67 (LOUDNESS: the BS.1770 `loud` stage,
+FEIGEN / MANDALA / POLYTOPE / DUST base light on true loudness, the peak-hold fix), §64 (the hat bed gate, the sub-void arming
+path), §66 (Vienna in numbers, `K.WREF`), §68 (the ears' low lane is a 60–150 Hz rise). `releases/retinarave-v0.23.html` (1454 KB,
+157 modules; from `file://` on scene 1: errs [], nonFinite [], clock pcm), package.json 0.23.0. Not pushed (retinarave.com serves
+v0.15). The user's next word: the snare / rim lane — "yes" (§69).
+
+## §69 the ears' SNARE lane is the two MID bands' RISE — the rim the picker could not hear, and the hat it called a snare (2026-10-01, one worker; §68 open item 1, §66 open item 2, §64 open item 2, the user on the trade: "yes"; `docs/AUDIT-drums.md` "§69")
+
+One engine commit (`e136243`, `assets/engine/ears/perc.js` + its feature docs), one tooling commit (`7f80a8d`,
+the new ruler, the harness knobs and the test cases), one docs commit. **Not tagged, not pushed, not deployed.**
+
+### What §68 handed over, reproduced
+
+§68 measured the snare lane and did not build it, leaving one number for the user: *CyborgNinja's recall
+0.61 → 0.51*. Reproduced on the node harness over the whole of all five tracks (`tools/drums-node.js`,
+`drumcheck.py`), `snareEvt` against the truth's `mid` — the baseline: SeeYouDrop P 0.52 R 0.69 F **0.59** ·
+CyborgNinja 0.92 / 0.59 / **0.72** · WhoLikesToParty 0.79 / 0.62 / **0.69** · Malicious 0.20 / 0.56 / **0.29** ·
+Vienna 0.24 / 0.71 / **0.35**; mean F **0.528**, §68's own number to the digit.
+
+### A fourth reference, because `mid` is the same kind of picker as the lane
+
+`tools/truth/snaretruth.py` (new, beside `kicktruth.py`) writes `tools/truth/<T>.snare.json`: the **offline
+150–800 Hz rise at the truth beat grid's 16th lines**, `kicktruth.py`'s method moved to the mid band — a 4th-order
+zero-phase envelope, `rise = 20log10(peak[−5, +60] ms / mean[−85, −5] ms)`, a hit = rise ≥ 4.0 dB and a local max
+over ±1 line. `drumcheck.py` grades `snare` against it as a fourth reference beside `mid` / `click` / `kick`.
+
+It exists for §68's reason, one band up: **the truth's `mid` is itself a 150–2500 Hz MEDIAN-residual flux list at a
+3 dB threshold** (`trackmap.py`), so on the one track that matters it shares the detector's blindness — Vienna's
+`mid` lists **201 onsets = 1.04 /s** where §66's hand-built rim/clap reference reads **2.0 /s** over 24–60 s.
+
+**The band was chosen on the one hand-made list there is** (§66's `tools/work/v66/clap-ref-rise.json`, 72 rim/clap
+hits on Vienna's beats 2 and 4). At 4.0 dB, 150–800 Hz reproduces it at **P 1.00 / R 0.97 (70 of 72) at lag +0 ms**
+against 150–600's 0.87 / 0.81, 150–1200's 0.95 / 0.96 and 150–2500's 0.98 / 0.90, and it lists **1.83 hits/s** on
+Vienna against §66's own measured 1.81. The floor plateaus at 3.0–4.0 dB (R 0.97 both) and breaks at 5.0 (R 0.67),
+so 4.0 is the top of the plateau, as it is for the kick. Validated where the control is trustworthy: **CyborgNinja's
+`mid` at P 0.97**, WhoLikesToParty's at 0.81. Like the kick reference it is a MID-BAND TRANSIENT list, not a
+snare-only one — a kick's 150–800 Hz body is a rise at a grid line too, exactly as `mid` and the engine's own
+`snareEvt` count it.
+
+### The lane, and why its band is TWO bands
+
+`tools/work/v69/{lab,sweep,cmp,fine,grid,final}.js` run the ENGINE's own filter bank at PHOP over each track and
+score candidate lanes against both references, so band, floor, baseline and refractory move independently.
+
+The honest difficulty is that **the two references disagree about the band because each was built on one of them**.
+Mean F over the five tracks against both, each candidate at its own best floor:
+
+| lane | vs `mid` | vs `snare` | sum |
+|---|---|---|---|
+| the old `flux(res9)` on 150–2500 | 0.528 | 0.498 | 1.026 |
+| `rise8` 150–2500 alone (`B_SNARE`) | **0.647** | 0.570 | 1.217 |
+| `rise8` 150–600 alone (`B_HARM`) | 0.571 | 0.594 | 1.165 |
+| `rise8` on a NEW 150–800 filter | 0.615 | **0.601** | 1.216 |
+| `rise8` 150–1200 (new filter) | 0.627 | 0.586 | 1.213 |
+| **`rise8` MEAN of 150–600 and 150–2500** | 0.621 | 0.609 | **1.230** |
+| `rise8` MAX of the two (a union) | 0.586 | 0.589 | 1.176 |
+| `rise8` MIN of the two (a hard AND) | 0.628 | 0.573 | 1.201 |
+
+So the lane is
+
+```
+rise = ½·[ rect(dB[B_HARM]  − mean of the previous 8 hops of dB[B_HARM])
+         + rect(dB[B_SNARE] − mean of the previous 8 hops of dB[B_SNARE]) ]
+```
+
+against an absolute floor. Three properties earn each piece, and each sits on a measured plateau:
+
+- **TWO EXISTING bands, averaged.** A snare is a BODY (150–600) and a NOISE (up to ~2.5 kHz) at once, and a pad's
+  or an arp's swell is usually one band only, so averaging halves it. It is the only candidate near the top on both
+  references, and it needs **no new filter** — a 150–800 Hz lane of its own scores the same sum and would add an
+  eighth band to the bank. MAX is a union and keeps the loose band's false fires (Vienna P 0.46 against 0.59); MIN
+  is a hard AND and costs CyborgNinja's recall (0.48). Each band's rise is **rectified BEFORE the mean**, so a
+  falling band contributes 0 rather than cancelling the other; the other order was measured and is identical to
+  three decimals. The weight sweep 0 / .25 / .4 / .5 / .6 / .75 / 1 on the 150–600 term gives sums 1.220 / 1.228 /
+  1.226 / **1.224** / 1.216 / 1.195 / 1.149 — a plateau over .25–.6, so **plain half-and-half is the centre, not a
+  fit**.
+- **`SNARE_BASE` 8 hops (~85 ms), `KICK_BASE`'s own number.** Swept 6 / 7 / 8 / 9 → sum 1.270 / 1.275 / 1.270 /
+  1.194. One number serves both lanes and sits inside the plateau.
+- **`SNARE_RISE` 3.75 dB, with NO adaptive `fm + k·fd` term**, for §68's reason: a rise is a RATIO, so one dB number
+  travels across tracks and loudnesses. (Swept here too — `k` 1 buys 0.02 of sum and `k` 3 takes CyborgNinja's
+  recall 0.57 → 0.40.) Floor plateau 3.5 / 3.75 / 4.0 / 4.25 dB → 1.262 / 1.270 / 1.275 / 1.275; **3.75 is the end
+  of it where CyborgNinja keeps the most recall (0.57 against 0.55 at 4.0) and Vienna fires closest to its own rate
+  (1.25 /s against a truth of 1.83)**.
+- **`REFRACT[1]` 0.060 → 0.075 s.** The single biggest knob after the onset function: a rise against an 8-hop
+  baseline still reads ~7/8 of itself on the hop AFTER a hit (§68's own observation for the low lane), so the lane
+  needs the refractory explicitly. Swept 0.060 / 0.070 / 0.075 / 0.085 / 0.100 s → sum 1.224 / 1.275 / 1.275 /
+  1.275 / 1.266. **0.075 is the shortest on the plateau**: 0.085 (the low lane's) would block a 16th note above
+  176 BPM, and no track here goes there — which is exactly why the margin is taken on material we do not have.
+  Unlike the low lane this one needs no private `last`: `emit(1)` is unconditional (a snare has no beater gate), so
+  `last[1]` already IS the lane's last fire.
+- **`SNARE_LAG` 0.010 s**, the lane's own, replacing `ONSET_LAG`'s 0.006 — `KICK_LAG`'s story on the mid band. At
+  `ONSET_LAG` the median lag per track against `mid` reads +3 / +5 / +5 / +5 / +4 ms; the extra 4 ms puts it at
+  **−1 / +1 / +1 / +1 / 0 ms, mean +0.4**, which is the OLD lane's own mean to the digit (§58: "ears +0").
+- The existing level gate (`dB < p90 + GATE_DB`) is kept, per band, as the flux lane applied it.
+
+### The five-track table
+
+**`snareEvt`, node, whole track** (before → after), against both references:
+
+| | vs `mid` | vs `snare` (§69) |
+|---|---|---|
+| SeeYouDrop | 0.59 → **0.69** (P 0.52→0.63, R 0.69→0.77) | 0.51 → **0.59** (P 0.51→0.62, R 0.51→0.57) |
+| CyborgNinja | 0.72 → 0.72 (P 0.92→**0.99**, R 0.59→0.57) | 0.78 → **0.90** (P 0.77→0.94, R 0.79→0.87) |
+| WhoLikesToParty | 0.69 → **0.82** (P 0.79→0.82, R 0.62→0.81) | 0.52 → **0.64** (P 0.46→0.52, R 0.58→0.84) |
+| Malicious | 0.29 → **0.41** (P 0.20→0.30, R 0.56→0.68) | 0.28 → **0.46** (P 0.28→0.50, R 0.29→0.42) |
+| **Vienna** | 0.35 → **0.59** (P 0.24→**0.54**, R 0.71→0.65) | 0.32 → **0.53** (P 0.25→0.65, R 0.43→0.44) |
+| **mean F** | **0.528 → 0.646** | **0.482 → 0.624** |
+
+**10 of 10 rows up or flat**, and on Vienna's own rim/clap list the lane reads **P 0.84 / R 0.57 / F 0.68 at +2 ms**
+against the old lane's **P 0.37 / R 0.68 / F 0.48**. Lag p50 vs `mid` **+1 / +1 / +1 / +1 / −2 ms** against the old
++0 / +2 / +1 / −2 / +1.
+
+**Page, det, `&map=0`, `CLOCK=1`, 20–110 s, one `tools/filetrace.js` trace per track, `drumcheck.py`** — `snareEvt` F:
+
+| | vs `mid` | vs `snare` | lag p50 vs `mid` |
+|---|---|---|---|
+| SeeYouDrop | 0.69 → **0.73** | 0.63 → **0.68** | +0 → +1 ms |
+| CyborgNinja | 0.70 → **0.71** (P 0.92→**1.00**) | 0.78 → **0.91** | −9 → −12 |
+| WhoLikesToParty | 0.70 → **0.82** | 0.54 → **0.65** | +1 → +1 |
+| Malicious | 0.32 → **0.46** | 0.25 → **0.45** | −11 → −10 |
+| **Vienna** | 0.42 → **0.72** (P 0.29→**0.77**) | 0.32 → **0.55** (P 0.24→0.68) | −1 → −3 |
+
+### CyborgNinja's recall: the question was mis-framed
+
+The user accepted a recall loss. It is smaller than §68's preview (0.59 → **0.57**, not 0.61 → 0.51 — §68's figure
+came from the lab's own picker, the engine's reads 0.59), and the diagnosis says it should not be bought back.
+
+Of the **101** `mid` onsets the old lane found and the new one drops (`tools/work/v69/final.js --diag --diag2`):
+
+| | median two-band rise | median hat-band (5–12 k) rise | on the truth `high` list | on the §69 snare reference | on the `click` list |
+|---|---|---|---|---|---|
+| the 101 LOST | **2.46 dB** | 9.18 dB | 97 % | **21 %** | 41 % |
+| the 627 KEPT | **7.56 dB** | 9.63 dB | 99 % | **92 %** | 94 % |
+
+They are **hats** — a 150–2500 Hz flux list counts a hat's spill and a mid-band RISE rightly does not. Hat
+co-incidence is not the discriminator (94 % of the lost and 90 % of the kept have a hat within 30 ms; on this track
+almost everything does); the absence of a mid-band BODY is. Measured and **rejected**: a lower floor for the mid
+lane does buy the recall back and buys hats with it — floor 2.0 dB takes CyborgNinja R 0.58 → 0.69 and **92 % of
+the lane's fires onto a hat**, while its F against the snare reference falls 0.89 → 0.84. Also measured and not
+needed: excluding the >2.5 kHz band is what the 150–600 term already does inside the mean, and gating on the HIGH
+lane's own onset would veto 90 % of the real snares on this track. **Nothing was added.** The row the user was
+warned about moves −0.02 and the same track's F against the grid reference moves 0.78 → **0.90**.
+
+### What DUST does with it — §66's own complaint
+
+`tools/dust-trace.js` on the final tree, scene 1, `&map=0`, graded by `tools/work/v69/dustsnare.py` against
+`<T>.snare.json` at ±50 ms (§64's tolerance). The two traces of each pair differ only in `perc.js`. DUST's snare
+voice is the flash ring on the body annulus, and it fires on **the earlier of** `snareEvt` and the `snare2` edge
+(§58 task B), so it sees the lane through a union with a level that did NOT change.
+
+| | before | after |
+|---|---|---|
+| **Vienna 24–60 s** (truth 70 hits = 1.94 /s) | **173 fires (4.81 /s), P 0.29 / R 0.71 / F 0.41** | **114 fires (3.17 /s), P 0.45 / R 0.73 / F 0.55** |
+| … share of fires at the voice's FLOOR | **39 %** | **11 %** |
+| … amp at a matched fire / at an unmatched one | 0.618 / 0.263 | 0.642 / **0.417** |
+| **SeeYouDrop 20–110 s** (truth 307 = 3.41 /s) | 333 (3.70 /s), P 0.64 / R 0.70 / F 0.67 | **367 (4.08 /s), P 0.66 / R 0.79 / F 0.72** |
+| **CyborgNinja 20–50 s** (truth 110 = 3.67 /s) | 197 (6.57 /s), P 0.52 / R 0.93 / F 0.66 | 193 (6.43 /s), P 0.53 / R 0.94 / **F 0.68** |
+
+§66's own number is reproduced to the digit — **4.81 /s** — and it falls to 3.17, with the share of floor-sized
+flashes (the uneven big-and-tiny rhythm §64 named) going **39 % → 11 %**. Both controls are better too.
+
+**The remaining over-firing on Vienna is `snare2`'s, and that is measurable.** `tools/work/v69/voicesim.js` replays
+`voices.js`'s own `voice()` rule over each trace's columns under three trigger policies:
+
+| after the change | Vienna 24–60 (truth 1.94 /s) | SeeYouDrop 20–110 (3.41 /s) | CyborgNinja 20–50 (3.67 /s) |
+|---|---|---|---|
+| UNION (what ships) | 3.19 /s · P 0.45 · F 0.56 | 4.08 /s · P 0.66 · F 0.72 | 6.43 /s · P 0.53 · F 0.68 |
+| **the LANE alone** | **1.39 /s · P 0.80 · F 0.67** | 3.88 /s · P 0.68 · **F 0.73** | **3.17 /s · P 0.94 · F 0.87** |
+| `snare2` alone (unchanged) | 3.03 /s · P 0.42 · F 0.51 | 1.72 /s · P 0.74 · F 0.50 | 6.30 /s · P 0.53 · F 0.68 |
+
+The lane alone is now the best policy on **all three windows, including SeeYouDrop** — which is where §64's same
+question about the HAT had to keep the union, because coverage fell there. It is not taken here: it is a SCENE
+change the user has not seen, and a voice that drops the level loses its SIZE (the amp p50 sits at the floor 0.200,
+because `voices.js` deliberately does not read the ears' velocity — §51's "the velocity saturates"). It is §69's
+open item with the numbers already in hand.
+
+### The `snare2` decision: it stays synapse's
+
+`snare2` — the level the scenes read for SIZE, and TORUS2's default since 2026-09-29 — **does not move.** Measured
+both ways on the whole of all five tracks (`drumcheck.py --src ears,v2`): synapse's `snare2` reads mean F **0.664**
+against `mid` and **0.448** against the snare reference, the new lane **0.646** and **0.624**; per track the lane
+now wins on `mid` on 3 of 5 (SeeYouDrop 0.69 vs 0.63, WhoLikesToParty 0.82 vs 0.79, Vienna 0.59 vs 0.52) and on
+the grid reference on **5 of 5**, and its lag is ≈ 0 against `snare2`'s +5 / +10 / +10 / +6 / +12 ms. §51's own
+criterion — "synapse's are better than the ears' on 3 of 4 tracks" — has therefore flipped.
+
+It stays anyway, for three reasons that are not about the measurement: moving it needs a new `snare` / `snareFl`
+stream out of the ears and a strength rank in `engine/drums/drums.js` (the brief is the picker, not the reactive
+stage); it would move a scene's DEFAULT look, and §51's rule is that the default moves only on the user's word; and
+DUST's voice already fires on **the earlier of** `snareEvt` and the `snare2` edge, so the lane reaches the picture
+without it, with the level still SIZING each hit (voices.js: "the event only PLACES the hit"). The numbers that
+would justify moving it are in DUST's own table below, and it is the §69 open item.
+
+Note where each field comes from, because it decides what the lane reaches: in FILE + MAP mode
+`snareEvt` / `snareAge` / `snareVel` / `denS` are the map's own non-causal list (`features-ears.js mapOverride`),
+so **§69 is a LIVE-mode and `&map=0` change** — which is where the user's attention has been since 2026-09-28 —
+while `snare2`, being synapse's, is causal in every mode. The kick lane has the same split.
+
+### Everything else that reads these onsets, proved
+
+- **The whole-track MAP is byte-identical on all five tracks** (`md5 d809f6e7`, §68's own hash). `map.js` runs its
+  own `PercTrack` but collects only `'kick'` from it (`densE` is kicks per second), and `map.onsets.snare` is the
+  offline picker in `map/onsets.js` — 387 / 1078 / 1219 / 236 / 201, the truth's `mid` counts exactly.
+- **The LOW lane and the HAT are byte-identical**, column for column, on all five node traces: `lowEvt`, `lowFl`,
+  `lowT`, `kickEvt`, `kickVel`, `denK`, `hatEvt`, `denH`. The two lanes share only `BANDS`, and class 1 touches
+  `p95[1]` / `last[1]` / `hist[1]` and nothing else.
+- **The live build / drop detector (§54) is byte-identical** on all five tracks: `buildLive`, `dropLiveIn`,
+  `dropLiveEvt`, `dropEvt`, `dropEnv`, `tension`, `subGate`, `bassReg`. `build/feed.js` reads bass / hp / sub, not
+  snares. 89 of the 122 columns of `tools/build-node.js`'s trace are identical on every track.
+- **The bar store (§50) moves and improves.** `bars/feed.js` takes `denS` in `FEAT_NAMES` and `snareEvt` / `snareAge`
+  in `EVT`, so `barMatch` and the bar events move. Graded by `predcheck.py` on the same node traces, the store's
+  SNARE route: SeeYouDrop pred F 0.562 → **0.608**, reactive 0.591 → **0.693**; Vienna pred F 0.300 → **0.337** with
+  P 0.420 → **0.796** and lag p90 +14.0 → **+1.6 ms**, reactive 0.353 → **0.590** with P 0.235 → 0.542. The kick and
+  hat routes of the same ruler are unmoved to the digit.
+- **The predicted-event queue (§55) moves and improves on 4 of 5.** `nextSnareIn` (`queuecheck.py`): SeeYouDrop
+  0.59 → **0.64** (jumps 23.7 → **9.4** /min) · CyborgNinja 0.45 → 0.39 (31.3 → 25.9) · WhoLikesToParty 0.55 →
+  **0.66** (18.6 → **5.5**) · Malicious 0.10 → **0.25** (75.0 → 33.6) · **Vienna 0.30 → 0.33 with P 0.42 → 0.76,
+  lag p90 13 → 8 ms and 8.1 → 0.0 jumps/min** — and Vienna's predicted snare PERIOD becomes 0.66 s, the half note
+  at 90 BPM, against 0.33 before. `nextKickIn` / `nextHatIn` / `nextBeatIn` / `nextBarIn` / `nextDropIn` are
+  unmoved on every track.
+- **§59's clock tables move; they were re-measured on all five tracks** (`tools/clock-study.js` + `gridcheck.py
+  --heard`, the whole track). The PCM clock takes every percussion onset as a phase measurement
+  (`clock.js R_CLS[1]` = 1.5), so this is the one stage §68 could prove unmoved and §69 cannot:
+
+  | | lock | lag med | \|lag\| p50 / p90 | within ±30 ms | conf on / off beat |
+  |---|---|---|---|---|---|
+  | SeeYouDrop | 9.2 → 12.0 s | +1 → +3 ms | 8/19 → 8/21 | 98 → 97 % | 0.93/0.47 → 0.93/0.80 |
+  | **CyborgNinja** | **17.9 → 3.4 s** | +1 → +1 | 2/4 → **1/3** | 93 → **97 %** | 0.93/0.93 → 0.94/0.92 |
+  | WhoLikesToParty | 5.6 → 5.6 s | +6 → +6 | 6/9 → 6/10 | 99 → 99 % | 0.93/0.92 → = |
+  | Malicious | 6.1 → 6.1 s | +23 → **+30** | 23/36 → 30/49 | 80 → **50 %** | 0.90/0.90 → 0.91/0.90 |
+  | **Vienna** | 20.9 → 20.9 s | +6 → **+4** | 7/82 → **5/67** | 73 → 74 % | 0.91/0.86 → 0.92/0.81 |
+
+  **CyborgNinja's lock — §59's own worst number — falls from 17.9 s to 3.4 s** and its in-octave accuracy rises to
+  97 %. The two rows that get worse are stated, not hidden: SeeYouDrop's lock (9.2 → 12.0 s) and the confidence
+  separation §68 had just won there (off-beat 0.47 → 0.80), and **Malicious's bias** (+23 → +30 ms), which drops it
+  through the 30 ms gate from 80 % to 50 % — on the one track whose truth grid is marked "tempo only" and whose own
+  tempo is 0.33 BPM from the clock's, and whose BIAS-REMOVED steadiness is unchanged (94 → **95 %** within ±30 ms
+  of its own median). Nothing in the lane is tuned on the clock.
+- **The fake-timeline md5 sweep: 0 of the 24 lines move.** The ears never run under `#test`; taken as an ISOLATED
+  pair in a `git worktree` of HEAD (`PORT=8906 tools/scene-md5.sh`) with only `perc.js` different, per §60's harness
+  rule. 12 scenes, `errs []` on every one, both sides.
+- **Cost: inside the noise.** `Ears.push` over the whole of Vienna, three interleaved old/new pairs per run, two
+  runs: best **72.85 → 72.92** µs per 512-sample block (+0.1 %) and **73.36 → 73.03** (−0.4 %) — the two runs
+  disagree in sign, so the change is under the ±0.5 % this machine can resolve. **The machine was NOT idle** (load
+  average 3.5–3.8 throughout; the busy processes are outside this session and could not be stopped), which is why
+  only the interleaved pair is quoted. Expected: the band COUNT is unchanged — both bands were already in the bank
+  — and the lane adds 16 adds and 2 divides per hop at 94 hops/s against a 7-band 4th-order filter bank running at
+  48 kHz. `test_ears.js`'s own gate reads 0.0605 → 0.0579 ms median per block against a 0.19 ms budget.
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing
+  soft-cap warns) · **`npm test` OK**. `tools/test_drums.js` has **9 new cases** on two synthetics, each graded
+  against the old lane in a worktree of HEAD: **a rim on 2 and 4 under 16th hats over a continuous mid bed** (the
+  CyborgNinja geometry — without the bed a hat on silence is an infinite rise in every band it touches, however
+  faint, and the test would say nothing) reads **40 fires for 40 rims, P 1.000 / R 1.000 at lag p50 −8.7 ms**
+  against the old lane's **51 fires, P 0.78**, with the hat lane untouched at 310 fires for 320 hats either way;
+  and **a snare under a 1.5 s mid pad swell** fires once, on the stick, where the old lane fires twice inside the
+  swell (1.034 and 1.162 s) — §64's "a median lags a swell", one band down. `snareEvt` / `snareVel` / `denS` all
+  follow the lane in the same cases. `tools/test_ears.js`'s own windows read snare F (25–45 / 57–90 / 105–130 s)
+  **0.72 / 0.73 / 0.64 → 0.67 / 0.83 / 0.72** at n 513 → 470 and its onset-error row snare med −1 p90 6 → −1 p90
+  11 ms; its 4 failures at 48 kHz are pre-existing and unmoved.
+- **No audible run.** Every number above is the deterministic file path or node.
+
+### Open, for the orchestrator
+
+- **§68 open item 1 is CLOSED, and with it §66 open item 2 and §64 open item 2.** The lane is in the picker, so
+  every reader benefits: `snareEvt`, `snareAge`, `snareVel`, `denS`, DUST's flash ring, the bar store's
+  fingerprints, the predicted queue's snare row and the PCM clock's phase measurements.
+- **`snare2` is the next decision and it is the user's** (above): the lane now beats synapse's level on the grid
+  reference 5 of 5 and on `mid` 3 of 5, at ~0 ms against +5…+12, but moving it needs a new stream out of the ears
+  and it moves TORUS2's DEFAULT look.
+- **DUST's snare voice could take the lane ALONE** — better on all three windows, including the control §64 had to
+  protect. One argument in `assets/scenes/dust/index.js`; it needs the user's eye and a size for an unconfirmed
+  hit, not another number.
+- **Malicious's PCM clock bias** +23 → +30 ms (80 % → 50 % within ±30 ms of a truth grid marked "tempo only" and
+  0.33 BPM away; bias-removed 94 → 95 %). The one row that gets worse and cannot be blamed on the reference.
+- **SeeYouDrop's PCM lock** 9.2 → 12.0 s and the confidence separation §68 had just won there (off-beat 0.47 →
+  0.80). Both are the same track's clock finding fewer, cleaner snare measurements early.
+- `tools/truth/<T>.snare.json` is built from the truth BEAT grid, so like the kick reference it inherits each
+  track's grid — Vienna's `Vienna.json` is still `provisional` and Malicious is "tempo only", which is why `mid` is
+  still graded beside it rather than replaced.
+- The lab and sweep scripts are `tools/work/v69/{lab,sweep,cmp,fine,grid,final,lagsel,snarelab,voicesim,dustsnare,
+  diffcols,cost,syndbg*}.js|py`, gitignored like §68's; the reference BUILDER was promoted to
+  `tools/truth/snaretruth.py` because `drumcheck.py` now depends on its output.
+- **`tools/accept.sh` still has not been run since v0.14** (§65 item 5, unchanged by this session).
+
+**The A/B watch list, in TRACK time** (the user listens in stream / live mode, where the lane is what the scenes read;
+in file + map mode `snareEvt` is still the map's own list and only `snare2` is causal):
+- **Vienna 0:24–1:00** — the rim/clap on beats 2 and 4. DUST's flash ring should now land ON the backbeat and stop
+  flickering between hits: 4.81 → 3.17 flashes/s against a groove of 1.94, and the tiny floor-sized flashes 39 % →
+  11 %. This is §66's own complaint ("the snare voice is still the loudest wrong voice").
+- **Vienna 1:46–2:00** (drop 2) — the same ring over the octave change; the lane's precision there is where the
+  biggest gain is.
+- **CyborgNinja 0:20–0:50** — the control for "does it still fire enough at 160 BPM". The ring's rate is unchanged
+  (6.57 → 6.43 /s) but the beat should sit tighter: the PCM clock locks at **3.4 s instead of 17.9**.
+- **SeeYouDrop 0:20–1:50** — the second control; the ring fires a little MORE often (3.70 → 4.08 /s against a truth
+  of 3.41) and better placed. Watch whether its clock feels slower to settle (lock 9.2 → 12.0 s).
+- **Malicious** — the one track that gets worse: the beat grid sits ~7 ms further off the truth. Nothing else on
+  this track is reliable either (§51: neither detector finds its kicks).
+
+**v0.24 tagged locally (2026-10-01) on the user's word ("it does look better, tag what has been done already"; deploy still held):**
+v0.23 + §69 (the ears' snare / rim lane). `releases/retinarave-v0.24.html` (1460 KB, 157 modules; from `file://` on scene 1:
+errs [], nonFinite [], clock pcm), package.json 0.24.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: the
+scenes' snare size onto the lane (`snare2` → the lane's own velocity) and Malicious's +30 ms clock bias (§70, §71).
+
+## §70 the SCENES' snare is the lane alone, and a hit now has a SIZE — `kickAmp` / `snareAmp`, and the saturation was a sign (2026-10-01, one worker; §69's open item, the user's word; `docs/AUDIT-drums.md` "§69")
+
+Three commits: `074061b` the engine's new fields, `e2c950a` DUST's flash ring, `7d679d2` TORUS2's snare wave.
+**Not tagged, not pushed, not deployed.**
+
+### What §69 handed over
+
+§69 simulated DUST's snare voice on the lane ALONE and found it best on all three windows (Vienna 1.39 /s at
+P 0.80 against the union's 3.19 /s at P 0.45; SeeYouDrop P 0.68 / F 0.73; CyborgNinja P 0.94 / F 0.87) and did not
+ship it, for two reasons: it changes cross-scene defaults, and **a lane-only hit has no size** — `voices.js`
+deliberately does not read the ears' velocity, because §51 measured it saturated ("`kickVel` p50 1.0, the uniform
+brightness of the predicted route"), so every lane-only flash came out at the voice's floor 0.200.
+
+### The saturation is a SIGN, not the music
+
+`dsp.js`'s stochastic quantile is
+
+```js
+this.v += x > this.v ? s * (1 - this.q) : -s * this.q;      // q = 0.95 → up 0.001, down 0.019
+```
+
+At equilibrium the fraction of samples BELOW `v` satisfies `(1 − F)·(1 − q) = F·q`, i.e. **F = 1 − q**. So
+`new Quantile(0.95, …)` settles on the **5th** percentile, not the 95th — confirmed directly
+(`tools/work/v70/qtest.mjs`: 200 000 draws from U(0, 10) give `Quantile(0.95).v` = **0.384** and
+`Quantile(0.05).v` = **9.376**, against the true p05 0.5 and p95 9.5). The snare lane's `p95[1]` therefore sits at
+**3.86 / 4.41 / 4.18 / 3.84 / 4.31 dB** on the five tracks — a hair over `SNARE_RISE` 3.75 — against a true-hit p95
+of **11.9 / 19.4 / 23.1 / 7.7 / 9.0**, and `snareVel = clamp01(rise / p5)` reads exactly 1.000 for **91 / 54 / 55 /
+74 / 52 %** of the hits. §51's observation was right and its explanation was wrong.
+
+**The convention is deliberately NOT fixed.** The same class carries every percussion band's level gate
+(`perc.js lvl`, p90, the `GATE_DB −34` reference), the sub gate's own p90 (`sub.js q90`) and `lpSweep`'s
+(`texture.js rollP90`) — four live readers, every one of them calibrated against the number it actually gets.
+Flipping the sign moves every band gate in the picker, which moves the map, the bar store, the queue and §59's clock
+tables all at once. It is an engine item with its own session (docs/OPEN-ITEMS.md), not a side-effect of a scene
+change.
+
+### The field: `amp = clamp01(rise_dB / SPAN)`
+
+No quantile at all — §68's own principle, one band up: *a rise is a RATIO, so one absolute dB number travels across
+tracks and loudnesses.*
+
+`tools/work/v70/{risedist,ampsweep}.js` run the engine's own `PercTrack` over the whole of all five tracks, record
+the rise that fired every lane fire, and match each fire to `tools/truth/<T>.snare.json` / `<T>.kick.json` at
+±50 ms. The rise at a TRUE hit, in dB:
+
+| | p10 | p50 | p95 | | p10 | p50 | p95 |
+|---|---|---|---|---|---|---|---|
+| | **snare lane** | | | | **low lane** | | |
+| SeeYouDrop | 4.08 | 6.32 | **11.90** | | 5.36 | 7.75 | **16.47** |
+| CyborgNinja | 4.23 | 6.95 | 19.45 | | 5.98 | 9.69 | 23.15 |
+| WhoLikesToParty | 4.65 | 8.78 | 23.08 | | 6.35 | 19.15 | 37.26 |
+| Malicious | 3.90 | 4.73 | 7.75 | | 5.21 | 6.28 | 9.55 |
+| Vienna | 4.20 | 5.62 | 8.97 | | 5.39 | 6.81 | 10.74 |
+| pooled | 4.13 | 6.47 | 19.62 | | 5.45 | 8.76 | 30.37 |
+
+**SPAN is the MEDIAN TRACK's p95, rounded** — 11.9 → **12 dB** for the snare, 16.5 → **16 dB** for the kick. One
+absolute mapping cannot put a 7.7 dB track and a 23 dB track both at 1, and the median track is the honest centre of
+that spread; the pooled p95 (19.6 / 30.4) would leave Vienna's hardest rim at 0.46 and Malicious's at 0.40.
+
+Each lane's **FLOOR is 0**, which is not a convenience: it makes each lane's own threshold map to itself over its
+span, and `3.75/12` and `5.0/16` are both exactly **0.3125**. So "a hit that only just fired" is the same soft
+0.31-sized hit in BOTH lanes, the two channels are directly comparable, and — the thing a lane-only trigger needs —
+no fire is ever invisible. (A FLOOR term was swept at 1 / 2 / 2.5 / 3 dB and only pushes a threshold hit toward
+invisibility. The SPAN sweep: snare 10 / 12 / 14 / 16 dB puts the threshold at 0.38 / 0.31 / 0.27 / 0.23 and the
+ceiling share at 23 / 17 / 13 / 9 %; **12 is where the threshold IS the brief's "a soft hit ≈ 0.3"**.)
+
+What the published fields read at each event, `tools/drums-node.js` whole track (`tools/work/v70/ampnode.js`):
+
+| | `snareVel` p10/p50/p90 · at 1.000 | `snareAmp` p10/p50/p90 · at 1.000 |
+|---|---|---|
+| SeeYouDrop | 1.000 / 1.000 / 1.000 · 91 % | 0.330 / 0.477 / 0.828 · 3 % |
+| CyborgNinja | 0.612 / 1.000 / 1.000 · 54 % | 0.346 / 0.561 / 1.000 · 18 % |
+| WhoLikesToParty | 0.472 / 1.000 / 1.000 · 55 % | 0.339 / 0.586 / 1.000 · 23 % |
+| Malicious | 0.835 / 1.000 / 1.000 · 74 % | 0.323 / 0.382 / 0.545 · 0 % |
+| Vienna | 0.753 / 1.000 / 1.000 · 52 % | 0.329 / 0.427 / 0.689 · 0 % |
+
+### The amp RIDES THE EVENT — and that is why `*Vel` is one hit stale
+
+`kickAmp` / `snareAmp` are NOT `CONT` history fields. `kickVel` / `snareVel` are, and the ears read a `CONT` field
+by interpolating the history ring AT heard time — while an onset's audio time is `(hop end) − half a hop − the
+lane's lag`, about **16 ms BEFORE the hop that found it**. So on the frame the event is released, the ring still
+holds the PREVIOUS hit's velocity. `snareAge` has always been exact because it comes from the released event; the
+amp does the same (`perc.js emit(c, t, vel, amp)` → `Ears.read` holds `lastAmp[cls]`). Caught by the first
+synthetic probe, where the amp was non-monotone in the hit's amplitude, and now a `test_drums.js` case: on the frame
+the first synthetic rim fires, `snareVel` reads **0.000** and `snareAmp` reads its own **0.322**.
+
+There is no `hatAmp`: the hat is the one class still on the HPSS-lite flux (§69), whose onset function is a one-hop
+difference of a median residual and has no magnitude in dB to publish.
+
+In **FILE + map** mode `kickAmp` / `snareAmp` are the map's own velocity, which is an OFFLINE `numpy` p95 over the
+class's peak fluxes (`map/onsets.js` `VEL_P`) and so does not saturate — the honest size the causal path had to
+build is simply what the map already published. As in §69, this is therefore a **LIVE-mode and `&map=0` change**.
+
+### DUST's flash ring: the lane alone, sized by `snareAmp`
+
+`voices.js voice()` takes a 7th argument `amp`. Given it, the voice is in LANE mode: the level's rising edge is not a
+trigger and its confirm branch is dead; a fire's size is `max(floor, amp)`. **`snare2` is still passed and is still
+the FLOOR under the envelope** — measured, not assumed (`tools/work/v70/voicesim.js`, five policies over the same
+traces): dropping it takes Vienna's `v.e` p50 0.285 → 0.245 and p95 0.659 → 0.595, so the level still holds the body
+annulus up BETWEEN hits. The KICK and the HAT keep the union: the v2 kick IS the ears' low lane (§51), and §64's
+answer for the hat was that coverage matters more than precision there.
+
+`tools/dust-trace.js` scene 1 `&map=0`, graded by `tools/work/v70/dustsnare.py` against `<T>.snare.json` at ±50 ms.
+Each pair back to back in an isolated `git worktree` of `074061b` with only `assets/scenes/dust/` different, and the
+pair proved by the md5 of each trace's `beatCount` / `dropEnv` / `eM` columns (identical on all three windows).
+
+| | before (the union) | after (the lane + `snareAmp`) |
+|---|---|---|
+| **Vienna 24–60 s** (truth 70 = 1.94 /s) | 114 fires (3.17 /s), P 0.45 / R 0.73 / F 0.55 | **49 (1.36 /s), P 0.80** / R 0.56 / F **0.66** |
+| … at the voice's FLOOR · amp p10 / p50 | 11 % · 0.259 / 0.495 | **0 %** · **0.407** / 0.590 |
+| … median gap between flashes | 267 ms | **667 ms** — the half note at 90 BPM, the backbeat itself |
+| … lumC lift per flash p50 · lag p90 | +13.85 · +14 ms | **+26.05** · **−3 ms** |
+| **SeeYouDrop 20–110 s** (307 = 3.41 /s) | 367 (4.08 /s), P 0.66 / R 0.79 / F 0.72 | 349 (3.88 /s), P **0.68** / R 0.78 / F **0.73** |
+| … at the floor · amp p50 | **72 %** · 0.250 | **0 %** · **0.494** |
+| **CyborgNinja 20–50 s** (110 = 3.67 /s) | 193 (6.43 /s), P 0.53 / R 0.94 / F 0.68 | **95 (3.17 /s), P 0.94** / R 0.81 / F **0.87** |
+| … at the floor · lumC lift · gap p50 | 15 % · +11.23 · 183 ms | **0 %** · **+17.37** · **367 ms** (the 8th at 160 BPM) |
+
+Every number reproduces §69's own simulation of this policy to the digit, and **both controls are better than the
+union** — which is the test §64's same question about the HAT had to fail. The one row that gets worse is stated:
+**Vienna's recall 0.73 → 0.56**, 49 flashes against 70 reference hits on the one track whose truth beat grid is still
+`provisional`. §66's complaint was the opposite one ("the snare voice is still the loudest wrong voice", 4.81 /s
+against a groove of 1.94); what is left now lands one flash per backbeat at P 0.80 with none of them floor-sized.
+
+### TORUS2's snare wave — and the channel that was dead on SeeYouDrop
+
+`math/waves.js step()` takes an optional `hits` array: a non-negative entry replaces that band's LEVEL EDGE with "an
+event just fired, launch at this amplitude", anything else leaves the band on the edge detector. GIELIS, the other
+`mkWaves()` caller, is untouched (its md5 lines are identical). TORUS2 passes
+`[-1, snareEvt ? max(0.01, snareAmp) : 0, -1]`.
+
+The edge detector needed `snare2 > HI (0.45)` having been under `LO (0.25)`, and **synapse's `snare2` never gets
+there on SeeYouDrop** — §69 measured its mean at 0.125 at a snare line (0.370 CyborgNinja, 0.422 Vienna). So
+TORUS2's snare band launched **17 waves in 90 s** of the user's own reference track against a groove of 3.41 /s. The
+channel was effectively dead and no ruler had ever counted it: `info()` reported wave POSITIONS, never LAUNCHES.
+`mkWaves` now keeps a per-band launch count and last amplitude (`fires()` / `lastAmp()`, reset with the buffer, never
+read by the look), TORUS2 reports them from a new read-only `hooks.dinfo()`, and `tools/work/v70/t2snare.py` grades a
+step in `d_fS`. The BEFORE side of each pair is the same tree with only the `hits` argument removed.
+
+| | before (`snare2`'s edge) | after (the lane + `snareAmp`) |
+|---|---|---|
+| **SeeYouDrop 20–110 s** (truth 307 = 3.41 /s) | **17 launches (0.19 /s)**, P 0.59 / R 0.03 / F 0.06 | **349 (3.88 /s), P 0.68 / R 0.78 / F 0.73** |
+| **CyborgNinja 20–50 s** (110 = 3.67 /s) | 55 (1.83 /s), P 0.80 / R 0.40 / F 0.53 | **95 (3.17 /s), P 0.94 / R 0.81 / F 0.87** |
+| **Vienna 24–60 s** (70 = 1.94 /s) | 56 (1.56 /s), P 0.52 / R 0.41 / F 0.46 | **49 (1.36 /s), P 0.80** / R 0.56 / F **0.66** |
+| lag p50/p90 · launch amp p10 (SYD · CN · Vienna) | −21/−14 · −16/−12 · −3/+1 ms · 0.551 / 0.475 / 0.566 | **−4/+16 · −12/−2 · −3/−3 ms** · **0.334 / 0.345 / 0.407** |
+
+`HI`/`LO` also meant a wave could only ever launch at 0.45 or more; the lane's amplitude starts at 0.31, so a soft
+rim now sends a small wave where before it sent none. **The look is otherwise the same picture:** mean luminance p50
+Vienna 100.10 → 98.23, CyborgNinja 99.99 → 100.32, SeeYouDrop 60.60 → 62.79; lumC 166.27 → 164.60 / 160.85 → 161.96
+/ 103.23 → 107.74; lumR 116.10 → 113.60 / 119.65 → 120.11 / 83.43 → 85.72. Waves alive p50 8 → 13 on SeeYouDrop (its
+snare band now has some). `hooks.train('4x4'|'sync')` is unaffected — `step` returns before the band loop while a
+pattern is pinned.
+
+### Every consumer of the snare, and what each now reads
+
+`grep -rn "snare2\|snareVel\|snareEvt\|snareAmp" assets` — six readers, three of them documentation:
+
+| reader | before | now |
+|---|---|---|
+| `scenes/dust` (flash ring) | the earlier of `snareEvt` and the `snare2` edge; `snare2` sizes it | **`snareEvt` alone; `snareAmp` sizes it**; `snare2` is the envelope's floor |
+| `scenes/torus2` (snare wave) | the `snare2` edge; `min(1, snare2)` sizes it | **`snareEvt` alone; `snareAmp` sizes it**; `snare2` still in `feats` |
+| `scenes/chladni` (the plate's ring) | `snareAge` + `snareVel` | **unchanged** — see below |
+| `engine/bars/feed.js` | `snareEvt` / `snareAge` / `denS` | unchanged (it does not read `snareVel`, so §70 cannot move the bar store) |
+| `engine/features-ears.js` | the map override | **publishes `snareAmp` = the map's velocity in file+map mode** |
+| `scenes/{dust,torus2,chladni}/help.js` | — | the two new entries, and `snare2` re-described as the level underneath |
+
+**CHLADNI is left alone, with the number.** It already reads the lane (`snareAge`), and its size is
+`U.snF = SNAMP(0.55) · clamp(snareVel, 0, 1.5) · exp(−snareAge/SNTC(0.16))`. Moving it to `snareAmp` would take the
+ring from full brightness on 52–91 % of hits to 0.33–0.69 — a **brightness recalibration** of a scene's validated
+default (the user OK'd CHLADNI in v0.15), not a trigger change, and `SNAMP` would have to be re-tuned with it. It
+wants its own A/B. `snare2` likewise stays published and routable: nothing was deleted.
+
+### Proofs
+
+- **The existing engine is byte-identical.** Every column of a `tools/drums-node.js` trace on all five tracks, against
+  an isolated worktree of `9b164e2` (`tools/work/v70/diffcols.js`: 21 identical, 0 moved, only `+kickAmp +snareAmp`).
+  The event log's vocabulary is unchanged (it writes `vel` only).
+- **The fake-timeline md5 sweep: 4 of the 24 lines move — DUST (s1) and TORUS2 (s3), f360 and f840 — and the other
+  20 (ten scenes, GIELIS among them) are identical.** Taken as an isolated pair in `git worktree`s, `errs []` on
+  every scene on both sides. **Why they move, measured, not guessed:** under `#test` the ears never run, so
+  `snareEvt` is `false`, `snareAge` 99 and `snareAmp` 0, while `snare2` is synapse's own fake snare level — read
+  straight off the page at f840: `{snareEvt: false, snareAmp: 0, snareAge: 99, snare2: 0.001, dustFS: 0, dustFK: 14,
+  t2FS: 0}`. So both scenes' snare channels are simply SILENT on the fake timeline, where the level used to drive
+  them. **CHLADNI's snare ring has been dark there since v0.15 for exactly this reason** (`exp(−99/0.16)` = 0), which
+  is the precedent — and the open item: the fake timeline should carry the ears' event channels so the md5 sweep
+  exercises them. Giving it `snareEvt` / `snareAge` / `snareAmp` would move CHLADNI's lines too, so it is a tools
+  decision like the `parity.js` NAV rows, not a scene one.
+- **`tools/parity.js fake`:** 72 fields compared, unchanged — the only MISMATCH is the pre-existing NAV block
+  (`nav.lg 7.852`, OPEN-ITEMS 2026-09-29, to the digit), and `kickAmp` / `snareAmp` appear as "missing in v3" INFO,
+  which is what an additive field is supposed to do.
+- **Cost is flat.** `CARD.bench(id, 300)` interleaved with NAV, three pairs each, warm-up discarded, `q` pinned 0.95
+  for 9 s (HARNESS bench protocol): DUST **1.323 → 1.286 ms** against NAV 2.458 → 2.376, ratio **0.538 → 0.541**;
+  TORUS2 **1.392 → 1.374** against NAV 2.412 → 2.422, ratio **0.577 → 0.567**. Both moves are inside the ±2 % spread
+  of the three pairs themselves. Expected: one MS read and one branch per frame in each scene. **The machine was not
+  idle** (load average 3.3–3.8, a parallel session's processes), which is why only interleaved pairs are quoted.
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, MS keys 205 → **207**, help.feats gaps 0, the 5
+  pre-existing soft-cap warns — `torus2/index.js` was kept under its own cap) · **`npm test` OK** with **6 new
+  `test_drums.js` cases**: a hit under the 3.75 dB floor does not fire at all; a SOFT rim reads `snareAmp` **0.322**
+  and a HARD one **1.000** (± 0.1); 3.2× the hit amplitude moves the amp 0.322 → 0.901, so the SPAN and not the clamp
+  does the work; `kickAmp` reads 0.313–0.562 with **0** at the ceiling where `kickVel` puts **12 of 39** identical
+  synthetic kicks at 1.000; and `snareVel` reads 0.000 on the frame `snareAmp` reads 0.322. The synthetic hits are
+  ONE rim template scaled and placed ON a hop boundary — a rim that starts mid-hop shows only part of its rise in the
+  hop that fires, and that phase swamps the amplitude itself.
+- **No audible run.** Every number is the deterministic file path, the node harness or the fake timeline.
+- The lab scripts are `tools/work/v70/{risedist,veldist,ampsweep,ampnode,ampsyn,ampsyn2,voicesim,diffcols,qtest}.js`
+  and `{dustsnare,t2snare}.py`, gitignored like §68's and §69's.
+
+### Open, for the orchestrator
+
+- **`dsp.js`'s `Quantile(q)` returns the (1 − q) quantile** (above). Four live readers depend on the number they
+  actually get: `perc.js lvl` (every band's level gate, with `GATE_DB`), `perc.js p95` (`*Vel`), `sub.js q90` (the
+  sub gate) and `texture.js rollP90` (`lpSweep`). Fixing the sign is an engine session with the map, the bar store,
+  the queue and §59's clock tables all downstream of it. **Nothing should be tuned against `*Vel` until it is.**
+- **CHLADNI's ring still reads `snareVel`** (above) — a brightness recalibration with `SNAMP`, wants the user's A/B.
+- **`kickAmp` is published and no kick consumer moved** (the brief's instruction). DUST's kick voice and TORUS2's
+  kick wave still fire on the union / the `kick2` edge and size themselves from `kick2`, which §51 built a RANK for
+  precisely because `kickVel` saturated. Whether the rank or `kickAmp` is the better size is now a measurable
+  question and is not measured here.
+- **The fake timeline carries no percussion EVENTS** (above), so the md5 sweep cannot see a scene's event-driven
+  channel at all — three scenes' snare rings are silent under `#test`.
+- **Vienna's recall** on both scenes (0.73 → 0.56 DUST, 0.41 → 0.56 TORUS2 — one down, one up) against a
+  `provisional` truth grid. The user's eye decides.
+- Carried from §69 and still open: `tools/accept.sh` has not been run since v0.14; SeeYouDrop's PCM lock 9.2 → 12.0 s.
+
+**The A/B watch list, in TRACK time** (stream / live mode or `&map=0`: in file + map mode `snareEvt` and `snareAmp`
+are the map's own list, so DUST and TORUS2 change there too but to the MAP's snares, not the lane's):
+- **SeeYouDrop 0:20–1:50, TORUS2** — the biggest change of the session and the one to look at first. The snare band
+  launched 17 waves in that whole 90 s and now launches 349: the sharp bright pulse along the loudest family should
+  go from "almost never" to one per snare. This is the user's own favourite music-to-viz mapping.
+- **Vienna 0:24–1:00, DUST** — §66's complaint. The flash ring should land ON the backbeat and stop flickering:
+  3.17 → 1.36 flashes/s against a groove of 1.94, the median gap 267 → 667 ms (the half note at 90 BPM), nothing
+  floor-sized any more and each flash lifting the centre nearly twice as much (+13.9 → +26.1). Watch for the
+  opposite failure: a rim the lane misses is now a flash that does not happen at all.
+- **Vienna 1:46–2:00 (drop 2), DUST + TORUS2** — the ring and the wave over the octave change, where the lane's
+  precision gain is largest.
+- **CyborgNinja 0:20–0:50, both** — the 160 BPM control. DUST's ring 6.43 → 3.17 /s at P 0.53 → 0.94 and TORUS2's
+  waves 1.83 → 3.17 /s: on this track BOTH scenes get the backbeat they were missing, from opposite directions.
+- **Any track, a soft rim vs a hard snare** — the new thing to look for: the size of a flash and the height of a
+  wave now follow how hard the hit was, where before they were one brightness (`snareVel` 1.000 on 52–91 % of hits)
+  or a follower's level.
+
+## §71 Malicious's +30 ms is its TRUTH GRID, not the clock — the one track whose beat line was never put on the audio (2026-10-01, one worker; §69's open item, the user's word; `docs/AUDIT-live-grid.md` "Step 6 addendum 4")
+
+**The ask:** §69 re-measured §59's clock tables after the snare lane and found the PCM clock's beat line on Malicious a
+constant **+30 ms late** (was +23; within ±30 ms 80 % → 50 %, bias-removed 94 → 95 %). Every scene's nudge crests ~30 ms
+after the beat there, at the edge of the 40 ms the user's eye reads (§52–§53). Remove it without moving the four tracks
+§69 improved — **or prove it is the reference and fix nothing.**
+
+**It is the reference.** `engine/clock/` and `engine/ears/` are untouched. Two tool files changed: a `test_clock.js`
+case that nails the property the diagnosis rests on, and a printed caveat in `gridcheck.py` so the next worker is not
+sent after this again. **Not tagged, not pushed, not deployed.**
+
+### Reproduced first, both trees, in isolated worktrees
+
+`tools/clock-study.js` + `gridcheck.py --heard`, node, whole track, five tracks, at HEAD (`9b164e2`) and at `4e175e5`
+(pre-§69) in two `git worktree`s — §69's table to the digit:
+
+| node, whole track | lag med | \|lag\| p50 / p90 | within ±30 ms | bias-removed | lock |
+|---|---|---|---|---|---|
+| SeeYouDrop | +1 → +3 ms | 8/19 → 8/21 | 98 → 97 % | 98 → 96 % | 9.2 → 12.0 s |
+| CyborgNinja | +1 → +1 | 2/4 → **1/3** | 93 → **97 %** | 93 → 97 % | **17.9 → 3.4 s** |
+| WhoLikesToParty | +6 → +6 | 6/9 → 6/10 | 99 → 99 % | 99 → 99 % | 5.6 → 5.6 s |
+| **Malicious** | +23 → **+30** | 23/36 → 30/49 | 80 → **50 %** | 94 → **95 %** | 6.1 → 6.1 s |
+| Vienna | +6 → **+4** | 7/82 → **5/67** | 73 → 74 % | 76 → 75 % | 20.9 → 20.9 s |
+
+### What moved the phase, exactly: the clock's line IS the weighted mean of its phase measurements
+
+Every ears onset is a PDA phase measurement with weight `vel / R_CLS[cls]` scaled by the gate's `beta` (`clock.js
+measureLine`). Summed over the whole track from `clock-study.js`'s own `log` — each onset's offset to the nearest truth
+beat, kept where it is inside ±0.15 beat (§59's own window), weighted by `beta·vel/R_CLS`:
+
+| β-weighted offset to the truth beat (ms) | kick | snare | hat | **all** | the clock's own lag |
+|---|---|---|---|---|---|
+| SeeYouDrop pre-§69 → HEAD | +2.5 → +3.0 | −2.7 → −1.4 | −4.9 → −4.3 | **−1.3 → −0.5** | +1 → +3 |
+| CyborgNinja | −0.4 → −0.5 | +2.7 → +1.3 | +3.0 → +3.0 | **+1.4 → +0.9** | +1 → +1 |
+| WhoLikesToParty | +2.9 → +3.0 | +4.7 → +6.4 | +4.8 → +4.9 | **+3.8 → +4.7** | +6 → +6 |
+| **Malicious** | **+18.5 → +21.4** | **+21.0 → +31.1** | **+12.9 → +13.8** | **+18.0 → +24.2** | **+23 → +30** |
+| Vienna | +2.8 → +2.5 | +11.1 → +3.5 | +4.0 → +3.6 | **+7.3 → +3.2** | +6 → +4 |
+
+The "all" column predicts the clock's lag on every track to within 6 ms, which is what the model says it should: the
+Kalman line settles on the weighted centre of its measurements. §69 moved Malicious because the snare lane's own
+placement went +21.0 → +31.1 ms **and** its share of the weight grew (β·w sum 119.5 → 142.8, 43 % → 49 % of the
+total) — so the centre went +18.0 → +24.2 and the line with it. Nothing about the lane is wrong: the SAME change took
+Vienna's snare term +11.1 → +3.5 and its clock +6 → +4.
+
+**But on Malicious ALL THREE classes are late** — kick +21, snare +31, hat +14 — and the kick lane, which is the
+reference the other four tracks sit on (−0.5…+3.0), is +21 there. A common-mode offset on all three inputs cannot be a
+class-weighting artefact, so no re-weighting of the classes can remove it. Measured, not argued (below).
+
+### Four independent rulers: Malicious's truth beat lines sit ~20 ms before the music's attacks
+
+1. **The truth tool's own offline onset lists against its own beats** (median offset, onsets inside ±0.15 beat; these
+   lists are zero-latency by construction and read within ±7 ms on the other four tracks):
+
+   | median ms | `low` | `click` (kicks) | `mid` | `high` |
+   |---|---|---|---|---|
+   | SeeYouDrop | +6.6 | +4.3 | −2.4 | −3.9 |
+   | CyborgNinja | +0.2 | +0.2 | +2.0 | +3.1 |
+   | WhoLikesToParty | +4.2 | +4.3 | +6.5 | +6.0 |
+   | **Malicious** | **+11.6** | **+23.5** | **+23.3** (p25 +23.0, p75 +23.6) | **+22.8** |
+   | Vienna | +0.1 | +1.4 | +2.1 | −1.9 |
+
+   Malicious's `mid` offsets are a near-delta at **+23.3 ms** — a constant, not a spread.
+2. **A zero-phase attack-time measurement that uses no engine and no truth list** (4th-order `filtfilt` band, its
+   `filtfilt`-smoothed envelope, the 20 % crossing of each rise; median offset to the nearest truth beat):
+
+   | median ms | 25–60 | 40–150 | 150–800 | 800–2500 | 5 k–12 k |
+   |---|---|---|---|---|---|
+   | SeeYouDrop | +28.5 | +12.2 | −0.7 | −8.8 | −11.1 |
+   | WhoLikesToParty | +15.2 | +13.4 | +5.1 | +5.1 | +6.3 |
+   | **Malicious** | **+11.5** | **+21.4** | **+22.9** | **+17.3** | **+13.8** |
+
+   On the two controls the bands straddle the grid line (the sub leads, the hats trail it). **On Malicious every band
+   from 25 Hz to 12 kHz is late** — the grid's line sits in a gap where nothing is. So this is NOT the "beats marked on
+   the kick while the felt beat is the snare" case: there is no band it is marked on.
+3. **The truth tool's own rule, as a continuous scan** (`trackmap.py anchor_grid`: "the beat is the one with more
+   40–150 Hz onset strength on it") — the positive zero-phase rise summed within ±0.05 beat of `beats + d`, over d.
+   `E(0)/E(dmax)`, the energy at the grid's own line as a share of the best line's: SeeYouDrop 0.87 / 0.99,
+   CyborgNinja 0.995 / 0.83, WhoLikesToParty 0.98 / 0.995, Vienna 0.88 / 0.98 — and **Malicious 0.89 (40–150) /
+   0.53 (150–800)**, the only reading under 0.82, with the argmax at **+41 / +45 ms**.
+4. **The provenance, in `trackmap.py` itself.** The beat LINE is put on the audio in exactly three ways: the kick
+   anchor + drift fit (`bpm_grid.anchor`), a hand-made grid (`bpm_grid.hand`), or the hand check `gridcheck.py`'s
+   docstring records. Four of the five have one — SeeYouDrop hand-checked (+2.9 ms off its own kick list),
+   CyborgNinja re-anchored (+0.1), WhoLikesToParty re-anchored + drift-fitted (+0.0), Vienna hand-made (90.000 BPM,
+   dp residual 0.0). **Malicious has none**: `if dpres > 0.06: beats = bdp` fires on its 89.7 ms DP residual, so its
+   `beats` are the raw Ellis DP tracker's output (hop-quantised at 11.6 ms, 15.9 ms rms off a straight line, period sd
+   5.05 ms), and the whole anchor branch — `if dpres <= 0.06` — is skipped. And the anchor could not have run anyway:
+   its kicks' eighth-lattice resultant is **0.134** against the tool's own `ANCHOR_R` floor of 0.5 (CyborgNinja 0.959,
+   WhoLikesToParty 0.544, SeeYouDrop 0.500, Vienna 0.351). `gridcheck.py`'s docstring already said so —
+   *"Malicious' kicks are uniform over the beat (DP residual 90 ms): TEMPO rows only"* — and §69 graded a row the ruler
+   disclaims.
+
+**So, with the grid's own ~+23 ms taken off, the ears' three lanes on Malicious are not outliers at all** (lane's
+β-weighted offset minus the same band's independently measured attack offset): kick **+0.0**, snare **+8.2**, hat
+**+0.0** ms, against SeeYouDrop −9.2 / −0.7 / +6.8 · CyborgNinja −2.5 / +3.8 / +2.7 · WhoLikesToParty −10.4 / +1.3 /
+−1.4 · Vienna −0.9 / +5.1 / +12.2. The hat lane lands within **0.5 ms** of the track's own 5–12 kHz attacks. And the
+clock: **+30 − 23 = +7 ms** in node, which is WhoLikesToParty's row. On the **page** (one `filetrace.js` det run,
+`&map=0&lead=0`, whole track) the same clock reads **+19 ms, 81 % within ±30 ms, bias-removed p50 8 / p90 24** — the
+page/node gap of ~11 ms on this track is §59's own recorded pre-existing one (§59: page +10 vs node +22) and is not
+this item. Against the music the page's line is therefore ~4 ms **early**.
+
+### The three candidate fixes, measured — all three make Malicious worse and cost the others
+
+One knob each (`CLOCKK`, no code change), the same five node runs, `gridcheck.py --heard`:
+
+| `R_CLS` (kick / snare / hat) | SeeYouDrop | CyborgNinja | WhoLikesToParty | **Malicious** | Vienna |
+|---|---|---|---|---|---|
+| **1 / 1.5 / 3 (ships)** | +3 ms, 97 %, lock 12.0 s | +1, 97 %, **3.4 s** | +6, 99 %, 5.6 s | **+30, 50 %** | +4, 74 %, p90 **67** |
+| (a) kick only (1 / 1e9 / 1e9) | +13, **84 %**, 12.6 s | −0, **92 %**, **17.1 s** | +6, 99 %, 3.3 s | **+36, 33 %**, lock **27.4 s** | +6, **63 %**, p90 **329** |
+| (c) kick-weighted 1 / 3 / 12 | +6, 94 %, 12.2 s | −2, 93 %, 18.7 s | +5, 99 %, 5.6 s | **+37, 29 %** | +4, **69 %**, p90 **320** |
+| (c) kick-weighted 1 / 6 / 24 | +8, **89 %**, 13.1 s | −2, 93 %, 18.7 s | +4, 99 %, 5.6 s | **+39, 24 %** | +4, 73 %, p90 **320** |
+
+Kicks-define-the-beat is **backwards on this track**: its hat lane is the one at +14, so dropping the hats moves the
+line LATER, +30 → +36. It also gives back exactly what §69 bought — CyborgNinja's lock 3.4 → 17.1 s — and takes
+Vienna's p90 from 67 ms to 320+. Candidate (b), a per-class lag compensation at the clock's input, has nothing to
+compensate: the per-class spread on the four anchored tracks is **±3 ms** (kick −0.5…+3.0, snare −1.4…+6.4, hat
+−4.3…+4.9), and on Malicious the three classes are late TOGETHER, which a per-class constant cannot touch. The only
+thing that removes a common-mode +30 on one track is a global constant — and the other four sit at +1 / +1 / +6 / +4.
+
+### The rule
+
+**A truth grid whose beat PHASE was never placed on the audio cannot grade a clock's phase.** `gridcheck.py` now prints
+that, per track, from the truth file itself — no `bpm_grid.anchor`, no `bpm_grid.hand`, and `dp_residual_ms > 60` ⇒ a
+caveat above the table saying the lag MEDIAN is the grid's offset plus the clock's error and the "jitter (bias removed)"
+row is the gradeable one. It fires on Malicious and on none of the other four. **Printed, not applied: no number in the
+table moves** (verified: the five tables above are byte-identical with and without it).
+
+`CLOCK.KICK_LAG` (0.004 s, §56's median of the four kick placements) is **left alone**, and so is the absence of a
+snare / hat term: both would be fitted to a 23 ms annotation offset.
+
+### Proofs
+
+- **`node tools/check.js` 0 fail** (157 modules, 202 uniforms, 205 MS keys, help.feats gaps 0, the 5 pre-existing soft-cap
+  warns) · **`npm test` OK** — `test_clock.js` is **14 checks** now (12 at HEAD), the two new ones being **`backbeat`**: kicks on every
+  beat and snares **40 ms late on 2 and 4** (loud 1.3, no low band, cls 1 — a laid-back backbeat, the shape §69's row was
+  blamed on). Every snare is a phase measurement at `R_CLS[1]` 1.5, so an averaging filter would settle ~10 ms late; the
+  clock reads **med +3.20 ms, p90 4.17 ms** against the kicks after 20 s, 127.90 BPM, `jumps 0` — the gate is `BACK_MS`
+  **5 ms**. This is the characterisation the diagnosis needs: the clock does NOT follow a late backbeat, so the +30 on
+  Malicious cannot be one.
+- **The engine is byte-identical to `9b164e2`** (v0.24, the tree every number here was taken on; a parallel worker has since
+  landed `074061b` §70 step 1 on `assets/engine/ears/`) — `git diff` touches `tools/test_clock.js` and `tools/truth/gridcheck.py`
+  and nothing else, so the fake-timeline md5 sweep, the bar store / queue tables (§55/§56) and node `Clock.push`
+  µs/hop are HEAD's by construction. The sweep was taken anyway as the receipt (an isolated `git worktree` of HEAD +
+  the two tool files, `PORT=8908 tools/scene-md5.sh s71`, 12 scene ids × f360/f840, `errs []` on every one): the three
+  lines §56/§59 pinned read exactly as recorded — **s0-f360 `fb74fee4`, s0-f840 `8a0715df`, s4-f840 `05bf21c0`** — so
+  the clock stage is still inert under `#test` (it returns at its first line under `ENGINE.fakeOn`). The full list is
+  `tools/work/s71-md5.txt`; it differs from `tools/accept/v0.14/scene-md5-v014.txt` on s1 / s2 / s4-f840 / s5 / s6 /
+  s0-f840, which is seven releases of scene work (DUST §57–§60/§65, the colour and loudness passes) and not this
+  session — a parallel worker was in `assets/engine/ears/` and the snare-reading scenes while this ran.
+- **No audible run.** Every number here is the deterministic node path or one det `filetrace.js` page run.
+- Scratch: `/tmp/rr/{head,pre69}` worktrees, `tools/work/clock/{h,p}-<Track>.json` inside them, the three `R_CLS`
+  sweeps, `indep.py` / `scan.py` / `perclass.py` (the zero-phase rulers, scratch — the reproducible path is in the
+  AUDIT addendum).
+
+### Open
+
+- **Malicious's truth grid is the real open item.** Its beat phase needs a hand check or a new anchor, and until then
+  its beat-phase rows are not evidence. The measured offset is **+23 ms** (the `mid` list's near-delta; the 150–800 Hz
+  scan says +41 at the argmax of a ±21 ms window). Cheapest honest fix: hand-mark 8–16 beats and re-phase, as live
+  step 3.1 did for CyborgNinja. **Do not fit the engine to it in the meantime.**
+- `trackmap.py`'s `dp_beats()` / `refit_grid()` work in FRAME INDEX units and convert with `index / fps`, while the
+  onset lists use `t2[pk]` — real times that include the STFT's `t0 = 1024/sr = 23.2 ms`. On a track with sharp
+  attacks the omission cancels against the flux's own half-window delay (SeeYouDrop's grid lands +2.9 ms off its
+  kicks), which is why four of five grids are fine; on a smeared track it does not. Worth a look when the grid is
+  re-made, but it is a RULER change with every table downstream of it: not taken here.
+- **SeeYouDrop's PCM lock 9.2 → 12.0 s** (§69's other losing row) is untouched and still open.
+- The +11 ms page/node gap on Malicious's clock (§59 recorded it; neither reading is the one in doubt).
+
+**v0.25 tagged locally (2026-10-01) on the user's word ("I looked at torus2 and dust both look better -> tag what we have"; deploy
+still held):** v0.24 + §70 (`kickAmp` / `snareAmp`; DUST's ring and TORUS2's waves on the lane alone) + §71 (Malicious's bias is
+its truth grid). `releases/retinarave-v0.25.html` (from `file://` on scene 3: errs [], nonFinite [], clock pcm), package.json
+0.25.0. Not pushed (retinarave.com serves v0.15). Next on the user's word: 1. Malicious's truth grid, 2. the `Quantile` sign
+session, 3. `kickAmp` → CHLADNI.
+
+## §73 the `Quantile` sign — a p95 that was a p5, a p90 that was a p10, and the four readers that had been calibrated against the wrong number (2026-10-01, one worker; §70's open item 1, the user's word: priority 2, "the `Quantile` sign engine session"; `docs/AUDIT-drums.md` "§73")
+
+### The bug, in one line
+
+`assets/engine/ears/dsp.js`'s `Quantile(q)` had its two Robbins-Monro weights swapped and settled on the
+**(1 − q)** quantile.
+
+```js
+this.v += x > this.v ? s * (1 - this.q) : -s * this.q;      // v0.25 and back to §44
+this.v += x > this.v ? s * this.q : -s * (1 - this.q);      // §73
+```
+
+Write `p = P(x > v)`. At equilibrium the up-pushes and the down-pushes balance, so the two weights fix `p` and
+nothing else does: `p·w_up = (1 − p)·w_down`. The old pair balances at `p·(1 − q) = (1 − p)·q`, i.e. **p = q** —
+`q` of the stream lies ABOVE `v`, which is the (1 − q) quantile. The fixed pair balances at `p = 1 − q`: `q` of
+the stream lies BELOW `v`, the q-th quantile, the thing the class is named for.
+
+**The receipt is `tools/test_dsp.js`** (in `npm test`, first in the list), 200 000 draws per distribution,
+`abs` mode, step 0.02, the estimate read as the mean of `v` over the last 40 000 pushes because a Robbins-Monro
+tracker never stops dithering:
+
+| distribution | q | true | BEFORE | AFTER |
+|---|---|---|---|---|
+| U(0,10) | 0.10 | 0.998 | 8.986 | 0.999 |
+| U(0,10) | 0.50 | 5.001 | 5.008 | 5.008 |
+| U(0,10) | 0.90 | 8.994 | 0.999 | 8.986 |
+| U(0,10) | 0.95 | 9.495 | **0.508** | 9.487 |
+| two-level (80 % at 1.0, 20 % at 9.0) | 0.50 | 1.025 | 1.026 | 1.026 |
+| two-level | 0.90 | 8.999 | **0.925** | 9.000 |
+| two-level | 0.95 | 9.049 | **0.912** | 9.051 |
+
+The two-level row is the engine's own case: a band that is quiet most of the time with loud hits in it. Nine of
+the file's assertions failed before and all pass after — the sign guard (`v` must RISE with `q`; before it read
+8.99 < 5.01 < 1.00 < 0.51), convergence within 2 % of the range at all four `q`, a 20 dB step change reached in
+1960 pushes (before: never), `rel`-mode scale invariance, determinism, the 16-push warm-up. A monotone ramp's rows
+are printed and NOT asserted: a causal tracker has no stationary quantile on a non-stationary stream, and a low-q
+floor follower on a rising stream is dragged to the top by its up-pushes alone.
+
+**The weights also set the two SPEEDS, and that is the half of the fix that forced three of the four
+re-calibrations.** For `q` near 1 the FAST leg is `step·q` and the slow one `step·(1 − q)`: a peak follower that
+leaps onto a new loud level and leaks away from it slowly. Under the old weights the same `q` was a FLOOR
+follower — fast down, slow up — so the magnitude of the fast leg is unchanged by the fix (0.045 dB/hop for `lvl`
+either way; "~3 s at the 86 Hz hop" still holds) but the DIRECTION it applies to flips. A consumer whose stated
+time constant describes the *slow* leg therefore needs ten times the step to keep it, for `q = 0.9`. Every comment
+in these files already wanted the peak follower: *"a 4 s follower collapsed inside the 8 s void and the gate then
+opened on its rumble"* is a floor follower's failure, and a peak follower cannot have it.
+
+### The consumer table — meant / got / decided
+
+The method: `tools/work/v73/rec.js` runs the real `Ears` over each of the five tracks on the page's det time base
+(`tools/node-stream.js`, the path `drums-node.js` takes) and records **the stream each estimator is pushed with**;
+`tools/work/v73/sweep.js` then replays both signs and sweeps that consumer's own constant in milliseconds. Only
+`fires` depends on the sign at all (through the level gate); `sms` / `ssh` / `roll` / `bdb` are raw band powers and
+are the same stream either way. **Every base number below is from a `git worktree` at `35242cf`** and every after
+number from a second worktree at the same commit with the patch applied, because a parallel worker is re-phasing
+Malicious's truth grid — no row in this section can move under the measurement.
+
+| consumer | what it MEANT | what it GOT | decided |
+|---|---|---|---|
+| **`perc.js lvl`** — `Quantile(0.9, 0.05, 'abs')` x 7 bands; the `GATE_DB` level gate, "ignore flux while a band sits this far under its own running p90" | the band's dB envelope p90, a LOUD reference | the **p10** — its p50 landed within 0.1–8.0 dB of the track's true p10 on every band | **keep q = 0.9, keep step 0.05, re-fit `GATE_DB` −34 → −54.** The step needs nothing (the fast leg's magnitude is unchanged); the offset does, because the reference moved up by the band's own p10→p90 spread, 10–30 dB on this material |
+| **`perc.js p95`** — `Quantile(0.95, STEP, 'abs')` x 3; `*Vel = clamp01(fire / p95.push(fire))` | the p95 of the lane's own fire magnitudes, so `*Vel` = 1 means the top 5 % of hits | the **p5** — 3.86–4.41 dB on the snare lane against a true-hit p95 of 7.7–23.1, so 52–91 % of hits read exactly 1.000 (§51's "the velocity saturates", diagnosed in §70) | **keep q = 0.95, re-fit step 0.02 → 0.2.** This is the one consumer whose bug was the point, and the one constant fitted to an outcome rather than derived |
+| **`sub.js q90`** — `Quantile(0.9, P90_STEP)`; `rel = ms / q90`, the gate hysteresis `GATE_ON` / `GATE_OFF`, and the `vel` of every `subIn` / `subOut` / `subNote` event | the p90 of the gate band's RMS, so `0.16` means "16 % of the sub's own loud level" | **0.04 / 0.24 / 0.07 / 0.04 / 0.33x** the trailing-32 s p90 on the five tracks — not a p90 at all, and `rel`'s p50 of 1.23–15.99 made `clamp01(rel)` 1.000 almost always, so the sub's note velocity was saturated exactly the way `*Vel` was | **keep q = 0.9, `P90_STEP` 2.5e-4 → 2.5e-3 (derived), `GATE_ON` / `GATE_OFF` 0.16 / 0.075 → 0.020 / 0.0094 (fitted to the gate's own five-track timeline)** |
+| **`texture.js rollP90`** — `Quantile(0.9, 4e-4)`; `lpSweep = clamp01(1 − roll / p90)` | the p90 of `roll` over ~30 s | the **p10**, so `roll / p10` was above 1 nearly always and the field clamped to 0: `lpSweep` read a p50 of **exactly 0.000 on all five tracks** and was non-zero on 0.3–35 % of hops. A DEAD CHANNEL | **keep q = 0.9, step 4e-4 → 4e-3 (derived).** Nothing to preserve — the field had no validated behaviour, it had no behaviour |
+
+**The two derived steps.** For `q = 0.9` the slow leg is `step/10`, and after the fix the slow leg is the one the
+stated time constant belongs to, so the step must be ten times bigger. Measured against the offline trailing-window
+p90 of the same stream, as a median ratio per track:
+
+```
+sub.q90 vs the trailing-32 s p90   v0.25  0.04 / 0.24 / 0.07 / 0.04 / 0.33x
+                                   sign only  0.28 / 0.87 / 0.67 / 0.35 / 0.95x
+                                   + 2.5e-3   0.93 / 1.00 / 0.97 / 0.96 / 1.00x
+tex.rollP90: mean |lpSweep - the offline 1 - roll/p90(30 s)|
+                                   v0.25  0.30 / 0.47 / 0.63 / 0.30 / 0.42
+                                   sign only  0.074 / 0.199 / 0.382 / 0.265 / 0.420   (Vienna still dead)
+                                   + 4e-3     0.070 / 0.058 / 0.086 / 0.067 / 0.112
+```
+(order: SeeYouDrop / CyborgNinja / WhoLikesToParty / Malicious / Vienna.) `lpSweep`'s own p50 goes
+**0.000 → 0.407 / 0.547 / 0.732 / 0.413 / 0.347** — the outro's closing filter is a channel again.
+
+**`p95`'s step is fitted, and why it had to be.** `p95[c]` is pushed only AT A FIRE, so its stream is a few hundred
+values a track. Under the old sign the fast leg was downward and the trip short — from the 16-fire warm-up mean
+down ~2 dB to the p5 — so 0.02 settled in ~100 fires. With the sign right the trip is UPWARD to the p95, 5–30 dB,
+which 0.019 dB/fire cannot finish inside a track: at step 0.02 the low lane's estimator still read
+**7.9 / 15.6 / 25.3 / 8.2 / 6.8 dB** against a true fire-stream p95 of **16.5 / 23.2 / 36.5 / 9.1 / 10.2**, and
+32 % of pooled true hits still saturated. Swept 0.02 / 0.05 / 0.1 / **0.2** / 0.4 / 0.8 — the ceiling share over
+the five tracks' true hits reads 32 % → 24 → 18 → **14** → 10 → 8 (kick), and past 0.2 the estimator over-tracks
+the top so the LOUDEST hits stop reaching 1.000 at all (`vel` p90 0.88–0.99 on three tracks at 0.4). 0.2 is the end
+of the plateau where a `*Vel` of 1 still means the top of the lane; at 0.2 the estimator's own p50 sits within
+9–19 % of the true fire-stream p95 on every lane and track.
+
+**`GATE_DB` and the sub pair are fitted to BEHAVIOUR, not scaled.** They have to be: the old reference's error is
+10–30 dB per band for `lvl` and 3–25x per track for `q90`, so no single scale factor is right for all five tracks.
+
+### The five tracks, before → after
+
+**The drum table** — 5 tracks x {`ears`, `v2`} x {kick, snare, hat} x their references (`low` / `click` / `kick`,
+`mid` / `snare`, `high`), 60 rows, `tools/drums-node.js` + `tools/truth/drumcheck.py`:
+
+| `GATE_DB` | rows that differ from base | worst change |
+|---|---|---|
+| −34 (the sign alone) | 22 | SeeYouDrop kick 192 → 188 fires, F 0.40 → 0.38 (`low`), 0.50 → 0.48 (`click`); WhoLikesToParty kick F 0.75 → 0.76 |
+| −44 | 8 | WhoLikesToParty v2 kick F 0.78 → 0.77 |
+| **−54 (shipped)** | **6** | **1–3 fires; every P / R / F identical to two decimals** |
+
+The 4 kicks −34 cost are in SeeYouDrop's **ducked 51–56 s bar before drop 1** — real hits in a high-passed
+build-up, where the 60–150 Hz band genuinely sits 34–44 dB under its own p90. That is the one thing the gate must
+not eat, and it is the whole reason the offset moved. −54 restores §68's measured posture exactly: *"swept with and
+without and on three bands, identical to every digit, so it costs nothing and still protects a silent band's noise
+floor"* — insurance, now read off the loud level the comment has always named. (At −34 SeeYouDrop's intro also lost
+the 2.4–4.0 s hats as silence at −51 dB; the hat F was unchanged at 0.72 either way, but `denH` went 7/s → 0/s
+through four seconds of "the intro's rising hats", which is a look, not a score.)
+
+**The sub gate** — `tools/work/v73/sweep.js sub`, the gate replayed off the recorded `(ms, share)` stream with the
+full hysteresis / dwell / confirm:
+
+| track | gate OPEN base → final | `subIn` base → final | frame agreement with v0.25 |
+|---|---|---|---|
+| SeeYouDrop | 83.2 % → 81.5 % | 29 → 29 | 98.1 % |
+| CyborgNinja | 98.6 % → 99.7 % | 41 → 7 | 98.9 % |
+| WhoLikesToParty | 81.0 % → 77.6 % | 533 → 506 | 93.0 % |
+| Malicious | 49.6 % → 49.7 % | 127 → 127 | 100.0 % |
+| Vienna | 80.4 % → 80.8 % | 55 → 38 | 99.5 % |
+
+The two `subIn` counts that FALL are CyborgNinja's and Vienna's, where the old gate chattered at the edge of a gate
+that is open 99 % and 80 % of the track. At the un-refitted 0.16 / 0.075 the new gate chatters instead:
+`subIn` 29 / **283** / 591 / 136 / 133 and the open share drops as far as 65.3 % — the pathology the author already
+fought once ("made the gate chatter 5.4 times a bar through the ducked drop 2 and halved the slide count"), which
+is why the pair moved.
+
+**§64's build table** — `tools/build-node.js` + `tools/truth/dropcheck.py --summary`, pooled over the 8 truth drops
+(SeeYouDrop x2 · WhoLikesToParty x3 · Malicious x1 · Vienna x2):
+
+```
+base   `buildLive>=0.4`  15.9 7.9 11.0 7.0 11.0 0.0 4.4 0.0   6/8  false 0.14/min  chance 0.00  armed 4.1 %
+final  `buildLive>=0.4`  15.9 7.9 11.0 7.0 11.0 0.0 4.4 0.0   6/8  false 0.14/min  chance 0.00  armed 4.1 %
+base   `dropLiveEvt:evt`  -6 +21 +10 +48 +12  —  -3  —         6/8
+final  `dropLiveEvt:evt`  -6 +21 +10 +48 +12  —  -3  —         6/8
+```
+**Identical** — Vienna drop 1 still fires (4.4 beats armed, the event +12 ms) and CyborgNinja, the false-alarm
+control, still reads 0.14 false arms/min. All 18 of `dropcheck.py`'s default rules are identical too, including
+`hush`, `tension`, `roll`, `swell`, `hp` and synapse's own anatomy.
+
+**§59's clock table** — `tools/truth/gridcheck.py --heard`. **Every v3 row is identical on all five tracks**
+(`bpm`, `beatPhase`, its jitter, its lock, the bar line, `dropEvt`). The PCM clock moves slightly and net upward:
+
+| track | beat-event F ±50 ms | `beatPhasePcm` \|lag\| p50 |
+|---|---|---|
+| SeeYouDrop | 0.903 → **0.915** | 40 → 39 ms |
+| CyborgNinja | 0.966 → 0.966 | 42 → 43 ms |
+| WhoLikesToParty | 0.973 → 0.973 | 37 → 38 ms |
+| Malicious | 0.987 → 0.986 | 14 → 12 ms (med −13 → −9) |
+| Vienna | 0.865 → 0.862 | 39 → 40 ms |
+
+`clockConfPcm` on/off the beat moves by at most 0.03. **The queue** (`queuecheck.py`): every F identical to two
+decimals except SeeYouDrop `nextHatIn` 0.56 → 0.55. **The bar store** (`predcheck.py`): every F within 0.002 on all
+five tracks. **The OFFLINE map** (`tools/work/v73/mapsum.js` — bpm, phase, bar, `drops`, `dropWhy`, sections, every
+onset list's length, beats, downbeats, novelty): **byte-identical** on all five tracks, and so is the map's own sub
+gate (`map.js` builds a `SubTrack` too, so this was the one place the sub re-fit could have moved the FILE+map path).
+`kickAmp` / `snareAmp` / `subPure` / `bassReg` / `width` / `tension` / v3's `bpm` / `beatCount`: unmoved.
+
+### `*Vel` after the fix, and the `*Vel` vs `*Amp` verdict
+
+Pooled over the five tracks' TRUE hits (every lane fire matched to `tools/truth/<T>.{kick,snare}.json` at ±50 ms;
+the hat has no truth list of its own so its row is every fire):
+
+| field | share at exactly 1.000, per track, v0.25 | pooled =1.000 after | pooled p10 / p50 / p90 after |
+|---|---|---|---|
+| `kickVel` | 87 / 46 / 50 / 83 / 83 % | **14 %** | 0.301 / 0.627 / 1.000 |
+| `snareVel` | 91 / 53 / 59 / 72 / 47 % | **13 %** | 0.285 / 0.585 / 1.000 |
+| `hatVel` | 92 / 61 / 43 / 81 / 89 % | **12 %** | 0.237 / 0.511 / 1.000 |
+| `kickAmp` (§70, unchanged) | — | 26 % | 0.34 / 0.55 / 1.00 |
+| `snareAmp` (§70, unchanged) | — | 17 % | 0.34 / 0.54 / 1.00 |
+
+So **`*Vel` is now as good a SPREAD as `*Amp`** — the brief's target was ≤ 25 % at the ceiling and the three
+velocities read 12–14 %, below `*Amp`'s own 17–26 % — and §51's observation finally has its true cause on record.
+
+**The verdict is still `*Amp` for a SIZE, and the per-track rows are why.** `*Vel`'s divisor is a running quantile
+of THIS TRACK's fire magnitudes, so its per-track p95 reads **1.000 on every one of the five tracks** — it
+renormalises, which is the right answer for "how hard, for this track" and the wrong one for "how big". `*Amp`'s
+per-track p95, measured at the fire frames of the shipped engine, reads **1.00 / 1.00 / 1.00 / 0.62 / 0.59** (kick)
+and **0.96 / 1.00 / 1.00 / 0.63 / 0.73** (snare): Malicious and Vienna never reach 1 because they are genuinely
+quieter tracks, and one absolute dB mapping says so (§70 recorded 0.99 / 1.00 / 1.00 / 0.65 / 0.75 for the snare,
+reproduced here to two digits). The same 12 dB snare reads **1.00 on Malicious**
+(fire-stream p95 7.5 dB) and **0.55 on WhoLikesToParty** (21.8 dB). **Both stay published**: `*Vel` is the honest
+per-track RANK the reactive drums' own `kick2` strength was hand-built to be in §51, `*Amp` is the absolute SIZE a
+scene reads. **No scene changed in this session**, and at the shipped constants the scenes' own
+inputs barely did. Field by field, base vs final over every frame of all five tracks: `snareAmp` **bit-identical on
+all five**, `kickAmp` identical on four and different on 0.1 % of WhoLikesToParty's frames (mean 0.0006);
+`snareEvt` identical on all five, `kickEvt` on four, `hatEvt` on three and 0.0-0.1 % on the other two; `bassReg`
+and `subPure` identical everywhere. So **DUST's flash ring and TORUS2's snare wave cannot have moved at all** —
+`snareEvt` + `snareAmp` is the whole of their input since §70. `*Vel` differs on 74-92 % of frames, which is the
+session. The two fields a scene DOES read that moved are `subGate` (0.0 / 1.1 / **7.2** / 0.0 / 0.5 % of frames)
+and `subNoteEvt` (0.4 / 0.8 / **3.8** / 0.0 / 0.3 %) — DUST's core hold, its core swell and the RIBBON
+formation's `!subGate && denK < K.lone` test read them, which is why WhoLikesToParty is the track to look at.
+
+### The proofs
+
+- `node tools/check.js` **0 fail** · `npm test` clean with `tools/test_dsp.js` first in the list
+- **The fake-timeline md5 sweep**, `PORT=8912 tools/scene-md5.sh q73` in an isolated `git worktree`: checked first
+  that nothing on the `#test` path can reach a `Quantile` at all — `sources/fake.js`, `features.js` and `shim.js`
+  import nothing from `engine/ears/`, and `engine/clock/clock.js` (which DOES run in every mode) imports only
+  `FFT` from `dsp.js`. So the expectation was **0 of the 24 lines move**, and that is what the sweep says.
+- **Page = node** (`tools/filetrace.js <T> 0 <dur> … '&map=0&lead=0'`, `CLOCK=1`, then `build-node.js --cmp`), on
+  the fields §73 touches: `kickEvt` / `hatEvt` / `subGate` / `beatCountPcm` identical on all 9450 frames of
+  SeeYouDrop, `snareEvt` on 9449, `kickVel` within 4.8e-4, `beatPhasePcm` within 2.1e-4, `denK` / `denH` within
+  5e-5, `lpSweep` within 3.9e-3. `buildLive` / `dropLiveIn` / `nextKickIn` / `predKickIn` disagree more, for the
+  reason HARNESS already records and not for a §73 reason: the node run takes its low onsets at the default
+  `--disp 40` and the page ran `&lead=0`, and the v3 queue path differs page/node in its first seconds (B.1).
+  CyborgNinja's page trace agrees with node on only 94 % of `kickEvt` frames and 3 of 10800 `beatPhasePcm` ones —
+  and it agrees with the **BASE** node trace EXACTLY as badly (`kickEvt` 10102/10800, `hatEvt` 9235/10800,
+  `beatCountPcm` 109/10800 against both), while base-node vs final-node is **10800/10800 identical** on `kickEvt`
+  and `hatEvt`. So that gap is the harness's own on this track — its page frame grid lands one frame off node's
+  (10801 against 10800) and §59 already recorded CyborgNinja's PCM clock flipping between its two kick lattices —
+  and §73 cannot have caused it: the comparison is unchanged by the patch, which is the stronger statement.
+  **WhoLikesToParty, Malicious and Vienna were NOT page-traced.** The loop reached WhoLikesToParty and died:
+  something outside this session removed the measurement worktrees under `/tmp` and SIGKILLed the dev server on
+  8912 mid-run (exit 137), so the last two never started. They were redundancy rather than evidence — SeeYouDrop is
+  the clean row and CyborgNinja is the stronger one, since a gap identical against base AND final cannot have been
+  opened by the patch — but a reader should not infer from this section that five tracks were walked. Re-running
+  them is a fresh worktree at this commit plus three `filetrace.js` calls.
+- Cost: flat — the fix changes two multiplications in one branch and nothing else; `test_loud`'s own budget row
+  reads 5.79 µs/frame against its 40 µs cap.
+- No audible run. Every number here is the deterministic file path, the node harness or the fake timeline.
+- The lab scripts are `tools/work/v73/{rec,sweep,mapsum}.js`, gitignored like §68's, §69's and §70's.
+
+### Open, for the orchestrator
+
+- **CHLADNI reads `kickVel` and `snareVel`** (`U.snF = 0.55 · clamp(snareVel) · exp(-snareAge/0.16)`). It flashed
+  at full brightness on 52–91 % of hits and now flashes at a graded one on 86–88 % — the ring is no longer a binary.
+  §70 left a `snareAmp` move pending the user's A/B and priority 3 is `kickAmp` → CHLADNI; that worker now has a
+  THIRD option (keep `*Vel`, which finally means something) and a re-tune of `SNAMP` either way.
+- **`lpSweep` is live for the first time** and CHLADNI's `fog` is its only reader. On a real track the plate now
+  takes fog through the outro (p50 0.35–0.73) where it never did. Nothing was tuned against it, because nothing
+  could be; it wants the user's eye.
+- **The reactive drums' `kick2` RANK vs `kickAmp` vs the now-honest `kickVel`** is still the measurable question
+  §70 left open, and is still not measured.
+- `tools/accept.sh` has not been run since v0.14, and SeeYouDrop's PCM lock 9.2 → 12.0 s is still open (both
+  carried from §69).
+- Malicious's row above is from the v0.25 truth grid, by construction (both worktrees at `35242cf`). When the
+  parallel re-phase lands, its drum / clock rows move with the RULER and this section's base and final move
+  together — the DELTAS stand, the absolute numbers do not.
+
+## §72 Malicious's truth grid is RE-PHASED by +23.22 ms — the bias was `dp_beats`'s frame-index conversion, not the track (2026-10-01, one worker; §71's open items 1 and 2, the user's word "ensure Malicious truth grid is accurate"; `docs/AUDIT-live-grid.md` "Step 6 addendum 5")
+
+**The ask:** §71 proved Malicious's +30 ms clock bias IS its truth grid and left two open items — hand-mark the beats
+and re-phase (item 1), and look at `trackmap.py`'s `index / fps` frame conversion (item 2). They are the same item.
+
+**It was the ruler, and it bit exactly one grid.** `tools/truth/trackmap.py` and `gridcheck.py` changed; `tools/truth/Malicious.*`
+and three of its ten grain tables were regenerated. `assets/` is untouched. Not tagged, not pushed, not deployed.
+
+### Step 0: the +23 ms IS `t0`, and it reached one grid of five
+
+`dp_beats()` returns FRAME-INDEX times (`index / fps`). The short STFT's frame i is really centred at
+`t2[i] = t0 + i / fps`, `t0 = 1024 / 44100 = 23.2200 ms` (nperseg 2048, `boundary=None`, `padded=False`). The
+`dpres > 0.06` branch wrote those straight out as `beats`, so such a grid sits `t0` BEFORE the audio. Three facts
+nail it:
+
+1. **Malicious's `beats` are exact multiples of the hop.** Residual against `512 / 44100` = **0.0025 of a hop**
+   (0.03 ms, the json's own 4-decimal rounding); against `512 / 48000` it is 0.287. The other four are sub-hop
+   (0.288–0.289) — they are refit / anchored / hand grids. One grid of five is on the DP branch.
+2. **Its own `mid` onset list (REAL times, `t2[pk]`) sits +23.3 ms after its own beats, p25 +23.0 / p75 +23.6** — a
+   near-delta 0.1 ms from `t0`, because both sides are the same STFT frames and the only difference is the missing `t0`.
+3. **A global conversion fix is WRONG.** Adding `t0` to all five grids and re-measuring each against its own attacks
+   (zero-phase, five bands, no engine, no truth list): the band-median profile moves to −23.7 / −23.0 / −16.7 / −24.5 ms
+   on SeeYouDrop / CyborgNinja / WhoLikesToParty / Vienna, i.e. every validated grid lands 17–25 ms off its own music,
+   while Malicious moves to −5.9. `refit_grid`'s phase is in the same frame-index units and is DELIBERATELY left there:
+   its own lag against the attacks cancels `t0` (SeeYouDrop's refit grid sits +2.9 ms from its kick list as it is, and
+   the hand-pass PNGs show its line landing on the waveform's attack while `+t0` lands 23 ms inside the hit). The fix
+   is therefore in the `dpres > 0.06` branch alone: `beats = bdp + t2[0]`. `dpres` itself is a frame-coordinate
+   comparison on both sides and does not move, so no branch decision changes on any track.
+
+### The three rulers, and they agree
+
+| ruler | number | how |
+|---|---|---|
+| the tool's own onset lists | **+23.3 ms** (p25 +23.0 / p75 +23.6) | `mid` / `click` / `high` against its own beats; the other four read within ±7 |
+| zero-phase band profile | **+21.0 ms** (flat 20–24, rms 4.0 ms) | `filtfilt` band → `filtfilt` envelope → the 20 % crossing, 1 ms step, 25 Hz–12 kHz, scanned for the shift that makes this track's per-band profile match the four controls' mean (+17.2 / +8.2 / +0.4 / −3.1 / −2.1 ms) |
+| the ears' lanes | **+18.1 ms** | `drums-node.js` at HEAD in an isolated worktree: all-lane mean +20.1 ms here against +1.9 / +3.4 / +0.3 / +2.2 on the four controls. The coarsest (60 Hz frames + the lanes' own detection lag) |
+| **the hand pass** | **+21.0 / +20.7 / +26.4 ms** | 16 beats marked one by one at SAMPLE resolution in the native 44.1 kHz dump, 5–12 kHz (the one lane with a clean on-beat transient here): the 20 % crossing (+18.5, sd 3.6), the envelope peak (+36.6, sd 6.5), the first sample the 100 Hz-highpassed \|x\| leaves its pre-attack floor (+28.6, sd **1.6**) — each MINUS the same estimator on the four validated grids, 16 marks each |
+
+Four numbers, 18.1 … 23.3, spread 5.2 ms, around `t0` = 23.22. **`t0` exactly is what was applied** — the cause is
+identified, not fitted. The 40–150 Hz lane is not usable as a hand ruler on this track (808 kicks with a slow rise over
+the previous note's tail: sd 19 ms); the montages are `tools/work/v72/hand3-*.png`, and the Malicious one shows every
+one of 16 beats with the shipped line in flat floor and the attack starting at the `+t0` line.
+
+### The DP beat list is KEPT, measured against the alternative
+
+The track is dead constant: its onset lattice is coherent over all 222 s (resultant **0.552** `click` / **0.590** `mid`
+at P = 0.42850–0.42856 s = **140.00–140.02 BPM**), which a moving tempo could not give over 520 beats. So §71's
+`bpm_grid.bpm` 139.675 is wrong — it is the median of hop-quantised DP gaps (0.429569 s; the least-squares line through
+the DP beats reads 140.033 BPM and they sit 15.9 ms rms / 59 ms max off it). **But a linear grid grades WORSE against
+the track's own attacks than the DP beats do**, each at its own best phase — mean \|offset\| p50 over the five bands:
+
+| grid | 25–60 | 40–150 | 150–800 | 0.8–2.5 k | 5–12 k | mean \|off\| p50 |
+|---|---|---|---|---|---|---|
+| **DP + t0 (ships)** | 33.7 | 28.6 | 19.5 | 17.8 | **10.2** | **22.0 ms** |
+| linear 140.000 BPM | 37.3 | 30.2 | 25.2 | 24.1 | 3.0 (p90 **43**) | 24.0 |
+| linear LS 140.033 | 37.0 | 24.9 | 20.8 | 22.2 | 15.6 | 24.1 |
+| linear lattice 140.023 | 36.0 | 24.6 | 20.6 | 21.9 | 17.3 | 24.1 |
+
+The hats lock to a 140.000 line at p50 3.0 ms but with p90 43 — the groove is on that lattice in places and off it
+elsewhere, which one straight line cannot follow and the DP beats can. **So: the phase moved, the beat list did not.**
+Every one of the 520 beats moved by the same +23.2 ms (`bpm_grid.phase` 0.04644 → 0.06966); the period, the shape, the
+`downbeat_mod4` = 2 and the bar line are untouched. `bpm_grid.bpm` still reads 139.6748 — inside `gridcheck.py`'s ±1 BPM
+tolerance, so no table moves, but **140.00 is this track's tempo** and `bpm_grid.hand.tempo_note` says so.
+
+### What the fix bought, measured
+
+| Malicious, whole track | before | after |
+|---|---|---|
+| PCM clock, node, `--heard` | **+30 ms**, \|lag\| p50 30 / p90 49, **50 %** within ±30, jitter p50 7 / p90 24, lock 6.1 s | **+7 ms**, p50 9 / p90 28, **92 %**, jitter p50 7 / p90 23, lock 6.1 s |
+| v3 clock, node | +23 ms, p50 23 / p90 82, 72 % | **−1 ms**, p50 8 / p90 59, 82 % |
+| PCM clock, PAGE (`&map=0&lead=0`, `--heard`) | **+19 ms**, p50 19 / p90 38, **81 %**, beat events F **0.916** | **−4 ms**, p50 9 / p90 25, **94 %**, F **0.980** |
+| `gridcheck.py`'s un-anchored-grid caveat | fires | silent |
+
+**§71 predicted +7 node and −4 page. Both land exactly.** The four other tracks' rows are byte-identical to §71's HEAD
+column — their truth files did not change (verified by md5) and were re-measured anyway: SeeYouDrop +3 ms / 97 % /
+lock 12.0 s · CyborgNinja +1 / 97 % / 3.4 s · WhoLikesToParty +6 / 99 % / 5.6 s · Vienna +4 / 74 % / p90 67 ms.
+
+The §68/§69 drum references are built ON the grid's 16th lines, so they moved with it and the lanes graded against them
+rose (`drumcheck.py`, node, ±30 ms; `vs low` / `click` / `mid` / `high` are real-time onset lists and did not move at all):
+
+| Malicious | `kick vs kick` (§68, n 644 → 654) | `snare vs snare` (§69, n 639 → 633) |
+|---|---|---|
+| ears | P 0.40 → **0.50**, R 0.10 → 0.13, F 0.16 → **0.20**, lag +9 → **+3** | P 0.50 → 0.52, R 0.42 → 0.45, F 0.46 → **0.48**, lag +14 → **+3** |
+| v2 | P 0.41 → 0.43, R 0.37 → 0.38, F 0.39 → 0.40, lag +5 → **+2** | P 0.26 → **0.69**, R 0.04 → 0.12, F 0.08 → **0.20**, lag +26 → **+7** |
+| syn | P 0.16 → 0.15, R 0.26 → 0.24, F 0.20 → 0.19, lag −4 → **−1** | P 0.54 → **0.68**, R 0.09 → 0.11, F 0.15 → **0.19**, lag +13 → **−10** |
+
+### A hand annotation now survives a re-run
+
+`--pcm` once destroyed a worker's uncommitted Vienna truth (§63 phase 1). `analyse()` now carries `bpm_grid.hand` and the
+top-level hand keys (`sections_hand`, `drops_hand`, `drops_user*`, `drops_tool`, `drops_note`, `provisional`, `notes`,
+`feel`) over from the file on disk — never computed, only preserved. Verified: SeeYouDrop / CyborgNinja /
+WhoLikesToParty regenerate **byte-identical** (json + all ten grain tables each) with the whole patch in, and a second
+`trackmap.py Malicious` reproduces the new json bit for bit, hand block included.
+
+`Malicious.json`'s `bpm_grid` gains `dp_t0` (the tool's own record: src, `t0_ms`, sr, hop, nperseg) and `hand` (the
+human record: what moved, the cause, the four rulers, the 16 marks, the DP-vs-linear comparison, the tempo note, the bar
+line, `not_checked`, and what it replaced). `gridcheck.py`'s caveat now takes `anchor | hand`; `dp_t0` ALONE is
+deliberately not enough — the conversion would be right but the line would still be the tracker's, and the printed note
+says so.
+
+### What moved on disk
+
+`tools/truth/Malicious.json` (phase, the 520 beats, 130 downbeats, 15 sections, the one drop 148.294 → 148.317, novelty,
+energy, the three beat-synchronous `slices`, the tonic's confidence 0.159 → 0.138 — G major unchanged; the seven
+fixed-time grains, the onset lists, the contour and the sub runs are byte-identical), `Malicious.kick.json`,
+`Malicious.snare.json`, `Malicious.loud.json` (its `sections` and drop `pairs`; the contour did not move), and
+`tools/truth/Malicious/grain-{beat,bar,4bar}.txt`. The other seven grain tables are byte-identical.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (157 modules, 202 uniforms, 207 MS keys, help.feats gaps 0, the 5 pre-existing soft-cap
+  warns) · **`npm test` OK** (test_clock 14 checks) · `node tools/test_loud.js --truth` **OK on all five**, Malicious's drop
+  148.32 agreeing to 0.05 LU on the moved boundary. `tools/test_map.js` / `test_ears.js` cannot run in this environment at
+  all (they want `tools/work/<T>.st.f32`, a native-rate stereo dump that has never been made; pre-existing, not in `npm test`).
+- **`assets/` is byte-identical to HEAD** — the change is two python tools and the truth data — so no md5 sweep, no bar /
+  queue tables, no `Clock.push` µs/hop. Every engine number above was taken in an isolated `git worktree` at `35242cf`
+  (`/tmp/rr-v72`) because a parallel worker has `assets/engine/ears/dsp.js` dirty in the main tree.
+- **No audible run.** One page Chrome at a time, `PORT=8910` on the worktree; the first page trace was discarded on
+  `filetrace`'s own `frame0 is -1` determinism warning and re-taken (`f0 2`).
+- Scratch (on disk, `tools/work/` is git-ignored, as §71's `v71/` is): `tools/work/v72/` — `prov.py` (provenance + the tool's own lists), `ruler_a.py` / `shift.py` (the
+  zero-phase ruler and the shift scan), `hand2.py` / `hand3.py` (the hand pass, any track / any lane, + the PNGs and the
+  mark lists), `laneoff.py` (the ears' lanes), `tempo.py` (the 140.00 BPM lattice), `cand.py` (DP+t0 vs linear),
+  `pickrun.py` / `clean.py` (choosing the beats), `writehand.py` (the provenance block). The 16 hand marks themselves
+  are NOT only there: they are written into `tools/truth/Malicious.json`'s `bpm_grid.hand.hand_marks`, which the tool now
+  preserves across a re-run.
+- **A note on this file:** the §72 section below §73 is where a concurrent worker's `git add docs/DECISIONS.md` put it
+  (commit `2a8670b`, which swept this section in with its own seven lines). Both sections are intact; the order is not.
+
+## §74 CHLADNI's kick is `kickAmp`, and the throw is an ENERGY — the stale-on-the-event-frame trap, and `lpSweep`'s knee (2026-10-01, one worker; §70's open items 2 and 3 and §73's open items 1 and 2, the user's word: priority 3, "`kickAmp` → CHLADNI")
+
+Three commits: `64a9b19` the `dinfo()` ruler, `c8a8d6a` the kick / snare / fog leans and the file split,
+`5a24fb6` this section plus CONTRACTS and OPEN-ITEMS. **Not tagged, not pushed, not deployed.**
+
+### What §73 alone did to CHLADNI — because no scene was measured in that session
+
+§73's own words were *"at the shipped constants the scenes' own inputs barely did"* move. For CHLADNI that is
+wrong, and the reason is in this scene's own shaders: **`kickVel` is fed in as a LAUNCH VELOCITY and the leap's
+peak height is (v·w)² / 2g, so the field is read SQUARED.** The scene had no ruler at all (no `hooks.dinfo()`),
+so nothing had ever counted it.
+
+`tools/dust-trace.js <T> <t0> <t1> <out> 11` (`&map=0`, `CLOCK=1`, `GPU=1`) on the four A/B windows, the v0.25
+side in an isolated `git worktree` at `35242cf` with only `assets/scenes/chladni/` carrying the new read-only
+`dinfo()` (and nothing else: the s11 md5 pair below is byte-identical across all three trees, so the ruler
+cannot have moved the picture). `kH` is the leap's peak at the median grain's `w`, as a multiple of the
+validated full throw (0.1430 plate units):
+
+| | v0.25 | HEAD = §73 |
+|---|---|---|
+| **SeeYouDrop** kick size p50 · at 1.000 | 1.000 · 68 % | **0.629 · 23 %** |
+| … throw height p50, x the validated throw | **1.00** | **0.40** |
+| … lum lift per kick p50 · settle dip p50 | +24.0 · 0.340 | +15.8 · 0.270 |
+| **CyborgNinja** throw height p50 · lumC lift | 0.45 · +58.6 | 0.33 · +49.0 |
+| **Vienna** throw height p50 · lumC lift | 0.86 · +92.2 | 0.55 · +72.2 |
+| **Malicious** throw height p50 · lumC lift | 1.00 · +75.6 | 0.48 · +62.6 |
+| **the plate ring** snF p50 · at the 0.55 ceiling (SYD/CN/VI/MAL) | 0.54 / 0.48 / 0.55 / 0.53 · 40 / 16 / 53 / 30 % | 0.42 / 0.43 / 0.49 / 0.42 · 9 / 11 / 31 / 6 % |
+| **`lpSweep`** p50 · frames over 0.5 (same order) | 0.00 / 0.00 / 0.00 / 0.00 · 0 / 0 / 0 / 3 % | **0.35 / 0.45 / 0.19 / 0.33 · 15 / 39 / 24 / 22 %** |
+| … and so the fog: lumC p50 | 185.2 / 150.4 / 151.7 / 147.2 | **168.4 / 131.8 / 145.7 / 137.7** |
+
+So §73 **more than halved the median kick's throw** on three of the four tracks and **switched a dead channel
+on**: the plate's centre lost 4-12 % of its brightness to a fog that had never existed, permanently, because
+the field drives it raw. Both are the honest fields finally arriving; neither is the look anyone tuned.
+
+### The kick: `kickAmp`, and the size is the throw's ENERGY
+
+**`kickVel` is unusable for this read, and not because of its spread.** It is a `CONT` history field and the
+ears read one by interpolating the ring AT heard time, while an onset's audio time is ~16 ms BEFORE the hop
+that found it (§70). So on the frame the event fires it still holds the **previous** hit's velocity. Measured
+on CyborgNinja 20-50 s, 85 kicks: the velocity read on the event frame correlates **0.172** with the velocity
+of the hit it is arming; `kickAmp` on the same frame correlates **0.986**, and `kickAmp` changes on event
+frames and on **no others** (75 changes, all 75 on an event frame, min 0.3135 = the lane's own threshold).
+Up to v0.25 this was invisible because the velocity was pinned at 1.0 on 46-87 % of hits. **§73 made the field
+honest and so made the staleness bite.** That kills the third option §73 offered as well as the first.
+
+**And the field must go in as the throw's ENERGY, not its velocity.** `uLeap.y` is multiplied by the age, so
+the height is quadratic: a size of 0.55 fed in as `v` shows **0.30** of the full throw. The brief's channel is
+*"how high that kick throws the sand"* — a HEIGHT — so `v = sqrt(size)` and the height is linear in the field.
+At a size of 1 that is byte-for-byte the validated v0.15 throw, so **the loud hits keep the look they were
+tuned at and only the soft ones come down**, which is exactly the shape the ask names. The scatter
+(`CH_KICKJ`) is a velocity too and takes the same root. `DROPV` 2.40 was always a velocity and is unchanged.
+
+Both readings were measured, the raw one in a second isolated worktree at `64a9b19` with that one line changed:
+
+| track | | v0.25 | HEAD (§73) | `kickAmp` raw | **§74** |
+|---|---|---|---|---|---|
+| **SeeYouDrop 20-110 s** | throw height p10 / p50 / p95, x the validated throw | 0.66 / 1.00 / **1.00** | 0.18 / 0.40 / **1.00** | 0.13 / 0.32 / **1.00** | 0.36 / 0.56 / **1.00** |
+| | the size armed, p50 · at 1.000 | 1.000 · 68 % | 0.629 · 23 % | 0.563 · 9 % | 0.750 · 9 % |
+| | lumC lift per kick p50 · lum lift p50 | +54.9 · +24.0 | +56.5 · +15.8 | +53.5 · +15.0 | **+58.1 · +18.6** |
+| | settle DIP per kick p50 | 0.340 | 0.270 | 0.212 | 0.281 |
+| **CyborgNinja 20-50 s** | throw height p10 / p50 / p95 | 0.23 / 0.45 / **1.00** | 0.14 / 0.33 / **1.00** | — | 0.39 / 0.56 / **1.00** |
+| | lumC lift · lum lift · settle dip | +58.6 · +12.7 · 0.334 | +49.0 · +9.8 · 0.355 | — | **+52.5 · +13.3 · 0.391** |
+| **Vienna 24-60 s** (kick p95 amp 0.57) | throw height p10 / p50 / p95 | 0.74 / 0.86 / **1.00** | 0.36 / 0.55 / **1.00** | 0.11 / 0.19 / **0.32** | 0.34 / 0.44 / **0.57** |
+| | lumC lift · lum lift · settle dip | +92.2 · +18.5 · 0.462 | +72.2 · +15.2 · 0.390 | **+47.2 · +9.8 · 0.267** | +66.8 · +12.5 · 0.363 |
+| **Malicious 20-80 s** (kick p95 amp 0.79) | throw height p10 / p50 / p95 | 0.70 / 1.00 / **1.00** | 0.28 / 0.48 / **1.00** | 0.10 / 0.16 / **0.63** | 0.32 / 0.40 / **0.79** |
+| | lumC lift · lum lift · settle dip | +75.6 · +12.3 · 0.445 | +62.6 · +8.9 · 0.354 | +42.0 · +6.2 · 0.272 | +57.7 · +8.7 · 0.363 |
+
+**The raw reading is rejected on Vienna's row and nothing else.** A quiet master's LOUDEST kick would throw
+**32 %** of the validated height (Malicious 63 %) and its lumC lift per kick would fall 92 → 47, below §73's
+already-reduced 72 — limp, which is precisely what the ask said to check. The energy reading holds Vienna's
+loudest at **57 %** and Malicious's at **79 %**, with the lift at 67 and 58 (HEAD: 72 and 63). **A per-track
+slow normaliser was therefore not needed and is declined**: §73 already measured where it leads — `kickVel`'s
+per-track p95 is 1.000 on all five tracks, so it would put every track's loudest kick at full height and
+delete §70's whole point, that a soft track reads soft. A soft track now reads soft in the one channel the
+brief gives the kick, and the FLOOR (0.3125, the lane's own threshold over its 16 dB span) means no throw is
+invisible: the smallest possible kick still throws 31 % of the validated height.
+
+On the two reference tracks the result is **above v0.25 on the per-kick lift** (SeeYouDrop +54.9 → +58.1 lumC,
+CyborgNinja +12.7 → +13.3 lum) with the median hit at 0.56 of the full throw instead of 1.00 — the grading is
+there and the loud kicks are not weaker than they were. The one number that does not come back is the plate's
+standing brightness (SeeYouDrop lumC p50 185 → 169 with the fog off entirely): less airborne sand at any one
+moment is the direct, intended consequence of grading the throw.
+
+### The predicted route carries no size, and does not need one
+
+`chladni.kickAge=predKickAge` (CONTRACTS Appendix A) replaces only the AGE; the SIZE is still armed by the real
+`kickEvt`, and `kickAmp` is HELD between events, so **a predicted kick is thrown at the last real kick's size** —
+the right answer on a four-on-the-floor, and no code. Proved end to end with the route in the hash
+(`&route=chladni.kickAge%3DpredKickAge`, SeeYouDrop 60-80 s): `d_kAge` equals `max(0, predKickAge)` on
+**1201 / 1201** frames and the real age on 0, **24 predicted throws in 20 s**, size p10 / p50 / p95
+0.566 / 0.694 / 0.812, lumC lift per throw p50 **+65.5**, and the armed size never below **0.560** = `sqrt(KSFLOOR)`.
+`KSFLOOR` is what answers "before the first real kick": the lane's own 0.3125, so the first predicted throw of a
+track is a threshold-sized throw and not a dead one.
+
+### The snare: `snareAmp`, `SNAMP` unchanged — and the ring was the wrong size all along
+
+§70 held this back as *"a brightness recalibration of a validated default"*. The recalibration is real, and it
+is not the reason to move: **the ring's brightest frame is the event frame** (`exp(-snareAge/SNTC)` = 1 there),
+which is exactly where `snareVel` is stale. So the flash's size correlated with the hit it belonged to at
+**−0.011 / 0.305 / −0.027 / 0.073** on the four tracks in v0.25 — nothing at all on SeeYouDrop and Vienna —
+and 0.183-0.453 after §73. With `snareAmp` it is **0.997-1.000**.
+
+| the plate ring | v0.25 | HEAD (§73) | **§74 (`snareAmp`)** |
+|---|---|---|---|
+| **SeeYouDrop** snF p10/p50/p95 · at the 0.55 ceiling | 0.517 / 0.537 / 0.550 · 40 % | 0.262 / 0.419 / 0.550 · 9 % | 0.181 / 0.265 / **0.510** · 1 % |
+| … corr(the flash's peak, its own hit) · lumM lift p50 (349) | **−0.011** · +27.0 | 0.379 · +23.7 | **0.999** · +19.8 |
+| **CyborgNinja** snF p10/p50/p95 · at the ceiling | 0.365 / 0.482 / 0.550 · 16 % | 0.268 / 0.426 / 0.550 · 11 % | 0.187 / 0.270 / **0.550** · 6 % |
+| … corr · lumM lift p50 (95) | 0.305 · +41.3 | 0.453 · +38.2 | **0.999** · **+39.7** |
+| **Vienna** snF p10/p50/p95 · at the ceiling | 0.463 / 0.550 / 0.550 · 53 % | 0.390 / 0.487 / 0.550 · 31 % | 0.224 / 0.325 / **0.412** · 0 % |
+| … corr · lumM lift p50 (49) | **−0.027** · +49.3 | 0.183 · +37.6 | **1.000** · +35.3 |
+| **Malicious** snF p10/p50/p95 · at the ceiling | 0.470 / 0.532 / 0.550 · 30 % | 0.342 / 0.422 / 0.550 · 6 % | 0.177 / 0.210 / **0.346** · 0 % |
+| … corr · lumM lift p50 (145) | 0.073 · +22.8 | 0.331 · +17.4 | **0.997** · +16.7 |
+
+**`SNAMP` stays 0.55** and the arithmetic says why: brightness is LINEAR in the field, so there is no square to
+undo, and the loudest hits on the two reference tracks still reach the validated ceiling (snF p95 0.510 and
+0.550 — their `snareAmp` p95 on these windows is 0.94 and 1.00). The quiet masters' loudest read 0.41 and 0.35,
+which is §70's sentence in this channel. Raising `SNAMP` to keep the MEDIAN at the validated brightness would
+need **1.11** and would push the loud hits past 1.0 — against the user's own *"I don't want it to be so bright
+that can't see the shapes"*. **The ring is NOT left binary**: it never was one in the eye, it was one brightness
+attached to the wrong hit, and the measured cost of fixing it is a 4-27 % smaller median flash in the body
+annulus (lumM lift p50 +41.3 → +39.7 CyborgNinja, +27.0 → +19.8 SeeYouDrop).
+
+The HAT keeps the rank: `hatVel` is all there is — §70 established there is no `hatAmp`, the hat being the one
+class still on the HPSS-lite flux with no rise in dB to publish. Its ripple is stale on its own event frame for
+the same reason, and that is an open item below, not something this session can fix.
+
+### `lpSweep`: live, and a RELATIVE measure — so a knee, and an ease
+
+CHLADNI's `params.fog` is `lpSweep`'s only reader anywhere. Run over the WHOLE of all five tracks with the real
+`Ears` on the page's det time base (`tools/work/v74/lpprof.js`):
+
+```
+lpSweep p25 / p50 / p75 / p90 / p99      last 20 s p50  vs the rest
+SeeYouDrop        0.238 0.407 0.559 0.967 0.999      0.956  vs 0.371     <- a real closing filter
+CyborgNinja       0.321 0.547 0.658 0.745 0.853      0.456  vs 0.555     <- LOWER at the end
+WhoLikesToParty   0.464 0.732 0.840 0.897 0.956      0.627  vs 0.746     <- LOWER at the end
+Malicious         0.226 0.413 0.586 0.736 0.920      0.325  vs 0.423     <- (its last 10 s do read 0.955)
+Vienna            0.039 0.348 0.592 0.766 0.962      0.403  vs 0.340
+```
+
+The field is `clamp01(1 − roll / roll's own running p90)`, so **a track sits part of the way up it by
+construction** and its middle says nothing about a filter. Only SeeYouDrop's outro is the thing the help text
+promises, and it reads 0.96 there against 0.37 for the body. Fed raw, the fog greyed the plate 34 % and dimmed
+the sand 25 % on CyborgNinja for the whole track.
+
+**The lean is a knee in `params.fog`'s own `from()`** — `smoothstep(FOGLO 0.80, FOGHI 0.97, lpSweep)` — swept
+0 / 1 (raw), 0.55 / 0.95, 0.65 / 0.95, 0.72 / 0.96, **0.80 / 0.97**, 0.85 / 0.98, eased, over whole tracks:
+
+| knee | frames with fog over 0.5 (SYD / CN / WLTP / MAL / VI) | SeeYouDrop last 20 s vs the rest |
+|---|---|---|
+| raw | 27 / 55 / 74 / 30 / 30 % | 0.993 vs 0.288 |
+| 0.72 / 0.96 | 18 / 0 / 18 / 2 / 4 % | 0.992 vs 0.000 |
+| **0.80 / 0.97** | **17 / 0 / 7 / 1 / 2 %** | **0.964 vs 0.000** |
+| 0.85 / 0.98 | 17 / 0 / 2 / 1 / 2 % | 0.883 vs 0.000 |
+
+0.80 / 0.97 is where the body of every track is off and the one real closing filter still reaches 0.96; 0.85
+starts eating that outro and 0.72 leaves WhoLikesToParty an 18 % veil. **And the output is EASED at `FOGTC`
+0.50 s, which is its own fix:** the raw field steps by 0.13-0.26 at its p99 and by **0.20-0.66 in a single
+frame** at its worst on the four A/B windows — a jump under CONTRACTS §1.9, on a channel that greys the whole
+plate, and it was there in v0.25 too (max step 0.20 / 0.24 / 0.37 / 0.56) where the field was merely too dead
+for it to matter. Eased, the per-frame step's p99 is 0.000-0.020 and its max 0.000-0.028.
+
+| the fog, on the A/B window | v0.25 | HEAD (§73) | **§74** |
+|---|---|---|---|
+| **SeeYouDrop** fog p50 / p90 · over 0.5 · max step | 0.000 / 0.098 · 0 % · 0.200 | 0.353 / 0.530 · 15 % · 0.456 | 0.000 / 0.000 · 0 % · **0.000** |
+| **CyborgNinja** | 0.000 / 0.157 · 0 % · 0.244 | 0.454 / 0.653 · 39 % · 0.404 | 0.000 / 0.000 · 0 % · **0.001** |
+| **Vienna** | 0.000 / 0.000 · 0 % · 0.369 | 0.193 / 0.682 · 24 % · 0.661 | 0.000 / 0.024 · 3 % · **0.028** |
+| **Malicious** | 0.000 / 0.281 · 3 % · 0.555 | 0.327 / 0.657 · 22 % · 0.625 | 0.000 / 0.001 · 0 % · **0.010** |
+| … and the plate: lumC p50 (same four) | 185 / 150 / 152 / 147 | 168 / 132 / 146 / 138 | 169 / **142** / 141 / 138 |
+
+The fog is now a channel that waits for the music it is named after. **Nothing about it is validated** — it had
+no behaviour before §73 — so it is on the watch list below.
+
+### The file split, and the ruler
+
+`index.js` was 479 lines before this session and the changes took it to 536, past check.js's **hard 500 cap**
+(not the 350 soft one). Two subjects came out, both mechanical: **`cam.js`** — the eye's own geometry
+(`FOV` / the two registers' pitch and distance / `CAMTC` / `BOUNCE` / `TILTB` / near-far, `EYE`, `BAS`,
+`camera()`, `lookVP()`) — and **`ears.js`** — the ear block the scene reads, the tonic's slow latch and the two
+test pins (`EARS`, `PRESETS`, `PINS`, `figure()`, `ears()`, `readEars()`). `index.js` is **428 lines**, 51 fewer
+than at HEAD; the soft-cap warn stands and is one of six in the repo (the others 361-467). The split is proved
+byte-identical by the md5 pair below and by the four traces.
+
+**`hooks.dinfo()` is new** (commit `64a9b19`): `tools/dust-trace.js` records every numeric key of a scene's
+read-only `dinfo()`, and CHLADNI published none, which is why no ruler had ever counted a throw. It reports the
+kick's held size / age / `kH` / scatter, the ring, the drive, gate, lift, spiral, glow, fog, the figure, and
+`set` / `air` from the **settle instrument** — the fraction of the sand within `DELTA` of a nodal line, which is
+the number a throw actually moves (a readback, so a pipeline stall, which is why it lives in `dinfo` and never
+in `update()` / `draw()`). `CH_KICKJ` became `export const KICKJ` in `shaders.js` so the scene and the shader
+share one number; the template prints it back byte-identical.
+
+### The proofs
+
+- **`node tools/check.js` 0 fail** (159 modules, 202 uniforms, MS keys 207, `help.feats` gaps 0, the 6 soft-cap
+  warns) · **`npm test` exit 0**, every suite clean. `tools/test_chladni.js` needed **no change**: it tests
+  `assets/math/chladni.js`'s numerics (the figure, the table, the slide's continuity, the Bessel rings, the GLSL
+  twin) and encodes no scene-side size at all, and `math/` was not touched.
+- **The s11 fake-timeline md5, the first time it is recorded** (`IDS="11" tools/scene-md5.sh`, `GPU=1`,
+  1280x720), as an isolated pair — a pristine worktree at `35242cf` against this tree:
+  ```
+  s11-f360.jpg  8a930b26be89a46ec070dae9a897ce03     <- IDENTICAL on v0.25, §73 and §74
+  s11-f840.jpg  5a5c795afac268921e60ae09b18fdbbb
+  ```
+  `scene 11 errs []` on both, `hop 840 row 72`. **0 of the 2 lines move**, and that is the prediction, not a
+  surprise: under `#test` the ears never run, so `kickEvt` is false and `kickAmp` / `snareAmp` 0 and `snareAge`
+  99 and `lpSweep` 0 — and `smoothstep(0.80, 0.97, 0)` is 0, so the eased fog never leaves 0 either. It is §70
+  open item 4 in this scene: **the fake timeline cannot exercise any of the three channels this session changed.**
+  No other scene's lines can have moved — the diff is `assets/scenes/chladni/` and nothing else, not `math/`,
+  not `core/`, not `engine/` (HARNESS "What to re-prove": a scene-folder change is proven on its own lines).
+- **The continuity monitor on scene 11, on a real track** (`tools/monitor.js` with
+  `CARD.NAV = CARD.REG[11].scene.state`, SeeYouDrop from 20 s, 70 s, `GPU=1`): **`n` 4206 frames, `viol` [],
+  `fast` 0, the worst undeclared jump 0.0289** against the 0.06 threshold. `CARD.ERRS` 0.
+- **Cost flat.** `CARD.bench(11, 300)` interleaved with `bench(0, 300)` in the same page, `q` **and `Q.ceil`**
+  pinned 0.95 (the pacer's own step sinks `q` after a blocking bench — the plain `setInterval` of the HARNESS
+  recipe left it at 0.75, tier 2, and the grain count follows the tier), 9 s warm-up, the first pair of each run
+  discarded, two runs per tree, `points` 150000 and `gl.getError()` 0 on every one: **ratio median 0.856 (v0.25,
+  eight pairs 0.762-0.900) → 0.837 (§74, eight pairs 0.708-0.871)**. The two spreads overlap completely and
+  NAV's own absolute ms drifted 13 % between runs, which is why only the ratio is quoted. Expected: one
+  `Math.sqrt` per kick event and one `ema` + one `smoothstep` per frame. **The machine was not idle** (load
+  2.5-3.8, the user's own Chrome).
+- **`tools/parity.js` was not run**: it compares the core / engine against v3 and this diff is one scene folder.
+- **No audible run.** Every number is the deterministic file path (`&map=0`, `CLOCK=1`), the node harness or the
+  fake timeline. At most two page Chromes, on `PORT=8914` / `8915`; the user's server on 8765 was never touched.
+  A 19-hour-old orphaned headless Chrome from an earlier session (`tools/chr9678`, reparented to systemd) was
+  killed by pid before the bench.
+- Scratch, gitignored like §70's and §73's: `tools/work/v74/` — `chl.py` (the per-hit ruler), `cmp.py` (the
+  before/after tables), `lpprof.js` (`lpSweep` over whole tracks + the knee sweep), `bench.sh`, and the
+  16 traces `{base,head,varA,after}-{SYD,CN,VI,MAL}.json` plus `route-SYD.json`. The two worktrees
+  (`/tmp/rr-v73base` at `35242cf`, `/tmp/rr-v74A` at `64a9b19`) are removed.
+
+### Open, for the orchestrator
+
+- **The fog has never been validated by anyone** — it had no behaviour until §73 and no tuning until now. The
+  knee's two numbers are fitted to five tracks' distributions, not to an eye. **SeeYouDrop's last 20 s is the
+  one place on the four A/B tracks where it does anything at all**, and the A/B window (20-110 s) does not
+  reach it: watching the fog means watching the outro.
+- **The hat's ripple is stale on its own event frame** and there is nothing to move it to: `hatVel` read at
+  `hatAge` ≈ 0 is the previous hat's rank, and §70 established there is no `hatAmp` because the hat's onset
+  function is a median-residual flux with no magnitude in dB. Either the hat lane grows a rise in dB (an engine
+  item) or the ripple's depth is read a frame or two late on purpose (a scene item). Measured consequence not
+  yet taken: the hat fires 8-16/s, so consecutive hats are usually similar and the error is small.
+- **`kickVel` / `snareVel` are no longer read by this scene** and came out of `feats` and `help.feats`
+  accordingly (a route to a field nobody reads is a lie — `route.js`). They are still published, still routable
+  on other scenes, and `snare2` / `kick2` are untouched. **DUST's kick voice and TORUS2's kick wave still size
+  themselves from `kick2`'s rank** — §70 open item 3 and §73 open item 3, still unmeasured, and this session is
+  evidence for `kickAmp` there too: the staleness argument applies to any one-shot armed on an event.
+- **The plate's standing brightness fell and did not come back** (SeeYouDrop lumC p50 185 → 169 with no fog at
+  all), because there is less sand in the air at any moment once the throw is graded. If the user wants the old
+  density back, the lever is `LEAPK` or `SANDB`, not the field — and raising `LEAPK` would take the loud hits
+  past the validated throw.
+- **Vienna and Malicious now read visibly softer than SeeYouDrop and CyborgNinja in the kick AND the ring**
+  (loudest throw 57 % / 79 % of full, loudest ring 0.41 / 0.35 against 0.51 / 0.55). That is §70's design
+  working, and it is the first time this scene has shown it. If the user reads it as "those tracks look weak",
+  the per-track normaliser is the lever and the decision is theirs, not the measurement's.
+- Carried and still open: `tools/accept.sh` has not been run since v0.14; SeeYouDrop's PCM lock 9.2 → 12.0 s;
+  the fake timeline carries no percussion events (§70 item 4, which is why s11's md5 cannot see this session);
+  `tools/parity.js fake`'s pre-existing NAV rows.
+
+**The A/B watch list, in TRACK time.** Old = `releases/retinarave-v0.25.html` from `file://` (pre-§73 CHLADNI);
+new = `http://127.0.0.1:8765/`. **Scene 11 has no digit key** — press **`n`** to cycle to it (ids 9+ have none),
+or open `#scene=11`. In FILE + map mode `kickAmp` / `snareAmp` are the map's own velocities, so use stream /
+live mode or `&map=0` to see the lane's.
+- **SeeYouDrop 0:20-1:50, the kick** — the one to look at first and the track this scene was tuned on. In v0.25
+  essentially every kick threw the sand to the same full height (68 % of hits at size 1.000); now the loud ones
+  still reach that height and the median reaches 56 % of it. Watch for the throw reading as GRADED rather than
+  as weaker: the per-kick lift is slightly ABOVE v0.25 (+54.9 → +58.1 lumC) even though the median throw is
+  lower. What genuinely did go down and stayed down is how much sand is in the air between kicks.
+- **SeeYouDrop 2:17-2:37 (the outro), the FOG** — the only place on these four tracks where `lpSweep` reaches a
+  real closing filter (p50 0.956 against 0.371 for the body). The plate should grey and dim into its figure
+  there, and nowhere else. **Against the OLD build the comparison is three-way**: v0.25 had no fog at all, HEAD
+  had 0.35 everywhere, and this has it only here.
+- **Vienna 0:24-1:00 and Malicious, the kick** — the quiet-master test. Their loudest kicks now throw 57 % and
+  79 % of the full height where v0.25 threw ~100 %. If that reads as limp rather than as honest, say so: the
+  raw absolute reading (rejected here at 32 % / 63 %) is the direction NOT to go, and the per-track normaliser
+  is the other way.
+- **CyborgNinja 0:20-0:50, the fog** — the control. Its whole track sat at fog 0.45-0.55 under HEAD (39 % of
+  frames over 0.5) and now sits at 0.000. The plate's centre goes 132 → 142 and the sand stops being dimmed.
+- **Any track, a soft kick against a hard one** — the new thing to look for in this scene, and the thing the
+  validated default could not show: the height of the throw and the brightness of the ring now follow how big
+  the hit was, and the ring in particular is now attached to the RIGHT hit (its correlation with its own hit was
+  −0.01 to 0.31 in v0.25).
+
+## §75 the shape did not move because the sub was not there — and the one engine fault behind it: the gate's cold start assumed the sub owned the low end (2026-10-01, one worker; the user on CHLADNI in stream mode: "opening 10 secs the pitch is changing but the shape isn't?", rated low priority *unless* it is the engine)
+
+Three commits: `3186ed9` the `dinfo()` figure columns, `d67890c` the engine fix plus `test_ears.js --cold`, this
+section plus OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run.
+
+### The ruler
+
+`WARM=0 PORT=8916 node tools/dust-trace.js <T> 0 20 <out> 11 '<21 MS fields>'` on all five tracks — `WARM=0` so the
+engine starts cold at t = 0 exactly as the user's play button does — and `dinfo()` gained the three numbers the FIGURE
+is made of, because `s` alone cannot say which of them moved it: `note` (the sub note the vote sits on), `win` (the
+vote's winner), `ton` (the tonic the interval is measured from), `latch` (the scene's raw TONIC LATCH) and `sTgt`.
+The audible pitch is measured offline from the decoded PCM, independent of the engine: a 0.25 s harmonic-product
+spectrum over the **70-200 Hz mid-bass** (the layer the ear hears when there is no sub) beside a 22-130 Hz YIN and the
+22-70 / 70-150 / 150-600 band shares. The rulers are in `tools/work/v75/` (gitignored, as §73's were):
+`openpitch.py` the two offline contours per track, `midbass.py` the 70-200 Hz HPS contour of SeeYouDrop's intro,
+`firstblocks.py` the zero-phase band levels of the first 0.6 s, `cold2.js` the gate's internals block by block,
+`gateab.js` the whole-track A/B, `an.js` the trace reader.
+
+### The timeline, per track (cold, file-det, scene 11, 0-20 s)
+
+| track | the audible pitch changes at | the sub's own share of the low end | `tonic` / `key` first report | `subGate` first open | `subNote` first / first change | the FIGURE first change / **held** |
+|---|---|---|---|---|---|---|
+| **SeeYouDrop** | **2.25 · 3.25 · 5.25 · 6.00 · 9.50 · 12.75 s** (the mid-bass walks C#2 E2 A2 E2 F#2 E2 C#2 at 70-110 Hz, −12 to −20 dB) | **0.001-0.008 to 12.9 s**, then 0.92 | 0.35 s (F) → **0.68 s C#**, held to 8.5 | 0.17 s, shuts 0.77 s | 0.20 s (A1) / 0.48 s, then −1 | 0.20 s … then **FROZEN at s = 7.000, figure (1,3), 2.23 → 13.02 s** |
+| **CyborgNinja** | continuously (C2 / C#2 / D2 sub from the first beat) | 0.47 by 0.075 s, 0.23-0.38 throughout | 0.35 s (G), then **11 changes in 12 s** | 0.17 s, 98.5 % of 0-10 s | 0.17 s / 0.23 s | 0.35 s, then ~40 changes in 0-10 s |
+| **Malicious** | from 0 s (a 98 Hz G2 lead; the track fades in from digital silence, \|x\| 4e-4 at t = 0) | **never above 0.011 to 0.63 s**, real sub at 5.37 s | 0.35 s (G) → 1.37 s (D) | **was 0.17 s (FALSE) → now 5.37 s** | **was 0.28 s (FALSE) → now 5.42 s** | **was 0.40 s then s = 2.000 held to 5.42 → now s = 0.000 (home) to 5.47 s** |
+| **WhoLikesToParty** | continuously (a D2/F#2 bass + a sub from the first beat) | 0.42 by 0.117 s, 0.01-0.71 | 0.35 s (D), then **8 changes in 6.5 s** | 0.17 s, 84.5 % of 0-10 s | 0.17 s / 0.32 s | 0.40 s, then ~40 changes in 0-10 s |
+| **Vienna** | continuously (D#1 → A#0 → F#0 → F1 → E1, every bar) | 0.51 by 0.053 s, 0.39-0.54 | 0.35 s (D#), **never changes** | 0.17 s, never shuts in 0-20 s | 0.17 s / 0.20 s | 0.28 s, then every bar | 
+
+### The answer: on SeeYouDrop it is (c), the scene — and the engine is right
+
+**(b), the §62 override, is eliminated outright.** `tonic` first reports at **0.35 s on all five tracks** and `key` /
+`mode` take it over on the same frame. 0.35 s is `tonic.js`'s structure and not a ramp: the chroma FFT needs `CH_N`
+8192 samples in the ring (0.17 s at 48 kHz) and `CH_EVERY` 32 blocks (0.34 s) before the FIRST `solve()`, after which
+`tonicConf` is the KK margin and is available immediately (0.04-0.27 at 0.5 s). `HIST` is the read-back ring (512
+frames, ~4 s of history to interpolate at heard time), not a warm-up. **Nothing the figure reads is late.**
+
+**On SeeYouDrop the figure is frozen for 10.8 s, and every field feeding it is correct.** The first 12.9 s of that
+track contain **no sub at all** — the 22-70 Hz band holds 0.1-0.8 % of 22-600 Hz, measured zero-phase offline — and
+the pitch the user hears move is the **70-110 Hz mid-bass**, which `sub.js` rejects on purpose (`SUB_LP` 100, `SUB_FMAX`
+130, `GATE_BAND` 22-60 and `GATE_SHARE_ON` 0.30: *"without this the intro's 109 Hz mid-bass … read as a sub"*). So
+`subNote` is −1 from 0.77 s to 13.02 s, CHLADNI's vote has nothing to vote on, and `index.js` **holds the last figure
+while the sub is gone** — stated in its own header, and right: drop 2's 60 ms ducks must not reset the plate. **This
+is (c), by design, and nothing in the engine is at fault for it.**
+
+What makes it look worse than a held home figure is which figure is held. The gate DID open at 0.17 s on
+SeeYouDrop, and honestly: there is a **real −3.8 dB 22-70 Hz hit at 0.050-0.125 s** (share 0.96, 40 dB over the intro
+that follows), a sub impact at the top of the track. The first YIN frame cannot run before 0.167 s (`need` = W + tmax
++ 2 = 334 decimated samples), by which time that hit is over, so YIN read its **−45 dB tail** — A1, then G#1, G1,
+A1, C#1 — at conf 0.86-0.98, and the scene's vote took `win` = 8 off 0.28 s of it. The plate then sat on interval 7
+(a fifth above C#), figure **(1,3)**, from 2.23 s to 13.02 s. Removing that reading would not make the shape move; it
+would make the held shape the **home figure (1,2) on the tonic**, which is the honest picture of "no sub".
+
+### The engine fault: two defaults that said "the sub owns the low end" before anything had been measured
+
+The gate has two halves and **at a cold start the level half cannot say no.** `rel = ms / q90` and `Quantile` is a
+running MEAN of its first 16 samples, so on the first frame `rel` ≡ 1.000 whatever the absolute level, against
+`GATE_ON` 0.020 — and the first frame's `ms` is worse than that: `rmsAcc` / `rmsN` accumulate from input sample 0
+while `frame()` does not run until 0.167 s, so the first level sample is an RMS over a **171 ms** window where every
+later one covers one 7.3 ms hop. That leaves the SHARE half as the only half that can refuse — and it was seeded
+`this.share = 1` and re-fed `sh = 1` on every block with `den === 0`. So:
+
+- `subGate`, `subIn` and `subNote` fired on the **first YIN frame of every one of the five tracks, 0.167 s**, and the
+  share then needed `SHARE_DOWN` (0.45 s) to decay off a claim no sample supported: the gate shut at 0.63-0.77 s.
+- On **Malicious** that is unambiguously false. The track fades in from digital silence (the first 512-block's peak
+  sample is 4e-4; the 22-70 band runs −107 → −54 dB over 0-0.6 s) and its share of the low end **never exceeds 0.011**
+  against `GATE_SHARE_ON` 0.30. Only the seed held the gate open. CHLADNI then latched `win` = 4 and walked the plate
+  through figures 11, 10, 9, 10, 11, 0, 1, 2 and sat on s = 2.000 until 5.42 s — all of it off two notes read in a
+  0.63 s window with no sub in it.
+
+**The fix, two lines.** `sub.js`: `this.share = 0` — the honest prior, and it costs a real sub nothing, because
+`SHARE_UP` is 0.012 s (two 512-blocks, 21 ms) and the first YIN frame is at 0.167 s regardless. `ears.js`: with
+`den === 0` the share is UNDEFINED, so it is **held**, not set to 1. **Rejected: a time-based warm-up** that forces
+the gate shut for N seconds — three of the five tracks have their sub in the first beat and report truthfully on the
+first possible frame, and a dead plate for the first half-second of a live set is a visible regression bought for
+nothing. **Rejected: an absolute level floor** — the ears are relative by design (AGC-proof) and at t = 0 there is no
+loud reference to be relative to; the share is the one measurement that is meaningful on the first block.
+
+**Proof, on the music.** The whole-track gate timeline of all five tracks, per YIN frame, before and after
+(`tools/work/v75/gateab.js`):
+
+| | frames differing | window | gate-open share | `subIn` | `subNote` | events lost |
+|---|---|---|---|---|---|---|
+| SeeYouDrop | **0 / 14775** | — | 81.32 % → 81.32 % | 30 → 30 | 365 → 365 | none |
+| CyborgNinja | **0 / 16880** | — | 99.60 % → 99.60 % | 8 → 8 | 975 → 975 | none |
+| Malicious | 43 / 20899 (**99.794 %**) | **0.171-0.619 s only** | 49.63 % → **49.42 %** | 127 → **126** | 408 → **406** | `subIn@0.167` `subNote@0.167` `subNote@0.471` `subOut@0.623` |
+| WhoLikesToParty | **0 / 24032** | — | 77.31 % → 77.31 % | 510 → 510 | 1076 → 1076 | none |
+| Vienna | **0 / 18061** | — | 80.73 % → 80.73 % | 38 → 38 | 736 → 736 | none |
+
+So the change is **43 frames of one track, all inside its first 0.62 s**, and it removes exactly the four false
+reports. **No true report is lost or delayed**: the four tracks whose sub is in the first beat still open the gate on
+the very first YIN frame, 0.1707 s, to the frame. The two §73 numbers it touches are Malicious's gate-open share
+(49.7 → 49.4 %) and its `subIn` count (127 → 126) — stated here because §73 published them.
+
+**A new ruler, `node tools/test_ears.js --cold`, 16 pass.** Per track: the first gate open, the first `subNote`, and
+the invariant the fix buys — **the gate may not open before the share has been measured to say the sub owns the low
+end** (`open >= the first block whose raw share reaches GATE_SHARE_ON`), plus `new SubTrack(sr).share === 0`. Run
+against the two old defaults it reports **4 FAIL** (the negative control).
+
+**Proofs.** `node tools/check.js` **0 fail** (159 modules, MS keys 207, help.feats gaps 0, the same 6 line-cap warns
+as HEAD) · `npm test` **0 FAIL** (all 12 groups) · `node tools/test_ears.js --cold` **16 pass** ·
+`node tools/test_ears.js --keys` (§62's table) **byte-identical to HEAD** · `node tools/test_ears.js --sr=48000`
+**ruler output byte-identical to HEAD** (the same 5 recorded causal-path misses; only the wall-clock cost line
+differs) · `node tools/test_chladni.js` **OK, 12 figures** · the 12-scene md5 sweep **24 / 24 lines identical** to an isolated `git worktree` at `1a5eadb`, `errs []` on every scene (the ears never run under `#test`). The offline map is untouched:
+`map/map.js` ASSIGNS `sub.share` at `i % PHOP === 0` starting at i = 0, so the constructor's value is never read
+there. Nothing but the sub gate reads `sub.share`. Files: `assets/engine/ears/sub.js`, `assets/engine/ears/ears.js`,
+`assets/engine/ears/feats.js` (the `subGate` formula), `assets/scenes/chladni/index.js` (`dinfo()` only),
+`tools/test_ears.js`, `docs/DECISIONS.md`, `docs/OPEN-ITEMS.md`.
+
+### What the SCENE would do about the frozen figure — for the user to decide, NOT shipped
+
+The user rated this low priority unless it was the engine, and the part of it that is the engine is fixed above; the
+rest is the scene, so nothing in `assets/scenes/chladni/` moved but the read-only `dinfo()`. Two candidates, measured
+but not applied. **(1) An absolute floor on the vote's evidence, one constant.** `win` is taken outright the first
+time any note is voted (`this.win < 0 || …`), and on SeeYouDrop that first vote is worth `dt · sub² · conf` ≈
+**0.0014** of accumulated evidence against the drop's **0.096** — a 70x margin, so a floor anywhere near 0.01 would
+refuse the intro's reading and leave the plate on the home figure (1,2) at interval 0 until a real sub arrives. It
+makes the held figure honest; it does not make the shape move. **(2) Let the figure follow the bass where the bass
+LIVES.** The scene already computes exactly that for its camera and its drive — `lvl = sub + (bass − sub)·reg` through
+the `REGLO` / `REGHI` knee, and on SeeYouDrop's intro `bassReg` reads 1.000 — so the information "the bass has moved
+an octave up" is already in the frame; what is missing is a PITCH for that layer, which the ears do not publish
+(`subNote` is the 22-130 Hz sub and nothing else). Offline, the intro's mid-bass is C#2 E2 A2 E2 F#2 E2 C#2 =
+intervals 0, 3, 8, 3, 5, 3, 0 to the C# tonic, which would draw **(1,2) → (1,5) → (2,5) → (2,3)**: four figures
+distinct by eye, changing on the six bar lines the user heard. That is the fix that answers the complaint as asked,
+and it costs a new engine field (a 60-200 Hz pitch track) and a second pitch channel in a scene whose whole premise is
+one element, one channel (CONTRACTS §0). (1) is a constant; (2) is a milestone.
+
+**v0.26 tagged locally (2026-10-01) on the user's word ("tag what we have so far"; deploy still held):** v0.25 + §72 (Malicious's
+grid re-phased +23.22 ms, the `dp_beats` t0 bug), §73 (`Quantile(q)` returned the (1−q) quantile — fixed, four consumers
+re-calibrated, `*Vel` an honest rank), §74 (CHLADNI's kick / snare on `kickAmp` / `snareAmp`, the fog knee).
+`releases/retinarave-v0.26.html` (from `file://` on scene 11: errs [], nonFinite [], clock pcm), package.json 0.26.0. Not pushed
+(retinarave.com serves v0.15). The user on CHLADNI: "opening 10 secs the pitch is changing but the shape isn't?" — lower priority
+unless it is the engine. **§75 measured it:** on SeeYouDrop it is the SCENE and by design (the first 12.9 s have no sub; the pitch
+that moves is the mid-bass the ears reject on purpose), and the one engine fault beside it — the sub gate's cold start assumed the
+sub owned the low end — is fixed on top of v0.26, untagged.
+
+## §76 the Arnold tongues in shadow mode — a circle-map phase-locking descriptor on the PCM clock, twelve fields no scene reads yet (2026-10-01, one worker; the user: "rec for tongues approved (do work with fable)"; `docs/plans/TONGUES-PLAN.md` phase 1; the probe `tools/truth/tongues/{env,probe}.py` is the target)
+
+Commit `de64fa5` (the stage, the fields, the tests, the node tool), this section plus the plan's table and OPEN-ITEMS. **Not
+tagged, not pushed, not deployed.** No audible run. Phase 2's receipt table and its decision are in §76a below (the knob is
+built, left OFF); phase 3 is §77, phase 4 §78; phase 5 (TORUS2's fog) is not in scope.
+
+### What was built
+
+`assets/engine/clock/tongues.js` (pure, 200 lines): a bank of sine circle maps θ += Ω·f_beat·dt − (K/2π)·ô·sin 2πθ with
+λ += ln|1 − K·ô·cos 2πθ|, driven per 512-sample hop by the PCM clock's own band-flux NOVELTY (the flux minus a causal 0.5 s
+EMA, rectified, normalised so ô sums to ~1 per oscillator cycle — the probe's definition, §2 of the plan), the bank's natural
+rates following the CLOCK's rate (`Clock.f`), the windows closing on the CLOCK's beats (`floor(b)` stepping, in audio time)
+over a ring of 16 beat snapshots. The MID band (150–2500 Hz, §69's snare lane band; one new accumulator `smid` over bins 7–107 in
+`strength()`'s existing loop) carries the ladder: Ω ∈ [0.25, 4] at 1/16 oct plus every p/q with q ≤ 4 — **84 oscillators**;
+the LOW band (40–150 Hz, §59's `s40`) carries **one** oscillator, Ω = 1, for `tongueLat` / `tongueLatConf`. Per beat: ρ_i =
+Δθ_i / 16, d_i = (1 − exp(Δλ_i / (Ω_i·16))) / K; a tongue p/q = the contiguous run with |ρ − p/q| < 0.02 and d > 0.05; its width
+in octaves (+ one bank step), the 1:1 width → K_impl = 2π × its half-width in Ω. `Clock.hop()` calls `tongues.hop()` when one is
+attached; `features-clock.js` attaches one to every new Clock while `TONGUEK.on` (so the first hop feeds it and page = node);
+`features-tongues.js` (after `clock-pcm`, before bars) only publishes, easing `tongueDepth` 0.3 s. A clock re-seat or lattice
+move (|Δb − f·dt| > 0.3 in a hop) clears the ring (`tongueOn` 0 for 16 beats); an onset's small backward correction does not
+(the first cut cleared on ANY backward step and Vienna's dream read "warming" for 20 s). `&tongues=0` / `ENGINE.TONGUEK.on`:
+no bank, `tongueOn` −1 (`loudAbs`'s A/B convention). `sources/fake.js` mirrors the twelve as constants from its phase, the
+8th / 16th depths and the swing the SAME constant in every phase (§78 reads a change in `tongue21`: it must see none here).
+
+**Three definitions settled against the numbers, each with the one that lost:**
+- `tongueAmbig` = **1 − max(tongue11, tongue21, tongue41)** — the music locks none of the clock's beat family. The plan's
+  "1 − the ladder winner's depth" was built first and read 0.84–0.94 through Vienna's dream where the beat's own depth is
+  0.00: on a window where nothing is wide a 1-step run at d 0.1 wins the width tie. The octave ladder's best depth reads
+  **1.00** there and 0.4–0.6 in a groove.
+- the ladder's winner (`tongueP`/`tongueQ`): the widest tongue, ties to the LOWER q then the lower p (the probe's rule).
+  Ties to the deeper give 2:1 every tie on every track (Vienna's "1:1 wins" 74 → 29 %), which is the plan's own finding that
+  depth prefers the denser lattice. On a PURE 1:1 click train the field reads **2/1** (the Ω = 2 oscillator takes twice the
+  drive per cycle under the per-cycle normalisation) — a width ranking, honest to the probe's 39–82 %, not an octave verdict.
+- `swing`: the drive's histogram over the CLOCK's phase (64 bins), the beat's own peak found within ±0.15 of the line, the
+  off-8th the parabolic mode in 0.4–0.75 of it — and 1.0 unless the Ω = 1 oscillator is locked (d > 0.05) and the mode is a
+  local maximum carrying ≥ 25 % of the beat's peak. Over the oscillator's OWN phase (the probe's axis) a swung train at 0.6
+  read 2.0 (the phase jumps at every click it is pulled by); over the clock's phase alone the five straight tracks read
+  1.16–1.30 (the hats' flux peaks a hop after the line); referenced to the flux's own on-beat peak they read 1.00–1.02 and the
+  swung train 1.51.
+
+### Node = probe (`tools/tongues-node.js`, the clock-centred bank; the probe's truth-centred `smid` / `s40` rows in brackets)
+
+| track | 1:1 wins | d 1:1 p50 | d 2:1 | d 4:1 | w 1:1 oct (K) | low d 1:1 | lock phase mid / low ms | swing | ambig ≥ 0.9 runs ≥ 8 beats |
+|---|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 150 | 29 % (43) | **0.288** (0.287) | 0.400 (0.409) | 0.394 (0.376) | 0.125 (0.125; K 0.27 = 0.27) | 0.172 (0.116) | +61 / +51 (+46 / +48) | 1.000 | none |
+| CyborgNinja 160 | 0 % (0) | **0.073** (0.073) | 0.607 (0.613) | 0.680 (0.679) | 0.063 (0.062; 0.14 = 0.14) | 0.178 (0.204) | −90 / +22 (−91 / +18) | 1.018 | none |
+| WhoLikesToParty 117 | 21 % (20) | **0.169** (0.161) | 0.443 (0.446) | 0.546 (0.546) | 0.063 (0.062) | 0.251 (0.253) | +9 / +49 (+10 / +48) | 1.024 | none |
+| Malicious 140 | 35 % (13) | **0.359** (0.359) | 0.438 (0.438) | 0.174 (0.184) | 0.187 (0.187; 0.41 = 0.41) | 0.122 (0.109) | +71 / +96 (+75 / +93) | 1.000 | none |
+| Vienna 90 | 74 % (82) | **0.352** (0.363) | 0.459 (0.453) | 0.414 (0.420) | 0.187 (0.187; 0.41 = 0.41) | 0.037 (0.032) | +8 / +176 (−7 / +179) | 1.000 | **72.0–86.0 s (22 beats)** |
+
+Every MID-band depth within **±0.016** of the probe and the low band's within ±0.056 (the plan's stop line was ±0.05 — one low-band cell, SeeYouDrop, sits 0.006 past it, explained below), the widths to the bank step, the lock phases within
+15 ms, the low band's half-beat reading on Vienna (+176 at d 0.04) and the kick lattice on CyborgNinja (+22 at d 0.18) both
+reproduced. Where the engine differs and why: SeeYouDrop's low d 0.172 against 0.116 and CyborgNinja's 0.178 against 0.204 —
+the probe's medians are over 16-beat windows on the TRUTH downbeats every four bars, the engine's over every clock beat (the
+trailing window steps once a beat, so 4× the samples, and the bank's rates follow `bpmPcm`, which wanders in the first 20 s);
+the "1:1 wins" column is the noisiest (a width tie decides it) and Malicious's 35 against 13 is that. Vienna's dream: `tongue11`
+= `tongue21` = 0.00 from 73.4 to 89.3 s, `tongueAmbig ≥ 0.9` for **22 clock beats, 72.0–86.0 s** (the probe's `o`-drive run
+74.0–86.0); at ≥ 0.8 none of CyborgNinja / WhoLikesToParty / Malicious holds 4 beats, SeeYouDrop's outro holds 7 at 0.9 and 18
+at 0.85 (150–157 s). Swing: all five straight, 1.00–1.02. First full window 9.8–18.4 s after a cold start (16 beats after the
+clock's first beat, plus any re-seat: SeeYouDrop re-seats at 9–18 s and refills at 18.4).
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (161 modules, 219 MS keys, 12 new FEATS entries + Appendix A rows, help.feats gaps 0; the six
+  pre-existing soft-cap warns) · `npm test` **OK** with `tools/test_tongues.js` (16 cases: a 1:1 train d 0.976 / width 0.50 oct
+  against the sine map's K/π = 0.46 / K_impl 1.00 / `tongueLat` 0.02 at conf 0.98; a 2:1 train d₂:₁ 0.965 with d₁:₁ 0.273;
+  8ths 2.46 dB under the quarters: d₁:₁ − d₂:₁ = −1.00 / −0.74 / +0.27 at K 0.5 / 1 / 2 — **at the engine's K 1 the denser
+  train is still the deeper**, so the plan's "1:1 > 2:1 only when K is in the probe's range" holds only at K 2, and the octave
+  stays with §61; a swung train at 0.6 reads 1.51; silence d 0 / ambig 1; a 0.5-beat jump clears and refills at +16; two runs
+  bit-identical) · `node tools/parity.js fake`: the same max |diff| 7.852 and the same `nav.*` MISMATCH line as HEAD in the
+  base worktree (pre-existing, v3's reference page; the twelve fields show as "missing in v3" info).
+- **Page = node** (`filetrace.js <T> 0 60 … '&map=0&lead=0'`, `WARM=0`, against `tongues-node.js`'s trace, `build-node.js --cmp`):
+  SeeYouDrop and WhoLikesToParty **3600 / 3600 frames within 1e-3 on all twelve** (max |diff| 1e-4 on the depths, 2.6e-3 on one
+  `tongue41` window); Vienna 0–110 s 84–100 % within 1e-3 (max 0.015 on `tongue11`, 0.116 on one `tongue21` window — the
+  page's `bpmPcm` differs from node's by up to 1.6 BPM transiently and the windows close on the clock's beats). **CyborgNinja and
+  Malicious do not agree — because the page's CLOCK is not node's there**: `bpmPcm` max |diff| 46 / 31 BPM in the first seconds
+  and `beatCountPcm` 1–3 off for the whole minute, and the HEAD worktree's `build-node.js` clock is **bit-identical** to the new
+  node's (10800 / 10800 on `bpmPcm` / `beatCountPcm` / `beatPhasePcm`), so this is §59's cold-start page / node gap (OPEN-ITEMS,
+  AUDIT-live-grid Step 6 addendum 3), pre-existing; the depths agree to ±0.02 once both clocks are locked. Two Vienna det runs
+  `cmp`-identical (1.25 MB).
+- **The fake-timeline md5 sweep in an isolated worktree: 0 of 24 lines moved** (`git worktree add --detach /tmp/rr-base HEAD`,
+  `PORT=8921 tools/scene-md5.sh base76` against `PORT=8920 tools/scene-md5.sh new76` on the new tree, `errs []` on all 12 ids;
+  `tools/work/tongues/md5-{base76,new76}.txt`). The stage never runs under `#test`; the mirror is written by fake.js; no scene
+  reads a field.
+- **Re-taken on §78's warm normaliser (`c849b38`)**: SeeYouDrop 0–60 s page = node 3600 / 3600 within 1e-3 on eleven of the
+  twelve fields (max |diff| 1e-4 on the depths, 4e-3 on `tongue41`; `tongueP` differs on 143 frames by a width tie); the
+  §77 page rows re-taken whole-track: Vienna 8.9 beats / −3 ms / 0 false, CyborgNinja 0 arms — unchanged.
+- **Cost.** Node: the bank alone **1.0–1.7 µs per hop = 1.6–2.7 µs per 60 Hz frame** (`tongues-node.js`'s last column; the
+  first cut with two 84-oscillator banks and no fast path read 4.1–4.7 µs/hop, and the PAGE read it at +0.035–0.044 ms per
+  frame on `CLOCK.cpuTotal / frameN` — 5× node, so two things were cut: a hop with zero novelty rotates freely without the
+  sin / cos / log (half the hops), bit-identical to the full step, and the low bank became its one Ω = 1 oscillator). Page,
+  SeeYouDrop 20–60 s det, interleaved on / off: `CLOCK.cpuTotal / frameN` **0.230 / 0.235 against 0.234 / 0.222 ms** — inside the
+  noise, under the plan's +0.01; `ENGINE.ms` 3.36 / 3.11 against 3.09 / 3.15. The ladder's per-beat pass (24 rationals × 84) is
+  not measurable.
+
+### What the shadow stage says about the plan's five questions, in the engine's numbers
+
+The bank reproduces the probe and the plan's verdict stands: it does not decide the octave (2:1 deeper than 1:1 on all five,
+and on a pure 1:1 train), it re-derives §59's low-band lattice statistic with a confidence (`tongueLatConf` 0.18 on CyborgNinja,
+0.04 on Vienna where §59's rule is silent), it sees nothing at Vienna's drop 2 (`tongueAmbig` 0.53–0.77 through 100–108 s, a
+groove), and it carries the one thing nothing in MS carried: Vienna's dream as **22 beats of `tongueAmbig ≥ 0.9` ending at the
+drop** — §77 reads it. Open: the "1:1 wins" statistic is a tie-breaker's and should not be read as a tempo vote; the bank
+re-centres on `bpmPcm`, so on the two tracks whose page clock is not node's the fields inherit that gap.
+
+### §76a phase 2 — `tongueLat` as the lattice input: the knob is built and stays OFF (the cold-start table said so)
+
+`CLOCK.LAT_SRC` (`'low'` = §59's two leaky 40–150 Hz energies, the default; `'tongue'` = the bank's Ω = 1 phase against the
+clock's line, the low band while `tongueLatConf ≥ 0.06`, the mid band's otherwise, |phase| > `LAT_TJUMP` 0.3 for `LAT_SUS`
+of net time → forward half a beat, exactly §59's hold and move) and `tools/tongues-cold.js`: **the cold-start table the engine
+never had** — the clock started cold at 10, 25, 40 … 145 s of each truth track in node on the det time base (46 starts), graded
+at the truth beats: the lattice it lands on (the median lag over the last 30 s within ±0.25 beat), the lock time (|lag| <
+0.1 beat for 8 s), lag p50 / p90 and the share within 30 ms from 15 s after the start, the lattice moves. `CLOCKK='{"LAT_SRC":
+"tongue"}'` is the one-knob A/B. `tools/work/tongues/cold-{low,tongue}.md` hold every row.
+
+| track | starts on the truth lattice, low / tongue | lock s p50 (max) | within 30 ms p50 | lag p90 p50 (ms) | lattice moves |
+|---|---|---|---|---|---|
+| SeeYouDrop | 7 / 7 · 7 / 7 | 11.2 (24.8) · 11.2 (24.8) | **98.8** · 94.3 % | **18** · 21 | 3 · 2 |
+| CyborgNinja | 9 / 9 · 9 / 9 | 2.8 (14.0) · 2.8 (12.9) | 100.0 · 100.0 % | 3 · 3 | **2** · 4 |
+| WhoLikesToParty | 10 / 10 · 10 / 10 | 3.3 (13.1) · 3.3 (13.1) | 100.0 · 100.0 % | 9 · 9 | 0 · 0 |
+| Malicious | 10 / 10 · 10 / 10 | 8.9 (17.1) · 8.9 **(12.3)** | 82.5 · 82.4 % | 36 · 35 | 2 · 1 |
+| Vienna | 10 / 10 · 10 / 10 | 15.7 (44.0) · 15.7 (44.0) | **80.5** · 77.6 % | **109** · 160 | **0** · 4 |
+
+**Both rules land on the truth lattice from every one of the 46 starts** — §59's rule is not right "by cold-start luck" on
+Vienna (§66's reading): ten starts, ten right. The tongue rule is better on one cell (Malicious's worst lock 17.1 → 12.3 s, the
+start-10 run 17.1 → 11.1) and worse on three tracks: Vienna's low band has no lattice (d 0.04), so the rule falls to the mid
+band, and the mid band's Ω = 1 phase sits +8 ms with a fat tail that crosses 0.3 cycle for 4 s on four starts — **four
+lattice moves §59's rule never made**, p90 lag 109 → 160 ms, within-30 80.5 → 77.6 %; SeeYouDrop 98.8 → 94.3 % (start 85: p90
+15 → 38 ms, one spurious move); CyborgNinja's moves 2 → 4 (start 40: 100 → 93.4 %). The plan's stop line — "any track §59 wins
+and the tongue loses" — is met three times. **`LAT_SRC` stays `'low'`.** What the knob is kept for: a track whose kicks fool the
+low-band ratio but lock the Ω = 1 oscillator; none of the five is one. WhoLikesToParty is identical under both.
+
+Commit: `assets/engine/clock/clock.js` (the knob, 6 lines of decision), `tongues.js` (`latMid` / `latMidConf`, unpublished),
+`tools/tongues-cold.js`. The default's behaviour is bit-identical to `de64fa5` (the `'low'` branch is the same line; the cold
+table's `low` rows re-run after the bank's cost cut are identical to the first run's, row for row).
+
+## §77 the build detector's third arming path — the beat the music is not committing to (2026-10-01, one worker; `docs/plans/TONGUES-PLAN.md` phase 3; the user's approval of the plan)
+
+Commit `a761b43` (the path, the node / replay tools, nine `test_build.js` cases), this section plus the plan's table and
+OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run.
+
+**What it reads.** §64 left Vienna's first drop with 4.9 beats of lead (the sub void) and §54 / §64 / §66 together found
+nothing causal before its second. The tongues (§76) publish the one quantity none of the detector's inputs carried: Vienna's
+dream is **22 clock beats of `tongueAmbig ≥ 0.9`, 72.0–86.0 s** — the music locks none of the clock's beat family — and no
+other track in the set holds 0.8 for four beats (SeeYouDrop's outro holds 7 beats at 0.9). So `engine/build/build.js` gains
+a third arm beside the void and the sub void: `tongueOn` 1 and `tongueAmbig ≥ AMB_ARM` (0.9) after `MIN_HIST`, counted in
+beats with gaps ≤ 1 beat bridged, **`AMB_HOLD` 8 beats** → armed on the next bar line; the slam is the sub-void's (an on-beat
+low onset confirmed by `sub ≥ SUBV_RET ×` its 2 s mean, no `SLAM_AFTER` wait), the ambiguity lifting for more than a beat
+releases an ambiguity arm only, `MAX` bars times it out. `feed.js` passes `tongueAmbig` / `tongueOn` from MS; absent, or the
+stage off (−1), reads as "not ambiguous", so every caller before §77 is unchanged. **The one bug the receipt caught**: the
+bass / hp void's "gone for a beat" branch disarmed any arm that was not the sub void's — it fired every beat of a groove and
+killed an ambiguity arm within a beat (the replay showed Vienna flapping 78 → 79 → 80 s at 0.24 / 0.03 / 0.87); it now
+spares `am` as it spared `sv`, and `test_build.js` asserts the arm HOLDS while the ambiguity lasts.
+
+**Node, `&map=0`, det, the §64 table re-taken** (`build-node.js` with the bank attached to its clock, `build-replay.js`; drops
+in order SeeYouDrop 1 2 · WhoLikesToParty 1 2 3 · Malicious · Vienna 1 2):
+
+| rule | path off (`AMB_ARM=0`) | path on (0.9 / 8) |
+|---|---|---|
+| `buildLive>=0.4` anticipation, beats | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **4.4 0** | 15.9 7.9 · 11.0 7.0 11.0 · 0 · **12.2 0** |
+| `dropLiveEvt` lag ms | −6 +21 · +10 +48 +12 · — · −3 — | −6 +21 · +10 +48 +12 · — · −3 — |
+| armed at drop · events · armed % | 6/8 · 6 · 4.1 | 6/8 · 6 · 4.8 |
+| false arms / min drop tracks · **CyborgNinja** · false events | 0.14 · **0** · 0 | 0.14 · **0** · 0 |
+
+The replayed traces for SeeYouDrop, WhoLikesToParty, Malicious and CyborgNinja are **md5-identical with the path on and off,
+and identical to §64's own hashes** (`d61565e3` / `498acde0` / `cb8e2724` / `54759f6d`): only Vienna moves (`d0793af7` →
+`5064fb54`). Sweep: `AMB_ARM` 0.85 or `AMB_HOLD` 6 → one false arm (SeeYouDrop's outro, 0.14 → 0.22 / min); 0.95 → Vienna back
+to 4.4 (the dream's depth hovers at 0.05); `AMB_HOLD` 12 → 8.3. **0.9 / 8 is the one setting that buys the lead and changes
+nothing else.**
+
+**Page, `&map=0&lead=0`, whole tracks** (`filetrace.js`, `WARM=0`, graded by `dropcheck.py`): **Vienna armed 8.9 beats before
+drop 1** (79.38 → 85.33 s; §64: 4.9), `dropLiveEvt` **−3 ms**, 0 false arms / min over 3.2 min, 1 event, **drop 2: 0 beats** —
+the plan claimed nothing there and the engine confirms it (`tongueAmbig` 0.53–0.77 through 100–108 s, a groove). The page
+reads 8.9 where the replay reads 12.2 because the bass void (71.4–74.4 s on the page) disarms first and the detector re-arms
+only once that void has been gone a bar (77.1 s) and on the next BAR line (79.38 — the lines fall at 76.7 / 79.4 on the
+page's clock, which is the PCM clock; node's build stage rides v3's), so the ambiguity's 8 beats (ready at 77.3) wait for the
+bar. **CyborgNinja: 0 arms, 0 events, 0.00 / min over 3.0 min** — the hard gate. The page's ambiguity run is 72.0–86.7 s
+against node's 72.0–86.0.
+
+### Proofs
+
+`node tools/check.js` 0 fail · `npm test` OK, `test_build.js` **38 pass** (nine new: a 6-beat run does not arm; 7 bars of
+1.0 arm on a bar line with the bass AND the sub in, and the arm holds; the kicks under it never fire; the sub at `SUBV_RET ×`
+fires once and disarms; 120 s of a dense train at 0.32 never arms; the ambiguity gone for a beat releases; `tongueOn` −1 /
+`AMB_ARM` 0 / no field are inert) · the four controls' replays md5-identical on / off (above) · the s1 fake-timeline md5
+cannot move (the build stage returns early on `fakeOn`; no scene edit in this commit).
+
+## §78 DUST: the double time ACCENTS, it does not drive — the nudge's amplitude on the tongue ladder's rise (2026-10-01, one worker; `docs/plans/TONGUES-PLAN.md` phase 4; the user at Vienna 1:25 since §61: "the double time should be accenting rather than driving")
+
+Commit `c849b38` (grid.js, index.js, help.js; plus one engine line in `clock/tongues.js` the receipt forced — below), this
+section plus the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the
+user's, stream mode, the watch-list at the end.
+
+### The lever, and the lean
+
+§66 measured and rejected an 8th-note NUDGE: CyborgNinja's 16th hats fire the same gate at 5.33 crests/s. The nudge stays on
+the beat. What the tongues add (§76) is the 8th / 16th tongue DEPTHS, `tongue21` / `tongue41` — and the level alone cannot be
+the lever either, because **CyborgNinja's `tongue21` sits at 0.61 for the whole track and Vienna's groove reads 0.46**: by level
+the control would be accented harder than the headline. What separates them is a **CHANGE over bars**: the 16-beat window's
+depth 16 beats ago against now. CyborgNinja's never rises more than **0.13** (`tongue41` 0.13) from the cold start to the end;
+Vienna's rises **0.00 → 0.52** over 87–101 s as the double time arrives after drop 1, and 0.15–0.30 over 27–39 s as the hats the
+user heard at 0:25 come in; SeeYouDrop's rise at every return (up to 0.51); WhoLikesToParty's 0.14 / 0.31 and Malicious's
+0.16 / 0.26 on a few bars. So, `assets/scenes/dust/grid.js`: at the beat line, `rise = max(tongue21, tongue41) − the same 16
+beats ago` (a ring per step), `acc = 0 under ACC.LO 0.15, 1 at ACC.HI 0.45`, and the step is `STEP · (1 + DOWN·isDown + ACC.K
+0.25 · acc)` — **the accent's AMPLITUDE, the way DOWN already treats the downbeat: a bigger crest on the same beat, never a
+faster one.** The ring resets whenever `tongueOn` is not 1, so a warming gap cannot read as a rise, and `tongueOn` −1
+(`&tongues=0`) is §66's step bit for bit. `hooks.dinfo()` gains `nacc`; the scene's `feats` gain `tongue21` / `tongue41` /
+`tongueOn` with `help.feats` lines. Not touched: the hat voice's gain (the second lever the brief allowed) — one lever, one
+receipt; it is open.
+
+**The engine line the receipt forced (`clock/tongues.js`).** The first `dust-trace.js` run (WARM 8, the engine cold at 12 s)
+put two accented bars on CyborgNinja at 26–27 s (acc 0.78 → 0.13) where the whole-track rise never passes 0.13: the bank's
+drive normaliser was an EMA started from 1e-6, 1.6× too small 8 s in, so the first windows after a cold start read 0.2 too
+deep (`tongue21` 0.67 → 0.88 → 0.73 over 20–30 s) and the FALL back read as a rise 16 beats later. The normaliser is now the
+running MEAN of the novelty until `EMA_TAU` has passed and the EMA after (the same memory): the §76 table re-taken moves no
+mid-band median by more than 0.014 (Malicious 0.359 → 0.345; SeeYouDrop's low band 0.172 → 0.156, nearer the probe's 0.116),
+the 1:1 click train's width 0.50 → 0.44 oct (theory 0.46), §77's replay hashes are unchanged to the byte, and CyborgNinja's
+cold-start rise is 0.13. The §76 proofs below were re-taken on it.
+
+### The ruler (`tools/dust-trace.js`, DUST forced, `&map=0`, the engine started at 0:00 — `WARM = t0` — in two worktrees: HEAD `67d98c1` and this; `tools/work/v78/nudge78.py`, the §61 / §66 grader on the trace's own `d_spin` plus the step per bar)
+
+| window (clock) | peak @ | floor / peak | dead | 25 / 50 / 90 % | max \|a\| p50 / p99 | step / STEP mean (max) | bars accented (acc max) | hat fires |
+|---|---|---|---|---|---|---|---|---|
+| **Vienna 80–110** (90.1) before | −8.3 ms | 16.4 % | 0.0 % | +0 / +317 / +767 | 16.3 / 49.2 | 1.130 (1.146) | 0 / 12 | 87 |
+| after | −8.3 ms | 14.5 % | 0.0 % | +0 / +317 / +767 | 16.9 / 49.8 | **1.223 (1.395)** | **7 / 12 (1.00)** | 87 |
+| **Vienna 24–60** (90.0) before | +8.3 ms | 17.2 % | 0.0 % | +0 / +308 / +767 | 11.7 / 19.1 | 1.119 (1.144) | 0 / 14 | 95 |
+| after | +8.3 ms | 16.7 % | 0.0 % | +0 / +317 / +767 | 12.4 / 19.8 | 1.138 (1.219) | **6 / 14 (0.37)** | 95 |
+| SeeYouDrop 20–110 (150.0) before | −8.3 ms | 17.5 % | 0.0 % | +0 / +200 / +467 | 17.4 / 35.9 | 1.123 (1.219) | 0 / 57 | 351 |
+| after | −8.3 ms | 16.7 % | 0.0 % | +0 / +200 / +467 | 17.6 / 36.7 | 1.153 (1.353) | 28 / 57 (0.91) | 351 |
+| **CyborgNinja 20–80** (160.0) before | −8.3 ms | 18.4 % | 0.0 % | +0 / +183 / +433 | 15.6 / 23.9 | 1.123 (1.217) | 0 / 41 | 454 |
+| after | −8.3 ms | 18.4 % | 0.0 % | +0 / +183 / +433 | 15.6 / 23.9 | 1.123 (1.217) | **0 / 41 (0.00)** | 454 |
+
+The §61 / §66 metrics hold on every window: the crest peaks at the same frame (±8.3 ms), the dead time stays 0, the 25 / 50 /
+90 % completion times are the frame they were, the velocity floor is unchanged (0.165–0.236 rad/s) and the floor / peak ratio
+moves only where the peak does (16.4 → 14.5 % on Vienna 80–110, inside §66's 12.3–17 % band); the jerk's p99 moves ≤ 0.8
+rad/s² (Vienna 80–110's 49 is the drop's own re-seat, before and after). The hat fires are identical on all four windows
+(flashes/s unchanged). **CyborgNinja is identical to the digit** — every metric, every bar, the luminance columns. Vienna's
+accent, per bar on the page: 1:27 0.07 · **1:30 0.93 · 1:32 1.00 · 1:35 1.00 · 1:38 0.90 · 1:40 0.45** · 1:43 0.00 — the step
+reads 1.25× on the ordinary beats and 1.75× on the downbeats through 1:30–1:38 and is back to §66's by 1:43; **nothing moves
+at drop 2 (1:46.7)**, where the ladder's depth does not change. Luminance: Vienna 80–110 p05 / p50 / p95 44.5 / 129.9 / 188.1
+→ 48.2 / 127.6 / 188.6, |Δlum| p50 1.29 → 1.29 — the accent is motion, not light.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (help.feats gaps 0; grid.js 302 lines, index.js 343 — under the soft cap) · `npm test` OK
+  (`test_tongues.js`'s `tongueK` case loosened to one bank step: the warm normaliser reads 0.956 where the cold one's 1.6×
+  drive read 1.00 against a theory of 1.00 at infinite resolution).
+- **s1 fake-timeline md5 UNCHANGED with the tongues on AND under `&tongues=0`: f360 `d16d35f7`, f840 `57a9c49c`** (= HEAD's
+  `base76` lines). The mirror's `tongue21` / `tongue41` are constants (0.5 / 0.4) in every phase of the loop, so the rise is 0
+  and the accent never fires there — the mirror that keeps the timeline an md5 reference, as §76 planned.
+- `CARD.bench(1, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: this tree **DUST 1.03 / 0.79 / 0.81 ms
+  against NAV 1.94 / 2.00 / 1.95** (ratio 0.42); the base worktree DUST 1.32 / 1.20 / 1.22 against NAV 1.96 / 1.94 / 1.94
+  (0.63) — the scene's new work is two ring writes and a max per beat; the difference is the machine's drift between the two
+  pages, not a cost.
+- Page = node on the warm normaliser (SeeYouDrop 0–60 s, the twelve fields): see the line appended to §76's proofs.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.26.html` from `file://`, new = `http://127.0.0.1:8765/`, key `2` for DUST, `&tongues=0` on the new page = the exact before)
+
+- **Vienna 1:25 → 1:43.** At the drop the nudge is §66's; over the next bar the double-time layer fills the 16-beat window and
+  from **1:30 to 1:38 every beat's crest is a quarter bigger** (the downbeat's 1.75× instead of 1.5×), fading through 1:40 and
+  gone by 1:43. The RATE of crests does not change (1.50 /s — one per beat), the hats flash exactly as before. Look for a
+  heavier swing of the whole cloud on each beat, not a faster one.
+- **Vienna 1:40–1:50.** The accent is fading (0.45 at 1:40) and is 0 before drop 2 at 1:46.7: this change does nothing there,
+  by measurement (the ladder's depth is flat across that drop). If 1:46.7 wants an accent it is a different field.
+- **Vienna 0:27–0:40.** The hats' arrival the user heard at 0:25 reads as a rise of 0.15–0.30: a smaller accent (0.26–0.37,
+  the step 1.07–1.09×) on four bars. Subtle by design — it is under the dead zone's knee.
+- **SeeYouDrop** 0:23–0:28, 0:34–0:39, 0:41–0:48 (0.91 at the return after breakdown 1), 1:28–1:33: the same accent at its
+  returns.
+- **CyborgNinja, anywhere:** nothing. Identical to the digit — the control the brief named.
+- **WhoLikesToParty / Malicious:** a few bars at 0.1–0.5 (their 16th-note depth rises at 0:50–0:55 and 2:03–2:10 on
+  WhoLikesToParty; 1:40–1:45, 2:51–2:56 on Malicious) — not graded here, named so the eye is not surprised.
+
+**v0.27 tagged AND DEPLOYED (2026-10-02) on the user's word ("tag and deploy; what i've seen so far is beautiful"):** v0.26 + §75
+(the sub gate's cold start), §76–§78 (the Arnold tongues: shadow stage, the clock knob built and left off, the ambiguity arming
+path, DUST's accent amplitude). First push to `main` since v0.15 (128 commits, v0.16–v0.27). Pre-deploy: `tools/accept.sh`
+(ACC=v0.27, first run since v0.14): check 0 fail, all 11 scenes `errs [] bad []` on `#test`, monitor 60 s 0 violations, route /
+manual / param smokes 0 fail; the FAIL lines are stale md5 references (s6 POLYTOPE moved at §63/§67 as recorded, NAV2 stills and the
+`mixs` 0→3 route moved with the scenes) plus one script bug — node now colours `util.inspect`, so the params block parsed
+`\e[33m0.4\e[39m` as a number (`FORCE_COLOR=0 NO_COLOR=1` added; the routes themselves verified: PROUTE.n 1, width 0.4 vs 1.8).
+Landing tiles regenerated (`tools/thumbs.sh`: dust / feigen / mandala / polytope / torus2 moved, nav / maxwell byte-identical);
+`site/` copy has no version text. `releases/retinarave-v0.27.html` (1522 KB, 161 modules; `file://` smoke on scenes 1 and 3:
+errs [], nonFinite [], clock pcm), package.json 0.27.0.
+
+## §79 TORUS2: the fog on the tongues — the dream hazes the nest, the drop clears it (2026-10-02, one worker; `docs/plans/TONGUES-PLAN.md` phase 5, on the user's word; the user's Vienna note: "1:05–1:25 … feels like in a dream before first drop at 1:25")
+
+Commit `1f77931` (`assets/scenes/torus2/haze.js` new, `shaders.js`, `index.js`, `help.js`, `motion.js` — the scene's folder only, no
+engine file), this section plus the plan's table, CONTRACTS and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible
+run; the A/B is the user's, stream mode, the watch-list at the end. Before / after pairs were taken across two worktrees
+(`/tmp/rr-base79` = `311d09a` on port 8923, this tree on 8922), removed when done.
+
+### What TORUS2 did before, measured (`tools/dust-trace.js … 3`, the engine started at 0:00, `&map=0`; `tools/work/v79/*-before.json`)
+
+The scene had a FOG but no haze: `fog = clamp(1.25 − 0.55 · depth / cam, 0.55, 1.25)` per segment — a static depth cue (brief
+spec 1b: "a depth cue, never a wall"), the same on every frame of every track. `tension` (v3's roughness) drives two things
+there and neither is a haze: `uDelta = 0.6 · tension` (the projection pole pushed into the picture) and `params.morph = 0.9 ·
+tension` (the rings pulled along the attractor). And `tension` reads LOWER in Vienna's dream than in its grooves — p50 0.15
+(p95 0.37) over 72–86 s against 0.23 / 0.31 / 0.30 in 60–72 / 86–100 / 100–110 — so nothing the scene read said "dream":
+luminance p50 79 in the dream, 66 in the groove before it, 93 after the drop. **Two hazes do not fight because there was no
+first one**; `tension`'s role is untouched. One more finding the design had to route around: with no track map, v3's `dropEvt`
+fires on Vienna at **73.28 s — inside the dream** (the bass void's "bass returns" rule) and NOT at 85.336, so TORUS2's collapse
+already fires there today, and `dropEvt` cannot be the fog's clear. The live detector's `dropLiveEvt` fires at **85.333 s** (§77).
+
+### The design, and the two forms that lost
+
+`tongueAmbig` on the page (a 16-beat trailing window stepping once a clock beat): Vienna climbs 0.54 → 0.90 over 64–72 s, holds
+**0.95–0.98 through 72–86 s**, falls 0.96 → 0.91 → 0.80 → 0.72 at 85.7 / 86.0 / 86.7 / 87.3 (one locked beat per beat refilling the
+window) and is ≤ 0.65 everywhere else in 60–110. The controls over their whole windows: CyborgNinja max **0.367**, SeeYouDrop
+**0.686** (its intro, 20–24 s, before the drums; the breakdown at 50–58 s peaks 0.61), WhoLikesToParty **0.567**, Malicious **0.636**.
+The LEVEL separates the dream from every groove in the set by 0.26 or more, so — against §78's lean — the level is the read here:
+
+- **the change over bars (§78's form) — rejected**: SeeYouDrop's breakdown RISES 0.25 → 0.61 over 50–55 s, nearly the dream's own
+  0.54 → 0.90 over 64–72; a change read hazes the breakdown. The lean belongs where the levels do not separate (§78: CyborgNinja's
+  `tongue21` 0.61 above Vienna's 0.46); here they do.
+- **the sustained run (§77's form, ≥ 0.9 for 8 beats) — rejected**: binary, and late — it would first haze at 77.3 s where the
+  eased level is already 0.5 at 72.6 and 0.9 at 75.2; and its release has the same 3-beat lag the level has, so it needs the
+  slam as much.
+- **the level, chosen** (`haze.js`): `smoothstep(LO 0.75, HI 0.95)` of `tongueAmbig` (the `haze` param's `from()`, routable like the
+  other six), eased **1.5 s in / 0.4 s out**, 0 while `tongueOn ≠ 1`, and **cleared ON the slam**: `dropLiveEvt` sets the target to 0
+  and holds it there until the window has fallen under LO (or 16 beats — the window's own length — if the ambiguity is still
+  there a bar later the music really is ambiguous and the fog is right to return). Without the hold the level re-hazes at 85.7
+  (0.96) and fights the slam. LO's margin: 0.064 to SeeYouDrop's intro, 0.10 to Vienna's own grooves, 0.38 to CyborgNinja.
+
+**What a full haze does to the picture** (`HAZE` in haze.js, the shader's `uHaze` behind `if (uHaze > 0.0)`): beyond the near shell
+(`NEAR` 0.5 of the camera distance, the nest's 1 − R/cam ≈ 0.54) the depth fog falls faster (`FOGK` +0.6 per unit depth) and its
+floor drops 0.55 → **0.25** (`DEEP`; TORUS v1's wall was 0.32 — here only in the dream) — the far side sinks into mist while the
+near strokes keep their light; the colours wash toward their own luminance by **0.45** (`SAT`: the key's hue is there, paler); the
+black behind the nest lifts to **0.045** of the mood palette's own colour (`VEIL`, the clear colour — the feedback is a `max`, so a
+constant veil does not accumulate); the bloom threshold falls 0.30 → **0.15** (`BLOOM`, `post.bloom.thr` as a function — exactly 0.3
+at haze 0): the mist scatters the light into soft halos. **The first cut dimmed the whole nest**: a fog rate × 2.2 from depth 0
+put the centroid at the floor (dream `lum` p50 79 → **33**, the bloom gone) — pivoting the extra fog at the near shell and
+lowering the bloom knee brought it to 62.5 with the near shell at full light. `tools/work/v79/vi80-{before,after,after2}.jpg`.
+
+### The ruler — the three tracks before / after (`dust-trace.js … 3`, WARM = t0, `&map=0`; `tools/work/v79/fog79.py`)
+
+| window (clock) | `tongueAmbig` p50 / p95 | ≥ 0.9 % | `tension` p50 / p95 | `lum` p05 / p50 / p95 before → after | `lumR` p50 | haze p50 / p95 | frames hazed (> 0.05) |
+|---|---|---|---|---|---|---|---|
+| Vienna 60–72 (groove) | 0.62 / 0.87 | 0.0 | 0.23 / 0.35 | 46.9 / 65.9 / 110.0 → 46.9 / 65.8 / 108.4 | 94.4 → 92.2 | 0.00 / 0.19 | **14.0 %** (the ramp, 70.3–72) |
+| **Vienna 72–86 (the dream)** | **0.96 / 0.98** | **100.0** | 0.15 / 0.37 | 58.7 / 79.2 / 111.1 → **43.4 / 62.5 / 98.6** | 88.3 → **68.5** | **0.99 / 1.00** | **100.0 %** |
+| Vienna 86–100 (drop 1) | 0.42 / 0.80 | 4.8 | 0.31 / 0.64 | 55.7 / 92.7 / 143.9 → 55.7 / 92.7 / 143.9 | 133.8 → 133.8 | 0.00 / 0.03 | 3.7 % (85.3–86.5, the release) |
+| Vienna 100–110 (drop 2 at 106.7) | 0.52 / 0.60 | 0.0 | 0.30 / 0.64 | identical | identical | 0.00 / 0.00 | **0.0 %** |
+| SeeYouDrop 20–50 | 0.40 / 0.66 | 0.0 | 0.35 / 0.64 | **identical** | identical | 0.00 / 0.00 | **0.0 %** |
+| SeeYouDrop 50–58 (breakdown) | 0.48 / 0.62 | 0.0 | 0.34 / 0.48 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| SeeYouDrop 58–100 (groove) | 0.46 / 0.58 | 0.0 | 0.34 / 0.54 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| SeeYouDrop 100–110 | 0.31 / 0.42 | 0.0 | 0.41 / 0.75 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| **CyborgNinja 20–50** | 0.31 / 0.34 | 0.0 | 0.33 / 0.46 | **identical** | identical | 0.00 / 0.00 | **0.0 %** |
+| CyborgNinja 50–80 | 0.32 / 0.35 | 0.0 | 0.36 / 0.52 | identical | identical | 0.00 / 0.00 | 0.0 % |
+| WhoLikesToParty 20–110 (after only) | 0.46 / 0.54 | 0.0 | 0.24 / 0.43 | 50.1 / 74.6 / 111.2 | 94.0 | 0.00 / 0.00 | 0.0 % |
+| Malicious 20–110 (after only) | 0.55 / 0.61 | 0.0 | 0.34 / 0.56 | 47.6 / 76.8 / 116.1 | 105.4 | 0.00 / 0.00 | 0.0 % |
+
+"Identical" means every column of the trace, luminance included, is equal before and after to the digit (SeeYouDrop 5401 frames,
+CyborgNinja 3601: `columns differing: []`). Vienna's `lum` differs on exactly the 1181 frames with haze > 0 plus 15 frames at
+89.02–89.28 s (−0.001 → −0.000) — the feedback's trail of the last hazed frames after the haze snaps to an exact 0 at 89.02.
+The dream by annulus, p50 before → after: centre 142 → 115 · body 111 → 90 · rim 88 → 68 · whole frame 79 → 62.5 (−21 %); the
+frame's p95 111 → 99, its p05 59 → 43 (the far side sinking). **Timing on the page**: haze > 0.05 at **70.32 s**, 0.5 at 72.57,
+0.9 at 75.22, 1.00 from 80 to the slam at **85.333**: 0.63 at 85.50, 0.18 at 86.00, 0.05 at 86.50, exactly 0 at 89.02 — where the
+window itself would first have read under LO at 87.3 s. **Nothing moves at drop 2** (1:46.7): the ambiguity there is 0.43–0.60.
+
+### Proofs
+
+- `node tools/check.js` **0 fail** (help.feats gaps 0; `haze.js` 66 lines; `index.js` **348** — it was 349 and the fog's eight
+  lines took it to 357, so the CPU `probe()` reference hook moved whole to `motion.js` as `probe(k, th, U)` with a one-line
+  wrapper; `hooks.probe(3)` answers as before) · `npm test` OK.
+- **The s3 fake-timeline md5 UNCHANGED three ways: HEAD `311d09a`, this tree by default, this tree under `&tongues=0` — f360
+  `0c81f92e`, f840 `e71f2f38`** (`IDS="3" PORT=8923 tools/scene-md5.sh base79` in the base worktree; `PORT=8922 … new79` /
+  `… new79off '&tongues=0'` here; `errs []`). The mirror's `tongueAmbig` is 0.4 in sustain / peak and 0.5 in the valleys (fake.js:
+  `1 − max(d, 0.5)`), both under LO 0.75, so the fog term is 0 at the fake's constants — the plan's "`IDS=3` moves by exactly that
+  scene" turned out not to be needed: it does not move at all.
+- **Bit-exact at haze 0 on a real track, not just on the JPEG**: CyborgNinja 20–50 s, this tree against HEAD, `lum` / `lumC` /
+  `lumR` / `lumM` **0 of 1801 frames differ**. The first shader cut — one `col` and one `fog` variable rewritten inside a uniform
+  branch — differed from HEAD by **one 8-bit step in a single pixel on 4–6 % of frames** (max |Δlum| 0.0001) with the haze at 0:
+  the compiler's scheduling of the same arithmetic, not a value change, invisible to the JPEG md5. The shader is now an
+  `if (uHaze > 0.0) { … } else { <the pre-§79 two lines, verbatim> }`, and two HEAD runs of the same window are themselves
+  identical (0 / 1801), so the receipt is real.
+- `&tongues=0` (`tongueOn` −1): the `haze` param's `from()` is `× (on === 1 ? 1 : 0)`, `step()` forces the target to 0, the eased
+  value snaps to an exact 0 under 1e-4, the veil is `0.045 · 0 · …` = (0, 0, 0), the bloom threshold `0.3 − 0.15 · 0` = 0.3, and the
+  shader takes the old branch — the pre-tongues TORUS2 bit for bit (the md5 line above, and the real-track line).
+- `CARD.bench(3, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: **haze forced on** (`&route=torus2.tongueAmbig=c:1`,
+  haze 0.9987) **0.95 / 0.93 / 0.94 ms against NAV 1.54 / 1.56 / 1.53** (ratio 0.61); this tree off 0.90 / 0.93 / 0.91 against
+  1.57 / 1.49 / 1.56 (0.59); HEAD 1.00 / 0.90 / 0.92 against 1.55 / 1.56 / 1.55 (0.60). Flat: one uniform, one clear colour, one
+  branch per vertex.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.27.html` from `file://`, new = `http://127.0.0.1:8765/`, key `4` for TORUS2 (keys 1–9 → ids 0–8), `&tongues=0` on the new page = the exact before)
+
+- **Vienna 1:05 → 1:25, the headline.** The nest is unchanged until **1:10**; from there the mist gathers — half at 1:12.5, full by
+  1:15 — and holds through 1:25: the far side of the nest sinks into fog, the colours go pale (the green stays green, washed), a
+  faint veil of the same colour lifts the black behind it, and the strokes' glow softens into halos. The near shell keeps its
+  light. (The user's dream starts at 1:05; the field is a 16-beat trailing window and reads 0.75 only at 1:09 — see open item 1.)
+- **1:25.3.** The slam clears it: a third of it in the first fifth of a second, four fifths within two thirds, gone by 1:26.5 — the groove is in full colour on the drop,
+  not three beats after it. The collapse TORUS2 already does on v3's `dropEvt` is NOT at 1:25.3 (it fires at 1:13.3, inside the
+  dream, before and after this change — open item 3).
+- **Vienna 1:40 → 1:50.** Nothing changes at drop 2 (1:46.7); nothing changes anywhere in 1:26 → 1:50.
+- **CyborgNinja and SeeYouDrop, any minute: nothing should change** — every frame of 20–80 / 20–110 s is identical to the digit.
+  SeeYouDrop's breakdown (0:50–0:58) and its intro (0:20–0:24) stay clear by 0.14 and 0.06 of ambiguity. WhoLikesToParty and
+  Malicious: no frame hazed over 20–110 s.
+
+## §80 DUST: the hat voice as the second accent lever — the double time arrives on the rim too (2026-10-02, one worker; §78's open item (1), on the user's word; the user at Vienna 1:25 since §61: "the double time should be accenting rather than driving")
+
+Commit `0da9fb2` (`assets/scenes/dust/voices.js`, `index.js` — the voices, not the grid; no engine file), this section plus
+the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the user's, stream mode,
+the watch-list at the end. §79 is another worker's number.
+
+### The lever, and the carrier
+
+§78 put the double time's arrival into the nudge's SWING (the step × (1 + 0.25·acc)) and left the brief's second lever — the
+hat voice's gain — open. The layer that arrives after Vienna's first drop IS the hats at 2× (the truth's `feel`: "from
+85.336 s the track adds a double-time layer … the hats / percussion run at 180"), and the hat voice's place is the RIM (§58:
+the high bins are the edge; `lumR` in `dust-trace.js` is its own ruler). So `voice()` gains a `gain` argument that multiplies
+the HIT'S size and nothing else — the amplitude the fire starts from and the level's confirm (`G · Math.max(floor, lvl)`),
+never the age, the refractory or the triggers, so **the rate and the timing of the flashes cannot move, by construction**
+(reactive, the user's preference since 2026-09-28), and never the level under the envelope (`Math.max(…, lvl)`, the sustained
+part of the band): what grows is the stick, not the bed — "let sustained sounds habituate". `index.js` passes `hatGain(this.sp.acc)`
+= `1 + HATACC.K · acc`, with `acc` **the same per-beat accent the nudge reads** (grid.js `accent21`: the 16-beat RISE of
+max(`tongue21`, `tongue41`), dead under 0.15, full at 0.45) — a layer ARRIVING, never its level, which is what keeps
+CyborgNinja (depth 0.6 all track, rise ≤ 0.13) at the digit. `&hatacc=<K>` is the knob (0 = the exact before, '' = 0.5);
+`hooks.dinfo()` gains `hG`, the gain this frame.
+
+**K, measured** (`tools/dust-trace.js`, DUST `&map=0`, the engine from 0:00 — `WARM = t0` — on this tree with `&hatacc=K`;
+`tools/work/v80/rim80.py`: `lumR`'s lift per hat fire = its peak in the 4 frames from the fire minus the frame before, on
+Vienna 1:30–1:38, the 30 fires where acc reads 0.97–1.00; fires, ages, `d_spin`, `d_nstep` bit-identical in every run):
+
+| K | gain at acc 1 | amp / hit p50 | lumR lift / hit p50 / p90 / mean | against the rim's own frame noise (\|ΔlumR\| p50 2.58) |
+|---|---|---|---|---|
+| 0 (before) | 1.00 | 0.348 | 20.3 / 39.8 / 21.5 | — |
+| 0.25 | 1.25 | 0.432 | 23.2 / 44.8 / 24.9 (+14 %) | +2.9 = 1.1× the noise — does not read |
+| **0.5** | **1.5** | **0.516** | **26.0 / 52.1 / 28.2 (+28 %)** | **+5.7 = 2.2× the noise; the three full bars' rim median +4 / +0 / +10, p95 +6 / +3 / +4** |
+| 1 | 2.0 | 0.685 | 31.2 / 61.1 / 34.5 (+54 %) | +10.9; amp p90 1.5 (past the voice's own range) and one bar's rim median +16 (+10 %) — driving |
+
+0.5 is the smallest gain whose per-hit lift clears twice the rim's own frame-to-frame noise. The reference the brief named,
+Vienna 1:00–1:20, has 20 fires at 1.0 /s and a lift of 1.0 / 3.7 (p50 / mean): the layer's arrival is already on the rim
+reactively (3.76 fires/s at 1:30–1:38 against 1.0), and the gain is what makes the arrival land harder than the groove's own
+sticks. The spatial reach was not touched: the sparkle's point size already scales with the amplitude (`spark * 2.2` in the
+shader), so a gain IS a reach, and widening `wHigh` would have been a shader change with no measured need.
+
+**The carrier: `acc` itself, not a held copy.** The question was whether the rim should fade with the nudge's acc (gone by
+1:43) or hold while the layer plays. Measured: the depth the accent came from falls back on its own — `tongue41` 0.63 at
+1:35 → 0.59 (1:38) → 0.55 (1:40) → 0.49 (1:43) → 0.43 (1:46) → 0.37 (1:48), the hats thinning to 1–4 fires a bar at 1:40–1:45
+— so there is no sustained plateau to hold on. A decaying-max copy with τ = one bar (2.7 s, `&hatacc=0.5,2.7` on the
+measuring build) differed from `acc` only on the bars at 1:40 / 1:43 / 1:46 (gain 1.13 → 1.23, 1.00 → 1.09, 1.00 → 1.03) where
+the rim's per-bar median and p95 moved **+0.0** against the before (the hats are sparse there) — and it carried a 3 % gain
+across drop 2 (1:46.7), where §78 moves nothing by measurement. Nothing visible bought, one invariant spent: the knob was
+removed. The brief argues the same way: the arrival is the accent, the texture after it is the new ordinary.
+
+### The four windows, before (HEAD `311d09a`, worktree) / after (this; `tools/work/v80/{before,after}-*.json`, `rim80.py`, `../v78/nudge78.py`)
+
+The before traces are bit-identical to §78's `after-w0-*.json` on every column (Vienna 80–110 re-taken in the worktree to
+prove it: 0.0 on `lumR`, `d_spin`, `d_fH`, `d_nacc`, `d_vh`, `d_aH`), so §78's files serve as HEAD's before on the other three.
+
+| window (clock) | hat fires | §61/§66 nudge (peak @ · floor/peak · dead · 25/50/90 % · \|a\| p99) | step/STEP mean (max) · bars acc>0 | amp / hit p50 | lumR lift / hit p50 / mean, accented beats | lumR p50 / p95 |
+|---|---|---|---|---|---|---|
+| **Vienna 80–110** (90.1) before | 86 | −8.3 ms · 14.5 % · 0 · +0/+317/+767 · 49.8 | 1.223 (1.395) · 7 / 12 | 0.316 | 13.8 / 16.1 (49 hits) | 132.2 / 191.6 |
+| after | **86** | **identical** | **identical** | 0.389 | **16.7 / 20.6** (unaccented 5.46 / 12.41 identical) | 132.4 / 196.4 |
+| **Vienna 1:30–1:38** before | 30 (3.76 /s) | — | acc 0.97 / 1.00 / 1.00 | 0.348 | 20.3 / 21.5 (p90 39.8) | 172.0 / 200.0 |
+| after | **30** | — | identical | 0.516 | **26.0 / 28.2 (p90 52.1)** | 175.1 / 208.5 |
+| Vienna 24–60 (90.0) before | 95 | +8.3 ms · 16.7 % · 0 · +0/+317/+767 · 19.8 | 1.138 (1.219) · 6 / 14 | 0.757 | 11.5 / 14.2 (34 hits, acc p50 0.30) | 70.3 / 130.0 |
+| after | 95 | identical | identical | 0.757 | 12.1 / 14.9 (gain 1.13–1.19) | 70.5 / 130.1 |
+| SeeYouDrop 20–110 (150.0) before | 350 | −8.3 ms · 16.7 % · 0 · +0/+200/+467 · 36.7 | 1.153 (1.353) · 28 / 57 | 0.233 | 0.76 / 4.30 (146 hits, acc p50 0.36) | 97.3 / 191.6 |
+| after | 350 | identical | identical | 0.248 | 0.93 / 4.44 (gain to 1.50) | 97.3 / 191.6 |
+| **CyborgNinja 20–80** (160.0) before | 454 | −8.3 ms · 18.4 % · 0 · +0/+183/+433 · 23.9 | 1.123 (1.217) · 0 / 41 | 0.343 | 1.47 / 6.94 (none accented) | 94.8 / 153.8 |
+| after | **454** | **identical** | **identical** | **0.343** | **identical** | **identical — every frame of `lumR`** |
+
+Vienna 60–80 (the 1:00–1:20 reference): after identical to before on every column (acc 0 there). The nudge metrics are the
+same numbers in every window because the grid is not touched — proven on `d_spin` / `d_nstep` / `d_nacc`, not assumed.
+The rim's p95 on Vienna 80–110 moves 191.6 → 196.4 (max per bar 209 → 213; nothing near 255). Luminance elsewhere: Vienna
+80–110 `lum` p50 127.6 → 127.6, |Δlum| p50 1.29 → 1.36 — the accent is on the rim's sticks, not the frame.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (index.js 349 lines, under the soft cap; voices.js 219) · `npm test` OK.
+- **s1 fake-timeline md5 UNCHANGED three ways: default, `&tongues=0`, `&hatacc=0` — f360 `d16d35f7`, f840 `57a9c49c`**
+  (= HEAD's). The default is unchanged because the fake's depths are constants (`fake.js`: 0.5 / 0.4) → rise 0 → acc 0 →
+  gain 1, the mirror §76 planned — the timeline stays an md5 reference with the lever on.
+- `CARD.bench(1, 300)` / `bench(0, 300)` interleaved, q pinned 0.95, three pairs: this tree **DUST 1.06 / 1.02 / 1.00 ms
+  against NAV 1.78 / 1.74 / 1.73** (0.59) and, re-run, 1.11 / 1.07 / 1.12 against 1.59 / 1.62 / 1.62 (0.68); the HEAD
+  worktree 1.18 / 1.23 / 1.27 against 1.75 / 1.70 / 1.66 (0.72). Flat — the scene's new work is one multiply per hat fire.
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.27.html` from `file://`, new = `http://127.0.0.1:8765/`, key `2` for DUST; `&hatacc=0` on the new page = the exact before, `&tongues=0` = §66's DUST)
+
+- **Vienna 1:25 → 1:43, the headline.** At the drop the hats go to 2× and sparkle the rim as before. From **1:30 to 1:38
+  every hat stick on the rim is half again as bright** (the gain 1.5 on acc 0.97–1.00) on top of §78's heavier swing — the
+  same flashes, at the same moments, bigger; fading through 1:40 (1.13) and gone by 1:43. The rate does not change (3.76
+  flashes/s there, before and after). Look for the edge of the cloud lighting harder on each tick of the double time, not
+  for more ticks.
+- **Vienna 1:43–1:50.** Nothing from this change (gain 1.00 from 1:43), and nothing at drop 2 (1:46.7) — the depth falls on
+  its own, the held copy was measured and rejected above.
+- **Vienna 0:27–0:40.** The hats' arrival the user heard at 0:25 reads acc 0.26–0.37 → gain 1.13–1.19 on four bars: the
+  sticks a sixth brighter, subtle by design (the same knee as §78's 7–9 % step).
+- **SeeYouDrop** 0:23–0:28, 0:34–0:39, 0:41–0:48 (gain to 1.45–1.50 at the return after breakdown 1), 1:28–1:33: the hat
+  sticks brighter at the returns; its hats are small there (amp p50 0.23) so the lift is modest (0.76 → 0.93 on the rim).
+- **CyborgNinja, anywhere:** nothing. Identical to the digit on every frame — the control.
+- **WhoLikesToParty / Malicious:** the few bars §78 named (0:50–0:55 / 2:03–2:10; 1:40–1:45 / 2:51–2:56) get the same
+  gain on their hat sticks, 1.05–1.25 — not graded here.
+
+**v0.28 tagged locally (2026-10-02) on the user's word ("tag what has been done"; NOT pushed — retinarave.com serves v0.27):**
+v0.27 + §79 (TORUS2's fog on `tongueAmbig`, cleared on the slam), §80 (DUST's hat voice gain 1 + 0.5·acc, the second accent
+lever), `docs/plans/TONGUES-PITCH-PLAN.md` (the pitch bank measured and NOT recommended; phases 2–3 approved instead).
+`releases/retinarave-v0.28.html` (`file://` smoke on scenes 1 and 3: errs [], nonFinite []), package.json 0.28.0.
+
+## §81 `tension`'s normaliser — the p10 / p98 of roughness over the last 30 s, and what the measure itself says about a drop (2026-10-02, one worker; `docs/plans/TONGUES-PITCH-PLAN.md` phase 2, on the user's word; the plan's finding in §6 (a))
+
+Commit `53c2ae9` (`assets/engine/roughnorm.js` new, `features-slow.js`, `features.js` — `slowAnalysis` takes `now`, `feats.js`,
+`core/harness.js` — `&rough=0`, `tools/test_rough.js` in `npm test`), this section, CONTRACTS §2, the plan's table and
+OPEN-ITEMS. **Not tagged, not pushed, not deployed.** No audible run; the A/B is the user's, the watch-list at the end of §82
+(both phases on one list). `&rough=0` is the v0.28 normaliser to the bit.
+
+### What was wrong, measured on the engine's own numbers first
+
+The plan's §6 (a) named `tension`'s normaliser from the probe's offline replica. Before touching it the PAGE's `rough` and
+`tension` were recorded on all five tracks (`tools/filetrace.js`, det file mode, 0 s to the end; `tools/work/pitch/before-*.json`)
+and the v0.28 follower pair was re-run on that series in a 30-line replica: **max |replica − page| 0.0000 over 9420 frames** — the
+normaliser is pure arithmetic on `rough`, so every variant below was tried offline on the real series and then confirmed in the
+engine (`tools/node-stream.js makeV3` runs v3 in node on the PCM dumps: `rough` page = node to 4e-6 p50, `tension` to 6e-5 p50
+/ 0.007 p99 — `tools/work/pitch/{sim.mjs,v3node.mjs,table81.py}`).
+
+What the page said (SeeYouDrop, p50 per truth section; raw `rough` · v0.28 `tension`): walk 0.0139 · 0.220, groove 0.0233 ·
+0.356, **void 0.0383 · 0.469, drop 1 0.0277 · 0.379**, breakdown 2 (96.0–105.6) **0.0300 · 0.429, drop 2 0.0310 · 0.396**. Two
+different things in one table. (1) **SeeYouDrop's void before drop 1 is ROUGHER than the drop, in the measure itself** — raw
+0.038 against 0.028 — because a noise riser is many partials a few bins apart and a sine sub under hats is not; §57 step 3's
+"a build that never arrived" is Sethares roughness doing exactly what it says, and no normaliser that preserves the order of
+`rough` can put the drop above it. (2) **Drop 2's void is NOT rougher than drop 2** (raw 0.0300 vs 0.0310) and the v0.28
+normaliser put it above anyway (0.429 vs 0.396) — that one IS the normaliser: `rHi` leaps onto any maximum and leaks back at
+0.002 per step (~17 s), `rLo` creeps up at 0.002 per step + 1e-5 and only ever falls onto a new minimum, so the same roughness
+reads differently depending on what happened in the preceding quarter minute (SeeYouDrop 0–4 s: `rHi` leapt to 0.071 on the
+fourth frame and held the first 17 s against it; Malicious 81–95 s read 0.397 on a raw 0.0287 that the next window read 0.19).
+And (3) **Vienna's dream (66.7–84.3 s) is the LEAST rough stretch of the track in the measure itself**: raw 0.0102 against
+0.017–0.033 everywhere else — a D♯/F♯ drone of octaves and fifths with the sub pulled out is the one place the partials do
+not beat. §79's "tension reads LOWER in the dream" (0.15) is the measure, not a defect, and the fog on `tongueAmbig` is the
+honest dream cue; `tension` cannot be made one.
+
+### The normaliser
+
+`engine/roughnorm.js`: `rLo` / `rHi` are the **p10 and the p98 of `rough` over the last 30 s** — a 256-bin histogram (0.0005 per
+bin, 0–0.128) over a ring evicted by TIME (the slow stage runs every other frame: 30/s at 60 Hz, 60/s at 120 — a count would
+have made the window display-rate dependent), three 256-bin scans per slow frame; `tension = ema((rough − rLo) / max(rHi − rLo,
+0.01), 0.35 s) · presence` as before. A window has no attack / release asymmetry: what left it is forgotten, what is in it counts
+once, and the same roughness reads the same whichever order the sections came in.
+
+**Why p98 and not the plan's p90.** Roughness is spiky — its p90 sits ~1.8× its median and its p98 ~3× — and the ceiling it
+replaces was a max follower, in effect a p99+. The quantile pair was swept offline on SeeYouDrop and Vienna (`sim.mjs`:
+p10/p90, p10/p95, p10/p98, p25/p98, a 3-point map pinning the median, W 20 / 30 / 60 s): p90 lifts both tracks' whole-track
+MEDIANS by 0.12–0.13 (SeeYouDrop groove 0.36 → 0.57) and every scene's groove with them; **p98 leaves the five tracks' medians
+where v0.28 had them** — SeeYouDrop 0.325 → 0.325, Vienna 0.277 → 0.289, Malicious 0.350 → 0.326, WhoLikesToParty 0.226 →
+0.261, CyborgNinja 0.320 → 0.259 — so no scene's groove moves beyond CyborgNinja's, and the SECTIONS move because the
+references no longer depend on history. **The plan's gate "the groove at ≤ 0.3" is not met by any quantile pair that keeps
+the medians** (SeeYouDrop's groove reads 0.40, v0.28 read 0.36; it needs a p40 floor, which would read 0 for the quieter half
+of every track); the gate was written against the probe's 0.28 and the page's groove was already above it.
+
+**The cold start (§67 / §75).** The references are a blend of a PRIOR pair — 0.010 / 0.050, the five tracks' own p10 / p98 of
+`rough` — and the window's measured quantiles, by how much of SEED = 5 s the window spans: the first frame reads against the
+prior exactly, the window owns the references from 5 s on, nothing recursive is seeded from the first spike. SeeYouDrop's
+first 4 s (hats rising, raw 0.03–0.045) read 0.29 → 0.80 against the prior where v0.28 read 0.07–0.27 against its 0.12 seed
+ceiling — the intro IS rough relative to a typical track, and the window agrees from 3 s on (its own p98 0.054).
+
+### The five-track section table (node v3 on the PCM dumps, `&rough=0` = before to the bit; p50 per truth section; the full table in `tools/work/pitch/table81.py`)
+
+| track · section | raw `rough` | before | **after** | the plan's question |
+|---|---|---|---|---|
+| **SeeYouDrop** walk 12.8–25.6 | 0.0139 | 0.220 | **0.150** | |
+| groove 25.6–38.4 | 0.0232 | 0.356 | **0.404** | the groove: +0.05 |
+| climb 38.4–44.8 | 0.0216 | 0.374 | **0.373** | |
+| **void 44.8–49.6** | **0.0383** | 0.467 | **0.593** | the void: the roughest 5 s of the first minute, read as such |
+| last 5 bars 49.6–57.6 | 0.0267 | 0.342 | **0.364** | |
+| **drop 1 57.6–62.4** | 0.0277 | 0.379 | **0.377** | **drop < void — the measure's order (raw 0.028 < 0.038)** |
+| drop 1 body 62.4–78.4 | 0.0311 | 0.373 | **0.423** | |
+| breakdown 2 / climb 89.6–96.0 | 0.0216 | 0.266 | **0.184** | |
+| **void 2 96.0–105.6** | 0.0300 | 0.429 | **0.326** | |
+| **drop 2 105.6–115.2** | 0.0310 | 0.396 | **0.411** | **drop ≥ void restored** (v0.28 had it inverted) |
+| outro walk 131.2–156.8 | 0.0227 | 0.278 | **0.167** | |
+| **Vienna** intro 0–62.6 | 0.0189 | 0.261 | **0.309** | |
+| **dream 66.7–84.3** | **0.0102** | 0.145 | **0.093** | **the track's minimum — the measure's (raw 0.010, the least rough stretch)** |
+| **drop 1 84.3–101.6** (85.34) | 0.0194 | 0.312 | **0.408** | drop ≥ the dream before it ✓ (both) |
+| 101.6–107.0 | 0.0146 | 0.231 | **0.220** | |
+| **drop 2 bar 107.0–109.7** | **0.0328** | 0.510 | **0.671** | the roughest bar of the track reads near the top ✓ (both; +0.16) |
+| after 109.7–113.7 | 0.0241 | 0.245 | **0.430** | v0.28's `rHi` had just leapt on the drop bar and held it under 0.25 |
+| **CyborgNinja** 12–34.5 / 34.5–48 / 48–84 / 84–108 | 0.0204 / 0.0202 / 0.0213 / 0.0314 | 0.287 / 0.310 / 0.347 / 0.328 | **0.157 / 0.210 / 0.274 / 0.388** | the control: no drop; its 84–108 s section is its roughest and now reads as such; the groove −0.07 … −0.13 |
+| **WhoLikesToParty** drops 57.5 / 131.4 / 188.8 (the section before each → the drop's) | 0.0203 → 0.0215 / 0.0197 → 0.0162 / 0.0194 → 0.0151 | 0.291 → 0.246 / 0.284 → 0.225 / 0.322 → 0.207 | **0.264 → 0.291 / 0.301 → 0.245 / 0.342 → 0.215** | drop 1: raw rises and v0.28 read it FALLING (0.291 → 0.246) — the normaliser's inversion, gone; drops 2 and 3 are smoother than the sections before them in the measure and read so under both |
+| **Malicious** 54–67.7 / 67.7–81.5 / 81.5–95.2 | 0.0390 / 0.0357 / 0.0287 | 0.515 / 0.353 / 0.397 | **0.736 / 0.531 / 0.189** | its two roughest sections read 0.74 / 0.53; the third, still rougher than the track's median, reads 0.19 after them — "relative to lately" (v0.28's 0.397 was against a floor the quiet intro had set) |
+
+**The eight drops at the 4-bar scale** (p50 over the 4 bars before → the 4 bars after each truth drop; raw · v0.28 · new):
+
+| drop | raw | v0.28 | **new** | |
+|---|---|---|---|---|
+| SeeYouDrop 57.6 | 0.0260 → 0.0277 ↑ | 0.340 → 0.389 ↑ | **0.357 → 0.386 ↑** | (the void is 8 s earlier; the last 4 bars are the climb's tail) |
+| SeeYouDrop 105.6 | 0.0254 → 0.0298 ↑ | 0.298 → 0.409 ↑ | **0.232 → 0.405 ↑** | |
+| WhoLikesToParty 57.5 | 0.0210 → 0.0227 ↑ | **0.319 → 0.235 ↓** | **0.279 → 0.294 ↑** | v0.28 read a rise as a fall |
+| WhoLikesToParty 131.4 | 0.0197 → 0.0175 ↓ | 0.284 → 0.239 ↓ | **0.301 → 0.249 ↓** | the measure falls |
+| WhoLikesToParty 188.8 | 0.0194 → 0.0167 ↓ | 0.322 → 0.214 ↓ | **0.342 → 0.220 ↓** | the measure falls |
+| Malicious 148.3 | 0.0217 → 0.0220 ↑ | **0.351 → 0.338 ↓** | **0.240 → 0.252 ↑** | v0.28 read a rise as a fall |
+| Vienna 85.3 | 0.0101 → 0.0199 ↑ | 0.168 → 0.313 ↑ | **0.109 → 0.424 ↑** | the dream → the drop: ×2 raw, +0.32 |
+| Vienna 106.7 | 0.0170 → 0.0234 ↑ | **0.285 → 0.259 ↓** | **0.329 → 0.415 ↑** | v0.28 read the drop-2 bar's rise as a fall (its `rHi` had leapt on it) |
+
+**The new normaliser moves with the raw roughness on all eight; v0.28 moved against it on three.** That is the whole of the
+fix: the direction of `tension` across a section change is now the direction of the measure, not of the follower's state.
+
+Against the plan's gate: **drop ≥ its void on 3 of the 4 named drops** (SeeYouDrop 105.6, Vienna 85.3, Vienna 106.7; v0.28
+managed 2 of 4) — the fourth, SeeYouDrop 57.6, is the measure's own order and stays so under any normaliser; **the groove is
+NOT ≤ 0.3** (0.40 — nor was it, 0.36); **the dream IS the minimum** — because it is. The plan's stop rule "SYD's void still
+outranks its drop" is therefore reached, and the honest reading is that it was always going to be: the rule assumed the
+inversion was the normaliser's, and on the page it is the measure's. The fix is kept on what it does fix — the history
+dependence (drop 2 ≥ its void; Malicious 81–95 and Vienna 109–114 no longer read against a ceiling one spike set; a bounded,
+display-rate-independent memory; an honest cold start) — with the medians held and `&rough=0` the exact before. What
+`tension` is NOT, and never was, is a build-to-drop tension: that is `buildLive` (§54) and, for the dream, `tongueAmbig` (§79).
+
+### Every consumer of `tension`, and what moved on screen
+
+Readers (`grep MS.tension`): **DUST** jitter only (§57: `uTension` → `pos += … · uTension · sin(…)`); **TORUS2 / TORUS** `U.delta =
+0.6 · tension` (the pole pinch) and `morph = 0.9 · tension` (the attractor); **GIELIS** `lean = MORPHK · tension`; **POLYTOPE** size
+× (1 − 0.3 t), jitter 0.05 t²; **MAXWELL** `shearE → 0.55 t`, `lens = 1.6 + 1.4 build + 0.6 t`; **NAV / NAV2** `reach` (0.5 t in
+the log-gain) and NAV2's bid; **MANDALA / FEIGEN** `uTension` + FEIGEN's dive brake (1 − 0.8 t) and width (1 + 0.25 t); and
+the ENGINE itself: `intensity = 0.62 eS + 0.38 t · presence` (→ `core/look.js`: the mood's `sat × (1 − 0.55 t)`, `bri + 0.25 t`,
+`spread + 0.2 t`, and the hue ORBIT's speed 0.10 · I²), `suspension` / `resolveEvt` (t > 0.55 … < 0.4), v3's `build` (+0.25 t
+inside the absent-bass term) and so the `arc`. Synapse's `A.tension` is its own accumulator and untouched.
+
+Measured with `tools/dust-trace.js` (DUST id 1 and TORUS2 id 3, `&map=0`, the before in a HEAD worktree on its own server, back
+to back; `tools/work/v81/{dust,torus2}-{before,after}-{syd,vie,cn}.json`, `cmp81.py`): **the engine's `beatCount` / `dropEnv` /
+`eM` md5 is identical before / after on all three windows** (SeeYouDrop 20–110 `54a5545d1bcdeaeacd659e01`, Vienna 60–110
+`ea31378366af460ef5b9e80e`, CyborgNinja 20–80 `c13ff0e99064cdaac6365a29`), every drum / grid / voice column is bit-identical
+(DUST: `d_nstep` `d_spin` `d_nacc` `d_fK/fS/fH` `d_aK/aS/aH` `d_form*` `d_build` `d_con`; TORUS2: fires, `d_haze` — 0.917 through
+the dream — `d_wave` `d_flash` `d_shim`), v3's `arc` differs on ONE frame of 5401 (SeeYouDrop 55.23 s, 'sustain' → 'build' a frame
+earlier; `build` max |Δ| 0.023), and what moved is the luminance and the mood:
+
+| window · scene | lum p50 before / after | the section that moved most | mood `sat` (DUST `d_sat`) | per-frame \|Δ\| between the two, p50, against the frame noise \|Δlum\| p50 |
+|---|---|---|---|---|
+| SeeYouDrop 20–110 · DUST | 100.4 / 100.5 | the void 44.8–49.6: lum 97.8 → 101.2, lumC 66.5 → 72.0 (more jitter, +8 %) | void 0.608 → 0.558, walk 0.677 → 0.707, groove 0.620 → 0.606 | 1.85 vs 2.14 — inside the noise |
+| SeeYouDrop 20–110 · TORUS2 | 62.8 / 62.6 | the void: lumC 105.7 → 112.5 (the pinch 0.28 → 0.36, +6 %) | — | 1.43 vs 1.34 |
+| Vienna 60–110 · DUST | 93.3 / 94.4 | drop 1 (84.3–101.6): lum 151 → 158 (+4 %), the drop-2 bar: lumC 127 → 139 (+9 %) | drop 1 0.594 → 0.558, the drop-2 bar 0.526 → 0.474; the dream 0.559 → 0.557 | 1.11 vs 1.08 |
+| Vienna 60–110 · TORUS2 | 73.9 / 73.2 | the drop-2 bar: lumC 105 → 111, lumR 86 → 91 (the pinch 0.31 → 0.40); the dream's pinch 0.087 → 0.055 (lumC 125 → 123) | — | 1.28 vs 0.88 |
+| **CyborgNinja 20–80 · DUST** | **100.9 / 98.1 (−3 %)** | every section: the groove reads 0.16–0.26 for 0.32–0.36 | **0.79 → 0.86 (+8 %), 0.75 → 0.78** | 2.77 vs 2.10 — **the one look that moves past its noise** |
+| CyborgNinja 20–80 · TORUS2 | 100.2 / 100.5 | lumR 121 → 117 (−3 %, less pinch) | — | 2.38 vs 1.72 |
+
+The groove reads as before on SeeYouDrop and Vienna (±0.05 in `tension`, lum within 1 %), the sections differ in the direction
+the raw roughness says (the void, the drop-2 bar, the dream), and **CyborgNinja is the one track whose ordinary moment moved**
+— down by 0.1–0.16, so the mood saturates ~8 % more and DUST's cloud jitters less, the whole 60 s. It is the control track
+(no drop, no breakdown, a 16th lattice all the way), its roughness is as spiky as SeeYouDrop's (p10 / p50 / p90 0.013 / 0.023 /
+0.042) and the v0.28 pair had been reading it against a floor that crept under everything; p98 puts its ordinary moment at
+0.26 where v0.28 said 0.32. No scene's gain was rescaled: the shift is the normaliser's calibration, not a scene's, and it is
+the smallest any quantile pair gives (p95 moves SeeYouDrop and Vienna UP by the same amount instead). The hue: on SeeYouDrop
+DUST's `d_hue` differs by 0.047 turns p50 / 0.26 p95 — `look.js`'s mood hue is a free-running ORBIT whose speed rides
+`intensity` (0.38 t), so a 0.05 change in t over 90 s is a different seat on the same wheel, not a different mapping; on
+Vienna (keyConf 1.0, the key's hue) `d_hue` is bit-identical.
+
+### Proofs
+
+- `node tools/check.js` 0 fail (features-slow.js 142 lines, roughnorm.js 74) · `npm test` exit 0 with `tools/test_rough.js`: rough
+  10 s / smooth 10 s / rough again reads 0.78 → **0.015 → 0.88**, and **0.21 → 0.013 → 0.87 at 0.3× the absolute level**; the first
+  sample reads against the prior pair exactly; a 0.07 plateau through the 5 s seed climbs the ceiling from 0.050 to 0.077 and
+  never past it; 30 s after a half-second 0.12 spike the ceiling is the plateau's own p98 (0.029); the `&rough=0` path is the
+  v0.28 formula (rLo 0.02146 / rHi 0.11534 after 30 steps at 0.04); two runs bit-identical.
+- **`&rough=0` = before to the bit** on all five tracks in node (`rough`, `tension`, `rLo`, `rHi`: max |Δ| 0.0).
+- **The fake-timeline md5 list cannot move and did not**: `sources/fake.js` writes `tension` itself (0.9 / 0.6 / 0.2 by phase); the
+  twelve ids' f360 / f840 lines are recorded under §82 (one list for both phases, HEAD's worktree against this tree).
+- Page = node on `tension` after: `tools/work/pitch/after-SeeYouDrop.json` against `node-after-SeeYouDrop.json` (the §82 traces carry it).
+- Cost: three 256-bin scans and one histogram update per slow frame (every other frame), no allocation after construction.
+
+## §82 `modeShade` — is THIS BAR major or minor: the chord quality the key implies for the bass's degree, and a per-bar pull on the key hue behind a flag (2026-10-02, one worker; `docs/plans/TONGUES-PITCH-PLAN.md` phase 3, on the user's word; the plan's §6 (b))
+
+Commits `55da70e` (`assets/engine/ears/shade.js` new, `features-ears.js`, `state.js`, `ears/feats.js`, `sources/fake.js`,
+`math/keycolour.js`, `core/harness.js` — `&shade=`, DUST / TORUS2 / POLYTOPE / MAXWELL / GIELIS `index.js` + `help.js` +
+`polytope/colour.js`, `tools/test_shade.js` in `npm test`) and `2efc3fd` (the held note), this section, CONTRACTS §2 + Appendix A,
+the plan's table and OPEN-ITEMS. **Not tagged, not pushed, not deployed. The pull is OFF by default** (`SHADE.K` 0): every scene's
+pixels are v0.28's to the bit until the user's eye has judged `&shade=1`. No audible run.
+
+### The rule
+
+The probe (the plan's §3 item 3) showed a per-bar major / minor cannot come from the pitch bank — the harmonic series is a
+major chord, so every track read major. It is a KEY-relative fact and costs nothing: in a diatonic key the triad on each
+scale degree has a fixed quality — natural minor **i iv v minor, III VI VII major** (ii diminished); major **I IV V major, ii
+iii vi minor** (vii diminished) — so `modeShade = quality[(bassNote − key) mod 12]` with `key` / `mode` the ears' tonic (§62).
+SeeYouDrop's annotated walk C♯1 A1 F♯1 E1 in C♯ minor is i VI iv III = **−1 +1 −1 +1**, every two bars. Three decisions the
+table carries, each stated in `shade.js`: a diminished triad reads −1 (its third is minor — the brief's axis); the **raised 7th
+of minor and every other non-diatonic bass reads 0** (the natural-minor set is what the KK minor profile the key came from
+describes; the harmonic-minor V would call every minor track's dominant bar warm, and on the five tracks the bass never sits
+on the leading tone); and the table depends on the **diatonic SET, not on which note is the tonic** — the relative major and
+minor agree on every note (C♯ minor = E major), the PARALLEL modes disagree on every shared note (C♯ is I in one, i in the
+other), a fifth-off key (§62's synapse failure) agrees on five of seven degrees. That last fact decided a design question
+before it was asked: on SeeYouDrop's walk the ears' tonic wanders C♯m → A major (18.1–19.8 s) → F♯m (19.8–24.6) → C♯m, because the
+sub is 70 % of the energy and leans on the chroma (§62 SUB_W 2.5), and the four bars read −1 +1 −1 +1 under every one of
+those readings (`test_shade.js` proves the table under all four).
+
+**The bass note.** `subNote` while `subGate` is open, `subConf ≥ 0.8` and the note has HELD 60 ms — the map's YIN shows every
+808 attack gliding F♯ → E → D♯ → C♯ in 50 ms before it settles (SeeYouDrop 12.90–12.95 s), and without the hold each attack
+would flash two wrong degrees. **The last settled note holds for a bar after the sub stops** (`2efc3fd`): WhoLikesToParty's
+bass is plucked — 50 ms sub runs, the gate open 59 % of the time, a settled note on 22 % of frames — and against "0 between
+notes" its field never left ±0.1 (p10 / p90 −0.14 / +0.02 over the track); a plucked bass is still the bar's bass between its
+plucks. Then `bchroma`'s root (v3's < 240 Hz pitch-class chroma, ema 0.35 s) stands in at weight 0.6 when its largest bin
+holds ≥ 35 % of the sum — SeeYouDrop's intro has no sub at all (§75) and its 70–110 Hz mid-bass walk C♯2 E2 A2 … reads through
+this path (−0.5 / −0.6 / +0.57 on bars 4–7); and with no bass at all the target is 0 and the field eases back to it.
+
+**The key.** The (key, mode) the degree is taken against must have HELD 2 s before the shade adopts it: measured on the walk,
+the tonic flips C♯m → C♯ MAJOR for 0.35 s at 14.0 s and 0.67 s at 15.0 s (tonicConf 0.01 — the KK coin toss between the parallel
+modes), and before the hold the C♯ bars read −0.36 / −0.16 instead of −1 (after: −0.59 / −0.98). A flip shorter than a bar is
+noise about the mode; a modulation holds. The weight is 1 when the ears have a tonic (`tonic ≥ 0`: the published `key` /
+`mode` ARE the tonic), else keycolour's own 0.1 … 0.3 ramp on synapse's `keyConf`, so the field and the hue it pulls agree on
+when the key counts. Eased with τ = a third of a bar (0.53 s at 150 BPM): settled within the bar it belongs to, and the first
+bar of a new note reads its transition (±0.45 at p50 on a −1 → +1 swing), the second ±0.97.
+
+### SeeYouDrop's walk — i / VI / iv / III, bar by bar (the page, det file mode, `tools/work/pitch/after-SeeYouDrop.json`; the truth's downbeats; p50 (min … max) per bar)
+
+| bar | t | truth note · degree | **modeShade p50** (min … max) — the map's sub (file mode) | the CAUSAL ears (`&map=0`, stream mode's path; `tools/work/v81/syd-walk-causal.json`) | the tonic the ears read |
+|---|---|---|---|---|---|
+| 8 | 12.81 | C♯1 · **i** | **−0.59** (−0.91 … +0.42) | **−0.50** (−0.89 … +0.42) | C♯m |
+| 9 | 14.41 | C♯1 · i | **−0.98** (−1.00 … −0.91) | **−0.93** | C♯m (the C♯M flips held out) |
+| 10 | 16.01 | A1 · **VI** | **+0.47** (−1.00 … +0.88) | **+0.84** | C♯m |
+| 11 | 17.61 | A1 · VI | **+0.97** (+0.88 … +0.99) | **+0.99** | A major (the set agrees) |
+| 12 | 19.21 | F♯1 · **iv** | **−0.45** (−0.88 … +1.00) | **−0.32** | F♯m (the set agrees) |
+| 13 | 20.81 | F♯1 · iv | **−0.97** (−0.99 … −0.88) | **−0.97** | F♯m |
+| 14 | 22.41 | E1 · **III** | **+0.45** (−1.00 … +0.88) | **+0.30** | F♯m (E = VII there: major too) |
+| 15 | 24.01 | E1 · III | **+0.97** (+0.88 … +0.99) | **+0.97** | C♯m |
+
+**8 of 8 bars carry the right sign at p50 on both paths** (the plan's stop rule was "> 1 bar in 8 misreads"); the first bar
+of each note is the ease's transition and the second its plateau. The outro walk (131–157 s, the same four notes) reads the
+same way. Drop 1 (57.6–66 s, C♯1 all the way) reads −0.69 / −0.98 / −1.00 / −0.19 (the bar where the sub ducks) / −0.68 / −0.98.
+
+### Vienna — the D♯ drone, the dream, the riff, and what the octave-up line implies after 1:46.7
+
+Vienna's key read is D♯ minor on every frame (keyConf 1.0, the tonic from 0 s). **The intro's drone (0–62.6 s)** is D♯1 / F♯1 /
+A♯1 (§66 Q1 — the map's sub: D♯ 21–30 % of frames, A♯ 15 %, F♯ 9–10 %, none 30–41 %) = i / III / v, so the field sits cool with
+warm bars where the F♯ leads (bar 23 −0.99, bar 24 +0.65). **The dream (66.7–84.3 s): the sub is gated OFF on every frame** — the
+drone the user hears is the 40 Hz drone LEAVING (§79's dream, §66's "the sub pulled out"), so there is no D♯ sub to read; the
+first dream bar holds bar 24's F♯ (+0.93) and from 69.3 s the mid-bass chroma stands in at −0.23 … −0.57 (its root D♯ / A♯, i / v,
+at the fallback weight 0.6). **Not −1 throughout, and not a flicker**: a steady cool lean. **The grooves (85–106 s)** are a
+2-bar riff, D♯ (4 beats, i) → A♯ (2 beats, v) → F♯ (1 beat, III) → F / E passing — so the D♯ bars read −0.63 … −0.98 and the riff
+bars swing −0.9 → +0.3 … +0.6 within the bar (the per-beat trace: D♯ beats −0.4 … −0.8, the A♯ beats −0.7, the F♯ beat → +0.0 …
++0.4). That is a riff, not a drone, and per bar it is honest: Vienna's bass IS i for most of every bar and III for one beat
+in eight. **After drop 2 (106.67 s)**: the sub is pulled out across the drop bar (gate 34 %; the held F♯ carries +0.74 through
+it), then the octave-up line the map's YIN reads as **A♯** (60–69 % of its gated frames; §66 wrote A1 from the truth tool's 0.372 s STFT labels — 55 vs 58 Hz,
+one semitone; the map's centred YIN is ±30 cents on 100 % of frames, so A♯ it is; in D♯ minor A♯ is v, A is nothing) → **−0.95 at bar 41** and −0.4 … −0.6 after as the
+line thins (gate 10–23 %, the chroma standing in). The octave-up line implies the DOMINANT, minor: the drop reads cool.
+
+### The five tracks' per-bar distribution (bars from 8 s; a bar's p50; `tools/work/pitch/shade82.py`)
+
+| track · truth key · the ears' key | bars | **minor (< −0.5)** | **major (> +0.5)** | between | unknown (\|v\| ≤ 0.1) | frame p50 | the bass it read |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop · C♯m · C♯m (F♯m / A on the walk, the set agrees) | 93 | **42 %** | **12 %** | 25 % | 22 % | −0.26 | C♯1 (i) under every groove and drop; the walk's VI / III bars are the major share |
+| Vienna · D♯m · D♯m (every frame) | 69 | **61 %** | **7 %** | 26 % | 6 % | −0.60 | i / v with III one beat in eight; the dream through the chroma |
+| WhoLikesToParty · DM · DM 51 % / Bm 23 % / Em 23 % (one set) | 120 | 28 % | 14 % | 32 % | 26 % | −0.07 | a plucked walking bass E B G D C F♯ = ii vi IV I · iii (C non-diatonic): a major key whose bass lives on its minor degrees |
+| **CyborgNinja · C♯m · G major 48 % / G♯M 33 %** (§62: the ears' miss) | 114 | 11 % | 16 % | 41 % | 32 % | +0.04 | **as wrong as its key** — C (46 % of its settled sub) is IV in G and the raised 7th (0) in C♯m; the control reads a coin toss |
+| **Malicious · GM · C minor 62 % / GM 31 %** (the ears' other miss; no settled sub at all — 0 % of frames at conf 0.8) | 124 | 20 % | 10 % | 42 % | 27 % | −0.12 | the chroma fallback only (hence the 42 % "between" at weight 0.6) against a key read a fifth off: five of seven degrees right by the set argument, the rest noise |
+
+The field is exactly as good as the key under it: on the three tracks where the ears' tonic is the truth's (§62: 3 of 5) the
+per-bar reading follows the bass's degree; on the two where it is not, it follows the wrong degrees — the shade cannot
+repair the key and does not try (the next lever is §62's open item, `tonicConf`).
+
+### The consumer — `math/keycolour.js`, behind `&shade=1`
+
+`anchor(dt, key, mode, keyConf, valence, harmAngle, moodHue, pin, shade = 0)`: the mode's PULL (0.45 toward WARM / COOL) is
+joined by **`SHADE.K · |shade| · wrap((shade > 0 ? WARM : COOL) − hueKey)`** — a major bar drags the key's hue a further K toward
+WARM, a minor bar toward COOL, the short way round, on the same `kw` gate (the hue only moves where the key is trusted) and the
+same HUETC ease (0.7 s) as the key itself. **`SHADE.K` is 0 by default**: the added term is `0 · (finite)` = 0 exactly, so the
+hue is v0.28's to the bit; `&shade=1` sets K = `SHADE.ON` = 0.25, `&shade=<k>` sets k. In a minor key the i / iv / v bars sit
+0.45 toward COOL and the III / VI / VII bars 0.45 COOL − 0.25 WARM: the alternation reads as the key's hue breathing warmer on
+the major bars. The five anchor scenes (DUST, TORUS2, POLYTOPE through `polytope/colour.js`, MAXWELL, GIELIS) pass `MS.modeShade`
+and declare it; CHLADNI anchors on its own ears and does not. The ease is the anchor's on top of the field's third-of-a-bar,
+so a bar's shade lands ~1–1.5 s into it — fine for a two-bar walk, late for a one-beat III (Vienna); the τ is the first knob
+if the eye wants it quicker (open item).
+
+### Proofs
+
+- `node tools/check.js` 0 fail (shade.js 88 lines, features-ears.js 191, keycolour.js 94) · `npm test` exit 0 with
+  `tools/test_shade.js`: the walk under C♯m / E / F♯m / A, Vienna's i / v / III, a chromatic bass 0, the 808 glide held out, C♯
+  held 2 s → −0.97 and A one bar → +0.90, the last note holds a bar then the field is back under 0.06, a 100 ms pluck every beat
+  reads +0.90, the chroma root at 0.6 and the sub outranking it, the parallel-mode flip of 0.5 s not moving the tonic bar and a
+  held modulation adopted, the keyConf ramp at 0.2 → +0.49.
+- **The fake-timeline md5 list, twelve ids, HEAD's worktree against this tree, flag off: IDENTICAL line for line** (`PORT=8929
+  tools/scene-md5.sh base81` / `PORT=8928 … new81`; the lists in `tools/work/{base81,new81}-md5.txt`): s0 f360 / f840 fb74fee4 / 8a0715df, s1 (DUST) d16d35f7 / 57a9c49c, s3 (TORUS2) 0c81f92e / e71f2f38, s5 e6aed873 / e6ec96a0, s9 95fd7d73 / 4e2108a7, s10 4f6c8cb0 / 1dc4cb4c — and the other six ids likewise; `errs []` on all twelve. With
+  `&shade=1` on the five anchor ids (1 3 5 9 10): **also identical** — the fake timeline mirrors `modeShade` 0 (`fake.js`), so the
+  pull has nothing to multiply; the flag's effect exists only on real music.
+- **The flag on, on real music** (TORUS2, SeeYouDrop, det file mode, frame-exact: `test&track=SeeYouDrop&at=0&scene=3[&shade=1]`, CLOCK=1 GPU=1, shots at frames 902 / 1106 / 1298 / 1490 = 15.0 / 18.4 / 21.6 / 24.8 s,
+  the second bar of each walk note, `MS.modeShade` reading **−0.970 / +0.973 / −0.972 / +0.972** on both runs; `tools/work/v81/walk-{c,a,f,e}-{off,on}.jpg`):
+  the four shot pairs differ, and the mean HSV hue of the saturated pixels moves **only on the major bars** — A1 (VI) 0.446 → 0.089
+  turns (teal → orange, the montage `walk-montage.jpg`), E1 (III) 0.371 → 0.408 — and not on the minor ones (C♯1 +0.003, F♯1
+  −0.001): by construction, since a minor key's hue already sits at the COOL pull and the shade's extra 0.25 toward COOL is
+  0.008 of a turn there, while 0.25 toward WARM crosses the cosine palette's teal → orange band. The band is sharp: `&shade=0.1`
+  moves the A bar 0.446 → 0.432 only (`walk-a-k01.jpg`), so the knob is coarse between 0.1 and 0.25 — the user's eye picks).
+- Page = node on `tension` after both commits (SeeYouDrop: p50 1.9e-4, p99 9e-3 — v3's shim parity, §81's number).
+
+### The user's A/B, stream mode, in track time (old = `releases/retinarave-v0.28.html` from `file://`; new = `http://127.0.0.1:8765/`, `&shade=1` for the pull, `&rough=0` for v0.28's tension; key `2` DUST, key `4` TORUS2)
+
+- **SeeYouDrop 0:13–0:26, TORUS2 with `&shade=1` — the headline.** The sub walks C♯ A F♯ E, two bars each: the key hue (C♯ minor,
+  pulled cool) should **breathe warmer on the A and E bars (0:16–0:19, 0:22–0:26) and back cool on the C♯ and F♯ bars**, landing
+  ~1 s into each pair. Without the flag the hue holds. The same walk returns at 2:11–2:37 (the outro). DUST shows it on its
+  cloud's palette.
+- **SeeYouDrop 0:45–0:50 (the void) — `tension`.** DUST's grains jitter harder and the mood drains a little more saturation
+  (0.61 → 0.56) through the risers; TORUS2's pole pinch is deeper (centre +6 %). The drop at 0:57.6 itself reads as before.
+  `&rough=0` = the old.
+- **SeeYouDrop 1:36–1:45 → 1:45.6 (void 2 → drop 2).** The drop now reads at least as rough as the breakdown before it (0.33 → 0.41;
+  it used to read 0.43 → 0.40): DUST's jitter and TORUS2's pinch no longer RELAX into the drop.
+- **Vienna 1:06–1:24 (the dream).** `tension` reads lower still (0.09 for 0.15): TORUS2's rings a touch less pulled, the fog
+  (§79) unchanged. With `&shade=1` the hue leans steadily cool (the chroma's D♯ / A♯) — no bar-to-bar movement expected.
+- **Vienna 1:25–1:41 (drop 1, the riff).** `tension` 0.31 → 0.41: DUST brighter by ~4 % with ~6 % less saturation, TORUS2's
+  centre +1 %. With `&shade=1`: cool on the D♯ bars, a warm flick on the F♯ beat every second bar (late by a second — the τ).
+- **Vienna 1:46.7 (drop 2) → 1:50.** The roughest bar of the track reads 0.67 (was 0.51): DUST's centre +9 %, TORUS2's pinch
+  0.31 → 0.40 for the 2.7 s bar, then 0.43 for 0.25 through 1:49–1:53 (v0.28's ceiling had leapt on the bar). With `&shade=1`
+  the octave-up line (v) reads cool.
+- **CyborgNinja, anywhere — the control.** The ordinary moment reads 0.16–0.26 for 0.32–0.36: DUST's cloud jitters less and
+  the mood saturates ~8 % more, the whole track; TORUS2's rim 3 % dimmer (less pinch). **This is the one look that moves past
+  its own noise** (§81) — if the eye prefers the old, `&rough=0` is it, and the knob is `ROUGHK.HI` (0.98). With `&shade=1`
+  the key is wrong (G for C♯) and so is the shade: expect nothing meaningful.
+- **WhoLikesToParty / Malicious:** `tension`'s direction across each drop now follows the raw roughness (§81's table); the shade
+  on Malicious is against a wrong key.
+
+**v0.29 tagged AND DEPLOYED (2026-10-02) on the user's word ("default on; tag; deploy"):** v0.28 + §81 (`tension` normalised
+to the track's own 30 s p10/p98, `&rough=0` = old) + §82 (`modeShade`; the key-colour pull **ON by default, `SHADE.K` 0.25**,
+`&shade=0` = the v0.28 look) — the user saw the A/B. Fake-timeline md5 unmoved (s1 `d16d35f7`/`57a9c49c`, s3 `0c81f92e`/
+`e71f2f38`; the fake mirrors shade 0); landing tiles regenerated, none moved; `releases/retinarave-v0.29.html` (1551 KB, 164
+modules; `file://` smoke on scenes 1, 3, 11: errs [], nonFinite []), package.json 0.29.0. Pushed `main` + tags v0.28, v0.29.
+
+## §83 the guard rails cover what we built — `accept.sh` re-based at v0.29 on one `ACC` variable, and the fake timeline gets a percussion lattice (2026-10-02, one worker; NEXT-SESSION-PROMPT item 1, on the user's word; the orchestrator's brief)
+
+Two commits, in order. **Not tagged, not pushed, not deployed.** No audible run. Every before / after pair in an isolated
+`git worktree` (the user's dev server on 8765 untouched; the worker's pages on PORT 8830 / 8831, killed by port).
+
+### Step A — the references, re-based at v0.29 (`tools/accept.sh`, `tools/accept/v0.29/`)
+
+**What.** `accept.sh` hard-coded its md5 references from four versions — `REF6` from `tools/accept/v0.7/scene-md5-v07.txt`,
+TORUS2 from the same v0.7 list, NAV2 from `v0.8/scene-md5-v08.txt` + `v0.8/nav2-still-md5.txt`, POLYTOPE from `v0.9/…v09.txt`,
+GIELIS from `v0.14/…v014.txt` + `v0.14/gielis-still-md5.txt`, the mixs 0→3 value inline (`f0c9d637`, v0.9) — and the "== scenes"
+block never compared s0 / s1 / s2 / s4 / s6 / s7 / s9 / s11 against any list at all (it shot t6 / t14 and read `CARD.ERRS`), so the
+sweep could not say whether DUST had moved. Now: **`ACC=${ACC:-v0.29}` is the one variable at the top**; shots go to
+`tools/accept/$ACC/` and every reference is read from the same directory — `scene-md5-v029.txt` (all twelve ids at CLOCK=1
+f360 / f840, `tools/scene-md5.sh`'s format), `nav2-still-md5.txt`, `gielis-still-md5.txt`, `trans-mixs-md5.txt` (the inline mixs
+value moved into a file, with its history in the header). A new **"== scene md5" loop checks every id's f360 / f840 line against
+the list** (the torus2 / nav2 / polytope / gielis blocks keep their own named shots and read the same list). The v0.7 / v0.8 /
+v0.9 / v0.14 lists stay on disk as history. The next re-base is: a new directory, those four files, that one default (HARNESS
+"Acceptance sweep" — that HARNESS edit rode into the other worker's `616f212` by the shared tree's `git add docs/HARNESS.md`; the
+text is this step's).
+
+**The before — the unmodified `accept.sh` on the deployed tree** (a worktree of `ffc6a62` = `dca98f5` + the tools/truth commits, no
+engine file between; `GPU=1 PORT=8830 ACC=v0.29`, 165 lines, `EXIT 0`): **16 FAIL lines** —
+- the mixs 0→3 f178 md5 `8a1a768d` ≠ the recorded `f0c9d637` (TORUS2, the fade's target, moved in §70 / §79 / §82; this machine
+  had read `641f6633` from v0.14 on, scene-md5-v014.txt's note);
+- s6 f360 `fac80f37` ≠ v0.7's `8d6ac4a6` on three lines (route-id, post-same, panel opened-then-closed — the `same` checks of the
+  routes block compare FEIGEN against v0.7; FEIGEN moved with LOUDNESS §63);
+- torus2 f360 / f840 `0c81f92e` / `e71f2f38` ≠ v0.7's `7189a6ba` / `48113eda`;
+- nav2 f360 / f840 `2daaa2c0` / `f2342b7f` ≠ v0.8's `9021eac8` / `f6299795` (= v0.14's own lines — the block read the v0.8 list) and
+  the four `&still=1` frames `202c5a8a` / `36c8a02f` / `1ee726cd` / `d60bc5c8` ≠ v0.8's;
+- polytope f360 / f840 `e6aed873` / `e6ec96a0` ≠ v0.9's `06b46063` / `cccb0094`;
+- **two stale assertions, not references:** "nav2 monitor" printed FAIL on `viol:[]` because the `tr -d '"'` left the JSON's
+  backslashes (`\viol\:[]` never matched `viol:\[\]` — the gielis block already stripped them; fixed the same way), and "landing
+  tiles" wanted `TILES 6` since v0.8.1 while nine scenes carry a `card` slot at v0.29 (DUST, GIELIS, MAXWELL, FEIGEN, MANDALA,
+  POLYTOPE, NAV, CHLADNI, TORUS2) — the count is now read from the scene folders.
+Everything else passed: check 0 fail, the math tests, the smokes, parity real, the 60 s monitor, hist rows == full, the feigen
+cost, hidden tab / worklet, routes / params (the `diff` halves), gielis md5 + still + train + monitor, help, the real start path,
+the bundle.
+
+**The v0.29 list** (`PORT=8830 tools/scene-md5.sh v029pre` in the same worktree, errs [] and hop 840 row 72 on all twelve;
+`tools/accept/v0.29/scene-md5-v029.txt`, = §82's proof numbers): against v0.14's list **s0-f840, s1, s2, s3, s4-f840, s5, s6 moved
+and s11 was never recorded**; s0-f360, s4-f360, s7, s8, s9, s10 are v0.14's lines to the byte. Exactly the set NEXT-SESSION-PROMPT
+item 1 named. The NAV2 stills are the sweep's own four shots; the GIELIS still pair is v0.14's pass-1 values, measured again
+(`fd8e256b` / `88f6d5cb`); the mixs value is `8a1a768d`.
+
+**Parity fake, before:** `max |diff| 7.852 · 72 fields`, the `nav.*` MISMATCH line (nav.c … nav.cyc.has) — the same line §76 and
+§79 recorded against HEAD; the MS fields themselves identical. accept.sh prints that line without the word FAIL (its grep looks
+for "parity|MISMATCH|max |diff|"), so it is not in the 16.
+
+**After:** `accept.sh` on the tree at this commit, in its own worktree — the receipt is in the Step B subsection below (the run
+that follows the commit).
+
+### Step B — the fake timeline's percussion lattice (`assets/engine/sources/fake.js`, 200 → 239 lines)
+
+**What.** Until v0.29 `kickEvt` / `snareEvt` / `hatEvt`, `kickAge` / `snareAge` / `hatAge`, `kickAmp` / `snareAmp` were
+`state.js`'s defaults under `#test` (false / 99 / 0 — the ears stage returns on `ENGINE.fakeOn`), `modeShade` was mirrored as 0
+and the twelve tongue fields as the same constants in every phase. So every voice built in §57–§80 and §82's pull were
+invisible to the CLOCK=1 md5 sweep — DUST's snare voice (lane mode since §70) had NEVER fired on the fake timeline. Now the
+fake carries a **4-bar lattice on its own beat grid, on the SAME crossings its levels already use**, so an event and its
+level are one onset (CONTRACTS §1.18): kick every beat (`kickAmp` 1.0 on beats 1 / 3, 0.55 on 2 / 4), snare on beats 2 / 4
+(`snareAmp` 0.9 on even bars, 0.5 on odd), hat on every 8th (no `hatAmp` exists — CONTRACTS; its soft / hard would have to
+ride the level, which is left at 0.5 so that HARNESS's pitfall, v3 parity's `hat` and every level-only scene stay put) —
+where the kick / snare levels play (sustain, peak) and where the hat level plays (everything but the valleys). An event is
+true for exactly one frame; its age on that frame is the crossing's sub-frame remainder (0 … dt, never negative here) and
+grows by dt after; 99 before the first event (the sentinel); the ages run through the valleys and the build (the kick's
+reaches ~7 s at the drop). `modeShade` is eased (τ = a third of a bar, as `shade.js`) toward −1 on even bars / +1 on odd bars
+where the kick plays and 0 (no bass) elsewhere. The tongue mirror follows the lattice: 1:1 depth 0.6 where the kick plays,
+8th / 16th depths 0.5 / 0.4 where the hats play and 0 in a valley — so `tongueAmbig` reads 0.4 / 0.5 / **1.0** (groove / build /
+valley: TORUS2's fog §79 hazes the valleys) and the 8th depth rises 0 → 0.5 at every valley's end (DUST's §78 / §80 accent
+fires there). The kick / snare / hat LEVELS are byte-for-byte what they were. Everything is a function of the fake clock —
+no Date, no Math.random. Stale comments corrected in the same commit: `features-tongues.js`, `dust/grid.js`, CONTRACTS §2
+(the tongue mirror, and `SHADE.K` — it said "0 by default, behind `&shade=1`" while v0.29 shipped it ON at 0.25; Appendix A's
+`modeShade` row likewise).
+
+**The sweep moved exactly where a scene reads a voice or the shade** (`PORT=8831 tools/scene-md5.sh lat1` on this tree against
+`scene-md5-v029-prelattice.txt`, the Step A list of one commit earlier; errs [] on all twelve):
+
+| id | scene | reads (of the fields the lattice now drives) | f360 | f840 |
+|---|---|---|---|---|
+| 0 | NAV | none | did not move | did not move |
+| 1 | DUST | kickEvt/Age, snareEvt/Age/Amp, hatEvt/Age, tongue21/41 (acc), modeShade | `d16d35f7` → **`1faaa64e`** | `57a9c49c` → **`25dfdc48`** |
+| 2 | MANDALA | none (levels only) | did not move | did not move |
+| 3 | TORUS2 | snareEvt + snareAmp (the wave), tongueAmbig (the fog), modeShade | `0c81f92e` → **`3122036e`** | `e71f2f38` → **`a1e941af`** |
+| 4 | DRUM | none | did not move | did not move |
+| 5 | POLYTOPE | modeShade (colour.js anchor) | `e6aed873` → **`9c3be023`** | `e6ec96a0` → **`04fc1ffb`** |
+| 6 | FEIGEN | none | did not move | did not move |
+| 7 | TORUS v1 | none | did not move | did not move |
+| 8 | NAV2 | none | did not move | did not move |
+| 9 | MAXWELL | modeShade (anchor) | `95fd7d73` → **`fb52b874`** | `4e2108a7` → **`02c317b8`** |
+| 10 | GIELIS | modeShade (anchor) | `4f6c8cb0` → **`6ab60297`** | `1dc4cb4c` → **`1fe93f2c`** |
+| 11 | CHLADNI | kickEvt/Age/Amp, snareAge/Amp, hatAge | `8a930b26` → **`380d0255`** | `5a5c795a` → **`b0407176`** |
+
+Six moved, six did not, and the six that moved are exactly the readers (`grep -l` over `assets/scenes/`: kickEvt → dust,
+chladni; snareEvt → torus2, dust; hatEvt → dust; the ages → dust, chladni; kickAmp → chladni; snareAmp → torus2, dust,
+chladni; modeShade → dust, torus2, polytope, maxwell, gielis; tongue* → dust, torus2). Also moved, for the same reasons:
+the mixs 0→3 fade at f178 (`8a1a768d` → `cb3d4048`: TORUS2 is the target and frames 120–178 sit in the sustain) and the
+**GIELIS `&still=1` pair** (`fd8e256b` / `88f6d5cb` → `b7d52757` / `ca912a8d`): `hooks.still(1)` rests the music-driven uniforms
+but keycolour's anchor still reads `MS.modeShade`, so the "rest state" was never shade-blind — open below. The NAV2 stills
+are unchanged (`202c5a8a` / `36c8a02f` / `1ee726cd` / `d60bc5c8`). **Determinism:** two full sweeps (`lat1`, `lat2`) are
+byte-identical lists. **`node tools/check.js` 0 fail** (fake.js 239 lines). **Parity fake:** `max |diff| 7.852 · 72 fields`
+and the `nav.*` MISMATCH line are the SAME as before the lattice (Step A's run; §76 / §79 recorded it against HEAD too) — the
+lattice's fields (`kickEvt` … `modeShade`, `tongue*`) are "missing in v3" info lines, never a diff, and the MS fields v3 has
+(`kick` / `snare` / `hat` levels, `beatPhase`, `bpm` …) are untouched; not a regression.
+
+**The receipt — a one-constant change in DUST's `voices.js` moves s1, then it is back** (`IDS=1 PORT=8831 tools/scene-md5.sh`,
+GPU=1, errs []): `RING_SPEED` 3.4 → 2.0 (the snare ring's speed, §58) — s1 **f360 `1faaa64e` → `3560b637`, f840 `25dfdc48` →
+`169ac112`**; `git checkout -- assets/scenes/dust/voices.js` → **`1faaa64e` / `25dfdc48`** again, the baseline. The kick voice's
+own decay constant is not in voices.js (it is `mkVoice(0.24, 0.25)` in `dust/index.js:83`, the brief's "kick-voice decay"): 0.24 →
+0.12 moves s1 to `f38e4360` / `2005cc9e`, reverted. **Honest caveat, measured:** both of those constants also moved s1 BEFORE the
+lattice (the same two edits in the HEAD worktree: RING_SPEED → `54cd4722` / `3c49b505`, the kick decay → `0e12c87c` / `288246cf`
+against `d16d35f7` / `57a9c49c`) — the kick voice fired on the LEVEL's edge all along (`voice()`'s `edge` branch, kick2 = 1 on
+the beat), and the snare ring was drawn at the level's size (`v.e = max(…, lvl)`, snare2 0.7) at a STATIC radius (`age` 99 →
+`min(age, 1.2)`), which RING_SPEED moves. What the sweep was blind to is the EVENT path — the snare voice's fire and its
+`snareAmp` size, the sub-frame ages, CHLADNI's `kickAmp` throw, the shade's pull, the accent's rise — and the proof of that is
+the lattice commit itself: six scenes moved, each through a field that was a constant one commit earlier, and six did not.
+
+**What did not move.** s0, s2, s4, s6, s7, s8 (every scene without a voice or the shade), the NAV2 stills, the hist rows ==
+full identity, the levels `kick` / `snare` / `hat` (and so v3 parity's compared fields), `check.js`, the node tests
+(`test_nav2.js` re-implements the fake's lines itself and is untouched).
+
+**Receipts after both commits** (`GPU=1 tools/accept.sh` in an isolated worktree of each commit, the user's 8765 untouched):
+Step A's commit on PORT 8832 — **199 lines, 0 FAIL** (all 24 scene lines "= reference", mixs `8a1a768d` = recorded, nav2 monitor
+clean, 9 tiles / 9 thumbnails, exceptions 0, the bundle errs []); this commit on PORT 8833 — **199 lines, 0 FAIL** (all 24 lines =
+the post-lattice list, mixs `cb3d4048` = recorded, nav2 + gielis monitors clean, 9 tiles, exceptions 0, bundle errs []).
+
+**Open.**
+- The hat has no `*Amp` field (CONTRACTS: the hat lane is the HPSS-lite flux, no rise in dB to publish), so the fake's hat
+  has events and ages but one size; a soft / hard hat on the fake would have to ride the `hat` level (0.5 / 0.35), which would
+  move v3 parity's `hat` and every level-only scene — not done. The day the ears publish `hatAmp`, the lattice takes it.
+- GIELIS `&still=1` is not shade-blind: `hooks.still(1)` should pin `modeShade`'s contribution at 0 if the still pair is meant
+  to be the scene's rest state (the re-based pair carries the shade's bar-by-bar pull).
+- `parity.js fake` has carried a `nav.*` MISMATCH (max |diff| 7.852) since at least §76; `accept.sh` prints it without the word
+  FAIL. Pre-existing, not this section's.
+
+## §84 `tonicConf` — the key's confidence is the bass agreeing with the KS tonic; `keyConf` changes owner; Malicious is C minor (2026-10-02, one worker; NEXT-SESSION-PROMPT item 2, the measurement + plan `docs/plans/KEY-PLAN.md` `4118f6f`, on the user's word)
+
+Three engine commits, in the plan's order — `4c79b12` (step 1: `tonicConf`, `assets/engine/ears/tonic.js`, `ears/feats.js`,
+`sources/fake.js` one constant line, CONTRACTS App. A), `0983335` (step 2: the held sub lean, `tonic.js`, `tools/truth/key-ears.mjs`),
+`6ad80c5` (step 3: `keyConf`'s owner — `features-ears.js`, `ears/shade.js`, `engine/feats.js`, `core/harness.js` `&kc=`, `tools/test_ears.js`
+`--keys` + `tools/test_shade.js`, CONTRACTS §1.18 / §2 / App. A) — then this section, OPEN-ITEMS and the memory line. **Not tagged, not
+pushed, not deployed; the user has not seen it.** No audible run. `tools/truth/<T>.json` `tonic` fields NOT edited (the user's ear is
+still owed on two of them — OPEN-ITEMS). Every before / after pair in an isolated `git worktree` (`db41dcc` the before, each commit its
+own), the user's 8765 untouched, the worker's pages on PORT 8842–8849, killed by port, one page at a time.
+
+### The truth, independent of the detector (KEY-PLAN §1, `tools/truth/key-truth.py` — numpy STFTs, KS on KK + Temperley, the bass-note histogram)
+
+| track | §62's "truth" | **the measurement** | the user's ear |
+|---|---|---|---|
+| SeeYouDrop | C♯m (human) | **C♯ minor, CONFIRMED** (whole C♯m +0.794 over F♯m +0.587; bass C♯ 34 %, 47 % loud) | confirmed already |
+| CyborgNinja | C♯m (KK .174) | **C♯, AMBIGUOUS in the audio**: the bass tonic is C♯ at 87–95 % by the 1.7 s peak picker but the bass is a WOBBLE spanning C2–D2 (YIN p10/p50/p90 61 / 67 / 76 Hz; pitch classes C 33 / C♯ 16 / D 22 %), and the mid band carries no C♯ at all (2–11 %; G 15–41 %) — KS on the drops C♯M / C♯m at margin 0.001–0.007 | **owed**: hum the wobble under the drop at 0:48 — is its centre C♯, SeeYouDrop's drop bass? dark or bright at 0:48–1:24? |
+| WhoLikesToParty | DM (KK .191) | **D major, CONFIRMED by KS** (DM +0.723 over Bm +0.575, every profile) — but NO bass pedal: the bass WALKS E B G D F♯, the sections sit on G (IV), B (vi) and E (ii) in turn | the drop at 0:57 is home; 0:37 / 1:49 / 2:48 lean to B minor; the same seven notes |
+| **Malicious** | GM (KK .159) | **C MINOR — §62's GM is REFUTED.** Whole Cm +0.737 / CM +0.723 / GM +0.652; bass C 55 % / G 40 %; the track ALTERNATES an intro on D♯ (the relative major, 0.9–54 s) with C sections (84–95 % C, KS Cm first on every one) and G sections (72–100 % G: the fifth) ~14 s each; the drop (148.3 s) is on C (Cm +0.811). §62's "GM" was the map's whole-track KK — the subdominant confusion §62 itself named, on the detector it trusted; **the ears were right** (Cm 53 % in §62's own table, graded as a miss) | **owed**: the bass under the drop at 2:28 — if it sounds like home, C minor (`tonic_hand`) |
+| Vienna | D♯m (KK .451) | **D♯ minor, CONFIRMED** (D♯m +0.934, margin 0.339; every graded section) | no question |
+
+Where the ambiguity is in the AUDIO, not the detector: the PARALLEL modes (an electronic bass + a fifth carries no third — C♯M / C♯m
+on CyborgNinja 0.001–0.007, Cm / CM on Malicious 0.008–0.065); the RELATIVE pair on WhoLikesToParty (per section, in the audio);
+the FIFTH on SeeYouDrop's walk (C♯m / F♯m / AM, §82's "the set agrees") and Malicious's G sections; and LOCAL roots that are not the
+key (SeeYouDrop's climb on G 97 %, its void on D 85 %; Malicious's G sections; WhoLikesToParty's E sections) — a detector that
+follows them is early, not confused. KEY-PLAN §1 has the 90-row table (`tools/work/v84/truth.md`, git-ignored).
+
+### The confusion table — the ears' `tonic` against the key, per frame from 15 s (`key-ears.mjs` → `key-confusion.py`; RIGHT = the key's tonic, LOCAL = the section's bass pedal, WRONG = neither)
+
+| track | key | frames | RIGHT / LOCAL / WRONG **before** (v0.29) | **after** (step 2, the held lean) | mode right (of RIGHT) before → after | `tonicConf` RIGHT p10 / p50 / p90 after | WRONG p10 / p50 / p90 after | mean gate `kw` before (synapse's `keyConf`) → **after** (`tonicConf`) |
+|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop | C♯m | 8553 | 73 / 1 / 26 | **82 / 0 / 18** | 85 % → 96 % | 0.30 / **0.52** / 0.71 | 0.02 / 0.24 / 0.39 | 0.57 → **0.87** |
+| CyborgNinja | C♯m | 9901 | 0 / 0 / 100 | **2 / 0 / 98** | – | 0.04 / 0.17 / 0.22 | 0.00 / **0.01** / 0.02 | 0.94 → **0.04** |
+| WhoLikesToParty | DM | 14478 | 50 / 10 / 40 | **59 / 2 / 39** | 100 % → 100 % | 0.04 / 0.14 / 0.17 | 0.02 / 0.07 / 0.16 | 1.00 → **0.15** |
+| Malicious | Cm | 12473 | 66 / 18 / 17 | **67 / 17 / 16** | 96 % → 99 % | 0.03 / **0.65** / 0.73 | 0.02 / 0.06 / 0.17 | 1.00 → **0.54** |
+| Vienna | D♯m | 10656 | 100 / 0 / 0 | **100 / 0 / 0** | 100 % → 100 % | 0.26 / 0.37 / 0.46 | – | 1.00 → **0.97** |
+
+So §62's row for CyborgNinja was worse than it read — not a low-margin miss but 0 of 9901 frames (the bass is a wobble the YIN cannot
+name, and the lead's G / D wins the mid band: not a detector problem, no step here claims it); its Malicious row was the ears being
+RIGHT against a wrong truth. The ears are 4 of 5 (`tools/test_ears.js --keys`: ears 4/5, synapse 2/5 on the pitch class).
+
+**`keyConf` before, what KEYC1 0.3 did:** synapse's `keyClar` (`(best r − .35)/.45`, ema 2 s, on a 65 Hz-floored chroma) — p50 0.20 /
+0.60 / 0.80 / 0.78 / 1.00, RIGHT and WRONG frames the same distribution on every track (SeeYouDrop 0.20 vs 0.36, Malicious 0.78 vs
+0.76), the gate fully open on **85–100 % of frames on four tracks, CyborgNinja's wrong G / G♯ included (`kw` 0.94)**, and 37 % open on
+the one human-confirmed key. §62 held it so the gate's scale would not move before an A/B; the measurement says the gate was already
+open everywhere else, on the wrong keys. And the published `tonicConf` (`(best − second) / |best|` over all 24) could not replace it:
+its "second" is usually the PARALLEL mode, so it measured the mode's clarity — RIGHT p50 0.07 vs WRONG 0.11 on SeeYouDrop (the wrong
+frames read HIGHER), below 0.3 on 79 % of right frames.
+
+### The conf — the candidates, replayed on the chroma the ears saw (KEY-PLAN §3: 17 candidates per frame from the dumped `TonicTrack.ch` and the gated sub note; a section RIGHT when ≥ 60 % of its frames carry the key's tonic, WRONG when ≥ 60 % carry neither the key's nor the local root; open = p50 ≥ KEYC1 0.3, closed = p50 < KEYC0 0.1)
+
+| candidate | RIGHT p10 (min over tracks) | right sections OPEN | min right section | WRONG sections CLOSED | max wrong section |
+|---|---|---|---|---|---|
+| `cur` (the published formula) | 0.010 | 16 / 46 | 0.013 | 10 / 17 | 0.204 |
+| `tmargR` = clamp01((r_best − r_bestOtherTonic) / 0.08) — the KS tonic margin alone | 0.167 | 46 / 46 | 0.420 | **0 / 17** | 1.000 |
+| `agree × stab` (the bass histogram's share on the tonic × the tonic's 12 s stability) | 0.039 | 26 / 46 | 0.000 | 17 / 17 | 0.099 |
+| **`tmargR × agreeE12`** — the chosen one | 0.022 | **38 / 46** | 0.059 | **16 / 17** | 0.377 |
+
+The KS margin alone is HIGH on the wrong keys: CyborgNinja's G major is a perfectly clear, stable, wrong read, because the chroma it
+is read from has no tonic in it. The bass histogram alone reads 0 wherever the sub is silent (Vienna's dream, 17 s with the sub gated
+off) and cannot tell a right key from a wrong one on a walking bass; `stab` multiplied in closes all 17 wrong sections but kills the
+dream and half of Malicious's right sections. **The product of the KS tonic margin and an EXPONENTIAL histogram's agreement holds
+both halves** — the histogram's numerator and denominator decay together, so its SHAPE holds through a silent sub (the dream at
+0.25 instead of 0).
+
+**Built (`tonic.js`):** `tonicConf = clamp01((r_best − r_bestOtherTonic) / TM1) · H[tonic] / ΣH`, `TM1` 0.08; `H[12]` per hop
+`H *= e^(−dt / TAU_H)` (12 s ≈ the chroma's own TAU 11) and `H[sub.note] += sub.conf` while gated and `conf ≥ H_CONF` 0.5; 0 until a
+bass has ever been heard (ΣH < 1e-6). Set in `solve()` (every 0.37 s, with the margin); `r[24]` kept so the best OTHER tonic is one
+pass. The parallel mode is not a rival: C♯M vs C♯m is a coin toss about the MODE, §82's 2 s hold already keeps it off the shade.
+**The receipt that the build is the replay** (step 1, the tonic itself untouched — 73 / 0 / 50 / 66 / 100 RIGHT, the before table
+to the frame): the published `tonicConf` against the replayed `tmargR × agreeE12` on the same dump, RIGHT p50 **0.545 / – / 0.138 /
+0.654 / 0.373 vs 0.539 / – / 0.137 / 0.657 / 0.372**, WRONG p50 0.081 / 0.009 / 0.070 / 0.050 vs 0.127 / 0.010 / 0.070 / 0.045 (the
+one gap, SeeYouDrop's wrong frames, is the engine's margin updating every 0.37 s against the replay's every frame — lower, the safe
+side); per-section |published − replay| ≤ 0.032.
+
+**Separation as built, after step 2** (per-section p50 of the published field, 49 right / 16 wrong sections): **39 of 49 right
+sections open, 16 of 16 wrong sections closed; max wrong section 0.08** (WhoLikesToParty s4, Bm), CyborgNinja's nine sections
+0.00–0.01, Malicious's D♯ intro (GM) 0.06. The right sections that are NOT open are the stated residues: WhoLikesToParty's seven
+(0.07–0.17: a walking bass in a major key gives no pedal to agree with — the conf is honest that the key is not stable there, and
+the hue stops swinging a third of the wheel between D's hue and B's at every section, which it did at `kw` 1.00; the lever if the
+user wants D major's hue is the `hooks.key` pin), Vienna's dream s2 at **0.24** (75 % open: τ 12 s halves D♯ once over 17 s of no sub;
+τ 20 would hold ~0.3 at the cost of a slower close on a real modulation — not a knob) and Malicious's FIRST C section after the D♯
+intro (s3, 54–68 s) at **0.06** — the histogram still remembers the intro's D♯ for one τ; s4 (68–82 s) reads 0.59 and the rest of the
+C sections 0.66–0.71. SeeYouDrop's grooves and drops **0.32–0.71**, Vienna's riffs 0.30–0.48. The walk (s1 / s14, KEY-PLAN's residue 1)
+is no longer a WRONG section under the held lean — it is mixed (C♯m / F♯m) and reads 0.31–0.38, open: F♯m is one twelfth of a turn
+from C♯m on the wheel with the same COOL pull, the hue wobbles a twelfth, it does not flip warm.
+
+### The detector — the one measured fix (step 2, `tonic.js` `subLean()`)
+
+**`SUB_W` was dead code.** `subLean()` built a one-bin `acc[sub.note] = SUB_W · conf` and handed it to `blend()`, which divides `acc`
+by its own sum — a one-bin vector normalises to exactly 1 whatever `SUB_W · conf` was. The header's "added with a weight proportional
+to its energy share" never ran: the sub's lean was a fixed TIME share (`SUB_WGT` 0.6 of the hop's `1 − e^(−dt/τ)`) and a 10 %-confidence
+glide frame of an 808 attack (F♯ → E → D♯ → C♯ in 50 ms, §82) leaned exactly as hard as a settled note. Now the sub leans **only while
+settled** (`sub.conf ≥ SUB_HELD` 0.8 — §82's own rule for the shade's bass note), at `SUB_WGT · min(1, conf)`; `SUB_W` deleted, the
+header corrected. KEY-PLAN §5 measured it as a prototype patch (`--variant=held`) and the engine reproduces the table **to the
+point**: RIGHT / LOCAL / WRONG **82 / 0 / 18 · 2 / 0 / 98 · 59 / 2 / 39 · 67 / 17 / 16 · 100 / 0 / 0**, SeeYouDrop's mode 85 → 96 %,
+WhoLikesToParty's LOCAL 10 → 2 (the E sections stop reading Em), nothing lost anywhere; `kw` SeeYouDrop 0.76 → 0.87 (the plan's
+0.87). `held1` (+ `SUB_WGT` 0.6 → 1.0) traded WhoLikesToParty for Malicious and was not taken. The KK dominant tie (degree 4 weighted
+4.38 over degree 2's 3.48: with the tonic, fourth and fifth equal in the chroma the MAJOR profile prefers the fifth above) is real
+and is what CyborgNinja's drops read; the designed counter is the sub lean, which on a wobble bass spread over C / C♯ / D cannot
+work — the fix is the conf (≤ 0.02 there), not the detector.
+
+### `keyConf`'s new owner (step 3, `features-ears.js`)
+
+Where §62 already takes `key` / `mode` over from synapse when `tonic ≥ 0`, **`S.keyConf = o.tonicConf`** too; `KEY_FIELDS` =
+`['key', 'mode', 'keyConf']`; the long "WHY keyConf IS NOT IN THAT LIST" note (whose reason was a look change — the look change is the
+point) replaced by a pointer here. **`KEYC0 0.1 / KEYC1 0.3` stay**: the new conf lands on them (wrong ≤ 0.08 → closed; right
+0.32–0.71 → open). `ears/shade.js`'s `keyW` is the same ramp on `keyConf` whether or not the ears have a tonic (§82 had × 1 whenever
+they did — so the shade trusted CyborgNinja's G major completely); on SeeYouDrop's walk the conf is 0.31–0.38 → `keyW` 1, nothing
+moves there. **`&kc=0`** (`KEYOWN.ears`, a leaf constant in `tonic.js`, the `LOUDK` / `TONGUEK` / `ROUGHK` / `SHADE` convention,
+parsed in `core/harness.js`) restores synapse's `keyClar` as the gate AND the shade's "1 when the ears have a tonic" — the v0.29 look,
+the A/B. Under `#test` the ears do not run (`tonic` −1): the fake writes `keyConf` 0.8 as before and (step 1) `tonicConf` 0 as one
+stated constant, so the fake timeline cannot move.
+
+**What the gate does after, per track** (the `kw` column above): SeeYouDrop **0.57 → 0.87** — the grooves and drops fully on C♯m's hue;
+§62's "the right key is barely more visible than the wrong one was" ends, and this IS the look change §62 deferred (the smallest one
+on the table); CyborgNinja **0.94 → 0.04** — off a wrong key onto the mood palette; WhoLikesToParty **1.00 → 0.15** — off the D / B
+swing; Malicious **1.00 → 0.54** — on in the C sections, closed through the intro's GM and the G sections' Cm / GM flips; Vienna
+1.00 → 0.97.
+
+**The page publishes it** (`tools/filetrace.js`, det file mode, 20–80 s of every track, `'key,mode,keyConf,tonic,tonicMinor,tonicConf'`,
+PORT 8847): `keyConf == tonicConf` on **3601 / 3601 frames on every track** of the frames where `tonic ≥ 0` (5 × 100 %), and under `&kc=0` on SeeYouDrop
+`keyConf` is synapse's again (0 of 3601 frames equal; `keyConf` p50 0.222 against `tonicConf` 0.412 — the switch is real).
+
+### The hue tables — the receipt that a wrong key no longer drives the hue (the §82 recipe: `CLOCK=1 GPU=1 node tools/cdp.js 'test&track=<T>&at=<t>&scene=<id>'`, the mean HSV hue in turns of the SATURATED pixels (S ≥ 0.35, V ≥ 0.25) of each 1280×720 shot; SeeYouDrop at frames 902 / 1106 / 1298 / 1490 = 15.0 / 18.4 / 21.6 / 24.8 s, the second bar of each walk note C♯ / A / F♯ / E; the others at `at = t − 25`, frame 1502 = t: CyborgNinja 60 s, Malicious 100 s, WhoLikesToParty 60 s, Vienna 90 s; before = `db41dcc`'s worktree, after step 2 = `0983335`'s, after step 3 = `6ad80c5`'s; `tools/work/v84/hue-{before,s2,s3}/`, git-ignored)
+
+| scene | shot | **before** (`db41dcc`): key · `keyConf` · `tonicConf` → hue | **after step 2** (the held lean) | **after step 3** (`keyConf` = `tonicConf`) |
+|---|---|---|---|---|
+| DUST | SYD 15.0 s C# | C#m 0.74 0.01 → **0.290** | C#m 0.74 0.93 → **0.290** | C#m 0.93 0.93 → **0.290** |
+| DUST | SYD 18.4 s A | AM 0.71 0.02 → **0.125** | C#m 0.71 0.06 → **0.236** | C#m 0.06 0.06 → **0.306** |
+| DUST | SYD 21.6 s F# | F#m 0.61 0.28 → **0.376** | F#m 0.61 0.33 → **0.379** | F#m 0.33 0.33 → **0.523** |
+| DUST | SYD 24.8 s E | C#m 0.57 0.04 → **0.444** | C#m 0.57 0.07 → **0.358** | C#m 0.07 0.07 → **0.377** |
+| DUST | CN 60 s | G#M 0.86 0.33 → **0.976** | G#M 0.86 0.01 → **0.976** | G#M 0.01 0.01 → **0.952** |
+| DUST | MAL 100 s | CM 0.91 0.02 → **0.866** | GM 0.91 0.08 → **0.849** | GM 0.08 0.08 → **0.312** |
+| DUST | WLTP 60 s | Em 0.63 0.17 → **0.459** | Bm 0.63 0.02 → **0.454** | Bm 0.02 0.02 → **0.232** |
+| DUST | VIE 90 s | D#m 1.00 0.39 → **0.438** | D#m 1.00 0.67 → **0.438** | D#m 0.67 0.67 → **0.439** |
+| TORUS2 | SYD 15.0 s C# | C#m 0.74 0.01 → **0.457** | C#m 0.74 0.93 → **0.457** | C#m 0.93 0.93 → **0.457** |
+| TORUS2 | SYD 18.4 s A | AM 0.71 0.02 → **0.085** | C#m 0.71 0.06 → **0.222** | C#m 0.06 0.06 → **0.290** |
+| TORUS2 | SYD 21.6 s F# | F#m 0.61 0.28 → **0.517** | F#m 0.61 0.33 → **0.518** | F#m 0.33 0.33 → **0.716** |
+| TORUS2 | SYD 24.8 s E | C#m 0.57 0.04 → **0.395** | C#m 0.57 0.07 → **0.324** | C#m 0.07 0.07 → **0.338** |
+| TORUS2 | CN 60 s | G#M 0.86 0.33 → **0.308** | G#M 0.86 0.01 → **0.308** | G#M 0.01 0.01 → **0.338** |
+| TORUS2 | MAL 100 s | CM 0.91 0.02 → **0.146** | GM 0.91 0.08 → **0.121** | GM 0.08 0.08 → **0.516** |
+| TORUS2 | WLTP 60 s | Em 0.63 0.17 → **0.457** | Bm 0.63 0.02 → **0.453** | Bm 0.02 0.02 → **0.268** |
+| TORUS2 | VIE 90 s | D#m 1.00 0.39 → **0.413** | D#m 1.00 0.67 → **0.413** | D#m 0.67 0.67 → **0.414** |
+| POLYTOPE | SYD 15.0 s C# | C#m 0.74 0.01 → **0.630** | C#m 0.74 0.93 → **0.630** | C#m 0.93 0.93 → **0.630** |
+| POLYTOPE | SYD 18.4 s A | AM 0.71 0.02 → **0.806** | C#m 0.71 0.06 → **0.653** | C#m 0.06 0.06 → **0.594** |
+| POLYTOPE | SYD 21.6 s F# | F#m 0.61 0.28 → **0.547** | F#m 0.61 0.33 → **0.546** | F#m 0.33 0.33 → **0.517** |
+| POLYTOPE | SYD 24.8 s E | C#m 0.57 0.04 → **0.542** | C#m 0.57 0.07 → **0.619** | C#m 0.07 0.07 → **0.616** |
+| POLYTOPE | CN 60 s | G#M 0.86 0.33 → **0.815** | G#M 0.86 0.01 → **0.815** | G#M 0.01 0.01 → **0.800** |
+| POLYTOPE | MAL 100 s | CM 0.91 0.02 → **0.985** | GM 0.91 0.08 → **0.012** | GM 0.08 0.08 → **0.615** |
+| POLYTOPE | WLTP 60 s | Em 0.63 0.17 → **0.428** | Bm 0.63 0.02 → **0.435** | Bm 0.02 0.02 → **0.616** |
+| POLYTOPE | VIE 90 s | D#m 1.00 0.39 → **0.626** | D#m 1.00 0.67 → **0.626** | D#m 0.67 0.67 → **0.614** |
+| MAXWELL | SYD 15.0 s C# | C#m 0.74 0.01 → **0.951** | C#m 0.74 0.93 → **0.951** | C#m 0.93 0.93 → **0.951** |
+| MAXWELL | SYD 18.4 s A | AM 0.71 0.02 → **0.000** | C#m 0.71 0.06 → **0.997** | C#m 0.06 0.06 → **0.012** |
+| MAXWELL | SYD 21.6 s F# | F#m 0.61 0.28 → **0.040** | F#m 0.61 0.33 → **0.040** | F#m 0.33 0.33 → **0.074** |
+| MAXWELL | SYD 24.8 s E | C#m 0.57 0.04 → **0.012** | C#m 0.57 0.07 → **0.994** | C#m 0.07 0.07 → **0.998** |
+| MAXWELL | CN 60 s | G#M 0.86 0.33 → **0.957** | G#M 0.86 0.01 → **0.957** | G#M 0.01 0.01 → **0.935** |
+| MAXWELL | MAL 100 s | CM 0.91 0.02 → **0.261** | GM 0.91 0.08 → **0.260** | GM 0.08 0.08 → **0.157** |
+| MAXWELL | WLTP 60 s | Em 0.63 0.17 → **0.975** | Bm 0.63 0.02 → **0.975** | Bm 0.02 0.02 → **0.948** |
+| MAXWELL | VIE 90 s | D#m 1.00 0.39 → **0.865** | D#m 1.00 0.67 → **0.865** | D#m 0.67 0.67 → **0.866** |
+| GIELIS | SYD 15.0 s C# | C#m 0.74 0.01 → **0.450** | C#m 0.74 0.93 → **0.450** | C#m 0.93 0.93 → **0.450** |
+| GIELIS | SYD 18.4 s A | AM 0.71 0.02 → **0.110** | C#m 0.71 0.06 → **0.233** | C#m 0.06 0.06 → **0.297** |
+| GIELIS | SYD 21.6 s F# | F#m 0.61 0.28 → **0.528** | F#m 0.61 0.33 → **0.530** | F#m 0.33 0.33 → **0.712** |
+| GIELIS | SYD 24.8 s E | C#m 0.57 0.04 → **0.339** | C#m 0.57 0.07 → **0.267** | C#m 0.07 0.07 → **0.286** |
+| GIELIS | CN 60 s | G#M 0.86 0.33 → **0.392** | G#M 0.86 0.01 → **0.392** | G#M 0.01 0.01 → **0.415** |
+| GIELIS | MAL 100 s | CM 0.91 0.02 → **0.181** | GM 0.91 0.08 → **0.163** | GM 0.08 0.08 → **0.552** |
+| GIELIS | WLTP 60 s | Em 0.63 0.17 → **0.500** | Bm 0.63 0.02 → **0.474** | Bm 0.02 0.02 → **0.326** |
+| GIELIS | VIE 90 s | D#m 1.00 0.39 → **0.438** | D#m 1.00 0.67 → **0.438** | D#m 0.67 0.67 → **0.438** |
+| CHLADNI | SYD 15.0 s C# | C#m 0.74 0.01 → **0.369** | C#m 0.74 0.93 → **0.369** | C#m 0.93 0.93 → **0.369** |
+| CHLADNI | SYD 18.4 s A | AM 0.71 0.02 → **0.419** | C#m 0.71 0.06 → **0.509** | C#m 0.06 0.06 → **0.509** |
+| CHLADNI | SYD 21.6 s F# | F#m 0.61 0.28 → **0.402** | F#m 0.61 0.33 → **0.403** | F#m 0.33 0.33 → **0.403** |
+| CHLADNI | SYD 24.8 s E | C#m 0.57 0.04 → **0.496** | C#m 0.57 0.07 → **0.496** | C#m 0.07 0.07 → **0.496** |
+| CHLADNI | CN 60 s | G#M 0.86 0.33 → **0.066** | G#M 0.86 0.01 → **0.083** | G#M 0.01 0.01 → **0.083** |
+| CHLADNI | MAL 100 s | CM 0.91 0.02 → **0.821** | GM 0.91 0.08 → **0.828** | GM 0.08 0.08 → **0.828** |
+| CHLADNI | WLTP 60 s | Em 0.63 0.17 → **0.566** | Bm 0.63 0.02 → **0.532** | Bm 0.02 0.02 → **0.532** |
+| CHLADNI | VIE 90 s | D#m 1.00 0.39 → **0.361** | D#m 1.00 0.67 → **0.361** | D#m 0.67 0.67 → **0.361** |
+
+Reading it. **Step 2 moves the look only where `key` / `mode` changed** — SeeYouDrop's A and E bars (18.4 / 24.8 s: the held lean keeps
+C♯m where the old lean had wandered to AM; TORUS2 0.085 → 0.222, DUST 0.125 → 0.236) and Malicious 100 s (CM → GM, a G section: the
+fifth) — and nowhere else (CyborgNinja, WhoLikesToParty, Vienna, SeeYouDrop's C♯ and F♯ bars to the third decimal). **Step 3 moves the
+look only where the gate changed:** (a) **a wrong or unstable key no longer drives the hue** — Malicious 100 s at `keyConf` 0.08 (closed:
+DUST 0.849 → 0.312, TORUS2 0.121 → 0.516, POLYTOPE 0.012 → 0.615, GIELIS 0.163 → 0.552 — the mood palette), WhoLikesToParty 60 s at 0.02
+(closed: DUST 0.454 → 0.232, TORUS2 0.453 → 0.268, GIELIS 0.474 → 0.326 — off the Bm hue), CyborgNinja 60 s at 0.01 (the gate is 0 exactly:
+`hTgt` = the mood hue; the measured whole-frame hue moves 0.015–0.03 turns on the five anchor scenes because the mood hue there sits near
+the warm G♯-major hue the wrong key had been pulling toward — what changes on this track is that the hue no longer FOLLOWS the wrong
+key's flips, GM on the breakdowns / G♯M on the drops / Cm, §2's table; the user's A/B is the ruler); (b) **the right key where the bass is
+under it is unchanged** — SeeYouDrop's C♯ bar (15.0 s, `keyConf` 0.74 → 0.93, open both ways: every scene identical) and Vienna 90 s
+(1.00 → 0.67, open: identical); (c) **the one look consequence, stated:** on SeeYouDrop's WALK the conf on the A and E bars is **0.06 /
+0.07** (the histogram shares C♯ / A / F♯ / E, the KS margin thins while the sub sits on A for two bars) → `kw` 0 → the hue slides to the
+mood palette on those bars (TORUS2 18.4 s 0.222 → 0.290, DUST 0.236 → 0.306; MAXWELL 0.997 → 0.012 is the wrap) and comes back on the F♯
+bar (0.33, open — mid-ease at 21.6 s: TORUS2 0.518 → 0.716). §82's "the key hue breathing warmer on the A and E bars" is therefore
+GATED on the walk's first cycle (the conf is 0.93 on the first C♯ bars, when the histogram is all C♯, and settles to the section's 0.31–0.38
+p50 as the walk fills it) — the shade's `keyW` rides the same gate. Whether the eye prefers the mood palette or §82's warm breathing on
+those bars is the user's A/B (`&kc=0`); the knob is `KEYC0 / KEYC1`. CHLADNI reads `tonic` / `tonicConf` directly and does not pass
+`keyConf` to an anchor, so step 3 cannot move it (identical to step 2 on every shot); step 2 moved its CyborgNinja figure 0.066 → 0.083
+(its `tconf` is the new scale).
+
+### Proofs
+
+- **The fake-timeline md5 sweep, all twelve ids, CLOCK=1 f360 / f840, each step's worktree against `tools/accept/v0.29/scene-md5-v029.txt`
+  (the §83 lattice baseline):** step 1 (`4c79b12`, PORT 8843) **24 lines, 0 moved**; step 2 (`0983335`, PORT 8844) **24 lines, 0 moved**; step 3
+  (`6ad80c5`, PORT 8846) **24 lines, 0 moved**; `errs []` on every id. The ears never run on the fake, and no scene reads `tonicConf` there
+  (CHLADNI reads it only behind `tonic ≥ 0`); the fake's `keyConf` 0.8 is unchanged.
+- **Two sweeps of the final tree byte-identical** (`13b1435`'s worktree, PORT 8849, `fa` / `fb`: the 24-line lists `diff`-identical, 24 lines 0 moved against the baseline, errs [] on all twelve).
+- `node tools/check.js` **0 fail** (164 modules, MS keys 220, the 6 pre-existing line-cap warns; tonic.js 106 lines, shade.js 92,
+  features-ears.js 187) · `npm test` **exit 0, 0 FAIL** (test_shade.js's three new cases: the walk under `keyConf` 0.05 with a
+  tonic reads |shade| 0.000 — the gate closes the shade too; 0.2 → −0.49; `KEYOWN.ears` false → −0.97, §82's rule) ·
+  **`node tools/test_ears.js --keys` 10 pass**: the five modal keys (SeeYouDrop C♯m 87 %, WhoLikesToParty DM 57 %, Vienna D♯m 100 %,
+  Malicious **Cm 63 %, expect true** on KEY-PLAN §1's measurement — the row says the user's ear is pending and the json is not
+  edited; CyborgNinja G♯M 50 %, the recorded miss) + the new ruler that would have caught §62's table: `tonicConf` p50 **0.005** on
+  CyborgNinja (< 0.1), **0.543** on SeeYouDrop 60–100 s and **0.348** on Vienna (≥ 0.3); ears 4/5 > synapse 2/5, 0 tracks worse.
+- `tools/parity.js fake` (inside accept.sh): **`max |diff| 7.852 · 72 fields`** and the `nav.*` MISMATCH line — the same line as §83 (it pre-dates §76; the MS fields 0 diff), not a regression.
+- **`GPU=1 PORT=8849 ACC=v0.29 tools/accept.sh` in a worktree of `13b1435`: 199 lines, 0 FAIL, EXIT 0** (all 24 scene lines = reference, mixs `cb3d4048` = recorded, nav2 + gielis monitors clean, 9 tiles, exceptions 0, bundle errs []).
+
+### The user's A/B (stream mode, in track time; `&kc=0` = the v0.29 gate, default = this; key `2` DUST, key `4` TORUS2)
+
+- **SeeYouDrop 0:12–0:30, TORUS2 / DUST — the headline.** The grooves and the walk should sit ON C♯ minor's hue (cool, the §82 shade
+  breathing warmer on the A and E bars as before) instead of the mood palette slid a third of the way toward it; §60's 0.27 is 0.87.
+  `&kc=0` is the old.
+- **CyborgNinja 0:48–1:24.** The mood palette, no G / G♯ hue and no shade — the key the engine reads there is wrong and it now says so
+  (conf 0.01). With `&kc=0` the old G-major hue is back, fully trusted. **If the eye misses a key colour here, the answer is the
+  user's ear on the key (OPEN-ITEMS), not the gate.**
+- **Malicious 0:54–1:21 → 2:28.** The hue closes through the intro and opens on the C sections (C minor's hue); the G sections flicker
+  the gate rather than the hue. **WhoLikesToParty:** the mood palette throughout (the D / B swing is gone).
+- **Vienna:** D♯ minor's hue as before (0.97); the dream a little less saturated with it (0.24 → `kw` 0.7).
+- The knob if the grooves read too saturated with the key's hue: `KEYC0 / KEYC1` in `math/keycolour.js` (0.1 / 0.3 — unchanged here).
+
+**Open.** OPEN-ITEMS 2026-10-02 §84: the user's ear on CyborgNinja (0:48) and Malicious (2:28) — then `tonic_hand` in the json; the
+three residues above; CHLADNI's `tconf` now carries this scale (not re-tuned); the §62 correction stands in KEY-PLAN §1 and
+`test_ears.js` — "Malicious: the ears were right".
+
+## §89 the `R` recorder — a compositor canvas on the frame's last task, one tap on `AU.bus`, a webm + a sidecar on the visitor's own disk (2026-10-02, one worker on the `rec` branch; NEXT-SESSION-PROMPT item 4 phase 1; the spec is `docs/plans/SOCIAL-PLAN.md` §0–§2, the user's interview answers in its §1 — nothing re-asked)
+
+Six commits on `rec` (a worktree of `db41dcc`), in the brief's order. **Not tagged, not pushed, not deployed, package.json untouched** —
+the tag (v0.30) is the user's step and now bumps TWO lines: `package.json` and `assets/core/version.js` (`tools/test_rec.js` fails when
+they differ). No audible run (every take here is headless with the demo synth). The user's dev server on 8765 untouched; this worker's
+pages on 8861 / 8862, killed by port. ffmpeg is NOT installed on this machine (the user's sudo): `tools/clip.js` is built against the CLI
+and dry-run only — open below.
+
+### What was built (`assets/core/rec.js` 165 lines, `version.js` 5, `loop.js` +2, `hud.js` +6, `help.js` +2, `index.html` +5, `tools/test_rec.js` 144, `tools/clip.js` 87, `site/about.html` +6)
+
+**The frame-end seam.** `loop.js`'s `frame()` runs: engine → scene updates → director → look → fx → scene pass(es) → `runChain` (the
+composite draws to the screen) → scene overlays (NAV's map, GL) → `drawHUD` (DOM) → `drawHelp` (DOM) → `logFrame`. The hook,
+`recFrame()`, sits **after the overlays and before `drawHUD`**: the last GL draw of the frame is behind it, the first DOM write is
+ahead. With `REC.on` false it returns on its first line (no GL call, no DOM, no allocation).
+
+**preserveDrawingBuffer — not needed, and the reason the copy lives in `frame()`.** `gl.js:28` creates the context without it
+(`{ antialias: false, alpha: false, powerPreference: 'high-performance' }` — the default is false). The rule (WebGL §2.2 "The
+Drawing Buffer"): the buffer is presented to the compositor and cleared *after the task that drew it returns*, and a read **inside the
+same task, after the draws** sees the frame. `tools/probe.js` has read the GL canvas through a 2D canvas this way since v0.2 ("same
+task, before compositing"). Measured here: the compositor's mean luminance mid-take **29.0** (NAV at 1 s; `test_rec.js`'s check,
+> 1.5) and a frame decoded from the webm (`tools/work/rec/frame.jpg`) shows the scene, NAV's overlay map and the watermark. A copy
+in a `setTimeout`, a promise, or a second rAF would read black; nothing in `rec.js` is async on the frame path.
+
+**The compositor.** A 2D canvas that is never in the DOM, `G.PW × G.PH` (re-sized on the frame a resize / fullscreen changes the
+WebGL canvas — the track follows); per frame `drawImage(G.cv)` then the watermark `@retinarave · <scene> · v0.29` (bottom-right,
+600-weight system sans at h/51 px — 14 px at 720p — white at 0.7 on a 0.6-black shadow; constants `WM` in rec.js, not a panel), the
+scene name live from `REG[SC.logical]` (it follows the director; a variant appends `-<variant>`). `captureStream(60)` on it is the
+video track. The HUD, the card, the toast, the red dot are DOM — out of the clip by construction, and `frame.jpg` is the receipt (the
+test turns the HUD on before `R`; the frame has no HUD text).
+
+**The audio.** `AU.rec = ctx.createMediaStreamDestination()`, `AU.bus.connect(AU.rec)` — once, from `AU.onInit` (or at module
+load when the context already exists). The bus is upstream of the analysers, the mute gain and file mode's shimmed analysers
+(`file.js:169`), so one tap covers tab capture / mic / file / demo, and a stage's own taps never see it. A take started before any
+source (no AudioContext yet) is a silent clip rather than a refusal.
+
+**MediaRecorder.** `isTypeSupported` picks `video/webm;codecs=vp9,opus` → `vp8,opus` → `video/webm`; `videoBitsPerSecond` 12e6;
+chunks every 2.5 s into memory; one toast at 5 minutes. Stop → one Blob → `<a download>` for the `.webm` and the `.json`
+(two downloads = one "allow multiple downloads" prompt in Chrome, the first time; accepted by the plan). Name:
+`retinarave-v0.29-<scene at the START>-<yyyy-mm-ddThh-mm-ss>.webm` (the stamp UTC, from the start). The sidecar is §2.4's schema plus
+`frames` (compositor frames drawn), `mime`, and `flags.clock` / `flags.map`:
+`{ app, version: "0.29.0", engineMd5: null, started, durationS, source: capture|mic|file|demo, track: <file name or null>,
+size: [w, h], fps: 60, frames, mime, scenes: [{ t, id, name }, …], flags: { lead, shade, clock, map }, ua }`.
+
+**The key.** `R` was unbound (`hud.js`'s handler: f d m h ? p escape l n 0–9). The help row of record (`help.js keys()`):
+`['R', 'record what you see and hear to a file on this device — nothing is uploaded; the music you capture is yours to clear',
+'record']` — the landing hint shows `R record` for free; `&rec=0` removes the row and makes the key inert (`REC.hidden`; a kiosk).
+The red dot `#recdot` sits top-right of the HUD layer (`z-index` 12, `pointer-events: none`, a 1.2 s blink), for the user only.
+`site/about.html` gets a "Recording" paragraph: on-device, through the browser's download, nothing uploaded, no upload or share
+button, the rights to the music are the visitor's to clear. **No upload path exists in the page, and none may be added** (the whole
+liability posture, SOCIAL-PLAN §1 row 7, §2.5; CONTRACTS §1.19).
+
+**`tools/clip.js`** (node + the ffmpeg CLI): `<take.webm> [--ss --to] [--out] [--dry]` → `tools/work/clips/<yyyy-mm-dd>T<hh-mm>-<scene>-v<ver>/`
+with `clip.webm` (copied), `meta.json` (the sidecar with `durationS` trimmed, `scenes[].t` shifted — the scene in effect at `ss`
+becomes t 0 —, `trim: [ss, to]`), `clip.mp4` (`-c:v libx264 -pix_fmt yuv420p -crf 18 -r 60 -c:a aac -b:a 192k -movflags +faststart`),
+`clip-9x16.mp4` (`-vf crop=trunc(ih*9/16/2)*2:ih` — even width, the plan's `ih*9/16` can be odd), `poster.jpg` (`ss + 1 s`, `scale=1920:-2`).
+Without ffmpeg it prints the exact commands and exits 2; `--dry` the same with exit 0. Dry-run on the test take with `--ss 3 --to 5.5`:
+folder `2026-10-02T21-57-nav-v0.29`, 2.5 s, scenes `torus2@0 dust@1.075` (the take's `nav@0 torus2@2.074 dust@4.075`).
+
+### Proofs
+
+- **`node tools/check.js` 0 fail** (166 modules; rec.js 165 lines).
+- **`tools/test_rec.js` 36 ok / 0 FAIL** (`GPU=1 PORT=8861`, headless, the real clock, `#test&fake=0`, keys `d R 4 2 R` through the
+  public handler, 6 s): `retinarave-v0.29-nav-2026-10-02T21-57-20.webm` + `.json` downloaded (6,996,260 bytes, `vp9,opus`); the
+  sidecar `source demo`, `track null`, `size [1280, 633]`, `durationS 6.007` vs the keys' 6.00; the timeline
+  `nav@0 → torus2@2.074 → dust@4.075` vs the key presses at 2.06 / 4.07; the webm's EBML-walked duration **5.96 s** (7 clusters)
+  vs `durationS` 6.007; **355 compositor frames = 59.1 fps**; the compositor's luminance 29.0; the frame from the webm decoded
+  (120 KB) with the HUD on in the DOM — `tools/work/rec/frame.jpg`: the scene, the watermark, no HUD.
+- **The md5 sweep did not move with the recorder idle.** Spot check first (`IDS="1 3" PORT=8861 tools/scene-md5.sh rec1`): s1
+  `1faaa64e` / `25dfdc48`, s3 `3122036e` / `a1e941af` = `tools/accept/v0.29/scene-md5-v029.txt`. Then the full sweep — below.
+- **The stop rule (SOCIAL-PLAN §2.2: the compositor halving fps at 1080p) does NOT fire.** `GPU=1 WIN=1920,1080` headless (the
+  window chrome leaves 1920×993), TORUS2 forced, the demo synth, `CARD.frameN` counted per 5 s window, `__REC.start()` between:
+  **off 300 · on 235 · off 301 · on 233 · off 301 frames / 5 s = 60 → 47 fps, 0.78×** (`CARD.ERRS` []). `Q.q` sank 0.53 → 0.00 while
+  on (the quality knob absorbed it; `ENGINE.ms` 1.16 → 1.15, the engine untouched). The compositor's own share, measured alone
+  (100 × `drawImage(gl)` + the shadowed text, `getImageData(1 px)`-synced, three medians): **1.36 / 1.23 / 1.39 ms per frame** at
+  1920×993; the bench pair in the same page `CARD.bench(3, 300)` 3.49 / `bench(0, 300)` 5.46 / 3.53 / 5.35 ms (TORUS2 / NAV). So
+  ~1.3 ms of the ~4.6 ms/frame lost is the compositor; the rest is Chrome's VP9 software encode at 12 Mb/s — which the alternative
+  (a watermark quad in `post.js` + `captureStream` on the WebGL canvas) would not remove. Headless with the user's desktop Chrome
+  loaded (HARNESS "Bench protocol" 4); the headed number is the user's by-hand receipt. Open: a take renders at the low `q` tier on
+  this machine — whether to pin `q` during a take is the user's call after they see one (OPEN-ITEMS).
+- **`accept.sh` in this worktree, recorder idle** (`GPU=1 PORT=8862 ACC=v0.29`): **199 lines, 0 FAIL, EXIT 0** (`tools/work/accept-rec.log`) — all 24 scene lines
+  "= reference" against `scene-md5-v029.txt` (44 "= reference" lines with the NAV2 / GIELIS stills), the mixs 0→3 f178 `cb3d4048` =
+  recorded, parity fake / real as §83 left them, the 60 s monitor clean, 9 tiles / 9 thumbnails, exceptions 0, the bundle (166 modules,
+  rec.js inlined) errs []. The engine and every scene are where v0.29 left them with the recorder idle.
+- **`&rec=0`**: `REC.hidden` true, the landing hint has no "record", `R` leaves `REC.on` false and `REC.n` 0; the default hash: the hint
+  shows `R record`. **The bundle from `file://`** (`dist/retinarave.html`, `#test&fake=0`): `__REC.start()` → `REC.on` true,
+  `vp9,opus`, the compositor 1280×633, `CARD.ERRS` [].
+
+### Open (also in OPEN-ITEMS)
+ffmpeg (the user's sudo) → `clip.js` for real + the ffprobe line 60 fps / yuv420p / AAC; the `HEADED=1` by-hand receipts (30 s tab
+capture, 30 s file, Chrome + VLC with sound, the watermark by eye; HARNESS "Recorder"); the `q` tier during a take; phones; the
+offline render (§2.7, deferred on the user's word); a resize mid-take's resolution change through a transcode.
+
+## §85 MANDALA on the grid — the wedge turns one step per beat on the shared beat grid, N moves only on a seam the bar store calls, and the §61 profile is lifted into `assets/math/beatgrid.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 1, on the orchestrator's brief; the user has not read the prompt — its defaults were taken, each named below)
+
+MANDALA (id 2, key 3) had no beat grid: the kaleidoscope's wedge ROTATED on `flowMid · 0.11`, the fold's twist on `flowMid · 0.3`,
+and the mirror count N was re-drawn every 64 kicks (`floor(kickCount / 64)` in the shader's hash) — the shape DUST had before §57.
+The brief ("motion is phase-locked to the beat grid with emphasis on downbeats and phrase boundaries") is the standard; the pattern is
+DUST's §57 / §61 / §66 / §78, and the rule is LIFT, NOT COPY (CONTRACTS §0: a scene imports only `math/*`). One commit; the before /
+after pairs in isolated worktrees (`../RetinaRave-m-base` at `8294d82` the before, `../RetinaRave-m85` = HEAD + this step the after),
+the user's 8765 untouched, this worker's pages on PORT 8881–8884 killed by pid, one page at a time, no audible run, nothing pushed.
+
+### The lift — `assets/math/beatgrid.js` (receipt: s1 DUST byte-identical)
+
+`dust/grid.js`'s K (GLIDE .45 / W .55 / WREF 145), STEP, DOWN, `lead`, `wFor`, `gFor`, `phi`, `phiDot`, `barIndex`, JUMP, BLEED,
+`mkSpin`, `spin`, ACC, `accentOf`, `accent21`, `mkTrigger`, `trigger` moved verbatim — comments included — into `assets/math/beatgrid.js`
+(306 lines); `dust/grid.js` keeps TORUS_K / GAL_K and re-exports the rest (`import` then `export`, 11 lines). THE ONE CHANGE at the lift:
+the step is per spinner — `mkSpin(step = STEP)` stores `S.base` and `spin()` scales `S.base · (1 + DOWN + ACC.K · acc)` instead of the
+module's STEP — so MANDALA can own 2π/(4N) while DUST's `mkSpin()` is the same arithmetic on the same double. `tools/check.js`'s static
+read check now follows a scene's `../../math/*` imports (one level), so DUST's `beatCount` / `tongue21` / … reads — now inside
+beatgrid.js — are still found and the scene's `feats` stay honest without a friction-log waiver. **s1's two lines are byte-identical**
+to `tools/accept/v0.29/scene-md5-v029.txt` (`1faaa64e` / `25dfdc48`) in the full 24-line sweep (`PORT=8882 tools/scene-md5.sh s1` in
+the m85 worktree, errs [] hop 840 row 72 ×12): the lift moved nothing. `npm test` OK, `check.js` 0 fail (the six soft-cap warns are
+the pre-existing ones).
+
+### MANDALA's grid — `mandala/grid.js`, `help.js` split out, `index.js` 144 → the scene object only
+
+- **The wedge angle** `rot = spin(G.sp, MS, dt)` replaces `uFlowMid · 0.11` in `a = mod(a0 + uRot, seg)`; the fold's twist R and the
+  constant c's phase advance on the same angle (`uFold = rot · FOLD_K`, FOLD_K 1 — the prompt left k unstated; 1 is one cycle of
+  the morph per N bars, the slowest that is still the beat's); `flow` stays only as c's slow drift and `rt.time`; `flowMid` is no
+  longer read (the prompt's ":57–58" uses `flow` alone). Uniforms: `uN`, `uRot`, `uFold` replace `uKickCount`, `uFlowMid`, `uSeed`;
+  `hash11` moved from the GLSL to grid.js as the N draw. `rot` / `fold` are wrapped mod 2π before upload (fp32).
+- **The step is 2π/(4N) — one wedge per bar (open question 1's default), `&step=<beats per wedge>` the knob** — re-derived at every
+  N change through `S.base`, which `spin()` picks up at the next beat line with its accumulator absorbing the difference (continuous).
+  **Capped at DUST's 2π/32** after the measurement below.
+- **N moves only on a seam**: the draw is the shader's own (`4 + 2·floor(5·hash11(seed·5.7 + k))`, N ∈ {4,6,8,10,12}) with `k` the
+  count of NOVEL seams (the old 64-kick epoch); `barReturnEvt` restores the N before the last change; look memory (CONTRACTS §1.11)
+  files N itself (`look.get/set`, the `epochOff` machinery gone). `cuts: 'event'` stays — N is the one discontinuity.
+- `feats`: − `kickCount`, `flowMid`; + `beatCount beatPhase bpm barPos phrase16Pos barNovelEvt barReturnEvt` and — because the lifted
+  `spin()` reads them for §78's accent from this step on — `tongue21 tongue41 tongueOn` (the prompt lists them under step 4; they are
+  read now). `dinfo()`: `N nN rot fold nv nu nstep noff njump nacc why`. Hooks: `&nudge=` (the SAME K object as DUST's) and `&step=`.
+
+### Measured (`tools/dust-trace.js … 2`, `tools/work/v85/nudge85.py` on `d_rot`; the four windows SeeYouDrop 20–110 WARM 20 / Vienna 24–60 WARM 24 / Vienna 80–110 WARM 40 / CyborgNinja 20–80 WARM 20; before = the base worktree, after = m85; the engine did not move: `beatCount` / `dropEnv` / `eM` md5 `54a5545d1bcdeaeacd659e01` / `c72502e2b368cb7a8481c48d` / `d0db00f91230a0866aa62d52` / `c13ff0e99064cdaac6365a29` identical before and after on all four)
+
+**Run 1 — as specified (a phrase wrap re-draws N from the current seed; the step 2π/(4N) uncapped):**
+
+| window | n | crest | v peak / floor | floor/peak | dead | max\|a\| p50 / p99 | N (p50) | N changes |
+|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 | 223 | −8.3 ms | 1.101 / 0.177 | 16.1 % | 0 % | 14.7 / 29.3 | 10 | 6: 24.28 phrase, 62.37 phrase, 70.35 phrase, 91.67 / 98.05 / 109.27 return |
+| Vienna 24–60 | 52 | +8.3 ms | 0.804 / 0.134 | 16.7 % | 0 % | 9.9 / 15.8 | 10 | 0 |
+| Vienna 80–110 | 44 | −8.3 ms | 1.185 / 0.168 | 14.2 % | 0 % | 16.8 / 50.2 | 8 | 1: 82.48 phrase |
+| CyborgNinja 20–80 | 158 | −8.3 ms | 1.022 / 0.189 | 18.4 % | 0 % | 12.5 / 19.1 | 10 | **1: 20.95 phrase — the control's receipt is 0** |
+
+The profile is DUST's to the frame (crest ±8.3 ms = half a frame either side, dead 0 %, floor ≥ 12 %, 25 / 50 / 90 % of the step at
++0 / +200 / +467 ms on SeeYouDrop = §61's own). The Vienna 80–110 p99 of 50 is one clock re-seat at 82.7 s (`noff` 0.131, BLEED giving
+it back — §61's mechanism, not a nudge). **What failed: CyborgNinja's N moved once, at 20.95 s.** Why: synapse's `seed` moves at ITS
+section events, not at the truth's lines — on CyborgNinja between 15 and 21 s (the truth's line is 12.02), on Vienna at ~82 s (the
+truth's 84.3), on SeeYouDrop at 24.3 / 62.4 / 70.4 — and the next phrase wrap turned each move into an N change. The bar store's
+novel / return events, by contrast, fell at 50.47 (novel) and 91.67 / 98.05 / 109.27 (return) on SeeYouDrop and NOWHERE on Vienna
+80–110 or CyborgNinja 20–80.
+
+**The one tune (run 2): a phrase line is still reported as a seam (`why` 1) but does not re-draw N; only `novel` draws and `return`
+restores.** CyborgNinja 20–80 → **0** N changes, Vienna 24–60 0, Vienna 80–110 0 (the bar store called no novel bar there — the §82
+lines 84.3 / 101.6 / 107.0 pass without one; measured, recorded, not assumed), SeeYouDrop **4: 50.47 novel (4→10), 91.67 return (10→4),
+98.05 return (4→10), 109.27 return (10→4)** — every one on a seam, the returns pouring back the earlier N. What it exposed: the first
+draw on CyborgNinja and Vienna 24–60 is **N = 4**, and at N = 4 the uncapped step is 2π/16 — twice DUST's — so the same profile reads
+**max|a| p50 31.2 on CyborgNinja (receipt ≤ 30) and 24.8 on Vienna 24–60**, v peak 2.56 rad/s. The jerk is the step, not the shape.
+
+**The one tune for that (run 3, what shipped): `stepFor(N) = min(2π/(4N), 2π/32)` — the swing per beat is never more than DUST's; at
+N = 4 the picture lands every two bars, from N = 8 up every bar.** s2's lines after run 3: **`f54761b7` (f360) / `39985f25` (f840)** — the only two lines of the 24 that differ from `scene-md5-v029.txt` (the full sweep was taken on run 1, `bfc81876` / `2b5c04ac`, 22 lines identical; runs 2 and 3 touched `mandala/grid.js` only, re-shot with `IDS=2`).
+
+**Run 3, the shipped grid (`tools/work/v85/s1c-*.json`; the same engine columns as the before, md5 identical ×4):**
+
+| window | n | crest | v peak / floor | floor/peak | dead | max\|a\| p50 / p99 | 25/50/90 % | N | rad/beat · design | N changes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 | 223 | −8.3 ms | 1.228 / 0.188 | 15.3 % | 0 % | 15.6 / 36.7 | +0 / +200 / +467 ms | 4 → 10 → 4 → 10 → 4 | 0.2004 (N mixed, 28 accented bars) | 4: 50.47 novel, 91.67 / 98.05 / 109.27 return |
+| Vienna 24–60 | 52 | +8.3 ms | 1.005 / 0.167 | 16.7 % | 0 % | 12.4 / 19.8 | +0 / +317 / +767 ms | 4 | 0.2239 · 0.2209 (6 accented bars) | 0 |
+| Vienna 80–110 | 44 | −8.3 ms | 0.963 / 0.134 | 13.9 % | 0 % | 13.4 / 40.1 (the 82.7 s re-seat) | +0 / +333 / +767 ms | 10 | 0.1894 · 0.1767 (7 accented, acc 1.00) | 0 |
+| CyborgNinja 20–80 | 158 | −8.3 ms | 1.278 / 0.236 | 18.4 % | 0 % | 15.6 / 23.9 | +0 / +183 / +433 ms | 4 | **0.2210 · 0.2209** (no accent: the control, to 3 decimals) | **0** |
+
+(design = STEP · (1 + DOWN/4) at the window's N with the cap; the per-bar step/STEP mean 1.124 on CyborgNinja = 1 + DOWN/4 exactly, the
+downbeat's bigger step 1.500 × the plain beat; SeeYouDrop's rad/beat mixes N = 4 and N = 10 bars.) Every receipt of the prompt's step 1
+holds on run 3: the crest within ±10 ms of the beat line on all four, max|a| ≤ 30, dead 0 %, floor/peak ≥ 12 %, the downbeat 1.5×,
+CyborgNinja 0 N changes with the accent never firing (41 of 41 bars at acc 0), SeeYouDrop's four on seams, Vienna's none (the
+§82 lines passed without a novel bar), `check.js` 0 fail, `&nudge=` reaches the scene (`hooks.nudge` on the shared K).
+
+### What the user sees, and what is open
+
+The kaleidoscope's N arms now sweep one wedge per bar (two at N = 4) and crest on every beat line, the bigger step on one beat of the
+four (the per-beat histogram on SeeYouDrop: 105 beats at 1.000 × STEP, 34 at 1.500, the accented ones in between); the fold's morph
+breathes on the same angle; N changes only where the bar store hears a new bar or a return. Open: (1) the lifted `spin()` lands the
+downbeat's bigger step on the FIRST SPINNER BEAT LINE INSIDE THE NEW BAR — the spinner's line is `lead(w)` = 0.275 beats before the
+beat, so at the bar line `barIndex` is still the old bar's and the 1.5× step is beat 2's, for DUST as for MANDALA (verbatim, s1
+unchanged is the receipt that nothing was touched); a fix moves DUST's s1 and is for a §-section of its own. (2) `trigger()`'s `ready`
+is always true here (N is a jump, not a pour), so two novel bars in one phrase (SeeYouDrop 101.57 / 104.45 fired `why` 2 but drew
+the same N) can re-draw twice; the draw's 20 % chance of the same N is the only damping. (3) Bench: `CARD.bench(2,300)` interleaved
+with `bench(0,300)`, q .95, three pairs, the medians — base **2.880 ms / NAV 3.207 = 0.898**, after **2.444 / 2.655 = 0.920**: flat
+(+2.4 % on the ratio, inside ±10 %; the ms moved with the machine, the ratio is the number).
+
+## §86 MANDALA's three transient voices on the ears' lanes — the fold-depth pulse, the segment flash, the trap-ring glint; `voice()` / `bed()` / `hatGain()` / `tens()` lifted into `assets/math/voice.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 2; the prompt's defaults 2 and 3 taken, named below)
+
+The scene read synapse's `kick` LEVEL as the hit (the zoom `−0.25·uKick`, the shove `c += 0.03·uKick`, the centre flare) and the `hat`
+level as the ring's sparkle: a follower's shape, not the hit's (§57's finding), and no snare at all. The brief: "transients produce
+sharp, fast-attack / slow-decay impulses driven by band-limited onset detection; frequency bands map to distinct visual behaviours so
+instruments are separable". One commit; before = `../RetinaRave-m-base` (`8294d82`) and the §85 traces, after = `../RetinaRave-m86`
+(= HEAD + this step), PORT 8883–8884, one page at a time, no audible run.
+
+### The lift — `assets/math/voice.js` (receipt: s1 DUST byte-identical, again)
+
+THR / FRESH / REFRACT, `mkVoice`, `voice` (the union of the ears' event and the v2 level's edge, the lane-alone snare of §70, the
+§80 `gain`), BED / `mkBed` / `bed` (§64's swell veto), HATACC / `hatGain` (§80), WIND_BAR / `mkTens` / `tens` (§57 step 3) moved
+verbatim with their comments (210 lines; THR and FRESH exported now); `dust/voices.js` keeps RING_* / `ringR` / `ringW` / `mkSub` /
+`sub` and re-exports the rest (34 lines). Nothing in a function moved. **s1's two lines are byte-identical to `scene-md5-v029.txt`**
+in the full 24-line sweep on the m86 worktree (`PORT=8883 tools/scene-md5.sh s2`, errs [] hop 840 row 72 ×12); so are s0 and s3–s11:
+**only s2 moved — `87aca86d` (f360) / `f2c644ac` (f840)**. CONTRACTS §1.18 names both modules; `check.js` 0 fail; `npm test` OK.
+
+### MANDALA's voices — `mandala/voices.js`, exactly DUST's three calls (dust/index.js :134 / :141 / :149)
+
+| voice | the call | what it moves (shaders.js) |
+|---|---|---|
+| kick | `voice(vK, dt, kick2, kickAge, kickEvt)` — the union, lane-less, the level sizes it (**open question 3: DUST's call exactly**, so one receipt covers both scenes; `kickAmp` is declared, traced as `kAmp`, not read) | **the fold-depth pulse**: `vk.e` is `uKick` — the zoom-in `−0.25·uKick`, the shove on c, the centre flare `0.8·uKick` |
+| snare (new) | `voice(vS, dt, snare2, snareAge, snareEvt, false, snareAmp)` — the lane alone at its own size (§70) | **the segment flash (open question 2: the flash, not the flip)**: ONE of the N wedges, picked by a hash of the fire count, lit through its own trap structure `palM(0.75 + 0.3·r0) · onSeg · uSnare · (0.25 + 1.6·acc)` for the decay — additive, so it cannot jump the picture and `cuts: 'event'` stays true |
+| hat | `voice(vH, dt, hat2, hatAge, hatEvt, bed(hBed, dt, highS))` — the union with the §64 veto | **the trap-ring glint**: `vh.e` is `uHat` in `0.12 + 1.4·uBands.z + 0.8·uHat` |
+
+tc / floor start at DUST's measured 0.24 / 0.25, 0.30 / 0.25, 0.09 / 0.2 and are MANDALA's constants (`TC`, `FLOOR`) from here; the
+levels `kick2` / `snare2` / `hat2` stay the floors under the envelopes (`Math.max(…, lvl)` inside `voice()`). `feats`: − `kick hat`, +
+`kick2 kickAge kickEvt kickAmp snare2 snareAge snareEvt snareAmp hat2 hatAge hatEvt highS`. `dinfo()` + `vk vs vh ageK ageS ageH fK fS
+fH aK aS aH srcK srcS srcH hBed hSwell seg kAmp`. Hooks: `&bed=` (the shared BED object).
+
+### Measured (`tools/work/v86/voice86.py` — P / coverage / floor share / 16th-grid share against `tools/truth/<T>.kick.json` / `.snare.json` / `onsets.high` at ±50 ms, the lag = the first frame the envelope rises after a truth onset, the annulus lift per fire against the annulus's own frame noise; validated first on DUST's §80 traces, where it reproduces §70's table — snare P 0.68 / 0.80 / 0.94; the engine columns md5-identical to the before on all four windows)
+
+| window · voice | fires /s (truth) | P | cov | floor | grid | lag p50 | lift / fire (p50) vs noise |
+|---|---|---|---|---|---|---|---|
+| SeeYouDrop 20–110 · kick | 3.40 (3.82) | 0.79 | 0.70 | 0.33 | 0.38 | **+13.2 ms** | lumC 7.3 vs 2.0 = **3.7×** |
+| · snare | 3.88 (3.41) | **0.68** | 0.78 | 0.00 | 0.62 | −3.6 ms | lumM 2.7 vs 2.0 = 1.3× |
+| · hat | 3.90 (3.29) | **0.74** | 0.87 | 0.37 | 0.32 | −7.7 ms | lumR 14.1 vs 2.1 = **6.6×** |
+| Vienna 24–60 · kick | 1.50 (1.58) | 0.72 | 0.68 | 0.22 | 0.74 | **+14.0 ms** | lumC 12.8 vs 4.0 = **3.2×** |
+| · snare | 1.36 (1.94) | **0.80** | 0.56 | 0.00 | 0.94 | −2.6 ms | lumM 48.8 vs 4.1 = 11.9× |
+| · hat | **2.64 (3.33) = 0.79× the truth's rate** | 0.94 | 0.74 | 0.08 | 0.94 | +0.7 ms | lumR 65.7 vs 4.0 = **16.4×** |
+| Vienna 80–110 · kick | 1.77 (1.63) | 0.58 | 0.63 | 0.23 | 0.77 | −2.6 ms | lumC 14.9 vs 2.7 = 5.5× |
+| · snare | 1.33 (1.63) | 0.47 | 0.39 | 0.00 | 0.90 | −2.6 ms | lumM 20.6 vs 3.0 = 7.0× |
+| · hat | 2.90 (2.70) | 0.79 | 0.85 | 0.20 | 0.80 | −3.8 ms | lumR 24.8 vs 3.1 = 8.1× |
+| CyborgNinja 20–50 · kick | 3.33 (3.50) | **1.00** | **0.95** | 0.31 | 0.83 | −7.5 ms | lumC 10.0 vs 3.0 = **3.3×** |
+| · snare | 3.17 (3.67) | **0.94** | 0.81 | 0.00 | 0.64 | −11.7 ms | lumM 13.6 vs 3.2 = 4.2× |
+| · hat | 7.57 (7.67) | **0.99** | 0.98 | 0.04 | 0.31 | +27.8 ms (20–80: −4.7) | lumR 16.6 vs 3.7 = **4.5×** |
+
+- **The fires are DUST's to the count** (SeeYouDrop 306 / 349 / 351, the same P, coverage, floor and grid shares as the §80 traces under
+  this ruler): the same function on the same MS — the receipt "not worse than DUST's table" holds by construction (snare P 0.80 /
+  0.68 / 0.94, hat 0.94 / 0.74 / 0.99 on Vienna 24–60 / SeeYouDrop / CyborgNinja 20–50). The kick's coverage against the §68 kick
+  truth is 0.70 / 0.68 / 0.95 — DUST's own numbers on this ruler, not the prompt's "≥ 0.9 everywhere"; the shortfall is the
+  union's (ears + v2) recall on the two tracks, a §68 matter, not the scene's.
+- **Lag**: the kick's envelope first moves +13.2 / +14.0 / −2.6 / −7.5 ms after the truth onset (p50) — inside the receipt's one frame
+  (+17 ms); the snare and hat lead it (the ears' event is early, §58). CyborgNinja 20–50's hat +27.8 ms is the 16ths at 160 BPM
+  against a 60 Hz envelope that is still decaying from the last stick (the rise is masked), DUST's own number; 20–80 reads −4.7.
+- **Legibility (§80's rule, ≥ 2× the annulus's own frame noise)**: the kick's lift of the centre 3.2–5.5× on all four, the hat's lift
+  of the rim 4.5–16.4× — against DUST's 1.9–2.8× and 0.6–5.6× on the same traces: the fold's zoom and the ring's glint carry a hit
+  further than a grain cloud does. The snare's segment flash is a WEDGE, not an annulus, so `lumM` under-reads it (1.3× on
+  SeeYouDrop's already-bright body, 4.2–11.9× elsewhere); a wedge ruler is pass 2's.
+- **No false voice in silence**: Vienna 24–60's pad swells fire the hat at 0.79× the truth's rate (receipt ≤ 1.2×), the §64 veto doing
+  there what it does for DUST.
+- Bench `CARD.bench(2,300)` / `bench(0,300)`, q .95, three pairs: **4.094 / 4.117 ms = 0.994** against §85's 0.920 (+8 %, inside ±10 %;
+  the machine was 1.5× busier — NAV's own ms went 2.66 → 4.12 — the ratio is the number; re-benched with steps 3–4 below).
+
+### The look (base vs m86 shots, SeeYouDrop 60 s and CyborgNinja 30 s, `CLOCK=1 GPU=1`): the body at a loud passage is a BLOWN-OUT
+yellow disc in v0.29 and after alike — `pow(acc·3.2, 2.6) · (0.35 + 1.3·uLevel)` with §63's `baseLight` at 1 clips the centre on
+every track's drop; it is inherited, step 4 is told not to touch `baseLight`, and it is logged as the first open item of this pass
+(the one knob that would give the fold its own dynamic range, "pass 2: the fold's own dynamic range on eM" in the prompt).
+
+## §87 MANDALA's real tension — the void before a drop and the beat the music will not commit to tighten the fold (N + 1, the palette drains, the body dims, the inversion clamps), the slam lets go on one frame; roughness becomes jitter (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 3; default 4 taken: +1, odd N)
+
+The scene read `tension` — v3's roughness, how DISSONANT the music is — as a build and zoomed OUT on it (`+0.5·uTension`), a build that
+never arrived (§57's finding on DUST). The brief: "a slow tension accumulator that visibly tightens the scene during builds and
+releases all at once on the drop". One commit; before = `../RetinaRave-m86`'s traces (§86), after = `../RetinaRave-m87` (= HEAD +
+this step), PORT 8884, one page at a time, no audible run.
+
+### What was built (`mandala/voices.js` `tension()`, shaders.js)
+
+`tens(vT, dt, MS)` (lifted in §86) gives `build` (`buildLive` eased, τ .35), `wind` (the last bar, `nextDropIn` < 1.7 s) and `rel`
+(`dropLiveEvt`, τ .55). MANDALA adds §77 / §79's ambiguity through TORUS2's dead zone, `amb = max(0, (tongueAmbig − 0.75) / 0.25)`
+(`tongueOn` 1 only), eased on τ .35 because it steps once per beat; **`tight = max(build, ambE)`** — the build is read as `tens()`
+already eases it. While `tight` is past the knee (0.55 on, 0.45 off — hysteresis around the prompt's 0.5) the mirror count is **N + 1**
+(odd — the fold's `mod` / `abs` is exact for any N and an odd count is itself the visible sign of the void; open question 4's default;
+the wedge STEP stays on N, so §85's numbers cannot move with the tension), the palette drains (`sat × (1 − 0.55·tight)`, DUST's number),
+the body dims (`× (1 − 0.6·tight)`), the fold pulls in (`+0.3·uTight` on the zoom) and the inversion's clamp tightens (`clamp(dot(z,z),
+0.07 + 0.1·tight, 3 − 1.5·tight)`). **The slam springs it all back on one frame**: `dropLiveEvt` zeroes `tight`, the ambiguity's ease
+and the build's, and `rel` adds to the centre flare (`+1.0·uRel`) and the zoom (`−0.3·uRel`). **Roughness is jitter only**: the zoom's
+`+0.5·uTension` became `0.03·tension·sin(flow)`. `feats` + `buildLive nextDropIn dropLiveEvt tongueAmbig` (`tongueOn` since §85).
+`dinfo()` + `build wind rel amb tight Nt drain`.
+
+### Measured (`tools/work/v87/tens87.py`; the engine columns md5-identical to the before on every window; s2's lines `a360e08f` / `39f90ef8`, the only two that differ from v0.29's list — the full sweep on m87 before the tunes `7079a200` / `3e21a2ee`, 22 lines identical; the tunes touched voices.js and one shader constant, re-shot with `IDS=2`)
+
+**As first built** (a second τ .35 ease on `tight` over `tens()`'s, the body dim 0.4): SeeYouDrop `tight` 0.168 at 52.0 s, 0.683 at 105.6
+(against `build`'s own 0.347 / 0.716 — the double ease); the per-bar median `lum` before drop 1 **136.6 / 134.5 / 125.9 / 136.7 — NOT
+monotone**, before drop 2 175.0 / 125.5 / 128.8 / 112.6 — not either: §63's `baseLight` rises 0.47 → 0.73 into the drop (the music
+gets louder, and it is right that the body does) and outran a 0.4 dim. **Two tunes, one each: the ease comes off `build` (`tight` =
+`build` exactly where the ambiguity is 0), the dim goes to 0.6.** After:
+
+| receipt | SeeYouDrop | Vienna | CyborgNinja 20–80 |
+|---|---|---|---|
+| `tight` at the §57 arm times | 52.0 s **0.347** (= `buildLive`'s arm value, 0.4 eased), 56.0 s 0.858, the last bar's median **0.93**, max 0.990 before 57.6; 102.4 s **0.000** (the arm's first frame), 105.6 s **0.716** (= `build`, §57's "reaching 0.75") | — | **max 0.000 on every frame** |
+| `rel` on the drop frame | **57.600** (truth 57.606, −6 ms) and **105.617** (truth 105.596, +21 ms: the engine's event frame, 1.3 frames late to the truth — the scene fires ON the event) at 0.970 (`tens()`'s own first-frame decay) | **85.333** (truth 85.336, −3 ms); **106.669: nothing** — `tight` 0.00 over the 4 bars before, `lum` 1.07× — §77's "nothing causal before drop 2", measured and recorded | **never** |
+| per-bar median `lum`, 4 bars before → the drop frame | **125.5 / 107.1 / 92.8 / 91.5 → 245.3 = 2.68×** the bar before; **175.0 / 125.5 / 106.2 / 88.6 → 244.1 = 2.75×** (both monotone falling, both ≥ 1.5×) | 64.9 / 60.6 / 73.7 → 189.5 = **2.57×** (not monotone: the dream swells into 1:25, `lvl` 0.80 → 0.89) | — |
+| `amb` across the dream 72.0–86.0 | — | p50 0.776, **≥ 0.75 on 67 % of the frames — every frame from 76.68 s on, none from 72.00 to 76.67**: `tongueAmbig` p10 0.388 there (p50 0.944 over the run); this page started at 40 s (WARM 30) and the tongues' 16-beat windows read the dream as ambiguous 4.7 s later than §77's from-0 run (72.0); and the receipt's 0.75 needs `tongueAmbig` ≥ 0.9375 under the 0.75 / 0.25 dead zone — §77's "22 beats ≥ 0.9" gives `amb` ≥ 0.6. Both recorded, neither the scene's | — |
+| `Nt` | N + 1 on 388 of 5401 frames (the two voids) | N + 1 on 408 of 1801 (80–110) / 587 of 1201 (70–90) — the dream | **`Nt` = N on 3601 of 3601** |
+
+Bench (m87 before the tunes; the tunes are two constants): `bench(2,300)` / `bench(0,300)` **4.024 / 4.224 ms = 0.953** (§86 0.994, §85
+0.920, base 0.898 — all inside ±10 % of each other). `check.js` 0 fail.
+
+### Open
+
+The two arm-time receipts as the prompt wrote them ("`tight` ≥ 0.9 by 52.0 s and ≥ 0.75 by 102.4") read §57's arm TIMES as reach times:
+`buildLive` IS 0.4 at the arm and climbs 0.15 per bar of void (§54), so 0.9 comes 4.3 s after the arm and 0.75 never before the second
+drop (0.716). The scene follows the engine to the digit; a faster reach is the detector's (OPEN-ITEMS). Vienna's dream from a cold 40 s
+start reads ambiguous from 76.7 s, not 72.0 — a from-0 trace is queued below (§88's receipts) to say which it is on the user's path.
+
+## §88 MANDALA's dynamic range, the accent and the key hue — the double time ACCENTS (a bigger crest, a harder glint, never a faster one), the palette's centre is the key through `keycolour.js` (2026-10-02, one worker; `MANDALA-OVERHAUL-SESSION-PROMPT.md` step 4; default 5 taken: `sp.acc` from the lifted spinner, no second copy)
+
+Base light stays `baseLight(loudRel, loudRange, loudAbs, lvl)` (§63, untouched). **The accent is §78's `acc`** — `accent21` inside the lifted
+`spin()` (the 16-beat RISE of `tongue21` / `tongue41`, dead under 0.15, full at 0.45), read as `G.sp.acc` (open question 5: lifted with
+the grid, one copy). The rotation step has carried `STEP · (1 + DOWN + ACC.K · acc)` since §85; this step adds **§80's hat lever**,
+`voice(vH, …, hatGain(sp.acc))` = `1 + 0.5·acc` on the glint's size (the shared HATACC, `&hatacc=`). **Harmony**: `KEY = mkAnchor()`,
+`A = KEY.anchor(dt, key, mode, keyConf, valence, harmAngle, m.hue, keyPin, modeShade)` as DUST's :196; `S.hue = A.hue`, `S.sat =
+m.sat · A.sat · drain` — the key hue, `modeShade`'s per-bar warm / cool pull (§82) and §84's `tonicConf` gate come from `keycolour.js`
+as-is (`&kc=0`, `&shade=0`, `&key=<k>` through `CARD.REG[2].scene.hooks.key`). `feats` + `key mode keyConf valence harmAngle modeShade`.
+`dinfo()` + `hG hue kconf key kmode sat`. One commit; before = `../RetinaRave-m87`'s traces, after = `../RetinaRave-m88`, PORT 8885.
+
+### Measured (`tools/work/v88/acc88.py`; the engine columns md5-identical to the before on all four windows; `fK fS fH` md5-identical between the step-2 and step-4 traces on all four — `375c20f3 99085f2c 6402e61f` SeeYouDrop, `2cc7b7f4 7d0bacc5 e976b706`, `cafd85c7 c3c36595 0fe5541e`, `3f190548 ec8d8225 d4f294ea`: the rate and timing of every fire unchanged, by construction)
+
+| receipt | measured |
+|---|---|
+| Vienna 1:30–1:38, `nacc` 0.97–1.00 | **p50 1.00** (p10 0.91, max 1.00); exactly §80's **30 hat fires** (3.75 /s), amp/hit p50 0.512 (§80's K .5 row: 0.516) |
+| the crest a quarter bigger there, 0 by 1:43 | `nstep/STEP` p50 **1.250** over 1:30–1:38 (= 1 + ACC.K), 1.212 over 1:38–1:43 (`nacc` p50 0.75, falling), **1.000 over 1:43–1:50 (`nacc` max 0.02)** |
+| the glint's lift per fire at acc 1 ≥ 2× the rim noise | **lumR +32.5 per hit (p50) against \|dlumR\| 4.29 = 7.6×** (1:38–1:43 12.1×, 1:43–1:50 at acc 0: 24.1 = 11.3× — the glint itself is already legible, the lever adds a third to it: 32.5 vs 24.1) |
+| CyborgNinja 20–80, `nacc` = 0 on every frame | **0 on 3601 / 3601**, `hG` 1.000 throughout — the control: the accent never fires |
+| SeeYouDrop `nacc` ≤ 0.51 at its returns, 0 elsewhere | at the returns (91.67 / 98.05 / 109.27, 7 s after each) **max 0.47** ✓; **elsewhere up to 1.00** — the 16ths ARRIVING with drop 1 (bars at 58.0 / 59.6 / 61.2 s: 1.00 / 1.00 / 0.71, `tongue41` 0.42 → 0.46 → 0.48 rising) and the build's own layer (46.8 / 48.4: 0.52 / 0.57, `tongue41` 0.70 → 0.75). The same `accent21` on the same MS gives DUST the same numbers on this engine — §78's "up to 0.51" was a different engine state; what the eye gets is the brief's own case (a layer arriving at the drop accents the beat), recorded, not tuned |
+| dynamic range: `lum` p50 breakdown 90–105 / drop 106–110 not larger than before step 1 | **0.958 after (186.2 / 194.3) against 0.975 before (158.4 / 162.4)** — not larger; the picture as a whole is brighter by the voices (the glint, the flash) |
+| the hue per truth section = DUST's | **identical to the frame** — a same-engine DUST trace (`s4-dust-syd-20-110.json`, scene 1) against MANDALA's `d_hue`: 0.460 (12.8–25.6, key F♯ at kconf 0.93), **0.555 on every C♯ section at kconf 1.00** (0.548–0.563 with the bars' shade), 0.621 on the drop bar 57.6–62.4; max \|Δ\| 0.0000 turns over the eleven sections, frame-wise p50 / max 0.0000 — one `mkAnchor()` on the same inputs |
+| Vienna's dream (§87's open item), from a 0 s start | `amb` ≥ 0.75 on **91 %** of 72.0–86.0 (p50 0.834, every frame from **73.32 s**; the 40 s cold start had it from 76.68): the tongues' 16-beat window, not the scene |
+
+Bench `bench(2,300)` / `bench(0,300)`, q .95, three pairs: **4.064 / 4.148 ms = 0.980** (§87 0.953, §86 0.994, §85 0.920, base 0.898 — the
+four steps inside ±10 % of each other and of the base; the ms doubled with the machine's load between §85 and §86, NAV's too).
+**s2's lines `62515d49` (f360) / `f3a3721c` (f840), the only two of the 24 that differ from v0.29's list** (full sweep on m88, errs []
+hop 840 row 72 ×12) — **re-recorded into `tools/accept/v0.29/scene-md5-v029.txt` in this commit** (the orchestrator's brief: the last
+step re-records s2's line; the header says which lines and why); `accept.sh` in a worktree of this commit is the receipt below.
+`check.js` 0 fail; the license header (`27617b5`, landed between §86 and §87) stamped on this pass's files (`node tools/license.js
+--only …`: math/beatgrid.js, math/voice.js, scenes/mandala/*, scenes/dust/grid.js + voices.js) — comments, no pixel.
+
+### The look (base vs m88 shots): SeeYouDrop 55 s — v0.29 a bright green full-frame lattice, after: the body at ~40 %, drained, an
+ELEVEN-armed fold (N 10 + 1) with the trap ring glinting — the void reads; 57.6 s — the drop frame is a white-out with horizontal
+slice bands in v0.29 and after alike (the post chain's own drop effect, inherited); Vienna 94 s — v0.29 green (the mood hue), after
+yellow-green (D♯ minor's hue pulled warm by the bars' shade), the body blown out in both (§86's open item).
+
+### The user's A/B, stream mode, key 3, in track time (old = `releases/retinarave-v0.29.html` from file://, new = 8765)
+SeeYouDrop **0:40–1:00**: the fold goes dark and odd-armed through the void, 0:57.6 lets go (2.7× the bar before); **1:30–1:50**: the same
+at 1:45.6 (the fold back to even on the slam); **0:58–1:02**: the 16ths arrive — a heavier crest per beat and harder glints, never faster.
+Vienna **1:12–1:26**: the dream tightens (from ~1:13 on a from-0 start), 1:25.3 releases; **1:30–1:38**: the double time — the glints a
+third harder, the crest a quarter bigger, gone by 1:43; **1:46.7**: nothing happens on purpose (§77). CyborgNinja **0:20–1:20**: the
+control — N never changes, nothing accents, nothing tightens, the groove just turns (one wedge every two bars at N 4). The knobs
+that step back one lean at a time on the new page: `&nudge=`, `&step=`, `&bed=`, `&hatacc=0`, `&kc=0`, `&shade=0`, `&rough=0`.
+
+## §90 IBelongHere's three times — DUST's sync at 0:10 / 0:47 / 1:04: the kick lane takes a clickless kick ON the clock's line, the clock holds its tempo through a kick-less passage, and the cold 4:3 lock is measured and left (2026-10-02, one worker; the diagnosis `docs/truth/IBELONGHERE-2026-10-02.md` §4, on the user's word: "on dust it feels like the beat is out of sync (at ~10s in, ~47s in, ~1m04s in)")
+
+Three commits in the diagnosis's order, each behind its knob (`&`-flag on the page, `CLOCKK` / `PERCK` in node; the knob at 0 =
+the v0.29 behaviour): **`54cfbe8` step 1 (0:10, a knob left OFF)**, **`a45f5d6` step 2 (0:47)**, **`9985bcf` step 3 (1:04)**. Every
+before / after pair in isolated worktrees (`../RetinaRave-v90-before` = `78feceb`, `../RetinaRave-v90-after` = `9985bcf`; the
+user's 8765 untouched, the worker's ports 8901–8905 killed by port; one page Chrome at a time). No audible run. **Not tagged, not
+pushed, not deployed.** Scratch (git-ignored): `tools/work/v90/{clk.py, combdbg.mjs, kickwin.py, linesim.py, dustwin.py}` and the
+traces under `tools/work/v90/{clock,drums}/`. Conventions as the diagnosis: a clock lag is its beat line minus the truth beat, + =
+late; the ruler is `tools/clock-study.js` (node, no display lead) graded per window by `clk.py` (lock = the first of 8 consecutive
+lines within ±30 ms); the kick lane by `tools/truth/drumcheck.py` (`kick vs kick`, ±30 ms, whole track) and `kickwin.py` (±60 ms,
+the diagnosis's windows).
+
+### Step 1 — 0:10: the comb-strength gate on a cold / unrelated tempo switch, measured and REJECTED (`CLOCK.SW_Y1`, default 0)
+
+The diagnosis proposed `need = !rel ? (y1 >= 0.3 ? 2 : 1e9)`: a cold switch needs comb strength ≥ 0.3, because the wrong lock read
+y1 0.18–0.30 and the right one 0.32 → 0.75. Built as `CLOCK.SW_Y1` (period.js `estimate()` — `Period` now takes the clock's knob
+object; `&swy1=` on the page), the gate covers both routes a cold prior can take (`tempoAge > 16 ? 3` — the prior starts at
+tempoAge 99 — and `!rel ? 2`). **At 0.3 it does not remove the plateau and it costs three tracks:** IBelongHere switches to 157.6 at
+10.0 s instead of 9.0 (y1 0.30) and holds it to 12.5 as before; Vienna's lock 21.4 → 27.4 s (held at the 124 prior for 20 s —
+its real tempo's y1 is 0.17–0.26 for 22 s), Malicious 3.5 → 13.8, WhoLikesToParty 6.2 → 25.7 (the 124 prior slid to 117 through
+the 6 % tracking branch and the lattice landed half a beat off; +244 ms until 25 s).
+
+**Why no gate on the comb can see it** (`combdbg.mjs`: every estimate of every cold start, SW_Y1 0): the five RIGHT cold locks
+switch at y1 **0.19** (Malicious, votes 0.15 / 0.17 / 0.19), **0.22** (Vienna, 0.22 / 0.22 / 0.22, `alive` on all three — its y1
+comes from the 2L lag), **0.26** (WhoLikesToParty), **0.29** (CyborgNinja), **0.64** (SeeYouDrop); the WRONG one at **0.25** (0.17 /
+0.23 / 0.25). Contrast at the switch 6.0 / 19.2 / 11.5 / 12.9 / 4.2 right vs 10.5 wrong; `best / cur` 0.35 / 0.09 / 0.37 / 0.45 /
+0.91 vs 0.29; the ACF at 2L over L 0.95 / ∞ / 0.77 / 0.97 / 0.73 vs 0.60; the 40–150 Hz share of the comb's strength (a 2 s leak
+of `s40` over `flux + 3·bflux`) **0.012 / 0.097 / 0.020 / 0.022 / 0.026 right vs 0.032 wrong** — the drumless intro carries MORE
+low band than four of the five drum intros; the PDA hit rate over the vote 2/4, 1/1, 3/7, 3/7, 1/2 vs 2/2. Nothing separates them.
+**What the 157.6 is:** 0.381 s = three 16ths of 118 = a dotted 8th — the echo period of the sung / pad intro, and the comb's
+candidate from 0.5 s on (155–157 at y1 0.10–0.13, under the gates, then 7.5 / 8.5 / 9.0 at 0.17 / 0.23 / 0.25 with the one
+non-vote at 8.0 reading the prior's own lag); the 8ths at 0.254 s that start at 9.8 s are not on its grid (1.5 of them per period),
+and they take the 8 s ring until 11.5 s (the comb says 117.8 at y1 0.18, held by the 25 % margin), 12.0 (vote 1, `alive`), 12.5
+(vote 2, `alive` dead → the switch). A vote-consistency rule (the 8.0 non-vote resets the count) moves the switch 9.0 → 9.5 s;
+nothing on the comb moves it past 10. The plateau is the audio's; the receipt the diagnosis asked for ("the plateau gone, lock ≤ 15.4")
+cannot be bought on the clock side without the three tracks above. **Left at 0:** the six clock-study traces byte-identical to
+`78feceb` (cols md5 `402f2d5d f95e8d3d dee488ec 758f5fc4 d5a2ceb6 f89fe950`); `CLOCKK='{"SW_Y1":0.3}'` / `&swy1=0.3` reproduces the
+table. The scene-side alternative in the diagnosis (publish `clockConfPcm × min(1, y1 / 0.3)`, let the nudge amplitude ride it) is
+the open item — `clockConfPcm` reads 0.77–0.80 inside the wrong lock, so confidence alone is no gate either.
+
+### Step 2 — 0:47: a CLICKLESS low onset ON the PCM clock's beat line is a kick (`PERCK.lineKick`, ears only)
+
+**Measured first, the two cheap variants** (`PERCK` env on `drums-node.js`, six tracks, `drumcheck.py` kick vs `.kick.json`):
+`CLICK_FLOOR` 0.7 / 0.5 are **byte-identical** to 1.0 (the adaptive term `fm + thrK·fd` is always above it — the floor never binds);
+`CLICK_W` 25 → 35 / 45 ms lifts IBelongHere's recall **0.40 → 0.42 / 0.42** (42–52 s: 9 → 10 of 21) and costs SeeYouDrop P 0.79 →
+0.72 / 0.66, Vienna P 0.69 → 0.55 / 0.52: this soft deep-house kick under its A1 pedal has **no beater click inside 45 ms**, while
+the low lane hears 90 % of it. **Then the line rule, simulated offline** (`linesim.py`: the base drums trace joined with the
+clock-study trace at the same frame; a clickless `lowEvt` with |wrap(beatPhasePcm)| < ph and `clockConfPcm` ≥ conf promoted):
+at the diagnosis's gate (0.08 / 0.75) IBelongHere F 0.55 → 0.67 with 18 of 110 promoted on its bare-808 truth; at **0.06 / 0.85**
+F 0.55 → **0.67 with P 0.89 → 0.90** and every other track up (CyborgNinja 0.90 → 0.95, WhoLikesToParty 0.70 → 0.76, SeeYouDrop 0.40 →
+0.47 at P 0.79 → 0.81, Malicious 0.20 → 0.31, Vienna 0.33 → 0.37), 9 of SeeYouDrop's 233 kicks on a bare-808 note start (**3.9 %**;
+§68's guard 6.0 %). The **8th line** (`lineSub 2`) reads IBelongHere 0.70 and takes the syncopated "and" kicks (42–52 s 14 of 21)
+but puts **52 of SeeYouDrop's 312 kicks (17 %) on 808 note starts** — its bass line runs on 8ths and the kick voice would fire on
+every note. A knob, OFF.
+
+**Built:** `perc.js` `PERCK = { clickW, clickFloor, lineKick 1, linePh 0.06, lineConf 0.85, lineSub 1 }` (a mutable object: `PERCK`
+env in node, `&kline=0|1|2` / `&clickw=<ms>` on the page; `o` in the constructor still wins per instance); `PercTrack.line` is a hook
+`(t) → { phase, conf }` — `clock.js lineHook(clk)` predicts the clock's state (the previous block's; the clock stage runs after the
+ears) to the onset's time — attached by `features-clock.js` when it makes a Clock for an Ears, and by the five node tools that run
+the ears beside a Clock (page = node). A clickless low onset on the line is **emitted at once, flagged `line`**, and the beater hold
+stays: a click inside `CLICK_W` drops the flag in place (the clicked path is unchanged to the hop). **The clock stage never takes a
+line kick as a tick** — it is on the line by construction, so it would only confirm the clock's own phase (a self-locking loop;
+fed, Vienna's clock read |p50| 4.8 → 11.3 ms, |p90| 119 → 328): with the flag honoured in all six feed loops the six clock-study
+traces are **byte-identical to `78feceb`** again.
+
+| `drumcheck.py` kick vs `.kick.json`, ears, ±30 ms | P | R | F | lag med / p90 ms |
+|---|---|---|---|---|
+| **IBelongHere** | 0.89 → 0.90 | **0.40 → 0.54** | **0.55 → 0.68** | +7 / +18 → +7 / +18 |
+| CyborgNinja | 1.00 → 1.00 | 0.82 → 0.91 | 0.90 → 0.95 | +5 / +16 → +5 / +14 |
+| WhoLikesToParty | 0.74 → 0.75 | 0.67 → 0.78 | 0.70 → 0.77 | +7 / +18 → +7 / +19 |
+| SeeYouDrop | 0.79 → 0.78 | 0.27 → 0.33 | 0.40 → 0.47 | +8 / +23 → +8 / +23 |
+| Malicious | 0.50 → 0.49 | 0.13 → 0.21 | 0.20 → 0.30 | +3 / +21 → +5 / +25 |
+| Vienna | 0.69 → 0.69 | 0.21 → 0.25 | 0.33 → 0.37 | +14 / +14 → +14 / +14 |
+
+No track down by more than 0.01 P; the lag medians are §71's (the promoted kicks carry `otK`, the low lane's own clock). IBelongHere
+per window (`kickwin.py`, ±60 ms, hits / truth kicks, false): **42–52 s 9 → 12 of 21 (false 0 → 1)**, 59–69 9 → 14 (1 → 1), 26–36
+15 → 20, 69–80 22 → 27; the intro's 5 vocal "kicks" (5–15 s, 3 of 20 truth, 2 false) are untouched — they are clicked. `lineKick 0`
+is byte-identical to the base.
+
+### Step 3 — 1:04: the kick-less passage (`HOLD_Y1` 0.3 / `R_Y1` 0.2 / `RATE_Y1` 0.15)
+
+**The diagnosis's `R_CLS` [1, 1.5, 3] → [1, 3, 6], re-run on all six:** IBelongHere 59–65 s +21.2 → **+11.9** (p90 36 → 30, within
+75 → 92 %) as measured — and SeeYouDrop |p50| / |p90| 7.9 / 24.8 → 8.7 / 27.6, CyborgNinja 1.1 / 2.9 → 2.1 / 5.2, Malicious 11.1 /
+28.3 → 14.0 / 29.9, **Vienna 4.8 / 119 → 8.1 / 322** (§71's hat row: Vienna's line is held by its hats). Not taken. **What the +21
+is:** `bpmPcm` leans 117.97 (52–59 s) → 117.87 (59–65) against 118.00, and 0.74 ms a beat over the breakdown's 26 beats IS the +21;
+the lean enters while y1 is 0.16–0.21 (52–59: `clear`, so the comb's sung-passage tempo is blended into `X.bpm` at 0.3 per estimate
+and the Kalman follows it) and continues under 0.15 (59–65, y1 0.03–0.11: `clear` is false, the comb is silent, and the late vocal
+onsets drag the RATE through the phase–rate coupling). The §61 nudge then crests late and the drop re-seats it by −22 ms in one
+beat. **Three knobs** (`clock.js CLOCK`; `&holdy1=` / `&ry1=` / `&ratey1=`; each 0 = the pre-§90 clock): `HOLD_Y1` — period.js
+holds its tracking blend while y1 < 0.3; `R_Y1` / `R_Y1P` — a snare / hat onset's variance × max(1, (R_Y1 / y1)^P), 0.2 linear;
+`RATE_Y1` — an onset moves the beat position only, not the rate, while y1 < 0.15 (Vienna's y1 never goes under 0.15 outside its
+cold start; IBelongHere's breakdowns sit at 0.06–0.08).
+
+| `clk.py`, node | IBelongHere 52–59 / **59–65** (med, p90, within) / 65–69 | SeeYouDrop p50/p90, lock | CyborgNinja | WhoLikesToParty | Malicious | Vienna |
+|---|---|---|---|---|---|---|
+| `78feceb` | +7.3 / **+21.2, 36, 75 %** / −1.2 | 7.9/24.8, 12.4 s | 1.1/2.9, 3.4 | 5.1/8.6, 6.2 | 11.1/28.3, 3.5 | 4.8/119, 21.4 |
+| R_Y1 0.3 | +1.7 / +12.1, 32, 75 % / −2.1 | 7.9/25.0 | 1.1/3.0 | = | 11.1/28.4 | **7.4/314** |
+| R_Y1 0.2 | +7.1 / +14.9, 35, 75 % / −1.5 | 7.9/24.8 | 1.1/2.9 | = | = | 5.0/112 |
+| R_Y1 0.15² · 0.12³ | +7.3 / **+21.7** · **+23.7** | = | = | = | = | 4.8/110 · 5.1/96 |
+| HOLD 0.2 · 0.25 | +7.3 / +21.2 · +20.4 (no effect: y1 < `clear`'s 0.15 there) | = | = | = | = | **7.2/314** · 4.8/119 |
+| HOLD 0.3 + R_Y1 0.2 | +7.1 / +13.7, 34, 75 % / −1.5 | 7.9/24.2 | 1.1/2.9 | 5.1/8.7 | 11.0/28.3 | 5.1/112 |
+| RATE 0.15 alone | +7.1 / +16.0, 32, 83 % / −1.1 | 8.1/23.8, **9.6 s** | 1.1/3.0, 3.8 | = | 11.3/29.0, **5.6 s** | 5.0/119 |
+| **HOLD 0.3 + R_Y1 0.2 + RATE 0.15 (ships)** | **+3.5 / +8.0, 29, 92 % / −1.6** | **8.0/23.2, 9.6 s** | 1.1/3.0, 3.8 | 5.1/8.7 | 11.3/29.0, 5.6 s | 4.9/116, 21.4 |
+
+Vienna's whole-track |p90| is a knife edge (119 ↔ 314: a half-beat stretch after 80 s flips on any perturbation of its onset
+weights — `HOLD_Y1` 0.2 flips it, 0.25 and 0.3 do not), which is why the receipt is per track and not a mean. The shipped row: the
+five within ±1 ms of before on p50 / p90, SeeYouDrop's lock 2.8 s earlier, **Malicious's lock 2.1 s later** (the rate frozen through
+a cold start at y1 0.08–0.19; `RATE_Y1` 0.12 does not recover it) — the one cost, in OPEN-ITEMS. IBelongHere's cold start also moves
+(lock 14.9 → 13.8 s, 10–16 s within 29 → 43 %); the 157.6 plateau is step 1's and stays. The six `clock-study` traces at the shipped
+defaults are byte-identical to the sweep's `h03r02rt015` run (the knobs reproduce the measurement).
+
+### DUST on the file path — `dust-trace.js IBelongHere 0 75`, scene 1, `WARM=0`, `&map=0`, before (`78feceb`) / after (`9985bcf`); `dustwin.py` per window (file mode: the 40 ms display lead is in the page's clock, so −40 is the design)
+
+| window | §61 crest vs the TRUTH beat, med (p10 / p90) ms | the page's clock line vs the truth beat, med / p90 |·| | kick voice on truth kicks (±60 ms), false | page `bpm` med |
+|---|---|---|---|---|
+| 5–15 (the intro; 157.6 from 9.0 to 12.5 s both) | +4.0 (−242 / +236) → −76.0 (−210 / +128) | +6.1 / 238 → −88.4 / 229 | 3 of 20, 2 → 3 of 20, 2 | 157.6 → 157.6 (9–12.5) |
+| 13–16 (the lock forms) | +125.5 (−133 / +216) → **−49.9 (−87 / −38)** | +220 / 230 → **−45.2 / 82** | 0 of 4 → 0 of 4 | 118.1 → 118.0 |
+| **42–52** | **−37.2 (−47 / −26) → −37.2 (−47 / −26)** (= the 40 ms lead, the design) | −38.4 / 43.6 → −38.4 / 43.6 | **9 of 21, 0 → 12 of 21, 1** | 118.01 → 118.01 |
+| **59–65** | −16.6 (−39 / **−3.6**) → **−27.3 (−46 / −16.0)** | **−19.9 / 32.9 → −30.4 / 39.0** | 4 of 10 → 5 of 10 | **117.81 → 118.07** |
+| 65–69 (the drop) | −38.4 → −39.2 | −42.3 → −42.0 (the re-seat: **22 → 12 ms** inside one beat) | 5 of 11, 1 → **9 of 11**, 1 | 118.1 → 118.1 |
+| 69–75 | −36.9 → −36.9 | −40.3 → −40.3 | 13 of 17 → **15 of 17** | 117.99 → 117.99 |
+
+The crest at 0:47 is unchanged because the clock there was never the cause (+1.5 ms in node); the kick voice is. At 1:04 the crest
+is back to −27 of the −40 design (half the lead was gone: p90 −3.6 → −16.0) and the drop's snap is 12 ms. At 0:10 the plateau is the
+same 157.6 for the same 3.5 s (step 1); the lock then forms earlier on the page (13–16 s: the clock line +220 → −45 ms), which is
+step 3's `RATE_Y1` through the cold start. `CARD.ERRS 0`, 4500 frames, both runs.
+
+### Receipts
+
+- **check.js 0 fail** at every commit (171 modules; the license-header warn is MANDALA's / `math/*`'s paths, a parallel worker's) ·
+  **npm test exit 0** (`test_clock` 17, `test_drums`, `test_tempo` among them) · `test_ears.js` not runnable (the native-rate dumps,
+  §86's note).
+- **The fake-timeline md5 sweep, both worktrees** (`GPU=1 PORT=8903 / 8904 tools/scene-md5.sh`): `../RetinaRave-v90-before` (`78feceb`) `tools/work/v90b-md5.txt` against `../RetinaRave-v90-after`
+  (`9985bcf`) `v90a-md5.txt`, 12 ids × f360 / f840, `errs []` on every one: **10 lines byte-identical; s2-f360 / s2-f840 moved
+  `87aca86d` / `f2c644ac` → `62515d49` / `f3a3721c`** — and that pair is the parallel MANDALA worker's: `f18785f` (§87) and `3bad667`
+  (§88) landed on `main` between `78feceb` and step 1 (this section's commits sit on `3bad667`), the after values ARE the lines
+  `3bad667` re-recorded in `tools/accept/v0.29/scene-md5-v029.txt`, and no commit here touches `assets/scenes/` or `assets/math/`
+  (`git diff --stat 78feceb..9985bcf -- assets/scenes assets/math` lists only the two MANDALA files from §87/§88). The honest
+  statement: the before worktree should have been `3bad667`; against the reference the after list is 24 / 24 (`accept.sh` below).
+  The clock stage and the ears return at their first line under `ENGINE.fakeOn`, so the line hook never runs on the fake.
+- **`accept.sh`** on the after worktree (`GPU=1 PORT=8905 ACC=v0.29`): **201 lines, 0 FAIL, EXIT 0** — every scene line "= reference" (s2 included), the mixs md5, nav2 / gielis stills + monitors,
+  parity fake (the §83 `nav.*` MISMATCH line, pre-existing), help, the real start path, the bundle. The user's 8765 untouched.
+- The parallel MANDALA worker's files (`assets/scenes/mandala/**`, `assets/scenes/dust/**`, `assets/math/**`, §85–§88) untouched;
+  the worktrees `../RetinaRave-m*` untouched.
+
+### What the user should look at (DUST, file mode, `http://127.0.0.1:8765/`, key 1, IBelongHere; the old behaviour = the same URL with `#test&track=IBelongHere&scene=1&kline=0&holdy1=0&ry1=0&ratey1=0`, or `releases/retinarave-v0.29.html` from `file://`)
+
+- **0:10** — unchanged by design: the wedge still turns at the 4:3 rate from 0:09 to 0:12.5 (the dotted-8th echo), the kick pulse on
+  the sung low onsets is the §68 lane's (those five are clicked). Nothing beat-locked before 0:12.5 is the warm-up and expected.
+- **0:47** — the kick pulse now fires on 12 of the 21 kicks of 0:42–0:52 (was 9) and on 14 of 21 through 0:59–1:09 (was 9); the
+  "and" kicks (0:43.6, 0:44.7, 0:45.6, 0:47.7, 0:48.2, 0:48.8) still do not fire — `&kline=2` fires them, at the price of SeeYouDrop's
+  808 notes.
+- **1:04** — the beat line through the sung breakdown now sits +8 ms (was +21) and the drop's snap is 10 ms (was 22); in file mode
+  the crest is back near the −40 ms lead through 0:59–1:05 instead of eating half of it.
+
+### The receipts — `accept.sh` in a worktree of `3bad667` (`../RetinaRave-m88c`, `GPU=1 PORT=8886 ACC=v0.29 tools/accept.sh`, 24 sections, 202 lines)
+
+**One FAIL line, then none:** `hidden tab back {n:60, onsets:1, …, hitmax:0.64}` — the v0.3 resume-hold check on the live demo synth
+(`&fake=0&scene=6`, a 15 s hide, the first 60 frames back may fire nothing). Re-run in isolation it read `onsets:2` twice — and the
+cause was this session's own: two headless Chromes orphaned by the two self-killed chain scripts (the `pkill -f` pattern matching its
+own shell, exit 144) were still alive, the load average 5.0. Killed by pid, the check reads **`{n:60, onsets:0, surprise:0, drops:0,
+gmax:0, hitmax:0, resumeAt:24.4}` four times out of four** — twice in the base worktree (`8294d82`, the control) and twice in the
+`3bad667` worktree — HARNESS's own reference line to the digit, as v0.5's sweep found the same line (DECISIONS v0.5: "a machine moment
+… re-run twice in isolation → onsets:0"). Everything else green: **the scene md5 loop 24 / 24 lines `= reference`** (s0–s11 at f360 /
+f840 against the re-recorded `scene-md5-v029.txt`, errs [] hop 840 row 72 on every id — the s2 lines `62515d49` / `f3a3721c` shot on
+the stamped tree match the unstamped m88 sweep: comments move no pixel), the NAV2 / GIELIS stills and the torus2 / polytope blocks
+`= reference`, **`parity fake` `max |diff| 7.852 · 72 fields` with the same `nav.*` MISMATCH line §83 and §84 recorded** (not a
+regression; the MS fields 0 diff), parity real `bpm within 1 of 126 … true · arc sequence identical: true · drops within 0.5 s: true`,
+**`mixs 0→3 f178 md5 cb3d4048 = recorded`**, the bundle **171 modules → dist/retinarave.html (1633 KB)**, help counts, routes, params,
+the hidden worklet, the 60 s monitor — 0 FAIL. `npm test` OK, `check.js` 0 fail (9 warn: the six soft caps and the license audit's 19
+public files still unstamped — DUST's other files and the rest of `math/`, left as `27617b5` left them; `node tools/license.js` is the
+one command). The worktrees `../RetinaRave-m-base` / `-m85` / `-m86` / `-m87` / `-m88` / `-m88c` are left in place for the A/B shots
+(`git worktree remove <dir>` each when done); the user's 8765 was never touched, no port of this session is open.
+
+## v0.30 — tagged + deployed 2026-10-03 on the user's word ("tag and deploy")
+`package.json` + `assets/core/version.js` 0.30.0 (§89: one version source); `releases/retinarave-v0.30.html` = `tools/bundle.js`
+(171 modules, 1648 KB); the deploy = the push to `main` (Cloudflare Git-connected `npm run build`). What ships over v0.29: §83 (accept
+re-base + the fake lattice — engine unchanged for the viewer), §84 `tonicConf` owns `keyConf`, §85–§88 MANDALA pass 1, §89 the `R`
+recorder, §90 the DUST sync on vocals (`lineKick`, `HOLD_Y1/R_Y1/RATE_Y1`), LICENSE = MIT + the Guest-List Clause with the header on
+every public file and `/LICENSE` served. Receipts at `39a17e4`: accept.sh 201 lines 0 FAIL, 24/24 md5 = `scene-md5-v029.txt`, two
+sweeps byte-identical; at the tag: check.js 0 fail, license --check 0 missing, npm test exit 0, test_rec all ok (VER 0.30.0 ==
+package.json), the release bundle from `file://` errs 0. The user's A/B gates (MANDALA, the key, DUST on IBelongHere, the recorder by
+hand) were NOT run before this deploy — the user chose to ship; their remarks become retunes (NEXT-SESSION-PROMPT §0).
+
+## §91 Share phases 2 + 3 — `releases.json` and `/whats-new`, the tag ritual in `check.js`, and the landing's one line (2026-10-03, one worker on the `share` branch; NEXT-SESSION-PROMPT item 2; the spec is `docs/plans/SOCIAL-PLAN.md` §3–§4, the user's interview answers in its §1 — nothing re-asked)
+
+Four commits on `share` from `dda7733`: `53f6ac3` the file, `f4914a2` the check, `e9ebfb0` the page, `27eda4d` the landing; this
+section + HARNESS "Release notes" + OPEN-ITEMS the fifth. **Not tagged, not pushed, not deployed** — v0.31 is the orchestrator's tag
+step (the ritual below). **DOM only:** no scene, engine or math file changed; the receipt is the full `CLOCK=1` sweep on this tree (`PORT=8931 tools/scene-md5.sh share31`, every id 0..11, errs [] hop 840 row 72 ×12): **24/24 lines = `tools/accept/v0.29/scene-md5-v029.txt`** to the byte (`diff` of the sorted lists against the reference's non-comment lines: empty).
+
+### The file — `releases.json` (SOCIAL-PLAN §3.1), 28 entries, v0.6 → v0.30
+One entry per tag, newest first: `version` / `tag` / `date` (the tag's date, `git tag --format=%(taggerdate)`) / `class` ∈ `scene`
+(a new scene or one rebuilt: v0.7 v0.8 v0.9 v0.10 v0.12 v0.14 v0.15 v0.21 — 8) · `engine` (a feature the viewer sees or hears — 14) ·
+`tuning` (looks retuned, thresholds moved: v0.11 v0.12.1 v0.13 v0.17.1 v0.26 v0.28 — 6) / `title` / `body` / `scenes` (ids) /
+`decisions` (the § list) / `clip` (`null` on all 28 — the historical clips are §3.3's `record-old.sh`, not built, OPEN-ITEMS). The
+bodies are written for a visitor — what they see and hear, 2–5 sentences, no section numbers in the prose (`check.js` refuses a `§`
+there; the pointer lives in `decisions`) — from the tag messages (`git tag -n9`), each §'s heading + first paragraph and the AUDIT
+files, in one sitting. v0.30's names the five things the user asked to be said plainly: `tonicConf` (the colour follows the key only
+when the ears are sure), MANDALA pass 1 (the kaleidoscope on the beat, three voices, the tension), the `R` recorder (on your device,
+nothing uploaded, no share button), the DUST sync on vocal tracks, and the licence (MIT + the Guest-List Clause, in the user's words:
+"if it runs at a party, I get in free, with a guest"). v0.29's is the plan's own example. v0.27's says what a visitor to the site
+actually met that day — the first deploy since v0.15, everything from v0.16 on at once — because the local-only tags v0.16–v0.26
+never reached retinarave.com. The three least sure (the user reads them once): v0.26, v0.22, v0.6 (OPEN-ITEMS).
+
+### The check — `tools/releases.js` + `check.js` (§3.2)
+`tools/releases.js` (84 lines) is the one reader: `load()`, `validate()` (x.y.z versions, `tag` == `v` + the version without a
+trailing `.0`, ISO dates, the class enum, non-empty title/body, no `§` in the prose, `scenes` ids, a non-empty `decisions` of `§N`,
+`clip` null or `{ youtube, poster }` with the poster present under `site/` when the id is set, unique versions, newest first by
+semver and by date, **the top entry's `version` == `package.json`'s**), `save()` (the file's own four-line-per-entry layout,
+byte-stable: two saves md5 `419304aa…` twice), `newIn()` (the card line's text), and the §3.2 CLI `set <tag> clip.youtube <id>`
+(fills the poster path `thumbs/whats-new/<tag>.jpg` when none is set, validates, saves) for SocialMediaManager's post log.
+`check.js` runs `validate()` and fails on every line; the negative test: the top entry edited to `0.31.0` on package.json 0.30.0 →
+`FAIL releases.json[0] (0.31.0): tag v0.30 != v0.31` + `FAIL releases.json: top entry is 0.31.0, package.json is 0.30.0 — the tag
+ritual…`, 2 fail; restored, 0 fail. `check.js` also fails when `index.html`'s `<a id="newin">` text is not the top entry's
+(`newIn()`), with "run node tools/whatsnew.js" in the message — proven before the first `whatsnew.js` run (1 fail), 0 after.
+
+### The page — `tools/whatsnew.js` → `site/whats-new.html` (§3.4)
+137 lines; `npm run build` = `whatsnew.js → bundle.js → cp site/. dist/ → cp LICENSE`, so the page is regenerated on every
+build, and the generated file is committed (site/ files are static sources; `--check` exits 1 when it or the card line is stale).
+Static: 28 `<article class="rel" id="v0.NN">` with the date, the class as a small label (`new scene` / `engine` / `tuning`), the
+title, the body, the scene thumbnails from `site/thumbs/` (the id → name map is the scene folders' `index.js` imported in node,
+as check.js does; a thumb only where `site/thumbs/<name>.jpg` exists — torus-v1 and DRUM have none), and the `decisions` list
+linking the DECISIONS file on GitHub. **The look is about.html's:** its `<style>` block is read at build time and reused as-is
+(one style source; the few rules the list needs are appended, and the tag anchors opt out of its uppercase `h2`). **The embed:**
+only an entry with `clip.youtube` gets a `.clip` block — the self-hosted poster, a `▶ play the clip` button and a one-line note —
+and only then is the 8-line inline click handler emitted that builds the `youtube-nocookie.com` iframe on a press; today no entry
+has a clip, so the page carries **no script at all** (`grep -c '<script\|<iframe\|youtube'` = 0). The licence header is
+`license.js`'s `stamp()`. `site/sitemap.xml` + `/whats-new` weekly 0.7, `about.html` links it under Follow, `_headers` gives it
+`/about`'s `max-age=300`. `tools/serve.js` now resolves an extensionless `/about` / `/whats-new` to `site/<p>.html`, as Cloudflare's
+static assets do on the deploy (dev == deploy for the links; a missing path is still 404).
+
+### The landing — SOCIAL-PLAN §4, DOM only
+`index.html`'s card, between the sub line and the picker: `<p class="why">` with the user's line verbatim — *Everything runs on this
+device — no account, no trackers, no ads. I built this for myself and wanted to share it.* — and `<p class="newin"><a id="newin"
+href="/whats-new">New in v0.30: Sure of the key, a kaleidoscope on the beat, and a record button → what's new</a>`. **The text is
+`releases.json`'s top entry and nothing fetches it:** `tools/whatsnew.js` writes it into the committed `index.html` (so the dev
+server page shows the same line as the deploy, not a default), `tools/bundle.js` inlines it again at build time from the same
+`newIn()` (and throws if the card lost the anchor), `check.js` fails a stale committed line. Both lines hide in peek with `.sub`
+(`.peek .why, .peek .newin { display: none }` — eval'd `none` / `none` with FEIGEN's tile pressed) and shrink a step under 520 px.
+`about.html`: a new "How it works and what it does not do" (the tab's audio analysed in the page, no server on the other end, the
+share dialog is Chrome's and the page receives the one ticked tab, the microphone and a dropped file the same; no accounts /
+cookies / analytics / trackers / ads, nothing third-party until play is pressed on a clip, the recording paragraph referenced not
+repeated; the why) and the three scenes its list had never gained (NAV2, GIELIS, CHLADNI — the card blurbs).
+
+### Receipts
+- **The two shots** (`tools/accept/v0.31/landing-{390,1440}.jpg`, committed since this section cites them): `MOBILE=1` 390 px —
+  `.why` [20, 370] × 59 px, `#newin` [31, 359] × 28 px inside the card [0, 390], `scrollWidth > innerWidth` **false**; 1440 px —
+  `.why` [478, 948] × 41, `#newin` [449, 976] × 28 inside the card [385, 1041], no x-scroll; both `tiles 9`, `errs []`.
+- **No third-party request before a click** (`performance.getEntriesByType('resource')` hosts): `/` (real path) → `["127.0.0.1:8931"]`
+  on both viewports; `/whats-new` → `["127.0.0.1:8931"]`, 28 articles, `#v0.30` resolves. The built `dist/` served on a throwaway port (python `http.server` 8932, killed by port): `/whats-new.html` hosts `["127.0.0.1:8932"]`, 28 articles, `document.scripts.length` **0**; `/` (real path) hosts `["127.0.0.1:8932"]`, the inlined line reads `New in v0.30: …`, errs [].
+- **accept.sh's landing steps** (`tools/landing-steps.json`): `TILES 9 imgs 480×9`, `PEEK true 6 6 demo 0 peek`, `DIRECTOR -1`,
+  `START demo false 3 hide true []`, 0 `[EXC]` — the tile count the block greps is `card:` slots, untouched.
+- `check.js` 0 fail (9 warn, the standing line-cap ones) · `license --check` 174 public files, 0 missing (whats-new.html is the 174th)
+  · `npm test` exit 0 · `npm run build` → `dist/whats-new.html` 33 KB, `dist/index.html` 1649 KB with the line inlined, `_headers` +
+  `sitemap.xml` carry `/whats-new` · `whatsnew.js --check` up to date after the build.
+- No audible run. The user's dev server on 8765 untouched; this worker's on 8931.
+
+### The v0.31 tag ritual (the orchestrator's step — in this order, or `check.js` fails)
+1. `package.json` + `assets/core/version.js` → 0.31.0 together (§89). 2. Add the v0.31 entry at the top of `releases.json`
+(`class` `engine`; the body: the what's-new page, the landing line, the about page — in a visitor's words). 3. `npm run build`
+(regenerates `site/whats-new.html` and the card line — commit both). 4. `node tools/check.js` 0 fail · `node tools/license.js --check`
+· `npm test` · `GPU=1 PORT=88xx node tools/test_rec.js` (VER == package.json) · `node tools/bundle.js releases/retinarave-v0.31.html`
++ the release from `file://` errs 0. 5. This section's tag note, commit, `git tag -a v0.31`, push on the user's word.
+
+### Open (also in OPEN-ITEMS)
+The historical clips (`tools/record-old.sh`, §3.3) and the posters' directory · the user's one read of the 28 bodies · the
+DECISIONS link on a private repo · the cold read of about.html on a phone · SocialMediaManager not started.
+
+## v0.31 — tagged + pushed 2026-10-03 on the user's word ("tag push and deploy")
+§91 ships: `releases.json` (29 entries, v0.6 → v0.31), `tools/releases.js` + `tools/whatsnew.js` → `site/whats-new.html`, the card's two
+lines ("Everything runs on this device…" + "New in v0.31: … → what's new"), about.html's long form. `package.json` + `version.js` 0.31.0,
+`releases/retinarave-v0.31.html` (171 modules, 1649 KB). Receipts at the tag: `releases.js check` 0 problems, check.js 0 fail, license
+--check 174 / 0 missing, npm test exit 0, test_rec all ok (VER 0.31.0), the release from `file://` errs 0; the scene md5 lines were
+24/24 = v0.29's on the `share` branch (§91) and no scene / engine file changed since. Note: at the time of this tag the live site had
+still not picked up v0.30 (the Cloudflare Git-connected build had not landed for 30+ min; wrangler not logged in here).
+
+## §92 the recorder's quality — the user's take measured, the tier held for a take, the encoder at 30 Mb/s, the sidecar inside the webm (2026-10-03, one worker on main; the user: "the recording quality isn't very good", a look remark = a retune request)
+
+Four commits on main, in order: `9c77b63` the measuring tool · `79f789d` the held tier · `711d7b7` the encoder, the clip size, the
+embedded sidecar, `clip.js` without a sidecar · this note. **Not tagged, not pushed, not deployed** (v0.32 is the user's word). No
+audible run; the dev server on 8765 untouched; this worker's pages on 8951–8956, killed by port. ffmpeg landed on the machine mid-task
+(the user's install): the EBML walk stays the Chrome-side path, ffprobe confirms it.
+
+### The user's take, measured (`tools/rec_probe.js`, then ffprobe)
+
+`~/Downloads/retinarave-v0.31-nav-2026-10-03T13-23-24.webm`: **VP9 1282×1309** (the user's window, not fullscreen; `dpr` 1 — the
+compositor records the WebGL canvas's backing size, so this IS what the engine rendered into), 3.38 s, **202 frames = 59.7 fps**
+(ffprobe `60000/1001`, 202 frames; 0 dropped on playback), **11.5 Mb/s realised of the 12 asked — the cap bound every second
+(11.2 / 12.0 / 11.7)**, opus 130 kb/s. Two older takes beside it (`v0.29-dust`, 71 s, 4276 frames, 11.25 Mb/s; `v0.29-gielis`, 6.7 s)
+are the same shape. **None of the three has its `.json` sidecar beside it** — the second download of a stop never landed (Chrome asks
+"download multiple files?" once per site, the user never saw / allowed it) — so the user's `Q.q` at the take is not on record.
+
+The sharpness measure (no ffmpeg needed, `rec_probe.js` LAPVAR): a frame → luma → the Laplacian variance at 1× (`lap`) and on the 2× /
+4× / 8× box-downsampled frame; **r14 = lap/l4 and r18 = lap/l8** are the numbers that survive a change of content — an upscaled
+soft render, or a starved encoder, has little 1-px energy against what it keeps at 4–8 px. The same NAV frame live (CLOCK=1 frame 420,
+1920×993, PNG): **q 1 (scale 1, iter 264): lap 206, r14 0.591, r18 0.370 · q 0 (scale 0.375, iter 64): lap 140, r14 0.389, r18 0.210**
+— the tier drop alone takes a third of the fine detail. **The user's frame: lap 64, r14 0.142, r18 0.081** (median over the take 0.14 /
+0.08) — a quarter of the live q=1 frame, below even the live q=0 frame: the frame is a low-tier render AND VP9 at a binding 12 Mb/s on top
+(`tools/work/rec/retinarave-v0.31-nav-…-frame.jpg`: the escape bands show the 0.375× staircase, the filaments are smeared). The 71 s
+DUST take (36 frames sampled every 2 s): **r14 0.18, r18 0.148, lap median 28** — the same signature over a whole track (DUST is a
+particle scene, so its tier drop is the point count 20k vs 150k rather than a scale; the encoder's smear is the same).
+
+### The causes, with numbers (headless `GPU=1 WIN=1920,1080` → canvas 1920×993, NAV, the demo synth, 10 s takes)
+
+| | v0.31 (q free, VP9 12 Mb/s) | measured |
+|---|---|---|
+| (a) the tier | on the user's desktop `Q.q` sinks under the encoder's load (§89 saw 0.53 → 0.00 on TORUS2); headless today NAV held 0.43 → 0.55 (the machine was idle) — the sink is load-dependent, the user's is not on record (no sidecar) | q 0 renders at 0.375× = 720×372 of a 1920×993 canvas, upscaled: r14 0.59 → 0.39 on the same frame |
+| (b) the encoder | VP9 realtime at 12 Mb/s on 1.9 MP × 60: the cap binds every second; the encoded frame keeps r14 ≈ 0.35 whatever the tier (q 1: 0.374 · hold 0.43: 0.41 · free: 0.346) — **the encoder is the floor at 12** | 30 Mb/s: r14 0.40–0.46, +25 %; the encode no slower (loop 57 vs 55.6 fps) |
+| (c) the size | the compositor = `G.PW × G.PH` = CSS × min(dpr, 1.5), long edge ≤ 2560 (`gl.js`): the take IS the backing size, not 1× CSS on a 2× screen. The user's 1282×1309 is their window at dpr 1. Fullscreen on the user's 5120×1440 screen renders 2560×720 (the cap) — a 21:9 clip of 720 lines | not a cause here; `&recsize=` scales the clip down, never up |
+| (d) frames | 59.7 fps encoded, 0 dropped: no judder. MediaRecorder stamps frames at the rAF time in whole ms (`time_base 1/1000`, intervals 13–20 ms: 151× 17, 116× 16, 56× 18 …), so ffprobe's `r_frame_rate` on a take is a guess — `60000/1001` on two takes, **`120/1` on the DUST take** — `clip.js`'s `-r 60` makes the clip CFR | not a cause |
+
+### What changed (`rec.js` 165 → 222 lines, `quality.js` +9, `clip.js`, `test_rec.js`, the new `rec_probe.js`)
+
+- **The tier is held for a take — `&recq=`** (the §89 open item). `quality.js`: `Q.hold` (null = the controller is free) and `pinQ(q)`;
+  the controller still measures (`Q.fps`) but sets `q` and its ceiling back to the pin at every window and derives `iter` / `scale` from it.
+  `rec.js` pins at R, restores `q0` at stop. **Default 0.75** (scale 0.875, tier 2); `&recq=1` the top; `&recq=hold` freezes q where the
+  governor had it; **`&recq=off` = v0.31**. Idle: `hold` null, the controller's path unchanged — the md5 sweep is the proof.
+- **The encoder — `&recmime=` / `&recbps=`.** `CODECS` by name (vp9 / vp8 / h264 / av1 / mp4 = `video/mp4;codecs=avc1.640028,opus`, the
+  file then `.mp4`), `ORDER` vp9 → vp8 → h264 for the default (unchanged). **Default 30 Mb/s** (was 12). The ladder (NAV, top tier, 10 s;
+  encoded fps / realised Mb/s / r14 / r18): vp9 12: 48.8 / 10.6 / 0.350 / 0.195 · **vp9 20: 56.5 / 16.2 / 0.372 / 0.216 · vp9 30: 56.1 /
+  23.2 / 0.400 / 0.243** · h264 12: 52.3 / 10.6 / 0.352 / 0.217 · h264 20: 54.6 / 18.2 / 0.403 / 0.254 · h264 30: 55.0 / 27.4 · av1 12:
+  55.5 / 9.7 / 0.441 / 0.274 · av1 20: 53.4 / 15.5 / 0.380 / 0.226 · vp8 20: 48.3 / 20.5 / 0.433 / 0.294. No hardware encode on this
+  Linux Chrome (h264 is OpenH264, av1 libaom realtime — both software, both ~the same fps as VP9 on 28 cores); AV1 keeps the most
+  detail per bit but plays on fewer devices and costs more on a weaker machine, so VP9 stays the default and `&recmime=av1` is the knob.
+  The tier at 30 Mb/s: q 1 → 54.6 fps encoded, 0.384 / 0.245 · **0.75 → 57.6 fps, 0.413 / 0.271** · hold (0.39) → 60 fps, 0.459 / 0.308
+  (the metric rewards the lower tier here: less fine content for the encoder to smear; the eye saw the 0.375× staircase in the user's frame,
+  so the pin is a floor on the render, not a sharpness maximiser). **0.75 is the ≥ 55 fps pick** on this machine.
+- **The clip's size — `&recsize=<height>`**: the compositor scaled to that height (width by the aspect, both even), the watermark with it;
+  `recsize=720` on 1920×993 → 1392×720 at 59.9 fps. Default: the canvas (backing) size, as before.
+- **The sidecar inside the webm — one download.** `finish()` splices a Matroska **Tags** element (`Tags > Tag > SimpleTag { TagName
+  COMMENT, TagString <the JSON> }`) before the first Cluster of the first chunk (an EBML walk of ~200 bytes). `ffprobe -show_entries
+  format_tags` prints `tag:COMMENT={…}`, ffmpeg decodes the file clean (357/357 frames), Chrome plays it (`test_rec`'s frame grab,
+  `rec_probe`'s playback). A tag appended AFTER the clusters is NOT seen by ffprobe (tested) — before the first cluster it is. `&recjson=1`
+  downloads the `.json` too (v0.30's two files; Chrome asks once). If the splice finds no cluster the `.json` download is the fallback.
+  New sidecar fields: `render [G.PW, G.PH]`, `dpr`, `bps`, `q` (the pin, null = free), `q0` (the governor at R); `REC.last.embedded`.
+- **`clip.js` without a sidecar**: `sidecarOf(file)` — the `.json` beside it, else the embedded tag (`rec_probe.js`'s `walk`), else one
+  derived from the name (`retinarave-v<ver>-<scene>-<stamp>`) + the EBML walk (duration, size, frames), written to `meta.json` with
+  `sidecar: null, derived: 'name+ebml'`; the bundle line says which (`sidecar derived | embedded | json`). `clip.js` on the user's take:
+  `2026-10-03T13-23-nav-v0.31 (sidecar derived · 3.383 s)`.
+- **`tools/rec_probe.js`** — HARNESS "Recorder" has the usage: a take's EBML (codec, size, frames, fps, Mb/s per second, the embedded
+  sidecar), its frames played headless through LAPVAR, and `--take` (a headless take with the `Q.q` trace, the live frame scored before
+  and after, the blob walked and played). `serve.js` serves `.webm`.
+
+### Before → after (headless NAV 1920×993, 10 s, the default of each build)
+
+| | v0.31 (`711d7b7` with `&recq=off&recbps=12`) | v0.32 default (`recq=0.75`, vp9 30 Mb/s) |
+|---|---|---|
+| `Q.q` during the take | 0.43 → 0.55 (free; sinks to 0 under desktop load, §89) | 0.75 flat (scale 0.875) |
+| loop / encoded fps | 60.0 / 60.0 | 60.0 / 59.9 |
+| realised Mb/s | 10.8 | 24.0 |
+| encoded r14 / r18 | 0.346 / 0.197 | **0.425 / 0.275** |
+| downloads per stop | 2 (the second swallowed by Chrome's prompt) | 1, the sidecar inside |
+
+### Receipts
+check.js 0 fail (171 modules; rec.js 222 lines) · npm test exit 0 · `test_rec.js` all ok (41 checks: the pin during the take, the release
+after, ONE download, the embedded sidecar == `REC.last.sidecar` byte for byte, the new fields) · **the CLOCK=1 md5 sweep at `711d7b7`
+(worktree, `PORT=8955`): 24/24 lines = `scene-md5-v029.txt`** (and 24/24 at `79f789d`) — the recorder idle and `Q.hold` null leave the
+engine where v0.29 left it · license headers on `rec_probe.js`.
+
+### What the user sees
+Press `R` on the dev server (any scene; NAV or DUST with a track, where the remark came from) — the HUD's `q` line reads 0.75 / scale
+0.875 for the length of the take and springs back after; one file lands (no second prompt); the clip is ~2× the bytes (3 MB/s); the
+filaments in NAV and the kick lane in DUST keep their edges. The old look: `#recq=off&recbps=12&recjson=1`.
+
+### Open (also in OPEN-ITEMS)
+The user's `q` at a real take is still unseen (the next take's sidecar carries `q0`) · the headed receipts (HARNESS "Recorder": Chrome +
+VLC with sound, the watermark by eye, now also: the embedded tag in VLC's metadata) · a fullscreen take on the 5120×1440 screen is 2560×720
+by `gl.js`'s long-edge cap · phones · the offline render (§2.7).
+
+**§92 addendum (the orchestrator, 2026-10-03, ffmpeg installed by the user):** the §89 `tools/clip.js` receipt is closed on the user's
+own 71 s DUST take (`retinarave-v0.29-dust-2026-10-03T05-51-15.webm`, no sidecar — derived): `clip.mp4` h264 1282×1308 yuv420p 60/1 +
+aac, `clip-9x16.mp4` 736×1308, `poster.jpg`, `meta.json` in `tools/work/clips/2026-10-03T05-51-dust-v0.29/`. One fix on the way: the
+take was 1282×**1309** (the window's size) and libx264 refuses an odd height for yuv420p — clip.js now scales / crops to even dims, and
+rec.js's `recDims()` is always even (`even(G.PW), even(G.PH)`) so a new take never carries an odd side. test_rec all ok, check.js 0 fail.
+
+## §93 the director's roster and the fit model — seven scenes, each with a musical territory (2026-10-04, on the user's word; nothing in the engine or the precedence changed)
+
+- **The ask.** The user: *"update the director to show these scenes -> NAV, DUST, TORUS, GIELIS, MANDALA, CHLADNI, MAXWELL; how does the
+  director pick the scene? want to make sure its the best fit for the section."* Talked through first (the user's rule for the session),
+  then built. The answers that shaped it: TORUS is TORUS2 (id 3; v1 stays forced-only) · DRUM (NAV's variant, id 4) is zeroed — NAV means
+  the navigator alone · FEIGEN (6) and POLYTOPE (5) go forced-only, not deleted · *"dust does a really good job at showing slow / sparse
+  sounds"* · lower weights for MAXWELL and CHLADNI (*"the most boring to watch"*) and MANDALA third, *"only slightly lower, is more
+  interesting than the other two"*.
+- **What was wrong with the §5 bids.** Six scenes read the same three features (regularity, clarity, punchy / calm) with weights all
+  landing in the 0.25–1.0 band, so on steady dance music the bids sat within a tenth or two of each other and the 0.25 hash noise plus
+  the history dock (−0.6 current, −0.25 previous) decided: a per-section shuffle with repeat avoidance, not a fit. The only section
+  awareness was consistency — the hash keyed on `sectionId` keeps a section on one scene, and look memory (§10) brings it back on a
+  return. Both stay; the bids now carry the fit.
+- **The fit model.** Each of the seven owns a territory, read from fields the engine already has, peaking near 1.1 inside it and
+  sitting near 0.3 outside, so the music decides and the hash only breaks ties — `pickScene`'s noise is 0.1 (was 0.25), the one change
+  in `core/scenes.js`. Every non-home bid is still 0 during a build (`arc === 'build'`, home parks there by precedence).
+
+  | scene | id | bid | max | territory |
+  |---|---|---|---|---|
+  | NAV (home) | 0 | `0.5 + buildLive` (unchanged) | — | builds, drops, silence, by precedence |
+  | DUST | 1 | `0.3 + 0.4 punchy + 0.4 calm` | 1.1 | transients, and slow / sparse sound (was `.3 + .5 punchy + .2 regularity`) |
+  | TORUS2 | 3 | `0.35 + 0.35 clarity + 0.4 regularity` | 1.1 | tonal, steady grooves; the +0.1 standing bonus is the user's favourite mapping (was `.25 + .45 clarity + .3 regularity`) |
+  | GIELIS | 10 | `0.2 + 0.3 clarity + 0.45 min(1, keyConf/0.6) + 0.1 regularity` | 1.05 | a sure key, harmony-rich, rhythm loose (the ears' tonicConf reads .3–.7 on a right key, hence /0.6) — was 0 |
+  | MANDALA | 2 | `0.2 + 0.35 regularity + 0.2 min(1, onsetRate/6) + 0.25 eS` | 1.0 | the dense, regular peaks; a notch under DUST / TORUS2 (was `.25 + .55 regularity + .2 min(1, onsetRate/6)`) |
+  | CHLADNI | 11 | `0.1 + 0.45 sub + 0.3 (1 − centroid)` | 0.85 | sub-driven, dark passages — was 0 |
+  | MAXWELL | 9 | `0.1 + 0.3 clarity + 0.3 calm + 0.15 (1 − punchy)` | 0.85 | calm, tonal, un-punchy — single sounds as wavefronts — was 0 |
+  | DRUM 4 · FEIGEN 6 · POLYTOPE 5 · TORUS v1 7 · NAV2 8 | | 0 | | forced-only (digit keys / `&scene=`) |
+
+  The low caps are how "lower weights" is meant: CHLADNI and MAXWELL win outright only when the sub or the calm owns the mix, and
+  otherwise come in through the rotation — the −0.6 / −0.25 history dock takes the two scenes just shown out of the race, so a 0.7
+  bid wins the third pick of a long steady section. Fields each bid reads were added to the scene's `feats` and `help.feats` ("the
+  bid: …" lines, the check.js rule); fields nobody reads any more came off (DUST `regularity`, NAV `clarity`, FEIGEN's and POLYTOPE's
+  bid fields). check.js 0 fail, `help.feats gaps 0`.
+- **Bid table on synthetic profiles** (the formulas alone, before the trace; punchy / calm / clarity / regularity / keyConf / onsetRate /
+  eS / sub / centroid set by hand): steady tonal groove → TORUS2 0.99 over GIELIS 0.91 · percussive + dense → MANDALA 0.88 · slow
+  sparse intro → DUST 0.90 · calm tonal pad → GIELIS 0.90, MAXWELL 0.74 · sub breakdown → CHLADNI 0.77 over DUST 0.70 · dense peak →
+  MANDALA 0.98 over TORUS2 0.94 · key-rich loose chords → GIELIS 0.95. The first GIELIS draft (`.25 + .35 clarity + …`) tied TORUS2
+  at 0.99 on the steady groove; trimmed by 0.1 so TORUS2 keeps it.
+- **What this does and does not move.** `parity.js fake` forces `&scene=0`, so parity and the §11 transition md5s are untouched (the
+  reference frame is director-blind since §15). The director traces (`tools/director-trace.sh`, `tools/accept/v0.32/`) change — that
+  is the point; the counts to compare are returns vs restores and switches on the bar line, which the mechanism (§10) still owns.
+  `test_director` OK (stub scenes, unaffected by the noise change). **Not validated by the user's eye yet**: the territories are a
+  first cut from the formulas and the demo traces, to be retuned from the user's remarks in track time (HARNESS "Director traces";
+  the real tracks in `~/Music/RetinaRave`).
+
+**§93 addendum (2026-10-04, the same session — the user: *"remove mandala, gielis from bidding; only rotate through NAV, DUST,
+TORUS2"*):** MANDALA, GIELIS, CHLADNI and MAXWELL are forced-only again (`score()` 0; each file's comment keeps the §93 formula
+for the day they come back), their bid-only fields off `feats` / `help.feats` (MANDALA's `arc` / `regularity` / `onsetRate` had
+no reader besides the bid). The roster is NAV (home, by precedence) + DUST + TORUS2; with two away scenes the −0.6 / −0.25 history
+dock makes the event-branch picks alternate DUST ↔ TORUS2 unless one bid clearly wins (DUST: transients and slow / sparse sound;
+TORUS2: tonal steady grooves). Noise 0.1 stays. test_director OK, check.js 0 fail, help.feats gaps 0.
+
+## §94 a boot never revives a forced scene — the panel's preset carried `manual.scene` (2026-10-04, found while the user looked at §93)
+
+- **The report.** The user, on the local page: *"when I share a tab with out clicking anything it defaults to GIELIS"*, then, after a
+  hard reload: *"click share a tab -> the viz that shows first is not director but gielis"*. GIELIS bids 0 (§93 addendum), the landing
+  starts on the director tile, nothing in the share path touches `SC.forced` — yet the page started forced on id 10.
+- **The cause.** The panel's preset (`localStorage['ew.routes.v1']`, v0.4 §16) is `routesJSON()`: the routes plus every `BLOCKS`
+  block, and `BLOCKS.manual.get()` includes `scene: SC.forced`. The panel saves on every change it makes — the force / release
+  buttons and the forced-scene select among them — and `restore()` at boot (outside `#test`) replays the whole preset through
+  `loadRoutes`, so `MANUAL.scene = 10` landed before the first frame. Once saved with a scene forced, every later boot of that
+  browser started on it, with the landing's tile marks (`LANDING.picked`, −1) saying "director". Today's trigger was almost
+  certainly a panel save while GIELIS was on screen during the §93 interim.
+- **The fix.** `restore()` parses the stored preset, deletes `manual.scene`, then loads it: routes, transition, colours and post
+  come back, the scene is the director's at boot. The textarea's load (`loadRoutes` from the panel) still applies a pasted
+  preset's scene — that is the user acting now, not a stale boot. `routesJSON()` is unchanged (the copied preset still says which
+  scene was forced). manual-smoke, route-smoke, param-smoke, check.js green. Not a director change: `core/scenes.js` untouched.
+- **Open, small:** the force button and the forced-scene select set `SC.forced` without `LANDING.picked`, so the tile marks can
+  disagree with the forced scene inside one session (pre-existing, v0.8.1 ↔ v0.4). Left as is.
+
+## §95 the dwell — a scene stays at least 30–90 s (2026-10-04, the user: *"it rotates too quickly through the scenes, let each scene go atleast 30-90 seconds"*)
+
+- **What churned.** With NAV, DUST and TORUS2 alone (§93 addendum) the event branch still switched on every identify / return /
+  phrase / settled trigger past 8 beats from the last switch (~4 s at 120 BPM), and the −0.6 / −0.25 history dock turned that into
+  a DUST ↔ TORUS2 ping-pong a few bars long. The §10 bar-line hold places a switch, it does not space them.
+- **The gate.** `SC.since` counts seconds on the current logical scene (reset in `goScene`); `SC.dwellMin` is drawn at every landing
+  in `SC.dwell = [30, 90]` by the director's own hash (the first stay — home from the start, no landing yet — gets `dwell[0]`: the first
+  house trace left NAV after 15.6 s before that seed) (`frac(sin(lands · 12.9898) · 43758.5)`, so a `CLOCK=1` trace is reproducible
+  and `Math.random` stays out of the director). The event branch — surprise hard cuts and the four soft triggers — is closed until
+  `since ≥ dwellMin`. **Not gated, by design:** the precedence above it — a drop hard-cuts home, silence drifts home, a build
+  parks home — because those are the track's structure, and the user's rule for drops stands (NAV owns them). A return whose scene
+  is owed (`SC.due`, §10 A) stays armed through the dwell and lands at the first open gate; an identify or phrase inside the dwell is
+  simply missed (the next one picks). The 8-beat spacing and the 16-beat away rule stay as the floor under the dwell.
+- **Knobs.** `&dwell=a[:b]` under `#test` (seconds; `&dwell=0` is the pre-§95 director), `CARD.SC.dwell` live, `DWELL=` on
+  `tools/director-trace.sh`. test_director step 9: a landing draws 30, two phrase lines and an identify inside it do nothing, the
+  first phrase line after it switches, the clock restarts, a drop still cuts home inside the dwell. The fake and house traces change
+  (fewer switches; the counts to read are returns vs restores — a return inside a dwell restores at the gate, so RESTORE may lag the
+  return by up to the dwell).
+- **Measured, house 120 s** (`tools/accept/v0.32/director-house-dwell.txt` vs `-addendum.txt`, the dwell off): scene changes 14 → 4.
+  Stays: NAV 0–53.3 s (through two drops), TORUS2 53.3–75.7 (22.4 s — ended by the build parking home before the 90.5 s drop, the
+  ungated precedence), NAV 75.7–107.3, TORUS2 from 107.3 (a return, on the bar line). 4 returns → 4 restores, as before.
+
+## §96 Firefox and Safari share no tab audio — the card routes around it (2026-10-06, the user: *"retina rave doesn't work on firefox"*)
+
+- **What failed.** Nothing in the engine: headless Firefox 146 (Playwright) runs the bundle at 60 fps, WebGL2, both worklets, no
+  console error. The failure is the front door. Firefox implements `getDisplayMedia` for video only — the `audio` constraint is
+  silently dropped (Mozilla bug 1541425, open since 2019, still open 2026-02) and its share dialog offers windows and screens, never a
+  tab; Safari is the same. A Firefox user followed the three steps, found no tab and no "Also share tab audio" box, shared something,
+  and landed in `startCapture`'s zero-audio-tracks branch: the demo signal ran under "No audio track was shared". That is "doesn't work".
+- **No feature test exists** (the constraint is dropped without an error), so `engine/sources/capture.js` decides on the user agent:
+  `NO_TAB_AUDIO` = Firefox, or Safari that is not Chromium. `LOOPBACK` names the microphone prompt's system-audio device for the OS —
+  "Monitor of …" (PipeWire / PulseAudio, Linux), "Stereo Mix" (Windows, where the driver offers it), "a loopback device such as
+  BlackHole" (Mac). The Linux and Windows routes need nothing installed: Firefox lists the monitor as a microphone.
+- **Four changes.** (1) `#landing.notab` (core/hud.js, desktop only — `mobile` already hides the tab path): the three steps and
+  *Share a tab* go, `#notab` says why and names the loopback device, the microphone button takes the mobile layout's weight, the file
+  link stays. (2) The capture fallback and the declined-share messages name the browser's gap and the two ways in instead of
+  "No audio track was shared". (3) `site/about.html` *How to use it* carries the same paragraph with the bug link. (4) This entry.
+- **Not done.** No UA probe for Safari-on-iOS (the `mobile` class already owns phones). No attempt to make tab audio work: there is none.
+
+## §97 NAV2 reset to a clone of NAV — the navigator's workbench (2026-10-08, the user: *"I like NAV better than NAV2 → reset NAV2 as NAV → all work in NAV2"*)
+
+- **What changed.** `assets/scenes/nav2/` is `nav/{index.js, nav.js, shaders.js, shaders-v2.js}` again — `nav.js`, `shaders.js` and
+  `shaders-v2.js` are byte copies (tools/test_nav2.js checks that every run), `index.js` differs from `nav/index.js` only in the
+  registration (`name 'nav2'`, `id 8`, `home: false`, `always: true`, `score: () => 0`, no `card`, no `variants` — NAV's DRUM is
+  id 4 and an id registers once), the program names (`julia2-v2`, `mandel2-v2`, `julia2`, `mandel2`, `pt2`), `rt.label 'nav2'`,
+  the hud prefix, the two first-frame guards a forced scene needs (`draw()` and `overlay()` return until the first `update()`),
+  `measure()` once per update and the hooks: `baby` (the clone's own `forceBaby` — `./nav.js` is a second module instance, so its
+  `NAV` object is not id 0's), `clipdbg`, `green()` (Green's ruler, unchanged) and `n2info()` — NAV's state in one object (`mode, c,
+  cPath, h, alpha, rho = e^lnr, phi, par, bulb, q, has, baby, kick, theta, lg, pathCut, tscale, cycBase, extBeat, loudBeats`) so the
+  §46 trace tools `tools/accept/v0.13/nav2-window.py` / `det13.py` still find `REG[8].scene.hooks.n2info()` and `.green()`; the
+  melody fields they also printed (`wind, bump, pulse, pitch, lift, …`) went with detect.js and read as null there now.
+  **Deleted:** `beat.js`, `detect.js`, `exit.js`, `nav2.js`, the v0.8–v0.13 `index.js` / `shaders.js` (§39's chart-free navigator,
+  §46's melody detector — paused mid-tune, never validated). **Kept:** `green.js` (no imports; the user wants Green's roundness /
+  edge-speed ruler as a steering fitness for the retune), `assets/math/field.js` + `tools/test_field.js` (NAV2's numerics, proven
+  against NAV's charts — still the node-side reference), `tools/test_green.js`. `assets/main.js` needed nothing (nav2 was imported and
+  registered at id 8); key `9` → id 8 and the `n` cycle (7 → 8) both reach it (headless: `logical 8, name nav2, home 0, errs []`).
+- **The one deviation from the review's recipe (`docs/plans/nav-retune-review-2026-10-08/nav-review.md` §5): `always: true`, not
+  `false`.** loop.js updates `always || on` scenes, and on the first frame `SC.cur` is still home when the update pass runs (the
+  forced scene lands in `updateScenes()` after it) — so an `always: false` clone misses frame 0's `update()`, one dt on every spring,
+  and its pair read `ec4459870a0e9906e61933db20f12ec7 / a46c37f645017d3cfe6aff3f59581529` — a picture nobody can tell from NAV's by eye,
+  but not NAV's bytes. With `always: true` the pair IS NAV's (below). The second reason is the point of the workbench: a scene that is
+  updated from boot like NAV has NAV's navigator state at every moment, so key `1` against key `9` mid-track compares control and
+  retune at one c, one mode, one history — a cold start on `9` would confound every A/B. Cost: one more `updateNav` + Green's ruler
+  per frame on every scene (node: median 0.042 ms, p95 0.088 ms), CPU only — an off-screen scene's `draw()` is never called and its
+  overlay returns at `PIP.a ≤ 0.01`, so no other scene's pixels can move (and the scene-folder row of HARNESS "What to re-prove" holds).
+- **The proof** (`IDS="0 8" PORT=8821 tools/scene-md5.sh`, CLOCK=1 GPU=1, errs [] hop 840 row 72 on both ids every run):
+
+  | | s0-f360 / s0-f840 | s8-f360 / s8-f840 |
+  |---|---|---|
+  | before, the clean tree (`base1`) | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | `2daaa2c0cbc80d96879049d1631fb74b` / `f2342b7f13ee899b30b2e4b1961ce834` |
+  | after, run 1 (`clone3`) | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` |
+  | after, run 2 (`clone4`) | identical | identical |
+
+  s0 is untouched and s8 = s0 to the byte: the clone is a visual no-op at the frames the guard reads. On the way there the first clone
+  (no `draw()` guard) threw `this._S` undefined on frame 0 and the fake clock froze (`hop 1 row 1`, f360 = f840 = `496ce9a8…`, errs []
+  — the exception never reaches `CARD.ERRS`, cdp's `[EXC]` line has it): CONTRACTS §1's `always: false` note and §39's lesson, now
+  asserted in node by `test_nav2.js` ("draw()/overlay() before the first update() returns"). Also measured: the 30 s continuity
+  monitor with the clone's state injected on `fake=0` (accept.sh's own line) — `n 1806, fast 0, max 0.0327, viol [], errs [], bad []`.
+- **What broke and how it was handled.** `tools/test_nav2.js` imported the deleted `nav2.js` / `detect.js` — rewritten as the clone's
+  node smoke: the three byte copies, the registration shape, own state and the monitor's shape, `hooks.baby` on the clone only, the
+  two guards, then 48 s at 60 Hz on the Worker's table seeded in node (`setGrid(buildRayGrid(...GRIDP))`, 62 ms — NAV was "untestable
+  in node" only for want of that line) with the clone's real `update()` driven beside NAV's on one fake timeline: identical to the bit
+  (max |Δc, Δh, Δvtime| 0, no frame with another mode), monitor viol [] (fast 67 — v3's smooth EXT frames, as HARNESS says), the exit
+  at f780 (13 s), INT→EXT→HOME→IN→INT before the second drop, `n2info()` finite, Green's ruler measured on all 2880 frames. `tools/
+  test_green.js` unchanged (green.js survived). `tools/accept.sh` "== nav2": the `&still=1` four are gone with the hook (the clone has
+  none, like NAV), `test_green.js` joins the node line, the monitor injection `CARD.NAV = REG[8].scene.state` stays (NAV's state has
+  its shape). **Guard re-base per §83:** `tools/accept/v0.34/scene-md5-v034.txt` = the v0.29 list with only the s8 pair changed (to
+  s0's values), `gielis-still-md5.txt` and `trans-mixs-md5.txt` copied unchanged, `nav2-still-md5.txt` dropped; `ACC` default →
+  v0.34; HARNESS "Acceptance sweep" / "File source" pointers; CONTRACTS §1.8's id-8 row; `site/about.html`'s NAV2 line ("the
+  navigator's workbench: a clone of NAV being retuned"). `node tools/check.js` 0 fail (the clone's index.js is 246 lines), `npm test`
+  passes, `test_field` OK. The full `accept.sh` was not run (25 min; its nav2 section is not separable from the script's header, so its
+  pieces were run by hand — the s8 pair, the three node tests, the monitor line — all above). No tag, `releases.json` untouched.
+- **From here.** Every retune is a commit on `assets/scenes/nav2/` alone, proven on `IDS=8 tools/scene-md5.sh` against its last recorded
+  pair (the scene-folder row of HARNESS "What to re-prove"), by eye on key `1` vs `9`, and — the user's wish — by Green's ruler through
+  `hooks.green()`; id 0 is the byte-identical control until the user says swap (then §39's replacement recipe: `home`, `always`, the
+  `card`, `parity.js`'s `&scene=0`). Commit 6f6e42a is the clone; the guard re-base and these notes follow it.
+- **A history note for bisecting.** Two workers shared this working tree (one index): the six `git rm`s of the old NAV2 modules were
+  staged when the other worker's commit `3f6bcdd` (tools/lumtrace.js) was made, and that commit carries them — on its own it deletes
+  `assets/scenes/nav2/index.js` while `main.js` still imports it, so that one commit does not load; `6f6e42a` (the clone) restores the
+  path. Nothing was pushed; a fixup that moves the six deletions into `6f6e42a` is the orchestrator's call once both workers are done.
+  Pitfall for next time: in a shared tree, stage and commit in one step, never leave deletions sitting in the index.
+
+## §99 NAV2 legibility — the exposure knee, the smoulder on loudness, the snare flash, colour on key (2026-10-08, one worker; NAV2-RETUNE-PLAN step 1, the user's answers "color on key" + the exposure lean; review `nav-retune-review-2026-10-08/nav-review.md` §3)
+
+- **The complaint and the diagnosis (review §3).** Zurna clip on NAV v0.32: *"@38s too bright"*, *"@1m10s the boundary section is too
+  bright and unable to see the fractal shapes"*, spirals *"a little too bright"*; liked: *"when it turns green"*, the circles on the
+  filaments, the spirals inward. Three brightness terms: (1) the interior smoulder `par²·(.35+.3 bass)` maxes when loud intensity pins
+  ρ→.98 beside a root, so the loudest STEADY bars wash the centre to near-white (baseline SeeYouDrop 39.2 s centre 0.965, Vienna 86.2 s
+  0.922); (2) the boundary flash `mix(col, mix(white, pal·2, .6)·uPal.w, edge·(.3+.4 hit))` never scales with how much boundary is on
+  screen; (3) "green" was the hue wheel (`LOOK.hue` drifts ~a turn per 20 s at eS 1) passing the green third, 3–10× the luminance of
+  the blues. Policy taken (plan row 3): the loudest sustained bars are the MOST legible — dark interior, bright rim; white is spent on
+  transients and the drop slam only.
+- **What was built — `assets/scenes/nav2/look2.js` (new, 104 lines; the palette / exposure state index.js uploads) + four terms in
+  `shaders-v2.js`'s FS_JULIA_V2, each behind a knob whose rest is NAV's bytes:**
+  1. **The knee** (`uN2.x`, `uLum`): `col /= 1 + K·max(0, L − L0)` on the final colour before bloom, L = Rec.709 luma — the old NAV2
+     pass-6 knee back (git `3f6bcdd~1:assets/scenes/nav2/shaders.js`), interior (xy) and exterior (zw) separately. Final numbers
+     `LUM_IN = (0.3, 1.5)`, `LUM_EX = (0.45, 1.5)` (the sweep below).
+  2. **The smoulder follows loudness, not the root** (`uN2.y`, `uSmo`): `sg = mix(SMO.LO, SMO.HI, baseLight(loudRel, loudRange,
+     loudAbs, eS)) · pw`, `pw = sstep(SMO.R0, SMO.R1, ρ)` in INT (ρ = e^lnr of the cycle chart — the old `sstep(.8,.98,ρ)` step
+     widened to a gradient from ρ .5) and the navigator's own `par` elsewhere (the bridge's 1 − t). `baseLight()` is §63/§67's
+     `loudlight.js` as DUST uses it (fallback `eS` when `&loud=0`, so that A/B stays exact). The shader multiplies by the old
+     `(.3 + .7 bands)`; the no-chart branch takes half. Final `SMO = {LO .12, HI .4, R0 .5, R1 .98}` — against the old gain .35 + .3 bass (up to .65 at a root).
+  3. **The boundary flash is the snare's** (`uN2.z`, `uFl`): `mix(col, mix(pal(t+.2)·2, white, WHITE)·uPal.w, edge·(ON + HIT·env))`,
+     `env` = `snareAmp` placed by `snareEvt` (§70's lane, decaying over .14 s) instead of v3's `hit`; `FL = {WHITE .15, ON .3, HIT .4, TAU .14}` (white .4 → .15).
+     No edge-coverage estimate: nothing on the CPU side knows how much boundary is on screen for free, so the always-on part stays .3
+     and the exterior knee caps it (plan row's "else" branch).
+  4. **Outside the set** (`uExtG`, `uExtK`, knob `&n2ext`): while c is not in INT the exterior branch's gain eases to `EXT.GAIN` and the
+     halo's reach `1/(1 + .011 e)` narrows to `1/(1 + .011 e · EXT.SHARP)` over .5 s. The first cut was the old `uExtG .35` dim alone:
+     CyborgNinja 55–60 (the dust after the 0:48 drop) read medY 0.059 / grad 0.0067 against the baseline's 0.213 / 0.0119 — a dim keeps
+     a flat wash flat, only darker. A narrower halo gives the dust back its edges. Final `EXT = {GAIN 1 (no dim), SHARP 1.5, TAU .5}`.
+  5. **Colour on key** (`K2.key`, CPU side): `uPal.x` and `uTint` (and the orbit dots `uCol`, the PiP's `uPal`/`uTint`/`uPc`) take the
+     hue of `mkAnchor()` from `keycolour.js` with `key / mode / keyConf / valence / harmAngle / modeShade` — the recipe TORUS2 / GIELIS /
+     DUST use, so one key is one colour across scenes — with the OLD drift (`LOOK.hueT`) as the mood hue the anchor slides back to when
+     `keyConf` < KEYC1 (.3): a keyless section is the v0.2 drift, not a random hue. **Convention:** keycolour's hue is palM's cosine
+     wheel (.02 red-pink, .55 teal, .67 green); NAV's `pal()`/`uTint` are hsv's (.33 green) — the mirror image, so `hueT = frac(−hue)`.
+     The drift becomes a **step per phrase**: on each `phrase16Pos` wrap the offset walks `0, +1/12, 0, −1/12` turns around the key
+     hue (the dominant's side, back, the subdominant's side, back — one fifth on the wheel), eased over a beat (τ = 60/bpm/3), weighted
+     by the anchor's confidence. `&key=<0..11>` pins the key as on TORUS2 / GIELIS (`hooks.key(k, m)`); `&kc=0` and `&shade=` act through
+     keycolour.js as everywhere.
+     **Which keys are green** (`keyHue(k, m)` in look2.js, hsv hue at rest — no shade, valence .5; green ≈ .22–.42):
+     major: C .99 red · C# **.22 green** · D .90 magenta · D# .13 yellow · E .81 violet · F .04 red · F# .72 blue · G .95 magenta · G# .17
+     yellow · A .85 magenta · A# .08 orange · B .76 violet. minor: **Cm .20 green** · **C#m .43 green** · Dm .66 blue · **D#m .34 green** ·
+     Em .57 blue · **Fm .25 green** · F#m .48 cyan · Gm .71 blue · **G#m .39 green** · Am .62 blue · **A#m .29 green** · Bm .52 cyan. So the
+     green the user likes is the MINOR keys' colour (the mode's pull toward COOL lands the odd fifths on green, the even ones on blue);
+     Malicious (C minor, §84) is green, and `modeShade` leans a minor key's III / VI / VII bars toward yellow-green per bar.
+- **The knobs (hooks on `#test`, so `&n2lum=0` etc. in the URL; `look2.js knob()`):** `&n2lum=0` knee off · `&n2smo=0` the old par²
+  smoulder · `&n2fl=0` the old flash · `&n2ext=0` no exterior dim / narrowing · `&n2key=0` the old hue drift; a comma list sets a term's
+  numbers and turns it on (`n2lum=L0,K[,L0x,Kx]`, `n2smo=LO,HI[,R0,R1]`, `n2fl=WHITE,ON,HIT`, `n2ext=GAIN,SHARP[,TAU]`) — `tools/lumtrace.js
+  --x='…'` passes them, one run per setting. Key 1 (id 0) is the old look whole.
+- **The identity proof.** `PORT=8841 IDS="0 8" tools/scene-md5.sh v034id '&n2lum=0&n2smo=0&n2fl=0&n2key=0'` → s8 = s0 = `fb74fee4… /
+  8a0715df…` (the uniforms' rest values are IEEE identities: `uN2` 0 takes the old branches, `uExtG`/`uExtK` 1 are `x·1.`), and s0 is
+  unchanged in every run of this step. Default-on s8: `a6551c69… / d4cfb4b1…`.
+- **The ruler, before (id 0, v0.33 baselines) → after (id 8, this tree), `tools/lumtrace.js` on the three windows, per 5 s** (medY ·
+  grad · ctr · clipMx; the CyborgNinja id-0 baseline was taken for this step and added to `baseline/`; sheets under `after-s99/`):
+
+  ```
+  SeeYouDrop 25-60   medY         grad            ctr          clipMx        Vienna 60-95    medY         grad            ctr          clipMx
+  25-30  .150→.152  .0127→.0132  .453→.448  .054→.001           60-65  .213→.170  .0169→.0175  .355→.325  .048→.002
+  30-35  .218→.202  .0114→.0166  .490→.523  .118→.002           65-70  .103→.105  .0151→.0159  .180→.328  .003→.001
+  35-40  .244→.298  .0140→.0135  .576→.572  .176→.001           70-75  .186→.204  .0125→.0171  .132→.321  .043→.007
+  40-45  .318→.244  .0127→.0134  .825→.661  .124→.002  (root)   75-80  .060→.070  .0097→.0120  .036→.037  .001→.001  (breakdown)
+  45-50  .218→.201  .0122→.0152  .397→.521  .002→.002           80-85  .173→.186  .0144→.0174  .253→.419  .009→.001
+  50-55  .190→.124  .0168→.0160  .417→.358  .100→.002  (brkdn)  85-90  .193→.217  .0182→.0163  .236→.245  .092→.002  (loudest)
+  55-60  .157→.170  .0116→.0125  .285→.279  .001→.001  (drop)   90-95  .149→.276  .0117→.0147  .075→.410  .044→.001
+  ALL    .204→.200  .0131→.0143  .496→.515  .176→.002           ALL    .158→.177  .0141→.0158  .165→.324  .092→.007
+  CyborgNinja 40-70  medY         grad            ctr          clipMx     frame maxima (p95 / centre) baseline → after:
+  40-45  .211→.205  .0147→.0154  .636→.563  .090→.002             SeeYouDrop  .961 / .966 → .796 / .788 (40-45 row max .792 / .788)
+  45-50  .279→.228  .0136→.0132  .633→.571  .094→.001             Vienna      .937 / .922 → .855 / .759 (the .855 is ONE frame, 73.3 s,
+  50-55  .186→.271  .0116→.0151  .604→.664  .043→.002                          meanY .602 — the only meanY ≥ .6 frame of the three windows)
+  55-60  .213→.137  .0119→.0108  .591→.432  .091→.001  (dust)     CyborgNinja .949 / .944 → .776 / .776
+  60-65  .250→.192  .0158→.0161  .663→.464  .149→.001
+  65-70  .198→.192  .0119→.0121  .256→.265  .087→.001
+  ALL    .225→.218  .0133→.0138  .600→.474  .149→.002
+  ```
+  The sweep that chose the numbers (`tools/work/lum/s99/sweep*.out`, the 35–45 / 50–60 rows warmed from the long runs' own `at`):
+  the first cut (knee (0.2, 3), ext dim .35) 40-45 medY .102 / grad .0086, CN 55-60 .059 / .0067 · exposure alone (`n2key=0`) .103 — the
+  hue is luminance-neutral here, the dim is the whole story · dim .6 + halo ×3: .125 / .0098, .076 / .0075 · dim .8 ×4: .157 / .0108,
+  .091 / .0083 · no dim ×4: .195 / .0115, .107 / .0091 · **no dim ×1.5 (shipped): .244 / .0134, .152 / .0108** · a stronger exterior knee
+  (0.4, 2) ×2: .208 / .0123, .132 / .0099 · (0.35, 2.5) ×1: .234 / .0127, .156 / .0105.
+
+- **Goals, ticked or missed:**
+  - knee: centre at the loudest rows ≤ .75 — **hit** on the 5-s medians (SeeYouDrop 40-45 .661, Vienna 85-90 .245, CyborgNinja 50-55
+    .664; baseline .825 / .236 / .604) and on every frame but SeeYouDrop's 35-45 peaks (.787 / .788 — the lean's "white on the slam" is
+    now a .79); p95 ≤ .85 — **hit** on every frame except Vienna 73.3 s (.855); window-median meanY within 15 % — **hit** (SeeYouDrop
+    −2 %, Vienna +12 %, CyborgNinja −3 %); clipMx < .02 per row — **hit** everywhere (.176 → .002 at worst).
+  - smoulder: `grad` at the loudest rows ≥ the window median — **hit** on SeeYouDrop 35-40 (.0135 = the median) and within 1 % on 40-45
+    (.0134), hit on Vienna 85-90 (.0163 = the median) and CyborgNinja 50-55 (.0151 ≥ .0142); **missed** on CyborgNinja 55-60, the dust
+    after the 0:48 drop (.0108 against the median .0142 — the baseline's own .0119 was under its median too; the dust is an EXT picture,
+    not the smoulder's) and on Vienna 90-95 (.0147 vs .0163). Breakdowns darker than drops — **hit**, and better than the baseline:
+    SeeYouDrop breakdown 50-55 .124 < drop 55-60 .170 (the baseline had them REVERSED, .190 > .157); Vienna 75-80 .070 is the window's
+    darkest row. `grad` on the whole window rose on all three (+9 %, +12 %, +4 %).
+  - flash: white .4 → .15 and the hit part on `snareAmp` — built; the edge-coverage estimate — not built (nothing free gives it), the
+    knee caps the always-on part instead (clipMx says it does).
+  - colour on key: built, same anchor as TORUS2 / GIELIS; green is a key now (the table above), not a clock. Not measured by eye.
+- **Pitfalls.** (1) A short lumtrace window is NOT the long run's rows: the navigator's trajectory is a function of `at = from − warm`
+  (SeeYouDrop 40–45 centre 0.558 warmed from 27 s vs 0.223 from 17 s on one tree); probe a sub-window with `--warm` chosen so `at`
+  matches (HARNESS "Luminance ruler"). (2) The hue change alone moves luminance (green/yellow vs blue is 3–10×), so a medY delta on a
+  window confounds exposure and colour — `&n2key=0` separates them. (3) The user's `node tools/serve.js` on 8765 is never touched:
+  every run here was `PORT=8841` / `--port=8841`.
+- **Not done / open for the user's eye.** The OKLCH mapping (`shaders.js`, `&colour=oklch`) carries none of the four terms — it is still
+  NAV's bytes; the sheets are numbers, not a look — step 4 of the plan is the eye in file mode (key 9 vs key 1 on the six windows).
+
+## §100 NAV2 motion — the groove moves c: the kick lane's goldilocks, the beat breath, the sub press, the pitch lean, the trap per bar (2026-10-08, one worker; NAV2-RETUNE-PLAN step 2, the user's answer on the kick "find the goldilocks, not too much, not too little"; review `nav-retune-review-2026-10-08/nav-review.md` §2, `engine-review.md` D1 D2 D6 D7)
+
+- **The complaint and the diagnosis (review §2).** *"The set doesn't move to the music completely as I'd expect"*, *"seems like we are
+  stuck in defined locations of the set"*; liked the 33 s moment on the Zurna clip (the Misiurewicz kick landing: the interior goes dark
+  mid-flight, the old interior re-fills with exterior spirals); the spirals at 42 s *"too chaotic"*. Inside a bulb only `intensity` (the
+  radius) and `harmUnw` (±1.3 rad of φ) moved c, both slow emas; the beat reached c only through v3's onset picker (`onset ∧ hitStrength
+  > .55 ∧ eS > .3` — rare on a groove, 1.4–2.8 jumps per bar when it did fire, see the table); the trap line's half turn per beat
+  re-threaded every filament each beat; nothing read the kick's size, the sub, the bass note or the bar.
+- **What was built — `assets/scenes/nav2/move2.js` (new, 98 lines: the state, the numbers, `tighten()`, `kickGate()`, `knob3()`) + seven
+  lines in `nav.js` (the import, `tighten()` before the chart, the two h targets ×(1 − T), the chart's `hb = h·(1 − breath)`, the φ target
+  + lean, the kick gate) + index.js (the knobs as hooks, feats, help, n2info, the trap angle). Every term behind a knob whose rest is
+  NAV's bytes: `tools/test_nav2.js` pass A drives the clone 48 s with the five knobs off against NAV's own update() on one fake timeline
+  and the two trajectories are the same to the bit (max |c, h, vtime difference| 0); the real-music replay below says the same (the all-off
+  row = NAV's row on all six windows).**
+  1. **The kick → Misiurewicz on the ears' kick lane** (`kickEvt`, placed by `kickAge`: the spring is stepped by the age on the event frame,
+     ≤ 30 ms), sized by `kickAmp` through §74's sqrt law `k = .3 + .55·√max(amp, .31)` (a size-1 hit = NAV's .85; the floor .31 is the
+     lane's own honest-hit threshold) — `kickAmp` is read on the event frame, where it is already the hit it belongs to (§74: `kickVel`
+     there is the PREVIOUS hit's). NAV's refractory kept (`kick.x < .15`), the drum / bridge vetoes kept, and two new ones: **INT only**
+     (no half-size jump in EXT: the exterior is the drop's, §95) and **the void** (`buildLive ≥ .4` = the live detector armed, or `park ≥
+     .6`: a jump in the void reads as a twitch). **The gate has two numbers, THR (the smallest `kickAmp` that jumps) and HOLD (beats since
+     the last jump before another may — in BEATS, so 90 and 150 BPM get the same jumps per bar; 0 = the spring refractory alone).**
+  2. **The beat breath on the radius** — `beatgrid.js spin()`'s profile (§61: the crest ON the line, the glide between, the downbeat ×1.5,
+     §78's `acc` from the tongue ladder's 16-beat rise = the double time makes the crest BIGGER, never faster), read as `crest = (step/base)
+     ·(φ'(u) − g)/((1 − g)·2/w)` (1 on a plain beat's line, 1.5 on the downbeat, up to 1.875 with the accent), scaled by `clockConfPcm`.
+     The press is applied to the chart's h itself, AFTER the spring (`hb = h·(1 − AMP·conf·crest)`: ρ = 1 − hb in a bulb, r = 1 + hb on
+     the cardioid, toward the rim on the crest, back between) — the raised cosine IS the smoothing; through the w 3.5 spring (the first
+     build) the realised swing was a third of the press. `BREATH.AMP = .3`.
+  3. **The sub press** — `subGate` open → the h TARGET ×(1 − DEPTH·subE), shut → ×(1 + DEPTH·|subE|) (toward the bulb's centre), `subE` an
+     ema (τ .12 s) of ±1. §75's cold start honoured: nothing until the gate has been seen open once in the run (`subSeen`), so a track's
+     sub-less intro and the fake timeline (no sub) are NAV. `SUB.DEPTH = .2`.
+  4. **The bass pitch lean** — `subNote` while the gate is open: the interval from `key` wrapped to −6..5 semitones leans φ by `GAIN·d/6`
+     (ema τ .15 s), released toward 0 over .6 s when the sub leaves; added to NAV's `1.3·sin(harmUnw…)` target and clamped to the bulb's
+     ±1.3 rad. `PITCH.GAIN = .6` (a tritone = .6 rad). A glide up leans one way, down the other; never a jump (the ema).
+  5. **The trap line turns per bar** — `ta = π·(¼ + ACC)·ang` with `ang` the same spinner in beat units: a quarter turn per beat = π per
+     bar, plus `ACC = .12` turns per beat as the accent, all on the profile (the crest on the line, ×1.5 on the downbeat, the double time's
+     accent) — 1.80 π per bar measured on the fake lattice against NAV's 4 π (the half turn per beat); monotone, never backward.
+  6. feats: `kickEvt kickAge kickAmp subGate subNote clockConfPcm barPos tongue21 tongue41 tongueOn` (spin() reads the last four), each
+     with a help line; unpublished fields leave their term at rest (node without the lane → v3's picker; the fake timeline → no sub, no
+     breath because its `clockConfPcm` is 0 — the PCM clock publishes it in the file and live modes).
+- **The ruler — `tools/navkicks.js` (new).** `record <Track> <from> <to>` is one deterministic headless run (CLOCK=1, GPU=1, port 8851) that
+  saves every MS field per frame (CARD.TRACE, the frozen trace format) plus arc / seed.a / seed.th from a rAF hook; `replay <json> --x=…`
+  drives nav2's real update() over the recorded MS at 60 Hz in node with the knobs applied through the scene's hooks (the navigator warms
+  over the trace's first 8 s, the window is counted); `sweep` runs one replay per (window, setting) in its own process. Counted: jumps (a
+  kick rise, whichever gate), bars, jumps per bar (+ per 5 s), the monitor's rule, the max per-frame cPath step (all / INT only / p99 /
+  mean) and the radius's swing per beat inside a bulb (max − min of ρ over each beat). `NAV` in the list is id 0 itself, the control. The
+  traces are `tools/work/navkicks/*.json` (gitignored, ~5.5 MB each; one minute each to record).
+- **The goldilocks sweep — jumps per bar, six windows, the final code (`tools/work/navkicks/sweepF.txt`; the full 22-row grid THR
+  {.45 .55 .65 .75} × HOLD {0 1.5 2 2.5 3} beats in `sweep6.txt`):**
+
+  | setting | SeeYouDrop 28–58 (4/4, 150) | Vienna 25–55 (90, kick on 1 & 3) | Vienna 85–100 (double time) | CyborgNinja 40–70 (16ths, 808s) | Malicious 140–170 | IBelongHere 40–75 |
+  |---|---|---|---|---|---|---|
+  | NAV (id 0, v3's picker) | 2.40 (45/19) | 2.81 (40/14) | 1.55 (12/8) | 1.75 (35/20) | 1.43 (25/18) | 1.57 (27/17) |
+  | `n2kick=0` (the clone, picker) | 2.40 | 2.81 | 1.55 | 1.75 | 1.43 | 1.57 |
+  | THR .45, HOLD 0 — the most | 1.55 | 1.82 | 1.81 | **2.35** | 0.91 | **2.03** |
+  | THR .31, HOLD 2 | 0.80 | 1.12 | 1.29 | 1.30 | 0.69 | 1.10 |
+  | THR .45, HOLD 1.5 | 0.91 | 1.40 | 1.29 | 1.45 | 0.80 | 1.22 |
+  | **THR .45, HOLD 2 — chosen** | **0.80** | **1.12** | **1.29** | **1.20** | **0.69** | **1.04** |
+  | THR .45, HOLD 2.5 | 0.69 | 1.12 | 1.16 | 0.90 | 0.57 | 0.87 |
+  | THR .45, HOLD 3 | 0.59 | 0.84 | 1.03 | 0.85 | 0.51 | 0.70 |
+  | THR .55, HOLD 2 | 0.75 | 1.12 | 1.29 | 1.15 | 0.46 | 0.81 |
+  | THR .65, HOLD 2 | 0.64 | 0.77 | 1.03 | 1.00 | 0.23 | 0.70 |
+  | THR .75, HOLD 2 — the least | 0.43 | 0.49 | 0.90 | 0.70 | **0** | 0.64 |
+  | THR .75, HOLD 0 | 0.59 | 0.70 | 1.03 | 0.90 | 0 | 0.93 |
+
+  The chosen row's 5-s rows: SeeYouDrop 1.67 1.54 1.0 **0** 0.67 **0** (43–48 the void + the drop's EXT, 53–58 the breakdown: 0 as asked);
+  Vienna 1.07 1.33 1.0 1.14 0.5 1.14; Vienna 85–100 1.6 0.73 1.6 (≤ 2 on the double time); CyborgNinja 1.43 1.54 1.54 **0** 1.23 1.54
+  (55–60 the 0:48 drop's exterior); Malicious 0.33 0.36 1.0 0.67 1.0 0.73; IBelongHere 1.6 1.2 0.44 0.44 0.4 1.6 1.6. **Why this row:**
+  every window lands in .69–1.29 (median 1.08) — the only rows with all six inside .5–1.5 are THR .31–.45 at HOLD 2, and .45 is the one that
+  keeps CyborgNinja's 808 notes (denK up to 7/s) from being the thing that jumps (THR .31 = the lane's floor, every honest note passes);
+  the hold does the per-bar rationing a threshold cannot (on a 4/4 groove every kick reads ~the same `kickAmp`, so THR alone is all or
+  nothing per section — HOLD 0 gives 1.5–2.4). THR .55 loses Malicious to .46 and .65 to .23 ("too little"); HOLD 2.5–3 drags SeeYouDrop
+  under .7. v3's picker, the "too little" guess, was in fact the MOST (1.4–2.8/bar, and in EXT at half size) — its hits were many and
+  un-rationed, which is the "chaotic" the user saw after drops as much as the trap.
+- **The breath's size and the continuity ruler.** ρ swing per beat inside a bulb (median / p90 over the window's beats, `sweepT.txt`): all
+  terms off = NAV's own .007/.056 · .003 · .008 · .004 · .006 · .047/.185 (SeeYouDrop · Vienna · Vienna-dt · CyborgNinja · Malicious ·
+  IBelongHere; the walk between bulbs); the breath alone **.070/.101 · .006 · .016 · .104/.169 · .080/.111 · .145/.187**; everything on
+  .072 · .004 · .049 · .125 · .111 · .141 (Vienna 25–55 sits on the cardioid: r breathes there, ρ is not counted). The AMP sweep
+  (`n2breath=.2 .3 .45 .6`, four windows): swing .047/.071/.115 → .070/.104/.145 → .086/.157/.191 → .101/.210/.234; the max per-frame cPath
+  step on INT frames stays at NAV's walk (.050/.052/.051 at .3 — NAV .048/.052/.051) through .3, reaches **.067** on IBelongHere at .45 (over
+  the monitor's .06) and 2 violations at .6 — **.3 is the largest amplitude with margin under the rule, and ρ .07–.15 per beat is a visible
+  breath (1 − ρ changes by a half)**. Max per-frame cPath step, all six windows, everything on: INT-only .050 .064 .060 .052 .038 .051
+  (NAV .048 .064 .060 .052 .036 .051), p99 .045 .060 .057 .043 .033 .045, the whole trace .20 .064 .060 .17 .038 .051 — the .17–.20 are
+  EXT, the exterior spring's launch after a drop, NAV's own (its row has them).
+- **The monitor.** `tools/test_nav2.js` pass A and pass B viol [] (pass B n 2879, fast 106, max step .176 in EXT); the fake timeline in the
+  page (`accept.sh`'s MON8 injection, 30 s) viol [] (n 1007, fast 8, max .0832, 25 jumps on its lattice); SeeYouDrop 25–60 file mode on id 8: **10 violations, all EXT,
+  all inside 1.1 s after the drop at 43 s** (page ms 26378–27396; the replay sees 4 of the same family, its 300 ms rule is in frames) — and
+  **id 0, NAV itself, on the same window: 8 violations, all EXT, the same second** (the first chain's MONF0, 26381–27214). The exterior
+  spring's launch along a landing ray after `navDrop` (lg from −2.2 + 1.7·dropStrength toward `reach` while θ settles) steps .1–.27 per
+  frame right where the ray table is densest; v3's picker hid them behind its own half-size EXT kicks (a kick rise is a legal frame).
+  Pre-existing, not §100's — logged as an open item below, not fixed here (the exterior is NAV's drop, §95).
+- **Luminance (the §99 ruler must not regress)** — `tools/lumtrace.js` at id 8 on the three windows, the sheets in
+  `nav-retune-review-2026-10-08/after-s100/` (§99's in `after-s99/`); ALL rows, §99 → §100: SeeYouDrop 25–60 medY .200 → .192, p90Y
+  .286 → .277, clip .001 = .001, grad .0143 → **.0145**, centre .515 → .380, rim .380 → .372; Vienna 60–95 medY .177 → .176, grad .0158 →
+  .0157, centre .324 → .323, rim .320 → .317; CyborgNinja 40–70 medY .218 → .213, p90Y .307 → .298, grad .0138 = .0138, centre .474 → .426,
+  rim .408 → .409. No clipped frame on any window (clipFrac ≥ .25 on 0 of 1003), grad (the structure) equal or up on all three, p95 down a
+  hair; the one real move is the centre on SeeYouDrop and CyborgNinja — darker, because the kick flights (14 on the SeeYouDrop window
+  against v3's picker, which the §99 sheet had) and the breath put the interior mid-flight more often; that IS the moment the user liked
+  (Zurna 33 s), and the loudest rows keep their order (SeeYouDrop 35–40 .276 > 50–55 .112, Vienna 75–80 .073 the darkest).
+- **Knobs** (`#test`, hooks, `knob3()`): `&n2kick=0` v3's picker · `&n2kick=THR[,HOLD[,REFR[,GAIN[,VOID]]]]` · `&n2breath=0` / `=AMP` ·
+  `&n2sub=0` / `=DEPTH[,TAU]` · `&n2pitch=0` / `=GAIN[,TAU[,REL]]` · `&n2trap=0` the half turn per beat / `=ACC`. `n2info()` carries
+  `tight breath crest subE subSeen lean trapA fires lastK acc`.
+- **Proof.** `IDS="0 8" tools/scene-md5.sh s100`: s0 `fb74fee4… / 8a0715df…` unchanged (s8 `95da6a49… / 56869e79…`, the workbench's own — it moves with every retune);
+  `node tools/check.js` 0 fail (nav2: index.js 304, nav.js 295, move2.js 98 lines); `node tools/test_nav2.js` all ok (the identity pass,
+  the knobs-on pass with its numbers, the cost median .023 ms); `node tools/license.js` clean. **The event-frame trap, met once more:** a rAF hook on `#test` (the fake
+  timeline, 12 s) saw `CARD.MS.kickEvt` true on 0 frames while the lattice had set `kickAmp` — a one-frame flag set inside an engine frame
+  is gone by the time a rAF-paced reader looks — so the gate fires on voice.js's rule, the flag OR the age crossing back under FRESH (.06
+  s) — with it the same 12 s give 4 jumps (HOLD 2 beats in a 6-s sustain), and the file-mode window (frame-locked) is unchanged: 14 fires.
+- **Pitfalls.** (1) `clockConfPcm` is 0 on the fake timeline (the PCM clock does not run there) — the breath is silent on `#test` without
+  a track; the trap, the kick lane (its lattice) and the sub (absent) are what the s8 md5 pair sees. (2) The replay's warm-up is the
+  trace's own 8 s, like lumtrace's — the page runs from `at`, so the two agree; a window counted from a cold navigator reads the first bar's
+  walk as motion. (3) The replay reconstructs `arc`, `seed.a`, `seed.th` from the rAF hook (the trace format drops strings and objects):
+  2280 of 2280 rows aligned on every window. (4) `pkill -f` with a pattern that is also in your own command line kills your own shell.
+- **Not done / open.** The eye (step 4 of the plan: key 9 vs key 1 on the six windows). NAV's exterior launch after a drop violates the
+  continuity rule on real music (id 0 as much as id 8; the fake timeline never showed it) — a §101+ item for the exterior, not touched
+  here. The `oklch` mapping (`shaders.js`) is still NAV's bytes. The pitch lean is relative to `key`; when `keyConf` is 0 it leans relative
+  to C — a `tonic` fallback is a line if the eye wants it. Items 1–5 landed in one code commit (one module, one harness) rather than five.
+
+## §101 NAV2 navigation — the phrase walk along the Farey ladder, Green's ruler as the fitness, drops that land somewhere new (2026-10-08, one worker; NAV2-RETUNE-PLAN step 3, the user's answer "8. a/c"; review `nav-retune-review-2026-10-08/nav-review.md` §2 and §4)
+
+- **The complaint and the diagnosis.** *"After watching NAV a lot, seems like we are stuck in defined locations of the set."* Review §2: the
+  only discrete chooser of a place is `interval` → one of twelve bulb roots, and every drop lands in the same dust (θ springs from the
+  landing ray to `harmUnw/TAU + seed.th`, the same spot each time). **Measured on the traces, the picture is worse than the review said:
+  on real music `interval` FLICKERS** — Vienna 25–55: 40 runs in 30 s, 34 of them shorter than 4 beats; SeeYouDrop 0–120: 33 runs;
+  IBelongHere 40–75: 19 — and every flicker sent NAV's beat-gated retarget on a 3–5 s rim walk it never finished: c was in TRANSIT
+  (the near-circle with a dissolving pinch) more than in a place. The places ruler below counts a place only when c sat in it ≥ 1 bar:
+  NAV dwells in 0–3 places per 30-s window and 5 in the first two minutes of SeeYouDrop.
+- **What was built — `assets/scenes/nav2/walk2.js` (new, 201 lines) + four lines in `nav.js` (the import, the target line, the drop
+  launch, the exterior θ target) + index.js (three knobs as hooks, two feats, n2info). Every term behind a knob whose rest is NAV's
+  line: `tools/test_nav2.js` pass A (the eight §100/§101 knobs off) is NAV's trajectory to the bit (max |c, h, vtime difference| 0);
+  the replay's all-off row = NAV's row on all seven windows.**
+  1. **The phrase walk (a).** `interval` still names the SPECIES (its p/q bulb). On a phrase boundary (the 16-beat wrap of `phrase16Pos`),
+     a `barNovelEvt` / `sectionEvt` (a new section is a reason to move; at most one such step per bar), or the ruler's early call, the
+     target steps along the Farey ladder: phrase k → the species, k+1 → a place on its ladder, k+2 → the species, k+3 → another place.
+     The ladder of p/q (`ladder()`): its two Farey neighbours in F_DEPTH (the fractions bracketing it with q ≤ 7 — p/q itself may be
+     deeper, 1/15 is) and the two mediants (p+a)/(q+b), reduced, q ≥ 2, each above the size floor `sin(πp/q)/q² ≥ MINSIZE` (.008: 1/7 =
+     .0089 passes, 2/9 = .0079 and 1/8 = .0060 do not — the tiny-bulb trap). The twelve species' ladders: 0/1 → [1/7] · 1/15 → [1/7] ·
+     1/8 → [1/7] · 1/5 → [1/6 | 1/4] · 1/4 → [1/5 | 2/7] · 1/3 → [2/7 3/10 | 2/5 3/8] · 2/5 → [1/3 3/8 | 3/7] · 1/2 → [3/7 4/9 | 4/7 5/9] ·
+     3/5 → [4/7 | 2/3 5/8] · 2/3 → [3/5 5/8 | 5/7 7/10] · 4/5 → [3/4 | 5/6] · 7/8 → [6/7]. Each place is a real bulb object (`mkBulb`:
+     root, centre, rays, R, rhoMax by baby.js's float32 rule, cached by identity — nav.js compares `N.bulb !== b`), so **NAV's own rim
+     walk takes c there** (leave through the root, α along the cardioid, enter, climb to the I-depth): continuity by construction, no new
+     cut. The walk lives on M: in a baby, or while a baby is wanted, the target is the species (babySwap's `tb[i]` stays honest).
+     **The step waits**: a step asked at the phrase line is taken on the next BAR line once c has sat in its place DWELL (1) bars (`here`
+     = inside the target past its root, or on the cardioid for the 0/1 species); stuck in transit for 2 phrases it goes anyway. **The
+     species is debounced**: a new `interval` names the species after HOLD (1) bars — the flicker above was the thing to fix; `HOLD 0`
+     is NAV's instant retarget and the sweep below carries that row.
+  2. **Green's ruler as the fitness (c).** `probeQ(c)` — green.js's trace of the 1.06-equipotential and 4πA/L² with G and the previous
+     curve untouched (.017 ms) — gives each candidate's Q at the radius NAV would sit at (ρ = .12 + .8 I, c = centre + ρ·(root − centre):
+     the multiplier chart agrees to 3 decimals, table below). Loudness on the TRACK'S OWN ladder (`baseLight(loudRel, loudRange,
+     loudAbs)`, §63 — `loudRel` spans 18 LU and a track rarely 11, so .72–.94 was "always loud" on SeeYouDrop) decides over the whole
+     pool: `s = (ladder − .5)·2·W`, |s| > .1 → loud picks the LOWEST Q (the most deformed set), quiet the HIGHEST (the calmest), never
+     the same side place twice running; |s| ≤ .1 (or `&n2green=0`) → the sides alternate (low, high) and the neighbour / the mediant take
+     turns. **Feedback**: while loud, the frame's measured Q above QMAX (.8) for more than BARS (1) bars — a calm picture under a loud
+     passage — asks an early step (≥ 8 beats after the last). The honest note on the ruler: the 1.06-equipotential is a coarse Q — the
+     big bulbs (1/2 .63–.70, 1/3 .65–.69, 2/5 .67, 3/7 .68, 3/8 .68, 4/9 .69) read "deformed", the small-p ones near the cusp (1/6 .77,
+     1/7 .81, 1/8 .84, 1/9 .86) "calm"; within a ladder the spread is often .69 vs .78 (1/5's: 1/4 .70 against 1/6 .78), and 1/2's four
+     candidates are all .68–.69 — there the ruler is mute and the sides alternate.
+
+     | p/q | size | Q at ρ .5 (lin / chart) | ρ .85 | ρ .97 | | p/q | size | ρ .5 | ρ .85 | ρ .97 |
+     |---|---|---|---|---|---|---|---|---|---|---|
+     | 1/2 | .250 | .630 / .630 | .681 | .698 | | 1/7 | .0089 | .811 / .811 | .814 | .815 |
+     | 1/3 | .096 | .649 / .648 | .676 | .686 | | 2/7 | .016 | .686 / .686 | .692 | .694 |
+     | 1/4 | .044 | .683 / .682 | .699 | .705 | | 3/7 | .020 | .681 / .681 | .686 | .687 |
+     | 1/5 | .024 | .728 / .728 | .738 | .741 | | 1/8 | .006 | .839 / .839 | .840 | .841 |
+     | 2/5 | .038 | .668 / .668 | .678 | .682 | | 3/8 | .014 | .677 / .677 | .681 | .683 |
+     | 1/6 | .014 | .774 / .774 | .779 | .781 | | 4/9 | .012 | .688 / .688 | .691 | .692 |
+
+     (c = 0: 1.000 · c = .2: .959 · the Misiurewicz point i: .358 · an exterior c: .654.)
+  3. **Drops land somewhere new.** NAV's exterior rule stays (out 8 beats, 48 at a peak, `dropLiveEvt`, the same `reach`); the drop is a
+     section event — the walk steps, and never onto the species it just left — and `dropLaunch()` launches c along the NEW place's
+     landing ray, the two rays of the pair alternating per drop. Outside, the θ target is the harmony's drift FROM that ray
+     (`extTheta`: base + (harmUnw − harmUnw at launch)/TAU) instead of NAV's spring from the ray to `harmUnw/TAU + seed.th`; the loud
+     exit's launch takes its base the same way at the OUT → EXT frame. HOME returns to the walk's current target (NAV's own line).
+  4. **NAV's EXT launch violations (§100's open item) — gone with 3.** The 8–10 monitor violations inside 1.1 s after the 43 s drop on
+     SeeYouDrop WERE the θ spring: `navDrop` set θ to the landing ray with v = 0 and NAV then sprang it a fraction of a turn toward
+     `harmUnw/TAU + seed.th` while lg launched — .1–.27 per frame where the ray table is densest (the "exterior sweep" the eye saw after
+     every drop). With θ's target AT the ray only lg moves. The page monitor, SeeYouDrop 25–60 file mode, id 8: **viol [] (n 2100, fast 0,
+     max .0558)** against §100's 10 and **id 0's 8 on the same run (MONF0: n 2100, fast 45, max .3213, the first at page ms 26510 = the
+     drop)**; the replay says the same on all six windows (the table: `n2drop=0` alone puts 7 / 8 / 13 back on SeeYouDrop 28–58 /
+     CyborgNinja / the full track).
+  5. **A hazard met twice and closed — the root crossing.** NAV takes a new target on a beat; if that beat falls while c is climbing into a
+     root (h in −.1 … .02, the spring still carrying it up), the cardioid branch sets `N.bulb = BULBS[0]` at once and the one overshoot
+     frame (h = +.001) draws the 0/1 chart = the cusp (.25, 0): a .35 jump (Malicious 164.2 s, the debounced species switching to the
+     cardioid; then Vienna 43.4 s with HOLD 0, a 1.0 jump the same way). NAV's own latent hazard (its retarget is the same line); in the
+     clone `walkTarget()` returns `N.target` itself through that band, and defers the species switch and the timed-out step. The eight-
+     and nine-hundred-frame replays of all seven windows are clean of it.
+  6. feats: `barNovelEvt sectionEvt` (+ `phrase16Pos loudRel loudRange loudAbs intensity presence harmUnw barPos beatCount` already there),
+     each with a help line; an unpublished field leaves its term at rest (no phrase clock → no step; the fake timeline has the clock).
+- **The ruler — `tools/navkicks.js replay … --places=1` (extended; `--w=1` logs each step, `--trace=a,b` a frame-by-frame line, `--runs=1`
+  the run list).** A PLACE is a bulb past its root (`P<n>:` inside a baby), the cardioid when it is the target and c is off the rim, or the
+  exterior as ONE state; 'rim' and 'bridge' are transit. Counted: distinct places dwelt ≥ 1 bar (4 beats), per minute of the window, the
+  visits, the exterior landings (θ in 24ths at each excursion's first frame, distinct count), Green's Q median over INT frames on loud
+  rows (the track's ladder ≥ .6) against quiet rows (< .4) — measured on id 0 too (the replay calls `measure()` for it). The same jumps
+  per bar, viol and max step as §100. `tools/work/navkicks/SeeYouDrop-0-120.json` is the new full-track trace (7200 frames, 17 MB;
+  `MAX_CHUNKS` 40 → 80).
+- **Places per minute and the rest, seven windows (`tools/work/navkicks/places.txt`; cell = places dwelt ≥ 1 bar (per min), visits, L
+  distinct exterior landings, Q loud / quiet, viol):**
+
+  | setting | SeeYouDrop 28–58 | Vienna 25–55 | Vienna 85–100 | CyborgNinja 40–70 | Malicious 140–170 | IBelongHere 40–75 | **SeeYouDrop 0–120** |
+  |---|---|---|---|---|---|---|---|
+  | NAV (id 0) | 3 (6) v3 L2 Q.682/– viol 5 | 0 (0) v0 L0 Q.783/– 0 | 2 (8) v2 L0 Q.763/.578 0 | 2 (4) v2 L1 Q.771/– 3 | 2 (4) v5 L0 Q.885/.769 0 | 2 (3.4) v4 L0 Q.732/.627 0 | **5 (2.5) v9 L3 Q.671/.734 9** |
+  | §100 (walk, green, drop off) | 3 (6) v3 L2 Q.729/.666 4 | 0 (0) v0 Q.768/.806 0 | 1 (4) v1 Q.778/.578 0 | 2 (4) v2 L1 Q.765/– 2 | 2 (4) v5 Q.850/.768 0 | 2 (3.4) v4 Q.746/.614 0 | 5 (2.5) v9 L3 Q.669/.721 11 |
+  | walk + green + drop, HOLD 0 | 4 (8) v4 L2 Q.777/.666 0 | 0 (0) v0 Q.768/.806 0 | 1 (4) v1 Q.781/.579 0 | 3 (6) v3 L1 Q.762/– 0 | 3 (6) v5 Q.842/.768 0 | 2 (3.4) v3 Q.746/.614 0 | 5 (2.5) v9 L3 Q.676/.721 1 |
+  | `n2green=0` (walk + drop) | 4 (8) v4 L2 Q.777/.746 0 | 2 (4) v2 Q.679/.675 0 | 3 (12) v4 Q.632/.770 0 | 4 (8) v5 L1 Q.759/– 0 | 3 (6) v5 Q.845/.858 0 | 5 (8.6) v6 Q.678/.613 0 | 6 (3) v13 L3 Q.587/.719 1 |
+  | `n2drop=0` (walk + green) | 5 (10) v5 L2 Q.682/.745 **7** | 2 (4) v2 Q.679/.684 0 | 3 (12) v4 Q.632/.770 0 | 4 (8) v5 L1 Q.758/– **8** | 3 (6) v5 Q.845/.858 0 | 5 (8.6) v6 Q.678/.613 0 | 8 (4) v14 L4 Q.587/.719 **13** |
+  | **all on — §101** | **5 (10) v5 L2 Q.684/.745 0** | **2 (4) v2 Q.679/.684 0** | **3 (12) v4 Q.632/.770 0** | **4 (8) v5 L1 Q.758/– 0** | **3 (6) v5 Q.845/.858 0** | **5 (8.6) v6 Q.678/.613 0** | **7 (3.5) v13 L4 Q.584/.719 2** |
+
+  **Reading.** Places dwelt: 3 → 5, 0 → 2, 2 → 3, 2 → 4, 2 → 3, 2 → 5 on the six windows and 5 → 7 on the full track (9 → 13 visits,
+  3 → 4 distinct landings); the HOLD-0 row says the debounce is what lets the walk breathe (without it the interval's flicker resets the
+  walk before a place is dwelt: Vienna 0 → 0, IBelongHere 2 → 2). The full track's places: 1/2 · 3/7 · 4/7 · EXT · 1/5 · P3:1/5 · P3:1/4
+  (NAV: 1/2 · 1/5 · EXT · P3:1/5 · P3:1/4). Q loud vs quiet with everything on: loud LOWER (busier) on SeeYouDrop 28–58 (.684 / .745),
+  Vienna 25–55 (.679 / .684), Vienna 85–100 (.632 / .770), IBelongHere (.678 / .613 — the one the other way, both rows calm), the full
+  track (.584 / .719); Malicious .845 / .858 (the cardioid and 1/7 the whole window, the ladder of 0/1 has nothing busier); NAV's full
+  track .671 / .734 and the §100 row .669 / .721 — the loud median moved .67 → .58 while the quiet one stayed. The monitor: viol 0 on
+  the six windows (NAV 5 / 0 / 0 / 3 / 0 / 0, all exterior launches), 2 on the full track (36.78 s HOME .082, 63.23 s EXT .063 — the
+  exterior springs' own steps mid-excursion, NAV's family: its row has 9), max step .029–.158. Jumps per bar unchanged from §100 (the
+  lane is not touched).
+- **Luminance (the §99 ruler, `after-s101/` against `after-s100/`), ALL rows:** SeeYouDrop 25–60 medY .192 → .187, p90Y .277 → .278,
+  clip .001 = .001, grad .0145 = .0145, centre .380 → .405, rim .372 → .377; Vienna 60–95 medY .176 → .180, grad .0157 → **.0161**, centre
+  .323 → .346, rim .317 → .311 (the one meanY ≥ .6 frame is §100's too); CyborgNinja 40–70 medY .213 → .208, p90Y .298 → .287, grad .0138
+  → .0137, centre .426 → .457, rim .409 → .379. No clipped frame on any window (0 of 1003); grad equal / up / down a hair; the centre a
+  little brighter on all three (c dwells in its places more and transits less — fewer near-circle frames).
+- **Knobs** (`#test`, hooks, `knob4()`): `&n2walk=0` the species only (NAV's places) · `&n2walk=DEPTH[,MINSIZE[,PER[,DWELL[,HOLD]]]]`
+  (7, .008, 1, 1, 1; `PER 2` = a step every other phrase, `HOLD 0` = NAV's instant retarget) · `&n2green=0` no ruler (the sides alternate,
+  no early step) · `&n2green=W[,QMAX[,BARS]]` (1, .8, 1) · `&n2drop=0` NAV's launch ray and exterior θ target. `n2info()` carries
+  `wk wplace wcands wpick wq wsteps wdue wdwell wearly wover wdrops wbase Q`.
+- **Proof.** `IDS="0 8" tools/scene-md5.sh s101`: s0 `fb74fee4… / 8a0715df…` unchanged (s8 `a8de2f03… / 7a65fd16…`); `node tools/check.js`
+  0 fail (nav2: index.js 313, nav.js 298, walk2.js 201 lines; license headers clean); `node tools/test_nav2.js` all ok — pass A to the
+  bit, pass B viol [] (n 2879, fast 0, max .0366) with 6 walk steps, 439 frames inside a Farey neighbour, 5 bulbs dwelt, 2 drops on 2 θ
+  bases; the fake page (`accept.sh`'s MON8 injection, 30 s) viol [] (n 1003, fast 0, max .0502); SeeYouDrop 25–60 file mode id 8 viol []
+  (above). The fake timeline's species cadence in `test_nav2.js` is now 12 s (was 4: NAV's own rim walks left the phrase walk no room
+  to dwell) — pass A is unaffected (both navigators read the same MS).
+- **Pitfalls.** (1) `pkill -f <pattern>` with the pattern ALSO in the command line that launches the thing later in the same shell line
+  kills the shell (§100's (4), met again: exit 144, nothing after it ran). (2) Two Chrome chains must not overlap a code change: a
+  monitor that loaded the modules before the last edit proves the old bytes — the whole chain was re-run after the final edit. (3)
+  `loudRel ≥ .6` is not "loud" on most tracks (SeeYouDrop never leaves .72–.94); the ladder is. (4) The equipotential's Q is a gross-
+  shape ruler, not an arm counter (the 9-armed 4/9 reads .69 like 1/2).
+- **Not done / open.** The eye (plan step 4; `EYE-GUIDE.md` has the recipe and the knobs). The two mid-excursion exterior steps on the
+  full track (NAV's spring family, not the launch). The root-crossing hazard in NAV itself (id 0, its own retarget line) — left, it is
+  the control. A per-ladder quiet candidate for 1/2 (all four read .69) if the eye wants calm there — the cardioid IS the calm place and
+  the even phrases do not visit it; a `0/1` entry in every ladder for quiet rows is a line.
+
+## §102 the swap — the retuned navigator is home, the kaleidoscope is off (2026-10-08, one worker; the user, after looking at the retune: *"nav2 is better than nav now; swap them so nav is key 9 and nav2 is key 1 (and used by the director); also remove the kaleidoscope — it distracts from the beauty of the set."*)
+
+- **What changed.** Two scene registrations and nothing in `core/`. `assets/scenes/nav2/` (name `nav2`, the §97–§101 retune) is
+  **id 0, key `1`, `home: true`, `always: true`, NAV's bid `(S) => 0.5 + S.buildLive`, NAV's `card` (title **NAV** — the public name
+  of the home scene stays) and `post.kaleido: 0`**. `assets/scenes/nav/` (name `nav`, the v0.33 navigator) is **id 8, key `9`,
+  `home: false`, `always: true`, `score: () => 0`, no `card`** — the control, forced-only, so key `1` against key `9` still compares one
+  navigator state mid-track (§97's reason for `always: true`, unchanged). `main.js` registers `nav` before `nav2` as before, so the
+  last `home: true` is id 0 (`core/scenes.js:50`, the §97 gotcha, now working for us). Names stayed as the user says them (`nav2`
+  at 0, `nav` at 8): nothing in check.js or the HUD needed otherwise; the HUD prefix and `rt.label` are the scene's own.
+
+  | | id | key | home | always | score | card | variants |
+  |---|---|---|---|---|---|---|---|
+  | `nav2` — the retuned navigator (`assets/scenes/nav2/`) | 0 | `1` | **true** | true | `0.5 + buildLive` | NAV · `site/thumbs/nav2.jpg` | — |
+  | `nav` — the v0.33 navigator (`assets/scenes/nav/`) | 8 | `9` | false | true | 0 | — | DRUM id 4 (base 8) |
+
+- **DRUM (id 4).** Stays a variant of `nav` — the code that draws it (`uDrum` in the v0.33 Julia shader) is there, an id registers once,
+  and the least churn is no move. It bids 0 (§93), is not home, renders base 8 now; its pair `0bff278a / 05bf21c0` is unchanged.
+- **The thumb.** `core/landing.js` loads `thumbs/<name>.jpg` — by `name`, not by the card title — so the tile needed
+  `site/thumbs/nav2.jpg`: `PORT=8871 tools/thumbs.sh "0:360"` (headless, one shot, the frame the s0 reference vouches for; 16.7 kB).
+  `site/thumbs/nav.jpg` stays: `site/whats-new.html` (built from `releases.json`, untouched) shows it for v0.31–v0.33.
+- **The kaleidoscope (step 1, commit `46fbe5c`).** `post.kaleido: 1 → 0` on the retuned scene only; `effects/composite.js` uploads
+  `uFx.z = FX.kal · kd` and the shader's `if (uFx.z > .01)` never runs — fully off, as TORUS2 / GIELIS / FEIGEN. The s0 / s8 pairs
+  cannot prove it: `core/post.js` arms `FX.kal` only on a `peak` arc, beats 12–15 of 16, `eS > .45`, no drop ringing — on the fake
+  timeline one window ending at f942. Proof at f930 (`FX.kal` .498): kaleido 0 `fd72bf62` vs `&post=nav2.kaleido=1` `bab7e883`.
+  NAV (now id 8) keeps 1.
+- **Browser (headless, `#test`, no scene forced).** `SC.home 0`, `REG[0] nav2 home true`, `REG[8] nav home false`, `REG[4] base 8
+  drum`, `CARD.home === REG[0].scene.state`, bids 0 → .5 / 8 → 0, kaleido 0 → 0 / 8 → 1; key `9` → forced 8 `nav`, `n` → 9 MAXWELL,
+  key `1` → forced 0 `nav2`, key `0` → −1, errs []. The landing has the NAV tile (id 0) and no tile for id 8.
+- **The director's proof** (`ACC=v0.34 tools/director-trace.sh s102 fake`, 72 s CLOCK=1, `tools/accept/v0.34/director-fake-s102.txt`,
+  `director-stats.js`): scene sequence **0 1 0 3** — the three drops (13 / 37 / 61 s) hard-cut to 0, two SWITCH@ on the bar line (DUST
+  at 30.98, TORUS2 at 69.68, both `phrase`), 11 RESTORE@ (10 to 0, 1 to 1), 65 of 72 one-second lines on `sc0`, **id 8 never** — the
+  roster is id 0 + DUST + TORUS2 as §93's addendum says, and the drop / build / silence precedence reads `SC.home` (`updateScenes`'s
+  `H = REG[SC.home].scene.rt`), so NAV's drop ownership (§95) moved with the home without a line changed.
+- **The md5s** (`PORT=8871 tools/scene-md5.sh`, CLOCK=1 GPU=1, errs [] hop 840 row 72):
+
+  | | s0-f360 / s0-f840 | s8-f360 / s8-f840 | s4 |
+  |---|---|---|---|
+  | before (§101 tree, `s102a` after step 1) | `fb74fee4…` / `8a0715df…` | `a8de2f03…` / `7a65fd16…` | `0bff278a…` / `05bf21c0…` |
+  | after the swap, run 1 (`s102b`) | `a8de2f034a7b2d3a1219f75f7d507a69` / `7a65fd16f9d697cb97f6cfbd3db90c74` | `fb74fee47170b2d1f043db9f96319c7e` / `8a0715dfb90ecf20d484578932a2f115` | unchanged |
+  | run 2 (`s102c`) | identical | identical | — |
+
+  Each navigator's pair moved with it across the ids to the byte (the §97 symmetry: a forced scene at 8 or at 0 sees the same
+  frames). **The full list** (`s102full`, HARNESS "What to re-prove" for a registration change) equals the re-based reference on all
+  24 lines: no other scene moved. **The mixs 0→3 at f178 moved**, `cb3d4048 → 724bbd72` (twice) — the fade's source is the retuned
+  picture now, s3 is unchanged; `tools/accept/v0.34/trans-mixs-md5.txt` re-based with the history line.
+- **The harness.** `tools/accept.sh` "== nav2": both pairs (s0 = the retune, s8 = the control) against the list, the hud / nonFinite
+  line on each, the continuity monitor on the home's state (`CARD.NAV = REG[0].scene.state`, `fake=0&scene=0`: `n 1781 fast 0 max
+  .0232 viol [] errs []`), the montage of the four. `tools/accept/v0.34/scene-md5-v034.txt` re-based **in place** (§83's rule asks a
+  new directory per re-base; v0.34 is today's unreleased directory, made by §97 and never tagged — the header carries both re-bases;
+  `v0.35/` is the tag's) — note the §99–§101 retunes never re-based their s8 line, so the list was already stale against the §101
+  tree. `tools/parity.js`: cardioid3's navigator is the v0.33 one, so the ew side forces `&scene=NAVID` (default 8) and samples
+  `REG[NAVID].scene.state` (`CARD.home` would be the retuned walk); `sc` reads the forced id as 0 on both sides. Result: **the
+  pre-existing §83 / §84 / §91 MISMATCH line to the last digit** — `max |diff| 7.852214593751443 · 72 fields`, `nav.c nav.mode nav.h
+  nav.alpha nav.th nav.lg nav.par nav.vtime nav.kick nav.cyc.has` (NAV reads `buildLive` / `dropLiveEvt` since §54, v3 reads `build` /
+  `dropEvt`), the MS fields 0 diff; the pre-swap commit `1974e85` in a throwaway worktree gives the same line — the v0.33 navigator
+  at id 8 is sample-for-sample what it was at id 0. `tools/test_nav2.js`: the registration asserts after the swap (ids, home, the
+  bid, the card, DRUM on the control, kaleido 0 vs 1), and each navigator is driven as the logical scene **at its own id**
+  (`isLogical` gates the loud exit — with `logical: 0` on both, the control never exits and pass A still "passes"; a trap). Pass A
+  (knobs off) is still the control to the bit, pass B viol []. `npm test` exit 0; `node tools/check.js` 0 fail, 8 warn (the
+  thumb warning came and went with `nav2.jpg`).
+- **Docs.** CONTRACTS §1.8 (0 nav2 home · 4 drum of 8 · 8 nav the control); `site/about.html` (NAV describes the retuned walk; "key 9
+  is the v0.33 navigator, kept as the control"); `EYE-GUIDE.md` (keys swapped, the knobs apply to the scene not an id);
+  `NAV2-RETUNE-PLAN.md` step 4 DONE note; HARNESS (the lumtrace example `--scene=0`, the list's re-base, parity's `NAVID`);
+  `tools/accept/v0.13/{nav2-window,det13}.py` read `REG[0]` now (the §97 pointer, trivial); `look2.js`'s header; `navkicks.js` records
+  on `&scene=0` (MS is scene-independent, the comment says so); `lumtrace.js`'s usage line.
+- **Not done.** No tag, no `package.json` / `version.js` bump, `releases.json` untouched, nothing pushed or deployed (the user's word).
+  `accept.sh` in full was not run (25 min); every piece that reads nav / nav2 was run by hand above. `NEXT-SESSION-PROMPT.md` still
+  describes the pre-swap tree. The user's eye on the swap itself (the landing tile is the f360 frame; the first look at key `1` as
+  home in stream mode is owed).
+- **Open, carried from §101.** The two mid-excursion exterior steps on the full track (the spring family, not the launch). The
+  root-crossing hazard on the v0.33 navigator's own retarget line — now id 8, still the control, left. A per-ladder quiet candidate for
+  1/2 (all four read Q .69) if the eye wants calm there. The six EYE-GUIDE windows are now read on key `1`.
+
+## §103 v0.34 tagged — the navigator moves with the music (2026-10-08 ~23:35 EST, one worker; the user: *"do the work now, then tag and deploy"*)
+
+- **The recipe (§91's ritual, the one that worked for v0.30–v0.33).** `package.json` + `assets/core/version.js` 0.33.0 → 0.34.0 ·
+  `releases.json` top entry (`v0.34`, 2026-10-08, class `scene`, title *"NAV moves with the music"*, decisions §97–§102, scenes `[0, 8]`,
+  no clip) · `node tools/whatsnew.js` (32 entries → `site/whats-new.html`, the card's `#newin` line refreshed) · `node tools/bundle.js
+  releases/retinarave-v0.34.html` (171 modules, 1642 KB — the frozen page, the first since v0.31; v0.32 / v0.33 skipped it) · `npm run build`.
+- **The gates, each green:** `node tools/check.js` 0 fail / 8 warn (the three soft-cap line counts) · `node tools/license.js --check` 175
+  public files, 0 without the header · `npm test` exit 0 · `node tools/test_rec.js` all ok (VER == package.json) · `node tools/test_nav2.js`
+  all ok (pass A to the bit, pass B viol [], cost median .024 ms) · the release page from `file://` headless (GPU=1, `#test&scene=0`, 6 s):
+  `errs [] bad [] home 0 forced 0`, `VER = '0.34.0'` in the bundle, key `9` → forced 8 (the control), errs [] · `wrangler.jsonc` / `_headers`
+  untouched. The md5 pairs are §102's, unchanged by a version bump (DOM only): s0 `a8de2f03 / 7a65fd16` (the retuned navigator, home),
+  s8 `fb74fee4 / 8a0715df` (the v0.33 navigator, key `9`), s4 `0bff278a / 05bf21c0`.
+- **What is live when.** One release commit (this note, `NEXT-SESSION-PROMPT.md`, the four generated files, the two versions, the entry),
+  `git tag -a v0.34`, `git push origin main --tags`; Cloudflare's Git-connected build takes ~40 min (v0.30–v0.33: 40–85 min) — poll
+  `VER = '0.34.0'` in the bundle at retinarave.com, the *New in v0.34* card line, `/whats-new` top card, key `9` present. Do not re-push to kick it.
+- **Not in this tag (carried from §101/§102):** the user's first look at key `1` as home in stream mode; the two mid-excursion EXT monitor
+  steps on the full SeeYouDrop; the 1/2 ladder's calm candidate; id 8's own root-crossing hazard (the control, left); parity's §83 `nav.*`
+  MISMATCH line (pre-existing, v3 vs NAV's live fields); `accept.sh` in full not run (its pieces by hand in §102).

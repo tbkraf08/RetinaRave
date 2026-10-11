@@ -23,6 +23,23 @@ fix the doc, not the reader.
   `help` entry with three depths.
 - Every scene respects `Q` (adaptive quality, §1.6): iteration counts and particle counts scale with it.
 - Verify with screenshots, not by reading the shader. `docs/HARNESS.md` has the commands.
+- **Proof is sized to the diff** (DECISIONS §38, HARNESS "What to re-prove after a change"): a scene-folder change
+  proves its own md5 lines (`IDS=<id> tools/scene-md5.sh`, `SCENES=<id> tools/real-md5.sh`), a registration change one
+  full list, a core / engine / substrate change the whole sweep, and the Q trace only when a scene enters the rotation.
+- **A cost number is measured one Chrome at a time**, three runs, nothing else on the machine (DECISIONS §9); a
+  difference inside that bench's noise floor is not a difference. The recipe is HARNESS "Bench protocol".
+- **The acceptance references live in one directory** chosen by `ACC`, and every reference is read from it (DECISIONS
+  §83). A re-base is a NEW directory with those files and that one default, with the reason in DECISIONS — never a
+  hard-coded value, never four versions of one truth.
+- **A hand annotation is durable** (DECISIONS §72): `tools/truth/trackmap.py` carries the hand block and the top-level
+  hand keys through a regeneration, and a re-run reproduces the json bit for bit. A tool pass never destroys a human mark.
+- **A look remark is a retune request, not a bug report** (DECISIONS §92): what the user says they saw — in track time —
+  becomes the next tuning pass's target. Tune and prove it on every library track, per-track numbers, never one track
+  alone (§109, §117).
+- **Every public file carries the licence header** and `/LICENSE` is served: MIT plus the Guest-List Clause — if Retina
+  Rave runs at a party, Toma gets in free, with a guest (DECISIONS §90–§91). `node tools/license.js --check` must report
+  0 missing. A borrowed solver or idea is credited in the file header, `site/about.html`, the README, DECISIONS and the
+  release entry (§104).
 
 ## 1. Scene contract
 
@@ -325,6 +342,8 @@ needed, now generic:
   `&colour=<name>` under `#test` (and `CARD.setColour(name)`) switches every scene that declares that name; a scene
   without it keeps its default; an unknown name throws. **The default is the look the user chose** (v0.2's cosine
   palettes on FEIGEN and NAV); an OKLCH mapping ships as an opt-in variant until the user picks it (DECISIONS §26).
+  **The rule, not just the mechanism:** a colour-IDENTITY change ships as a variant until the user's own eye picks it —
+  never the scene's default on a worker's montage alone (DECISIONS §26; the shipped look is still v0.2's).
   The help view's cast line names the current variant and the declared ones. `check.js` fails on a default that is
   not a variant.
 - **Overlay**: drawn after the composite, direct to the screen, with your on-screen weight `vis` (0..1, follows the
@@ -731,6 +750,12 @@ are the scene author's rules:
   / `phrasePos` / `phrase16Pos` / `bar` (synapse) lock to the audio the analysers see — 47 ms before the ear in a real-time file
   or the demo, 27 ms after it in capture. With the lead on (`&lead=1`, the `L` key; `MS.leadT` ≠ 0) the engine publishes them
   moved onto heard time (`engine/lead.js`); a scene reads the same names either way and must not add its own offset.
+  **The DISPLAY lead is 40 ms in the file modes and the demo, and 0 on a capture or a microphone** (DECISIONS §52, §53,
+  the user's own A/B): `LEAD.disp` 0.040, `LEAD.dispLive` 0, read through `dispNow()`. The eye wants the picture early
+  only where the audio is decoded ahead of what you hear; in stream mode it is already late and must not be moved again.
+  **The beat clock itself is the PCM clock by default** (DECISIONS §56 addendum 3): `ENGINE.CLOCK.src === 'pcm'`, so
+  `bpm` / `beatPhase` / `beat` / `beatCount` are the PCM bus's and `clockPcm` is 1. `&clock=v3` is the A/B; the
+  `*Pcm` rows of Appendix A describe the bus's own fields, not an opt-in.
 - **Events placed by their age.** `kickEvt` / `snareEvt` / `hatEvt` fire on the frame the onset is heard; `kickAge` etc. is
   the heard time since the onset (99 before any; it can be a few ms below 0 on the release frame — clamp `max(0, age)`). A fast
   motion is a function of the age (`z = v·a − g·a²/2`), not an envelope started on the frame, so it is right to the sub-frame.
@@ -793,6 +818,9 @@ are the scene author's rules:
   a motion like `kickAge` (within half a frame of 0 on the release frame), `predKick` / `predSnare` / `predHat` are the same hits
   as levels decaying over 0.16 s (synapse's `kick` shape). They are predictions: gate or weight by `predConf`, and let the
   reactive event through when they disagree. `barNovelEvt` / `barReturnEvt` fire 1.2–3 beats into a new bar, not on its line.
+  **REACTIVE OVER PREDICTED is the standing rule** (DECISIONS §51, the 2026-09-28 A/B by eye): the reactive levels are
+  what reads as in sync — coverage and dynamics beat millisecond timing — so a prediction only PLACES a hit the reactive
+  lane has already agreed to. Routing a scene's drum reads onto the predicted fields wholesale looked WORSE.
 - **Anticipation only from what is known.** In file mode (`mapOn` 1) `toDrop`, `buildProg`, `toBoundary`, `mapNext` are the
   track's own future: wind up exactly to `mapDropEvt`. In live modes `mapOn` is 0 — fall back to `dropConf`, `dropExpectedIn`,
   `build`, `dropEvt`, and never invent a countdown.
@@ -985,6 +1013,17 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
 - Crossfades render both scenes and hand them to the transition (§5; `mixs` by default) over `clamp(4·60/bpm, 1.2, 3)` s.
   Both `draw` calls happen each frame of the fade; both `update`s run.
 - Scores: `score()` + 0.1 per-section seed noise (0.25 before §93) − 0.6 if you were the last scene − 0.25 if the one before.
+- **The dwell** (§95, the user: "it rotates too quickly through the scenes, let each scene go at least 30-90 seconds"): a
+  scene stays at least `SC.dwellMin` seconds, drawn per landing from `SC.dwell = [30, 90]` by the director's own hash (so a
+  `CLOCK=1` trace stays reproducible). The EVENT branch — surprise, identify, return, phrase, settled — is closed until
+  `SC.since >= SC.dwellMin`; the precedence above it (a drop hard-cuts home, low presence drifts home, a build parks home)
+  is never dwelled. `&dwell=a[:b]` under `#test` is the pre-§95 director.
+- **A boot never revives a forced scene** (§94): `panel.js restore()` deletes `manual.scene` from the stored preset before
+  loading it, so a page that once saved with a scene forced still starts on the director's pick. A preset PASTED into the
+  panel's textarea does apply its scene — that is the user acting now.
+- **Synapse's section ids are indices into a ring**: the stage publishes `MS.sectionRenumber` on the frame they move, and
+  the director walks `SC.mem`'s keys, `prevAlt` and `due` through the map before reading `sectionAlt` (§21, §22;
+  `SC.renumberOn = false` is the pre-§21 behaviour, for the before / after trace).
 - The roster — who bids at all (§93, its addendum, §114; **§118's ids**): **FLUID (0), NAV2 (2, home, `0.5 + buildLive`), DUST (3), TORUS2 (4)**;
   every other registered scene returns 0 (forced-only: `&scene=`, the keys, the panel's force) — FLUID2 (1, §116) and MANDALA (5) among them: a scene joins
   the bid only on the user's word. Each bid is a fit model on
@@ -1159,12 +1198,12 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `nextSnareUp` | level | the wind-up to the next predicted snare | a param route |
 | `nextHatUp` | level | the wind-up to the next predicted hat | a param route |
 | `queueN` | count | how many events the queue lists within the next 2 bars | nothing visual: the harness and the help view read it |
-| `bpmPcm` | raw | the tempo of the beat clock estimated on the PCM bus | nothing by default; bpm with the switch on |
-| `beatPhasePcm` | level | where the PCM clock is inside its beat, 0→1 | nothing by default; beatPhase with the switch on |
-| `beatCountPcm` | count | the PCM clock's beats since its start | nothing by default; beatCount with the switch on |
-| `beatPcm` | event | the PCM clock crossed a beat line this frame | nothing by default; beat with the switch on |
-| `clockConfPcm` | level | how sure the PCM clock is of its phase | nothing by default; a scene may gate on it |
-| `clockPcm` | level | is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock's | nothing: the harness and the HUD read it |
+| `bpmPcm` | raw | the tempo of the beat clock estimated on the PCM bus | **is `bpm` by default** (§56 addendum 3: `CLOCK.src` 'pcm'); `&clock=v3` is the A/B |
+| `beatPhasePcm` | level | where the PCM clock is inside its beat, 0→1 | **is `beatPhase` by default** (§56) |
+| `beatCountPcm` | count | the PCM clock's beats since its start | **is `beatCount` by default** (§56) |
+| `beatPcm` | event | the PCM clock crossed a beat line this frame | **is `beat` by default** (§56) |
+| `clockConfPcm` | level | how sure the PCM clock is of its phase | a scene may gate on it (NAV2's kick lane does, §100) |
+| `clockPcm` | level | is the switch on: are bpm / beatPhase / beat / beatCount the PCM clock's — **1 by default since §56** | nothing: the harness and the HUD read it |
 | `kickCount` | count | kicks since start | MANDALA fold epoch (every 64 kicks; synapse used 32) |
 | `alive` | level | is sound present (synapse) | idle behaviour |
 | `hush` | level | the silence before a drop | DUST/MANDALA hold |
