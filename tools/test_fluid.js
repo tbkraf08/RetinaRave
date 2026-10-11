@@ -55,6 +55,12 @@
 //              40 s steady → 0, a swell → 1, a dip → 0); the grain moves no splat, no body, no heave; the DIP: DIP_SRC 1 × (1 − HI_SHARP) on every
 //              frame the base paid a hat droplet and DIP_N − 1 after, never inside the confirmed clear, nowhere else; DIP_SRC 2 × (1 − HI_SHARP·env)
 //              on every frame outside the clear; DIP_SRC 0 the governed dyeDiss; the cold frame drops a pending dip; determinism; the Proxy
+//              S5 (§116 S5): the pen's MECHANICS (the vocal feature deferred): PEN_SRC 0 the identical path (the base's `floor` splat to the byte,
+//              no `pen` kind, pen.on 0); PEN_SRC 1 the floor REPLACED by one `pen` splat on exactly the frames the floor had, at the same ink in the
+//              budget's units (dye × (2 / PEN_RAD)² at PEN_RAD · RADIUS; the ink rate and dyeDiss the off run's within 1e-9 — the governor unmoved);
+//              the position eased on the fifths circle: the per-frame step ≤ PEN_VMAX · dt on every frame, x / y in [0, 1], the cold frame and a live
+//              switch-on start AT the target (step 0); the push = PEN_V · the drift · gain · f, bounded, 0 at PEN_V 0; AX 1 draws more than AX 0 on
+//              RaindropsOnRoses's breakdown; the tritone wrap (a synthetic walk round the circle): one lift, every other step bounded; determinism; the Proxy
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -519,6 +525,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   const plan2 = INJ2.plan, mkState2 = INJ2.mkState, FEATS2 = INJ2.FLUID_FEATS, K2 = INJ2.K;
   const SHIP_S3 = { SNARE_JET: K2.SNARE_JET, CURL_SRC: K2.CURL_SRC, CURL_MASK: K2.CURL_MASK }; Object.assign(K2, { SNARE_JET: 0, CURL_SRC: 0, CURL_MASK: 0 });   // S3: the S1 relation is proven with the mids' curl, the mask and the snare jet OFF (the identical list and params); S3's own block proves them
   const SHIP_S4 = { NOISE_V: K2.NOISE_V, DIP_SRC: K2.DIP_SRC }; Object.assign(K2, { NOISE_V: 0, DIP_SRC: 0 });   // S4: … and with the grain and the dip OFF (the dip moves dyeDiss; the S1 / S3 relations are on the governed value); S4's own block proves them
+  const SHIP_S5 = { PEN_SRC: K2.PEN_SRC }; K2.PEN_SRC = 0;   // S5: … and with the pen OFF (the floor is the base's splat; S5's own block proves the pen)
   const SHIP_SHAPE = K2.KICK_SHAPE; K2.KICK_SHAPE = 0;   // S2: the S1 relation is proven at the control's kick (shape 0); the shapes have their own block below, the shipped one restored after
   ok(typeof plan2 === 'function' && typeof mkState2 === 'function' && INJ2.K && typeof INJ2.K === 'object' && Array.isArray(FEATS2), 'bands: inject2.js exports inject.js\'s interface (plan, mkState, K, FLUID_FEATS)');
   ok(FLUID_FEATS.every((k) => FEATS2.includes(k)), 'bands: inject2\'s FLUID_FEATS ⊇ the base\'s (' + FLUID_FEATS.length + ' of ' + FEATS2.length + ' — plan2 runs plan(), so it reads them)');
@@ -532,7 +539,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
   // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
-  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; return Q; };
+  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; delete Q.pen; return Q; };
   const frac = (x) => x - Math.floor(x);
   // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
   const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
@@ -776,7 +783,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       ok(Math.abs(steady - K2.CURL0) < 0.5 && Math.abs(swell - (K2.CURL0 + K2.CURL_MID)) < 0.5 && Math.abs(dip - K2.CURL0) < 0.5, 'bands: S3 — the own range: 40 s of mid .5 → the floor (' + steady.toFixed(2) + '), a swell to .7 → CURL0 + CURL_MID within 1.5 s (6 MID_TAU; ' + swell.toFixed(2) + '), a dip to .3 → the floor (' + dip.toFixed(2) + '); the base\'s tension .5 would read 30 throughout'); }
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S3 — the K2 table restored after the switches');
   }
-  Object.assign(K2, SHIP_S4);   // S4's shipped switches back (its own block follows)
+  Object.assign(K2, SHIP_S4, SHIP_S5);   // S4's and S5's shipped switches back (their own blocks follow)
   { // S4 (§116 S4, FLUID2-PLAN §4 S4): the highs as the SURFACE, never a force on the mass — the grain's amplitude (a uniform for the advect
     // pass, never a splat), its three sources, the dip on the governed dyeDiss (per hat / continuous / none, never inside the clear), the cold
     // frame, determinism, the Proxy, the table restored
@@ -821,6 +828,60 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       Object.assign(K2, defaults);
       ok(early === K.FLOOR_WIN && steady < 0.02 && swell > 0.98 && dip < 0.02, 'bands: S4 — HI_SRC 1: the ring holds FLOOR_WIN one-second means (' + early + '); 40 s of high .5 → env ' + steady.toFixed(3) + ' (the floor), a swell to .7 → ' + swell.toFixed(3) + ' within 1 s (20 HI_TAU), a dip to .3 → ' + dip.toFixed(3) + '; HI_SRC 0 would read .5 / .7 / .3'); }
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S4 — the K2 table restored after the switches');
+  }
+  { // S5 (§116 S5, FLUID2-PLAN §4 S5): the pen's MECHANICS — the floor replaced by one `pen` splat at the same ink in the budget's units, its
+    // position eased on the fifths circle with the step clamped, a push along its drift; PEN_SRC 0 the identical path; the vocal feature deferred
+    const defaults = { ...K2 };
+    const JR = trace('RaindropsOnRoses-map0');
+    const run5 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
+    const inkOf = (s) => (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2;
+    ok([0, 1, 2].includes(defaults.PEN_SRC) && [0, 1].includes(defaults.PEN_AX) && defaults.PEN_TAU > 0 && defaults.PEN_VMAX > 0 && defaults.PEN_V >= 0 && defaults.PEN_RAD > 0, 'bands: S5 — K2 carries PEN_SRC ' + defaults.PEN_SRC + ', PEN_AX ' + defaults.PEN_AX + ', PEN_TAU ' + defaults.PEN_TAU + ', PEN_VMAX ' + defaults.PEN_VMAX + ', PEN_V ' + defaults.PEN_V + ', PEN_RAD ' + defaults.PEN_RAD);
+    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S5 — no new MS read: the pen reads the base\'s harmAngle / centroid and the base state\'s hx / hy / pin (the vocal feature\'s voxS / voxHz are NOT read — S5b)');
+    if (JR) {
+      const off = run5({ PEN_SRC: 0 }), on = run5({ PEN_SRC: 1, PEN_AX: 0 }), ax1 = run5({ PEN_SRC: 1, PEN_AX: 1 }), v0 = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_V: 0 }), vp = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_V: 0.25 }), r2 = run5({ PEN_SRC: 1, PEN_AX: 1, PEN_RAD: 2 });
+      const baseRun = replay(JR, mkState(), plan);
+      const fl = (r) => r.P.splats.find((s) => s.k === 'floor'), pn = (r) => r.P.splats.find((s) => s.k === 'pen');
+      const nFloor = off.filter((r) => fl(r)).length;
+      ok(nFloor > 6000 && off.every((r, i) => !pn(r) && r.P.pen.on === 0 && r.P.pen.src === 0 && JSON.stringify(fl(r) || null) === JSON.stringify(fl(baseRun[i]) || null)), 'bands: S5 — PEN_SRC 0: no `pen` kind, pen.on 0, and the `floor` splat is the base\'s to the byte on every one of RaindropsOnRoses\'s ' + off.length + ' real frames (' + nFloor + ' floor frames)');
+      for (const [tag, R, rad] of [['AX 0', on, defaults.PEN_RAD], ['AX 1', ax1, defaults.PEN_RAD], ['PEN_RAD 2', r2, 2]]) {
+        const exact = R.every((r, i) => { const f = fl(off[i]), p = pn(r); if (!f) return !p && r.P.pen.on === 0 && r.P.pen.ink === 0; return p && !fl(r) && r.P.pen.on === 1 && r.P.splats.filter((s) => s.k === 'pen').length === 1 && Math.abs(p.rad - rad * K.RADIUS) < 1e-12 && Math.abs(inkOf(p) - inkOf(f)) <= 1e-12 * inkOf(f) + 1e-18 && Math.abs(p.r - f.r * (2 / rad) ** 2) <= 1e-12 * f.r && Math.abs(r.P.pen.ink - r.P.pen.floor) <= 1e-12 * r.P.pen.floor; });
+        ok(exact, 'bands: S5 — ' + tag + ': the floor replaced by exactly one `pen` on every frame the floor had and none otherwise, at radius PEN_RAD · RADIUS with the dye × (2 / PEN_RAD)² — the same ink in the budget\'s units within 1e-12 (pen.ink = pen.floor)');
+        ok(R.every((r, i) => Math.abs(r.P.ink - off[i].P.ink) <= 1e-9 * Math.max(1e-9, off[i].P.ink) && Math.abs(r.P.params.dyeDiss - off[i].P.params.dyeDiss) <= 1e-9 * off[i].P.params.dyeDiss), 'bands: S5 — ' + tag + ': the ink rate and dyeDiss the off run\'s within 1e-9 on every frame — the governor unmoved (the pen is counted before S4\'s dip)');
+        const lim = (r) => defaults.PEN_VMAX * (r.t - (R[R.indexOf(r) - 1] || { t: r.t - 1 / 60 }).t);
+        ok(R[0].P.pen.step === 0 && R[0].P.pen.v === 0 && R.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * Math.max(1e-3, Math.min(0.1, i ? r.t - R[i - 1].t : 1 / 60)) + 1e-12 && r.P.pen.x >= 0 && r.P.pen.x < 1 && r.P.pen.y >= 0.25 - 1e-12 && r.P.pen.y <= 0.75 + 1e-12), 'bands: S5 — ' + tag + ': the cold frame starts AT the target (step 0, v 0); the per-frame step ≤ PEN_VMAX · dt on every frame (max ' + Math.max(...R.map((r) => r.P.pen.step)).toFixed(5) + ' vs ' + (defaults.PEN_VMAX / 60).toFixed(5) + '), x in [0, 1), y in [.25, .75]');
+      }
+      const strokeBeat = (R, t0, t1) => { const b = {}; for (const r of R) if (r.t >= t0 && r.t < t1) b[r.S.beatCount] = (b[r.S.beatCount] || 0) + r.P.pen.step; return med(Object.values(b)); };
+      const span = (R, t0, t1) => { const xs = R.filter((r) => r.t >= t0 && r.t < t1 && r.P.pen.on).map((r) => r.P.pen.x).sort((a, b) => a - b); return xs[Math.floor(0.9 * xs.length)] - xs[Math.floor(0.1 * xs.length)]; };
+      const s0 = strokeBeat(on, 111.4, 137.1), s1 = strokeBeat(ax1, 111.4, 137.1), sp0 = span(on, 111.4, 137.1), sp1 = span(ax1, 111.4, 137.1);
+      ok(s1 > 2 * s0 && sp1 > 0.15 && sp0 < 0.1 && on.every((r) => r.P.pen.wrap === 0) && ax1.every((r) => r.P.pen.wrap === 0), 'bands: S5 — the stroke on RaindropsOnRoses\'s breakdown (111.4–137.1): AX 1 (the frame\'s harmAngle, the pen\'s own ease) draws ' + s1.toFixed(4) + ' screen heights per beat (p50) over a span of ' + sp1.toFixed(3) + '; AX 0 (the 15 s centre — the plan\'s letter) ' + s0.toFixed(4) + ' over ' + sp0.toFixed(3) + ' — a drifting dot; no tritone lift on either');
+      const f = 60 * (1 / 60);
+      ok(vp.every((r) => { const p = pn(r); if (!p) return true; const m = Math.hypot(p.dx, p.dy), want = 0.25 * r.P.pen.v * r.P.gain * 60 * Math.max(1e-3, Math.min(0.1, vp.indexOf(r) ? r.t - vp[vp.indexOf(r) - 1].t : 1 / 60)); return Math.abs(m - want) <= 1e-9 * Math.max(1, want) && m <= 0.25 * defaults.PEN_VMAX * r.P.gain * 1.2 * f + 1e-9; }) && vp.some((r) => { const p = pn(r); return p && Math.hypot(p.dx, p.dy) > 0; }), 'bands: S5 — the push at PEN_V .25: |(dx, dy)| = PEN_V · the pen\'s drift (uv/s) · gain · f on every pen splat, bounded by PEN_V · PEN_VMAX · gain · f (max ' + Math.max(...vp.map((r) => { const p = pn(r); return p ? Math.hypot(p.dx, p.dy) : 0; })).toFixed(4) + '); the shipped PEN_V is ' + defaults.PEN_V);
+      const stripV = (P) => ({ ...P, splats: P.splats.map((s) => (s.k === 'pen' ? { ...s, dx: 0, dy: 0 } : s)) });
+      ok(v0.every((r) => { const p = pn(r); return !p || (p.dx === 0 && p.dy === 0); }) && JSON.stringify(v0.map((r) => r.P)) === JSON.stringify(vp.map((r) => stripV(r.P))) && (defaults.PEN_V !== 0 || JSON.stringify(v0.map((r) => r.P)) === JSON.stringify(ax1.map((r) => r.P))), 'bands: S5 — PEN_V 0 (the shipped value): ink only (dx = dy = 0 on every pen splat), everything else the .25 run\'s to the byte');
+      { // a live switch-on mid-track and the grammar's cold frame: the pen starts at its target, no sweep
+        Object.assign(K2, defaults, { PEN_SRC: 0, PEN_AX: 1 }); const st = mkState2(); const C = JR.cols; let prev = null; const steps = [];
+        for (let i = 0; i < 4000; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i];
+          if (i === 3000) K2.PEN_SRC = 1; if (i === 3500) st.n = 0;
+          const P = plan2(S, dt, st); if (i >= 2999 && i <= 3002 || i >= 3499 && i <= 3502) steps.push([P.pen.on, +P.pen.step.toFixed(5)]); }
+        Object.assign(K2, defaults);
+        ok(steps[0][0] === 0 && steps[1][1] === 0 && steps[2][1] > 0 && steps[5][1] === 0 && steps[6][1] > 0, 'bands: S5 — PEN_SRC turned on live (frame 3000) and the grammar\'s cold frame (3500): the first pen frame is AT its target (step 0), the next moves (' + steps.map((s) => s.join(':')).join(' ') + ')'); }
+      ok(JSON.stringify(on.map((r) => r.P)) === JSON.stringify(run5({ PEN_SRC: 1, PEN_AX: 0 }).map((r) => r.P)) && JSON.stringify(ax1.map((r) => r.P)) === JSON.stringify(run5({ PEN_SRC: 1, PEN_AX: 1 }).map((r) => r.P)), 'bands: S5 — determ: two fresh band states on the real trace → identical output, the pen on (AX 0 and AX 1)');
+      { Object.assign(K2, defaults, { PEN_SRC: 1, PEN_AX: 1 }); const st = mkState2(); let thrown = null; const C = JR.cols, allow = new Set([...FEATS2, 'seed']);
+        for (let i = 0; i < JR.f.length && !thrown; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+          const PX = new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allow.has(k)) thrown = 'read of ' + k + ' at frame ' + i; return t[k]; } });
+          try { plan2(PX, 1 / 60, st); } catch (e) { thrown = String(e); } }
+        Object.assign(K2, defaults);
+        ok(thrown === null, 'bands: S5 — proxy: RaindropsOnRoses through plan2 with the pen on (AX 1), no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
+    }
+    { // the tritone wall: a synthetic harmAngle walking the full circle in 20 s at AX 1 — ONE lift (|Δx| > .5, wrap 1, its step on the circle still bounded), every other frame bounded, and the pen tracks within a fifth
+      Object.assign(K2, defaults, { PEN_SRC: 1, PEN_AX: 1 }); const st = mkState2(); const rows = [];
+      for (let i = 0; i < 1500; i++) { const a = 2 * Math.PI * Math.min(1, i / 1200); const P = plan2(base({ harmAngle: a, mid: 0.6, centroid: 0.5, beatCount: 10 + (i >> 5) }), DT, st); rows.push({ a, p: P.pen, x: P.pen.x }); }
+      Object.assign(K2, defaults);
+      const lifts = rows.filter((r, i) => i && Math.abs(r.x - rows[i - 1].x) > 0.5), wraps = rows.filter((r) => r.p.wrap).length;
+      const tracks = rows.slice(200, 1200).every((r) => { const st = r.a / (2 * Math.PI) * 12, d = ((st + 6) % 12 + 12) % 12 - 6, want = ((d + 6.5) % 12) / 12; let e = Math.abs(r.x - want); e = Math.min(e, 1 - e); return e < 1 / 12; });
+      ok(lifts.length === 1 && wraps === 1 && lifts[0].p.wrap === 1 && rows.every((r) => r.p.step <= defaults.PEN_VMAX * DT + 1e-12) && tracks, 'bands: S5 — the tritone wall: a harmAngle walking the circle once → one lift (x ' + (lifts[0] ? (rows[rows.indexOf(lifts[0]) - 1].x.toFixed(3) + ' → ' + lifts[0].x.toFixed(3)) : '-') + ', wrap 1), every frame\'s step on the circle ≤ PEN_VMAX · dt, the pen within a fifth of its target while walking');
+    }
+    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S5 — the K2 table restored after the switches');
   }
 }
 

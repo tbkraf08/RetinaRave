@@ -11045,7 +11045,166 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   the copied gates script's `scene-md5.sh` tag is a hand edit (s3 → s4 → s5); with `INJECT=inject2.js` the replays' `FLUIDK=` IS the band
   table (no `FLUIDK2`).
 
-### S5 — vocals = the pen (conditional on a vocal-presence feature; not started)
+### S5 — vocals = the pen: the MECHANICS, the feature deferred (2026-10-10, branch `fluid2`, commits efc5bf1 → the docs; `git merge main` at 80d8aef first — S4 merged, a fast-forward)
+
+- **The ask, as the plan framed it and the user's scope holds:** the voice is a PEN — a continuous emitter following pitch, brightness =
+  presence, leaving a stroke the fluid carries off; it DRAWS, it does not inject mass (the user's frame on "can subbass / bass / mid / highs /
+  vocals be treated differently"). The plan's §3 inventory found the one band the engine cannot hear as a band: no vocal-presence, no
+  harmonic-to-noise, no pitch-continuity feature (the nearest proxies are `mid · clarity · (1 − dirty)` and the §108 floor, which IS "the mids
+  are singing" today) — a thin one does not exist (one extractor session with its own ruler). So §4 S5's letter: **the mechanics only — a
+  drifting emitter on the harmony's centre replacing the floor; the feature deferred to S5b, one read when it lands.** The user's scope
+  words: *"only tune with Raindrops, don't do full sweep"* — tuned, stripped and proven on RaindropsOnRoses alone (the run at 24 s, the live
+  lanes; the groove 76–110, the breakdown 111.4–137.1 where a lead would carry the pool, the pads 118–126); **the other seven tracks are
+  untuned and unswept on the user's word; the full sweep is owed before any tag.** Kept small: one kind, six knobs, no new MS read.
+- **As built** (`inject2.js`, the S5 block between S3's jet and the governor's sum — S4's note: a pen's ink is counted BEFORE the dip touches
+  `dyeDiss`): **the kind** `k: 'pen'` — ONE sustained dye splat per frame that REPLACES the base's `floor` (§108: a fixed cloud at the
+  tonic's x 6.5 / 12, y .5, radius ×2) while `PEN_SRC` > 0, at the floor's ink in the budget's units EXACTLY (its dye × (2 / PEN_RAD)² at
+  radius PEN_RAD · RADIUS: a thinner, denser mark, the same area-weighted ink — the governor's own rate is the off run's to 1e-9 on every one
+  of RaindropsOnRoses's 6601 real frames, dyeDiss too); no floor, no pen (the pen lifts on silence, on noise and in the clear, as the floor
+  does — the §108 "it heard that one" ruler stays the floor's: 6599 pen frames = 6599 floor frames). So the pen's BRIGHTNESS is the floor's
+  level — the mids' place on the track's own last 30 s × the gain (presence · loudRel: the brightness IS the presence) — and S5b's `voxS`
+  multiplies it. **The place**: x on the TONIC AXIS (§111 item 6 — the base's own axis and its tonic rule: `pin.k`, or the centre's nearest
+  fifth before any pin, `sectorPc` from keycolour.js) as a CONTINUOUS fifths position relative to the tonic, `x = frac((p + 6.5) / 12)` (the
+  integer sectors land on relX's values; the tritone's sector is split at the walls), the target by `PEN_AX`: 0 the base's eased harmony centre
+  (`st.base.hx / hy`, HARM_TAU 15 s — the plan's letter), 1 the frame's `harmAngle` (the chroma's fifths centroid — continuous; the pen's own
+  ease the only inertia); y by `centroid` (.25 + .5·c, the harmonic branch's place). The position is EASED (`PEN_TAU` .3 s) on the fifths
+  CIRCLE by the shortest arc (a +7-fifths target is walked as −5) and the move's LENGTH is clamped to `PEN_VMAX · dt` (.5 screen heights / s —
+  the §1.9 step on every frame, the diagonal included: the first cut clamped x and y apart and the diagonal reached lim·√2, the test caught
+  it); a re-pinned key is a stroke of k sectors, never a jump; the one lift is the tritone WALL (the axis's cut, x .99 → .01: `pen.wrap` 1 on
+  that frame, its step read on the circle — the synthetic walk round the circle lifts exactly once; RaindropsOnRoses lifts never). The cold
+  frame (fluid.js resets `n`) and a live `PEN_SRC` switch-on start AT the target (step 0, no sweep). **The push**: dx, dy = `PEN_V` × the
+  pen's own drift velocity (uv/s) × g × f — zero while the pen is still (a stroke, never a plume), bounded by PEN_V · PEN_VMAX · g · f.
+  **The switch**: `PEN_SRC` 0 off (the base's `floor` splat to the byte, no `pen` kind, `pen.on` 0), 1 the harmony stand-in, **2 RESERVED
+  for the vocal feature** — the reads (`voxS`, `voxHz`) are NOT in the file (FLUID_FEATS unchanged: sub + high over the base's; check.js
+  FAILS on a read outside it): 2 plans as 1 today and `pen.src` says 2. **The record** `pen` { on, src, x, y, step, v, ink, floor, wrap }
+  in the return → `FLUID.pen`, `fldbg()`, the HUD's fluid line (`pen x,y`), `CARD.fluid.pen`; the field strip's evals line carries `penOn
+  penX penY penStep penInk` after the highs' four (`fluid-highs-grain.py`'s regex opened to the trailing fields). help.js's eli5 says the pen
+  draws the HARMONY today, not the voice, and must not be read as a vocal detector. inject.js untouched.
+- **K2 (the ship table):** `PEN_SRC 1` · `PEN_AX 1` · `PEN_TAU .3` · `PEN_VMAX .5` · **`PEN_V 0`** · `PEN_RAD 1`. The plan's K2 named
+  `PEN_DYE .004` (the floor's — here the floor's ink is inherited, not re-declared), `PEN_V .02` (the plan's units were a per-frame stamp;
+  here PEN_V is a fraction of the pen's own speed and ships 0 — below), `PEN_LO .15 / PEN_HI .4` (the floor's own knee, inherited: the pen's
+  presence proxy IS the floor's level, so no second knee), `PEN_TAU .3` (kept).
+- **The rulers and the windows.** (1) The PURE ruler at 60 fps (`tools/work/fluid2/s5/ruler.js`, no GL — RaindropsOnRoses's real trace
+  through inject2): per window the pen's frames vs the floor's, the ink/s of each, the own ink rate ÷ the control's and the largest relative
+  dyeDiss difference (the governor), the STROKE PER BEAT (Σ `pen.step` over each beat's frames, p50 / p90 — the dye's path along the axis per
+  beat), the largest per-frame step vs PEN_VMAX · dt, the lifts, the x span (p90 − p10), the drift speed, the push's max. (2) The EYE: the
+  field strip with `DYE=1` over 76–137 at 1 fps per variant (eight strips, ~2 min each, `tools/work/fluid2/s5/{run.sh, strips*.log}`) with
+  the S4 highs ruler on it for the pool's SPEED (the guard: within 10 % of the pen-off strip per window) and the dye's ink / edges; and two
+  10 fps strips over the pads 118–121 (pen off / pen ink-only) for the beat's cadence. The windows: groove 76–110, breakdown 111.4–137.1,
+  thin 111–116, pads 118–126, outro 127–137 (the 129.98 s clear inside it).
+- **The pure ruler (RaindropsOnRoses, 6601 frames; every variant: floor frames = pen frames on every window, the ink/s equal, the ink rate
+  ÷ control 1.000000, the dyeDiss difference 0, lifts 0):**
+
+| tag | window (frames) | stroke / beat p50 | p90 | step max (lim .00833) | x p10 / p50 / p90 | span | drift p50 uv/s | push max |
+|---|---|---|---|---|---|---|---|---|
+| **ship** AX 1 V 0 | groove (2040) | .0233 | .0759 | .00833 | .389 / .553 / .611 | .223 | .059 | 0 |
+| | breakdown (1357) | **.0539** | .0912 | .00654 | .261 / .402 / .515 | **.254** | .125 | 0 |
+| | thin (300) | .0476 | .0598 | .00443 | .400 / .480 / .565 | .164 | .095 | 0 |
+| | pads (480) | .0556 | .1211 | .00602 | .257 / .404 / .511 | .254 | .153 | 0 |
+| | outro (421) | .0594 | .1150 | .00654 | .248 / .354 / .487 | .239 | .133 | 0 |
+| AX 0 (the plan's letter) | groove | .0147 | .0221 | .00239 | .518 / .530 / .547 | .028 | .029 | 0 |
+| | breakdown | **.0078** | .0191 | .00188 | .427 / .476 / .518 | **.091** | .018 | 0 |
+| | pads | .0091 | .0170 | .00140 | .458 / .478 / .494 | .036 | .019 | 0 |
+| AX 1 TAU .1 | breakdown | .0630 | .1276 | .00833 | .252 / .398 / .528 | .277 | .148 | 0 |
+| AX 1 V .25 | breakdown | .0539 | .0912 | .00654 | (AX 1's) | .254 | .125 | 7.1e-2 |
+| AX 1 V .25 | all | .0394 | .1015 | .00833 | .334 / .524 / .605 | .270 | .088 | .122 |
+
+  At 140 BPM a beat is .43 s: the shipped pen walks a twentieth of the screen per beat on the breakdown (a quarter of the screen over the
+  phrase), the plan's-letter centre a hundred-and-thirtieth (a dot that drifts .09 over the whole breakdown). The step never exceeds the
+  clamp; the clamp is ACTIVE on the groove's chord changes (max = lim) and idle on the breakdown.
+- **The strips (the S4 highs ruler per window, the ratio variant ÷ the pen-off strip; the flow's own run-to-run divergence is ±2–6 % per
+  window — read a window, never a shot):**
+
+| tag | window | speed | lap | dgrad | dink | grey |
+|---|---|---|---|---|---|---|
+| **ship** AX 1 V 0 | groove | **1.000** | 1.000 | 1.016 | 1.003 | 1.022 |
+| | breakdown | **1.000** | 1.000 | 1.024 | 1.096 | 1.036 |
+| | thin | 1.000 | 1.000 | 0.998 | 1.028 | 1.013 |
+| | pads | 1.000 | 1.000 | 1.011 | 1.030 | 1.016 |
+| | outro | 1.000 | 1.000 | 1.088 | 1.143 | 1.035 |
+| AX 0 | groove / breakdown / pads | 1.003 / 1.046 / 0.994 | ≈ 1 | 1.036 / 1.011 / 1.055 | 1.005 / 1.164 / 1.045 | 1.025 / 1.002 / 1.007 |
+| AX 1 V .05 | groove / breakdown / outro | 1.009 / 1.032 / 1.100 | ≈ 1 | 1.001 / 1.053 / 1.108 | 1.009 / 1.182 / 1.221 | 1.034 / 1.046 / 1.071 |
+| AX 1 V .25 | groove / breakdown / thin / outro | 1.021 / **1.237** / 1.249 / **1.370** | 1.013 / 1.013 / 1.028 / 1.039 | 1.068 / 1.044 / 1.130 / 1.033 | 1.016 / 1.082 / 1.092 / 1.230 | 1.029 / 1.029 / 1.016 / 1.115 |
+| AX 1 V 1 | groove / breakdown / pads / outro | 1.090 / **2.435** / **2.687** / 2.017 | 1.006 / 1.158 / 1.145 / 1.089 | 0.955 / 1.147 / 1.319 / 1.021 | 0.994 / 1.212 / 1.631 / 1.377 | 1.031 / 1.185 / 1.405 / 1.138 |
+| AX 1 RAD 2 V .25 | groove / breakdown / outro | 1.037 / **1.443** / 1.474 | ≈ 1.03 | 0.994 / 0.974 / 0.912 | 0.996 / 1.007 / 0.996 | 1.002 / 1.038 / 0.990 |
+| AX 1 TAU .1 V .25 | breakdown / outro | 1.248 / 1.454 | 1.007 / 1.031 | 1.088 / 1.041 | 1.084 / 1.166 | 1.029 / 1.061 |
+
+  Ink only is zero force to the digit (the velocity pass sees a dye-only splat: speed and lap 1.000 everywhere); the dye's edges +1–9 % and
+  the ink on screen +3–14 % — the floor's cloud spread its ink at one place where the eddies thinned it, the pen's mark is denser and moves,
+  the same ink. **The push is the guard's edge on a NEAR-STILL pool**: the breakdown runs at .05 uv/s against the groove's .20–.32, so a push
+  that is nothing on the groove (+2 % at .25) is +24 % on the breakdown and +37 % on the outro; 1 is a plume (×2.4–2.7, the eddies' lap +15 %);
+  .05 sits inside the 10 % guard (+3 %, the outro +10 %) and the 1 fps eye finds nothing it buys; a wider pen (RAD 2) pushes more at the same
+  PEN_V (+44 %: the impulse ∝ dx · rad) and reads no sharper (dgrad .91–.99).
+- **The eye (the montages):** `tools/accept/v0.37/fluid2-s116-s5-RaindropsOnRoses.jpg` — 76–137 at 1 fps, rows off (composite + dye),
+  SHIP (composite + dye), AX 0 (dye), V .25 (dye), V 1 (dye), at t 80 95 105 113 120 125 131 136 — at ONE second per shot the breakdown's
+  ink is a cloud under every variant (the pool's own eddies smear whatever enters; V 1's plume is the one row that differs, and it differs
+  by a bulge of ink, not a line). `…-pads10fps.jpg` — the pads 118.9–120.4 at 10 fps, six consecutive dye shots, the central band at full
+  size, floor vs the shipped pen: **the floor's ink sits as two or three separate blobs that stay put (the eddies feeding a fixed source);
+  the pen's is ONE continuous band bridging where the blobs were — the trail of its walk x .48 → .30 → .48 over 3 s. A line being drawn.**
+  On the groove the fast pool smears either one (dgrad +1.6 %, the eye's difference nil) — the pen is the breakdown's instrument, which is
+  where a lead or a voice carries the pool.
+- **The ship decision:** `PEN_SRC 1` ships — the eye says line (at the beat's cadence, on the breakdown) and the budget holds to 1e-9;
+  `PEN_AX 1` (the plan's letter, the 15 s centre, is a dot — its ease was built for the HUE, where a progression must be one colour; a pen
+  wants the chord); `PEN_V 0` (the user's frame — it draws, it does not inject mass — and the guard: 0 is zero force to the digit, .25 breaks
+  it on the still windows, .05 passes and buys nothing); `PEN_RAD 1`, `PEN_TAU .3`, `PEN_VMAX .5` (the clamp active only on the groove's
+  chord steps). What the pen draws today is the HARMONY — help.js and CONTRACTS §1.1 say so.
+- **The gates (RaindropsOnRoses-filtered; `tools/work/fluid2/s5/gates.sh`, the log `gates.log`; each with its wall time):** `node tools/check.js` 183 modules · 0 fail · 9 warn (inject2.js over the 350-line soft cap at 393 — the comments);
+  `npm test` exit 0 — test_fluid **423 ok 0 fail** (S5's 20 cases in the bands block), test_music 151 ok (19 s); `node tools/license.js` 186 public
+  files, 0 without the header (the ruler lives in tools/work); **SCENES=13 real-md5 Raindrops ×2: 8 / 8 cmp-equal (69 s + 69 s)**, all 8 moved
+  against S4's (the floor's splat is the pen's on every frame) → re-based into `real-md5-v037.txt` (8 lines, the other 322 untouched; the first
+  run shared the GPU with a 33 h-old headless Chrome found and killed mid-run — a/b still cmp-equal, frame0 2); **SCENES=12 real-md5 Raindrops:
+  8 / 8 = v036 (68 s)** — the pool grammar returns no pen, the step the §104 pass; **the roster 0 1 3 Raindrops: 24 / 24 = v037 (208 s)**,
+  differ [], new []; **real-rulers s13 Raindrops 56–116: 1 / 1 ok (65 s)** — jump viol 0 max .058, mon viol 0 max .0161, black 0, clip25 0,
+  medY .194; **scene-md5 fake: 26 = v035 (s13's pair aside), errs [] on 14 ids (213 s)**; s12's pair unmoved (3e483039 / 2274bb4e = v035),
+  s13's pair re-recorded 9a67af34 / fb6a5d6f (S4's 9a5a843b / 9ec3cf10 — the pen on the fake's floor); **parity fake: max |diff|
+  7.852214593751443 over 72 fields, the §102 nav.* line to the digit (51 s)**; **the substrate bench** (one page test&scene=12, q .95 pinned,
+  load 1.68, the GPU clock ramping over the run as in S4): pool / bands ship (the pen on, V 0) / bands pen-off (PEN_SRC 0: the floor's splat) /
+  bands pen V 1 ×3 = 1.198 / 1.105 / 1.072 / 1.066 · 1.063 / 1.047 / 1.060 / 1.041 · 1.058 / 1.064 / .847 / .809 — **medians 1.063 / 1.064 /
+  1.060 / 1.041: ship − pool +.001, ship − pen-off +.004, within ±.05** (one splat for one splat: no cost by construction; the absolute ms are
+  this desktop's load — S4 read .85–.87 at load 1.96 after its own ramp); the show pass bench(13) .411 / bench(12) .363 (the pen is the pool's,
+  nothing on the show pass), bench(0) 1.418; tier 3, sim 259×128, dye 1035×512; **MOBILE=1 scene 13 tier 0 alive** (errs [] bad [] frameN
+  242, `pen` on at x .44; benchFluid bands ship .536 / pen-off .533 / pool .481 — the pen inside the quad's noise; show13 .603 / show12 .574 —
+  the tier-0 substrate still over the .4 budget on this loaded desktop, S4's finding); `npm run build` 182 modules **1 851 843 bytes** (S4's
+  1 841 924 + 9.9 KB, the comments mostly), file:// scene 13 bands errs [] frameN 302, scene 12 pool errs [] frameN 303; the crossfade 12 → 13
+  greys 34.7 … 19.7 … 34.0 max step 7.66 / 255 §1.9 viol [], 13 → 0 the forced branch's revert, errs [], max step 1.96. inject.js untouched.
+- **Open, carried:** **the full sweep before any tag** (the user's word; S1–S4's open lists stand) — the pen's x span and stroke per track
+  (the pure ruler runs on any trace in a minute: `JR` is the one argument to change) and the tritone lifts on tracks whose harmony crosses
+  the pinned key's tritone (Raindrops never does; a track in a key its chords leave would lift — the wrap is a cut by design, the sweep
+  decides if it wants a fade instead); the pen on a track with NO floor (noise, silence) is nothing — correct, and not yet seen on
+  Comptine's applause; `fluid-tracks.js` gained no S5 column (the pen's x span and stroke read off the pure ruler, not the replay — one line
+  if S7 wants them; its `ORDER` counts `pen` as unclassified, as `dip` / `sjet`); the push stays a switch at 0 with its finding (remove it if
+  the sweep agrees); the pen's y (the centroid) is barely exercised on Raindrops (y .43–.53 — the centroid sits mid-range) — a bright lead
+  would lift it; a montage at 10 fps on the groove was not taken (the 1 fps groove reads nil either way).
+- **S5b — the vocal feature (deferred; one extractor session, NOT this plan's; so the next session builds it in one go):** *The feature:*
+  an ears stage on the PCM bus (`assets/engine/ears/`, beside the lanes): per hop a pitch estimate in 200–3000 Hz (a normalised
+  autocorrelation or a cepstral peak over a ~40 ms window, the usual pitched-ness test) and its harmonic-to-noise ratio (the energy at the
+  harmonics of that pitch over the rest of the band), gated by pitch CONTINUITY over ~100 ms (three hops within a semitone — a sung note
+  holds, a hat does not) and by `presence`; the output eased ~.1 s. *The MS keys to add (FEATS entries, fake-timeline defaults, parity
+  untouched — the parity set is the 72 v3 fields; md5 unmoved until a scene reads them):* **`voxS`** (0–1, the vocal presence — the HNR ×
+  the continuity through a knee on the track's own range, §111 item 7's shape), **`voxHz`** (the pitch in Hz, −1 = none), `voxConf`
+  (0–1, the estimate's confidence — optional). *The hook in inject2 (PEN_SRC 2, the reads added to FLUID_FEATS then):* the floor's ink SPLIT
+  by `voxS` between the floor's cloud at the tonic (× (1 − voxS)) and the pen (× voxS) — Σ = the floor's budget, so an instrumental passage
+  keeps the floor and a sung one moves it onto the pen (not `presence = voxS` in place of the floor's level, which would darken every
+  instrumental track); the pen's x from `voxHz` as a pitch class on the tonic axis (`p = 12·log2(voxHz / 440) + 69`, `pc = p mod 12`, the
+  fifths position `7·pc mod 12` continuous — the same `x = frac((d + 6.5) / 12)` as today, so the pen follows the melody up and down the
+  circle), y from the octave (.25 + .5 · clamp(log2(voxHz / 110) / 4, 0, 1): 110–1760 Hz), the target eased and clamped as today; voxHz −1
+  → the harmony's centre (today's AX 1). *The ruler:* a hand-marked vocal window on IBelongHere and WhoLikesToParty (the two library tracks
+  with a voice — the plan's §3) in `windows.json` as the `test_music` ruler: `voxS` p50 inside the sung bars > 2× outside, `voxHz` within a
+  semitone of the sung note on a hand-checked bar (the click render recipe, HARNESS "Hearing a truth grid"); RaindropsOnRoses's breakdown
+  lead 111–137 as the third window (a lead is pitched and continuous — the feature will read it as a voice, and should). *The cost:* one
+  full session — the stage (~150 lines), the three FEATS entries, the two-track ruler and its hand marks, the md5 re-base when FLUID2 reads
+  it; parity untouched. *The pitfall:* the pen then draws the melody — a track with a lead synth and no voice draws it too (a pitched-ness
+  test cannot tell them apart; the user must not read the pen as a vocal detector either way).
+- **For S6's builder (time):** the kinds in the list are now the base's + `dip` + `sjet` + **`pen`** (and no `floor` while PEN_SRC > 0 —
+  a ruler that counts `floor` frames under the band grammar counts zero; count `pen`); the band grammar's record set on `FLUID` is `heave,
+  swirl, kick, mids, snare, grain, highs, pen`; the pen's state (`penN, penP, penY, penLx, penLy`) is reset on the cold frame and on
+  PEN_SRC 0 — a freeze (S6's `dtSim` 0) must NOT advance the pen (its ease runs on `dt`: pass the frozen dt, or the pen keeps walking over
+  frozen ink — the plan's precedence "a dtSim of 0 from the base wins" is fluid.js's multiply, the grammar still sees the wall dt); the
+  replays' `FLUIDK=` is the band table with `INJECT=inject2.js`; the gates script's `scene-md5.sh` tag is a hand edit (s4 → s5 → s6); a
+  stale headless Chrome from an earlier worker shares the GPU — `ps -o pid,etimes -p $(pgrep -d, -f 'chrome.*remote-debugging')` before
+  any strip or gate and kill the day-old ones by pid (four were found this session, 32 h old); the 10 fps strip is the pen's cadence — a
+  1 fps strip cannot show a stroke of a twentieth of the screen per beat.
+
 
 ### S6 — time (not started)
 

@@ -1,0 +1,79 @@
+== s13a start 22:07:19
+73cbe9e1ab57866462cc8f826dfd9567  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13a wall 69 s
+== s13b start 22:08:28
+73cbe9e1ab57866462cc8f826dfd9567  s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s13b wall 69 s
+== s13 a/b cmp-equal 8 lines
+== s13 vs v037 (S4): 0 unmoved, 8 moved: s13-RaindropsOnRoses-build1-f730-m0.jpg s13-RaindropsOnRoses-build1-f730-m1.jpg s13-RaindropsOnRoses-drop1-f1030-m0.jpg s13-RaindropsOnRoses-drop1-f1030-m1.jpg s13-RaindropsOnRoses-groove-f602-m0.jpg s13-RaindropsOnRoses-groove-f602-m1.jpg s13-RaindropsOnRoses-intro-f602-m0.jpg s13-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 start 22:09:38
+a6155f7caf1a1abd813d3f1a587b15cd  s12-RaindropsOnRoses-intro-f602-m1.jpg
+== s12 wall 68 s
+== s12 Raindrops vs v036: 8 / 8 equal, differ []
+== roster start 22:10:46
+c84fce0c141ad711c1af778d08ac4ef6  s3-RaindropsOnRoses-intro-f602-m1.jpg
+== roster wall 208 s
+== roster 0 1 3 Raindrops vs v037: 24 / 24 equal, differ [], new []
+== rulers start 22:14:14
+13  fluid2    RaindropsOnRoses 56-116    continuous | 600   0     0.194  0.0221 | 3599  0.058  0     0     | 3599  0.0161 0     | ok
+real-rulers s5-rain: 1 scenes × 1 tracks, 0 FAIL, 65 s wall (map 1, PAR 1)
+== rulers wall 65 s
+== fake start 22:15:19
+== fake wall 213 s
+errs [] on 14 ids
+== fake 26 = v035 (s13's pair aside)
+3e48303900f1447bc8da8624273ef554  s12-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+9a67af34fafa3657c7a8f4cf028afd16  s13-f360.jpg
+fb6a5d6f9757d20d80eb68eef2d56b16  s13-f840.jpg
+== parity start 22:18:52
+info (fields on one side only — v3 creates some at runtime, level was deleted): level:missing in ew  highM:missing in v3  buildPk:missing in v3  liveT:missing in v3  arcT:missing in v3  surRaw:missi
+max |diff| over all numeric fields: 7.852214593751443 · fields compared 72
+MISMATCH: nav.c=2.0922965052426807  nav.mode=1  nav.h=0.731401391594356  nav.alpha=0.49002564187315134  nav.th=1.0322474015564918  nav.lg=7.852214593751443  nav.par=0.7771599445147408  nav.vtime=0.829
+== parity wall 51 s
+== bench 22:19:43
+setInterval(()=>CARD.Q.q=0.95,16);'pinned' => "pinned"
+CARD.benchFluid(300,null,'pool').toFixed(3)+' cold' => "1.203 cold"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "1.198 pool"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=0,CARD.benchFlu => "1.105 ship {\"on\":1,\"src\":1,\"x\":0.6169267696378089,\"y\":0.4775,\"step\":0,\"v\":0,\"ink\":0.0006493653567459295,\"floor\":0.0006493653567459295,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=0,CARD.benchFluid(300,null,"bands").t => "1.072 pen-off {\"on\":0,\"src\":0,\"x\":0.6169267696378089,\"y\":0.4775,\"step\":0,\"v\":0,\"ink\":0,\"floor\":0,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=1,CARD.benchFlu => "1.066 pen-v1"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "1.063 pool"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=0,CARD.benchFlu => "1.047 ship {\"on\":1,\"src\":1,\"x\":0.623889798398079,\"y\":0.472502,\"step\":0,\"v\":0,\"ink\":0.012022639871419522,\"floor\":0.012022639871419522,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=0,CARD.benchFluid(300,null,"bands").t => "1.060 pen-off {\"on\":0,\"src\":0,\"x\":0.623889798398079,\"y\":0.472502,\"step\":0,\"v\":0,\"ink\":0,\"floor\":0,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=1,CARD.benchFlu => "1.041 pen-v1"
+CARD.benchFluid(300,null,"pool").toFixed(3)+" pool" => "1.058 pool"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=0,CARD.benchFlu => "1.064 ship {\"on\":1,\"src\":1,\"x\":0.6341685551394308,\"y\":0.521999,\"step\":0,\"v\":0,\"ink\":0.006009897550269917,\"floor\":0.006009897550269917,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=0,CARD.benchFluid(300,null,"bands").t => "0.847 pen-off {\"on\":0,\"src\":0,\"x\":0.6341685551394308,\"y\":0.521999,\"step\":0,\"v\":0,\"ink\":0,\"floor\":0,\"wrap\":0}"
+(CARD.fluid.K2.PEN_SRC=1,CARD.fluid.K2.PEN_V=1,CARD.benchFlu => "0.809 pen-v1"
+(CARD.fluid.K2.PEN_V=0,CARD.bench(13,300).toFixed(3)+' show1 => "0.411 show13"
+CARD.bench(12,300).toFixed(3)+' show12' => "0.363 show12"
+CARD.bench(0,300).toFixed(3)+' nav' => "1.418 nav"
+JSON.stringify({tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CA => "{\"tier\":3,\"sim\":[259,128],\"dye\":[1035,512],\"q\":0.95,\"g\":\"pool\",\"errs\":[]}"
+ 22:19:57 up 36 days,  9:34,  1 user,  load average: 1.68, 1.76, 1.56
+== MOBILE=1 tier 0: scene 13 alive + the substrate quads at tier 0
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,tier:CAR => "{\"sc\":13,\"g\":\"bands\",\"tier\":0,\"sim\":[64,139],\"dye\":[256,554],\"errs\":[],\"bad\":[],\"frameN\":242,\"pen\":{\"on\":1,\"src\":1,\"x\":0.4415299072658356,\"y\":0.4775,\"step\":0.0006602487169201643,\"v\":0.03977401909157735,\"ink\":0.01176276038215895,\"floor\":0.01176276038215895,\"wrap\":0},\"flinfo\":\"{\\\"expo\\\":1.0366,\\\"vis\\\":1,\\\"ring\\\":0,\\\"nHat\\\":16,\\\"on\\\":1,\\\"relief\\\":24,\\\"nSplat\\\":0,\\\"spec\\\":0.9499,\\\"specPow\\\":62,\\\"highS\\\":0.3499,\\\"grain\\\":0,\\\"seed\\\":242}\"}"
+CARD.benchFluid(300,null,'bands').toFixed(3)+' bands ship' => "0.536 bands ship"
+(CARD.fluid.K2.PEN_SRC=0,CARD.benchFluid(300,null,'bands').t => "0.533 bands pen-off"
+(CARD.fluid.K2.PEN_SRC=1,CARD.benchFluid(300,null,'pool').to => "0.481 pool"
+CARD.bench(13,300).toFixed(3)+' show13' => "0.603 show13"
+CARD.bench(12,300).toFixed(3)+' show12' => "0.574 show12"
+JSON.stringify({errs:CARD.ERRS,bad:CARD.nonFinite(),tier:CAR => "{\"errs\":[],\"bad\":[],\"tier\":0,\"pen\":{\"on\":1,\"src\":1,\"x\":0.4621372926982114,\"y\":0.4775,\"step\":0.00037505317148855966,\"v\":0.022593564547504268,\"ink\":0.006240042894029961,\"floor\":0.006240042894029961,\"wrap\":0}}"
+== build 22:20:03
+bundled 182 modules → dist/index.html (1800 KB)
+1851843
+== file:// 22:20:03
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":13,\"g\":\"bands\",\"on\":true,\"frameN\":302,\"errs\":[],\"bad\":[],\"n\":13}"
+JSON.stringify({sc:CARD.SC.cur,g:CARD.fluid.grammar,on:CARD. => "{\"sc\":12,\"g\":\"pool\",\"on\":true,\"frameN\":303,\"errs\":[],\"bad\":[],\"n\":13}"
+VER = '0.36.0'
+== fade 22:20:15
+CARD.SC.forced=-1;CARD.goScene(13,false);CARD.SC.forced=13;J => "{\"cur\":12,\"next\":13,\"dur\":1.6003089469811436,\"g\":\"pool\",\"f0\":2}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\"}"
+CARD.goScene(0,false);JSON.stringify({cur:CARD.SC.cur,next:C => "{\"cur\":13,\"next\":0,\"g\":\"bands\"}"
+JSON.stringify({cur:CARD.SC.cur,next:CARD.SC.next,g:CARD.flu => "{\"cur\":13,\"next\":-1,\"g\":\"bands\",\"errs\":[],\"bad\":[],\"heard\":37.07}"
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+a grey 34.7 36.3 36.6 37.0 37.2 36.4 28.9 21.2 19.7 22.3 24.0 25.7 27.6 30.3 31.6 32.3 32.3 33.8 33.5 33.2 32.7 34.0
+a max step 7.66 /255 · §1.9 viol []
+b grey 32.1 31.9 31.6 32.6 32.4 32.2 31.9 33.5 33.1 32.7 32.4 34.3 34.1 33.7 33.5 34.4 34.0 33.7 33.2 34.5 33.9 33.3
+b max step 1.96 /255 · §1.9 viol []
+== all done 22:20:35

@@ -24,7 +24,7 @@ for a in sys.argv[3:]:
 ev = {}
 for l in open(f'{d}/evals.txt'):
     l = l.strip().strip('"')
-    m = re.match(r'^(\d\d) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$', l)
+    m = re.match(r'^(\d\d) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)(?: .*)?$', l)   # §116 S5: the pen's fields may follow
     if m: ev[m.group(1)] = m.groups()[1:]
 def lum(f, crop=True):
     im = np.asarray(Image.open(f).convert('RGB'), dtype=np.float32) / 255

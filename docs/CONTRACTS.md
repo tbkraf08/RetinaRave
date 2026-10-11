@@ -148,7 +148,12 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               seeded by the step count; bounded so the pool's mean speed stays within 10 % of the grain-off run), every
                               hat droplet DIPS the governed dyeDiss a frame or two (never inside the clear), and the slow top band is the
                               LIGHT: FLUID2's own show pass tightens and brightens the glint from `highS` (display only — "air above 8 kHz"
-                              has no band, `highS` 5–16 k is the nearest and says so); the
+                              has no band, `highS` 5–16 k is the nearest and says so); the voice (S5) is a PEN —
+                              the MECHANICS only, the vocal feature deferred (S5b): one sustained `pen` splat REPLACES the §108
+                              floor cloud at the same ink in the budget's units, drifting along the tonic axis with the
+                              harmony's centre (the stand-in for a pitch), eased on the fifths circle with its per-frame step
+                              clamped (the §1.9 step; the one lift is the tritone wall), a small push along its own drift — it
+                              draws, it never injects mass; what it draws today is the HARMONY, not the voice; the
                               rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
@@ -276,7 +281,11 @@ needed, now generic:
   inside the confirmed clear), the cell and hold for the uniforms, `jit` the DYE pass's `uJit` in dye texels (the back-trace sample point
   jittered ±½·jit; (0, 0) is the identical dye pass; the velocity pass passes (0, 0)) — `CARD.fluid.highs`; the specular and the display
   grain are the SCENE's, not the grammar's: FLUID2's show pass reads `highS` / `high` itself (`uSpecPow`, `uGrain`, its own `uSeed` =
-  `ctx.fluid.steps & 255`) and lights the ink — display only, no return field, the pool bit-identical under them (§116 S4). `fluid.js` reads them from the plan of the grammar that owns the
+  `ctx.fluid.steps & 255`) and lights the ink — display only, no return field, the pool bit-identical under them (§116 S4); (S5) `pen` (`{ on, src, x, y,
+  step, v, ink, floor, wrap }` — the pen's place this frame (uv), its move (`step`, on the fifths circle: ≤ `PEN_VMAX · dt` on every frame), its drift
+  speed (uv/s), its area-weighted ink and the floor's it replaced (equal by construction), `wrap` 1 on a tritone lift; `on` 0 under `PEN_SRC` 0 where the
+  list carries the base's `floor` to the byte; `src` the switch, 2 reserved for the vocal feature's reads that do not exist yet) — `CARD.fluid.pen`; the
+  pen is a SPLAT (`k: 'pen'`), nothing on the passes. `fluid.js` reads them from the plan of the grammar that owns the
   step; the pool grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
   the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect

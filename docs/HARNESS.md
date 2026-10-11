@@ -406,6 +406,26 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   scene-12 page never runs FLUID2's `update()` — its spec / grain uniforms are the last frame's (FLUID's constants, grain 0): bench the show
   pass on `test&scene=13`, set the knob, wait a frame, then bench (the specular read +.03 ms there, the display grain +.09); and a gates script
   copied from the step before carries `tools/scene-md5.sh <tag>` by hand — S4's fake list landed in `s3-md5.txt` and was compared by hand.
+- **The pen strip — the STROKE ruler (§116 S5; FLUID2-PLAN §4 S5):** does the pen draw a LINE, or sit as a blob? Two readings. (1) The PURE
+  ruler, at 60 fps with no GL: `node tools/work/fluid2/s5/ruler.js '<tag>|<K2 json>' …` replays RaindropsOnRoses's real trace through inject2
+  under each K2 and prints, per window (groove 76–110, breakdown 111.4–137.1, thin 111–116, pads 118–126, outro 127–137, all), the pen's frames
+  against the floor's (the control: PEN_SRC 0 — the "it heard that one" ruler: the counts must match), the ink/s of each (equal by construction —
+  the pen is the floor's ink in the budget's units), the own ink rate pen ÷ control and the largest relative dyeDiss difference (the governor's
+  proof: 1.000000 and 0), the STROKE PER BEAT (Σ `pen.step` over each beat's frames, p50 / p90 — the dye's path along the axis per beat; a line
+  is a stroke the eye can follow at the beat, a blob is < .01), the largest per-frame step against `PEN_VMAX · dt` (the §1.9 step), the tritone
+  lifts (`wrap`), the x span (p90 − p10), the drift speed, the push's largest |(dx, dy)|. (2) The EYE: the field strip with `DYE=1` over the
+  groove AND the breakdown — `DYE=1 K2='{"PEN_AX":1}' PORT=89xx tools/fluid-field-strip.sh RaindropsOnRoses 13 <tag> 76 137 1 24` (the
+  evals line carries `penOn penX penY penStep penInk` after the highs' four), `tools/fluid-highs-grain.py` on it for the pool's speed (the
+  pen's push is the guard: within 10 % of the pen-off strip per window) and the dye's ink / edges, `tools/work/fluid2/s5/{run.sh, montage.py}`
+  (the montage's label: the pen's on / x / y / step per shot beside speed / dink / dgrad; the composite and the dye rows). Read the dye row:
+  a pen leaves a trail the advection carries off from a moving point; the floor was a cloud at one place. **What the ruler found (§116 S5):**
+  at 1 fps the breakdown's ink is a cloud under every variant (the pool's own eddies smear whatever enters) — the stroke needs the beat's
+  cadence: a 10 fps strip over the pads (`tools/fluid-field-strip.sh RaindropsOnRoses 13 pen10 118 121 10 24`, the central band of six
+  consecutive dye shots cropped at full size) shows the floor's ink as separate blobs that stay put and the pen's as one continuous band
+  bridging them — the trail of a walk x .48 → .30 → .48 over 3 s; the plan's-letter axis (the 15 s harmony centre, `PEN_AX 0`) moves .008
+  screen heights per beat — a drifting dot — and the frame's `harmAngle` through the pen's own .3 s ease (`PEN_AX 1`) .054 per beat over a
+  quarter of the screen; the push is the guard's edge on a NEAR-STILL pool (the breakdown at .05 uv/s: `PEN_V` .25 lifts its speed +24 %, 1 is a
+  plume ×2.4–2.7, .05 sits at +3 %) — ink only (`PEN_V 0`) is zero force to the digit (speed and lap 1.000 on every window), and ships.
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into

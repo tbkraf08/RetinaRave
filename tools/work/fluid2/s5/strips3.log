@@ -1,0 +1,9 @@
+== 21:59:49 RaindropsOnRoses s13 ax1v05 K2={"PEN_AX":1,"PEN_V":0.05}
+== RaindropsOnRoses s13 ax1v05 76-137: "{\"HEAVE\":0.6,\"HEAVE_DC\":0.15,\"SUB_TAU\":0.04,\"SUB_SLOW\":2,\"FLIP\":0,\"GLIDE_K\":3,\"SWIRL\":0,\"SUB_G · "{\"f0\":2,\"frame\":6784,\"errs\":[],\"bad\":[],\"steps\":6784}" · 62 shots · 129 s
+# ax1v05: n 62 · r(speed, sub) 0.786 · speed p10/p50/p90 0.0482/0.2528/0.3678 · sub mean 0.56 · coverage nan % of 44 sub-up shots above floor nan
+# ax1v05 groove: n 34 · high 0.45800 · highS 0.27500 · grain 0.43279 · dip 1.00000 · speed 0.32053 · lap 0.01800 · dgrad 0.00942 · dlap 0.00718 · dink 0.15564 · cgrad 0.02315 · grey 53.34146
+# ax1v05 breakdown: n 26 · high 0.51400 · highS 0.31900 · grain 0.30662 · dip 1.00000 · speed 0.06099 · lap 0.01939 · dgrad 0.00847 · dlap 0.00695 · dink 0.14267 · cgrad 0.01737 · grey 37.38063
+# ax1v05 thin: n 5 · high 0.16700 · highS 0.05400 · grain 0.12034 · dip 1.00000 · speed 0.05679 · lap 0.00939 · dgrad 0.00474 · dlap 0.00413 · dink 0.11455 · cgrad 0.00836 · grey 31.75554
+# ax1v05 pads: n 8 · high 0.46700 · highS 0.27200 · grain 0.23320 · dip 1.00000 · speed 0.04876 · lap 0.01856 · dgrad 0.00956 · dlap 0.00721 · dink 0.17873 · cgrad 0.01737 · grey 37.73407
+# ax1v05 outro: n 10 · high 0.59900 · highS 0.48300 · grain 0.46644 · dip 1.00000 · speed 0.25280 · lap 0.02568 · dgrad 0.01053 · dlap 0.00816 · dink 0.14738 · cgrad 0.02256 · grey 42.32765
+== done 22:02:00
