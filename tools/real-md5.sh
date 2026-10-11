@@ -11,7 +11,7 @@
 # or engine change is PROVEN here.
 #   GPU=1 PORT=88xx tools/real-md5.sh <tag>         -> tools/work/real-<tag>/<name>.jpg + tools/work/real-<tag>-md5.txt (the list)
 #   HASHX='&k2=%7B%22DT_SUB%22%3A0%7D' appends extra hash params to every page (§116 S6: the band grammar's knobs url-encoded — proves a knob set's identity)
-#   the DEFAULT (tools/accept.sh): SCENES = the roster (0 1 3 12; FLUID bids since §114), every track, both modes, WINDOWS = intro groove build1 drop1
+#   the DEFAULT (tools/accept.sh): SCENES = the roster (§118's ids: 0 FLUID · 2 NAV2 the home · 3 DUST · 4 TORUS2 — FLUID bids since §114), every track, both modes, WINDOWS = intro groove build1 drop1
 #   (boundary1 on a drop-less track) + the take's intro / chords; FULL=1 = every registered id and every window (quiet, build2, drop2).
 #   scope: SCENES="0 3" TRACKS="SeeYouDrop rec" MODES="1" WINDOWS="groove drop1"   — a scene-folder change is proven on its own lines
 #   PAR=2 runs two scene lanes at once on PORT and PORT+1 (the md5s do not move: rule 1 holds the clock through the decode — proven
@@ -23,7 +23,7 @@ TAG=$1; [ -z "$TAG" ] && { echo "usage: GPU=1 PORT=88xx tools/real-md5.sh <tag>"
 PORT=${PORT:-8921}; PAR=${PAR:-1}
 ALLIDS=$(grep -hoE "^ {2,6}(\{ )?id: [0-9]+" assets/scenes/*/index.js | grep -oE "[0-9]+$" | sort -n)
 if [ -n "$FULL" ]; then SCENES=${SCENES:-$ALLIDS}; WINDOWS=${WINDOWS:-intro groove quiet build1 drop1 boundary1 build2 drop2 boundary2 chords}
-else SCENES=${SCENES:-0 1 3 12}; WINDOWS=${WINDOWS:-intro groove build1 drop1 boundary1 chords}; fi
+else SCENES=${SCENES:-0 2 3 4}; WINDOWS=${WINDOWS:-intro groove build1 drop1 boundary1 chords}; fi
 MODES=${MODES:-1 0}
 TRACKS=${TRACKS:-$(python3 -c "import json;print(' '.join(json.load(open('tools/truth/windows.json'))['tracks']))")}
 RECWAV=${RECWAV:-tools/work/fluid-diag/music}

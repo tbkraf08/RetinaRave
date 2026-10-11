@@ -9,7 +9,7 @@
 # spike rule on mean |ΔY| outside event frames + 0.3 s; black frames) and the continuity monitor on the scene's OWN state (--mon=1,
 # CARD.NAV = REG[id].scene.state where it is monitor-shaped) — into ONE table.
 #   GPU=1 PORT=88xx tools/real-rulers.sh <tag>      -> tools/work/rulers-<tag>/s<id>-<track>.{csv,txt,json,log} + the table on stdout
-#   the DEFAULT (tools/accept.sh): SCENES = the roster (0 1 3 12; FLUID bids since §114) on every track + the take; FULL=1 = every registered id.
+#   the DEFAULT (tools/accept.sh): SCENES = the roster (§118's ids: 0 FLUID · 2 NAV2 · 3 DUST · 4 TORUS2; FLUID bids since §114) on every track + the take; FULL=1 = every registered id.
 #   scope: SCENES="0 3" TRACKS="SeeYouDrop rec"; MAP=0 runs the live lanes (&map=0; the take always does); PAR=2 two scene lanes
 #   (PORT, PORT+1 — never while a bench runs).  RECWAV=<dir with rec.wav> (default tools/work/fluid-diag/music).  TABLE=1 re-tabulates
 #   the runs already in tools/work/rulers-<tag>/ without running (the FAIL rules applied again).
@@ -21,7 +21,7 @@ cd "$(dirname "$0")/.." || exit 1
 TAG=$1; [ -z "$TAG" ] && { echo "usage: GPU=1 PORT=88xx tools/real-rulers.sh <tag>"; exit 2; }
 PORT=${PORT:-8941}; PAR=${PAR:-1}
 ALLIDS=$(grep -hoE "^ {2,6}(\{ )?id: [0-9]+" assets/scenes/*/index.js | grep -oE "[0-9]+$" | sort -n)
-if [ -n "$FULL" ]; then SCENES=${SCENES:-$ALLIDS}; else SCENES=${SCENES:-0 1 3 12}; fi
+if [ -n "$FULL" ]; then SCENES=${SCENES:-$ALLIDS}; else SCENES=${SCENES:-0 2 3 4}; fi
 TRACKS=${TRACKS:-$(python3 -c "import json;print(' '.join(json.load(open('tools/truth/windows.json'))['tracks']))")}
 RECWAV=${RECWAV:-tools/work/fluid-diag/music}
 has() { case " $1 " in *" $2 "*) return 0;; esac; return 1; }

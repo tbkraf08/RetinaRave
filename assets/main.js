@@ -35,19 +35,15 @@ import composite from './effects/composite.js';
 import mixs from './transitions/mixs.js';
 import morph from './transitions/morph.js';
 
-import nav from './scenes/nav/index.js'; // §102: id 8, key 9 — the v0.33 navigator, forced-only, kept as the control; DRUM (id 4) stays its variant
-import dust from './scenes/dust/index.js';
-import mandala from './scenes/mandala/index.js';
-import torus from './scenes/torus/index.js';
-import polytope from './scenes/polytope/index.js';
-import feigen from './scenes/feigen/index.js';
-import torus2 from './scenes/torus2/index.js'; // v0.7: id 3, TORUS's bid (DECISIONS §37); torus is torus-v1 at id 7, forced-only
-import nav2 from './scenes/nav2/index.js'; // §102 (2026-10-08): id 0, key 1, the director's HOME — the retuned navigator (§97–§101); registered after nav so its `home: true` is the last one (core/scenes.js:50)
-import maxwell from './scenes/maxwell/index.js'; // v0.10: id 9, forced-only (score 0; the `n` key cycles to it — the number keys ran out) — MAXWELL-SESSION-PROMPT.md
-import gielis from './scenes/gielis/index.js'; // v0.14: id 10, forced-only (score 0; no digit key — `n` cycles to it, or &scene=10) — GIELIS-SESSION-PROMPT.md
-import chladni from './scenes/chladni/index.js'; // v0.15: id 11 ("slot 12"), forced-only (score 0; no digit key — `n` cycles to it, or &scene=11) — ENGINE-CHLADNI-SESSION-PROMPT.md
-import fluid from './scenes/fluid/index.js'; // §106: id 12 ("slot 13"); on the roster since §114 (its own fit bid beside NAV, DUST, TORUS2; no digit key — `n` cycles to it, or &scene=12) — the fluid substrate shown as itself (FLUID-PLAN Step 3)
-import fluid2 from './scenes/fluid2/index.js'; // §116: id 13, forced-only (score 0; no digit key — `n` cycles to it, or &scene=13) — FLUID's pool under the band grammar (its card's `fluid.grammar`, core/fluid/inject2.js; FLUID2-PLAN)
+import fluid from './scenes/fluid/index.js'; // §118 the lean-down (2026-10-11): id 0, key 1 — the fluid substrate shown as itself (§106, FLUID-PLAN Step 3); on the roster since §114 (its own fit bid beside NAV2, DUST, TORUS2)
+import fluid2 from './scenes/fluid2/index.js'; // §118: id 1, key 2 — FLUID's pool under the band grammar (its card's `fluid.grammar`, core/fluid/inject2.js; §116, FLUID2-PLAN); forced-only (score 0)
+import nav2 from './scenes/nav2/index.js'; // §118: id 2, key 3 — the retuned navigator (§97–§101) and the director's HOME (`home: true`; core/scenes.js register() seats SC.cur there, so a page load still opens on NAV2 as it did when the home was the literal id 0)
+import dust from './scenes/dust/index.js'; // §118: id 3, key 4 — the overhauled cloud (§61–§82); on the roster
+import torus2 from './scenes/torus2/index.js'; // §118: id 4, key 5 — the Hopf torus (§37); on the roster
+import mandala from './scenes/mandala/index.js'; // §118: id 5, key 6 — the box-fold kaleidoscope; forced-only (score 0)
+// §118 the lean-down (the user: "I never look at polytope, feigen, maxwell, gielis, chladni, key5-nav, key8-torus, key9-nav, and OK to archive"):
+// the eight scenes they named — POLYTOPE, FEIGEN, MAXWELL, GIELIS, CHLADNI, the v0.33 NAV with its DRUM variant, and TORUS v1 —
+// moved to archive/scenes/ with their tests, worker docs and accept references. The old → new id map is archive/README.md.
 
 const $ = (id) => document.getElementById(id);
 
@@ -76,7 +72,7 @@ initFluid(ctx); // before resize(): its targets are allocated on the first resiz
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
-for (const scene of [nav, dust, mandala, torus2, polytope, feigen, torus, nav2, maxwell, gielis, chladni, fluid, fluid2]) {
+for (const scene of [fluid, fluid2, nav2, dust, torus2, mandala]) { // §118: the six kept scenes, in id order — REG is dense 0..5 (the arrow keys and `n` cycle it; core/scenes.js stepScene)
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);

@@ -19,11 +19,13 @@
 //      the dwell holds FLUID against a profile TORUS2 wins, a forced scene (the panel preset's manual.scene, §94) wins over the bid
 //   node tools/test_director.js -> per-step lines + OK / FAIL
 import { MS } from '../assets/engine/state.js';
-import { SC, REG, register, updateScenes, pickScene } from '../assets/core/scenes.js';
+import { SC, REG, SCENES, register, updateScenes, pickScene } from '../assets/core/scenes.js';
 import nav2 from '../assets/scenes/nav2/index.js';     // step 10 reads the four real bids (score() only: no init, no GL)
 import dust from '../assets/scenes/dust/index.js';
 import torus2 from '../assets/scenes/torus2/index.js';
 import fluid from '../assets/scenes/fluid/index.js';
+import fluid2 from '../assets/scenes/fluid2/index.js';
+import mandala from '../assets/scenes/mandala/index.js';
 
 let fails = 0;
 const fail = (m) => { fails++; console.log('FAIL', m); };
@@ -194,13 +196,24 @@ console.log('9. dwell (§95): the event branch waits dwellMin seconds');
   ok(SC.logical === 0, 'a drop still cuts home inside the dwell');
   SC.dwell = [0, 0];
 }
-console.log('10. FLUID joins the bid (§114): the real fit model of NAV / DUST / TORUS2 / FLUID');
+console.log('10. FLUID joins the bid (§114): the real fit model of FLUID / NAV2 / DUST / TORUS2 — on §118\'s ids');
 {
-  // the stubs keep their ids and rt; their bids become the real ones (the stub 2 goes forced-only, as MANDALA is since §93)
-  REG[0].scene.score = nav2.score; REG[1].scene.score = dust.score; REG[2].scene.score = () => 0;
-  register(mk(3, 'torus2', torus2.score)); register(mk(12, 'fluid', fluid.score));
-  ok(nav2.id === 0 && dust.id === 1 && torus2.id === 3 && fluid.id === 12, 'the four real scenes carry the roster ids 0 / 1 / 3 / 12');
-  const ROSTER = [0, 1, 3, 12], NAME = { 0: 'NAV', 1: 'DUST', 3: 'TORUS2', 12: 'FLUID' };
+  // §118 (the lean-down, 2026-10-11): the registry is rebuilt on the NEW ids — the eight never-watched scenes are archived and
+  // the six kept ones were shifted down to fill the holes (fluid 0, fluid2 1, nav2 2, dust 3, torus2 4, mandala 5). Steps 1–9
+  // above are the director's own arithmetic on three stubs at 0 / 1 / 2 and keep those; this step is about the real bids, so it
+  // starts from an empty REG and seats one stub per kept scene at that scene's real id, carrying the real score().
+  REG.length = 0; SCENES.length = 0;
+  SC.mem = {}; SC.hist = []; SC.prevAlt = -1; SC.altOpen = false; SC.due = -1; SC.pend = null; SC.forced = -1;
+  register(mk(0, 'fluid', fluid.score));            // id 0, key 1 — on the roster since §114
+  register(mk(1, 'fluid2', () => 0));               // id 1, key 2 — forced-only
+  register(mk(2, 'nav2', nav2.score, true));        // id 2, key 3 — the HOME (register() seats SC.home / cur / logical here)
+  register(mk(3, 'dust', dust.score));              // id 3, key 4
+  register(mk(4, 'torus2', torus2.score));          // id 4, key 5
+  register(mk(5, 'mandala', () => 0));              // id 5, key 6 — forced-only since §93
+  ok(fluid.id === 0 && fluid2.id === 1 && nav2.id === 2 && dust.id === 3 && torus2.id === 4 && mandala.id === 5,
+    'the six kept scenes carry §118\'s ids 0 / 1 / 2 / 3 / 4 / 5 (roster 0 2 3 4, home 2)');
+  ok(SC.home === 2 && SC.cur === 2 && SC.logical === 2, '§118: register() seated the home (NAV2, id 2) as the first frame\'s scene, not the literal id 0 (FLUID)');
+  const ROSTER = [0, 2, 3, 4], NAME = { 0: 'FLUID', 2: 'NAV', 3: 'DUST', 4: 'TORUS2' };
   // §93's synthetic profiles, extended by the three fields FLUID's bid reads (bassS, keyConf, centroid)
   const PROF = {
     'sub-driven drop window': { bassS: 0.95, keyConf: 0.4, centroid: 0.35, clarity: 0.5, regularity: 0.8, punchy: 0.6, calm: 0.1 },
@@ -219,84 +232,84 @@ console.log('10. FLUID joins the bid (§114): the real fit model of NAV / DUST /
   for (const name in PROF) { set(name); console.log('    ' + name.padEnd(24) + fmt(bids())); }
   // a. the formulas alone: territories with a margin wider than the noise
   set('sub-driven drop window'); let b = bids();
-  ok(lead(b, 12) > 0.1, 'drop window: FLUID leads by ' + lead(b, 12).toFixed(3) + ' (> 0.1, the hash noise)');
+  ok(lead(b, 0) > 0.1, 'drop window: FLUID leads by ' + lead(b, 0).toFixed(3) + ' (> 0.1, the hash noise)');
   set('sub breakdown'); b = bids();
-  ok(lead(b, 12) > 0.1, 'sub breakdown: FLUID leads by ' + lead(b, 12).toFixed(3));
+  ok(lead(b, 0) > 0.1, 'sub breakdown: FLUID leads by ' + lead(b, 0).toFixed(3));
   set('steady tonal groove'); b = bids();
-  ok(lead(b, 3) > 0.1, 'steady tonal groove: TORUS2 keeps it by ' + lead(b, 3).toFixed(3));
+  ok(lead(b, 4) > 0.1, 'steady tonal groove: TORUS2 keeps it by ' + lead(b, 4).toFixed(3));
   set('slow sparse intro'); b = bids();
-  ok(lead(b, 1) > 0.2, 'slow sparse intro: DUST keeps it by ' + lead(b, 1).toFixed(3));
+  ok(lead(b, 3) > 0.2, 'slow sparse intro: DUST keeps it by ' + lead(b, 3).toFixed(3));
   set('noise, no bass'); b = bids();
-  ok(b[12] < 0.5, 'noise with no bass: FLUID bids low (' + b[12].toFixed(3) + ' — the grammar injects nothing there, §111 item 8)');
+  ok(b[0] < 0.5, 'noise with no bass: FLUID bids low (' + b[0].toFixed(3) + ' — the grammar injects nothing there, §111 item 8)');
   set('sub-driven drop window', 'build'); b = bids();
-  ok(b[1] === 0 && b[3] === 0 && b[12] === 0 && b[0] === 0.5, 'a build zeroes every away bid (NAV ' + b[0] + '), home parks by precedence');
+  ok(b[0] === 0 && b[3] === 0 && b[4] === 0 && b[2] === 0.5, 'a build zeroes every away bid (NAV ' + b[2] + '), home parks by precedence');
   // b. pickScene on a clean history, every section hash: the drop window is FLUID's whatever the noise draws
   SC.hist = []; let wins = 0;
   set('sub-driven drop window');
-  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 12) wins++; }
+  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 0) wins++; }
   ok(wins === 50, 'pickScene picks FLUID on the drop window for 50 of 50 section hashes (' + wins + ')');
   set('steady tonal groove'); wins = 0;
-  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 3) wins++; }
+  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 4) wins++; }
   ok(wins === 50, 'pickScene picks TORUS2 on the steady groove for 50 of 50 (' + wins + ')');
   set('sub-driven drop window', 'build'); wins = 0;
-  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 0) wins++; }
+  for (let sid = 0; sid < 50; sid++) { S.sectionId = sid; if (pickScene(S) === 2) wins++; }
   ok(wins === 50, 'in a build pickScene returns home for 50 of 50 (every away bid 0)');
   // c. nobody starves: the neutral profile through the −0.6 / −0.25 history dock rotates the three away scenes
   set('neutral'); SC.hist = []; const seen = {};
   for (let k = 0; k < 12; k++) { S.sectionId = 100 + k; const id = pickScene(S); seen[id] = (seen[id] || 0) + 1; SC.hist.unshift(id); SC.hist.length = Math.min(SC.hist.length, 3); }
   const seenS = ROSTER.map((id) => NAME[id] + ' ' + (seen[id] || 0)).join(' · ');
-  ok(seen[1] >= 3 && seen[3] >= 3 && seen[12] >= 3, '12 neutral picks rotate DUST / TORUS2 / FLUID (' + seenS + ')');
-  ok(!(seen[1] > 5 || seen[3] > 5 || seen[12] > 5), 'no away scene takes more than 5 of the 12');
+  ok(seen[3] >= 3 && seen[4] >= 3 && seen[0] >= 3, '12 neutral picks rotate DUST / TORUS2 / FLUID (' + seenS + ')');
+  ok(!(seen[3] > 5 || seen[4] > 5 || seen[0] > 5), 'no away scene takes more than 5 of the 12');
   // d. through the director: the groove on TORUS2, the drop cuts home, the window after it is FLUID's; the structure still takes
   //    FLUID home. awayBeat 0.5 on the home stub: v3's phrase trigger (every 16 beats from the beat home was left, step 7 set 1) can
   //    never land on a whole beat, so every pick below is the trigger this step fires. The history dock (−0.6 / −0.25) is real:
   //    a scene just shown, forced or picked, is docked — the sequences put FLUID two scenes back before asking the bid for it.
-  const reset = () => { SC.mem = {}; SC.prevAlt = -1; SC.altOpen = false; SC.due = -1; SC.pend = null; SC.forced = -1; SC.hist = []; S.sectionAlt = -1; S.repeat = false; S.seed.scene = -1; S.build = 0; S.presence = 1; S.gridTrust = 0; S.sectionId = 7; REG[0].scene.rt.awayBeat = 0.5; REG[0].scene.rt.settledAt = 0; };
+  const reset = () => { SC.mem = {}; SC.prevAlt = -1; SC.altOpen = false; SC.due = -1; SC.pend = null; SC.forced = -1; SC.hist = []; S.sectionAlt = -1; S.repeat = false; S.seed.scene = -1; S.build = 0; S.presence = 1; S.gridTrust = 0; S.sectionId = 7; REG[2].scene.rt.awayBeat = 0.5; REG[2].scene.rt.settledAt = 0; };
   const open = () => { while (S.beatCount - SC.lastBeat < 8 || SC.since < SC.dwellMin || SC.next >= 0) frame(); };
   SC.dwell = [0, 0]; reset(); set('steady tonal groove'); open();
   frame({ surpriseEvt: true });
-  ok(SC.logical === 3, 'the groove: a surprise cut lands TORUS2 (logical ' + SC.logical + ')');
+  ok(SC.logical === 4, 'the groove: a surprise cut lands TORUS2 (logical ' + SC.logical + ')');
   set('sub-driven drop window'); frame({ dropEvt: true });
-  ok(SC.logical === 0, 'the drop hard-cuts home');
+  ok(SC.logical === 2, 'the drop hard-cuts home');
   open(); frame({ identifyEvt: true });                                                 // v3 identify, no memory: pickScene
-  ok(SC.logical === 12, 'the identify in the window after the drop picks FLUID (hist ' + SC.hist.join(',') + ')');
+  ok(SC.logical === 0, 'the identify in the window after the drop picks FLUID (hist ' + SC.hist.join(',') + ')');
   open(); frame({ dropEvt: true });
-  ok(SC.logical === 0, 'a drop hard-cuts home from FLUID');
+  ok(SC.logical === 2, 'a drop hard-cuts home from FLUID');
   reset(); set('sub-driven drop window'); open(); frame({ surpriseEvt: true }); open();
-  ok(SC.logical === 12 && SC.next < 0, 'on FLUID, the fade done');
+  ok(SC.logical === 0 && SC.next < 0, 'on FLUID, the fade done');
   S.build = 0.6; frame();
-  ok(SC.logical === 0, 'a build parks home from FLUID (logical ' + SC.logical + ')');
+  ok(SC.logical === 2, 'a build parks home from FLUID (logical ' + SC.logical + ')');
   reset(); set('sub-driven drop window'); open(); frame({ surpriseEvt: true }); open();
-  ok(SC.logical === 12 && SC.next < 0, 'on FLUID again');
+  ok(SC.logical === 0 && SC.next < 0, 'on FLUID again');
   S.presence = 0.05; frame();
-  ok(SC.logical === 0, 'silence drifts home from FLUID (logical ' + SC.logical + ')');
+  ok(SC.logical === 2, 'silence drifts home from FLUID (logical ' + SC.logical + ')');
   S.presence = 1;
   // e. the dwell holds FLUID against a profile TORUS2 wins
   SC.dwell = [30, 30]; reset(); set('sub-driven drop window'); open();
   frame({ surpriseEvt: true });
-  ok(SC.logical === 12 && SC.dwellMin === 30, 'landed FLUID with dwellMin 30 (logical ' + SC.logical + ')');
+  ok(SC.logical === 0 && SC.dwellMin === 30, 'landed FLUID with dwellMin 30 (logical ' + SC.logical + ')');
   set('steady tonal groove');                                                          // TORUS2's profile from now on
   beats(20); frame({ identifyEvt: true }); beats(20); frame({ identifyEvt: true });    // identifies at 10 s and 20 s
-  ok(SC.logical === 12 && !SC.pend, 'two identifies inside the dwell leave FLUID on (since ' + SC.since.toFixed(1) + ' s)');
+  ok(SC.logical === 0 && !SC.pend, 'two identifies inside the dwell leave FLUID on (since ' + SC.since.toFixed(1) + ' s)');
   beats(22); frame({ identifyEvt: true });                                              // 31 s: the gate is open
-  ok(SC.logical === 3, 'the first identify after the dwell switches to TORUS2 (logical ' + SC.logical + ')');
+  ok(SC.logical === 4, 'the first identify after the dwell switches to TORUS2 (logical ' + SC.logical + ')');
   SC.dwell = [0, 0];
   // f. a forced scene wins over the bid (the panel's force / its preset's manual.scene, §94): no pick while it stands
   reset(); open(); set('sub-driven drop window');
-  SC.forced = 1; frame();
-  ok(SC.logical === 1, 'forced DUST shows DUST on the drop window (logical ' + SC.logical + ')');
+  SC.forced = 3; frame();
+  ok(SC.logical === 3, 'forced DUST shows DUST on the drop window (logical ' + SC.logical + ')');
   open(); frame({ surpriseEvt: true }); frame({ identifyEvt: true }); frame({ dropEvt: true });
-  ok(SC.logical === 1 && !SC.switched, 'a surprise, an identify and a drop move nothing while DUST is forced');
-  SC.forced = 12; frame();
+  ok(SC.logical === 3 && !SC.switched, 'a surprise, an identify and a drop move nothing while DUST is forced');
+  SC.forced = 0; frame();
   set('steady tonal groove'); open(); frame({ identifyEvt: true });
-  ok(SC.logical === 12, 'forced FLUID stays on the steady groove TORUS2 would win');
-  SC.forced = 1; frame(); open(); frame({ identifyEvt: true });
-  ok(SC.logical === 1, 'forced back to DUST, the identify moves nothing');
-  SC.forced = -1; SC.hist = [1];                                                        // released after a long forced stay: the history is the scene just shown
+  ok(SC.logical === 0, 'forced FLUID stays on the steady groove TORUS2 would win');
+  SC.forced = 3; frame(); open(); frame({ identifyEvt: true });
+  ok(SC.logical === 3, 'forced back to DUST, the identify moves nothing');
+  SC.forced = -1; SC.hist = [3];                                                        // released after a long forced stay: the history is the scene just shown
   set('sub-driven drop window'); open(); frame({ identifyEvt: true });
-  ok(SC.logical === 12, 'released: the next identify picks by the bid — FLUID on the drop window (logical ' + SC.logical + ')');
+  ok(SC.logical === 0, 'released: the next identify picks by the bid — FLUID on the drop window (logical ' + SC.logical + ')');
   set('steady tonal groove'); open(); frame({ identifyEvt: true });
-  ok(SC.logical === 3, 'and TORUS2 on the groove (logical ' + SC.logical + ')');
+  ok(SC.logical === 4, 'and TORUS2 on the groove (logical ' + SC.logical + ')');
 }
 console.log(fails ? `test_director: ${fails} FAIL` : 'test_director: OK');
 process.exit(fails ? 1 : 0);

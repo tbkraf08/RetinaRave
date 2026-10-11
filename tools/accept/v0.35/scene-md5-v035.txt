@@ -29,29 +29,18 @@
 # 35e85096). Against v0.34: s0 / s3 / s11 differ (the lattice events) and s12 is new. Measured `GPU=1 PORT=8911 tools/scene-md5.sh
 # s109adv0a` and `s109adv0b`: byte-equal, errs [] hop 840 row 72 on every id. A solver / grammar change now moves the s12 pair ALONE.
 # §111 (2026-10-09): s12's pair re-based (bf9bcc3e / 35e85096 → 3e483039 / 2274bb4e — the grammar's eight items; GPU=1 PORT=8981 tools/scene-md5.sh s111, errs [] on all 13); every other line unchanged (no roster scene reads the substrate on advect 0).
-a6c725fa86d56e0b954a3bf34548f88c  s0-f360.jpg
-a12256fdbc334215c31f9851f9638647  s0-f840.jpg
-1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
-25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
-62515d49261070922f23ce68f94fc877  s2-f360.jpg
-f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
-80c43f0fc1aeb607ccbbe9971826c672  s3-f360.jpg
-248ad4c9b188a1e29fadca7f90442bdd  s3-f840.jpg
-0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
-05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
-9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
-04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
-fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
-6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
-d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
-7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
-fb74fee47170b2d1f043db9f96319c7e  s8-f360.jpg
-8a0715dfb90ecf20d484578932a2f115  s8-f840.jpg
-fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
-02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
-6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
-1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
-3b12b8b362e53ef1c5d7c2222961682f  s11-f360.jpg
-a56a64cefaf8b43295cd63e830f15327  s11-f840.jpg
-3e48303900f1447bc8da8624273ef554  s12-f360.jpg
-2274bb4ef3fcb0c3822532a89be4f675  s12-f840.jpg
+# §118 the lean-down (2026-10-11): the ids were RENUMBERED. The eight scenes the user never looks at are archived
+# (archive/scenes/, see archive/README.md) and the six kept ones shifted down to fill the holes:
+#   12 FLUID -> 0 (key 1) · 13 FLUID2 -> 1 (key 2) · 0 NAV2 -> 2 (key 3) · 1 DUST -> 3 (key 4) · 3 TORUS2 -> 4 (key 5) · 2 MANDALA -> 5 (key 6)
+# Only the s<id> KEYS below were rewritten; NOT ONE HASH MOVED (an id is a registration slot, never a pixel — the gates
+# of §118 re-measured every line that is still reachable and found them to the byte). Lines for the archived ids are gone.
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg

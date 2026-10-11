@@ -62,7 +62,7 @@ function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
 
 const SELF = {
   name: 'fluid2',
-  id: 13,
+  id: 1,   // §118 the lean-down (2026-10-11): was 13 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 2)
   tag: 'FLUID\'s pool under the band grammar — each band a different kind of coupling: the sub a field, the kick a mass that travels, the mids the material, the highs the surface (FLUID2-PLAN; S0 = FLUID to the pixel)',
   fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js plans the pool while this scene owns it
   feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'highS', 'high'], // FLUID's five own reads + S4's highS (the light) and high (the display grain); no bid fields (forced-only)

@@ -10,11 +10,14 @@
 // no card, own state, hooks n2info / green / baby), the first-frame guards draw() and overlay() need as a forced scene (the
 // §39 freeze), Green's ruler live, and the cost of one update().
 // node tools/test_nav2.js            N2TRACE=1 prints one line per half second
+// §118 (2026-10-11, the lean-down): the v0.33 navigator is archive/scenes/nav/ now — the user never looks at key 9. It is
+// still imported here as the A/B CONTROL (the byte-copy check, the nav.js line diff, the 48 s trajectory): archive/ is a
+// frozen tree, which is exactly what a control should be. Its declared id (8) is dead in the live registry.
 import fs from 'node:fs';
 import scene from '../assets/scenes/nav2/index.js';
-import nav from '../assets/scenes/nav/index.js';
+import nav from '../archive/scenes/nav/index.js';
 import { NAV as N2 } from '../assets/scenes/nav2/nav.js';
-import { NAV as N0 } from '../assets/scenes/nav/nav.js';
+import { NAV as N0 } from '../archive/scenes/nav/nav.js';
 import { G } from '../assets/scenes/nav2/green.js';
 import { buildRayGrid, setGrid, GRIDP } from '../assets/math/mandel.js';
 import { clamp, ema, sstep, frac, TAU } from '../assets/math/util.js';
@@ -24,16 +27,16 @@ const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else con
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 console.log('1. the byte copy, the navigator\'s diff, the registration');
-ok(fs.readFileSync('assets/scenes/nav/shaders.js').equals(fs.readFileSync('assets/scenes/nav2/shaders.js')), 'assets/scenes/nav2/shaders.js (the OKLCH mapping) is a byte copy of nav/shaders.js');
+ok(fs.readFileSync('archive/scenes/nav/shaders.js').equals(fs.readFileSync('assets/scenes/nav2/shaders.js')), 'assets/scenes/nav2/shaders.js (the OKLCH mapping) is a byte copy of nav/shaders.js');
 { // §100 / §101: nav.js differs from NAV's at the move2.js + walk2.js hooks only — the imports, the tighten() call, the two h targets, the φ target, the kick gate, the target line, the drop launch, the exterior θ target
-  const A = fs.readFileSync('assets/scenes/nav/nav.js', 'utf8').split('\n'), B = fs.readFileSync('assets/scenes/nav2/nav.js', 'utf8').split('\n');
+  const A = fs.readFileSync('archive/scenes/nav/nav.js', 'utf8').split('\n'), B = fs.readFileSync('assets/scenes/nav2/nav.js', 'utf8').split('\n');
   const sa = new Set(A), sb = new Set(B), gone = A.filter((l) => !sb.has(l)).length, added = B.filter((l) => !sa.has(l)).length;
   ok(gone <= 12 && added <= 22 && B.some((l) => l.includes("from './move2.js'")) && B.some((l) => l.includes("from './walk2.js'")), `nav2/nav.js = nav/nav.js + the §100 / §101 hooks: ${gone} lines gone, ${added} added (caps 12 / 22), imports move2.js + walk2.js`);
 }
-ok(scene.name === 'nav2' && scene.id === 0 && nav.name === 'nav' && nav.id === 8, `name ${scene.name} id ${scene.id}; the control ${nav.name} id ${nav.id} (§102: the swap)`);
-ok(scene.home === true && nav.home === false && nav.always === true, 'home true, the control home false + always true (core/scenes.js keeps the LAST registered home; main.js registers nav before nav2)');
+ok(scene.name === 'nav2' && scene.id === 2 && nav.name === 'nav' && nav.id === 8, `name ${scene.name} id ${scene.id}; the control ${nav.name} id ${nav.id} (§102 the swap; §118 the lean-down moved the live navigator to id 2 and the control to archive/scenes/nav/ — the control keeps its old id 8, which no live registry claims any more)`);
+ok(scene.home === true && nav.home === false && nav.always === true, 'home true, the control home false + always true (core/scenes.js keeps the LAST registered home; since §118 nav2 is the ONLY registered home — the control is archived)');
 ok(scene.always === true, 'always true (like NAV: the forced scene is updated from frame 0, so the s8 pair is NAV\'s to the byte)');
-ok(!scene.variants && nav.variants && nav.variants.length === 1 && nav.variants[0].id === 4 && nav.variants[0].score() === 0, 'no variants here; DRUM (id 4, score 0) stays on the control (registered once)');
+ok(!scene.variants && nav.variants && nav.variants.length === 1 && nav.variants[0].id === 4 && nav.variants[0].score() === 0, 'no variants here; DRUM (id 4, score 0) stays on the control — archived with it in §118, so no live id 4 variant');
 ok(scene.card && scene.card.title === 'NAV' && !nav.card, 'the card (title NAV) is here; the control has none');
 ok(typeof scene.hooks.baby === 'function' && typeof scene.hooks.n2info === 'function' && typeof scene.hooks.green === 'function', 'hooks baby / n2info / green');
 ok(nav.feats.every((k) => scene.feats.includes(k)) && scene.feats.length > nav.feats.length, `feats ⊇ NAV's ${nav.feats.length} (+${scene.feats.length - nav.feats.length} for §99's look2.js)`);

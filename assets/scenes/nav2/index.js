@@ -38,7 +38,7 @@ let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shippe
 
 export default {
   name: 'nav2',
-  id: 0,
+  id: 2,   // §118 the lean-down (2026-10-11): was 0 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 3)
   tag: 'music navigates the Mandelbrot set: bulbs by interval, the phrase walk along the Farey ladder, exterior rays on the drop',
   card: { title: 'NAV', blurb: 'a walk over the Mandelbrot set: every stop is a Julia set, and the music picks the route' }, // landing tile (CONTRACTS §1.17): the home scene's public name stays NAV; the picture is site/thumbs/nav2.jpg (by `name`, tools/thumbs.sh "0:360")
   home: true,       // the director's home scene since §102: drops cut here, builds park here — core/scenes.js:50 keeps the LAST registered home, and ../nav/ says false now

@@ -1,4 +1,4 @@
-# The mixs 0→3 transition at f178 (scene 0 forced, released at frame 120 with goScene(3), shot at 178, m .499; CLOCK=1 GPU=1
+# The mixs NAV2 → TORUS2 transition at f178 (that scene forced, released at frame 120 with goScene(torus2), shot at 178, m .499; CLOCK=1 GPU=1
 # 1280x720) — the value accept.sh "== transition" reads since v0.29 (DECISIONS §83). History: 5892ddc5 (v0.7) → 641f6633 (v0.7–v0.8)
 # → f0c9d637 (v0.9) → 8a1a768d (v0.29) → cb3d4048 (§83 Step B, the lattice) → 724bbd72 (§102, the swap: scene 0 is the retuned
 # navigator) → 1ccfd0c1 at v0.35 (§105, 2026-10-09): the feedback pass rides the substrate's velocity on both sides of the fade
@@ -11,4 +11,6 @@
 # → 9632647d at §109's advect-off default (the same day; the user: the advection is not wanted on nav / particles / torus; FLUID opts
 # in): both sides of this fade run the scalar pass again — not back to v0.34's 724bbd72 because NAV2 and TORUS2 fire their event voices
 # on the fixed fake. Measured twice (PORT 8911, m .499, errs []), equal.
-9632647d03e445513144bd6cdc82e5ea  trans-mixs-0-3-f178.jpg
+# §118 (2026-10-11, the lean-down): the ids were renumbered, so the SAME fade is now 2→4 (it was 0→3) and the file's key
+# follows. The hash is unchanged — the two scenes, the two frames and every pixel are the same; only the registration slots moved.
+9632647d03e445513144bd6cdc82e5ea  trans-mixs-2-4-f178.jpg

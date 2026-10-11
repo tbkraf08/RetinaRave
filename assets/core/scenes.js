@@ -13,7 +13,7 @@ import { routeScene, view, isRouted } from './route.js'; // v0.4 routes: the MS 
 import { paramScene } from './params.js'; // v0.5 params: a scene's visual parameters (validated once here; values handed to update() by the loop)
 
 export const SC = {
-  cur: 0, next: -1, m: 0, dur: 2,   // base ids of the two rendered scenes and the crossfade position
+  cur: 0, next: -1, m: 0, dur: 2,   // base ids of the two rendered scenes and the crossfade position (register() re-seats cur / logical / hist on the home scene — §118)
   logical: 0,                        // the logical id (a variant has its own id but renders its parent's base)
   variant: null, vT: 0, vmix: 0,     // active variant name, its target (0/1) and the eased mix scenes read
   lastBeat: -99, hist: [0], forced: -1, home: 0,
@@ -29,8 +29,10 @@ export const REG = [];
 export const SCENES = [];
 
 // Step the forced scene by d from where the eye is now (the logical scene while the director drives) and return the new id.
-// A swipe (core/touch.js) and the `n` key (core/hud.js, v0.10 — the number keys ran out at NAV2's `9`) both cycle through
-// the registry with it; they hand the id to the landing picker so a press on the card previews like a tile.
+// A swipe (core/touch.js) and the `n` key / the arrow keys (core/hud.js: v0.10 `n` and → forward, §118's ← back) all cycle
+// through the registry with it; they hand the id to the landing picker so a press on the card previews like a tile.
+// §118 (the lean-down): REG is DENSE 0..5 — the kept scenes were shifted down to fill the archived ones' holes — so
+// (from + d + n) % n walks every scene in both directions with no empty slot to land on.
 export function stepScene(d) {
   const n = REG.length;
   if (!n) return -1;
@@ -47,7 +49,7 @@ export function register(scene) {
   paramScene(scene); // v0.5: checks the params slot (eli5 / range / from reads ⊂ feats) and makes the value object
   REG[id] = { id, base: id, scene, variant: null };
   SCENES.push(scene);
-  if (scene.home) SC.home = id;
+  if (scene.home) { SC.home = id; SC.cur = SC.logical = id; SC.hist = [id]; } // §118: the page's FIRST frame is the home scene by NAME, not by the literal id 0 (SC.cur's initial value above). Before the lean-down the home WAS id 0 and the two agreed; the renumber put FLUID at 0, and a load must still open on NAV2 as it did.
   if (scene.colour) { // colour slot (CONTRACTS §1.4, v0.3 §26): named colour mappings, one current; the default is the scene's
     const c = scene.colour;
     if (!c.variants || !(c.default in c.variants)) throw new Error('scene ' + scene.name + ': colour.default is not a variant');

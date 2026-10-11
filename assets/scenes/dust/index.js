@@ -47,7 +47,7 @@ function lookVP(m, yaw, pitch, dist, aspect, fov, near, far) {
 
 const SELF = {
   name: 'dust',
-  id: 1,
+  id: 3,   // §118 the lean-down (2026-10-11): was 1 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 4)
   tag: 'a swarm of dust, one frequency band per grain',
   card: { title: 'DUST', blurb: 'a swarm of particles in a flow field, one frequency band per grain, the Hopf fibres threaded through' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/dust.jpg from tools/thumbs.sh
   feats: ['flow', 'flowMid', 'flowBass', 'bassS', 'midS', 'highS', 'lvl', 'dropEnv', 'tension',

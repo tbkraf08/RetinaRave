@@ -8,27 +8,16 @@
 # 1 → 0 in §102 step 1 does not touch f360 / f840: FX.kal fires on the fake timeline only in the f~900–942 peak window); s8 is the
 # v0.33 navigator (assets/scenes/nav/, the control) at NAV's old pair fb74fee4 / 8a0715df; s4 (DRUM, now a variant of id 8)
 # unchanged. Measured `IDS="0 4 8" PORT=8871 tools/scene-md5.sh`, twice, errs [] hop 840 row 72 on every id.
-a8de2f034a7b2d3a1219f75f7d507a69  s0-f360.jpg
-7a65fd16f9d697cb97f6cfbd3db90c74  s0-f840.jpg
-1faaa64e042b4dcd9e38fa904c1988c4  s1-f360.jpg
-25dfdc48614a037b13b5ccf30c361273  s1-f840.jpg
-62515d49261070922f23ce68f94fc877  s2-f360.jpg
-f3a3721cfbb5fa4947dcab8668830d9e  s2-f840.jpg
-3122036e95e0120e10a99ae00c578354  s3-f360.jpg
-a1e941aff486e1206a30e45b36effa0d  s3-f840.jpg
-0bff278ab9e8e89e5f1e53b985fbd8f2  s4-f360.jpg
-05bf21c0ee79e5343a6bd89baa2bd971  s4-f840.jpg
-9c3be02390dad07d818e54d5a24fba4e  s5-f360.jpg
-04fc1ffbcd092b7e4bca1feb8b37d750  s5-f840.jpg
-fac80f372465a37d4c5c06e000770aa0  s6-f360.jpg
-6251d7e904f01d0df7c123a3506cc9a0  s6-f840.jpg
-d3e73b38e30ca4176a869986869d05e3  s7-f360.jpg
-7e77c7b391bcae8860b57b36b38a1229  s7-f840.jpg
-fb74fee47170b2d1f043db9f96319c7e  s8-f360.jpg
-8a0715dfb90ecf20d484578932a2f115  s8-f840.jpg
-fb52b8742e4b9f70f950f65e9c236730  s9-f360.jpg
-02c317b848ccc75beba025f35b41b9ad  s9-f840.jpg
-6ab6029783ca4b8527fb2ac6f40c7dc9  s10-f360.jpg
-1fe93f2c53f4d921aa8257d1dd1e1a9e  s10-f840.jpg
-380d0255eb88707cb2de637d9e335d83  s11-f360.jpg
-b0407176d15f916b9f96713111864737  s11-f840.jpg
+# §118 the lean-down (2026-10-11): the ids were RENUMBERED. The eight scenes the user never looks at are archived
+# (archive/scenes/, see archive/README.md) and the six kept ones shifted down to fill the holes:
+#   12 FLUID -> 0 (key 1) · 13 FLUID2 -> 1 (key 2) · 0 NAV2 -> 2 (key 3) · 1 DUST -> 3 (key 4) · 3 TORUS2 -> 4 (key 5) · 2 MANDALA -> 5 (key 6)
+# Only the s<id> KEYS below were rewritten; NOT ONE HASH MOVED (an id is a registration slot, never a pixel — the gates
+# of §118 re-measured every line that is still reachable and found them to the byte). Lines for the archived ids are gone.
+a8de2f034a7b2d3a1219f75f7d507a69  s2-f360.jpg
+7a65fd16f9d697cb97f6cfbd3db90c74  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+3122036e95e0120e10a99ae00c578354  s4-f360.jpg
+a1e941aff486e1206a30e45b36effa0d  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg

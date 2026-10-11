@@ -3,6 +3,7 @@ tools/chr*/
 tools/work/
 *.jpg
 !tools/accept/**/*.jpg
+!archive/accept/**/*.jpg
 .claude/
 .wrangler/
 node_modules/

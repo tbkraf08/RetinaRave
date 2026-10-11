@@ -28,7 +28,7 @@ const KEY = mkAnchor(); // the key as a hue anchor on the circle of fifths, mode
 
 const SELF = {
   name: 'mandala',
-  id: 2,
+  id: 5,   // §118 the lean-down (2026-10-11): was 2 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 6)
   tag: 'N-fold Kleinian fold · box-fold + sphere inversion, orbit-trapped',
   card: { title: 'MANDALA', blurb: 'a box-fold fractal seen through a kaleidoscope' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/mandala.jpg from tools/thumbs.sh
   // every MS field this scene reads: score() reads the first three, update() the rest (the tongue fields through

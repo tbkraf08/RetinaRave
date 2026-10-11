@@ -536,8 +536,8 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(undecl2.length === 0, 'bands: every inject2 FLUID_FEATS key in FEATS' + (undecl2.length ? ' — missing ' + undecl2.join(',') : ''));
   ok(FEATS2.includes('sub') && !FLUID_FEATS.includes('sub'), 'bands: S1 — inject2 reads `sub` (the envelope\'s source), the base does not');
   ok(GRAMMARS.pool.plan === plan && GRAMMARS.bands.plan === plan2 && DEFAULT_GRAMMAR === 'pool', 'bands: the table — pool is inject.js, bands is inject2.js, the default is pool');
-  ok(fluid2Scene.id === 13 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 13) declares fluid.grammar bands and the dispatch picks it');
-  ok(fluidScene.id === 12 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 12) declares no slot → pool');
+  ok(fluid2Scene.id === 1 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 1 since §118, was 13) declares fluid.grammar bands and the dispatch picks it');
+  ok(fluidScene.id === 0 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 0 since §118, was 12) declares no slot → pool');
   ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf(undefined) === 'pool' && grammarOf({ fluid: {} }) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'toString' } }) === 'pool', 'bands: no slot, no card, an unknown name, an inherited name → pool (check.js fails the card; the loop never mixes)');
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed

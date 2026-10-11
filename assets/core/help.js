@@ -43,7 +43,8 @@ export const keys = () => [['?', 'or H — this view', 'help'],
   ['W', 'the fluid substrate on / off: the pool of ink under the scenes that the music stirs (on by default where the browser renders to float textures; part B says what it reads)', null],
   ['G', 'the glitch rows off / on — the screen tear the composite draws on a drop, a surprise or a hard scene cut (on by default; &glitch=0 starts with it off, &glitch=0.5 at half)', null],
   ['1–' + Math.min(9, REG.length), 'force the scene with id 0 – ' + (Math.min(9, REG.length) - 1) + ' (the ids are in part C)', 'force a scene'],
-  ['N', 'the next scene, cycling through all ' + REG.length + ' (a swipe on a phone does the same)', 'next scene'],
+  ['N', 'or → — the next scene, cycling through all ' + REG.length + ' (a swipe on a phone does the same)', 'next scene'],
+  ['←', 'the previous scene, cycling the other way (§118, 2026-10-11)', 'previous scene'],
   ...(REC.hidden ? [] : [['R', 'record what you see and hear to a file on this device — nothing is uploaded; the music you capture is yours to clear', 'record']]),
   ['0', 'back to the director', 'director']];
 const EV = Object.keys(FEATS).filter((k) => FEATS[k].kind === 'event'); // latched per frame while open (they last one frame)

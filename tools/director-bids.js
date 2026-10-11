@@ -9,10 +9,10 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const IDS = [0, 1, 3, 12], NAME = { 0: 'NAV', 1: 'DUST', 3: 'TORUS2', 12: 'FLUID' };
+const IDS = [0, 2, 3, 4], NAME = { 0: 'FLUID', 2: 'NAV', 3: 'DUST', 4: 'TORUS2' }; // §118 (the lean-down): the roster on the new ids — fluid 0, nav2 2 (the home), dust 3, torus2 4
 const COLS = ['NAV', 'DUST', 'TORUS2', 'FLUID', 'bassS', 'keyConf', 'centroid', 'clarity', 'regularity', 'punchy', 'calm'];
 const INST = 'window.__B=[];window.__BI=setInterval(()=>{const S=CARD.MS,R=CARD.REG;window.__B.push([+(S.t||0).toFixed(1),CARD.SC.cur,S.arc,' +
-  '...[0,1,3,12].map(i=>+R[i].scene.score(S,R[i].scene.rt,CARD.SC).toFixed(3)),+S.bassS.toFixed(2),+S.keyConf.toFixed(2),+S.centroid.toFixed(2),' +
+  '...[0,2,3,4].map(i=>+R[i].scene.score(S,R[i].scene.rt,CARD.SC).toFixed(3)),+S.bassS.toFixed(2),+S.keyConf.toFixed(2),+S.centroid.toFixed(2),' +
   '+S.clarity.toFixed(2),+S.regularity.toFixed(2),+S.punchy.toFixed(2),+S.calm.toFixed(2)])},1000);1';
 const DONE = 'JSON.stringify({B:window.__B,f0:CARD.ENGINE.AU.file?CARD.ENGINE.AU.file.frame0:null,errs:CARD.ERRS,ev:CARD.log.filter(l=>/^(SCENE|DROP|SURPRISE|SWITCH|RESTORE)@/.test(l))})';
 
@@ -44,7 +44,7 @@ function summarise(f) {
   console.log('  medians: ' + COLS.map((c, i) => `${c} ${med(B.map((r) => r[3 + i])).toFixed(2)}`).join(' · '));
   for (const e of ev.filter((l) => /^SCENE@/.test(l))) {
     const t = +e.match(/@([\d.]+)/)[1], r = B.reduce((p, q) => Math.abs(q[0] - t) < Math.abs(p[0] - t) ? q : p);
-    console.log(`  ${e.slice(0, 40).padEnd(42)} @${r[0]} ${r[2]}: NAV ${r[3]} DUST ${r[4]} TORUS2 ${r[5]} FLUID ${r[6]} · bassS ${r[7]} keyConf ${r[8]} cen ${r[9]} cl ${r[10]} reg ${r[11]} pun ${r[12]} calm ${r[13]}`);
+    console.log(`  ${e.slice(0, 40).padEnd(42)} @${r[0]} ${r[2]}: FLUID ${r[3]} NAV ${r[4]} DUST ${r[5]} TORUS2 ${r[6]} · bassS ${r[7]} keyConf ${r[8]} cen ${r[9]} cl ${r[10]} reg ${r[11]} pun ${r[12]} calm ${r[13]}`);
   }
   console.log('  ' + ev.filter((l) => /^(SCENE|DROP|SWITCH)@/.test(l)).map((l) => l.replace(/ gt[\d.]+/, '')).join(' · '));
 }

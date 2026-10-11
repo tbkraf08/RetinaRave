@@ -4,6 +4,14 @@
 
 All commands run from the repo root. Zero dependencies beyond node ≥ 20, google-chrome, python3 + PIL (montage).
 
+**§118 (2026-10-11, the lean-down) — the ids in every recipe below are the NEW dense ones.** The user: *"I never look at polytope,
+feigen, maxwell, gielis, chladni, key5-nav, key8-torus, key9-nav, and OK to archive"* and *"instead of skipping holes, can we shift
+kept scenes down to fill the gaps? order: fluid, fluid2, nav2, dust, torus2, mandala"*. So: **0 fluid (key 1) · 1 fluid2 (2) ·
+2 nav2 (3, the home) · 3 dust (4) · 4 torus2 (5) · 5 mandala (6)**, the roster `SCENES="0 2 3 4"`, and the eight archived scenes
+(with their tests, worker docs, accept dirs and `tools/feigen-bench.sh` / `tools/q-trace.sh`'s FEIGEN vehicle) live in `archive/` —
+old → new map in `archive/README.md`. The arrow keys step the scene forward (→, like `n`) and back (←). History lines below keep
+their original ids; a recipe you can RUN carries the new ones.
+
 ## Real-music acceptance (2026-10-09, DECISIONS §109)
 
 **The rule: a scene or engine change is proven on REAL TRACKS; the fake timeline is a smoke test.** Until §109 every identity
@@ -41,14 +49,14 @@ was not music. The user: *"test should be real and simulate what would normally 
 - **The identity references** — `GPU=1 PORT=88xx tools/real-md5.sh <tag>`: every window × BOTH map modes (`&map=1` the file map,
   `&map=0` the live lanes; the take `&map=0` only) → `tools/work/real-<tag>-md5.txt`, one line per shot
   (`<md5>  s<id>-<track>-<window>-f<N>-m<map>.jpg`), the reference `tools/accept/v0.35/real-md5-v035.txt`. The DEFAULT scope (what
-  `accept.sh` runs) is the roster (`SCENES="0 1 3 12"` — FLUID bids since §114; before it the scope was "the roster + FLUID") on every track at intro / groove / build1 / drop1 (+ the take's intro
+  `accept.sh` runs) is the roster (`SCENES="0 2 3 4"` since §118 — FLUID bids since §114; the ids read "0 1 3 12" until the lean-down) on every track at intro / groove / build1 / drop1 (+ the take's intro
   / chords); `FULL=1` is every registered id at every window (quiet, build2, drop2 too). `SCENES= TRACKS= WINDOWS= MODES=` scope a
   re-proof to a scene folder's own lines. `PAR=2` runs two scene lanes (PORT, PORT+1): the md5s hold (rule 1 holds the clock through the
   decode under load — `f0` is printed per run and must read 2) but a bench does not. The wall times are in DECISIONS §109.
 - **The behaviour rulers** — `GPU=1 PORT=88xx tools/real-rulers.sh <tag>`: one deterministic run per scene × track on the track's
   `rulers` window through `lumtrace.js --jump=1 --mon=1` — the luminance ruler, the PICTURE's continuity (every frame: the monitor's
   spike rule on the whole-frame mean |ΔY| outside event frames + 0.3 s; black frames) and the continuity monitor on the scene's OWN
-  state (`CARD.NAV = REG[id].scene.state` where it is monitor-shaped: nav2, nav, gielis, chladni, fluid; `-` otherwise) — one table,
+  state (`CARD.NAV = REG[id].scene.state` where it is monitor-shaped: nav2 and fluid since §118 — nav, gielis and chladni are archived; `-` otherwise) — one table,
   `tools/accept/v0.35/real-rulers-v035.txt`. FAIL: `mon viol` non-empty · `jump viol` non-empty · black frames > 5 % · `clipFrac ≥ .25`
   on > 2 % of the sampled frames · page errs / nonFinite. **A FAIL is a finding for DECISIONS, never a retune in the sweep.** Same
   DEFAULT / `FULL=1` / `PAR=` scope as the md5 sweep.
@@ -162,35 +170,35 @@ mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never mor
 4. **Pairs, not triples, and nothing else on the machine**: no second Chrome, no worker shooting, no wait loop
    spinning (a `while ! test -e …` without a sleep zeroed a whole q trace; gate on `timeout 500 tail -f log | grep -q
    -m1 GO`). The user's desktop Chrome loads every bench (flatpak, GPU process ~18 %).
-5. A threshold is decidable from interleaved pairs, never from absolute ms: `accept.sh`'s FEIGEN gate is
-   `max(2.9 ms, 1.5 × NAV)` for this reason. `tools/feigen-bench.sh` is the worked example of all five.
+5. A threshold is decidable from interleaved pairs, never from absolute ms: `accept.sh`'s FEIGEN gate was
+   `max(2.9 ms, 1.5 × NAV)` for this reason. `archive/tools/feigen-bench.sh` is the worked example of all five (§118: the
+   gate went with the scene; the rule did not).
 
-## Q trace (any scene whose cost could move the global quality knob) and the FEIGEN bench (v0.2 §16)
+## Q trace (any scene whose cost could move the global quality knob) — the FEIGEN bench is ARCHIVED (§118)
 
 ```
 GPU=1 tools/q-trace.sh before|none|after [house aba]   # q + scene at 1 Hz, 3 runs per style -> tools/accept/v0.2/q-<style>-<tag>.txt
-node tools/q-stats.js tools/accept/v0.2/q-house-before.txt   # per run: q mean/min, the 0-40 / 40-70 / 70-100 / 100- windows, every FEIGEN visit
-GPU=1 tools/feigen-bench.sh before|after [levels]            # per-level bench at tier 3 (NAV interleaved), flip cost, seam ratio -> feigen-bench-<tag>.txt
+node tools/q-stats.js tools/accept/v0.2/q-house-before.txt   # per run: q mean/min, the 0-40 / 40-70 / 70-100 / 100- windows
 ```
 `Q` is global (`core/quality.js`: −0.2 per half second over 26.5 ms, −0.07 over 18.8, +0.04 per 2.5 s of good frames),
 so one expensive scene lowers every scene's tier for ~30 s after it leaves; the trace of `q` across a track is the
-measurement, the scene's own bench only the symptom. The recipe forces scene 6 at 40 s with the dive set to L 2.5 (the
-depth a minute-long section reaches; a visit from the arrival depth stays under L 1.3 for 30 s and costs nothing) and
-releases it into a soft switch home at 70 s (`VISIT=40:70:2.5`; `VISIT=` for the director's own picks — the third
-field is FEIGEN's dive depth through `hooks.feig`; no other scene has a depth, so a scene that ever needs a forced deep
-visit brings its own hook and its own `VISIT` shape in its brief), so every run
-has the same deep visit on the same clock; tag `none` makes its `score` 0 after load instead (never auto-picked, as good as unregistered — no file edit).
+measurement, the scene's own bench only the symptom. `VISIT=<force>:<release>[:<depth>]` pins the same visit on the same
+clock in every run (the third field went to FEIGEN's dive through `hooks.feig`; no other scene has a depth, so a scene
+that ever needs a forced deep visit brings its own hook and its own `VISIT` shape in its brief); tag `none` makes the
+scene's `score` 0 after load instead (never auto-picked, as good as unregistered — no file edit).
 **One Chrome at a time and nothing else on the machine**: a second instance alone sinks `q` to 0 (`director-aba-after.txt`
 was traced beside house and sat at 0.00–0.06 for 190 s), so the runs are sequential (house 3 × 2 min, aba 3 × 3.2 min)
 and no worker shoots meanwhile — nor computes: a sibling's wait loop spinning on one core, with the desktop browser's
-renderers, held `q` at 0.00–0.05 for a whole run before FEIGEN was even on screen (§16). Check the 0–40 s window
-against `none` (0.60) before reading anything else. `demo` synths are random: compare the means of three runs, and compare `after` against
-`none`, not against `before`. `feigen-bench.sh` is the worker's and the orchestrator's one source of cost numbers:
-`&feig=<L>` per level under the "Bench protocol" above (`q` pinned .95, `bench(6,300)` interleaved with `bench(0,300)`),
-the cost of a tricorn flip (every rung rebuilt after §16), and
-the seam ratio: `CLOCK=1` shots of frames 300–340 at `SEAM_L`, mean |Δ| per pixel between consecutive frames, max /
-median, and the |Δ| at each frame the scene logged a `RUNG@` change. Kick flares are the baseline spikes in that
-window (f305 / f334 ≈ 4.5, f320 ≈ 42 on the fake timeline before §16).
+renderers, held `q` at 0.00–0.05 for a whole run before the deep scene was even on screen (§16). Check the 0–40 s window
+against `none` (0.60) before reading anything else. `demo` synths are random: compare the means of three runs, and compare
+`after` against `none`, not against `before`.
+**§118 (the lean-down):** FEIGEN is archived, so `tools/feigen-bench.sh` moved to `archive/tools/` and `accept.sh`'s
+"== feigen cost" block is gone. It stays the WORKED EXAMPLE of the five bench rules above (`archive/tools/feigen-bench.sh`,
+read with `archive/scenes/feigen/`): `&feig=<L>` per level under "Bench protocol" (`q` pinned .95, `bench(6,300)`
+interleaved with `bench(0,300)`), the cost of a tricorn flip, and the seam ratio — `CLOCK=1` shots of frames 300–340 at
+`SEAM_L`, mean |Δ| per pixel between consecutive frames, max / median, and the |Δ| at each frame the scene logged a
+`RUNG@` change. Kick flares were the baseline spikes in that window (f305 / f334 ≈ 4.5, f320 ≈ 42 on the fake timeline
+before §16). `tools/q-trace.sh` still forces a scene by id — pass the id you mean; its FEIGEN defaults are dead.
 
 ## Transition (change to the crossfade pass, or a new `assets/transitions/*.js`)
 
@@ -314,13 +322,13 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   `INJECT=<file>` replays another grammar (`git show <rev>:assets/core/fluid/inject.js > /tmp/before.js`) for a before → after on the
   same traces; `FLUIDK='{"K":v}'` an A/B of one knob; `JSON=` the rows. Every §111 item's numbers are this table's columns
   (`tools/work/fluid-s111/before.md`, `i1.md` … `i8.md`). (2) **Then the shots**: the survey's deterministic FLUID run per track
-  (`tools/work/fluid-s111/shots.sh <track> <tag> "<name:t …>"`: `test&track=<T>&at=0&scene=12`, `CLOCK=1 GPU=1`, keyed on `__FRAME`,
+  (`tools/work/fluid-s111/shots.sh <track> <tag> "<name:t …>"`: `test&track=<T>&at=0&scene=0`, `CLOCK=1 GPU=1`, keyed on `__FRAME`,
   `frame0` 2, the whole-frame grey mean / p99 per shot) at the survey's windows (`tools/work/fluid-tracks/windows.txt`) and its two 31 s
   strips; `cmp.py <track> <tags…>` prints the survey's grey beside each tag's and the strips' band counts (< 28 empty · 28–45 · 46–60
   SeeYouDrop's groove · > 60 packed), `hue.py` the dominant hue per window; the montages `montage.sh` → `tools/accept/v0.35/fluid-s111-<track>-*.jpg`.
   The two "it changed" rulers the survey set: SeeYouDrop's windows (the reference) and CyborgNinja's busiest 31 s (the packing). (3) The
-  pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=12 tools/real-md5.sh` twice (cmp-equal; the
-  roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=12 tools/real-rulers.sh`, the fake
+  pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=0 tools/real-md5.sh` twice (cmp-equal; the
+  roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=0 tools/real-rulers.sh`, the fake
   smoke (only s12 moves), parity.
 - **The field strip — the S1 ruler (§116 S1; FLUID2-PLAN §4 S1):** the pool's MEAN SPEED against the sub band, per track, on one deterministic
   whole-track run: `[K2='{"SWIRL":.8}'] [MAP=0|1] PORT=89xx tools/fluid-field-strip.sh <track> <12|13> <tag> <t0> <t1> [fps=1] [at=0]` →
@@ -381,7 +389,7 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   with a THIRD shot per second — `DYE=1 [K2=json] [SPEC=json] PORT=89xx tools/fluid-field-strip.sh RaindropsOnRoses 13 <tag> 60 133 1 24`
   takes the composite, the velocity (dbg 2) and the DYE itself (dbg 1, `<tag>-NNd.jpg` at F + 2: the ink before the light, the velocity
   inset bottom-right); the evals line carries `high highS grain dip` after S3's `mid curl midsPos`; `SPEC='{"HI":0,"POW":0}'` holds FLUID2's
-  specular table (`CARD.REG[13].scene.SPEC`) for the light's A/B — `K2=` cannot reach it (the specular is the scene's, not the grammar's).
+  specular table (`CARD.REG[1].scene.SPEC`) for the light's A/B — `K2=` cannot reach it (the specular is the scene's, not the grammar's).
   Then `tools/fluid-highs-grain.py <dir> <tag> hat_rich=82-91 hat_poor=99-102,108-110 …` writes `highs.txt`: per shot **speed** (S1's
   metric — THE GUARD: the grain on vs off within 10 %), **lap** (S3's small-scale energy of the velocity — the grain IS this, at the texel),
   **dgrad** (the dye's mean gradient magnitude on its luminance, the inset cropped out: the ink's edge sharpness — the plan's number for the
@@ -404,7 +412,7 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   any change seeds a different turbulent history; the outro, six shots with the 129.98 s clear in them, reads .86–.94 on speed for every
   variant): read a window's ratio against that floor, never a single shot. **Two bench pitfalls (S4):** `CARD.bench(13, 300)` on the
   scene-12 page never runs FLUID2's `update()` — its spec / grain uniforms are the last frame's (FLUID's constants, grain 0): bench the show
-  pass on `test&scene=13`, set the knob, wait a frame, then bench (the specular read +.03 ms there, the display grain +.09); and a gates script
+  pass on `test&scene=1`, set the knob, wait a frame, then bench (the specular read +.03 ms there, the display grain +.09); and a gates script
   copied from the step before carries `tools/scene-md5.sh <tag>` by hand — S4's fake list landed in `s3-md5.txt` and was compared by hand.
 - **The pen strip — the STROKE ruler (§116 S5; FLUID2-PLAN §4 S5):** does the pen draw a LINE, or sit as a blob? Two readings. (1) The PURE
   ruler, at 60 fps with no GL: `node tools/work/fluid2/s5/ruler.js '<tag>|<K2 json>' …` replays RaindropsOnRoses's real trace through inject2
@@ -438,21 +446,21 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   lanes never fire on RaindropsOnRoses's drops 1 / 2, §117). `tools/work/fluid2/s6/cmp.py <kind> <ref> <tags…> -- name=a-b …` per shot: the
   velocity shot's mean speed (the S1 ruler) × dtSim = the DISPLACEMENT per wall-second, the composite's grey and centre grey (the §113 disc),
   the §1.9 step between consecutive shots (mean |ΔY|, 0–255); per window the p50s and the ratio to the ref. `montage.py` the same shots per
-  variant with the clock on every label. (3) The EYE in track time — the user's, on `#scene=13&k2={…}` (DECISIONS §116 S6 lists the A/B URLs).
+  variant with the clock on every label. (3) The EYE in track time — the user's, on `#scene=1&k2={…}` (DECISIONS §116 S6 lists the A/B URLs).
   **What the ruler found (§116 S6):** read the DISPLACEMENT, never the velocity alone — a slowed clock dissipates less per wall-second, so the
   velocity shot reads HIGHER (+9 % on the cut at a clock of .84) while the ink travels less (.93×); the pool stills on its own through a sub cut
   (the S1 field's void entry: the off run's speed .36 → .05), the clock multiplies that; the live detector's latch arms 2.1 s into a 3.2 s cut —
   the void term cannot read a cut, the breath does; the drop's burst is a number on an emptied pool (the centre grey at +0.4 s 25.0 under
   substeps and under the clock alone, the off run 25.3 — the plan's 10 % rule picks the clock alone), the §1.9 step at the drop's frame is the
   clear's and the FX flash's (95 / 255 under every variant; the burst adds 1); the bench's burst is `CARD.benchFluid(300, null, 'bands', 2)`
-  (+.51 ms at tier 3 — a second chain). A knob set's IDENTITY on the GPU: `HASHX='&k2=%7B%22DT_SUB%22%3A0%2C%22DT_VOID%22%3A1%7D' SCENES=13
+  (+.51 ms at tier 3 — a second chain). A knob set's IDENTITY on the GPU: `HASHX='&k2=%7B%22DT_SUB%22%3A0%2C%22DT_VOID%22%3A1%7D' SCENES=1
   tools/real-md5.sh <tag>` (the neutral knobs = S5's hashes to the byte).
-- **FLUID2 — the recipe in one place (§116 S0–S7; FLUID2-PLAN).** The scene is id 13 (`&scene=13`, the `n` key; forced-only); its card's
+- **FLUID2 — the recipe in one place (§116 S0–S7; FLUID2-PLAN).** The scene is id 1 since §118 (`&scene=1`, key 2, the arrows / `n`; forced-only); its card's
   `fluid: { grammar: 'bands' }` makes the step plan through `core/fluid/inject2.js` (the band grammar composing on inject.js's base state).
   **Switches:** `&k2={"DT_SUB":0}` on ANY page (no `#test`) overrides any K2 knob for the run — the user's A/B at home (DECISIONS §116 S6 lists the
   URLs); `K2=json` on the strip tools, `FLUIDK2=json` on the replays; the neutral set that makes FLUID2 the pool grammar to the byte is
   `{"DT_SUB":0,"DT_VOID":1,"DT_DROP":0}` plus the per-band switches (`SWIRL 0 · KICK_SHAPE 0 · CURL_SRC 0 · SNARE_JET 0 · NOISE_V 0 · DIP_SRC 0 ·
-  PEN_SRC 0`: every one 0 = inject.js's list / pass to the bit); `HASHX='&k2=<url-encoded json>' SCENES=13 tools/real-md5.sh <tag>` proves a knob
+  PEN_SRC 0`: every one 0 = inject.js's list / pass to the bit); `HASHX='&k2=<url-encoded json>' SCENES=1 tools/real-md5.sh <tag>` proves a knob
   set's identity on the GPU. **The rulers, all on one deterministic run (`CLOCK=1 GPU=1`, `at=` the track's `start`, keyed on `__FRAME`, `frame0` 2):**
   the field strip (S1, speed vs sub), the kick strip + `fluid-kick-travel.py` (S2, the travel), the mids strip + `fluid-mids-lap.py` (S3, the texture),
   the snare strip + `fluid-snare-travel.py` (S3), the highs strip + `fluid-highs-grain.py` (S4, the surface), the pen ruler (S5, `tools/work/fluid2/s5/ruler.js`),
@@ -466,11 +474,11 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   track in both map modes and the pad — the seven untuned tracks' rows exist here (measured, untuned). **The state (2026-10-10):** every K2 was tuned
   on RaindropsOnRoses alone (the user's word); the references are Raindrops-filtered (`TRACKS=RaindropsOnRoses`: 8 s13 lines in `real-md5-v037.txt`,
   1 rulers row); **the seven-track sweep is owed before any tag** — the table above first, then the strips per track (the §111 rule: a change on
-  ≥ 3 of the six, Malicious never a gate), then the full `SCENES=13` references (58 lines, 8 rulers rows).
+  ≥ 3 of the six, Malicious never a gate), then the full `SCENES=1` references (58 lines, 8 rulers rows).
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
-  `tools/work/rec/<tag>/music/rec.wav`, cdp runs `CLOCK=1 GPU=1` on `test&track=rec&at=<t0>&map=0&scene=12` with `MUSIC=` pointing
+  `tools/work/rec/<tag>/music/rec.wav`, cdp runs `CLOCK=1 GPU=1` on `test&track=rec&at=<t0>&map=0&scene=0` with `MUSIC=` pointing
   at that directory (`&map=0` = the live path on a file, "File source" above; capture mode has no map either), one shot per
   `60/fps` frames keyed on `__FRAME` (rule 1: heard `t = (frame − 2)/60`), and prints the whole-frame grey line per shot —
   the mean (the §106/§107 metric) AND the p99 (a cloud at one sector moves the p99 by 20–80 levels and the mean by 1–3).
@@ -489,31 +497,31 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   name that planned the last step; `CARD.fluid.K2` the band grammar's constants (`K2=` on the strip tools, `FLUIDK2=` on the replays — `K=` /
   `FLUIDK=` reach inject.js's, which plan2 inherits); since S1 `CARD.fluid.heave` / `.swirl` are the field's values on the last step (0 under the pool grammar), the
   HUD's fluid line and FLUID2's `fldbg` hook carry them; `CARD.benchFluid(300, null, 'bands')` vs `(300, null, 'pool')` interleaved in ONE page is
-  the pair that prices a grammar (§116: `CARD.benchFluid(300, null, 'pool')` / `(300, null, 'bands')` interleaved ×3 in ONE page (`test&scene=12`, q .95 pinned, 8 s warm, a cold call discarded, `uptime` load 4.1): **0.813 / 0.826 · 0.837 / 0.863 · 0.849 / 0.818 ms** — medians **0.837 / 0.826**, the pairs +0.013 / +0.026 / −0.031, within ±0.05 (a branch, not a pass; the absolute ms are the desktop's load, §113's 0.67–0.72 were under load 2.2–2.9); the show pass `bench(12, 300)` / `bench(13, 300)` ×3 **0.525 / 0.525 · 0.534 / 0.525 · 0.506 / 0.505** (the same program), `bench(0, 300)` 2.044 (ratio .41); tier 3, sim 259×128, dye 1035×512 (12 s)); the HUD's fluid line and the help view's part B say the grammar and list its reads.
+  the pair that prices a grammar (§116: `CARD.benchFluid(300, null, 'pool')` / `(300, null, 'bands')` interleaved ×3 in ONE page (`test&scene=0`, q .95 pinned, 8 s warm, a cold call discarded, `uptime` load 4.1): **0.813 / 0.826 · 0.837 / 0.863 · 0.849 / 0.818 ms** — medians **0.837 / 0.826**, the pairs +0.013 / +0.026 / −0.031, within ±0.05 (a branch, not a pass; the absolute ms are the desktop's load, §113's 0.67–0.72 were under load 2.2–2.9); the show pass `bench(12, 300)` / `bench(13, 300)` ×3 **0.525 / 0.525 · 0.534 / 0.525 · 0.506 / 0.505** (the same program), `bench(0, 300)` 2.044 (ratio .41); tier 3, sim 259×128, dye 1035×512 (12 s)); the HUD's fluid line and the help view's part B say the grammar and list its reads.
   `INJECT=assets/core/fluid/inject2.js node tools/fluid-replay.js …` / `… fluid-tracks.js` replay the band grammar with no GL (the per-track
   table gains a grammar column per step; S1's `field` column). **The proofs:** since S1 the s13 lines are their own (`tools/accept/v0.37/real-md5-v037.txt`:
   v036's + s13's 66 + the roster's 24 RaindropsOnRoses lines; `TRACKS=RaindropsOnRoses` filters a run to the user's tuning track — DECISIONS §116 S1).
-  At S0: `SCENES=13 tools/real-md5.sh` (58 lines, ~720 s) — cmp-equal to s12's 58 in
+  At S0: `SCENES=1 tools/real-md5.sh` (58 lines, ~720 s) — cmp-equal to FLUID's 58 in
   `real-md5-v036.txt` with the names mapped (`sed 's/ s12-/ s13-/'`), hash for hash; from S1 on s13 has its own reference
-  (`tools/accept/v0.37/real-md5-v037.txt` = v036's 232 + s13's 58) and `SCENES=12` must stay 58 / 58 = v036 (the switch is free — proven at S0
-  and again at S7); `SCENES="0 1 3" PAR=2` 174 / 174 (every new uniform's neutral path); the fake `tools/scene-md5.sh` 28 lines = the 26 of
-  `scene-md5-v035.txt` + s13's pair (= s12's at S0); `SCENES=13 tools/real-rulers.sh` 8 / 8 ok (jump viol [], mon viol [], black 0 — s12's rows
+  (`tools/accept/v0.37/real-md5-v037.txt` = v036's 232 + s13's 58) and `SCENES=0` must stay 58 / 58 = v036 (the switch is free — proven at S0
+  and again at S7); `SCENES="2 3 4" PAR=2` 174 / 174 (every new uniform's neutral path); the fake `tools/scene-md5.sh` 28 lines = the 26 of
+  `scene-md5-v035.txt` + s13's pair (= s12's at S0); `SCENES=1 tools/real-rulers.sh` 8 / 8 ok (jump viol [], mon viol [], black 0 — s12's rows
   to the digit at S0); `node tools/test_fluid.js`'s `bands` block (the table, the card, the identity on the real trace, the shared base state
   across pool → bands → pool → bands, determinism, the Proxy); `node tools/check.js`'s fluid block per grammar. The crossfade's receipt:
   `&trans=mixs` 12 → 13 → 0 errs [], the whole-frame grey continuous across the fade (§116).
 - **The eye** (FLUID-PLAN "SeeYouDrop windows"): `&track=SeeYouDrop&fluiddbg=1` at `at=0` f602, `at=25` f602 / f1958 / f1982,
   `at=80` f602 / f1202 / f1538 / f1550 — the dye itself, so the question "does the music read in the medium" is answered before any
   consumer exists; two runs of a shot are md5-equal (the five rules under "File source"). §104's set is `tools/accept/v0.35/fluid-*.jpg`.
-- **FLUID, id 12 (§106, `assets/scenes/fluid/`)** — the substrate shown as itself: one fullscreen pass lights `engineTex.dye` as a liquid
+- **FLUID, id 0 since §118 — 12 at §106 (`assets/scenes/fluid/`)** — the substrate shown as itself: one fullscreen pass lights `engineTex.dye` as a liquid
   surface (the normal from the ink's luminance gradient over ±2 dye texels, a light at the top, a Blinn highlight, a porthole feather),
-  exposure on the loudness ladder; forced-only (`&scene=12`, `n` cycles to it). Its own injection through `ctx.fluid.splat` (a sparkle on
+  exposure on the loudness ladder; forced-only until §114 (`&scene=0` since §118, key 1). Its own injection through `ctx.fluid.splat` (a sparkle on
   `hat2`; the §106 ring of six droplets on the drop is gone since §113 — the grammar's shockwave is the one ring), gated on being on screen.
-  Proofs: `IDS=12 PORT=88xx GPU=1 tools/scene-md5.sh s12` twice (the pair in `scene-md5-v035.txt`; `&fluid=0` paints the idle, its pair in
-  that file's header); the windows above on `&scene=12` → `tools/accept/v0.35/fluid-s3-*.jpg`; `CARD.bench(12, 300)` interleaved with
+  Proofs: `IDS=0 PORT=88xx GPU=1 tools/scene-md5.sh s0` twice (the pair in `scene-md5-v035.txt`; `&fluid=0` paints the idle, its pair in
+  that file's header); the windows above on `&scene=0` → `tools/accept/v0.35/fluid-s3-*.jpg`; `CARD.bench(0, 300)` interleaved with
   `bench(0, 300)` (budget ≤ 0.5 ms, the pass alone — the step's 0.58 is the substrate's); the continuity monitor on the scene's own state:
-  `{"eval":"CARD.NAV=CARD.REG[12].scene.state;$MON;'ok'"}` on `test&track=SeeYouDrop&at=25&scene=12` (real time, 60 s) → `viol []`
+  `{"eval":"CARD.NAV=CARD.REG[0].scene.state;$MON;'ok'"}` on `test&track=SeeYouDrop&at=25&scene=0` (real time, 60 s) → `viol []`
   (`cPath` = exposure and on-screen weight, `kick.x` = the drop ring's envelope, the one declared cut); `hooks.flinfo()` / `.fldbg()`
-  read-only. **The drop strip** (does the pool clear?): `&track=SeeYouDrop&at=48&scene=12` under `CLOCK=1`, 24 shots keyed on
+  read-only. **The drop strip** (does the pool clear?): `&track=SeeYouDrop&at=48&scene=0` under `CLOCK=1`, 24 shots keyed on
   HEARD time 56.5 → 58.9 s every ~0.1 s — a rAF logger that records every frame where `dropLiveEvt | mapDropEvt | dropEvt` is set
   and, when `MS.heardT` crosses the next target, sets `window.__PAUSE=1` itself (the shim stops on that exact frame; the step
   list is `{wait:1}, {until:'window.__PAUSE==1'}, {shot}` per target) with `CARD.fluid.params.dyeDiss` at each shot. Key on
@@ -549,10 +557,10 @@ composite at k 0.75 / 1.5 / 3 → 135 / 150 / 177 (a harder knee lifts the mids)
 back-trace of `uPrev` along `engineTex.vel`, `c −= advect·dt·v`, clamped to the picture). `run()` picks `prA` only when
 `io.fluid.on && post.fb.advect > 0`; otherwise the old program runs with the old uniforms — bit-exact by construction.
 **The default is 0 since §109** (the user, 2026-10-09: *"I don't like the fluid dynamics effecting the other scenes (I think is the
-advection?) -> ie. nav, particles, torus, etc."*): a scene OPTS IN with `post.fb.advect` — FLUID (id 12) sets 1, no roster scene does.
-The proof is therefore: every line of the fake smoke list `tools/accept/v0.35/scene-md5-v035.txt` EXCEPT the s12 pair equals the
-`&fluid=0` list `scene-md5-v035-fluid0.txt` (the scalar pass whether the substrate is on or off; the s12 pair differs because FLUID
-shows the dye), and `IDS=1 tools/scene-md5.sh <tag> '&post=dust.fb.advect=1'` moves the s1 pair (the opt-in path alive).
+advection?) -> ie. nav, particles, torus, etc."*): a scene OPTS IN with `post.fb.advect` — FLUID (id 0 since §118) sets 1, no roster scene does.
+The proof is therefore: every line of the fake smoke list `tools/accept/v0.35/scene-md5-v035.txt` EXCEPT FLUID's pair (s0 since §118, s12 before) equals the
+`&fluid=0` list `scene-md5-v035-fluid0.txt` (the scalar pass whether the substrate is on or off; FLUID's pair differs because it
+shows the dye), and `IDS=3 tools/scene-md5.sh <tag> '&post=dust.fb.advect=1'` moves DUST's pair (s3 since §118) — the opt-in path alive.
 `&post=<scene>.fb.advect=<gain>` is the manual override (`fb.advect` is the fifth post param, `manual-smoke.js`) and the one-run A/B
 of the §105 look on any scene. The cost is one bilinear fetch per frame pixel; the pass runs at frame res (§105 has the number).
 
@@ -619,7 +627,7 @@ python3 tools/montage.py tools/work/m.jpg 2 tools/work/s1-t6.jpg tools/work/s1-t
 ## Real window (headed Chrome on the desktop — v0.2 §17's audit; the one thing headless cannot do)
 
 ```
-HEADED=1 WIN=1920,1080 WINPOS=0,0 DPR=1.5 node tools/cdp.js 'test&scene=6&feig=3.6' '<steps>'   # a real window on $DISPLAY
+HEADED=1 WIN=1920,1080 WINPOS=0,0 DPR=1.5 node tools/cdp.js 'test&scene=2' '<steps>'            # a real window on $DISPLAY
 HEADED=1 WIN=1920,1080 CAPTITLE=WhoLikesToParty node tools/cdp.js 'real' '<steps>'              # tab capture, auto-picked
 ```
 - `HEADED=1` drops `--headless`; `WIN`/`WINPOS` size and place the window; `DPR=1.5` forces `devicePixelRatio` (this
@@ -674,7 +682,7 @@ Headless can hide the page: a second tab activated hides the main one (rAF stops
 a burst on return), `{activate:'main'}` brings it back and fires `visibilitychange`. `Page.setWebLifecycleState`
 (`frozen`/`active`) is **not** it: `active` never restores visibility headless (tried, dropped).
 ```
-GPU=1 node tools/cdp.js 'test&fake=0&scene=6' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=>PROBE.start())"},{"wait":8000},{"tab":"about:blank"},{"activate":"tab"},{"wait":15000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k==="back"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,60);return JSON.stringify({n:fr.length,onsets:fr.filter(function(f){return f.o}).length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k==="drop"&&e.t>=b.t}).length,gmax:Math.max.apply(null,fr.map(function(f){return f.g})),hitmax:Math.max.apply(null,fr.map(function(f){return f.hit})),resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]'
+GPU=1 node tools/cdp.js 'test&fake=0&scene=2' '[{"until":"window.CARD"},{"wait":1000},{"eval":"fetch('"'"'/tools/probe.js'"'"').then(r=>r.text()).then(eval).then(()=PROBE.start())"},{"wait":8000},{"tab":"about:blank"},{"activate":"tab"},{"wait":15000},{"activate":"main"},{"wait":3000},{"eval":"(function(){var b=PROBE.ev.filter(function(e){return e.k==="back"}).pop()||{t:1e9};var fr=PROBE.frames.filter(function(f){return f.t>=b.t}).slice(0,60);return JSON.stringify({n:fr.length,onsets:fr.filter(function(f){return f.o}).length,surprise:fr.filter(function(f){return f.s}).length,drops:PROBE.ev.filter(function(e){return e.k==="drop"&&e.t>=b.t}).length,gmax:Math.max.apply(null,fr.map(function(f){return f.g})),hitmax:Math.max.apply(null,fr.map(function(f){return f.hit})),resumeAt:+CARD.ENGINE.resumeAt.toFixed(1)})})()"}]'
 # => {"n":60,"onsets":0,"surprise":0,"drops":0,"gmax":0,"hitmax":0,"resumeAt":26.4}   <- the first 60 frames (1 s) back: nothing may fire
 ```
 `accept.sh` "== hidden tab" runs exactly this, and "== hidden worklet" the same on synapse's dnb synth (150 frames, `srMax` < 1.4). Since the
@@ -709,9 +717,9 @@ with the help open at frame 290 `[SC.cur, SC.next, SC.m]` is the same triple and
 
 Per-scene routing of `MS` fields (CONTRACTS §1.15) and the manual overrides, all under `#test`; storage is ignored there.
 ```
-&route=feigen.bass=centroid*1.5+0.1~0.2!,feigen.kick=snare      # scene.field=src[*k][+b|-b][~tau][!] — several with ','
-&route=feigen.bass=c:0.4                                        # a constant source (transfer still applies)
-&post=feigen.bloom.thr=0.3,feigen.kaleido=0,dust.exposure.on=0  # the six post params: bloom.thr fb.decay fb.advect kaleido exposure.on glitch
+&route=nav2.interval=centroid*1.5+0.1~0.2!,nav2.kickAmp=snare2   # scene.field=src[*k][+b|-b][~tau][!] — several with ','   (§118: the vehicle is NAV2; FEIGEN is archived)
+&route=nav2.interval=c:0.4                                       # a constant source (transfer still applies)
+&post=nav2.bloom.thr=0.35,nav2.kaleido=0,dust.exposure.on=0     # the six post params: bloom.thr fb.decay fb.advect kaleido exposure.on glitch
 &post=nav2.glitch=0                                             # §110: no glitch rows (screen tear) on that scene; 0..1 a gain (the page-wide one is &glitch=)
 ```
 A `+` in a hash reaches the page as a space through `URLSearchParams` — the parser reads both. An unknown scene, field,
@@ -722,8 +730,8 @@ an `[EXC]` line, the loop never starts — `CARD.frameN` stays 0: a typo must no
 `route(scene, field, {src, k, b, inv, tau, c} | null)` · `routes('a.b=c,…')` (the grammar, all-or-nothing) · `routesString()` back
 to it · `clearRoutes(scene?)` · `routesJSON()` / `loadRoutes(json)` (the panel's preset: `{routes, manual}`) · `sources(field)` (what
 may feed it) · `view(name)` (the object the scene reads; `=== CARD.MS` while unrouted) · `MANUAL` (`scene` = `SC.forced`, `trans`,
-`colour` per scene, `post`) · `manual('scene', 6)` / `manual('trans', 'mixs')` / `manual('colour', 'feigen', 'oklch')` /
-`manual('post', 'feigen', 'bloom.thr', 0.3 | null)` · `posts('feigen.bloom.thr=0.3,…')` / `postString()` ·
+`colour` per scene, `post`) · `manual('scene', 4)` / `manual('trans', 'mixs')` / `manual('colour', 'nav2', 'oklch')` /
+`manual('post', 'nav2', 'bloom.thr', 0.35 | null)` · `posts('nav2.bloom.thr=0.35,…')` / `postString()` ·
 `pulse(scene, event)` (v0.4.1: the event is `true` on the scene's view for exactly the next frame — `view(name) !== MS` on
 that frame only; the panel's `fire` button; never a route, never stored).
 
@@ -742,11 +750,11 @@ components in GLSL count as `draw()` reads).
 ```
 # identity: the module loaded and no routes → every scene-md5 line unchanged (v2 and &colour=oklch lists), mixs md5, parity fake 0 diff
 tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.7/scene-md5-v07.txt)
-# the view path is exact: an identity route through the view leaves FEIGEN's md5s identical; a real route moves them
-CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=bass' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rid-s6-f360"}]'   # 8d6ac4a6… (= s6-f360)
-CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&route=feigen.bass=high' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rhi-s6-f360"}]'   # differs
+# the view path is exact: an identity route through the view leaves NAV2's md5s identical; a real route moves them (§118: NAV2, id 2 — FEIGEN is archived)
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=2&route=nav2.interval=interval' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rid-s2-f360"}]'   # = the referencec4a6… (= s6-f360)
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=2&route=nav2.interval=high' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/rhi-s2-f360"}]'   # differs
 # a manual post: the v2 default's own value leaves s6 identical, bloom off (thr 2) moves it
-CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&post=feigen.bloom.thr=0.3' …   # identical · &post=feigen.bloom.thr=2 differs
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=2&post=nav2.bloom.thr=0.35' …   # identical · &post=nav2.bloom.thr=2 differs
 # cost: ten routes on FEIGEN, q pinned, bench(6,300)/bench(0,300) interleaved before / with / after ("Bench protocol"): ratios .68 / .64 / .77 (noise),
 #   ROUTE.ms 0.007–0.023 ms (tools/accept/v0.4/route-bench.txt); the refresh runs outside ENGINE.frame so ENGINE.ms cannot move
 ```
@@ -756,7 +764,7 @@ CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&post=feigen.bloom.thr=0.3' …   #
 
 Per-scene routing of `MS` fields into a scene's *visual parameters* (CONTRACTS §1.16), under `#test`:
 ```
-&param=feigen.sharp=centroid*1.5+0.1~0.2!,feigen.glow=c:0.6   # scene.param=src[*k][+b|-b][~tau][!] (route.js's grammar) · a constant c:<value> in the parameter's units
+&param=nav2.trap=centroid*1.5+0.1~0.2!,nav2.zoom=c:0.6        # scene.param=src[*k][+b|-b][~tau][!] (route.js's grammar) · a constant c:<value> in the parameter's units
 ```
 An unknown scene or parameter, a source that is not a level / raw / angle / event field, a transfer on a constant, or a
 negative τ **throws at init** (`[EXC]`, `CARD.frameN` stays 0). Lists and the preset's `params` block are all-or-nothing.
@@ -773,7 +781,7 @@ no DOM; the rest headless):
 tools/scene-md5.sh after; diff <(sort -k2 tools/work/after-md5.txt) <(sort -k2 tools/accept/v0.7/scene-md5-v07.txt)
 # a scene's move of a constant into params is a no-op per move: the same diff after each commit of the scene's worker
 # a param route moves the picture; a constant route at the derived value on the defaults does not have to (from() is live, the constant is not)
-CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=6&param=feigen.<p>=centroid*1.5' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/prt-s6-f360"}]'
+CLOCK=1 GPU=1 node tools/cdp.js 'test&scene=2&param=nav2.<p>=centroid*1.5' '[{"until":"window.CARD"},{"until":"window.__FRAME>=360"},{"shot":"work/prt-s2-f360"}]'
 ```
 
 ## Landing tiles (v0.8.1 — change to `core/landing.js`, `hud.js`'s run/stop hooks, `index.html`'s card, a scene's `card` slot, `tools/thumbs.sh`)
@@ -782,10 +790,10 @@ The tiles are DOM, rendered from `REG` at `initHUD`; a click is `pick(id)`: `SC.
 `AU.mode === 'none'`, the muted demo synth starts as a live preview with the card slimmed (`#landing.peek`). Prove on the **real**
 hash (the harness hides the card under `#test`, so `pick()` never previews there):
 
-    GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"      # the steps: tiles + thumbnail widths, FEIGEN tile → peek state, DIRECTOR → forced -1, TORUS tile then the demo link → the show
+    GPU=1 node tools/cdp.js real "$(cat tools/landing-steps.json)"      # the steps: tiles + thumbnail widths, the TORUS2 tile (data-id 4) → peek state, DIRECTOR → forced -1, TORUS tile then the demo link → the show
 
-Expected: `TILES 10 imgs 480,…` (the scenes that declare `card`: NAV, DUST, MANDALA, TORUS2, POLYTOPE, FEIGEN, MAXWELL, GIELIS, CHLADNI, FLUID — 6 until v0.10, 10 since §106) (a 0 or a missing image = the thumbnail did not load — `tools/serve.js` serves `site/` at the root since
-v0.8.1; on `file://` the images are absent by design); `PEEK true 6 6 demo 0 peek` (mon 0 = silent); `DIRECTOR -1`; `START demo false 3
+Expected: `TILES 5 imgs 480,…` (§118: the scenes that declare `card` — FLUID, NAV, DUST, TORUS2, MANDALA; 6 until v0.10, 10 at v0.29, 5 since the lean-down; FLUID2 declares none) (a 0 or a missing image = the thumbnail did not load — `tools/serve.js` serves `site/` at the root since
+v0.8.1; on `file://` the images are absent by design); `PEEK true 4 4 demo 0 peek` (mon 0 = silent); `DIRECTOR -1`; `START demo false 4
 hide true []` — the forced scene survives the start. `MOBILE=1` for the
 phone card (`.mobile`, four tiles a row) and `FAKEMIC=1` + `{clickSel:"#mic"}` for the microphone out of a preview. Thumbnails:
 `tools/thumbs.sh` (all pinned frames) or `tools/thumbs.sh "1:1200"` (one scene); a frame change is a commit that says so. `accept.sh`
@@ -998,7 +1006,7 @@ the demo) — use a fresh `PORT` or kill it. Rows: `tools/accept/live-grid/*-bar
 The A/B the user watches (no scene edit — routes, CONTRACTS §1.15; a normal page: the routes panel `P` or `CARD.route`):
 `#test&track=SeeYouDrop&map=0&scene=3&route=torus2.kick=predKick,torus2.snare=predSnare,torus2.hat=predHat` (TORUS2's wave +
 core flash on the predicted hits; drop the `route=` for the reactive synapse levels), and for CHLADNI's ballistic sand
-`&scene=11&route=chladni.kickEvt=predKickEvt,chladni.kickAge=predKickAge,chladni.snareAge=predSnareAge,chladni.hatAge=predHatAge`.
+`&scene=11&route=chladni.kickEvt=predKickEvt,…` — CHLADNI is archived since §118, so that one is history; the route shape is the point.
 
 ## Drums — the reactive drums v2 (`engine/drums/`, `features-drums.js`, or the ears' low lane)
 
@@ -1453,6 +1461,9 @@ node tools/whatsnew.js [--check]             # releases.json → site/whats-new.
 node tools/releases.js set v0.29 clip.youtube <id>   # SocialMediaManager's post log writes the id back; the poster is site/thumbs/whats-new/<tag>.jpg (self-hosted)
 npm run build                                # = whatsnew.js → bundle.js (inlines the line) → cp site/. dist/ → dist/whats-new.html, dist/index.html
 ```
+- **§118 (2026-10-11):** the frozen `releases/retinarave-v*.html` pages were pruned to the last three (v0.34, v0.35, v0.36) — 40 MB → 5 MB.
+  The ritual is unchanged (a new page per tag, `npm run build` then a copy); every older page is in git history at its own tag
+  (`git show v0.29:releases/retinarave-v0.29.html > /tmp/x.html` brings one back for an A/B). `releases.json` is untouched.
 - `releases.json` (repo root) is the one visitor-facing source: one entry per tag, newest first, `body` in a visitor's words (no
   section numbers — `decisions` carries the § list; check.js refuses a § in the prose). `tools/releases.js` is the one reader.
 - **The tag ritual, in this order or check.js fails:** bump `package.json` + `assets/core/version.js` together (§89) → add the

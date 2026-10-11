@@ -95,7 +95,8 @@ export function initHUD() {
     } else if (k === 'w') { // the fluid substrate on / off (DECISIONS §104); stays off where there are no float render targets
       const on = setFluid(!FLUID.on);
       toast(FLUID.avail ? (on ? 'fluid substrate on' : 'fluid substrate off') : 'fluid substrate unavailable here (no float render targets)');
-    } else if (k === 'n') pick(stepScene(1)); // v0.10: the next scene, cycling through the registry (ids 9+ have no number key); through the picker like the digits
+    } else if (k === 'n' || k === 'arrowright') pick(stepScene(1)); // v0.10 `n` = the next scene, cycling through the registry; §118 (2026-10-11, the user: "we have "N" for next scene, should have a previous scene button -> use the arrow keys for changing scenes forward and backward") the right arrow does the same
+    else if (k === 'arrowleft') pick(stepScene(-1)); // §118: the PREVIOUS scene — REG is dense 0..5 since the lean-down, so stepScene's (from + d + n) % n wraps 0 -> 5 both ways. Nothing else bound an arrow (one keydown listener, core/hud.js; the panel's inputs return above)
     else if (k >= '0' && k <= '9') { if (k === '0') pick(-1); else if (REG[+k - 1]) pick(+k - 1); } // v0.8.1: through the picker, so a key on the landing previews like a tile click
   });
   addEventListener('dblclick', fullscreen);

@@ -121,7 +121,7 @@ function info() {
 
 export default {
   name: 'torus2',
-  id: 3,
+  id: 4,   // §118 the lean-down (2026-10-11): was 3 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 5)
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
   feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],

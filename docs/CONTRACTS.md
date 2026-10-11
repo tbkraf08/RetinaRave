@@ -244,7 +244,7 @@ needed, now generic:
   consumer in the core is the feedback pass, which back-traces a scene's trail along its velocity when that scene opts in
   (`fb.advect`, §105; **off by default since §109 — FLUID opts in; the user's 2026-10-09 call: "I don't like the fluid dynamics
   effecting the other scenes … nav, particles, torus"**);
-  FLUID (id 12, §106) shows the dye itself, lit as a liquid surface; its one injection of its own (a sparkle on the hats; §113 took its
+  FLUID (id 0 since §118, §106) shows the dye itself, lit as a liquid surface; its one injection of its own (a sparkle on the hats; §113 took its
   six-droplet drop ring out — the substrate's shockwave is the one ring) goes through `splat`, gated on `visibility` — the pool is one
   under every scene. **The force kinds** (DECISIONS §104, §113): `splat(x, y, dx, dy, rgb, r?)` a Gaussian impulse of velocity and dye;
   `force(fx, fy)` a uniform body force (weak by construction — the projection removes its gradient part); **`ring(a, r, w)`** (§113) a
@@ -261,7 +261,7 @@ needed, now generic:
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
   the substrate's step is a slot the OWNER scene declares, never a special case in `core/`. The table is `core/fluid/grammar.js`:
   `'pool'` (`core/fluid/inject.js` — the default: FLUID and every scene without the slot) and `'bands'` (`core/fluid/inject2.js` —
-  FLUID2, id 13: the bands as different kinds of coupling). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
+  FLUID2, id 1 since §118: the bands as different kinds of coupling). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
   (`SC.next`), else the current (`SC.cur`) — the pool is in its grammar from the fade's first frame, so it is already there when the scene
   is fully visible; a forced scene (`&scene=13`, the `n` key) is `SC.cur` the moment `goScene` lands it. Deterministic: a function of
   `SC` alone. **One pool, one base state:** every grammar exports inject.js's interface (`plan, mkState, K, FLUID_FEATS`); a composing
@@ -308,7 +308,7 @@ needed, now generic:
   multiplies by presence and drops to 0.2 on a drop), `fb.advect` (DECISIONS §105: a gain on the substrate's velocity —
   the trail is back-traced along `engineTex.vel`, screen fractions per second, so it rides the music's current; **0 default
   since §109** = the v0.2 scalar pass, the identical compiled program — a scene OPTS IN: 1 = the trail moves at the current's own
-  speed, 0.5 = half; FLUID (id 12) sets 1, no roster scene does (the user, 2026-10-09: the advection on nav / particles / torus is
+  speed, 0.5 = half; FLUID (id 0 since §118) sets 1, no roster scene does (the user, 2026-10-09: the advection on nav / particles / torus is
   not wanted); it is also the scalar pass whenever the substrate is off — `&fluid=0`, key W, no float render targets), `bloom.thr` (luminance threshold, 0.35 default, 2 = bloom off),
   `kaleido` (0..1 multiplier on the beat-driven kaleidoscope: 1 = as the director drives it, 0 = never on this scene),
   `glitch` (0..1 gain on the composite's glitch rows — the screen tear on a drop, a surprise or a hard scene cut — for
@@ -406,11 +406,29 @@ seconds (the same clock `MS` events are stamped with).
 ### 1.8 Registration
 
 Two lines in `assets/main.js`, the only edits outside your folder: an import next to the other scene imports
-(`import dust from './scenes/dust/index.js';`) and your name appended to the list `for (const scene of [nav, dust])`.
+(`import dust from './scenes/dust/index.js';`) and your name appended to the list `for (const scene of [fluid, fluid2, nav2, dust, torus2, mandala])` — in id order since §118, which is what keeps `REG` dense.
 The harness then knows it: `&scene=<id>` forces it, `CARD.SCENES` lists it, `check.js` checks it.
 
-Registered ids (keep this table current): **0 nav2** (home since §102, 2026-10-08 — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, key `1`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`) · **4 drum** (a variant of id 8 since the swap — forced-only since §93, base 8) · 1 dust · 2 mandala · **3 torus2** (v0.7, TORUS's bid) ·
-5 polytope · 6 feigen · **7 torus-v1** (the v0.2–v0.6 TORUS, forced-only for one release, §37) · **8 nav** (the v0.33 navigator in `assets/scenes/nav/`, kept as the control since §102: forced-only `score()` 0, key `9`, `always: true` like the home so key 1 vs 9 compares one navigator state; no `card`; was id 0 and the home v0.1–v0.33) · **9 maxwell** (v0.10, forced-only: `score()` 0, no digit — the `n` key cycles to it; `MAXWELL-SESSION-PROMPT.md`) · **10 gielis** (v0.14, forced-only: `score()` 0, no digit — `n` or `&scene=10`; `GIELIS-SESSION-PROMPT.md`) · **11 chladni** (v0.15, forced-only: `score()` 0, no digit — `n` or `&scene=11`; `ENGINE-CHLADNI-SESSION-PROMPT.md`) · **12 fluid** (§106, 2026-10-09; ON THE ROSTER since §114, 2026-10-10 — its own fit bid `0.35 + 0.4 bassS + 0.2 min(1, keyConf/0.6) + 0.15 (1 − centroid)`, 0 in a build; no digit — `n` or `&scene=12` forces it; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's; `FLUID-PLAN.md` Step 3) · **13 fluid2** (§116, 2026-10-10; forced-only: `score()` 0, no digit — `n` or `&scene=13`; no `card`; FLUID's pool under the BAND grammar — its card's `fluid: { grammar: 'bands' }` slot (§1.4) makes the step plan through `core/fluid/inject2.js` while it owns the pool; at S0 pixel-identical to FLUID; S1–S6 of `FLUID2-PLAN.md` BUILT (§116: the sub a field, the kick a vortex pair, the mids the confinement, the highs a grain + a dip + the light, the harmony's pen, the solver's clock), closed at S7 — tuned on RaindropsOnRoses alone on the user's word, the seven-track sweep owed before any tag; `&k2={…}` on any page is its switchboard). `CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
+Registered ids (keep this table current — **§118, 2026-10-11, the lean-down**: the user *"I never look at polytope, feigen,
+maxwell, gielis, chladni, key5-nav, key8-torus, key9-nav, and OK to archive"* and *"instead of skipping holes, can we shift kept
+scenes down to fill the gaps? order: fluid, fluid2, nav2, dust, torus2, mandala"* — eight scenes moved to `archive/scenes/` and
+the six kept ones were shifted down, so `REG` is DENSE 0..5 and every id is a digit key again):
+**0 fluid** (key `1`; §106, ON THE ROSTER since §114 — its own fit bid `0.35 + 0.4 bassS + 0.2 min(1, keyConf/0.6) + 0.15 (1 − centroid)`,
+0 in a build; the fluid substrate shown as itself — `ctx.engineTex.dye` lit as a liquid surface in one pass, the grammar the core's;
+`FLUID-PLAN.md` Step 3) · **1 fluid2** (key `2`; §116, forced-only: `score()` 0; no `card`; FLUID's pool under the BAND grammar —
+its card's `fluid: { grammar: 'bands' }` slot (§1.4) makes the step plan through `core/fluid/inject2.js` while it owns the pool; at
+S0 pixel-identical to FLUID; S1–S6 of `FLUID2-PLAN.md` BUILT (the sub a field, the kick a vortex pair, the mids the confinement,
+the highs a grain + a dip + the light, the harmony's pen, the solver's clock), closed at S7 — tuned on RaindropsOnRoses alone on
+the user's word, the seven-track sweep owed before any tag; `&k2={…}` on any page is its switchboard) · **2 nav2** (key `3`; the
+HOME — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, NAV's bid `0.5 + buildLive`, the landing tile titled NAV with
+`site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`. `register()` seats
+`SC.cur` / `SC.logical` / `SC.hist` on whichever scene declares `home`, so the first frame of a page load is this one and not the
+literal id 0) · **3 dust** (key `4`; on the roster) · **4 torus2** (key `5`; v0.7, TORUS's bid, the public name TORUS) ·
+**5 mandala** (key `6`; forced-only since §93: `score()` 0).
+Archived at §118 (`archive/scenes/`, the old → new map in `archive/README.md`; nothing imports them but `tools/test_nav2.js`, which
+reads `archive/scenes/nav/` as its A/B control): polytope (was 5), feigen (6), torus-v1 (7), nav the v0.33 control (8) with its
+DRUM variant (4), maxwell (9), gielis (10), chladni (11). Their accept references moved to `archive/accept/`.
+`CARD.REG[id]` is `{id, base, scene, variant}` (`scene` is your exported object; `variant` is null for a
 scene's own id); `CARD.SCENES` is the array of scene objects in registration order.
 
 ### 1.9 `cuts` — what you promise about discontinuities
@@ -967,8 +985,8 @@ Register in `assets/main.js`: `for (const fx of [feedback, bloom, composite]) ad
 - Crossfades render both scenes and hand them to the transition (§5; `mixs` by default) over `clamp(4·60/bpm, 1.2, 3)` s.
   Both `draw` calls happen each frame of the fade; both `update`s run.
 - Scores: `score()` + 0.1 per-section seed noise (0.25 before §93) − 0.6 if you were the last scene − 0.25 if the one before.
-- The roster — who bids at all (§93, its addendum, §114): **NAV2 (0, home, `0.5 + buildLive`), DUST (1), TORUS2 (3), FLUID (12)**;
-  every other registered scene returns 0 (forced-only: `&scene=`, the keys, the panel's force) — FLUID2 (13, §116) among them: it joins
+- The roster — who bids at all (§93, its addendum, §114; **§118's ids**): **FLUID (0), NAV2 (2, home, `0.5 + buildLive`), DUST (3), TORUS2 (4)**;
+  every other registered scene returns 0 (forced-only: `&scene=`, the keys, the panel's force) — FLUID2 (1, §116) and MANDALA (5) among them: a scene joins
   the bid only on the user's word. Each bid is a fit model on
   smoothed fields the engine already has — 0.3–0.35 standing, peaking near 1.1 in its territory, 0 during a build — so the music
   decides and the noise only breaks ties (DECISIONS §93's table, FLUID's row in §114). A scene joining the roster: its bid in

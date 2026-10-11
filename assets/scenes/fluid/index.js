@@ -62,7 +62,7 @@ function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
 
 const SELF = {
   name: 'fluid',
-  id: 12,
+  id: 0,   // §118 the lean-down (2026-10-11): was 12 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 1)
   tag: 'the fluid substrate as itself — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the key colours it, the drop clears it and throws it outward',
   card: { title: 'FLUID', blurb: 'ink in a pool: the bass note is where it enters, every kick lifts it, the snare shears it, the key is its colour' },
   feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence', 'arc', 'bassS', 'keyConf', 'centroid'], // the last four are the bid's alone (§114; help.js says 'the bid:')
