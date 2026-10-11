@@ -34,8 +34,13 @@
 #   12 FLUID -> 0 (key 1) · 13 FLUID2 -> 1 (key 2) · 0 NAV2 -> 2 (key 3) · 1 DUST -> 3 (key 4) · 3 TORUS2 -> 4 (key 5) · 2 MANDALA -> 5 (key 6)
 # Only the s<id> KEYS below were rewritten; NOT ONE HASH MOVED (an id is a registration slot, never a pixel — the gates
 # of §118 re-measured every line that is still reachable and found them to the byte). Lines for the archived ids are gone.
+# §118 also RECORDED FLUID2's pair for the first time (s1, 0e92a1c4 / ed3283fc): the scene was built at §116 S7 on
+# RaindropsOnRoses alone and its fake pair was measured there but never written down ("fake 26 = v035 (s13's pair aside)" in
+# tools/accept/v0.37/fluid2-s116-s7.txt). §118's run reproduces it to the byte, so the full list is 12 lines now.
 3e48303900f1447bc8da8624273ef554  s0-f360.jpg
 2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+0e92a1c49f8d69135bd71b6ad52c62d3  s1-f360.jpg
+ed3283fcfa8bc934d80c12ea15bb785e  s1-f840.jpg
 a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
 a12256fdbc334215c31f9851f9638647  s2-f840.jpg
 1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg

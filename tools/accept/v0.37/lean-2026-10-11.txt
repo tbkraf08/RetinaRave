@@ -1,0 +1,120 @@
+== §118 the lean-down — the gates, 2026-10-11, one Opus worker on main (commits e91a323 · 9e7dd6b · d6fdf1a · de5215f · this one)
+   Scope: eight scenes archived, the kept six renumbered 0..5 to fill the holes, the arrow keys, parity cut to the music
+   state, the accept / releases / disk pruning, the DECISIONS split. NOT tagged, NOT pushed.
+   The id map: 12 FLUID -> 0 (key 1) · 13 FLUID2 -> 1 (2) · 0 NAV2 -> 2 (3, the home) · 1 DUST -> 3 (4) · 3 TORUS2 -> 4 (5) · 2 MANDALA -> 5 (6)
+
+== GATE 1  node tools/check.js  —  2 s
+check: 144 modules · uniforms 161 · MS keys 220 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn
+   (was 183 modules · scenes 13 · 0 fail · 9 warn at ebc372f. The 4 warns are the line-cap warnings only:
+    core/fluid/inject2.js 462, engine/ears/perc.js 407, scenes/dust/index.js 354, scenes/torus2/index.js 353 — soft cap 350.
+    The 5 warns that went were the archived scenes'. check.js walks assets/ only, so archive/ is invisible to it;
+    its §104 / §116 comments still read true.)
+
+== GATE 2  npm test  —  25 s, exit 0
+test_dsp all pass · test_rough OK · test_baby OK · test_misi OK · test_hopf OK · test_tempo OK · test_director OK ·
+test_bars OK · test_drums OK · test_build OK · test_queue OK · test_clock OK · test_loud OK 43 pass · test_tongues OK ·
+test_fluid 442 ok 0 fail · test_music 151 ok 0 fail
+   test_fluid 442 and test_music 151 are ebc372f's counts to the test — unchanged, as required.
+   test_director's step 10 was rebuilt on the new ids (it starts from an empty REG, seats one stub per kept scene at its
+   real id with that scene's real score(), and asserts register() seated the home):
+     ok the six kept scenes carry §118's ids 0 / 1 / 2 / 3 / 4 / 5 (roster 0 2 3 4, home 2)
+     ok §118: register() seated the home (NAV2, id 2) as the first frame's scene, not the literal id 0 (FLUID)
+     ok drop window: FLUID leads by 0.116 (> 0.1, the hash noise) · sub breakdown: FLUID leads by 0.247
+     ok steady tonal groove: TORUS2 keeps it by 0.113 · slow sparse intro: DUST keeps it by 0.290
+     ok pickScene picks FLUID on the drop window 50/50 · TORUS2 on the groove 50/50 · home in a build 50/50
+     ok 12 neutral picks rotate DUST / TORUS2 / FLUID (FLUID 4 · NAV 0 · DUST 4 · TORUS2 4), none above 5
+     ok the groove: a surprise cut lands TORUS2 (logical 4) · the drop hard-cuts home (2) · the identify after it picks FLUID (0)
+     ok a build parks home from FLUID (2) · silence drifts home from FLUID (2) · the dwell holds FLUID 30 s against TORUS2's profile
+     ok forced DUST (3) survives a surprise, an identify and a drop · forced FLUID (0) survives the groove · released, the bid decides
+   Not in npm test, run anyway because the archive had to stay importable:
+     node tools/test_nav2.js -> all ok  (it reads archive/scenes/nav/{index,nav,shaders}.js as its A/B control:
+     the byte copy, the nav.js line diff within the 12 / 22 caps, 48 s of the retune with §100's knobs off against the
+     control's own trajectory to the bit, the continuity invariant, the cost median 0.023 ms)
+
+== GATE 3  tools/scene-md5.sh (the fake smoke, GPU=1 PORT=8979)  —  90 s
+errs [] hop 840 row 72 on every one of the 6 ids. 12 lines:
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg          <- FLUID, was s12
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+0e92a1c49f8d69135bd71b6ad52c62d3  s1-f360.jpg          <- FLUID2, was s13
+ed3283fcfa8bc934d80c12ea15bb785e  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg          <- NAV2, was s0
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg          <- DUST, was s1
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg          <- TORUS2, was s3
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg          <- MANDALA, was s2
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+   10 / 10 of the renamed reference lines cmp-equal TO THE BYTE: the renumber moved no pixel, as it cannot — an id is a
+   registration slot. NO LINE WAS RE-CUT. s1 (FLUID2) is the one line that is NEW to the list rather than renamed:
+   §116 S7 measured its fake pair and chose not to write it down ("fake 26 = v035 (s13's pair aside)" in
+   fluid2-s116-s7.txt); this run reproduces 0e92a1c4 / ed3283fc, so scene-md5-v035.txt is 12 lines now and the next
+   full sweep has a reference for all six.
+
+== GATE 4  tools/real-md5.sh on RaindropsOnRoses (GPU=1, the eight-track sweep NOT run — the user's deferral stands)
+(a) SCENES=0 TRACKS=RaindropsOnRoses PORT=8981  —  70 s, 4 runs, 8 lines
+    f0 2 · errs [] · bad [] · exc 0 on every run (heard 41.133 / 86 at the two windows, map 1 and map 0)
+    8 / 8 cmp-equal to tools/accept/v0.37/real-md5-v037.txt's s0 lines (= §116 S7's s12 lines, renamed)
+(b) SCENES="2 3 4" TRACKS=RaindropsOnRoses PORT=8983  —  205 s, 12 runs, 24 lines
+    f0 2 · errs [] · bad [] · exc 0 on every run; sc reads 2 / 3 / 4, the forced id
+    24 / 24 cmp-equal to real-md5-v037.txt's s2 / s3 / s4 lines (= §116 S7's "roster 0 1 3 Raindrops 24 / 24", renamed)
+    §116 S7's own wall for this was 207 s — 205 s here, the same run on the same machine.
+
+== GATE 5  node tools/parity.js fake (PORT=8977)  —  128 s, exit 0
+=== fake path (CLOCK=1, both sides #test&scene=0, 24 s = 1440 frames) ===
+samples v3 24 ew 24 · ERRS v3 [] ew []
+max |diff| over all numeric fields: 0 · fields compared 62
+MS parity: every field identical to 1e-9
+   The decision: parity is CUT to the music state, not retired. It sampled nav.c / nav.mode / nav.h / nav.alpha /
+   nav.th / nav.lg / nav.par / nav.vtime / nav.kick / nav.cyc.has against cardioid3's navigator, which since §102 meant
+   forcing the v0.33 control at id 8 — the scene §118 archived — and which had been a standing MISMATCH for weeks
+   (§116 S7's receipt: max |diff| 7.852214593751443, every nav.* row red, every MS row 0) because the navigator the
+   engine ships walks somewhere else BY DESIGN. 72 fields compared before, 62 now: the ten nav.* rows are what went.
+   The navigator keeps its own proofs (test_nav2.js above, the continuity monitor).
+   The run rewrites tools/accept/v0.5/{ew-t6,ew-t14,ew-t20,parity-fake}.jpg and they are COMMITTED this time, not
+   checked out: the ew side renders scene 0, which is FLUID now. The v3 shots did not move.
+
+== GATE 6  npm run build  —  0.14 s
+whatsnew: 34 entries -> site/whats-new.html (41 KB, top v0.36, index.html #newin current; clips 0)
+bundled 143 modules -> dist/index.html (1340 KB = 1 378 966 bytes)
+   ebc372f: 182 modules, 1 863 210 bytes. -39 modules, -484 244 bytes (-26 %), well under the 1.86 MB the brief named.
+
+== GATE 7  the arrows, headless Chrome (PORT=8975)  —  2 s
+[6,0]                                    <- REG.length 6, forced 0
+"R1 forced 1 fluid2"  "R2 forced 2 nav2"  "R3 forced 3 dust"  "R4 forced 4 torus2"  "R5 forced 5 mandala"  "R6 forced 0 fluid"
+"L1 forced 5 mandala" "L2 forced 4 torus2" "L3 forced 3 dust" "L4 forced 2 nav2"    "L5 forced 1 fluid2"   "L6 forced 0 fluid"
+"N forced 1 fluid2"
+"errs []"
+   ArrowRight walks 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 0 and ArrowLeft walks it back, both wrapping; `n` still steps forward.
+   Nothing was displaced: the page has exactly one keydown listener (core/hud.js) and no arrow was bound in it, in
+   core/panel.js or in core/touch.js before today.
+   The initial scene on load, same driver, no &scene=:
+   {"cur":2,"logical":2,"home":2,"name":"nav2","hist":[2],"n":6,"errs":[]}
+   — NAV2, by name. core/scenes.js register() seats SC.cur / SC.logical / SC.hist on whichever scene declares
+   home: true, because the struct's literal `cur: 0` meant the navigator only by the accident that the navigator was
+   id 0 from v0.1 to §102. Flipping the load to FLUID is that one line.
+
+== GATE 8  node tools/license.js --check  —  0.02 s
+license: 147 public files · 0 without the header
+   (186 / 0 at ebc372f — the 39 archived modules are not public files any more. license.js walks assets/ + site/ +
+   index.html, so archive/ is out of scope by construction, exactly as check.js is.)
+
+== Disk and counts, before -> after
+the checkout            6.6 GB     -> 1.8 GB
+tools/accept            131 MB     -> 55 MB  (+ 48 MB in archive/accept)
+releases/               40 MB / 37 -> 5.0 MB / 3  (v0.34, v0.35, v0.36; the rest are in git history at their tags)
+tools/chr9479…chr9742   777 MB     -> deleted (abandoned headless-Chrome profiles)
+tools/work              5.2 GB     -> 1.1 GB  (2 472 entries moved to ~/Archive/RetinaRave-work/, now 4.1 GB)
+tools/truth/traces      254 MB     -> 254 MB (untouched: npm test reads it)
+docs/DECISIONS.md       11 663 ln  -> 2 690 ln (+ 9 077 in docs/DECISIONS-ARCHIVE.md)
+registered scenes       14 ids     -> 6 (dense 0..5)
+accept dirs             23 live    -> 9 live, 14 in archive/accept
+tracked files           —          -> 1 738
+untracked under tools/accept  440  -> 0 (deleted: 430 scratch jpgs + 10 scratch txt; v0.27 was 100 % untracked)
+
+== Owed after this
+- the seven-track FLUID2 sweep before any tag (§116 S7, deferred on the user's word) — unchanged by §118
+- accept.sh's "== routes" and "== params" blocks were re-pointed from FEIGEN (archived) to NAV2 (id 2) and have NEVER
+  been run on that vehicle: the next full `GPU=1 tools/accept.sh` is their first sweep
+- the eight-track sweep, a tag, a push, a releases.json entry: all the user's call. §118 moves the KEYS, so it is a
+  visitor-facing change and needs its own entry when a tag happens.

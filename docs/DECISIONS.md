@@ -2688,3 +2688,166 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   - **Still open on the track (findings, not gates):** the live build detector's miss of drops 1 / 2 and its one fire at 129.5 s (the sub
     cuts before the drops; the ≤ 4 rule holds at 1); the roster's (0 1 3) real-md5 lines on the track, owed with the next roster re-proof
     (none run here); the key's mode by ear.
+
+## §118 the lean-down — eight scenes archived, the kept six renumbered, the arrow keys (2026-10-11, one Opus worker on main; the user: *"I never look at polytope, feigen, maxwell, gielis, chladni, key5-nav, key8-torus, key9-nav, and OK to archive"*, then *"instead of skipping holes, can we shift kept scenes down to fill the gaps?"* / *"order: fluid, fluid2, nav2, dust, torus2, mandala"*, then *"we have "N" for next scene, should have a previous scene button -> use the arrow keys for changing scenes forward and backward; go"*)
+
+The engine had fourteen registered ids and the user watched six of them. Eight scenes, their tests, their worker docs,
+their accept references and their thumbnails are out of the live tree; the six that stay are renumbered to fill the
+holes, so every one of them has a number key again; and the scene stepper gained a direction.
+
+### The id map
+
+| old | scene | new | key |
+| --- | --- | --- | --- |
+| 12 | FLUID | **0** | `1` |
+| 13 | FLUID2 | **1** | `2` |
+| 0 | NAV2 (the home) | **2** | `3` |
+| 1 | DUST | **3** | `4` |
+| 3 | TORUS2 | **4** | `5` |
+| 2 | MANDALA | **5** | `6` |
+| 5 · 6 · 7 · 8 (+ its variant 4) · 9 · 10 · 11 | POLYTOPE · FEIGEN · TORUS v1 · NAV v0.33 (+ DRUM) · MAXWELL · GIELIS · CHLADNI | archived | — |
+
+The order is the user's, read as the order they would cycle in. `REG` is DENSE 0..5 now, which is the point of filling
+the holes rather than skipping them: `stepScene`'s `(from + d + n) % n` walks every scene in both directions with no
+empty slot to land on, the digit keys cover the whole roster (they had run out at 9 and ids 9–13 had no key at all),
+and `help.js`'s `1–` range and `panel.js`'s hole filter both become trivially right.
+
+**The HOME is still NAV2 — by NAME, not by the literal 0.** `SC.cur` was initialised to `0` in the struct literal and
+for v0.1–v0.33 that WAS the navigator, so the two agreed by accident. The renumber put FLUID at 0, so
+`core/scenes.js register()` now seats `SC.cur`, `SC.logical` and `SC.hist` on whichever scene declares `home: true`.
+Measured on a page load: `cur 2, logical 2, home 2, hist [2], errs []`. If the user wants FLUID first on load, that one
+line is where to say it.
+
+### The arrows
+
+`core/hud.js`: `ArrowRight` steps forward (what `n` already did, kept), `ArrowLeft` steps back —
+`stepScene(-1)`, which is only correct because `REG` is dense. Both go through the landing picker like the digits, so a
+press on the card previews like a tile click. The page has exactly ONE `keydown` listener and no arrow was bound
+anywhere in it, in the panel or in `core/touch.js`, so **nothing was displaced** (the bottom bar's prev / next buttons
+have called `stepScene(±1)` since v0.10 — the arrows are the same two calls on the desktop). `core/help.js`'s key
+table lists `N or →` and `←`, and the landing card's hint row is rendered from that table, so the two cannot drift.
+
+### What moved where
+
+`archive/` is frozen: nothing in `assets/` imports it, `check.js` and `license.js` walk `assets/` only, the bundler
+reaches it from no import. `archive/README.md` carries the id map from the other direction, how to cite an old id, and
+how to bring a scene back.
+- `archive/scenes/` — the eight folders, byte-unchanged (DRUM is NAV's variant and lives inside `nav/`).
+- `archive/math/` — `nudge.js`, `gielis.js`, `chladni.js` as real files (only the archived scenes used them), plus
+  one-line re-export shims for the seven shared modules that are still live in `assets/math/`. That keeps the archive
+  IMPORTABLE, which matters: `tools/test_nav2.js` reads `archive/scenes/nav/{index,nav,shaders}.js` as its A/B control
+  (the byte copy, the `nav.js` line diff, 48 s of trajectory) and stays green — a frozen tree is exactly what a control
+  should be. Its declared id 8 is simply dead in the live registry.
+- `archive/tools/` — `test_polytope.js`, `test_feigen_ladder.js`, `test_fdtd.js`, `test_gielis.js`, `test_chladni.js`,
+  `navkicks.js`, `feigen-bench.sh`. None was in `npm test`.
+- `archive/docs/workers/` — the 28 brief + report files about these scenes only. The `nav-*` docs stayed LIVE: NAV2 is a
+  byte-faithful clone of NAV, so that lineage still binds.
+- `archive/site/thumbs/` — six jpgs. `archive/accept/` — fourteen dead sweeps (below).
+
+### What the renumber touched, and what it could not
+
+Every md5 reference keyed by id had its `s<id>` KEYS renamed and **not one hash moved** — an id is a registration slot,
+never a pixel. `scene-md5-v035.txt` and `-fluid0.txt` (26 lines → 10 kept; the eight archived ids dropped),
+`scene-md5-v034.txt` (24 → 8), `real-md5-v035/36/37.txt` (232 / 240 / 330 lines, every one kept: the five ids that have
+real-track lines are all kept scenes), `real-rulers-v035/36.txt` (the `id` column, rows re-sorted), and
+`trans-mixs-md5.txt` — the same NAV2 → TORUS2 fade at f178 is `2→4` now instead of `0→3`, at the same hash. Each file
+says so in its header. The scripts' defaults followed: `real-md5.sh` / `real-rulers.sh` `SCENES="0 2 3 4"`,
+`director-bids.js` `IDS [0,2,3,4]`, `test_director.js` step 10 (rebuilt from an empty `REG`, one stub per kept scene at
+its real id, with an assertion that `register()` seated the home), `test_fluid.js`'s two id assertions.
+
+`accept.sh` lost the "== polytope", "== gielis" and "== feigen cost" blocks and had its ids remapped; the nav2 block
+lost the archived control's lane. Its "== routes" and "== params" blocks used FEIGEN as their VEHICLE (id 6, a numeric
+`bloom.thr`, a `params` slot) and were re-pointed to NAV2 (id 2, `bloom.thr` 0.35, `params` `trap`…). **Those two
+blocks have not been run on the new vehicle — the next full `GPU=1 tools/accept.sh` is their first sweep.**
+`tools/q-trace.sh` forced scene 6 and called FEIGEN's `hooks.feig`; it is parameterised now (`QID` default 0, `QHOME`
+default 2, the depth field empty by default). `tools/landing-steps.json` clicks `data-id="4"`.
+
+Two things the renumber reached that were not on the list. `releases.json`'s per-entry `scenes` arrays are scene IDS —
+they drive `/whats-new`'s thumbnails — so they were remapped and the archived ids dropped; `site/whats-new.html` was
+regenerated, and v0.35 / v0.36 had SILENTLY LOST FLUID's thumbnail the moment id 12 stopped existing. And
+`site/about.html`'s cast is the six in id order with a key row; its `<b>TORUS</b>` line is TORUS2's public name and
+stayed.
+
+### Parity cut to the music state
+
+`tools/parity.js` sampled the navigator's own state (`nav.c`, `nav.mode`, `nav.h`, …) beside MS. Since §102 that meant
+forcing the v0.33 control at id 8, which §118 archived — and the check had been RED for weeks either way: the §116 S7
+receipt reads `max |diff| 7.852214593751443`, every `nav.*` row a MISMATCH, every MS row 0, because the navigator the
+engine ships walks somewhere else BY DESIGN. A gate that cannot go green is not a gate. The `nav.*` rows and `NAVID`
+are gone, both sides force scene 0, the field-by-field max-diff and the 0-diff expectation on the fake path are
+unchanged. It passes: `max |diff| … 0 · fields compared 62` (72 before — the ten `nav.*` rows are what went),
+`MS parity: every field identical to 1e-9`. The fake montage's ew shots are committed rather than reverted this time:
+the ew side renders scene 0, which is FLUID now, so they genuinely changed.
+
+### DECISIONS split
+
+`docs/DECISIONS.md` was 11 663 lines. §0 … §103 (2026-09-22 the extraction → 2026-10-08 the v0.34 tag) are
+`docs/DECISIONS-ARCHIVE.md`, 9 077 lines with a header that says what it is, carries the old → new id map (every id
+written before today is pre-renumber, including the two meanings id 0 and id 8 have had across the §102 swap) and says
+how to cite it. The live log is 2 690 lines, §104 onward, and its head carries a pointer plus a
+**"Standing rules (from §0–§103)"** block: 32 lines, one per rule that still binds, each with its §. Nothing was
+renumbered and no cross-reference was rewritten — no tool parses this file, every `§N` is a comment pointing a reader
+at a section, and rewriting 11 000 lines to prove a filename would have been the opposite of a lean-down.
+
+Each of the 32 was then checked against `docs/CONTRACTS.md`; 20 were already there and the 12 that were not are now,
+one line each: §0 gained proof-sized-to-the-diff (§38), one Chrome per bench (§9), the `ACC` reference discipline
+(§83), durable hand annotations (§72), "a look remark is a retune request" (§92) and the licence + credit-where-due
+(§90–§91, §104); §1.4 the colour-identity rule (§26); §1.18 the display lead's two values (§52–§53), the PCM clock as
+the DEFAULT rather than a switch (§56) and REACTIVE OVER PREDICTED as a rule (§51); §4 the dwell with its exemptions
+(§95), "a boot never revives a forced scene" (§94) and the section-renumber map (§21–§22). **Found while checking:**
+Appendix A's five `*Pcm` rows still read "nothing by default; bpm with the switch on", wrong since §56 addendum 3 made
+the PCM clock the default. Fixed in the same pass.
+
+### Disk
+
+| | before | after |
+| --- | --- | --- |
+| the checkout | 6.6 GB | 1.8 GB |
+| `tools/accept` | 131 MB | 55 MB (+ 48 MB in `archive/accept`) |
+| `releases/` | 40 MB, 37 pages | 5.0 MB, 3 pages |
+| `tools/chr*` | 777 MB | gone |
+| `tools/work` | 5.2 GB | 1.1 GB (4.1 GB moved to `~/Archive/RetinaRave-work/`) |
+| `docs/DECISIONS.md` | 11 663 lines | 2 690 (+ 9 077 archived) |
+| registered scenes | 14 ids | 6 |
+| `check.js` modules | 183 | 144 |
+| the bundle | 1 863 210 bytes, 182 modules | 1 378 966 bytes, 143 modules |
+
+440 untracked scratch files under `tools/accept` were deleted (`git clean -f tools/accept` only, listed first), and
+`tools/accept/v0.27` went with them — 0 of its 63 files were tracked. Moved to `archive/accept/`: v0.1, v0.4, v0.8,
+v0.8.1, v0.9, v0.10, v0.11, v0.12, v0.13, v0.14, v0.15, v0.29, v0.31, v0.32 — every jpg still tracked
+(`.gitignore` carries `!archive/accept/**/*.jpg`). KEPT live: v0.2, v0.3, v0.5, v0.7, v0.34, v0.35 (`$ACC`), v0.36,
+v0.37, live-grid. 34 of the 37 frozen release pages were `git rm`'d; the ritual is unchanged and every older page is in
+git history at its tag (`git show v0.29:releases/retinarave-v0.29.html`). In `tools/work` the eight tracks'
+`.48000.st.f32` + `.f32` (+ `.json`), `rec/`, `fluid-tracks/` and `fluid-diag/` stayed — everything a live test or tool
+opens; `tools/truth/traces` (254 MB) was not touched. `tools/work` is `.gitignore`'d but 61 files under it are TRACKED
+(the fluid2 S2–S5 gate scripts), so those were checked straight back out.
+
+### The gates
+
+The receipt with every number and every wall time is `tools/accept/v0.37/lean-2026-10-11.txt`. In short, all eight green:
+
+1. `node tools/check.js` — 2 s — **144 modules · scenes 6 · 0 fail · 4 warn** (183 / 13 / 0 / 9 at ebc372f; the four
+   warns are the line-cap ones only, the five that went were the archived scenes').
+2. `npm test` — 25 s, exit 0 — **test_fluid 442 ok 0 fail and test_music 151 ok 0 fail, ebc372f's counts to the test**;
+   `test_director` green on the new ids and asserting that `register()` seated the home. Also `node tools/test_nav2.js`
+   all ok, reading `archive/scenes/nav/` as its control.
+3. the fake smoke `tools/scene-md5.sh` — 90 s — **12 lines, errs [] hop 840 row 72 on all six ids; 10 / 10 renamed
+   reference lines cmp-equal to the byte, no line re-cut.** The twelfth pair (s1 = FLUID2, `0e92a1c4` / `ed3283fc`) is
+   NEW to the list rather than renamed: §116 S7 measured it and left it unwritten, so it is recorded now.
+4. `SCENES=0 TRACKS=RaindropsOnRoses tools/real-md5.sh` — 70 s — **8 / 8 cmp-equal** to `real-md5-v037.txt`;
+   `SCENES="2 3 4" TRACKS=RaindropsOnRoses` — 205 s — **24 / 24 cmp-equal** (§116 S7's own wall for that was 207 s).
+   `f0` 2, errs [], bad [], exc 0 on all 16 runs. The eight-track sweep was NOT run.
+5. `node tools/parity.js fake` — 128 s, exit 0 — **max |diff| 0 · fields compared 62 · "MS parity: every field
+   identical to 1e-9"** (72 fields before; the ten `nav.*` rows are what went).
+6. `npm run build` — 0.14 s — **143 modules, 1 378 966 bytes** (182 / 1 863 210 before: −39 modules, −26 %).
+7. the arrows, headless Chrome — 2 s — **ArrowRight 0→1→2→3→4→5→0 by name, ArrowLeft back, both wrapping; `n` still
+   steps; errs []**. And the load with no `&scene=`: `cur 2, logical 2, home 2, name nav2, hist [2]`.
+8. `node tools/license.js --check` — 0.02 s — **147 public files · 0 without the header** (186 / 0 before).
+
+### Owed
+
+- The seven-track FLUID2 sweep before any tag (§116 S7, the user's deferral) — unchanged by this.
+- `accept.sh`'s "== routes" and "== params" blocks on their new NAV2 vehicle: never run.
+- Nothing is tagged and nothing is pushed. `releases.json` still tops out at v0.36 and `package.json` is 0.36.0 — the
+  renumber, the arrows and FLUID2 all ship in whatever the user tags next, and §118 is a visitor-facing change (the
+  keys moved) so it needs its own release entry when that happens.
