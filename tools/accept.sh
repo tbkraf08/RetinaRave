@@ -22,7 +22,7 @@ node tools/test_fluid.js | tail -1; node tools/test_music.js | tail -1
 echo "== lines smoke";    node tools/lines-smoke.js | tail -1
 echo "== oklch smoke";    node tools/oklch-smoke.js | tail -1
 echo "== chain smoke";    node tools/chain-smoke.js | tail -1
-echo "== parity fake";   node tools/parity.js fake | grep -E "parity|MISMATCH|max \|diff\|" || echo "FAIL parity fake"
+echo "== parity fake";   node tools/parity.js fake | grep -E "parity|MISMATCH|max \|diff\|" || echo "FAIL parity fake"   # §118: MUSIC-STATE parity (the nav.* rows went with the archived v0.33 control — they had been a standing MISMATCH since the §102 swap); expect "MS parity: every field identical to 1e-9"
 echo "== parity real";   node tools/parity.js real | tail -1
 MON=$(grep -v '^//' tools/monitor.js | tr '\n' ' ' | sed 's/"/\\"/g')
 echo "== monitor 60 s";  node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"},{\"wait\":60000},{\"eval\":\"'MON '+JSON.stringify({n:MON.n,fast:MON.fast,viol:MON.viol,errs:CARD.ERRS,bad:CARD.nonFinite()})\"}]" | grep EVAL | sed 's/.*=> //'

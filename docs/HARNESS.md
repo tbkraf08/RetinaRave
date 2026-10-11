@@ -830,12 +830,20 @@ GPU=1 node tools/cdp.js 'test&fake=0' "[{\"wait\":1500},{\"eval\":\"$MON;'ok'\"}
 # viol twice; real-rulers.sh binds it to every scene's own state through lumtrace.js --mon=1 (a scene with no cPath reports '-').
 ```
 
-## Parity with v3 (core/engine changes only)
+## Parity with v3 (core/engine changes only) — the MUSIC STATE, since §118
 
 ```
-GPU=1 node tools/parity.js fake     # MS/NAV identical to 1e-9 at 1 Hz for 24 s + montage tools/accept/v0.2/parity-fake.jpg
+GPU=1 node tools/parity.js fake     # every MS field identical to 1e-9 at 1 Hz for 24 s + montage tools/accept/v0.5/parity-fake.jpg
 GPU=1 node tools/parity.js real     # fake=0: both bpm within 1 of the synth's 126, arc sequence identical, drops within 0.5 s
 ```
+**§118 (2026-10-11):** it was `MS/NAV` parity and it sampled the navigator's own state against v3's. Since the §102 swap
+that meant forcing the v0.33 control (id 8) on the ew side, and §118 archived that scene — and the check had been RED for
+weeks either way (`max |diff| 7.85` on `nav.lg`, every `nav.*` row a MISMATCH, every MS row 0), because the navigator the
+engine ships walks somewhere else BY DESIGN. The `nav.*` rows and `NAVID` are gone, both sides force scene 0, and the
+expectation is the one parity is FOR: the extractor hears what v3 hears. Expect `max |diff| … 0 · fields compared 62`
+and `MS parity: every field identical to 1e-9` (§118's run: 128 s wall, `samples v3 24 ew 24`, `ERRS [] []`). The `info`
+line — fields on one side only (v3 has no live detector, no PCM clock, no loudness ladder) — is not a diff. The
+navigator's own proofs are `tools/test_nav2.js` and the continuity monitor below.
 
 ## File source — a real track, deterministically (v0.15 E1/E2)
 

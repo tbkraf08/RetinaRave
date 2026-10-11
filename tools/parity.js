@@ -1,10 +1,15 @@
 // Parity between cardioid3.html (via FILE=, legacy cdp semantics) and Retina Rave (formerly Eigenwobble) on the same #test timeline.
 // usage: node tools/parity.js [fake|real|both]   (seed.looks — the director's look memory, absent in v3 — is ignored)   (env GPU=1 recommended; shots -> tools/accept/v0.2/)
-//   fake: CLOCK=1 deterministic 60 Hz clock on both, MS + NAV dumped every 60 frames for 24 s, max |diff| per field
+//   fake: CLOCK=1 deterministic 60 Hz clock on both, the MUSIC STATE dumped every 60 frames for 24 s, max |diff| per field
 //         (expected 0: the fake path is deterministic), screenshots at frames 360/840/1200 (T≈6/14/20) montaged.
-//         The navigator v3 has is the v0.33 one — since DECISIONS §102 (2026-10-08, the swap) that is id 8 (assets/scenes/nav/,
-//         the control), so the ew side forces NAVID (default 8) and samples REG[NAVID].scene.state; the home (id 0) is the retuned
-//         navigator, whose c walks elsewhere by design. `sc` reads the forced id as 0 on both sides (v3 knows no id 8).
+// §118 (2026-10-11, the lean-down): this is a MUSIC-STATE parity now. It used to sample the navigator's own state too
+// (`nav.c`, `nav.mode`, `nav.h`, …) against v3's navigator, which since §102 meant forcing the v0.33 control at id 8 —
+// and that scene is archived. The navigator the engine ships (NAV2, §97–§101) walks somewhere else BY DESIGN, so the
+// nav.* rows had been a standing MISMATCH for weeks (the last receipt: max |diff| 7.85 on nav.lg, every nav.* row red,
+// every MS row 0). What parity is FOR is the extractor: the engine must hear what v3 hears on the same timeline. So the
+// nav.* sampling and NAVID are gone, both sides force scene 0, and the expectation is the one that still means
+// something — every MS field identical to 1e-9 on the fake path. The navigator has its own proofs: tools/test_nav2.js
+// (48 s against the archived control, to the bit with §100's knobs off) and the continuity monitor.
 //   real: #test&fake=0 (demo synth, real audio, real clock) for 32 s: both bpm within 1 of the synth's 126 (v0.2 §9: the canonical
 //         tempo no longer tracks v3's; v3's known error on this synth is +0.1..0.2), arc sequence identical, drop times within 0.5 s.
 import { spawnSync } from 'node:child_process';
@@ -15,12 +20,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const V3 = process.env.V3 || '/home/toma/Documents/Kraftek/Cardioid/cardioid3.html';
 const OUT = path.join(HERE, 'accept/' + (process.env.ACC || 'v0.5')); // ACC=v0.3 / v0.2 to write beside the earlier sweeps
 const mode = process.argv[2] || 'both';
-const NAVID = +(process.env.NAVID || 8); // the v0.33 navigator's id on the ew side (§102: 8; NAVID=0 compares v3 against the retuned home — a different walk, by design)
 
-const SNAP = `(()=>{const S=CARD.MS,N=CARD.NAV||CARD.home,o={};for(const k in S){const v=S[k];if(typeof v==='number'||typeof v==='boolean'||typeof v==='string')o[k]=v;
+// §118: the MUSIC STATE only — every scalar / array / plain-object field of MS, plus the three non-MS rows that are still
+// the extractor's (the groove's rotation, the crossfade position, the quality knob). No scene is sampled.
+const SNAP = `(()=>{const S=CARD.MS,o={};for(const k in S){const v=S[k];if(typeof v==='number'||typeof v==='boolean'||typeof v==='string')o[k]=v;
 else if(v&&v.length!==undefined)o[k]=Array.from(v,x=>Array.isArray(x)?x.slice():x);else if(v&&typeof v==='object')o[k]=Object.assign({},v);}
-o['nav.c']=N.c.slice();o['nav.mode']=N.mode;o['nav.h']=N.h.x;o['nav.alpha']=N.alpha.x;o['nav.th']=N.th.x;o['nav.lg']=N.lg.x;o['nav.par']=N.par;o['nav.vtime']=N.vtime;o['nav.kick']=N.kick.x;o['nav.cyc.has']=N.cyc.has;
-o['groove.rot']=CARD.GROOVE.rot;o['sc']=[CARD.SC.cur===window.__NAVID?0:CARD.SC.cur,CARD.SC.next,CARD.SC.m];o['q.scale']=CARD.Q.scale;o['q.iter']=CARD.Q.iter;return o;})()`;
+o['groove.rot']=CARD.GROOVE.rot;o['sc']=[CARD.SC.cur,CARD.SC.next,CARD.SC.m];o['q.scale']=CARD.Q.scale;o['q.iter']=CARD.Q.iter;return o;})()`;
 const SAMPLER = `window.__SAMP=[];window.__last=-1;(function s(){if(window.__FRAME%60===0&&window.__FRAME!==window.__last){window.__last=window.__FRAME;window.__SAMP.push(Object.assign({frame:window.__FRAME},${SNAP}));}requestAnimationFrame(s);})();'ok'`;
 
 function run(legacy, hash, steps, env = {}) {
@@ -59,15 +64,14 @@ function diffFields(A, B) {
 
 let status = 0;
 if (mode === 'fake' || mode === 'both') {
-  console.log('=== fake path (CLOCK=1, v3 #test&scene=0 vs ew #test&scene=' + NAVID + ', 24 s = 1440 frames) ===');
-  const q = process.env.QOFF ? [{ until: 'window.CARD' }, { eval: 'CARD.SC.quantise=false' }] : []; // QOFF=1: §10 B off (director check only; the fake parity forces the v0.33 navigator)
-  const nav = NAVID ? [{ until: 'window.CARD' }, { eval: 'window.__NAVID=' + NAVID + ';CARD.NAV=CARD.REG[' + NAVID + '].scene.state;1' }] : []; // §102: the ew side samples the v0.33 navigator's state at id NAVID (CARD.home would be the retuned one)
+  console.log('=== fake path (CLOCK=1, both sides #test&scene=0, 24 s = 1440 frames) ===');
+  const q = process.env.QOFF ? [{ until: 'window.CARD' }, { eval: 'CARD.SC.quantise=false' }] : []; // QOFF=1: §10 B off (a director check; MS parity does not need it)
   const steps = [{ wait: 300 }, { eval: SAMPLER }, { until: 'window.__FRAME>=360' }, { shot: 'SIDE-t6' }, { until: 'window.__FRAME>=840' }, { shot: 'SIDE-t14' },
     { until: 'window.__FRAME>=1200' }, { shot: 'SIDE-t20' }, { until: 'window.__FRAME>=1441' }, { eval: 'JSON.stringify(window.__SAMP)' }, { eval: 'JSON.stringify(CARD.ERRS)' }, { eval: 'JSON.stringify(CARD.log.filter(l=>/@/.test(l)))' }];
   const sub = (side) => JSON.parse(JSON.stringify(steps).replace(/SIDE/g, side));
-  const a = run(true, 'test&scene=0', sub('v3'), { CLOCK: '1' }), b = run(false, 'test&scene=' + NAVID, nav.concat(q, sub('ew')), { CLOCK: '1' });
+  const a = run(true, 'test&scene=0', sub('v3'), { CLOCK: '1' }), b = run(false, 'test&scene=0', q.concat(sub('ew')), { CLOCK: '1' });
   if (a.errs.length || b.errs.length) { console.log('page errors:', a.errs, b.errs); status = 1; }
-  const o = (q.length ? 1 : 0) + (nav.length ? 1 : 0), A = JSON.parse(a.evals[1] || '[]'), B = JSON.parse(b.evals[1 + o] || '[]');
+  const o = q.length ? 1 : 0, A = JSON.parse(a.evals[1] || '[]'), B = JSON.parse(b.evals[1 + o] || '[]');
   console.log('samples v3', A.length, 'ew', B.length, '· ERRS v3', a.evals[2], 'ew', b.evals[2 + o]);
   const d = diffFields(A, B);
   const bad = Object.entries(d).filter(([k, v]) => typeof v === 'number' && v > 1e-9);
@@ -75,7 +79,7 @@ if (mode === 'fake' || mode === 'both') {
   const nums = Object.entries(d).filter(([k, v]) => typeof v === 'number');
   if (info.length) console.log('info (fields on one side only — v3 creates some at runtime, level was deleted):', info.map(([k, v]) => k + ':' + v).join('  '));
   console.log('max |diff| over all numeric fields:', Math.max(0, ...nums.map(([, v]) => v)), '· fields compared', nums.length);
-  if (bad.length) { console.log('MISMATCH:', bad.map(([k, v]) => k + '=' + v).join('  ')); status = 1; } else console.log('MS/NAV parity: every field identical to 1e-9');
+  if (bad.length) { console.log('MISMATCH:', bad.map(([k, v]) => k + '=' + v).join('  ')); status = 1; } else console.log('MS parity: every field identical to 1e-9');
   console.log('events v3:', a.evals[3]);
   console.log('events ew:', b.evals[3 + o]);
   const mt = spawnSync('python3', [path.join(HERE, 'montage.py'), path.join(OUT, 'parity-fake.jpg'), '3', ...['t6', 't14', 't20'].map((t) => path.join(OUT, 'v3-' + t + '.jpg')), ...['t6', 't14', 't20'].map((t) => path.join(OUT, 'ew-' + t + '.jpg'))], { encoding: 'utf8' });
@@ -84,7 +88,7 @@ if (mode === 'fake' || mode === 'both') {
 if (mode === 'real' || mode === 'both') {
   console.log('=== real extractor (#test&fake=0, demo synth, 32 s) ===');
   const steps = [{ wait: 32000 }, { eval: 'JSON.stringify({bpm:CARD.MS.bpm,arcs:CARD.log.filter(l=>/^SECTION@/.test(l)).map(l=>l.split(" ")[1]),drops:CARD.log.filter(l=>/^DROP@/.test(l)).map(l=>+l.slice(5).split(" ")[0]),errs:CARD.ERRS,bad:(CARD.nonFinite||(()=>[]))()})' }];
-  const a = run(true, 'test&fake=0&scene=0', steps), b = run(false, 'test&fake=0&scene=' + NAVID, steps); // the real path reads MS only; the forced scene is the v0.33 navigator for symmetry
+  const a = run(true, 'test&fake=0&scene=0', steps), b = run(false, 'test&fake=0&scene=0', steps); // the real path reads MS only; scene 0 on both sides
   const A = JSON.parse(a.evals[0] || '{}'), B = JSON.parse(b.evals[0] || '{}');
   console.log('v3:', JSON.stringify(A));
   console.log('ew:', JSON.stringify(B));
