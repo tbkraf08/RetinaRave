@@ -24,6 +24,8 @@
 #   on the pure replay at 60 fps — tools/work/fluid2/s5/ruler.js).
 #   Since §116 S6 it carries `dtSim substeps latched breath void drop` after the pen's five (the TIME ruler: the solver's clock per shot — its
 #   mean over a window × the speed = the pool's displacement per wall-second; the clock's trace per frame is the pure ruler's, tools/work/fluid2/s6/ruler.js).
+#   Since §116 S7 `WINS="t0-t1 t0-t1 …"` shoots SEVERAL windows at the fps in ONE deterministic run (the arc strip: a track's moments on one
+#   clock, no per-window re-run — the state warm through every one); <t0> <t1> then only name the span, and NN is three digits past 99 shots.
 cd "$(dirname "$0")/.." || exit 1
 T=$1; SC=$2; TAG=$3; T0=$4; T1=$5; FPS=${6:-1}; AT=${7:-0}; PORT=${PORT:-8978}; MAP=${MAP:-0}
 [ -z "$T" ] || [ -z "$SC" ] || [ -z "$TAG" ] || [ -z "$T0" ] || [ -z "$T1" ] && { echo "usage: [K2=json] [K=json] [MAP=0|1] PORT=88xx tools/fluid-field-strip.sh <track> <scene> <tag> <t0> <t1> [fps] [at]"; exit 2; }
@@ -31,15 +33,19 @@ D=tools/work/fluid2/field/$T-s$SC-$TAG; mkdir -p $D
 MH=""; [ "$MAP" = 0 ] && MH="&map=0"
 LIST=$(python3 -c "
 t0, t1, fps, at = float('$T0'), float('$T1'), float('$FPS'), float('$AT')
-n = int(round((t1 - t0) * fps)) + 1
-print(' '.join('%02d:%.3f:%d' % (k, t0 + k / fps, 2 + round((t0 + k / fps - at) * 60)) for k in range(n)))")
+wins = [tuple(map(float, w.split('-'))) for w in '$WINS'.split()] or [(t0, t1)]   # §116 S7: several windows in one run
+ts = [a + k / fps for a, b in wins for k in range(int(round((b - a) * fps)) + 1)]
+w = 3 if len(ts) > 100 else 2
+print(' '.join('%0*d:%.3f:%d' % (w, k, t, 2 + round((t - at) * 60)) for k, t in enumerate(ts)))")
 S='[{"until":"window.CARD"}'
+# the per-shot evals line as ONE page-side helper (§116 S7: 135 shots × the inline line passed Linux's 128 KB single-argument limit — the run died silent)
 [ -n "$K2" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.fluid.K2,$(echo "$K2" | sed 's/"/\\"/g')))\"}"
 [ -n "$K" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.fluid.K,$(echo "$K" | sed 's/"/\\"/g')))\"}"
 [ -n "$SPEC" ] && S="$S,{\"eval\":\"JSON.stringify(Object.assign(CARD.REG[13].scene.SPEC,$(echo "$SPEC" | sed 's/"/\\"/g')))\"}"
 S="$S,{\"until\":\"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open\",\"timeout\":300000},{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,dur:CARD.ENGINE.AU.file.dur,sc:CARD.SC.cur,grammar:CARD.fluid.grammar,fluid:CARD.fluid&&{on:CARD.fluid.on,tier:CARD.fluid.tier,sim:[CARD.fluid.simW,CARD.fluid.simH]},K2:CARD.fluid.K2})\"}"
+S="$S,{\"eval\":\"window.__fsEv=(nn,tt)=>nn+' '+tt+' '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.sub.toFixed(3)+' '+CARD.MS.subGate+' '+CARD.fluid.heave.toFixed(4)+' '+CARD.fluid.swirl.toFixed(4)+' '+CARD.fluid.params.dyeDiss.toFixed(2)+' '+(CARD.MS.mid||0).toFixed(3)+' '+CARD.fluid.params.curl.toFixed(1)+' '+(CARD.fluid.mids?CARD.fluid.mids.pos.toFixed(3):'-')+' '+(CARD.MS.high||0).toFixed(3)+' '+(CARD.MS.highS||0).toFixed(3)+' '+(CARD.fluid.highs?CARD.fluid.highs.grain.toFixed(5)+' '+CARD.fluid.highs.dip.toFixed(3):'- -')+' '+(CARD.fluid.pen?CARD.fluid.pen.on+' '+CARD.fluid.pen.x.toFixed(4)+' '+CARD.fluid.pen.y.toFixed(4)+' '+CARD.fluid.pen.step.toFixed(5)+' '+CARD.fluid.pen.ink.toExponential(3):'- - - - -')+' '+CARD.fluid.dtSim.toFixed(4)+' '+CARD.fluid.substeps+' '+(CARD.fluid.time?CARD.fluid.time.latched+' '+CARD.fluid.time.breath.toFixed(3)+' '+CARD.fluid.time.void.toFixed(3)+' '+CARD.fluid.time.drop.toFixed(3):'- - - -');1\"}"
 for item in $LIST; do NN=${item%%:*}; R=${item#*:}; TT=${R%%:*}; F=${R##*:}
-  S="$S,{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$TAG-$NN\"},{\"eval\":\"'$NN $TT '+CARD.MS.heardT.toFixed(3)+' '+CARD.MS.sub.toFixed(3)+' '+CARD.MS.subGate+' '+CARD.fluid.heave.toFixed(4)+' '+CARD.fluid.swirl.toFixed(4)+' '+CARD.fluid.params.dyeDiss.toFixed(2)+' '+(CARD.MS.mid||0).toFixed(3)+' '+CARD.fluid.params.curl.toFixed(1)+' '+(CARD.fluid.mids?CARD.fluid.mids.pos.toFixed(3):'-')+' '+(CARD.MS.high||0).toFixed(3)+' '+(CARD.MS.highS||0).toFixed(3)+' '+(CARD.fluid.highs?CARD.fluid.highs.grain.toFixed(5)+' '+CARD.fluid.highs.dip.toFixed(3):'- -')+' '+(CARD.fluid.pen?CARD.fluid.pen.on+' '+CARD.fluid.pen.x.toFixed(4)+' '+CARD.fluid.pen.y.toFixed(4)+' '+CARD.fluid.pen.step.toFixed(5)+' '+CARD.fluid.pen.ink.toExponential(3):'- - - - -')+' '+CARD.fluid.dtSim.toFixed(4)+' '+CARD.fluid.substeps+' '+(CARD.fluid.time?CARD.fluid.time.latched+' '+CARD.fluid.time.breath.toFixed(3)+' '+CARD.fluid.time.void.toFixed(3)+' '+CARD.fluid.time.drop.toFixed(3):'- - - -')\"},{\"eval\":\"CARD.fluid.dbg=2\"},{\"until\":\"window.__FRAME>=$((F + 1))\",\"timeout\":900000},{\"shot\":\"$TAG-${NN}v\"},{\"eval\":\"CARD.fluid.dbg=0\"}"
+  S="$S,{\"until\":\"window.__FRAME>=$F\",\"timeout\":900000},{\"shot\":\"$TAG-$NN\"},{\"eval\":\"__fsEv('$NN','$TT')\"},{\"eval\":\"CARD.fluid.dbg=2\"},{\"until\":\"window.__FRAME>=$((F + 1))\",\"timeout\":900000},{\"shot\":\"$TAG-${NN}v\"},{\"eval\":\"CARD.fluid.dbg=0\"}"
   [ "$DYE" = 1 ] && S="$S,{\"eval\":\"CARD.fluid.dbg=1\"},{\"until\":\"window.__FRAME>=$((F + 2))\",\"timeout\":900000},{\"shot\":\"$TAG-${NN}d\"},{\"eval\":\"CARD.fluid.dbg=0\"}"
 done
 S="$S,{\"eval\":\"JSON.stringify({f0:CARD.ENGINE.AU.file.frame0,frame:window.__FRAME,errs:CARD.ERRS,bad:CARD.nonFinite(),steps:CARD.fluid&&CARD.fluid.steps})\"}]"
@@ -51,7 +57,7 @@ d, tag, floor = sys.argv[1], sys.argv[2], float(sys.argv[3])
 ev = {}
 for l in open(f'{d}/evals.txt'):
     l = l.strip().strip('"')
-    m = re.match(r'^(\d\d) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+)(?: .*)?$', l)   # §116 S3: mid, curl, mids.pos follow (fluid-mids-lap.py reads them)
+    m = re.match(r'^(\d{2,3}) ([\d.]+) ([\d.]+) ([\d.]+) (\S+) (\S+) (\S+) (\S+)(?: .*)?$', l)   # §116 S3: mid, curl, mids.pos follow (fluid-mids-lap.py reads them)
     if m: ev[m.group(1)] = m.groups()[1:]
 rows = []
 for nn in sorted(ev):
