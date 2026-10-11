@@ -426,6 +426,27 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   screen heights per beat — a drifting dot — and the frame's `harmAngle` through the pen's own .3 s ease (`PEN_AX 1`) .054 per beat over a
   quarter of the screen; the push is the guard's edge on a NEAR-STILL pool (the breakdown at .05 uv/s: `PEN_V` .25 lifts its speed +24 %, 1 is a
   plume ×2.4–2.7, .05 sits at +3 %) — ink only (`PEN_V 0`) is zero force to the digit (speed and lap 1.000 on every window), and ships.
+- **The time strip — the CLOCK ruler (§116 S6; FLUID2-PLAN §4 S6):** does the solver's clock read as the music? Three readings. (1) The PURE
+  ruler, at 60 fps with no GL: `node tools/work/fluid2/s6/ruler.js '<tag>|<K2 json>' …` replays RaindropsOnRoses's live-lane trace through
+  inject2 under each K2 and prints, per window (pin 52–58, cut 65.4–68.57, ret2 68.57–70.5, groove 76–110, break 111.4–134, all), the clock
+  `dtSim`'s p10 / p50 / p90, min / max and MEAN (the pool's seconds per wall-second), the largest per-frame |Δ| against the slew limit
+  `DT_SLEW · dt` (the §1.9 step), the slewed / latched / substep frames, each term's span (breath, level), subEnv / buildLive p50, the sub gate's
+  share, the pen's largest step; `TRACE=1 T0=50 T1=72 STEP=0.25` prints the clock at that cadence. (2) The STRIPS — the field strip tool with the
+  evals line's `dtSim substeps latched breath void drop` (after the pen's five): `tools/work/fluid2/s6/run.sh <cut|arc|drop> '<tag>|<K2>' …` —
+  `cut` at 10 fps 64–70.5 on the live lanes (a clock that breathes needs the eye's cadence), `arc` at 1 fps 50–140 (the pin, the cut, the groove,
+  the breakdown, the return at 137.137), `drop` at 10 fps 67.5–70 on the FILE map (`MAP=1`: drop 2 is confirmed only there, at 68.62 — the live
+  lanes never fire on RaindropsOnRoses's drops 1 / 2, §117). `tools/work/fluid2/s6/cmp.py <kind> <ref> <tags…> -- name=a-b …` per shot: the
+  velocity shot's mean speed (the S1 ruler) × dtSim = the DISPLACEMENT per wall-second, the composite's grey and centre grey (the §113 disc),
+  the §1.9 step between consecutive shots (mean |ΔY|, 0–255); per window the p50s and the ratio to the ref. `montage.py` the same shots per
+  variant with the clock on every label. (3) The EYE in track time — the user's, on `#scene=13&k2={…}` (DECISIONS §116 S6 lists the A/B URLs).
+  **What the ruler found (§116 S6):** read the DISPLACEMENT, never the velocity alone — a slowed clock dissipates less per wall-second, so the
+  velocity shot reads HIGHER (+9 % on the cut at a clock of .84) while the ink travels less (.93×); the pool stills on its own through a sub cut
+  (the S1 field's void entry: the off run's speed .36 → .05), the clock multiplies that; the live detector's latch arms 2.1 s into a 3.2 s cut —
+  the void term cannot read a cut, the breath does; the drop's burst is a number on an emptied pool (the centre grey at +0.4 s 25.0 under
+  substeps and under the clock alone, the off run 25.3 — the plan's 10 % rule picks the clock alone), the §1.9 step at the drop's frame is the
+  clear's and the FX flash's (95 / 255 under every variant; the burst adds 1); the bench's burst is `CARD.benchFluid(300, null, 'bands', 2)`
+  (+.51 ms at tier 3 — a second chain). A knob set's IDENTITY on the GPU: `HASHX='&k2=%7B%22DT_SUB%22%3A0%2C%22DT_VOID%22%3A1%7D' SCENES=13
+  tools/real-md5.sh <tag>` (the neutral knobs = S5's hashes to the byte).
 - **The recording replay ruler** (§108; FLUID-DIAG-2026-10-09 §4 is the worked example): a recorder take's audio track IS what the
   engine heard (`rec.js` taps `AU.bus`), so a take the user reports on is re-run frame-exact, cold, on the live lanes:
   `PORT=88xx tools/rec-strip.sh <take.webm> <tag> [t0 t1 fps scene]` — ffmpeg extracts the audio once into
