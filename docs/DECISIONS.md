@@ -10751,7 +10751,122 @@ on FLUID's one pool. This note opens with S0 and grows one heading per step.
   core against dy .37): the pair is mostly spin, and the §1.9 step holds (≤ .011) — the eye at home says whether it reads as a hit or a
   curl · S1's open list unchanged (Comptine's sway, Malicious's field, the mixs mid-dip, the whole-track traces without `sub`).
 
-### S3 — mids = material (not started)
+### S3 — mids = material (2026-10-10, branch `fluid2`, commits 4d3e3bd → the docs; `git merge main` at 17802d2 first — S2 merged, a fast-forward)
+
+- **The ask, as the plan framed it and the user's scope holds:** the mids as MATERIAL — the weather, not the mass (the user: *"the double
+  time should be accenting rather than driving"*). The plan's three parts: (a) the vorticity confinement from the mid band's own range,
+  (b) a y-mask on the vort pass, (c) the snare as a shear burst / directed jet; the chords untouched. The user's scope words: *"only tune
+  with Raindrops, don't do full sweep"* — tuned, stripped and proven on RaindropsOnRoses alone (the run at 24 s, the live lanes); **the other
+  seven tracks are untuned and unswept on the user's word; the full sweep is owed before any tag.**
+- **As built** (`core/fluid/inject2.js`, nothing in inject.js; `shaders.js` VORT, `fluid.js`, `fluid2/index.js`'s HUD line): **the curl** —
+  `CURL_SRC 1`: `params.curl = CURL0 + CURL_MID · midEnv`, `midEnv` = the mid band's place in the track's own last FLOOR_WIN s — §111 item
+  7's ring on the base's state (`st.base.midRing`, READ, never duplicated: the p20 / p80 of its one-second means, sstep between them; the
+  level itself before the ring holds 5 s), eased `MID_TAU` .25 s so the constant never steps per frame (the largest step on the real trace
+  2.578 ≤ CURL_MID·dt/MID_TAU 2.667); `CURL_SRC 0` is the base's `10 + 40·tension` to the bit. The base tied the curls to the BUILD (a
+  riser tightens them); FLUID2 ties them to the mids' density — on Raindrops the breakdown's pads (118–126 s, mid .80–.88) read 49.8 where
+  tension read 23.3, the thin stretch (111–116, mid .35–.48) 10.4 where tension read 16.4, the groove 42.1. **The mask** — `CURL_MASK 1`
+  returns `params.curlMask { y0 .3, y1 .7, lo .25, fe .1 }`; `fluid.js` hands it to the vort pass as `uCurlMask` (vec4), the confinement ×
+  mix(lo, 1, the feathered band); absent → (0, 1, 1, 0) and the branch is not taken — a uniform branch, never a mix (the ring's and the
+  swirl's rule; the s12 real-md5 and the fake md5s prove the identical path). **The snare** — `SNARE_JET 1`: the drum branch's two shears at
+  (.3, .5) / (.7, .5) (equal, opposite, inward) become ONE jet (`k: 'sjet'`) from x `SNARE_X` in from the left or the right wall, alternating
+  by the snare count, at y `SNARE_Y` .5, at the pair's momentum Σ|dx|·rad and ink spread over `SNARE_N` 4 frames (S2's jet shape: a
+  pending queue at 1 / SNARE_N per frame, emptied on the cold frame); the harmonic branch's one directed splat (`k: 'snare'`) and the chord
+  shears (`k: 'chord'`) are untouched; the ink budget re-governs over the own list (the same ink SNARE_N frames later — within 10 % on every
+  frame, the p50 dyeDiss the base's). `mids { pos, curl, mask }` and `snare { kind, mom, ink, n, side }` in the return (`CARD.fluid.mids /
+  .snare`, the HUD's fluid line says the mids' place, the mask, the snare's kind and wall). **No new MS read**: `mid` and the snare lane are
+  the base's (inject2's FLUID_FEATS is still the base's + `sub`).
+- **The rulers** (HARNESS "## Fluid"): **the texture** — `tools/fluid-mids-lap.py` on a field strip's velocity shots (60–130 s at 1 fps): lap =
+  the mean |3×3 Laplacian| of the velocity (the small-scale energy the plan names), speed, ratio = lap / speed (a still pool reads a low
+  Laplacian whatever its confinement: the void's windows need the ratio), curlM; per window the p50, per dense / thin pair the margin. The
+  windows from the trace (`tools/truth/traces/RaindropsOnRoses-map0.json`, the per-second `mid`): dense_groove 76–80 + 96–100 (.68),
+  dense_pads 118–126 (.83, the sub gone), thin_break 111–116 (.48 — the ONE thin stretch the track has; "the breakdown is thin" holds for
+  its first five seconds only, its pads are the densest mids on the track). **The sideways travel** — `LANE=snare tools/fluid-kick-strip.sh`
+  + `tools/fluid-snare-travel.py`: the velocity ALONG THE PUSH, per column the fastest fibre (the p90 over the band y .5 ± .12 of dir·vx)
+  minus the pre shot's, clipped: P the directed mass added, peak, front = how far from the launch it holds above .04 continuously. **The
+  ruler that failed first:** the undirected added-mass centroid over the band (S2's U, turned sideways) read the busy pool's own change —
+  span .8 of the width on every kind, the centroid at .4–.6 for a jet born at .05 — the directed fibre separates the hit from the traffic.
+- **The mids, measured** (RaindropsOnRoses, the p50 per window; lap and curlM × 1000; `tools/work/fluid2/s3/cmp-mids.py`):
+
+  | variant | curl groove / pads / thin | lap groove / pads / thin | speed groove / pads / thin | ratio groove / pads / thin | margin lap groove÷thin · pads÷thin | margin curlM | margin ratio |
+  |---|---|---|---|---|---|---|---|
+  | FLUID (s12, the control) | 22.8 / 23.3 / 15.4 | 14.9 / 12.8 / 9.7 | .147 / .041 / .067 | .112 / .331 / .135 | 1.54 · 1.32 | 2.09 · 1.37 | .83 · 2.46 |
+  | FLUID2 CURL_SRC 0 (tension) | 22.8 / 23.3 / 15.4 | 15.8 / 12.6 / 8.9 | .228 / .045 / .054 | .080 / .285 / .176 | 1.77 · 1.42 | 2.79 · 1.61 | .46 · 1.62 |
+  | **FLUID2 CURL_MID 40 (ships)** | 34.8 / 49.9 / 10.4 | 18.6 / 18.6 / 7.2 | .226 / .047 / .054 | .082 / .411 / .138 | **2.57 · 2.57** | **5.22 · 4.15** | .59 · 2.97 |
+  | + CURL_MASK 1 | 34.8 / 49.9 / 10.4 | 14.4 / 13.3 / 5.2 | .215 / .046 / .053 | .072 / .304 / .109 | 2.79 · 2.57 | 4.00 · 3.42 | .66 · 2.80 |
+  | CURL_MID 80 | 59.7 / 89.9 / 10.7 | 25.5 / 26.7 / 8.1 | .189 / **.091** / .052 | .117 / .317 / .144 | 3.14 · 3.29 | 7.52 · 6.99 | .81 · 2.21 |
+  | CURL_MID 80 + mask | 59.7 / 89.9 / 10.7 | 18.5 / 19.3 / 5.8 | .221 / .060 / .053 | .084 / .331 / .110 | 3.17 · 3.30 | 6.34 · 6.26 | .76 · 3.01 |
+  | CURL_MID 0 (the ruler's floor) | 10 / 10 / 10 | 11.6 / 6.9 / 6.3 | .232 / .056 / .054 | .056 / .119 / .129 | 1.84 · 1.09 | 2.10 · 1.04 | .43 · .92 |
+
+  The reading: with the constant flat (CURL_MID 0) the groove still out-textures the thin stretch 1.84× — that is the MOTION's margin (the
+  groove's speed is four times the void's), the ruler's floor; tension buys 1.42 on the pads (a build's riser); the mids' own range buys
+  **2.57 on both pairs** (curlM 5.2 / 4.2: the curls twice as dense in the pads as tension gave, half as dense in the thin stretch), **at the
+  pool's own speed** — the pads' speed .047 against tension's .045: the material changed, the mass did not (the frame: accenting, not
+  driving). CURL_MID 80 buys 3.1–3.3 but DOUBLES the pads' speed (.091): a confinement at 90 pumps a still pool — the void driven, not
+  textured — so 40 ships and 80 is the switch. **The mask buys nothing:** the lap margin +.2 on one pair and 0 on the other, the curlM margin
+  DOWN (5.2 → 4.0, 4.2 → 3.4) and the dense windows' texture cut by a quarter (the confinement off on 60 % of the screen) — the plan's
+  reason (the mids' ink enters at mid height) does not hold on the velocity: the curls the mids tighten live where the kick's pair and the
+  sub's field put the motion, not where the floor's ink lands. `CURL_MASK` stays a K2 switch at 0 (the identical vort pass).
+- **The snare, measured** (the 10 groove snares, p50 of the directed ruler: P the added directed mass, peak uv/s, front screen widths from
+  the launch — at +0 / +½ / +1 beat):
+
+  | variant | P 0 / ½ / 1 | peak 0 / ½ / 1 | front 0 / ½ / 1 | note |
+  |---|---|---|---|---|
+  | FLUID's pair (s12) | .133 / .171 / .167 | .210 / .175 / .125 | .088 / .086 / .086 | the control |
+  | FLUID2 pair (SNARE_JET 0) | .168 / .194 / .171 | .224 / .191 / .172 | .077 / .135 / .078 | the base's shape under the field |
+  | the jet AT the wall (.02, N 4) | .198 / .238 / .097 | .313 / .247 / .090 | .069 / .112 / **.000** | gone by +1 |
+  | the stamp at the wall (.02, N 1) | .234 / .230 / .090 | .306 / .301 / .093 | .084 / .107 / .022 | gone by +1 |
+  | **the jet .12 in (N 4) — ships** | .194 / **.347** / **.293** | **.412** / .345 / .243 | .067 / .142 / **.136** | carries itself |
+  | .12 in, N 1 | .292 / .307 / .308 | .447 / .368 / .282 | .083 / .118 / .116 | the hardest hit, less reach |
+  | .12 in, N 8 | .098 / .304 / .261 | .184 / .352 / .219 | .054 / .147 / .111 | soft at +0 |
+  | .2 in, N 4 | .248 / .374 / .340 | .396 / .322 / .227 | .075 / **.208** / .176 (p10 0) | the furthest, born a fifth in |
+
+  **The finding: a push AT a closed wall is projected away.** The plan's jet from (.02, .5) adds the most directed mass at +0 (.31 peak) and
+  has NOTHING left at +1 beat — the pressure solve's no-through wall cancels the wall-normal push and spreads it along the wall (the velocity
+  shots: a smear up and down the edge, no stroke). A hair in from the wall (.12 — two splat radii) the same impulse rolls up a burst that
+  carries itself: front .136 at +1 beat (the pair's .078, FLUID's .086; the pair's own best, .135 at +½, it holds a full beat), the peak 1.4×
+  the pair's at every moment, the directed mass at +1 1.7×. Spread over 4 frames beats one stamp on reach (the stamp's harder peak dies
+  faster) and beats 8 on the hit's own frame (the eye wants the snare ON the snare). .2 in travels furthest but its p10 at +1 is 0 (one
+  snare swallowed by the groove's traffic) and it is born a fifth of the way in — not "from a wall". **Ships: `SNARE_JET 1, SNARE_X .12,
+  SNARE_N 4`; `SNARE_X .2`, `SNARE_N 1` and `SNARE_JET 0` the switches.** The §1.9 step at the hit ≤ .005 on every kind (max .0112 over
+  the four moments), grey0 44–49 (the pair 48.9).
+- **The decision — `CURL_SRC 1, CURL0 10, CURL_MID 40, MID_TAU .25, CURL_MASK 0` (`CURL_Y0 .3, CURL_Y1 .7, CURL_LO .25, CURL_FE .1` behind
+  it), `SNARE_JET 1, SNARE_X .12, SNARE_Y .5, SNARE_N 4`.** The chords untouched (`k: 'chord'`, the base's to the byte on every frame).
+- **What the eye should see at home (`#scene=13`, the montage `tools/accept/v0.37/fluid2-s116-s3-RaindropsOnRoses.jpg` — the mids rows
+  (FLUID / FLUID2 on tension / FLUID2 on the mids, composite over velocity, at 78 / 98 / 113 / 122 s) above the snare rows (the pair / the
+  jet .12, dye over velocity, two snares × four moments); `-variants.jpg` the mask, 80, 80 + mask, 0, and the six snare kinds):** in the
+  breakdown's pads (118 s on) the ink grained with small eddies where FLUID's lay smooth, the thin five seconds before them smoother than
+  FLUID's; every snare a burst of ink from the left wall then the right that rolls into the pool at mid height and is still travelling a
+  beat later, where FLUID's two shears sat in the centre's traffic (the montage at 0.1 s cannot judge the rhythm — the user's eye in track
+  time decides). The mids' reading is REACTIVE per frame (MID_TAU .25 s): at 98 s `mid` dips to .35 inside the groove and the curl follows
+  (13) — the texture breathes with the mix, not with a 2 s mean.
+- **The gates (Raindrops-filtered, each with its wall time; the receipt `tools/accept/v0.37/fluid2-s116-s3.txt`):** `node tools/check.js` **183 / 0 fail**;
+  `npm test` **exit 0** (15 s; test_fluid 389 — S3's 19 cases, test_music 151); `license` 0 without the header; s13 real-md5 on Raindrops
+  twice **8 / 8 cmp-equal** (69 / 69 s), all 8 moved against S2's → **re-based** into `real-md5-v037.txt` (the other 322 lines untouched);
+  s12 **8 / 8 = v036** (69 s: the pool grammar's vort pass byte-identical under `uCurlMask` (0, 1, 1, 0)); the roster 0 1 3 **24 / 24 =
+  v037** (207 s); real-rulers s13 **1 / 1 ok** (65 s: jump viol 0 max .054, mon viol 0 max .0161, black 0, clip25 0, medY .187); the fake
+  **26 = v035** + s12's pair unmoved + s13's pair re-recorded 5dd1f1a7 / 9fd248b3 (213 s, errs [] on 14 ids); parity fake **max
+  7.852214593751443 / 72 fields** / the §102 nav.* line to the digit (50 s); the bench in one page (q .95, load 1.61) pool / bands ship / bands
+  mask / bands snare-every-step ×3 = .632 / .594 / .569 / .540 · .511 / .511 / .485 / .499 · .482 / .479 / .518 / .502 — **medians .511 / .511 /
+  .518 / .502: ship − pool .000, the mask +.007, the snare −.009, within ±.05** (the mask is one vec4 uniform on the vort pass, no new pass;
+  the fake page's snare lane has no rank, so the held snare exercises the harmonic splat — the jet's cost is S2's jet's, 1 + SNARE_N splats);
+  bench(0) 1.259; **MOBILE=1 scene 13 tier 0 alive** (errs [] bad [] frameN 242; benchFluid bands .417 / mask .445 / snare .445 / pool .440 —
+  the .4 budget's edge as S2 saw, the pool itself .440 on this desktop's phone canvas); `npm run build` 182 modules 1 825 515 bytes, file://
+  scene 13 bands errs [] frameN 302, scene 12 pool errs []; the crossfade 12 → 13 greys 34.7 … 20.6 … 35.1 max step 7.49 / 255 §1.9 viol [],
+  the 13 → 0 row the forced branch's revert, errs []. inject.js untouched.
+- **Open, carried:** **the full sweep before any tag** (the user's word; S1's and S2's open lists stand); the tension → curl tie is GONE in
+  FLUID2 (the mids drive the constant; a build's riser no longer tightens the curls — a `CURL_TENSION` term is one line if the eye misses
+  it); the mask's cost is paid (one vec4 uniform on the vort pass, no new pass) for a switch that buys nothing on this track — remove it if
+  the sweep agrees; the thin window on Raindrops is five seconds and the sub cut (65.5–68) reads dense mids at its frames — the dense /
+  thin claim on the other seven tracks (Comptine's piano, IBelongHere's breakdown against SeeYouDrop's build-100, CyborgNinja's busiest) is
+  the sweep's; the snare jet's wall alternation is by COUNT (left, right, left …) — a snare roll alternates every hit, which the eye may read
+  as a flicker (by the bar is the one-line alternative); the directed ruler's band (y .5 ± .12) and THR .04 are this track's.
+- **For S4's builder:** the vort pass now has a vec4 uniform (`uCurlMask`) beside `uCurlK` — S4's `uNoise` / `uSeed` go on ADVECT, not here;
+  the per-step record set on `FLUID` is `heave, swirl, kick, mids, snare` (null under the pool grammar — `fldbg()` in fluid2/index.js
+  carries them); the kinds in the band grammar's list are the base's + `dip` (S2) + `sjet` (S3) — a test that strips "the grammar's own
+  kinds" lists both; `inkChanged` is set whenever SNARE_JET is on (the own ema decides; a no-op while it equals the base's); the strip tools
+  take `LANE=` and the field strip's evals line carries `mid curl midsPos` — S4's hat-dense windows can use the same strip with S3's ruler
+  (the Laplacian rises with the grain) beside S1's speed (the mass must not).
+
 
 ### S4 — highs = surface (not started)
 
