@@ -2851,3 +2851,12 @@ The receipt with every number and every wall time is `tools/accept/v0.37/lean-20
 - Nothing is tagged and nothing is pushed. `releases.json` still tops out at v0.36 and `package.json` is 0.36.0 — the
   renumber, the arrows and FLUID2 all ship in whatever the user tags next, and §118 is a visitor-facing change (the
   keys moved) so it needs its own release entry when that happens.
+
+**§118 addendum — Share a tab opens on FLUID (2026-10-11, the user: *"sharing a tab should start with fluid"*).** The page's first
+frame stays the home (NAV2, the `home: true` seat in `register()`); the **Share a tab** button (`core/hud.js` `$('go')`) now calls
+`seatScene(0)` (`core/scenes.js`) before `ENGINE.start('capture')` — the same seat the home gets (cur / logical / hist, next −1,
+m 0, since 0), NOT a force: `SC.forced` is left alone, so a picked landing tile wins and the director runs on from the pool (FLUID
+bids, its dwell holds it, a build parks home). The demo fallback on the same button (no `getDisplayMedia`) seats it too; the
+microphone and demo buttons do not. Proof (headless, PORT 8975, GPU=1): before the click `cur 2 forced −1`; `#go.onclick()` →
+`{cur 0, logical 0, forced −1, hist [0], name fluid, errs []}`. check 144 modules 0 fail; npm test exit 0. No md5 line can move
+(the harness forces its scene by hash). Open: the user's eye on the first seconds of a real tab share.

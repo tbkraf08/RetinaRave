@@ -7,7 +7,7 @@
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
 import { toggleMonitor } from '../engine/sources/demo.js';
-import { SC, REG, stepScene } from './scenes.js';
+import { SC, REG, stepScene, seatScene } from './scenes.js'; // §118 addendum: seatScene — Share a tab opens on FLUID
 import { Q } from './quality.js';
 import { G } from './gl.js';
 import { FX } from './post.js'; // §110: key G = the glitch rows' gain 1 ↔ 0; the HUD line while the gain is not 1
@@ -46,6 +46,7 @@ export function initHUD() {
   $('go').onclick = () => {
     leavePeek();
     $('msg').textContent = '';
+    seatScene(0); // §118 addendum (the user: "sharing a tab should start with fluid"): id 0 = FLUID unless a tile was picked
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
       ENGINE.start('demo', 'Tab capture is not supported here — running the demo signal.');
       return;

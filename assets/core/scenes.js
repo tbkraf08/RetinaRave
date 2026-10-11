@@ -85,6 +85,18 @@ export function setColour(name) {
   return hit;
 }
 
+// §118 addendum (the user, 2026-10-11: "sharing a tab should start with fluid"): seat the pool as the scene the stream opens on
+// — the same seat register() gives the home on the page's first frame, NOT a force (SC.forced stays as it was, so the director
+// runs on from here: FLUID bids, its dwell holds it, a build parks home). A picked tile (SC.forced >= 0) wins and is left alone.
+export function seatScene(id) {
+  const E = REG[id];
+  if (!E || SC.forced >= 0) return false;
+  SC.cur = SC.logical = E.base;
+  SC.next = -1; SC.m = 0; SC.since = 0;
+  SC.hist = [id];
+  return true;
+}
+
 export function goScene(id, hard, S) {
   const E = REG[id];
   if (!E) return;
