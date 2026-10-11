@@ -37,6 +37,7 @@ export const FLUID = {
   kick: null,               // §116 S2 the band grammar's kick on the last step ({ shape, mom, ink, n } — inject2's return); null under the pool grammar
   mids: null, snare: null,  // §116 S3 the band grammar's mids ({ pos, curl, mask }) and snare ({ kind, mom, ink, n, side }) on the last step; null under the pool grammar
   grain: 0, highs: null,    // §116 S4 the band grammar's grain on the last step (uv/s², the velocity advect's uNoise; 0 under the pool grammar) and its highs record ({ env, grain, dip })
+  pen: null,                // §116 S5 the band grammar's pen record on the last step ({ on, src, x, y, step, v, ink, floor, wrap }; null under the pool grammar)
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
@@ -153,7 +154,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   let pr;
   let breath = 0, swirl = 0, grain = 0, cell = 1, hold = 1, jit = 0;
   FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
-  FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = null;
+  FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = FLUID.pen = null;
   if (!resumed) {
     // §116 the dispatch: the band grammar plans on st2 (its plan() runs the pool grammar's on st2.base === st first), the pool grammar on st
     const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
@@ -163,7 +164,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
     swirl = R.swirl || 0;   // §116 S1 the band grammar's swirl (the pool grammar returns none → 0, the identical advect path)
     grain = R.grain > 0 ? R.grain : 0;   // §116 S4 the band grammar's grain (the pool grammar returns none → 0, the identical advect path)
     if (R.highs) { cell = R.highs.cell || 1; hold = R.highs.hold || 1; jit = R.highs.jit > 0 ? R.highs.jit : 0; }   // … its cell / hold, and the dye jitter (dye texels; 0 = the identical dye pass)
-    FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.grain = grain; FLUID.kick = R.kick || null; FLUID.mids = R.mids || null; FLUID.snare = R.snare || null; FLUID.highs = R.highs || null;
+    FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.grain = grain; FLUID.kick = R.kick || null; FLUID.mids = R.mids || null; FLUID.snare = R.snare || null; FLUID.highs = R.highs || null; FLUID.pen = R.pen || null;   // §116 S5 the pen's record (the pool grammar returns none)
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
     pm.curlMask = R.params.curlMask || null;   // §116 S3 the band grammar's mask on the confinement (the pool grammar returns none → the identical vort pass)
     if (R.ring) FLUID.ring(R.ring.a, R.ring.r, R.ring.w, R.ring.cx, R.ring.cy);   // §113 the shockwave, this step (§116 S2: the puff carries its centre; the shockwave none → .5, .5)
@@ -317,5 +318,5 @@ export function benchFluid(n, S, ring, grammar) {
 }
 
 export const fluidLine = () => (FLUID.avail
-  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} kick ${K2.KICK_SHAPE} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}` : ''}` : 'fluid off (W)')
+  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} kick ${K2.KICK_SHAPE} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}${FLUID.pen && FLUID.pen.on ? ` pen ${FLUID.pen.x.toFixed(2)},${FLUID.pen.y.toFixed(2)}` : ''}` : ''}` : 'fluid off (W)')
   : 'fluid unavailable (no float render targets)');

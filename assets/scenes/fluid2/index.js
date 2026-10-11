@@ -57,7 +57,7 @@ function flinfo() {
 function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
   const F = SELF.ctx && SELF.ctx.fluid;
   if (!F) return JSON.stringify({ on: false });
-  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4), kick: F.kick, mids: F.mids, snare: F.snare, grain: +F.grain.toFixed(5), highs: F.highs });   // §116 S1: the field's values on the last step; S2 the kick, S3 the mids and the snare; S4 the grain and the highs record
+  return JSON.stringify({ on: F.on, avail: F.avail, ms: +F.ms.toFixed(3), tier: F.tier, sim: [F.simW, F.simH], dye: [F.dyeW, F.dyeH], nSplat: F.nSplat, steps: F.steps, params: F.params, grammar: F.grammar, heave: +F.heave.toFixed(4), swirl: +F.swirl.toFixed(4), kick: F.kick, mids: F.mids, snare: F.snare, grain: +F.grain.toFixed(5), highs: F.highs, pen: F.pen });   // §116 S1: the field's values on the last step; S2 the kick, S3 the mids and the snare; S4 the grain and the highs record; S5 the pen
 }
 
 const SELF = {

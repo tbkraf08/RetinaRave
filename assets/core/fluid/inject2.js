@@ -100,6 +100,35 @@
 // continuous form × (1 − HI_SHARP · highEnv); never inside the confirmed clear (clearLeft > 0: DROP_DISS stands) and never below 0. The
 // specular is DISPLAY (fluid2/{index,shaders}.js: the highlight's gain and exponent from `highS`) — no pool change, nothing here.
 // `highs` { env, grain, dip } in the return (`CARD.fluid.highs`).
+//
+// S5 — THE VOICE IS A PEN (FLUID2-PLAN §4 S5; the user's frame: a continuous emitter following pitch, brightness = presence, leaving a
+// stroke the fluid carries off — it DRAWS, it does not inject mass). The engine has no vocal feature (the plan's §3 inventory: no
+// harmonic-to-noise ratio, no pitch continuity — S5b, one extractor session, deferred), so this step builds the MECHANICS and the
+// feature is one read when it lands:
+//   the KIND   — `k: 'pen'`: ONE sustained dye splat per frame that REPLACES the base's `floor` (§108: a fixed cloud at the tonic's x,
+//                y .5, radius ×2) while PEN_SRC > 0 — the floor's ink in the budget's units exactly (its dye × (2 / PEN_RAD)² at radius
+//                PEN_RAD · RADIUS: a thinner, denser mark, the same area-weighted ink — the governor sees the same rate); no floor, no pen
+//                (the pen is lifted on silence, on noise and in the clear, as the floor is — the §108 "it heard that one" ruler stays the
+//                floor's). So the pen's BRIGHTNESS is the floor's level — the mids' place on the track's own range × the gain (presence ·
+//                loudRel: the brightness IS the presence) — and S5b's `voxS` multiplies it;
+//   the PLACE  — the pen's x drifts along the TONIC AXIS (§111 item 6: the pinned key at the centre, fifths right, fourths left, the
+//                tritone at the walls — the base's own axis, its tonic rule) with the HARMONY'S CENTRE, the stand-in for a pitch until S5b:
+//                PEN_AX 0 the base's eased centre (`st.base.hx / hy`, HARM_TAU 15 s — the plan's letter), 1 the frame's `harmAngle` (the
+//                chroma's fifths centroid, continuous — the pen's own ease the only inertia); y by `centroid` (.25 + .5·c, the harmonic
+//                branch's place). The position is EASED (PEN_TAU) on the fifths CIRCLE (the shortest arc, wrapped to ±6 fifths) and its
+//                per-frame step is CLAMPED (PEN_VMAX screen heights / s): the stroke is continuous — the §1.9 step at every frame; a re-pinned
+//                key is a stroke of k sectors, not a jump; the one lift is the tritone wall (the axis's cut: x .99 → .01, `pen.wrap` 1 on
+//                that frame, the step read on the circle);
+//   the PUSH   — a small velocity ALONG its drift: dx, dy = PEN_V × the pen's own velocity (uv/s) × g × f — zero while the pen is still
+//                (a stroke, never a plume), bounded |(dx, dy)| ≤ PEN_V · PEN_VMAX · g · f; PEN_V 0 is ink only;
+//   the SWITCH — PEN_SRC 0 off (the floor stands: the byte-identical list, `pen.on` 0), 1 the harmony stand-in (above), 2 RESERVED for
+//                the vocal feature: presence = `voxS` (0–1, the ears' harmonic-to-noise ratio in 200–3000 Hz with pitch continuity over
+//                ~100 ms, eased — S5b's extractor stage) × the floor's level, x from `voxHz` (the pitch as a pitch class on the tonic axis,
+//                −1 = none → the harmony's centre) when they exist. The reads are NOT in this file (FLUID_FEATS unchanged — check.js FAILS
+//                on a read outside it): 2 plans as 1 today and `pen.src` says 2. The stroke the fluid carries off is the §105 advection.
+// `pen` { on, src, x, y, step, v, ink, floor, wrap } in the return (`CARD.fluid.pen`): step = the position's move this frame (uv, on the
+// circle), v = its drift speed (uv/s), ink = the pen's area-weighted ink, floor = the floor's it replaced (equal by construction), wrap.
+import { sectorPc } from '../../math/keycolour.js';
 import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
 import { clamp, ema, sstep } from '../../math/util.js';
 
@@ -168,6 +197,14 @@ export const K = {
                    //   force (the velocity pass passes 0) and, the strips found, a BLUR: a random walk of an accumulating field's read point is diffusion
                    //   (the dye's gradient −2 % at 1, −7 % at 2). A softening on the highs if anyone wants one; 0 = the identical dye pass. The grain that
                    //   is surface and nothing else is FLUID2's DISPLAY grain (fluid2/index.js SPEC.GRAIN: the show pass's read point, nothing accumulated)
+  PEN_SRC: 1,      // S5 the pen: 0 off (the base's floor stands — the identical list) · 1 the harmony's centre as the stand-in for a pitch (the MECHANICS;
+                   //   the vocal feature is S5b's, one extractor session) · 2 reserved for that feature (`voxS`, `voxHz` — not read yet: plans as 1, pen.src 2)
+  PEN_AX: 0,       //   the stand-in's axis read: 0 the base's eased harmony centre (hx / hy, HARM_TAU 15 s — the plan's letter) · 1 the frame's harmAngle (the
+                   //   chroma's fifths centroid, continuous; the pen's own ease the only inertia — strokes on every chord)
+  PEN_TAU: 0.3,    //   s: the pen's position eased this fast toward its target (on the fifths circle: the shortest arc; y toward the centroid's place)
+  PEN_VMAX: 0.5,   //   screen heights / s: the pen's largest drift — the per-frame step ≤ PEN_VMAX · dt (the §1.9 step; a re-pin is a stroke, never a jump)
+  PEN_V: 0.25,     //   the push along the drift: dx, dy = PEN_V × the pen's own velocity (uv/s) × g × f; 0 = ink only (a still pen pushes nothing either way)
+  PEN_RAD: 1,      //   the pen's radius × RADIUS (the floor's is 2): the floor's dye × (2 / PEN_RAD)² — the same ink in the budget's units, a thinner mark
 };
 
 // { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
@@ -180,7 +217,10 @@ export const K = {
 //   S4: `highEnv` the high band's envelope (by HI_SRC) eased HI_TAU (cold: at the frame's value), `highRing` / `highAcc` / `highN` / `highT` the
 //   own range (HI_SRC 1: one-second means over FLOOR_WIN s, the second being summed — this grammar's own, emptied on the cold frame),
 //   `dipLeft` the per-hat dip's frames left (a transient: 0 on the cold frame)
-export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [], highEnv: 0, highRing: [], highAcc: 0, highN: 0, highT: 0, dipLeft: 0 });
+//   S5: `penN` the frames the pen has been on (0 = the pen starts AT its target: no sweep on the switch, the grammar's cold frame or PEN_SRC
+//   turned on live), `penP` its eased place on the fifths circle relative to the tonic ([−6, 6)), `penY` its eased height, `penLx` / `penLy`
+//   the last frame's position (the step and the drift read against them)
+export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate: 0, jet: [], puffT: -1, puffA: 0, puffX: 0.5, midEnv: 0, snareN: 0, sjet: [], highEnv: 0, highRing: [], highAcc: 0, highN: 0, highT: 0, dipLeft: 0, penN: 0, penP: 0, penY: 0.5, penLx: 6.5 / 12, penLy: 0.5 });
 
 // plan(S, dt, st) → the same shape as inject.js's plan() (its fields, the 'sub' splat without its velocity) + `heave` (uv/s², what
 // was added to `body`), `swirl` (the uniform's value, 1/s²), `subEnv` (the envelope), `kick` (S2: { shape, mom, ink, n } — this frame's
@@ -188,7 +228,8 @@ export const mkState = () => ({ base: null, n: 0, subEnv: 0, subSlow: 0, inkRate
 // read them. A ring may carry a centre (`cx, cy`; S2's puff) — fluid.js passes it to `uRingC`; `params.curlMask` ({ y0, y1, lo, fe }, S3's
 // mask; absent = the identical vort pass) goes to `uCurlMask`. S4: `grain` (uv/s², the velocity advect's `uNoise`; 0 = the identical pass)
 // and `highs` ({ env, grain, dip, cell, hold, jit } — dip = the factor on dyeDiss this frame, 1 = none; cell / hold the grain's cell and
-// hold for the uniforms; jit the dye jitter in dye texels, 0 = the identical dye pass) for the rulers and fluid.js.
+// hold for the uniforms; jit the dye jitter in dye texels, 0 = the identical dye pass) for the rulers and fluid.js. S5: `pen` ({ on, src,
+// x, y, step, v, ink, floor, wrap } — the pen's place and move this frame; on 0 under PEN_SRC 0, the list the base's).
 export function plan(S, dt, st) {
   if (!st.base) st.base = mkStateBase();
   const R = planBase(S, dt, st.base);
@@ -275,6 +316,41 @@ export function plan(S, dt, st) {
   const mids = { pos: st.midEnv, curl: R.params.curl, mask: null };
   if (K.CURL_SRC) { R.params.curl = K.CURL0 + K.CURL_MID * st.midEnv; mids.curl = R.params.curl; }
   if (K.CURL_MASK) { R.params.curlMask = { y0: K.CURL_Y0, y1: K.CURL_Y1, lo: K.CURL_LO, fe: K.CURL_FE }; mids.mask = R.params.curlMask; }
+  // S5 the pen (PEN_SRC; 0 = the floor untouched — the identical list, the pen's state reset so a live switch-on starts at its target). The
+  // target: the harmony's angle as a place on the fifths circle RELATIVE TO THE TONIC (the base's axis and its tonic rule — pin.k, or the
+  // centre's nearest fifth before any pin), eased on the circle by the shortest arc with the step clamped; the floor's splat becomes the
+  // pen's at the same ink in the budget's units. Counted in the governor's sum BELOW (S4's dip touches dyeDiss after it — S4's note).
+  if (cold) st.penN = 0;
+  const pen = { on: 0, src: K.PEN_SRC | 0, x: st.penLx, y: st.penLy, step: 0, v: 0, ink: 0, floor: 0, wrap: 0 };
+  if (K.PEN_SRC > 0) {
+    const B = st.base, cen = Math.atan2(B.hy, B.hx);
+    const jf = ((Math.round(cen / (2 * Math.PI) * 12) % 12) + 12) % 12;
+    const sT = sectorPc(B.pin ? B.pin.k : (7 * jf) % 12);   // the tonic's fifths position (the centre of the base's relX axis)
+    const ang = K.PEN_AX === 1 ? (S.harmAngle || 0) : cen;
+    const dT = ((ang / (2 * Math.PI) * 12 - sT + 6) % 12 + 12) % 12 - 6;   // the target: fifths from the tonic, wrapped to [−6, 6)
+    const yT = 0.25 + 0.5 * clamp(S.centroid || 0, 0, 1);
+    if (st.penN === 0) { st.penP = dT; st.penY = yT; }
+    else {
+      const arc = ((dT - st.penP + 6) % 12 + 12) % 12 - 6;   // the shortest arc on the circle
+      const e = 1 - Math.exp(-dt / Math.max(1e-6, K.PEN_TAU)), lim = Math.max(0, K.PEN_VMAX) * dt;
+      let mx = arc * e / 12, my = (yT - st.penY) * e;   // the eased move in screen units (a fifth is 1 / 12 of the width) …
+      const m = Math.hypot(mx, my); if (m > lim) { mx *= lim / m; my *= lim / m; }   // … its LENGTH clamped (the §1.9 step: ≤ PEN_VMAX · dt on the diagonal too)
+      st.penP = ((st.penP + mx * 12 + 6) % 12 + 12) % 12 - 6;
+      st.penY += my;
+    }
+    const x = ((st.penP + 6.5) % 12) / 12, y = st.penY;   // relX's continuous form: the tonic at 6.5 / 12, a fifth per 1 / 12, the tritone split at the walls
+    let ax = x - st.penLx, ay = y - st.penLy, vx = 0, vy = 0;
+    if (st.penN > 0) { if (ax > 0.5) { ax -= 1; pen.wrap = 1; } else if (ax < -0.5) { ax += 1; pen.wrap = 1; } vx = ax / dt; vy = ay / dt; pen.step = Math.hypot(ax, ay); pen.v = Math.hypot(vx, vy); }
+    const fi = R.splats.findIndex((s) => s.k === 'floor');
+    if (fi >= 0) {
+      const fl = R.splats[fi]; R.splats.splice(fi, 1);
+      const rad = Math.max(0.25, K.PEN_RAD) * KB.RADIUS, q = (fl.rad / rad) ** 2, push = K.PEN_V * g * 60 * dt;
+      R.splats.push({ x, y, dx: push * vx, dy: push * vy, r: fl.r * q, g: fl.g * q, b: fl.b * q, rad, k: 'pen' });
+      pen.on = 1; pen.ink = (fl.r + fl.g + fl.b) * q * (rad / KB.RADIUS) ** 2; pen.floor = (fl.r + fl.g + fl.b) * (fl.rad / KB.RADIUS) ** 2;
+      inkChanged = true;   // the same ink in the budget's units (q · rad² = the floor's rad²): the own rate decides, as the jets' frames do
+    }
+    st.penN++; st.penLx = x; st.penLy = y; pen.x = x; pen.y = y;
+  } else st.penN = 0;
   // the ink budget over THIS list (§111; the drop's impulse not counted, as the base counts): the own rate starts at the base's warm
   // value and runs the same ema, so with the ink unchanged it IS the base's rate and the base's dyeDiss stands untouched
   let ink = 0;
@@ -313,6 +389,6 @@ export function plan(S, dt, st) {
   if (heave) R.body += heave;   // 0 adds nothing: the body stays the base's to the bit (the sub silent = the pool grammar's breath)
   const swirl = K.SWIRL * st.subEnv * g * bar * gate;
   st.n++;
-  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare; R.grain = grain; R.highs = { env: st.highEnv, grain, dip, cell: Math.max(1, K.NOISE_CELL | 0), hold: Math.max(1, K.NOISE_HOLD | 0), jit };
+  R.heave = heave; R.swirl = swirl; R.subEnv = st.subEnv; R.kick = kick; R.mids = mids; R.snare = snare; R.grain = grain; R.highs = { env: st.highEnv, grain, dip, cell: Math.max(1, K.NOISE_CELL | 0), hold: Math.max(1, K.NOISE_HOLD | 0), jit }; R.pen = pen;
   return R;
 }
