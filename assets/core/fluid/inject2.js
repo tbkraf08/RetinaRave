@@ -199,11 +199,14 @@ export const K = {
                    //   is surface and nothing else is FLUID2's DISPLAY grain (fluid2/index.js SPEC.GRAIN: the show pass's read point, nothing accumulated)
   PEN_SRC: 1,      // S5 the pen: 0 off (the base's floor stands — the identical list) · 1 the harmony's centre as the stand-in for a pitch (the MECHANICS;
                    //   the vocal feature is S5b's, one extractor session) · 2 reserved for that feature (`voxS`, `voxHz` — not read yet: plans as 1, pen.src 2)
-  PEN_AX: 0,       //   the stand-in's axis read: 0 the base's eased harmony centre (hx / hy, HARM_TAU 15 s — the plan's letter) · 1 the frame's harmAngle (the
-                   //   chroma's fifths centroid, continuous; the pen's own ease the only inertia — strokes on every chord)
+  PEN_AX: 1,       //   the stand-in's axis read: 0 the base's eased harmony centre (hx / hy, HARM_TAU 15 s — the plan's letter: .008 screen heights per beat on
+                   //   RaindropsOnRoses's breakdown, a drifting dot) · 1 the frame's harmAngle (the chroma's fifths centroid, continuous; the pen's own ease the
+                   //   only inertia: .054 per beat over a quarter of the screen — SHIPS: the 10 fps strip shows one continuous band where the floor's blobs sat, §116 S5)
   PEN_TAU: 0.3,    //   s: the pen's position eased this fast toward its target (on the fifths circle: the shortest arc; y toward the centroid's place)
   PEN_VMAX: 0.5,   //   screen heights / s: the pen's largest drift — the per-frame step ≤ PEN_VMAX · dt (the §1.9 step; a re-pin is a stroke, never a jump)
-  PEN_V: 0.25,     //   the push along the drift: dx, dy = PEN_V × the pen's own velocity (uv/s) × g × f; 0 = ink only (a still pen pushes nothing either way)
+  PEN_V: 0,        //   the push along the drift: dx, dy = PEN_V × the pen's own velocity (uv/s) × g × f; 0 = INK ONLY — SHIPS: the user's frame ("it draws, it does
+                   //   not inject mass") and the strips (§116 S5): the breakdown's pool is near still (.05 uv/s), so .25 lifts its speed +24 % (the outro +37 %),
+                   //   1 is a plume (×2.4–2.7), .05 sits inside the 10 % guard (+3 %, the outro +10 %) and the eye gains nothing by it; 0 is zero force to the digit
   PEN_RAD: 1,      //   the pen's radius × RADIUS (the floor's is 2): the floor's dye × (2 / PEN_RAD)² — the same ink in the budget's units, a thinner mark
 };
 

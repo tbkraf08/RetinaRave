@@ -4,7 +4,7 @@
 #   on / x / y / step (the evals line's S5 fields), speed, dink, dgrad from highs.txt.
 import sys, re; from PIL import Image, ImageDraw
 out, title = sys.argv[1], sys.argv[2]
-W = 236; H = int(633 * W / 1280) + 14
+W = int(sys.argv[1].split("@")[1]) if "@" in sys.argv[1] else 236; out = out.split("@")[0]; H = int(633 * W / 1280) + 14
 def tab(tag):
     T = {}
     d = f'tools/work/fluid2/field/RaindropsOnRoses-s13-{tag}'
