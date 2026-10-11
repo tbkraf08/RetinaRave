@@ -153,7 +153,14 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               floor cloud at the same ink in the budget's units, drifting along the tonic axis with the
                               harmony's centre (the stand-in for a pitch), eased on the fifths circle with its per-frame step
                               clamped (the §1.9 step; the one lift is the tritone wall), a small push along its own drift — it
-                              draws, it never injects mass; what it draws today is the HARMONY, not the voice; the
+                              draws, it never injects mass; what it draws today is the HARMONY, not the voice; TIME (S6) is
+                              the SOLVER's clock, not the grammar's: `dtSim` multiplies the vort / advect passes' dt (fluid.js) —
+                              the pool's time breathes with the sub (its rise quickens the ink's travel, its tail and a sub CUT
+                              slacken it, zero-mean on a groove), runs at half time in a latched void (eased 1 s, gated on the
+                              sub being out) and bursts on the confirmed drop's frame (× DT_DROPX decaying over the clear's beat —
+                              the clock alone by default, DT_DROP 1 the honest substeps); the splats, the emitters' ×60·dt, the
+                              key's evidence, the refractories, the clear's countdown and the shockwave's front stay on the
+                              grammar's dt (musical time); every change of the clock is slewed (DT_SLEW: the §1.9 rule); the
                               rest of the grammar is the base's. A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
                               "## Fluid", the per-track tuning recipe; DECISIONS §111).
@@ -285,7 +292,15 @@ needed, now generic:
   step, v, ink, floor, wrap }` — the pen's place this frame (uv), its move (`step`, on the fifths circle: ≤ `PEN_VMAX · dt` on every frame), its drift
   speed (uv/s), its area-weighted ink and the floor's it replaced (equal by construction), `wrap` 1 on a tritone lift; `on` 0 under `PEN_SRC` 0 where the
   list carries the base's `floor` to the byte; `src` the switch, 2 reserved for the vocal feature's reads that do not exist yet) — `CARD.fluid.pen`; the
-  pen is a SPLAT (`k: 'pen'`), nothing on the passes. `fluid.js` reads them from the plan of the grammar that owns the
+  pen is a SPLAT (`k: 'pen'`), nothing on the passes; (S6) `dtSim` (the SOLVER's clock: `fluid.js` multiplies the vort and velocity-advect
+  `uDt` by it — the dye advect shares the program and inherits it, so the dye's dissipation is the pool's time too; absent → 1, the identical pass;
+  bounded [`DT_MIN`, `DT_MAX`] and slewed per frame by the grammar), `substeps` (> 1: the curl → dye-advect chain runs that many times at
+  dt · dtSim / substeps, the splats once — the drop's burst under `DT_DROP` 1; the step counter counts frames) and `time` (`{ dtSim, substeps,
+  breath, level, void, drop, pulse, latched, raw, slewed }` — the terms, for the rulers) — `CARD.fluid.dtSim / substeps / time`. **The precedence
+  rule for `dtSim`** (FLUID2-PLAN §2; FLUID-DROP item 2's freeze): a composing grammar multiplies the base's clock by its own through
+  `composeDt(base, mine)` (inject2.js) and a base `dtSim` of **0 wins outright** — a freeze is a freeze, the grammar's bounds do not lift it;
+  the base returns no `dtSim` today (→ 1). A grammar whose clock can reach 0 must run its own eased positions (the pen) on the solver's
+  clock, or they walk over frozen ink (inject2's pen eases on min(1, dtSim) · dt). `fluid.js` reads them from the plan of the grammar that owns the
   step; the pool grammar returns none, so every step under it is the §104 pass to the bit. The band grammar's own state goes COLD while it does not own
   the pool (`fluid.js` resets inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back, never a burst.
 - **Per-scene post params** (`post`): `fb.decay` (0..1 trail persistence, 0 = no trails; the feedback effect
@@ -688,6 +703,11 @@ are the scene author's rules:
   picture must be able to say which sound moved it.
 - **Continuous things on heard time.** Every ears / map level is already evaluated at `MS.heardT` (the audio time the listener
   hears this frame) — read it, do not smooth it again on `dt` unless the look needs inertia (and then say so).
+- **A grammar's clock vs the solver's** (§116 S6): the fluid substrate's `dtSim` bends the WATER's time only — the ink's travel per
+  wall-second, the dye's dissipation — and moves no event's placement: the splats, the clear, the shockwave's front, the key's evidence
+  stay on the grammar's dt (heard time, with the display lead of this section). A dt that steps is a continuity risk (§1.9): every change
+  is slewed (`DT_SLEW`), and whether a clock that breathes reads as the music or as a framerate wobble is the user's eye in track time —
+  the 0.1 s strip cannot tell (DECISIONS §116 S6).
 - **The beat clocks on heard time (live step 2).** `beatPhase` / `beat` / `beatCount` (v3) and `beatSyn` / `barPos` / `barPhase`
   / `phrasePos` / `phrase16Pos` / `bar` (synapse) lock to the audio the analysers see — 47 ms before the ear in a real-time file
   or the demo, 27 ms after it in capture. With the lead on (`&lead=1`, the `L` key; `MS.leadT` ≠ 0) the engine publishes them

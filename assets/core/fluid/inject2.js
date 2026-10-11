@@ -241,7 +241,8 @@ export const K = {
   DT_LVL: 0,       //   the level: × (1 + DT_LVL · (subEnv − .5)) — slow while the sub is out, fast while it pins; 0 = off (a switch: the strips decide)
   DT_VOID: 0.5,    //   the latched void's clock (the void's depth eases the clock toward it; the clear ends it); 1 = off
   DT_TAU: 1,       //   s: the void term's ease (in and out — the return's snap is measured as a §1.9 step)
-  DT_DROP: 0,      //   the drop's burst: 0 none · 1 DT_STEPS substeps per frame at the burst's clock (the real thing) · 2 the clock alone (the stand-in)
+  DT_DROP: 2,      //   the drop's burst: 0 none · 1 DT_STEPS substeps per frame at the burst's clock (the real thing, +cost) · 2 the clock alone (the stand-in —
+                   //   SHIPS by the plan's 10 % rule: the centre grey at +0.4 s 25.0 under both against the off run's 25.3 on RaindropsOnRoses's drop 2, §116 S6)
   DT_DROPX: 2,     //   the burst's clock on the drop's frame, decaying linearly to 1 over the clear's beat (accenting, never driving)
   DT_STEPS: 2,     //   the substeps per frame while the burst runs (DT_DROP 1) — a second curl → advect chain, the plan's +0.6–0.7 ms
   DT_BEAT: 0,      //   the pulse: × (1 + DT_BEAT · (cos⁴(π·beatPhase) − 3/8)), zero-mean on the beat; 0 = off (the judder test)
