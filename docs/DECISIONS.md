@@ -2860,3 +2860,10 @@ bids, its dwell holds it, a build parks home). The demo fallback on the same but
 microphone and demo buttons do not. Proof (headless, PORT 8975, GPU=1): before the click `cur 2 forced −1`; `#go.onclick()` →
 `{cur 0, logical 0, forced −1, hist [0], name fluid, errs []}`. check 144 modules 0 fail; npm test exit 0. No md5 line can move
 (the harness forces its scene by hash). Open: the user's eye on the first seconds of a real tab share.
+**The hold (same day, the user at 8765: *"still goes to nav"*).** Reproduced on the demo path: the seat held 0.8 s, then the director's
+home rules undid it at 10 s (`hist [2, 0]`): a stream's first frames read `presence < .12` (the silence rule parks home) and a first
+loud frame can read as `dropEvt` (home, hard). `seatScene()` now draws the §95 dwell for the seat (`dwellMin`, the same deterministic
+formula, `SC.lands` advanced — never on a harness run, which forces by hash) and sets `SC.seatHold`; `updateScenes` skips the three
+home rules (drop, silence, build) while the hold stands, clears it at `since ≥ dwellMin` or on any real landing (`goScene`). After the
+hold the director is §93–§95 unchanged. Proof (headless, demo, PORT 8975): `dwellMin 84.2`, cur 0 at 10 / 25 / 60 s, hist [0], errs [].
+check 0 fail, npm test exit 0.

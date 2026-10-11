@@ -13,6 +13,7 @@ import { routeScene, view, isRouted } from './route.js'; // v0.4 routes: the MS 
 import { paramScene } from './params.js'; // v0.5 params: a scene's visual parameters (validated once here; values handed to update() by the loop)
 
 export const SC = {
+  seatHold: false, // §118 addendum: a seatScene() opener holds its dwell against the home rules
   cur: 0, next: -1, m: 0, dur: 2,   // base ids of the two rendered scenes and the crossfade position (register() re-seats cur / logical / hist on the home scene — §118)
   logical: 0,                        // the logical id (a variant has its own id but renders its parent's base)
   variant: null, vT: 0, vmix: 0,     // active variant name, its target (0/1) and the eased mix scenes read
@@ -94,6 +95,12 @@ export function seatScene(id) {
   SC.cur = SC.logical = E.base;
   SC.next = -1; SC.m = 0; SC.since = 0;
   SC.hist = [id];
+  // The seat HOLDS through its own dwell (the §95 draw every landing gets): a stream's first frames read presence ≈ 0 and
+  // its first loud frame can read as a drop — both are home rules, and either would undo the seat within seconds (measured:
+  // the demo path went FLUID → home at 10 s). Until SC.since reaches dwellMin the home rules wait; after it, the director
+  // is the §93–§95 one unchanged (drops and builds exempt from the dwell).
+  SC.dwellMin = SC.dwell[0] + (SC.dwell[1] - SC.dwell[0]) * frac(Math.sin((++SC.lands) * 12.9898) * 43758.5);
+  SC.seatHold = true;
   return true;
 }
 
@@ -106,6 +113,7 @@ export function goScene(id, hard, S) {
   SC.hist.unshift(id);
   SC.hist.length = Math.min(SC.hist.length, 3);
   SC.logical = id;
+  SC.seatHold = false; // a real landing ends a seat's hold
   SC.lastBeat = S.beatCount;
   SC.since = 0; // §95: the dwell clock restarts; its minimum is drawn here (deterministic — the traces stay comparable)
   SC.dwellMin = SC.dwell[0] + (SC.dwell[1] - SC.dwell[0]) * frac(Math.sin((++SC.lands) * 12.9898) * 43758.5);
@@ -241,7 +249,9 @@ export function updateScenes(dt, S) {
     if (SC.logical !== SC.forced) goScene(SC.forced, true, S);
   } else {
     const awayHome = SC.logical !== SC.home;
-    if (S.dropEvt) { SC.pend = null; goScene(SC.home, true, S); }
+    if (SC.seatHold && SC.since >= SC.dwellMin) SC.seatHold = false; // the seat's dwell is served; the home rules apply again
+    if (SC.seatHold) { /* §118 addendum: a seated stream opener keeps its dwell against the start-up silence and the first drop */ }
+    else if (S.dropEvt) { SC.pend = null; goScene(SC.home, true, S); }
     else if (S.presence < 0.12) {
       SC.pend = null;
       if (awayHome && SC.next < 0) goScene(SC.home, false, S);
