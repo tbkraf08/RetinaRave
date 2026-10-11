@@ -61,6 +61,9 @@
 //              the position eased on the fifths circle: the per-frame step ≤ PEN_VMAX · dt on every frame, x / y in [0, 1], the cold frame and a live
 //              switch-on start AT the target (step 0); the push = PEN_V · the drift · gain · f, bounded, 0 at PEN_V 0; AX 1 draws more than AX 0 on
 //              RaindropsOnRoses's breakdown; the tritone wrap (a synthetic walk round the circle): one lift, every other step bounded; determinism; the Proxy
+//              S6 (§116 S6): the SOLVER's clock dtSim — bounded [DT_MIN, DT_MAX], slewed per frame (DT_SLEW), the neutral knobs 1 exactly, composeDt (a base 0 wins), the
+//              pen on min(1, dtSim) · dt; the breath on the 1:06 cut, the void on the breakdown (gated on the sub out), the burst on the file map's drop 2 (substeps under
+//              DT_DROP 1 only), the pulse zero-mean, a cold frame at its target, a live knob change slewed; determinism; the Proxy
 //   breath     the beat's body force: −.35·cos⁴(π·beatPhase) × gain, 0 at phase .5
 //   music      per library track (both map modes): the grammar injects on ≥ 95 % of the seconds WITH music (presence median > .3);
 //              a frame with presence 0 moves nothing and inks nothing; every clear (dyeDiss DROP_DISS) sits within CLEAR_PEND beats of a
@@ -539,7 +542,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   // S1's relation: strip() = the base's fields with the sub splat's velocity zeroed and the body and the grammar's own fields removed
   // (the sub splat kept by place and kind only — its velocity is gone, its dye / radius re-shaped by SUB_INK / SUB_RAD; dyeDiss to 1e-9 — the re-governed budget rounds)
-  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; delete Q.pen; return Q; };
+  const strip = (P) => { const Q = { ...P, splats: P.splats.map((s) => (s.k === 'sub' ? { x: s.x, y: s.y, k: s.k } : s)), params: { ...P.params, dyeDiss: +P.params.dyeDiss.toFixed(9) } }; delete Q.body; delete Q.heave; delete Q.swirl; delete Q.subEnv; delete Q.ink; delete Q.kick; delete Q.mids; delete Q.snare; delete Q.grain; delete Q.highs; delete Q.pen; delete Q.dtSim; delete Q.substeps; delete Q.time; return Q; };   // S6: the clock's three return fields
   const frac = (x) => x - Math.floor(x);
   // 600 synthetic frames: a groove with the sub open, kicks on the beat, snares on 2 and 4, hats, a pad's mid — the sub BAND at 0 (MS's default)
   const synth = (i, sub = 0) => base({ sub, subGate: 1, subNote: (i >> 7) % 12, bassReg: (i >> 5) & 1, beatPhase: (i % 30) / 30, beatCount: 10 + Math.floor(i / 30),
@@ -882,6 +885,69 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       ok(lifts.length === 1 && wraps === 1 && lifts[0].p.wrap === 1 && rows.every((r) => r.p.step <= defaults.PEN_VMAX * DT + 1e-12) && tracks, 'bands: S5 — the tritone wall: a harmAngle walking the circle once → one lift (x ' + (lifts[0] ? (rows[rows.indexOf(lifts[0]) - 1].x.toFixed(3) + ' → ' + lifts[0].x.toFixed(3)) : '-') + ', wrap 1), every frame\'s step on the circle ≤ PEN_VMAX · dt, the pen within a fifth of its target while walking');
     }
     ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S5 — the K2 table restored after the switches');
+  }
+  { // S6 (§116 S6, FLUID2-PLAN §4 S6): the SOLVER's clock — dtSim bounded [DT_MIN, DT_MAX], slewed per frame (DT_SLEW), the neutral knobs 1 exactly,
+    // the base's 0 wins (composeDt), the pen rides min(1, dtSim) · dt; the breath on the cut, the void on the breakdown (gated on the sub out), the
+    // drop's burst on the file map's confirmed drop 2 (the substep count under DT_DROP 1, the clock alone under 2), the pulse zero-mean; determ, the Proxy
+    const defaults = { ...K2 };
+    const JR = trace('RaindropsOnRoses-map0'), JM = trace('RaindropsOnRoses-map1');
+    const run6 = (over = {}, J = JR) => { Object.assign(K2, defaults, over); const out = replay(J, mkState2(), plan2); Object.assign(K2, defaults); return out; };
+    const win = (R, a, b) => R.filter((r) => r.t >= a && r.t < b), mean = (a) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    const NEUTRAL = { DT_SUB: 0, DT_LVL: 0, DT_VOID: 1, DT_DROP: 0, DT_BEAT: 0 };
+    ok(['DT_SUB', 'DT_LVL', 'DT_VOID', 'DT_TAU', 'DT_DROP', 'DT_DROPX', 'DT_STEPS', 'DT_BEAT', 'DT_SLEW', 'DT_MIN', 'DT_MAX'].every((k) => typeof defaults[k] === 'number') && defaults.DT_MIN > 0 && defaults.DT_MIN <= 1 && defaults.DT_MAX >= 1 && defaults.DT_VOID >= 0 && defaults.DT_VOID <= 1 && [0, 1, 2].includes(defaults.DT_DROP) && defaults.DT_STEPS >= 2 && defaults.DT_SLEW > 0, 'bands: S6 — K2 carries DT_SUB ' + defaults.DT_SUB + ', DT_LVL ' + defaults.DT_LVL + ', DT_VOID ' + defaults.DT_VOID + ' / DT_TAU ' + defaults.DT_TAU + ', DT_DROP ' + defaults.DT_DROP + ' (DROPX ' + defaults.DT_DROPX + ', STEPS ' + defaults.DT_STEPS + '), DT_BEAT ' + defaults.DT_BEAT + ', DT_SLEW ' + defaults.DT_SLEW + ', the bounds [' + defaults.DT_MIN + ', ' + defaults.DT_MAX + ']');
+    const cd = INJ2.composeDt;
+    ok(typeof cd === 'function' && cd(undefined, 0.7) === 0.7 && cd(null, 1.3) === 1.3 && cd(0, 1.5) === 0 && cd(0, 0.5) === 0 && cd(0.5, 2) === 1 && cd(2, 0.25) === 0.5 && cd(1, 1) === 1, 'bands: S6 — composeDt: the base\'s clock (none → 1) × this grammar\'s; a base 0 (item 2\'s freeze) wins over any value here');
+    ok(FEATS2.filter((k) => !FLUID_FEATS.includes(k)).join(',') === 'sub,high', 'bands: S6 — no new MS read: the clock reads the base\'s buildLive / tongueOn / tongueAmbig / subGate / beatPhase (its latch recomputed, never duplicated); `pred*` and `dropLiveIn` are not read');
+    if (JR && JM) {
+      const neutral = run6(NEUTRAL);
+      ok(neutral.every((r) => r.P.dtSim === 1 && r.P.substeps === 1 && r.P.time.raw === 1 && r.P.time.breath === 1 && r.P.time.level === 1 && r.P.time.void === 1 && r.P.time.drop === 1 && r.P.time.pulse === 1), 'bands: S6 — the neutral knobs (DT_SUB 0, DT_LVL 0, DT_VOID 1, DT_DROP 0, DT_BEAT 0): dtSim 1 EXACTLY and substeps 1 on every one of RaindropsOnRoses\'s ' + neutral.length + ' real frames — the byte-identical pass (x · 1 = x in fluid.js; the md5 gate proves the pixels)');
+      const ship = run6();
+      const dtOf = (R, i) => Math.max(1e-3, Math.min(0.1, i ? R[i].t - R[i - 1].t : 1 / 60));
+      ok(ship.every((r) => r.P.dtSim >= defaults.DT_MIN - 1e-12 && r.P.dtSim <= defaults.DT_MAX + 1e-12 && r.P.time.raw >= defaults.DT_MIN - 1e-12 && r.P.time.raw <= defaults.DT_MAX + 1e-12), 'bands: S6 — the shipped clock is bounded [DT_MIN, DT_MAX] on every real frame (min ' + Math.min(...ship.map((r) => r.P.dtSim)).toFixed(3) + ', max ' + Math.max(...ship.map((r) => r.P.dtSim)).toFixed(3) + ')');
+      const wild = run6({ DT_SUB: 5, DT_LVL: 5, DT_VOID: 0, DT_BEAT: 3, DT_DROP: 2, DT_DROPX: 9 });
+      ok(wild.every((r) => r.P.dtSim >= defaults.DT_MIN - 1e-12 && r.P.dtSim <= defaults.DT_MAX + 1e-12) && wild.some((r) => r.P.dtSim === defaults.DT_MIN) && wild.some((r) => r.P.dtSim === defaults.DT_MAX), 'bands: S6 — … and under wild knobs (DT_SUB 5, DT_LVL 5, DT_VOID 0, DT_BEAT 3, DROPX 9) it sits on the bounds and never outside them');
+      const eased = (R) => R.every((r, i) => i === 0 || Math.abs(r.P.dtSim - R[i - 1].P.dtSim) <= defaults.DT_SLEW * dtOf(R, i) + 1e-12);
+      const slewed = (R) => R.filter((r) => r.P.time.slewed).length;
+      ok(eased(ship) && eased(wild) && slewed(wild) > 50 && ship[0].P.time.slewed === 0 && wild[0].P.time.slewed === 0, 'bands: S6 — eased: |Δ dtSim| ≤ DT_SLEW · dt on every frame of the ship run (max ' + Math.max(...ship.map((r, i) => (i ? Math.abs(r.P.dtSim - ship[i - 1].P.dtSim) : 0))).toFixed(4) + ' vs ' + (defaults.DT_SLEW / 60).toFixed(4) + ') and of the wild one (' + slewed(wild) + ' frames held by the slew, ' + slewed(ship) + ' on the ship run); the cold frame starts AT its target (slewed 0)');
+      const free = run6({ DT_SUB: 5, DT_LVL: 5, DT_VOID: 0, DT_BEAT: 3, DT_SLEW: 1e9 });
+      ok(slewed(free) === 0 && free.every((r) => r.P.dtSim === r.P.time.raw), 'bands: S6 — DT_SLEW 1e9: no frame slewed, dtSim = the clamped product on every frame');
+      // the breath alone on the cut (65.4–68.57) and the return; zero-mean on the groove
+      const br = run6({ DT_VOID: 1 }), bCut = mean(win(br, 65.4, 68.57).map((r) => r.P.dtSim)), bRet = mean(win(br, 68.57, 70.5).map((r) => r.P.dtSim)), bGr = mean(win(br, 76, 110).map((r) => r.P.dtSim));
+      ok(bCut < 0.9 && bRet > 1.04 && Math.abs(bGr - 1) < 0.01 && br.every((r) => r.P.time.void === 1 && r.P.time.level === 1), 'bands: S6 — the breath (DT_SUB ' + defaults.DT_SUB + ', the void off) on the live lanes: the 1:06 cut runs at ' + bCut.toFixed(3) + ' (the pool holds its breath), the return 68.57–70.5 at ' + bRet.toFixed(3) + ' (it runs again), the groove 76–110 at ' + bGr.toFixed(4) + ' — zero-mean: the sub\'s gesture, not a tempo');
+      // the void alone on the breakdown, gated on the sub out
+      const vd = run6({ DT_SUB: 0 }), vBrk = win(vd, 111.4, 134), vLat = vBrk.filter((r) => r.P.time.latched).length;
+      ok(vLat > 500 && Math.min(...vBrk.map((r) => r.P.dtSim)) <= defaults.DT_VOID + 0.02 && vd.every((r) => r.P.time.void >= defaults.DT_VOID - 1e-12 && r.P.time.void <= 1 && !(r.P.time.latched && r.S.subGate > 0) && !(r.P.time.latched && r.P.params.dyeDiss === K.DROP_DISS)) && win(vd, 76, 110).every((r) => r.P.dtSim >= 0.98), 'bands: S6 — the void (DT_VOID ' + defaults.DT_VOID + ', the breath off): latched on ' + vLat + ' of the breakdown\'s ' + vBrk.length + ' frames (111.4–134 s), the clock down to ' + Math.min(...vBrk.map((r) => r.P.dtSim)).toFixed(3) + ' there; never latched with the sub open or inside the clear; the groove untouched (≥ .98)');
+      const vRet = win(vd, 68.57, 70.5).map((r) => r.P.dtSim), vDip = vRet.reduce((a, d, i) => a + (i && d < vRet[i - 1] ? vRet[i - 1] - d : 0), 0);
+      ok(vRet[vRet.length - 1] > 0.95 && vRet[vRet.length - 1] > vRet[0] + 0.08 && vDip < 0.01, 'bands: S6 — the void lets go on the sub\'s return (68.57 — the live lanes never confirm that drop, §117, and the detector stays armed): the clock rises through 68.57–70.5 from ' + vRet[0].toFixed(3) + ' to ' + vRet[vRet.length - 1].toFixed(3) + ' (eased DT_TAU, the dips summed ' + vDip.toFixed(4) + ' — the latch\'s flicker), no snap');
+      // the drop's burst on the FILE map (drop 2 confirmed at 68.62 there): the clock the same under DT_DROP 1 and 2; the substeps only under 1; decays within the beat
+      const d2 = run6({ DT_DROP: 2 }, JM), d1 = run6({ DT_DROP: 1 }, JM), d0 = run6({}, JM);
+      const di = d2.findIndex((r) => r.P.drop === 1 && r.t > 60 && r.t < 75), beatF = Math.round(60 * 60 / Math.max(60, d2[di].S.bpm));
+      const burst = d2.slice(di, di + beatF + 12).map((r) => r.P.dtSim), peak = Math.max(...burst), after = d2[di + beatF + 12].P.dtSim, before = d2[di - 1].P.dtSim;
+      ok(di > 0 && peak > before + 0.5 && peak <= defaults.DT_DROPX * 1.2 + 1e-9 && d2[di].P.time.drop === defaults.DT_DROPX && d2[di + beatF].P.time.drop <= 1.05 && after < 1.15 && d2[di].P.ring !== null, 'bands: S6 — DT_DROP 2 on the file map: the burst hangs on the confirmed drop at ' + d2[di].t.toFixed(2) + ' s (the shockwave\'s frame — ring set): the clock ' + before.toFixed(3) + ' → peak ' + peak.toFixed(3) + ' (the term DT_DROPX ' + defaults.DT_DROPX + ' on the frame, slewed in), back to ' + d2[di + beatF].P.time.drop.toFixed(3) + ' a beat later — accenting, never driving');
+      ok(d1.every((r, i) => r.P.dtSim === d2[i].P.dtSim) && d1.every((r) => (r.P.substeps > 1) === (r.P.time.drop > 1)) && d1.filter((r) => r.P.substeps === defaults.DT_STEPS).length > 0 && d1.filter((r) => r.P.substeps === defaults.DT_STEPS).length <= 3 * (beatF + 1) && d2.every((r) => r.P.substeps === 1) && d0.every((r) => r.P.substeps === 1 && r.P.time.drop === 1), 'bands: S6 — DT_DROP 1: the same clock as 2 on every frame, DT_STEPS substeps on exactly the burst\'s frames (' + d1.filter((r) => r.P.substeps > 1).length + ' over the file map\'s ' + d1.filter((r) => r.P.drop === 1).length + ' clears), 1 elsewhere; 2 never substeps; 0 neither bursts nor substeps');
+      // the pen rides min(1, dtSim) · dt: a clock toward 0 (DT_VOID 0, DT_MIN 0) holds the pen in the latched breakdown
+      const frz = run6({ DT_SUB: 0, DT_VOID: 0, DT_MIN: 0 }), held = frz.filter((r) => r.t > 111.4 && r.t < 134 && r.P.dtSim < 0.05);
+      ok(held.length > 100 && held.every((r) => r.P.pen.step <= defaults.PEN_VMAX * 0.1 * 0.05 + 1e-12) && frz.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * dtOf(frz, i) * Math.min(1, r.P.dtSim) + 1e-12) && ship.every((r, i) => r.P.pen.step <= defaults.PEN_VMAX * dtOf(ship, i) + 1e-12), 'bands: S6 — the pen receives the clock: with the void\'s clock at 0 (DT_VOID 0, DT_MIN 0) the pen\'s step is ≤ PEN_VMAX · dt · dtSim on every frame (' + held.length + ' near-frozen frames in the breakdown, step max ' + Math.max(...held.map((r) => r.P.pen.step)).toExponential(2) + '); on the ship run it never exceeds the S5 bound (the hand never runs faster than the grammar)');
+      // the pulse: zero-mean on the groove, a tick of ± DT_BEAT · 3/8
+      const pl = run6({ DT_SUB: 0, DT_VOID: 1, DT_BEAT: 0.3 }), pG = win(pl, 76, 110).map((r) => r.P.dtSim);
+      ok(Math.abs(mean(pG) - 1) < 0.01 && Math.max(...pG) - Math.min(...pG) > 0.2 && pl.every((r) => r.P.time.pulse >= 1 - 0.3 * 3 / 8 - 1e-12 && r.P.time.pulse <= 1 + 0.3 * 5 / 8 + 1e-12), 'bands: S6 — DT_BEAT .3: a zero-mean pulse on the groove (mean ' + mean(pG).toFixed(4) + ', span ' + (Math.max(...pG) - Math.min(...pG)).toFixed(3) + '), the term in [1 − 3/8·DT_BEAT, 1 + 5/8·DT_BEAT]');
+      { // a cold frame mid-track starts AT its target (a switch into this grammar is no jolt); the live knob change slews from where it was
+        Object.assign(K2, defaults); const st = mkState2(); const C = JR.cols; let prev = null; const rows = [];
+        for (let i = 2400; i < 2800; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote; const dt = prev === null ? 1 / 60 : Math.max(1e-3, Math.min(0.1, JR.t[i] - prev)); prev = JR.t[i];
+          if (i === 2600) st.n = 0; if (i === 2700) K2.DT_LVL = 3;
+          const P = plan2(S, dt, st); rows.push({ i, d: P.dtSim, sl: P.time.slewed, raw: P.time.raw }); }
+        Object.assign(K2, defaults);
+        const c = rows.find((r) => r.i === 2600), k = rows.find((r) => r.i === 2700), k1 = rows.find((r) => r.i === 2701);
+        ok(c.sl === 0 && c.d === c.raw && k.sl === 1 && Math.abs(k.d - rows.find((r) => r.i === 2699).d) <= defaults.DT_SLEW / 60 + 1e-12 && k1.d !== k.d, 'bands: S6 — the grammar\'s cold frame (2600) starts AT its target (slewed 0); a live knob change (DT_LVL 3 at 2700) slews in from the last frame\'s clock (' + rows.find((r) => r.i === 2699).d.toFixed(3) + ' → ' + k.d.toFixed(3) + ' → ' + k1.d.toFixed(3) + ', raw ' + k.raw.toFixed(3) + ')'); }
+      ok(JSON.stringify(ship.map((r) => r.P)) === JSON.stringify(run6().map((r) => r.P)) && JSON.stringify(d1.map((r) => r.P)) === JSON.stringify(run6({ DT_DROP: 1 }, JM).map((r) => r.P)), 'bands: S6 — determ: two fresh band states on the real traces → identical output (the ship run; DT_DROP 1 on the file map)');
+      { Object.assign(K2, defaults, { DT_DROP: 1, DT_LVL: 0.4, DT_BEAT: 0.2 }); const st = mkState2(); let thrown = null; const C = JM.cols, allow = new Set([...FEATS2, 'seed']);
+        for (let i = 0; i < JM.f.length && !thrown; i++) { const S = {}; for (const k in C) S[k] = C[k][i]; S.seed = { a: 0.37 }; S.subNote = S.subNote == null ? -1 : S.subNote;
+          const PX = new Proxy(S, { get(t, k) { if (typeof k === 'string' && !allow.has(k)) thrown = 'read of ' + k + ' at frame ' + i; return t[k]; } });
+          try { plan2(PX, 1 / 60, st); } catch (e) { thrown = String(e); } }
+        Object.assign(K2, defaults);
+        ok(thrown === null, 'bands: S6 — proxy: RaindropsOnRoses (the file map) through plan2 with every time term on, no read outside inject2\'s FLUID_FEATS' + (thrown ? ' — ' + thrown : '')); }
+    } else ok(true, 'bands: S6 — (no RaindropsOnRoses traces: the real-frame cases skipped)');
+    ok(JSON.stringify(K2) === JSON.stringify(defaults), 'bands: S6 — the K2 table restored after the switches');
   }
 }
 

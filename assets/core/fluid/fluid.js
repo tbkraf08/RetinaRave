@@ -38,6 +38,7 @@ export const FLUID = {
   mids: null, snare: null,  // §116 S3 the band grammar's mids ({ pos, curl, mask }) and snare ({ kind, mom, ink, n, side }) on the last step; null under the pool grammar
   grain: 0, highs: null,    // §116 S4 the band grammar's grain on the last step (uv/s², the velocity advect's uNoise; 0 under the pool grammar) and its highs record ({ env, grain, dip })
   pen: null,                // §116 S5 the band grammar's pen record on the last step ({ on, src, x, y, step, v, ink, floor, wrap }; null under the pool grammar)
+  dtSim: 1, substeps: 1, time: null,   // §116 S6 the SOLVER's clock on the last step (the vort / advect dt × dtSim; 1 under the pool grammar — the identical pass), the substeps the step took (the drop's burst), the band grammar's time record ({ dtSim, substeps, breath, level, void, drop, pulse, latched, raw, slewed }; null under the pool grammar)
   // splat(x, y, dx, dy, rgb, r?): x y in uv, dx dy in uv/s (added once), rgb linear 0..1, r the radius (default params.radius)
   splat(x, y, dx, dy, rgb, r) { this.queue.push({ x, y, dx, dy, r: rgb[0], g: rgb[1], b: rgb[2], rad: r === undefined ? this.params.radius : r }); },
   force(fx, fy) { this.body[0] += fx; this.body[1] += fy; },
@@ -49,6 +50,7 @@ export const FLUID = {
 };
 
 let gl = null, P = {}, st = null, st2 = null, ph = null;   // st: the pool grammar's state; st2: the band grammar's, whose .base IS st (§116: one state, shared)
+let holdSteps = 0;   // §116 S6 harness only: benchFluid holds the substep count on every step (the burst's cost at the tier); 0 = the grammar's
 let vel = [null, null], dye = [null, null], prs = [null, null], div = null, curl = null; // [read, write] pairs
 let lastW = 0, lastH = 0;
 
@@ -152,9 +154,9 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   if (tr !== FLUID.tier || G.PW !== lastW || G.PH !== lastH) alloc(tr);
   const pm = FLUID.params, q = FLUID.queue;
   let pr;
-  let breath = 0, swirl = 0, grain = 0, cell = 1, hold = 1, jit = 0;
+  let breath = 0, swirl = 0, grain = 0, cell = 1, hold = 1, jit = 0, dtSim = 1, substeps = 1;
   FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
-  FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = FLUID.pen = null;
+  FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = FLUID.pen = FLUID.time = null;
   if (!resumed) {
     // §116 the dispatch: the band grammar plans on st2 (its plan() runs the pool grammar's on st2.base === st first), the pool grammar on st
     const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
@@ -165,6 +167,12 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
     grain = R.grain > 0 ? R.grain : 0;   // §116 S4 the band grammar's grain (the pool grammar returns none → 0, the identical advect path)
     if (R.highs) { cell = R.highs.cell || 1; hold = R.highs.hold || 1; jit = R.highs.jit > 0 ? R.highs.jit : 0; }   // … its cell / hold, and the dye jitter (dye texels; 0 = the identical dye pass)
     FLUID.heave = R.heave || 0; FLUID.swirl = swirl; FLUID.grain = grain; FLUID.kick = R.kick || null; FLUID.mids = R.mids || null; FLUID.snare = R.snare || null; FLUID.highs = R.highs || null; FLUID.pen = R.pen || null;   // §116 S5 the pen's record (the pool grammar returns none)
+    // §116 S6 the solver's clock: the grammar's `dtSim` multiplies the vort / advect dt (none → 1: the identical pass; a 0 freezes the solver —
+    // item 2's precedence, composed in inject2); `substeps` > 1 runs the curl → advect chain that many times at dt · dtSim / substeps (the drop's
+    // burst, DT_DROP 1); the splats land once. The step counter counts frames, not substeps (the grain's seed rides it).
+    dtSim = R.dtSim === undefined || R.dtSim === null ? 1 : Math.max(0, R.dtSim);
+    substeps = R.substeps > 1 ? R.substeps | 0 : 1;
+    FLUID.time = R.time || null;
     pm.curl = R.params.curl; pm.velDiss = R.params.velDiss; pm.dyeDiss = R.params.dyeDiss; pm.pressure = R.params.pressure; pm.radius = R.params.radius;
     pm.curlMask = R.params.curlMask || null;   // §116 S3 the band grammar's mask on the confinement (the pool grammar returns none → the identical vort pass)
     if (R.ring) FLUID.ring(R.ring.a, R.ring.r, R.ring.w, R.ring.cx, R.ring.cy);   // §113 the shockwave, this step (§116 S2: the puff carries its centre; the shockwave none → .5, .5)
@@ -200,6 +208,11 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
     }
     q.length = 0;
   }
+  // §116 S6 the solver's clock: every pass from the curl to the dye advect runs nSub times at dts = dt · dtSim / nSub (nSub 1 and dtSim 1 →
+  // dts = dt to the bit: the identical pass); the splats above landed once, the body / the wave are the frame's and ride every substep
+  const nSub = holdSteps > 0 ? holdSteps : substeps, dts = dt * dtSim / nSub;
+  FLUID.dtSim = dtSim; FLUID.substeps = nSub;
+  for (let si = 0; si < nSub; si++) {
   // curl → vorticity confinement
   pr = pass(P.curl, curl, true);
   tex(pr, 'uVel', 0, vel[0]);
@@ -211,7 +224,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   gl.uniform2f(pr.u('uScale'), sx, sy);
   gl.uniform1f(pr.u('uCurlK'), pm.curl);
   { const m = pm.curlMask; gl.uniform4f(pr.u('uCurlMask'), m ? m.y0 : 0, m ? m.y1 : 1, m ? m.lo : 1, m ? Math.max(1e-3, m.fe) : 0); }   // §116 S3: (0, 1, 1, 0) = the branch not taken
-  gl.uniform1f(pr.u('uDt'), dt);
+  gl.uniform1f(pr.u('uDt'), dts);   // §116 S6: the solver's dt
   tri();
   swap(vel);
   // divergence → pressure (warm-started × pressure, ITER Jacobi sweeps) → projection
@@ -241,7 +254,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   pr = pass(P.advect, vel[1]);
   tex(pr, 'uVel', 0, vel[0]);
   tex(pr, 'uSrc', 1, vel[0]);
-  gl.uniform1f(pr.u('uDt'), dt);
+  gl.uniform1f(pr.u('uDt'), dts);   // §116 S6: the solver's dt — the dye pass below shares the program and inherits it (its dissipation is the pool's time too)
   gl.uniform1f(pr.u('uDiss'), pm.velDiss);
   gl.uniform1f(pr.u('uBody'), breath);
   gl.uniform2f(pr.u('uForce'), FLUID.body[0], FLUID.body[1]);
@@ -273,6 +286,7 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   gl.uniform1i(pr.u('uDye'), 1);
   tri();
   swap(dye);
+  }
   FLUID.body[0] = FLUID.body[1] = 0;
   FLUID.wave = null;
   FLUID.steps++;
@@ -301,11 +315,13 @@ export function drawFluidDbg() {
 // interleaved with bench(0, 300)). S is the MS to plan from (static during the call — no events fire; the solver's cost is what is measured).
 // §113: `ring` ({a, r, w}, optional) is held on every step — the shockwave's cost at the tier (the same program; a uniform branch).
 // §116: `grammar` ('pool' | 'bands', optional) benches that grammar's step; absent = the one that planned the last step (FLUID.grammar).
-export function benchFluid(n, S, ring, grammar) {
+// §116 S6: `steps` (optional, > 1) holds that many substeps on every step — the drop burst's cost at the tier (DT_DROP 1), a second chain per step.
+export function benchFluid(n, S, ring, grammar, steps) {
   if (!FLUID.avail || !FLUID.on) return -1;
   const g = grammar || FLUID.grammar;
   const sync = () => { gl.bindFramebuffer(gl.FRAMEBUFFER, dye[0].f); gl.readPixels(dye[0].w >> 1, dye[0].h >> 1, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4)); };
   const hold = () => { if (ring) FLUID.ring(ring.a, ring.r, ring.w); };
+  holdSteps = steps > 1 ? steps | 0 : 0;
   hold(); stepFluid(1 / 60, S, false, g);
   sync();
   const t = performance.now();
@@ -314,9 +330,10 @@ export function benchFluid(n, S, ring, grammar) {
     if (i % 8 === 7) sync();
   }
   sync();
+  holdSteps = 0;
   return (performance.now() - t) / n;
 }
 
 export const fluidLine = () => (FLUID.avail
-  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} kick ${K2.KICK_SHAPE} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}${FLUID.pen && FLUID.pen.on ? ` pen ${FLUID.pen.x.toFixed(2)},${FLUID.pen.y.toFixed(2)}` : ''}` : ''}` : 'fluid off (W)')
+  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} kick ${K2.KICK_SHAPE} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}${FLUID.pen && FLUID.pen.on ? ` pen ${FLUID.pen.x.toFixed(2)},${FLUID.pen.y.toFixed(2)}` : ''} dt ${FLUID.dtSim.toFixed(2)}${FLUID.substeps > 1 ? `×${FLUID.substeps}` : ''}` : ''}` : 'fluid off (W)')
   : 'fluid unavailable (no float render targets)');
