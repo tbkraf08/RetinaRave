@@ -28,6 +28,7 @@ export const MS = {
   tonic: -1, tonicMinor: 0, tonicConf: 0, bassReg: 0, lpSweep: 0, width: 0, modeShade: 0,
   kickEvt: false, snareEvt: false, hatEvt: false, kickAge: 99, snareAge: 99, hatAge: 99, kickVel: 0, snareVel: 0, hatVel: 0, kickAmp: 0, snareAmp: 0,
   denK: 0, denS: 0, denH: 0, pulse: 1,
+  voxS: 0, voxHz: -1, voxConf: 0,   // the vocal track (ears/vox.js, §123) — idle: nobody singing, no pitch, no read at all (voxConf 0 = the rig keeps `interval`)
   mapOn: 0, toDrop: -1, toBoundary: -1, buildProg: 0, mapSection: -1, mapNext: -1, mapReturn: 0, eG: 0, mapDropEvt: false, mapBoundaryEvt: false,
   // bars stage (features-bars.js, live step 3) — idle: nothing predicted
   predKickEvt: false, predSnareEvt: false, predHatEvt: false, predKickAge: 99, predSnareAge: 99, predHatAge: 99,
