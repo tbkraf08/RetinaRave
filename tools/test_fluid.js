@@ -571,6 +571,30 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       const sameAsBase = (r, i) => r.splats.every((s) => { const c = colOf(s), b = colOf({ r: A[i].colour[0], g: A[i].colour[1], b: A[i].colour[2] }); return !c || c.every((v, j) => Math.abs(v - b[j]) < 1e-9); });
       ok(C0.every(sameAsBase) && !B.slice(0, 200).every(sameAsBase), 'bands: NOTE_COL 0 → every splat in the base\'s colour; NOTE_COL 1 → the sub / kick / lead carry their own note\'s hue');
     }
+    { // §123: the LEAD reads the vocal track when it has a read (voxConf > 0); the MS defaults (0 / -1 / 0) are the §121 `interval` path above
+      ok(B.filter((r) => r.rig.lead.on).every((r) => r.rig.lead.src === 'interval'), 'bands: vox — the MS defaults (voxConf 0) keep the §121 stand-in: every lead frame above says src interval');
+      const hzOf = (i) => 220 * 2 ** (((i >> 6) % 12) / 12);                       // a chromatic walk up from A3, one note per 64 frames
+      const voxed = (i, vs, hz) => Object.assign(synth(i), { voxS: vs, voxHz: hz, voxConf: 0.5 });
+      const s1 = mkState2(), s2 = mkState2(), s3 = mkState2(), sa2 = mkState(), V = [], Z = [], H = [], A2 = [];
+      for (let i = 0; i < 600; i++) {
+        V.push(plan2(voxed(i, 0.8, hzOf(i)), DT, s1)); A2.push(plan(voxed(i, 0.8, hzOf(i)), DT, sa2));
+        Z.push(plan2(voxed(i, 0.02, hzOf(i)), DT, s2));
+        H.push(plan2(voxed(i, 0.8, i % 64 < 48 ? hzOf(i) : -1), DT, s3));
+      }
+      const inkOf = (P, k) => P.splats.reduce((a, s) => a + (s.k === k ? (s.r + s.g + s.b) * (s.rad / K.RADIUS) ** 2 : 0), 0);
+      const leads = V.filter((r) => r.rig.lead.on);
+      ok(leads.length > 500 && leads.every((r) => r.rig.lead.src === 'live' && Math.abs(r.rig.lead.share - K2.LEAD_SHARE * 0.8) < 1e-9), 'bands: vox — with a read (voxConf > 0) the lead is live on ' + leads.length + ' / 600 frames, its share LEAD_SHARE × voxS = ' + (K2.LEAD_SHARE * 0.8).toFixed(2));
+      const shareOk = V.filter((r) => r.rig.lead.on && r.drop !== 1).every((r) => { const l = inkOf(r, 'lead'), f = inkOf(r, 'floor'); return l + f > 0 && Math.abs(l / (l + f) - K2.LEAD_SHARE * 0.8) < 1e-6; });
+      ok(shareOk, 'bands: vox — the lead\'s area-weighted ink is exactly LEAD_SHARE × voxS of (lead + floor): the floor keeps the rest');
+      ok(V.every((r, i) => r.drop === 1 || Math.abs(sumDye(r) - sumDye(A2[i])) < 1e-9), 'bands: vox — Σ area-weighted ink per frame = the base\'s to 1e-9 on the live path too');
+      const yT = (r) => { const hz = r.rig.lead.hz, oct = Math.max(0, Math.min(1, Math.log2(hz / 110) / 4)); return K2.LEAD_Y0 + (K2.LEAD_Y1 - K2.LEAD_Y0) * ((1 - K2.LEAD_OCT) * r.rig.lead.deg / 11 + K2.LEAD_OCT * oct); };
+      const settled = leads.filter((r, i) => i > 50 && leads.slice(i - 50, i).every((q) => q.rig.lead.hz === r.rig.lead.hz));
+      ok(settled.length > 0 && settled.every((r) => Math.abs(r.rig.lead.y - yT(r)) < tol) && new Set(leads.map((r) => r.rig.lead.deg)).size >= 6, 'bands: vox — the lead\'s height = the sung pitch\'s scale degree + LEAD_OCT × the octave term (within ' + tol.toFixed(3) + ' after 50 frames on a note), ' + new Set(leads.map((r) => r.rig.lead.deg)).size + ' degrees on the chromatic walk');
+      ok(leads.every((r) => r.rig.lead.pc === ((Math.round(12 * Math.log2(r.rig.lead.hz / 440) + 69) % 12) + 12) % 12), 'bands: vox — the lead\'s hue is the SUNG note\'s pitch class (12·log2(hz / 440) + 69, rounded), not the bass + interval');
+      ok(Z.every((r) => !r.rig.lead.on && !r.splats.some((s) => s.k === 'lead')) && Z.filter((r) => r.splats.some((s) => s.k === 'floor')).length > 500, 'bands: vox — voxS under VOX_ON (' + K2.VOX_ON + '): no lead splat, the floor whole (nobody singing = the floor keeps its ink)');
+      const held = H.filter((r, i) => i > 0 && i % 64 >= 49 && r.rig.lead.on && H[i - 1].rig.lead.on);
+      ok(held.length > 50 && held.every((r, _, __) => true) && H.every((r, i) => !(i % 64 >= 49 && i % 64 < 63 && r.rig.lead.on && H[i - 1].rig.lead.on) || (Math.abs(r.rig.lead.y - H[i - 1].rig.lead.y) < 1e-9 && r.rig.lead.pc === H[i - 1].rig.lead.pc)), 'bands: vox — a voiced frame with no pitch read (voxHz -1, voxS .8) HOLDS the last height and hue (' + held.length + ' frames)');
+    }
   }
   const J = trace('SeeYouDrop-map1');
   if (J) {

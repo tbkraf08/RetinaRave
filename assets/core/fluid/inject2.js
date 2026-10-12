@@ -26,9 +26,11 @@
 //          bars, the even beams on odd bars, each run outside → in — never a hashed x.
 //   INSIDE the centre (the mids' floor cloud, dye only, as FLUID) and a quad (x .5 ± .2, y .5 ± .18) whose pairs join as the tension
 //          rises (the lower pair first) — the ink shared, never added.
-//   LEAD   the vocal / melody channel, centre stage: the strongest note above the bass (`interval` over the bass note — the chroma's lead;
-//          a true vocal detector is S5b's extractor session, `voxS / voxHz`, two reads to swap in here) takes LEAD_SHARE of the floor's ink
-//          and puts it at a HEIGHT by its pitch — the scale degree above the tonic, y LEAD_Y0 (the tonic) to LEAD_Y1 (the leading tone):
+//   LEAD   the vocal / melody channel, centre stage (§123): the VOICE — the ears' vocal track (`voxS` the presence, `voxHz` the sung pitch,
+//          `voxConf`; engine/ears/vox.js, a CNN live in every mode, step 3's Demucs lane in file mode) takes LEAD_SHARE × voxS of the floor's
+//          ink (nobody singing = the floor keeps its ink) and puts it at a HEIGHT by its pitch — the scale degree above the tonic, y LEAD_Y0
+//          (the tonic) to LEAD_Y1 (the leading tone), plus a smaller octave term — in the sung note's hue; while the track has no read at all
+//          (voxConf 0: the fake timeline) the §121 stand-in stays — the strongest note above the bass, `interval` over the bass note:
 //          pitch is vertical here, never a horizontal slide; the mark eases between notes (LEAD_TAU) with a small push along its move.
 //   DROP   the §113 shockwave is GONE (ring null, no 'drop' impulse); the clear (dyeDiss DROP_DISS for a beat, §107 / §111) stays, and on
 //          the clear's frame every mouth fires one pulse — the BLINDER, the all-on cue — floor up, sides in, top down, the inside's ink.
@@ -41,7 +43,7 @@ import { clamp, ema, hsv } from '../../math/util.js';
 import { WARM, COOL, PULL, wrap } from '../../math/keycolour.js';
 import { srgbToLin1 } from '../../math/oklab.js';
 
-export const FLUID_FEATS = [...FEATS_BASE, 'interval', 'phrase16Pos', 'bar'];   // the lead's note, the sides' quarter, the chases' bar parity
+export const FLUID_FEATS = [...FEATS_BASE, 'interval', 'phrase16Pos', 'bar', 'voxS', 'voxHz', 'voxConf'];   // the lead's note (§123: the voice first, `interval` the fallback), the sides' quarter, the chases' bar parity
 
 // The rig grammar's constants (K2), one table. The base's K (inject.js) is inherited through planBase().
 export const K = {
@@ -60,7 +62,9 @@ export const K = {
   QUAD_T: [0.35, 0.65],   // tension at which the lower pair, then the upper pair, join the centre
   SPREAD_B: 0.5,    // buildLive above which the sub's ink spreads from the centre to the inner pair too (the density ramp)
   OUTER_T: 0.6,     // tension (or buildLive) above which the outer floor pair joins the kick's chase — held back for the drop below it
-  LEAD_SHARE: 0.5,  // the share of the floor's ink the lead mark takes while a lead note is there
+  LEAD_SHARE: 0.5,  // the share of the floor's ink the lead mark takes while a lead note is there (§123: × voxS while the vocal track has a read)
+  VOX_ON: 0.1,      // §123: voxS under which no lead splat is placed at all (its share would be under .05 of the floor's — a splat is a GPU pass, not free)
+  LEAD_OCT: 0.3,    // §123: the octave term's weight in the lead's height — clamp(log2(voxHz / 110) / 4, 0, 1): a soprano line sits higher than a baritone's; the scale degree is the rest
   LEAD_Y0: 0.3,     // the lead's height at the tonic …
   LEAD_Y1: 0.85,    // … and at the leading tone (11 semitones up); pitch is vertical
   LEAD_TAU: 0.35,   // s: the mark's ease between notes — a glide, not a hop (`interval` changes up to twice a second on every track: 12 degree bins per track, the eight-track table)
@@ -140,14 +144,34 @@ export function plan(S, dt, st) {
   // INSIDE — the floor cloud at the centre, the quad's pairs joining with the tension; the LEAD takes its share and rises with its pitch
   if (by.floor) {
     const s = by.floor[0]; let dye = dyeOf(s);
-    const lead = S.subGate > 0 || R.harmonic ? ((S.interval | 0) % 12 + 12) % 12 : 0;   // the strongest note above the bass (0 = none other)
-    if (lead > 0 && dye > 0) {
-      const pc = (bassPc + lead) % 12, deg = ((pc - tonic) % 12 + 12) % 12, yT = K.LEAD_Y0 + (K.LEAD_Y1 - K.LEAD_Y0) * deg / 11;
+    // §123 — the LEAD reads the vocal track when it has a read (voxConf > 0: the CNN live in every mode today, step 3's Demucs lane in
+    // file mode): its ink share is LEAD_SHARE × voxS (an instrumental passage keeps the floor whole — not a darker pool), its height the
+    // sung pitch's scale degree above the tonic plus a smaller octave term, its hue the sung note's; a voiced frame with no pitch read
+    // (a consonant, the YIN gate shut) HOLDS the last height and hue. voxConf 0 = no read at all (the fake timeline, a trace recorded
+    // before §123): the §121 stand-in, `interval` over the bass note, exactly as before. The HUD's vox line says which (`live` / `interval`).
+    const live = S.voxConf > 0;
+    let on = 0, pc = -1, deg = -1, yT = -1, share = 0, hz = -1;
+    if (live) {
+      const vs = clamp(S.voxS || 0, 0, 1);
+      if (vs >= K.VOX_ON && dye > 0) {
+        on = 1; share = dye * K.LEAD_SHARE * vs;
+        if (S.voxHz > 0) {
+          hz = S.voxHz;
+          const p = 12 * Math.log2(hz / 440) + 69, oct = clamp(Math.log2(hz / 110) / 4, 0, 1);
+          pc = ((Math.round(p) % 12) + 12) % 12; deg = ((pc - tonic) % 12 + 12) % 12;
+          yT = K.LEAD_Y0 + (K.LEAD_Y1 - K.LEAD_Y0) * ((1 - K.LEAD_OCT) * deg / 11 + K.LEAD_OCT * oct);
+        } else { pc = st.leadPc; yT = st.leadY >= 0 ? st.leadY : 0.5 * (K.LEAD_Y0 + K.LEAD_Y1); deg = pc >= 0 ? ((pc - tonic) % 12 + 12) % 12 : -1; }
+      }
+    } else {
+      const lead = S.subGate > 0 || R.harmonic ? ((S.interval | 0) % 12 + 12) % 12 : 0;   // the strongest note above the bass (0 = none other)
+      if (lead > 0 && dye > 0) { on = 1; share = dye * K.LEAD_SHARE; pc = (bassPc + lead) % 12; deg = ((pc - tonic) % 12 + 12) % 12; yT = K.LEAD_Y0 + (K.LEAD_Y1 - K.LEAD_Y0) * deg / 11; }
+    }
+    if (on) {
       const y0 = st.leadY < 0 ? yT : st.leadY, y = ema(y0, yT, dt, K.LEAD_TAU), move = y - y0;
       st.leadY = y; st.leadPc = pc;
-      const share = dye * K.LEAD_SHARE; dye -= share;
+      dye -= share;
       put(0.5, y, 0, K.LEAD_V * 60 * move, share * (2 / K.LEAD_S) ** 2, noteCol(pc), K.LEAD_S, 'lead');   // the same ink in the budget's units
-      rig.lead = { on: 1, pc, deg, y: +y.toFixed(4) };
+      rig.lead = { on: 1, pc, deg, y: +y.toFixed(4), src: live ? 'live' : 'interval', hz: live ? +hz.toFixed(1) : -1, share: +(K.LEAD_SHARE * (live ? clamp(S.voxS || 0, 0, 1) : 1)).toFixed(3) };
     } else { st.leadY = -1; st.leadPc = -1; }
     const pairs = (S.tension > K.QUAD_T[0] ? 1 : 0) + (S.tension > K.QUAD_T[1] ? 1 : 0), n = 1 + 2 * pairs;
     put(0.5, 0.5, 0, 0, dye / n, R.colour, 2, 'floor');
