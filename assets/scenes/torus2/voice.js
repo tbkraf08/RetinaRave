@@ -27,7 +27,8 @@ export const T2VOX = {
 const VX = mkVox();
 export const OUT = { w: 0, pc: -1, y01: -1, th: 0, hue: 0, bri: 1 };
 
-// One frame. `ch` is the scene's per-family chroma array (ch[pc] is lifted in place); `thLoud` the loudest family's latitude
+// One frame. `ch` is the scene's per-family chroma array (ch[pc] is lifted in place — index.js calls this AFTER
+// reframe(), so the lit ring reaches the shader but never the camera's sample gate, §127 addendum); `thLoud` the loudest family's latitude
 // (the strand's base latitude before the collapse and the sub's swell, which index.js applies after), `knotBri0` / `hueSlot0`
 // the strand's pre-voice brightness and hue slot. Returns OUT (reused every frame): at w 0 the three are the inputs, exactly.
 export function voice(dt, MS, ch, TH0, THS, thLoud, knotBri0, hueSlot0) {

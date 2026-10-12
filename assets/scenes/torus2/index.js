@@ -213,14 +213,6 @@ export default {
     // spec 6: a section event re-picks the knot — the same interval table, rotated by the section (deterministic)
     if (MS.sectionEvt) pqOff = Math.max(0, MS.sectionAlt | 0);
     pq = PQ[((Math.max(0, Math.min(11, MS.interval | 0)) + pqOff) % 12 + 12) % 12];
-    // §127: the knot strand becomes the VOICE (voice.js, the shared gate math/vox.js): the sung pitch lifts the strand's latitude
-    // toward the equator, the sung note takes its hue, its brightness lifts and the sung class's ring is lit — all blended by w;
-    // w 0 (voxConf 0: the fake timeline, the traces; `&t2vox=0`) = the strand's three numbers exactly as before
-    const VO = voiceStep(dt, MS, ch, TH0, THS, th[loudest], 1.5 * (0.4 + 0.6 * MS.intensity), loudest / 12 - 0.5 + 0.09);
-    U.knotTh = Math.min((VO.th * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
-    U.knotBri = VO.bri;
-    U.knotHue = VO.hue;
-
     // spec 1c: the kick lights the core. Our own follower on MS.kick2 (which itself decays over 0.16 s), so the flash
     // lasts about FLASHT seconds; the shader weights it by (1 - chroma) so the quiet inner families get it.
     U.flash = Math.max(U.flash * Math.exp(-dt / FLASHT), MS.kick2);
@@ -279,6 +271,20 @@ export default {
     U.bounce = P.bounce;
 
     reframe(dt, th, ch, U.psi0, U.alpha, U.delta, CEN);
+    // §127: the knot strand becomes the VOICE (voice.js, the shared gate math/vox.js): the sung pitch lifts the strand's latitude
+    // toward the equator, the sung note takes its hue, its brightness lifts and the sung class's ring is lit — all blended by w;
+    // w 0 (voxConf 0: the fake timeline, the traces; `&t2vox=0`) = the strand's three numbers exactly as before.
+    // AFTER reframe() on purpose (§127 addendum — the user: "it being on causes performance issues"): the ring's lift
+    // ch[pc] = max(ch[pc], w) crossed reframe's `ch[k] < 0.3` gate, so every note's start and end added or dropped 25
+    // sample points and jumped the centroid and the camera distance — a stutter, not a glide. Every input is already
+    // final here (loudest / th / U.collapse / U.subP / MS.intensity never move after this point) and U.knotTh / Bri /
+    // Hue are read only in draw(), so the strand is the same to the byte; the lit ring still reaches the shader,
+    // because uChroma is uploaded from `ch` in draw(). The camera simply no longer hears the voice.
+    const VO = voiceStep(dt, MS, ch, TH0, THS, th[loudest], 1.5 * (0.4 + 0.6 * MS.intensity), loudest / 12 - 0.5 + 0.09);
+    U.knotTh = Math.min((VO.th * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
+    U.knotBri = VO.bri;
+    U.knotHue = VO.hue;
+
     const f = MS.flow;
     CAM = [U.turn, 0.46 + 0.16 * Math.sin(0.043 * f), dist(CEN[3], FOV, U.size, ASP, 1 + U.bounce), FOV];
     this.rt.time = f;
