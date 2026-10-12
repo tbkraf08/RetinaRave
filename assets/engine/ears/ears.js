@@ -13,6 +13,7 @@ import { PercTrack, B_SUB, B_LOWBASS, B_HARM } from './perc.js';
 import { TonicTrack } from './tonic.js';
 import { TextureTrack } from './texture.js';
 import { PulseTrack } from './pulse.js';
+import { VoxTrack } from './vox.js';   // §123: the vocal track — voxS / voxHz / voxConf, read-only to every other lane
 import { clamp01 } from './dsp.js';
 
 export const EARS_FIELDS = [
@@ -21,11 +22,13 @@ export const EARS_FIELDS = [
   'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'snareAge', 'hatAge', 'kickVel', 'snareVel', 'hatVel',
   'kickAmp', 'snareAmp',
   'denK', 'denS', 'denH', 'pulse', 'lpSweep', 'width',
+  'voxS', 'voxHz', 'voxConf',
 ];
-// the continuous fields, in the order the history ring stores them
+// the continuous fields, in the order the history ring stores them (§123 appended the three vox fields at the END, so every
+// index before them is what it was — the other lanes' reads cannot move)
 const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 'subGate',
   'tonic', 'tonicMinor', 'tonicConf', 'bassReg', 'kickVel', 'snareVel', 'hatVel', 'denK', 'denS', 'denH',
-  'pulse', 'lpSweep', 'width'];
+  'pulse', 'lpSweep', 'width', 'voxS', 'voxHz', 'voxConf'];
 const EVENTS = { subNote: 'subNoteEvt', subIn: 'subIn', subOut: 'subOut', kick: 'kickEvt', snare: 'snareEvt', hat: 'hatEvt' };
 const AGES = { kick: 'kickAge', snare: 'snareAge', hat: 'hatAge' };
 // §70 — the two rise lanes' unsaturated SIZE. NOT a CONT field: `kickVel` / `snareVel` are read back from the history
@@ -60,6 +63,7 @@ export class Ears {
     this.tone = new TonicTrack(sr, opts.tonic || {});
     this.tex = new TextureTrack(sr);
     this.pulse = new PulseTrack(opts.pulse || {});
+    this.vox = new VoxTrack(sr, opts.vox || {});
     this.RB = 1 << 14; this.mid = new Float32Array(this.RB); this.mask = this.RB - 1; this.w = 0;
     this.t0 = null;                  // audio time of mid[0] of the stream
     this.tEnd = 0;                   // audio time one past the newest sample
@@ -75,7 +79,7 @@ export class Ears {
     this.out = {};
     for (const k of EARS_FIELDS) this.out[k] = 0;
     for (const k of Object.values(AGES)) this.out[k] = 99;
-    this.out.subNote = -1; this.out.tonic = -1; this.out.pulse = 1;
+    this.out.subNote = -1; this.out.tonic = -1; this.out.pulse = 1; this.out.voxHz = -1;
     this.blocks = 0;
     this.relLead = opts.relLead === undefined ? REL_LEAD : opts.relLead;
     this.tRead = -1; this.dtRead = 1 / 60;           // the measured read interval, for the release lead
@@ -87,7 +91,7 @@ export class Ears {
   push(L, R, t0) {
     const n = L.length, sr = this.sr;
     if (this.t0 === null) this.t0 = t0;
-    const sub = this.sub, perc = this.perc, tex = this.tex, mid = this.mid, mask = this.mask;
+    const sub = this.sub, perc = this.perc, tex = this.tex, vox = this.vox, mid = this.mid, mask = this.mask;
     // The sub gate needs to know whether the sub OWNS the low end; PercTrack's bank already has the three low bands.
     // Smoothed over SHARE_TAU: which layer owns the low end is a section-level fact, and the per-hop value swings with
     // every kick (unsmoothed it made the gate chatter 5.4 times a bar through drop 2 and cut the slide count in half).
@@ -104,6 +108,7 @@ export class Ears {
       mid[this.w & mask] = m; this.w++;
       perc.step(m, t);
       tex.step(l, r, m);
+      vox.step(m, t);                              // §123: its own ring, its own hop; publishes voxS / voxHz / voxConf, reads nothing else
       if (sub.step(m, t)) this.snap(t);
     }
     this.tEnd = t0 + n / sr;
@@ -130,6 +135,7 @@ export class Ears {
     v[11][i] = perc.vel[0]; v[12][i] = perc.vel[1]; v[13][i] = perc.vel[2];
     v[14][i] = perc.den[0]; v[15][i] = perc.den[1]; v[16][i] = perc.den[2];
     v[17][i] = this.pulse.pulse; v[18][i] = tex.lpSweep; v[19][i] = tex.width;
+    v[20][i] = this.vox.s; v[21][i] = this.vox.hz; v[22][i] = this.vox.conf;
     this.hi = (i + 1) % HIST; if (this.hn < HIST) this.hn++;
   }
 
@@ -174,7 +180,8 @@ export class Ears {
     for (let j = 0; j < CONT.length; j++) {
       const name = CONT[j], x = v[j][a], y = v[j][b];
       // a pitch class, a note index, a gate and a pulse are categorical: take the nearer frame, never the average
-      out[name] = (name === 'subNote' || name === 'tonic' || name === 'tonicMinor' || name === 'subGate' || name === 'pulse')
+      // (§123: voxHz too — it is −1 between notes, and the average of −1 and 300 Hz is not a pitch)
+      out[name] = (name === 'subNote' || name === 'tonic' || name === 'tonicMinor' || name === 'subGate' || name === 'pulse' || name === 'voxHz')
         ? (f < 0.5 ? x : y) : x + (y - x) * f;
     }
     out.subGate = out.subGate > 0.5 ? 1 : 0;
