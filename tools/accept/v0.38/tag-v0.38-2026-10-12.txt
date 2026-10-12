@@ -94,3 +94,11 @@ dist/ is git-ignored and not committed, there is no .github/ workflow, and Cloud
 github.com/tbkraf08/RetinaRave and builds on a push to main (wrangler.jsonc serves ./dist). The push IS the deploy:
 ONE push, then poll https://retinarave.com/ for the VER line — never a second push (§115). The push and LIVE times
 are in DECISIONS §125.
+
+== PUSHED AND LIVE
+The release commit 73f848c · the tag v0.38 = 008d226ae182ec4f642a9abb07b7ce4e54b3fbf0.
+ONE push at 12:28:31 EDT 2026-10-12 (971b2c0..73f848c main -> main; * [new tag] v0.38 -> v0.38).
+LIVE at 12:30:22 EDT — VER = '0.38.0' on https://retinarave.com/ — the Cloudflare build took 1 min 51 s.
+Confirmed 12:30:33 on all three routes: / serves VER 0.38.0 and the card line "New in v0.38: The engine
+learns to hear a voice -> what's new"; /whats-new http 200 with id="v0.38", the `cls engine` label and
+<h3>The engine learns to hear a voice</h3>; /about carries the Jamendo Corpus credit.

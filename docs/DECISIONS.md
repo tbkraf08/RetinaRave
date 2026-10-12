@@ -3427,3 +3427,12 @@ check 0 fail, npm test exit 0.
   machine · `accept.sh`'s routes / params blocks on NAV2 · no `fluid2.jpg` thumbnail, so the v0.38 entry renders no thumbs.
 - **Next, and being planned in parallel right now:** the **CNN accuracy / lag plan** and the **per-scene vocal reads**. Read both plans
   before starting either; `NEXT-SESSION-PROMPT.md` says the same in one line.
+- **Addendum — PUSHED AND LIVE.** The release commit is **73f848c**, the annotated tag **v0.38** is
+  `008d226ae182ec4f642a9abb07b7ce4e54b3fbf0`. **`git push origin main --tags` at 12:28:31 EDT, 2026-10-12**
+  (`971b2c0..73f848c  main -> main` and `* [new tag] v0.38 -> v0.38`) — **ONE push**, as §115 requires.
+  **LIVE at 12:30:22 EDT: `VER = '0.38.0'` on `https://retinarave.com/`** — the Cloudflare build took **1 min 51 s**,
+  the fastest of the recent tags (2026-10-03's once took 40–85 min; slow is not broken, and a second push is never the
+  answer). Confirmed on all three routes at 12:30:33: `/` serves `VER = '0.38.0'` and the card line *"New in v0.38: The
+  engine learns to hear a voice → what's new"* · `/whats-new` **http 200** with `id="v0.38"`, the `cls engine` label and
+  `<h3>The engine learns to hear a voice</h3>` · `/about` carries the Jamendo Corpus credit. The user validates the rest
+  at home — the list is above.
