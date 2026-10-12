@@ -3227,3 +3227,96 @@ check 0 fail, npm test exit 0.
   every track, both map modes and the pad take: the rig reads the live CNN in file mode too (the map has no vocal lane until step 3), so
   FLUID2's picture changed everywhere the voice did. The list is `tools/accept/v0.38/real-md5-s123-s1.txt` for the record; the full reference
   is re-based by the next release's sweep, never here (the roster's 264 lines held, above). `npm test` exit 0 with `test_vox.js` in it.
+- **Addendum 2026-10-12 — VALIDATED BY EYE.** The user on `#scene=1` with the CNN feeding FLUID2's LEAD: *"looks good, continue
+  with file mode"* — §123 stands as shipped (the five runs' weights, the eased `voxS`, the rig's two reads) and step 3 is next.
+
+
+## §124 The file-mode vocal lane — the Demucs sidecar wins where it exists (2026-10-12, the vocal detector's step 3 of three, `docs/plans/VOCAL-PLAN.md` §3; the user: *"do the demucs for file; do cnn for live (note: I listen to live mode 90% of the time -> live mode is first concern)"*; on §123's eye check: *"looks good, continue with file mode"*)
+
+- **What it is** (branch `vox-lane`, one Opus session, plumbing only — no new design, nothing retuned): in FILE mode `voxS` /
+  `voxHz` / `voxConf` come from an offline sidecar beside the track instead of the live CNN. The sidecar is step 1's Demucs
+  truth, which heard the voice non-causally on a SEPARATED stem — no mix ceiling on the pitch, no 363 ms causal window, no
+  false voice in a piano line — and it costs the engine nothing at run time. §123's CNN is untouched and still answers in
+  every live mode, which is where the user listens 90 % of the time. The rig (`core/fluid/inject2.js`) did not move: it reads
+  the three keys and `voxConf > 0`, and cannot tell which source filled them — the whole point of the plan's one interface.
+- **The lane** (`tools/truth/voxlane.py <T> [--all]`, new) → `$MUSIC/<T>.vox.json`: `{ track, sr, hop .01, n, voxS[], voxHz[],
+  voxConf[], provenance }` from `tools/truth/<T>.vox.json`'s `share` / `f0` / `vprob`.
+  · `voxS` = the share with §122's own window KNEE AT .5 — the share is `rms(stem)/rms(mix)`, whose scale is the track's own
+  (IBelongHere's sung p95 .89, SeeYouDrop's .47, WhoLikesToParty's .24), so p10 → knee maps to 0 → .5 and knee → p95 to .5 → 1,
+  clipped both ends (the upper span floored at .1 where an instrumental's p95 sits UNDER the .08 knee floor). A lane frame reads
+  ≥ .5 exactly where §122's frame-level rule says "sung", so the live tier's own .3 and .5 gates keep their meaning.
+  · 0 / −1 / the floor OUTSIDE the music frames (the mix more than 40 dB under its own p95), which is voxtruth's mask
+  re-derived from the mix rather than guessed: the pad take's fade read ≥ the knee on 10.5 % of its frames with no voice in it
+  at all, because a ratio of two almost-zero levels can read anything. §122's knee is computed over the music frames for the
+  same reason.
+  · `voxHz` = `f0` where `vprob ≥ .5`, −1 elsewhere. · `voxConf` = `max(.001, vprob · voxS)` — the FLOOR is deliberate: the
+  rig's switch is `voxConf > 0` = "the detector has a read at all", and a lane has a read on every frame of the track, so
+  without a floor FLUID2's lead would flicker back to §121's `interval` stand-in through every instrumental bar of a file.
+- **The plumbing, in order.** `tools/serve.js` serves `/music/<T>.vox.json` on the SAME route as the audio (the `.json` mime
+  added; the path guard untouched — a name with a separator or `..` is still refused 400, an absent lane is 404). The file
+  source fetches it with the track's own `encodeURIComponent` and keeps it on `F.vox`, **before `F.ready`** so the map's gate
+  always sees it; awaited, not raced, because in deterministic mode the clock is still held and in real time the buffer node
+  has not started — neither mode's `frame0` moves. `map.js` gains the lane beside `mapSubAt`: `voxLane(json)` packs it into
+  three Float32Arrays (or returns null on a stale shape), `mapVoxAt(lane, t)` reads the NEAREST frame at heard time, never an
+  interpolation (`voxHz` is categorical; the 10 ms grid is at most 5 ms away, a third of a frame). `features-ears.js` attaches
+  it to the map it builds and overwrites the three keys inside the map branch, exactly as `map.sub` overwrites the causal sub.
+  The live stage KEEPS RUNNING in file mode: its cost is paid in the PCM listener before this stage can know a lane exists,
+  and skipping it would be neither trivial nor byte-safe.
+- **The switch and the HUD.** `&vox=live` (ENGINE.voxLane false) leaves the CNN's values standing on a file — the A/B, and the
+  only way to shoot the live tier's picture on a track; `&vox=lane` is the default. The HUD's vox line says which source fed
+  the rig: `lead ← lane | live | interval`, off `EARS.voxFrom` — **no MS field was added for it**, so FEATS, parity's 72 and
+  every trace column are as §123 left them. Proven on the page (det, `CLOCK=1`, RaindropsOnRoses at 24 s, scene 1, frame 3000
+  = heard 73.967 s): with the lane `voxS / voxHz / voxConf` = .088 / 281.9 / .060, byte-exact the lane file's frame 7397;
+  with `&vox=live` AND with `&map=0`, the same .3869 / −1 / .0399 — the CNN, unperturbed by the fetch.
+- **The A/B** (`tools/vox-ab.js`, new, no GL: the live stage replayed over the 48 kHz PCM dumps in node against the lane the
+  page fetches; `sung %` = frames with `voxS ≥ .3`, `agree %` = both above the gate or both below, `pitched %` = frames where
+  BOTH publish a pitch as a share of the frames the LANE pitches, `semi %` = of those, within 100 cents of the lane's):
+
+| track | lane KB | sung % lane / live | agree % | both % | lane pitched | pitched % | semi % | oct % | lag ms | r |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Comptine (the no-voice control) | 208 | **0.0** / 23.6 | 76.4 | 0.0 | 98 | 19 | 26 | 42 | — | −.17 |
+| IBelongHere (vocal house) | 350 | **67.6** / 72.5 | 70.3 | 55.2 | 6219 | 58 | **87** | 96 | **180** | .53 |
+| RaindropsOnRoses | 331 | **44.2** / 60.0 | 75.6 | 39.9 | 5089 | 56 | **77** | 88 | **150** | .73 |
+| CyborgNinja | 261 | 0.4 / 5.9 | 93.8 | 0.0 | 151 | 5 | 0 | 14 | — | .17 |
+| Malicious | 321 | 1.9 / 12.3 | 86.8 | 0.5 | 584 | 5 | 0 | 0 | — | .12 |
+| SeeYouDrop | 227 | **47.2** / 56.4 | 73.3 | 38.5 | 682 | 13 | **48** | 61 | **160** | .70 |
+| Vienna | 281 | 1.4 / 22.1 | 78.2 | 0.9 | 589 | 15 | 79 | 79 | — | .19 |
+| WhoLikesToParty (shouted chops) | 367 | 22.5 / 27.6 | 64.8 | 7.5 | **0** | — | — | — | — | .20 |
+
+  Read: on the three voiced tracks the two sources agree about "is someone singing" on **70 / 76 / 73 %** of frames, and where
+  both pitch, the CNN is within a semitone of the lane on **87 / 77 / 48 %** (SeeYouDrop's C#5 chops over a synth are the mix
+  ceiling §123 already measured against the stem's pYIN — 14 % there, 48 % here against the lane, the same story). The CNN
+  reads MORE voice than the lane on every single track: +24 points on Comptine's solo piano, +21 on Vienna, +10 on Malicious,
+  +5 to +16 on the voiced three — §123's "an unseen instrumental reads as a voice on 17–31 % of frames" seen from the other
+  side, and the plainest argument for the lane in file mode. **The CNN's lag, by cross-correlation of the two `voxS` series:
+  median 160 ms (150 / 160 / 180 on the voiced three)** — the ~100 ms the causal front end owes plus the .1 s ease, measured
+  at last rather than estimated. A lag only means something where the series share a signal, so it prints `-` below r .3: on a
+  no-voice track the argmax lands on the search bound and says nothing. WhoLikesToParty's lane pitches NOTHING (§122: "shouted,
+  not sung" — pYIN voiced nowhere), so its pitch columns are empty by construction, not by failure.
+- **What the lane costs.** Live: **nothing** — no lane is fetched, built or read in capture, mic or demo mode, and the live
+  stage's 72.6 µs per hop (§123) is unchanged in every mode. File: one fetch of **208–367 KB** per track (2.4 MB for the nine
+  lanes), decoded once into three Float32Arrays, then one `Math.round` and three array reads per frame; the map build it waits
+  behind is 1.6 s. **A tab share has no lane and no file** — live mode is the CNN alone, which is why step 2 came first.
+- **Local only by construction**, like the tracks themselves: `$MUSIC` is the one directory `serve.js` serves from and the one
+  place `tools/bundle.js` and `npm run build` cannot see, so no lane can be bundled or deployed. Nothing on retinarave.com
+  changes. The pad take's lane goes beside `rec.wav` as `rec.vox.json` and is never read (a take is `map0only` in
+  `windows.json`: the live lanes, no map).
+- **The md5 proof.** The fake smoke (`tools/scene-md5.sh s124`, errs [] hop 840 row 72 on all six ids): every line = the v0.35
+  reference but the s1 pair, and the s1 pair = **293d773c / 96ad310a — main's, to the byte** (§123 shot that pair from a plain
+  archive of main's tree and recorded why the reference's s1 lines are stale: no fake list was re-based after §121 moved the rig
+  onto s1). So **unmoved on every line against main** — the fake timeline has no file, so it has no lane, and the stage's map
+  branch never runs there. The real sweep (`GPU=1 PORT=8930 SCENES=1 tools/real-md5.sh s124`, 43 runs, 66 lines, 789 s wall, f0 2
+  on every run, no errs, no WARN): **all 32 `&map=1` lines moved and all 34 `&map=0` lines HELD to the byte** — every one of the
+  eight tracks changed in file mode (even Comptine's, where the lane reads 0 and the rig's lead goes dark instead of splatting on
+  the CNN's false piano voice) and the live path is untouched, including the pad take's two `map0only` lines. That is the shape
+  the step predicted: the lane exists only in file mode with the map on, and only FLUID2 reads the voice. The list is
+  `tools/accept/v0.38/real-md5-s124-s1.txt`; the full reference is re-based by the next release's sweep, never here. The roster's
+  264 lines (s0 / s2 / s3 / s4) were not re-shot: no roster scene reads a vox field (`FLUID_FEATS` is FLUID2's) and §123's sweep
+  already held them against the v0.37 reference with the three keys live in both map modes.
+- **The gates:** `node tools/check.js` 147 modules · 0 fail · 4 warn (the soft caps); `npm test` exit 0 — `test_vox.js` all ok
+  (§123's Comptine miss still recorded as a note) with its new **(vi) the lane's grid**: `voxLane` / `mapVoxAt` put the 10 ms
+  sidecar on the 60 fps clock with the index == `round(t / hop)` and **no drift over an hour of frames**, `voxHz` never averaged
+  with its −1, the ends clamped, no lane = 0 / −1 / 0; `test_fluid.js` 350 ok and `test_music.js` 151 ok unchanged (the traces
+  predate the keys, so the rig still reads `interval` there); `node tools/license.js --check` 150 / 0. Not tagged, not pushed,
+  nothing deployed — the user tags. **To A/B at home:** `#track=<T>&scene=1` is the lane and `#track=<T>&scene=1&vox=live` is the
+  CNN, with the HUD's `lead ←` saying which.

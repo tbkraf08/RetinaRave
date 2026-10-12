@@ -148,7 +148,7 @@ export function plan(S, dt, st) {
     // file mode): its ink share is LEAD_SHARE × voxS (an instrumental passage keeps the floor whole — not a darker pool), its height the
     // sung pitch's scale degree above the tonic plus a smaller octave term, its hue the sung note's; a voiced frame with no pitch read
     // (a consonant, the YIN gate shut) HOLDS the last height and hue. voxConf 0 = no read at all (the fake timeline, a trace recorded
-    // before §123): the §121 stand-in, `interval` over the bass note, exactly as before. The HUD's vox line says which (`live` / `interval`).
+    // before §123): the §121 stand-in, `interval` over the bass note, exactly as before. The HUD's vox line says which (§124: `lane` / `live` / `interval`).
     const live = S.voxConf > 0;
     let on = 0, pc = -1, deg = -1, yT = -1, share = 0, hz = -1;
     if (live) {
