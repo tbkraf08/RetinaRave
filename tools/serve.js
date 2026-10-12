@@ -1,5 +1,6 @@
 // Zero-dependency static server for dev (file:// blocks module imports). usage: node tools/serve.js [port] [root]
-// v0.15 E1 also serves GET /music/<name> from $MUSIC (default ~/Music/RetinaRave) for the file source (&track=<name>).
+// v0.15 E1 also serves GET /music/<name> from $MUSIC (default ~/Music/RetinaRave) for the file source (&track=<name>);
+// §124 the vocal lane rides the same route as <name>.vox.json.
 // LOCAL ONLY, by construction: the route lives here and nowhere else. tools/bundle.js inlines assets/**/*.js into one
 // HTML file and `npm run build` copies site/ — neither can see ~/Music, and wrangler.jsonc deploys ./dist, so no track
 // and no /music/ path can be bundled or deployed.
@@ -18,9 +19,12 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 // --- /music/ (v0.15 E1) ---
 const MUSIC = path.resolve(process.env.MUSIC || path.join(os.homedir(), 'Music/RetinaRave'));
 const MEXT = ['', '.flac', '.wav', '.mp3', '.ogg'];   // as tools/truth/trackmap.py find()
-const MMIME = { '.flac': 'audio/flac', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
+// .json: the vocal LANE sidecar `<T>.vox.json` beside the track (tools/truth/voxlane.py, DECISIONS §124) — the file source
+// fetches /music/<T>.vox.json and a 404 simply means no lane. It is served by the SAME route and therefore under the same
+// local-only guarantee as the audio: $MUSIC is invisible to bundle.js and to `npm run build`, so no lane can be deployed.
+const MMIME = { '.flac': 'audio/flac', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.json': 'application/json' };
 
-// One track by name, with or without extension. A name carrying a path separator or '..' is refused, never resolved.
+// One track (or its lane sidecar) by name, with or without extension. A name carrying a path separator or '..' is refused, never resolved.
 function music(name, res) {
   if (!name || name.includes('/') || name.includes('\\') || name.includes('..')) { res.writeHead(400); return res.end('bad track name'); }
   for (const ext of MEXT) {

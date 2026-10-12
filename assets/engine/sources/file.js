@@ -41,6 +41,7 @@ export const HOP = 512;              // the synapse tap's block size (synapse/ta
 export const DET_LEAD = 0.0427;
 const DET_HOLD_FRAME = 1;            // the deterministic clock is held here while the track decodes (see holdClock below)
 const MUSIC_URL = '/music/';         // tools/serve.js, from $MUSIC (default ~/Music/RetinaRave) — local only, never shipped
+const VOX_EXT = '.vox.json';         // §124: the vocal LANE sidecar beside the track (tools/truth/voxlane.py); a 404 = no lane
 const START_DELAY = 0.06;            // s of context time before the buffer node starts, so startCtxTime is not already past
 const DET_SEED = 0x9e3779b9;         // the seeded PRNG's seed (see the note above); any fixed value, named so it is not magic
 const END_EPS = 1e-6;
@@ -95,7 +96,7 @@ export async function startFile(src, opt = {}) {
   const F = AU.file = {
     name, sr: ctx.sampleRate, n: 0, dur: 0, L: null, R: null, mono: null,
     at: Math.max(0, +(opt.at || 0) || 0), det, ready: false, gates: [],
-    open: false, frame0: -1, ph: 0, ctx0: 0, pushed: 0, ended: false, err: null,
+    open: false, frame0: -1, ph: 0, ctx0: 0, pushed: 0, ended: false, err: null, vox: null,   // vox: §124's lane JSON, null = none
     playhead: () => F.ph,
     heardT: () => heardTOf(F),
   };
@@ -130,6 +131,10 @@ export async function startFile(src, opt = {}) {
   F.R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : F.L;
   F.mono = downmix(F.L, F.R);                       // (L + R)/2 — the tap's downmix, and the AnalyserNode's, exactly
   F.buf = buf;
+  // §124 the vocal lane: BEFORE F.ready, because features-ears.js' map gate fires on F.ready and the lane is handed to the
+  // map it builds (EARS.map.vox). Awaited here rather than raced: in deterministic mode the clock is still held, and in
+  // real time the buffer node has not started — so the fetch costs a frame of neither, and both modes stay reproducible.
+  if (typeof src === 'string') F.vox = await fetchVox(src);
   F.ready = true;
   if (F.gates.length) { try { await Promise.all(F.gates.slice()); } catch (e) {} }
   if (AU.file !== F) return F;
@@ -145,6 +150,17 @@ function downmix(L, R) {
   if (L === R) { m.set(L); return m; }
   for (let i = 0; i < n; i++) m[i] = (L[i] + R[i]) * 0.5;
   return m;
+}
+
+// The vocal lane beside the track (§124): /music/<name>.vox.json, tools/truth/voxlane.py's sidecar of the Demucs truth.
+// A 404 is the normal answer (no lane for this track, or no lane at all) and is silent: the live CNN keeps the three keys.
+// `name` goes through the same encodeURIComponent as the track, so serve.js' path guard sees the same string.
+async function fetchVox(name) {
+  try {
+    const r = await fetch(MUSIC_URL + encodeURIComponent(name + VOX_EXT));
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
 }
 
 // Deterministic mode, part one — BEFORE the decode, because the decode takes a different number of milliseconds every run

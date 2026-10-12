@@ -258,6 +258,34 @@ export function mapSubAt(map, t, out = {}) {
   return out;
 }
 
+// --- the vocal lane (DECISIONS §124, the vocal detector's step 3) -----------------------------------------------------
+// The Demucs sidecar `$MUSIC/<T>.vox.json` (tools/truth/voxlane.py) as a map lane: the file source fetches it beside the
+// track and hands it to the map, and the ears stage reads it at HEARD time exactly as it reads `map.sub` — so the lane
+// obeys the same clock and the same display lead as every other map channel, and a 404 simply means no lane.
+// Not built here and not part of `buildMap`'s JSON: the map is one deterministic pass over the DECODED AUDIO, and the lane
+// is an offline file the page is handed. `map.vox` is where it is attached (features-ears.js), null when there is none.
+export const VOX_LANE_HOP = 0.01;         // s: the lane's grid (voxlane.py HOP_S) — the engine reads the nearest frame
+
+// The sidecar's JSON in, a packed lane out (null when the shape is not one: a stale file never feeds the rig).
+export function voxLane(j) {
+  if (!j || !(j.n > 0) || !j.voxS || !j.voxHz || !j.voxConf) return null;
+  const n = j.n | 0, hop = +j.hop || VOX_LANE_HOP;
+  if (j.voxS.length < n || j.voxHz.length < n || j.voxConf.length < n) return null;
+  return { n, hop, sr: j.sr || 0, track: j.track || '',
+    S: Float32Array.from(j.voxS.slice(0, n)), hz: Float32Array.from(j.voxHz.slice(0, n)), conf: Float32Array.from(j.voxConf.slice(0, n)) };
+}
+
+// The vocal lane at heard time. The NEAREST frame, never an interpolation — `voxHz` is -1 between notes and the average of
+// -1 and 300 Hz is not a pitch (mapSubAt's rule, and `read()`'s in ears.js); the grid is 100 Hz, so the nearest frame is at
+// most 5 ms away, a third of a 60 Hz frame.
+// out { voxS, voxHz, voxConf }
+export function mapVoxAt(lane, t, out = {}) {
+  if (!lane || !lane.n) { out.voxS = 0; out.voxHz = -1; out.voxConf = 0; return out; }
+  const i = Math.max(0, Math.min(lane.n - 1, Math.round(t / lane.hop)));
+  out.voxS = lane.S[i]; out.voxHz = lane.hz[i]; out.voxConf = lane.conf[i];
+  return out;
+}
+
 // Did a drop / a section boundary fall in (tPrev, t]?
 export function mapCross(map, tPrev, t) {
   let drop = false, boundary = false;
