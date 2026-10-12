@@ -15,6 +15,7 @@ import { anchor } from './colour.js';
 import { HELP } from './help.js';
 import { BOUNCE, dist, probe as fibreProbe, reframe, turn as turnEase } from './motion.js';
 import { HAZE, haze as hazeNow, level as hazeLevel, step as hazeStep, veil as hazeVeil } from './haze.js';   // §79: the fog on the tongues
+import { OUT as VOUT, T2VOX, voice as voiceStep } from './voice.js';   // §127: the knot strand becomes the voice
 
 const TAU = Math.PI * 2;
 const TH0 = 0.12;
@@ -60,7 +61,7 @@ let KSEG = 640;       // segments on the knot strand (it winds p+q times, so it 
 
 const th = new Float32Array(12);
 const ch = new Float32Array(12);
-const U = { twist: 0, slip: 0, morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0, haze: 0 };
+const U = { twist: 0, slip: 0, morph: 0, morphT: 0, turn: 0, turnT: 0, bounce: 0, size: 0.6, fibF: FIBMIN, psi0: 0, alpha: 0, delta: 0, subP: 0, collapse: 0, gain: 0, knotT: 0, knotTh: 1, knotBri: 1, knotHue: 0 / 12 - 0.5 + 0.09, wpx: 2.6, flash: 0, shim: 0, glow: GLOW, briMax: 1, draw: FIBN, beatNow: 0, wave: WAVE0, key: 0, mode: 0, fifth: 0, hue: 0, sat: 1, phrase: 0, haze: 0 };
 const MOOD = new Float32Array(3);
 const VEIL = [0, 0, 0];   // §79: the clear colour behind the nest — exactly black while the haze is 0
 const PSI = new Float32Array(3);
@@ -106,6 +107,8 @@ function key(k, m) {
   return JSON.stringify(keyPin);
 }
 
+// §127: &t2vox=0 under #test (hooks.t2vox) = the pre-voice strand on every frame — the A/B and the md5 receipt
+function t2vox(v) { T2VOX.on = v === '' || v === undefined || v === null ? 1 : +v ? 1 : 0; return T2VOX.on; }
 // test hook: pin how many fibres per family are drawn (-1 = whatever the music asks for)
 function fib(v) {
   fibPin = v > 0 ? Math.min(FIBN, v | 0) : -1;
@@ -116,7 +119,7 @@ const dinfo = () => ({ fK: wfires(0), fS: wfires(1), fH: wfires(2), aK: wlastAmp
 
 // test hook: the live look numbers, so a shot can be read as numbers as well as pixels
 function info() {
-  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), haze: +U.haze.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), slip: +U.slip.toFixed(3), twist: +U.twist.toFixed(3), pqOff, att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow) });
+  return JSON.stringify({ glow: +U.glow.toFixed(4), briMax: +U.briMax.toFixed(4), flash: +U.flash.toFixed(4), shim: +U.shim.toFixed(4), haze: +U.haze.toFixed(4), loudest, draw: U.draw, seg: SEG, morph: +U.morph.toFixed(4), slip: +U.slip.toFixed(3), twist: +U.twist.toFixed(3), pqOff, att: ATNAMES[att], fade: +attFade.toFixed(3), key: U.key, mode: U.mode, fifthKey: U.fifth, hue: +U.hue.toFixed(4), sat: +U.sat.toFixed(3), beat: +U.beatNow.toFixed(3), live: wlive(U.beatNow), kick: wpos(0, U.beatNow), snare: wpos(1, U.beatNow), hat: wpos(2, U.beatNow), knotTh: +U.knotTh.toFixed(6), knotBri: +U.knotBri.toFixed(6), knotHue: +U.knotHue.toFixed(6), vox: { w: +VOUT.w.toFixed(4), pc: VOUT.pc, y01: +VOUT.y01.toFixed(4) }, ch: Array.from(ch, (c) => +c.toFixed(6)) });
 }
 
 export default {
@@ -124,10 +127,10 @@ export default {
   id: 4,   // §118 the lean-down (2026-10-11): was 3 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 5)
   tag: 'hopf fibration, alive — waves on the fibres, key as hue anchor, a nudge per beat, attractors mixed in',
   card: { title: 'TORUS', blurb: 'the Hopf fibration: circles on the 3-sphere, projected down to where we can see them, waving with the music' }, // landing tile (CONTRACTS §1.17, v0.8.1); the picture is site/thumbs/torus2.jpg from tools/thumbs.sh
-  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],
+  feats: ['chroma', 'harmAngle', 'interval', 'harmUnw', 'beatPhase', 'beatCount', 'bass', 'sub', 'tension', 'dropEvt', 'dropEnv', 'bpm', 'presence', 'flow', 'flowBass', 'flowMid', 'flowHigh', 'barPos', 'surpriseEvt', 'sectionEvt', 'roll', 'riser', 'intensity', 'arc', 'sectionAlt', 'build', 'arousal', 'phrase16Pos', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'voxS', 'voxHz', 'voxConf', 'kick2', 'snare2', 'snareEvt', 'snareAmp', 'hat2', 'beat', 'alive', 'novelty', 'hush', 'calm', 'clarity', 'regularity', 'tongueAmbig', 'tongueOn', 'dropLiveEvt'],
   cuts: 'continuous',
   rt: {},
-  hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo },
+  hooks: { probe, info, train, fib, key, motion, morph, unwind, dinfo, t2vox },
 
   // TORUS2's territory (§93): tonal, steady grooves — regularity leads, clarity second, a +0.1 standing bonus as the user's
   // favourite mapping. Was TORUS's bid verbatim, .25 + .45 clarity + .3 regularity (§4 / §37). Never during a build.
@@ -210,8 +213,13 @@ export default {
     // spec 6: a section event re-picks the knot — the same interval table, rotated by the section (deterministic)
     if (MS.sectionEvt) pqOff = Math.max(0, MS.sectionAlt | 0);
     pq = PQ[((Math.max(0, Math.min(11, MS.interval | 0)) + pqOff) % 12 + 12) % 12];
-    U.knotTh = Math.min((th[loudest] * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
-    U.knotBri = 1.5 * (0.4 + 0.6 * MS.intensity);
+    // §127: the knot strand becomes the VOICE (voice.js, the shared gate math/vox.js): the sung pitch lifts the strand's latitude
+    // toward the equator, the sung note takes its hue, its brightness lifts and the sung class's ring is lit — all blended by w;
+    // w 0 (voxConf 0: the fake timeline, the traces; `&t2vox=0`) = the strand's three numbers exactly as before
+    const VO = voiceStep(dt, MS, ch, TH0, THS, th[loudest], 1.5 * (0.4 + 0.6 * MS.intensity), loudest / 12 - 0.5 + 0.09);
+    U.knotTh = Math.min((VO.th * (1 - U.collapse) + 0.05 * U.collapse) * (1 + U.subP), 1.55);
+    U.knotBri = VO.bri;
+    U.knotHue = VO.hue;
 
     // spec 1c: the kick lights the core. Our own follower on MS.kick2 (which itself decays over 0.16 s), so the flash
     // lasts about FLASHT seconds; the shader weights it by (1 - chroma) so the quiet inner families get it.
@@ -306,7 +314,7 @@ export default {
     g.uniform2f(pr.u('uKnotPQ'), pq[0], pq[1]);
     g.uniform1f(pr.u('uKnotT'), U.knotT);
     g.uniform1f(pr.u('uKnotTh'), U.knotTh);
-    g.uniform2f(pr.u('uKnotBH'), U.knotBri, loudest / 12 - 0.5 + 0.09);
+    g.uniform2f(pr.u('uKnotBH'), U.knotBri, U.knotHue);   // §127: the sung note's slot while someone sings
     g.uniform2f(pr.u('uGlowM'), U.glow, U.briMax);
     g.uniform1f(pr.u('uFlashK'), U.flash);
     g.uniform1f(pr.u('uShim'), U.shim);
@@ -329,7 +337,7 @@ export default {
 
   hud() {
     const { R, r } = torusRadii(th[loudest]);
-    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2) + ' haze ' + U.haze.toFixed(2);
+    return 'torus2 pc' + loudest + ' R=' + R.toFixed(2) + ' r=' + r.toFixed(2) + ' knot ' + pq[0] + ',' + pq[1] + ' fib ' + (12 * U.draw) + ' seg ' + SEG + ' glow ' + U.glow.toFixed(2) + ' waves ' + wlive(U.beatNow) + ' key ' + U.key + (U.mode ? 'm' : 'M') + ' turn ' + U.turn.toFixed(2) + ' size ' + U.size.toFixed(2) + ' ' + ATNAMES[att] + ' ' + U.morph.toFixed(2) + ' slip ' + U.slip.toFixed(2) + ' haze ' + U.haze.toFixed(2) + ' vox w ' + VOUT.w.toFixed(2) + (VOUT.pc >= 0 ? ' pc' + VOUT.pc : '');
   },
 
   // The six visual parameters (CONTRACTS §1.16), named for what the eye sees. Every from() is the expression that

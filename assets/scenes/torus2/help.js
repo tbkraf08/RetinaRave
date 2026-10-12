@@ -58,6 +58,13 @@ export const HELP = {
         + 'into fog, the colours wash pale, the black behind it lifts to a veil — and the groove\'s return clears it',
       tongueOn: 'the tongues\' switch: off, the mist never comes and the nest is exactly the pre-tongues TORUS',
       dropLiveEvt: 'the drop\'s slam clears the mist on the beat, before the fog\'s own slow reading has caught up',
+      voxS: 'the knot strand becomes the voice: above the gate\'s knee (.45 → .85, over the live detector\'s own gates so a '
+        + 'piano\'s false voice stays dark) the strand brightens, takes the sung note\'s hue and the sung class\'s ring is lit — '
+        + 'the other eleven keep their light; `&t2vox=0` is the strand exactly as before',
+      voxHz: 'the sung pitch is the strand\'s HEIGHT: it lifts the knot\'s latitude toward the equator — the nest\'s own vertical — '
+        + 'as a glide, and picks which family ring lights; a pitch colours nothing until it has held about 85 ms',
+      voxConf: 'the switch: 0 (the fake timeline, a trace recorded before the detector) and the strand is the melody\'s as before; '
+        + 'any read above 0 lets the voice in — the HUD\'s vox line says which source (lane / live) feeds it',
     },
     eli5: 'Every ring is one fibre of the Hopf map, as in TORUS, and this version is built to move with the music: nothing inside the nest is allowed to fall dark, every kick flashes the quiet fibres at the core, and the hats run a fine shimmer round each ring.',
     why: 'The first TORUS drew the geometry right but stayed dark inside: a quiet pitch class sat at a twentieth of the brightness of the loud one and disappeared into the fog. Here a brightness floor keeps every fibre visible, the fog only ever dims the far side by half, the kick lights the innermost (quietest) families rather than the loud rim, and the hats shimmer along the ring parameter — so the bass lights the core and the melody lights the rim.',

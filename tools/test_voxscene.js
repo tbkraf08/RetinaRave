@@ -6,6 +6,7 @@
 import { VOXK, hueOf, mkVox, vox } from '../assets/math/vox.js';
 import { hueOf as hueOfKey } from '../assets/math/vox.js';
 import { sstep } from '../assets/math/util.js';
+import { T2VOX } from '../assets/scenes/torus2/voice.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
@@ -74,6 +75,64 @@ console.log('1. the gate (math/vox.js)');
   const keyHue = st.hue;
   for (let i = 0; i < 30; i++) vox(st, DT, defaults({ key: 7, mode: 1, voxS: 1, voxHz: 440, voxConf: 0.5 }));
   ok(keyHue === hueOfKey(7, 1) && st.hue === hueOf(9, 1) && st.deg === 2, 'G minor: the key\'s hue before the voice, the sung A\'s hue (deg 2) after');
+}
+
+// ---- the scenes: a stub ctx (no GL), update() driven at 60 Hz on a steady synthetic groove; one module instance per run (the
+// query string makes node load a fresh copy of the scene's own state — test_nav2's two-instance trick), the shared gate's
+// state reset by 60 frames of the defaults at the end of every run (voxConf 0 = the exact reset), so runs compare to the byte.
+const CTX = () => ({ Q: { q: 0.95 }, onResize() {}, mkProg() { return { u: () => null, p: 1 }; }, lines: { VS: '', FS: '', mk() { return {}; }, set() {}, draw() {} }, gl: {}, tier: () => 3, budget: () => 1000, mkTarget: () => ({}), tex() {}, use() {}, tri() {}, engineTex: {} });
+const LOOK = { mood: { hue: 0.1, sat: 0.7, bri: 0.8, spread: 0.5, invert: 0, angular: 0 } };
+const GROOVE = { rot: 0 };
+function msAt(i, v) {
+  const t = i / 60, beat = t * 2;   // 120 bpm
+  const chroma = new Float32Array(12); chroma[0] = 0.8; chroma[4] = 0.5; chroma[7] = 0.6; chroma[2] = 0.2;
+  return Object.assign({ chroma, harmAngle: 0.3, interval: 7, harmUnw: 0.2 * t, beatPhase: beat % 1, beatCount: Math.floor(beat), bass: 0.3, sub: 0.2, tension: 0.3,
+    dropEvt: false, dropEnv: 0, bpm: 120, presence: 0.8, flow: t, flowBass: t, flowMid: t, flowHigh: t, barPos: (beat / 4) % 4, surpriseEvt: false, sectionEvt: false,
+    roll: 0, riser: 0, intensity: 0.6, arc: 'sustain', sectionAlt: 1, build: 0.2, arousal: 0.5, phrase16Pos: (beat / 16) % 1, key: 0, mode: 0, keyConf: 0.8, valence: 0.5,
+    modeShade: 0, kick2: 0, snare2: 0, snareEvt: false, snareAmp: 0, hat2: 0, beat: false, alive: 1, novelty: 0.2, hush: 0, calm: 0, clarity: 0.5, regularity: 0.5,
+    tongueAmbig: 0, tongueOn: -1, dropLiveEvt: false, voxS: 0, voxHz: -1, voxConf: 0,
+    // DUST's reads
+    bassS: 0.3, midS: 0.3, highS: 0.2, lvl: 0.7, kickAge: 9, kickEvt: false, snareAge: 9, hatAge: 9, hatEvt: false, subNoteEvt: false, subGate: 1, buildLive: 0, nextDropIn: 99,
+    tongue21: 0, tongue41: 0, eM: 0.8, eS: 0.5, loudRel: 0.5, loudRange: 0.5, loudAbs: -1, denK: 2, sectionReturn: 0, barReturnEvt: false, barNovelEvt: false, punchy: 0.5 }, v || {});
+}
+let inst = 0;
+async function runScene(file, n, voiceOf, before) {
+  const sc = (await import('../assets/scenes/' + file + '/index.js?i=' + (inst++))).default;
+  sc.init(CTX());
+  if (before) before(sc);
+  const out = [];
+  for (let i = 0; i < n + 60; i++) {
+    const MS = msAt(i, i < n ? voiceOf(i) : null);
+    const params = {}; for (const k in sc.params) params[k] = sc.params[k].from(MS);
+    sc.update(DT, MS, GROOVE, LOOK, { params });
+    if (i < n) out.push(sc.hooks.info ? JSON.parse(sc.hooks.info()) : sc.hooks.dinfo());
+  }
+  return out;
+}
+const A4 = { voxS: 1, voxHz: 440, voxConf: 0.5 };
+
+console.log('2. TORUS2 (id 4): the knot strand becomes the voice');
+{
+  const N = 240;
+  const base = await runScene('torus2', N, () => null);
+  const off = await runScene('torus2', N, () => null, () => T2VOX.on = 0); T2VOX.on = 1;
+  const offV = await runScene('torus2', N, () => A4, () => T2VOX.on = 0); T2VOX.on = 1;
+  const sung = await runScene('torus2', N, () => A4);
+  const piano = await runScene('torus2', N, () => ({ voxS: 0.35, voxHz: 330, voxConf: 0.9 }));
+  const knot = (r) => JSON.stringify([r.knotTh, r.knotBri, r.knotHue, r.ch, r.briMax, r.loudest]);
+  ok(base.every((r) => r.vox.w === 0 && r.vox.pc === -1), 'the defaults (voxConf 0): w 0, pc −1 on every frame');
+  ok(base.every((r, i) => knot(r) === knot(off[i])), 'the defaults = the switch off (&t2vox=0), the knot\'s five numbers to the byte on ' + N + ' frames');
+  ok(offV.every((r, i) => knot(r) === knot(off[i]) && r.vox.w === 0), 'the switch off with a sung A4 = the defaults: &t2vox=0 is today\'s bytes on a voiced track');
+  ok(piano.every((r, i) => knot(r) === knot(base[i]) && r.vox.w === 0), 'a piano\'s false voice (voxS .35, periodic, voxConf .9) stays under the knee: = the defaults to the byte');
+  const last = sung[N - 1], b = base[N - 1];
+  const TH0 = 0.12, THS = Math.PI / 2 - TH0, y = (1 - VOXK.OCT) * 9 / 11 + VOXK.OCT * Math.log2(440 / 110) / 4;
+  const thV = TH0 + THS * (T2VOX.LAT0 + T2VOX.LAT1 * y);
+  ok(last.vox.w === 1 && last.vox.pc === 9 && near(last.vox.y01, y, 1e-4), `a sung A4: w 1, pc 9, y01 ${last.vox.y01} (${y.toFixed(4)})`);
+  ok(near(last.knotHue, 9 / 12 - 0.5 + T2VOX.HUE, 1e-6) && near(last.knotBri, b.knotBri * (1 + T2VOX.BRI), 1e-6), `the strand's hue the sung note's slot (${last.knotHue}), its brightness × ${1 + T2VOX.BRI} (${last.knotBri} vs ${b.knotBri})`);
+  const subP = 0.25 * 0.2 + 0.03 * Math.sin(Math.PI * 2 * msAt(N - 1).barPos / 4);   // index.js's own: the sub fattens, the bar breathes
+  ok(near(last.knotTh, Math.min(thV * (1 + subP), 1.55), 1e-6) && last.knotTh !== b.knotTh, `the strand's latitude is the sung pitch's: ${last.knotTh} = min((TH0 + THS·(.35 + .5·y01))·(1 + subP), 1.55) (the loudest family's ${b.knotTh} before)`);
+  ok(last.ch[9] === 1 && last.ch.every((c, k) => k === 9 || c === b.ch[k]) && last.briMax === b.briMax && last.loudest === b.loudest, 'the sung class\'s ring (A, family 9) is lit to 1; the other eleven keep their chroma; briMax and the loudest family unchanged (the glow floor stands)');
+  ok(sung.slice(0, 6).every((r) => r.vox.w === 1 && r.vox.pc === -1 && r.knotHue === base[0].knotHue), 'the hue waits for the hold (the first ~5 frames: w 1, pc −1, the strand\'s own hue)');
 }
 
 console.log(fails ? 'FAIL ' + fails : 'OK');

@@ -26,7 +26,7 @@
 //   voxConf is NOT a weight: live voxConf = voxS × periodicity and a piano is periodic — it would pass the case we fear.
 //
 // Pure, per-caller state (mkVox(), as keycolour's mkAnchor): two scenes in one crossfade never share a release. A scene
-// imports only math/* (CONTRACTS §0); this reads S.voxS / voxHz / voxConf / key / mode, which the scene lists in `feats`.
+// imports only math/* (CONTRACTS §0); this reads MS.voxS / voxHz / voxConf / key / mode, which the scene lists in `feats`.
 // The knobs: VOXK (`&voxk=lo,hi` on any page, core/harness.js). The rig (inject2.js) keeps its own validated reads.
 import { clamp, ema, sstep } from './util.js';
 import { COOL, PULL, WARM, wrap } from './keycolour.js';
@@ -47,15 +47,15 @@ export const hueOf = (pc, minor) => { const h = ((7 * (((pc | 0) % 12) + 12) % 1
 
 export function mkVox() { return { w: 0, pc: -1, y01: -1, hue: 0, hz: -1, deg: -1, cand: -1, held: 0 }; }
 
-// One frame. Reads S.voxS, S.voxHz, S.voxConf, S.key, S.mode; writes and returns `st` ({ w, pc, y01, hue, hz, deg }).
-export function vox(st, dt, S) {
-  const minor = (S.mode | 0) ? 1 : 0, tonic = ((S.key | 0) % 12 + 12) % 12;
-  if (!(S.voxConf > 0)) {   // no read at all: the no-op, exactly
+// One frame. Reads MS.voxS, MS.voxHz, MS.voxConf, MS.key, MS.mode; writes and returns `st` ({ w, pc, y01, hue, hz, deg }).
+export function vox(st, dt, MS) {
+  const minor = (MS.mode | 0) ? 1 : 0, tonic = ((MS.key | 0) % 12 + 12) % 12;
+  if (!(MS.voxConf > 0)) {   // no read at all: the no-op, exactly
     st.w = 0; st.pc = -1; st.y01 = -1; st.hz = -1; st.deg = -1; st.cand = -1; st.held = 0;
     st.hue = hueOf(tonic, minor);
     return st;
   }
-  const tgt = sstep(VOXK.LO, VOXK.HI, clamp(S.voxS || 0, 0, 1));
+  const tgt = sstep(VOXK.LO, VOXK.HI, clamp(MS.voxS || 0, 0, 1));
   st.w = tgt >= st.w ? tgt : ema(st.w, tgt, dt, VOXK.REL);
   if (st.w < VOXK.OFF) st.w = 0;
   if (st.w <= 0) {          // nobody singing: forget the pitch, so a re-entry starts at its own note
@@ -63,7 +63,7 @@ export function vox(st, dt, S) {
     st.hue = hueOf(tonic, minor);
     return st;
   }
-  const hz = S.voxHz;
+  const hz = MS.voxHz;
   if (hz > 0) {
     const cls = ((Math.round(12 * Math.log2(hz / 440) + 69) % 12) + 12) % 12;
     if (cls === st.cand) st.held += dt; else { st.cand = cls; st.held = 0; }
