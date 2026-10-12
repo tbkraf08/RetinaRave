@@ -9,7 +9,7 @@
 //   (i)   the mel parity: the ears' log-mel (raw and normalised) on SeeYouDrop's first 3000 hops = voxtrain.py's numpy front end to 1e-4
 //   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4
 //   (iii) the ruler per track (the plan's targets): voxS p50 inside windows_hand > 2× outside on every voiced track; < 5 % false-positive
-//         frames on Comptine (the control — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
+//         frames on Comptine (the control, UNSEEN since §126 — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
 //         stem's pYIN on the voiced frames — RECORDED, not gated (the mix ceiling)
 //   (iv)  the wiring: with the stage stubbed out, every other ears field is byte-identical on 30 s of SeeYouDrop (read-only to the lanes)
 //   (v)   the bench: the stage's cost per hop (its sample loop + the FFT + the net + the YIN), median over the track; the gate ≤ 0.1 ms
@@ -38,9 +38,9 @@ const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'M
 // is RECORDED below, not gated: the hand says voice, the pitch ruler says no pitch, and the net is trained on sung-or-spoken frames.
 const VOICED = ['IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop'];
 const SHOUTED = ['WhoLikesToParty'];
-// The control. Comptine (solo piano) TRAINS since run 4 (voxtrain.py LIB_TRAIN: held out, three runs read its piano as a voice on
-// 28 / 22 / 17 % of frames; Vienna's synth leads read 31 % when IT was the unseen control) — so this gate is IN-SAMPLE, and says so;
-// the unseen no-voice numbers are the §123 training table's, not a gate here. The other no-voice tracks print as notes.
+// The control. Comptine (solo piano) is UNSEEN since §126 (voxtrain.py LIB_HELD = IBelongHere + Comptine): §123's final split trained
+// on it (three earlier runs held it out and read its piano as a voice on 28 / 22 / 17 % of frames), so its 10 % was in-sample — this
+// round the number is honest. The other no-voice tracks (CyborgNinja, Vienna) train and print as in-sample notes.
 const CONTROL = 'Comptine';
 const NOVOICE = ['CyborgNinja', 'Vienna'];
 const LEAD = { track: 'RaindropsOnRoses', from: 111.5, to: 137.0 };
@@ -161,10 +161,10 @@ function ruler() {
   for (const r of rows) {
     if (VOICED.includes(r.track)) ok('(iii) ' + r.track + ': voxS p50 inside the hand windows > 2x outside', r.ratio > 2, r.p50in.toFixed(3) + ' / ' + r.p50out.toFixed(3) + ' = ' + r.ratio.toFixed(1) + 'x', '> 2x');
     if (SHOUTED.includes(r.track)) note('(iii) ' + r.track + ': voxS p50 inside the hand windows vs outside (shouted chops, no pYIN voicing — recorded)', r.p50in.toFixed(3) + ' / ' + r.p50out.toFixed(3) + ' = ' + r.ratio.toFixed(1) + 'x');
-    // RECORDED, not gated (§123): the shipped weights read Comptine's piano as a voice on 10 % of frames at voxS >= .5 — in-sample — against the
-    // plan's 5 %; the target is MISSED and printed as such (HARNESS: a claim pending its fix prints as a note, never a FAIL). The fix is a
-    // piano-negative set or a longer window, not a sixth run of this net (five runs: 28 / 22 / 17 % unseen, 3.8 / 10 % in-sample).
-    if (r.track === CONTROL) note('(iii) ' + r.track + ' (the control, IN-SAMPLE): false-positive frames (voxS >= .5) — ' + (r.fp < 5 ? 'met' : 'MISSED, recorded'), r.fp.toFixed(2) + ' % against the plan\'s < 5 %');
+    // RECORDED, not gated (§123, §126): §123's weights read Comptine's piano as a voice on 10 % of frames at voxS >= .5 — in-sample — against
+    // the plan's 5 %; §126 holds Comptine OUT (a piano / string / wind negative set — MusicNet, MAESTRO — trains instead) and prints the unseen
+    // number, met or MISSED (HARNESS: a claim pending its fix prints as a note, never a FAIL).
+    if (r.track === CONTROL) note('(iii) ' + r.track + ' (the control, UNSEEN): false-positive frames (voxS >= .5) — ' + (r.fp < 5 ? 'met' : 'MISSED, recorded'), r.fp.toFixed(2) + ' % against the plan\'s < 5 %');
     if (NOVOICE.includes(r.track)) note('(iii) ' + r.track + ' (no voice, in-sample): false-positive frames (voxS >= .5)', r.fp.toFixed(2) + ' %');
     if (r.track === LEAD.track) ok('(iii) ' + r.track + ": the lead 1:51.5-2:17 read as voice (p50 voxS)", r.lead >= 0.5, r.lead.toFixed(3), '>= .5 (by design)');
     if ((VOICED.includes(r.track) || SHOUTED.includes(r.track)) && r.voiced > 0) note('(iii) ' + r.track + ': voxHz within a semitone of the stem pYIN (recorded)', r.hzSemi.toFixed(0) + ' % of ' + r.voiced + ' voiced frames (' + r.hzOct.toFixed(0) + ' % modulo the octave, a pitch on ' + r.hzCov.toFixed(0) + ' %) — the plan asks 70, the mix ceiling');

@@ -73,9 +73,35 @@ Mathieu Ramona, Gaël Richard, Bertrand David, "Vocal detection in music with su
 Singing Voice Detection" on Zenodo (https://zenodo.org/records/2585988, CC BY 4.0). Fetched to ~/Datasets/jamendo-svd/ on
 this machine only; neither the audio nor the labels are in the repo.
 
-**What ships (DECISIONS §123):** `assets/engine/ears/vox-weights.js` — the 38 385 parameters of the live vocal detector
+**What ships (DECISIONS §123, retrained §126):** `assets/engine/ears/vox-weights.js` — the 38 385 parameters of the live vocal detector
 (`assets/engine/ears/vox.js` + `vox-net.js`), trained by `tools/truth/voxtrain.py` on the corpus's train + valid splits (77 of
-the 93 pieces, the frame labels at the window's end) together with six of this project's own library tracks. The weights are a
-derived work of the corpus under CC BY 4.0; this notice, the header of the weights module and the credits on retinarave.com/about
-are the attribution. The corpus's own README: "This is a public corpus of 93 creative-commons licensed music pieces annotated by
-voice (sung or spoken) and no-voice." Nothing of the audio or the labels is reproduced in the weights or anywhere on the site.
+the 93 pieces, the frame labels at the window's end; since §126 also their Demucs vocal and accompaniment stems, remixed) together
+with five of this project's own library tracks and the two corpora below. The weights are a derived work of the corpus under CC BY
+4.0; this notice, the header of the weights module and the credits on retinarave.com/about are the attribution. The corpus's own
+README: "This is a public corpus of 93 creative-commons licensed music pieces annotated by voice (sung or spoken) and no-voice."
+Nothing of the audio or the labels is reproduced in the weights or anywhere on the site.
+
+## MusicNet — no-voice negatives of the vocal detector's second pass (DECISIONS §126; not in the repo)
+John Thickstun, Zaid Harchaoui, Sham M. Kakade, "Learning Features of Music from Scratch", ICLR 2017: 330 freely-licensed
+classical recordings with note labels, published on Zenodo (https://zenodo.org/records/5120004, DOI 10.5281/zenodo.5120004).
+The record's licence field, verbatim: `cc-by-4.0` — Creative Commons Attribution 4.0 International. A 4.6 h subset (13 solo-piano
+and 15 strings / winds recordings, by id out of `musicnet_metadata.csv`; the bytes from the HuggingFace mirror
+`DreamyWanderer/MusicNet` of the same recordings, the Zenodo tarball itself streaming at 60 KB/s) sits in ~/Datasets/musicnet/ on
+this machine only, with `LICENCE-NOTE.md` beside it. Used as PURE NEGATIVES — the solo piano and the string / wind lines in the
+voice's range that the first weights read as a voice — and as remix beds under Jamendo's vocal stems. No audio is in the repo or
+on the site; the weights are the derived work, and this notice, the weights' header and retinarave.com/about are the attribution.
+
+## MAESTRO v3.0.0 — no-voice negatives of the vocal detector's second pass (DECISIONS §126; not in the repo)
+Curtis Hawthorne, Andriy Stasyuk, Adam Roberts, Ian Simon, Cheng-Zhi Anna Huang, Sander Dieleman, Erich Elsen, Jesse Engel,
+Douglas Eck, "Enabling Factorized Piano Music Modeling and Generation with the MAESTRO Dataset", ICLR 2019 (Google Magenta,
+https://magenta.tensorflow.org/datasets/maestro). The archive's `LICENSE` file opens, verbatim: "Attribution-NonCommercial-ShareAlike
+4.0 International"; the dataset page, verbatim: "The dataset is made available by Google LLC under a Creative Commons Attribution
+Non-Commercial Share-Alike 4.0 (CC BY-NC-SA 4.0) license." A 2.3 h subset (17 solo-piano performances of the `train` split, one per
+composer, pulled by HTTP range out of the 108 GB zip — never the whole archive) sits in ~/Datasets/maestro/ on this machine only,
+with the archive's LICENSE and README and a `LICENCE-NOTE.md` beside it. Used as PURE NEGATIVES and as remix beds.
+
+**The non-commercial terms, and why the weights still ship.** MAESTRO is CC BY-NC-SA 4.0; the weights of the live vocal detector
+were trained with its audio among their negatives. Retina Rave is non-commercial — MIT + the Guest-List Clause, nothing sold, no
+ads, no accounts, no monetisation of any kind — and the user's decision of 2026-10-12 stands in DECISIONS §126: *"use the
+non-commercial sets -> still can publish the weights; don't worry we are not monetizing this."* Anyone taking the weights into a
+commercial product inherits that term and should retrain without the NC audio (`tools/truth/voxtrain.py` lists every set).
