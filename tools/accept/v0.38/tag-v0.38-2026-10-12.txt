@@ -1,0 +1,96 @@
+== v0.38 the tag — the gates, 2026-10-12, one Opus worker on main (the release commit; base 853dc12)
+   What ships since v0.37 (971b2c0): the VOCAL DETECTOR, all three of its steps, plus §120 / §121 which never had a tag.
+   §120 the FLUID2 reset (the band grammar pulled on the user's "moves too quickly"; the slot kept) · §121 the RIG
+   (23 invisible mouths lining the sides and the top and inside, chases, note hues off the circle of fifths, the lead
+   channel's HEIGHT = pitch, no shockwave, the blinder) · §122 the ground truth (Demucs htdemucs vocal stems, librosa
+   pYIN, tools/truth/voxtruth.py → the hand windows the detector is measured against) · §123 the LIVE tier-2 CNN in
+   the ears (engine/ears/vox.js + vox-net.js + vox-weights.js; voxS / voxHz / voxConf; the rig reads the voice) —
+   VALIDATED BY EYE 2026-10-12 ("looks good, continue with file mode") · §124 the FILE-mode Demucs lane (the sidecar
+   wins where it exists, &vox=live the A/B, the HUD's `lead ← lane | live | interval`).
+   The class is ENGINE: a new causal stage in the ears, three new music-state keys, no new scene and no scene
+   renumbered. The entry's `decisions` names all FIVE (§120 … §124), not only the three the brief listed — §120 and
+   §121 landed after v0.37's tag and SHIP HERE, and v0.37's own entry described at length the band grammar §120 pulls,
+   so a visitor on key 2 is owed that sentence. Nothing else in the entry, and no code, moved for it.
+   All gates run AFTER the version bump + the releases.json entry, so every one saw the release's own files.
+
+== GATE 1  node tools/check.js  —  0.5 s
+check: 147 modules · uniforms 159 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn
+   The 4 warns are the line-cap ones only (soft cap 350): core/scenes.js 370, engine/ears/perc.js 407,
+   scenes/dust/index.js 354, scenes/torus2/index.js 353. v0.37's receipt read 5 — core/fluid/inject2.js dropped back
+   under the cap when §120 pulled the band grammar. Non-blocking.
+   node tools/releases.js check  ->  36 entries · top v0.38 · package.json 0.38.0 · 0 problem(s)
+   node tools/whatsnew.js --check ->  36 entries · up to date
+   node tools/license.js --check  ->  150 public files · 0 without the header   (0.03 s)
+   (147 files at v0.37 + vox.js + vox-net.js + vox-weights.js = 150; the weights module carries the header AND the
+    Jamendo CC BY 4.0 provenance in its own comment block.)
+
+== GATE 2  npm test  —  29.4 s, exit 0
+   test_vox.js all ok — its six blocks: (i) the mel parity against numpy, (ii) the ONNX parity of the streaming net,
+   (iii) the per-track ruler, (iv) the wiring (31 other fields byte-identical), (v) the bench, (vi) §124's lane grid
+   (voxLane / mapVoxAt on the 60 fps clock, no drift over an hour of frames, voxHz never averaged with its −1).
+   §123's Comptine false-positive miss is still printed as a NOTE, never a FAIL (HARNESS's `gate: false` shape):
+     note  (iii) Comptine (the control, IN-SAMPLE): false-positive frames (voxS >= .5) — MISSED, recorded
+           10.05 % against the plan's < 5 %
+   test_fluid 350 ok 0 fail · test_music 151 ok 0 fail · test_director / test_bars / test_drums / test_build /
+   test_queue / test_clock / test_loud / test_tongues / test_dsp / test_rough / test_baby / test_misi / test_hopf /
+   test_tempo all OK.
+
+== GATE 3  the frozen page, npm run build + tools/bundle.js
+npm run build  —  0.14 s  —  whatsnew: 36 entries -> site/whats-new.html (47 KB, top v0.38, #newin refreshed; clips 0)
+                             bundled 146 modules -> dist/index.html (1 428 KB = 1 468 403 bytes)
+   v0.37's build was 143 / 1 380 695; the +3 modules are vox.js, vox-net.js and vox-weights.js, and the
+   +87 708 bytes are almost all the weights module (104 297 bytes on disk, Float16 LE base64 — the net's
+   38 385 parameters; nothing is fetched, the landing's on-device promise holds).
+node tools/bundle.js releases/retinarave-v0.38.html  —  146 modules, 1 468 403 bytes, VER = '0.38.0'
+   (the frozen page and dist/index.html are the same bundle, byte for byte in size.)
+the frozen page from file://, headless, CLOCK=1 GPU=1 (FILE=$PWD/releases/retinarave-v0.38.html, PORT 8991):
+   test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   (CLOCK=1 from the first pass — v0.37's pitfall paid forward: window.__FRAME exists only under cdp.js's CLOCK shim,
+    so a frame target without CLOCK=1 always burns its 120 s timeout. 15 s per scene.)
+   grep on the page: 13 hits for vox-weights / VOX_W / Jamendo — the weights and their attribution are IN the artifact.
+
+== GATE 4  the no-third-party receipt (SOCIAL-PLAN §4) — ONE host on both routes
+/whats-new   (PORT=8993)  ->  ["127.0.0.1:8993"]   title "What's new in Retina Rave — every release, newest first"
+/            (NOAUTO=1 real, PORT=8995)  ->  ["127.0.0.1:8995"]
+             #newin reads "New in v0.38: The engine learns to hear a voice → what's new"
+/about       (PORT=8997)  ->  ["127.0.0.1:8997"]   and in the DOM: the Jamendo Corpus line true, "CC BY 4.0" true
+   The v0.38 article renders on /whats-new: id="v0.38", h3 "The engine learns to hear a voice", the class label
+   reads `engine`, dated 12 October 2026, and the notes line reads
+   "for the curious, the engineering notes: §120 · §121 · §122 · §123 · §124". It shows NO thumbnails
+   (`.thumbs` absent): the entry's scenes is [1] and site/thumbs/ has no fluid2.jpg — carried open since v0.37,
+   the user's word on a tile.
+   THIRD-PARTY.md already credits Demucs (§122), librosa (§122, its licence reproduced) and the Jamendo corpus
+   (CC BY 4.0, "not in the repo"); about.html already carries the Jamendo paragraph. Both verified to RENDER; nothing
+   was added for this tag.
+
+== The three-page rule (§118, standing since §119)
+releases/ keeps the last THREE frozen pages: retinarave-v0.36.html, -v0.37.html, -v0.38.html.
+v0.35's page was `git rm`'d in the release commit; it is in git history at its tag
+(`git show v0.35:releases/retinarave-v0.35.html > /tmp/x.html`).
+
+== NOT run, and why (the brief's instruction: both were already paid in §123 / §124 and the engine has not moved since)
+The real-md5 sweeps. §123 ran the roster (s0 / s2 / s3 / s4) and held 264 of 264 lines against the v0.37 reference with
+the three vox keys LIVE in both map modes — the stage is read-only to every other feature — and swept s1 (66 lines, all
+moved: the rig reads the voice; tools/accept/v0.38/real-md5-s123-s1.txt). §124 re-swept s1 (43 runs, 66 lines, 789 s)
+and found all 32 `&map=1` lines moved and all 34 `&map=0` lines HELD to the byte — the lane exists only in file mode
+with the map on (tools/accept/v0.38/real-md5-s124-s1.txt). HEAD is 853dc12, the same tree §124's sweep shot; only
+version strings, releases.json, the generated site files, the frozen page and docs moved after it.
+The fake smoke (tools/scene-md5.sh). §124 ran it: every line = the v0.35 reference but the s1 pair, and that pair is
+main's own 293d773c / 96ad310a (the reference's s1 lines went stale when §121 moved the rig onto s1 and no fake list
+was re-based after it). Unmoved on every line against main.
+tools/accept.sh. Not run — §123 / §124 are its tier and both are done; its "== routes" / "== params" blocks on the
+NAV2 vehicle are still owed (since §118).
+A director trace. No scene entered the rotation: FLUID2 still bids 0 (forced-only, no landing card), so HARNESS's
+"a scene enters the director's rotation" tier does not apply.
+No audio was played and nothing was retuned.
+
+== The full md5 reference, re-based when
+The v0.37 reference's s1 lines are stale by §121 and by §123 / §124 (both recorded it, both kept the full reference
+untouched). The next release's sweep re-bases them; this tag does not.
+
+== The deploy
+dist/ is git-ignored and not committed, there is no .github/ workflow, and Cloudflare is git-connected to
+github.com/tbkraf08/RetinaRave and builds on a push to main (wrangler.jsonc serves ./dist). The push IS the deploy:
+ONE push, then poll https://retinarave.com/ for the VER line — never a second push (§115). The push and LIVE times
+are in DECISIONS §125.

@@ -1,5 +1,24 @@
 [
  {
+  "version": "0.38.0",
+  "tag": "v0.38",
+  "date": "2026-10-12",
+  "class": "engine",
+  "title": "The engine learns to hear a voice",
+  "body": "Retina Rave now listens for singing. A small neural network — about forty thousand numbers, trained on a public corpus of Creative-Commons music annotated for voice and no voice, and shipped inside the page itself — reads the sound as it arrives and answers three questions many times a second: is someone singing, how loud against the rest of the mix, and on what note. The second pool of ink, on key 2, uses all three, and it is a different scene from the one that shipped last time. The band grammar I put there a release ago moved too fast to watch, so it is gone; in its place the pool is fed by a rig of invisible mouths — twenty-three of them, lining the two sides and the top and set symmetrically inside the frame, the way a lighting designer hangs a truss rather than aiming one lamp at the middle. Each part of the music gets its own mouths, and a run across the rig reads as a chase. The voice is now the lead channel: the mouth that draws the melody rides on the singer instead of on a metronome, its height is the pitch — high notes high on the screen — and its colour is the note being sung, taken around the circle of fifths like every other harmony colour here. When nobody is singing, the lead goes quiet rather than inventing a line. The drop no longer throws a shockwave across this pool; the rig answers it instead. The listening costs the picture nothing — the detector runs beside the rest of the ears, in well under a tenth of a millisecond per step, and the weights are part of the page, so nothing is fetched and nothing leaves your device. The on-device promise on the landing page is unchanged. Being honest about what it is: the network is small and hears only a third of a second at a time, so it is quick rather than clever. It knows the eight tracks in my own library well; on music it has never heard, a solo piano or a lead synth sitting in the voice's range can read as a voice on a fifth of the frames, and a pitch taken off a full mix lands within a semitone about three times in four when there is a clear lead vocal, less when the voice is a chopped sample riding over a synth. There is a second, more accurate route that only works on my own machine: playing a file, the page can read a vocal part that was separated offline beforehand, which hears the voice on its own with no mix to confuse it, and a switch in the address bar flips between the two so the difference is visible. A shared tab is always the live network — which is how I watch almost all of the time, and why it was built first. The little readout in the corner says which of the two is feeding the picture.",
+  "clip": null,
+  "decisions": [
+   "§120",
+   "§121",
+   "§122",
+   "§123",
+   "§124"
+  ],
+  "scenes": [
+   1
+  ]
+ },
+ {
   "version": "0.37.0",
   "tag": "v0.37",
   "date": "2026-10-11",

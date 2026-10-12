@@ -3320,3 +3320,110 @@ check 0 fail, npm test exit 0.
   predate the keys, so the rig still reads `interval` there); `node tools/license.js --check` 150 / 0. Not tagged, not pushed,
   nothing deployed — the user tags. **To A/B at home:** `#track=<T>&scene=1` is the lane and `#track=<T>&scene=1&vox=live` is the
   CNN, with the HUD's `lead ←` saying which.
+
+## §125 v0.38 tagged — the engine learns to hear a voice (2026-10-12, one Opus worker on main; the user: *"tag and deploy"*)
+
+- **What ships** (everything on `main` since v0.37 — 16 commits, five sections; this note adds no code): **§120 the FLUID2 reset** — the §116
+  band grammar pulled on the user's *"I'm not a fan of fluid2 (it moves too quickly)"*, `inject2.js` the identity, the slot kept ·
+  **§121 the RIG** — the emitter array built in one step on the user's five decisions: **23 invisible mouths** lining the two sides and the
+  top and set symmetrically inside, each part of the music on its own mouths, a run across them a chase, every splat in its note's hue off
+  the circle of fifths (luminance-normalised, the budget the base's), the LEAD channel's **height = pitch**, no shockwave, the blinder on
+  the clear · **§122 the vocal ground truth** — Demucs `htdemucs` vocal stems + librosa pYIN through `tools/truth/voxtruth.py`, the hand
+  windows and passages the detector is measured against, the ear rules · **§123 the LIVE tier-2 CNN in the ears** — `engine/ears/vox.js`
+  (a causal stage beside sub / perc / tonic, read-only to every other feature), `ears/vox-net.js` (38 385 parameters run as a STREAM, one
+  column per hop), `ears/vox-weights.js` (104 297 bytes, Float16 base64, inlined by the bundler), the three keys `voxS` / `voxHz` /
+  `voxConf`, and FLUID2's LEAD reading them · **§124 the FILE-mode Demucs lane** — `tools/truth/voxlane.py` → `$MUSIC/<T>.vox.json`,
+  served beside the audio, overwriting the three keys in the map branch exactly as `map.sub` overwrites the causal sub, with `&vox=live`
+  the A/B and the HUD's `lead ← lane | live | interval` saying which source fed the picture.
+- **The class is `engine`, and the entry names all FIVE sections, not the three the brief listed.** A new causal stage in the ears and
+  three new music-state keys is an engine release: no scene was added and no id moved. But §120 and §121 landed after v0.37's tag and ship
+  here, and **v0.37's own release entry described the band grammar §120 pulls at length** — a visitor who read it and presses `2` is owed
+  the sentence that it is gone and what replaced it. So `decisions` is `[§120, §121, §122, §123, §124]` and the body's second paragraph is
+  the rig before the voice. Nothing else in the entry, and no line of code, moved for that call.
+- **What the entry says about the limits, in a visitor's words** (the honest word, in the house voice — §123's numbers without the table):
+  *"the network is small and hears only a third of a second at a time, so it is quick rather than clever. It knows the eight tracks in my
+  own library well; on music it has never heard, a solo piano or a lead synth sitting in the voice's range can read as a voice on a fifth
+  of the frames, and a pitch taken off a full mix lands within a semitone about three times in four when there is a clear lead vocal, less
+  when the voice is a chopped sample riding over a synth."* The weights ship and the page fetches nothing — *"the weights are part of the
+  page, so nothing is fetched and nothing leaves your device. The on-device promise on the landing page is unchanged."* The second, more
+  accurate route is named as what it is: **local only**, a file on this machine, with the switch and the HUD readout for the A/B.
+- **The credits were already in place and were PROVEN to render, not re-written** ([[feedback-credit-where-due]]): `THIRD-PARTY.md` carries
+  Demucs (§122), librosa (§122, its licence reproduced in full) and **the Jamendo singing-voice corpus (Zenodo 2585988, CC BY 4.0,
+  "not in the repo")**; `site/about.html` carries the Jamendo paragraph — *"The weights ship with the engine; the music does not"* — and
+  its DOM was read on the live `/about` route to confirm both the corpus line and the `CC BY 4.0` string. The weights module's own header
+  carries the provenance. **Nothing was added for this tag.**
+- **The recipe (§91's ritual as §119's, the three-page rule standing).** `package.json` + `assets/core/version.js` 0.37.0 → 0.38.0
+  (together, §89) · `releases.json` top entry (`v0.38`, 2026-10-12, class `engine`, title *"The engine learns to hear a voice"*, the five
+  §s, `scenes: [1]`, no clip) — **hand-inserted as `JSON.stringify(rel, null, 1)`, which is the file's own
+  layout to the byte — a 19-line pure insertion.** `releases.js`'s own `save()` writes a DIFFERENT, compact layout: calling it
+  reformatted the whole file for a 546-line diff, so it was reverted and the round-trip (`JSON.stringify(load(), null, 1) + '\n'` ==
+  the file) was checked identical before the insertion. **A note for the next tag: add the entry by hand in indent-1, never through
+  `save()`** · `npm run build` (36 entries → `site/whats-new.html` 47 KB, the card's `#newin` line *New in v0.38: The engine learns to hear a
+  voice*, `dist/index.html` **146 modules, 1 468 403 bytes**) · `node tools/bundle.js releases/retinarave-v0.38.html` (**146 modules,
+  1 468 403 bytes**, `VER = '0.38.0'`; v0.37's frozen page was 143 / 1 380 695 — the +3 modules are `vox.js`, `vox-net.js` and
+  `vox-weights.js` and the **+87 708 bytes are almost all the weights**) · `git rm releases/retinarave-v0.35.html` (the three-page rule;
+  `releases/` keeps v0.36 / v0.37 / v0.38, and v0.35's page is in history at its tag).
+- **The gates, each green on the tree AFTER the bump, with wall times.** The receipt with every number is
+  `tools/accept/v0.38/tag-v0.38-2026-10-12.txt`:
+  1. `node tools/check.js` — 0.5 s — **147 modules · uniforms 159 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn** (the
+     line-cap warns only; v0.37 read 5 — `core/fluid/inject2.js` dropped back under the soft cap when §120 pulled the band grammar) ·
+     `releases.js check` **36 entries, top v0.38 == package.json 0.38.0, 0 problems** · `whatsnew --check` up to date ·
+     `license.js --check` **150 public files, 0 without the header** (147 at v0.37 + the three new vox modules).
+  2. `npm test` — 29.4 s, **exit 0** — `test_vox.js` all ok across its six blocks (the mel parity against numpy, the ONNX parity of the
+     streaming net, the per-track ruler, the wiring's 31 byte-identical fields, the bench, and §124's **(vi) the lane's grid** — no drift
+     over an hour of frames); `test_fluid` **350 ok**, `test_music` **151 ok**, every other suite OK. §123's Comptine false-positive miss
+     still prints as a **note**, never a FAIL (HARNESS's `gate: false` shape): *10.05 % against the plan's < 5 %*.
+  3. the frozen page from `file://`, headless, **CLOCK=1** GPU=1 (`FILE=$PWD/releases/retinarave-v0.38.html`) — `test&scene=0` →
+     `{sc 0, grammar pool, fluidOn true, errs [], bad [], frameN 300}` · `test&scene=1` → `{sc 1, grammar bands, fluidOn true, errs [],
+     bad [], frameN 300}`, 15 s per scene. **CLOCK=1 from the first pass** — v0.37's pitfall paid forward (`window.__FRAME` exists only
+     under cdp.js's CLOCK shim, so a frame target without it burns its 120 s timeout). A grep on the page returns 13 hits for
+     `vox-weights` / `VOX_W` / `Jamendo`: the weights **and their attribution** are in the artifact.
+  4. the no-third-party receipt (SOCIAL-PLAN §4) — **ONE host on every route**: `/whats-new` → `["127.0.0.1:8993"]` · `/` (`NOAUTO=1 real`)
+     → `["127.0.0.1:8995"]` with `#newin` reading *"New in v0.38: The engine learns to hear a voice → what's new"* · `/about` →
+     `["127.0.0.1:8997"]` with the Jamendo line and `CC BY 4.0` in the DOM. The v0.38 article renders (`id="v0.38"`, the `engine` label,
+     12 October 2026, the notes line **§120 · §121 · §122 · §123 · §124**) and shows **no thumbnails at all** — `scenes` is `[1]` and
+     `site/thumbs/` still has no `fluid2.jpg`, carried open since v0.37 on the user's word about a tile.
+- **What was NOT run, and why — the brief's own instruction, and it holds.** The **real-md5 sweeps** and **`accept.sh`**: both were paid in
+  §123 / §124 and **the engine has not moved since**. §123 held the roster **264 of 264 lines** against the v0.37 reference with the three
+  vox keys live in BOTH map modes (the stage is read-only to every other feature) and swept s1 (66 lines, all moved — the rig reads the
+  voice; `tools/accept/v0.38/real-md5-s123-s1.txt`). §124 re-swept s1 (43 runs, 66 lines, 789 s) and found **all 32 `&map=1` lines moved
+  and all 34 `&map=0` lines HELD to the byte** — the lane exists only in file mode with the map on, and only FLUID2 reads the voice
+  (`real-md5-s124-s1.txt`). HEAD was **853dc12**, the same tree §124's sweep shot; only version strings, `releases.json`, the generated
+  site files, the frozen page and docs moved after it. The **fake smoke** was §124's too: every line = the v0.35 reference but the s1 pair,
+  and that pair is main's own `293d773c / 96ad310a` (the reference's s1 lines went stale when §121 moved the rig onto s1 and no fake list
+  was re-based after it) — **unmoved on every line against main**. **No `scene-md5`/`real-md5` reference was re-based here**: the next
+  release's sweep does it, never the tag. `accept.sh`'s "== routes" / "== params" blocks on the NAV2 vehicle are **still owed** (since
+  §118). **No director trace**: FLUID2 still bids 0 (forced-only, no landing card), so HARNESS's "a scene enters the director's rotation"
+  tier does not apply. **No audio was played and nothing was retuned.**
+- **The deploy shape, unchanged and confirmed.** `dist/` is what `npm run build` writes and what `wrangler.jsonc` serves
+  (`assets.directory ./dist`); `dist/` is **git-ignored and not committed**, and there is no `.github/` workflow — the deploy is
+  **Cloudflare, git-connected to `github.com/tbkraf08/RetinaRave`, building on a push to `main`**. So the push IS the deploy: **ONE push**,
+  then poll `https://retinarave.com/` for the `VER` line, **never a second push** (§115 — a second push is a second deploy; 2026-10-03 one
+  build took 40–85 minutes, slow and not broken). The lanes cannot leak: `$MUSIC` is the one directory `serve.js` serves from and the one
+  place the bundler cannot see, so no `<T>.vox.json` is bundled or deployed (§124).
+- **What is live when.** ONE release commit (this note, the receipt `tools/accept/v0.38/tag-v0.38-2026-10-12.txt`,
+  `NEXT-SESSION-PROMPT.md` rewritten for the post-release truth, the two versions, the entry, the generated `site/whats-new.html` +
+  `index.html`'s line, `releases/retinarave-v0.38.html` in and v0.35's out), `git tag -a v0.38`, `git push origin main --tags` — one push.
+  The push and LIVE times are in the addendum below.
+- **What the user validates at home (every remark in track time is a retune request).** (1) **the voice in FLUID2** on the live site
+  (`#scene=1`, key `2`): the lead mouth rides the singer, height = pitch, hue = the sung note, quiet when nobody sings — on
+  **RaindropsOnRoses** (the breakdown lead 111–137 s reads .987), **IBelongHere** and **SeeYouDrop**; a shared tab is the CNN alone.
+  (2) **the two sources side by side**, dev server only: `#track=<T>&scene=1` the lane against `&vox=live` the CNN, the HUD's `lead ←`
+  naming it — §124 measured 70 / 76 / 73 % agreement and a **150–180 ms lag**, and the question for the eye is whether that lag is
+  visible. (3) **the false voice** on a LIVE tab, where there is no lane: Comptine's solo piano and Vienna's synth leads, the measured
+  10 % / 6 % of frames above the gate seen rather than counted. (4) **§121 the rig itself**, owed from before the tag: the chases, the note
+  hues, the blinder on the clear (RaindropsOnRoses 84 / 118 / 137 s, SeeYouDrop 57.6 s). (5) the hard cut `n` / `→` FLUID → FLUID2
+  mid-groove (the pool must not blink). (6) **§118 on the live site**: keys `1`–`6`, the arrows both ways, a page load on NAV2, Share a tab
+  opening on FLUID and STAYING. (7) carried, still unvalidated: v0.36's shockwave on the four dropping tracks, FLUID in the rotation, the
+  drop's flash with the ring and no droplets; v0.35's whole list.
+- **Open findings carried into the tag (none retuned).** The **Jamendo-test F1 target ≥ .88, missed at .79–.80**, and §123's own verdict on
+  the fix — a piano / lead-synth negative set or a longer window, not a sixth run of this 38 k net · **an unseen instrumental reading as a
+  voice on 17–31 % of its frames** (the in-sample control itself at 10.0 %) · **`voxHz` on a mix** within a semitone of the lane on
+  87 / 77 / 48 % · **the CNN's 150–180 ms lag** · the eight-track FLUID2 sweep (the standing exception to CONTRACTS §1.1) · the **real-md5
+  s1 reference**, stale since §121 and re-based by the next real sweep · **FLUID-DROP item 2, the reversal** (and `DROP_DISS` 6 after it) ·
+  a **tier-0 phone measure** of the rig · **IBelongHere's live return 36 frames late** and Vienna's bar 40 arming nothing · the live
+  detector's miss on Raindrops' drops 1 / 2 and the void term arming 2.1 s into the cut · the **mixs mid-dip** (the incoming scene's cold
+  `U.expo`) · **DUST's bid share** (0 of 5 away picks) · §109's seven ruler FAILs on DUST / TORUS2 · the idle bench, still unseen on this
+  machine · `accept.sh`'s routes / params blocks on NAV2 · no `fluid2.jpg` thumbnail, so the v0.38 entry renders no thumbs.
+- **Next, and being planned in parallel right now:** the **CNN accuracy / lag plan** and the **per-scene vocal reads**. Read both plans
+  before starting either; `NEXT-SESSION-PROMPT.md` says the same in one line.
