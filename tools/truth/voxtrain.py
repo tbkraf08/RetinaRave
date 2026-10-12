@@ -5,6 +5,8 @@
 """The live vocal detector's training (DECISIONS §123, the vocal detector's step 2 of three; §126 the second pass — the data).
 
     python3 tools/truth/voxtrain.py [--epochs=N] [--per-epoch=N] [--remixes=N] [--var-floor=F] [--tag=T] [--no-train] [--mel-only=<Track>]
+                                    [--snr=LO,HI] [--quota=jam,lib,neg,remix] [--soft-floor=F]   (§126 item 4: the recipe's knobs for run 2 / 3,
+                                    the defaults = run 1's recipe; a soft target under F inside a hand window is DROPPED, not taught as near-silence)
       -> assets/engine/ears/vox-weights.js   the weights as a JS module (Float16 little-endian, base64; the provenance in its header)
       -> tools/work/vox/vox.onnx              the same net, the same (fp16-rounded) weights — the parity check's reference
       -> tools/work/vox/onnx-parity.json      200 held Jamendo-test windows (the normalised mel, 40 x 34) + onnxruntime's output on them
@@ -92,7 +94,8 @@ SNR_DB = (-12.0, 6.0)               # the vocal stem's level against the bed, in
 REMIX_SECONDS = 150.0               # a remix's length (random offsets into both stems)
 PITCH_BANDS = 2                     # the mel-domain pitch shift, ± bands (uniform over −2..2)
 STRETCH = (0.8, 1.2)                # the time stretch's range (half the windows)
-QUOTA = {'jam': 0.35, 'lib': 0.10, 'neg': 0.25, 'remix': 0.30}   # the draw per epoch by group
+QUOTA = {'jam': 0.35, 'lib': 0.10, 'neg': 0.25, 'remix': 0.30}   # the draw per epoch by group (--quota=jam,lib,neg,remix)
+SOFT_FLOOR = 0.0                    # --soft-floor: a library hand-window frame whose lane target is in (0, F) leaves the loss (a breath, a tail under the knee)
 
 
 # ---------------------------------------------------------------------------------------------------- the front end
@@ -655,13 +658,16 @@ def build_all(log, pool, vf):
 
 # ---------------------------------------------------------------------------------------------------- main
 def main():
-    global CLASSICAL_HELD, PARTIAL
+    global CLASSICAL_HELD, PARTIAL, SNR_DB, QUOTA, SOFT_FLOOR
     args = sys.argv[1:]
     PARTIAL = '--partial' in args
     opt = lambda k, d: next((a.split('=', 1)[1] for a in args if a.startswith('--' + k + '=')), d)
     log = lambda s: print(s, flush=True)
     os.makedirs(WORK, exist_ok=True)
     vf = float(opt('var-floor', VAR_FLOOR))
+    if opt('snr', None): SNR_DB = tuple(float(v) for v in opt('snr', '').split(','))
+    if opt('quota', None): QUOTA = dict(zip(('jam', 'lib', 'neg', 'remix'), (float(v) for v in opt('quota', '').split(','))))
+    SOFT_FLOOR = float(opt('soft-floor', SOFT_FLOOR))
     if opt('mel-only', None):
         write_mel_parity(opt('mel-only', None), vf); return
     tag = opt('tag', time.strftime('%Y%m%d-%H%M'))
@@ -680,6 +686,9 @@ def main():
     log('loading the front ends …')
     jam = {s: [(n, build_jamendo(n, vf)) for n in (train_names() if s == 'train' else filelist(s))] for s in ('train', 'valid', 'test')}
     lib_tr = [(t, build_lib(t, vf)) for t in LIB_TRAIN]
+    if SOFT_FLOOR > 0:   # the knob is applied after the cache (the cached ys is the lane's own read)
+        lib_tr = [(t, (x, y, np.where((ys > 0) & (ys < SOFT_FLOOR), -1, ys).astype(np.float32), tt)) for t, (x, y, ys, tt) in lib_tr]
+    log(f'knobs: remix SNR {SNR_DB[0]:+g}..{SNR_DB[1]:+g} dB, quota {QUOTA}, soft floor {SOFT_FLOOR:g}')
     lib_held = [(t, build_lib(t, vf)) for t in LIB_HELD]
     lib_rec = [(t, build_lib(t, vf)) for t in LIB_RECORDED]
     accs = [('acc:' + t, build_acc(t, vf)) for t in ACC_TRACKS] + [('jacc:' + os.path.splitext(n)[0], build_jacc(n, vf)) for n in train_names() if has_stem(n, 'no_vocals')]
@@ -758,7 +767,7 @@ def main():
     for r in rows_held + rows_tr + rows_rec + rows_acc + rows_clsh: log(f'  {r["track"]:34s} frames {r["frames"]:7d} sung {r["sung_pct"]:5.1f} %  F1 {r["F1"]:.3f} P {r["P"]:.3f} R {r["R"]:.3f} AUC {r["AUC"]}  fp {r["fp_pct"]} %')
     cls_fp = float(np.mean([r['fp_pct'] for r in rows_cls])) if rows_cls else float('nan')
     log(f'  classical in-sample fp (mean over {len(rows_cls)} files) {cls_fp:.1f} %; remixes (last epoch, 12 of them) F1 {rem_all.get("F1")} AUC {rem_all.get("AUC")}')
-    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x 34, batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
+    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x 34, batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, the soft floor {SOFT_FLOOR:g}, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
                              'jamendo': 'Zenodo record 2585988 (cc-by-4.0)', 'musicnet': 'Zenodo record 5120004 (cc-by-4.0) — Creative Commons Attribution 4.0 International; ~/Datasets/musicnet/LICENCE-NOTE.md',
                              'maestro': 'MAESTRO v3.0.0, Google LLC, LICENSE: Attribution-NonCommercial-ShareAlike 4.0 International; ~/Datasets/maestro/LICENCE-NOTE.md', 'var_floor': vf, 'tag': tag,
                              'jamendo_train_stems': n_jam_stems, 'classical_held': CLASSICAL_HELD, 'remix_sources': len(vox_src), 'remix_beds': len(beds)},

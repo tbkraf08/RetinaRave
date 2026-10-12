@@ -7,7 +7,9 @@
 // Inputs (gitignored, the one-line fix printed when one is missing): tools/work/<T>.48000.st.f32 (trackmap.py --pcm --sr=48000),
 // tools/work/vox/mel-SeeYouDrop.json + onnx-parity.json (tools/truth/voxtrain.py), tools/truth/<T>.vox.json (committed; voxtruth.py).
 //   (i)   the mel parity: the ears' log-mel (raw and normalised) on SeeYouDrop's first 3000 hops = voxtrain.py's numpy front end to 1e-4
-//   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4
+//   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4;
+//         then the TRAINING table the shipped weights came with (tools/work/vox/train-report.json: Jamendo test F1 / AUC, the unseen
+//         IBelongHere and Comptine) printed as NOTES — the plan's F1 >= .82 / Comptine <= 5 % say met or MISSED, never a FAIL (§126)
 //   (iii) the ruler per track (the plan's targets): voxS p50 inside windows_hand > 2× outside on every voiced track; < 5 % false-positive
 //         frames on Comptine (the control, UNSEEN since §126 — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
 //         stem's pYIN on the voiced frames — RECORDED, not gated (the mix ceiling)
@@ -120,6 +122,19 @@ function onnxParity() {
   ok('(ii) the stream fires on the 34th column, never before', fired === ref.n && early === 0, fired + ' / ' + ref.n + ', early ' + early);
   ok('(ii) sigmoid output max |Δ| vs onnxruntime', dMax <= 1e-4, dMax.toExponential(2), '<= 1e-4');
   ok('(ii) the weights module', VOX_W.nMel === N_MEL && VOX_W.tWin === T_WIN && VOX_W.f16.length > 50000, VOX_W.nParams + ' params, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', '40 x 34');
+}
+
+// The training table (§126 item 4): the report voxtrain.py wrote beside the weights it exported. The numbers are the net's own
+// (frame-level, the .5 threshold, no ease, no vote) — the ruler below is the same net through the ears' stage. Recorded, not gated.
+function training() {
+  const p = path.join(ROOT, 'tools/work/vox/train-report.json');
+  if (!fs.existsSync(p)) { note('(ii) the training report', 'tools/work/vox/train-report.json absent (the weights\' run writes it) — nothing to record'); return; }
+  const R = JSON.parse(fs.readFileSync(p, 'utf8').replace(/\bNaN\b/g, 'null'));   // python's json writes NaN for a no-voice track's AUC
+  const pr = R.provenance || {}, te = R.jamendo_test || {}, H = R.held || {}, ib = H.IBelongHere || {}, co = H.Comptine || {};
+  note('(ii) the training run', (pr.tag || '?') + ' of ' + (pr.date || '?') + ', ' + (R.epochs || []).length + ' epochs, ' + R.params + ' params; ' + (pr.summary || '').slice(0, 90) + '…');
+  note('(ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC — ' + (te.F1 >= 0.82 ? 'the plan\'s >= .82 met' : 'the plan\'s >= .82 MISSED, recorded'), te.F1 + ' / ' + te.P + ' / ' + te.R + ' / ' + te.AUC + ' (' + te.frames + ' frames)');
+  note('(ii) IBelongHere (UNSEEN): F1 / P / R / AUC', ib.F1 + ' / ' + ib.P + ' / ' + ib.R + ' / ' + ib.AUC);
+  note('(ii) Comptine (UNSEEN, the net at .5): false-positive frames — ' + (co.fp_pct < 5 ? 'met' : 'MISSED, recorded'), co.fp_pct + ' % against the plan\'s < 5 %');
 }
 
 // ------------------------------------------------------------------------------------------------ (iii) the ruler per track
@@ -239,7 +254,7 @@ function bench() {
   note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (one inference per 4 hops: ' + (R.hops / Math.max(1, R.vox.fired)).toFixed(2) + ')');
 }
 
-if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); } }
+if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); training(); } }
 if (!only || has('ruler')) ruler();
 if (!only) { wiring(); laneGrid(); }
 if (!only || has('bench')) bench();
