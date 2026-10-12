@@ -36,6 +36,12 @@ with a **"Standing rules (from §0–§103)"** block at the top (§0–§103 are
 `tools/parity.js` is a MUSIC-STATE parity now (62 fields; the ten `nav.*` rows went with the archived control).
 `releases/` keeps **the last three** frozen pages and the tag step `git rm`s the fourth (HARNESS "## Release notes").
 
+## NEXT: the vocal detector, step 1 — ground truth (`VOCAL-SESSION-PROMPT.md`; the plan `docs/plans/VOCAL-PLAN.md`)
+
+The user (2026-10-11): *"plan next session: 1. ground truth first 2. live mode with tier2 CNN 3. file mode with demucs vocal stem"*.
+Step 1 is one Fable session: install Demucs + librosa, the htdemucs pass on the eight tracks, `tools/truth/voxtruth.py` → `<T>.vox.json`,
+the two renders per track + the `! paplay` list, Jamendo fetched, the credits. The user's ear closes it. Steps 2 and 3 follow in order.
+
 ## FLUID2 now: the RIG grammar (§121, on main, unreleased) — the user's five decisions built in one step; the eye is owed
 
 `inject2.js` is the rig (`docs/plans/FLUID2-EMITTERS.md` §0 has the decisions and the eight-track table): 23 invisible mouths,
