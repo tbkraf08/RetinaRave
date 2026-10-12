@@ -1,0 +1,16 @@
+# §127 (2026-10-12): the fake smoke (GPU=1 PORT=8941 tools/scene-md5.sh s127) with the voice on TORUS2 (s4) and DUST (s3): every line =
+# tools/accept/v0.35/scene-md5-v035.txt but the s1 pair, which = main's 293d773c / 96ad310a (§123: the reference's s1 lines were stale since
+# §121; no fake list was re-based after it). Unmoved on every line against main: the fake timeline has voxConf 0, so the gate is a no-op
+# and the shader's voice block is never entered. errs [] hop 840 row 72 on all six ids.
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+293d773c7c9bca96a3adc58f22a0af31  s1-f360.jpg
+96ad310aee4f285c47a40b9d7eee38af  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
