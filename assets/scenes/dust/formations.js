@@ -49,13 +49,16 @@ export const K = {
   build: 0.35,     // buildLive above this is the void: the torus
   lone: 1.6,       // no sub sounding AND fewer than this many kicks a second is a lone voice: the ribbon
   low: 0.74,       // eM below this is quiet for this track: the sphere
+  voice: 0.5,      // §127: no sub sounding AND the voice on for most of the last 8 s is a lone voice: the ribbon
 };
 
 // Which shape the music is asking for right now. A pure function of MS — no state, no hysteresis: the CALLER only
 // asks on a seam (grid.js), so the answer is only ever read four or five times a minute and cannot chatter.
-export function shapeFor(MS) {
+// §127: `voxSec` (voice.js: the gate's w over 8 s — a seam decision is about a section) lets a LONE VOICE ask for the ribbon:
+// no sub sounding and either no kicks or someone singing. 0 (the default, the fake timeline, `&dvox=0`) = the pre-§127 rule.
+export function shapeFor(MS, voxSec = 0) {
   if (MS.buildLive > K.build) return TORUS;
-  if (!MS.subGate && MS.denK < K.lone) return RIBBON;
+  if (!MS.subGate && (MS.denK < K.lone || voxSec > K.voice)) return RIBBON;
   if (MS.eM < K.low) return SPHERE;
   return GALAXY;
 }

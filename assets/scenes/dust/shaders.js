@@ -66,6 +66,15 @@ uniform sampler2D uNorm;   // 1x1: the RMS of the habituation gain over the bins
                            // the steady bands and the changing ones instead of changing how much there is.
 uniform vec3 uHab;         // x = the habituation on/off (hooks.hab, the A/B), y = the floor a sustained band
                            // habituates TO, z = the step in the spectrum that counts as fully new
+uniform vec4 uVox;         // §127 the VOICE (voice.js): x = w the sung presence through the gate's knee (0 = the block below is
+                           // skipped whole — today's bytes), y = the sung pitch's rank on the log axis, z = the lifted grains'
+                           // gain (normalised on the CPU so the light is MOVED: the cloud gives up VOX_DIM·w, the three
+                           // partials' grains take it), w = unused
+uniform vec2 uVoxC;        // x = the sung note's palette t (its hue), y = the ribbon's rise with the sung pitch (0 at w 0)
+#define VOX_W 0.0075       /* the partial window's sigma on the 0..1 log axis (voice.js VOXD.W) */
+#define VOX_DIM 0.25       /* the cloud's share given up at w 1 (VOXD.DIM) */
+#define VOX_LN2 0.110387   /* ln 2 / ln(16000/30): the second partial's offset on the axis */
+#define VOX_LN3 0.174957   /* ln 3 / ln(16000/30): the third */
 
 out vec3 vCol;
 
@@ -120,7 +129,7 @@ vec3 form(int k, float n, vec3 h, float id){
   //    so the low bins are the centre of the ribbon and the highs its two ends — and the wave is sampled where the
   //    grain actually is, so the ribbon is still literally the waveform.
   float x = (h.z < .5 ? -1. : 1.) * (.02 + .98 * h.x); float w = wave(.5 + .5 * x);
-  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);
+  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel) + uVoxC.y, (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);   // §127: the line rises with the sung pitch (uVoxC.y 0 = today)
   pz.yz *= rot(x * 2.5 + uFlowMid * .4);
   return pz;
 }
@@ -180,7 +189,14 @@ void main(){
   float bright = (.22 + 3.2 * amp * amp) * gBase
     + (1.5 * kick + 4. * ring + 1.8 * spark + .5 * uVoice.w * wLow + uDrop) * gHit;
   bright *= min(1., sz) * min(1., 50000. / uCount);           // energy-conserving: sub-pixel points fade, and more particles are each dimmer
-  vCol = palM(fx * .9 + h.y * .12 + .1 * length(pos)) * bright * uAlive;
+  float pt = fx * .9 + h.y * .12 + .1 * length(pos);
+  if (uVox.x > 0.) {                                          // §127 the VOICE: the grains at the sung pitch's first three partials are
+    float d1 = (fx - uVox.y) / VOX_W, d2 = (fx - uVox.y - VOX_LN2) / VOX_W, d3 = (fx - uVox.y - VOX_LN3) / VOX_W;   // lifted in the
+    float vk = min(1., exp(-d1 * d1) + .6 * exp(-d2 * d2) + .4 * exp(-d3 * d3)) * uVox.x;   // sung note's hue; the rest of the cloud
+    bright *= 1. - VOX_DIM * uVox.x + uVox.z * vk;             // gives up VOX_DIM·w — the light is moved (uVox.z: voice.js), never added
+    pt = mix(pt, uVoxC.x, vk);
+  }
+  vCol = palM(pt) * bright * uAlive;
 }`;
 
 export const FS_DUST = `#version 300 es

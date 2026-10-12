@@ -13,6 +13,7 @@ import { HAB, NW, ema, emaK, mkEma } from './habit.js';
 import { BED, HATACC, bed, hatGain, mkBed, mkSub, mkTens, mkVoice, ringR, ringW, sub, tens, voice } from './voices.js';
 import { GALAXY, TORUS, file, midR, mkMem, recall, returning, shapeFor } from './formations.js';
 import { mkAnchor } from '../../math/keycolour.js';
+import { OUT as VOUT, VOXD, voice as voiceStep } from './voice.js';   // §127: the singer's grains, the ribbon as the lone voice
 
 const FORMS = ['sphere', 'torus', 'galaxy', 'ribbon'];
 // §60 step 3: the key as a hue ANCHOR, the same language TORUS2 (id 3) and POLYTOPE (id 5) already speak
@@ -58,7 +59,7 @@ const SELF = {
     'tongue21', 'tongue41', 'tongueOn',
     'eM', 'eS', 'loudRel', 'loudRange', 'loudAbs', 'denK', 'sectionAlt', 'sectionReturn', 'barReturnEvt',
     'harmAngle', 'key', 'mode', 'keyConf', 'valence', 'modeShade',
-    'arc', 'punchy', 'calm'],
+    'arc', 'punchy', 'calm', 'voxS', 'voxHz', 'voxConf'],
   cuts: 'onset',
   rt: {},
   fibresOn: 1,                  // hooks.fibres — the A/B switch; set before init(), so never reset there
@@ -166,14 +167,18 @@ const SELF = {
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
     // never while a pour is still running. WHICH shape is the section's energy (formations.js); a return pours back
     // into the shape that section had. The drop is the one exception to the seam: it bursts wherever it lands.
+    // §127: the VOICE (voice.js, the shared gate math/vox.js) — the singer's grains lifted in the note's hue (the cloud gives up
+    // the light they take), the ribbon's line rising with the pitch, and `voxSec` letting a lone voice ask for the ribbon on a
+    // seam; w 0 (voxConf 0: the fake timeline, the traces; `&dvox=0`) = every number below exactly as before
+    const VO = voiceStep(dt, MS);
     const ret = returning(this.mem, MS);
     const why = trigger(this.trig, MS, this.formT >= 1);
     if (ret && this.formT >= 1 && this.reform(Math.max(0, recall(this.mem, MS)), false)) this.why = 'return';
-    else if (why && this.reform(shapeFor(MS), false)) this.why = why;
+    else if (why && this.reform(shapeFor(MS, VO.sec), false)) this.why = why;
     const dropOn = MS.dropEnv > 0.5;
     if (dropOn && !this.dropHi) {                        // DETONATE: the drop bursts the torus into the galaxy
       this.why = 'drop';
-      this.reform(this.formB === TORUS ? GALAXY : shapeFor(MS), true);
+      this.reform(this.formB === TORUS ? GALAXY : shapeFor(MS, VO.sec), true);
     }
     this.dropHi = dropOn;
     file(this.mem, MS, this.formB);                      // this section's shape is whatever it ends on
@@ -244,6 +249,8 @@ const SELF = {
     ctx.tex(P, 'uEma', 2, this.E.a);                     // the slow spectrum the pass above just wrote
     ctx.tex(P, 'uNorm', 3, this.E.n);                    // ...and this frame's normaliser for it, one texel
     gl.uniform3f(P.u('uHab'), this.habOn ? 1 : 0, HAB, NW);
+    gl.uniform4f(P.u('uVox'), VOUT.w, VOUT.rank, VOUT.gain, 0);   // §127: the voice — all 0 at w 0 (the block is skipped)
+    gl.uniform2f(P.u('uVoxC'), VOUT.hueT, VOUT.ribY);
     const wasDepth = gl.isEnabled(gl.DEPTH_TEST);
     gl.disable(gl.DEPTH_TEST);                           // additive points are order-independent; the target may have no depth buffer
     gl.clearColor(0, 0, 0, 1);
@@ -305,6 +312,8 @@ const SELF = {
       if (a[1] !== '' && a[1] !== undefined && a[1] !== null && +a[1] > 0.02 && +a[1] <= 1) NUDGE.W = +a[1];
       return JSON.stringify(NUDGE);
     },
+    // §127: &dvox=0 under #test (hooks.dvox) = the pre-voice cloud on every frame — the A/B and the md5 receipt
+    dvox(v) { VOXD.on = v === '' || v === undefined || v === null ? 1 : +v ? 1 : 0; return VOXD.on; },
     // &key=<k> (and hooks.key(k, m) from a page) pins the key so a shot can prove one hue at a time
     key(k, m) { SELF.keyPin = k === null || k === undefined || k === '' || k < 0 ? null : { k: ((k | 0) % 12 + 12) % 12, m: (m | 0) ? 1 : 0 }; return JSON.stringify(SELF.keyPin); },
     dinfo() {
@@ -312,7 +321,8 @@ const SELF = {
         noff: SELF.sp.off, njump: SELF.sp.jumps, nacc: SELF.sp.acc,
         formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
-        want: shapeFor(SELF.lastMS || {}),
+        want: shapeFor(SELF.lastMS || {}, VOUT.sec),
+        voxW: VOUT.w, voxPc: VOUT.pc, voxY: VOUT.y01, voxRank: VOUT.rank, voxGain: VOUT.gain, voxHue: VOUT.hueT, voxRib: VOUT.ribY, voxSec: VOUT.sec, voxP: VOUT.p,
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
         dyn: SELF.m.dyn, pk: SELF.vD.pk, dr: SELF.vD.r, base: SELF.vD.base, fb: SELF.vD.fb, lpk: SELF.vD.lpk,
@@ -345,7 +355,7 @@ const SELF = {
   },
 
   hud() {
-    return 'dust ' + this.rt.label;
+    return 'dust ' + this.rt.label + ' vox w ' + VOUT.w.toFixed(2) + (VOUT.pc >= 0 ? ' pc' + VOUT.pc : '') + ' sec ' + VOUT.sec.toFixed(2);
   },
 
   help: HELP,

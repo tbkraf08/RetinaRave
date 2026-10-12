@@ -7,6 +7,8 @@ import { VOXK, hueOf, mkVox, vox } from '../assets/math/vox.js';
 import { hueOf as hueOfKey } from '../assets/math/vox.js';
 import { sstep } from '../assets/math/util.js';
 import { T2VOX } from '../assets/scenes/torus2/voice.js';
+import { VOXD, rankOf, shareAt } from '../assets/scenes/dust/voice.js';
+import { RIBBON, shapeFor } from '../assets/scenes/dust/formations.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
@@ -80,7 +82,7 @@ console.log('1. the gate (math/vox.js)');
 // ---- the scenes: a stub ctx (no GL), update() driven at 60 Hz on a steady synthetic groove; one module instance per run (the
 // query string makes node load a fresh copy of the scene's own state — test_nav2's two-instance trick), the shared gate's
 // state reset by 60 frames of the defaults at the end of every run (voxConf 0 = the exact reset), so runs compare to the byte.
-const CTX = () => ({ Q: { q: 0.95 }, onResize() {}, mkProg() { return { u: () => null, p: 1 }; }, lines: { VS: '', FS: '', mk() { return {}; }, set() {}, draw() {} }, gl: {}, tier: () => 3, budget: () => 1000, mkTarget: () => ({}), tex() {}, use() {}, tri() {}, engineTex: {} });
+const CTX = () => ({ Q: { q: 0.95 }, onResize() {}, mkProg() { return { u: () => null, p: 1 }; }, lines: { VS: '', FS: '', mk() { return {}; }, set() {}, draw() {} }, gl: { createVertexArray: () => ({}) }, tier: () => 3, budget: () => 1000, mkTarget: () => ({}), tex() {}, use() {}, tri() {}, engineTex: {} });
 const LOOK = { mood: { hue: 0.1, sat: 0.7, bri: 0.8, spread: 0.5, invert: 0, angular: 0 } };
 const GROOVE = { rot: 0 };
 function msAt(i, v) {
@@ -88,7 +90,7 @@ function msAt(i, v) {
   const chroma = new Float32Array(12); chroma[0] = 0.8; chroma[4] = 0.5; chroma[7] = 0.6; chroma[2] = 0.2;
   return Object.assign({ chroma, harmAngle: 0.3, interval: 7, harmUnw: 0.2 * t, beatPhase: beat % 1, beatCount: Math.floor(beat), bass: 0.3, sub: 0.2, tension: 0.3,
     dropEvt: false, dropEnv: 0, bpm: 120, presence: 0.8, flow: t, flowBass: t, flowMid: t, flowHigh: t, barPos: (beat / 4) % 4, surpriseEvt: false, sectionEvt: false,
-    roll: 0, riser: 0, intensity: 0.6, arc: 'sustain', sectionAlt: 1, build: 0.2, arousal: 0.5, phrase16Pos: (beat / 16) % 1, key: 0, mode: 0, keyConf: 0.8, valence: 0.5,
+    roll: 0, riser: 0, intensity: 0.6, arc: 'sustain', sectionAlt: 1, build: 0.2, arousal: 0.5, phrase16Pos: beat % 16, key: 0, mode: 0, keyConf: 0.8, valence: 0.5,
     modeShade: 0, kick2: 0, snare2: 0, snareEvt: false, snareAmp: 0, hat2: 0, beat: false, alive: 1, novelty: 0.2, hush: 0, calm: 0, clarity: 0.5, regularity: 0.5,
     tongueAmbig: 0, tongueOn: -1, dropLiveEvt: false, voxS: 0, voxHz: -1, voxConf: 0,
     // DUST's reads
@@ -133,6 +135,45 @@ console.log('2. TORUS2 (id 4): the knot strand becomes the voice');
   ok(near(last.knotTh, Math.min(thV * (1 + subP), 1.55), 1e-6) && last.knotTh !== b.knotTh, `the strand's latitude is the sung pitch's: ${last.knotTh} = min((TH0 + THS·(.35 + .5·y01))·(1 + subP), 1.55) (the loudest family's ${b.knotTh} before)`);
   ok(last.ch[9] === 1 && last.ch.every((c, k) => k === 9 || c === b.ch[k]) && last.briMax === b.briMax && last.loudest === b.loudest, 'the sung class\'s ring (A, family 9) is lit to 1; the other eleven keep their chroma; briMax and the loudest family unchanged (the glow floor stands)');
   ok(sung.slice(0, 6).every((r) => r.vox.w === 1 && r.vox.pc === -1 && r.knotHue === base[0].knotHue), 'the hue waits for the hold (the first ~5 frames: w 1, pc −1, the strand\'s own hue)');
+}
+
+console.log('3. DUST (id 3): the singer\'s grains, the ribbon as the lone voice');
+{
+  const N = 720;   // 12 s: voxSec (τ 8 s) crosses .5 at 5.5 s of a held voice
+  const d = (r) => JSON.stringify([r.formA, r.formB, +r.formT.toFixed(6), r.want, r.why, +r.spin.toFixed(6), +r.con.toFixed(6), +r.dyn.toFixed(6), +r.hue.toFixed(6), r.voxW, r.voxRank, r.voxGain, r.voxHue, r.voxRib]);
+  const base = await runScene('dust', N, () => null);
+  const off = await runScene('dust', N, () => null, () => VOXD.on = 0); VOXD.on = 1;
+  const offV = await runScene('dust', N, () => A4, () => VOXD.on = 0); VOXD.on = 1;
+  const piano = await runScene('dust', N, () => ({ voxS: 0.35, voxHz: 330, voxConf: 0.9 }));
+  const sung = await runScene('dust', N, () => A4);
+  ok(base.every((r) => r.voxW === 0 && r.voxPc === -1 && r.voxSec === 0), 'the defaults (voxConf 0): w 0, pc −1, voxSec 0 on every frame');
+  ok(base.every((r, i) => d(r) === d(off[i])), 'the defaults = the switch off (&dvox=0): the pour, the shape asked for, the spin, the drive, the hue and the five voice uniforms to the byte on ' + N + ' frames');
+  ok(offV.every((r, i) => d(r) === d(off[i])), 'the switch off with a sung A4 = the defaults: &dvox=0 is today\'s bytes on a voiced track');
+  ok(piano.every((r, i) => d(r) === d(base[i])), 'a piano\'s false voice (voxS .35, periodic, voxConf .9) stays under the knee: = the defaults to the byte');
+  const last = sung[N - 1], rank = rankOf(440), p = shareAt(rank), gain = Math.min(VOXD.GMAX, VOXD.DIM * (1 - p) / p);
+  const y = (1 - VOXK.OCT) * 9 / 11 + VOXK.OCT * Math.log2(440 / 110) / 4;
+  ok(last.voxW === 1 && last.voxPc === 9 && near(last.voxRank, rank) && near(last.voxGain, gain) && last.voxHue === 9 / 12 && near(last.voxRib, (y - 0.5) * VOXD.RIBY, 1e-4), `a sung A4: w 1, pc 9, rank ${rank.toFixed(4)} (= ln(440/30)/ln(16000/30)), the partials' share p ${p.toFixed(4)}, gain ${gain.toFixed(2)}, hue t .75, the ribbon's rise ${last.voxRib.toFixed(4)}`);
+  ok(sung.every((r, i) => r.want === base[i].want && r.formB === base[i].formB), 'with the sub sounding (subGate 1) the voice asks for no other shape: want and formB = the defaults on every frame');
+  // THE LIGHT IS MOVED: the population mean of the shader's brightness factor, (1 − DIM·w) + gain·vk, over the grains as the
+  // shader hashes them (hash11, fx = .95·h.x^1.4), is 1 where the gain is under its cap, and never under .95 up to C6
+  const fract = (x) => x - Math.floor(x), hash11 = (q) => { q = fract(q * 0.1031); q *= q + 33.33; q *= q + q; return fract(q); };
+  const NG = 50000, fxs = new Float64Array(NG); for (let i = 0; i < NG; i++) fxs[i] = Math.pow(hash11(i * 1.31 + 1), 1.4) * 0.95;
+  const factor = (hz) => { const r = rankOf(hz), pp = shareAt(r), g = Math.min(VOXD.GMAX, VOXD.DIM * (1 - pp) / pp); let s = 0;
+    for (let i = 0; i < NG; i++) { const fx = fxs[i], d1 = (fx - r) / VOXD.W, d2 = (fx - r - Math.log(2) / VOXD.LN) / VOXD.W, d3 = (fx - r - Math.log(3) / VOXD.LN) / VOXD.W;
+      const vk = Math.min(1, Math.exp(-d1 * d1) + 0.6 * Math.exp(-d2 * d2) + 0.4 * Math.exp(-d3 * d3)); s += 1 - VOXD.DIM + g * vk; }
+    return { mean: s / NG, capped: g >= VOXD.GMAX, g, pp }; };
+  const notes = [['C3', 130.81], ['A3', 220], ['C4', 261.63], ['A4', 440], ['C5', 523.25], ['A5', 880], ['C6', 1046.5]];
+  const rows = notes.map(([n, hz]) => [n, factor(hz)]);
+  const free = rows.filter(([, f]) => !f.capped), budget = rows.every(([, f]) => f.mean > 0.95 && f.mean < 1.02) && free.every(([, f]) => near(f.mean, 1, 0.02));   // ±.02: ~1200 grains sit in the window, so the sample's share of them carries ~3 % noise
+  ok(budget && free.length >= 2, 'the light is moved, not added: the brightness factor\'s population mean over 50 000 hashed grains = 1 ± .02 where the gain is under its cap (' + free.map(([n]) => n).join(' ') + '), > .95 up to C6 — ' + rows.map(([n, f]) => n + ' ' + f.mean.toFixed(3) + (f.capped ? '*' : '') + ' (p ' + (100 * f.pp).toFixed(1) + ' %, ×' + (1 + f.g).toFixed(1) + ')').join(' · '));
+  // THE RIBBON: a lone voice — no sub sounding, the kicks still dense enough that today's rule says galaxy — pours the cloud
+  // into the ribbon on a seam once the voice has been on for most of 8 s; the defaults never do
+  const lone = { subGate: 0, denK: 2.2, eM: 0.8 };
+  ok(shapeFor(msAt(0, lone)) !== RIBBON && shapeFor(msAt(0, lone), 0.6) === RIBBON && shapeFor(msAt(0, lone), 0.4) !== RIBBON && shapeFor(msAt(0, Object.assign({}, lone, { subGate: 1 })), 0.9) !== RIBBON, 'shapeFor: no sub + dense kicks = today\'s shape; + voxSec .6 → the ribbon; voxSec .4 → today\'s; a sub sounding → never the ribbon on the voice');
+  const loneBase = await runScene('dust', N, () => lone);
+  const loneSung = await runScene('dust', N, () => Object.assign({}, lone, A4));
+  const tSec = loneSung.findIndex((r) => r.voxSec > 0.5), tWant = loneSung.findIndex((r) => r.want === RIBBON), tForm = loneSung.findIndex((r) => r.formB === RIBBON);
+  ok(loneBase.every((r) => r.want !== RIBBON && r.formB !== RIBBON) && tSec > 4 * 60 && tSec < 7 * 60 && tWant === tSec && tForm > tWant && loneSung[N - 1].formB === RIBBON, `a lone voice: the defaults never ask for the ribbon; sung, voxSec passes .5 at ${(tSec / 60).toFixed(2)} s, the shape asked for is the ribbon from there, the pour lands on the seam at ${(tForm / 60).toFixed(2)} s and holds`);
 }
 
 console.log(fails ? 'FAIL ' + fails : 'OK');

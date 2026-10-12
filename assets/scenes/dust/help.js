@@ -89,6 +89,15 @@ export const HELP = {
     arc: 'the bid: never auto-picked during a build',
     punchy: 'the bid: punchy music invites the swarm',
     calm: 'the bid: slow, sparse sound is the swarm\'s (§93)',
+    voxS: 'the singer\'s grains: above the gate\'s knee (.45 → .85, over the live detector\'s own gates so a piano\'s false '
+      + 'voice stays dark) the grains whose bands sit at the sung pitch\'s first three partials — three thin shells at its '
+      + 'radii — are lifted in the sung note\'s hue and the rest of the cloud gives up exactly that light; the voice over 8 s '
+      + 'also lets a lone voice (no sub sounding) pour the cloud into the ribbon on a seam; `&dvox=0` is the cloud as before',
+    voxHz: 'which bands are the singer\'s (the pitch and its 2× and 3× partials on the log axis, so the shells rise and fall '
+      + 'with the melody) and, in the ribbon, how high the line sits — the one vertical this scene has; a pitch colours '
+      + 'nothing until it has held about 85 ms',
+    voxConf: 'the switch: 0 (the fake timeline, a trace recorded before the detector) and the cloud is exactly as before; any '
+      + 'read above 0 lets the voice in — the HUD\'s vox line says which source (lane / live) feeds it',
   },
   eli5: 'Every dot is a particle that owns one frequency band of the spectrum. When its band gets loud the dot '
     + 'pushes outward, grows and brightens, so the cloud is a picture of the sound: the bass grains ARE the core of '
