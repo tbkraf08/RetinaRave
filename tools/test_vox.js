@@ -13,12 +13,14 @@
 //         stem's pYIN on the voiced frames — RECORDED, not gated (the mix ceiling)
 //   (iv)  the wiring: with the stage stubbed out, every other ears field is byte-identical on 30 s of SeeYouDrop (read-only to the lanes)
 //   (v)   the bench: the stage's cost per hop (its sample loop + the FFT + the net + the YIN), median over the track; the gate ≤ 0.1 ms
+//   (vi)  the lane's grid (§124): map.js' voxLane / mapVoxAt put the 10 ms sidecar on the engine's 60 fps clock with no drift
 import fs from 'fs';
 import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
 import { VoxTrack, VOX_GATE } from '../assets/engine/ears/vox.js';
 import { VoxNet, N_MEL, T_WIN } from '../assets/engine/ears/vox-net.js';
 import { VOX_W } from '../assets/engine/ears/vox-weights.js';
+import { voxLane, mapVoxAt, VOX_LANE_HOP } from '../assets/engine/map/map.js';   // §124: the file-mode lane's packing and its read
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const has = (k) => process.argv.includes('--' + k);
@@ -200,6 +202,33 @@ function wiring() {
   note('(iv) Ears.push ms per 512 block with / without the stage (30 s of SeeYouDrop)', A.pushMs.toFixed(3) + ' / ' + Bs.pushMs.toFixed(3) + ' (+' + (A.pushMs - Bs.pushMs).toFixed(3) + ' ms = ' + (1000 * (A.pushMs - Bs.pushMs)).toFixed(0) + ' us per hop)');
 }
 
+// ------------------------------------------------------------------------------------------------ (vi) the lane's grid (§124)
+// The sidecar is a 10 ms grid and the engine asks for it at heard time, 60 times a second, for up to an hour of track: the one
+// thing that can go wrong silently is DRIFT — an index walked per frame instead of computed, or a float hop accumulated. The
+// lane is read like map.sub (the nearest frame, never an interpolation), so the claim is exact: index == round(t / hop) at every
+// frame of an hour, the ends clamped, and voxHz never averaged with its -1.
+function laneGrid() {
+  console.log('== the lane grid (map.js voxLane + mapVoxAt: the 10 ms sidecar on the engine\'s clock, §124)');
+  const n = 360000;                                        // an hour at 10 ms
+  const j = { track: 'synthetic', sr: 44100, hop: VOX_LANE_HOP, n, voxS: [], voxHz: [], voxConf: [] };
+  for (let i = 0; i < n; i++) { j.voxS.push((i % 1000) / 1000); j.voxHz.push(i % 2 ? -1 : 200 + (i % 800)); j.voxConf.push(0.001); }
+  const lane = voxLane(j), out = {};
+  ok('(vi) voxLane packs the three arrays', !!lane && lane.n === n && lane.hop === VOX_LANE_HOP, lane ? lane.n + ' frames, hop ' + lane.hop : 'null');
+  ok('(vi) voxLane rejects a stale shape (n past the arrays)', voxLane({ n: 10, hop: 0.01, voxS: [0], voxHz: [-1], voxConf: [0] }) === null, 'null');
+  let worst = 0, badHz = 0;
+  for (let f = 0; f < 216000; f++) {                        // an hour of frames at 60 fps
+    const t = f / 60, i = Math.round(t / VOX_LANE_HOP);
+    mapVoxAt(lane, t, out);
+    worst = Math.max(worst, Math.abs(out.voxS - lane.S[i]));
+    if (!(out.voxHz === -1 || out.voxHz >= 200)) badHz++;    // never (-1 + x) / 2
+  }
+  ok('(vi) no drift over an hour of frames: voxS == the nearest frame', worst === 0, 'max |Δ| ' + worst, '== 0');
+  ok('(vi) voxHz is categorical (never interpolated with its -1)', badHz === 0, badHz + ' bad frames');
+  mapVoxAt(lane, -5, out); const lo = out.voxS; mapVoxAt(lane, 1e6, out);
+  ok('(vi) the ends clamp', lo === lane.S[0] && out.voxS === lane.S[n - 1], 'first / last frame held');
+  ok('(vi) no lane: 0 / -1 / 0 (the live tier keeps the keys)', (mapVoxAt(null, 1, out), out.voxS === 0 && out.voxHz === -1 && out.voxConf === 0), 'idle');
+}
+
 // ------------------------------------------------------------------------------------------------ (v) the bench
 function bench() {
   console.log('== the bench (the stage alone on SeeYouDrop: the sample loop + the FFT + the mel + the net + the YIN, per 512-sample hop)');
@@ -212,7 +241,7 @@ function bench() {
 
 if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); } }
 if (!only || has('ruler')) ruler();
-if (!only) wiring();
+if (!only) { wiring(); laneGrid(); }
 if (!only || has('bench')) bench();
 console.log(FAIL ? `\n${FAIL} FAILED` : '\nall ok');
 process.exit(FAIL ? 1 : 0);

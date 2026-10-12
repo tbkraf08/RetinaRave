@@ -1250,6 +1250,30 @@ field is graded with `tools/dust-trace.js` **with the engine started at 0:00** (
 plus a warm normaliser, and a window that starts the engine cold inside the track (the default WARM 8) is not what the user's
 play button does (§78 found CyborgNinja's cold start reading two false accents that way).
 
+## Vocal detector — the live CNN and the file-mode lane (DECISIONS §123–§124; `engine/ears/vox*.js`, `tools/truth/voxlane.py`, anything that reads `voxS` / `voxHz` / `voxConf`)
+
+Two sources, one interface. LIVE (every live mode, and a file under `&vox=live`): the causal CNN in the ears. FILE: the Demucs
+lane `$MUSIC/<T>.vox.json` beside the track, which WINS where it exists (the user: *"do the demucs for file; do cnn for live
+(note: I listen to live mode 90 % of the time -> live mode is first concern)"*). The HUD's vox line says which fed the rig —
+`lead ← lane | live | interval` (`interval` = §121's chroma stand-in, where `voxConf` is 0: the fake timeline, an old trace).
+```
+python3 tools/truth/voxlane.py --all                 # the nine lanes from tools/truth/<T>.vox.json -> $MUSIC/<T>.vox.json (208-367 KB each; the pad take's goes beside rec.wav)
+node tools/test_vox.js                               # in npm test: the mel / ONNX parities, the ruler per track, the wiring, the bench, (vi) the lane's grid
+node tools/vox-ab.js [Track …] [--music=<dir>] [--lag=500] [--lagr=0.3]    # the A/B: the live CNN against the lane, per track
+```
+`vox-ab.js` replays the PCM dumps (`tools/work/<T>.48000.st.f32`) through the live stage in node and reads the lane the page
+would fetch — no GL, no page. Its columns: **sung %** (frames with `voxS ≥ .3`, lane then live), **agree %** (both above the
+gate or both below), **pitched %** (frames where BOTH publish a pitch, as a share of the frames the LANE pitches), **semi %**
+(of those, within 100 cents of the lane's; `oct %` forgives an octave), and **lag ms** — the shift of the live `voxS` series
+that maximises its correlation `r` with the lane's, POSITIVE meaning live is late (its causal window + the .1 s ease). A lag
+only means something where the two series share a signal, so it prints `-` below `--lagr`: on a no-voice track the argmax
+lands on the search bound and says nothing. The lane's own grid is 10 ms, so the lag's resolution is 10 ms.
+
+The identity rule: a lane only exists in FILE mode with the map on, so a change here may move the **`&map=1` lines of the
+scene that reads the voice (s1, FLUID2) and nothing else** — the `&map=0` lines are the live path and must hold to the byte,
+and the fake smoke has no file and therefore no lane at all. `&vox=live` is the A/B switch for the page (and the way to shoot
+the live tier's picture on a file).
+
 ## Scene ruler on a real track — `tools/dust-trace.js` (a scene edit whose point is the SYNC, v0.20+ / DECISIONS §57)
 
 `filetrace.js` records MS, and MS says nothing about what a SCENE did with it; `probe.js` reads the canvas but needs a
