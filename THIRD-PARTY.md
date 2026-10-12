@@ -71,5 +71,11 @@ USE OR PERFORMANCE OF THIS SOFTWARE.
 Mathieu Ramona, Gaël Richard, Bertrand David, "Vocal detection in music with support vector machines", ICASSP 2008:
 93 Creative-Commons-licensed pieces from jamendo.com with voice / no-voice annotations, published as "Jamendo Corpus for
 Singing Voice Detection" on Zenodo (https://zenodo.org/records/2585988, CC BY 4.0). Fetched to ~/Datasets/jamendo-svd/ on
-this machine only; neither the audio nor the labels are in the repo. Whether weights trained on it ship is DECISIONS §122's
-open question (a).
+this machine only; neither the audio nor the labels are in the repo.
+
+**What ships (DECISIONS §123):** `assets/engine/ears/vox-weights.js` — the 38 385 parameters of the live vocal detector
+(`assets/engine/ears/vox.js` + `vox-net.js`), trained by `tools/truth/voxtrain.py` on the corpus's train + valid splits (77 of
+the 93 pieces, the frame labels at the window's end) together with six of this project's own library tracks. The weights are a
+derived work of the corpus under CC BY 4.0; this notice, the header of the weights module and the credits on retinarave.com/about
+are the attribution. The corpus's own README: "This is a public corpus of 93 creative-commons licensed music pieces annotated by
+voice (sung or spoken) and no-voice." Nothing of the audio or the labels is reproduced in the weights or anywhere on the site.

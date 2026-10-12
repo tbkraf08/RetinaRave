@@ -3119,3 +3119,111 @@ check 0 fail, npm test exit 0.
   module's header, and the audio never ships; (c) with `voxS` low the LEAD's ink share goes to 0 and the floor keeps its ink
   (`LEAD_SHARE · voxS`), `interval` only as the fallback while `voxConf` is 0 (no detector read at all: the fake timeline, the old
   traces), the HUD's vox line says which source feeds the lead.
+
+
+## §123 The live vocal detector — the tier-2 CNN in the ears, and the rig reads the voice (2026-10-12, the vocal detector's step 2 of three, `docs/plans/VOCAL-PLAN.md` §2; the user: *"do the demucs for file; do cnn for live (note: I listen to live mode 90% of the time -> live mode is first concern)"*; on step 1's renders: *"SeeYouDrop-vox-stem.wav is hard to tell because the sound is distorted and lined up with the other sounds so can understand the missed detection (but things have sounded accurate)"*)
+
+- **What it is** (branch `vox-cnn`, one Fable session): three music-state keys, `voxS` (the vocal presence 0–1, eased .1 s), `voxHz` (the sung
+  pitch in Hz, −1 none) and `voxConf` (0–1), from a new causal stage in the ears — `engine/ears/vox.js` beside the sub / perc / tonic
+  lanes, its own ring of the mid signal, read-only to every other feature — and FLUID2's LEAD channel reading them (`core/fluid/inject2.js`).
+  The FEATS entries (`ears/feats.js`), the `state.js` defaults 0 / −1 / 0 (the fake timeline's: `#test` never runs the ears), `EARS_FIELDS` +
+  the history ring (the three appended at the END of `CONT`, so no other lane's index moved; `voxHz` is categorical in `read()` — the
+  average of −1 and 300 Hz is not a pitch), FLUID2's help text, and the HUD's vox line (`vox S .xx hz 262 conf .xx lead ← live | interval`;
+  step 3 adds `lane`). Parity's 72 untouched. (b) answered: the lane wins in file mode (step 3), the CNN alone in every live mode. (a) and
+  (c) on the plan's recommendations (§122's addendum): the weights SHIP with attribution; `LEAD_SHARE · voxS`, `interval` only while
+  `voxConf` is 0.
+- **The front end** (`vox.js`; `tools/truth/voxtrain.py` re-implements it in numpy to the hop): per 512-sample hop a 2048-point periodic-Hann
+  FFT (the ears' own class) over the 2048 samples ending at the hop, the POWER in 40 triangular HTK-mel bands 100 Hz–8 kHz, ln(E + 1e-9),
+  then a per-band CAUSAL running mean / variance (an exact cumulative mean until the count passes the 30 s exponential window) →
+  (x − m) / sqrt(v + .0625): the model sees the track's own range, never an absolute level (§111 item 7's shape). The first FFT at hop 3.
+  **The mel parity** (`tools/test_vox.js` (i)): the ears' log-mel on SeeYouDrop's first 3000 hops = numpy's to **7.05e-5 raw, 1.29e-5
+  normalised** (the gate 1e-4; the float32 FFT is the whole difference).
+- **The net, run as a STREAM** (`ears/vox-net.js`, plain Float32Array loops — node, the page, a Worker): 40 × **34** hops → conv 3×3 ×16 →
+  ReLU → max-pool 2 → conv 3×3 ×16 → ReLU → max-pool 2 → dense 32 → ReLU → dense 1 → sigmoid, **38 385 parameters**. The plan's 32 hops
+  became 34 and the convolutions VALID in time (same in frequency) so that every pooling pair is full and the NEWEST hop reaches the dense
+  layer — and so that the net runs one column at a time as the hops arrive: one conv1 column per hop (~6 k multiply-adds), one conv2
+  column per two (~46 k), the dense every four (~36 k) ≈ 38 k per hop, where a batch inference of the window every four hops is ~1 M per
+  run. The output at hop N is EXACTLY the batch model on the window [N − 33, N], firing at hops ≡ 1 (mod 4) from the first column (the
+  first at hop 33). **The ONNX parity** ((ii)): the JS stream on 200 held Jamendo-test windows vs onnxruntime on `tools/work/vox/vox.onnx`
+  (the same fp16-rounded weights; torch vs onnxruntime 3.3e-6 on the logit) — **1.17e-6** on the sigmoid output (the gate 1e-4); the stream
+  fires on the 34th column and never before, 200 / 200. The weights: `ears/vox-weights.js`, Float16 little-endian base64, **104 297 bytes**
+  (the plan's ≈ 100 KB; fp32 would be twice that), the provenance and the Jamendo attribution in its header; `bundle.js` inlines it like
+  any module — nothing is fetched, the landing's on-device promise holds.
+- **The pitch** (`vox.js`): a second `Yin` (the sub's class) on a 200–1000 Hz band-passed (4th-order high + low, dsp.js 'steep') copy
+  decimated to 12 kHz, a 20 ms window, CMND .15, run on every inference; `voxHz` = its f0 while `voxS` > .3 and the periodicity ≥ .6, −1
+  otherwise; **`voxConf` = voxS × the periodicity measured on EVERY inference whether or not the gate is open** — so it is 0 only where there
+  is no read at all (the fake timeline, digital silence, a trace recorded before this), which is the rig's cue for `interval`. A pitch read
+  on a MIX: the honest ceiling of this tier, measured below.
+- **The training** (`voxtrain.py`, torch CPU, 24 threads; the Jamendo singing-voice corpus — Zenodo 2585988, CC BY 4.0 — at 48 kHz mono, the
+  .lab labels at the window's END, 61 train / 16 valid (picks the epoch) / 16 test; the library's `windows_hand` (a frame inside a hand window
+  with the stem's share ≥ the track's knee is sung, outside every window not, under the knee inside one — a breath — dropped), ×2; from run 2
+  the training tracks' Demucs ACCOMPANIMENTS as negatives and eight cross-track REMIXES of their vocal stems over another track's
+  accompaniment at −9 … +2 dB, labelled by the stem's share of the remix (≥ .15 sung, ≤ .04 not); 12–14 epochs × 400 k windows, batch 512,
+  Adam 1e-3 cosine, BCE, gain / tilt / level / noise jitter on the normalised input; 70–130 s per epoch). **Five runs, the whole story:**
+
+| run | the data | held out (library) | Jamendo test F1 / AUC | IBelongHere F1 / AUC (unseen) | Comptine fp % | Vienna fp % |
+|---|---|---|---|---|---|---|
+| 1 | Jamendo + the six library mixes | IBelongHere, Comptine | .789 / .868 | .806 / .842 | **28.2 unseen** | 6.6 |
+| 2 | + the accompaniments + the remixes (the remix labels wrong: a stem judged against its own p95 read 100 % sung) | IBelongHere, Comptine | .803 / .880 | .768 / .826 | **21.9 unseen** | 2.7 |
+| 3 | the remix labels fixed (the stem's SHARE), BCE pos_weight .6 | IBelongHere, Comptine | .784 / .870 | .730 / .848 | **16.5 unseen** | 1.5 |
+| 4 | Comptine trains, pos_weight 1 | IBelongHere, Vienna | .797 / .873 | .768 / .815 | 3.8 | **31.1 unseen** |
+| 5 (ships) | every no-voice track trains; the valid-AUC pick is a high-recall epoch (R .87, P .73) | IBelongHere | .792 / .875 | .819 / .838 | 10.0 (test_vox, eased) | 6.0 |
+
+  Read: **the target F1 ≥ .88 on Jamendo test is MISSED at .79–.80** — the 2015 nets it was taken from are ten times the size with 1.6 s of
+  CENTRED context; this one is 38 k parameters over 363 ms, causal, and five runs sat within two points of each other. **An unseen
+  instrumental reads as a voice on 17–31 % of its frames** (Comptine's solo piano three times, Vienna's synth leads once): nothing in
+  Jamendo teaches a 363 ms net that a harmonic line in the voice band is not a voice, and the user listens to THIS library live 90 % of
+  the time — so the shipped weights know every library track but IBelongHere (the one unseen control, F1 .82 / P .93), and the fix for the
+  world outside the library is a piano / lead-synth negative set or a longer window, not a sixth run of this net. Run 4's weights were the
+  better no-voice set (Comptine 3.8) but its ONNX / parity files were overwritten by run 5 and its checkpoint with them; run 5 is the one
+  set with a consistent parity reference, so it ships.
+- **The ruler** (`tools/test_vox.js` (iii): the 48 kHz PCM dumps through the stage, `windows_hand` from the `.vox.json`; voxS eased):
+
+| track | hand s | voxS p50 in / out | ratio | fp % (≥ .5 outside) | lead p50 | voiced | voxHz: a pitch on / within a semitone / modulo the octave |
+|---|---|---|---|---|---|---|---|
+| Comptine (the control, in-sample) | 0 | – / .111 | – | **10.0 — MISSED (< 5)** | – | 0 | – |
+| IBelongHere (unseen) | 199 | .694 / .216 | **3.2×** | 20.7 | – | 5549 | 60 / **53** / 58 % |
+| RaindropsOnRoses | 94 | .884 / .171 | **5.2×** | 18.9 | **.987** (the lead, by design) | 2613 | 81 / **63** / 72 % |
+| CyborgNinja | 0 | – / .084 | – | 1.1 | – | 0 | – |
+| Malicious | 1 | .440 / .122 | 3.6× | 2.3 | – | 52 | 6 / 0 / 0 % |
+| SeeYouDrop | 75 | .764 / .204 | **3.7×** | 13.2 | – | 206 | 28 / **14** / 18 % |
+| Vienna | 0 | – / .139 | – | 6.0 | – | 0 | – |
+| WhoLikesToParty (shouted chops, no pYIN voicing — recorded) | 64 | .222 / .201 | 1.1× | 5.7 | – | 0 | – |
+
+  Read: the three voiced tracks clear 2× (3.2 / 5.2 / 3.7); Raindrops' lead reads as a voice (.987); the control MISSES its 5 % at 10 %
+  (recorded as a miss in the test, never a FAIL — HARNESS's `gate: false` shape); WhoLikesToParty's hand windows (the ear accepted the
+  Demucs passages; §122: "shouted, not sung", pYIN voiced nowhere) read 1.1× — by the §122 table's own definition it is not a voiced track,
+  so its claim is recorded. **The mix ceiling on voxHz:** within a semitone of the stem's pYIN on 53 / 63 / 14 % of the voiced frames
+  (IBelongHere / Raindrops / SeeYouDrop; the plan's 70 % recorded, not gated), 58 / 72 / 18 % with an octave error forgiven, a pitch at all
+  on 60 / 81 / 28 % — on a mix the YIN takes the loudest periodic thing in 200–1000 Hz, which on SeeYouDrop's C#5 chops over a synth is
+  the synth; step 3's lane is the accurate file-mode read. The fp % on the voiced tracks (13–21 %) is frames OUTSIDE the hand windows
+  above .5: reverb tails, backing lines and the breaths the knee dropped — the ear's "things have sounded accurate" was about the passages.
+- **The wiring proof** ((iv)): Ears on 30 s of SeeYouDrop with the stage vs with it stubbed — every one of the 31 other fields byte-identical
+  at 60 fps; the vox fields reach `read()` (voxS max .994, voxHz −1 or 200–1000 Hz, voxConf 0 wherever voxS is 0). **The bench** ((v),
+  HARNESS "Bench protocol", the machine idle): the stage alone — the sample loop (four biquads + the decimation + its ring), the FFT, the
+  mel, the net, the YIN — **72.6 µs per hop median, p99 135, mean 78** (the gate ≤ 100 µs; the 2048 FFT is 45 of it); `Ears.push`
+  .172 ms per 512 block with the stage against .072 without (+100 µs = the stage), inside the PCM listener, outside `frame()` — the frame
+  budget unmoved. One inference per 4.01 hops.
+- **The rig reads it** (`inject2.js`): while `voxConf` > 0 the LEAD's ink share = `LEAD_SHARE · voxS` (none under `VOX_ON` .1: a splat is a
+  GPU pass), its height `p = 12·log2(voxHz / 440) + 69`, the scale degree of p mod 12 above the tonic as before plus `LEAD_OCT` .3 of the
+  octave term clamp(log2(voxHz / 110) / 4, 0, 1), its hue the SUNG note's; a voiced frame with no pitch read holds the last height and hue;
+  `voxConf` 0 = the §121 stand-in exactly as it was. `tools/test_fluid.js` grew eight claims (350 ok): the defaults keep `interval`; with a
+  read the lead is live with share LEAD_SHARE × voxS and the lead's area-weighted ink is exactly that fraction of lead + floor (the floor
+  keeps the rest), Σ ink = the base's to 1e-9 on the live path too, the height = the degree + the octave term after 50 frames on a note, the
+  hue the sung pitch class, voxS under VOX_ON → no lead splat and the floor whole, the hold on voxHz −1. The §121 eight-track table stands:
+  the traces predate the keys (voxConf 0 → `interval`).
+- **The md5 proof.** The fake smoke (`tools/scene-md5.sh`): every line = the v0.35 reference but the s1 pair — and the s1 pair (293d773c /
+  96ad310a) = main's at 5f18a4d, shot from a plain archive of its tree: the reference's s1 lines (0e92a1c4 / ed3283fc) were stale since
+  §121 moved the rig onto s1 and no fake list was re-based after it. So: **unmoved on every line against main.** The real sweep
+  (`tools/real-md5.sh`, both map modes): the roster **s0 / s2 / s3 / s4 — 264 of 264 lines = the v0.37 reference** (the stage is read-only to
+  every other feature on real music, in the file map mode and the live lanes); the s1 lines: the addendum below (the sweep ran last).
+- **Credits and the licence** ([[feedback-credit-where-due]]; the plan's (a)): the Jamendo corpus in THIRD-PARTY.md (what ships, what does
+  not), in about.html's credits and in the weights module's header; the audio and the labels never leave this machine. `node tools/license.js
+  --check` 150 / 0 (`vox.js`, `vox-net.js`, `vox-weights.js` new).
+- **The gates:** `node tools/check.js` 147 modules · 0 fail · 4 warn (the soft caps); `node tools/test_vox.js` all ok (the Comptine miss
+  recorded); `test_fluid.js` 350 ok; `npm test` exit 0 (`test_vox.js` added to it; the gitignored inputs it needs print their one-line fix
+  when missing, the traces' rule). Not tagged, not pushed; the user's eye on `#scene=1` with the HUD's vox line is next, then step 3.
+- **Addendum — the s1 sweep** (`SCENES=1 PAR=2 tools/real-md5.sh`, 66 runs, f0 2 on every run, no errs): **all 66 s1 lines moved, 0 held** —
+  every track, both map modes and the pad take: the rig reads the live CNN in file mode too (the map has no vocal lane until step 3), so
+  FLUID2's picture changed everywhere the voice did. The list is `tools/accept/v0.38/real-md5-s123-s1.txt` for the record; the full reference
+  is re-based by the next release's sweep, never here (the roster's 264 lines held, above). `npm test` exit 0 with `test_vox.js` in it.
