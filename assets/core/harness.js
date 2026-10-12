@@ -1,7 +1,7 @@
 // Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
-// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &det= / &clock= / &loud= / &tongues= / &fluid= / &fluiddbg= / &glitch= / scene hooks (&baby=), CARD.log, bench.
+// Test harness: window.CARD, CARD.fix, #test / &scene= / &fake=0 / &demo= / &trans= / &colour= / &route= / &post= / &param= / &k= / &kmood= / &track= / &at= / &sync= / &lead= / &disp= / &map= / &vox= / &det= / &clock= / &loud= / &tongues= / &fluid= / &fluiddbg= / &glitch= / scene hooks (&baby=), CARD.log, bench.
 // Mirrors cardioid3's CARD object so tools/parity.js can dump the same fields from both.
 import { ENGINE } from '../engine/engine.js';
 import { MS, XS } from '../engine/state.js';
@@ -175,6 +175,10 @@ export function initHarness(hideLanding) {
   // live step 3.0: &map=0 skips the file's track map, so the ears stay causal (the live path on a file, deterministic under
   // CLOCK=1) — what every live-mode stage is developed against; the default builds the map as v0.15 did
   if (HASH.has('map')) ENGINE.useMap = HASH.get('map') !== '0';
+  // §124 the vocal lane: in file mode the Demucs sidecar ($MUSIC/<T>.vox.json, tools/truth/voxlane.py) feeds voxS / voxHz /
+  // voxConf and the live CNN is overridden — the user's rule ("do the demucs for file; do cnn for live"). &vox=live forces the
+  // CNN on a file too (the A/B: tools/vox-ab.js grades the two off the page); &vox=lane is the default. No lane, no change.
+  if (HASH.has('vox')) { const v = HASH.get('vox'); if (v !== 'live' && v !== 'lane') throw new Error('&vox= lane | live'); ENGINE.voxLane = v === 'lane'; }
   // true loudness (engine/loud.js, DECISIONS §63): &loud=0 turns the stage off — loudAbs stays -1 and every migrated
   // scene falls back to the `lvl` / `eM` formula it had before, which is the A/B and the md5 receipt
   if (HASH.has('loud')) LOUDK.on = HASH.get('loud') !== '0';

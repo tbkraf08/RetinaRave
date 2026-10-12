@@ -22,7 +22,7 @@ import { PCM } from './pcm.js';
 import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX } from './ears/ears.js';
 import { KEYOWN } from './ears/tonic.js';
 import { DEN_WIN } from './ears/perc.js';
-import { buildMap, mapAt, mapCross, mapSubAt } from './map/map.js';
+import { buildMap, mapAt, mapCross, mapSubAt, mapVoxAt, voxLane } from './map/map.js';
 import { ModeShade } from './ears/shade.js';
 
 // §62 — `key` / `mode` are the EARS' tonic once it has one. They are synapse's fields (features-synapse.js writes them
@@ -52,7 +52,10 @@ const SUB_EVT = [['noteT', 'subNoteEvt', 'subNote'], ['inT', 'subIn', 'subIn'], 
 
 export const EARS = {
   ears: null, map: null, mapFile: null, next: -1, subscribed: false, lastT: -1, beat: 0, cpu: 0, blocks: 0,
-  mapMs: 0, out: {}, sub: {},
+  mapMs: 0, out: {}, sub: {}, vox: {},
+  // §124: which source last fed voxS / voxHz / voxConf — 'lane' (the file-mode Demucs sidecar), 'live' (the CNN) or ''
+  // (the stage has not run: the fake timeline). The HUD's vox line reads it; nothing else does, and no MS field moved for it.
+  voxFrom: '',
   // the map-event release cursors: one index per percussion class and per sub event list, the last released time, and
   // the 1 s sliding history each `den*` counts. Reset by `resetRel()` on a new map or a backwards seek.
   oi: [0, 0, 0], last: [-9, -9, -9], vel: [0, 0, 0], hist: [[], [], []], si: [0, 0, 0],
@@ -89,6 +92,9 @@ function armMap(F) {
         const c0 = performance.now();
         try { EARS.map = buildMap(F.L, F.R, F.sr); } catch (e) { EARS.map = null; EARS.mapErr = String(e && e.message || e); }
         EARS.mapMs = performance.now() - c0;
+        // §124: the file source fetched the vocal lane beside the track (sources/file.js, before F.ready — so it is here
+        // by now whenever the track has one) and the map carries it like its own channels. A 404 left F.vox null.
+        if (EARS.map) EARS.map.vox = voxLane(F.vox);
         if (EARS.map) ENGINE.log('mapReady', 0, { ms: +EARS.mapMs.toFixed(1), drops: EARS.map.drops, sections: EARS.map.sections.length });
         res();
       }, 0);
@@ -121,6 +127,7 @@ export function earsStage(dt, now, S) {
     // §84: and the gate on that key is the tonic's own confidence — until §84 it stayed synapse's clarity of a read nobody
     // published, fully open on CyborgNinja's wrong G major (85 % of frames ≥ KEYC1) and 37 % open on SeeYouDrop's right C#m.
     if (o.tonic >= 0) { S.key = o.tonic | 0; S.mode = o.tonicMinor | 0; if (KEYOWN.ears) S.keyConf = o.tonicConf; }
+    EARS.voxFrom = 'live';                          // §124: the CNN's read, until a lane overwrites it below
     if (!M) for (const e of E.events) ENGINE.log(e.type, e.t, e.vel !== undefined ? { vel: +(+e.vel).toFixed(3) } : undefined);
   }
   if (M) {
@@ -141,6 +148,16 @@ export function earsStage(dt, now, S) {
     if (t < EARS.lastT - 1e-9) resetRel();                         // a seek backwards: the cursors are stale
     EARS.lastT = t;
     mapOverride(M, t, S);
+    // §124 — THE LANE WINS in file mode (the user: "do the demucs for file; do cnn for live"): the Demucs sidecar is the
+    // separator's own non-causal read of the voice, with no mix ceiling on the pitch, so it replaces the three live keys
+    // here exactly as `map.sub` replaces the causal sub above. `&vox=live` (ENGINE.voxLane false) leaves the CNN's values
+    // standing — the A/B, and the only way to see the live tier on a file. The live stage keeps running either way: its
+    // cost is paid in the PCM listener before this stage can know whether a lane exists.
+    if (M.vox && ENGINE.voxLane) {
+      mapVoxAt(M.vox, t, EARS.vox);
+      S.voxS = EARS.vox.voxS; S.voxHz = EARS.vox.voxHz; S.voxConf = EARS.vox.voxConf;
+      EARS.voxFrom = 'lane';
+    }
   } else if (S.mapOn) {
     S.mapOn = 0; S.toDrop = S.toBoundary = S.mapSection = S.mapNext = -1; S.buildProg = S.mapReturn = S.eG = 0;
   }

@@ -6,6 +6,7 @@
 // The table itself is help.js `keys()`; the landing card's hint row is rendered from it here.
 import { AU } from '../engine/audio.js';
 import { ENGINE } from '../engine/engine.js';
+import { EARS } from '../engine/features-ears.js'; // §124: EARS.voxFrom — 'lane' | 'live' | '' for the vox line's source
 import { toggleMonitor } from '../engine/sources/demo.js';
 import { SC, REG, stepScene, seatScene } from './scenes.js'; // §118 addendum: seatScene — Share a tab opens on FLUID
 import { Q } from './quality.js';
@@ -149,9 +150,10 @@ export function hudText(S) {
     `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}  lead ${ENGINE.LEAD.on ? (1000 * S.leadT).toFixed(0) + ' ms' : 'off'}  clock ${ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'} (pcm ${S.bpmPcm.toFixed(1)} ${f(S.beatPhasePcm)} conf ${f(S.clockConfPcm)})`,
     `arc ${S.arc}  eS ${f(S.eS)} eM ${f(S.eM)} eL ${f(S.eL)}  build ${f(S.build)}  absent ${f(S.absentT)}  dropEnv ${f(S.dropEnv)}`,
     `harm ${f(S.harmAngle)} vel ${f(S.harmVel)} clarity ${f(S.clarity)}  interval ${S.interval}`,
-    // §123: the vocal track — presence, the sung pitch (−1 none), its confidence, and which source feeds FLUID2's lead: `live` = the
-    // CNN (every mode today), `interval` = the §121 chroma stand-in (no read at all: the fake timeline); step 3 adds `lane` (the Demucs sidecar, file mode)
-    `vox S ${f(S.voxS)}  hz ${S.voxHz > 0 ? S.voxHz.toFixed(0) : '-'}  conf ${f(S.voxConf)}  lead ← ${S.voxConf > 0 ? 'live' : 'interval'}`,
+    // §123 + §124: the vocal track — presence, the sung pitch (−1 none), its confidence, and which source feeds FLUID2's lead:
+    // `lane` = the Demucs sidecar (file mode, the default — §124), `live` = the CNN (every live mode, and a file under &vox=live),
+    // `interval` = the §121 chroma stand-in where there is no read at all (the fake timeline, a trace recorded before §123)
+    `vox S ${f(S.voxS)}  hz ${S.voxHz > 0 ? S.voxHz.toFixed(0) : '-'}  conf ${f(S.voxConf)}  lead ← ${S.voxConf > 0 ? (EARS.voxFrom === 'lane' ? 'lane' : 'live') : 'interval'}`,
     `tension ${f(S.tension)} (rough ${S.rough.toFixed(3)})  suspension ${f(S.suspension)}  surprisal ${f(S.surprisal)}  section ${S.sectionId}${S.repeat ? ' (repeat)' : ''}`,
     `scene ${SC.logical} ${sc ? sc.name : ''}${SC.variant ? '/' + SC.variant : ''} (cur ${SC.cur} next ${SC.next} m ${f(SC.m)}) vmix ${f(SC.vmix)}${SC.forced >= 0 ? ' FORCED' : ''}`,
     `groove rot ${f(GROOVE.rot)}  drift ${f(GROOVE.drift)} sway ${f(GROOVE.sway)} nod ${f(GROOVE.nod.x)}`,
