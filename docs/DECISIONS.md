@@ -3107,3 +3107,15 @@ check 0 fail, npm test exit 0.
 - **The gates:** nothing in the engine moved — `node tools/check.js` 144 modules · 0 fail · 4 warn; `npm test` exit 0 (test_fluid 342 ok,
   test_music 151 ok — §121's numbers; the worktree needed main's gitignored `tools/truth/traces/*.json` linked in to run them);
   `node tools/license.js --check` 147 / 0. Not tagged, not pushed; the user's ear closes the step.
+- **Addendum 2026-10-12 — the ear's verdict, and the three open questions closed** (the step-2 session, branch `vox-cnn`). The user on the
+  18 renders: *"SeeYouDrop-vox-stem.wav is hard to tell because the sound is distorted and lined up with the other sounds so can understand
+  the missed detection (but things have sounded accurate)"* — read: the Demucs PASSAGES stand as the hand windows on every track, so
+  `windows_hand` = the `passages` list (from / to / kind) in each of the nine `tools/truth/<T>.vox.json`, `provenance.ear` carrying the
+  date and the quote (Comptine / CyborgNinja / Vienna / the pad take: an empty hand — the control holds; Raindrops' 1:51.5–2:17 keeps
+  `kind: 'lead'`). (b), answered: *"do the demucs for file; do cnn for live (note: I listen to live mode 90% of the time -> live mode is
+  first concern)"* — the lane wins in file mode (step 3), the CNN alone in every live mode, and LIVE quality is what step 2 is built for.
+  (a) and (c) were not answered; step 2 proceeds on the plan's recommendations and says so (§123): (a) the weights SHIP with
+  attribution — the Jamendo corpus is CC BY 4.0 on Zenodo, so the credit goes in THIRD-PARTY.md, about.html's credits and the weights
+  module's header, and the audio never ships; (c) with `voxS` low the LEAD's ink share goes to 0 and the floor keeps its ink
+  (`LEAD_SHARE · voxS`), `interval` only as the fallback while `voxConf` is 0 (no detector read at all: the fake timeline, the old
+  traces), the HUD's vox line says which source feeds the lead.
