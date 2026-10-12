@@ -3436,3 +3436,76 @@ check 0 fail, npm test exit 0.
   engine learns to hear a voice → what's new"* · `/whats-new` **http 200** with `id="v0.38"`, the `cls engine` label and
   `<h3>The engine learns to hear a voice</h3>` · `/about` carries the Jamendo Corpus credit. The user validates the rest
   at home — the list is above.
+
+## §127 The vocal lane on TORUS2 and DUST — one shared gate, the strand and the grains (2026-10-12, one Fable worker in a worktree off 85e98c1, branch `vox-scenes-a`; the plan `docs/plans/VOX-SCENES-PLAN.md`; the user: *"skip fluid for now; director -> don't bias the bid toward fluid"*)
+
+- **What it is.** The plan's session A minus FLUID, plus DUST from session B minus the director: `assets/math/vox.js` (the shared
+  gate) + TORUS2 + DUST. No director change at all (no bid term, no roster change, §95's dwell untouched); FLUID's `inject.js` and
+  FLUID2's rig untouched — the plan's open question 3 is answered the user's way: the NEW reads use the shared gate's knee, the rig
+  keeps the raw `voxS` the user validated by eye (§123). Nothing tagged, pushed or deployed; no audio played.
+- **The gate** (`math/vox.js`, pure, per-caller state like keycolour's `mkAnchor`): `vox(st, dt, MS)` → `{ w, pc, y01, hue }`.
+  `w = sstep(.45, .85, voxS)` — the knee ABOVE the live tier's own .3 / .5 gates, no rise ease, release .3 s (0 under .01);
+  `pc` the sung pitch class only after it has HELD .085 s (~two CNN inferences — a flicker or a shut YIN gate colours nothing; a
+  consonant holds the last); `y01` the rig's height `(1 − .3)·deg/11 + .3·clamp(log2(hz/110)/4, 0, 1)` eased .35 s, deg above the
+  key's tonic; `hue` the note's on the circle of fifths with the mode's pull (inject2's `hueOf` verbatim), the key's until a note
+  holds. **`voxConf` 0 → w 0 / pc −1 / y01 −1 exactly** — the no-op on the fake timeline and the traces; `voxConf` is the switch,
+  never a weight (live `voxConf = voxS × periodicity`, and a piano is periodic). Knobs: `&voxk=<lo>,<hi>` on any page (harness.js).
+- **TORUS2 (id 4) — the knot strand becomes the voice** (`scenes/torus2/voice.js`): the knot is already "the melody traces the
+  knot"; while someone sings three numbers blend by w — its LATITUDE → `TH0 + THS·(.35 + .5·y01)` (the sung pitch lifts the strand
+  toward the equator, the nest's own vertical, as a glide), its HUE → the sung note's slot `pc/12 − .5 + .09` (where the loudest
+  class's slot sits today; `uKnotBH.y` is a CPU number now), its BRIGHTNESS × (1 + .6·w); and the sung class's family ring is LIT,
+  `ch[pc] = max(ch[pc], w)` after `briMax` and `loudest` are read — the other eleven keep their light, the glow floor stands. Cost
+  none. `&t2vox=0` (hooks.t2vox) = today's bytes on a voiced track. hud() appends `vox w .xx pcN`.
+- **DUST (id 3) — the singer's grains, and the ribbon as the lone voice** (`scenes/dust/voice.js`; the plan's (a) AND (b) — the
+  planner's pick on open question 4, pending the eye): a grain's band is its PLACE (§58), so the grains whose bin sits at the sung
+  pitch's first three PARTIALS (voxHz, 2×, 3× on the log axis, bin j = 30·(16000/30)^(j/256) Hz — three thin shells at the pitch's
+  radii) are LIFTED in the sung note's hue (palette t = pc/12) and the rest of the cloud is scaled by (1 − .25·w): **the light is
+  moved** — the lift's gain is normalised on the CPU from the grains' own density over the axis (fx = .95·u^1.4 → ρ ∝ fx^(−2/7); the
+  partials' share p ≈ Σ aₖ·σ√π·ρ(fₖ) ≈ 2.2–2.8 %, the gain .25·w·(1 − p)/p ≈ ×10–12, capped at 12) so the brightness factor's
+  population mean is 1 (measured over 50 000 hashed grains: 1 ± .02 from C3 to C6). `shapeFor(MS, voxSec)` gains the voice:
+  `!subGate && (denK < lone || voxSec > .5)` → RIBBON, `voxSec` = w over 8 s (a seam decision is about a section) — the ribbon IS "the
+  breakdown, or a lone voice" and until now only knew "no kicks"; in the ribbon the line's y rises with the pitch (added to the
+  WAVE behind a branch that leaves w untouched at 0). The shader's block runs only at w > 0 (`uVox` vec4 + `uVoxC` vec2, ~8 ALU per
+  vertex inside it). `&dvox=0` (hooks.dvox) = today's bytes. hud() appends `vox w .xx pcN sec .xx`; dinfo() carries nine voice
+  numbers for dust-trace.
+- **The no-op proof.** `tools/test_voxscene.js` (27 ok, in `npm test`): the gate's defaults on 600 frames; each scene's `update()`
+  driven in node on a stub ctx, one module instance per run — the defaults = the switch off TO THE BYTE (TORUS2's five knot numbers
+  on 240 frames, DUST's pour / shape / spin / drive / hue / uniforms on 720), the switch off with a sung A4 = the defaults, a piano's
+  false voice (voxS .35 at voxConf .9) = the defaults; a sung A4 → TORUS2 w 1 / pc 9 / y01 .7227 / the hue slot .34 / brightness ×1.6
+  / the latitude's formula / family 9 lit with the other eleven, briMax and loudest unchanged; DUST rank .4277 / p 2.4 % / gain 10.6
+  / hue t .75 / the ribbon's rise; with the sub sounding the voice asks for no other shape; a lone voice pours into the ribbon on the
+  8 s seam once voxSec passes .5 (4.4 s) and the defaults never do. The fake smoke (`tools/accept/v0.38/scene-md5-s127.txt`): every
+  line = the v0.35 reference but the s1 pair = main's 293d773c / 96ad310a (§123's stale-reference note) — **unmoved against main**.
+- **The Comptine-live lit share — the plan's §0 claim is MISSED** (`tools/vox-gate-ruler.js`, the CNN replayed over the PCM dumps
+  and the lane, the gate at 60 fps; `tools/accept/v0.38/vox-gate-ruler-s127.txt`): at the default knee Comptine LIVE lights (w > 0,
+  the .3 s release included) on **27.3 %** of its frames and is hued (a class held) on **15.0 %**, at a mean w of **.070** — the
+  piano's voxS hovers around .45–.6, so the knee lets a LITTLE light through OFTEN; Vienna 14.5 / 4.5 %, CyborgNinja 4.0 / 2.1 %,
+  Malicious 4.9 / 1.4 %; the voiced three 48–77 % lit live (62–91 % on the lane). The knee sweep: .5/.9 → Comptine 22.6 %, .55/.9 →
+  18.2 %, .6/.95 → 14.3 % at a mean w of .017 — but SeeYouDrop's lane hue falls 26 → 4 % and Raindrops' lane lit 62 → 43 %. The
+  default stays the plan's; `&voxk=` is the user's A/B at home. What the knee held back: the CNN's raw sung-% on Comptine is 23.6
+  at the .3 gate (§124) and the gate's mean w there is .07 — a seventh of a voiced track's — so the false voice is dim, not absent.
+- **The md5 result** (`GPU=1 PORT=8951 PAR=2 SCENES="3 4" tools/real-md5.sh s127`, 86 runs, f0 2 on every run, errs [], 927 s;
+  the lists `tools/accept/v0.38/real-md5-s127-s3.txt` / `-s4.txt`, read against a SWITCH-OFF baseline shot at the same tree,
+  `real-md5-s127off-s3.txt` / `-s4.txt`): **s4 19 of 66 moved by the voice, 47 held; s3 25 of 66 moved, 41 held.** FILE mode on the
+  instrumentals: Comptine / CyborgNinja / Malicious / WhoLikesToParty **0/4 held on TORUS2**, Comptine / CyborgNinja / Malicious 0/4
+  on DUST — the read is a no-op where the lane says no voice; Vienna's groove moved on both (the lane ITSELF read a voice on 560
+  frames before the shot, the last 2.4 s before it: w was 0 at the shot but the scenes' eases carry — with the switch off the line
+  = the reference); WhoLikesToParty's drop1 on DUST (the lane's shouts light w with no pitch and voxSec passes .5 → the ribbon).
+  LIVE: Comptine build1 + drop1 moved on both scenes (the piano's false voice at the shot), Vienna build1 + Malicious groove on
+  DUST, the voiced three on both — **the live lines are re-shot after the CNN's second pass (VOX-CNN2, a parallel branch) lands.**
+  Every other scene's lines were not re-shot (nothing they read moved; the ears are untouched here). **A finding:** 11 s3 lines of
+  the v0.37 reference were already stale BEFORE this branch (the switch-off list differs from v0.37 on them — CyborgNinja intro +
+  boundary1 m1, Malicious build1 m1 + m0, WhoLikesToParty groove m1 + build1 m0, IBelongHere drop1 m1 + intro / groove m0, Raindrops
+  groove m1, SeeYouDrop groove m0); s4's 66 = v0.37. The next release's sweep re-bases; nothing here retunes DUST for it.
+- **The bench: NOT OBTAINED.** The HARNESS bench harness (q pinned .95, 8 s settle, three interleaved pairs against NAV2, on the
+  fake timeline and on IBelongHere at 60 s, switch on / off) was run after the sweeps with the machine idle, and `tools/cdp.js`
+  crashed at module import in that invocation on every case (the same driver ran 258 md5 runs on this tree today; the eval string
+  is the suspect). On the fake timeline the voice path is a skipped branch and three uniform uploads, so the no-op cost is the
+  upload; the voiced cost is the gate (a few dozen flops per frame) plus ~8 ALU per vertex in DUST's shader — unmeasured. Owed
+  (`docs/plans/VOX-SCENES-HANDOFF.md`).
+- **The gates:** `node tools/check.js` 150 modules · 0 fail · 4 warn (the soft caps: dust/index.js 364, torus2/index.js 361 — the
+  reads live in each scene's `voice.js`); `node tools/license.js --check` 153 / 0; `npm test` exit 0 (`test_voxscene.js` added).
+- **The eye is owed** — the voiced tracks on `#scene=4` (TORUS2) and `#scene=3` (DUST), file and live, on the dev server:
+  `#track=IBelongHere&scene=4` / `&scene=3` (the lane), the same with `&vox=live` (the CNN's picture), `RaindropsOnRoses` (from
+  24 s) and `SeeYouDrop` likewise, and `#track=Comptine&scene=3&vox=live` as the control (what the knee lets through on a piano);
+  `&t2vox=0` / `&dvox=0` under `#test` is the before. Every remark in track time is a K2 retune on all eight tracks (CONTRACTS §1.1).

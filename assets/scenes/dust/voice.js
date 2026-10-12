@@ -27,7 +27,7 @@ export const VOXD = {
   GMAX: 12,     // the lifted grains' gain cap (p tiny = a pitch where few grains live: the budget is exact up to ~C5, within 4 % at C6)
   W: 0.0075,    // the partial window's sigma on the 0..1 log axis (a semitone is .0092; a bin .0039)
   A: [1, 0.6, 0.4],   // the three partials' weights
-  RIBY: 0.6,    // the ribbon's rise at the top of the voice's range (scene units; y01 .5 = where it sits today)
+  RIBY: 0.8,    // the ribbon's rise at the top of the voice's range, in WAVE units (the wave is ±1 → ±.75·(.4 + lvl) scene units; y01 .5 = where it sits today)
   SEC: 8,       // s: voxSec's window — w over a section
   LN: Math.log(16000 / 30),   // the spec axis: bin j is 30·(16000/30)^(j/256) Hz (synapse/analyzer.js)
 };

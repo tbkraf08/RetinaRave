@@ -70,7 +70,7 @@ uniform vec4 uVox;         // §127 the VOICE (voice.js): x = w the sung presenc
                            // skipped whole — today's bytes), y = the sung pitch's rank on the log axis, z = the lifted grains'
                            // gain (normalised on the CPU so the light is MOVED: the cloud gives up VOX_DIM·w, the three
                            // partials' grains take it), w = unused
-uniform vec2 uVoxC;        // x = the sung note's palette t (its hue), y = the ribbon's rise with the sung pitch (0 at w 0)
+uniform vec2 uVoxC;        // x = the sung note's palette t (its hue), y = the ribbon's rise with the sung pitch, in WAVE units (0 at w 0)
 #define VOX_W 0.0075       /* the partial window's sigma on the 0..1 log axis (voice.js VOXD.W) */
 #define VOX_DIM 0.25       /* the cloud's share given up at w 1 (VOXD.DIM) */
 #define VOX_LN2 0.110387   /* ln 2 / ln(16000/30): the second partial's offset on the axis */
@@ -128,8 +128,12 @@ vec3 form(int k, float n, vec3 h, float id){
   // 3: the waveform itself as a twisting ribbon. A grain's place ALONG it is its band rank, mirrored about the middle,
   //    so the low bins are the centre of the ribbon and the highs its two ends — and the wave is sampled where the
   //    grain actually is, so the ribbon is still literally the waveform.
+  // §127: the line rises with the sung pitch — added to the WAVE (uVoxC.y in wave units) behind a branch that leaves w
+  // UNTOUCHED at 0: any arithmetic on w, even "+ 0.", let the GLSL compiler re-contract the expression and moved CyborgNinja's
+  // file-mode intro and boundary lines with no voice read at all (the first two cuts); a select keeps the original value
   float x = (h.z < .5 ? -1. : 1.) * (.02 + .98 * h.x); float w = wave(.5 + .5 * x);
-  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel) + uVoxC.y, (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);   // §127: the line rises with the sung pitch (uVoxC.y 0 = today)
+  if (uVoxC.y != 0.) w += uVoxC.y;
+  vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);
   pz.yz *= rot(x * 2.5 + uFlowMid * .4);
   return pz;
 }
