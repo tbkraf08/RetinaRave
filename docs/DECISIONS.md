@@ -3043,3 +3043,67 @@ check 0 fail, npm test exit 0.
 - **Not tagged, not pushed.** The user's eye first (`#scene=1` on the dev server); every remark in track time is a K2 retune on all eight
   tracks (CONTRACTS §1.1).
 
+
+## §122 The vocal ground truth — Demucs labels, the ear rules (2026-10-11, the vocal detector's step 1 of three, `docs/plans/VOCAL-PLAN.md`; the user: *"plan next session: 1. ground truth first 2. live mode with tier2 CNN 3. file mode with demucs vocal stem"*)
+
+- **What ran** (the worktree branch `vox-truth`; nothing in the engine moved): `pip install --user demucs librosa` (Demucs 4.1.0, librosa 0.11.0,
+  soundfile 0.14.0 in the user site; torch 2.12.0+cu130 untouched, no CUDA — CPU only), then `demucs -n htdemucs --two-stems=vocals` on
+  the eight library tracks + the pad take (`tools/work/fluid-diag/music/rec.wav` copied as `PadRec.wav`) into the ABSOLUTE
+  `tools/work/vox/htdemucs/<T>/{vocals,no_vocals}.wav` of the main checkout (gitignored; the stems outlive the worktree; never served,
+  never bundled). Two lanes of 14 threads on the 28 cores: 75–124 s per track, the whole pass 7 min (`tools/work/vox/demucs.log`).
+- **`tools/truth/voxtruth.py <T> [--render]`** (new; numpy + soundfile + librosa; clicktrack.py's click synthesis imported, not copied)
+  → `tools/truth/<T>.vox.json`: per 10 ms hop over the stem the vocal SHARE rms(stem)/rms(mix) (23 ms frames, box .1 s, clipped 1.5),
+  pYIN f0 on the stem (65–1050 Hz, 2048-sample frames, −1 unvoiced) and its voiced probability; the proposed sung WINDOWS = share ≥ a
+  knee on the track's own range (max(.08, p10 + .3·(p95 − p10)) over the music frames — the mix within 40 dB of its p95; an
+  instrumental's leak never clears .08) for ≥ 1 s with gaps under .5 s bridged, each with its mean share and median f0; the PASSAGES =
+  the same windows with phrase gaps under 2 s bridged (IBelongHere's verses are 52 windows and 10 passages — the clicks and the table
+  are the passages', the windows are the detector's frame-level grain; this is the one deviation from the plan's "a click at each
+  window's edge": 52 click pairs in four minutes answer nothing). RaindropsOnRoses' breakdown lead is `LEAD` 111–137 → `kind: 'lead'`
+  on the window and passage that cover it (1:51.5–2:17.1 found, .47 share, C4 — marked on purpose, the detector SHOULD read it).
+  `windows_hand` is never written by the script and survives every re-run; the three arrays are complete (share 4 decimals, f0 1,
+  vprob 3; 2.9 MB over the nine files) because the same file is step 3's lane. `provenance` carries the labeller, the Demucs / librosa
+  lines, the method sentence and the Jamendo licence line. `windows.py` now writes a `vox` key per track (`tools/truth/<T>.vox.json`,
+  the pad take's `rec` → `PadRec.vox.json`); `windows.json` regenerated — only the nine `vox` keys moved.
+- **The table** (Demucs wall = one lane of 14 threads; music s = frames within 40 dB of the mix's p95; voiced % = windowed music frames;
+  the passages in track time with their mean share; f0 = pYIN p10 / p50 / p90 inside the windows where voiced ≥ .5):
+
+| track | Demucs wall | music s | voiced % | knee (share p95) | windows / passages | the passages (track time; share) | f0 p10 / p50 / p90 Hz |
+|---|---|---|---|---|---|---|---|
+| Comptine (the no-voice control) | 74.7 s | 144.4 | **0.0** | .080 (.002) | 0 / 0 | none | — |
+| IBelongHere (vocal house) | 114.8 s | 229.1 | **68.3** | .293 (.893) | 52 / 10 | 0:00–0:06 (.46) · 0:08–0:14 (.43) · 0:17–0:47 (.39) · 0:50–1:10 (.51) · 1:14–1:18 (.46) · 1:22–2:33 (.41) · 2:36–2:38 (.73) · 2:44–3:06 (.52) · 3:08–3:13 (.37) · 3:16–3:48 (.44) | 222 / 335 / 523 (A3 / E4 / C5) |
+| RaindropsOnRoses | 113.0 s | 218.1 | **41.7** | .300 (.996) | 13 / 10 | 0:00.5–0:41 (.88, the sung intro before the 24 s start) · 0:52–0:53 · 0:55–1:02 (.25) · 1:09–1:14 · 1:17–1:21 (.27) · **1:51.5–2:17 (.47, LEAD, C4)** · 2:28–2:29 · 2:45–2:47 (.30) · 2:59–3:05 (.26) · 3:07–3:10 | 254 / 302 / 427 (B3 / D4 / A4) |
+| CyborgNinja | 89.6 s | 180.0 | **0.0** | .080 (.005) | 0 / 0 | none (stem max share .09, under the knee) | — |
+| Malicious | 110.5 s | 221.1 | 0.5 | .080 (.009) | 1 / 1 | 0:13.4–0:14.6 (.20, E5 — one shot) | 668 / 678 / 705 |
+| SeeYouDrop | 87.5 s | 157.2 | **44.2** | .141 (.468) | 11 / 7 | 0:10–0:47 (.22, C#5) · 0:50–0:58 (.52, unvoiced) · 1:05–1:12 (.10, A5) · 1:30–1:42 (.19, C5) · 1:57–2:04 (.19, unvoiced) · 2:11–2:13 (.18, C#4) · 2:36–2:37 (.35, D4) | 276 / 282 / 821 |
+| Vienna | 98.4 s | 192.7 | **0.0** | .080 (.006) | 0 / 0 | none | — |
+| WhoLikesToParty | 123.6 s | 253.5 | **20.1** | .083 (.237) | 25 / 14 | 0:01–0:16 (.12) · 0:37–0:39 · 0:41–0:43 · 0:46–0:47 · 0:50–0:57 (.20) · 0:59–1:13 (.11) · 1:51–1:52 · 1:55–1:57 · 2:04–2:11 (.23) · 2:14–2:16 · 2:25–2:27 · 3:01–3:08 (.19) · 3:11–3:13 · 3:23–3:24 | none voiced (pYIN < .5 throughout: shouted, not sung) |
+| PadRec (the pad take, 24.5 s) | 14.2 s | 22.0 | **0.0** | .080 (.003) | 0 / 0 | none (FLUID-DIAG's "pads, vocal" intro: Demucs hears no voice in it) | — |
+
+  Read: the control is clean (Comptine .002, CyborgNinja .005, Vienna .006, the pad .003 at p95 — a two-stem pass leaks under 1 % of
+  the mix's rms into the vocal stem on an instrumental, and the .08 floor holds with a 10× margin); IBelongHere is sung over two thirds
+  of its music frames, not only in the survey's intro + breakdowns (0–16, 48–64, 112–130, 144–178, 208–233 s are all inside the
+  passages, and so are the verses between); Raindrops' intro is a voice at .88 share and the lead is where the user put it; SeeYouDrop's
+  44 % at C#5 / A5 with a .52 passage pYIN calls unvoiced, and WhoLikesToParty's 20 % with no voicing at all, are the ear's calls —
+  a vocal chop, a shout, or a synth the separator took for a voice (the stem render says which). Malicious has one shot.
+- **The ear's renders** (`~/Music/RetinaRave-clicks/`, 18 files, never played here): `<T>-vox-windows.wav` = the mix at .85 with
+  clicktrack.py's section double-click (3 kHz, 2 × 15 ms, −6 dB re peak) where a passage OPENS and its drop click (400 Hz 120 ms, +6 dB)
+  where it CLOSES; `<T>-vox-stem.wav` = the Demucs vocal stem alone, 16-bit stereo 44.1 kHz. Listening order: Comptine (the control —
+  silence and no clicks is the pass), IBelongHere (the known reference), RaindropsOnRoses (the lead), CyborgNinja, Malicious, SeeYouDrop,
+  Vienna, WhoLikesToParty, the pad take; windows before stem per track. **The user answers in track time** ("vocals 48–64, the 112
+  one is a synth") → `windows_hand: [{from, to, kind?}]` in the json by hand (PENDING THE EAR — no hand window exists yet; the script
+  keeps the key on every re-run); `windows.json`'s `vox` keys already point at the files.
+- **Jamendo** (step 2's public training set): Mathieu Ramona's original host `mathieuramona.com` no longer resolves; the corpus lives on
+  Zenodo as record 2585988 ("Jamendo Corpus for Singing Voice Detection", `jamando.zip`, 327 156 782 bytes, metadata licence
+  `cc-by-4.0`) → `~/Datasets/jamendo-svd/jamendo/{audio (75 ogg + 18 mp3, 317 MB), labels (93 .lab: `from to sing|nosing`),
+  filelists (train 61 / valid 16 / test 16)}`. The licence line, verbatim from its README and now in every `.vox.json`'s provenance and
+  in `~/Datasets/jamendo-svd/LICENCE-NOTE.md`: *"This is a public corpus of 93 creative-commons licensed music pieces annotated by voice
+  (sung or spoken) and no-voice."* The per-piece CC terms (BY / SA / NC) are NOT in the archive — the weights question below.
+- **Credits** ([[feedback-credit-where-due]]): THIRD-PARTY.md gains Demucs (Défossez et al., MIT, the licence reproduced), librosa
+  (ISC, reproduced) and the Jamendo corpus (CC BY 4.0 on Zenodo; not in the repo). `voxtruth.py` carries the licence header
+  (`license.js` stamps .js / .html only; the `.vox.json` files are data like every `tools/truth/*.json`, no header).
+- **Open for the user** (the plan's three, verbatim): (a) the weights' licence given Jamendo's CC terms — ship or keep local;
+  (b) in file mode, the lane wins or the CNN (recommended: the lane, the HUD says); (c) with `voxS` low the lead falls back to `interval`
+  (today's chroma proxy) or goes dark (recommended: the share goes to 0, the floor keeps its ink — S5b's split).
+- **The gates:** nothing in the engine moved — `node tools/check.js` 144 modules · 0 fail · 4 warn; `npm test` exit 0 (test_fluid 342 ok,
+  test_music 151 ok — §121's numbers; the worktree needed main's gitignored `tools/truth/traces/*.json` linked in to run them);
+  `node tools/license.js --check` 147 / 0. Not tagged, not pushed; the user's ear closes the step.

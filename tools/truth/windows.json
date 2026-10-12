@@ -72,7 +72,8 @@
     "from": 11.0,
     "to": 71.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/Comptine.vox.json"
   },
   "CyborgNinja": {
    "track": "CyborgNinja",
@@ -146,7 +147,8 @@
     "from": 118.0,
     "to": 178.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/CyborgNinja.vox.json"
   },
   "IBelongHere": {
    "track": "IBelongHere",
@@ -220,7 +222,8 @@
     "from": 159.0,
     "to": 219.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/IBelongHere.vox.json"
   },
   "Malicious": {
    "track": "Malicious",
@@ -281,7 +284,8 @@
     "from": 115.0,
     "to": 175.0
    },
-   "gate": false
+   "gate": false,
+   "vox": "tools/truth/Malicious.vox.json"
   },
   "RaindropsOnRoses": {
    "track": "RaindropsOnRoses",
@@ -365,7 +369,8 @@
     "to": 116.0
    },
    "gate": true,
-   "start": 24.0
+   "start": 24.0,
+   "vox": "tools/truth/RaindropsOnRoses.vox.json"
   },
   "SeeYouDrop": {
    "track": "SeeYouDrop",
@@ -442,7 +447,8 @@
     "from": 40.0,
     "to": 100.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/SeeYouDrop.vox.json"
   },
   "Vienna": {
    "track": "Vienna",
@@ -519,7 +525,8 @@
     "from": 125.0,
     "to": 185.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/Vienna.vox.json"
   },
   "WhoLikesToParty": {
    "track": "WhoLikesToParty",
@@ -597,7 +604,8 @@
     "from": 8.0,
     "to": 68.0
    },
-   "gate": true
+   "gate": true,
+   "vox": "tools/truth/WhoLikesToParty.vox.json"
   },
   "rec": {
    "track": "rec",
@@ -627,7 +635,8 @@
    "rulers": {
     "from": 0,
     "to": 24.4
-   }
+   },
+   "vox": "tools/truth/PadRec.vox.json"
   }
  }
 }
