@@ -7,9 +7,11 @@
 // Inputs (gitignored, the one-line fix printed when one is missing): tools/work/<T>.48000.st.f32 (trackmap.py --pcm --sr=48000),
 // tools/work/vox/mel-SeeYouDrop.json + onnx-parity.json (tools/truth/voxtrain.py), tools/truth/<T>.vox.json (committed; voxtruth.py).
 //   (i)   the mel parity: the ears' log-mel (raw and normalised) on SeeYouDrop's first 3000 hops = voxtrain.py's numpy front end to 1e-4
-//   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4
+//   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4;
+//         then the TRAINING table the shipped weights came with (tools/work/vox/train-report.json: Jamendo test F1 / AUC, the unseen
+//         IBelongHere and Comptine) printed as NOTES — the plan's F1 >= .82 / Comptine <= 5 % say met or MISSED, never a FAIL (§126)
 //   (iii) the ruler per track (the plan's targets): voxS p50 inside windows_hand > 2× outside on every voiced track; < 5 % false-positive
-//         frames on Comptine (the control — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
+//         frames on Comptine (the control, UNSEEN since §126 — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
 //         stem's pYIN on the voiced frames — RECORDED, not gated (the mix ceiling)
 //   (iv)  the wiring: with the stage stubbed out, every other ears field is byte-identical on 30 s of SeeYouDrop (read-only to the lanes)
 //   (v)   the bench: the stage's cost per hop (its sample loop + the FFT + the net + the YIN), median over the track; the gate ≤ 0.1 ms
@@ -38,9 +40,9 @@ const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'M
 // is RECORDED below, not gated: the hand says voice, the pitch ruler says no pitch, and the net is trained on sung-or-spoken frames.
 const VOICED = ['IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop'];
 const SHOUTED = ['WhoLikesToParty'];
-// The control. Comptine (solo piano) TRAINS since run 4 (voxtrain.py LIB_TRAIN: held out, three runs read its piano as a voice on
-// 28 / 22 / 17 % of frames; Vienna's synth leads read 31 % when IT was the unseen control) — so this gate is IN-SAMPLE, and says so;
-// the unseen no-voice numbers are the §123 training table's, not a gate here. The other no-voice tracks print as notes.
+// The control. Comptine (solo piano) is UNSEEN since §126 (voxtrain.py LIB_HELD = IBelongHere + Comptine): §123's final split trained
+// on it (three earlier runs held it out and read its piano as a voice on 28 / 22 / 17 % of frames), so its 10 % was in-sample — this
+// round the number is honest. The other no-voice tracks (CyborgNinja, Vienna) train and print as in-sample notes.
 const CONTROL = 'Comptine';
 const NOVOICE = ['CyborgNinja', 'Vienna'];
 const LEAD = { track: 'RaindropsOnRoses', from: 111.5, to: 137.0 };
@@ -122,6 +124,19 @@ function onnxParity() {
   ok('(ii) the weights module', VOX_W.nMel === N_MEL && VOX_W.tWin === T_WIN && VOX_W.f16.length > 50000, VOX_W.nParams + ' params, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', '40 x 34');
 }
 
+// The training table (§126 item 4): the report voxtrain.py wrote beside the weights it exported. The numbers are the net's own
+// (frame-level, the .5 threshold, no ease, no vote) — the ruler below is the same net through the ears' stage. Recorded, not gated.
+function training() {
+  const p = path.join(ROOT, 'tools/work/vox/train-report.json');
+  if (!fs.existsSync(p)) { note('(ii) the training report', 'tools/work/vox/train-report.json absent (the weights\' run writes it) — nothing to record'); return; }
+  const R = JSON.parse(fs.readFileSync(p, 'utf8').replace(/\bNaN\b/g, 'null'));   // python's json writes NaN for a no-voice track's AUC
+  const pr = R.provenance || {}, te = R.jamendo_test || {}, H = R.held || {}, ib = H.IBelongHere || {}, co = H.Comptine || {};
+  note('(ii) the training run', (pr.tag || '?') + ' of ' + (pr.date || '?') + ', ' + (R.epochs || []).length + ' epochs, ' + R.params + ' params; ' + (pr.summary || '').slice(0, 90) + '…');
+  note('(ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC — ' + (te.F1 >= 0.82 ? 'the plan\'s >= .82 met' : 'the plan\'s >= .82 MISSED, recorded'), te.F1 + ' / ' + te.P + ' / ' + te.R + ' / ' + te.AUC + ' (' + te.frames + ' frames)');
+  note('(ii) IBelongHere (UNSEEN): F1 / P / R / AUC', ib.F1 + ' / ' + ib.P + ' / ' + ib.R + ' / ' + ib.AUC);
+  note('(ii) Comptine (UNSEEN, the net at .5): false-positive frames — ' + (co.fp_pct < 5 ? 'met' : 'MISSED, recorded'), co.fp_pct + ' % against the plan\'s < 5 %');
+}
+
 // ------------------------------------------------------------------------------------------------ (iii) the ruler per track
 function ruler() {
   console.log('== the ruler per track (tools/work/<T>.48000.st.f32 through the stage; windows_hand from tools/truth/<T>.vox.json)');
@@ -161,10 +176,10 @@ function ruler() {
   for (const r of rows) {
     if (VOICED.includes(r.track)) ok('(iii) ' + r.track + ': voxS p50 inside the hand windows > 2x outside', r.ratio > 2, r.p50in.toFixed(3) + ' / ' + r.p50out.toFixed(3) + ' = ' + r.ratio.toFixed(1) + 'x', '> 2x');
     if (SHOUTED.includes(r.track)) note('(iii) ' + r.track + ': voxS p50 inside the hand windows vs outside (shouted chops, no pYIN voicing — recorded)', r.p50in.toFixed(3) + ' / ' + r.p50out.toFixed(3) + ' = ' + r.ratio.toFixed(1) + 'x');
-    // RECORDED, not gated (§123): the shipped weights read Comptine's piano as a voice on 10 % of frames at voxS >= .5 — in-sample — against the
-    // plan's 5 %; the target is MISSED and printed as such (HARNESS: a claim pending its fix prints as a note, never a FAIL). The fix is a
-    // piano-negative set or a longer window, not a sixth run of this net (five runs: 28 / 22 / 17 % unseen, 3.8 / 10 % in-sample).
-    if (r.track === CONTROL) note('(iii) ' + r.track + ' (the control, IN-SAMPLE): false-positive frames (voxS >= .5) — ' + (r.fp < 5 ? 'met' : 'MISSED, recorded'), r.fp.toFixed(2) + ' % against the plan\'s < 5 %');
+    // RECORDED, not gated (§123, §126): §123's weights read Comptine's piano as a voice on 10 % of frames at voxS >= .5 — in-sample — against
+    // the plan's 5 %; §126 holds Comptine OUT (a piano / string / wind negative set — MusicNet, MAESTRO — trains instead) and prints the unseen
+    // number, met or MISSED (HARNESS: a claim pending its fix prints as a note, never a FAIL).
+    if (r.track === CONTROL) note('(iii) ' + r.track + ' (the control, UNSEEN): false-positive frames (voxS >= .5) — ' + (r.fp < 5 ? 'met' : 'MISSED, recorded'), r.fp.toFixed(2) + ' % against the plan\'s < 5 %');
     if (NOVOICE.includes(r.track)) note('(iii) ' + r.track + ' (no voice, in-sample): false-positive frames (voxS >= .5)', r.fp.toFixed(2) + ' %');
     if (r.track === LEAD.track) ok('(iii) ' + r.track + ": the lead 1:51.5-2:17 read as voice (p50 voxS)", r.lead >= 0.5, r.lead.toFixed(3), '>= .5 (by design)');
     if ((VOICED.includes(r.track) || SHOUTED.includes(r.track)) && r.voiced > 0) note('(iii) ' + r.track + ': voxHz within a semitone of the stem pYIN (recorded)', r.hzSemi.toFixed(0) + ' % of ' + r.voiced + ' voiced frames (' + r.hzOct.toFixed(0) + ' % modulo the octave, a pitch on ' + r.hzCov.toFixed(0) + ' %) — the plan asks 70, the mix ceiling');
@@ -239,7 +254,7 @@ function bench() {
   note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (one inference per 4 hops: ' + (R.hops / Math.max(1, R.vox.fired)).toFixed(2) + ')');
 }
 
-if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); } }
+if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); training(); } }
 if (!only || has('ruler')) ruler();
 if (!only) { wiring(); laneGrid(); }
 if (!only || has('bench')) bench();

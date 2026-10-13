@@ -3437,6 +3437,118 @@ check 0 fail, npm test exit 0.
   `<h3>The engine learns to hear a voice</h3>` · `/about` carries the Jamendo Corpus credit. The user validates the rest
   at home — the list is above.
 
+## §126 The live vocal detector's second pass — the lag measured per stage, the data, three runs, run 2 ships (2026-10-12, branch `vox-cnn2`, two Fable sessions, `docs/plans/VOX-CNN2-PLAN.md`; the user: *"what are next steps to improve the CNN accuracy (and speed up detection lag)"*; on the licences: *"use the non-commercial sets -> still can publish the weights; don't worry we are not monetizing this"*; on the plan's open questions: *"I don't understand this question"*)
+
+- **What it is.** The §123 net (38 385 parameters, 40 × 34, run as a stream) retrained on a second recipe and re-eased, the interface
+  unmoved: `voxS` / `voxHz` / `voxConf`, the rig's two reads, parity's 72, the fake md5 — nothing in `assets/scenes`, `math/vox.js` or
+  `core/fluid` touched. Four commits in the plan's order: **item 1** the ruler (`tools/vox-ab.js --stage=raw|held|eased`, `--stamp=end|centre`,
+  the flicker and the run-length histogram), **item 3** the ease (`ears/vox.js`: VOX_ATTACK .03 s under a 2-of-3 vote at the .3 gate,
+  VOX_RELEASE .05 s otherwise, the pitch gated by the vote; everything causal), **item 2** the data (`tools/truth/voxtrain.py`'s second
+  recipe), **item 4** the retrain (three runs, run 2 ships: `ears/vox-weights.js` 105 339 bytes). **The user's decisions, taken as the
+  plan recommended where the answer was *"I don't understand this question"*:** no look-ahead — everything causal (the plan's (b)); chops
+  are not voice — WhoLikesToParty's mix is OUT of the loss and its row is recorded (the plan's (c)); the rig `inject2.js` untouched; the
+  NC-licensed sets are IN and the weights SHIP (the plan's (a), the user's override above — MAESTRO's CC BY-NC-SA 4.0 line verbatim in
+  `~/Datasets/maestro/LICENCE-NOTE.md`, in the weights module's header and in THIRD-PARTY.md with the paragraph that Retina Rave is
+  non-commercial); the net's shape (the plan's (d), TCN vs GRU head) is session 3's by the numbers.
+- **The lag, measured before it was changed** (`vox-ab.js --stage=all`, the lane's 10 ms grid, hops stamped at the frame's END = what the
+  display sees; the hold = held − raw, the ease = eased − held; medians over the voiced three, then IBelongHere / Raindrops / SeeYouDrop):
+
+| weights · ease | raw | held | eased | hold · ease | flicker live / lane | Comptine · Vienna % ≥ .3 |
+|---|---|---|---|---|---|---|
+| §123 · one ease .1 s (v0.38 as shipped) | 60 (80 / 60 / 60) | 80 (100 / 80 / 80) | **160** (180 / 150 / 160) | 20 · 80 | 0.65x | 23.6 · 22.1 |
+| §123 · attack .03 / release .05, voted (item 3) | 60 | 80 | **120** (130 / 110 / 120) | 20 · 30 | 0.92x | 24.0 · 23.0 |
+| run 1 · the same ease | 60 (90 / 60 / 60) | 80 (110 / 80 / 70) | 120 (160 / 120 / 110) | 20 · 40 | 0.82x | 17.6 · 15.2 |
+| **run 2 · the same ease (ships)** | 60 (90 / 60 / 60) | 90 (110 / 90 / 80) | **120** (160 / 120 / 120) | 20 · 40 | 0.77x | **3.5 · 7.0** |
+
+  Read: **the plan's budget was wrong and the ruler corrected it before anything trained** — the ease was HALF the 160, not three fifths
+  (80, not 100), and the raw stage is 60–80 ms (the 2048-point frame's centroid 21 + the net's own commit on a boundary 40–60), not 46.
+  The ease retune took 40 ms off (160 → 120) for a flicker that stays UNDER the lane's (0.92x → 0.77x with the new weights — the vote
+  kills the ≤ 50 ms spikes a faster attack would otherwise let through); the hold's 20 and the raw 60 are the floor of THIS net at a
+  4-hop cadence. **The plan's ≤ 100 ms is MISSED at 120** and cannot be reached by smoothing: raw + hold = 80–90 before any ease. The
+  inference cadence 4 → 2 was NOT taken (+20 µs/hop for −8 ms mean, the plan's own arithmetic); session 3's net (an output every hop,
+  no hold) is where the next 20–40 ms live. IBelongHere's eased lag is 160 on the new weights (ease 50): a net with precision .97 and
+  recall .61 rises later on a soft onset — the lag is paid in the same coin as the false voice. Agreement with the lane 70 / 78 / 76 %
+  (§124: 70 / 76 / 73). Comptine's voiced runs on the new weights: 28 runs, none over 1 s (§123's weights: 82, eight over 1 s).
+- **The data** (`voxtrain.py`, the second recipe; the front end, the net and the export unchanged, the parities re-proven): the 93 Jamendo
+  tracks through Demucs (`htdemucs --two-stems=vocals`, two lanes, 61 train stems used; the valid / test stems exist for session 3's pitch
+  head) — the TRAIN labels cleaned by the stem as a second annotator (a `sing` frame under .04 of the mix dropped, a no-voice frame over
+  .3 dropped; valid and test keep the raw labels so the numbers compare to §123's), the 61 accompaniments as hard negatives; **random
+  remixes re-drawn every epoch** (60 × 150 s: a Jamendo-train or library vocal stem over another track's accompaniment or a classical
+  recording, random offsets, labelled by the stem's share ≥ .15 AND the source's own label, ≤ .04 not, between dropped); **the Demucs lane
+  as a SOFT target** on the library's hand windows (the §122 knee at .5; 0 outside); mel-domain pitch shift ±2 bands + time stretch
+  .8–1.2 on half the windows; **MusicNet** (4.6 h: 13 solo piano + 15 strings / winds) and **MAESTRO v3** (2.3 h solo piano) as pure
+  negatives and remix beds, one file of each kind held out as an unseen-classical control; the draw by quota jam .35 · lib .10 · neg .25
+  · remix .30, 400 k windows per epoch, 12 epochs, the Jamendo-valid AUC picks the epoch. **Held out, UNSEEN: IBelongHere and Comptine**
+  (§123's final split trained on Comptine, so its 10 % was in-sample — this round the number is honest). Jamendo train 1.24 M windows
+  (55 % sung), the library 183 k, the negatives 3.6 M.
+- **Three runs, the pick by the held-out pair + Jamendo test, never in-sample** (`--soft-floor=F`: a hand-window frame whose lane reads
+  under F leaves the loss instead of teaching near-silence inside a passage; `--snr=LO,HI` the remix range; `--quota=` the shares — the
+  three knobs are CLI flags now, the defaults = run 1):
+
+| run | the knobs | Jamendo test F1 / P / R / AUC | IBelongHere F1 / P / R / AUC (unseen) | Comptine fp % at .5 (unseen) | at the .3 gate | classical held out (mn-pi / mn-st / ma) | best epoch |
+|---|---|---|---|---|---|---|---|
+| §123 run 5 (v0.38) | — | .792 / .73 / .87 / .875 | .819 / .93 / – / .838 | 10.0 in-sample | 23.6 | – | – |
+| 1 | the recipe as committed (SNR −12..+6, the lane's read as the target) | .798 / .808 / .788 / .877 | .788 / .963 / .666 / .879 | **7.6 — MISSED** | 17.6 | 1.5 / 10.3 / 4.9 | 8 (.881) |
+| **2 (ships)** | soft floor .3, SNR −6..+6 | .795 / .861 / .738 / **.886** | .748 / .971 / .608 / .869 | **1.4 — met** | **3.5** | 0.4 / 4.1 / 1.1 | 11 (.884) |
+| 3 | soft floor .3, SNR −12..+6 | .795 / .849 / .748 / .883 | .765 / .970 / .632 / .871 | 4.3 — met | – | 0.7 / 5.4 / 1.9 | 8 (.882) |
+
+  Read: run 1's failure mode was the piano still reading as a voice (7.6 % unseen, against 28 / 22 / 17 % when §123 held it out — the
+  classical negatives did most of the work) while recall sat at two thirds; the soft floor paid 7.6 → 4.3 and the SNR narrowing 4.3 →
+  1.4, each for a few points of recall on the unseen voiced track (.666 → .632 → .608). **Run 2 ships** for the best rank (AUC .886), the
+  best unseen control and the highest contrast on the ruler; its recall is RECORDED, not hidden: IBelongHere reads 54.5 % of its frames
+  sung at the gate where the lane reads 67.6, SeeYouDrop 35.5 vs 47.2. **The plan's Jamendo F1 ≥ .82 is MISSED at .795–.798** — three
+  more runs within .003 of each other on F1 and §123's five within two points: the number is this net's ceiling, as §123 said, and the
+  next point is session 3's net, not a seventh run. Raindrops' in-sample fp 10.6 % is the lead synth the user WANTS read as a voice
+  (§123: "the lead, by design" — the hand windows do not cover it). The unseen-classical controls 0.4 / 4.1 / 1.1 % (a string quartet
+  the hardest); the in-sample classical mean 2.0 %. WhoLikesToParty out of the loss reads F1 .07 — the chops are not what the net was
+  taught, as decided.
+- **The ruler** (`tools/test_vox.js` (iii), the 48 kHz PCM dumps through the stage, the eased `voxS`, the shipped weights; §123's row in
+  brackets):
+
+| track | hand s | voxS p50 in / out | ratio | fp % (≥ .5 outside) | lead p50 | voiced | voxHz: a pitch on / within a semitone / modulo the octave |
+|---|---|---|---|---|---|---|---|
+| Comptine (the control, **UNSEEN**) | 0 | – / .026 | – | **1.3 — met** (10.0 in-sample) | – | 0 | – |
+| IBelongHere (unseen) | 199 | .508 / .062 | **8.2×** (3.2) | 7.4 (20.7) | – | 5549 | 50 / **45** / 48 % (60 / 53 / 58) |
+| RaindropsOnRoses | 94 | .739 / .067 | **11.0×** (5.2) | 10.2 (18.9) | **.900** (.987) | 2613 | 70 / **55** / 64 % (81 / 63 / 72) |
+| CyborgNinja | 0 | – / .006 | – | 0.0 (1.1) | – | 0 | – |
+| Malicious | 1 | .250 / .045 | 5.5× (3.6) | 0.3 (2.3) | – | 52 | 0 / 0 / 0 % |
+| SeeYouDrop | 75 | .465 / .083 | **5.6×** (3.7) | 2.4 (13.2) | – | 206 | 16 / **9** / 13 % (28 / 14 / 18) |
+| Vienna (in-sample) | 0 | – / .054 | – | 1.6 (6.0) | – | 0 | – |
+| WhoLikesToParty (chops, recorded) | 64 | .114 / .180 | 0.6× (1.1) | 10.4 (5.7) | – | 0 | – |
+
+  Read: the voiced three clear 2× by a wider margin than §123 (8.2 / 11.0 / 5.6 vs 3.2 / 5.2 / 3.7) because the OUTSIDE fell (.062–.083
+  from .17–.22), not because the inside rose — the inside fell too (IBelongHere .694 → .508, SeeYouDrop .764 → .465: the recall above);
+  the "outside the windows" fp on the voiced tracks halved and more (20.7 → 7.4, 18.9 → 10.2, 13.2 → 2.4 — the plan's "halved" met).
+  **voxHz within a semitone 45 / 55 / 9 %** against §123's 53 / 63 / 14 — the YIN on the mix is untouched and publishes on fewer
+  frames now that the vote gates it; the pitch head is session 3's (the plan's item 4), the ceiling the mix's. The semitone column is
+  recorded, never gated; the Comptine note prints **met** for the first time; the Jamendo F1 note prints MISSED.
+- **The gates.** `node tools/check.js` **147 modules · 0 fail · 4 warn** (the soft caps) · `license.js --check` **150 public files, 0 without the header** · `npm test` **exit 0** (`test_vox.js` all ok: the mel
+  parity 7.05e-5 / 1.29e-5, the stream vs onnxruntime **8.81e-7** on the shipped weights, the training table as notes, the ruler, the
+  wiring's 31 fields identical, the bench, the lane's grid). **The bench** (`test_vox.js --bench`, the machine idle at load 2.9 (this machine's floor), three runs):
+  **75.7 / 74.8 / 74.2 µs per hop median**, p99 136–140, mean ≈ 80 — the gate ≤ 100 µs, the ease is free (§123: 72.6). **The fake smoke** (`tools/scene-md5.sh s126`): every line = the v0.35 reference but the s1 pair, which = main's 293d773c / 96ad310a (the reference's s1 lines stale since §121, as §123 and §127 record) — the twelve lines = main's §127 list byte for byte, **UNMOVED against main** (the fake timeline has voxConf 0). **The real sweep**
+  (`SCENES=1 PAR=2 tools/real-md5.sh s126-s1`, the s124 reference's scope — intro / groove / build1 / drop1 / boundary1 / chords, both
+  modes, the take; 66 lines, f0 2 on every run, errs []): **all 32 `&map=1` lines HELD to the byte** (the lane feeds the picture in file mode, the weights are not read there) and **all 34 `&map=0` lines MOVED** (the live CNN feeds the lead: new weights, new ease) — exactly the expected shape, no wiring bug, nothing re-baselined — the list `tools/accept/v0.38/real-md5-s126-s1.txt`; the roster's
+  lines were not re-shot (the stage is read-only to every other feature, §123's 264 / 264, and nothing outside `ears/vox*.js` and
+  `tools/` moved on this branch). No audio played; not tagged, not pushed, not merged (main gained §127 in parallel; the merge is the
+  orchestrator's).
+- **The corpora and their licences** ([[feedback-credit-where-due]]; each set's `LICENCE-NOTE.md` beside the audio on this machine, the
+  lines in THIRD-PARTY.md and the weights module's header; none of the audio is in the repo): **the Jamendo singing-voice corpus**
+  (Ramona, Richard, David, ICASSP 2008; Zenodo 2585988, `license: cc-by-4.0`; the README verbatim: *"This is a public corpus of 93
+  creative-commons licensed music pieces annotated by voice (sung or spoken) and no-voice."*) · **MusicNet** (Thickstun, Harchaoui,
+  Kakade, ICLR 2017; Zenodo 5120004, `cc-by-4.0` = Creative Commons Attribution 4.0 International; the bytes from the HuggingFace mirror
+  `DreamyWanderer/MusicNet` of the same recordings, the Zenodo tarball streaming at 60 KB/s) · **MAESTRO v3.0.0** (Hawthorne et al.,
+  ICLR 2019; the archive's LICENSE opens *"Attribution-NonCommercial-ShareAlike 4.0 International"*; the dataset page: *"The dataset is
+  made available by Google LLC under a Creative Commons Attribution Non-Commercial Share-Alike 4.0 (CC BY-NC-SA 4.0) license."*) — the
+  weights were trained with NC-licensed audio among their negatives and ship on the user's word that Retina Rave is non-commercial
+  (MIT + the Guest-List Clause, nothing sold); THIRD-PARTY.md says so in one paragraph. Demucs (MIT) made every stem.
+- **What is left for session 3** (the plan's step 3): **the net** — the causal TCN over the mel column (≈ 19 k MAC/hop, an output EVERY
+  hop, no 4-hop hold: the 20 ms hold and part of the raw 60 are its to take) or the GRU(32) head on the 2-D trunk if the TCN's Jamendo F1
+  is not ≥ the trunk's + 2 on the same data — the F1 .82 and the lag ≤ 100 both wait on it; **the pitch head** (61-way, trained on the
+  stems' pYIN — the library's in `tools/truth/<T>.vox.json`, Jamendo's from the 93 stems now on disk) with the harmonic salience
+  replacing the YIN on the mix (45 / 55 / 9 % within a semitone is the mix ceiling, not the net's); the recall on the unseen voiced
+  track (.61) — a longer memory is the plan's answer, not a threshold; the per-hop ONNX parity for a streaming net; the user's eye on
+  `#scene=1` with `&vox=live` on IBelongHere, Comptine and Vienna (the false voice seen, not counted) and the lag beside the lane; the
+  eight-track FLUID2 sweep still owed; the real-md5 s1 reference re-based by the next release's sweep.
 ## §127 The vocal lane on TORUS2 and DUST — one shared gate, the strand and the grains (2026-10-12, one Fable worker in a worktree off 85e98c1, branch `vox-scenes-a`; the plan `docs/plans/VOX-SCENES-PLAN.md`; the user: *"skip fluid for now; director -> don't bias the bid toward fluid"*)
 
 - **What it is.** The plan's session A minus FLUID, plus DUST from session B minus the director: `assets/math/vox.js` (the shared

@@ -7,9 +7,12 @@
 // publishes three numbers and touches nothing else. Pure: no DOM, no clock, no Math.random; node, the page and a Worker.
 //
 //   voxS     the vocal presence 0..1 — a small CNN (ears/vox-net.js, its weights ears/vox-weights.js, trained by tools/truth/voxtrain.py)
-//            over the last 34 hops of a 40-band log-mel front end, eased VOX_EASE; the net's output is the WINDOW'S END, so the read
-//            trails the sound by the ease (~.1 s) plus the net's own lag — fine for a sustained line, late for a consonant
-//   voxHz    the sung pitch in Hz while voxS > VOX_GATE and the pitch is periodic enough, −1 otherwise: a second YIN (the sub's class)
+//            over the last 34 hops of a 40-band log-mel front end, eased toward the net's output — VOX_ATTACK while the vote (below)
+//            says voice and the output is above the eased value, VOX_RELEASE otherwise (§126: the one ease of .1 s was HALF the
+//            measured 160 ms lag — attack .03 / release .05 under the vote took it to 120 with the flicker under the lane's own).
+//            The net's output is the WINDOW'S END, so the read still trails the sound by the front end's own ~60–80 ms (the ruler:
+//            tools/vox-ab.js --stage) — fine for a sustained line, late for a consonant. Everything here is causal: no look-ahead.
+//   voxHz    the sung pitch in Hz while the vote is on, voxS > VOX_GATE and the pitch is periodic enough, −1 otherwise: a second YIN (the sub's class)
 //            on a 200–1000 Hz band-passed, decimated copy of the stream — a pitch read on a MIX, unreliable whenever anything else is
 //            pitched in that band (the honest ceiling of this tier; step 3's Demucs lane is the accurate file-mode read)
 //   voxConf  voxS × the YIN's periodicity, measured on every inference whether or not the gate is open — so it is 0 only where there
@@ -29,8 +32,11 @@ export const VOX_LO = 100, VOX_HI = 8000;      // the mel bands' range (Hz)
 export const MEL_FLOOR = 1e-9;                 // ln(E + this): −90 dB re a full-scale sine's band power
 export const NORM_TAU = 30;                    // s: the causal normaliser's window
 export const VAR_FLOOR = 0.0625;               // the sd floor (.25 nat ≈ 2.2 dB)
-export const VOX_EASE = 0.1;                   // s: voxS's ease toward the net's output
-export const VOX_GATE = 0.3;                   // voxS above which the pitch is reported
+export const VOX_ATTACK = 0.03;                // s: voxS's ease toward a HIGHER net output while the vote says voice (§126; was one VOX_EASE .1)
+export const VOX_RELEASE = 0.05;               // s: voxS's ease otherwise (§126: .1 → .05 — the release owed as much lag as the attack, and a false voice's spike dies sooner)
+export const VOX_EASE = VOX_RELEASE;           // the old name, kept for readers: the release IS the §123 ease
+export const VOX_GATE = 0.3;                   // voxS above which the pitch is reported; the vote's threshold on the net's output
+export const VOX_VOTE_OF = 3, VOX_VOTE_ON = 2; // the hysteresis (§126): the vote is ON when VOX_VOTE_ON of the last VOX_VOTE_OF inferences read >= VOX_GATE
 export const PITCH_BAND = [200, 1000];         // Hz: the YIN's band (a 4th-order high-pass + low-pass, dsp.js 'steep')
 export const PITCH_SRD = 12000;                // the decimated rate the YIN runs at (the factor is round(sr / this))
 export const PITCH_WIN = 0.020;                // s: the YIN window — 4 periods of 200 Hz
@@ -66,11 +72,14 @@ export class VoxTrack {
     this.x = new Float32Array(N_MEL);            // … and its normalised column (the net's input)
     this.m = new Float64Array(N_MEL); this.v = new Float64Array(N_MEL); this.n = 0;
     this.A = 1 - Math.exp(-(VOX_HOP / sr) / NORM_TAU);
-    this.ease = 1 - Math.exp(-(VOX_HOP / sr) / VOX_EASE);
+    this.easeA = 1 - Math.exp(-(VOX_HOP / sr) / VOX_ATTACK);   // per hop, toward a rising output under the vote
+    this.easeR = 1 - Math.exp(-(VOX_HOP / sr) / VOX_RELEASE);  // per hop, otherwise
+    this.ease = this.easeR;                      // the old name (the release)
     this.net = new VoxNet(o.weights);
     this.p = 0;                                  // the net's latest output (held between inferences)
     this.s = 0; this.hz = -1; this.per = 0; this.conf = 0; this.rhz = 0;
     this.fired = 0;                              // inferences so far
+    this.votes = 0; this.vote = 0; this.on = false;   // the last VOX_VOTE_OF inferences' reads at the gate, as bits; their count; the vote
     // the pitch lane: band-pass, decimate, YIN
     this.band = new Band(sr, PITCH_BAND[0], PITCH_BAND[1], 2, 'steep');
     this.D = Math.max(1, Math.round(sr / PITCH_SRD)); this.srd = sr / this.D; this.phase = 0;
@@ -109,14 +118,19 @@ export class VoxTrack {
     const p = this.net.push(x);
     if (p >= 0) {
       this.p = p; this.fired++;
+      // the vote (§126): the last VOX_VOTE_OF inferences at the gate, VOX_VOTE_ON of them on = voice. One inference above the gate alone
+      // neither opens the fast attack nor publishes a pitch; one below alone does not close them — the hysteresis a .03 s attack needs.
+      this.votes = ((this.votes << 1) | (p >= VOX_GATE ? 1 : 0)) & ((1 << VOX_VOTE_OF) - 1);
+      let c = 0; for (let v = this.votes; v; v >>= 1) c += v & 1;
+      this.vote = c; this.on = c >= VOX_VOTE_ON;
       if (this.pw >= this.need) {
         const r = this.yin.run(this.pring, this.pw, this.pmask);
         this.per = r.hz >= PITCH_BAND[0] && r.hz <= PITCH_BAND[1] ? r.conf : 0;
         this.rhz = r.hz;
       }
     }
-    this.s += (this.p - this.s) * this.ease;
-    this.hz = this.s > VOX_GATE && this.per >= PITCH_PER ? this.rhz : -1;
+    this.s += (this.p - this.s) * (this.on && this.p > this.s ? this.easeA : this.easeR);
+    this.hz = this.on && this.s > VOX_GATE && this.per >= PITCH_PER ? this.rhz : -1;
     this.conf = clamp01(this.s * this.per);
     if (this.onHop) this.onHop(this, h, true);
   }
