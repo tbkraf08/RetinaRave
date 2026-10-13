@@ -191,9 +191,9 @@ function ruler() {
 function wiring() {
   console.log('== the wiring (Ears with the stage vs the stage stubbed out: every other field identical; the vox fields reach read())');
   const pcm = loadMid('SeeYouDrop'); if (!pcm) return;
-  const stream = (stub) => {
+  const stream = (stub) => {                                 // stub: false = the stage runs · true = step() stubbed · 'skip' = §130's Ears.setVoxSkip(true)
     const ears = new Ears(pcm.sr);
-    if (stub) ears.vox.step = () => false;
+    if (stub === 'skip') ears.setVoxSkip(true); else if (stub) ears.vox.step = () => false;
     const B = 512, n = Math.min(pcm.n, 30 * pcm.sr), cols = {}; for (const f of EARS_FIELDS) cols[f] = [];
     let next = 0, pushNs = 0;
     const bl = new Float32Array(B), br = new Float32Array(B);
@@ -215,6 +215,15 @@ function wiring() {
   ok('(iv) voxConf in [0, 1] and 0 wherever voxS is 0', vc.every((v, i) => v >= 0 && v <= 1 && (vs[i] > 0 || v === 0)), 'max ' + Math.max(...vc).toFixed(3));
   ok('(iv) the stage stubbed: voxS / voxHz / voxConf stay at 0 / -1 / 0', Bs.cols.voxS.every((v) => v === 0) && Bs.cols.voxHz.every((v) => v === -1) && Bs.cols.voxConf.every((v) => v === 0), 'idle');
   note('(iv) Ears.push ms per 512 block with / without the stage (30 s of SeeYouDrop)', A.pushMs.toFixed(3) + ' / ' + Bs.pushMs.toFixed(3) + ' (+' + (A.pushMs - Bs.pushMs).toFixed(3) + ' ms = ' + (1000 * (A.pushMs - Bs.pushMs)).toFixed(0) + ' us per hop)');
+  // §130: the skip the file-mode lane turns on (features-ears.js laneFeeds → Ears.setVoxSkip) is the stub by another door: the same 31
+  // fields byte-identical, the three keys idle, and the push cost back to the stubbed figure; turning it off re-primes a fresh track.
+  const K = stream('skip');
+  const movedK = others.filter((f) => A.cols[f].some((v, i) => v !== K.cols[f][i]));
+  ok('(iv) §130 setVoxSkip(true): every non-vox ears field identical (30 s, 60 fps)', movedK.length === 0, movedK.length ? 'moved: ' + movedK.join(',') : others.length + ' fields identical');
+  ok('(iv) §130 setVoxSkip(true): voxS / voxHz / voxConf stay at 0 / -1 / 0', K.cols.voxS.every((v) => v === 0) && K.cols.voxHz.every((v) => v === -1) && K.cols.voxConf.every((v) => v === 0), 'idle');
+  const E2 = new Ears(pcm.sr), v0 = E2.vox; E2.setVoxSkip(true); const v1 = E2.vox; E2.setVoxSkip(false);
+  ok('(iv) §130 setVoxSkip(false) re-primes: a fresh VoxTrack, skip off', v1 === v0 && v1.skip && E2.vox !== v0 && !E2.vox.skip, 'fresh');
+  note('(iv) §130 Ears.push ms per 512 block with the stage skipped (the lane feeds the keys)', K.pushMs.toFixed(3) + ' (the stage on: ' + A.pushMs.toFixed(3) + ', −' + (1000 * (A.pushMs - K.pushMs)).toFixed(0) + ' us per hop)');
 }
 
 // ------------------------------------------------------------------------------------------------ (vi) the lane's grid (§124)

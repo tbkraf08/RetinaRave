@@ -63,7 +63,8 @@ export class Ears {
     this.tone = new TonicTrack(sr, opts.tonic || {});
     this.tex = new TextureTrack(sr);
     this.pulse = new PulseTrack(opts.pulse || {});
-    this.vox = new VoxTrack(sr, opts.vox || {});
+    this.voxOpts = opts.vox || {};
+    this.vox = new VoxTrack(sr, this.voxOpts);
     this.RB = 1 << 14; this.mid = new Float32Array(this.RB); this.mask = this.RB - 1; this.w = 0;
     this.t0 = null;                  // audio time of mid[0] of the stream
     this.tEnd = 0;                   // audio time one past the newest sample
@@ -85,13 +86,19 @@ export class Ears {
     this.tRead = -1; this.dtRead = 1 / 60;           // the measured read interval, for the release lead
   }
   get events() { return this.released; }
+  // §130: skip the vocal stage (on = true) while something else feeds the three keys — the file-mode lane (features-ears.js) — and
+  // re-prime it with a fresh VoxTrack when it is wanted again. The other lanes never read it, so nothing else moves (test_vox.js (iv)).
+  setVoxSkip(on) {
+    if (on === this.vox.skip) return;
+    if (on) this.vox.skip = true; else this.vox = new VoxTrack(this.sr, this.voxOpts);
+  }
   // The release lead for this read: half a frame, never more than REL_LEAD.
   lead() { return Math.min(this.relLead, 0.5 * this.dtRead); }
 
   push(L, R, t0) {
     const n = L.length, sr = this.sr;
     if (this.t0 === null) this.t0 = t0;
-    const sub = this.sub, perc = this.perc, tex = this.tex, vox = this.vox, mid = this.mid, mask = this.mask;
+    const sub = this.sub, perc = this.perc, tex = this.tex, vox = this.vox.skip ? null : this.vox, mid = this.mid, mask = this.mask;
     // The sub gate needs to know whether the sub OWNS the low end; PercTrack's bank already has the three low bands.
     // Smoothed over SHARE_TAU: which layer owns the low end is a section-level fact, and the per-hop value swings with
     // every kick (unsmoothed it made the gate chatter 5.4 times a bar through drop 2 and cut the slide count in half).
@@ -108,7 +115,7 @@ export class Ears {
       mid[this.w & mask] = m; this.w++;
       perc.step(m, t);
       tex.step(l, r, m);
-      vox.step(m, t);                              // §123: its own ring, its own hop; publishes voxS / voxHz / voxConf, reads nothing else
+      if (vox) vox.step(m, t);                     // §123: its own ring, its own hop; publishes voxS / voxHz / voxConf, reads nothing else (§130: null while the lane feeds them)
       if (sub.step(m, t)) this.snap(t);
     }
     this.tEnd = t0 + n / sr;

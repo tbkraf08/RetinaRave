@@ -69,11 +69,21 @@ function resetRel() {
   EARS.tRead = -1; EARS.dtRead = 1 / 60;
 }
 
+// The map this frame reads, or null: file mode, the file the map was built for, and a map with a sub channel (a failed build has none).
+const mapOf = () => (AU.mode === 'file' && AU.file === EARS.mapFile && EARS.map && EARS.map.sub && EARS.map.sub.n ? EARS.map : null);
+// §130: THE LANE FEEDS THE KEYS — the one condition under which earsStage overwrites voxS / voxHz / voxConf with the Demucs sidecar
+// (§124: `M.vox && ENGINE.voxLane`), so the CNN's read of the same hop would be discarded. Until §130 the live stage ran anyway, in the
+// PCM listener, in every mode ("its cost is paid before this stage can know whether a lane exists"): ~75 µs per hop, ~0.19 ms per frame
+// at 48 kHz, for a number nobody read. Now onBlock skips the stage while this is true (Ears.setVoxSkip); `&vox=live`, `&map=0`, a track
+// without a sidecar and every live source keep it running, so the live tier is exactly what it was.
+const laneFeeds = () => { const M = mapOf(); return !!(M && M.vox && ENGINE.voxLane); };
+
 function onBlock(L, R, t0) {
   if (ENGINE.fakeOn || !AU.ctx) return;
   if (t0 < 0) return;                               // real-time file mode before the node started (pcm.js map → -1)
   const c0 = performance.now();                     // cost accounting only (ENGINE.ms), never a feature
   if (!EARS.ears || Math.abs(t0 - EARS.next) > JUMP) EARS.ears = new Ears(AU.ctx.sampleRate);
+  EARS.ears.setVoxSkip(laneFeeds());                // §130: no CNN while the lane feeds the keys (the map exists before the first block)
   EARS.ears.push(L, R, t0);
   EARS.next = t0 + L.length / AU.ctx.sampleRate;
   EARS.blocks++;
@@ -120,7 +130,7 @@ export function earsStage(dt, now, S) {
   // Decided BEFORE the causal read so only one path writes the event log: a map override logs the map's own events with
   // the same type names ('kick' / 'snare' / 'hat' / 'subNote' / 'subIn' / 'subOut'), so the log's vocabulary never changes
   // and nothing is stamped twice.
-  const M = AU.mode === 'file' && AU.file === EARS.mapFile && EARS.map && EARS.map.sub && EARS.map.sub.n ? EARS.map : null;
+  const M = mapOf();
   if (E) {
     if (S.bpm > 0 && E.pulse.setBeat) { const b = 60 / S.bpm; if (b !== EARS.beat) { EARS.beat = b; E.pulse.setBeat(b); } }
     const o = E.read(t);
@@ -154,8 +164,9 @@ export function earsStage(dt, now, S) {
     // §124 — THE LANE WINS in file mode (the user: "do the demucs for file; do cnn for live"): the Demucs sidecar is the
     // separator's own non-causal read of the voice, with no mix ceiling on the pitch, so it replaces the three live keys
     // here exactly as `map.sub` replaces the causal sub above. `&vox=live` (ENGINE.voxLane false) leaves the CNN's values
-    // standing — the A/B, and the only way to see the live tier on a file. The live stage keeps running either way: its
-    // cost is paid in the PCM listener before this stage can know whether a lane exists.
+    // standing — the A/B, and the only way to see the live tier on a file. §130: the live stage is SKIPPED in the PCM listener
+    // while this branch is taken (`laneFeeds`, the same condition, read per block), so the keys it would have computed are never
+    // computed — until §130 they were computed and thrown away here (~0.19 ms per frame).
     if (M.vox && ENGINE.voxLane) {
       mapVoxAt(M.vox, t, EARS.vox);
       S.voxS = EARS.vox.voxS; S.voxHz = EARS.vox.voxHz; S.voxConf = EARS.vox.voxConf;

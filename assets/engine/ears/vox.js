@@ -87,6 +87,11 @@ export class VoxTrack {
     this.yin = new Yin(this.srd, PITCH_BAND[0], PITCH_BAND[1], Math.round(PITCH_WIN * this.srd), PITCH_THR);
     this.need = this.yin.W + this.yin.tmax + 2;
     this.onHop = o.onHop || null;                // a test hook: (track, hopIndex) after each hop
+    // §130: true = the stage is SKIPPED — Ears.push does not call step(), so no ring write, no band-pass, no FFT, no net, no YIN; the
+    // three keys stay 0 / −1 / 0 (exactly the stage stubbed, tools/test_vox.js (iv)). Set by Ears.setVoxSkip while the file-mode lane
+    // (§124) feeds voxS / voxHz / voxConf and the CNN's read would be thrown away; turning it back on replaces the track with a fresh
+    // one (the ring, the normaliser and the net re-prime as on a new source). Never read inside this class: step() always computes.
+    this.skip = false;
   }
   // One mid sample at audio time t. Returns true when a hop ran.
   step(m, t) {
