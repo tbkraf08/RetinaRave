@@ -176,6 +176,14 @@ mix 360 s, fake 72 s (`CLOCK=1`, deterministic); two styles at a time, never mor
 
 ## Q trace (any scene whose cost could move the global quality knob) — the FEIGEN bench is ARCHIVED (§118)
 
+**The load bench (§130)** — `GPU=1 PORT=88xx node tools/load-bench.js '<hash>' [secs=40] [runs=3]`: one REAL-TIME page per run (no
+`CLOCK`, `MUTE=1` by default), `q` / `Q.fps` / `ENGINE.ms` / the ears' ms per frame (`EARS.cpuAcc / frames`, the PCM listener's cost)
+sampled every 500 ms, one line per run: q at 1..10 / 20 / 40 s of page time, the second the file opened at, the min q after 1 s and
+every drop after it, fps 5–40 s, ENGINE.ms 10–40 s, the ears' ms per frame 10–40 s, `voxFrom`. The fake timeline (`test&scene=4`) is
+the no-load reference; `test&track=<T>&scene=<id>` the file load (the lane), `…&vox=live` the CNN on a file, `…&map=0` the live
+lanes. Same rules as the Q trace: one Chrome, nothing else on the machine, three runs. Why real time: under `CLOCK=1` every frame is
+16.67 ms and the clock is held through the decode, so the governor never sees a load there — the thing §130 measured and fixed.
+
 ```
 GPU=1 tools/q-trace.sh before|none|after [house aba]   # q + scene at 1 Hz, 3 runs per style -> tools/accept/v0.2/q-<style>-<tag>.txt
 node tools/q-stats.js tools/accept/v0.2/q-house-before.txt   # per run: q mean/min, the 0-40 / 40-70 / 70-100 / 100- windows
@@ -604,7 +612,9 @@ node tools/cdp.js '<hash>' '<json steps>'
   running, `Q.q` seeded 0.35, `CARD.TOUCH.{swipes,holds}` count synthetic `TouchEvent`s on `#gl` (a swipe > 60 px in < 700 ms steps
   `SC.forced`; a press held 600 ms toggles the help) — the v0.6 mobile proof recipe is in DECISIONS §35 ·
   `FAKECAP=1` auto-accept tab capture · `CLOCK=1` deterministic 60 Hz clock (`window.__FRAME`; frame 360 = T 6 s) ·
-  `OUT=dir` where shots go (default `tools/`).
+  `OUT=dir` where shots go (default `tools/`) · `MUTE=1` Chrome's `--mute-audio` (§130): a REAL-TIME file run (no `CLOCK`) plays the
+  track through `ctx.destination` — muted at the output, the AudioContext runs as before (proven silent on the sink's monitor: rms 0 /
+  peak 0 while IBelongHere ran). `tools/test_rec.js` takes the same flag (the demo synth on the real clock).
 
 Examples:
 ```

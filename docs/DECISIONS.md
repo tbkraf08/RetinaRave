@@ -3805,3 +3805,104 @@ check 0 fail, npm test exit 0.
 - **Next, in order:** the eye above · **session 3 of `docs/plans/VOX-CNN2-PLAN.md`** (the TCN / GRU net — the only route to the last
   of the lag, since raw + hold is 80–90 ms before any ease — the pitch head, and the recall the narrowed SNR cost) · **scenes B
   (NAV2, MANDALA) only if the user asks.** `NEXT-SESSION-PROMPT.md` says the same in one line.
+
+## §130 The governor and the vocal stage's cost — the load hold, no CNN under the lane, the pruned FFT (2026-10-13, one Fable worker in a worktree off v0.39 27728aa, branch `perf-vox`; the user: *"the quality of torus and dust seems lower (both file mode and t2vox=0)"*, then *"see poor quality in vox=live also; do the fixes"*)
+
+- **What the bench found, and what it did not.** A bench across v0.37 / v0.38 / v0.39 (file mode, IBelongHere, scenes 3 + 4, the governor
+  free) found **no scene-time regression** between the tags; what it found was in the governor and in the ears. (1) `core/quality.js`
+  (−.2 per half second over 26.5 ms, −.07 over 18.8, +.04 per 2.5 s of good frames, the ceiling +.002 per window) took the file LOAD as
+  bad frames: the track map's build is ~1–1.6 s of synchronous work on the main thread inside the file source's gates (§48), and the frame
+  after it measures 0.25 s (the loop's cap), so the window it lands in averages 25–31 ms and costs −.2 — on every file load, in every tag,
+  identically. (2) The loop's FIRST frame measures from t = 0 to the first rAF (the modules, the GL context, the first compiles: 0.25 s
+  capped), so the first window of EVERY run — the fake timeline included — closed at 19–26 ms and took −.07 and a ceiling of .53; the
+  ".69 at 40 s" the file load was measured against was that ceiling climbing at +.002 per window, not a level. (3) The vocal stage
+  (§123, `ears/vox.js`: a 2048-point FFT + 40 mel + the stream net + a second YIN, ~75 µs per hop) ran in the PCM listener in every mode,
+  and in file mode the §124 lane overwrote its three keys on the same frame — the CNN's read was computed and thrown away, ~0.15 ms per
+  frame at 48 kHz. At 60 Hz the governor's good band above 16.67 ms is under a millisecond wide, so that is not nothing on a GPU nearer
+  the edge. **Measured in real time** (`tools/load-bench.js`, new: q / Q.fps / ENGINE.ms / the ears' ms per frame every 500 ms of a
+  real-time run, `MUTE=1` → `--mute-audio`, proven silent on the sink's monitor — rms 0 / peak 0 while IBelongHere ran; under `CLOCK=1`
+  every frame is 16.67 ms and the clock is held through the decode, so the governor never SEES a load there, which is why no md5
+  reference and no q trace had ever shown it). **Before** (`3c04e1d`, main + the bench's handles; IBelongHere, GPU=1, load 2.9–3.5,
+  three runs each): the fake timeline s3 / s4 — q .48 at 1 s (the −.07 of the first window), **.57 at 10 s**, .68 at 40 s, no drop after
+  1 s; file mode s3 (the lane) — q .35 / .48 / .35 at 1 s, the open at 4.5–4.8 s of page time, **−.2 at the open on every run** (.35 →
+  .15, once twice: .35 → .15 → .08), **.27 / .28 / .14 at 10 s**, .43 / .40 / .26 at 40 s; s4 — **.27 / .27 / .36 at 10 s**, .44 / .44 /
+  .57 at 40 s; `&vox=live` s3 — .36 / .15 / .23 at 10 s, .57 / .26 / .44 at 40 s; s4 — .36 / .40 / .23, .56 / .57 / .44; `&map=0` (the live
+  lanes: no map, no stall) — the fake's curve exactly, .57 at 10 s, .68 at 40 s. ENGINE.ms (EMA, 10–40 s): the lane .93–1.01, `&vox=live`
+  .94–1.03, `&map=0` .97–.98; the ears' ms per frame (the PCM listener, `EARS.cpuAcc / frames`, new): the lane **.276–.291**, live
+  .272–.304, `&map=0` .291–.303 — the same in every mode, because the stage ran in every mode.
+- **Fix 1 — the load hold** (`core/quality.js` `Q.load`, `LOAD_TAIL` 30; `sources/file.js` `AU.loading`; `loop.js` passes it). The file
+  source raises `AU.loading` at the start of its decode and drops it when the map is built and the playhead opens (the error path and
+  `teardown` drop it too; a newer source owns the flag); `updateQuality` holds while it is up and for LOAD_TAIL frames after — the stall's
+  own frame is the first frame AFTER the open, so the window it lands in closes inside the tail. Held means: a window over either knee
+  lowers neither q nor its ceiling and resets no good run; the controller keeps measuring (`Q.fps`) and keeps climbing on good windows
+  exactly as before — so q resumes from where it stood before the load, never from the floor the stall sent it to. **The page's own
+  start begins held too** (the first window's 0.25 s is the same kind of stall, in every mode). The thresholds and the climb rate are
+  untouched; the recorder's pin (§92 `Q.hold`) still wins at every window, held or not; the HUD's q line says `load` / `pin` while one is
+  on. The capture start was checked, not assumed: `getDisplayMedia` and the worklet's `addModule` are async, nothing synchronous waits
+  there (and capture is only provable headed, HARNESS), so it gets the page-start hold like every mode and no more. **Why nothing
+  deterministic can move:** under `CLOCK=1` no window is ever over a knee (16.67 ms frames, the clock held through the decode, the fake
+  has no load), and the hold only changes what a window OVER a knee does — so every md5 reference holds by construction, the fake smoke
+  included. **After** (`ff6d0e1`, the same protocol, load 2.6–3.4): the fake s3 / s4 — q .55 at 1 s, **.83 / .83 / .87 at 10 s**, 1.00 by
+  20 s; file mode s3 (the lane) — **.55 flat through the open, no drop on any run, .67 / .67 / .67 at 10 s**, .99 at 20 s, 1.00 at 40 s;
+  s4 — **.67 / .67 / .67 at 10 s**, .99–1.00 at 20 s; `&vox=live` s3 — .67 / .67 / .67, s4 — .67 / .63 / .67, both 1.00 by 40 s; `&map=0`
+  — .87 / .83 / .83 at 10 s. fps 59.4–60.0 everywhere, errs [] everywhere. **The brief's criterion read in page time is MISSED by .16**
+  (the file's .67 against the fake's .83 at 10 s, the allowance .05): the 4.5 s the fetch + decode + map build take are 4.5 s in which q
+  stands at .55 and does not climb (it did not climb through the load before §130 either — the page is decoding and the windows are not
+  under the 17.5 ms knee), while the fake's climb starts at 2.5 s; read from the OPEN the two curves are the same curve (+.04 per second
+  from the first good 2.5 s: the file reaches .83 at ~14.5 s of page time, 10 s after its open). The user's symptom — **.14–.36 at 10 s
+  and .26–.57 at 40 s, every file load, every scene — is .67 at 10 s and 1.00 by 20 s**, which is what the fake timeline now reads too.
+- **Fix 2a — no CNN while the lane feeds the keys** (`features-ears.js` `laneFeeds()`, `Ears.setVoxSkip`, `VoxTrack.skip`). The one
+  condition under which `earsStage` overwrites voxS / voxHz / voxConf with the Demucs sidecar (§124: file mode, the map built for this
+  file, a lane, `ENGINE.voxLane`) is now read per block in `onBlock`, and while it holds the vocal stage is not run — the ring, the
+  band-pass, the FFT, the mel, the net, the YIN. `&vox=live`, `&map=0`, a track without a sidecar and every live source keep it running:
+  the live tier is exactly what it was. Turning the skip off replaces the track with a fresh `VoxTrack` (the ring, the normaliser and the
+  net re-prime as on a new source) — it never happens mid-stream today (a new source is a new `Ears`), but the door is honest. **The
+  wiring proof** (`test_vox.js` (iv)): with the skip on, every one of the 31 other ears fields byte-identical on 30 s of SeeYouDrop at
+  60 fps, the three keys idle at 0 / −1 / 0, `Ears.push` **0.158 → 0.064 ms per block (−94 µs per hop)**, the stub's own 0.079 beside
+  it. MS cannot move in file mode: the lane overwrote the same three fields before and after. **After, in the page:** the ears' ms per
+  frame on the lane **.276–.291 → .136–.143** (−.14–.15 ms per frame, the whole stage at ~1.56 hops per frame — the brief's "~0.19"
+  was the §126 p99 figure per hop, the median is 75); ENGINE.ms on the lane .93–1.01 → **.80–.84**.
+- **Fix 2b — NOT taken: reading the synapse Analyzer's FFT.** The finding, in full: `synapse/analyzer.js` computes `f2 = FFT(2048)` —
+  the SAME class the ears copied verbatim (periodic Hann, |X|·2/Σwin) — at every 512-sample hop over the 2048 samples ending at the hop,
+  which is exactly the vox front end's spectrum. In DETERMINISTIC file mode the two are the same floats: `tickFile` pushes the same 512
+  blocks to the tap and to the PCM bus, `F.mono` is (L + R)·0.5 in float32 and the ears' mid is 0.5·(l + r) stored into a Float32Array,
+  the same rounding. In LIVE mode they are not: the Analyzer's hop phase counts from the worklet's first (silent) block while the ears
+  start a fresh `Ears` on every stamp jump, and the worklet's own downmix feeds the tap while the ears downmix the PCM bus's L / R — the
+  two 2048-sample windows are not the same samples, so the mel would not be bit-identical in the mode the user listens in 90 % of the
+  time, and the live md5 lines (`&map=0`) could not be promised. Two more reasons it stays undone: the ears' contract (`ears.js`: no DOM,
+  no clock, no import outside `engine/ears` — node == page == Worker) would be broken by reaching into a stage that runs in `frame()`,
+  and the Worker move below puts the two on different threads. **What it would have saved:** the FFT alone, **45.1 µs per hop** of the
+  stage's 74.8 (the parts bench, below) — ~70 µs per frame in live mode. Inside the ears there is no other 2048: `tonic.js` runs an 8192
+  every 32 hops over a different window.
+- **Fix 2c — the pruned FFT, bit-identical** (`dsp.js` `FFT.magsLo(ring, start, mask, out, kMax)`; `vox.js` `kMax` 341). `mags()` for
+  the bins 0..kMax only: the first stage written as the add / subtract its exact (1, −0) twiddle evaluates to (`re[b]·1 − im[b]·(−0)` is
+  `re[b]` up to the sign of a zero, and no later product, sum or squared magnitude can see the sign of a zero — the one way it could,
+  `sqrt(re² + im²)`, squares it away), each later stage producing only the sub-bins the next stage reads — min(size − 1, kMax) — so the
+  2048's last two stages run 342 butterflies per block instead of 1024 / 512, and the magnitude loop stops at kMax. The vocal front end's
+  40 HTK-mel triangles end at bin 341 (8 kHz at 48 kHz). `mags()` itself is untouched (`tonic.js`, synapse). **The proof is exact, not
+  1e-4** (`test_vox.js` (vii)): `magsLo == mags` with `Object.is` on every bin 0..341 of every hop of SeeYouDrop — **14 775 hops, 0 bins
+  differ** — and the front end through it (the log-mel, the normalised column, voxS / voxHz / voxConf) **identical hop for hop over 60 s**.
+  **The parts bench** (`test_vox.js --bench`, new notes; the machine at its floor, load ~2.9): the FFT **45.1 → 37.8 µs** per call, the
+  sample loop alone 4.8 µs per hop, the stage **74.8 µs per hop through `mags` → 64.4 through `magsLo`** (median; §126 recorded 75.7 /
+  74.8 / 74.2), the ruler's per-track medians **65–67 µs** (§126: 74–76), p99 130–207. What else was looked at and left: the net (38 k
+  multiply-adds per hop, its accumulation order is the ONNX parity's — any reordering moves bits), the YIN (14.6 k ops per inference,
+  every 4 hops), the per-sample band-pass (4.8 µs for the whole loop), the per-inference `{hz, conf}` object — nothing bit-identical and
+  material is left in the hop path; the rest is the FFT's 38 µs and the net's ~20. In the page the live modes read within noise of
+  before (`&vox=live` .272–.304 → .264–.277 ms per frame, `&map=0` .291–.303 → .283–.293; ENGINE.ms .94–1.03 → .92–.97): ~16 µs per
+  frame is under what a 500 ms sample of a real-time page resolves — the node bench is the number.
+- **The gates.** `node tools/check.js` **150 modules · 0 fail · 4 warn** (the soft caps) · `node tools/license.js --check` **153 public files, 0 without the header** · `npm test` **exit 0** (`test_vox.js` all ok: the mel parity, the ONNX parity, the ruler unchanged, the wiring's 31 fields with the stub AND with the skip, the lane's grid, the pruned FFT's 0 bins / 0 values, the bench under 100 µs; every other test as before) · **`test_rec.js` all ok** (the §92 pin still wins: `Q.hold` .75 held through the take, q0 .55, free again after the stop; `MUTE=1`) · **the fake smoke** (`GPU=1 PORT=8952 IDS="1 3 4" tools/scene-md5.sh s130`): the six lines = `tools/accept/v0.38/scene-md5-s127.txt` byte for byte — the hold did not leak into the fake path · **the real sweep** (`GPU=1 PORT=8953 PAR=2 SCENES=1 tools/real-md5.sh s130-s1`, the s126 reference's scope, 43 runs, f0 2 on every run, errs [], 78 s wall): **all 66 lines HELD to the byte** against `tools/accept/v0.38/real-md5-s126-s1.txt` — the 32 `&map=1` AND the 34 `&map=0` — so no q-pinned content proof was needed: the governor runs free in the sweep, but under `CLOCK=1` it never sees a window over a knee (Fix 1 changes no q there), the skip feeds the lane's own values (Fix 2a), and the FFT is the same floats (Fix 2c). The list and the load bench's raw runs are recorded as `tools/accept/v0.39/real-md5-s130-s1.txt` and `tools/accept/v0.39/load-bench-s130.txt`.
+- **Out of scope, the next structural step: the ears to a Worker.** Everything the ears need is already there — `ears.js` has no DOM,
+  no clock, no `Math.random`, no import outside `engine/ears`, and `vox-net.js` was written to "run in node, in the page and in a
+  Worker, and cost the same" — so the PCM listener's whole cost (the lane .14, live .27 ms per frame, plus the §123 CNN's p99 hops) can
+  leave the main thread: blocks go over a port, the history ring comes back per frame (or the Worker keeps the ring and answers `read(t)`
+  with one `postMessage` per frame, as `math/mandel.js` does today, the only Worker in `assets/`). The determinism contract (node == page
+  == Worker, CONTRACTS) is what makes it safe; the det-mode harness (`tickFile` pushing blocks inside `frame()`) is what makes it a
+  design — the Worker's answer must be back before the stage reads, so det mode either keeps the ears in-thread or waits on the port.
+  Not started here.
+- **The bench's handles** (`3c04e1d`): `tools/load-bench.js`, `MUTE=1` in `tools/cdp.js` and `tools/test_rec.js`, `EARS.cpuAcc` /
+  `EARS.frames` (running totals, accounting only) and `ENGINE.EARS` (the harness's handle). No behaviour moves. HARNESS: the env line
+  and "The load bench" under "Q trace".
+- **Not tagged, not pushed, not merged, nothing deployed; no audio played** (every real-time run muted and proven so). The user retests
+  on main once `perf-vox` is merged (his server on 8765 serves main): `#test&track=IBelongHere&scene=4` and `&scene=3` (the lane),
+  the same with `&vox=live` (the CNN on a file), `&map=0` (the live lanes) — the HUD's `q` line reads `load` through the decode and
+  climbs from .55 after the open instead of from .15.

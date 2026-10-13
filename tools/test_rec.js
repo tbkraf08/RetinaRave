@@ -61,7 +61,7 @@ async function ensureServer() {
   fs.mkdirSync(DL, { recursive: true });
   const sv = await ensureServer();
   const udd = path.join(HERE, 'chr' + dbg);
-  const ch = spawn('google-chrome', ['--headless=new', '--window-size=' + WIN, ...gpu, '--remote-debugging-port=' + dbg, '--autoplay-policy=no-user-gesture-required',
+  const ch = spawn('google-chrome', ['--headless=new', '--window-size=' + WIN, ...gpu, '--remote-debugging-port=' + dbg, '--autoplay-policy=no-user-gesture-required', ...(process.env.MUTE ? ['--mute-audio'] : []),   // MUTE=1 (§130): the demo synth plays through ctx.destination on the real clock
     '--no-first-run', '--user-data-dir=' + udd, 'about:blank'], { stdio: 'ignore' });
   const done = async (code) => { try { ch.kill(); } catch (e) {} if (sv) sv.kill(); await sleep(300); fs.rmSync(udd, { recursive: true, force: true }); process.exit(code); };
   try {
