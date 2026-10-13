@@ -9,6 +9,8 @@
 //      CLOCK=1 deterministic 60 Hz rAF clock: window.__FRAME counts frames; {until:'__FRAME>=360'} pauses the clock at
 //        exactly that frame for the shots/evals that follow; the next {wait} resumes it ·
 //      FILE=/abs/path.html open a file:// page instead (legacy cardioid mode) · PORT (default 8765; the debug port is PORT + 1000, §109) · OUT=dir for shots ·
+//      MUTE=1 Chrome's --mute-audio (§130): a REAL-TIME file run (no CLOCK) plays the track through ctx.destination, and the harness's
+//        q / cost traces of a file load run in real time — muted at the output, the AudioContext runs exactly as before ·
 //      HEADED=1 a real window on $DISPLAY (v0.2 §17 audit): WIN=1920,1080 (size) · WINPOS=0,0 · DPR=1.5 forces
 //        devicePixelRatio · CAPTITLE=<substring> auto-picks that tab (with its audio) in the getDisplayMedia dialog;
 //        extra steps: {tab:'url'} opens a second tab in the background ({tab:'url', window:{left,top,width,height}} = its own
@@ -53,6 +55,7 @@ async function ensureServer() {
       ...(process.env.CAPTITLE ? ['--auto-select-tab-capture-source-by-title=' + process.env.CAPTITLE] : [])]
     : ['--headless=new', '--window-size=' + (process.env.WIN || '1280,720'), ...gpu]), '--remote-debugging-port=' + dbg,
     ...(process.env.NOAUTO ? [] : ['--autoplay-policy=no-user-gesture-required']),
+    ...(process.env.MUTE ? ['--mute-audio'] : []),
     ...(process.env.FAKECAP ? ['--auto-select-tab-capture-source-by-title=Retina Rave', '--auto-accept-this-tab-capture'] : []),
     ...(process.env.FAKEMIC ? ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] : []),
     '--no-first-run', '--user-data-dir=' + HERE + '/chr' + dbg, 'about:blank'], { stdio: 'ignore' });

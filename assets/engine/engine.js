@@ -40,6 +40,7 @@ export const ENGINE = {
   ms: 0,
   frameN: 0,        // v0.15: frames run by frame(); the trace's `f` and the event log's `f`
   PCM,              // v0.15 E1: the PCM bus (PCM.on(fn) -> fn(L, R, t0)); the EARS stage subscribes here
+  EARS: null,       // §130: the ears stage's state (features-ears.js sets it) — the harness's handle on its cost accounting (cpuAcc / frames) and voxFrom
   TRACE,            // v0.15 E1: the per-frame MS recorder tools/filetrace.js drives (ENGINE.TRACE.start/stop)
   LOG,              // v0.15 E2: the event ring behind log() below, cap 20 000 (engine/trace.js LOG_CAP)
   resumeAt: -1,     // `now` of the first frame after a hidden tab (v0.3 resume-hold); the extractor holds its events for 1 s from it

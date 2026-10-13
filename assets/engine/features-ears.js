@@ -53,6 +53,9 @@ const SUB_EVT = [['noteT', 'subNoteEvt', 'subNote'], ['inT', 'subIn', 'subIn'], 
 export const EARS = {
   ears: null, map: null, mapFile: null, next: -1, subscribed: false, lastT: -1, beat: 0, cpu: 0, blocks: 0,
   mapMs: 0, out: {}, sub: {}, vox: {},
+  // §130 cost accounting only (never a feature): `cpu` is the PCM listener's ms since the last frame, drained into ENGINE.extraMs
+  // below; `cpuAcc` / `frames` keep running totals so the harness can read the ears' ms per frame over a window (tools/load-bench.js).
+  cpuAcc: 0, frames: 0,
   // §124: which source last fed voxS / voxHz / voxConf — 'lane' (the file-mode Demucs sidecar), 'live' (the CNN) or ''
   // (the stage has not run: the fake timeline). The HUD's vox line reads it; nothing else does, and no MS field moved for it.
   voxFrom: '',
@@ -112,7 +115,7 @@ export function earsStage(dt, now, S) {
   for (const k of EVT) S[k] = false;
   if (!AU.ctx || AU.mode === 'none') return;
   if (!EARS.subscribed) { EARS.subscribed = true; PCM.on(onBlock); }
-  ENGINE.extraMs += EARS.cpu; EARS.cpu = 0;         // the push work happens in the PCM listener, outside frame()
+  ENGINE.extraMs += EARS.cpu; EARS.cpuAcc += EARS.cpu; EARS.frames++; EARS.cpu = 0; // the push work happens in the PCM listener, outside frame()
   const t = S.heardT, E = EARS.ears;
   // Decided BEFORE the causal read so only one path writes the event log: a map override logs the map's own events with
   // the same type names ('kick' / 'snare' / 'hat' / 'subNote' / 'subIn' / 'subOut'), so the log's vocabulary never changes
@@ -204,6 +207,7 @@ function mapOverride(M, t, S) {
 }
 
 AU.onFile.push(armMap);
+ENGINE.EARS = EARS;   // §130: the harness's handle (cost accounting, voxFrom) — engine.js declares the slot
 // `KEY_FIELDS` is declared here so the stage's feat list states what it writes; `key` / `mode` / `keyConf` keep synapse's
 // FEATS entries, because the quantity has not changed — only which detector answers for it. §62 held `keyConf` back
 // (synapse's clarity, so the gate's SCALE would not move before an A/B); DECISIONS §84 measured that gate on the five
