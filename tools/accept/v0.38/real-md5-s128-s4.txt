@@ -1,0 +1,82 @@
+# §128 (2026-10-12) s4 TORUS2, the POST-MERGE re-shoot: the same sweep as -s128-s3.txt (86 runs, f0 2, errs [], 777 s). Read against
+# tools/accept/v0.38/real-md5-s127-s4.txt (the voice ON at 3ce1e90, BEFORE 941dd7a) and -s127off-s4.txt (the &t2vox=0 baseline, which =
+# the v0.37 reference on all 66 lines): 16 of 66 moved, 50 held. Both changes on this branch can move an s4 line — the new weights (live)
+# and 941dd7a (the voiceStep moved after reframe, so the sung family no longer admits fibre sample points and the camera no longer hears
+# the voice) — and the grade is the shape both predict:
+# FILE (&map=1, the lane): 6 of 32 moved, every one of them a line where the lane reads a voice at or just before the shot. THREE went
+# back to the switch-off picture EXACTLY — Vienna groove, IBelongHere groove, RaindropsOnRoses groove: w is 0 at those shots and all that
+# was left of the voice was the camera's eases, which 941dd7a removes (§127 recorded Vienna's groove as "the lane itself read a voice 2.4 s
+# before the shot — the scene's eases carry"; they no longer do). THREE moved to a new value — IBelongHere build1 + drop1, Raindrops drop1:
+# w > 0 at the shot, so the strand still takes the sung note's hue, height and brightness while the nest sits still. Every file-mode
+# INSTRUMENTAL line held (Comptine, CyborgNinja, Malicious 0/4 each; WhoLikesToParty 0/4) — the read stays a no-op where the lane says no voice.
+# LIVE (&map=0, the CNN): 10 of 34 moved. Comptine build1 + drop1 went back to the switch-off picture (the piano's false voice is gone,
+# §126 run 2), Vienna build1 to a new value; the voiced three + the take's chords on 7 of 18. CyborgNinja / Malicious / WhoLikesToParty
+# 0/4 live, as in §127.
+# No finding on s4: no line held that should have moved and none moved that should have held. s1 was NOT re-shot (§126 shot it at this
+# engine tree) and neither was the roster (nothing else reads the voice).
+b21d90fdc5e4708f0228b476edbc895d  s4-Comptine-build1-f993-m0.jpg
+b5a3f93dd03672c94567b5e15d1686ab  s4-Comptine-build1-f993-m1.jpg
+d62f3630cb8c78ab4d9f8e96233621a9  s4-Comptine-drop1-f1293-m0.jpg
+7b420664febb89b50ad9e598b82fc8ed  s4-Comptine-drop1-f1293-m1.jpg
+34e33be523495c98e07c546dc5f48912  s4-Comptine-groove-f602-m0.jpg
+653b0ca4346be695131186e8ad69a2f9  s4-Comptine-groove-f602-m1.jpg
+51a06cdf6838c2188397d93423009233  s4-Comptine-intro-f602-m0.jpg
+b5226c29a35f1c3e696721aa9bd68ef9  s4-Comptine-intro-f602-m1.jpg
+0280256341d2c55cc8c2529acf833fd4  s4-CyborgNinja-boundary1-f1533-m0.jpg
+9a7d8c7f0402623b14ef6d28b9fa1073  s4-CyborgNinja-boundary1-f1533-m1.jpg
+52821fcdba176c44fb87ba0360b79ee1  s4-CyborgNinja-build1-f1233-m0.jpg
+24011294aafa47aa6c691072834b79b9  s4-CyborgNinja-build1-f1233-m1.jpg
+38982dfc555babe249847b86a8570dc5  s4-CyborgNinja-groove-f602-m0.jpg
+909b620507b5f0081fe00a953007b7ea  s4-CyborgNinja-groove-f602-m1.jpg
+b41f0bdb0dd12f07cad501f39b64e90c  s4-CyborgNinja-intro-f602-m0.jpg
+c9dedf4067ad131821ee9075feae7cde  s4-CyborgNinja-intro-f602-m1.jpg
+8bef77c818aaf7af782b9138b29173b7  s4-IBelongHere-build1-f655-m0.jpg
+e8fec2752e6018109fda275db24f7eeb  s4-IBelongHere-build1-f655-m1.jpg
+a91227c8932edac939c67733b30f7490  s4-IBelongHere-drop1-f955-m0.jpg
+43ebfa29baed16563177cf39f98eaec2  s4-IBelongHere-drop1-f955-m1.jpg
+fa339787d601040a7f70630bd304c11e  s4-IBelongHere-groove-f602-m0.jpg
+f8c31f6f446759ebbb9e2bffe50e12c2  s4-IBelongHere-groove-f602-m1.jpg
+61e87bb9b871340f4fede378b2b20301  s4-IBelongHere-intro-f602-m0.jpg
+36b9339dd447267cd27f824b5cf543ff  s4-IBelongHere-intro-f602-m1.jpg
+2912a9ccae57dadc421d0f94187f2130  s4-Malicious-build1-f1221-m0.jpg
+d17973c038876a0134a3fc3f3249e3f7  s4-Malicious-build1-f1221-m1.jpg
+ec07333a582f177313ef6816a0ef2d42  s4-Malicious-drop1-f1521-m0.jpg
+8b716c650025d4443461550813d72a77  s4-Malicious-drop1-f1521-m1.jpg
+4ce4f63c82a0409a4efd1c8208490916  s4-Malicious-groove-f602-m0.jpg
+29ec37f9fbdf36f523a67b5217fa80ae  s4-Malicious-groove-f602-m1.jpg
+15cb79796b300a4c3a8092929e4a68c3  s4-Malicious-intro-f602-m0.jpg
+47daa4fc3784fccdc383b2fa30c52fab  s4-Malicious-intro-f602-m1.jpg
+102ec8477f5912f6cd59ed05b7080e00  s4-RaindropsOnRoses-build1-f730-m0.jpg
+8ae5312013bd7135bf62b755ac5877ee  s4-RaindropsOnRoses-build1-f730-m1.jpg
+7cddbda9fc4ea2fe50b92d57c5bd6304  s4-RaindropsOnRoses-drop1-f1030-m0.jpg
+b4261926793f6c10a4843b490928b08c  s4-RaindropsOnRoses-drop1-f1030-m1.jpg
+736acfd5be26dd2d8856b995635a17ec  s4-RaindropsOnRoses-groove-f602-m0.jpg
+74690af0589f913f7f830a9d7a435556  s4-RaindropsOnRoses-groove-f602-m1.jpg
+bbdbacbf2f6fd6cb42b6fe972938a13b  s4-RaindropsOnRoses-intro-f602-m0.jpg
+f41518cc14fa1cfce157f14a436a3241  s4-RaindropsOnRoses-intro-f602-m1.jpg
+5a810b3d3ac47153cf6a111a27efa2d9  s4-SeeYouDrop-build1-f1238-m0.jpg
+02dd7d2c48d67f812d328454a31c00d9  s4-SeeYouDrop-build1-f1238-m1.jpg
+52475767adb87126cd0bc3c36835c5d1  s4-SeeYouDrop-drop1-f1538-m0.jpg
+0309a6fa679d4ebc896df825469a2663  s4-SeeYouDrop-drop1-f1538-m1.jpg
+f2da06be0f357a3a9f4e45610f4422af  s4-SeeYouDrop-groove-f602-m0.jpg
+a7f5d8f29fde9892de9a7b537cd7485a  s4-SeeYouDrop-groove-f602-m1.jpg
+27f3bc94b45a0cfadae9b8b06a6d54f2  s4-SeeYouDrop-intro-f602-m0.jpg
+99a78e5907891a814f072a8993ab5a20  s4-SeeYouDrop-intro-f602-m1.jpg
+9d6660d47042dd9c0452d03a3472ce0e  s4-Vienna-build1-f1222-m0.jpg
+add152b8b87c0fa96403d38cead44efd  s4-Vienna-build1-f1222-m1.jpg
+3faee9d95912855299a6fbe779d7b918  s4-Vienna-drop1-f1522-m0.jpg
+cced6e5677eb82c881b5599476f9e1b4  s4-Vienna-drop1-f1522-m1.jpg
+573f0b3c89245bc90025ffaf11f7cefe  s4-Vienna-groove-f602-m0.jpg
+405af59f7164ce89085121a2943afbd0  s4-Vienna-groove-f602-m1.jpg
+2f89378b4dd4cafad460d471c39bf530  s4-Vienna-intro-f602-m0.jpg
+25324a4a663152b900fe8ad0d701a961  s4-Vienna-intro-f602-m1.jpg
+c8b7ce91640837e796e4932d81dc28b1  s4-WhoLikesToParty-build1-f1232-m0.jpg
+059ed04cddd3e61bf0c9cd480d90d0ea  s4-WhoLikesToParty-build1-f1232-m1.jpg
+02c22b51ebf95a3abfc8f9a083567988  s4-WhoLikesToParty-drop1-f1532-m0.jpg
+75680c814a2cac35878b7a30f26f9c30  s4-WhoLikesToParty-drop1-f1532-m1.jpg
+d94bd0c02af415e84d0007b122aaf629  s4-WhoLikesToParty-groove-f602-m0.jpg
+4f70a330cb862c6108b477602d100f62  s4-WhoLikesToParty-groove-f602-m1.jpg
+bf2a42bfe471b0909778eb7ea54bdab2  s4-WhoLikesToParty-intro-f602-m0.jpg
+40d671cf3c426a0724b225d7b5107b9d  s4-WhoLikesToParty-intro-f602-m1.jpg
+3dff493d4725aee0c6c1d3c12c3dadf5  s4-rec-chords-f1202-m0.jpg
+a95e841a77bec4e4fa42c3f7a27dcd4a  s4-rec-intro-f602-m0.jpg

@@ -1,0 +1,31 @@
+# §128 (2026-10-12) the bench §127 owed, pass A — HARNESS "Bench protocol" and docs/plans/VOX-SCENES-HANDOFF.md item 1: one page per
+# hash, q pinned .95 (setInterval 16 ms), 8 s settle, one cold bench(id,300) discarded, three INTERLEAVED pairs bench(id,300) /
+# bench(2,300) (nav2 is the reference scene since §118), the median of each. The switch ON vs &dvox=0 / &t2vox=0, on the fake timeline
+# and on #test&track=IBelongHere&at=60 (file mode: the §124 lane feeds the voice). Machine at its floor (load ~5 with the user's
+# desktop Chrome, which HARNESS rule 4 says loads every bench); the ratio against nav2 in the same page is what compares.
+# WHY §127's RUN CRASHED, for the record: tools/cdp.js JSON.parses argv[3] at module top level, so a regex written \d (rather than \\d)
+# inside the eval string is an invalid JSON escape and node reports "SyntaxError: Bad escaped character in JSON" before the driver
+# starts — a crash "at module import" with no page involved. Reproduced and fixed by escaping; cdp.js needs no change.
+# PASS A IS NOT COMPARABLE ON TORUS2 and is kept only as the record: the scene picks its attractor per page load (the hud reads cnn on
+# one page, aizawa on the next, thomas on the third) and the attractors do not cost the same — hence the s4 fake pair's 1.138 vs 1.606 ms,
+# which is the attractor, not the switch. Pass B (bench-s128b.txt) toggles the switch inside ONE page and is the number to read.
+== bench-s128 · 2026-10-12 · load average: 4.76, 4.90, 4.25
+== the fake timeline (voxConf 0 — the gate is a no-op, the shader block never entered)
+-- DUST  s3 switch ON  (#test&scene=3)
+s3 0.940 ms (runs 0.940/0.926/1.039) | nav2 2.164 ms (runs 2.164/2.240/2.149) | ratio 0.434 | q 0.95 tier 3 | hud [dust sphere>ribbon 0.05 3.7 vox w 0.00 sec 0.00] | errs []
+-- DUST  s3 switch OFF (#test&scene=3&dvox=0)
+s3 0.895 ms (runs 0.895/0.895/0.907) | nav2 2.193 ms (runs 2.193/2.190/2.208) | ratio 0.408 | q 0.95 tier 3 | hud [dust sphere>ribbon 0.05 3.7 vox w 0.00 sec 0.00] | errs []
+-- TORUS2 s4 switch ON  (#test&scene=4)
+s4 1.138 ms (runs 1.138/1.141/1.133) | nav2 2.129 ms (runs 2.125/2.129/2.298) | ratio 0.535 | q 0.95 tier 3 | hud [torus2 pc4 R=1.41 r=1.00 knot 1,3 fib 84 seg 160 glow 0.12 waves 15 key 9m turn 5.92 size 0.62 cnn 0.18 slip 0.00 haze 0.77 vox w 0.00] | errs []
+-- TORUS2 s4 switch OFF (#test&scene=4&t2vox=0)
+s4 1.606 ms (runs 1.623/1.541/1.606) | nav2 2.192 ms (runs 2.192/2.186/2.365) | ratio 0.733 | q 0.95 tier 3 | hud [torus2 pc4 R=1.41 r=1.00 knot 1,3 fib 84 seg 160 glow 0.12 waves 15 key 9m turn 5.92 size 0.62 aizawa 0.18 slip 0.00 haze 0.77 vox w 0.00] | errs []
+== IBelongHere at 60 s, file mode (the §124 voice lane feeds the read)
+-- DUST  s3 switch ON
+s3 1.054 ms (runs 1.031/1.175/1.054) | nav2 3.197 ms (runs 2.969/3.930/3.197) | ratio 0.330 | q 0.95 tier 3 | hud [dust ribbon 5.3 vox w 0.03 pc7 sec 0.44] | errs []
+-- DUST  s3 switch OFF
+s3 0.934 ms (runs 0.934/0.884/0.992) | nav2 3.744 ms (runs 3.744/3.788/3.740) | ratio 0.250 | q 0.95 tier 3 | hud [dust ribbon 5.6 vox w 0.00 sec 0.00] | errs []
+-- TORUS2 s4 switch ON
+s4 1.393 ms (runs 1.393/1.366/1.396) | nav2 3.723 ms (runs 3.723/3.873/3.692) | ratio 0.374 | q 0.95 tier 3 | hud [torus2 pc5 R=1.41 r=1.00 knot 1,2 fib 144 seg 160 glow 0.18 waves 12 key 2m turn 9.13 size 0.67 thomas 0.34 slip 0.00 haze 0.00 vox w 0.03 pc7] | errs []
+-- TORUS2 s4 switch OFF
+s4 1.313 ms (runs 1.255/1.313/1.337) | nav2 3.350 ms (runs 3.350/3.461/3.335) | ratio 0.392 | q 0.95 tier 3 | hud [torus2 pc5 R=1.41 r=1.00 knot 1,2 fib 144 seg 160 glow 0.18 waves 12 key 2m turn 9.15 size 0.67 thomas 0.33 slip 1.20 haze 0.00 vox w 0.00] | errs []
+== load average: 5.96, 5.19, 4.44

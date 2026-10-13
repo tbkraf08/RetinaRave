@@ -1,0 +1,23 @@
+# §128 (2026-10-12) the bench §127 owed, pass B — THE NUMBER TO READ. Both switches are runtime hooks (hooks.dvox / hooks.t2vox), so one
+# page gives three interleaved TRIPLES on identical scene state: bench(id,300) with the voice ON / bench(id,300) with it OFF /
+# bench(2,300) nav2. q pinned .95, 8 s settle, one cold call discarded, medians. Pass A's page-per-hash form is in bench-s128.txt.
+# THE CLAIM: UNMOVED WITHIN NOISE. ON/OFF reads 0.949 (DUST fake) · 0.994 (TORUS2 fake) · 1.014 (DUST on IBelongHere) · 1.050 (TORUS2 on
+# IBelongHere) — and the spread WITHIN one side is wider than the difference between the sides (DUST's fake ON runs 1.124 / 0.917 / 0.949,
+# TORUS2's IBelongHere OFF runs 1.384 / 1.654 / 1.378). Against nav2 in the same page: DUST .25-.51x, TORUS2 .37-.54x. On the fake
+# timeline voxConf is 0, so w is 0 on BOTH sides and the shader's voice block is never entered either way: that row measures the three
+# uniform uploads alone. On IBelongHere at 60 s the lane has the voice (hud `vox w 0.03 pc7` on the ON side) so the w > 0 branch IS live;
+# w's MAGNITUDE does not change its instruction count (~8 ALU per vertex inside DUST's branch, CPU numbers into existing uniforms on
+# TORUS2), so the branch being taken is what the number needed. §127's "performance issues" were the camera, not the frame cost — the
+# fix is 941dd7a's reordering, and it is not a cost this bench can see.
+== bench-s128b (one page per row, the switch toggled in place) · 2026-10-12 · load average: 5.53, 5.15, 4.46
+== the fake timeline (voxConf 0: w 0 on both sides — the shader's voice block is never entered either way)
+-- DUST  s3 (#test&scene=3)
+s3 ON 0.949 ms (runs 1.124/0.917/0.949) | s3 OFF 1.000 ms (runs 0.963/1.043/1.000) | nav2 1.865 ms (runs 2.019/1.770/1.865) | ON/OFF 0.949 ON/nav2 0.509 | q 0.95 tier 3 | hud [dust sphere>ribbon 0.05 3.7 vox w 0.00 sec 0.00] | errs []
+-- TORUS2 s4 (#test&scene=4)
+s4 ON 0.984 ms (runs 0.976/0.984/0.987) | s4 OFF 0.990 ms (runs 0.974/0.990/1.041) | nav2 1.827 ms (runs 1.858/1.813/1.827) | ON/OFF 0.994 ON/nav2 0.539 | q 0.95 tier 3 | hud [torus2 pc4 R=1.41 r=1.00 knot 1,3 fib 84 seg 160 glow 0.12 waves 15 key 9m turn 5.92 size 0.62 cnn 0.18 slip 0.00 haze 0.77 vox w 0.00] | errs []
+== IBelongHere at 60 s, file mode (the §124 voice lane feeds the read: w > 0 on the ON side)
+-- DUST  s3
+s3 ON 1.000 ms (runs 1.008/1.000/0.995) | s3 OFF 0.986 ms (runs 0.996/0.986/0.966) | nav2 3.930 ms (runs 3.930/3.961/3.835) | ON/OFF 1.014 ON/nav2 0.254 | q 0.95 tier 3 | hud [dust ribbon 5.6 vox w 0.03 pc7 sec 0.44] | errs []
+-- TORUS2 s4
+s4 ON 1.453 ms (runs 1.431/1.458/1.453) | s4 OFF 1.384 ms (runs 1.384/1.654/1.378) | nav2 3.907 ms (runs 3.998/3.886/3.907) | ON/OFF 1.050 ON/nav2 0.372 | q 0.95 tier 3 | hud [torus2 pc5 R=1.41 r=1.00 knot 1,2 fib 144 seg 160 glow 0.18 waves 12 key 2m turn 8.35 size 0.67 thomas 0.32 slip 1.20 haze 0.00 vox w 0.03 pc7] | errs []
+== load average: 5.14, 5.12, 4.50
