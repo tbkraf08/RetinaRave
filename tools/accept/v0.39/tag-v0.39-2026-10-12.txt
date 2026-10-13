@@ -1,0 +1,114 @@
+== v0.39 the tag — the gates, 2026-10-12, one Opus worker on main (the release commit; base 73c37e0)
+   The user: "tag for now, don't deploy". TAGGED LOCALLY, NOT PUSHED, NOT DEPLOYED — retinarave.com still serves
+   v0.38 and will until the user says push. This receipt is the gates' own output on the tree AFTER the bump.
+   What ships since v0.38 (73f848c): the VOICE REACHING THE SCENES, plus the CNN's second pass behind it.
+   §126 the live detector's second pass (three retrains of a second recipe, run 2 ships: the soft floor + the
+   narrowed SNR; assets/engine/ears/vox-weights.js 105 339 bytes, the attack / release ease in ears/vox.js;
+   Comptine's UNSEEN false-positive share 7.6 -> 1.4 % at .5, AUC .886, Jamendo test F1 .795 — the plan's >= .82
+   MISSED and recorded) · §127 the vocal lane on the scenes (assets/math/vox.js the ONE shared gate — knee
+   0.45 -> 0.85, hold .085 s, release .3 s; TORUS2's strand takes the sung note's height / hue / brightness,
+   DUST's grains light the sung register and the ribbon rides the lone voice; &t2vox=0 / &dvox=0 / &voxk=lo,hi the
+   A/Bs) · §127 addendum 941dd7a (the voiceStep moved AFTER reframe: the voice no longer admits fibre sample
+   points, so the camera no longer pumps on a sung note — the user's "it being on causes performance issues")
+   · §128 the proof (the merged gates, the bench §127 owed, the s3 / s4 re-shoot, the lit share).
+   The class is ENGINE: the ears' weights and ease moved and two scenes grew a read; no scene was added and no
+   id moved. scenes [3, 4] — site/thumbs/dust.jpg and torus2.jpg exist, so the entry renders TWO thumbs.
+   All gates ran AFTER the version bump + the releases.json entry, so every one saw the release's own files.
+
+== GATE 1  node tools/check.js
+check: 150 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn
+   The 4 warns are the line-cap ones only (soft cap 350): core/scenes.js 370, engine/ears/perc.js 407,
+   scenes/dust/index.js 364, scenes/torus2/index.js 367 — §127's reads live in each scene's own voice.js and the
+   two index.js files grew only their call sites. Non-blocking, unchanged from §128's reading.
+   node tools/releases.js check   ->  37 entries · top v0.39 · package.json 0.39.0 · 0 problem(s)
+   node tools/whatsnew.js --check ->  37 entries · up to date
+   node tools/license.js --check  ->  153 public files · 0 without the header
+   (150 at v0.38 + math/vox.js + scenes/dust/voice.js + scenes/torus2/voice.js = 153.)
+
+== GATE 2  npm test  —  30 s, exit 0
+   test_vox.js all ok across its six blocks. The ONNX parity that §127's addendum recorded as FAILING
+   (max |delta| 8.00e-1 against 1e-4 — the vox-cnn2 worktree had rewritten the SHARED fixture
+   tools/work/vox/onnx-parity.json with run 2's outputs while main still shipped §123's weights) now PASSES at
+   8.81e-7: the merge brought the weights the fixture was written from, exactly as that finding predicted.
+   (i)   the mel parity (numpy voxtrain.py == ears/vox.js): raw 7.05e-5 · normalised 1.29e-5   <= 1e-4
+   (ii)  the stream vs onnxruntime on 200 held Jamendo-test windows: 8.81e-7                   <= 1e-4
+         the weights module: 38 385 params, 100 KB base64, 40 x 34
+         note (ii) Jamendo test, 16 unseen tracks: F1 / P / R / AUC 0.795 / 0.861 / 0.738 / 0.886
+                   — the plan's >= .82 MISSED, recorded (§126: this net's ceiling, session 3's job)
+         note (ii) IBelongHere (UNSEEN): 0.748 / 0.971 / 0.608 / 0.869
+         note (ii) Comptine (UNSEEN, at .5): 1.4 % false-positive frames — MET against the plan's < 5 %
+   (iii) the ruler per track: the voiced three in / out 8.2x (IBelongHere) · 11.0x (RaindropsOnRoses) ·
+         5.6x (SeeYouDrop), all > 2x; Comptine 1.26 % and CyborgNinja 0.00 % false-positive, Vienna 1.65 %;
+         WhoLikesToParty's shouted chops 0.6x recorded as a note (no pYIN voicing — the chops are out of the
+         loss by the user's call); voxHz within a semitone on 45 / 55 / 9 % — the plan asks 70, the mix ceiling.
+   (iv)  the wiring: 31 non-vox ears fields byte-identical with the stage stubbed out.
+   (v)   the bench: 74.3 us per hop median (p99 141, mean 81.5)                                 <= 100 us
+   (vi)  §124's lane grid: no drift over an hour of frames, voxHz never averaged with its -1.
+   test_voxscene.js  27 ok  (the gate's knee / hold / release, TORUS2's strand, DUST's grains and ribbon, and
+                             the switch-off byte-identity claims on the merged tree)
+   test_fluid 350 ok 0 fail · test_music 151 ok 0 fail · test_dsp / test_rough / test_baby / test_misi /
+   test_hopf / test_tempo / test_director / test_bars / test_drums / test_build / test_queue / test_clock /
+   test_loud / test_tongues all OK.
+
+== GATE 3  the frozen page, npm run build + tools/bundle.js
+npm run build  —  0.15 s  —  whatsnew: 37 entries -> site/whats-new.html (50 KB, top v0.39, index.html #newin
+                             refreshed; clips 0)
+                             bundled 149 modules -> dist/index.html (1453 KB = 1 494 624 bytes)
+   v0.38's build was 146 / 1 468 403. The +3 modules are math/vox.js (the shared gate), scenes/dust/voice.js and
+   scenes/torus2/voice.js; the +26 221 bytes are those three plus §126's weights module growing 104 297 ->
+   105 339 bytes (the header now names MusicNet and MAESTRO beside Jamendo).
+node tools/bundle.js releases/retinarave-v0.39.html  —  149 modules, 1 494 624 bytes, VER = '0.39.0'
+   (the frozen page and dist/index.html are the same bundle, byte for byte in size.)
+git rm releases/retinarave-v0.36.html  —  the three-page rule (HARNESS "## Release notes"): releases/ keeps
+   v0.37 / v0.38 / v0.39, and v0.36's page is in history at its tag.
+the frozen page from file://, headless, CLOCK=1 GPU=1 (FILE=$PWD/releases/retinarave-v0.39.html):
+   test&scene=0 -> {sc 0, grammar "pool",  fluidOn true, errs [], bad [], frameN 300}
+   test&scene=1 -> {sc 1, grammar "bands", fluidOn true, errs [], bad [], frameN 300}
+   test&scene=3 -> {sc 3, grammar "pool",  fluidOn true, errs [], bad [], frameN 300}   <- DUST, the new read
+   test&scene=4 -> {sc 4, grammar "pool",  fluidOn true, errs [], bad [], frameN 300}   <- TORUS2, the new read
+   (sc is CARD.SC.cur, the forced scene; the four scenes are the two the voice reaches plus the two pools.
+    CLOCK=1 from the first pass — v0.37's pitfall paid forward: window.__FRAME exists only under cdp.js's CLOCK
+    shim, so a frame target without CLOCK=1 always burns its 120 s timeout.)
+   grep on the page: 15 hits for vox-weights / VOX_W / Jamendo — the weights AND their attribution are IN the
+   artifact, and nothing is fetched (the landing's on-device promise holds).
+
+== GATE 4  the no-third-party receipt (SOCIAL-PLAN §4) — ONE host on every route
+/whats-new   (PORT=8993)  ->  ["127.0.0.1:8993"]   title "What's new in Retina Rave — every release, newest first"
+   The v0.39 article renders: the anchor id="v0.39" exists, dated 12 October 2026, the class label reads
+   `engine`, the title "The voice reaches the scenes", the notes line "§126 · §127 · §128", and it shows
+   TWO thumbnails (scenes [3, 4] -> site/thumbs/dust.jpg + torus2.jpg; the first entry since v0.34 with any).
+/            (NOAUTO=1 real, PORT=8995)  ->  ["127.0.0.1:8995"]
+             #newin reads "New in v0.39: The voice reaches the scenes → what's new"
+/about       (PORT=8995)  ->  ["127.0.0.1:8995"]
+   The credits were VERIFIED TO RENDER and nothing was added (feedback-credit-where-due): in the /about DOM,
+   Jamendo true · MusicNet true · MAESTRO true · "CC BY 4.0" true · "CC BY-NC-SA 4.0" true. THIRD-PARTY.md
+   carries Demucs, librosa (its licence in full), the Jamendo corpus (CC BY 4.0), MusicNet (CC BY 4.0) and
+   MAESTRO v3.0.0 (CC BY-NC-SA 4.0, the archive's LICENSE line verbatim and the non-commercial paragraph) and is
+   copied to dist/ by npm run build. §126 put all three corpora in both files; this tag added not one line.
+
+== WHAT WAS NOT RUN, AND WHY (the brief's instruction, and it holds)
+   The full real-md5 roster and accept.sh: §128 paid the sweep this release needs and the engine has not moved
+   since. §128 re-shot s3 + s4 (86 runs, f0 2 on every run, errs [], bad [], 777 s) — the only two scenes that
+   grew a read — and §126 shot s1 at this engine tree; the roster's other lines read nothing that moved (§123
+   held 264 of 264 with the vox keys live in both map modes: the stage is read-only to every other feature).
+   The fake smoke was §128's, scoped to IDS="1 3 4": all six lines = tools/accept/v0.38/scene-md5-s127.txt byte
+   for byte, errs [] hop 840 row 72 — the fake timeline reports voxConf 0, so the gate returns w 0 and no voice
+   block is entered. HEAD at the last sweep was 7153fc1 / 73c37e0; after it only the two version strings,
+   releases.json, the generated site files, the frozen page, this receipt and docs moved.
+   NO reference was re-based here — the next release's sweep does that, never the tag.
+   §128's FINDING STANDS, carried not fixed: four s3 FILE-mode lines of §127's list (RaindropsOnRoses intro /
+   build1 / drop1, SeeYouDrop intro) are NOT reproducible from the tree and the lane they name — ruled out in
+   five steps (determinism, §126's engine, the WHOLE assets/ tree at 3ce1e90, the lane as an input, DUST's
+   non-voice path), the suspect the unpinned quality tier (q 0.75 / tier 2 at the Raindrops-intro shot, and
+   DUST's grain work scales with q). real-md5-s128-s3.txt is the reference for s3 from here.
+   accept.sh's "== routes" / "== params" blocks on the NAV2 vehicle are STILL owed (since §118).
+   No director trace: no scene entered or left the rotation (the roster is unchanged at SCENES="0 2 3 4").
+   NO AUDIO WAS PLAYED and nothing was retuned.
+
+== THE TAG
+   One release commit, then git tag -a v0.39 -m "v0.39: the vocal lane on the scenes, the CNN's second pass
+   (§126–§128)". NOT PUSHED. NOT DEPLOYED. A push to main IS the deploy (Cloudflare is git-connected to
+   github.com/tbkraf08/RetinaRave and builds on a push; dist/ is git-ignored and there is no .github/ workflow),
+   so the tag stays local until the user says the word — and then it is ONE push, then poll retinarave.com for
+   VER = '0.39.0', never a second push (§115).
+   What is owed before that word: THE USER'S EYE on scenes 1 / 3 / 4, live and file, on the new weights.

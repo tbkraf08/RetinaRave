@@ -3706,3 +3706,102 @@ check 0 fail, npm test exit 0.
   the TCN / GRU net for the last of the lag (raw + hold is 80–90 ms before any ease, so the plan's ≤ 100 cannot be reached by easing),
   the pitch head, and the recall the narrowed SNR cost (IBelongHere live 54.5 % sung at the gate vs the lane's 67.6). (3) Jamendo test
   F1 stays **MISSED at .795** against the plan's ≥ .82 — this net's ceiling, §126's record.
+
+## §129 v0.39 tagged, NOT deployed — the voice reaches the scenes (2026-10-12, one Opus worker on main, no worktree; the user: *"tag for now, don't deploy"*)
+
+- **What ships** (everything on `main` since v0.38 — 20 commits, three sections; this note adds no code): **§126 the live
+  detector's second pass** — the lag measured per stage, a second data recipe (`--soft-floor=.3`, `--snr=-6,6`, the three knobs now
+  `voxtrain.py` flags), three retrains and **run 2 shipped** on the best AUC (.886), the unseen control (Comptine 7.6 → **1.4 %**) and
+  the highest contrast on the ruler, its recall recorded as the price; MusicNet and MAESTRO added to the negatives on the user's
+  *"use the non-commercial sets → still can publish the weights; don't worry we are not monetizing this"* · **§127 the vocal lane on
+  the scenes** — `assets/math/vox.js`, the ONE shared gate (knee 0.45 → 0.85, hold .085 s, release .3 s) read by `scenes/dust/voice.js`
+  and `scenes/torus2/voice.js`: TORUS2's strand takes the sung note's **height, hue and brightness**, DUST's grains light the sung
+  register and the ribbon rides a lone voice, `&t2vox=0` / `&dvox=0` / `&voxk=lo,hi` the A/Bs · **§127's addendum `941dd7a`** — the
+  `voiceStep` moved AFTER `reframe()` so the sung family no longer admits fibre sample points and **the camera no longer pumps on a
+  note** (the user, testing: *"it being on causes performance issues"* — the read costs nothing per frame; it was the camera) ·
+  **§128 the proof** — the merged gates, the bench §127 owed, the s3 / s4 re-shoot and the lit share.
+- **The class is `engine`, and `scenes` is `[3, 4]`.** The ears' weights and ease moved and two scenes grew a read; **no scene was
+  added and no id moved**, so it is not a `scene` release. But `site/thumbs/` has `dust.jpg` and `torus2.jpg`, so this is the first
+  entry since v0.34 to render **any** thumbnails — two of them. The entry's `decisions` is `[§126, §127, §128]`.
+- **What the entry says about the limits, in a visitor's words** (the honest word, in the house voice, no numbers in the prose):
+  *"Its old failing was a confident false alarm: a solo piano or a lead synth sitting in the voice's range read as singing… It now
+  lights on about one frame in fourteen there… That was bought with caution: it also misses more of the quiet singing than it did,
+  about a tenth of what it used to catch, and that is the trade I would rather have — a scene that stays dark through a piano solo is
+  honest, a scene that pulses at a piano is a lie."* The lag and the ceiling are there too (*"about an eighth of a second behind the
+  note… on music it has never heard it is right about four times in five"*), and so is the colourless light of a chopped sample. The
+  camera bug is named as what it was: *"One bug went with all this, and it turned out to be the camera rather than the sound."*
+- **The credits were already in place and were PROVEN to render, not re-written** ([[feedback-credit-where-due]]). §126 put all three
+  corpora in both files, so **this tag added not one line**: `THIRD-PARTY.md` carries Demucs, librosa (its licence in full), the
+  **Jamendo** corpus (CC BY 4.0), **MusicNet** (CC BY 4.0) and **MAESTRO v3.0.0** (CC BY-NC-SA 4.0, the archive's `LICENSE` line
+  verbatim and the non-commercial paragraph), and `npm run build` copies it to `dist/`; the `/about` DOM was read on the dev route and
+  returns **Jamendo true · MusicNet true · MAESTRO true · "CC BY 4.0" true · "CC BY-NC-SA 4.0" true**. The weights module's own header
+  names the three.
+- **The recipe (§125's ritual, the three-page rule standing, and §125's pitfall paid forward).** `package.json` +
+  `assets/core/version.js` 0.38.0 → 0.39.0 (together, §89) · `releases.json` top entry (`v0.39`, 2026-10-12, class `engine`, title
+  *"The voice reaches the scenes"*, the three §s, `scenes: [3, 4]`, no clip) — **hand-inserted as `JSON.stringify(rel, null, 1)` after
+  the round-trip (`JSON.stringify(load(), null, 1) + '\n'` == the file) was checked byte-identical FIRST, for an 18-line pure
+  insertion.** `releases.js`'s own `save()` still writes a different, compact layout and would reformat all 37 entries; **§125's note
+  held and cost nothing this time** · `npm run build` (37 entries → `site/whats-new.html` 50 KB, the card's `#newin` line *New in
+  v0.39: The voice reaches the scenes*, `dist/index.html` **149 modules, 1 494 624 bytes**) · `node tools/bundle.js
+  releases/retinarave-v0.39.html` (**149 modules, 1 494 624 bytes**, `VER = '0.39.0'`; v0.38's frozen page was 146 / 1 468 403 — the
+  +3 modules are `math/vox.js`, `dust/voice.js` and `torus2/voice.js`, and the +26 221 bytes are those three plus the weights module
+  growing 104 297 → 105 339) · `git rm releases/retinarave-v0.36.html` (the three-page rule; `releases/` keeps v0.37 / v0.38 / v0.39,
+  and v0.36's page is in history at its tag).
+- **The gates, each green on the tree AFTER the bump.** The receipt with every number is
+  `tools/accept/v0.39/tag-v0.39-2026-10-12.txt`:
+  1. `node tools/check.js` — **150 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn** (the
+     line-cap warns only: `core/scenes.js` 370, `ears/perc.js` 407, `dust/index.js` 364, `torus2/index.js` 367 — §127's reads live in
+     each scene's own `voice.js`) · `releases.js check` **37 entries, top v0.39 == package.json 0.39.0, 0 problems** ·
+     `whatsnew --check` up to date · `license.js --check` **153 public files, 0 without the header** (150 at v0.38 + the three new
+     modules).
+  2. `npm test` — 30 s, **exit 0** — and **the ONNX parity that §127's addendum recorded as FAILING now passes at 8.81e-7** (the
+     `vox-cnn2` worktree had rewritten the shared fixture with run 2's outputs while main still shipped §123's weights; the merge
+     brought the weights the fixture was written from, exactly as that finding predicted). The mel parity 7.05e-5 / 1.29e-5; the stage
+     **74.3 µs per hop** median against ≤ 100; `test_voxscene` **27 ok**, `test_fluid` **350 ok**, `test_music` **151 ok**, every other
+     suite OK. The misses still print as **notes**, never FAILs: Jamendo-test **F1 .795 against the plan's ≥ .82**, `voxHz` within a
+     semitone on 45 / 55 / 9 %.
+  3. the frozen page from `file://`, headless, **CLOCK=1** GPU=1 — `test&scene=0` → `{sc 0, pool, fluidOn true, errs [], bad [],
+     frameN 300}` · `scene=1` → `{sc 1, bands, …}` · **`scene=3`** → `{sc 3, pool, …}` · **`scene=4`** → `{sc 4, pool, …}` — the two
+     scenes the voice reaches, shot on the artifact itself. `CLOCK=1` from the first pass (v0.37's pitfall, paid forward twice now).
+     A grep on the page returns **15 hits** for `vox-weights` / `VOX_W` / `Jamendo`: the weights and their attribution are in it.
+  4. the no-third-party receipt (SOCIAL-PLAN §4) — **ONE host on every route**: `/whats-new` → `["127.0.0.1:8993"]` · `/`
+     (`NOAUTO=1 real`) → `["127.0.0.1:8995"]` with `#newin` reading *"New in v0.39: The voice reaches the scenes → what's new"* ·
+     `/about` → `["127.0.0.1:8995"]` with all three corpora and both licence strings in the DOM. The v0.39 article renders
+     (`id="v0.39"`, the `engine` label, 12 October 2026, the notes line **§126 · §127 · §128**) and shows **two thumbnails**.
+- **What was NOT run, and why — the brief's own instruction, and it holds.** The **full real-md5 roster** and **`accept.sh`**: §128
+  paid the sweep this release needs and **the engine has not moved since**. §128 re-shot **s3 + s4** — the only two scenes that grew a
+  read — at 86 runs, `f0` 2 on every run, `errs []`, `bad []`, 777 s, and §126 shot **s1** at this engine tree; the roster's other
+  lines read nothing that moved (§123 held **264 of 264** with the vox keys live in both map modes: the stage is read-only to every
+  other feature). The **fake smoke** was §128's, scoped to `IDS="1 3 4"`: all six lines = `tools/accept/v0.38/scene-md5-s127.txt` byte
+  for byte, `errs []` hop 840 row 72 — the fake timeline reports `voxConf` 0, so the gate returns `w` 0 and no voice block is entered.
+  HEAD at the last sweep was `7153fc1` / `73c37e0`; after it only the two version strings, `releases.json`, the generated site files,
+  the frozen page, the receipt and docs moved. **No reference was re-based here** — the next release's sweep does that, never the tag.
+  `accept.sh`'s routes / params blocks on NAV2 are **still owed** (since §118). **No director trace**: the roster is unchanged at
+  `SCENES="0 2 3 4"`, no scene entered or left the rotation. **No audio was played and nothing was retuned.**
+- **§128's finding is CARRIED, not fixed.** Four s3 FILE-mode lines of §127's list (RaindropsOnRoses intro / build1 / drop1,
+  SeeYouDrop intro) are not reproducible from the tree and the lane they name — ruled out in five steps (determinism, §126's engine,
+  the whole `assets/` tree at `3ce1e90`, the lane as an input, DUST's non-voice path), the suspect the **unpinned quality tier**
+  (`q` 0.75 / tier 2 at the Raindrops-intro shot, and DUST's grain work scales with `q`). `real-md5-s128-s3.txt` is the reference for
+  s3 from here, and **a DUST line is a proof only when the sweep that shot it is the sweep that reads it**. The 11 stale s3 lines of
+  the v0.37 reference and the stale s1 pair are the same class; the next full sweep re-bases all of them.
+- **The deploy shape, unchanged — and this is why the tag stays local.** `dist/` is what `npm run build` writes and what
+  `wrangler.jsonc` serves (`assets.directory ./dist`); `dist/` is git-ignored and not committed, and there is no `.github/` workflow —
+  the deploy is **Cloudflare, git-connected to `github.com/tbkraf08/RetinaRave`, building on a push to `main`**. **So the push IS the
+  deploy**, and the user said *"tag for now, don't deploy"*: **nothing was pushed, `origin/main` is still at `66129a3` (v0.38's
+  own addendum, the last thing pushed) and `retinarave.com` still serves `VER = '0.38.0'`.** When the word comes it is **ONE push** of `main --tags`, then poll for the `VER`
+  line, **never a second push** (§115).
+- **What is live when.** ONE release commit (this note, the receipt, `NEXT-SESSION-PROMPT.md` rewritten for the post-tag truth, the
+  two versions, the entry, the generated `site/whats-new.html` + `index.html`'s line, `releases/retinarave-v0.39.html` in and v0.36's
+  out), then `git tag -a v0.39 -m "v0.39: the vocal lane on the scenes, the CNN's second pass (§126–§128)"` — **and stop.**
+- **What the user validates at home before the push (every remark in track time is a retune request).** (1) **THE NEW READS, unseen
+  by any eye** — `#track=IBelongHere&scene=4`: TORUS2's strand takes the sung note's height, hue and brightness **while the nest sits
+  still** (`941dd7a`); then `&scene=3`, DUST's grains on the sung register and the ribbon as a lone voice; both again with
+  **`&vox=live`**; then `#track=RaindropsOnRoses&at=24` and `#track=SeeYouDrop`; the control **`#track=Comptine&scene=3&vox=live`**,
+  which should now be nearly dark; `&t2vox=0` / `&dvox=0` / `&voxk=lo,hi` the A/Bs. (2) **FLUID2 on the NEW weights** (`#scene=1`,
+  key `2`) — §123's read was validated by eye, but these are different weights: the quiet is quieter and the catch thinner.
+  (3) the **false voice** on a live tab, now the measured 7.1 % / 4.2 % rather than 27.3 / 14.5. (4) carried from v0.38: §121 the rig
+  itself, the two sources side by side, the hard cut FLUID → FLUID2, §118's keys and the Share-a-tab seat; from v0.36 the shockwave,
+  FLUID in the rotation; v0.35's whole list.
+- **Next, in order:** the eye above · **session 3 of `docs/plans/VOX-CNN2-PLAN.md`** (the TCN / GRU net — the only route to the last
+  of the lag, since raw + hold is 80–90 ms before any ease — the pitch head, and the recall the narrowed SNR cost) · **scenes B
+  (NAV2, MANDALA) only if the user asks.** `NEXT-SESSION-PROMPT.md` says the same in one line.
