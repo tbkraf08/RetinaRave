@@ -145,7 +145,7 @@ export function hudText(S) {
   const f = (x) => x.toFixed(2);
   const E = REG[SC.logical], sc = E ? E.scene : null;
   const lines = [
-    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
+    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}${Q.hold !== null ? ' pin' : Q.load ? ' load' : ''}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
     `bands ${f(S.bass)} ${f(S.mid)} ${f(S.high)}  presence ${f(S.presence)}  hit ${f(S.hit)}`,
     `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}  lead ${ENGINE.LEAD.on ? (1000 * S.leadT).toFixed(0) + ' ms' : 'off'}  clock ${ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'} (pcm ${S.bpmPcm.toFixed(1)} ${f(S.beatPhasePcm)} conf ${f(S.clockConfPcm)})`,
     `arc ${S.arc}  eS ${f(S.eS)} eM ${f(S.eM)} eL ${f(S.eL)}  build ${f(S.build)}  absent ${f(S.absentT)}  dropEnv ${f(S.dropEnv)}`,

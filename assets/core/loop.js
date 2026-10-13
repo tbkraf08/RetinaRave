@@ -31,7 +31,7 @@ export function frame(tms) {
   frameN++;
   CARD.frameN = frameN;
   if (document.hidden) return;
-  updateQuality(dtRaw);
+  updateQuality(dtRaw, ENGINE.AU.loading); // §130: the load hold — a file's decode + map build never lowers q (core/quality.js)
   resize();
   ENGINE.frame(dt, now, tms);
   if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap

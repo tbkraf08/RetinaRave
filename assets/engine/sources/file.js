@@ -91,6 +91,7 @@ export async function startFile(src, opt = {}) {
   // different amount: the MS trace would still match frame for frame but a screenshot of a real track would not.
   // window.__pauseAt / __PAUSE are tools/cdp.js's CLOCK=1 shim; on a page without it this is two harmless properties.
   holdClock(det);
+  AU.loading = true;                                // §130: core/quality.js holds q until the playhead opens (the decode, the map build)
   if (det) armTap();                                // BEFORE the decode: see armTap
   const name = typeof src === 'string' ? src : (src && src.name) || 'file';
   const F = AU.file = {
@@ -120,6 +121,7 @@ export async function startFile(src, opt = {}) {
     buf = await ctx.decodeAudioData(ab);
   } catch (e) {
     F.err = String((e && e.message) || e);
+    if (AU.file === F) AU.loading = false;          // §130: the load ended (in failure); a newer source owns the flag otherwise
     run('demo', 'That track could not be played (' + F.err + ') — running the demo signal.');
     return F;
   }
@@ -140,6 +142,7 @@ export async function startFile(src, opt = {}) {
   if (AU.file !== F) return F;
   if (det) armDet(F);
   F.open = true;                                    // the next frame starts the playhead
+  AU.loading = false;                               // §130: the hold's tail (LOAD_TAIL frames) starts on the next frame
   holdClock(false);                                 // let the deterministic clock run: the next frame is frame0
   return F;
 }
@@ -252,6 +255,7 @@ export function tickFile(nowMs) {
 // Undo everything armDet / startBuffer did. Idempotent: audio.js's stopAll calls it through AU.stopFile.
 export function teardown() {
   holdClock(false);
+  AU.loading = false;                               // §130: a stopped source is not loading
   if (node) {
     try { node.stop(); } catch (e) {}
     try { node.disconnect(); } catch (e) {}
