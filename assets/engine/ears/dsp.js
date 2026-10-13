@@ -46,6 +46,31 @@ export class FFT {                                        // copied from synapse
     const h = n >> 1, nm = this.norm;
     for (let i = 0; i < h; i++) out[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) * nm;
   }
+  // §130: `mags` for the bins 0..kMax ONLY, bit-identical to it on those bins (out[i] for i > kMax is not written). The same
+  // decimation-in-time butterflies in the same order, two things fewer: (1) the first stage's twiddle is exactly (1, −0), so its
+  // butterflies are the add / subtract they already evaluate to (`re[b]·1 − im[b]·(−0)` is re[b] up to the sign of a zero, which no
+  // later product, sum or squared magnitude can see); (2) a stage of block size `size` only has to produce the sub-bins the next stage
+  // reads, min(size − 1, kMax), so the last two stages of a 2048 with kMax 341 run 342 butterflies per block instead of 1024 / 512,
+  // and the magnitude loop stops at kMax. The vocal front end's 40 mel bands end at bin 341 (8 kHz at 48 kHz): tools/test_vox.js
+  // proves max |Δ| == 0 against `mags` on every hop of a track; the cost is in DECISIONS §130.
+  magsLo(ring, start, mask, out, kMax) {
+    const n = this.n, re = this.re, im = this.im, rev = this.rev, w = this.win, cs = this.cs, sn = this.sn;
+    for (let i = 0; i < n; i++) re[rev[i]] = ring[(start + i) & mask] * w[i];
+    im.fill(0);
+    for (let i = 0; i < n; i += 2) { const x = re[i], y = re[i + 1]; re[i + 1] = x - y; re[i] = x + y; }   // stage 1: twiddle (1, −0)
+    for (let size = 4; size <= n; size <<= 1) {
+      const half = size >> 1, step = n / size, jEnd = Math.min(half, (size - 1 < kMax ? size - 1 : kMax) + 1);
+      for (let i = 0; i < n; i += size) {
+        for (let j = 0, k = 0; j < jEnd; j++, k += step) {
+          const a = i + j, b = a + half, wr = cs[k], wi = sn[k];
+          const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+    const nm = this.norm;
+    for (let i = 0; i <= kMax; i++) out[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) * nm;
+  }
 }
 
 // One biquad section, RBJ cookbook coefficients. `bp` = constant skirt-gain band-pass, `lp` = low-pass.

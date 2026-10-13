@@ -68,6 +68,7 @@ export class VoxTrack {
     this.nextHop = VOX_HOP; this.hops = 0;
     this.fft = new FFT(VOX_N); this.mag = new Float32Array(VOX_N >> 1);
     this.bank = melBank(sr);
+    this.kMax = this.bank[N_MEL - 1].i0 + this.bank[N_MEL - 1].n - 1;   // §130: the highest bin a band reads — the pruned FFT (dsp.js magsLo) stops there
     this.mel = new Float32Array(N_MEL);          // the last hop's raw log-mel …
     this.x = new Float32Array(N_MEL);            // … and its normalised column (the net's input)
     this.m = new Float64Array(N_MEL); this.v = new Float64Array(N_MEL); this.n = 0;
@@ -107,7 +108,7 @@ export class VoxTrack {
     const h = this.hops++;
     this.band.e = 0;
     if (this.w < VOX_N) { if (this.onHop) this.onHop(this, h, false); return; }
-    this.fft.mags(this.ring, (this.w - VOX_N) & this.mask, this.mask, this.mag);
+    this.fft.magsLo(this.ring, (this.w - VOX_N) & this.mask, this.mask, this.mag, this.kMax);   // §130: bins 0..kMax, bit-identical to mags()
     const mag = this.mag, bank = this.bank, mel = this.mel, x = this.x, M = this.m, V = this.v;
     const a = Math.max(1 / (this.n + 1), this.A); this.n++;
     for (let j = 0; j < N_MEL; j++) {

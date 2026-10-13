@@ -16,10 +16,13 @@
 //   (iv)  the wiring: with the stage stubbed out, every other ears field is byte-identical on 30 s of SeeYouDrop (read-only to the lanes)
 //   (v)   the bench: the stage's cost per hop (its sample loop + the FFT + the net + the YIN), median over the track; the gate ≤ 0.1 ms
 //   (vi)  the lane's grid (§124): map.js' voxLane / mapVoxAt put the 10 ms sidecar on the engine's 60 fps clock with no drift
+//   (vii) the pruned FFT (§130): dsp.js magsLo == mags on bins 0..kMax to the BIT on every hop of a track, and the stage's outputs
+//         (mel, the normalised column, voxS / voxHz / voxConf) identical hop for hop against the unpruned front end
 import fs from 'fs';
 import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
-import { VoxTrack, VOX_GATE } from '../assets/engine/ears/vox.js';
+import { VoxTrack, VOX_GATE, VOX_N } from '../assets/engine/ears/vox.js';
+import { FFT } from '../assets/engine/ears/dsp.js';
 import { VoxNet, N_MEL, T_WIN } from '../assets/engine/ears/vox-net.js';
 import { VOX_W } from '../assets/engine/ears/vox-weights.js';
 import { voxLane, mapVoxAt, VOX_LANE_HOP } from '../assets/engine/map/map.js';   // §124: the file-mode lane's packing and its read
@@ -253,6 +256,44 @@ function laneGrid() {
   ok('(vi) no lane: 0 / -1 / 0 (the live tier keeps the keys)', (mapVoxAt(null, 1, out), out.voxS === 0 && out.voxHz === -1 && out.voxConf === 0), 'idle');
 }
 
+// ------------------------------------------------------------------------------------------------ (vii) the pruned FFT (§130)
+// `magsLo` is `mags` with the first stage written as the add / subtract its (1, −0) twiddle evaluates to and the last stages pruned to
+// the bins the mel reads. The claim is EXACT: every bin 0..kMax of every hop of a whole track is the same float, and the stage's outputs
+// through it (the log-mel, the normalised column, the three keys) are the same floats as through `mags` — so no md5 line can move.
+function prunedFFT() {
+  console.log('== the pruned FFT (dsp.js magsLo == mags to the bit on bins 0..kMax; the front end identical through it)');
+  const pcm = loadMid('SeeYouDrop'); if (!pcm) return;
+  const probe = new VoxTrack(pcm.sr), kMax = probe.kMax;
+  const F = new FFT(VOX_N), a = new Float32Array(VOX_N >> 1), b = new Float32Array(VOX_N >> 1);
+  const RB = 4096, ring = new Float32Array(RB), mask = RB - 1;
+  let w = 0, hops = 0, bad = 0, worst = 0;
+  for (let i = 0; i < pcm.n; i++) {
+    ring[w & mask] = pcm.mid[i]; w++;
+    if (w >= VOX_N && w % 512 === 0) {
+      F.mags(ring, (w - VOX_N) & mask, mask, a); F.magsLo(ring, (w - VOX_N) & mask, mask, b, kMax); hops++;
+      for (let k = 0; k <= kMax; k++) if (!Object.is(a[k], b[k])) { bad++; worst = Math.max(worst, Math.abs(a[k] - b[k])); }
+    }
+  }
+  ok('(vii) magsLo == mags on bins 0..' + kMax + ' (Object.is, every hop of SeeYouDrop)', bad === 0, hops + ' hops, ' + bad + ' bins differ' + (bad ? ', max |Δ| ' + worst.toExponential(2) : ''), '0 bins differ');
+  // the stage through mags() vs through magsLo(): the same floats hop for hop
+  const cols = (viaMags) => {
+    const out = [];
+    const hook = (v, h, ran) => { if (ran) out.push([Float32Array.from(v.mel), Float32Array.from(v.x), v.s, v.hz, v.conf]); };
+    const vox = new VoxTrack(pcm.sr, { onHop: hook });
+    if (viaMags) vox.fft.magsLo = function (r, st, m, o) { this.mags(r, st, m, o); };
+    const n = Math.min(pcm.n, 60 * pcm.sr);
+    for (let j = 0; j < n; j++) vox.step(pcm.mid[j], (j + 1) / pcm.sr);
+    return out;
+  };
+  const A = cols(true), B = cols(false);
+  let diff = 0;
+  for (let h = 0; h < A.length; h++) {
+    for (let j = 0; j < N_MEL; j++) if (!Object.is(A[h][0][j], B[h][0][j]) || !Object.is(A[h][1][j], B[h][1][j])) diff++;
+    if (!Object.is(A[h][2], B[h][2]) || !Object.is(A[h][3], B[h][3]) || !Object.is(A[h][4], B[h][4])) diff++;
+  }
+  ok('(vii) the front end through magsLo == through mags: mel, x, voxS / voxHz / voxConf (60 s, per hop)', A.length === B.length && diff === 0, A.length + ' hops, ' + diff + ' values differ', '0');
+}
+
 // ------------------------------------------------------------------------------------------------ (v) the bench
 function bench() {
   console.log('== the bench (the stage alone on SeeYouDrop: the sample loop + the FFT + the mel + the net + the YIN, per 512-sample hop)');
@@ -261,11 +302,22 @@ function bench() {
   const R = run(pcm.mid, pcm.sr);
   ok('(v) the stage: median us per hop', R.usMed <= 100, R.usMed.toFixed(1) + ' us (p99 ' + R.usP99.toFixed(0) + ', mean ' + R.usMean.toFixed(1) + ')', '<= 100 us (HARNESS "Bench protocol": the stage <= .1 ms per hop)');
   note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (one inference per 4 hops: ' + (R.hops / Math.max(1, R.vox.fired)).toFixed(2) + ')');
+  // §130: the parts — the two FFTs alone (mags vs magsLo on the same ring), the sample loop alone (the hop stubbed), the stage through mags()
+  const med = (per) => { per.sort((x, y) => x - y); return per[per.length >> 1]; };
+  const F = new FFT(VOX_N), o = new Float32Array(VOX_N >> 1), ring = new Float32Array(4096), kMax = R.vox.kMax;
+  ring.set(pcm.mid.subarray(48000, 48000 + 4096));
+  const tFFT = (fn) => { const per = []; for (let i = 0; i < 3000; i++) { const a = process.hrtime.bigint(); fn(); per.push(Number(process.hrtime.bigint() - a) / 1e3); } return med(per); };
+  const usMags = tFFT(() => F.mags(ring, 0, 4095, o)), usLo = tFFT(() => F.magsLo(ring, 0, 4095, o, kMax));
+  const loop = new VoxTrack(pcm.sr); loop.hop = () => {};
+  const perL = []; for (let i = 0; i + 512 <= 20 * pcm.sr; i += 512) { const a = process.hrtime.bigint(); for (let j = i; j < i + 512; j++) loop.step(pcm.mid[j], (j + 1) / pcm.sr); perL.push(Number(process.hrtime.bigint() - a) / 1e3); }
+  const viaMags = new VoxTrack(pcm.sr); viaMags.fft.magsLo = function (r, st, m, out) { this.mags(r, st, m, out); };
+  const perM = []; for (let i = 0; i + 512 <= 60 * pcm.sr; i += 512) { const a = process.hrtime.bigint(); for (let j = i; j < i + 512; j++) viaMags.step(pcm.mid[j], (j + 1) / pcm.sr); perM.push(Number(process.hrtime.bigint() - a) / 1e3); }
+  note('(v) §130 the parts, median us: FFT mags / magsLo (bins 0..' + kMax + ') · the sample loop alone · the stage through mags (60 s) vs through magsLo (the full track above)', usMags.toFixed(1) + ' / ' + usLo.toFixed(1) + ' · ' + med(perL).toFixed(1) + ' · ' + med(perM).toFixed(1) + ' vs ' + R.usMed.toFixed(1));
 }
 
 if (!only || has('bench')) { if (!only) { melParity(); onnxParity(); training(); } }
 if (!only || has('ruler')) ruler();
-if (!only) { wiring(); laneGrid(); }
+if (!only) { wiring(); laneGrid(); prunedFFT(); }
 if (!only || has('bench')) bench();
 console.log(FAIL ? `\n${FAIL} FAILED` : '\nall ok');
 process.exit(FAIL ? 1 : 0);
