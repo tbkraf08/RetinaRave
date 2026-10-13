@@ -3626,3 +3626,83 @@ check 0 fail, npm test exit 0.
 - **The fake smoke, scoped to the scene folder's own lines** (HARNESS "What to re-prove": `IDS=4 GPU=1 PORT=8942 tools/scene-md5.sh s127d`): `80c43f0fc1aeb607ccbbe9971826c672` / `248ad4c9b188a1e29fadca7f90442bdd` = the s4 pair of `tools/accept/v0.38/scene-md5-s127.txt`, `errs []`. It could not have moved: the fake timeline reports `voxConf 0`, the gate returns `w 0`, the block is a no-op on either side of `reframe()` — the shot is the receipt that the move is the only edit.
 - **The real-md5 s4 lines are NOT re-shot here** — they get re-shot after §126 (VOX-CNN2, the parallel branch) lands, together with the live lines §127 already owed. This change can only move a line where `w > 0` (the voiced tracks, and the piano's false voice live), and it moves it TOWARD the pre-§127 camera.
 - **The eye is owed:** `#track=IBelongHere&scene=4` against `&t2vox=0` — the strand should still take the sung note's hue and height, with the nest sitting still.
+
+## §128 The two voice branches merged — the gates, the bench §127 owed, the re-shoot, and the false voice down to 7 % (2026-10-12, one Opus worker on main, no worktree; the brief: *"Plumbing on main … if a gate fails, report it, do not fix"*)
+
+- **What it is.** Plumbing only: `main` at `7153fc1` is §126 (the CNN's second round — run-2 weights + the attack / release ease)
+  merged onto §127 (scenes A: the shared gate `assets/math/vox.js`, TORUS2's strand, DUST's grains) with `941dd7a` (voiceStep after
+  reframe) on top, and the two branches each owed the other's receipts. **Not one byte under `assets/` was edited here** — four
+  measurements and this entry. Nothing tagged, pushed or deployed; no retune; no audio played.
+- **The gates, all green.** `node tools/check.js` 150 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · **0 fail
+  · 4 warn** (the soft caps: `core/scenes.js` 370, `ears/perc.js` 407, `dust/index.js` 364, `torus2/index.js` 367).
+  `node tools/license.js --check` **153 / 0**. `npm test` **exit 0** — and the ONNX parity that §127's addendum recorded as FAILING
+  (max |Δ| 8.00e-1 against 1e-4: the `vox-cnn2` worktree had rewritten the SHARED fixture `tools/work/vox/onnx-parity.json` with run
+  2's outputs while main still shipped §123's weights) **now passes at 8.81e-7** — the merge brought the weights the fixture was
+  written from, exactly as that finding predicted. The mel parity 7.05e-5 / 1.29e-5; the stage 74.8 µs per hop median (p99 144, mean
+  82.0) against ≤ 100; the wiring's 31 non-vox fields identical; `test_voxscene` 27 ok (the switch-off byte-identity claims hold on
+  the merged tree), `test_fluid` 350 ok, `test_music` 151 ok. The fake smoke scoped to the scenes that read the voice (`IDS="1 3 4"
+  GPU=1 PORT=8941 tools/scene-md5.sh s128`): **all six lines = `tools/accept/v0.38/scene-md5-s127.txt` byte for byte**, `errs []` hop
+  840 row 72 on each — the fake timeline reports `voxConf` 0, the gate returns `w` 0, no voice block is entered, so no new list.
+- **Why §127's bench crashed, and the bench** (`tools/accept/v0.38/bench-s128.txt` pass A, `bench-s128b.txt` pass B — **read B**).
+  It was never cdp.js: `tools/cdp.js` `JSON.parse`s `argv[3]` at module top level, so a regex written `\d` instead of `\\d` inside
+  the eval string is an invalid JSON escape and node throws `SyntaxError: Bad escaped character in JSON` before the driver starts —
+  a "crash at module import" with no page involved. Escaped, the same driver runs. Pass A (one page per hash, the handoff's literal
+  recipe) is kept for the record but is **not comparable on TORUS2**: the scene picks its attractor per page load (`cnn` / `aizawa` /
+  `thomas` across three pages) and the attractors do not cost the same — the s4 fake pair's 1.138 vs 1.606 ms is the attractor, not
+  the switch. Pass B toggles `hooks.dvox` / `hooks.t2vox` INSIDE one page, three interleaved triples ON / OFF / nav2, q pinned .95,
+  8 s settle, one cold call discarded:
+
+  | page | voice ON | voice OFF | nav2 | ON/OFF | ON/nav2 |
+  |---|---|---|---|---|---|
+  | `#test&scene=3` DUST | 0.949 ms | 1.000 ms | 1.865 ms | 0.949 | 0.509 |
+  | `#test&scene=4` TORUS2 | 0.984 ms | 0.990 ms | 1.827 ms | 0.994 | 0.539 |
+  | `#test&track=IBelongHere&at=60&scene=3` | 1.000 ms | 0.986 ms | 3.930 ms | 1.014 | 0.254 |
+  | `#test&track=IBelongHere&at=60&scene=4` | 1.453 ms | 1.384 ms | 3.907 ms | 1.050 | 0.372 |
+
+  **Unmoved within noise:** the spread WITHIN one side is wider than the gap between the sides (DUST's fake ON runs 1.124 / 0.917 /
+  0.949; TORUS2's IBelongHere OFF runs 1.384 / 1.654 / 1.378). The fake rows have `voxConf` 0 on both sides, so they price the three
+  uniform uploads alone; on IBelongHere the lane has the voice (hud `vox w 0.03 pc7`) so the `w > 0` branch IS live, and w's
+  magnitude does not change its instruction count (~8 ALU per vertex inside DUST's branch; CPU numbers into existing uniforms on
+  TORUS2). The user's *"it being on causes performance issues"* was the CAMERA, fixed in `941dd7a` — not a frame cost this bench can
+  see, which is why it took a continuity argument and not a bench to find it.
+- **The false voice is down to a third of what it was — the plan's §0 claim is now MET** (`tools/vox-gate-ruler.js`, the same tool
+  and inputs as §127, the lane columns identical to the tenth as the control; `tools/accept/v0.38/vox-gate-ruler-s128.txt`).
+  **Comptine LIVE lights on 7.1 % of its frames against the plan's ≤ 10 % (§127: 27.3 %), is hued on 1.8 % (15.0), at a mean w of
+  .015 (.070), in 10 separate runs (40).** The other controls fell with it: Vienna 14.5 → **4.2** % lit, CyborgNinja 4.0 → **0.1**,
+  Malicious 4.9 → **0.7**. The price is the recall §126 measured and chose: IBelongHere 77.1 → **67.0** % lit, RaindropsOnRoses 55.4
+  → **48.2**, SeeYouDrop 47.7 → **32.5**. WhoLikesToParty LIVE ROSE, 13.8 → **23.7** %, at a hue share of 0.5 % — its shouted chops
+  read as presence with no pitch (the chops are out of the loss by the user's call, §126), so the light they make is colourless;
+  recorded, not retuned. No knee sweep: the default knee is the one the user A/Bs at home with `&voxk=lo,hi`, and `§127`'s sweep
+  stands as the trade-off curve.
+- **The re-shoot** (`GPU=1 PORT=8951 PAR=2 SCENES="3 4" tools/real-md5.sh s128`, the s127 scope: 86 runs, `f0` 2 on every run,
+  `errs []`, `bad []`, 777 s; `real-md5-s128-s3.txt` / `-s4.txt`). s1 was NOT re-shot (§126 shot it at this engine tree) and neither
+  was the roster. **s4 TORUS2 — 16 of 66 moved, 50 held, and the grade is the shape the two changes predict.** FILE (`&map=1`): 6 of
+  32 moved, every one a line where the lane reads a voice at or just before the shot — THREE back to the switch-off picture EXACTLY
+  (Vienna / IBelongHere / Raindrops groove: w is 0 at those shots and all the voice had left was the camera's eases, which `941dd7a`
+  removes — §127 wrote "the scene's eases carry"; they no longer do), THREE to a new value (IBelongHere build1 + drop1, Raindrops
+  drop1: w > 0, so the strand still takes the sung note's hue, height and brightness while the nest sits still); **every instrumental
+  file line HELD** (Comptine / CyborgNinja / Malicious / WhoLikesToParty 0/4 each). LIVE (`&map=0`): 10 of 34 — Comptine build1 +
+  drop1 back to the switch-off picture (the piano's false voice gone), Vienna build1 to a new value, the voiced three + the take's
+  chords 7 of 18; CyborgNinja / Malicious / WhoLikesToParty 0/4. **s3 DUST — 17 of 66 moved, 49 held.** LIVE 13 of 34, exactly the
+  lines §127 said it would re-shoot: Comptine build1 + drop1 and Malicious groove back to the switch-off picture (the ruler's 27.3 →
+  7.1 % in one frame each), Vienna build1 to a new value, the voiced three + the chords 9 of 18.
+- **A finding: four s3 FILE-mode lines moved that should have held** — RaindropsOnRoses intro / build1 / drop1 and SeeYouDrop intro,
+  voice ON. The lane did not change and no DUST file did, so they could not move; they did. Ruled out in order: (1) **determinism** —
+  two fresh `PAR=1` shoots of those eight lines agree with the sweep to the byte; (2) **§126's engine** — with `ears/vox.js` +
+  `vox-weights.js` checked out at `3ce1e90` they are STILL today's bytes, not §127's; (3) **any code at all** — with the WHOLE
+  `assets/` tree checked out at `3ce1e90`, the exact tree §127 shot from, they are STILL today's bytes; (4) **the lane as an input** —
+  the page's `voxS` / `voxHz` / `voxConf` match `~/Music/RetinaRave/<T>.vox.json` to the digit at heard 24.000 and 33.967 s, `mapOn`
+  1 from frame 2, and the sidecars have not been written since 11:17, before the §127 sweep; (5) **DUST's own non-voice path** — all
+  eight `&dvox=0` lines shot here are byte-identical to `real-md5-s127off-s3.txt`. So the §127 voice-ON values for those four shots
+  **are not reproducible from the tree and the lane they name**: stale, the same class as the 11 stale s3 lines of v0.37 that §127
+  itself recorded. The suspect is the QUALITY TIER — at the Raindrops-intro shot `q` reads 0.75 / tier 2 with the voice on and off
+  alike (the sweep does not pin q), and DUST's grain work scales with q, so a two-lane sweep's load can move a DUST line without
+  moving a code byte. **Recorded, nothing re-baselined beyond writing the honest list**; `real-md5-s128-s3.txt` is the reference for
+  s3 from here, and a DUST line is a proof only when the sweep that shot it is the sweep that reads it.
+- **What is owed.** (1) **The user's eye**, the only thing left before a tag: scenes 1 / 3 / 4 live and file on the dev server —
+  `#track=IBelongHere&scene=4` and `&scene=3` (the lane) · the same with `&vox=live` (the CNN's picture) · `#track=RaindropsOnRoses&at=24&scene=1`
+  (the rig's lead on the new weights) · `#track=SeeYouDrop&scene=3` · `#track=Comptine&scene=3&vox=live` as the control, which should
+  now be nearly dark · `&t2vox=0` / `&dvox=0` / `&voxk=lo,hi` the A/Bs. (2) **Session 3 of the CNN plan** (`docs/plans/VOX-CNN2-PLAN.md`):
+  the TCN / GRU net for the last of the lag (raw + hold is 80–90 ms before any ease, so the plan's ≤ 100 cannot be reached by easing),
+  the pitch head, and the recall the narrowed SNR cost (IBelongHere live 54.5 % sung at the gate vs the lane's 67.6). (3) Jamendo test
+  F1 stays **MISSED at .795** against the plan's ≥ .82 — this net's ceiling, §126's record.

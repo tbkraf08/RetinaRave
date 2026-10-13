@@ -1,0 +1,20 @@
+# §128 (2026-10-12): the voice gate's ruler on the SHIPPED weights (§126 run 2) + §126's attack / release ease, at the tree
+# 7153fc1 (the merge of vox-cnn2 onto §127 scenes A) — the same tool and the same inputs as tools/accept/v0.38/vox-gate-ruler-s127.txt,
+# which read §123's weights. LIVE = the CNN replayed over the PCM dumps (what live mode shows); LANE = the Demucs sidecar (file mode,
+# unchanged here: the lane columns are the control and are identical to §127's to the tenth).
+# THE PLAN'S §0 CLAIM IS NOW MET: Comptine LIVE lights on 7.1 % of its frames (§127: 27.3 %) against the plan's <= 10 %, is hued on
+# 1.8 % (15.0), at a mean w of .015 (.070) in 10 separate runs (40). The other controls fell with it: Vienna 14.5 -> 4.2 % lit,
+# CyborgNinja 4.0 -> 0.1, Malicious 4.9 -> 0.7. The cost is the recall §126 recorded and priced: IBelongHere 77.1 -> 67.0 % lit,
+# RaindropsOnRoses 55.4 -> 48.2, SeeYouDrop 47.7 -> 32.5. WhoLikesToParty LIVE rose 13.8 -> 23.7 % at a hue share of 0.5 % — its
+# shouted chops read as presence with no pitch (the chops are OUT of the loss by the user's call, §126), so the light they make is
+# colourless; recorded, not retuned. No knee sweep here: the default knee is the one the user A/Bs at home with &voxk=lo,hi.
+vox-gate-ruler · knee 0.45 → 0.85 · hold 0.085 s · release 0.3 s · music frames = the lane's voxConf > 0
+            track |  frames | live lit % | live hue % | live w̄ | live entries | lane lit % | lane hue % | lane w̄ | lane entries
+         Comptine |    8662 |        7.1 |        1.8 |   0.015 |           10 |        0.0 |        0.0 |   0.000 |            0
+      CyborgNinja |   10803 |        0.1 |        0.0 |   0.000 |            1 |        1.3 |        0.5 |   0.001 |            3
+           Vienna |   11559 |        4.2 |        0.7 |   0.012 |           18 |        4.8 |        4.6 |   0.012 |            4
+        Malicious |   13375 |        0.7 |        0.1 |   0.004 |            7 |        6.4 |        2.9 |   0.018 |           10
+  WhoLikesToParty |   15380 |       23.7 |        0.5 |   0.075 |          177 |       82.4 |        0.0 |   0.300 |           50
+      IBelongHere |   13986 |       67.0 |       50.4 |   0.448 |          100 |       91.4 |       80.0 |   0.556 |           22
+ RaindropsOnRoses |   13371 |       48.2 |       27.2 |   0.332 |          129 |       61.8 |       57.6 |   0.313 |           23
+       SeeYouDrop |    9456 |       32.5 |       13.8 |   0.207 |           69 |       64.9 |       26.4 |   0.317 |           18
