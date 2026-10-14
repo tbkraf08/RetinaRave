@@ -19,7 +19,7 @@ import { PCM } from './pcm.js';
 // width, pulse — and EVERY live mode stays causal, because nothing else in the map covers them.
 // The release rule is the same in both paths: an event fires on the frame NEAREST its onset (`t <= heardT + lead`,
 // `lead = min(1/120, half the frame interval)`), so `<x>Age` may be negative by up to `lead` on the release frame.
-import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX } from './ears/ears.js';
+import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX, HIST } from './ears/ears.js';
 // §131: the ears' own thread. `EarsHost` is the same reader filled from a Worker's messages instead of from its own DSP
 // (ears/host.js); `EARSK.worker` is `&ears=main`'s switch. Nothing else in this file knows which transport it is talking to.
 import { EarsHost, EARSK, primeEarsWorker, earsWorkerUp } from './ears/host.js';
@@ -63,6 +63,11 @@ export const EARS = {
   // `wcpuAcc` / `wblocks` are its DSP ms per block and `lag*` the heard→feature delay of the round trip (ms, accounting only;
   // none of it is main-thread time, so none of it is in ENGINE.ms). `msEma` is this thread's drained cost per frame.
   on: 'main', msEma: 0, wcpuAcc: 0, wblocks: 0, lag: 0, lagMax: 0, lagAcc: 0, lagN: 0,
+  // §131 THE NUMBER THAT MATTERS: how STALE the features are when the frame reads them — heard time minus the newest
+  // history frame in the ring (s). It carries everything in the way of the ear: the capture buffering, the block the hop
+  // has not finished, the display lead (40 ms in the file modes, 0 live) and, over a port, the round trip. The message lag
+  // above is the transport's own delay; this is what a scene actually sees, and it is the two transports' comparator.
+  staleAcc: 0, staleN: 0, staleMax: 0,
   // §124: which source last fed voxS / voxHz / voxConf — 'lane' (the file-mode Demucs sidecar), 'live' (the CNN) or ''
   // (the stage has not run: the fake timeline). The HUD's vox line reads it; nothing else does, and no MS field moved for it.
   voxFrom: '',
@@ -149,6 +154,7 @@ export function earsStage(dt, now, S) {
   ENGINE.extraMs += EARS.cpu; EARS.cpuAcc += EARS.cpu; EARS.frames++; EARS.msEma += (EARS.cpu - EARS.msEma) * 0.05; EARS.cpu = 0; // the push work happens in the PCM listener, outside frame()
   if (EARS.ears && EARS.ears.worker) { const H = EARS.ears; EARS.wcpuAcc = H.wmsAcc; EARS.wblocks = H.wblocks; EARS.lag = H.lag; EARS.lagMax = H.lagMax; EARS.lagAcc = H.lagAcc; EARS.lagN = H.lagN; } // §131 accounting
   const t = S.heardT, E = EARS.ears;
+  if (E && E.hn) { const d = t - E.ht[(E.hi - 1 + HIST) % HIST]; EARS.staleAcc += d; EARS.staleN++; if (d > EARS.staleMax) EARS.staleMax = d; } // §131 accounting
   // Decided BEFORE the causal read so only one path writes the event log: a map override logs the map's own events with
   // the same type names ('kick' / 'snare' / 'hat' / 'subNote' / 'subIn' / 'subOut'), so the log's vocabulary never changes
   // and nothing is stamped twice.

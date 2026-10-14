@@ -976,6 +976,36 @@ deterministic file mode is fed by the source from the decoded channels. **The wo
 PORT=8812 CLOCK=1 GPU=1 node tools/cdp.js 'test&track=SeeYouDrop&at=58&scene=0' '[{"until":"window.CARD"},{"eval":"window.__P={n:0,last:null,dmax:-1e9,dmin:1e9};CARD.ENGINE.PCM.on(function(L,R,t0){var P=window.__P;if(t0<0)return;P.n++;if(P.last!==null){var d=t0-P.last;if(d>P.dmax)P.dmax=d;if(d<P.dmin)P.dmin=d;}P.last=t0;});1"},{"until":"CARD.ENGINE.AU.file&&CARD.ENGINE.AU.file.open","timeout":300000},{"until":"window.__FRAME>=1922","timeout":600000},{"eval":"JSON.stringify({blocks:window.__P.n,step:512/CARD.ENGINE.AU.file.sr,dmax:window.__P.dmax,dmin:window.__P.dmin})"}]'
 ```
 
+### The ears' thread (DECISIONS §131)
+
+The causal DSP runs in a dedicated Worker (`assets/engine/ears/worker.js` → `ears/core.js`) in every **live** mode — capture,
+mic, demo and a file played in real time — and **in this thread in deterministic file mode**, because `sources/file.js` pushes
+its blocks inside `frame()` and the stage reads the ring in the same frame (`PCM.local`): a port cannot answer inside a frame.
+So every md5 reference, every trace and every ruler runs the in-process path it always ran, and `CLOCK=1` cannot see the
+switch. `&ears=main` (no `#test` needed, like `&lead=`) forces the in-process path everywhere — the A/B, and the path for a
+browser without module Workers; `&ears=worker` is the default. The HUD's engine line says which: `ears main 0.29 ms` or
+`ears worker 0.04 ms (dsp 0.19 lag 1.2/14.8)` — this thread's drained ms per frame, then the Worker's own DSP ms per block and
+the round trip's delay (neither of the last two is main-thread time, so neither is in `ENGINE.ms`).
+
+- **The proof that the two transports are the same floats**: `node tools/test_earsw.js [--secs=60] [--track=…]` (in `npm test`
+  at 30 s) streams a track through BOTH at once and compares every `EARS_FIELDS` value at every read with `Object.is`, the
+  released onsets, the LOW lane, and a `Clock` beside each lane (§90's line through the port) — a differing bit is a FAIL,
+  never a tolerance. It also starts the REAL `ears/worker.js` over a `worker_threads` port through `tools/ears-worker-node.js`
+  (a web-shaped Worker scope for node) and compares the frames of 400 blocks.
+- **The numbers**: `tools/load-bench.js` as §130 runs it, with and without `&ears=main` (`tools/work/ears131/bench.sh` is the
+  loop that produced §131's table), plus `ENGINE.EARS.staleAcc / staleN / staleMax` — **heard time minus the newest history
+  frame in the ring at read time**, which is what a scene actually sees (the capture buffering, the unfinished hop, the display
+  lead and, over a port, the round trip). The message lag (`EARS.lagAcc / lagN`, `lagMax`) is the transport's own delay and is
+  bounded by the main thread's frame cadence — it is NOT the feature delay.
+- **The single-file build**: there is no `worker.js` to start and nothing may be fetched, so `tools/bundle.js` bundles the
+  Worker's graph the way it bundles the page and writes it into `assets/engine/ears/wsrc.js`'s one export; `ears/host.js`
+  starts a classic Worker from a Blob of that string (`+ 12 modules, ~218 KB` in the build line). `dist/` and the frozen
+  release pages therefore run the Worker from `file://` too — which is what the file:// smoke proves.
+- **What to re-prove after a change to `engine/ears/`, the host or the protocol**: `node tools/check.js` · `npm test`
+  (`test_earsw` + `test_vox`) · `node tools/test_ears.js --sr=48000 --trace` twice and `cmp` · the fake smoke list · the
+  default real md5 sweep (it runs the in-process path: a moved line is a determinism bug in the DSP, not in the transport) ·
+  one real-time run per transport with errs [] · the file:// bundle on the roster scenes · Firefox headless on the bundle.
+
 ### The landing control ("play a file from this device")
 
 `index.html` carries `<a id="pickfile">` in the `.alt` row and a hidden `<input type="file" accept="audio/*" id="file">`;

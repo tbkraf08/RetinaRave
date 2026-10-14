@@ -692,6 +692,15 @@ are the scene author's rules:
   picture must be able to say which sound moved it.
 - **Continuous things on heard time.** Every ears / map level is already evaluated at `MS.heardT` (the audio time the listener
   hears this frame) — read it, do not smooth it again on `dt` unless the look needs inertia (and then say so).
+- **Where the ears RUN is not a feature** (§131). The causal DSP has one implementation and two transports: in this thread
+  (node, every tool, deterministic file mode, `&ears=main`) and in a dedicated Worker (every live mode — capture, mic, demo,
+  a file played in real time). The facade and its tracks therefore stay as they were written — no DOM, no clock, no
+  `Math.random`, no import outside `engine/ears/` — and the ONLY file in that folder that may touch the page is `ears/host.js`,
+  the transport. A scene, a stage or a tool reads `EARS.ears` the same way either way (`read(t)`, `out`, `events`,
+  `lowReleased`, `pendLow`, `pulse.setBeat`): the history ring, the release rule and the interpolation are one
+  implementation (`EarsReader`), filled either by its own `snap` or by the Worker's messages. `tools/test_earsw.js` is the
+  receipt — every field, every read, `Object.is`, no tolerance. Deterministic file mode keeps the in-process path by
+  construction, so no md5 reference can move; a difference between the transports is a BUG, never a baseline.
 - **A grammar's clock vs the solver's** (§116 S6): the fluid substrate's `dtSim` bends the WATER's time only — the ink's travel per
   wall-second, the dye's dissipation — and moves no event's placement: the splats, the clear, the shockwave's front, the key's evidence
   stay on the grammar's dt (heard time, with the display lead of this section). A dt that steps is a continuity risk (§1.9): every change

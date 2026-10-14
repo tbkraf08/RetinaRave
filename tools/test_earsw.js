@@ -11,6 +11,11 @@
 //         feeds it, the hook live in one and shipped as state per block in the other — the published clock must match too,
 //         and the line-promoted kicks and their corrections must be non-zero, or the path was never exercised
 //   (iv)  the cost of the transport on the calling thread (the copy + the protocol) beside the DSP it replaces
+//   (vi)  THE ONE BEHAVIOUR A REAL PORT MOVES: in the Worker the onsets reach the PCM clock on the next main-thread task
+//         after the reply — about one block (10.7 ms at 48 kHz) after the hop that found them, where in this thread the clock
+//         reads them inside that same block. Each onset still carries its own sample-exact time, so what is late is the
+//         ARRIVAL of a right measurement (an out-of-sequence Kalman update), not the measurement. This lane runs the
+//         in-process ears with the clock fed one block late and prints what the published clock does differently.
 //   (v)   the REAL Worker entry (assets/engine/ears/worker.js) started in node through a web-shaped scope: the frames of a
 //         block round-tripped over a real port are bit-identical to the in-process ones
 //   node tools/test_earsw.js [--secs=60] [--track=SeeYouDrop] [--sr=48000]
@@ -40,12 +45,12 @@ EARSK.make = (onmessage) => {
 };
 
 // one stream: the ears (either transport) with a Clock beside them, fed as features-clock.js feeds it
-function lane(sr, make) {
+function lane(sr, make, delay) {
   const E = make(sr), clk = new Clock(sr);
   E.setLine(lineHook(clk), clk);
   // `line` / `fix`: the DISTINCT onset times seen promoted on the clock's line and then corrected back (§90). Sets, because the
   // two lanes offer the clock different lists — the pending one, drained by every read, and the host's 1 s arrival buffer.
-  return { E, clk, seen: [-1, -1, -1], st: { n: null }, mono: new Float32Array(B), line: new Set(), fix: new Set() };
+  return { E, clk, seen: [-1, -1, -1], st: { n: null }, mono: new Float32Array(B), line: new Set(), fix: new Set(), delay: !!delay, q: [] };
 }
 function block(L, R, t0, X) {
   X.E.setVoxSkip(false);
@@ -53,7 +58,8 @@ function block(L, R, t0, X) {
   const m = X.mono;
   for (let i = 0; i < L.length; i++) m[i] = 0.5 * (L[i] + R[i]);
   X.clk.push(L.length === m.length ? m : m.subarray(0, L.length), t0);
-  const p = X.E.onsetFeed();
+  let p = X.E.onsetFeed();
+  if (X.delay) { const prev = X.q; X.q = p.slice(); p = prev; }   // (vi): the clock sees the previous block's onsets
   for (let i = 0; i < p.length; i++) {
     const e = p[i], c = CLS[e.type];
     if (e.line === true) X.line.add(e.t);
@@ -65,17 +71,19 @@ const pcm = loadPcm(TRACK, SR);
 const sr = pcm.sr, nEnd = Math.min(pcm.n, Math.ceil(SECS * sr));
 console.log(`== §131 the two transports (${TRACK} @ ${sr}, ${SECS} s, 60 fps reads)`);
 const A = lane(sr, (s) => new Ears(s));                 // in this thread
+const D = lane(sr, (s) => new Ears(s), true);           // (vi) in this thread, the clock fed one block late
 const Wl = lane(sr, (s) => new EarsHost(s));            // over the port
 ok('(0) the host has a port', !Wl.E.failed && Wl.E.worker === true, Wl.E.failed ? 'failed' : 'ready');
 
 const bl = new Float32Array(B), br = new Float32Array(B);
 let bad = 0, badField = '', reads = 0, evA = 0, evW = 0, evBad = 0, lowA = 0, lowW = 0, lowBad = 0;
-let next = 0, msA = 0, msW = 0, blocks = 0;
+let next = 0, msA = 0, msW = 0, blocks = 0, dBpm = 0, dPh = 0, dN = 0, cbad = 0, cFirst = '';
 for (let s = 0; s + B <= nEnd; s += B) {
   bl.set(pcm.L.subarray(s, s + B)); br.set(pcm.R.subarray(s, s + B));
   const t0 = s / sr;
   let a = process.hrtime.bigint(); block(bl, br, t0, A); msA += Number(process.hrtime.bigint() - a) / 1e6;
   a = process.hrtime.bigint(); block(bl, br, t0, Wl); msW += Number(process.hrtime.bigint() - a) / 1e6;
+  block(bl, br, t0, D);
   blocks++;
   const tEnd = (s + B) / sr;
   while (next <= tEnd) {
@@ -98,15 +106,27 @@ for (let s = 0; s + B <= nEnd; s += B) {
     else for (let i = 0; i < la.length; i++) if (!Object.is(la[i].t, lw[i].t) || !Object.is(la[i].fl, lw[i].fl)) lowBad++;
     // (iii) the published PCM clock on both lanes
     const ca = A.clk.read(next, A.st, {}), cw = Wl.clk.read(next, Wl.st, {});
-    if (!Object.is(ca.bpm, cw.bpm) || !Object.is(ca.phase, cw.phase) || !Object.is(ca.count, cw.count)) { bad++; if (!badField) badField = `the clock @ ${next.toFixed(3)} s: ${ca.bpm}/${ca.phase} vs ${cw.bpm}/${cw.phase}`; }
+    if (!Object.is(ca.bpm, cw.bpm) || !Object.is(ca.phase, cw.phase) || !Object.is(ca.count, cw.count)) { cbad++; if (!cFirst) cFirst = `@ ${next.toFixed(3)} s: ${ca.bpm}/${ca.phase} vs ${cw.bpm}/${cw.phase}`; }
+    const cd = D.clk.read(next, D.st, {});
+    if (next > 20) {                                     // from 20 s: both clocks are locked (the cold start is 12-15 s)
+      dN++;
+      const db = Math.abs(cd.bpm - ca.bpm); if (db > dBpm) dBpm = db;
+      const bps = ca.bpm / 60, dp = Math.abs(cd.phase - ca.phase);
+      const ph = 1000 * Math.min(dp, 1 - dp) / Math.max(bps, 1e-6); if (ph > dPh) dPh = ph;
+    }
     next += 1 / 60;
   }
 }
 ok('(i) every EARS_FIELDS value, every read', bad === 0, `${reads} reads × ${EARS_FIELDS.length} fields, ${bad} differ`, badField || 'max |Δ| 0');
 ok('(ii) the released onsets', evBad === 0 && evA === evW && evA > 0, `${evA} vs ${evW} events, ${evBad} differ`, 'identical');
 ok('(ii) the LOW lane (the reactive drums\' own)', lowBad === 0 && lowA === lowW && lowA > 0, `${lowA} vs ${lowW} onsets, ${lowBad} differ`, 'identical');
-ok('(iii) §90: the line was exercised on both', A.line.size > 0 && A.line.size === Wl.line.size && A.fix.size === Wl.fix.size,
-  `line kicks ${A.line.size} vs ${Wl.line.size}, corrected back ${A.fix.size} vs ${Wl.fix.size}`, '> 0, equal');
+ok('(iii) the PCM clock published on both lanes', cbad === 0, `${reads} reads, ${cbad} differ`, cFirst || 'identical');
+// §90's promoted kicks are what the port's line state has to reproduce; the ticks are every onset the clock was handed. Both
+// counts must agree — a track whose 40 s window promotes none (Vienna) proves nothing about the line and says so.
+ok('(iii) §90: the line and the ticks agree', A.line.size === Wl.line.size && A.fix.size === Wl.fix.size && A.fix.size > 0,
+  `line kicks ${A.line.size} vs ${Wl.line.size}${A.line.size ? '' : ' (none in this window)'}, ticks ${A.fix.size} vs ${Wl.fix.size}`, 'equal, ticks > 0');
+console.log(`  (vi)  the clock fed one block late (what a real port moves, ${dN} reads from 20 s): max |Δbpm| ${dBpm.toFixed(3)}, ` +
+  `max |Δ beat phase| ${dPh.toFixed(1)} ms — the onsets' own times are unchanged, only when the filter sees them`);
 console.log(`  cost  per block over ${blocks} blocks: in-thread ears+clock ${(msA / blocks).toFixed(3)} ms · host+clock ${(msW / blocks).toFixed(3)} ms ` +
   `(the port's own DSP ${(CORE_MS / blocks).toFixed(3)} ms of it, so the transport is ${((msW - CORE_MS) / blocks).toFixed(3)} ms on the caller's thread)`);
 

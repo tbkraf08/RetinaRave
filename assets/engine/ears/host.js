@@ -23,7 +23,7 @@ import { PERCK } from './perc.js';     // &kline= / &clickw= live in the Worker'
 import { EARS_WORKER_SRC } from './wsrc.js';
 
 const NF = CONT.length;
-const FEED_KEEP = 1.0;                 // s of onsets kept for the PCM clock's own read (it dedupes by time; §131 `onsetFeed`)
+const FIX_KEEP = 64;                   // §90 line kicks kept addressable for a correction (the Worker watches each for 0.3 s)
 export const EARSK = {
   worker: true,                        // &ears=main turns the Worker off for the whole page (the A/B, and any browser without module Workers)
   url: 'assets/engine/ears/worker.js', // the module page's path to the Worker (the single-file build uses EARS_WORKER_SRC instead)
@@ -80,8 +80,8 @@ export class EarsHost extends EarsReader {
     this.worker = true;                // the HUD's engine line reads this
     this.failed = false;
     this.blocks = 0;
-    this.feed = [];                    // the onsets the PCM clock takes as ticks (arrival order; trimmed by time)
-    this.byId = new Map();             // id -> the event object, for the §90 line corrections
+    this.byId = new Map();             // id -> the event object, for the §90 line corrections (trimmed with `watch`'s window)
+    this.ids = [];                     // the ids in that map, oldest first
     this.pool = [];                    // { L, R } pairs handed back by the Worker
     this.sent = [];                    // performance.now() per block in flight — the heard→feature lag
     this.lag = 0; this.lagMax = 0; this.lagN = 0; this.lagAcc = 0;
@@ -103,7 +103,12 @@ export class EarsHost extends EarsReader {
 
   setVoxSkip(on) { this.skip = !!on; }
 
-  onsetFeed() { return this.feed; }
+  // §131: the PCM clock's ticks. The pending list, exactly as in this thread — an onset a read has already released was
+  // offered to the clock in an earlier block and is not offered again. Over a port that leaves one structural difference:
+  // an onset could be released before the clock's NEXT block read and never be offered at all. Measured, it cannot be —
+  // in live mode heard time runs ~44 ms BEHIND the newest analysis frame (the capture / output buffering; `EARS.staleAcc`
+  // reads −44 ms on a real-time file run), so a fresh onset sits ~4 blocks before it is due, and the clock reads every block.
+  onsetFeed() { return this.pending; }
 
   push(L, R, t0) {
     const w = W.w;
@@ -137,17 +142,10 @@ export class EarsHost extends EarsReader {
     for (let i = 0; i < ev.length; i++) {
       const e = ev[i];
       this.pushEvent(e);
-      if (e.line !== undefined) this.byId.set(e.n, e);
-      if (e.type !== 'low') this.feed.push(e);
+      if (e.line !== undefined) { this.byId.set(e.n, e); this.ids.push(e.n); }   // only a §90 line kick can still be corrected
     }
     const fix = m.fix;
     for (let i = 0; i < fix.length; i++) { const e = this.byId.get(fix[i].n); if (e) e.line = fix[i].line; }
-    // trim: the clock reads the feed per block and dedupes by time, the corrections only reach the last 0.3 s of onsets
-    if (this.feed.length) {
-      const cut = this.feed[this.feed.length - 1].t - FEED_KEEP;
-      let k = 0;
-      for (let i = 0; i < this.feed.length; i++) { const e = this.feed[i]; if (e.t >= cut) this.feed[k++] = e; else this.byId.delete(e.n); }
-      this.feed.length = k;
-    }
+    while (this.ids.length > FIX_KEEP) this.byId.delete(this.ids.shift());        // the Worker watches an onset for 0.3 s; this is ample
   }
 }
