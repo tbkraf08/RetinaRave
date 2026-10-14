@@ -13,6 +13,7 @@ import { ROUGHK } from '../engine/roughnorm.js';   // &rough=0: tension's pre-§
 import { VOXK } from '../math/vox.js';   // &voxk=<lo>,<hi>: the voice gate's knee on every scene that reads it (§127; TORUS2 and DUST)
 import { SHADE } from '../math/keycolour.js';   // &shade=0 / &shade=<k>: the per-bar major / minor pull on the key hue (§82; ON by default since v0.29)
 import { KEYOWN } from '../engine/ears/tonic.js';
+import { EARSK } from '../engine/ears/host.js';   // §131: &ears=main keeps the causal DSP on the main thread (the A/B)
 import { PERCK } from '../engine/ears/perc.js';   // &kline= / &clickw=: the ears' kick-lane knobs (§90)   // &kc=0: keyConf back to synapse's clarity (the §62-§83 gate; §84 made it the ears' tonicConf)
 import { SC, REG, SCENES, TRANSITIONS, goScene, renderScene, setTransition, setColour } from './scenes.js';
 import { Q } from './quality.js';
@@ -180,6 +181,11 @@ export function initHarness(hideLanding) {
   // voxConf and the live CNN is overridden — the user's rule ("do the demucs for file; do cnn for live"). &vox=live forces the
   // CNN on a file too (the A/B: tools/vox-ab.js grades the two off the page); &vox=lane is the default. No lane, no change.
   if (HASH.has('vox')) { const v = HASH.get('vox'); if (v !== 'live' && v !== 'lane') throw new Error('&vox= lane | live'); ENGINE.voxLane = v === 'lane'; }
+  // §131 the ears' thread (engine/ears/host.js): in every LIVE mode (capture, mic, demo, a file played in real time) the causal
+  // DSP runs in a dedicated Worker and the PCM listener only copies the block and posts it; `&ears=main` keeps it in the listener
+  // on the main thread — the A/B, and the path for a browser without module Workers. Deterministic file mode is in-process either
+  // way (features-ears.js `makeEars`: the frames must be in the ring before the same frame reads them), so no md5 can see this.
+  if (HASH.has('ears')) { const v = HASH.get('ears'); if (v !== 'main' && v !== 'worker') throw new Error('&ears= main | worker'); EARSK.worker = v === 'worker'; }
   // true loudness (engine/loud.js, DECISIONS §63): &loud=0 turns the stage off — loudAbs stays -1 and every migrated
   // scene falls back to the `lvl` / `eM` formula it had before, which is the A/B and the md5 receipt
   if (HASH.has('loud')) LOUDK.on = HASH.get('loud') !== '0';

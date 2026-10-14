@@ -47,12 +47,12 @@ function onBlock(L, R, t0) {
   if (t0 < 0) return;
   const c0 = performance.now();
   const E = EARS.ears;
-  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); if (TONGUEK.on) CLOCKS.clk.tongues = new Tongues(TONGUEK); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; CLOCKS.k = null; if (E) E.perc.line = lineHook(CLOCKS.clk); }   // §90: the ears read this clock's line
+  if (!CLOCKS.clk || E !== CLOCKS.E) { CLOCKS.clk = new Clock(AU.ctx.sampleRate); if (TONGUEK.on) CLOCKS.clk.tongues = new Tongues(TONGUEK); CLOCKS.E = E; CLOCKS.seen = [-1, -1, -1]; CLOCKS.pub.n = null; CLOCKS.rawSt.n = null; CLOCKS.k = null; if (E) E.setLine(lineHook(CLOCKS.clk), CLOCKS.clk); }   // §90: the ears read this clock's line
   const m = CLOCKS.mono, n = L.length;
   for (let i = 0; i < n; i++) m[i] = 0.5 * (L[i] + R[i]);
   CLOCKS.clk.push(n === m.length ? m : m.subarray(0, n), t0);
   if (E) {
-    const p = E.pending, seen = CLOCKS.seen;
+    const p = E.onsetFeed(), seen = CLOCKS.seen;   // §131: the pending list in this thread, the Worker host's arrival buffer over a port
     for (let i = 0; i < p.length; i++) { const e = p[i], c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; CLOCKS.clk.onset(e.t, c, e.vel); } }   // §90: a line-promoted kick is not a tick
   }
   CLOCKS.blocks++;

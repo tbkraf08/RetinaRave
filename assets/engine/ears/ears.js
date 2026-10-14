@@ -26,7 +26,7 @@ export const EARS_FIELDS = [
 ];
 // the continuous fields, in the order the history ring stores them (§123 appended the three vox fields at the END, so every
 // index before them is what it was — the other lanes' reads cannot move)
-const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 'subGate',
+export const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 'subGate',
   'tonic', 'tonicMinor', 'tonicConf', 'bassReg', 'kickVel', 'snareVel', 'hatVel', 'denK', 'denS', 'denH',
   'pulse', 'lpSweep', 'width', 'voxS', 'voxHz', 'voxConf'];
 const EVENTS = { subNote: 'subNoteEvt', subIn: 'subIn', subOut: 'subOut', kick: 'kickEvt', snare: 'snareEvt', hat: 'hatEvt' };
@@ -55,19 +55,13 @@ export const HIST = 512;            // history frames (~4 s at the sub hop) — 
 export const REL_LEAD = 1 / 120;
 export const DT_MAX = 0.05;         // a read interval longer than this is a seek or a stall, not a frame, this is ample
 
-export class Ears {
-  constructor(sr, opts = {}) {
-    this.sr = sr;
-    this.sub = new SubTrack(sr, opts.sub || {});
-    this.perc = new PercTrack(sr, opts.perc || {});
-    this.tone = new TonicTrack(sr, opts.tonic || {});
-    this.tex = new TextureTrack(sr);
-    this.pulse = new PulseTrack(opts.pulse || {});
-    this.voxOpts = opts.vox || {};
-    this.vox = new VoxTrack(sr, this.voxOpts);
-    this.RB = 1 << 14; this.mid = new Float32Array(this.RB); this.mask = this.RB - 1; this.w = 0;
-    this.t0 = null;                  // audio time of mid[0] of the stream
-    this.tEnd = 0;                   // audio time one past the newest sample
+
+// §131 THE READ SIDE, on its own (the Worker move): the history ring, the pending onsets and `read(tHeard)` — everything
+// that turns what was heard into this frame's numbers, and nothing that computes them. `Ears` below extends it and fills the
+// ring from its own DSP (node, the page's `&ears=main`, the Worker's own thread); `EarsHost` (ears/host.js) extends it and
+// fills the SAME ring from the Worker's messages (`pushFrame` / `pushEvent`). One release rule, one interpolation, one `out`.
+export class EarsReader {
+  constructor(opts = {}) {
     this.hi = 0; this.hn = 0;        // history write index / count
     this.ht = new Float64Array(HIST);
     this.hv = CONT.map(() => new Float32Array(HIST));
@@ -81,19 +75,104 @@ export class Ears {
     for (const k of EARS_FIELDS) this.out[k] = 0;
     for (const k of Object.values(AGES)) this.out[k] = 99;
     this.out.subNote = -1; this.out.tonic = -1; this.out.pulse = 1; this.out.voxHz = -1;
-    this.blocks = 0;
     this.relLead = opts.relLead === undefined ? REL_LEAD : opts.relLead;
     this.tRead = -1; this.dtRead = 1 / 60;           // the measured read interval, for the release lead
   }
   get events() { return this.released; }
+  // §131: the onsets the PCM clock takes as its ticks each block (features-clock.js). In this thread they are the pending
+  // list itself; over a port they arrive after a frame may already have released them, so `EarsHost` answers with its own
+  // arrival buffer. The clock dedupes by time (`seen` per class), so a list that holds an onset one block longer is safe.
+  onsetFeed() { return this.pending; }
+  // §90: the clock-line hook (PercTrack.line). In this thread it is handed straight to the detector; over a port a function
+  // cannot be, so `EarsHost` ships the clock's STATE per block and the Worker evaluates the same arithmetic (host.js).
+  setLine(hook, clk) { }
+  // The release lead for this read: half a frame, never more than REL_LEAD.
+  lead() { return Math.min(this.relLead, 0.5 * this.dtRead); }
+  // §131 the Worker transport's ingestion: one history frame exactly as the Worker's `snap` wrote it (the CONT order), and one
+  // detected onset. The floats cross as Float32Array / Float64Array, so the ring holds the same bits either way.
+  pushFrame(t, v, off) {
+    const i = this.hi, h = this.hv;
+    this.ht[i] = t;
+    for (let j = 0; j < CONT.length; j++) h[j][i] = v[off + j];
+    this.hi = (i + 1) % HIST; if (this.hn < HIST) this.hn++;
+  }
+  pushEvent(e) { if (e.type === 'low') this.pendLow.push(e); else this.pending.push(e); }
+  read(tHeard) {
+    const out = this.out;
+    for (const k of Object.values(EVENTS)) out[k] = 0;
+    this.released.length = 0;
+    if (this.tRead >= 0) { const d = tHeard - this.tRead; if (d > 0 && d <= DT_MAX) this.dtRead += (d - this.dtRead) * 0.2; }
+    this.tRead = tHeard;
+    const rel = tHeard + this.lead();                 // the release rule: the frame NEAREST the onset
+    // release every pending onset whose audio time has been reached
+    let k = 0;
+    for (let i = 0; i < this.pending.length; i++) {
+      const e = this.pending[i];
+      if (e.t <= rel) {
+        const f = EVENTS[e.type];
+        if (f) { out[f] = 1; this.lastEv[e.type] = e.t; }
+        if (AMPS[e.type]) this.lastAmp[e.type] = +e.amp || 0;
+        this.released.push(e);
+      } else this.pending[k++] = e;
+    }
+    this.pending.length = k;
+    this.lowReleased.length = 0; k = 0;
+    for (let i = 0; i < this.pendLow.length; i++) { const e = this.pendLow[i]; if (e.t <= rel) this.lowReleased.push(e); else this.pendLow[k++] = e; }
+    this.pendLow.length = k;
+    for (const cls in AGES) out[AGES[cls]] = this.lastEv[cls] === undefined ? 99 : tHeard - this.lastEv[cls];
+    for (const cls in AMPS) out[AMPS[cls]] = this.lastAmp[cls];
+    // continuous fields at tHeard: the bracketing history frames, interpolated (newest when tHeard is past them)
+    const n = this.hn;
+    if (n === 0) return out;
+    const newest = (this.hi - 1 + HIST) % HIST, oldest = (this.hi - n + HIST) % HIST;
+    let a = newest, b = newest, f = 0;
+    if (tHeard >= this.ht[newest]) { a = b = newest; }
+    else if (tHeard <= this.ht[oldest]) { a = b = oldest; }
+    else {
+      let lo = 0, hi = n - 1;                              // binary search over the ring's logical order
+      while (lo < hi) { const m = (lo + hi) >> 1; if (this.ht[(oldest + m) % HIST] < tHeard) lo = m + 1; else hi = m; }
+      b = (oldest + lo) % HIST; a = (oldest + Math.max(0, lo - 1)) % HIST;
+      const dt = this.ht[b] - this.ht[a]; f = dt > 0 ? (tHeard - this.ht[a]) / dt : 0;
+    }
+    const v = this.hv;
+    for (let j = 0; j < CONT.length; j++) {
+      const name = CONT[j], x = v[j][a], y = v[j][b];
+      // a pitch class, a note index, a gate and a pulse are categorical: take the nearer frame, never the average
+      // (§123: voxHz too — it is −1 between notes, and the average of −1 and 300 Hz is not a pitch)
+      out[name] = (name === 'subNote' || name === 'tonic' || name === 'tonicMinor' || name === 'subGate' || name === 'pulse' || name === 'voxHz')
+        ? (f < 0.5 ? x : y) : x + (y - x) * f;
+    }
+    out.subGate = out.subGate > 0.5 ? 1 : 0;
+    out.subPure = clamp01(out.subPure);
+    return out;
+  }
+}
+
+export class Ears extends EarsReader {
+  constructor(sr, opts = {}) {
+    super(opts);
+    this.sr = sr;
+    this.sub = new SubTrack(sr, opts.sub || {});
+    this.perc = new PercTrack(sr, opts.perc || {});
+    this.tone = new TonicTrack(sr, opts.tonic || {});
+    this.tex = new TextureTrack(sr);
+    this.pulse = new PulseTrack(opts.pulse || {});
+    this.voxOpts = opts.vox || {};
+    this.vox = new VoxTrack(sr, this.voxOpts);
+    this.RB = 1 << 14; this.mid = new Float32Array(this.RB); this.mask = this.RB - 1; this.w = 0;
+    this.t0 = null;                  // audio time of mid[0] of the stream
+    this.tEnd = 0;                   // audio time one past the newest sample
+    this.blocks = 0;
+  }
   // §130: skip the vocal stage (on = true) while something else feeds the three keys — the file-mode lane (features-ears.js) — and
   // re-prime it with a fresh VoxTrack when it is wanted again. The other lanes never read it, so nothing else moves (test_vox.js (iv)).
   setVoxSkip(on) {
     if (on === this.vox.skip) return;
     if (on) this.vox.skip = true; else this.vox = new VoxTrack(this.sr, this.voxOpts);
   }
-  // The release lead for this read: half a frame, never more than REL_LEAD.
-  lead() { return Math.min(this.relLead, 0.5 * this.dtRead); }
+
+  // §90: in this thread the clock's line hook is the detector's own (features-clock.js, every node tool beside a Clock).
+  setLine(hook) { this.perc.line = hook; }
 
   push(L, R, t0) {
     const n = L.length, sr = this.sr;
@@ -146,53 +225,4 @@ export class Ears {
     this.hi = (i + 1) % HIST; if (this.hn < HIST) this.hn++;
   }
 
-  read(tHeard) {
-    const out = this.out;
-    for (const k of Object.values(EVENTS)) out[k] = 0;
-    this.released.length = 0;
-    if (this.tRead >= 0) { const d = tHeard - this.tRead; if (d > 0 && d <= DT_MAX) this.dtRead += (d - this.dtRead) * 0.2; }
-    this.tRead = tHeard;
-    const rel = tHeard + this.lead();                 // the release rule: the frame NEAREST the onset
-    // release every pending onset whose audio time has been reached
-    let k = 0;
-    for (let i = 0; i < this.pending.length; i++) {
-      const e = this.pending[i];
-      if (e.t <= rel) {
-        const f = EVENTS[e.type];
-        if (f) { out[f] = 1; this.lastEv[e.type] = e.t; }
-        if (AMPS[e.type]) this.lastAmp[e.type] = +e.amp || 0;
-        this.released.push(e);
-      } else this.pending[k++] = e;
-    }
-    this.pending.length = k;
-    this.lowReleased.length = 0; k = 0;
-    for (let i = 0; i < this.pendLow.length; i++) { const e = this.pendLow[i]; if (e.t <= rel) this.lowReleased.push(e); else this.pendLow[k++] = e; }
-    this.pendLow.length = k;
-    for (const cls in AGES) out[AGES[cls]] = this.lastEv[cls] === undefined ? 99 : tHeard - this.lastEv[cls];
-    for (const cls in AMPS) out[AMPS[cls]] = this.lastAmp[cls];
-    // continuous fields at tHeard: the bracketing history frames, interpolated (newest when tHeard is past them)
-    const n = this.hn;
-    if (n === 0) return out;
-    const newest = (this.hi - 1 + HIST) % HIST, oldest = (this.hi - n + HIST) % HIST;
-    let a = newest, b = newest, f = 0;
-    if (tHeard >= this.ht[newest]) { a = b = newest; }
-    else if (tHeard <= this.ht[oldest]) { a = b = oldest; }
-    else {
-      let lo = 0, hi = n - 1;                              // binary search over the ring's logical order
-      while (lo < hi) { const m = (lo + hi) >> 1; if (this.ht[(oldest + m) % HIST] < tHeard) lo = m + 1; else hi = m; }
-      b = (oldest + lo) % HIST; a = (oldest + Math.max(0, lo - 1)) % HIST;
-      const dt = this.ht[b] - this.ht[a]; f = dt > 0 ? (tHeard - this.ht[a]) / dt : 0;
-    }
-    const v = this.hv;
-    for (let j = 0; j < CONT.length; j++) {
-      const name = CONT[j], x = v[j][a], y = v[j][b];
-      // a pitch class, a note index, a gate and a pulse are categorical: take the nearer frame, never the average
-      // (§123: voxHz too — it is −1 between notes, and the average of −1 and 300 Hz is not a pitch)
-      out[name] = (name === 'subNote' || name === 'tonic' || name === 'tonicMinor' || name === 'subGate' || name === 'pulse' || name === 'voxHz')
-        ? (f < 0.5 ? x : y) : x + (y - x) * f;
-    }
-    out.subGate = out.subGate > 0.5 ? 1 : 0;
-    out.subPure = clamp01(out.subPure);
-    return out;
-  }
 }

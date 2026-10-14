@@ -1,0 +1,86 @@
+# §131 (2026-10-13) the load bench, both transports — the §130 protocol (tools/load-bench.js: q / Q.fps / ENGINE.ms / the ears'
+# ms per frame every 500 ms of a REAL-TIME muted run, MUTE=1, GPU=1), three runs per cell, IBelongHere, scenes 4 and 3 x the
+# lane / &vox=live / &map=0, with the ears in the Worker (default) and on the main thread (&ears=main). The machine's floor was
+# NOT free (the user's own Chrome up, load 4.5-6.0): read the pairs, which ran minutes apart under the same load.
+# Then the latency A/B: three 30 s runs per transport reading EARS.cpuAcc/frames, the Worker's DSP ms per block, the message
+# lag (lagAcc/lagN, lagMax) and the staleness of the features at read time (staleAcc/staleN, staleMax; negative = the ears are
+# AHEAD of heard time). DECISIONS §131 has both tables.
+
+== the load bench
+== scene 4 lane worker  (load 4.59 4.92 5.45)
+run 1 [test&track=IBelongHere&scene=4] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.56 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.798 | ears 0.034 ms/frame | vox lane | errs []
+run 2 [test&track=IBelongHere&scene=4] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.63 20:0.99 40:1.00 | open 4.63 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.794 | ears 0.034 ms/frame | vox lane | errs []
+run 3 [test&track=IBelongHere&scene=4] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.63 20:0.99 40:1.00 | open 4.69 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.837 | ears 0.038 ms/frame | vox lane | errs []
+== scene 4 lane &ears=main  (load 4.49 4.82 5.35)
+run 1 [test&track=IBelongHere&scene=4&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.51 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.855 | ears 0.152 ms/frame | vox lane | errs []
+run 2 [test&track=IBelongHere&scene=4&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:1.00 40:1.00 | open 4.57 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.889 | ears 0.142 ms/frame | vox lane | errs []
+run 3 [test&track=IBelongHere&scene=4&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.51 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.866 | ears 0.144 ms/frame | vox lane | errs []
+== scene 4 &vox=live worker  (load 4.96 4.84 5.29)
+run 1 [test&track=IBelongHere&scene=4&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.55 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.802 | ears 0.035 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=4&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.59 10:0.63 20:0.95 40:1.00 | open 4.83 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.881 | ears 0.040 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=4&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:0.86 | open 4.81 s | min q after 1 s 0.55 drops 36.5s 1→0.93, 37.5s 0.93→0.86 | fps 58.8 | ENGINE.ms 0.944 | ears 0.046 ms/frame | vox live | errs []
+== scene 4 &vox=live &ears=main  (load 6.00 5.12 5.32)
+run 1 [test&track=IBelongHere&scene=4&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.59 10:0.63 20:0.95 40:1.00 | open 4.8 s | min q after 1 s 0.55 drops 27s 1→0.93 | fps 59.0 | ENGINE.ms 1.151 | ears 0.324 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=4&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.63 20:0.99 40:1.00 | open 4.85 s | min q after 1 s 0.55 drops none | fps 59.3 | ENGINE.ms 1.178 | ears 0.335 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=4&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.59 10:0.63 20:0.99 40:1.00 | open 4.89 s | min q after 1 s 0.55 drops none | fps 59.3 | ENGINE.ms 1.093 | ears 0.295 ms/frame | vox live | errs []
+== scene 4 &map=0 worker  (load 5.68 5.21 5.32)
+run 1 [test&track=IBelongHere&scene=4&map=0] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.75 8:0.79 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.837 | ears 0.038 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=4&map=0] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.67 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 59.9 | ENGINE.ms 0.811 | ears 0.037 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=4&map=0] q@ 1:0.55 2:0.55 3:0.55 4:0.59 5:0.63 6:0.67 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.823 | ears 0.037 ms/frame | vox live | errs []
+== scene 4 &map=0 &ears=main  (load 4.91 5.12 5.27)
+run 1 [test&track=IBelongHere&scene=4&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.59 5:0.63 6:0.67 7:0.67 8:0.71 9:0.75 10:0.79 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 1.089 | ears 0.324 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=4&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.75 8:0.79 9:0.83 10:0.87 20:1.00 40:0.79 | open 0.5 s | min q after 1 s 0.55 drops 30s 1→0.8, 30.5s 0.8→0.6 | fps 59.0 | ENGINE.ms 1.119 | ears 0.324 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=4&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.75 8:0.79 9:0.83 10:0.87 20:1.00 40:1.00 | open 0.51 s | min q after 1 s 0.55 drops none | fps 59.9 | ENGINE.ms 1.092 | ears 0.323 ms/frame | vox live | errs []
+== scene 3 lane worker  (load 4.60 4.91 5.17)
+run 1 [test&track=IBelongHere&scene=3] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:1.00 40:0.72 | open 4.71 s | min q after 1 s 0.55 drops 36s 1→0.93, 36.5s 0.93→0.86, 37s 0.86→0.79, 38s 0.79→0.72 | fps 58.4 | ENGINE.ms 0.873 | ears 0.041 ms/frame | vox lane | errs []
+run 2 [test&track=IBelongHere&scene=3] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.63 20:0.95 40:1.00 | open 4.8 s | min q after 1 s 0.55 drops none | fps 59.3 | ENGINE.ms 0.963 | ears 0.046 ms/frame | vox lane | errs []
+run 3 [test&track=IBelongHere&scene=3] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.55 9:0.59 10:0.63 20:0.95 40:1.00 | open 5 s | min q after 1 s 0.55 drops none | fps 59.3 | ENGINE.ms 0.871 | ears 0.043 ms/frame | vox lane | errs []
+== scene 3 lane &ears=main  (load 5.46 5.14 5.22)
+run 1 [test&track=IBelongHere&scene=3&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.55 9:0.59 10:0.63 20:0.99 40:1.00 | open 5 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.971 | ears 0.165 ms/frame | vox lane | errs []
+run 2 [test&track=IBelongHere&scene=3&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:1.00 40:1.00 | open 4.55 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.874 | ears 0.146 ms/frame | vox lane | errs []
+run 3 [test&track=IBelongHere&scene=3&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.53 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.916 | ears 0.153 ms/frame | vox lane | errs []
+== scene 3 &vox=live worker  (load 4.11 4.82 5.10)
+run 1 [test&track=IBelongHere&scene=3&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.59 10:0.63 20:0.95 40:1.00 | open 4.51 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.751 | ears 0.034 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=3&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:1.00 40:1.00 | open 4.65 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.749 | ears 0.032 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=3&vox=live] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.63 20:0.95 40:1.00 | open 4.61 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.750 | ears 0.033 ms/frame | vox live | errs []
+== scene 3 &vox=live &ears=main  (load 3.26 4.28 4.87)
+run 1 [test&track=IBelongHere&scene=3&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.46 s | min q after 1 s 0.55 drops none | fps 59.5 | ENGINE.ms 0.963 | ears 0.272 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=3&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.59 10:0.63 20:0.99 40:1.00 | open 4.75 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.995 | ears 0.279 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=3&vox=live&ears=main] q@ 1:0.55 2:0.55 3:0.55 4:0.55 5:0.55 6:0.55 7:0.55 8:0.59 9:0.63 10:0.67 20:0.99 40:1.00 | open 4.57 s | min q after 1 s 0.55 drops none | fps 59.4 | ENGINE.ms 0.947 | ears 0.266 ms/frame | vox live | errs []
+== scene 3 &map=0 worker  (load 3.24 3.94 4.67)
+run 1 [test&track=IBelongHere&scene=3&map=0] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.744 | ears 0.032 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=3&map=0] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.67 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.760 | ears 0.034 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=3&map=0] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.67 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.750 | ears 0.034 ms/frame | vox live | errs []
+== scene 3 &map=0 &ears=main  (load 3.04 3.65 4.47)
+run 1 [test&track=IBelongHere&scene=3&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.75 8:0.79 9:0.83 10:0.87 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 1.011 | ears 0.330 ms/frame | vox live | errs []
+run 2 [test&track=IBelongHere&scene=3&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.67 7:0.71 8:0.75 9:0.79 10:0.83 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 0.994 | ears 0.297 ms/frame | vox live | errs []
+run 3 [test&track=IBelongHere&scene=3&map=0&ears=main] q@ 1:0.55 2:0.55 3:0.59 4:0.63 5:0.67 6:0.71 7:0.75 8:0.79 9:0.83 10:0.87 20:1.00 40:1.00 | open 0.5 s | min q after 1 s 0.55 drops none | fps 60.0 | ENGINE.ms 1.053 | ears 0.321 ms/frame | vox live | errs []
+
+== the table (tools/work/ears131/table.py)
+cell                       ears ms/frame          ENGINE.ms              q@10s            q@20s            fps    drops
+s4 lane worker             0.034/0.034/0.038      0.798/0.794/0.837      0.67/0.63/0.63   0.99/0.99/0.99   59.4  0
+s4 lane &ears=main         0.152/0.142/0.144      0.855/0.889/0.866      0.67/0.67/0.67   0.99/1.00/0.99   59.5  0
+s4 &vox=live worker        0.035/0.040/0.046      0.802/0.881/0.944      0.67/0.63/0.67   0.99/0.95/0.99   58.8  1
+s4 &vox=live &ears=main    0.324/0.335/0.295      1.15/1.18/1.09         0.63/0.63/0.63   0.95/0.99/0.99   59.0  1
+s4 &map=0 worker           0.038/0.037/0.037      0.837/0.811/0.823      0.83/0.83/0.83   1.00/1.00/1.00   59.9  0
+s4 &map=0 &ears=main       0.324/0.324/0.323      1.09/1.12/1.09         0.79/0.87/0.87   1.00/1.00/1.00   59.0  1
+s3 lane worker             0.041/0.046/0.043      0.873/0.963/0.871      0.67/0.63/0.63   1.00/0.95/0.95   58.4  1
+s3 lane &ears=main         0.165/0.146/0.153      0.971/0.874/0.916      0.63/0.67/0.67   0.99/1.00/0.99   59.4  0
+s3 &vox=live worker        0.034/0.032/0.033      0.751/0.749/0.750      0.63/0.67/0.63   0.95/1.00/0.95   59.4  0
+s3 &vox=live &ears=main    0.272/0.279/0.266      0.963/0.995/0.947      0.67/0.63/0.67   0.99/0.99/0.99   59.4  0
+s3 &map=0 worker           0.032/0.034/0.034      0.744/0.760/0.750      0.83/0.83/0.83   1.00/1.00/1.00   60.0  0
+s3 &map=0 &ears=main       0.330/0.297/0.321      1.01/0.994/1.05        0.87/0.83/0.87   1.00/1.00/1.00   60.0  0
+
+== the latency A/B (30 s per run)
+s4 &map=0 worker run 1: "{\"on\":\"worker\",\"fr\":1805,\"mainMs\":0.039,\"wdsp\":0.198,\"lagMean\":0.41,\"lagMax\":14.1,\"staleMean\":-43.1,\"staleMax\":0,\"q\":1,\"ms\":0.73,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &map=0 worker run 2: "{\"on\":\"worker\",\"fr\":1807,\"mainMs\":0.04,\"wdsp\":0.195,\"lagMean\":0.39,\"lagMax\":7.7,\"staleMean\":-43.7,\"staleMax\":0,\"q\":1,\"ms\":0.68,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &map=0 worker run 3: "{\"on\":\"worker\",\"fr\":1807,\"mainMs\":0.033,\"wdsp\":0.192,\"lagMean\":0.32,\"lagMax\":8.6,\"staleMean\":-44.6,\"staleMax\":0,\"q\":1,\"ms\":0.72,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &map=0 &ears=main run 1: "{\"on\":\"main\",\"fr\":1807,\"mainMs\":0.293,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-43.6,\"staleMax\":0,\"q\":1,\"ms\":0.92,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &map=0 &ears=main run 2: "{\"on\":\"main\",\"fr\":1806,\"mainMs\":0.295,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-43.9,\"staleMax\":0,\"q\":1,\"ms\":1.06,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &map=0 &ears=main run 3: "{\"on\":\"main\",\"fr\":1808,\"mainMs\":0.302,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-43.9,\"staleMax\":0,\"q\":1,\"ms\":0.99,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &vox=live worker run 1: "{\"on\":\"worker\",\"fr\":1546,\"mainMs\":0.038,\"wdsp\":0.2,\"lagMean\":4.73,\"lagMax\":108.1,\"staleMean\":-43.7,\"staleMax\":17,\"q\":1,\"ms\":0.73,\"fps\":60,\"bpm\":118,\"vf\":\"live\"}"
+s4 &vox=live worker run 2: "{\"on\":\"worker\",\"fr\":1560,\"mainMs\":0.032,\"wdsp\":0.175,\"lagMean\":4.07,\"lagMax\":96,\"staleMean\":-43.6,\"staleMax\":10.3,\"q\":1,\"ms\":0.66,\"fps\":60,\"bpm\":118.1,\"vf\":\"live\"}"
+s4 &vox=live worker run 3: "{\"on\":\"worker\",\"fr\":1558,\"mainMs\":0.034,\"wdsp\":0.192,\"lagMean\":4.71,\"lagMax\":103.4,\"staleMean\":-43.2,\"staleMax\":16,\"q\":1,\"ms\":0.83,\"fps\":60,\"bpm\":118.1,\"vf\":\"live\"}"
+s4 &vox=live &ears=main run 1: "{\"on\":\"main\",\"fr\":1550,\"mainMs\":0.326,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-44.3,\"staleMax\":6.7,\"q\":1,\"ms\":1.02,\"fps\":60,\"bpm\":118.1,\"vf\":\"live\"}"
+s4 &vox=live &ears=main run 2: "{\"on\":\"main\",\"fr\":1555,\"mainMs\":0.309,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-42.5,\"staleMax\":0,\"q\":1,\"ms\":1.02,\"fps\":60,\"bpm\":118.1,\"vf\":\"live\"}"
+s4 &vox=live &ears=main run 3: "{\"on\":\"main\",\"fr\":1557,\"mainMs\":0.3,\"wdsp\":0,\"lagMean\":0,\"lagMax\":0,\"staleMean\":-44.1,\"staleMax\":4.7,\"q\":1,\"ms\":1.09,\"fps\":60,\"bpm\":118.1,\"vf\":\"live\"}"

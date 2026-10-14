@@ -13,7 +13,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.argv[2] || path.join(ROOT, 'dist/retinarave.html');
 const ENTRY = 'assets/main.js';
 
-const mods = new Map(); // rel path -> { deps: [rel], code }
 const TAIL = "\\s*;?[ \\t]*(?://[^\\n]*)?$";   // a trailing line comment after the statement is part of the line (v0.4's core modules carry one)
 const IMPORT_RE = new RegExp("^import\\s+(?:([\\w$]+)\\s*,\\s*)?(?:(\\{[^}]*\\})|(\\*\\s+as\\s+[\\w$]+)|([\\w$]+))?\\s*(?:from\\s*)?['\"]([^'\"]+)['\"]" + TAIL, 'gm');
 const SIDE_RE = new RegExp("^import\\s+['\"]([^'\"]+)['\"]" + TAIL, 'gm');
@@ -40,7 +39,7 @@ function declarators(rest) {
   return out;
 }
 
-function transform(rel) {
+function transform(rel, mods) {
   if (mods.has(rel)) return;
   let src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
   const deps = [], names = [];
@@ -76,20 +75,34 @@ function transform(rel) {
   if (/^import\s/m.test(src)) throw new Error(rel + ': unhandled import form: ' + src.match(/^import\s.*$/m)[0]);
   const table = [...new Set(names)].concat(def ? [`default: ${def}`] : []).join(', ');
   mods.set(rel, { deps, code: `__m[${JSON.stringify(rel)}] = (function () {\n'use strict';\n${src}\nreturn { ${table} };\n})();\n` });
-  for (const d of deps) transform(d);
+  for (const d of deps) transform(d, mods);
 }
 
-transform(ENTRY);
-// dependency order (post-order DFS from the entry)
-const order = [], seen = new Set();
-(function visit(rel) {
-  if (seen.has(rel)) return;
-  seen.add(rel);
-  for (const d of mods.get(rel).deps) visit(d);
-  order.push(rel);
-})(ENTRY);
+// One entry -> one self-contained classic script. `pre` seeds modules the bundler must NOT read from disk (the ears Worker's
+// inline source below), keyed by their path, so the module table holds the generated code in their place.
+function bundleOf(entry, pre) {
+  const mods = new Map(pre || []);
+  transform(entry, mods);
+  const order = [], seen = new Set();
+  (function visit(rel) {
+    if (seen.has(rel)) return;
+    seen.add(rel);
+    for (const d of mods.get(rel).deps) visit(d);
+    order.push(rel);
+  })(entry);
+  return { src: `(function () {\nconst __m = {};\n${order.map((r) => mods.get(r).code).join('\n')}})();\n`, n: order.length };
+}
 
-const bundle = `(function () {\nconst __m = {};\n${order.map((r) => mods.get(r).code).join('\n')}})();\n`;
+// §131 THE EARS WORKER'S SOURCE, inlined. The single-file page may fetch nothing at runtime, so there is no worker.js to
+// start: its module graph is bundled the same way the page is and written into `ears/wsrc.js`'s one export, which `ears/host.js`
+// wraps in a Blob to start a classic Worker (the module page, which has the file, starts it by URL and this string stays empty).
+const WSRC = 'assets/engine/ears/wsrc.js';
+const wk = bundleOf('assets/engine/ears/worker.js');
+const pre = [[WSRC, { deps: [], code: `__m[${JSON.stringify(WSRC)}] = (function () {\n'use strict';\nconst EARS_WORKER_SRC = ${JSON.stringify(wk.src)};\nreturn { EARS_WORKER_SRC };\n})();\n` }]];
+
+const main = bundleOf(ENTRY, pre);
+const order = { length: main.n };
+const bundle = main.src;
 let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script type="module" src="assets\/main\.js"><\/script>/, () => `<script>\n${bundle}</script>`);
 if (!html.includes('const __m')) throw new Error('module script tag not found in index.html');
@@ -98,4 +111,4 @@ if (!hasNewIn(html)) throw new Error('index.html: the card lost its <a id="newin
 html = patchNewIn(html, loadReleases()[0]);
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
-console.log(`bundled ${order.length} modules → ${path.relative(ROOT, OUT)} (${(html.length / 1024).toFixed(0)} KB)`);
+console.log(`bundled ${order.length} modules (+ ${wk.n} in the ears Worker, ${(wk.src.length / 1024).toFixed(0)} KB inline) → ${path.relative(ROOT, OUT)} (${(html.length / 1024).toFixed(0)} KB)`);
