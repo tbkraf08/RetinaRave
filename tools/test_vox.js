@@ -7,9 +7,10 @@
 // Inputs (gitignored, the one-line fix printed when one is missing): tools/work/<T>.48000.st.f32 (trackmap.py --pcm --sr=48000),
 // tools/work/vox/mel-SeeYouDrop.json + onnx-parity.json (tools/truth/voxtrain.py), tools/truth/<T>.vox.json (committed; voxtruth.py).
 //   (i)   the mel parity: the ears' log-mel (raw and normalised) on SeeYouDrop's first 3000 hops = voxtrain.py's numpy front end to 1e-4
-//   (ii)  the ONNX parity: the JS stream's output on 200 held Jamendo-test windows = onnxruntime's on the same windows to 1e-4;
-//         then the TRAINING table the shipped weights came with (tools/work/vox/train-report.json: Jamendo test F1 / AUC, the unseen
-//         IBelongHere and Comptine) printed as NOTES — the plan's F1 >= .82 / Comptine <= 5 % say met or MISSED, never a FAIL (§126)
+//   (ii)  the ONNX parity (§133, a per-hop net): the JS stream on 200 held Jamendo-test windows of 64 hops = onnxruntime on the same
+//         windows to 1e-4 on EVERY column — the voice logit and the 61 pitch logits; then the TRAINING table the shipped weights came
+//         with (tools/work/vox/train-report.json: Jamendo test F1 / AUC, the pitch head, the unseen IBelongHere and Comptine) printed
+//         as NOTES — the gates' F1 >= .84 / Comptine <= 5 % say met or MISSED, never a FAIL (§126)
 //   (iii) the ruler per track (the plan's targets): voxS p50 inside windows_hand > 2× outside on every voiced track; < 5 % false-positive
 //         frames on Comptine (the control, UNSEEN since §126 — RECORDED since §123's miss, see below); RaindropsOnRoses' lead 1:51.5–2:17 read as voice (p50 ≥ .5); voxHz within a semitone of the
 //         stem's pYIN on the voiced frames — RECORDED, not gated (the mix ceiling)
@@ -21,9 +22,9 @@
 import fs from 'fs';
 import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
-import { VoxTrack, VOX_GATE, VOX_N } from '../assets/engine/ears/vox.js';
+import { VoxTrack, VOX_GATE, VOX_N, PITCH_LO, PITCH_HI } from '../assets/engine/ears/vox.js';
 import { FFT } from '../assets/engine/ears/dsp.js';
-import { VoxNet, N_MEL, T_WIN } from '../assets/engine/ears/vox-net.js';
+import { VoxNet, N_MEL, PITCH_BINS, MAC_PER_HOP } from '../assets/engine/ears/vox-net.js';
 import { VOX_W } from '../assets/engine/ears/vox-weights.js';
 import { voxLane, mapVoxAt, VOX_LANE_HOP } from '../assets/engine/map/map.js';   // §124: the file-mode lane's packing and its read
 
@@ -105,26 +106,31 @@ function melParity() {
 
 // ------------------------------------------------------------------------------------------------ (ii) the ONNX parity
 function onnxParity() {
-  console.log('== the ONNX parity (onnxruntime on 200 held Jamendo-test windows == the JS stream)');
+  console.log('== the ONNX parity (onnxruntime on 200 held Jamendo-test windows of 64 hops == the JS stream, every column, both heads)');
   const p = path.join(ROOT, 'tools/work/vox/onnx-parity.json');
-  if (!need(p, 'python3 tools/truth/voxtrain.py --no-train   (needs tools/work/vox/vox-net.pt: the training run)')) return;
+  if (!need(p, 'python3 tools/truth/voxtrain.py --net=tcn --no-train   (needs tools/work/vox/vox-net.pt: the training run)')) return;
   const ref = JSON.parse(fs.readFileSync(p, 'utf8'));
-  let dMax = 0, fired = 0, early = 0;
-  const col = new Float32Array(N_MEL);
+  if (ref.net !== VOX_W.net) { ok('(ii) the parity file is for the shipped net', false, ref.net + ' vs ' + VOX_W.net); return; }
+  const T = ref.shape[1];
+  let dVoice = 0, dPitch = 0, cols = 0, silent = 0;
+  const col = new Float32Array(N_MEL), lg = new Float32Array(PITCH_BINS + 1);
   for (let i = 0; i < ref.n; i++) {
     const net = new VoxNet(VOX_W), m = ref.mel[i];
-    let out = -1;
-    for (let t = 0; t < T_WIN; t++) {
-      for (let b = 0; b < N_MEL; b++) col[b] = m[b * T_WIN + t];
+    for (let t = 0; t < T; t++) {
+      for (let b = 0; b < N_MEL; b++) col[b] = m[b * T + t];
       const r = net.push(col);
-      if (t < T_WIN - 1 && r >= 0) early++;
-      if (t === T_WIN - 1) out = r;
+      if (!(r >= 0 && r <= 1)) silent++;
+      cols++;
+      dVoice = Math.max(dVoice, Math.abs(net.z - ref.voice[i][t]));
+      net.logits(lg);
+      const rp = ref.pitch[i][t];
+      for (let c = 0; c <= PITCH_BINS; c++) dPitch = Math.max(dPitch, Math.abs(lg[c] - rp[c]));
     }
-    if (out >= 0) { fired++; dMax = Math.max(dMax, Math.abs(out - ref.prob[i])); }
   }
-  ok('(ii) the stream fires on the 34th column, never before', fired === ref.n && early === 0, fired + ' / ' + ref.n + ', early ' + early);
-  ok('(ii) sigmoid output max |Δ| vs onnxruntime', dMax <= 1e-4, dMax.toExponential(2), '<= 1e-4');
-  ok('(ii) the weights module', VOX_W.nMel === N_MEL && VOX_W.tWin === T_WIN && VOX_W.f16.length > 50000, VOX_W.nParams + ' params, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', '40 x 34');
+  ok('(ii) the stream outputs on EVERY column from the first (no hold)', silent === 0 && cols === ref.n * T, cols + ' columns, ' + silent + ' without an output');
+  ok('(ii) voice logit max |Δ| vs onnxruntime, every column', dVoice <= 1e-4, dVoice.toExponential(2), '<= 1e-4');
+  ok('(ii) pitch head (61 logits) max |Δ| vs onnxruntime, every column', dPitch <= 1e-4, dPitch.toExponential(2), '<= 1e-4');
+  ok('(ii) the weights module', VOX_W.net === 'tcn' && VOX_W.nMel === N_MEL && VOX_W.pitchBins === PITCH_BINS && VOX_W.macPerHop === MAC_PER_HOP && VOX_W.f16.length > 20000, VOX_W.net + ', ' + VOX_W.nParams + ' params, ' + VOX_W.macPerHop + ' MAC/hop, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', 'tcn, 40 bands, 60 pitch bins');
 }
 
 // The training table (§126 item 4): the report voxtrain.py wrote beside the weights it exported. The numbers are the net's own
@@ -135,7 +141,8 @@ function training() {
   const R = JSON.parse(fs.readFileSync(p, 'utf8').replace(/\bNaN\b/g, 'null'));   // python's json writes NaN for a no-voice track's AUC
   const pr = R.provenance || {}, te = R.jamendo_test || {}, H = R.held || {}, ib = H.IBelongHere || {}, co = H.Comptine || {};
   note('(ii) the training run', (pr.tag || '?') + ' of ' + (pr.date || '?') + ', ' + (R.epochs || []).length + ' epochs, ' + R.params + ' params; ' + (pr.summary || '').slice(0, 90) + '…');
-  note('(ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC — ' + (te.F1 >= 0.82 ? 'the plan\'s >= .82 met' : 'the plan\'s >= .82 MISSED, recorded'), te.F1 + ' / ' + te.P + ' / ' + te.R + ' / ' + te.AUC + ' (' + te.frames + ' frames)');
+  note('(ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC — ' + (te.F1 >= 0.84 ? 'the §133 gate\'s >= .84 met' : 'the §133 gate\'s >= .84 MISSED, recorded'), te.F1 + ' / ' + te.P + ' / ' + te.R + ' / ' + te.AUC + ' (' + te.frames + ' frames)');
+  if (te.pitch_frames) note('(ii) Jamendo test, the pitch head vs the stems\' pYIN: a pitch on / exact bin / within ±1 bin, none right', te.pitch_pub_pct + ' / ' + te.pitch_exact_pct + ' / ' + te.pitch_pm1_pct + ' % of ' + te.pitch_frames + ' frames; none ' + te.none_ok_pct + ' %');
   note('(ii) IBelongHere (UNSEEN): F1 / P / R / AUC', ib.F1 + ' / ' + ib.P + ' / ' + ib.R + ' / ' + ib.AUC);
   note('(ii) Comptine (UNSEEN, the net at .5): false-positive frames — ' + (co.fp_pct < 5 ? 'met' : 'MISSED, recorded'), co.fp_pct + ' % against the plan\'s < 5 %');
 }
@@ -214,7 +221,7 @@ function wiring() {
   ok('(iv) every non-vox ears field identical with the stage stubbed (30 s, 60 fps)', moved.length === 0, moved.length ? 'moved: ' + moved.join(',') : others.length + ' fields identical');
   const vs = A.cols.voxS, vh = A.cols.voxHz, vc = A.cols.voxConf;
   ok('(iv) voxS reaches read(): in [0, 1], non-zero after the first inference', vs.every((v) => v >= 0 && v <= 1) && vs.slice(120).some((v) => v > 0), 'max ' + Math.max(...vs).toFixed(3));
-  ok('(iv) voxHz is -1 or a pitch in 200..1000 Hz, never an average', vh.every((v) => v === -1 || (v >= 200 && v <= 1000)), 'pitched frames ' + vh.filter((v) => v > 0).length + ' / ' + vh.length);
+  ok('(iv) voxHz is -1 or a pitch in the head\'s range (C3 − 50 c .. B7 + 50 c), never an average', vh.every((v) => v === -1 || (v >= PITCH_LO && v <= PITCH_HI)), 'pitched frames ' + vh.filter((v) => v > 0).length + ' / ' + vh.length);
   ok('(iv) voxConf in [0, 1] and 0 wherever voxS is 0', vc.every((v, i) => v >= 0 && v <= 1 && (vs[i] > 0 || v === 0)), 'max ' + Math.max(...vc).toFixed(3));
   ok('(iv) the stage stubbed: voxS / voxHz / voxConf stay at 0 / -1 / 0', Bs.cols.voxS.every((v) => v === 0) && Bs.cols.voxHz.every((v) => v === -1) && Bs.cols.voxConf.every((v) => v === 0), 'idle');
   note('(iv) Ears.push ms per 512 block with / without the stage (30 s of SeeYouDrop)', A.pushMs.toFixed(3) + ' / ' + Bs.pushMs.toFixed(3) + ' (+' + (A.pushMs - Bs.pushMs).toFixed(3) + ' ms = ' + (1000 * (A.pushMs - Bs.pushMs)).toFixed(0) + ' us per hop)');
@@ -296,12 +303,12 @@ function prunedFFT() {
 
 // ------------------------------------------------------------------------------------------------ (v) the bench
 function bench() {
-  console.log('== the bench (the stage alone on SeeYouDrop: the sample loop + the FFT + the mel + the net + the YIN, per 512-sample hop)');
+  console.log('== the bench (the stage alone on SeeYouDrop: the sample loop + the FFT + the mel + the net + the two heads + the salience, per 512-sample hop)');
   const pcm = loadMid('SeeYouDrop'); if (!pcm) return;
   run(pcm.mid, pcm.sr, 20 * pcm.sr);                      // warm the JIT
   const R = run(pcm.mid, pcm.sr);
   ok('(v) the stage: median us per hop', R.usMed <= 100, R.usMed.toFixed(1) + ' us (p99 ' + R.usP99.toFixed(0) + ', mean ' + R.usMean.toFixed(1) + ')', '<= 100 us (HARNESS "Bench protocol": the stage <= .1 ms per hop)');
-  note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (one inference per 4 hops: ' + (R.hops / Math.max(1, R.vox.fired)).toFixed(2) + ')');
+  note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (§133: one per hop from the first FFT, ' + MAC_PER_HOP + ' MAC each)');
   // §130: the parts — the two FFTs alone (mags vs magsLo on the same ring), the sample loop alone (the hop stubbed), the stage through mags()
   const med = (per) => { per.sort((x, y) => x - y); return per[per.length >> 1]; };
   const F = new FFT(VOX_N), o = new Float32Array(VOX_N >> 1), ring = new Float32Array(4096), kMax = R.vox.kMax;

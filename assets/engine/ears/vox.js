@@ -2,21 +2,27 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // The vocal track: is someone SINGING, and at what pitch (DECISIONS §123, the vocal detector's step 2 — the live tier; the user:
-// "do the demucs for file; do cnn for live (note: I listen to live mode 90% of the time -> live mode is first concern)").
-// A causal stage beside the sub / perc / tonic lanes, read-only to every other feature: it keeps its own ring of the mid signal,
-// publishes three numbers and touches nothing else. Pure: no DOM, no clock, no Math.random; node, the page and a Worker.
+// "do the demucs for file; do cnn for live (note: I listen to live mode 90% of the time -> live mode is first concern)"; §133 the
+// streaming net with the pitch head). A causal stage beside the sub / perc / tonic lanes, read-only to every other feature: it keeps
+// its own ring of the mid signal, publishes three numbers and touches nothing else. Pure: no DOM, no clock, no Math.random; node, the
+// page and the ears Worker.
 //
-//   voxS     the vocal presence 0..1 — a small CNN (ears/vox-net.js, its weights ears/vox-weights.js, trained by tools/truth/voxtrain.py)
-//            over the last 34 hops of a 40-band log-mel front end, eased toward the net's output — VOX_ATTACK while the vote (below)
-//            says voice and the output is above the eased value, VOX_RELEASE otherwise (§126: the one ease of .1 s was HALF the
-//            measured 160 ms lag — attack .03 / release .05 under the vote took it to 120 with the flicker under the lane's own).
-//            The net's output is the WINDOW'S END, so the read still trails the sound by the front end's own ~60–80 ms (the ruler:
-//            tools/vox-ab.js --stage) — fine for a sustained line, late for a consonant. Everything here is causal: no look-ahead.
-//   voxHz    the sung pitch in Hz while the vote is on, voxS > VOX_GATE and the pitch is periodic enough, −1 otherwise: a second YIN (the sub's class)
-//            on a 200–1000 Hz band-passed, decimated copy of the stream — a pitch read on a MIX, unreliable whenever anything else is
-//            pitched in that band (the honest ceiling of this tier; step 3's Demucs lane is the accurate file-mode read)
-//   voxConf  voxS × the YIN's periodicity, measured on every inference whether or not the gate is open — so it is 0 only where there
-//            is no read at all (the fake timeline, digital silence), which is the rig's cue to fall back to `interval` (core/fluid/inject2.js)
+//   voxS     the vocal presence 0..1 — the net (ears/vox-net.js, its weights ears/vox-weights.js, trained by tools/truth/voxtrain.py:
+//            §133 a causal TCN over a 40-band log-mel front end, an output EVERY hop; the §123–§126 net was a 40 × 34 window read once
+//            per four hops) eased toward the net's output — VOX_ATTACK while the vote (below) says voice and the output is above the
+//            eased value, VOX_RELEASE otherwise (§126: the one ease of .1 s was HALF the measured 160 ms lag — attack .03 / release
+//            .05 under the vote took it to 120 with the flicker under the lane's own; §133: the per-hop output has no hold to pay for,
+//            the vote is per hop and the ruler re-tuned the ease — tools/vox-ab.js --stage). Everything here is causal: no look-ahead.
+//   voxHz    the sung pitch in Hz while the vote is on, voxS > VOX_GATE and the pitch head is sure enough (its "none" class under
+//            1 − PITCH_PER), −1 otherwise: the net's PITCH HEAD (61 classes: 60 semitone bins C3..B7 + none, trained on the vocal
+//            stems' pYIN — a pitch learned from the STEM, read on the mix) names the semitone; HARMONIC SALIENCE on the ears' own
+//            2048-point FFT refines it inside the bin (Σ k = 1..SAL_HARM of |X| at k·f over SAL_CANDS candidates across the bin's
+//            ±50 cents, the argmax published). WHAT BECAME OF THE YIN: §123's second YIN on a 200–1000 Hz band-passed, decimated copy
+//            of the stream — a pitch read on a MIX, wrong whenever anything else was pitched in that band (45 / 55 / 9 % within a
+//            semitone of the lane, §126's table) — is PULLED from this stage: no band-pass, no decimation ring, no CMND per hop. The
+//            Yin class stays in dsp.js for the sub lane.
+//   voxConf  voxS × the head's voiced mass (1 − p(none)), measured on every hop whether or not the gate is open — so it is 0 only where
+//            there is no read at all (the fake timeline, digital silence), which is the rig's cue to fall back to `interval` (core/fluid/inject2.js)
 //
 // THE FRONT END, hop by hop (tools/truth/voxtrain.py re-implements it in numpy; tools/test_vox.js proves the two equal to 1e-4):
 // every VOX_HOP = 512 samples a VOX_N = 2048-point periodic-Hann FFT (the ears' FFT class: |X|·2/Σwin) over the 2048 samples ending at
@@ -24,8 +30,8 @@
 // CAUSAL running mean / variance — an exact cumulative mean until the count passes the NORM_TAU = 30 s exponential window, exponential
 // after — → (x − m) / sqrt(v + VAR_FLOOR): the net sees the track's own range, never an absolute level (§111 item 7's shape). The
 // first FFT runs at hop 3 (2048 samples in); hop h covers samples [512·(h+1) − 2048, 512·(h+1)) of the stream.
-import { FFT, Band, Yin, clamp01 } from './dsp.js';
-import { VoxNet, N_MEL } from './vox-net.js';
+import { FFT, clamp01 } from './dsp.js';
+import { VoxNet, N_MEL, PITCH_NONE, binHz } from './vox-net.js';
 
 export const VOX_HOP = 512, VOX_N = 2048;
 export const VOX_LO = 100, VOX_HI = 8000;      // the mel bands' range (Hz)
@@ -36,12 +42,11 @@ export const VOX_ATTACK = 0.03;                // s: voxS's ease toward a HIGHER
 export const VOX_RELEASE = 0.05;               // s: voxS's ease otherwise (§126: .1 → .05 — the release owed as much lag as the attack, and a false voice's spike dies sooner)
 export const VOX_EASE = VOX_RELEASE;           // the old name, kept for readers: the release IS the §123 ease
 export const VOX_GATE = 0.3;                   // voxS above which the pitch is reported; the vote's threshold on the net's output
-export const VOX_VOTE_OF = 3, VOX_VOTE_ON = 2; // the hysteresis (§126): the vote is ON when VOX_VOTE_ON of the last VOX_VOTE_OF inferences read >= VOX_GATE
-export const PITCH_BAND = [200, 1000];         // Hz: the YIN's band (a 4th-order high-pass + low-pass, dsp.js 'steep')
-export const PITCH_SRD = 12000;                // the decimated rate the YIN runs at (the factor is round(sr / this))
-export const PITCH_WIN = 0.020;                // s: the YIN window — 4 periods of 200 Hz
-export const PITCH_THR = 0.15;                 // the YIN CMND threshold
-export const PITCH_PER = 0.6;                  // the least periodicity (1 − CMND at the period) at which a pitch is published
+export const VOX_VOTE_OF = 4, VOX_VOTE_ON = 3; // the hysteresis (§126, per HOP since §133): the vote is ON when VOX_VOTE_ON of the last VOX_VOTE_OF hops read >= VOX_GATE
+export const PITCH_PER = 0.5;                  // the least voiced mass of the pitch head (1 − p(none)) at which a pitch is published (§133; was the YIN's periodicity .6)
+export const SAL_HARM = 5;                     // the harmonics the salience sums (k = 1..5; a harmonic past the mel's top bin is left out)
+export const SAL_CANDS = 11;                   // the candidates across the bin: −50..+50 cents in 10-cent steps
+export const PITCH_LO = binHz(0, -50), PITCH_HI = binHz(59, 50);   // Hz: what voxHz can be — the head's 60 bins, C3 − 50 cents .. B7 + 50 cents
 
 // The 40 triangles (HTK mel, peak 1) over the FFT's bin centres i·sr/VOX_N — the same table voxtrain.py's mel_bank() builds.
 export function melBank(sr, nMel = N_MEL, lo = VOX_LO, hi = VOX_HI, n = VOX_N) {
@@ -77,16 +82,12 @@ export class VoxTrack {
     this.easeR = 1 - Math.exp(-(VOX_HOP / sr) / VOX_RELEASE);  // per hop, otherwise
     this.ease = this.easeR;                      // the old name (the release)
     this.net = new VoxNet(o.weights);
-    this.p = 0;                                  // the net's latest output (held between inferences)
+    this.p = 0;                                  // the net's latest output (§133: a new one every hop)
     this.s = 0; this.hz = -1; this.per = 0; this.conf = 0; this.rhz = 0;
-    this.fired = 0;                              // inferences so far
-    this.votes = 0; this.vote = 0; this.on = false;   // the last VOX_VOTE_OF inferences' reads at the gate, as bits; their count; the vote
-    // the pitch lane: band-pass, decimate, YIN
-    this.band = new Band(sr, PITCH_BAND[0], PITCH_BAND[1], 2, 'steep');
-    this.D = Math.max(1, Math.round(sr / PITCH_SRD)); this.srd = sr / this.D; this.phase = 0;
-    this.PB = 1024; this.pring = new Float32Array(this.PB); this.pmask = this.PB - 1; this.pw = 0;
-    this.yin = new Yin(this.srd, PITCH_BAND[0], PITCH_BAND[1], Math.round(PITCH_WIN * this.srd), PITCH_THR);
-    this.need = this.yin.W + this.yin.tmax + 2;
+    this.fired = 0;                              // inferences so far (§133: one per hop from the first FFT)
+    this.votes = 0; this.vote = 0; this.on = false;   // the last VOX_VOTE_OF hops' reads at the gate, as bits; their count; the vote
+    this.bin = PITCH_NONE;                       // the pitch head's argmax at the newest hop (60 = none)
+    this.binHz = sr / VOX_N;                     // Hz per FFT bin, for the salience
     this.onHop = o.onHop || null;                // a test hook: (track, hopIndex) after each hop
     // §130: true = the stage is SKIPPED — Ears.push does not call step(), so no ring write, no band-pass, no FFT, no net, no YIN; the
     // three keys stay 0 / −1 / 0 (exactly the stage stubbed, tools/test_vox.js (iv)). Set by Ears.setVoxSkip while the file-mode lane
@@ -97,8 +98,6 @@ export class VoxTrack {
   // One mid sample at audio time t. Returns true when a hop ran.
   step(m, t) {
     this.ring[this.w & this.mask] = m; this.w++;
-    const y = this.band.power(m);
-    if (++this.phase >= this.D) { this.phase = 0; this.pring[this.pw & this.pmask] = y; this.pw++; }
     if (this.w < this.nextHop) return false;
     this.nextHop += VOX_HOP;
     this.hop(t);
@@ -106,7 +105,6 @@ export class VoxTrack {
   }
   hop(t) {
     const h = this.hops++;
-    this.band.e = 0;
     if (this.w < VOX_N) { if (this.onHop) this.onHop(this, h, false); return; }
     this.fft.magsLo(this.ring, (this.w - VOX_N) & this.mask, this.mask, this.mag, this.kMax);   // §130: bins 0..kMax, bit-identical to mags()
     const mag = this.mag, bank = this.bank, mel = this.mel, x = this.x, M = this.m, V = this.v;
@@ -121,23 +119,39 @@ export class VoxTrack {
       V[j] = (1 - a) * (V[j] + a * d * d);
       x[j] = (lm - M[j]) / Math.sqrt(V[j] + VAR_FLOOR);
     }
-    const p = this.net.push(x);
-    if (p >= 0) {
-      this.p = p; this.fired++;
-      // the vote (§126): the last VOX_VOTE_OF inferences at the gate, VOX_VOTE_ON of them on = voice. One inference above the gate alone
-      // neither opens the fast attack nor publishes a pitch; one below alone does not close them — the hysteresis a .03 s attack needs.
-      this.votes = ((this.votes << 1) | (p >= VOX_GATE ? 1 : 0)) & ((1 << VOX_VOTE_OF) - 1);
-      let c = 0; for (let v = this.votes; v; v >>= 1) c += v & 1;
-      this.vote = c; this.on = c >= VOX_VOTE_ON;
-      if (this.pw >= this.need) {
-        const r = this.yin.run(this.pring, this.pw, this.pmask);
-        this.per = r.hz >= PITCH_BAND[0] && r.hz <= PITCH_BAND[1] ? r.conf : 0;
-        this.rhz = r.hz;
-      }
-    }
+    const net = this.net, p = net.push(x);
+    this.p = p; this.fired++;
+    // the vote (§126, per hop since §133): the last VOX_VOTE_OF hops at the gate, VOX_VOTE_ON of them on = voice. One hop above the gate
+    // alone neither opens the fast attack nor publishes a pitch; one below alone does not close them — the hysteresis a .03 s attack needs.
+    this.votes = ((this.votes << 1) | (p >= VOX_GATE ? 1 : 0)) & ((1 << VOX_VOTE_OF) - 1);
+    let c = 0; for (let v = this.votes; v; v >>= 1) c += v & 1;
+    this.vote = c; this.on = c >= VOX_VOTE_ON;
+    // the pitch: the head's bin, the salience's Hz inside it (every hop, gate or not — `rhz` is the read, `hz` the published one)
+    this.bin = net.bin; this.per = 1 - net.pNone;
+    this.rhz = net.bin < PITCH_NONE ? this.salience(net.bin) : -1;
     this.s += (this.p - this.s) * (this.on && this.p > this.s ? this.easeA : this.easeR);
-    this.hz = this.on && this.s > VOX_GATE && this.per >= PITCH_PER ? this.rhz : -1;
+    this.hz = this.on && this.s > VOX_GATE && this.per >= PITCH_PER && this.rhz > 0 ? this.rhz : -1;
     this.conf = clamp01(this.s * this.per);
     if (this.onHop) this.onHop(this, h, true);
+  }
+  // Harmonic salience inside a semitone bin: of SAL_CANDS candidate fundamentals across the bin's ±50 cents, the one whose first
+  // SAL_HARM harmonics add up to the most magnitude in THIS hop's 2048-point FFT (bins 0..kMax, linearly interpolated between bin
+  // centres). The head says WHICH semitone; this says where inside it the harmonics actually stand — a 2048-point bin is 23 Hz wide,
+  // a semitone at C3 is 7.8 Hz, so the low bins lean on the upper harmonics, which the sum gives them for free.
+  salience(bin) {
+    const mag = this.mag, kMax = this.kMax, bh = this.binHz;
+    let best = -1, bestHz = -1;
+    for (let c = 0; c < SAL_CANDS; c++) {
+      const f = binHz(bin, -50 + 100 * c / (SAL_CANDS - 1));
+      let s = 0;
+      for (let k = 1; k <= SAL_HARM; k++) {
+        const pos = k * f / bh, i = pos | 0;
+        if (i + 1 > kMax) break;
+        const fr = pos - i;
+        s += mag[i] * (1 - fr) + mag[i + 1] * fr;
+      }
+      if (s > best) { best = s; bestHz = f; }
+    }
+    return bestHz;
   }
 }
