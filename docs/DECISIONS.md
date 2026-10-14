@@ -3906,3 +3906,154 @@ check 0 fail, npm test exit 0.
   on main once `perf-vox` is merged (his server on 8765 serves main): `#test&track=IBelongHere&scene=4` and `&scene=3` (the lane),
   the same with `&vox=live` (the CNN on a file), `&map=0` (the live lanes) — the HUD's `q` line reads `load` through the decode and
   climbs from .55 after the open instead of from .15.
+
+## §131 The ears off the main thread — a dedicated Worker for the live modes (2026-10-13, one worker in a worktree off main 68775ba, branch `ears-worker`; §130's "out of scope, the next structural step")
+
+- **THE DESIGN, before any of it was written.** The ears are already a causal, pure-DSP facade on 512-sample hops with no DOM,
+  no clock and no `Math.random` (CONTRACTS: node == page == Worker), so what had to be designed was not the DSP but the SEAM.
+  It is the facade's own split: everything that COMPUTES a frame (the sub, the perc bank, the tonic, the texture, the pulse and
+  §123's vocal net) goes to a dedicated Worker, and everything that READS one — the history ring, the release rule, the
+  interpolation at heard time, `out` — stays on the main thread as `EarsReader`, because that read is what the stage must do
+  inside `frame()` and it costs nothing (0.001 ms per read, §130's cost table). Blocks go over a port and per-hop FEATURE
+  FRAMES come back; the host writes them into the same ring with the same field order (`pushFrame`), so the heard-time read
+  discipline is untouched and one implementation of `read(tHeard)` serves both transports. **Not** `read(t)` over the port:
+  that would make the frame wait a round trip, which is the stall this move exists to remove. **Deterministic file mode keeps
+  the ears in this thread** (`PCM.local`: `sources/file.js` pushes the blocks inside `frame()` and the stage reads them in the
+  same frame), so every md5 reference, every trace and every ruler runs the path it always ran and the Worker is exactly what
+  the user watches 90 % of the time: capture, mic, demo and a file played in real time. The PCM bus itself stays on the main
+  thread — the PCM clock (§56) and the loudness stage (§63) are listeners too — so what leaves is the ears' DSP, not the
+  samples: a 4 KB copy into a pooled transferable and one `postMessage` stay behind. Node and every tool keep the in-process
+  `Ears` class unchanged: one code path for the DSP, two transports.
+- **The transport.** `ears/core.js` is the producer protocol (pure, no `self`): `init` (a stream: sample rate, options, a
+  generation), `b` (one block: L, R, the stamp, the vocal-skip flag and the PCM clock's line STATE), `beat` (the pulse's beat
+  length) in; `f` per block out — the frames (`t` Float64Array, `v` Float32Array, nf × 23 in the ring's field order), the
+  onsets, §90's line corrections, the block's DSP ms, and the two block buffers handed BACK for the next block (the steady
+  state allocates nothing). `ears/worker.js` is that core on a Worker scope; `ears/host.js` is `EarsHost extends EarsReader`
+  on the main thread: one Worker per page, one GENERATION per stream (a seek or a new source builds a new host, which the
+  stages already detect by object identity, and frames from an older generation are dropped). A Worker that will not start or
+  dies hands the next block back to an in-process `Ears` — the fallback is the old path, whole.
+- **The two things a function cannot do over a port, and what was done instead.** (1) §90's clock-line hook
+  (`PercTrack.line`): the host ships the clock's STATE (t, b, f, conf) with every block and the Worker evaluates `Clock.at`'s
+  own arithmetic on it — and the state it ships is the one the in-process ears read, because the clock pushes AFTER the ears in
+  the bus's listener order, so both see the previous block's. (2) The onsets the clock takes as ticks: `EarsReader.onsetFeed()`
+  is the seam, the pending list in this thread and the host's own (identical) pending list over the port. An arrival buffer was
+  tried first and REJECTED by measurement: on IBelongHere it offered the clock two kicks this thread never offers (a line kick
+  whose flag drops after a read has already released it) and the published clock drifted from 17.5 s on 2553 of 3601 reads
+  while every ears field was still identical. The port's job is to be the same floats.
+- **The determinism proof** (`tools/test_earsw.js`, in `npm test` at 30 s; `tools/ears-worker-node.js` is a web-shaped Worker
+  scope for node). A track streamed through BOTH transports at once, block for block, read at the same heard times, with a
+  `Clock` beside each lane fed exactly as features-clock.js feeds it. On **all eight library tracks** (40 s each, the "tune on
+  all tracks" rule): every one of the 34 `EARS_FIELDS` at every read identical under `Object.is` — **a tolerance was never
+  used** — the released onsets (type, t, vel, amp) identical, the LOW lane the reactive drums read identical, the published
+  PCM clock (bpm, phase, count) identical on every read, and §90's promoted kicks and the clock's ticks equal in count
+  (0–24 line kicks, 145–504 ticks per window). 56 pass, 0 fail. On SeeYouDrop at 60 s: 3601 reads × 34 fields, 0 differ; 600
+  events; 160 low onsets. And the REAL `ears/worker.js`, started over a `worker_threads` port, returns 400 blocks / 20 999
+  floats **bit-identical** to the in-process frames — the file the page starts is the file node proved.
+- **The one behaviour a real port moves, measured.** The onsets reach the PCM clock on the next main-thread task after the
+  reply — about one block (10.7 ms at 48 kHz) after the hop that found them, where in this thread the clock reads them inside
+  that same block. Each onset still carries its own sample-exact time, so what is late is the ARRIVAL of a right measurement
+  (an out-of-sequence Kalman update), not the measurement. `test_earsw.js` (vi) runs the in-process ears with the clock fed one
+  block late: over 20–40 s, **max |Δbpm| 0.025–0.238 and max |Δ beat phase| 1.6–25.2 ms** across the eight tracks (CyborgNinja
+  the tightest, Comptine the loosest, SeeYouDrop 0.090 / 8.0, IBelongHere 0.059 / 5.7). Live only, and under the eye's own
+  threshold for a beat line; it is the price of the margin below, and it is stated here rather than discovered later.
+- **The latency, and the number that matters.** The message lag (`EARS.lagAcc / lagN`) is the round trip's own delay and is
+  bounded by the main thread's frame cadence — the Worker's reply waits for the next task between frames, so on a 60 Hz page it
+  reads 11 ms mean with a 104 ms worst at the page's start (the Worker's script parsing while the first blocks queue). That
+  number is NOT the feature delay, and the brief's "under one hop" cannot be read off it. The honest comparator is
+  `EARS.staleAcc / staleN` — **heard time minus the newest history frame in the ring at the moment the frame reads it**, which
+  carries everything in the ear's way: the capture buffering, the hop that has not closed, the display lead and, over a port,
+  the round trip. On a 30 s real-time run (IBelongHere, scene 4, `&vox=live`, muted): **main −44.0 ms mean / +17 ms worst,
+  worker −44.4 / 0** — the ears run ~44 ms AHEAD of heard time in both transports (the output buffering), so the round trip
+  lands inside slack that already existed, and the worker lane never once left a frame reading past the newest frame where the
+  main-thread lane did. **The display lead for live (0 ms) needs no change on this evidence** (§131 does not touch
+  `dispNow()`): the features a live frame reads are not later than they were.
+
+- **The before / after, the §130 protocol** (`tools/load-bench.js`, real-time muted file runs of IBelongHere, GPU=1, three runs
+  per cell, this machine's floor is not free — the user's own Chrome was up, load 4.5–6.0 — so read the PAIRS, which ran
+  minutes apart under the same load). `ears` is the PCM listener's ms per frame on the MAIN thread (`EARS.cpuAcc / frames`),
+  which is the whole point; `ENGINE.ms` is the engine's EMA 10–40 s; the Worker's own DSP ms per block is beside it.
+
+  | cell (scene · vox) | ears ms/frame **worker** | **main** | ENGINE.ms **worker** | **main** | q@10 s W / M | q@20 s W / M |
+  |---|---|---|---|---|---|---|
+  | s4 · the lane | **.034 / .034 / .038** | .152 / .142 / .144 | **.798 / .794 / .837** | .855 / .889 / .866 | .67 .63 .63 / .67 .67 .67 | .99 / .99–1.00 |
+  | s4 · `&vox=live` | **.035 / .040 / .046** | .324 / .335 / .295 | **.802 / .881 / .944** | 1.15 / 1.18 / 1.09 | .67 .63 .67 / .63 .63 .63 | .95–.99 / .95–.99 |
+  | s4 · `&map=0` | **.038 / .037 / .037** | .324 / .324 / .323 | **.837 / .811 / .823** | 1.09 / 1.12 / 1.09 | .83 .83 .83 / .79 .87 .87 | 1.00 / 1.00 |
+  | s3 · the lane | **.041 / .046 / .043** | .165 / .146 / .153 | **.873 / .963 / .871** | .971 / .874 / .916 | .67 .63 .63 / .63 .67 .67 | .95–1.00 / .99–1.00 |
+  | s3 · `&vox=live` | **.034 / .032 / .033** | .272 / .279 / .266 | **.751 / .749 / .750** | .963 / .995 / .947 | .63 .67 .63 / .67 .63 .67 | .95–1.00 / .99 |
+  | s3 · `&map=0` | **.032 / .034 / .034** | .330 / .297 / .321 | **.744 / .760 / .750** | 1.01 / .994 / 1.05 | .83 .83 .83 / .87 .83 .87 | 1.00 / 1.00 |
+
+  So the main thread gives up **.11–.13 ms per frame on the lane and .24–.29 ms in the live lanes** (`&map=0` / `&vox=live`,
+  where the §123 CNN runs), and `ENGINE.ms` falls **.05–.09 on the lane and .20–.30 live** — the Worker's own 0.175–0.198 ms
+  per block is now somebody else's thread. fps 58.4–60.0 and errs [] in every cell. **`q` does not move**, and it should not:
+  at 60 Hz the governor's good band starts at 16.67 ms and these pages sit at 0.7–1.2 ms of engine time with the GPU doing the
+  rest, so a third of a millisecond is margin, not a tier — it is the margin the user's *"quality seems lower"* came out of
+  (§130), and the next GPU nearer the edge is where it shows. The file-load curve is §130's exactly (q .55 held through the
+  decode, .63–.67 at 10 s, .99–1.00 by 20 s; `&map=0` .83 at 10 s, 1.00 by 20 s): the hold is untouched.
+- **The latency, measured both ways** (three 30 s muted real-time runs per transport, s4, IBelongHere; `lag` is the message
+  round trip, `stale` is heard time minus the newest ring frame at read time — negative means the ears are AHEAD of the ear).
+
+  | cell | ears ms/frame | Worker DSP ms/block | lag mean / worst | stale mean / worst |
+  |---|---|---|---|---|
+  | `&map=0` **worker** (the live path) | .033–.040 | .192–.198 | **0.32–0.41 / 7.7–14.1 ms** | **−43.1…−44.6 / 0 ms** |
+  | `&map=0` **main** | .293–.302 | — | — | −43.6…−43.9 / 0 ms |
+  | `&vox=live` **worker** (a file's map) | .032–.038 | .175–.200 | 4.07–4.73 / 96–108 ms | −43.2…−43.7 / 10.3–17 ms |
+  | `&vox=live` **main** | .309–.326 | — | — | −42.5…−44.3 / 0–6.7 ms |
+
+  **Under one hop, on the path that matters**: in the live lanes the round trip is 0.32–0.41 ms mean and 7.7–14.1 ms at its
+  worst, against the hop's 10.7 ms. The 96–108 ms worst in the two map cells is the TRACK MAP'S OWN STALL (§48: 1–1.6 s of
+  synchronous main-thread work inside the file source's gates): the worklet keeps posting blocks through it and no reply can be
+  delivered until it ends, so the queue drains afterwards — the same stall shows as the only positive `stale` in the table
+  (10.3–17 ms against main's 0–6.7). **No live source has that stall** (`getDisplayMedia` and `addModule` are async, §130), and
+  `&map=0` is the live path on a file: 0 positive staleness on every run. **So the display lead for live (0 ms) needs no
+  change** and §131 does not touch `dispNow()`: on the user's path the features a frame reads are not later than they were,
+  and they were already ~43 ms ahead of heard time in both transports.
+
+- **The switch and the HUD.** `&ears=main | worker` parses outside `#test` (like `&lead=` / `&glitch=`): `main` keeps the DSP
+  in the PCM listener for the whole page — the A/B, and the path for a browser without module Workers — and `worker` is the
+  default. The HUD's engine line says which and what it costs: `ears main 0.29 ms` or
+  `ears worker 0.04 ms (dsp 0.19 lag 1.2/14.8)` — this thread's drained ms per frame, then the Worker's own DSP ms per block
+  and the round trip's current / worst delay; neither of the last two is main-thread time, so neither is in `ENGINE.ms`.
+- **Starting a Worker in a page that may fetch nothing.** The module page has a file, so the host starts
+  `assets/engine/ears/worker.js` as a module Worker by URL. The single-file build has no file and the landing promises no
+  runtime fetch, so `tools/bundle.js` now bundles the Worker's graph with the same transform it bundles the page with and
+  writes it into `ears/wsrc.js`'s one export; the host wraps that string in a Blob and starts a classic Worker from it. The
+  build line prints both: **151 modules + 12 in the ears Worker, 218 KB inline, the page 1468 → 1695 KB** (the ears graph is
+  in the document twice — once for the main thread's fallback and the det path, once for the Worker — which is the price of
+  one file and no fetch). So `dist/` and the frozen release pages run the Worker from `file://` too.
+
+- **The gates.** `node tools/check.js` **154 modules · 0 fail · 4 warn** (the same four soft caps as §130) · `node
+  tools/license.js --check` **157 public files, 0 without the header** · `npm test` **exit 0** with `test_earsw` in the chain
+  (`test_vox` unchanged — the mel parity, the ONNX parity, the ruler, the wiring, the lane grid, the pruned FFT; `test_music`
+  151 ok, 0 fail) · `tools/test_ears.js --sr=48000 --trace` before and after step 1 **cmp-identical** (9456 frames, 44 fields)
+  · **the fake smoke** (`GPU=1 PORT=8952 IDS="1 3 4" tools/scene-md5.sh s131`): the six lines = `tools/accept/v0.38/scene-md5-s127.txt`
+  **byte for byte** · **the real sweep** (`GPU=1 PORT=8930 PAR=2 SCENES="0 1 2 3 4" tools/real-md5.sh s131`, the HARNESS default
+  scope — every track, both map modes, the take — **215 runs, 330 lines, f0 2 on every run, errs [] on every run, 37 min
+  wall**): **EVERY LINE HELD TO THE BYTE** against the reference each scene's lines belong to — s0 and s2 (66 + 66) against
+  `tools/accept/v0.37/real-md5-v037.txt`, s1 (66) against `tools/accept/v0.39/real-md5-s130-s1.txt`, s3 and s4 (66 + 66)
+  against `tools/accept/v0.38/real-md5-s128-s3.txt` / `-s4.txt`: **0 moved of 330**, which is what deterministic file mode
+  keeping the in-process ears means · **the frozen page from file://** on scenes 0 / 1 / 3 / 4: errs [] on all four, 60 fps —
+  and the honest note that in CHROMIUM from `file://` the PCM bus's own worklet cannot load at all (`blob:null/<uuid>` is
+  cross-origin there), so no block is delivered and the ears never run on that page: **the same error on
+  `releases/retinarave-v0.38.html`**, a build from before §131, so it is not §131's and it is not new. The Chromium proof of
+  the inline Worker is the bundle over http (844 blocks, lag 0.2–0.5 ms, errs [] on all four scenes), and **headless Firefox
+  runs the inline Worker from `file://`** (Playwright `firefox-1509`, §96, with `media.autoplay.default: 0` or the context
+  stays suspended and nothing is ever delivered): **842 blocks round-tripped, 60 fps, presence 0.98, errs [], no console
+  line** on scenes 0 / 1 / 3 / 4. Capture and mic were not measured — they are only provable headed (HARNESS) — and they take
+  the same code path as `&map=0`.
+- **The records.** `tools/accept/v0.39/real-md5-s131.txt` (the sweep's 330 lines and what they were read against),
+  `load-bench-s131.txt` (the raw runs of both tables) and `earsw-s131.txt` (the two transports on all eight tracks).
+
+- **What is left.** (1) The PCM bus still wakes the main thread for every block, because the PCM clock (§56) and the loudness
+  stage (§63) read the same samples there — moving the clock into the same Worker would close §131's one behavioural gap (the
+  tick that arrives a block late) and take another ~0.1 ms per frame off this thread; it is the next structural step, and it is
+  bigger than this one (the clock publishes through the lead and is swapped into v3's fields per frame). (2) The worklet could
+  post straight to the Worker's port (a `MessageChannel` handed into the AudioWorklet) once nothing on the main thread needs
+  the blocks — that is the same step. (3) `SharedArrayBuffer` would turn the reply into a lock-free ring and remove the
+  task-queue wait altogether, but it needs COOP/COEP on `site/_headers`, which changes what the page may embed; not taken,
+  and not needed at the measured slack. (4) The ears graph is in the single-file page twice (218 KB); a shared module table
+  across the page and its Worker would need the Worker to be a module Worker from a Blob, which cannot resolve relative
+  imports. (5) `&ears=main` keeps the old path for an A/B in the user's own eye — the HUD says which thread is talking.
+- **No scene, no CNN weight, no gate was touched; nothing tagged, pushed, merged or deployed; no audio played** (every
+  real-time run `MUTE=1`). The user's A/B once this is merged (his server on 8765 serves main):
+  `127.0.0.1:8765/#test&track=IBelongHere&scene=4&vox=live` against the same with `&ears=main` — the HUD's engine line reads
+  `ears worker …` / `ears main …`, and the look must be the same look.

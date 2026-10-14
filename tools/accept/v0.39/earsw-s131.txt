@@ -1,0 +1,104 @@
+# §131 (2026-10-13): the two transports compared on every library track — `tools/test_earsw.js --secs=40 --track=<T>`, which
+# streams the track through the in-process `Ears` and through `EarsHost` over the protocol at once, reads both at the same heard
+# times and compares every EARS_FIELDS value with Object.is (no tolerance), the released onsets, the LOW lane, and a `Clock`
+# beside each lane fed exactly as features-clock.js feeds it (§90's line through the port). (vi) is the one behaviour a real
+# port moves: the same ears with the clock fed ONE BLOCK LATE, which is where the onsets arrive over a port.
+# 56 pass, 0 fail. `npm test` runs the SeeYouDrop 30 s case.
+
+---- SeeYouDrop
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      338 vs 338 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   71 vs 71 onsets, 0 differ       identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 11 vs 11, ticks 272 vs 272equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.090, max |Δ beat phase| 8.0 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- IBelongHere
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      412 vs 412 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   90 vs 90 onsets, 0 differ       identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 16 vs 16, ticks 284 vs 284equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.059, max |Δ beat phase| 5.7 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- Comptine
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      196 vs 196 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   44 vs 44 onsets, 0 differ       identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 1 vs 1, ticks 195 vs 195equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.238, max |Δ beat phase| 25.2 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- RaindropsOnRoses
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      367 vs 367 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   97 vs 97 onsets, 0 differ       identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 4 vs 4, ticks 298 vs 298equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.131, max |Δ beat phase| 12.5 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- Vienna
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      329 vs 329 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   50 vs 50 onsets, 0 differ       identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 0 vs 0 (none in this window), ticks 145 vs 145equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.167, max |Δ beat phase| 23.3 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- CyborgNinja
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      735 vs 735 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   137 vs 137 onsets, 0 differ     identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 8 vs 8, ticks 504 vs 504equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.025, max |Δ beat phase| 1.6 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- Malicious
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      348 vs 348 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   160 vs 160 onsets, 0 differ     identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 24 vs 24, ticks 204 vs 204equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.129, max |Δ beat phase| 19.5 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+---- WhoLikesToParty
+  pass  (0) the host has a port                       ready                           
+  pass  (i) every EARS_FIELDS value, every read       2401 reads × 34 fields, 0 differmax |Δ| 0
+  pass  (ii) the released onsets                      843 vs 843 events, 0 differ     identical
+  pass  (ii) the LOW lane (the reactive drums' own)   191 vs 191 onsets, 0 differ     identical
+  pass  (iii) the PCM clock published on both lanes   2401 reads, 0 differ            identical
+  pass  (iii) §90: the line and the ticks agree       line kicks 14 vs 14, ticks 482 vs 482equal, ticks > 0
+  (vi)  the clock fed one block late (what a real port moves, 1201 reads from 20 s): max |Δbpm| 0.047, max |Δ beat phase| 4.2 ms — the onsets' own times are unchanged, only when the filter sees them
+  pass  (v) assets/engine/ears/worker.js over a real port400/400 blocks, 20999 floats, 0 differidentical
+
+== the fake smoke (GPU=1 PORT=8952 IDS="1 3 4" tools/scene-md5.sh s131) — the six lines = tools/accept/v0.38/scene-md5-s127.txt byte for byte
+"scene 1 errs [] hop 840 row 72"
+"scene 3 errs [] hop 840 row 72"
+"scene 4 errs [] hop 840 row 72"
+293d773c7c9bca96a3adc58f22a0af31  s1-f360.jpg
+96ad310aee4f285c47a40b9d7eee38af  s1-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+
+== the single-file bundle: headless Firefox from file:// (Playwright firefox-1509), then Chromium over http
+ff s0: {"frames":543,"fps":60,"on":"worker","blocks":843,"wblocks":841,"lag":0,"src":"demo","bpm":125.8,"presence":0.97,"errs":[]}  console []
+ff s1: {"frames":542,"fps":60,"on":"worker","blocks":841,"wblocks":841,"lag":1,"src":"demo","bpm":125.7,"presence":0.98,"errs":[]}  console []
+ff s3: {"frames":542,"fps":60,"on":"worker","blocks":840,"wblocks":839,"lag":0,"src":"demo","bpm":125.8,"presence":0.97,"errs":[]}  console []
+ff s4: {"frames":542,"fps":60,"on":"worker","blocks":841,"wblocks":840,"lag":1,"src":"demo","bpm":125.5,"presence":0.97,"errs":[]}  console []
+bundle/http s0: "{\"on\":\"worker\",\"blocks\":844,\"wblocks\":843,\"lag\":0.3,\"dsp\":0.219,\"fps\":60,\"src\":\"demo\",\"bpm\":125.7,\"presence\":0.97,\"pcmErr\":null,\"errs\":[]}"
+bundle/http s1: "{\"on\":\"worker\",\"blocks\":844,\"wblocks\":844,\"lag\":0.1,\"dsp\":0.207,\"fps\":60,\"src\":\"demo\",\"bpm\":125.7,\"presence\":0.97,\"pcmErr\":null,\"errs\":[]}"
+bundle/http s3: "{\"on\":\"worker\",\"blocks\":844,\"wblocks\":843,\"lag\":0.5,\"dsp\":0.212,\"fps\":60,\"src\":\"demo\",\"bpm\":125.8,\"presence\":0.97,\"pcmErr\":null,\"errs\":[]}"
+bundle/http s4: "{\"on\":\"worker\",\"blocks\":845,\"wblocks\":844,\"lag\":0.2,\"dsp\":0.21,\"fps\":60,\"src\":\"demo\",\"bpm\":125.6,\"presence\":0.97,\"pcmErr\":null,\"errs\":[]}"
+s0: "{\"on\":\"main\",\"blocks\":0,\"wblocks\":0,\"lag\":0,\"fps\":60,\"src\":\"demo\",\"bpm\":126.1,\"presence\":0.97,\"errs\":[]}"
+s1: "{\"on\":\"main\",\"blocks\":0,\"wblocks\":0,\"lag\":0,\"fps\":60,\"src\":\"demo\",\"bpm\":126.1,\"presence\":0.97,\"errs\":[]}"
+s3: "{\"on\":\"main\",\"blocks\":0,\"wblocks\":0,\"lag\":0,\"fps\":60,\"src\":\"demo\",\"bpm\":126.1,\"presence\":0.97,\"errs\":[]}"
+s4: "{\"on\":\"main\",\"blocks\":0,\"wblocks\":0,\"lag\":0,\"fps\":60,\"src\":\"demo\",\"bpm\":126.1,\"presence\":0.98,\"errs\":[]}"
