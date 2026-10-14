@@ -992,15 +992,23 @@ the round trip's delay (neither of the last two is main-thread time, so neither 
   released onsets, the LOW lane, and a `Clock` beside each lane (§90's line through the port) — a differing bit is a FAIL,
   never a tolerance. It also starts the REAL `ears/worker.js` over a `worker_threads` port through `tools/ears-worker-node.js`
   (a web-shaped Worker scope for node) and compares the frames of 400 blocks.
-- **The numbers**: `tools/load-bench.js` as §130 runs it, with and without `&ears=main` (`tools/work/ears131/bench.sh` is the
-  loop that produced §131's table), plus `ENGINE.EARS.staleAcc / staleN / staleMax` — **heard time minus the newest history
-  frame in the ring at read time**, which is what a scene actually sees (the capture buffering, the unfinished hop, the display
+- **The numbers**: `tools/load-bench.js` as §130 runs it, once with and once without `&ears=main` (§131's table is three runs
+  per cell over scenes 3 / 4 × the lane / `&vox=live` / `&map=0`), plus `ENGINE.EARS.staleAcc / staleN / staleMax` — **heard
+  time minus the newest history frame in the ring at read time**, which is what a scene actually sees (the capture buffering, the unfinished hop, the display
   lead and, over a port, the round trip). The message lag (`EARS.lagAcc / lagN`, `lagMax`) is the transport's own delay and is
-  bounded by the main thread's frame cadence — it is NOT the feature delay.
+  bounded by the main thread's frame cadence — it is NOT the feature delay. One muted real-time run per transport reads them:
+  `MUTE=1 GPU=1 PORT=88xx node tools/cdp.js 'test&track=IBelongHere&scene=4&vox=live'` (add `&ears=main` for the other lane)
+  with `{"wait":30000}` then
+  `{"eval":"JSON.stringify({on:CARD.ENGINE.EARS.on,mainMs:CARD.ENGINE.EARS.cpuAcc/CARD.ENGINE.EARS.frames,stale:1000*CARD.ENGINE.EARS.staleAcc/CARD.ENGINE.EARS.staleN,staleMax:1000*CARD.ENGINE.EARS.staleMax,lag:CARD.ENGINE.EARS.lagAcc/CARD.ENGINE.EARS.lagN,ms:CARD.ENGINE.ms,q:CARD.Q.q,errs:CARD.ERRS})"}`.
 - **The single-file build**: there is no `worker.js` to start and nothing may be fetched, so `tools/bundle.js` bundles the
   Worker's graph the way it bundles the page and writes it into `assets/engine/ears/wsrc.js`'s one export; `ears/host.js`
-  starts a classic Worker from a Blob of that string (`+ 12 modules, ~218 KB` in the build line). `dist/` and the frozen
-  release pages therefore run the Worker from `file://` too — which is what the file:// smoke proves.
+  starts a classic Worker from a Blob of that string (`+ 12 modules, ~218 KB` in the build line). Headless **Firefox** runs
+  that path from `file://` (Playwright `firefox-1509`, §96; `media.autoplay.default: 0` or the context stays suspended and no
+  PCM block is ever delivered): 842 blocks round-tripped, 60 fps, errs [], no console line. In **Chromium** from `file://` the
+  PCM bus's own worklet cannot load at all — `blob:null/<uuid>` is cross-origin there, so `PCM.err` is set and no block is
+  delivered, which is TRUE OF EVERY BUILD BEFORE §131 TOO (checked against `releases/retinarave-v0.38.html`: the same error):
+  that page proves the bundle runs clean, never that the live ears run. The Chromium proof of the inline Worker is the bundle
+  over http (`node tools/cdp.js '…' '…' http://127.0.0.1:PORT/dist/index.html`): 844 blocks, lag 0.2–0.5 ms, errs [].
 - **What to re-prove after a change to `engine/ears/`, the host or the protocol**: `node tools/check.js` · `npm test`
   (`test_earsw` + `test_vox`) · `node tools/test_ears.js --sr=48000 --trace` twice and `cmp` · the fake smoke list · the
   default real md5 sweep (it runs the in-process path: a moved line is a determinism bug in the DSP, not in the transport) ·
