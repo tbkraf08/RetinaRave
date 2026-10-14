@@ -361,6 +361,7 @@ const AU = {
   stopFile: null,       // v0.15 E1: sources/file.js's teardown, so stopAll can undo the file graph without importing it
   sync: 0,              // v0.15 E2: SYNC_OFS (s) — the declared capture-path lag added to heardT in capture / mic mode
   onFile: [],           // fns(F) called when a file source starts, before its decode (features-ears.js arms the map gate)
+  loading: false,       // §130: true from a file source's start until its playhead opens (the decode + the map build) — core/quality.js holds q through it
   onInit: [],           // fns(ctx) called once the context exists (features.js registers setupBins)
   onRun: null,          // fn(mode, msg) — UI hook
   onStop: null,         // fn(msg) — UI hook
@@ -3972,6 +3973,7 @@ async function startFile(src, opt = {}) {
   // different amount: the MS trace would still match frame for frame but a screenshot of a real track would not.
   // window.__pauseAt / __PAUSE are tools/cdp.js's CLOCK=1 shim; on a page without it this is two harmless properties.
   holdClock(det);
+  AU.loading = true;                                // §130: core/quality.js holds q until the playhead opens (the decode, the map build)
   if (det) armTap();                                // BEFORE the decode: see armTap
   const name = typeof src === 'string' ? src : (src && src.name) || 'file';
   const F = AU.file = {
@@ -4001,6 +4003,7 @@ async function startFile(src, opt = {}) {
     buf = await ctx.decodeAudioData(ab);
   } catch (e) {
     F.err = String((e && e.message) || e);
+    if (AU.file === F) AU.loading = false;          // §130: the load ended (in failure); a newer source owns the flag otherwise
     run('demo', 'That track could not be played (' + F.err + ') — running the demo signal.');
     return F;
   }
@@ -4021,6 +4024,7 @@ async function startFile(src, opt = {}) {
   if (AU.file !== F) return F;
   if (det) armDet(F);
   F.open = true;                                    // the next frame starts the playhead
+  AU.loading = false;                               // §130: the hold's tail (LOAD_TAIL frames) starts on the next frame
   holdClock(false);                                 // let the deterministic clock run: the next frame is frame0
   return F;
 }
@@ -4133,6 +4137,7 @@ function tickFile(nowMs) {
 // Undo everything armDet / startBuffer did. Idempotent: audio.js's stopAll calls it through AU.stopFile.
 function teardown() {
   holdClock(false);
+  AU.loading = false;                               // §130: a stopped source is not loading
   if (node) {
     try { node.stop(); } catch (e) {}
     try { node.disconnect(); } catch (e) {}
@@ -4638,6 +4643,7 @@ const ENGINE = {
   ms: 0,
   frameN: 0,        // v0.15: frames run by frame(); the trace's `f` and the event log's `f`
   PCM,              // v0.15 E1: the PCM bus (PCM.on(fn) -> fn(L, R, t0)); the EARS stage subscribes here
+  EARS: null,       // §130: the ears stage's state (features-ears.js sets it) — the harness's handle on its cost accounting (cpuAcc / frames) and voxFrom
   TRACE,            // v0.15 E1: the per-frame MS recorder tools/filetrace.js drives (ENGINE.TRACE.start/stop)
   LOG,              // v0.15 E2: the event ring behind log() below, cap 20 000 (engine/trace.js LOG_CAP)
   resumeAt: -1,     // `now` of the first frame after a hidden tab (v0.3 resume-hold); the extractor holds its events for 1 s from it
@@ -4837,6 +4843,31 @@ class FFT {                                        // copied from synapse/dsp.js
     }
     const h = n >> 1, nm = this.norm;
     for (let i = 0; i < h; i++) out[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) * nm;
+  }
+  // §130: `mags` for the bins 0..kMax ONLY, bit-identical to it on those bins (out[i] for i > kMax is not written). The same
+  // decimation-in-time butterflies in the same order, two things fewer: (1) the first stage's twiddle is exactly (1, −0), so its
+  // butterflies are the add / subtract they already evaluate to (`re[b]·1 − im[b]·(−0)` is re[b] up to the sign of a zero, which no
+  // later product, sum or squared magnitude can see); (2) a stage of block size `size` only has to produce the sub-bins the next stage
+  // reads, min(size − 1, kMax), so the last two stages of a 2048 with kMax 341 run 342 butterflies per block instead of 1024 / 512,
+  // and the magnitude loop stops at kMax. The vocal front end's 40 mel bands end at bin 341 (8 kHz at 48 kHz): tools/test_vox.js
+  // proves max |Δ| == 0 against `mags` on every hop of a track; the cost is in DECISIONS §130.
+  magsLo(ring, start, mask, out, kMax) {
+    const n = this.n, re = this.re, im = this.im, rev = this.rev, w = this.win, cs = this.cs, sn = this.sn;
+    for (let i = 0; i < n; i++) re[rev[i]] = ring[(start + i) & mask] * w[i];
+    im.fill(0);
+    for (let i = 0; i < n; i += 2) { const x = re[i], y = re[i + 1]; re[i + 1] = x - y; re[i] = x + y; }   // stage 1: twiddle (1, −0)
+    for (let size = 4; size <= n; size <<= 1) {
+      const half = size >> 1, step = n / size, jEnd = Math.min(half, (size - 1 < kMax ? size - 1 : kMax) + 1);
+      for (let i = 0; i < n; i += size) {
+        for (let j = 0, k = 0; j < jEnd; j++, k += step) {
+          const a = i + j, b = a + half, wr = cs[k], wi = sn[k];
+          const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+    const nm = this.norm;
+    for (let i = 0; i <= kMax; i++) out[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) * nm;
   }
 }
 
@@ -6100,6 +6131,7 @@ class VoxTrack {
     this.nextHop = VOX_HOP; this.hops = 0;
     this.fft = new FFT(VOX_N); this.mag = new Float32Array(VOX_N >> 1);
     this.bank = melBank(sr);
+    this.kMax = this.bank[N_MEL - 1].i0 + this.bank[N_MEL - 1].n - 1;   // §130: the highest bin a band reads — the pruned FFT (dsp.js magsLo) stops there
     this.mel = new Float32Array(N_MEL);          // the last hop's raw log-mel …
     this.x = new Float32Array(N_MEL);            // … and its normalised column (the net's input)
     this.m = new Float64Array(N_MEL); this.v = new Float64Array(N_MEL); this.n = 0;
@@ -6119,6 +6151,11 @@ class VoxTrack {
     this.yin = new Yin(this.srd, PITCH_BAND[0], PITCH_BAND[1], Math.round(PITCH_WIN * this.srd), PITCH_THR);
     this.need = this.yin.W + this.yin.tmax + 2;
     this.onHop = o.onHop || null;                // a test hook: (track, hopIndex) after each hop
+    // §130: true = the stage is SKIPPED — Ears.push does not call step(), so no ring write, no band-pass, no FFT, no net, no YIN; the
+    // three keys stay 0 / −1 / 0 (exactly the stage stubbed, tools/test_vox.js (iv)). Set by Ears.setVoxSkip while the file-mode lane
+    // (§124) feeds voxS / voxHz / voxConf and the CNN's read would be thrown away; turning it back on replaces the track with a fresh
+    // one (the ring, the normaliser and the net re-prime as on a new source). Never read inside this class: step() always computes.
+    this.skip = false;
   }
   // One mid sample at audio time t. Returns true when a hop ran.
   step(m, t) {
@@ -6134,7 +6171,7 @@ class VoxTrack {
     const h = this.hops++;
     this.band.e = 0;
     if (this.w < VOX_N) { if (this.onHop) this.onHop(this, h, false); return; }
-    this.fft.mags(this.ring, (this.w - VOX_N) & this.mask, this.mask, this.mag);
+    this.fft.magsLo(this.ring, (this.w - VOX_N) & this.mask, this.mask, this.mag, this.kMax);   // §130: bins 0..kMax, bit-identical to mags()
     const mag = this.mag, bank = this.bank, mel = this.mel, x = this.x, M = this.m, V = this.v;
     const a = Math.max(1 / (this.n + 1), this.A); this.n++;
     for (let j = 0; j < N_MEL; j++) {
@@ -6238,7 +6275,8 @@ class Ears {
     this.tone = new TonicTrack(sr, opts.tonic || {});
     this.tex = new TextureTrack(sr);
     this.pulse = new PulseTrack(opts.pulse || {});
-    this.vox = new VoxTrack(sr, opts.vox || {});
+    this.voxOpts = opts.vox || {};
+    this.vox = new VoxTrack(sr, this.voxOpts);
     this.RB = 1 << 14; this.mid = new Float32Array(this.RB); this.mask = this.RB - 1; this.w = 0;
     this.t0 = null;                  // audio time of mid[0] of the stream
     this.tEnd = 0;                   // audio time one past the newest sample
@@ -6260,13 +6298,19 @@ class Ears {
     this.tRead = -1; this.dtRead = 1 / 60;           // the measured read interval, for the release lead
   }
   get events() { return this.released; }
+  // §130: skip the vocal stage (on = true) while something else feeds the three keys — the file-mode lane (features-ears.js) — and
+  // re-prime it with a fresh VoxTrack when it is wanted again. The other lanes never read it, so nothing else moves (test_vox.js (iv)).
+  setVoxSkip(on) {
+    if (on === this.vox.skip) return;
+    if (on) this.vox.skip = true; else this.vox = new VoxTrack(this.sr, this.voxOpts);
+  }
   // The release lead for this read: half a frame, never more than REL_LEAD.
   lead() { return Math.min(this.relLead, 0.5 * this.dtRead); }
 
   push(L, R, t0) {
     const n = L.length, sr = this.sr;
     if (this.t0 === null) this.t0 = t0;
-    const sub = this.sub, perc = this.perc, tex = this.tex, vox = this.vox, mid = this.mid, mask = this.mask;
+    const sub = this.sub, perc = this.perc, tex = this.tex, vox = this.vox.skip ? null : this.vox, mid = this.mid, mask = this.mask;
     // The sub gate needs to know whether the sub OWNS the low end; PercTrack's bank already has the three low bands.
     // Smoothed over SHARE_TAU: which layer owns the low end is a section-level fact, and the per-hop value swings with
     // every kick (unsmoothed it made the gate chatter 5.4 times a bar through drop 2 and cut the slide count in half).
@@ -6283,7 +6327,7 @@ class Ears {
       mid[this.w & mask] = m; this.w++;
       perc.step(m, t);
       tex.step(l, r, m);
-      vox.step(m, t);                              // §123: its own ring, its own hop; publishes voxS / voxHz / voxConf, reads nothing else
+      if (vox) vox.step(m, t);                     // §123: its own ring, its own hop; publishes voxS / voxHz / voxConf, reads nothing else (§130: null while the lane feeds them)
       if (sub.step(m, t)) this.snap(t);
     }
     this.tEnd = t0 + n / sr;
@@ -7799,6 +7843,9 @@ const SUB_EVT = [['noteT', 'subNoteEvt', 'subNote'], ['inT', 'subIn', 'subIn'], 
 const EARS = {
   ears: null, map: null, mapFile: null, next: -1, subscribed: false, lastT: -1, beat: 0, cpu: 0, blocks: 0,
   mapMs: 0, out: {}, sub: {}, vox: {},
+  // §130 cost accounting only (never a feature): `cpu` is the PCM listener's ms since the last frame, drained into ENGINE.extraMs
+  // below; `cpuAcc` / `frames` keep running totals so the harness can read the ears' ms per frame over a window (tools/load-bench.js).
+  cpuAcc: 0, frames: 0,
   // §124: which source last fed voxS / voxHz / voxConf — 'lane' (the file-mode Demucs sidecar), 'live' (the CNN) or ''
   // (the stage has not run: the fake timeline). The HUD's vox line reads it; nothing else does, and no MS field moved for it.
   voxFrom: '',
@@ -7812,11 +7859,21 @@ function resetRel() {
   EARS.tRead = -1; EARS.dtRead = 1 / 60;
 }
 
+// The map this frame reads, or null: file mode, the file the map was built for, and a map with a sub channel (a failed build has none).
+const mapOf = () => (AU.mode === 'file' && AU.file === EARS.mapFile && EARS.map && EARS.map.sub && EARS.map.sub.n ? EARS.map : null);
+// §130: THE LANE FEEDS THE KEYS — the one condition under which earsStage overwrites voxS / voxHz / voxConf with the Demucs sidecar
+// (§124: `M.vox && ENGINE.voxLane`), so the CNN's read of the same hop would be discarded. Until §130 the live stage ran anyway, in the
+// PCM listener, in every mode ("its cost is paid before this stage can know whether a lane exists"): ~75 µs per hop, ~0.19 ms per frame
+// at 48 kHz, for a number nobody read. Now onBlock skips the stage while this is true (Ears.setVoxSkip); `&vox=live`, `&map=0`, a track
+// without a sidecar and every live source keep it running, so the live tier is exactly what it was.
+const laneFeeds = () => { const M = mapOf(); return !!(M && M.vox && ENGINE.voxLane); };
+
 function onBlock(L, R, t0) {
   if (ENGINE.fakeOn || !AU.ctx) return;
   if (t0 < 0) return;                               // real-time file mode before the node started (pcm.js map → -1)
   const c0 = performance.now();                     // cost accounting only (ENGINE.ms), never a feature
   if (!EARS.ears || Math.abs(t0 - EARS.next) > JUMP) EARS.ears = new Ears(AU.ctx.sampleRate);
+  EARS.ears.setVoxSkip(laneFeeds());                // §130: no CNN while the lane feeds the keys (the map exists before the first block)
   EARS.ears.push(L, R, t0);
   EARS.next = t0 + L.length / AU.ctx.sampleRate;
   EARS.blocks++;
@@ -7858,12 +7915,12 @@ function earsStage(dt, now, S) {
   for (const k of EVT) S[k] = false;
   if (!AU.ctx || AU.mode === 'none') return;
   if (!EARS.subscribed) { EARS.subscribed = true; PCM.on(onBlock); }
-  ENGINE.extraMs += EARS.cpu; EARS.cpu = 0;         // the push work happens in the PCM listener, outside frame()
+  ENGINE.extraMs += EARS.cpu; EARS.cpuAcc += EARS.cpu; EARS.frames++; EARS.cpu = 0; // the push work happens in the PCM listener, outside frame()
   const t = S.heardT, E = EARS.ears;
   // Decided BEFORE the causal read so only one path writes the event log: a map override logs the map's own events with
   // the same type names ('kick' / 'snare' / 'hat' / 'subNote' / 'subIn' / 'subOut'), so the log's vocabulary never changes
   // and nothing is stamped twice.
-  const M = AU.mode === 'file' && AU.file === EARS.mapFile && EARS.map && EARS.map.sub && EARS.map.sub.n ? EARS.map : null;
+  const M = mapOf();
   if (E) {
     if (S.bpm > 0 && E.pulse.setBeat) { const b = 60 / S.bpm; if (b !== EARS.beat) { EARS.beat = b; E.pulse.setBeat(b); } }
     const o = E.read(t);
@@ -7897,8 +7954,9 @@ function earsStage(dt, now, S) {
     // §124 — THE LANE WINS in file mode (the user: "do the demucs for file; do cnn for live"): the Demucs sidecar is the
     // separator's own non-causal read of the voice, with no mix ceiling on the pitch, so it replaces the three live keys
     // here exactly as `map.sub` replaces the causal sub above. `&vox=live` (ENGINE.voxLane false) leaves the CNN's values
-    // standing — the A/B, and the only way to see the live tier on a file. The live stage keeps running either way: its
-    // cost is paid in the PCM listener before this stage can know whether a lane exists.
+    // standing — the A/B, and the only way to see the live tier on a file. §130: the live stage is SKIPPED in the PCM listener
+    // while this branch is taken (`laneFeeds`, the same condition, read per block), so the keys it would have computed are never
+    // computed — until §130 they were computed and thrown away here (~0.19 ms per frame).
     if (M.vox && ENGINE.voxLane) {
       mapVoxAt(M.vox, t, EARS.vox);
       S.voxS = EARS.vox.voxS; S.voxHz = EARS.vox.voxHz; S.voxConf = EARS.vox.voxConf;
@@ -7950,6 +8008,7 @@ function mapOverride(M, t, S) {
 }
 
 AU.onFile.push(armMap);
+ENGINE.EARS = EARS;   // §130: the harness's handle (cost accounting, voxFrom) — engine.js declares the slot
 // `KEY_FIELDS` is declared here so the stage's feat list states what it writes; `key` / `mode` / `keyConf` keep synapse's
 // FEATS entries, because the quantity has not changed — only which detector answers for it. §62 held `keyConf` back
 // (synapse's clarity, so the gate's SCALE would not move before an A/B); DECISIONS §84 measured that gate on the five
@@ -10328,9 +10387,23 @@ const { clamp } = __m["assets/math/util.js"];
 // A coarse-pointer device (phone, tablet) starts lower so the first two seconds do not stutter before the controller catches
 // up (v0.6); the controller then finds the device's level as before. Headless Chrome and node have a fine pointer: unchanged.
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches;
-const Q = { q: COARSE ? 0.35 : 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60, hold: null };
+const LOAD_TAIL = 30;             // frames the hold outlives a load (§130, below)
+const Q = { q: COARSE ? 0.35 : 0.55, ceil: 1, acc: 0, n: 0, worst: 0, good: 0, iter: 150, scale: 0.75, fps: 60, hold: null, load: LOAD_TAIL };
 // hold: null = the controller is free. A number = the recorder's pin (DECISIONS §92): the controller still measures (Q.fps), but q and
 // its ceiling are set back to the pin at every window, so a take renders at one tier. Set through pinQ(), never by a scene.
+// load: THE LOAD HOLD (DECISIONS §130). 0 = none · −1 = a source is loading (updateQuality's `loading`: sources/file.js sets AU.loading
+// from the start of its decode until the track map is built and the playhead opens — 1–4 s with ONE synchronous stall of up to ~1.6 s,
+// the map build on the main thread) · n > 0 = n more frames held after the load ended (LOAD_TAIL: the stall's own frame is the first
+// frame AFTER the open, so the window it lands in closes inside the tail, and the first frames of the playing track compile what they
+// compile). While held, a window over either knee neither lowers q and its ceiling nor resets the good run; the controller keeps
+// measuring (Q.fps) and keeps climbing on good windows exactly as before — so q resumes from where it stood BEFORE the load instead of
+// from the floor the stall sent it to (before §130: .55 → .15 inside the first second of every file load, back to only .44–.57 by 40 s,
+// against the fake timeline's .69 — the user: "the quality of torus and dust seems lower"). Under the deterministic clock (CLOCK=1) a
+// frame is 16.67 ms and the clock is held through the decode, so no window is ever over a knee there: the hold changes nothing, and
+// every md5 reference holds by construction. The recorder's pin (hold) still wins at every window, held or not.
+// The page's own start is a load too and begins held (load = LOAD_TAIL): the loop's first frame measures from t = 0 to the first rAF
+// (0.25 s capped — the modules, the GL context, the first compiles), which closed the first window at 19–26 ms and took −.07 and a
+// ceiling of .53 (+.002 per window: .69 at 40 s) off EVERY run, the fake timeline included — the ".69" the file load was measured against.
 
 const derive = () => { Q.iter = Math.round(64 + 200 * Q.q); Q.scale = Math.round((0.38 + 0.62 * Q.q) * 16) / 16; };
 function pinQ(q) { // q: the tier to hold (0..1) · null: release (the controller resumes from the current q)
@@ -10338,7 +10411,10 @@ function pinQ(q) { // q: the tier to hold (0..1) · null: release (the controlle
   if (Q.hold !== null) { Q.q = Q.ceil = Q.hold; derive(); }
 }
 
-function updateQuality(dtRaw) {
+// dtRaw: this frame's real interval (s) · loading: true while a source loads (AU.loading) — the load hold above
+function updateQuality(dtRaw, loading) {
+  if (loading) Q.load = -1; else if (Q.load < 0) Q.load = LOAD_TAIL; else if (Q.load > 0) Q.load--;
+  const held = Q.load !== 0;
   Q.acc += dtRaw;
   Q.n++;
   Q.worst = Math.max(Q.worst, dtRaw);
@@ -10346,13 +10422,9 @@ function updateQuality(dtRaw) {
     const avg = Q.acc / Q.n;
     Q.fps = 1 / avg;
     if (avg > 0.0265) {
-      Q.ceil = Math.max(0, Q.q - 0.05);
-      Q.q -= 0.2;
-      Q.good = 0;
+      if (!held) { Q.ceil = Math.max(0, Q.q - 0.05); Q.q -= 0.2; Q.good = 0; }
     } else if (avg > 0.0188) {
-      Q.ceil = Math.max(0, Q.q - 0.02);
-      Q.q -= 0.07;
-      Q.good = 0;
+      if (!held) { Q.ceil = Math.max(0, Q.q - 0.02); Q.q -= 0.07; Q.good = 0; }
     } else if (avg < 0.0175) {
       Q.good += Q.acc;
       if (Q.good > 2.5) {
@@ -10379,7 +10451,7 @@ const tier = () => (Q.q < 0.25 ? 0 : Q.q < 0.5 ? 1 : Q.q < 0.8 ? 2 : 3);
 const BUDGET = { points: [20000, 45000, 90000, 150000], segs: [2500, 5000, 9000, 16384] };
 const budget = (kind) => BUDGET[kind][tier()];
 
-return { COARSE, Q, tier, BUDGET, budget, pinQ, updateQuality };
+return { COARSE, LOAD_TAIL, Q, tier, BUDGET, budget, pinQ, updateQuality };
 })();
 
 __m["assets/core/post.js"] = (function () {
@@ -14105,7 +14177,7 @@ function hudText(S) {
   const f = (x) => x.toFixed(2);
   const E = REG[SC.logical], sc = E ? E.scene : null;
   const lines = [
-    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
+    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}${Q.hold !== null ? ' pin' : Q.load ? ' load' : ''}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
     `bands ${f(S.bass)} ${f(S.mid)} ${f(S.high)}  presence ${f(S.presence)}  hit ${f(S.hit)}`,
     `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}  lead ${ENGINE.LEAD.on ? (1000 * S.leadT).toFixed(0) + ' ms' : 'off'}  clock ${ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'} (pcm ${S.bpmPcm.toFixed(1)} ${f(S.beatPhasePcm)} conf ${f(S.clockConfPcm)})`,
     `arc ${S.arc}  eS ${f(S.eS)} eM ${f(S.eM)} eL ${f(S.eL)}  build ${f(S.build)}  absent ${f(S.absentT)}  dropEnv ${f(S.dropEnv)}`,
@@ -14809,7 +14881,7 @@ function frame(tms) {
   frameN++;
   CARD.frameN = frameN;
   if (document.hidden) return;
-  updateQuality(dtRaw);
+  updateQuality(dtRaw, ENGINE.AU.loading); // §130: the load hold — a file's decode + map build never lowers q (core/quality.js)
   resize();
   ENGINE.frame(dt, now, tms);
   if (ENGINE.resumed) FX.glitch = FX.flash = 0; // v0.3 resume-hold: the composite's transients do not outlive a hidden gap

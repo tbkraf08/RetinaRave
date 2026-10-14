@@ -1,0 +1,98 @@
+== v0.39 the tag RE-POINTED — the gates, 2026-10-13, one Fable worker on main (base 68775ba; the tag was at 27728aa)
+   The user: "tag". The standing rule from earlier today holds: TAG, DO NOT DEPLOY — no push of any kind, the tag
+   stays local. retinarave.com still serves VER = '0.38.0' and will until the user says push.
+   What this re-point folds in: §130 THE GOVERNOR AND THE VOCAL STAGE'S COST — the five commits that landed after
+   the v0.39 release commit (3c04e1d the bench's handles · 898e790 Fix 1 the load hold · 55df446 Fix 2a no CNN
+   under the lane · ff6d0e1 Fix 2c the pruned FFT · 68775ba the record). No scene, no look and no MS key moved;
+   releases.json's v0.39 entry gains §130 in `decisions` and one clause in the body (the load hold and the stage
+   that is no longer asked for an answer nobody uses, in the entry's own voice, no numbers, no § in the prose).
+   The entry's date stays 2026-10-12 (the release's own day) — only the tag moved.
+   All gates ran on the tree AFTER the entry edit and the regeneration, so every one saw the release's own files.
+
+== GATE 1  node tools/check.js  —  exit 0
+check: 150 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn
+   The 4 warns are the line-cap ones only (soft cap 350) and are §129's reading unchanged: core/scenes.js 370,
+   engine/ears/perc.js 407, scenes/dust/index.js 364, scenes/torus2/index.js 367. §130 touched core/quality.js,
+   engine/ears/{features-ears,vox,dsp}.js, sources/file.js and core/loop.js, none of them near a cap.
+   node tools/releases.js check   ->  37 entries · top v0.39 · package.json 0.39.0 · 0 problem(s)
+   node tools/whatsnew.js --check ->  STALE before the regeneration (exit 1), up to date after (exit 0)
+   node tools/license.js --check  ->  153 public files · 0 without the header   (unchanged: §130 added no file)
+
+== GATE 2  npm test  —  31.4 s, exit 0
+   Every suite as at §129, plus §130's own blocks inside test_vox.js:
+   (i)   the mel parity (numpy voxtrain.py == ears/vox.js): raw 7.05e-5 · normalised 1.29e-5        <= 1e-4
+   (ii)  the stream vs onnxruntime on 200 held Jamendo-test windows: 8.81e-7                        <= 1e-4
+         the weights module: 38 385 params, 100 KB base64, 40 x 34; the stream fires on the 34th column 200/200
+         note (ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC 0.795 / 0.861 / 0.738 / 0.886
+                   — the plan's >= .82 still MISSED, still recorded as a note (§126: session 3's job)
+         note (ii) IBelongHere (UNSEEN) 0.748 / 0.971 / 0.608 / 0.869 · Comptine (UNSEEN, at .5) 1.4 % fp — MET
+   (iii) the ruler per track, through the PRUNED FFT: the voiced three in / out 8.2x (IBelongHere) ·
+         11.0x (RaindropsOnRoses) · 5.6x (SeeYouDrop), all > 2x; Comptine 1.3 % · CyborgNinja 0.0 % ·
+         Vienna 1.6 % false-positive; WhoLikesToParty's shouted chops 0.6x the recorded note; voxHz within a
+         semitone on 45 / 55 / 9 %. Per-track medians 67-68 us/hop (§126 recorded 74-76 — Fix 2c).
+   (iv)  the wiring: 31 non-vox ears fields byte-identical with the stage STUBBED, and again with §130's SKIP on;
+         the three keys idle at 0 / -1 / 0 under both doors; setVoxSkip(false) re-primes a fresh VoxTrack.
+         note (iv) Ears.push ms per 512 block: the stage on 0.153 · stubbed 0.071 · SKIPPED 0.066 (-87 us/hop)
+   (v)   the bench: the stage 66.0 us per hop median (p99 155, mean 78.4)        <= 100 us  (§129 read 74.3)
+         note (v) §130 the parts, median us: FFT mags 52.5 -> magsLo 42.8 · the sample loop alone 8.0 ·
+                  the stage through mags 75.3 vs through magsLo 66.0
+   (vi)  §124's lane grid: no drift over an hour of frames, voxHz never averaged with its -1.
+   (vii) §130 the pruned FFT: magsLo == mags with Object.is on bins 0..341 of EVERY hop of SeeYouDrop —
+         14 772 hops, 0 bins differ — and the front end through it (mel, the normalised column, voxS / voxHz /
+         voxConf) 5 622 hops, 0 values differ over 60 s.
+   test_voxscene 27 ok · test_fluid 350 ok 0 fail · test_music 151 ok 0 fail · test_dsp / test_rough / test_baby /
+   test_misi / test_hopf / test_tempo / test_director / test_bars / test_drums / test_build / test_queue /
+   test_clock / test_loud / test_tongues all OK.
+
+== GATE 3  the generated site and the frozen page
+node tools/whatsnew.js  ->  37 entries -> site/whats-new.html (52 030 bytes, top v0.39; clips 0)
+                            index.html #newin CURRENT — the title did not change, so the card's line is the same
+                            string ("New in v0.39: The voice reaches the scenes") and index.html does not move.
+npm run build           ->  bundled 149 modules -> dist/index.html (1 461 KB = 1 502 547 bytes), 0.15 s
+node tools/bundle.js releases/retinarave-v0.39.html  —  149 modules, 1 502 547 bytes, VER = '0.39.0'
+   v0.39's first cut of this page was 149 / 1 494 624: the module count is UNCHANGED (§130 added no module) and
+   the +7 923 bytes are §130's code — core/quality.js's load hold, features-ears.js's laneFeeds / setVoxSkip,
+   ears/vox.js's magsLo call and dsp.js's magsLo itself.
+   In the artifact: LOAD_TAIL 7 occurrences · AU.loading 7 · setVoxSkip 4 · laneFeeds 3 · magsLo 3 · Q.load on
+   3 lines — §130's quality.js and ears ARE in the frozen page. 15 lines hit vox-weights / VOX_W / Jamendo, as at
+   §129: the weights and their attribution are still in it and nothing is fetched.
+   The three-page rule already stood from §129 — releases/ holds v0.37 / v0.38 / v0.39 and nothing was git rm'd.
+the frozen page from file://, headless, CLOCK=1 GPU=1 MUTE=1 (FILE=$PWD/releases/retinarave-v0.39.html):
+   test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"errs":[],"bad":[],"frameN":300}
+   test&scene=3 -> {"sc":3,"grammar":"pool","fluidOn":true,"errs":[],"bad":[],"frameN":300}   <- DUST
+   test&scene=4 -> {"sc":4,"grammar":"pool","fluidOn":true,"errs":[],"bad":[],"frameN":300}   <- TORUS2
+   All four lines are §129's to the character. CLOCK=1 from the first pass (v0.37's pitfall, paid forward again),
+   and MUTE=1 on every run (§130's flag) — NO AUDIO WAS PLAYED at any point in this session.
+
+== GATE 4  the no-third-party receipt (SOCIAL-PLAN §4) — ONE host on both routes  (PORT=8993)
+/whats-new   ->  ["127.0.0.1:8993"]   title "What's new in Retina Rave — every release, newest first"
+   The v0.39 article renders with §130 folded in: id="v0.39" present, the `engine` label true, 12 October 2026
+   true, the title "The voice reaches the scenes" true, the notes line now "§126 · §127 · §128 · §130", and it
+   still shows TWO thumbnails (scenes [3, 4] -> site/thumbs/dust.jpg + torus2.jpg).
+/            (NOAUTO=1 real)  ->  ["127.0.0.1:8993"]
+             #newin reads "New in v0.39: The voice reaches the scenes → what's new"
+
+== WHAT WAS NOT RUN, AND WHY
+   The full real-md5 roster, accept.sh, the fake smoke and a fresh load bench: §130 paid all of them on its own
+   tree three commits ago and the engine has not moved since (only releases.json, site/whats-new.html, the frozen
+   page, this receipt and DECISIONS). §130's own receipts stand as this release's content proof:
+   tools/accept/v0.39/real-md5-s130-s1.txt — GPU=1 PAR=2 SCENES=1, 43 runs, f0 2 on every run, errs [], 78 s:
+     all 66 lines HELD to the byte against tools/accept/v0.38/real-md5-s126-s1.txt, the 32 &map=1 AND the 34
+     &map=0 — the load hold cannot move a CLOCK=1 window, the skip feeds the lane's own values, the FFT is the
+     same floats; and the fake smoke (IDS="1 3 4") = tools/accept/v0.38/scene-md5-s127.txt byte for byte.
+   tools/accept/v0.39/load-bench-s130.txt — the raw real-time runs behind §130's before / after.
+   NO reference was re-based here — the next release's sweep does that, never the tag.
+   §128's md5 finding is still CARRIED, not fixed (four s3 FILE-mode lines of §127's list; real-md5-s128-s3.txt
+   is the reference for s3 from here). accept.sh's routes / params blocks on NAV2 are still owed (since §118).
+   No director trace: the roster is unchanged at SCENES="0 2 3 4". Nothing was retuned.
+
+== THE TAG
+   One commit, then git tag -f -a v0.39 -m "v0.39: the vocal lane on the scenes, the CNN's second pass, the load
+   hold (§126-§130)" — the tag MOVED from 27728aa to this commit. git describe --tags == v0.39 at HEAD.
+   NOT PUSHED. NOT DEPLOYED. A push to main IS the deploy (Cloudflare is git-connected to
+   github.com/tbkraf08/RetinaRave and builds on a push; dist/ is git-ignored, there is no .github/ workflow), and
+   the user's standing word today is tag, not deploy — so origin/main stays where it is and the tag is local only.
+   When the word comes it is ONE push of main --tags, then poll retinarave.com for VER = '0.39.0' (§115).
+   What is owed before that word, unchanged from §129: THE USER'S EYE on scenes 1 / 3 / 4, live and file, on the
+   new weights — and now also the HUD's q line reading `load` through a decode and climbing from .55 after it.

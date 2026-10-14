@@ -3906,3 +3906,35 @@ check 0 fail, npm test exit 0.
   on main once `perf-vox` is merged (his server on 8765 serves main): `#test&track=IBelongHere&scene=4` and `&scene=3` (the lane),
   the same with `&vox=live` (the CNN on a file), `&map=0` (the live lanes) — the HUD's `q` line reads `load` through the decode and
   climbs from .55 after the open instead of from .15.
+
+**§129 addendum — the v0.39 tag RE-POINTED to include §130 (2026-10-13, one Fable worker on main, no worktree; the user: *"tag"*).**
+§130's five commits (`3c04e1d` the bench's handles · `898e790` the load hold · `55df446` no CNN under the lane · `ff6d0e1` the pruned
+FFT · `68775ba` the record) landed AFTER the v0.39 release commit, so the local tag at `27728aa` named a tree without them. On the
+user's one word the tag was **moved to a new release commit on `main`** rather than left behind: `releases.json`'s v0.39 entry gains
+**§130 in `decisions`** (the article's notes line now reads *§126 · §127 · §128 · §130*) and **one clause in the body**, in the entry's
+own voice and with no numbers — the governor that *"was reading the pause while a track is read off the disk as the machine
+struggling"* and now *"waits out a load and carries on from where it stood"*, and the network that is *"no longer asked for an answer
+that is thrown away on the same frame"*. **The entry's date stays 2026-10-12** (the release's own day; only the tag moved), and
+§125's pitfall was paid forward again — the round-trip (`JSON.stringify(load(), null, 1) + '\n'` == the file) was checked
+byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()`.
+- **Regenerated, not rewritten:** `node tools/whatsnew.js` → `site/whats-new.html` 52 030 bytes (37 entries, two lines changed);
+  `index.html`'s `#newin` line **did not move** (the title is unchanged, so the card's string is the same one) — the generator says
+  `#newin current`. `npm run build` 149 modules → `dist/index.html` 1 502 547 bytes, and `node tools/bundle.js
+  releases/retinarave-v0.39.html` the same **149 / 1 502 547, `VER = '0.39.0'`**: the module count is unchanged (§130 added no module)
+  and the **+7 923 bytes over the first cut's 1 494 624** are §130's code — `LOAD_TAIL` 7 occurrences, `AU.loading` 7, `setVoxSkip` 4,
+  `laneFeeds` 3, `magsLo` 3 in the artifact. The three-page rule already stood from §129; nothing was `git rm`'d.
+- **The gates, all green on the re-pointed tree** (the receipt `tools/accept/v0.39/tag-v0.39-2026-10-13.txt`): `check.js` **150
+  modules · 0 fail · 4 warn** (§129's four line caps) · `releases.js check` **37 entries, top v0.39 == 0.39.0, 0 problems** ·
+  `whatsnew --check` stale before the regeneration, **up to date** after · `license --check` **153 / 0** · `npm test` **exit 0** in
+  31.4 s (the mel parity 7.05e-5 / 1.29e-5, the ONNX parity 8.81e-7, the stage **66.0 µs per hop** median against §129's 74.3 —
+  Fix 2c — the skip's 31 fields, `magsLo == mags` on 14 772 hops / 0 bins, `test_voxscene` 27 ok, `test_fluid` 350 ok, `test_music`
+  151 ok; the two misses still notes) · the **frozen page from `file://`** headless `CLOCK=1 GPU=1 MUTE=1` on **scenes 0, 1, 3, 4** —
+  `{sc, pool/bands, fluidOn true, errs [], bad [], frameN 300}`, all four lines §129's to the character · **ONE host** on
+  `/whats-new` and on `/` (`NOAUTO=1 real`), the v0.39 article rendering the `engine` label, 12 October 2026, the new notes line and
+  its two thumbs. **No sweep was re-run and no reference re-based:** §130 paid the roster this release needs three commits ago
+  (`real-md5-s130-s1.txt` — all 66 lines held to the byte, `&map=1` and `&map=0`; the fake smoke byte for byte) and the engine has not
+  moved since. **No audio was played** — `MUTE=1` on every run.
+- **Not pushed, not deployed.** `git tag -f -a v0.39` at the new commit, `git describe --tags` == `v0.39` at HEAD, and **that is
+  where it stops**: the push IS the deploy (§129's shape, unchanged), the user's standing word today is *tag*, and `retinarave.com`
+  still serves `VER = '0.38.0'`. Owed before the word is still **the user's eye on scenes 1 / 3 / 4**, live and file — and now the
+  HUD's `q` line reading `load` through a decode and climbing from .55 after it.
