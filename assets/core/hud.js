@@ -145,7 +145,7 @@ export function hudText(S) {
   const f = (x) => x.toFixed(2);
   const E = REG[SC.logical], sc = E ? E.scene : null;
   const lines = [
-    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}${Q.hold !== null ? ' pin' : Q.load ? ' load' : ''}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms`,
+    `fps ${Q.fps.toFixed(0)}  q ${f(Q.q)}${Q.hold !== null ? ' pin' : Q.load ? ' load' : ''}  scale ${Q.scale} iter ${Q.iter}  ${G.PW}x${G.PH}  src ${AU.mode}  engine ${ENGINE.ms.toFixed(2)} ms  ears ${earsLine()}`,
     `bands ${f(S.bass)} ${f(S.mid)} ${f(S.high)}  presence ${f(S.presence)}  hit ${f(S.hit)}`,
     `bpm ${S.bpm.toFixed(1)}  phase ${f(S.beatPhase)}  beat ${S.beatCount}  regularity ${f(S.regularity)}  lead ${ENGINE.LEAD.on ? (1000 * S.leadT).toFixed(0) + ' ms' : 'off'}  clock ${ENGINE.CLOCK ? ENGINE.CLOCK.src : 'v3'} (pcm ${S.bpmPcm.toFixed(1)} ${f(S.beatPhasePcm)} conf ${f(S.clockConfPcm)})`,
     `arc ${S.arc}  eS ${f(S.eS)} eM ${f(S.eM)} eL ${f(S.eL)}  build ${f(S.build)}  absent ${f(S.absentT)}  dropEnv ${f(S.dropEnv)}`,
@@ -162,6 +162,16 @@ export function hudText(S) {
   if (FX.glitchGain !== 1) lines.push(`glitch rows gain ${f(FX.glitchGain)}${FX.glitchGain ? '' : ' (off)'}  drive ${f(FX.glitch)}  (key G · &glitch=)`); // §110: only while not the default
   if (sc && sc.hud) lines.push(sc.hud());
   return lines.join('\n');
+}
+
+// §131: where the ears run and what they cost. `main` is the drained PCM-listener ms per frame (what ENGINE.ms carries);
+// `worker` is the same number for this thread — the copy and the postMessage — beside the Worker's OWN DSP ms per block and
+// the heard→feature lag of the round trip (neither of those is main-thread time, so neither is in ENGINE.ms).
+function earsLine() {
+  const me = EARS.msEma.toFixed(2);
+  if (EARS.on !== 'worker' || !EARS.ears || !EARS.ears.worker) return 'main ' + me + ' ms';
+  const w = EARS.wblocks ? (EARS.wcpuAcc / EARS.wblocks).toFixed(2) : '-';
+  return 'worker ' + me + ' ms (dsp ' + w + ' lag ' + EARS.lag.toFixed(1) + '/' + EARS.lagMax.toFixed(1) + ')';
 }
 
 export function drawHUD(S, frameN) {

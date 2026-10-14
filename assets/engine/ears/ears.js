@@ -26,7 +26,7 @@ export const EARS_FIELDS = [
 ];
 // the continuous fields, in the order the history ring stores them (§123 appended the three vox fields at the END, so every
 // index before them is what it was — the other lanes' reads cannot move)
-const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 'subGate',
+export const CONT = ['subHz', 'subCents', 'subNote', 'subConf', 'subGlide', 'subPure', 'subGate',
   'tonic', 'tonicMinor', 'tonicConf', 'bassReg', 'kickVel', 'snareVel', 'hatVel', 'denK', 'denS', 'denH',
   'pulse', 'lpSweep', 'width', 'voxS', 'voxHz', 'voxConf'];
 const EVENTS = { subNote: 'subNoteEvt', subIn: 'subIn', subOut: 'subOut', kick: 'kickEvt', snare: 'snareEvt', hat: 'hatEvt' };

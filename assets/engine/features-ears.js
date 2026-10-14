@@ -20,6 +20,9 @@ import { PCM } from './pcm.js';
 // The release rule is the same in both paths: an event fires on the frame NEAREST its onset (`t <= heardT + lead`,
 // `lead = min(1/120, half the frame interval)`), so `<x>Age` may be negative by up to `lead` on the release frame.
 import { Ears, EARS_FIELDS, REL_LEAD, DT_MAX } from './ears/ears.js';
+// §131: the ears' own thread. `EarsHost` is the same reader filled from a Worker's messages instead of from its own DSP
+// (ears/host.js); `EARSK.worker` is `&ears=main`'s switch. Nothing else in this file knows which transport it is talking to.
+import { EarsHost, EARSK, primeEarsWorker, earsWorkerUp } from './ears/host.js';
 import { KEYOWN } from './ears/tonic.js';
 import { DEN_WIN } from './ears/perc.js';
 import { buildMap, mapAt, mapCross, mapSubAt, mapVoxAt, voxLane } from './map/map.js';
@@ -56,6 +59,10 @@ export const EARS = {
   // §130 cost accounting only (never a feature): `cpu` is the PCM listener's ms since the last frame, drained into ENGINE.extraMs
   // below; `cpuAcc` / `frames` keep running totals so the harness can read the ears' ms per frame over a window (tools/load-bench.js).
   cpuAcc: 0, frames: 0,
+  // §131: where the ears run ('worker' | 'main', the HUD's engine line) and what the Worker costs on its OWN thread —
+  // `wcpuAcc` / `wblocks` are its DSP ms per block and `lag*` the heard→feature delay of the round trip (ms, accounting only;
+  // none of it is main-thread time, so none of it is in ENGINE.ms). `msEma` is this thread's drained cost per frame.
+  on: 'main', msEma: 0, wcpuAcc: 0, wblocks: 0, lag: 0, lagMax: 0, lagAcc: 0, lagN: 0,
   // §124: which source last fed voxS / voxHz / voxConf — 'lane' (the file-mode Demucs sidecar), 'live' (the CNN) or ''
   // (the stage has not run: the fake timeline). The HUD's vox line reads it; nothing else does, and no MS field moved for it.
   voxFrom: '',
@@ -78,11 +85,25 @@ const mapOf = () => (AU.mode === 'file' && AU.file === EARS.mapFile && EARS.map 
 // without a sidecar and every live source keep it running, so the live tier is exactly what it was.
 const laneFeeds = () => { const M = mapOf(); return !!(M && M.vox && ENGINE.voxLane); };
 
+// §131 WHICH TRANSPORT THIS STREAM RUNS ON. The Worker takes every LIVE feeder — capture, mic, demo and a file played in real
+// time, which is what the user watches — and deterministic file mode keeps the in-process `Ears`, because `sources/file.js`
+// pushes its blocks inside `frame()` and this stage reads them in the SAME frame (`PCM.local`): a port cannot answer inside a
+// frame without the stall this move exists to remove, so every md5 reference, trace and ruler runs the path it always ran.
+// `&ears=main` forces in-process everywhere (the A/B, and any browser without module Workers); so does a Worker that failed.
+function makeEars(sr) {
+  if (!PCM.local && EARSK.worker && earsWorkerUp()) {
+    const h = new EarsHost(sr);
+    if (!h.failed) { EARS.on = 'worker'; return h; }
+  }
+  EARS.on = 'main';
+  return new Ears(sr);
+}
+
 function onBlock(L, R, t0) {
   if (ENGINE.fakeOn || !AU.ctx) return;
   if (t0 < 0) return;                               // real-time file mode before the node started (pcm.js map → -1)
   const c0 = performance.now();                     // cost accounting only (ENGINE.ms), never a feature
-  if (!EARS.ears || Math.abs(t0 - EARS.next) > JUMP) EARS.ears = new Ears(AU.ctx.sampleRate);
+  if (!EARS.ears || EARS.ears.failed || Math.abs(t0 - EARS.next) > JUMP) EARS.ears = makeEars(AU.ctx.sampleRate);
   EARS.ears.setVoxSkip(laneFeeds());                // §130: no CNN while the lane feeds the keys (the map exists before the first block)
   EARS.ears.push(L, R, t0);
   EARS.next = t0 + L.length / AU.ctx.sampleRate;
@@ -124,8 +145,9 @@ export function earsStage(dt, now, S) {
   if (ENGINE.fakeOn) { for (const k of SUB_EVT) S[k[1]] = false; return; }
   for (const k of EVT) S[k] = false;
   if (!AU.ctx || AU.mode === 'none') return;
-  if (!EARS.subscribed) { EARS.subscribed = true; PCM.on(onBlock); }
-  ENGINE.extraMs += EARS.cpu; EARS.cpuAcc += EARS.cpu; EARS.frames++; EARS.cpu = 0; // the push work happens in the PCM listener, outside frame()
+  if (!EARS.subscribed) { EARS.subscribed = true; primeEarsWorker(); PCM.on(onBlock); } // §131: the Worker's script parses while the page starts
+  ENGINE.extraMs += EARS.cpu; EARS.cpuAcc += EARS.cpu; EARS.frames++; EARS.msEma += (EARS.cpu - EARS.msEma) * 0.05; EARS.cpu = 0; // the push work happens in the PCM listener, outside frame()
+  if (EARS.ears && EARS.ears.worker) { const H = EARS.ears; EARS.wcpuAcc = H.wmsAcc; EARS.wblocks = H.wblocks; EARS.lag = H.lag; EARS.lagMax = H.lagMax; EARS.lagAcc = H.lagAcc; EARS.lagN = H.lagN; } // §131 accounting
   const t = S.heardT, E = EARS.ears;
   // Decided BEFORE the causal read so only one path writes the event log: a map override logs the map's own events with
   // the same type names ('kick' / 'snare' / 'hat' / 'subNote' / 'subIn' / 'subOut'), so the log's vocabulary never changes
