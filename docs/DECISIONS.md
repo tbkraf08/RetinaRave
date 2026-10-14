@@ -4088,3 +4088,125 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   real-time run `MUTE=1`). The user's A/B once this is merged (his server on 8765 serves main):
   `127.0.0.1:8765/#test&track=IBelongHere&scene=4&vox=live` against the same with `&ears=main` — the HUD's engine line reads
   `ears worker …` / `ears main …`, and the look must be the same look.
+
+## §132 v0.40 tagged, NOT deployed — the ears off the main thread (2026-10-14, one Opus worker on main, no worktree; the user: *"cut v0.40"*)
+
+- **What ships** (everything on `main` since the v0.39 tag at `3592a32`, which already carried §130; this note adds no code):
+  **§131 THE EARS OFF THE MAIN THREAD** — the facade's own seam, designed before a line was written: everything that COMPUTES a
+  frame (the sub, the perc bank, the tonic, the texture, the pulse and §123's vocal net) goes to a dedicated Worker
+  (`ears/core.js` the pure producer protocol, `ears/worker.js` that core on a Worker scope, `ears/host.js` `EarsHost extends
+  EarsReader`, `ears/wsrc.js` the bundled inline source for the single-file build), and everything that READS one — the history
+  ring, the release rule, the interpolation at heard time — stays here, because that read is what the stage must do inside
+  `frame()` and it costs nothing. **Deterministic file mode keeps the in-process ears** (`PCM.local`), so every md5 reference,
+  trace and ruler runs the path it always ran; the PCM bus stays on this thread because the PCM clock (§56) and the loudness
+  stage (§63) read the same blocks; a Worker that will not start falls back to the old path whole. `&ears=main | worker` is the
+  A/B (`worker` the default) and the HUD's engine line says which thread is talking and what it costs. Measured: **live ears
+  .03–.04 ms per frame against .27–.34**, `ENGINE.ms` down .05–.09 on the lane and .20–.30 in the live lanes, the round trip
+  **0.32–0.41 ms mean against the hop's 10.7**, every `EARS` field `Object.is`-identical on all eight tracks with **no tolerance
+  ever used**, and **0 of 330 real-md5 lines moved**. · plus **`0a60073`**, the handoff commit — docs only.
+- **The class is `engine`, and `scenes` is `[]`.** Nothing a listener sees moved: no scene was added, no id moved, no look, no
+  MS key, no CNN weight and no gate. So **no thumbnail was rendered** — the first entry since v0.33 with an empty `scenes`, and
+  deliberately so (§129's two thumbs were `dust.jpg` + `torus2.jpg`; this release renders none). The entry's `decisions` is
+  **`[§131]`** alone.
+- **What the entry says, in a visitor's words** (the house voice, no numbers in the prose, no § — `check.js` refuses one):
+  the title *"The listening moves to its own thread"*, and the honest shape of a release that changes nothing you can see —
+  *"Nothing a scene is handed changed, and I proved that rather than claimed it: the old arrangement and the new one were run
+  side by side on the same sound, on every track in my library, and every value a scene reads was compared one at a time,
+  exactly, never within a tolerance"*; what it buys is *"the thread that draws no longer stops to listen"*, and the limit is
+  named at once — *"On this machine you will not see the detail level move, because that time was margin rather than a step; on
+  a machine nearer its limit it is the difference between a frame arriving and a frame arriving late, and it is the same margin
+  the softness I went looking for last release came out of."* The two honest limits are both in it: §131's **one behavioural
+  move** (*"the part that follows the beat is now told about a kick a hop of the thread after the ears found it… it is a shift,
+  and it exists only while listening live; the kick itself still carries the moment it happened"*) and the **old** Chromium
+  limit, named because it now looks new (*"a single saved page opened straight off the disk cannot start this browser's audio
+  plumbing at all, which was already true of the page before this one"*). **The user A/B'd the two transports by eye today** on
+  his own server and said the Worker is the better of the two (*"first line, ears worker"*), which is what the entry's *"and the
+  new one is the one I would keep"* carries — the first time a tag's entry states a preference the user had already given.
+- **The recipe (§125's ritual, §129's step for step, the three-page rule standing, §125's pitfall paid forward a third time).**
+  `package.json` + `assets/core/version.js` 0.39.0 → 0.40.0 (together, §89 — and `test_rec.js` is the gate that they agree:
+  the take's file name came out `retinarave-v0.40-nav2-…webm`) · `releases.json` top entry (`v0.40`, **2026-10-14**, class
+  `engine`, title *"The listening moves to its own thread"*, `decisions` `[§131]`, `scenes` `[]`, no clip) — **hand-inserted as
+  `JSON.stringify(rel, null, 1)` after the round-trip (`JSON.stringify(load(), null, 1) + '\n'` == the file) was checked
+  byte-identical FIRST**, for a **13-line pure insertion** (`git diff --numstat` 13 added, **0 removed**). `releases.js`'s own
+  `save()` still writes a different, compact layout and would reformat all 38 entries; **the note held and cost nothing again**
+  · `npm run build` (38 entries → `site/whats-new.html` **54 951 bytes**, and `index.html`'s `#newin` line **did move** this
+  time, because the title did: *New in v0.40: The listening moves to its own thread → what's new*; `dist/index.html`
+  **151 modules + 12 in the ears Worker, 218 KB inline, 1 744 344 bytes**) · `node tools/bundle.js
+  releases/retinarave-v0.40.html` (**the same 151 / +12 / 1 744 344, `VER = '0.40.0'`**) · `git rm
+  releases/retinarave-v0.37.html` (the three-page rule; `releases/` keeps v0.38 / v0.39 / v0.40, and v0.37's page is in history
+  at its tag).
+- **The frozen page, read against v0.39's** (149 modules / 1 502 547 bytes): the page graph gains **exactly two** modules —
+  `ears/host.js` and `ears/wsrc.js`, diffed module key by module key against `releases/retinarave-v0.39.html` — while
+  `ears/core.js` and `ears/worker.js` live in the **Worker's** graph only, which is why `check.js` counts four new files and the
+  bundler counts two. The **+241 797 bytes** are those two plus the **218 KB inline Worker source**: the ears graph is in the
+  document TWICE, once for this thread's fallback and the det path and once for the Worker, which is §131's stated price of one
+  file and no runtime fetch. In the artifact `EARS_WORKER_SRC` returns **6 hits**, the first of them the Worker's own source
+  string. **A finding on the receipt I was asked for:** the literal `ears worker` is **not** in the page and never was — the
+  HUD assembles the line at draw time (`ears ${earsLine()}` in `core/hud.js`, with `'worker ' + me + ' ms (dsp '` and
+  `'main ' + me + ' ms'` both present), so a grep for the assembled phrase is empty by construction and the three greps above
+  are what prove the word ships.
+- **The gates, each green on the tree AFTER the bump.** The receipt with every number is
+  `tools/accept/v0.40/tag-v0.40-2026-10-14.txt`:
+  1. `node tools/check.js` — **154 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn**
+     (154 = §130's 150 + §131's four files; the four warns are §129's line caps unchanged: `core/scenes.js` 370,
+     `ears/perc.js` 407, `dust/index.js` 364, `torus2/index.js` 367) · `releases.js check` **38 entries, top v0.40 ==
+     package.json 0.40.0, 0 problems** · `whatsnew --check` **up to date** · `license.js --check` **157 public files, 0 without
+     the header** (153 at v0.39 + §131's four).
+  2. `npm test` — **51.5 s, exit 0** — with **`test_earsw` in the chain**: 1800 reads × 34 fields **0 differ**, the onsets
+     211 vs 211, the LOW lane 42 vs 42, the published PCM clock 0 differ on 1800 reads, §90's line kicks 7 vs 7 and ticks
+     170 vs 170, and the **real `ears/worker.js` over a real port 400/400 blocks / 20 999 floats identical**; (vi) the clock fed
+     one block late **max |Δbpm| 0.090, max |Δ beat phase| 8.0 ms** (the price, stated). `test_vox` unchanged — the mel parity
+     7.05e-5 / 1.29e-5, the ONNX parity 8.81e-7, the stage **70.3 µs per hop** median against ≤ 100, the pruned FFT
+     **14 772 hops / 0 bins**, the wiring's 31 fields; `test_voxscene` **27 ok**, `test_fluid` **350 ok**, `test_music`
+     **151 ok**, every other suite OK. The two misses still print as **notes**, never FAILs: Jamendo-test **F1 .795 against the
+     plan's ≥ .82**, and IBelongHere's recall.
+  3. `node tools/test_rec.js` (the version pair's own gate) — **GPU=1 MUTE=1: all ok**, the §92 pin still wins (`Q.hold` .75
+     through the take, free again from q0 .55 after the stop), 360 frames at 60.0 fps composited, the name and the sidecar
+     carrying **v0.40**. **A LOAD FINDING, recorded not fixed:** *without* `GPU=1`, on swiftshader under this machine's load of
+     19–20 (another agent's worktree was building at the same time), the single assertion *"after the stop the governor is free
+     again … from q0 0.55"* FAILS — the diagnostic read is `{hold: null, q: 0.15, load: 0, fps: 10.9}`, so **`Q.hold` IS null
+     and the pin released correctly**; the governor is doing its job on a page running at 11 fps and the failure is the
+     assertion's own tolerance (`|q − q0| < 0.05`) meeting a software-GL frame rate. Not a §131 regression, and nothing was
+     re-baselined.
+  4. the **frozen page from `file://`**, headless, **CLOCK=1 GPU=1 MUTE=1** — `test&scene=0` → `{sc 0, pool, fluidOn true,
+     errs [], bad [], frameN 300}` · `scene=1` → `{sc 1, bands, …}` · `scene=3` → `{sc 3, pool, …}` · `scene=4` → `{sc 4,
+     pool, …}` — **all four lines §129's and §130's to the character**. `CLOCK=1` from the first pass (v0.37's pitfall, paid
+     forward a third time). §131's honest note stands and is **not this tag's**: in Chromium from `file://` the PCM bus's own
+     worklet cannot load at all (`blob:null/<uuid>` is cross-origin there), so the live ears never run on a saved page — **the
+     same error on `releases/retinarave-v0.38.html`**, a build from before §131. The fake timeline needs no PCM, which is why
+     those four lines are clean; the Chromium proof of the inline Worker is §131's bundle over http (844 blocks, lag 0.2–0.5 ms)
+     and headless Firefox from `file://` (842 blocks, 60 fps), neither re-run here because the Worker's source bytes are the
+     same bytes.
+  5. the no-third-party receipt (SOCIAL-PLAN §4) — **ONE host on every route**: `/whats-new` → `["127.0.0.1:8993"]` · `/`
+     (`NOAUTO=1 real`) → `["127.0.0.1:8995"]` with `#newin` reading *"New in v0.40: The listening moves to its own thread →
+     what's new"* · `/about` → `["127.0.0.1:8997"]`. The v0.40 article renders (`id="v0.40"`, the `engine` label, 14 October
+     2026, the notes line carrying §131) and shows **no thumbnails at all**, which is what `scenes: []` means. The credits were
+     **already in place and unchanged** ([[feedback-credit-where-due]]): §131 borrowed nothing — no corpus, no solver, no idea —
+     so `THIRD-PARTY.md` and the `/about` DOM are v0.39's, proven there. **The user's own dev server on 8765 was left running
+     and untouched**; every port here was 8993+.
+- **What was NOT run, and why — the brief's own instruction, and it holds.** The **full real-md5 roster**, **`accept.sh`**, the
+  **fake smoke**, `test_ears --trace` and a fresh **load bench**: **§131 paid every one of them** on its own branch and **the
+  engine has not moved since** the merge (after it only the two version strings, `releases.json`, the generated site files, the
+  frozen page, the receipt and docs moved). §131's receipts stand as this release's content proof —
+  `tools/accept/v0.39/real-md5-s131.txt` (the HARNESS default scope, **215 runs, 330 lines, f0 2 on every run, errs [] on every
+  run, 37 min wall: EVERY LINE HELD TO THE BYTE, 0 moved of 330**), the fake smoke byte for byte against
+  `tools/accept/v0.38/scene-md5-s127.txt`, and `load-bench-s131.txt` / `earsw-s131.txt`. **No reference was re-based here** —
+  the next release's sweep does that, never the tag. §128's md5 finding is still **CARRIED, not fixed** (four s3 FILE-mode lines
+  of §127's list; `real-md5-s128-s3.txt` is the reference for s3 from here). `accept.sh`'s routes / params blocks on NAV2 are
+  **still owed** (since §118). **No director trace**: the roster is unchanged at `SCENES="0 2 3 4"`, no scene entered or left
+  the rotation. **No audio was played and nothing was retuned.**
+- **The deploy shape, unchanged — and this is why the tag stays local.** `dist/` is what `npm run build` writes and what
+  `wrangler.jsonc` serves (`assets.directory ./dist`); `dist/` is git-ignored and not committed, and there is no `.github/`
+  workflow — the deploy is **Cloudflare, git-connected to `github.com/tbkraf08/RetinaRave`, building on a push to `main`**.
+  **So the push IS the deploy**, and the user's word was *"cut v0.40"*: **nothing was pushed, `origin/main` is still at
+  `66129a3` (v0.38's own addendum, the last thing pushed) and `retinarave.com` still serves `VER = '0.38.0'`** — it is now
+  **two** tags behind the tree. When the word comes it is **ONE push** of `main --tags`, then poll for the `VER` line, **never a
+  second push** (§115).
+- **What is live when.** ONE release commit (the two versions, the entry, the generated `site/whats-new.html` +
+  `index.html`'s line, `releases/retinarave-v0.40.html` in and v0.37's out, the receipt and this note), then
+  `git tag -a v0.40 -m "v0.40 — the ears off the main thread"` — **and stop.** Nothing in `../RetinaRave-vox-net3` (branch
+  `vox-net3`) and nothing under `assets/engine/ears/vox*` was touched.
+- **Next, in order:** the user's word on the push · **session 3 of `docs/plans/VOX-CNN2-PLAN.md`** (the TCN / GRU net for the
+  last of the lag, the pitch head, and the recall the narrowed SNR cost — Jamendo-test F1 .795 is still the plan's miss) ·
+  §131's own "what is left" (the PCM clock into the same Worker, which closes the one-block tick and takes another ~0.1 ms off
+  this thread) · **scenes B (NAV2, MANDALA) only if the user asks.**

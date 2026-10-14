@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.40.0",
+  "tag": "v0.40",
+  "date": "2026-10-14",
+  "class": "engine",
+  "title": "The listening moves to its own thread",
+  "body": "Everything the page does to hear the music — the drums, the bass, the key it is in, the texture, the pulse and the voice detector that arrived in the last two releases — now runs on a thread of its own, beside the one that draws. Nothing a scene is handed changed, and I proved that rather than claimed it: the old arrangement and the new one were run side by side on the same sound, on every track in my library, and every value a scene reads was compared one at a time, exactly, never within a tolerance — not one of them differed, and the shot-by-shot proofs that pin each scene's pixels all came back the same to the byte. What changed is that the thread that draws no longer stops to listen. Watching a shared tab, which is how I watch nearly all of the time, drawing gets back almost all of the time the listening used to take from it, and more again when the voice detector is doing its work too. On this machine you will not see the detail level move, because that time was margin rather than a step; on a machine nearer its limit it is the difference between a frame arriving and a frame arriving late, and it is the same margin the softness I went looking for last release came out of. Playing a file the way the test harness plays one keeps the listening where it was, because there the sound is handed in and read back inside the same frame, so every pixel proof still runs the path it always ran. If the new thread will not start, the page falls back to the old arrangement whole, with nothing missing. The readout in the corner says which thread is listening and what it costs, and a switch in the address bar forces the old one, so the two can be watched one after the other on the same music — and the new one is the one I would keep. Being honest about what moved and what did not. One thing moves: the part that follows the beat is now told about a kick a hop of the thread after the ears found it, which on everything I measured shifts the tempo it reports, and the place it puts the beat, by less than an eye reads on a beat line — but it is a shift, and it exists only while listening live; the kick itself still carries the moment it happened. And one old limit is worth naming because it now looks like a new one: a single saved page opened straight off the disk cannot start this browser's audio plumbing at all, which was already true of the page before this one — served over the network, the way the site is, it is the real thing.",
+  "clip": null,
+  "decisions": [
+   "§131"
+  ],
+  "scenes": []
+ },
+ {
   "version": "0.39.0",
   "tag": "v0.39",
   "date": "2026-10-12",
