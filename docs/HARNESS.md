@@ -338,9 +338,20 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   pad through `tools/rec-strip.sh` as §108. (4) Then the real-music gates below: `SCENES=0 tools/real-md5.sh` twice (cmp-equal; the
   roster's lines unmoved — the grammar's velocity reaches no roster scene on advect 0), `SCENES=0 tools/real-rulers.sh`, the fake
   smoke (only s12 moves), parity.
-- **The §116 strips below (field, kick, mids, snare, highs, pen, time) measured the BAND grammar, pulled at §120 (2026-10-11): FLUID2 is
-  FLUID to the pixel again, `inject2.js` the identity, `K2` empty.** The tools stay (`tools/fluid-kick-strip.sh`, `tools/work/fluid2/s2–s5/`) and
-  run against `git show v0.37:assets/core/fluid/inject2.js` or any new grammar that returns the same records; `K2=` reaches an empty table today.
+- **What is in FLUID2's slot today (§132, 2026-10-14): the FROZEN §108 POOL GRAMMAR** — `core/fluid/inject2.js` is
+  `git show feb1f67:assets/core/fluid/inject.js` to the byte, the pool as it read in the take of 2026-10-09 15:51 EDT (before §111's
+  eight tuning items, before §113's ring; the six-droplet drop is back in the scene). It is **not tuned** and must not be: the per-track
+  recipe above is the LIVE pool grammar's (`inject.js`, FLUID id 0). Its gate is identity, not behaviour —
+  `tools/test_fluid.js`'s `bands` block replays it against the same `git show` and asserts every output frame equal at moodHue .6 and .2,
+  and `INJECT=<the ref> JSON=… node tools/fluid-tracks.js` against `INJECT=assets/core/fluid/inject2.js` must `diff` clean on all eight
+  tracks (`tools/accept/v0.40/fluid-tracks-s132.txt`). `K2` is the §108 table (21 constants, `RADIUS` … `CHORD_REF`). The fake
+  scene-md5 pair for s1 is `aa626832` / `8372bc28` (`tools/accept/v0.40/scene-md5-s132.txt`); s0 is unmoved at `3e483039` / `2274bb4e`.
+- **The §121 RIG grammar** (23 invisible mouths, the chases, the note hues, the LEAD channel, the blinder) is at **v0.40** —
+  `git show v0.40:assets/core/fluid/inject2.js`, its test block `git show v0.40:tools/test_fluid.js`, its strips
+  `tools/accept/v0.38/fluid2-s121-rig-tracks.{md,mjs}` and the two montages beside them. **The §116 strips below (field, kick, mids,
+  snare, highs, pen, time) measured the BAND grammar, pulled at §120 (2026-10-11).** The tools stay (`tools/fluid-kick-strip.sh`,
+  `tools/work/fluid2/s2–s5/`) and run against `git show v0.37:assets/core/fluid/inject2.js`, `git show v0.40:…`, or any new grammar that
+  returns the same records; `K2=` reaches the §108 table today, which returns none of them.
 - **The field strip — the S1 ruler (§116 S1; FLUID2-PLAN §4 S1):** the pool's MEAN SPEED against the sub band, per track, on one deterministic
   whole-track run: `[K2='{"SWIRL":.8}'] [MAP=0|1] PORT=89xx tools/fluid-field-strip.sh <track> <12|13> <tag> <t0> <t1> [fps=1] [at=0]` →
   `tools/work/fluid2/field/<track>-s<scene>-<tag>/` — per shot the composite (the eye) at frame F and, after `CARD.fluid.dbg = 2` from an

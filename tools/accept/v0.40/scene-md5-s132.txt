@@ -1,0 +1,15 @@
+# §132 (2026-10-14): the FAKE-timeline smoke after FLUID2's slot was reset to the FROZEN §108 pool grammar
+# (core/fluid/inject2.js = `git show feb1f67:assets/core/fluid/inject.js`, the scene = feb1f67's FLUID with the card's identity).
+#   IDS="0 1" GPU=1 PORT=8871 tools/scene-md5.sh s132     (2 ids, 4 shots, errs [] hop 840 row 72 on both)
+#     "scene 0 errs [] hop 840 row 72"
+#     "scene 1 errs [] hop 840 row 72"
+# READ AGAINST: s0 -> tools/accept/v0.38/scene-md5-s127.txt (itself v0.35's s0 pair, unmoved since §108's re-base).
+# RESULT: s0 UNMOVED to the hash — FLUID (id 0) was not touched by §132 (no edit to inject.js, grammar.js, core/fluid/shaders.js
+# or assets/scenes/fluid/). s1 is NEW and must be: a different grammar plans the pool under the same show pass. It was
+# 293d773c / 96ad310a under the §121 RIG (tools/accept/v0.38/scene-md5-s127.txt) and 3e483039 / 2274bb4e under §120's identity.
+# s2..s5 were NOT shot: nothing outside core/fluid/{fluid,inject2}.js and scenes/fluid2/ moved, and the pool's velocity reaches
+# no roster scene at fb.advect 0 (§109). The real-music proof is real-md5-s132-s0.txt beside this file.
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+aa6268322f36acf568cae26df302e163  s1-f360.jpg
+8372bc2879a802dcfb8c93ecf28721a5  s1-f840.jpg

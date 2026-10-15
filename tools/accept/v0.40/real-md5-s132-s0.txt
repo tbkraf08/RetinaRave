@@ -1,0 +1,75 @@
+# §132 (2026-10-14): the REAL-MUSIC identity proof for FLUID (id 0) after FLUID2's slot was reset to the §108 pool grammar.
+#   SCENES="0" GPU=1 PORT=8871 tools/real-md5.sh s132
+#   the HARNESS default scope for one scene: every library track + the pad take, intro / groove / build1 / drop1 (boundary1 where a
+#   track has no drop) / chords, BOTH map modes — 43 runs, 66 lines, f0 2 on EVERY run, errs [] and bad [] on every run, sc 0 on
+#   every run, 13 min wall (780 s), PAR 1.
+# READ AGAINST (never re-baselined): tools/accept/v0.39/real-md5-s131.txt's 66 s0 lines.
+# RESULT: 0 of 66 MOVED — the 32 &map=1 lines and the 34 &map=0 lines alike. §132 touched core/fluid/fluid.js (the LOOK import and
+# the fourth argument on the 'bands' call ONLY — the pool call is byte-identical), core/fluid/inject2.js and scenes/fluid2/; none of
+# it reaches FLUID, and this is the proof on real music rather than on the fake timeline.
+4ccf638001d42cd5c0cb43a69ba5daef  s0-Comptine-build1-f993-m0.jpg
+2bd31c09d6134fea5b9d72ac3eaa4adf  s0-Comptine-build1-f993-m1.jpg
+86d3dddf2e0770898b6c9d63303a67e5  s0-Comptine-drop1-f1293-m0.jpg
+e70d59e9f90c9e9a9f8d93de186496b7  s0-Comptine-drop1-f1293-m1.jpg
+7c2f378a810a6fb89ac94587089f7571  s0-Comptine-groove-f602-m0.jpg
+429a08231f08cf683ee33f19cf581ad8  s0-Comptine-groove-f602-m1.jpg
+3e44956f44cb79a224010a734ee20287  s0-Comptine-intro-f602-m0.jpg
+5d111495288c019d8032b2412fa38ec1  s0-Comptine-intro-f602-m1.jpg
+878d77dffcdd126d4da9580a0b049029  s0-CyborgNinja-boundary1-f1533-m0.jpg
+9d65b00584dad0ddb2004833e217c4d7  s0-CyborgNinja-boundary1-f1533-m1.jpg
+36dd4f7a50916f4b6a004eeef60a902a  s0-CyborgNinja-build1-f1233-m0.jpg
+fa52090a17cea9807a425a6212f3c270  s0-CyborgNinja-build1-f1233-m1.jpg
+27fd4ddb159009c0f5322d2378bd7fb3  s0-CyborgNinja-groove-f602-m0.jpg
+2b071761cc813b561dcb91cc812ca82c  s0-CyborgNinja-groove-f602-m1.jpg
+043e7ed0b8e296a0462398d0d3ffb820  s0-CyborgNinja-intro-f602-m0.jpg
+7e28313894a8acc9a5861d52f4f4cfd5  s0-CyborgNinja-intro-f602-m1.jpg
+0dfb72bf56d86a8b74f087a45201b5b1  s0-IBelongHere-build1-f655-m0.jpg
+ec871af0f35f7989e8fb1360cd5e2bad  s0-IBelongHere-build1-f655-m1.jpg
+89ca58b777d356c04a08a1c225c9f5e2  s0-IBelongHere-drop1-f955-m0.jpg
+4ea6731d22625cecd6c2b4e16e178c64  s0-IBelongHere-drop1-f955-m1.jpg
+e6a7ac172acc1ec6d2ed7d50ffd7438a  s0-IBelongHere-groove-f602-m0.jpg
+1829021e99b3544abb8b91497dc2e4ef  s0-IBelongHere-groove-f602-m1.jpg
+8052f0a825b417b80fbd9aa73bfd68bd  s0-IBelongHere-intro-f602-m0.jpg
+ad77e44967fccbf180c0760370fbac89  s0-IBelongHere-intro-f602-m1.jpg
+b36d9aa7f372045ca1e026e27d4b109c  s0-Malicious-build1-f1221-m0.jpg
+03e1b75c1bd28176d1ffb05f5a6aa398  s0-Malicious-build1-f1221-m1.jpg
+a1e83a55a09066b4e8e30f51f552a146  s0-Malicious-drop1-f1521-m0.jpg
+05353f8b37789805a08a36e7dcad920e  s0-Malicious-drop1-f1521-m1.jpg
+8c97c2b46f9f2fd19741aa141129ae12  s0-Malicious-groove-f602-m0.jpg
+bc00ec8a55fae4ad1b50ba98cac2e3c8  s0-Malicious-groove-f602-m1.jpg
+4be8bdecce4df45a608a913bd093630d  s0-Malicious-intro-f602-m0.jpg
+e4148e91a0c408166a6a1e8cee745c6d  s0-Malicious-intro-f602-m1.jpg
+13d802a9473281b985484e0ab441b200  s0-RaindropsOnRoses-build1-f730-m0.jpg
+3df13c699e65dfc78499b48b48283a95  s0-RaindropsOnRoses-build1-f730-m1.jpg
+5f946bd61ada6152184f21a4facfc8f8  s0-RaindropsOnRoses-drop1-f1030-m0.jpg
+21581b7ffecde2fa83e79c778161d2d0  s0-RaindropsOnRoses-drop1-f1030-m1.jpg
+9ec70f36c51704c7baa1ebc1755d4935  s0-RaindropsOnRoses-groove-f602-m0.jpg
+a54dc73f84924149acc070797cb4e9e2  s0-RaindropsOnRoses-groove-f602-m1.jpg
+9996eaef1dcf7c73981229262d54c88f  s0-RaindropsOnRoses-intro-f602-m0.jpg
+a6155f7caf1a1abd813d3f1a587b15cd  s0-RaindropsOnRoses-intro-f602-m1.jpg
+091bc01e9f91bdcbd4377c220a415e14  s0-SeeYouDrop-build1-f1238-m0.jpg
+65cf92b2b07bf39d8d937dcd25d8d4bc  s0-SeeYouDrop-build1-f1238-m1.jpg
+1fe1e46f58f5383574f4e5b18ffa63b7  s0-SeeYouDrop-drop1-f1538-m0.jpg
+d206d3632aa162d9c34a9ebf2fabe36b  s0-SeeYouDrop-drop1-f1538-m1.jpg
+f03eee3042eb381d2d17c974701bb5df  s0-SeeYouDrop-groove-f602-m0.jpg
+668f35822d0561c7d614d64147e3294a  s0-SeeYouDrop-groove-f602-m1.jpg
+0e5ce422153fef13873305ca75aaa462  s0-SeeYouDrop-intro-f602-m0.jpg
+1c1d740d8a7f9b8284aca413eecffbb0  s0-SeeYouDrop-intro-f602-m1.jpg
+80a891f91ce6b6260b5e526a0d8c77ff  s0-Vienna-build1-f1222-m0.jpg
+151dfbcd42f27cb52a0c87ac57eec8f4  s0-Vienna-build1-f1222-m1.jpg
+3d94bb9d7dd09b9b7907319d02ff3d2a  s0-Vienna-drop1-f1522-m0.jpg
+fb44cae87e7fc129383abdbe7677d892  s0-Vienna-drop1-f1522-m1.jpg
+af034ceadfc3b1858c71d3c970429013  s0-Vienna-groove-f602-m0.jpg
+fdba14a801422308094d5a703ac10c8f  s0-Vienna-groove-f602-m1.jpg
+ab3846d8ab8992413506c3291897876b  s0-Vienna-intro-f602-m0.jpg
+d095224313365b751aa412d0d4ace2f4  s0-Vienna-intro-f602-m1.jpg
+2bb07ef0ff75faa3e8b312492596b998  s0-WhoLikesToParty-build1-f1232-m0.jpg
+07c8f4acdbb67a46cb9f54ad68a81113  s0-WhoLikesToParty-build1-f1232-m1.jpg
+b1516ed8971f07343d999f3256ce53b5  s0-WhoLikesToParty-drop1-f1532-m0.jpg
+22b043b4643de4404d3f518e84e5f014  s0-WhoLikesToParty-drop1-f1532-m1.jpg
+d63b16dec5976d02b6923e033710b8a6  s0-WhoLikesToParty-groove-f602-m0.jpg
+5bfe5ae434bc04e15013bdacf55d4bf4  s0-WhoLikesToParty-groove-f602-m1.jpg
+0db5b2881fd2c4f38565b1e8df1bb30e  s0-WhoLikesToParty-intro-f602-m0.jpg
+91be739006c9ab68ddf57b32c4c5cb13  s0-WhoLikesToParty-intro-f602-m1.jpg
+0854d3d5f827134952aa5d26b5ff5e86  s0-rec-chords-f1202-m0.jpg
+646df548346a3c615f9a245b036872fa  s0-rec-intro-f602-m0.jpg

@@ -11,6 +11,7 @@
 // Step 1 has no consumer: every md5 holds (the proof is in §104). Velocity unit: screen fractions per second, everywhere.
 import { G, ETEX, mkProg, use, tex, tri } from '../gl.js';
 import { tier } from '../quality.js';
+import { LOOK } from '../look.js';   // §132: the 'bands' grammar is the §108 pool, whose plan() takes LOOK.mood.hue as the colour anchor's fallback while the key is not trusted (the pool grammar dropped that read at §111)
 import { ema } from '../../math/util.js';
 import { K } from './inject.js';
 import { K as K2 } from './inject2.js';
@@ -125,7 +126,7 @@ export function initFluid(ctx) {
   for (const [k, src] of [['splat', SH.SPLAT], ['curl', SH.CURL], ['vort', SH.VORT], ['div', SH.DIV], ['scale', SH.SCALE], ['jacobi', SH.JACOBI], ['grad', SH.GRAD], ['advect', SH.ADVECT], ['dbg', SH.DBG]]) P[k] = mkProg(src, 'fluid-' + k);
   st = GRAMMARS.pool.mkState();
   st2 = GRAMMARS.bands.mkState();
-  st2.base = st;   // §116: the base state is one object — the key pin, the ranks, the clear, the shockwave run on under either grammar
+  st2.base = st;   // §116: the base state is one object — the key pin, the ranks, the clear, the shockwave run on under either grammar (§132: the frozen §108 grammar in the slot COMPOSES NOTHING — it keeps its whole state in st2 and never reads .base or .n; both keys are inert on it)
   ctx.onResize(() => alloc(tier())); // the canvas changed: the grids follow its aspect (the old picture copied in)
 }
 
@@ -158,8 +159,10 @@ export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   FLUID.grammar = grammar === 'bands' ? 'bands' : DEFAULT_GRAMMAR;
   FLUID.heave = FLUID.swirl = FLUID.grain = 0; FLUID.kick = FLUID.mids = FLUID.snare = FLUID.highs = FLUID.pen = FLUID.time = null;
   if (!resumed) {
-    // §116 the dispatch: the band grammar plans on st2 (its plan() runs the pool grammar's on st2.base === st first), the pool grammar on st
-    const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2) : GRAMMARS.pool.plan(S, dt, st);   // §111: the grammar colours the pool from the key (pinned at KEY_TRUST) and the harmony, never LOOK's mood
+    // §116 the dispatch: the 'bands' grammar plans on st2, the pool grammar on st. §132: 'bands' is the FROZEN §108 pool grammar, and
+    // its fourth argument is LOOK.mood.hue (the anchor's fallback below keyConf .3, as fluid.js passed it at feb1f67); the POOL call is
+    // byte-identical to §111's — the live pool grammar colours from the pinned key and the harmony and never reads LOOK's mood.
+    const R = FLUID.grammar === 'bands' ? GRAMMARS.bands.plan(S, dt, st2, LOOK.mood.hue) : GRAMMARS.pool.plan(S, dt, st);
     if (FLUID.grammar !== 'bands') st2.n = 0;   // §116 S1: the band grammar's OWN state goes cold while it does not own the pool (inject2's `n`): its envelopes and ink rate re-sync on the frame it takes the pool back — a re-entry is never a burst (the base state is shared and stays warm)
     for (const s of R.splats) q.push(s);
     breath = R.body;
