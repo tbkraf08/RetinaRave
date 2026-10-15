@@ -7,6 +7,7 @@
 //   node tools/vox-ab.js --lag=<ms>            # the lag search's half-window (default 500)
 //   node tools/vox-ab.js --stage=raw|held|eased|all   # §126: which stage of the live tier the lag column times (default all: a second
 //                                              table with the three lags per track, and the differences between them)
+//   node tools/vox-ab.js --ease=.03,.05,4,3    # §133: the stage's attack s, release s, vote window hops, votes needed — the ease sweep (default: vox.js's constants)
 //   node tools/vox-ab.js --stamp=end|centre    # §126: where a hop is stamped on the lane's grid — the END of its 2048-sample frame (what
 //                                              the display sees; the default) or the frame's CENTROID 21 ms earlier (the lane's own
 //                                              convention: the lag printed is then the net's commit + the hold + the ease, the frame's
@@ -36,6 +37,8 @@
 // differences, FLICKER (crossings of the .3 gate per minute, lane and live — a shorter ease is paid for in the open) and the
 // RUN-LENGTH histogram of the live tier's voiced runs (frames ≥ .3 in a row: ≤ 50 ms is a spike a hysteresis kills, ≥ 1 s a
 // passage). The lag is a cross-correlation argmax on a 10 ms grid: ±10 ms is the resolution, not a finding.
+// §133: the net outputs EVERY hop, so (a) and (b) are the same series and the `hold` column reads 0 — the hold's 20–30 ms is simply
+// gone from the budget; `semi %` now reads the pitch HEAD (refined by salience) against the lane instead of the YIN on the mix.
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -51,6 +54,8 @@ const LAG_MS = +flag('lag', 500);
 const LAG_R = +flag('lagr', 0.3);     // the least correlation at which a lag means anything
 const STAGE = flag('stage', 'all');   // raw | held | eased | all (§126)
 const STAMP = flag('stamp', 'end');   // end | centre (§126): where a hop sits on the lane's grid
+const EASE = flag('ease', '');        // §133: attack,release,voteOf,voteOn (s, s, hops, hops) — the stage's ease overridden for the sweep; '' = vox.js's constants
+const EASE_O = EASE ? (([a, r, of, on]) => ({ attack: +a, release: +r, voteOf: +of, voteOn: +on }))(EASE.split(',')) : {};
 const RUN_BINS = [50, 100, 250, 500, 1000];   // ms: the run-length histogram's upper edges (the last bin is "longer")
 const only = argv.filter((a) => !a.startsWith('--'));
 const tracks = only.length ? only : TRACKS;
@@ -77,7 +82,7 @@ function loadLane(track) {
 // The stage over the whole track: one row per 512-sample hop, stamped at the hop's last sample (ears/vox.js step()).
 // §126: beside `s` (the eased voxS) the HELD net output `p` and the RAW output on the hops an inference fired (NaN elsewhere).
 function live(mid, sr) {
-  const vox = new VoxTrack(sr), t = [], s = [], hz = [], held = [], raw = [];
+  const vox = new VoxTrack(sr, EASE_O), t = [], s = [], hz = [], held = [], raw = [];
   let fired = 0;
   for (let i = 0; i < mid.length; i++) if (vox.step(mid[i], (i + 1) / sr)) {
     t.push((i + 1) / sr); s.push(vox.s); hz.push(vox.hz); held.push(vox.p);

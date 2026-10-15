@@ -24,7 +24,7 @@ import path from 'path';
 import { Ears, EARS_FIELDS } from '../assets/engine/ears/ears.js';
 import { VoxTrack, VOX_GATE, VOX_N, PITCH_LO, PITCH_HI } from '../assets/engine/ears/vox.js';
 import { FFT } from '../assets/engine/ears/dsp.js';
-import { VoxNet, N_MEL, PITCH_BINS, MAC_PER_HOP } from '../assets/engine/ears/vox-net.js';
+import { VoxNet, N_MEL, PITCH_BINS, macPerHop } from '../assets/engine/ears/vox-net.js';
 import { VOX_W } from '../assets/engine/ears/vox-weights.js';
 import { voxLane, mapVoxAt, VOX_LANE_HOP } from '../assets/engine/map/map.js';   // §124: the file-mode lane's packing and its read
 
@@ -130,7 +130,7 @@ function onnxParity() {
   ok('(ii) the stream outputs on EVERY column from the first (no hold)', silent === 0 && cols === ref.n * T, cols + ' columns, ' + silent + ' without an output');
   ok('(ii) voice logit max |Δ| vs onnxruntime, every column', dVoice <= 1e-4, dVoice.toExponential(2), '<= 1e-4');
   ok('(ii) pitch head (61 logits) max |Δ| vs onnxruntime, every column', dPitch <= 1e-4, dPitch.toExponential(2), '<= 1e-4');
-  ok('(ii) the weights module', VOX_W.net === 'tcn' && VOX_W.nMel === N_MEL && VOX_W.pitchBins === PITCH_BINS && VOX_W.macPerHop === MAC_PER_HOP && VOX_W.f16.length > 20000, VOX_W.net + ', ' + VOX_W.nParams + ' params, ' + VOX_W.macPerHop + ' MAC/hop, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', 'tcn, 40 bands, 60 pitch bins');
+  ok('(ii) the weights module', VOX_W.net === 'tcn' && VOX_W.nMel === N_MEL && VOX_W.pitchBins === PITCH_BINS && VOX_W.macPerHop === macPerHop(VOX_W) && VOX_W.f16.length > 20000, VOX_W.net + ', ' + VOX_W.nParams + ' params, ' + VOX_W.macPerHop + ' MAC/hop, ' + (VOX_W.f16.length / 1024).toFixed(0) + ' KB base64', 'tcn, 40 bands, 60 pitch bins');
 }
 
 // The training table (§126 item 4): the report voxtrain.py wrote beside the weights it exported. The numbers are the net's own
@@ -308,7 +308,7 @@ function bench() {
   run(pcm.mid, pcm.sr, 20 * pcm.sr);                      // warm the JIT
   const R = run(pcm.mid, pcm.sr);
   ok('(v) the stage: median us per hop', R.usMed <= 100, R.usMed.toFixed(1) + ' us (p99 ' + R.usP99.toFixed(0) + ', mean ' + R.usMean.toFixed(1) + ')', '<= 100 us (HARNESS "Bench protocol": the stage <= .1 ms per hop)');
-  note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (§133: one per hop from the first FFT, ' + MAC_PER_HOP + ' MAC each)');
+  note('(v) hops / inferences', R.hops + ' / ' + R.vox.fired + ' (§133: one per hop from the first FFT, ' + macPerHop(VOX_W) + ' MAC each)');
   // §130: the parts — the two FFTs alone (mags vs magsLo on the same ring), the sample loop alone (the hop stubbed), the stage through mags()
   const med = (per) => { per.sort((x, y) => x - y); return per[per.length >> 1]; };
   const F = new FFT(VOX_N), o = new Float32Array(VOX_N >> 1), ring = new Float32Array(4096), kMax = R.vox.kMax;

@@ -6,22 +6,24 @@
 // in node, in the page and in the ears Worker, and costs the same.
 //
 // THE NET (§133, `--net=tcn` in voxtrain.py): a causal temporal convolution over the normalised 40-band log-mel column —
-//   layer 0   40 → 32, kernel 3 over the hops t−2, t−1, t                         (3 840 multiply-adds)
-//   blocks 1–5  32 → 32, kernel 3 at dilations 1 2 4 8 16 (the taps t−2d, t−d, t), ReLU, added to the block's input (residual)
+//   layer 0   40 → C, kernel 3 over the hops t−2, t−1, t                          (3 840 multiply-adds at C = 32)
+//   blocks     C → C, kernel 3 at dilations 1 2 4 8 (16) (the taps t−2d, t−d, t), ReLU, added to the block's input (residual)
 //                                                                                   (5 × 3 072)
-//   the heads on the last block's column h_t (32 wide, shared): the VOICE logit (32 → 1, sigmoid) and the PITCH (32 → 61, softmax:
+//   the heads on the last block's column h_t (C wide, shared): the VOICE logit (C → 1, sigmoid) and the PITCH (C → 61, softmax:
 //   60 semitone bins C3..B7 and a 61st "none")                                     (32 + 1 952)
-// ≈ 21 k multiply-adds per hop, 21 438 parameters, a receptive field of 65 hops (693 ms at 48 kHz / 512). Everything is CAUSAL and
+// ≈ 21 k multiply-adds per hop at C = 32 (21 438 parameters; 43 k at the shipped C = 48 — the width is read from the module), a receptive field of 65 hops (693 ms at 48 kHz / 512). Everything is CAUSAL and
 // the pre-history is ZERO: the batch model (voxtrain.py) left-pads every layer's input with zeros in time, and this stream keeps a
 // 64-slot ring per layer that starts at zero and is never read further back than 32 hops — so the column at hop t here is EXACTLY
 // the batch model's column t on the window that ends at t (tools/test_vox.js (ii) proves it against onnxruntime to 1e-4, every
 // column, both heads). The §123–§126 net was a 40 × 34 window with one inference per four hops; this one has no hold at all.
 import { VOX_W } from './vox-weights.js';
 
-export const N_MEL = 40, C = 32, DIL = [1, 2, 4, 8, 16], RB = 64, RM = RB - 1;
+export const N_MEL = 40, RB = 64, RM = RB - 1;
 export const PITCH_BINS = 60, PITCH_NONE = PITCH_BINS, PITCH_C3 = 130.8127826502993;   // the head's classes: bins 0..59 = C3..B7, 60 = none
-export const RF = 1 + 2 + 2 * DIL.reduce((a, d) => a + d, 0);                            // 65: the receptive field (hops)
-export const MAC_PER_HOP = N_MEL * C * 3 + DIL.length * C * C * 3 + C + C * (PITCH_BINS + 1);
+export const hiddenOf = (W = VOX_W) => W.hidden || W.shapes['inp.weight'][0];           // the hidden width C (32 in run 1, 48 from run 3 — voxtrain.py --tcn-c)
+export const dilOf = (W = VOX_W) => W.dil || [1, 2, 4, 8, 16];                           // the blocks' dilations (voxtrain.py --tcn-dil); the deepest tap is 2·max ≤ 32 < RB
+export const rfOf = (W = VOX_W) => 3 + 2 * dilOf(W).reduce((a, d) => a + d, 0);         // the receptive field (hops): 65 at 1 2 4 8 16, 33 at 1 2 4 8
+export const macPerHop = (W = VOX_W) => { const C = hiddenOf(W), nb = dilOf(W).length; return N_MEL * C * 3 + nb * C * C * 3 + C + C * (PITCH_BINS + 1); };
 
 // Float16 (little-endian, base64) → Float32Array. A hand-rolled decode: Float16Array is not everywhere yet, and this runs once.
 export function decodeF16(b64) {
@@ -49,10 +51,11 @@ export function weightsOf(W = VOX_W) {
   let w = CACHE.get(W);
   if (w) return w;
   if (W.net !== 'tcn') throw new Error('vox-net: the weights module is a ' + W.net + ' net; this stream runs the §133 TCN');
-  const all = decodeF16(W.f16);
+  const all = decodeF16(W.f16), C = hiddenOf(W), DIL = dilOf(W);
+  if (2 * Math.max(...DIL) >= RB) throw new Error('vox-net: a dilation of ' + Math.max(...DIL) + ' reads past the ' + RB + '-slot ring');
   let o = 0;
   const take = (n) => { const v = all.subarray(o, o + n); o += n; return v; };
-  w = { w0: relay(take(C * N_MEL * 3), C, N_MEL), b0: take(C), blocks: [] };
+  w = { C, DIL, w0: relay(take(C * N_MEL * 3), C, N_MEL), b0: take(C), blocks: [] };
   for (let k = 0; k < DIL.length; k++) w.blocks.push({ w: relay(take(C * C * 3), C, C), b: take(C) });
   w.wv = take(C); w.bv = take(1);                     // voice (1, 32, 1)
   w.wp = take((PITCH_BINS + 1) * C); w.bp = take(PITCH_BINS + 1);   // pitch (61, 32, 1)
@@ -64,6 +67,7 @@ export function weightsOf(W = VOX_W) {
 export class VoxNet {
   constructor(W = VOX_W) {
     this.W = weightsOf(W);
+    const C = this.C = this.W.C, DIL = this.DIL = this.W.DIL;
     this.h = 0;                                       // the next input column's hop index
     this.inp = new Float32Array(4 * N_MEL);           // the 4 newest input columns, by hop & 3 (the layer-0 taps read t−2 .. t)
     this.L = []; for (let k = 0; k <= DIL.length; k++) this.L.push(new Float32Array(RB * C));   // layer k's output columns, by hop & 63
@@ -74,7 +78,7 @@ export class VoxNet {
   }
   // One hop: the normalised 40-band column. Returns the voice probability (0..1) — on EVERY hop from the first.
   push(col) {
-    const t = this.h++, W = this.W, s0 = (t & RM) * C;
+    const t = this.h++, W = this.W, C = this.C, DIL = this.DIL, s0 = (t & RM) * C;
     this.inp.set(col, (t & 3) * N_MEL);
     // layer 0: 40 → 32 over the columns t−2, t−1, t (a column before the first hop is zero: the ring starts at zero and is only written at t)
     {
@@ -119,7 +123,7 @@ export class VoxNet {
   }
   // The pitch head's logits at the newest hop, for the parity test (the softmax above overwrote `pitch`; recomputed from the ring).
   logits(out = new Float32Array(PITCH_BINS + 1)) {
-    const s0 = ((this.h - 1) & RM) * C, h = this.hid, wp = this.W.wp, bp = this.W.bp;
+    const C = this.C, s0 = ((this.h - 1) & RM) * C, h = this.hid, wp = this.W.wp, bp = this.W.bp;
     for (let c = 0; c <= PITCH_BINS; c++) { let s = bp[c]; const wo = c * C; for (let i = 0; i < C; i++) s += wp[wo + i] * h[s0 + i]; out[c] = s; }
     return out;
   }

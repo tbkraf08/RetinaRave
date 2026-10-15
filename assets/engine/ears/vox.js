@@ -78,8 +78,11 @@ export class VoxTrack {
     this.x = new Float32Array(N_MEL);            // … and its normalised column (the net's input)
     this.m = new Float64Array(N_MEL); this.v = new Float64Array(N_MEL); this.n = 0;
     this.A = 1 - Math.exp(-(VOX_HOP / sr) / NORM_TAU);
-    this.easeA = 1 - Math.exp(-(VOX_HOP / sr) / VOX_ATTACK);   // per hop, toward a rising output under the vote
-    this.easeR = 1 - Math.exp(-(VOX_HOP / sr) / VOX_RELEASE);  // per hop, otherwise
+    // §133: the ease and the vote are overridable per instance for the ruler's sweep (tools/vox-ab.js --ease=attack,release,of,on); the engine never passes them
+    this.attack = o.attack || VOX_ATTACK; this.release = o.release || VOX_RELEASE;
+    this.voteOf = o.voteOf || VOX_VOTE_OF; this.voteOn = o.voteOn || VOX_VOTE_ON;
+    this.easeA = 1 - Math.exp(-(VOX_HOP / sr) / this.attack);   // per hop, toward a rising output under the vote
+    this.easeR = 1 - Math.exp(-(VOX_HOP / sr) / this.release);  // per hop, otherwise
     this.ease = this.easeR;                      // the old name (the release)
     this.net = new VoxNet(o.weights);
     this.p = 0;                                  // the net's latest output (§133: a new one every hop)
@@ -123,9 +126,9 @@ export class VoxTrack {
     this.p = p; this.fired++;
     // the vote (§126, per hop since §133): the last VOX_VOTE_OF hops at the gate, VOX_VOTE_ON of them on = voice. One hop above the gate
     // alone neither opens the fast attack nor publishes a pitch; one below alone does not close them — the hysteresis a .03 s attack needs.
-    this.votes = ((this.votes << 1) | (p >= VOX_GATE ? 1 : 0)) & ((1 << VOX_VOTE_OF) - 1);
+    this.votes = ((this.votes << 1) | (p >= VOX_GATE ? 1 : 0)) & ((1 << this.voteOf) - 1);
     let c = 0; for (let v = this.votes; v; v >>= 1) c += v & 1;
-    this.vote = c; this.on = c >= VOX_VOTE_ON;
+    this.vote = c; this.on = c >= this.voteOn;
     // the pitch: the head's bin, the salience's Hz inside it (every hop, gate or not — `rhz` is the read, `hz` the published one)
     this.bin = net.bin; this.per = 1 - net.pNone;
     this.rhz = net.bin < PITCH_NONE ? this.salience(net.bin) : -1;
