@@ -2,23 +2,30 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
-// FLUID2 (id 1, key 2; DECISIONS §120 the reset, §121 the RIG) — FLUID's pool and FLUID's show pass under the RIG grammar: the card's
-// `fluid: { grammar: 'bands' }` slot (CONTRACTS §1.4) makes the step plan through core/fluid/inject2.js while this scene owns the pool
-// (SC.next if a fade runs, else SC.cur — loop.js). The grammar is the user's emitter array (docs/plans/FLUID2-EMITTERS.md): a fixed,
-// symmetric, INVISIBLE rig of 23 mouths in three sizes — five washes along the floor, three spots per wall, seven beams across the top,
-// a centre and a quad inside — the music's hits re-placed onto it by CHASES (ping-pong, inside → out, odds / evens by the bar, the
-// outer mouths held back until the tension or the build opens them), every splat in the hue of ITS NOTE on the circle of fifths, a LEAD
-// channel (the strongest note above the bass, centre stage, its HEIGHT its pitch), no shockwave (the clear stays; every mouth pulses
-// once on it — the blinder). Nothing here is drawn for the rig: this file is FLUID's scene file with two differences — forced-only
-// (`&scene=1`, key 2, the arrows, the panel's force; score() 0, no landing tile) and the grammar slot.
+// FLUID2 (id 1, key 2; DECISIONS §132, after §120's recipe) — FLUID AS IT WAS ON 2026-10-09 15:51 EDT, frozen. The user watched a take
+// of that local build (the sidecar's page version 0.34.0, a live tab capture, scene id 12 "fluid", 225 s) and asked for FLUID2 to BE it:
+// *"the version I liked was before ring was added"*. So this scene file, its help and its show pass are `git show feb1f67:assets/scenes/fluid/*`
+// — §104's substrate + §106's scene + §107's drop clear + §108's harmonic floor and chord shears, BEFORE §111's eight tuning items and
+// BEFORE §113's shockwave — with only the CARD's identity carried over from today's FLUID2: the name, id 1 (key 2), forced-only (`score()`
+// 0, no landing tile) and the grammar slot. FLUID (id 0) is untouched and keeps moving; this one does not.
 //
-// What FLUID's header says holds here: this scene READS the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js, a copy
-// of FLUID's); it adds one injection of its own through ctx.fluid.splat, gated on being on screen: a sparkle on the surface while the
-// hats are up. Its own reads are exactly `feats` (five: the loudness ladder for the exposure, the hats and presence — no bid fields).
-// `kick.x` (the monitor's one declared cut) is the clear's envelope, raised on the frame the grammar's clear fires. A scene must not
-// import core/fluid (check.js): everything through ctx.fluid. Under &fluid=0 / key W / no float render targets the dye is the 1×1 black
-// placeholder: draw() paints the empty pool's idle and hud() says why. Nothing here reads a wall clock or Math.random.
-import { clamp, ema, frac } from '../../math/util.js';
+// WHAT IS WHOSE. The music → pool grammar is the CORE's — and FLUID2's slot (`fluid: { grammar: 'bands' }`, CONTRACTS §1.4) points it at
+// core/fluid/inject2.js, which since §132 is the FROZEN §108 pool grammar (its reads in FLUID_FEATS, shown in the help view's part B): the
+// sub is where the ink enters, the kick lifts it, the snare shears it, the hats are droplets, the key is its colour, the beat kneads it,
+// the filter makes it syrup, the mid band is a floor of ink and a chord attack a smaller shear, the live drop clears it. This scene READS
+// the dye (ctx.engineTex.dye, linear) and draws it in one pass (shaders.js); it adds two injections of its own through ctx.fluid.splat,
+// gated on being on screen (the pool is one under every scene): a ring of six droplets outward on the drop and a sparkle on the surface
+// while the hats are up. Its own reads are exactly `feats`: the loudness ladder for the exposure (math/loudlight.js, as NAV2), the drop,
+// the hats and presence. THE DROP IS CHLADNI's SLAM RULE — the map's bar line in file mode, the live detector or the extractor's drop
+// otherwise (mapDropEvt || dropLiveEvt || (mapOn <= .5 && dropEvt)): the plan's dropLiveEvt alone never fires on SeeYouDrop's drop 1 in
+// file mode (the §106 strip: dropEvt f578, mapDropEvt f579, dropLiveEvt never). A scene must not import core/fluid (check.js): everything
+// through ctx.fluid. The plan's `ctx.fluid.params.curl += 10` is NOT done: the step runs BEFORE update() and rewrites params from the
+// grammar, so a scene's write there is overwritten before any step reads it (reported, §106).
+//
+// Under &fluid=0 / key W / no float render targets the dye is the 1×1 black placeholder: draw() paints the empty pool's
+// idle (faint rings on musical time) and hud() says why. Nothing here reads a wall clock or Math.random: the sparkle's x
+// walks the golden ratio on the scene's own count.
+import { clamp, ema, frac, TAU } from '../../math/util.js';
 import { baseLight } from '../../math/loudlight.js';
 import { SHOW_FS } from './shaders.js';
 import { HELP } from './help.js';
@@ -30,8 +37,12 @@ const SPEC = 0.6;          // the highlight's gain
 const RELIEF = 24;         // the gradient's gain: ink differs by hundredths over two dye texels, the normal needs ×24 to tilt
 const PORT0 = 0.88;        // the porthole feather, inner radius on the frame's superellipse …
 const PORT1 = 1.04;        // … and outer: the corners and the walls are outside the picture
-const RING_TC = 0.5;       // the drop's envelope for the hud / monitor (the monitor's declared cut): raised on the grammar's confirmed clear —
-                           //   §113: the shockwave's frame; the §106 six-droplet ring that fired here is gone (the substrate's ring replaces it)
+const RING_N = 6;          // the live drop: six droplets on a ring round the centre, thrown outward
+const RING_R = 0.22;       // the ring's radius in screen heights
+const RING_V = 1.6;        // their speed, uv/s (the grammar's drop impulse is 2.5 from the floor; this is the sideways clear)
+const RING_DYE = 0.04;     // the ink they carry (a little white: the ring is a PUSH, the §106 strip showed 0.12 filling the pool with grey)
+const RING_RAD = 3;        // their radius, × the grammar's splat radius
+const RING_TC = 0.5;       // the ring's envelope for the hud / monitor (the monitor's declared cut)
 const HAT_ON = 0.3;        // the sparkle: while hat2 is above this (the grammar's own gate) …
 const HAT_GAP = 0.05;      // … one droplet every 50 ms, never two in a frame
 const HAT_Y = 0.93;        // at the surface
@@ -40,8 +51,8 @@ const HAT_DYE = 0.2;       // its ink at hat2 1 (white-ish: a sparkle, not the k
 const HAT_RAD = 0.4;       // its radius × the grammar's
 const GOLD = 0.6180339887; // the sparkle's x walks the golden ratio across 0.15..0.85 on the scene's own count
 
-const CLEAR_DD = 12;       // §111: the grammar's DROP_DISS — the frame dyeDiss first reads this is the confirmed drop (inject.js's clear)
-const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0, clearing: 0 };
+const U = { expo: 1, vis: 0, ring: 0, hatT: 0, nHat: 0, on: 0, relief: RELIEF, nSplat: 0 };
+let ASP = 16 / 9;
 
 // read-only hooks (CONTRACTS §1.4: a hook that reports must not mutate)
 function flinfo() {
@@ -56,22 +67,25 @@ function fldbg() { // the step's numbers, through ctx.fluid (the plan's hook)
 const SELF = {
   name: 'fluid2',
   id: 1,   // §118 the lean-down (2026-10-11): was 13 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 2)
-  tag: 'FLUID\'s pool under the RIG — an invisible, symmetric array of 23 mouths the music\'s hits are chased across, every splat in its note\'s hue, the lead\'s height its pitch, no shockwave (§121)',
-  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js (the rig) plans the pool while this scene owns it
-  feats: ['loudRel', 'loudRange', 'loudAbs', 'hat2', 'presence'], // FLUID's five own reads; no bid fields (forced-only)
+  tag: 'FLUID as it was before the ring (§108) — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the mid band is a floor, the key colours it, six droplets clear it on the drop',
+  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js — the FROZEN §108 pool grammar (§132) plans the pool while this scene owns it
+  feats: ['loudRel', 'loudRange', 'loudAbs', 'dropLiveEvt', 'mapDropEvt', 'mapOn', 'dropEvt', 'hat2', 'presence'],
   cuts: 'continuous',
   rt: {},
   hooks: { flinfo, fldbg },
   // the continuity monitor's shape (tools/monitor.js reads CARD.NAV || CARD.home; a run points CARD.NAV here): cPath is the
   // scene's own continuous state — the exposure and the on-screen weight; pathCut 3 = measure every frame (CHLADNI's note);
-  // kick.x is the drop's envelope (§113: the shockwave's frame), the one declared cut (it rises on the drop frame)
+  // kick.x is the drop ring's envelope, the one declared cut (it rises on the drop frame)
   state: { mode: 'pool', cPath: [1, 0], pathCut: 3, kick: { x: 0 }, baby: null },
 
-  // forced-only (§116, §120): not on the roster — `&scene=1`, key 2, the arrows, the panel's force. A bid is the user's word.
-  score() { return 0; },
+  // forced-only (§116, §120, §132): not on the roster — `&scene=1`, key 2, the arrows, the panel's force. A bid is the user's word.
+  score() {
+    return 0;
+  },
 
   init(ctx) {
     this.ctx = ctx;
+    ctx.onResize((w, h) => { ASP = w / Math.max(1, h); });
     this.pr = ctx.mkProg(ctx.oklch + SHOW_FS, 'fluid2-show');
   },
 
@@ -88,9 +102,15 @@ const SELF = {
     U.nSplat = 0;
     if (U.vis > 0 && U.on) {                       // the pool is one under every scene: only an on-screen FLUID stirs it
       const g = MS.presence, rad = F.params.radius;
-      const clearing = F.params.dyeDiss >= CLEAR_DD ? 1 : 0, drop = clearing && !U.clearing;   // §111: the grammar's confirmed clear, on its first frame
-      U.clearing = clearing;
-      if (drop) U.ring = 1;                        // §113: the grammar's shockwave fires on this frame (its own ring, in the substrate); the envelope for the monitor
+      const drop = MS.mapDropEvt || MS.dropLiveEvt || (MS.mapOn <= 0.5 && MS.dropEvt); // the slam rule (CHLADNI's): where the drop IS
+      if (drop) {                                  // the ring: six droplets thrown outward — the picture empties from the middle
+        U.ring = 1;
+        for (let i = 0; i < RING_N; i++) {
+          const a = TAU * (i + 0.5) / RING_N, cx = Math.cos(a), sy = Math.sin(a);
+          F.splat(0.5 + RING_R * cx / ASP, 0.5 + RING_R * sy, RING_V * g * cx / ASP, RING_V * g * sy, [RING_DYE * g, RING_DYE * g, RING_DYE * g], rad * RING_RAD);
+          U.nSplat++;
+        }
+      }
       if (MS.hat2 > HAT_ON && U.hatT <= 0) {       // the sparkle: one droplet onto the surface, at most every HAT_GAP
         U.hatT = HAT_GAP;
         U.nHat++;
@@ -98,7 +118,7 @@ const SELF = {
         F.splat(0.15 + 0.7 * frac(U.nHat * GOLD), HAT_Y, 0, HAT_V * g, [k, k, k * 1.1], rad * HAT_RAD);
         U.nSplat++;
       }
-    } else U.clearing = F && F.on && F.params.dyeDiss >= CLEAR_DD ? 1 : 0;   // off screen: track it, never splat
+    }
     this.rt.label = 'pool expo ' + U.expo.toFixed(2);
     const st = this.state;
     st.cPath[0] = U.expo;

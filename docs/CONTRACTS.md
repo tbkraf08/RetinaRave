@@ -148,14 +148,18 @@ ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/f
                               sub shut two bars the HARMONIC BRANCH: every hit at the harmony's place, applause / noise injects
                               nothing (§111) — pads, chords and vocals had no channel before §108, a piano no "where" before
                               §111) is the core's (core/fluid/inject.js, its reads in `FLUID_FEATS`, shown in the help view's
-                              part B); a scene adds on top. FLUID2's slot (core/fluid/inject2.js) is the RIG grammar since §121 (2026-10-11): the
-                              base's plan re-placed by kind onto an invisible symmetric rig of 23 mouths (five floor washes, three
-                              spots per wall, seven top beams, a centre and a quad) by chases, every splat in its note's hue, a LEAD
-                              channel whose height is its pitch, no shockwave, the blinder on the clear (docs/plans/FLUID2-EMITTERS.md);
-                              the §116 band grammar it replaced is at v0.37 (pulled at §120: "it moves too quickly"). A grammar change is tuned and proven on every library track —
+                              part B); a scene adds on top. FLUID2's slot (core/fluid/inject2.js) is the FROZEN §108 POOL GRAMMAR since
+                              §132 (2026-10-14): `git show feb1f67:assets/core/fluid/inject.js` to the byte — the pool as the user saw it
+                              in the take of 2026-10-09 15:51 EDT, before §111's tuning and before §113's ring. It COMPOSES NOTHING (no
+                              `base` in its state), so its FLUID_FEATS is its own 36 reads and NOT a superset of inject.js's — check.js
+                              gates the "⊇ the pool's reads" rule on that key. fluid.js passes LOOK.mood.hue as its fourth argument on
+                              this call alone (the anchor's fallback below keyConf .3; §111 took that read out of the live pool grammar).
+                              The RIG grammar that held the slot from §121 is at v0.40 (`git show v0.40:assets/core/fluid/inject2.js`:
+                              23 invisible mouths, chases, note hues, a LEAD channel, the blinder); the §116 band grammar before it is at
+                              v0.37 (pulled at §120: "it moves too quickly"). A grammar change is tuned and proven on every library track —
                               `tools/fluid-tracks.js`'s per-track table first, the survey's windows re-shot after (HARNESS
-                              "## Fluid", the per-track tuning recipe; DECISIONS §111) — FLUID2's K2 the one standing exception:
-                              tuned on RaindropsOnRoses alone on the user's word (§116 S1–S7), the eight-track sweep owed before any tag.
+                              "## Fluid", the per-track tuning recipe; DECISIONS §111) — the slot's frozen grammar the one standing
+                              exception: it is not tuned at all, and a change to it is a change to which build it is frozen at.
 ctx.Q                         adaptive quality (§1.6) · ctx.tier() → 0..3 (q<.25, <.5, <.8, else) for particle budgets
 ctx.budget(kind)              the count for the current tier from the core's tables (§1.4): 'points' → particles of a
                               gl_VertexID cloud, 'segs' → segments of a ctx.lines path-A buffer. Read it every draw.
@@ -252,17 +256,20 @@ needed, now generic:
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
   the substrate's step is a slot the OWNER scene declares, never a special case in `core/`. The table is `core/fluid/grammar.js`:
   `'pool'` (`core/fluid/inject.js` — the default: FLUID and every scene without the slot) and `'bands'` (`core/fluid/inject2.js` —
-  FLUID2, id 1 since §118: the RIG grammar since §121). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
+  FLUID2, id 1 since §118: the frozen §108 pool grammar since §132; the name is a slot key, not a description). **The owner rule** (`loop.js`): the incoming scene while a crossfade runs
   (`SC.next`), else the current (`SC.cur`) — the pool is in its grammar from the fade's first frame, so it is already there when the scene
   is fully visible; a forced scene (`&scene=13`, the `n` key) is `SC.cur` the moment `goScene` lands it. Deterministic: a function of
   `SC` alone. **One pool, one base state:** every grammar exports inject.js's interface (`plan, mkState, K, FLUID_FEATS`); a composing
   grammar (inject2) runs inject.js's `plan()` on the SHARED base state (`st2.base === st` in fluid.js) and edits the result by kind
   (`k` on every splat), so the §111 machinery (the key pin, the ranks, the hat bucket, the ink rate, the confirmed clear, the §113
-  shockwave) runs on warm across a switch in both directions and the dye is carried, never reset — the switch is not a cut. A grammar's
+  shockwave) runs on warm across a switch in both directions and the dye is carried, never reset — the switch is not a cut. A
+  STANDALONE grammar (the slot's own since §132) keeps its WHOLE state in `st2` and never reads `.base`: `fluid.js` still sets
+  `st2.base = st` and `st2.n = 0`, and both are inert on it. A grammar's
   own state starts cold on its first frame and must be a transient or ease from its neutral value. A card naming a grammar not in the
   table FAILS `check.js` (the loop would fall back to `'pool'`). `CARD.fluid.grammar` reports the name that planned the last step,
-  FLUID2 is FLUID to the pixel while
-  `'bands'` is the identity (§116 S0's proof: s13's 58 real-md5 lines = s12's hash for hash; §120 reset it to that). **A grammar's optional
+  and the fake scene-md5 reads the pair the owner's grammar makes (§132: s1 `aa626832` / `8372bc28` against FLUID's unmoved
+  `3e483039` / `2274bb4e`; it was the identity under §120, when `'bands'` was inject.js's plan() itself — §116 S0's proof: s13's 58
+  real-md5 lines = s12's hash for hash). **A grammar's optional
   return fields beyond inject.js's** — `fluid.js` reads each when present, each absent = the §104 pass to the bit: `heave` (uv/s², what it added
   to `body`), `swirl` (the `uSwirl` uniform on the velocity advect: a solid-body rotation's angular acceleration, 1/s²; 0 is the byte-identical
   path — a uniform branch, never a mix), `grain` (uv/s²: the velocity advect's `uNoise`, a Wang-hashed per-cell push, seeded by the step count),

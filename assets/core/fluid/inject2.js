@@ -2,192 +2,153 @@
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
 // Solver after Pavel Dobryakov, WebGL-Fluid-Simulation (MIT, 2017) — https://github.com/PavelDoGreat/WebGL-Fluid-Simulation
-// The RIG grammar (FLUID2, id 1; DECISIONS §121, docs/plans/FLUID2-EMITTERS.md — the user, 2026-10-11: an array of different-sized
-// entry points lining the sides and top and inside, symmetric and tasteful, as a lighting designer would hang a rig; "remove the
-// shockwave; add channel for vocals; pitch seems more like a vertical move rather than horizontal slide; rig should be invisible;
-// color should be based on the coloring key (ie musical note) of circle of fifths"). The second MS → force grammar of the one pool,
-// chosen by the scene that owns it (the card's `fluid: { grammar: 'bands' }`; core/fluid/grammar.js the table, fluid.js dispatches,
-// loop.js names the owner). PURE, the same module interface as inject.js (`plan, mkState, K, FLUID_FEATS`): tools/fluid-tracks.js and
-// tools/fluid-replay.js replay it through `INJECT=assets/core/fluid/inject2.js`.
-//
-// HOW IT COMPOSES. plan(S, dt, st) runs inject.js's plan() on `st.base` — the SAME state object fluid.js hands the pool grammar (fluid.js:
-// `st2.base = st`), so the §111 machinery (the key pin, the lanes' ranks, the hat bucket, the ink rate and its governor, the confirmed
-// clear, the harmonic branch, the noise guard) runs on warm across a scene switch in both directions; this file never writes st.base.
-// Then it RE-PLACES the base's splats onto the rig by kind, keeping each one's force and its ink in the budget's units (area-weighted: a small mouth is denser): the WHERE is the rig's, the HOW HARD is the
-// base's. What a lighting designer does — a fixed symmetric PLOT in three sizes, SYSTEMS per function, CHASES across them that change on
-// the phrase, the outer fixtures held for the drop:
-//   FLOOR  five washes along the bottom (x .5 ± {0, .2, .4}, sizes 2 / 1.5 / 1 — the big ones central): the sub's ink and lift from the
-//          centre (and the inner pair in a build: the density ramp); the kick's impulse from a mouth the CHASE picks — even phrases
-//          ping-pong over the inner pair (L R C R L C), odd phrases inside → out (centre, the inner pair, the outer pair,
-//          the inner pair …); the outer pair opens only when the tension or the build says so (held back for the drop).
-//   SIDES  three spots per wall (x .08 / .92, y .3 / .5 / .7): the snare fires the mirror PAIR, inward (FLUID's gesture kept), at the
-//          height the phrase's quarter picks (middle, upper, lower, middle); the chord the pair at the centroid's height.
-//   TOP    seven beams across the ceiling (x .5 ± {0, .14, .28, .42}, y .92, size ½): the hats' droplets on a chase — the odd beams on even
-//          bars, the even beams on odd bars, each run outside → in — never a hashed x.
-//   INSIDE the centre (the mids' floor cloud, dye only, as FLUID) and a quad (x .5 ± .2, y .5 ± .18) whose pairs join as the tension
-//          rises (the lower pair first) — the ink shared, never added.
-//   LEAD   the vocal / melody channel, centre stage (§123): the VOICE — the ears' vocal track (`voxS` the presence, `voxHz` the sung pitch,
-//          `voxConf`; engine/ears/vox.js, a CNN live in every mode, step 3's Demucs lane in file mode) takes LEAD_SHARE × voxS of the floor's
-//          ink (nobody singing = the floor keeps its ink) and puts it at a HEIGHT by its pitch — the scale degree above the tonic, y LEAD_Y0
-//          (the tonic) to LEAD_Y1 (the leading tone), plus a smaller octave term — in the sung note's hue; while the track has no read at all
-//          (voxConf 0: the fake timeline) the §121 stand-in stays — the strongest note above the bass, `interval` over the bass note:
-//          pitch is vertical here, never a horizontal slide; the mark eases between notes (LEAD_TAU) with a small push along its move.
-//   DROP   the §113 shockwave is GONE (ring null, no 'drop' impulse); the clear (dyeDiss DROP_DISS for a beat, §107 / §111) stays, and on
-//          the clear's frame every mouth fires one pulse — the BLINDER, the all-on cue — floor up, sides in, top down, the inside's ink.
-// COLOUR: every splat in the hue of ITS NOTE on the circle of fifths (keycolour.js's wheel: pitch class pc at ((7·pc) mod 12) / 12 turns,
-// pulled toward warm / cool by the mode as the key's own hue is) — the sub and the kick in the bass note's hue, the lead in its note's,
-// everything without a note (the floor, the sides, the hats, the blinder) in the KEY's (the base's colour); NOTE_COL 0 = the base's
-// colour on all. The rig is INVISIBLE: nothing here is drawn, the show pass is FLUID's. Positions in uv (0..1, y up), sizes × RADIUS.
-import { plan as planBase, mkState as mkStateBase, FLUID_FEATS as FEATS_BASE, K as KB } from './inject.js';
-import { clamp, ema, hsv } from '../../math/util.js';
-import { WARM, COOL, PULL, wrap } from '../../math/keycolour.js';
+// §132 (2026-10-14) — THIS FILE IS THE §108 POOL GRAMMAR, FROZEN, AS FLUID2's (id 1, key 2; the card's `fluid: { grammar: 'bands' }`
+// slot, CONTRACTS §1.4). It is `git show feb1f67:assets/core/fluid/inject.js` to the byte below this note: the pool grammar as it stood
+// at §104 + §106 + §107 + §108, BEFORE §111's eight tuning items and BEFORE §113's shockwave — the build of 2026-10-09 15:51 EDT the user
+// watched and asked FLUID2 to BE ("the version I liked was before ring was added"). Nothing is tuned here and nothing should be: a change
+// to the live pool grammar belongs in inject.js, which FLUID (id 0) keeps. The RIG grammar that held this slot from §121 to v0.40 is at
+// `git show v0.40:assets/core/fluid/inject2.js` (its tests at `git show v0.40:tools/test_fluid.js`, its strips in HARNESS "## Fluid");
+// the §116 band grammar before it is at v0.37. It does NOT compose the pool grammar (no `base` in mkState()), so its FLUID_FEATS is its
+// own 37 reads and not a superset of today's inject.js (check.js's `lost` rule is gated on composition since §132).
+// The fourth argument is LOOK.mood.hue, read only while keyConf < .3 — fluid.js passes it on the 'bands' call alone (§111 took that read
+// out of the pool grammar). The math modules this imports (util, keycolour, oklab) have not moved since feb1f67, so the replay IS the take.
+// The injection grammar: MS → the forces, the dye and the solver's parameters for one step (FLUID-PLAN Step 1, the table).
+// PURE: no GL, no DOM, imports only math/*; node-importable (tools/test_fluid.js, tools/check.js). fluid.js applies what
+// plan() returns. Every MS field read here is in FLUID_FEATS — main.js checks the list against ENGINE.FEATS like a scene's
+// feats and check.js fails on a read outside it (the substrate feeds every scene, so the rule is stricter than a scene's warn).
+// The mappings are CONTRACTS §1.18's kind: levels at heard time, events placed on their frame, *Amp for size, never *Vel,
+// never pred*, never dropEvt (the drop is dropLiveEvt || mapDropEvt — §107). One musical element → one channel: the sub is
+// WHERE the ink enters, the kick LIFTS it, the snare SHEARS it, the hats are droplets from the surface, the key is its COLOUR,
+// the beat kneads the pool, the filter makes it syrup — and since §108 the HARMONIC content has its own two: the mid band's
+// level is a FLOOR of ink (dye only, no velocity) at the key's sector, and a chord attack the snare lane does not call a snare
+// (the v1 `snare` level rising with no `snareEvt`) is a smaller SHEAR with its own refractory. Before §108 a pad / chord /
+// vocal piece (FLUID-DIAG-2026-10-09: sub 0 %, bass 20 %, low-mid 75 %) had no channel at all — 0 splats on 17 of 22 seconds.
+// Units: positions in uv (0..1, y up), velocities in uv/s — a splat ADDS its dx/dy to the field once (an impulse); the
+// persistent emitters (the sub, the hats while hat2 is up) add per frame scaled by 60·dt so a 30 fps machine injects the
+// same per second. Seeded, never random: the hats' x is hash(beatCount·7 + i, seed.a).
+import { clamp, frac, sstep, hsv, mix } from '../../math/util.js';
+import { mkAnchor, sectorPc } from '../../math/keycolour.js';
 import { srgbToLin1 } from '../../math/oklab.js';
 
-export const FLUID_FEATS = [...FEATS_BASE, 'interval', 'phrase16Pos', 'bar', 'voxS', 'voxHz', 'voxConf'];   // the lead's note (§123: the voice first, `interval` the fallback), the sides' quarter, the chases' bar parity
+export const FLUID_FEATS = ['subNote', 'subGate', 'subGlide', 'subHz', 'bassReg', 'kickEvt', 'kickAmp', 'kickAge', 'snareEvt', 'snareAmp',
+  'hat2', 'denH', 'beatCount', 'seed', 'beatPhase', 'key', 'mode', 'keyConf', 'tonicConf', 'modeShade', 'valence', 'harmAngle',
+  'tension', 'lpSweep', 'buildLive', 'tongueAmbig', 'tongueOn', 'dropLiveEvt', 'mapDropEvt', 'hush', 'calm', 'loudRel', 'presence', 'bpm',
+  'mid', 'snare'];
 
-// The rig grammar's constants (K2), one table. The base's K (inject.js) is inherited through planBase().
+// The grammar's constants, one table (DECISIONS §104 says where each came from). Velocities in uv/s, dye in linear units.
 export const K = {
-  FLOOR_DX: 0.2,    // the floor's mouths at x .5 ± {0, DX, 2·DX}; sizes below (centre, inner pair, outer pair)
-  FLOOR_S: [2, 1.5, 1],
-  FLOOR_Y: 0.06,
-  SIDE_X: 0.08,     // the side spots' inset from the wall (never AT it: a push at a closed wall is lost)
-  SIDE_Y: [0.5, 0.7, 0.3],   // the heights the phrase's quarters pick: middle, upper, lower, (middle again)
-  SIDE_S: 1,
-  TOP_N: 7,         // the beams across the ceiling, x .5 ± TOP_DX·(i − 3)
-  TOP_DX: 0.14,
-  TOP_Y: 0.92,
-  TOP_S: 0.5,
-  QUAD_DX: 0.2,     // the inside quad, x .5 ± DX, y .5 ± DY, size as the floor cloud's (2)
-  QUAD_DY: 0.18,
-  QUAD_T: [0.35, 0.65],   // tension at which the lower pair, then the upper pair, join the centre
-  SPREAD_B: 0.5,    // buildLive above which the sub's ink spreads from the centre to the inner pair too (the density ramp)
-  OUTER_T: 0.6,     // tension (or buildLive) above which the outer floor pair joins the kick's chase — held back for the drop below it
-  LEAD_SHARE: 0.5,  // the share of the floor's ink the lead mark takes while a lead note is there (§123: × voxS while the vocal track has a read)
-  VOX_ON: 0.1,      // §123: voxS under which no lead splat is placed at all (its share would be under .05 of the floor's — a splat is a GPU pass, not free)
-  LEAD_OCT: 0.3,    // §123: the octave term's weight in the lead's height — clamp(log2(voxHz / 110) / 4, 0, 1): a soprano line sits higher than a baritone's; the scale degree is the rest
-  LEAD_Y0: 0.3,     // the lead's height at the tonic …
-  LEAD_Y1: 0.85,    // … and at the leading tone (11 semitones up); pitch is vertical
-  LEAD_TAU: 0.35,   // s: the mark's ease between notes — a glide, not a hop (`interval` changes up to twice a second on every track: 12 degree bins per track, the eight-track table)
-  LEAD_V: 0.08,     // uv/s per uv of move: the push along the mark's travel (a melodic leap is a stroke, not a jump)
-  LEAD_S: 1.5,
-  BLIND_V: 0.6,     // the blinder on the clear's frame: every mouth one pulse — floor up, sides in, top down at this speed …
-  BLIND_DYE: 0.3,   // … and this ink each (× gain)
-  NOTE_COL: 1,      // 1: a splat with a note (the sub, the kick, the lead) in that note's hue; 0: the base's colour on everything
-  SAT: 0.85,        // the note hues' saturation (× (.4 + .6·tonicConf), the base's shape)
+  RADIUS: 0.0025,  // the splat's exp(−|p|²/r), aspect-corrected in the shader (the reference's default)
+  SUB_V: 0.08,     // the sub emitter: +dy per frame (×60·dt) while subGate is open
+  SUB_X: 0.02,     // its lean with the glide, per 12 st/s
+  SUB_DYE: 0.015,  // its ink per frame (×60·dt): ≈ 0.9 at the mouth at dyeDiss 1
+  KICK_V: 0.9,     // the kick: dy = KICK_V·sqrt(kickAmp), one impulse from the floor, radius ×2; 40 % on the two frames after
+  KICK_DYE: 0.5,
+  SNARE_V: 0.6,    // the snare: ±SNARE_V·snareAmp sideways at mid height
+  SNARE_DYE: 0.25,
+  HAT_V: -0.15,    // the hats: droplets falling from y 0.9, radius ×0.5, up to 3 of them while hat2 > 0.3
+  HAT_DYE: 0.3,
+  BODY: 0.35,      // the beat's breath: fy = −BODY·cos⁴(π·beatPhase), shaped cos(π(2x−1)) in the shader (a uniform force is a gradient)
+  DROP_V: 2.5,     // the drop: one impulse up from the sub's x, radius ×4, and the pool clears (dyeDiss DROP_DISS) for one beat
+  DROP_DYE: 1.0,
+  DROP_DISS: 12,   // §107: 12 keeps 1 % of the ink 0.4 s after the drop ((1/(1+.2))²⁴); 6 kept 10 % and the pool read as full
+  FLOOR_DYE: 0.004, // §108 the harmonic floor: ink per frame (×60·dt) × mid × gain at the key's sector — a quarter of the sub's,
+                   //   ≈ 0.24 at the mouth at dyeDiss 1; NO velocity, so no roster trail moves (the feedback pass reads vel only)
+  FLOOR_LO: 0.15,  //   the knee on `mid` (pow(band/peak, .7)·presence): below LO nothing, full above HI — silence and a residue
+  FLOOR_HI: 0.40,  //   read as nothing, a sustained pad (mid .84–.99 on the take) as a slowly fed cloud
+  CHORD_V: 0.18,   // §108 a chord attack: ±CHORD_V·Δsnare sideways at mid height — SNARE_V × 0.3, a third of the lane's shear
+  CHORD_DYE: 0.08, //   its ink (SNARE_DYE × 0.3), × Δsnare
+  CHORD_RISE: 0.05, //  the v1 `snare` level must rise by more than this in one frame (the take's chord attacks: Δ .08–.88)
+  CHORD_REF: 0.15, //   s of refractory after a chord shear OR a snareEvt — a sustained chord is one attack, a snare is not doubled
 };
 
-// { base: inject.js's state (SHARED with the pool grammar — fluid.js sets it; null = make one on the first plan), …this grammar's own:
-//   n frames owned (fluid.js zeroes it while another grammar owns the pool: the own state re-syncs on re-entry), the kick chase's count
-//   and its last placement (the kick's two tail frames reuse it), the hat chase's count, the lead's eased height and its note }
-export const mkState = () => ({ base: null, n: 0, kickN: 0, kickAt: null, hatI: 0, leadY: -1, leadPc: -1 });
+export const mkState = () => ({ clearLeft: 0, anchor: mkAnchor(), xSub: 0.5, snarePrev: 0, chordLeft: 0 });
 
-const floorX = (i) => 0.5 + [0, -1, 1, -2, 2][i] * K.FLOOR_DX;   // mouth 0 the centre, 1 / 2 the inner pair, 3 / 4 the outer pair
-const floorS = (i) => K.FLOOR_S[[0, 1, 1, 2, 2][i]];
-const topX = (i) => 0.5 + K.TOP_DX * (i - 3);
-const ODD = [0, 6, 2, 4], EVEN = [1, 5, 3];   // the top chase's runs, outside → in
-const hueOf = (pc, minor) => { const h = ((7 * pc) % 12) / 12; return h + PULL * wrap((minor ? COOL : WARM) - h); };
+const hash = (i, a) => frac(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453);
 
-// plan(S, dt, st) → inject.js's shape (splats, body, params, gain, colour, floor, chord, ink, drop, harmonic, noise, ring: null) plus
-// `rig` { kick: [mouths], hats: [beams], side: q, quad: n, lead: { on, pc, deg, y }, blind } for the rulers.
-export function plan(S, dt, st) {
-  if (!st.base) st.base = mkStateBase();
-  const R = planBase(S, dt, st.base);
-  const B = st.base, g = R.gain, f = 60 * dt;
-  st.n++;
-  // the key and the mode as the base colours by them (its pin, else the harmony's nearest fifth), the note hues' saturation
-  const jf = ((Math.round(Math.atan2(B.hy, B.hx) / (2 * Math.PI) * 12) % 12) + 12) % 12;
-  const tonic = B.pin ? B.pin.k : (7 * jf) % 12, minor = B.pin ? B.pin.m : (S.mode ? 1 : 0);
-  const sat = clamp(K.SAT * (0.4 + 0.6 * (S.tonicConf || 0)), 0, 1);
-  const lum0 = R.colour[0] + R.colour[1] + R.colour[2];
-  const noteCol = (pc) => {   // the note's hue at the BASE colour's luminance sum: the ink in the budget's units is the base's whatever the hue (the eight-track table read .82–.88 of it unnormalised)
-    if (!K.NOTE_COL || pc < 0) return R.colour;
-    const c = hsv(hueOf(pc, minor) - Math.floor(hueOf(pc, minor)), sat, 1).map(srgbToLin1), l = c[0] + c[1] + c[2];
-    return l > 0 ? c.map((v) => v * lum0 / l) : R.colour;
+// plan(S, dt, st, moodHue) → { splats: [{x, y, dx, dy, r, g, b, rad}], body, params: {curl, velDiss, dyeDiss, pressure, radius},
+// gain, colour: [r, g, b] (linear), floor, chord }. The splats come in the grammar's order: sub, kick, snare ×2, chord ×2, hats,
+// floor, drop (tools/fluid-replay.js classifies them by it). `st` is mkState()'s (the anchor's ease, the drop's countdown, the last
+// emitter x, the last frame's `snare` level and the chord refractory);
+// `moodHue` is LOOK.mood.hue — the hue the anchor slides to while the key is not trusted (the same fallback every key-anchored scene has).
+export function plan(S, dt, st, moodHue = 0.6) {
+  const f = 60 * dt; // per-frame emitters as a rate
+  const g = S.presence * (0.3 + 0.7 * S.loudRel) * (1 - 0.8 * S.hush) * (1 - 0.5 * S.calm); // quiet is quiet
+  // the dye colour: the shared key hue (keycolour.js) — warm / cool by the mode and the bar's shade, saturation by how sure the tonic is
+  const A = st.anchor.anchor(dt, S.key | 0, S.mode | 0, S.keyConf || 0, isFinite(S.valence) ? S.valence : 0.5, S.harmAngle || 0, moodHue, null, S.modeShade || 0);
+  const col = hsv(frac(A.hue), clamp(A.sat * (0.4 + 0.6 * S.tonicConf), 0, 1), 1).map(srgbToLin1);
+  const splats = [];
+  const add = (x, y, dx, dy, dye, rad) => splats.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: K.RADIUS * rad });
+  // the sub emitter: x on the circle of fifths (the sector of the bass note, half a sector in from the wall), y by the register
+  if (S.subGate > 0) {
+    const sec = S.subNote >= 0 ? sectorPc(S.subNote) + 0.5 : 12 * frac(S.harmAngle / (2 * Math.PI));
+    st.xSub = sec / 12;
+    const y = 0.12 + 0.25 * S.bassReg;
+    const wide = 1 + 0.5 * (1 - clamp((S.subHz - 30) / 90, 0, 1)); // a lower sub is a wider mouth
+    add(st.xSub, y, K.SUB_X * clamp(S.subGlide / 12, -1, 1) * g * f, K.SUB_V * g * f, K.SUB_DYE * g * f, wide);
+  }
+  // the kick: an impulse up from the floor under the sub, sized by the hit; the two frames after keep 40 %
+  const kAge = S.kickAge < 99 ? Math.max(0, S.kickAge) : 99;
+  if (S.kickEvt || kAge < 2 / 60) {
+    const w = S.kickEvt ? 1 : 0.4;
+    add(st.xSub, 0.06, 0, K.KICK_V * Math.sqrt(Math.max(0, S.kickAmp)) * g * w, K.KICK_DYE * g * w, 2);
+  }
+  // the snare: a lateral shear at mid height
+  if (S.snareEvt) {
+    add(0.3, 0.5, K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
+    add(0.7, 0.5, -K.SNARE_V * S.snareAmp * g, 0, K.SNARE_DYE * g, 1);
+  }
+  // §108 a chord attack: the v1 `snare` level (the extractor's mid-band flux peak, 0.13 s decay) rising by more than CHORD_RISE in
+  // one frame with no snareEvt on it — the pad's 2.5–2.9 dB attacks the 3.75 dB lane rightly does not call a snare — gives the same
+  // two shears at a third of the force, sized by the rise; one refractory for both so a chord is one attack and a snare is never
+  // doubled by its own rise on the frame after. The lane's hit keeps its full size above.
+  const dS = S.snare - st.snarePrev;
+  st.snarePrev = S.snare;
+  st.chordLeft = Math.max(0, st.chordLeft - dt);
+  let chord = 0;
+  if (S.snareEvt) st.chordLeft = K.CHORD_REF;
+  else if (dS > K.CHORD_RISE && st.chordLeft <= 0 && g > 0) {
+    st.chordLeft = K.CHORD_REF;
+    chord = dS;
+    add(0.3, 0.5, K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
+    add(0.7, 0.5, -K.CHORD_V * dS * g, 0, K.CHORD_DYE * dS * g, 1);
+  }
+  // the hats: up to three droplets from the surface, seeded by the beat
+  if (S.hat2 > 0.3) {
+    const n = Math.min(3, Math.round(S.denH));
+    for (let i = 0; i < n; i++) add(hash(S.beatCount * 7 + i, S.seed.a), 0.9, 0, K.HAT_V * g * f, K.HAT_DYE * g * f, 0.5);
+  }
+  // §108 the harmonic floor: the mid band's level as continuous ink — pads, chords, vocals, the 95 % of a track the drum channels
+  // never see — entering at the KEY's sector on the circle of fifths (the sub emitter's x rule on the tonic instead of the bass
+  // note) at mid height, radius ×2, in the key's hue. Dye only, dx = dy = 0: the pool shows the music's level and colour from the
+  // first second of sound and the hits' shears land in ink that is already there, while no roster trail moves (feedback.js reads
+  // the velocity). The knee on `mid` keeps silence and a residue at nothing; the §107 clear still empties it (DROP_DISS 12 beats
+  // 0.004 per frame).
+  const floorLvl = sstep(K.FLOOR_LO, K.FLOOR_HI, S.mid) * S.mid;
+  let floor = 0;
+  if (floorLvl > 0 && g > 0) {
+    floor = K.FLOOR_DYE * floorLvl * g * f;
+    add((sectorPc(S.key | 0) + 0.5) / 12, 0.5, 0, 0, floor, 2);
+  }
+  // the drop: the pool clears in one beat (the countdown runs on dt, not on a clock field). The trigger is the live detector
+  // OR the map's bar line (§107): in file mode with the map built the live detector never fires on SeeYouDrop's drop 1 and
+  // `mapDropEvt` does (frame-exact); live mode has no map, so the detector is the whole truth there. NEVER `dropEvt` — it
+  // fires inside Vienna's dream (CONTRACTS §1.18) and a missed live drop is the detector's gap to close, not the grammar's.
+  if (S.dropLiveEvt || S.mapDropEvt) {
+    add(st.xSub, 0.06, 0, K.DROP_V * g, K.DROP_DYE * g, 4);
+    st.clearLeft = 60 / Math.max(60, S.bpm);
+  } else st.clearLeft = Math.max(0, st.clearLeft - dt);
+  // the beat's breath on the whole pool
+  const c = Math.cos(Math.PI * S.beatPhase), c2 = c * c;
+  const body = -K.BODY * c2 * c2 * g;
+  // the solver's parameters
+  const voidT = Math.max(S.buildLive, S.tongueOn === 1 ? S.tongueAmbig : 0); // ink accumulates through the void
+  const params = {
+    curl: 10 + 40 * S.tension,
+    velDiss: 0.2 + 2.8 * sstep(0.80, 0.97, S.lpSweep) + 2 * S.hush,
+    dyeDiss: st.clearLeft > 0 ? K.DROP_DISS : mix(1.0, 0.05, clamp(voidT, 0, 1)),
+    pressure: 0.8,
+    radius: K.RADIUS,
   };
-  const out = [];
-  const put = (x, y, dx, dy, dye, col, rad, k) => out.push({ x, y, dx, dy, r: col[0] * dye, g: col[1] * dye, b: col[2] * dye, rad: KB.RADIUS * rad, k });
-  const dyeOf = (s) => (s.r + s.g + s.b) / Math.max(1e-9, R.colour[0] + R.colour[1] + R.colour[2]);   // the base's dye scalar back out of its colour
-  const by = {}; for (const s of R.splats) (by[s.k] || (by[s.k] = [])).push(s);
-  const bassPc = S.subNote >= 0 ? S.subNote | 0 : tonic;
-  const bassCol = noteCol(S.subGate > 0 ? bassPc : -1);
-  const rig = { kick: [], hats: [], side: -1, quad: 0, lead: { on: 0, pc: -1, deg: -1, y: -1 }, blind: 0 };
-  // FLOOR — the sub: the centre wash, the inner pair joining in a build (the ink and the lift shared)
-  if (by.sub) for (const s of by.sub) {
-    const mouths = S.buildLive > K.SPREAD_B ? [0, 1, 2] : [0], r0 = s.rad / KB.RADIUS;
-    for (const m of mouths) { const r = floorS(m) / 2 * r0; put(floorX(m), s.y, s.dx, s.dy / mouths.length, dyeOf(s) / mouths.length * (r0 / r) ** 2, bassCol, r, 'sub'); }   // the base's mouth width rides the wash's size; the ink in the budget's units (area-weighted) is the base's
-  }
-  // FLOOR — the kick: the chase (one mouth, or a pair at the same momentum split); the two tail frames reuse the hit's placement
-  if (by.kick) {
-    const outer = S.tension > K.OUTER_T || S.buildLive > K.OUTER_T;
-    if (S.kickEvt) {
-      const odd = ((S.bar | 0) >> 2) & 1, i = st.kickN++;
-      if (!odd) st.kickAt = [[1], [2], [0], [2], [1], [0]][i % 6];                           // ping-pong over the inner pair, L R C R L C — equal by construction
-      else { const ring = [0, 1, 2, 1][i % 4]; st.kickAt = ring === 0 ? [0] : ring === 1 ? [1, 2] : outer ? [3, 4] : [0]; }   // inside → out, the outer pair only when open
-    }
-    const at = st.kickAt || [0];
-    for (const s of by.kick) for (const m of at) put(floorX(m), K.FLOOR_Y, 0, s.dy / Math.sqrt(at.length), dyeOf(s) / at.length * (s.rad / KB.RADIUS / floorS(m)) ** 2, bassCol, floorS(m), 'kick');   // a smaller mouth, a denser ink: the area-weighted ink is the base's
-    rig.kick = at.slice();
-  }
-  // SIDES — the snare's mirror pair at the phrase quarter's height, the chord's at the centroid's; always inward, the base's force and ink
-  const q = Math.floor(clamp((S.phrase16Pos || 0) / 4, 0, 3.999)), ySn = K.SIDE_Y[[0, 1, 2, 0][q]];
-  const yCh = K.SIDE_Y[S.centroid < 0.33 ? 2 : S.centroid < 0.66 ? 0 : 1];
-  for (const kind of ['snare', 'chord']) if (by[kind]) {
-    const s = by[kind][0], v = Math.abs(s.dx) + Math.abs(s.dy), dye = dyeOf(s) * (by[kind].length > 1 ? 1 : 0.5), y = kind === 'snare' ? ySn : yCh;
-    put(K.SIDE_X, y, v, 0, dye, R.colour, K.SIDE_S, kind); put(1 - K.SIDE_X, y, -v, 0, dye, R.colour, K.SIDE_S, kind);
-    if (kind === 'snare') rig.side = q;
-  }
-  // TOP — the hats' droplets on the beam chase: the odd beams on even bars, the even on odd, each run outside → in
-  if (by.hat) for (const s of by.hat) {
-    const run = ((S.bar | 0) & 1) ? EVEN : ODD, beam = run[st.hatI++ % run.length];
-    put(topX(beam), K.TOP_Y, 0, s.dy, dyeOf(s), R.colour, K.TOP_S, 'hat'); rig.hats.push(beam);
-  }
-  // INSIDE — the floor cloud at the centre, the quad's pairs joining with the tension; the LEAD takes its share and rises with its pitch
-  if (by.floor) {
-    const s = by.floor[0]; let dye = dyeOf(s);
-    // §123 — the LEAD reads the vocal track when it has a read (voxConf > 0: the CNN live in every mode today, step 3's Demucs lane in
-    // file mode): its ink share is LEAD_SHARE × voxS (an instrumental passage keeps the floor whole — not a darker pool), its height the
-    // sung pitch's scale degree above the tonic plus a smaller octave term, its hue the sung note's; a voiced frame with no pitch read
-    // (a consonant, the YIN gate shut) HOLDS the last height and hue. voxConf 0 = no read at all (the fake timeline, a trace recorded
-    // before §123): the §121 stand-in, `interval` over the bass note, exactly as before. The HUD's vox line says which (§124: `lane` / `live` / `interval`).
-    const live = S.voxConf > 0;
-    let on = 0, pc = -1, deg = -1, yT = -1, share = 0, hz = -1;
-    if (live) {
-      const vs = clamp(S.voxS || 0, 0, 1);
-      if (vs >= K.VOX_ON && dye > 0) {
-        on = 1; share = dye * K.LEAD_SHARE * vs;
-        if (S.voxHz > 0) {
-          hz = S.voxHz;
-          const p = 12 * Math.log2(hz / 440) + 69, oct = clamp(Math.log2(hz / 110) / 4, 0, 1);
-          pc = ((Math.round(p) % 12) + 12) % 12; deg = ((pc - tonic) % 12 + 12) % 12;
-          yT = K.LEAD_Y0 + (K.LEAD_Y1 - K.LEAD_Y0) * ((1 - K.LEAD_OCT) * deg / 11 + K.LEAD_OCT * oct);
-        } else { pc = st.leadPc; yT = st.leadY >= 0 ? st.leadY : 0.5 * (K.LEAD_Y0 + K.LEAD_Y1); deg = pc >= 0 ? ((pc - tonic) % 12 + 12) % 12 : -1; }
-      }
-    } else {
-      const lead = S.subGate > 0 || R.harmonic ? ((S.interval | 0) % 12 + 12) % 12 : 0;   // the strongest note above the bass (0 = none other)
-      if (lead > 0 && dye > 0) { on = 1; share = dye * K.LEAD_SHARE; pc = (bassPc + lead) % 12; deg = ((pc - tonic) % 12 + 12) % 12; yT = K.LEAD_Y0 + (K.LEAD_Y1 - K.LEAD_Y0) * deg / 11; }
-    }
-    if (on) {
-      const y0 = st.leadY < 0 ? yT : st.leadY, y = ema(y0, yT, dt, K.LEAD_TAU), move = y - y0;
-      st.leadY = y; st.leadPc = pc;
-      dye -= share;
-      put(0.5, y, 0, K.LEAD_V * 60 * move, share * (2 / K.LEAD_S) ** 2, noteCol(pc), K.LEAD_S, 'lead');   // the same ink in the budget's units
-      rig.lead = { on: 1, pc, deg, y: +y.toFixed(4), src: live ? 'live' : 'interval', hz: live ? +hz.toFixed(1) : -1, share: +(K.LEAD_SHARE * (live ? clamp(S.voxS || 0, 0, 1) : 1)).toFixed(3) };
-    } else { st.leadY = -1; st.leadPc = -1; }
-    const pairs = (S.tension > K.QUAD_T[0] ? 1 : 0) + (S.tension > K.QUAD_T[1] ? 1 : 0), n = 1 + 2 * pairs;
-    put(0.5, 0.5, 0, 0, dye / n, R.colour, 2, 'floor');
-    if (pairs >= 1) for (const sx of [-1, 1]) put(0.5 + sx * K.QUAD_DX, 0.5 - K.QUAD_DY, 0, 0, dye / n, R.colour, 2, 'floor');
-    if (pairs >= 2) for (const sx of [-1, 1]) put(0.5 + sx * K.QUAD_DX, 0.5 + K.QUAD_DY, 0, 0, dye / n, R.colour, 2, 'floor');
-    rig.quad = 2 * pairs;
-  }
-  // DROP — no shockwave, no drop impulse; the BLINDER on the clear's frame: every mouth one pulse
-  if (R.drop) {
-    const v = K.BLIND_V * g, dye = K.BLIND_DYE * g;
-    for (let m = 0; m < 5; m++) put(floorX(m), K.FLOOR_Y, 0, v, dye, R.colour, floorS(m), 'blind');
-    for (const y of K.SIDE_Y) { put(K.SIDE_X, y, v, 0, dye, R.colour, K.SIDE_S, 'blind'); put(1 - K.SIDE_X, y, -v, 0, dye, R.colour, K.SIDE_S, 'blind'); }
-    for (let i = 0; i < K.TOP_N; i++) put(topX(i), K.TOP_Y, 0, -v, dye, R.colour, K.TOP_S, 'blind');
-    put(0.5, 0.5, 0, 0, dye, R.colour, 2, 'blind');
-    for (const sx of [-1, 1]) for (const sy of [-1, 1]) put(0.5 + sx * K.QUAD_DX, 0.5 + sy * K.QUAD_DY, 0, 0, dye, R.colour, 2, 'blind');
-    rig.blind = 1;
-  }
-  return { ...R, splats: out, ring: null, rig };
+  return { splats, body, params, gain: g, colour: col, floor, chord }; // floor = this frame's floor ink, chord = the rise that sheared (0: none) — for the replay ruler
+
 }

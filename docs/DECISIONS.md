@@ -4210,3 +4210,98 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   last of the lag, the pitch head, and the recall the narrowed SNR cost — Jamendo-test F1 .795 is still the plan's miss) ·
   §131's own "what is left" (the PCM clock into the same Worker, which closes the one-block tick and takes another ~0.1 ms off
   this thread) · **scenes B (NAV2, MANDALA) only if the user asks.**
+
+## §132 FLUID2 reset to the §108 pool — the take of 2026-10-09 15:51 EDT, before the ring (2026-10-14, one Opus worker in a worktree off main ac46def; the user: *"the version I liked was before ring was added"* / *"do option 1"*)
+
+- **What the user watched.** A screen recording of the LOCAL build of **2026-10-09, 15:51 EDT (19:51 UTC)** — its sidecar says page
+  version **0.34.0** (the tree had not bumped yet: v0.35 was cut at 18:16 EDT the same day), source **tab capture, i.e. LIVE mode**,
+  **scene id 12 "fluid"**, **225 s**. The tree at that minute was `9658d8f` (§109's last commit, 15:48 EDT) — and
+  `git diff feb1f67 9658d8f -- assets/core/fluid/ assets/scenes/fluid/ assets/math/` is **EMPTY**, so **`feb1f67` IS the take's FLUID
+  to the byte**: §104's substrate + §106's scene + §107's drop clear + §108's harmonic floor and chord shears.
+- **Why `feb1f67` and not v0.35.** Both are pre-ring (§113's shockwave ships in v0.36), but v0.35 (`eaa745b`, 18:16 EDT) carries
+  **§111's eight tuning items**, every one of them committed between 16:16 and 17:34 that afternoon — **after** the recording. The
+  density governor, the pinned key, the syrup rule, the bounded void, the confirmed clear, the tonic-relative axis, the floor on the
+  track's own range and the harmonic branch are all absent from what the user saw; and **§111 was never A/B'd by eye** (it was tuned
+  against `fluid-tracks.js`'s per-track table and the survey's strips). Taking v0.35 would have handed back a reading the user has never
+  judged. So the slot gets §108, exactly.
+- **The recipe is §120's, a second time.** FLUID2's card keeps its slot — `fluid: { grammar: 'bands' }` (CONTRACTS §1.4) — and
+  `core/fluid/inject2.js` is **overwritten**; the name `'bands'` is now only a slot key, not a description. **What is retrievable where:**
+  the §121 RIG grammar (the 23 invisible mouths, the chases, the note hues, the lead's height, the blinder) is at
+  **`git show v0.40:assets/core/fluid/inject2.js`**, its test block at `git show v0.40:tools/test_fluid.js`, its strips in
+  HARNESS "## Fluid"; the §116 band grammar before it is at `git show v0.37:assets/core/fluid/inject2.js`. **FLUID (id 0) was not
+  touched** — not `inject.js`, not `grammar.js`, not `core/fluid/shaders.js`, not its scene folder, not the ears or the engine.
+- **The grammar** (`core/fluid/inject2.js`): `git show feb1f67:assets/core/fluid/inject.js` to the byte under a ten-line §132 note.
+  36 declared reads, 21 constants, `mkState()` = `{clearLeft, anchor, xSub, snarePrev, chordLeft}`. It **composes nothing** — there is no
+  `base` in its state, so it is not inject.js's plan() re-placed, it IS inject.js's plan() as it was. `assets/math/{util,keycolour,oklab}.js`
+  and `assets/engine/feats.js` have **not moved since feb1f67** (`git diff` empty on all four), so the replay is the take and not an
+  approximation of it.
+- **The mood hue, the one line of plumbing.** The §108 `plan(S, dt, st, moodHue = 0.6)` takes a fourth argument — `LOOK.mood.hue`, the
+  colour anchor's fallback while `keyConf < .3`; §111 removed that read from the pool grammar and `fluid.js` stopped passing it. So
+  `core/fluid/fluid.js` re-imports `LOOK` (as it did at feb1f67) and passes it **on the `'bands'` call alone**:
+  `GRAMMARS.bands.plan(S, dt, st2, LOOK.mood.hue) : GRAMMARS.pool.plan(S, dt, st)` — the pool call is byte-identical to §111's, and
+  `look.js` imports only `math/util.js`, so no cycle. `st2.base = st` and `st2.n = 0` stay (minimal diff): both keys are **inert** on a
+  state the §108 grammar never reads, and the line says so now.
+- **The six droplets are back, on purpose.** FLUID's §106 scene threw a ring of **six droplets** outward from the centre on the confirmed
+  drop (`RING_N` 6, `RING_R` .22, `RING_V` 1.6, `RING_DYE` .04, radius ×3) on the **slam rule** —
+  `mapDropEvt || dropLiveEvt || (mapOn <= .5 && dropEvt)`. §113 (`e49c7f3`) deleted them: measured against the new velocity shockwave the
+  centre grey moved 41.6 → 41.5, so they bought nothing *next to the ring*. With the ring gone they are the only thing the drop does to
+  the picture, and they are in **every pre-§113 build** — therefore in the take. They stay, with the nine feats that feed them.
+- **The scene** (`assets/scenes/fluid2/{index,help}.js`): `git show feb1f67:assets/scenes/fluid/*` with **only the card's identity**
+  carried over from today's FLUID2 — `name: 'fluid2'`, `id: 1` (key 2, the §118 renumber), `score() { return 0; }` and **no `card`**
+  (forced-only, no landing tile), the `fluid: { grammar: 'bands' }` slot, and the show program renamed `'fluid2-show'` so the two scenes
+  do not share a program key. Everything else is feb1f67's: the constants, the nine feats
+  (`loudRel loudRange loudAbs dropLiveEvt mapDropEvt mapOn dropEvt hat2 presence`), the slam rule, `update` / `draw` / `hud`, the two
+  params, `post: { fb: { decay: .35, advect: 1 }, bloom: { thr: .5 }, kaleido: 0, morph: { flow: .4 } }`.
+  `assets/scenes/fluid2/shaders.js` already equalled feb1f67's FLUID shader but for two header lines and was left alone.
+- **`check.js`, one rule relaxed and one tightened — the same question.** The fluid block FAILED a non-default grammar whose
+  `FLUID_FEATS` lacks any of the pool's, because until today every non-default grammar **composed** the pool and therefore ran its reads.
+  The §108 copy does not: its list is its own 36 reads and lacks today's `bass`, `centroid`, `dirty` (§111 item 8's noise guard). The rule
+  is now gated on composition — **`'base' in GRAMMARS[g].mkState()`** (the RIG's state had `base: null`, the §108 state has no such key) —
+  rather than padded with fields the file never touches. **The judgment call:** the `unread` *warn* two lines above exempts the pool's
+  reads for a non-default grammar for exactly the same reason, so it is gated on the same test; that is a tightening, not a relaxation,
+  and it produces **0 new warns**. Nothing else in `check.js` moved.
+- **The tests** (`tools/test_fluid.js`, the `bands` block): the RIG's 24 behaviour assertions are replaced by an **identity** proof, since
+  identity is the whole claim. (a) the interface, `FLUID_FEATS ⊂ FEATS` with no `pred*` / `*Vel` / `dropEvt`, no `base` in `mkState()`,
+  the table / the slot / `grammarOf` / forced-only with the nine reads named. (b) **BYTE-IDENTITY against the reference read out of git at
+  test time** — `git show feb1f67:assets/core/fluid/inject.js` written to a temp module whose three `../../math/` specifiers are made
+  absolute (so both modules import the same math), then `K`, `FLUID_FEATS`, `mkState()`, and **every output frame and the end state** over
+  600 synthetic frames and over SeeYouDrop's 6 601 real frames, at **moodHue .6 and .2** (the frames at `keyConf` .1 exercise the fallback
+  the fourth argument feeds). Where git cannot reach `feb1f67` it prints a **note**, never a FAIL. (c) determinism — two fresh states on
+  the real trace, identical JSON — and the Proxy MS that throws on a read outside the declared list. `test_fluid` **331 ok, 0 fail**
+  (350 under the RIG).
+- **The eight-track replay** (`tools/accept/v0.40/fluid-tracks-s132.txt`): `INJECT=<the feb1f67 temp module>` vs
+  `INJECT=assets/core/fluid/inject2.js`, `node tools/fluid-tracks.js` over all eight library tracks in both map modes plus the pad take —
+  **`diff` of the two JSON row files is empty, and so is the diff of the two markdown tables**. `fluid-tracks.js` needed **no fix**: its
+  RIG / band reads are already guarded (`rows[0].P.kick !== undefined`, `rows[0].P.heave !== undefined`, `st.base || st`), and under the
+  §108 grammar they simply report `—`. The table is the §108 reading on the record: SeeYouDrop map 1 injects on 100 % of its music
+  seconds, **2 clears at 57.6 / 105.6 s (both true), 0 shockwaves**, hit x pinned at **.30 / .70** (the survey's "three fixed points" that
+  §111 item 8 spread), the governor column `—` because `INK_BUDGET` does not exist yet.
+- **The gates.** `node tools/check.js` — **154 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 4 warn**
+  (the four are §129's unchanged line caps). `npm test` **exit 0** — `test_fluid` 331 ok / 0 fail, `test_music` 151 ok / 0 fail,
+  `test_vox` / `test_earsw` / `test_voxscene` / every other suite OK. The **fake scene-md5** (`IDS="0 1" GPU=1 PORT=8871
+  tools/scene-md5.sh s132`, errs `[]` hop 840 row 72 on both): **s0 = `3e483039` / `2274bb4e`, the reference's to the hash**
+  (`tools/accept/v0.38/scene-md5-s127.txt`, itself v0.35's s0 pair — **FLUID did not move**), and **s1 is new at `aa626832` /
+  `8372bc28`**, which is what a different grammar under the same show pass must read (it was `293d773c` / `96ad310a` under the RIG).
+  And the **real-music proof, which is the one that counts** (`SCENES="0" GPU=1 PORT=8871 tools/real-md5.sh s132`, the HARNESS default
+  scope for one scene — every library track + the pad take, intro / groove / build1 / drop1 / boundary1 / chords, both map modes):
+  **43 runs, 66 lines, f0 2 · errs [] · bad [] · sc 0 on every run, 780 s wall — 0 of 66 MOVED** against
+  `tools/accept/v0.39/real-md5-s131.txt`'s s0 lines. s2–s5 were not shot: nothing outside `core/fluid/{fluid,inject2}.js` and
+  `scenes/fluid2/` moved, and the pool's velocity reaches no roster scene at `fb.advect` 0 (§109). The records are
+  `tools/accept/v0.40/scene-md5-s132.txt`, `real-md5-s132-s0.txt` and `fluid-tracks-s132.txt`.
+- **A finding on the way, not fixed and not mine.** `npm test` fails on **untouched `main`** in this working tree: `test_vox`'s ONNX
+  parity block throws `TypeError: Cannot read properties of undefined` because `tools/work/vox/onnx-parity.json` (gitignored scratch) was
+  **overwritten at 20:48 today by the CNN session-3 worker** with the new net's shape (`voice` / `pitch` heads in place of
+  `logit` / `prob`; `run-s133.done` is beside it at 20:49). Reproduced on the clean repo before anything of §132 was written. The gate
+  above was run with that one file pointed at `onnx-parity-run2.json` — run 2 is the net that ships (§126) — and `test_vox` then passes
+  with its own numbers (mel parity 7.05e-5 / 1.29e-5, the stage 64.5 µs per hop, the pruned FFT 14 772 hops / 0 bins). **Nothing in
+  `tools/work` was rewritten**; the worktree holds read-only symlinks to the main tree's artefacts.
+- **What will NOT look exactly like the take, and why that is right.** Two things have moved under the scene since October and neither is
+  FLUID2's to undo. (1) **§130's load hold**: the quality governor no longer dips at startup, so the first ~10 s run at a higher tier than
+  they did on 9 October — the sim and dye grids reach their size sooner and the opening is cleaner than the recording. (2) **The voice
+  loses its only consumer in the pool**: §121's RIG was what read `voxS` / `voxHz` / `voxConf` into a fluid picture, and the §108 grammar
+  predates the detector entirely. TORUS2 and DUST keep theirs (§127, §128), and FLUID (id 0) never had one. Everything else the engine
+  gained since — the ears in a Worker (§131), the vocal lane, the renumber, the arrow keys — is upstream of the grammar or outside it,
+  and file-mode determinism is unchanged (the byte-identity run is the proof).
+- **No tag, no push, no deploy, `releases.json` untouched.** `origin/main` is still at `66129a3` and retinarave.com still serves
+  **v0.38.0**, two tags behind. The eye check is the user's: `http://127.0.0.1:8765/` → Share a tab → key **2** (LIVE mode, which is the
+  mode the take was shot in), or `http://127.0.0.1:8765/#test&scene=1` for the fake timeline.

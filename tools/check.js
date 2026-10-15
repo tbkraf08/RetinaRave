@@ -191,9 +191,14 @@ for (const d of sceneDirs) {
     const read = new Set([...src.matchAll(/\b(?:S|MS)\.(\w+)/g)].map((m) => m[1]));
     const outside = [...read].filter((k) => !FLUID_FEATS.includes(k));
     if (outside.length) fail('fluid substrate (' + g + '): ' + path.basename(file) + ' reads MS fields outside FLUID_FEATS: ' + outside.join(','));
-    const unread = FLUID_FEATS.filter((k) => !read.has(k) && !(g !== DEFAULT_GRAMMAR && baseRead.has(k)));
+    const unread = FLUID_FEATS.filter((k) => !read.has(k) && !(g !== DEFAULT_GRAMMAR && 'base' in GRAMMARS[g].mkState() && baseRead.has(k)));   // §132: the pool's reads count as a COMPOSING grammar's only
     if (unread.length) warn('fluid substrate (' + g + '): FLUID_FEATS entries ' + path.basename(file) + ' never reads: ' + unread.join(','));
-    if (g !== DEFAULT_GRAMMAR) { const lost = GRAMMARS[DEFAULT_GRAMMAR].FLUID_FEATS.filter((k) => !FLUID_FEATS.includes(k)); if (lost.length) fail('fluid substrate (' + g + '): FLUID_FEATS lacks the pool grammar\'s reads it runs: ' + lost.join(',')); }
+    // §132: the "⊇ the pool's reads" rule binds a grammar that COMPOSES the pool (its plan() runs inject.js's, so the base's reads are
+    // its own) — detected on its own state, `base` in mkState(). A STANDALONE grammar (FLUID2's slot since §132 is the frozen §108 pool
+    // grammar, which composes nothing) declares exactly what ITS source reads; padding the list with fields the file never touches would
+    // be a lie the `unread` warn above is there to catch.
+    const composes = g !== DEFAULT_GRAMMAR && 'base' in GRAMMARS[g].mkState();
+    if (composes) { const lost = GRAMMARS[DEFAULT_GRAMMAR].FLUID_FEATS.filter((k) => !FLUID_FEATS.includes(k)); if (lost.length) fail('fluid substrate (' + g + '): FLUID_FEATS lacks the pool grammar\'s reads it runs: ' + lost.join(',')); }
   }
   for (const d of sceneDirs) {
     const sc = (await import(path.join(ROOT, 'assets/scenes', d, 'index.js'))).default;
