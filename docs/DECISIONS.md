@@ -4088,3 +4088,106 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   real-time run `MUTE=1`). The user's A/B once this is merged (his server on 8765 serves main):
   `127.0.0.1:8765/#test&track=IBelongHere&scene=4&vox=live` against the same with `&ears=main` — the HUD's engine line reads
   `ears worker …` / `ears main …`, and the look must be the same look.
+
+## §133 The live vocal detector's third pass — a streaming net every hop, a pitch head on the stem's pYIN, the YIN on the mix pulled (2026-10-14/15, branch `vox-net3` in a worktree off main 0a60073, one Fable session; `docs/plans/VOX-CNN2-PLAN.md` session 3 "THE NET"; the user's decisions carried from §126: no look-ahead, chops are not voice, the NC sets stay in and the weights ship, the net's shape *"by the numbers"*)
+
+- **What it is.** The §123–§126 net was a 40 × 34 log-mel WINDOW read once per four hops (conv / pool / conv / pool / dense) and a
+  second YIN on the mix for the pitch. This pass replaces it with a net that outputs EVERY hop and carries its own pitch: a causal
+  TCN over the normalised mel column (`ears/vox-net.js`: 40 → 48 with kernel 3, five 48 → 48 blocks at dilations 1 2 4 8 16, residual,
+  ReLU — receptive field 65 hops ≈ 693 ms, 43 296 multiply-adds per hop, 43 646 parameters) with two heads on its shared 48-wide
+  column: the VOICE logit and a 61-way PITCH softmax (60 semitone bins C3..B7 + none), trained on pYIN of the Demucs vocal STEMS —
+  the Jamendo train stems' computed this pass (`voxtrain.py --pyin-only`, voxtruth.py's recipe, cached under `tools/work/vox/pyin/`),
+  the library's from `tools/truth/<T>.vox.json`. `voxHz` is the head's bin refined inside it by HARMONIC SALIENCE on the ears' own
+  2048-point FFT (Σ k = 1..5 of |X| at k·f over 11 candidates across the bin's ±50 cents); the YIN, its band-pass and its decimation
+  ring are gone from the stage (the Yin class stays in dsp.js for the sub). The vote (§126) is per hop now — 3 of the last 4 hops at
+  the .3 gate — and the ease is unchanged (.03 attack under the vote, .05 release); `voxConf` = voxS × the head's voiced mass. The
+  interface did not move: `voxS` / `voxHz` / `voxConf`, the rig's two reads, nothing in `assets/scenes`, `math/vox.js`, `core/`, or the
+  ears' other stages (test_vox.js (iv): 31 fields identical with the stage stubbed; the fake smoke's six lines = s127's). The whole
+  pipeline keeps §126's front end and data recipe (the mel cache reused as is; held out unseen: IBelongHere + Comptine; WhoLikesToParty
+  out of the loss); `voxtrain.py --net=cnn|tcn|gru` trains the three shapes, the stream nets on windows of 128 hops with the loss on
+  the last 64 columns (every column its own voice and pitch target; a band-shifted window has no pitch loss, a mel band is not a
+  semitone), `--tcn-c` / `--tcn-dil` / `--onset-w` / `--pitch-w` the knobs, `export_stream` the weights module for both heads and the
+  parity frames with EVERY column. The stream is exact: left zero-padding in the batch model = 64-slot rings that start at zero in the
+  JS, so column t here is the batch model's column t (test_vox.js (ii): 200 held windows × 64 columns, voice 6.8e-6, pitch 1.2e-5).
+- **The runs — seven, the budget's six plus a one-epoch smoke; all on run 2's data (the quota 35/10/25/30 unless said, SNR −6..+6, soft
+  floor .3, 12 or 16 epochs × 200 k windows of 128 hops), Jamendo valid picks the epoch.** The 2-D baseline is §126's run 2 as shipped
+  (the same data, 400 k windows of 34). `MAC` is per hop; `fp` Comptine's false-positive frames at .5 (the report), raw ≥ .3 (the net
+  alone), eased ≥ .3 (`vox-ab`'s live sung %); `pitch ±1` the head within a semitone of the stem's pYIN on Jamendo test / IBelongHere /
+  RaindropsOnRoses / SeeYouDrop; `lag` raw / eased from `vox-ab --stage=all` (the voiced three's medians); the bench `test_vox.js --bench`.
+
+| run | shape | MAC/hop · params | Jamendo test F1 / P / R / AUC | IBelongHere F1 / P / R / AUC (unseen) | Comptine fp .5 / raw ≥ .3 / eased ≥ .3 | classical held (mn-pi / mn-st / ma) | pitch ±1 % (Jam / IBH / RoR / SYD) | lag raw / eased ms | bench µs |
+|---|---|---|---|---|---|---|---|---|---|
+| §126 run 2 (v0.39, the 2-D window) | 40 × 34 conv/pool ×2, dense | 38 385 · 38 385 | .795 / .861 / .738 / .886 | .748 / .971 / .608 / .869 | 1.4 / – / 3.5 | 0.4 / 4.1 / 1.1 | the YIN on the mix: 45 / 55 / 9 % vs the lane | 60 / 120 | 74–76 |
+| 1 tcn1 | TCN C 32, dil 1 2 4 8 16 | 21 184 · 21 438 | .806 / .871 / .750 / .892 | .737 / .958 / .600 / .852 | 4.1 / 12.8 / 12.9 | 1.9 / 5.0 / 2.7 | 43.7 / 41.3 / 47.3 / 8.7 | 90 / 140 | 77 (loaded) |
+| 2 gru1 | the 2-D trunk per hop (pool (2,1) ×2) → GRU 32 | 72 256 · 23 150 | .812 / .895 / .743 / .906 | .694 / .970 / .541 / .856 | 0.3 / 1.8 / – | 0.4 / 1.9 / 0.3 | **5.3 / 4.6 / 5.4 / 0** | – | – (72 k is over the gate by construction; not built in JS) |
+| 3 tcn2 | TCN C 48, 16 epochs | 43 296 · 43 646 | **.819** / .852 / .788 / .896 | .781 / .955 / .661 / .847 | 3.8 / 11.2 / 11.6 | 1.1 / 5.1 / 3.4 | 48.5 / 48.7 / 56.9 / 11.7 | 140 / 180 | ~100 under a training load |
+| 4 tcn3 | TCN C 48, dil 1 2 4 8 (RF 33) | 36 384 · 36 686 | .788 / .865 / .723 / .880 | .750 / .976 / .609 / .864 | 5.4 / – / 13.0 | 1.8 / 5.6 / 2.5 | 43.4 / 43.4 / 46.8 / 7.3 | **70 / 110** | 71–72 |
+| 5 tcn4 | TCN C 40, quota 30/10/35/25 | 31 280 · 31 582 | .810 / .874 / .754 / .892 | .741 / .971 / .599 / .847 | 3.1 / 9.6 / 9.7 | 0.5 / 3.4 / 2.2 | 43.4 / 42.9 / 52.6 / 5.3 | 150 / 190 | 68 |
+| **6 tcn5 (ships)** | TCN C 48, the onset weight ×3 on 10 hops | 43 296 · 43 646 | **.818** / .858 / .782 / .896 | .776 / .966 / .649 / .857 | **2.3** / 9.1 / 9.5 | 0.9 / 4.6 / 3.2 | **48.6 / 48.3 / 55.0 / 10.2** | 150 / 180 | **76.6 / 77.9 / 76.6** |
+
+  **Why the TCN, why run 6.** The brief's rule: the TCN ships if its Jamendo F1 reaches the 2-D baseline + .02 = .815, otherwise the
+  GRU head. Runs 3 and 6 reach it (.819 / .818); the GRU at the same width (.812) does not, and it could not ship anyway: the 2-D
+  trunk's two frequency poolings leave 10 bands for the GRU to read a semitone from — its pitch head never learned (5 % within a
+  semitone, 4 % on IBelongHere: the §126 YIN's own ceiling again), and 72 k MAC is 3.4× the TCN's for the same voice number. Run 6 is
+  run 3 with the voice loss weighted ×3 on the ten hops after a 0 → 1 edge of the target (asking the net to commit early, from the past
+  alone — causal): the same F1, Comptine's false voice 3.8 → 2.3 % at .5, and NO change in the lag (below). WhoLikesToParty (chops,
+  recorded): 10.2 % of frames ≥ .5. The TCN at width 32 (run 1) stays in the table as the cheap point (21 k MAC, F1 .806).
+- **The lag, measured and not fixed.** The hold is gone — raw = held on every row — but the TCN's own commit is LATER than the window
+  net's: the receptive field decides it (RF 65: 90–150 ms raw across four runs; RF 33: 70; the 2-D's 34-hop window: 60), neither the
+  onset weight (run 6) nor the ease moves it — the ease sweep (`vox-ab --ease=attack,release,of,on`, six settings on run 1, three on
+  run 6) changes the eased lag by 20–50 ms at the cost of flicker (.75× → 1.16× the lane's), so the §126 ease stays. The stage lags:
+
+| weights · ease | raw | held | eased | hold · ease | flicker live / lane | Comptine · Vienna % ≥ .3 |
+|---|---|---|---|---|---|---|
+| §126 run 2 · attack .03 / release .05, voted 2 of 3 inferences (v0.39) | 60 (90 / 60 / 60) | 90 (110 / 90 / 80) | **120** (160 / 120 / 120) | 20–30 · 30–40 | 0.77x | 3.5 · 7.0 |
+| run 4 tcn3 (RF 33) · the same ease, voted 3 of 4 hops | 70 (70 / 100 / 60) | 70 | 110 (110 / 140 / 100) | 0 · 40 | 0.91x | 13.0 · 23.1 |
+| **run 6 tcn5 (ships) · the same ease, voted 3 of 4 hops** | 150 (100 / 150 / 180) | 150 | **180** (140 / 180 / 210) | 0 · 30 | **0.75x** | **9.5 · 15.6** |
+
+  Run 4 is the measured trade: 70 ms raw for F1 .788 (under the baseline). The brief's rule put accuracy first, so run 6 ships with
+  the lag MISSED and recorded; swapping to run 4's weights is one copy (`tools/work/vox/vox-weights-tcn3.js` + `onnx-parity-tcn3.json`),
+  and the next pass should look for the shape that keeps RF 65's F1 with RF 33's commit (a loss on the END column only, as the window
+  net had; or a shorter field with more width).
+- **The eight-track ruler (`test_vox.js` (iii) on run 6: `voxS` through the stage; `voxHz` = the head + the salience against the
+  stem's pYIN; `vox-ab` against the lane).**
+
+| track | hand s | voxS p50 in / out | ratio | fp % (≥ .5 outside) | lead p50 | voiced | voxHz vs the stem: a pitch on / within a semitone / modulo the octave | vs the LANE: pitched % · semi % · oct % | sung % lane / live · agree | lag eased |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Comptine (the control, UNSEEN) | 0 | – / .061 | – | **2.3 — met** (1.3 in §126) | – | 0 | – | – | 0.0 / 9.5 · 90.5 | – |
+| IBelongHere (unseen) | 199 | .583 / .101 | **5.8×** (8.2) | 9.1 (7.4) | – | 5549 | 49 / **48** / 48 % (50 / 45 / 48) | 47 · **97** · 98 (42 · 45 · 48) | 67.6 / 58.9 · 69 | 140 |
+| RaindropsOnRoses | 94 | .770 / .068 | **11.4×** (11.0) | 12.9 (10.2) | **.829** (.900) | 2613 | 59 / **54** / 58 % (70 / 55 / 64) | 37 · **93** · 98 (31 · 55 · 61) | 44.2 / 47.6 · 79 | 180 |
+| CyborgNinja | 0 | – / .008 | – | 0.0 (0.0) | – | 0 | – | 0 · – | 0.4 / 0.0 · 99.6 | – |
+| Malicious | 1 | .217 / .067 | 3.2× (5.5) | 1.6 (0.3) | – | 52 | 0 / 0 / 0 % | 0 · – | 1.9 / 6.6 · 92 | – |
+| SeeYouDrop | 75 | .662 / .105 | **6.3×** (5.6) | 2.1 (2.4) | – | 206 | 14 / **10** / 11 % (16 / 9 / 13) | 5 · **74** · 77 (3 · 9 · 9) | 47.2 / 41.2 · 77 | 210 |
+| Vienna (in-sample) | 0 | – / .103 | – | 5.2 (1.6) | – | 0 | – | 2 · 91 | 1.4 / 15.6 · 84 | – |
+| WhoLikesToParty (chops, recorded) | 64 | .097 / .173 | 0.6× (0.6) | 9.2 (10.4) | – | 0 | – | – | 22.5 / 23.7 · 62 | – |
+
+  (§126's run 2 in parentheses.) The pitch is the pass's clear win: against the lane the page reads, 97 / 93 / 74 % within a semitone
+  on the three sung tracks (45 / 55 / 9 % for the YIN on the mix), 98 / 98 / 77 % modulo the octave; against the stem's pYIN the head
+  publishes a pitch on 49 / 59 / 14 % of the voiced frames and is within a semitone on 48 / 54 / 10 % — SeeYouDrop's processed,
+  stacked lead stays the hard case (§122's own note). The false voice outside the hand windows rose on the two sung tracks (IBelongHere
+  9.1, RaindropsOnRoses 12.9 %, the Vienna in-sample 5.2) and fell on Comptine.
+- **The gates (per step `check` + `npm test`; the full set once at the close).** (1) `node tools/check.js` 0 fail / 4 warn (the two
+  scene files over the soft cap, pre-existing) — **met**; `node tools/license.js --check` 157 public files, 0 without the header —
+  **met**; `npm test` exit 0 (166 passes; test_fluid 350 ok; test_earsw OK — the ears Worker's determinism proof runs the new net
+  inside the Worker; the first run of `npm test` in the worktree failed on the 17 gitignored MS traces that live only in the main
+  checkout, linked in like `tools/work` — not a code fault) — **met**; `node tools/bundle.js` 151 modules + 12 in the ears Worker,
+  236 KB inline — **met**. (2) The ONNX parity for a per-hop net: 200 held windows × 64 columns, voice max |Δ| 6.8e-6, pitch head
+  1.2e-5 (≤ 1e-4) — **met**; the mel parity unmoved (7.05e-5 / 1.29e-5) — **met**. (3) The bench, three runs on the shipped net:
+  76.6 / 77.9 / 76.6 µs per hop median (≤ 100; the FFT is ~47 of it; load 9–10 with the user's Chrome and Code open) — **met**. (4)
+  Jamendo test F1 .818 against ≥ .84 — **MISSED** (the best of six runs; +.023 over the 2-D baseline); IBelongHere unseen P .966 /
+  R .649 — recorded; Comptine unseen fp 2.3 % at .5 — **met**, 9.5 % at the .3 gate against ≤ 5 — **MISSED** (the net's raw ≥ .3 is
+  9.1 %: every TCN sat at 9–13 % here, the GRU at 1.8 — the dense first layer over 40 bands is not frequency-shift invariant the way the
+  2-D trunk is, the pitch-shift jitter alone does not buy it back); classical held-out 0.9 / 4.6 / 3.2 % — recorded. (5) eased lag
+  median 180 ms against ≤ 80 — **MISSED** (above); flicker .75× the lane's (≤ 1.5) — **met**; semi % vs the lane 74 on SeeYouDrop (≥ 60),
+  97 on IBelongHere and 93 on RaindropsOnRoses (≥ 85) — **met**. (6) The fake smoke `IDS="1 3 4" tools/scene-md5.sh s133`: six lines =
+  `tools/accept/v0.38/scene-md5-s127.txt` to the byte — **met**; the real sweep `SCENES=1 PAR=2 MUTE=1 tools/real-md5.sh s133-s1`:
+  43 runs, f0 2 and errs [] on every run; against `real-md5-s130-s1.txt` ALL 32 `&map=1` lines HELD to the byte (the lane feeds the
+  lead and the CNN is skipped there, §130) and ALL 34 `&map=0` lines MOVED — expected, the live tier feeds FLUID2's lead there and
+  the net, its weights and its pitch all changed; each moved line is listed with its old hash — **met as specified**. Records: `tools/accept/v0.39/vox-s133.txt` (the runs, the ruler, the A/B, the bench, the ease sweep) and
+  `real-md5-s133-s1.txt`.
+- **What is left.** (1) The user's eye on the three sung tracks in live mode (`#test&track=IBelongHere&scene=1&vox=live`, then 3 and
+  4): the pitch should sit on the note now, the entrance ~60 ms later than v0.39's. (2) The lag: the next pass's one question (above);
+  run 4's weights are the measured alternative. (3) Comptine at the .3 gate and the false voice on the sung tracks' quiet bars: a
+  frequency-shift-invariant front layer (a small 2-D conv before the TCN, pooled in frequency but not time) is the obvious shape, and
+  the GRU row says the negatives come with it. (4) F1 .84 stays unmet; the data recipe is unchanged since §126 and the Jamendo
+  valid/test labels carry their own slop (§126). (5) No merge, tag, push or deploy from this branch; nothing on main touched.
