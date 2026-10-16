@@ -7,7 +7,7 @@
     python3 tools/truth/voxtrain.py [--epochs=N] [--per-epoch=N] [--remixes=N] [--var-floor=F] [--tag=T] [--no-train] [--mel-only=<Track>]
                                     [--snr=LO,HI] [--quota=jam,lib,neg,remix] [--soft-floor=F]   (§126 item 4: the recipe's knobs for run 2 / 3,
                                     the defaults = run 1's recipe; a soft target under F inside a hand window is DROPPED, not taught as near-silence)
-                                    [--net=cnn|tcn|gru] [--tcn-c=N] [--tcn-dil=1,2,4,8,16] [--pitch-w=F] [--onset-w=F] [--pyin-only]   (§133: the STREAM nets — an output every hop and a 61-way
+                                    [--net=cnn|tcn|gru] [--tcn-c=N] [--tcn-dil=1,2,4,8,16] [--pitch-w=F] [--onset-w=F] [--front=F] [--loss-cols=N] [--pyin-only]   (§133: the STREAM nets — an output every hop and a 61-way
                                     pitch head on the shared hidden column, trained on the stems' pYIN; --pyin-only computes and caches the
                                     Jamendo stems' pYIN first (tools/work/vox/pyin/); the default net stays the §123 window CNN)
       -> assets/engine/ears/vox-weights.js   the weights as a JS module (Float16 little-endian, base64; the provenance in its header)
@@ -666,6 +666,7 @@ def evaluate(model, torch, sets):
 NET = 'cnn'
 SEQ, LOSS_COLS = 128, 64
 TCN_C, TCN_DIL = 32, (1, 2, 4, 8, 16)
+FRONT, FRONT_POOL = 0, 4                            # --front=F (§134 b): a 2-D conv 3x3 x F (causal in time) pooled x4 in frequency, its F x 10 column CONCATENATED to the raw mel column as the TCN's input
 GRU_H = 32
 
 
@@ -674,11 +675,15 @@ def make_stream_model(torch, net):
     class TCN(nn.Module):
         def __init__(self):
             super().__init__()
-            self.inp = nn.Conv1d(N_MEL, TCN_C, 3)
+            if FRONT: self.f2d = nn.Conv2d(1, FRONT, 3, padding=(1, 0))
+            self.inp = nn.Conv1d(N_MEL + FRONT * (N_MEL // FRONT_POOL), TCN_C, 3)
             self.blocks = nn.ModuleList([nn.Conv1d(TCN_C, TCN_C, 3, dilation=d) for d in TCN_DIL])
             self.voice = nn.Conv1d(TCN_C, 1, 1)
             self.pitch = nn.Conv1d(TCN_C, PITCH_BINS + 1, 1)
         def forward(self, x):                                   # x (B, 40, T) → voice (B, T), pitch (B, 61, T)
+            if FRONT:                                           # §134 (b): the frequency-pooled 2-D view beside the raw column
+                h2 = F.max_pool2d(torch.relu(self.f2d(F.pad(x[:, None], (2, 0)))), (FRONT_POOL, 1))   # (B, F, 10, T)
+                x = torch.cat([x, h2.reshape(x.shape[0], -1, x.shape[2])], dim=1)                      # index f·10 + q after the 40 raw bands
             h = torch.relu(self.inp(F.pad(x, (2, 0))))
             for conv, d in zip(self.blocks, TCN_DIL):
                 h = h + torch.relu(conv(F.pad(h, (2 * d, 0))))
@@ -704,12 +709,12 @@ def make_stream_model(torch, net):
 
 def stream_order(net):
     if net == 'tcn':
-        return ['inp.weight', 'inp.bias'] + [f'blocks.{i}.{k}' for i in range(len(TCN_DIL)) for k in ('weight', 'bias')] + ['voice.weight', 'voice.bias', 'pitch.weight', 'pitch.bias']
+        return (['f2d.weight', 'f2d.bias'] if FRONT else []) + ['inp.weight', 'inp.bias'] + [f'blocks.{i}.{k}' for i in range(len(TCN_DIL)) for k in ('weight', 'bias')] + ['voice.weight', 'voice.bias', 'pitch.weight', 'pitch.bias']
     return ['conv1.weight', 'conv1.bias', 'conv2.weight', 'conv2.bias', 'gru.weight_ih_l0', 'gru.weight_hh_l0', 'gru.bias_ih_l0', 'gru.bias_hh_l0', 'voice.weight', 'voice.bias', 'pitch.weight', 'pitch.bias']
 
 
 def stream_macs(net):
-    if net == 'tcn': return N_MEL * TCN_C * 3 + len(TCN_DIL) * TCN_C * TCN_C * 3 + TCN_C + TCN_C * (PITCH_BINS + 1)
+    if net == 'tcn': return FRONT * 9 * N_MEL + (N_MEL + FRONT * (N_MEL // FRONT_POOL)) * TCN_C * 3 + len(TCN_DIL) * TCN_C * TCN_C * 3 + TCN_C + TCN_C * (PITCH_BINS + 1)
     return 16 * 9 * N_MEL + 16 * 16 * 9 * (N_MEL // 2) + 3 * (160 * GRU_H + GRU_H * GRU_H) + GRU_H + GRU_H * (PITCH_BINS + 1)
 
 
@@ -839,7 +844,7 @@ def export_stream(model, torch, report, vf, net):
                'note': 'mel row-major (band, hop): index = band*T + hop; voice[i][t] the logit at column t; pitch[i][t] the 61 logits (bins C3..B7, then none) at column t'},
               open(os.path.join(WORK, 'onnx-parity.json'), 'w'))
     prov = report.get('provenance', {}); held = report.get('held', {}); te = report.get('jamendo_test', {})
-    arch = ('a causal TCN over the mel column: 40 -> %d (k3), %d x %d -> %d (k3, dilations %s, residual, ReLU), receptive field %d hops' % (TCN_C, len(TCN_DIL), TCN_C, TCN_C, ' '.join(map(str, TCN_DIL)), 3 + 2 * sum(TCN_DIL))
+    arch = (('a 2-D front layer conv 3x3 x%d (causal in time) max-pooled x%d in frequency, its %d x %d column beside the raw 40 bands (§134), then ' % (FRONT, FRONT_POOL, FRONT, N_MEL // FRONT_POOL) if FRONT else '') + 'a causal TCN over the mel column: %d -> %d (k3), %d x %d -> %d (k3, dilations %s, residual, ReLU), receptive field %d hops' % (N_MEL + FRONT * (N_MEL // FRONT_POOL), TCN_C, len(TCN_DIL), TCN_C, TCN_C, ' '.join(map(str, TCN_DIL)), 3 + 2 * sum(TCN_DIL) + (2 if FRONT else 0))
             if net == 'tcn' else 'the 2-D trunk per hop (conv 3x3 x16 causal -> pool (2,1) -> conv 3x3 x16 -> pool (2,1), the 16 x 10 column) -> GRU(32)')
     lines = ['// ' + l for l in HEAD] + [
         "// The live vocal detector's weights (DECISIONS §123, retrained §126, the streaming net §133; tools/truth/voxtrain.py wrote this file — do not edit by hand).",
@@ -862,7 +867,7 @@ def export_stream(model, torch, report, vf, net):
             te.get('F1'), te.get('AUC'), te.get('pitch_exact_pct'), te.get('pitch_pm1_pct'),
             held.get('IBelongHere', {}).get('F1'), held.get('IBelongHere', {}).get('AUC'), held.get('Comptine', {}).get('fp_pct'), vf),
         'export const VOX_W = {',
-        "  net: '%s', nMel: %d, nParams: %d, macPerHop: %d, pitchBins: %d, pitchC3: %.10g, hidden: %d, dil: %s," % (net, N_MEL, len(flat), stream_macs(net), PITCH_BINS, PITCH_C3, TCN_C if net == 'tcn' else GRU_H, json.dumps(list(TCN_DIL))),
+        "  net: '%s', nMel: %d, nParams: %d, macPerHop: %d, pitchBins: %d, pitchC3: %.10g, hidden: %d, dil: %s, front: %d, frontPool: %d," % (net, N_MEL, len(flat), stream_macs(net), PITCH_BINS, PITCH_C3, TCN_C if net == 'tcn' else GRU_H, json.dumps(list(TCN_DIL)), FRONT, FRONT_POOL),
         '  shapes: ' + json.dumps(shapes).replace('"', "'") + ',',
         '  order: ' + json.dumps(order).replace('"', "'") + ',',
         "  f16: '" + b64 + "',",
@@ -994,7 +999,7 @@ def build_all(log, pool, vf):
 
 # ---------------------------------------------------------------------------------------------------- main
 def main():
-    global CLASSICAL_HELD, PARTIAL, SNR_DB, QUOTA, SOFT_FLOOR, NET, PITCH_W, TCN_C, TCN_DIL, ONSET_W
+    global CLASSICAL_HELD, PARTIAL, SNR_DB, QUOTA, SOFT_FLOOR, NET, PITCH_W, TCN_C, TCN_DIL, ONSET_W, FRONT, LOSS_COLS
     args = sys.argv[1:]
     PARTIAL = '--partial' in args
     opt = lambda k, d: next((a.split('=', 1)[1] for a in args if a.startswith('--' + k + '=')), d)
@@ -1006,7 +1011,7 @@ def main():
     SOFT_FLOOR = float(opt('soft-floor', SOFT_FLOOR))
     NET = opt('net', NET); PITCH_W = float(opt('pitch-w', PITCH_W)); TCN_C = int(opt('tcn-c', TCN_C))
     if opt('tcn-dil', None): TCN_DIL = tuple(int(v) for v in opt('tcn-dil', '').split(','))
-    ONSET_W = float(opt('onset-w', ONSET_W))
+    ONSET_W = float(opt('onset-w', ONSET_W)); FRONT = int(opt('front', FRONT)); LOSS_COLS = int(opt('loss-cols', LOSS_COLS))
     assert NET in ('cnn', 'tcn', 'gru'), NET
     stream = NET != 'cnn'
     if opt('mel-only', None):
@@ -1159,7 +1164,7 @@ def main():
     for r in rows_held + rows_tr + rows_rec + rows_acc + rows_clsh: log(f'  {r["track"]:34s} frames {r["frames"]:7d} sung {r["sung_pct"]:5.1f} %  F1 {r["F1"]:.3f} P {r["P"]:.3f} R {r["R"]:.3f} AUC {r["AUC"]}  fp {r["fp_pct"]} %' + (f'  pitch {r.get("pitch_frames")} fr: pub {r.get("pitch_pub_pct")} exact {r.get("pitch_exact_pct")} ±1 {r.get("pitch_pm1_pct")} %; none ok {r.get("none_ok_pct")} %' if stream else ''))
     cls_fp = float(np.mean([r['fp_pct'] for r in rows_cls])) if rows_cls else float('nan')
     log(f'  classical in-sample fp (mean over {len(rows_cls)} files) {cls_fp:.1f} %; remixes (last epoch, 12 of them) F1 {rem_all.get("F1")} AUC {rem_all.get("AUC")}')
-    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x {SEQ if stream else T_WIN}' + (f' (the loss on the last {LOSS_COLS} columns, the pitch loss x {PITCH_W}, the onset weight {ONSET_W:g} on {ONSET_HOPS} hops, the net {NET} C {TCN_C} dil {TCN_DIL}, quota {QUOTA})' if stream else '') + f', batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, the soft floor {SOFT_FLOOR:g}, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
+    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x {SEQ if stream else T_WIN}' + (f' (the loss on the last {LOSS_COLS} columns, the pitch loss x {PITCH_W}, the onset weight {ONSET_W:g} on {ONSET_HOPS} hops, the net {NET} C {TCN_C} dil {TCN_DIL} front {FRONT}, quota {QUOTA})' if stream else '') + f', batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, the soft floor {SOFT_FLOOR:g}, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
                              'jamendo': 'Zenodo record 2585988 (cc-by-4.0)', 'musicnet': 'Zenodo record 5120004 (cc-by-4.0) — Creative Commons Attribution 4.0 International; ~/Datasets/musicnet/LICENCE-NOTE.md',
                              'maestro': 'MAESTRO v3.0.0, Google LLC, LICENSE: Attribution-NonCommercial-ShareAlike 4.0 International; ~/Datasets/maestro/LICENCE-NOTE.md', 'var_floor': vf, 'tag': tag,
                              'jamendo_train_stems': n_jam_stems, 'classical_held': CLASSICAL_HELD, 'remix_sources': len(vox_src), 'remix_beds': len(beds)},
