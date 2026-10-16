@@ -4191,3 +4191,66 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   frequency-shift-invariant front layer (a small 2-D conv before the TCN, pooled in frequency but not time) is the obvious shape, and
   the GRU row says the negatives come with it. (4) F1 .84 stays unmet; the data recipe is unchanged since §126 and the Jamendo
   valid/test labels carry their own slop (§126). (5) No merge, tag, push or deploy from this branch; nothing on main touched.
+
+## §134 The streaming net's second pass — a 2-D front layer and the loss on the END column: the lag back to 130 ms, run 10 ships (2026-10-15/16, branch `vox-net3` continued in the same worktree, served to the user on 8765; the user chose §133's option 3: *"one more pass on the shape that keeps RF 65's accuracy with RF 33's commit"*)
+
+- **What it is.** Two candidates on §133's recipe (run 2's data, the onset weight ×3 that helped Comptine), four runs: **(b)** a 2-D FRONT
+  LAYER ahead of the TCN — conv 3×3 ×8, causal in time, ReLU, max-pooled ×4 in frequency, its 8 × 10 column CONCATENATED to the raw 40
+  bands as the TCN's input (`voxtrain.py --front=8`; the GRU row had read Comptine 1.8 % at .3 through a 2-D trunk where every pure TCN
+  sat at 9–13 — a frequency-shift-invariant view beside the raw column the pitch head needs); **(a)** the loss on the END column only
+  (`--loss-cols=1`: the net optimised for the newest frame's commit, as the §123 window net was, not averaged over 64 positions). Run 7 =
+  (b); run 8 = (a)+(b); runs 9 and 10 = (a)+(b) at receptive fields 33 and 57 (`--tcn-dil=1,2,4,8` / `1,2,4,8,12`). `ears/vox-net.js`
+  runs the front layer in the stream when the module carries one (`front` / `frontPool`; the ring of the four newest mel columns, the
+  pooled features after the 40 raw bands — the batch model's concatenation order). Nothing else moved: the interface, the stage's ease
+  and vote, the scenes, the ears' other stages (test_vox.js (iv) 31 fields identical).
+
+| run | shape | MAC/hop · params | Jamendo test F1 / P / R / AUC | IBelongHere F1 / P / R (unseen) · fp outside the hand windows % | Comptine fp .5 / raw ≥ .3 / eased ≥ .3 | Vienna raw ≥ .3 | classical held (mn-pi / mn-st / ma) | chops ≥ .5 % | pitch ±1 % Jam · semi % vs the lane SYD / IBH / RoR | lag raw / eased (IBH / RoR / SYD) | flicker | bench µs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| §133 run 6 tcn5 (shipped) | C 48, RF 65, onset ×3 | 43 296 · 43 646 | .818 / .858 / .782 / .896 | .776 / .966 / .649 · 9.1 | 2.3 / 9.1 / 9.5 | 15.4 | 0.9 / 4.6 / 3.2 | 10.2 | 48.6 · 74 / 97 / 93 | 150 / **180** (140 / 180 / 210) | 0.75x | 77 |
+| §133 run 4 tcn3 | C 48, RF 33 | 36 384 · 36 686 | .788 / .865 / .723 / .880 | .750 / .976 / .609 · – | 5.4 / – / 13.0 | – | 1.8 / 5.6 / 2.5 | 9.7 | 43.4 · 74 / 98 / 96 | 70 / 110 | 0.91x | 71 |
+| 7 tcn6 | (b) front 8, RF 65 | 57 696 · 55 246 | .828 / .773 / .891 / .909 | .862 / .936 / .800 · **23.5** | 3.9 / 9.6 / 9.5 | 20.2 | 1.5 / 7.2 / 3.1 | 28.4 | **58.0** · 70 / 94 / 94 | **50** / 140 (140 / 90 / 190) | 0.82x | 90–92 |
+| 8 tcn7 | (a)+(b), RF 65 | 57 696 · 55 246 | **.831** / .855 / .809 / .907 | .810 / .974 / .693 · 7.2 | **1.8 / 5.7 / 5.7** | **7.6** | 0.4 / 3.4 / 0.8 | 7.9 | 50.1 · 80 / 97 / 94 | 110 / 150 (150 / 110 / 200) | 0.72x | 90 |
+| 9 tcn8 | (a)+(b), RF 33 | 50 784 · 48 286 | .807 / .840 / .776 / .886 | .782 / .952 / .664 · 13.0 | 4.8 / 12.2 / 12.3 | 17.9 | 1.8 / 3.6 / 2.2 | 17.8 | 46.8 · 83 / 96 / 92 | 80 / **120** (120 / 120 / 200) | 0.96x | 84–85 |
+| **10 tcn9 (ships)** | (a)+(b), RF 57 (dil 1 2 4 8 12) | 57 696 · 55 246 | **.825** / .850 / .803 / .902 | .814 / .961 / .706 · 11.8 | 2.5 / 7.0 / 6.9 | 9.1 | 0.6 / 3.7 / 1.2 | 12.7 | 50.5 · 70 / 96 / 94 | 90 / **130** (130 / 130 / 150) | **0.63x** | **88.9 / 89.5 / 89.7** |
+
+  **Why run 10.** The ship rule was: replace tcn5 only for ≥ 40 ms off the eased lag with ≤ .01 F1 lost and the semitone gates kept.
+  Run 7 qualifies on the letter (−40, +.010) but the front layer alone made the net recall-heavy (P .773; false voice outside the hand
+  windows 23.5 % on IBelongHere, 28 % on the chops, Vienna 20 % ≥ .3) — the quiet bars would light. Run 8 (the END-column loss on top)
+  is the best detector of the pass (F1 .831, Comptine 5.7 % at .3, Vienna 7.6, precision .855) and misses the −40 by one 10 ms grid
+  step (−30). Run 9 at RF 33 buys the lag (120) and pays .011 of F1 (one thousandth over the rule). Run 10 at RF 57 sits between: −50 ms
+  (130 eased, and 130 / 130 / 150 per track — the first row with no 200 ms outlier), F1 +.007, the best flicker, Comptine 2.5 / 6.9,
+  the semitone gates kept (70 / 96 / 94). The front layer is what moved the needle on both counts: F1 .818 → .825–.831 and the raw
+  commit 150 → 50–110 with the END-column loss setting the precision; the receptive field then trades the last 30 ms against F1 (RF 65
+  → 33 → 57: lag 150 / 120 / 130, F1 .831 / .807 / .825).
+- **The lag table (vox-ab --stage=all, the voiced three's medians; hold 0 everywhere since §133).**
+
+| weights | raw | eased | ease | flicker live / lane | Comptine · Vienna % ≥ .3 |
+|---|---|---|---|---|---|
+| §126 run 2 (v0.39, the 2-D window) | 60 | 120 | 20–30 hold + 30–40 | 0.77x | 3.5 · 7.0 |
+| §133 run 6 tcn5 | 150 (100 / 150 / 180) | 180 (140 / 180 / 210) | 30 | 0.75x | 9.5 · 15.6 |
+| run 7 tcn6 (front) | 50 (100 / 50 / 40) | 140 (140 / 90 / 190) | 40–150 | 0.82x | 9.5 · 20.0 |
+| run 8 tcn7 (front + END loss) | 110 (110 / 70 / 180) | 150 (150 / 110 / 200) | 40 | 0.72x | 5.7 · 8.2 |
+| run 9 tcn8 (RF 33) | 80 (70 / 80 / 180) | 120 (120 / 120 / 200) | 40 | 0.96x | 12.3 · 18.2 |
+| **run 10 tcn9 (RF 57, ships)** | 90 (80 / 90 / 110) | **130** (130 / 130 / 150) | 40 | **0.63x** | 6.9 · 8.9 |
+
+- **The eight-track ruler on run 10 (`test_vox.js` (iii); §133's tcn5 in parentheses).** Comptine fp 2.6 % (2.3); IBelongHere p50 in / out
+  .675 / .088 = 7.6× (5.8), fp outside 11.8 (9.1), voxHz vs the stem: a pitch on 51 / within a semitone 49 / modulo the octave 49 %
+  (49 / 48 / 48); RaindropsOnRoses .762 / .039 = 19.4× (11.4), the lead p50 .952 (.829), fp 8.6 (12.9), pitch 56 / 53 / 55 % (59 / 54 / 58);
+  SeeYouDrop .659 / .103 = 6.4× (6.3), fp 4.3 (2.1), pitch 15 / 10 / 11 % (14 / 10 / 11); Vienna fp 1.8 (5.2); CyborgNinja 0.0; Malicious
+  .139 / .053, fp 0.7; WhoLikesToParty (chops) .129 / .178, fp 12.4 (9.2). Against the lane: 96 / 94 / 70 % within a semitone (97 / 93 / 74).
+- **The gates.** check 0 fail / 4 warn (pre-existing) — **met**; license 157 / 0 — **met**; `npm test` exit 0 (201 passes, test_fluid 350
+  ok, test_earsw OK) — **met**; bundle 151 + 12 Worker modules (269 KB inline, the module 144 KB) — **met**; parity every column both heads
+  8.95e-6 / 1.99e-5 — **met**; bench 88.9 / 89.5 / 89.7 µs per hop (≤ 100; inside npm test 89.9; p99 100–120 — the gate's margin is 10 µs
+  now, 57 696 MAC/hop) — **met, thin**; eased lag 130 against ≤ 110 — **MISSED** (−50 vs §133's 180; the ship rule's −40 met); Jamendo F1
+  .825 ≥ .815 — **met**; Comptine 2.5 % at .5 — **met**, 6.9 % at the .3 gate against ≤ 5 — **MISSED** (run 8's 5.7 is the pass's best);
+  semi vs the lane 70 / 96 / 94 against 60 / 85 / 85 — **met**; the fake smoke `IDS="1 3 4" tools/scene-md5.sh s134`: six lines = s127's — **met**; the real
+  sweep `SCENES=1 PAR=2 MUTE=1 tools/real-md5.sh s134-s1`: 43 runs, f0 2 and errs [] on every run; against `real-md5-s133-s1.txt` ALL 32
+  `&map=1` lines HELD to the byte, 31 of the 34 `&map=0` lines MOVED (the live tier feeds the lead there) and 3 held (s1-CyborgNinja-boundary1-f1533-m0.jpg s1-CyborgNinja-build1-f1233-m0.jpg s1-CyborgNinja-intro-f602-m0.jpg — no voice read
+  under either net) — **met as specified**. Records: `tools/accept/v0.39/vox-s134.txt`, `real-md5-s134-s1.txt`.
+- **What is left.** (1) The user's eye in live mode on the three sung tracks (`#test&track=IBelongHere&scene=1&vox=live`, then 3 and 4):
+  the entrance ~10 ms later than v0.39's eased 120, the pitch on the note, fewer false lights on Comptine / Vienna than §133's. (2) The
+  lag's last 20 ms to the 110 target and the F1 .84: the front layer's channels (8 → 12–16 at the bench's cost) or a second 2-D layer are
+  the next knobs; the bench margin is 10 µs, so a cheaper front end (the FFT is 47 of the 90) is the pre-condition. (3) Comptine at the
+  .3 gate (6.9): the END-column loss halved it; a negative-heavier quota on that recipe (§133's run 5 bought 2–3 points) is one run.
+  (4) The alternative modules stay under `tools/work/vox/vox-weights-{tcn5-ship,tcn6,tcn7,tcn8}.js` with their parity files — a one-copy
+  swap each. (5) No merge, tag, push or deploy; nothing on main touched; the worktree is served on 8765 so the user sees run 10 on reload.
