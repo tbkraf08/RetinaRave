@@ -4891,3 +4891,94 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   (`real-rulers.sh`) on the ninth track, owed with the next roster re-proof as §117's were · the three remaining passages
   pYIN calls unvoiced (0:30, 0:43, 1:59) — a .72–.79 share with no stable pitch is either the chest-voice entry or the
   separator's reverb, and the stem render says which.
+
+## §138 DUST follows the singer — the sung register as a band that rides the pitch's height (2026-10-17, one Fable worker in a worktree off main 89547bc, branch `dust-voice2`; the user, watching DUST on main: *"looking at dust -> feels like it doesn't follow the vocals (more so the instruments)"* → *"retune dust"*)
+
+- **The finding that scoped it (§137, not re-measured).** The scenes read ONE voice gate, `assets/math/vox.js` (§127: knee .45 → .85
+  on `voxS`, hold .085 s, release .3 s), fed by the live net or the file-mode Demucs lane. On TheChain, unseen by the net, that
+  gate is lit on **100 % of the sung time and 7.7 % of the unsung** (precision 92 %), the pitch within a semitone 95 %, false
+  voice 0.5 %. The signal DUST received was full and clean; **DUST spent it thinly**: `dust/voice.js` (§127) moved a quarter of
+  the light (`DIM` .25) onto three partial shells of sigma **.0075** on the log axis — in the galaxy that is a ring **.009 scene
+  units thick** in a 1.7-unit disc, a HAIRLINE holding 2.4 % of the grains — and its one motion with the melody was RADIAL, a
+  semitone = .011 units; pitch-as-height lived in the ribbon alone, which needs `!subGate && voxSec > .5` over 8 s. Under a kit
+  whose kick, ring and sparkle drive every other number on screen, that is invisible. **A weighting question, not a detection
+  one** — nothing in `math/vox.js` or the ears moved here; everything still comes through `vox()`, one gate, no second detector.
+- **The design (three sentences).** The sung register is a BAND, not a hairline — `W` .03, three semitones' sigma, ~9 % of the
+  grains at E4 — lifted in the sung note's hue at ×5–6 and GROWN (`SZ` 1.2 on the point-size sum beside the kick's 1· and the
+  ring's 3·), and the rest of the cloud, the drums' flashes included, gives up nearly half its light to it (`DIM` .45) and takes
+  it back within the gate's .3 s release — so the drums RECEDE under a sustained voice and the picture's colour follows the
+  melody's notes. THE VERTICAL (the user's §121 rule, *"pitch seems more like a vertical move"*): the gate's height `y01` (the
+  scale degree, a little of the octave, eased .35 s — the rig's recipe) moves the whole cloud by `Y0` .6·w·(y01 − ½) scene units
+  and the band by `Y1` 1.6·vk more, so the lit hoop floats up out of the body on a high note and sinks under it on a low one, in
+  every formation, on top of the drum grammar which is untouched (§61–§82: not one kick, ring, hat, fog or tension number moved).
+  The ribbon seam is NOT opened on `w` alone — kept as §127 left it, a bonus state: on IBelongHere (68 % sung, four on the
+  floor) a `w`-only seam would have put the cloud on a line for most of the track and thrown the twenty sections of drum
+  grammar away with the shapes; a seam decision stays a section decision (reactive over predicted is about the per-frame
+  response, which the band and the ride are). The candidates not taken: the fog and a separate hit-recession knob — `DIM` on
+  the whole grain already recedes the flashes by the same share, one budget, one knob.
+- **Two things §127 had wrong, found on the way.** (1) **The light budget**: §127's gain was `DIM·(1 − p)/p`, the budget of a band
+  that is NOT dimmed, but the shader's factor `1 − DIM·w + gain·vk` dims every grain — so the population mean was `1 − DIM·p` =
+  .994 at the hairline's p .024, inside `test_voxscene`'s ±.02; at the band's p .085 and DIM .45 it read **.957** and the test
+  caught it. The gain is **`DIM/p`** now and the exact sum over 50 000 hashed grains reads .993–1.000 from C3 to C6, ×5.5–6.7,
+  never capped (`GMAX` 8, was 12 — nothing reaches it). (2) **The sign of up**: `lookVP()`'s side vector is −cross(f, up), so
+  its up vector is −up — screen up is world **−y**, and every formation has always lived mirrored with nobody able to tell. The
+  first after-traces read the vertical ruler NEGATIVE (r(ΔlumY, ΔvoxY) −.39 on IBelongHere) and the shot at TheChain 54.1 s
+  (E, y01 .12, ride −.38) put the hoop ON TOP of the sphere: §127's ribbon rise `w += uVoxC.y` had been lifting the line for a
+  LOW note too. Both rises are subtractions in the shader now; the CPU numbers (`ribY`, `ride`) keep their sign.
+- **The knobs** (`VOXD` in `dust/voice.js`; the shader's `#define`s mirror them; `&dvox=0` = the pre-§127 cloud on every frame):
+
+| knob | §127 | §138 | what |
+|---|---|---|---|
+| `DIM` | .25 | **.45** | the cloud's share given up at w 1 — the drums recede with it |
+| `W` | .0075 | **.03** | the band's sigma on the 0..1 log axis (a semitone .0092): a band, not a hairline |
+| `A` | 1 / .6 / .4 | **1 / .5 / .25** | the three partials' weights — one band moving, not three |
+| `GMAX` | 12 | **8** | the gain cap (unreached: 5.5–6.7 across C3–C6) |
+| gain | DIM·(1 − p)/p | **DIM/p** | the budget: the factor's mean is 1 at every w |
+| `Y0` | – | **.6** | the whole cloud's rise, scene units per unit of w·(y01 − ½) — ±.12 on a melody's ±.2 |
+| `Y1` | – | **1.6** | the band's rise on top, × vk — ±.3 more: the hoop leaves the 1.1-unit body |
+| `SZ` | – | **1.2** | the band's grains' size term, × vk |
+| `RIBY`, `SEC`, the seam | .8, 8 s, `!subGate && voxSec > .5` | unchanged | the ribbon's rise (sign fixed), the section window, the entry rule |
+
+- **The ruler** — `tools/dust-trace.js` gains `lumY`, the composited frame's luminance-weighted VERTICAL centroid (0 bottom … 1 top;
+  the one column that can see a ride), and `tools/dust-voice.js` reads a set of traces: sung frames by the hand passages of
+  `tools/truth/<T>.vox.json` (the truth, never the detector — §58), r(lum, voxS) against r(lum, kickAmp), the gate's lit share
+  of sung / unsung, **r(lumY, voxY)** and its .25 s change **r(ΔlumY, ΔvoxY)** against the kick's Δ on the same frames, the ride's
+  p10 / p90, the ribbon share, lum sung / unsung. Nine windows at scene 3, `&map=0` (the live net on the file — the user's 90 %
+  case; `URLSearchParams` keeps the first `map=`, so dust-trace cannot be asked for the lane), "before" = `&dvox=0` on the same
+  build (`tools/accept/v0.39/dust-voice-s138.txt` has the full table):
+
+| track · window | sung % | lit sung / unsung % | r(lum,voxS) before → after | r(lumY,voxY) | r(ΔlumY,ΔvoxY) · kick's Δ | ride p10 / p90 | ribbon % before → after |
+|---|---|---|---|---|---|---|---|
+| TheChain 50–130 | 56.1 | 78.4 / 0.0 | −.05 → .06 | .15 | .04 · .04 | −.26 / .14 | 8.0 → 37.7 |
+| TheChain 170–240 (the bass break + the chant's first 5 s) | 7.4 | 8.0 / 0.0 | −.19 → −.19 | −.09 | **.78** · .00 | .00 / .00 | 15.2 → 15.2 |
+| IBelongHere 40–100 | 81.9 | 79.6 / 10.6 | −.22 → −.09 | .24 | **.37** · .15 | −.20 / .11 | 15.1 → 27.5 |
+| RaindropsOnRoses 100–140 (the lead) | 63.9 | 81.2 / 1.6 | −.07 → −.07 | **.47** | .03 · −.02 | −.19 / .00 | 25.6 → 42.7 |
+| SeeYouDrop 40–100 (chops) | 52.8 | 32.8 / 2.7 | −.53 → −.38 | **.71** | .18 · −.02 | −.17 / .00 | 30.5 → 41.1 |
+| Comptine 11–71 · CyborgNinja 118–178 · Malicious 115–175 | 0 | – / 0.0 | identical rows | – | – | – | identical |
+| Vienna 125–185 | 0 | – / 5.1 | −.08 → −.05 (unsung) | – | – | – | 9.6 → 9.6 |
+
+  Read: **the vertical is the number** — where the ruler can see the sung height at all it follows it (SeeYouDrop .71, Raindrops
+  .47, IBelongHere .24 per frame; the chant .78, IBelongHere .37 on the note's own .25 s), and the kick's Δ on the same frames
+  is ~0, so what moves the picture up and down while someone sings is now the singer. The luminance correlations barely move
+  because they cannot: the light is moved, not added (lum sung +2–6 % under the bloom, unsung within 1 %, SeeYouDrop −7 %).
+  TheChain's long window reads weakest (.15 / .04): 37.7 % of it is the ribbon, whose line IS the waveform and owns the
+  centroid, and the live pitch read on this track covers 53 % of the lane's (§137) — the eye check on the lane is owed. The
+  three silent controls are identical to the frame; Vienna's 5.1 % lit is the live net's known false voice on its synth leads
+  (§123, §127) and was already spent by §127's cloud. The ribbon shares in the "before" column are the pre-§127 rule (`&dvox=0`
+  turns `voxSec` off too); §127's own cloud read 37.7 % on TheChain 50–130 (the first run of this work, on main's bytes).
+- **The eye, so far mine.** Shot pairs at TheChain 68 s (`&dvox=0` against the defaults) and the ride's two extremes (54.1 s, E
+  y01 .12; 120.5 s, D y01 .74): the band is a visible green/pink hoop of larger grains that changes hue with the note, and after
+  the sign fix sits low on the low note and high on the high one. The user's eye is the gate (`#test&track=TheChain&scene=3&vox=live`
+  for the live net, `#test&track=TheChain&scene=3` for the lane; `&dvox=0` on either for the before).
+- **The md5s.** The fake smoke `IDS="3" tools/scene-md5.sh s138` (`tools/accept/v0.39/scene-md5-s138.txt`): **2 of 2 HOLD** — the
+  fake timeline has voxConf 0 → w 0 → both shader blocks skipped. The real roster, s3 only, both map modes
+  (`SCENES=3 PAR=2 tools/real-md5.sh s138-s3`, `tools/accept/v0.39/real-md5-s138-s3.txt`): MD5_RESULT_PENDING
+- **Pitfalls paid.** A `tools/serve.js` left on a port by an earlier lane from the MAIN checkout served main's bytes to the first
+  fake-md5 attempt (one md5 for both frames, hop 5106); a Chrome left on a debug port (PORT + 1000) by a killed lane was ATTACHED
+  TO by the next run on that PORT, which then shot the stale page 74 times (every line one md5, "heard 171.417" on all of them) —
+  `ss -ltnp | grep 88` and `pgrep -fa remote-debugging-port` before a list, and kill by pid. `pgrep -f` with the pattern's own text
+  elsewhere in the same command line (a relaunch line) kills the shell (exit 144). `URLSearchParams` keeps the FIRST `map=`.
+- **What is left.** The user's eye on all four voiced tracks, live and lane; the lane's picture under the ruler (dust-trace would
+  need a `&map=1` path); TORUS2 and FLUID2 under the same question (§137 left them untaken); the §127 ribbon rise's sign on
+  TORUS2's strand if it shares the recipe (not checked); the mirrored view in `lookVP()` left as it is (every formation was tuned
+  under it); the full real roster (s0 / s2 / s4) not re-cut here — only scene 3's folder moved.
