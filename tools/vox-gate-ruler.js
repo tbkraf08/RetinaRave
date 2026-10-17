@@ -19,7 +19,7 @@ import { VOXK, mkVox, vox } from '../assets/math/vox.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SR = 48000, FPS = 60;
-const TRACKS = ['Comptine', 'CyborgNinja', 'Vienna', 'Malicious', 'WhoLikesToParty', 'IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop'];
+const TRACKS = ['Comptine', 'CyborgNinja', 'Vienna', 'Malicious', 'WhoLikesToParty', 'IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop', 'TheChain'];
 const argv = process.argv.slice(2);
 const flag = (k, d) => { const a = argv.find((x) => x.startsWith('--' + k + '=')); return a === undefined ? d : a.slice(k.length + 3); };
 const MUSIC = path.resolve(flag('music', process.env.MUSIC || path.join(os.homedir(), 'Music/RetinaRave')));

@@ -450,6 +450,68 @@
    "gate": true,
    "vox": "tools/truth/SeeYouDrop.vox.json"
   },
+  "TheChain": {
+   "track": "TheChain",
+   "seconds": 270.0,
+   "bpm": 153.8,
+   "loudest30_from": 224,
+   "drops": [
+    199.692
+   ],
+   "runs": [
+    {
+     "at": 0.0,
+     "shots": [
+      {
+       "name": "intro",
+       "t": 10.0,
+       "f": 602
+      }
+     ]
+    },
+    {
+     "at": 80.0,
+     "shots": [
+      {
+       "name": "quiet",
+       "t": 90.0,
+       "f": 602
+      }
+     ]
+    },
+    {
+     "at": 174.0,
+     "shots": [
+      {
+       "name": "build1",
+       "t": 194.692,
+       "f": 1244
+      },
+      {
+       "name": "drop1",
+       "t": 199.692,
+       "f": 1544
+      }
+     ]
+    },
+    {
+     "at": 224.0,
+     "shots": [
+      {
+       "name": "groove",
+       "t": 234.0,
+       "f": 602
+      }
+     ]
+    }
+   ],
+   "rulers": {
+    "from": 204.0,
+    "to": 264.0
+   },
+   "gate": false,
+   "vox": "tools/truth/TheChain.vox.json"
+  },
   "Vienna": {
    "track": "Vienna",
    "seconds": 192.4,

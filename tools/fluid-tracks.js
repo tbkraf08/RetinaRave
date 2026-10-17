@@ -54,7 +54,7 @@ if (process.env.FLUIDK) Object.assign(K, JSON.parse(process.env.FLUIDK));
 // the rulers' constants (RADIUS, INK_BUDGET, DROP_DISS) are the BASE grammar's: a composing grammar's K (inject2's K2, §116) has none of them
 const KR = K.RADIUS !== undefined ? K : (await import('../assets/core/fluid/inject.js')).K;
 const WIN = JSON.parse(fs.readFileSync(path.join(HERE, 'truth/windows.json'), 'utf8')).tracks;
-const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious RaindropsOnRoses rec').split(/\s+/).filter(Boolean);
+const TRACKS = (process.env.TRACKS || 'SeeYouDrop Vienna IBelongHere CyborgNinja WhoLikesToParty Comptine Malicious RaindropsOnRoses TheChain rec').split(/\s+/).filter(Boolean);
 const MODES = (process.env.MODES || '1 0').split(/\s+/).filter(Boolean);
 const BRK = { IBelongHere: [144, 178] };   // the survey's false-arm window (FLUID-TRACKS §4)
 const SURVEY = {};   // the survey's window seconds per track (tools/work/fluid-tracks/windows.txt when present)

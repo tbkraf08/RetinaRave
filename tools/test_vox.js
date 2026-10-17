@@ -38,11 +38,13 @@ const ok = (name, pass, value, target) => {
 };
 const note = (name, value) => console.log('  note  ' + name.padEnd(58) + String(value));
 const SR = 48000;
-const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'Malicious', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty'];
+const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'Malicious', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty', 'TheChain'];
 // The VOICED tracks, by the §122 table's own definition: hand windows AND pYIN voicing inside them (IBelongHere E4, RaindropsOnRoses D4,
 // SeeYouDrop C#5). WhoLikesToParty's 20 % of hand windows are shouted chops with NO pYIN voicing ("shouted, not sung"), so its 2x claim
 // is RECORDED below, not gated: the hand says voice, the pitch ruler says no pitch, and the net is trained on sung-or-spoken frames.
-const VOICED = ['IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop'];
+// TheChain (the ninth track, §137) joins them: 8 hand passages, 1236 pyin-voiced frames in them, f0 p50 341 Hz (F4) — and it is
+// UNSEEN (voxtrain.py LIB_HELD), so its ratio is the honest one.
+const VOICED = ['IBelongHere', 'RaindropsOnRoses', 'SeeYouDrop', 'TheChain'];
 const SHOUTED = ['WhoLikesToParty'];
 // The control. Comptine (solo piano) is UNSEEN since §126 (voxtrain.py LIB_HELD = IBelongHere + Comptine): §123's final split trained
 // on it (three earlier runs held it out and read its piano as a voice on 28 / 22 / 17 % of frames), so its 10 % was in-sample — this

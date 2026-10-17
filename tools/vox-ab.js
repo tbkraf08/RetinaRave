@@ -46,7 +46,7 @@ import { VoxTrack, VOX_GATE } from '../assets/engine/ears/vox.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SR = 48000;
-const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'Malicious', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty'];
+const TRACKS = ['Comptine', 'IBelongHere', 'RaindropsOnRoses', 'CyborgNinja', 'Malicious', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty', 'TheChain'];
 const argv = process.argv.slice(2);
 const flag = (k, d) => { const a = argv.find((x) => x.startsWith('--' + k + '=')); return a === undefined ? d : a.slice(k.length + 3); };
 const MUSIC = path.resolve(flag('music', process.env.MUSIC || path.join(os.homedir(), 'Music/RetinaRave')));

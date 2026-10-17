@@ -13,7 +13,7 @@
 #   PORT=88xx tools/traces.sh [names…]        names: <Track>-map1 <Track>-map0 rec-map0 (default: all 17); TRACKS="A B" limits the default
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p tools/truth/traces
-TRACKS=${TRACKS:-Comptine CyborgNinja IBelongHere Malicious RaindropsOnRoses SeeYouDrop Vienna WhoLikesToParty}
+TRACKS=${TRACKS:-Comptine CyborgNinja IBelongHere Malicious RaindropsOnRoses SeeYouDrop TheChain Vienna WhoLikesToParty}
 W=${*:-$(for t in $TRACKS; do echo $t-map1 $t-map0; done) rec-map0}
 for n in $W; do
   if [ "$n" = rec-map0 ]; then
