@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 """Hear a truth grid: the track with a click on every truth beat -> tools/work/<name>-click[-everyN].wav
 
-  python3 tools/truth/clicktrack.py <name> [--every=N] [--no-downbeat] [--drops] [--sections] [--from=S] [--to=S] [--gain=dB]
+  python3 tools/truth/clicktrack.py <name> [--every=N] [--offset=N] [--bar=N] [--no-downbeat] [--drops] [--sections]
+                                           [--from=S] [--to=S] [--gain=dB]
 
 The only ruler that is the user's (NEXT-SESSION-PROMPT "Validating a truth grid"): a late grid is heard as a flam, a wrong bar
 line as the accent on the wrong beat, a wrong drop as a click where nothing happens, a wrong OCTAVE as twice (or half) the
 clicks the music nods to. Reads tools/truth/<name>.json (beats / downbeats / drops / sections / drops_user) and the stereo PCM
 dump tools/work/<name>.48000.st.f32 (never regenerate that with `trackmap.py --pcm` on a track that has a truth dir).
   --every=N      click every Nth beat (2 = half time, 4 = quarter) - to hear which lattice the music actually nods to
+  --offset=N     start the --every lattice at beat index N: WHICH of the N parities is clicked (DECISIONS §137 addendum - the
+                 user on TheChain's first half-time render: "I nod my head at 76 bpm, but the B clicks off beat". --every=2
+                 alone clicks the EVEN beat indices, and on a grid whose downbeat is an odd index that is the wrong half of
+                 the bar: every accent falls in a gap and the whole render is heard as off-beat. Pick the parity that carries
+                 the map's own `downbeat_mod4`.)
+  --bar=N        accent every Nth CLICKED beat instead of the truth `downbeats` list - the bar of the HEARD lattice, not of the
+                 grid (at --every=2 the grid's 4-beat bar is only 2 heard beats, so a bar of 4 at half time is --every=2 --bar=4).
+                 The count runs from the first beat of the lattice (index `offset`), so it does not move with --from/--to.
   --no-downbeat  no accent on the downbeats (default: the first beat of each bar is a lower, louder click)
   --drops        a long low click on every truth drop (drops_user if present, else drops)
   --sections     a short high double-click on every section start
@@ -35,7 +44,9 @@ def main():
         print(__doc__); sys.exit(1)
     name = args[0]
     opt = lambda k, d=None: next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--' + k + '=')), d)
-    every = int(opt('every', 1)); t_from = float(opt('from', 0)); t_to = opt('to'); gain_db = float(opt('gain', -6))
+    every = int(opt('every', 1)); offset = int(opt('offset', 0)); barn = opt('bar')
+    barn = int(barn) if barn else 0
+    t_from = float(opt('from', 0)); t_to = opt('to'); gain_db = float(opt('gain', -6))
     tj = json.load(open(os.path.join(HERE, name + '.json')))
     pcm = os.path.join(WORK, f'{name}.{SR}.st.f32')
     if not os.path.exists(pcm):
@@ -57,10 +68,13 @@ def main():
     beats = tj.get('beats', [])
     downs = set(round(d, 4) for d in tj.get('downbeats', [])) if '--no-downbeat' not in sys.argv else set()
     cb, cd = click(2000, 25), click(1000, 40)
-    nb = 0
+    nb = na = 0
     for k, b in enumerate(beats):
-        if k % every or not (t_from <= b < t1): continue
-        if round(b, 4) in downs: put(b, cd, g * 10 ** (4 / 20))
+        if k < offset or (k - offset) % every: continue
+        j = (k - offset) // every                       # the index of this beat within the HEARD lattice
+        if not (t_from <= b < t1): continue
+        acc = (j % barn == 0) if barn else (round(b, 4) in downs)
+        if acc: put(b, cd, g * 10 ** (4 / 20)); na += 1
         else: put(b, cb, g)
         nb += 1
     nd = ns = 0
@@ -75,7 +89,7 @@ def main():
             put(t0, cs, g); put(t0 + 0.06, cs, g); ns += 1
     y = x * 0.85 + c[:, None]
     y /= max(1.0, np.abs(y).max())
-    tag = f'-every{every}' if every > 1 else ''
+    tag = (f'-every{every}' if every > 1 else '') + (f'-off{offset}' if offset else '') + (f'-bar{barn}' if barn else '')
     out = os.path.join(WORK, f'{name}-click{tag}.wav')
     with wave.open(out, 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
@@ -83,9 +97,12 @@ def main():
     bpm = tj.get('bpm_grid', {}).get('bpm')
     bg = tj.get('bpm_grid', {})
     hand = tj.get('hand') or bg.get('hand') or tj.get('anchor') == 'hand'   # §72 wrote Malicious's hand under bpm_grid.hand
-    prov = 'provisional' if tj.get('provisional') else ('hand' if hand else ('anchor' if bg.get('anchor') else 'tool (no anchor, no hand)'))
-    print(f'{out}: {t_from:.1f}-{t1:.1f} s, {nb} clicks (every {every}; grid {bpm} BPM -> {bpm / every if bpm else "?"} heard), '
-          f'{len(downs) and "downbeats accented" or "no downbeat accent"}, {nd} drops, {ns} sections; grid provenance: {prov}')
+    # as gridcheck.py: a hand lattice nobody has listened to yet is `provisional`, wherever the flag sits (TheChain, §137 addendum)
+    prov = 'provisional' if (tj.get('provisional') or (isinstance(hand, dict) and hand.get('provisional'))) else \
+        ('hand' if hand else ('anchor' if bg.get('anchor') else 'tool (no anchor, no hand)'))
+    acc_src = (f'bar of {barn} on the heard lattice' if barn else ('the truth downbeats' if downs else 'none'))
+    print(f'{out}: {t_from:.1f}-{t1:.1f} s, {nb} clicks (every {every} from beat index {offset}; grid {bpm} BPM -> '
+          f'{bpm / every if bpm else "?"} heard), {na} accents ({acc_src}), {nd} drops, {ns} sections; grid provenance: {prov}')
 
 
 if __name__ == '__main__':

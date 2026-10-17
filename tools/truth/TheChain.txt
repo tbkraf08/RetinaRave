@@ -132,3 +132,22 @@ the vocal ground truth (tools/truth/TheChain.vox.json; htdemucs --two-stems=voca
     2:09.72-2:48.69  ( 39.0 s)  share 0.46  368.0 Hz F#4
     3:54.81-4:23.39  ( 28.6 s)  share 0.42  333.3 Hz E4
   the INSTRUMENTAL gaps >= 5 s: 0:00.00-0:30.41 (30 s) · 0:37.29-0:43.26 (6 s) · 1:20.01-1:33.99 (14 s) · 1:39.83-1:46.59 (7 s) · 1:52.81-1:59.33 (7 s) · 2:48.69-3:54.81 (66 s) · 4:23.39-4:30.22 (7 s)
+
+the FELT GRID — 76 BPM on the odd half of the 152 lattice (bpm_grid.hand, hand-chosen and PROVISIONAL; DECISIONS §137 addendum,
+the user's ear on the A/B click renders, 2026-10-17: "I nod my head at 76 bpm, but the B clicks off beat"):
+  bpm 75.9996 (beat 0.789478 s = 2 x 0.394739), phase 0.417959 s = the tool's phase + ONE 152-beat (the beats at ODD k,
+    `beats[1::2]`, 342 of them, 0.418 -> 269.758 s) — §137's B render was --every=2, which takes the EVEN k, so its 76-beat
+    sat on the other half of the bar and carried 0 accents over its 76 clicks: that is the "off beat"
+  bar 3.157912 s = 8 of the 152-beats, bar phase 1.207400 s = k 3 mod 8 (the map's own first printed downbeat; downbeat_mod4
+    on this 76 lattice = 1), 85 complete bars of 4
+  the parity is the one thing the map is sure of: downbeat_phase scores [4.763, 6.298, 4.593, 6.577] peak on the ODD indices
+    1 and 3 at 1.35x the even ones, and the kit agrees — of the 940 kicks 576 sit within 50 ms of a truth beat, 312 odd /
+    264 even; of the 985 snares 584 sit on a beat, 312 / 272
+  the HALF-bar is a tie and stays unchecked: folded mod 8 the kicks read 77 on index 3 against 76 on index 7, the snares
+    73 against 75
+  summary.bpm is 76.0 since 2026-10-17; the onset ACF's 153.8 is summary.bpm_tool and bpm_grid.bpm 151.9991 is the DP gaps'
+    median — neither is this track's tempo
+  the `beats` / `downbeats` lists are UNCHANGED (the §72 / §117 rule: the figure is recorded, the list stays), so every drum
+    slot, the one drop's bar pin and the 30 sections are untouched
+  the ear still owed, and the GATE waits on it (windows.py NO_GATE): ~/Music/RetinaRave-clicks/TheChain-B2-76-25to85.wav and
+    TheChain-B2-76-170to230.wav — clicktrack.py --every=2 --offset=3 --bar=4, 75 and 76 clicks, 19 accents each

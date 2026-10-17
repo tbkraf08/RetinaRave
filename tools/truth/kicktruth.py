@@ -82,8 +82,18 @@ if __name__ == '__main__':
     RISE = opt('--rise', 4.0)
     tracks = [x for x in a if not x.startswith('--') and not x.replace('.', '').isdigit()] or \
         ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious', 'Vienna']
-    # the §66 reference list is a gitignored one-off (tools/work/v66, long gone from this machine): its absence costs the
-    # Vienna row ONE column, not the run — the ninth track's import (§137) found the unconditional load fatal for every track.
+    # THE §66 REFERENCE LIST — where it comes from and how to remake it (DECISIONS §137 addendum; the user: "why not generate so
+    # truth is there?"). `tools/work/v66/kick-ref-rise.json` is 60 times (s), THIS method on Vienna only, over 24-60 s, written by
+    # `tools/work/v66/kick3.py` — §66 Q1's one-off, which runs the same 60-150 Hz rise at >= 4.0 dB with a local max over +-1 line,
+    # but on a DEAD-FLAT 16th lattice (phase 0.0026 s, bar 8/3 s = Vienna's 90.000 BPM hand grid) over an audio slice trimmed to
+    # 21-63 s, where this tool uses the DP `beats` list and the whole file. Those two differences are the whole 60-vs-57 gap below.
+    # It is NOT hand-marked: no ear placed a hit (§68/§69 call it "hand-made" meaning built on Vienna's HAND GRID).
+    # TO REGENERATE (gitignored, as the original):
+    #     cp /home/toma/Archive/RetinaRave-work/v66/{lib.py,kick3.py} tools/work/v66/ && (cd tools/work/v66 && python3 kick3.py)
+    # It writes kick-ref-rise.json (60 hits = 1.67 /s) and clap-ref-rise.json (72 = 2.00 /s), both spanning 24.0026-59.8359 s, and
+    # 2026-10-17 it reproduced the 2026-09-30 originals BIT-IDENTICAL (md5 5e2f7125e02ba3726590996f7ea52780 / f060d5822243e628eaf426259f8258f3).
+    # The Vienna column then prints `§66 24-60: 57/60 m55 P 0.96 R 0.92`, which is §68's own published row to the digit.
+    # The load stays conditional (§137): the file is a gitignored one-off, and its absence costs the Vienna row one column, not the run.
     p66 = os.path.join(ROOT, 'tools/work/v66/kick-ref-rise.json')
     v66 = np.array(json.load(open(p66)), float) if os.path.exists(p66) else None
     for tr in tracks:
