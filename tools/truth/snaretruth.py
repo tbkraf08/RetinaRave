@@ -16,7 +16,9 @@ On Vienna `mid` lists 201 onsets = 1.04 /s where §66's own hand-built rim/clap 
 hit list rather than a list of the pad's swells.
 
 THE BAND IS 150-800, swept (150-600 / 150-800 / 150-1200 / 150-2500 / 200-800) against the one hand-made list
-there is: §66's `tools/work/v66/clap-ref-rise.json` (72 rim / clap hits on Vienna's beats 2 and 4, 24-60 s).
+there is: §66's `tools/work/v66/clap-ref-rise.json` (72 mid-band transients on Vienna's 90.000 BPM hand grid, 24-60 s;
+§68/§69 describe it as "72 hits on beats 2 and 4" and its two biggest slot bins ARE 2 and 4, but 46 of the 72 sit
+elsewhere -- §137 addendum, where its provenance and the one-line recipe to regenerate it are recorded at the load site).
 150-800 at 4.0 dB reproduces it at **P 1.00 / R 0.97 (70 of 72) at lag +0 ms** — 150-600 reads 0.87 / 0.81 and
 150-2500 0.98 / 0.90 — and it lists 1.83 hits/s on Vienna against §66's own measured 1.81 /s. The floor plateaus
 at 3.0-4.0 dB (R 0.97 both) and breaks at 5.0 (R 0.67), so 4.0 is the top of the plateau, as it is for the kick.
@@ -113,8 +115,17 @@ if __name__ == '__main__':
     RISE, LO, HI = opt('--rise', 4.0), int(opt('--lo', 150)), int(opt('--hi', 800))
     tracks = [x for x in a if not x.startswith('--') and not x.replace('.', '').isdigit()] or \
         ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious', 'Vienna']
-    # as kicktruth.py (§137): the §66 clap reference is a gitignored one-off that no longer exists here — its absence
-    # costs the Vienna row one column, not the run.
+    # THE §66 REFERENCE LIST — see the long note at the same load site in kicktruth.py (DECISIONS §137 addendum; the user: "why not
+    # generate so truth is there?"). `tools/work/v66/clap-ref-rise.json` is 72 times (s) over 24.0026-59.8359 s = 2.00 /s, the
+    # 150-800 Hz rise at >= 4.0 dB with a local max over +-1 line on Vienna's 90.000 BPM hand grid's 16th lattice, written by
+    # `tools/work/v66/kick3.py` (§66 Q1's one-off) — not hand-marked; "hand-made" in §69 means built on the HAND GRID. Its slot
+    # histogram over the 16 slots of the bar is [11 0 8 0 14 0 0 6 6 7 0 1 12 0 7 0]: the two biggest bins ARE beats 2 and 4
+    # (slots 4 and 12), but 46 of the 72 are elsewhere — so it is the MID-BAND TRANSIENT list §69 says it is, not 72 backbeats.
+    # TO REGENERATE (gitignored, as the original):
+    #     cp /home/toma/Archive/RetinaRave-work/v66/{lib.py,kick3.py} tools/work/v66/ && (cd tools/work/v66 && python3 kick3.py)
+    # 2026-10-17 that reproduced the 2026-09-30 original BIT-IDENTICAL (md5 f060d5822243e628eaf426259f8258f3) and the Vienna column
+    # prints `§66 24-60: 70/72 m70 P 1.00 R 0.97`, which is §69's own published row to the digit.
+    # The load stays conditional (§137): the file is a gitignored one-off, and its absence costs the Vienna row one column, not the run.
     p66 = os.path.join(ROOT, 'tools/work/v66/clap-ref-rise.json')
     v66 = np.array(json.load(open(p66)), float) if os.path.exists(p66) else None
     for tr in tracks:
