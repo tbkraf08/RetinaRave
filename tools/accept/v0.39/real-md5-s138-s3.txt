@@ -1,0 +1,89 @@
+# §138 (2026-10-17): the real-music md5 roster for DUST (s3) on branch `dust-voice2` at 87d2d1f — the voice as the lead (the sung band,
+# the ride, the size, DIM .45, the gain budget DIM/p, the rise's sign).
+#   SCENES=3 PAR=2 PORT=8911 GPU=1 MUTE=1 tools/real-md5.sh s138-s3        # 74 lines · 49 runs · f0 2 on all · errs [] · 908 s wall
+# READ AGAINST: tools/accept/v0.39/real-md5-s135.txt (66 s3 lines; TheChain is §137's, after s135, so its 8 lines are NEW, not moved).
+# RESULT: 50 of 66 HOLD, 16 MOVE, 8 NEW:
+#   UNVOICED, both map modes: Comptine 8/8 · CyborgNinja 8/8 · Malicious 8/8 · WhoLikesToParty 8/8 · rec 2/2 HOLD — w 0 there, the
+#     shader's voice blocks skipped, the cloud bit for bit §127's.
+#   Vienna 7/8: drop1-f1522-m0 MOVES (the live path only; its m1 line holds) — the live net's known false voice on Vienna's synth
+#     leads (§123's 17–31 %, the §127 knee lets 5 % of its frames through: dust-voice-s138.txt's 5.1 % lit) is w > 0 at that frame,
+#     and §127's cloud already spent it (s135 has it in); §138 spends it differently. The gate's leak, not DUST's — the brief's
+#     "every unvoiced line holds" is MISSED on this one line and explained, not hidden.
+#   VOICED, expected to move: IBelongHere 5 of 8 (build1-m1, drop1-m1, groove-m0, groove-m1, intro-m1) · RaindropsOnRoses 6 of 8
+#     (build1 / drop1 / intro, both modes) · SeeYouDrop 4 of 8 (build1-m0, drop1-m0, groove-m0, intro-m1) · TheChain 8 NEW.
+#     The lines of a voiced track that HOLD are frames where the gate is shut (nobody singing at that window's frame).
+# 74 distinct md5s (no stale-page line: see scene-md5-s138.txt's pitfall).
+9cd14c15e9e4cc90a4eb9aa5858dd719  s3-Comptine-build1-f993-m0.jpg
+3e48b851a1ce6eb249d1778d0bd39987  s3-Comptine-build1-f993-m1.jpg
+8b8df3b30ccf2c0d43928eae80bf618a  s3-Comptine-drop1-f1293-m0.jpg
+fb93f0b8f8b1b4f741e2a03755c64817  s3-Comptine-drop1-f1293-m1.jpg
+205f043f9e5c84baa045cb416532d40b  s3-Comptine-groove-f602-m0.jpg
+2ede2d7c4b2e815e4aeaa68abea8f817  s3-Comptine-groove-f602-m1.jpg
+57c68f3d49f5cc961f6e28f6ee998060  s3-Comptine-intro-f602-m0.jpg
+0df659da45f6bb5a87d9922ecf862296  s3-Comptine-intro-f602-m1.jpg
+c25e1b095b091de39a57516a66a4cca1  s3-CyborgNinja-boundary1-f1533-m0.jpg
+11482cb78188efe6656b530f4ba3065b  s3-CyborgNinja-boundary1-f1533-m1.jpg
+e48e9a22b272eaf809c43055fc8bfe28  s3-CyborgNinja-build1-f1233-m0.jpg
+6f57e4c495cbf8f322dd32225574417b  s3-CyborgNinja-build1-f1233-m1.jpg
+c6fc683ea001c1ae2ed90ff3df6ddb3c  s3-CyborgNinja-groove-f602-m0.jpg
+7e930e35281655825a66123cfab9d731  s3-CyborgNinja-groove-f602-m1.jpg
+4da6d7208af5f173da9663c0e91e1661  s3-CyborgNinja-intro-f602-m0.jpg
+34fbcf43f938ae9f8cebf233f6bfb82e  s3-CyborgNinja-intro-f602-m1.jpg
+8c22089df6b22899027cd3b906b6dd9e  s3-IBelongHere-build1-f655-m0.jpg
+ad9f15bba6624db515319035f115dff7  s3-IBelongHere-build1-f655-m1.jpg
+f260bfc31d8f8043430abac4d8f241df  s3-IBelongHere-drop1-f955-m0.jpg
+f84b831855f25e31abf05c1ccd5ec8ee  s3-IBelongHere-drop1-f955-m1.jpg
+3626a5d9a7a279b8ab8f7208c2619ead  s3-IBelongHere-groove-f602-m0.jpg
+ce8179f51e6e37c3b15ca91159e30f27  s3-IBelongHere-groove-f602-m1.jpg
+86b593175af7c087f1a0083847be8870  s3-IBelongHere-intro-f602-m0.jpg
+fc699f9d62a4f60bc6626ea9d89a03bb  s3-IBelongHere-intro-f602-m1.jpg
+ed637ed979bf20235fcac9ce9ccc994e  s3-Malicious-build1-f1221-m0.jpg
+c3dd989cccf499a4b1730312b0561c5e  s3-Malicious-build1-f1221-m1.jpg
+5f75a0e1d393fde97b3820b79f45f167  s3-Malicious-drop1-f1521-m0.jpg
+2f4c74ab12b2ff415e4d39fd2d73cc27  s3-Malicious-drop1-f1521-m1.jpg
+2eff7fb122a7ebe503e6fabab0ac0eb0  s3-Malicious-groove-f602-m0.jpg
+6ef7189e3ce3a217d8ffbca2082a979c  s3-Malicious-groove-f602-m1.jpg
+0d31a360da2873b24bed367ab0ece1e8  s3-Malicious-intro-f602-m0.jpg
+d0c7bba50c741f4226a88607d034ec45  s3-Malicious-intro-f602-m1.jpg
+60916e2744d2aebea2904a918aed713d  s3-RaindropsOnRoses-build1-f730-m0.jpg
+d9242319600805f0f99813fd46057a64  s3-RaindropsOnRoses-build1-f730-m1.jpg
+1bee74510fdcbb20d6c1f34a1295831c  s3-RaindropsOnRoses-drop1-f1030-m0.jpg
+cdcbfe20064c882d7c0064e297e5a1c1  s3-RaindropsOnRoses-drop1-f1030-m1.jpg
+1b3b928eb134bfcb02588f2680df54da  s3-RaindropsOnRoses-groove-f602-m0.jpg
+21f843e5c0d5aef0c6c42766f8ee5503  s3-RaindropsOnRoses-groove-f602-m1.jpg
+c4818d839607d6c62d6154179641b81f  s3-RaindropsOnRoses-intro-f602-m0.jpg
+0401ed13725e2f853c5a8d70d83bd7b2  s3-RaindropsOnRoses-intro-f602-m1.jpg
+1a01b0389ba87a17a706ddb765f004c8  s3-SeeYouDrop-build1-f1238-m0.jpg
+db7ce7f2028d36d3740dc86484d5d9e5  s3-SeeYouDrop-build1-f1238-m1.jpg
+dffc8ea1a1aeedb061c7f20bfa7ec52f  s3-SeeYouDrop-drop1-f1538-m0.jpg
+3e455fb6dabc628ef28659f25b133571  s3-SeeYouDrop-drop1-f1538-m1.jpg
+15626768fc2c39c2735da236efdb8c96  s3-SeeYouDrop-groove-f602-m0.jpg
+6aec2efaa44b26c2f3f408e0d0dba91a  s3-SeeYouDrop-groove-f602-m1.jpg
+0a4f67c7be09a86c90749ae001919484  s3-SeeYouDrop-intro-f602-m0.jpg
+282767bcdc3e7287529d839c172cd2dd  s3-SeeYouDrop-intro-f602-m1.jpg
+0bac66dcee69550f97726c5708a90b50  s3-TheChain-build1-f1244-m0.jpg
+873954da86d58d5b68bb2ba53d40d53f  s3-TheChain-build1-f1244-m1.jpg
+861d2c49d05d42217535547f37e3f9e3  s3-TheChain-drop1-f1544-m0.jpg
+a294f09f4b115ad506fb49f7e3b63b9b  s3-TheChain-drop1-f1544-m1.jpg
+c35002f77e3eb8d632546852b632344c  s3-TheChain-groove-f602-m0.jpg
+92dbfd9c91b0579ed92401764e57934d  s3-TheChain-groove-f602-m1.jpg
+c77f4ddcee77274fd715a3566ab3dcae  s3-TheChain-intro-f602-m0.jpg
+ead46b40e5ba175c4fca1c6b8fc16391  s3-TheChain-intro-f602-m1.jpg
+ee69f8118f07759613adb8cda3fd2c18  s3-Vienna-build1-f1222-m0.jpg
+339e61717196006dce73fab3c1959d47  s3-Vienna-build1-f1222-m1.jpg
+e01a3b71d80ad5fb5694c4229a944bdc  s3-Vienna-drop1-f1522-m0.jpg
+2db3b2de69b73b6cfc202b67639adbcc  s3-Vienna-drop1-f1522-m1.jpg
+c2bf3a276aa7f0bcbc7f6949316cc90d  s3-Vienna-groove-f602-m0.jpg
+e0e112629846e52d57523b87b667c891  s3-Vienna-groove-f602-m1.jpg
+1f66bbf3279e4fcf346f780fd167fa71  s3-Vienna-intro-f602-m0.jpg
+56f50c69ce541081d969bcbf89bb9188  s3-Vienna-intro-f602-m1.jpg
+5cbb241eb929ee7815353ac93abc6f91  s3-WhoLikesToParty-build1-f1232-m0.jpg
+03a0f26db1a40b85ba9817e47ff9f7de  s3-WhoLikesToParty-build1-f1232-m1.jpg
+8208ec6167df5bc1186c2610dc88964d  s3-WhoLikesToParty-drop1-f1532-m0.jpg
+a9267d3f23ecde57126c498c047a2e37  s3-WhoLikesToParty-drop1-f1532-m1.jpg
+b7d177cc6493ceea8770f2ec3f3e4dd8  s3-WhoLikesToParty-groove-f602-m0.jpg
+e170b53660a012d2d2e55c0363b9773e  s3-WhoLikesToParty-groove-f602-m1.jpg
+ebf300da9a7055cd0452eb73f0ac3049  s3-WhoLikesToParty-intro-f602-m0.jpg
+9c304c4ea3d50731b1432844e4c38835  s3-WhoLikesToParty-intro-f602-m1.jpg
+030d93e3350b294d5900792c51970c1e  s3-rec-chords-f1202-m0.jpg
+90c9a5702dde2be3bcea9445a5ce1e83  s3-rec-intro-f602-m0.jpg

@@ -4972,7 +4972,13 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   for the live net, `#test&track=TheChain&scene=3` for the lane; `&dvox=0` on either for the before).
 - **The md5s.** The fake smoke `IDS="3" tools/scene-md5.sh s138` (`tools/accept/v0.39/scene-md5-s138.txt`): **2 of 2 HOLD** — the
   fake timeline has voxConf 0 → w 0 → both shader blocks skipped. The real roster, s3 only, both map modes
-  (`SCENES=3 PAR=2 tools/real-md5.sh s138-s3`, `tools/accept/v0.39/real-md5-s138-s3.txt`): MD5_RESULT_PENDING
+  (`SCENES=3 PAR=2 tools/real-md5.sh s138-s3`, `tools/accept/v0.39/real-md5-s138-s3.txt`): **50 of 66 HOLD, 16 move, 8 new** (74 lines, 49 runs, f0 2 on all, 908 s wall).
+  Every line of Comptine, CyborgNinja, Malicious, WhoLikesToParty and the take holds in both map modes (w 0: the blocks skipped).
+  The voiced tracks move where the gate is open at the window's frame — IBelongHere 5, RaindropsOnRoses 6, SeeYouDrop 4 — and
+  hold where it is shut; TheChain's 8 lines are new (§137 came after s135). **One line of an unvoiced track moves**: Vienna
+  `drop1-f1522-m0`, the live path, where the net's known false voice on its synth leads (§123, 5.1 % of Vienna's frames through
+  the §127 knee) has w > 0 and §127's cloud was already spending it — the gate's leak, not DUST's; the brief's "every unvoiced
+  line holds" is MISSED on that one line, by the same mechanism `&vox=live` on Vienna has always shown. Its `m1` line holds.
 - **Pitfalls paid.** A `tools/serve.js` left on a port by an earlier lane from the MAIN checkout served main's bytes to the first
   fake-md5 attempt (one md5 for both frames, hop 5106); a Chrome left on a debug port (PORT + 1000) by a killed lane was ATTACHED
   TO by the next run on that PORT, which then shot the stale page 74 times (every line one md5, "heard 171.417" on all of them) —
