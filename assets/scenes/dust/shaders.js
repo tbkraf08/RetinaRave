@@ -135,9 +135,11 @@ vec3 form(int k, float n, vec3 h, float id){
   //    grain actually is, so the ribbon is still literally the waveform.
   // §127: the line rises with the sung pitch — added to the WAVE (uVoxC.y in wave units) behind a branch that leaves w
   // UNTOUCHED at 0: any arithmetic on w, even "+ 0.", let the GLSL compiler re-contract the expression and moved CyborgNinja's
-  // file-mode intro and boundary lines with no voice read at all (the first two cuts); a select keeps the original value
+  // file-mode intro and boundary lines with no voice read at all (the first two cuts); a select keeps the original value.
+  // §138: SUBTRACTED — the view's up is world −y (lookVP's s is −cross(f, up), so u = −up; every formation has always lived
+  // mirrored and nobody could tell), and §127's "+" put a HIGH note LOW on screen; the shot pair ride-lo54 / ride-hi120 proved it
   float x = (h.z < .5 ? -1. : 1.) * (.02 + .98 * h.x); float w = wave(.5 + .5 * x);
-  if (uVoxC.y != 0.) w += uVoxC.y;
+  if (uVoxC.y != 0.) w -= uVoxC.y;
   vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);
   pz.yz *= rot(x * 2.5 + uFlowMid * .4);
   return pz;
@@ -185,13 +187,14 @@ void main(){
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
   // §138 THE VOICE'S PLACE AND HEIGHT. vk is the grain's weight in the sung band (the three partials, VOX_W wide); the RIDE
   // lifts the whole cloud with the sung pitch's height and the band further still, so the lit hoop floats up out of the body
-  // on a high note and sinks under it on a low one (y is the one vertical the view keeps: the spin below turns xz). Behind the
-  // same w > 0 branch as the light (§127's rule: any arithmetic on a 0, even "+ 0.", let the compiler re-contract the frame).
+  // on a high note and sinks under it on a low one (y is the one vertical the view keeps: the spin below turns xz; SCREEN up is
+  // world −y here — lookVP's u is −up — so the rise is a subtraction, as the ribbon's is). Behind the same w > 0 branch as the
+  // light (§127's rule: any arithmetic on a 0, even "+ 0.", let the compiler re-contract the frame).
   float vk = 0.;
   if (uVox.x > 0.) {
     float d1 = (fx - uVox.y) / VOX_W, d2 = (fx - uVox.y - VOX_LN2) / VOX_W, d3 = (fx - uVox.y - VOX_LN3) / VOX_W;
     vk = min(1., exp(-d1 * d1) + VOX_A2 * exp(-d2 * d2) + VOX_A3 * exp(-d3 * d3)) * uVox.x;
-    pos.y += uVox.w * (VOX_Y0 + VOX_Y1 * vk);
+    pos.y -= uVox.w * (VOX_Y0 + VOX_Y1 * vk);
   }
   pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);

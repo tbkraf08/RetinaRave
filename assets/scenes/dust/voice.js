@@ -24,7 +24,8 @@
 // ring's terms); (4) THE VERTICAL: the pitch's height y01 (the gate's, eased .35 s — the rig's recipe, §121 "pitch seems more
 // like a vertical move") moves the whole cloud by Y0·w·(y01 − ½) and the band by Y1 more on top, so the lit hoop floats up
 // out of the body on a high note and sinks under it on a low one, riding every rise and fall of the line in every formation
-// (the cloud's own axis is radial; §127 could put pitch-as-height in the ribbon alone). The fundamental's partials keep their
+// (the cloud's own axis is radial; §127 could put pitch-as-height in the ribbon alone — and had its sign wrong: the view's up
+// is world −y, so §127's ribbon rose on screen for a LOW note; both rises are subtractions in the shader now). The fundamental's partials keep their
 // hue but weigh less (A .5 / .25, was .6 / .4): one band moving, not three. Everything still comes through `vox()` — one
 // shared gate, no second detector — and a frame at w 0 is bit for bit §127's.
 // The RIBBON (formations.js shapeFor(): `!subGate && (denK < lone || voxSec > .5)` → RIBBON) is UNCHANGED, a bonus state:
