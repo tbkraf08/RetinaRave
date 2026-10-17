@@ -1,24 +1,32 @@
 // Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
 // use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
 // Source: https://github.com/tbkraf08/RetinaRave
-// The live vocal detector's net, run as a STREAM (DECISIONS §123; the weights: ears/vox-weights.js, written by tools/truth/voxtrain.py).
-// Pure: Float32Arrays and loops — no runtime, no WebGL, no DOM — so it runs in node, in the page and in a Worker, and costs the same.
+// The live vocal detector's net, run as a STREAM — one output EVERY hop (DECISIONS §123 the first net, §133 this one; the weights:
+// ears/vox-weights.js, written by tools/truth/voxtrain.py). Pure: Float32Arrays and loops — no runtime, no WebGL, no DOM — so it runs
+// in node, in the page and in the ears Worker, and costs the same.
 //
-// The batch model (voxtrain.py) is 40 mel bands × 34 hops → conv 3×3 ×16 (padded in frequency, VALID in time) → ReLU → max-pool 2 →
-// conv 3×3 ×16 (the same) → ReLU → max-pool 2 → dense 32 → ReLU → dense 1 → sigmoid. Because the convolutions are valid in time, every
-// column of every layer depends on a fixed neighbourhood of the columns before it, so the same arithmetic runs one column at a time as the
-// hops arrive — one conv1 column per hop (~6 k multiply-adds), one conv2 column per two hops (~46 k), the dense every four (~36 k): ≈ 38 k
-// multiply-adds per hop, 20–40 µs in plain JavaScript, where a batch inference of the whole window every four hops would be ~1 M per run.
-// The output at hop N is EXACTLY the batch model on the window [N − 33, N] (tools/test_vox.js proves it against onnxruntime to 1e-4),
-// and it fires at hops N ≡ 1 (mod 4) counted from the first column — the first at hop 33, the 34th column. Where the stream is:
-//   hop h          the input column h (40 normalised log-mel values); conv1 centred at c = h − 1 needs h − 2 .. h, so it is computed now
-//   c even ≥ 2     pool1 pairs (c − 1, c) → the pooled column p = (c − 2) / 2  (16 ch × 20)
-//   p ≥ 2          conv2 centred at m = p − 1 needs p − 2 .. p
-//   m even ≥ 2     pool2 pairs (m − 1, m) → q = (m − 2) / 2  (16 × 10)
-//   q ≥ 6          the dense over q − 6 .. q, flattened in torch's (channel, frequency, time) order, then the sigmoid
+// THE NET (§133, `--net=tcn` in voxtrain.py): a causal temporal convolution over the normalised 40-band log-mel column —
+//   layer 0   40 → C, kernel 3 over the hops t−2, t−1, t                          (3 840 multiply-adds at C = 32)
+//   blocks     C → C, kernel 3 at dilations 1 2 4 8 (16) (the taps t−2d, t−d, t), ReLU, added to the block's input (residual)
+//                                                                                   (5 × 3 072)
+//   the heads on the last block's column h_t (C wide, shared): the VOICE logit (C → 1, sigmoid) and the PITCH (C → 61, softmax:
+//   60 semitone bins C3..B7 and a 61st "none")                                     (32 + 1 952)
+// ≈ 21 k multiply-adds per hop at C = 32 (21 438 parameters; 43 k at the shipped C = 48 — the width is read from the module), a receptive field of 65 hops (693 ms at 48 kHz / 512). Everything is CAUSAL and
+// the pre-history is ZERO: the batch model (voxtrain.py) left-pads every layer's input with zeros in time, and this stream keeps a
+// 64-slot ring per layer that starts at zero and is never read further back than 32 hops — so the column at hop t here is EXACTLY
+// the batch model's column t on the window that ends at t (tools/test_vox.js (ii) proves it against onnxruntime to 1e-4, every
+// column, both heads). The §123–§126 net was a 40 × 34 window with one inference per four hops; this one has no hold at all.
 import { VOX_W } from './vox-weights.js';
 
-export const N_MEL = 40, T_WIN = 34, C1 = 16, C2 = 16, F1 = 20, F2 = 10, TQ = 7, H1 = 32;
+export const N_MEL = 40, RB = 64, RM = RB - 1;
+export const PITCH_BINS = 60, PITCH_NONE = PITCH_BINS, PITCH_C3 = 130.8127826502993;   // the head's classes: bins 0..59 = C3..B7, 60 = none
+export const hiddenOf = (W = VOX_W) => W.hidden || W.shapes['inp.weight'][0];           // the hidden width C (32 in run 1, 48 from run 3 — voxtrain.py --tcn-c)
+export const dilOf = (W = VOX_W) => W.dil || [1, 2, 4, 8, 16];                           // the blocks' dilations (voxtrain.py --tcn-dil); the deepest tap is 2·max ≤ 32 < RB
+export const rfOf = (W = VOX_W) => 3 + 2 * dilOf(W).reduce((a, d) => a + d, 0);         // the receptive field (hops): 65 at 1 2 4 8 16, 33 at 1 2 4 8
+export const frontOf = (W = VOX_W) => W.front || 0;                                       // §134: the 2-D front layer's channels (0 = none, as run 6)
+export const FPOOL = 4, FQ = N_MEL / FPOOL;                                                // its frequency pool and the pooled bands (10)
+export const inDimOf = (W = VOX_W) => N_MEL + frontOf(W) * FQ;                            // the TCN's input width: the raw 40 (+ F × 10 pooled features)
+export const macPerHop = (W = VOX_W) => { const C = hiddenOf(W), nb = dilOf(W).length, F = frontOf(W); return F * 9 * N_MEL + inDimOf(W) * C * 3 + nb * C * C * 3 + C + C * (PITCH_BINS + 1); };
 
 // Float16 (little-endian, base64) → Float32Array. A hand-rolled decode: Float16Array is not everywhere yet, and this runs once.
 export function decodeF16(b64) {
@@ -32,20 +40,31 @@ export function decodeF16(b64) {
   return out;
 }
 
+// A torch Conv1d weight (O, I, 3) re-laid as [tap][o][i] so the inner loop over the inputs is contiguous (the sums are the same floats
+// in the same order per output: tap by tap, input by input — the order the parity test's tolerance covers).
+function relay(w, O, I) {
+  const out = new Float32Array(3 * O * I);
+  for (let o = 0; o < O; o++) for (let i = 0; i < I; i++) for (let j = 0; j < 3; j++) out[(j * O + o) * I + i] = w[(o * I + i) * 3 + j];
+  return out;
+}
+
 const CACHE = new WeakMap();
-// The decoded, sliced weights of a weights module (memoised per module object: a new Ears on every stream jump must not decode 44 k floats again).
+// The decoded, re-laid weights of a weights module (memoised per module object: a new Ears on every stream jump must not decode again).
 export function weightsOf(W = VOX_W) {
   let w = CACHE.get(W);
   if (w) return w;
-  const all = decodeF16(W.f16);
+  if (W.net !== 'tcn') throw new Error('vox-net: the weights module is a ' + W.net + ' net; this stream runs the §133 TCN');
+  const all = decodeF16(W.f16), C = hiddenOf(W), DIL = dilOf(W), F = frontOf(W), IN = inDimOf(W);
+  if (2 * Math.max(...DIL) >= RB) throw new Error('vox-net: a dilation of ' + Math.max(...DIL) + ' reads past the ' + RB + '-slot ring');
+  if (W.front && W.frontPool !== FPOOL) throw new Error('vox-net: the front layer pools x' + W.frontPool + ', this stream pools x' + FPOOL);
   let o = 0;
   const take = (n) => { const v = all.subarray(o, o + n); o += n; return v; };
-  w = {
-    w1: take(C1 * 1 * 9), b1: take(C1),              // conv1 (16, 1, 3, 3): [ch][0][df][dt]
-    w2: take(C2 * C1 * 9), b2: take(C2),             // conv2 (16, 16, 3, 3): [o][i][df][dt]
-    w3: take(H1 * C2 * F2 * TQ), b3: take(H1),       // fc1 (32, 1120): [j][c·70 + f·7 + t]
-    w4: take(1 * H1), b4: take(1),                   // fc2 (1, 32)
-  };
+  w = { C, DIL, F, IN };
+  if (F) { w.wf = take(F * 9); w.bf = take(F); }           // f2d (F, 1, 3, 3): [f][0][df][dt]
+  w.w0 = relay(take(C * IN * 3), C, IN); w.b0 = take(C); w.blocks = [];
+  for (let k = 0; k < DIL.length; k++) w.blocks.push({ w: relay(take(C * C * 3), C, C), b: take(C) });
+  w.wv = take(C); w.bv = take(1);                     // voice (1, 32, 1)
+  w.wp = take((PITCH_BINS + 1) * C); w.bp = take(PITCH_BINS + 1);   // pitch (61, 32, 1)
   if (o !== all.length) throw new Error('vox-net: weights length ' + all.length + ' != ' + o);
   CACHE.set(W, w);
   return w;
@@ -54,106 +73,89 @@ export function weightsOf(W = VOX_W) {
 export class VoxNet {
   constructor(W = VOX_W) {
     this.W = weightsOf(W);
+    const C = this.C = this.W.C, DIL = this.DIL = this.W.DIL, IN = this.IN = this.W.IN;
     this.h = 0;                                       // the next input column's hop index
-    this.inp = [0, 1, 2].map(() => new Float32Array(N_MEL));          // the 3 newest input columns, by hop % 3
-    this.c1 = [0, 1].map(() => new Float32Array(C1 * N_MEL));        // conv1 columns by centre % 2
-    this.p1 = [0, 1, 2].map(() => new Float32Array(C1 * F1));        // pooled columns by p % 3
-    this.c2 = [0, 1].map(() => new Float32Array(C2 * F1));           // conv2 columns by centre % 2
-    this.q = []; for (let i = 0; i < TQ; i++) this.q.push(new Float32Array(C2 * F2));   // the pool2 columns by q % 7
-    this.hid = new Float32Array(H1);
-    this.p = -1;                                      // the last output (0..1), -1 before any
+    this.mel = new Float32Array(4 * N_MEL);           // the 4 newest MEL columns, by hop & 3 (the front layer's taps read t−2 .. t)
+    this.inp = new Float32Array(4 * IN);              // the 4 newest TCN input columns (the mel + the front layer's pooled features), by hop & 3
+    this.f2 = this.W.F ? new Float32Array(this.W.F * N_MEL) : null;   // the front layer's unpooled column at this hop
+    this.L = []; for (let k = 0; k <= DIL.length; k++) this.L.push(new Float32Array(RB * C));   // layer k's output columns, by hop & 63
+    this.hid = this.L[DIL.length];                    // the last block's ring: the shared column the heads read
+    this.pitch = new Float32Array(PITCH_BINS + 1);    // the pitch head's softmax at the newest hop
+    this.bin = PITCH_NONE; this.pBin = 0; this.pNone = 1;   // its argmax, that class's probability, the "none" probability
+    this.z = 0; this.p = -1;                          // the voice logit and its sigmoid (−1 before any hop)
   }
-  // One hop: the normalised 40-band column. Returns the sigmoid output when the dense fired on this hop, else -1.
+  // One hop: the normalised 40-band column. Returns the voice probability (0..1) — on EVERY hop from the first.
   push(col) {
-    const h = this.h++;
-    this.inp[h % 3].set(col);
-    if (h < 2) return -1;
-    const c = h - 1;
-    this.conv1(c);
-    if (c & 1 || c < 2) return -1;
-    const p = (c - 2) >> 1;
-    this.pool1(c, p);
-    if (p < 2) return -1;
-    const m = p - 1;
-    this.conv2(m);
-    if (m & 1 || m < 2) return -1;
-    const q = (m - 2) >> 1;
-    this.pool2(m, q);
-    if (q < 6) return -1;
-    return (this.p = this.dense(q));
-  }
-  conv1(c) {                                          // centred at hop c: the columns c-1, c, c+1
-    const W = this.W, w = W.w1, b = W.b1, out = this.c1[c & 1];
-    const x0 = this.inp[(c - 1) % 3], x1 = this.inp[c % 3], x2 = this.inp[(c + 1) % 3];
-    for (let ch = 0; ch < C1; ch++) {
-      const wo = ch * 9, bb = b[ch], oo = ch * N_MEL;
-      const w00 = w[wo], w01 = w[wo + 1], w02 = w[wo + 2], w10 = w[wo + 3], w11 = w[wo + 4], w12 = w[wo + 5], w20 = w[wo + 6], w21 = w[wo + 7], w22 = w[wo + 8];
-      for (let f = 0; f < N_MEL; f++) {
-        let s = bb;
-        if (f > 0) s += w00 * x0[f - 1] + w01 * x1[f - 1] + w02 * x2[f - 1];
-        s += w10 * x0[f] + w11 * x1[f] + w12 * x2[f];
-        if (f < N_MEL - 1) s += w20 * x0[f + 1] + w21 * x1[f + 1] + w22 * x2[f + 1];
-        out[oo + f] = s > 0 ? s : 0;
-      }
-    }
-  }
-  pool1(c, p) {                                       // the pair (c-1, c) → p: 2×2 max
-    const a = this.c1[(c - 1) & 1], b = this.c1[c & 1], out = this.p1[p % 3];
-    for (let ch = 0; ch < C1; ch++) {
-      const io = ch * N_MEL, oo = ch * F1;
-      for (let f = 0; f < F1; f++) {
-        const i = io + 2 * f;
-        let m = a[i]; if (a[i + 1] > m) m = a[i + 1]; if (b[i] > m) m = b[i]; if (b[i + 1] > m) m = b[i + 1];
-        out[oo + f] = m;
-      }
-    }
-  }
-  conv2(m) {                                          // centred at pooled m: the pooled columns m-1, m, m+1
-    const W = this.W, w = W.w2, b = W.b2, out = this.c2[m & 1];
-    const x0 = this.p1[(m - 1) % 3], x1 = this.p1[m % 3], x2 = this.p1[(m + 1) % 3];
-    for (let o = 0; o < C2; o++) {
-      const oo = o * F1, bb = b[o];
-      for (let f = 0; f < F1; f++) out[oo + f] = bb;
-      for (let i = 0; i < C1; i++) {
-        const wo = (o * C1 + i) * 9, io = i * F1;
-        const w00 = w[wo], w01 = w[wo + 1], w02 = w[wo + 2], w10 = w[wo + 3], w11 = w[wo + 4], w12 = w[wo + 5], w20 = w[wo + 6], w21 = w[wo + 7], w22 = w[wo + 8];
-        for (let f = 0; f < F1; f++) {
-          let s = w10 * x0[io + f] + w11 * x1[io + f] + w12 * x2[io + f];
-          if (f > 0) s += w00 * x0[io + f - 1] + w01 * x1[io + f - 1] + w02 * x2[io + f - 1];
-          if (f < F1 - 1) s += w20 * x0[io + f + 1] + w21 * x1[io + f + 1] + w22 * x2[io + f + 1];
-          out[oo + f] += s;
+    const t = this.h++, W = this.W, C = this.C, DIL = this.DIL, IN = this.IN, s0 = (t & RM) * C, F = W.F;
+    this.mel.set(col, (t & 3) * N_MEL);
+    const xi = (t & 3) * IN; this.inp.set(col, xi);
+    if (F) {                                          // §134 (b): the 2-D front layer — conv 3×3 ×F over the mel columns t−2 .. t (causal, zero before hop 0,
+      const m = this.mel, f2 = this.f2, wf = W.wf, bf = W.bf;   // frequency padded), ReLU, max-pooled ×4 in frequency → F × 10 features after the 40 raw bands
+      const m0 = ((t - 2) & 3) * N_MEL, m1 = ((t - 1) & 3) * N_MEL, m2 = (t & 3) * N_MEL, z0 = t < 2, z1 = t < 1;
+      for (let f = 0; f < F; f++) {
+        const wo = f * 9, bb = bf[f], oo = f * N_MEL;
+        const w00 = wf[wo], w01 = wf[wo + 1], w02 = wf[wo + 2], w10 = wf[wo + 3], w11 = wf[wo + 4], w12 = wf[wo + 5], w20 = wf[wo + 6], w21 = wf[wo + 7], w22 = wf[wo + 8];
+        for (let b = 0; b < N_MEL; b++) {
+          let s = bb;
+          if (b > 0) { if (!z0) s += w00 * m[m0 + b - 1]; if (!z1) s += w01 * m[m1 + b - 1]; s += w02 * m[m2 + b - 1]; }
+          if (!z0) s += w10 * m[m0 + b]; if (!z1) s += w11 * m[m1 + b]; s += w12 * m[m2 + b];
+          if (b < N_MEL - 1) { if (!z0) s += w20 * m[m0 + b + 1]; if (!z1) s += w21 * m[m1 + b + 1]; s += w22 * m[m2 + b + 1]; }
+          f2[oo + b] = s > 0 ? s : 0;
+        }
+        for (let q = 0; q < FQ; q++) {
+          const i = oo + q * FPOOL; let v = f2[i];
+          for (let k = 1; k < FPOOL; k++) if (f2[i + k] > v) v = f2[i + k];
+          this.inp[xi + N_MEL + f * FQ + q] = v;
         }
       }
-      for (let f = 0; f < F1; f++) if (out[oo + f] < 0) out[oo + f] = 0;
     }
-  }
-  pool2(m, q) {                                       // the pair (m-1, m) → q
-    const a = this.c2[(m - 1) & 1], b = this.c2[m & 1], out = this.q[q % TQ];
-    for (let ch = 0; ch < C2; ch++) {
-      const io = ch * F1, oo = ch * F2;
-      for (let f = 0; f < F2; f++) {
-        const i = io + 2 * f;
-        let v = a[i]; if (a[i + 1] > v) v = a[i + 1]; if (b[i] > v) v = b[i]; if (b[i + 1] > v) v = b[i + 1];
-        out[oo + f] = v;
+    // layer 0: IN → C over the input columns t−2, t−1, t (a column before the first hop is zero: the ring starts at zero and is only written at t)
+    {
+      const out = this.L[0], w = W.w0, b = W.b0, x0 = this.inp, o0 = ((t - 2) & 3) * IN, o1 = ((t - 1) & 3) * IN, o2 = xi;
+      const z0 = t < 2, z1 = t < 1;                   // the taps before the first column read a zero column, not a stale ring slot
+      for (let o = 0; o < C; o++) {
+        let s = b[o];
+        const w0 = o * IN, w1 = (C + o) * IN, w2 = (2 * C + o) * IN;
+        if (!z0) for (let i = 0; i < IN; i++) s += w[w0 + i] * x0[o0 + i];
+        if (!z1) for (let i = 0; i < IN; i++) s += w[w1 + i] * x0[o1 + i];
+        for (let i = 0; i < IN; i++) s += w[w2 + i] * x0[o2 + i];
+        out[s0 + o] = s > 0 ? s : 0;
       }
     }
-  }
-  dense(q) {                                          // over q-6 .. q, flattened (channel, frequency, time)
-    const W = this.W, w3 = W.w3, b3 = W.b3, w4 = W.w4, hid = this.hid, Q = this.q;
-    for (let j = 0; j < H1; j++) {
-      let s = b3[j];
-      const jo = j * C2 * F2 * TQ;
-      for (let t = 0; t < TQ; t++) {
-        const col = Q[(q - 6 + t) % TQ], wt = jo + t;
-        for (let ch = 0; ch < C2; ch++) {
-          const co = ch * F2, wc = wt + ch * F2 * TQ;
-          for (let f = 0; f < F2; f++) s += w3[wc + f * TQ] * col[co + f];
-        }
+    // the residual blocks: x_k+1[t] = x_k[t] + relu(b + Σ taps W_j · x_k[t − (2 − j)·d]); a tap before hop 0 is a zero column (the ring is zero there)
+    for (let k = 0; k < DIL.length; k++) {
+      const d = DIL[k], x = this.L[k], out = this.L[k + 1], w = W.blocks[k].w, b = W.blocks[k].b;
+      const a0 = ((t - 2 * d) & RM) * C, a1 = ((t - d) & RM) * C, a2 = s0;
+      for (let o = 0; o < C; o++) {
+        let s = b[o];
+        const w0 = o * C, w1 = (C + o) * C, w2 = (2 * C + o) * C;
+        for (let i = 0; i < C; i++) s += w[w0 + i] * x[a0 + i] + w[w1 + i] * x[a1 + i] + w[w2 + i] * x[a2 + i];
+        out[s0 + o] = x[a2 + o] + (s > 0 ? s : 0);
       }
-      hid[j] = s > 0 ? s : 0;
     }
-    let z = W.b4[0];
-    for (let j = 0; j < H1; j++) z += w4[j] * hid[j];
-    return 1 / (1 + Math.exp(-z));
+    // the heads on the shared column
+    const h = this.hid, wv = W.wv, wp = W.wp, bp = W.bp, P = this.pitch;
+    let z = W.bv[0];
+    for (let i = 0; i < C; i++) z += wv[i] * h[s0 + i];
+    this.z = z; this.p = 1 / (1 + Math.exp(-z));
+    let mx = -Infinity, bin = 0;
+    for (let c = 0; c <= PITCH_BINS; c++) {
+      let s = bp[c]; const wo = c * C;
+      for (let i = 0; i < C; i++) s += wp[wo + i] * h[s0 + i];
+      P[c] = s; if (s > mx) { mx = s; bin = c; }
+    }
+    let sum = 0;
+    for (let c = 0; c <= PITCH_BINS; c++) { const e = Math.exp(P[c] - mx); P[c] = e; sum += e; }
+    for (let c = 0; c <= PITCH_BINS; c++) P[c] /= sum;
+    this.bin = bin; this.pBin = P[bin]; this.pNone = P[PITCH_NONE];
+    return this.p;
+  }
+  // The pitch head's logits at the newest hop, for the parity test (the softmax above overwrote `pitch`; recomputed from the ring).
+  logits(out = new Float32Array(PITCH_BINS + 1)) {
+    const C = this.C, s0 = ((this.h - 1) & RM) * C, h = this.hid, wp = this.W.wp, bp = this.W.bp;
+    for (let c = 0; c <= PITCH_BINS; c++) { let s = bp[c]; const wo = c * C; for (let i = 0; i < C; i++) s += wp[wo + i] * h[s0 + i]; out[c] = s; }
+    return out;
   }
 }
+// The frequency of a pitch bin (0..59) at an offset in cents.
+export const binHz = (bin, cents = 0) => PITCH_C3 * Math.pow(2, (bin + cents / 100) / 12);

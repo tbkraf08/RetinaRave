@@ -1,0 +1,197 @@
+# §133 (2026-10-15): the streaming vocal net — branch vox-net3 (worktree off main 0a60073). The runs' reports: tools/work/vox/train-report-{tcn1,gru1,tcn2,tcn3,tcn4,tcn5}.json (gitignored); run 6 tcn5 ships.
+# Gates: check 0 fail / 4 warn · license 157 / 0 · npm test exit 0 (166 pass) · bundle 151 + 12 Worker modules · parity voice 6.8e-6 / pitch 1.2e-5 · bench 76.6 / 77.9 / 76.6 us · F1 .818 (>= .84 MISSED) · Comptine 2.3 % at .5 met, 9.5 % at .3 MISSED · eased lag 180 (<= 80 MISSED) · flicker .75x · semi 74 / 97 / 93 · fake smoke 6 lines = s127.
+
+== the runs (Jamendo test, the unseen pair, the classical controls, the pitch head)
+[tcn1] knobs: remix SNR -6..+6 dB, quota {'jam': 0.35, 'lib': 0.1, 'neg': 0.25, 'remix': 0.3}, soft floor 0.3
+[tcn1] net: tcn, 21438 parameters, ~21184 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[tcn1] best epoch 9 (valid AUC 0.889)
+[tcn1] Jamendo test: F1 0.806 P 0.871 R 0.75 AUC 0.892 (362420 frames); pitch: a pitch on 50.9 %, exact 33.5 %, ±1 bin 43.7 % of 69091 pYIN frames; none right on 97.4 %
+[tcn1]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.737 P 0.958 R 0.600 AUC 0.852  fp 10.3 %  pitch 5549 fr: pub 44.2 exact 31.1 ±1 41.3 %; none ok 98.1 %
+[tcn1]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 4.1 %  pitch None fr: pub None exact None ±1 None %; none ok 97.7 %
+[tcn1]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.755 P 0.793 R 0.720 AUC 0.899  fp 10.1 %  pitch 2613 fr: pub 50.8 exact 32.6 ±1 47.3 %; none ok 97.7 %
+[tcn1]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.796 P 0.911 R 0.706 AUC 0.907  fp 4.4 %  pitch 206 fr: pub 9.7 exact 6.3 ±1 8.7 %; none ok 99.6 %
+[tcn1]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.043 P 0.051 R 0.037 AUC 0.301  fp 8.8 %  pitch None fr: pub None exact None ±1 None %; none ok 99.7 %
+[tcn1]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 2.7 %  pitch None fr: pub None exact None ±1 None %; none ok 98.9 %
+
+[gru1] knobs: remix SNR -6..+6 dB, quota {'jam': 0.35, 'lib': 0.1, 'neg': 0.25, 'remix': 0.3}, soft floor 0.3
+[gru1] net: gru, 23150 parameters, ~72256 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[gru1] best epoch 8 (valid AUC 0.899)
+[gru1] Jamendo test: F1 0.812 P 0.895 R 0.743 AUC 0.906 (362420 frames); pitch: a pitch on 14.7 %, exact 2.7 %, ±1 bin 5.3 % of 69091 pYIN frames; none right on 99.8 %
+[gru1]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.694 P 0.970 R 0.541 AUC 0.856  fp 6.6 %  pitch 5549 fr: pub 11.3 exact 1.4 ±1 4.6 %; none ok 100.0 %
+[gru1]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 0.3 %  pitch None fr: pub None exact None ±1 None %; none ok 100.0 %
+[gru1]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.752 P 0.882 R 0.655 AUC 0.912  fp 4.7 %  pitch 2613 fr: pub 14.0 exact 1.1 ±1 5.4 %; none ok 99.9 %
+[gru1]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.683 P 0.967 R 0.528 AUC 0.917  fp 1.2 %  pitch 206 fr: pub 0.0 exact 0.0 ±1 0.0 %; none ok 99.7 %
+[gru1]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.002 P 0.047 R 0.001 AUC 0.213  fp 0.2 %  pitch None fr: pub None exact None ±1 None %; none ok 100.0 %
+[gru1]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 0.3 %  pitch None fr: pub None exact None ±1 None %; none ok 100.0 %
+
+[tcn2] knobs: remix SNR -6..+6 dB, quota {'jam': 0.35, 'lib': 0.1, 'neg': 0.25, 'remix': 0.3}, soft floor 0.3
+[tcn2] net: tcn, 43646 parameters, ~43296 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[tcn2] best epoch 9 (valid AUC 0.894)
+[tcn2] Jamendo test: F1 0.819 P 0.852 R 0.788 AUC 0.896 (362420 frames); pitch: a pitch on 55.9 %, exact 38.6 %, ±1 bin 48.5 % of 69091 pYIN frames; none right on 97.0 %
+[tcn2]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.781 P 0.955 R 0.661 AUC 0.847  fp 12.0 %  pitch 5549 fr: pub 49.9 exact 39.2 ±1 48.7 %; none ok 98.4 %
+[tcn2]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 3.8 %  pitch None fr: pub None exact None ±1 None %; none ok 98.6 %
+[tcn2]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.780 P 0.780 R 0.780 AUC 0.913  fp 11.9 %  pitch 2613 fr: pub 61.8 exact 44.0 ±1 56.9 %; none ok 97.0 %
+[tcn2]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.789 P 0.930 R 0.686 AUC 0.909  fp 3.3 %  pitch 206 fr: pub 16.0 exact 9.2 ±1 11.7 %; none ok 99.6 %
+[tcn2]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.048 P 0.050 R 0.047 AUC 0.289  fp 11.3 %  pitch None fr: pub None exact None ±1 None %; none ok 99.7 %
+[tcn2]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 3.4 %  pitch None fr: pub None exact None ±1 None %; none ok 98.7 %
+
+[tcn3] knobs: remix SNR -6..+6 dB, quota {'jam': 0.35, 'lib': 0.1, 'neg': 0.25, 'remix': 0.3}, soft floor 0.3
+[tcn3] net: tcn, 36686 parameters, ~36384 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[tcn3] best epoch 9 (valid AUC 0.880)
+[tcn3] Jamendo test: F1 0.788 P 0.865 R 0.723 AUC 0.88 (362420 frames); pitch: a pitch on 49.3 %, exact 35.5 %, ±1 bin 43.4 % of 69091 pYIN frames; none right on 97.8 %
+[tcn3]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.750 P 0.976 R 0.609 AUC 0.864  fp 5.7 %  pitch 5549 fr: pub 44.2 exact 36.0 ±1 43.4 %; none ok 98.4 %
+[tcn3]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 5.4 %  pitch None fr: pub None exact None ±1 None %; none ok 97.7 %
+[tcn3]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.727 P 0.778 R 0.683 AUC 0.886  fp 10.5 %  pitch 2613 fr: pub 48.6 exact 33.3 ±1 46.8 %; none ok 97.7 %
+[tcn3]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.772 P 0.871 R 0.693 AUC 0.891  fp 6.5 %  pitch 206 fr: pub 10.2 exact 7.3 ±1 7.3 %; none ok 99.3 %
+[tcn3]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.075 P 0.082 R 0.069 AUC 0.31  fp 9.7 %  pitch None fr: pub None exact None ±1 None %; none ok 99.8 %
+[tcn3]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 2.5 %  pitch None fr: pub None exact None ±1 None %; none ok 99.0 %
+
+[tcn4] knobs: remix SNR -6..+6 dB, quota {'jam': 0.3, 'lib': 0.1, 'neg': 0.35, 'remix': 0.25}, soft floor 0.3
+[tcn4] net: tcn, 31582 parameters, ~31280 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[tcn4] best epoch 13 (valid AUC 0.894)
+[tcn4] Jamendo test: F1 0.81 P 0.874 R 0.754 AUC 0.892 (362420 frames); pitch: a pitch on 48.9 %, exact 34.8 %, ±1 bin 43.4 % of 69091 pYIN frames; none right on 98.4 %
+[tcn4]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.741 P 0.971 R 0.599 AUC 0.847  fp 7.1 %  pitch 5549 fr: pub 43.8 exact 33.5 ±1 42.9 %; none ok 99.0 %
+[tcn4]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 3.1 %  pitch None fr: pub None exact None ±1 None %; none ok 99.0 %
+[tcn4]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.760 P 0.767 R 0.754 AUC 0.904  fp 12.4 %  pitch 2613 fr: pub 55.0 exact 37.5 ±1 52.6 %; none ok 97.7 %
+[tcn4]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.753 P 0.914 R 0.640 AUC 0.895  fp 3.9 %  pitch 206 fr: pub 5.8 exact 3.9 ±1 5.3 %; none ok 99.6 %
+[tcn4]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.069 P 0.067 R 0.072 AUC 0.37  fp 12.6 %  pitch None fr: pub None exact None ±1 None %; none ok 99.9 %
+[tcn4]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 2.2 %  pitch None fr: pub None exact None ±1 None %; none ok 99.3 %
+
+[tcn5] knobs: remix SNR -6..+6 dB, quota {'jam': 0.35, 'lib': 0.1, 'neg': 0.25, 'remix': 0.3}, soft floor 0.3
+[tcn5] net: tcn, 43646 parameters, ~43296 MAC / hop, windows of 128 hops with the loss on the last 64, pitch loss weight 0.5
+[tcn5] best epoch 9 (valid AUC 0.894)
+[tcn5] Jamendo test: F1 0.818 P 0.858 R 0.782 AUC 0.896 (362420 frames); pitch: a pitch on 55.9 %, exact 38.8 %, ±1 bin 48.6 % of 69091 pYIN frames; none right on 97.1 %
+[tcn5]   IBelongHere                        frames   15426 sung  79.5 %  F1 0.776 P 0.966 R 0.649 AUC 0.857  fp 8.8 %  pitch 5549 fr: pub 49.6 exact 38.5 ±1 48.3 %; none ok 98.4 %
+[tcn5]   Comptine                           frames   13499 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 2.3 %  pitch None fr: pub None exact None ±1 None %; none ok 98.9 %
+[tcn5]   RaindropsOnRoses                   frames   18530 sung  35.1 %  F1 0.772 P 0.772 R 0.772 AUC 0.907  fp 12.3 %  pitch 2613 fr: pub 59.9 exact 42.1 ±1 55.0 %; none ok 97.0 %
+[tcn5]   SeeYouDrop                         frames   12663 sung  38.9 %  F1 0.798 P 0.941 R 0.693 AUC 0.915  fp 2.8 %  pitch 206 fr: pub 14.1 exact 7.8 ±1 10.2 %; none ok 99.6 %
+[tcn5]   WhoLikesToParty                    frames   20282 sung  11.2 %  F1 0.045 P 0.049 R 0.042 AUC 0.279  fp 10.2 %  pitch None fr: pub None exact None ±1 None %; none ok 99.8 %
+[tcn5]   ma-00                              frames   30761 sung   0.0 %  F1 0.000 P 0.000 R 0.000 AUC nan  fp 3.2 %  pitch None fr: pub None exact None ±1 None %; none ok 98.7 %
+
+== the raw false-positive share on the no-voice tracks (the net alone, python predict_seq)
+tcn1 Comptine raw>=.3 12.8 % >=.5 4.3 % | Vienna 18.7 / 6.1 · tcn2 11.2 / 3.9 | 17.4 / 5.9 · gru1 1.8 / 0.3 | 6.2 / 2.2 · tcn4 9.6 / 3.3 | 10.2 / 2.6 · tcn5 9.1 / 2.5 | 15.4 / 5.3
+
+== test_vox.js on the shipped weights (tcn5)
+== the mel parity (numpy voxtrain.py == ears/vox.js, raw and normalised log-mel)
+  pass  (i) hops compared                                         3000                          = 3000 (from hop 3)
+  pass  (i) raw log-mel max |Δ|                                   7.05e-5                       <= 1e-4
+  pass  (i) normalised log-mel max |Δ|                            1.29e-5                       <= 1e-4
+== the ONNX parity (onnxruntime on 200 held Jamendo-test windows of 64 hops == the JS stream, every column, both heads)
+  pass  (ii) the stream outputs on EVERY column from the first (no hold)12800 columns, 0 without an output
+  pass  (ii) voice logit max |Δ| vs onnxruntime, every column     6.78e-6                       <= 1e-4
+  pass  (ii) pitch head (61 logits) max |Δ| vs onnxruntime, every column1.24e-5                       <= 1e-4
+  pass  (ii) the weights module                                   tcn, 43646 params, 43296 MAC/hop, 114 KB base64tcn, 40 bands, 60 pitch bins
+  note  (ii) the training run                                     tcn5 of 2026-10-15, 16 epochs, 43646 params; 16 epochs x 200000 windows of 40 x 128 (the loss on the last 64 columns, the pitch loss x …
+  note  (ii) Jamendo test (16 unseen tracks): F1 / P / R / AUC — the §133 gate's >= .84 MISSED, recorded0.818 / 0.858 / 0.782 / 0.896 (362420 frames)
+  note  (ii) Jamendo test, the pitch head vs the stems' pYIN: a pitch on / exact bin / within ±1 bin, none right55.9 / 38.8 / 48.6 % of 69091 frames; none 97.1 %
+  note  (ii) IBelongHere (UNSEEN): F1 / P / R / AUC               0.776 / 0.966 / 0.649 / 0.857
+  note  (ii) Comptine (UNSEEN, the net at .5): false-positive frames — met2.3 % against the plan's < 5 %
+== the ruler per track (tools/work/<T>.48000.st.f32 through the stage; windows_hand from tools/truth/<T>.vox.json)
+  track              hops   hand s   voxS p50 in / out (p90 out)   ratio    fp% (>=.5 outside)   lead p50   voiced   hz cov%  semi%  semi-oct%   us/hop med p99 mean
+  Comptine           13535       0        - / 0.061 (0.289)         -      2.3                 -        0        -      -        -          79   90   79
+  IBelongHere        21854     199    0.583 / 0.101 (0.478)       5.8      9.1                 -     5549       49     48       48          76  113   78
+  RaindropsOnRoses   20892      94    0.770 / 0.068 (0.607)      11.4     12.9             0.829     2613       59     54       58          79  118   81
+  CyborgNinja        16880       0        - / 0.008 (0.032)         -      0.0                 -        0        -      -        -          82  133   84
+  Malicious          20899       1    0.217 / 0.067 (0.246)       3.2      1.6                 -       52        0      0        0          80  122   82
+  SeeYouDrop         14775      75    0.662 / 0.105 (0.327)       6.3      2.1                 -      206       14     10       11          77   89   78
+  Vienna             18061       0        - / 0.103 (0.386)         -      5.2                 -        0        -      -        -          78  134   83
+  WhoLikesToParty    24032      64    0.097 / 0.173 (0.487)       0.6      9.2                 -        0        -      -        -          77  102   77
+  note  (iii) Comptine (the control, UNSEEN): false-positive frames (voxS >= .5) — met2.28 % against the plan's < 5 %
+  pass  (iii) IBelongHere: voxS p50 inside the hand windows > 2x outside0.583 / 0.101 = 5.8x          > 2x
+  note  (iii) IBelongHere: voxHz within a semitone of the stem pYIN (recorded)48 % of 5549 voiced frames (48 % modulo the octave, a pitch on 49 %) — the plan asks 70, the mix ceiling
+  pass  (iii) RaindropsOnRoses: voxS p50 inside the hand windows > 2x outside0.770 / 0.068 = 11.4x         > 2x
+  pass  (iii) RaindropsOnRoses: the lead 1:51.5-2:17 read as voice (p50 voxS)0.829                         >= .5 (by design)
+  note  (iii) RaindropsOnRoses: voxHz within a semitone of the stem pYIN (recorded)54 % of 2613 voiced frames (58 % modulo the octave, a pitch on 59 %) — the plan asks 70, the mix ceiling
+  note  (iii) CyborgNinja (no voice, in-sample): false-positive frames (voxS >= .5)0.00 %
+  pass  (iii) SeeYouDrop: voxS p50 inside the hand windows > 2x outside0.662 / 0.105 = 6.3x          > 2x
+  note  (iii) SeeYouDrop: voxHz within a semitone of the stem pYIN (recorded)10 % of 206 voiced frames (11 % modulo the octave, a pitch on 14 %) — the plan asks 70, the mix ceiling
+  note  (iii) Vienna (no voice, in-sample): false-positive frames (voxS >= .5)5.19 %
+  note  (iii) WhoLikesToParty: voxS p50 inside the hand windows vs outside (shouted chops, no pYIN voicing — recorded)0.097 / 0.173 = 0.6x
+== the wiring (Ears with the stage vs the stage stubbed out: every other field identical; the vox fields reach read())
+  pass  (iv) every non-vox ears field identical with the stage stubbed (30 s, 60 fps)31 fields identical           
+  pass  (iv) voxS reaches read(): in [0, 1], non-zero after the first inferencemax 0.971                     
+  pass  (iv) voxHz is -1 or a pitch in the head's range (C3 − 50 c .. B7 + 50 c), never an averagepitched frames 351 / 1800     
+  pass  (iv) voxConf in [0, 1] and 0 wherever voxS is 0           max 0.941                     
+  pass  (iv) the stage stubbed: voxS / voxHz / voxConf stay at 0 / -1 / 0idle                          
+  note  (iv) Ears.push ms per 512 block with / without the stage (30 s of SeeYouDrop)0.161 / 0.070 (+0.091 ms = 91 us per hop)
+  pass  (iv) §130 setVoxSkip(true): every non-vox ears field identical (30 s, 60 fps)31 fields identical           
+  pass  (iv) §130 setVoxSkip(true): voxS / voxHz / voxConf stay at 0 / -1 / 0idle                          
+  pass  (iv) §130 setVoxSkip(false) re-primes: a fresh VoxTrack, skip offfresh                         
+  note  (iv) §130 Ears.push ms per 512 block with the stage skipped (the lane feeds the keys)0.072 (the stage on: 0.161, −89 us per hop)
+== the lane grid (map.js voxLane + mapVoxAt: the 10 ms sidecar on the engine's clock, §124)
+  pass  (vi) voxLane packs the three arrays                       360000 frames, hop 0.01       
+  pass  (vi) voxLane rejects a stale shape (n past the arrays)    null                          
+  pass  (vi) no drift over an hour of frames: voxS == the nearest framemax |Δ| 0                     == 0
+  pass  (vi) voxHz is categorical (never interpolated with its -1)0 bad frames                  
+  pass  (vi) the ends clamp                                       first / last frame held       
+  pass  (vi) no lane: 0 / -1 / 0 (the live tier keeps the keys)   idle                          
+== the pruned FFT (dsp.js magsLo == mags to the bit on bins 0..kMax; the front end identical through it)
+  pass  (vii) magsLo == mags on bins 0..341 (Object.is, every hop of SeeYouDrop)14772 hops, 0 bins differ     0 bins differ
+  pass  (vii) the front end through magsLo == through mags: mel, x, voxS / voxHz / voxConf (60 s, per hop)5622 hops, 0 values differ    0
+== the bench (the stage alone on SeeYouDrop: the sample loop + the FFT + the mel + the net + the two heads + the salience, per 512-sample hop)
+  pass  (v) the stage: median us per hop                          81.1 us (p99 138, mean 83.1)  <= 100 us (HARNESS "Bench protocol": the stage <= .1 ms per hop)
+  note  (v) hops / inferences                                     14775 / 14772 (§133: one per hop from the first FFT, 43296 MAC each)
+  note  (v) §130 the parts, median us: FFT mags / magsLo (bins 0..341) · the sample loop alone · the stage through mags (60 s) vs through magsLo (the full track above)46.5 / 37.9 · 1.0 · 85.7 vs 81.1
+
+all ok
+
+== vox-ab.js --stage=all on the shipped weights
+the vocal A/B: the live CNN (ears/vox.js over tools/work/<T>.48000.st.f32) against the file-mode lane (/home/toma/Music/RetinaRave)
+
+  track              frames   lane KB   sung % lane / live   agree %   both %   lane pitched   pitched %   semi %   oct %   lag ms    r (r at 0)
+  Comptine           14438       208        0.0 / 9.5        90.5      0.0             98           0        -       -        -   -0.113 (-0.124)
+  IBelongHere        23312       350       67.6 / 58.9       69.2     47.9           6219          47       97      98      140    0.529 (0.462)
+  RaindropsOnRoses   22286       331       44.2 / 47.6       78.8     35.3           5089          37       93      98      180    0.706 (0.671)
+  CyborgNinja        18007       261        0.4 / 0.0        99.6      0.0            151           0        -       -      500    0.457 (0.218)
+  Malicious          22293       321        1.9 / 6.6        91.9      0.2            584           0        -       -        -    0.049 (0.042)
+  SeeYouDrop         15761       227       47.2 / 41.2       77.2     32.8            682           5       74      77      210    0.703 (0.663)
+  Vienna             19266       281        1.4 / 15.6       84.4      0.7            589           2       91      91        -    0.204 (0.166)
+  WhoLikesToParty    25635       367       22.5 / 23.7       61.8      4.0              0           -        -       -        -    0.005 (-0.125)
+
+  the tracks the lane calls voiced (sung % >= 5): IBelongHere, RaindropsOnRoses, SeeYouDrop, WhoLikesToParty
+  agreement 69 % · 79 % · 77 % · 62 %   |   the CNN's lag median 180 ms (140 / 180 / 210, the rows with r >= 0.3, the eased stage, hops stamped at the frame's end)
+
+  the lag per stage (ms, + = live LATE; hops stamped at the frame's end; `-` where r < 0.3), the hold = held − raw, the ease = eased − held; flicker = crossings of .3 per minute
+  track              lag raw   held   eased   | hold   ease   | r raw   held   eased   | flicker lane / held / live
+  Comptine                 -      -       -   |    -      -   | -0.11  -0.11   -0.11   |     0.0 / 166.2 /  47.4
+  IBelongHere            100    100     140   |    0     40   |  0.53   0.53    0.53   |    97.3 / 306.8 /  75.2
+  RaindropsOnRoses       150    150     180   |    0     30   |  0.69   0.69    0.71   |   122.2 / 315.0 /  69.5
+  CyborgNinja            410    410     500   |    0     90   |  0.41   0.41    0.46   |     4.0 /   6.7 /   0.7
+  Malicious                -      -       -   |    -      -   |  0.05   0.05    0.05   |     9.2 / 258.9 /  61.4
+  SeeYouDrop             180    180     210   |    0     30   |  0.69   0.69    0.70   |    99.7 / 360.1 /  86.8
+  Vienna                   -      -       -   |    -      -   |  0.19   0.19    0.20   |     8.1 / 308.9 /  72.9
+  WhoLikesToParty          -      -       -   |    -      -   |  0.01   0.01    0.00   |   228.4 / 609.5 / 152.6
+
+  the voiced runs (frames ≥ .3 in a row), live | lane:
+  Comptine            57 runs: ≤50  11 · ≤100  13 · ≤250  12 · ≤500  13 · ≤1s   8 · >1s   0   |      0 runs: ≤50   0 · ≤100   0 · ≤250   0 · ≤500   0 · ≤1s   0 · >1s   0
+  IBelongHere        146 runs: ≤50  41 · ≤100   9 · ≤250  13 · ≤500  16 · ≤1s  14 · >1s  53   |    189 runs: ≤50  11 · ≤100  12 · ≤250  34 · ≤500  45 · ≤1s  32 · >1s  55
+  RaindropsOnRoses   129 runs: ≤50  52 · ≤100  14 · ≤250  10 · ≤500   7 · ≤1s  16 · >1s  30   |    227 runs: ≤50  32 · ≤100  29 · ≤250  83 · ≤500  48 · ≤1s  27 · >1s   8
+  CyborgNinja          1 runs: ≤50   1 · ≤100   0 · ≤250   0 · ≤500   0 · ≤1s   0 · >1s   0   |      6 runs: ≤50   1 · ≤100   1 · ≤250   4 · ≤500   0 · ≤1s   0 · >1s   0
+  Malicious          114 runs: ≤50  61 · ≤100  19 · ≤250  19 · ≤500   8 · ≤1s   6 · >1s   1   |     17 runs: ≤50   1 · ≤100   4 · ≤250   7 · ≤500   4 · ≤1s   0 · >1s   1
+  SeeYouDrop         114 runs: ≤50  53 · ≤100  12 · ≤250  19 · ≤500  12 · ≤1s  11 · >1s   7   |    131 runs: ≤50   7 · ≤100  10 · ≤250  57 · ≤500  21 · ≤1s  20 · >1s  16
+  Vienna             117 runs: ≤50  48 · ≤100  22 · ≤250  16 · ≤500   8 · ≤1s  15 · >1s   8   |     13 runs: ≤50   2 · ≤100   3 · ≤250   4 · ≤500   3 · ≤1s   1 · >1s   0
+  WhoLikesToParty    326 runs: ≤50 135 · ≤100  50 · ≤250  75 · ≤500  29 · ≤1s  30 · >1s   7   |    488 runs: ≤50  95 · ≤100 121 · ≤250 266 · ≤500   5 · ≤1s   1 · >1s   0
+
+  the voiced rows' medians: raw 150 · held 150 · eased 180 ms   (hold 0, ease 30)   flicker live / lane 0.75x
+
+== the bench, three runs idle-ish (load ~9.5, the user's Chrome + Code open)
+76.8 us (p99 124) · 77.9 us (p99 86) · 76.6 us (p99 96); inside npm test 76.7 (p99 96); run 4 tcn3 71–72; run 5 tcn4 68; run 3 tcn2 97–102 UNDER a 24-thread training load
+
+== the ease sweep (vox-ab --ease=attack,release,voteOf,voteOn; the voiced rows' medians raw · held · eased, flicker live / lane)
+run 1 tcn1: .03,.05,4,3 → 90 · 90 · 140, .82x | .02,.05,3,2 → 140, .92x | .01,.05,3,2 → 140, .95x | .01,.03,2,2 → 120, 1.16x | .015,.05,4,3 → 140, .81x | .01,.08,3,2 → 150, .72x
+run 6 tcn5: .03,.05,4,3 → 150 · 150 · 180, .75x (ships) | .02,.05,3,2 → 180, .79x | .01,.05,3,2 → 180, .83x | .01,.03,2,2 → 170, 1.11x
+
+== npm test
+> node tools/test_dsp.js && node tools/test_rough.js && node tools/test_baby.js && node tools/test_misi.js && node tools/test_hopf.js && node tools/test_tempo.js && node tools/test_director.js && node tools/test_bars.js && node tools/test_drums.js && node tools/test_build.js && node tools/test_queue.js && node tools/test_clock.js && node tools/test_loud.js && node tools/test_tongues.js && node tools/test_fluid.js && node tools/test_vox.js && node tools/test_earsw.js --secs=30 && node tools/test_voxscene.js && node tools/test_music.js
+test_fluid: 350 ok, 0 fail
+  pass  (v) the stage: median us per hop                          76.7 us (p99 96, mean 77.5)   <= 100 us (HARNESS "Bench protocol": the stage <= .1 ms per hop)
+test_earsw: OK
+exit 0
+
+== the fake smoke (IDS=1 3 4, = tools/accept/v0.38/scene-md5-s127.txt)
+293d773c7c9bca96a3adc58f22a0af31  s1-f360.jpg
+96ad310aee4f285c47a40b9d7eee38af  s1-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg

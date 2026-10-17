@@ -7,6 +7,9 @@
     python3 tools/truth/voxtrain.py [--epochs=N] [--per-epoch=N] [--remixes=N] [--var-floor=F] [--tag=T] [--no-train] [--mel-only=<Track>]
                                     [--snr=LO,HI] [--quota=jam,lib,neg,remix] [--soft-floor=F]   (§126 item 4: the recipe's knobs for run 2 / 3,
                                     the defaults = run 1's recipe; a soft target under F inside a hand window is DROPPED, not taught as near-silence)
+                                    [--net=cnn|tcn|gru] [--tcn-c=N] [--tcn-dil=1,2,4,8,16] [--pitch-w=F] [--onset-w=F] [--front=F] [--loss-cols=N] [--pyin-only]   (§133: the STREAM nets — an output every hop and a 61-way
+                                    pitch head on the shared hidden column, trained on the stems' pYIN; --pyin-only computes and caches the
+                                    Jamendo stems' pYIN first (tools/work/vox/pyin/); the default net stays the §123 window CNN)
       -> assets/engine/ears/vox-weights.js   the weights as a JS module (Float16 little-endian, base64; the provenance in its header)
       -> tools/work/vox/vox.onnx              the same net, the same (fp16-rounded) weights — the parity check's reference
       -> tools/work/vox/onnx-parity.json      200 held Jamendo-test windows (the normalised mel, 40 x 34) + onnxruntime's output on them
@@ -309,6 +312,63 @@ def cached(name, build, vf=None):
     return np.load(xp)['x'], z['y'], z['ys'], z['t']
 
 
+# §133: the pitch head's target per item, cached once under mel2/pitch/<name>.npz: int8 per hop — PITCH_NONE (−1) an explicit "no pitch"
+# (the label says no voice, or the stem's share is under STEM_OFF), 0..PITCH_BINS−1 the semitone bin of the stem's pYIN (C3 = 0 … B7 = 59)
+# where vprob ≥ PYIN_VOICED, PITCH_SKIP (−2) no target (voice without a confident pYIN, a pitch outside the head's range: no loss).
+PITCH_BINS, PITCH_C3 = 60, 130.8127826502993      # 60 semitones C3..B7; the head's 61st class is "none"
+PITCH_NONE, PITCH_SKIP = -1, -2
+PITCH_W = 0.5                                       # --pitch-w: the pitch loss's weight beside the voice BCE
+ONSET_W, ONSET_HOPS = 1.0, 10                       # --onset-w: the voice loss's weight on the ONSET_HOPS columns after a 0 -> 1 edge of the target (§133 run 6: the commit lag attacked in the loss, causally)
+
+
+def pitch_bins(f0, vprob, t):
+    """The bin per hop time t from a 10 ms pYIN grid: PITCH_SKIP where unvoiced or out of range."""
+    k = np.clip(np.round(t / PYIN_HOP_S).astype(int), 0, len(f0) - 1)
+    f = f0[k]; v = vprob[k]
+    ok = (v >= PYIN_VOICED) & (f > 0)
+    b = np.full(len(t), PITCH_SKIP, dtype=np.int8)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        bb = np.round(12.0 * np.log2(np.where(ok, f, 1.0) / PITCH_C3)).astype(int)
+    inr = ok & (bb >= 0) & (bb < PITCH_BINS)
+    b[inr] = bb[inr]
+    return b, ok
+
+
+def _pitch_path(name): return os.path.join(MELDIR, 'pitch', name + '.npz')
+
+
+def cached_pitch(name, build):
+    p = _pitch_path(name)
+    if not os.path.exists(p):
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        yp = build()
+        tmp = p + f'.{os.getpid()}.tmp.npz'
+        np.savez(tmp, yp=yp.astype(np.int8)); os.replace(tmp, p)
+    return np.load(p)['yp']
+
+
+def pitch_jamendo(name, t, y):
+    def b():
+        f0, vp = jam_pyin(name)
+        bins, _ = pitch_bins(f0, vp, t)
+        yp = np.where(y == 0, PITCH_NONE, np.where(y == 1, bins, PITCH_SKIP)).astype(np.int8)
+        return yp
+    return cached_pitch('jam-' + os.path.splitext(name)[0], b)
+
+
+def pitch_lib(track, t):
+    def b():
+        f0, vp = lib_pyin(track)
+        bins, _ = pitch_bins(f0, vp, t)
+        inw = np.zeros(len(t), dtype=bool)
+        for w in lib_truth(track).get('windows_hand', []): inw |= (t >= w['from']) & (t < w['to'])
+        return np.where(inw, bins, PITCH_NONE).astype(np.int8)
+    return cached_pitch('lib-' + track, b)
+
+
+def pitch_none(t): return np.full(len(t), PITCH_NONE, dtype=np.int8)
+
+
 def build_jamendo(name, vf=None):
     split = jam_split_of(name)
     def b():
@@ -373,6 +433,54 @@ def jam_has_voice(name):
     return any(len(l.split()) >= 3 and l.split()[2] == 'sing' for l in open(os.path.join(JAMENDO, 'labels', os.path.splitext(name)[0] + '.lab')))
 
 
+# ---------------------------------------------------------------------------------------------------- the pitch truth (§133)
+# The pitch head's target: pYIN on the VOCAL STEM, the recipe of tools/truth/voxtruth.py verbatim (librosa.pyin 65–1050 Hz, 2048-sample
+# frames, a 10 ms hop, center=True) — the library's is in tools/truth/<T>.vox.json (f0 / vprob); the Jamendo stems' is computed here once
+# and cached under tools/work/vox/pyin/<base>.npz (gitignored). A pitch counts where vprob >= PYIN_VOICED (voxlane.py's rule for voxHz).
+PYIN_DIR = os.path.join(WORK, 'pyin')
+PYIN_FMIN, PYIN_FMAX, PYIN_HOP_S, PYIN_VOICED = 65.0, 1050.0, 0.01, 0.5
+
+
+def pyin_of(key, path):
+    """(f0 Hz or -1, vprob) on the 10 ms grid of the stem at `path`, cached as float32 under PYIN_DIR/<key>.npz."""
+    os.makedirs(PYIN_DIR, exist_ok=True)
+    p = os.path.join(PYIN_DIR, key + '.npz')
+    if os.path.exists(p):
+        z = np.load(p); return z['f0'].astype(np.float64), z['vprob'].astype(np.float64)
+    import librosa, soundfile as sf
+    y, sr = sf.read(path, dtype='float32', always_2d=True); y = y.mean(axis=1)
+    hop = int(round(PYIN_HOP_S * sr)); pwin = 2048 if sr <= 48000 else 4096
+    f0, vflag, vprob = librosa.pyin(y, fmin=PYIN_FMIN, fmax=PYIN_FMAX, sr=sr, frame_length=pwin, hop_length=hop, center=True)
+    f0 = np.where(np.isfinite(f0), f0, -1.0)
+    tmp = p + f'.{os.getpid()}.tmp.npz'
+    np.savez(tmp, f0=f0.astype(np.float32), vprob=vprob.astype(np.float32), sr=sr, hop=hop); os.replace(tmp, p)
+    return f0.astype(np.float64), vprob.astype(np.float64)
+
+
+def jam_pyin(name):
+    base = os.path.splitext(name)[0]
+    return pyin_of('jam-' + base, os.path.join(JAM_STEM_DIR, base, 'vocals.wav'))
+
+
+def lib_pyin(track):
+    d = lib_truth(track)
+    return np.asarray(d['f0'], dtype=np.float64), np.asarray(d['vprob'], dtype=np.float64)
+
+
+def _pyin_one(name):
+    t0 = time.time(); jam_pyin(name); return name, time.time() - t0
+
+
+def pyin_all(log, pool):
+    names = [n for n in filelist('train') + filelist('valid') + filelist('test') if has_stem(n)]
+    log(f'pYIN on {len(names)} Jamendo vocal stems -> {os.path.relpath(PYIN_DIR, ROOT)}')
+    t0 = time.time(); done = 0
+    for name, dt in pool.imap_unordered(_pyin_one, names):
+        done += 1
+        if done % 10 == 0 or dt > 60: log(f'  {done} / {len(names)}  {name} {dt:.0f} s  ({time.time() - t0:.0f} s)')
+    log(f'pYIN ready in {time.time() - t0:.0f} s')
+
+
 # ---------------------------------------------------------------------------------------------------- the remixes (re-drawn per epoch)
 def remix_sources():
     """The vocal sources (key, kind, name) and the beds (key, kind, name) the remixes draw from — the train split and the library only."""
@@ -413,7 +521,13 @@ def _remix_one(job):
     ys[(share >= STEM_ON) & src] = 1
     ys[share <= STEM_OFF] = 0
     x = normalise(lm, var_floor=vf).astype(np.float32)
-    return (f'remix:{vname}/{bname}{snr:+.0f}', x, ys)
+    # §133: the pitch target from the SOURCE stem's pYIN at the source's time — a bin where the stem is sung in the remix, none where it is out
+    f0, vp = jam_pyin(vs[1]) if vs[0] == 'jam' else lib_pyin(vs[1])
+    bins, _ = pitch_bins(f0, vp, ts)
+    yp = np.full(H, PITCH_SKIP, dtype=np.int8)
+    yp[ys == 1] = bins[ys == 1]
+    yp[ys == 0] = PITCH_NONE
+    return (f'remix:{vname}/{bname}{snr:+.0f}', x, ys, yp)
 
 
 def draw_remixes(pool, rng, vox, beds, k, vf):
@@ -539,6 +653,233 @@ def evaluate(model, torch, sets):
     return rows, {'frames': int(len(Y)), 'F1': round(F, 3), 'P': round(pr, 3), 'R': round(rc, 3), 'AUC': round(auc(Y, P), 3)}
 
 
+# ---------------------------------------------------------------------------------------------------- the stream nets (§133)
+# --net=tcn | gru: a net that outputs EVERY hop (no 4-hop hold) with a shared 32-wide hidden column h_t, two heads on it — the voice logit
+# and the 61-way pitch (60 semitone bins C3..B7 + none). Both are causal by construction (left zero-padding in time, the same zeros the
+# ears' stream starts from), so the batch model on a window equals the stream column for column (tools/test_vox.js (ii) proves it).
+#   tcn  40 → 32 (k3) then five 32 → 32 (k3, dilations 1 2 4 8 16, residual, ReLU): receptive field 65 hops ≈ 693 ms, ≈ 21 k MAC / hop
+#   gru  the 2-D trunk per hop — conv 3×3 ×16 (causal in time) → ReLU → pool (2, 1) → conv 3×3 ×16 → ReLU → pool (2, 1) → the 16 × 10
+#        column (160) → GRU(32): the pooling only along frequency so a column exists every hop; ≈ 72 k MAC / hop
+# The training windows are SEQ hops long with the loss on the last LOSS_COLS columns (the first columns warm the receptive field / the
+# state up, exactly as the ears' first hops do); every column has its own voice target (the hop's label, −1 masked) and pitch target
+# (PITCH_* above, PITCH_SKIP masked; a band-shifted window has NO pitch loss — a mel-band shift is not a semitone).
+NET = 'cnn'
+SEQ, LOSS_COLS = 128, 64
+TCN_C, TCN_DIL = 32, (1, 2, 4, 8, 16)
+FRONT, FRONT_POOL = 0, 4                            # --front=F (§134 b): a 2-D conv 3x3 x F (causal in time) pooled x4 in frequency, its F x 10 column CONCATENATED to the raw mel column as the TCN's input
+GRU_H = 32
+
+
+def make_stream_model(torch, net):
+    nn = torch.nn; F = torch.nn.functional
+    class TCN(nn.Module):
+        def __init__(self):
+            super().__init__()
+            if FRONT: self.f2d = nn.Conv2d(1, FRONT, 3, padding=(1, 0))
+            self.inp = nn.Conv1d(N_MEL + FRONT * (N_MEL // FRONT_POOL), TCN_C, 3)
+            self.blocks = nn.ModuleList([nn.Conv1d(TCN_C, TCN_C, 3, dilation=d) for d in TCN_DIL])
+            self.voice = nn.Conv1d(TCN_C, 1, 1)
+            self.pitch = nn.Conv1d(TCN_C, PITCH_BINS + 1, 1)
+        def forward(self, x):                                   # x (B, 40, T) → voice (B, T), pitch (B, 61, T)
+            if FRONT:                                           # §134 (b): the frequency-pooled 2-D view beside the raw column
+                h2 = F.max_pool2d(torch.relu(self.f2d(F.pad(x[:, None], (2, 0)))), (FRONT_POOL, 1))   # (B, F, 10, T)
+                x = torch.cat([x, h2.reshape(x.shape[0], -1, x.shape[2])], dim=1)                      # index f·10 + q after the 40 raw bands
+            h = torch.relu(self.inp(F.pad(x, (2, 0))))
+            for conv, d in zip(self.blocks, TCN_DIL):
+                h = h + torch.relu(conv(F.pad(h, (2 * d, 0))))
+            return self.voice(h).squeeze(1), self.pitch(h)
+    class GRUNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv1 = nn.Conv2d(1, 16, 3, padding=(1, 0))
+            self.conv2 = nn.Conv2d(16, 16, 3, padding=(1, 0))
+            self.gru = nn.GRU(16 * (N_MEL // 4), GRU_H, batch_first=True)
+            self.voice = nn.Linear(GRU_H, 1)
+            self.pitch = nn.Linear(GRU_H, PITCH_BINS + 1)
+        def forward(self, x):                                   # x (B, 40, T)
+            h = x[:, None]                                      # (B, 1, 40, T)
+            h = torch.relu(self.conv1(F.pad(h, (2, 0)))); h = F.max_pool2d(h, (2, 1))      # (B, 16, 20, T)
+            h = torch.relu(self.conv2(F.pad(h, (2, 0)))); h = F.max_pool2d(h, (2, 1))      # (B, 16, 10, T)
+            B, C, Fq, T = h.shape
+            h = h.reshape(B, C * Fq, T).permute(0, 2, 1)        # (B, T, 160) — index ch·10 + f
+            h, _ = self.gru(h)                                  # (B, T, 32)
+            return self.voice(h).squeeze(2), self.pitch(h).permute(0, 2, 1)
+    return TCN() if net == 'tcn' else GRUNet()
+
+
+def stream_order(net):
+    if net == 'tcn':
+        return (['f2d.weight', 'f2d.bias'] if FRONT else []) + ['inp.weight', 'inp.bias'] + [f'blocks.{i}.{k}' for i in range(len(TCN_DIL)) for k in ('weight', 'bias')] + ['voice.weight', 'voice.bias', 'pitch.weight', 'pitch.bias']
+    return ['conv1.weight', 'conv1.bias', 'conv2.weight', 'conv2.bias', 'gru.weight_ih_l0', 'gru.weight_hh_l0', 'gru.bias_ih_l0', 'gru.bias_hh_l0', 'voice.weight', 'voice.bias', 'pitch.weight', 'pitch.bias']
+
+
+def stream_macs(net):
+    if net == 'tcn': return FRONT * 9 * N_MEL + (N_MEL + FRONT * (N_MEL // FRONT_POOL)) * TCN_C * 3 + len(TCN_DIL) * TCN_C * TCN_C * 3 + TCN_C + TCN_C * (PITCH_BINS + 1)
+    return 16 * 9 * N_MEL + 16 * 16 * 9 * (N_MEL // 2) + 3 * (160 * GRU_H + GRU_H * GRU_H) + GRU_H + GRU_H * (PITCH_BINS + 1)
+
+
+SEQ_LOOK = int(math.ceil((SEQ - 1) * STRETCH[1])) + 1
+
+
+class SeqGroup:
+    """Every (item, hop) a SEQ-hop window may END at — the end's voice target valid and the stretched span inside the item — with X the
+    concatenated columns and the per-column targets YS (voice, −1 masked) and YP (pitch, PITCH_SKIP masked)."""
+    def __init__(self, sets):
+        xs, yss, yps, ids = [], [], [], []
+        off = 0
+        for x, ys, yp, rep in sets:
+            n = len(x)
+            ok = np.arange(min(SEQ_LOOK, n), n)
+            ok = ok[ys[ok] >= 0]
+            for _ in range(rep): ids.append(ok + off)
+            xs.append(x); yss.append(ys); yps.append(yp); off += n
+        self.X = np.concatenate(xs).astype(np.float32) if xs else np.zeros((0, N_MEL), np.float32)
+        self.YS = np.concatenate(yss).astype(np.float32) if yss else np.zeros(0, np.float32)
+        self.YP = np.concatenate(yps).astype(np.int8) if yps else np.zeros(0, np.int8)
+        self.idx = np.concatenate(ids) if ids else np.zeros(0, int)
+        self.y = self.YS[self.idx] if len(self.idx) else np.zeros(0, np.float32)
+    def batch(self, sel, rng, stretch=True):
+        e = self.idx[sel]; B = len(e)
+        f = np.ones(B)
+        if stretch:
+            m = rng.random(B) < 0.5
+            f[m] = rng.uniform(STRETCH[0], STRETCH[1], m.sum())
+        pos = e[:, None] - (SEQ - 1 - np.arange(SEQ))[None, :] * f[:, None]      # (B, SEQ), the last column = e exactly
+        i0 = np.floor(pos).astype(int); w = (pos - i0).astype(np.float32)
+        i1 = np.minimum(i0 + 1, e[:, None])
+        x = self.X[i0] * (1 - w)[:, :, None] + self.X[i1] * w[:, :, None]             # (B, SEQ, 40)
+        r = np.clip(np.round(pos).astype(int), 0, len(self.YS) - 1)
+        return np.ascontiguousarray(x.transpose(0, 2, 1)), self.YS[r], self.YP[r]      # (B, 40, SEQ), (B, SEQ), (B, SEQ)
+
+
+def augment_seq(x, rng):
+    """The §123 / §126 jitter on a (B, 40, T) batch; returns the batch and the band shift per window (a shifted window gets no pitch loss)."""
+    B = x.shape[0]
+    k = rng.integers(-PITCH_BANDS, PITCH_BANDS + 1, B)
+    if PITCH_BANDS:
+        idx = np.clip(np.arange(N_MEL)[None, :] - k[:, None], 0, N_MEL - 1)
+        x = np.take_along_axis(x, idx[:, :, None], axis=1)
+    off = rng.normal(0, 0.3, (B, 1, 1)).astype(np.float32)
+    tilt = rng.normal(0, 0.3, (B, 1, 1)).astype(np.float32) * np.linspace(-1, 1, N_MEL, dtype=np.float32)[None, :, None]
+    gain = rng.normal(1.0, 0.1, (B, 1, 1)).astype(np.float32)
+    noise = rng.normal(0, 0.05, x.shape).astype(np.float32)
+    return x * gain + off + tilt + noise, k
+
+
+def predict_seq(model, torch, x):
+    """The whole item as one causal sequence: (H,) voice prob, (H, 61) pitch prob."""
+    with torch.no_grad():
+        v, pp = model(torch.from_numpy(np.ascontiguousarray(x.T.astype(np.float32)))[None])
+        return torch.sigmoid(v[0]).numpy(), torch.softmax(pp[0], dim=0).numpy().T
+
+
+def evaluate_seq(model, torch, sets):
+    """sets: (name, x, y_hard, yp). The voice numbers as evaluate() (the hard labels from hop T_WIN−1 on, so the rows compare to run 2's),
+    plus the pitch head where a pYIN target exists: exact-bin %, within ±1 bin %, a pitch published (argmax < none) %, and none-correct % on the explicit-none frames."""
+    rows = []; ally, allp = [], []; pe = pm = pa = pn = 0; npit = nnone = 0
+    for name, x, y, yp in sets:
+        if len(x) < T_WIN: continue
+        pv, pp = predict_seq(model, torch, x)
+        ok = np.arange(T_WIN - 1, len(x)); ok = ok[y[ok] >= 0]
+        if not len(ok): continue
+        Y = y[ok].astype(np.float32); p = pv[ok]
+        F, pr, rc = f1(Y, p)
+        row = {'track': name, 'frames': int(len(Y)), 'sung_pct': round(100 * float(Y.mean()), 1), 'F1': round(F, 3), 'P': round(pr, 3), 'R': round(rc, 3), 'AUC': round(auc(Y, p), 3), 'fp_pct': round(100 * float(((p >= 0.5) & (Y == 0)).sum() / max(1, (Y == 0).sum())), 1)}
+        am = pp.argmax(axis=1)
+        tp = np.where(yp >= 0)[0]; tn = np.where(yp == PITCH_NONE)[0]
+        if len(tp):
+            d = np.abs(am[tp] - yp[tp]); pub = am[tp] < PITCH_BINS
+            row.update({'pitch_frames': int(len(tp)), 'pitch_pub_pct': round(100 * float(pub.mean()), 1), 'pitch_exact_pct': round(100 * float((d == 0).mean()), 1), 'pitch_pm1_pct': round(100 * float((d <= 1).mean()), 1)})
+            pe += int((d == 0).sum()); pm += int((d <= 1).sum()); pa += int(pub.sum()); npit += len(tp)
+        if len(tn):
+            row['none_ok_pct'] = round(100 * float((am[tn] == PITCH_BINS).mean()), 1); pn += int((am[tn] == PITCH_BINS).sum()); nnone += len(tn)
+        rows.append(row); ally.append(Y); allp.append(p)
+    if not ally: return rows, {'frames': 0}
+    Y = np.concatenate(ally); P = np.concatenate(allp)
+    F, pr, rc = f1(Y, P)
+    tot = {'frames': int(len(Y)), 'F1': round(F, 3), 'P': round(pr, 3), 'R': round(rc, 3), 'AUC': round(auc(Y, P), 3)}
+    if npit: tot.update({'pitch_frames': npit, 'pitch_pub_pct': round(100 * pa / npit, 1), 'pitch_exact_pct': round(100 * pe / npit, 1), 'pitch_pm1_pct': round(100 * pm / npit, 1)})
+    if nnone: tot['none_ok_pct'] = round(100 * pn / nnone, 1)
+    return rows, tot
+
+
+def export_stream(model, torch, report, vf, net):
+    """The weights module for a stream net (both heads), its ONNX, and the parity frames: 200 held Jamendo-test windows of PAR_T hops with
+    EVERY column's voice logit and 61 pitch logits from onnxruntime."""
+    import onnxruntime as ort
+    PAR_T = 64
+    sd = {k: v.detach().cpu().numpy() for k, v in model.state_dict().items()}
+    order = stream_order(net)
+    flat = np.concatenate([sd[k].ravel() for k in order]).astype(np.float32)
+    f16 = flat.astype(np.float16); back = f16.astype(np.float32)
+    with torch.no_grad():
+        o = 0
+        for k in order:
+            n = sd[k].size
+            model.state_dict()[k].copy_(torch.from_numpy(back[o:o + n].reshape(sd[k].shape))); o += n
+    model.eval()
+    shapes = {k: list(sd[k].shape) for k in order}
+    b64 = base64.b64encode(f16.astype('<f2').tobytes()).decode('ascii')
+    os.makedirs(WORK, exist_ok=True)
+    onnx_path = os.path.join(WORK, 'vox.onnx')
+    dummy = torch.zeros(1, N_MEL, PAR_T)
+    torch.onnx.export(model, dummy, onnx_path, input_names=['mel'], output_names=['voice', 'pitch'], opset_version=17, dynamo=False)
+    sess = ort.InferenceSession(onnx_path, providers=['CPUExecutionProvider'])
+    rng = np.random.default_rng(SEED)
+    mels, vo, po = [], [], []
+    for n in filelist('test'):
+        x = build_jamendo(n, vf)[0]
+        for e in rng.choice(np.arange(PAR_T, len(x)), 13, replace=False):
+            mels.append(np.ascontiguousarray(x[e - PAR_T + 1:e + 1].T.astype(np.float32)))
+    mels = np.stack(mels[:200])
+    for i in range(len(mels)):
+        v, pp = sess.run(None, {'mel': mels[i:i + 1]})
+        vo.append(v[0]); po.append(pp[0])
+    with torch.no_grad():
+        tv, tp = model(torch.from_numpy(mels))
+    dmax = max(float(np.abs(tv.numpy() - np.stack(vo)).max()), float(np.abs(tp.numpy() - np.stack(po)).max()))
+    print(f'  onnx vs torch on {len(mels)} held windows of {PAR_T} hops, every column: max |Δlogit| {dmax:.2e}')
+    json.dump({'n': int(len(mels)), 'net': net, 'shape': [N_MEL, PAR_T], 'mel': [[round(float(v), 6) for v in m.ravel()] for m in mels],
+               'voice': [[round(float(v), 5) for v in r] for r in vo], 'pitch': [[[round(float(v), 5) for v in c] for c in r.T] for r in po],
+               'note': 'mel row-major (band, hop): index = band*T + hop; voice[i][t] the logit at column t; pitch[i][t] the 61 logits (bins C3..B7, then none) at column t'},
+              open(os.path.join(WORK, 'onnx-parity.json'), 'w'))
+    prov = report.get('provenance', {}); held = report.get('held', {}); te = report.get('jamendo_test', {})
+    arch = (('a 2-D front layer conv 3x3 x%d (causal in time) max-pooled x%d in frequency, its %d x %d column beside the raw 40 bands (§134), then ' % (FRONT, FRONT_POOL, FRONT, N_MEL // FRONT_POOL) if FRONT else '') + 'a causal TCN over the mel column: %d -> %d (k3), %d x %d -> %d (k3, dilations %s, residual, ReLU), receptive field %d hops' % (N_MEL + FRONT * (N_MEL // FRONT_POOL), TCN_C, len(TCN_DIL), TCN_C, TCN_C, ' '.join(map(str, TCN_DIL)), 3 + 2 * sum(TCN_DIL) + (2 if FRONT else 0))
+            if net == 'tcn' else 'the 2-D trunk per hop (conv 3x3 x16 causal -> pool (2,1) -> conv 3x3 x16 -> pool (2,1), the 16 x 10 column) -> GRU(32)')
+    lines = ['// ' + l for l in HEAD] + [
+        "// The live vocal detector's weights (DECISIONS §123, retrained §126, the streaming net §133; tools/truth/voxtrain.py wrote this file — do not edit by hand).",
+        '// %s; two heads on the shared 32-wide hidden column: the voice logit -> sigmoid, and the 61-way pitch' % arch,
+        '// (60 semitone bins C3..B7 + none, softmax) — an output EVERY hop. %d parameters, ~%d multiply-adds per hop, %s.' % (len(flat), stream_macs(net), net.upper()),
+        '// Float16 little-endian, base64 (%d bytes), in the order %s; ears/vox-net.js decodes and runs it as a stream.' % (len(f16) * 2, ', '.join(order)),
+        '// Trained %s on CPU (%s). THE CORPORA — none of their audio is here; these weights are the derived work and this' % (prov.get('date', ''), prov.get('summary', '')),
+        '// header is their attribution (THIRD-PARTY.md has the full notices):',
+        '//   · the Jamendo singing-voice corpus (Ramona, Richard, David, ICASSP 2008; Zenodo record 2585988, licence "cc-by-4.0" = CC BY 4.0):',
+        '//     61 train + 16 valid tracks, their Demucs vocal / accompaniment stems (remixes, hard negatives);',
+        '//   · MusicNet (Thickstun, Harchaoui, Kakade, ICLR 2017; Zenodo record 5120004, licence "cc-by-4.0" = Creative Commons Attribution 4.0',
+        '//     International): a 4.6 h subset of solo piano and strings / winds, no-voice negatives;',
+        '//   · MAESTRO v3.0.0 (Hawthorne et al., ICLR 2019; Google LLC, LICENSE: "Attribution-NonCommercial-ShareAlike 4.0 International",',
+        '//     CC BY-NC-SA 4.0): a 2.3 h subset of solo piano, no-voice negatives — Retina Rave is non-commercial (the user, 2026-10-12:',
+        '//     "use the non-commercial sets -> still can publish the weights; don\'t worry we are not monetizing this");',
+        '//   · five of this project\'s own library tracks (the ear-accepted hand windows, §122, the Demucs lane as a soft target, §126) and six',
+        '//     of their accompaniments; IBelongHere and Comptine UNSEEN; WhoLikesToParty out of the loss.',
+        '//   The pitch head\'s targets are pYIN (librosa) on the Demucs vocal stems of the Jamendo train tracks and the five library tracks (§133).',
+        '// Jamendo test F1 %s / AUC %s, pitch exact / ±1 bin %s / %s %%; unseen IBelongHere F1 %s / AUC %s, unseen Comptine false positives %s %%; VAR_FLOOR %g.' % (
+            te.get('F1'), te.get('AUC'), te.get('pitch_exact_pct'), te.get('pitch_pm1_pct'),
+            held.get('IBelongHere', {}).get('F1'), held.get('IBelongHere', {}).get('AUC'), held.get('Comptine', {}).get('fp_pct'), vf),
+        'export const VOX_W = {',
+        "  net: '%s', nMel: %d, nParams: %d, macPerHop: %d, pitchBins: %d, pitchC3: %.10g, hidden: %d, dil: %s, front: %d, frontPool: %d," % (net, N_MEL, len(flat), stream_macs(net), PITCH_BINS, PITCH_C3, TCN_C if net == 'tcn' else GRU_H, json.dumps(list(TCN_DIL)), FRONT, FRONT_POOL),
+        '  shapes: ' + json.dumps(shapes).replace('"', "'") + ',',
+        '  order: ' + json.dumps(order).replace('"', "'") + ',',
+        "  f16: '" + b64 + "',",
+        '};',
+        '',
+    ]
+    out = os.path.join(ROOT, 'assets', 'engine', 'ears', 'vox-weights.js')
+    open(out, 'w').write('\n'.join(lines))
+    print(f'  wrote {out} ({os.path.getsize(out)} bytes), {onnx_path}, onnx-parity.json')
+    return dmax
+
+
 # ---------------------------------------------------------------------------------------------------- the export
 HEAD = [
     'Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):',
@@ -658,7 +999,7 @@ def build_all(log, pool, vf):
 
 # ---------------------------------------------------------------------------------------------------- main
 def main():
-    global CLASSICAL_HELD, PARTIAL, SNR_DB, QUOTA, SOFT_FLOOR
+    global CLASSICAL_HELD, PARTIAL, SNR_DB, QUOTA, SOFT_FLOOR, NET, PITCH_W, TCN_C, TCN_DIL, ONSET_W, FRONT, LOSS_COLS
     args = sys.argv[1:]
     PARTIAL = '--partial' in args
     opt = lambda k, d: next((a.split('=', 1)[1] for a in args if a.startswith('--' + k + '=')), d)
@@ -668,8 +1009,16 @@ def main():
     if opt('snr', None): SNR_DB = tuple(float(v) for v in opt('snr', '').split(','))
     if opt('quota', None): QUOTA = dict(zip(('jam', 'lib', 'neg', 'remix'), (float(v) for v in opt('quota', '').split(','))))
     SOFT_FLOOR = float(opt('soft-floor', SOFT_FLOOR))
+    NET = opt('net', NET); PITCH_W = float(opt('pitch-w', PITCH_W)); TCN_C = int(opt('tcn-c', TCN_C))
+    if opt('tcn-dil', None): TCN_DIL = tuple(int(v) for v in opt('tcn-dil', '').split(','))
+    ONSET_W = float(opt('onset-w', ONSET_W)); FRONT = int(opt('front', FRONT)); LOSS_COLS = int(opt('loss-cols', LOSS_COLS))
+    assert NET in ('cnn', 'tcn', 'gru'), NET
+    stream = NET != 'cnn'
     if opt('mel-only', None):
         write_mel_parity(opt('mel-only', None), vf); return
+    if '--pyin-only' in args:       # §133: the Jamendo stems' pYIN alone (the pitch head's targets; cached, then a no-op)
+        import multiprocessing as mp
+        pool = mp.get_context('forkserver').Pool(int(opt('procs', 12))); pyin_all(log, pool); pool.close(); pool.join(); return
     tag = opt('tag', time.strftime('%Y%m%d-%H%M'))
     import multiprocessing as mp
     ctx = mp.get_context('forkserver')
@@ -694,28 +1043,47 @@ def main():
     accs = [('acc:' + t, build_acc(t, vf)) for t in ACC_TRACKS] + [('jacc:' + os.path.splitext(n)[0], build_jacc(n, vf)) for n in train_names() if has_stem(n, 'no_vocals')]
     cls_tr = [(k, build_classical(k, p, vf)) for k, p in cls if k not in CLASSICAL_HELD]
     cls_held = [(k, build_classical(k, p, vf)) for k, p in cls if k in CLASSICAL_HELD]
-    groups = {
-        'jam': Group([(x, ys, 1) for n, (x, y, ys, t) in jam['train']]),
-        'lib': Group([(x, ys, LIB_OVERSAMPLE) for n, (x, y, ys, t) in lib_tr]),
-        'neg': Group([(x, ys, 1) for n, (x, y, ys, t) in accs + cls_tr]),
-    }
+    # §133: the pitch target per item (the stream nets' second head; a no-op for --net=cnn): {name: yp}
+    YP = {}
+    if stream:
+        if not all(os.path.exists(os.path.join(PYIN_DIR, 'jam-' + os.path.splitext(n)[0] + '.npz')) for n in train_names()):
+            raise SystemExit('the Jamendo stems\' pYIN is not cached — fix: python3 tools/truth/voxtrain.py --pyin-only')
+        for sp in ('train', 'valid', 'test'):
+            for n, (x, y, ys, t) in jam[sp]: YP[n] = pitch_jamendo(n, t, y)
+        for t_, (x, y, ys, t) in lib_tr + lib_held + lib_rec: YP[t_] = pitch_lib(t_, t)
+        for n, (x, y, ys, t) in accs + cls_tr + cls_held: YP[n] = pitch_none(t)
+        log(f'  pitch targets: ' + ', '.join(f'{sp} {sum(int((YP[n] >= 0).sum()) for n, _ in jam[sp])} bins' for sp in ('train', 'valid', 'test')) + f', library {sum(int((YP[t_] >= 0).sum()) for t_, _ in lib_tr)} bins')
+    if stream:
+        groups = {
+            'jam': SeqGroup([(x, ys, YP[n], 1) for n, (x, y, ys, t) in jam['train']]),
+            'lib': SeqGroup([(x, ys, YP[n], LIB_OVERSAMPLE) for n, (x, y, ys, t) in lib_tr]),
+            'neg': SeqGroup([(x, ys, YP[n], 1) for n, (x, y, ys, t) in accs + cls_tr]),
+        }
+    else:
+        groups = {
+            'jam': Group([(x, ys, 1) for n, (x, y, ys, t) in jam['train']]),
+            'lib': Group([(x, ys, LIB_OVERSAMPLE) for n, (x, y, ys, t) in lib_tr]),
+            'neg': Group([(x, ys, 1) for n, (x, y, ys, t) in accs + cls_tr]),
+        }
     for k, g in groups.items(): log(f'  group {k}: {len(g.idx)} windows ({100 * float(np.mean(g.y >= 0.5)) if len(g.y) else 0:.1f} % sung)')
     vox_src, beds = remix_sources()
     log(f'  remixes: {len(vox_src)} vocal sources x {len(beds)} beds, {REMIXES_PER_EPOCH} per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, {REMIX_SECONDS:.0f} s each')
-    model = make_model(torch)
+    model = make_stream_model(torch, NET) if stream else make_model(torch)
     nparams = sum(p.numel() for p in model.parameters())
-    log(f'net: {nparams} parameters')
-    epochs = int(opt('epochs', 12)); per_epoch = int(opt('per-epoch', 400000)); bs = 512; n_remix = int(opt('remixes', REMIXES_PER_EPOCH))
+    log(f'net: {NET}, {nparams} parameters' + (f', ~{stream_macs(NET)} MAC / hop, windows of {SEQ} hops with the loss on the last {LOSS_COLS}, pitch loss weight {PITCH_W}' if stream else ''))
+    epochs = int(opt('epochs', 12)); per_epoch = int(opt('per-epoch', 100000 if stream else 400000)); bs = 512; n_remix = int(opt('remixes', REMIXES_PER_EPOCH))
     optim = torch.optim.Adam(model.parameters(), lr=1e-3)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=epochs)
     lossf = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(POS_WEIGHT))
+    ce = torch.nn.CrossEntropyLoss()
+    colmask = torch.zeros(SEQ, dtype=torch.bool); colmask[SEQ - LOSS_COLS:] = True
     best = None; hist = []; last_remix = []
     if opt('no-train', None) is None:
         for ep in range(epochs):
             t0 = time.time()
             rem = draw_remixes(pool, rng, vox_src, beds, n_remix, vf) if n_remix else []
             last_remix = rem
-            groups['remix'] = Group([(x, ys, 1) for name, x, ys in rem])
+            groups['remix'] = SeqGroup([(x, ys, yp, 1) for name, x, ys, yp in rem]) if stream else Group([(x, ys, 1) for name, x, ys, yp in rem])
             t_rem = time.time() - t0
             # the draw by quota, per group (with replacement only where a group is smaller than its share)
             draws = []
@@ -726,26 +1094,49 @@ def main():
                 draws.append((k, sel))
             order = np.concatenate([np.full(len(s), i) for i, (k, s) in enumerate(draws)]); rng.shuffle(order)
             ptr = [0] * len(draws)
-            model.train(); tot = 0.0; nb = 0; npos = 0; ntot = 0
+            model.train(); tot = 0.0; totp = 0.0; nb = 0; npos = 0; ntot = 0
             for i in range(0, len(order), bs):
                 chunk = order[i:i + bs]
-                xs, ys = [], []
+                xs, ys, yps = [], [], []
                 for gi, (k, sel) in enumerate(draws):
                     c = int((chunk == gi).sum())
                     if not c: continue
-                    xb, yb = groups[k].batch(sel[ptr[gi]:ptr[gi] + c], rng); ptr[gi] += c
+                    if stream:
+                        xb, yb, pb = groups[k].batch(sel[ptr[gi]:ptr[gi] + c], rng); yps.append(pb)
+                    else:
+                        xb, yb = groups[k].batch(sel[ptr[gi]:ptr[gi] + c], rng)
+                    ptr[gi] += c
                     xs.append(xb); ys.append(yb)
-                xb = augment(np.concatenate(xs), rng); yb = np.concatenate(ys)
-                npos += float((yb >= 0.5).sum()); ntot += len(yb)
                 optim.zero_grad()
-                loss = lossf(model(torch.from_numpy(xb)), torch.from_numpy(yb))
+                if stream:
+                    xb, shift = augment_seq(np.concatenate(xs), rng); yb = np.concatenate(ys); pb = np.concatenate(yps)
+                    lv, lp = model(torch.from_numpy(xb))
+                    yv = torch.from_numpy(yb); mv = (yv >= 0) & colmask[None, :]
+                    if ONSET_W != 1.0:      # the columns right after a rising edge of the target weigh ONSET_W: the net is asked to commit early, from the past alone
+                        on = (yb >= 0.5); edge = np.zeros_like(on); edge[:, 1:] = on[:, 1:] & ~on[:, :-1] & (yb[:, :-1] >= 0)
+                        near = np.zeros_like(on)
+                        for k in range(ONSET_HOPS): near[:, k:] |= edge[:, :SEQ - k]
+                        wgt = torch.from_numpy(np.where(near, ONSET_W, 1.0).astype(np.float32))[mv]
+                        loss = (torch.nn.functional.binary_cross_entropy_with_logits(lv[mv], yv[mv], reduction='none') * wgt).sum() / wgt.sum()
+                    else:
+                        loss = lossf(lv[mv], yv[mv])
+                    yp_ = torch.from_numpy(pb.astype(np.int64)); mp = (yp_ >= PITCH_NONE) & colmask[None, :] & torch.from_numpy(shift == 0)[:, None]
+                    if mp.any():
+                        lossp = ce(lp.permute(0, 2, 1)[mp], torch.where(yp_[mp] == PITCH_NONE, PITCH_BINS, yp_[mp]))
+                        loss = loss + PITCH_W * lossp; totp += float(lossp)
+                    npos += float((yb[:, SEQ - LOSS_COLS:] >= 0.5).sum()); ntot += int(mv.sum())
+                else:
+                    xb = augment(np.concatenate(xs), rng); yb = np.concatenate(ys)
+                    npos += float((yb >= 0.5).sum()); ntot += len(yb)
+                    loss = lossf(model(torch.from_numpy(xb)), torch.from_numpy(yb))
                 loss.backward(); optim.step()
                 tot += float(loss); nb += 1
             sched.step()
             model.eval()
-            _, va = evaluate(model, torch, [(n, x, y) for n, (x, y, ys, t) in jam['valid']])
-            hist.append({'epoch': ep + 1, 'loss': round(tot / nb, 4), 'valid_F1': va['F1'], 'valid_AUC': va['AUC'], 's': round(time.time() - t0), 'remix_s': round(t_rem), 'sung_pct': round(100 * npos / max(1, ntot), 1), 'remixes': len(rem)})
-            log(f'  epoch {ep + 1:2d}  loss {tot / nb:.4f}  valid F1 {va["F1"]:.3f} AUC {va["AUC"]:.3f}  {time.time() - t0:.0f} s (remixes {len(rem)} in {t_rem:.0f} s; {100 * npos / max(1, ntot):.0f} % sung)')
+            if stream: _, va = evaluate_seq(model, torch, [(n, x, y, YP[n]) for n, (x, y, ys, t) in jam['valid']])
+            else: _, va = evaluate(model, torch, [(n, x, y) for n, (x, y, ys, t) in jam['valid']])
+            hist.append({'epoch': ep + 1, 'loss': round(tot / nb, 4), 'pitch_loss': round(totp / nb, 4), 'valid_F1': va['F1'], 'valid_AUC': va['AUC'], 'valid_pitch_exact_pct': va.get('pitch_exact_pct'), 's': round(time.time() - t0), 'remix_s': round(t_rem), 'sung_pct': round(100 * npos / max(1, ntot), 1), 'remixes': len(rem)})
+            log(f'  epoch {ep + 1:2d}  loss {tot / nb:.4f}' + (f' (pitch {totp / nb:.4f})' if stream else '') + f'  valid F1 {va["F1"]:.3f} AUC {va["AUC"]:.3f}' + (f' pitch exact {va.get("pitch_exact_pct")} % ±1 {va.get("pitch_pm1_pct")} %' if stream else '') + f'  {time.time() - t0:.0f} s (remixes {len(rem)} in {t_rem:.0f} s; {100 * npos / max(1, ntot):.0f} % sung)')
             if best is None or va['AUC'] > best[0]:
                 best = (va['AUC'], {k: v.clone() for k, v in model.state_dict().items()}, ep + 1)
         model.load_state_dict(best[1]); log(f'best epoch {best[2]} (valid AUC {best[0]:.3f})')
@@ -753,28 +1144,34 @@ def main():
     else:
         model.load_state_dict(torch.load(os.path.join(WORK, 'vox-net.pt')))
     model.eval()
-    H = lambda L: [(n, x, y) for n, (x, y, ys, t) in L]
-    rows_te, te = evaluate(model, torch, H(jam['test']))
-    rows_va, va = evaluate(model, torch, H(jam['valid']))
-    rows_held, _ = evaluate(model, torch, H(lib_held))
-    rows_tr, _ = evaluate(model, torch, H(lib_tr))
-    rows_rec, _ = evaluate(model, torch, H(lib_rec))
-    rows_acc, _ = evaluate(model, torch, H(accs[:len(ACC_TRACKS)]))
-    rows_cls, _ = evaluate(model, torch, H(cls_tr))
-    rows_clsh, _ = evaluate(model, torch, H(cls_held))
-    rows_rem, rem_all = evaluate(model, torch, [(n, x, np.where(ys < 0, -1, (ys >= 0.5).astype(np.int8))) for n, x, ys in last_remix[:12]])
-    log(f'Jamendo test: F1 {te["F1"]} P {te["P"]} R {te["R"]} AUC {te["AUC"]} ({te["frames"]} frames)')
-    for r in rows_held + rows_tr + rows_rec + rows_acc + rows_clsh: log(f'  {r["track"]:34s} frames {r["frames"]:7d} sung {r["sung_pct"]:5.1f} %  F1 {r["F1"]:.3f} P {r["P"]:.3f} R {r["R"]:.3f} AUC {r["AUC"]}  fp {r["fp_pct"]} %')
+    if stream:
+        H = lambda L: [(n, x, y, YP[n]) for n, (x, y, ys, t) in L]
+        evaluate_ = lambda m, tc, sets: evaluate_seq(m, tc, sets)
+    else:
+        H = lambda L: [(n, x, y) for n, (x, y, ys, t) in L]
+        evaluate_ = evaluate
+    rows_te, te = evaluate_(model, torch, H(jam['test']))
+    rows_va, va = evaluate_(model, torch, H(jam['valid']))
+    rows_held, _ = evaluate_(model, torch, H(lib_held))
+    rows_tr, _ = evaluate_(model, torch, H(lib_tr))
+    rows_rec, _ = evaluate_(model, torch, H(lib_rec))
+    rows_acc, _ = evaluate_(model, torch, H(accs[:len(ACC_TRACKS)]))
+    rows_cls, _ = evaluate_(model, torch, H(cls_tr))
+    rows_clsh, _ = evaluate_(model, torch, H(cls_held))
+    rem_sets = [(n, x, np.where(ys < 0, -1, (ys >= 0.5).astype(np.int8))) + ((yp,) if stream else ()) for n, x, ys, yp in last_remix[:12]]
+    rows_rem, rem_all = evaluate_(model, torch, rem_sets)
+    log(f'Jamendo test: F1 {te["F1"]} P {te["P"]} R {te["R"]} AUC {te["AUC"]} ({te["frames"]} frames)' + (f'; pitch: a pitch on {te.get("pitch_pub_pct")} %, exact {te.get("pitch_exact_pct")} %, ±1 bin {te.get("pitch_pm1_pct")} % of {te.get("pitch_frames")} pYIN frames; none right on {te.get("none_ok_pct")} %' if stream else ''))
+    for r in rows_held + rows_tr + rows_rec + rows_acc + rows_clsh: log(f'  {r["track"]:34s} frames {r["frames"]:7d} sung {r["sung_pct"]:5.1f} %  F1 {r["F1"]:.3f} P {r["P"]:.3f} R {r["R"]:.3f} AUC {r["AUC"]}  fp {r["fp_pct"]} %' + (f'  pitch {r.get("pitch_frames")} fr: pub {r.get("pitch_pub_pct")} exact {r.get("pitch_exact_pct")} ±1 {r.get("pitch_pm1_pct")} %; none ok {r.get("none_ok_pct")} %' if stream else ''))
     cls_fp = float(np.mean([r['fp_pct'] for r in rows_cls])) if rows_cls else float('nan')
     log(f'  classical in-sample fp (mean over {len(rows_cls)} files) {cls_fp:.1f} %; remixes (last epoch, 12 of them) F1 {rem_all.get("F1")} AUC {rem_all.get("AUC")}')
-    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x 34, batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, the soft floor {SOFT_FLOOR:g}, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
+    report = {'provenance': {'date': time.strftime('%Y-%m-%d'), 'summary': f'{epochs} epochs x {per_epoch} windows of 40 x {SEQ if stream else T_WIN}' + (f' (the loss on the last {LOSS_COLS} columns, the pitch loss x {PITCH_W}, the onset weight {ONSET_W:g} on {ONSET_HOPS} hops, the net {NET} C {TCN_C} dil {TCN_DIL} front {FRONT}, quota {QUOTA})' if stream else '') + f', batch {bs}, Adam 1e-3 cosine, BCE (pos_weight {POS_WEIGHT}, soft targets on the library), the draw by quota {QUOTA}, {n_remix} remixes re-drawn per epoch at {SNR_DB[0]:+.0f}..{SNR_DB[1]:+.0f} dB SNR, gain / tilt / level / noise jitter + pitch shift ±{PITCH_BANDS} bands + time stretch {STRETCH[0]}..{STRETCH[1]} on half the windows, the soft floor {SOFT_FLOOR:g}, VAR_FLOOR {vf:g}; the best Jamendo-valid AUC epoch kept ({best[2] if best else "loaded"})',
                              'jamendo': 'Zenodo record 2585988 (cc-by-4.0)', 'musicnet': 'Zenodo record 5120004 (cc-by-4.0) — Creative Commons Attribution 4.0 International; ~/Datasets/musicnet/LICENCE-NOTE.md',
                              'maestro': 'MAESTRO v3.0.0, Google LLC, LICENSE: Attribution-NonCommercial-ShareAlike 4.0 International; ~/Datasets/maestro/LICENCE-NOTE.md', 'var_floor': vf, 'tag': tag,
                              'jamendo_train_stems': n_jam_stems, 'classical_held': CLASSICAL_HELD, 'remix_sources': len(vox_src), 'remix_beds': len(beds)},
-              'params': nparams, 'epochs': hist, 'jamendo_test': te, 'jamendo_valid': va, 'jamendo_test_tracks': rows_te,
+              'net': NET, 'mac_per_hop': stream_macs(NET) if stream else 38385, 'params': nparams, 'epochs': hist, 'jamendo_test': te, 'jamendo_valid': va, 'jamendo_test_tracks': rows_te,
               'held': {r['track']: r for r in rows_held}, 'library_train': rows_tr, 'recorded': rows_rec, 'accompaniments': rows_acc,
               'classical_train_fp_mean': cls_fp, 'classical_train': rows_cls, 'classical_held': rows_clsh, 'remixes_last_epoch': rows_rem, 'remixes_all': rem_all}
-    report['onnx_vs_torch'] = export(model, torch, report, vf)
+    report['onnx_vs_torch'] = export_stream(model, torch, report, vf, NET) if stream else export(model, torch, report, vf)
     write_mel_parity(opt('mel-track', 'SeeYouDrop'), vf)
     json.dump(report, open(os.path.join(WORK, 'train-report.json'), 'w'), indent=1)
     json.dump(report, open(os.path.join(WORK, f'train-report-{tag}.json'), 'w'), indent=1)

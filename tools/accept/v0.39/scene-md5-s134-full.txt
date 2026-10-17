@@ -1,0 +1,19 @@
+# §134 (2026-10-16): the fake smoke on branch `vox-net3` at 8c464a0 — run 10's streaming net + pitch head.
+#   IDS="0 1 2 3 4 5" PORT=8871 GPU=1 MUTE=1 tools/scene-md5.sh s134-full
+#   every registered id at CLOCK=1 f360 / f840 — 12 lines; errs [] hop 840 row 72 on ALL SIX ids.
+# READ AGAINST: tools/accept/v0.38/scene-md5-s127.txt — 0 DIFF on all 12 lines, s5 (MANDALA) included.
+# WHY IT CANNOT MOVE: the fake timeline has voxConf 0, so the §127 gate is a no-op and the shader's voice block is never
+#   entered — a net swap is invisible here BY CONSTRUCTION. This list is the SMOKE; the proof is real-md5-s134-full.txt
+#   beside it (215 runs on the real tracks, f0 2 everywhere).
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+293d773c7c9bca96a3adc58f22a0af31  s1-f360.jpg
+96ad310aee4f285c47a40b9d7eee38af  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
