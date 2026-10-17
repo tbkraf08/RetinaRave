@@ -1,0 +1,19 @@
+# §135 (2026-10-17): the gain. tools/load-bench.js on the SOFTWARE renderer (no GPU=1 — SwiftShader, the starved GPU the
+# user's "dropped frames" shows up on), 30 s, two runs each, before = main d72a96d, after = branch `fluid-idle`.
+#   MUTE=1 PORT=8875 node tools/load-bench.js 'test&track=IBelongHere&scene=3' 30 2      (main)
+#   MUTE=1 PORT=8877 node tools/load-bench.js 'test&track=IBelongHere&scene=2' 30 2      (the branch)
+# Machine: load 5.65 at the start (the user's own Chrome + VS Code sit at ~6; the idle floor here is 2.5–3). errs [] on all 8 runs.
+# fps is load-bench's own mean from 5 s on. The governor collapses q to 0 by 8–9 s on SwiftShader, so these numbers are
+# the TIER 0 step's cost (sim 64, dye 256, 10 Jacobi) — the tier-3 cost is the bench line at the bottom.
+#
+#   scene            before (main)        after (fluid-idle)     delta        ENGINE.ms before -> after
+#   s3 DUST          22.8 / 22.8 fps      25.2 / 25.2 fps        +10.5 %      2.394 / 2.400  ->  2.255 / 2.197
+#   s2 NAV2          28.2 / 28.4 fps      31.5 / 32.1 fps        +12.4 %      2.106 / 2.121  ->  2.019 / 1.919
+# The expectation from the brief's `&fluid=0` reads (DUST 25.6 / 23.9, NAV2 31.7) is MET: the idle rule buys back what
+# switching the substrate off by hand bought, without touching the switch.
+#
+# One GPU=1 read at q pinned to 1 (CARD.Q.hold=1, tier 3, sim 259x128 dye 1035x512), 9 s of page time:
+#   test&scene=3  (DUST)   idle 1  on true  ms 0      steps 0     — the step never ran at all
+#   test&scene=0  (FLUID)  idle 0  on true  ms 0.07   steps 543   — it runs every frame, as before
+#   CARD.benchFluid(300) at tier 3: 1.338 ms per step under DUST, 1.634 ms under FLUID (the §104 budget is ≤ 1.0;
+#   1.65 ms is the brief's figure for this box). That is the GPU time the idle rule removes from every non-fluid frame.

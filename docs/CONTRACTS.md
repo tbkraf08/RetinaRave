@@ -117,10 +117,13 @@ ctx.engineTex                 {spec, wave, hist, row}: engine textures (R8, LINE
                               dye   RGBA16F LINEAR, dyeW×dyeH (short edge 256/384/512/512): the substrate's ink, LINEAR colour
                                     (the key hue; encode before you show it, §1.10). Both are `{t, w, h}` like spec; both are 1×1
                                     black placeholders while `ctx.fluid.on` is false (no float render targets, `&fluid=0`, key W) —
-                                    a sampler always binds, so read them without a guard and let black mean "still".
-                              simW simH dyeW dyeH: the live grid sizes (0 while off).
+                                    and, since §135, while the pool IDLES: no scene on screen declares `fluid: { reads: true }`, so the
+                                    step is skipped (§1.4 "The substrate's READERS"). A sampler always binds, so read them without a
+                                    guard and let black mean "still".
+                              simW simH dyeW dyeH: the live grid sizes (0 while off or idle).
 ctx.fluid                     the substrate's API (DECISIONS §104, core/fluid/fluid.js): `on` (read it — never set it; the W key and
-                              `&fluid=0` do) · `avail` (false on a device without EXT_color_buffer_float) · `tex` = `{vel, dye}`, the
+                              `&fluid=0` do) · `avail` (false on a device without EXT_color_buffer_float) · `idle` (§135: 1 while no
+                              scene on screen reads the pool — the step is skipped and the placeholders are bound; `on` is unchanged) · `tex` = `{vel, dye}`, the
                               same objects as `engineTex.vel / .dye` · `splat(x, y, dx, dy, rgb, r?)` adds an impulse this frame: x y in
                               uv, dx dy in uv/s (added once to the field), rgb LINEAR 0..1 (the ink), r the Gaussian's radius
                               (`params.radius` = 0.0025 by default, ×2 for a kick, ×4 for a drop) · `force(fx, fy)` a uniform body
@@ -253,6 +256,22 @@ needed, now generic:
   ring round the hit's place; the larger amplitude still wins the step, with its own centre. **`params` is rewritten by the step BEFORE `update()`**,
   so a scene's `params.curl += 10` in `update()` is overwritten before any step reads it (§106 found the plan's override dead; a
   scene wants a `bias` slot the step adds after the grammar — not built).
+- **The substrate's READERS** (`fluid: { reads: true }` on the card; DECISIONS §135, 2026-10-17): a scene that SAMPLES the substrate
+  — `ctx.engineTex.dye` / `.vel` in its own passes, or `post.fb.advect` ≠ 0 so the feedback pass back-traces along the velocity —
+  must say so in the same `fluid` slot. The slot is `{ grammar?: '<name>', reads?: true }` and either key stands alone: FLUID (id 0)
+  declares `reads` and keeps the default `'pool'` grammar, FLUID2 (id 1) declares both. **The step is gated on it** (`loop.js`,
+  `readsFluid()` in `core/fluid/grammar.js`): the Stam solver runs only while a declaring scene is on screen — the §116 owner, or the
+  scene fading OUT of a crossfade (it is still visible and still samples), or the one `SC.forced` names (a forced scene lands in
+  `updateScenes()`, which runs after the step, so the page's first frame would otherwise idle under the seated home). Under every other
+  scene the pool IDLES: no GL work, `CARD.fluid.idle` 1, `ms` 0, and the two 1×1 black placeholders bound on `engineTex.vel / .dye`
+  exactly as `&fluid=0` binds them — so a sampler always binds, and a scene that is not meant to read the pool reads black. Idling
+  never touches `on`: that word stays the user's (`&fluid=0`, key `W`) and the HUD's. **On resume** the first stepped frame empties the
+  pool (velocity, dye, pressure and the two stencils, both ping-pong faces) before any splat of that frame lands, so a crossfade into a
+  fluid scene fills from dark and never fades in the picture the pool held minutes ago; the grammar's own state is left warm (it is a
+  function of MS, not of the picture) — only the PICTURE goes stale. The declaration is DATA on the scene, never an id list in `core/`,
+  and `check.js` FAILS a scene folder that samples the substrate without it (a flag with no sampling read warns: the pool would be
+  stepped for nobody). The cost it removes is the whole step: 1.34–1.63 ms of GPU per frame at tier 3 on the §104 box, which bought
+  DUST +10.5 % and NAV2 +12.4 % of frame rate on the software renderer.
 - **The pool's grammar** (`fluid: { grammar: '<name>' }` on the card; DECISIONS §116, FLUID2-PLAN §2): which MS → force grammar plans
   the substrate's step is a slot the OWNER scene declares, never a special case in `core/`. The table is `core/fluid/grammar.js`:
   `'pool'` (`core/fluid/inject.js` — the default: FLUID and every scene without the slot) and `'bands'` (`core/fluid/inject2.js` —

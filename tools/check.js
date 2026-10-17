@@ -200,12 +200,26 @@ for (const d of sceneDirs) {
     const composes = g !== DEFAULT_GRAMMAR && 'base' in GRAMMARS[g].mkState();
     if (composes) { const lost = GRAMMARS[DEFAULT_GRAMMAR].FLUID_FEATS.filter((k) => !FLUID_FEATS.includes(k)); if (lost.length) fail('fluid substrate (' + g + '): FLUID_FEATS lacks the pool grammar\'s reads it runs: ' + lost.join(',')); }
   }
+  // §135 the idle rule: the slot is { grammar?: <name>, reads?: true } — either key alone is legal (FLUID declares `reads` and takes
+  // the default grammar). `reads` says the scene SAMPLES the substrate, which is what the step is gated on (core/fluid/grammar.js's
+  // readsFluid, loop.js). A folder that samples it and does not declare it would draw a 1×1 black placeholder and look broken, so
+  // that is a FAIL; the sampling read is static — `engineTex.dye` / `engineTex.vel` anywhere in the folder, or a non-zero
+  // `post.fb.advect` on the card (§105: the feedback pass back-traces the trail along the velocity). A `reads` with no sampling
+  // read is a warn (the pool would be stepped for nobody — the cost §135 exists to remove).
   for (const d of sceneDirs) {
     const sc = (await import(path.join(ROOT, 'assets/scenes', d, 'index.js'))).default;
     if (sc.fluid !== undefined) {
-      if (!(sc.fluid && typeof sc.fluid === 'object' && typeof sc.fluid.grammar === 'string')) fail('scene ' + d + ': the fluid slot must be { grammar: <name> } (CONTRACTS §1.4)');
-      else if (!(sc.fluid.grammar in GRAMMARS)) fail('scene ' + d + ': fluid.grammar ' + sc.fluid.grammar + ' is not a grammar of core/fluid/grammar.js (' + Object.keys(GRAMMARS).join(',') + ')');
+      if (!(sc.fluid && typeof sc.fluid === 'object' && (typeof sc.fluid.grammar === 'string' || sc.fluid.reads !== undefined))) fail('scene ' + d + ': the fluid slot must be { grammar?: <name>, reads?: true } (CONTRACTS §1.4)');
+      if (sc.fluid && sc.fluid.grammar !== undefined && !(typeof sc.fluid.grammar === 'string' && sc.fluid.grammar in GRAMMARS)) fail('scene ' + d + ': fluid.grammar ' + sc.fluid.grammar + ' is not a grammar of core/fluid/grammar.js (' + Object.keys(GRAMMARS).join(',') + ')');
+      if (sc.fluid && sc.fluid.reads !== undefined && typeof sc.fluid.reads !== 'boolean') fail('scene ' + d + ': fluid.reads must be a boolean (CONTRACTS §1.4)');
     }
+    const dir = path.join(ROOT, 'assets/scenes', d);
+    const src = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+    const adv = sc.post && sc.post.fb && sc.post.fb.advect;
+    const samples = /\bengineTex\s*\.\s*(?:dye|vel)\b/.test(src) || !!(typeof adv === 'function' ? adv(MS) : adv);
+    const declared = !!(sc.fluid && sc.fluid.reads);
+    if (samples && !declared) fail('scene ' + d + ' samples the fluid substrate (engineTex.dye / .vel or post.fb.advect) without declaring fluid.reads — the step idles under it and it would draw the 1×1 placeholder (DECISIONS §135)');
+    if (declared && !samples) warn('scene ' + d + ' declares fluid.reads but the static read check finds no engineTex.dye / .vel and no post.fb.advect — the substrate would be stepped for nobody (DECISIONS §135)');
   }
 }
 

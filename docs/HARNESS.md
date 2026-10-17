@@ -279,7 +279,22 @@ fluid block — a read outside the list FAILS, stricter than a scene's warn). Ve
   bottom-right (0.5 + v, ±0.5 uv/s spans the range), `&fluiddbg=2` the velocity alone; harness only — `FLUID.dbg` is 0 on every
   normal path. Key `W` toggles the substrate live (`CARD.setFluid(on)`), a toast says so; where there are no float render
   targets (`CARD.fluid.avail` false) it stays off.
-- **`CARD.fluid`** = `{on, avail, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue, wave, K}` — `wave` the step's shockwave
+- **The idle rule** (DECISIONS §135, 2026-10-17): the step runs ONLY while a scene that SAMPLES the substrate is on screen.
+  "Samples" is a declaration on the card — `fluid: { reads: true }` (CONTRACTS §1.4) — and `loop.js` steps when the §116 owner
+  declares it, or the scene fading OUT does, or `SC.forced` points at one (a forced scene lands in `updateScenes()`, after the
+  step, so without that last clause a forced fluid run loses the page's first step and its md5 list moves by it). Otherwise
+  `idleFluid()`: no GL at all, `CARD.fluid.idle` 1, `ms` 0, `nSplat` 0, the two 1×1 placeholders bound on `engineTex.vel / .dye`
+  exactly as `&fluid=0` binds them — and `on` UNTOUCHED, so the HUD's word and the user's switch still mean what they meant.
+  The HUD line reads `fluid idle … (this scene does not read the substrate — §135)`. On resume the first stepped frame EMPTIES
+  the pool (velocity, dye, pressure, the two stencils, both ping-pong faces) before that frame's splats land, so a crossfade
+  into FLUID fills from dark instead of fading in a picture minutes old. `check.js` FAILS a scene folder that samples the
+  substrate (`engineTex.dye` / `.vel` anywhere in it, or a non-zero `post.fb.advect` on the card) without the flag.
+  **The one-line proof** (GPU=1, q pinned to 1, `#test&scene=3`): `CARD.fluid.idle` 1 with `steps` 0 and `ms` 0 after seconds of
+  page time, while `CARD.benchFluid(300)` on the same page reports the 1.34–1.63 ms per step that is being skipped — and
+  `#test&scene=0` on the same build reads `idle` 0 with `steps` climbing. The resume clear is read with `&fluiddbg=1` and
+  `tools/lum.py`: FLUID full (centre .12) → away to NAV2 (.00, the placeholder) → back, the fade's first frames .019, its
+  middle .076, 3 s on .110 — dark at the fade's start although the pool had been full, then alive.
+- **`CARD.fluid`** = `{on, avail, idle, ms, tier, simW, simH, dyeW, dyeH, nSplat, steps, params, tex, queue, wave, K}` — `idle` 1 while no scene on screen reads the substrate (§135: the step is skipped, `ms` 0, `steps` held, the placeholders bound) — `wave` the step's shockwave
   ring `{a, r, w}` or null (§113; `CARD.fluid.ring(a, r, w)` sets one for the next step) — `K` the grammar's constants
   (inject.js), live: `CARD.fluid.K.FLOOR_LO=9` from an eval after `__FRAME>=1` is a one-knob A/B of the same run (§108) — `ms` the step's CPU
   submission time (EMA, like `ENGINE.ms`; the GPU cost is the bench below), `nSplat` the last step's splat count, `params` the

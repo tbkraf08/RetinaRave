@@ -17,8 +17,8 @@ import { CARD, logFrame } from './harness.js';
 import { refreshRoutes, view } from './route.js';
 import { refreshParams } from './params.js';
 import { recFrame } from './rec.js'; // the recorder's post-frame hook (DECISIONS §89): a no-op unless REC.on
-import { FLUID, stepFluid, drawFluidDbg } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): one step per frame on the finished MS, before the scenes update
-import { grammarOf } from './fluid/grammar.js'; // §116: the pool's grammar is the OWNER scene's card slot (fluid.grammar) — the incoming scene while a fade runs, else the current
+import { FLUID, stepFluid, idleFluid, drawFluidDbg } from './fluid/fluid.js'; // the fluid substrate (DECISIONS §104): one step per frame on the finished MS, before the scenes update — §135: only while a scene that READS it is on screen
+import { grammarOf, readsFluid } from './fluid/grammar.js'; // §116: the pool's grammar is the OWNER scene's card slot (fluid.grammar) — the incoming scene while a fade runs, else the current; §135: `reads` in the same slot is the step's gate
 
 let lastT = 0, frameN = 0, wall = 0;
 
@@ -38,7 +38,11 @@ export function frame(tms) {
   uploadEngineTex(ENGINE.tex);
   const S = MS;
   const owner = REG[SC.next >= 0 ? SC.next : SC.cur]; // §116 the pool's owner: the incoming scene from the crossfade's first frame (its grammar is in place when it is fully visible), else the current — a forced scene is SC.cur the moment goScene lands it
-  stepFluid(dt, S, ENGINE.resumed, grammarOf(owner && owner.scene)); // §104: MS is final, no scene has updated yet — a scene's update/draw sees this frame's field; returns at once when off
+  const out = SC.next >= 0 ? REG[SC.cur] : null;       // §135: while a fade runs the OUTGOING scene is still on screen and still samples what it sampled
+  const fwd = SC.forced >= 0 ? REG[SC.forced] : null;  // §135: a FORCED scene lands in updateScenes(), which runs after this step — on the page's first frame the owner is still the home register() seated, so a forced fluid run would lose exactly one step (its md5 list moved by that one frame; s2–s5 held, nothing else samples the pool). The gate honours the scene the engine is about to land
+  const wantFluid = readsFluid(owner && owner.scene) || readsFluid(out && out.scene) || readsFluid(fwd && fwd.scene); // §135 the step's gate: a scene that READS the substrate is on screen (the owner, or the one fading out) or forced. Nothing else looks at the dye or the velocity, so the step would be 1.65 ms of GPU nobody sees
+  if (wantFluid) stepFluid(dt, S, ENGINE.resumed, grammarOf(owner && owner.scene)); // §104: MS is final, no scene has updated yet — a scene's update/draw sees this frame's field; returns at once when off
+  else idleFluid();                                    // §135: no GL work, `ms` 0, the 1×1 placeholders bound; the next stepped frame empties the pool so the fade in never shows a stale picture
   refreshRoutes(dt); // v0.4: routed views refreshed from the finished MS (returns at once while no route exists)
   // scene updates: scenes flagged always, plus the ones on screen — each reads its own view of MS (MS itself unless routed)
   const env = { SC, Q, now };

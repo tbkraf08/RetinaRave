@@ -26,6 +26,7 @@ const MAXS = 16;                           // splats per draw (the uniform array
 // CARD.fluid (harness) and ctx.fluid (scenes). `on` is the switch (&fluid=0, key W); `avail` says the device can run it at all.
 export const FLUID = {
   on: true, avail: false, ms: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, nSplat: 0, steps: 0, dbg: 0,
+  idle: 0,          // §135: the owner scene does not read the substrate — no step this frame, the placeholders bound. NOT the switch: `on` stays the user's word (&fluid=0, key W)
   params: { curl: 30, velDiss: 0.2, dyeDiss: 1, pressure: 0.8, iters: 20, radius: 0.0025, curlMask: null }, // the live values after inject.js; a scene may override for the frame
   tex: null,        // { vel, dye }: the same objects as ctx.engineTex.vel / .dye
   queue: [],        // this frame's splats: {x, y, dx, dy, r, g, b, rad} — inject.js fills it, scenes add through splat(), the step drains it
@@ -52,6 +53,7 @@ export const FLUID = {
 
 let gl = null, P = {}, st = null, st2 = null, ph = null;   // st: the pool grammar's state; st2: the band grammar's, whose .base IS st (§116: one state, shared)
 let holdSteps = 0;   // §116 S6 harness only: benchFluid holds the substep count on every step (the burst's cost at the tier); 0 = the grammar's
+let idlePend = 0;    // §135: an idle stretch happened — the next stepped frame empties the pool first (so a fluid scene never fades in on a stale picture)
 let vel = [null, null], dye = [null, null], prs = [null, null], div = null, curl = null; // [read, write] pairs
 let lastW = 0, lastH = 0;
 
@@ -103,11 +105,36 @@ function copy(from, to) {
 }
 // What a sampler sees: the live read textures while on, the placeholders while off (the objects never change identity).
 function publish() {
-  const on = FLUID.avail && FLUID.on;
+  const on = FLUID.avail && FLUID.on && !FLUID.idle;   // §135: idle binds the placeholders exactly as the switch's off does — a sampler always binds, and a scene that is not meant to read the pool reads 1×1 black
   const V = ETEX.vel, D = ETEX.dye;
   V.t = on ? vel[0].t : ph.t; V.w = on ? vel[0].w : 1; V.h = on ? vel[0].h : 1;
   D.t = on ? dye[0].t : ph.t; D.w = on ? dye[0].w : 1; D.h = on ? dye[0].h : 1;
   ETEX.simW = on ? vel[0].w : 0; ETEX.simH = on ? vel[0].h : 0; ETEX.dyeW = on ? dye[0].w : 0; ETEX.dyeH = on ? dye[0].h : 0;
+}
+
+// §135 point 3: empty the pool — the velocity, the dye, the pressure and the scratch stencils to black on both sides of every
+// ping-pong. §107's "clear" is a DISSIPATION ramp (inject.js's DROP_DISS over a beat), not a GL clear, so there was no hard-clear
+// path to reuse: this is it, the same clearColor/clear mkT() does on allocation. Called on the first stepped frame after an idle
+// stretch, before any splat of that frame lands, so the crossfade into a fluid scene fills from dark.
+function clearPool() {
+  if (!vel[0]) return;
+  gl.disable(gl.SCISSOR_TEST);
+  gl.clearColor(0, 0, 0, 1);
+  for (const r of [vel[0], vel[1], dye[0], dye[1], prs[0], prs[1], div, curl]) {
+    if (!r) continue;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, r.f);
+    gl.viewport(0, 0, r.w, r.h);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+}
+
+// §135: the frame's owner does not read the substrate (loop.js, readsFluid()) — the step is SKIPPED outright: no GL work at all,
+// `ms` reads 0 and the 1×1 placeholders stay bound. The grammar's own state is left warm (it is a function of MS, not of the
+// picture); the PICTURE is what goes stale, so the first stepped frame after this clears it (idlePend → clearPool()).
+export function idleFluid() {
+  if (!FLUID.idle) { FLUID.idle = 1; idlePend = 1; publish(); }
+  FLUID.ms = 0;
+  FLUID.nSplat = 0;
 }
 
 export function initFluid(ctx) {
@@ -150,9 +177,11 @@ function pass(pr, tgt, texel) {
 // 'pool' unless the card names another; a strict branch on the name, never a mix). Leaves BLEND / DEPTH_TEST / SCISSOR off.
 export function stepFluid(dt, S, resumed, grammar = DEFAULT_GRAMMAR) {
   if (!FLUID.avail || !FLUID.on) return;
+  FLUID.idle = 0;   // §135: this frame's owner reads the pool — the step below is §104's, unchanged
   const t0 = performance.now();
   const tr = tier();
   if (tr !== FLUID.tier || G.PW !== lastW || G.PH !== lastH) alloc(tr);
+  if (idlePend) { idlePend = 0; clearPool(); }   // §135 point 3: the first step after an idle stretch fills from dark
   const pm = FLUID.params, q = FLUID.queue;
   let pr;
   let breath = 0, swirl = 0, grain = 0, cell = 1, hold = 1, jit = 0, dtSim = 1, substeps = 1;
@@ -325,6 +354,8 @@ export function benchFluid(n, S, ring, grammar, steps) {
   const sync = () => { gl.bindFramebuffer(gl.FRAMEBUFFER, dye[0].f); gl.readPixels(dye[0].w >> 1, dye[0].h >> 1, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4)); };
   const hold = () => { if (ring) FLUID.ring(ring.a, ring.r, ring.w); };
   holdSteps = steps > 1 ? steps | 0 : 0;
+  const wasIdle = FLUID.idle, wasPend = idlePend;   // §135: the bench steps the pool whatever the owner is — it must not leave the idle bookkeeping (or the pool's picture) changed behind it
+  idlePend = 0;
   hold(); stepFluid(1 / 60, S, false, g);
   sync();
   const t = performance.now();
@@ -334,9 +365,11 @@ export function benchFluid(n, S, ring, grammar, steps) {
   }
   sync();
   holdSteps = 0;
+  idlePend = wasPend;
+  if (wasIdle) { FLUID.idle = 1; publish(); }   // §135: back to idle, the placeholders rebound — the next real frame decides again
   return (performance.now() - t) / n;
 }
 
 export const fluidLine = () => (FLUID.avail
-  ? (FLUID.on ? `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}${FLUID.pen && FLUID.pen.on ? ` pen ${FLUID.pen.x.toFixed(2)},${FLUID.pen.y.toFixed(2)}` : ''} dt ${FLUID.dtSim.toFixed(2)}${FLUID.substeps > 1 ? `×${FLUID.substeps}` : ''}` : ''}` : 'fluid off (W)')
+  ? (FLUID.on ? (FLUID.idle ? `fluid idle  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  (this scene does not read the substrate — §135)` : `fluid ${FLUID.ms.toFixed(2)} ms  grammar ${FLUID.grammar}  sim ${FLUID.simW}x${FLUID.simH}  dye ${FLUID.dyeW}x${FLUID.dyeH}  tier ${FLUID.tier}  iters ${FLUID.params.iters}  splats ${FLUID.nSplat}  curl ${FLUID.params.curl.toFixed(0)} vd ${FLUID.params.velDiss.toFixed(2)} dd ${FLUID.params.dyeDiss.toFixed(2)}${FLUID.grammar === 'bands' ? ` heave ${FLUID.heave.toFixed(2)} swirl ${FLUID.swirl.toFixed(2)} grain ${FLUID.grain.toFixed(3)}${FLUID.highs ? ` dip ${FLUID.highs.dip.toFixed(2)}` : ''}${FLUID.pen && FLUID.pen.on ? ` pen ${FLUID.pen.x.toFixed(2)},${FLUID.pen.y.toFixed(2)}` : ''} dt ${FLUID.dtSim.toFixed(2)}${FLUID.substeps > 1 ? `×${FLUID.substeps}` : ''}` : ''}`) : 'fluid off (W)')
   : 'fluid unavailable (no float render targets)');
