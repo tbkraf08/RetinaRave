@@ -4471,3 +4471,94 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   .3 gate (6.9): the END-column loss halved it; a negative-heavier quota on that recipe (§133's run 5 bought 2–3 points) is one run.
   (4) The alternative modules stay under `tools/work/vox/vox-weights-{tcn5-ship,tcn6,tcn7,tcn8}.js` with their parity files — a one-copy
   swap each. (5) No merge, tag, push or deploy; nothing on main touched; the worktree is served on 8765 so the user sees run 10 on reload.
+
+## §135 The fluid substrate idles under the scenes that do not read it (2026-10-17, branch `fluid-idle` in a worktree off main d72a96d, one Fable worker; the user: *"dust seems slow? also nav seems slower"* → *"dropped frames"* → *"fix it"*)
+
+- **The finding.** `core/loop.js` called `stepFluid()` EVERY frame on EVERY scene — §104's own words, *"a Stam solver under every
+  scene"* — and only `scenes/fluid` (id 0) and `scenes/fluid2` (id 1) ever sample what it writes (`ctx.engineTex.dye` in their show
+  pass, `ctx.engineTex.vel` through the `post.fb.advect` feedback they are the only two to opt into, §109). At q 1 that step is
+  tier 3 (sim 259×128, dye 1035×512, 20 Jacobi sweeps) and `CARD.benchFluid(300)` measures **1.34–1.63 ms of GPU per frame** on this
+  box — spent for nobody under DUST, NAV2, TORUS2 and MANDALA. On the software renderer (the starved GPU the user's dropped frames
+  show up on) main runs DUST at 22.8 fps against 25.6 with `&fluid=0`, NAV2 at 28.2 against 31.7; v0.34, before §104, 26.2 and 32.4.
+  The vocal net is not involved (`ears` 0.11–0.14 ms/frame on every run, the same before and after).
+- **The gate is DATA on the scene, never an id list in `core/`.** The card's existing `fluid` slot takes a second key:
+  `fluid: { reads: true }` on FLUID, `fluid: { grammar: 'bands', reads: true }` on FLUID2 (CONTRACTS §1.4 "The substrate's READERS";
+  either key stands alone, so FLUID declares the read and keeps the default `'pool'` grammar). `core/fluid/grammar.js` gains
+  `readsFluid(scene)` beside `grammarOf(scene)` — pure, node-importable, and the two are independent: a card may name a grammar
+  without reading the pool, and the slot without `reads` is exactly that.
+- **The step's gate** (`loop.js`, one line). It steps when a scene that READS the substrate is on screen: the §116 owner
+  (`REG[SC.next >= 0 ? SC.next : SC.cur]`), **or the scene fading OUT** (`REG[SC.cur]` while `SC.next >= 0` — it is still visible and
+  still samples; gating on the owner alone would have blacked the pool on the first frame of every fade OUT of FLUID, a pop the user
+  would have seen immediately), **or the one `SC.forced` names** — a forced scene lands in `updateScenes()`, which runs AFTER the step,
+  so on the page's first frame the owner is still the home `register()` seated and a forced fluid run lost exactly one step (measured:
+  the s0 and s1 fake-smoke pairs both moved by that one frame, s2–s5 held because nothing else samples the pool). `grammarOf()` is
+  untouched: the grammar is still the owner's. Otherwise `idleFluid()`.
+- **Idle** (`fluid.js`). No GL work at all: `FLUID.idle` 1, `ms` 0, `nSplat` 0, and `publish()` binds the two 1×1 black placeholders
+  exactly as the switch's off path does — **without touching `FLUID.on`**, which stays the user's word (`&fluid=0`, key `W`) and the
+  HUD's. `fluidLine()` reads `fluid idle  grammar …  sim …  (this scene does not read the substrate — §135)`. `benchFluid()` saves and
+  restores the idle bookkeeping, so a bench under a non-fluid owner leaves neither the flag nor the pool's picture changed behind it.
+- **Resume** (point 3). The first stepped frame after an idle stretch calls `clearPool()` — the velocity, the dye, the pressure and the
+  two scratch stencils to black on BOTH ping-pong faces — before any splat of that frame lands, so the crossfade into a fluid scene
+  fills from dark and never fades in the picture the pool held minutes ago. The grammar's own state is left warm (it is a function of
+  MS, not of the picture); only the PICTURE goes stale. `ENGINE.resumed` keeps its meaning. **Finding:** §107's "clear" is a
+  DISSIPATION ramp (`inject.js`'s `DROP_DISS` over a beat), not a GL clear — there was no hard-clear path in `fluid.js` to reuse, so
+  this is one, built from the same `clearColor` / `clear` pair `mkT()` already runs on allocation.
+- **The guard.** `check.js`'s fluid-slot rule now takes `{ grammar?, reads? }`, and FAILS a scene folder that samples the substrate
+  (`engineTex.dye` / `.vel` anywhere in the folder, or a non-zero `post.fb.advect` on the card) without the flag — it would draw the
+  1×1 placeholder and look broken; a flag with no sampling read warns (the pool would be stepped for nobody). Both directions
+  verified by hand on a throwaway edit.
+- **The bench** (`tools/load-bench.js`, SwiftShader — no `GPU=1`, 30 s, two runs each, `errs []` on all eight; machine load 5.65,
+  the user's own Chrome + VS Code sit at ~6). The governor collapses q to 0 by 8–9 s on the software renderer, so these are the
+  TIER 0 step's cost; the tier-3 cost is the bench line below.
+
+| run | before (main d72a96d) | after (`fluid-idle`) | delta | ENGINE.ms before → after |
+|---|---|---|---|---|
+| `test&track=IBelongHere&scene=3` (DUST) | 22.8 / 22.8 fps | **25.2 / 25.2** | **+10.5 %** | 2.394 / 2.400 → 2.255 / 2.197 |
+| `test&track=IBelongHere&scene=2` (NAV2) | 28.2 / 28.4 fps | **31.5 / 32.1** | **+12.4 %** | 2.106 / 2.121 → 2.019 / 1.919 |
+| the brief's `&fluid=0` reads (the target) | — | DUST 25.6 / 23.9 · NAV2 31.7 | — | — |
+
+  One `GPU=1` read with q pinned to 1 (`CARD.Q.hold=1`, tier 3, sim 259×128 dye 1035×512), 9 s of page time: `#test&scene=3` reads
+  `idle` 1, `on` true, `ms` 0, **`steps` 0** — the step never ran once; `#test&scene=0` on the same build reads `idle` 0, `steps` 543,
+  `ms` 0.07. `CARD.benchFluid(300)` on those two pages: **1.338 ms** per step under DUST, **1.634** under FLUID — the GPU time the rule
+  removes from every non-fluid frame (§104's budget is ≤ 1.0 ms at tier 3; this box has never met it).
+- **The crossfade into FLUID looks right** (real time, `GPU=1`, `test&track=IBelongHere`, `tools/lum.py` centre means of the 20 % box).
+  A forced switch is a HARD CUT (`goScene(id, true)` — key `1` sets `SC.forced`), so the fade is made the harness way:
+  `CARD.goScene(0, false)` then `CARD.SC.forced = 0`, which leaves the director's home rules out and lets the fade run (`SC.m` 0 →
+  .049 → .492 → landed, `SC.dur` 1.54 s). **The clear's proof** is the run that STARTS on FLUID so the pool is full first
+  (`&fluiddbg=1`, the dye over the composite): FLUID alive **.1205** (steps 639) → away to NAV2, the fade out still stepping (639 →
+  643 while FLUID was visible, the out clause) then idle at steps 735 and the pool **.0000** → back to FLUID, the fade's first frames
+  **.0187** (dark, although it had been .1205), its middle **.0756**, 3 s on **.1098**. The plain-composite run of the same switch:
+  .3386 → .2277 → .2060 (NAV2 fading out of a bright frame into the pool). `errs []` on every run; shots under the worktree's
+  (gitignored) `tools/work/fluid-idle/`.
+- **The director's roster is unchanged.** Nothing here touches a bid: FLUID still bids beside NAV2, DUST and TORUS2 (§114), with
+  `score()` and the §93–§95 dwell exactly as they were, and `SCENES="0 2 3 4"` is still the roster. The idle rule reads the director's
+  output; it never writes it.
+- **The gates.** `node tools/check.js` 0 fail — **met** (5 warn, one of them new: `assets/core/fluid/fluid.js` is 376 lines, over the
+  350 soft cap, under the 500 fail cap); `node tools/license.js --check` 157 / 0 — **met**; `npm test` exit 0 — **met**
+  (`test_fluid` 331 → **345 ok, 0 fail**: +14 for the idle rule — the declaration on all six cards and its agreement with §109's
+  advect opt-ins, then `fluid.js`'s own state machine through a FAKE WebGL2 context, a Proxy with every enum a number, every call a
+  no-op and `drawArrays` / `clear` counted: a fluid owner draws 29 and allocates the tier, an idle frame does 0 draws / 0 clears and
+  holds the step counter at `ms` 0 with the placeholder texture itself bound, 20 more idle frames still 0 / 0, the first step after
+  the stretch clears 8 faces then draws, the next clears 0, the next idle→fluid edge clears 8 again). The fake smoke
+  `IDS="0 1 2 3 4 5" GPU=1 MUTE=1 PORT=8875 tools/scene-md5.sh s135`: **10 of 12 lines HOLD** against
+  `tools/accept/v0.39/scene-md5-s134-full.txt` — **met**, with a finding: the two s1 (FLUID2) lines differ from that reference and
+  from it alone. Main d72a96d shot on this box today gives EXACTLY the branch's two values (`aa626832` / `8372bc28`), and CONTRACTS
+  §1.4 already records that pair as FLUID2's current one — the s134 list was cut at `8c464a0`, BEFORE the merge that brought §132's
+  FLUID2 reset in, so it is stale on s1. Not re-baselined.
+  The real roster `GPU=1 PORT=8875 PAR=2 MUTE=1 SCENES="0 1 2 3 4" tools/real-md5.sh s135` (215 runs, 330 lines, ~68 min on a box at
+  load 6–8; `f0` 2 on every run, `errs []` and `bad []` throughout, 0 exceptions, 0 missing shots): against
+  `real-md5-s134-full.txt`, 330 joined 330 with no ref-only and no new-only name, **264 HOLD and 66 moved** — and all 66 are **s1
+  (FLUID2), both map modes, all of it**; s0 (FLUID), s2 (NAV2), s3 (DUST) and s4 (TORUS2) hold 66 / 66 each. The 66 were then
+  re-shot ON MAIN d72a96d, this box, same scope (`SCENES="1" tools/real-md5.sh s135base`, 43 runs, clean): **branch s1 vs main s1 =
+  0 of 66 moved, byte-identical name for name; main s1 vs the s134 reference = 66 of 66 moved.** The same stale reference, the same
+  cause as the fake smoke. **So §135 moved 0 of the 330 lines** — **met**. Records: `tools/accept/v0.39/scene-md5-s135.txt`,
+  `real-md5-s135.txt` (the full 330 of this sweep, including the branch's own s1 list for the next one), `load-bench-s135.txt`.
+- **What is left.** (1) The user's eye: that DUST and NAV2 feel right again at home, and that the crossfade into FLUID from the
+  director (not the harness's soft switch) reads as a fill rather than a pop — the pool now starts from dark on every entry,
+  which is a LOOK change the numbers cannot settle. (2) `assets/core/fluid/fluid.js` is 376 lines, over `check.js`'s 350 soft cap;
+  the idle machinery is ~25 of them. Splitting the solver's passes out of the file is the obvious cut and is not done here.
+  (3) `tools/accept/v0.39/{scene-md5,real-md5}-s134-full.txt` are stale on s1 from the merge, not from this work — the next
+  engine sweep should read against `real-md5-s135.txt` instead, or those two lists should be re-cut on main and said so.
+  (4) The pool's grammar still PLANS nothing while idle, which is the point; a scene that wants a warm pool the instant it
+  lands (rather than a fill from dark) would need a pre-roll, and nobody has asked for one. (5) No merge, tag, push or deploy;
+  main is untouched and the site stays at v0.38.
