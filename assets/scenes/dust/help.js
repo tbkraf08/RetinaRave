@@ -89,13 +89,15 @@ export const HELP = {
     arc: 'the bid: never auto-picked during a build',
     punchy: 'the bid: punchy music invites the swarm',
     calm: 'the bid: slow, sparse sound is the swarm\'s (§93)',
-    voxS: 'the singer\'s grains: above the gate\'s knee (.45 → .85, over the live detector\'s own gates so a piano\'s false '
-      + 'voice stays dark) the grains whose bands sit at the sung pitch\'s first three partials — three thin shells at its '
-      + 'radii — are lifted in the sung note\'s hue and the rest of the cloud gives up exactly that light; the voice over 8 s '
-      + 'also lets a lone voice (no sub sounding) pour the cloud into the ribbon on a seam; `&dvox=0` is the cloud as before',
-    voxHz: 'which bands are the singer\'s (the pitch and its 2× and 3× partials on the log axis, so the shells rise and fall '
-      + 'with the melody) and, in the ribbon, how high the line sits — the one vertical this scene has; a pitch colours '
-      + 'nothing until it has held about 85 ms',
+    voxS: 'the singer\'s band: above the gate\'s knee (.45 → .85, over the live detector\'s own gates so a piano\'s false '
+      + 'voice stays dark) the grains whose bands sit at the sung pitch (a band three semitones wide, its 2× and 3× partials '
+      + 'fainter) are lifted in the sung note\'s hue and grow, and the rest of the cloud — the drums\' flashes with it — gives up '
+      + 'nearly half its light to them, back within .3 s of the voice stopping; the voice over 8 s also lets a lone voice (no sub '
+      + 'sounding) pour the cloud into the ribbon on a seam; `&dvox=0` is the cloud as before the voice',
+    voxHz: 'which bands are the singer\'s (the pitch and its 2× and 3× partials on the log axis) and HOW HIGH the cloud sits: '
+      + 'the sung pitch\'s height (the scale degree, a little of the octave, eased .35 s) lifts the whole cloud a little and the '
+      + 'lit band a lot, so the hoop floats up out of the body on a high note and sinks under it on a low one, in every '
+      + 'formation — and in the ribbon the line itself rises; a pitch colours nothing until it has held about 85 ms',
     voxConf: 'the switch: 0 (the fake timeline, a trace recorded before the detector) and the cloud is exactly as before; any '
       + 'read above 0 lets the voice in — the HUD\'s vox line says which source (lane / live) feeds it',
   },

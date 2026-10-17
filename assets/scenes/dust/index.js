@@ -167,9 +167,10 @@ const SELF = {
     // A formation change lands only on a seam of the music — the phrase line, or a bar the store calls new — and
     // never while a pour is still running. WHICH shape is the section's energy (formations.js); a return pours back
     // into the shape that section had. The drop is the one exception to the seam: it bursts wherever it lands.
-    // §127: the VOICE (voice.js, the shared gate math/vox.js) — the singer's grains lifted in the note's hue (the cloud gives up
-    // the light they take), the ribbon's line rising with the pitch, and `voxSec` letting a lone voice ask for the ribbon on a
-    // seam; w 0 (voxConf 0: the fake timeline, the traces; `&dvox=0`) = every number below exactly as before
+    // §127 / §138: the VOICE (voice.js, the shared gate math/vox.js) — the sung BAND lifted in the note's hue (the cloud gives up
+    // the light it takes, the drums recede with it), riding the pitch's height with the whole cloud under it, the ribbon's line
+    // rising with the pitch, and `voxSec` letting a lone voice ask for the ribbon on a seam; w 0 (voxConf 0: the fake timeline,
+    // the traces; `&dvox=0`) = every number below exactly as before
     const VO = voiceStep(dt, MS);
     const ret = returning(this.mem, MS);
     const why = trigger(this.trig, MS, this.formT >= 1);
@@ -249,7 +250,7 @@ const SELF = {
     ctx.tex(P, 'uEma', 2, this.E.a);                     // the slow spectrum the pass above just wrote
     ctx.tex(P, 'uNorm', 3, this.E.n);                    // ...and this frame's normaliser for it, one texel
     gl.uniform3f(P.u('uHab'), this.habOn ? 1 : 0, HAB, NW);
-    gl.uniform4f(P.u('uVox'), VOUT.w, VOUT.rank, VOUT.gain, 0);   // §127: the voice — all 0 at w 0 (the block is skipped)
+    gl.uniform4f(P.u('uVox'), VOUT.w, VOUT.rank, VOUT.gain, VOUT.ride);   // §127: the voice — all 0 at w 0 (the blocks are skipped); .w = §138 the ride
     gl.uniform2f(P.u('uVoxC'), VOUT.hueT, VOUT.ribY);
     const wasDepth = gl.isEnabled(gl.DEPTH_TEST);
     gl.disable(gl.DEPTH_TEST);                           // additive points are order-independent; the target may have no depth buffer
@@ -322,7 +323,7 @@ const SELF = {
         formA: SELF.formA, formB: SELF.formB, formT: SELF.formT,
         why: SELF.why === 'phrase' ? 1 : SELF.why === 'novel' ? 2 : SELF.why === 'drop' ? 3 : SELF.why === 'return' ? 4 : 0,
         want: shapeFor(SELF.lastMS || {}, VOUT.sec),
-        voxW: VOUT.w, voxPc: VOUT.pc, voxY: VOUT.y01, voxRank: VOUT.rank, voxGain: VOUT.gain, voxHue: VOUT.hueT, voxRib: VOUT.ribY, voxSec: VOUT.sec, voxP: VOUT.p,
+        voxW: VOUT.w, voxPc: VOUT.pc, voxY: VOUT.y01, voxRank: VOUT.rank, voxGain: VOUT.gain, voxHue: VOUT.hueT, voxRib: VOUT.ribY, voxSec: VOUT.sec, voxP: VOUT.p, voxRide: VOUT.ride,
         nRef: SELF.nRef, vk: SELF.vK.e, vs: SELF.vS.e, vh: SELF.vH.e, vb: SELF.vB.e,
         build: SELF.vT.build, wind: SELF.vT.wind, rel: SELF.vT.rel, con: SELF.m.build, sat: SELF.mood.sat,
         dyn: SELF.m.dyn, pk: SELF.vD.pk, dr: SELF.vD.r, base: SELF.vD.base, fb: SELF.vD.fb, lpk: SELF.vD.lpk,
@@ -355,7 +356,7 @@ const SELF = {
   },
 
   hud() {
-    return 'dust ' + this.rt.label + ' vox w ' + VOUT.w.toFixed(2) + (VOUT.pc >= 0 ? ' pc' + VOUT.pc : '') + ' sec ' + VOUT.sec.toFixed(2);
+    return 'dust ' + this.rt.label + ' vox w ' + VOUT.w.toFixed(2) + (VOUT.pc >= 0 ? ' pc' + VOUT.pc + ' y ' + VOUT.y01.toFixed(2) : '') + ' sec ' + VOUT.sec.toFixed(2);
   },
 
   help: HELP,
