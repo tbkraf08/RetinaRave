@@ -52,14 +52,20 @@ for (const f of files) {
   const litS = vw ? mean(pick(vw, true).map((v) => (v > 0.5 ? 1 : 0))) : NaN, litU = vw ? mean(pick(vw, false).map((v) => (v > 0.5 ? 1 : 0))) : NaN;
   const rSv = pearson(...pair(lum, voxS, true)), rSk = pearson(...pair(lum, kick, true)), rUk = pearson(...pair(lum, kick, false)), rUv = pearson(...pair(lum, voxS, false));
   let rY = NaN, cy = []; if (vy && lumY) { const x = [], y = []; for (let i = 0; i < n; i++) if (sung[i] && vy[i] !== null && vy[i] >= 0 && lumY[i] !== null) { x.push(lumY[i]); y.push(vy[i]); } rY = pearson(x, y); cy = x; }
+  // THE SHORT-TIME VERTICAL: the formation pours and the ribbon's own waveform move the centroid by ±.08 over a window, the ride
+  // by ±.02–.05 — so the per-frame correlation above is the slow picture's; this one is the change over DT frames (.25 s, a note's
+  // own time) of lumY against the change of the sung height, on the sung frames with a pitch, and the kick's own on the same
+  // frames (dLum against dKickAmp) for the competing driver
+  const DT = 15; let rDy = NaN, rDk = NaN;
+  if (vy && lumY) { const x = [], y = [], u = [], v = []; for (let i = DT; i < n; i++) if (sung[i] && sung[i - DT] && vy[i] !== null && vy[i - DT] !== null && vy[i] >= 0 && vy[i - DT] >= 0 && lumY[i] !== null && lumY[i - DT] !== null) { x.push(lumY[i] - lumY[i - DT]); y.push(vy[i] - vy[i - DT]); u.push(lum[i] - lum[i - DT]); v.push(kick[i] - kick[i - DT]); } rDy = pearson(x, y); rDk = pearson(u, v); }
   const rid = ride ? pick(ride, true) : null;
   const rib = fB ? mean(fB.map((v) => (v === 3 ? 1 : 0))) : NaN;
   const base = path.basename(f, '.json');
-  rows.push({ track: j.track, base, t0: T[0], t1: T[n - 1], n, sungPct: nS / n, litS, litU, rSv, rSk, rUv, rUk, rY, cy10: q(cy, 0.1), cy90: q(cy, 0.9), ride10: rid ? q(rid, 0.1) : NaN, ride90: rid ? q(rid, 0.9) : NaN, rib, lumS: mean(pick(lum, true)), lumU: mean(pick(lum, false)) });
+  rows.push({ track: j.track, base, t0: T[0], t1: T[n - 1], n, sungPct: nS / n, litS, litU, rSv, rSk, rUv, rUk, rY, rDy, rDk, cy10: q(cy, 0.1), cy90: q(cy, 0.9), ride10: rid ? q(rid, 0.1) : NaN, ride90: rid ? q(rid, 0.9) : NaN, rib, lumS: mean(pick(lum, true)), lumU: mean(pick(lum, false)) });
 }
 rows.sort((a, b) => (a.track + a.t0).localeCompare(b.track + b.t0) || a.base.localeCompare(b.base));
-console.log('| trace | window | sung % | lit % sung / unsung | r(lum,voxS) sung | r(lum,kickAmp) sung | r(lum,voxS) unsung | r(lum,kickAmp) unsung | r(lumY,voxY) sung | lumY p10 / p90 | ride p10 / p90 | ribbon % | lum sung / unsung |');
-console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+console.log('| trace | window | sung % | lit % sung / unsung | r(lum,voxS) sung | r(lum,kickAmp) sung | r(lum,voxS) unsung | r(lum,kickAmp) unsung | r(lumY,voxY) sung | r(ΔlumY,ΔvoxY) .25 s | r(Δlum,ΔkickAmp) same frames | lumY p10 / p90 | ride p10 / p90 | ribbon % | lum sung / unsung |');
+console.log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
 for (const r of rows) {
-  console.log(`| ${r.base} | ${f2(r.t0, 0)}–${f2(r.t1, 0)} s | ${pct(r.sungPct)} | ${pct(r.litS)} / ${pct(r.litU)} | ${f2(r.rSv)} | ${f2(r.rSk)} | ${f2(r.rUv)} | ${f2(r.rUk)} | ${f2(r.rY)} | ${f2(r.cy10, 3)} / ${f2(r.cy90, 3)} | ${f2(r.ride10)} / ${f2(r.ride90)} | ${pct(r.rib)} | ${f2(r.lumS, 1)} / ${f2(r.lumU, 1)} |`);
+  console.log(`| ${r.base} | ${f2(r.t0, 0)}–${f2(r.t1, 0)} s | ${pct(r.sungPct)} | ${pct(r.litS)} / ${pct(r.litU)} | ${f2(r.rSv)} | ${f2(r.rSk)} | ${f2(r.rUv)} | ${f2(r.rUk)} | ${f2(r.rY)} | ${f2(r.rDy)} | ${f2(r.rDk)} | ${f2(r.cy10, 3)} / ${f2(r.cy90, 3)} | ${f2(r.ride10)} / ${f2(r.ride90)} | ${pct(r.rib)} | ${f2(r.lumS, 1)} / ${f2(r.lumU, 1)} |`);
 }
