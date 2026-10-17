@@ -13,3 +13,6 @@ loud half: sub 34%  bass 30%  lm 14%  mid 19%  high 4% | bass f0 54.8 Hz A1 held
 
 === RaindropsOnRoses  222.7 s  tempo 93.8 bpm (percussive onsets, loudest 30 s from 76 s)
 loud half: sub 56%  bass 34%  lm 5%  mid 4%  high 1% | bass f0 46.3 Hz F#1 held 71% | centroid30-600 69 Hz  h/f 0.05
+
+=== TheChain  270.0 s  tempo 153.8 bpm (percussive onsets, loudest 30 s from 224 s)
+loud half: sub 15%  bass 30%  lm 20%  mid 24%  high 11% | bass f0 54.9 Hz A1 held 31% | centroid30-600 145 Hz  h/f 0.51
