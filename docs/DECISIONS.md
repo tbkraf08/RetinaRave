@@ -4562,3 +4562,154 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   (4) The pool's grammar still PLANS nothing while idle, which is the point; a scene that wants a warm pool the instant it
   lands (rather than a fill from dark) would need a pre-roll, and nobody has asked for one. (5) No merge, tag, push or deploy;
   main is untouched and the site stays at v0.38.
+
+## §136 v0.41 tagged, NOT deployed — the voice finds its pitch, the pool rests (2026-10-17, one Opus worker on main, no worktree; the user: *"tag new version"*)
+
+- **What ships** (everything on `main` since the v0.40 tag at `ac46def`; this note adds no code):
+  **§132 THE FLUID2 RESET TO THE §108 POOL** — the grammar in FLUID2's slot is the pre-ring pool of the 2026-10-09 15:51 EDT
+  take, proved frame by frame against `git show feb1f67:…/inject.js` rather than rebuilt, with the six droplets back on the
+  confirmed drop; **the voice loses its only consumer in a fluid picture** (the §121 RIG was the read, and it is at
+  `git show v0.40:assets/core/fluid/inject2.js`). · **§133 + §134 THE STREAMING VOCAL NET WITH ITS PITCH HEAD** — a causal TCN
+  with a 2-D front layer (conv 3×3 ×8, causal, max-pooled ×4 in frequency, its 8 × 10 column beside the raw 40 bands), the loss
+  on the END column, RF 57, **an output every hop instead of every window**, and a 61-way pitch head on the shared hidden column
+  trained on the stems' pYIN with the YIN on the mix pulled: 55 246 params, 57 696 MAC/hop, **the sung pitch within a semitone
+  of the Demucs lane 70 / 96 / 94 % on SeeYouDrop / IBelongHere / RaindropsOnRoses against 9 / 45 / 55 before** — which is the
+  release — Jamendo-test **F1 .825 against .795**, the eased lag **130 ms against 120** (the one number that got worse), Comptine
+  false voice **2.5 % at .5**, bench **89 µs/hop**; the voice reaches DUST and TORUS2. · **§135 THE FLUID SUBSTRATE IDLES UNDER
+  THE SCENES THAT DO NOT READ IT** — the step runs only for the §116 owner, the scene fading OUT or the one `SC.forced` names,
+  otherwise `idleFluid()` with no GL work and the 1×1 placeholders bound and **`FLUID.on` untouched**: **DUST +10.5 % / NAV2
+  +12.4 % on the software renderer**, 1.3–1.6 ms of GPU per frame removed from every non-fluid frame, and the pool **fills from
+  dark on entry** because the first stepped frame after an idle stretch clears it. **The user's eye has already spoken on two of
+  these three**: DUST / NAV2's *"dropped frames"* **was** the substrate and is fixed, and §131's Worker A/B — v0.40's content —
+  he had confirmed the better of the two.
+- **The class is `engine`, and `scenes` is `[1, 3, 4]`.** Not a `scene` release: no scene was added and no id moved. But three
+  of them look different. **1 FLUID2** draws a different picture outright — a different grammar under the same slot, which is
+  the one case where a reset is a visible change. **3 DUST** and **4 TORUS2** carry the voice, and the voice's **hue** is the
+  pitch, so the new net's win lands on the lit seam through the grains and on the strand lifted out of the nest. **0 FLUID and
+  2 NAV2 are deliberately NOT listed**: §135 made them faster without changing a pixel they draw, and §135's own sweep proved
+  that at **0 of 330 real-md5 lines moved**. The entry's `decisions` is **`[§132, §133, §134, §135]`**. **Thumbnails: two,
+  rendered by the build and by nothing else.** `tools/whatsnew.js` renders one per listed scene that has
+  `site/thumbs/<name>.jpg`; the directory holds `dust fluid mandala nav2 torus2`, so the article shows **DUST and TORUS** and
+  **FLUID2 shows none** for want of a `fluid2.jpg`. Nothing was shot by hand — §129 and §125 let the build decide the same way.
+- **A FINDING ON THE ENTRY, and the one place this tag departs from its brief.** The brief asked `decisions` to carry the
+  duplicate number honestly, e.g. `"§132 (the FLUID2 reset)"`. **It cannot:** `tools/releases.js` line 36 validates every
+  element against **`/^§\d+[a-z]?$/`** and `node tools/releases.js check` reports a problem on that string — verified in node
+  before a byte was written. So the entry carries the **four bare numbers**, which does name all four sections, and the
+  duplicate is recorded in prose instead: **`docs/DECISIONS.md` has TWO sections numbered §132** — the v0.40 tag note and the
+  FLUID2 reset, in that order — and **both stay that way**, because renumbering a published section that a shipped
+  `releases.json` entry already links to is the worse of the two wrongs. Nothing in `releases.js` or `check.js` was relaxed to
+  fit the brief.
+- **What the entry says, in a visitor's words** (the house voice, no measurement in the prose, no § — `releases.js` refuses
+  one): the title *"The voice finds the note, and the ink rests"*, and it leads on the pitch because that is the release —
+  *"the thing it got better at is the one it was worst at: the note … on two of the three sung tracks in my library the note it
+  named was wrong more often than it was right — which means the colour a sung line painted was mostly a colour the song was
+  not in."* **The three honest limits are in it, and the one that got worse is named first:** *"The voice still enters a beat
+  behind the note at a walking tempo, and a shade later than it did in the last release — that is the trade for a network that
+  hears further back before it commits, and it is the gate I most wanted to meet and did not"*; *"A solo piano sitting in a
+  singer's range still lights the scenes a little; it is a fraction of what it was two releases ago, and it is not nothing"*;
+  and the chops, *"a voice being present with no note in it, so the light it makes has no colour."* FLUID2's reset is given as
+  the user's own preference (*"the version I had on a recording from a week before and could not stop preferring"*) with the
+  proof named (*"proved frame by frame against the old file rather than rebuilt from memory"*) and its cost owned (*"the pool no
+  longer reads the voice at all, because reading it was the rig's own idea"*). §135 closes the body with its visible
+  consequence rather than only its win: *"when a pool scene comes in now, it fills from dark instead of fading up the picture
+  the pool happened to be holding from minutes ago."*
+- **The recipe (§132's ritual step for step, the three-page rule standing, §125's `releases.json` pitfall paid forward a FOURTH
+  time).** `package.json` + `assets/core/version.js` 0.40.0 → 0.41.0 **together** (§89 — and `test_rec.js` is the gate that they
+  agree: the take came out `retinarave-v0.41-nav2-2026-10-17T18-05-23.webm` with the sidecar reading `retinarave 0.41.0`) ·
+  `releases.json` top entry (`v0.41`, **2026-10-17**, class `engine`, the title above, `scenes [1, 3, 4]`, no clip) —
+  **hand-inserted as `JSON.stringify(rel, null, 1)` after `JSON.stringify(load(), null, 1) + '\n'` == the file was checked
+  byte-identical FIRST** (31 534 bytes, true), the script also re-proving that the **result** round-trips and that the 38
+  existing entries are byte-identical in the tail before it wrote: a **20-line pure insertion** (`git diff --numstat` **20
+  added, 0 removed**). `releases.js`'s own `save()` still writes a different compact layout and would reformat all 39 entries;
+  **it was never called, and the note has now held and cost nothing four times running** · `npm run build` (39 entries →
+  `site/whats-new.html` **59 045 bytes**, and `index.html`'s `#newin` line **did** move because the title did: *New in v0.41:
+  The voice finds the note, and the ink rests → what's new*; `dist/index.html` **151 modules + 12 in the ears Worker, 269 KB
+  inline, 1 848 752 bytes**) · `node tools/bundle.js releases/retinarave-v0.41.html` (**the same 151 / +12 / 269 KB /
+  1 848 752**, `VER = '0.41.0'`) · `git rm releases/retinarave-v0.38.html` (the three-page rule; `releases/` keeps v0.39 / v0.40
+  / v0.41, and v0.38's page is in history at its tag).
+- **The frozen page, read against v0.40's** (151 + 12 modules / 1 744 344 bytes): **the module counts are IDENTICAL — 151 + 12,
+  nothing entered or left the page graph** — and the **+104 408 bytes** are **DATA, not code**. `ears/vox-weights.js` went from
+  43 646 params (§126 run 2) to **55 246** (§134 run 10: the front layer and the pitch head), and the ears graph is in the
+  document **TWICE**, once for this thread's fallback and the det path and once for the Worker, which is §131's stated price of
+  one file and no runtime fetch — so the weights module's own growth lands in the page doubled, and the **inline Worker goes
+  218 KB → 269 KB**. The three greps asked for are all in it: **`EARS_WORKER_SRC` 6 hits** (v0.40's count exactly, the first of
+  them the Worker's own source string), the weights module's header line **verbatim** (*"front layer conv 3x3 x8 (causal in
+  time) max-pooled x4 in frequency, its 8 x 10 column beside the raw 40 bands (§134), then a causal TCN over the mel column:
+  120 -> 48 (k3…"*, with the shape line `net 'tcn', nParams 55246, macPerHop 57696, dil [1,2,4,8,12], front 8, frontPool 4`),
+  and **`idleFluid` 4 hits** — plus **`reads: true` 3 hits**, the two fluid cards' §135 declarations (CONTRACTS §1.4).
+- **The gates, each run on the tree AFTER the bump.** The receipt with every number is
+  `tools/accept/v0.41/tag-v0.41-2026-10-17.txt`:
+  1. `node tools/check.js` — **154 modules · uniforms 161 · MS keys 223 · scenes 6 (help.feats gaps 0) · 0 fail · 5 warn**,
+     exit 0 — **met** (the brief's 5 warns expected; they are line caps, all under the 500 fail cap, and the fifth is §135's
+     own new one: `core/fluid/fluid.js` **376**, beside §129's unchanged four — `core/scenes.js` 370, `ears/perc.js` 407,
+     `dust/index.js` 364, `torus2/index.js` 367) · `releases.js check` **39 entries, top v0.41 == package.json 0.41.0, 0
+     problems** — **met** · `whatsnew --check` **39 entries, up to date** — **met** · `license.js --check` **157 public files,
+     0 without the header** — **met** (157 at v0.40 too: §132–§135 added no public file).
+  2. `npm test` — **exit 0, 39.6 s** — **met**. `test_fluid` **345 ok, 0 fail** (331 before §135: +14 for the idle rule — the
+     declaration on all six cards, its agreement with §109's advect opt-ins, and `fluid.js`'s own state machine through a FAKE
+     WebGL2 context with `drawArrays` / `clear` counted); `test_music` **151 ok, 0 fail**; `test_loud` **43 pass, 5.99 µs per
+     frame under the 40 µs budget**; `test_earsw`, `test_voxscene` and every other suite **OK**. `test_vox`: the mel parity and
+     the **ONNX parity on 200 held Jamendo-test windows, every column and both heads**, both pass; the stage **90.4 µs/hop
+     median (p99 97) against ≤ 100 — met, and thin**, the margin ~10 µs at 57 696 MAC/hop; the pruned FFT **14 775 hops /
+     14 772 inferences**; `Ears.push` per 512 block **.174 with the stage / .071 without**, §130's skip **.069**; (vii) the
+     front end through `magsLo` == through `mags`, **5 622 hops, 0 values differ**. **§134's two known misses still print as
+     `note`, never as FAIL, and were not re-baselined:** Jamendo-test **F1 .825 against the §133 gate's ≥ .84 — MISSED**, and
+     IBelongHere (unseen) **F1 .814 / P .961 / R .706** — §126's recall.
+  3. `GPU=1 MUTE=1 node tools/test_rec.js` (the version pair's own gate) — **all ok** — **met**: the sidecar's
+     `app/version` **retinarave 0.41.0** and the file name **`retinarave-v0.41-…`**, the two strings moved together. §92's pin
+     still wins (`Q.hold` .75 through the take, free again from q0 .48 after the stop); webm 13 468 274 bytes, EBML magic,
+     5.95 s / 7 clusters ≈ the sidecar's 6.006, a frame decoded, the HUD on in the DOM, the timeline 2 → 3 → 1 within 0.6 s of
+     the keys. **A LOAD NOTE, not a regression:** **270 frames at 45.0 fps** composited against §132's 360 at 60.0 — this box
+     sat at **load 6.70** (the user's own Chrome + VS Code are ~6 of it; the idle floor here is 2.5–3 and was never waited for).
+     `GPU=1` throughout; §132's finding that the governor assertion fails on swiftshader *without* `GPU=1` is known and was not
+     re-tested.
+  4. the **frozen page from `file://`**, headless, **CLOCK=1 GPU=1 MUTE=1** — `test&scene=0` → `{sc 0, grammar pool, fluidOn
+     true, idle 0, errs [], bad [], frameN 300}` · `scene=1` → `{sc 1, bands, true, idle 0, …}` · `scene=3` → `{sc 3, pool,
+     true, **idle 1**, …}` · `scene=4` → `{sc 4, pool, true, **idle 1**, …}` — **`errs []` and `bad []` (`CARD.nonFinite()`) on
+     all four — met.** The lines are §129's / §130's / §132's to the character **but for one field added on purpose**: `idle`,
+     0 on the two fluid scenes and **1 on DUST and TORUS2** — §135's rule made visible on the frozen page, exactly where it
+     should be — while **`fluidOn` stays true on all four**, which is §135's point: the idle path never touches `FLUID.on`, so
+     `&fluid=0` and key `W` still mean what they meant. `CLOCK=1` from the first pass (v0.37's pitfall, paid forward a fourth
+     time). §131's honest note stands and is not this tag's: from `file://` in Chromium the PCM bus's worklet cannot load
+     (`blob:null/<uuid>` is cross-origin there), so the live ears never run on a saved page; the fake timeline needs no PCM,
+     which is why these four lines are clean.
+  5. the **no-third-party receipt** (SOCIAL-PLAN §4) — **ONE host on every route** — **met**: `/whats-new` →
+     `["127.0.0.1:8993"]` · `/` (`NOAUTO=1 real`) → `["127.0.0.1:8995"]` with `#newin` reading *"New in v0.41: The voice finds
+     the note, and the ink rests → what's new"* · `/about` → `["127.0.0.1:8997"]`. The v0.41 article renders (`id="v0.41"`, the
+     `engine` label, **17 October 2026**, the title, the notes line *§132 · §133 · §134 · §135*) and shows **exactly two
+     thumbnails, DUST and TORUS**, which is what `scenes: [1, 3, 4]` means against a `site/thumbs/` with no `fluid2.jpg`. The
+     credits were **already in place and needed no move** ([[feedback-credit-where-due]]): the new net borrowed no NEW corpus,
+     solver or idea — **Demucs** and **librosa / pYIN** (Mauch & Dixon) have been in `THIRD-PARTY.md` with their licences since
+     §122 — and the only `site/about.html` line that moved since v0.40 is §132's own FLUID2 description, committed with that
+     work. **The user's two dev servers were left running and untouched** — 8765 (this checkout) and 8874 (the v0.34 checkout);
+     every port used here was 8993 / 8995 / 8997.
+- **What was NOT run, and why — the brief's own instruction, and it holds.** The **full real-md5 roster** and **`accept.sh`**:
+  **§135 paid the 330-line sweep** on its own branch (215 runs, 330 lines, `f0` 2 and `errs []` and `bad []` on every run,
+  ~68 min, and after re-shooting the 66 s1 lines on main for the comparison: **0 of 330 moved against main**) — **and the engine
+  has not moved since that merge**: `git diff 8f20ca9..HEAD -- assets/` is **EMPTY**, and this commit holds only the two version
+  strings, `index.html`'s `#newin` line, `releases.json`, `site/whats-new.html`, the frozen page swap, the receipt and this
+  note. So §135's receipts **are** this release's content proof — `tools/accept/v0.39/real-md5-s135.txt` (the full 330),
+  `scene-md5-s135.txt` (the fake smoke, 10 of 12 holding), `load-bench-s135.txt`, and `vox-s134.txt` for the net. Also not run
+  and not owed: the fake smoke, `test_ears --trace`, a fresh load bench, `fluid-tracks.js`, and a **director trace** (the roster
+  is unchanged at `SCENES="0 2 3 4"`; nothing entered or left the rotation). **No reference was re-based here** — the next
+  release's sweep does that, never the tag. **No audio was played and nothing was retuned.**
+- **Carried findings — recorded, NOT fixed, and none of them this tag's.** (1) **`tools/accept/v0.39/{scene-md5,real-md5}-s134-full.txt`
+  (and `real-md5-s134-s1.txt`) are STALE ON s1**: cut at `8c464a0`, **before** the merge that brought §132's FLUID2 reset onto
+  main, so every s1 line in them is the RIG's picture and not the page's. §135 proved it twice (main's own s1 == the branch's
+  byte for byte; main's s1 vs the s134 reference = 66 of 66 moved). **`real-md5-s135.txt` supersedes them for s1** and is what
+  the next engine sweep should read against. (2) The `decisions` regex vs the duplicate §132 — above. (3) §134's two MISSED
+  gates and §126's IBelongHere recall, all three stated plainly in the entry's prose. (4) `core/fluid/fluid.js` at 376 lines
+  over the 350 soft cap (§135's own item 2). (5) `accept.sh`'s routes / params blocks on NAV2, **still owed since §118**.
+- **The deploy shape, unchanged — and this is why the tag stays local.** `dist/` is what `npm run build` writes and what
+  `wrangler.jsonc` serves (`assets.directory ./dist`); `dist/` is git-ignored and not committed, and there is no `.github/`
+  workflow — the deploy is **Cloudflare, git-connected to `github.com/tbkraf08/RetinaRave`, building on a push to `main`**.
+  **So the push IS the deploy**, and the user's word was *"tag new version"*: **nothing was pushed and nothing was merged.**
+  When the word comes it is **ONE push** of `main --tags`, then poll for the `VER` line, **never a second push** (§115).
+  ONE release commit, then `git tag -a v0.41 -m "v0.41 — the voice finds its pitch, the pool rests"` — **and stop.** The three
+  sibling worktrees (`../RetinaRave-vox-net3`, `../RetinaRave-fluid-idle`, `../RetinaRave-v034`) were **not touched**.
+- **Next, in order:** the user's word on the push · **the user's EYE**, which is what §134 and §135 both end on and neither can
+  settle — that DUST and NAV2 feel right again at home, and that the crossfade into a fluid scene reads as a **fill** rather
+  than a pop now the pool starts from dark (the eye-check URLs need `#test&`, §130's note) · **CNN session 4** if the user wants
+  it: the lag's last 20 ms to the 110 target and F1 .84, for which §134 named the knobs (the front layer's channels 8 → 12–16,
+  or a second 2-D layer) and the **~10 µs bench margin makes a cheaper front end the pre-condition** (the FFT is 47 of the 90) ·
+  splitting the solver's passes out of `core/fluid/fluid.js` · re-cutting or formally retiring the stale s134 lists.

@@ -1,5 +1,25 @@
 [
  {
+  "version": "0.41.0",
+  "tag": "v0.41",
+  "date": "2026-10-17",
+  "class": "engine",
+  "title": "The voice finds the note, and the ink rests",
+  "body": "The detector that listens for singing was rebuilt, and the thing it got better at is the one it was worst at: the note. Before this release it answered a window at a time and guessed the pitch off the whole mix, and on two of the three sung tracks in my library the note it named was wrong more often than it was right — which means the colour a sung line painted was mostly a colour the song was not in. It now answers on every step rather than every window, and the pitch comes from the network itself instead of being chased afterwards. On the tracks with a clear lead vocal it lands on the right note nearly always, and on the hardest of the three — a shouted sample over a synth — it still lands where it used to. You see it in the two scenes that read the voice: on key 4 the lit seam through the swarm of grains takes the colour of the note being sung, and on key 5 so does the strand lifted out of the nest. Hearing a sung line in the right colour is the whole of what changed there. Being honest about the rest of it. The voice still enters a beat behind the note at a walking tempo, and a shade later than it did in the last release — that is the trade for a network that hears further back before it commits, and it is the gate I most wanted to meet and did not. A solo piano sitting in a singer's range still lights the scenes a little; it is a fraction of what it was two releases ago, and it is not nothing. A chopped, shouted sample still reads as a voice being present with no note in it, so the light it makes has no colour. And the network still knows my own library far better than it knows music it has never heard. The second pool of ink, on key 2, has gone back to the reading I kept returning to. The rig of invisible mouths I built for it last release is gone and the pool is fed the way the first one is, which is the version I had on a recording from a week before and could not stop preferring; it is in the page exactly as it was that afternoon, proved frame by frame against the old file rather than rebuilt from memory. One thing goes with that: the pool no longer reads the voice at all, because reading it was the rig's own idea. The grains and the nest carry the voice now, and the first pool never did. Last, the thing that had been quietly taking frames from everything else. The pool of ink is a fluid simulation, and it was being run under every scene on the page whether anything on screen was drawing from it or not — on a machine with graphics power to spare you would never notice, and on one without it that is a real slice of every single frame spent for nobody. It now runs only while a scene that actually draws from it is on screen. On the slowest renderer I have, the dust and the navigator each got better than a tenth of their frame rate back, and that is the dropped frames I went looking for. There is one visible consequence and it is the right one: when a pool scene comes in now, it fills from dark instead of fading up the picture the pool happened to be holding from minutes ago.",
+  "clip": null,
+  "decisions": [
+   "§132",
+   "§133",
+   "§134",
+   "§135"
+  ],
+  "scenes": [
+   1,
+   3,
+   4
+  ]
+ },
+ {
   "version": "0.40.0",
   "tag": "v0.40",
   "date": "2026-10-14",
