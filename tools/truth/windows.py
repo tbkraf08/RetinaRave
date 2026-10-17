@@ -35,6 +35,9 @@ TRACKS = ['Comptine', 'CyborgNinja', 'IBelongHere', 'Malicious', 'RaindropsOnRos
 # TheChain (the ninth track, 2026-10-17, DECISIONS §137 — the user: "here is a new test song to first analyze and get golden truths"):
 # measured and swept for the record, no claim on it is a FAIL, until the user validates a ruler on it (the §117 precedent — Raindrops
 # was NO_GATE from its import until the click render was heard the same afternoon).
+# §137 addendum: the OCTAVE is settled by ear — 76 BPM, not the grid's 152 ("I nod my head at 76 bpm, but the B clicks off beat") — but
+# the PARITY is not: B clicked the wrong half of the bar, and TheChain-B2-76-{25to85,170to230}.wav are rendered and unheard.
+# THE GATE TURNS ON WHEN THE USER CONFIRMS B2 (drop 'TheChain' from NO_GATE then; bpm_grid.hand.provisional false with it).
 NO_GATE = {'Malicious', 'TheChain'}
 # `start` — the track starts HERE for every harness purpose (the user, 2026-10-10, on RaindropsOnRoses: "note: start from 24 secs"):
 # the intro run is cold at `start`, no window and no run begins before it, the rulers window begins no earlier, and tools/traces.sh
