@@ -20,3 +20,14 @@ export function grammarOf(scene) {
   const g = scene && scene.fluid && scene.fluid.grammar;
   return typeof g === 'string' && Object.prototype.hasOwnProperty.call(GRAMMARS, g) ? g : DEFAULT_GRAMMAR;
 }
+
+// §135 THE IDLE RULE. §104 stepped the solver under EVERY scene; only a scene that SAMPLES the substrate (ctx.engineTex.dye /
+// .vel — FLUID draws the dye, and its post.fb.advect back-traces the trail along the velocity) has anything to show for it, and
+// the step is 1.65 ms of GPU per frame at tier 3. So the step is gated on the OWNER's own declaration — `fluid: { reads: true }`
+// on the card, DATA on the scene and never an id list in core/ (CONTRACTS §1.4; check.js FAILS a folder that samples the
+// substrate without the flag). readsFluid(scene) is that flag; loop.js steps when it is true and idles the pool when it is not.
+// A scene may hold the grammar slot without reading the pool (it would plan a field nobody looks at) — allowed, and the slot
+// without `reads` is exactly that; the two are independent.
+export function readsFluid(scene) {
+  return !!(scene && scene.fluid && scene.fluid.reads);
+}

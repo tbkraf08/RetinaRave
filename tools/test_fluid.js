@@ -62,9 +62,13 @@
 //              file mode and 0 on the live lanes, Comptine / CyborgNinja / the pad 0), each half a beat with its front at SW_C·SW_T
 import { plan, mkState, FLUID_FEATS, K } from '../assets/core/fluid/inject.js';
 import * as INJ2 from '../assets/core/fluid/inject2.js';          // §116 the band grammar (the same interface)
-import { GRAMMARS, grammarOf, DEFAULT_GRAMMAR } from '../assets/core/fluid/grammar.js';
+import { GRAMMARS, grammarOf, readsFluid, DEFAULT_GRAMMAR } from '../assets/core/fluid/grammar.js';   // §135: readsFluid is the step's gate
 import fluidScene from '../assets/scenes/fluid/index.js';         // the two cards (score() / slots only: no init, no GL — as test_director imports them)
 import fluid2Scene from '../assets/scenes/fluid2/index.js';
+import nav2Scene from '../assets/scenes/nav2/index.js';           // §135 the idle rule: the four scenes that do NOT read the substrate
+import dustScene from '../assets/scenes/dust/index.js';
+import torus2Scene from '../assets/scenes/torus2/index.js';
+import mandalaScene from '../assets/scenes/mandala/index.js';
 import { FEATS } from '../assets/engine/feats.js';
 import { MS } from '../assets/engine/state.js';
 import { sectorPc } from '../assets/math/keycolour.js';
@@ -523,7 +527,7 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
   ok(!('base' in mkState2()), 'bands: the §108 grammar COMPOSES NOTHING — no `base` key in mkState() (check.js gates the "⊇ the pool\'s reads" rule on it since §132)');
   ok(GRAMMARS.pool.plan === plan && GRAMMARS.bands.plan === plan2 && DEFAULT_GRAMMAR === 'pool', 'bands: the table — pool is inject.js, bands is inject2.js, the default is pool');
   ok(fluid2Scene.id === 1 && fluid2Scene.fluid && fluid2Scene.fluid.grammar === 'bands' && grammarOf(fluid2Scene) === 'bands', 'bands: FLUID2 (id 1) declares fluid.grammar bands and the dispatch picks it');
-  ok(fluidScene.id === 0 && !fluidScene.fluid && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 0) declares no slot → pool');
+  ok(fluidScene.id === 0 && !('grammar' in (fluidScene.fluid || {})) && grammarOf(fluidScene) === 'pool', 'bands: FLUID (id 0) names no grammar in its slot (§135 put `reads` there) → pool');
   ok(grammarOf({}) === 'pool' && grammarOf(null) === 'pool' && grammarOf({ fluid: { grammar: 'nope' } }) === 'pool' && grammarOf({ fluid: { grammar: 'bands' } }) === 'bands', 'bands: grammarOf — no card / no slot / an unknown name → pool; bands → bands');
   ok(fluid2Scene.score({ arc: 'drop', bassS: 1, keyConf: 1, centroid: 0 }) === 0 && !fluid2Scene.card, 'bands: FLUID2 is forced-only — score() 0 on FLUID\'s best profile, no landing tile');
   ok(fluid2Scene.feats.length === 9 && fluid2Scene.feats.every((k) => fluidScene.feats.includes(k) || ['dropLiveEvt', 'mapDropEvt', 'mapOn', 'dropEvt'].includes(k)), 'bands: FLUID2\'s own nine reads are §106\'s — the loudness ladder, the slam rule\'s four, the hats and presence (' + fluid2Scene.feats.join(' ') + ')');
@@ -695,6 +699,75 @@ const drumSt = () => { const st = mkState(); plan(base({ subGate: 1, subNote: 0 
       ok(silentFrames.length >= 100 && forced === 0, `music: the pad take's silent room (presence 0 to ${silentT.toFixed(2)} s, ${silentFrames.length} frames) moves and inks nothing (${forced} frames did)`);
     }
   }
+}
+
+// idle (§135 the idle rule): §104 stepped the solver under EVERY scene; only FLUID and FLUID2 SAMPLE it, and the step is 1.65 ms of GPU
+// per frame at tier 3 (DUST 21.5 fps on the software renderer against 25.6 with &fluid=0). The gate is the owner's own declaration,
+// `fluid: { reads: true }` on the card (readsFluid), and loop.js idles the pool when no scene on screen reads it. Tested here: the
+// declaration on all six cards, and fluid.js's own state machine through a FAKE WebGL2 context (a Proxy: every enum a number, every
+// call a no-op, drawArrays and clear counted) — the step is skipped outright while idle, the 1×1 placeholders stay bound, and the
+// first stepped frame after an idle stretch empties the pool (clearPool: the eight ping-pong faces) so a fade in never shows a stale
+// picture. No GL and no DOM is needed for any of it: gl.js reaches `window` only inside resize(), which nothing here calls.
+{
+  const reading = [fluidScene, fluid2Scene], blind = [nav2Scene, dustScene, torus2Scene, mandalaScene];
+  ok(reading.every((sc) => readsFluid(sc) === true), 'idle: FLUID and FLUID2 declare fluid.reads — the two scenes that sample the dye / the velocity');
+  ok(blind.every((sc) => readsFluid(sc) === false), 'idle: ' + blind.map((sc) => sc.name).join(' / ') + ' declare none — the pool idles under every one of them');
+  ok(readsFluid(null) === false && readsFluid({}) === false && readsFluid({ fluid: {} }) === false && readsFluid({ fluid: { grammar: 'bands' } }) === false && readsFluid({ fluid: { reads: true } }) === true,
+    'idle: readsFluid — no card / no slot / an empty slot / the grammar slot alone: false; the flag: true (the grammar and the read are independent)');
+  ok(blind.every((sc) => !(sc.post && sc.post.fb && sc.post.fb.advect)) && reading.every((sc) => sc.post.fb.advect === 1),
+    'idle: the declaration matches §109 — only the two readers opt into post.fb.advect (the velocity back-trace), the four on the roster do not');
+
+  const STAT = { draws: 0, clears: 0 };
+  let uid = 0;
+  const enums = new Map();
+  const CALLS = {
+    createTexture: () => ({ k: 'tex', id: ++uid }), createFramebuffer: () => ({ k: 'fb', id: ++uid }),
+    createShader: () => ({ k: 'sh', id: ++uid }), createProgram: () => ({ k: 'pg', id: ++uid }), createVertexArray: () => ({ k: 'va', id: ++uid }),
+    getShaderParameter: () => true, getProgramParameter: () => true, getShaderInfoLog: () => '', getProgramInfoLog: () => '',
+    getUniformLocation: (p, n) => ({ k: 'loc', n }),
+    drawArrays: () => { STAT.draws++; }, clear: () => { STAT.clears++; }, readPixels: () => {},
+  };
+  const FAKE = new Proxy({}, { get(_, k) {
+    if (typeof k !== 'string') return undefined;
+    if (k in CALLS) return CALLS[k];
+    if (/^[A-Z][A-Z0-9_]*$/.test(k)) { if (!enums.has(k)) enums.set(k, enums.size + 1); return enums.get(k); }
+    return () => {};
+  } });
+
+  const { G, ETEX } = await import('../assets/core/gl.js');
+  const { FLUID, stepFluid, idleFluid, initFluid } = await import('../assets/core/fluid/fluid.js');
+  G.gl = FAKE; G.FLOAT = true; G.PW = 1280; G.PH = 720;
+  initFluid({ onResize: () => {} });
+  const PH = ETEX.dye.t;   // the 1×1 black placeholder initFluid() bound (the objects ETEX.vel / .dye never change identity — only their `t`)
+  ok(FLUID.avail === true && FLUID.on === true && FLUID.idle === 0 && ETEX.vel.w === 1 && ETEX.dye.w === 1, 'idle: the fake context brings the substrate up — avail, on, not idle, the placeholders bound before the first step');
+  const S135 = base({ subGate: 1, subNote: 0, mid: 0.5, kickEvt: true, kickAmp: 0.6, hat2: 0.5, denH: 2 });
+
+  const take = () => { const r = { ...STAT, steps: FLUID.steps, ms: FLUID.ms, idle: FLUID.idle, velW: ETEX.vel.w, dyeW: ETEX.dye.w, velT: ETEX.vel.t, dyeT: ETEX.dye.t }; STAT.draws = STAT.clears = 0; return r; };
+  stepFluid(DT, S135, false, 'pool');                 // the first step allocates the tier's grids (eight mkT(), each one cleared on creation)
+  const a = take();
+  ok(a.draws > 0 && a.steps === 1 && a.idle === 0 && a.velW > 1 && a.dyeW > 1 && a.velT !== PH, `idle: a fluid owner steps — ${a.draws} draws, steps 1, the live ${FLUID.simW}x${FLUID.simH} velocity and ${FLUID.dyeW}x${FLUID.dyeH} dye bound`);
+  stepFluid(DT, S135, false, 'pool');
+  const b = take();
+  ok(b.draws > 0 && b.clears === 0 && b.steps === 2, `idle: the steady state is §104's — a second step draws (${b.draws}) and clears nothing (${b.clears})`);
+
+  idleFluid();                                        // the owner is now a scene that does not read the pool
+  const c = take();
+  ok(c.draws === 0 && c.clears === 0 && c.steps === 2 && c.ms === 0 && c.idle === 1, `idle: an idle frame does NO GL work — ${c.draws} draws, ${c.clears} clears, the step counter held at ${c.steps}, ms 0`);
+  ok(c.velW === 1 && c.dyeW === 1 && c.velT === PH && c.dyeT === PH, 'idle: while idle the 1×1 placeholders are bound (the same objects, the placeholder texture) — a sampler always binds and reads black');
+  ok(FLUID.on === true, 'idle: idling never touches `on`, the word the user sets (&fluid=0, key W) and the HUD prints');
+  for (let i = 0; i < 20; i++) idleFluid();
+  const d = take();
+  ok(d.draws === 0 && d.clears === 0 && d.steps === 2, `idle: 20 more idle frames — still ${d.draws} draws and ${d.clears} clears (the cost §135 removes)`);
+
+  stepFluid(DT, S135, false, 'pool');                 // the owner reads the pool again
+  const e = take();
+  ok(e.clears === 8 && e.draws > 0 && e.idle === 0 && e.steps === 3 && e.velW > 1 && e.dyeW > 1,
+    `idle: the first step after an idle stretch EMPTIES the pool first — ${e.clears} clears (the velocity, the dye, the pressure and the two stencils, both faces) then ${e.draws} draws, so the fade in fills from dark`);
+  stepFluid(DT, S135, false, 'pool');
+  const f = take();
+  ok(f.clears === 0 && f.draws > 0 && f.steps === 4, `idle: the clear is once per resume, not per frame (${f.clears} clears on the next step)`);
+  idleFluid(); stepFluid(DT, S135, false, 'pool');
+  ok(take().clears === 8, 'idle: and again on the next idle to fluid edge');
 }
 
 gate = true;

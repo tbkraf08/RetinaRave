@@ -68,7 +68,7 @@ const SELF = {
   name: 'fluid2',
   id: 1,   // §118 the lean-down (2026-10-11): was 13 — the kept scenes shifted down to fill the gaps (order: fluid, fluid2, nav2, dust, torus2, mandala; key 2)
   tag: 'FLUID as it was before the ring (§108) — a pool of ink lit from above: the bass note is where it enters, kicks lift it, snares shear it, the mid band is a floor, the key colours it, six droplets clear it on the drop',
-  fluid: { grammar: 'bands' },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js — the FROZEN §108 pool grammar (§132) plans the pool while this scene owns it
+  fluid: { grammar: 'bands', reads: true },   // the grammar slot (CONTRACTS §1.4): core/fluid/inject2.js — the FROZEN §108 pool grammar (§132) plans the pool while this scene owns it; §135 `reads` says this scene SAMPLES the pool (the dye in draw(), the velocity through post.fb.advect), so the step runs while it is on screen
   feats: ['loudRel', 'loudRange', 'loudAbs', 'dropLiveEvt', 'mapDropEvt', 'mapOn', 'dropEvt', 'hat2', 'presence'],
   cuts: 'continuous',
   rt: {},
