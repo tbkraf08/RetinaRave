@@ -22,7 +22,7 @@ was not music. The user: *"test should be real and simulate what would normally 
 
 - **The traces** — `tools/traces.sh` (~2 min each, ~34 min for all 17): every recordable MS field per frame of a deterministic cold-start
   file run (`filetrace.js`, `WARM=0`, the five rules below) for EVERY library track (`~/Music/RetinaRave`: Comptine, CyborgNinja,
-  IBelongHere, Malicious, RaindropsOnRoses, SeeYouDrop, Vienna, WhoLikesToParty — eight since §117) `start` → `start` + 110 s (windows.json's
+  IBelongHere, Malicious, RaindropsOnRoses, SeeYouDrop, TheChain, Vienna, WhoLikesToParty — nine since §137) `start` → `start` + 110 s (windows.json's
   `start`: 0 for the seven, **24 s for RaindropsOnRoses** — the user: *"start from 24 secs"*; the track exists for no harness purpose before it) in both modes — `<Track>-map1.json` the normal file mode,
   `<Track>-map0.json` the live lanes on the same audio — plus `rec-map0.json`, the user's pad take (FLUID-DIAG-2026-10-09,
   `tools/work/fluid-diag/music/rec.wav`) 0 → 24.4 s. 16 MB each, `tools/truth/traces/*.json`, gitignored; `npm test` FAILS with the

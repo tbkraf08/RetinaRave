@@ -4713,3 +4713,181 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   it: the lag's last 20 ms to the 110 target and F1 .84, for which §134 named the knobs (the front layer's channels 8 → 12–16,
   or a second 2-D layer) and the **~10 µs bench margin makes a cheaper front end the pre-condition** (the FFT is 47 of the 90) ·
   splitting the solver's passes out of `core/fluid/fluid.js` · re-cutting or formally retiring the stale s134 lists.
+
+## §137 the ninth track — TheChain (Fleetwood Mac, the 2004 remaster), and the voice gate's first UNSEEN test (2026-10-17, one Fable worker in a worktree off main 7ecf804, branch `track9`; the user: *"~/Downloads/Fleetwood Mac - The Chain (2004 Remaster).flac here is a new test song to first analyze and get golden truths -> its a great song to test vocals with"*, and separately on DUST: *"feels like it doesn't follow the vocals (more so the instruments)"*)
+
+- **The file.** Copied (not moved) to `~/Music/RetinaRave/TheChain.flac` — the library's short names, as the eight — 44.1 kHz
+  stereo FLAC (PCM_16), **270.213 s** (270.0 at the truth's framing), md5 `a6300ee5ee8f146ff7ce4b613e81e1f7`. Nothing under
+  `~/Music` is committed; the truth files are. **"Tune on all tracks" now means NINE** (`windows.py` TRACKS → `windows.json`,
+  which is the one list `real-md5.sh` and `test_music.js` read; `traces.sh`, `fluid-tracks.js`, `vox-ab.js`,
+  `vox-gate-ruler.js`, `test_vox.js` TRACKS + VOICED).
+- **The truth, the §117 recipe as run.** `python3 tools/truth/trackmap.py TheChain --pcm --sr=48000` (allowed once: no truth
+  dir existed; the default grains 8, 5, 3, 2, 1, 0.569, 0.224 s + beat / bar / 4bar → `tools/truth/TheChain.json` 1.27 MB,
+  `tools/truth/TheChain/grain-*.txt`, the gitignored dumps `tools/work/TheChain.{f32,48000.f32,48000.st.f32}` written to the
+  MAIN checkout so they outlive the worktree). Then `kicktruth.py` → `.kick.json` (**940 kicks, 3.48 /s**, p50 rise 12.6 dB,
+  beat-slots **[576 30 303 31]** — the kicks on the beat and the backbeat, almost nothing on the 8ths: a drum kit, not a
+  machine); `snaretruth.py` → `.snare.json` (985, 3.65 /s, p50 9.9 dB, slots [584 16 366 19] — the same two-and-four);
+  `trackmap.py --loud` → `.loud.json`; `--brief` → `others-brief.txt`; `TheChain.txt` = the stdout summary with the vocal
+  passages appended in TRACK TIME (the user reports that way). `--pcm` is now banned on the NINE (HARNESS "Loudness").
+  **Two pre-existing breakages fixed on the way:** `kicktruth.py` and `snaretruth.py` both loaded the §66 reference lists
+  (`tools/work/v66/{kick,clap}-ref-rise.json`, a gitignored one-off long gone from this machine) UNCONDITIONALLY, which made
+  them fail on **every** track, not only Vienna — now loaded when the file exists, and its absence costs the Vienna row one
+  column rather than the run.
+- **What is hand-marked, what is measured.** NOTHING is hand-marked: no beat, bar, section, drop, key or vocal window was
+  placed by hand, and the user named no moment on this track (no `START`, no `USER`). Measured, with the Malicious / §72
+  caveat: `gridcheck.py` says *"beat phase never placed on the audio"* (dp_residual **77.2 ms** > 60, no anchor, no hand), so
+  the DP list was kept un-refit and the 30 sections and the one drop are bar-pinned to THAT grid. So, as Malicious and as
+  Raindrops was for an afternoon: **`gate: false` (`windows.py` NO_GATE) — measured and swept for the record, no claim on it
+  is a FAIL, until the user validates a ruler on it.**
+- **Tempo and key.** The grid's `bpm` **151.9991** (beat 0.394739 s, phase 0.0232 s, coherence 0.214, 684 beats, 171 bars of
+  1.579 s, `downbeat_mod4` 3 on a weak margin — scores [4.76 6.30 4.59 6.58], 1 and 3 nearly tied, which is what a backbeat
+  kit does to the low/mid downbeat test); the summary's 153.8 is the onset ACF. **The number to doubt is the octave, not the
+  phase:** The Chain is a ~76 BPM song, and 152.00 is its double — the click render's `--every=2` lattice is exactly 75.9996,
+  so the A/B the user must hear is 152 against 76 (the §117 precedent: *"the 140 click nods better then the 70"* settled
+  Raindrops the other way). Key **A, mode unsettled — a PARALLEL pair again**: trackmap's KK on the sub-inclusive chroma reads
+  A major +0.745 against A minor +0.709 (margin **0.036**) with E major / E minor +0.681 / +0.680 right behind, conf **0.0491**
+  — far under the §84 shade gate 0.3, so `modeShade` would stay shut on this track. The chroma is E 0.211 / A 0.151 / D 0.095 /
+  B 0.092 — the Am–E–A modal shape of the song. The independent key rulers (`key-truth.py`, `key-ears.mjs`) were NOT run and
+  **no `test_ears.js` KEY_TRACKS row was added**: with a 0.036 parallel margin and conf under the shade gate there is nothing
+  to assert yet (left below).
+- **The loudness shape, and the one drop.** Integrated **−12.219 LKFS** (the quietest of the nine — a 2004 rock remaster, not
+  a club master: the eight run −7 to −9.2); short-term p10 / p50 / p90 / p95 **−22.05 / −15.01 / −9.28 / −8.83**, range
+  **13.22 LU** (the widest in the library — Raindrops' is 8.96). The per-bar low-end share of its own p90 tells the whole
+  arrangement: bars 1–52 sit at **0.18–0.21** (the dobro-and-bass intro and the verses), bar 65 jumps to **0.83**, bars 179–192
+  fall to **0.12–0.34** (the famous bass break), then 204 → 242 climb **0.77 → 1.06** (the guitar outro, the loudest 30 s from
+  **224 s**). One bar-pinned drop, **199.692 s**, and it is a real one: **+8.23 LU, ×6.653** power across the 5.1 s pair — the
+  biggest drop ratio in the library. The loud half: sub 15 % · bass 30 % · lm 20 % · mid 24 % · high 11 %, bass f0 54.9 Hz
+  **A1 held 31 %**, centroid 145 Hz, h/f 0.51 — a BAND, with the mid-band energy the eight (sub 34–56 %) do not have.
+  650 low / 436 click / 606 mid / 968 high onsets; 214 bare-808 note starts (33 % of the low onsets — a kick with no click
+  layered on it is what a real kick drum sounds like to this test); 80 sub slides.
+- **The vocal truth** (`voxtruth.py`, the §122 recipe: `htdemucs --two-stems=vocals` on CPU, 2 min 38 s, then librosa pYIN).
+  **46.2 %** of the 257.5 music seconds are inside a sung window — second only to IBelongHere's 68.3 %. knee **0.2651**
+  (share p10 / p95 0.0005 / **0.8825** — a cleanly separated lead); **15 windows, 8 passages**; f0 inside the windows p10 /
+  p50 / p90 **325.7 / 341.1 / 406.8 Hz = E4 / F4 / G#4** over 1236 voiced frames — the highest-sitting lead in the library
+  (Raindrops D4, IBelongHere E4, SeeYouDrop C#5 on 206 frames). `windows_hand` = the passages, per §122's addendum rule for
+  every track; `provenance.ear` says so and says the ear on THIS track's own renders is still owed. **The passages in track
+  time** (mean share, median f0):
+
+| passage (mm:ss) | s | share | f0 | what it is |
+|---|---|---|---|---|
+| 0:30.4–0:37.3 | 6.9 | .72 | unvoiced | the first verse's entry ("listen to the wind blow") — pYIN finds no stable pitch in it |
+| 0:43.3–0:48.9 | 5.6 | .79 | unvoiced | the verse's second line |
+| 0:53.6–1:20.0 | 26.5 | .42 | 337.2 E4 | the verse into the first chorus |
+| 1:34.0–1:39.8 | 5.8 | .68 | 290.2 D4 | — |
+| 1:46.6–1:52.8 | 6.2 | .75 | 110.6 **A2** | the low harmony line — an octave below the lead, and the one passage pYIN puts there |
+| 1:59.3–2:05.5 | 6.1 | .72 | unvoiced | — |
+| **2:09.7–2:48.7** | **39.0** | .46 | 368.0 F#4 | the long chorus — the biggest single passage |
+| **3:54.8–4:23.4** | **28.6** | .42 | 333.3 E4 | the "chain, keep us together" outro chant |
+
+  **And the gap that matters: 2:48.7 → 3:54.8, 66 s with no voice at all** — the famous bass break (the user's "around 3:00")
+  and the first half of the guitar outro. The lane says the track is 0:00–0:30 instrumental, sung in bursts to 2:49, silent
+  for 66 s, then sung to 4:23 — which is the song. `voxlane.py` → `~/Music/RetinaRave/TheChain.vox.json` (381 KB, local only,
+  never bundled): voxS ≥ .5 on **36.3 %** of 27 022 frames, a pitch on 4.7 %, voxConf 0.001–0.946.
+- **Ruler 1 — the A/B, `node tools/vox-ab.js TheChain --stage=all`** (the live CNN replayed over the PCM dump against the
+  file-mode lane). **The net has never seen this track** (`voxtrain.py` LIB_HELD gains it beside IBelongHere and Comptine;
+  never LIB_TRAIN, ACC_TRACKS or LIB_VOX_SOURCES), so this is the honest row:
+
+| | sung % lane / live | agree % | lane pitched | pitched % | semi % | oct % | lag raw / held / eased ms | r | flicker lane / live |
+|---|---|---|---|---|---|---|---|---|---|
+| TheChain | **40.3 / 36.6** | **85.7** | 1270 | 53 | **95** | 95 | **80 / 80 / 120** | 0.82 | 47.1 / 51.1 /min |
+
+  Read: the CNN finds 36.6 % against the lane's 40.3 % and agrees with it on **86 %** of frames; where both publish a pitch
+  the live one is within **a semitone 95 % of the time** (95 % modulo the octave — so there is no octave error to forgive),
+  against the plan's ask of 70 and against the 49 / 53 / 10 % the three known voiced tracks read on the same column. The
+  lag is **120 ms** eased (80 raw, hold 0 since §133's net fires every hop, 40 on the ease) — the §134 budget, unchanged by
+  an unseen track. 115 live runs against the lane's 106, flicker 1.08× — the stage is not chattering on this material.
+- **Ruler 2 — `node tools/test_vox.js --ruler`**, TheChain's row beside the library's (`voxS` p50 inside the hand windows
+  against outside; `fp %` = frames ≥ .5 outside them):
+
+| track | hand s | voxS p50 in / out | ratio | fp % | voiced | hz cov % | semi % |
+|---|---|---|---|---|---|---|---|
+| Comptine (the control, unseen) | 0 | – / .039 | – | 2.6 | 0 | – | – |
+| IBelongHere (unseen) | 199 | .675 / .088 | 7.6× | 11.8 | 5549 | 51 | 49 |
+| RaindropsOnRoses | 94 | .762 / .039 | 19.4× | 8.6 | 2613 | 56 | 53 |
+| SeeYouDrop | 75 | .659 / .103 | 6.4× | 4.3 | 206 | 15 | 10 |
+| Malicious | 1 | .139 / .053 | 2.6× | 0.7 | 52 | 0 | 0 |
+| WhoLikesToParty (shouted) | 64 | .129 / .178 | 0.7× | 12.4 | 0 | – | – |
+| **TheChain (UNSEEN)** | **125** | **.720 / .054** | **13.3×** | **0.5** | **1185** | **53** | **50** |
+
+  Read: **13.3×, second only to Raindrops' in-sample 19.4×, and a false voice of 0.5 % — the lowest of any track in the
+  library, lower than the solo-piano CONTROL's 2.59 %.** On a track the net was never trained on, with a real singer over a
+  real band, it says "voice" almost nowhere the Demucs stem does not. `npm test` adds TheChain to the gated VOICED rows and
+  its `> 2×` claim passes. The pitch columns (hz cov 53 %, semi 50 %) sit with the library's — the mix ceiling §123 named,
+  recorded not gated.
+- **Ruler 3 — `node tools/vox-gate-ruler.js`** (§127: how much of a track LIGHTS through `assets/math/vox.js`, which is the
+  gate DUST, TORUS2 and FLUID2 all read):
+
+| track | frames | live lit % | live hue % | lane lit % | lane hue % | lane entries |
+|---|---|---|---|---|---|---|
+| Comptine | 8662 | 12.4 | 3.1 | 0.0 | 0.0 | 0 |
+| CyborgNinja | 10803 | 0.0 | 0.0 | 1.3 | 0.5 | 3 |
+| Vienna | 11559 | 10.1 | 0.0 | 4.8 | 4.6 | 4 |
+| Malicious | 13375 | 6.2 | 0.0 | 6.4 | 2.9 | 10 |
+| WhoLikesToParty | 15380 | 43.9 | 0.0 | 82.4 | 0.0 | 50 |
+| IBelongHere | 13986 | 81.0 | 71.9 | 91.4 | 80.0 | 22 |
+| RaindropsOnRoses | 13371 | 55.5 | 43.8 | 61.8 | 57.6 | 23 |
+| SeeYouDrop | 9456 | 50.4 | 34.3 | 64.9 | 26.4 | 18 |
+| **TheChain** | **16212** | **44.4** | **33.0** | **50.3** | **31.3** | **8** |
+
+  **And the number the complaint needs** (`tools/work/v137/gate-sung.mjs`, gitignored — the same gate state machine, the same
+  inputs, partitioned by the hand windows instead of summed over the music frames):
+
+| track | sung % | lane lit of SUNG | lane lit of UNSUNG | lane sung-of-lit | live lit of SUNG | live lit of UNSUNG | live sung-of-lit |
+|---|---|---|---|---|---|---|---|
+| **TheChain** | 46.1 | **100.0** | **7.7** | **91.7** | **88.8** | **6.4** | **92.3** |
+| IBelongHere | 85.5 | 97.7 | 54.2 | 91.4 | 87.3 | 43.6 | 92.2 |
+| RaindropsOnRoses | 42.3 | 100.0 | 33.9 | 68.3 | 89.2 | 30.9 | 67.9 |
+| SeeYouDrop | 47.4 | 98.3 | 34.8 | 71.8 | 83.0 | 21.1 | 78.0 |
+
+- **What it says about DUST** (the user: *"feels like it doesn't follow the vocals (more so the instruments)"*). **The gate is
+  not the problem.** On TheChain the shared gate is lit on **100 % of the sung time and only 7.7 % of the unsung** in file mode
+  (88.8 / 6.4 live) — a sung-of-lit precision of **92 %**, the sharpest in the library by a wide margin (Raindrops 68 %,
+  SeeYouDrop 72 %; and the lane's lit share, 50.3 %, is only 4 points over the 46.1 % the track is actually sung). The signal
+  DUST needs is present, accurate and nearly leak-free on this material. What is small is DUST's USE of it: `dust/voice.js`
+  (§127) spends the voice on `VOXD.DIM` **0.25** — a quarter of the cloud's light moved onto three thin partial shells — plus
+  a RIBBON seam that needs `!subGate && voxSec > .5` over an **8 s** window to fire at all. On a track whose drums run two-and-
+  four through every passage, `subGate` is up and the ribbon never opens, so the whole vocal grammar on screen is 25 % of the
+  light on three shells while 100 % of the kick and snare lanes drive shape, scale and formation. **That is the gap to close,
+  and it is a weighting question, not a detection one — the measurement above is the evidence, and nothing in `assets/` was
+  touched here.** (The analogous read for TORUS2 and FLUID2 is not taken; only DUST was asked about.)
+- **The renders, for the ear** (`~/Music/RetinaRave-clicks/`, five files, never played here — memory `feedback_listen_via_paplay`):
+  `TheChain-vox-windows.wav` (the mix at .85 with a 3 kHz double-click where a passage opens and a 400 Hz click where it
+  closes) and `TheChain-vox-stem.wav` (the Demucs vocal stem alone) are the §122 pair; `TheChain-A-152-25to85.wav`,
+  `TheChain-B-76-25to85.wav` (`--every=2`) and `TheChain-A-152-170to230.wav` (the drop at 199.692 on its bar line) are the
+  grid, which is what `gate: false` is waiting on. Listening order: the vox windows, the vox stem, then A against B on the
+  same 25–85 s window, then the drop.
+
+```
+! paplay /home/toma/Music/RetinaRave-clicks/TheChain-vox-windows.wav
+! paplay /home/toma/Music/RetinaRave-clicks/TheChain-vox-stem.wav
+! paplay /home/toma/Music/RetinaRave-clicks/TheChain-A-152-25to85.wav
+! paplay /home/toma/Music/RetinaRave-clicks/TheChain-B-76-25to85.wav
+! paplay /home/toma/Music/RetinaRave-clicks/TheChain-A-152-170to230.wav
+```
+
+- **The traces and the gates.** `PORT=8876 tools/traces.sh TheChain-map1 TheChain-map0` → `tools/truth/traces/TheChain-map{1,0}.json`
+  (6601 frames, 216 fields, heard 0 → 110 s, 16.2 MB each; gitignored, recorded into the MAIN checkout so they outlive the
+  worktree) — `test_music.js` reads `windows.json`'s track list, so the ninth track's entry would have failed it with
+  "no trace" without them. **`npm test` exit 0** with the ninth track in the lists: test_fluid 345 ok / 0 fail, test_music **151 ok / 0 fail**,
+  test_vox's gated VOICED row for TheChain PASSES, test_loud 43 pass, the rest OK; the fake md5 untouched and no real-md5
+  sweep (nothing in the engine moved here). TheChain's own claims print as NOTES, `gate: false` doing its job — and one of
+  them says `[would FAIL; not a gate]`: *"the 2 seconds read as noise inject nothing (1 did) @ 2 3"* on map1, which is the
+  dobro-and-bass opening being quiet enough that FLUID's noise test and its injector disagree about seconds 2 and 3. What the
+  traces say about the engine on this material: the PCM clock reads **151.57 BPM**, the truth's 153.8 × 1 (ratio 0.986) — the
+  clock locks the 152 octave, not the 76, which is half of the A/B above and the half that does NOT need the user's ear;
+  `kickEvt` 101 over 50–110 s against 101 truth clicks (**×1.00** in file mode, ×1.22 live); tongues on 100 % of the frames
+  from 20 s; the key pins **A at 7.0 s**, 94 % of the frames key-coloured, but `keyConf` **0.03** — under the §84 shade gate,
+  so the mode question above is the engine's too; `subGate` 47 % (map) / 76 % (live); the LIVE build detector fires ONCE in
+  0–110 s, at **86.117 s**, a false alarm by the 4 s rule (the only truth drop is at 199.692, outside the trace window) with
+  `buildLive` max 0.87 — within the ≤ 4 rule; 3 director switches, none inside the 30 s dwell; FLUID injects on 100 % of the
+  music seconds with 1 shockwave on the one confirmed clear, syrup 2.6 %, deep void 1.2 %. `node tools/check.js` **0 fail**
+  (5 warn, the standing soft caps), `node tools/license.js --check` **157 / 0** (no new public code file — the truth json, the
+  grain tables and windows.json are data).
+- **Open, for the record (not gates):** the user's EAR on the five renders — the vox pair (do the eight passages and the 66 s
+  break land where he hears them?) and above all **152 against 76**, which is what `gate: false` is waiting on · the mode of
+  the A (a 0.036 parallel margin, conf 0.0491 under the shade gate): `key-truth.py` / `key-ears.mjs` not run and no
+  `test_ears.js` KEY_TRACKS row yet · DUST's weighting of a gate that is now measured as accurate (`VOXD.DIM` 0.25 and the
+  ribbon's `!subGate` condition) · the roster's identity references (`real-md5.sh`) and the behaviour ruler
+  (`real-rulers.sh`) on the ninth track, owed with the next roster re-proof as §117's were · the three remaining passages
+  pYIN calls unvoiced (0:30, 0:43, 1:59) — a .72–.79 share with no stable pitch is either the chest-voice entry or the
+  separator's reverb, and the stem render says which.
