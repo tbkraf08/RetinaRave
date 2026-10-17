@@ -75,8 +75,8 @@ uniform vec2 uVoxC;        // x = the sung note's palette t (its hue), y = the r
 #define VOX_DIM 0.45       /* the cloud's share given up at w 1 (VOXD.DIM) — §138: was .25 */
 #define VOX_A2 0.5         /* the second and third partials' weights (VOXD.A) — §138: were .6 / .4 */
 #define VOX_A3 0.25
-#define VOX_Y0 0.35        /* §138 the ride: the whole cloud's rise per unit of uVox.w, scene units (VOXD.Y0) */
-#define VOX_Y1 0.8         /* ...and the band's rise on top, × its own weight vk (VOXD.Y1) */
+#define VOX_Y0 0.6         /* §138 the ride: the whole cloud's rise per unit of uVox.w, scene units (VOXD.Y0) */
+#define VOX_Y1 1.6         /* ...and the band's rise on top, × its own weight vk (VOXD.Y1) */
 #define VOX_SZ 1.2         /* §138 the band's grains' size term, × vk, on the sum the kick (1·) and the ring (3·) are on (VOXD.SZ) */
 #define VOX_LN2 0.110387   /* ln 2 / ln(16000/30): the second partial's offset on the axis */
 #define VOX_LN3 0.174957   /* ln 3 / ln(16000/30): the third */

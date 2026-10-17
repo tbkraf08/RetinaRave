@@ -43,8 +43,8 @@ export const VOXD = {
   GMAX: 8,      // the lifted grains' gain cap (p tiny = a pitch where few grains live; with W .03 the gain sits at 4–6 up to C6 — §127: 12)
   W: 0.03,      // the partial window's sigma on the 0..1 log axis — a BAND, ≈ 3 semitones (a semitone is .0092; §127: .0075, a hairline)
   A: [1, 0.5, 0.25],  // the three partials' weights — the fundamental leads (§127: 1, .6, .4)
-  Y0: 0.35,     // §138 the RIDE: the whole cloud moves Y0·w·(y01 − ½) scene units up the sung pitch's height (±.17 over the range)
-  Y1: 0.8,      // ...and the lit band Y1·vk more on top of that: the hoop floats out of the body on a high note (±.4 more)
+  Y0: 0.6,      // §138 the RIDE: the whole cloud moves Y0·w·(y01 − ½) scene units up the sung pitch's height (±.3 over the range; a melody lives in ±.2 of y01, so ±.12)
+  Y1: 1.6,      // ...and the lit band Y1·vk more on top of that: the hoop floats out of the body on a high note (±.3 more on a melody's ±.2, out of a 1.1-unit sphere)
   SZ: 1.2,      // §138 the band's grains grow by SZ·vk on the point-size sum (the kick's term is 1·kick, the ring's 3·ring)
   RIBY: 0.8,    // the ribbon's rise at the top of the voice's range, in WAVE units (the wave is ±1 → ±.75·(.4 + lvl) scene units; y01 .5 = where it sits today)
   SEC: 8,       // s: voxSec's window — w over a section
