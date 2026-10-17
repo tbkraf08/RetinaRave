@@ -113,7 +113,10 @@ if __name__ == '__main__':
     RISE, LO, HI = opt('--rise', 4.0), int(opt('--lo', 150)), int(opt('--hi', 800))
     tracks = [x for x in a if not x.startswith('--') and not x.replace('.', '').isdigit()] or \
         ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious', 'Vienna']
-    v66 = np.array(json.load(open(os.path.join(ROOT, 'tools/work/v66/clap-ref-rise.json'))), float)
+    # as kicktruth.py (§137): the §66 clap reference is a gitignored one-off that no longer exists here — its absence
+    # costs the Vienna row one column, not the run.
+    p66 = os.path.join(ROOT, 'tools/work/v66/clap-ref-rise.json')
+    v66 = np.array(json.load(open(p66)), float) if os.path.exists(p66) else None
     for tr in tracks:
         for R in ([3, 3.5, 4, 4.5, 5, 6] if '--sweep' in a else [RISE]):
             sr, dur, ks, sl, rs, T = build(tr, R, LO, HI)
@@ -123,7 +126,7 @@ if __name__ == '__main__':
                 ref = np.array(T['onsets'][key], float)
                 tp, _ = match(ks, ref, 0.030)
                 line += f'  {key}: P {tp/max(1,len(ks)):.2f} R {tp/max(1,len(ref)):.2f}'
-            if tr == 'Vienna':
+            if tr == 'Vienna' and v66 is not None:
                 mine = ks[(ks >= 23.9) & (ks <= 60.0)]
                 tp, lg = match(mine, v66, 0.040)
                 line += f'  | §66 24-60: {len(mine)}/{len(v66)} m{tp} P {tp/max(1,len(mine)):.2f} R {tp/max(1,len(v66)):.2f}'

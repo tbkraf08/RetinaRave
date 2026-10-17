@@ -82,7 +82,10 @@ if __name__ == '__main__':
     RISE = opt('--rise', 4.0)
     tracks = [x for x in a if not x.startswith('--') and not x.replace('.', '').isdigit()] or \
         ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious', 'Vienna']
-    v66 = np.array(json.load(open(os.path.join(ROOT, 'tools/work/v66/kick-ref-rise.json'))), float)
+    # the §66 reference list is a gitignored one-off (tools/work/v66, long gone from this machine): its absence costs the
+    # Vienna row ONE column, not the run — the ninth track's import (§137) found the unconditional load fatal for every track.
+    p66 = os.path.join(ROOT, 'tools/work/v66/kick-ref-rise.json')
+    v66 = np.array(json.load(open(p66)), float) if os.path.exists(p66) else None
     for tr in tracks:
         for R in ([4, 5, 6, 7, 8, 9, 10] if '--sweep' in a else [RISE]):
             sr, dur, ks, sl, rs, T = build(tr, R)
@@ -92,7 +95,7 @@ if __name__ == '__main__':
                 ref = np.array(T['onsets'][key], float)
                 tp, _ = match(ks, ref, 0.030)
                 line += f'  {key}: P {tp/max(1,len(ks)):.2f} R {tp/max(1,len(ref)):.2f}'
-            if tr == 'Vienna':
+            if tr == 'Vienna' and v66 is not None:
                 mine = ks[(ks >= 23.9) & (ks <= 60.0)]
                 tp, lg = match(mine, v66, 0.040)
                 line += f'  | §66 24-60: {len(mine)}/{len(v66)} m{tp} P {tp/max(1,len(mine)):.2f} R {tp/max(1,len(v66)):.2f}'

@@ -83,7 +83,7 @@ JAM_STEM_DIR = os.path.join(WORK, 'jamendo', 'htdemucs')   # §126: Demucs over 
 # The library split (§126): five mixes train, the voiced IBelongHere AND the solo-piano Comptine are UNSEEN; WhoLikesToParty is out of
 # the loss (shouted chops, not voice) and recorded. The accompaniments of six tracks are negatives (an accompaniment is voice-free).
 LIB_TRAIN = ['CyborgNinja', 'Malicious', 'RaindropsOnRoses', 'SeeYouDrop', 'Vienna']
-LIB_HELD = ['IBelongHere', 'Comptine']
+LIB_HELD = ['IBelongHere', 'Comptine', 'TheChain']   # TheChain (the ninth track, §137) is UNSEEN on purpose: never in LIB_TRAIN, ACC_TRACKS or LIB_VOX_SOURCES
 LIB_RECORDED = ['WhoLikesToParty']
 ACC_TRACKS = ['CyborgNinja', 'Malicious', 'RaindropsOnRoses', 'SeeYouDrop', 'Vienna', 'WhoLikesToParty']
 LIB_VOX_SOURCES = ['RaindropsOnRoses', 'SeeYouDrop']      # the library vocal stems the remixes may use (IBelongHere held, the chops out)
