@@ -1,0 +1,37 @@
+# §138 (2026-10-17): DUST's voice on the picture, branch `dust-voice2` at 87d2d1f — tools/dust-trace.js on nine windows (scene 3,
+# `&map=0`: the live net on the file, the user's 90 % case), read by tools/dust-voice.js. "before" = the same build under `&dvox=0`
+# (the pre-§127 cloud, bit for bit — test_voxscene's claim), "after" = the §138 defaults. Sung frames = the hand passages of
+# tools/truth/<T>.vox.json (the truth, not the detector). Controls (no passages): Comptine, CyborgNinja, Malicious, Vienna.
+#   before = PORT=88xx MUTE=1 node tools/dust-trace.js <T> <t0> <t1> <out> 3 "<MS_DEFAULT>,voxS,voxHz,voxConf" [&dvox=0]
+#   node tools/dust-voice.js tools/work/v138/*.json
+# READ: the three unvoiced controls Comptine / CyborgNinja / Malicious are IDENTICAL rows before and after (w 0 → the blocks skipped);
+# Vienna lights 5.1 % of its (all unsung) frames after — the live net's known false voice on its synth leads (§123's table, §127's
+# knee), the §127 cloud already spent it; its live-path s3 lines are the ones expected to move among the controls.
+# THE VERTICAL (the §138 claim: the sung pitch's height moves the picture): r(lumY, voxY) on the sung frames with a pitch —
+# SeeYouDrop .71, RaindropsOnRoses .47, IBelongHere .24, TheChain 50–130 .15; the .25 s change r(ΔlumY, ΔvoxY): TheChain's
+# outro chant .78, IBelongHere .37, SeeYouDrop .18 — against the kick's Δ on the same frames (.15 / .00 / −.02 / .04 / −.02): the
+# centroid follows the sung line where it follows anything. Before, the column is undefined (no voice read: voxY −1).
+# THE LIGHT: r(lum, voxS) on the sung frames barely moves (the budget is neutral by design — the light is moved, not added); the
+# sung-time luminance rises 2–6 % (the band under the bloom) and the unsung-time is within 1 % everywhere but SeeYouDrop (−7 %:
+# its chops light the gate 2.7 % of the unsung time). The ribbon share is §127's (the seam rule is untouched; `&dvox=0` also turns
+# §127's voxSec off, which is why "before" shows 8 % on TheChain where the §127 cloud showed 37.7 % — the §137 run on main).
+| trace | window | sung % | lit % sung / unsung | r(lum,voxS) sung | r(lum,kickAmp) sung | r(lum,voxS) unsung | r(lum,kickAmp) unsung | r(lumY,voxY) sung | r(ΔlumY,ΔvoxY) .25 s | r(Δlum,ΔkickAmp) same frames | lumY p10 / p90 | ride p10 / p90 | ribbon % | lum sung / unsung |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| after-Comptine-11 | 11–71 s | 0.0 | – / 0.0 | – | – | 0.08 | 0.05 | – | – | – | – / – | – / – | 72.3 | – / 73.9 |
+| before-Comptine-11 | 11–71 s | 0.0 | – / 0.0 | – | – | 0.08 | 0.05 | – | – | – | – / – | – / – | 72.3 | – / 73.9 |
+| after-CyborgNinja-118 | 118–178 s | 0.0 | – / 0.0 | – | – | -0.08 | 0.22 | – | – | – | – / – | – / – | 0.0 | – / 99.2 |
+| before-CyborgNinja-118 | 118–178 s | 0.0 | – / 0.0 | – | – | -0.08 | 0.22 | – | – | – | – / – | – / – | 0.0 | – / 99.2 |
+| after-IBelongHere-40 | 40–100 s | 81.9 | 79.6 / 10.6 | -0.09 | 0.24 | -0.27 | 0.05 | 0.24 | 0.37 | 0.15 | 0.449 / 0.604 | -0.20 / 0.11 | 27.5 | 109.7 / 116.7 |
+| before-IBelongHere-40 | 40–100 s | 81.9 | 0.0 / 0.0 | -0.22 | 0.27 | -0.25 | 0.04 | – | – | – | – / – | 0.00 / 0.00 | 15.1 | 105.7 / 118.1 |
+| after-Malicious-115 | 115–175 s | 0.0 | – / 0.0 | – | – | 0.17 | -0.15 | – | – | – | – / – | – / – | 48.7 | – / 96.7 |
+| before-Malicious-115 | 115–175 s | 0.0 | – / 0.0 | – | – | 0.17 | -0.15 | – | – | – | – / – | – / – | 48.7 | – / 96.7 |
+| after-RaindropsOnRoses-100 | 100–140 s | 63.9 | 81.2 / 1.6 | -0.07 | 0.12 | -0.40 | 0.26 | 0.47 | 0.03 | -0.02 | 0.425 / 0.564 | -0.19 / 0.00 | 42.7 | 70.4 / 112.2 |
+| before-RaindropsOnRoses-100 | 100–140 s | 63.9 | 0.0 / 0.0 | -0.07 | 0.10 | -0.40 | 0.28 | – | – | – | – / – | 0.00 / 0.00 | 25.6 | 68.4 / 112.5 |
+| after-SeeYouDrop-40 | 40–100 s | 52.8 | 32.8 / 2.7 | -0.38 | -0.07 | -0.01 | 0.30 | 0.71 | 0.18 | -0.02 | 0.352 / 0.576 | -0.17 / 0.00 | 41.1 | 98.6 / 109.8 |
+| before-SeeYouDrop-40 | 40–100 s | 52.8 | 0.0 / 0.0 | -0.53 | -0.10 | 0.22 | 0.02 | – | – | – | – / – | 0.00 / 0.00 | 30.5 | 93.1 / 117.7 |
+| after-TheChain-170 | 170–240 s | 7.4 | 8.0 / 0.0 | -0.19 | -0.41 | -0.06 | 0.24 | -0.09 | 0.78 | 0.00 | 0.521 / 0.572 | 0.00 / 0.00 | 15.2 | 126.6 / 86.0 |
+| before-TheChain-170 | 170–240 s | 7.4 | 0.0 / 0.0 | -0.19 | -0.42 | -0.06 | 0.24 | – | – | – | – / – | 0.00 / 0.00 | 15.2 | 126.6 / 86.0 |
+| after-TheChain-50 | 50–130 s | 56.1 | 78.4 / 0.0 | 0.06 | 0.02 | -0.06 | 0.33 | 0.15 | 0.04 | 0.04 | 0.439 / 0.530 | -0.26 / 0.14 | 37.7 | 101.4 / 49.0 |
+| before-TheChain-50 | 50–130 s | 56.1 | 0.0 / 0.0 | -0.05 | -0.03 | -0.07 | 0.27 | – | – | – | – / – | 0.00 / 0.00 | 8.0 | 97.3 / 53.9 |
+| after-Vienna-125 | 125–185 s | 0.0 | – / 5.1 | – | – | -0.07 | -0.17 | – | – | – | – / – | – / – | 9.6 | – / 85.6 |
+| before-Vienna-125 | 125–185 s | 0.0 | – / 0.0 | – | – | -0.08 | -0.17 | – | – | – | – / – | – / – | 9.6 | – / 85.4 |

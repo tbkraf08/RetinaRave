@@ -66,13 +66,18 @@ uniform sampler2D uNorm;   // 1x1: the RMS of the habituation gain over the bins
                            // the steady bands and the changing ones instead of changing how much there is.
 uniform vec3 uHab;         // x = the habituation on/off (hooks.hab, the A/B), y = the floor a sustained band
                            // habituates TO, z = the step in the spectrum that counts as fully new
-uniform vec4 uVox;         // §127 the VOICE (voice.js): x = w the sung presence through the gate's knee (0 = the block below is
-                           // skipped whole — today's bytes), y = the sung pitch's rank on the log axis, z = the lifted grains'
+uniform vec4 uVox;         // §127 the VOICE (voice.js): x = w the sung presence through the gate's knee (0 = the two blocks below
+                           // are skipped whole — today's bytes), y = the sung pitch's rank on the log axis, z = the lifted grains'
                            // gain (normalised on the CPU so the light is MOVED: the cloud gives up VOX_DIM·w, the three
-                           // partials' grains take it), w = unused
+                           // partials' grains take it), w = §138 the RIDE, w·(y01 − ½): the sung pitch's height, signed
 uniform vec2 uVoxC;        // x = the sung note's palette t (its hue), y = the ribbon's rise with the sung pitch, in WAVE units (0 at w 0)
-#define VOX_W 0.0075       /* the partial window's sigma on the 0..1 log axis (voice.js VOXD.W) */
-#define VOX_DIM 0.25       /* the cloud's share given up at w 1 (VOXD.DIM) */
+#define VOX_W 0.03         /* the partial window's sigma on the 0..1 log axis (voice.js VOXD.W) — §138: a band, was .0075 */
+#define VOX_DIM 0.45       /* the cloud's share given up at w 1 (VOXD.DIM) — §138: was .25 */
+#define VOX_A2 0.5         /* the second and third partials' weights (VOXD.A) — §138: were .6 / .4 */
+#define VOX_A3 0.25
+#define VOX_Y0 0.6         /* §138 the ride: the whole cloud's rise per unit of uVox.w, scene units (VOXD.Y0) */
+#define VOX_Y1 1.6         /* ...and the band's rise on top, × its own weight vk (VOXD.Y1) */
+#define VOX_SZ 1.2         /* §138 the band's grains' size term, × vk, on the sum the kick (1·) and the ring (3·) are on (VOXD.SZ) */
 #define VOX_LN2 0.110387   /* ln 2 / ln(16000/30): the second partial's offset on the axis */
 #define VOX_LN3 0.174957   /* ln 3 / ln(16000/30): the third */
 
@@ -130,9 +135,11 @@ vec3 form(int k, float n, vec3 h, float id){
   //    grain actually is, so the ribbon is still literally the waveform.
   // §127: the line rises with the sung pitch — added to the WAVE (uVoxC.y in wave units) behind a branch that leaves w
   // UNTOUCHED at 0: any arithmetic on w, even "+ 0.", let the GLSL compiler re-contract the expression and moved CyborgNinja's
-  // file-mode intro and boundary lines with no voice read at all (the first two cuts); a select keeps the original value
+  // file-mode intro and boundary lines with no voice read at all (the first two cuts); a select keeps the original value.
+  // §138: SUBTRACTED — the view's up is world −y (lookVP's s is −cross(f, up), so u = −up; every formation has always lived
+  // mirrored and nobody could tell), and §127's "+" put a HIGH note LOW on screen; the shot pair ride-lo54 / ride-hi120 proved it
   float x = (h.z < .5 ? -1. : 1.) * (.02 + .98 * h.x); float w = wave(.5 + .5 * x);
-  if (uVoxC.y != 0.) w += uVoxC.y;
+  if (uVoxC.y != 0.) w -= uVoxC.y;
   vec3 pz = vec3(x * 1.9, w * .75 * (.4 + uLevel), (fract(h.z * 2.) - .5) * .12 + (h.y - .5) * .5 * uMidS);
   pz.yz *= rot(x * 2.5 + uFlowMid * .4);
   return pz;
@@ -178,6 +185,17 @@ void main(){
   pos *= (1. - .3 * uBuild.x + .17 * uBuild.y + uDrop * 1.6 * h.y * h.y + .1 * uBassS) * (.82 + .18 * uDyn);
   pos += (h - .5) * .5 * uTension * sin(uFlow * 40. + id) * .12;   // roughness: jitter, and nothing else
   pos = mix(pos, (floor(pos * 5. + .5) / 5.), uAngular * .35);     // angular moods snap the cloud to a lattice
+  // §138 THE VOICE'S PLACE AND HEIGHT. vk is the grain's weight in the sung band (the three partials, VOX_W wide); the RIDE
+  // lifts the whole cloud with the sung pitch's height and the band further still, so the lit hoop floats up out of the body
+  // on a high note and sinks under it on a low one (y is the one vertical the view keeps: the spin below turns xz; SCREEN up is
+  // world −y here — lookVP's u is −up — so the rise is a subtraction, as the ribbon's is). Behind the same w > 0 branch as the
+  // light (§127's rule: any arithmetic on a 0, even "+ 0.", let the compiler re-contract the frame).
+  float vk = 0.;
+  if (uVox.x > 0.) {
+    float d1 = (fx - uVox.y) / VOX_W, d2 = (fx - uVox.y - VOX_LN2) / VOX_W, d3 = (fx - uVox.y - VOX_LN3) / VOX_W;
+    vk = min(1., exp(-d1 * d1) + VOX_A2 * exp(-d2 * d2) + VOX_A3 * exp(-d3 * d3)) * uVox.x;
+    pos.y -= uVox.w * (VOX_Y0 + VOX_Y1 * vk);
+  }
   pos.xz *= rot(uSpin);                                       // the cloud's own spin: a nudge per beat, a bigger one on the downbeat
   vec4 cp = uVP * vec4(pos, 1.);
   gl_Position = cp;
@@ -194,11 +212,11 @@ void main(){
     + (1.5 * kick + 4. * ring + 1.8 * spark + .5 * uVoice.w * wLow + uDrop) * gHit;
   bright *= min(1., sz) * min(1., 50000. / uCount);           // energy-conserving: sub-pixel points fade, and more particles are each dimmer
   float pt = fx * .9 + h.y * .12 + .1 * length(pos);
-  if (uVox.x > 0.) {                                          // §127 the VOICE: the grains at the sung pitch's first three partials are
-    float d1 = (fx - uVox.y) / VOX_W, d2 = (fx - uVox.y - VOX_LN2) / VOX_W, d3 = (fx - uVox.y - VOX_LN3) / VOX_W;   // lifted in the
-    float vk = min(1., exp(-d1 * d1) + .6 * exp(-d2 * d2) + .4 * exp(-d3 * d3)) * uVox.x;   // sung note's hue; the rest of the cloud
-    bright *= 1. - VOX_DIM * uVox.x + uVox.z * vk;             // gives up VOX_DIM·w — the light is moved (uVox.z: voice.js), never added
-    pt = mix(pt, uVoxC.x, vk);
+  if (uVox.x > 0.) {                                          // §127 the VOICE: the grains in the sung band (vk, above) are lifted in
+    bright *= 1. - VOX_DIM * uVox.x + uVox.z * vk;             // the sung note's hue; the rest of the cloud gives up VOX_DIM·w — the
+    pt = mix(pt, uVoxC.x, vk);                                 // light is moved (uVox.z: voice.js), never added; the drums' flashes
+    sz += uRes.y * .0055 * VOX_SZ * vk / max(zc, .2);          // recede with it. §138: the band's grains GROW, on the kick's and the
+    gl_PointSize = clamp(sz, 1., 48.);                         // ring's own size term (sz was already folded into bright above)
   }
   vCol = palM(pt) * bright * uAlive;
 }`;

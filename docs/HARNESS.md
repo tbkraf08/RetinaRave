@@ -1359,6 +1359,22 @@ weights, the stage's ease — §126, §133): the `&map=1` lines of s1 HOLD (the 
 §130) and the `&map=0` lines MOVE — expected, and listed in the accept record rather than hidden. `&vox=live` is the A/B
 switch for the page (and the way to shoot the live tier's picture on a file).
 
+**The voice on a SCENE's picture (DECISIONS §138, DUST).** The gate rulers above say whether the voice ARRIVES; whether the cloud
+SPENDS it is a scene-ruler question — `tools/dust-trace.js` on a sung window (`&map=0`, the live net on the file: the user's
+90 % case; `URLSearchParams` keeps the FIRST `map=`, so the lane cannot be asked for through the extra-hash argument), with the
+three voice keys added to the MS fields, then `tools/dust-voice.js` over the traces:
+
+```
+PORT=8877 MUTE=1 node tools/dust-trace.js TheChain 50 130 tools/work/v138/after-TheChain-50.json 3 "heardT,lvl,…,kickAmp,…,voxS,voxHz,voxConf"
+node tools/dust-voice.js tools/work/v138/*.json        # one row per trace: the sung frames by the TRUTH (the hand passages of tools/truth/<T>.vox.json)
+```
+The row partitions the frames by the hand passages, never by the detector (§58's rule), and reads on the SUNG frames r(lum, voxS)
+against r(lum, kickAmp) — how much of the composited light follows the voice against the kick — the gate's lit share of the sung
+and the unsung frames (`d_voxW`), the vertical ride's p10 / p90 (`d_voxRide`), r(lumC, voxY) (the centre's light against the sung
+height), the ribbon's share, and the mean luminance sung / unsung. The UNVOICED tracks are the control: w is ~0 there, so the
+before and after rows must agree to the frame and the real-md5 s3 lines must hold in both map modes; the voiced tracks' s3 lines
+move and are listed. `&dvox=0` is the exact before on the same frames (the A/B, and the way to shoot the pair).
+
 ## Scene ruler on a real track — `tools/dust-trace.js` (a scene edit whose point is the SYNC, v0.20+ / DECISIONS §57)
 
 `filetrace.js` records MS, and MS says nothing about what a SCENE did with it; `probe.js` reads the canvas but needs a

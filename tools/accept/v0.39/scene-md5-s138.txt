@@ -1,0 +1,10 @@
+# §138 (2026-10-17): the fake smoke for DUST on branch `dust-voice2` at 7893078 — the voice as the lead (the sung band, the ride,
+# the size, DIM .45, the gain budget DIM/p). The fake timeline has voxConf 0 → w 0 → the shader's two voice blocks are skipped
+# whole, so these lines CANNOT move, and did not:
+#   IDS="3" GPU=1 MUTE=1 PORT=8887 tools/scene-md5.sh s138          # errs [] hop 840 row 72
+# READ AGAINST: tools/accept/v0.39/scene-md5-s135.txt (s3 lines 1faaa64e / 25dfdc48). RESULT: 2 of 2 HOLD to the byte.
+# Pitfall paid on the way: a `tools/serve.js` left on the port by an earlier lane FROM THE MAIN CHECKOUT (a dust-trace run started
+# there for the "before" set) served main's bytes to the first attempt, and the shot pair came back as ONE md5 at hop 5106 —
+# a port answers, cdp.js spawns nothing, and the worktree is not what is on screen. Check `ss -ltnp | grep 88` before a list.
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
