@@ -7,15 +7,24 @@
 //        Farey address names). The attracting cycle's point z₀ becomes a parabolic point of g = f^{Q} with q petals, and the
 //        shader colours the interior by PETAL INDEX and the phase of the Fatou coordinate Φ(z) ≈ −1/(q·a·(z − z₀)^q) — the
 //        time-to-leave the petal — so the q petals pinwheel with the bars (uImp.x rises 0 → 1).
-//   EXT  the way out: c = c₀ + n̂·ε, ε small along the implosion direction (the rim's outward normal, rhoGrad). The Julia set
-//        has imploded: the orbits that converged now pass through the near-parabolic GATE around z₀, each passage costing
-//        ~π/√|ε| iterations (Lavaurs), and the shader colours by the PASSAGE COUNT — the cauliflower grows hair. The beat
-//        turns the horn-map phase: ε breathes by EPS_BEAT within each beat (and EPS_DROP with the drop's envelope), so the
-//        transit σ = frac(π/√ε) sweeps its cycle and the exploded set breathes with the bar line (uImp.y rises; uSig = σ).
+//   EXT  the way out: c = c₀ + d̂·ε, ε small, d̂ a direction that LEAVES M — not the rim's normal: at a satellite root the parent's
+//        outward normal points INTO the child (the child hangs there; c₀ + n̂ε is its slow attracting cycle, the parabolic
+//        bifurcation), and the exterior is the thin wedge between the two tangent components, α ∈ (π/2 − ε/2R_child, π/2 +
+//        ε/2R_parent) from the normal — FAN probes a fan dense around ±π/2 with field.js's escapes() (no table) and takes the
+//        first direction outside at ε₀ and 4ε₀. The Julia set has imploded (Lavaurs): the orbits that converged now pass
+//        through the near-parabolic GATE around z₀ — but the approach to a q-petal point is algebraic (~1/(q a r^q) steps of
+//        f^Q from radius r), so inside the shader's budget the gate passages exist only for the outer petal zones at low q;
+//        what the budget SEES is the former interior's ESCAPE — the dust eating inward as ε grows, re-filling as it shrinks —
+//        with the passage count and the time near z₀ as layers on top. The beat turns the horn-map phase: ε breathes by
+//        EPS_BEAT within each beat (and EPS_DROP with the drop's envelope), so the transit σ = frac(π/√ε) (the q = 1 normal
+//        form's) sweeps its cycle and the exploded set breathes with the bar line (uImp.y rises; uSig = σ).
 //   IN   the return: when the exterior settles (OUT3.SETTLE beats; PEAK at a peak) c eases back to the ball over T_BACK s
 //        with the chart restored at the end.
-// The petal coefficient a is measured, not tabulated: a = mean over four directions of (g(z₀ + w) − z₀ − w) / w^{q+1} at
-// |w| = W0 — g = f^{Q·q} iterated on the CPU once per drop. The gate radius R = PET_R·(PET_K/|a|)^{1/q}, the petal's own scale.
+// The root c₀ and its parabolic point z₀ are solved, not tabulated: mandel.js's solveMult (a Newton in (z, c) onto the target
+// multiplier) continued from the ball's λ. The petal coefficient a is measured: a = mean over four directions of
+// (g(z₀ + w) − z₀ − w) / w^{q+1} at |w| = W0 — g = f^{Q·q} iterated on the CPU once per drop — at the ROOT (at the rim's cycle
+// point the linear term swamps it). The petal radius Rp = PET_R·(PET_K/|a|)^{1/q}, the gate R = GATE_FRAC·Rp; layer() is the
+// CPU ruler of the explosion (the escape fraction of the former petal's zones inside the budget, their mean passage count).
 // Maths after Douady–Hubbard (the parabolic root points of M), Lavaurs (1989, the implosion and its phase), Shishikura (the
 // Fatou coordinates and the horn map; LMS 274, 2000) and Inou–Mukherjee (2016, the horn map's translation constant σ); the
 // user's notes on both (MandelBound theory/t-parab-horn-map-p24-p50.md, QuantumComputing's cardioid-cusp toolkit) are the brief.
@@ -52,7 +61,7 @@ export const OUT3 = {
 };
 
 // what index.js uploads: x the petal stage's weight, y the explosion's, z q (petals), w the gate radius R; z0, a, sig, and the record
-export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, n: 0, drops: 0, frames: 0, T: 0 };
+export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, escMax: 0, passMax: 0, n: 0, drops: 0, frames: 0, T: 0 };
 
 const CY = mkCyc();
 let st = null;   // the drop in flight: { from, root, n, size, Q, q, t, settled, beat0 }
@@ -142,7 +151,7 @@ export function startDrop(N, S, root, nx, ny, reach) {
   }
   IMP.fan = found;
   IMP.q = q; IMP.q0 = cy.q; IMP.z0 = z0; IMP.a = a; IMP.root = root; IMP.nrm = [dx, dy]; IMP.Rp = OUT3.PET_R * Math.pow(OUT3.PET_K / am, 1 / q); IMP.R = OUT3.GATE_FRAC * IMP.Rp; IMP.x = 0; IMP.y = 0; IMP.sig = 0;
-  IMP.eps0 = eps0; IMP.eps = eps0; IMP.drops++; IMP.passes = 0; IMP.esc = 0;
+  IMP.eps0 = eps0; IMP.eps = eps0; IMP.drops++; IMP.passes = 0; IMP.esc = 0; IMP.escMax = 0; IMP.passMax = 0;
   st = { from: [N.ball[0], N.ball[1]], root, nx: dx, ny: dy, t: 0, beat0: S.beatCount, cyc: cy, p: r.p };
   N.mode = 'OUT';
   N.extBeat = S.beatCount;
@@ -176,7 +185,7 @@ export function stepDrop(N, S, dt, idle) {
     IMP.T = Math.PI / Math.sqrt(Math.max(IMP.eps / N.size, 1e-12));   // the transit in iterations for ε in component units (the q = 1 normal form)
     IMP.sig = IMP.T - Math.floor(IMP.T);
     IMP.frames++;
-    if ((IMP.n++ & 7) === 0) { const L = layer(N.cPath[0], N.cPath[1], IMP.z0, IMP.Rp, IMP.R, IMP.q0); IMP.passes = L.p; IMP.esc = L.esc; }   // the layer, every 8th frame (24 orbits × ITER)
+    if ((IMP.n++ & 7) === 0) { const L = layer(N.cPath[0], N.cPath[1], IMP.z0, IMP.Rp, IMP.R, IMP.q0); IMP.passes = L.p; IMP.esc = L.esc; IMP.escMax = Math.max(IMP.escMax, L.esc); IMP.passMax = Math.max(IMP.passMax, L.p); }   // the layer, every 8th frame (24 orbits × ITER)
     N.cyc.has = 0;
     N.par = 0;
     const settle = (S.arc !== 'peak' && S.beatCount - X.beat0 > OUT3.SETTLE) || S.beatCount - X.beat0 > OUT3.PEAK || idle;

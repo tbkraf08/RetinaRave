@@ -59,7 +59,7 @@ console.log('4. 96 s at 60 Hz: the ball on a fake timeline (loud ladder, a pitch
 const MS = {
   presence: 1, bass: 0, mid: 0, high: 0, hit: 0, hitStrength: 0, onset: false, beat: false, beatPhase: 0, beatCount: 0, bpm: 124,
   eS: 0, eM: 0, buildLive: 0, tension: 0, suspension: 0, arc: 'idle', dropLiveEvt: false, dropStrength: 0, dropEnv: 0, resolveEvt: false,
-  intensity: 0, peaks: [[110, 1], [220, 0.6], [330, 0.5], [550, 0.3]], sectionEvt: false, dropEvt: false,
+  intensity: 0, peaks: [[110, 1], [220, 0.6], [330, 0.5], [550, 0.3]], sectionEvt: false, dropEvt: false, mapDropEvt: false,
   key: 7, mode: 0, keyConf: 0.5, valence: 0.5, harmAngle: 0, modeShade: 0, snareEvt: false, snareAmp: 0, loudRel: 0.5, loudRange: 10, loudAbs: 1, phrase16Pos: 0,
   kickEvt: false, kickAge: 99, kickAmp: 0, subGate: 0, subNote: -1, clockConfPcm: 0.9, barPos: 0, barPhase: 0, tongue21: 0, tongue41: 0, tongueOn: 1,
   centroid: 0.4, voxS: 0, voxHz: -1, voxConf: 0, dropExpectedIn: -1,

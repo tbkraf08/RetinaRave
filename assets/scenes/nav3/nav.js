@@ -289,7 +289,7 @@ export function updateNav(dt, now, S, env) {
   }
   // the drop: the live detector's slam, and (OUT3.ANY, the default) the map's / the fake timeline's dropEvt too — the fake timeline
   // never arms the live detector, so #test would never show the exit; a refractory of DROP_REFR beats keeps the two from double-firing
-  const drop = (S.dropLiveEvt || (OUT3.ANY && S.dropEvt)) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;
+  const drop = (S.dropLiveEvt || S.mapDropEvt || (OUT3.ANY && S.dropEvt)) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;   // §107's rule: the live slam OR the file map's frame-exact line (mapDropEvt — without it six of nine tracks never left in the gate's windows); dropEvt is the fake timeline's
   if (drop && N.mode === 'CROSS') {   // a drop mid-crossing: land first (the chart is already verified), then leave
     const X = N.cross;
     N.ball[0] = X.to[0]; N.ball[1] = X.to[1]; N.cyc = X.cyc; N.cyc.has = 1;

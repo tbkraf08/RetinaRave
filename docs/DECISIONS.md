@@ -5172,3 +5172,142 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   the ribbon rise's sign on the strand) · **CNN session 4** if the user wants it (§134's knobs; the ~10 µs bench margin makes a
   cheaper front end the pre-condition) · splitting the solver's passes out of `core/fluid/fluid.js` · re-cutting or formally
   retiring the stale s134 lists.
+
+## §140 NAV3 — the navigator that ROLLS, and the drop as a parabolic implosion (2026-10-17, one Fable worker in a worktree off main fc8e1c8, branch `nav3`, NOT merged; the user: *"clone nav -> review [the QuantumComputing repo's "what is not implemented": chart-free navigation, parabolic implosion] ; improve nav clone"*)
+
+- **What it is.** `assets/scenes/nav3/`, id 6, key `7`, forced-only (`score()` 0, `home: false`, `always: false`): a clone of NAV2
+  whose navigation needs no chart and no table, and whose drop crosses the parabolic point. The §93 roster is unchanged (NAV2,
+  DUST, TORUS2, FLUID bid), NAV2 (`assets/scenes/nav2/`, the home) is byte-untouched, `assets/math/field.js` is untouched
+  (`test_field.js` OK on every run — it was NAV2's v0.8 numerics, built for exactly this and dead since §97's reset: the brief
+  quotes the QuantumComputing review's words, *"built in assets/math/field.js but is dead code"*). Three commits, one per step:
+  `3226203` the clone · `11cb152` the roll · `e454504` the implosion; the gate's records and this entry follow. The worker
+  report with the friction log is `docs/workers/nav3.md`; the brief `docs/workers/brief-nav3.md`.
+- **Step 1, the clone (the §97 recipe).** Every file byte-copied, `index.js` differing in the registration, the program names
+  (`julia3-v2`, …, `pt3`), the label, and EVERY hook renamed — `n2*` → `n3*`, `green` → `green3`, `baby` → `baby3` — because
+  hooks are dispatched by NAME across scenes (`core/harness.js`: `CARD.hooks[k]` is whichever scene registered last, and `&k=`
+  in the hash reaches every scene that declares `k`); the brief's "hooks kept" would have left `&baby=` and `CARD.hooks.green`
+  ambiguous between the two navigators. `main.js` registers it seventh (REG dense 0..6; `help.js`'s digit range follows
+  `REG.length`); CONTRACTS §1.8 has the row; `scene-md5.sh`'s comment says 7 scenes / 14 lines. `always: false` by the brief: the
+  s6 pair is not s2's bytes (frame 0's update is missed — §97's own note), and it is the step-1 record
+  (`tools/accept/nav3/scene-md5-step1.txt`: `7ffaa4d4 / e8718212`).
+- **Step 2, the roll (`nav.js`, new; `walk2.js` gone; `move2.js` / `look2.js` / `green.js` byte copies).** Inside a hyperbolic
+  component the attracting cycle's multiplier is a coordinate: **log λ = ln ρ + i·2πθ** is holomorphic in c, so the whole
+  continuation is one complex division, **Δc = Δlog λ / (λ′/λ)** (λ′ by `rhoGrad`'s central differences), in every component of
+  every period — the Newton-on-twelve-bulbs of NAV's `bulbChart` without the twelve. The wall is ρ: a step whose linear
+  prediction passes `RHO_WALL` .97 loses its radial part (the ball SLIDES along the rim), and a step is accepted only when
+  `findCycle` at `N_ITER` names the SAME period (v0.8's finding, `docs/workers/nav2.md` 3: *"ρ alone is not a wall — the period
+  test is"*), else halved once, else dropped: c and λ stand, never a visible jump (the 96 s node drive: 0 failures, the largest
+  per-frame step .017). The music: **loud is out** — the track's own loudness ladder (`loudlight.js baseLight`) sets ρ from
+  `RHO_LO` .25 (the Koenigs spiral loose) to `RHO_HI` .93 (tight against the rim: the curl, arg λ / ln|λ|); **pitch is up** —
+  `math/vox.js`'s height y01 (the centroid when nobody sings) sets θ from `TH0` .5 (opposite the root; c = −.75 on the cardioid)
+  by `TH_SPAN` −.17 toward 1/3 (the cardioid's highest point, Im c .65); `harmAngle` (`HARM` .05 turns per π) and the key's place
+  on the fifths circle (`KEY` .08 turns × keyConf) turn it; a `sectionEvt` mirrors θ ↔ 1 − θ (the conjugate picture); the beat
+  breath and the sub press (`move2.js`, unchanged) ride on ρ; the targets go through springs (`W_RHO` 3.5, `W_TH` 1.4) and the
+  step closes `GAIN` 4·(.35 + .65·intensity) of the error per second, capped at `VMAX` 1.2 in |Δlog λ|. **Into a child by
+  geometry:** against the rim (`GATE.RHO` .9) where `nearestRational(θ, QMAX 7)` names p/q within `TOL` .5/q² and the music
+  ASKS (`buildLive` ≥ .45, `dropExpectedIn` > 0, or the ladder risen `RISE` .1 over `BARS` 2) — and while it asks the θ target
+  snaps to the nearest p/q whose child is inside `P_MAX` 32, so the rim slides TOWARD the gateway (without that the fake's 3 s
+  build never crossed) — the ball crosses: the root by `ROOT_STEPS` 2 secant steps along the normal (`ROOT_K` .9 each), the
+  child's size **R = 1/(|dλ/dc|·q²)** (exact on the cardioid: sin(πp/q)/q² — field.js's own header), the landing the DEEPEST of
+  `DIVE` .6·R·`TRIES` {1, 1.5, 2, .6, 2.6} that `findCycle` names q·q₀ (the first valid one sat at ρ_child .988, on the child's
+  rim), and `CROSS` eases c ball → root → landing over `T` .8 s with the last chart held and `par` peaking at the root. The
+  way out: the ladder under `FALL` .3 for `EXIT_BARS` 1.5 bars latches `leaving` (released only above FALL + `HYST` .3), θ →
+  0 at `EXIT_SPEED` 2× (θ_child = 0 IS the root to the parent), and the crossing back lands on the stack's saved parent c,
+  re-verified. The kick: `move2.js`'s lane as before, the jump along the outward normal by `KICK3.LEN` .5 × the size, the
+  chart hidden while it rings (NAV's Misiurewicz jump without the table). The drop reads `dropLiveEvt` OR `mapDropEvt` (§107's rule — the first nine-track run read the live slam and synapse's `dropEvt` only, and six tracks never left; a slip, fixed before the gate's table) OR `dropEvt`
+  (`OUT3.ANY`; `&n3drop=live` = NAV2's read) with `DROP_REFR` 4 beats — the fake timeline never arms the live detector, and NAV2
+  on `#test` never leaves either (measured: `n2info().mode` INT, `extBeat` 0 at 15 s). Knobs: `&n3roll=RHO_LO,RHO_HI[,TH0,
+  TH_SPAN[,GAIN,VMAX]]` · `&n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]]` · `&n3kick3=LEN`; a bare call READS the table
+  (a bare `knob5('roll')` once parsed `''` as `[0]` and set `RHO_LO` 0 — fixed; look2's / move2's knobs keep the old pattern).
+- **Step 3, the implosion (`implode.js`, new; `shaders-v2.js` + the uniforms `uImp uZ0 uA uSig uQ0`).** Three stages, one per
+  mode. **OUT** (`T_IN` 1.4 s): the ball walks to the root c₀ — `solveMult` (`math/mandel.js`, a Newton in (z, c) onto λ =
+  e^{2πi p/q} continued from the ball's λ in `LAM_STEP` .1, a SOLVER and the only `mandel.js` import) gives c₀ and the parabolic
+  point z₀ to `ROOT_TOL` 1e-9 (the secant root + the rim's cycle point stand in at q = 1, the cusp, where that Newton
+  degenerates); the Koenigs chart holds to `CHART_TO` .85 of the way (ρ → 1, the smoulder) and the **Fatou petals** fade in
+  from `PET_FROM` .6: a non-escaping pixel is coloured by the sector of w = z_final − z₀ (q sectors; one per beat turns the
+  wheel) and the phase of **Φ ≈ −1/(q·a·w^q)** — the time-to-leave, concentric bands in each petal — with `a` MEASURED at the
+  root (g = f^{Qq} at |w| = `W0` .02 × the cycle's spacing, four directions averaged; measured at the rim's cycle point instead
+  the linear term (λ^q − 1)·w swamps it and `a` read 2.7·10⁶; at the root 28 for 2/5, 55 for the 1/3 of a period-2 component).
+  **EXT**: **c = c₀ + d̂·ε** — and d̂ is NOT the rim's normal: at a satellite root the parent's outward normal points INTO the
+  child (the child hangs there; c₀ + n̂ε is its slow attracting cycle, the parabolic bifurcation, not the implosion), and the
+  exterior is the thin wedge between the two tangent components, α ∈ (π/2 − ε/2R_child, π/2 + ε/2R_parent) from the normal
+  (.17 rad wide at ε .014 on a 2/5 bulb). `FAN` probes a fan dense around ±π/2 with **`field.escapes()`** (the exterior Green's
+  potential — no table) and takes the first direction outside at both ε₀ and 4ε₀ (3 of the node drive's 4 drops; the 4th, a
+  1/6 root of a period-7 component at ε₀ 3·10⁻⁴, finds none and keeps the normal — owed). ε₀ = `EPS` .004 · 2^(reach + 6) ·
+  the component's size (the `reach` parameter is log2 of ε in the component's own size now, range −10 … −2), breathing ×(1 +
+  `EPS_BEAT` .5·(1 − beatPhase)) per beat and ×(1 + `EPS_DROP` 2·dropEnv) on the slam — the transit **σ = frac(π/√ε)** (the
+  horn-map phase, the q = 1 normal form's, `IMP.sig`) sweeps its cycle with the beat and turns the layers' hue. The shader
+  draws the imploded set as **the former interior's ESCAPE**: an escaped pixel takes the dust bands plus the gate-passage layer
+  (an entry into R = `GATE_FRAC` .3 × the petal radius `(PET_K .03/|a|)^{1/q}` after `OUT_RUN` 2·q₀ iterates beyond 2R — the
+  period cycle's own alternation is not a transit) and the glow of time spent near z₀; a pixel still inside keeps its petal.
+  **IN** (`T_BACK` 1.2 s): back to the ball, the chart restored (`findCycle` re-verified). The budget is `ITER` 420 and the
+  no-chart short budget is off while the implosion runs (GPU=1 bench 5.8–7.2 ms per frame in EXT against 3.2 rolling —
+  a drop's seconds). Knobs: `&n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE]]]]]]`.
+- **The finding that reshaped step 3 — the budget against a q-petal point.** The brief's *"each passage costs ~π/√|ε|"* is the
+  cusp's (q = 1) normal form. At a q-petal parabolic point the approach from |w| = r costs ~1/(q·a·r^q) iterations of f^Q — the
+  critical slowing itself, algebraic — so from .15 at the cardioid's 1/3 root an orbit is still .08 from z₀ after 420 iterations
+  of f (`tools/work/nav3/scan.mjs`), and a 2/5 root needs ~2·10⁵ steps of f⁵ to reach a gate of .02. Gate passages at q ≥ 3 are
+  beyond any shader budget this engine will carry; the passage layer stays in the shader and lights where it can (the outer
+  petal zones, low q), but the implosion's PICTURE inside 420 iterations is the escape of the former interior — the dust
+  eating inward as ε grows and re-filling as it shrinks — and its CPU ruler is `implode.js layer()`: the fraction of 24 orbits on
+  three circles in the former petal (.3 / .6 / .9 of its radius) that escape inside the budget, **8–58 % at ε₀ and 33–92 % at
+  3ε₀** on the node drive's four drops (the brief's "implosion frames" = the EXT frames with that fraction > 0), beside their
+  mean passage count (.2–.4 at the cardioid's roots, 2 at a deep one).
+- **The node drive** (`tools/test_nav3.js`, 96 s at 60 Hz on a fake timeline with a loudness ladder, a singer on alternate
+  sustains, a build at 10 s and the drop at 13 s of each 24 s loop; `N3TRACE=1` per second, `N3SCAN=1` the ε scan at each drop):
+  every frame finite · the wall held (max ρ .927 against .97) · 2 crossings (into the 1/7 child, period 7, out again on the quiet
+  breakdown) · 4 drops → OUT 1.4 s each → EXT → IN → INT, the chart back · 0 `findCycle` failures, 0 stalls · the ball's largest
+  per-frame step .017 · **.047 ms per update()** in node (findCycle at N_ITER + rhoGrad + Green's ruler; NAV2's was .042) · the
+  byte copies (move2, look2, green, shaders) · the registration · the guards. `node tools/check.js` 0 fail (nav.js 354 lines, a
+  soft-cap warn; the card's thumb cut at the end), `license.js --check` 0 without, `test_field` OK, `test_nav2` all ok; `npm test`
+  carries `test_nav3`.
+- **The gate** (every run on PORT 8813, one Chrome at a time; records under `tools/accept/nav3/`). `node tools/check.js` **0 fail**
+  (7 warn: nav.js 354 lines over the 350 soft cap, the five pre-existing) · `license.js --check` 0 without · `test_field` OK ·
+  `test_nav2` all ok · `test_nav3` OK. **The full list** (`tools/scene-md5.sh nav3s3`, 14 lines, `scene-md5-step3.txt`): the
+  **12 existing lines unmoved** against `v0.39/scene-md5-s135.txt` / `-s138.txt` to the byte (s2 `a6c725fa / a12256fd`), s6
+  `9fc210b7 / 71635e5c` (f360 = step 2's: the roll before the drop; f840 the implosion at 13 s). **SwiftShader bench**
+  (`load-bench.js`, IBelongHere from 0, 30 s, 2 runs, `load-bench-nav3.txt`): NAV3 **30.1 / 29.3 fps**, ENGINE.ms 1.94 / 1.92 ·
+  NAV2 **33.0 / 33.6 fps**, 1.85 / 1.74 — the governor collapses q to 0 by 8 s on the software renderer, and IBelongHere's
+  first drop at 15.9 s puts the 420-iteration implosion inside the window: NAV3 is ~10 % slower there. **On the GPU** (`GPU=1`,
+  q held at 1, tier 3) both hold 60 fps on every track; `CARD.bench` NAV3 2.1–2.2 ms rolling (NAV2 1.6–2.1), 3–5 ms in a
+  child of period 5–7, **10.2–10.9 ms while the implosion runs** (SeeYouDrop, Raindrops — a drop's seconds, 420 iterations).
+  **The nine tracks** (`tracks-tr2.txt`; the window `at = drop − 14`, the counters at drop + 12 s heard; `tracks-run1.txt` is
+  the first run, which read the live slam and synapse's `dropEvt` only — six tracks never left, the `mapDropEvt` slip above):
+
+  | track | drop (s) | rim s | children | max period | drops | implosion frames | petals q | escMax / passMax | fps t3 (bench ms) NAV3 · NAV2 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | SeeYouDrop | 57.6 | 0 | 0 | 1 | 1 | 635 | 3 | .08 / .25 | 59.7 (10.2) · 60 (4.44) |
+  | IBelongHere | 64.7 | 2.6 | 1 | 7 | 1 | 156 | 2 | 0 / .17 | 60 (2.08) · 60 (2.02) |
+  | Comptine | 31.5 | 0 | 0 | 1 | 1 | 1171 | 2 | .08 / .13 | 60 (5.29) · 60 (2.04) |
+  | RaindropsOnRoses | 68.6 | 0.7 | 0 | 1 | 1 | 636 | 2 | .08 / .29 | 58.9 (10.9) · 60 (2.10) |
+  | Vienna | 85.3 | 7.4 | 1 | 3 | 0 | 0 | — | — | 60 (2.23) · 60 (2.05) |
+  | WhoLikesToParty | 57.5 | 1.7 | 0 | 1 | 1 | 190 | 7 | .08 / .33 | 59.9 (2.09) · 60 (1.67) |
+  | Malicious | 148.3 | 0 | 1 | 5 | 0 | 0 | — | — | 60 (2.09) · 60 (2.09) |
+  | TheChain | 199.7 | 5.8 | 1 | 5 | 1 | 111 | 2 | 0 / .17 | 59.9 (3.07) · 60 (1.58) |
+  | CyborgNinja | (48, no drop) | 0 | 0 | 1 | 0 | 0 | — | — | 60 (4.20) · 60 (2.08) |
+
+  0 `findCycle` failures and 0 stalls on every track, `errs []`, `bad []`. Six of nine cross into a child inside their window
+  (max period 3–7); the rim time runs 0–7.4 s of 26. **Why three tracks show no drop:** CyborgNinja has no drop in
+  `tools/truth/windows.json` (its window is the loudest 30 s — nothing to fire). Vienna (85.34) and Malicious (148.32) carry
+  bar-pinned drops in the truth tool's list, but inside these windows neither the live detector nor the engine's own track
+  map (`mapDropEvt`, `engine/map`) raised one on this build — the same reads NAV2 and FLUID take (§107), so this is the
+  detectors on those two tracks, not the window and not the scene; which of the two maps disagrees with the truth tool is
+  not measured here (owed: a `filetrace.js` of `dropLiveEvt / mapDropEvt / dropEvt` over Vienna 71–97 and Malicious 134–160).
+  The escape fraction `escMax` reads .08 on every track that imploded (one of the 24 sampled orbits — the outer zone at
+  ε₀), 0 on IBelongHere and TheChain (deep roots, ε₀ ∝ the small component): the implosion's visible depth on real tracks is
+  thinner than the fake drive's 8–58 % promised, and the `EPS` knob (`&n3imp=`) is where the eye retunes it.
+  **Montages:** `tools/work/nav3/montage-test.jpg` (`#test`: the roll at 6 and 26 s, the way in at 13.9, the explosion at 15 and
+  17.5, the return at 21.5, the s6 pair) and `montage-tracks.jpg` (four shots per track: drop − 6, drop − 1, drop + 1.5, drop + 5).
+  `site/thumbs/nav3.jpg` is f360 of the fake timeline (thumbs.sh's recipe by hand — its id grep misses an `id: 6,   // …` line).
+- **What is NOT done.** (1) **Nothing is validated by eye** — every number here is a ruler's; the user's eye on key `7` is the
+  gate that matters (the roll's feel, the petals, the implosion's depth, the mirror flips on a section). (2) The implosion's
+  depth on real tracks is thin (`escMax` .08 / 0): `EPS` .004, `EPS_DROP` 2 and `GATE_FRAC` .3 are the fake drive's numbers,
+  not retuned per track; the per-track retune the brief asked for stops at the counters above. (3) The direction fan finds
+  no exterior at deep roots (the node drive's 4th drop; `fan` 0 on 7 of the 9 tracks' drops means the normal itself was
+  outside or the fan fell back — the record does not separate the two; owed). (4) Vienna and Malicious: no drop raised in
+  their windows (above). (5) Gate PASSAGES at q ≥ 3 are beyond the budget (the finding) — the Lavaurs "hair" is the escape
+  layer, not a passage count; the OKLCH mapping (`&colour=oklch`) carries neither layer. (6) `nav.js` is 354 lines (soft cap
+  350). (7) The implosion costs 10–11 ms per frame at tier 3 on this GPU and ~10 % of SwiftShader's fps: the governor will
+  drop q on a weak GPU during drops; `OUT3.ITER` is the knob. (8) The thumb, `site/about.html`, README and THIRD-PARTY carry
+  the scene and the credits; `releases.json` is untouched; no merge, no tag, no push — main is untouched and NAV2 is
+  byte-identical to main's.

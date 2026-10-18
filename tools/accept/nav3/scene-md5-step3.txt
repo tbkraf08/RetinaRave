@@ -1,0 +1,15 @@
+# NAV3 step 3 — the FULL list, PORT=8813 tools/scene-md5.sh nav3s3 (CLOCK=1 GPU=1, errs [] hop 840 row 72 on all seven ids). The 12 existing lines = tools/accept/v0.39/scene-md5-s135.txt / -s138.txt to the byte (0 of 12 moved); s6-f360 = step 2's (the roll before the drop), s6-f840 moved with the implosion (the drop at 13 s).
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+aa6268322f36acf568cae26df302e163  s1-f360.jpg
+8372bc2879a802dcfb8c93ecf28721a5  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+9fc210b71d6a6d780338798ed5ff2ff9  s6-f360.jpg
+71635e5c3206ba65e3dc16856b693192  s6-f840.jpg

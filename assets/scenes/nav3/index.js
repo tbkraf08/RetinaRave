@@ -42,7 +42,7 @@ export default {
   home: false,      // NAV2 (id 2) is the home; this is the workbench
   always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
-  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'dropEvt', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',
+  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',
     'hit', 'bass', 'mid', 'high', 'peaks', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock)
     'loudRel', 'loudRange', 'loudAbs', 'centroid', 'voxS', 'voxHz', 'voxConf', 'harmAngle', 'key', 'keyConf', 'dropExpectedIn', 'sectionEvt', // §140 nav.js: loud → ρ, pitch → θ (math/vox.js), the key / harmony turn, the gate, the mirror
     'snareEvt', 'snareAmp', 'mode', 'valence', 'modeShade', 'phrase16Pos', 'bpm', // §99: look2.js (+ loudRel loudRange loudAbs key keyConf harmAngle above)
@@ -83,7 +83,7 @@ export default {
       q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
       depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
       kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
-      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, drops: IMP.drops, frames: IMP.frames },   // §140 step 3: the implosion's record (implode.js IMP)
+      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames },   // §140 step 3: the implosion's record (implode.js IMP)
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
       Q: GREEN.Q,
@@ -95,7 +95,8 @@ export default {
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
       beatCount: 'beats since the drop: how long c stays outside before it comes back in',
       dropLiveEvt: 'the drop: c leaves the component through its rim along the wall\'s normal — step 3 makes it the parabolic implosion (the live detector\'s slam)',
-      dropEvt: 'the map\'s (and the fake timeline\'s) drop fires the same exit — the live detector never arms on #test; &n3drop=live reads the live slam only, as NAV2',
+      mapDropEvt: 'the file map\'s drop, on its exact bar line, fires the same exit (§107\'s rule: the live slam OR the map\'s line)',
+      dropEvt: 'the fake timeline\'s drop fires the same exit — the live detector never arms on #test; &n3drop=live reads the live slam only, as NAV2',
       dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings; the return waits until it has faded',
       intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
       buildLive: 'the void before a drop presses the ball against the rim and ASKS to go in: at a p/q root the ball crosses into the child bulb (§140)',

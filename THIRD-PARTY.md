@@ -105,3 +105,16 @@ were trained with its audio among their negatives. Retina Rave is non-commercial
 ads, no accounts, no monetisation of any kind — and the user's decision of 2026-10-12 stands in DECISIONS §126: *"use the
 non-commercial sets -> still can publish the weights; don't worry we are not monetizing this."* Anyone taking the weights into a
 commercial product inherits that term and should retrain without the NC audio (`tools/truth/voxtrain.py` lists every set).
+
+## The parabolic implosion — the mathematics NAV3's drop borrows (assets/scenes/nav3/implode.js, assets/math/field.js; DECISIONS §140)
+Ideas, not code: nothing of these works is copied, and every formula is re-derived in the scene's own source, where the header
+says which is whose. The parabolic root points of the Mandelbrot set, their internal angles p/q and the multiplier λ as the
+coordinate of a hyperbolic component are Adrien Douady and John H. Hubbard's ("Étude dynamique des polynômes complexes",
+Publications Mathématiques d'Orsay, 1984–85). The implosion of a Julia set when the parameter crosses such a point, the slow
+"eggbeater" transit through the gate (~π/√ε iterations in the normal form) and the phase of that transit are Pierre Lavaurs'
+("Systèmes dynamiques holomorphes: explosion de points périodiques paraboliques", thèse, Université Paris-Sud, Orsay, 1989).
+The Fatou coordinates in the attracting petals and the horn map between them follow Mitsuhiro Shishikura ("Bifurcation of
+parabolic fixed points", in The Mandelbrot set, theme and variations, LMS Lecture Note Series 274, 2000, Theorem 2.1). The
+horn map's translation constant σ as the scene names it is Hiroyuki Inou and Sabyasachi Mukherjee's ("Non-landing parameter
+rays of the multicorns", Inventiones Mathematicae 204, 2016, §3). The user's own notes on both
+(MandelBound theory/t-parab-horn-map-p24-p50.md; QuantumComputing's cardioid-cusp toolkit input of 2026-04-29) were the brief.
