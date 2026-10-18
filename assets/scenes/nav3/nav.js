@@ -34,7 +34,7 @@ import { OUT3, startDrop, stepDrop } from './implode.js';   // §140 step 3: the
 
 export const ROLL = {
   RHO_LO: 0.45,    // the ρ target when the track is at its quietest (the §140 retune: was .25, then .55 — the pulse needs room below the rim to swing — the user: "the set doesn't seem to be dancing"; the ball lives near the rim, where ρ → 1 pinches the Julia set)
-  RHO_HI: 0.955,   // ... at its loudest (against the rim: the spiral tight; was .93)
+  RHO_HI: 0.9,     // ... at its loudest (the depth pass: was .955 — with the pulse on top the ball sat pinned at the wall 35–39 % of its frames on IBelongHere / SeeYouDrop / Vienna, every step projected to zero: the loud ceiling leaves the pulse .06 of headroom under PULSE_TOP now)
   RHO_WALL: 0.985, // the wall: a step past it is projected along the rim (field.js converges inside 1000 steps to .985; was .97)
   RHO_MIN: 0.02,   // below this |λ| the log coordinate is singular (the centre); the floor the division uses
   TH0: 0.5,        // the internal angle (turns) at pitch 0: the point opposite the root (on the cardioid, c = −.75)
@@ -48,10 +48,11 @@ export const ROLL = {
   GAIN: 12,        // per s: the fraction of the log λ error closed; ×(G0 + (1 − G0)·intensity) — the bar's energy is the step (was 4)
   G0: 0.35,
   VMAX: 3.5,       // per s: the ball's top speed in |Δlog λ| (was 1.2; 4 put the per-frame c step at .059 on the node drive, over the monitor's .06 with no margin)
-  BREATH: 0.5,     // the beat breath's press toward the rim: ρ += BREATH·M2.breath·(1 − ρ)
-  CONV_RIM: 2,     // §140 quality: the shader's convergence radius ×(1 + CONV_RIM·sstep(CONV_R0, 1, ρ)) — the orbits' slow approach at the rim stops earlier (publish())
-  CONV_R0: 0.85,
-  CONV_MAX: 0.12,  // the radius's cap on the cardioid (z units); in a child .4 × the cycle's spacing caps it
+  BREATH: 0.5,     // the beat breath's press toward the rim: ρ += BREATH·M2.breath·(PULSE_TOP − ρ)
+  PULSE_TOP: 0.965, // the depth pass: the ceiling the breath and the dance's pulse press toward (was the wall itself: pinned there the step is projected to zero and the picture stands still)
+  CONV_RIM: 0.6,   // §140 quality → the depth pass: the shader's convergence radius ×(1 + CONV_RIM·sstep(CONV_R0, 1, ρ)) — at 2 past .85 with a .12 cap the orbit stopped so early that the interior rendered as a flat disc (the user: "lots of little circles"); the Koenigs bands need the orbit to spiral in
+  CONV_R0: 0.93,
+  CONV_MAX: 0.05,  // the radius's cap on the cardioid (z units; was .12); in a child .4 × the cycle's spacing caps it
   IDLE: 0.15,      // presence below this freezes the ball (NAV's rule)
 };
 export const GATE = {
@@ -66,7 +67,7 @@ export const GATE = {
   EXIT_BARS: 1.5,  // bars of a fallen ladder before the ball rolls back out (a one-bar drop-out is a fill, not a breakdown)
   HYST: 0.3,       // the way out, once decided, is abandoned only when the ladder climbs back above FALL + HYST
   EXIT_SPEED: 2,   // the roll to the exit root is this much faster than VMAX (the way out is a decision, not a drift)
-  P_MAX: 14,       // the period cap (§140 quality: was 32 — at period 21–30 the Julia set is hair-thin and the halo lit the whole blob; 14 = the 1/7 child's 1/2; field.js's P_MAX 64 is the detector's own)
+  P_MAX: 7,        // the period cap (the depth pass: was 14 — a period ≥ 8 filled Julia set is a rosette of small components, not the one blob with spiral arms the user knows; with DEPTH_MAX 1 only the cardioid's own p/q children, q ≤ QMAX)
   DIVE: 0.6,       // the landing: DIVE·R past the root along the normal (R the child's size; the child's centre is at R)
   TRIES: [1, 1.5, 2, 0.6, 2.6],   // DIVE multipliers tried; the deepest landing findCycle names q·q₀ wins
   ROOT_STEPS: 2,   // secant steps along the normal onto ρ = 1 before the landing is measured from the root
@@ -74,6 +75,8 @@ export const GATE = {
   T: 0.8,          // s: the crossing — c eases root-ward then into the child with the last chart held, par peaking at the root
   HOLD: 2,         // bars inside a component before the next crossing
   OUT_TOL: 0.02,   // turns: |θ_child| under this at the rim = at the root back to the parent
+  DEPTH_MAX: 1,    // the depth pass: how many children deep the ball may go (1 = the cardioid and its first-level bulbs are home)
+  CHILD_BARS: 2,   // bars a child crossing holds at most while the music no longer asks — then the ball rolls back out (the fallen ladder still exits earlier)
 };
 export const KICK3 = { LEN: 0.5, ANG: 0.9 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal turned by ±ANG rad (the side alternating per kick — the lobes swing, not only the rim), × the lane's k
 // THE DANCE (the §140 retune; the user on key 7: "the fractal shape doesn't seem to be changing that much … the set doesn't seem to
@@ -209,7 +212,7 @@ function cross(N, S, dir, p, q) {
   let land = null, cy = null;
   if (dir > 0) {
     const R = N.size / (q * q), Q = N.cyc.q * q;
-    if (Q > GATE.P_MAX) return 0;
+    if (Q > GATE.P_MAX || N.stack.length >= GATE.DEPTH_MAX) return 0;
     for (const k of GATE.TRIES) {   // the DEEPEST landing that findCycle names q·q₀ (the lowest ρ_child: the child's spiral loose, the shader converging fast)
       const lx = rx + nx * R * GATE.DIVE * k, ly = ry + ny * R * GATE.DIVE * k, c2 = findCycle(lx, ly, mkCyc(), N_MAX);
       if (c2.has && c2.q === Q && (!cy || c2.rho < cy.rho)) { land = [lx, ly]; cy = c2; }
@@ -268,14 +271,15 @@ export function updateNav(dt, now, S, env) {
   // the exit: inside a child, the ladder fallen for EXIT_BARS bars → roll to the child's root (θ 0) and press the rim
   const fell = inChild && N.loud < GATE.FALL;
   N.fell = fell ? N.fell + dt * bps / 4 : 0;
-  if (inChild && N.fell >= GATE.EXIT_BARS) N.leaving = 1;   // latched: the way out is taken once decided, unless the music comes back loud
-  if (!inChild || N.loud > GATE.FALL + GATE.HYST) N.leaving = 0;
-  const leaving = N.leaving === 1;
   // the ask: a build, an expected drop, or the ladder risen over BARS bars — the gate's condition, and the rim's steering toward it
   const rise = N.loudHist.length > GATE.BARS && N.loud - N.loudHist[N.loudHist.length - 1 - GATE.BARS] >= GATE.RISE;
   const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise;
+  if (inChild && N.fell >= GATE.EXIT_BARS) N.leaving = 1;   // latched: the way out is taken once decided, unless the music comes back loud
+  if (inChild && !asks && N.bar - N.lastCross >= GATE.CHILD_BARS) N.leaving = 2;   // the depth pass: a child crossing holds CHILD_BARS bars once the music stops asking, then the ball rolls back out — the cardioid and its first-level bulbs are home
+  if (!inChild || (N.leaving === 1 && N.loud > GATE.FALL + GATE.HYST)) N.leaving = 0;
+  const leaving = N.leaving > 0;
   if (leaving) { th = 0; rho = Math.max(rho, GATE.RHO + 0.02); }
-  else if (asks && N.mode === 'INT' && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {
+  else if (asks && N.mode === 'INT' && N.stack.length < GATE.DEPTH_MAX && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {
     const r = nearestRational(N.th, GATE.QMAX);   // the rim slides toward the nearest gateway whose child is inside the period cap
     if (r.q >= 2 && N.cyc.q * r.q <= GATE.P_MAX) th = r.p / r.q;
   }
@@ -285,7 +289,7 @@ export function updateNav(dt, now, S, env) {
 
   if (N.mode === 'INT') {
     if (!idle) {
-      const rhoEff = clamp(N.rhoT.x + (ROLL.BREATH * M2.breath + N.pulse) * (1 - N.rhoT.x), ROLL.RHO_MIN * 4, ROLL.RHO_WALL);   // the beat breath (move2) + the reactive pulse (DANCE) press toward the rim
+      const rhoEff = clamp(N.rhoT.x + (ROLL.BREATH * M2.breath + N.pulse) * Math.max(0, ROLL.PULSE_TOP - N.rhoT.x), ROLL.RHO_MIN * 4, ROLL.RHO_WALL);   // the press reaches PULSE_TOP, never the wall   // the beat breath (move2) + the reactive pulse (DANCE) press toward the rim
       roll(N, dt, rhoEff, N.thT.x, ROLL.GAIN * (ROLL.G0 + (1 - ROLL.G0) * clamp(S.intensity || 0, 0, 1)), leaving ? GATE.EXIT_SPEED : 1);
       geometry(N);
     }
@@ -294,7 +298,7 @@ export function updateNav(dt, now, S, env) {
     const g = N.gate, r = nearestRational(N.th, GATE.QMAX);
     g.p = r.p; g.q = r.q; g.err = r.err;
     const atRim = N.rho >= GATE.RHO, named = r.q >= 2 && r.err < GATE.TOL / (r.q * r.q);
-    g.on = atRim && named && asks && N.bar - N.lastCross >= GATE.HOLD ? 1 : 0;
+    g.on = atRim && named && asks && N.stack.length < GATE.DEPTH_MAX && N.bar - N.lastCross >= GATE.HOLD ? 1 : 0;
     if (g.on && !idle && cross(N, S, 1, r.p, r.q)) N.maxQ = Math.max(N.maxQ, N.cross.cyc.q);
     else if (leaving && atRim && Math.min(N.th, 1 - N.th) < GATE.OUT_TOL && cross(N, S, -1, 0, 1)) N.fell = 0;
     publish(N.cyc, N.ball[0], N.ball[1]);   // + the rim-scaled convergence radius
@@ -383,15 +387,16 @@ export function updateNav(dt, now, S, env) {
 
 // the knobs as hooks: n3roll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · n3kick3=LEN
 export function knob5(name, v) {
-  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' ? ROLL : name === 'gate' ? GATE : name === 'dance' ? DANCE : KICK3;
+  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' || name === 'conv' ? ROLL : name === 'gate' ? GATE : name === 'dance' ? DANCE : KICK3;
   if (s === '' || s === '1') return Object.assign({}, T);   // a bare call READS (CARD.hooks.n3roll() from the console; the knob alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
   const set = (T, keys) => keys.forEach((k, i) => { if (i < nums.length) T[k] = nums[i]; });
   if (name === 'roll') set(ROLL, ['RHO_LO', 'RHO_HI', 'TH0', 'TH_SPAN', 'GAIN', 'VMAX']);
-  if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE']);
+  if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE', 'P_MAX', 'DEPTH_MAX', 'CHILD_BARS']);   // the depth pass's A/B: &n3gate=7,0.5,0,0.1,0.3,1.5,0.6,14,2,99 is the quality pass's depth
   if (name === 'kick3') set(KICK3, ['LEN', 'ANG']);
   if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE']);
+  if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc
   return nums;
 }
 export { GR, VX };

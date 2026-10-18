@@ -5395,3 +5395,34 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   (TheChain 210, Raindrops 71.5, Comptine 41) are a lit blob by this ruler too and are KEPT — the user liked them. The s6 pair after
   the pass: `tools/accept/nav3/scene-md5-quality.txt`; the 12 other lines cannot move (a scene-folder change). `check.js` 0 fail,
   `test_nav3` OK (look2.js off its byte-copy list), `test_field` OK, 60 fps at tier 3 held on every window of the dance ruler.
+- **ADDENDUM — the depth pass (2026-10-18; the user, from a recording of NAV3 on 8765 at 08f7c2a: *"why does it look like the set is
+  lots of little circles? it doesn't look like the mandelbrot/julia fractal?"* — a rosette of small flat-green petals, c's cursor
+  on a child far down a bulb, the outline barely changing over 8 s).** Three causes named, measured first (`tools/work/nav3/
+  periods.mjs` on the dance ruler's rows — the share of frames by period class, the longest run at period ≥ 8, the share of INT
+  frames pinned at the wall ρ > .98, the longest still run; `tools/accept/nav3/depth/`), on the nine mid-song windows at 08f7c2a:
+  **period ≥ 8 on 23 % of the frames** overall and 55–65 % on Malicious, Raindrops and WhoLikesToParty (runs of 16–19 s at
+  period 10–28), 29 % on Vienna; **pinned at the wall 35–39 % of INT frames** on IBelongHere, SeeYouDrop and Vienna; no still run
+  over .27 s by |Δc| (the ball moved — but in a period-28 child the rosette's outline is the parent's dynamics, and the tiny
+  component's λ moves only its petals: the picture stands still while the ball dances). (1) **DEPTH.** The quality pass's `P_MAX`
+  14 let the gate cross a child's child (period q₀·q); a filled Julia set of period ≥ 8 is a cluster of small components — right,
+  and not the one blob with spiral arms the user knows from NAV2 (the cardioid and its first-level bulbs). Policy now: **the home
+  is the cardioid and its first-level bulbs** — `GATE.DEPTH_MAX` **1** (the gate refuses a crossing from inside a child), `P_MAX` **7**
+  (= `QMAX`), and a child crossing **holds `CHILD_BARS` 2 bars once the music stops asking**, then rolls back out (`N.leaving` 2; the
+  fallen ladder's exit, `leaving` 1, still goes first). (2) **THE WALL.** The breath and the dance's pulse pressed toward 1 − ρ, so
+  on a loud track (`RHO_HI` .955) the ball sat at `RHO_WALL` .985 with every step's radial part projected to zero — the stall by
+  the ruler. `RHO_HI` .955 → **.9** and the press reaches **`PULSE_TOP` .965**, never the wall; the `DANCE` numbers of 44eda55 are
+  untouched. (3) **THE CONVERGENCE RADIUS** (the quality pass's `CONV_RIM` 2 past .85, cap .12) was the suspect for the flat
+  interior; it is NOT the cause: the same-frame A/B (`&n3conv=2,0.85,0.12` against the new .6 / .93 / .05, the gate forced by
+  `&n3gate=7,0.5,0[,…,14,2,99]` so `#test` reproduces the recording's situation — period 14 at depth 2, ρ .945) reads the band
+  ruler (`bands.py`: the share of interior pixels on a band edge) **identical on 6 of 8 frames and within 1 % on the other two**,
+  at period 14 and at period 2 alike (`tools/accept/nav3/depth/bands-test-strips.txt`). The flat interior is the depth itself: at
+  ρ .98 in a hair-thin component the Koenigs bands are sub-pixel. The milder radius is kept (the q trace did not move).
+  **After** (`periods-after.txt`, `dance-d3after.txt`, `q-after3.txt`, the strips `tools/work/nav3/deep-{before,after}.jpg` on
+  `#test` with the gate forced): **period ≥ 8 on 0 % of the frames, ≤ 7 on 100 %** (target ≥ 80 %), period 1 on 64 %; pinned at
+  the wall **0–5 %** of INT frames (was 35–39 %); the dance held or rose — |Δlog λ| .07–.37 per beat, the arg swing .65–1.15 rad
+  per bar, the rim 1–54 %, still 0 %, the per-frame step .047 on the node drive; the q trace **.903–.926, 60 fps min 60 on all
+  nine windows** (NAV2 .908–.923). On the forced-gate `#test` strip the before run sat at period 14 (depth 2) as a hairy spindle
+  whose outline held across the eight half-bars; the after run lands in the 1/2 bulb (period 2, depth 1) — one blob, spiral arms,
+  a different outline each half-bar. The s6 pair after the pass: `tools/accept/nav3/scene-md5-depth.txt`; the 12 other lines
+  cannot move. `check.js` 0 fail, `test_nav3` OK (10 crossings / 5 exits on the node drive now that a child is left on its own),
+  `test_field` OK. **Not done:** the user's eye on the result; the gate's `&n3gate=` list is 10 numbers now (documented in knob5).

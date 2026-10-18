@@ -1,0 +1,3 @@
+# NAV3 after the depth pass (§140 addendum: DEPTH_MAX 1, P_MAX 7, CHILD_BARS 2, RHO_HI .9 + PULSE_TOP .965, CONV .6/.93/.05) — IDS=6 PORT=8813 tools/scene-md5.sh nav3depth, CLOCK=1 GPU=1; the 12 other lines cannot move (a scene-folder change).
+96fd5b4d4b92ee0678082c363780bf6a  s6-f360.jpg
+47cabff5e12d08d9b28b56e8af902e1c  s6-f840.jpg

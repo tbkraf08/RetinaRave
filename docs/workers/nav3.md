@@ -129,3 +129,7 @@ See DECISIONS §140, the addendum "the dance retune": the before / after1 / afte
 ## The quality pass (2026-10-18)
 
 See DECISIONS §140, the addendum "the quality pass": the q traces `tools/accept/nav3/q-{before,after1,after2}.txt`, the luminance rows `lum-{before,after,after2,nav2}/`, the edge ruler `glow-edge-*.txt` and the shots `tools/work/nav3/glow-{before,after,after2}.jpg`. The implosion budget follows the governor (`IMP_ITER_MUL` 1.2 × Q.iter, cap 320), the convergence radius grows at the rim (`ROLL.CONV_*`), `P_MAX` 14, nav3 has its own exposure numbers in `look2.js` (`SMO` .85–.995, `LUM_IN` .25/2.5, `EXT.SHARP_IN` 1.6 / `SHARP` 2.2). q .884–.924 against NAV2 .908–.923; wash frames 8 % → 2.9 % (NAV2 4 %). Vienna at period 14 on the wall still washes.
+
+## The depth pass (2026-10-18)
+
+See DECISIONS §140, the addendum "the depth pass": the period-class / wall / stall tables `tools/accept/nav3/depth/periods-{before,after}.txt`, the band rulers `depth/bands-test-strips.txt`, the strips `tools/work/nav3/deep-{before,after}.jpg` and `deepAB-{newconv,oldconv}.jpg`, the q trace `q-after3.txt`. The home is the cardioid and its first-level bulbs (`GATE.DEPTH_MAX` 1, `P_MAX` 7, `CHILD_BARS` 2); the press reaches `ROLL.PULSE_TOP` .965, never the wall (`RHO_HI` .9); the convergence radius was not the flat interior (the same-frame A/B is identical) and stays at the milder numbers.
