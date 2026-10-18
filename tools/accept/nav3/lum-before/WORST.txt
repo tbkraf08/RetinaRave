@@ -1,0 +1,10 @@
+Comptine-s6              n 53 meanY 0.175 clip 0.001 grad p50 0.0152 p10 0.0101 | wash (grad<0.012 & Y>0.2) 2 (4 %) | worst t 21.0:Y0.60/g0.0068 41.0:Y0.32/g0.0100 29.0:Y0.24/g0.0146
+CyborgNinja-s6           n 53 meanY 0.232 clip 0.001 grad p50 0.0145 p10 0.0105 | wash (grad<0.012 & Y>0.2) 13 (25 %) | worst t 59.5:Y0.36/g0.0107 58.0:Y0.36/g0.0122 34.0:Y0.34/g0.0120
+IBelongHere-s6           n 53 meanY 0.177 clip 0.001 grad p50 0.0131 p10 0.0104 | wash (grad<0.012 & Y>0.2) 1 (2 %) | worst t 64.5:Y0.50/g0.0058 65.0:Y0.20/g0.0092 65.5:Y0.17/g0.0095
+Malicious-s6             n 53 meanY 0.268 clip 0.001 grad p50 0.0135 p10 0.0112 | wash (grad<0.012 & Y>0.2) 5 (9 %) | worst t 138.0:Y0.40/g0.0134 157.5:Y0.32/g0.0109 156.0:Y0.33/g0.0117
+RaindropsOnRoses-s6      n 53 meanY 0.174 clip 0.001 grad p50 0.0103 p10 0.0091 | wash (grad<0.012 & Y>0.2) 9 (17 %) | worst t 72.0:Y0.25/g0.0103 71.5:Y0.22/g0.0098 70.5:Y0.20/g0.0086
+SeeYouDrop-s6            n 53 meanY 0.250 clip 0.001 grad p50 0.0161 p10 0.0127 | wash (grad<0.012 & Y>0.2) 0 (0 %) | worst t 66.5:Y0.36/g0.0130 62.0:Y0.34/g0.0127 61.0:Y0.32/g0.0129
+TheChain-s6              n 53 meanY 0.170 clip 0.001 grad p50 0.0099 p10 0.0083 | wash (grad<0.012 & Y>0.2) 6 (11 %) | worst t 210.0:Y0.24/g0.0081 211.5:Y0.22/g0.0093 208.0:Y0.24/g0.0100
+Vienna-s6                n 53 meanY 0.212 clip 0.001 grad p50 0.0145 p10 0.0095 | wash (grad<0.012 & Y>0.2) 2 (4 %) | worst t 95.5:Y0.34/g0.0114 85.5:Y0.34/g0.0116 91.0:Y0.35/g0.0125
+WhoLikesToParty-s6       n 53 meanY 0.181 clip 0.001 grad p50 0.0134 p10 0.0110 | wash (grad<0.012 & Y>0.2) 0 (0 %) | worst t 68.0:Y0.30/g0.0123 69.0:Y0.30/g0.0134 58.5:Y0.20/g0.0090
+total wash 38 of 477 (8.0 %)

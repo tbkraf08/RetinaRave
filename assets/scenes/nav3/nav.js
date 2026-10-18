@@ -49,6 +49,9 @@ export const ROLL = {
   G0: 0.35,
   VMAX: 3.5,       // per s: the ball's top speed in |Δlog λ| (was 1.2; 4 put the per-frame c step at .059 on the node drive, over the monitor's .06 with no margin)
   BREATH: 0.5,     // the beat breath's press toward the rim: ρ += BREATH·M2.breath·(1 − ρ)
+  CONV_RIM: 2,     // §140 quality: the shader's convergence radius ×(1 + CONV_RIM·sstep(CONV_R0, 1, ρ)) — the orbits' slow approach at the rim stops earlier (publish())
+  CONV_R0: 0.85,
+  CONV_MAX: 0.12,  // the radius's cap on the cardioid (z units); in a child .4 × the cycle's spacing caps it
   IDLE: 0.15,      // presence below this freezes the ball (NAV's rule)
 };
 export const GATE = {
@@ -63,7 +66,7 @@ export const GATE = {
   EXIT_BARS: 1.5,  // bars of a fallen ladder before the ball rolls back out (a one-bar drop-out is a fill, not a breakdown)
   HYST: 0.3,       // the way out, once decided, is abandoned only when the ladder climbs back above FALL + HYST
   EXIT_SPEED: 2,   // the roll to the exit root is this much faster than VMAX (the way out is a decision, not a drift)
-  P_MAX: 32,       // the period cap (field.js's P_MAX 64 is the detector's own)
+  P_MAX: 14,       // the period cap (§140 quality: was 32 — at period 21–30 the Julia set is hair-thin and the halo lit the whole blob; 14 = the 1/7 child's 1/2; field.js's P_MAX 64 is the detector's own)
   DIVE: 0.6,       // the landing: DIVE·R past the root along the normal (R the child's size; the child's centre is at R)
   TRIES: [1, 1.5, 2, 0.6, 2.6],   // DIVE multipliers tried; the deepest landing findCycle names q·q₀ wins
   ROOT_STEPS: 2,   // secant steps along the normal onto ρ = 1 before the landing is measured from the root
@@ -112,11 +115,25 @@ const wrap = (x) => x - Math.round(x);
 const fifths = (k) => ((7 * (((k | 0) % 12) + 12) % 12) % 12) / 12;
 
 // the shader's view of the cycle: {q, lnr, arg, zs, eps2, has} from field.js's record (index.js uploads uLam / uZs / uEps2)
-function publish(cy) {
+function publish(cy, cr, ci) {
   cy.lnr = Math.log(Math.max(cy.rho, 1e-6));
   cy.zs = cy.zs || [0, 0];
   cy.zs[0] = cy.zr;
   cy.zs[1] = cy.zi;
+  // §140 quality: the shader's convergence radius grows toward the rim. An orbit needs ln(eps/|w₀|)/ln ρ iterations to come within
+  // eps of the cycle point — 55 at ρ .95, 190 at .985 against 10 at .75 — and the Koenigs coordinate it reports (Lw/(−ln ρ) + n/q) is
+  // an invariant, so stopping the orbit earlier at a bigger eps moves no band. Scaled by CONV_RIM past CONV_R0, capped at CONV_MAX on
+  // the cardioid and at .4 × the cycle's own spacing in a child (the next cycle point must stay outside the radius).
+  if (cr !== undefined) {
+    const k = 1 + ROLL.CONV_RIM * sstep(ROLL.CONV_R0, 1, cy.rho);
+    let cap = ROLL.CONV_MAX;
+    if (cy.q > 1) {
+      let wr = cy.zr, wi = cy.zi, md = 1;
+      for (let j = 1; j < cy.q; j++) { const t = wr * wr - wi * wi + cr; wi = 2 * wr * wi + ci; wr = t; md = Math.min(md, Math.hypot(wr - cy.zr, wi - cy.zi)); }
+      cap = Math.min(cap, 0.4 * md);
+    }
+    cy.eps2 = Math.min(cy.eps2 * k * k, cap * cap);
+  }
   return cy;
 }
 
@@ -280,7 +297,7 @@ export function updateNav(dt, now, S, env) {
     g.on = atRim && named && asks && N.bar - N.lastCross >= GATE.HOLD ? 1 : 0;
     if (g.on && !idle && cross(N, S, 1, r.p, r.q)) N.maxQ = Math.max(N.maxQ, N.cross.cyc.q);
     else if (leaving && atRim && Math.min(N.th, 1 - N.th) < GATE.OUT_TOL && cross(N, S, -1, 0, 1)) N.fell = 0;
-    publish(N.cyc);
+    publish(N.cyc, N.ball[0], N.ball[1]);   // + the rim-scaled convergence radius
     N.cyc.has = 1;
     N.par = sstep(0.8, 0.98, N.rho) * (N.cyc.q > 1 ? 1 : 0.4);
     N.cPath[0] = N.ball[0];

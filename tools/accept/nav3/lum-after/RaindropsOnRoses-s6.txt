@@ -1,0 +1,12 @@
+lumtrace RaindropsOnRoses scene 6 [55, 81] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 55.000 → 81.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+55-60     0.127  0.186  0.001  0.001  0.0135  0.258  0.203   10
+60-65     0.116  0.127  0.002  0.002  0.0100  0.381  0.203   10
+65-70     0.099  0.155  0.002  0.002  0.0089  0.384  0.182   10
+70-75     0.158  0.174  0.002  0.002  0.0084  0.477  0.247   10
+75-80     0.135  0.154  0.002  0.002  0.0079  0.473  0.220   10
+80-81     0.127  0.136  0.002  0.002  0.0080  0.507  0.231    3
+ALL       0.128  0.168  0.002  0.002  0.0096  0.434  0.217   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0072 at t 70.50
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.352 · f0 2 · sr 48000 · end frame 2042 heard 81
+files: tools/work/nav3/lum-after/RaindropsOnRoses-s6.csv · tools/work/nav3/lum-after/RaindropsOnRoses-s6.txt

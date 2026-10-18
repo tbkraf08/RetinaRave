@@ -5348,3 +5348,50 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   after the retune: `tools/accept/nav3/scene-md5-dance.txt`; the 12 other lines cannot move (a scene-folder change). `check.js` 0
   fail, `test_nav3` OK (the node drive's step rule is the monitor's .06 now), `test_field` OK; 60 fps at tier 3 held on every
   window of the ruler (the real-time runs of the gate are unchanged in cost: the roll's per-update cost is .048 ms).
+- **ADDENDUM — the quality pass (2026-10-18; the user on 8765: *"how to increase the quality of the render? (seems pixelated)
+  sometimes the glow washes out the fractal and is hard to see it"*).** Two retunes, both measured first, the implosion's look kept.
+  **Pixelation = the governor's q** (`core/quality.js`: scale = .38 + .62 q, iter = 64 + 200 q). The q trace (`tools/work/nav3/
+  qtrace.mjs`: a 30 s REAL-TIME run on the GPU from each drop window's `at`, q and fps sampled every 250 ms; `tools/accept/nav3/
+  q-before.txt`): on this box q never went under .55 for either scene, but NAV3 sat **.77–.84 on the five windows with an
+  implosion** (SeeYouDrop .812, IBelongHere .837, Raindrops .766, WhoLikesToParty .796, TheChain .833; fps min 46–52 in EXT)
+  against **NAV2's .91–.92** on the same windows, and matched NAV2 where it only rolled (Vienna .905, Malicious .909, CyborgNinja
+  .925, Comptine .913 vs .908–.921). So the pixelation is the implosion's 420-iteration budget: on a GPU with less headroom than
+  this one the governor answers it with a halved render scale. The rolling cost was NOT 2–5× — the gate's `bench` numbers of 10–11
+  ms were read inside EXT (the settle after a `peak` is 48 beats) and CyborgNinja's 4.2 ms was its rolling at ρ .9+ where an orbit
+  needs ln(eps/|w₀|)/ln ρ iterations to converge (55 at ρ .95, 190 at .985, 10 at .75); its q trace reads .925, NAV2's .916.
+  **The cuts:** (1) the implosion's budget follows the governor — `IMP_ITER_MUL` × `Q.iter`, capped at `OUT3.ITER` (a first pass
+  at 1.6 / 420 lifted the five windows to .818–.891, still under NAV2; what ships is **1.2 / 320**: 317 iterations at q 1, 228 at
+  q .63); escaped pixels already left the loop, the passage layer costs ~10 flops per iteration and is not the cost. (2) the
+  shader's convergence radius grows toward the rim (`ROLL.CONV_RIM` 2 past `CONV_R0` .85, capped at `CONV_MAX` .12 on the
+  cardioid and .4 × the cycle's spacing in a child — `nav.js publish()`): the Koenigs coordinate the shader reports, Lw/(−ln ρ) +
+  n/q, is an invariant, so stopping the orbit earlier at a bigger eps moves no band. (3) the period cap `GATE.P_MAX` 32 → **14**: at
+  period 21–30 the Julia set is hair-thin and both the cost and the wash were at their worst.
+  **The glow.** The ruler is `tools/lumtrace.js` (HARNESS "Luminance ruler") on the nine drop windows at 2 fps, NAV3 before / after
+  and NAV2 on the same frames (`tools/accept/nav3/lum-{before,after,after2,nav2}/`, the per-track summary `lumworst.mjs`: meanY,
+  clipFrac, the structure score grad's p50 / p10, the WASH frames — grad under .012 with meanY over .2 — and the three worst by
+  grad/Y), plus `edge.py` on the worst frames' shots (the fraction of pixels with a local gradient over .08 = where an edge reads,
+  the fraction over Y .5 = the wash). **Before:** NAV3 meanY .17–.27 against NAV2's .135–.215, wash 8 % of frames against 4 %,
+  the worst rolling frames with 20–25 % of the pixels over Y .5 and edges on 0.9–1.5 % (CyborgNinja 59.5 s, Malicious 157.5,
+  Vienna 95.5 — all at ρ .92–.985 in a period 15–28 child: the interior smoulder, whose ρ window .5–.98 was ALWAYS open now that the
+  ball lives at the rim, plus the halo's 90 px half-reach over a hair-thin set); the other worst frames are the implosion's EXT
+  (TheChain 210, Raindrops 71.5, Comptine 41) and the drop flash itself (Comptine 21.0, IBelongHere 64.5: Y .5–.6 — the composite's
+  flash, the same on NAV2), both kept. **What moved (nav3's own `look2.js`, off the byte-copy list; the knobs `&n3lum` / `&n3ext` /
+  `&n3smo` as before, `&n3ext=GAIN,SHARP[,SHARP_IN[,TAU]]` now):** the smoulder lights only at the very rim — `SMO` R0 .5 → **.85**,
+  R1 .98 → **.995**, HI .4 → **.3**; the interior knee `LUM_IN` (.3, 1.5) → **(.25, 2.5)**; the halo's reach narrowed INSIDE the
+  set too — `EXT.SHARP_IN` **1.6** (NAV2's rest is 1) and `SHARP` 1.5 → **2.2** outside. A first pass that also took the exterior
+  knee to (.35, 3) and SHARP to 3 / 2.2 read the three rolling frames right (edges 3.0 / 1.0 / .84 % of pixels, the wash under 1 % —
+  CyborgNinja's edge-to-wash ratio .08 → 3.55) but dimmed the whole picture under NAV2's (meanY .127–.17, grad p50 under NAV2's on
+  every track): §99's lesson again, a dim keeps a flat wash flat; the exterior knee went back to NAV2's (.45, 1.5).
+  **After (pass 2, what ships; `tools/accept/nav3/q-after2.txt`, `lum-after2/`, `glow-edge-after2.txt`):** the q trace NAV3
+  **.884–.924** on the nine windows against NAV2's .908–.923 — inside NAV2's band on 7, a hair under on SeeYouDrop (.895) and
+  WhoLikesToParty (.884); q never under .55 or .35 on either scene; fps 57.4–60 mean, min 50–54 inside an implosion (NAV2 60
+  throughout). The glow ruler: wash frames **2.9 %** (before 8 %, NAV2 4 %), meanY .15–.23 and grad p50 .0097–.0154 inside NAV2's
+  .135–.215 / .0109–.0177 on every track. The worst rolling frames by the edge ruler (`tools/work/nav3/glow-{before,after,after2}.jpg`,
+  the same deterministic frames): CyborgNinja 59.5 s edges 1.5 → **3.7 %** of pixels, the wash 19.8 → **8.6 %**; Malicious 157.5 s
+  edges 1.3 → **2.4 %**, the wash 22.1 → **11.7 %** — the set's boundary and its spiral arms read against a dark interior where
+  the before frames were a lit blob. **Not met:** Vienna 95.5 s (ρ .985 at period 14) is still a flat cyan blob (edges .9 %, the
+  wash 24 %): at the wall in a deep child the Julia set is hair-thin and the halo fills it whatever the knee does — the next move
+  is a smaller `P_MAX` or a lower `RHO_WALL` inside a child, both knobs, the user's eye to decide. The implosion's frames
+  (TheChain 210, Raindrops 71.5, Comptine 41) are a lit blob by this ruler too and are KEPT — the user liked them. The s6 pair after
+  the pass: `tools/accept/nav3/scene-md5-quality.txt`; the 12 other lines cannot move (a scene-folder change). `check.js` 0 fail,
+  `test_nav3` OK (look2.js off its byte-copy list), `test_field` OK, 60 fps at tier 3 held on every window of the dance ruler.

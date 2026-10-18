@@ -50,7 +50,7 @@ export const OUT3 = {
   QMAX: 7,         // the Farey address the root is named by (q petals; θ near 0 or 1 → the cusp, 1 petal)
   ANY: 1,          // 1: dropEvt (the map's / the fake timeline's) fires the drop beside dropLiveEvt; 0 (&n3drop=live): the live slam only, as NAV2
   DROP_REFR: 4,    // beats after a drop before another may fire (the two detectors can name one drop a beat apart)
-  ITER: 420,       // the shader's iteration budget while the implosion runs (the passages need it; the loop's hard cap)
+  ITER: 320,       // the shader's iteration budget while the implosion runs (§140 quality: was 420, the loop's hard cap — index.js scales it by the governor's q and caps it here)
   OUT_RUN: 2,      // × q₀ iterates beyond 2R before the next entry into R counts as a passage (the cycle's own alternation does not)
   SAMPLE: 8,       // orbits sampled per radius for the layer (n3info imp.passes / imp.esc; every 8th frame)
   SAMPLE_R: [0.3, 0.6, 0.9],   // × the petal radius Rp: the sample circles around z₀ — the former petal's inner, middle and outer zone

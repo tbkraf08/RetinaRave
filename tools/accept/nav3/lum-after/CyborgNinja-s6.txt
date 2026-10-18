@@ -1,0 +1,12 @@
+lumtrace CyborgNinja scene 6 [34, 60] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 34.000 → 60.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+34-39     0.148  0.195  0.001  0.002  0.0128  0.379  0.248   10
+39-44     0.136  0.143  0.002  0.002  0.0114  0.411  0.256   10
+44-49     0.148  0.175  0.001  0.002  0.0098  0.377  0.279   10
+49-54     0.124  0.169  0.001  0.002  0.0125  0.360  0.239   10
+54-59     0.149  0.214  0.001  0.002  0.0135  0.388  0.291   10
+59-60     0.228  0.231  0.001  0.001  0.0107  0.379  0.336    3
+ALL       0.142  0.205  0.001  0.002  0.0119  0.384  0.265   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0075 at t 48.00
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.244 · f0 2 · sr 48000 · end frame 2042 heard 60
+files: tools/work/nav3/lum-after/CyborgNinja-s6.csv · tools/work/nav3/lum-after/CyborgNinja-s6.txt

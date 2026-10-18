@@ -20,7 +20,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const rd = (d, f) => fs.readFileSync('assets/scenes/' + d + '/' + f);
 
 console.log('1. the byte copies (the files the roll does not touch)');
-export const COPIES = ['move2.js', 'look2.js', 'green.js', 'shaders.js'];   // step 3: shaders-v2.js carries the implosion's two layers (the OKLCH mapping in shaders.js does not — &colour=oklch shows the roll without them)
+export const COPIES = ['move2.js', 'green.js', 'shaders.js'];   // the quality pass took look2.js off the list (NAV3's own exposure numbers, §140); step 3: shaders-v2.js carries the implosion's two layers (the OKLCH mapping in shaders.js does not — &colour=oklch shows the roll without them)
 for (const f of COPIES) ok(rd('nav2', f).equals(rd('nav3', f)), `nav3/${f} is a byte copy of nav2/${f}`);
 ok(!fs.existsSync('assets/scenes/nav3/walk2.js'), 'no walk2.js (the Farey-table walk is gone with the tables)');
 {

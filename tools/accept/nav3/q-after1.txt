@@ -1,0 +1,10 @@
+SeeYouDrop        s6 after at 44 30s | q mean 0.835 min 0.63 under.55 0 under.35 0 | fps mean 57.8 min 52 | {"INT":38,"OUT":6,"EXT":60} "errs []"
+IBelongHere       s6 after at 51 30s | q mean 0.891 min 0.63 under.55 0 under.35 0 | fps mean 59.1 min 48.8 | {"INT":83,"OUT":6,"EXT":10,"IN":5} "errs []"
+Comptine          s6 after at 18 30s | q mean 0.918 min 0.63 under.55 0 under.35 0 | fps mean 59.5 min 56 | {"INT":31,"CROSS":3,"OUT":6,"EXT":64} "errs []"
+RaindropsOnRoses  s6 after at 55 30s | q mean 0.818 min 0.63 under.55 0 under.35 0 | fps mean 57.8 min 48 | {"INT":38,"OUT":5,"EXT":61} "errs []"
+Vienna            s6 after at 71 30s | q mean 0.908 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":101,"CROSS":3} "errs []"
+WhoLikesToParty   s6 after at 44 30s | q mean 0.843 min 0.63 under.55 0 under.35 0 | fps mean 59.4 min 52 | {"INT":77,"OUT":6,"EXT":13,"IN":5,"CROSS":3} "errs []"
+Malicious         s6 after at 134 30s | q mean 0.906 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+TheChain          s6 after at 186 30s | q mean 0.836 min 0.59 under.55 0 under.35 0 | fps mean 59.5 min 52 | {"INT":86,"OUT":5,"EXT":8,"IN":5} "errs []"
+CyborgNinja       s6 after at 34 30s | q mean 0.924 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+DONE Sun Oct 18 02:26:44 AM EDT 2026

@@ -1,0 +1,12 @@
+lumtrace TheChain scene 6 [186, 212] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 186.000 → 212.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+186-191   0.125  0.131  0.001  0.001  0.0088  0.428  0.218   10
+191-196   0.141  0.148  0.001  0.001  0.0078  0.460  0.224   10
+196-201   0.121  0.134  0.001  0.001  0.0088  0.427  0.195   10
+201-206   0.105  0.141  0.001  0.001  0.0084  0.094  0.243   10
+206-211   0.134  0.175  0.001  0.001  0.0090  0.315  0.295   10
+211-212   0.156  0.170  0.001  0.001  0.0089  0.342  0.323    3
+ALL       0.131  0.149  0.001  0.001  0.0086  0.428  0.234   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0066 at t 210.00
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.306 · f0 2 · sr 48000 · end frame 2042 heard 212
+files: tools/work/nav3/lum-after/TheChain-s6.csv · tools/work/nav3/lum-after/TheChain-s6.txt

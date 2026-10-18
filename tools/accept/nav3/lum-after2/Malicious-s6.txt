@@ -1,0 +1,12 @@
+lumtrace Malicious scene 6 [134, 160] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 134.000 → 160.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+134-139   0.269  0.303  0.001  0.002  0.0150  0.546  0.472   10
+139-144   0.266  0.305  0.001  0.002  0.0171  0.503  0.431   10
+144-149   0.175  0.204  0.002  0.002  0.0152  0.480  0.307   10
+149-154   0.142  0.181  0.001  0.002  0.0136  0.387  0.250   10
+154-159   0.228  0.252  0.001  0.001  0.0150  0.466  0.407   10
+159-160   0.238  0.246  0.001  0.001  0.0147  0.449  0.412    3
+ALL       0.227  0.286  0.001  0.002  0.0152  0.475  0.398   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0090 at t 149.50
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.324 · f0 2 · sr 48000 · end frame 2042 heard 160
+files: tools/work/nav3/lum-after2/Malicious-s6.csv · tools/work/nav3/lum-after2/Malicious-s6.txt

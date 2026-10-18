@@ -1,0 +1,6 @@
+glow-after2-Comptine-41              Y 0.243 edge>0.08  0.73 %  bright>.5 12.02 %  edge/bright 0.06
+glow-after2-CyborgNinja-59.5         Y 0.159 edge>0.08  3.69 %  bright>.5  8.63 %  edge/bright 0.43
+glow-after2-Malicious-157.5          Y 0.176 edge>0.08  2.36 %  bright>.5 11.72 %  edge/bright 0.20
+glow-after2-RaindropsOnRoses-71.5    Y 0.177 edge>0.08  0.88 %  bright>.5 11.47 %  edge/bright 0.08
+glow-after2-TheChain-210             Y 0.200 edge>0.08  0.92 %  bright>.5 17.02 %  edge/bright 0.05
+glow-after2-Vienna-95.5              Y 0.220 edge>0.08  0.89 %  bright>.5 24.23 %  edge/bright 0.04

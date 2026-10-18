@@ -1,0 +1,3 @@
+# NAV3 after the quality pass (§140 addendum: the implosion budget 1.2 × Q.iter capped at 320, the rim-scaled convergence radius, P_MAX 14, nav3's own look2 exposure numbers) — IDS=6 PORT=8813 tools/scene-md5.sh nav3q2, CLOCK=1 GPU=1; the 12 other lines cannot move (a scene-folder change).
+aec66b58dfa84664f442c46aead357a1  s6-f360.jpg
+311ed001d195fd1310f7920e5104fb11  s6-f840.jpg

@@ -31,6 +31,7 @@ let ctx, pt, B_ORB;   // the Julia and PiP programs are per colour mapping: this
 // and by ~.2 the v2 pair moves too. f1800 is byte-identical at every fraction down to .2 and a third cheaper.
 const ITER_LO = 0.5;
 const ITER_Q = 0.15, ITER_QMAX = 8;   // §140: the Julia budget grows by ITER_Q per unit of period above 1 (a period-7 bulb ×1.9), capped at period 1 + ITER_QMAX; the shader loop's 420 is the hard cap
+const IMP_ITER_MUL = 1.2;   // §140 quality: the implosion's iteration budget = IMP_ITER_MUL × the governor's Q.iter (64 + 200 q), capped at OUT3.ITER 320 — 317 at q 1, 228 at q .63 (a first pass at 1.6 / 420 left q at .82–.89 on the drop windows against NAV2's .91), so the governor's answer to the drop's cost is not a halved render scale
 const PIP_SIZE = 0.6, PIP_MIN = 0.03;   // §140: the little map's half-width ≈ PIP_SIZE × the component's size, never under PIP_MIN
 let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
 
@@ -229,7 +230,7 @@ export default {
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
     gl.uniform4f(u('uView'), 0, 0, scale, rotv);
     const imp = IMP.x + IMP.y > 0;   // §140 step 3: while the implosion runs the budget is OUT3.ITER and the no-chart short budget is off (the passages need every iteration)
-    const it = imp ? OUT3.ITER : Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
+    const it = imp ? Math.min(OUT3.ITER, Math.round(Q.iter * IMP_ITER_MUL)) : Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140 quality: the implosion's budget follows the governor (IMP_ITER_MUL × Q.iter, capped at OUT3.ITER) — a flat 420 cost 10–11 ms a frame and pulled q to .63 on the drop windows   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), imp ? it : Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
     gl.uniform4f(u('uImp'), IMP.x, IMP.y, IMP.q, IMP.R);   // §140 the implosion's layers (implode.js): petal weight, explosion weight, q petals, the gate radius

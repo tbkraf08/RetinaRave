@@ -18,13 +18,13 @@ export const K2 = { lum: 1, smo: 1, fl: 1, ext: 1, key: 1 };
 // old NAV2 pass-6 knee (0.2, 3) with its .35 exterior dim read the loudest rows DARKEST (SeeYouDrop 40-45 medY .102 against the
 // baseline's .318, CyborgNinja's post-drop dust .059 against .213) — a dim keeps a flat wash flat, only darker; what reads is a
 // gentle knee, no dim, and the halo's reach narrowed a little while c is outside the set.
-export const LUM_IN = [0.3, 1.5];    // uLum.xy: the interior's luminance knee (L0, K): col /= 1 + K·max(0, L − L0)
-export const LUM_EX = [0.45, 1.5];   // uLum.zw: the exterior's — it only takes the top off the dust / flash wash (clipMx .176 → .002)
-export const EXT = { GAIN: 1, SHARP: 1.5, TAU: 0.5 };   // outside the set (the drop's dust: every pixel is near the Cantor dust,
+export const LUM_IN = [0.25, 2.5];   // NAV3 (§140 quality; NAV2's .3, 1.5): uLum.xy, the interior's luminance knee (L0, K): col /= 1 + K·max(0, L − L0) — the ball lives at the rim now, where the smoulder is at its gain
+export const LUM_EX = [0.45, 1.5];   // uLum.zw: the exterior's knee — NAV2's (a first pass at .35, 3 took the dust's own bands with the wash: grad p50 fell under NAV2's on every track — §99's lesson, a dim keeps a flat wash flat) — it only takes the top off the dust / flash wash (clipMx .176 → .002)
+export const EXT = { GAIN: 1, SHARP: 2.2, SHARP_IN: 1.6, TAU: 0.5 };   // NAV3 (§140 quality; NAV2's SHARP 1.5, 1 inside): the halo's reach 1/(1 + .011 e) narrows to 1/(1 + .011 e·SHARP) outside the set and ·SHARP_IN INSIDE too — at the rim the Julia set is hair-thin and the halo's 90 px half-reach lit the whole blob (the user: "the glow washes out the fractal"). outside the set (the drop's dust: every pixel is near the Cantor dust,
                                      // the halo term is 1 everywhere) the exterior's gain eases to GAIN (uExtG; 1 = no dim) and the
                                      // halo's reach 1/(1 + .011 e) narrows to 1/(1 + .011 e · SHARP) (uExtK) over TAU s. SHARP 4
                                      // halved the dust's light (halo² .28 against .67 at 20 px); 1.5 keeps its edges and its glow
-export const SMO = { LO: 0.12, HI: 0.4, R0: 0.5, R1: 0.98 };   // the smoulder's gain LO..HI on the base light; its ρ window
+export const SMO = { LO: 0.12, HI: 0.3, R0: 0.85, R1: 0.995 };   // NAV3 (§140 quality; NAV2's HI .4, R0 .5, R1 .98): with ρ at .45–.985 the old window was always open — the smoulder lights only at the very rim now. the smoulder's gain LO..HI on the base light; its ρ window
 export const FL = { WHITE: 0.15, ON: 0.3, HIT: 0.4, TAU: 0.14 };   // the flash: white share (was .4), always-on, snare gain, decay
 export const STEP = 1 / 12;          // the per-phrase hue step: a twelfth of a turn = one fifth on the wheel, the key's neighbours
 const STEPS = [0, 1, 0, -1];         // the walk: key, dominant side, key, subdominant side — back on the key every other phrase
@@ -60,7 +60,7 @@ export function knob(name, v) {
   if (name === 'lum') { LUM_IN[0] = nums[0]; LUM_IN[1] = nums[1]; if (nums.length >= 4) { LUM_EX[0] = nums[2]; LUM_EX[1] = nums[3]; } }
   if (name === 'smo') { SMO.LO = nums[0]; SMO.HI = nums[1]; if (nums.length >= 4) { SMO.R0 = nums[2]; SMO.R1 = nums[3]; } }
   if (name === 'fl') { FL.WHITE = nums[0]; FL.ON = nums[1]; if (nums.length >= 3) FL.HIT = nums[2]; }
-  if (name === 'ext') { EXT.GAIN = nums[0]; EXT.SHARP = nums[1]; if (nums.length >= 3) EXT.TAU = nums[2]; }
+  if (name === 'ext') { EXT.GAIN = nums[0]; EXT.SHARP = nums[1]; if (nums.length >= 3) EXT.SHARP_IN = nums[2]; if (nums.length >= 4) EXT.TAU = nums[3]; }   // NAV3: &n3ext=GAIN,SHARP[,SHARP_IN[,TAU]]
   return nums;
 }
 
@@ -82,7 +82,7 @@ export function update2(dt, S, N, LOOK) {
   // the exterior's dim and the halo's narrowing while c is outside the set (K2.ext off: both rest at 1, an exact identity)
   const out = N.mode !== 'INT' && K2.ext;
   L2.extG = ema(L2.extG, out ? EXT.GAIN : 1, dt, EXT.TAU);
-  L2.extK = ema(L2.extK, out ? EXT.SHARP : 1, dt, EXT.TAU);
+  L2.extK = ema(L2.extK, out ? EXT.SHARP : EXT.SHARP_IN, dt, EXT.TAU);   // NAV3: the halo narrowed inside too (SHARP_IN; NAV2's rest is 1)
   // the flash rides the snare lane: the ears' event places it, snareAmp (§70, held between hits) sizes it
   L2.fl = Math.max(L2.fl * Math.exp(-dt / FL.TAU), S.snareEvt ? (S.snareAmp || 0) : 0);
   // colour on key: the anchor (circle of fifths, mode pull, per-bar shade, keyConf gate — keycolour.js) with the OLD drift as

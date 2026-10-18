@@ -125,3 +125,7 @@ montage `tools/work/nav3/montage-tracks.jpg` (four shots per track: drop − 6, 
 ## The dance retune (2026-10-18)
 
 See DECISIONS §140, the addendum "the dance retune": the before / after1 / after2 movement tables are `tools/accept/nav3/dance-*.txt`, the strips `tools/work/nav3/dance-{ibh,chain}-{before,after,nav2}.jpg`, the knobs `ROLL` / `DANCE` / `KICK3.ANG` in `nav.js` (`&n3dance=`). Per beat NAV3 moves a third of NAV2 (median .20 against .57 in |Δlog λ|), per bar it matches NAV2 in angle; the rim time went from 0–22 % to 13–62 %.
+
+## The quality pass (2026-10-18)
+
+See DECISIONS §140, the addendum "the quality pass": the q traces `tools/accept/nav3/q-{before,after1,after2}.txt`, the luminance rows `lum-{before,after,after2,nav2}/`, the edge ruler `glow-edge-*.txt` and the shots `tools/work/nav3/glow-{before,after,after2}.jpg`. The implosion budget follows the governor (`IMP_ITER_MUL` 1.2 × Q.iter, cap 320), the convergence radius grows at the rim (`ROLL.CONV_*`), `P_MAX` 14, nav3 has its own exposure numbers in `look2.js` (`SMO` .85–.995, `LUM_IN` .25/2.5, `EXT.SHARP_IN` 1.6 / `SHARP` 2.2). q .884–.924 against NAV2 .908–.923; wash frames 8 % → 2.9 % (NAV2 4 %). Vienna at period 14 on the wall still washes.
