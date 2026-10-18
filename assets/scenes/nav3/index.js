@@ -10,14 +10,12 @@
 // implosion (Fatou petals on the way in, the Lavaurs explosion on the way out). `always: false`: updated only while on screen, so
 // draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1; §97's freeze).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { startGridWorker, LG_MIN, LG_MAX } from '../../math/mandel.js';   // LG_*: the exterior potential's own bounds — the `reach` parameter's range
-import { NAV, updateNav } from './nav.js';
+import { NAV, updateNav, knob5, knobDrop } from './nav.js';   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
 import { K2, L2, LUM_IN, LUM_EX, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n3lum / &n3smo / &n3fl / &n3ext / &n3key
-import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar
-import { W2, knob4 } from './walk2.js';   // §101: the phrase walk along the Farey ladder, Green's ruler as the fitness, drops that land somewhere new
+import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar (a byte copy of nav2's)
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
 const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
@@ -31,23 +29,24 @@ let ctx, pt, B_ORB;   // the Julia and PiP programs are per colour mapping: this
 // worst pixel — the flat branch's pow(lw, .73) amplifies a tL difference that v2's linear ramp quantises away),
 // and by ~.2 the v2 pair moves too. f1800 is byte-identical at every fraction down to .2 and a third cheaper.
 const ITER_LO = 0.5;
+const ITER_Q = 0.15, ITER_QMAX = 8;   // §140: the Julia budget grows by ITER_Q per unit of period above 1 (a period-7 bulb ×1.9), capped at period 1 + ITER_QMAX; the shader loop's 420 is the hard cap
+const PIP_SIZE = 0.6, PIP_MIN = 0.03;   // §140: the little map's half-width ≈ PIP_SIZE × the component's size, never under PIP_MIN
 let clipDbg = 0;   // #test only (hooks.clipdbg): 1 = write okClip of the shipped (h,L,C) into o.r, 2 = of the flat .11 chroma
 
 export default {
   name: 'nav3',
   id: 6,   // key `7` (core/hud.js: digit k forces REG[k − 1]); seventh in main.js's list so REG stays dense 0..6 (§118)
-  tag: 'music navigates the Mandelbrot set: bulbs by interval, the phrase walk along the Farey ladder, exterior rays on the drop',
+  tag: 'the music rolls c inside the Mandelbrot set with no chart: loud presses it to the rim, pitch lifts it, a build rolls it through a root into a child bulb; the drop implodes the Julia set',
   card: { title: 'NAV3', blurb: 'the navigator that rolls: no chart, no table — the music pushes c inside M and the drop implodes the Julia set' }, // landing tile (CONTRACTS §1.17); the picture is site/thumbs/nav3.jpg (tools/thumbs.sh "6:360")
   home: false,      // NAV2 (id 2) is the home; this is the workbench
   always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
-  feats: ['interval', 'repeat', 'seed', 'beat', 'beatPhase', 'beatCount', 'dropLiveEvt', 'dropStrength', 'dropEnv', 'intensity',
-    'buildLive', 'suspension', 'presence', 'harmUnw', 'arc', 'onset', 'hitStrength', 'hit', 'eS', 'eM', 'tension', 'resolveEvt',
-    'bass', 'mid', 'high', 'peaks', // exactly what nav.js, index.js and the shaders read (§12 trimmed 11 v3-era leftovers)
-    'snareEvt', 'snareAmp', 'loudRel', 'loudRange', 'loudAbs', 'key', 'mode', 'keyConf', 'valence', 'modeShade', 'harmAngle', 'phrase16Pos', 'bpm', // §99: look2.js
-    'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn', // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
-    'barNovelEvt', 'sectionEvt'], // §101: walk2.js (+ phrase16Pos, loudRel, intensity, presence, harmUnw already above)
-  state: NAV,       // ./nav.js's own object — a second module instance, not ../nav/nav.js's; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
+  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'dropEvt', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',
+    'hit', 'bass', 'mid', 'high', 'peaks', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock)
+    'loudRel', 'loudRange', 'loudAbs', 'centroid', 'voxS', 'voxHz', 'voxConf', 'harmAngle', 'key', 'keyConf', 'dropExpectedIn', 'sectionEvt', // §140 nav.js: loud → ρ, pitch → θ (math/vox.js), the key / harmony turn, the gate, the mirror
+    'snareEvt', 'snareAmp', 'mode', 'valence', 'modeShade', 'phrase16Pos', 'bpm', // §99: look2.js (+ loudRel loudRange loudAbs key keyConf harmAngle above)
+    'onset', 'hitStrength', 'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'], // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
+  state: NAV,       // ./nav.js's own object; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
   rt: { c: NAV.c, label: 'nav3', home: false, awayBeat: 0, settledAt: 0, time: 0, log: '' },
   // no `variants`: DRUM (id 4, forced-only since §93) stays on ../nav/ — an id is registered once (core/scenes.js throws on a second), and the least churn keeps it with the code that draws it
   hooks: {
@@ -67,84 +66,83 @@ export default {
     n3sub: (v) => knob3('sub', v),
     n3pitch: (v) => knob3('pitch', v),
     n3trap: (v) => knob3('trap', v),
-    // §101's knobs (walk2.js knob4()): &n3walk=0 the species only (NAV) · =DEPTH[,MINSIZE[,PER]] · &n3green=0 no ruler in the choice / no early step · =W[,QMAX[,BARS]] · &n3drop=0 NAV's launch ray + θ target
-    n3walk: (v) => knob4('walk', v),
-    n3green: (v) => knob4('green', v),
-    n3drop: (v) => knob4('drop', v),
+    // §140's knobs (nav.js knob5()): &n3roll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · &n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · &n3kick3=LEN
+    n3roll: (v) => knob5('roll', v),
+    n3gate: (v) => knob5('gate', v),
+    n3kick3: (v) => knob5('kick3', v),
+    n3drop: knobDrop,                         // &n3drop=live: the live slam only (NAV2's read); default both detectors (the fake timeline has no live slam)
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green3: () => GREEN,                      // `green3`: &green / CARD.hooks.green stay NAV2's (hooks are global by name)
-    // the navigator's state in one object, for the same tools' `hooks.n3info()` line (every field NAV's hud() prints, plus
-    // the chart coordinates): mode, c, h, alpha, rho = |λ| (1 − h is not it — h is the depth spring; rho comes from the cycle),
-    // phi, par, bulb p/q, baby P, kick, theta, lg, cPath, pathCut, cyc has/q
+    // the ball's state in one object for the trace tools (`hooks.n3info()`): mode, the drawn c, the ball, ρ / θ and their targets,
+    // the period q, the component's size, the gate's address, the stack depth, the counters (crossings, stalls, fails, time on the rim)
     n3info: () => ({
-      mode: NAV.mode, c: [NAV.c[0], NAV.c[1]], cPath: [NAV.cPath[0], NAV.cPath[1]], h: NAV.h.x, alpha: NAV.alpha.x,
-      rho: Math.exp(NAV.cyc.lnr), phi: NAV.phi.x, par: NAV.par, bulb: NAV.bulb.p + '/' + NAV.bulb.q, q: NAV.cyc.q, has: NAV.cyc.has,
-      baby: NAV.baby ? NAV.baby.P : 0, kick: NAV.kick.x, theta: NAV.th.x, lg: NAV.lg.x, pathCut: NAV.pathCut, tscale: NAV.timeScale,
-      cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, loudBeats: NAV.loudBeats,
+      mode: NAV.mode, c: [NAV.c[0], NAV.c[1]], ball: [NAV.ball[0], NAV.ball[1]], rho: NAV.rho, th: NAV.th, rhoT: NAV.rhoT.x, thT: NAV.thT.x,
+      q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
+      depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
+      kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
-      wk: W2.k, wplace: W2.place ? W2.place.p + '/' + W2.place.q : '', wcands: W2.cands.join(' '), wpick: W2.pick, wq: W2.qPred, wsteps: W2.steps, wdue: W2.due, wdwell: W2.dwell, wearly: W2.early, wover: W2.over, wdrops: W2.drops, wbase: W2.base, Q: GREEN.Q,   // §101
+      Q: GREEN.Q,
     }),
   },
   help: {
     // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
     feats: {
-      interval: 'which bulb c heads for: the interval picks the p/q bulb (of the baby copy when inside one) — the SPECIES; §101\'s walk visits its Farey neighbours phrase by phrase',
-      repeat: 'a repeated section may dive into a baby copy of M (which one comes from the seed)',
-      seed: 'the section\'s constants: which baby copy, the interior angle offset, the exterior angle',
-      beat: 'retargeting happens on the beat, never on the root-to-ray bridge; loud beats are counted toward leaving',
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
-      beatCount: 'beats since the last exit: settling back inside, which ray to take, the landing time',
-      dropLiveEvt: 'the exit: c is thrown out of M along an external ray — the live detector\'s slam (2026-09-29, the user\'s stream-mode A/B: "B looks good", "#1" = NAV only)',
-      dropStrength: 'how deep outside the ray lands (log2 of the potential, -2.2 down to -0.5)',
-      dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings',
-      intensity: 'how deep into the bulb c sits, and the loud count that leads to leaving',
-      buildLive: 'parks c at the bulb\'s root (the cusp) while the void before a drop runs (the live build detector, §54; v3\'s build until 2026-09-29)',
-      suspension: 'also parks at the root: a held tension waits at the gateway',
-      presence: 'silence freezes c and slows the visual clock; the picture-in-picture fades out',
-      harmUnw: 'the interior angle alpha and the exterior angle theta: the harmony walks c around the bulb, and along the rays outside',
-      arc: 'sustain counts loud beats toward leaving; peak keeps c outside longer',
-      onset: 'a hard hit kicks c toward a Misiurewicz point (into the dendrite) and back',
-      hitStrength: 'how far that kick goes',
-      hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
-      eS: 'the exterior depth (with tension) and the amplitude of the DRUM modes',
-      eM: 'trail length (feedback decay 0.7 + 0.16 eM); DRUM bids when eM is low',
-      tension: 'the exterior depth: tense music sits further out along the ray',
+      beatCount: 'beats since the drop: how long c stays outside before it comes back in',
+      dropLiveEvt: 'the drop: c leaves the component through its rim along the wall\'s normal — step 3 makes it the parabolic implosion (the live detector\'s slam)',
+      dropEvt: 'the map\'s (and the fake timeline\'s) drop fires the same exit — the live detector never arms on #test; &n3drop=live reads the live slam only, as NAV2',
+      dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings; the return waits until it has faded',
+      intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
+      buildLive: 'the void before a drop presses the ball against the rim and ASKS to go in: at a p/q root the ball crosses into the child bulb (§140)',
+      suspension: 'a held tension also presses the ball against the rim (the gateway)',
+      presence: 'silence freezes the ball and slows the visual clock; the picture-in-picture fades out',
+      arc: 'a peak keeps c outside longer after a drop (48 beats against 8)',
+      eS: 'the loudness ladder\'s fallback when the loudness stage is off; the exterior depth; the DRUM modes\' amplitude',
+      eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
+      tension: 'how far outside the set the drop throws c (the `reach` parameter)',
       resolveEvt: 'a release doubles the visual clock for a moment',
+      hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
       bass: 'the glow of the set\'s interior, a 5 % zoom-in, the size of the critical-orbit dots',
       mid: 'the radius of the circular orbit trap',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
+      loudRel: 'LOUD IS OUT: the track\'s own loudness ladder sets |λ| — quiet near the component\'s centre (the Koenigs spiral loose), loud against the rim (the spiral tight, the curl); a rise over two bars asks the gate to open, a fall inside a child rolls the ball back out',
+      loudRange: 'how many LU the track has shown so far: the ladder the ball\'s radius is stretched over (loudlight.js)',
+      loudAbs: 'whether the loudness stage runs: when it does not (&loud=0) the ladder falls back to eS',
+      centroid: 'the pitch\'s stand-in when nobody sings: the spectral brightness as a height, lifting c toward the 1/3 bulb',
+      voxS: 'PITCH IS UP: while someone sings, the sung pitch\'s height (math/vox.js) sets the internal angle — Im c rises with the pitch on the cardioid; voxS weights it against the centroid',
+      voxHz: 'the sung pitch itself, as a height on the voice\'s range (log2 over four octaves from A2)',
+      voxConf: 'whether the voice is trusted: 0 (the fake timeline) leaves the centroid in charge',
+      harmAngle: 'the harmony\'s place on the circle of fifths leans the internal angle: which part of the rim the ball slides toward',
+      key: 'the key\'s tonic picks a sector of the rim (weighted by keyConf); and the hue, as on every scene (keycolour.js)',
+      keyConf: 'how far the key is trusted: the rim sector and the key hue fade with it',
+      dropExpectedIn: 'a drop expected on the grid asks the gate to open: against the rim at a p/q root, the ball crosses into the child',
+      sectionEvt: 'a new section mirrors the rim (θ ↔ 1 − θ): the conjugate picture',
       snareEvt: 'the flash on the set\'s edge is the snare\'s: the ears\' snare event places it (§99)',
       snareAmp: 'how bright that edge flash is: the size of the last snare',
-      loudRel: 'the interior\'s smoulder follows the track\'s own loudness, not the root (§99): loudRel against the range the track has shown',
-      loudRange: 'how many LU the track has shown so far: the ladder the smoulder is stretched over (loudlight.js)',
-      loudAbs: 'whether the loudness stage runs: when it does not (&loud=0) the smoulder falls back to eS',
-      key: 'the hue: the key\'s place on the circle of fifths anchors the palette (keycolour.js, as TORUS2 / GIELIS)',
       mode: 'minor pulls the key hue toward the cool half of the wheel, major toward the warm',
-      keyConf: 'how far the key is trusted: below a third the hue slides back to the old drift',
       valence: 'a touch of warmth on the key hue (keycolour.js VALW)',
       modeShade: 'whether THIS bar sits on a major or a minor degree: a per-bar lean of the key hue warm or cool (§82)',
-      harmAngle: 'the key hue\'s fallback when no key is trusted: the nearest fifth of the harmony angle',
       phrase16Pos: 'the hue steps a twelfth of a turn around the key hue when the 16-beat phrase wraps, eased over a beat',
-      bpm: 'how long that hue step takes to settle (a beat)',
-      kickEvt: 'the Misiurewicz jump fires on the ears\' own kick (§100), not v3\'s onset picker: c jump-cuts toward the nearest Misiurewicz point and springs back',
+      bpm: 'how long that hue step takes to settle (a beat); the bar clock the gate\'s HOLD and the exit\'s patience count in',
+      onset: 'v3\'s onset picker fires the kick when the ears\' lane is not published (move2.js)',
+      hitStrength: 'how far that fallback kick goes',
+      kickEvt: 'the kick: c jumps OUT through the rim along the wall\'s normal (the Julia set breaks into dust for a frame) and springs back — NAV\'s Misiurewicz jump without the table (§100 lane, §140 target)',
       kickAge: 'places that jump between frames: the spring is stepped by the age on the event frame',
       kickAmp: 'how far the jump goes (the sqrt law of §74, floor .31) and the goldilocks gate: a kick smaller than the threshold does not jump',
-      subGate: 'the sub sounding presses c toward the bulb\'s rim (the Koenigs arms tighten); the sub leaving relaxes it toward the centre — nothing until the gate has opened once',
-      subNote: 'the bass note leans c\'s internal angle within the bulb: above the key one way, below it the other, a glide becomes a lean',
-      clockConfPcm: 'how big the beat breath is allowed to be: the clock\'s own confidence scales the per-beat press of the radius',
+      subGate: 'the sub sounding presses the ball toward the rim (the Koenigs arms tighten); the sub leaving relaxes it toward the centre',
+      subNote: 'the bass note\'s lean (move2.js) — read, not yet a force on this scene',
+      clockConfPcm: 'how big the beat breath is allowed to be: the clock\'s own confidence scales the per-beat press toward the rim',
       barPos: 'the downbeat: the beat breath and the trap\'s turn take a step and a half on the bar\'s first beat (beatgrid.js)',
-      tongue21: 'the double time arriving (a RISE of the 8th-note depth over 16 beats) makes the breath\'s crest bigger — never faster (§78)',
+      tongue21: 'the double time arriving makes the breath\'s crest bigger — never faster (§78)',
       tongue41: 'the same accent from the 16th-note depth\'s rise',
       tongueOn: 'the accent\'s A/B gate: −1 (the stage off) is the plain profile',
-      barNovelEvt: 'a bar that starts something new is a reason to move: the phrase walk takes its step early (§101)',
-      sectionEvt: 'a new section is a reason to move: the phrase walk steps (§101)',
     },
-    eli5: 'You are inside the Julia set of one point c. The music walks c around the Mandelbrot set: consonant intervals pick big bulbs, the drop throws c outside along an external ray.',
-    why: 'Bulbs are indexed by rotation number p/q, which is the same combinatorics as musical intervals (just ratios). Drops are the only exits from the interior: through parabolic roots onto landing rays. The interior smoulders as the multiplier nears 1 — critical slowing, the orbit taking longer and longer to settle. Two colourings: the default is v0.2\'s ramp — a blue exterior, the Koenigs bands lighting the dark interior — and `&colour=oklch` swaps in a perceptual one: inside a component hue is the internal angle arg lambda, one hue for the whole component, and outside it is the escape count — the equipotentials of the set — so the colour comes out as concentric bands that follow the set\'s own outline, in the Julia set and in the picture-in-picture alike.',
-    math: 'Interior chart: multiplier λ=ρe^{iφ} of the p/q bulb via Newton in (z,c). Exterior chart: inverse Böttcher map on a (θ, log₂G) table. Baby copies: tuning, zoom-matched at the root (hybrid equivalence).',
+    eli5: 'You are inside the Julia set of one point c, and c is a ball rolling inside the Mandelbrot set. Loud music presses it against the wall, a singer lifts it, a build rolls it through a gateway into a smaller copy, and the drop pushes it out through the wall — the Julia set implodes.',
+    why: 'Inside a component of M the attracting cycle\'s multiplier λ is a coordinate: |λ| → 1 IS the boundary and arg λ the internal angle, so the music can steer in (|λ|, arg λ) and the point c follows by one complex division — no table of bulbs, every bulb reachable. Where the rim\'s internal angle is a fraction p/q a child bulb hangs by its root; crossing the root multiplies the period by q, and the Julia set grows q new arms. Outside the rim the Julia set is dust: the drop is that crossing, through the parabolic point.',
+    math: 'findCycle: the attracting cycle of f_c = z² + c from the critical orbit (nearest return → Newton on f^q(z) − z), λ = (f^q)′(z). log λ is holomorphic in c, so Δc = Δlog λ / (λ′/λ), with λ′ by central differences (field.js rhoGrad). The wall: ∇|λ| projects a step that would pass |λ| = .97. The child: the root is c + n̂ (1 − |λ|)/|∇|λ||, its size 1/(|dλ/dc| q²) (exact on the cardioid: sin(πp/q)/q²), the landing DIVE of that along n̂, verified by findCycle before a frame moves. Drops: step 3 — Fatou coordinates and the Lavaurs phase (Douady–Hubbard, Lavaurs 1989, Shishikura, Inou–Mukherjee).',
   },
 
   score: () => 0,   // forced-only: the §93 roster (NAV2, DUST, TORUS2, FLUID) is unchanged
@@ -159,8 +157,8 @@ export default {
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
     dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
     pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
-    // the one parameter nav.js reads (through updateNav's opts): the target of the exterior spring, already clamped to its own range by the expression it was
-    reach: { eli5: 'how far outside the set the drop throws the picture', range: [LG_MIN, LG_MAX], from: (S) => clamp(mix(-2.6, -9, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 3.2 * S.dropEnv, LG_MIN, LG_MAX) },
+    // the one parameter nav.js reads (through updateNav's opts): the drop's depth outside the set, log2 of ε in units of the component's size (§140; nav.js OUT3 / implode.js)
+    reach: { eli5: 'how far outside the set the drop throws the picture (log2, in the component\'s own size)', range: [-10, -2], from: (S) => clamp(mix(-8, -4, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 1.5 * S.dropEnv, -10, -2) },
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -180,7 +178,7 @@ export default {
     CV.oklch.mandel = c.mkProg(c.oklch + OK_NAV + FS_MANDEL, 'mandel3');
     pt = c.mkProg(VS_PT, FS_PT, 'pt3');
     B_ORB = c.dynBuf(160 * 3, 3);
-    startGridWorker();   // once per page (mandel.js GRIDW): NAV's init already started it, the table is shared
+    // no startGridWorker(): the ball needs no exterior ray table (§140) — NAV2's init starts the shared Worker for itself
   },
 
   update(dt, S, GROOVE, LOOK, env) {
@@ -189,13 +187,13 @@ export default {
     if (this.rt.settledAt === 0) N.landed = 0; // the director consumed the landing (zeroed rt.settledAt)
     updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5, P: env.params });
     const rt = this.rt;
-    rt.home = N.mode === 'INT';
+    rt.home = false;   // forced-only: never the director's home
     rt.awayBeat = N.extBeat;
     rt.settledAt = N.landed || 0;
     rt.cycBase = N.cycBase;
     rt.time = N.vtime;
-    rt.label = N.mode + (N.baby ? ' P' + N.baby.P : '') + ' ' + N.bulb.p + '/' + N.bulb.q;
-    rt.log = `${N.mode} h${N.h.x.toFixed(2)} lg${N.lg.x.toFixed(1)} par${N.par.toFixed(2)}`;
+    rt.label = N.mode + ' q' + N.cyc.q + (N.stack.length ? ' d' + N.stack.length : '') + ' ' + N.gate.p + '/' + N.gate.q;
+    rt.log = `${N.mode} rho${N.rho.toFixed(3)} th${N.th.toFixed(3)} q${N.cyc.q} par${N.par.toFixed(2)}`;
     measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms, pure CPU — no pixel reads it): hooks.green()
     update2(dt, S, N, LOOK);       // §99: the base light, the smoulder, the exterior dim, the snare flash, the key hue
     this._groove = GROOVE;
@@ -206,7 +204,7 @@ export default {
     const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
     const pr = this.colour.variants[colour].julia;
     ctx.use(pr, tgt, w, h);
-    const u = pr.u, B = N.baby;
+    const u = pr.u;
     const hueT = K2.key ? L2.hueT : LOOK.hueT;   // §99: colour on key — uPal.x and the tint (use() uploaded LOOK's; the knob off leaves them)
     if (K2.key) {
       gl.uniform4f(u('uPal'), hueT, LOOK.pal[1], LOOK.pal[2], LOOK.pal[3]);
@@ -218,18 +216,17 @@ export default {
     gl.uniform1f(u('uExtK'), L2.extK);
     gl.uniform1f(u('uSmo'), L2.smo);
     gl.uniform4f(u('uFl'), FL.WHITE, FL.ON, FL.HIT, L2.fl);
-    const cm = B ? Math.hypot(N.c[0] - B.c0[0], N.c[1] - B.c0[1]) / B.size : Math.hypot(N.c[0], N.c[1]);
-    // inside a baby the same view is conjugated by w=A z (matched at the cut), then eased out (bz) until the host's decorations frame the copy
+    const cm = Math.hypot(N.c[0], N.c[1]);
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
-    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom * (B ? mix(1, 1.7, N.bz.x) / B.A : 1);
-    const rotv = GROOVE.rot - (B ? B.argA : 0);
+    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom;   // no baby copies on this scene (§140): the view is M's own, uSc 1
+    const rotv = GROOVE.rot;
     N.view = [0, 0, scale, rotv];
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
     gl.uniform4f(u('uView'), 0, 0, scale, rotv);
-    const it = Math.min(420, Math.round(Q.iter * (B ? 1.6 : 1)));
+    const it = Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
     gl.uniform1i(u('uIter'), it);
     gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
-    gl.uniform2f(u('uSc'), B ? 1 / B.A : 1, B ? 1 / B.P : 1);
+    gl.uniform2f(u('uSc'), 1, 1);
     const ta = K3.trap ? M2.trapA : Math.PI * br;   // §100: a quarter turn per beat (π per bar) + ACC turns on each crest, beatgrid's profile; off = NAV's half turn per beat
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
     gl.uniform1f(u('uTrapR'), P.trap);
@@ -270,11 +267,11 @@ export default {
     if (!this._P) return;   // always: false — loop.js calls every scene's overlay every frame, updated or not (CONTRACTS §1 line 49)
     const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q, cv = this.colour.cur;
     PIP.a = ema(PIP.a, vis * this._P.pip, dt, 0.5);
-    let ex = N.baby ? 0 : 0.05;
+    let ex = 0.05;
     for (let i = 0; i < 96; i += 4) ex = Math.max(ex, Math.hypot(N.path[i * 3] - PIP.cx.x, N.path[i * 3 + 1] - PIP.cy.x));
     PIP.cx.step(N.cPath[0], dt);
     PIP.cy.step(N.cPath[1], dt);
-    PIP.sc.step(Math.log(N.baby ? clamp(ex * 1.8 + 0.8 * N.baby.size, 1.4 * N.baby.size, 1.7) : clamp(ex * 1.8 + 0.25, 0.3, 1.7)), dt);
+    PIP.sc.step(Math.log(clamp(ex * 1.8 + PIP_SIZE * N.size, PIP_MIN, 1.7)), dt);   // §140: the little map zooms onto the component the ball is in (N.size = 1/|dλ/dc|, the cardioid's is ~.5–1, a 1/7 bulb's ~.01)
     const pipS = Math.exp(PIP.sc.x);
     if (PIP.a <= 0.01) return;
     const sz = Math.round(Math.min(PW, PH) * 0.24), mg = Math.round(sz * 0.12), x0 = PW - sz - mg, y0 = mg;
@@ -291,7 +288,7 @@ export default {
     gl.uniform4fv(pr.u('uPal'), [hueT, 0.2, 0.6, 1]);
     gl.uniform3fv(pr.u('uTint'), K2.key ? ctx.hsv(hueT, 0.75, 1) : LOOK.tint);
     gl.uniform4f(pr.u('uView'), PIP.cx.x, PIP.cy.x, pipS, 0);
-    gl.uniform1i(pr.u('uIter'), Math.round(N.baby ? 256 : 90 + 120 * Q.q));
+    gl.uniform1i(pr.u('uIter'), Math.round(N.stack.length ? 256 : 90 + 120 * Q.q));   // deeper in a child the little map is zoomed in: more iterations, as NAV's baby view had
     gl.uniform1f(pr.u('uAlpha'), PIP.a);
     if (cv === 'oklch') gl.uniform1f(pr.u('uClipDbg'), clipDbg);
     for (let j = 0; j < 32; j++) { // a chart cut is not a path: no segment across it
@@ -308,6 +305,6 @@ export default {
 
   hud() {
     const N = NAV, f = (x) => x.toFixed(2);
-    return `nav3 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  h ${f(N.h.x)} alpha ${N.alpha.x.toFixed(3)}  theta ${N.th.x.toFixed(3)} log2G ${f(N.lg.x)}  par ${f(N.par)} tscale ${f(N.timeScale)}  bulb ${N.bulb.p}/${N.bulb.q}${N.baby ? ' baby P' + N.baby.P : ''}  cycBase ${N.cycBase | 0}  key ${L2.key}${L2.mode ? 'm' : 'M'} kc ${L2.conf.toFixed(2)} hue ${L2.hueT.toFixed(3)} base ${L2.base.toFixed(2)} smo ${L2.smo.toFixed(3)}`;
+    return `nav3 ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  rho ${N.rho.toFixed(3)}→${N.rhoT.x.toFixed(2)} th ${N.th.toFixed(3)}→${frac(N.thT.x).toFixed(2)}  q ${N.cyc.q} depth ${N.stack.length} gate ${N.gate.p}/${N.gate.q}${N.gate.on ? '!' : ''}  par ${f(N.par)} tscale ${f(N.timeScale)}  loud ${f(N.loud)} size ${N.size.toExponential(1)} x${N.crosses} s${N.stalls} f${N.fails}  key ${L2.key}${L2.mode ? 'm' : 'M'} kc ${L2.conf.toFixed(2)} hue ${L2.hueT.toFixed(3)}`;
   },
 };
