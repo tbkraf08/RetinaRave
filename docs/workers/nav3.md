@@ -137,3 +137,23 @@ See DECISIONS §140, the addendum "the depth pass": the period-class / wall / st
 ## The Comptine pass (2026-10-18, branch `nav3-comptine` off v0.43)
 
 See DECISIONS §142: the seven remarks, the five NAV3-only picks (silence rolls to the circle and stops the clock; the sprites and the child disc; the ladder-rise ask gone, BUILD .7; the petal paint confined; the kick jump to the wall, the mirror on keyConf), the replay ruler `tools/work/nav3/replay.mjs` (the nine tracks through their live-lane traces, no Chrome), the records under `tools/accept/nav3/comptine/`, the eye strip `tools/work/nav3/comptine-after.jpg`. Remark 5 (the drops) is branch 2.
+
+## The look pass (2026-10-18, branch `nav3-look` off `drop-piano` a50410e, DECISIONS §144)
+
+The user's remarks on two Comptine captures (the jitter, the washed-out interior at 18 / 26 / 1:34, the spirals that "loop", the hold's blobby
+artifacts and weird interior colour); six picks, NAV3-only. Pointers:
+
+* **The rulers** — `tools/work/nav3/look-replay.mjs` (the plan's `sim2.mjs` + replay3's §143 feeds: per track |Δlog λ|/beat, ρ-reversals/s, the
+  chart-off share of INT frames, crossings, the implosions with the escape fraction over each hold; `SCAN=1` prints the escape fraction against
+  ε/size at every root — the cliff that made the calibration), `look-replay-all.sh <tag>` (the nine + Comptine on the map), `look-shots.mjs`
+  (deterministic frame grabs from 0 at any fps list), `look-hue.py` (the 60 fps far-exterior |Δhue| ruler), `look-ruler.py` (the plan's
+  black / wash / structure), `look-perc.mjs` (perc vs punchy on the nine), `look-chain.sh` (the Chrome gate in one script).
+* **The records** — `tools/accept/nav3/look/`: `replay-{before,after}.txt`, `perc.txt`, `hue-{before,after}.txt`, `frames-{before,after-peek,after}.txt`,
+  `scene-md5-look.txt`, `q-look.txt`; the eye `tools/work/nav3/peek-ba-{1,2,3}.jpg` (before over after) and the strips `look-comptine-*.jpg`,
+  `look-seeyoudrop.jpg`.
+* **Friction.** (1) The escape fraction is a cliff whose place is the root's (a cusp .00 → .96 between ε/size .008 and .016; a q 4–7 root needs
+  .03–.06) — the plan's "×4" is one number for every root; the floor is calibrated per drop instead (`ESC_FLOOR` / `ESC_TOP`). (2) `punchy` reads
+  a solo piano above SeeYouDrop (the crest factor); `perc` is the scale. (3) The ρ-reversal count never separated the piano from the kit (3.3–5.5
+  on all); |Δlog λ| per beat did. (4) `TURN × N.bar` with a time-varying scale would jump — the turn accumulates. (5) The worktree needed the PCM
+  dumps and their sidecars (`tools/work/<T>.48000.st.f32{,.json}`) symlinked for `test_vox` beside the traces and `tools/work/vox/`. (6) The 60 fps
+  page ruler reads the sawtooth as sign reversals (47–59 % of frames in EXT against 16 % inside), smaller degrees than the recording's frames.

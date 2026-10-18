@@ -5784,3 +5784,108 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   DUST / TORUS2 do not read the fields (the user's word). Appendix A is stale against feats.js on nine rows (`tools/feats-doc.js`
   regenerates them; reverted here to keep the diff its own). `nav.js` and `implode.js` are inside the caps (407 / 262 lines, the warn as
   since §140).
+
+## §144 NAV3's look on Comptine — the hold's interior, the jitter, the kick blink, the palette (2026-10-18, one Fable worker in a worktree, branch `nav3-look` off `drop-piano` a50410e, NOT merged; the user's two captures of NAV3 on Comptine; the analyst's `COMPTINE2-PASS-PLAN.md` with its `sim2.mjs` / `ruler.py`; `assets/scenes/nav3/` only — no engine, NAV2 or core byte moved)
+
+- **The user's remarks (verbatim).** Branch 1 (`nav3-comptine`): *"a fractal pattern starts at 8s -> the shape looks cool but the movement is too
+  quick and jittery for the music (especially around 13s-15s)"* · *"at 18s, 26s the fractal is washed out and can't see it"* · *"1m34s the fractal
+  shape is washed out"* · *"from 1m38s the spirals around the set look like they loop (ie. moving all the way and cutting back to starting point)
+  -> spiraling should be smooth"*. Branch 2 (`drop-piano`): *"I don't like what happens to the set at 34s-42s, 52s-1m9s, 1m48-2m8s -> there seem
+  to be blobby artifacts, the interior color is weird (should it be black on interior here?), the shape of the set stops changing."*
+- **The causes (the plan's, each confirmed by the replay or a frame ruler before anything moved; `tools/accept/nav3/look/`).** (1) *The jitter:*
+  the §140 dance on a piano — `DANCE.BASS` .6 × bass (the left hand IS bass), the kick / hit press on ρ with `W_RHO` 9 and `GAIN` 12, `SWAY` .18
+  turns per phrase: the replay read **|Δlog λ| .535 per beat on Comptine against .32–.49 on the dance tracks**, 5.4 ρ-reversals/s. (2) *The kick
+  blink:* every kick (`k > .02`) hid the chart (`nav.js` `N.cyc.has = 0`) for the ring's .4 s — **chart-off on 13.6 % of Comptine's INT frames
+  (23 % with the map), 11–66 % on the others** (CyborgNinja 66): the interior blinked black on every piano attack, the 1:34 "washed out" is one
+  of them. (3) *18 s / 26 s:* `pal()`'s luma is a tenth as bright in blue as in green and the interior's bands were `pal(…) × (.03 + .16·bands·…)`
+  with no luma normalisation — the before frames read **26 s: black 57 % of the frame (centre 57 %) at rim hue 295°** (violet: the bands under
+  Y .04), 18 s: wash 11 %, structure .83. (4) *The hold's blobs and the weird interior:* in EXT ~96 % of the former interior does not escape inside
+  the budget (esc ≤ .04 at ε₀/size .004 on B's roots), so the shader painted those pixels with the Fatou-petal layer at mix .85 (`max(uImp.x,
+  uImp.y)`) — in the imploded set nothing attracts and z_final sits anywhere on its loop, so the paint landed on preimage blobs lit by a
+  meaningless Fatou phase; the .03 base + the line trap filled the rest; v3's `dropEnv` pumped ε through `EPS_DROP` on every v3 hit (esc 1.0 at 59
+  / 68 s). (5) *The sweep-and-snap:* `pal(.55 + .07·pl + .3·uSig)` on every escaped pixel with σ = frac(π/√ε) and ε a per-beat sawtooth — σ wraps
+  9× a beat. The 60 fps ruler on the deterministic page (`look-hue.py`, the far-exterior annulus's circular-mean hue): EXT 36–38.5 |Δhue| median
+  1.21° p90 2.78° with **sign reversals on 59 % of frames**, 56–59 median .85° p90 4.99° max 19.8° reversals 47 %, against the INT control's
+  .84° / 1.83° / reversals 16 % — the sawtooth (the plan's 4.1° / 16° / 39° were the recording's 36–48 fps frames). (6) The orbit head dot: the
+  white comet at 15.7–21.7, 47, 50, 74, 105 s (INT at ρ < `DOTS_RHO`).
+- **What moved (every number a constant in `assets/scenes/nav3/`, v0.43's reachable by the knobs below).**
+  1. **The hold's interior (`implode.js`, `shaders-v2.js`).** `OUT3.BLACK` 1: a non-escaped pixel with no chart is BLACK while the implosion is up
+     (OUT past the chart, EXT, IN), the petal layer weights `uImp.x` (the way in) instead of `max(x, y)`. **ε₀ is calibrated per drop** —
+     `ESC_FLOOR` .3 / `ESC_TOP` .8: two bisections in log ε (`ESC_STEPS` 8 inside [EPS/`ESC_SPAN` 4, EPS·4] × size, `layer()` as the ruler, along
+     the sweep's middle) give ε_lo where the former petal's escape fraction is .3 and ε_hi where it is .8; the hold walks between them by the
+     ENERGY `drive` = `HOLD_LOUD` 1 × the loudness ladder (eased `HOLD_TAU` 1 s) + `EPS_BEAT` .25 × the beat profile's crest (move2.js `M2.crest`:
+     continuous, 1 on the line, 1.5 on the downbeat — the sawtooth is gone) + `EPS_DROP` 1 × the slam's own pulse (`IMP.slam` 1 at the drop and at
+     a re-arm, over `SLAM_T`), ε = ε_lo·(ε_hi/ε_lo)^min(drive, `DRIVE_MAX` 1.6). Why calibrated and not ×4: the scan (`look-replay.mjs SCAN=1`)
+     read the fraction as a CLIFF whose place is the root's — a cusp root goes .00 → .96 between ε/size .008 and .016, a q 4–7 root needs .03–.06
+     for .3 — so one `EPS` .016 was dust at Comptine's 34 s root and a black blob at its 53 s root. `EPS` .016 is the bracket's centre (was .004);
+     the `reach` param is a constant −6 now (its old route, .55 eS + .5 tension + 1.5 dropEnv, double-counted the energy the ladder carries and put
+     a dance track's whole former interior to dust). **The dropEnv leak is closed:** v3's envelope reaches ε only with `&n3drop=any`.
+  2. **What moves in a long hold.** (a) the depth follows the ladder (above); (b) **the direction sweeps the exterior wedge**: at the drop the wedge
+     [aLo, aHi] around the fan's direction is probed with `escapes()` at ε₀ and 4ε₀ (`WEDGE_STEP` .02 rad, up to a half turn each way), and in EXT
+     the direction is the wedge's middle + a sine of `TURN_BARS` 4 bars with the half-sweep min(`TURN_MAX` .5 rad, (1 − `TURN_MARGIN` .15) × the
+     half-width) — a cusp root sweeps ±.3–.5 rad, a satellite root ±.03 (its wedge is .06 rad): Lavaurs' phase changes with arg ε and the
+     imploded set morphs continuously. `IMP.phi / wedge / loudE / eps0 / epsHi / drive` in `n3info().imp`.
+  3. **The jitter (`nav.js`).** Every DANCE term is × the PERCUSSIVENESS scale s = clamp(perc / `PERC_REF` .33, `PERC_MIN` .2, 1), perc the engine's
+     onset-envelope spikiness eased over `PERC_TAU` 3 s (`N.percE / percS`); the bar turn ACCUMULATES at the scaled rate (`N.turn`, not TURN × N.bar —
+     the product would jump with s); the kick jump's length too (`KICK3.PERC` 1). **Which field, and the nine numbers** (`look/perc.txt`, the 0–110 s
+     traces' means): **perc** — Comptine **.100** · Malicious .164 · Raindrops .261 · SeeYouDrop .263 · Vienna .304 · IBelongHere .359 · TheChain .567
+     · CyborgNinja .649 · WhoLikesToParty .750 → the scale Comptine **.30**, Malicious .50, SeeYouDrop / Raindrops .80, Vienna .92, the rest 1.
+     `punchy` is NOT it: the crest factor of a solo piano reads **.248 against SeeYouDrop's .068** (Raindrops .128, Vienna .157).
+  4. **The chart through the kick (`nav.js` `KICK3.CHART` 1, `N.shown`).** While the kick rings the DRAWN c is off the ball, so its chart is found on
+     its own — `findCycle` at `N.c` each frame (`N_ITER`, the same period), published with the rim-scaled convergence radius, uploaded by index.js as
+     `N.shown` — the Koenigs bands tighten toward the rim with the jump; a drawn c findCycle cannot name draws none (v0.43's blink). The ball's chart
+     is untouched.
+  5. **The palette (`look2.js`, `shaders-v2.js`).** `pal3(t)` = `pal(t)` × min(`PAL3.Y` .5 × uPal.w / luma, `PAL3.MAX` 4): the interior's bands
+     (`base` and the smoulder) at one luma whatever the hue — blue ×4 (Y .07 → .29), green ×.7; the drum, the trap and the exterior keep `pal()`.
+     `LUM_IMP` (.3, 2.5): the exterior's knee while the implosion is up (mixed by uImp.y; was LUM_EX's .45).
+  6. **Assumed.** `SIG_TINT` 0 (σ off the exterior layer's and the petals' hue; `IMP.sig` still computed) · `EPS_BEAT` on the crest (above) · the
+     orbit dots: `params.dots` from() → 0 (draw() skips at 0; route it on with `&param=nav3.dots=c:1.5`).
+- **The knob table.** `&n3imp=EPS,EPS_BEAT,EPS_DROP,PET_K,PET_R,T_IN,SETTLE,PET_LUM,HOLD,REARM,HOLD_MAX,HOLD_LOUD,TURN_BARS,TURN_MAX,SIG_TINT,BLACK,
+  ESC_FLOOR,ESC_TOP` — **v0.43's hold: `&n3imp=0.004,0.5,2,0.03,1,1.4,8,0.08,1,1,32,0,0,0.5,0.3,0,0`** (ε₀ .004 uncalibrated, the linear breath,
+  no ladder, no sweep, σ on, the petals both ways) · `&n3dance=BASS,KICK,HIT,TURN,SWAY,SNARE,PERC_REF,PERC_MIN,PERC_TAU` (v0.43: `…,0.08,0` — the
+  scale off) · `&n3kick3=LEN,ANG,PERC,CHART` (v0.43: `.5,.9,0,0`) · `&n3pal3=0` (pal(); `=Y,MAX`) · `&n3lum=L0,K,L0x,Kx,L0i,Ki` (v0.43: `…,.45,1.5`)
+  · `&n3drop=any` (v3's dropEnv back in ε) · `&param=nav3.dots=c:1.5` (the dots). New: `OUT3.ESC_FLOOR ESC_TOP ESC_SPAN ESC_STEPS DRIVE_MAX HOLD_LOUD
+  HOLD_TAU TURN_BARS TURN_MAX TURN_MARGIN WEDGE_STEP SIG_TINT BLACK`, `DANCE.PERC_REF PERC_MIN PERC_TAU`, `KICK3.PERC CHART`, `look2.LUM_IMP PAL3`;
+  moved: `EPS` .004 → .016, `EPS_BEAT` .5 → .25 (on the crest), `EPS_DROP` 2 → 1 (on the slam), `reach` → −6. `feats` + `perc`, − `tension`.
+- **The numbers.** *The nine-track replay* (`look-replay.mjs`: `updateNav` as pure state through the 0–110 s live-lane traces with §143's shift and
+  SUBV_HAD; `look/replay-{before,after}.txt`; INT frames only for the dance columns):
+
+  | track | \|Δlog λ\|/beat | ρ-rev/s | chart-off % | crossings | implosions (esc min/mean/max over the hold) |
+  |---|---|---|---|---|---|
+  | Comptine | .535 → **.246** | 5.4 → 5.3 | 13.6 → **0** | 0 → 0 | 2 → 2: 33.0→43.9 (.00/.01/.04 → **.13/.66/1.0**), 51.7→72.1 (.00/.51/1.0 → **.00/.71/1.0**) |
+  | Comptine (map) | .556 → **.252** | 4.9 → 4.8 | 23.0 → **0** | 0 → 0 | 3 → 3: + 107.4→ (.00 → .00/.78/.96) |
+  | SeeYouDrop | .382 → .282 | 3.9 → 3.5 | 23.6 → 0 | 3 → 3 | 2 → 2: 57.6→75.2 (.00 → .33/.71/1.0), 105.6→ (.04 → .85) |
+  | IBelongHere | .361 → .306 | 3.7 → 3.6 | 31.0 → .1 | 0 → 0 | 1 → 1: 65.8→87.7 (.06 → .38/.58/.63) |
+  | Raindrops | .399 → .392 | 3.6 → 3.3 | 28.5 → 0 | 6 → 10 | 1 → 1: 129.5→ (.04 → .54/.79/.96) |
+  | Vienna | .490 → .415 | 4.2 → 4.0 | 11.2 → 0 | 1 → 1 | 1 → 1: 85.3→ (.00 → .33/.67/1.0) |
+  | WhoLikesToParty | .419 → .421 | 5.5 → 5.4 | 46.6 → .1 | 2 → 2 | 1 → 1: 57.5→79.7 (.00 → .00: a q 7 root, no escape inside the budget at any ε of the bracket) |
+  | Malicious | .361 → .262 | 4.8 → 4.0 | 13.7 → 0 | 0 → 0 | 1 → 1: 68.9→87.3 (.15 → .21/.67/1.0) |
+  | TheChain | .355 → .364 | 3.8 → 3.7 | 40.2 → .2 | 2 → 2 | 2 → 2: 44.7→72.6 (.00 → .29/.69/1.0), 86.1→90.8 (.00 → .42/.77/1.0) |
+  | CyborgNinja | .321 → .311 | 4.0 → 4.1 | 65.7 → .2 | 0 → 0 | 0 → 0 |
+
+  Read: Comptine's dance at **.25 per beat** (half; inside the dance tracks' .26–.42 now), the dance tracks within 0–26 % of before (SeeYouDrop and
+  Malicious the most, at scales .8 / .5); the ρ-reversal count barely moves on any track — it counts the spring's sign changes, not their size, and
+  the dance tracks read 3.3–5.4 too, so it was never the piano's discriminant; **chart-off 11–66 % → 0–.2 %** on all nine (the .1–.2 % = kicks whose
+  drawn c findCycle could not name); the holds' escape fraction **.00–.04 → a floor of .13–.54 and a mean of .58–.79** on every root but
+  WhoLikesToParty's. The implosions' times are §143's to the frame (the shift and the hold are the engine's; the roots differ where the dance's
+  path differs). *The frame rulers* (`look-ruler.py` on the deterministic page from 0, `look/frames-{before,after-peek}.txt`): **18 s** black 15 → 12 %,
+  structure .83 → .96; **26 s** black **57 → 39 % (centre 57 → 13 %)**, structure .60 → .91, the violet bands legible; **36 s** (the first hold)
+  structure .70 → 2.38, wash 0; **60 s** (hold 2 at loud .78) black 52 % (the exterior dark), the centre's wash 22 % = the dust at esc .96;
+  **94.0 → 94.4 s** (the kick at 94.1): black 1 → 10 %, structure 1.41 → 1.21 — the bands stay (before: the chart off, the centre black .84);
+  **110 s** the painted basilica → the dust shape. *The eye* (`tools/work/nav3/peek-ba-{1,2,3}.jpg`, before over after at 18 / 26 / 36 / 57 / 60 / 66
+  / 94 / 110 / 115 / 120 / 34.5 / 40 s): at 18 and 26 the interior's spiral bands read where the before frames are black with a white comet; the holds
+  are a dust-eaten silhouette with black cores where the before frames are painted petal blobs (66 s: pink lobes with dark holes) or a flat black
+  blob with a green rim (115 s).
+- **The gate.** `node tools/check.js` **0 fail** (6 warn: the pre-existing soft caps; `nav.js` 435 lines, `implode.js` 310 — inside the 500 hard
+  cap) · `npm test` **exit 0** (test_nav3 OK: 8 crossings, 4 drops → 1580 EXT frames, the layer's escape fraction up to 1.00, max step .0502,
+  .041 ms per update; test_shift OK, test_fluid 345 ok, test_music 151 ok, test_vox's gate lines met — the worktree needed `tools/truth/traces/`,
+  `tools/work/vox/` AND the PCM dumps `tools/work/<T>.48000.st.f32` + their `.json` sidecars symlinked from the main checkout: the HARNESS pitfall
+  grew two files) · the full `tools/scene-md5.sh look` list, the q trace on the nine windows, the Comptine after-frames' rulers (60 fps |Δhue| in
+  EXT against the INT control, the frames at 18 / 26 / 94), the strips `tools/work/nav3/look-comptine-{30-75,105-130}.jpg` and the SeeYouDrop
+  strip: **PENDING — the Chrome chain `tools/work/nav3/look-chain.sh` (md5 → shots → syd → q) runs on PORT 8817; this entry is completed when it ends.**
+- **NOT done.** The user's eye on all of it (every number here is a ruler's). The hold's escape fraction is the former PETAL's three zones inside the
+  budget — at a deep root (WhoLikesToParty's q 7, SeeYouDrop's 107 s q 4 of period 7) no ε of the bracket reaches the floor and the hold sits at the
+  bracket's top edge (ε/size .064): a black silhouette on dust, as v0.43's but black. The direction sweep moves the escape fraction too (a wedge's
+  edge is nearer M: Comptine 37 s reads .54 at φ .29 against .58 at the middle) — the floor is the middle's. The ρ-reversal count is not a jitter
+  ruler (above). `ESC_FLOOR` .3 / `ESC_TOP` .8, `HOLD_LOUD` 1, `TURN_BARS` 4, `PAL3.Y` .5 are first numbers for the eye, not swept. The OKLCH mapping
+  (`&colour=oklch`) carries none of the shader changes (as since §140). `nav.js` 435 lines (soft cap 350, as since §140).
