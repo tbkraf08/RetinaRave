@@ -1,0 +1,288 @@
+================================================================================
+ v0.42 — the cloud follows the singer, a ninth song
+ the tag receipt · 2026-10-17 · one Opus worker on main, no worktree
+ the user: "tag and merge" (the merge was done)  -> TAGGED LOCALLY, NOT PUSHED,
+                                                    NOT DEPLOYED
+================================================================================
+
+WHAT SHIPS — everything on main since the v0.41 tag at 7ecf804. This commit adds
+NO code: two version strings, the releases.json entry, the two generated site
+files, the frozen page, this receipt and DECISIONS §139.
+
+  §137  THE NINTH TRACK — TheChain (Fleetwood Mac, the 2004 remaster): the library
+        grows from eight to nine, and "tune on all tracks" now means NINE
+        (windows.py TRACKS -> windows.json, the one list real-md5.sh and
+        test_music.js read). Its map, the 8 / 5 / 3 / 2 / 1 / 0.569 / 0.224 s
+        grains, the kick (940) and snare (985) click truths, the loudness shape
+        (-12.219 LKFS, range 13.22 LU — the widest in the library), the one drop
+        at 199.692 s (+8.23 LU, x6.653 — the biggest ratio in the library), the
+        Demucs vocal truth (46.2 % of the music sung, 15 windows / 8 passages, the
+        lead at E4 / F4 / G#4) and the file-mode lane (TheChain.vox.json, local).
+        HELD OUT OF THE NET'S TRAINING (voxtrain.py LIB_HELD), so its vocal rulers
+        are the first UNSEEN word on the §133 / §134 net:
+          the sung pitch within a semitone        95 %  (95 % modulo the octave)
+          false voice (voxS >= .5 outside the hand windows)   0.5 %
+            — the lowest of any track, under the solo-piano control's 2.59 %
+          voxS p50 in / out  .720 / .054 = 13.3x  (second only to in-sample 19.4x)
+          the shared vox gate lit on 100 % of the SUNG time, 7.7 % of the unsung
+            (lane; 88.8 / 6.4 live) — sung-of-lit precision 92 %
+        Two pre-existing breakages fixed on the way (kicktruth.py / snaretruth.py
+        loaded the §66 reference lists unconditionally and so failed on EVERY
+        track). Nothing in assets/ was touched by §137.
+  §137 addendum  THE FELT GRID IS 76, ON THE ODD PARITY. The user's ear on the two
+        click renders ("I nod my head at 76 bpm, but the B clicks off beat"):
+        the octave is 76, not the grid's 151.9991 nor the onset ACF's 153.8, and
+        clicktrack.py's --every=2 lattice took the EVEN parity while the bar line
+        is odd. clicktrack.py learned --offset and --bar; TheChain.json gained
+        bpm_grid.hand (76.0, provisional: true) in the §117 / §72 shape; the
+        `beats` / `downbeats` lists are UNCHANGED (the figure is recorded, the list
+        stays). THE BEAT GATE STAYS OFF (windows.py NO_GATE) until the user
+        confirms the B2 render. Also: the §66 Vienna reference lists were never
+        lost, only archived — restored and re-proven by RE-RUNNING the generator
+        (both 2026-09-30 files bit-identical, md5 5e2f7125… / f060d582…), so the
+        Vienna P/R columns print again; and §69's "72 rim/clap hits on beats 2 and
+        4" is corrected in prose (26 of the 72 are there — it is the mid-band
+        transient list §69 itself says it is).
+  §138  DUST FOLLOWS THE SINGER. §137's measurement scoped it: the gate was
+        accurate and DUST spent it thinly (DIM .25 onto three shells of sigma
+        .0075 — a hairline .009 scene units thick in a 1.7-unit disc, 2.4 % of the
+        grains — and its one motion with the melody was RADIAL). Now the sung
+        register is a BAND (W .03, ~9 % of the grains at E4) lit in the note's hue
+        at x5.5-6.7 and grown (SZ 1.2), the rest of the cloud gives up nearly half
+        its light to it while a voice sounds (DIM .45) and takes it back within the
+        gate's .3 s release, and THE PITCH IS A HEIGHT: Y0 .6 moves the whole
+        cloud, Y1 1.6 the band on top. The drum grammar (§61-§82) is untouched.
+        TWO §127 SLIPS FIXED: the light budget (the gain is DIM/p, not
+        DIM·(1-p)/p — the population mean of the brightness factor now reads
+        .993-1.000 from C3 to C6, and test_voxscene's ±.02 caught the old one at
+        the band's p), and THE SIGN OF UP (lookVP's up vector is -up, so screen up
+        is world -y: §127's ribbon rise had been lifting the line for a LOW note).
+        Proof: r(lumY, voxY) .71 / .47 / .24 on SeeYouDrop / Raindrops /
+        IBelongHere with the kick's Δ ~0 on the same frames; the real-md5 s3
+        sweep 50 of 66 held (below).
+  §138's own carried miss: ONE unvoiced line moved — Vienna drop1-f1522-m0, the
+        live path, the net's known false voice on its synth leads (§123, 5.1 % of
+        Vienna's frames) which §127's cloud was already spending. The gate's leak,
+        not DUST's; its m1 line holds.
+
+THE CLASS IS `scene`, AND `scenes` IS [3].
+  THE FILE'S OWN RULE, as its entries show it: a release is `engine` when what
+  moved is in the ears / the engine's shared machinery (§129 v0.39, §132 v0.40,
+  §136 v0.41 all say "no scene was added and no id moved, so it is not a scene
+  release" — and in all three the CONTENT was the ears or the substrate). Here
+  NOTHING in the ears, the gate or core/ moved: `git diff v0.41..HEAD -- assets/`
+  is FOUR FILES, all of them assets/scenes/dust/ (help.js, index.js, shaders.js,
+  voice.js). The only engine code in this release is one scene's own picture, which
+  is what v0.21 ("DUST rebuilt: read the song with the sound off", class `scene`,
+  scenes [3]) and v0.34 ("NAV moves with the music", class `scene`, scenes [2])
+  both are. `tuning` was rejected: §138 is not a knob pass — it adds a grammar
+  element (the band, the ride) and three new knobs (Y0, Y1, SZ), and fixes a sign.
+  §137 is truth and tools only and lands in `decisions`, not in the class.
+  SCENE 4 TORUS2 IS NOT LISTED: §137 explicitly left the analogous read on TORUS2
+  and FLUID2 untaken, and no TORUS2 byte moved.
+  THUMBNAILS: the build renders one per listed scene that has
+  site/thumbs/<name>.jpg (tools/whatsnew.js). site/thumbs/ holds dust.jpg
+  fluid.jpg mandala.jpg nav2.jpg torus2.jpg — so the v0.42 article renders exactly
+  ONE, DUST, verified in the DOM (gate 5). Nothing was shot by hand; §136 / §129 /
+  §125 let the build decide the same way.
+
+THE ENTRY, IN A VISITOR'S WORDS — "The cloud follows the singer".
+  No measurement in the prose, no § (releases.js refuses one). The body leads on
+  the complaint it answers (the singer had a hairline under a drum kit), gives the
+  band, the recession and the height, names the mirrored-view sign fix in one
+  sentence, then the ninth song as the only unseen word on the detector, and ends
+  on the honest limits: a solo piano in a singer's range can still make the cloud
+  flicker a little; a chopped shouted sample reads as a voice with no note in it,
+  so its light has no colour; on one song the lit line owns the picture by itself;
+  the seam that puts the swarm on a line is still a once-a-section decision; the
+  new song's pulse reads at double the speed you nod at, so it is in the library
+  for watching rather than for measuring against; and the eye on all of it is so
+  far mine.
+  decisions: ["§137", "§138"] — BARE NUMBERS ONLY. tools/releases.js:36 validates
+  every element against /^§\d+[a-z]?$/, so "§137 (the addendum)" would be a
+  problem; the addendum lives inside §137 in DECISIONS and is named in prose here.
+
+THE RECIPE, §136's STEP FOR STEP (§125's releases.json pitfall paid forward a
+FIFTH time).
+  package.json + assets/core/version.js  0.41.0 -> 0.42.0, TOGETHER (§89 —
+    test_rec.js is the gate that they agree; the take came out
+    retinarave-v0.42-nav2-2026-10-18T01-26-18.webm with the sidecar reading
+    retinarave 0.42.0).
+  releases.json top entry (v0.42, 2026-10-17, class `scene`, scenes [3],
+    decisions [§137, §138], no clip) — HAND-INSERTED as
+    JSON.stringify(entry, null, 1) indented one space, after proving FIRST that
+    JSON.stringify(load(), null, 1) + '\n' == the file byte for byte (34 850
+    chars / 35 069 bytes, true), and then that the RESULT round-trips and that the
+    39 existing entries are byte-identical in the tail. A PURE INSERTION:
+    git diff --numstat = 16 added, 0 removed. releases.js save() writes a
+    different compact layout and would reformat all 40 entries; IT WAS NEVER
+    CALLED — the note has now held and cost nothing five times running.
+  npm run build  -> 40 entries -> site/whats-new.html 63 388 bytes (62 KB, was
+    59 045 at v0.41), index.html's #newin line moved because the title did, and
+    dist/index.html 151 modules + 12 in the ears Worker, 269 KB inline,
+    1 854 024 bytes.
+  node tools/bundle.js releases/retinarave-v0.42.html  -> THE SAME 151 / +12 /
+    269 KB / 1 854 024 bytes, VER = '0.42.0'.
+  git rm releases/retinarave-v0.39.html  (the three-page rule, §118): releases/
+    keeps v0.40 / v0.41 / v0.42, and v0.39's page is in history at its tag.
+
+THE FROZEN PAGE, READ AGAINST v0.41's (151 + 12 modules / 1 848 752 bytes).
+  THE MODULE COUNTS ARE IDENTICAL — 151 + 12, nothing entered or left the page
+  graph — and the INLINE WORKER IS THE SAME 269 KB, because not one byte of the
+  ears moved. The +5 272 bytes are DUST's four files and the two version strings:
+  the band and the ride in the shader, the knob table in voice.js, the help line.
+
+THE GATES, EACH RUN ON THE TREE AFTER THE BUMP.
+
+GATE 1  the static checks
+  node tools/check.js  — 154 modules · uniforms 161 · MS keys 223 · scenes 6
+    (help.feats gaps 0) · 0 FAIL · 5 WARN, exit 0  -> MET (the 5 warns expected:
+    the line soft caps, all far under the 500 fail cap — core/fluid/fluid.js 376,
+    core/scenes.js 370, ears/perc.js 407, dust/index.js 365 (364 at v0.41: §138's
+    one line), torus2/index.js 367).
+  node tools/releases.js check — 40 entries · top v0.42 == package.json 0.42.0 ·
+    0 problem(s)  -> MET
+  node tools/whatsnew.js --check — 40 entries · up to date  -> MET
+  node tools/license.js --check — 157 public files · 0 without the header  -> MET
+    (157 at v0.41 too: §137 and §138 added no public file — the truth json, the
+    grain tables and windows.json are data, and the tools are not public files.)
+
+GATE 2  npm test — EXIT 0, 43.4 s  -> MET
+  test_dsp all pass · test_rough / test_baby / test_misi / test_hopf OK ·
+  test_tempo OK · test_director OK · test_bars OK · test_drums OK · test_build OK ·
+  test_queue OK · test_clock OK · test_loud OK 43 pass (6.30 µs/frame under the
+  40 µs budget) · test_tongues OK · test_fluid 345 ok / 0 fail ·
+  test_earsw OK (every EARS_FIELDS value identical over both transports, 1800
+  reads x 34 fields, 0 differ) · test_voxscene OK · test_music 151 ok / 0 fail
+  (the ninth track in the lists, its own claims printing as notes — gate: false).
+  test_vox: the mel parity (max |Δ| 7.05e-5 raw / 1.29e-5 normalised) and the ONNX
+  parity on 200 held Jamendo-test windows (voice logit 8.95e-6, the 61-logit pitch
+  head 1.99e-5, every column, both heads) both PASS; the stage 91.2 µs/hop median
+  (p99 158, mean 95.6) against <= 100 — MET, and thin, as §136 said; the pruned
+  FFT 14 775 hops / 14 772 inferences, magsLo == mags on 0 bins differing and the
+  front end through either identical on 5 622 hops.
+  TheChain's gated VOICED row PASSES: voxS p50 .720 / .054 = 13.3x > 2x.
+  THE KNOWN MISSES STILL PRINT AS `note`, NEVER AS FAIL, and were not re-baselined
+  (carried from §134 / §126, not this tag's):
+    Jamendo test, 16 unseen tracks: F1 .825 / P .85 / R .803 / AUC .902 against
+      the §133 gate's >= .84 — MISSED, recorded
+    IBelongHere (UNSEEN): F1 .814 / P .961 / R .706 / AUC .877 — §126's recall
+    the mix pitch ceiling: voxHz within a semitone 49 / 53 / 10 / 50 % on
+      IBelongHere / Raindrops / SeeYouDrop / TheChain against the plan's 70
+
+GATE 3  GPU=1 MUTE=1 node tools/test_rec.js  (PORT default; no extra port used)
+  test_rec: ALL OK  -> MET
+  THE VERSION PAIR MOVED TOGETHER, which is this gate's whole job:
+    sidecar app/version  = retinarave 0.42.0
+    the file name        = retinarave-v0.42-nav2-2026-10-18T01-26-18.webm
+  §92's pin still wins: q .75 held through the take, the governor free again
+  (Q.hold null) from q0 .55 after the stop. webm 15 864 866 bytes, EBML magic,
+  5.92 s / 7 clusters ~ the sidecar's 6.014, a frame decoded, the HUD on in the
+  DOM, the timeline 2 -> 3 -> 1 within 0.6 s of the keys (2.066 vs 2.06, 4.065 vs
+  4.07). 358 frames at 59.5 fps composited — BETTER than §136's 270 at 45.0 on the
+  same box at load 6.42 (the user's own Chrome + VS Code are most of it; the idle
+  floor here is 2.5-3 and was not waited for). GPU=1 throughout; §132's finding
+  that the governor assertion fails on swiftshader WITHOUT GPU=1 is known and was
+  not re-tested.
+
+GATE 4  the frozen page from file://, headless, CLOCK=1 GPU=1 MUTE=1
+  FILE=$PWD/releases/retinarave-v0.42.html, PORT=8993 (debug 9993),
+  steps [{until window.CARD}, {until window.__FRAME>=300}, {eval ...}]
+    test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+    test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+    test&scene=3 -> {"sc":3,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}  <- DUST
+    test&scene=4 -> {"sc":4,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}
+  errs [] and bad [] (CARD.nonFinite()) on all four  -> MET
+  THE FOUR LINES ARE §136's TO THE CHARACTER, `idle` included — which is the point
+  for a release that moved one scene's shader: DUST's picture changed and its MS
+  read did not. CLOCK=1 from the FIRST pass (v0.37's pitfall, paid forward a
+  fifth time). MUTE=1 on every run — NO AUDIO WAS PLAYED at any point.
+  §131's honest note stands and is not this tag's: from file:// in Chromium the PCM
+  bus's worklet cannot load (blob:null/<uuid> is cross-origin there), so the live
+  ears never run on a saved page; the fake timeline needs no PCM, which is why
+  these four lines are clean — and on the fake timeline voxConf is 0, so DUST's two
+  new shader blocks are skipped, which is also why the s138 fake smoke held 2 of 2.
+  THE GREPS ON THE PAGE:
+    EARS_WORKER_SRC   6 hits  (§131's inline Worker source, v0.41's count exactly)
+    idleFluid         4 hits  (§135)
+    `reads: true`     3 hits  (the two fluid cards' §135 declarations, CONTRACTS §1.4)
+    nParams: 55246    2 hits  (§134's weights module, unmoved)
+    §138's NEW KNOBS, present with their values:
+      #define VOX_W 0.03 · VOX_DIM 0.45 · VOX_A2 0.5 · VOX_A3 0.25 ·
+      VOX_Y0 0.6 · VOX_Y1 1.6 · VOX_SZ 1.2   (and VOXD's DIM: 0.45 in voice.js)
+
+GATE 5  the no-third-party receipt (SOCIAL-PLAN §4) — ONE HOST ON EVERY ROUTE
+  Hosts collected from performance.getEntries() on each route.
+  /whats-new  (PORT=8993)  -> ["127.0.0.1:8993"]
+      title "What's new in Retina Rave — every release, newest first"
+      the v0.42 article renders: id="v0.42" true, the label "new scene",
+      "17 October 2026", h3 "The cloud follows the singer",
+      the notes line "engineering notes: §137 · §138",
+      and exactly ONE thumbnail: DUST  (scenes [3])
+  /           (PORT=8995, NOAUTO=1 real)  -> ["127.0.0.1:8995"]
+      #newin reads "New in v0.42: The cloud follows the singer → what's new"
+  /about      (PORT=8997)  -> ["127.0.0.1:8997"]
+      title "About Retina Rave — music, math, and why it exists"; Jamendo and
+      MAESTRO both present in the DOM.
+  -> MET on all three.
+  THE CREDITS WERE ALREADY IN PLACE AND NEEDED NO MOVE ([[feedback-credit-where-due]]):
+  §137 borrowed no NEW corpus, solver or idea — Demucs (Défossez et al.) and
+  librosa / pYIN (Mauch & Dixon) are in THIRD-PARTY.md with their licences since
+  §122, and §137's §66 regeneration ran the repo's OWN one-off. git diff
+  v0.41..HEAD -- site/about.html THIRD-PARTY.md is EMPTY, correctly.
+  THE USER'S OWN DEV SERVER WAS LEFT RUNNING AND UNTOUCHED: 8765 (this checkout —
+  the only port in the 87xx-88xx range listening). Every port used here was
+  8993 / 8995 / 8997, and no serve.js was killed that this session did not start.
+
+WHAT WAS NOT RUN, AND WHY — the brief's own instruction, and it holds.
+  THE FULL REAL-MD5 ROSTER and accept.sh. §138 paid the sweep on the ONLY folder
+  that moved: SCENES=3 PAR=2 tools/real-md5.sh s138-s3 — 74 lines, 49 runs, f0 2 on
+  all, 908 s wall, 50 of 66 HOLD, 16 move, 8 new
+  (tools/accept/v0.39/real-md5-s138-s3.txt). Every line of Comptine, CyborgNinja,
+  Malicious, WhoLikesToParty and the take holds in both map modes (w 0: the blocks
+  are skipped); the voiced tracks move exactly where the gate is open at the
+  window's frame (IBelongHere 5, Raindrops 6, SeeYouDrop 4) and hold where it is
+  shut; TheChain's 8 lines are new (§137 came after s135); and ONE unvoiced line
+  moves — Vienna drop1-f1522-m0, live, the net's known false voice, carried above.
+  The fake smoke held 2 of 2 (scene-md5-s138.txt). §135's 330-line sweep
+  (real-md5-s135.txt) covers s0 / s2 / s4, and NOTHING ELSE IN THE ENGINE HAS MOVED
+  SINCE: git diff v0.41..HEAD -- assets/ is the four dust files and nothing else.
+  So §138's and §135's receipts ARE this release's content proof.
+  Also not run and not owed: a fresh load bench, test_ears --trace, fluid-tracks.js,
+  a director trace (the roster is unchanged at SCENES="0 2 3 4"; nothing entered or
+  left the rotation), and the key rulers on TheChain (§137 left them, a 0.036
+  parallel margin under the shade gate).
+  NO REFERENCE WAS RE-BASED HERE — the next engine sweep does that, never the tag.
+  NO AUDIO WAS PLAYED AND NOTHING WAS RETUNED.
+
+CARRIED FINDINGS — recorded, NOT fixed, and none of them this tag's.
+  1. tools/accept/v0.39/{scene-md5,real-md5}-s134-full.txt (and real-md5-s134-s1.txt)
+     ARE STALE ON s1 — cut at 8c464a0, before §132's FLUID2 reset landed on main.
+     real-md5-s135.txt supersedes them for s1. Unmoved since §136 named it.
+  2. TheChain's BEAT GATE IS OFF (windows.py NO_GATE) until the user confirms the
+     B2 render at 76 on the odd parity; bpm_grid.hand.provisional stays true with
+     it, and the half-bar (k = 3 vs 7 mod 8) is a tie in the numbers (kicks 77/76,
+     snares 73/75) that only the ear can break.
+  3. THE UP-VECTOR SIGN ON TORUS2's STRAND IS UNCHECKED — §127's ribbon rise was
+     wrong-signed in DUST and TORUS2 may share the recipe (§138 did not look).
+  4. §134's two MISSED gates and §126's IBelongHere recall (gate 2), stated plainly
+     in the entry's prose.
+  5. core/fluid/fluid.js at 376 lines over the 350 soft cap (§135's item 2).
+  6. accept.sh's routes / params blocks on NAV2, still owed since §118.
+  7. THE USER'S EYE is the gate on §138 and has not been given: all four voiced
+     tracks, live and lane (#test&track=TheChain&scene=3&vox=live, and without
+     &vox= for the lane; &dvox=0 on either for the before). §136's two eye items
+     (DUST / NAV2 at home, the fluid fill-from-dark) are also still open.
+
+THE DEPLOY SHAPE, UNCHANGED — AND THIS IS WHY THE TAG STAYS LOCAL.
+  dist/ is what npm run build writes and what wrangler.jsonc serves
+  (assets.directory ./dist); dist/ is git-ignored and not committed, and there is
+  no .github/ workflow — the deploy is Cloudflare, git-connected to
+  github.com/tbkraf08/RetinaRave, building on a push to main. SO THE PUSH IS THE
+  DEPLOY, and the user's word was "tag and merge": NOTHING WAS PUSHED. When the
+  word comes it is ONE push of main --tags, then poll for the VER line, NEVER a
+  second push (§115). ONE release commit, then
+  git tag -a v0.42 -m "v0.42 — the cloud follows the singer, a ninth song" — and
+  stop. The six sibling worktrees (../RetinaRave-vox-net3, -fluid-idle, -v034,
+  -track9, -chain-truth, -dust-voice2) were NOT TOUCHED.
+================================================================================

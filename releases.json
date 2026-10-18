@@ -1,5 +1,21 @@
 [
  {
+  "version": "0.42.0",
+  "tag": "v0.42",
+  "date": "2026-10-17",
+  "class": "scene",
+  "title": "The cloud follows the singer",
+  "body": "Watching the swarm of grains on key 4 with a song I know well, I could not see the singing in it. The kick, the snare and the hat each had a voice in that picture and the singer had a hairline: a quarter of the light moved onto a ring so thin that under a real drum kit you would never find it, and the one thing it did with the melody was slide that ring in and out by less than its own width. The detector was not at fault, and I measured that before I touched anything — on a song the network had never heard it lit through all of the singing and almost none of the rest, and named the note within a semitone nearly every time. The signal was arriving clean and the scene was spending it on nothing. Now the register the singer is in is a band rather than a hairline, lit in the colour of the note being sung and drawn with bigger grains, and the rest of the cloud — the drums' flashes included — gives up nearly half its light to it while a voice is sounding, then takes it all back within a breath of the voice stopping. The drums recede under a held line instead of shouting over it, and the moment the singing stops they are as bright as they ever were. The note is also a height now: the lit band floats up out of the body of the cloud on a high note and sinks under it on a low one, carrying the whole swarm a little with it, in every formation the scene has. The drum grammar underneath is untouched — not one kick, ring or hat moved — this is only a question of who gets the light while somebody sings. One old mistake came out in the washing. The view this engine draws through is mirrored top to bottom, which nothing on screen could ever tell you, and the one place it mattered was the rise: the line the last release lifted for a sung note had been lifting it for a low note and pushing it down for a high one. Both rises are the right way up from here. There is a ninth song in the library, a rock record from the seventies with a real singer over a real band, and it is the first one I added after the voice detector had finished learning — it was deliberately kept out of that learning, so what it says is the only word I have from a song the network cannot have memorised. It says the detector is good. It found the singing wherever the separated vocal track said there was singing, it called the note right nearly every time, and over the whole song it claimed a voice almost nowhere there wasn't one — less often, in fact, than on the solo piano I keep as a control. The song has the widest quiet-to-loud range of anything in the library and a long stretch in the middle with no voice at all, which is exactly the material this scene needed to be judged on. One caveat on it: the engine reads its pulse at double the speed you would nod your head to, and until I have sat and listened to that properly the song is in the library for watching rather than for measuring against. Being honest about the rest. A solo piano sitting in a singer's range can still make the cloud flicker a little; it is a fraction of what it was two releases ago and it is not nothing. A chopped, shouted sample still reads as a voice with no note in it, so the light it makes has no colour. On one song the lit line through the swarm is bright enough to own the picture by itself. And the seam that puts the whole swarm on a line is still a once-a-section decision rather than something a voice can open on its own — on a song that is sung most of the way through, letting a voice open it would throw away the twenty formations the scene has for the sections of a track. So far the eye on all of this is mine; the one it has to convince is at home in front of a big screen.",
+  "clip": null,
+  "decisions": [
+   "§137",
+   "§138"
+  ],
+  "scenes": [
+   3
+  ]
+ },
+ {
   "version": "0.41.0",
   "tag": "v0.41",
   "date": "2026-10-17",
