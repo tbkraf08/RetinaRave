@@ -5880,9 +5880,20 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   cap) · `npm test` **exit 0** (test_nav3 OK: 8 crossings, 4 drops → 1580 EXT frames, the layer's escape fraction up to 1.00, max step .0502,
   .041 ms per update; test_shift OK, test_fluid 345 ok, test_music 151 ok, test_vox's gate lines met — the worktree needed `tools/truth/traces/`,
   `tools/work/vox/` AND the PCM dumps `tools/work/<T>.48000.st.f32` + their `.json` sidecars symlinked from the main checkout: the HARNESS pitfall
-  grew two files) · the full `tools/scene-md5.sh look` list, the q trace on the nine windows, the Comptine after-frames' rulers (60 fps |Δhue| in
-  EXT against the INT control, the frames at 18 / 26 / 94), the strips `tools/work/nav3/look-comptine-{30-75,105-130}.jpg` and the SeeYouDrop
-  strip: **PENDING — the Chrome chain `tools/work/nav3/look-chain.sh` (md5 → shots → syd → q) runs on PORT 8817; this entry is completed when it ends.**
+  grew two files) · **the full list** `PORT=8817 tools/scene-md5.sh look` (`tools/accept/nav3/scene-md5-look.txt`): **s0–s5 = `scene-md5-step3.txt`
+  to the byte (0 of 12 moved)**, s6 `374f0f81 / dfd88623` (was `4ac1d5fe / aaa34ba3`: the dots off, pal3, the scaled dance, the black calibrated
+  hold), errs [] hop 840 row 72 on all seven · **the q trace** (`q-all.sh look 6`, the nine drop windows real-time on the GPU, `look/q-look.txt`):
+  **q .902–.931, fps mean 60 min 60, errs [] on all nine** (§143 read .912–.921) — WhoLikesToParty **.902 is under the .91 asked** (its hold sits at
+  the bracket's top ε with the q 7 root; §143 read .915 there, min .59 on both runs — a noisy real-time trace, re-run owed) · **the 60 fps |Δhue|
+  ruler after** (`look/hue-after.txt`, the same deterministic frames): EXT 36–38.5 **median .18° p90 .45° max 2.89° reversals 19 %** (before 1.21 /
+  2.78 / 4.28 / 59 %), EXT 56–59 **.25° / 2.25° / 5.65° / 18 %** (before .85 / 4.99 / 19.8 / 47 %), the INT control .93 / 2.79 / 14.6 / 8 % — the
+  exterior inside the control's band on every column, the sawtooth gone; the picture's own |ΔY| per frame in EXT .0147 → .0061 and .0137 → .0050 ·
+  **the frames after** (`look/frames-after.txt`, = the peek's to the digit — the page is deterministic): 18 s black 12 % / structure .96, 26 s black
+  39 % (centre 13 %), 94.0 → 94.4 → 94.5 black 1 → 10 → 13 % with the structure 1.41 → 1.21 → 1.18 (the bands through the kick) · **the strips**
+  `tools/work/nav3/look-comptine-30-75.jpg` and `look-comptine-105-130.jpg` (2 fps, 91 + 51 tiles: the ball rolling to 33, the first hold's
+  dust-eaten set 34–43, back inside 44–51, the long hold 53–71 breathing with the ladder and turning, inside again 72–75; 107.5 → 129.5 the
+  third) and `look-seeyoudrop.jpg` (50–70 s at 2 fps from `at=40`: inside to 57.5, the way in at 58, the exploded set at 59–70 — a dance drop
+  still slams: the dust fills the former interior at esc .7–1.0 with black cores, the exterior dark).
 - **NOT done.** The user's eye on all of it (every number here is a ruler's). The hold's escape fraction is the former PETAL's three zones inside the
   budget — at a deep root (WhoLikesToParty's q 7, SeeYouDrop's 107 s q 4 of period 7) no ε of the bracket reaches the floor and the hold sits at the
   bracket's top edge (ε/size .064): a black silhouette on dust, as v0.43's but black. The direction sweep moves the escape fraction too (a wedge's
