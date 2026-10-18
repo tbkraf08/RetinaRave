@@ -1,0 +1,12 @@
+lumtrace Comptine scene 6 [104, 130] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 104.000 → 130.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+104-109   0.082  0.132  0.001  0.001  0.0120  0.111  0.222   10
+109-114   0.140  0.179  0.001  0.001  0.0132  0.325  0.332   10
+114-119   0.096  0.192  0.001  0.001  0.0105  0.022  0.169   10
+119-124   0.073  0.091  0.001  0.001  0.0087  0.042  0.183   10
+124-129   0.093  0.107  0.001  0.001  0.0103  0.085  0.188   10
+129-130   0.079  0.586  0.001  0.001  0.0089  0.227  0.124    3
+ALL       0.098  0.179  0.001  0.001  0.0108  0.085  0.230   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0044 at t 129.00
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.371 · f0 2 · sr 48000 · end frame 2042 heard 130
+files: tools/work/nav3/lum-cafter/Comptine-109-125.csv · tools/work/nav3/lum-cafter/Comptine-109-125.txt

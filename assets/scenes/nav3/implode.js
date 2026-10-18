@@ -45,7 +45,8 @@ export const OUT3 = {
   EPS_DROP: 2,     // ...and by this × dropEnv: the slam explodes the set furthest, then it settles
   W0: 0.02,        // |w| at which the petal coefficient a is measured (in z units, × the cycle's own scale ZS)
   PET_K: 0.03,     // the petal's radius R solves |a| R^q = PET_K (the contraction at the rim, 1 − RHO_WALL)
-  PET_R: 1,        // × that radius: the petal scale
+  PET_R: 1,        // × that radius: the petal scale — §142: the petal LAYER is confined to it (mix × exp(−r/(PET_R·Rp)))
+  PET_LUM: 0.08,   // §142: the petal layer's base lightness (was .22 in the shader: the whole interior a flat wash for the drop's six seconds)
   GATE_FRAC: 0.3,  // the GATE is this fraction of the petal: the Lavaurs opening (|u| ~ √ε in the normal form) is far smaller than the petal, and a transit must leave it (2R) and come back — at the petal's own size the orbits of a cardioid root never left
   QMAX: 7,         // the Farey address the root is named by (q petals; θ near 0 or 1 → the cusp, 1 petal)
   ANY: 1,          // 1: dropEvt (the map's / the fake timeline's) fires the drop beside dropLiveEvt; 0 (&n3drop=live): the live slam only, as NAV2
@@ -213,12 +214,12 @@ export function stepDrop(N, S, dt, idle) {
 
 // &n3drop=live: the live detector's slam only (NAV2's read); anything else: both detectors (OUT3.ANY)
 export function knobDrop(v) { OUT3.ANY = String(v) === 'live' ? 0 : 1; return OUT3.ANY; }
-// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE]]]]]]
+// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM]]]]]]]
 export function knobImp(v) {
   const s = String(v === undefined || v === null ? '' : v);
   if (s === '' || s === '1') return Object.assign({}, OUT3);   // a bare call READS (CARD.hooks.n3imp() from the console; &n3imp alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
-  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });
+  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE', 'PET_LUM'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });
   return nums;
 }

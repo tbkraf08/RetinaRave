@@ -5599,3 +5599,70 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   whether the depth pass answered *"lots of little circles"* · the per-track `EPS` retune, once the eye has spoken · the
   Vienna / Malicious drop filetrace · the user's eye on §138's DUST band and his ear on TheChain's **B2** · the user's word on
   the push.
+
+## §142 NAV3 on Comptine — the seven remarks, NAV3-only (2026-10-18, one Fable worker in a worktree, branch `nav3-comptine` off v0.43 `4f1f527`, NOT merged; the user's capture `retinarave-v0.42-nav3-2026-10-18T17-08-55.webm` of NAV3 at d0da382, the analyst's reconstruction `COMPTINE-PASS-PLAN.md` — the offset recording = track + 3.89 s, the sheets, the node replay)
+
+- **The seven remarks, as the plan records them (track time):** 1 — the silence before the music (−3.9 … 0 s): the ball frozen on a
+  lumpy set, the exterior ray bands and spokes drifting. 2 — 27 s, 1:21, 1:29, 2:06: circles — clustered orbit sprites, round
+  lobes, the period-2 discs of a child crossing, the Koenigs rings. 3 — 32–38 s: a child entered on a loudness rise, the outline
+  the parent's, loud read as glow not shape. 4 — 47 s – 1:10: the whole interior painted flat (cyan / pink / orange) through the
+  drops. 5 — 47 vs 52 s and the sustain to 1:10 (the drops: engine's — not this branch). 6 — 1:34 / 1:38: a kick jump from the rim
+  landing OUTSIDE M, the set a pale wash for .6 s; the section mirror flipping seven times in 110 s. 7 — 1:44–2:00, the early
+  crossing at 1:45, the paint again at 1:49–2:05. The user agreed to five NAV3-only picks; `OUT3.ANY`, the re-arm during EXT/IN,
+  the reactive ladder drop and the energy hold are branch 2's (the engine's drop work) and are untouched here.
+- **The causes (the plan's, confirmed by the replay — `tools/work/nav3/replay.mjs`, NAV3's `updateNav` as pure state through
+  `tools/truth/traces/<T>-map0.json`, no Chrome; the nine tracks, `tools/accept/nav3/comptine/replay-cbefore.txt`):** the ladder-rise
+  ask crossed **13 times in 110 s on Comptine** (8 of them on the rise; 9–17 on the other tracks, 4–14 of them rises); kick jumps of
+  `LEN` .5 × the component's size from a ball at ρ .93 landed the DRAWN c **outside M on 6 of 8** Comptine kicks (12–101 of 19–115
+  on the other tracks: the set to dust on a kick); the orbit sprites were on at the rim or in a crossing on **72–98 %** of the
+  frames; the petal layer painted every non-escaped pixel at mix .85 for the drop's six seconds (the centre's luma on 47–70 s:
+  median .50, p90 .59); idle froze the ball where it was (`if (!idle)`) at ρ .3 and the clock kept .15 of its rate.
+- **What moved (every number a constant; `assets/scenes/nav3/` only, NAV2 and the engine untouched):**
+  1. **Silence.** Idle (presence < `ROLL.IDLE` .15) rolls the ball to `IDLE_RHO` .08 (= RHO_MIN·4: c ≈ λ/2 ≈ 0, the Julia set a
+     circle, Q → 1 by green.js) with the roll's own gain, and the visual clock's floor `T_FLOOR` .15 → **0** — `N.vtime` is what
+     `loop.js` takes as the palette / spoke time (`LOOK.time = cur.time`), so at presence 0 the ray bands, the spokes and the trap
+     stand still. The gate stays shut while idle.
+  2. **The circles.** The critical-orbit sprites draw only with a chart on and ρ under `DOTS_RHO` .85 (off at the rim and in a
+     crossing); the child convergence disc's cap `CONV_CHILD` .4 → **.15** × the cycle's spacing. `&n3conv=RIM,R0,MAX[,CHILD[,DOTS_RHO]]`
+     — `&n3conv=.6,.93,.05,.4,9` is v0.43's picture.
+  3. **Children.** The ladder-rise ask is gone: `GATE.RISE` .1 → **0** (0 = off; the gate guards `RISE > 0`), a crossing needs
+     `buildLive ≥ BUILD` or `dropExpectedIn > 0`; `BUILD` .45 → **.7**.
+  4. **The petal paint.** The Fatou-petal layer is confined to the petal — mix × exp(−r / (`PET_R`·Rp)) — and its base lightness
+     `PET_LUM` .22 → **.08** (`uPet`; `&n3imp=…,PET_LUM` the eighth number).
+  5. **The kick jump and the mirror.** The jump is `KICK3.LEN`·(1 − ρ)·size — LEN of the way to the wall ((1 − ρ)·size ≈ the
+     distance to the rim), never past it; the section mirror flips only with `keyConf > 0`.
+- **The numbers (`tools/accept/nav3/comptine/`).** *The replay, nine tracks, before → after* (`replay-cbefore.txt` / `replay-cafter.txt`):
+  crossings Comptine 13 → **5** (all on `buildLive`: 53.4, 83.3, 106.0 s in, 65.3 / 87.8 out), SeeYouDrop 9 → 5, IBelongHere 10 → 0,
+  Raindrops 17 → 6, Vienna 8 → 2, WhoLikesToParty 9 → 2, Malicious 14 → 0, TheChain 13 → 2, CyborgNinja 4 → 0 — every remaining
+  crossing a build or an expected drop, none a rise; kick jumps landing outside M **6 / 37 / 39 / 27 / 16 / 50 / 12 / 53 / 101 → 0 on
+  every track** (the jumps themselves unchanged: 8–119 per track); orbit-sprite frames at the rim **72–98 % → 0 %**; idle frames roll
+  to ρ .30 → the circle's target (`IDLE_RHO` .08: TheChain's 189 idle frames read a mean ρ .23 on their way down). *The Comptine
+  replay at the seven times* (track time; `replay-cafter.txt`): 0.5 s INT q1 (the opening's presence .88 — the capture's silence is
+  before the trace's 0), 27 s IN q1 (back from the 21 s implosion, the sprites off), 33 s INT q1 ρ .84 (no crossing: the 33.0 rise
+  ask is gone), 47 s INT q1 ρ .93 (the 46.9 build crossing comes at 53.4 now, `BUILD` .7), 52 s EXT q1 (the 47.5 live arm's
+  implosion, unchanged — branch 2), 1:21 INT q1, 1:29 INT q1 ρ .97 (the 92.3 rise crossing is gone), 1:33.8 INT q1 with the kick
+  at .74 and ρ .85 — the jump inside M, 1:45 INT q1 (the 105.1 crossing comes at 106.0 on `buildLive` 1.0), 1:49 OUT q7 (the
+  107.9 live arm, as before). *The circles' same-frame A/B* (`circles-ab-states.txt`, `tools/work/nav3/circles-ab.jpg`; file mode at
+  27 s, 1:21, 1:29, 2:06 — the ball in the cardioid at ρ .79 / .87 / .85 / .53 there): at 1:21 and 1:29 (ρ ≥ `DOTS_RHO`) the only
+  pixels that differ are a 50 × 50 patch at the cycle point — the sprites gone, the set identical (the band ruler 4.0 → 3.9 %,
+  2.4 → 2.2 %); at 27 s and 2:06 the frames are byte-equal (ρ under the gate, the sprites stay). The child disc's cap (.4 → .15 ×
+  the spacing) has no file-mode frame at these times to show (no child there in file mode); it is proven by the replay's
+  `eps2` and by the node drive. *The centre's wash* (`lumtrace.js` 2 fps, `lum-{before,after}-Comptine-*`): 47–70 s the centre's
+  luma median **.50 → .15** (p90 .59 → .58: the drop flashes), 1:49–2:05 median **.23 → .085**, p90 .56 → .33; the structure score's
+  median .0144 → .0111 and .0114 → .0105 (the painted petal wedges were edges too). *The dance* (`dance-cafter.txt`, 18 windows):
+  |Δlog λ| .05–.32 per beat, the arg swing .62–1.22 rad per bar, the rim 0–56 %, still 0 % — the depth pass's range held; the
+  mid-song windows sit at period 1 on 100 % of frames (nothing asks without a build). *The q trace* (`q-cafter.txt`): **.913–.926,
+  60 fps min 60** on all nine windows (NAV2 .908–.923). *The eye:* `tools/work/nav3/comptine-after.jpg` — Comptine 20–130 s at 2 fps
+  (lumtrace's sheet, a tile every .5 s). `check.js` 0 fail · `test_field` OK · `test_nav3` OK (8 crossings / 5 exits on the node
+  drive) · the s6 pair `tools/accept/nav3/scene-md5-comptine.txt`; the 12 other lines cannot move (a scene-folder change).
+- **The knob table.** `&n3roll` as before · `&n3gate=QMAX,TOL,BUILD,RISE,FALL,EXIT_BARS,DIVE,P_MAX,DEPTH_MAX,CHILD_BARS` (v0.43's asks:
+  `…,0.45,0.1,…`) · `&n3conv=RIM,R0,MAX,CHILD,DOTS_RHO` (v0.43's circles: `.6,.93,.05,.4,9`) · `&n3imp=EPS,EPS_BEAT,EPS_DROP,PET_K,
+  PET_R,T_IN,SETTLE,PET_LUM` (v0.43's paint: `…,0.22` — the confinement has no off switch but `PET_R` 99) · `&n3kick3=LEN,ANG` ·
+  `&n3dance`, `&n3drop` as before. New constants: `ROLL.IDLE_RHO` .08, `ROLL.T_FLOOR` 0, `ROLL.DOTS_RHO` .85, `ROLL.CONV_CHILD` .15,
+  `OUT3.PET_LUM` .08; moved: `GATE.RISE` 0, `GATE.BUILD` .7; the kick jump's length `LEN·(1 − ρ)·size`; the mirror on `keyConf > 0`.
+- **NOT done.** The user's eye on all of it (every number here is a ruler's). Remark 5 whole (the 47.5 false arm, the lost 52.17
+  arm, the fixed 8-beat settle through 52 → 70 and 1:49 → 2:05): branch 2 — `OUT3.ANY`, the re-arm during EXT/IN, the reactive
+  ladder drop and the energy hold are untouched here, so the drops on Comptine are exactly v0.43's. The silence pick is measured in
+  the replay only (the traces start at presence .88; no capture-mode trace of the opening exists) — the roll to the circle and the
+  stopped clock are the node drive's and the code's word. The petal confinement is not A/B'd on a Comptine frame (the centre's
+  luma is the ruler). `nav.js` is over the 350 soft cap (a warn, as since §140).
