@@ -420,7 +420,10 @@ HOME — the retuned navigator of §97–§101 in `assets/scenes/nav2/`, NAV's b
 `site/thumbs/nav2.jpg`, the kaleidoscope off; `hooks.n2info()` / `.green()` and the `n2*` knobs on `#test`. `register()` seats
 `SC.cur` / `SC.logical` / `SC.hist` on whichever scene declares `home`, so the first frame of a page load is this one and not the
 literal id 0) · **3 dust** (key `4`; on the roster) · **4 torus2** (key `5`; v0.7, TORUS's bid, the public name TORUS) ·
-**5 mandala** (key `6`; forced-only since §93: `score()` 0).
+**5 mandala** (key `6`; forced-only since §93: `score()` 0) · **6 nav3** (key `7`; §140, branch `nav3` — the navigator that ROLLS:
+a NAV2 clone whose table walk is replaced by the ball rolling inside M on `math/field.js` and whose drop is a parabolic implosion;
+forced-only: `score()` 0, `home: false`, `always: false`; its hooks are `n3*` / `green3` / `baby3` because hooks are dispatched by NAME
+across scenes — `&n2lum`, `&baby`, `CARD.hooks.green` stay NAV2's).
 Archived at §118 (`archive/scenes/`, the old → new map in `archive/README.md`; nothing imports them but `tools/test_nav2.js`, which
 reads `archive/scenes/nav/` as its A/B control): polytope (was 5), feigen (6), torus-v1 (7), nav the v0.33 control (8) with its
 DRUM variant (4), maxwell (9), gielis (10), chladni (11). Their accept references moved to `archive/accept/`.

@@ -1,0 +1,3 @@
+# NAV3 step 1 (the byte clone of NAV2 at id 6, always:false) — IDS=6 PORT=8813 tools/scene-md5.sh nav3s1, CLOCK=1 GPU=1, errs [] hop 840 row 72. The pair differs from s2's (an always:false scene misses frame 0's update — §97's note); it is the step-1 record the step-2 / step-3 pairs are read against.
+7ffaa4d4cc52846358df9da047bfd91f  s6-f360.jpg
+e8718212597aa799eda8121fd3ed4c06  s6-f840.jpg

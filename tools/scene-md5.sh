@@ -3,7 +3,7 @@
 # usage: tools/scene-md5.sh <tag> [extra hash params, e.g. '&histfull=1']     IDS="3" (or "3 7") shoots only those ids — a scene-folder
 # change is proven on its own lines (HARNESS "What to re-prove"); the full list is for main.js / core / engine changes.
 # §118 (2026-10-11, the lean-down): the registry is 6 scenes on dense ids — fluid 0, fluid2 1, nav2 2, dust 3, torus2 4, mandala 5 —
-# so a full list is 12 lines. The references in tools/accept/v0.3*/ carry the NEW names (the hashes never moved: the renumber is a
+# so a full list was 12 lines; §140 added nav3 at id 6 (key 7, forced-only): 7 scenes, 14 lines. The references in tools/accept/v0.3*/ carry the NEW names (the hashes never moved: the renumber is a
 # registration order, not a pixel). The DRUM variant went with the archived nav, so the id grep no longer finds a variant id.
 cd "$(dirname "$0")/.." || exit 1
 TAG=$1; X=$2

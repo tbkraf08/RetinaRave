@@ -41,6 +41,7 @@ import nav2 from './scenes/nav2/index.js'; // §118: id 2, key 3 — the retuned
 import dust from './scenes/dust/index.js'; // §118: id 3, key 4 — the overhauled cloud (§61–§82); on the roster
 import torus2 from './scenes/torus2/index.js'; // §118: id 4, key 5 — the Hopf torus (§37); on the roster
 import mandala from './scenes/mandala/index.js'; // §118: id 5, key 6 — the box-fold kaleidoscope; forced-only (score 0)
+import nav3 from './scenes/nav3/index.js'; // §140: id 6, key 7 — NAV3, the navigator that rolls (a NAV2 clone; chart-free on math/field.js, the drop a parabolic implosion); forced-only (score 0)
 // §118 the lean-down (the user: "I never look at polytope, feigen, maxwell, gielis, chladni, key5-nav, key8-torus, key9-nav, and OK to archive"):
 // the eight scenes they named — POLYTOPE, FEIGEN, MAXWELL, GIELIS, CHLADNI, the v0.33 NAV with its DRUM variant, and TORUS v1 —
 // moved to archive/scenes/ with their tests, worker docs and accept references. The old → new id map is archive/README.md.
@@ -72,7 +73,7 @@ initFluid(ctx); // before resize(): its targets are allocated on the first resiz
 for (const fx of [feedback, bloom, exposure, composite]) addEffect(fx, ctx);
 for (const tr of [mixs, morph]) addTransition(tr, ctx);
 setTransition('morph'); // the default transition, chosen on the §11 A/B montage (DECISIONS §11); mixs is v3's, one &trans= away
-for (const scene of [fluid, fluid2, nav2, dust, torus2, mandala]) { // §118: the six kept scenes, in id order — REG is dense 0..5 (the arrow keys and `n` cycle it; core/scenes.js stepScene)
+for (const scene of [fluid, fluid2, nav2, dust, torus2, mandala, nav3]) { // §118: the six kept scenes + §140's NAV3, in id order — REG is dense 0..6 (the arrow keys and `n` cycle it; core/scenes.js stepScene)
   const missing = (scene.feats || []).filter((f) => !(f in ENGINE.FEATS));
   if (missing.length) ERRS.push('scene ' + scene.name + ' reads undeclared MS fields: ' + missing.join(','));
   scene.init(ctx);
