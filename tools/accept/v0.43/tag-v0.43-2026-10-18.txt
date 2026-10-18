@@ -1,0 +1,299 @@
+================================================================================
+ v0.43 — the navigator that rolls, and a drop that implodes
+ the tag receipt · 2026-10-18 · one Opus worker on main, no worktree
+ the user: "tag what has been done so far"      -> MERGED, TAGGED LOCALLY,
+                                                   NOT PUSHED, NOT DEPLOYED
+================================================================================
+
+WHAT SHIPS — everything on main since the v0.42 tag at ba45bd5. This release
+commit adds NO code: two version strings, the releases.json entry, the two
+generated site files, the frozen page, this receipt and DECISIONS §141. The
+content came in one merge, 188734c, of the branch `nav3` (seven commits, a
+fast-forwardable line off main fc8e1c8 — no conflict, nothing resolved by hand).
+
+  §140  NAV3 — THE NAVIGATOR THAT ROLLS, AND THE DROP AS A PARABOLIC IMPLOSION.
+        assets/scenes/nav3/, id 6, key 7, FORCED-ONLY (score() 0, home false,
+        always false): the §93 roster is unchanged and the director cannot pick
+        it. NAV2 (the home, key 3) is BYTE-UNTOUCHED and assets/math/field.js is
+        untouched — field.js was NAV2's v0.8 numerics, built for exactly this and
+        dead since §97's reset; the QuantumComputing review's "built in
+        assets/math/field.js but is dead code" is what the brief quoted.
+        Three steps, one commit each:
+          3226203  step 1, the clone — every nav2 file byte-copied, EVERY hook
+                   renamed n2* -> n3*, green -> green3, baby -> baby3 (hooks
+                   dispatch by NAME across scenes), programs julia3/mandel3/pt3,
+                   main.js registers it seventh (REG dense 0..6), CONTRACTS §1.8
+                   row, tools/test_nav3.js.
+          11cb152  step 2, the roll — nav.js on math/field.js: log λ = ln ρ +
+                   i·2πθ is holomorphic in c, so the continuation is ONE complex
+                   division Δc = Δlog λ / (λ'/λ), in every component of every
+                   period — NAV's bulbChart without the twelve bulbs. No BULBS,
+                   no BABIES, no MISI, no ray grid; walk2.js gone. The wall is ρ
+                   plus the period test (v0.8's finding). Loud -> ρ, pitch -> θ,
+                   harmAngle and the key turn it, a section mirrors θ; a build
+                   snaps θ to the nearest p/q and crosses the root into the child
+                   (two secant steps, the deepest landing findCycle names q·q0);
+                   a fallen ladder rolls it back out through the root.
+          e454504  step 3, the implosion — implode.js: OUT walks the ball to the
+                   root c0 (solveMult's Newton in (z, c) onto λ = e^{2πip/q} — a
+                   SOLVER, no table), the Koenigs chart holds, then the FATOU
+                   PETALS from the orbit's final z (the sector of w and the phase
+                   of Φ = −1/(q a w^q), `a` MEASURED at the root). EXT puts
+                   c = c0 + d̂·ε in the EXTERIOR — d̂ found by field.escapes() in a
+                   fan, because at a satellite root the parent's normal points
+                   INTO the child and the exterior is the thin wedge between the
+                   two tangent components. ε breathes with the beat (the horn-map
+                   phase σ = frac(π/√ε)) and the slam. The shader draws the
+                   imploded set as the former interior's ESCAPE.
+          3920fca  the gate — the drop reads mapDropEvt too (§107's rule; the
+                   first nine-track run read the live slam and synapse's dropEvt
+                   only and six tracks never left), the full 14-line md5 list
+                   (12 existing lines UNMOVED vs main), the SwiftShader bench,
+                   the nine-track table, the thumb, DECISIONS §140,
+                   docs/workers/nav3.md, and the maths credited in implode.js,
+                   site/about.html, README and THIRD-PARTY.md (Douady–Hubbard,
+                   Lavaurs, Shishikura, Inou–Mukherjee).
+        THREE RETUNES, each one the user's eye and each measured FIRST:
+          44eda55  the dance — "the set doesn't seem to be dancing with the
+                   music". dance.mjs on 18 windows: NAV3 |Δlog λ| .008–.14 per
+                   beat against NAV2's .29–1.14. The ball now lives at the rim
+                   (RHO_LO .45, RHO_HI .955, RHO_WALL .985), the springs and
+                   gains are a beat's (W_RHO 9, W_TH 5, GAIN 12, VMAX 3.5 under
+                   the monitor's .06 step), and THE DANCE is reactive only (the
+                   user's rule, [[feedback-reactive-over-predicted]]): bass /
+                   kick / hit press ρ, θ turns .1 per bar + sways over the
+                   phrase + the snare twitch, the kick jump turned ±.9 rad
+                   alternating. After: .06–.40 per beat (3–4x), arg swing
+                   .34–1.2 rad per bar, rim 13–62 %.
+          08f7c2a  the quality — "seems pixelated … the glow washes out the
+                   fractal". The q trace on the nine drop windows: NAV3 .77–.84
+                   on the five implosion windows against NAV2's .91. The
+                   implosion's budget now follows the governor (IMP_ITER_MUL 1.2
+                   x Q.iter, cap 320), the convergence radius grows at the rim
+                   (the Koenigs coordinate is invariant, so no band moves),
+                   P_MAX 14; nav3's own exposure in look2.js (SMO .85–.995,
+                   LUM_IN .25/2.5, SHARP_IN 1.6 / SHARP 2.2 — the EXTERIOR knee
+                   kept at NAV2's after a dimming first pass, §99's lesson
+                   again). After: q .884–.924 (NAV2 .908–.923), wash 2.9 %
+                   (before 8 %, NAV2 4 %), CyborgNinja / Malicious edges
+                   1.5 -> 3.7 % / 1.3 -> 2.4 % of pixels.
+          d0da382  the depth — "lots of little circles … doesn't look like the
+                   mandelbrot/julia fractal". periods.mjs on the dance rows:
+                   period >= 8 on 23 % of frames (55–65 % on three tracks, runs
+                   of 16–19 s), pinned at the wall 35–39 % of INT frames on
+                   three. THE HOME IS THE CARDIOID AND ITS FIRST-LEVEL BULBS:
+                   GATE.DEPTH_MAX 1, P_MAX 7, a child holds CHILD_BARS 2 once
+                   the music stops asking then rolls out; the breath / pulse
+                   press reaches PULSE_TOP .965 and never the wall (RHO_HI .9;
+                   the DANCE numbers of 44eda55 untouched); the convergence
+                   radius at .6/.93/.05 — and the same-frame A/B says CONV was
+                   NOT the cause of the flat interior, the depth was. After:
+                   period >= 8 on 0 %, <= 7 on 100 %, wall 0–5 %, the dance held
+                   (|Δlog λ| .07–.37 per beat), q .903–.926 at 60 fps on all nine.
+
+THE ENTRY — class `scene`, scenes [6], decisions ["§140"], no clip.
+  A new scene with a new id is the plainest `scene` release there is (v0.37's
+  FLUID2 and v0.36's FLUID joining the rotation are the precedents). `decisions`
+  is the BARE number only — tools/releases.js line 36 validates every element
+  against /^§\d+[a-z]?$/, so "§140 (the depth pass)" would be a problem; the
+  three addenda are named in prose here and in §141 and live inside §140 where
+  they were written. ONE thumbnail, NAV3, rendered by the build and by nothing
+  else (tools/whatsnew.js renders one per listed scene that has
+  site/thumbs/<name>.jpg; site/thumbs/nav3.jpg came in with the gate commit).
+  Hand-inserted as JSON.stringify(rel, null, 1) AFTER proving FIRST that
+  JSON.stringify(load(), null, 1) + '\n' == the file byte for byte (38 752 chars
+  / 38 989 bytes, true), the script then re-proving that the RESULT round-trips
+  and that the 40 existing entries are byte-identical in the tail: a 15-LINE PURE
+  INSERTION (git diff --numstat: 15 added, 0 removed). releases.js's own save()
+  writes a different compact layout and would reformat all 41 entries; IT WAS
+  NEVER CALLED, and §125's note has now held and cost nothing SIX times running.
+
+THE RECIPE (§136's / §139's ritual step for step, the three-page rule standing)
+  package.json + assets/core/version.js 0.42.0 -> 0.43.0 TOGETHER (§89 —
+  test_rec.js is the gate that they agree) · the releases.json top entry
+  (v0.43, 2026-10-18, class scene, the title above, scenes [6], no clip) ·
+  npm run build (41 entries -> site/whats-new.html 68 212 B, and index.html's
+  #newin moved because the title did: "New in v0.43: The navigator that rolls,
+  and a drop that implodes → what's new"; dist/index.html 160 modules + 12 in the
+  ears Worker, 269 KB inline, 1 985 044 bytes) · node tools/bundle.js
+  releases/retinarave-v0.43.html (the same 160 / +12 / 269 KB / 1 985 044,
+  VER = '0.43.0') · git rm releases/retinarave-v0.40.html (the three-page rule;
+  releases/ keeps v0.41 / v0.42 / v0.43, and v0.40's page is in history at its
+  tag).
+
+THE FROZEN PAGE, READ AGAINST v0.42's (151 + 12 modules / 1 854 024 bytes)
+  160 + 12 modules, 1 985 044 bytes. The +9 modules and +131 020 bytes are
+  nav3's NINE files (green.js, implode.js, index.js, look2.js, move2.js, nav.js,
+  shaders-v2.js, shaders.js — and main.js's one registration line) and the two
+  version strings; the inline ears Worker is the same 269 KB because not one byte
+  of the ears moved. git diff v0.42..HEAD -- assets/ is 9 files, every one of
+  them assets/scenes/nav3/ but main.js's +3/−1.
+  THE GREPS ON THE PAGE:
+    EARS_WORKER_SRC   6 hits  (v0.42's and v0.41's count exactly)
+    idleFluid         4 hits  (§135, unmoved)
+    `reads: true`     3 hits  (the two fluid cards' §135 declarations)
+    nParams: 55246    2 hits  (§134's weights module, unmoved)
+    solveMult        12 · nearestRational 12 · uImp 14  (step 2 and step 3)
+    the depth pass's numbers, present with their values:
+      DEPTH_MAX: 1 · P_MAX: 7 · CHILD_BARS: 2 · RHO_HI: 0.9 · PULSE_TOP: 0.965
+      RHO_WALL: 0.985 · VMAX: 3.5 · GAIN: 12 · SHARP_IN: 1.6
+
+THE GATES, EACH RUN ON THE TREE AFTER THE BUMP
+GATE 1  the four static checks
+  node tools/check.js  -> 162 modules · uniforms 165 · MS keys 223 · scenes 7
+    (help.feats gaps 0) · 0 FAIL · 6 warn, exit 0  -> MET.
+    The six warns are the line soft caps, all far under the 500 fail cap:
+      core/fluid/fluid.js 376 · core/scenes.js 370 · engine/ears/perc.js 407 ·
+      scenes/dust/index.js 365 · scenes/nav3/nav.js 403 · scenes/torus2/index.js 367
+    nav.js is the new one (§140's own item 6: 354 at the gate, 403 after the
+    three retunes). scenes 7 is NAV3's id 6 joining the register.
+  node tools/releases.js check -> 41 entries · top v0.43 == package.json 0.43.0 ·
+    0 problem(s)  -> MET.
+  node tools/whatsnew.js --check -> 41 entries · up to date  -> MET.
+  node tools/license.js --check -> 165 public files · 0 without the header
+    -> MET (157 at v0.42: nav3's eight public files, and tools/test_nav3.js
+    carries it too).
+GATE 2  npm test -> EXIT 0, 40.4 s, 0 FAIL lines  -> MET. Run twice, identical.
+  test_fluid   345 ok, 0 fail
+  test_music   151 ok, 0 fail  (the nine tracks, both map modes)
+  test_loud    43 pass · 5.79 µs per frame under the 40 µs budget
+  test_earsw   OK  (1800 reads x 34 fields, 0 differ across the two transports)
+  test_voxscene OK  (§138's light budget: the population mean over 50 000 hashed
+               grains 0.993–1.000 from C3 to C6, the ±.02 rule)
+  test_vox     the mel parity and the ONNX parity on 200 held Jamendo-test
+               windows, every column and both heads, both pass; THE STAGE
+               87.8 µs/hop median (p99 102, mean 88.3) against <= 100 — MET.
+  test_nav3    OK — and it is the suite that owns §140. The 96 s node drive:
+               every frame finite; the wall held (max ρ .9790 against
+               RHO_WALL .985, 0 frames over); loud presses to the rim (.979 >=
+               GATE.RHO .9); 10 CROSSINGS, max period 6, 3004 frames inside a
+               child; 5 EXITS back to the cardioid; 4 drops -> 1580 EXT frames ->
+               4 returns (EXT -> IN -> INT); the implosion 340 OUT frames (the
+               petals, 1.4 s each); the petal coefficient |a| 5.52e+1, the gate
+               radius R 2.45e-2, q 3 petals, the layer's escape fraction up to
+               0.38 and passages up to 4.0 over 879 implosion frames; findCycle
+               failures 0, stalls 0; the ball's largest per-frame step in INT
+               0.04731 under the continuity monitor's .06; 0.0466 ms per update()
+               in node (NAV2's was .042).
+  §134's and §126's KNOWN MISSES still print as `note`, never as FAIL, and were
+  NOT re-baselined: Jamendo-test F1 .825 against the §133 gate's >= .84 MISSED,
+  IBelongHere (unseen) F1 .814 / P .961 / R .706, and the mix pitch ceiling
+  (within a semitone 49 / 53 / 10 / 50 % against the plan's 70). None of them is
+  this release's: no byte of the ears, math/vox.js or core/ moved.
+GATE 3  GPU=1 MUTE=1 PORT=8991 node tools/test_rec.js (the version pair's own
+  gate) -> ALL OK  -> MET. The sidecar's app/version reads "retinarave 0.43.0"
+  and the file name is retinarave-v0.43-nav2-2026-10-18T17-46-45.webm — the two
+  strings moved together. §92's pin still wins (Q.hold .75 through the take, free
+  again from q0 .55 after the stop); webm 16 228 030 bytes, EBML magic, 5.96 s /
+  8 clusters ~ the sidecar's 6.008, a frame decoded, the HUD on in the DOM, the
+  timeline 2 -> 3 -> 1 within 0.6 s of the keys (2.027 vs 2.03, 4.041 vs 4.04).
+  360 frames at 59.9 fps composited.
+GATE 4  the frozen page from file://, headless, CLOCK=1 GPU=1 MUTE=1
+  FILE=$PWD/releases/retinarave-v0.43.html, PORT=8993,
+  steps [{until window.CARD}, {until window.__FRAME>=300}, {eval ...}]
+    test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+    test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+    test&scene=3 -> {"sc":3,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}  <- DUST
+    test&scene=4 -> {"sc":4,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}
+    test&scene=6 -> {"sc":6,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}  <- NAV3, NEW
+  errs [] and bad [] (CARD.nonFinite()) on all FIVE  -> MET.
+  THE FOUR OLD LINES ARE §139's AND §136's TO THE CHARACTER, `idle` included —
+  which is the point for a release that only ADDS a scene folder. The fifth line
+  is NAV3's first: `idle 1` is §135 doing its job — NAV3 does not declare a read
+  of the fluid substrate, so the pool does not step under it. CLOCK=1 from the
+  FIRST pass (v0.37's pitfall, paid forward a sixth time). MUTE=1 on every run —
+  NO AUDIO WAS PLAYED at any point.
+GATE 5  the no-third-party receipt (SOCIAL-PLAN §4) — ONE HOST ON EVERY ROUTE
+  /whats-new  (PORT=8993)  -> ["127.0.0.1:8993"]
+      title "What's new in Retina Rave — every release, newest first"
+      the v0.43 article renders: id="v0.43" true, the label "new scene",
+      "18 October 2026", h3 "The navigator that rolls, and a drop that implodes",
+      the notes line "for the curious, the engineering notes: §140",
+      and exactly ONE thumbnail: NAV3  (scenes [6])
+  /           (PORT=8995, NOAUTO=1 real)  -> ["127.0.0.1:8995"]
+      #newin reads "New in v0.43: The navigator that rolls, and a drop that
+      implodes → what's new"
+  /about      (PORT=8997)  -> ["127.0.0.1:8997"]
+      title "About Retina Rave — music, math, and why it exists"; NAV3 present,
+      Douady present, Jamendo present.
+  -> MET on all three.
+  THE CREDITS WERE ALREADY IN PLACE AND NEEDED NO MOVE HERE
+  ([[feedback-credit-where-due]]): §140's gate commit 3920fca put Douady–Hubbard,
+  Lavaurs, Shishikura and Inou–Mukherjee into implode.js's header,
+  site/about.html, README.md and THIRD-PARTY.md when the maths was borrowed —
+  git diff v0.42..HEAD -- site/about.html THIRD-PARTY.md README.md is +16 lines,
+  all of it that credit, and nothing was added at the tag.
+  THE USER'S DEV SERVER WAS LEFT RUNNING AND UNTOUCHED — 8765 (this checkout) and
+  8813 (the nav3 worker's) were the only ports listening in that range before and
+  after; every port used here was 8991 / 8993 / 8995 / 8997, and no serve.js this
+  session did not start was killed. No Chrome but this session's own headless
+  ones was touched.
+
+WHAT WAS NOT RUN, AND WHY — the brief's own instruction, and it holds.
+  THE FULL real-md5 ROSTER and accept.sh. §140's gate already paid the only
+  sweep this release can owe: tools/scene-md5.sh nav3s3 is the FULL 14-line list
+  with the 12 EXISTING LINES UNMOVED to the byte against v0.39/scene-md5-s135.txt
+  and -s138.txt (s2 a6c725fa / a12256fd), and each retune re-recorded the s6 pair
+  alone (scene-md5-dance.txt, -quality.txt, -depth.txt) because a change inside
+  one scene folder cannot move another scene's pixels (HARNESS "What to re-prove",
+  row 1). git diff v0.42..HEAD -- assets/ is nav3's own folder plus main.js's one
+  registration line — and main.js's registration is HARNESS row 2, which is the
+  full list, which the gate commit ran. NOTHING ENTERED THE DIRECTOR'S ROTATION
+  (NAV3 is forced-only, score() 0), so HARNESS row 5's Q trace is not owed — and
+  it was not run. Also not run and not owed: a fresh load bench (the gate's
+  load-bench-nav3.txt stands), test_ears --trace, fluid-tracks.js, a director
+  trace, and any real-music render. NO REFERENCE WAS RE-BASED HERE — the next
+  engine sweep does that, never the tag. NO AUDIO WAS PLAYED AND NOTHING WAS
+  RETUNED AT THE TAG.
+
+CARRIED FINDINGS — recorded, NOT fixed, and none of them this tag's.
+  (1) The user's EYE on NAV3 is the gate that matters and has NOT been given —
+      above all on the depth pass (d0da382), which is the newest of the three and
+      the only one the user has not seen a frame of. Key 7, or #test&scene=6.
+  (2) The implosion's depth on real tracks is THIN (escMax .08 on every track
+      that imploded, 0 on IBelongHere and TheChain); EPS .004, EPS_DROP 2 and
+      GATE_FRAC .3 are the fake drive's numbers, not retuned per track.
+  (3) VIENNA (85.34 s) and MALICIOUS (148.32 s) carry bar-pinned drops in the
+      truth tool's list, but inside the gate's windows NEITHER the live detector
+      NOR the engine's own track map raised one, so NAV3 never implodes on them.
+      Which of the two maps disagrees with the truth tool is NOT measured; owed:
+      a filetrace.js of dropLiveEvt / mapDropEvt / dropEvt over Vienna 71–97 and
+      Malicious 134–160. This is the detectors, not the scene.
+  (4) The direction fan finds no exterior at deep roots (the node drive's 4th
+      drop); the record does not separate "the normal was outside" from "the fan
+      fell back". Owed.
+  (5) Gate PASSAGES at q >= 3 are beyond any shader budget this engine will carry
+      (the finding: the approach is algebraic, ~1/(q·a·r^q) iterates of f^Q).
+  (6) nav.js is 403 lines over the 350 soft cap, and core/fluid/fluid.js is still
+      376 (§135's item 2).
+  (7) Vienna 95.5 s (ρ .985 at period 14) is still a flat cyan blob by the edge
+      ruler after the quality pass — the next move is a smaller P_MAX or a lower
+      RHO_WALL inside a child, both knobs, the user's eye to decide. The depth
+      pass's P_MAX 7 may already have taken it; not re-measured on that frame.
+  (8) THE OLDER OPEN EYES, carried from §139 and §136 and NOT closed here:
+      §138's DUST band on all four voiced tracks (live and lane), the fluid
+      filling from dark on a director entry into FLUID, the user's EAR on
+      TheChain's B2 render (the beat gate stays OFF, bpm_grid.hand provisional),
+      the up-vector sign on TORUS2's strand (unchecked), and
+      tools/accept/v0.39/{scene-md5,real-md5}-s134-full.txt stale on s1.
+  (9) accept.sh's routes / params blocks on NAV2, still owed since §118.
+
+THE DEPLOY SHAPE, UNCHANGED — AND THIS IS WHY THE TAG STAYS LOCAL.
+  dist/ is what npm run build writes and what wrangler.jsonc serves
+  (assets.directory ./dist); dist/ is git-ignored and not committed, and there is
+  no .github/ workflow — the deploy is Cloudflare, git-connected to
+  github.com/tbkraf08/RetinaRave, building on a push to main. SO THE PUSH IS THE
+  DEPLOY, and the user's word was "tag what has been done so far": the merge and
+  the tag were done, NOTHING WAS PUSHED. When the word comes it is ONE push of
+  main --tags, then poll for the VER line, NEVER a second push (§115).
+  ONE merge commit (188734c), ONE release commit, then git tag -a v0.43 — and
+  stop. The sibling worktrees were not touched; the branch nav3 was left in
+  place, pointing at d0da382.
+
+NEXT, IN ORDER
+  the user's EYE on NAV3, key 7 — the roll's feel, the petals, the implosion's
+  depth, and above all whether the depth pass fixed "lots of little circles" ·
+  the per-track EPS retune the brief asked for, once the eye has spoken ·
+  the Vienna / Malicious drop filetrace (carried finding 3) · the user's EYE on
+  §138's DUST band and his EAR on TheChain's B2 · the user's word on the push.
+================================================================================
