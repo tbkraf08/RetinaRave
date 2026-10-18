@@ -10,7 +10,8 @@
 // implosion (Fatou petals on the way in, the Lavaurs explosion on the way out). `always: false`: updated only while on screen, so
 // draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1; §97's freeze).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { NAV, updateNav, knob5, knobDrop } from './nav.js';   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
+import { NAV, updateNav, knob5 } from './nav.js';
+import { IMP, OUT3, knobDrop, knobImp } from './implode.js';   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
@@ -71,6 +72,7 @@ export default {
     n3gate: (v) => knob5('gate', v),
     n3kick3: (v) => knob5('kick3', v),
     n3drop: knobDrop,                         // &n3drop=live: the live slam only (NAV2's read); default both detectors (the fake timeline has no live slam)
+    n3imp: knobImp,                           // &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE]]]]]] — the implosion's numbers (implode.js OUT3)
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green3: () => GREEN,                      // `green3`: &green / CARD.hooks.green stay NAV2's (hooks are global by name)
@@ -81,6 +83,7 @@ export default {
       q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
       depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
       kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
+      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, drops: IMP.drops, frames: IMP.frames },   // §140 step 3: the implosion's record (implode.js IMP)
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
       Q: GREEN.Q,
@@ -223,9 +226,15 @@ export default {
     N.view = [0, 0, scale, rotv];
     gl.uniform2f(u('uC'), N.c[0], N.c[1]);
     gl.uniform4f(u('uView'), 0, 0, scale, rotv);
-    const it = Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
+    const imp = IMP.x + IMP.y > 0;   // §140 step 3: while the implosion runs the budget is OUT3.ITER and the no-chart short budget is off (the passages need every iteration)
+    const it = imp ? OUT3.ITER : Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
     gl.uniform1i(u('uIter'), it);
-    gl.uniform1i(u('uIterLo'), Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
+    gl.uniform1i(u('uIterLo'), imp ? it : Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
+    gl.uniform4f(u('uImp'), IMP.x, IMP.y, IMP.q, IMP.R);   // §140 the implosion's layers (implode.js): petal weight, explosion weight, q petals, the gate radius
+    gl.uniform2f(u('uZ0'), IMP.z0[0], IMP.z0[1]);
+    gl.uniform2f(u('uA'), IMP.a[0], IMP.a[1]);
+    gl.uniform1f(u('uSig'), IMP.sig);
+    gl.uniform1f(u('uQ0'), OUT3.OUT_RUN * IMP.q0);   // iterates beyond 2R before an entry counts as a passage (implode.js passages())
     gl.uniform2f(u('uSc'), 1, 1);
     const ta = K3.trap ? M2.trapA : Math.PI * br;   // §100: a quarter turn per beat (π per bar) + ACC turns on each crest, beatgrid's profile; off = NAV's half turn per beat
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));

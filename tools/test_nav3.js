@@ -9,6 +9,8 @@ import fs from 'node:fs';
 import scene from '../assets/scenes/nav3/index.js';
 import nav2 from '../assets/scenes/nav2/index.js';
 import { NAV as N3, ROLL, GATE } from '../assets/scenes/nav3/nav.js';
+import { IMP, OUT3, layer } from '../assets/scenes/nav3/implode.js';
+const LAY = (e) => { const L = layer(IMP.root[0] + IMP.nrm[0] * e, IMP.root[1] + IMP.nrm[1] * e, IMP.z0, IMP.Rp, IMP.R, IMP.q0); return L.esc.toFixed(2) + '/' + L.p.toFixed(1); };
 import { NAV as N2 } from '../assets/scenes/nav2/nav.js';
 import { clamp, ema, sstep } from '../assets/math/util.js';
 
@@ -18,7 +20,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const rd = (d, f) => fs.readFileSync('assets/scenes/' + d + '/' + f);
 
 console.log('1. the byte copies (the files the roll does not touch)');
-export const COPIES = ['move2.js', 'look2.js', 'green.js', 'shaders.js', 'shaders-v2.js'];
+export const COPIES = ['move2.js', 'look2.js', 'green.js', 'shaders.js'];   // step 3: shaders-v2.js carries the implosion's two layers (the OKLCH mapping in shaders.js does not — &colour=oklch shows the roll without them)
 for (const f of COPIES) ok(rd('nav2', f).equals(rd('nav3', f)), `nav3/${f} is a byte copy of nav2/${f}`);
 ok(!fs.existsSync('assets/scenes/nav3/walk2.js'), 'no walk2.js (the Farey-table walk is gone with the tables)');
 {
@@ -114,6 +116,8 @@ function fake(S, dt, now) {
 
 const dt = 1 / 60, FR = 96 * 60, P = {};
 let nonFinite = 0, wall = 0, maxRho = 0, maxQ = 1, inChild = 0, outAgain = 0, extFrames = 0, crossFrames = 0, drops = 0, returned = 0, maxStep = 0, lastC = null, lastMode = '';
+let outFrames = 0, maxPasses = 0, impFrames = 0, impFinite = 0, maxEsc = 0;
+const passHist = new Array(10).fill(0);
 const modes = {}, events = [];
 const t0 = performance.now();
 for (let f = 1; f <= FR; f++) {
@@ -126,7 +130,9 @@ for (let f = 1; f <= FR; f++) {
   modes[N.mode] = (modes[N.mode] || 0) + 1;
   if (N.mode === 'INT') { if (N.rho > ROLL.RHO_WALL + 0.012) wall++; maxRho = Math.max(maxRho, N.rho); }
   if (N.mode === 'CROSS') crossFrames++;
-  if (N.mode === 'EXT') extFrames++;
+  if (N.mode === 'EXT' && lastMode !== 'EXT' && process.env.N3SCAN) { const rt = [N.cPath[0] - IMP.eps * (N.cPath[0] - 0) / IMP.eps, 0]; void rt; const X = scene.state; console.log('  scan at drop ' + IMP.drops + ' (q ' + IMP.q + ', R ' + IMP.R.toExponential(2) + ', eps0 ' + IMP.eps0.toExponential(2) + '): fan ' + IMP.fan + ' nrm ' + IMP.nrm.map((x) => x.toFixed(2)) + ' layer esc-fraction/passages for eps × ' + [0.003, 0.01, 0.03, 0.1, 0.3, 1, 3].map((m) => { const e = IMP.eps0 * m, nx = (X.cPath[0] - X.ball[0]), ny = 0; void nx; void ny; const r0 = IMP.root; return m + ':' + LAY(e); }).join(' ')); }
+  if (N.mode === 'EXT') { extFrames++; const pp = IMP.passes; if (pp > maxPasses) maxPasses = pp; if (IMP.esc > 0) impFrames++; if (IMP.esc > maxEsc) maxEsc = IMP.esc; passHist[Math.min(Math.round(pp), 9)]++; if (![IMP.eps, IMP.sig, IMP.R, IMP.a[0], IMP.a[1], IMP.z0[0], IMP.z0[1]].every(Number.isFinite)) impFinite++; }
+  if (N.mode === 'OUT') outFrames++;
   if (N.cyc.q > maxQ) maxQ = N.cyc.q;
   if (N.stack.length > 0) inChild++;
   if (lastMode === 'CROSS' && N.mode === 'INT' && N.stack.length === 0 && maxQ > 1) outAgain++;
@@ -140,6 +146,7 @@ for (let f = 1; f <= FR; f++) {
   if ((process.env.N3TRACE && f % 60 === 0) || (process.env.N3TRACE === "2" && now > 27 && now < 31 && f % 6 === 0)) console.log(`  t ${now.toFixed(0)} ${N.mode} q${N.cyc.q} d${N.stack.length} rho ${N.rho.toFixed(3)}/${N.rhoT.x.toFixed(2)} th ${N.th.toFixed(3)}/${(N.thT.x - Math.floor(N.thT.x)).toFixed(2)} gate ${N.gate.p}/${N.gate.q}${N.gate.on ? '!' : ''} loud ${N.loud.toFixed(2)} build ${MS.buildLive.toFixed(2)} ball ${N.ball[0].toFixed(4)},${N.ball[1].toFixed(4)} size ${N.size.toFixed(3)} x${N.crosses} s${N.stalls} f${N.fails} fell ${N.fell.toFixed(2)}`);
 }
 const ms = (performance.now() - t0) / FR;
+console.log('  the layer mean passages per EXT frame (0..9+): ' + passHist.join(' ') + ' | a ' + Math.hypot(IMP.a[0], IMP.a[1]).toExponential(3) + ' R ' + IMP.R.toExponential(3) + ' z0 ' + IMP.z0.map((x) => x.toFixed(5)) + ' eps0 ' + IMP.eps0.toExponential(3) + ' T ' + IMP.T.toFixed(1));
 console.log('  modes ' + JSON.stringify(modes) + '\n  events ' + events.slice(0, 24).join(' | ') + (events.length > 24 ? ' …' : ''));
 ok(nonFinite === 0, 'every frame finite (c, the ball, rho, th, lnr, arg, par, size)');
 ok(wall === 0, `the ball never passes the wall in INT by more than .012 — the linear projection overshoots by a hair at a landing (max rho ${maxRho.toFixed(4)} vs RHO_WALL ${ROLL.RHO_WALL}; ${wall} frames over)`);
@@ -147,6 +154,8 @@ ok(maxRho > GATE.RHO, `loud presses the ball against the rim (max rho ${maxRho.t
 ok(N3.crosses >= 2 && maxQ >= 2 && inChild > 60, `the build rolls the ball through a root into a child: ${N3.crosses} crossings, max period ${maxQ}, ${inChild} frames inside a child`);
 ok(outAgain >= 1, `the fall rolls it back out through the root (${outAgain} exits to the cardioid)`);
 ok(drops === 4 && extFrames > 60 && returned >= 3, `${drops} drops → ${extFrames} frames outside, ${returned} returns (EXT → IN → INT)`);
+ok(outFrames >= 4 * 60 * OUT3.T_IN * 0.9 && IMP.drops === 4, `the implosion: ${outFrames} frames on the way in (OUT: the petals, ${OUT3.T_IN} s each), IMP.drops ${IMP.drops}`);
+ok(impFinite === 0 && maxEsc > 0 && IMP.R > 0 && Math.hypot(IMP.a[0], IMP.a[1]) > 0, `the petal coefficient a finite (|a| ${Math.hypot(IMP.a[0], IMP.a[1]).toExponential(2)}), the gate radius R ${IMP.R.toExponential(2)}, q ${IMP.q} petals, the layer's escape fraction up to ${maxEsc.toFixed(2)}, passages up to ${maxPasses.toFixed(1)} (${impFrames} implosion frames)`);
 ok(N3.fails < FR * 0.02, `findCycle failures ${N3.fails} (< 2 % of frames; stalls ${N3.stalls})`);
 ok(maxStep < 0.05, `the ball's largest per-frame step in INT ${maxStep.toFixed(5)} (< .05: no visible jump outside the declared cuts)`);
 console.log(`  cost: ${ms.toFixed(4)} ms per update() in node (findCycle at N_ITER + rhoGrad + the ruler), ${(ms * 60).toFixed(2)} ms/s`);

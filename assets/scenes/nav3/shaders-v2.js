@@ -17,14 +17,16 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl; // uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0; // §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
+  float gt=0.,ps=0.,dq0=1e9,outr=uQ0;bool imp=uImp.x+uImp.y>0.;vec2 wq=vec2(1.,0.);float R2=uImp.w*uImp.w; /* §140: the gate — time spent near z0 (soft), passages (an entry into R after uQ0 iterates beyond 2R: the period cycle's own alternation is not a transit), the closest approach w for the petal */
   for(int i=0;i<420;i++){ if(i>=uIter)break;
     float dd=1e31;
     if(!big){dz=2.*cmul(z,dz);dd=dot(dz,dz);if(dd>1e30)big=true;}
     z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
+    if(imp){vec2 wz=z-uZ0;float d2=dot(wz,wz);gt+=exp(-d2/R2);if(d2<R2){if(outr>=uQ0)ps+=1.;outr=0.;}else if(d2>4.*R2)outr+=1.;if(d2<dq0){dq0=d2;wq=wz;}}
     tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
     if(m2>1e4){esc=true;break;}
     if(uLam.w>.5){vec2 w=z-uZs;if(dot(w,w)<uEps2){conv=true;break;}}
@@ -50,6 +52,17 @@ void main(){
     float sg=uN2.y>.5?uSmo:uPar*uPar*(.35+.3*uBands.x); /* §99: the smoulder follows the track's loudness (look2.js), not the root */
     col+=pal(.5+.1*bands)*sg*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
   }else{float sg=uN2.y>.5?uSmo*.5:uPar*uPar*(.16+.2*uBands.x);col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*sg;}
+  if(imp){ /* §140 the implosion's two layers (implode.js) */
+    if(!esc){ /* FATOU PETALS (the way in, and the former interior on the way out): q petals around z0 from the orbit's FINAL z — the approach to a q-petal point is algebraic, so after the budget the orbit sits in its petal at |w| ~ (q a n)^(-1/q): the index by the sector of w (one petal per beat turns the wheel), the lightness by the phase of the Fatou coordinate Phi = -1/(q a w^q) (the time-to-leave: concentric bands in each petal); the attracting axis of each petal is where a w^q is real negative */
+      vec2 w=z-uZ0;float q=uImp.z,r=max(length(w),1e-6),th=atan(w.y,w.x),aq=atan(uA.y,uA.x),am=max(length(uA),1e-12);
+      float k=floor(fract(th/TAU+(.5-aq/TAU)/q+uBeat.x/q)*q)/q;float pet=fract((th*q+aq)/TAU);
+      float rq=exp(q*log(r));float rePhi=-cos(th*q+aq)/(q*am*rq);float ph=fract(rePhi*.5);
+      vec3 pc=pal(k+.07+.3*uSig)*(.22+.5*(.5+.5*cos(TAU*ph)))*(.35+.65*exp(-abs(pet-.5)*2.5));
+      col=mix(col,pc,max(uImp.x,uImp.y)*.85);}
+    else if(uImp.y>0.){ /* THE LAVAURS EXPLOSION on the way out: an escaped pixel of the former interior IS the implosion (the dust eating inward, breathing with eps); its passages through the gate are the hair's layers, the soft time near z0 its glow */
+      float pl=min(ps,8.);vec3 ec=pal(.55+.07*pl+.3*uSig)*(.1+.14*pl)+vec3(.8,.85,1.)*min(gt*.04,.6);
+      col=mix(col,col+ec*(.4+.6*smoothstep(0.,60.,n)),uImp.y);}
+  }
   if(uN2.x>.5){float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?uLum.zw:uLum.xy;col*=1./(1.+kn.y*max(0.,L-kn.x));}
   if(esc)col*=uExtG; /* §99: the soft knee on the luminance before bloom — the interior stays dark whatever the palette's phase, the dust stops washing out; uExtG dims the exterior while c is outside the set */
   o=vec4(col,1.);

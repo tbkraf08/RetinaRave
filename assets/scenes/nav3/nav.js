@@ -21,8 +21,8 @@
 //                 out through the same root (θ_child → 0 IS the root to the parent). A stack remembers the way down.
 //   the kick      move2.js's lane fires as before; the jump is along the outward normal by KICK3.LEN of the component's size
 //                 (the Julia set breaks into dust for a frame — NAV's Misiurewicz jump without the table) and springs back
-//   the drop      step 2's placeholder: c leaves through the rim along the normal to ε outside and comes back when the
-//                 exterior settles; step 3 (nav3/implode.js) makes it the parabolic implosion
+//   the drop      implode.js: the ball walks to the root (Fatou petals), c crosses to ε outside along the normal (the Lavaurs
+//                 explosion, the beat turning the horn-map phase) and comes back when the exterior settles
 // A frame whose findCycle does not converge inside N_ITER keeps last frame's c and λ (the step is halved once, then dropped)
 // — never a visible jump. Every number is a named constant below; the knobs are hooks on #test (index.js).
 import { TAU, clamp, mix, sstep, ema, Spring } from '../../math/util.js';
@@ -30,6 +30,7 @@ import { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } from '../..
 import { baseLight } from '../../math/loudlight.js';
 import { mkVox, vox } from '../../math/vox.js';
 import { tighten, kickGate, M2 } from './move2.js';
+import { OUT3, startDrop, stepDrop } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes)
 
 export const ROLL = {
   RHO_LO: 0.25,    // the ρ target when the track is at its quietest (near the centre: the spiral loose)
@@ -72,14 +73,6 @@ export const GATE = {
   OUT_TOL: 0.02,   // turns: |θ_child| under this at the rim = at the root back to the parent
 };
 export const KICK3 = { LEN: 0.5 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal, × the lane's k
-export const OUT3 = {
-  EPS: 0.03,       // the drop (step 2's placeholder): c leaves to root + EPS·2^reach·size… see navDrop (step 3 replaces it)
-  SETTLE: 8,       // beats outside before the return (48 at a peak, as NAV)
-  PEAK: 48,
-  T_IN: 1.2,       // s: the return's ease
-  ANY: 1,          // 1: dropEvt (the map's / the fake timeline's) fires the drop beside dropLiveEvt; 0 (&n3drop=live): the live slam only, as NAV2
-  DROP_REFR: 4,    // beats after a drop before another may fire (the two detectors can name one drop a beat apart)
-};
 
 const CYC2 = mkCyc(), VX = mkVox();
 const GR = { gx: 0, gy: 0, dlr: 0, dli: 0, dl: 1 };
@@ -88,11 +81,11 @@ const C0 = [-0.1725, 0];   // λ = −.3 on the cardioid: ρ .3, θ .5 — a bal
 export const NAV = {
   mode: 'INT', ball: [C0[0], C0[1]], c: [C0[0], C0[1]], cPath: [C0[0], C0[1]], cyc: findCycle(C0[0], C0[1], mkCyc(), N_MAX), grad: GR,   // ball: where the ball IS (findCycle's c); cPath: the path (the ball, or a crossing's lerp); c: the DRAWN c (cPath + the kick) — what index.js uploads
   rhoT: new Spring(0.3, 2.5), thT: new Spring(0.5, 1.4), rho: 0.3, th: 0.5, size: 1, q: 1,
-  stack: [], cross: null, ext: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
+  stack: [], cross: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
   gate: { p: 0, q: 1, err: 1, on: 0 }, loud: 0, loudHist: [], bar: 0, lastBar: 0, lastCross: -99, fell: 0, leaving: 0, since: 0,
   par: 0, timeScale: 1, vtime: 0, pathCut: 999, extBeat: 0, landed: 0, cycBase: 1, stalls: 0, fails: 0, crosses: 0, maxQ: 1, rimT: 0,
   path: new Float32Array(96 * 3), orbit: new Float32Array(160 * 3), tmp: [0, 0], view: [0, 0, 1, 0],
-  baby: null, bz: { x: 1 }, h: { x: 0 }, alpha: { x: 0.5 }, th_: { x: 0 }, lg: { x: 0 }, bulb: { p: 0, q: 1 },   // the shape index.js / move2.js still read
+  baby: null,   // the monitor's shape (tools/monitor.js reads {mode, cPath, pathCut, kick:{x}, baby}); no baby copies on this scene
   forceBaby: -1, log: () => {},
 };
 NAV.rho = NAV.cyc.rho;
@@ -157,12 +150,14 @@ function roll(N, dt, rhoT, thT, gain, speed = 1) {
 
 // The crossing into the p/q child (dir +1) or back to the parent (dir −1): the landing is verified by findCycle before a
 // single frame moves. Returns 1 when the crossing starts.
-function cross(N, S, dir, p, q) {
+// The root of the component along the outward normal from the ball: c + n̂·(1 − ρ)/|∇ρ| is a one-step linearisation; two
+// secant steps along the normal (each a findCycle at N_MAX — a crossing or a drop is a rare event) put it where ρ = 1 to ~1e-3
+// of the component's size. Returns { rx, ry, nx, ny } or null when the gradient is degenerate.
+const RT = { rx: 0, ry: 0, nx: 0, ny: 0 };
+function rootOf(N) {
   const gm = Math.hypot(GR.gx, GR.gy);
-  if (gm < 1e-12) return 0;
+  if (gm < 1e-12) return null;
   const nx = GR.gx / gm, ny = GR.gy / gm;
-  // the root: c + n̂·(1 − ρ)/|∇ρ| is a one-step linearisation; two secant steps along the normal (each a findCycle at N_MAX — a
-  // crossing is a rare event) put it where ρ = 1 to ~1e-3 of the component's size
   let rx = N.ball[0], ry = N.ball[1], rho = N.cyc.rho, dsum = 0;
   for (let i = 0; i < GATE.ROOT_STEPS; i++) {
     const d = (1 - rho) / gm * GATE.ROOT_K;
@@ -171,6 +166,14 @@ function cross(N, S, dir, p, q) {
     rx += nx * d; ry += ny * d; dsum += d; rho = c2.rho;
   }
   if (dsum === 0) { const d = (1 - N.cyc.rho) / gm; rx += nx * d; ry += ny * d; }
+  RT.rx = rx; RT.ry = ry; RT.nx = nx; RT.ny = ny;
+  return RT;
+}
+
+function cross(N, S, dir, p, q) {
+  const R0 = rootOf(N);
+  if (!R0) return 0;
+  const { rx, ry, nx, ny } = R0;
   let land = null, cy = null;
   if (dir > 0) {
     const R = N.size / (q * q), Q = N.cyc.q * q;
@@ -197,19 +200,11 @@ function cross(N, S, dir, p, q) {
   return 1;
 }
 
-// step 2's drop (replaced by nav3/implode.js in step 3): out through the rim along the normal, back when the exterior settles
-export function navDrop(S, now, reach) {
-  const N = NAV, gm = Math.hypot(GR.gx, GR.gy);
-  if (gm < 1e-12 || N.mode === 'EXT') return;
-  const nx = GR.gx / gm, ny = GR.gy / gm, d0 = (1 - N.cyc.rho) / gm, eps = OUT3.EPS * Math.pow(2, 8 + reach) * N.size;
-  N.ext = { from: [N.ball[0], N.ball[1]], to: [N.ball[0] + nx * (d0 + eps), N.ball[1] + ny * (d0 + eps)], t: 0, cyc: N.cyc };
-  N.ball[0] = N.ext.to[0];
-  N.ball[1] = N.ext.to[1];
-  N.mode = 'EXT';
-  N.extBeat = S.beatCount;
-  N.timeScale = 2.6;
-  N.kick.set(0);
-  N.log('DROP@' + now.toFixed(2) + ' eps ' + eps.toExponential(2));
+// the drop: the parabolic implosion (implode.js) — from the ball through the root along the normal to ε outside, and back
+export function navDrop(S, reach) {
+  const N = NAV, R0 = rootOf(N);
+  if (!R0 || N.mode !== 'INT') return 0;
+  return startDrop(N, S, [R0.rx, R0.ry], R0.nx, R0.ny, reach);
 }
 
 // env: { isLogical, drum, P } as NAV2's (index.js); P.reach is the drop's depth parameter (§1.16)
@@ -287,30 +282,10 @@ export function updateNav(dt, now, S, env) {
       N.cross = null;
       N.landed = S.beatCount;
     }
-  } else if (N.mode === 'EXT') {   // outside (step 2's placeholder): the Julia set is dust until the exterior settles, then the return
-    const settle = (S.arc !== 'peak' && S.beatCount - N.extBeat > OUT3.SETTLE) || S.beatCount - N.extBeat > OUT3.PEAK || idle;
-    N.cPath[0] = N.ball[0];
-    N.cPath[1] = N.ball[1];
-    N.cyc.has = 0;
-    N.par = 0;
-    if (settle && S.dropEnv < 0.2) { N.mode = 'IN'; N.ext.t = 0; }
-  } else if (N.mode === 'IN') {
-    const X = N.ext;
-    X.t = Math.min(1, X.t + dt / OUT3.T_IN);
-    const u = sstep(0, 1, X.t);
-    N.cPath[0] = mix(X.to[0], X.from[0], u);
-    N.cPath[1] = mix(X.to[1], X.from[1], u);
-    N.cyc.has = 0;
-    N.par = u;
-    if (X.t >= 1) {
-      N.ball[0] = X.from[0];
-      N.ball[1] = X.from[1];
-      N.cyc = X.cyc;
-      N.cyc.has = 1;
-      geometry(N);
-      N.mode = 'INT';
-      N.landed = S.beatCount;
-    }
+  } else {   // OUT / EXT / IN: the parabolic implosion (implode.js) — the way in to the root, the exploded set, the way back
+    const was = N.mode;
+    stepDrop(N, S, dt, idle);
+    if (was !== 'INT' && N.mode === 'INT') geometry(N);   // landed back on the ball: the gradient and the size are the ball's again
   }
   // the drop: the live detector's slam, and (OUT3.ANY, the default) the map's / the fake timeline's dropEvt too — the fake timeline
   // never arms the live detector, so #test would never show the exit; a refractory of DROP_REFR beats keeps the two from double-firing
@@ -321,7 +296,7 @@ export function updateNav(dt, now, S, env) {
     geometry(N);
     N.thT.set(N.th); N.rhoT.set(N.rho); N.q = N.cyc.q; N.mode = 'INT'; N.cross = null;
   }
-  if (drop && N.mode === 'INT') navDrop(S, now, env.P && isFinite(env.P.reach) ? env.P.reach : -6);
+  if (drop && N.mode === 'INT') navDrop(S, env.P && isFinite(env.P.reach) ? env.P.reach : -6);
   // the kick (move2.js's lane): along the outward normal by LEN × the component's size, hiding the chart while it rings
   const kk = kickGate(S, N, park, env);
   if (kk > 0) {
@@ -338,8 +313,6 @@ export function updateNav(dt, now, S, env) {
   N.cycBase = N.cyc.has;
   if (k > 0.02) N.cyc.has = 0;
   N.q = N.cyc.q;
-  N.bulb.p = N.gate.p; N.bulb.q = N.gate.q;
-  N.h.x = N.rho; N.alpha.x = N.th; N.lg.x = N.stack.length;
   // visual time: crawls near the wall (critical slowing), releases on resolution / drop
   if (S.resolveEvt) N.timeScale = Math.max(N.timeScale, 2);
   N.timeScale = ema(N.timeScale, mix(1, 0.05, N.par * N.par), dt, 0.5);
@@ -368,7 +341,9 @@ export function updateNav(dt, now, S, env) {
 
 // the knobs as hooks: n3roll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · n3kick3=LEN
 export function knob5(name, v) {
-  const nums = String(v === undefined || v === null ? '' : v).split(',').map(Number);
+  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' ? ROLL : name === 'gate' ? GATE : KICK3;
+  if (s === '' || s === '1') return Object.assign({}, T);   // a bare call READS (CARD.hooks.n3roll() from the console; the knob alone in the URL)
+  const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
   const set = (T, keys) => keys.forEach((k, i) => { if (i < nums.length) T[k] = nums[i]; });
   if (name === 'roll') set(ROLL, ['RHO_LO', 'RHO_HI', 'TH0', 'TH_SPAN', 'GAIN', 'VMAX']);
@@ -376,6 +351,4 @@ export function knob5(name, v) {
   if (name === 'kick3') set(KICK3, ['LEN']);
   return nums;
 }
-// &n3drop=live: the live detector's slam only (NAV2's read); anything else: both detectors (OUT3.ANY)
-export function knobDrop(v) { OUT3.ANY = String(v) === 'live' ? 0 : 1; return OUT3.ANY; }
 export { GR, VX };
