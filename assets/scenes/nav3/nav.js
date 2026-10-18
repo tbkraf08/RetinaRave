@@ -30,7 +30,7 @@ import { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } from '../..
 import { baseLight } from '../../math/loudlight.js';
 import { mkVox, vox } from '../../math/vox.js';
 import { tighten, kickGate, M2 } from './move2.js';
-import { OUT3, startDrop, stepDrop } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes)
+import { OUT3, startDrop, stepDrop, rearm } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes); §143: rearm
 
 export const ROLL = {
   RHO_LO: 0.45,    // the ρ target when the track is at its quietest (the §140 retune: was .25, then .55 — the pulse needs room below the rim to swing — the user: "the set doesn't seem to be dancing"; the ball lives near the rim, where ρ → 1 pinches the Julia set)
@@ -337,7 +337,7 @@ export function updateNav(dt, now, S, env) {
   }
   // the drop: the live detector's slam, and (OUT3.ANY, the default) the map's / the fake timeline's dropEvt too — the fake timeline
   // never arms the live detector, so #test would never show the exit; a refractory of DROP_REFR beats keeps the two from double-firing
-  const drop = (S.dropLiveEvt || S.mapDropEvt || (OUT3.ANY && S.dropEvt)) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;   // §107's rule: the live slam OR the file map's frame-exact line (mapDropEvt — without it six of nine tracks never left in the gate's windows); dropEvt is the fake timeline's
+  const drop = (S.dropLiveEvt || S.mapDropEvt || S.shiftEvt || (OUT3.ANY && S.dropEvt)) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;   // §107's rule: the live slam OR the file map's frame-exact line; §143: OR the engine's energy shift (shiftEvt — the drop a piano has); v3's dropEvt only with OUT3.ANY (&n3drop=any)
   if (drop && N.mode === 'CROSS') {   // a drop mid-crossing: land first (the chart is already verified), then leave
     const X = N.cross;
     N.ball[0] = X.to[0]; N.ball[1] = X.to[1]; N.cyc = X.cyc; N.cyc.has = 1;
@@ -345,6 +345,7 @@ export function updateNav(dt, now, S, env) {
     N.thT.set(N.th); N.rhoT.set(N.rho); N.q = N.cyc.q; N.mode = 'INT'; N.cross = null;
   }
   if (drop && N.mode === 'INT') navDrop(S, env.P && isFinite(env.P.reach) ? env.P.reach : -6);
+  else if (drop && (N.mode === 'OUT' || N.mode === 'EXT' || N.mode === 'IN')) rearm(N, S);   // §143: a drop mid-implosion re-arms it instead of being discarded (Comptine's 52.17 was lost that way)
   // the kick (move2.js's lane): along the outward normal by LEN × the component's size, hiding the chart while it rings
   const kk = kickGate(S, N, park, env);
   if (kk > 0) {

@@ -20,6 +20,11 @@
 //        form's) sweeps its cycle and the exploded set breathes with the bar line (uImp.y rises; uSig = σ).
 //   IN   the return: when the exterior settles (OUT3.SETTLE beats; PEAK at a peak) c eases back to the ball over T_BACK s
 //        with the chart restored at the end.
+// §143 (the drop on a delicate piece): the drop is the live slam, the map's line OR the engine's energy shift (`shiftEvt`); EXT HOLDS
+// while the energy is still up (`shiftHold`) and the SETTLE beats count from the hold's end (PEAK stays the hard cap); a drop or a
+// shift that lands during OUT / EXT / IN RE-ARMS the implosion (rearm(): beat0 reset, the slam's own ε pulse, IN turned back into OUT
+// from where it is) instead of being discarded — Comptine's 52.17 arm was lost mid-implosion that way. v3's dropEvt is no longer
+// read by default (OUT3.ANY 0 — NAV2 never did; `&n3drop=any` restores it).
 // The root c₀ and its parabolic point z₀ are solved, not tabulated: mandel.js's solveMult (a Newton in (z, c) onto the target
 // multiplier) continued from the ball's λ. The petal coefficient a is measured: a = mean over four directions of
 // (g(z₀ + w) − z₀ − w) / w^{q+1} at |w| = W0 — g = f^{Q·q} iterated on the CPU once per drop — at the ROOT (at the rim's cycle
@@ -37,7 +42,11 @@ export const OUT3 = {
   T_IN: 1.4,       // s: the way in — from the ball to the root, the petals lighting
   PET_FROM: 0.6,   // the petal layer fades in from this fraction of the way in (0 at PET_FROM, 1 at the root)
   CHART_TO: 0.85,  // the Koenigs chart holds until this fraction of the way in (the smoulder of ρ → 1), then the petals carry the picture
-  SETTLE: 8,       // beats outside before the return (48 at a peak, as NAV)
+  SETTLE: 8,       // beats outside before the return (48 at a peak, as NAV) — §143: counted from the end of the energy hold when there is one
+  HOLD: 1,         // §143: 1 = EXT holds while the engine's shiftHold is 1 (the energy is still up), then the SETTLE beats; 0 = the fixed settle
+  HOLD_MAX: 32,    // §143: beats the energy hold may keep EXT at most (Comptine's 52 → 1:07 is 27; a dance track's drop section stays up for a minute — without a cap every drop held to PEAK, 19–25 s); the SETTLE beats follow
+  REARM: 1,        // §143: 1 = a drop / shift during OUT / EXT / IN re-arms the implosion; 0 = discarded (v0.43)
+  SLAM_T: 2,       // beats: the re-arm's own ε pulse (IMP.slam, the EPS_DROP term when v3's dropEnv is not the trigger's) decays over this
   PEAK: 48,
   T_BACK: 1.2,     // s: the way back to the ball
   EPS: 0.004,      // ε in units of the component's size (1/|dλ/dc|) at `reach` −6; ×2^(reach + 6) — the brief's 1e-3 … 1e-2
@@ -49,7 +58,7 @@ export const OUT3 = {
   PET_LUM: 0.08,   // §142: the petal layer's base lightness (was .22 in the shader: the whole interior a flat wash for the drop's six seconds)
   GATE_FRAC: 0.3,  // the GATE is this fraction of the petal: the Lavaurs opening (|u| ~ √ε in the normal form) is far smaller than the petal, and a transit must leave it (2R) and come back — at the petal's own size the orbits of a cardioid root never left
   QMAX: 7,         // the Farey address the root is named by (q petals; θ near 0 or 1 → the cusp, 1 petal)
-  ANY: 1,          // 1: dropEvt (the map's / the fake timeline's) fires the drop beside dropLiveEvt; 0 (&n3drop=live): the live slam only, as NAV2
+  ANY: 0,          // §143: 0 — v3's dropEvt is not read (NAV2 never did; a piano's false drops came in by it); 1 (&n3drop=any): dropEvt fires the drop too. The fake timeline (#test) leaves on its own shiftEvt now
   DROP_REFR: 4,    // beats after a drop before another may fire (the two detectors can name one drop a beat apart)
   ITER: 320,       // the shader's iteration budget while the implosion runs (§140 quality: was 420, the loop's hard cap — index.js scales it by the governor's q and caps it here)
   OUT_RUN: 2,      // × q₀ iterates beyond 2R before the next entry into R counts as a passage (the cycle's own alternation does not)
@@ -62,7 +71,7 @@ export const OUT3 = {
 };
 
 // what index.js uploads: x the petal stage's weight, y the explosion's, z q (petals), w the gate radius R; z0, a, sig, and the record
-export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, escMax: 0, passMax: 0, n: 0, drops: 0, frames: 0, T: 0 };
+export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, escMax: 0, passMax: 0, n: 0, drops: 0, frames: 0, T: 0, slam: 0, rearms: 0, held: 0 };   // §143: slam = the re-arm's ε pulse, rearms = the count, held = frames EXT was held by shiftHold
 
 const CY = mkCyc();
 let st = null;   // the drop in flight: { from, root, n, size, Q, q, t, settled, beat0 }
@@ -153,7 +162,8 @@ export function startDrop(N, S, root, nx, ny, reach) {
   IMP.fan = found;
   IMP.q = q; IMP.q0 = cy.q; IMP.z0 = z0; IMP.a = a; IMP.root = root; IMP.nrm = [dx, dy]; IMP.Rp = OUT3.PET_R * Math.pow(OUT3.PET_K / am, 1 / q); IMP.R = OUT3.GATE_FRAC * IMP.Rp; IMP.x = 0; IMP.y = 0; IMP.sig = 0;
   IMP.eps0 = eps0; IMP.eps = eps0; IMP.drops++; IMP.passes = 0; IMP.esc = 0; IMP.escMax = 0; IMP.passMax = 0;
-  st = { from: [N.ball[0], N.ball[1]], root, nx: dx, ny: dy, t: 0, beat0: S.beatCount, cyc: cy, p: r.p };
+  st = { from: [N.ball[0], N.ball[1]], start: [N.ball[0], N.ball[1]], root, nx: dx, ny: dy, t: 0, beat0: S.beatCount, hold: S.beatCount, cyc: cy, p: r.p };   // §143: start = where the way in begins (the ball, or a re-arm's c); hold = the last beat the energy was up
+  IMP.slam = 0;
   N.mode = 'OUT';
   N.extBeat = S.beatCount;
   N.timeScale = 2.6;
@@ -169,8 +179,8 @@ export function stepDrop(N, S, dt, idle) {
   if (N.mode === 'OUT') {   // the way in: ball → root, the petals lighting, the chart held then released at the root
     X.t = Math.min(1, X.t + dt / OUT3.T_IN);
     const u = sstep(0, 1, X.t);
-    N.cPath[0] = mix(X.from[0], X.root[0], u);
-    N.cPath[1] = mix(X.from[1], X.root[1], u);
+    N.cPath[0] = mix(X.start[0], X.root[0], u);
+    N.cPath[1] = mix(X.start[1], X.root[1], u);
     IMP.x = sstep(OUT3.PET_FROM, 1, u); IMP.y = 0;   // the petals exist only AT the root (before it the attracting cycle still wins and the Fatou coordinate does not exist): they fade in over the last stretch
     N.cyc.has = u < OUT3.CHART_TO ? 1 : 0;   // the chart (the Koenigs bands, ρ → 1: the critical slowing) holds until then
     N.par = u;
@@ -178,7 +188,8 @@ export function stepDrop(N, S, dt, idle) {
   } else if (N.mode === 'EXT') {   // the way out: c₀ + n̂·ε(t), ε breathing with the beat and the slam
     X.t += dt;
     const bp = isFinite(S.beatPhase) ? clamp(S.beatPhase, 0, 1) : 0;
-    IMP.eps = IMP.eps0 * (1 + OUT3.EPS_BEAT * (1 - bp) + OUT3.EPS_DROP * (S.dropEnv || 0));
+    IMP.slam *= Math.exp(-dt / Math.max(0.05, OUT3.SLAM_T * 60 / (S.bpm > 40 ? S.bpm : 124)));   // §143: the re-arm's pulse
+    IMP.eps = IMP.eps0 * (1 + OUT3.EPS_BEAT * (1 - bp) + OUT3.EPS_DROP * Math.max(S.dropEnv || 0, IMP.slam));
     N.cPath[0] = X.root[0] + X.nx * IMP.eps;
     N.cPath[1] = X.root[1] + X.ny * IMP.eps;
     N.ball[0] = N.cPath[0]; N.ball[1] = N.cPath[1];
@@ -189,8 +200,13 @@ export function stepDrop(N, S, dt, idle) {
     if ((IMP.n++ & 7) === 0) { const L = layer(N.cPath[0], N.cPath[1], IMP.z0, IMP.Rp, IMP.R, IMP.q0); IMP.passes = L.p; IMP.esc = L.esc; IMP.escMax = Math.max(IMP.escMax, L.esc); IMP.passMax = Math.max(IMP.passMax, L.p); }   // the layer, every 8th frame (24 orbits × ITER)
     N.cyc.has = 0;
     N.par = 0;
-    const settle = (S.arc !== 'peak' && S.beatCount - X.beat0 > OUT3.SETTLE) || S.beatCount - X.beat0 > OUT3.PEAK || idle;
-    if (settle && (S.dropEnv || 0) < 0.2) { N.mode = 'IN'; X.t = 0; X.out = [N.cPath[0], N.cPath[1]]; }
+    // §143: the energy hold — while shiftHold is 1 the exterior stays (IMP.held counts the frames) and the settle counts from the hold's
+    // last beat; PEAK (from the drop itself) and silence end it regardless
+    const held = OUT3.HOLD && (S.shiftHold || 0) > 0 && S.beatCount - X.beat0 <= OUT3.HOLD_MAX;
+    if (held) { X.hold = S.beatCount; IMP.held++; }
+    const capped = S.beatCount - X.beat0 > OUT3.PEAK || idle;
+    const settle = capped || (!held && S.arc !== 'peak' && S.beatCount - Math.max(X.beat0, X.hold) > OUT3.SETTLE);
+    if (settle && (capped || (S.dropEnv || 0) < 0.2)) { N.mode = 'IN'; X.t = 0; X.out = [N.cPath[0], N.cPath[1]]; }
   } else {   // IN: the way back to the ball; the chart is restored at the end
     X.t = Math.min(1, X.t + dt / OUT3.T_BACK);
     const u = sstep(0, 1, X.t);
@@ -212,14 +228,26 @@ export function stepDrop(N, S, dt, idle) {
   }
 }
 
-// &n3drop=live: the live detector's slam only (NAV2's read); anything else: both detectors (OUT3.ANY)
-export function knobDrop(v) { OUT3.ANY = String(v) === 'live' ? 0 : 1; return OUT3.ANY; }
-// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM]]]]]]]
+// §143: a drop or a shift while the implosion runs RE-ARMS it: beat0 and the hold reset (the settle starts over), the slam's own ε pulse
+// (IMP.slam → 1: the set explodes furthest on this beat as on the first drop); during IN the way back is abandoned — the way in starts
+// over from where c is (st.start = cPath: continuous, the petals light again, then EXT). Returns 1 when something was re-armed.
+export function rearm(N, S) {
+  const X = st;
+  if (!X || !OUT3.REARM) return 0;
+  X.beat0 = S.beatCount; X.hold = S.beatCount; IMP.slam = 1; IMP.rearms++;
+  if (N.mode === 'IN') { X.start = [N.cPath[0], N.cPath[1]]; X.t = 0; IMP.x = 0; IMP.y = 0; N.mode = 'OUT'; N.timeScale = 2.6; }
+  N.extBeat = S.beatCount;
+  N.log('REARM@' + (S.beatCount | 0) + ' ' + N.mode);
+  return 1;
+}
+// &n3drop=any: v3's dropEvt fires the drop too (v0.43's read); &n3drop=live / anything else: the live slam, the map's line and the shift (OUT3.ANY 0, §143)
+export function knobDrop(v) { OUT3.ANY = String(v) === 'any' ? 1 : 0; return OUT3.ANY; }
+// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX]]]]]]]]]]
 export function knobImp(v) {
   const s = String(v === undefined || v === null ? '' : v);
   if (s === '' || s === '1') return Object.assign({}, OUT3);   // a bare call READS (CARD.hooks.n3imp() from the console; &n3imp alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
-  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE', 'PET_LUM'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });
+  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE', 'PET_LUM', 'HOLD', 'REARM', 'HOLD_MAX'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });   // §143: HOLD / REARM / HOLD_MAX the ninth to eleventh
   return nums;
 }

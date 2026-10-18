@@ -43,7 +43,7 @@ export default {
   home: false,      // NAV2 (id 2) is the home; this is the workbench
   always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
-  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',
+  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'shiftEvt', 'shiftHold', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',   // §143: shiftEvt / shiftHold (the energy shift)
     'hit', 'bass', 'mid', 'high', 'peaks', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock)
     'loudRel', 'loudRange', 'loudAbs', 'centroid', 'voxS', 'voxHz', 'voxConf', 'harmAngle', 'key', 'keyConf', 'dropExpectedIn', 'sectionEvt', // §140 nav.js: loud → ρ, pitch → θ (math/vox.js), the key / harmony turn, the gate, the mirror
     'snareEvt', 'snareAmp', 'mode', 'valence', 'modeShade', 'phrase16Pos', 'bpm', // §99: look2.js (+ loudRel loudRange loudAbs key keyConf harmAngle above)
@@ -74,8 +74,8 @@ export default {
     n3kick3: (v) => knob5('kick3', v),
     n3dance: (v) => knob5('dance', v),
     n3conv: (v) => knob5('conv', v),         // &n3conv=CONV_RIM,CONV_R0,CONV_MAX — the convergence radius at the rim (the depth pass's band A/B)       // &n3dance=BASS,KICK[,HIT[,TURN[,SWAY[,SNARE]]]] — the §140 retune's reactive dance (nav.js DANCE)
-    n3drop: knobDrop,                         // &n3drop=live: the live slam only (NAV2's read); default both detectors (the fake timeline has no live slam)
-    n3imp: knobImp,                           // &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE]]]]]] — the implosion's numbers (implode.js OUT3)
+    n3drop: knobDrop,                         // &n3drop=any: v3's dropEvt too (v0.43's read); default the live slam, the map's line and the shift (§143)
+    n3imp: knobImp,                           // &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX]]]]]]]]]] — the implosion's numbers (implode.js OUT3; §143: HOLD / REARM / HOLD_MAX)
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     green3: () => GREEN,                      // `green3`: &green / CARD.hooks.green stay NAV2's (hooks are global by name)
@@ -99,7 +99,9 @@ export default {
       beatCount: 'beats since the drop: how long c stays outside before it comes back in',
       dropLiveEvt: 'the drop: c leaves the component through its rim along the wall\'s normal — step 3 makes it the parabolic implosion (the live detector\'s slam)',
       mapDropEvt: 'the file map\'s drop, on its exact bar line, fires the same exit (§107\'s rule: the live slam OR the map\'s line)',
-      dropEvt: 'the fake timeline\'s drop fires the same exit — the live detector never arms on #test; &n3drop=live reads the live slam only, as NAV2',
+      dropEvt: 'v3\'s drop fires the exit only with &n3drop=any (§143: off by default — a piano\'s false drops came in by it; NAV2 never read it)',
+      shiftEvt: 'the engine\'s energy shift (the loudness ladder stepping up over a bar) fires the same implosion — the drop a piece with no slam has (§143); mid-implosion it re-arms it',
+      shiftHold: 'while the energy stays up the exterior holds (EXT), then the 8-beat settle; the hard cap is OUT3.PEAK (§143)',
       dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings; the return waits until it has faded',
       intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
       buildLive: 'the void before a drop presses the ball against the rim and ASKS to go in: at a p/q root the ball crosses into the child bulb (§140)',
