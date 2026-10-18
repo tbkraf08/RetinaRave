@@ -27,6 +27,7 @@ import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
 import { feed as queueFeed } from '../assets/engine/queue/feed.js';
 import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';
 import { Tongues, TONGUEK } from '../assets/engine/clock/tongues.js';
+import { Loud, LOUD_FIELDS } from '../assets/engine/loud.js';   // §143: the loudness ladders the slam confirms on (features-loud.js: one Loud per stream, pushed per PCM block, read at heard time)
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -65,7 +66,8 @@ if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
 // v3 − pcm count difference, so a from-0 grading holds the BAR PHASE equal to the v3 run's (the stores keep it in count units)
 if (process.env.CLOCKK) Object.assign(CLOCK, JSON.parse(process.env.CLOCKK));
 const CLOCKSRC = process.env.CLOCKSRC === 'pcm' ? 'pcm' : 'v3';
-const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm', 'tongueAmbig', 'tongueOn'];   // + the tongues' tension (§76/§77: the build stage's third arming input)
+const CLOCK_OUT = ['bpmPcm', 'beatPhasePcm', 'beatCountPcm', 'beatPcm', 'clockConfPcm', 'clockPcm', 'tongueAmbig', 'tongueOn'];
+const LOUD_OUT = [...LOUD_FIELDS, 'loudAbs'];   // §143: as features-loud.js publishes them (loudAbs 1: a file, the engine owns the gain)   // + the tongues' tension (§76/§77: the build stage's third arming input)
 const TRACKS = a.length ? a : ['SeeYouDrop', 'CyborgNinja', 'WhoLikesToParty', 'Malicious'];
 
 const EARS_K = ['denK', 'denS', 'denH', 'subGate', 'subIn', 'subOut', 'subPure', 'subConf', 'bassReg', 'lpSweep', 'width', 'pulse', 'kickEvt', 'snareEvt', 'hatEvt', 'kickAge', 'kickVel'];
@@ -96,10 +98,11 @@ for (const track of TRACKS) {
   let detMs = 0; tap.clock = () => detMs;
   const an = tap.an, A = an.A, ears = new Ears(sr), v3 = V3 ? await makeV3(pcm) : null;
   const names = [...EARS_K, ...Object.keys(SYN_A), ...Object.keys(SYN_EV), ...Object.keys(SYN_IN), 'rollRate', 'phrase16Pos', 'barPos',
-    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...CLOCK_OUT, ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
+    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...CLOCK_OUT, ...LOUD_OUT, ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
   const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
+  const loud = new Loud(sr), lo = {};   // §143
   const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {}, ck = { k: null };
   ears.perc.line = lineHook(clk);   // §90: the kick lane reads the clock's line (page = node)
   if (TONGUEK.on) clk.tongues = new Tongues(TONGUEK);   // as features-clock.js attaches it (§76)
@@ -108,7 +111,7 @@ for (const track of TRACKS) {
   detStream(pcm, {
     pre(fr) { detMs = (fr + F0) * 1000 / FPS; },   // file.js tickFile: the frame clock's ms, then this frame's pushes
     block(bl, br, mono, t0) {
-      tap.pushBlock(mono, detMs); ears.push(bl, br, t0);
+      tap.pushBlock(mono, detMs); ears.push(bl, br, t0); loud.push(bl, br, t0);
       clk.push(mono, t0);                                  // features-clock.js onBlock: the mono block, then the ears' new onsets
       for (const e of ears.pending) { const c = CLS[e.type]; if (c !== undefined && !e.line && e.t > seen[c]) { seen[c] = e.t; clk.onset(e.t, c, e.vel); } }
     },
@@ -126,6 +129,7 @@ for (const track of TRACKS) {
         CK = clk.read(heard + DET_LEAD, craw, {}); CK.count += ck.k === null ? 0 : ck.k;
       }
       if (v3) { const S = M0; for (const k of V3_K) cols[k].push(r4(k === 'arcN' ? ARC[S.arc] ?? -1 : S[k])); }
+      loud.read(heard, lo); for (const k of LOUD_FIELDS) cols[k].push(r4(lo[k])); cols.loudAbs.push(1);   // §143
       tap.frame(dt);
       const o = ears.read(heard);
       for (const k of EARS_K) cols[k].push(r4(o[k]));
@@ -139,6 +143,7 @@ for (const track of TRACKS) {
         if (CK) { S.beatCount = CK.count; S.beatPhase = CK.phase; S.bpm = CK.bpm; }   // the switch: the PCM clock's raw values (features-clock.js)
         S.barConf = A.barConf; S.bpmSyn = A.bpm; S.barPos = wrap(A.beat - an.o4, 4); S.hp = A.ev.hp; S.bassS = A.bassS; S.sub = A.sub; S.heardT = heard;
         S.tongueAmbig = tgo ? tgo.tongueAmbig : 1; S.tongueOn = tgo ? tgo.tongueOn : -1;   // the tongues' tension (§77)
+        for (const k of LOUD_FIELDS) S[k] = lo[k]; S.loudAbs = 1;   // §143: the ladders (feed.js reads loudRel / loudM / loudPk / loudRange / loudAbs)
         // the bars store first (the page's stage order: bars, drums, build, queue)
         for (const k of EARS_B) S[k] = o[k];
         S.midS = A.midS; S.highS = A.highS; S.lvl = A.level; S.centroid = A.centroid;

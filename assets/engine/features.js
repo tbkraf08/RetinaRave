@@ -3,6 +3,8 @@
 // Source: https://github.com/tbkraf08/RetinaRave
 // LAYER 1: music-state extractor. Audio in (AU analysers), MS out. No GL, no DOM.
 // Lifted from cardioid3 updateMusic; tempo/harmony/section live in features-slow.js.
+import { BUILD } from './build/build.js';   // §143: the slam's knobs (SUB_BACK / LEVEL / PEND), shared with the live detector
+import { Confirm, ladderOf } from './build/confirm.js';
 import { clamp, ema, sstep, wrap1 } from '../math/util.js';
 import { AU } from './audio.js';
 import { MS, XS } from './state.js';
@@ -30,6 +32,18 @@ function bandRms(m, a, b) {
   let s = 0;
   for (let i = a; i < b; i++) s += m[i] * m[i];
   return Math.sqrt(s / (b - a));
+}
+
+// §143 — v3's drop gets the live slam's test (DECISIONS §143 item 1b; build/confirm.js): a candidate from either path below is PENDING
+// until the ears' sub gate is back and the loudness ladder is at a drop's level (BUILD.SUB_BACK / LEVEL, within BUILD.PEND beats), and
+// fires — with its strength, the envelope, the refractory and the arc's `build` reset — on that frame. With the loud stage off
+// (loudAbs < 0: `&loud=0`, node's v3 harness) the candidate fires at once: the pre-§143 extractor, which is the A/B. On a piano
+// (Comptine: no sub ever) no candidate fires: its 40.8 / 58.9 / 67.4 / 98.6 s drops are gone, and the shift field carries them.
+const DROPC = new Confirm(BUILD);
+function dropFire(S, now, strength) { S.dropEvt = true; S.dropStrength = strength; S.lastDrop = now; S.dropEnv = 1; S.build = 0; }
+function dropCand(S, now, strength) {
+  if (!(S.loudAbs >= 0) || (BUILD.SUB_BACK <= 0 && BUILD.LEVEL <= 0)) { dropFire(S, now, strength); return; }
+  if (!DROPC.pending) { DROPC.arm(S.beatCount + S.beatPhase); XS.dropStr = strength; }
 }
 
 export function updateMusic(dt, now) {
@@ -158,17 +172,12 @@ export function updateMusic(dt, now) {
   S.eM = ema(S.eM, e, dtF, 2.5);
   S.eL = ema(S.eL, e, dtF, 12);
   S.eMax = Math.max(S.eMax * Math.exp(-dtF / 60), S.eM, 0.15);
-  if (reseed) S.absentT = 0; // v0.3 §26 audit: absence before the gap is no evidence after it
+  if (reseed) { S.absentT = 0; DROPC.clear(); } // v0.3 §26 audit: absence before the gap is no evidence after it (§143: nor a drop pending across it)
   const prevAbsent = S.absentT;
   if (S.bassFast > 0.5) S.absentT = 0;
   else if (S.presence > 0.3) S.absentT += dt;
-  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5 && !settle) {
-    S.dropEvt = true;
-    S.dropStrength = clamp(0.45 + prevAbsent / 10 + S.build * 0.4, 0, 1);
-    S.lastDrop = now;
-    S.dropEnv = 1;
-    S.build = 0;
-  }
+  if (prevAbsent > 1.8 && S.bassFast > 0.5 && now - X.lastOnset < 0.1 && now - S.lastDrop > 5 && !settle)
+    dropCand(S, now, clamp(0.45 + prevAbsent / 10 + S.build * 0.4, 0, 1));
   // second drop path for tracks whose bass never leaves: a build was recently in progress and a hard bass hit lands
   // well above the medium-term energy
   S.buildPk = Math.max((S.buildPk || 0) * Math.exp(-dtF / 3), S.build);
@@ -177,14 +186,11 @@ export function updateMusic(dt, now) {
   // by ~2.5 s. raw e, not eS: the first kick must count, eS lags it by 0.3 s
   const lowArc = (S.arc === 'valley' || S.arc === 'build') && (S.arcT || 0) > 1;
   // three gates: a build led here, or a quiet arc led here, or the energy more than doubles on this hit (groove kicks ~1.8x eM, drops 3x)
-  if (!S.dropEvt && !settle && S.liveT > 4 && S.onset && S.hitStrength > 0.6 && S.bassFast > 0.6 &&
-    (((S.buildPk > 0.5 || lowArc) && e > S.eM + 0.25) || e > 2 * S.eM + 0.1) && now - S.lastDrop > 8) {
-    S.dropEvt = true;
-    S.dropStrength = clamp(0.35 + 0.6 * Math.max(S.buildPk, e - S.eM), 0, 1);
-    S.lastDrop = now;
-    S.dropEnv = 1;
-    S.build = 0;
-  }
+  if (!S.dropEvt && !DROPC.pending && !settle && S.liveT > 4 && S.onset && S.hitStrength > 0.6 && S.bassFast > 0.6 &&
+    (((S.buildPk > 0.5 || lowArc) && e > S.eM + 0.25) || e > 2 * S.eM + 0.1) && now - S.lastDrop > 8)
+    dropCand(S, now, clamp(0.35 + 0.6 * Math.max(S.buildPk, e - S.eM), 0, 1));
+  // §143: the pending candidate waits for the sub and the ladder (the same test as the live slam), up to PEND beats
+  if (DROPC.pending && DROPC.step(S.beatCount + S.beatPhase, +S.subGate || 0, ladderOf(S.loudRel, S.loudRange, S.loudAbs, BUILD)) > 0) dropFire(S, now, XS.dropStr);
   S.dropEnv *= Math.exp(-dt / (2.2 * 60 / S.bpm));
   const ab = S.absentT > 1.5 ? 1 : 0;
   const bRaw = clamp(2 * Math.max(0, S.eM - S.eL) * (1 - ab) + ab * (0.3 + 0.03 * Math.min(S.absentT, 6) + 0.13 * Math.max(0, S.onsetRate - 3.5) +

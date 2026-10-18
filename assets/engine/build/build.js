@@ -44,6 +44,19 @@
 //   ARM       once it has held AMB_HOLD beats, on the next bar line; the slam and the release are the sub-void path's (no
 //             SLAM_AFTER wait, the sub's own return confirms); the ambiguity lifting for a beat disarms an ambiguity arm only
 // `tongueOn` −1 (the stage off) or an input without the field reads as "not ambiguous": every caller before §77 is unchanged.
+// TWO GATES ON A PIANO (DECISIONS §143, docs/workers/brief-drop-piano.md item 1 — the user on NAV3 over Comptine: "47s looks like
+// a drop, when really should do a drop viz at 52s"). Measured on the nine page traces and the node traces (tools/work/drop/
+// measure3.py, subdiag.mjs, slamdiag.mjs): every one of Comptine's six arms was the SUB-VOID path with the causal sub gate's 32 s
+// mean at 0.00 — a piano has no sub, and a sub that was never there cannot have LEFT (the dance tracks' sub-void arms read .62–.98).
+// And after every confirmed slam the ears' causal sub gate OPENED within .25 s (SeeYouDrop ×2, WhoLikesToParty ×3, Vienna, Raindrops,
+// IBelongHere 179.9) and the loudness ladder (math/loudlight baseLight on loudRel: the track's own 3 s loudness over the range it has
+// shown) stood at .53–.99 within a beat — where the false slams had no sub come back (IBelongHere's breakdown 157 / 167, every
+// piano slam) or a ladder at .17–.38 (TheChain 86.9: a kick in a quiet passage; Raindrops 129.5: a fill). The ladder's RISE over the
+// bar before (the brief's other witness) separated nothing the level did not, and TheChain's fast ladder read +.34 on a hit. So:
+//   SUB VOID  arms only when the gate's 32 s mean is at or above SUBV_HAD (the sub WAS there)
+//   SLAM      once the bass confirms it, the slam is PENDING until the causal sub gate is at or above SUB_BACK AND the ladder at or
+//             above LEVEL — released on that frame (the same frame when both already hold; up to PEND beats later) — and dropped,
+//             the arm kept, if PEND beats pass without them. The ladder absent (`&loud=0`, no loud stage) = the level test passes.
 // THE TIME BASE is the bars stage's (DECISIONS §50): B = the v3 beat moved onto heard time with the lead's estimate; an
 // onset's position x = B - (T - t) x bpm / 60 (t may be ahead of T by the display lead in file modes: features-build.js).
 // THE BAR LINE: v3's own count (beatCount mod 4) until synapse proposes a sure bar phase (barConf >= 0.9, same octave) for
@@ -68,8 +81,14 @@ export const BUILD = {
   SUBV_RET: 2,     // on a sub-void arm: sub >= SUBV_RET x its 2 s mean = the sub is back (Vienna's drop reads 2.14)
   AMB_ARM: 0.9,    // the tongues' tongueAmbig at or above which the beat is ambiguous (0 = the ambiguity path off; §77)
   AMB_HOLD: 8,     // beats the ambiguity must hold before the path arms (Vienna's dream 22; the longest elsewhere 7)
+  SUBV_HAD: 0.3,   // §143: the sub-void path needs a sub that WAS there — the causal gate's 32 s mean at or above this (Comptine 0.00 on every arm; the dance tracks' arms .62–.98); 0 = off
+  SUB_BACK: 0.5,   // §143: the slam releases only once the ears' causal sub gate is at or above this (every confirmed drop within .25 s; IBelongHere's breakdown slams and every piano slam never); 0 = off
+  LEVEL: 0.5,      // §143: ... and the loudness ladder (baseLight on loudRel) at or above this (confirmed drops .53–.99 within a beat; TheChain's quiet-passage kick .17, Raindrops' fill .38); 0 = off
+  LEVEL_RNG: 4,    // §143: LU of range the track must have shown before the level test applies (a mid-track start's ladder is the warm-up guard's, not the track's: confirm.js ladderOf); the tracks that fail it whole (WhoLikesToParty 2.9, Vienna 3.3, CyborgNinja 1.4 LU) had no false slam the level caught
+  PEND: 4,         // beats the sub and the ladder may take after the bass-confirmed onset (WhoLikesToParty 131.4 reaches .53 at .5 s, .62 at 1 s) — then the slam is dropped and the arm kept
 };
 export const BUILD_OUT = ['buildLive', 'dropLiveIn', 'dropLiveEvt'];
+import { Confirm } from './confirm.js';   // §143: the slam's confirmation (the sub back, the ladder at a drop's level) — v3's dropEvt takes the same one
 const TEMPO_JUMP = 0.04, ANCHOR_BEATS = 8;
 
 // a trailing box mean over `win` seconds of (value, dt) samples, time-weighted (the page's frame interval varies)
@@ -91,7 +110,8 @@ export class Build {
     this.k = k;
     this.out = { buildLive: 0, dropLiveIn: -1, dropLiveEvt: 0 };
     this.hp5 = new BoxMean(5); this.b2 = new BoxMean(2); this.b32 = new BoxMean(32); this.s2 = new BoxMean(2);
-    this.sg2 = new BoxMean(2);
+    this.sg2 = new BoxMean(2); this.sg32 = new BoxMean(32);   // §143: the gate's 32 s mean — was the sub ever there
+    this.conf = new Confirm(k);   // §143: the bass-confirmed slam waiting for the sub and the ladder
     this.pB = null; this.pBpm = 0;
     this.a = 0; this.aCand = -1; this.aT = 0;       // the bar phase (0..3) and a proposed one
     this.reset();
@@ -99,14 +119,14 @@ export class Build {
 
   // a seek / a new stream: nothing carries across
   reset() {
-    this.hp5.reset(); this.b2.reset(); this.b32.reset(); this.s2.reset(); this.sg2.reset();
+    this.hp5.reset(); this.b2.reset(); this.b32.reset(); this.s2.reset(); this.sg2.reset(); this.sg32.reset();
     this.hist = 0; this.disarm(true); this.rearm = true; this.voidB = 0; this.gapB = 0; this.offB = 0;
     this.svB = 0; this.svGap = 0; this.amB = 0; this.amGap = 0;
     this.out.buildLive = 0;
   }
 
   disarm(slam) {
-    this.armed = false; this.armB = 0; this.cand = null; this.sv = false; this.am = false;
+    this.armed = false; this.armB = 0; this.cand = null; this.conf.clear(); this.sv = false; this.am = false;
     this.out.dropLiveIn = -1;
     if (slam) this.out.buildLive = 0;
     this.rearm = false;
@@ -119,7 +139,8 @@ export class Build {
     if (B - this.aT >= ANCHOR_BEATS) { this.a = p; this.aCand = -1; }
   }
 
-  // one frame. i = { B, rel, bpm, ok, hp, bassS, sub, subGate, tongueAmbig, tongueOn, anchor, onsets: [{ x }], dt }:
+  // one frame. i = { B, rel, bpm, ok, hp, bassS, sub, subGate, tongueAmbig, tongueOn, anchor, onsets: [{ x }], dt, lad }:
+  //   lad  the loudness ladder 0..1 (feed.js; NaN or absent = the loud stage is off: the slam needs no level, §143)
   //   B  heard beat position (continuous) · rel  the position events are released at (B + the display lead, beats)
   //   bpm  the grid's tempo · ok  music present (presence)
   //   hp  synapse's high-pass evidence · bassS  synapse's bass level · anchor  a proposed bar phase 0..3 or -1
@@ -139,10 +160,11 @@ export class Build {
     this.hist += dt;
     const hp5 = this.hp5.push(i.hp, dt), b2prev = this.b2.mean, b2 = this.b2.push(i.bassS, dt), b32 = this.b32.push(i.bassS, dt);
     const s2prev = this.s2.mean; this.s2.push(i.sub || 0, dt);
-    const sg2 = this.sg2.push(i.subGate === undefined ? 1 : i.subGate, dt);
+    const sgIn = i.subGate === undefined ? 1 : i.subGate, sg2 = this.sg2.push(sgIn, dt), sg32 = this.sg32.push(sgIn, dt);
+    const lad = i.lad === undefined ? NaN : +i.lad;   // §143: the loudness ladder (NaN = no loud stage)
     const isVoid = this.hist >= k.MIN_HIST && (hp5 > k.HP_ARM || (k.BASS_ARM > 0 && b2 < k.BASS_ARM * b32));
     // the sub void, counted in beats of its own with the same gap bridging
-    const isSubVoid = this.hist >= k.MIN_HIST && k.SUBV_OFF > 0 && sg2 < k.SUBV_OFF;
+    const isSubVoid = this.hist >= k.MIN_HIST && k.SUBV_OFF > 0 && sg2 < k.SUBV_OFF && (k.SUBV_HAD <= 0 || sg32 >= k.SUBV_HAD);   // §143: a sub that was never there has not left
     if (isSubVoid) { this.svB += dB + this.svGap; this.svGap = 0; }
     else { this.svGap += dB; if (this.svGap > 1) { this.svB = 0; this.svGap = 0; if (this.armed && this.sv) this.disarm(false); } }
     // the ambiguity (§77), the same counting
@@ -177,9 +199,11 @@ export class Build {
         else if ((i.rel === undefined ? B : i.rel) >= this.cand.x - 0.05 && ((i.bassS >= k.RET * this.cand.ref && this.cand.ref > 0) ||
           (k.SUB_RET > 0 && (i.sub || 0) >= k.SUB_RET * this.cand.sref && this.cand.sref > 0) ||
           ((this.sv || this.am) && k.SUBV_RET > 0 && (i.sub || 0) >= k.SUBV_RET * this.cand.sref && this.cand.sref > 0))) {
-          o.dropLiveEvt = 1; this.disarm(true); return o;
+          this.conf.arm(this.cand.x);   // §143: the bass is back — the slam is PENDING until the sub is back and the ladder is at a drop's level
+          this.cand = null;
         }
       }
+      if (this.conf.step(B, sgIn, lad) > 0) { o.dropLiveEvt = 1; this.disarm(true); return o; }   // −1 (PEND beats without them): not a drop; the arm stays
       const vb = Math.max(this.voidB, this.sv ? this.svB : 0, this.am ? this.amB : 0) / 4;
       o.buildLive = Math.min(1, k.L0 + (1 - k.L0) * Math.max(0, vb - k.HOLD) / Math.max(1e-6, k.FULL - k.HOLD));
       // beats to the next bar line; 0 through the first ON_BEAT after a line (the drop may be landing now; not on the arm's line)

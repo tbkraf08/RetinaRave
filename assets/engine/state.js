@@ -35,6 +35,7 @@ export const MS = {
   predKick: 0, predSnare: 0, predHat: 0, predKickIn: -1, predConf: 0, barMatch: 0, barNovelEvt: false, barReturnEvt: false,
   kick2: 0, snare2: 0, hat2: 0,                       // the reactive drums v2 (engine/drums, features-drums.js)
   buildLive: 0, dropLiveIn: -1, dropLiveEvt: false,   // the live build / drop detector (engine/build, features-build.js) — idle
+  shiftEvt: false, shiftHold: 0,                      // the energy shift (engine/shift, features-shift.js, §143) — idle: no step, nothing held
   // the predicted-event queue (engine/queue, features-queue.js, live step 5) — idle: nothing listed
   nextBeatIn: -1, nextBarIn: -1, nextKickIn: -1, nextSnareIn: -1, nextHatIn: -1, nextDropIn: -1,
   nextKickConf: 0, nextSnareConf: 0, nextHatConf: 0, nextKickUp: 0, nextSnareUp: 0, nextHatUp: 0, queueN: 0,
@@ -60,5 +61,6 @@ export const XS = {
   mu: new Float32Array(15), va: new Float32Array(15).fill(0.01), fp: new Float32Array(17), lib: [], arcPrev: 'idle', eAtChange: 0, phraseBeat: 0,
   holdUntil: -1, reseed: false, // v0.3 resume-hold (ENGINE.resume): events masked until holdUntil, flux/surprise baselines re-seated once
   relN: 0, relQ: 0,             // v0.3 §21 tempo 3:2 arbitration: consecutive short-window votes for the relative relQ
+  dropStr: 0,                   // §143: the strength of v3's pending drop candidate (features.js dropCand)
 };
 
