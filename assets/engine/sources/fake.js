@@ -128,12 +128,12 @@ export function fakeMusic(dt, now) {
   fakeShift(dt, S);
 }
 
-// §143: shiftEvt / shiftHold from the mirrored ladder through the real Shift (engine/shift/shift.js) — the fake's drop is its own
-// dropEvt (no live detector, no map here). A function of the fake state alone; under &loud=0 the ladder is NaN and nothing fires.
+// §143: shiftEvt / shiftHold from the mirrored ladder through the real Shift (engine/shift/shift.js). A function of the fake state
+// alone; under &loud=0 the ladder is NaN and nothing fires.
 function fakeShift(dt, S) {
   const i = FSI;
   i.B = S.beatCount + S.beatPhase; i.bpm = S.bpm; i.ok = S.presence >= SHIFT.PRESENT; i.dt = dt;
-  i.lad = baseLight(S.loudRel, S.loudRange, S.loudAbs, NaN); i.drop = S.dropEvt ? 1 : 0; i.armed = 0;   // the live detector never arms on the fake
+  i.lad = baseLight(S.loudRel, S.loudRange, S.loudAbs, NaN); i.drop = 0; i.armed = 0;   // no confirmed drop here (dropLiveEvt / mapDropEvt never fire on the fake; v3's dropEvt is not one in the real stage either) and the live detector never arms — so the fake's own ladder step after the 13 s drop IS the shift NAV3 leaves on under #test
   const o = FSH.step(i);
   S.shiftEvt = !!o.shiftEvt; S.shiftHold = o.shiftHold;
 }

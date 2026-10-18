@@ -1,0 +1,43 @@
+
+== Comptine  truth [21.513, 31.544, 41.471]  slams [np.float64(47.5), np.float64(52.17), np.float64(58.88), np.float64(107.92)]  armed 39 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   41.55  47.50 | 0.00   0.94  | 0.00 0.00  | 0.53 | 0.00 |  2.8
+   47.85  52.17 | 0.00   1.04  | 0.00 0.00  | 0.35 | 0.00 |  2.0
+   52.18  58.88 | 0.00   1.19  | 0.00 0.00  | 0.35 | 0.00 |  3.1
+   61.08  70.15 | 0.06   1.06  | 0.00 0.00  | 0.23 | 0.00 |  4.1
+   82.82  90.70 | 0.00   1.13  | 0.00 0.00  | 0.54 | 0.00 |  3.2
+   98.80 107.92 | 0.02   0.70  | 0.00 0.00  | 0.35 | 0.00 |  4.1
+
+== SeeYouDrop  truth [57.606, 105.596]  slams [np.float64(57.6), np.float64(105.62)]  armed 8 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   51.60  57.60 | 0.17   0.42  | 0.29 0.94  | 0.33 | 1.00 |  3.8
+  102.42 105.62 | 0.13   0.60  | 0.40 0.94  | 0.29 | 1.00 |  2.0
+
+== IBelongHere  truth [15.882, 64.691, 129.776, 178.852]  slams []  armed 0 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+
+== WhoLikesToParty  truth [57.507, 131.352, 188.788]  slams [np.float64(57.52)]  armed 4 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   53.42  57.52 | 0.19   0.37  | 0.45 0.78  | 0.35 | 1.00 |  2.0
+
+== Vienna  truth [85.3359, 106.6693]  slams [np.float64(85.33)]  armed 9 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   71.37  75.45 | 0.17   0.62  | 0.00 0.87  | 0.87 | 1.00 |  1.5
+   79.38  85.33 | 0.00   1.05  | 0.00 0.62  | 0.95 | 1.00 |  2.2
+
+== RaindropsOnRoses  truth [41.134, 68.569, 137.137]  slams [np.float64(129.52)]  armed 21 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   67.28  74.07 | 0.18   0.44  | 0.71 0.98  | 0.45 | 1.00 |  4.0
+  113.58 125.55 | 0.12   0.47  | 0.95 1.00  | 0.60 | 1.00 |  7.0
+  125.58 129.52 | 0.00   0.89  | 0.00 0.63  | 0.38 | 1.00 |  2.3
+
+== Malicious  truth [148.317]  slams []  armed 0 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+
+== TheChain  truth [199.692]  slams [np.float64(86.12)]  armed 5 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed
+   82.52  86.12 | 0.18   0.19  | 0.00 0.89  | 0.44 | 1.00 |  2.3
+   93.63  95.18 | 0.01   0.60  | 0.57 0.74  | 0.31 | 1.00 |  1.0
+
+== CyborgNinja  truth []  slams []  armed 0 % of frames
+   arm t   end t  | hp5   b2/b32 | sg2  sg32  | amb  | sub ever (max sg before) | bars armed

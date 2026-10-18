@@ -1176,6 +1176,39 @@ open `http://127.0.0.1:8765/`, key `1` (NAV), Share a tab, then in the console `
 `localStorage` untouched; `CARD.clearRoutes('nav')` → `MS.build` again) — but headless Chrome never resolves `getDisplayMedia`
 (FAKECAP or not: `AU.mode` 'none', then 'demo' as "declined"), so capture mode itself is only proved HEADED (`tools/caplag.js`).
 
+**§143 — the two gates and the loud stage in node (2026-10-18, `docs/workers/drop-piano.md`).** The sub-void arm needs a sub that WAS
+there (`BUILD.SUBV_HAD` .3: the causal gate's 32 s mean — a piano never arms), and the bass-confirmed slam is PENDING (`engine/build/
+confirm.js`, shared with v3's `dropEvt` in features.js) until the ears' sub gate is back (`SUB_BACK` .5) and the loudness ladder is at a
+drop's level (`LEVEL` .5, once the track has shown `LEVEL_RNG` 4 LU of range), released on that frame, dropped after `PEND` 4 beats
+with the arm kept. `build-node.js` runs the loud stage (one `Loud` per track, pushed per PCM block, read at heard time — page = node on
+`loudRel` to 6e-4) and records `loudM loudS loudPk loudRel loudRange loudAbs`; `build-replay.js` feeds them (a trace without them =
+no level test) and its `--sweep` steps the four knobs. The rulers: `node tools/work/drop/slams.mjs` (the live slams before / after per
+track against windows.json), `v3diag.mjs` (v3's drops through the same confirmation, emulated over the node columns — node's own v3
+runs with `loudAbs` −1, the pre-§143 path), `subdiag.mjs` / `slamdiag.mjs` (the sub gate and the two ladders after every slam).
+**Page ≠ node on Comptine** (v3's clock locks elsewhere on a piano: beatCount off by up to 23): the node harness designs, the whole-track
+page traces decide — `WARM=0 GPU=1 CLOCK=1 MUTE=1 node tools/filetrace.js <T> 0 <dur> out.json '<fields>' '&map=0&scene=2'`
+(`tools/work/drop/chain.sh page`). **A mid-track start (`&at=`) lies to the ladder**: the loud stage restarts and the §67 warm-up guard
+holds `loudRel` near .8 while `loudRange` grows from 0 — the level test waits for the range, the shift stage below cannot fire for the
+first bars; prove a drop from 0, or from ≥ 20 s before it.
+
+## Shift — the energy shift (DECISIONS §143; `engine/shift/`, `features-shift.js`, anything that reads `shiftEvt` / `shiftHold`)
+
+```
+node tools/test_shift.js                                                              # in npm test: the ring, the warm-up, the level, the hold, the re-level, the armed guard, the Confirm
+node tools/work/drop/shift-replay.mjs [--set LEVEL=0.75,STEP=0.3] [Track …]            # the stage through the 0–110 s page traces
+node tools/work/drop/shift-replay.mjs --pat 'tools/work/drop/page/{T}-after.json'      # … through any trace set (the whole tracks)
+node tools/work/drop/replay3.mjs Comptine 47,52,70,109,125 [--before] [--trace <json>] # NAV3's updateNav through a trace with the fields
+PORT=8815 node tools/work/drop/n3rec.mjs Comptine 0 132 after 47,52,70,109,125        # the page's own NAV3 record (CLOCK=1, scene 6)
+```
+`shiftEvt` fires when the loudness ladder (math/loudlight `baseLight` on `loudRel`) is `STEP` .3 above its value `BARS` 1 bar ago AND at or
+above `LEVEL` .75, after `MIN_HIST` 4 s, `REFR` 2 bars after the last shift or confirmed drop, never while the live detector is armed
+(`ARMED`); `shiftHold` stays 1 while the ladder is ≥ `HOLD` .5 × the level, 0 after `REL` .5 bar under it or in silence. **Replay = page
+to the frame** (the stage is a pure function of the trace's ladder and clocks: Comptine's whole-track page trace at LEVEL .7 and the replay
+agree on 32.87 / 51.37 / 91.57 / 111.08 / 120.50 / 135.27), so a knob is swept on the recorded traces and only the chosen number
+re-recorded. The fake timeline runs the same `Shift` inside `sources/fake.js` on its mirrored ladder (`features-shift.js` returns on
+`fakeOn`, the loud stage's convention); `&loud=0` = no ladder, no shift. The numbers that decided LEVEL: Comptine's drops .93 / .86, its
+four-second swells .54–.71 (the whole-track page ladder, `tools/work/drop/page/Comptine-after.json`).
+
 ## Queue — the predicted-event queue (live step 5; a change to `engine/queue/`, `features-queue.js`, `Bars.upcoming`, or anything a scene reads as "what comes next")
 
 One list, rebuilt every frame from the other stages' decisions: `ENGINE.QUEUE.list` / `CARD.QUEUE` = `[{ cls: 'beat' | 'bar' |
@@ -1707,6 +1740,13 @@ add a sweep's shots only when a DECISIONS section cites them.
 - Scene palettes are **cosine**, `0.5 + 0.5·cos(TAU·(h + [0, .33, .67]))`, not HSV: a hue number in a report is in **palette
   turns** (0–1, recovered by `probe.js hueFit`), and a proof that quotes HLS degrees against a constant in turns compares nothing.
 
+
+- **A worktree has no `tools/truth/traces/` and no `tools/work/vox/`** (both untracked in the main checkout): `npm test` fails on
+  test_fluid ("no trace … record it") and test_vox ("missing mel-SeeYouDrop.json") there until they are symlinked from the main
+  checkout (§143's worker). The PCM dumps `tools/work/<T>.48000.st.f32` the node harnesses read are the same case.
+- **`&at=` mid-track and the loudness ladder** (§143): the loud stage restarts at a seek, the §67 warm-up guard holds `loudRel` near .8
+  for ~25 s and `loudRange` grows from 0 — a ladder read in that window is the guard's, not the track's. The slam's level test waits for
+  `LEVEL_RNG` 4 LU of range, the shift stage cannot step; prove drops from 0 or from 20 s before them.
 
 ## Hearing a truth grid (`tools/truth/clicktrack.py`, 2026-10-02)
 

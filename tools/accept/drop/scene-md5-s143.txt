@@ -1,0 +1,15 @@
+# §143 drop-piano — the FULL list, PORT=8815 tools/scene-md5.sh s143 (CLOCK=1 GPU=1, errs [] hop 840 row 72 on all seven ids). s0–s5 (12 lines) = tools/accept/nav3/scene-md5-step3.txt to the byte; s6-f360 = §142's (tools/accept/nav3/scene-md5-comptine.txt); s6-f840 moved: NAV3 no longer reads the fake's dropEvt (OUT3.ANY 0) and its own shift on the fake lands at 25.45 s, so the 14 s frame shows the ball still rolling instead of the implosion. IDS=6 re-run after the fake.js fix (drop 0): the same pair.
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+aa6268322f36acf568cae26df302e163  s1-f360.jpg
+8372bc2879a802dcfb8c93ecf28721a5  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+4ac1d5feb53f7a12a916fd5d1b40efd4  s6-f360.jpg
+aaa34ba38cfb2c0cee54b703d2d39519  s6-f840.jpg

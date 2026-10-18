@@ -48,10 +48,10 @@ console.log('2. flat, and the warm-up');
   st.run(30, 0.6);
   ok('a flat ladder never shifts, never holds', events(st).length === 0 && holdFrames(st) === 0, `events ${events(st).length}`);
   const w = mk();
-  w.run(2, 0.1); w.run(1, 0.9);   // a step inside the first 4 s
+  w.run(10, 0.1); w.run(1, 0.9);   // a step inside the first 16 s
   ok(`a step before MIN_HIST ${SHIFT.MIN_HIST} s does not fire`, events(w).length === 0, `events ${events(w).length}`);
   const lo = mk();
-  lo.run(8, 0.05); lo.run(1, 0.5);   // +.45, but only to .5
+  lo.run(18, 0.05); lo.run(1, 0.5);   // +.45, but only to .5
   ok(`a step that does not reach LEVEL ${SHIFT.LEVEL} does not fire (a piece waking up is not a shift)`, events(lo).length === 0, `events ${events(lo).length}`);
   lo.run(1, 0.8);   // half a bar later: .8, +.75 over the bar
   ok('... and fires once the ladder reaches it with the step still inside the bar', events(lo).length === 1, `events ${events(lo).length}`);
@@ -60,7 +60,7 @@ console.log('2. flat, and the warm-up');
 console.log('3. the step, the hold, the release');
 {
   const st = mk();
-  st.run(8, 0.2);
+  st.run(18, 0.2);
   const n0 = st.out.length;
   st.run(6, 0.8);   // +0.6 at once
   const ev = events(st, n0);
@@ -81,14 +81,15 @@ console.log('3. the step, the hold, the release');
 console.log('4. a creep is not a shift; a second step re-levels');
 {
   const st = mk();
-  st.run(8, 0.2);
+  st.run(18, 0.2);
   const n0 = st.out.length;
   st.run(8, (t) => 0.2 + 0.35 * t / 8);   // +.35 over 4 bars: never +.3 inside one bar
   ok('a creep of STEP over 4 bars never fires', events(st, n0).length === 0, `events ${events(st, n0).length}`);
   const st2 = mk();
-  st2.run(8, 0.1); st2.run(5, 0.7);
+  st2.run(18, 0.1); st2.run(5, 0.78);
   const a = events(st2).length;
-  st2.run(5, 1.0);   // +.3 again, after REFR: re-levels to 1.0
+  st2.run(1, 0.45);   // a dip inside the hold (.45 >= .5 x .78): held
+  st2.run(5, 1.0);    // +.55 over the bar, after REFR: a second shift re-levels to 1.0 (Comptine 2:00: the ladder dips to .5 and climbs to .85 inside the 1:49 hold)
   ok('a second step after REFR fires again (re-levels)', a === 1 && events(st2).length === 2, `events ${events(st2).length}`);
   st2.run(1, 0.5);   // .5 >= .5 x 1.0: still held
   ok('... and the hold is measured against the NEW level', st2.out[st2.out.length - 1].hold === 1, `hold ${st2.out[st2.out.length - 1].hold}`);
@@ -99,26 +100,26 @@ console.log('4. a creep is not a shift; a second step re-levels');
 console.log('5. a confirmed drop is a shift the stage does not double');
 {
   const st = mk();
-  st.run(8, 0.3);
+  st.run(18, 0.3);
   const n0 = st.out.length;
   st.run(3, 0.9, { drop: 1 });   // the slam frame: the ladder jumps and the drop is confirmed on the same frame
   ok('the drop levels the hold with no shiftEvt', holdFrames(st, n0) === st.out.length - n0 && events(st, n0).length === 0, `held ${holdFrames(st, n0)} events ${events(st, n0).length}`);
   st.run(1, 1.0);   // still inside REFR (2 bars = 4 s): a further step does not fire
   ok(`no shift within REFR ${SHIFT.REFR} bars of the drop`, events(st, n0).length === 0, `events ${events(st, n0).length}`);
   const off = mk({ DROP_LEVELS: 0 });
-  off.run(8, 0.3); const m0 = off.out.length; off.run(1, 0.9, { drop: 1 });
+  off.run(18, 0.3); const m0 = off.out.length; off.run(1, 0.9, { drop: 1 });
   ok('DROP_LEVELS 0: the drop is ignored and the step itself fires', events(off, m0).length === 1, `events ${events(off, m0).length}`);
 }
 
 console.log('5b. no shift while the live detector is armed');
 {
   const st = mk();
-  st.run(8, 0.2);
+  st.run(18, 0.2);
   const n0 = st.out.length;
   for (let f = 0; f < 120; f++) { st.B += bps * dt; st.out.push(Object.assign({ B: st.B, t: st.out.length * dt }, st.s.step({ B: st.B, bpm: BPM, ok: true, lad: 0.9, drop: 0, armed: 1, dt }))); }
   ok('a step while armed does not fire (the slam will name it)', st.out.filter((o, i) => i >= n0 && o.shiftEvt).length === 0, `events ${st.out.filter((o, i) => i >= n0 && o.shiftEvt).length}`);
   const off = mk({ ARMED: 0 });
-  off.run(8, 0.2);
+  off.run(18, 0.2);
   for (let f = 0; f < 120; f++) { off.B += bps * dt; off.out.push(Object.assign({ B: off.B, t: off.out.length * dt }, off.s.step({ B: off.B, bpm: BPM, ok: true, lad: 0.9, drop: 0, armed: 1, dt }))); }
   ok('ARMED 0: it fires', off.out.filter((o) => o.shiftEvt).length === 1, `events ${off.out.filter((o) => o.shiftEvt).length}`);
 }
@@ -126,7 +127,7 @@ console.log('5b. no shift while the live detector is armed');
 console.log('6. silence and a seek');
 {
   const st = mk();
-  st.run(8, 0.2); st.run(2, 0.8);
+  st.run(18, 0.2); st.run(2, 0.8);
   ok('(held before the silence)', st.out[st.out.length - 1].hold === 1, '');
   st.run(1, 0.8, { ok: false });
   ok('silence clears the hold', st.out[st.out.length - 1].hold === 0, `hold ${st.out[st.out.length - 1].hold}`);
@@ -134,7 +135,7 @@ console.log('6. silence and a seek');
   st.run(3, 0.8);
   ok('... and the ring: the music coming back at the same level is not a step (MIN_HIST again)', events(st, n0).length === 0, `events ${events(st, n0).length}`);
   const sk = mk();
-  sk.run(8, 0.2);
+  sk.run(18, 0.2);
   sk.B += 40;   // a seek of 40 beats
   const m0 = sk.out.length;
   sk.run(1, 0.9);

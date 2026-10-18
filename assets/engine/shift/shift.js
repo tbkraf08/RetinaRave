@@ -18,12 +18,12 @@
 // THE TIME BASE is the bars stage's (DECISIONS §50): B = the raw v3 beat + the lead's estimate, as engine/build's feed.
 export const SHIFT = {
   STEP: 0.3,       // the ladder's rise over BARS bars that names a shift (Comptine 48 → 52 s: 0 → .85; a loud bar inside a groove moves it .1)
-  LEVEL: 0.7,      // ... and the ladder must have REACHED this. Comptine's drop at 52 reads .91 and its 1:49 one climbs past it; its four-second SWELLS peak at .53–.69 (44.4, 90.5 — the user's "too harsh at 1:34", 101.9) and a step to .5 at 32 / 42 chained NAV3's implosions into one 50 s exterior; the dance tracks' shifts read .84–.92
+  LEVEL: 0.75,     // ... and the ladder must have REACHED this. Comptine's whole-track ladder (the page): the drop at 52 peaks .93, the 1:49 one .86, the opening's .79; its four-second SWELLS peak at .54–.71 (45.1, 91.6 — the user's "too harsh at 1:34" — and 102.3), so .75 sits .04 above the loudest swell and .11 under the softer drop; at .5 the swells chained NAV3's implosions into one 50 s exterior, at .7 the 1:34 swell still fired. The dance tracks' shifts read .84–.92
   ARMED: 1,        // 1: no shift while the live detector is armed (buildLive > 0: a drop is expected and the slam will name it — SeeYouDrop's riser read +.33 a bar before its slam, Vienna's dream +.3 three seconds before); 0: shifts fire regardless
   BARS: 1,         // bars of the heard grid the rise is measured over
   HOLD: 0.5,       // shiftHold stays 1 while the ladder is at or above HOLD × the shift's level
   REL: 0.5,        // bars the ladder must sit under that line before the hold releases (a one-beat dip is a fill, not an end)
-  MIN_HIST: 4,     // s of music before the first shift: the 3 s short-term loudness window has to be full before its step means anything
+  MIN_HIST: 16,    // s of music before the first shift: the loud stage's peak hold and range are the §67 warm-up guard's for its first ~20 s (RaindropsOnRoses fired at 5.0 s on a range of 16.5 LU read off a silent intro); the earliest real shift on the nine tracks is 26 s
   REFR: 2,         // bars after a shift or a confirmed drop before the next shift may fire
   PRESENT: 0.15,   // presence under this is silence: no shift, the hold released, the ring forgotten (the build detector's PRESENT)
   DROP_LEVELS: 1,  // 1: a confirmed drop (dropLiveEvt / mapDropEvt) levels the hold from the ladder and starts the refractory; 0: drops ignored
