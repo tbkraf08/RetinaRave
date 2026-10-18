@@ -82,7 +82,7 @@ export const GATE = {
   DEPTH_MAX: 1,    // the depth pass: how many children deep the ball may go (1 = the cardioid and its first-level bulbs are home)
   CHILD_BARS: 2,   // bars a child crossing holds at most while the music no longer asks — then the ball rolls back out (the fallen ladder still exits earlier)
 };
-export const KICK3 = { LEN: 0.5, ANG: 0.9 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal turned by ±ANG rad (the side alternating per kick — the lobes swing, not only the rim), × the lane's k
+export const KICK3 = { LEN: 0.5, ANG: 0.9, PERC: 1, CHART: 1 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal turned by ±ANG rad (the side alternating per kick — the lobes swing, not only the rim), × the lane's k; §144: PERC 1 = the jump × the percussiveness scale (DANCE.PERC_*), CHART 1 = the chart stays through the kick (findCycle at the DRAWN c each frame while it rings: the bands tighten toward the rim instead of the interior blinking black — 14–66 % of INT frames chart-off before; 0 = NAV2's Misiurewicz blink)
 // THE DANCE (the §140 retune; the user on key 7: "the fractal shape doesn't seem to be changing that much … the set doesn't seem to
 // be dancing with the music"): the set dances when log λ swings, so the REACTIVE levels drive ρ and θ directly — never a predicted
 // route (the user's rule: reactive levels look in sync, predicted ones don't). Measured before the retune on the nine tracks:
@@ -96,9 +96,19 @@ export const DANCE = {
   SWAY: 0.18,      // turns of θ swaying over the 16-beat phrase: the overall shape is never the same two bars running
   SNARE: 0.08,     // turns of θ kicked by the snare (snareAmp on snareEvt, decaying over SNARE_TAU), the side alternating: the 2-and-4 twitch
   SNARE_TAU: 0.25, // s
+  // §144 the jitter (the user on Comptine: "the movement is too quick and jittery for the music"): every DANCE term above is × the
+  // PERCUSSIVENESS scale s = clamp(perc / PERC_REF, PERC_MIN, 1), perc the engine's onset-envelope spikiness eased over PERC_TAU s. The
+  // nine tracks' mean perc (the 0–110 s traces): Comptine .100 · Malicious .164 · Raindrops .261 · SeeYouDrop .263 · Vienna .304 ·
+  // IBelongHere .359 · TheChain .567 · CyborgNinja .649 · WhoLikesToParty .750 — a piano at a quarter to a third of a dance track, so
+  // Comptine gets ~.3 and the dance tracks keep their snap (≥ .8 at PERC_REF .33). `punchy` was the other candidate and is NOT it: the
+  // crest factor of a solo piano reads .25 against SeeYouDrop's .07. PERC_REF 0 = off (s 1, v0.43).
+  PERC_REF: 0.33,
+  PERC_MIN: 0.2,
+  PERC_TAU: 3,
 };
 
 const CYC2 = mkCyc(), VX = mkVox();
+const KCH = mkCyc(), NOCH = mkCyc();   // §144: the kick's own chart (findCycle at the drawn c while the kick rings) and the empty one (has 0)
 const GR = { gx: 0, gy: 0, dlr: 0, dli: 0, dl: 1 };
 const C0 = [-0.1725, 0];   // λ = −.3 on the cardioid: ρ .3, θ .5 — a ball that starts resting, not at the singular centre
 
@@ -106,6 +116,8 @@ export const NAV = {
   mode: 'INT', ball: [C0[0], C0[1]], c: [C0[0], C0[1]], cPath: [C0[0], C0[1]], cyc: findCycle(C0[0], C0[1], mkCyc(), N_MAX), grad: GR,   // ball: where the ball IS (findCycle's c); cPath: the path (the ball, or a crossing's lerp); c: the DRAWN c (cPath + the kick) — what index.js uploads
   rhoT: new Spring(0.3, 2.5), thT: new Spring(0.5, 1.4), rho: 0.3, th: 0.5, size: 1, q: 1,
   kp: 0, sn: 0, snSide: 1, kside: 1, pulse: 0,   // the dance's impulses (DANCE): the kick's, the snare's and its side, the kick jump's side, the pulse on ρ
+  percE: 0, percS: 1, turn: 0,   // §144: the eased percussiveness, its scale on the dance, the accumulated bar turn (TURN × bars, × the scale as it goes — not TURN × N.bar, whose product would jump with the scale)
+  shown: null,   // §144: the chart index.js draws — the ball's (cyc), the kick's own while it rings (KCH), or none (NOCH)
   stack: [], cross: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
   gate: { p: 0, q: 1, err: 1, on: 0 }, loud: 0, loudHist: [], bar: 0, lastBar: 0, lastCross: -99, fell: 0, leaving: 0, since: 0,
   par: 0, timeScale: 1, vtime: 0, pathCut: 999, extBeat: 0, landed: 0, cycBase: 1, stalls: 0, fails: 0, crosses: 0, maxQ: 1, rimT: 0,
@@ -117,6 +129,8 @@ NAV.rho = NAV.cyc.rho;
 NAV.th = NAV.cyc.arg / TAU;
 NAV.cyc.lnr = Math.log(NAV.cyc.rho);
 NAV.cyc.zs = [NAV.cyc.zr, NAV.cyc.zi];
+NAV.shown = NAV.cyc;
+NOCH.has = 0; NOCH.zs = [0, 0]; NOCH.lnr = -1; NOCH.arg = 0; NOCH.q = 1; NOCH.eps2 = 0;
 
 const wrap = (x) => x - Math.round(x);
 const fifths = (k) => ((7 * (((k | 0) % 12) + 12) % 12) % 12) / 12;
@@ -268,8 +282,13 @@ export function updateNav(dt, now, S, env) {
   if (S.snareEvt) { N.sn = Math.max(N.sn, S.snareAmp || 0.6); N.snSide = -N.snSide; }
   N.sn *= Math.exp(-dt / DANCE.SNARE_TAU);
   const ph16 = isFinite(S.phrase16Pos) ? S.phrase16Pos : 0;
-  th += DANCE.TURN * N.bar + DANCE.SWAY * Math.sin(TAU * ph16 / 16) + DANCE.SNARE * N.sn * N.snSide;
-  N.pulse = clamp(DANCE.BASS * (S.bass || 0) + DANCE.KICK * N.kp + DANCE.HIT * (S.hit || 0), 0, 1);
+  // §144: the percussiveness scale on every dance term (a piano's ~.3, a kit's 1); the bar turn accumulates at the scaled rate
+  N.percE = ema(N.percE, isFinite(S.perc) ? clamp(S.perc, 0, 1) : 0.5, dt, DANCE.PERC_TAU);
+  const ps = DANCE.PERC_REF > 0 ? clamp(N.percE / DANCE.PERC_REF, DANCE.PERC_MIN, 1) : 1;
+  N.percS = ps;
+  N.turn += ps * DANCE.TURN * dt * bps / 4;
+  th += N.turn + ps * (DANCE.SWAY * Math.sin(TAU * ph16 / 16) + DANCE.SNARE * N.sn * N.snSide);
+  N.pulse = ps * clamp(DANCE.BASS * (S.bass || 0) + DANCE.KICK * N.kp + DANCE.HIT * (S.hit || 0), 0, 1);
   let rho = S.presence < ROLL.IDLE ? ROLL.IDLE_RHO : mix(ROLL.RHO_LO, ROLL.RHO_HI, N.loud) + (N.mode === 'INT' ? T : 0);   // §142: silence rolls the ball to the circle (c → 0, Q → 1)
   const inChild = N.stack.length > 0, idle = S.presence < ROLL.IDLE;
   // the exit: inside a child, the ladder fallen for EXIT_BARS bars → roll to the child's root (θ 0) and press the rim
@@ -352,8 +371,9 @@ export function updateNav(dt, now, S, env) {
     const gm = Math.hypot(GR.gx, GR.gy) || 1;
     N.kside = -N.kside;   // the side alternates per kick: the normal turned by ±ANG — the jump swings the lobes, not only the rim
     const ca = Math.cos(KICK3.ANG), sa = Math.sin(KICK3.ANG) * N.kside, nx = GR.gx / gm, ny = GR.gy / gm;
-    N.kickM[0] = N.cPath[0] + (nx * ca - ny * sa) * KICK3.LEN * (1 - N.rho) * N.size;   // §142: the jump is LEN of the way to the wall ((1 − ρ)·size ≈ the distance to the rim), never past it — a ball at the rim once landed outside M (6 of Comptine's 8 kicks) and the set went to dust
-    N.kickM[1] = N.cPath[1] + (nx * sa + ny * ca) * KICK3.LEN * (1 - N.rho) * N.size;
+    const len = KICK3.LEN * (1 - N.rho) * N.size * (KICK3.PERC ? N.percS : 1);   // §144: × the percussiveness scale (a piano's kicks are the left hand)
+    N.kickM[0] = N.cPath[0] + (nx * ca - ny * sa) * len;   // §142: the jump is LEN of the way to the wall ((1 − ρ)·size ≈ the distance to the rim), never past it — a ball at the rim once landed outside M (6 of Comptine's 8 kicks) and the set went to dust
+    N.kickM[1] = N.cPath[1] + (nx * sa + ny * ca) * len;
     N.kick.set(kk);
     if (M2.lastK === kk && S.kickAge > 0 && S.kickAge < 0.03) N.kick.step(0, S.kickAge);
   }
@@ -362,7 +382,14 @@ export function updateNav(dt, now, S, env) {
   N.c[0] = mix(N.cPath[0], N.kickM[0], k);   // the DRAWN c: the kick displaces the picture, never the ball
   N.c[1] = mix(N.cPath[1], N.kickM[1], k);
   N.cycBase = N.cyc.has;
-  if (k > 0.02) N.cyc.has = 0;
+  // §144: the chart through the kick — while the kick rings the DRAWN c is off the ball, so its chart is found on its own (findCycle at
+  // N.c, the same period: the Koenigs bands tighten toward the rim with the jump); the ball's chart (N.cyc) is untouched. A drawn c
+  // findCycle cannot name (outside, or another period) draws none — v0.43's blink, and the rest when KICK3.CHART is 0
+  N.shown = N.cyc;
+  if (k > 0.02) {
+    N.shown = NOCH;
+    if (KICK3.CHART && N.cyc.has && findCycle(N.c[0], N.c[1], KCH, N_ITER).has && KCH.q === N.cyc.q) { publish(KCH, N.c[0], N.c[1]); KCH.has = 1; N.shown = KCH; }
+  }
   N.q = N.cyc.q;
   // visual time: crawls near the wall (critical slowing), releases on resolution / drop
   if (S.resolveEvt) N.timeScale = Math.max(N.timeScale, 2);
@@ -399,8 +426,8 @@ export function knob5(name, v) {
   const set = (T, keys) => keys.forEach((k, i) => { if (i < nums.length) T[k] = nums[i]; });
   if (name === 'roll') set(ROLL, ['RHO_LO', 'RHO_HI', 'TH0', 'TH_SPAN', 'GAIN', 'VMAX']);
   if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE', 'P_MAX', 'DEPTH_MAX', 'CHILD_BARS']);   // the depth pass's A/B: &n3gate=7,0.5,0,0.1,0.3,1.5,0.6,14,2,99 is the quality pass's depth
-  if (name === 'kick3') set(KICK3, ['LEN', 'ANG']);
-  if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE']);
+  if (name === 'kick3') set(KICK3, ['LEN', 'ANG', 'PERC', 'CHART']);   // §144: &n3kick3=.5,.9,0,0 is v0.43's jump and blink
+  if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE', 'PERC_REF', 'PERC_MIN', 'PERC_TAU']);   // §144: &n3dance=.6,.8,.3,.1,.18,.08,0 is v0.43's dance on every piece (PERC_REF 0 = the scale off)
   if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX', 'CONV_CHILD', 'DOTS_RHO']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc; &n3conv=.6,.93,.05,.4 the v0.43 child disc (§142)
   return nums;
 }

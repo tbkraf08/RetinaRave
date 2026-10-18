@@ -15,7 +15,7 @@ import { IMP, OUT3, knobDrop, knobImp } from './implode.js';   // §140 step 3: 
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
-import { K2, L2, LUM_IN, LUM_EX, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n3lum / &n3smo / &n3fl / &n3ext / &n3key
+import { K2, L2, LUM_IN, LUM_EX, LUM_IMP, PAL3, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &n3lum / &n3smo / &n3fl / &n3ext / &n3key; §144: the implosion knee, pal3
 import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar (a byte copy of nav2's)
 
 const modes = new Float32Array(16), pipPath = new Float32Array(96);
@@ -43,8 +43,8 @@ export default {
   home: false,      // NAV2 (id 2) is the home; this is the workbench
   always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
   cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
-  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'shiftEvt', 'shiftHold', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'tension', 'resolveEvt',   // §143: shiftEvt / shiftHold (the energy shift)
-    'hit', 'bass', 'mid', 'high', 'peaks', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock)
+  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'shiftEvt', 'shiftHold', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'resolveEvt',   // §143: shiftEvt / shiftHold (the energy shift)
+    'hit', 'bass', 'mid', 'high', 'peaks', 'perc', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock); §144: perc scales the dance
     'loudRel', 'loudRange', 'loudAbs', 'centroid', 'voxS', 'voxHz', 'voxConf', 'harmAngle', 'key', 'keyConf', 'dropExpectedIn', 'sectionEvt', // §140 nav.js: loud → ρ, pitch → θ (math/vox.js), the key / harmony turn, the gate, the mirror
     'snareEvt', 'snareAmp', 'mode', 'valence', 'modeShade', 'phrase16Pos', 'bpm', // §99: look2.js (+ loudRel loudRange loudAbs key keyConf harmAngle above)
     'onset', 'hitStrength', 'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'], // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
@@ -56,7 +56,8 @@ export default {
     clipdbg: (v) => { clipDbg = +v || 0; },   // the gamut probe of both escape branches, read back through an RGBA8 target
     // §99's knobs (look2.js knob()): &n3lum=0 knee off · &n3smo=0 the old par² smoulder · &n3fl=0 the old flash · &n3ext=0 no
     // exterior dim / halo narrowing · &n3key=0 the old hue drift; a comma list sets a term's numbers (look2.js knob() says which)
-    n3lum: (v) => knob('lum', v),
+    n3lum: (v) => knob('lum', v),        // §144: =L0,K,L0x,Kx,L0i,Ki — the fifth / sixth the exterior knee while the implosion is up
+    n3pal3: (v) => knob('pal3', v),      // §144: &n3pal3=0 = pal() for the interior (v0.43); =Y,MAX the luma target and the boost's cap
     n3smo: (v) => knob('smo', v),
     n3fl: (v) => knob('fl', v),
     n3ext: (v) => knob('ext', v),
@@ -86,7 +87,8 @@ export default {
       q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
       depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
       kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
-      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames },   // §140 step 3: the implosion's record (implode.js IMP)
+      shown: (NAV.shown || NAV.cyc).has, percS: NAV.percS, turn: NAV.turn,   // §144: the chart drawn (the kick's own while it rings), the percussiveness scale, the accumulated bar turn
+      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames, rearms: IMP.rearms, held: IMP.held, phi: IMP.phi, wedge: IMP.wedge.slice(), loudE: IMP.loudE, eps0: IMP.eps0, epsHi: IMP.epsHi, drive: IMP.drive },   // §140 step 3: the implosion's record (implode.js IMP); §144: the direction's angle, the wedge, the eased ladder
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
       Q: GREEN.Q,
@@ -110,10 +112,10 @@ export default {
       arc: 'a peak keeps c outside longer after a drop (48 beats against 8)',
       eS: 'the loudness ladder\'s fallback when the loudness stage is off; the exterior depth; the DRUM modes\' amplitude',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
-      tension: 'how far outside the set the drop throws c (the `reach` parameter)',
       resolveEvt: 'a release doubles the visual clock for a moment',
       hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
-      bass: 'the glow of the set\'s interior, a 5 % zoom-in, the size of the critical-orbit dots',
+      bass: 'the glow of the set\'s interior, a 5 % zoom-in (and the size of the critical-orbit dots when the `dots` parameter is routed on — off by default since §144)',
+      perc: 'how percussive the piece is scales the whole dance (the bass / kick / hit press on |λ|, the bar turn, the phrase sway, the snare twitch, the kick jump): a solo piano moves at a third of a kit\'s snap (§144)',
       mid: 'the radius of the circular orbit trap',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
@@ -164,10 +166,10 @@ export default {
   params: {
     trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
-    dots: { eli5: 'how big the dots of the critical orbit are', range: [0, 3], from: (S) => 1 + S.bass },
+    dots: { eli5: 'how big the dots of the critical orbit are (0 = none; §144: off by default — the head dot read as a white comet on a quiet piece; route it on, e.g. &param=nav3.dots=c:1.5)', range: [0, 3], from: () => 0 },
     pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
     // the one parameter nav.js reads (through updateNav's opts): the drop's depth outside the set, log2 of ε in units of the component's size (§140; nav.js OUT3 / implode.js)
-    reach: { eli5: 'how far outside the set the drop throws the picture (log2, in the component\'s own size)', range: [-10, -2], from: (S) => clamp(mix(-8, -4, clamp(0.55 * S.eS + 0.5 * S.tension, 0, 1)) + 1.5 * S.dropEnv, -10, -2) },
+    reach: { eli5: 'how far outside the set the drop throws the picture: a log2 offset from the implosion\'s calibrated floor (§144: ε₀ is found per drop where the dust has eaten ESC_FLOOR of the former petal; the loudness ladder then deepens it live) — −6 is the floor itself, −5 twice as far', range: [-10, -2], from: () => -6 },   // §144: a constant (was mix(−8, −4, .55 eS + .5 tension) + 1.5 dropEnv: the energy now reaches ε through the ladder (OUT3.HOLD_LOUD), and on a dance track the old route put the whole former interior to dust)
   },
 
   // Two colourings of the same dynamics (CONTRACTS §1.4). `v2` (the default — DECISIONS §26) is v0.2's pal() ramp:
@@ -221,6 +223,9 @@ export default {
     }
     gl.uniform4f(u('uN2'), K2.lum, K2.smo, K2.fl, 0);   // §99's three shader terms, each a knob; all 0 (and uExtG / uExtK 1) = NAV's bytes
     gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
+    gl.uniform2f(u('uLumI'), LUM_IMP[0], LUM_IMP[1]);   // §144: the exterior's knee while the implosion is up
+    gl.uniform3f(u('uPal3'), PAL3.Y, PAL3.MAX, PAL3.ON ? 1 : 0);   // §144: the luma-normalised interior palette
+    gl.uniform4f(u('uImpK'), OUT3.BLACK, 0, 0, 0);   // §144: the former interior black while the implosion is up, the petals on the way in only
     gl.uniform1f(u('uExtG'), L2.extG);
     gl.uniform1f(u('uExtK'), L2.extK);
     gl.uniform1f(u('uSmo'), L2.smo);
@@ -239,7 +244,7 @@ export default {
     gl.uniform4f(u('uImp'), IMP.x, IMP.y, IMP.q, IMP.R);   // §140 the implosion's layers (implode.js): petal weight, explosion weight, q petals, the gate radius
     gl.uniform2f(u('uZ0'), IMP.z0[0], IMP.z0[1]);
     gl.uniform2f(u('uA'), IMP.a[0], IMP.a[1]);
-    gl.uniform1f(u('uSig'), IMP.sig);
+    gl.uniform1f(u('uSig'), IMP.sig * OUT3.SIG_TINT);   // §144: σ's weight on the hue (0: off the tint; .3 = v0.43)
     gl.uniform1f(u('uQ0'), OUT3.OUT_RUN * IMP.q0);   // iterates beyond 2R before an entry counts as a passage (implode.js passages())
     gl.uniform2f(u('uPet'), IMP.Rp * OUT3.PET_R, OUT3.PET_LUM);   // §142: the petal layer's radius and base lightness
     gl.uniform2f(u('uSc'), 1, 1);
@@ -247,9 +252,10 @@ export default {
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
     gl.uniform1f(u('uTrapR'), P.trap);
     gl.uniform1f(u('uDrum'), vmix);
-    gl.uniform2f(u('uZs'), N.cyc.zs[0], N.cyc.zs[1]);
-    gl.uniform4f(u('uLam'), N.cyc.lnr, N.cyc.arg, N.cyc.q, N.cyc.has);
-    gl.uniform1f(u('uEps2'), N.cyc.eps2);
+    const CY = N.shown || N.cyc;   // §144: the chart drawn — the kick's own while it rings (nav.js KICK3.CHART), else the ball's
+    gl.uniform2f(u('uZs'), CY.zs[0], CY.zs[1]);
+    gl.uniform4f(u('uLam'), CY.lnr, CY.arg, CY.q, CY.has);
+    gl.uniform1f(u('uEps2'), CY.eps2);
     gl.uniform1f(u('uPx'), 2 * scale / h);
     gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
     if (colour === 'oklch') gl.uniform1f(u('uClipDbg'), clipDbg);   // the gamut probe is that mapping's own uniform
@@ -264,7 +270,7 @@ export default {
     ctx.tri();
     // critical orbit: the actual dynamics of f_c — crawls near parabolic roots, flies off at the drop. §142 the circles: drawn only with a
     // chart on and ρ under ROLL.DOTS_RHO — at the rim and in a crossing the 160 sprites piled into bright blobs near the cycle (Comptine 27 s, 1:29)
-    if (!(N.mode === 'INT' && N.cyc.has && N.rho < ROLL.DOTS_RHO)) return;
+    if (!(N.mode === 'INT' && N.cyc.has && N.rho < ROLL.DOTS_RHO && P.dots > 0)) return;   // §144: `dots` 0 (the default) draws none
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.useProgram(pt.p);
