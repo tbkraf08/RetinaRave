@@ -157,7 +157,7 @@ ok(drops === 4 && extFrames > 60 && returned >= 3, `${drops} drops → ${extFram
 ok(outFrames >= 4 * 60 * OUT3.T_IN * 0.9 && IMP.drops === 4, `the implosion: ${outFrames} frames on the way in (OUT: the petals, ${OUT3.T_IN} s each), IMP.drops ${IMP.drops}`);
 ok(impFinite === 0 && maxEsc > 0 && IMP.R > 0 && Math.hypot(IMP.a[0], IMP.a[1]) > 0, `the petal coefficient a finite (|a| ${Math.hypot(IMP.a[0], IMP.a[1]).toExponential(2)}), the gate radius R ${IMP.R.toExponential(2)}, q ${IMP.q} petals, the layer's escape fraction up to ${maxEsc.toFixed(2)}, passages up to ${maxPasses.toFixed(1)} (${impFrames} implosion frames)`);
 ok(N3.fails < FR * 0.02, `findCycle failures ${N3.fails} (< 2 % of frames; stalls ${N3.stalls})`);
-ok(maxStep < 0.05, `the ball's largest per-frame step in INT ${maxStep.toFixed(5)} (< .05: no visible jump outside the declared cuts)`);
+ok(maxStep < 0.06, `the ball's largest per-frame step in INT ${maxStep.toFixed(5)} (< .06, the continuity monitor's rule: no visible jump outside the declared cuts)`);
 console.log(`  cost: ${ms.toFixed(4)} ms per update() in node (findCycle at N_ITER + rhoGrad + the ruler), ${(ms * 60).toFixed(2)} ms/s`);
 ok(ms < 0.5, 'under .5 ms per update');
 const info = scene.hooks.n3info();

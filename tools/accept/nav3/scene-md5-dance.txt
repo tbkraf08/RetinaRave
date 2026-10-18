@@ -1,0 +1,3 @@
+# NAV3 after the dance retune (§140 addendum) — IDS=6 PORT=8813 tools/scene-md5.sh nav3d, CLOCK=1 GPU=1; the 12 other lines cannot move (a scene-folder change, HARNESS 'What to re-prove'; the full list at step 3 holds).
+6a0190377300a35921f27714b2c78d3e  s6-f360.jpg
+b877157285a8cfb41274528f6dceb1ba  s6-f840.jpg

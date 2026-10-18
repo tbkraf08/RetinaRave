@@ -71,6 +71,7 @@ export default {
     n3roll: (v) => knob5('roll', v),
     n3gate: (v) => knob5('gate', v),
     n3kick3: (v) => knob5('kick3', v),
+    n3dance: (v) => knob5('dance', v),       // &n3dance=BASS,KICK[,HIT[,TURN[,SWAY[,SNARE]]]] — the §140 retune's reactive dance (nav.js DANCE)
     n3drop: knobDrop,                         // &n3drop=live: the live slam only (NAV2's read); default both detectors (the fake timeline has no live slam)
     n3imp: knobImp,                           // &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE]]]]]] — the implosion's numbers (implode.js OUT3)
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace

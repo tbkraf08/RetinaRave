@@ -121,3 +121,7 @@ montage `tools/work/nav3/montage-tracks.jpg` (four shots per track: drop − 6, 
   | Malicious | 148.3 | 0 | 1 | 5 | 0 | 0 | — | — | 60 (2.09) · 60 (2.09) |
   | TheChain | 199.7 | 5.8 | 1 | 5 | 1 | 111 | 2 | 0 / .17 | 59.9 (3.07) · 60 (1.58) |
   | CyborgNinja | (48, no drop) | 0 | 0 | 1 | 0 | 0 | — | — | 60 (4.20) · 60 (2.08) |
+
+## The dance retune (2026-10-18)
+
+See DECISIONS §140, the addendum "the dance retune": the before / after1 / after2 movement tables are `tools/accept/nav3/dance-*.txt`, the strips `tools/work/nav3/dance-{ibh,chain}-{before,after,nav2}.jpg`, the knobs `ROLL` / `DANCE` / `KICK3.ANG` in `nav.js` (`&n3dance=`). Per beat NAV3 moves a third of NAV2 (median .20 against .57 in |Δlog λ|), per bar it matches NAV2 in angle; the rim time went from 0–22 % to 13–62 %.

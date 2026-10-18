@@ -33,9 +33,9 @@ import { tighten, kickGate, M2 } from './move2.js';
 import { OUT3, startDrop, stepDrop } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes)
 
 export const ROLL = {
-  RHO_LO: 0.25,    // the ρ target when the track is at its quietest (near the centre: the spiral loose)
-  RHO_HI: 0.93,    // ... at its loudest (against the rim: the spiral tight)
-  RHO_WALL: 0.97,  // the wall: a step past it is projected along the rim (field.js converges inside 1000 steps to .985)
+  RHO_LO: 0.45,    // the ρ target when the track is at its quietest (the §140 retune: was .25, then .55 — the pulse needs room below the rim to swing — the user: "the set doesn't seem to be dancing"; the ball lives near the rim, where ρ → 1 pinches the Julia set)
+  RHO_HI: 0.955,   // ... at its loudest (against the rim: the spiral tight; was .93)
+  RHO_WALL: 0.985, // the wall: a step past it is projected along the rim (field.js converges inside 1000 steps to .985; was .97)
   RHO_MIN: 0.02,   // below this |λ| the log coordinate is singular (the centre); the floor the division uses
   TH0: 0.5,        // the internal angle (turns) at pitch 0: the point opposite the root (on the cardioid, c = −.75)
   TH_SPAN: -0.17,  // turns per unit pitch height: up = toward 1/3, the cardioid's highest point (Im c .65)
@@ -43,11 +43,11 @@ export const ROLL = {
   KEY: 0.08,       // turns of θ across the key's circle of fifths, weighted by keyConf: one key, one sector of the rim
   CENT_LO: 0.25,   // the centroid range read as pitch height when nobody sings (centroid is 0..1, log2-weighted)
   CENT_HI: 0.65,
-  W_RHO: 3.5,      // 1/s: the ρ target's spring (the ball moves with the music, not per frame)
-  W_TH: 1.4,       // 1/s: the θ target's spring
-  GAIN: 4,         // per s: the fraction of the log λ error closed; ×(G0 + (1 − G0)·intensity) — the bar's energy is the step
+  W_RHO: 9,        // 1/s: the ρ target's spring (the retune: was 3.5 — a beat, not a bar)
+  W_TH: 5,         // 1/s: the θ target's spring (was 1.4)
+  GAIN: 12,        // per s: the fraction of the log λ error closed; ×(G0 + (1 − G0)·intensity) — the bar's energy is the step (was 4)
   G0: 0.35,
-  VMAX: 1.2,       // per s: the ball's top speed in |Δlog λ| (ρ .25 → .93 is Δln 1.3: a second and a bit)
+  VMAX: 3.5,       // per s: the ball's top speed in |Δlog λ| (was 1.2; 4 put the per-frame c step at .059 on the node drive, over the monitor's .06 with no margin)
   BREATH: 0.5,     // the beat breath's press toward the rim: ρ += BREATH·M2.breath·(1 − ρ)
   IDLE: 0.15,      // presence below this freezes the ball (NAV's rule)
 };
@@ -72,7 +72,21 @@ export const GATE = {
   HOLD: 2,         // bars inside a component before the next crossing
   OUT_TOL: 0.02,   // turns: |θ_child| under this at the rim = at the root back to the parent
 };
-export const KICK3 = { LEN: 0.5 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal, × the lane's k
+export const KICK3 = { LEN: 0.5, ANG: 0.9 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal turned by ±ANG rad (the side alternating per kick — the lobes swing, not only the rim), × the lane's k
+// THE DANCE (the §140 retune; the user on key 7: "the fractal shape doesn't seem to be changing that much … the set doesn't seem to
+// be dancing with the music"): the set dances when log λ swings, so the REACTIVE levels drive ρ and θ directly — never a predicted
+// route (the user's rule: reactive levels look in sync, predicted ones don't). Measured before the retune on the nine tracks:
+// NAV3 |Δlog λ| .008–.14 per beat against NAV2's .29–1.14 (tools/work/nav3/dance-before.txt).
+export const DANCE = {
+  BASS: 0.6,       // ρ += BASS·bass·(1 − ρ): the bass level presses the ball out, the spiral's tightness (arg λ / ln|λ|) pulsing with every kick
+  KICK: 0.8,       // ρ += KICK·kp·(1 − ρ): the kick lane's impulse (kickAmp on kickEvt, decaying over KICK_TAU)
+  KICK_TAU: 0.2,   // s
+  HIT: 0.3,        // ρ += HIT·hit·(1 − ρ): the ears' hit impulse
+  TURN: 0.1,       // turns of θ per BAR, steady: the lobes rotate across a bar (a full turn in 10 bars; the first pass at .06 read .6–1 rad of arg swing per bar against NAV2's 1–1.8)
+  SWAY: 0.18,      // turns of θ swaying over the 16-beat phrase: the overall shape is never the same two bars running
+  SNARE: 0.08,     // turns of θ kicked by the snare (snareAmp on snareEvt, decaying over SNARE_TAU), the side alternating: the 2-and-4 twitch
+  SNARE_TAU: 0.25, // s
+};
 
 const CYC2 = mkCyc(), VX = mkVox();
 const GR = { gx: 0, gy: 0, dlr: 0, dli: 0, dl: 1 };
@@ -81,6 +95,7 @@ const C0 = [-0.1725, 0];   // λ = −.3 on the cardioid: ρ .3, θ .5 — a bal
 export const NAV = {
   mode: 'INT', ball: [C0[0], C0[1]], c: [C0[0], C0[1]], cPath: [C0[0], C0[1]], cyc: findCycle(C0[0], C0[1], mkCyc(), N_MAX), grad: GR,   // ball: where the ball IS (findCycle's c); cPath: the path (the ball, or a crossing's lerp); c: the DRAWN c (cPath + the kick) — what index.js uploads
   rhoT: new Spring(0.3, 2.5), thT: new Spring(0.5, 1.4), rho: 0.3, th: 0.5, size: 1, q: 1,
+  kp: 0, sn: 0, snSide: 1, kside: 1, pulse: 0,   // the dance's impulses (DANCE): the kick's, the snare's and its side, the kick jump's side, the pulse on ρ
   stack: [], cross: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
   gate: { p: 0, q: 1, err: 1, on: 0 }, loud: 0, loudHist: [], bar: 0, lastBar: 0, lastCross: -99, fell: 0, leaving: 0, since: 0,
   par: 0, timeScale: 1, vtime: 0, pathCut: 999, extBeat: 0, landed: 0, cycBase: 1, stalls: 0, fails: 0, crosses: 0, maxQ: 1, rimT: 0,
@@ -223,6 +238,14 @@ export function updateNav(dt, now, S, env) {
   const kc = isFinite(S.keyConf) ? clamp(S.keyConf, 0, 1) : 0;
   let th = ROLL.TH0 + ROLL.TH_SPAN * height + ROLL.HARM * ((S.harmAngle || 0) / Math.PI) + ROLL.KEY * kc * (fifths(S.key) - 0.5);
   if (N.mirror < 0) th = 1 - th;
+  // the dance (DANCE): the reactive impulses, the bar turn, the phrase sway
+  if (S.kickEvt) N.kp = Math.max(N.kp, isFinite(S.kickAmp) && S.kickAmp > 0 ? S.kickAmp : 0.6);
+  N.kp *= Math.exp(-dt / DANCE.KICK_TAU);
+  if (S.snareEvt) { N.sn = Math.max(N.sn, S.snareAmp || 0.6); N.snSide = -N.snSide; }
+  N.sn *= Math.exp(-dt / DANCE.SNARE_TAU);
+  const ph16 = isFinite(S.phrase16Pos) ? S.phrase16Pos : 0;
+  th += DANCE.TURN * N.bar + DANCE.SWAY * Math.sin(TAU * ph16 / 16) + DANCE.SNARE * N.sn * N.snSide;
+  N.pulse = clamp(DANCE.BASS * (S.bass || 0) + DANCE.KICK * N.kp + DANCE.HIT * (S.hit || 0), 0, 1);
   let rho = mix(ROLL.RHO_LO, ROLL.RHO_HI, N.loud) + (N.mode === 'INT' ? T : 0);
   const inChild = N.stack.length > 0, idle = S.presence < ROLL.IDLE;
   // the exit: inside a child, the ladder fallen for EXIT_BARS bars → roll to the child's root (θ 0) and press the rim
@@ -245,7 +268,7 @@ export function updateNav(dt, now, S, env) {
 
   if (N.mode === 'INT') {
     if (!idle) {
-      const rhoEff = clamp(N.rhoT.x + ROLL.BREATH * M2.breath * (1 - N.rhoT.x), ROLL.RHO_MIN * 4, ROLL.RHO_WALL);
+      const rhoEff = clamp(N.rhoT.x + (ROLL.BREATH * M2.breath + N.pulse) * (1 - N.rhoT.x), ROLL.RHO_MIN * 4, ROLL.RHO_WALL);   // the beat breath (move2) + the reactive pulse (DANCE) press toward the rim
       roll(N, dt, rhoEff, N.thT.x, ROLL.GAIN * (ROLL.G0 + (1 - ROLL.G0) * clamp(S.intensity || 0, 0, 1)), leaving ? GATE.EXIT_SPEED : 1);
       geometry(N);
     }
@@ -301,8 +324,10 @@ export function updateNav(dt, now, S, env) {
   const kk = kickGate(S, N, park, env);
   if (kk > 0) {
     const gm = Math.hypot(GR.gx, GR.gy) || 1;
-    N.kickM[0] = N.cPath[0] + GR.gx / gm * KICK3.LEN * N.size;
-    N.kickM[1] = N.cPath[1] + GR.gy / gm * KICK3.LEN * N.size;
+    N.kside = -N.kside;   // the side alternates per kick: the normal turned by ±ANG — the jump swings the lobes, not only the rim
+    const ca = Math.cos(KICK3.ANG), sa = Math.sin(KICK3.ANG) * N.kside, nx = GR.gx / gm, ny = GR.gy / gm;
+    N.kickM[0] = N.cPath[0] + (nx * ca - ny * sa) * KICK3.LEN * N.size;
+    N.kickM[1] = N.cPath[1] + (nx * sa + ny * ca) * KICK3.LEN * N.size;
     N.kick.set(kk);
     if (M2.lastK === kk && S.kickAge > 0 && S.kickAge < 0.03) N.kick.step(0, S.kickAge);
   }
@@ -341,14 +366,15 @@ export function updateNav(dt, now, S, env) {
 
 // the knobs as hooks: n3roll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · n3kick3=LEN
 export function knob5(name, v) {
-  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' ? ROLL : name === 'gate' ? GATE : KICK3;
+  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' ? ROLL : name === 'gate' ? GATE : name === 'dance' ? DANCE : KICK3;
   if (s === '' || s === '1') return Object.assign({}, T);   // a bare call READS (CARD.hooks.n3roll() from the console; the knob alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
   const set = (T, keys) => keys.forEach((k, i) => { if (i < nums.length) T[k] = nums[i]; });
   if (name === 'roll') set(ROLL, ['RHO_LO', 'RHO_HI', 'TH0', 'TH_SPAN', 'GAIN', 'VMAX']);
   if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE']);
-  if (name === 'kick3') set(KICK3, ['LEN']);
+  if (name === 'kick3') set(KICK3, ['LEN', 'ANG']);
+  if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE']);
   return nums;
 }
 export { GR, VX };

@@ -5311,3 +5311,40 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   drop q on a weak GPU during drops; `OUT3.ITER` is the knob. (8) The thumb, `site/about.html`, README and THIRD-PARTY carry
   the scene and the credits; `releases.json` is untouched; no merge, no tag, no push — main is untouched and NAV2 is
   byte-identical to main's.
+- **ADDENDUM — the dance retune (2026-10-18; the user, watching NAV3 on 8765: *"the fractal shape doesn't seem to be changing that
+  much (I did see something cool around the drops which did line up) but the set doesn't seem to be dancing with the music"*).**
+  The implosion stays as it was (its knobs untouched); the ROLL is what moved. **Measured first** (`tools/work/nav3/dance.mjs`: one
+  deterministic window, NAV3 forced with NAV2 updated beside it, per frame both navigators' c, log λ, period, mode; 18 windows =
+  the nine drop windows of the gate + a 30 s mid-song window per track with no drop; `tools/accept/nav3/dance-{before,after1,
+  after2}.txt`): before the retune NAV3 moved **|Δlog λ| .008–.144 per beat** (median .06) against **NAV2's .29–1.14** (median
+  .57); its arg λ swing per bar .03–.39 rad against NAV2's .83–1.81; its time near the rim (ρ > .9) 0–22 % of the frames
+  against NAV2's 7–23 %; effectively still (|Δc| < 10⁻⁴ of the component's size) on 0–3 % of frames (NAV2 0). The ball was alive
+  but ten times quieter than the chart walk the user's eye is used to — c sat at ρ .25–.6 with a 3.5/s spring and a 1.2/s speed
+  cap, and nothing reactive touched log λ between drops.
+  **What moved (every number a constant, `ROLL` / `DANCE` / `KICK3` in `nav.js`, the knob `&n3dance=BASS,KICK[,HIT[,TURN[,SWAY
+  [,SNARE]]]]`):** the ball lives at the rim — `RHO_LO` .25 → **.45**, `RHO_HI` .93 → **.955**, `RHO_WALL` .97 → **.985**
+  (field.js converges there inside 1000 steps); the springs and gains are a beat's, not a bar's — `W_RHO` 3.5 → **9**, `W_TH`
+  1.4 → **5**, `GAIN` 4 → **12**, `VMAX` 1.2 → **3.5** (4 put the per-frame c step at .059 on the node drive, over the
+  continuity monitor's .06 with no margin; 3.5 reads .053); and **THE DANCE**, reactive only (the user's rule: reactive levels look
+  in sync, predicted routes don't — no `pred*`, no `next*`): ρ += (`BASS` .6·bass + `KICK` .8·kp + `HIT` .3·hit)·(1 − ρ) — the
+  bass level and the kick lane's impulse (kickAmp on kickEvt, τ `KICK_TAU` .2 s) press the ball out so the spiral's tightness
+  arg λ / ln|λ| pulses with every kick; θ += `TURN` .1 turns per bar (the lobes rotate, a full turn in 10 bars) + `SWAY` .18
+  turns·sin(2π·phrase16Pos/16) (the shape is never the same two bars running) + `SNARE` .08·sn·(±1) (snareAmp on snareEvt, τ .25 s,
+  the side alternating: the 2-and-4 twitch); and the kick's jump leaves along the normal turned by ±`KICK3.ANG` .9 rad, the
+  side alternating per kick, so the jump swings the lobes and not only the rim. The wall, the child crossings, the exit and the
+  implosion are untouched.
+  **After (two passes — the first at BASS .35 / KICK .45 / TURN .06 / SWAY .1 / RHO_LO .55 read |Δlog λ| .03–.24 per beat; the
+  second is what ships):** NAV3 **|Δlog λ| .06–.40 per beat** (median .20, 3–4× before; Vienna .40, Raindrops .35, Malicious .29,
+  TheChain .26), arg λ swing per bar **.34–1.20 rad** (inside NAV2's range on 15 of 18 windows), near the rim **13–62 %** of the
+  frames (0–2 % only on Comptine's drop window and TheChain's verse, where the ladder is low), still on 0 % of frames, the
+  per-frame step under the monitor's rule on every window (`maxStep` .053 on the node drive, no findCycle failure, no stall).
+  **Not met:** the brief's "per-beat |Δlog λ| at least NAV2's" — NAV2's per-beat figure (median .57) is its ±1.3 rad φ lean on
+  `harmUnw` plus the breath; NAV3 sits at a third of it per beat and matches it per bar in angle. Pushing further means a
+  bigger `VMAX` (the monitor's .06 per frame is the ceiling) or a bigger `TURN` / `SWAY` (the knob is there).
+  **The strips** (`tools/work/nav3/strip.sh`: 8 shots at half-bar steps across 4 bars, deterministic): `tools/work/nav3/
+  dance-ibh-{before,after,nav2}.jpg` (IBelongHere 24–32 s, 117.6 bpm) and `dance-chain-{before,after,nav2}.jpg` (TheChain's verse
+  104–116.6 s, 76 bpm); the first pass's strips are under `after1/`. Before, one outline holds for three half-bars (TheChain
+  frames 1–3, IBelongHere 1–3); after, the arms, the pinch at the rim and the Koenigs spokes differ frame to frame. The s6 pair
+  after the retune: `tools/accept/nav3/scene-md5-dance.txt`; the 12 other lines cannot move (a scene-folder change). `check.js` 0
+  fail, `test_nav3` OK (the node drive's step rule is the monitor's .06 now), `test_field` OK; 60 fps at tier 3 held on every
+  window of the ruler (the real-time runs of the gate are unchanged in cost: the roll's per-update cost is .048 ms).
