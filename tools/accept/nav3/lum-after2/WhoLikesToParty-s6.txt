@@ -1,0 +1,12 @@
+lumtrace WhoLikesToParty scene 6 [44, 70] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 44.000 → 70.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+44-49     0.162  0.230  0.001  0.001  0.0151  0.413  0.270   10
+49-54     0.092  0.135  0.001  0.001  0.0118  0.268  0.193   10
+54-59     0.128  0.178  0.001  0.002  0.0116  0.394  0.246   10
+59-64     0.138  0.167  0.001  0.002  0.0123  0.499  0.252   10
+64-69     0.231  0.241  0.001  0.002  0.0156  0.521  0.408   10
+69-70     0.247  0.260  0.001  0.001  0.0164  0.601  0.392    3
+ALL       0.139  0.233  0.001  0.002  0.0134  0.445  0.267   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0085 at t 58.50
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.337 · f0 2 · sr 48000 · end frame 2042 heard 70
+files: tools/work/nav3/lum-after2/WhoLikesToParty-s6.csv · tools/work/nav3/lum-after2/WhoLikesToParty-s6.txt

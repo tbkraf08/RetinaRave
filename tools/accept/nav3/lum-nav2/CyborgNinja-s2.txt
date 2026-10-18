@@ -1,0 +1,12 @@
+lumtrace CyborgNinja scene 2 [34, 60] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 34.000 → 60.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+34-39     0.158  0.276  0.001  0.001  0.0166  0.243  0.295   10
+39-44     0.225  0.258  0.001  0.001  0.0132  0.337  0.415   10
+44-49     0.161  0.255  0.001  0.002  0.0108  0.279  0.275   10
+49-54     0.244  0.346  0.001  0.001  0.0139  0.508  0.462   10
+54-59     0.182  0.271  0.001  0.002  0.0145  0.486  0.305   10
+59-60     0.253  0.254  0.001  0.001  0.0163  0.702  0.444    3
+ALL       0.200  0.302  0.001  0.002  0.0139  0.416  0.336   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0072 at t 41.00
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.349 · f0 2 · sr 48000 · end frame 2042 heard 60
+files: tools/work/nav3/lum-nav2/CyborgNinja-s2.csv · tools/work/nav3/lum-nav2/CyborgNinja-s2.txt

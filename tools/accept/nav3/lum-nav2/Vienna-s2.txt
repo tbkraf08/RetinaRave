@@ -1,0 +1,12 @@
+lumtrace Vienna scene 2 [71, 97] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 71.000 → 97.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+71-76     0.086  0.102  0.001  0.001  0.0120  0.202  0.147   10
+76-81     0.121  0.193  0.001  0.001  0.0178  0.270  0.224   10
+81-86     0.206  0.259  0.001  0.001  0.0187  0.384  0.386   10
+86-91     0.192  0.230  0.001  0.001  0.0173  0.177  0.320   10
+91-96     0.179  0.194  0.001  0.001  0.0161  0.401  0.328   10
+96-97     0.149  0.192  0.001  0.001  0.0149  0.571  0.332    3
+ALL       0.154  0.230  0.001  0.001  0.0163  0.326  0.291   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0076 at t 71.00
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.436 · f0 2 · sr 48000 · end frame 2042 heard 97
+files: tools/work/nav3/lum-nav2/Vienna-s2.csv · tools/work/nav3/lum-nav2/Vienna-s2.txt

@@ -1,0 +1,12 @@
+lumtrace IBelongHere scene 2 [51, 77] s · 2 fps · 640x317 from 1280x633 · 53 frames · heard 51.000 → 77.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+51-56     0.075  0.123  0.001  0.001  0.0119  0.134  0.134   10
+56-61     0.148  0.170  0.001  0.001  0.0126  0.294  0.252   10
+61-66     0.098  0.121  0.001  0.001  0.0122  0.216  0.156   10
+66-71     0.149  0.185  0.001  0.001  0.0148  0.190  0.332   10
+71-76     0.143  0.162  0.001  0.001  0.0159  0.402  0.293   10
+76-77     0.150  0.178  0.001  0.001  0.0098  0.120  0.264    3
+ALL       0.135  0.178  0.001  0.001  0.0133  0.243  0.252   53
+clipFrac >= 0.25 on 0 of 53 frames · meanY >= 0.6 on 0 · min grad 0.0058 at t 64.50
+tiles 0 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.361 · f0 2 · sr 48000 · end frame 2042 heard 77
+files: tools/work/nav3/lum-nav2/IBelongHere-s2.csv · tools/work/nav3/lum-nav2/IBelongHere-s2.txt
