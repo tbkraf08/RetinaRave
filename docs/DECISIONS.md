@@ -5987,9 +5987,15 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   interior as dark spirals in structured key-hue dust where the before frames are a pink fill, green soup, blue soup. The strips
   `tools/work/nav3/swell-comptine-0-75.jpg`, `swell-comptine-105-130.jpg`, `swell-seeyoudrop.jpg` (2 fps).
 - **The gate.** `node tools/check.js` **0 fail** (6 pre-existing warns; `nav.js` 479 lines, inside the 500 hard cap) · `test_nav3` OK (the fake's
-  shift on the fake's perc .5 → the swell path is NOT what the node drive exercises: its 4 drops are live slams) · **PENDING — the chain
-  `tools/work/nav3/swell-chain.sh` (npm test → the full md5 list → the q trace, WhoLikesToParty twice) runs on PORT 8817; this entry is completed
-  when it ends.**
+  shift on the fake's perc .5 → the swell path is NOT what the node drive exercises: its 4 drops are live slams) · `npm test` **exit 0, 0 FAIL**
+  (the chain's run and again at HEAD) · **the full list** `PORT=8817 tools/scene-md5.sh swell` (`tools/accept/nav3/scene-md5-swell.txt`): **s0–s5 =
+  `scene-md5-step3.txt` to the byte (0 of 12 moved)**, s6 `05f1250c / 64048003` (was `374f0f81 / dfd88623`), errs [] hop 840 row 72 on all seven ·
+  **the q trace** (`q-all.sh swell 6`, the nine drop windows real-time on the GPU, `swell/q-swell.txt`): **q .906–.927, fps mean 60, min 60 on eight
+  and 58 on IBelongHere, errs [] on all nine** — SeeYouDrop .916 · IBelongHere **.907** · Comptine .911 · Raindrops .923 · Vienna .916 ·
+  WhoLikesToParty **.906** · Malicious .910 · TheChain .921 · CyborgNinja .927; **WhoLikesToParty run twice more: .910 and .918** (§144 read .902
+  once, §143 .915) — so its first read is the trace's noise (min .59 on the under-.91 runs, .63 on the others), and **IBelongHere's .907 is the one
+  number under the .91 ask** (§144 .922, §143 .916; its window now carries a CROSS at the swell-less shift — the implosion follows a child crossing,
+  3 samples of CROSS in the mode table — not re-run).
 - **NOT done.** The user's eye on all of it. Malicious' 68.9 shift swells now (its slow percussiveness scale sits at .50 in the intro — the threshold's
   edge; `&n3swell=.4` implodes it). The swell's own look is the child's set at the rim with the bands up — nothing new is drawn for it. The escape-time
   colour's `IMP_N` 30 is one number for every root. The ring ruler is the centre row/column's peaks under Y .15 — a proxy, not a segmentation. The
