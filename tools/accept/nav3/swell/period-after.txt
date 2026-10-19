@@ -1,0 +1,4 @@
+tools/work/nav3/look-swell-after1-syd from t60.0: n 601 | mean|ΔY| per frame 0.0187, at 1 beat (33 fr) 0.0797, 1 bar (132) 0.0994, max 0.1308 at lag 479
+  dips (lag frames -> s, |ΔY|): 73(1.22s):0.0816
+  mean-luma autocorr first peak: lag 125 = 2.08 s (ac -0.00); luma mean 0.178 std over time 0.0254
+  |ΔY| series autocorr first peak: lag 96 = 1.60 s (ac 0.61)

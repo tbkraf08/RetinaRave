@@ -30,7 +30,7 @@ import { findCycle, rhoGrad, nearestRational, mkCyc, N_ITER, N_MAX } from '../..
 import { baseLight } from '../../math/loudlight.js';
 import { mkVox, vox } from '../../math/vox.js';
 import { tighten, kickGate, M2 } from './move2.js';
-import { OUT3, startDrop, stepDrop, rearm } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes); §143: rearm
+import { OUT3, IMP, startDrop, stepDrop, rearm } from './implode.js';   // §140 step 3: the drop as a parabolic implosion (the OUT / EXT / IN modes); §143: rearm
 
 export const ROLL = {
   RHO_LO: 0.45,    // the ρ target when the track is at its quietest (the §140 retune: was .25, then .55 — the pulse needs room below the rim to swing — the user: "the set doesn't seem to be dancing"; the ball lives near the rim, where ρ → 1 pinches the Julia set)
@@ -82,6 +82,31 @@ export const GATE = {
   DEPTH_MAX: 1,    // the depth pass: how many children deep the ball may go (1 = the cardioid and its first-level bulbs are home)
   CHILD_BARS: 2,   // bars a child crossing holds at most while the music no longer asks — then the ball rolls back out (the fallen ladder still exits earlier)
 };
+// §145 THE SWELL (the user on Comptine: a shift on a delicate piece should not explode the set; "at 48s the music starts to do something
+// beautiful but the fractal seems boring"): below PERC_LT of the percussiveness scale an energy shift (and, with MAP, the file map's drop line)
+// drives a SWELL — the ball pressed to the rim (GATE.RHO + .02), θ steered to the nearest gateway and the gate open to cross into the child, the
+// interior's bands and brightness up (uSwell: index.js) — held while the engine's shiftHold (BEATS beats for a map line); the implosion is
+// reserved for a confirmed slam (dropLiveEvt: §143's sub-back gate). Above PERC_LT a shift still implodes (the dance tracks keep §143's reads).
+// And the ladder's RISE RATE presses the ball toward the rim BEFORE a shift lands: the swell term (RISE_GAIN × (loud − its RISE_TAU ema)),
+// steering θ to the gateway past RISE_STEER; CENT 1 reads the centroid against the track's own running range (CENT_TAU) instead of CENT_LO/HI.
+export const SWELL = {
+  PERC_LT: 0.5,    // the percussiveness scale under which a shift swells instead of imploding — read on the SLOW ema (PERC_TAU: is this a percussive PIECE, not a loud bar: Comptine's 3 s scale read .59 on the 33 s chord attack and imploded); Comptine ~.3, Malicious ~.5, the kits .8–1; 0 = never (fd49b87)
+  PERC_TAU: 15,    // s: the slow percussiveness ema the split reads
+  MAP: 1,          // 1 = the file map's drop line swells too under PERC_LT (Comptine's 107.4 is the truth tool's provisional line); 0 = a map line always implodes
+  BEATS: 8,        // beats a map-line swell holds (a shift's holds while shiftHold)
+  TAU: 0.4,        // s: the swell's ease in and out
+  BANDS: 0.6,      // the interior's band amplitude × (1 + BANDS·swell)
+  LUM: 0.15,       // added to the smoulder's gain × swell
+  RISE_GAIN: 3,    // the rise term: clamp((loud − ema_RISE_TAU(loud)) × RISE_GAIN, 0, 1) presses ρ toward GATE.RHO + .02 (0 = off, fd49b87)
+  RISE_TAU: 2,     // s
+  RISE_STEER: 0.5, // the rise term past this steers θ to the nearest gateway (the asks' steering)
+  CENT: 1,         // 1 = the centroid normalised to the track's running range; 0 = ROLL.CENT_LO / CENT_HI (fd49b87)
+  CENT_TAU: 60,    // s: the range's relaxation (the extremes decay toward the current value)
+};
+export const INT3 = {
+  K_RINGS: 2,      // §145 the interior: the Koenigs rings and spokes fade with the ring index from the cycle point, exp(−rings/K_RINGS) — only the innermost few stay (the user liked "the complexity around the centre"; the tiling across the interior is gone); 0 = nothing inside but the floor; 999 = fd49b87's tiling
+  FLOOR: 0.02,     // the interior's never-black luma floor, in the palette's hue (pal() goes under Y .01 in its blue phases)
+};
 export const KICK3 = { LEN: 0.5, ANG: 0.9, PERC: 1, CHART: 1 };   // the kick's jump: LEN × the component's size (1/|dλ/dc|) along the outward normal turned by ±ANG rad (the side alternating per kick — the lobes swing, not only the rim), × the lane's k; §144: PERC 1 = the jump × the percussiveness scale (DANCE.PERC_*), CHART 1 = the chart stays through the kick (findCycle at the DRAWN c each frame while it rings: the bands tighten toward the rim instead of the interior blinking black — 14–66 % of INT frames chart-off before; 0 = NAV2's Misiurewicz blink)
 // THE DANCE (the §140 retune; the user on key 7: "the fractal shape doesn't seem to be changing that much … the set doesn't seem to
 // be dancing with the music"): the set dances when log λ swings, so the REACTIVE levels drive ρ and θ directly — never a predicted
@@ -116,7 +141,8 @@ export const NAV = {
   mode: 'INT', ball: [C0[0], C0[1]], c: [C0[0], C0[1]], cPath: [C0[0], C0[1]], cyc: findCycle(C0[0], C0[1], mkCyc(), N_MAX), grad: GR,   // ball: where the ball IS (findCycle's c); cPath: the path (the ball, or a crossing's lerp); c: the DRAWN c (cPath + the kick) — what index.js uploads
   rhoT: new Spring(0.3, 2.5), thT: new Spring(0.5, 1.4), rho: 0.3, th: 0.5, size: 1, q: 1,
   kp: 0, sn: 0, snSide: 1, kside: 1, pulse: 0,   // the dance's impulses (DANCE): the kick's, the snare's and its side, the kick jump's side, the pulse on ρ
-  percE: 0, percS: 1, turn: 0,   // §144: the eased percussiveness, its scale on the dance, the accumulated bar turn (TURN × bars, × the scale as it goes — not TURN × N.bar, whose product would jump with the scale)
+  percE: 0, percS: 1, turn: 0,
+  swell: 0, swellOn: 0, swellArm: -99, swells: 0, rise: 0, loudSlow: 0, cLo: NaN, cHi: NaN, percL: 0,   // §145: the swell's ease, its latch, the beat it armed, the count, the rise term, the ladder's slow ema, the centroid's running range   // §144: the eased percussiveness, its scale on the dance, the accumulated bar turn (TURN × bars, × the scale as it goes — not TURN × N.bar, whose product would jump with the scale)
   shown: null,   // §144: the chart index.js draws — the ball's (cyc), the kick's own while it rings (KCH), or none (NOCH)
   stack: [], cross: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
   gate: { p: 0, q: 1, err: 1, on: 0 }, loud: 0, loudHist: [], bar: 0, lastBar: 0, lastCross: -99, fell: 0, leaving: 0, since: 0,
@@ -254,10 +280,10 @@ function cross(N, S, dir, p, q) {
 }
 
 // the drop: the parabolic implosion (implode.js) — from the ball through the root along the normal to ε outside, and back
-export function navDrop(S, reach) {
+export function navDrop(S, reach, kind = 'slam') {
   const N = NAV, R0 = rootOf(N);
   if (!R0 || N.mode !== 'INT') return 0;
-  return startDrop(N, S, [R0.rx, R0.ry], R0.nx, R0.ny, reach);
+  return startDrop(N, S, [R0.rx, R0.ry], R0.nx, R0.ny, reach, kind);
 }
 
 // env: { isLogical, drum, P } as NAV2's (index.js); P.reach is the drop's depth parameter (§1.16)
@@ -271,7 +297,10 @@ export function updateNav(dt, now, S, env) {
   N.loud = baseLight(S.loudRel, S.loudRange, S.loudAbs, isFinite(S.eS) ? S.eS : 0.5);
   if (N.bar - N.lastBar >= 1) { N.lastBar = Math.floor(N.bar); N.loudHist.push(N.loud); if (N.loudHist.length > 8) N.loudHist.shift(); }
   const V = vox(VX, dt, S);
-  const cent = clamp(((isFinite(S.centroid) ? S.centroid : 0.4) - ROLL.CENT_LO) / (ROLL.CENT_HI - ROLL.CENT_LO), 0, 1);
+  const c0 = isFinite(S.centroid) ? S.centroid : 0.4;
+  if (!isFinite(N.cLo)) { N.cLo = c0 - 0.02; N.cHi = c0 + 0.02; }
+  N.cLo = c0 < N.cLo ? c0 : ema(N.cLo, c0, dt, SWELL.CENT_TAU); N.cHi = c0 > N.cHi ? c0 : ema(N.cHi, c0, dt, SWELL.CENT_TAU);   // §145: the running range
+  const cent = SWELL.CENT ? clamp((c0 - N.cLo) / Math.max(N.cHi - N.cLo, 0.05), 0, 1) : clamp((c0 - ROLL.CENT_LO) / (ROLL.CENT_HI - ROLL.CENT_LO), 0, 1);
   const height = V.w > 0 && V.y01 >= 0 ? mix(cent, V.y01, V.w) : cent;
   const kc = isFinite(S.keyConf) ? clamp(S.keyConf, 0, 1) : 0;
   let th = ROLL.TH0 + ROLL.TH_SPAN * height + ROLL.HARM * ((S.harmAngle || 0) / Math.PI) + ROLL.KEY * kc * (fifths(S.key) - 0.5);
@@ -296,17 +325,28 @@ export function updateNav(dt, now, S, env) {
   N.fell = fell ? N.fell + dt * bps / 4 : 0;
   // the ask: a build, an expected drop, or the ladder risen over BARS bars — the gate's condition, and the rim's steering toward it
   const rise = GATE.RISE > 0 && N.loudHist.length > GATE.BARS && N.loud - N.loudHist[N.loudHist.length - 1 - GATE.BARS] >= GATE.RISE;   // §142: RISE 0 = no ladder-rise ask (it crossed 7 times in 110 s on Comptine)
-  const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise;
+  // §145 the swell: latched by a shift (or a map line) under PERC_LT, held while shiftHold (BEATS for a map line); the rise term on the ladder's slope
+  N.percL = ema(N.percL, isFinite(S.perc) ? clamp(S.perc, 0, 1) : 0.5, dt, SWELL.PERC_TAU);
+  const percSL = DANCE.PERC_REF > 0 ? clamp(N.percL / DANCE.PERC_REF, DANCE.PERC_MIN, 1) : 1;
+  const lowPerc = SWELL.PERC_LT > 0 && percSL < SWELL.PERC_LT;
+  if (lowPerc && (S.shiftEvt || (SWELL.MAP && S.mapDropEvt))) { N.swellOn = 1; N.swellArm = S.beatCount; N.swells++; }
+  const swelling = N.swellOn && ((S.shiftHold || 0) > 0 || S.beatCount - N.swellArm < SWELL.BEATS);
+  if (!swelling) N.swellOn = 0;
+  N.swell = ema(N.swell, swelling ? 1 : 0, dt, SWELL.TAU);
+  N.loudSlow = ema(N.loudSlow, N.loud, dt, SWELL.RISE_TAU);
+  N.rise = clamp((N.loud - N.loudSlow) * SWELL.RISE_GAIN, 0, 1);
+  const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise || N.swell > 0.5;
   if (inChild && N.fell >= GATE.EXIT_BARS) N.leaving = 1;   // latched: the way out is taken once decided, unless the music comes back loud
   if (inChild && !asks && N.bar - N.lastCross >= GATE.CHILD_BARS) N.leaving = 2;   // the depth pass: a child crossing holds CHILD_BARS bars once the music stops asking, then the ball rolls back out — the cardioid and its first-level bulbs are home
   if (!inChild || (N.leaving === 1 && N.loud > GATE.FALL + GATE.HYST)) N.leaving = 0;
   const leaving = N.leaving > 0;
   if (leaving) { th = 0; rho = Math.max(rho, GATE.RHO + 0.02); }
-  else if (asks && N.mode === 'INT' && N.stack.length < GATE.DEPTH_MAX && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {
+  else if ((asks || N.rise > SWELL.RISE_STEER) && N.mode === 'INT' && N.stack.length < GATE.DEPTH_MAX && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {   // §145: the rise steers too
     const r = nearestRational(N.th, GATE.QMAX);   // the rim slides toward the nearest gateway whose child is inside the period cap
     if (r.q >= 2 && N.cyc.q * r.q <= GATE.P_MAX) th = r.p / r.q;
   }
-  if (park > 0.5 || asks) rho = Math.max(rho, GATE.RHO + 0.02);   // a build (or any ask) presses the ball against the rim: the gateway (NAV's park at the root)
+  if (park > 0.5 || asks) rho = Math.max(rho, GATE.RHO + 0.02);
+  else if (N.rise > 0 && N.mode === 'INT') rho = mix(rho, Math.max(rho, GATE.RHO + 0.02), N.rise);   // §145: the ladder's rise presses toward the rim before the shift lands   // a build (or any ask) presses the ball against the rim: the gateway (NAV's park at the root)
   N.rhoT.step(clamp(rho, ROLL.RHO_MIN * 4, ROLL.RHO_WALL), dt, ROLL.W_RHO);
   N.thT.step(th + Math.round(N.thT.x - th), dt, ROLL.W_TH);
 
@@ -356,15 +396,18 @@ export function updateNav(dt, now, S, env) {
   }
   // the drop: the live detector's slam, and (OUT3.ANY, the default) the map's / the fake timeline's dropEvt too — the fake timeline
   // never arms the live detector, so #test would never show the exit; a refractory of DROP_REFR beats keeps the two from double-firing
-  const drop = (S.dropLiveEvt || S.mapDropEvt || S.shiftEvt || (OUT3.ANY && S.dropEvt)) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;   // §107's rule: the live slam OR the file map's frame-exact line; §143: OR the engine's energy shift (shiftEvt — the drop a piano has); v3's dropEvt only with OUT3.ANY (&n3drop=any)
+  // §145: under PERC_LT a shift (and a map line, with SWELL.MAP) swells instead (above); the implosion is the confirmed slam's — and the shift's on a kit
+  const slamIn = S.dropLiveEvt || (S.mapDropEvt && !(lowPerc && SWELL.MAP)) || (OUT3.ANY && S.dropEvt), shiftIn = S.shiftEvt && !lowPerc;
+  const kind = slamIn ? 'slam' : 'shift';
+  const drop = (slamIn || shiftIn) && S.beatCount - N.extBeat >= OUT3.DROP_REFR;   // §107's rule: the live slam OR the file map's frame-exact line; §143: OR the engine's energy shift (shiftEvt — the drop a piano has); v3's dropEvt only with OUT3.ANY (&n3drop=any)
   if (drop && N.mode === 'CROSS') {   // a drop mid-crossing: land first (the chart is already verified), then leave
     const X = N.cross;
     N.ball[0] = X.to[0]; N.ball[1] = X.to[1]; N.cyc = X.cyc; N.cyc.has = 1;
     geometry(N);
     N.thT.set(N.th); N.rhoT.set(N.rho); N.q = N.cyc.q; N.mode = 'INT'; N.cross = null;
   }
-  if (drop && N.mode === 'INT') navDrop(S, env.P && isFinite(env.P.reach) ? env.P.reach : -6);
-  else if (drop && (N.mode === 'OUT' || N.mode === 'EXT' || N.mode === 'IN')) rearm(N, S);   // §143: a drop mid-implosion re-arms it instead of being discarded (Comptine's 52.17 was lost that way)
+  if (drop && N.mode === 'INT') navDrop(S, env.P && isFinite(env.P.reach) ? env.P.reach : -6, kind);
+  else if (drop && (N.mode === 'OUT' || N.mode === 'EXT' || N.mode === 'IN')) rearm(N, S, kind);   // §143: a drop mid-implosion re-arms it instead of being discarded (Comptine's 52.17 was lost that way)
   // the kick (move2.js's lane): along the outward normal by LEN × the component's size, hiding the chart while it rings
   const kk = kickGate(S, N, park, env);
   if (kk > 0) {
@@ -394,7 +437,7 @@ export function updateNav(dt, now, S, env) {
   // visual time: crawls near the wall (critical slowing), releases on resolution / drop
   if (S.resolveEvt) N.timeScale = Math.max(N.timeScale, 2);
   N.timeScale = ema(N.timeScale, mix(1, 0.05, N.par * N.par), dt, 0.5);
-  N.vtime += dt * N.timeScale * (ROLL.T_FLOOR + (1 - ROLL.T_FLOOR) * S.presence);   // §142: NAV3's own clock (loop.js takes rt.time as the palette / spoke time) — at presence 0 nothing moves
+  N.vtime += dt * N.timeScale * (ROLL.T_FLOOR + (1 - ROLL.T_FLOOR) * S.presence) * (1 - (1 - OUT3.IMP_TIME) * IMP.y);   // §145: the palette / spoke clock frozen (IMP_TIME 0) while the implosion is up   // §142: NAV3's own clock (loop.js takes rt.time as the palette / spoke time) — at presence 0 nothing moves
   // path trail (PiP) + critical orbit, as NAV's — on the drawn c
   N.pathCut++;
   const P = N.path, dc = N.c;
@@ -419,7 +462,7 @@ export function updateNav(dt, now, S, env) {
 
 // the knobs as hooks: n3roll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · n3gate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · n3kick3=LEN
 export function knob5(name, v) {
-  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' || name === 'conv' ? ROLL : name === 'gate' ? GATE : name === 'dance' ? DANCE : KICK3;
+  const s = String(v === undefined || v === null ? '' : v), T = name === 'roll' || name === 'conv' ? ROLL : name === 'gate' ? GATE : name === 'dance' ? DANCE : name === 'swell' ? SWELL : name === 'int' ? INT3 : KICK3;
   if (s === '' || s === '1') return Object.assign({}, T);   // a bare call READS (CARD.hooks.n3roll() from the console; the knob alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
@@ -428,6 +471,8 @@ export function knob5(name, v) {
   if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE', 'P_MAX', 'DEPTH_MAX', 'CHILD_BARS']);   // the depth pass's A/B: &n3gate=7,0.5,0,0.1,0.3,1.5,0.6,14,2,99 is the quality pass's depth
   if (name === 'kick3') set(KICK3, ['LEN', 'ANG', 'PERC', 'CHART']);   // §144: &n3kick3=.5,.9,0,0 is v0.43's jump and blink
   if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE', 'PERC_REF', 'PERC_MIN', 'PERC_TAU']);   // §144: &n3dance=.6,.8,.3,.1,.18,.08,0 is v0.43's dance on every piece (PERC_REF 0 = the scale off)
+  if (name === 'int') set(INT3, ['K_RINGS', 'FLOOR']);
+  if (name === 'swell') set(SWELL, ['PERC_LT', 'PERC_TAU', 'MAP', 'BEATS', 'TAU', 'BANDS', 'LUM', 'RISE_GAIN', 'RISE_TAU', 'RISE_STEER', 'CENT', 'CENT_TAU']);   // §145: &n3swell=0,15,0,8,.4,.6,.15,0,2,.5,0 is fd49b87 (no swell, no rise term, CENT_LO/HI)
   if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX', 'CONV_CHILD', 'DOTS_RHO']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc; &n3conv=.6,.93,.05,.4 the v0.43 child disc (§142)
   return nums;
 }

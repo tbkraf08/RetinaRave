@@ -1,0 +1,24 @@
+SeeYouDrop: 6601 frames 0.0–110.0 s | INT 86.1 s: |Δlogλ|/beat 0.288 chart-off 0.2 % | crossings 3 | shifts - | SWELLS 0: - | implosions 2: 57.6→75.2 (EXT 59.0–74.0, 0 re-arm, esc 0.54/0.83/1.00) | 105.6→110.0+ (EXT 107.0–110.0, 0 re-arm, esc 0.00/0.69/1.00)
+IBelongHere: 6601 frames 0.0–110.0 s | INT 88.2 s: |Δlogλ|/beat 0.329 chart-off 0.0 % | crossings 0 | shifts 65.8 | SWELLS 0: - | implosions 1: 65.8→87.7 (EXT 67.3–86.5, 0 re-arm, esc 0.75/0.94/0.96)
+Comptine: 6601 frames 0.0–110.0 s | INT 106.8 s: |Δlogλ|/beat 0.319 chart-off 0.0 % | crossings 4 | shifts 33.0 51.7 | SWELLS 2: 33.0 51.7 | implosions 0: 
+RaindropsOnRoses: 6601 frames 24.0–134.0 s | INT 98.2 s: |Δlogλ|/beat 0.415 chart-off 0.1 % | crossings 9 | shifts - | SWELLS 0: - | implosions 1: 129.5→134.0+ (EXT 130.9–134.0, 0 re-arm, esc 0.00/0.07/0.21)
+Vienna: 6601 frames 0.0–110.0 s | INT 84.5 s: |Δlogλ|/beat 0.419 chart-off 0.0 % | crossings 1 | shifts - | SWELLS 0: - | implosions 1: 85.3→110.0+ (EXT 86.7–110.0, 0 re-arm, esc 0.00/0.06/0.13)
+WhoLikesToParty: 6601 frames 0.0–110.0 s | INT 86.2 s: |Δlogλ|/beat 0.418 chart-off 0.1 % | crossings 2 | shifts - | SWELLS 0: - | implosions 1: 57.5→79.7 (EXT 58.9–78.5, 0 re-arm, esc 0.00/0.04/0.17)
+Malicious: 6601 frames 0.0–110.0 s | INT 109.2 s: |Δlogλ|/beat 0.242 chart-off 0.0 % | crossings 1 | shifts 68.9 | SWELLS 1: 68.9 | implosions 0: 
+TheChain: 6601 frames 0.0–110.0 s | INT 75.7 s: |Δlogλ|/beat 0.334 chart-off 0.0 % | crossings 2 | shifts 44.7 55.3 | SWELLS 0: - | implosions 2: 44.7→72.6 (EXT 46.1–71.4, 1 re-arm, esc 0.21/0.60/0.88) | 86.1→90.8 (EXT 87.5–89.6, 0 re-arm, esc 0.00/0.01/0.04)
+CyborgNinja: 6601 frames 0.0–110.0 s | INT 110.0 s: |Δlogλ|/beat 0.322 chart-off 0.2 % | crossings 0 | shifts - | SWELLS 0: - | implosions 0: 
+Comptine [map1]: 6601 frames 0.0–110.0 s | INT 106.0 s: |Δlogλ|/beat 0.324 chart-off 0.0 % | crossings 5 | shifts 33.0 51.7 | SWELLS 3: 33.0 51.7 107.4 | implosions 0: 
+  t 33.00 INT q1 d0 ρ 0.927 θ 0.138 gate 1/7 has 1 loud 0.76 rise 1.00 swell 0.08 ps 0.59 cent 0.40 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 32.7
+  t 34.00 CROSS q1 d1 ρ 0.937 θ 0.141 gate 1/7 has 1 loud 0.79 rise 0.87 swell 0.92 ps 0.51 cent 0.23 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 33.5
+  t 36.00 INT q7 d1 ρ 0.928 θ 0.056 gate 0/1 has 1 loud 0.38 rise 0.00 swell 1.00 ps 0.43 cent 0.09 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 34.9
+  t 40.00 INT q1 d0 ρ 0.532 θ 0.163 gate 1/6 has 1 loud 0.00 rise 0.00 swell 0.00 ps 0.23 cent 0.13 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 37.5
+  t 44.00 INT q1 d0 ρ 0.812 θ 0.200 gate 1/5 has 1 loud 0.43 rise 0.59 swell 0.00 ps 0.20 cent 0.26 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 41.5
+  t 48.00 INT q1 d0 ρ 0.507 θ 0.254 gate 1/4 has 1 loud 0.00 rise 0.00 swell 0.00 ps 0.20 cent 0.13 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 45.5
+  t 50.00 INT q1 d0 ρ 0.688 θ 0.184 gate 1/5 has 1 loud 0.33 rise 0.53 swell 0.00 ps 0.20 cent 0.40 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 47.5
+  t 52.00 CROSS q1 d1 ρ 0.924 θ 0.167 gate 1/6 has 1 loud 0.82 rise 1.00 swell 0.53 ps 0.20 cent 0.53 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 49.4
+  t 55.00 INT q6 d1 ρ 0.928 θ 0.298 gate 2/7 has 1 loud 0.88 rise 0.22 swell 1.00 ps 0.20 cent 0.23 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 51.6
+  t 60.00 INT q6 d1 ρ 0.926 θ 0.267 gate 1/4 has 1 loud 0.78 rise 0.04 swell 1.00 ps 0.20 cent 0.52 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 53.8
+  t 66.00 INT q6 d1 ρ 0.924 θ 0.351 gate 1/3 has 1 loud 0.34 rise 0.00 swell 1.00 ps 0.30 cent 0.18 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 56.2
+  t 71.00 INT q1 d0 ρ 0.613 θ 0.372 gate 2/5 has 1 loud 0.10 rise 0.02 swell 0.00 ps 0.33 cent 0.60 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 59.3
+  t 107.00 INT q1 d0 ρ 0.610 θ 0.010 gate 0/1 has 1 loud 0.03 rise 0.00 swell 0.00 ps 0.44 cent 0.60 hold 0 eps 0.00e+0 esc 0.00 φ 0.000 vtime 95.1
+  t 110.00 INT q7 d1 ρ 0.938 θ 0.743 gate 3/4 has 1 loud 0.42 rise 0.56 swell 1.00 ps 0.47 cent 0.86 hold 1 eps 0.00e+0 esc 0.00 φ 0.000 vtime 97.8
