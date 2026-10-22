@@ -1,0 +1,12 @@
+t018.00.jpg   black<.04 0.12 (centre 0.06)  wash>.5 0.129 (centre 0.090)  meanY 0.201 centreY 0.163  struct(centre grad) 0.96  rim hue   175
+t026.00.jpg   black<.04 0.39 (centre 0.13)  wash>.5 0.039 (centre 0.048)  meanY 0.143 centreY 0.193  struct(centre grad) 0.91  rim hue   285
+t036.00.jpg   black<.04 0.01 (centre 0.03)  wash>.5 0.000 (centre 0.000)  meanY 0.238 centreY 0.300  struct(centre grad) 2.38  rim hue   135
+t057.00.jpg   black<.04 0.00 (centre 0.00)  wash>.5 0.000 (centre 0.001)  meanY 0.251 centreY 0.314  struct(centre grad) 1.38  rim hue   139
+t060.00.jpg   black<.04 0.52 (centre 0.25)  wash>.5 0.076 (centre 0.217)  meanY 0.169 centreY 0.294  struct(centre grad) 1.00  rim hue   247
+t066.00.jpg   black<.04 0.31 (centre 0.15)  wash>.5 0.000 (centre 0.001)  meanY 0.140 centreY 0.242  struct(centre grad) 1.48  rim hue   356
+t094.00.jpg   black<.04 0.01 (centre 0.03)  wash>.5 0.007 (centre 0.008)  meanY 0.144 centreY 0.143  struct(centre grad) 1.41  rim hue    73
+t094.40.jpg   black<.04 0.10 (centre 0.04)  wash>.5 0.000 (centre 0.000)  meanY 0.130 centreY 0.150  struct(centre grad) 1.21  rim hue    78
+t094.50.jpg   black<.04 0.13 (centre 0.06)  wash>.5 0.000 (centre 0.001)  meanY 0.117 centreY 0.132  struct(centre grad) 1.18  rim hue    83
+t110.00.jpg   black<.04 0.22 (centre 0.10)  wash>.5 0.010 (centre 0.029)  meanY 0.211 centreY 0.296  struct(centre grad) 1.37  rim hue   346
+t115.00.jpg   black<.04 0.00 (centre 0.00)  wash>.5 0.001 (centre 0.003)  meanY 0.213 centreY 0.341  struct(centre grad) 1.28  rim hue   101
+t120.00.jpg   black<.04 0.00 (centre 0.01)  wash>.5 0.002 (centre 0.006)  meanY 0.263 centreY 0.326  struct(centre grad) 2.09  rim hue   181

@@ -1,0 +1,15 @@
+# §144 nav3-look — the FULL list, PORT=8817 tools/scene-md5.sh look (CLOCK=1 GPU=1, errs [] hop 840 row 72 on all seven ids). s0–s5 (12 lines) = tools/accept/nav3/scene-md5-step3.txt to the byte (a scene-folder change: no other scene reads nav3/); s6 moved on both frames (the dots off, pal3 on the interior, the dance scaled by perc, the fake's shift implosion with the calibrated floor, the black interior): was 4ac1d5fe / aaa34ba3 (§143).
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+aa6268322f36acf568cae26df302e163  s1-f360.jpg
+8372bc2879a802dcfb8c93ecf28721a5  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+374f0f81f5c2a18db6dc755fa93303a3  s6-f360.jpg
+dfd886232f0ccc2d470c33d532ac2227  s6-f840.jpg

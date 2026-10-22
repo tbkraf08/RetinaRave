@@ -1,0 +1,3 @@
+look-before 20.0-22.0: n 121 | far-exterior hue mean 226 deg | |dhue|/frame median 0.84 p90 1.83 max 15.13 deg, reversals 0.16 | |dY|/frame mean 0.0078 p90 0.0149 | meanY 0.093
+look-before 36.0-38.5: n 151 | far-exterior hue mean 141 deg | |dhue|/frame median 1.21 p90 2.78 max 4.28 deg, reversals 0.59 | |dY|/frame mean 0.0147 p90 0.0223 | meanY 0.210
+look-before 56.0-59.0: n 181 | far-exterior hue mean 151 deg | |dhue|/frame median 0.85 p90 4.99 max 19.79 deg, reversals 0.47 | |dY|/frame mean 0.0137 p90 0.0256 | meanY 0.257

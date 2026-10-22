@@ -1,0 +1,25 @@
+SeeYouDrop: 6601 frames 0.0–110.0 s | INT 85.9 s: |Δlogλ|/beat 0.382 ρ-reversals/s 3.9 chart-off 23.6 % kicks 34 | perc mean 0.263 | crossings 3 | shifts - | implosions 2: 57.6→75.2 (EXT 59.0–74.0, 0 re-arm, esc 0.00/0.00/0.00) | 105.6→110.0+ (EXT 107.0–110.0, 0 re-arm, esc 0.00/0.00/0.04)
+IBelongHere: 6601 frames 0.0–110.0 s | INT 88.2 s: |Δlogλ|/beat 0.361 ρ-reversals/s 3.7 chart-off 31.0 % kicks 46 | perc mean 0.359 | crossings 0 | shifts 65.8 | implosions 1: 65.8→87.7 (EXT 67.3–86.5, 0 re-arm, esc 0.00/0.06/0.13)
+Comptine: 6601 frames 0.0–110.0 s | INT 78.7 s: |Δlogλ|/beat 0.535 ρ-reversals/s 5.4 chart-off 13.6 % kicks 18 | perc mean 0.100 | crossings 0 | shifts 33.0 51.7 | implosions 2: 33.0→43.9 (EXT 34.4–42.7, 0 re-arm, esc 0.00/0.01/0.04) | 51.7→72.1 (EXT 53.1–70.9, 0 re-arm, esc 0.00/0.51/1.00)
+RaindropsOnRoses: 6601 frames 24.0–134.0 s | INT 100.7 s: |Δlogλ|/beat 0.399 ρ-reversals/s 3.6 chart-off 28.5 % kicks 48 | perc mean 0.261 | crossings 6 | shifts - | implosions 1: 129.5→134.0+ (EXT 130.9–134.0, 0 re-arm, esc 0.00/0.04/0.04)
+Vienna: 6601 frames 0.0–110.0 s | INT 84.5 s: |Δlogλ|/beat 0.490 ρ-reversals/s 4.2 chart-off 11.2 % kicks 16 | perc mean 0.304 | crossings 1 | shifts - | implosions 1: 85.3→110.0+ (EXT 86.7–110.0, 0 re-arm, esc 0.00/0.00/0.00)
+WhoLikesToParty: 6601 frames 0.0–110.0 s | INT 86.2 s: |Δlogλ|/beat 0.419 ρ-reversals/s 5.5 chart-off 46.6 % kicks 66 | perc mean 0.750 | crossings 2 | shifts - | implosions 1: 57.5→79.7 (EXT 58.9–78.5, 0 re-arm, esc 0.00/0.00/0.00)
+Malicious: 6601 frames 0.0–110.0 s | INT 91.5 s: |Δlogλ|/beat 0.361 ρ-reversals/s 4.8 chart-off 13.7 % kicks 21 | perc mean 0.164 | crossings 0 | shifts 68.9 | implosions 1: 68.9→87.3 (EXT 70.3–86.1, 0 re-arm, esc 0.13/0.15/0.21)
+TheChain: 6601 frames 0.0–110.0 s | INT 75.9 s: |Δlogλ|/beat 0.355 ρ-reversals/s 3.8 chart-off 40.2 % kicks 50 | perc mean 0.567 | crossings 2 | shifts 44.7 55.3 | implosions 2: 44.7→72.6 (EXT 46.1–71.4, 1 re-arm, esc 0.00/0.00/0.04) | 86.1→90.8 (EXT 87.5–89.6, 0 re-arm, esc 0.00/0.00/0.00)
+CyborgNinja: 6601 frames 0.0–110.0 s | INT 110.0 s: |Δlogλ|/beat 0.321 ρ-reversals/s 4.0 chart-off 65.7 % kicks 119 | perc mean 0.649 | crossings 0 | shifts - | implosions 0: 
+Comptine [map1]: 6601 frames 0.0–110.0 s | INT 76.0 s: |Δlogλ|/beat 0.556 ρ-reversals/s 4.9 chart-off 23.0 % kicks 29 | perc mean 0.100 | crossings 0 | shifts 33.0 51.7 | implosions 3: 33.0→43.9 (EXT 34.4–42.7, 0 re-arm, esc 0.00/0.03/0.04) | 51.7→72.1 (EXT 53.1–70.9, 0 re-arm, esc 0.00/0.14/1.00) | 107.4→110.0+ (EXT 108.8–110.0, 0 re-arm, esc 0.00/0.00/0.00)
+  t 8.00 INT q1 ρ 0.825 θ 0.048 has 1 kick 0.00 eps 0.00e+0 esc 0.00 σ 0.00 T 0.0 hold 0 loud 0.40 ps 1.00 φ 0.000
+  t 13.00 INT q1 ρ 0.886 θ 0.227 has 0 kick 0.29 eps 0.00e+0 esc 0.00 σ 0.00 T 0.0 hold 0 loud 0.51 ps 1.00 φ 0.000
+  t 15.00 INT q1 ρ 0.931 θ 0.213 has 0 kick 0.35 eps 0.00e+0 esc 0.00 σ 0.00 T 0.0 hold 0 loud 0.54 ps 1.00 φ 0.000
+  t 18.00 INT q1 ρ 0.794 θ 0.493 has 1 kick 0.00 eps 0.00e+0 esc 0.00 σ 0.00 T 0.0 hold 0 loud 0.59 ps 1.00 φ 0.000
+  t 26.00 INT q1 ρ 0.923 θ 0.651 has 0 kick 0.02 eps 0.00e+0 esc 0.00 σ 0.00 T 0.0 hold 0 loud 0.44 ps 1.00 φ 0.000
+  t 36.00 EXT q1 ρ 0.834 θ 0.180 has 0 kick 0.00 eps 2.61e-3 esc 0.04 σ 0.30 T 43.3 hold 1 loud 0.38 ps 1.00 φ 0.000
+  t 37.00 EXT q1 ρ 0.834 θ 0.180 has 0 kick 0.00 eps 2.27e-3 esc 0.04 σ 0.51 T 46.5 hold 0 loud 0.07 ps 1.00 φ 0.000
+  t 38.00 EXT q1 ρ 0.834 θ 0.180 has 0 kick 0.00 eps 2.40e-3 esc 0.04 σ 0.15 T 45.1 hold 0 loud 0.00 ps 1.00 φ 0.000
+  t 56.00 EXT q1 ρ 0.894 θ 0.021 has 0 kick 0.00 eps 3.41e-4 esc 0.00 σ 0.80 T 48.8 hold 1 loud 0.76 ps 1.00 φ 0.000
+  t 57.00 EXT q1 ρ 0.894 θ 0.021 has 0 kick 0.00 eps 3.77e-4 esc 0.00 σ 0.43 T 46.4 hold 1 loud 0.69 ps 1.00 φ 0.000
+  t 58.00 EXT q1 ρ 0.894 θ 0.021 has 0 kick 0.00 eps 4.04e-4 esc 0.00 σ 0.83 T 44.8 hold 1 loud 0.83 ps 1.00 φ 0.000
+  t 59.00 EXT q1 ρ 0.894 θ 0.021 has 0 kick 0.00 eps 1.04e-3 esc 1.00 σ 0.96 T 28.0 hold 1 loud 0.80 ps 1.00 φ 0.000
+  t 94.00 INT q1 ρ 0.808 θ 0.993 has 1 kick 0.00 eps 5.39e-4 esc 0.00 σ 0.81 T 38.8 hold 0 loud 0.49 ps 1.00 φ 0.000
+  t 94.30 INT q1 ρ 0.895 θ 0.032 has 0 kick 0.29 eps 5.39e-4 esc 0.00 σ 0.81 T 38.8 hold 0 loud 0.37 ps 1.00 φ 0.000
+  t 110.00 EXT q1 ρ 0.705 θ 0.464 has 0 kick 0.00 eps 4.47e-3 esc 0.00 σ 0.27 T 43.3 hold 1 loud 0.42 ps 1.00 φ 0.000
