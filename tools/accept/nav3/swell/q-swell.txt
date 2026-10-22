@@ -1,0 +1,12 @@
+SeeYouDrop        s6 swell at 44 30s | q mean 0.916 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":6,"EXT":60} "errs []"
+IBelongHere       s6 swell at 51 30s | q mean 0.907 min 0.59 under.55 0 under.35 0 | fps mean 60 min 58 | {"INT":37,"CROSS":3,"OUT":6,"EXT":58} "errs []"
+Comptine          s6 swell at 18 30s | q mean 0.911 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+RaindropsOnRoses  s6 swell at 55 30s | q mean 0.923 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":35,"CROSS":3,"OUT":5,"EXT":61} "errs []"
+Vienna            s6 swell at 71 30s | q mean 0.916 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+WhoLikesToParty   s6 swell at 44 30s | q mean 0.906 min 0.59 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":33,"OUT":6,"EXT":65} "errs []"
+Malicious         s6 swell at 134 30s | q mean 0.91 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+TheChain          s6 swell at 186 30s | q mean 0.921 min 0.59 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":5,"EXT":58,"IN":3} "errs []"
+CyborgNinja       s6 swell at 34 30s | q mean 0.927 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+DONE Sun Oct 18 08:46:37 PM EDT 2026
+WhoLikesToParty   s6 swell2 at 44 30s | q mean 0.91 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":33,"OUT":6,"EXT":65} "errs []"
+WhoLikesToParty   s6 swell3 at 44 30s | q mean 0.918 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":33,"OUT":6,"EXT":65} "errs []"

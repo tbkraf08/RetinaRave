@@ -16,14 +16,15 @@
 // whose accumulated derivative has collapsed below 1 is inside a basin — it cannot escape, and the only thing its
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
+// §145 (the swell pass): uInt = (K_RINGS: the Koenigs rings and spokes fade with the depth from the cycle point, exp(−rings/K) — 0 = none, the floor alone; FLOOR: the interior's never-black luma floor in the palette's hue; SWELL_BANDS; -), uSwell the swell's ease (the bands' amplitude and the smoulder up), uImpK.y = PET_Q1, uImpC = (IMP_COL, IMP_SN, IMP_HUE_SN, IMP_LUM): the former interior by its escape time under an implosion.
 // §144 (the look pass): pal3() — the INTERIOR palette at a fixed luma (uPal3 = (Y, the boost's cap, on); the bands legible at every hue);
 // uLumI the exterior knee while the implosion is up (mixed in by uImp.y); uImpK.x = BLACK: a non-escaped pixel with no chart is black while
 // the implosion runs and the petal layer paints on the way in (uImp.x) only; uSig arrives pre-scaled by OUT3.SIG_TINT (0: σ off the tint).
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0;uniform vec2 uPet;uniform vec2 uLumI;uniform vec3 uPal3;uniform vec4 uImpK; // §142 uPet = (the petal radius Rp·PET_R the layer is confined to, its base lightness PET_LUM). §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0;uniform vec2 uPet;uniform vec2 uLumI;uniform vec3 uPal3;uniform vec4 uImpK;uniform vec4 uInt;uniform float uSwell;uniform vec4 uImpC; // §142 uPet = (the petal radius Rp·PET_R the layer is confined to, its base lightness PET_LUM). §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
 vec3 pal3(float t){vec3 c=pal(t);float y=dot(c,vec3(.2126,.7152,.0722));return mix(c,c*min(uPal3.x*uPal.w/max(y,1e-4),uPal3.y),uPal3.z);} /* §144: the interior's hue at one luma (the mood's brightness uPal.w kept) */
 void main(){
-  vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
+  vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);vec2 zpx=z; /* §145: the pixel's own z, for the petal's confinement */
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
   float gt=0.,ps=0.,dq0=1e9,outr=uQ0;bool imp=uImp.x+uImp.y>0.;vec2 wq=vec2(1.,0.);float R2=uImp.w*uImp.w; /* §140: the gate — time spent near z0 (soft), passages (an entry into R after uQ0 iterates beyond 2R: the period cycle's own alternation is not a transit), the closest approach w for the petal */
   for(int i=0;i<420;i++){ if(i>=uIter)break;
@@ -36,9 +37,9 @@ void main(){
     if(uLam.w>.5){vec2 w=z-uZs;if(dot(w,w)<uEps2){conv=true;break;}}
     else if(i>=uIterLo&&dd<1.)break; // no chart: the long budget is for structure still resolving, and |(f^n)'|<1 says there is none left
   }
-  float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;
+  float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;float sn=0.; /* §145: the smooth escape count, read by the implosion's colour too */
   if(esc){
-    float sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
+    sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
     float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
     float edge=exp(-e*.3),halo=1./(1.+e*.011*uExtK);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
     col=pal(t)*(.07+.93*halo*halo);
@@ -48,25 +49,31 @@ void main(){
   }else if(conv){
     vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
     float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
-    float bands=.5+.5*cos(TAU*Lk);float spokes=.5+.5*cos(ai*2.+uTime*.4);
-    vec3 base=pal3(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes); /* §144: pal3 — the bands at one luma whatever the hue */
+    float rings=max(0.,Lk-.5*log(uEps2)/(-lnr));float fade=uInt.x>0.?exp(-rings/uInt.x):0.; /* §145: the ring index counted from the cycle point (Lk at the convergence radius is the innermost); the tiling fades with it — the user: "I don't like the clutter inside the set" */
+    float bands=(.5+.5*cos(TAU*Lk))*fade;float spokes=(.5+.5*cos(ai*2.+uTime*.4))*fade;
+    vec3 base=pal3(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes)*(1.+uSwell*uInt.z); /* §144: pal3 — the bands at one luma whatever the hue (off since §145: the lift read every ring at full); §145: the swell lifts the bands */
+    vec3 fl=pal(.55);base+=fl*(uInt.y/max(dot(fl,vec3(.2126,.7152,.0722)),.02)); /* §145: the never-black floor at luma uInt.y in the palette's hue */
     float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
     float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
     col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
-    float sg=uN2.y>.5?uSmo:uPar*uPar*(.35+.3*uBands.x); /* §99: the smoulder follows the track's loudness (look2.js), not the root */
+    float sg=(uN2.y>.5?uSmo:uPar*uPar*(.35+.3*uBands.x))+uSwell*uInt.w; /* §99: the smoulder follows the track's loudness (look2.js), not the root; §145: + the swell's lift */
     col+=pal3(.5+.1*bands)*sg*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
   }else if(imp&&uImpK.x>.5){col=vec3(0.); /* §144: no chart while the implosion is up = the former interior, BLACK (the dust eats into it from the rim; the .03 base, the line trap and the smoulder painted the hold's blobs) */
   }else{float sg=uN2.y>.5?uSmo*.5:uPar*uPar*(.16+.2*uBands.x);col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*sg;}
   if(imp){ /* §140 the implosion's two layers (implode.js) */
-    if(!esc){ /* FATOU PETALS (the way in; §144: on the way out too only with BLACK 0): q petals around z0 from the orbit's FINAL z — the approach to a q-petal point is algebraic, so after the budget the orbit sits in its petal at |w| ~ (q a n)^(-1/q): the index by the sector of w (one petal per beat turns the wheel), the lightness by the phase of the Fatou coordinate Phi = -1/(q a w^q) (the time-to-leave: concentric bands in each petal); the attracting axis of each petal is where a w^q is real negative */
+    if(!esc&&(uImp.z>1.5||uImpK.y>.5)){ /* §145: no petal paint at a q 1 root (PET_Q1). FATOU PETALS (the way in; §144: on the way out too only with BLACK 0): q petals around z0 from the orbit's FINAL z — the approach to a q-petal point is algebraic, so after the budget the orbit sits in its petal at |w| ~ (q a n)^(-1/q): the index by the sector of w (one petal per beat turns the wheel), the lightness by the phase of the Fatou coordinate Phi = -1/(q a w^q) (the time-to-leave: concentric bands in each petal); the attracting axis of each petal is where a w^q is real negative */
       vec2 w=z-uZ0;float q=uImp.z,r=max(length(w),1e-6),th=atan(w.y,w.x),aq=atan(uA.y,uA.x),am=max(length(uA),1e-12);
       float k=floor(fract(th/TAU+(.5-aq/TAU)/q+uBeat.x/q)*q)/q;float pet=fract((th*q+aq)/TAU);
       float rq=exp(q*log(r));float rePhi=-cos(th*q+aq)/(q*am*rq);float ph=fract(rePhi*.5);
       vec3 pc=pal(k+.07+uSig)*(uPet.y+.5*(.5+.5*cos(TAU*ph)))*(.35+.65*exp(-abs(pet-.5)*2.5));
-      col=mix(col,pc,mix(max(uImp.x,uImp.y),uImp.x,uImpK.x)*.85*exp(-r/uPet.x));} /* §142: the petal layer is confined to the petal radius (uPet.x) and its base lightness is uPet.y — it painted every non-escaped pixel of the interior for the drop's six seconds; §144: on the way in only (in the imploded set nothing attracts, z_final sits anywhere on its loop through the gate — the paint landed on the preimage blobs) */
+      col=mix(col,pc,mix(max(uImp.x,uImp.y),uImp.x,uImpK.x)*.85*exp(-length(zpx-uZ0)/uPet.x));} /* §145: confined by the PIXEL's distance to z₀ (the orbit's final z sits in the petal for every interior pixel, so r confined nothing: the preimage blobs) */ /* §142: the petal layer is confined to the petal radius (uPet.x) and its base lightness is uPet.y — it painted every non-escaped pixel of the interior for the drop's six seconds; §144: on the way in only (in the imploded set nothing attracts, z_final sits anywhere on its loop through the gate — the paint landed on the preimage blobs) */
     else if(uImp.y>0.){ /* THE LAVAURS EXPLOSION on the way out: an escaped pixel of the former interior IS the implosion (the dust eating inward, breathing with eps); its passages through the gate are the hair's layers, the soft time near z0 its glow */
-      float pl=min(ps,8.);vec3 ec=pal(.55+.07*pl+uSig)*(.1+.14*pl)+vec3(.8,.85,1.)*min(gt*.04,.6);
-      col=mix(col,col+ec*(.4+.6*smoothstep(0.,60.,n)),uImp.y);}
+      float pl=min(ps,8.);
+      if(uImpC.x>.5&&(ps>0.||gt>1.||sn>uImpK.z)){ /* §145: the former interior = a gate-passed orbit OR a slow escape (sn past IMP_N: at the slam's ε the former interior leaves without nearing z₀) */ /* §145: the FORMER INTERIOR (a gate-passed orbit) by its ESCAPE TIME — the key's hue (pal() with no uTime drift), luma bands on the smooth escape count, the passages brighter; none of the exterior's halo / trap / dust / flash terms (the imploded set is denser than the pixel grid: they read a boundary everywhere and filled it flat) */
+        vec3 ci=pal(.55+uImpC.z*sn)*(uImpC.w+.14*pl)*(.5+.5*cos(TAU*sn*uImpC.y))*(.4+.6*smoothstep(0.,60.,n));
+        col=mix(col,ci,uImp.y);}
+      else{vec3 ec=pal(.55+.07*pl+uSig)*(.1+.14*pl)+vec3(.8,.85,1.)*min(gt*.04,.6);
+      col=mix(col,col+ec*(.4+.6*smoothstep(0.,60.,n)),uImp.y);}}
   }
   if(uN2.x>.5){float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?mix(uLum.zw,uLumI,uImp.y):uLum.xy;col*=1./(1.+kn.y*max(0.,L-kn.x));} /* §144: the exterior's knee lowered to uLumI while the implosion is up */
   if(esc)col*=uExtG; /* §99: the soft knee on the luminance before bloom — the interior stays dark whatever the palette's phase, the dust stops washing out; uExtG dims the exterior while c is outside the set */

@@ -5900,3 +5900,103 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   edge is nearer M: Comptine 37 s reads .54 at φ .29 against .58 at the middle) — the floor is the middle's. The ρ-reversal count is not a jitter
   ruler (above). `ESC_FLOOR` .3 / `ESC_TOP` .8, `HOLD_LOUD` 1, `TURN_BARS` 4, `PAL3.Y` .5 are first numbers for the eye, not swept. The OKLCH mapping
   (`&colour=oklch`) carries none of the shader changes (as since §140). `nav.js` 435 lines (soft cap 350, as since §140).
+
+## §145 NAV3's swell — the interior's tiling gone, a shift on a delicate piece SWELLS instead of imploding, the rise term, the implosion's colour and motion (2026-10-18, one Fable worker in a worktree, branch `nav3-swell` off `nav3-look` fd49b87, NOT merged; the user's capture `…T23-33-33.webm` of fd49b87 on Comptine; the analyst's `COMPTINE3-PASS-PLAN.md` with `sim3.mjs` / `shade.mjs` / `colour.py` / `period60.py`; `assets/scenes/nav3/` only)
+
+- **The user's remarks (verbatim).** 1 *"what is on the inside of the set at 8s (a lot of other places) -> I don't like the clutter inside the set"* — shown
+  the Koenigs ring tiling at 17 s: *"yup can remove that -> I don't like it (it didn't change that much, I just didn't want to focus on it before)"* ·
+  2 *"at 33s the set gets weird with circle blobs"* · 3 *"34s, 54s-1m11s, 1m50s-2m5s the color turns an ugly almost pastel color / and the fractal is over
+  saturated with color and can't see the fractal"* · 4 *"37s, 55s-1m11s, 1m50s-2m5s the fractal shape seems to be looping again"* · 5 *"48s the music
+  starts to do something beautiful but the fractal seems boring"*.
+- **The causes (the plan's, measured on the deterministic page's frames at fd49b87 — `tools/accept/nav3/swell/rulers-before.txt`, the ring ruler =
+  the analyst's `colour.py`: luma peaks along the centre box's middle row and column; `INTERIOR rings` = those under Y .15, the exterior's dust bands
+  in the box are brighter).** (1) §144's `pal3()` lifted the dark half of the wheel ×1.8–4 and dimmed the bright half, so every one of the ~10 Koenigs
+  rings (ln(1/ε_conv)/(−ln ρ) at ρ .7) plus the spokes read at full — **interior rings per row 7.5 at 5–11 s, 11.5 at 17 s, 4.5 at 44–52 s; IBelongHere's
+  verse 4.1, SeeYouDrop's 2.6** — the tiling; v0.43 showed the outer few and went black on blue hues (§144's cause 3). (2) 33.0 is the engine's energy
+  shift → the implosion at the CUSP root (q 1): the Fatou bands there are circles tangent at z₀ and the paint's confinement `exp(−r/Rp)` used the
+  ORBIT's final z, which sits in the petal for every interior pixel — the circle family pulled back to every preimage = the blobs; then the slam's
+  pulse (drive 1.66) put 34 % past the top → the whole former interior dust for two seconds. (3) The former interior under a hold was drawn by the
+  EXTERIOR branch: the imploded set is denser than the pixel grid (`shade.mjs`: the distance estimate .69 px median on 96 % of its pixels), so the
+  halo, the line trap, the dust term and the flash all read "at a boundary" everywhere — a flat saturated fill at the drifting exterior hue (the frames:
+  hold 2 saturation .67, chroma .42, structure 1.2 against INT's 1.6–2.8). (4) Four loops: the palette drift `uTime·.06` (vtime 1/s in EXT: a wheel per
+  17 s ≈ the hold), the 4-bar sine sweep of the direction, the beat breath (.25 of a 3× bracket = ε ×1.5 per beat), the ladder's 4-bar phrase (the
+  music's). (5) 44–48 the ladder falls .43 → 0, 48–52 it rises 0 → .82; the ball at ρ .5–.8 is a rounded blob (its character changes past .9) and the
+  only path from the swell to NAV3 was the ladder's level → ρ; the shift fires at 51.7.
+- **What moved (every number a constant in `assets/scenes/nav3/`, fd49b87's reachable by the knobs below).**
+  - **A. The interior (`nav.js INT3`, `shaders-v2.js`, `look2.js`).** The Koenigs rings and the spokes fade with the ring index from the cycle point —
+    `rings = Lk − Lk(ε_conv)` (Lk at the convergence radius is the innermost), the band and spoke terms × exp(−rings/`K_RINGS` 2) — so only the
+    innermost two or three and the spiral arms at the cycle point stay (the user liked "the complexity around the centre"); `K_RINGS` 0 = nothing
+    inside but the floor, 999 = fd49b87's tiling. `FLOOR` .02: a never-black luma floor in the palette's hue (`pal(.55)` normalised). **`PAL3.ON` 0**:
+    v0.43's `pal()` is back (`&n3pal3=.5,4` = §144). The line trap stays (NAV2's beat line).
+  - **B. The swell (`nav.js SWELL`).** Under `PERC_LT` .5 of the percussiveness scale — read on a SLOW ema, `PERC_TAU` 15 s (is this a percussive PIECE:
+    the 3 s scale read .59 on Comptine's 33 s chord attack and imploded) — an energy shift drives a SWELL, not an implosion: `N.swell` eases to 1
+    (`TAU` .4 s) while `shiftHold`, the ball is pressed to the rim (`GATE.RHO` + .02, the asks' press), θ steered to the nearest gateway and the gate
+    opened to cross into the child (the asks' condition), the interior's band amplitude × (1 + `BANDS` .6·swell) and the smoulder + `LUM` .15·swell
+    (`uSwell`). `MAP` 1: the file map's drop line swells too under the threshold (held `BEATS` 8; Comptine's 107.37 is the truth tool's provisional
+    line, and the user watches with the map on); a confirmed live slam (§143's sub-back gate) still implodes anywhere; above the threshold a shift
+    implodes as §143 (the kits keep their reads). The trigger's kind reaches `startDrop` / `rearm`.
+  - **C. The rise term (`SWELL.RISE_*`).** `rise` = clamp((loud − ema_`RISE_TAU` 2 s(loud)) × `RISE_GAIN` 3, 0, 1) presses ρ toward the rim (ρ_target =
+    mix(ρ_target, GATE.RHO + .02, rise)) and past `RISE_STEER` .5 steers θ to the nearest gateway — before the shift lands. `CENT` 1: the centroid is
+    read against the track's own running range (`N.cLo / cHi`, the extremes relaxing over `CENT_TAU` 60 s) instead of `CENT_LO / HI` .25–.65, so a
+    piano's brightness moves θ.
+  - **D. The implosion's colour (`OUT3.IMP_COL` 1, `shaders-v2.js`).** While the implosion is up, a pixel of the former interior — a gate-passed orbit
+    (`ps > 0 || gt > 1`) OR a slow escape (`sn > IMP_N` 30: at the slam's ε the former interior leaves without nearing z₀) — is drawn by its ESCAPE
+    TIME: `pal(.55 + IMP_HUE_SN .01·sn)` (the key's hue, no `uTime`) × (`IMP_LUM` .22 + .14 per passage) × luma bands cos(2π·sn·`IMP_SN` .035) ×
+    the smoothstep(n) — none of the halo / trap / dust / flash terms; the black cores (non-escaped) kept; the true exterior as before.
+  - **E. Motion in a hold (`implode.js`).** The breath is ABSOLUTE and scaled: ε × (1 + `EPS_BEAT` .15 × the crest × percS) — ×1.15 on a kit's beat line,
+    ×1.03 on a piano (the crest is out of the drive); the direction's sweep is ONE-WAY (`TURN_ONEWAY` 1: from the wedge's middle toward its edge at
+    `TURN_MAX`/`TURN_BARS` rad per bar, stopping at the edge or at TURN_MAX — no sine return); the ladder's walk kept; **the palette / spoke clock is
+    FROZEN under an implosion** (`IMP_TIME` 0: `vtime` += dt × (1 − (1 − IMP_TIME)·uImp.y)).
+  - **F. The cusp's blobs.** The petal paint is confined by the PIXEL's distance to z₀ (`length(zpx − uZ0)`), not the orbit's final z; no petal paint at
+    a q 1 root (`PET_Q1` 0); the slam pulse is `SHIFT_SLAM` .3 on a shift (the full 1 for a live / map slam).
+- **The knob table.** `&n3int=K_RINGS,FLOOR` (fd49b87: `999,0` + `&n3pal3=.5,4`) · `&n3swell=PERC_LT,PERC_TAU,MAP,BEATS,TAU,BANDS,LUM,RISE_GAIN,RISE_TAU,
+  RISE_STEER,CENT,CENT_TAU` (fd49b87: `0,15,0,8,.4,.6,.15,0,2,.5,0` — no swell, no rise term, CENT_LO/HI) · `&n3imp=…` 19th–25th = `SHIFT_SLAM,IMP_TIME,
+  TURN_ONEWAY,PET_Q1,IMP_COL,IMP_LUM,IMP_N` (fd49b87: `1,1,0,1,0`; `EPS_BEAT` .15 absolute — fd49b87's .25 was a share of the walk, not comparable) ·
+  `&n3pal3` as §144. New: `INT3.K_RINGS FLOOR`, `SWELL.*`, `OUT3.SHIFT_SLAM IMP_TIME TURN_ONEWAY PET_Q1 IMP_COL IMP_SN IMP_HUE_SN IMP_LUM IMP_N`; moved:
+  `EPS_BEAT` .25 (of the walk) → .15 (absolute × percS), `PAL3.ON` 1 → 0. `n3info()`: `swell swells rise cent`.
+- **The numbers.** *The nine-track replay* (`tools/work/nav3/swell-replay.mjs` through the 0–110 s live-lane traces, §143's shift and SUBV_HAD;
+  `swell/replay-{before,after}.txt`; before = fd49b87):
+
+  | track | implosions → implosions + SWELLS | \|Δlog λ\|/beat | chart-off % | crossings |
+  |---|---|---|---|---|
+  | Comptine | 2 (33.0, 51.7) → **0 + 2 swells (33.0, 51.7)**; with the map 3 → **0 + 3 (33.0, 51.7, 107.4)** | .246 → .319 | 0 → 0 | 0 → 4 (the swells cross: 34.0 the 1/7 child, 52.0 the 1/6, 110 the 3/4) |
+  | SeeYouDrop | 2 → 2 (57.6→75.2, 105.6→; esc .54/.83/1.0) | .282 → .288 | 0 → .2 | 3 → 3 |
+  | IBelongHere | 1 → 1 (65.8→87.7) | .306 → .329 | .1 → 0 | 0 → 0 |
+  | Raindrops | 1 → 1 (129.5→) | .392 → .415 | 0 → .1 | 10 → 9 |
+  | Vienna | 1 → 1 (85.3→) | .415 → .419 | 0 → 0 | 1 → 1 |
+  | WhoLikesToParty | 1 → 1 (57.5→79.7) | .421 → .418 | .1 → .1 | 2 → 2 |
+  | Malicious | 1 (68.9→87.3) → **0 + 1 swell (68.9)** — its slow scale sits at .5 in the intro | .262 → .242 | 0 → 0 | 0 → 1 |
+  | TheChain | 2 → 2 (44.7→72.6, 86.1→90.8) | .364 → .334 | .2 → 0 | 2 → 2 |
+  | CyborgNinja | 0 → 0 | .311 → .322 | .2 → .2 | 0 → 0 |
+
+  *The rise term on Comptine 44–52* (the map replay): ρ **.81 (44, rise .59) → .71 (46) → .51 (48, the ladder 0) → .69 (50, rise .53) → .92 (52, the
+  shift, swell .53, CROSS into the 1/6 child)** — from the blob regime to the rim as the ladder climbs 0 → .82; |Δlog λ|/beat .25 → .32 over the
+  track. *The ring ruler* (`swell/rulers-{before,after}.txt`, the deterministic frames from 0; INTERIOR rings per row): **Comptine 5–11 s 7.5 → .7,
+  17 s 11.5 → 1.0, 44–52 4.5 → 1.0; IBelongHere 24–32 4.1 → .5; SeeYouDrop 50–57 2.6 → .7** (target ≤ 2 away from the centre: met on every window;
+  the whole-row count, exterior bands included, 17 → 10.9 / 14 → 3.5 / 13.3 → 7.4). *The 33 s blobs:* gone with the swell on Comptine (33.0 is a
+  swell into the 1/7 child, 36.5–42.5 INT at period 7); the confinement and `PET_Q1` are proven on the kits' OUTs by the frames (SeeYouDrop 58 s:
+  the way in without paint on the cusp's circles). *The colour ruler on SeeYouDrop's hold* (60–70 s, 601 frames at 60 fps; `colour.py`'s centre
+  box): **wash .040 → .006, chroma .361 → .259, structure .93 → 1.74**, centre Y .27 → .19, saturation .71 → .71 (the key's hue is saturated by
+  design), the whole-row ring count 12.4 → 22.7 = the escape-time bands' structure; INT 50–57 unchanged (.47 / .74). *The periodicity ruler*
+  (`period60.py`, the picture's self-distance by lag over the same 10 s): before the self-distance peaked at **lag 292 = 4.9 s and fell back**
+  (the sine sweep's return) with the mean-luma autocorrelation's first peak at 6.4 s; after it **climbs to the window's end (max at lag 479 = 8 s)**
+  and the luma autocorrelation has **no peak (ac −.00 at 2.1 s)** — no return at the hold's length or the sweep's half-period; the |ΔY| series keeps
+  the beat (1.6 s = 2 beats at 124 BPM, ac .41 → .61: the fixed breath). *The eye* (`tools/work/nav3/swell-ba-{1,2,syd}.jpg`, before over after):
+  8 / 17 / 48 s a dark interior with the arms at the centre where the tiling was; 33 → 37 s the swell crossing into a seven-armed child instead of
+  the cusp's blobs and the dust; 55–66 and 110–120 the child's spiral set at the rim (no hold on Comptine); SeeYouDrop 60 / 64 / 68 s the former
+  interior as dark spirals in structured key-hue dust where the before frames are a pink fill, green soup, blue soup. The strips
+  `tools/work/nav3/swell-comptine-0-75.jpg`, `swell-comptine-105-130.jpg`, `swell-seeyoudrop.jpg` (2 fps).
+- **The gate.** `node tools/check.js` **0 fail** (6 pre-existing warns; `nav.js` 479 lines, inside the 500 hard cap) · `test_nav3` OK (the fake's
+  shift on the fake's perc .5 → the swell path is NOT what the node drive exercises: its 4 drops are live slams) · `npm test` **exit 0, 0 FAIL**
+  (the chain's run and again at HEAD) · **the full list** `PORT=8817 tools/scene-md5.sh swell` (`tools/accept/nav3/scene-md5-swell.txt`): **s0–s5 =
+  `scene-md5-step3.txt` to the byte (0 of 12 moved)**, s6 `05f1250c / 64048003` (was `374f0f81 / dfd88623`), errs [] hop 840 row 72 on all seven ·
+  **the q trace** (`q-all.sh swell 6`, the nine drop windows real-time on the GPU, `swell/q-swell.txt`): **q .906–.927, fps mean 60, min 60 on eight
+  and 58 on IBelongHere, errs [] on all nine** — SeeYouDrop .916 · IBelongHere **.907** · Comptine .911 · Raindrops .923 · Vienna .916 ·
+  WhoLikesToParty **.906** · Malicious .910 · TheChain .921 · CyborgNinja .927; **WhoLikesToParty run twice more: .910 and .918** (§144 read .902
+  once, §143 .915) — so its first read is the trace's noise (min .59 on the under-.91 runs, .63 on the others), and **IBelongHere's .907 is the one
+  number under the .91 ask** (§144 .922, §143 .916; its window now carries a CROSS at the swell-less shift — the implosion follows a child crossing,
+  3 samples of CROSS in the mode table — not re-run).
+- **NOT done.** The user's eye on all of it. Malicious' 68.9 shift swells now (its slow percussiveness scale sits at .50 in the intro — the threshold's
+  edge; `&n3swell=.4` implodes it). The swell's own look is the child's set at the rim with the bands up — nothing new is drawn for it. The escape-time
+  colour's `IMP_N` 30 is one number for every root. The ring ruler is the centre row/column's peaks under Y .15 — a proxy, not a segmentation. The
+  rise term reads the ladder's slope only (no field for the swell before the shift). The OKLCH mapping carries none of it. `nav.js` 479 lines (soft cap 350).

@@ -10,8 +10,9 @@
 // implosion (Fatou petals on the way in, the Lavaurs explosion on the way out). `always: false`: updated only while on screen, so
 // draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1; §97's freeze).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { NAV, updateNav, knob5, ROLL } from './nav.js';
-import { IMP, OUT3, knobDrop, knobImp } from './implode.js';   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
+import { NAV, updateNav, knob5, ROLL, INT3 } from './nav.js';   // §145: INT3 the interior's depth fade / floor
+import { IMP, OUT3, knobDrop, knobImp } from './implode.js';
+import { SWELL as SWELL3 } from './nav.js';   // §145: the swell's shader lifts   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
@@ -74,7 +75,9 @@ export default {
     n3gate: (v) => knob5('gate', v),
     n3kick3: (v) => knob5('kick3', v),
     n3dance: (v) => knob5('dance', v),
-    n3conv: (v) => knob5('conv', v),         // &n3conv=CONV_RIM,CONV_R0,CONV_MAX — the convergence radius at the rim (the depth pass's band A/B)       // &n3dance=BASS,KICK[,HIT[,TURN[,SWAY[,SNARE]]]] — the §140 retune's reactive dance (nav.js DANCE)
+    n3conv: (v) => knob5('conv', v),
+    n3swell: (v) => knob5('swell', v),       // §145: &n3swell=PERC_LT,PERC_TAU,MAP,BEATS,TAU,BANDS,LUM,RISE_GAIN,RISE_TAU,RISE_STEER,CENT,CENT_TAU (fd49b87: 0,15,0,8,.4,.6,.15,0,2,.5,0)
+    n3int: (v) => knob5('int', v),           // §145: &n3int=K_RINGS,FLOOR (fd49b87: 999,0 with &n3pal3=.5,4 — every ring at full, no floor)         // &n3conv=CONV_RIM,CONV_R0,CONV_MAX — the convergence radius at the rim (the depth pass's band A/B)       // &n3dance=BASS,KICK[,HIT[,TURN[,SWAY[,SNARE]]]] — the §140 retune's reactive dance (nav.js DANCE)
     n3drop: knobDrop,                         // &n3drop=any: v3's dropEvt too (v0.43's read); default the live slam, the map's line and the shift (§143)
     n3imp: knobImp,                           // &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX]]]]]]]]]] — the implosion's numbers (implode.js OUT3; §143: HOLD / REARM / HOLD_MAX)
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
@@ -87,7 +90,7 @@ export default {
       q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
       depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
       kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
-      shown: (NAV.shown || NAV.cyc).has, percS: NAV.percS, turn: NAV.turn,   // §144: the chart drawn (the kick's own while it rings), the percussiveness scale, the accumulated bar turn
+      shown: (NAV.shown || NAV.cyc).has, percS: NAV.percS, turn: NAV.turn, swell: NAV.swell, swells: NAV.swells, rise: NAV.rise, cent: [NAV.cLo, NAV.cHi],   // §145: the swell's ease and count, the rise term, the centroid's running range   // §144: the chart drawn (the kick's own while it rings), the percussiveness scale, the accumulated bar turn
       imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames, rearms: IMP.rearms, held: IMP.held, phi: IMP.phi, wedge: IMP.wedge.slice(), loudE: IMP.loudE, eps0: IMP.eps0, epsHi: IMP.epsHi, drive: IMP.drive },   // §140 step 3: the implosion's record (implode.js IMP); §144: the direction's angle, the wedge, the eased ladder
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
@@ -100,9 +103,9 @@ export default {
       beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
       beatCount: 'beats since the drop: how long c stays outside before it comes back in',
       dropLiveEvt: 'the drop: c leaves the component through its rim along the wall\'s normal — step 3 makes it the parabolic implosion (the live detector\'s slam)',
-      mapDropEvt: 'the file map\'s drop, on its exact bar line, fires the same exit (§107\'s rule: the live slam OR the map\'s line)',
+      mapDropEvt: 'the file map\'s drop, on its exact bar line, fires the same exit (§107\'s rule: the live slam OR the map\'s line); §145: under SWELL.PERC_LT it swells instead',
       dropEvt: 'v3\'s drop fires the exit only with &n3drop=any (§143: off by default — a piano\'s false drops came in by it; NAV2 never read it)',
-      shiftEvt: 'the engine\'s energy shift (the loudness ladder stepping up over a bar) fires the same implosion — the drop a piece with no slam has (§143); mid-implosion it re-arms it',
+      shiftEvt: 'the engine\'s energy shift (the loudness ladder stepping up over a bar): on a kit it fires the implosion (§143; mid-implosion it re-arms it); on a low-percussive piece (§145, under SWELL.PERC_LT) it SWELLS instead — the ball pressed to the rim and through the gateway, the bands up, nothing explodes',
       shiftHold: 'while the energy stays up the exterior holds (EXT), then the 8-beat settle; the hard cap is OUT3.PEAK (§143)',
       dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings; the return waits until it has faded',
       intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
@@ -119,10 +122,10 @@ export default {
       mid: 'the radius of the circular orbit trap',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
-      loudRel: 'LOUD IS OUT: the track\'s own loudness ladder sets |λ| — quiet near the component\'s centre (the Koenigs spiral loose), loud against the rim (the spiral tight, the curl); a rise over two bars asks the gate to open, a fall inside a child rolls the ball back out',
+      loudRel: 'LOUD IS OUT (§145: and its RISE over ~2 s presses the ball to the rim and steers it to the gateway before a shift lands): the track\'s own loudness ladder sets |λ| — quiet near the component\'s centre (the Koenigs spiral loose), loud against the rim (the spiral tight, the curl); a rise over two bars asks the gate to open, a fall inside a child rolls the ball back out',
       loudRange: 'how many LU the track has shown so far: the ladder the ball\'s radius is stretched over (loudlight.js)',
       loudAbs: 'whether the loudness stage runs: when it does not (&loud=0) the ladder falls back to eS',
-      centroid: 'the pitch\'s stand-in when nobody sings: the spectral brightness as a height, lifting c toward the 1/3 bulb',
+      centroid: 'the pitch\'s stand-in when nobody sings: the spectral brightness as a height, lifting c toward the 1/3 bulb (§145: against the track\'s own running range, so a piano\'s brightness moves it)',
       voxS: 'PITCH IS UP: while someone sings, the sung pitch\'s height (math/vox.js) sets the internal angle — Im c rises with the pitch on the cardioid; voxS weights it against the centroid',
       voxHz: 'the sung pitch itself, as a height on the voice\'s range (log2 over four octaves from A2)',
       voxConf: 'whether the voice is trusted: 0 (the fake timeline) leaves the centroid in charge',
@@ -225,7 +228,10 @@ export default {
     gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
     gl.uniform2f(u('uLumI'), LUM_IMP[0], LUM_IMP[1]);   // §144: the exterior's knee while the implosion is up
     gl.uniform3f(u('uPal3'), PAL3.Y, PAL3.MAX, PAL3.ON ? 1 : 0);   // §144: the luma-normalised interior palette
-    gl.uniform4f(u('uImpK'), OUT3.BLACK, 0, 0, 0);   // §144: the former interior black while the implosion is up, the petals on the way in only
+    gl.uniform4f(u('uImpK'), OUT3.BLACK, OUT3.PET_Q1, OUT3.IMP_N, 0);   // §144: the former interior black while the implosion is up, the petals on the way in only; §145: the cusp's petal paint
+    gl.uniform4f(u('uInt'), INT3.K_RINGS, INT3.FLOOR, SWELL3.BANDS, SWELL3.LUM);   // §145: the rings' depth fade, the floor, the swell's lifts
+    gl.uniform1f(u('uSwell'), N.swell);
+    gl.uniform4f(u('uImpC'), OUT3.IMP_COL, OUT3.IMP_SN, OUT3.IMP_HUE_SN, OUT3.IMP_LUM);   // §145: the former interior by its escape time
     gl.uniform1f(u('uExtG'), L2.extG);
     gl.uniform1f(u('uExtK'), L2.extK);
     gl.uniform1f(u('uSmo'), L2.smo);

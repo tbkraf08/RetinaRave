@@ -157,3 +157,24 @@ artifacts and weird interior colour); six picks, NAV3-only. Pointers:
   on all); |Δlog λ| per beat did. (4) `TURN × N.bar` with a time-varying scale would jump — the turn accumulates. (5) The worktree needed the PCM
   dumps and their sidecars (`tools/work/<T>.48000.st.f32{,.json}`) symlinked for `test_vox` beside the traces and `tools/work/vox/`. (6) The 60 fps
   page ruler reads the sawtooth as sign reversals (47–59 % of frames in EXT against 16 % inside), smaller degrees than the recording's frames.
+
+## The swell pass (2026-10-18, branch `nav3-swell` off `nav3-look` fd49b87, DECISIONS §145)
+
+The user's five remarks on the fd49b87 capture (the interior's clutter, the 33 s blobs, the pastel / over-saturated holds, the looping, the boring
+48 s swell); six picks (A–F), NAV3-only. Pointers:
+
+* **The rulers** — `tools/work/nav3/swell-replay.mjs` (look-replay + the swell's columns: implosions vs swells, the rise term, ρ at the user's times),
+  `swell-colour.py` (the analyst's `colour.py`: luma / black / wash / saturation / chroma / hue / structure / rings per row, + the INTERIOR ring count
+  under Y .15), `swell-rings.py` (its per-window summary), `swell-period.py` (the analyst's `period60.py` on jpg frames: the self-distance by lag),
+  `swell-before.sh` / `swell-after.sh` (the frame captures: Comptine from 0, SeeYouDrop's hold at 60 fps, IBelongHere's verse), `swell-strips.sh`,
+  `swell-chain.sh` (the gate). The BEFORE frames of SeeYouDrop / IBelongHere were shot from a frozen copy of fd49b87's tree in the scratchpad
+  (the live server serves the worktree, and an edit mid-run would have reached a page loading after it).
+* **The records** — `tools/accept/nav3/swell/`: `replay-{before,after}.txt`, `rulers-{before,after}.txt`, `period-{before,after}.txt`,
+  `scene-md5-swell.txt`, `q-swell.txt`; the eye `tools/work/nav3/swell-ba-{1,2,syd}.jpg`, the strips `swell-comptine-{0-75,105-130}.jpg`,
+  `swell-seeyoudrop.jpg`.
+* **Friction.** (1) The 3 s percussiveness scale read .59 on Comptine's 33 s chord attack — the split needs a slow ema (`PERC_TAU` 15 s). (2) The
+  gate-passage discriminator (`ps > 0 || gt > 1`) misses the former interior at the slam's ε (the orbits leave without nearing z₀) — `IMP_N` on the
+  escape count. (3) A GLSL block-scope slip (`sn` declared inside the `esc` branch) compiled to a black shader on the first after run — `errs` caught
+  it. (4) The ring ruler's whole-row count includes the exterior's dust bands inside the centre box; the interior count (peaks under Y .15) is the
+  one that reads the tiling. (5) The file map's line on Comptine (107.37) had to swell too for "0 implosions" as the user watches (file mode with
+  the map): `SWELL.MAP`.
