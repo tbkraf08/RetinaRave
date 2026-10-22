@@ -52,16 +52,20 @@ export const ROLL = {
   PULSE_TOP: 0.965, // the depth pass: the ceiling the breath and the dance's pulse press toward (was the wall itself: pinned there the step is projected to zero and the picture stands still)
   CONV_RIM: 0.6,   // §140 quality → the depth pass: the shader's convergence radius ×(1 + CONV_RIM·sstep(CONV_R0, 1, ρ)) — at 2 past .85 with a .12 cap the orbit stopped so early that the interior rendered as a flat disc (the user: "lots of little circles"); the Koenigs bands need the orbit to spiral in
   CONV_R0: 0.93,
-  CONV_MAX: 0.05,  // the radius's cap on the cardioid (z units; was .12); in a child .4 × the cycle's spacing caps it
-  IDLE: 0.15,      // presence below this freezes the ball (NAV's rule)
+  CONV_MAX: 0.05,  // the radius's cap on the cardioid (z units; was .12)
+  CONV_CHILD: 0.15, // §142 the circles: in a child the cap is CONV_CHILD × the cycle's spacing (was .4: a period-4 child showed four flat dark discs)
+  IDLE: 0.15,      // presence below this: the ball rolls to the circle and the clock stops (NAV froze it where it was)
+  IDLE_RHO: 0.08,  // §142 silence: the ρ target while idle — RHO_MIN·4, c ≈ λ/2 ≈ 0, the Julia set a circle (Q → 1 by green.js)
+  T_FLOOR: 0,      // §142: the visual clock's rate at presence 0 (was .15: the exterior bands and spokes drifted through silence)
+  DOTS_RHO: 0.85,  // §142 the circles: the critical-orbit sprites draw only with a chart on and ρ under this (they piled into bright blobs at the rim and in a crossing)
 };
 export const GATE = {
   QMAX: 7,         // the deepest child the rim names (nearestRational's q cap)
   TOL: 0.5,        // |θ − p/q| < TOL / q² names the child (a p/q bulb's footprint on the rim shrinks like 1/q²)
   RHO: 0.9,        // pressed against the rim: ρ at or above this may cross
   NEAR: 0.15,      // while the music asks and ρ is within NEAR of GATE.RHO, θ's target snaps to the nearest p/q: the rim slides TOWARD the gateway
-  BUILD: 0.45,     // buildLive at or above this asks to go in
-  RISE: 0.1,       // a rise of the loudness ladder by this over BARS bars asks to go in
+  BUILD: 0.7,      // buildLive at or above this asks to go in (§142: was .45 — the live detector arms a bar early on a swell, Comptine 1:45)
+  RISE: 0,         // a rise of the loudness ladder by this over BARS bars asks to go in; 0 = off (§142: crossings only on buildLive / dropExpectedIn; was .1)
   BARS: 2,
   FALL: 0.3,       // ladder under this for EXIT_BARS bars (inside a child) rolls the ball back out
   EXIT_BARS: 1.5,  // bars of a fallen ladder before the ball rolls back out (a one-bar drop-out is a fill, not a breakdown)
@@ -133,7 +137,7 @@ function publish(cy, cr, ci) {
     if (cy.q > 1) {
       let wr = cy.zr, wi = cy.zi, md = 1;
       for (let j = 1; j < cy.q; j++) { const t = wr * wr - wi * wi + cr; wi = 2 * wr * wi + ci; wr = t; md = Math.min(md, Math.hypot(wr - cy.zr, wi - cy.zi)); }
-      cap = Math.min(cap, 0.4 * md);
+      cap = Math.min(cap, ROLL.CONV_CHILD * md);
     }
     cy.eps2 = Math.min(cy.eps2 * k * k, cap * cap);
   }
@@ -246,7 +250,7 @@ export function navDrop(S, reach) {
 export function updateNav(dt, now, S, env) {
   const N = NAV, bps = (S.bpm > 40 ? S.bpm : 124) / 60;
   N.bar += dt * bps / 4;
-  if (S.sectionEvt) N.mirror = -N.mirror;   // a new section mirrors the rim (θ ↔ 1 − θ: the conjugate picture)
+  if (S.sectionEvt && (S.keyConf || 0) > 0) N.mirror = -N.mirror;   // a new section mirrors the rim (θ ↔ 1 − θ: the conjugate picture); §142: only with a key read (Comptine flipped 7 times in 110 s on a piano)
   const park = clamp(Math.max(sstep(0.45, 0.85, S.buildLive), sstep(0.5, 0.8, S.suspension)), 0, 1);
   const T = tighten(dt, S, N);   // move2.js: the beat breath (M2.breath), the sub press (± on ρ), the pitch lean (M2.lean, unused here)
   // the music → the targets. Loudness on the track's own ladder; the pitch as a height (the voice, else the centroid)
@@ -266,13 +270,13 @@ export function updateNav(dt, now, S, env) {
   const ph16 = isFinite(S.phrase16Pos) ? S.phrase16Pos : 0;
   th += DANCE.TURN * N.bar + DANCE.SWAY * Math.sin(TAU * ph16 / 16) + DANCE.SNARE * N.sn * N.snSide;
   N.pulse = clamp(DANCE.BASS * (S.bass || 0) + DANCE.KICK * N.kp + DANCE.HIT * (S.hit || 0), 0, 1);
-  let rho = mix(ROLL.RHO_LO, ROLL.RHO_HI, N.loud) + (N.mode === 'INT' ? T : 0);
+  let rho = S.presence < ROLL.IDLE ? ROLL.IDLE_RHO : mix(ROLL.RHO_LO, ROLL.RHO_HI, N.loud) + (N.mode === 'INT' ? T : 0);   // §142: silence rolls the ball to the circle (c → 0, Q → 1)
   const inChild = N.stack.length > 0, idle = S.presence < ROLL.IDLE;
   // the exit: inside a child, the ladder fallen for EXIT_BARS bars → roll to the child's root (θ 0) and press the rim
   const fell = inChild && N.loud < GATE.FALL;
   N.fell = fell ? N.fell + dt * bps / 4 : 0;
   // the ask: a build, an expected drop, or the ladder risen over BARS bars — the gate's condition, and the rim's steering toward it
-  const rise = N.loudHist.length > GATE.BARS && N.loud - N.loudHist[N.loudHist.length - 1 - GATE.BARS] >= GATE.RISE;
+  const rise = GATE.RISE > 0 && N.loudHist.length > GATE.BARS && N.loud - N.loudHist[N.loudHist.length - 1 - GATE.BARS] >= GATE.RISE;   // §142: RISE 0 = no ladder-rise ask (it crossed 7 times in 110 s on Comptine)
   const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise;
   if (inChild && N.fell >= GATE.EXIT_BARS) N.leaving = 1;   // latched: the way out is taken once decided, unless the music comes back loud
   if (inChild && !asks && N.bar - N.lastCross >= GATE.CHILD_BARS) N.leaving = 2;   // the depth pass: a child crossing holds CHILD_BARS bars once the music stops asking, then the ball rolls back out — the cardioid and its first-level bulbs are home
@@ -288,7 +292,7 @@ export function updateNav(dt, now, S, env) {
   N.thT.step(th + Math.round(N.thT.x - th), dt, ROLL.W_TH);
 
   if (N.mode === 'INT') {
-    if (!idle) {
+    {   // §142: idle rolls too (to the circle, ROLL.IDLE_RHO); before, idle froze the ball where it was
       const rhoEff = clamp(N.rhoT.x + (ROLL.BREATH * M2.breath + N.pulse) * Math.max(0, ROLL.PULSE_TOP - N.rhoT.x), ROLL.RHO_MIN * 4, ROLL.RHO_WALL);   // the press reaches PULSE_TOP, never the wall   // the beat breath (move2) + the reactive pulse (DANCE) press toward the rim
       roll(N, dt, rhoEff, N.thT.x, ROLL.GAIN * (ROLL.G0 + (1 - ROLL.G0) * clamp(S.intensity || 0, 0, 1)), leaving ? GATE.EXIT_SPEED : 1);
       geometry(N);
@@ -347,8 +351,8 @@ export function updateNav(dt, now, S, env) {
     const gm = Math.hypot(GR.gx, GR.gy) || 1;
     N.kside = -N.kside;   // the side alternates per kick: the normal turned by ±ANG — the jump swings the lobes, not only the rim
     const ca = Math.cos(KICK3.ANG), sa = Math.sin(KICK3.ANG) * N.kside, nx = GR.gx / gm, ny = GR.gy / gm;
-    N.kickM[0] = N.cPath[0] + (nx * ca - ny * sa) * KICK3.LEN * N.size;
-    N.kickM[1] = N.cPath[1] + (nx * sa + ny * ca) * KICK3.LEN * N.size;
+    N.kickM[0] = N.cPath[0] + (nx * ca - ny * sa) * KICK3.LEN * (1 - N.rho) * N.size;   // §142: the jump is LEN of the way to the wall ((1 − ρ)·size ≈ the distance to the rim), never past it — a ball at the rim once landed outside M (6 of Comptine's 8 kicks) and the set went to dust
+    N.kickM[1] = N.cPath[1] + (nx * sa + ny * ca) * KICK3.LEN * (1 - N.rho) * N.size;
     N.kick.set(kk);
     if (M2.lastK === kk && S.kickAge > 0 && S.kickAge < 0.03) N.kick.step(0, S.kickAge);
   }
@@ -362,7 +366,7 @@ export function updateNav(dt, now, S, env) {
   // visual time: crawls near the wall (critical slowing), releases on resolution / drop
   if (S.resolveEvt) N.timeScale = Math.max(N.timeScale, 2);
   N.timeScale = ema(N.timeScale, mix(1, 0.05, N.par * N.par), dt, 0.5);
-  N.vtime += dt * N.timeScale * (0.15 + 0.85 * S.presence);
+  N.vtime += dt * N.timeScale * (ROLL.T_FLOOR + (1 - ROLL.T_FLOOR) * S.presence);   // §142: NAV3's own clock (loop.js takes rt.time as the palette / spoke time) — at presence 0 nothing moves
   // path trail (PiP) + critical orbit, as NAV's — on the drawn c
   N.pathCut++;
   const P = N.path, dc = N.c;
@@ -396,7 +400,7 @@ export function knob5(name, v) {
   if (name === 'gate') set(GATE, ['QMAX', 'TOL', 'BUILD', 'RISE', 'FALL', 'EXIT_BARS', 'DIVE', 'P_MAX', 'DEPTH_MAX', 'CHILD_BARS']);   // the depth pass's A/B: &n3gate=7,0.5,0,0.1,0.3,1.5,0.6,14,2,99 is the quality pass's depth
   if (name === 'kick3') set(KICK3, ['LEN', 'ANG']);
   if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE']);
-  if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc
+  if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX', 'CONV_CHILD', 'DOTS_RHO']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc; &n3conv=.6,.93,.05,.4 the v0.43 child disc (§142)
   return nums;
 }
 export { GR, VX };

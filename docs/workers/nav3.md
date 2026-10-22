@@ -133,3 +133,7 @@ See DECISIONS §140, the addendum "the quality pass": the q traces `tools/accept
 ## The depth pass (2026-10-18)
 
 See DECISIONS §140, the addendum "the depth pass": the period-class / wall / stall tables `tools/accept/nav3/depth/periods-{before,after}.txt`, the band rulers `depth/bands-test-strips.txt`, the strips `tools/work/nav3/deep-{before,after}.jpg` and `deepAB-{newconv,oldconv}.jpg`, the q trace `q-after3.txt`. The home is the cardioid and its first-level bulbs (`GATE.DEPTH_MAX` 1, `P_MAX` 7, `CHILD_BARS` 2); the press reaches `ROLL.PULSE_TOP` .965, never the wall (`RHO_HI` .9); the convergence radius was not the flat interior (the same-frame A/B is identical) and stays at the milder numbers.
+
+## The Comptine pass (2026-10-18, branch `nav3-comptine` off v0.43)
+
+See DECISIONS §142: the seven remarks, the five NAV3-only picks (silence rolls to the circle and stops the clock; the sprites and the child disc; the ladder-rise ask gone, BUILD .7; the petal paint confined; the kick jump to the wall, the mirror on keyConf), the replay ruler `tools/work/nav3/replay.mjs` (the nine tracks through their live-lane traces, no Chrome), the records under `tools/accept/nav3/comptine/`, the eye strip `tools/work/nav3/comptine-after.jpg`. Remark 5 (the drops) is branch 2.

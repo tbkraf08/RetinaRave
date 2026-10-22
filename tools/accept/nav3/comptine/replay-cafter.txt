@@ -1,0 +1,20 @@
+Comptine: 6601 frames 0.0–110.0 s | crossings 5 [53.4↓build 65.3↑ 83.3↓build 87.8↑ 106.0↓build] | kicks 10, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.301 | modes: 37 changes
+  0.0 ·→INT q1 | 21.0 INT→OUT q1 | 22.4 OUT→EXT q1 | 26.3 EXT→IN q1 | 27.5 IN→INT q1 | 40.8 INT→OUT q1 | 42.2 OUT→EXT q1 | 45.3 EXT→IN q1 | 46.5 IN→INT q1 | 47.5 INT→OUT q1 | 48.9 OUT→EXT q1 | 52.1 EXT→IN q1 | 53.4 IN→INT q1 | 53.4 INT→CROSS q1 | 54.2 CROSS→INT q4 | 58.9 INT→OUT q4 | 60.3 OUT→EXT q4 | 63.8 EXT→IN q4 | 65.0 IN→INT q4 | 65.3 INT→CROSS q4 | 66.1 CROSS→INT q1 | 67.4 INT→OUT q1 | 68.8 OUT→EXT q1 | 71.3 EXT→IN q1 | 72.5 IN→INT q1 | 83.3 INT→CROSS q1 | 84.1 CROSS→INT q7 | 87.8 INT→CROSS q7 | 88.6 CROSS→INT q1 | 98.6 INT→OUT q1 | 100.0 OUT→EXT q1 | 103.2 EXT→IN q1 | 104.4 IN→INT q1 | 106.0 INT→CROSS q1 | 106.8 CROSS→INT q7 | 107.9 INT→OUT q7 | 109.3 OUT→EXT q7
+  t 0.52 INT q1 ρ 0.735 θ 0.435 depth 0 IMP 0.00/0.00 kick 0.13 loud 0.18 presence 0.88 build 0.00 crosses 0 dots 0 c -0.4236,0.2362
+  t 27.00 IN q1 ρ 0.784 θ 0.461 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.29 presence 1.00 build 0.00 crosses 0 dots 0 c -0.5494,0.2455
+  t 33.00 INT q1 ρ 0.839 θ 0.175 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.75 presence 1.00 build 0.00 crosses 0 dots 1 c 0.2936,0.2318
+  t 47.00 INT q1 ρ 0.925 θ 0.705 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.22 presence 1.00 build 1.00 crosses 0 dots 0 c 0.0535,-0.5579
+  t 52.00 EXT q1 ρ 0.932 θ 0.711 depth 0 IMP 0.00/1.00 kick 0.00 loud 0.82 presence 1.00 build 1.00 crosses 0 dots 0 c 0.1153,-0.5991
+  t 81.00 INT q1 ρ 0.854 θ 0.433 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.22 presence 1.00 build 0.00 crosses 2 dots 0 c -0.5114,0.3106
+  t 89.00 INT q1 ρ 0.968 θ 0.636 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.14 presence 1.00 build 1.00 crosses 4 dots 0 c -0.2859,-0.5973
+  t 93.80 INT q1 ρ 0.846 θ 0.953 depth 0 IMP 0.00/0.00 kick 0.74 loud 0.53 presence 1.00 build 0.00 crosses 4 dots 0 c 0.2566,-0.0158
+  t 105.00 INT q1 ρ 0.847 θ 0.217 depth 0 IMP 0.00/0.00 kick 0.00 loud 0.22 presence 1.00 build 1.00 crosses 4 dots 1 c 0.2509,0.3427
+  t 109.00 OUT q7 ρ 0.935 θ 0.364 depth 1 IMP 0.75/0.00 kick 0.00 loud 0.29 presence 1.00 build 0.00 crosses 5 dots 0 c 0.1378,0.6116
+SeeYouDrop: 6601 frames 0.0–110.0 s | crossings 5 [54.0↓build 63.4↑ 66.7↓drop 71.0↑ 105.1↓build] | kicks 45, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.301 | modes: 17 changes
+IBelongHere: 6601 frames 0.0–110.0 s | crossings 0 [] | kicks 57, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 7 at mean ρ 0.297 | modes: 5 changes
+RaindropsOnRoses: 6601 frames 24.0–134.0 s | crossings 6 [46.6↓drop 50.5↑ 117.1↓build 120.1↑ 124.2↓build 127.8↑] | kicks 43, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.301 | modes: 24 changes
+Vienna: 6601 frames 0.0–110.0 s | crossings 2 [80.3↓build 92.1↑] | kicks 23, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.301 | modes: 13 changes
+WhoLikesToParty: 6601 frames 0.0–110.0 s | crossings 2 [56.1↓build 63.3↑] | kicks 78, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 5 at mean ρ 0.300 | modes: 9 changes
+Malicious: 6601 frames 0.0–110.0 s | crossings 0 [] | kicks 22, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.300 | modes: 13 changes
+TheChain: 6601 frames 0.0–110.0 s | crossings 2 [85.5↓build 91.1↑] | kicks 71, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 189 at mean ρ 0.225 | modes: 12 changes
+CyborgNinja: 6601 frames 0.0–110.0 s | crossings 0 [] | kicks 119, landing outside M 0 | sprite frames at the rim 0 (0.0 %) | idle frames 2 at mean ρ 0.301 | modes: 1 changes

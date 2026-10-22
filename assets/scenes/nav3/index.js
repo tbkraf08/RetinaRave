@@ -10,7 +10,7 @@
 // implosion (Fatou petals on the way in, the Lavaurs explosion on the way out). `always: false`: updated only while on screen, so
 // draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1; §97's freeze).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
-import { NAV, updateNav, knob5 } from './nav.js';
+import { NAV, updateNav, knob5, ROLL } from './nav.js';
 import { IMP, OUT3, knobDrop, knobImp } from './implode.js';   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { OK_NAV, FS_JULIA, FS_MANDEL, VS_PT, FS_PT } from './shaders.js';
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
@@ -239,6 +239,7 @@ export default {
     gl.uniform2f(u('uA'), IMP.a[0], IMP.a[1]);
     gl.uniform1f(u('uSig'), IMP.sig);
     gl.uniform1f(u('uQ0'), OUT3.OUT_RUN * IMP.q0);   // iterates beyond 2R before an entry counts as a passage (implode.js passages())
+    gl.uniform2f(u('uPet'), IMP.Rp * OUT3.PET_R, OUT3.PET_LUM);   // §142: the petal layer's radius and base lightness
     gl.uniform2f(u('uSc'), 1, 1);
     const ta = K3.trap ? M2.trapA : Math.PI * br;   // §100: a quarter turn per beat (π per bar) + ACC turns on each crest, beatgrid's profile; off = NAV's half turn per beat
     gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
@@ -259,7 +260,9 @@ export default {
     }
     gl.uniform4fv(u('uMode[0]'), modes);
     ctx.tri();
-    // critical orbit: the actual dynamics of f_c — crawls near parabolic roots, flies off at the drop
+    // critical orbit: the actual dynamics of f_c — crawls near parabolic roots, flies off at the drop. §142 the circles: drawn only with a
+    // chart on and ρ under ROLL.DOTS_RHO — at the rim and in a crossing the 160 sprites piled into bright blobs near the cycle (Comptine 27 s, 1:29)
+    if (!(N.mode === 'INT' && N.cyc.has && N.rho < ROLL.DOTS_RHO)) return;
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.useProgram(pt.p);

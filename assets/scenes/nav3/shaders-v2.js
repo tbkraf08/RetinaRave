@@ -17,7 +17,7 @@
 // remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
 // path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
 export const FS_JULIA_V2 = `
-uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0; // §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0;uniform vec2 uPet; // §142 uPet = (the petal radius Rp·PET_R the layer is confined to, its base lightness PET_LUM). §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
 void main(){
   vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);
   vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
@@ -57,8 +57,8 @@ void main(){
       vec2 w=z-uZ0;float q=uImp.z,r=max(length(w),1e-6),th=atan(w.y,w.x),aq=atan(uA.y,uA.x),am=max(length(uA),1e-12);
       float k=floor(fract(th/TAU+(.5-aq/TAU)/q+uBeat.x/q)*q)/q;float pet=fract((th*q+aq)/TAU);
       float rq=exp(q*log(r));float rePhi=-cos(th*q+aq)/(q*am*rq);float ph=fract(rePhi*.5);
-      vec3 pc=pal(k+.07+.3*uSig)*(.22+.5*(.5+.5*cos(TAU*ph)))*(.35+.65*exp(-abs(pet-.5)*2.5));
-      col=mix(col,pc,max(uImp.x,uImp.y)*.85);}
+      vec3 pc=pal(k+.07+.3*uSig)*(uPet.y+.5*(.5+.5*cos(TAU*ph)))*(.35+.65*exp(-abs(pet-.5)*2.5));
+      col=mix(col,pc,max(uImp.x,uImp.y)*.85*exp(-r/uPet.x));} /* §142: the petal layer is confined to the petal radius (uPet.x) and its base lightness is uPet.y — it painted every non-escaped pixel of the interior for the drop's six seconds */
     else if(uImp.y>0.){ /* THE LAVAURS EXPLOSION on the way out: an escaped pixel of the former interior IS the implosion (the dust eating inward, breathing with eps); its passages through the gate are the hair's layers, the soft time near z0 its glow */
       float pl=min(ps,8.);vec3 ec=pal(.55+.07*pl+.3*uSig)*(.1+.14*pl)+vec3(.8,.85,1.)*min(gt*.04,.6);
       col=mix(col,col+ec*(.4+.6*smoothstep(0.,60.,n)),uImp.y);}

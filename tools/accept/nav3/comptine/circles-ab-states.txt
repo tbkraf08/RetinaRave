@@ -1,0 +1,17 @@
+"{\"t\":27,\"v\":\"after\",\"mode\":\"INT\",\"q\":1,\"rho\":0.79,\"depth\":0}"
+"{\"t\":27,\"v\":\"before\",\"mode\":\"INT\",\"q\":1,\"rho\":0.79,\"depth\":0}"
+"{\"t\":81,\"v\":\"after\",\"mode\":\"INT\",\"q\":1,\"rho\":0.869,\"depth\":0}"
+"{\"t\":81,\"v\":\"before\",\"mode\":\"INT\",\"q\":1,\"rho\":0.869,\"depth\":0}"
+"{\"t\":89,\"v\":\"after\",\"mode\":\"INT\",\"q\":1,\"rho\":0.853,\"depth\":0}"
+"{\"t\":89,\"v\":\"before\",\"mode\":\"INT\",\"q\":1,\"rho\":0.853,\"depth\":0}"
+"{\"t\":126,\"v\":\"after\",\"mode\":\"INT\",\"q\":1,\"rho\":0.532,\"depth\":0}"
+"{\"t\":126,\"v\":\"before\",\"mode\":\"INT\",\"q\":1,\"rho\":0.532,\"depth\":0}"
+circ-before-27                     interior px  34351 (cut Y 0.09, mean Y 0.052)  band edges   0.6 %
+circ-after-27                      interior px  34351 (cut Y 0.09, mean Y 0.052)  band edges   0.6 %
+circ-before-81                     interior px  33895 (cut Y 0.13, mean Y 0.092)  band edges   4.0 %
+circ-after-81                      interior px  34605 (cut Y 0.13, mean Y 0.092)  band edges   3.9 %
+circ-before-89                     interior px  33973 (cut Y 0.11, mean Y 0.071)  band edges   2.4 %
+circ-after-89                      interior px  34261 (cut Y 0.11, mean Y 0.070)  band edges   2.2 %
+circ-before-126                    interior px  39346 (cut Y 0.05, mean Y 0.042)  band edges   2.4 %
+circ-after-126                     interior px  39346 (cut Y 0.05, mean Y 0.042)  band edges   2.4 %
+pixel diff before/after (>24/255): 27 s 0 px · 1:21 1358 px in a 48×46 patch at the cycle point (the sprites, ρ .869 ≥ DOTS_RHO) · 1:29 1915 px in a 59×55 patch (ρ .853) · 2:06 0 px (ρ .532, the sprites stay)

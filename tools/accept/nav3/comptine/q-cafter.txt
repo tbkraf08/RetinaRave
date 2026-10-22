@@ -1,0 +1,10 @@
+SeeYouDrop        s6 cafter at 44 30s | q mean 0.924 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":6,"EXT":60} "errs []"
+IBelongHere       s6 cafter at 51 30s | q mean 0.916 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":83,"OUT":6,"EXT":10,"IN":5} "errs []"
+Comptine          s6 cafter at 18 30s | q mean 0.923 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":9,"OUT":6,"EXT":84,"IN":5} "errs []"
+RaindropsOnRoses  s6 cafter at 55 30s | q mean 0.921 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":5,"EXT":61} "errs []"
+Vienna            s6 cafter at 71 30s | q mean 0.926 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+WhoLikesToParty   s6 cafter at 44 30s | q mean 0.919 min 0.59 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":80,"OUT":6,"EXT":13,"IN":5} "errs []"
+Malicious         s6 cafter at 134 30s | q mean 0.915 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+TheChain          s6 cafter at 186 30s | q mean 0.913 min 0.59 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":86,"OUT":5,"EXT":8,"IN":5} "errs []"
+CyborgNinja       s6 cafter at 34 30s | q mean 0.925 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+DONE Sun Oct 18 02:30:42 PM EDT 2026
