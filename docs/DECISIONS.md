@@ -6000,3 +6000,131 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   edge; `&n3swell=.4` implodes it). The swell's own look is the child's set at the rim with the bands up — nothing new is drawn for it. The escape-time
   colour's `IMP_N` 30 is one number for every root. The ring ruler is the centre row/column's peaks under Y .15 — a proxy, not a segmentation. The
   rise term reads the ladder's slope only (no field for the swell before the shift). The OKLCH mapping carries none of it. `nav.js` 479 lines (soft cap 350).
+
+## §146 v0.44 tagged, pushed and DEPLOYED — NAV3's four passes, and the engine's drop learns to wait (2026-10-22, one Opus worker on main, no worktree; the user: *"nav3 still needs work, but tag what we have so far and push and deploy"*)
+
+- **What ships** (everything on `main` since the v0.43 tag at `4f1f527`; this note adds no code). It arrived in **four `--no-ff`
+  merges of a linear stack**, each branch fast-forwardable off `4f1f527` and merged in order so the history shows them —
+  **`4779f44`** `nav3-comptine` (§142) · **`bf84b86`** `drop-piano` (§143) · **`4333651`** `nav3-look` (§144) · **`b89cdb2`**
+  `nav3-swell` (§145). **Zero conflicts and nothing resolved by hand**; `main`'s own `9d8ad95` (the drop-piano brief) was the
+  only commit the stack did not already contain. **§142 THE COMPTINE PASS** — the user's seven remarks on a Comptine capture,
+  NAV3-only: silence rolls the ball to the circle (`IDLE_RHO` .08) and stops NAV3's own clock (`T_FLOOR` 0), the orbit sprites
+  only with a chart on and ρ < `DOTS_RHO` .85, the child convergence disc .4 → `CONV_CHILD` .15, children only on
+  `buildLive` ≥ .7 / `dropExpectedIn`, the petal layer confined to the petal radius, the kick jump never past the wall, the
+  section mirror on `keyConf` > 0 (crossings 13 → 5, outside-M landings 0 on all nine, sprite-at-rim frames 72–98 % → 0 %,
+  the centre's wash .50 → .15, q .913–.926 at 60 fps) · **§143 THE ENGINE'S DROP ON A DELICATE PIECE — THE ONE ENGINE CHANGE
+  HERE, AND EVERY SCENE INHERITS IT.** A piano has no sub, and all six of Comptine's live arms were §64's sub-void path
+  counting a sub that was never there as having left. The live slam now needs **the sub back (`SUB_BACK` .5) and the loudness
+  ladder at a drop's level (`LEVEL` .75)** before `build/confirm.js` releases it (`SUBV_HAD` .3, `PEND` 4, `LEVEL_RNG` 4 LU),
+  and **v3's `dropEvt` goes through the same test**: on the nine tracks **every confirmed live slam kept, 5 false → 0** (the
+  release 50–370 ms later, the sub opening), v3's truth hits all kept and its false drops 15 → 5. In their place a new engine
+  field — `engine/shift/shift.js`: `shiftEvt` when the ladder steps `STEP` .3 above its value a bar ago AND sits at `LEVEL`
+  .75, after `MIN_HIST` 16 s, `REFR` 2 bars, never while the live detector is armed; `shiftHold` while the ladder holds .5 of
+  that level. NAV3 reads `dropLiveEvt || mapDropEvt || shiftEvt` (`OUT3.ANY` 0), holds EXT while `shiftHold` is 1
+  (`HOLD_MAX` 32 beats + `SETTLE` 8) and **re-arms mid-implosion** — Comptine 7 implosions → 4, at 33.0 / 51.7 / 111.3 / 135.4:
+  the user's *"should do a drop viz at 52s with energy sustained till 1m10"* is the 51.7 shift held to 1:07, and nothing fires
+  at 47. Also `engine/audio.js` **`GESTURE_RESUME` 1** — one `pointerdown` / `keydown` listener resumes a suspended
+  AudioContext on a fresh origin (a file-mode track on a new port ran the clock and played no sound). `tools/test_shift.js`
+  joins `npm test` · **§144 THE LOOK PASS** — the hold's interior BLACK with the petals on the way in only, ε₀ calibrated per
+  drop to the layer's escape fraction (`ESC_FLOOR` .3 → `ESC_TOP` .8 by the energy), the direction sweeping the exterior wedge
+  (`TURN_BARS` 4), the dance scaled by the engine's percussiveness (Comptine .10 against the dance tracks' .26–.75), the chart
+  through the kick (chart-off INT frames 14–66 % → 0), `pal3()` the luma-normalised interior palette, the orbit dots off ·
+  **§145 THE SWELL PASS** — the Koenigs tiling fades with the ring index (`K_RINGS` 2, a never-black floor), and **under
+  `PERC_LT` of the slow percussiveness scale an energy shift SWELLS instead of imploding**: the ball to the rim and through the
+  gateway into a child, the bands up, nothing explodes (Comptine 2 implosions → 0, 3 swells; the kits unchanged); the ladder's
+  rise rate presses ρ to the rim before the shift lands, the former interior drawn by its escape time under an implosion, the
+  palette clock frozen under a hold.
+- **The class is `scene`, and `scenes` is `[6]`.** §143 is an engine change, but **NAV3 is the only scene whose pixels moved**
+  (§144's and §145's gates each read s0–s5 **0 of 12 md5 lines moved**, and §143's `scene-md5-s143.txt` the same), and the
+  thumbnail rule follows the moved scene. `decisions` is **`["§142","§143","§144","§145"]`** — the bare numbers only
+  (`tools/releases.js` line 36 validates against `/^§\d+[a-z]?$/`, §136's finding paid forward). **ONE thumbnail, NAV3**,
+  rendered by the build and by nothing else.
+- **What the entry says, in a visitor's words** (the house voice, no § — `releases.js` refuses one): the title *"The quiet
+  song: a drop that waits, and one that swells"*, and the body leads on the fact that all four passes came out of **one song**
+  — a slow solo piano piece the engine had been reading completely wrong. The scene learning to be quiet; then the engine, and
+  it is given as what it is, the whole page's and not the new scene's: *"a piano has no sub-bass, and the drop detector had
+  been arming on exactly that… A slam now has to show the sub back and the loudness ladder standing at a drop's level before it
+  is allowed through"*, with the nine-track numbers in plain words and *"not one real drop lost"*; then the gentler thing that
+  replaces them, the energy shift, *"and the new navigator holds its drop picture up for as long as the energy stays up rather
+  than for a fixed eight beats"*; then the look, and the swell — *"on a delicate piece an energy shift no longer explodes
+  anything: it SWELLS"*. The honest limits close it, as they must: **nobody but me has watched any of these four passes — the
+  scene still needs work and it is on a key of its own for that reason**; the swell draws nothing of its own yet; one song's
+  intro sits on the threshold; one number for every gateway; the alternative colour mapping carries none of it; and **the site
+  has been sitting several tags behind — everything since the singing detector went in arrives at once**.
+- **The recipe (§141's ritual step for step, the three-page rule standing, §125's `releases.json` pitfall paid forward a
+  SEVENTH time).** `package.json` + `assets/core/version.js` 0.43.0 → 0.44.0 **together** (§89 — `test_rec.js` is the gate that
+  they agree: the take came out `retinarave-v0.44-nav2-2026-10-22T18-01-44.webm` with the sidecar reading `retinarave 0.44.0`)
+  · `releases.json` top entry (`v0.44`, **2026-10-22**, class `scene`, the title above, `scenes [6]`, no clip) —
+  **hand-inserted as `JSON.stringify(rel, null, 1)`, after proving FIRST that `JSON.stringify(load(), null, 1) + '\n'` == the
+  file byte for byte** (43 155 chars / 43 409 bytes, true), the script then re-proving that the **result** round-trips and that
+  the 41 existing entries are byte-identical in the tail: an **18-line pure insertion** (`git diff --numstat` **18 added,
+  0 removed**). `releases.js`'s own `save()` would reformat all 42 entries; **it was never called, and the note has now held
+  and cost nothing seven times running** · `npm run build` (42 entries → `site/whats-new.html` **72 661 bytes**, and
+  `index.html`'s `#newin` line moved because the title did; `dist/index.html` **163 modules + 12 in the ears Worker, 269 KB
+  inline, 2 041 502 bytes**) · `node tools/bundle.js releases/retinarave-v0.44.html` (**the same 163 / +12 / 269 KB /
+  2 041 502**, `VER = '0.44.0'`) · `git rm releases/retinarave-v0.41.html` (the three-page rule; `releases/` keeps v0.42 /
+  v0.43 / v0.44).
+- **The frozen page, read against v0.43's** (160 + 12 modules / 1 985 044 bytes): **163 + 12 modules, 2 041 502 bytes.** The
+  **+3 modules are `engine/shift/shift.js`, `engine/features-shift.js` and `engine/build/confirm.js`**, and **the inline ears
+  Worker is the same 269 KB because not one byte of the ears moved**.
+- **The gates, each run on the tree AFTER the bump.** The receipt with every number is
+  `tools/accept/v0.44/tag-v0.44-2026-10-22.txt`:
+  1. `node tools/check.js` — **165 modules · uniforms 172 · MS keys 225 · scenes 7 (help.feats gaps 0) · 0 fail · 6 warn**,
+     exit 0 — **met** (the warns are the line soft caps, far under the 500 fail cap; `scenes/nav3/nav.js` is now **480**, 403
+     at v0.43 — the three passes — beside `core/fluid/fluid.js` 376, `core/scenes.js` 370, `ears/perc.js` 407,
+     `dust/index.js` 365, `torus2/index.js` 367) · `releases.js check` **42 entries, top v0.44 == package.json 0.44.0,
+     0 problems** — **met** · `whatsnew --check` **42 entries, up to date** — **met** · `license.js --check` **168 public
+     files, 0 without the header** — **met** (165 at v0.43: the three new engine files carry it).
+  2. `npm test` — **exit 0, 0 FAIL lines, 580 `ok` lines** — **met**, run twice with the same result. **`test_shift` OK**
+     (§143's 34 checks, new in the suite) · `test_nav3` OK · `test_fluid` **345 ok, 0 fail** · `test_music` **151 ok, 0 fail**
+     on the nine tracks in both map modes · `test_loud` OK 43 pass · `test_earsw` OK · `test_voxscene` OK · `test_vox`'s mel
+     and ONNX parities pass. **ONE `NOTE` line, not a gate and not re-baselined** (*"music: TheChain-map1 — the 2 seconds read
+     as noise inject nothing"*); §134's and §126's known misses still print as `note`, never FAIL — **no byte of the ears or
+     `math/vox.js` moved here.**
+  3. `GPU=1 MUTE=1 PORT=8991 node tools/test_rec.js` (the version pair's own gate) — **all ok** — **met**: the sidecar's
+     `app/version` **retinarave 0.44.0** and the file name `retinarave-v0.44-…`, the two strings moved together. §92's pin
+     still wins (`Q.hold` .75 through the take, free again from q0 .55); webm 15 908 610 bytes, EBML magic, 5.96 s / 9 clusters
+     ≈ the sidecar's 6.008, a frame decoded, the HUD on in the DOM, the timeline 2 → 3 → 1 within 0.6 s of the keys.
+     **360 frames at 59.9 fps** composited.
+  4. the **frozen page from `file://`**, headless, **CLOCK=1 GPU=1 MUTE=1**, PORT 8993 — `test&scene=0` → `{sc 0, grammar pool,
+     fluidOn true, idle 0, errs [], bad [], frameN 300}` · `scene=1` → `{sc 1, bands, true, idle 0, …}` · `scene=3` → `{sc 3,
+     pool, true, idle 1, …}` · `scene=4` → `{sc 4, pool, true, idle 1, …}` · `scene=6` → `{sc 6, pool, true, idle 1, errs [],
+     bad [], frameN 300}` — **`errs []` and `bad []` (`CARD.nonFinite()`) on all five — met**, and **all five lines are §141's
+     to the character**, `idle` included, which is the point for a release whose only moved pixels are NAV3's. `CLOCK=1` from
+     the first pass (v0.37's pitfall, a seventh time). **`MUTE=1` on every run — no audio was played at any point.**
+  5. the **no-third-party receipt** (SOCIAL-PLAN §4) — **ONE host on every route** — **met**: `/whats-new` →
+     `["127.0.0.1:8993"]` · `/` (`NOAUTO=1 real`) → `["127.0.0.1:8995"]` with `#newin` reading *"New in v0.44: The quiet song:
+     a drop that waits, and one that swells → what's new"* · `/about` → `["127.0.0.1:8997"]`. The v0.44 article renders
+     (`id="v0.44"`, the label **new scene**, **22 October 2026**, the title) and shows **exactly ONE thumbnail, NAV3**, which
+     is what `scenes: [6]` means. **The credits needed no move at the tag** ([[feedback-credit-where-due]]): the four passes
+     borrowed no new mathematics — `git diff v0.43..HEAD -- site/about.html THIRD-PARTY.md README.md` is **empty**. **The
+     user's dev servers were left running and untouched** — 8765, 8766, 8813 and 8815 were listening before and after; every
+     port used here was 8991 / 8993 / 8995 / 8997, and no `serve.js` this session did not start was killed.
+- **What was NOT run, and why.** The **full `real-md5` roster** and **`accept.sh`**: §144's and §145's gates already paid the
+  only sweep this release can owe (s0–s5 **0 of 12 lines moved** on both, s6 re-recorded on each — a change inside one scene
+  folder cannot move another scene's pixels, HARNESS *"What to re-prove"* row 1), and §143's engine edit was proved the same
+  way (`tools/accept/drop/scene-md5-s143.txt`). **Nothing entered the director's rotation** (NAV3 is forced-only, `score()` 0),
+  so **row 5's Q trace is not owed**. Also not run and not owed: a fresh load bench, `test_ears --trace`, `fluid-tracks.js`, a
+  director trace, any real-music render. **No reference was re-based here** — the next engine sweep does that, never the tag.
+  **No audio was played and nothing was retuned at the tag.**
+- **Carried findings — recorded, NOT fixed.** (1) **The user's EYE on NAV3 since §142 has not been given** — his own words at
+  the tag: *"nav3 still needs work"*. The four passes are each a ruler's answer to a remark on a capture, and he has seen a
+  frame of none of them. (2) The **swell draws nothing of its own** beyond the crossing and the band lift. (3) **Malicious'
+  intro shift sits at the swell threshold's edge** (its slow percussiveness scale .50; `&n3swell=.4` implodes it). (4) The
+  escape-time colour's **`IMP_N` 30 is one number for every root**. (5) The **OKLCH mapping** (`&colour=oklch`) carries none of
+  the §144 / §145 shader work. (6) **`nav.js` 480 lines** against the 350 soft cap (403 at v0.43). (7) **IBelongHere's three v3
+  drops land +.8 … +1.4 s late** for the scenes that read `dropEvt` (TORUS2, FLUID2), and **§143 is unseen on NAV2 / DUST /
+  TORUS2 / FLUID by eye**. (8) The shift and the level test need the track's loudness history: an `&at=` start mid-track is
+  cold for ~20 s. (9) The older open eyes, carried and not closed: §138's DUST band on the four voiced tracks, the fluid
+  filling from dark on a director entry into FLUID, the ear on TheChain's **B2**, the up-vector sign on TORUS2's strand, the
+  stale s134 lists on s1, and `accept.sh`'s routes / params blocks on NAV2 (owed since §118).
+- **The deploy — and this time the tag goes out.** `dist/` is what `npm run build` writes and what `wrangler.jsonc` serves; it
+  is git-ignored and not committed, and there is no `.github/` workflow — the deploy is **Cloudflare, git-connected to
+  `github.com/tbkraf08/RetinaRave`, building on a push to `main`**. **So the push IS the deploy** (§115: ONE push, then poll
+  for the `VER` line, never a second). **The site jumps from v0.38 to v0.44**: v0.39, v0.40, v0.41, v0.42 and v0.43 were tagged
+  locally and never pushed, so **everything since §128 goes live at once** — the ears in a Worker, the FLUID2 reset to the §108
+  pool, the streaming vocal net with its pitch head, the fluid-idle fix, TheChain, DUST following the singer, and NAV3 with all
+  four of its passes.
+- **Next, in order:** **the user's eye on NAV3, key `7`** — the four passes, and above all the swell on a delicate piece · his
+  eye on §143 everywhere else (NAV2, DUST, TORUS2, FLUID2 all read the gated drops now) · the per-root `IMP_N` and the per-track
+  ε retune, once the eye has spoken · §138's DUST band and the ear on TheChain's **B2**.

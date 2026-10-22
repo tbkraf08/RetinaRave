@@ -1,5 +1,23 @@
 [
  {
+  "version": "0.44.0",
+  "tag": "v0.44",
+  "date": "2026-10-22",
+  "class": "scene",
+  "title": "The quiet song: a drop that waits, and one that swells",
+  "body": "The seventh scene — the navigator on key 7, the one the director never picks and you have to ask for — got four more passes, and every one of them came out of a single song: a slow solo piano piece that the engine had been reading completely wrong.\n\nFirst the scene itself learned to be quiet. In silence the ball now rolls back to the plain circle at the heart of the shape and the scene's own clock stops, so the rays and spokes stand still instead of spinning through a rest. The orbit dots that made the set look like a scatter of little circles only appear when there is a map on screen and the ball is away from the edge; the petal layer stays inside the petals; a hit can no longer throw the ball past the wall; and the scene only crosses into a smaller bulb when the music is genuinely building, not whenever it drifts near a gateway.\n\nThen the engine. This one is not the new scene's — every scene on the page inherits it. A piano has no sub-bass, and the drop detector had been arming on exactly that: it counted a bass that was never there as having dropped out, and then fired on the next loud chord. A slam now has to show the sub back and the loudness ladder standing at a drop's level before it is allowed through, and the second detector, the one that reads the map, goes through the same test. Across the nine songs in the library that is five false slams gone to none, fifteen false reads down to five, and not one real drop lost — a few of them land a fraction of a second later than they used to, which is the sub coming back. In its place there is something gentler: an energy shift, a sustained lift that is not a slam, is now a field any scene can read, and the new navigator holds its drop picture up for as long as the energy stays up rather than for a fixed eight beats. On the piano piece that is the difference between a picture at 47 seconds that should never have happened and one at 52 that holds to 1:07, which is what the music does. Small thing, same release: the sound now starts on your first click or key press, instead of staying silent on a freshly opened tab.\n\nThe third pass was the look. The held interior goes black with the petals only on the way in, the depth of the come-apart is calibrated per drop so it eats visibly on a quiet song and still has somewhere to go on a loud one, the direction sweeps around the wedge over four bars instead of sitting still, and the whole dance is scaled by how percussive the music actually is — on a piano, barely at all.\n\nThe last pass is the one to watch for. On a delicate piece an energy shift no longer explodes anything: it SWELLS. The ball runs out to the rim and through the gateway into a smaller bulb, the bands rise, the picture opens — and nothing comes apart. The piano piece went from two implosions to none and three swells. The tiling inside the set, which had been reading as a stack of hard rings, now fades out with depth to a floor that is never quite black.\n\nThe honest limits, as always. Nobody but me has watched any of these four passes — the scene still needs work and it is on a key of its own for that reason. The swell draws nothing of its own yet beyond the crossing and the lift. One song's intro sits right on the threshold between swelling and imploding. The escape-time colour uses one number for every gateway. The alternative colour mapping carries none of this. And the site itself has been sitting several tags behind: everything since the singing detector went in arrives here at once.",
+  "scenes": [
+   6
+  ],
+  "decisions": [
+   "§142",
+   "§143",
+   "§144",
+   "§145"
+  ],
+  "clip": null
+ },
+ {
   "version": "0.43.0",
   "tag": "v0.43",
   "date": "2026-10-18",
