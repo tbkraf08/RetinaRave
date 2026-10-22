@@ -6128,3 +6128,21 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
 - **Next, in order:** **the user's eye on NAV3, key `7`** — the four passes, and above all the swell on a delicate piece · his
   eye on §143 everywhere else (NAV2, DUST, TORUS2, FLUID2 all read the gated drops now) · the per-root `IMP_N` and the per-track
   ε retune, once the eye has spoken · §138's DUST band and the ear on TheChain's **B2**.
+
+### §146 addendum — v0.44 PUSHED AND LIVE
+
+- **One push, at 2026-10-22 14:06:59 EDT** — `66129a3..be7d3cc main -> main`, **93 commits** (everything from the §125
+  addendum, the last thing origin had seen, to the v0.44 release commit), then `git push origin --tags`: **six new tags,
+  v0.39 v0.40 v0.41 v0.42 v0.43 v0.44** — the five that had been sitting local since 2026-10-12 and this one. No second push
+  of `main` (§115).
+- **LIVE at 14:09:22 EDT**, `VER = '0.44.0'` on `https://retinarave.com/` — the Cloudflare build **2 min 23 s** (v0.38's was
+  1 min 51 s). Polled every 120 s: 14:07:21 still `0.38.0`, 14:09:22 `0.44.0`.
+- **Every route 200 and byte-identical to the local build**: `/` **2 041 502 B** (the frozen page's own size to the byte) ·
+  `/whats-new` **72 661 B** · `/THIRD-PARTY.md` **10 307 B** · `/about` **12 144 B**. The landing's `#newin` reads *"New in
+  v0.44: The quiet song: a drop that waits, and one that swells → what's new"*, and `/whats-new` carries `id="v0.44"` dated
+  **22 October 2026**.
+- **The site went from v0.38 to v0.44 in one step**, as the note above said it would: everything since §128 is now live — the
+  ears in a Worker (§131), the FLUID2 reset to the §108 pool (§132), the streaming vocal net with its pitch head (§133/§134),
+  the fluid-idle fix (§135), TheChain (§137), DUST following the singer (§138), NAV3 (§140) and its four passes
+  (§142–§145). **The user's eye is owed on all of it on the live site, NAV3 first — his word at the tag was "nav3 still
+  needs work".**
