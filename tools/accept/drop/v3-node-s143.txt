@@ -1,0 +1,27 @@
+Comptine          truth [21.513,31.544,41.471]
+   v3 before: 21 40.8 58.87 67.4 98.57 129 → 2/3 hit, 4 false (58.87 67.4 98.57 129)
+   v3 after:   → 0/3 hit, 0 false
+SeeYouDrop        truth [57.606,105.596]
+   v3 before: 57.6 105.6 → 2/2 hit, 0 false
+   v3 after:  57.65 105.67 → 2/2 hit, 0 false
+IBelongHere       truth [15.882,64.691,129.776,178.852]
+   v3 before: 64.45 130.03 178.33 → 3/4 hit, 0 false
+   v3 after:  65.27 130.35 179.63 → 3/4 hit, 0 false
+WhoLikesToParty   truth [57.507,131.352,188.788]
+   v3 before:  → 0/3 hit, 0 false
+   v3 after:   → 0/3 hit, 0 false
+Vienna            truth [85.3359,106.6693]
+   v3 before: 73.28 → 0/2 hit, 1 false (73.28)
+   v3 after:   → 0/2 hit, 0 false
+RaindropsOnRoses  truth [41.134,68.569,137.137]
+   v3 before: 3.55 12.38 21.72 41.13 68.57 137.13 → 3/3 hit, 3 false (3.55 12.38 21.72)
+   v3 after:  41.13 68.65 137.13 → 3/3 hit, 0 false
+Malicious         truth [148.317]
+   v3 before: 12.03 18.82 25.7 → 0/1 hit, 3 false (12.03 18.82 25.7)
+   v3 after:  12.08 19.03 25.92 → 0/1 hit, 3 false (12.08 19.03 25.92)
+TheChain          truth [199.692]
+   v3 before: 8.32 86.12 171.13 186.22 → 0/1 hit, 4 false (8.32 86.12 171.13 186.22)
+   v3 after:  8.32 171.13 → 0/1 hit, 2 false (8.32 171.13)
+CyborgNinja       truth []
+   v3 before:  → 0/0 hit, 0 false
+   v3 after:   → 0/0 hit, 0 false

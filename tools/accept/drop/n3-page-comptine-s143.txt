@@ -1,0 +1,25 @@
+== n3 Sun Oct 18 03:50:35 PM EDT 2026
+Comptine after (page, at 0, 132 s, 7921 frames, "errs [] bad []"): slams - | map 107.37 | v3 - | shifts 32.98 51.72 112.05 120.67 | implosions 3: 33.0→42.2 (EXT 34.4–41.0, 0 re-arm) | 51.7→72.1 (EXT 53.1–70.9, 0 re-arm) | 107.4→129.6 (EXT 108.8–128.4, 0 re-arm)
+  0.0 ·→INT | 33.0 INT→OUT | 34.4 OUT→EXT | 41.0 EXT→IN | 42.2 IN→INT | 51.7 INT→OUT | 53.1 OUT→EXT | 70.9 EXT→IN | 72.1 IN→INT | 107.4 INT→OUT | 108.8 OUT→EXT | 128.4 EXT→IN | 129.6 IN→INT | 130.1 INT→CROSS | 130.9 CROSS→INT
+  t 33.00 OUT q1 ρ 0.834 hold 1 loudRel 0.918 bLive 0 depth 0
+  t 47.00 INT q1 ρ 0.735 hold 0 loudRel 0.739 bLive 0 depth 0
+  t 52.00 OUT q1 ρ 0.894 hold 1 loudRel 0.942 bLive 0 depth 0
+  t 58.90 EXT q1 ρ 0.894 hold 1 loudRel 0.928 bLive 0 depth 0
+  t 66.00 EXT q1 ρ 0.894 hold 1 loudRel 0.779 bLive 0 depth 0
+  t 70.00 EXT q1 ρ 0.894 hold 0 loudRel 0.6 bLive 0 depth 0
+  t 94.00 INT q1 ρ 0.808 hold 0 loudRel 0.8 bLive 0 depth 0
+  t 98.00 INT q1 ρ 0.741 hold 0 loudRel 0.529 bLive 0 depth 0
+  t 105.00 INT q1 ρ 0.73 hold 0 loudRel 0.676 bLive 0 depth 0
+  t 107.90 OUT q1 ρ 0.705 hold 1 loudRel 0.647 bLive 0 depth 0
+  t 109.00 EXT q1 ρ 0.705 hold 1 loudRel 0.703 bLive 0 depth 0
+  t 112.00 EXT q1 ρ 0.705 hold 1 loudRel 0.933 bLive 0 depth 0
+  t 120.00 EXT q1 ρ 0.705 hold 1 loudRel 0.796 bLive 0 depth 0
+  t 125.00 EXT q1 ρ 0.705 hold 0 loudRel 0.63 bLive 0 depth 0
+  t 130.00 INT q1 ρ 0.866 hold 0 loudRel 0.184 bLive 0.69 depth 0
+  40.0 ·→INT | 57.6 INT→OUT | 59.0 OUT→EXT | 77.2 EXT→IN | 78.4 IN→INT
+  t 57.60 INT q1 ρ 0.723 hold 0 loudRel 0.863 bLive 0 depth 0
+  t 60.00 EXT q1 ρ 0.753 hold 1 loudRel 0.875 bLive 0 depth 0
+  t 70.00 EXT q1 ρ 0.753 hold 1 loudRel 0.916 bLive 0 depth 0
+  t 75.00 EXT q1 ρ 0.753 hold 1 loudRel 0.932 bLive 0 depth 0
+  t 80.00 INT q1 ρ 0.985 hold 1 loudRel 0.944 bLive 0 depth 0
+== md5 Sun Oct 18 03:53:40 PM EDT 2026

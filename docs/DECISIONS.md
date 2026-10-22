@@ -5666,3 +5666,121 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   the replay only (the traces start at presence .88; no capture-mode trace of the opening exists) — the roll to the circle and the
   stopped clock are the node drive's and the code's word. The petal confinement is not A/B'd on a Comptine frame (the centre's
   luma is the ruler). `nav.js` is over the 350 soft cap (a warn, as since §140).
+
+## §143 the engine's drop on a delicate piece — the two gates, the energy shift, NAV3's hold, the gesture resume (2026-10-18, one Fable worker in a worktree, branch `drop-piano` off `nav3-comptine` 1e20a18, NOT merged; the user's three remarks on the §142 capture; the analyst's plan `COMPTINE-PASS-PLAN.md` remark 5; `docs/workers/brief-drop-piano.md`, `docs/workers/drop-piano.md`)
+
+- **The user's three remarks (2026-10-18, watching NAV3 on Comptine, verbatim).** *5. "at 47s again (this song is very delicate and the
+  energy changes very rapidly) -> 47s looks like a drop, when really should do a drop viz at 52s with energy sustained till 1m10s (a
+  little slow (2-4 bars) to detect and show the shift in energy"* · *6. "the visual shift at 1m34 was too harsh for how delicate the
+  song was being, there was a big change at 1m38 but song was delicate"* · *7. "… at 1m45 would consider it dropping too early (it starts
+  at 1m49 and goes till 2m05 where it starts to pull back)"*. The analyst's reconstruction: the drops that fired on the capture were
+  40.8 (v3's dropEvt), 47.5 (the live detector, false), 58.9 (both), 67.4 (v3), 98.57 (v3); the live arm at 52.17 — the one the user
+  wanted — was lost because NAV3 was mid-implosion; every implosion held a fixed 8 beats whatever the energy; §113 had already
+  counted Comptine's five live arms with 0 confirmed. The user chose: the engine fixes this, for every scene.
+- **The measurement (before anything moved; the nine page traces `tools/truth/traces/<T>-map0.json`, the node harness; `tools/work/drop/
+  measure*.py`, `subdiag.mjs`, `slamdiag.mjs`).** (a) *Which path armed.* Every one of Comptine's six live arms (41.6, 47.9, 52.2, 61.1,
+  82.8, 98.8 s) was the SUB-VOID path (§64) — hp's 5 s mean 0.00–.06, the bass ratio .70–1.19 (no void), and the causal sub gate's 2 s
+  mean AND its 32 s mean at **0.00**: a piano has no sub, and the path counted a sub that was never there as having LEFT. The dance
+  tracks' sub-void arms read 32 s means of .62–.98 (SeeYouDrop .94, WhoLikesToParty .78, Vienna .62 / .87, Raindrops .63–1.0, TheChain
+  .74–.89). (b) *What a confirmed slam has.* After every confirmed live slam the ears' causal sub gate opened within .25 s (SeeYouDrop
+  ×2, WhoLikesToParty ×3, Vienna 85.3, Raindrops 68.6, IBelongHere 179.9: max 1.00 by +.25 s) and the loudness ladder (math/loudlight
+  `baseLight` on `loudRel` — the track's own 3 s loudness over the range it has shown, every scene's base light) stood at **.53–.99**
+  within a beat; after the false slams the gate never opened (IBelongHere's breakdown 157.3 / 166.9: 0.00 through +2 s; every piano slam)
+  or the ladder sat at **.17–.38** (TheChain 86.9, a kick in a quiet passage; Raindrops 129.5, a fill). (c) *The ladder's RISE* (the
+  brief's first-named witness): at the confirmed slams the slow ladder read +.16 … +.52 over the bar before and the false ones −.48 …
+  +.10 — but the fast ladder (loudM, 400 ms) read **+.34** on TheChain's quiet kick and **−.61** on Vienna's drop (the window straddles
+  the slam), the slow one **−.33** on Raindrops' drop after its gap (the window is full of the gap): no rise rule separated what the sub
+  and the level did, so the rise is not a knob. Comptine's 47.5 (−.48) against 52.17 (+.52) is what the shift stage reads.
+- **Item 1 — the false drops at the source (`engine/build/build.js`, `confirm.js`, `feed.js`, `features.js`).** `BUILD.SUBV_HAD` .3: the
+  sub-void path arms only when the causal gate's 32 s mean is at or above it. `SUB_BACK` .5 / `LEVEL` .5 / `PEND` 4: once the bass
+  confirms the onset (§54's rule, unchanged), the slam is PENDING in `build/confirm.js` until the sub gate is back and the ladder at a
+  drop's level — released on that frame (the same frame when both already hold), dropped after PEND beats without them with the arm
+  kept. `LEVEL_RNG` 4 LU: the level test applies once the track has shown that much range — a mid-track start (`&at=`, a seek)
+  restarts the loud stage with the §67 warm-up guard holding `loudRel` near .8 and `loudRange` growing from 0 (measured: Comptine from
+  36 s reads .28 → .58 across 48–53 s where the whole-track ladder reads 0 → .9). With the loud stage off (`&loud=0`, `loudAbs` −1) the
+  level test passes: the pre-§143 slam, the A/B. **v3's `dropEvt` takes the same confirmation** (features.js `dropCand` → `Confirm` →
+  `dropFire`: the strength, the envelope, the refractory and the arc's `build` reset land on the release frame; a resume clears it;
+  with `loudAbs` < 0 — node's v3, the fake — the candidate fires at once, so parity fake cannot move). *Node, whole tracks (`tools/work/
+  drop/slams-final.txt`, `v3-final.txt`; the live slams before → after against windows.json):* SeeYouDrop 2/2 → 2/2 (57.60 → 57.65,
+  105.62 → 105.67) · WhoLikesToParty 3/3 → 3/3 (+.08 / +.37 / +.18 s) · Vienna 1/2 → 1/2 (85.33 → 85.40) · Raindrops 68.6 kept, **129.52
+  gone** · IBelongHere 179.88 kept, **157.25 / 166.87 gone** · TheChain **86.92 gone** · Comptine 42.93 / 45.13 (node's) **gone, 0 arms but
+  127.6** · Malicious / CyborgNinja 0 / 0 — **every confirmed slam kept, 5 false → 0, the release 50–370 ms later** (the sub gate opening).
+  v3's drops: every truth hit kept (SeeYouDrop 2, IBelongHere 3 — now +.8 / +.3 / +1.3 s late, Raindrops 3), 15 false → 5 (Comptine's
+  six gone — 21.0 among them, the tool's provisional 21.5 the user never named; Malicious' three intro hits and TheChain's 8.3 / 171.1
+  stay: a sub and a loud level are there).
+- **Item 2 — the energy shift as an engine field (`engine/shift/shift.js`, `features-shift.js`, after 'build').** `shiftEvt` fires when the
+  ladder is `STEP` .3 above its value `BARS` 1 bar ago (a `BeatRing` of one sample per frame, read by beat) AND at or above `LEVEL`
+  .75, after `MIN_HIST` 4 s of music, `REFR` 2 bars after the last shift or confirmed drop (`dropLiveEvt || mapDropEvt` levels the hold
+  itself — a slam IS a shift, never doubled), and never while the live detector is armed (`ARMED` 1 — SeeYouDrop's riser read +.33
+  a bar before its slam, Vienna's dream +.3 three seconds before: the slam names those). `shiftHold` is 1 from the shift while the ladder
+  stays at or above `HOLD` .5 × the level it stepped to, 0 once it has sat under that line for `REL` .5 bar, or in silence (`PRESENT`
+  .15). Reactive, about a bar late by the 3 s window — the user: "sooner is better". **The level, three times:** `STEP` alone chained
+  NAV3's implosions on Comptine into one 50 s exterior (steps 0 → .3 at 31.9 / 42.7 / 81.8 / 89.8, each a re-arm); `LEVEL` .5 still fired
+  the four-second swells (44.4 at .56, 90.5 at .69 — the user's "too harsh at 1:34", 101.9 at .53); .7 fired the 1:34 swell on the
+  whole-track page trace (.711); **.75** sits .04 above the loudest swell and .11 under the softer drop (the whole-track page ladder:
+  the drop at 52 peaks .93, the 1:49 one .86, the opening's 34.5 s .79; the swells .54 / .71 / .54). *The page, whole track, Comptine
+  (`tools/work/drop/page/Comptine-after.json`, the live lanes from 0; the replay = the page to the frame):* shifts **32.98, 51.72, 111.30,
+  120.67 (a re-level inside the hold), 135.38**; holds **33.0–36.9, 51.7–67.0, 111.3–125.0**, 135.4–end; nowhere in silence; no live
+  arm but 128 s, no slam, no v3 drop. The user's 52 → 51.7; "energy sustained till 1m10" → the hold to 1:07 and NAV3's 8-beat settle to
+  1:11; "it starts at 1m49" → 1:51.3 (2.3 s, one bar at Comptine's heard 109 BPM — the 3 s window); "till 2m05 where it starts to pull
+  back" → **the hold ends at 125.0 = 2:05**. The eight other tracks (0–110 s traces, `shift-final.txt`): SeeYouDrop / WhoLikesToParty /
+  Vienna / Raindrops / CyborgNinja **none**, IBelongHere 65.9 (its 64.7 drop, which the live detector never finds — a gain for live
+  mode), Malicious 68.9, TheChain 44.7 / 55.3 (the loud section; its truth drop is 199.7). `feats.js` entries, `state.js` defaults,
+  `sources/fake.js` runs the same `Shift` on its mirrored ladder (the loud stage's convention), `tools/test_shift.js` in `npm test`
+  (34 checks), the node harness runs the loud stage (`build-node.js`, page = node on `loudRel` to 6e-4).
+- **Item 3 — NAV3 reads it (`assets/scenes/nav3/` only; NAV2 byte-untouched).** `OUT3.ANY` 1 → **0** (v3's `dropEvt` no longer fires the
+  implosion — NAV2 never read it, four of Comptine's false drops came in by it; `&n3drop=any` restores it; the fake timeline leaves on
+  its own shift now). The drop = `dropLiveEvt || mapDropEvt || shiftEvt` (`DROP_REFR` 4 beats as before). `HOLD` 1: EXT holds while
+  `shiftHold` is 1 and the `SETTLE` 8 beats count from the hold's last beat; `HOLD_MAX` 32 beats the hold's own cap (without it every
+  dance-track drop held to the 48-beat `PEAK`, 19–25 s: a drop section stays up for a minute; Comptine's 52 → 1:07 is 27 beats); PEAK
+  and silence still end it. `REARM` 1: a drop or shift during OUT / EXT / IN re-arms (`rearm()`: beat0 and the hold reset, the slam's own
+  ε pulse `IMP.slam` decaying over `SLAM_T` 2 beats in the `EPS_DROP` term, IN turned back into OUT from where c is — `st.start`, so no
+  jump) instead of being discarded. The §142 kick jump and mirror unchanged. *The Comptine replay (`tools/work/drop/replay3.mjs`
+  through the 0–110 s trace; before = v0.43's reads):* **7 implosions → 2** — before 21.0, 40.8, 47.5, 58.9, 67.4, 98.6, 107.9, each a
+  fixed 8 beats; after 32.9 → 43.9 and **51.4 → 72.1 (EXT 52.8 → 70.9)**, nothing at 47, nothing at 1:34 / 1:38 / 1:45. The page's
+  own record and the 1:49 → 2:05 hold: the page's own record (`tools/work/drop/n3rec.mjs`, CLOCK=1 scene 6 from 0 — file mode, so the map's one line at 107.37 is on; `tools/accept/drop/n3-page-comptine-s143.txt`): **3 implosions in 132 s — 33.0 → 42.2, 51.7 → 72.1 (EXT 53.1 → 70.9), 107.4 → 129.6 (the map's line, EXT 108.8 → 128.4, the hold to 2:05)**; at 47 INT (ρ .74), at 52 OUT, 58.9 / 66 EXT held, 70 EXT settling, 94 / 98 / 105 INT, 109 / 112 / 120 EXT held, 125 the hold off, 130 INT; errs [] bad []. The 2 fps eye strip `tools/work/drop/comptine-after.jpg` (40–130 s): the ball inside through 47, the set imploding at 51.5–53, the exploded pinwheel held to 66, back inside by 72.5, out again 107.5–129.5, inside at 130 — the 1:34 / 1:38 / 1:45 tiles show the ball rolling inside; the luminance ruler reads 0 clipped frames, median Y .104 (§142's .149 — less exterior wash). *The other eight (the node replay, 0–110 s):* SeeYouDrop 57.6 → 75.2 (EXT 15 s: the
+  32-beat cap + the settle) and 105.6; WhoLikesToParty 57.5 → 79.7; Vienna 85.3; IBelongHere 65.8 (on the shift; v0.43's 64.5 was v3's);
+  Malicious 68.9 (the shift; v0.43's three intro implosions 12 / 18.8 / 25.7 are gone); TheChain 44.7 + 55.3 (a re-arm) and 86.1;
+  Raindrops 129.5 (the page trace's pre-§143 slam, gone on the page after); CyborgNinja none.
+- **Item 4 — the gesture resume (`engine/audio.js`, the orchestrator's add).** On a fresh origin Chrome keeps a new AudioContext
+  suspended until a gesture; `initAudio()`'s `resume()` is a no-op without one and only `sources/mic.js` resumed on its own gesture —
+  a file-mode track on a new port (8813 tonight) ran the clock and played no sound. `GESTURE_RESUME` 1: one document-level
+  `pointerdown` / `keydown` listener (capture), removed the moment it fires, that resumes the context when it is not running. No pixel
+  reads it: headless cdp runs with the autoplay flag and never fires it — the md5 lines below cannot move by it.
+- **The gate.** `check.js` **0 fail** (6 warns, the pre-existing soft caps) · `npm test` **exit 0** — test_build 38 pass, **test_shift OK** (34), test_nav3 OK, test_fluid 345 ok, test_music 151 ok, the rest OK (every suite OK once the worktree has
+  the main checkout's untracked `tools/truth/traces/` and `tools/work/vox/` — see the pitfall in HARNESS) · the md5 list `PORT=8815 tools/scene-md5.sh s143` (`tools/accept/drop/scene-md5-s143.txt`): **the 12 lines s0–s5 = `tools/accept/nav3/scene-md5-step3.txt` to the byte** (no scene but NAV3 reads the fields; the fake's `dropEvt` is written by fake.js itself and v3's gate never runs on the fake; the gesture listener never fires headless), **s6-f360 = §142's `4ac1d5fe`**, **s6-f840 moved `2c703f67` → `aaa34ba3`**: NAV3 no longer reads the fake's dropEvt and its own shift on the fake lands at 25.45 s (the fake's ladder needs a loop of history), so the 14 s frame shows the ball still rolling, not the implosion — the IDS=6 pair re-run after the fake fix gave the same two hashes; errs [] hop 840 row 72 on all seven ids ·
+  the director `tools/director-trace.sh s143 house` / `aba` (`tools/accept/drop/director-*-s143.txt`): the scene ids picked are **0 / 2 / 4 only** — NAV3 (6) never (its bid is 0: the §93 roster unchanged); `q-trace.sh s143 house aba`: house q mean **.97 / .97 / .97** (min .55 on the load), aba **.98 / .98 / .58** — the third aba run dipped to .14 in its last window with nothing of this branch on screen (the user's desktop Chrome loads every trace; the two others read 1.00 there) · the q trace `tools/work/nav3/q-all.sh s143 6` (the nine drop windows, NAV3 forced, real time on the GPU; `tools/accept/drop/q-nav3-windows-s143.txt`): **q .912–.921, fps mean 60 min 60 on all nine**, errs [] — the held exterior costs nothing the governor sees (§142 read .913–.926) · parity fake **`MS parity: every field identical to 1e-9`** (`tools/accept/drop/parity-fake.jpg`) · the strips `tools/work/drop/comptine-after.jpg` (Comptine 40–130 s at 2 fps, 181 tiles, 0 clipped) and `tools/work/drop/seeyoudrop-after.jpg` (45–80 s: the ball inside to 57.5, the way in at 58, the exploded set held 59–74, back by 78 — nothing lost).
+- **The per-track table (the whole tracks on the page, the live lanes; before = the 0–110 s traces / §113 / the node harness):**
+  (`tools/accept/drop/per-track-s143.txt`, `tools/work/drop/table.mjs`; live = `dropLiveEvt`, v3 = `dropEvt`, the page's live lanes; ·n = the node harness past the 110 s before-traces; the shift column is re-derived from the after-traces at the shipped knobs — replay = page; NAV3 = `replay3.mjs` through the traces: implosions start → end)
+
+  | track | truth | live before → after | v3 before → after | shifts · holds | NAV3 before → after |
+  |---|---|---|---|---|---|
+  | Comptine | 21.5 31.5 41.5 (the tool's, provisional) | 47.5 52.2 58.9 107.9 (4 false) → **none** | 21 40.8 58.9 67.4 98.6 129 (4 false) → **none** | **33.0 51.7 111.3 120.7 135.4** · 33–36.9, **51.7–67.0**, **111.3–125.0**, 135.4–end | 7 (8 beats each) → **4: 33→42, 51.7→72.1, 111.3→129.6, 135.4→end** |
+  | SeeYouDrop | 57.6 105.6 | 2/2 → **2/2** (+50 ms) | 2/2 → 2/2 (+70 ms) | none · the slams' hold 57.6–134.7 | 57.6→62.4, 105.6→110 → 57.6→75.2, 105.7→123.2 |
+  | IBelongHere | 15.9 64.7 129.8 178.9 | 157.3n 166.9n 179.9n (1/4, 2 false) → **179.6 (1/4, 0 false)** | 64.5 130n 178.3n (3/4) → 65.3 130.4 179.7 (3/4, +.8/+.4/+1.4 s) | **65.8 130.7 180.4** (the three drops the live detector misses, 1.1–1.5 s late) · 65.8–123.4, 130.7–148.8, 180.4–214.3 | 1 (64.5, v3's) → **3** on the shifts |
+  | WhoLikesToParty | 57.5 131.4 188.8 | 3/3 → **3/3** (+.1/+.4/+.2 s) | 0/3 → 0/3 | none (never a shift: its range 2.9 LU) | 1 → **3** (every slam, 32 beats each) |
+  | Vienna | 85.3 106.7 | 1/2 → 1/2 (+70 ms) | 73.3 (false) → **none** | 185.7 · 85.4–end | 73.3 (false), 85.3 → 85.4→112.0, 185.7 |
+  | RaindropsOnRoses | 41.1 68.6 137.1 | 129.5 (false) → **none** | 3/3 → 3/3 (+.1 s) | **26.0** · 26.0–114.3 (the 5.0 s cold-start shift gone with MIN_HIST 16) | 41.1, 68.6, 129.5 (v3's, v3's, false) → **26.0→44.5** (the first chorus; the 41.1 / 68.6 drops are v3's and the map's — in live mode NAV3 no longer sees them) |
+  | Malicious | 148.3 | 0/1 → 0/1 | 12 18.8 25.7 (3 false) → 12.3 19.7 25.9 (3 false, +.3 … +.9 s) | 68.9 · 68.9–113.7 | 3 (v3's intro hits) → **1: 68.9→87.3** |
+  | TheChain | 199.7 | 86.1 (false) → **none** | 8.3 86.1 171.1n 186.2n (4 false) → 8.3 171.1 (2 false) | 44.7 55.3 121.6 131.4 **202.7** (the truth drop, 3 s late — the live detector never arms there) · 44.7–83.1, 121.6–175.0, 202.7–258.8 | 8.3, 86.1 (both false) → 44.7→72.6 (1 re-arm), 121.6→148.8 (1 re-arm), 202.7→219.7 |
+  | CyborgNinja | — | 0 → 0 | 0 → 0 | none | 0 → 0 |
+
+  Read: **no confirmed live slam lost on any track and 0 false live slams on all nine** (was 8: Comptine 4, IBelongHere 2, Raindrops 1,
+  TheChain 1); v3's truth hits all kept at +50 ms … +1.4 s, its false drops 15 → 5; the piano's drops are gone from both detectors and
+  the shift carries its two (and its 33 s one, the tool's own 31.5 truth); the shifts on the dance tracks sit on the drops the live
+  detector misses (IBelongHere ×3, TheChain's 199.7) or on loud sections (TheChain 44.7 / 55.3 / 121.6 / 131.4, Malicious 68.9,
+  Raindrops 26.0, Vienna 185.7). NAV3's exteriors run 32 beats + the settle where the energy holds (15–22 s) against 8 beats before.
+- **The knob table.** `BUILD.SUBV_HAD` .3 · `SUB_BACK` .5 · `LEVEL` .5 · `LEVEL_RNG` 4 · `PEND` 4 (`BUILDK='{"SUB_BACK":0}'` in node;
+  `&loud=0` = no level test on the page) · `SHIFT.STEP` .3 · `LEVEL` .75 · `BARS` 1 · `HOLD` .5 · `REL` .5 · `MIN_HIST` 4 · `REFR` 2 ·
+  `PRESENT` .15 · `ARMED` 1 · `DROP_LEVELS` 1 (`CARD.ENGINE.SHIFTK.LEVEL = …` live; the replay's `--set`) · `OUT3.ANY` 0 (`&n3drop=any`) ·
+  `HOLD` 1 · `HOLD_MAX` 32 · `REARM` 1 · `SLAM_T` 2 (`&n3imp=EPS,EPS_BEAT,EPS_DROP,PET_K,PET_R,T_IN,SETTLE,PET_LUM,HOLD,REARM,HOLD_MAX` —
+  `…,0,0` is v0.43's settle and discard) · `audio.js GESTURE_RESUME` 1.
+- **NOT done.** The user's eye on all of it. The page's own NAV3 record exists for Comptine and SeeYouDrop only (the seven others are the node replay through their page traces). The shift's LEVEL .75 is fitted
+  on Comptine with its margins stated (.04 / .11); TheChain's 44.7 / 55.3 and Malicious' 68.9 shifts are real loud sections, not the
+  user's drops — whether NAV3 should implode there is for the eye. IBelongHere's three v3 drops now land +.8 … +1.3 s late for the
+  scenes that read `dropEvt` (TORUS2, FLUID2) and its 64.7 drop reaches NAV3 1.1 s late on the shift (the live detector still misses
+  it, 1/4). The release lag of 50–370 ms on the live slams is the sub gate's opening. The shift and the level test need the track's
+  loudness history: a `&at=` start mid-track is cold for ~20 s (friction 4) — in live mode the stream runs from the start of listening.
+  DUST / TORUS2 do not read the fields (the user's word). Appendix A is stale against feats.js on nine rows (`tools/feats-doc.js`
+  regenerates them; reverted here to keep the diff its own). `nav.js` and `implode.js` are inside the caps (407 / 262 lines, the warn as
+  since §140).

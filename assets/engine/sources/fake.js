@@ -9,6 +9,8 @@ import { TAU, clamp, ema, frac, sstep } from '../../math/util.js';
 import { MS, TEX } from '../state.js';
 import { LOUDK, LOUD_OFS } from '../loud.js';
 import { TONGUEK } from '../clock/tongues.js';
+import { Shift, SHIFT } from '../shift/shift.js';   // §143: the energy shift on the fake's own ladder (the real stage, deterministic here)
+import { baseLight } from '../../math/loudlight.js';
 
 const lib = {};
 let hatPh = 0;
@@ -45,6 +47,7 @@ function fakeLattice(dt, S, kickOn, hatsOn) {
 }
 // the fake timeline's loudness state (fakeLoud below): the peak hold and the window the range percentiles come from
 const FL = { pk: 0, lo: 0, hi: 0, n: 0 };
+const FSH = new Shift(SHIFT), FSI = {};   // §143: the fake timeline's shift stage (features-shift.js returns on fakeOn, as the loud stage does)
 
 export function fakeMusic(dt, now) {
   const S = MS, T = now % 24;
@@ -122,6 +125,17 @@ export function fakeMusic(dt, now) {
   fakeSynapse(dt, now, S, sec, T, e, kp, kickOn, hatX);
   fakeLoud(dt, now, S);
   fakeTongues(S, kickOn, sec !== 'valley');
+  fakeShift(dt, S);
+}
+
+// §143: shiftEvt / shiftHold from the mirrored ladder through the real Shift (engine/shift/shift.js). A function of the fake state
+// alone; under &loud=0 the ladder is NaN and nothing fires.
+function fakeShift(dt, S) {
+  const i = FSI;
+  i.B = S.beatCount + S.beatPhase; i.bpm = S.bpm; i.ok = S.presence >= SHIFT.PRESENT; i.dt = dt;
+  i.lad = baseLight(S.loudRel, S.loudRange, S.loudAbs, NaN); i.drop = 0; i.armed = 0;   // no confirmed drop here (dropLiveEvt / mapDropEvt never fire on the fake; v3's dropEvt is not one in the real stage either) and the live detector never arms — so the fake's own ladder step after the 13 s drop IS the shift NAV3 leaves on under #test
+  const o = FSH.step(i);
+  S.shiftEvt = !!o.shiftEvt; S.shiftHold = o.shiftHold;
 }
 
 // The twelve TONGUE fields (engine/clock/tongues.js, DECISIONS §76), mirrored from the LATTICE's phase (§83): the beat locks

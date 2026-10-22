@@ -1,0 +1,27 @@
+Comptine          truth [21.513,31.544,41.471]
+   before: arms 41.3 43.5 45.6 61.1 76.1 89.5 100.3 127.6 | slams 42.93 45.13 → 1/3 hit, 1 false (45.13)
+   after:  arms 127.6 | slams  → 0/3 hit, 0 false
+SeeYouDrop        truth [57.606,105.596]
+   before: arms 51.2 102.4 120 | slams 57.6 105.62 → 2/2 hit, 0 false
+   after:  arms 51.2 102.4 120 | slams 57.65 105.67 → 2/2 hit, 0 false
+IBelongHere       truth [15.882,64.691,129.776,178.852]
+   before: arms 148.9 165.4 167.3 213.4 | slams 157.25 166.87 179.88 → 1/4 hit, 2 false (157.25 166.87)
+   after:  arms 148.9 165.4 177.5 213.4 | slams 179.88 → 1/4 hit, 0 false
+WhoLikesToParty   truth [57.507,131.352,188.788]
+   before: arms 51.9 127.8 183.2 | slams 57.52 131.4 188.8 → 3/3 hit, 0 false
+   after:  arms 51.9 127.8 183.2 | slams 57.52 131.4 188.8 → 3/3 hit, 0 false
+Vienna            truth [85.3359,106.6693]
+   before: arms 69.3 77.2 | slams 85.33 → 1/2 hit, 0 false
+   after:  arms 69.3 77.2 | slams 85.4 → 1/2 hit, 0 false
+RaindropsOnRoses  truth [41.134,68.569,137.137]
+   before: arms 34.3 41.1 66.9 114 126 222.1 | slams 68.6 129.52 → 1/3 hit, 1 false (129.52)
+   after:  arms 34.3 41.1 66.9 114 126 222.1 | slams 68.65 → 1/3 hit, 0 false
+Malicious         truth [148.317]
+   before: arms 222 | slams  → 0/1 hit, 0 false
+   after:  arms 222 | slams  → 0/1 hit, 0 false
+TheChain          truth [199.692]
+   before: arms 81.7 92.8 174.9 261.1 | slams 86.92 → 0/1 hit, 1 false (86.92)
+   after:  arms 81.7 92.8 174.9 261.1 | slams  → 0/1 hit, 0 false
+CyborgNinja       truth []
+   before: arms  | slams  → 0/0 hit, 0 false
+   after:  arms  | slams  → 0/0 hit, 0 false

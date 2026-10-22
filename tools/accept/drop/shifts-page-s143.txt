@@ -1,0 +1,10 @@
+knobs {"STEP":0.3,"LEVEL":0.75,"ARMED":1,"BARS":1,"HOLD":0.5,"REL":0.5,"MIN_HIST":16,"REFR":2,"PRESENT":0.15,"DROP_LEVELS":1}
+Comptine          truth [21.513,31.544,41.471] | drops  | shifts 5: 32.98@0.75 51.72@0.75 111.30@0.75 120.67@0.75 135.38@0.75 | holds 33.0–36.9 51.7–67.0 111.3–125.0 135.4–end
+SeeYouDrop        truth [57.606,105.596] | drops 57.65 105.67 | shifts 0:  | holds 57.6–134.7
+IBelongHere       truth [15.882,64.691,129.776,178.852] | drops  | shifts 3: 65.85@0.92 130.70@0.84 180.38@0.75 | holds 65.8–123.4 130.7–148.8 180.4–214.3
+WhoLikesToParty   truth [57.507,131.352,188.788] | drops 57.52 131.38 188.78 | shifts 0:  | holds 57.5–end
+Vienna            truth [85.3359,106.6693] | drops 85.40 | shifts 1: 185.68@0.97 | holds 85.4–end
+RaindropsOnRoses  truth [41.134,68.569,137.137] | drops  | shifts 1: 25.98@0.76 | holds 26.0–114.3
+Malicious         truth [148.317] | drops  | shifts 1: 68.88@0.92 | holds 68.9–113.7
+TheChain          truth [199.692] | drops  | shifts 5: 44.68@0.86 55.25@0.84 121.62@0.75 131.42@0.77 202.68@0.75 | holds 44.7–83.1 121.6–175.0 202.7–258.8
+CyborgNinja       truth [] | drops  | shifts 0:  | holds 

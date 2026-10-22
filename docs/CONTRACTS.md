@@ -1130,7 +1130,7 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `absentT` | raw | seconds since the bass left | first drop path |
 | `arc` | enum | which part of the song this is | scene precedence, kal |
 | `arcT` | raw | seconds in the current arc | drop gating |
-| `dropEvt` | event | THE DROP just landed | hard cut to NAV EXT, flash, glitch |
+| `dropEvt` | event | THE DROP just landed | hard cut to NAV EXT, flash, glitch (TORUS2 / FLUID2 read it; NAV3 only with &n3drop=any since §143) |
 | `dropStrength` | level | how big the drop was | exterior depth after the drop |
 | `dropEnv` | level | the drop, decaying over ~2 beats | uBeat.w, zoom, feedback zoom |
 | `lastDrop` | raw | time of the last drop (s) | refractory |
@@ -1174,6 +1174,8 @@ Every field a scene may list in `feats` and read in `update`. Kinds: `level` 0..
 | `buildLive` | level | a drop is coming: the bass has been pulled out for a bar or more (the void before a drop), rising with its length | park / wind up through the void (NAV reads it by default since 2026-09-29; the old look: nav.buildLive=build) |
 | `dropLiveIn` | raw | beats until the next bar line while a drop is coming (-1 = nothing armed) | a count-down to the candidate drop line |
 | `dropLiveEvt` | event | THE DROP, live: the bass slams back on a beat after the void (one frame) | the drop flash / spring (NAV reads it by default since 2026-09-29; the old look: nav.dropLiveEvt=dropEvt) |
+| `shiftEvt` | event | the energy just SHIFTED up: the track got a step louder over the last bar (one frame) — the drop a piece with no slam has | NAV3's implosion (its drop = the live slam OR this); no other scene by default |
+| `shiftHold` | level | is the energy still up since the shift (1) or has it fallen back (0) | NAV3 holds its implosion (EXT) while this is 1, then settles over 8 beats (the hard cap stays its PEAK) |
 | `nextBeatIn` | raw | seconds until the next beat line (-1 = no clock / silence) | a count-down to the beat (a motion that lands on it) |
 | `nextBarIn` | raw | seconds until the next bar line (-1 = none) | a count-down to the bar |
 | `nextKickIn` | raw | seconds until the next PREDICTED kick (-1 = none within 2 bars / not confident) | wind up before the kick lands (TORUS2 A/B: torus2.wave=nextKickUp*0.35+0.65) |

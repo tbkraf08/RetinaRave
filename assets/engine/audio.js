@@ -54,6 +54,21 @@ export const AU = {
   },
 };
 
+// §143: on a fresh origin Chrome keeps a new AudioContext SUSPENDED until a user gesture — init()'s resume() below is a no-op
+// without one (only sources/mic.js resumes on its own gesture), so a file-mode track on a new port ran the clock and played no
+// sound. One document-level listener, removed the moment it fires, that resumes the context if it is not running yet.
+export const GESTURE_RESUME = 1;   // 0: the pre-§143 behaviour (the first gesture does nothing)
+function armGestureResume(ctx) {
+  if (!GESTURE_RESUME || typeof document === 'undefined') return;
+  const on = () => {
+    document.removeEventListener('pointerdown', on, true);
+    document.removeEventListener('keydown', on, true);
+    if (ctx.state !== 'running' && ctx.resume) ctx.resume();
+  };
+  document.addEventListener('pointerdown', on, true);
+  document.addEventListener('keydown', on, true);
+}
+
 export function initAudio() {
   if (AU.ctx) return;
   const C = window.AudioContext || window.webkitAudioContext;
@@ -74,6 +89,7 @@ export function initAudio() {
   AU.slow.connect(mute);
   mute.connect(ctx.destination);
   ctx.resume && ctx.resume();
+  armGestureResume(ctx);   // §143
   PCM.arm(ctx, AU.bus); // v0.15: the PCM bus's live feeder — it builds nothing until a stage subscribes
   for (const f of AU.onInit) f(ctx);
 }

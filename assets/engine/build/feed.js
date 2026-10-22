@@ -6,9 +6,10 @@
 // (DECISIONS §50): the RAW v3 clock (the stages run before the lead) moved onto heard time with the lead's estimate L.
 import { ANCHOR_CONF } from '../bars/feed.js';
 import { BUILD } from './build.js';
+import { ladderOf } from './confirm.js';   // §143: the loudness ladder the slam confirms on (NaN = no level test: the loud stage off or the track's range not shown yet)
 
 // the MS fields feed() reads
-export const FEED_IN = ['beatCount', 'beatPhase', 'bpm', 'presence', 'barConf', 'bpmSyn', 'barPos', 'hp', 'bassS', 'sub', 'subGate', 'tongueAmbig', 'tongueOn', 'heardT'];
+export const FEED_IN = ['beatCount', 'beatPhase', 'bpm', 'presence', 'barConf', 'bpmSyn', 'barPos', 'hp', 'bassS', 'sub', 'subGate', 'tongueAmbig', 'tongueOn', 'heardT', 'loudRel', 'loudRange', 'loudAbs'];
 
 // The ears' low onsets due by `due` (heard s) and after lane.t (the last one taken): the released ones and, when a display
 // lead lets the release run ahead of the ear (file modes), the pending ones too. lane = { t: -Infinity } per stream.
@@ -41,5 +42,8 @@ export function feed(S, L, disp, dt, ts, into, sg) {
   // the tongues' tension (§77): absent or the stage off (-1) reads as "not ambiguous"
   into.tongueOn = S.tongueOn === 1 ? 1 : 0; into.tongueAmbig = +S.tongueAmbig || 0;
   into.anchor = sure ? ((Math.round(raw - S.barPos) % 4) + 4) % 4 : -1;
+  // §143: the loudness ladder (loudRel, the 3 s loudness, over the track's own range — what every scene's base light reads) — NaN
+  // when the loud stage is off (loudAbs −1 / absent), which the detector reads as "no level needed" (the pre-§143 slam)
+  into.lad = ladderOf(S.loudRel, S.loudRange, S.loudAbs, BUILD);   // NaN: the loud stage off, or the range not shown yet (a mid-track start)
   return into;
 }

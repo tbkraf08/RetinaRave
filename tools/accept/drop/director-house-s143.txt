@@ -1,0 +1,163 @@
+SCENE@0.45 -> 2 bar0.00 gt0.00
+SECTION@1.45 valley
+1.7 bpm123.9 syn127.9 reg0.18 r320.06/0.06/0/0.06/0.06 valley e0.56/0.19 b0.61 bld0.13 abs0.0 ten0.60 sur0.51/1.2 iv4 cl0.71 | INT h0.30 lg-4.0 par0.00 | sc2 sec0 alt-1 ret0 bar2.71 gt0.00 q0.48
+2.9 bpm125.4 syn127.9 reg0.33 r320.26/0.14/0/0.18/0.15 sustain e0.58/0.34 b0.25 bld0.36 abs0.3 ten0.34 sur0.10/0.7 iv4 cl0.89 | INT h0.38 lg-4.0 par0.00 | sc2 sec0 alt-1 ret0 bar1.25 gt0.00 q0.34
+4.0 bpm126.4 syn127.9 reg0.46 r320.8/0.52/0/0.49/0.35 sustain e0.64/0.44 b0.89 bld0.51 abs0.0 ten0.31 sur0.01/0.5 iv4 cl0.89 | INT h-0.08 lg-4.0 par0.16 | sc2 sec1 alt-1 ret0 bar3.41 gt0.00 q0.34
+DROP@4.87 str 0.70
+5.2 bpm127.1 syn127.9 reg0.62 r321.01/0.65/0/0.5/0.43 peak e0.61/0.51 b0.31 bld0.24 abs0.2 ten0.30 sur0.00/0.3 iv4 cl0.92 | INT h-0.12 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar1.84 gt0.76 q0.27
+6.3 bpm127.4 syn128.1 reg0.74 r320.92/0.71/0/0.44/0.45 peak e0.54/0.52 b0.98 bld0.52 abs0.0 ten0.17 sur0.00/0.2 iv4 cl0.92 | INT h0.27 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar0.16 gt0.96 q0.13
+7.4 bpm127.6 syn128.0 reg0.83 r320.89/0.64/0/0.37/0.42 peak e0.57/0.53 b0.55 bld0.57 abs0.1 ten0.36 sur0.00/0.5 iv4 cl0.85 | INT h0.46 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar2.51 gt0.99 q0.06
+8.6 bpm127.7 syn127.7 reg0.90 r320.97/0.73/0/0.42/0.47 peak e0.49/0.53 b0.25 bld0.55 abs0.3 ten0.18 sur0.09/1.0 iv4 cl0.71 | INT h0.43 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar0.96 gt1.00 q0.00
+9.8 bpm127.8 syn127.6 reg0.93 r320.9/0.56/0/0.41/0.36 peak e0.56/0.56 b0.39 bld0.52 abs0.1 ten0.19 sur0.01/0.1 iv4 cl0.46 | INT h0.47 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar3.61 gt1.00 q0.00
+FILE@10.95 alt0 scene2
+11.0 bpm127.9 syn127.6 reg0.95 r320.89/0.58/0/0.44/0.34 peak e0.59/0.55 b0.78 bld0.46 abs0.0 ten0.06 sur0.00/0.4 iv4 cl0.47 | INT h0.49 lg-4.0 par0.00 | sc2 sec1 alt0 ret0 bar2.27 gt1.00 q0.00
+12.3 bpm127.9 syn127.5 reg0.95 r321.09/0.82/0/0.56/0.51 peak e0.54/0.56 b0.29 bld0.43 abs0.2 ten0.16 sur0.00/0.5 iv4 cl0.52 | INT h0.04 lg-4.0 par0.98 | sc2 sec1 alt1 ret0 bar0.82 gt1.00 q0.00
+13.5 bpm127.9 syn127.5 reg0.95 r320.9/0.62/0/0.46/0.38 peak e0.66/0.57 b0.59 bld0.39 abs0.0 ten0.32 sur0.00/0.7 iv4 cl0.62 | INT h-0.12 lg-4.0 par0.00 | sc2 sec1 alt1 ret0 bar3.41 gt1.00 q0.00
+14.6 bpm127.9 syn127.5 reg0.93 r320.97/0.61/0/0.52/0.39 peak e0.52/0.56 b0.26 bld0.37 abs0.3 ten0.40 sur0.00/0.7 iv4 cl0.53 | INT h0.31 lg-4.0 par0.00 | sc2 sec1 alt1 ret0 bar1.91 gt1.00 q0.00
+15.8 bpm127.9 syn127.5 reg0.95 r320.96/0.63/0/0.48/0.4 peak e0.61/0.57 b0.65 bld0.33 abs0.0 ten0.44 sur0.00/0.7 iv4 cl0.52 | INT h0.42 lg-4.0 par0.00 | sc2 sec1 alt1 ret0 bar0.42 gt1.00 q0.00
+SECTION@16.09 peak
+17.0 bpm127.9 syn127.5 reg0.98 r321.09/0.73/0/0.49/0.44 peak e0.59/0.58 b0.28 bld0.31 abs0.3 ten0.19 sur0.00/0.6 iv4 cl0.69 | INT h0.43 lg-4.0 par0.00 | sc2 sec1 alt1 ret0 bar2.93 gt1.00 q0.00
+18.2 bpm127.9 syn127.5 reg0.94 r320.92/0.61/0/0.54/0.32 peak e0.66/0.59 b0.47 bld0.29 abs0.1 ten0.12 sur0.00/0.5 iv4 cl0.86 | INT h-0.09 lg-4.0 par0.01 | sc2 sec1 alt1 ret0 bar1.62 gt1.00 q0.00
+19.3 bpm127.9 syn127.5 reg0.93 r320.97/0.69/0/0.54/0.4 peak e0.56/0.59 b0.35 bld0.28 abs0.2 ten0.14 sur0.00/0.4 iv4 cl0.91 | INT h-0.12 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar2.80 gt1.00 q0.00
+20.3 bpm127.9 syn127.5 reg0.93 r320.95/0.68/0/0.49/0.38 peak e0.57/0.59 b0.65 bld0.26 abs0.0 ten0.12 sur0.00/0.4 iv4 cl0.90 | INT h0.37 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar1.06 gt1.00 q0.00
+21.6 bpm127.9 syn127.5 reg0.88 r320.77/0.67/0/0.38/0.42 peak e0.60/0.59 b0.46 bld0.24 abs0.1 ten0.20 sur0.00/0.3 iv4 cl0.83 | INT h0.45 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar3.66 gt1.00 q0.00
+22.7 bpm127.9 syn127.5 reg0.82 r320.62/0.54/0/0.29/0.38 peak e0.58/0.57 b0.89 bld0.19 abs0.0 ten0.23 sur0.00/0.3 iv4 cl0.81 | INT h-0.11 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar2.17 gt1.00 q0.00
+SECTION@23.48 peak
+SURPRISE@23.48
+23.8 bpm127.9 syn127.5 reg0.79 r320.67/0.55/0/0.3/0.39 peak e0.26/0.49 b0.01 bld0.11 abs1.0 ten0.03 sur0.88/1.5 iv7 cl0.99 | INT h0.22 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar1.53 gt1.00 q0.00
+25.0 bpm127.9 syn127.5 reg0.75 r320.65/0.46/0/0.29/0.27 peak e0.33/0.43 b0.00 bld0.23 abs2.2 ten0.00 sur0.21/0.8 iv7 cl1.00 | INT h0.83 lg-4.0 par0.00 | sc2 sec2 alt1 ret0 bar2.96 gt1.00 q0.00
+FILE@25.48 alt1 scene2
+26.1 bpm127.9 syn128.0 reg0.70 r320.6/0.94/0/0.4/0.16 sustain e0.25/0.37 b0.00 bld0.37 abs3.3 ten0.00 sur0.02/0.4 iv7 cl1.00 | INT h-0.02 lg-4.0 par0.92 | sc2 sec3 alt1 ret0 bar2.47 gt1.00 q0.00
+27.2 bpm127.9 syn128.1 reg0.70 r320.68/0.6/0/0.26/0.3 sustain e0.13/0.29 b0.00 bld0.41 abs4.4 ten0.02 sur0.00/0.6 iv7 cl0.97 | INT h-0.12 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar0.80 gt1.00 q0.00
+SECTION@27.53 valley
+28.2 bpm127.9 syn128.2 reg0.62 r320.09/0.04/0/0.01/0.02 valley e0.35/0.30 b0.00 bld0.52 abs5.4 ten0.03 sur0.00/0.5 iv7 cl1.00 | INT h-0.12 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar2.94 gt0.99 q0.00
+29.2 bpm128.0 syn128.0 reg0.55 r32-0.03/0/0/-0.03/0 valley e0.31/0.31 b0.00 bld0.49 abs6.4 ten0.03 sur0.00/0.2 iv7 cl1.00 | INT h0.52 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar1.08 gt0.96 q0.01
+30.2 bpm127.9 syn127.8 reg0.37 r32- valley e0.22/0.29 b0.00 bld0.53 abs7.4 ten0.04 sur0.00/0.3 iv7 cl1.00 | INT h0.86 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar3.18 gt0.92 q0.01
+SURPRISE@30.97
+31.2 bpm128.0 syn128.0 reg0.32 r320.19/0/0/-0.01/0 build e0.21/0.25 b0.00 bld0.62 abs8.4 ten0.01 sur0.81/1.5 iv7 cl1.00 | INT h0.93 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar1.34 gt0.88 q0.02
+32.2 bpm128.0 syn128.1 reg0.49 r320.46/0.01/0/0.19/-0.03 build e0.35/0.28 b0.00 bld0.71 abs9.4 ten0.00 sur0.27/0.9 iv4 cl0.99 | INT h0.88 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar3.51 gt0.85 q0.02
+33.3 bpm127.9 syn128.2 reg0.70 r320.79/0.2/0/0.38/-0.04 build e0.31/0.29 b0.00 bld0.69 abs10.4 ten0.00 sur0.04/0.5 iv4 cl1.00 | INT h-0.06 lg-4.0 par0.41 | sc2 sec3 alt2 ret0 bar1.68 gt0.86 q0.02
+34.3 bpm127.9 syn128.2 reg0.77 r321.11/0.32/0/0.57/-0.05 build e0.22/0.27 b0.00 bld0.63 abs11.5 ten0.01 sur0.00/0.7 iv4 cl0.87 | INT h-0.12 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar3.85 gt0.97 q0.03
+35.3 bpm127.9 syn128.2 reg0.83 r321.16/0.31/0/0.68/-0.05 build e0.30/0.27 b0.00 bld0.63 abs12.5 ten0.00 sur0.13/0.3 iv4 cl0.70 | INT h-0.12 lg-4.0 par0.03 | sc2 sec3 alt2 ret0 bar2.01 gt1.00 q0.03
+36.3 bpm127.9 syn128.0 reg0.88 r321.07/0.37/0/0.61/0.05 build e0.39/0.32 b0.00 bld0.72 abs13.5 ten0.01 sur0.02/0.5 iv4 cl0.92 | INT h-0.12 lg-4.0 par0.00 | sc2 sec3 alt2 ret0 bar0.26 gt1.00 q0.03
+37.3 bpm127.9 syn127.8 reg0.92 r321/0.64/0/0.59/0.38 build e0.37/0.34 b0.00 bld0.84 abs14.5 ten0.03 sur0.00/0.7 iv4 cl0.83 | INT h0.05 lg-4.0 par0.91 | sc2 sec3 alt2 ret0 bar2.38 gt1.00 q0.04
+38.3 bpm128.0 syn127.7 reg0.96 r321.07/0.95/0/0.68/0.67 build e0.31/0.33 b0.00 bld0.84 abs15.5 ten0.05 sur0.36/1.1 iv4 cl0.54 | INT h0.03 lg-4.0 par0.99 | sc2 sec3 alt2 ret0 bar0.51 gt1.00 q0.04
+39.3 bpm127.9 syn127.6 reg0.98 r321.27/1.23/0/0.76/0.86 build e0.43/0.35 b0.00 bld0.80 abs16.5 ten0.01 sur0.05/0.7 iv4 cl0.64 | INT h0.01 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar2.64 gt0.99 q0.05
+40.3 bpm127.9 syn127.6 reg0.99 r321.52/1.41/0/0.82/0.89 build e0.44/0.39 b0.00 bld0.81 abs17.5 ten0.00 sur0.01/0.4 iv4 cl0.83 | INT h0.01 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar0.75 gt0.95 q0.05
+41.3 bpm127.9 syn127.5 reg1.00 r320.87/0.73/0/0.54/0.49 build e0.40/0.39 b0.01 bld0.93 abs18.5 ten0.04 sur0.00/0.6 iv4 cl0.68 | INT h0.00 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar2.88 gt0.91 q0.06
+42.3 bpm127.9 syn127.5 reg1.00 r320.95/0.83/0/0.61/0.61 build e0.37/0.38 b0.00 bld0.98 abs19.5 ten0.19 sur0.16/0.6 iv4 cl0.40 | INT h0.00 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar0.85 gt0.88 q0.06
+43.3 bpm127.9 syn127.5 reg1.00 r321.12/1.04/0/0.68/0.72 build e0.50/0.42 b0.01 bld0.99 abs20.5 ten0.09 sur0.02/0.7 iv4 cl0.64 | INT h0.00 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar2.85 gt0.84 q0.07
+44.3 bpm127.9 syn127.5 reg1.00 r321.09/1.05/0/0.58/0.69 build e0.47/0.44 b0.01 bld1.00 abs21.5 ten0.05 sur0.00/0.3 iv4 cl0.69 | INT h0.00 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar0.96 gt0.81 q0.07
+45.3 bpm127.9 syn127.5 reg0.99 r320.88/0.77/0/0.53/0.55 build e0.37/0.43 b0.00 bld0.99 abs22.5 ten0.05 sur0.00/0.4 iv4 cl0.49 | INT h0.00 lg-4.0 par1.00 | sc2 sec3 alt2 ret0 bar3.10 gt0.78 q0.07
+SECTION@45.63 build
+SURPRISE@45.63
+FILE@45.63 alt2 scene2
+DROP@45.77 str 1.00
+46.3 bpm128.0 syn127.7 reg0.91 r320.38/0.27/0/0.28/0.22 peak e0.57/0.45 b0.48 bld0.04 abs0.1 ten0.41 sur0.98/1.6 iv4 cl0.72 | EXT h0.00 lg-2.0 par0.00 | sc2 sec3 alt2 ret0 bar1.41 gt0.75 q0.08
+47.3 bpm128.0 syn127.6 reg0.86 r320.62/0.44/0/0.45/0.38 peak e0.58/0.48 b0.47 bld0.11 abs0.2 ten0.36 sur0.35/0.8 iv7 cl0.89 | EXT h0.00 lg-4.2 par0.00 | sc2 sec3 alt2 ret0 bar3.69 gt0.85 q0.08
+48.3 bpm128.0 syn127.8 reg0.86 r321.08/0.76/0/0.72/0.51 peak e0.57/0.51 b0.34 bld0.16 abs0.2 ten0.33 sur0.05/0.6 iv7 cl0.99 | EXT h0.00 lg-5.1 par0.00 | sc2 sec2 alt2 ret0 bar1.85 gt0.97 q0.09
+RESTORE@48.92 alt0 scene2
+49.3 bpm127.9 syn127.8 reg0.82 r320.94/0.75/0/0.47/0.51 peak e0.53/0.53 b0.25 bld0.19 abs0.3 ten0.30 sur0.01/0.4 iv7 cl0.94 | EXT h0.00 lg-5.5 par0.00 | sc2 sec2 alt0 ret1 bar3.99 gt0.99 q0.09
+50.3 bpm128.0 syn127.7 reg0.84 r321.02/0.76/0/0.5/0.53 peak e0.52/0.54 b0.93 bld0.20 abs0.0 ten0.30 sur0.00/0.4 iv7 cl0.98 | EXT h0.00 lg-5.5 par0.00 | sc2 sec2 alt0 ret1 bar2.12 gt1.00 q0.09
+51.3 bpm128.0 syn127.6 reg0.85 r321.15/0.79/0/0.6/0.49 peak e0.56/0.55 b0.92 bld0.20 abs0.0 ten0.34 sur0.06/0.4 iv7 cl0.93 | EXT h0.00 lg-5.8 par0.00 | sc2 sec2 alt0 ret1 bar0.25 gt1.00 q0.10
+52.4 bpm128.0 syn127.6 reg0.88 r321.15/0.74/0/0.58/0.43 peak e0.54/0.54 b0.58 bld0.18 abs0.0 ten0.45 sur0.09/1.0 iv7 cl0.93 | EXT h0.00 lg-5.7 par0.00 | sc2 sec2 alt0 ret1 bar2.46 gt1.00 q0.10
+53.4 bpm128.0 syn127.6 reg0.94 r321.15/0.69/0/0.56/0.4 peak e0.56/0.54 b0.47 bld0.16 abs0.1 ten0.47 sur0.34/0.8 iv7 cl0.77 | EXT h0.00 lg-5.8 par0.00 | sc2 sec2 alt0 ret1 bar0.62 gt1.00 q0.10
+SECTION@53.50 peak
+SURPRISE@53.50
+SCENE@53.50 -> 4 bar0.87 gt1.00
+54.4 bpm128.0 syn127.5 reg0.97 r321.16/0.81/0/0.62/0.49 peak e0.55/0.54 b0.46 bld0.15 abs0.0 ten0.39 sur0.34/0.3 iv7 cl0.31 |  | sc4 sec2 alt0 ret1 bar2.75 gt1.00 q0.11
+55.4 bpm128.0 syn127.5 reg0.99 r321.23/0.81/0/0.67/0.45 peak e0.57/0.55 b0.34 bld0.15 abs0.1 ten0.33 sur0.05/0.4 iv7 cl0.42 |  | sc4 sec2 alt0 ret1 bar0.86 gt1.00 q0.11
+56.4 bpm128.0 syn127.5 reg0.99 r321.12/0.82/0/0.6/0.46 peak e0.54/0.56 b0.23 bld0.16 abs0.3 ten0.27 sur0.01/0.5 iv7 cl0.51 |  | sc4 sec2 alt0 ret1 bar2.99 gt1.00 q0.11
+57.4 bpm128.0 syn127.5 reg0.99 r321.04/0.79/0/0.57/0.52 peak e0.53/0.56 b1.00 bld0.15 abs0.0 ten0.38 sur0.41/1.3 iv4 cl0.57 |  | sc4 sec2 alt0 ret1 bar1.11 gt1.00 q0.12
+58.4 bpm128.0 syn127.5 reg1.00 r321.13/0.9/0/0.6/0.56 peak e0.61/0.57 b0.88 bld0.14 abs0.0 ten0.37 sur0.17/0.7 iv4 cl0.74 |  | sc4 sec2 alt0 ret1 bar3.27 gt1.00 q0.12
+59.4 bpm128.0 syn127.5 reg1.00 r321.2/0.75/0/0.64/0.44 peak e0.58/0.57 b0.68 bld0.13 abs0.0 ten0.55 sur0.14/0.9 iv4 cl0.62 |  | sc4 sec2 alt0 ret1 bar1.42 gt1.00 q0.13
+60.4 bpm127.9 syn127.5 reg1.00 r321.13/0.73/0/0.59/0.44 peak e0.56/0.55 b0.50 bld0.10 abs0.1 ten0.41 sur0.30/0.6 iv4 cl0.60 |  | sc4 sec2 alt0 ret1 bar3.55 gt1.00 q0.13
+SECTION@60.62 peak
+SURPRISE@60.62
+61.4 bpm127.9 syn127.5 reg1.00 r321.18/0.86/0/0.64/0.56 peak e0.59/0.55 b0.47 bld0.08 abs0.1 ten0.40 sur0.40/1.1 iv4 cl0.56 |  | sc4 sec2 alt0 ret1 bar1.68 gt1.00 q0.13
+62.4 bpm127.9 syn127.5 reg1.00 r321.25/0.94/0/0.67/0.59 peak e0.56/0.55 b0.38 bld0.08 abs0.2 ten0.24 sur0.21/0.8 iv4 cl0.78 |  | sc4 sec2 alt0 ret1 bar3.82 gt1.00 q0.14
+63.4 bpm127.9 syn127.5 reg1.00 r321.35/1.02/0/0.78/0.62 peak e0.58/0.56 b0.29 bld0.08 abs0.3 ten0.20 sur0.03/0.7 iv4 cl0.90 |  | sc4 sec2 alt0 ret1 bar1.93 gt1.00 q0.14
+64.4 bpm128.0 syn127.5 reg1.00 r321.12/0.88/0/0.6/0.54 peak e0.55/0.57 b0.57 bld0.09 abs0.0 ten0.20 sur0.00/0.6 iv7 cl0.97 |  | sc4 sec2 alt0 ret1 bar0.05 gt1.00 q0.15
+65.4 bpm128.0 syn127.5 reg1.00 r321.14/0.76/0/0.62/0.49 peak e0.56/0.57 b0.96 bld0.09 abs0.0 ten0.20 sur0.00/0.5 iv7 cl0.94 |  | sc4 sec2 alt0 ret1 bar2.18 gt1.00 q0.15
+66.4 bpm127.9 syn127.5 reg1.00 r321.14/0.76/0/0.61/0.44 peak e0.61/0.58 b0.76 bld0.09 abs0.0 ten0.29 sur0.00/0.6 iv7 cl0.85 |  | sc4 sec2 alt0 ret1 bar0.32 gt1.00 q0.15
+67.4 bpm127.9 syn127.5 reg0.98 r320.97/0.63/0/0.47/0.36 peak e0.59/0.58 b0.59 bld0.08 abs0.1 ten0.39 sur0.02/0.9 iv7 cl0.77 |  | sc4 sec2 alt0 ret1 bar2.48 gt1.00 q0.16
+SECTION@68.35 peak
+SURPRISE@68.35
+68.4 bpm127.9 syn127.5 reg0.99 r321.02/0.68/0/0.47/0.44 peak e0.32/0.52 b0.06 bld0.05 abs0.4 ten0.17 sur0.78/1.6 iv7 cl0.80 |  | sc4 sec2 alt0 ret1 bar0.62 gt1.00 q0.16
+69.4 bpm127.8 syn127.5 reg0.99 r320.9/0.64/0/0.37/0.45 peak e0.33/0.44 b0.00 bld0.01 abs1.4 ten0.07 sur0.69/1.2 iv7 cl1.00 |  | sc4 sec2 alt0 ret1 bar2.73 gt1.00 q0.17
+70.4 bpm127.8 syn127.5 reg0.99 r321.03/0.73/0/0.37/0.44 sustain e0.30/0.40 b0.00 bld0.26 abs2.4 ten0.05 sur0.13/0.6 iv7 cl1.00 |  | sc4 sec2 alt0 ret1 bar0.86 gt1.00 q0.17
+RESTORE@70.50 alt2 scene2
+FILE@70.50 alt0 scene4
+71.4 bpm127.8 syn127.5 reg0.95 r320.59/0.74/0/0.3/0.28 sustain e0.22/0.35 b0.00 bld0.38 abs3.4 ten0.03 sur0.02/0.5 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar2.99 gt1.00 q0.17
+72.4 bpm127.8 syn127.5 reg0.83 r320.52/0.35/0/0.19/0.16 sustain e0.16/0.28 b0.00 bld0.41 abs4.4 ten0.01 sur0.00/0.5 iv7 cl0.99 |  | sc4 sec3 alt2 ret1 bar1.12 gt1.00 q0.18
+SECTION@72.48 valley
+BABY@72.50 enter P4 at landing 1/2: c -0.7500000,0.0000000 -> -0.1613575,1.0360311
+73.4 bpm127.8 syn127.5 reg0.77 r320.14/0/0/0.01/0 valley e0.35/0.29 b0.00 bld0.47 abs5.4 ten0.00 sur0.00/0.6 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar3.25 gt1.00 q0.18
+74.4 bpm127.8 syn127.5 reg0.62 r320.13/0/0/0.02/0.01 valley e0.29/0.30 b0.00 bld0.48 abs6.4 ten0.00 sur0.00/0.2 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar1.38 gt0.97 q0.19
+75.4 bpm127.9 syn127.5 reg0.47 r320.1/0/0/-0.01/0 valley e0.19/0.27 b0.00 bld0.50 abs7.4 ten0.00 sur0.00/0.4 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar3.51 gt0.93 q0.19
+SURPRISE@75.82
+SCENE@76.15 -> 2 bar1.17 gt0.90
+76.4 bpm128.0 syn127.5 reg0.50 r320.49/0.07/0/0.27/-0.01 valley e0.22/0.24 b0.00 bld0.58 abs8.4 ten0.00 sur0.96/1.5 iv7 cl0.93 |  | sc2 sec3 alt2 ret1 bar1.67 gt0.89 q0.20
+77.4 bpm128.0 syn127.5 reg0.62 r320.84/0.11/0/0.46/-0.04 build e0.31/0.27 b0.00 bld0.60 abs9.4 ten0.00 sur0.25/0.8 iv4 cl1.00 |  | sc2 sec3 alt2 ret1 bar3.81 gt0.89 q0.20
+78.4 bpm127.9 syn127.5 reg0.73 r321.26/0.26/0/0.77/-0.05 build e0.25/0.27 b0.00 bld0.57 abs10.4 ten0.00 sur0.03/0.4 iv4 cl1.00 | INT h-0.12 lg-11.9 par0.00 | sc2 sec3 alt2 ret1 bar1.95 gt0.98 q0.20
+79.4 bpm127.9 syn127.5 reg0.85 r321.19/0.34/0/0.66/-0.04 build e0.17/0.24 b0.00 bld0.57 abs11.4 ten0.01 sur0.20/1.1 iv4 cl0.81 | INT h-0.10 lg-11.9 par0.21 | sc2 sec3 alt2 ret1 bar0.08 gt1.00 q0.21
+SECTION@79.52 build
+SURPRISE@79.52
+80.4 bpm127.9 syn127.5 reg0.94 r321.41/0.35/0/0.82/-0.05 build e0.29/0.25 b0.00 bld0.61 abs12.4 ten0.01 sur0.14/0.4 iv4 cl0.75 | INT h-0.01 lg-11.9 par0.98 | sc2 sec3 alt2 ret1 bar2.21 gt1.00 q0.21
+81.4 bpm127.8 syn127.5 reg0.96 r321.42/0.39/0/0.79/-0.05 build e0.37/0.29 b0.00 bld0.75 abs13.4 ten0.00 sur0.02/0.7 iv4 cl0.92 | INT h0.00 lg-11.9 par1.00 | sc2 sec3 alt2 ret1 bar0.32 gt1.00 q0.22
+82.4 bpm127.8 syn127.5 reg0.98 r321.06/0.58/0/0.62/0.3 build e0.32/0.30 b0.00 bld0.82 abs14.4 ten0.02 sur0.00/0.7 iv4 cl0.84 | INT h0.00 lg-11.9 par1.00 | sc2 sec4 alt2 ret1 bar2.45 gt1.00 q0.22
+SURPRISE@83.20
+83.4 bpm127.9 syn127.5 reg0.99 r321.06/0.88/0/0.63/0.64 build e0.26/0.29 b0.00 bld0.85 abs15.4 ten0.09 sur0.70/1.2 iv4 cl0.50 | INT h0.00 lg-11.9 par1.00 | sc2 sec4 alt2 ret1 bar0.58 gt0.97 q0.22
+84.4 bpm127.9 syn127.5 reg1.00 r321.29/1.13/0/0.75/0.8 build e0.43/0.32 b0.01 bld0.92 abs16.4 ten0.01 sur0.10/0.9 iv4 cl0.65 | INT h0.00 lg-11.9 par1.00 | sc2 sec4 alt2 ret1 bar2.71 gt0.93 q0.23
+85.4 bpm127.9 syn127.5 reg1.00 r321.26/1.07/0/0.72/0.7 build e0.44/0.36 b0.00 bld0.96 abs17.4 ten0.01 sur0.01/0.6 iv4 cl0.84 | INT h0.07 lg-11.9 par0.83 | sc2 sec4 alt2 ret1 bar0.84 gt0.89 q0.23
+86.4 bpm127.9 syn127.5 reg1.00 r321.04/0.92/0/0.61/0.63 build e0.41/0.38 b0.00 bld0.99 abs18.4 ten0.03 sur0.00/0.8 iv4 cl0.66 | INT h0.72 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar2.96 gt0.86 q0.23
+87.4 bpm127.9 syn127.5 reg1.00 r321.07/0.94/0/0.68/0.68 build e0.39/0.38 b0.01 bld1.00 abs19.4 ten0.18 sur0.23/0.5 iv4 cl0.39 | INT h0.76 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar1.11 gt0.82 q0.24
+88.4 bpm127.9 syn127.5 reg1.00 r321.1/1/0/0.66/0.69 build e0.52/0.42 b0.00 bld1.00 abs20.4 ten0.13 sur0.03/0.8 iv4 cl0.65 | INT h0.73 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar3.25 gt0.79 q0.24
+89.4 bpm127.9 syn127.5 reg1.00 r320.96/0.88/0/0.56/0.6 build e0.48/0.44 b0.01 bld1.00 abs21.4 ten0.04 sur0.00/0.4 iv4 cl0.70 | INT h0.73 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar1.38 gt0.76 q0.25
+90.4 bpm127.9 syn127.5 reg0.97 r320.76/0.64/0/0.48/0.47 build e0.35/0.43 b0.00 bld0.98 abs22.4 ten0.04 sur0.00/0.5 iv4 cl0.52 | INT h0.78 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar3.46 gt0.73 q0.25
+FILE@90.63 alt2 scene2
+SECTION@90.67 build
+SURPRISE@90.67
+DROP@90.78 str 1.00
+91.4 bpm128.0 syn127.5 reg0.92 r320.45/0.33/0/0.36/0.26 peak e0.57/0.46 b0.50 bld0.06 abs0.0 ten0.41 sur0.93/1.3 iv4 cl0.72 | INT h0.59 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar1.67 gt0.70 q0.25
+92.4 bpm128.0 syn127.5 reg0.87 r320.64/0.37/0/0.46/0.29 peak e0.58/0.50 b0.39 bld0.13 abs0.1 ten0.34 sur0.34/0.8 iv4 cl0.75 | INT h0.40 lg-11.9 par0.00 | sc2 sec4 alt2 ret1 bar3.82 gt0.93 q0.26
+93.4 bpm127.9 syn127.5 reg0.86 r321.13/0.74/0/0.75/0.51 peak e0.54/0.52 b0.28 bld0.17 abs0.3 ten0.31 sur0.05/0.8 iv4 cl0.90 | INT h0.39 lg-11.9 par0.00 | sc2 sec2 alt2 ret1 bar1.95 gt0.99 q0.26
+RESTORE@93.92 alt0 scene4
+94.4 bpm127.9 syn127.5 reg0.88 r321.14/0.88/0/0.63/0.56 peak e0.52/0.53 b0.49 bld0.19 abs0.0 ten0.34 sur0.01/0.6 iv4 cl0.99 | INT h0.39 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar0.09 gt1.00 q0.26
+95.4 bpm127.9 syn127.5 reg0.89 r321.11/0.82/0/0.61/0.52 peak e0.54/0.54 b0.91 bld0.20 abs0.0 ten0.30 sur0.00/0.4 iv7 cl0.99 | INT h0.32 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar2.21 gt1.00 q0.27
+96.4 bpm127.9 syn127.5 reg0.91 r321.12/0.8/0/0.59/0.47 peak e0.54/0.54 b0.72 bld0.19 abs0.0 ten0.42 sur0.18/0.9 iv4 cl0.76 | INT h-0.12 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar0.34 gt1.00 q0.27
+97.4 bpm128.0 syn127.5 reg0.96 r321.29/0.86/0/0.72/0.49 peak e0.56/0.54 b0.60 bld0.17 abs0.0 ten0.47 sur0.05/0.9 iv4 cl0.83 | INT h-0.12 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar2.46 gt1.00 q0.28
+98.4 bpm128.0 syn127.5 reg0.97 r321.13/0.76/0/0.63/0.47 peak e0.51/0.53 b0.44 bld0.15 abs0.1 ten0.47 sur0.18/0.6 iv4 cl0.76 | INT h0.07 lg-11.9 par0.82 | sc2 sec2 alt0 ret1 bar0.59 gt1.00 q0.28
+SECTION@98.52 peak
+SURPRISE@98.52
+99.4 bpm127.9 syn127.5 reg0.99 r321.19/0.82/0/0.62/0.52 peak e0.56/0.53 b0.45 bld0.13 abs0.2 ten0.36 sur0.32/0.6 iv4 cl0.35 | INT h0.40 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar2.72 gt1.00 q0.29
+100.4 bpm127.9 syn127.5 reg1.00 r321.3/0.86/0/0.67/0.52 peak e0.55/0.55 b0.32 bld0.14 abs0.2 ten0.32 sur0.04/0.5 iv4 cl0.41 | INT h0.41 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar0.84 gt1.00 q0.29
+101.4 bpm127.9 syn127.5 reg1.00 r321.12/0.79/0/0.64/0.49 peak e0.54/0.56 b0.24 bld0.15 abs0.3 ten0.27 sur0.01/0.4 iv4 cl0.50 | INT h0.41 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar3.01 gt1.00 q0.29
+102.4 bpm127.9 syn127.5 reg1.00 r321.18/0.81/0/0.66/0.52 peak e0.55/0.56 b0.99 bld0.15 abs0.0 ten0.38 sur0.34/1.2 iv4 cl0.57 | INT h0.41 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar1.15 gt1.00 q0.30
+103.4 bpm127.9 syn127.5 reg1.00 r321.12/0.88/0/0.59/0.55 peak e0.57/0.56 b0.88 bld0.14 abs0.0 ten0.40 sur0.24/0.7 iv4 cl0.70 | INT h0.39 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar3.28 gt1.00 q0.30
+104.4 bpm127.9 syn127.5 reg1.00 r321.07/0.83/0/0.53/0.51 peak e0.59/0.56 b0.68 bld0.12 abs0.0 ten0.58 sur0.14/0.9 iv4 cl0.66 | INT h0.39 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar1.41 gt1.00 q0.31
+105.4 bpm127.9 syn127.5 reg1.00 r321.22/0.86/0/0.67/0.5 peak e0.60/0.56 b0.51 bld0.11 abs0.1 ten0.40 sur0.33/1.1 iv4 cl0.57 | INT h0.40 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar3.54 gt1.00 q0.31
+SECTION@105.62 peak
+SURPRISE@105.62
+106.4 bpm127.9 syn127.5 reg1.00 r321.15/0.77/0/0.63/0.48 peak e0.56/0.56 b0.49 bld0.10 abs0.0 ten0.37 sur0.38/1.0 iv4 cl0.50 | INT h0.41 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar1.66 gt1.00 q0.31
+107.4 bpm127.9 syn127.5 reg1.00 r321.2/0.77/0/0.63/0.45 peak e0.59/0.56 b0.39 bld0.09 abs0.2 ten0.27 sur0.20/0.8 iv4 cl0.77 | INT h0.43 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar3.78 gt1.00 q0.31
+108.4 bpm127.9 syn127.5 reg1.00 r321.15/0.8/0/0.59/0.48 peak e0.58/0.57 b0.28 bld0.10 abs0.3 ten0.25 sur0.04/0.7 iv4 cl0.92 | INT h0.42 lg-11.9 par0.00 | sc2 sec2 alt0 ret1 bar1.91 gt1.00 q0.32
+SCENE@109.36 -> 4 bar0.01 gt1.00
+SWITCH@109.36 -> 4 bar0.01 gt1.00 (held 3.9 beats, identify)
+109.4 bpm127.9 syn127.5 reg1.00 r321.15/0.87/0/0.64/0.58 peak e0.53/0.57 b0.39 bld0.10 abs0.2 ten0.22 sur0.00/0.6 iv4 cl0.98 | INT h0.42 lg-11.9 par0.00 | sc4 sec2 alt0 ret1 bar0.04 gt1.00 q0.32
+110.4 bpm127.9 syn127.5 reg1.00 r321.06/0.79/0/0.56/0.51 peak e0.60/0.58 b0.96 bld0.10 abs0.0 ten0.22 sur0.00/0.3 iv4 cl0.98 | INT h0.43 lg-11.9 par0.00 | sc4 sec2 alt0 ret1 bar2.21 gt1.00 q0.33
+111.4 bpm127.9 syn127.5 reg1.00 r321.13/0.71/0/0.61/0.4 peak e0.58/0.58 b0.78 bld0.09 abs0.0 ten0.33 sur0.02/0.7 iv4 cl0.83 |  | sc4 sec2 alt0 ret1 bar0.35 gt1.00 q0.33
+112.4 bpm127.9 syn127.5 reg1.00 r321.19/0.73/0/0.62/0.4 peak e0.57/0.57 b0.60 bld0.07 abs0.0 ten0.39 sur0.05/1.0 iv4 cl0.79 |  | sc4 sec2 alt0 ret1 bar2.48 gt1.00 q0.34
+SECTION@113.36 peak
+SURPRISE@113.36
+113.4 bpm127.9 syn127.5 reg1.00 r321.06/0.75/0/0.52/0.47 peak e0.32/0.52 b0.06 bld0.04 abs0.6 ten0.21 sur0.71/1.6 iv4 cl0.83 |  | sc4 sec2 alt0 ret1 bar0.60 gt1.00 q0.34
+114.4 bpm127.9 syn127.5 reg1.00 r320.92/0.66/0/0.47/0.41 peak e0.31/0.44 b0.00 bld0.04 abs1.6 ten0.11 sur0.72/1.2 iv7 cl1.00 |  | sc4 sec2 alt0 ret1 bar2.72 gt1.00 q0.35
+115.4 bpm127.9 syn127.5 reg0.99 r320.86/1.03/0/0.5/0.62 sustain e0.28/0.39 b0.00 bld0.29 abs2.6 ten0.07 sur0.13/0.6 iv7 cl1.00 |  | sc4 sec2 alt0 ret1 bar0.85 gt1.00 q0.35
+RESTORE@115.50 alt2 scene2
+FILE@115.50 alt0 scene4
+116.4 bpm127.9 syn127.5 reg0.97 r321.58/1.8/0/1.07/0.94 sustain e0.21/0.33 b0.00 bld0.39 abs3.6 ten0.05 sur0.02/0.5 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar2.98 gt1.00 q0.35
+117.4 bpm127.9 syn127.5 reg0.91 r320.33/0.28/0/0.13/0.13 sustain e0.15/0.27 b0.00 bld0.42 abs4.6 ten0.03 sur0.00/0.5 iv7 cl0.99 |  | sc4 sec3 alt2 ret1 bar1.11 gt1.00 q0.36
+SECTION@117.40 valley
+118.4 bpm127.8 syn127.5 reg0.81 r320.17/0.01/0/0.02/0 valley e0.33/0.28 b0.00 bld0.49 abs5.6 ten0.02 sur0.00/0.6 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar3.24 gt1.00 q0.36
+119.4 bpm127.8 syn127.5 reg0.73 r320.2/0/0/0.01/0 valley e0.28/0.29 b0.00 bld0.48 abs6.6 ten0.02 sur0.00/0.1 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar1.37 gt0.96 q0.37
+120.4 bpm127.8 syn126.0 reg0.61 r320.15/0/0/0/0 valley e0.18/0.26 b0.00 bld0.50 abs7.6 ten0.01 sur0.00/0.4 iv7 cl1.00 |  | sc4 sec3 alt2 ret1 bar3.49 gt0.93 q0.37

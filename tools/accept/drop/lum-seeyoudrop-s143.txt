@@ -1,0 +1,13 @@
+lumtrace SeeYouDrop scene 6 [45, 80] s · 2 fps · 640x317 from 1280x633 · 71 frames · heard 45.000 → 80.000
+window    medY   p90Y   clip   clipMx grad    ctr    rim      n
+45-50     0.107  0.144  0.001  0.001  0.0093  0.042  0.297   10
+50-55     0.094  0.108  0.001  0.001  0.0095  0.020  0.183   10
+55-60     0.056  0.192  0.001  0.001  0.0125  0.018  0.128   10
+60-65     0.242  0.261  0.001  0.001  0.0127  0.253  0.355   10
+65-70     0.139  0.170  0.001  0.001  0.0120  0.207  0.286   10
+70-75     0.206  0.272  0.001  0.001  0.0134  0.246  0.372   10
+75-80     0.223  0.257  0.001  0.001  0.0142  0.254  0.345   11
+ALL       0.160  0.254  0.001  0.001  0.0120  0.197  0.329   71
+clipFrac >= 0.25 on 0 of 71 frames · meanY >= 0.6 on 0 · min grad 0.0070 at t 51.00
+tiles 71 · bad 0 · page errs [] · nonFinite [] · ENGINE.ms 1.276 · f0 2 · sr 48000 · end frame 2582 heard 80
+files: tools/work/drop/seeyoudrop-after.csv · tools/work/drop/seeyoudrop-after.txt · tools/work/drop/seeyoudrop-after-sheet.jpg
