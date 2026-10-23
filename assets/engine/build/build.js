@@ -69,9 +69,11 @@
 //            (not on the bar line: the shift is already a bar late), no SLAM_AFTER wait; buildLive sits at SHIFT_L0 (the void's L0
 //            .4 is read as "the void" by DUST at .35, move2's kick veto at .4, NAV2's park at .45 — a shift is not a void; > 0 keeps
 //            the shift stage's ARMED rule); the void lifting never releases it; MAX bars, silence, a seek and a tempo jump do
-//   SLAM     the same on-beat low onset (ON_BEAT .125 unchanged: the drop kick reads +.100 in this stage's time base — the brief's
-//            .14–.17 was the lead-shifted display clock; at .2 the pickup kick a quarter beat before it, −.137, took the candidate
-//            and the +.5 rule masked the drop), confirmed (SHIFT_GATE) by the causal sub gate opening and nothing else — its
+//   SLAM     the same on-beat low onset (ON_BEAT .125 → .2: the drop kick reads +.100 in node's time base and +.165 on the page's (the lead's estimate −.003 s against node's −.043: .065 beats at 97 BPM),
+//            where the page lost it; and SHIFT_LAST — at .2 the pickup kick a quarter beat before it (−.137 / −.072) took the candidate
+//            under the first-keeps-it rule and expired a frame before the gate opened, so on a shift arm the NEWEST on-beat onset is
+//            the candidate: the gate's opening names the last kick before it), confirmed
+//            (SHIFT_GATE) by the causal sub gate opening and nothing else — its
 //            2 s mean under SUBV_OFF as the onset arrived (shut), the gate at or above SUB_BACK now, its 32 s mean under SHIFT_HAD (the
 //            sub ARRIVES: .11 at The Roots' drop; a dip inside a sub groove reads .5–.7 — The Roots 78.7 and TheChain 130.7, fills) —
 //            then §143's Confirm as every slam
@@ -89,7 +91,8 @@ export const BUILD = {
   L0: 0.4,         // buildLive on the arm
   MAX: 8,          // bars armed with no slam -> disarm (a breakdown)
   SLAM_AFTER: 1,   // bars armed before a slam counts (a void is 2-5 bars: a bass return inside its first bar is a pickup)
-  ON_BEAT: 0.125,  // beats: a slam onset this close to a beat line (§147 measured and KEPT: The Roots' drop kick reads +.100 in this stage's time base — the trace's beatPhase is the lead-shifted clock, +.069 — and at .2 the pickup kick a quarter beat before it (−.137) became the candidate and masked it)
+  ON_BEAT: 0.2,    // beats: a slam onset this close to a beat line (§147: was .125 — The Roots' drop kick reads +.100 in node's time base and +.165 on the page's (the lead's estimate −.003 s there against node's −.043 s: .065 beats at 97 BPM), where the page lost it; the nine tracks' slams do not move at .2 and no false one appears: tools/accept/nav3/shift/slams-node.txt)
+  SHIFT_LAST: 1,   // §147: 1 = on a shift arm the NEWEST on-beat onset is the candidate (the gate's opening names the last kick before it: The Roots' pickup −.14 / −.07 beats before the drop kick +.10 / +.17 (node / page) took the candidate under v0.44's first-keeps-it rule and expired a frame before the gate opened); 0 = the void paths' rule (the first on-beat onset keeps the candidate +.5 beat)
   CONF: 0.25,      // beats after the onset in which the bass must come back
   RET: 1.75,          // bassS >= RET x its 2 s mean (as the onset arrived) = the bass is back
   SUB_RET: 5,      // or synapse's sub >= SUB_RET x its 2 s mean (the 808 / sub coming back first; 0 = off)
@@ -218,7 +221,7 @@ export class Build {
       // the slam: an on-beat low onset, confirmed by the bass coming back within CONF beats
       for (const e of i.onsets) {
         if (!this.sv && !this.am && !this.sh && e.x - this.armB < 4 * k.SLAM_AFTER) continue;
-        if (Math.abs(e.x - Math.round(e.x)) <= k.ON_BEAT && (!this.cand || e.x > this.cand.x + 0.5)) this.cand = { x: e.x, ref: b2prev, sref: s2prev, gref: sg2prev, g32: sg32 };
+        if (Math.abs(e.x - Math.round(e.x)) <= k.ON_BEAT && (!this.cand || e.x > this.cand.x + 0.5 || (this.sh && k.SHIFT_LAST))) this.cand = { x: e.x, ref: b2prev, sref: s2prev, gref: sg2prev, g32: sg32 };   // §147: on a shift arm the newest on-beat onset is the candidate
       }
       if (this.cand) {
         if (B - this.cand.x > k.CONF) this.cand = null;

@@ -28,10 +28,13 @@ function mk(knobs) {
       const B0 = st.B; st.B += bps * dt;
       const ons = [];
       if (p.onBeat && Math.floor(st.B) > Math.floor(B0)) ons.push({ x: Math.floor(st.B) });          // an onset ON each beat line
+      if (p.pickup && Math.floor(st.B + 0.14) > Math.floor(B0 + 0.14)) ons.push({ x: Math.floor(st.B + 0.14) - 0.14 });   // §147: a pickup .14 beats BEFORE each line
+      if (p.late && Math.floor(st.B - 0.1) > Math.floor(B0 - 0.1)) ons.push({ x: Math.floor(st.B - 0.1) + 0.1 });   // §147: the kick .1 beats AFTER each line
       if (p.offBeat && Math.floor(st.B - 0.5) > Math.floor(B0 - 0.5)) ons.push({ x: Math.floor(st.B - 0.5) + 0.5 });   // on the off-beat
       const i = { B: st.B, rel: st.B, bpm: p.bpm || BPM, ok: p.ok === undefined ? true : p.ok, hp: p.hp || 0, bassS: p.bassS === undefined ? 0.5 : p.bassS,
         sub: p.sub === undefined ? 0.5 : p.sub, anchor: -1, onsets: ons, dt };
       if (p.subGate !== undefined) i.subGate = p.subGate;
+      if (p.gateFrom !== undefined) i.subGate = st.B >= p.gateFrom ? 1 : 0;   // §147: the gate opens at a beat position
       if (p.tongueAmbig !== undefined) { i.tongueAmbig = p.tongueAmbig; i.tongueOn = p.tongueOn === undefined ? 1 : p.tongueOn; }
       if (p.shift) i.shift = f === 0 ? 1 : 0;   // §147: the engine's shiftEvt on this run's first frame
       if (p.lad !== undefined) i.lad = p.lad;
@@ -248,6 +251,13 @@ console.log('the shift arm (§147)');
   const ng = mk({ SHIFT_GATE: 0 });
   ng.run(40, base); ng.run(4, Object.assign({ shift: 1 }, base)); const ng0 = ng.out.length; ng.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1 }));
   ok('SHIFT_ARM 0: never armed, nothing fires · SHIFT_GATE 0: armed, the gate opening alone fires nothing (the ratios rule)', !armedSh(off, 0) && !fired(off).length && !!armedSh(ng, 0) && !fired(ng, ng0).length, `${off.out[off.out.length - 1].buildLive} / ${fired(ng, ng0).length}`);
+  // The Roots' kicks: a pickup .14 before the line, the drop kick .1 after it (inside ON_BEAT), the gate opening with the kick —
+  // the better-aligned onset takes the candidate (CAND_BEST) and the slam lands on the kick's frame, not lost behind the pickup
+  const pk = mk();
+  pk.run(40, Object.assign({}, base, { onBeat: false, pickup: true, late: true })); pk.run(3.9, Object.assign({}, base, { onBeat: false, pickup: true, late: true, shift: 1 }));
+  const pk0 = pk.out.length, gateAt = Math.ceil(pk.B + 0.2) + 0.1; pk.run(0.8, Object.assign({}, base, { onBeat: false, pickup: true, late: true, sub: 0.9, gateFrom: gateAt }));   // the gate opens WITH the kick .1 after the next line
+  const pe = fired(pk, pk0);
+  ok('a pickup kick .14 before the line does not mask the drop kick .1 after it (SHIFT_LAST): one slam, on the kick', pe.length === 1 && Math.abs(pe[0].B - Math.round(pe[0].B) - 0.1) < bps * dt + 1e-9, pe.length ? `B ${pe[0].B.toFixed(3)}` : '0 events');
   // the bass-return ratios confirm nothing on a shift arm (TheChain 130.7: a chorus's bass swell at 2× its 2 s mean with the gate open)
   const rat = mk();
   rat.run(40, Object.assign({}, base, { subGate: 1 })); rat.run(4, Object.assign({}, base, { subGate: 1, shift: 1 }));
