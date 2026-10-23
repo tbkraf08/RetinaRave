@@ -91,6 +91,9 @@ export const OUT3 = {
   IMP_HUE_SN: 0.01, // §145: the hue's spread per unit of sn around the key (0 = one hue)
   IMP_LUM: 0.22,   // §145: the former interior's base lightness in the escape-time colour (+ .14 per gate passage)
   IMP_N: 30,       // §145: a pixel whose smooth escape count passes this is the former interior's too (the true exterior near the set escapes in ~10–25 at the hold's ε; the slam's ε empties the former interior without a gate passage)
+  EPS_KICK: 0.6,   // §147 item 3 (the user on a held EXT: "missing a lot of complexity … off beat"): ε × (1 + EPS_KICK × the kick's impulse × the ladder's scale) — the dance's own kick impulse (nav.js N.kp: kickAmp on kickEvt, decaying over DANCE.KICK_TAU .2 s), REACTIVE (the user's rule: reactive levels look in sync, the clock's crest does not), so the dust eats in on every kick and refills between; 0 = v0.44
+  KICK_LOUD: 0.5,  // §147: the ladder's scale on that pulse — × (1 − KICK_LOUD + KICK_LOUD × the eased ladder): a quiet passage's kick breathes half, a loud one the whole
+  BAR_STEP: 1,     // §147: 1 = the direction's one-way sweep STEPS on the BAR LINE (TURN_MAX/TURN_BARS rad per bar, landing as barPos wraps — a re-chart of the explosion each bar, the wedge's edge still the stop); 0 = v0.44's continuous free-running sweep
   OUT_RUN: 2,      // × q₀ iterates beyond 2R before the next entry into R counts as a passage (the cycle's own alternation does not)
   SAMPLE: 8,       // orbits sampled per radius for the layer (n3info imp.passes / imp.esc; every 8th frame)
   SAMPLE_R: [0.3, 0.6, 0.9],   // × the petal radius Rp: the sample circles around z₀ — the former petal's inner, middle and outer zone
@@ -101,7 +104,7 @@ export const OUT3 = {
 };
 
 // what index.js uploads: x the petal stage's weight, y the explosion's, z q (petals), w the gate radius R; z0, a, sig, and the record
-export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, escMax: 0, passMax: 0, n: 0, drops: 0, frames: 0, T: 0, slam: 0, rearms: 0, held: 0, phi: 0, wedge: [0, 0], loudE: 0, epsHi: 0, drive: 0 };   // §143: slam = the re-arm's ε pulse, rearms = the count, held = frames EXT was held by shiftHold; §144: phi = the direction's angle from the fan's (rad), wedge = the exterior wedge's bounds from the normal, loudE = the eased ladder, epsHi = the calibrated top, drive = the energy 0..DRIVE_MAX
+export const IMP = { x: 0, y: 0, q: 1, q0: 1, R: 0.1, Rp: 0.3, z0: [0, 0], a: [0, 0], root: [0, 0], nrm: [1, 0], fan: 0, sig: 0, eps: 0, eps0: 0, passes: 0, esc: 0, escMax: 0, passMax: 0, n: 0, drops: 0, frames: 0, T: 0, slam: 0, rearms: 0, held: 0, phi: 0, wedge: [0, 0], loudE: 0, epsHi: 0, drive: 0, kickP: 0, steps: 0 };   // §147: kickP = the kick pulse on ε this frame, steps = the direction's bar steps in this hold   // §143: slam = the re-arm's ε pulse, rearms = the count, held = frames EXT was held by shiftHold; §144: phi = the direction's angle from the fan's (rad), wedge = the exterior wedge's bounds from the normal, loudE = the eased ladder, epsHi = the calibrated top, drive = the energy 0..DRIVE_MAX
 
 const CY = mkCyc();
 let st = null;   // the drop in flight: { from, root, n, size, Q, q, t, settled, beat0 }
@@ -215,8 +218,8 @@ export function startDrop(N, S, root, nx, ny, reach, kind = 'slam') {   // §145
   }
   IMP.fan = found;
   IMP.q = q; IMP.q0 = cy.q; IMP.z0 = z0; IMP.a = a; IMP.root = root; IMP.nrm = [dx, dy]; IMP.Rp = Rp; IMP.R = Rg; IMP.x = 0; IMP.y = 0; IMP.sig = 0;
-  IMP.eps0 = eps0; IMP.epsHi = epsHi; IMP.eps = eps0; IMP.drops++; IMP.passes = 0; IMP.esc = 0; IMP.escMax = 0; IMP.passMax = 0; IMP.phi = 0; IMP.wedge = [aLo - aMid, aHi - aMid]; IMP.loudE = N.loud;
-  st = { from: [N.ball[0], N.ball[1]], start: [N.ball[0], N.ball[1]], root, nx, ny, a0: aMid, aLo, aHi, bar0: N.bar, t: 0, beat0: S.beatCount, hold: S.beatCount, cyc: cy, p: r.p };   // §143: start = where the way in begins (the ball, or a re-arm's c); hold = the last beat the energy was up; §144: nx/ny = the NORMAL, a0 the direction's angle from it (the wedge's middle), aLo/aHi the wedge
+  IMP.eps0 = eps0; IMP.epsHi = epsHi; IMP.eps = eps0; IMP.drops++; IMP.passes = 0; IMP.esc = 0; IMP.escMax = 0; IMP.passMax = 0; IMP.phi = 0; IMP.wedge = [aLo - aMid, aHi - aMid]; IMP.loudE = N.loud; IMP.kickP = 0; IMP.steps = 0;
+  st = { from: [N.ball[0], N.ball[1]], start: [N.ball[0], N.ball[1]], root, nx, ny, a0: aMid, aLo, aHi, bar0: N.bar, steps: 0, barPos: -1, t: 0, beat0: S.beatCount, hold: S.beatCount, cyc: cy, p: r.p };   // §143: start = where the way in begins (the ball, or a re-arm's c); hold = the last beat the energy was up; §144: nx/ny = the NORMAL, a0 the direction's angle from it (the wedge's middle), aLo/aHi the wedge
   IMP.slam = kind === 'shift' ? OUT3.SHIFT_SLAM : 1;   // §144: the drop's own ε pulse (§145: SHIFT_SLAM on a shift) (the slam explodes the set furthest, then it settles over SLAM_T beats) — v3's envelope no longer stands in
   N.mode = 'OUT';
   N.extBeat = S.beatCount;
@@ -248,11 +251,17 @@ export function stepDrop(N, S, dt, idle) {
     IMP.drive = drive;
     // §144: calibrated (ESC_FLOOR > 0): ε walks in log from the floor (drive 0: esc ESC_FLOOR) to the top (drive 1: ESC_TOP) and past it on
     // the slam (drive up to DRIVE_MAX); uncalibrated: v0.43's linear breath on ε₀
-    IMP.eps = (OUT3.ESC_FLOOR > 0 ? IMP.eps0 * Math.pow(IMP.epsHi / IMP.eps0, clamp(drive, 0, OUT3.DRIVE_MAX)) : IMP.eps0 * (1 + drive)) * (1 + OUT3.EPS_BEAT * crest * (N.percS === undefined ? 1 : N.percS));   // §145: the breath absolute × the percussiveness scale
+    IMP.kickP = OUT3.EPS_KICK * (N.kp || 0) * (1 - OUT3.KICK_LOUD + OUT3.KICK_LOUD * clamp(IMP.loudE, 0, 1));   // §147: the kick's own breath, the ladder's share of it
+    IMP.eps = (OUT3.ESC_FLOOR > 0 ? IMP.eps0 * Math.pow(IMP.epsHi / IMP.eps0, clamp(drive, 0, OUT3.DRIVE_MAX)) : IMP.eps0 * (1 + drive)) * (1 + OUT3.EPS_BEAT * crest * (N.percS === undefined ? 1 : N.percS) + IMP.kickP);   // §145: the breath absolute × the percussiveness scale; §147: + the kick pulse
     // §144: the direction turns round the root inside the wedge: a sine of TURN_BARS bars about the wedge's middle, the half-sweep capped
     const half = OUT3.TURN_BARS > 0 ? Math.min(OUT3.TURN_MAX, 0.5 * (X.aHi - X.aLo) * (1 - OUT3.TURN_MARGIN)) : 0;
     const mid = half > 0 ? 0.5 * (X.aLo + X.aHi) : X.a0;
-    const phi = OUT3.TURN_ONEWAY ? mid + Math.min(half, OUT3.TURN_MAX * (N.bar - X.bar0) / Math.max(OUT3.TURN_BARS, 1e-6)) : mid + half * Math.sin(TAU * (N.bar - X.bar0) / Math.max(OUT3.TURN_BARS, 1e-6));   // §145: one way from the middle toward the edge, never back
+    const bp = isFinite(S.barPos) ? S.barPos : -1;   // §147: the bar line = barPos wrapping (the heard grid's); the step lands there
+    if (OUT3.BAR_STEP && bp >= 0 && X.barPos >= 0 && bp < X.barPos - 2) X.steps++;
+    X.barPos = bp;
+    const sweep = OUT3.BAR_STEP ? X.steps : N.bar - X.bar0;   // §147: bars as whole steps on the line, or v0.44's continuous count
+    const phi = OUT3.TURN_ONEWAY ? mid + Math.min(half, OUT3.TURN_MAX * sweep / Math.max(OUT3.TURN_BARS, 1e-6)) : mid + half * Math.sin(TAU * sweep / Math.max(OUT3.TURN_BARS, 1e-6));   // §145: one way from the middle toward the edge, never back
+    IMP.steps = X.steps;
     IMP.phi = phi - X.a0;
     const ca = Math.cos(phi), sa = Math.sin(phi), ex = X.nx * ca - X.ny * sa, ey = X.nx * sa + X.ny * ca;
     IMP.nrm[0] = ex; IMP.nrm[1] = ey;
@@ -308,13 +317,14 @@ export function rearm(N, S, kind = 'slam') {
 }
 // &n3drop=any: v3's dropEvt fires the drop too (v0.43's read); &n3drop=live / anything else: the live slam, the map's line and the shift (OUT3.ANY 0, §143)
 export function knobDrop(v) { OUT3.ANY = String(v) === 'any' ? 1 : 0; return OUT3.ANY; }
-// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX[,HOLD_LOUD[,TURN_BARS[,TURN_MAX[,SIG_TINT[,BLACK[,ESC_FLOOR[,ESC_TOP[,SHIFT_SLAM[,IMP_TIME[,TURN_ONEWAY[,PET_Q1[,IMP_COL[,IMP_LUM[,IMP_N]]]]]]]]]]]]]]]]]]]]]]]]
+// &n3imp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX[,HOLD_LOUD[,TURN_BARS[,TURN_MAX[,SIG_TINT[,BLACK[,ESC_FLOOR[,ESC_TOP[,SHIFT_SLAM[,IMP_TIME[,TURN_ONEWAY[,PET_Q1[,IMP_COL[,IMP_LUM[,IMP_N[,EPS_KICK[,KICK_LOUD[,BAR_STEP]]]]]]]]]]]]]]]]]]]]]]]]]]]
+//   §147: the 26th–28th EPS_KICK, KICK_LOUD, BAR_STEP (v0.44: 0,.5,0 — no kick breath, the continuous sweep)
 //   v0.43's hold: &n3imp=0.004,0.5,2,0.03,1,1.4,8,0.08,1,1,32,0,0,0.5,0.3,0,0 (ε₀ .004 uncalibrated, the linear breath, no ladder depth, no sweep, σ on the tint, the petals both ways)
 export function knobImp(v) {
   const s = String(v === undefined || v === null ? '' : v);
   if (s === '' || s === '1') return Object.assign({}, OUT3);   // a bare call READS (CARD.hooks.n3imp() from the console; &n3imp alone in the URL)
   const nums = s.split(',').map(Number);
   if (!nums.length || nums.some((x) => !isFinite(x))) return null;
-  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE', 'PET_LUM', 'HOLD', 'REARM', 'HOLD_MAX', 'HOLD_LOUD', 'TURN_BARS', 'TURN_MAX', 'SIG_TINT', 'BLACK', 'ESC_FLOOR', 'ESC_TOP', 'SHIFT_SLAM', 'IMP_TIME', 'TURN_ONEWAY', 'PET_Q1', 'IMP_COL', 'IMP_LUM', 'IMP_N'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });   // §143: HOLD / REARM / HOLD_MAX the ninth to eleventh; §144: HOLD_LOUD … ESC_TOP the twelfth to eighteenth; §145: SHIFT_SLAM … IMP_LUM the nineteenth to twenty-fourth (fd49b87: 1,1,0,1,0,0 — the full pulse on a shift, the drift, the sine sweep, the cusp's petals, the exterior branch; EPS_BEAT .25 was a share of the walk, not comparable)
+  ['EPS', 'EPS_BEAT', 'EPS_DROP', 'PET_K', 'PET_R', 'T_IN', 'SETTLE', 'PET_LUM', 'HOLD', 'REARM', 'HOLD_MAX', 'HOLD_LOUD', 'TURN_BARS', 'TURN_MAX', 'SIG_TINT', 'BLACK', 'ESC_FLOOR', 'ESC_TOP', 'SHIFT_SLAM', 'IMP_TIME', 'TURN_ONEWAY', 'PET_Q1', 'IMP_COL', 'IMP_LUM', 'IMP_N', 'EPS_KICK', 'KICK_LOUD', 'BAR_STEP'].forEach((k, i) => { if (i < nums.length) OUT3[k] = nums[i]; });   // §143: HOLD / REARM / HOLD_MAX the ninth to eleventh; §144: HOLD_LOUD … ESC_TOP the twelfth to eighteenth; §145: SHIFT_SLAM … IMP_LUM the nineteenth to twenty-fourth (fd49b87: 1,1,0,1,0,0 — the full pulse on a shift, the drift, the sine sweep, the cusp's petals, the exterior branch; EPS_BEAT .25 was a share of the walk, not comparable)
   return nums;
 }
