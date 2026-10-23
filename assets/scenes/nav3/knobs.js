@@ -75,6 +75,9 @@ export const SWELL = {
   RISE_STEER: 0.5, // the rise term past this steers θ to the nearest gateway (the asks' steering)
   CENT: 1,         // 1 = the centroid normalised to the track's running range; 0 = ROLL.CENT_LO / CENT_HI (fd49b87)
   CENT_TAU: 60,    // s: the range's relaxation (the extremes decay toward the current value)
+  PEND_CROSS: 0,   // §147: 1 = on a KIT the shift's press also opens the gate and CROSSES into the child, as the piano swell does (§145); 0 = the press and the gateway steer only — measured on The Roots' pending at 57.5 / 58.5 s, the crossing into a period-4 child at the rim IS the pink wash (centre Y .25 / .26, wash .21 / .24 with it; .11 / .14, .03 / .04 without; the smoulder and the swell lift move nothing). The under-PERC_LT swell crosses as before (Comptine unchanged)
+  PEND_BANDS: 0,   // §147: on a KIT (at or above PERC_LT) the shift's press carries this share of the swell's band lift (BANDS × it) — 0 = the press without the lift (the pending read a pink wash at 56.5–58.5 on The Roots; the user rejects washes); 1 = the piano swell's lift. Eased over TAU like the swell
+  PEND_LUM: 0,     // §147: ... and this share of the smoulder lift (LUM × it) on a kit; the under-PERC_LT swell keeps both at 1 (Comptine unchanged)
   SHIFT_WAIT: 4,   // §147 bars: on a KIT (at or above PERC_LT) a shift no longer implodes on its own frame — it ARMS: the swell's press (the ball to the rim, θ to the gateway, uSwell up) while the engine's shift arm listens, and the first confirmed slam (dropLiveEvt, on a beat line by construction) inside this many bars FIRES the implosion; none → the pending clears into the swell (held while shiftHold). No implosion without a slam (The Roots: the shift at 55.1 imploded 4 s early and between beats; the slam is 59.1). 0 = v0.44 (the shift implodes at once)
 };
 export const INT3 = {
@@ -118,7 +121,7 @@ export function knob5(name, v) {
   if (name === 'kick3') set(KICK3, ['LEN', 'ANG', 'PERC', 'CHART']);   // §144: &n3kick3=.5,.9,0,0 is v0.43's jump and blink
   if (name === 'dance') set(DANCE, ['BASS', 'KICK', 'HIT', 'TURN', 'SWAY', 'SNARE', 'PERC_REF', 'PERC_MIN', 'PERC_TAU']);   // §144: &n3dance=.6,.8,.3,.1,.18,.08,0 is v0.43's dance on every piece (PERC_REF 0 = the scale off)
   if (name === 'int') set(INT3, ['K_RINGS', 'FLOOR']);
-  if (name === 'swell') set(SWELL, ['PERC_LT', 'PERC_TAU', 'MAP', 'BEATS', 'TAU', 'BANDS', 'LUM', 'RISE_GAIN', 'RISE_TAU', 'RISE_STEER', 'CENT', 'CENT_TAU', 'SHIFT_WAIT']);   // §145: &n3swell=0,15,0,8,.4,.6,.15,0,2,.5,0 is fd49b87 (no swell, no rise term, CENT_LO/HI); §147: the 13th, SHIFT_WAIT (0 = v0.44: a kit's shift implodes at once)
+  if (name === 'swell') set(SWELL, ['PERC_LT', 'PERC_TAU', 'MAP', 'BEATS', 'TAU', 'BANDS', 'LUM', 'RISE_GAIN', 'RISE_TAU', 'RISE_STEER', 'CENT', 'CENT_TAU', 'SHIFT_WAIT', 'PEND_BANDS', 'PEND_LUM', 'PEND_CROSS']);   // §145: &n3swell=0,15,0,8,.4,.6,.15,0,2,.5,0 is fd49b87 (no swell, no rise term, CENT_LO/HI); §147: the 13th–15th, SHIFT_WAIT (0 = v0.44: a kit's shift implodes at once), PEND_BANDS, PEND_LUM, PEND_CROSS (1,1,1 = the piano swell's lift and crossing on a kit's press)
   if (name === 'conv') set(ROLL, ['CONV_RIM', 'CONV_R0', 'CONV_MAX', 'CONV_CHILD', 'DOTS_RHO']);   // the depth pass's A/B: &n3conv=2,0.85,0.12 is the quality pass's flat disc; &n3conv=.6,.93,.05,.4 the v0.43 child disc (§142)
   return nums;
 }

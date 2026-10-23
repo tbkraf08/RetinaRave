@@ -45,7 +45,7 @@ export const NAV = {
   kp: 0, sn: 0, snSide: 1, kside: 1, pulse: 0,   // the dance's impulses (DANCE): the kick's, the snare's and its side, the kick jump's side, the pulse on ρ
   percE: 0, percS: 1, turn: 0,
   swell: 0, swellOn: 0, swellArm: -99, swells: 0, rise: 0, loudSlow: 0, cLo: NaN, cHi: NaN, percL: 0,   // §145: the swell's ease, its latch, the beat it armed, the count, the rise term, the ladder's slow ema, the centroid's running range   // §144: the eased percussiveness, its scale on the dance, the accumulated bar turn (TURN × bars, × the scale as it goes — not TURN × N.bar, whose product would jump with the scale)
-  pend: -1, pends: 0, pendSlams: 0, pendLapsed: 0,   // §147: a kit's shift PENDING the slam — the beat it armed (−1 none), the count, how many a slam fired, how many lapsed into the swell
+  pend: -1, pends: 0, pendSlams: 0, pendLapsed: 0, liftB: 1, liftL: 1,   // §147: the swell lift's share the shader gets (1 under PERC_LT; PEND_BANDS / PEND_LUM on a kit — the press without the wash), eased   // §147: a kit's shift PENDING the slam — the beat it armed (−1 none), the count, how many a slam fired, how many lapsed into the swell
   shown: null,   // §144: the chart index.js draws — the ball's (cyc), the kick's own while it rings (KCH), or none (NOCH)
   stack: [], cross: null, kick: new Spring(0, 9), kickM: [0, 0], mirror: 1,
   gate: { p: 0, q: 1, err: 1, on: 0 }, loud: 0, loudHist: [], bar: 0, lastBar: 0, lastCross: -99, fell: 0, leaving: 0, since: 0,
@@ -241,19 +241,21 @@ export function updateNav(dt, now, S, env) {
   const swelling = N.swellOn && ((S.shiftHold || 0) > 0 || S.beatCount - N.swellArm < SWELL.BEATS || pending);
   if (!swelling) N.swellOn = 0;
   N.swell = ema(N.swell, swelling ? 1 : 0, dt, SWELL.TAU);
+  N.liftB = ema(N.liftB, lowPerc ? 1 : SWELL.PEND_BANDS, dt, SWELL.TAU); N.liftL = ema(N.liftL, lowPerc ? 1 : SWELL.PEND_LUM, dt, SWELL.TAU);   // §147: a kit's press carries PEND_* of the lift (index.js scales uInt.zw by them)
   N.loudSlow = ema(N.loudSlow, N.loud, dt, SWELL.RISE_TAU);
   N.rise = clamp((N.loud - N.loudSlow) * SWELL.RISE_GAIN, 0, 1);
-  const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise || N.swell > 0.5;
+  const swellAsk = N.swell > 0.5 && (lowPerc || SWELL.PEND_CROSS);   // §147: a kit's press does not open the gate (the crossing at the rim is the wash); the piano swell's does
+  const asks = S.buildLive >= GATE.BUILD || S.dropExpectedIn > 0 || rise || swellAsk;
   if (inChild && N.fell >= GATE.EXIT_BARS) N.leaving = 1;   // latched: the way out is taken once decided, unless the music comes back loud
   if (inChild && !asks && N.bar - N.lastCross >= GATE.CHILD_BARS) N.leaving = 2;   // the depth pass: a child crossing holds CHILD_BARS bars once the music stops asking, then the ball rolls back out — the cardioid and its first-level bulbs are home
   if (!inChild || (N.leaving === 1 && N.loud > GATE.FALL + GATE.HYST)) N.leaving = 0;
   const leaving = N.leaving > 0;
   if (leaving) { th = 0; rho = Math.max(rho, GATE.RHO + 0.02); }
-  else if ((asks || N.rise > SWELL.RISE_STEER) && N.mode === 'INT' && N.stack.length < GATE.DEPTH_MAX && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {   // §145: the rise steers too
+  else if ((asks || N.swell > 0.5 || N.rise > SWELL.RISE_STEER) && N.mode === 'INT' && N.stack.length < GATE.DEPTH_MAX && N.rho >= GATE.RHO - GATE.NEAR && N.bar - N.lastCross >= GATE.HOLD) {   // §145: the rise steers too
     const r = nearestRational(N.th, GATE.QMAX);   // the rim slides toward the nearest gateway whose child is inside the period cap
     if (r.q >= 2 && N.cyc.q * r.q <= GATE.P_MAX) th = r.p / r.q;
   }
-  if (park > 0.5 || asks) rho = Math.max(rho, GATE.RHO + 0.02);
+  if (park > 0.5 || asks || N.swell > 0.5) rho = Math.max(rho, GATE.RHO + 0.02);   // §147: the press whether or not the gate opens
   else if (N.rise > 0 && N.mode === 'INT') rho = mix(rho, Math.max(rho, GATE.RHO + 0.02), N.rise);   // §145: the ladder's rise presses toward the rim before the shift lands   // a build (or any ask) presses the ball against the rim: the gateway (NAV's park at the root)
   N.rhoT.step(clamp(rho, ROLL.RHO_MIN * 4, ROLL.RHO_WALL), dt, ROLL.W_RHO);
   N.thT.step(th + Math.round(N.thT.x - th), dt, ROLL.W_TH);

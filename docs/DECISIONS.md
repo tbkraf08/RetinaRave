@@ -6208,3 +6208,11 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   tuned on a piano): with no slam it holds bright — The Roots 60–75 without the slam read centre Y .275 / wash .25. The shift arm's
   MIN_HIST is the void paths' 32 s. The page and node disagree on the lead by ~.04 s; ON_BEAT .2 covers The Roots and moved no other slam.
   The breath's two knobs are the brief's ask, shipped on, within 2× before and after — the eye decides. nav.js / implode.js over the soft cap.
+- **Addendum (the coordinator's follow-up before the eye): the kit's pending presses, it does not cross.** The pending window on The Roots
+  (56.5–58.5) read a pink wash; one term off per frame (`variants.sh`, 57.5 / 58.5 s): the swell lift at 0 moved nothing (.215 → .214 centre Y),
+  the smoulder off nothing, the CHILD CROSSING off took centre Y .25 / .26 → .11 / .14 and wash .21 / .24 → .03 / .04 — §145's crossing into a
+  period-4 child at the rim, dark on a piano, is the wash on a loud kit. **`SWELL.PEND_CROSS` 0**: a kit's press keeps the rim press and the
+  gateway steer, the gate stays shut; the under-PERC_LT swell crosses as §145 (Comptine's replay unchanged: 4 crossings, 2 swells, 0 implosions).
+  `PEND_BANDS` / `PEND_LUM` 0 kept as knobs (`&n3swell` 14th–16th), inert here. 55.1–59.1: **centre Y .215 / wash .155 → .113 / .022** (v0.44's
+  early implosion there read .125 / .016). The Roots' replay: 0 crossings, the slam's implosion as before. TheChain's q window (the one with a
+  kit's shift, inside the map's implosion) re-run ×3: .882 (a load hiccup, fps min 48), .917, .911 against .905. The md5 list cannot move.

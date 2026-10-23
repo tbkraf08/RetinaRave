@@ -154,3 +154,20 @@ bars (.093) is the slam's own pulse (drive up to 1.6, EPS_DROP 1) eating the for
 - The page and node disagree on the lead by ~.04 s (`leadT`); ON_BEAT .2 covers it on The Roots, measured nowhere else (no slam moved).
 - `nav.js` 368 / `implode.js` 335 still over the 350 soft cap by the brief's standing warn.
 - The breath's numbers were already within 2× before the change; the two knobs are the brief's ask, shipped on, measured, for the eye.
+
+## Addendum — the kit's pending PRESSES, it does not cross (the coordinator's follow-up before the eye; commit 5)
+
+`shift-after-55-62.jpg` showed the pending window 56.5–58.5 as a pink wash. Measured on the frames at 57.5 / 58.5 with one term off per run
+(`tools/work/nav3/shift/variants.sh`): the swell's uSwell lift scaled to 0 (`PEND_BANDS` / `PEND_LUM`) moved nothing (centre Y .215 → .214,
+wash .155 → .154 over 55.5–59.0); the loudness smoulder off (`&n3smo=0`) moved nothing; the child crossing off (DEPTH_MAX 0) took the frames
+from centre Y .25 / .26, wash .21 / .24 to **.11 / .14, .03 / .04**. The wash is the swell's ask opening the gate and the ball CROSSING into a
+period-4 child at the rim (par .8) on a loud kit — §145's crossing, which on a piano reads dark. So **`SWELL.PEND_CROSS` 0**: on a kit the
+shift's press keeps the rim press and the gateway steer but does not open the gate; the under-PERC_LT swell crosses exactly as §145 (Comptine's
+replay: 4 crossings, 2 swells, 0 implosions, unchanged). `PEND_BANDS` / `PEND_LUM` 0 are kept as knobs (`&n3swell` 14th–16th with PEND_CROSS;
+`1,1,1` = the piano treatment on a kit) and are inert on The Roots. **55.1–59.1 before this commit: centre Y .215, wash .155, black .275; after:
+centre Y .113, wash .022, black .341** (8 frames at 2 fps; v0.44's early implosion over the same seconds read .125 / .016). The replay on The
+Roots: 0 crossings (was 1), the 59.13 slam's implosion as before. check.js 0 fail, test_nav3 OK, npm test's other suites untouched by a
+scene-folder line. The q trace sees a scene line only where a kit's shift sits in a window: TheChain's (its 202.7 shift falls inside the map's
+199.7 implosion, so the press never runs there); re-run three times: **.882 (fps min 48, load 3.9 — a hiccup), .917, .911** against .905 before.
+The md5 list cannot move (the fake's shift lands past both frames). 8765 is a static server over this worktree: a reload serves the new
+`knobs.js` / `nav.js` / `index.js` — no restart.

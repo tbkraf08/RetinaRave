@@ -11,3 +11,4 @@ CyborgNinja       s6 shift at 34 30s | q mean 0.909 min 0.63 under.55 0 under.35
 DONE Thu Oct 22 11:59:32 PM EDT 2026
 TheRoots80        s6 shift at 45 30s | q mean 0.9 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
 TheRoots80        s6 shift0 at 0 76s | q mean 0.966 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":216,"CROSS":4,"OUT":6,"EXT":62} "errs []"
+TheChain (after PEND_CROSS 0, x3) | q .882 (load 3.9, fps min 48) / .917 / .911 - before .905; modes identical
