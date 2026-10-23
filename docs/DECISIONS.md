@@ -6146,3 +6146,65 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   the fluid-idle fix (§135), TheChain (§137), DUST following the singer (§138), NAV3 (§140) and its four passes
   (§142–§145). **The user's eye is owed on all of it on the live site, NAV3 first — his word at the tag was "nav3 still
   needs work".**
+
+## §147 NAV3's shift waits for the slam, the engine's slam hears the sub — The Roots, a live band (2026-10-22/23, one Fable worker in a worktree, branch `nav3-shift` off `main` c3eb3cd, NOT merged; the user's live capture of v0.43 NAV3 on "The Roots" by Long Arm; `docs/workers/brief-nav3-shift.md`, `docs/workers/nav3-shift.md`)
+
+- **The user (2026-10-22, watching NAV3 LIVE on The Roots, ~97 BPM, verbatim).** *"what happens at 56 secs inside the set? the fractal looks like
+  is missing a lot of complexity (also part of it seems off beat)"*. The orchestrator's diagnosis on the recording's 80 s as a track (the
+  deterministic clock from 0, the live lanes): the engine's **shiftEvt at 55.12** (beat 91.73, between beats) took NAV3's implosion (the
+  piece reads percussive) and EXT held to the end; the **real drop at 59.05** (a kick at velocity 1 on the beat, the ears' causal sub gate
+  opening 0 → 1 .08 s later, the ladder .77) armed nothing — hp 0, bassS never left (2 s / 32 s .89), the gate's 32 s mean **0.00** (§143's
+  SUBV_HAD rightly shuts the sub-void path: a sub that was never there has not left), the tongues locked (.66). So the eye saw a c₀ + ε
+  picture 4 s early, between beats, turning on the one-way sweep. The user said "go" to three picks: the engine hears this drop, NAV3's
+  shift on a kit waits for it, a held EXT breathes.
+- **Item 1 — the SHIFT arm (`engine/build/build.js`, `feed.js`; every scene).** A fourth arming path: a `shiftEvt` (the frame before — the
+  shift stage runs after the build stage) while nothing is armed, after MIN_HIST, arms **at once** (the shift is already a bar late), no
+  SLAM_AFTER wait, `buildLive` at **`SHIFT_L0` .3** (under DUST's .35 void, move2's .4 kick veto, NAV2's .45 park; > 0 keeps the shift stage's
+  ARMED rule); the void lifting never releases it. The slam: the on-beat low onset confirmed by **the causal sub gate OPENING** — its 2 s
+  mean under SUBV_OFF as the onset arrived, at or above SUB_BACK now (`SHIFT_GATE` 1) — on a sub that **arrives** (`SHIFT_HAD` .3: the
+  gate's 32 s mean under it, the mirror of SUBV_HAD) and by nothing else, then §143's Confirm. No bass-return ratio could have named
+  this drop (bassS .58 against a 2 s mean .40 at RET 1.75×; sub .99 against .52 at SUB_RET 5× / SUBV_RET 2×) — and measured, the ratios
+  on a shift arm named TheChain 130.67 (a chorus's bass swell, the gate open all along) and the gate alone without SHIFT_HAD named The
+  Roots 78.72 (a 6 s sub dip inside its groove, the gate's 32 s mean .54 — a fill): both rules removed both. **`ON_BEAT` .125 → .2 and
+  `SHIFT_LAST` 1**, measured first: node's time base reads the drop kick +.100 past the line, the page's past .125 (the lead's estimate
+  −.003 s against node's −.043 — .065 beats) and the page lost it twice; at .2 the pickup kick a quarter beat before (−.137 / −.021) took
+  the candidate under the first-keeps-it rule and expired a frame before the gate opened — on a shift arm the NEWEST on-beat onset is the
+  candidate (the gate's opening names the last kick before it), the void paths keep the first. Probed on the page frame by frame
+  (`tools/work/nav3/shift/probe.mjs`, the live BUILDS imported into the page): the pickup x 97.979, the kick **98.094**, the gate opens on
+  the frame at **59.133** → `dropLiveEvt` (beat 98.24; the trace's lead-shifted phase +.305). *The slam table* (node harness + the Shift
+  stage, `tools/build-node.js` now runs it; `tools/accept/nav3/shift/slams-node.txt`): **The Roots 0/1 → 1/1 at 59.13**; SeeYouDrop
+  57.65 / 105.67, WhoLikesToParty 57.52 / 131.40 / 188.80, Vienna 85.40, Raindrops 68.65, IBelongHere 179.88 — **every slam on the same
+  frame, 0 false** (the grader's one "false", IBelongHere 179.88 at +1.03 s on the 178.85 drop, is §143's hit before and after); shift arms
+  with no slam on Vienna 185.7, IBelongHere 65.8 / 130.7, Malicious 68.9, TheChain 44.7 / 121.6 / 202.7, Comptine 33.0 / 111.3 / 120.8 —
+  a kit whose gate is open through the shift never slams by it. `test_build` 51 pass (11 new). `feed.js` FEED_IN + `shiftEvt`.
+- **Item 2 — NAV3: a kit's shift ARMS, the slam FIRES (`nav.js`, new `knobs.js`).** `SWELL.SHIFT_WAIT` 4 bars (0 = v0.44): at or above
+  PERC_LT a shift sets a PENDING state — the swell's own latch (the ball to GATE.RHO + .02, θ to the nearest gateway, uSwell up; nothing
+  copied) held through the window — and the first confirmed slam inside it fires the implosion (kind 'slam') and closes it; none → the
+  pending lapses into the swell (held while shiftHold, §145). **No implosion without a slam**; a shift mid-implosion no longer re-arms.
+  `nav.js` 479 → 368: the six knob tables and `knob5()` in **`knobs.js`** (re-exported). `n3info()`: `pend pends pendSlams pendLapsed`.
+  *The shift table* (`shift-table.mjs` = §145's replay through the page traces; `shift-table.txt`): **The Roots 55.1 IMPLODED (φ −.274)
+  → 55.1 pending → the 59.13 slam fires (φ +.305, EXT 60.5 →)**, the page's own after-trace the same (1 pend armed, 1 fired, 0 lapsed);
+  IBelongHere 65.8 and TheChain 44.7 (shifts with no slam inside 4 bars) now swell — 1 → 0 and 2 → 1 implosions; **Comptine 0 implosions /
+  2 swells** (§145 held); the six slam implosions unchanged. Every implosion has a slam's phase now (−.015 … +.33).
+- **Item 3 — a held EXT breathes (`implode.js`).** Measured first (`breath.mjs` / `breath.py`: a grab at every beat line and half beat,
+  64×64 luma |ΔY|): on The Roots the v0.44 hold 60–75 already moved as much as INT frame to frame (BEAT .0497 / HALF .0426 against INT
+  .0450 / .0361) — the "missing complexity" was the implosion's shape 4 s early and off the beat, not a frozen picture. The brief's breath
+  shipped anyway: **`EPS_KICK` .6** — ε × (1 + EPS_BEAT·crest·percS + EPS_KICK × the dance's kick impulse × (1 − `KICK_LOUD` .5 + KICK_LOUD
+  × the eased ladder)), reactive; **`BAR_STEP` 1** — the one-way direction sweep steps on the bar line (barPos wrapping) instead of running
+  free. After (the implosion from the slam): **EXT 60–75 BEAT .0539 / HALF .0467 = 1.2× / 1.3× INT's** (the ask: within 2×); centre black
+  .18–.33; wash .093 over the slam's bars (the slam's pulse), **.016 on the held tail** against §144's .01 (the kick breath's price, for the eye).
+- **The gate.** `check.js` **0 fail** (6 warns: nav.js 368, implode.js 335 over the soft cap) · `npm test` **exit 0** · the md5 list
+  `PORT=8817 tools/scene-md5.sh shift` (`scene-md5-shift.txt`): **all 14 lines = §145's `scene-md5-swell.txt` to the byte, 0 moved** (the
+  fake never runs the build detector; its own shift lands at 25.45 s, past both frames; the EXT changes need an implosion the fake reaches
+  at no shot) · the q trace on the nine drop windows (`q-shift.txt`): **q .905–.930, fps 60 / 60, errs [] on all nine** (TheChain .905 the
+  one under .91, over the .90 ask) · **The Roots from 0, 76 s real time, the implosion inside: q .966, fps 60 min 60** (a seek to 45 s reads
+  q .90 and never implodes: the ladder's history is the read) · the strips `tools/work/nav3/shift-{before,after}-55-62.jpg`: before, the
+  set imploding at 55.5–56.5 with the drop 3.5 s away; after, the ball at the rim through the pending (a crossing at 55.4, the swell's lift
+  pink by 57), the petals on the slam at 59.1–60.5, the dust from 60.5 — where the drum is.
+- **The knob table.** `BUILD.SHIFT_ARM` 1 · `SHIFT_L0` .3 · `SHIFT_GATE` 1 · `SHIFT_HAD` .3 · `SHIFT_LAST` 1 · `ON_BEAT` .125 → .2 (`BUILDK=
+  '{"SHIFT_ARM":0,"ON_BEAT":0.125}'` = v0.44 in node) · `SWELL.SHIFT_WAIT` 4 (`&n3swell` 13th; 0 = v0.44) · `OUT3.EPS_KICK` .6 / `KICK_LOUD`
+  .5 / `BAR_STEP` 1 (`&n3imp` 26th–28th; v0.44 `0,.5,0`). `tools/build-node.js` runs the Shift stage (`SHIFTK`) and records `armPath`.
+- **NOT done.** The user's eye on all of it (8765 serves the branch). The pending's look on a kit is the §145 swell's (bands ×1.6, +.15 lum,
+  tuned on a piano): with no slam it holds bright — The Roots 60–75 without the slam read centre Y .275 / wash .25. The shift arm's
+  MIN_HIST is the void paths' 32 s. The page and node disagree on the lead by ~.04 s; ON_BEAT .2 covers The Roots and moved no other slam.
+  The breath's two knobs are the brief's ask, shipped on, within 2× before and after — the eye decides. nav.js / implode.js over the soft cap.
