@@ -1,0 +1,14 @@
+# §147 the q trace on the nine drop windows (tools/work/nav3/q-all.sh shift 6: at = drop − 14, 30 s real time on the GPU, MUTE=1) + The Roots
+SeeYouDrop        s6 shift at 44 30s | q mean 0.93 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":6,"EXT":60} "errs []"
+IBelongHere       s6 shift at 51 30s | q mean 0.91 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":36,"CROSS":4,"OUT":6,"EXT":58} "errs []"
+Comptine          s6 shift at 18 30s | q mean 0.914 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+RaindropsOnRoses  s6 shift at 55 30s | q mean 0.91 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":34,"CROSS":4,"OUT":5,"EXT":61} "errs []"
+Vienna            s6 shift at 71 30s | q mean 0.917 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+WhoLikesToParty   s6 shift at 44 30s | q mean 0.928 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":34,"OUT":5,"EXT":65} "errs []"
+Malicious         s6 shift at 134 30s | q mean 0.911 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+TheChain          s6 shift at 186 30s | q mean 0.905 min 0.59 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":38,"OUT":5,"EXT":58,"IN":3} "errs []"
+CyborgNinja       s6 shift at 34 30s | q mean 0.909 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+DONE Thu Oct 22 11:59:32 PM EDT 2026
+TheRoots80        s6 shift at 45 30s | q mean 0.9 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":104} "errs []"
+TheRoots80        s6 shift0 at 0 76s | q mean 0.966 min 0.63 under.55 0 under.35 0 | fps mean 60 min 60 | {"INT":216,"CROSS":4,"OUT":6,"EXT":62} "errs []"
+TheChain (after PEND_CROSS 0, x3) | q .882 (load 3.9, fps min 48) / .917 / .911 - before .905; modes identical

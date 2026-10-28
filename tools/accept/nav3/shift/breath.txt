@@ -1,0 +1,11 @@
+# §147 item 3 — the per-beat picture difference on The Roots (breath.mjs grabs at every beat line + half beat, breath.py: 64×64 luma, mean |ΔY|); before = v0.44 (the main checkout on 8818), after = this branch
+## before
+INT                       45.0- 55.0 beats  16 | BEAT |ΔY| mean 0.0450 p90 0.0656 | HALF |ΔY| mean 0.0361 | centre black 0.149 wash 0.0134 Y 0.097
+EXT                       60.0- 75.0 beats  24 | BEAT |ΔY| mean 0.0497 p90 0.0623 | HALF |ΔY| mean 0.0426 | centre black 0.140 wash 0.0073 Y 0.155
+EXT                       60.0- 67.0 beats  12 | BEAT |ΔY| mean 0.0489 p90 0.0611 | HALF |ΔY| mean 0.0395 | centre black 0.240 wash 0.0132 Y 0.142
+EXT                       67.0- 75.0 beats  12 | BEAT |ΔY| mean 0.0511 p90 0.0623 | HALF |ΔY| mean 0.0445 | centre black 0.041 wash 0.0014 Y 0.168
+## after (this branch; the implosion from the 59.13 slam, EXT 60.5 → held)
+INT                       45.0- 55.0 beats  16 | BEAT |ΔY| mean 0.0450 p90 0.0656 | HALF |ΔY| mean 0.0361 | centre black 0.149 wash 0.0134 Y 0.097
+EXT                       60.0- 75.0 beats  24 | BEAT |ΔY| mean 0.0539 p90 0.0728 | HALF |ΔY| mean 0.0467 | centre black 0.255 wash 0.0542 Y 0.209
+EXT                       60.0- 67.0 beats  12 | BEAT |ΔY| mean 0.0555 p90 0.0757 | HALF |ΔY| mean 0.0460 | centre black 0.333 wash 0.0929 Y 0.214
+EXT                       67.0- 75.0 beats  12 | BEAT |ΔY| mean 0.0539 p90 0.0702 | HALF |ΔY| mean 0.0469 | centre black 0.178 wash 0.0155 Y 0.203

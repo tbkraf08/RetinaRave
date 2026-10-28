@@ -91,7 +91,8 @@ export default {
       depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
       kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
       shown: (NAV.shown || NAV.cyc).has, percS: NAV.percS, turn: NAV.turn, swell: NAV.swell, swells: NAV.swells, rise: NAV.rise, cent: [NAV.cLo, NAV.cHi],   // §145: the swell's ease and count, the rise term, the centroid's running range   // §144: the chart drawn (the kick's own while it rings), the percussiveness scale, the accumulated bar turn
-      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames, rearms: IMP.rearms, held: IMP.held, phi: IMP.phi, wedge: IMP.wedge.slice(), loudE: IMP.loudE, eps0: IMP.eps0, epsHi: IMP.epsHi, drive: IMP.drive },   // §140 step 3: the implosion's record (implode.js IMP); §144: the direction's angle, the wedge, the eased ladder
+      pend: NAV.pend, pends: NAV.pends, pendSlams: NAV.pendSlams, pendLapsed: NAV.pendLapsed, lift: [NAV.liftB, NAV.liftL],   // §147: a kit's shift pending the slam — the beat it armed (−1 none), how many armed / fired by a slam / lapsed into the swell
+      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames, rearms: IMP.rearms, held: IMP.held, phi: IMP.phi, wedge: IMP.wedge.slice(), loudE: IMP.loudE, eps0: IMP.eps0, epsHi: IMP.epsHi, drive: IMP.drive, kickP: IMP.kickP, steps: IMP.steps },   // §147: the kick pulse on ε, the direction's bar steps   // §140 step 3: the implosion's record (implode.js IMP); §144: the direction's angle, the wedge, the eased ladder
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
       Q: GREEN.Q,
@@ -229,7 +230,7 @@ export default {
     gl.uniform2f(u('uLumI'), LUM_IMP[0], LUM_IMP[1]);   // §144: the exterior's knee while the implosion is up
     gl.uniform3f(u('uPal3'), PAL3.Y, PAL3.MAX, PAL3.ON ? 1 : 0);   // §144: the luma-normalised interior palette
     gl.uniform4f(u('uImpK'), OUT3.BLACK, OUT3.PET_Q1, OUT3.IMP_N, 0);   // §144: the former interior black while the implosion is up, the petals on the way in only; §145: the cusp's petal paint
-    gl.uniform4f(u('uInt'), INT3.K_RINGS, INT3.FLOOR, SWELL3.BANDS, SWELL3.LUM);   // §145: the rings' depth fade, the floor, the swell's lifts
+    gl.uniform4f(u('uInt'), INT3.K_RINGS, INT3.FLOOR, SWELL3.BANDS * N.liftB, SWELL3.LUM * N.liftL);   // §145: the rings' depth fade, the floor, the swell's lifts; §147: × the lift's share (1 under PERC_LT, PEND_BANDS / PEND_LUM on a kit's press)
     gl.uniform1f(u('uSwell'), N.swell);
     gl.uniform4f(u('uImpC'), OUT3.IMP_COL, OUT3.IMP_SN, OUT3.IMP_HUE_SN, OUT3.IMP_LUM);   // §145: the former interior by its escape time
     gl.uniform1f(u('uExtG'), L2.extG);

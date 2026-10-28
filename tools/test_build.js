@@ -28,11 +28,16 @@ function mk(knobs) {
       const B0 = st.B; st.B += bps * dt;
       const ons = [];
       if (p.onBeat && Math.floor(st.B) > Math.floor(B0)) ons.push({ x: Math.floor(st.B) });          // an onset ON each beat line
+      if (p.pickup && Math.floor(st.B + 0.14) > Math.floor(B0 + 0.14)) ons.push({ x: Math.floor(st.B + 0.14) - 0.14 });   // §147: a pickup .14 beats BEFORE each line
+      if (p.late && Math.floor(st.B - 0.1) > Math.floor(B0 - 0.1)) ons.push({ x: Math.floor(st.B - 0.1) + 0.1 });   // §147: the kick .1 beats AFTER each line
       if (p.offBeat && Math.floor(st.B - 0.5) > Math.floor(B0 - 0.5)) ons.push({ x: Math.floor(st.B - 0.5) + 0.5 });   // on the off-beat
       const i = { B: st.B, rel: st.B, bpm: p.bpm || BPM, ok: p.ok === undefined ? true : p.ok, hp: p.hp || 0, bassS: p.bassS === undefined ? 0.5 : p.bassS,
         sub: p.sub === undefined ? 0.5 : p.sub, anchor: -1, onsets: ons, dt };
       if (p.subGate !== undefined) i.subGate = p.subGate;
+      if (p.gateFrom !== undefined) i.subGate = st.B >= p.gateFrom ? 1 : 0;   // §147: the gate opens at a beat position
       if (p.tongueAmbig !== undefined) { i.tongueAmbig = p.tongueAmbig; i.tongueOn = p.tongueOn === undefined ? 1 : p.tongueOn; }
+      if (p.shift) i.shift = f === 0 ? 1 : 0;   // §147: the engine's shiftEvt on this run's first frame
+      if (p.lad !== undefined) i.lad = p.lad;
       const o = b.step(i);
       last = { B: st.B, buildLive: o.buildLive, dropLiveIn: o.dropLiveIn, dropLiveEvt: o.dropLiveEvt };
       st.out.push(last);
@@ -42,6 +47,7 @@ function mk(knobs) {
   return st;
 }
 const armedAt = (st, from) => st.out.find((o, i) => i >= from && o.buildLive >= BUILD.L0 - 1e-9);
+const armedSh = (st, from) => st.out.find((o, i) => i >= from && o.dropLiveIn >= 0);   // §147: a shift arm sits at SHIFT_L0, under L0 — armed = dropLiveIn counting
 const fired = (st, from = 0) => st.out.filter((o, i) => i >= from && o.dropLiveEvt);
 
 console.log('steady music');
@@ -201,6 +207,72 @@ console.log('the ambiguity (§77)');
   const off2 = mk({ AMB_ARM: 0 }); off2.run(40, Object.assign({ tongueAmbig: 0.45 }, base)); off2.run(14, Object.assign({ tongueAmbig: 1.0 }, base));
   const none = mk(); none.run(54, base);
   ok('tongueOn -1 / AMB_ARM 0 / no field: the same stream never arms', !armedAt(off, 0) && !armedAt(off2, 0) && !armedAt(none, 0), `${off.out[off.out.length - 1].buildLive} ${off2.out[off2.out.length - 1].buildLive} ${none.out[none.out.length - 1].buildLive}`);
+}
+console.log('the shift arm (§147)');
+{
+  // The Roots' shape: a live band — the bass in (bassS flat .5, hp 0), the sub gate SHUT the whole time (its 32 s mean 0: the sub-void
+  // path is rightly closed by SUBV_HAD), the beat locked; the engine's shift fires; four seconds later a kick on the beat with the
+  // gate opening on that frame and the sub up — but not by any bass-return ratio (sub .5 → .9, under SUBV_RET 2 and SUB_RET 5).
+  const base = { hp: 0, bassS: 0.5, sub: 0.5, subGate: 0, tongueAmbig: 0.45, onBeat: true };
+  const st = mk();
+  st.run(40, base);
+  const n0 = st.out.length;
+  st.run(0.5, Object.assign({ shift: 1 }, base));
+  const a = armedSh(st, n0), sh0 = st.out[n0];
+  ok('a shiftEvt arms at once (not on the bar line) with the bass and the sub in and the gate shut', !!a && a === sh0, a ? `at B ${a.B.toFixed(3)} (the shift's frame B ${sh0.B.toFixed(3)})` : 'never');
+  ok(`the level sits at SHIFT_L0 ${BUILD.SHIFT_L0} (under the void's L0 ${BUILD.L0}) and dropLiveIn counts`, !!a && Math.abs(st.out[st.out.length - 1].buildLive - BUILD.SHIFT_L0) < 1e-9 && st.out[st.out.length - 1].dropLiveIn >= 0, `${st.out[st.out.length - 1].buildLive} ${st.out[st.out.length - 1].dropLiveIn.toFixed(2)}`);
+  st.run(3.5, base);   // the kicks go on with the gate shut
+  ok('on-beat kicks with the gate still shut never fire, and the arm holds (no void to lift)', fired(st, n0).length === 0 && st.out[st.out.length - 1].dropLiveIn >= 0, `${fired(st, n0).length} events, dropLiveIn ${st.out[st.out.length - 1].dropLiveIn.toFixed(2)}`);
+  const n1 = st.out.length;
+  st.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1 }));   // the gate opens on the next beat line's kick
+  const ev = fired(st, n1);
+  ok('the gate OPENING on an on-beat kick fires once (no bass-return ratio holds) and disarms', ev.length === 1 && ev[0].buildLive === 0 && ev[0].dropLiveIn === -1, `${ev.length} events`);
+  ok('on the onset\'s own frame (the gate open and no ladder = §143\'s Confirm releases at once)', ev.length === 1 && Math.abs(ev[0].B - Math.round(ev[0].B)) < bps * dt + 1e-9, ev[0] ? `B ${ev[0].B.toFixed(3)}` : '');
+  // the ladder at a quiet level holds the slam PENDING (§143's Confirm) — a shift arm takes the same gate
+  const lv = mk();
+  lv.run(40, base); lv.run(4, Object.assign({ shift: 1 }, base));
+  const l0 = lv.out.length;
+  lv.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1, lad: 0.2 }));
+  ok('…but a ladder under LEVEL holds it pending (nothing fires)', fired(lv, l0).length === 0, `${fired(lv, l0).length} events`);
+  // a kit whose gate is OPEN through the shift (a groove getting louder) never slams by the shift: the scene swells on it
+  const grv = mk();
+  grv.run(40, Object.assign({}, base, { subGate: 1 })); const g0 = grv.out.length;
+  grv.run(8, Object.assign({}, base, { subGate: 1, shift: 1 }));
+  ok('a shift with the gate already open: armed, the on-beat kicks never fire (the gate did not OPEN)', !!armedSh(grv, g0) && fired(grv, g0).length === 0, `${fired(grv, g0).length} events`);
+  // a shift arm with no slam times out after MAX bars
+  const to = mk();
+  to.run(40, base); const t0 = to.out.length;
+  to.run(2 * (BUILD.MAX + 2), Object.assign({ shift: 1 }, base));
+  const ta = armedSh(to, t0), dis = to.out.findIndex((x, i) => i > to.out.indexOf(ta) && x.dropLiveIn === -1);
+  ok(`a shift arm with no slam times out after ${BUILD.MAX} bars`, !!ta && dis > 0 && Math.abs(to.out[dis].B - ta.B - 4 * BUILD.MAX) < 0.5, ta ? `armed B ${ta.B.toFixed(2)}, disarmed B ${(to.out[dis] || {}).B?.toFixed(2)}` : 'never armed');
+  // SHIFT_ARM 0 is v0.44: the same stream never arms; SHIFT_GATE 0: armed, but the gate opening confirms nothing
+  const off = mk({ SHIFT_ARM: 0 });
+  off.run(40, base); off.run(4, Object.assign({ shift: 1 }, base)); off.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1 }));
+  const ng = mk({ SHIFT_GATE: 0 });
+  ng.run(40, base); ng.run(4, Object.assign({ shift: 1 }, base)); const ng0 = ng.out.length; ng.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1 }));
+  ok('SHIFT_ARM 0: never armed, nothing fires · SHIFT_GATE 0: armed, the gate opening alone fires nothing (the ratios rule)', !armedSh(off, 0) && !fired(off).length && !!armedSh(ng, 0) && !fired(ng, ng0).length, `${off.out[off.out.length - 1].buildLive} / ${fired(ng, ng0).length}`);
+  // The Roots' kicks: a pickup .14 before the line, the drop kick .1 after it (inside ON_BEAT), the gate opening with the kick —
+  // the better-aligned onset takes the candidate (CAND_BEST) and the slam lands on the kick's frame, not lost behind the pickup
+  const pk = mk();
+  pk.run(40, Object.assign({}, base, { onBeat: false, pickup: true, late: true })); pk.run(3.9, Object.assign({}, base, { onBeat: false, pickup: true, late: true, shift: 1 }));
+  const pk0 = pk.out.length, gateAt = Math.ceil(pk.B + 0.2) + 0.1; pk.run(0.8, Object.assign({}, base, { onBeat: false, pickup: true, late: true, sub: 0.9, gateFrom: gateAt }));   // the gate opens WITH the kick .1 after the next line
+  const pe = fired(pk, pk0);
+  ok('a pickup kick .14 before the line does not mask the drop kick .1 after it (SHIFT_LAST): one slam, on the kick', pe.length === 1 && Math.abs(pe[0].B - Math.round(pe[0].B) - 0.1) < bps * dt + 1e-9, pe.length ? `B ${pe[0].B.toFixed(3)}` : '0 events');
+  // the bass-return ratios confirm nothing on a shift arm (TheChain 130.7: a chorus's bass swell at 2× its 2 s mean with the gate open)
+  const rat = mk();
+  rat.run(40, Object.assign({}, base, { subGate: 1 })); rat.run(4, Object.assign({}, base, { subGate: 1, shift: 1 }));
+  const rt0 = rat.out.length; rat.run(0.6, Object.assign({}, base, { bassS: 1.0, sub: 0.9, subGate: 1 }));
+  ok('a bass swell at 2× its 2 s mean (RET) with the gate open does not slam a shift arm', !!armedSh(rat, 0) && fired(rat, rt0).length === 0, `${fired(rat, rt0).length} events`);
+  // the sub was THERE (its 32 s mean over SHIFT_HAD) and dipped for a bar: a fill, not an arrival — nothing fires on its return
+  const dip = mk();
+  dip.run(40, Object.assign({}, base, { subGate: 1 })); dip.run(3, Object.assign({}, base, { subGate: 0, shift: 1 }));
+  const dp0 = dip.out.length; dip.run(0.6, Object.assign({}, base, { sub: 0.9, subGate: 1 }));
+  ok(`a sub back from a 3 s dip inside a groove (32 s mean over SHIFT_HAD ${BUILD.SHIFT_HAD}) does not slam a shift arm`, !!armedSh(dip, 0) && fired(dip, dp0).length === 0, `${fired(dip, dp0).length} events`);
+  // a shift inside the first MIN_HIST s, or while a void arm is up, changes nothing
+  const early = mk(); early.run(10, Object.assign({ shift: 1 }, base)); early.run(1, base);
+  const dbl = mk(); dbl.run(40, { hp: 0, bassS: 0.5, sub: 0.5, subGate: 1 }); dbl.run(6, { hp: 0.6, bassS: 0.02, sub: 0.02, subGate: 1 });
+  const dl = dbl.out[dbl.out.length - 1].buildLive; dbl.run(0.5, { hp: 0.6, bassS: 0.02, sub: 0.02, subGate: 1, shift: 1 });
+  ok(`a shift before ${BUILD.MIN_HIST} s does not arm; a shift over a void arm leaves its level alone`, !armedSh(early, 0) && dbl.out[dbl.out.length - 1].buildLive >= dl - 1e-9, `${early.out[early.out.length - 1].buildLive} / ${dl.toFixed(3)} → ${dbl.out[dbl.out.length - 1].buildLive.toFixed(3)}`);
 }
 console.log(FAIL ? `test_build: ${FAIL} FAILED` : 'test_build: OK');
 process.exit(FAIL ? 1 : 0);
