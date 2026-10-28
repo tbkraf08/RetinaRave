@@ -6216,3 +6216,47 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   `PEND_BANDS` / `PEND_LUM` 0 kept as knobs (`&n3swell` 14th–16th), inert here. 55.1–59.1: **centre Y .215 / wash .155 → .113 / .022** (v0.44's
   early implosion there read .125 / .016). The Roots' replay: 0 crossings, the slam's implosion as before. TheChain's q window (the one with a
   kit's shift, inside the map's implosion) re-run ×3: .882 (a load hiccup, fps min 48), .917, .911 against .905. The md5 list cannot move.
+
+## §148 v0.45 tagged LOCALLY — the drop a live band plays (2026-10-28, one Opus worker on main, no worktree; the user: *"tag latest code"*)
+
+- **What ships** (everything on `main` since the v0.44 tag at `be7d3cc`; this note adds no code). It arrived in **one `--no-ff`
+  merge** of a linear five-commit stack (`70b6e8a`..`b6cf345`) fast-forwardable off `c3eb3cd` — **`2653b7d`** `nav3-shift` (§147).
+  **Zero conflicts and nothing resolved by hand**; `main`'s own `c3eb3cd` (the nav3-shift brief) was the only commit the branch
+  did not already contain. **§147 THE SHIFT WAITS FOR THE SLAM, AND THE SLAM HEARS THE SUB** — the user's live capture of NAV3 on
+  The Roots: the engine's `shiftEvt` at 55.12 took the implosion between beats while the real drop at 59.05 armed nothing,
+  because a live band plays no breakdown and §143's `SUBV_HAD` rightly shuts the sub-void path on a gate whose 32 s mean is 0.00.
+  Item 1, **in `engine/build/` and inherited by every scene**: a `shiftEvt` arms the live detector at once (`SHIFT_ARM` 1,
+  `SHIFT_L0` .3) and the **causal sub gate OPENING** confirms the slam (`SHIFT_GATE` 1) on a sub that *arrives* (`SHIFT_HAD` .3)
+  and by nothing else — no bass-return ratio could have named it, and both ratios named a chorus's swell and a dip inside a
+  groove instead; `ON_BEAT` .125 → .2 with `SHIFT_LAST` 1 (on a shift arm the NEWEST on-beat onset is the candidate), measured
+  first. **The Roots 0/1 → 1/1 at 59.13, every other slam on the same frame, 0 false.** Item 2, NAV3: at or above `PERC_LT` a
+  shift sets a **PENDING** press (`SWELL.SHIFT_WAIT` 4 bars) and the first confirmed slam inside the window fires the implosion —
+  **no implosion without a slam**; none → §145's swell. Item 3: a held EXT **breathes on the kick** (`EPS_KICK` .6) and the
+  direction **steps on the bar** (`BAR_STEP` 1). The addendum: `PEND_CROSS` 0 — a kit's press keeps the rim and the gateway steer
+  without crossing, which was the pink wash. `nav.js` 479 → 368 (`knobs.js`); `tools/test_build.js` 51 pass (11 new).
+- **The entry** — `releases.json` top, **class `engine`**, `scenes` [6], `decisions` ["§147"], `clip` null, 2026-10-28, title
+  *"The drop the band plays: the shift waits for the slam"*. `engine` because item 1 lives in `engine/build/` and every scene
+  inherits the new arming path; `scenes` [6] because NAV3 is the only scene whose pixels moved, so the article shows one
+  thumbnail. The body is a visitor's account of all four pieces and ends on the honest limits, the first of which is that nobody
+  but the user's own eye can close this.
+- **The ritual** (§141's, step for step; §125's `releases.json` pitfall paid forward an **eighth** time). `package.json` +
+  `assets/core/version.js` 0.44.0 → **0.45.0** together (§89), proved by `test_rec`'s sidecar `retinarave 0.45.0` against the file
+  name `retinarave-v0.45-nav2-2026-10-28T13-38-52.webm`. `releases.json`: the round-trip proved **FIRST** (`JSON.stringify(load(),
+  null, 1) + '\n'` == the file byte for byte, 46 949 chars / 47 221 bytes), then the entry hand-inserted at the head as
+  `JSON.stringify(rel, null, 1)`, the result re-proved and the 42 existing entries proved byte-identical in the tail —
+  **15 added, 0 removed, `save()` never called**. `npm run build` (43 entries → `site/whats-new.html` 76 348 B; `index.html`'s
+  `#newin` moved because the title did). `releases/retinarave-v0.45.html` at **164 modules + 12 in the ears Worker, 269 KB
+  inline, 2 053 929 bytes** (v0.44: 163 + 12 / 2 041 502 — the +1 module is `knobs.js`, and not one byte of the ears moved);
+  v0.42's page out on the three-page rule.
+- **The gate on the bumped tree.** `check.js` **0 fail / 6 warn** (166 modules; `nav.js` 376 after the extraction) · `releases.js
+  check` 43 entries, top v0.45 == 0.45.0, 0 problems · `whatsnew --check` up to date · `license --check` 169 public files,
+  0 missing · **`npm test` exit 0, 0 FAIL, 580 ok** (also run on the merge commit before the bump, same result) · `test_rec` all
+  ok with the version pair proved · the frozen page headless from `file://` on scenes 0/1/3/4/6, `errs []` and `bad []`, **all
+  five lines §146's to the character** · one host on `/whats-new`, `/` and `/about`, the v0.45 article with exactly one
+  thumbnail. The credits needed no move — `git diff v0.44..HEAD -- site/about.html THIRD-PARTY.md README.md` is empty.
+  Receipt: `tools/accept/v0.45/tag-v0.45-2026-10-28.txt`.
+- **NOT pushed, NOT deployed.** The user's word was **"tag latest code"** and nothing more: the tag is annotated and **local**,
+  the commit is on local `main`, and the push IS the deploy (Cloudflare, git-connected, building on a push to `main`) — so
+  **retinarave.com stays at v0.44** (live 2026-10-22 14:09 EDT). **The user has seen no frame of §147**, and his eye on NAV3 has
+  been owed since §142; §146's nine open eyes are all carried and none closed. Port **8765 was moved back to the main checkout**
+  after the tag (`MUSIC=tools/work/nav3/music` — the nine tracks plus `TheRoots80.wav`), verified serving `VER = '0.45.0'`.

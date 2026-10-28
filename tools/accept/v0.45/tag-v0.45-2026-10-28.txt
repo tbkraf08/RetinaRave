@@ -1,0 +1,216 @@
+================================================================================
+ v0.45 — the drop the band plays: the shift waits for the slam
+ the tag receipt · 2026-10-28 · one Opus worker on main, no worktree
+ the user: "tag latest code"      -> MERGED, TAGGED LOCALLY. NOT PUSHED, NOT
+                                     DEPLOYED.
+================================================================================
+
+WHAT SHIPS — everything on main since the v0.44 tag at be7d3cc. The release
+commit adds NO code: two version strings, the releases.json entry, the two
+generated site files, the frozen page, this receipt and DECISIONS §148. The
+content came in ONE --no-ff merge of a linear five-commit stack off c3eb3cd, no
+conflict and nothing resolved by hand (main's own c3eb3cd, the nav3-shift brief,
+was the only commit the branch did not already contain):
+
+  2653b7d  Merge branch 'nav3-shift'  — §147 the shift pass (70b6e8a..b6cf345, 5)
+
+  §147  THE SHIFT WAITS FOR THE SLAM, AND THE SLAM HEARS THE SUB. The user,
+        watching NAV3 live on The Roots (Long Arm, ~97 BPM): "what happens at 56
+        secs inside the set? the fractal looks like is missing a lot of
+        complexity (also part of it seems off beat)". The diagnosis: the engine's
+        shiftEvt at 55.12 (between beats) took the implosion and EXT held to the
+        end, while the REAL drop at 59.05 — a kick on the beat with the causal
+        sub gate opening .08 s later, the ladder .77 — armed nothing: a live band
+        plays no breakdown, so hp stayed 0, bassS never left, and §143's SUBV_HAD
+        rightly shut the sub-void path on a gate whose 32 s mean was 0.00.
+        · Item 1 THE SHIFT ARM (engine/build/build.js, feed.js; EVERY SCENE).
+          A fourth arming path: a shiftEvt with nothing armed, after MIN_HIST,
+          arms AT ONCE (the shift is already a bar late), no SLAM_AFTER wait,
+          buildLive at SHIFT_L0 .3 (under DUST's .35 void, move2's .4 kick veto,
+          NAV2's .45 park). The slam is confirmed by the causal sub gate OPENING
+          (SHIFT_GATE 1) on a sub that ARRIVES (SHIFT_HAD .3, the mirror of
+          SUBV_HAD) and by nothing else — no bass-return ratio could have named
+          this drop, and measured, the ratios named TheChain 130.67 (a chorus's
+          bass swell) and the gate alone without SHIFT_HAD named The Roots 78.72
+          (a 6 s dip inside the groove): both rules removed both. ON_BEAT
+          .125 → .2 and SHIFT_LAST 1, measured first (node reads the drop kick
+          +.100 past the line, the page's past .125, and the page lost it twice;
+          at .2 the pickup a quarter beat earlier took the candidate under the
+          first-keeps-it rule, so on a shift arm the NEWEST on-beat onset is the
+          candidate). THE SLAM TABLE (slams-node.txt): The Roots 0/1 → 1/1 at
+          59.13; SeeYouDrop 57.65 / 105.67, WhoLikesToParty 57.52 / 131.40 /
+          188.80, Vienna 85.40, Raindrops 68.65, IBelongHere 179.88 — every slam
+          on the SAME FRAME as v0.44, 0 false. A kit whose gate is open through
+          the shift never slams by it. test_build 51 pass (11 new).
+        · Item 2 NAV3: A KIT'S SHIFT ARMS, THE SLAM FIRES (nav.js, new knobs.js).
+          SWELL.SHIFT_WAIT 4 bars (0 = v0.44): at or above PERC_LT a shift sets a
+          PENDING state — the ball to GATE.RHO + .02, θ to the nearest gateway,
+          uSwell up — and the first confirmed slam inside the window fires the
+          implosion and closes it; none → the pending lapses into §145's swell.
+          NO IMPLOSION WITHOUT A SLAM; a shift mid-implosion no longer re-arms.
+          THE SHIFT TABLE (shift-table.txt): The Roots 55.1 IMPLODED (φ −.274) →
+          55.1 pending → the 59.13 slam fires (φ +.305, EXT 60.5 →); IBelongHere
+          65.8 and TheChain 44.7 now swell (1 → 0 and 2 → 1 implosions); Comptine
+          0 implosions / 2 swells (§145 held); the six slam implosions unchanged.
+          Every implosion has a slam's phase now (−.015 … +.33). nav.js 479 → 368
+          — the six knob tables and knob5() moved to knobs.js.
+        · Item 3 A HELD EXT BREATHES (implode.js). OUT3.EPS_KICK .6 (ε scaled by
+          the dance's kick impulse against the eased ladder, KICK_LOUD .5) and
+          BAR_STEP 1 (the one-way direction sweep steps on the bar line). After:
+          EXT 60–75 BEAT .0539 / HALF .0467 = 1.2× / 1.3× INT's (the ask: within
+          2×); centre black .18–.33; wash .093 over the slam's bars, .016 on the
+          held tail against §144's .01.
+        · The addendum A KIT'S PENDING PRESSES, IT DOES NOT CROSS.
+          SWELL.PEND_CROSS 0: §145's crossing into a period-4 child at the rim is
+          dark on a piano and a pink wash on a loud kit, so a kit's press keeps
+          the rim press and the gateway steer with the gate shut (the under-
+          PERC_LT swell crosses as §145, Comptine's replay unchanged).
+          55.1–59.1 centre Y .215 / wash .155 → .113 / .022. PEND_BANDS /
+          PEND_LUM 0 kept as inert knobs.
+        · §147's own gate: check.js 0 fail · npm test exit 0 · the md5 list
+          scene-md5-shift.txt all 14 lines = §145's scene-md5-swell.txt to the
+          byte, 0 moved · q .905–.930 at 60 fps, errs [] on all nine drop windows
+          · The Roots from 0, 76 s real time with the implosion inside: q .966,
+          fps 60 min 60.
+
+THE ENTRY — class `engine`, scenes [6], decisions ["§147"], clip null, dated
+2026-10-28. `engine` and not `scene`: item 1 is in engine/build/ and every scene
+on the page inherits the new arming path, which is what a visitor needs told.
+scenes [6] all the same, because NAV3 is the only scene whose pixels moved — the
+thumbnail rule, and the article shows exactly one thumbnail (proved below).
+
+THE RECIPE (§141's ritual step for step; §125's releases.json pitfall paid
+forward an EIGHTH time):
+  · package.json + assets/core/version.js 0.44.0 -> 0.45.0 TOGETHER (§89) —
+    proved by test_rec below.
+  · releases.json: the round-trip proved FIRST — JSON.stringify(load(), null, 1)
+    + '\n' == the file byte for byte (46 949 chars / 47 221 bytes, true) — then
+    the entry hand-inserted at the head as JSON.stringify(rel, null, 1), the
+    RESULT re-proved to round-trip and the 42 existing entries proved
+    byte-identical in the tail (46 948 chars, true). git diff --numstat: 15
+    added, 0 removed — a pure insertion. releases.js save() was NEVER called.
+  · npm run build — 43 entries -> site/whats-new.html 76 348 bytes (72 661 at
+    v0.44); index.html's #newin moved because the title did; dist/index.html 164
+    modules + 12 in the ears Worker, 269 KB inline, 2 053 929 bytes.
+  · node tools/bundle.js releases/retinarave-v0.45.html — the same 164 / +12 /
+    269 KB / 2 053 929, VER = '0.45.0'.
+  · git rm releases/retinarave-v0.42.html (the three-page rule; releases/ keeps
+    v0.43 / v0.44 / v0.45).
+
+THE FROZEN PAGE, read against v0.44's (163 + 12 modules / 2 041 502 bytes):
+164 + 12 modules, 2 053 929 bytes. The +1 module is assets/scenes/nav3/knobs.js
+(§147 item 2's extraction); the +12 427 bytes are that plus the engine's shift
+arm and the NAV3 / implode edits. The ears Worker is the same 269 KB — not one
+byte of the ears moved.
+
+THE GATES, each run on the tree AFTER the bump:
+  1. node tools/check.js — 166 modules · uniforms 172 · MS keys 225 · scenes 7
+     (help.feats gaps 0) · 0 fail · 6 warn, exit 0 — MET (165 modules at v0.44;
+     knobs.js). The warns are the line soft caps: core/fluid/fluid.js 376,
+     core/scenes.js 370, ears/perc.js 407, dust/index.js 365,
+     scenes/nav3/nav.js 376 (480 at v0.44 — knobs.js came out of it),
+     torus2/index.js 367. All far under the 500 fail cap.
+     · releases.js check — 43 entries, top v0.45 == package.json 0.45.0,
+       0 problems — MET.
+     · whatsnew --check — 43 entries, up to date — MET.
+     · license.js --check — 169 public files, 0 without the header — MET
+       (168 at v0.44: knobs.js).
+  2. npm test — exit 0, 0 FAIL lines, 580 ok lines — MET, and run once before
+     the bump on the merge commit with the same result. test_build OK with
+     §147's 11 new checks (51 pass) · test_shift OK · test_nav3 OK ·
+     test_fluid 345 ok, 0 fail · test_music 151 ok, 0 fail on the nine tracks in
+     both map modes · test_loud OK 43 pass · test_earsw OK · test_voxscene OK ·
+     test_vox's mel and ONNX parities pass. The known note lines (§134's and
+     §126's misses, TheChain's 2 noise seconds) still print as note, never FAIL —
+     no byte of the ears or math/vox.js moved here. Nothing was re-baselined.
+  3. GPU=1 MUTE=1 PORT=8991 node tools/test_rec.js — all ok, exit 0 — MET, and
+     it is the version pair's own gate: the sidecar's app/version reads
+     "retinarave 0.45.0" and the file name is
+     retinarave-v0.45-nav2-2026-10-28T13-38-52.webm — the two strings moved
+     together. §92's pin still wins (q .75 through the take, free again from
+     q0 .55); webm 15 212 155 bytes, EBML magic, 5.97 s / 7 clusters ~ the
+     sidecar's 6.005, a frame decoded, the HUD on in the DOM, the timeline
+     2 -> 3 -> 1 within 0.6 s of the keys (2.04 vs 2.04, 4.056 vs 4.05).
+     360 frames at 60.0 fps composited.
+  4. the frozen page from file://, headless, CLOCK=1 GPU=1 MUTE=1,
+     FILE=$PWD/releases/retinarave-v0.45.html, PORT=8993,
+     steps [{until window.CARD}, {until __FRAME>=300}, {eval ...}]
+       test&scene=0 -> {"sc":0,"grammar":"pool","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+       test&scene=1 -> {"sc":1,"grammar":"bands","fluidOn":true,"idle":0,"errs":[],"bad":[],"frameN":300}
+       test&scene=3 -> {"sc":3,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}  <- DUST
+       test&scene=4 -> {"sc":4,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}
+       test&scene=6 -> {"sc":6,"grammar":"pool","fluidOn":true,"idle":1,"errs":[],"bad":[],"frameN":300}
+     errs [] and bad [] (CARD.nonFinite()) on all five — MET, and ALL FIVE LINES
+     ARE §141's AND §146's TO THE CHARACTER, `idle` included — which is the point
+     for a release whose only moved pixels are NAV3's, even though item 1 is an
+     engine change: the fake timeline never reaches a shift arm. CLOCK=1 from the
+     FIRST pass (v0.37's pitfall, an eighth time). MUTE=1 on every run — no audio
+     was played at any point.
+  5. the no-third-party receipt (SOCIAL-PLAN §4) — ONE HOST ON EVERY ROUTE — MET:
+     /whats-new (PORT=8993) -> ["127.0.0.1:8993"], title "What's new in Retina
+       Rave — every release, newest first"; the v0.45 article renders
+       (id="v0.45" true, "v0.45 28 October 2026 engine", the title "The drop the
+       band plays: the shift waits for the slam") and shows exactly ONE
+       thumbnail — which is what scenes [6] means.
+     / (PORT=8995, NOAUTO=1 real) -> ["127.0.0.1:8995"], title "Retina Rave —
+       music-reactive visuals from real math", #newin reads "New in v0.45: The
+       drop the band plays: the shift waits for the slam → what's new".
+     /about (PORT=8997) -> ["127.0.0.1:8997"], title "About Retina Rave — music,
+       math, and why it exists".
+     THE CREDITS NEEDED NO MOVE AT THE TAG ([[feedback-credit-where-due]]):
+     §147 borrowed no new mathematics — git diff v0.44..HEAD -- site/about.html
+     THIRD-PARTY.md README.md is empty.
+     THE USER'S DEV SERVERS WERE LEFT ALONE WHILE THE GATES RAN — 8765, 8766,
+     8813, 8815 and 8817 were listening before and after; every port used here
+     was 8991 / 8993 / 8995 / 8997, and no serve.js this session did not start
+     was killed by the gates. (8765 was moved back to main AFTER the tag, on the
+     task's own instruction — see THE PORT below.) No Chrome but this session's
+     own headless ones was touched.
+
+WHAT WAS NOT RUN, AND WHY. The full real-md5 roster and accept.sh: §147's own
+gate already paid the only sweep this release can owe — scene-md5-shift.txt is
+§145's list to the byte, 0 of 14 lines moved, because the fake timeline never
+runs the build detector to a shift arm and the EXT changes need an implosion the
+fake reaches at no shot. NAV3 is forced-only (score() 0), so the Q trace row is
+not owed at the tag; §147 ran it anyway on nine real drop windows. Not run and
+not owed: a fresh load bench, test_ears --trace, fluid-tracks.js, a director
+trace, any real-music render. No reference was re-based here — the next engine
+sweep does that, never the tag. No audio was played and nothing was retuned at
+the tag.
+
+CARRIED FINDINGS — RECORDED, NOT FIXED.
+ (1) THE USER'S EYE ON NONE OF §147 — and his eye on NAV3 has been owed since
+     §142. His word at this tag was only "tag latest code": no push, no deploy.
+ (2) The pending's look on a loud kit is still §145's swell look, tuned on a
+     piano: with no slam inside the window it holds bright (The Roots 60–75
+     without the slam read centre Y .275 / wash .25). PEND_BANDS / PEND_LUM are
+     the knobs and are 0.
+ (3) The shift arm's MIN_HIST is the void paths' 32 s, and the level test needs
+     the track's loudness history: an &at= start mid-track is cold for ~20 s (a
+     seek to 45 s on The Roots reads q .90 and never implodes).
+ (4) The page and node disagree on the lead by ~.04 s; ON_BEAT .2 covers The
+     Roots and moved no other slam, but the margin is the disagreement's size.
+ (5) The breath's two knobs (EPS_KICK, BAR_STEP) are the brief's ask, shipped on,
+     within 2× before and after — the eye decides.
+ (6) nav.js 376 and implode.js over the 350 soft cap.
+ (7) §146's open eyes, all carried and none closed: the swell drawing nothing of
+     its own, Malicious' intro shift at the threshold, IMP_N one number for every
+     root, OKLCH carrying none of the §144 / §145 shader work, IBelongHere's
+     three v3 drops +.8 … +1.4 s late for TORUS2 / FLUID2, §143 unseen on NAV2 /
+     DUST / TORUS2 / FLUID, §138's DUST band on the four voiced tracks, the fluid
+     filling from dark on a director entry into FLUID, the ear on TheChain's B2,
+     the up-vector sign on TORUS2's strand, the stale s134 lists on s1,
+     accept.sh's routes / params blocks on NAV2 (owed since §118).
+
+THE DEPLOY — NOT DONE, AND NOT ASKED FOR. dist/ is git-ignored and there is no
+.github/ workflow: the deploy is Cloudflare, git-connected to
+github.com/tbkraf08/RetinaRave, building on a push to main. THE PUSH IS THE
+DEPLOY, and there was no push. The site stays at v0.44 (live since 2026-10-22
+14:09 EDT); v0.45 exists only as a local tag and a local commit on main.
+
+THE PORT. Port 8765 was serving the nav3-shift worktree; on the task's
+instruction it was moved back to the main checkout after the tag, with
+MUSIC=tools/work/nav3/music (the nine library tracks as symlinks plus
+TheRoots80.wav). Verified: /music/TheRoots80 answers 200 on a ranged GET and
+/assets/core/version.js served on 8765 reads VER = '0.45.0'. 8766, 8813, 8815
+and 8817 were not touched.
