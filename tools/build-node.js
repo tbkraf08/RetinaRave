@@ -27,9 +27,7 @@ import { Queue, QUEUE, QUEUE_OUT } from '../assets/engine/queue/queue.js';
 import { feed as queueFeed } from '../assets/engine/queue/feed.js';
 import { Clock, CLOCK, lineHook } from '../assets/engine/clock/clock.js';
 import { Tongues, TONGUEK } from '../assets/engine/clock/tongues.js';
-import { Loud, LOUD_FIELDS } from '../assets/engine/loud.js';
-import { Shift, SHIFT, SHIFT_OUT } from '../assets/engine/shift/shift.js';   // §147: the energy shift runs too (features-shift.js's feed, after the build stage) — the build stage's fourth arming input
-import { baseLight } from '../assets/math/loudlight.js';   // §143: the loudness ladders the slam confirms on (features-loud.js: one Loud per stream, pushed per PCM block, read at heard time)
+import { Loud, LOUD_FIELDS } from '../assets/engine/loud.js';   // §143: the loudness ladders the slam confirms on (features-loud.js: one Loud per stream, pushed per PCM block, read at heard time)
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const a = process.argv.slice(2);
@@ -60,7 +58,6 @@ const V3 = !flag('--no-v3');
 // file page); BUILDK='{"HP_ARM":0.05}' overrides knobs (the sweep uses tools/build-replay.js on the recorded inputs instead)
 const DISP = +opt('--disp', 0) / 1000;
 if (process.env.BUILDK) Object.assign(BUILD, JSON.parse(process.env.BUILDK));
-if (process.env.SHIFTK) Object.assign(SHIFT, JSON.parse(process.env.SHIFTK));   // §147
 // live step 5: the bars store and the queue run too (as features-bars.js / features-queue.js feed them); QUEUEK='{"HOLD":0.1}'
 if (process.env.QUEUEK) Object.assign(QUEUE, JSON.parse(process.env.QUEUEK));
 // live step 6: the PCM beat clock runs too (as features-clock.js feeds it: the mono block, then the ears' new onsets); CLOCKK='{"R_ON":1e-3}'
@@ -101,10 +98,10 @@ for (const track of TRACKS) {
   let detMs = 0; tap.clock = () => detMs;
   const an = tap.an, A = an.A, ears = new Ears(sr), v3 = V3 ? await makeV3(pcm) : null;
   const names = [...EARS_K, ...Object.keys(SYN_A), ...Object.keys(SYN_EV), ...Object.keys(SYN_IN), 'rollRate', 'phrase16Pos', 'barPos',
-    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...CLOCK_OUT, ...LOUD_OUT, ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', 'armPath', ...SHIFT_OUT, ...BARS_OUT, ...QUEUE_OUT] : [])];   // §147: armPath = which path armed (void / sub / amb / shift, '' when not), the shift's two fields
+    'synDropEvt', 'synFakeoutEvt', 'synBoundaryEvt', 'lowEvt', 'lowFl', 'lowAge', ...CLOCK_OUT, ...LOUD_OUT, ...(V3 ? [...V3_K, ...BUILD_OUT, 'lowT', ...BARS_OUT, ...QUEUE_OUT] : [])];
   const cols = Object.fromEntries(names.map((k) => [k, []]));
   const t = [], f = [];
-  const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {}, sh: new Shift(SHIFT), sinp: {} };   // §147: + the shift
+  const bst = { b: new Build(), lane: { t: -Infinity }, ts: [], inp: {}, S: {}, bars: new Bars(), binp: {}, q: new Queue(), qinp: {} };
   const loud = new Loud(sr), lo = {};   // §143
   const clk = new Clock(sr), CLS = { kick: 0, snare: 1, hat: 2 }, seen = [-1, -1, -1], cpub = { n: null }, craw = { n: null }, cev = {}, ck = { k: null };
   ears.perc.line = lineHook(clk);   // §90: the kick lane reads the clock's line (page = node)
@@ -154,16 +151,9 @@ for (const track of TRACKS) {
         for (const k of BARS_OUT) cols[k].push(r4(ro[k]));
         const ts = laneTake(ears, heard + DISP + 0.5 / FPS, bst.lane, bst.ts);
         cols.lowT.push(ts.length ? ts.map((x) => +x.toFixed(6)) : null);
-        const bo = bst.b.step(feed(S, -DET_LEAD, DISP, dt, ts, bst.inp));   // S.shiftEvt is the frame before's (set below), as the page's stage order reads it
+        const bo = bst.b.step(feed(S, -DET_LEAD, DISP, dt, ts, bst.inp));
         for (const k of BUILD_OUT) cols[k].push(r4(bo[k]));
-        cols.armPath.push(bst.b.armed ? (bst.b.sh ? 'shift' : bst.b.sv ? 'sub' : bst.b.am ? 'amb' : 'void') : '');   // §147
         S.buildLive = bo.buildLive; S.dropLiveIn = bo.dropLiveIn;
-        // §147: the shift stage as features-shift.js feeds it — the bars' time base, the ladder, this frame's slam, the arm
-        const si = bst.sinp; si.B = S.beatCount + S.beatPhase - DET_LEAD * S.bpm / 60; si.bpm = S.bpm; si.ok = S.presence >= SHIFT.PRESENT; si.dt = dt;
-        si.lad = baseLight(S.loudRel, S.loudRange, S.loudAbs, NaN); si.drop = bo.dropLiveEvt ? 1 : 0; si.armed = bo.buildLive > 0 ? 1 : 0;
-        const so = bst.sh.step(si);
-        for (const k of SHIFT_OUT) cols[k].push(r4(so[k]));
-        S.shiftEvt = so.shiftEvt ? 1 : 0; S.shiftHold = so.shiftHold;
         const qo = bst.q.step(queueFeed(S, -DET_LEAD, DISP, dt, bst.bars, bst.b, bst.qinp));
         for (const k of QUEUE_OUT) cols[k].push(r4(qo[k]));
       }

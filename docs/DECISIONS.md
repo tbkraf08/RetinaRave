@@ -6260,3 +6260,19 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   **retinarave.com stays at v0.44** (live 2026-10-22 14:09 EDT). **The user has seen no frame of §147**, and his eye on NAV3 has
   been owed since §142; §146's nine open eyes are all carried and none closed. Port **8765 was moved back to the main checkout**
   after the tag (`MUSIC=tools/work/nav3/music` — the nine tracks plus `TheRoots80.wav`), verified serving `VER = '0.45.0'`.
+
+## §150 v0.45 WITHDRAWN — main back to c3eb3cd's code; yesterday's NAV3 was better (2026-10-28, one Opus builder + one Opus tester under the Fable orchestrator, on main; §149 NAVPOOL, written earlier the same day, arrives in a later commit)
+
+- **The eye.** Toma watched v0.45's NAV3 beside c3eb3cd's (yesterday's) and found **yesterday's better**. What he saw: the
+  implosions no longer fire on the shift (on a kit the shift only ARMS, and the slam that should fire it often never comes);
+  the ball sits **pinned at the rim for 4 bars** after a kit shift; and engine-wide there are **fewer shifts**, the 8-bar arm
+  swallowing ones that used to land.
+- **What moved.** One revert commit on main: `a5e863b` (the v0.45 release) and `2653b7d` (the `nav3-shift` merge, `-m 1`) reverted
+  together, so **main's code is c3eb3cd's tree byte for byte** (`git diff c3eb3cd -- . ':!docs' ':!tools/accept/nav3/shift'` empty).
+  `package.json` / `version.js` back to **0.44.0**, `releases.json`, `site/whats-new.html`, `index.html` and the frozen
+  `releases/` pages back with them; `tools/accept/v0.45/` gone.
+- **What stays as record.** §147 and §148 above, `docs/workers/nav3-shift.md` and `tools/accept/nav3/shift/` — the measurement
+  is true of the branch even though the branch is not on main.
+- **Where the work lives.** Branch **`nav3-shift` at b6cf345**, untouched; a later pass can take pieces of it (the sub-confirmed
+  slam, the EXT breath) without the arm that cost the shifts.
+- **The tag.** `v0.45` **deleted locally**; it was never pushed. **v0.44.0 remains the live version** (retinarave.com, §146).

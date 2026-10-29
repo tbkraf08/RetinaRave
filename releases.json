@@ -1,20 +1,5 @@
 [
  {
-  "version": "0.45.0",
-  "tag": "v0.45",
-  "date": "2026-10-28",
-  "class": "engine",
-  "title": "The drop the band plays: the shift waits for the slam",
-  "body": "A live band does not drop the way a dance record does. There is no breakdown, no four bars with the bass pulled out and then silence — the groove simply lifts, and the whole kit arrives at once, on the beat. Until now the engine could not hear that. Watched against a live recording, the seventh scene came apart four seconds early and off the beat, on the sustained lift rather than on the hit, and was still holding that picture up when the drum actually landed.\n\nSo the lift itself now arms the detector. When the energy steps up and stays up, the engine begins listening for a slam straight away instead of waiting for the bass to leave first — and what confirms the slam is the bass arriving: a low hit on the beat with the bass register opening underneath it on that same frame, on a song whose bass had been away. Nothing else is allowed to confirm it, and that matters, because the loudness ratios that name a drop on a dance record will just as readily name a chorus's bass swell or a six-bar dip inside a groove. Across the nine songs in the library every drop the engine already found lands on the same frame as before, no new false ones appeared, and the live recording's drop — which it had been missing outright — is now found within a frame of where the kick is. The window around the beat had to widen a little to hold it, and on a lift it is the newest hit on the beat that is the candidate rather than the first, because it is the bass opening that names which kick was the drop.\n\nThe scene follows. On a percussive song an energy lift no longer explodes anything by itself: it presses the ball out to the edge of the lobe it is in, lines it up with the nearest gateway, and holds there for four bars, waiting. If a confirmed drop arrives inside that window, that is when the set comes apart — on the hit, on the beat. If none does, the press relaxes into the swell. On the live recording that moves the come-apart from 55 seconds, between beats and with the drum still three and a half seconds away, to 59, which is where the drum is. Two other songs that used to explode on a lift with no drop behind it now simply swell. The pressed state also stays where it is instead of slipping through the gateway, which on a loud kit had been washing the middle of the picture pink. And a held come-apart breathes now: how deep it eats pulses with the kick, and the direction it sweeps steps on the bar line instead of drifting free.\n\nThe honest limits. Nobody but me has watched any of it, which is still why the scene is on a key of its own and out of the rotation. While it is pressed out and waiting it wears the look that was tuned on a piano — bright, where a loud kit may want something else. The lift needs about twenty seconds of the song's loudness behind it to mean anything, so a track started from the middle is deaf for a while. The page and the offline harness still disagree by about a twentieth of a second on how far ahead the picture runs. And a slow solo piano piece is untouched by all of this: it never presses, it swells, exactly as it did.",
-  "scenes": [
-   6
-  ],
-  "decisions": [
-   "§147"
-  ],
-  "clip": null
- },
- {
   "version": "0.44.0",
   "tag": "v0.44",
   "date": "2026-10-22",
