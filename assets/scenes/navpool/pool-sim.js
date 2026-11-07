@@ -33,15 +33,16 @@ export const KS = {
   KICK_WALL: 3,      // on a kick the wall pushes (1 + KICK_WALL · the kick's envelope) × its own speed …
   KICK_TAU: 0.12,    // … the envelope's decay, s (a short excess compression: the shove you see, not a lasting one)
   EDGE_TAU: 0.06,    // §151 the paddle: the edge velocity's inertia, s (the one smoothing stage: a 1-frame flicker passes at 24 %, a stop falls to 5 % in .18 s)
-  PADDLE_GAIN: 1,    // × the edge's speed
+  PADDLE_GAIN: 3,    // × the edge's speed (Toma's pick, §151: 1 added too little motion over the removal-only pool — A12)
   PADDLE_K: 8,       // /s: how fast the band's fluid takes up the paddle's speed
-  PADDLE_BAND: 3,    // sim cells from the wall the paddle reaches (≤ 8)
+  PADDLE_BAND: 4,    // sim cells from the wall the paddle reaches (≤ 8; Toma's pick, §151)
   PADDLE_VMAX: 1.0,  // the paddle speed's cap (height units/s: uv · (asp, 1))
   EDGE_NORM: 1,      // × WALLV's normal speed in the edge's velocity (1 = the plan's: the observed normal motion + the rigid tangential part)
   SPIN_MAX: 6,       // rad/s: the view's spin rate is clamped here (the nod's one-frame jerks reach 12.7)
   GROW_MAX: 4,       // /s: the zoom rate's clamp (the drop's ≤ .099 a frame)
   EDGE_JUMP: 0.5,    // rad: a turn bigger than this in one step is a GAP (a seek / a cut), not a motion
-  SLIP: 0,           // §151 A/B only (&npsim=SLIP:1): the velocity's back-trace is mask-weighted (a solid tap reads the cell's own velocity: free slip; 0 = the old bilinear blend of the wall's zero tangential velocity, a numerical no-slip drag that ate the coast)
+  SLIP: 1,           // §151 (Toma's pick): the velocity's back-trace is mask-weighted as ADYE's — a solid tap reads the cell's own velocity:
+                     //   free slip at the staircase wall (0 = the old bilinear blend of the wall's zero tangential velocity, a numerical no-slip drag that ate the coast)
   MAXS: 16,          // splats per draw (the uniform array's size)
   BENCH: 0,          // harness only (&npsim=BENCH:1): step on EVERY draw(), so CARD.bench(7, n) prices the mask + the solver too
 };

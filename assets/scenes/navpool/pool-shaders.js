@@ -14,7 +14,7 @@
 //   DIV    0 in a solid cell; a solid neighbour's velocity is its wall velocity (WALLV wrote it), the screen's edges mirrored
 //   JACOBI / GRAD  Neumann at the wall: a solid neighbour's pressure reads the centre's; a solid cell keeps its wall velocity
 //   ADVECT the velocity: a back-trace that lands in the solid reads the cell's own value (nothing flows out of the wall); ADYE the dye (below).
-//          §151 uSlip (KS.SLIP, A/B only, default 0 = the old line exactly): the back-trace mask-weighted as ADYE's (a solid tap reads the
+//          §151 uSlip (KS.SLIP, default 1; 0 = the old line exactly): the back-trace mask-weighted as ADYE's (a solid tap reads the
 //          cell's own velocity): free slip at the staircase wall instead of the bilinear blend of the wall's zero tangential velocity
 //          ADYE moves the ink the edge sweeps over onto the rim (conservative), its wall level uThr below WALL so it reaches the drawn edge
 const NB = `uniform vec2 uTexel;

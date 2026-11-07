@@ -150,7 +150,7 @@ console.log('7. §151 the probe (harness only)');
 console.log('8. §151 the edge is a paddle');
 {
   const sh = rd('navpool', 'pool-shaders.js').toString();
-  ok(['EDGE_TAU', 'PADDLE_GAIN', 'PADDLE_K', 'PADDLE_BAND', 'PADDLE_VMAX', 'SPIN_MAX', 'GROW_MAX', 'EDGE_JUMP'].every((k) => Number.isFinite(KS[k]) && KS[k] > 0), 'the paddle knobs are finite and > 0');
+  ok(KS.PADDLE_GAIN === 3 && KS.PADDLE_BAND === 4 && ['EDGE_TAU', 'PADDLE_GAIN', 'PADDLE_K', 'PADDLE_BAND', 'PADDLE_VMAX', 'SPIN_MAX', 'GROW_MAX', 'EDGE_JUMP'].every((k) => Number.isFinite(KS[k]) && KS[k] > 0), 'the paddle knobs are finite and > 0 (Toma\'s defaults: PADDLE_GAIN 3, PADDLE_BAND 4)');
   // edgeRates + rigOf + edgeField against pool.js toUv by a central finite difference: a view turning, zooming and sliding
   const asp = 16 / 9, Om = 1.3, g = -0.7, vx = 0.21, vy = -0.17, h = 5e-4;   // 2h = 1e-3: edgeRates floors dt there
   const Vt = (t) => [0.1 + vx * t, -0.2 + vy * t, 1.42 * Math.exp(g * t), 0.4 + Om * t];
@@ -176,7 +176,7 @@ console.log('8. §151 the edge is a paddle');
   const pd = sh.slice(sh.indexOf('export const PADDLE'), sh.indexOf('export const DIV'));
   ok(pd.includes('if(ul<1e-4){o=vec4(v,0.,1.);return;}') && pd.includes('if(gap>0.)vh+=e*min(gap,ul)*'), 'PADDLE: the |ue| guard (no division under 1e-4), one-sided (gap > 0), the impulse capped at |ue| (a still paddle never brakes)');
   const adv = sh.slice(sh.indexOf('export const ADVECT'), sh.indexOf('export const ADYE'));
-  ok(KS.SLIP === 0 && adv.includes('vec4 r=texture(uM,c).x>WALL?(uSlip>.5&&texture(uM,vUv).x>WALL?trace(c,own):texture(uSrc,c)):own;') && adv.includes('vec4 own=texture(uSrc,vUv);') && adv.includes('o=r/(1.+uDiss*uDt);}'), 'SLIP 0 (default): ADVECT is the old line (foot in fluid → bilinear texture(uSrc, c), else the own value); SLIP:1 the A/B free-slip trace');
+  ok(KS.SLIP === 1 && adv.includes('vec4 r=texture(uM,c).x>WALL?(uSlip>.5&&texture(uM,vUv).x>WALL?trace(c,own):texture(uSrc,c)):own;') && adv.includes('vec4 own=texture(uSrc,vUv);') && adv.includes('o=r/(1.+uDiss*uDt);}'), 'SLIP 1 (default, §151): the free-slip mask-weighted trace; SLIP:0 is the old ADVECT line (foot in fluid → bilinear texture(uSrc, c), else the own value)');
   ok(KS.EDGE_NORM === 1 && sh.includes('raw=uNorm*texture(uVel,vUv).xy+t/uScale;'), 'EDGE_NORM 1 (default): the edge velocity = WALLV\'s normal speed + the rigid tangential part');
   const sim = rd('navpool', 'pool-sim.js').toString();
   ok(/edg = \[ctx\.mkTarget\(sw, sh\), ctx\.mkTarget\(sw, sh\)\];\n\s*zero\(edg\[0\]\);\n\s*zero\(edg\[1\]\);/.test(sim) && sim.includes('...edg, div]'), 'edg is allocated, cleared on every alloc and freed with the others');
