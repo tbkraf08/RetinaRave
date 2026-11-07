@@ -127,5 +127,14 @@ console.log('6. silence idles the pool\'s confinement and the dance (§149: knob
   ok('g' in I && 'breathG' in I && 'breath' in I && 'trapA' in I, 'npinfo exposes g / breathG / breath / trapA (read-only)');
 }
 
+console.log('7. §151 the probe (harness only)');
+{
+  ok(['npwall', 'npspin', 'nppk'].every((k) => typeof scene.hooks[k] === 'function' && k.startsWith('np') && !H3.includes(k)) && new Set([scene.hooks.npwall, scene.hooks.npspin, scene.hooks.nppk, scene.hooks.npsim]).size === 4, 'hooks npwall / npspin / nppk exist, np-prefixed, not nav3\'s, distinct');
+  const sim = rd('navpool', 'pool-sim.js').toString();
+  ok(['curl', 'ke', 'L:', 'nf', 'nan'].every((k) => sim.slice(sim.indexOf('export function probeSim')).includes(k)), 'probeSim reports curl / ke / L / nf / nan');
+  const ix = rd('navpool', 'index.js').toString();
+  ok(ix.includes('const rotv = SPIN.th ? GROOVE.rot + SPIN.th : GROOVE.rot;'), 'the drawn rotation is GROOVE.rot exactly while SPIN.th is 0');
+}
+
 console.log(fails ? `test_navpool: ${fails} FAIL` : 'test_navpool: all ok');
 process.exit(fails ? 1 : 0);

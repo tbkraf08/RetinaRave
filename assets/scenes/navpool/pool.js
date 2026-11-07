@@ -119,3 +119,22 @@ export function stepPool(dt, S, SC, id, F, c, V, asp, hue, stir) {
   }
   POOL.total += POOL.nSplat;
 }
+
+// Harness knob (hooks.nppk, `&nppk=V:0,KICK_V:0`): set the stirring's numbers by name for an A/B (§151, as pool-sim.js knobSim).
+export function knobPool(v) {
+  for (const kv of String(v).split(',')) {
+    const [k, x] = kv.split(':');
+    if (k in PK && typeof PK[k] === 'number' && Number.isFinite(+x)) PK[k] = +x;
+  }
+}
+
+// §151 harness only (hooks.npspin, index.js): a controlled turn of the view — for the next `frames` update()s θs += rate·dt, added to the drawn
+// rotation (the picture and the mask turn together); after the window θs HOLDS. 0 by default (the scene bit-exact).
+export const SPIN = { rate: 0, left: 0, th: 0 };
+export function knobSpin(rate, frames) {
+  if (typeof rate === 'string' && frames === undefined) [rate, frames] = rate.split(',');
+  const r = +rate, n = frames === undefined || frames === '' ? 60 : Math.round(+frames);
+  if (!Number.isFinite(r) || !Number.isFinite(n)) return;
+  SPIN.rate = r;
+  SPIN.left = Math.max(0, n);
+}

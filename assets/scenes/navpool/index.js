@@ -15,7 +15,7 @@ import { IMP, OUT3, knobDrop, knobImp } from './implode.js';
 import { SWELL as SWELL3 } from './nav.js';   // §145: the swell's shader lifts   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { VS_PT, FS_PT } from './shaders.js';   // NAVPOOL: the v2 mapping only (the pool is lit in shaders-v2.js); shaders.js is a byte copy of nav3's for the dots
 import { baseLight } from '../../math/loudlight.js';
-import { POOL, stepPool } from './pool.js';
+import { POOL, stepPool, knobPool, SPIN, knobSpin } from './pool.js';
 import { SIM, initSim, armSim, stepSim, probeSim, knobSim } from './pool-sim.js';   // unit 2: the scene's own solver, the set's edge its wall   // the set's dance stirs the pool: the critical orbit, the kick, the drop ring
 import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
 import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
@@ -79,6 +79,8 @@ export default {
     // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
     // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
     npwall: () => probeSim(),
+    npspin: knobSpin,           // §151: &npspin=1.5,60 (or hooks.npspin(1.5, 60)) — turn the view at 1.5 rad/s for 60 updates, then hold
+    nppk: knobPool,             // §151: &nppk=V:0,KICK_V:0 — the stirring's numbers by name (pool.js PK), for an A/B
     npsim: knobSim,             // &npsim=WALL_K:4,FADE_TAU:.06 — the solver's numbers by name (pool-sim.js KS)   // unit 2, read-only: the wall at work (pool-sim.js probeSim: rim / deep / wall cells, dye, speed, v·n)
     greenp: () => GREEN,                      // &green / green3 stay NAV2's / NAV3's
     // the ball's state in one object for the trace tools (`hooks.npinfo()`): mode, the drawn c, the ball, ρ / θ and their targets,
@@ -212,6 +214,7 @@ export default {
     update2(dt, S, N, LOOK);       // §99: the base light, the smoulder, the exterior dim, the snare flash, the key hue
     armSim(dt, ctx.fluid && ctx.fluid.on, idleGate(S.presence));   // unit 2: the solver steps on this frame's draw() (the user's switch W / &fluid=0 still stops it)
     stepPool(dt, S, SC, this.id, SIM, N.c, N.view, ASP, K2.key ? L2.hueT : LOOK.hueT, env.params.stir);   // NAVPOOL: the set's dance stirs the pool (on screen only)
+    if (SPIN.left > 0) { SPIN.th += SPIN.rate * dt; SPIN.left--; }   // §151 harness: the controlled turn (0 unless hooks.npspin ran)
     this._groove = GROOVE;
     this._S = S;
   },
@@ -221,7 +224,7 @@ export default {
     const cm = Math.hypot(N.c[0], N.c[1]);
     const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
     const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom;   // no baby copies on this scene (§140): the view is M's own, uSc 1
-    const rotv = GROOVE.rot;
+    const rotv = SPIN.th ? GROOVE.rot + SPIN.th : GROOVE.rot;   // §151: + the harness's controlled turn (npspin; 0 = bit-exact)
     N.view = [0, 0, scale, rotv];
     const imp = IMP.x + IMP.y > 0;   // §140 step 3: while the implosion runs the budget is OUT3.ITER and the no-chart short budget is off (the passages need every iteration)
     const it = imp ? Math.min(OUT3.ITER, Math.round(Q.iter * IMP_ITER_MUL)) : Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140 quality: the implosion's budget follows the governor (IMP_ITER_MUL × Q.iter, capped at OUT3.ITER) — a flat 420 cost 10–11 ms a frame and pulled q to .63 on the drop windows   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop

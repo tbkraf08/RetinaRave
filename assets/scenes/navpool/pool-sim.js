@@ -233,6 +233,12 @@ export function stepSim(J) {
 // Harness only (hooks.npwall(), read-only): the wall at work, read back from the GPU. Cells: `rim` = fluid with a solid 4-neighbour,
 // `deep` = fluid with no solid within 3 cells, `wall` = solid with a fluid 4-neighbour. Means of the dye's luminance and the speed
 // (uv/s), and on the rim the velocity along the inward normal (∇m: > 0 = the ink pushed off the wall, < 0 = driven into it).
+// §151 probe: `ke` = mean |v|² (uv²/s²) of the class; `curl` = mean |ω| (1/s), ω = ½[(v_y(x+1) − v_y(x−1))·W − (v_x(y+1) − v_x(y−1))·H]
+// (the old CURL pass's stencil) over cells whose 4 neighbours are all fluid — so a rim cell (a solid 4-neighbour by definition) never
+// qualifies: rim.curl is read on the BAND behind it (fluid, 4 fluid neighbours, a solid cell within 3: the near-wall cells the paddle
+// reaches), counted in rim.nc; deep.curl on the deep cells (deep.nc). Overall: `L` = mean over the fluid cells of (p × v)_z, p = (2uv − 1)(asp, 1),
+// v·(asp, 1)·2 (the signed angular momentum about the screen centre, aspect-true), `nf` the fluid-cell count, `nan` the non-finite
+// vel / dye components.
 function rd(t, w, h) {
   const a = new Float32Array(w * h * 4);
   gl.bindFramebuffer(gl.FRAMEBUFFER, t.f);
@@ -244,12 +250,31 @@ export function probeSim() {
   const w = vel[0].w, h = vel[0].h, M = rd(msk[0], w, h), V = rd(vel[0], w, h), Dy = rd(dye[0], dye[0].w, dye[0].h);
   const m = (x, y) => M[4 * (Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x)))];
   const fl = (x, y) => m(x, y) > 0.75;
-  const A = { rim: [0, 0, 0, 0], deep: [0, 0, 0, 0], wall: [0, 0, 0, 0] };   // n, Σ dye, Σ speed, Σ v·n
+  const vk = (x, y) => 4 * (Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x)));
+  const A = { rim: [0, 0, 0, 0, 0, 0, 0], deep: [0, 0, 0, 0, 0, 0, 0], wall: [0, 0, 0, 0, 0, 0, 0] };   // n, Σ dye, Σ speed, Σ v·n, Σ |v|², Σ |ω|, n ω
+  const asp = w / h;
+  let nan = 0, nf = 0, Ls = 0;
+  for (let i = 0; i < V.length; i++) if (!Number.isFinite(V[i])) nan++;
+  for (let i = 0; i < Dy.length; i++) if (!Number.isFinite(Dy[i])) nan++;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!fl(x, y)) continue;
+      const k = 4 * (y * w + x), px = (2 * (x + 0.5) / w - 1) * asp, py = 2 * (y + 0.5) / h - 1;
+      nf++;
+      Ls += px * (V[k + 1] * 2) - py * (V[k] * asp * 2);
+    }
+  }
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const k = 4 * (y * w + x), f = fl(x, y), nb = fl(x - 1, y) + fl(x + 1, y) + fl(x, y - 1) + fl(x, y + 1);
       let deep = f;
       for (let j = -3; j <= 3 && deep; j++) for (let i = -3; i <= 3 && deep; i++) if (!fl(x + i, y + j)) deep = false;
+      if (f && nb === 4) {   // the curl stencil: all 4 neighbours fluid — deep cells, else the near-wall band (booked to rim)
+        const om = 0.5 * ((V[vk(x + 1, y) + 1] - V[vk(x - 1, y) + 1]) * w - (V[vk(x, y + 1)] - V[vk(x, y - 1)]) * h);
+        const R = A[deep ? 'deep' : 'rim'];
+        R[5] += Math.abs(om);
+        R[6]++;
+      }
       const kind = f ? (nb < 4 ? 'rim' : deep ? 'deep' : null) : (nb > 0 ? 'wall' : null);
       if (!kind) continue;
       const dx = Math.floor((x + 0.5) / w * dye[0].w), dy = Math.floor((y + 0.5) / h * dye[0].h), q = 4 * (dy * dye[0].w + dx);
@@ -259,12 +284,14 @@ export function probeSim() {
       R[1] += 0.2126 * Dy[q] + 0.7152 * Dy[q + 1] + 0.0722 * Dy[q + 2];
       R[2] += Math.hypot(V[k], V[k + 1]);
       R[3] += (V[k] * gx + V[k + 1] * gy) / gn;
+      R[4] += V[k] * V[k] + V[k + 1] * V[k + 1];
     }
   }
-  const out = { on: SIM.on, steps: SIM.steps, sim: [w, h] };
+  const out = { on: SIM.on, steps: SIM.steps, sim: [w, h], L: +(Ls / Math.max(1, nf)).toFixed(7), nf, nan };
   for (const kind in A) {
     const R = A[kind], n = Math.max(1, R[0]);
-    out[kind] = { n: R[0], dye: +(R[1] / n).toFixed(4), speed: +(R[2] / n).toFixed(4), vn: +(R[3] / n).toFixed(4) };
+    out[kind] = { n: R[0], dye: +(R[1] / n).toFixed(4), speed: +(R[2] / n).toFixed(4), vn: +(R[3] / n).toFixed(4), ke: +(R[4] / n).toFixed(6) };
+    if (kind !== 'wall') { out[kind].curl = +(R[5] / Math.max(1, R[6])).toFixed(4); out[kind].nc = R[6]; }
   }
   return out;
 }
