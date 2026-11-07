@@ -7,20 +7,23 @@
 // frame along the critical orbit, never more than ORB_MAX a frame from the orbit, a kick bursts, a drop rings; off screen it never splats;
 // (5) unit 2, the set's edge as the wall: the scene's own solver (pool-sim.js) — the core's tier tables and pass order, the mask is the
 // Julia escape test with the picture's uniforms, Neumann pressure at the wall, the wall's velocity from the mask's change, no core import.
+// (9) §152: navpool's nav.js is main's nav3/nav.js + §149's idle gate only; implode.js / look2.js byte copies of nav3's.
 // node tools/test_navpool.js
 import fs from 'node:fs';
 import scene from '../assets/scenes/navpool/index.js';
 import nav3 from '../assets/scenes/nav3/index.js';
 import { POOL, PK, stepPool, toUv, SPIN } from '../assets/scenes/navpool/pool.js';
 import { SIM, KS, edgeRates, rigOf, edgeField } from '../assets/scenes/navpool/pool-sim.js';
-import { ROLL, idleGate } from '../assets/scenes/navpool/knobs.js';
+import { ROLL, idleGate, SWELL, NAV, knob5 } from '../assets/scenes/navpool/nav.js';
+import { OUT3 } from '../assets/scenes/navpool/implode.js';
+import { knob5 as knob5n3 } from '../assets/scenes/nav3/nav.js';
 
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else console.log('  ok   ' + m); };
 const rd = (d, f) => fs.readFileSync('assets/scenes/' + d + '/' + f);
 
 console.log('1. the byte copies (the files the pool does not touch)');
-for (const f of ['move2.js', 'green.js', 'shaders.js'])   // as test_nav3.js pins nav3's against nav2's; implode.js / look2.js are copies too but NAV3 is still being tuned; nav.js / knobs.js diverged for the silence idle (§149: idleGate) ok(rd('nav3', f).equals(rd('navpool', f)), `navpool/${f} is a byte copy of nav3/${f}`);
+for (const f of ['move2.js', 'green.js', 'shaders.js', 'implode.js', 'look2.js'])   // as test_nav3.js pins nav3's against nav2's; §152: implode.js / look2.js pinned too (navpool tracks main's nav3 — a nav3 tune of either fails here until navpool re-clones it); nav.js alone diverges, for the silence idle (§149: idleGate; section 8 pins that diff) ok(rd('nav3', f).equals(rd('navpool', f)), `navpool/${f} is a byte copy of nav3/${f}`);
 
 console.log('2. the registration');
 ok(scene.name === 'navpool' && scene.id === 7 && nav3.id === 6, `name ${scene.name} id ${scene.id} (key 8); nav3 still id 6`);
@@ -117,7 +120,7 @@ console.log('5. unit 2: the scene\'s own solver, the set\'s edge its wall');
   ok(sh.includes('return a+(1.-ws)*own;') && KS.SQUEEZE === 1 && KS.INK_CAP > 0, 'the dye is conservative at the wall: solid taps read the texel\'s own ink, the swept ink lands on the rim (SQUEEZE 1), capped');
 }
 
-console.log('6. silence idles the dance (§149: knobs.js idleGate); §151 the pool\'s confinement is gone');
+console.log('6. silence idles the dance (§149: nav.js idleGate); §151 the pool\'s confinement is gone');
 {
   const sim = rd('navpool', 'pool-sim.js').toString(), ix = rd('navpool', 'index.js').toString(), nv = rd('navpool', 'nav.js').toString();
   ok(Number.isFinite(ROLL.IDLE_W) && ROLL.IDLE_W > 0, `ROLL.IDLE_W ${ROLL.IDLE_W} finite > 0`);
@@ -190,6 +193,30 @@ console.log('8. §151 the edge is a paddle');
   scene.hooks.npspin('x');
   ok(a.rate === 1.5 && a.left === 60 && b.rate === a.rate && b.left === a.left && SPIN.th === 0 && SPIN.left === 0 && SPIN.rate === 0, 'npspin(\'1.5,60\') = npspin(1.5, 60); npspin(\'x\') is a no-op (θs 0)');
   Object.assign(SPIN, s0);
+}
+
+console.log('9. §152 navpool\'s nav is main\'s nav3 + §149 only (the §147 clone is gone)');
+{
+  ok(!fs.existsSync('assets/scenes/navpool/knobs.js'), 'knobs.js is gone (its numbers are nav.js\'s again, as nav3\'s)');
+  // un-gate navpool/nav.js by reverting exactly §149's hunks H1–H7: the result must be nav3/nav.js to the byte — any other drift fails here
+  let u = rd('navpool', 'nav.js').toString(), bad = [];
+  const cut = (a, b, n = 1) => { const k = u.split(a).length - 1; if (k !== n) bad.push(`${k}× ${a.slice(0, 48)}`); u = u.split(a).join(b); };
+  cut("  IDLE_W: 0.15,    // NAVPOOL silence (§149): the idle ramp's width above IDLE — presence ≥ IDLE + IDLE_W (.3) is full music (the library's traces never dip under .3 after their lead-in), ≤ IDLE is idle\n", '');
+  cut("// NAVPOOL silence (§149): 1 under music (exactly: sstep's t = 1 → 1), 0 in silence, a smooth ramp between; non-finite → 1 (load-bearing: a NaN would poison the dance)\n", '');
+  cut('export const idleGate = (p) => (Number.isFinite(p) ? sstep(ROLL.IDLE, ROLL.IDLE + ROLL.IDLE_W, p) : 1);\n', '');
+  cut("  const g = (N.g = idleGate(S.presence));   // NAVPOOL §149: silence idles the dance (the bar turn, the sway, the breath as read, the centroid's running range) — 1 exactly under music\n", '');
+  cut(', g: 1,   // §149 g: the idle gate (idleGate above)', ',');
+  cut('c0, dt * g, SWELL.CENT_TAU', 'c0, dt, SWELL.CENT_TAU', 2);
+  cut('ps * g * DANCE.TURN', 'ps * DANCE.TURN');
+  cut('(g * DANCE.SWAY', '(DANCE.SWAY');
+  cut('M2.breath * N.g', 'M2.breath');
+  ok(!bad.length && u === rd('nav3', 'nav.js').toString(), `navpool/nav.js minus §149's H1–H7 === nav3/nav.js byte for byte${bad.length ? ' (hunk count: ' + bad.join('; ') + ')' : ''}`);
+  const all = fs.readdirSync('assets/scenes/navpool').filter((f) => f.endsWith('.js')).map((f) => rd('navpool', f).toString()).join('\n');
+  const hit = ['SHIFT_WAIT', 'PEND_', 'EPS_KICK', 'KICK_LOUD', 'BAR_STEP', 'liftB', 'liftL', 'kickP', 'pendSlams'].filter((k) => all.includes(k));
+  ok(!hit.length, `no §147 name in assets/scenes/navpool/*.js (SHIFT_WAIT PEND_ EPS_KICK KICK_LOUD BAR_STEP liftB liftL kickP pendSlams)${hit.length ? ': ' + hit.join(' ') : ''}`);
+  ok(OUT3.EPS_KICK === undefined && OUT3.BAR_STEP === undefined && SWELL.SHIFT_WAIT === undefined && !('pend' in NAV), 'OUT3 has no EPS_KICK / BAR_STEP, SWELL no SHIFT_WAIT, NAV no pend');
+  const k5 = Object.keys(knob5('swell')), k3 = Object.keys(knob5n3('swell'));
+  ok(k5.length === 12 && JSON.stringify(k5) === JSON.stringify(k3), `knob5('swell') reads nav3's 12 keys (${k5.length}: ${k5.join(' ')})`);
 }
 
 console.log(fails ? `test_navpool: ${fails} FAIL` : 'test_navpool: all ok');
