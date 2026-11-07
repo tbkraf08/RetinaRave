@@ -6448,3 +6448,59 @@ rotating even though there is no sound, it was just faint"*. Toma's choice on sy
   fast spin the sheared near-wall band rolls up into a ring of small eddies near the rim, which decays.
 - **Open.** `pool-sim.js` is 384 lines (check.js soft cap 350). The rim's thinner ink on real audio (D1). Toma's eye on the dev stack is
   the final gate; no merge, tag or push before his OK.
+
+## §152 NAVPOOL: the edge is main's NAV3 again — the §147 clone goes (2026-11-07, branch `navpool-nav3-sync` off `navpool-momentum` d281ef4, NOT merged; one Opus builder + one Opus tester under the Fable orchestrator; plan `navpool-nav3-sync-plan.md`; Toma: navpool's edge must move like main's nav3)
+
+- **Why.** §149 cloned NAV3 from the v0.45 tree, i.e. §147's NAV3 (branch `nav3-shift`): on a kit a shift only ARMED
+  (`SWELL.SHIFT_WAIT` 4 bars) and waited for a slam. §150 withdrew v0.45 and put main back on c3eb3cd's code (nav3 + the engine), but
+  navpool kept its clone. Main's engine never sends the slam §147's arm waits for, so in navpool the implosion never fired on a kit's
+  shift: the ball sat pressed at the rim for 4 bars and the arm lapsed into the swell. Zoom and rotation already matched; only the
+  implode / shift logic and its knobs differed.
+- **What** (`66dd38d`, the test fix `97cd617`). `navpool/implode.js` is a byte copy of `nav3/implode.js` (gone: `OUT3.EPS_KICK` / `KICK_LOUD` / `BAR_STEP`,
+  `IMP.kickP` / `steps`, the bar-line step sweep — back to v0.44's continuous sweep). `navpool/nav.js` is `nav3/nav.js` verbatim plus
+  §149's seven gate hunks and nothing else: `ROLL.IDLE_W`, `idleGate`, `NAV.g`, `g` on the centroid's running range (×2), the bar turn,
+  the sway, and `N.g` on the breath as read (gone: `SHIFT_WAIT`, `PEND_*`, `NAV.pend` / `pends` / `pendSlams` / `pendLapsed` / `liftB`
+  / `liftL`, the arm block; restored: `shiftIn = S.shiftEvt && !lowPerc` implodes on the shift's frame on a kit; the piano swell crosses
+  as v0.44). `knobs.js` (§147's split of nav.js's tables) is `git rm`'d and its numbers are inline again, as nav3's (nav.js 483 lines,
+  under check.js's 500 cap). `index.js`: 3 lines only — the §147 `pend` / `lift` readouts out, the `imp` readout and the `uInt` uniform are
+  nav3's lines verbatim (without the uInt line `N.liftB` would be undefined → NaN). Paddle, pool, SPIN, npspin, nav3, the engine: untouched.
+- **URL knobs.** `&npswell` reads 12 fields again (was 16: fields 13–16 SHIFT_WAIT / PEND_CROSS / PEND_BANDS / PEND_LUM are gone);
+  `&npimp` reads 25 (was 28: EPS_KICK / KICK_LOUD / BAR_STEP). A saved link with the extra fields silently ignores them.
+- **The pins (a policy change).** `tools/test_navpool.js` section 1 now pins `implode.js` and `look2.js` as byte copies of nav3's too
+  (with move2 / green / shaders): from now a NAV3 tune of either file fails `npm test` until navpool re-clones it — deliberately, navpool
+  tracks main's nav3. Section 9 (new): knobs.js absent; navpool's nav.js with §149's H1–H7 reverted by exact-count string replaces
+  `===` nav3/nav.js (a future nav3 change is re-cloned and this test says what to keep); no §147 name in the folder; `OUT3` / `SWELL` /
+  `NAV` carry none of §147's keys; `knob5('swell')` reads nav3's 12 keys.
+  Found by the tester (`97cd617`): section 1's `ok()` had sat at the end of its line comment since §149, so the byte-copy pins asserted
+  nothing; the comment is on its own lines now and a drift in implode.js + look2.js gives 2 FAIL. test_nav3.js's pin loop is not affected.
+- **The proof** (`tools/accept/navpool/nav3-sync.txt`, `scene-md5-sync.txt`). The fake timeline cannot show it (its only shift is
+  ~f1527, past f840), so the primary proof is a node replay of `updateNav` (stepDrop inside) over four page traces, no Chrome
+  (`tools/work/navpool/sync-replay.mjs`, from §145's swell-replay; source in the record).
+  6a, under music (presence := max(p, .3), which only touches the traces' lead-in frames): navpool's per-frame dump (NAV mode, c, ball,
+  ρ, θ, both springs, swell, turn, the centroid range, IMP x/y/q/ε/drops/frames/T) is BYTE-IDENTICAL to nav3's on IBelongHere,
+  TheChain, Comptine and SeeYouDrop, 6601 frames each. Before (d281ef4) it diverged at f3951 (IBelongHere, 65.85 s, the shift),
+  f2681 (TheChain, 44.68 s, the shift), f3542 (SeeYouDrop, 59.0 s, inside the 57.6 implosion: §147's ε kick / bar step); Comptine was
+  already identical (no kit shift).
+  6b, the real presence: implosion triggers EXACT on all four (IBelongHere 65.85 s; TheChain 44.68 s + re-arm 55.3 + 86.1 s;
+  SeeYouDrop 57.6 / 105.6 s); before, navpool swelled where nav3 implodes (IBelongHere 0 implosions vs 1, TheChain 1 vs 2).
+  6e: s6 05f1250c / 64048003, s7 de6085f2 / fa715035, 0 moved.
+  6d, the page (PORT 8866, CLOCK=1 GPU=1, `test&track=IBelongHere&at=0&map=0`, readouts every 30 frames): scene 6 (the control) INT
+  through f3960, OUT with drops 1 at f3990 (ρ .952), EXT from f4080; scene 7 the SAME readout, ρ / mode equal to scene 6's at every
+  readout to 4–5 places, θ / turn offset by a constant −.0063 turn (§149's lead-in), `g` === 1 at all 24 readouts, same edge and rays
+  at f4020 (the interior is the pool). Before (d281ef4) scene 7 had no drop there.
+  6f, the paddle (the §151 A5 recipe, PORT 8871): +1.5 at the modal alignment BYTE-IDENTICAL to the d281ef4 run (39 readouts, shots
+  f900 / f960 / f1080 byte-equal): ΔL960 −.2736, coast .778 / .600, deep990/960 1.30, edge .035 = momentum-step4.txt. −1.5 byte-identical
+  pre / post at a common alignment; at the modal alignment +.3192, coast .826 / .632, deep 1.12, edge .036 = the record. 0 drops in the
+  window: the paddle is unchanged.
+  6g, §149's silence (recipe A, scene 7, muted from the start): `g` 0, `breathG` 0, the turn flat (Δ 0) at every readout f300–f1200.
+- **Deviation from the plan** (agreed with the tester). 6b's carry bound (|Δturn| ≤ .005, |Δθ| ≤ .01, |Δρ| ≤ .01, transitions ±2
+  frames) assumed a ~10-frame lead-in under presence .3. TheChain's is 193 frames (3.2 s): §149's gate idles the dance there, as
+  designed, and the carry reaches the later crossings — TheChain's two INT→CROSS pairs land 14 and 4 frames off nav3's, |Δturn| .031
+  (the same on the d281ef4 tree: §149's own carry, not §152's), SeeYouDrop |Δρ| .035 at 55.1 s. Every implosion transition is exact and
+  the from→to sequences are identical on all four. 6a proves the only difference left is the lead-in: --music changes only those frames
+  and makes the dumps byte-equal. IBelongHere and Comptine meet the bound as written.
+  6g's θ bound (< .0005 over f300–f1200) is not met at one alignment (mute on frame 2: .3646 → .3670, .00019 over f600–f1200), but
+  the readouts there are byte-identical to d281ef4's at the same alignment (2 runs each tree; the only diff is the removed pend / lift
+  fields), and d281ef4 at a mute-on-frame-3 alignment moves 3e-6: an alignment-dependent cold-start settle that predates §152, recorded
+  as such, not as a pass of the literal bound.
+- **Open.** Toma's eye on the dev stack is the gate; no merge, tag or push before his OK. R5: nav.js is 483 lines, near the 500 cap.

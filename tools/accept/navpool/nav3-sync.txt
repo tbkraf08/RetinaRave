@@ -1,0 +1,173 @@
+# NAVPOOL nav3-sync (DECISIONS §152, 2026-11-07) — the proof record. Branch navpool-nav3-sync off navpool-momentum d281ef4.
+# Code 66dd38d (implode.js re-cloned, nav.js = nav3's + §149 H1–H7, knobs.js git rm, index.js I1–I3, test section 9), test fix 97cd617.
+# BEFORE = d281ef4 (P4, unedited tree / the tester's detached worktree of it), AFTER = 97cd617 (assets as 66dd38d).
+
+## Tools and inputs (md5)
+21efa635f31a62aab79d4c1bd466b2c6  tools/work/navpool/sync-replay.mjs
+d13726580f99b38256e335f5c121d8ed  tools/work/navpool/cmp6b.mjs
+ab9f8ef77661d478ea453a03d1c9addf  tools/work/navpool/swell-replay.orig.mjs
+356d45d48c3fa3434a0a9081ee70af4e  tools/work/navpool/a5/run.sh
+08cac61aa74891c57426b301e88e3115  tools/work/navpool/a5/gen.js
+f56bcfcd2391a1a75f86bb08b84cb536  tools/work/navpool/a5/a5.js
+ea64a4c16ca1a626ee9491b606cd4255  tools/truth/traces/IBelongHere-map0.json
+2586f9d5f0b1669ba2c53d750b6d8ddc  tools/truth/traces/TheChain-map0.json
+3fdc40ca4bbc1123f089c037b23e593b  tools/truth/traces/Comptine-map0.json
+21d009597d53799cf9c6e40967b58269  tools/truth/traces/SeeYouDrop-map0.json
+  (swell-replay.orig.mjs = §145's .claude/worktrees/agent-a43e535ac135b941f/tools/work/nav3/swell-replay.mjs, the source sync-replay.mjs
+   was copied from; the a5 scripts = the §151 tester's, plus its chk.js 17460739 / rd.js 3f108da3. sync-replay.mjs and cmp6b.mjs are
+   reproduced at the end of this file: tools/work is untracked.)
+  Replays: cd tools/work/navpool; node sync-replay.mjs <Track> --scene nav3|navpool [--music] --dump <dir>/<T>-<sc>-<music|raw>.jsonl
+           --sum <dir>/<T>-<sc>-<music|raw>.sum.json   (one scene per process); node cmp6b.mjs <dir>
+  --music: presence := max(presence, .3) before the shift stage and updateNav, both scenes; navpool asserts ROLL.IDLE + IDLE_W === .3.
+  Presence < .3 on the traces: IBelongHere f0–9, TheChain f0–192, Comptine f0–4, SeeYouDrop f0–4 — the only frames --music changes.
+
+## P4 tests (BEFORE) / A8 (AFTER)
+  BEFORE: test_navpool all ok (section 1's pins were asserting nothing — see 97cd617), test_nav3 OK, check.js 0 fail 8 warn, md5 below.
+  AFTER:  test_navpool all ok (section 1: 5 pins ok; drift in implode.js + look2.js → 2 FAIL), test_nav3 OK (log = P4's but the ms line),
+          check.js 0 fail, the same 8 warn (navpool/nav.js 377 → 484 lines as counted by check.js), npm test exit 0.
+
+## 6a — --music dumps, nav3 vs navpool (cmp), 6601 frames per trace
+  BEFORE (positive control): IBelongHere first diff line 3952 = f3951 t 65.85 (the shift) · TheChain line 2682 = f2681 t 44.68 (the shift)
+          · SeeYouDrop line 3543 = f3542 t 59.03 (inside the 57.6 implosion's EXT: §147 EPS_KICK / BAR_STEP) · Comptine identical.
+  AFTER:  IDENTICAL on all 4 (IBelongHere, TheChain, Comptine, SeeYouDrop), 6601 lines each; nav3's dumps BEFORE = AFTER. (Tester: the
+          same with its own replay script; g === 1 every frame.)
+
+## 6b — raw presence (no clamp): node cmp6b.mjs pre | post
+  BEFORE:
+    IBelongHere: FAIL | shifts 3951 drops  (nav3 3951) rearms  | triggers exact false | transitions 1 (nav3 5) seq false max |Δf| NaN | max |Δturn| 1.43e-3 |Δth| 4.99e-1 |Δrho| 1.43e-1
+    TheChain: FAIL | shifts 2681,3315 drops 5167 (nav3 2681,5167) rearms  | triggers exact false | transitions 9 (nav3 13) seq false max |Δf| NaN | max |Δturn| 3.12e-2 |Δth| 4.98e-1 |Δrho| 5.73e-1
+    Comptine: PASS | shifts 1979,3103 drops  (nav3 ) rearms  | triggers exact true | transitions 9 (nav3 9) seq true max |Δf| 0 | max |Δturn| 5.74e-4 |Δth| 2.65e-3 |Δrho| 7.02e-3
+    SeeYouDrop: FAIL | shifts  drops 3456,6337 (nav3 3456,6337) rearms  | triggers exact true | transitions 12 (nav3 12) seq true max |Δf| 1 | max |Δturn| 5.74e-4 |Δth| 1.07e-2 |Δrho| 3.49e-2
+    6b: FAIL
+  AFTER:
+    IBelongHere: PASS | shifts 3951 drops 3951 (nav3 3951) rearms  | triggers exact true | transitions 5 (nav3 5) seq true max |Δf| 0 | max |Δturn| 1.43e-3 |Δth| 1.93e-3 |Δrho| 3.70e-3
+    TheChain: FAIL | shifts 2681,3315 drops 2681,5167 (nav3 2681,5167) rearms 3315 | triggers exact true | transitions 13 (nav3 13) seq false max |Δf| 14 | max |Δturn| 3.12e-2 |Δth| 4.79e-1 |Δrho| 3.35e-1
+    Comptine: PASS | shifts 1979,3103 drops  (nav3 ) rearms  | triggers exact true | transitions 9 (nav3 9) seq true max |Δf| 0 | max |Δturn| 5.74e-4 |Δth| 2.65e-3 |Δrho| 7.02e-3
+    SeeYouDrop: FAIL | shifts  drops 3456,6337 (nav3 3456,6337) rearms  | triggers exact true | transitions 12 (nav3 12) seq true max |Δf| 1 | max |Δturn| 5.74e-4 |Δth| 1.07e-2 |Δrho| 3.49e-2
+    6b: FAIL
+  Summary lines (sync-replay.mjs, raw):
+    BEFORE navpool IBelongHere: SWELLS 1: 65.8 | implosions 0            nav3: implosions 1: 65.8→87.7
+    BEFORE navpool TheChain: SWELLS 2: 44.7 55.3 | implosions 1: 86.1→90.8   nav3: 44.7→72.6 (1 re-arm) | 86.1→90.8
+    AFTER  navpool = nav3 on all 4: IBelongHere 65.8→87.7 · TheChain 44.7→72.6 (1 re-arm at f3315 55.3 s) | 86.1→90.8 · Comptine 0
+           (swells 33.0 51.7) · SeeYouDrop 57.6→75.2 | 105.6→110.0+
+  Rule (i): triggers EXACT (shift / drop / re-arm frames) on all 4 AFTER; implosion counts equal; from→to sequences identical on all 4;
+  ±2 frames on IBelongHere / Comptine / SeeYouDrop (max 1) — TheChain's two INT→CROSS / CROSS→INT pairs land 14 and 4 frames off
+  (f5079 vs 5093, f5476 vs 5472); every implosion transition exact. Rule (ii): met on IBelongHere / Comptine; TheChain |Δturn| .0312
+  (= BEFORE's .0312), |Δθ| .479, |Δρ| .335 (around the crossing); SeeYouDrop |Δρ| .035 (f3308 55.13 s, INT, 316 frames > .01), |Δθ| .0107.
+  DEVIATION (accepted by the tester): the carry is §149's lead-in (TheChain 193 frames < .3, not ~10): the navpool raw dump is
+  byte-equal BEFORE vs AFTER up to f2681, and 6a (which only changes the lead-in frames) is byte-identical.
+  6c: after the shift navpool's ρ is nav3's (OUT, frozen .951 IBelongHere / .965 TheChain); BEFORE it was pressed .96–.985 for the
+  4-bar arm. No pend / liftB in NAV (test section 9) nor in the dump.
+
+## 6d — the page (main checkout, PORT 8866, CLOCK=1 GPU=1, test&track=IBelongHere&at=0&map=0, readouts every 30 f, the tester)
+  scene 6 (control): INT drops 0 through f3960 (ρ .874) → f3990 OUT drops 1 ρ .95199, OUT to f4050, EXT from f4080 (ρ .95199).
+  scene 7 AFTER: the SAME readout f3990 OUT drops 1 ρ .952, EXT from f4080; ρ / mode = scene 6's at every readout to 4–5 places; θ / turn
+  offset −.0063 turn constant (§149's lead-in); g === 1 at all 24 readouts; no pend / lift fields; c finite; errs [] both; f4020 shots:
+  the same edge and implosion rays, navpool's interior the pool. BEFORE (d281ef4) scene 7: no drop there.
+
+## 6e — md5 (IDS="6 7" tools/scene-md5.sh, CLOCK=1 GPU=1)
+  BEFORE syncpre (PORT 8866, builder) = tsyncpre (PORT 8867, tester worktree): s6 05f1250c / 64048003, s7 de6085f2 / fa715035.
+  AFTER sync (PORT 8866, builder, 66dd38d) = tsync (PORT 8866, tester, 97cd617): the same — 0 of 4 moved (scene-md5-sync.txt).
+
+## 6f — the paddle (§151 A5: SeeYouDrop at=20 map=0, MUTED at f600, &npsim=DYE_DISS:0, npspin(±1.5, 60) at f900, readouts every 6 f; PORT 8871)
+  +1.5 at the modal alignment (MUTED f600 sample 1424896, c(f900) .01713306923171744, −.0354735862984843): AFTER readouts BYTE-IDENTICAL to
+  BEFORE's (39 EVAL lines), shots f900 / f960 / f1080 byte-equal; ΔL960 −.27359, coast .778 / .600, deep990/960 1.295, edge .035
+  (= momentum-step4.txt §5).
+  −1.5: BEFORE / AFTER byte-identical at a common alignment (MUTED f600 s1426432, ΔL960 +.31991); at the modal alignment AFTER +.31919,
+  coast .826 / .632, deep 1.124, edge .036 (= the record's +.3192 / .826 / .632 / 1.12 / .036; no modal −1.5 BEFORE run landed in 3 tries).
+  imp.drops 0 in the window → the byte bound applies, and holds.
+
+## 6g — §149 silence (recipe A: scene 7, SeeYouDrop at=20 map=0, muted from the start, f300–f1200 every 30 f; PORT 8866)
+  g 0 and breathG 0 at every readout; turn 0, flat (Δ 0). Under music (6d) g === 1 at every readout.
+  θ: at the mute-on-frame-2 alignment .3646 → .3670 (Δ .0024 f300–1200, .00019 f600–1200) — byte-identical to d281ef4 at the same
+  alignment (2 runs per tree; only the removed pend / lift fields differ); d281ef4 at mute-on-frame-3 .249017 → .249014 (3e-6). A
+  pre-existing, alignment-dependent cold-start settle, recorded as such — not a pass of the literal < .0005.
+
+## sync-replay.mjs
+// §152 navpool-nav3-sync: the replay of updateNav (stepDrop runs inside it) over a real page trace, for nav3 OR navpool — no Chrome.
+// Copied from §145's tools/work/nav3/swell-replay.mjs (worktree agent-a43e535ac135b941f, md5 ab9f8ef77661d478ea453a03d1c9addf), with:
+//   --scene nav3|navpool   the scene folder whose nav.js / implode.js is imported (one scene per process: module state is per path)
+//   --music                presence := max(presence, MUSIC) on every frame, BEFORE the shift stage and updateNav (MUSIC hardcoded .3, the
+//                          same for both scenes; for navpool the script asserts ROLL.IDLE + ROLL.IDLE_W === MUSIC once)
+//   --dump <file>          one JSON line per frame: frame, t, NAV mode/c/ball/rho/th/rhoT/thT/swell/turn/cLo/cHi, IMP x/y/q/eps/drops/frames/T
+//   --sum <file>           the run's events as JSON: shift frames, drop (implosion start) frames, re-arm frames, mode transitions [frame, from, to]
+//   node tools/work/navpool/sync-replay.mjs <Track> --scene nav3|navpool [--music] [--dump f.jsonl] [--sum f.json] [--map1] [t1,t2,…]
+import fs from 'node:fs';
+const MUSIC = 0.3;
+const W = new URL('../../../assets/', import.meta.url).pathname;
+const a = process.argv.slice(2);
+const opt = (k, d) => (a.includes(k) ? a.splice(a.indexOf(k), 2)[1] : d);
+const flag = (k) => (a.includes(k) ? (a.splice(a.indexOf(k), 1), true) : false);
+const SCENE = opt('--scene', 'nav3'), DUMP = opt('--dump', ''), SUM = opt('--sum', ''), MUS = flag('--music');
+if (SCENE !== 'nav3' && SCENE !== 'navpool') throw new Error('--scene nav3|navpool');
+const { NAV, updateNav } = await import(W + 'scenes/' + SCENE + '/nav.js');
+const { IMP } = await import(W + 'scenes/' + SCENE + '/implode.js');
+if (MUS && SCENE === 'navpool') {
+  const { ROLL } = await import(W + 'scenes/navpool/nav.js');
+  if (!(ROLL.IDLE + ROLL.IDLE_W === MUSIC)) throw new Error(`navpool ROLL.IDLE + ROLL.IDLE_W = ${ROLL.IDLE + ROLL.IDLE_W} !== ${MUSIC}`);
+}
+const { Shift, SHIFT } = await import(W + 'engine/shift/shift.js');
+const { BUILD } = await import(W + 'engine/build/build.js');
+const { baseLight } = await import(W + 'math/loudlight.js');
+const MAP1 = flag('--map1'), track = a[0], times = (a[1] || '').split(',').filter(Boolean).map(Number);
+const p = opt('--trace', new URL('../../truth/traces/' + track + (MAP1 ? '-map1' : '-map0') + '.json', import.meta.url).pathname);
+const d = JSON.parse(fs.readFileSync(p)), F = d.fields, T = d.t, cols = d.cols, col = (j) => Array.isArray(cols) ? cols[j] : cols[F[j]];
+const sg = cols.subGate ? cols.subGate.map(Number) : null, bl = cols.buildLive ? cols.buildLive.map(Number) : null;
+const killed = new Set(), killedArm = new Set();
+if (sg && bl) { let on = false, armOk = true; for (let i = 0; i < T.length; i++) { const v = bl[i] > 0.05; if (v && !on) { let s = 0, n = 0; for (let j = i; j >= 0 && T[i] - T[j] <= 32; j--) { s += sg[j]; n++; } armOk = n ? s / n >= BUILD.SUBV_HAD : true; } on = v; if (v && !armOk) killedArm.add(i); if (+cols.dropLiveEvt[i] > 0 && !armOk) killed.add(i); } }
+const sh = new Shift(SHIFT), si = {}, S = {};
+let prev = '', cur = null; const imps = [], ev = [], shifts = [], swellsAt = [], dump = [];
+const E = { scene: SCENE, track, music: MUS, frames: T.length, t0: T[0], shifts: [], drops: [], rearms: [], trans: [] };
+let sw0 = 0;
+for (let i = 0; i < T.length; i++) {
+  for (let j = 0; j < F.length; j++) S[F[j]] = col(j)[i];
+  if (MUS) S.presence = Math.max(+S.presence, MUSIC);
+  S.arc = 'idle';
+  const dt = i ? T[i] - T[i - 1] : 1 / 60;
+  if (killed.has(i)) S.dropLiveEvt = 0; if (killedArm.has(i)) S.buildLive = 0;
+  si.B = +S.beatCount + +S.beatPhase; si.bpm = +S.bpm; si.ok = +S.presence >= SHIFT.PRESENT; si.dt = dt;
+  si.lad = baseLight(+S.loudRel, +S.loudRange, +S.loudAbs, NaN); si.drop = S.dropLiveEvt || S.mapDropEvt ? 1 : 0; si.armed = +S.buildLive > 0 && !killedArm.has(i) ? 1 : 0;
+  const o = sh.step(si); S.shiftEvt = o.shiftEvt; S.shiftHold = o.shiftHold;
+  if (o.shiftEvt) { shifts.push(T[i].toFixed(1)); E.shifts.push(i); }
+  const r0 = IMP.rearms || 0, d0 = IMP.drops || 0;
+  updateNav(dt, T[i], S, { isLogical: true, drum: false, P: { reach: -6 } });
+  if ((IMP.drops || 0) > d0) E.drops.push(i);
+  if ((IMP.rearms || 0) > r0) E.rearms.push(i);
+  if ((NAV.swells || 0) > sw0) { swellsAt.push(T[i].toFixed(1)); sw0 = NAV.swells; }
+  if (NAV.mode !== prev) {
+    ev.push(`${T[i].toFixed(1)} ${prev || '·'}→${NAV.mode}`); E.trans.push([i, prev || '·', NAV.mode]);
+    if (NAV.mode === 'OUT' && prev !== 'IN') cur = { t0: T[i], rearms: 0 };
+    if (NAV.mode === 'INT' && cur) { cur.t1 = T[i]; imps.push(cur); cur = null; }
+    prev = NAV.mode;
+  }
+  if ((IMP.rearms || 0) > r0 && cur) cur.rearms++;
+  if (DUMP) dump.push(JSON.stringify({ f: i, t: T[i], mode: NAV.mode, c: NAV.c, ball: NAV.ball, rho: NAV.rho, th: NAV.th, rhoT: [NAV.rhoT.x, NAV.rhoT.v], thT: [NAV.thT.x, NAV.thT.v], swell: NAV.swell, turn: NAV.turn, cLo: NAV.cLo, cHi: NAV.cHi, imp: { x: IMP.x, y: IMP.y, q: IMP.q, eps: IMP.eps, drops: IMP.drops, frames: IMP.frames, T: IMP.T } }));
+  if (times.length && times.some((t) => T[i] >= t && (i === 0 || T[i - 1] < t))) console.log(`  t ${T[i].toFixed(2)} f${i} ${NAV.mode} ρ ${NAV.rho.toFixed(4)} θ ${NAV.th.toFixed(4)} turn ${NAV.turn.toFixed(4)} swell ${(NAV.swell || 0).toFixed(3)} drops ${IMP.drops}`);
+}
+if (cur) { cur.t1 = T[T.length - 1]; cur.open = 1; imps.push(cur); }
+const f = (x, n = 1) => (+x).toFixed(n);
+console.log(`${SCENE} ${track}${MAP1 ? ' [map1]' : ''}${MUS ? ' [music]' : ''}: ${T.length} frames ${f(T[0])}–${f(T[T.length - 1])} s | shifts ${shifts.join(' ') || '-'} | SWELLS ${NAV.swells || 0}: ${swellsAt.join(' ') || '-'} | implosions ${imps.length}: ${imps.map((m) => `${f(m.t0)}→${f(m.t1)}${m.open ? '+' : ''} (${m.rearms} re-arm)`).join(' | ')}`);
+if (process.env.CHANGES) console.log('  ' + ev.join(' | '));
+if (DUMP) fs.writeFileSync(DUMP, dump.join('\n') + '\n');
+if (SUM) fs.writeFileSync(SUM, JSON.stringify(E));
+
+## cmp6b.mjs
+// §152 6b: nav3 vs navpool unclamped (raw) replays — triggers exact, transition sequence ±2 frames, implosion count, carry bounds
+import fs from 'node:fs';
+const dir = process.argv[2] || 'post';
+const circ = (a, b) => { let d = (a - b) % 1; if (d > 0.5) d -= 1; if (d < -0.5) d += 1; return Math.abs(d); };
+let allOk = true;
+for (const tr of ['IBelongHere', 'TheChain', 'Comptine', 'SeeYouDrop']) {
+  const s3 = JSON.parse(fs.readFileSync(`${dir}/${tr}-nav3-raw.sum.json`)), sp = JSON.parse(fs.readFileSync(`${dir}/${tr}-navpool-raw.sum.json`));
+  const L3 = fs.readFileSync(`${dir}/${tr}-nav3-raw.jsonl`, 'utf8').trim().split('\n').map(JSON.parse), Lp = fs.readFileSync(`${dir}/${tr}-navpool-raw.jsonl`, 'utf8').trim().split('\n').map(JSON.parse);
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const trig = eq(s3.shifts, sp.shifts) && eq(s3.drops, sp.drops) && eq(s3.rearms, sp.rearms);
+  const seq = s3.trans.length === sp.trans.length && s3.trans.every((t, i) => t[1] === sp.trans[i][1] && t[2] === sp.trans[i][2] && Math.abs(t[0] - sp.trans[i][0]) <= 2);
+  const maxDt = s3.trans.length === sp.trans.length ? Math.max(0, ...s3.trans.map((t, i) => Math.abs(t[0] - sp.trans[i][0]))) : NaN;
+  let dTurn = 0, dTh = 0, dRho = 0;
+  for (let i = 0; i < L3.length; i++) { dTurn = Math.max(dTurn, Math.abs(L3[i].turn - Lp[i].turn)); dTh = Math.max(dTh, circ(L3[i].th, Lp[i].th)); dRho = Math.max(dRho, Math.abs(L3[i].rho - Lp[i].rho)); }
+  const ok = trig && seq && s3.drops.length === sp.drops.length && dTurn <= 0.005 && dTh <= 0.01 && dRho <= 0.01;
+  allOk &&= ok;
+  console.log(`${tr}: ${ok ? 'PASS' : 'FAIL'} | shifts ${sp.shifts} drops ${sp.drops} (nav3 ${s3.drops}) rearms ${sp.rearms} | triggers exact ${trig} | transitions ${sp.trans.length} (nav3 ${s3.trans.length}) seq ${seq} max |Δf| ${maxDt} | max |Δturn| ${dTurn.toExponential(2)} |Δth| ${dTh.toExponential(2)} |Δrho| ${dRho.toExponential(2)}`);
+}
+console.log(allOk ? '6b: all PASS' : '6b: FAIL');

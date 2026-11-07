@@ -66,7 +66,7 @@ NAVPOOL 2.63 ms draw only, **3.87 ms with its mask + solver** (`&npsim=BENCH:1`)
   clockConfPcm .7–.86, and percS RISES to 1 because `perc` → 1 on a dying onset envelope. So the bar turn `N.turn`, the phrase sway and
   the beat breath as read at nav.js `rhoEff` keep moving the edge (≈ .35 rad/s plus a ±.18-turn swing) and ρ bounces .1–.33 instead of
   resting at IDLE_RHO .08. trapA turns too, but the exterior is near black in silence and the turn is invisible, so it is not gated.
-- **The gate.** `knobs.js idleGate(p) = isFinite(p) ? sstep(ROLL.IDLE, ROLL.IDLE + ROLL.IDLE_W, p) : 1` (`IDLE_W` .15): exactly 1 for
+- **The gate.** `nav.js idleGate(p) = isFinite(p) ? sstep(ROLL.IDLE, ROLL.IDLE + ROLL.IDLE_W, p) : 1` (`IDLE_W` .15): exactly 1 for
   presence ≥ .3 (every library track after its lead-in), 0 at ≤ .15 (the §142 idle threshold), smooth between. It is an instantaneous
   function of MS.presence, which is already the engine's ema. The finite guard is load-bearing: `30·NaN` would poison `vel` until reload.
   (1) pool: `armSim(dt, on, idleGate(S.presence))` → `SIM.gate` (initial 1 for the BENCH / first-draw path) → `uCurlK = KS.CURL * SIM.gate`.
@@ -76,7 +76,9 @@ NAVPOOL 2.63 ms draw only, **3.87 ms with its mask + solver** (`&npsim=BENCH:1`)
   Under music g = 1.0 and every term is `x·1`, which is bit-exact, so the fake pair `eedd6403 / 62b63ea2` does not move. No new uniform,
   feat or param. KS.CURL stays 30. [§151: the confinement and its gate are gone (KS.CURL, SIM.gate, armSim's gate, VORT); the dance gate
   `idleGate` in nav.js is unchanged.]
-- **Which files diverged from nav3 and why.** `nav.js` and `knobs.js` are no longer copies of nav3's: the gate is navpool's local idle.
+- **Which files diverged from nav3 and why.** `nav.js` is no longer a copy of nav3's: the gate is navpool's local idle. [§152: it is main's
+  nav3/nav.js + §149's seven gate hunks (IDLE_W, idleGate, g) and nothing else; test_navpool section 9 un-gates it and asserts it equals
+  nav3/nav.js byte for byte. knobs.js (§147's split) is gone; implode.js and look2.js are byte copies of nav3's again and pinned.]
   nav3 keeps dancing in silence as §142 designed (scene 6 is the control). `move2.js` / `green.js` / `shaders.js` stay byte copies: the
   breath is gated where it is READ, not where move2 makes it, so `M2.breath` itself still pulses in silence. New read-only npinfo
   fields: `g` and `breathG` (= g·M2.breath, the applied breath).
@@ -138,3 +140,14 @@ stop; mirrored −1.5 gives +.319, .83 / .63. Real audio vs removal-only: rim sp
 to the wall (D1). (2) Recipe A's f60 deep speed .0242 is the pre-existing start-up transient (BEFORE .0217) plus ~.0025 from the paddle
 on the start-up edge motion; ≤ .003 from f160. (3) After a fast spin the sheared near-wall band rolls up into a ring of small eddies near
 the rim — edge-driven curl, decaying; A3c (the curl cap calibrated against audio curl) is not a gate for it (Toma's ruling).
+
+## The edge is main's nav3 again (DECISIONS §152; Toma: navpool's edge must move like main's nav3)
+
+§149 had cloned the v0.45 tree's NAV3, i.e. §147's (a kit's shift ARMED for 4 bars and waited for a slam main's engine never sends, so
+the implosion never fired on the shift). Now `implode.js` and `look2.js` are byte copies of nav3's (pinned in test_navpool section 1:
+a nav3 tune of either fails npm test until navpool re-clones it), `nav.js` is nav3's + §149's seven idle-gate hunks only (section 9
+reverts them and compares with nav3/nav.js byte for byte), and `knobs.js` is gone. On a kit the shift implodes on its own frame, as on
+scene 6. URL knobs: `&npswell` takes 12 fields (nav3's `&n3swell`), `&npimp` 25 (nav3's `&n3imp`); a link with more fields ignores the
+rest. npinfo has no `pend` / `pends` / `pendSlams` / `pendLapsed` / `lift` and `imp` no `kickP` / `steps`. To re-sync after a nav3
+change: copy nav3/nav.js, re-apply H1–H7 (section 9's replace list names them), copy implode.js / look2.js.
+

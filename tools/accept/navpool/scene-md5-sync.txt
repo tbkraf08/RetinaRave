@@ -1,0 +1,6 @@
+# NAVPOOL nav3-sync (§152, 2026-11-07) — IDS="6 7" PORT=8866 tools/scene-md5.sh sync at 66dd38d (CLOCK=1 GPU=1, the builder's run).
+# diff against syncpre (the same command at d281ef4, P4): 0 of 4 moved — expected (the fake's only shift is ~f1527, past f840; g = 1 exactly).
+05f1250cdb1f254a6418089fd01f5cbd  s6-f360.jpg
+64048003576eb4f38a9311e7780afd26  s6-f840.jpg
+de6085f2ebb677f302e5d7f8a7392bf1  s7-f360.jpg
+fa715035a472d056f3a1014547f3815b  s7-f840.jpg
