@@ -23,7 +23,10 @@ const ok = (c, m) => { if (!c) { fails++; console.log('  FAIL ' + m); } else con
 const rd = (d, f) => fs.readFileSync('assets/scenes/' + d + '/' + f);
 
 console.log('1. the byte copies (the files the pool does not touch)');
-for (const f of ['move2.js', 'green.js', 'shaders.js', 'implode.js', 'look2.js'])   // as test_nav3.js pins nav3's against nav2's; §152: implode.js / look2.js pinned too (navpool tracks main's nav3 — a nav3 tune of either fails here until navpool re-clones it); nav.js alone diverges, for the silence idle (§149: idleGate; section 8 pins that diff) ok(rd('nav3', f).equals(rd('navpool', f)), `navpool/${f} is a byte copy of nav3/${f}`);
+// as test_nav3.js pins nav3's against nav2's; §152: implode.js / look2.js pinned too (navpool tracks main's nav3 — a nav3 tune of either fails
+// here until navpool re-clones it); nav.js alone diverges, for the silence idle (§149: idleGate; section 9 pins that diff). Until §152 the
+// ok() below sat at the end of this comment (since §149) and the pins asserted nothing.
+for (const f of ['move2.js', 'green.js', 'shaders.js', 'implode.js', 'look2.js']) ok(rd('nav3', f).equals(rd('navpool', f)), `navpool/${f} is a byte copy of nav3/${f}`);
 
 console.log('2. the registration');
 ok(scene.name === 'navpool' && scene.id === 7 && nav3.id === 6, `name ${scene.name} id ${scene.id} (key 8); nav3 still id 6`);
