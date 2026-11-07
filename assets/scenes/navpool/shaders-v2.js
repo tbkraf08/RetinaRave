@@ -1,0 +1,105 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
+// NAVPOOL (DECISIONS §149): a copy of ../nav3/shaders-v2.js whose INTERIOR (the `conv` and the no-chart branches) is the scene's
+// own pool (pool-sim.js; unit 2: the set's edge is its wall) lit as FLUID2's show pass lights it (poolSh: luminance relief over ±2 dye texels, Lambert + Blinn, the dark pool), over
+// uPool.w × NAV3's old interior; the pool is added past the knee and under the implosion's layers (pk). Prepend ctx.oklch (linToSrgb).
+// NAV shaders, colour mapping `v2` (CONTRACTS §1.4) — v0.2's Julia and PiP fragment sources, lifted verbatim, and
+// the scene's DEFAULT: the look the user chose (DECISIONS §26). The OKLCH mapping of §25 is in shaders.js and is
+// opt-in (`&colour=oklch`). Nothing below has changed since v0.2 but the two export names and the split iteration
+// budget the loop now carries (uIterLo — the same three lines in both files, or the two mappings disagree) — in
+// particular there is no uClipDbg here (the gamut probe belongs to the OKLCH pass) and no ctx.oklch / OK_NAV chunk.
+// VS_PT / FS_PT are the same under both mappings, so they stay in shaders.js and are not duplicated here.
+
+// The Julia set of f_c. Exterior: distance-estimated dust with orbit traps; interior with a known cycle (uLam.w):
+// Koenigs coordinate bands + spokes, and the DRUM: Koopman modes cos(k·arg + TAU·m·L) driven by the spectral peaks.
+// Both interior branches carry the critical-slowing smoulder: uPar (NAV's N.par, the multiplier modulus |lambda| ->
+// 1 near a parabolic root) squared, so the term is exactly zero while par is 0 and the picture is byte-identical to v3.
+// The loop's budget is split (index.js ITER_LO, docs/workers/nav-iter.md): without a chart (uLam.w = 0) an orbit
+// whose accumulated derivative has collapsed below 1 is inside a basin — it cannot escape, and the only thing its
+// remaining iterations could still move is tL, which settled long before — so it stops at uIterLo. The exterior
+// path, tL, tC and the escape branch are untouched: nothing that branch reads depends on where this loop stops.
+// §145 (the swell pass): uInt = (K_RINGS: the Koenigs rings and spokes fade with the depth from the cycle point, exp(−rings/K) — 0 = none, the floor alone; FLOOR: the interior's never-black luma floor in the palette's hue; SWELL_BANDS; -), uSwell the swell's ease (the bands' amplitude and the smoulder up), uImpK.y = PET_Q1, uImpC = (IMP_COL, IMP_SN, IMP_HUE_SN, IMP_LUM): the former interior by its escape time under an implosion.
+// §144 (the look pass): pal3() — the INTERIOR palette at a fixed luma (uPal3 = (Y, the boost's cap, on); the bands legible at every hue);
+// uLumI the exterior knee while the implosion is up (mixed in by uImp.y); uImpK.x = BLACK: a non-escaped pixel with no chart is black while
+// the implosion runs and the petal layer paints on the way in (uImp.x) only; uSig arrives pre-scaled by OUT3.SIG_TINT (0: σ off the tint).
+export const FS_JULIA_V2 = `
+uniform vec2 uC;uniform vec4 uView;uniform int uIter;uniform vec2 uTrapN;uniform float uTrapR;uniform float uDrum;uniform vec2 uZs;uniform vec4 uLam;uniform float uEps2;uniform vec4 uMode[4];uniform float uPx;uniform float uPar;uniform int uIterLo;uniform vec2 uSc;uniform vec4 uN2;uniform vec4 uLum;uniform float uExtG;uniform float uExtK;uniform float uSmo;uniform vec4 uFl;uniform vec4 uImp;uniform vec2 uZ0;uniform vec2 uA;uniform float uSig;uniform float uQ0;uniform vec2 uPet;uniform vec2 uLumI;uniform vec3 uPal3;uniform vec4 uImpK;uniform vec4 uInt;uniform float uSwell;uniform vec4 uImpC;uniform sampler2D uDye;uniform vec2 uDyeTexel;uniform vec4 uPool; /* NAVPOOL: the substrate's dye and its light, uPool = (exposure, highlight gain, relief, the set's trace under it) */ // §142 uPet = (the petal radius Rp·PET_R the layer is confined to, its base lightness PET_LUM). §140 the implosion (implode.js IMP): uImp = (the petal stage's weight, the explosion's, q petals, the gate radius R), uZ0 the parabolic point, uA the petal coefficient a of g(w) = w + a w^{q+1}, uSig the horn-map phase σ. uSc: z-scale of the (little) Julia set, 1/P. §99 (look2.js), each a knob, rest 0 = NAV's bytes: uN2 = (knee on, smoulder on, flash on, -), uLum = the knee (L0, K) interior.xy / exterior.zw, uExtG the exterior's gain outside the set, uExtK the halo's narrowing there (rest 1: e*.011*1. is exact), uSmo the loudness smoulder's gain, uFl = (white share, always-on, snare gain, snare envelope)
+vec3 pal3(float t){vec3 c=pal(t);float y=dot(c,vec3(.2126,.7152,.0722));return mix(c,c*min(uPal3.x*uPal.w/max(y,1e-4),uPal3.y),uPal3.z);} /* §144: the interior's hue at one luma (the mood's brightness uPal.w kept) */
+float plum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}
+vec3 poolSh(vec2 uv){ /* NAVPOOL: FLUID2's show pass on the dye at this pixel — luminance relief over ±2 dye texels, Lambert + Blinn from the top, the dark pool; linear → display */
+  vec2 e=2.*uDyeTexel;vec3 c=max(texture(uDye,uv).rgb,0.);
+  float L=plum(texture(uDye,uv-vec2(e.x,0.)).rgb),R=plum(texture(uDye,uv+vec2(e.x,0.)).rgb),B=plum(texture(uDye,uv-vec2(0.,e.y)).rgb),T=plum(texture(uDye,uv+vec2(0.,e.y)).rgb);
+  vec3 n=normalize(vec3(-(R-L)*uPool.z,-(T-B)*uPool.z,1.));vec3 l=normalize(vec3(0.,.55,.83));vec3 h=normalize(l+vec3(0.,0.,1.));
+  float dif=.35+.65*clamp(dot(n,l),0.,1.);float ink=clamp(plum(c)*4.,0.,1.);float spec=pow(max(dot(n,h),0.),48.)*uPool.y*(.08+.92*ink);
+  return linToSrgb(clamp((vec3(.0012,.002,.0045)+c*dif+spec*vec3(.9,.95,1.))*uPool.x,0.,1.));}
+void main(){
+  vec2 p=(vUv*2.-1.)*vec2(uRes.x/uRes.y,1.);vec2 z=uView.xy+uView.z*(rot(uView.w)*p);vec2 zpx=z; /* §145: the pixel's own z, for the petal's confinement */
+  vec2 dz=vec2(1.,0.);float m2=dot(z,z),tL=1e9,tC=1e9,n=0.;bool esc=false,conv=false,big=false;
+  float gt=0.,ps=0.,dq0=1e9,outr=uQ0;bool imp=uImp.x+uImp.y>0.;vec2 wq=vec2(1.,0.);float R2=uImp.w*uImp.w; /* §140: the gate — time spent near z0 (soft), passages (an entry into R after uQ0 iterates beyond 2R: the period cycle's own alternation is not a transit), the closest approach w for the petal */
+  for(int i=0;i<420;i++){ if(i>=uIter)break;
+    float dd=1e31;
+    if(!big){dz=2.*cmul(z,dz);dd=dot(dz,dz);if(dd>1e30)big=true;}
+    z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+uC;m2=dot(z,z);n+=1.;
+    if(imp){vec2 wz=z-uZ0;float d2=dot(wz,wz);gt+=exp(-d2/R2);if(d2<R2){if(outr>=uQ0)ps+=1.;outr=0.;}else if(d2>4.*R2)outr+=1.;if(d2<dq0){dq0=d2;wq=wz;}}
+    tL=min(tL,abs(dot(z,uTrapN)));tC=min(tC,abs(sqrt(m2)-uTrapR));
+    if(m2>1e4){esc=true;break;}
+    if(uLam.w>.5){vec2 w=z-uZs;if(dot(w,w)<uEps2){conv=true;break;}}
+    else if(i>=uIterLo&&dd<1.)break; // no chart: the long budget is for structure still resolving, and |(f^n)'|<1 says there is none left
+  }
+  float lt=exp(-tL*16./uSc.x),ct=exp(-tC*22.);vec3 col;float sn=0.;vec3 pc=vec3(0.);float pk=1.; /* NAVPOOL: pc the pool on an interior pixel (0 elsewhere), pk how much of it the implosion's layers leave */ /* §145: the smooth escape count, read by the implosion's colour too */
+  if(esc){
+    sn=n+1.-log2(max(1e-6,.5*log(m2)/log(100.)));
+    float d=big?0.:.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/uPx;
+    float edge=exp(-e*.3),halo=1./(1.+e*.011*uExtK);float t=sn*.035*uSc.y+uTime*.06+.12*sin(atan(z.y,z.x)*2.);
+    col=pal(t)*(.07+.93*halo*halo);
+    col+=pal(t+.35)*lt*(.25+1.2*uBands.x)*halo;col+=pal(t+.2)*exp(-d*7./uSc.x)*(.05+.6*uBeat.w); /* dust stays legible when c is far outside M */ col+=pal(t+.6)*ct*uBands.z*.9*halo;
+    if(uN2.z>.5)col=mix(col,mix(pal(t+.2)*2.,vec3(1.),uFl.x)*uPal.w,edge*(uFl.y+uFl.z*uFl.w)); /* §99: the flash is the SNARE's (uFl.w = snareAmp's envelope, not v3's hit) with uFl.x white instead of .4 */
+    else col=mix(col,mix(vec3(1.),pal(t+.2)*2.,.6)*uPal.w,edge*(.3+.4*uBeat.y));
+  }else if(conv){
+    vec2 w=z-uZs;float Lw=.5*log(max(dot(w,w),1e-20));float aw=atan(w.y,w.x);float lnr=min(uLam.x,-.05);
+    float Lk=Lw/(-lnr)+n/uLam.z;float ai=aw-uLam.y*(Lw/lnr); // Koenigs coordinate: both are invariants of f^q
+    float rings=max(0.,Lk-.5*log(uEps2)/(-lnr));float fade=uInt.x>0.?exp(-rings/uInt.x):0.; /* §145: the ring index counted from the cycle point (Lk at the convergence radius is the innermost); the tiling fades with it — the user: "I don't like the clutter inside the set" */
+    float bands=(.5+.5*cos(TAU*Lk))*fade;float spokes=(.5+.5*cos(ai*2.+uTime*.4))*fade;
+    vec3 base=pal3(.55+.1*bands+.08*spokes)*(.03+.16*bands*(.3+uBands.x)+.05*spokes)*(1.+uSwell*uInt.z); /* §144: pal3 — the bands at one luma whatever the hue (off since §145: the lift read every ring at full); §145: the swell lifts the bands */
+    vec3 fl=pal(.55);base+=fl*(uInt.y/max(dot(fl,vec3(.2126,.7152,.0722)),.02)); /* §145: the never-black floor at luma uInt.y in the palette's hue */
+    float psi=0.,at=0.;for(int j=0;j<4;j++){vec4 M=uMode[j];psi+=M.z*cos(M.x*ai+TAU*M.y*Lk)*cos(M.w);at+=M.z;}
+    float chl=exp(-abs(psi)*7.);vec3 drum=pal(.3+.3*psi)*(.06+.7*abs(psi))+vec3(1.,.95,.85)*chl*.55*min(at,1.)*uPal.w;
+    col=mix(base,drum,uDrum)+pal(.8)*lt*.15;
+    float sg=(uN2.y>.5?uSmo:uPar*uPar*(.35+.3*uBands.x))+uSwell*uInt.w; /* §99: the smoulder follows the track's loudness (look2.js), not the root; §145: + the swell's lift */
+    col+=pal3(.5+.1*bands)*sg*(.3+.7*bands); /* critical slowing: the bands smoulder as |lambda|->1 */
+    pc=poolSh(vUv);col*=uPool.w; /* NAVPOOL: the interior IS the pool; the Koenigs bands a trace under it */
+  }else if(imp&&uImpK.x>.5){col=vec3(0.); /* §144: no chart while the implosion is up = the former interior, BLACK (the dust eats into it from the rim; the .03 base, the line trap and the smoulder painted the hold's blobs) */
+  }else{float sg=uN2.y>.5?uSmo*.5:uPar*uPar*(.16+.2*uBands.x);col=pal(.6)*.03+pal(.4)*lt*.25*(.3+uBands.x);col+=pal(.45)*sg;pc=poolSh(vUv);col*=uPool.w;} /* NAVPOOL: the chart-free interior is the pool too */
+  if(imp){ /* §140 the implosion's two layers (implode.js) */
+    if(!esc&&(uImp.z>1.5||uImpK.y>.5)){ /* §145: no petal paint at a q 1 root (PET_Q1). FATOU PETALS (the way in; §144: on the way out too only with BLACK 0): q petals around z0 from the orbit's FINAL z — the approach to a q-petal point is algebraic, so after the budget the orbit sits in its petal at |w| ~ (q a n)^(-1/q): the index by the sector of w (one petal per beat turns the wheel), the lightness by the phase of the Fatou coordinate Phi = -1/(q a w^q) (the time-to-leave: concentric bands in each petal); the attracting axis of each petal is where a w^q is real negative */
+      vec2 w=z-uZ0;float q=uImp.z,r=max(length(w),1e-6),th=atan(w.y,w.x),aq=atan(uA.y,uA.x),am=max(length(uA),1e-12);
+      float k=floor(fract(th/TAU+(.5-aq/TAU)/q+uBeat.x/q)*q)/q;float pet=fract((th*q+aq)/TAU);
+      float rq=exp(q*log(r));float rePhi=-cos(th*q+aq)/(q*am*rq);float ph=fract(rePhi*.5);
+      vec3 pcol=pal(k+.07+uSig)*(uPet.y+.5*(.5+.5*cos(TAU*ph)))*(.35+.65*exp(-abs(pet-.5)*2.5));
+      float pw=mix(max(uImp.x,uImp.y),uImp.x,uImpK.x)*.85*exp(-length(zpx-uZ0)/uPet.x);col=mix(col,pcol,pw);pk=1.-pw;} /* §145: confined by the PIXEL's distance to z₀ (the orbit's final z sits in the petal for every interior pixel, so r confined nothing: the preimage blobs) */ /* §142: the petal layer is confined to the petal radius (uPet.x) and its base lightness is uPet.y — it painted every non-escaped pixel of the interior for the drop's six seconds; §144: on the way in only (in the imploded set nothing attracts, z_final sits anywhere on its loop through the gate — the paint landed on the preimage blobs) */
+    else if(uImp.y>0.){ /* THE LAVAURS EXPLOSION on the way out: an escaped pixel of the former interior IS the implosion (the dust eating inward, breathing with eps); its passages through the gate are the hair's layers, the soft time near z0 its glow */
+      float pl=min(ps,8.);
+      if(uImpC.x>.5&&(ps>0.||gt>1.||sn>uImpK.z)){ /* §145: the former interior = a gate-passed orbit OR a slow escape (sn past IMP_N: at the slam's ε the former interior leaves without nearing z₀) */ /* §145: the FORMER INTERIOR (a gate-passed orbit) by its ESCAPE TIME — the key's hue (pal() with no uTime drift), luma bands on the smooth escape count, the passages brighter; none of the exterior's halo / trap / dust / flash terms (the imploded set is denser than the pixel grid: they read a boundary everywhere and filled it flat) */
+        vec3 ci=pal(.55+uImpC.z*sn)*(uImpC.w+.14*pl)*(.5+.5*cos(TAU*sn*uImpC.y))*(.4+.6*smoothstep(0.,60.,n));
+        col=mix(col,ci,uImp.y);pk=1.-uImp.y;}
+      else{vec3 ec=pal(.55+.07*pl+uSig)*(.1+.14*pl)+vec3(.8,.85,1.)*min(gt*.04,.6);
+      col=mix(col,col+ec*(.4+.6*smoothstep(0.,60.,n)),uImp.y);}}
+  }
+  if(uN2.x>.5){float L=dot(col,vec3(.2126,.7152,.0722));vec2 kn=esc?mix(uLum.zw,uLumI,uImp.y):uLum.xy;col*=1./(1.+kn.y*max(0.,L-kn.x));} /* §144: the exterior's knee lowered to uLumI while the implosion is up */
+  if(esc)col*=uExtG;
+  col+=pc*pk; /* NAVPOOL: the pool past the knee (it is FLUID2's light, already exposed) — under the implosion's layers where they paint */ /* §99: the soft knee on the luminance before bloom — the interior stays dark whatever the palette's phase, the dust stops washing out; uExtG dims the exterior while c is outside the set */
+  o=vec4(col,1.);
+}`;
+
+// Picture-in-picture: M itself with the path of c (drawn in-shader from uPath — gl.POINTS vanish in offset viewports on ANGLE-GL).
+export const FS_MANDEL_V2 = `
+uniform vec4 uView;uniform int uIter;uniform float uAlpha;uniform vec3 uPath[32];uniform vec3 uPc;
+float seg(vec2 p,vec2 a,vec2 b){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/max(dot(ba,ba),1e-12),0.,1.);return length(pa-ba*h);}
+void main(){vec2 p=vUv*2.-1.;vec2 c=uView.xy+uView.z*p;vec2 z=vec2(0.),dz=vec2(0.);float n=0.,m2=0.;bool esc=false;
+  for(int i=0;i<256;i++){if(i>=uIter)break;dz=2.*cmul(z,dz)+vec2(1.,0.);z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+c;m2=dot(z,z);n+=1.;if(m2>1e4){esc=true;break;}}
+  vec3 col=vec3(.0);if(esc){float d=.5*sqrt(m2/dot(dz,dz))*log(m2);float e=d/(uView.z*2./uRes.y);float sn=n+1.-log2(.5*log(m2)/log(100.));
+    col=pal(sn*.03+.2)*.35/(1.+e*.05)+vec3(.9)*exp(-e*.6);}else col=vec3(.02,.02,.04);
+  float pg=0.;for(int j=0;j<31;j++){float d=seg(c,uPath[j].xy,uPath[j+1].xy)/uView.z;pg+=(exp(-d*70.)+.35*exp(-d*14.))*uPath[j].z;}
+  float dc=length(c-uPath[0].xy)/uView.z;float cur=exp(-dc*28.)+.5*exp(-dc*7.);col+=uPc*min(pg,1.5)+vec3(1.)*cur*uPath[0].z;
+  float r=length(max(abs(p)-vec2(.82),0.))/.18;float a=uAlpha*(1.-smoothstep(.6,1.,r));o=vec4(col,a*clamp((esc?.85:.7)+pg+cur,0.,1.));}`;

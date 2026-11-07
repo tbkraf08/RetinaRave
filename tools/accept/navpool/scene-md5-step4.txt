@@ -1,0 +1,20 @@
+# NAVPOOL momentum (§151, 2026-11-06) — the FULL list at 02215d7 (PADDLE_GAIN 3, PADDLE_BAND 4, SLIP 1): tools/scene-md5.sh g3full (CLOCK=1 GPU=1, PORT 8871, run by the tester).
+# s0–s6 identical to scene-md5-step3.txt; s7 moves (expected: the confinement gone, the orbit/kick ink-only, the paddle). Two IDS=7 runs reproduce s7.
+3e48303900f1447bc8da8624273ef554  s0-f360.jpg
+2274bb4ef3fcb0c3822532a89be4f675  s0-f840.jpg
+aa6268322f36acf568cae26df302e163  s1-f360.jpg
+8372bc2879a802dcfb8c93ecf28721a5  s1-f840.jpg
+a6c725fa86d56e0b954a3bf34548f88c  s2-f360.jpg
+a12256fdbc334215c31f9851f9638647  s2-f840.jpg
+1faaa64e042b4dcd9e38fa904c1988c4  s3-f360.jpg
+25dfdc48614a037b13b5ccf30c361273  s3-f840.jpg
+80c43f0fc1aeb607ccbbe9971826c672  s4-f360.jpg
+248ad4c9b188a1e29fadca7f90442bdd  s4-f840.jpg
+62515d49261070922f23ce68f94fc877  s5-f360.jpg
+f3a3721cfbb5fa4947dcab8668830d9e  s5-f840.jpg
+05f1250cdb1f254a6418089fd01f5cbd  s6-f360.jpg
+64048003576eb4f38a9311e7780afd26  s6-f840.jpg
+de6085f2ebb677f302e5d7f8a7392bf1  s7-f360.jpg
+fa715035a472d056f3a1014547f3815b  s7-f840.jpg
+
+# diff against scene-md5-step3.txt (hash + name): s7-f360 eedd6403 → de6085f2, s7-f840 62b63ea2 → fa715035 (2 of 16 moved, both s7)

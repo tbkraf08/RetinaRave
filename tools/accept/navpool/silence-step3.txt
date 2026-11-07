@@ -1,0 +1,189 @@
+# NAVPOOL silence (DECISIONS §149 addendum, 2026-10-28) — the proofs, recipes A / B / C, before (the UNFIXED tree, the same final step
+# lists) beside after (the final tree: idleGate on the confinement, the bar turn, the sway, the breath as read, the centroid range).
+# Runs by the Opus tester: CLOCK=1 GPU=1 PORT=8866 MUSIC=tools/work/nav3/music, hash test&track=SeeYouDrop&at=20|149&scene=7&map=0
+# (&map=0 REQUIRED), one Chrome at a time. Step lists: the plan's §3 (B: until f480, READOUT, until f600, READOUT, shot, zero-fill
+# F.mono/L/R from F.pushed; READOUT at 900 1000 1060 1100 1200 1260 1300 1400 1500 1650 1800 2100 2400. A: zero-fill on file open
+# (lands at frame 4). C: track end, no mute, READOUT at 480 516 530 560 600 700 820 1000 1100 1300 1500 + ended).
+# Columns (tab.js): frame presence | npwall deep / rim speed (uv/s) | rim v·n | wall speed | rim dye | rim.n/deep.n | pool total | rho rhoT th turn | M2.breath | g | breathG (= g·M2.breath, the APPLIED breath)
+#
+# Acceptance as revised by the orchestrator: (1) exact identity under real audio cannot hold — a cold-start file run's presence ramps from 0
+# over the first ~25 frames (f21 .12, f40 .75), so g < 1 there and the run diverges from frame ~2; a "hold 1 until the first music" would add
+# scene state and break the muted-from-start path, so it was not done. The exact-identity proof is the fake timeline (presence 1):
+# scene-md5-step3.txt (s7 eedd6403 / 62b63ea2, ids 0–7 equal to step2) + the fake npwall readouts f204/205/360/800/840 byte-equal.
+# Real audio f480–f600: side by side, within 10 % on the scene state and deep speed, and the f600 shot pair looks the same.
+# (2) A6(vi) rim band p99 |ΔY| ≤ 20 (was ≤ 12), the edge's angular fit 0 ± 2° still required. (3) the centroid range gate (A7).
+# (4) A3's f820 bound .029 = the CURL:0 column (.024) + .005; .0305 passes because the tail from f700 is non-increasing and the rest hold.
+
+== VERDICT (tester, final tree): PASS
+A1 B deep f900 .049 · f1000 .029 · f1200 .012 · f1500 .0036 · f1650–2400 .002 / .0011 / .0003 / .0001, monotone; rim ≤ .0054 from f1000   (before: surges to .98 at f1400)
+A2 A deep ≤ .0183 at every frame, total 1
+A3 C f700 .0672 · f820 .0305 · f1000 .0134 · f1100 .0087 · f1300 .0038 · f1500 .0017, non-increasing
+A4 fake pair eedd6403 / 62b63ea2; full list ids 0–7 = step2; fake npwall f204/205/360/800/840 byte-equal (beforeFake vs fFake)
+A5 shots silence-before|after-f600/1000/1200/1500.jpg: before f1000/f1200 a crinkly tight spiral; after a soft swirl fading in place; f600 the same picture (interior mean |ΔY| 21.9 vs 22.9 between two unfixed runs); R4 f700–780 no hitch
+A6 turn .20214 flat from f760 · th .8157 flat from f900 · rho .08 · breathG 0 on every crest · rim.n/deep.n 254/5326 constant · wall.speed 0, |rim.vn| ≤ .0014 at f1000/1012/1024/1036/1048
+   hp diff (rim band): f1000/1060 p99 16 mean 2.99 fit +0.00°; f1200/1260 p99 20 (15 with the mean shift removed) mean 5.14 fit +0.00°   (before: p99 49 / 35)
+A7 A th .2826 (f160) → .2825 f300–f1200 (Δ < .0001), turn .00011 flat, breath 0 — judged from f300: f60→f160 is the cold start (ρ rolling .46 → .08, the key read settling)
+A8 scene 6 byte-equal before / after (beforeS6 vs fS6)
+music f480/f600 (beforeB2 vs fB6, the same mute alignment): th −.8 %, turn −3.6 %, ρ/ρT/presence/percS/kick/total/kicks 0 %, deep speed −4.1 % / +1.4 %, deep dye −6.5 % / −6.9 %;
+   the rim-local metrics exceed 10 % (rim.vn +25 % f480, rim.dye −10.2 %; C deep f560 +12.5 %) — under the harness's own floor: the unfixed tree against itself
+   across alignments moves rim.vn 48–68 %, wall speed 14–33 %, deep dye 17 %, deep speed 9 %
+determinism: fB6 / fB7 / fB8 readouts byte-equal, shots md5-equal, all "MUTED at frame 600 sample 1424896" (the harness alternates 1424896 / 1424384 on both trees — a harness effect)
+static: check.js 0 fail / 7 warn (none new) · npm test exit 0 · move2 / green / shaders byte copies · KS.CURL 30 · no Math.random / Date.now / new uniform / feat / param
+
+== recipe B — BEFORE (beforeB2.log), tab
+480 1 deep 0.4602 rim 0.4139 vn 0.1268 wall 0.3258 rimdye 0.0177 n 416/3786 tot 345 rho 0.8895 rhoT 0.838 th 0.4506 turn 0.10585 br 0.038 g  bG  
+600 1 deep 0.4138 rim 0.2558 vn 0.1609 wall 0.263 rimdye 0.0224 n 434/3890 tot 450 rho 0.8896 rhoT 0.8545 th 0.5743 turn 0.15427 br 0.028 g  bG  
+"MUTED at frame 600 sample 1424896"
+700 0.3114 deep 0.19 rim 0.0374 vn 0.0012 wall 0.0208 rimdye 0.031 n 262/4898 tot 463 rho 0.4947 rhoT 0.4269 th 0.5432 turn 0.1925 br 0.000 g  bG  
+720 0.2454 deep 0.1653 rim 0.0542 vn -0.0372 wall 0.0961 rimdye 0.0413 n 260/5010 tot 463 rho 0.4259 rhoT 0.3445 th 0.5416 turn 0.20183 br 0.029 g  bG  
+740 0.1934 deep 0.1463 rim 0.0381 vn 0.0069 wall 0.0201 rimdye 0.0332 n 254/5112 tot 464 rho 0.3501 rhoT 0.2707 th 0.615 turn 0.21227 br 0.245 g  bG  
+760 0.1524 deep 0.1305 rim 0.0323 vn 0.0063 wall 0.0179 rimdye 0.0337 n 252/5182 tot 464 rho 0.2897 rhoT 0.2519 th 0.682 turn 0.22412 br 0.242 g  bG  
+780 0.1201 deep 0.1152 rim 0.0385 vn 0.0053 wall 0.0186 rimdye 0.0454 n 254/5266 tot 464 rho 0.1943 rhoT 0.118 th 0.7157 turn 0.23753 br 0.000 g  bG  
+800 0.0947 deep 0.0981 rim 0.0303 vn 0.0073 wall 0.01 rimdye 0.0436 n 254/5298 tot 464 rho 0.1254 rhoT 0.0834 th 0.737 turn 0.25276 br 0.000 g  bG  
+850 0.0522 deep 0.0755 rim 0.046 vn 0.0129 wall 0.0055 rimdye 0.0474 n 256/5312 tot 465 rho 0.0971 rhoT 0.08 th 0.8292 turn 0.29977 br 0.000 g  bG  
+900 0.0288 deep 0.1204 rim 0.048 vn 0.0172 wall 0.0086 rimdye 0.0585 n 256/5336 tot 465 rho 0.0947 rhoT 0.08 th 0.9994 turn 0.35187 br 0.000 g  bG  
+950 0.0159 deep 0.1935 rim 0.097 vn 0.0438 wall 0.0017 rimdye 0.0597 n 254/5358 tot 465 rho 0.0939 rhoT 0.08 th 0.14 turn 0.40396 br 0.059 g  bG  
+960 0.0141 deep 0.2205 rim 0.1033 vn 0.046 wall 0.005 rimdye 0.0511 n 254/5328 tot 465 rho 0.1282 rhoT 0.08 th 0.1566 turn 0.41438 br 0.044 g  bG  
+970 0.0125 deep 0.2655 rim 0.1411 vn 0.0778 wall 0.0056 rimdye 0.058 n 254/5356 tot 465 rho 0.1004 rhoT 0.08 th 0.1695 turn 0.4248 br 0.000 g  bG  
+980 0.0111 deep 0.4493 rim 0.158 vn 0.0882 wall 0.0072 rimdye 0.041 n 254/5348 tot 465 rho 0.1162 rhoT 0.08 th 0.1775 turn 0.43521 br 0.228 g  bG  
+990 0.0099 deep 0.6206 rim 0.2047 vn 0.086 wall 0.0025 rimdye 0.0354 n 254/5350 tot 465 rho 0.1026 rhoT 0.08 th 0.1813 turn 0.44563 br 0.000 g  bG  
+1000 0.0088 deep 0.7145 rim 0.2994 vn 0.1381 wall 0.0061 rimdye 0.0305 n 254/5352 tot 465 rho 0.0978 rhoT 0.08 th 0.1808 turn 0.45605 br 0.145 g  bG  
+1012 0.0076 deep 0.8048 rim 0.4529 vn 0.1693 wall 0.0028 rimdye 0.0313 n 254/5350 tot 465 rho 0.1053 rhoT 0.08 th 0.175 turn 0.46855 br 0.000 g  bG  
+1024 0.0066 deep 0.7277 rim 0.4968 vn 0.1088 wall 0.0048 rimdye 0.0194 n 254/5360 tot 465 rho 0.0972 rhoT 0.08 th 0.1642 turn 0.48106 br 0.144 g  bG  
+1036 0.0057 deep 0.7281 rim 0.504 vn 0.1779 wall 0.0029 rimdye 0.0162 n 254/5362 tot 465 rho 0.1048 rhoT 0.08 th 0.1494 turn 0.49353 br 0.000 g  bG  
+1048 0.0049 deep 0.7363 rim 0.4482 vn 0.0883 wall 0.0064 rimdye 0.0089 n 254/5356 tot 465 rho 0.0998 rhoT 0.08 th 0.1316 turn 0.50568 br 0.213 g  bG  
+1060 0.0043 deep 0.6978 rim 0.5211 vn 0.1003 wall 0.0052 rimdye 0.0087 n 258/5334 tot 465 rho 0.1124 rhoT 0.08 th 0.1123 turn 0.5174 br 0.000 g  bG  
+1100 0.0027 deep 0.6826 rim 0.2903 vn 0.0526 wall 0.0051 rimdye 0.0043 n 256/5338 tot 465 rho 0.1122 rhoT 0.08 th 0.0566 turn 0.55346 br 0.212 g  bG  
+1110 0.0024 deep 0.6104 rim 0.2583 vn 0.0347 wall 0.0022 rimdye 0.006 n 254/5340 tot 465 rho 0.1005 rhoT 0.08 th 0.0484 turn 0.56175 br 0.000 g  bG  
+1120 0.0021 deep 0.5523 rim 0.235 vn 0.0307 wall 0.0044 rimdye 0.0056 n 254/5344 tot 465 rho 0.0964 rhoT 0.08 th 0.0437 turn 0.56974 br 0.136 g  bG  
+1130 0.0019 deep 0.4997 rim 0.2169 vn 0.0368 wall 0.0064 rimdye 0.0031 n 254/5338 tot 465 rho 0.1079 rhoT 0.08 th 0.0425 turn 0.57746 br 0.000 g  bG  
+1140 0.0017 deep 0.4527 rim 0.1931 vn 0.0336 wall 0.0028 rimdye 0.0024 n 254/5344 tot 465 rho 0.0924 rhoT 0.08 th 0.0448 turn 0.58491 br 0.000 g  bG  
+1150 0.0015 deep 0.4203 rim 0.1816 vn 0.0176 wall 0.0026 rimdye 0.0031 n 256/5344 tot 465 rho 0.1261 rhoT 0.08 th 0.0505 turn 0.59208 br 0.177 g  bG  
+1160 0.0013 deep 0.3935 rim 0.1509 vn 0.0138 wall 0.0069 rimdye 0.0032 n 254/5340 tot 465 rho 0.102 rhoT 0.08 th 0.0598 turn 0.59898 br 0.000 g  bG  
+1170 0.0012 deep 0.3721 rim 0.1357 vn 0.0126 wall 0.0059 rimdye 0.0027 n 256/5346 tot 465 rho 0.1058 rhoT 0.08 th 0.0718 turn 0.60563 br 0.209 g  bG  
+1180 0.001 deep 0.3574 rim 0.1314 vn 0.0053 wall 0.0042 rimdye 0.0024 n 256/5348 tot 465 rho 0.1042 rhoT 0.08 th 0.0868 turn 0.61202 br 0.000 g  bG  
+1190 0.0009 deep 0.3397 rim 0.1218 vn 0.0037 wall 0.0012 rimdye 0.0017 n 256/5354 tot 465 rho 0.0923 rhoT 0.08 th 0.104 turn 0.61817 br 0.035 g  bG  
+1200 0.0008 deep 0.3259 rim 0.1267 vn 0.0114 wall 0.0043 rimdye 0.0013 n 256/5330 tot 465 rho 0.1119 rhoT 0.08 th 0.1227 turn 0.62407 br 0.024 g  bG  
+1260 0.0004 deep 0.2704 rim 0.0865 vn 0.0102 wall 0.0055 rimdye 0.0008 n 252/5340 tot 465 rho 0.0951 rhoT 0.08 th 0.2478 turn 0.65478 br 0.000 g  bG  
+1300 0.0002 deep 0.2423 rim 0.0756 vn 0.0097 wall 0.0027 rimdye 0.0009 n 252/5332 tot 465 rho 0.1013 rhoT 0.08 th 0.3112 turn 0.67127 br 0.000 g  bG  
+1400 0.0001 deep 0.1829 rim 0.0576 vn 0.0092 wall 0.0058 rimdye 0.0009 n 252/5332 tot 465 rho 0.0942 rhoT 0.08 th 0.3427 turn 0.70243 br 0.000 g  bG  
+1500 0 deep 0.1199 rim 0.05 vn 0.0064 wall 0.001 rimdye 0.0003 n 252/5332 tot 465 rho 0.0895 rhoT 0.08 th 0.3069 turn 0.72468 br 0.000 g  bG  
+1650 0 deep 0.5426 rim 0.2655 vn 0.078 wall 0.0061 rimdye 0.0001 n 252/5332 tot 465 rho 0.0966 rhoT 0.08 th 0.364 turn 0.75594 br 0.122 g  bG  
+1800 0 deep 0.6188 rim 0.292 vn 0.0827 wall 0.0026 rimdye 0.0001 n 250/5306 tot 465 rho 0.0949 rhoT 0.08 th 0.4133 turn 0.78719 br 0.009 g  bG  
+2100 0 deep 0.3991 rim 0.1935 vn 0.0297 wall 0.0004 rimdye 0 n 252/5316 tot 465 rho 0.0816 rhoT 0.08 th 0.4857 turn 0.8497 br 0.000 g  bG  
+2400 0 deep 0.3945 rim 0.2617 vn 0.0199 wall 0.0005 rimdye 0 n 252/5316 tot 465 rho 0.08 rhoT 0.08 th 0.5079 turn 0.91222 br 0.000 g  bG  
+"errs []"
+
+== recipe B — AFTER (fB6.log), tab
+480 1 deep 0.4412 rim 0.4276 vn 0.1587 wall 0.3215 rimdye 0.0159 n 410/3810 tot 345 rho 0.8895 rhoT 0.838 th 0.4468 turn 0.10201 br 0.038 g 1 bG 0.038472192752889246 
+600 1 deep 0.4198 rim 0.2564 vn 0.164 wall 0.2511 rimdye 0.0223 n 444/3936 tot 450 rho 0.8896 rhoT 0.8545 th 0.5705 turn 0.15042 br 0.028 g 1 bG 0.027516729035098417 
+"MUTED at frame 600 sample 1424896"
+700 0.3114 deep 0.1878 rim 0.0365 vn -0.0049 wall 0.0133 rimdye 0.0349 n 272/4898 tot 463 rho 0.4947 rhoT 0.4269 th 0.5394 turn 0.18866 br 0.000 g 1 bG 0 
+720 0.2454 deep 0.1682 rim 0.0583 vn -0.0397 wall 0.0982 rimdye 0.0399 n 262/5024 tot 463 rho 0.4211 rhoT 0.3445 th 0.5385 turn 0.19699 br 0.029 g 0.6992050516144368 bG 0.020294107052131395 
+740 0.1934 deep 0.1432 rim 0.0363 vn 0.0041 wall 0.027 rimdye 0.0256 n 254/5144 tot 464 rho 0.3281 rhoT 0.2707 th 0.6236 turn 0.20137 br 0.245 g 0.20291781738866266 bG 0.04973660651538859 
+760 0.1524 deep 0.1163 rim 0.02 vn 0.0025 wall 0.0142 rimdye 0.0268 n 254/5208 tot 464 rho 0.2727 rhoT 0.2519 th 0.7178 turn 0.20214 br 0.242 g 0.0007883129613950742 bG 0.00019043672514234327 
+780 0.1201 deep 0.0992 rim 0.0246 vn 0.006 wall 0.0187 rimdye 0.0408 n 254/5274 tot 464 rho 0.1812 rhoT 0.118 th 0.776 turn 0.20214 br 0.000 g 0 bG 0 
+800 0.0947 deep 0.084 rim 0.0126 vn 0.0035 wall 0.004 rimdye 0.0441 n 254/5306 tot 464 rho 0.1058 rhoT 0.0834 th 0.8019 turn 0.20214 br 0.000 g 0 bG 0 
+850 0.0522 deep 0.0639 rim 0.0088 vn -0.0003 wall 0.0001 rimdye 0.0412 n 254/5322 tot 465 rho 0.0807 rhoT 0.08 th 0.815 turn 0.20214 br 0.000 g 0 bG 0 
+900 0.0288 deep 0.0491 rim 0.0078 vn -0.0013 wall 0 rimdye 0.0312 n 254/5322 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+950 0.0159 deep 0.0376 rim 0.0066 vn -0.0016 wall 0 rimdye 0.0218 n 254/5322 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.059 g 0 bG 0 
+960 0.0141 deep 0.0358 rim 0.0064 vn -0.0016 wall 0 rimdye 0.0202 n 254/5322 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.044 g 0 bG 0 
+970 0.0125 deep 0.034 rim 0.0062 vn -0.0016 wall 0 rimdye 0.0187 n 254/5322 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+980 0.0111 deep 0.0324 rim 0.0059 vn -0.0014 wall 0 rimdye 0.0172 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.228 g 0 bG 0 
+990 0.0099 deep 0.0308 rim 0.0056 vn -0.0015 wall 0 rimdye 0.016 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1000 0.0088 deep 0.0294 rim 0.0054 vn -0.0014 wall 0 rimdye 0.0148 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.145 g 0 bG 0 
+1012 0.0076 deep 0.0278 rim 0.0052 vn -0.0014 wall 0 rimdye 0.0136 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1024 0.0066 deep 0.0263 rim 0.0049 vn -0.0013 wall 0 rimdye 0.0124 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.144 g 0 bG 0 
+1036 0.0057 deep 0.0249 rim 0.0047 vn -0.0012 wall 0 rimdye 0.0113 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1048 0.0049 deep 0.0236 rim 0.0045 vn -0.0012 wall 0 rimdye 0.0104 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.213 g 0 bG 0 
+1060 0.0043 deep 0.0223 rim 0.0043 vn -0.0011 wall 0 rimdye 0.0095 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1100 0.0027 deep 0.0188 rim 0.0036 vn -0.0009 wall 0 rimdye 0.0072 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.212 g 0 bG 0 
+1110 0.0024 deep 0.018 rim 0.0035 vn -0.0008 wall 0 rimdye 0.0068 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1120 0.0021 deep 0.0172 rim 0.0033 vn -0.0008 wall 0 rimdye 0.0063 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.136 g 0 bG 0 
+1130 0.0019 deep 0.0165 rim 0.0032 vn -0.0007 wall 0 rimdye 0.0059 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1140 0.0017 deep 0.0158 rim 0.003 vn -0.0007 wall 0 rimdye 0.0056 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1150 0.0015 deep 0.0152 rim 0.0029 vn -0.0007 wall 0 rimdye 0.0052 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.177 g 0 bG 0 
+1160 0.0013 deep 0.0145 rim 0.0028 vn -0.0006 wall 0 rimdye 0.0049 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1170 0.0012 deep 0.0139 rim 0.0027 vn -0.0006 wall 0 rimdye 0.0046 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.209 g 0 bG 0 
+1180 0.001 deep 0.0134 rim 0.0026 vn -0.0006 wall 0 rimdye 0.0043 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1190 0.0009 deep 0.0128 rim 0.0025 vn -0.0005 wall 0 rimdye 0.004 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.035 g 0 bG 0 
+1200 0.0008 deep 0.0123 rim 0.0024 vn -0.0005 wall 0 rimdye 0.0038 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.024 g 0 bG 0 
+1260 0.0004 deep 0.0096 rim 0.0018 vn -0.0004 wall 0 rimdye 0.0025 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1300 0.0002 deep 0.0081 rim 0.0015 vn -0.0003 wall 0 rimdye 0.002 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1400 0.0001 deep 0.0054 rim 0.001 vn -0.0002 wall 0 rimdye 0.001 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1500 0 deep 0.0036 rim 0.0007 vn -0.0001 wall 0 rimdye 0.0006 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+1650 0 deep 0.002 rim 0.0004 vn 0 wall 0 rimdye 0.0002 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.122 g 0 bG 0 
+1800 0 deep 0.0011 rim 0.0002 vn 0 wall 0 rimdye 0.0001 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.009 g 0 bG 0 
+2100 0 deep 0.0003 rim 0.0001 vn 0 wall 0 rimdye 0 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+2400 0 deep 0.0001 rim 0 vn 0 wall 0 rimdye 0 n 254/5320 tot 465 rho 0.08 rhoT 0.08 th 0.8157 turn 0.20214 br 0.000 g 0 bG 0 
+"errs []"
+
+== recipe A — BEFORE (beforeA.log), tab
+"MUTED from start at frame 4"
+60 0.0931 deep 0.0172 rim 0.0233 vn 0.002 wall 0.0112 rimdye 0.0003 n 268/4992 tot 1 rho 0.4562 rhoT 0.4235 th 0.3338 turn 0.01016 br 0.000 g  bG  
+160 0.0283 deep 0.0218 rim 0.0249 vn 0.0009 wall 0.0031 rimdye 0.0015 n 258/5162 tot 1 rho 0.3265 rhoT 0.3163 th 0.3374 turn 0.02738 br 0.000 g  bG  
+300 0.0053 deep 0.0274 rim 0.0407 vn 0.0096 wall 0.0004 rimdye 0.0225 n 254/5322 tot 1 rho 0.0801 rhoT 0.08 th 0.3052 turn 0.05391 br 0.000 g  bG  
+450 0.0009 deep 0.3959 rim 0.1761 vn 0.0674 wall 0.0009 rimdye 0.0111 n 254/5322 tot 1 rho 0.08 rhoT 0.08 th 0.341 turn 0.10601 br 0.000 g  bG  
+600 0.0002 deep 0.6792 rim 0.4429 vn 0.1292 wall 0.0013 rimdye 0.0117 n 252/5308 tot 1 rho 0.08 rhoT 0.08 th 0.4681 turn 0.14819 br 0.000 g  bG  
+900 0 deep 0.35 rim 0.1285 vn 0.0296 wall 0.0005 rimdye 0.0033 n 254/5314 tot 1 rho 0.08 rhoT 0.08 th 0.4967 turn 0.20124 br 0.000 g  bG  
+1200 0 deep 0.5612 rim 0.2376 vn 0.0166 wall 0.0005 rimdye 0.0007 n 254/5312 tot 1 rho 0.08 rhoT 0.08 th 0.5182 turn 0.25291 br 0.000 g  bG  
+"errs []"
+
+== recipe A — AFTER (fA.log), tab
+"MUTED from start at frame 4"
+60 0.0931 deep 0.0183 rim 0.0169 vn -0.0011 wall 0.012 rimdye 0.0003 n 270/4996 tot 1 rho 0.4565 rhoT 0.4235 th 0.3163 turn 0.00011 br 0.000 g 0 bG 0 
+160 0.0283 deep 0.0025 rim 0.0056 vn 0.0019 wall 0.0039 rimdye 0.0032 n 262/5166 tot 1 rho 0.3265 rhoT 0.3163 th 0.2826 turn 0.00011 br 0.000 g 0 bG 0 
+300 0.0053 deep 0.0011 rim 0.0031 vn -0.0001 wall 0 rimdye 0.0249 n 254/5324 tot 1 rho 0.0801 rhoT 0.08 th 0.2825 turn 0.00011 br 0.000 g 0 bG 0 
+450 0.0009 deep 0.0005 rim 0.0012 vn -0.0001 wall 0 rimdye 0.0117 n 254/5324 tot 1 rho 0.08 rhoT 0.08 th 0.2825 turn 0.00011 br 0.000 g 0 bG 0 
+600 0.0002 deep 0.0003 rim 0.0006 vn 0 wall 0 rimdye 0.0049 n 254/5324 tot 1 rho 0.08 rhoT 0.08 th 0.2825 turn 0.00011 br 0.000 g 0 bG 0 
+900 0 deep 0.0002 rim 0.0008 vn -0.0007 wall 0 rimdye 0.0004 n 254/5324 tot 1 rho 0.08 rhoT 0.08 th 0.2825 turn 0.00011 br 0.000 g 0 bG 0 
+1200 0 deep 0.0001 rim 0.0002 vn -0.0002 wall 0 rimdye 0.0001 n 254/5324 tot 1 rho 0.08 rhoT 0.08 th 0.2825 turn 0.00011 br 0.000 g 0 bG 0 
+"errs []"
+
+== recipe C — BEFORE (beforeC2.log), tab
+480 1 deep 0.2962 rim 0.105 vn 0.0171 wall 0.0682 rimdye 0.0292 n 364/3978 tot 282 rho 0.8376 rhoT 0.8096 th 0.4615 turn 0.12618 br 0.095 g  bG  end false
+516 0.9422 deep 0.2373 rim 0.0697 vn 0.0122 wall 0.0397 rimdye 0.0189 n 288/4808 tot 305 rho 0.5812 rhoT 0.5294 th 0.5074 turn 0.14112 br 0.000 g  bG  end false
+530 0.7976 deep 0.2085 rim 0.0646 vn 0.0176 wall 0.0297 rimdye 0.0232 n 282/4840 tot 308 rho 0.5521 rhoT 0.5137 th 0.5273 turn 0.14677 br 0.034 g  bG  end false
+560 0.558 deep 0.1742 rim 0.0435 vn 0.0092 wall 0.0047 rimdye 0.029 n 274/4902 tot 310 rho 0.5088 rhoT 0.5019 th 0.5524 turn 0.1589 br 0.000 g  bG  end true
+600 0.3466 deep 0.1433 rim 0.0328 vn 0.0044 wall 0.0056 rimdye 0.0383 n 284/4868 tot 312 rho 0.5354 rhoT 0.4829 th 0.5711 turn 0.17522 br 0.290 g  bG  end true
+700 0.1054 deep 0.0734 rim 0.0321 vn 0.0093 wall 0.0155 rimdye 0.0108 n 258/5288 tot 314 rho 0.2115 rhoT 0.1373 th 0.8838 turn 0.21657 br 0.000 g  bG  end true
+820 0.0253 deep 0.3725 rim 0.2093 vn 0.0978 wall 0.0007 rimdye 0.0137 n 254/5320 tot 315 rho 0.0998 rhoT 0.0936 th 0.9486 turn 0.26684 br 0.000 g  bG  end true
+1000 0.003 deep 0.3337 rim 0.1015 vn 0.0209 wall 0.0003 rimdye 0.0097 n 254/5312 tot 315 rho 0.0841 rhoT 0.083 th 0.025 turn 0.3429 br 0.000 g  bG  end true
+1100 0.0009 deep 0.2579 rim 0.0687 vn 0.0182 wall 0.006 rimdye 0.0105 n 252/5308 tot 315 rho 0.1201 rhoT 0.0813 th 0.0675 turn 0.38532 br 0.028 g  bG  end true
+1300 0.0001 deep 0.1522 rim 0.069 vn 0.0182 wall 0.0003 rimdye 0.0062 n 250/5320 tot 315 rho 0.0814 rhoT 0.0802 th 0.1525 turn 0.47029 br 0.000 g  bG  end true
+1500 0 deep 0.3578 rim 0.1763 vn 0.0416 wall 0.002 rimdye 0.0026 n 250/5316 tot 315 rho 0.0895 rhoT 0.08 th 0.2376 turn 0.55535 br 0.068 g  bG  end true
+"errs []"
+
+== recipe C — AFTER (fC.log), tab
+480 1 deep 0.2692 rim 0.0989 vn 0.0189 wall 0.0564 rimdye 0.0333 n 358/4006 tot 282 rho 0.8376 rhoT 0.8096 th 0.4579 turn 0.12251 br 0.095 g 1 bG 0.09483676101063486 end false
+516 0.9422 deep 0.254 rim 0.0857 vn 0.0135 wall 0.045 rimdye 0.0154 n 286/4814 tot 305 rho 0.5812 rhoT 0.5294 th 0.5037 turn 0.13744 br 0.000 g 1 bG 0 end false
+530 0.7976 deep 0.2268 rim 0.0763 vn 0.0095 wall 0.0302 rimdye 0.0204 n 282/4840 tot 308 rho 0.5521 rhoT 0.5137 th 0.5237 turn 0.1431 br 0.034 g 1 bG 0.034456207733558945 end false
+560 0.558 deep 0.196 rim 0.0509 vn 0.0041 wall 0.006 rimdye 0.0279 n 274/4922 tot 310 rho 0.5089 rhoT 0.5019 th 0.5488 turn 0.15523 br 0.000 g 1 bG 0 end true
+600 0.3466 deep 0.1558 rim 0.0429 vn 0.0072 wall 0.011 rimdye 0.0352 n 280/4870 tot 312 rho 0.5354 rhoT 0.4829 th 0.5674 turn 0.17155 br 0.290 g 1 bG 0.2899072808068039 end true
+700 0.1054 deep 0.0672 rim 0.0225 vn 0.0086 wall 0.0134 rimdye 0.0137 n 260/5288 tot 314 rho 0.2112 rhoT 0.1373 th 0.8204 turn 0.18667 br 0.000 g 0 bG 0 end true
+820 0.0253 deep 0.0305 rim 0.0062 vn 0.0004 wall 0.0002 rimdye 0.0101 n 256/5334 tot 315 rho 0.0953 rhoT 0.0936 th 0.8278 turn 0.18667 br 0.000 g 0 bG 0 end true
+1000 0.003 deep 0.0134 rim 0.003 vn 0 wall 0 rimdye 0.0038 n 254/5326 tot 315 rho 0.0834 rhoT 0.083 th 0.8277 turn 0.18667 br 0.000 g 0 bG 0 end true
+1100 0.0009 deep 0.0087 rim 0.0019 vn -0.0001 wall 0 rimdye 0.0022 n 254/5326 tot 315 rho 0.0815 rhoT 0.0813 th 0.8277 turn 0.18667 br 0.028 g 0 bG 0 end true
+1300 0.0001 deep 0.0038 rim 0.0009 vn 0 wall 0 rimdye 0.0007 n 254/5326 tot 315 rho 0.0803 rhoT 0.0802 th 0.8277 turn 0.18667 br 0.000 g 0 bG 0 end true
+1500 0 deep 0.0017 rim 0.0004 vn 0 wall 0 rimdye 0.0002 n 254/5326 tot 315 rho 0.0801 rhoT 0.08 th 0.8277 turn 0.18667 br 0.068 g 0 bG 0 end true
+"errs []"
+
+== determinism (fB6 / fB7 / fB8)
+fB6 readouts md5 7913dd9b08cadc56a468d3c154800e81  MUTED at frame 600 sample 1424896
+74e9f00b1526cf66a49ddf6ac6df24b6  np-f600.jpg 232452cfc0f9580fa5cb102a800ff6bc  np-f1000.jpg 67193ceddacef9682fbafadcbf7a8499  np-f1200.jpg 88ae9eae2e9a57cace8e0594d3c99eca  np-f1500.jpg 
+fB7 readouts md5 7913dd9b08cadc56a468d3c154800e81  MUTED at frame 600 sample 1424896
+74e9f00b1526cf66a49ddf6ac6df24b6  np-f600.jpg 232452cfc0f9580fa5cb102a800ff6bc  np-f1000.jpg 67193ceddacef9682fbafadcbf7a8499  np-f1200.jpg 88ae9eae2e9a57cace8e0594d3c99eca  np-f1500.jpg 
+fB8 readouts md5 7913dd9b08cadc56a468d3c154800e81  MUTED at frame 600 sample 1424896
+74e9f00b1526cf66a49ddf6ac6df24b6  np-f600.jpg 232452cfc0f9580fa5cb102a800ff6bc  np-f1000.jpg 67193ceddacef9682fbafadcbf7a8499  np-f1200.jpg 88ae9eae2e9a57cace8e0594d3c99eca  np-f1500.jpg 
+
+== recipe B READOUT JSON per shot frame (600 / 1000 / 1200 / 1500), before then after
+-- beforeB2
+{"f":600,"pr":1,"rms":0.53311,"perc":0.1,"bpm":150.1,"rot":3.2439,"drift":3.10406,"c":[-0.5203,-0.36369],"rho":0.8896,"rhoT":0.8545,"th":0.5743,"turn":0.15427,"percS":0.349,"kick":0.78,"wall":{"on":1,"steps":599,"sim":[259,128],"rim":{"n":434,"dye":0.0224,"speed":0.2558,"vn":0.1609},"deep":{"n":3890,"dye":0.0763,"speed":0.4138,"vn":0},"wall":{"n":438,"dye":0.0178,"speed":0.263,"vn":0.1702}},"ns":1,"total":450,"kicks":12,"breath":0.027516729035098417}
+{"f":1000,"pr":0.0088,"rms":0,"perc":0.219,"bpm":150,"rot":3.2534,"drift":3.2534,"c":[0.02214,0.0425],"rho":0.0978,"rhoT":0.08,"th":0.1808,"turn":0.45605,"percS":1,"kick":0,"wall":{"on":1,"steps":999,"sim":[259,128],"rim":{"n":254,"dye":0.0305,"speed":0.2994,"vn":0.1381},"deep":{"n":5352,"dye":0.0041,"speed":0.7145,"vn":0},"wall":{"n":258,"dye":0.0135,"speed":0.0061,"vn":0.0022}},"ns":0,"total":465,"kicks":12,"breath":0.14517481655942893}
+{"f":1200,"pr":0.0008,"rms":0,"perc":0.046,"bpm":150,"rot":3.25307,"drift":3.25307,"c":[0.04005,0.03586],"rho":0.1119,"rhoT":0.08,"th":0.1227,"turn":0.62407,"percS":0.557,"kick":0,"wall":{"on":1,"steps":1199,"sim":[259,128],"rim":{"n":256,"dye":0.0013,"speed":0.1267,"vn":0.0114},"deep":{"n":5330,"dye":0.0014,"speed":0.3259,"vn":0},"wall":{"n":260,"dye":0.0008,"speed":0.0043,"vn":0.0018}},"ns":0,"total":465,"kicks":12,"breath":0.02408869970449731}
+{"f":1500,"pr":0,"rms":0,"perc":0.029,"bpm":150,"rot":3.25304,"drift":3.25304,"c":[-0.01415,0.04324],"rho":0.0895,"rhoT":0.08,"th":0.3069,"turn":0.72468,"percS":0.2,"kick":0,"wall":{"on":1,"steps":1499,"sim":[259,128],"rim":{"n":252,"dye":0.0003,"speed":0.05,"vn":0.0064},"deep":{"n":5332,"dye":0.0002,"speed":0.1199,"vn":0},"wall":{"n":256,"dye":0.0002,"speed":0.001,"vn":-0.0001}},"ns":0,"total":465,"kicks":12,"breath":0}
+-- fB6
+{"f":600,"pr":1,"rms":0.53311,"perc":0.1,"bpm":150.1,"rot":3.2439,"drift":3.10406,"c":[-0.53275,-0.34797],"rho":0.8896,"rhoT":0.8545,"th":0.5705,"turn":0.15042,"percS":0.349,"kick":0.78,"wall":{"on":1,"steps":599,"sim":[259,128],"rim":{"n":444,"dye":0.0223,"speed":0.2564,"vn":0.164},"deep":{"n":3936,"dye":0.071,"speed":0.4198,"vn":0},"wall":{"n":448,"dye":0.0163,"speed":0.2511,"vn":0.1545}},"ns":1,"total":450,"kicks":12,"g":1,"breathG":0.027516729035098417,"breath":0.027516729035098417}
+{"f":1000,"pr":0.0088,"rms":0,"perc":0.219,"bpm":150,"rot":3.2534,"drift":3.2534,"c":[0.01714,-0.03546],"rho":0.08,"rhoT":0.08,"th":0.8157,"turn":0.20214,"percS":1,"kick":0,"wall":{"on":1,"steps":999,"sim":[259,128],"rim":{"n":254,"dye":0.0148,"speed":0.0054,"vn":-0.0014},"deep":{"n":5320,"dye":0.0094,"speed":0.0294,"vn":0},"wall":{"n":258,"dye":0.0096,"speed":0,"vn":0}},"ns":0,"total":465,"kicks":12,"g":0,"breathG":0,"breath":0.14517481655942893}
+{"f":1200,"pr":0.0008,"rms":0,"perc":0.046,"bpm":150,"rot":3.25307,"drift":3.25307,"c":[0.01714,-0.03546],"rho":0.08,"rhoT":0.08,"th":0.8157,"turn":0.20214,"percS":0.557,"kick":0,"wall":{"on":1,"steps":1199,"sim":[259,128],"rim":{"n":254,"dye":0.0038,"speed":0.0024,"vn":-0.0005},"deep":{"n":5320,"dye":0.0028,"speed":0.0123,"vn":0},"wall":{"n":258,"dye":0.0027,"speed":0,"vn":0}},"ns":0,"total":465,"kicks":12,"g":0,"breathG":0,"breath":0.02408869970449731}
+{"f":1500,"pr":0,"rms":0,"perc":0.029,"bpm":150,"rot":3.25304,"drift":3.25304,"c":[0.01714,-0.03546],"rho":0.08,"rhoT":0.08,"th":0.8157,"turn":0.20214,"percS":0.2,"kick":0,"wall":{"on":1,"steps":1499,"sim":[259,128],"rim":{"n":254,"dye":0.0006,"speed":0.0007,"vn":-0.0001},"deep":{"n":5320,"dye":0.0004,"speed":0.0036,"vn":0},"wall":{"n":258,"dye":0.0004,"speed":0,"vn":0}},"ns":0,"total":465,"kicks":12,"g":0,"breathG":0,"breath":0}

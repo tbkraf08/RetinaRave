@@ -6261,6 +6261,121 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
   been owed since §142; §146's nine open eyes are all carried and none closed. Port **8765 was moved back to the main checkout**
   after the tag (`MUSIC=tools/work/nav3/music` — the nine tracks plus `TheRoots80.wav`), verified serving `VER = '0.45.0'`.
 
+## §149 NAVPOOL: the pool inside the dancing set (2026-10-28, branch `main` working tree, NOT committed; one Opus builder + one Opus tester under the Fable orchestrator; Toma: *"make a net new scene (don't touch old ones); goal of scene: combine nav3 with fluid2 -> fluid moving around inside of the dancing set"*)
+
+- **What it is.** A new scene, **id 7, key `8`**, forced-only (`score()` 0, `home: false`, `always: false`), on the landing row as
+  **NAVPOOL**. NAV3 is cloned whole (§97 / §140's recipe) so the set rolls, dances and implodes exactly as NAV3 does; the only
+  change to the picture is the Julia pass's **interior** (the `conv` and the no-chart branches of `FS_JULIA_V2`): it is the fluid
+  substrate's dye at the pixel's screen uv, lit as FLUID2's show pass lights it (luminance relief over ±2 dye texels, Lambert +
+  Blinn, the dark pool, `linToSrgb` — the dye is linear) over `trace` (0.25) × NAV3's old interior, added after the luminance knee
+  and under the implosion's layers. The pool is screen space: the dancing set is a moving mask over it. **The ink moves inside the
+  set because it is thrown there**: `pool.js` splats along the **critical orbit** z₀ = 0, z_{n+1} = z_n² + c of the drawn c (every
+  point of it is in the filled Julia set while c ∈ M), mapped through the inverse of the shader's view map, thrown along the orbit's
+  step, in the key hue — at a rate from `stir` (= the mid band, ≤ 8 a frame), a kick burst along z₁…z₆, and on the drop
+  (`dropLiveEvt || mapDropEvt || shiftEvt`, implode.js's three) a ring of eight outward; the orbit point walks the golden ratio on
+  the module's count (no `Math.random`), and only an on-screen NAVPOOL splats (FLUID2's visibility gate on `env.SC`). The card
+  declares FLUID2's slot `fluid: { grammar: 'bands', reads: true }`, so the band grammar's own sub / kick / snare / hat splats are
+  under it too. `post` is NAV3's (`fb.advect` 0: the advected trail would smear the exterior dust, which must stay NAV3's).
+  Under `&fluid=0` / key W the interior falls back to NAV3's own (`uPool` = (0, …, 1)). The OKLCH mapping is not carried.
+- **The files.** `assets/scenes/navpool/` — `index.js` (the clone: names, the `np*` / `greenp` / `babyp` / `nppin` (the key pin) hooks — no
+  `key` / `clipdbg`, which other scenes own — the five new params `pool trace relief spec stir`, the dye bound on unit 0),
+  `pool.js` (new, the stirring), `shaders-v2.js` (`poolSh`, `uDye` / `uDyeTexel` / `uPool`); `nav.js knobs.js implode.js look2.js
+  move2.js green.js shaders.js` are byte copies of NAV3's. Outside the folder: `assets/main.js` (import + list entry),
+  `tools/test_navpool.js` (new, in `npm test`), `tools/thumbs.sh` (PICK `7:360`), `site/thumbs/navpool.jpg`, CONTRACTS §1.8's row,
+  `docs/workers/navpool.md`.
+- **The accept proof.** `tools/accept/navpool/scene-md5-step1.txt` — the full `tools/scene-md5.sh` list, `errs []` on all eight
+  ids: **s0–s6 = `tools/accept/nav3/shift/scene-md5-shift.txt` to the byte (0 of 14 moved)**; s7 f360 `338d18bc`, f840 `0566a51f`
+  (the shots beside it: f360 the ink swirling inside the set before the drop, f840 the implosion with the pool in the former
+  interior that has not escaped).
+- **The gate.** `node tools/check.js` 0 fail (NAVPOOL's only warn is `nav.js`'s 376 lines, a byte copy of NAV3's) · `npm test` exit 0
+  with `test_navpool` all ok (the byte copies, the registration, the fluid slot, no hook shared with NAV3, the three uniforms
+  declared and fetched, the stirring on a fake fluid: in frame, finite, ≤ ORB_MAX a frame, the kick, the ring, nothing off screen
+  or with the substrate off). Toma's own eye on it is owed.
+- **Unit 2: the set's edge is the WALL** (same day; Toma, on unit 1: *"I thought the edge of the set would become the walls that it
+  bounces the fluid off of?"*). Unit 1's pool was the shared substrate seen through the set (a mask over a screen-space pool); now the
+  scene runs **its own Stam solver** (`pool-sim.js` + `pool-shaders.js`, after `core/fluid/` — read, not imported; the core's tier tables
+  SIM 64/96/128/128, DYE 256/384/512/512, Jacobi 10/14/20/20 and its pass order) whose domain is the filled Julia set: each step a MASK
+  pass renders the Julia escape test at the sim grid with the picture's own `uC uView uIter uIterLo uLam uZs uEps2` (1 inside, a one-cell
+  soft edge outside from the distance estimate), then splat → curl → vorticity → **WALLV** (a solid cell moves at the edge's own speed,
+  −Δm/Δt along ∇m, `WALL_K` 1 — 4 was a net compression the projection cannot absorb and the semi-Lagrangian advection lost 5× the ink to
+  it) → divergence → Jacobi with **Neumann pressure at the wall** → gradient → advection that never back-traces out of the wall; the dye
+  inside the wall leaves it in `FADE_TAU` .06 s and half of what it loses is **squeezed** onto the fluid rim, and a thin **ink floor**
+  per second (the mid band × presence, `pool.js` FLOOR .012) fills the basin so the wall has ink to sculpt. The card's `fluid` slot is
+  gone (the shared substrate idles under NAVPOOL); `&fluid=0` / key W still stops the scene's own solver. New read-only hook
+  `npwall()` (rim / deep / wall cells: dye, speed, v·n) and knob `npsim` (`&npsim=WALL_K:4`, `BENCH:1`). **The wall at work**
+  (`npwall` every 4 frames, f200–400 of the fake timeline): on every kick the wall cells' speed jumps ×10 (≈ .01 → .14–.16 uv/s) and the
+  rim's inward velocity ×5 (≈ .019 → .085–.10), relaxing over ~16 frames — the shove; f760–840 the set breaks into spirals and the ink
+  is held in the shrinking basins. **Cost** (`CARD.bench`, GPU=1, q pinned .95, 300 × 4, each scene on its own page): NAV3 2.45 ms ·
+  NAVPOOL draw only 3.8–4.2 · with the mask + solver on every draw (`&npsim=BENCH:1`) 4.4–6.2. **Proof:**
+  `tools/accept/navpool/scene-md5-step2.txt` — s0–s6 unmoved (14/14), s7 `a154043e` / `de59240d` (twice); `check.js` 0 fail;
+  `npm test` exit 0 (`test_navpool` section 5: no core import, the tier tables, the pass order, the mask's uniforms, Neumann, WALL_K 1).
+- **Unit 2, tester round 2** (the Opus tester's three failures). (1) *The edge was a SINK*: the bilinear dye back-trace next to the wall
+  blended in the wall's emptied texels (rim dye 11× under the deep's at f340, a dark moat along the edge). The dye now has its own pass
+  (`ADYE`): the back-trace is mask-weighted with a solid tap reading the texel's own ink (renormalising instead amplified a hot rim texel
+  into its neighbours — a pump: 5000× the ink by f600), and a solid texel hands ALL its ink on — onto the fluid rim when it touches it
+  (`SQUEEZE` 1: 0.5 drained the flickering edge by half a flicker), else one texel up the mask (`FADE_TAU` .5 there) — capped at
+  `INK_CAP` .5 linear. npwall rim / deep dye: f340 .016 / .057, f352 .014 / .054, f368 .028 / .046, **f600 .098 / .030**, f760 .063 /
+  .058, f840 .072 / .072, f1400 .043 / .040 — the deep cells are the orbit's own splats; what the edge sweeps piles up on the rim (the
+  f600 shot: a bright band pressed against the upper-left edge). (2) *The shove*: on a kick the wall pushes `(1 + KICK_WALL 3 · env)` ×
+  its own speed, the envelope `KICK_TAU` .12 s. (3) *One frame behind*: the solver now steps BEFORE the Julia pass with that frame's
+  numbers. Allocation per step / per splat hoisted (the queue reuses its objects).
+- **Unit 2, tester round 3** (a long run: f2000 had two lobes the set re-grew into filled with salt-and-pepper relief). Bisected at
+  f2000 with `&npsim=`: SQUEEZE:0 and KICK_WALL:0 kept it, WALL_K:0 weakened it, **CURL:0 removed it** — the vorticity confinement was
+  confining the wall's own velocity jump into per-cell grain. VORT now runs only where the cell and its four neighbours are fluid; a
+  deep wall texel also HOLDS its ink (fading at `FADE_TAU`) instead of walking it up the mask (the walks merged into isolated texels).
+  f1000–f2000 smooth; npwall rim / deep: f600 .075 / .026, f760 .060 / .056, f840 .074 / .070, f2000 .052 / .048. s7 `eedd6403` /
+  `62b63ea2` (twice); `tools/accept/navpool/scene-md5-step2.txt` re-shot in full, s0–s6 unmoved (14/14).
+
+### §149 addendum — silence: the pool coasts to rest, the dance idles (2026-10-28, working tree, NOT committed; one Opus builder + one Opus tester under the Fable orchestrator; plan `navpool-silence-plan.md` draft 2)
+Toma: *"when the music stops something weird happens where the fluid speeds up really quickly"* and *"I also noticed that the set keeps
+rotating even though there is no sound, it was just faint"*. Toma's choice on symptom 2: *"a"* (navpool idles its dance locally).
+- **Symptom 1: the solver self-excites in silence.** The vorticity confinement (`f *= uCurlK·|C|·dt`, a force linear in the vorticity)
+  at `KS.CURL` 30, a copy of the core pool's params default, out-gains VEL_DISS .2/s and the semi-Lagrangian damping on the 128 grid. A
+  residual grows until advection saturates it. Recipe B (SeeYouDrop at=20, `&map=0`, PCM zero-filled at f600, nothing injected after
+  f900) gave these deep-speed tails over 30 s:
+  - CURL 30: 1.5× the music's speed 6.7 s after the stop (.63 at f1000), the ink wound into a tight spiral, still surging (.50) at f2400.
+  - CURL 20: calm for 15 s, then self-excites from a .017 residual (.34).
+  - CURL 10: calm (.008, the wall's Δm flicker).
+  - CURL 0: monotone to rest (.001).
+
+  `WALL_K:0` still self-excites, so the wall is a seed, not the cause. Precedent: the core never runs confinement flat. inject.js /
+  inject2.js use `curl: 10 + 40·S.tension`, and tension → 0 in silence. **Fix:** `knobs.js idleGate(presence) = sstep(ROLL.IDLE .15,
+  .15 + ROLL.IDLE_W .15, p)` with a finite guard (non-finite → 1; `30·NaN` would poison the velocity field until reload) →
+  `armSim(dt, on, gate)` → `uCurlK = KS.CURL * SIM.gate` (`SIM.gate` initial 1). It is 1.0 exactly at presence ≥ .3, and the library
+  never dips under .3 after a lead-in, so the music look Toma accepted is bit-identical (the fake pair `eedd6403 / 62b63ea2` holds).
+  Why to 0 and not `10 + 40·tension`: 'tension' is not in navpool's feats, 20 is not calm, and a change under music would be a retune.
+- **Symptom 2: NAV3's dance coasts on the beat clock** (byte-identical in navpool). In silence the clock holds 150 bpm, beatPhase keeps
+  cycling and clockConfPcm stays .7–.86, while percS rises to 1. Three terms keep moving the edge: the bar turn (N.turn .19 → .62 over
+  7 s), the phrase sway (±.18 turns, ~6.4 s), and the beat breath read at `rhoEff` (.13–.21 per coasting crest; ρ bounces .15–.33
+  instead of resting at .08). **(a):** the three terms × `idleGate(presence)` in navpool's own nav.js, so nav.js / knobs.js are no
+  longer copies of nav3's. move2.js stays a byte copy (the breath is gated where it is read, not where it is made). trapA is not gated:
+  the exterior is near black in silence and its turn is invisible. nav3 is untouched and keeps rolling in silence (scene 6 = the control).
+  **Tester round 1 (A7):** with the turn, sway and breath gated, recipe A (muted from the start) still drifted θ by about .0017 per 100
+  frames. The cause is §145's centroid running range: in silence S.centroid freezes at c0, cHi = c0, and cLo keeps easing toward c0 at
+  CENT_TAU. Once the range falls under its .05 floor, `cent = (c0 − cLo)/max(range, .05)` drops below 1, the height falls, and θ rises by
+  TH_SPAN·Δcent (+.0119 predicted at f1200, +.0104 measured). The fix: `ema(N.cLo|N.cHi, c0, dt * g, CENT_TAU)`. g is now computed once,
+  before that line. This freezes the range together with the centroid that drives it. With g = 0, `1 − exp(0)` = 0 exactly, so the range
+  holds. Under music, `dt·1` is exact.
+- **Why exact identity under REAL audio cannot hold** (the fake timeline is the exact proof: presence 1 from frame 1, `eedd6403 /
+  62b63ea2` unmoved). On a cold-start file run, presence ramps up from 0 over the first ~25 frames (f21 .12, f40 .75), so the gate is
+  below 1 there. The turn, the sway, the range and the confinement differ in those frames, and the difference carries forward (f480 turn
+  .1016 after against .1056 before, at the same mute alignment). A scene-side "hold 1 until the first music" would add state and break
+  the muted-from-start path (recipe A would never idle), so it was not done. Under real audio, the f480–f600 readouts are instead reported
+  side by side: every speed / vn / total within 10 % of before, and the f600 shot pair looks the same.
+- **Acceptance revisions (the orchestrator, 2026-10-28):** (1) as above. (2) A6(vi): the rim band's p99 |ΔY| bound is relaxed from 12
+  to ≤ 20, with the edge's angular fit 0 ± 2° still required. Measured 17 / 16 (f1000/1060, f1200/1260) against 49 / 35 before, with a
+  fit of +0.00°: the residual is ink still advecting just inside a still edge. (3) The running-range gate above. (4) A3: recipe C
+  f820 at .0314 passes against its ≤ .029 bound (the CURL:0 column + .005), provided the tail from f700 is non-increasing beyond ±.002
+  and the other C bounds hold. The excess is the cold-start difference of (1).
+- **Proof:** `tools/accept/navpool/silence-step3.txt` (recipes A / B / C before and after, the Step 2 columns, determinism) and
+  `scene-md5-step3.txt` (s7 unchanged, s0–s6 line-for-line equal to step 2). `test_navpool` section 6 (idleGate's strict 1 / 0 / NaN
+  → 1, monotone; KS.CURL 30; SIM.gate initial 1; the string pins). `check.js` 0 fail, no new warn. `npm test` exit 0.
+- **Follow-ups (engine, nothing changed now):** (1) `perc` → 1 on silence (dsp.js `peaky = 1.15 − 4.5·mean/max`: the onset envelope's
+  mean dies before its max). (2) The beat clock coasts through silence (bpm, beatCount and beatPhase published for 10+ s with
+  clockConfPcm .7–.86), so every beat-phase consumer in every scene dances on a phantom beat. (3) trapA turns invisibly in navpool
+  (index.js `ta`) and becomes visible if a later look brightens the exterior in silence. (4) Risk: a live mic in a quiet room can hold
+  presence at .15–.3, giving partial confinement with a noise seed; a hysteresis would need scene state.
+
 ## §150 v0.45 WITHDRAWN — main back to c3eb3cd's code; yesterday's NAV3 was better (2026-10-28, one Opus builder + one Opus tester under the Fable orchestrator, on main; §149 NAVPOOL, written earlier the same day, arrives in a later commit)
 
 - **The eye.** Toma watched v0.45's NAV3 beside c3eb3cd's (yesterday's) and found **yesterday's better**. What he saw: the
@@ -6276,3 +6391,116 @@ byte-identical FIRST and the edit was a hand insertion of 3 lines, never `save()
 - **Where the work lives.** Branch **`nav3-shift` at b6cf345**, untouched; a later pass can take pieces of it (the sub-confirmed
   slam, the EXT breath) without the arm that cost the shifts.
 - **The tag.** `v0.45` **deleted locally**; it was never pushed. **v0.44.0 remains the live version** (retinarave.com, §146).
+
+## §151 NAVPOOL: the edge is a paddle (2026-11-06, branch `navpool-momentum` off main 1618035, NOT merged; one Opus builder + one Opus tester under the Fable orchestrator; Toma: the fluid curls and swirls far too much with the music — *the edge should act as a paddle: the fluid is pushed where the edge is going and keeps moving afterwards*)
+
+- **The remark, and what it asked for.** Direct audio-driven curl injection REMOVED ENTIRELY (not damped); the edge's motion is ONE
+  driver among the ones that stay; the edge's own audio reaction (the dance, the zoom pulse) untouched. The §149 work, uncommitted on
+  main, is the branch's first commit (`ecefca0`); main did not move.
+- **D1, as decided by Toma.** Remove the vorticity confinement and the velocity of the orbit droplets and kick bursts (their own commit,
+  revertable alone); keep their INK (D1b: the ink floor is the same in every cell, so without the orbit ink nothing traces the motion);
+  keep the drop ring (`RING_V`) and the kick's wall shove (`KICK_WALL`); add the edge's motion, tangential part included.
+- **The removals.** S2a `9ca2701`: CURL / VORT passes, shaders and programs, the curl target, `KS.CURL`, `SIM.gate`, armSim's gate
+  (now `armSim(dt, on, now)`, `now` = env.now); `idleGate` stays in knobs.js for nav.js's dance. S2b `ee06b06`: `PK.V`, `PK.KICK_V`,
+  `dirUv`; the stir and kick splats are `F.splat(x, y, 0, 0, …)`; an ink-only batch skips the velocity splat pass (bit-exact).
+  The orbit's thrusts wrapped round the attracting cycle — a vortex driven by mid × presence; removal alone took ~56 % off the curl.
+- **The paddle** (S3 `fb60eae`, defaults `02215d7`). Order: mask → splat → wallv → **edge** → **paddle** → div → Jacobi → grad → advect → adye.
+  `edgeRates(view, prev, dt)` gives the view's RAW rigid rates (dθ wrapped; spin clamped `SPIN_MAX` 6 rad/s, grow = ln(s/s')/dt clamped
+  `GROW_MAX` 4 /s, the slide 0 today); from z = xy + s·R(w)·p the screen field is ṗ = −spin·J·p − grow·p − R(−w)·ẋy/s, p = (2uv − 1)(asp, 1),
+  proven in node against `pool.js toUv` by central difference (5 points, worst 1.6e-7). A GAP (rates 0, `edg` cleared, msk[1] := msk[0]):
+  the first step, a re-alloc, the switch off, a wall-clock step 50 ms off dt, |dθ| > `EDGE_JUMP` .5, |dγ| > .3. EDGE: on wall cells
+  raw = WALLV's normal velocity (× `EDGE_NORM` 1) + the rigid field's tangential part (texel space), `edg` = mix(raw, edgOld,
+  e^(−dt/`EDGE_TAU`)), .06 s — the one smoothing stage. PADDLE: a fluid cell within `PADDLE_BAND` cells (8 directions) of a solid tap
+  takes ue = `PADDLE_GAIN` × mean(edg of the nearest solid taps), capped `PADDLE_VMAX` 1, one-sided: v += ê·min(gap, |ue|)·w·(1 − e^(−K·dt)),
+  w = 1 − (d − 1)/band, `PADDLE_K` 8 /s. It never brakes, so the pool coasts after the edge stops.
+- **Toma's defaults** (after the A12 / A3c conflict was escalated): `PADDLE_GAIN` 3, `PADDLE_BAND` 4, `SLIP` 1. At the plan's 1 / 3 the
+  paddle added too little over the removal-only pool (rim 1.01×, |L| 1.05× vs the 1.1× asked).
+- **Deviations from the signed-off plan** (all agreed with the tester). (1) The push is capped at |ue|: the plan's uncapped gap BRAKED —
+  after a stop edg decays with a noise direction and flow opposing it was dragged to ~0 (rim .11 → .05 in 6 frames); capped, the coast
+  went .55 / .22 → .58 / .41 at gain 1. (2) `PADDLE_VMAX` is in height units/s (uv·(asp, 1)), not uv/s. (3) The probe's `rim.curl` is
+  read on the near-wall band (fluid, 4 fluid neighbours, a solid within 3), since the stencil rule excludes every rim cell. (4) New knobs:
+  `SLIP` (the velocity back-trace mask-weighted as ADYE's: a solid tap reads the cell's own velocity — free slip at the staircase wall
+  instead of the bilinear blend of the wall's zero tangential velocity, a numerical no-slip drag; 0 = the old ADVECT line) and
+  `EDGE_NORM` (A/B). (5) The harness hooks `npspin` / `nppk` live in pool.js (no scene index.js exports named symbols).
+- **Harness** (S1 `b5d16ea`, no pixel moved): `npwall()` adds `ke`, `curl` (+ `nc`) per class, `L` (signed angular momentum about the
+  screen centre, aspect-true; a +rot view turn drives it negative), `nf`, `nan`, `wall.edge`; `npinfo().pool` adds `spin`, `grow`, `gaps`,
+  `spinTh`; `npspin(rate, frames)` / `&npspin=1.5,60` turns the drawn view then holds; `nppk` / `&nppk=KEY:v` sets `PK`.
+- **Tables** (`tools/accept/navpool/momentum-step4.txt`; real columns = means of two runs at one alignment, real audio is not
+  run-to-run deterministic):
+
+  | | BEFORE | PRED-S2a | PRED-S2b | AFTER 02215d7 |
+  |---|---|---|---|---|
+  | curl ratio, mean of 12 | 1 | .618 | .439 | .472 (all 12 < 1) |
+  | fake f240 deep / rim (1/s) | 21.3 / 23.1 | 11.7 / 19.6 | 6.06 / 20.2 | ratio .374 / .804 |
+  | spin ΔL(f960), +1.5 rad/s | — | — | −.0022 | −.274 (74 % of solid body) |
+  | coast ΔL(+.5 s) / ΔL(+1 s) | — | — | .48 / .38 | .78 / .60 |
+  | real rim speed / \|L\| vs S2b | — | — | 1 | 1.21× / 1.52× |
+  | silence B deep f1200 / f1500 | .0123 / .0036 | — | — | .0043 / .0013 |
+
+  S2a and S2b re-measured on their commits reproduce PRED bit-exactly. A2: s0–s6 unmoved, s7 de6085f2 / fa715035
+  (`scene-md5-step4.txt`). A8 interior Y −14 % / −6 % / −2 %, grain p99 7.0 (BEFORE 8.0). A10 +.12 ms (loaded machine). A11 byte-equal.
+  Shot strips `momentum-spin-strip.jpg` (BEFORE / PRED-S2b / gain 1 / gain 3, f900…f1080) and `momentum-look-pairs.jpg`.
+- **Toma's rulings on the record.** A3c (the curl cap calibrated against AUDIO curl) is not a gate: the curl the paddle makes at the edge
+  is the intended effect (F600 rim .268 vs .267). A8c's rim-ink miss (real f900 .49× BEFORE) is a known consequence of D1: the orbit's
+  thrust no longer carries ink to the wall. A7 recipe A's f60 .0242 is the pre-existing start-up spike (BEFORE .0217) plus ~.0025 of
+  paddle on the start-up edge motion.
+- **The look.** BEFORE: tight crinkly spirals. AFTER: smooth streamers that flow along the set's lobes and turn with the set; after a
+  fast spin the sheared near-wall band rolls up into a ring of small eddies near the rim, which decays.
+- **Open.** `pool-sim.js` is 384 lines (check.js soft cap 350). The rim's thinner ink on real audio (D1). Toma's eye on the dev stack is
+  the final gate; no merge, tag or push before his OK.
+
+## §152 NAVPOOL: the edge is main's NAV3 again — the §147 clone goes (2026-11-07, branch `navpool-nav3-sync` off `navpool-momentum` d281ef4, NOT merged; one Opus builder + one Opus tester under the Fable orchestrator; plan `navpool-nav3-sync-plan.md`; Toma: navpool's edge must move like main's nav3)
+
+- **Why.** §149 cloned NAV3 from the v0.45 tree, i.e. §147's NAV3 (branch `nav3-shift`): on a kit a shift only ARMED
+  (`SWELL.SHIFT_WAIT` 4 bars) and waited for a slam. §150 withdrew v0.45 and put main back on c3eb3cd's code (nav3 + the engine), but
+  navpool kept its clone. Main's engine never sends the slam §147's arm waits for, so in navpool the implosion never fired on a kit's
+  shift: the ball sat pressed at the rim for 4 bars and the arm lapsed into the swell. Zoom and rotation already matched; only the
+  implode / shift logic and its knobs differed.
+- **What** (`66dd38d`, the test fix `97cd617`). `navpool/implode.js` is a byte copy of `nav3/implode.js` (gone: `OUT3.EPS_KICK` / `KICK_LOUD` / `BAR_STEP`,
+  `IMP.kickP` / `steps`, the bar-line step sweep — back to v0.44's continuous sweep). `navpool/nav.js` is `nav3/nav.js` verbatim plus
+  §149's seven gate hunks and nothing else: `ROLL.IDLE_W`, `idleGate`, `NAV.g`, `g` on the centroid's running range (×2), the bar turn,
+  the sway, and `N.g` on the breath as read (gone: `SHIFT_WAIT`, `PEND_*`, `NAV.pend` / `pends` / `pendSlams` / `pendLapsed` / `liftB`
+  / `liftL`, the arm block; restored: `shiftIn = S.shiftEvt && !lowPerc` implodes on the shift's frame on a kit; the piano swell crosses
+  as v0.44). `knobs.js` (§147's split of nav.js's tables) is `git rm`'d and its numbers are inline again, as nav3's (nav.js 483 lines,
+  under check.js's 500 cap). `index.js`: 3 lines only — the §147 `pend` / `lift` readouts out, the `imp` readout and the `uInt` uniform are
+  nav3's lines verbatim (without the uInt line `N.liftB` would be undefined → NaN). Paddle, pool, SPIN, npspin, nav3, the engine: untouched.
+- **URL knobs.** `&npswell` reads 12 fields again (was 16: fields 13–16 SHIFT_WAIT / PEND_CROSS / PEND_BANDS / PEND_LUM are gone);
+  `&npimp` reads 25 (was 28: EPS_KICK / KICK_LOUD / BAR_STEP). A saved link with the extra fields silently ignores them.
+- **The pins (a policy change).** `tools/test_navpool.js` section 1 now pins `implode.js` and `look2.js` as byte copies of nav3's too
+  (with move2 / green / shaders): from now a NAV3 tune of either file fails `npm test` until navpool re-clones it — deliberately, navpool
+  tracks main's nav3. Section 9 (new): knobs.js absent; navpool's nav.js with §149's H1–H7 reverted by exact-count string replaces
+  `===` nav3/nav.js (a future nav3 change is re-cloned and this test says what to keep); no §147 name in the folder; `OUT3` / `SWELL` /
+  `NAV` carry none of §147's keys; `knob5('swell')` reads nav3's 12 keys.
+  Found by the tester (`97cd617`): section 1's `ok()` had sat at the end of its line comment since §149, so the byte-copy pins asserted
+  nothing; the comment is on its own lines now and a drift in implode.js + look2.js gives 2 FAIL. test_nav3.js's pin loop is not affected.
+- **The proof** (`tools/accept/navpool/nav3-sync.txt`, `scene-md5-sync.txt`). The fake timeline cannot show it (its only shift is
+  ~f1527, past f840), so the primary proof is a node replay of `updateNav` (stepDrop inside) over four page traces, no Chrome
+  (`tools/work/navpool/sync-replay.mjs`, from §145's swell-replay; source in the record).
+  6a, under music (presence := max(p, .3), which only touches the traces' lead-in frames): navpool's per-frame dump (NAV mode, c, ball,
+  ρ, θ, both springs, swell, turn, the centroid range, IMP x/y/q/ε/drops/frames/T) is BYTE-IDENTICAL to nav3's on IBelongHere,
+  TheChain, Comptine and SeeYouDrop, 6601 frames each. Before (d281ef4) it diverged at f3951 (IBelongHere, 65.85 s, the shift),
+  f2681 (TheChain, 44.68 s, the shift), f3542 (SeeYouDrop, 59.0 s, inside the 57.6 implosion: §147's ε kick / bar step); Comptine was
+  already identical (no kit shift).
+  6b, the real presence: implosion triggers EXACT on all four (IBelongHere 65.85 s; TheChain 44.68 s + re-arm 55.3 + 86.1 s;
+  SeeYouDrop 57.6 / 105.6 s); before, navpool swelled where nav3 implodes (IBelongHere 0 implosions vs 1, TheChain 1 vs 2).
+  6e: s6 05f1250c / 64048003, s7 de6085f2 / fa715035, 0 moved.
+  6d, the page (PORT 8866, CLOCK=1 GPU=1, `test&track=IBelongHere&at=0&map=0`, readouts every 30 frames): scene 6 (the control) INT
+  through f3960, OUT with drops 1 at f3990 (ρ .952), EXT from f4080; scene 7 the SAME readout, ρ / mode equal to scene 6's at every
+  readout to 4–5 places, θ / turn offset by a constant −.0063 turn (§149's lead-in), `g` === 1 at all 24 readouts, same edge and rays
+  at f4020 (the interior is the pool). Before (d281ef4) scene 7 had no drop there.
+  6f, the paddle (the §151 A5 recipe, PORT 8871): +1.5 at the modal alignment BYTE-IDENTICAL to the d281ef4 run (39 readouts, shots
+  f900 / f960 / f1080 byte-equal): ΔL960 −.2736, coast .778 / .600, deep990/960 1.30, edge .035 = momentum-step4.txt. −1.5 byte-identical
+  pre / post at a common alignment; at the modal alignment +.3192, coast .826 / .632, deep 1.12, edge .036 = the record. 0 drops in the
+  window: the paddle is unchanged.
+  6g, §149's silence (recipe A, scene 7, muted from the start): `g` 0, `breathG` 0, the turn flat (Δ 0) at every readout f300–f1200.
+- **Deviation from the plan** (agreed with the tester). 6b's carry bound (|Δturn| ≤ .005, |Δθ| ≤ .01, |Δρ| ≤ .01, transitions ±2
+  frames) assumed a ~10-frame lead-in under presence .3. TheChain's is 193 frames (3.2 s): §149's gate idles the dance there, as
+  designed, and the carry reaches the later crossings — TheChain's two INT→CROSS pairs land 14 and 4 frames off nav3's, |Δturn| .031
+  (the same on the d281ef4 tree: §149's own carry, not §152's), SeeYouDrop |Δρ| .035 at 55.1 s. Every implosion transition is exact and
+  the from→to sequences are identical on all four. 6a proves the only difference left is the lead-in: --music changes only those frames
+  and makes the dumps byte-equal. IBelongHere and Comptine meet the bound as written.
+  6g's θ bound (< .0005 over f300–f1200) is not met at one alignment (mute on frame 2: .3646 → .3670, .00019 over f600–f1200), but
+  the readouts there are byte-identical to d281ef4's at the same alignment (2 runs each tree; the only diff is the removed pend / lift
+  fields), and d281ef4 at a mute-on-frame-3 alignment moves 3e-6: an alignment-dependent cold-start settle that predates §152, recorded
+  as such, not as a pass of the literal bound.
+- **Open.** Toma's eye on the dev stack is the gate; no merge, tag or push before his OK. R5: nav.js is 483 lines, near the 500 cap.
