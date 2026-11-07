@@ -27,7 +27,7 @@ mapping). `CARD.REG[7].scene.hooks.npinfo().pool` = `{vis, on, n, nSplat, total,
 **Shape.** No shared substrate any more (no `fluid` slot): `pool-sim.js` is the scene's own Stam solver (`pool-shaders.js`), the core's
 tier tables and pass order, RGBA16F `ctx.mkTarget` ping-pongs, stepped in `draw()` once per `update()` (`armSim` / `stepSim`), right
 after the Julia pass so the MASK uses that frame's own uniforms. Step: MASK (escape test at the sim grid, 1 inside, ≤ .5 outside with a
-one-cell soft edge from the distance estimate; fluid is m > .75) → splats → curl → vort → WALLV (solid cells move at −Δm/Δt along ∇m,
+one-cell soft edge from the distance estimate; fluid is m > .75) → splats → curl → vort [§151: curl / vort GONE; EDGE + PADDLE after WALLV — see Unit 3] → WALLV (solid cells move at −Δm/Δt along ∇m,
 `WALL_K` 1, capped `WALL_VMAX`) → div (0 in the wall) → Jacobi (Neumann: a solid neighbour reads the centre) → grad → advect (never out of
 the wall; the dye's wall level is `DYE_THR` .3 so the ink reaches the drawn edge; dye in the wall leaves in `FADE_TAU`, `SQUEEZE` of it onto
 the rim; `pool.js` FLOOR adds a thin ink floor per second in every fluid cell).
@@ -49,12 +49,13 @@ pumps ink without bound, the second drains the edge because the boundary flicker
 
 **Tester round 3.** Grain in re-grown lobes on long runs was the vorticity confinement amplifying the wall's velocity jump: VORT is off
 on and beside the wall. Deep wall ink is held (not walked up the mask). Bisect recipe: `&npsim=CURL:0` / `SQUEEZE:0` / `WALL_K:0` at f2000.
+[§151: VORT and KS.CURL are gone, so `CURL:0` is a no-op now; bisect the paddle with `PADDLE_GAIN:0` / `SLIP:0` / `EDGE_NORM:0`.]
 
 **Quiet-machine bench** (2026-10-28, after the tester's sign-off; GPU=1, `CARD.bench(id, 300)` × 4 at f600, q pinned .95 = tier 3, each
 scene on its own page; medians): NAV3 1.75 ms · FLUID2 0.53 ms (its show pass only — the shared substrate step is outside `bench`) ·
 NAVPOOL 2.63 ms draw only, **3.87 ms with its mask + solver** (`&npsim=BENCH:1`). Unpinned, all three hold q 1.000 at f900.
 
-## Silence — the pool coasts to rest, the dance idles (DECISIONS §149 addendum; Toma: *"when the music stops something weird happens where the fluid speeds up really quickly"* · *"I also noticed that the set keeps rotating even though there is no sound, it was just faint"*)
+## Silence — the pool coasts to rest, the dance idles [§151: the confinement and its gate are gone; the dance gate is unchanged] (DECISIONS §149 addendum; Toma: *"when the music stops something weird happens where the fluid speeds up really quickly"* · *"I also noticed that the set keeps rotating even though there is no sound, it was just faint"*)
 - **The finding (the pool).** The solver self-excites in silence through the vorticity confinement: VORT's force is linear in |curl|
   (`uCurlK·|C|·dt`, `KS.CURL` 30, the core's pool default) and at 30 on the 128 grid it beats VEL_DISS .2/s + the scheme's numerical
   damping, so any residual (the last music, a droplet, the wall's Δm flicker) grows until advection saturates it at ~.5–.7 uv/s and winds the
@@ -73,7 +74,8 @@ NAVPOOL 2.63 ms draw only, **3.87 ms with its mask + solver** (`&npsim=BENCH:1`)
   and (tester round 1, A7) §145's centroid running range eased with `dt * g`. With a frozen centroid, cLo crept up to it, the range fell
   under its .05 floor, and θ drifted about .0017 per 100 frames in a run muted from the start.
   Under music g = 1.0 and every term is `x·1`, which is bit-exact, so the fake pair `eedd6403 / 62b63ea2` does not move. No new uniform,
-  feat or param. KS.CURL stays 30.
+  feat or param. KS.CURL stays 30. [§151: the confinement and its gate are gone (KS.CURL, SIM.gate, armSim's gate, VORT); the dance gate
+  `idleGate` in nav.js is unchanged.]
 - **Which files diverged from nav3 and why.** `nav.js` and `knobs.js` are no longer copies of nav3's: the gate is navpool's local idle.
   nav3 keeps dancing in silence as §142 designed (scene 6 is the control). `move2.js` / `green.js` / `shaders.js` stay byte copies: the
   breath is gated where it is READ, not where move2 makes it, so `M2.breath` itself still pulses in silence. New read-only npinfo
@@ -87,6 +89,52 @@ NAVPOOL 2.63 ms draw only, **3.87 ms with its mask + solver** (`&npsim=BENCH:1`)
   Shots: `silence-before|after-f600/1000/1200/1500.jpg`.
 - **Identity under real audio is not exact:** a cold-start file run's presence ramps from 0 over ~25 frames, so the gate is below 1
   there. The fake timeline (presence 1) is the exact proof; real-audio music frames are compared within 10 %.
-- **Known gaps** (DECISIONS §149 addendum): a quiet room on a live mic can hold presence at .15–.3, which gives partial confinement and a
+- **Known gaps** (DECISIONS §149 addendum) [§151: the confinement half of this gap is gone with the confinement]: a quiet room on a live mic can hold presence at .15–.3, which gives partial confinement and a
   noise seed. The engine findings (`perc` → 1 on silence; the beat clock coasting at the held bpm) are logged as follow-ups. nav3,
   core and engine are untouched.
+
+## Unit 3 — the edge is a paddle (DECISIONS §151; Toma: the fluid curls and swirls far too much with the music — the edge should act as a paddle, the fluid pushed where the edge is going and still moving afterwards)
+
+**What went.** Nothing forces curl from the audio any more. The vorticity confinement is gone: the CURL / VORT passes and shaders, the curl
+target, `KS.CURL`, `SIM.gate`, armSim's gate (`armSim(dt, on, now)` takes `env.now`). The orbit stir and the kick burst drop INK ONLY
+(`F.splat(x, y, 0, 0, …)`; `PK.V` / `PK.KICK_V` / `dirUv` deleted): their thrusts wrapped round the attracting cycle, a vortex driven by
+mid × presence. Their ink stays (D1b: it is what makes the motion visible). The drop ring (`RING_V`) and the kick's wall shove
+(`KICK_WALL`) stay. The edge's own audio reaction (the dance, the zoom pulse) is untouched.
+
+**The paddle.** Step: mask → splat → WALLV → **EDGE** → **PADDLE** → div → Jacobi → grad → advect → adye.
+- `edgeRates(view, prev, dt)` (pure, node-tested by finite difference against `pool.js toUv`): the view's raw rigid rates, spin = dθ/dt
+  (wrapped, clamped `SPIN_MAX` 6), grow = ln(s/s')/dt (clamped `GROW_MAX` 4), slide (0 today). Field ṗ = −spin·J·p − grow·p − R(−w)·ẋy/s,
+  p = (2uv − 1)(asp, 1). A +rot view turn is a clockwise screen field: L < 0.
+- GAP (rates 0, `edg` cleared, msk[1] := msk[0]): the first step, a re-alloc, the switch off, a wall-clock step 50 ms off dt (a stall,
+  an off-screen gap, a seek), |dθ| > `EDGE_JUMP` .5, |dγ| > .3. `npinfo().pool.gaps` counts them.
+- EDGE: on wall cells raw = WALLV's velocity (× `EDGE_NORM` 1) + the rigid field's tangential part; `edg` = mix(raw, edgOld, e^(−dt/EDGE_TAU)),
+  `EDGE_TAU` .06 s.
+- PADDLE: a fluid cell within `PADDLE_BAND` 4 cells (8 directions) of a solid tap takes up ue = `PADDLE_GAIN` 3 × mean(edg) (capped
+  `PADDLE_VMAX` 1 in HEIGHT units/s, uv·(asp, 1)), one-sided: v += ê·min(gap, |ue|)·w·(1 − e^(−PADDLE_K·dt)), `PADDLE_K` 8/s. It never brakes.
+- `SLIP` 1: the velocity back-trace is mask-weighted (a solid tap reads the cell's own velocity) — free slip at the staircase wall.
+
+**Deviations from the signed-off plan.** (1) The impulse is capped at |ue|: the plan's uncapped gap BRAKED — after a stop edg decays with
+a noise direction and flow opposing it was dragged to ~0 (rim .11 → .05 in 6 frames). (2) `PADDLE_VMAX` is in height units, not uv/s.
+(3) `rim.curl` in the probe is read on the near-wall band (fluid, 4 fluid neighbours, a solid within 3: `rim.nc` cells), because the
+stencil rule excludes every rim cell. (4) Toma's defaults GAIN 3 / BAND 4 / SLIP 1 instead of the plan's 1 / 3 / (none): at gain 1
+the paddle added too little motion over the removal-only pool (A12). `SLIP` and `EDGE_NORM` are new knobs.
+
+**Seeing it.** `CARD.REG[7].scene.hooks.npwall()`: per class `ke`, `curl` (`nc`), overall `L` (signed angular momentum about the screen
+centre, aspect-true), `nf`, `nan`, `wall.edge` (mean |edg|). `npinfo().pool`: `spin`, `grow`, `gaps`, `spinTh`. Hooks (harness only):
+`npspin(rate, frames)` / `&npspin=1.5,60` turns the drawn view for N updates then HOLDS (θs 0 by default: bit-exact); `nppk` /
+`&nppk=KEY:v` sets `pool.js PK`. A/B: `&npsim=PADDLE_GAIN:0` (removal only), `PADDLE_GAIN:1,PADDLE_BAND:3,SLIP:0` (the plan's).
+
+**Recipes / tables.** `tools/accept/navpool/momentum-step4.txt` (the calibration BEFORE / PRED-S2a / PRED-S2b, the S2a / S2b re-measures,
+AFTER), `scene-md5-step4.txt`, the shot strips `momentum-*.jpg`. Real audio is not run-to-run deterministic (the file's push alignment):
+real columns are means of two runs; muted recipes are accepted only at "MUTED at frame 600 sample 1424896".
+
+**Results** (02215d7, the tester's runs; `momentum-step4.txt` §5). Curl AFTER/BEFORE mean .472 (all 12 points < 1: fake deep .37/.37/.10,
+rim .80/.71/.27; real deep .34/.26/.32, rim .69/.86/.59). Spin recipe (+1.5 rad/s for 60 frames at f900, muted, DYE_DISS 0): ΔL(f960)
+−.274 (74 % of solid body; removal-only −.0022), coast .78 at +.5 s and .60 at +1 s, the edge's velocity at 3.5 % 12 frames after the
+stop; mirrored −1.5 gives +.319, .83 / .63. Real audio vs removal-only: rim speed 1.21×, |L| 1.52×. Silence still rests (recipe B deep
+.0043 at f1200, .0013 at f1500). Cost +.12 ms (loaded machine, within noise). s7 md5 de6085f2 / fa715035; s0–s6 unmoved.
+
+**Known consequences.** (1) The rim holds less ink on real audio (A8c: .49× BEFORE at f900): the orbit's thrust no longer carries ink
+to the wall (D1). (2) Recipe A's f60 deep speed .0242 is the pre-existing start-up transient (BEFORE .0217) plus ~.0025 from the paddle
+on the start-up edge motion; ≤ .003 from f160. (3) After a fast spin the sheared near-wall band rolls up into a ring of small eddies near
+the rim — edge-driven curl, decaying; A3c (the curl cap calibrated against audio curl) is not a gate for it (Toma's ruling).

@@ -6391,3 +6391,60 @@ rotating even though there is no sound, it was just faint"*. Toma's choice on sy
 - **Where the work lives.** Branch **`nav3-shift` at b6cf345**, untouched; a later pass can take pieces of it (the sub-confirmed
   slam, the EXT breath) without the arm that cost the shifts.
 - **The tag.** `v0.45` **deleted locally**; it was never pushed. **v0.44.0 remains the live version** (retinarave.com, §146).
+
+## §151 NAVPOOL: the edge is a paddle (2026-11-06, branch `navpool-momentum` off main 1618035, NOT merged; one Opus builder + one Opus tester under the Fable orchestrator; Toma: the fluid curls and swirls far too much with the music — *the edge should act as a paddle: the fluid is pushed where the edge is going and keeps moving afterwards*)
+
+- **The remark, and what it asked for.** Direct audio-driven curl injection REMOVED ENTIRELY (not damped); the edge's motion is ONE
+  driver among the ones that stay; the edge's own audio reaction (the dance, the zoom pulse) untouched. The §149 work, uncommitted on
+  main, is the branch's first commit (`ecefca0`); main did not move.
+- **D1, as decided by Toma.** Remove the vorticity confinement and the velocity of the orbit droplets and kick bursts (their own commit,
+  revertable alone); keep their INK (D1b: the ink floor is the same in every cell, so without the orbit ink nothing traces the motion);
+  keep the drop ring (`RING_V`) and the kick's wall shove (`KICK_WALL`); add the edge's motion, tangential part included.
+- **The removals.** S2a `9ca2701`: CURL / VORT passes, shaders and programs, the curl target, `KS.CURL`, `SIM.gate`, armSim's gate
+  (now `armSim(dt, on, now)`, `now` = env.now); `idleGate` stays in knobs.js for nav.js's dance. S2b `ee06b06`: `PK.V`, `PK.KICK_V`,
+  `dirUv`; the stir and kick splats are `F.splat(x, y, 0, 0, …)`; an ink-only batch skips the velocity splat pass (bit-exact).
+  The orbit's thrusts wrapped round the attracting cycle — a vortex driven by mid × presence; removal alone took ~56 % off the curl.
+- **The paddle** (S3 `fb60eae`, defaults `02215d7`). Order: mask → splat → wallv → **edge** → **paddle** → div → Jacobi → grad → advect → adye.
+  `edgeRates(view, prev, dt)` gives the view's RAW rigid rates (dθ wrapped; spin clamped `SPIN_MAX` 6 rad/s, grow = ln(s/s')/dt clamped
+  `GROW_MAX` 4 /s, the slide 0 today); from z = xy + s·R(w)·p the screen field is ṗ = −spin·J·p − grow·p − R(−w)·ẋy/s, p = (2uv − 1)(asp, 1),
+  proven in node against `pool.js toUv` by central difference (5 points, worst 1.6e-7). A GAP (rates 0, `edg` cleared, msk[1] := msk[0]):
+  the first step, a re-alloc, the switch off, a wall-clock step 50 ms off dt, |dθ| > `EDGE_JUMP` .5, |dγ| > .3. EDGE: on wall cells
+  raw = WALLV's normal velocity (× `EDGE_NORM` 1) + the rigid field's tangential part (texel space), `edg` = mix(raw, edgOld,
+  e^(−dt/`EDGE_TAU`)), .06 s — the one smoothing stage. PADDLE: a fluid cell within `PADDLE_BAND` cells (8 directions) of a solid tap
+  takes ue = `PADDLE_GAIN` × mean(edg of the nearest solid taps), capped `PADDLE_VMAX` 1, one-sided: v += ê·min(gap, |ue|)·w·(1 − e^(−K·dt)),
+  w = 1 − (d − 1)/band, `PADDLE_K` 8 /s. It never brakes, so the pool coasts after the edge stops.
+- **Toma's defaults** (after the A12 / A3c conflict was escalated): `PADDLE_GAIN` 3, `PADDLE_BAND` 4, `SLIP` 1. At the plan's 1 / 3 the
+  paddle added too little over the removal-only pool (rim 1.01×, |L| 1.05× vs the 1.1× asked).
+- **Deviations from the signed-off plan** (all agreed with the tester). (1) The push is capped at |ue|: the plan's uncapped gap BRAKED —
+  after a stop edg decays with a noise direction and flow opposing it was dragged to ~0 (rim .11 → .05 in 6 frames); capped, the coast
+  went .55 / .22 → .58 / .41 at gain 1. (2) `PADDLE_VMAX` is in height units/s (uv·(asp, 1)), not uv/s. (3) The probe's `rim.curl` is
+  read on the near-wall band (fluid, 4 fluid neighbours, a solid within 3), since the stencil rule excludes every rim cell. (4) New knobs:
+  `SLIP` (the velocity back-trace mask-weighted as ADYE's: a solid tap reads the cell's own velocity — free slip at the staircase wall
+  instead of the bilinear blend of the wall's zero tangential velocity, a numerical no-slip drag; 0 = the old ADVECT line) and
+  `EDGE_NORM` (A/B). (5) The harness hooks `npspin` / `nppk` live in pool.js (no scene index.js exports named symbols).
+- **Harness** (S1 `b5d16ea`, no pixel moved): `npwall()` adds `ke`, `curl` (+ `nc`) per class, `L` (signed angular momentum about the
+  screen centre, aspect-true; a +rot view turn drives it negative), `nf`, `nan`, `wall.edge`; `npinfo().pool` adds `spin`, `grow`, `gaps`,
+  `spinTh`; `npspin(rate, frames)` / `&npspin=1.5,60` turns the drawn view then holds; `nppk` / `&nppk=KEY:v` sets `PK`.
+- **Tables** (`tools/accept/navpool/momentum-step4.txt`; real columns = means of two runs at one alignment, real audio is not
+  run-to-run deterministic):
+
+  | | BEFORE | PRED-S2a | PRED-S2b | AFTER 02215d7 |
+  |---|---|---|---|---|
+  | curl ratio, mean of 12 | 1 | .618 | .439 | .472 (all 12 < 1) |
+  | fake f240 deep / rim (1/s) | 21.3 / 23.1 | 11.7 / 19.6 | 6.06 / 20.2 | ratio .374 / .804 |
+  | spin ΔL(f960), +1.5 rad/s | — | — | −.0022 | −.274 (74 % of solid body) |
+  | coast ΔL(+.5 s) / ΔL(+1 s) | — | — | .48 / .38 | .78 / .60 |
+  | real rim speed / \|L\| vs S2b | — | — | 1 | 1.21× / 1.52× |
+  | silence B deep f1200 / f1500 | .0123 / .0036 | — | — | .0043 / .0013 |
+
+  S2a and S2b re-measured on their commits reproduce PRED bit-exactly. A2: s0–s6 unmoved, s7 de6085f2 / fa715035
+  (`scene-md5-step4.txt`). A8 interior Y −14 % / −6 % / −2 %, grain p99 7.0 (BEFORE 8.0). A10 +.12 ms (loaded machine). A11 byte-equal.
+  Shot strips `momentum-spin-strip.jpg` (BEFORE / PRED-S2b / gain 1 / gain 3, f900…f1080) and `momentum-look-pairs.jpg`.
+- **Toma's rulings on the record.** A3c (the curl cap calibrated against AUDIO curl) is not a gate: the curl the paddle makes at the edge
+  is the intended effect (F600 rim .268 vs .267). A8c's rim-ink miss (real f900 .49× BEFORE) is a known consequence of D1: the orbit's
+  thrust no longer carries ink to the wall. A7 recipe A's f60 .0242 is the pre-existing start-up spike (BEFORE .0217) plus ~.0025 of
+  paddle on the start-up edge motion.
+- **The look.** BEFORE: tight crinkly spirals. AFTER: smooth streamers that flow along the set's lobes and turn with the set; after a
+  fast spin the sheared near-wall band rolls up into a ring of small eddies near the rim, which decays.
+- **Open.** `pool-sim.js` is 384 lines (check.js soft cap 350). The rim's thinner ink on real audio (D1). Toma's eye on the dev stack is
+  the final gate; no merge, tag or push before his OK.

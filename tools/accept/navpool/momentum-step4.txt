@@ -1,0 +1,126 @@
+# NAVPOOL momentum (§151) — the tester's acceptance record. Section 1 (CALIBRATION) was written at S1 (b5d16ea) BEFORE any physics edit was
+# measured; its thresholds are fixed and are not moved after AFTER numbers exist.
+# Runs: GPU=1 CLOCK=1 PORT=8871, one Chrome at a time, MUSIC=tools/work/nav3/music, tester worktree at b5d16ea.
+#   fake  = test&scene=7                                   (deterministic; s7 f360/f840 md5 eedd6403 / 62b63ea2 reproduced)
+#   real  = test&track=SeeYouDrop&at=20&scene=7&map=0       (NOT run-to-run deterministic: the file's push alignment varies — two BEFORE runs
+#           differ by up to 19 % on rim.curl, 14 % on deep.curl; so every real column is the MEAN OF TWO RUNS)
+#   B / spin recipes mute at f600 and are accepted only when the mute lands at frame 600 sample 1424896 (the modal alignment;
+#           two such runs ARE byte-equal: p2bS = p2bS2). Readouts landing a frame late (a cdp.js overshoot, ~1 in 4 runs) are re-run.
+#   PRED-S2a = &npsim=CURL:0 · PRED-S2b = &npsim=CURL:0&nppk=V:0,KICK_V:0 (on b5d16ea)
+#   curl: deep.curl on the deep cells; rim.curl on the near-wall band (fluid, 4 fluid nbrs, a solid within 3) — see the S1 commit.
+
+== 1. CALIBRATION (S1, b5d16ea)
+
+A3 curl (1/s), value (ratio to BEFORE)
+point        BEFORE   PRED-S2a          PRED-S2b         | A3c per-point cap = 1.3 × PRED-S2b ratio + .05
+F240 deep    21.299   11.700 (0.549)    6.056 (0.284)    | 0.419
+F240 rim     23.058   19.649 (0.852)   20.249 (0.878)    | 1.191  (A3h: < 1.000 binds)
+F360 deep    22.655   12.612 (0.557)    6.906 (0.305)    | 0.447
+F360 rim     17.672   13.303 (0.753)   11.606 (0.657)    | 0.904
+F600 deep    11.180    3.609 (0.323)    0.634 (0.057)    | 0.124
+F600 rim      8.214    2.793 (0.340)    1.368 (0.167)    | 0.267
+R480 deep    22.549   12.447 (0.552)    5.554 (0.246)    | 0.370
+R480 rim     22.512   19.243 (0.855)   18.127 (0.805)    | 1.097  (A3h: < 1.000 binds)
+R600 deep    20.473    9.532 (0.466)    4.075 (0.199)    | 0.309
+R600 rim     21.371   19.716 (0.923)   15.479 (0.724)    | 0.991
+R900 deep    23.950   11.762 (0.491)    5.816 (0.243)    | 0.366
+R900 rim     26.607   20.191 (0.759)   18.669 (0.702)    | 0.963
+mean ratio    1.000    0.618            0.439            | A3c mean cap = 1.3 × 0.439 = 0.571
+Which removal bought what: the confinement (S2a) takes ~45 % off deep curl, little off the near-wall band; the orbit/kick thrust (S2b)
+halves deep curl again and is what quiets the fake tail (F600 deep .32 → .06).
+
+A5 spin recipe (B muted at f600, &npsim=DYE_DISS:0, npspin(±1.5, 60) at f900), ΔL = L − L(f894)
+run              L(f894)     ΔL960      ΔL990/ΔL960  ΔL1020/ΔL960  deep990/960  sign f912–1080
+BEFORE +1.5     -0.03102    +0.00688    1.568        1.936         0.775        +   (the confinement's own vortex decaying: L drifts +; no spin signal)
+BEFORE -1.5     -0.03102    +0.01157    1.113        1.291         0.775        +
+BEFORE  0       -0.03102    +0.00744    1.376        1.705         0.860        +   → BEFORE's spin-induced ΔL960: -0.0006 (+1.5) / +0.0041 (-1.5)
+PRED-S2a +1.5   -0.02177    +0.00426    1.703        2.125         0.750        +
+PRED-S2b +1.5   +0.00003    -0.00220    0.478        0.384         0.599        −   (+rot drives L NEGATIVE: the screen turns clockwise)
+PRED-S2b -1.5   +0.00003    +0.00244    0.398        0.304         0.531        +
+PRED-S2b  0     +0.00003    -0.00002    —            —             0.882        ±0  (no drift: the S2b pool is a clean baseline)
+Analytic solid-body ΔL at 1.5 rad/s: the set at f960 is near-disc (c ≈ (.017, −.035), s = 1.42, nf 6378 ≈ π R²/cell, R = .704 in p) →
+mean|p|² = .248, ΔL_solid = −1.5 × .248 = −0.372. PRED-S2b reaches 0.6 % of it (≪ half) → k = 2 (the plan's default) applies.
+
+A5c (fixed here): AFTER |ΔL(f960)| ≥ 2 × PRED-S2b = 0.0044 (+1.5 run) and ≥ 0.0049 (−1.5 run).
+     The S2b commit's re-measure must match PRED-S2b within 10 %: ΔL960 −0.00220 ± 0.00022 (+1.5), +0.00244 ± 0.00024 (−1.5).
+A5h (plan, unchanged): sign(ΔL) negative f912–1080 for +1.5, positive for −1.5; |ΔL990| ≥ .5|ΔL960|, |ΔL1020| ≥ .3|ΔL960|;
+     deep990 ≥ .5 deep960; wall.edge(f972) < .1 wall.edge(f960). (PRED-S2b alone: coast .48/.38 and .40/.30 — marginal without the paddle.)
+
+A7 BEFORE (recipe B, no spin): deep f900 .0491 · f1000 .0294 · f1200 .0123 · f1500 .0036 · f1800 .0011, monotone from f600
+   (BEFORE itself misses the AFTER bounds ≤ .01 @f1200 / ≤ .003 @f1500 — those are the plan's absolute AFTER bounds).
+   recipe A: deep ≤ .0217 (f60), ≤ .0021 from f160. recipe C: deep f700 .066 · f1000 .0143 · f1500 .0018, non-increasing.
+A8 BEFORE: interior mean Y (shot, eroded filled-Julia mask from the readout's c / zoom / rot): fake f360 89.72 · fake f840 112.81 · real f600 90.81
+   → A8h bounds [−40 %, +25 %]: f360 [53.8, 112.2] · f840 [67.7, 141.0] · real f600 [54.5, 113.5]  (PRED-S2b: f360 72.96, f840 104.75)
+   rim-band grain p99 |ΔY| recipe B f1000 vs f1012 (±12 px band): BEFORE 8.0 → AFTER ≤ 20.
+   A8c dye (deep / rim) BEFORE: fake f240 .0452/.0073 · f360 .0565/.0167 · f600 .0260/.0754; real f480 .1042/.0159 · f600 .0710/.0223 · f900 .0815/.0223
+   → AFTER within [0.5×, 2×] of these (real: mean of two runs).
+A10 BEFORE (&npsim=BENCH:1, q pinned .95, f600, bench(7,300)/bench(0,300) pairs ×4): 3.237/.493 3.181/.454 3.139/.439 3.159/.444
+   → median 3.170 ms (ratio to NAV 7.1). AFTER ≤ 3.47 ms in the same protocol; if the machine has drifted (NAV ms off by > 15 %), the ratio ≤ 7.76 decides.
+A11: determinism is judged on the fake timeline (byte-equal readouts + shot md5) and on two muted runs with the same mute alignment;
+   real-audio unmuted runs are not deterministic even on BEFORE (above).
+A12: S2b's own real f480–f900 rim speed and |L| are re-measured on the S2b commit (two runs) and AFTER compared to those.
+
+== 2. S2a (9ca2701) and S2b (ee06b06) — measured in the tester worktree
+A1: test_navpool all ok · check.js 0 fail / 7 warn (none new) · npm test exit 0 — at both commits.
+The commits reproduce their predictions BIT-EXACTLY: fake s7 shots S2a = PRED-S2a (f360 85a8aab8 / f840 d024d766), S2b = PRED-S2b
+(f360 7ebecd3c / f840 d4f2c88e); the A5 spin readouts of S2b = PRED-S2b byte-for-byte (ΔL960 −0.00220 / +0.00244 → within 10 %: yes, 0 %).
+Real f480/600/900 curl (2-run means; all four runs at one alignment): S2a deep .554/.469/.529, rim .786/.854/.721 of BEFORE;
+S2b deep .253/.198/.268, rim .747/.740/.673 (vs BEFORE's later run pair — the written BEFORE column above stays the reference).
+
+== 3. AFTER = S3 (fb60eae), defaults (EDGE_TAU .06, PADDLE_GAIN 1, PADDLE_K 8, PADDLE_BAND 3, PADDLE_VMAX 1 height/s, impulse capped at |ue|)
+A1  test_navpool all ok (§8: edgeRates = d(toUv)/dt by finite difference, worst rel 1.6e-7; +rot → L < 0; gaps; wrap; clamp) · check 0 fail / 8 warn
+    (new: pool-sim.js 384 lines > soft cap 350) · npm test exit 0.                                                              PASS
+A2  IDS 0–7: s0–s6 = scene-md5-step3 (unmoved); s7 moves to dc2c6ec0 / 8021d265 (expected).                                     PASS
+A3  curl AFTER/BEFORE: fake 240/360/600 deep .293/.319/.061, rim .867/.664/.164; real 480/600/900 deep .250/.203/.259, rim .802/.813/.695;
+    all 12 < 1 (A3h PASS); every point ≤ its cap; mean .449 ≤ .571 (A3c PASS).
+A4  real deep speed mean f480–f900 .150 (> .005); rim speed min .088 (> 0); nan 0 in every AFTER log.                           PASS
+A5  +1.5: ΔL960 −.0857 (39× PRED-S2b; 23 % of solid body), sign − at every readout f912–1080; coast .576 / .404; deep990/960 .844;
+    wall.edge 972/960 .035.  −1.5: ΔL960 +.0957, sign + throughout; coast .598 / .424; deep .739; edge .036.                    PASS (h and c)
+    Strip (f900…f1080, BEFORE / PRED-S2b / AFTER): BEFORE — one big confinement spiral that keeps winding on its own, unrelated to the
+    turn; PRED-S2b — the ink sits still while the disc turns; AFTER — the ink in a ring along the wall is dragged round with the set
+    during the spin and keeps streaming round after f960, the interior drifting more slowly (the near-disc set: a rim band, not solid body).
+A7  B: deep f900 .0127 → f1000 .0081 → f1200 .0035 → f1500 .0010, monotone (PASS). C: f1000 .0044 → f1500 .0006 non-increasing (PASS).
+    A: f60 deep .0218 > .02 — FAIL by .0018; BEFORE (S1) is .0217 at the same frame: a start-up transient the change does not touch.
+A8  interior Y fake f360 73.2 (−18 %), f840 105.0 (−7 %), real f600 84.9 (−7 %): PASS. Grain p99 7.0 (BEFORE 8.0): PASS.
+    A8c dye: deep .58–.94×, rim .81–1.17× except real f900 rim .34× (FAIL < .5×) — S2b gives the same .34× there (AFTER = S2b within 2 %
+    at every real readout f480–900): the orbit's thrust no longer carries ink to the rim (D1b's ink-only splats).
+A9  shot pairs fake f360/f840, real f480/f600/f900: BEFORE crinkly tight spirals (two vortices at f480, a tight spiral at f600, a fine
+    crinkle at f900); AFTER smooth larger-scale streaks, no tight spirals; f840 (the implosion) near-identical (the spiral there is the set's).
+    The set's own motion is untouched: fake c / rot / zoom identical BEFORE vs AFTER at every readout; exterior mean |ΔY| ≤ .06.
+A10 UNDECIDED: the desktop is loaded (NAV0 1.1–2.9 ms vs .45 at calibration). Interleaved trees: S1 5.95 ms / AFTER 6.36 ms (NAV0 1.43 /
+    1.56): ratio 4.2 vs 4.1; three more interleaved pairs (load avg ~4, NAV0 0.8–4.1 ms) — the steadiest pair S1 8.44 ms
+    (NAV0 1.83, ratio 4.6) vs AFTER 8.30 ms (NAV0 1.76, ratio 4.7): no measurable difference at this noise; the absolute +.3 ms test needs a quiet machine.
+A11 fake readouts byte-equal and shot md5 equal over two runs; spin recipe (two runs, same mute alignment) byte-equal, f960 shot md5 equal. PASS
+A12 real f480–900, AFTER vs S2b (2-run means, same alignment): rim speed ≥ S2b at 11/15, mean 1.010×; |L| 11/15, 1.049×.          FAIL
+
+== 4. TOMA'S DECISION (relayed by the orchestrator, after section 3): PADDLE_GAIN 3, PADDLE_BAND 4, SLIP 1 (free-slip velocity back-trace) as
+   the defaults — commit 02215d7. Rulings for this record:
+   - A3c is NOT a gate for 02215d7: its cap targeted AUDIO-driven curl; the curl the paddle makes at the edge is the intended effect.
+     A3h (AFTER < BEFORE at all 12) stays a gate; the values are reported.
+   - A8c's rim-ink miss is a known consequence of D1 (the orbit's thrust no longer carries ink to the rim), not a failure.
+   - A7 recipe A's f60 value is a pre-existing start-up spike (BEFORE .0217), not a failure.
+   Real columns below use two runs at the modal alignment (c(f900) = (.288834, −.056394), the same alignment as S2b's pair and BEFORE's
+   second run); off-alignment runs were discarded (g3R, g3R3, g3R5).
+
+== 5. AFTER = 02215d7 (GAIN 3, BAND 4, SLIP 1)
+A1  test_navpool all ok · check 0 fail / 8 warn (pool-sim.js 384 lines, soft cap) · npm test exit 0.                             PASS
+A2  IDS 0–7: s0–s6 = scene-md5-step3 (unmoved); s7 de6085f2 / fa715035.                                                       PASS
+A3  AFTER/BEFORE: fake 240/360/600 deep .374/.370/.099, rim .804/.705/.268; real 480/600/900 deep .341/.256/.315, rim .688/.861/.588.
+    Mean .472. A3h: all 12 < 1 — PASS. (A3c, not a gate per Toma: F600 rim .268 vs its cap .267; every other point under its cap.)
+A4  real deep speed mean f480–900 .191; rim min .109; nan 0 in every log.                                                     PASS
+A5  +1.5: ΔL960 −.2736 (74 % of solid body; 124× PRED-S2b), sign − f912–1080; coast .778 / .600; deep990/960 1.30; edge 972/960 .035.
+    −1.5: ΔL960 +.3192, sign +; coast .826 / .632; deep 1.12; edge .036.                                                       PASS
+    Strip (BEFORE / PRED-S2b / gain 1 / gain 3, f900…f1080): at gain 3 the whole pool turns with the set during the spin and keeps
+    turning after f960; from ~f990 the sheared band along the wall rolls up into a ring of small eddies — edge-driven curl, decaying.
+A7  B: deep f900 .0161, f1000 .0102, f1200 .0043, f1500 .0013, monotone from f900 — PASS. C: f1000 .0086 → f1500 .0011 — PASS.
+    A: f60 .0242 (BEFORE .0217: the start-up spike; the paddle on the start-up edge motion adds ~.0025); ≤ .003 from f160. Not a failure (ruling).
+A8  interior Y fake f360 76.9 (−14 %), f840 105.9 (−6 %), real f600 88.6 (−2 %): PASS. Grain p99 7.0 (BEFORE 8.0): PASS.
+    Dye deep / rim × BEFORE: fake .64/1.40, .69/1.46, .85/1.58; real .63/.92, .97/1.35, .59/.49 — real f900 rim .49× is the D1 consequence (ruling).
+A9  pairs fake f360/f840, real f480/f600/f900: BEFORE crinkly tight spirals; gain 3 smooth streamers that flow along the set's lobes,
+    more motion than gain 1, no tight spirals; f840 near-identical (the spiral there is the set's own). The dance is untouched.
+A10 interleaved S1 / AFTER (load avg 4–7, NAV0 1.1–1.3 ms): pairs 5.75 / 5.71 and 5.12 / 5.41 ms → +.12 ms on the mean (≤ +.3),
+    ratios to NAV0 4.7 / 4.5 and 4.3 / 4.6: no cost signal above the noise.                                                   PASS (loaded machine)
+A11 fake readouts byte-equal and shot md5 equal (two runs); spin recipe byte-equal (two runs, same mute alignment), f1080 shot md5 equal;
+    two real runs at one alignment byte-equal (g3R2 = g3R4).                                                                     PASS
+A12 real f480–900 (aligned 2-run means) vs S2b: rim speed ≥ S2b at 15/15, mean 1.214×; |L| ≥ S2b at 13/15, mean 1.520×.          PASS
+    (with an off-alignment run mixed in, 11/15 · 1.31× and 14/15 · 3.04× — the alignment noise is larger than the gain-1 effect was.)

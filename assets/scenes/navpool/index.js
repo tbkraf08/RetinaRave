@@ -6,7 +6,8 @@
 // ../nav3/ copied, the program and hook names renamed (`n3*` → `np*`, hooks are dispatched by NAME across scenes); the Julia pass's
 // INTERIOR is a pool of ink lit as FLUID2 lights it (shaders-v2.js poolSh), over a trace of NAV3's Koenigs bands. Unit 2 (Toma: "I thought
 // the edge of the set would become the walls that it bounces the fluid off of?"): the pool is this scene's OWN solver (pool-sim.js) and
-// the set's boundary is its solid, moving wall; the ink is thrown along the critical orbit of c (pool.js) and the dance shoves it.
+// the set's boundary is its solid, moving wall; the ink is dropped on the critical orbit of c (pool.js) and the dance shoves it. Unit 3 (§151,
+// Toma: too much curl): no vorticity confinement, the orbit and the kick drop ink only, and the edge is a PADDLE — its motion pushes the pool.
 // `always: false`: updated only while on screen, so draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { NAV, updateNav, knob5, ROLL, INT3 } from './nav.js';
@@ -34,8 +35,8 @@ export default {
   name: 'navpool',
   // key `8`; eighth in main.js's list so REG stays dense 0..7 (the id line has no comment: tools/thumbs.sh greps `^  id: 7,$`)
   id: 7,
-  tag: 'NAVPOOL: NAV3\'s dancing Julia set filled with FLUID2\'s pool — the critical orbit stirs the ink, the kick throws it, the drop rings it outward',
-  card: { title: 'NAVPOOL', blurb: 'the dancing Julia set filled with a pool of ink that the music stirs from inside' }, // landing tile (CONTRACTS §1.17); site/thumbs/navpool.jpg (tools/thumbs.sh "7:360")
+  tag: 'NAVPOOL: NAV3\'s dancing Julia set filled with FLUID2\'s pool — the critical orbit drops the ink, the set\'s edge paddles it round, the drop rings it outward',
+  card: { title: 'NAVPOOL', blurb: 'the dancing Julia set filled with a pool of ink that its edge paddles as it dances' }, // landing tile (CONTRACTS §1.17); site/thumbs/navpool.jpg (tools/thumbs.sh "7:360")
   // no `fluid` slot since unit 2: the shared substrate idles under this scene; its pool is its own (pool-sim.js)
   home: false,      // NAV2 (id 2) is the home; this is the workbench
   always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
@@ -120,7 +121,7 @@ export default {
       hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
       bass: 'the glow of the set\'s interior, a 5 % zoom-in (and the size of the critical-orbit dots when the `dots` parameter is routed on — off by default since §144)',
       perc: 'how percussive the piece is scales the whole dance (the bass / kick / hit press on |λ|, the bar turn, the phrase sway, the snare twitch, the kick jump): a solo piano moves at a third of a kit\'s snap (§144)',
-      mid: 'the radius of the circular orbit trap; and the STIR: how much ink the critical orbit throws into the pool each second, and how fast (pool.js)',
+      mid: 'the radius of the circular orbit trap; and the STIR: how much ink the critical orbit drops into the pool each second (pool.js; §151: ink only, no thrust)',
       high: 'the circular trap\'s highlight',
       peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
       loudRel: 'how brightly the pool is lit (FLUID2\'s light); LOUD IS OUT (§145: and its RISE over ~2 s presses the ball to the rim and steers it to the gateway before a shift lands): the track\'s own loudness ladder sets |λ| — quiet near the component\'s centre (the Koenigs spiral loose), loud against the rim (the spiral tight, the curl); a rise over two bars asks the gate to open, a fall inside a child rolls the ball back out',
@@ -144,9 +145,9 @@ export default {
       bpm: 'how long that hue step takes to settle (a beat); the bar clock the gate\'s HOLD and the exit\'s patience count in',
       onset: 'v3\'s onset picker fires the kick when the ears\' lane is not published (move2.js)',
       hitStrength: 'how far that fallback kick goes',
-      kickEvt: 'a burst of ink along the first points of the critical orbit, thrown along its steps (pool.js); the kick: c jumps OUT through the rim along the wall\'s normal (the Julia set breaks into dust for a frame) and springs back — NAV\'s Misiurewicz jump without the table (§100 lane, §140 target)',
+      kickEvt: 'a burst of ink on the first points of the critical orbit (pool.js; §151: ink only — the wall\'s shove KICK_WALL is the kick\'s push); the kick: c jumps OUT through the rim along the wall\'s normal (the Julia set breaks into dust for a frame) and springs back — NAV\'s Misiurewicz jump without the table (§100 lane, §140 target)',
       kickAge: 'places that jump between frames: the spring is stepped by the age on the event frame',
-      kickAmp: 'how hard the kick\'s burst of ink is thrown; how far the jump goes (the sqrt law of §74, floor .31) and the goldilocks gate: a kick smaller than the threshold does not jump',
+      kickAmp: 'how much ink the kick\'s burst drops and how hard the wall shoves; how far the jump goes (the sqrt law of §74, floor .31) and the goldilocks gate: a kick smaller than the threshold does not jump',
       subGate: 'the sub sounding presses the ball toward the rim (the Koenigs arms tighten); the sub leaving relaxes it toward the centre',
       subNote: 'the bass note\'s lean (move2.js) — read, not yet a force on this scene',
       clockConfPcm: 'how big the beat breath is allowed to be: the clock\'s own confidence scales the per-beat press toward the rim',
@@ -155,9 +156,9 @@ export default {
       tongue41: 'the same accent from the 16th-note depth\'s rise',
       tongueOn: 'the accent\'s A/B gate: −1 (the stage off) is the plain profile',
     },
-    eli5: 'NAV3\'s dancing Julia set, but its inside is a pool of ink and its edge is the pool\'s wall. The music rolls the point c around the Mandelbrot set and the set dances; the path a point takes under z → z² + c throws ink into the pool, and as the edge breathes, kicks and implodes it shoves the ink, which piles up against it and bounces off.',
-    why: 'The critical orbit 0, c, c² + c, … never escapes while c is in M, so every point of it is inside the filled Julia set: the ink enters where the dynamics live, thrown along the step z → z² + c. The filled Julia set is the fluid and its outside is solid: the boundary is a wall that moves with c and the view, so the dance is a force on the ink.',
-    math: 'NAV3\'s mathematics (Koenigs coordinates inside a component of M, |λ| and arg λ as the music\'s coordinates, the parabolic implosion at the drop). The pool is a Stam solver (semi-Lagrangian advection, a Jacobi pressure projection) whose domain is the filled Julia set at the sim grid: Neumann pressure at the wall, the wall cells moving at −Δm/Δt along ∇m (m the escape mask), the ink lit by its luminance gradient (Lambert + Blinn).',
+    eli5: 'NAV3\'s dancing Julia set, but its inside is a pool of ink and its edge is the pool\'s wall. The music rolls the point c around the Mandelbrot set and the set dances; the path a point takes under z → z² + c drops ink into the pool, and the edge is a paddle: as the set turns, breathes, kicks and implodes it pushes the ink where it is going, and the pool keeps moving after it stops.',
+    why: 'The critical orbit 0, c, c² + c, … never escapes while c is in M, so every point of it is inside the filled Julia set: the ink enters where the dynamics live. The filled Julia set is the fluid and its outside is solid: the boundary is a wall that moves with c and the view, so the dance is a force on the ink — its normal motion shoves it, and its slide along itself (the view\'s turn and zoom) drags the near-wall fluid with it, with inertia, so the pool coasts after the edge stops. No force comes from the audio directly (§151).',
+    math: 'NAV3\'s mathematics (Koenigs coordinates inside a component of M, |λ| and arg λ as the music\'s coordinates, the parabolic implosion at the drop). The pool is a Stam solver (semi-Lagrangian advection, free slip at the wall, a Jacobi pressure projection, no vorticity confinement) whose domain is the filled Julia set at the sim grid: Neumann pressure at the wall, the wall cells moving at −Δm/Δt along ∇m (m the escape mask) plus the view\'s rigid tangential velocity ṗ = −ω·J·p − (ṡ/s)·p smoothed over EDGE_TAU, a one-sided push on a 4-cell near-wall band, the ink lit by its luminance gradient (Lambert + Blinn).',
   },
 
   score: () => 0,   // forced-only: the §93 roster (NAV2, DUST, TORUS2, FLUID) is unchanged
@@ -172,7 +173,7 @@ export default {
     trace: { eli5: 'how much of the set\'s own banded interior shows through under the pool', range: [0, 1], from: () => 0.25 },
     relief: { eli5: 'how deeply the light carves the edges of the ink', range: [0, 80], from: () => 24 },
     spec: { eli5: 'how bright the highlight on the ink is', range: [0, 2], from: () => 0.6 },
-    stir: { eli5: 'how much ink the set\'s orbit throws into the pool each second, and how fast', range: [0, 1], from: (MS) => MS.mid },
+    stir: { eli5: 'how much ink the set\'s orbit drops into the pool each second', range: [0, 1], from: (MS) => MS.mid },
     trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
     zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
     dots: { eli5: 'how big the dots of the critical orbit are (0 = none; §144: off by default — the head dot read as a white comet on a quiet piece; route it on, e.g. &param=navpool.dots=c:1.5)', range: [0, 3], from: () => 0 },
