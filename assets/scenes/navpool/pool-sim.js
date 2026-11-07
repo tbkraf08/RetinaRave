@@ -5,12 +5,15 @@
 // NAVPOOL's OWN fluid (DECISIONS §149 unit 2): a Stam solver like the core substrate's (assets/core/fluid/fluid.js — its tier tables and
 // its pass order, read, not imported) in which the JULIA SET'S BOUNDARY IS A SOLID WALL that moves with the dance. Each step: the mask
 // (the Julia escape test at the sim grid with the picture's own uniforms) → the splats (pool.js's: the critical orbit, the kick, the drop
-// ring) → the wall's velocity in the solid cells → divergence → pressure Jacobi (Neumann at the wall) → gradient →
+// ring) → the wall's velocity in the solid cells → §151 the edge's velocity with inertia → the paddle (the edge pushes a near-wall band
+// of the fluid where it is going, one-sided, so the pool coasts on after it stops) → divergence → pressure Jacobi (Neumann at the wall) → gradient →
 // advect the velocity → advect the dye (nothing back-traced out of the wall; the dye in the wall fades). No grammar layer: the scene's
 // own splats are the forcing. Everything is ctx.mkTarget (RGBA16F, LINEAR, CLAMP); the step runs in draw(), once per update().
 // Needs float render targets (ctx.fluid.avail) and honours the user's switch (ctx.fluid.on: key W, &fluid=0): off, nothing runs and the
 // interior falls back to NAV3's own.
 import * as SH from './pool-shaders.js';
+
+const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
 export const KS = {
   SIM: [64, 96, 128, 128],     // the sim grid's short edge per ctx.tier() — the core's table
@@ -29,12 +32,23 @@ export const KS = {
   INK_CAP: 0.5,      // a fluid texel's ink is capped here (linear; the picture is white well before): semi-Lagrangian copying is not conservative
   KICK_WALL: 3,      // on a kick the wall pushes (1 + KICK_WALL · the kick's envelope) × its own speed …
   KICK_TAU: 0.12,    // … the envelope's decay, s (a short excess compression: the shove you see, not a lasting one)
+  EDGE_TAU: 0.06,    // §151 the paddle: the edge velocity's inertia, s (the one smoothing stage: a 1-frame flicker passes at 24 %, a stop falls to 5 % in .18 s)
+  PADDLE_GAIN: 1,    // × the edge's speed
+  PADDLE_K: 8,       // /s: how fast the band's fluid takes up the paddle's speed
+  PADDLE_BAND: 3,    // sim cells from the wall the paddle reaches (≤ 8)
+  PADDLE_VMAX: 1.0,  // the paddle speed's cap (height units/s: uv · (asp, 1))
+  EDGE_NORM: 1,      // × WALLV's normal speed in the edge's velocity (1 = the plan's: the observed normal motion + the rigid tangential part)
+  SPIN_MAX: 6,       // rad/s: the view's spin rate is clamped here (the nod's one-frame jerks reach 12.7)
+  GROW_MAX: 4,       // /s: the zoom rate's clamp (the drop's ≤ .099 a frame)
+  EDGE_JUMP: 0.5,    // rad: a turn bigger than this in one step is a GAP (a seek / a cut), not a motion
+  SLIP: 0,           // §151 A/B only (&npsim=SLIP:1): the velocity's back-trace is mask-weighted (a solid tap reads the cell's own velocity: free slip; 0 = the old bilinear blend of the wall's zero tangential velocity, a numerical no-slip drag that ate the coast)
   MAXS: 16,          // splats per draw (the uniform array's size)
   BENCH: 0,          // harness only (&npsim=BENCH:1): step on EVERY draw(), so CARD.bench(7, n) prices the mask + the solver too
 };
 
 export const SIM = {
-  avail: 0, on: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, steps: 0, nSplat: 0, pend: 0, dt: 0, now: 0,
+  avail: 0, on: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, steps: 0, nSplat: 0, pend: 0, dt: 0, now: 0, lastNow: 0, offSeen: 0, alloced: 0,
+  spin: 0, grow: 0, gaps: 0, prev: [0, 0, 1, 0], rig: [0, 0, 0, 0],   // §151: the edge's raw rigid rates, the gap count, the last step's view, the shader's uRig
   params: { radius: KS.RADIUS },
   floor: [0, 0, 0], // the ink floor per second in every fluid cell (pool.js sets it each update from the mid band; 0 when muted)
   kick: 0,          // the kick's envelope (pool.js sets 1 on kickEvt; decays here)
@@ -49,7 +63,7 @@ export const SIM = {
 };
 
 let ctx = null, gl = null, P = {}, CW = 16, CH = 9, black = null;
-let vel = [null, null], dye = [null, null], prs = [null, null], msk = [null, null], div = null;
+let vel = [null, null], dye = [null, null], prs = [null, null], msk = [null, null], div = null, edg = [null, null];
 const SA = new Float32Array(KS.MAXS * 4), SC4 = new Float32Array(KS.MAXS * 4);   // the splat uniforms, reused
 const swap = (p) => { const a = p[0]; p[0] = p[1]; p[1] = a; };
 const grid = (s) => (CW >= CH ? [Math.round(s * CW / CH), s] : [s, Math.round(s * CH / CW)]);
@@ -65,6 +79,12 @@ function copy(from, to) {
   gl.uniform1f(pr.u('uK'), 1);
   ctx.tri();
 }
+function zero(to) {   // §151: a target cleared to 0 (a scale-×0 pass from the 1×1 black)
+  const pr = pass(P.scale, to);
+  ctx.tex(pr, 'uSrc', 0, black);
+  gl.uniform1f(pr.u('uK'), 0);
+  ctx.tri();
+}
 function alloc(tr) {
   const [sw, sh] = grid(KS.SIM[tr]), [dw, dh] = grid(KS.DYE[tr]);
   const nv = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)], nd = [ctx.mkTarget(dw, dh), ctx.mkTarget(dw, dh)];
@@ -72,12 +92,16 @@ function alloc(tr) {
     copy(vel[0], nv[0]);
     copy(dye[0], nd[0]);
   }
-  for (const r of [...vel, ...dye, ...prs, ...msk, div]) if (r) ctx.freeTarget(r);
+  for (const r of [...vel, ...dye, ...prs, ...msk, ...edg, div]) if (r) ctx.freeTarget(r);
   vel = nv;
   dye = nd;
   prs = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)];
   msk = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)];
   div = ctx.mkTarget(sw, sh);
+  edg = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)];
+  zero(edg[0]);
+  zero(edg[1]);
+  SIM.alloced = 1;   // §151: a GAP for the paddle on the next step
   SIM.tier = tr;
   SIM.simW = sw; SIM.simH = sh; SIM.dyeW = dw; SIM.dyeH = dh;
   SIM.dye = dye[0];
@@ -89,7 +113,7 @@ export function initSim(c) {
   SIM.avail = c.fluid && c.fluid.avail ? 1 : 0;
   black = c.mkTarget(1, 1);
   SIM.dye = black;
-  for (const k of ['mask', 'splat', 'wallv', 'div', 'scale', 'jacobi', 'grad', 'advect', 'adye']) P[k] = c.mkProg(SH[k.toUpperCase()], 'navpool-' + k);
+  for (const k of ['mask', 'splat', 'wallv', 'edge', 'paddle', 'div', 'scale', 'jacobi', 'grad', 'advect', 'adye']) P[k] = c.mkProg(SH[k.toUpperCase()], 'navpool-' + k);
   c.onResize((w, h) => {
     CW = w;
     CH = h;
@@ -102,9 +126,35 @@ export function armSim(dt, on, now) {   // §151: no gate — the confinement is
   SIM.on = SIM.avail && on ? 1 : 0;
   SIM.pend = SIM.on;
   SIM.now = now;
+  if (!SIM.on) SIM.offSeen = 1;   // §151: the paddle's GAP on the next step
   SIM.dt = dt;
   if (!SIM.on) SIM.qn = 0;
   SIM.kick *= Math.exp(-dt / KS.KICK_TAU);
+}
+
+// §151 the edge's RIGID rates between two views [x, y, scale, rot] (pure: node tests it). dθ wrapped to (−π, π], dγ = ln(s/s'),
+// spin / grow clamped (SPIN_MAX / GROW_MAX), vxy the slide (0 today); gap = a turn past EDGE_JUMP or a zoom past e^±.3 (rates 0).
+export function edgeRates(view, prev, dt) {
+  const T = Math.max(dt, 1e-3), d = view[3] - prev[3], dth = Math.atan2(Math.sin(d), Math.cos(d));
+  const dg = Math.log(Math.max(1e-9, view[2]) / Math.max(1e-9, prev[2]));
+  const gap = !(Math.abs(dth) <= KS.EDGE_JUMP && Math.abs(dg) <= 0.3);
+  if (gap) return { spin: 0, grow: 0, vx: 0, vy: 0, dth, dg, gap: true };
+  return { spin: clamp(dth / T, -KS.SPIN_MAX, KS.SPIN_MAX), grow: clamp(dg / T, -KS.GROW_MAX, KS.GROW_MAX), vx: (view[0] - prev[0]) / T, vy: (view[1] - prev[1]) / T, dth, dg, gap: false };
+}
+// … as the EDGE shader's uRig: [spin, grow, R(−w)·vxy/s] (ṗ = −spin·J·p − grow·p − uRig.zw)
+export function rigOf(R, view, out) {
+  const c = Math.cos(view[3]), s = Math.sin(view[3]), k = 1 / Math.max(1e-9, view[2]);
+  out[0] = R.spin;
+  out[1] = R.grow;
+  out[2] = (c * R.vx + s * R.vy) * k;
+  out[3] = (-s * R.vx + c * R.vy) * k;
+  return out;
+}
+// … the rigid field at uv (uv/s), the shader's uR (node's finite-difference test against pool.js toUv)
+export function edgeField(rig, uv, asp) {
+  const px = (2 * uv[0] - 1) * asp, py = 2 * uv[1] - 1;
+  const dx = rig[0] * py - rig[1] * px - rig[2], dy = -rig[0] * px - rig[1] * py - rig[3];
+  return [dx / asp / 2, dy / 2];
 }
 
 // The step, from draw(), after the picture: J = the Julia pass's own numbers {c, view, it, itLo, lam, zs, eps2} so the wall IS the set drawn.
@@ -130,7 +180,27 @@ export function stepSim(J) {
   gl.uniform1f(pr.u('uEps2'), J.eps2);
   gl.uniform1f(pr.u('uHz'), 2 * J.view[2] / sy);   // one sim cell in the plane: the soft edge's width
   ctx.tri();
-  if (SIM.steps === 0) copy(msk[0], msk[1]);   // the first step has no "last frame": the wall stands still
+  // §151 the edge's rigid rates (RAW: EDGE_TAU is the one smoothing stage), or a GAP: the first step, a re-alloc, the switch off since
+  // the last step, a stall / an off-screen gap / a seek (the wall clock's step 50 ms off the clamped dt), a turn past EDGE_JUMP, a zoom
+  // past e^±.3. A GAP: the wall stands still this step (msk[1] := msk[0] — the first step's rule generalised; it also drops the old
+  // spurious shove on re-entry), the rates 0, edg cleared.
+  const R = edgeRates(J.view, SIM.prev, dt);
+  const gap = SIM.steps === 0 || SIM.alloced || SIM.offSeen || Math.abs(SIM.now - SIM.lastNow - dt) > 0.05 || R.gap;
+  SIM.alloced = 0;
+  SIM.offSeen = 0;
+  SIM.lastNow = SIM.now;
+  for (let i = 0; i < 4; i++) SIM.prev[i] = J.view[i];
+  if (gap) {
+    SIM.gaps++;
+    SIM.spin = SIM.grow = 0;
+    SIM.rig.fill(0);
+    copy(msk[0], msk[1]);
+    zero(edg[0]);
+  } else {
+    SIM.spin = R.spin;
+    SIM.grow = R.grow;
+    rigOf(R, J.view, SIM.rig);
+  }
   SIM.nSplat = nq;
   if (nq) {
     const A = SA, C = SC4;
@@ -167,6 +237,24 @@ export function stepSim(J) {
   gl.uniform2f(pr.u('uWall'), KS.WALL_K * (1 + KS.KICK_WALL * SIM.kick), KS.WALL_VMAX);
   ctx.tri();
   swap(vel);
+  pr = pass(P.edge, edg[1], true);   // §151: the edge's velocity with inertia
+  ctx.tex(pr, 'uVel', 0, vel[0]);
+  ctx.tex(pr, 'uM', 1, msk[0]);
+  ctx.tex(pr, 'uE', 2, edg[0]);
+  gl.uniform2f(pr.u('uScale'), sx, sy);
+  gl.uniform4f(pr.u('uRig'), SIM.rig[0], SIM.rig[1], SIM.rig[2], SIM.rig[3]);
+  gl.uniform1f(pr.u('uA'), Math.exp(-dt / Math.max(1e-4, KS.EDGE_TAU)));
+  gl.uniform1f(pr.u('uNorm'), KS.EDGE_NORM);
+  ctx.tri();
+  swap(edg);
+  pr = pass(P.paddle, vel[1], true);   // §151: the edge pushes the near-wall band where it is going (one-sided)
+  ctx.tex(pr, 'uVel', 0, vel[0]);
+  ctx.tex(pr, 'uM', 1, msk[0]);
+  ctx.tex(pr, 'uE', 2, edg[0]);
+  gl.uniform2f(pr.u('uScale'), sx, sy);
+  gl.uniform4f(pr.u('uPad'), KS.PADDLE_GAIN, clamp(Math.round(KS.PADDLE_BAND), 1, 8), KS.PADDLE_VMAX, 1 - Math.exp(-KS.PADDLE_K * dt));
+  ctx.tri();
+  swap(vel);
   pr = pass(P.div, div, true);
   ctx.tex(pr, 'uVel', 0, vel[0]);
   ctx.tex(pr, 'uM', 1, msk[0]);
@@ -198,6 +286,7 @@ export function stepSim(J) {
   ctx.tex(pr, 'uM', 2, msk[0]);
   gl.uniform1f(pr.u('uDt'), dt);
   gl.uniform1f(pr.u('uDiss'), KS.VEL_DISS);
+  gl.uniform1f(pr.u('uSlip'), KS.SLIP);
   ctx.tri();
   swap(vel);
   pr = pass(P.adye, dye[1], true);
@@ -225,7 +314,7 @@ export function stepSim(J) {
 // qualifies: rim.curl is read on the BAND behind it (fluid, 4 fluid neighbours, a solid cell within 3: the near-wall cells the paddle
 // reaches), counted in rim.nc; deep.curl on the deep cells (deep.nc). Overall: `L` = mean over the fluid cells of (p × v)_z, p = (2uv − 1)(asp, 1),
 // v·(asp, 1)·2 (the signed angular momentum about the screen centre, aspect-true), `nf` the fluid-cell count, `nan` the non-finite
-// vel / dye components.
+// vel / dye components; wall.edge the mean |edg| (the edge's velocity with inertia, uv/s) on the wall cells.
 function rd(t, w, h) {
   const a = new Float32Array(w * h * 4);
   gl.bindFramebuffer(gl.FRAMEBUFFER, t.f);
@@ -234,11 +323,11 @@ function rd(t, w, h) {
 }
 export function probeSim() {
   if (!vel[0] || !SIM.steps) return { on: SIM.on, steps: SIM.steps };
-  const w = vel[0].w, h = vel[0].h, M = rd(msk[0], w, h), V = rd(vel[0], w, h), Dy = rd(dye[0], dye[0].w, dye[0].h);
+  const w = vel[0].w, h = vel[0].h, M = rd(msk[0], w, h), V = rd(vel[0], w, h), Dy = rd(dye[0], dye[0].w, dye[0].h), E = rd(edg[0], w, h);
   const m = (x, y) => M[4 * (Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x)))];
   const fl = (x, y) => m(x, y) > 0.75;
   const vk = (x, y) => 4 * (Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x)));
-  const A = { rim: [0, 0, 0, 0, 0, 0, 0], deep: [0, 0, 0, 0, 0, 0, 0], wall: [0, 0, 0, 0, 0, 0, 0] };   // n, Σ dye, Σ speed, Σ v·n, Σ |v|², Σ |ω|, n ω
+  const A = { rim: [0, 0, 0, 0, 0, 0, 0, 0], deep: [0, 0, 0, 0, 0, 0, 0, 0], wall: [0, 0, 0, 0, 0, 0, 0, 0] };   // n, Σ dye, Σ speed, Σ v·n, Σ |v|², Σ |ω|, n ω, Σ |edg|
   const asp = w / h;
   let nan = 0, nf = 0, Ls = 0;
   for (let i = 0; i < V.length; i++) if (!Number.isFinite(V[i])) nan++;
@@ -272,12 +361,14 @@ export function probeSim() {
       R[2] += Math.hypot(V[k], V[k + 1]);
       R[3] += (V[k] * gx + V[k + 1] * gy) / gn;
       R[4] += V[k] * V[k] + V[k + 1] * V[k + 1];
+      R[7] += Math.hypot(E[k], E[k + 1]);
     }
   }
   const out = { on: SIM.on, steps: SIM.steps, sim: [w, h], L: +(Ls / Math.max(1, nf)).toFixed(7), nf, nan };
   for (const kind in A) {
     const R = A[kind], n = Math.max(1, R[0]);
     out[kind] = { n: R[0], dye: +(R[1] / n).toFixed(4), speed: +(R[2] / n).toFixed(4), vn: +(R[3] / n).toFixed(4), ke: +(R[4] / n).toFixed(6) };
+    if (kind === 'wall') out[kind].edge = +(R[7] / n).toFixed(5);   // §151: mean |edg| (uv/s) on the wall cells
     if (kind !== 'wall') { out[kind].curl = +(R[5] / Math.max(1, R[6])).toFixed(4); out[kind].nc = R[6]; }
   }
   return out;

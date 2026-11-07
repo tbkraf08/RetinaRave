@@ -14,6 +14,8 @@
 //   DIV    0 in a solid cell; a solid neighbour's velocity is its wall velocity (WALLV wrote it), the screen's edges mirrored
 //   JACOBI / GRAD  Neumann at the wall: a solid neighbour's pressure reads the centre's; a solid cell keeps its wall velocity
 //   ADVECT the velocity: a back-trace that lands in the solid reads the cell's own value (nothing flows out of the wall); ADYE the dye (below).
+//          §151 uSlip (KS.SLIP, A/B only, default 0 = the old line exactly): the back-trace mask-weighted as ADYE's (a solid tap reads the
+//          cell's own velocity): free slip at the staircase wall instead of the bilinear blend of the wall's zero tangential velocity
 //          ADYE moves the ink the edge sweeps over onto the rim (conservative), its wall level uThr below WALL so it reaches the drawn edge
 const NB = `uniform vec2 uTexel;
 vec2 vL(){return vUv-vec2(uTexel.x,0.);}vec2 vR(){return vUv+vec2(uTexel.x,0.);}
@@ -47,6 +49,41 @@ vec2 g=vec2(texture(uM,vR()).x-texture(uM,vL()).x,texture(uM,vT()).x-texture(uM,
 float s=clamp(-(m-texture(uMp,vUv).x)/max(uDt,1e-4)*uWall.x,-uWall.y,uWall.y);
 o=vec4(n*s/uScale,0.,1.);}`;
 
+// §151 THE PADDLE (Toma: "the fluid is pushed where the edge is going and keeps moving afterwards"). WALLV sees only the normal part
+// of the edge's motion (−Δm/dt); the view's rigid turn / zoom / slide (uRig = spin, grow, R(−w)·ẋy/s: ṗ = −spin·J·p − grow·p − uRig.zw,
+// p = (2uv − 1)(asp, 1); edgeRates in pool-sim.js) moves the set along itself too.
+//   EDGE   on a wall cell (solid, |∇m| > .05): raw = WALLV's velocity (the observed normal speed) + the rigid field's tangential part
+//          (texel space, isotropic); elsewhere 0. edg = mix(raw, edgOld, uA), uA = e^{−dt/EDGE_TAU}: the edge's velocity with inertia
+//   PADDLE on a fluid cell: d = the nearest radius 1..band (8 directions) with a solid tap; ue = gain · mean(edg of those taps), capped
+//          (height units: uv · (asp, 1)); the cell takes up the paddle's speed along ê = ue/|ue| ONE-SIDED: v += ê·gap·w·uPad.w when
+//          gap = |ue| − v·ê > 0, the impulse capped at |ue| itself: v += ê·min(gap, |ue|)·w·uPad.w (w = 1 − (d − 1)/band, uPad.w =
+//          1 − e^{−PADDLE_K·dt}) — the plan's uncapped gap BRAKED: as edg decays after a stop its direction is noise, and a flow opposing
+//          ê has a large gap, so it was dragged to ~0 (the rim collapsed .11 → .05 uv/s in 6 frames). Capped, a near-still paddle adds
+//          ~nothing and the pool coasts on after the edge stops
+export const EDGE = NB + WALL + `
+uniform sampler2D uVel,uM,uE;uniform vec2 uScale;uniform vec4 uRig;uniform float uA,uNorm;
+void main(){float m=texture(uM,vUv).x;vec2 raw=vec2(0.);
+if(m<=WALL){vec2 g=vec2(texture(uM,vR()).x-texture(uM,vL()).x,texture(uM,vT()).x-texture(uM,vB()).x);float gl=length(g);
+ if(gl>.05){vec2 n=g/gl,H=vec2(uScale.x/uScale.y,1.),p=(vUv*2.-1.)*H;
+  vec2 uR=(uRig.x*vec2(p.y,-p.x)-uRig.y*p-uRig.zw)/H*.5;vec2 t=uR*uScale;t-=dot(t,n)*n;
+  raw=uNorm*texture(uVel,vUv).xy+t/uScale;}}
+o=vec4(mix(raw,texture(uE,vUv).xy,uA),0.,1.);}`;
+
+export const PADDLE = NB + WALL + `
+uniform sampler2D uVel,uM,uE;uniform vec2 uScale;uniform vec4 uPad;
+void main(){vec2 v=texture(uVel,vUv).xy;if(texture(uM,vUv).x<=WALL){o=vec4(v,0.,1.);return;}
+vec2 D[8]=vec2[8](vec2(1.,0.),vec2(1.,1.),vec2(0.,1.),vec2(-1.,1.),vec2(-1.,0.),vec2(-1.,-1.),vec2(0.,-1.),vec2(1.,-1.));
+vec2 s=vec2(0.);float ns=0.,d=0.;
+for(int r=1;r<=8;r++){if(float(r)>uPad.y+.001)break;
+ for(int k=0;k<8;k++){vec2 q=vUv+D[k]*float(r)*uTexel;if(texture(uM,q).x<=WALL){s+=texture(uE,q).xy;ns+=1.;}}
+ if(ns>0.){d=float(r);break;}}
+if(ns<1.){o=vec4(v,0.,1.);return;}
+vec2 H=vec2(uScale.x/uScale.y,1.),ue=uPad.x*(s/ns)*H;float ul=length(ue);if(ul>uPad.z){ue*=uPad.z/ul;ul=uPad.z;}
+if(ul<1e-4){o=vec4(v,0.,1.);return;}
+vec2 e=ue/ul,vh=v*H;float gap=ul-dot(vh,e);
+if(gap>0.)vh+=e*min(gap,ul)*(1.-(d-1.)/uPad.y)*uPad.w;
+o=vec4(vh/H,0.,1.);}`;
+
 export const DIV = NB + WALL + `
 uniform sampler2D uVel,uM;uniform vec2 uScale;
 void main(){if(texture(uM,vUv).x<=WALL){o=vec4(0.,0.,0.,1.);return;}vec2 C=texture(uVel,vUv).xy*uScale;
@@ -74,9 +111,13 @@ v=v*uScale-vec2(R-L,T-B);
 o=vec4(v/uScale,0.,1.);}`;
 
 export const ADVECT = NB + WALL + `
-uniform sampler2D uVel,uSrc,uM;uniform float uDt,uDiss;
-void main(){vec2 c=vUv-uDt*texture(uVel,vUv).xy;
-vec4 r=texture(uM,c).x>WALL?texture(uSrc,c):texture(uSrc,vUv);
+uniform sampler2D uVel,uSrc,uM;uniform float uDt,uDiss,uSlip;
+vec4 trace(vec2 c,vec4 own){vec2 sz=1./uTexel;vec2 g=c*sz-.5;vec2 b=floor(g),f=g-b;vec4 a=vec4(0.);float ws=0.;
+ for(int j=0;j<2;j++)for(int i=0;i<2;i++){vec2 t=b+vec2(i,j);float w=(i==0?1.-f.x:f.x)*(j==0?1.-f.y:f.y);ivec2 it=clamp(ivec2(t),ivec2(0),ivec2(sz)-1);
+  if(texelFetch(uM,it,0).x>WALL){a+=w*texelFetch(uSrc,it,0);ws+=w;}}
+ return a+(1.-ws)*own;}
+void main(){vec4 own=texture(uSrc,vUv);vec2 c=vUv-uDt*texture(uVel,vUv).xy;
+vec4 r=texture(uM,c).x>WALL?(uSlip>.5&&texture(uM,vUv).x>WALL?trace(c,own):texture(uSrc,c)):own;
 o=r/(1.+uDiss*uDt);}`;
 
 // The DYE's advection, CONSERVATIVE at the wall (the tester's find: a bilinear back-trace next to the wall blended in the wall's empty

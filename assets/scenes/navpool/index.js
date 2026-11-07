@@ -95,7 +95,7 @@ export default {
       hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
       g: NAV.g, breathG: NAV.g * M2.breath, tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
       Q: GREEN.Q,
-      pool: { steps: SIM.steps, sim: [SIM.simW, SIM.simH], dye: [SIM.dyeW, SIM.dyeH], vis: POOL.vis, on: POOL.on, n: POOL.n, nSplat: POOL.nSplat, total: POOL.total, kicks: POOL.kicks, rings: POOL.rings },   // NAVPOOL: the stirring (pool.js)
+      pool: { steps: SIM.steps, sim: [SIM.simW, SIM.simH], dye: [SIM.dyeW, SIM.dyeH], vis: POOL.vis, on: POOL.on, n: POOL.n, nSplat: POOL.nSplat, total: POOL.total, kicks: POOL.kicks, rings: POOL.rings, spin: SIM.spin, grow: SIM.grow, gaps: SIM.gaps, spinTh: SPIN.th },   // NAVPOOL: the stirring (pool.js)
     }),
   },
   help: {

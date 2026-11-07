@@ -36,7 +36,7 @@ export const POOL = { vis: 0, on: 0, n: 0, acc: 0, nSplat: 0, kicks: 0, rings: 0
 const ZX = new Float64Array(PK.ORB_LEN + 2), ZY = new Float64Array(PK.ORB_LEN + 2);
 
 // z ↦ uv: the inverse of the shader's view map. Returns false off screen.
-function toUv(x, y, V, asp, out) {
+export function toUv(x, y, V, asp, out) {
   const dx = x - V[0], dy = y - V[1], c = Math.cos(V[3]), s = Math.sin(V[3]);
   out[0] = ((c * dx + s * dy) / V[2] / asp + 1) / 2;
   out[1] = ((-s * dx + c * dy) / V[2] + 1) / 2;

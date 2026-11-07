@@ -11,8 +11,8 @@
 import fs from 'node:fs';
 import scene from '../assets/scenes/navpool/index.js';
 import nav3 from '../assets/scenes/nav3/index.js';
-import { POOL, PK, stepPool } from '../assets/scenes/navpool/pool.js';
-import { SIM, KS } from '../assets/scenes/navpool/pool-sim.js';
+import { POOL, PK, stepPool, toUv, SPIN } from '../assets/scenes/navpool/pool.js';
+import { SIM, KS, edgeRates, rigOf, edgeField } from '../assets/scenes/navpool/pool-sim.js';
 import { ROLL, idleGate } from '../assets/scenes/navpool/knobs.js';
 
 let fails = 0;
@@ -98,8 +98,8 @@ console.log('5. unit 2: the scene\'s own solver, the set\'s edge its wall');
   const sim = rd('navpool', 'pool-sim.js').toString(), sh = rd('navpool', 'pool-shaders.js').toString(), ix = rd('navpool', 'index.js').toString();
   ok(!/from '[^']*core\//.test(sim + sh), 'pool-sim.js / pool-shaders.js import nothing from core');
   ok(KS.SIM.join() === '64,96,128,128' && KS.DYE.join() === '256,384,512,512' && KS.ITER.join() === '10,14,20,20', 'the core\'s tier tables (sim, dye, Jacobi sweeps)');
-  const order = ['P.mask', 'P.splat', 'P.wallv', 'P.div', 'P.jacobi', 'P.grad', 'P.advect', 'P.adye'].map((k) => sim.indexOf('pass(' + k));
-  ok(order.every((x, i) => x > 0 && (i === 0 || x > order[i - 1])), 'step order (§151: no curl / vort): mask → splat → wall → div → Jacobi → grad → advect → adye');
+  const order = ['P.mask', 'P.splat', 'P.wallv', 'P.edge', 'P.paddle', 'P.div', 'P.jacobi', 'P.grad', 'P.advect', 'P.adye'].map((k) => sim.indexOf('pass(' + k));
+  ok(order.every((x, i) => x > 0 && (i === 0 || x > order[i - 1])), 'step order (§151: no curl / vort; the edge, the paddle): mask → splat → wall → edge → paddle → div → Jacobi → grad → advect → adye');
   ok(/stepSim\(\{ c: N\.c, view: N\.view, it, itLo/.test(ix), 'the mask is drawn with the picture\'s own c / view / budgets / chart');
   const mk = sh.slice(sh.indexOf('export const MASK'), sh.indexOf('export const SPLAT'));
   ok(['uC', 'uView', 'uIter', 'uIterLo', 'uLam', 'uZs', 'uEps2'].every((u) => new RegExp('uniform \\w+ ' + u + ';').test(mk) && sim.includes("'" + u + "'")), 'MASK declares and is fed uC uView uIter uIterLo uLam uZs uEps2');
@@ -145,6 +145,51 @@ console.log('7. §151 the probe (harness only)');
   ok(['curl', 'ke', 'L:', 'nf', 'nan'].every((k) => sim.slice(sim.indexOf('export function probeSim')).includes(k)), 'probeSim reports curl / ke / L / nf / nan');
   const ix = rd('navpool', 'index.js').toString();
   ok(ix.includes('const rotv = SPIN.th ? GROOVE.rot + SPIN.th : GROOVE.rot;'), 'the drawn rotation is GROOVE.rot exactly while SPIN.th is 0');
+}
+
+console.log('8. §151 the edge is a paddle');
+{
+  const sh = rd('navpool', 'pool-shaders.js').toString();
+  ok(['EDGE_TAU', 'PADDLE_GAIN', 'PADDLE_K', 'PADDLE_BAND', 'PADDLE_VMAX', 'SPIN_MAX', 'GROW_MAX', 'EDGE_JUMP'].every((k) => Number.isFinite(KS[k]) && KS[k] > 0), 'the paddle knobs are finite and > 0');
+  // edgeRates + rigOf + edgeField against pool.js toUv by a central finite difference: a view turning, zooming and sliding
+  const asp = 16 / 9, Om = 1.3, g = -0.7, vx = 0.21, vy = -0.17, h = 5e-4;   // 2h = 1e-3: edgeRates floors dt there
+  const Vt = (t) => [0.1 + vx * t, -0.2 + vy * t, 1.42 * Math.exp(g * t), 0.4 + Om * t];
+  const Rr = edgeRates(Vt(h), Vt(-h), 2 * h), rig = rigOf(Rr, Vt(0), [0, 0, 0, 0]);
+  let worst = 0;
+  for (const [zx, zy] of [[0.3, 0.2], [-0.5, 0.4], [0.1, -0.6], [-0.2, -0.1], [0.6, 0.5]]) {
+    const a = [0, 0], b = [0, 0], o = [0, 0];
+    toUv(zx, zy, Vt(h), asp, a);
+    toUv(zx, zy, Vt(-h), asp, b);
+    toUv(zx, zy, Vt(0), asp, o);
+    const fd = [(a[0] - b[0]) / (2 * h), (a[1] - b[1]) / (2 * h)], an = edgeField(rig, o, asp);
+    worst = Math.max(worst, Math.hypot(fd[0] - an[0], fd[1] - an[1]) / Math.hypot(fd[0], fd[1]));
+  }
+  ok(!Rr.gap && Math.abs(Rr.spin - Om) < 1e-9 && Math.abs(Rr.grow - g) < 1e-9 && worst < 1e-6, `edgeRates / edgeField = d(toUv)/dt of a fixed plane point (5 points, turn + zoom + slide; worst rel ${worst.toExponential(2)})`);
+  { // the sign the A5 readout uses: +rot drives the fluid's angular momentum L = (p × v)_z NEGATIVE
+    const r = rigOf(edgeRates([0, 0, 1.42, 0.025], [0, 0, 1.42, 0], 1 / 60), [0, 0, 1.42, 0.025], [0, 0, 0, 0]), u = edgeField(r, [0.75, 0.5], asp);
+    const px = (2 * 0.75 - 1) * asp, Lz = px * (u[1] * 2) - 0 * (u[0] * asp * 2);
+    ok(r[0] > 0 && Lz < 0, `a +rot view turn is a clockwise screen field: L < 0 (spin ${r[0].toFixed(2)}, L ${Lz.toFixed(3)})`);
+  }
+  const J1 = edgeRates([0, 0, 1.42, 0.6], [0, 0, 1.42, 0], 1 / 60), J2 = edgeRates([0, 0, 1.42 * 1.4, 0], [0, 0, 1.42, 0], 1 / 60), W = edgeRates([0, 0, 1.42, -Math.PI + 0.01], [0, 0, 1.42, Math.PI - 0.01], 1 / 60);
+  ok(J1.gap && J1.spin === 0 && J1.grow === 0 && J2.gap && J2.grow === 0, '|dθ| > EDGE_JUMP and |dγ| > .3 are GAPs (rates 0)');
+  ok(!W.gap && Math.abs(W.dth - 0.02) < 1e-9 && edgeRates([0, 0, 1.42, 1], [0, 0, 1.42, 0.8], 1 / 60).spin === KS.SPIN_MAX, 'dθ wraps across ±π; spin clamps at SPIN_MAX');
+  const pd = sh.slice(sh.indexOf('export const PADDLE'), sh.indexOf('export const DIV'));
+  ok(pd.includes('if(ul<1e-4){o=vec4(v,0.,1.);return;}') && pd.includes('if(gap>0.)vh+=e*min(gap,ul)*'), 'PADDLE: the |ue| guard (no division under 1e-4), one-sided (gap > 0), the impulse capped at |ue| (a still paddle never brakes)');
+  const adv = sh.slice(sh.indexOf('export const ADVECT'), sh.indexOf('export const ADYE'));
+  ok(KS.SLIP === 0 && adv.includes('vec4 r=texture(uM,c).x>WALL?(uSlip>.5&&texture(uM,vUv).x>WALL?trace(c,own):texture(uSrc,c)):own;') && adv.includes('vec4 own=texture(uSrc,vUv);') && adv.includes('o=r/(1.+uDiss*uDt);}'), 'SLIP 0 (default): ADVECT is the old line (foot in fluid → bilinear texture(uSrc, c), else the own value); SLIP:1 the A/B free-slip trace');
+  ok(KS.EDGE_NORM === 1 && sh.includes('raw=uNorm*texture(uVel,vUv).xy+t/uScale;'), 'EDGE_NORM 1 (default): the edge velocity = WALLV\'s normal speed + the rigid tangential part');
+  const sim = rd('navpool', 'pool-sim.js').toString();
+  ok(/edg = \[ctx\.mkTarget\(sw, sh\), ctx\.mkTarget\(sw, sh\)\];\n\s*zero\(edg\[0\]\);\n\s*zero\(edg\[1\]\);/.test(sim) && sim.includes('...edg, div]'), 'edg is allocated, cleared on every alloc and freed with the others');
+  const s0 = { ...SPIN };
+  scene.hooks.npspin('1.5,60');
+  const a = { ...SPIN };
+  Object.assign(SPIN, s0);
+  scene.hooks.npspin(1.5, 60);
+  const b = { ...SPIN };
+  Object.assign(SPIN, s0);
+  scene.hooks.npspin('x');
+  ok(a.rate === 1.5 && a.left === 60 && b.rate === a.rate && b.left === a.left && SPIN.th === 0 && SPIN.left === 0 && SPIN.rate === 0, 'npspin(\'1.5,60\') = npspin(1.5, 60); npspin(\'x\') is a no-op (θs 0)');
+  Object.assign(SPIN, s0);
 }
 
 console.log(fails ? `test_navpool: ${fails} FAIL` : 'test_navpool: all ok');
