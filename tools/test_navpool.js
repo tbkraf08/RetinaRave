@@ -55,7 +55,7 @@ const Q = [];
 const F = { on: true, params: { radius: 0.0025 }, floor: [0, 0, 0], splat: (x, y, dx, dy, rgb, r) => Q.push({ x, y, dx, dy, rgb, r }) };
 const S = { presence: 1, kickEvt: false, kickAmp: 0, dropLiveEvt: false, mapDropEvt: false, shiftEvt: false };
 const SC = { cur: 7, next: -1, m: 0 }, V = [0, 0, 1.42, 0.3], c = [-0.12, 0.65];
-let maxOrb = 0, inFrame = true, finite = true;
+let maxOrb = 0, inFrame = true, finite = true, still = true, nOrb = 0;
 for (let f = 0; f < 600; f++) {
   S.kickEvt = f % 30 === 0;
   S.kickAmp = 0.8;
@@ -65,16 +65,24 @@ for (let f = 0; f < 600; f++) {
   for (const s of Q) {
     if (!(s.x > 0 && s.x < 1 && s.y > 0 && s.y < 1)) inFrame = false;
     if (![s.x, s.y, s.dx, s.dy, ...s.rgb, s.r].every(Number.isFinite)) finite = false;
+    if (s.dx !== 0 || s.dy !== 0) still = false;
+    nOrb++;
   }
 }
 ok(POOL.total > 300 && POOL.kicks === 20, `on screen: ${POOL.total} splats in 10 s, ${POOL.kicks} kicks`);
 ok(maxOrb <= PK.ORB_MAX, `at most ${PK.ORB_MAX} orbit splats a frame (max ${maxOrb})`);
 ok(inFrame && finite, 'every splat inside the frame, finite');
+ok(still && nOrb > 300, `§151: every orbit / kick splat is ink only (dx = dy = 0, ${nOrb} splats)`);
+ok(!('V' in PK) && !('KICK_V' in PK) && !rd('navpool', 'pool.js').toString().includes('dirUv'), '§151: no PK.V / PK.KICK_V / dirUv');
 Q.length = 0;
 S.kickEvt = false;
 S.dropLiveEvt = true;
 stepPool(1 / 60, S, SC, 7, F, c, V, 16 / 9, 0.4, 0.6);
 ok(Q.length >= PK.RING_N && POOL.ring === 1, `the drop rings: ${Q.length} splats`);
+{
+  const ring = Q.slice(-PK.RING_N);
+  ok(ring.every((s) => Math.hypot(s.dx, s.dy) > 0 && (s.dx * (s.x - 0.5) + s.dy * (s.y - 0.5)) > 0), '§151: the ring splats keep their outward radial velocity (RING_V)');
+}
 S.dropLiveEvt = false;
 const t0 = POOL.total;
 for (let f = 0; f < 60; f++) stepPool(1 / 60, S, { cur: 6, next: -1, m: 0 }, 7, F, c, V, 16 / 9, 0.4, 0.6);
@@ -133,6 +141,7 @@ console.log('7. §151 the probe (harness only)');
 {
   ok(['npwall', 'npspin', 'nppk'].every((k) => typeof scene.hooks[k] === 'function' && k.startsWith('np') && !H3.includes(k)) && new Set([scene.hooks.npwall, scene.hooks.npspin, scene.hooks.nppk, scene.hooks.npsim]).size === 4, 'hooks npwall / npspin / nppk exist, np-prefixed, not nav3\'s, distinct');
   const sim = rd('navpool', 'pool-sim.js').toString();
+  ok(/if \(!isDye && still\) continue;/.test(sim), '§151: an ink-only batch skips the velocity splat pass');
   ok(['curl', 'ke', 'L:', 'nf', 'nan'].every((k) => sim.slice(sim.indexOf('export function probeSim')).includes(k)), 'probeSim reports curl / ke / L / nf / nan');
   const ix = rd('navpool', 'index.js').toString();
   ok(ix.includes('const rotv = SPIN.th ? GROOVE.rot + SPIN.th : GROOVE.rot;'), 'the drawn rotation is GROOVE.rot exactly while SPIN.th is 0');

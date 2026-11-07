@@ -5,8 +5,8 @@
 // live: the CRITICAL ORBIT z₀ = 0, z₁ = c, z₂ = c² + c, … of the c the ball has rolled to. While c is in M that orbit never
 // escapes, so every point of it lies in the filled Julia set — the interior this scene paints with the pool (shaders-v2.js).
 // Each point is mapped plane → screen by the inverse of the shader's view map (z = xy + s·rot(w)·p, p = (2uv − 1)·(aspect, 1)),
-// and a droplet is thrown along the orbit's own step z_{n+1} − z_n in the key's hue. The mid band sets how much ink per second
-// (the `stir` parameter), the kick throws a stronger burst along the first orbit points, the drop (the live slam, the map's line,
+// and a droplet of ink is dropped there in the key's hue (§151: ink only — it was thrown along the orbit's step z_{n+1} − z_n, and those
+// thrusts wrapped round the attracting cycle into a vortex). The mid band sets how much ink per second (the `stir` parameter), the kick drops a stronger burst on the first orbit points, the drop (the live slam, the map's line,
 // the energy shift — implode.js's three) a ring outward from the centre, as FLUID2's. At most ORB_MAX droplets a frame from the
 // orbit. No Math.random: which orbit point a droplet takes walks the golden ratio on this module's own count (FLUID2's sparkle).
 // Only an ON-SCREEN NAVPOOL splats (the visibility gate is FLUID2's, on env.SC).
@@ -17,12 +17,10 @@ export const PK = {
   ORB_MAX: 8,      // droplets a frame from the orbit, the kick's included
   RATE: 40,        // droplets per second at stir 1 (the mid band), × presence
   RATE0: 0.15,     // the floor of the rate under stir: a quiet piece still breathes
-  V: 0.5,          // the droplet's speed along the orbit's step, uv/s, at stir 1
   INK: 0.012,      // its ink (linear) at stir 1
   RAD: 1.5,        // its radius × the grammar's splat radius
   HUE: 0.08,       // the hue spread along the orbit around the key hue
-  KICK_N: 6,       // the kick: a burst along the first KICK_N orbit points …
-  KICK_V: 1.4,     // … thrown at KICK_V · kickAmp uv/s
+  KICK_N: 6,       // the kick: an ink burst on the first KICK_N orbit points (§151: ink only — no thrust) …
   KICK_INK: 0.035, // … with this much ink
   KICK_RAD: 3,     // … this wide (× the grammar's radius)
   RING_N: 8,       // the drop: RING_N droplets on a ring round the centre, outward (FLUID2's ring: 6, .22, 1.6, grey)
@@ -43,13 +41,6 @@ function toUv(x, y, V, asp, out) {
   out[0] = ((c * dx + s * dy) / V[2] / asp + 1) / 2;
   out[1] = ((-s * dx + c * dy) / V[2] + 1) / 2;
   return out[0] > 0.01 && out[0] < 0.99 && out[1] > 0.01 && out[1] < 0.99;
-}
-// the orbit step z_i → z_{i+1} as a unit direction on the screen (rotated, the aspect undone), into out[2..3]
-function dirUv(i, V, asp, out) {
-  const ex = ZX[i + 1] - ZX[i], ey = ZY[i + 1] - ZY[i], c = Math.cos(V[3]), s = Math.sin(V[3]);
-  const u = (c * ex + s * ey) / asp, v = -s * ex + c * ey, m = Math.hypot(u, v);
-  out[2] = m > 1e-9 ? u / m : 0;
-  out[3] = m > 1e-9 ? v / m : 0;
 }
 const UV = [0, 0, 0, 0];
 
@@ -87,9 +78,8 @@ export function stepPool(dt, S, SC, id, F, c, V, asp, hue, stir) {
     const a = clamp(S.kickAmp, 0, 1) * g;
     for (let i = 1; i <= Math.min(PK.KICK_N, len - 1) && budget > 0; i++) {
       if (!toUv(ZX[i], ZY[i], V, asp, UV)) continue;
-      dirUv(i, V, asp, UV);
       const col = hsv(frac(hue + PK.HUE * (i / PK.KICK_N - 0.5)), 0.8, PK.KICK_INK * a);
-      F.splat(UV[0], UV[1], PK.KICK_V * a * UV[2], PK.KICK_V * a * UV[3], col, rad * PK.KICK_RAD);
+      F.splat(UV[0], UV[1], 0, 0, col, rad * PK.KICK_RAD);   // §151: ink only (the thrust along the orbit's step wrapped round the cycle: a curl burst)
       budget--;
       POOL.nSplat++;
     }
@@ -100,10 +90,8 @@ export function stepPool(dt, S, SC, id, F, c, V, asp, hue, stir) {
     POOL.n++;
     const i = 1 + Math.floor(frac(POOL.n * GOLD) * (len - 1));
     if (!toUv(ZX[i], ZY[i], V, asp, UV)) continue;
-    dirUv(i, V, asp, UV);
     const col = hsv(frac(hue + PK.HUE * (i / len - 0.5)), 0.75, PK.INK * (0.3 + stir) * g);
-    const v = PK.V * (0.3 + stir) * g;
-    F.splat(UV[0], UV[1], v * UV[2], v * UV[3], col, rad * PK.RAD);
+    F.splat(UV[0], UV[1], 0, 0, col, rad * PK.RAD);   // §151: ink only — the orbit's thrusts wrapped round the attracting cycle (a vortex driven by mid × presence)
     budget--;
     POOL.nSplat++;
   }

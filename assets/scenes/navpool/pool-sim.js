@@ -141,7 +141,10 @@ export function stepSim(J) {
         A.set([s.x, s.y, s.dx, s.dy], i * 4);
         C.set([s.r, s.g, s.b, Math.max(1e-5, s.rad)], i * 4);
       }
+      let still = true;   // §151: a batch of ink-only splats (dx = dy = 0) skips the velocity pass (adding an exact 0: bit-exact)
+      for (let i = 0; i < n; i++) if (q[i0 + i].dx !== 0 || q[i0 + i].dy !== 0) still = false;
       for (const [pair, isDye] of [[vel, 0], [dye, 1]]) {
+        if (!isDye && still) continue;
         pr = pass(P.splat, pair[1]);
         ctx.tex(pr, 'uSrc', 0, pair[0]);
         gl.uniform4fv(pr.u('uSplat'), A);
