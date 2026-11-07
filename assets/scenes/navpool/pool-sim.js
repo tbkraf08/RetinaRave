@@ -5,7 +5,7 @@
 // NAVPOOL's OWN fluid (DECISIONS §149 unit 2): a Stam solver like the core substrate's (assets/core/fluid/fluid.js — its tier tables and
 // its pass order, read, not imported) in which the JULIA SET'S BOUNDARY IS A SOLID WALL that moves with the dance. Each step: the mask
 // (the Julia escape test at the sim grid with the picture's own uniforms) → the splats (pool.js's: the critical orbit, the kick, the drop
-// ring) → curl → vorticity → the wall's velocity in the solid cells → divergence → pressure Jacobi (Neumann at the wall) → gradient →
+// ring) → the wall's velocity in the solid cells → divergence → pressure Jacobi (Neumann at the wall) → gradient →
 // advect the velocity → advect the dye (nothing back-traced out of the wall; the dye in the wall fades). No grammar layer: the scene's
 // own splats are the forcing. Everything is ctx.mkTarget (RGBA16F, LINEAR, CLAMP); the step runs in draw(), once per update().
 // Needs float render targets (ctx.fluid.avail) and honours the user's switch (ctx.fluid.on: key W, &fluid=0): off, nothing runs and the
@@ -16,7 +16,6 @@ export const KS = {
   SIM: [64, 96, 128, 128],     // the sim grid's short edge per ctx.tier() — the core's table
   DYE: [256, 384, 512, 512],   // the dye's — the core's
   ITER: [10, 14, 20, 20],      // pressure Jacobi sweeps — the core's
-  CURL: 30,          // vorticity confinement (the core's pool default)
   VEL_DISS: 0.2,     // velocity dissipation per second (the core's)
   DYE_DISS: 0.35,    // dye dissipation per second (the core's 1 emptied a pool fed only by the orbit; .35 holds a swirl ~3 s)
   PRESSURE: 0.8,     // the pressure's warm start (the core's)
@@ -35,8 +34,7 @@ export const KS = {
 };
 
 export const SIM = {
-  gate: 1,         // §149 the confinement's idle gate (knobs.js idleGate(presence), armSim's 3rd arg; 1 before the first update and under BENCH)
-  avail: 0, on: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, steps: 0, nSplat: 0, pend: 0, dt: 0,
+  avail: 0, on: 0, tier: -1, simW: 0, simH: 0, dyeW: 0, dyeH: 0, steps: 0, nSplat: 0, pend: 0, dt: 0, now: 0,
   params: { radius: KS.RADIUS },
   floor: [0, 0, 0], // the ink floor per second in every fluid cell (pool.js sets it each update from the mid band; 0 when muted)
   kick: 0,          // the kick's envelope (pool.js sets 1 on kickEvt; decays here)
@@ -51,7 +49,7 @@ export const SIM = {
 };
 
 let ctx = null, gl = null, P = {}, CW = 16, CH = 9, black = null;
-let vel = [null, null], dye = [null, null], prs = [null, null], msk = [null, null], div = null, curl = null;
+let vel = [null, null], dye = [null, null], prs = [null, null], msk = [null, null], div = null;
 const SA = new Float32Array(KS.MAXS * 4), SC4 = new Float32Array(KS.MAXS * 4);   // the splat uniforms, reused
 const swap = (p) => { const a = p[0]; p[0] = p[1]; p[1] = a; };
 const grid = (s) => (CW >= CH ? [Math.round(s * CW / CH), s] : [s, Math.round(s * CH / CW)]);
@@ -74,13 +72,12 @@ function alloc(tr) {
     copy(vel[0], nv[0]);
     copy(dye[0], nd[0]);
   }
-  for (const r of [...vel, ...dye, ...prs, ...msk, div, curl]) if (r) ctx.freeTarget(r);
+  for (const r of [...vel, ...dye, ...prs, ...msk, div]) if (r) ctx.freeTarget(r);
   vel = nv;
   dye = nd;
   prs = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)];
   msk = [ctx.mkTarget(sw, sh), ctx.mkTarget(sw, sh)];
   div = ctx.mkTarget(sw, sh);
-  curl = ctx.mkTarget(sw, sh);
   SIM.tier = tr;
   SIM.simW = sw; SIM.simH = sh; SIM.dyeW = dw; SIM.dyeH = dh;
   SIM.dye = dye[0];
@@ -92,7 +89,7 @@ export function initSim(c) {
   SIM.avail = c.fluid && c.fluid.avail ? 1 : 0;
   black = c.mkTarget(1, 1);
   SIM.dye = black;
-  for (const k of ['mask', 'splat', 'curl', 'vort', 'wallv', 'div', 'scale', 'jacobi', 'grad', 'advect', 'adye']) P[k] = c.mkProg(SH[k.toUpperCase()], 'navpool-' + k);
+  for (const k of ['mask', 'splat', 'wallv', 'div', 'scale', 'jacobi', 'grad', 'advect', 'adye']) P[k] = c.mkProg(SH[k.toUpperCase()], 'navpool-' + k);
   c.onResize((w, h) => {
     CW = w;
     CH = h;
@@ -101,10 +98,10 @@ export function initSim(c) {
 }
 
 // Once per update(): the step runs on the next draw() (a GL pass belongs to draw). on = the user's switch.
-export function armSim(dt, on, gate) {
-  SIM.gate = gate;   // §149: silence idles the vorticity confinement (at CURL 30 it self-excites the resting pool)
+export function armSim(dt, on, now) {   // §151: no gate — the confinement is gone (§149's idle gate of it with it); now = env.now (the wall clock)
   SIM.on = SIM.avail && on ? 1 : 0;
   SIM.pend = SIM.on;
+  SIM.now = now;
   SIM.dt = dt;
   if (!SIM.on) SIM.qn = 0;
   SIM.kick *= Math.exp(-dt / KS.KICK_TAU);
@@ -158,19 +155,6 @@ export function stepSim(J) {
     }
     SIM.qn = 0;
   }
-  pr = pass(P.curl, curl, true);
-  ctx.tex(pr, 'uVel', 0, vel[0]);
-  gl.uniform2f(pr.u('uScale'), sx, sy);
-  ctx.tri();
-  pr = pass(P.vort, vel[1], true);
-  ctx.tex(pr, 'uVel', 0, vel[0]);
-  ctx.tex(pr, 'uCurl', 1, curl);
-  ctx.tex(pr, 'uM', 2, msk[0]);
-  gl.uniform2f(pr.u('uScale'), sx, sy);
-  gl.uniform1f(pr.u('uCurlK'), KS.CURL * SIM.gate);
-  gl.uniform1f(pr.u('uDt'), dt);
-  ctx.tri();
-  swap(vel);
   pr = pass(P.wallv, vel[1], true);   // the wall: a solid cell moves as the set's edge does
   ctx.tex(pr, 'uVel', 0, vel[0]);
   ctx.tex(pr, 'uM', 1, msk[0]);

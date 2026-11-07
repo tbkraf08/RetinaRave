@@ -34,7 +34,7 @@ export const ROLL = {
   T_FLOOR: 0,      // §142: the visual clock's rate at presence 0 (was .15: the exterior bands and spokes drifted through silence)
   DOTS_RHO: 0.85,  // §142 the circles: the critical-orbit sprites draw only with a chart on and ρ under this (they piled into bright blobs at the rim and in a crossing)
 };
-// NAVPOOL silence (§149): 1 under music (exactly: sstep's t = 1 → 1), 0 in silence, a smooth ramp between; non-finite → 1 (load-bearing: uCurlK·NaN would poison the pool)
+// NAVPOOL silence (§149): 1 under music (exactly: sstep's t = 1 → 1), 0 in silence, a smooth ramp between; non-finite → 1 (load-bearing: a NaN would poison the dance; §151: it no longer gates the pool — the confinement is gone)
 export const idleGate = (p) => (Number.isFinite(p) ? sstep(ROLL.IDLE, ROLL.IDLE + ROLL.IDLE_W, p) : 1);
 export const GATE = {
   QMAX: 7,         // the deepest child the rim names (nearestRational's q cap)

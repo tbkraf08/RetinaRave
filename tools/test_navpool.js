@@ -90,8 +90,8 @@ console.log('5. unit 2: the scene\'s own solver, the set\'s edge its wall');
   const sim = rd('navpool', 'pool-sim.js').toString(), sh = rd('navpool', 'pool-shaders.js').toString(), ix = rd('navpool', 'index.js').toString();
   ok(!/from '[^']*core\//.test(sim + sh), 'pool-sim.js / pool-shaders.js import nothing from core');
   ok(KS.SIM.join() === '64,96,128,128' && KS.DYE.join() === '256,384,512,512' && KS.ITER.join() === '10,14,20,20', 'the core\'s tier tables (sim, dye, Jacobi sweeps)');
-  const order = ['P.mask', 'P.splat', 'P.curl', 'P.vort', 'P.wallv', 'P.div', 'P.jacobi', 'P.grad', 'P.advect'].map((k) => sim.indexOf('pass(' + k));
-  ok(order.every((x, i) => x > 0 && (i === 0 || x > order[i - 1])), 'step order: mask → splat → curl → vort → wall → div → Jacobi → grad → advect');
+  const order = ['P.mask', 'P.splat', 'P.wallv', 'P.div', 'P.jacobi', 'P.grad', 'P.advect', 'P.adye'].map((k) => sim.indexOf('pass(' + k));
+  ok(order.every((x, i) => x > 0 && (i === 0 || x > order[i - 1])), 'step order (§151: no curl / vort): mask → splat → wall → div → Jacobi → grad → advect → adye');
   ok(/stepSim\(\{ c: N\.c, view: N\.view, it, itLo/.test(ix), 'the mask is drawn with the picture\'s own c / view / budgets / chart');
   const mk = sh.slice(sh.indexOf('export const MASK'), sh.indexOf('export const SPLAT'));
   ok(['uC', 'uView', 'uIter', 'uIterLo', 'uLam', 'uZs', 'uEps2'].every((u) => new RegExp('uniform \\w+ ' + u + ';').test(mk) && sim.includes("'" + u + "'")), 'MASK declares and is fed uC uView uIter uIterLo uLam uZs uEps2');
@@ -109,19 +109,21 @@ console.log('5. unit 2: the scene\'s own solver, the set\'s edge its wall');
   ok(sh.includes('return a+(1.-ws)*own;') && KS.SQUEEZE === 1 && KS.INK_CAP > 0, 'the dye is conservative at the wall: solid taps read the texel\'s own ink, the swept ink lands on the rim (SQUEEZE 1), capped');
 }
 
-console.log('6. silence idles the pool\'s confinement and the dance (§149: knobs.js idleGate)');
+console.log('6. silence idles the dance (§149: knobs.js idleGate); §151 the pool\'s confinement is gone');
 {
   const sim = rd('navpool', 'pool-sim.js').toString(), ix = rd('navpool', 'index.js').toString(), nv = rd('navpool', 'nav.js').toString();
   ok(Number.isFinite(ROLL.IDLE_W) && ROLL.IDLE_W > 0, `ROLL.IDLE_W ${ROLL.IDLE_W} finite > 0`);
   ok(idleGate(ROLL.IDLE + ROLL.IDLE_W) === 1 && idleGate(0.5) === 1 && idleGate(1) === 1, 'idleGate === 1 (strict) at IDLE + IDLE_W, .5, 1: the identity under music');
   ok(idleGate(ROLL.IDLE) === 0 && idleGate(0) === 0, 'idleGate === 0 at IDLE and 0');
-  ok(idleGate(NaN) === 1 && idleGate(undefined) === 1 && idleGate(Infinity) === 1, 'idleGate of a non-finite presence is 1 (uCurlK never NaN)');
+  ok(idleGate(NaN) === 1 && idleGate(undefined) === 1 && idleGate(Infinity) === 1, 'idleGate of a non-finite presence is 1');
   let mono = true;
   for (let i = 1; i <= 100; i++) if (idleGate(i / 100) < idleGate((i - 1) / 100)) mono = false;
   ok(mono, 'idleGate monotone non-decreasing on a 101-point 0..1 sweep');
-  ok(KS.CURL === 30 && SIM.gate === 1, `KS.CURL ${KS.CURL} (unchanged), SIM's initial gate ${SIM.gate} (the BENCH / first-draw path uploads 30·1)`);
-  ok(sim.includes("gl.uniform1f(pr.u('uCurlK'), KS.CURL * SIM.gate);") && /export function armSim\(dt, on, gate\) \{\n\s*SIM\.gate = gate;/.test(sim) && (sim.match(/SIM\.gate = /g) || []).length === 1, 'uCurlK = KS.CURL × SIM.gate; armSim\'s 3rd argument is the one write');
-  ok(ix.includes('armSim(dt, ctx.fluid && ctx.fluid.on, idleGate(S.presence));') && (ix.match(/armSim\(/g) || []).length === 1, 'index.js passes idleGate(S.presence) unconditionally (one call)');
+  const all = fs.readdirSync('assets/scenes/navpool').map((f) => rd('navpool', f).toString()).join('\n'), psh = rd('navpool', 'pool-shaders.js').toString();
+  ok(!/export const (CURL|VORT)\b/.test(psh) && !all.includes('uCurlK') && !/P\.(curl|vort)\b/.test(sim), '§151: no CURL / VORT shader, no uCurlK anywhere in the folder, no P.curl / P.vort pass');
+  ok(!('CURL' in KS) && !('gate' in SIM) && !sim.includes('SIM.gate') && !sim.includes('KS.CURL'), '§151: no KS.CURL, no SIM.gate');
+  ok(/export function armSim\(dt, on, now\) \{/.test(sim) && !/armSim\([^)]*gate/.test(sim), '§151: armSim has no gate parameter (dt, on, now)');
+  ok(ix.includes('armSim(dt, ctx.fluid && ctx.fluid.on, env.now);') && (ix.match(/armSim\(/g) || []).length === 1 && !ix.includes('idleGate'), '§151: index.js has one armSim call, no idleGate (import or call)');
   ok(nv.includes('idleGate(S.presence)') && nv.includes('N.turn += ps * g * DANCE.TURN') && nv.includes('ps * (g * DANCE.SWAY * Math.sin(') && nv.includes('ROLL.BREATH * M2.breath * N.g') && nv.includes('ema(N.cLo, c0, dt * g, SWELL.CENT_TAU)') && nv.includes('ema(N.cHi, c0, dt * g, SWELL.CENT_TAU)') && nv.indexOf('idleGate(S.presence)') < nv.indexOf('ema(N.cLo, c0, dt * g'), 'nav.js gates the bar turn, the sway, the breath as read and the centroid\'s running range by idleGate (g computed before its first use)');
   const I = scene.hooks.npinfo();
   ok('g' in I && 'breathG' in I && 'breath' in I && 'trapA' in I, 'npinfo exposes g / breathG / breath / trapA (read-only)');

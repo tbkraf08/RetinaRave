@@ -9,7 +9,6 @@
 // the filled Julia set = fluid, ≤ .5 = escaped = solid; a one-cell soft edge from the distance estimate), uMp the previous frame's.
 // Fluid is m > WALL (.75). Velocity is in screen fractions per second (uv/s) and texel units through uScale = (simW, simH), as the core's.
 //   MASK   the escape test of shaders-v2.js's FS_JULIA_V2 with the same uniforms (uC uView uIter uIterLo uLam uZs uEps2) at the sim grid
-//   VORT   the confinement is off on and beside the wall (round 3: it amplified the wall's velocity jump into per-cell grain)
 //   WALLV  a solid cell takes the WALL's velocity: the mask's change over the frame along its gradient, −Δm/dt texels/s along n̂ (toward
 //          the fluid), × uWall.x, clamped to uWall.y — the set advancing into the ink shoves it, retreating drags it
 //   DIV    0 in a solid cell; a solid neighbour's velocity is its wall velocity (WALLV wrote it), the screen's edges mirrored
@@ -40,19 +39,6 @@ void main(){vec4 b=texture(uSrc,vUv);vec3 a=vec3(0.);
 for(int i=0;i<16;i++){if(i>=uN)break;vec2 p=vUv-uSplat[i].xy;p.x*=uAspect;float g=exp(-dot(p,p)/uCol[i].w);
 a+=g*(uDye==1?uCol[i].xyz:vec3(uSplat[i].zw,0.));}
 o=vec4(b.xyz+a,1.);}`;
-
-export const CURL = NB + `
-uniform sampler2D uVel;uniform vec2 uScale;
-void main(){float L=texture(uVel,vL()).y*uScale.y,R=texture(uVel,vR()).y*uScale.y,T=texture(uVel,vT()).x*uScale.x,B=texture(uVel,vB()).x*uScale.x;
-o=vec4(.5*(R-L-T+B),0.,0.,1.);}`;
-
-export const VORT = NB + WALL + `
-uniform sampler2D uVel,uCurl,uM;uniform vec2 uScale;uniform float uCurlK,uDt;
-float wl(vec2 q){return texture(uM,q).x>WALL?1.:0.;}
-void main(){float L=texture(uCurl,vL()).x,R=texture(uCurl,vR()).x,T=texture(uCurl,vT()).x,B=texture(uCurl,vB()).x,C=texture(uCurl,vUv).x;
-vec2 f=.5*vec2(abs(T)-abs(B),abs(R)-abs(L));f/=length(f)+1e-4;f*=uCurlK*C*wl(vUv)*wl(vL())*wl(vR())*wl(vT())*wl(vB());f.y=-f.y; /* no confinement at the wall: the curl across a wall cell is the wall's jump, and confining it grew per-cell grain (tester round 3) */
-vec2 v=texture(uVel,vUv).xy*uScale;v+=f*uDt;v=clamp(v,vec2(-1000.),vec2(1000.));
-o=vec4(v/uScale,0.,1.);}`;
 
 export const WALLV = NB + WALL + `
 uniform sampler2D uVel,uM,uMp;uniform vec2 uScale;uniform float uDt;uniform vec2 uWall;

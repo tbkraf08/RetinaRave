@@ -10,7 +10,6 @@
 // `always: false`: updated only while on screen, so draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1).
 import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
 import { NAV, updateNav, knob5, ROLL, INT3 } from './nav.js';
-import { idleGate } from './knobs.js';   // §149: silence idles the pool's confinement   // §145: INT3 the interior's depth fade / floor
 import { IMP, OUT3, knobDrop, knobImp } from './implode.js';
 import { SWELL as SWELL3 } from './nav.js';   // §145: the swell's shader lifts   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
 import { VS_PT, FS_PT } from './shaders.js';   // NAVPOOL: the v2 mapping only (the pool is lit in shaders-v2.js); shaders.js is a byte copy of nav3's for the dots
@@ -113,7 +112,7 @@ export default {
       intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
       buildLive: 'the void before a drop presses the ball against the rim and ASKS to go in: at a p/q root the ball crosses into the child bulb (§140)',
       suspension: 'a held tension also presses the ball against the rim (the gateway)',
-      presence: 'silence freezes the ball and the dance and slows the visual clock; the picture-in-picture fades out; it stills the pool\'s stirring and idles its confinement (the pool coasts to rest)',
+      presence: 'silence freezes the ball and the dance and slows the visual clock; the picture-in-picture fades out; it stills the pool\'s stirring (the pool coasts to rest)',
       arc: 'a peak keeps c outside longer after a drop (48 beats against 8)',
       eS: 'the loudness ladder\'s fallback when the loudness stage is off; the exterior depth; the DRUM modes\' amplitude',
       eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
@@ -158,7 +157,7 @@ export default {
     },
     eli5: 'NAV3\'s dancing Julia set, but its inside is a pool of ink and its edge is the pool\'s wall. The music rolls the point c around the Mandelbrot set and the set dances; the path a point takes under z → z² + c throws ink into the pool, and as the edge breathes, kicks and implodes it shoves the ink, which piles up against it and bounces off.',
     why: 'The critical orbit 0, c, c² + c, … never escapes while c is in M, so every point of it is inside the filled Julia set: the ink enters where the dynamics live, thrown along the step z → z² + c. The filled Julia set is the fluid and its outside is solid: the boundary is a wall that moves with c and the view, so the dance is a force on the ink.',
-    math: 'NAV3\'s mathematics (Koenigs coordinates inside a component of M, |λ| and arg λ as the music\'s coordinates, the parabolic implosion at the drop). The pool is a Stam solver (semi-Lagrangian advection, vorticity confinement, a Jacobi pressure projection) whose domain is the filled Julia set at the sim grid: Neumann pressure at the wall, the wall cells moving at −Δm/Δt along ∇m (m the escape mask), the ink lit by its luminance gradient (Lambert + Blinn).',
+    math: 'NAV3\'s mathematics (Koenigs coordinates inside a component of M, |λ| and arg λ as the music\'s coordinates, the parabolic implosion at the drop). The pool is a Stam solver (semi-Lagrangian advection, a Jacobi pressure projection) whose domain is the filled Julia set at the sim grid: Neumann pressure at the wall, the wall cells moving at −Δm/Δt along ∇m (m the escape mask), the ink lit by its luminance gradient (Lambert + Blinn).',
   },
 
   score: () => 0,   // forced-only: the §93 roster (NAV2, DUST, TORUS2, FLUID) is unchanged
@@ -212,7 +211,7 @@ export default {
     rt.log = `${N.mode} rho${N.rho.toFixed(3)} th${N.th.toFixed(3)} q${N.cyc.q} par${N.par.toFixed(2)}`;
     measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms, pure CPU — no pixel reads it): hooks.green()
     update2(dt, S, N, LOOK);       // §99: the base light, the smoulder, the exterior dim, the snare flash, the key hue
-    armSim(dt, ctx.fluid && ctx.fluid.on, idleGate(S.presence));   // unit 2: the solver steps on this frame's draw() (the user's switch W / &fluid=0 still stops it)
+    armSim(dt, ctx.fluid && ctx.fluid.on, env.now);   // unit 2: the solver steps on this frame's draw() (the user's switch W / &fluid=0 still stops it)
     stepPool(dt, S, SC, this.id, SIM, N.c, N.view, ASP, K2.key ? L2.hueT : LOOK.hueT, env.params.stir);   // NAVPOOL: the set's dance stirs the pool (on screen only)
     if (SPIN.left > 0) { SPIN.th += SPIN.rate * dt; SPIN.left--; }   // §151 harness: the controlled turn (0 unless hooks.npspin ran)
     this._groove = GROOVE;
