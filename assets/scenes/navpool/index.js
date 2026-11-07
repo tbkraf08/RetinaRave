@@ -1,0 +1,345 @@
+// Retina Rave — © 2026 Thomas Kraft. Licensed under the Retina Rave License (MIT + the Guest-List Clause):
+// use it at a party and Toma gets in free. Full text: https://retinarave.com/LICENSE and ./LICENSE in the repo.
+// Source: https://github.com/tbkraf08/RetinaRave
+// NAVPOOL — NAV3's dancing set with FLUID2's pool inside it (DECISIONS §149, 2026-10-28; Toma: "combine nav3 with fluid2 -> fluid
+// moving around inside of the dancing set"): id 7, key `8`, forced-only (score 0). A NAV3 clone by the §97 / §140 recipe — every file of
+// ../nav3/ copied, the program and hook names renamed (`n3*` → `np*`, hooks are dispatched by NAME across scenes); the Julia pass's
+// INTERIOR is a pool of ink lit as FLUID2 lights it (shaders-v2.js poolSh), over a trace of NAV3's Koenigs bands. Unit 2 (Toma: "I thought
+// the edge of the set would become the walls that it bounces the fluid off of?"): the pool is this scene's OWN solver (pool-sim.js) and
+// the set's boundary is its solid, moving wall; the ink is thrown along the critical orbit of c (pool.js) and the dance shoves it.
+// `always: false`: updated only while on screen, so draw() / overlay() keep the forced-scene first-frame guards (CONTRACTS §1).
+import { TAU, clamp, mix, sstep, ema, frac, Spring } from '../../math/util.js';
+import { NAV, updateNav, knob5, ROLL, INT3 } from './nav.js';
+import { idleGate } from './knobs.js';   // §149: silence idles the pool's confinement   // §145: INT3 the interior's depth fade / floor
+import { IMP, OUT3, knobDrop, knobImp } from './implode.js';
+import { SWELL as SWELL3 } from './nav.js';   // §145: the swell's shader lifts   // §140 step 3: the implosion's uniforms (uImp / uZ0 / uA / uSig) and knobs   // §140 step 2: the ball rolling inside M on math/field.js — no mandel.js table, no grid worker
+import { VS_PT, FS_PT } from './shaders.js';   // NAVPOOL: the v2 mapping only (the pool is lit in shaders-v2.js); shaders.js is a byte copy of nav3's for the dots
+import { baseLight } from '../../math/loudlight.js';
+import { POOL, stepPool } from './pool.js';
+import { SIM, initSim, armSim, stepSim, probeSim, knobSim } from './pool-sim.js';   // unit 2: the scene's own solver, the set's edge its wall   // the set's dance stirs the pool: the critical orbit, the kick, the drop ring
+import { FS_JULIA_V2, FS_MANDEL_V2 } from './shaders-v2.js';
+import { measure, G as GREEN } from './green.js';   // Green's theorem on c's equipotential: roundness Q, area A, edge speed v (v0.13)
+import { K2, L2, LUM_IN, LUM_EX, LUM_IMP, PAL3, FL, update2, pinKey, knob } from './look2.js';   // §99: exposure + colour on key, behind &nplum / &npsmo / &npfl / &npext / &npkey; §144: the implosion knee, pal3
+import { K3, M2, knob3 } from './move2.js';   // §100: the groove moves c — the kick lane, the beat breath, the sub press, the pitch lean, the trap per bar (a byte copy of nav2's)
+
+const modes = new Float32Array(16), pipPath = new Float32Array(96);
+const PIP = { cx: new Spring(-0.6, 1.5), cy: new Spring(0, 1.5), sc: new Spring(Math.log(1.5), 1.6), a: 0 };
+let ctx, pt, B_ORB, ASP = 16 / 9;   // the Julia and PiP programs are per colour mapping: this.colour.variants[name]
+// The iteration budget is split as NAV3's (docs/workers/nav-iter.md): a no-chart orbit whose |(f^n)'| fell under 1 stops at ITER_LO.
+const ITER_LO = 0.5;
+const ITER_Q = 0.15, ITER_QMAX = 8;   // §140: the Julia budget grows by ITER_Q per unit of period above 1 (a period-7 bulb ×1.9), capped at period 1 + ITER_QMAX; the shader loop's 420 is the hard cap
+const IMP_ITER_MUL = 1.2;   // §140 quality: the implosion's iteration budget = IMP_ITER_MUL × the governor's Q.iter (64 + 200 q), capped at OUT3.ITER 320 — 317 at q 1, 228 at q .63 (a first pass at 1.6 / 420 left q at .82–.89 on the drop windows against NAV2's .91), so the governor's answer to the drop's cost is not a halved render scale
+const PIP_SIZE = 0.6, PIP_MIN = 0.03;   // §140: the little map's half-width ≈ PIP_SIZE × the component's size, never under PIP_MIN
+
+export default {
+  name: 'navpool',
+  // key `8`; eighth in main.js's list so REG stays dense 0..7 (the id line has no comment: tools/thumbs.sh greps `^  id: 7,$`)
+  id: 7,
+  tag: 'NAVPOOL: NAV3\'s dancing Julia set filled with FLUID2\'s pool — the critical orbit stirs the ink, the kick throws it, the drop rings it outward',
+  card: { title: 'NAVPOOL', blurb: 'the dancing Julia set filled with a pool of ink that the music stirs from inside' }, // landing tile (CONTRACTS §1.17); site/thumbs/navpool.jpg (tools/thumbs.sh "7:360")
+  // no `fluid` slot since unit 2: the shared substrate idles under this scene; its pool is its own (pool-sim.js)
+  home: false,      // NAV2 (id 2) is the home; this is the workbench
+  always: false,    // forced-only: updated only while on screen (the brief); draw() / overlay() guard the first frame before the first update()
+  cuts: 'event',    // c jumps only at drops, chart cuts (pathCut<=2) and beat kicks
+  feats: ['beatPhase', 'beatCount', 'dropLiveEvt', 'mapDropEvt', 'dropEvt', 'shiftEvt', 'shiftHold', 'dropEnv', 'intensity', 'buildLive', 'suspension', 'presence', 'arc', 'eS', 'eM', 'resolveEvt',   // §143: shiftEvt / shiftHold (the energy shift)
+    'hit', 'bass', 'mid', 'high', 'peaks', 'perc', // index.js's draw (the trap turn, the zoom, the dots, the DRUM modes) + nav.js (park, settle, the visual clock); §144: perc scales the dance
+    'loudRel', 'loudRange', 'loudAbs', 'centroid', 'voxS', 'voxHz', 'voxConf', 'harmAngle', 'key', 'keyConf', 'dropExpectedIn', 'sectionEvt', // §140 nav.js: loud → ρ, pitch → θ (math/vox.js), the key / harmony turn, the gate, the mirror
+    'snareEvt', 'snareAmp', 'mode', 'valence', 'modeShade', 'phrase16Pos', 'bpm', // §99: look2.js (+ loudRel loudRange loudAbs key keyConf harmAngle above)
+    'onset', 'hitStrength', 'kickEvt', 'kickAge', 'kickAmp', 'subGate', 'subNote', 'clockConfPcm', 'barPos', 'tongue21', 'tongue41', 'tongueOn'], // §100: move2.js (+ beatgrid.js spin() reads barPos / the tongue ladder)
+  state: NAV,       // ./nav.js's own object; the monitor's shape {mode, cPath, pathCut, kick:{x}, baby}
+  rt: { c: NAV.c, label: 'navpool', home: false, awayBeat: 0, settledAt: 0, time: 0, log: '' },
+  // no `variants`: DRUM (id 4, forced-only since §93) stays on ../nav/ — an id is registered once (core/scenes.js throws on a second), and the least churn keeps it with the code that draws it
+  hooks: {
+    babyp: (i) => { NAV.forceBaby = +i; },     // this clone's forceBaby; hooks are global by name
+    // §99's knobs (look2.js knob()): &nplum=0 knee off · &npsmo=0 the old par² smoulder · &npfl=0 the old flash · &npext=0 no
+    // exterior dim / halo narrowing · &npkey=0 the old hue drift; a comma list sets a term's numbers (look2.js knob() says which)
+    nplum: (v) => knob('lum', v),        // §144: =L0,K,L0x,Kx,L0i,Ki — the fifth / sixth the exterior knee while the implosion is up
+    nppal3: (v) => knob('pal3', v),      // §144: &nppal3=0 = pal() for the interior (v0.43); =Y,MAX the luma target and the boost's cap
+    npsmo: (v) => knob('smo', v),
+    npfl: (v) => knob('fl', v),
+    npext: (v) => knob('ext', v),
+    npkey: (v) => knob('key', v),
+    nppin: pinKey,                            // &nppin=<0..11>: pin the key (`key` stays the other scenes'; npkey is the §99 hue-drift knob)
+    // §100's knobs (move2.js knob3()): &npkick=0 v3's onset picker · =THR[,REFR,GAIN,VOID] the lane's numbers · &npbreath=AMP · &npsub=DEPTH · &nppitch=GAIN · &nptrap=0 the old π per beat / =ACC
+    npkick: (v) => knob3('kick', v),
+    npbreath: (v) => knob3('breath', v),
+    npsub: (v) => knob3('sub', v),
+    nppitch: (v) => knob3('pitch', v),
+    nptrap: (v) => knob3('trap', v),
+    // §140's knobs (nav.js knob5()): &nproll=RHO_LO,RHO_HI[,TH0,TH_SPAN[,GAIN,VMAX]] · &npgate=QMAX,TOL[,BUILD,RISE[,FALL,EXIT_BARS[,DIVE]]] · &npkick3=LEN
+    nproll: (v) => knob5('roll', v),
+    npgate: (v) => knob5('gate', v),
+    npkick3: (v) => knob5('kick3', v),
+    npdance: (v) => knob5('dance', v),
+    npconv: (v) => knob5('conv', v),
+    npswell: (v) => knob5('swell', v),       // §145: &npswell=PERC_LT,PERC_TAU,MAP,BEATS,TAU,BANDS,LUM,RISE_GAIN,RISE_TAU,RISE_STEER,CENT,CENT_TAU (fd49b87: 0,15,0,8,.4,.6,.15,0,2,.5,0)
+    npint: (v) => knob5('int', v),           // §145: &npint=K_RINGS,FLOOR (fd49b87: 999,0 with &nppal3=.5,4 — every ring at full, no floor)         // &npconv=CONV_RIM,CONV_R0,CONV_MAX — the convergence radius at the rim (the depth pass's band A/B)       // &npdance=BASS,KICK[,HIT[,TURN[,SWAY[,SNARE]]]] — the §140 retune's reactive dance (nav.js DANCE)
+    npdrop: knobDrop,                         // &npdrop=any: v3's dropEvt too (v0.43's read); default the live slam, the map's line and the shift (§143)
+    npimp: knobImp,                           // &npimp=EPS[,EPS_BEAT[,EPS_DROP[,PET_K[,PET_R[,T_IN[,SETTLE[,PET_LUM[,HOLD[,REARM[,HOLD_MAX]]]]]]]]]] — the implosion's numbers (implode.js OUT3; §143: HOLD / REARM / HOLD_MAX)
+    // Green's theorem on c's equipotential (green.js), measured every update(): {Q, A, L, v, dA, R, ok, n} — the §46 trace
+    // tools (tools/accept/v0.13/nav2-window.py, det13.py) read it as hooks.green()
+    npwall: () => probeSim(),
+    npsim: knobSim,             // &npsim=WALL_K:4,FADE_TAU:.06 — the solver's numbers by name (pool-sim.js KS)   // unit 2, read-only: the wall at work (pool-sim.js probeSim: rim / deep / wall cells, dye, speed, v·n)
+    greenp: () => GREEN,                      // &green / green3 stay NAV2's / NAV3's
+    // the ball's state in one object for the trace tools (`hooks.npinfo()`): mode, the drawn c, the ball, ρ / θ and their targets,
+    // the period q, the component's size, the gate's address, the stack depth, the counters (crossings, stalls, fails, time on the rim)
+    npinfo: () => ({
+      mode: NAV.mode, c: [NAV.c[0], NAV.c[1]], ball: [NAV.ball[0], NAV.ball[1]], rho: NAV.rho, th: NAV.th, rhoT: NAV.rhoT.x, thT: NAV.thT.x,
+      q: NAV.cyc.q, has: NAV.cyc.has, size: NAV.size, par: NAV.par, gate: NAV.gate.p + '/' + NAV.gate.q, gateErr: NAV.gate.err, gateOn: NAV.gate.on,
+      depth: NAV.stack.length, maxQ: NAV.maxQ, crosses: NAV.crosses, stalls: NAV.stalls, fails: NAV.fails, rimT: NAV.rimT, loud: NAV.loud, mirror: NAV.mirror,
+      kick: NAV.kick.x, pathCut: NAV.pathCut, tscale: NAV.timeScale, cycBase: NAV.cycBase | 0, extBeat: NAV.extBeat, fell: NAV.fell,
+      shown: (NAV.shown || NAV.cyc).has, percS: NAV.percS, turn: NAV.turn, swell: NAV.swell, swells: NAV.swells, rise: NAV.rise, cent: [NAV.cLo, NAV.cHi],   // §145: the swell's ease and count, the rise term, the centroid's running range   // §144: the chart drawn (the kick's own while it rings), the percussiveness scale, the accumulated bar turn
+      pend: NAV.pend, pends: NAV.pends, pendSlams: NAV.pendSlams, pendLapsed: NAV.pendLapsed, lift: [NAV.liftB, NAV.liftL],   // §147: a kit's shift pending the slam — the beat it armed (−1 none), how many armed / fired by a slam / lapsed into the swell
+      imp: { x: IMP.x, y: IMP.y, q: IMP.q, R: IMP.R, z0: IMP.z0.slice(), a: Math.hypot(IMP.a[0], IMP.a[1]), eps: IMP.eps, sig: IMP.sig, T: IMP.T, passes: IMP.passes, esc: IMP.esc, escMax: IMP.escMax, passMax: IMP.passMax, fan: IMP.fan, Rp: IMP.Rp, drops: IMP.drops, frames: IMP.frames, rearms: IMP.rearms, held: IMP.held, phi: IMP.phi, wedge: IMP.wedge.slice(), loudE: IMP.loudE, eps0: IMP.eps0, epsHi: IMP.epsHi, drive: IMP.drive, kickP: IMP.kickP, steps: IMP.steps },   // §147: the kick pulse on ε, the direction's bar steps   // §140 step 3: the implosion's record (implode.js IMP); §144: the direction's angle, the wedge, the eased ladder
+      hueT: L2.hueT, base: L2.base, smo: L2.smo, extG: L2.extG, extK: L2.extK, fl: L2.fl, key: L2.key, keyMode: L2.mode, keyConf: L2.conf, phr: L2.phr,   // §99
+      g: NAV.g, breathG: NAV.g * M2.breath, tight: M2.tight, breath: M2.breath, crest: M2.crest, subE: M2.subE, subSeen: M2.subSeen, lean: M2.lean, trapA: M2.trapA, fires: M2.fires, lastK: M2.lastK, acc: M2.sp.acc,   // §100
+      Q: GREEN.Q,
+      pool: { steps: SIM.steps, sim: [SIM.simW, SIM.simH], dye: [SIM.dyeW, SIM.dyeH], vis: POOL.vis, on: POOL.on, n: POOL.n, nSplat: POOL.nSplat, total: POOL.total, kicks: POOL.kicks, rings: POOL.rings },   // NAVPOOL: the stirring (pool.js)
+    }),
+  },
+  help: {
+    // what each field in `feats` moves on this screen (CONTRACTS §1.13); a field without a line falls back to FEATS[k].drives
+    feats: {
+      beatPhase: 'the orbit trap\'s rotation and the eased beat clock the picture breathes on',
+      beatCount: 'beats since the drop: how long c stays outside before it comes back in',
+      dropLiveEvt: 'a ring of ink thrown outward from the centre of the pool; the drop: c leaves the component through its rim along the wall\'s normal — step 3 makes it the parabolic implosion (the live detector\'s slam)',
+      mapDropEvt: 'the file map\'s drop, on its exact bar line, fires the same exit (§107\'s rule: the live slam OR the map\'s line); §145: under SWELL.PERC_LT it swells instead',
+      dropEvt: 'v3\'s drop fires the exit only with &npdrop=any (§143: off by default — a piano\'s false drops came in by it; NAV2 never read it)',
+      shiftEvt: 'the engine\'s energy shift (the loudness ladder stepping up over a bar): on a kit it fires the implosion (§143; mid-implosion it re-arms it); on a low-percussive piece (§145, under SWELL.PERC_LT) it SWELLS instead — the ball pressed to the rim and through the gateway, the bands up, nothing explodes',
+      shiftHold: 'while the energy stays up the exterior holds (EXT), then the 8-beat settle; the hard cap is OUT3.PEAK (§143)',
+      dropEnv: 'zooms the view out by up to 25 % and lights the exterior dust while the drop rings; the return waits until it has faded',
+      intensity: 'the ball\'s step: a bar with more energy closes more of the distance to where the music points per second',
+      buildLive: 'the void before a drop presses the ball against the rim and ASKS to go in: at a p/q root the ball crosses into the child bulb (§140)',
+      suspension: 'a held tension also presses the ball against the rim (the gateway)',
+      presence: 'silence freezes the ball and the dance and slows the visual clock; the picture-in-picture fades out; it stills the pool\'s stirring and idles its confinement (the pool coasts to rest)',
+      arc: 'a peak keeps c outside longer after a drop (48 beats against 8)',
+      eS: 'the loudness ladder\'s fallback when the loudness stage is off; the exterior depth; the DRUM modes\' amplitude',
+      eM: 'trail length (feedback decay 0.7 + 0.16 eM)',
+      resolveEvt: 'a release doubles the visual clock for a moment',
+      hit: 'a flash on the set\'s edge, a slight zoom-in, the bright head of the path in the picture-in-picture',
+      bass: 'the glow of the set\'s interior, a 5 % zoom-in (and the size of the critical-orbit dots when the `dots` parameter is routed on — off by default since §144)',
+      perc: 'how percussive the piece is scales the whole dance (the bass / kick / hit press on |λ|, the bar turn, the phrase sway, the snare twitch, the kick jump): a solo piano moves at a third of a kit\'s snap (§144)',
+      mid: 'the radius of the circular orbit trap; and the STIR: how much ink the critical orbit throws into the pool each second, and how fast (pool.js)',
+      high: 'the circular trap\'s highlight',
+      peaks: 'DRUM: the four spectral peaks become the four Koenigs modes (frequency picks the mode, amplitude its weight)',
+      loudRel: 'how brightly the pool is lit (FLUID2\'s light); LOUD IS OUT (§145: and its RISE over ~2 s presses the ball to the rim and steers it to the gateway before a shift lands): the track\'s own loudness ladder sets |λ| — quiet near the component\'s centre (the Koenigs spiral loose), loud against the rim (the spiral tight, the curl); a rise over two bars asks the gate to open, a fall inside a child rolls the ball back out',
+      loudRange: 'how many LU the track has shown so far: the ladder the ball\'s radius is stretched over (loudlight.js)',
+      loudAbs: 'whether the loudness stage runs: when it does not (&loud=0) the ladder falls back to eS',
+      centroid: 'the pitch\'s stand-in when nobody sings: the spectral brightness as a height, lifting c toward the 1/3 bulb (§145: against the track\'s own running range, so a piano\'s brightness moves it)',
+      voxS: 'PITCH IS UP: while someone sings, the sung pitch\'s height (math/vox.js) sets the internal angle — Im c rises with the pitch on the cardioid; voxS weights it against the centroid',
+      voxHz: 'the sung pitch itself, as a height on the voice\'s range (log2 over four octaves from A2)',
+      voxConf: 'whether the voice is trusted: 0 (the fake timeline) leaves the centroid in charge',
+      harmAngle: 'the harmony\'s place on the circle of fifths leans the internal angle: which part of the rim the ball slides toward',
+      key: 'the key\'s tonic picks a sector of the rim (weighted by keyConf); and the hue, as on every scene (keycolour.js)',
+      keyConf: 'how far the key is trusted: the rim sector and the key hue fade with it',
+      dropExpectedIn: 'a drop expected on the grid asks the gate to open: against the rim at a p/q root, the ball crosses into the child',
+      sectionEvt: 'a new section mirrors the rim (θ ↔ 1 − θ): the conjugate picture',
+      snareEvt: 'the flash on the set\'s edge is the snare\'s: the ears\' snare event places it (§99)',
+      snareAmp: 'how bright that edge flash is: the size of the last snare',
+      mode: 'minor pulls the key hue toward the cool half of the wheel, major toward the warm',
+      valence: 'a touch of warmth on the key hue (keycolour.js VALW)',
+      modeShade: 'whether THIS bar sits on a major or a minor degree: a per-bar lean of the key hue warm or cool (§82)',
+      phrase16Pos: 'the hue steps a twelfth of a turn around the key hue when the 16-beat phrase wraps, eased over a beat',
+      bpm: 'how long that hue step takes to settle (a beat); the bar clock the gate\'s HOLD and the exit\'s patience count in',
+      onset: 'v3\'s onset picker fires the kick when the ears\' lane is not published (move2.js)',
+      hitStrength: 'how far that fallback kick goes',
+      kickEvt: 'a burst of ink along the first points of the critical orbit, thrown along its steps (pool.js); the kick: c jumps OUT through the rim along the wall\'s normal (the Julia set breaks into dust for a frame) and springs back — NAV\'s Misiurewicz jump without the table (§100 lane, §140 target)',
+      kickAge: 'places that jump between frames: the spring is stepped by the age on the event frame',
+      kickAmp: 'how hard the kick\'s burst of ink is thrown; how far the jump goes (the sqrt law of §74, floor .31) and the goldilocks gate: a kick smaller than the threshold does not jump',
+      subGate: 'the sub sounding presses the ball toward the rim (the Koenigs arms tighten); the sub leaving relaxes it toward the centre',
+      subNote: 'the bass note\'s lean (move2.js) — read, not yet a force on this scene',
+      clockConfPcm: 'how big the beat breath is allowed to be: the clock\'s own confidence scales the per-beat press toward the rim',
+      barPos: 'the downbeat: the beat breath and the trap\'s turn take a step and a half on the bar\'s first beat (beatgrid.js)',
+      tongue21: 'the double time arriving makes the breath\'s crest bigger — never faster (§78)',
+      tongue41: 'the same accent from the 16th-note depth\'s rise',
+      tongueOn: 'the accent\'s A/B gate: −1 (the stage off) is the plain profile',
+    },
+    eli5: 'NAV3\'s dancing Julia set, but its inside is a pool of ink and its edge is the pool\'s wall. The music rolls the point c around the Mandelbrot set and the set dances; the path a point takes under z → z² + c throws ink into the pool, and as the edge breathes, kicks and implodes it shoves the ink, which piles up against it and bounces off.',
+    why: 'The critical orbit 0, c, c² + c, … never escapes while c is in M, so every point of it is inside the filled Julia set: the ink enters where the dynamics live, thrown along the step z → z² + c. The filled Julia set is the fluid and its outside is solid: the boundary is a wall that moves with c and the view, so the dance is a force on the ink.',
+    math: 'NAV3\'s mathematics (Koenigs coordinates inside a component of M, |λ| and arg λ as the music\'s coordinates, the parabolic implosion at the drop). The pool is a Stam solver (semi-Lagrangian advection, vorticity confinement, a Jacobi pressure projection) whose domain is the filled Julia set at the sim grid: Neumann pressure at the wall, the wall cells moving at −Δm/Δt along ∇m (m the escape mask), the ink lit by its luminance gradient (Lambert + Blinn).',
+  },
+
+  score: () => 0,   // forced-only: the §93 roster (NAV2, DUST, TORUS2, FLUID) is unchanged
+
+  post: { fb: { decay: (S) => 0.7 + 0.16 * S.eM }, bloom: { thr: 0.35 }, kaleido: 0 },   // §102: the kaleidoscope OFF (the user: "it distracts from the beauty of the set") — composite.js's uFx.z = FX.kal · 0, the mirror never mixes in, as TORUS2 / GIELIS / FEIGEN; NAV (id 8) keeps 1
+
+  // The visual parameters of this screen, and what feeds each one by default (CONTRACTS §1.16). Every `from(S)` is
+  // the expression `draw()` / `nav.js` computed inline before v0.5 — moved verbatim, never rewritten, so the picture
+  // is byte-identical while nothing is routed (one commit per move, each proved by the scene-md5 pair + parity).
+  params: {
+    pool: { eli5: 'how brightly the pool inside the set is lit, on the track\'s own loudness ladder (FLUID2\'s light)', range: [0, 1.6], from: (MS) => 0.5 + 0.9 * baseLight(MS.loudRel, MS.loudRange, MS.loudAbs, MS.loudRel) },
+    trace: { eli5: 'how much of the set\'s own banded interior shows through under the pool', range: [0, 1], from: () => 0.25 },
+    relief: { eli5: 'how deeply the light carves the edges of the ink', range: [0, 80], from: () => 24 },
+    spec: { eli5: 'how bright the highlight on the ink is', range: [0, 2], from: () => 0.6 },
+    stir: { eli5: 'how much ink the set\'s orbit throws into the pool each second, and how fast', range: [0, 1], from: (MS) => MS.mid },
+    trap: { eli5: 'how wide the ring is that the orbit trap lights up', range: [0.35, 1.25], from: (S) => 0.35 + 0.9 * S.mid },
+    zoom: { eli5: 'how far the view is pulled back from the Julia set', range: [0.5, 2], from: (S) => (1 - 0.05 * S.bass - 0.07 * S.hit) * (1 + 0.25 * S.dropEnv) },
+    dots: { eli5: 'how big the dots of the critical orbit are (0 = none; §144: off by default — the head dot read as a white comet on a quiet piece; route it on, e.g. &param=navpool.dots=c:1.5)', range: [0, 3], from: () => 0 },
+    pip: { eli5: 'how visible the little map of the Mandelbrot set is', range: [0, 1], from: (S) => sstep(0.05, 0.3, S.presence) },
+    // the one parameter nav.js reads (through updateNav's opts): the drop's depth outside the set, log2 of ε in units of the component's size (§140; nav.js OUT3 / implode.js)
+    reach: { eli5: 'how far outside the set the drop throws the picture: a log2 offset from the implosion\'s calibrated floor (§144: ε₀ is found per drop where the dust has eaten ESC_FLOOR of the former petal; the loudness ladder then deepens it live) — −6 is the floor itself, −5 twice as far', range: [-10, -2], from: () => -6 },   // §144: a constant (was mix(−8, −4, .55 eS + .5 tension) + 1.5 dropEnv: the energy now reaches ε through the ladder (OUT3.HOLD_LOUD), and on a dance track the old route put the whole former interior to dust)
+  },
+
+  // One colouring: NAV3's default `v2` with the pool in the interior (the OKLCH mapping is not carried: its interior has no pool).
+  colour: { default: 'v2', variants: { v2: {} } },   // NAVPOOL: the v2 mapping only — the pool is lit in shaders-v2.js
+
+  init(c) {
+    ctx = c;
+    c.onResize((w, h) => { ASP = w / Math.max(1, h); });
+    initSim(c);
+    NAV.log = c.log;
+    const CV = this.colour.variants;
+    CV.v2.julia = c.mkProg(c.oklch + FS_JULIA_V2, 'juliap-v2');   // v0.2's pal() ramp + ctx.oklch for linToSrgb (the dye is linear)
+    CV.v2.mandel = c.mkProg(FS_MANDEL_V2, 'mandelp-v2');
+    pt = c.mkProg(VS_PT, FS_PT, 'ptp');
+    B_ORB = c.dynBuf(160 * 3, 3);
+  },
+
+  update(dt, S, GROOVE, LOOK, env) {
+    const N = NAV, SC = env.SC;
+    this._P = env.params;   // §1.16: the same object every frame, refreshed before this update(); draw()/overlay() read it back the same frame
+    if (this.rt.settledAt === 0) N.landed = 0; // the director consumed the landing (zeroed rt.settledAt)
+    updateNav(dt, env.now, S, { isLogical: SC.logical === this.id, drum: SC.vT > 0.5, P: env.params });
+    const rt = this.rt;
+    rt.home = false;   // forced-only: never the director's home
+    rt.awayBeat = N.extBeat;
+    rt.settledAt = N.landed || 0;
+    rt.cycBase = N.cycBase;
+    rt.time = N.vtime;
+    rt.label = N.mode + ' q' + N.cyc.q + (N.stack.length ? ' d' + N.stack.length : '') + ' ' + N.gate.p + '/' + N.gate.q;
+    rt.log = `${N.mode} rho${N.rho.toFixed(3)} th${N.th.toFixed(3)} q${N.cyc.q} par${N.par.toFixed(2)}`;
+    measure(N.c[0], N.c[1], dt);   // Green's ruler on this frame's c (0.03 ms, pure CPU — no pixel reads it): hooks.green()
+    update2(dt, S, N, LOOK);       // §99: the base light, the smoulder, the exterior dim, the snare flash, the key hue
+    armSim(dt, ctx.fluid && ctx.fluid.on, idleGate(S.presence));   // unit 2: the solver steps on this frame's draw() (the user's switch W / &fluid=0 still stops it)
+    stepPool(dt, S, SC, this.id, SIM, N.c, N.view, ASP, K2.key ? L2.hueT : LOOK.hueT, env.params.stir);   // NAVPOOL: the set's dance stirs the pool (on screen only)
+    this._groove = GROOVE;
+    this._S = S;
+  },
+  draw(tgt, { w, h, vmix, colour }) {
+    if (!this._S) return;   // always: false — a forced scene is drawn on its first frame before its first update() (CONTRACTS §1)
+    const gl = ctx.gl, S = this._S, N = NAV, GROOVE = this._groove, LOOK = ctx.LOOK, Q = ctx.Q, asp = w / h, P = this._P;
+    const cm = Math.hypot(N.c[0], N.c[1]);
+    const br = S.beatCount + 1 - Math.pow(1 - S.beatPhase, 3);
+    const scale = (1.42 + 0.3 * Math.max(0, cm - 0.8)) * P.zoom;   // no baby copies on this scene (§140): the view is M's own, uSc 1
+    const rotv = GROOVE.rot;
+    N.view = [0, 0, scale, rotv];
+    const imp = IMP.x + IMP.y > 0;   // §140 step 3: while the implosion runs the budget is OUT3.ITER and the no-chart short budget is off (the passages need every iteration)
+    const it = imp ? Math.min(OUT3.ITER, Math.round(Q.iter * IMP_ITER_MUL)) : Math.min(420, Math.round(Q.iter * (1 + ITER_Q * Math.min(N.cyc.q - 1, ITER_QMAX))));   // §140 quality: the implosion's budget follows the governor (IMP_ITER_MUL × Q.iter, capped at OUT3.ITER) — a flat 420 cost 10–11 ms a frame and pulled q to .63 on the drop windows   // §140: a period-q cycle takes q× the iterations to converge onto one of its points — the budget grows with the period, capped by the loop
+    const CY = N.shown || N.cyc;   // §144: the chart drawn — the kick's own while it rings (nav.js KICK3.CHART), else the ball's
+    stepSim({ c: N.c, view: N.view, it, itLo: imp ? it : Math.round(it * ITER_LO), lam: [CY.lnr, CY.arg, CY.q, CY.has], zs: CY.zs, eps2: CY.eps2 });   // unit 2: the wall is the set about to be drawn (the mask and the picture share this frame's numbers)
+    const pr = this.colour.variants[colour].julia;
+    ctx.use(pr, tgt, w, h);
+    const u = pr.u;
+    const hueT = K2.key ? L2.hueT : LOOK.hueT;   // §99: colour on key — uPal.x and the tint (use() uploaded LOOK's; the knob off leaves them)
+    if (K2.key) {
+      gl.uniform4f(u('uPal'), hueT, LOOK.pal[1], LOOK.pal[2], LOOK.pal[3]);
+      gl.uniform3fv(u('uTint'), ctx.hsv(hueT, 0.75, 1));
+    }
+    gl.uniform4f(u('uN2'), K2.lum, K2.smo, K2.fl, 0);   // §99's three shader terms, each a knob; all 0 (and uExtG / uExtK 1) = NAV's bytes
+    gl.uniform4f(u('uLum'), LUM_IN[0], LUM_IN[1], LUM_EX[0], LUM_EX[1]);
+    gl.uniform2f(u('uLumI'), LUM_IMP[0], LUM_IMP[1]);   // §144: the exterior's knee while the implosion is up
+    gl.uniform3f(u('uPal3'), PAL3.Y, PAL3.MAX, PAL3.ON ? 1 : 0);   // §144: the luma-normalised interior palette
+    gl.uniform4f(u('uImpK'), OUT3.BLACK, OUT3.PET_Q1, OUT3.IMP_N, 0);   // §144: the former interior black while the implosion is up, the petals on the way in only; §145: the cusp's petal paint
+    gl.uniform4f(u('uInt'), INT3.K_RINGS, INT3.FLOOR, SWELL3.BANDS * N.liftB, SWELL3.LUM * N.liftL);   // §145: the rings' depth fade, the floor, the swell's lifts; §147: × the lift's share (1 under PERC_LT, PEND_BANDS / PEND_LUM on a kit's press)
+    gl.uniform1f(u('uSwell'), N.swell);
+    gl.uniform4f(u('uImpC'), OUT3.IMP_COL, OUT3.IMP_SN, OUT3.IMP_HUE_SN, OUT3.IMP_LUM);   // §145: the former interior by its escape time
+    gl.uniform1f(u('uExtG'), L2.extG);
+    gl.uniform1f(u('uExtK'), L2.extK);
+    gl.uniform1f(u('uSmo'), L2.smo);
+    gl.uniform4f(u('uFl'), FL.WHITE, FL.ON, FL.HIT, L2.fl);
+    gl.uniform2f(u('uC'), N.c[0], N.c[1]);
+    gl.uniform4f(u('uView'), 0, 0, scale, rotv);
+    gl.uniform1i(u('uIter'), it);
+    gl.uniform1i(u('uIterLo'), imp ? it : Math.round(it * ITER_LO));   // the short budget of §1.4's split: see ITER_LO
+    gl.uniform4f(u('uImp'), IMP.x, IMP.y, IMP.q, IMP.R);   // §140 the implosion's layers (implode.js): petal weight, explosion weight, q petals, the gate radius
+    gl.uniform2f(u('uZ0'), IMP.z0[0], IMP.z0[1]);
+    gl.uniform2f(u('uA'), IMP.a[0], IMP.a[1]);
+    gl.uniform1f(u('uSig'), IMP.sig * OUT3.SIG_TINT);   // §144: σ's weight on the hue (0: off the tint; .3 = v0.43)
+    gl.uniform1f(u('uQ0'), OUT3.OUT_RUN * IMP.q0);   // iterates beyond 2R before an entry counts as a passage (implode.js passages())
+    gl.uniform2f(u('uPet'), IMP.Rp * OUT3.PET_R, OUT3.PET_LUM);   // §142: the petal layer's radius and base lightness
+    gl.uniform2f(u('uSc'), 1, 1);
+    const ta = K3.trap ? M2.trapA : Math.PI * br;   // §100: a quarter turn per beat (π per bar) + ACC turns on each crest, beatgrid's profile; off = NAV's half turn per beat
+    gl.uniform2f(u('uTrapN'), -Math.sin(ta), Math.cos(ta));
+    gl.uniform1f(u('uTrapR'), P.trap);
+    gl.uniform1f(u('uDrum'), vmix);
+    gl.uniform2f(u('uZs'), CY.zs[0], CY.zs[1]);
+    gl.uniform4f(u('uLam'), CY.lnr, CY.arg, CY.q, CY.has);
+    gl.uniform1f(u('uEps2'), CY.eps2);
+    gl.uniform1f(u('uPx'), 2 * scale / h);
+    const D = SIM.dye;   // NAVPOOL: the scene's own pool (1×1 black while off: then the interior is NAV3's own, uPool.w 1)
+    ctx.tex(pr, 'uDye', 0, D);
+    gl.uniform2f(u('uDyeTexel'), 1 / Math.max(1, D.w), 1 / Math.max(1, D.h));
+    gl.uniform4f(u('uPool'), POOL.on ? P.pool : 0, P.spec, P.relief, POOL.on ? P.trace : 1);
+    gl.uniform1f(u('uPar'), N.par); // critical slowing: how close the multiplier is to the unit circle (0 outside / far from a root)
+    for (let j = 0; j < 4; j++) {
+      const pk = S.peaks[j], f = pk ? pk[0] : 110 * (j + 1), oct = Math.log2(Math.max(f, 30) / 55);
+      modes[j * 4] = 2 * (1 + (Math.round(oct * 12) * 7 % 12) % 4);
+      modes[j * 4 + 1] = 1 + Math.floor(clamp(oct, 0, 4.9));
+      modes[j * 4 + 2] = pk ? clamp(0.35 + 0.65 * (j === 0 ? 1 : pk[1] / S.peaks[0][1]), 0, 1) * (0.3 + 0.7 * S.eS) * S.presence : 0;
+      modes[j * 4 + 3] = N.vtime * (1.5 + oct);
+    }
+    gl.uniform4fv(u('uMode[0]'), modes);
+    ctx.tri();
+    // critical orbit: the actual dynamics of f_c — crawls near parabolic roots, flies off at the drop. §142 the circles: drawn only with a
+    // chart on and ρ under ROLL.DOTS_RHO — at the rim and in a crossing the 160 sprites piled into bright blobs near the cycle (Comptine 27 s, 1:29)
+    if (!(N.mode === 'INT' && N.cyc.has && N.rho < ROLL.DOTS_RHO && P.dots > 0)) return;   // §144: `dots` 0 (the default) draws none
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.useProgram(pt.p);
+    gl.uniform4f(pt.u('uView'), 0, 0, scale, rotv);
+    gl.uniform1f(pt.u('uAsp'), asp);
+    gl.uniform1f(pt.u('uSize'), h * 0.012 * P.dots);
+    const oc = ctx.hsv(frac((K2.key ? L2.hueT : LOOK.hue) + 0.5), 0.35, 0.5 * LOOK.pal[3]);   // §99: the dots follow the key hue too
+    gl.uniform3f(pt.u('uCol'), oc[0], oc[1], oc[2]);
+    gl.uniform1f(pt.u('uLine'), 0);
+    ctx.upload(B_ORB, N.orbit, 160 * 3);
+    gl.bindVertexArray(B_ORB.vao);
+    gl.drawArrays(gl.POINTS, 0, 160);
+    gl.disable(gl.BLEND);
+  },
+
+  // Picture-in-picture: M itself with the path of c. Post-composite, scissored, direct to screen.
+  overlay(PW, PH, vis, dt) {
+    if (!this._P) return;   // always: false — loop.js calls every scene's overlay every frame, updated or not (CONTRACTS §1 line 49)
+    const gl = ctx.gl, S = this._S, N = NAV, LOOK = ctx.LOOK, Q = ctx.Q, cv = this.colour.cur;
+    PIP.a = ema(PIP.a, vis * this._P.pip, dt, 0.5);
+    let ex = 0.05;
+    for (let i = 0; i < 96; i += 4) ex = Math.max(ex, Math.hypot(N.path[i * 3] - PIP.cx.x, N.path[i * 3 + 1] - PIP.cy.x));
+    PIP.cx.step(N.cPath[0], dt);
+    PIP.cy.step(N.cPath[1], dt);
+    PIP.sc.step(Math.log(clamp(ex * 1.8 + PIP_SIZE * N.size, PIP_MIN, 1.7)), dt);   // §140: the little map zooms onto the component the ball is in (N.size = 1/|dλ/dc|, the cardioid's is ~.5–1, a 1/7 bulb's ~.01)
+    const pipS = Math.exp(PIP.sc.x);
+    if (PIP.a <= 0.01) return;
+    const sz = Math.round(Math.min(PW, PH) * 0.24), mg = Math.round(sz * 0.12), x0 = PW - sz - mg, y0 = mg;
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(x0, y0, sz, sz);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const pr = this.colour.variants[cv].mandel;
+    gl.useProgram(pr.p);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(x0, y0, sz, sz);
+    gl.uniform2f(pr.u('uRes'), sz, sz);
+    const hueT = K2.key ? L2.hueT : LOOK.hueT;   // §99: the PiP and its path on the same key hue
+    gl.uniform4fv(pr.u('uPal'), [hueT, 0.2, 0.6, 1]);
+    gl.uniform3fv(pr.u('uTint'), K2.key ? ctx.hsv(hueT, 0.75, 1) : LOOK.tint);
+    gl.uniform4f(pr.u('uView'), PIP.cx.x, PIP.cy.x, pipS, 0);
+    gl.uniform1i(pr.u('uIter'), Math.round(N.stack.length ? 256 : 90 + 120 * Q.q));   // deeper in a child the little map is zoomed in: more iterations, as NAV's baby view had
+    gl.uniform1f(pr.u('uAlpha'), PIP.a);
+    for (let j = 0; j < 32; j++) { // a chart cut is not a path: no segment across it
+      pipPath[j * 3] = N.path[j * 9];
+      pipPath[j * 3 + 1] = N.path[j * 9 + 1];
+      pipPath[j * 3 + 2] = (N.pathCut >= j * 3 && N.pathCut < j * 3 + 3) ? 0 : (1 - j / 32) * (j ? 1 : 1 + S.hit);
+    }
+    gl.uniform3fv(pr.u('uPath[0]'), pipPath);
+    gl.uniform3fv(pr.u('uPc'), ctx.hsv(frac(hueT + 0.45), 0.55, 1));
+    ctx.tri();
+    gl.disable(gl.BLEND);
+    gl.disable(gl.SCISSOR_TEST);
+  },
+
+  hud() {
+    const N = NAV, f = (x) => x.toFixed(2);
+    return `navpool ${N.mode}  c ${N.c[0].toFixed(4)} ${N.c[1].toFixed(4)}  rho ${N.rho.toFixed(3)}→${N.rhoT.x.toFixed(2)} th ${N.th.toFixed(3)}→${frac(N.thT.x).toFixed(2)}  q ${N.cyc.q} depth ${N.stack.length} gate ${N.gate.p}/${N.gate.q}${N.gate.on ? '!' : ''}  par ${f(N.par)} tscale ${f(N.timeScale)}  loud ${f(N.loud)} size ${N.size.toExponential(1)} x${N.crosses} s${N.stalls} f${N.fails}  key ${L2.key}${L2.mode ? 'm' : 'M'} kc ${L2.conf.toFixed(2)} hue ${L2.hueT.toFixed(3)}  pool ${POOL.on ? 'splats ' + POOL.nSplat + ' total ' + POOL.total : 'off (W / no float targets)'}`;
+  },
+};
