@@ -1,0 +1,25 @@
+v0.46 — tag receipt (2026-11-10, DECISIONS §153)
+
+Merge on main: b4cc409 (navpool-nav3-sync 5f4b145; navpool-momentum d281ef4 underneath), --no-ff, no conflict.
+Bump: package.json + assets/core/version.js 0.44.0 -> 0.46.0. releases.json: round trip byte-identical first, then the
+top entry v0.46 (class scene, scenes [7], decisions §149 §151 §152, date 2026-11-10). npm run build: whatsnew 43 entries,
+top v0.46, #newin "New in v0.46: A new scene: the pool inside the dancing set, stirred by its own edge".
+Frozen page: node tools/bundle.js releases/retinarave-v0.46.html — 174 modules + 12 in the ears Worker (269 KB inline),
+2 237 823 bytes, VER = '0.46.0'. git rm releases/retinarave-v0.42.html (three-page rule: v0.43 / v0.44 / v0.46).
+
+Gates, each on the bumped tree:
+  1. node tools/check.js — 176 modules · uniforms 182 · MS keys 225 · scenes 8 (help.feats gaps 0) · 0 fail · 8 warn — MET
+     releases.js check — 43 entries · top v0.46 · package.json 0.46.0 · 0 problems — MET
+     whatsnew --check — 43 entries, up to date — MET
+     license.js --check — 179 public files, 0 without the header — MET
+  2. npm test — exit 0; the only FAIL token is the known NOTE "TheChain-map1 … [would FAIL; not a gate]"; test_music 151 ok 0 fail — MET
+     (also run on the merge commit before the bump: exit 0)
+  3. GPU=1 MUTE=1 PORT=8991 node tools/test_rec.js — all ok; version.js 0.46.0 == package.json 0.46.0;
+     retinarave-v0.46-nav2-2026-11-10T21-23-51.webm — MET
+  4. the frozen page from file://, CLOCK=1 GPU=1 MUTE=1 PORT=8993, [{until CARD},{until __FRAME>=300},{eval}]:
+     test&scene=0 -> {"sc":0,"errs":[],"bad":[],"frameN":300}
+     test&scene=6 -> {"sc":6,"errs":[],"bad":[],"frameN":300}
+     test&scene=7 -> {"sc":7,"errs":[],"bad":[],"frameN":300}   <- NAVPOOL
+     — MET
+Not run at the tag: the full scene-md5 roster / accept.sh — §151 and §152 paid their own sweeps (scene-md5-step4.txt,
+scene-md5-sync.txt: s0–s6 unmoved, s7 de6085f2 / fa715035); NAVPOOL is forced-only (score 0), so no Q trace is owed.

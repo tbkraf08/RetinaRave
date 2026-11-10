@@ -1,5 +1,22 @@
 [
  {
+  "version": "0.46.0",
+  "tag": "v0.46",
+  "date": "2026-11-10",
+  "class": "scene",
+  "title": "A new scene: the pool inside the dancing set, stirred by its own edge",
+  "body": "There is a new scene on key 8, NAVPOOL, and like the seventh it is one you have to ask for — the director never picks it. It is the navigator from key 7, the same set rolling, dancing and coming apart on a drop, with a pool of ink inside it. The edge of the set is the wall of the pool: the fluid lives only inside the filled shape, and when the shape moves, the wall moves with it.\n\nThe first version stirred the pool straight from the music — every beat threw small whirlpools into the water, and the result curled and swirled far too much, tight crinkly spirals that had more to do with the drums than with the shape. That is gone entirely, not turned down. The music still drops ink into the pool along the path the set's own centre traces, a drop still throws a ring of ink outward and a kick still shoves at the wall, but nothing else in the audio is allowed to spin the water. What moves it now is the edge, and the edge works like a paddle: when the set turns, grows or shrinks, the fluid next to the wall is pushed the way the wall is going, and it keeps moving after the wall stops, coasting and slowly settling the way water does when you stop stirring. The wall is slippery rather than sticky, so the flow runs along it instead of being dragged to a halt. What you see is smooth streamers that follow the lobes and turn with the set; after a fast spin the band next to the rim rolls up into a ring of small eddies that fade away.\n\nThe dance is the seventh scene's, exactly. The pool scene had been built on a draft of the navigator that never shipped, one where a lift in a percussive song only pressed the ball out to the edge and waited for a slam that, on this engine, never comes — so in the pool the set often never came apart at all. Replayed against four songs, the two scenes now move identically frame for frame once the music is playing, and every come-apart lands on the same frame in both. From here on they are tied together: a change to how the seventh scene moves has to be carried into this one too, or the tests fail.\n\nThe honest limits. With the music no longer stirring it, the ink near the rim is thinner on real songs than it was. While a song is just starting the pool scene holds its dance still until it hears music, so on a song with a long quiet opening the two scenes can sit a hair apart for the first few seconds.",
+  "scenes": [
+   7
+  ],
+  "decisions": [
+   "§149",
+   "§151",
+   "§152"
+  ],
+  "clip": null
+ },
+ {
   "version": "0.44.0",
   "tag": "v0.44",
   "date": "2026-10-22",

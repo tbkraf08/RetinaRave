@@ -6504,3 +6504,19 @@ rotating even though there is no sound, it was just faint"*. Toma's choice on sy
   fields), and d281ef4 at a mute-on-frame-3 alignment moves 3e-6: an alignment-dependent cold-start settle that predates §152, recorded
   as such, not as a pass of the literal bound.
 - **Open.** Toma's eye on the dev stack is the gate; no merge, tag or push before his OK. R5: nav.js is 483 lines, near the 500 cap.
+
+## §153 v0.46 tagged and pushed — NAVPOOL ships: the pool inside the dancing set, the edge a paddle, the dance main's NAV3 (2026-11-10, one Opus worker on main under the Fable orchestrator; Toma validated §151 + §152 on the dev stack and chose a full release commit over a bare tag)
+
+- **What ships since v0.44 (ff89792 on origin).** The merge `b4cc409` of `navpool-nav3-sync` (5f4b145, `navpool-momentum` d281ef4
+  underneath): §149's NAVPOOL (id 7, key `8`, forced-only), §151's paddle (confinement and the orbit / kick velocity out, their ink
+  kept, the edge's motion through a one-sided paddle band, free slip) and §152's re-clone of main's NAV3 dance. Also on main since
+  v0.44 and carried by this push: §147 / §148 / §150's record (the withdrawn v0.45 and its revert; the code is c3eb3cd's).
+- **The ritual (HARNESS "## Release notes").** `package.json` + `assets/core/version.js` 0.44.0 → 0.46.0 together; the
+  `releases.json` top entry inserted after the round-trip was proved byte-identical (class scene, scenes [7], decisions §149 §151
+  §152, dated 2026-11-10); `npm run build` (43 entries, `site/whats-new.html`, `index.html`'s #newin); `releases/retinarave-v0.46.html`
+  (174 modules + 12 in the ears Worker, 2 237 823 bytes, VER 0.46.0); `git rm releases/retinarave-v0.42.html` (three-page rule:
+  v0.43 / v0.44 / v0.46). v0.45 stays unused as a number (§150).
+- **Gates on the bumped tree.** check.js 0 fail / 8 warn (176 modules, scenes 8); releases.js check 0 problems; whatsnew --check up
+  to date; license --check 179 files, 0 missing; npm test exit 0 (the known TheChain noise NOTE only); test_rec all ok with the version
+  pair (retinarave-v0.46-nav2-…webm); the frozen page from file://, CLOCK=1 GPU=1 MUTE=1, scenes 0 / 6 / 7 at f300: errs [] bad [].
+  Receipt: `tools/accept/v0.46/tag-v0.46-2026-11-10.txt`.
